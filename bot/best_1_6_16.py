@@ -49,7 +49,7 @@ def register_on_close(cb):
     on_close_callback = cb
 
 def set_api_client(client):
-    """Inject the HeyAnon client so strategy can post its own logs"""
+    """Inject the NunuIRL client so strategy can post its own logs"""
     global api_client
     api_client = client
 

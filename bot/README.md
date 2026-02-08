@@ -1,22 +1,29 @@
-HeyAnon Bot (starter)
+NunuIRL Bot
 
-This folder contains a minimal example bot that posts position snapshots to the HeyAnon API.
+Multi-strategy auto-trading bot with ensemble voting, self-improving ML, and trailing stop loss.
 
-How to run with Docker Compose (recommended):
-- From the `infra/` folder run the compose commands.
+## Quick Start (Paper Trading)
+```bash
+cd bot
+cp .env.example .env
+# Edit .env with your Discord webhook and/or Telegram token
+pip install -r requirements.txt
+python multi_strategy_main.py
+```
 
-Or build the bot image directly for faster iteration:
+## Docker
+```bash
+docker build -t nunuirl_bot:local .
+docker run --rm --env-file .env nunuirl_bot:local
+```
 
-# Build image
-# docker build -t heyanon_bot:local .
+## Strategies
+- Regime Trend (1h/6h/16h WaveTrend + MACD/MFI)
+- Monte Carlo Zones (SMA20/50 + MC simulation)
+- Confidence Scorer (adaptive zone scoring with win rate tracking)
+- Multi-Tier Quality (EMA crossover + VWAP + tiered signals)
 
-# Run container (example, pass envs)
-# docker run --rm --env HEYANON_API_KEY=dev_api_key_change_me --env BASE_URL=http://host.docker.internal:8000 heyanon_bot:local
-
-Configuration:
-- Copy `.env.example` to `.env` and edit values, or pass envs via Docker/Compose.
-- `SEND_TEST_TRADE=1` will post a single test trade on startup.
-- `SNAPSHOT_INTERVAL_SEC` controls how often the bot sends position snapshots.
-
-Notes:
-- This is a starter bot; replace `bot.py` with your trading logic. The client class `HeyAnon` performs simple POST requests to the API endpoints.
+## Configuration
+- Copy `.env.example` to `.env` and edit values
+- `ENVIRONMENT=paper` for paper trading (default), `production` for live
+- Set `DISCORD_WEBHOOK` and/or `TELEGRAM_TOKEN` + `TELEGRAM_CHAT_ID` for alerts

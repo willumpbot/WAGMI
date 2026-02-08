@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # fetch_secrets.sh - robust helper to fetch secrets from AWS Secrets Manager
 # Usage: fetch_secrets.sh [secret-name] [out-file] [format]
-#   secret-name: AWS Secrets Manager secret id (default: heyanon/staging)
+#   secret-name: AWS Secrets Manager secret id (default: nunuirl/staging)
 #   out-file: path to write the secret (default: .env.staging)
 #   format: dotenv | json (default: dotenv)
 
 set -euo pipefail
-SECRET_NAME=${1:-heyanon/staging}
+SECRET_NAME=${1:-nunuirl/staging}
 OUT_FILE=${2:-.env.staging}
 FORMAT=${3:-dotenv}
 

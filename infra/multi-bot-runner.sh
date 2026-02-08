@@ -39,10 +39,10 @@ jq -r '.[]' "$STRATS_FILE" | while read -r strat; do
   name="bot_${i}"
   # try to read per-bot secrets from secrets file
   bot_symbol="BTC-PERP"
-  bot_key_env="${HEYANON_API_KEY:-}"
+  bot_key_env="${NUNUIRL_API_KEY:-}"
   if [ -f "$SECRETS_FILE" ]; then
     s_sym=$(jq -r --arg k "$strat" '.[$k].SYMBOL // empty' "$SECRETS_FILE" 2>/dev/null || true)
-    s_key=$(jq -r --arg k "$strat" '.[$k].HEYANON_API_KEY // empty' "$SECRETS_FILE" 2>/dev/null || true)
+    s_key=$(jq -r --arg k "$strat" '.[$k].NUNUIRL_API_KEY // empty' "$SECRETS_FILE" 2>/dev/null || true)
     if [ -n "$s_sym" ]; then bot_symbol="$s_sym"; fi
     if [ -n "$s_key" ]; then bot_key_env="$s_key"; fi
   fi
@@ -51,12 +51,12 @@ jq -r '.[]' "$STRATS_FILE" | while read -r strat; do
   $name:
     build:
       context: ../bot
-    container_name: heyanon_bot_$i
+    container_name: nunuirl_bot_$i
     environment:
       - BASE_URL=http://api:8000
       - STRATEGY_ID=$strat
       - SYMBOL=$bot_symbol
-      - HEYANON_API_KEY=$bot_key_env
+      - NUNUIRL_API_KEY=$bot_key_env
       - SNAPSHOT_INTERVAL_SEC=30
     depends_on:
       - api
@@ -108,7 +108,7 @@ if [ "$DRY" = "--dry-run" ]; then
   }
 
   # Build services YAML block
-  SERVICES=$(jq -r 'to_entries[] | [.key, (.value.HEYANON_API_KEY // ""), (.value.SYMBOL // "")] | @tsv' "$SECRETS")
+  SERVICES=$(jq -r 'to_entries[] | [.key, (.value.NUNUIRL_API_KEY // ""), (.value.SYMBOL // "")] | @tsv' "$SECRETS")
   YAML="services:\n"
   MISSING=0
 
@@ -117,12 +117,12 @@ if [ "$DRY" = "--dry-run" ]; then
     KEY=$(resolve "$RAW_KEY")
     SYM=$(resolve "$RAW_SYM")
 
-    # fallback per-bot -> env -> global HEYANON_API_KEY
+    # fallback per-bot -> env -> global NUNUIRL_API_KEY
     if [ -z "$KEY" ]; then
-      KEY="${HEYANON_API_KEY:-}"
+      KEY="${NUNUIRL_API_KEY:-}"
     fi
     if [ -z "$KEY" ]; then
-      echo "WARN: missing HEYANON_API_KEY for strategy=$STRAT" >&2
+      echo "WARN: missing NUNUIRL_API_KEY for strategy=$STRAT" >&2
       MISSING=1
       if [ "$STRICT" -eq 1 ]; then
         echo "STRICT mode: aborting due to missing secret for $STRAT" >&2
@@ -145,7 +145,7 @@ if [ "$DRY" = "--dry-run" ]; then
         - BASE_URL=http://api:8000
         - STRATEGY_ID=${STRAT}
         - SYMBOL=${SYM}
-        - HEYANON_API_KEY=${KEY}
+        - NUNUIRL_API_KEY=${KEY}
         - SNAPSHOT_INTERVAL_SEC=30
       depends_on:
         - api

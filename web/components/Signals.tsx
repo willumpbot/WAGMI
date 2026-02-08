@@ -32,7 +32,7 @@ function resolveApiBase(): string {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://heyanon-platform.onrender.com';
+      return 'https://nunuirl-platform.onrender.com';
     }
   }
   return 'http://localhost:8000';

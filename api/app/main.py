@@ -13,7 +13,7 @@ from .routes_copy import router as copy_router
 from .middleware import metrics_middleware
 from .services.signals import state as signals_state, loop_runner, refresh_signals
 
-app = FastAPI(title="HeyAnon API", version="0.1.0")
+app = FastAPI(title="NunuIRL API", version="0.1.0")
 
 # initialize structured logging
 init_logging()

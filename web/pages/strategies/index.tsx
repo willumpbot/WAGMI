@@ -16,7 +16,7 @@ function resolveApiBase(): string {
     const host = window.location.hostname;
     // In production on Render, default to the live API if env is missing
     if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://heyanon-platform.onrender.com';
+      return 'https://nunuirl-platform.onrender.com';
     }
   }
   // Local dev fallback

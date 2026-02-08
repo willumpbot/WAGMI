@@ -1,6 +1,6 @@
 apiVersion: 1
 dashboards:
-  - name: HeyAnon
+  - name: NunuIRL
     orgId: 1
     type: file
     disableDeletion: false

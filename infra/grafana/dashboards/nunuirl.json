@@ -2,7 +2,7 @@
   "dashboard": {
     "id": null,
     "uid": null,
-    "title": "HeyAnon - Basic",
+    "title": "NunuIRL - Basic",
     "tags": [],
     "timezone": "browser",
     "schemaVersion": 37,
@@ -14,7 +14,7 @@
         "title": "Requests per second",
         "targets": [
           {
-            "expr": "sum by(path) (rate(heyanon_requests_total[1m]))",
+            "expr": "sum by(path) (rate(nunuirl_requests_total[1m]))",
             "legendFormat": "{{path}}",
             "refId": "A"
           }
@@ -26,7 +26,7 @@
         "title": "Errors per second",
         "targets": [
           {
-            "expr": "sum by(path) (rate(heyanon_errors_total[1m]))",
+            "expr": "sum by(path) (rate(nunuirl_errors_total[1m]))",
             "legendFormat": "{{path}}",
             "refId": "A"
           }
@@ -38,7 +38,7 @@
         "title": "p95 latency (ms)",
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, sum(rate(heyanon_request_latency_seconds_bucket[1m])) by (le, path))",
+            "expr": "histogram_quantile(0.95, sum(rate(nunuirl_request_latency_seconds_bucket[1m])) by (le, path))",
             "legendFormat": "{{path}}",
             "refId": "A"
           }

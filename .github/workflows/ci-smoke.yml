@@ -28,9 +28,9 @@ jobs:
       - name: Build api and bot images with buildx and cache
         working-directory: infra
         run: |
-          docker buildx build --load --cache-to=type=local,dest=/tmp/.buildx-cache-new --cache-from=type=local,src=/tmp/.buildx-cache -f Dockerfile ../api -t heyanon_api:ci || true
-          docker buildx build --load --cache-to=type=local,dest=/tmp/.buildx-cache-new --cache-from=type=local,src=/tmp/.buildx-cache -f Dockerfile ../bot -t heyanon_bot:ci || true
-          docker buildx build --load --cache-to=type=local,dest=/tmp/.buildx-cache-new --cache-from=type=local,src=/tmp/.buildx-cache -f Dockerfile ../executor -t heyanon_copy_executor:ci || true
+          docker buildx build --load --cache-to=type=local,dest=/tmp/.buildx-cache-new --cache-from=type=local,src=/tmp/.buildx-cache -f Dockerfile ../api -t nunuirl_api:ci || true
+          docker buildx build --load --cache-to=type=local,dest=/tmp/.buildx-cache-new --cache-from=type=local,src=/tmp/.buildx-cache -f Dockerfile ../bot -t nunuirl_bot:ci || true
+          docker buildx build --load --cache-to=type=local,dest=/tmp/.buildx-cache-new --cache-from=type=local,src=/tmp/.buildx-cache -f Dockerfile ../executor -t nunuirl_copy_executor:ci || true
           # rotate cache
           rm -rf /tmp/.buildx-cache || true
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
@@ -77,7 +77,7 @@ jobs:
         working-directory: infra
         env:
           BASE_URL: http://localhost:8000
-          HEYANON_API_KEY: ${{ secrets.HEYANON_API_KEY }}
+          NUNUIRL_API_KEY: ${{ secrets.NUNUIRL_API_KEY }}
         run: |
           python -m pip install --upgrade pip
           python -m pip install requests
@@ -224,7 +224,7 @@ jobs:
         working-directory: infra
         env:
           BASE_URL: http://localhost:8000
-          HEYANON_API_KEY: ${{ secrets.HEYANON_API_KEY }}
+          NUNUIRL_API_KEY: ${{ secrets.NUNUIRL_API_KEY }}
         run: |
           python -m pip install --upgrade pip
           python -m pip install requests

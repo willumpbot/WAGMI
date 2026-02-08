@@ -47,7 +47,7 @@ def _format_alerts(alerts):
             "description": summ or None,
             "color": 15158332 if sev.lower() in ("critical", "high", "danger") else 16776960 if sev.lower() in ("warning",) else 3066993,
             "fields": fields,
-            "footer": {"text": "Alert from HeyAnon Prometheus/Alertmanager"},
+            "footer": {"text": "Alert from NunuIRL Prometheus/Alertmanager"},
         }
         # add quick links to Prometheus/Alertmanager (localhost-based)
         try:

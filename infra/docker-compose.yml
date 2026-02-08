@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16
-    container_name: heyanon_postgres
+    container_name: nunuirl_postgres
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
@@ -20,15 +20,15 @@ services:
 
   redis:
     image: redis:7
-    container_name: heyanon_redis
+    container_name: nunuirl_redis
     ports:
       - "6379:6379"
     restart: unless-stopped
 
   api:
     build: ../api
-    image: heyanon_api:ci
-    container_name: heyanon_api
+    image: nunuirl_api:ci
+    container_name: nunuirl_api
     environment:
       - CACHE_TTL_SEC=60
       - DISABLE_SIGNALS=0
@@ -47,7 +47,7 @@ services:
 
   web:
     build: ../web
-    container_name: heyanon_web
+    container_name: nunuirl_web
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
     ports:
@@ -59,8 +59,8 @@ services:
   bot:
     build:
       context: ../bot
-    image: heyanon_bot:ci
-    container_name: heyanon_bot
+    image: nunuirl_bot:ci
+    container_name: nunuirl_bot
     depends_on:
       api:
         condition: service_healthy
@@ -68,7 +68,7 @@ services:
       - BASE_URL=http://api:8000
       - STRATEGY_ID=mtf-btc-1h-6h-16h
       - SYMBOL=BTC-PERP
-      - HEYANON_API_KEY=supersecret
+      - NUNUIRL_API_KEY=supersecret
       - API_SHARED_SECRET=supersecret
       - SEND_TEST_TRADE=0
       - SNAPSHOT_INTERVAL_SEC=30
@@ -79,7 +79,7 @@ services:
   prometheus:
     # pin to a known-good Prometheus tag for local dev
     image: prom/prometheus:v2.53.0
-    container_name: heyanon_prometheus
+    container_name: nunuirl_prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus_rules.yml:/etc/prometheus/prometheus_rules.yml:ro
@@ -90,7 +90,7 @@ services:
 
   grafana:
     image: grafana/grafana:10.1.0
-    container_name: heyanon_grafana
+    container_name: nunuirl_grafana
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
@@ -106,7 +106,7 @@ services:
 
   alertmanager:
     image: prom/alertmanager:v0.26.0
-    container_name: heyanon_alertmanager
+    container_name: nunuirl_alertmanager
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     ports:
@@ -115,7 +115,7 @@ services:
 
   discord-relay:
     image: python:3.11-slim
-    container_name: heyanon_discord_relay
+    container_name: nunuirl_discord_relay
     working_dir: /app
     volumes:
       - ./discord_relay:/app:ro
@@ -129,8 +129,8 @@ services:
   copy-executor:
     build:
       context: ../executor
-    image: heyanon_copy_executor:ci
-    container_name: heyanon_copy_executor
+    image: nunuirl_copy_executor:ci
+    container_name: nunuirl_copy_executor
     environment:
       - API_BASE=http://api:8000
       - POLL_INTERVAL=10
@@ -148,12 +148,12 @@ services:
   bot-mtf-eth:
     build:
       context: ../bot
-    container_name: heyanon_bot_mtf_eth
+    container_name: nunuirl_bot_mtf_eth
     environment:
       - BASE_URL=http://api:8000
       - STRATEGY_ID=mtf-eth-1h-6h-16h
       - SYMBOL=ETH-PERP
-      - HEYANON_API_KEY=supersecret
+      - NUNUIRL_API_KEY=supersecret
       - API_SHARED_SECRET=supersecret
       - SNAPSHOT_INTERVAL_SEC=30
     depends_on:
@@ -163,12 +163,12 @@ services:
   bot-swing-btc:
     build:
       context: ../bot
-    container_name: heyanon_bot_swing_btc
+    container_name: nunuirl_bot_swing_btc
     environment:
       - BASE_URL=http://api:8000
       - STRATEGY_ID=swing-perp-16h
       - SYMBOL=BTC-PERP
-      - HEYANON_API_KEY=supersecret
+      - NUNUIRL_API_KEY=supersecret
       - API_SHARED_SECRET=supersecret
       - SNAPSHOT_INTERVAL_SEC=30
     volumes:
@@ -180,12 +180,12 @@ services:
   bot-levx-btc:
     build:
       context: ../bot
-    container_name: heyanon_bot_levx_btc
+    container_name: nunuirl_bot_levx_btc
     environment:
       - BASE_URL=http://api:8000
       - STRATEGY_ID=levx-btc-1h
       - SYMBOL=BTC-PERP
-      - HEYANON_API_KEY=supersecret
+      - NUNUIRL_API_KEY=supersecret
       - API_SHARED_SECRET=supersecret
       - SNAPSHOT_INTERVAL_SEC=60
     depends_on:

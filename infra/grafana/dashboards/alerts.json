@@ -2,7 +2,7 @@
   "dashboard": {
     "id": null,
     "uid": null,
-    "title": "HeyAnon - Alerts",
+    "title": "NunuIRL - Alerts",
     "schemaVersion": 37,
     "version": 1,
     "refresh": "10s",
@@ -12,7 +12,7 @@
         "title": "Stale Heartbeats",
         "targets": [
           {
-            "expr": "time() - max(heyanon_strategy_last_heartbeat_unixtime) by (strategy_id)",
+            "expr": "time() - max(nunuirl_strategy_last_heartbeat_unixtime) by (strategy_id)",
             "refId": "A"
           }
         ],
@@ -23,7 +23,7 @@
         "title": "API p95 latency",
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, sum(rate(heyanon_request_latency_seconds_bucket[5m])) by (le, path))",
+            "expr": "histogram_quantile(0.95, sum(rate(nunuirl_request_latency_seconds_bucket[5m])) by (le, path))",
             "refId": "A"
           }
         ],
@@ -34,7 +34,7 @@
         "title": "API 5xx rate",
         "targets": [
           {
-            "expr": "sum(rate(heyanon_requests_total{status=~\"5..\"}[5m])) / sum(rate(heyanon_requests_total[5m]))",
+            "expr": "sum(rate(nunuirl_requests_total{status=~\"5..\"}[5m])) / sum(rate(nunuirl_requests_total[5m]))",
             "refId": "A"
           }
         ],

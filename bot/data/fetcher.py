@@ -56,7 +56,7 @@ class DataFetcher:
         self.retry_delay = retry_delay
         self.cache_ttl = cache_ttl
         self._session = requests.Session()
-        self._session.headers.update({"User-Agent": "HeyAnon-Bot/1.0"})
+        self._session.headers.update({"User-Agent": "NunuIRL-Bot/1.0"})
         self._cache: Dict[str, tuple] = {}  # key -> (timestamp, dataframe)
         self._lock = threading.Lock()
         self._last_request_ts = 0.0
