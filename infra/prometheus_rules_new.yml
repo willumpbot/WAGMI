@@ -1,8 +1,8 @@
 groups:
-  - name: heyanon.rules
+  - name: nunuirl.rules
     rules:
       - alert: APIHighErrorRate
-        expr: sum(rate(heyanon_requests_total{status=~"5.."}[5m])) / sum(rate(heyanon_requests_total[5m])) > 0.02
+        expr: sum(rate(nunuirl_requests_total{status=~"5.."}[5m])) / sum(rate(nunuirl_requests_total[5m])) > 0.02
         for: 5m
         labels:
           severity: warning
@@ -30,7 +30,7 @@ groups:
 
       - alert: StrategyHeartbeatStale
         # adjusted for local testing: fire if last seen > 60s, require stable for 30s
-        expr: (time() - max(heyanon_strategy_last_heartbeat_unixtime) by (strategy_id)) > 60
+        expr: (time() - max(nunuirl_strategy_last_heartbeat_unixtime) by (strategy_id)) > 60
         for: 30s
         labels:
           severity: critical

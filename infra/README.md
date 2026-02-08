@@ -1,4 +1,4 @@
-Developer infra helpers for HeyAnon platform
+Developer infra helpers for NunuIRL platform
 
 Quick steps to rebuild API and validate metrics:
 
@@ -48,7 +48,7 @@ docker compose up -d --build api prometheus grafana
 # Prometheus UI at http://localhost:9090
 ```
 
-Grafana is pre-provisioned with a Prometheus datasource and a basic HeyAnon dashboard. If you change the metrics names in the API, update `infra/grafana/dashboards/heyanon.json` accordingly.
+Grafana is pre-provisioned with a Prometheus datasource and a basic NunuIRL dashboard. If you change the metrics names in the API, update `infra/grafana/dashboards/nunuirl.json` accordingly.
 
 Request-id & JSON logs
 

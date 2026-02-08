@@ -44,19 +44,19 @@ metrics = Metrics()
 
 # Prometheus metrics: labeled by path and status
 REQUEST_COUNTER = Counter(
-    "heyanon_requests_total",
+    "nunuirl_requests_total",
     "Total HTTP requests",
     ["path", "status"],
 )
 
 ERROR_COUNTER = Counter(
-    "heyanon_errors_total",
+    "nunuirl_errors_total",
     "Total HTTP errors",
     ["path", "status"],
 )
 
 LATENCY_HIST = Histogram(
-    "heyanon_request_latency_seconds",
+    "nunuirl_request_latency_seconds",
     "Request latency in seconds",
     ["path", "status"],
     buckets=(0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5),

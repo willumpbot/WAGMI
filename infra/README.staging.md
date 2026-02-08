@@ -1,8 +1,8 @@
-HeyAnon staging runbook
+NunuIRL staging runbook
 
 This file explains how to run a staging stack locally and basic secrets guidance.
 
-HeyAnon staging runbook
+NunuIRL staging runbook
 
 This document explains how to run a local staging stack, fetch secrets for staging, and includes a short troubleshooting checklist.
 
@@ -14,7 +14,7 @@ PowerShell (Windows):
 
 ```powershell
 # Fetch secrets into .env.staging (see below for details)
-.\fetch_secrets.ps1 -SecretName 'heyanon/staging' -OutFile '.env.staging'
+.\fetch_secrets.ps1 -SecretName 'nunuirl/staging' -OutFile '.env.staging'
 
 docker compose -f docker-compose.staging.yml up -d --build
 ```
@@ -22,11 +22,11 @@ docker compose -f docker-compose.staging.yml up -d --build
 Bash (Linux/macOS/WSL):
 
 ```bash
-./fetch_secrets.sh heyanon/staging .env.staging
+./fetch_secrets.sh nunuirl/staging .env.staging
 docker compose -f docker-compose.staging.yml up -d --build
 ```
 
-Ensure `.env.staging` contains required variables like `HEYANON_API_KEY`, `DISCORD_WEBHOOK_URL`, `POSTGRES_PASSWORD`, etc. Do not commit this file to git.
+Ensure `.env.staging` contains required variables like `NUNUIRL_API_KEY`, `DISCORD_WEBHOOK_URL`, `POSTGRES_PASSWORD`, etc. Do not commit this file to git.
 
 ## Fetch secrets
 
@@ -56,7 +56,7 @@ The secret value should be a JSON object with top-level string keys and values. 
 
 ```json
 {
-	"HEYANON_API_KEY": "xxxxx",
+	"NUNUIRL_API_KEY": "xxxxx",
 	"DISCORD_WEBHOOK_URL": "https://discord.com/api/webhooks/...",
 	"POSTGRES_PASSWORD": "pass"
 }
@@ -75,7 +75,7 @@ Minimal example policy:
 		{
 			"Effect": "Allow",
 			"Action": ["secretsmanager:GetSecretValue"],
-			"Resource": ["arn:aws:secretsmanager:REGION:ACCOUNT:secret:heyanon/*"]
+			"Resource": ["arn:aws:secretsmanager:REGION:ACCOUNT:secret:nunuirl/*"]
 		}
 	]
 }
@@ -98,7 +98,7 @@ Minimal example policy:
 1. Fetch secrets and bring up staging:
 
 ```powershell
-.\infra\fetch_secrets.ps1 -SecretName 'heyanon/staging' -OutFile '.env.staging'
+.\infra\fetch_secrets.ps1 -SecretName 'nunuirl/staging' -OutFile '.env.staging'
 docker compose -f docker-compose.staging.yml up -d --build
 ```
 

@@ -120,7 +120,7 @@ class TradingConfig:
 
     # API integration
     api_base_url: str = field(default_factory=lambda: _env("BASE_URL", "http://api:8000"))
-    api_key: str = field(default_factory=lambda: _env("HEYANON_API_KEY", ""))
+    api_key: str = field(default_factory=lambda: _env("NUNUIRL_API_KEY", _env("HEYANON_API_KEY", "")))
     strategy_id: str = field(default_factory=lambda: _env("STRATEGY_ID", "multi-strategy"))
 
     @property

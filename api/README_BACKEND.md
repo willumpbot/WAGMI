@@ -1,6 +1,6 @@
 # Mico API - Production Backend
 
-**Crisp, production-grade FastAPI backend** for the Heyanon trading platform. Website-only, observational signals (no BUY/SELL language).
+**Crisp, production-grade FastAPI backend** for the NunuIRL trading platform. Website-only, observational signals (no BUY/SELL language).
 
 ## Architecture
 
@@ -159,7 +159,7 @@ Create `.env` file:
 ```bash
 # API Configuration
 API_CACHE_TTL_SEC=60
-API_ORIGINS=http://localhost:3000,https://heyanon-platform.onrender.com
+API_ORIGINS=http://localhost:3000,https://nunuirl-platform.onrender.com
 
 # CoinGecko
 COINGECKO_BASE=https://api.coingecko.com/api/v3
@@ -202,7 +202,7 @@ docker-compose -f ../infra/docker-compose.yml build api
 docker-compose -f ../infra/docker-compose.yml up -d api
 
 # Logs
-docker logs heyanon_api --tail 50 -f
+docker logs nunuirl_api --tail 50 -f
 
 # Stop
 docker-compose -f ../infra/docker-compose.yml down
@@ -321,7 +321,7 @@ Allowed origins are configured via `API_ORIGINS` env var:
 API_ORIGINS=http://localhost:3000
 
 # Production
-API_ORIGINS=https://heyanon-platform.onrender.com,https://mico-site.onrender.com
+API_ORIGINS=https://nunuirl-platform.onrender.com,https://mico-site.onrender.com
 ```
 
 **IMPORTANT:** Frontend must set `NEXT_PUBLIC_API_URL` to backend URL.
@@ -373,7 +373,7 @@ curl http://localhost:8000/health
 ### Signals not updating
 ```bash
 # Check logs
-docker logs heyanon_api --tail 50
+docker logs nunuirl_api --tail 50
 
 # Verify CoinGecko reachable
 curl https://api.coingecko.com/api/v3/ping
@@ -390,10 +390,10 @@ curl http://localhost:8000/v1/summary
 ### Data not persisting
 ```bash
 # Check data directory exists
-docker exec heyanon_api ls -la /app/data
+docker exec nunuirl_api ls -la /app/data
 
 # Create manually if needed
-docker exec heyanon_api mkdir -p /app/data/strategy_logs
+docker exec nunuirl_api mkdir -p /app/data/strategy_logs
 ```
 
 ## Next Steps

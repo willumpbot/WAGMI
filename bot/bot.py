@@ -21,7 +21,7 @@ def now_ms() -> int:
     return int(time.time() * 1000)
 
 
-class HeyAnon:
+class NunuIRL:
     def __init__(self, base_url: str, api_key: str = None, timeout: float = 5.0):
         self.base = base_url.rstrip("/")
         self.timeout = timeout
@@ -74,9 +74,9 @@ def main():
     base_url = os.getenv("BASE_URL", "http://api:8000")
     strategy_id = os.getenv("STRATEGY_ID", "mtf-btc-1h-6h-16h")
     symbol = os.getenv("SYMBOL", "BTC-PERP")
-    api_key = os.getenv("HEYANON_API_KEY", "dev_api_key_change_me")
+    api_key = os.getenv("NUNUIRL_API_KEY", os.getenv("HEYANON_API_KEY", "dev_api_key_change_me"))
 
-    client = HeyAnon(base_url=base_url, api_key=api_key)
+    client = NunuIRL(base_url=base_url, api_key=api_key)
 
     # Heartbeat thread: send heartbeat every 30 seconds
     def heartbeat_loop(stop_event: threading.Event):

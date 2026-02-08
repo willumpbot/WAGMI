@@ -1,10 +1,10 @@
 groups:
-  - name: heyanon.rules
+  - name: nunuirl.rules
     rules:
       - alert: ApiHighErrorRate
         expr: |
-          sum(rate(heyanon_requests_total{status=~"5.."}[5m]))
-            / sum(rate(heyanon_requests_total[5m])) > 0.015
+          sum(rate(nunuirl_requests_total{status=~"5.."}[5m]))
+            / sum(rate(nunuirl_requests_total[5m])) > 0.015
         for: 5m
         labels:
           severity: warning
@@ -13,7 +13,7 @@ groups:
 
       - alert: ApiHighLatencyP95
         expr: |
-          histogram_quantile(0.95, sum(rate(heyanon_request_latency_seconds_bucket[5m])) by (le, path)) > 0.5
+          histogram_quantile(0.95, sum(rate(nunuirl_request_latency_seconds_bucket[5m])) by (le, path)) > 0.5
         for: 5m
         labels:
           severity: warning
@@ -22,7 +22,7 @@ groups:
 
       - alert: StaleHeartbeat
         expr: |
-          (time() - max(heyanon_strategy_last_heartbeat_unixtime) by (strategy_id)) > 120
+          (time() - max(nunuirl_strategy_last_heartbeat_unixtime) by (strategy_id)) > 120
         for: 2m
         labels:
           severity: critical

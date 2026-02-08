@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from prometheus_client import Gauge
 
 # Gauge of last heartbeat timestamp per strategy
-HEARTBEAT_GAUGE = Gauge("heyanon_strategy_last_heartbeat_unixtime", "Last heartbeat unix timestamp", ["strategy_id"])
+HEARTBEAT_GAUGE = Gauge("nunuirl_strategy_last_heartbeat_unixtime", "Last heartbeat unix timestamp", ["strategy_id"])
 
 logger = logging.getLogger("ingest")
 
