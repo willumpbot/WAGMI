@@ -33,17 +33,11 @@ class SymbolConfig:
     risk_tier: str      # "low", "medium", "high"
 
 
-# Default symbols from user's original 3 bots
+# Primary trading targets
 DEFAULT_SYMBOLS = {
-    "BTC": SymbolConfig("BTC", "BTC-USD", "bitcoin", "low"),
-    "ETH": SymbolConfig("ETH", "ETH-USD", "ethereum", "medium"),
+    "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "medium"),
     "SOL": SymbolConfig("SOL", "SOL-USD", "solana", "medium"),
-    "XRP": SymbolConfig("XRP", "XRP-USD", "ripple", "medium"),
-    "AVAX": SymbolConfig("AVAX", "AVAX-USD", "avalanche-2", "high"),
-    "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "high"),
-    "BNB": SymbolConfig("BNB", "BNB-USD", "binancecoin", "medium"),
-    "RENDER": SymbolConfig("RENDER", "RENDER-USD", "render-token", "high"),
-    "JUP": SymbolConfig("JUP", "JUP-USD", "jupiter-exchange-solana", "high"),
+    "BTC": SymbolConfig("BTC", "BTC-USD", "bitcoin", "low"),
 }
 
 # Risk multipliers for zone computation (from user's original bots)
@@ -135,11 +129,11 @@ class TradingConfig:
 def get_leverage_tier(confidence: float, num_strategies_agree: int, total_strategies: int) -> float:
     """
     Determine leverage based on confidence and strategy agreement.
-    Returns leverage multiplier (1.0 = spot).
+    Returns leverage multiplier. Minimum 2x (no spot trading).
 
     Tiers:
       <60%  confidence -> no trade
-      60-69% -> spot (1x)
+      60-69% -> 2x (low leverage)
       70-79% -> 2-3x
       80-89% -> 3-5x
       90-94% -> 5-10x
@@ -149,7 +143,7 @@ def get_leverage_tier(confidence: float, num_strategies_agree: int, total_strate
         return 0.0  # no trade
 
     if confidence < 70:
-        return 1.0  # spot
+        return 2.0  # minimum low leverage
 
     if confidence < 80:
         return 2.0 + (confidence - 70) / 10.0  # 2.0 to 3.0
