@@ -60,7 +60,8 @@ class DataFetcher:
         self._cache: Dict[str, tuple] = {}  # key -> (timestamp, dataframe)
         self._lock = threading.Lock()
         self._last_request_ts = 0.0
-        self._min_request_gap = 1.5  # seconds between CoinGecko requests (rate limit)
+        self._min_request_gap = 2.5  # seconds between CoinGecko requests (rate limit)
+        self._consecutive_429s = 0
 
     def _rate_limit(self):
         """Enforce minimum gap between API requests."""
@@ -96,10 +97,16 @@ class DataFetcher:
             try:
                 resp = self._session.get(url, params=params, timeout=15)
                 if resp.status_code == 429:
-                    wait = int(resp.headers.get("Retry-After", 60))
-                    logger.warning(f"[{coin_id}] CoinGecko rate limited, waiting {wait}s")
+                    self._consecutive_429s += 1
+                    wait = min(int(resp.headers.get("Retry-After", 10)), 30)
+                    # Back off more on repeated 429s
+                    wait = wait + (self._consecutive_429s * 5)
+                    logger.warning(f"[{coin_id}] CoinGecko rate limited, waiting {wait}s (429 #{self._consecutive_429s})")
                     time.sleep(wait)
+                    # Increase gap between future requests
+                    self._min_request_gap = min(self._min_request_gap + 1.0, 8.0)
                     continue
+                self._consecutive_429s = 0
                 resp.raise_for_status()
                 data = resp.json()
                 if "prices" not in data or "total_volumes" not in data:
