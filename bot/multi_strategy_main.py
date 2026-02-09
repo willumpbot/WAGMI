@@ -14,6 +14,7 @@ import signal
 import sys
 import time
 import threading
+import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any
 
@@ -31,6 +32,7 @@ from ml.learner import SignalLearner, TradeOutcome
 from alerts.router import AlertRouter
 
 # Setup logging
+os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(name)s] %(message)s",
@@ -169,17 +171,23 @@ class MultiStrategyBot:
 
     def _tick_once(self):
         """One iteration of the main loop."""
+        trace_id = uuid.uuid4().hex[:8]
+
         for symbol, sym_cfg in DEFAULT_SYMBOLS.items():
             try:
-                self._process_symbol(symbol, sym_cfg)
+                self._process_symbol(symbol, sym_cfg, trace_id)
             except Exception as e:
-                logger.error(f"[{symbol}] Error: {e}", exc_info=True)
+                logger.error(f"[{trace_id}][{symbol}] Error: {e}", exc_info=True)
 
-        # Heartbeat every 60 ticks
+        # Heartbeat every 60 ticks (~1 hour at 60s intervals)
         if self._tick % 60 == 0:
             self._send_heartbeat()
 
-    def _process_symbol(self, symbol: str, sym_cfg):
+        # Market update every 15 ticks (~15 min) - sends even without signals
+        if self._tick % 15 == 0 and self._tick % 60 != 0:
+            self._send_market_update(trace_id)
+
+    def _process_symbol(self, symbol: str, sym_cfg, trace_id: str = ""):
         """Process one symbol: fetch data, check positions, generate signals."""
         # Fetch data for all needed timeframes
         data = self.fetcher.fetch_multi_timeframe(sym_cfg.coingecko_id, self._needed_tfs)
@@ -302,7 +310,7 @@ class MultiStrategyBot:
         self.alerts.send_signal(signal_result, lev_decision.leverage, tier)
 
         logger.info(
-            f"[{symbol}] OPENED {side} | Conf: {original_conf:.0f}%->{signal_result.confidence:.0f}% | "
+            f"[{trace_id}][{symbol}] OPENED {side} | Conf: {original_conf:.0f}%->{signal_result.confidence:.0f}% | "
             f"Lev: {lev_decision.leverage:.1f}x ({lev_decision.reason}) | "
             f"Strategies: {signal_result.metadata.get('strategies_agree', [signal_result.strategy])}"
         )
@@ -324,10 +332,65 @@ class MultiStrategyBot:
             f"ml_samples={status['ml_samples']}"
         )
 
+    def _send_market_update(self, trace_id: str = ""):
+        """Send periodic market assessment even when no signals fire.
+        Helps testers stay informed and feeds data for ML improvement."""
+        lines = [f"[MARKET UPDATE] {datetime.now(timezone.utc).strftime('%H:%M UTC')}"]
+
+        for symbol, sym_cfg in DEFAULT_SYMBOLS.items():
+            try:
+                data = self.fetcher.fetch_multi_timeframe(sym_cfg.coingecko_id, self._needed_tfs)
+                price = self.fetcher.latest_price(sym_cfg.coingecko_id)
+                if price is None:
+                    continue
+
+                # Get all strategy assessments
+                statuses = self.ensemble.get_all_status(symbol, data)
+
+                # Build compact summary
+                assessments = []
+                for s in statuses:
+                    strat = s.get("strategy", "?")
+                    if strat == "regime_trend":
+                        align_l = s.get("align_long", 0)
+                        align_s = s.get("align_short", 0)
+                        cross = s.get("cross", "none")
+                        assessments.append(f"RT: L{align_l}/S{align_s} cross={cross}")
+                    elif strat == "monte_carlo_zones":
+                        action = s.get("action", "?")
+                        mc = s.get("mc_prediction", {})
+                        up = mc.get("up_prob", 0) if mc else 0
+                        assessments.append(f"MC: {action} up={up:.0%}")
+                    elif strat == "confidence_scorer":
+                        action = s.get("action", "?")
+                        assessments.append(f"CS: {action}")
+                    elif strat == "multi_tier_quality":
+                        side = s.get("side", "?")
+                        regime = s.get("regime_score", 0)
+                        assessments.append(f"MT: {side} regime={regime}")
+
+                assessment_str = " | ".join(assessments)
+
+                # Check if any open position
+                open_pos = self.pos_mgr.get_open_positions()
+                pos_str = ""
+                if symbol in open_pos:
+                    pos = open_pos[symbol]
+                    pnl = (price - pos.entry) * pos.qty if pos.side == "LONG" else (pos.entry - price) * pos.qty
+                    pos_str = f" [OPEN {pos.side} {pos.leverage:.0f}x PnL=${pnl:+,.0f}]"
+
+                lines.append(f"  {symbol} ${price:,.2f}{pos_str}")
+                lines.append(f"    {assessment_str}")
+
+            except Exception as e:
+                lines.append(f"  {symbol}: error ({e})")
+
+        msg = "\n".join(lines)
+        self.alerts.send_market_update(msg)
+        logger.info(msg.replace("\n", " | "))
+
 
 def main():
-    # Ensure log directory exists
-    os.makedirs("logs", exist_ok=True)
     os.makedirs("ml_data", exist_ok=True)
 
     config = TradingConfig()

@@ -4,7 +4,7 @@ Determines leverage based on signal confidence, strategy agreement, and risk tie
 
 Tiers:
   <60% confidence  -> No trade
-  60-69%           -> Spot (1x)
+  60-69%           -> 2x (minimum leverage, no spot)
   70-79%           -> 2-3x
   80-89%           -> 3-5x (requires 2+ strategies)
   90-94%           -> 5-10x (requires 3+ strategies)
@@ -59,13 +59,13 @@ class LeverageManager:
         Decide leverage based on confidence and strategy consensus.
         """
         if not self.enable_leverage:
-            return LeverageDecision(1.0, "spot", "spot", "Leverage disabled")
+            return LeverageDecision(2.0, "leverage", "low", "Leverage disabled, using minimum 2x")
 
         if confidence < 60:
             return LeverageDecision(0.0, "none", "none", f"Confidence {confidence:.0f}% too low")
 
         if confidence < 70:
-            return LeverageDecision(1.0, "spot", "spot", f"Spot: confidence {confidence:.0f}%")
+            return LeverageDecision(2.0, "leverage", "low", f"2x minimum: confidence {confidence:.0f}%")
 
         # Risk tier adjustment (high risk = less leverage)
         tier_cap = {"low": self.max_leverage, "medium": min(15.0, self.max_leverage), "high": min(10.0, self.max_leverage)}

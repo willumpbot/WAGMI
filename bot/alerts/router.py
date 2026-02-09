@@ -115,6 +115,11 @@ class AlertRouter:
         )
         self._send_discord(msg)
 
+    def send_market_update(self, msg: str):
+        """Send periodic market status update (even without signals)."""
+        self._send_discord(msg)
+        self._send_telegram(msg)
+
     def send_circuit_breaker(self, reason: str):
         """Alert when circuit breaker triggers."""
         msg = f"CIRCUIT BREAKER TRIPPED\nReason: {reason}\nTrading halted until cooldown expires."
