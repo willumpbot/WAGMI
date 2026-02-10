@@ -159,20 +159,12 @@ class RegimeTrendStrategy(BaseStrategy):
             tp1 = c - 1.0 * R
             tp2 = c - 2.0 * R
 
-        # Cross recency check (penalize if cross is stale)
+        # Cross recency: boost confidence if multiple recent crosses confirm direction
         try:
-            if buy:
-                last_cross_idx = cross_up[::-1].idxmax() if cross_up.any() else None
-                if last_cross_idx is not None:
-                    bars_since = len(cross_up) - 1 - last_cross_idx
-                    if bars_since > 2:
-                        confidence -= (bars_since - 2) * 3
-            else:
-                last_cross_idx = cross_dn[::-1].idxmax() if cross_dn.any() else None
-                if last_cross_idx is not None:
-                    bars_since = len(cross_dn) - 1 - last_cross_idx
-                    if bars_since > 2:
-                        confidence -= (bars_since - 2) * 3
+            recent_window = cross_up.iloc[-5:] if buy else cross_dn.iloc[-5:]
+            recent_crosses = int(recent_window.sum())
+            if recent_crosses >= 2:
+                confidence += 5  # multiple confirmations in last 5 bars
         except Exception:
             pass
 

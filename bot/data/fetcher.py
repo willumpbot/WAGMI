@@ -104,10 +104,9 @@ class DataFetcher:
             import ccxt
             self._ccxt = ccxt
 
-            # Binance - no auth needed for market data
-            self._exchanges["binance"] = ccxt.binance({
+            # Bybit - no auth needed for market data, works in US
+            self._exchanges["bybit"] = ccxt.bybit({
                 "enableRateLimit": True,
-                "options": {"defaultType": "spot"},
             })
 
             # Hyperliquid - no auth needed for market data
@@ -145,14 +144,25 @@ class DataFetcher:
 
     def _set_cache(self, key: str, df: pd.DataFrame):
         self._cache[key] = (time.time(), df.copy())
+        # Evict stale entries periodically to prevent memory leak
+        if len(self._cache) > 100:
+            self._evict_stale_cache()
+
+    def _evict_stale_cache(self):
+        """Remove expired cache entries."""
+        now = time.time()
+        max_ttl = max(CACHE_TTL_BY_TF.values()) * 2  # 2x the longest TTL
+        stale = [k for k, (ts, _) in self._cache.items() if now - ts > max_ttl]
+        for k in stale:
+            del self._cache[k]
 
     # ─── CCXT fetching ───────────────────────────────────────────────
 
     def _get_exchange_for_symbol(self, symbol_name: str) -> tuple:
         """Return (exchange_obj, ccxt_symbol) for a given symbol name."""
         mapping = {
-            "BTC": ("binance", "BTC/USDT"),
-            "SOL": ("binance", "SOL/USDT"),
+            "BTC": ("bybit", "BTC/USDT"),
+            "SOL": ("bybit", "SOL/USDT"),
             "HYPE": ("hyperliquid", "HYPE/USDC:USDC"),
         }
         if symbol_name in mapping:
@@ -176,6 +186,28 @@ class DataFetcher:
             df_4h = self._fetch_ccxt_ohlcv(symbol_name, "4h")
             if df_4h is not None and not df_4h.empty:
                 return self._resample_ohlcv(df_4h, "16h")
+            return None
+
+        # Handle 6h — not all exchanges support it, so build from 1h
+        if timeframe == "6h" and ccxt_tf == "6h":
+            # Try native 6h first; if it fails, resample from 1h
+            try:
+                self._total_requests += 1
+                since = None
+                if "hyperliquid" in str(type(exchange)).lower():
+                    since = int((time.time() - limit * 360 * 60) * 1000)
+                candles = exchange.fetch_ohlcv(ccxt_symbol, "6h", since=since, limit=limit)
+                if candles:
+                    df = pd.DataFrame(candles, columns=["timestamp", "open", "high", "low", "close", "volume"])
+                    df["time"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
+                    df = df.drop(columns=["timestamp"]).set_index("time").sort_index().reset_index()
+                    return df
+            except Exception:
+                pass
+            # Fallback: build 6h from 1h
+            df_1h = self._fetch_ccxt_ohlcv(symbol_name, "1h")
+            if df_1h is not None and not df_1h.empty:
+                return self._resample_ohlcv(df_1h, "6h")
             return None
 
         if ccxt_tf is None:

@@ -307,8 +307,8 @@ class MultiStrategyBot:
         if lev_decision.leverage <= 0:
             return  # Confidence too low
 
-        # Calculate position size
-        qty = self.risk_mgr.calculate_qty(signal_result.entry, signal_result.sl)
+        # Calculate position size (accounting for leverage to keep risk constant)
+        qty = self.risk_mgr.calculate_qty(signal_result.entry, signal_result.sl, lev_decision.leverage)
         if qty <= 0:
             return
 
