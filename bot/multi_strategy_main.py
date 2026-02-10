@@ -28,7 +28,8 @@ from strategies.ensemble import EnsembleStrategy
 from execution.position_manager import PositionManager
 from execution.leverage import LeverageManager
 from execution.risk import RiskManager, CircuitBreaker
-from ml.learner import SignalLearner, TradeOutcome, MarketSnapshot
+from execution.trade_logger import TradeLogger
+from ml.learner import SignalLearner, TradeOutcome
 from alerts.router import AlertRouter
 
 # Setup logging
@@ -121,6 +122,9 @@ class MultiStrategyBot:
             telegram_chat_id=config.telegram_chat_id,
         )
 
+        # Trade logging (paper trading validation)
+        self.trade_logger = TradeLogger(log_dir="paper_trades") if not config.auto_trade else None
+
         self._tick = 0
         self._needed_tfs = self.ensemble.get_all_required_timeframes()
 
@@ -142,13 +146,6 @@ class MultiStrategyBot:
             logger.warning("AUTO-TRADING ENABLED - REAL MONEY MODE")
             logger.warning("Starting in 5 seconds... Press CTRL+C to abort")
             time.sleep(5)
-
-        # Send startup message to Discord/Telegram
-        self.alerts.send_startup(
-            symbols=list(DEFAULT_SYMBOLS.keys()),
-            strategies=len(self.strategies),
-            leverage_max=self.config.max_leverage,
-        )
 
         # Signal handlers
         signal.signal(signal.SIGINT, self._handle_signal)
@@ -186,45 +183,33 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.error(f"[{trace_id}][{symbol}] Error: {e}", exc_info=True)
 
-        # Heartbeat every 60 ticks (~1 hour at 60s intervals), but not tick 0
-        if self._tick > 0 and self._tick % 60 == 0:
+        # Heartbeat every 60 ticks (~1 hour at 60s intervals)
+        if self._tick % 60 == 0:
             self._send_heartbeat()
 
-        # Market update: immediately on tick 0, then every 15 ticks (~15 min)
-        if self._tick == 0 or (self._tick % 15 == 0 and self._tick % 60 != 0):
+        # Market update every 15 ticks (~15 min) - sends even without signals
+        if self._tick % 15 == 0 and self._tick % 60 != 0:
             self._send_market_update(trace_id)
 
     def _process_symbol(self, symbol: str, sym_cfg, trace_id: str = ""):
         """Process one symbol: fetch data, check positions, generate signals."""
         # Fetch data for all needed timeframes
-        data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, self._needed_tfs)
+        data = self.fetcher.fetch_multi_timeframe(sym_cfg.coingecko_id, self._needed_tfs)
 
         # Get current price
-        current_price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
+        current_price = self.fetcher.latest_price(sym_cfg.coingecko_id)
         if current_price is None:
             return
-
-        # Record market snapshot for ML passive learning
-        if self.ml:
-            snapshot = MarketSnapshot(symbol=symbol, price=current_price)
-            # Try to compute market context from available data
-            try:
-                df_1h = data.get("1h")
-                if df_1h is not None and not df_1h.empty and len(df_1h) > 2:
-                    snapshot.price_change_1h_pct = (current_price - float(df_1h["close"].iloc[-2])) / float(df_1h["close"].iloc[-2]) * 100
-                    if len(df_1h) > 24:
-                        snapshot.price_change_24h_pct = (current_price - float(df_1h["close"].iloc[-24])) / float(df_1h["close"].iloc[-24]) * 100
-                    avg_vol = float(df_1h["volume"].tail(20).mean())
-                    if avg_vol > 0:
-                        snapshot.volume_ratio = float(df_1h["volume"].iloc[-1]) / avg_vol
-            except Exception:
-                pass
-            self.ml.record_snapshot(snapshot)
 
         # Update existing positions
         events = self.pos_mgr.update_price(symbol, current_price)
         for event in events:
             self.risk_mgr.update_equity(event.pnl - event.fee)
+
+            # Log trade event (paper trading)
+            if self.trade_logger:
+                hold_time = event.metadata.get("hold_time_s", 0)
+                self.trade_logger.log_trade_event(event, hold_time_s=hold_time)
 
             # Record outcome for ML
             if self.ml and event.action in ("SL", "TP2", "TRAILING_STOP"):
@@ -277,6 +262,20 @@ class MultiStrategyBot:
         if signal_result is None:
             return
 
+        # Log signal (paper trading)
+        if self.trade_logger:
+            regime_score = signal_result.metadata.get("align_long", 0) or signal_result.metadata.get("regime_score", 0)
+            num_agree = signal_result.metadata.get("num_agree", 1)
+            total_strategies = signal_result.metadata.get("total_strategies", len(self.strategies))
+            self.trade_logger.log_signal(
+                symbol=symbol,
+                signal_obj=signal_result,
+                trace_id=trace_id,
+                regime_score=regime_score,
+                num_agree=num_agree,
+                total_strategies=total_strategies,
+            )
+
         # ML confidence adjustment
         original_conf = signal_result.confidence
         if self.ml:
@@ -307,8 +306,8 @@ class MultiStrategyBot:
         if lev_decision.leverage <= 0:
             return  # Confidence too low
 
-        # Calculate position size (accounting for leverage to keep risk constant)
-        qty = self.risk_mgr.calculate_qty(signal_result.entry, signal_result.sl, lev_decision.leverage)
+        # Calculate position size
+        qty = self.risk_mgr.calculate_qty(signal_result.entry, signal_result.sl)
         if qty <= 0:
             return
 
@@ -341,7 +340,6 @@ class MultiStrategyBot:
 
     def _send_heartbeat(self):
         """Send periodic status heartbeat."""
-        fetcher_stats = self.fetcher.get_stats()
         status = {
             "equity": self.risk_mgr.equity,
             "open_positions": self.pos_mgr.get_open_count(),
@@ -354,10 +352,7 @@ class MultiStrategyBot:
             f"[HEARTBEAT] equity=${status['equity']:,.2f} "
             f"positions={status['open_positions']} "
             f"daily_pnl=${status['daily_pnl']:+,.2f} "
-            f"ml_samples={status['ml_samples']} "
-            f"api_calls={fetcher_stats['total_requests']} "
-            f"cache_hits={fetcher_stats['cache_hits']} "
-            f"gap={fetcher_stats['request_gap']}"
+            f"ml_samples={status['ml_samples']}"
         )
 
     def _send_market_update(self, trace_id: str = ""):
@@ -367,8 +362,8 @@ class MultiStrategyBot:
 
         for symbol, sym_cfg in DEFAULT_SYMBOLS.items():
             try:
-                data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, self._needed_tfs)
-                price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
+                data = self.fetcher.fetch_multi_timeframe(sym_cfg.coingecko_id, self._needed_tfs)
+                price = self.fetcher.latest_price(sym_cfg.coingecko_id)
                 if price is None:
                     continue
 
