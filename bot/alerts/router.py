@@ -120,6 +120,19 @@ class AlertRouter:
         self._send_discord(msg)
         self._send_telegram(msg)
 
+    def send_startup(self, symbols: list, strategies: int, leverage_max: float):
+        """Send a startup confirmation message to verify alerts are working."""
+        msg = (
+            f"[NunuIRL Bot Started]\n"
+            f"Mode: Paper Trading\n"
+            f"Symbols: {', '.join(symbols)}\n"
+            f"Strategies: {strategies} active\n"
+            f"Max Leverage: {leverage_max:.0f}x\n"
+            f"Alerts: Active — you'll receive signals here!"
+        )
+        self._send_discord(msg)
+        self._send_telegram(msg)
+
     def send_circuit_breaker(self, reason: str):
         """Alert when circuit breaker triggers."""
         msg = f"CIRCUIT BREAKER TRIPPED\nReason: {reason}\nTrading halted until cooldown expires."

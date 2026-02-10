@@ -28,17 +28,18 @@ def cmd_paper(args):
     os.makedirs("logs", exist_ok=True)
     os.makedirs("ml_data", exist_ok=True)
 
-    from trading_config import TradingConfig
+    from trading_config import TradingConfig, DEFAULT_SYMBOLS
     from multi_strategy_main import MultiStrategyBot
 
     config = TradingConfig()
+    symbols_str = ", ".join(DEFAULT_SYMBOLS.keys())
 
     print("=" * 60)
     print("NunuIRL Paper Trading")
     print("=" * 60)
     print(f"  Discord: {'configured' if config.discord_webhook else 'NOT SET (add DISCORD_WEBHOOK to .env)'}")
     print(f"  Telegram: {'configured' if config.telegram_token else 'NOT SET (add TELEGRAM_TOKEN to .env)'}")
-    print(f"  Symbols: BTC, ETH, SOL, XRP, AVAX, HYPE, BNB, RENDER, JUP")
+    print(f"  Symbols: {symbols_str}")
     print(f"  Strategies: 4 (regime_trend, monte_carlo, confidence, multi_tier)")
     print(f"  Leverage: {'enabled' if config.enable_leverage else 'disabled'} (max {config.max_leverage}x)")
     print(f"  ML: {'enabled' if config.enable_ml else 'disabled'}")
@@ -217,7 +218,7 @@ Commands:
 
     # Backtest
     sub_bt = subparsers.add_parser("backtest", help="Run backtest")
-    sub_bt.add_argument("--symbols", default="BTC,ETH,SOL", help="Comma-separated symbols")
+    sub_bt.add_argument("--symbols", default="HYPE,SOL,BTC", help="Comma-separated symbols")
     sub_bt.add_argument("--days", type=int, default=30, help="Days of history")
     sub_bt.add_argument("--strategies", default="", help="Strategy names (empty=all)")
     sub_bt.add_argument("--equity", type=float, default=10000, help="Starting equity")

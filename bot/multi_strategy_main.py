@@ -143,6 +143,13 @@ class MultiStrategyBot:
             logger.warning("Starting in 5 seconds... Press CTRL+C to abort")
             time.sleep(5)
 
+        # Send startup message to Discord/Telegram
+        self.alerts.send_startup(
+            symbols=list(DEFAULT_SYMBOLS.keys()),
+            strategies=len(self.strategies),
+            leverage_max=self.config.max_leverage,
+        )
+
         # Signal handlers
         signal.signal(signal.SIGINT, self._handle_signal)
         signal.signal(signal.SIGTERM, self._handle_signal)
@@ -179,12 +186,12 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.error(f"[{trace_id}][{symbol}] Error: {e}", exc_info=True)
 
-        # Heartbeat every 60 ticks (~1 hour at 60s intervals)
-        if self._tick % 60 == 0:
+        # Heartbeat every 60 ticks (~1 hour at 60s intervals), but not tick 0
+        if self._tick > 0 and self._tick % 60 == 0:
             self._send_heartbeat()
 
-        # Market update every 15 ticks (~15 min) - sends even without signals
-        if self._tick % 15 == 0 and self._tick % 60 != 0:
+        # Market update: immediately on tick 0, then every 15 ticks (~15 min)
+        if self._tick == 0 or (self._tick % 15 == 0 and self._tick % 60 != 0):
             self._send_market_update(trace_id)
 
     def _process_symbol(self, symbol: str, sym_cfg, trace_id: str = ""):
@@ -317,6 +324,7 @@ class MultiStrategyBot:
 
     def _send_heartbeat(self):
         """Send periodic status heartbeat."""
+        fetcher_stats = self.fetcher.get_stats()
         status = {
             "equity": self.risk_mgr.equity,
             "open_positions": self.pos_mgr.get_open_count(),
@@ -329,7 +337,10 @@ class MultiStrategyBot:
             f"[HEARTBEAT] equity=${status['equity']:,.2f} "
             f"positions={status['open_positions']} "
             f"daily_pnl=${status['daily_pnl']:+,.2f} "
-            f"ml_samples={status['ml_samples']}"
+            f"ml_samples={status['ml_samples']} "
+            f"api_calls={fetcher_stats['total_requests']} "
+            f"cache_hits={fetcher_stats['cache_hits']} "
+            f"gap={fetcher_stats['request_gap']}"
         )
 
     def _send_market_update(self, trace_id: str = ""):

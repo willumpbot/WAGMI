@@ -17,6 +17,7 @@ OHLCV is approximated by resampling close-price data points:
   volume = sum of volumes in interval
 """
 
+import os
 import time
 import random
 import logging
@@ -24,11 +25,16 @@ import threading
 import requests
 import pandas as pd
 from datetime import datetime, timezone
-from typing import Optional, Dict
+from typing import Any, Optional, Dict
 
 logger = logging.getLogger("bot.data")
 
-COINGECKO_BASE = "https://api.coingecko.com/api/v3"
+# Use CoinGecko Demo API if key is provided (higher rate limits)
+_CG_API_KEY = os.getenv("COINGECKO_API_KEY", "")
+if _CG_API_KEY:
+    COINGECKO_BASE = "https://pro-api.coingecko.com/api/v3"
+else:
+    COINGECKO_BASE = "https://api.coingecko.com/api/v3"
 
 # Mapping from desired timeframe to CoinGecko lookback and resample frequency
 TIMEFRAME_MAP = {
@@ -43,24 +49,38 @@ TIMEFRAME_MAP = {
     "daily": {"days": 30, "freq": "1h"},  # alias: returns hourly data for zone strategies
 }
 
+# Cache TTL per lookback period — longer-range data changes slower
+CACHE_TTL_BY_DAYS = {
+    1: 120,    # intraday: cache 2 min
+    30: 300,   # monthly: cache 5 min
+    90: 600,   # quarterly: cache 10 min
+}
+
 
 class DataFetcher:
     """
     CoinGecko-primary market data fetcher.
     Fetches price+volume data and constructs OHLCV candles at desired timeframes.
-    Includes caching, rate limiting, and retry logic.
+    Includes tiered caching, rate limiting, and retry logic.
     """
 
-    def __init__(self, max_retries: int = 3, retry_delay: float = 5.0, cache_ttl: int = 45):
+    def __init__(self, max_retries: int = 3, retry_delay: float = 5.0, cache_ttl: int = 120):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
-        self.cache_ttl = cache_ttl
+        self.cache_ttl = cache_ttl  # default fallback TTL
         self._session = requests.Session()
-        self._session.headers.update({"User-Agent": "NunuIRL-Bot/1.0"})
+        headers = {"User-Agent": "NunuIRL-Bot/1.0"}
+        if _CG_API_KEY:
+            headers["x-cg-demo-api-key"] = _CG_API_KEY
+            logger.info("CoinGecko API key configured — using Pro API endpoint")
+        self._session.headers.update(headers)
         self._cache: Dict[str, tuple] = {}  # key -> (timestamp, dataframe)
         self._lock = threading.Lock()
         self._last_request_ts = 0.0
-        self._min_request_gap = 1.5  # seconds between CoinGecko requests (rate limit)
+        self._min_request_gap = 2.5  # seconds between CoinGecko requests
+        self._consecutive_429s = 0
+        self._total_requests = 0
+        self._cache_hits = 0
 
     def _rate_limit(self):
         """Enforce minimum gap between API requests."""
@@ -71,10 +91,16 @@ class DataFetcher:
                 time.sleep(self._min_request_gap - gap + random.uniform(0, 0.3))
             self._last_request_ts = time.time()
 
-    def _get_cached(self, key: str) -> Optional[pd.DataFrame]:
+    def _get_cache_ttl(self, days: int) -> int:
+        """Get cache TTL based on the lookback period."""
+        return CACHE_TTL_BY_DAYS.get(days, self.cache_ttl)
+
+    def _get_cached(self, key: str, ttl: Optional[int] = None) -> Optional[pd.DataFrame]:
+        effective_ttl = ttl if ttl is not None else self.cache_ttl
         if key in self._cache:
             ts, df = self._cache[key]
-            if time.time() - ts < self.cache_ttl:
+            if time.time() - ts < effective_ttl:
+                self._cache_hits += 1
                 return df.copy()
         return None
 
@@ -84,7 +110,8 @@ class DataFetcher:
     def _fetch_market_chart(self, coin_id: str, days: int, vs_currency: str = "usd") -> Optional[pd.DataFrame]:
         """Fetch raw price+volume data from CoinGecko market_chart endpoint."""
         cache_key = f"raw:{coin_id}:{days}"
-        cached = self._get_cached(cache_key)
+        ttl = self._get_cache_ttl(days)
+        cached = self._get_cached(cache_key, ttl)
         if cached is not None:
             return cached
 
@@ -93,13 +120,21 @@ class DataFetcher:
 
         for attempt in range(self.max_retries):
             self._rate_limit()
+            self._total_requests += 1
             try:
                 resp = self._session.get(url, params=params, timeout=15)
                 if resp.status_code == 429:
-                    wait = int(resp.headers.get("Retry-After", 60))
-                    logger.warning(f"[{coin_id}] CoinGecko rate limited, waiting {wait}s")
+                    self._consecutive_429s += 1
+                    wait = min(int(resp.headers.get("Retry-After", 10)), 30)
+                    wait = wait + (self._consecutive_429s * 5)
+                    logger.warning(f"[{coin_id}] CoinGecko rate limited, waiting {wait}s (429 #{self._consecutive_429s})")
                     time.sleep(wait)
+                    self._min_request_gap = min(self._min_request_gap + 1.0, 8.0)
                     continue
+                self._consecutive_429s = 0
+                # Reset gap back toward baseline on success
+                if self._min_request_gap > 2.5:
+                    self._min_request_gap = max(self._min_request_gap - 0.2, 2.5)
                 resp.raise_for_status()
                 data = resp.json()
                 if "prices" not in data or "total_volumes" not in data:
@@ -116,6 +151,10 @@ class DataFetcher:
                 self._set_cache(cache_key, df.reset_index())
                 return df.reset_index()
 
+            except requests.exceptions.HTTPError as e:
+                logger.warning(f"[{coin_id}] CoinGecko HTTP error: {e}")
+                if attempt < self.max_retries - 1:
+                    time.sleep(self.retry_delay * (attempt + 1))
             except Exception as e:
                 logger.warning(f"[{coin_id}] CoinGecko attempt {attempt+1}/{self.max_retries} failed: {e}")
                 if attempt < self.max_retries - 1:
@@ -185,7 +224,7 @@ class DataFetcher:
     def latest_price(self, coin_id: str, vs_currency: str = "usd") -> Optional[float]:
         """Get the latest price for a coin."""
         cache_key = f"price:{coin_id}"
-        cached = self._get_cached(cache_key)
+        cached = self._get_cached(cache_key, ttl=60)  # price cache: 1 min
         if cached is not None and not cached.empty:
             return float(cached["close"].iloc[-1])
 
@@ -229,6 +268,17 @@ class DataFetcher:
                     result[tf] = self._resample_to_ohlcv(raw, freq)
 
         return result
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Return fetcher stats for diagnostics."""
+        return {
+            "total_requests": self._total_requests,
+            "cache_hits": self._cache_hits,
+            "cache_entries": len(self._cache),
+            "request_gap": f"{self._min_request_gap:.1f}s",
+            "consecutive_429s": self._consecutive_429s,
+            "api_key": bool(_CG_API_KEY),
+        }
 
     def clear_cache(self):
         """Clear the data cache."""
