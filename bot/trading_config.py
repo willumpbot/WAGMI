@@ -54,13 +54,13 @@ class TradingConfig:
 
     # General
     environment: str = field(default_factory=lambda: _env("ENVIRONMENT", "paper"))
-    scan_interval_s: int = field(default_factory=lambda: _env_int("SCAN_INTERVAL_S", 60))
+    scan_interval_s: int = field(default_factory=lambda: _env_int("SCAN_INTERVAL_S", 30))
     verbose: bool = field(default_factory=lambda: _env_bool("VERBOSE", True))
 
     # Equity & risk
     starting_equity: float = field(default_factory=lambda: _env_float("STARTING_EQUITY", 10000.0))
     risk_per_trade: float = field(default_factory=lambda: _env_float("RISK_PER_TRADE", 0.015))
-    max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 6))
+    max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 3))
     taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 5))
 
     # Circuit breakers
