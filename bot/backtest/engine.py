@@ -246,7 +246,7 @@ class BacktestEngine:
         if lev_decision.leverage <= 0:
             return
 
-        qty = self.risk_mgr.calculate_qty(signal.entry, signal.sl)
+        qty = self.risk_mgr.calculate_qty(signal.entry, signal.sl, lev_decision.leverage)
         if qty <= 0:
             return
 

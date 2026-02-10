@@ -60,7 +60,7 @@ class MonteCarloZonesStrategy(BaseStrategy):
         sma20 = df["SMA20"].iloc[-1]
         if pd.isna(sma20):
             return None
-        stdev = statistics.pstdev(df["close"].iloc[-20:].tolist())
+        stdev = statistics.stdev(df["close"].iloc[-20:].tolist())
         if stdev == 0:
             return None
         reg_k, deep_k = RISK_MULTIPLIERS[risk_tier]

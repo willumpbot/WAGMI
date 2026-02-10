@@ -271,6 +271,10 @@ class SignalLearner:
         """Record a market observation for passive learning."""
         self.snapshots.append(snapshot)
 
+        # Trim in memory to prevent unbounded growth
+        if len(self.snapshots) > 2500:
+            self.snapshots = self.snapshots[-2000:]
+
         # Backfill future returns on older snapshots
         self._backfill_returns(snapshot.symbol, snapshot.price)
 
@@ -405,6 +409,7 @@ class SignalLearner:
 
         # Handle feature count mismatch (model was trained with different features)
         if len(self.weights) != len(x):
+            logger.warning(f"ML feature mismatch: model has {len(self.weights)} weights, input has {len(x)} features. Retraining needed.")
             return None
 
         z = float(x @ self.weights + self.bias)

@@ -132,22 +132,11 @@ class LeverageManager:
             return 0.0
 
         risk_usd = equity * risk_per_trade
-        # With leverage, the position is larger but risk per dollar is the same
-        # risk_usd = stop_width * qty * leverage ... but we want risk_usd fixed
-        # So: qty = risk_usd / (stop_width * leverage) ... NO
-        # Actually: risk_usd = stop_width * qty (always)
-        # leverage amplifies PnL: actual_pnl = (price_move * qty * leverage)
-        # So for a given risk_usd: qty = risk_usd / (stop_width * leverage)
-        # This means we risk the same USD amount but with smaller qty
-        # OR: we keep same qty and risk more... user wants to amplify gains
-        # Standard approach: qty = risk_usd / stop_width (same as spot)
-        # The leverage just means we put up less margin
-        # PnL = (price_move * qty * leverage) - so leverage multiplies the PnL
-        # To keep risk_usd constant: qty = risk_usd / (stop_width * leverage)
-
-        qty = risk_usd / stop_width
-        # Leverage allows us to trade with less collateral
-        # collateral_needed = (entry * qty) / leverage
+        # PnL = price_move * qty * leverage
+        # At stop loss: loss = stop_width * qty * leverage
+        # To keep loss = risk_usd: qty = risk_usd / (stop_width * leverage)
+        effective_leverage = max(leverage, 1.0)
+        qty = risk_usd / (stop_width * effective_leverage)
         return qty
 
     def liquidation_price(

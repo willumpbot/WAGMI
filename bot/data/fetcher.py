@@ -144,6 +144,17 @@ class DataFetcher:
 
     def _set_cache(self, key: str, df: pd.DataFrame):
         self._cache[key] = (time.time(), df.copy())
+        # Evict stale entries periodically to prevent memory leak
+        if len(self._cache) > 100:
+            self._evict_stale_cache()
+
+    def _evict_stale_cache(self):
+        """Remove expired cache entries."""
+        now = time.time()
+        max_ttl = max(CACHE_TTL_BY_TF.values()) * 2  # 2x the longest TTL
+        stale = [k for k, (ts, _) in self._cache.items() if now - ts > max_ttl]
+        for k in stale:
+            del self._cache[k]
 
     # ─── CCXT fetching ───────────────────────────────────────────────
 
