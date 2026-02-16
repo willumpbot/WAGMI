@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 
 from data.fetcher import DataFetcher
+from data.db import init_db, log_signal, log_trade, log_equity, get_daily_summary
 from trading_config import TradingConfig, DEFAULT_SYMBOLS
 from strategies.regime_trend import RegimeTrendStrategy
 from strategies.monte_carlo_zones import MonteCarloZonesStrategy
@@ -226,6 +227,20 @@ class MultiStrategyBot:
         for event in events:
             self.risk_mgr.update_equity(event.pnl - event.fee)
 
+            # Log trade event to database
+            log_trade(
+                symbol=event.symbol,
+                action=event.action,
+                side=event.side,
+                price=event.price,
+                qty=event.qty,
+                pnl=event.pnl,
+                fee=event.fee,
+                leverage=event.leverage,
+                strategy=event.strategy,
+                metadata=event.metadata
+            )
+
             # Record outcome for ML
             if self.ml and event.action in ("SL", "TP2", "TRAILING_STOP"):
                 pos = self.pos_mgr.positions.get(symbol)
@@ -276,6 +291,22 @@ class MultiStrategyBot:
         signal_result = self.ensemble.evaluate(symbol, data)
         if signal_result is None:
             return
+
+        # Log every signal generated (even if not traded)
+        log_signal(
+            symbol=symbol,
+            strategy=signal_result.strategy,
+            side=signal_result.side,
+            confidence=signal_result.confidence,
+            entry=signal_result.entry,
+            sl=signal_result.sl,
+            tp1=signal_result.tp1,
+            tp2=signal_result.tp2,
+            atr=signal_result.atr,
+            leverage=1.0,
+            traded=False,
+            metadata=signal_result.metadata
+        )
 
         # ML confidence adjustment
         original_conf = signal_result.confidence
@@ -329,6 +360,34 @@ class MultiStrategyBot:
             confidence=signal_result.confidence,
         )
 
+        # Log trade open to database
+        log_trade(
+            symbol=symbol,
+            action="OPEN",
+            side=side,
+            price=signal_result.entry,
+            qty=qty,
+            leverage=lev_decision.leverage,
+            strategy=signal_result.strategy,
+            metadata={"confidence": signal_result.confidence, "strategies": signal_result.metadata.get("strategies_agree", [])}
+        )
+
+        # Mark signal as traded
+        log_signal(
+            symbol=symbol,
+            strategy=signal_result.strategy,
+            side=signal_result.side,
+            confidence=signal_result.confidence,
+            entry=signal_result.entry,
+            sl=signal_result.sl,
+            tp1=signal_result.tp1,
+            tp2=signal_result.tp2,
+            atr=signal_result.atr,
+            leverage=lev_decision.leverage,
+            traded=True,
+            metadata=signal_result.metadata
+        )
+
         # Send signal alert
         tier = signal_result.metadata.get("tier", "")
         self.alerts.send_signal(signal_result, lev_decision.leverage, tier)
@@ -349,6 +408,18 @@ class MultiStrategyBot:
             "ml_samples": len(self.ml.outcomes) if self.ml else 0,
             "circuit_breaker": self.risk_mgr.circuit_breaker.get_status(),
         }
+
+        # Log equity snapshot to database
+        log_equity(
+            equity=self.risk_mgr.equity,
+            open_positions=self.pos_mgr.get_open_count(),
+            daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,
+            unrealized_pnl=self.pos_mgr.get_total_unrealized_pnl({
+                sym: self.fetcher.latest_price(sym, DEFAULT_SYMBOLS[sym].coingecko_id) or 0
+                for sym in DEFAULT_SYMBOLS.keys()
+            })
+        )
+
         self.alerts.send_heartbeat(status)
         logger.info(
             f"[HEARTBEAT] equity=${status['equity']:,.2f} "
@@ -420,6 +491,7 @@ class MultiStrategyBot:
 
 def main():
     os.makedirs("ml_data", exist_ok=True)
+    init_db()  # Initialize SQLite database for trade journal
 
     config = TradingConfig()
     bot = MultiStrategyBot(config)
