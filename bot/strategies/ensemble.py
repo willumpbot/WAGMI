@@ -65,6 +65,11 @@ class EnsembleStrategy:
         if not signals:
             return None
 
+        # Volume chop filter: reject signals during low-volume periods
+        if self._is_low_volume(symbol, data):
+            logger.info(f"[{symbol}] Signal skipped: low volume (chop filter)")
+            return None
+
         if self.mode == "voting":
             return self._voting(symbol, signals)
         elif self.mode == "weighted":
@@ -74,19 +79,72 @@ class EnsembleStrategy:
         else:
             return self._voting(symbol, signals)
 
+    def _is_low_volume(self, symbol: str, data: Dict[str, pd.DataFrame]) -> bool:
+        """Check if current volume is too low for reliable signals.
+        Returns True if volume < 40% of 20-bar average (choppy market)."""
+        df_1h = data.get("1h")
+        if df_1h is None or df_1h.empty or len(df_1h) < 20:
+            return False  # can't determine, allow trading
+        vol = df_1h["volume"]
+        avg_vol = float(vol.tail(20).mean())
+        if avg_vol <= 0:
+            return False
+        current_vol = float(vol.iloc[-1])
+        ratio = current_vol / avg_vol
+        if ratio < 0.4:
+            logger.info(f"[{symbol}] Volume ratio {ratio:.2f} (current={current_vol:.0f}, avg={avg_vol:.0f})")
+            return True
+        return False
+
     def _voting(self, symbol: str, signals: List[Signal]) -> Optional[Signal]:
-        """Require min_votes strategies to agree on direction."""
+        """Require min_votes strategies to agree on direction.
+        Opposition veto: if any strategy actively votes the opposite side,
+        require min_votes + len(opposition) to override."""
         buy_signals = [s for s in signals if s.side == "BUY"]
         sell_signals = [s for s in signals if s.side == "SELL"]
 
-        if len(buy_signals) >= self.min_votes:
-            chosen = buy_signals
-        elif len(sell_signals) >= self.min_votes:
-            chosen = sell_signals
+        # Determine which side has enough base votes
+        buy_enough = len(buy_signals) >= self.min_votes
+        sell_enough = len(sell_signals) >= self.min_votes
+
+        if buy_enough and sell_enough:
+            # Both sides have min_votes - pick stronger side
+            if len(buy_signals) > len(sell_signals):
+                chosen, opposition = buy_signals, sell_signals
+            elif len(sell_signals) > len(buy_signals):
+                chosen, opposition = sell_signals, buy_signals
+            else:
+                return None  # tied
+        elif buy_enough:
+            chosen, opposition = buy_signals, sell_signals
+        elif sell_enough:
+            chosen, opposition = sell_signals, buy_signals
         else:
             return None
 
-        return self._merge_signals(symbol, chosen)
+        # Opposition veto: if strategies actively disagree, raise the bar
+        if opposition:
+            required = self.min_votes + len(opposition)
+            if len(chosen) < required:
+                logger.info(
+                    f"[{symbol}] Signal vetoed: {len(chosen)} {chosen[0].side} vs "
+                    f"{len(opposition)} {opposition[0].side} (need {required} votes)"
+                )
+                return None
+
+        merged = self._merge_signals(symbol, chosen)
+
+        # Confidence penalty for opposition (even when vote passes)
+        if opposition:
+            penalty = len(opposition) * 10
+            merged.confidence = max(0, merged.confidence - penalty)
+            merged.metadata["opposition_penalty"] = penalty
+            logger.info(
+                f"[{symbol}] Opposition penalty: -{penalty} confidence "
+                f"(opposed by {[s.strategy for s in opposition]})"
+            )
+
+        return merged
 
     def _weighted(self, symbol: str, signals: List[Signal]) -> Optional[Signal]:
         """Weight strategies by performance and combine."""

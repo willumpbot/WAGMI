@@ -446,6 +446,16 @@ class MultiStrategyBot:
                 # Get all strategy assessments
                 statuses = self.ensemble.get_all_status(symbol, data)
 
+                # Volume ratio for chop detection
+                vol_str = ""
+                df_1h = data.get("1h")
+                if df_1h is not None and not df_1h.empty and len(df_1h) >= 20:
+                    avg_v = float(df_1h["volume"].tail(20).mean())
+                    cur_v = float(df_1h["volume"].iloc[-1])
+                    if avg_v > 0:
+                        vr = cur_v / avg_v
+                        vol_str = f" vol={vr:.1f}x" + (" [LOW]" if vr < 0.4 else "")
+
                 # Build compact summary
                 assessments = []
                 for s in statuses:
@@ -478,7 +488,7 @@ class MultiStrategyBot:
                     pnl = (price - pos.entry) * pos.qty if pos.side == "LONG" else (pos.entry - price) * pos.qty
                     pos_str = f" [OPEN {pos.side} {pos.leverage:.0f}x PnL=${pnl:+,.0f}]"
 
-                lines.append(f"  {symbol} ${price:,.2f}{pos_str}")
+                lines.append(f"  {symbol} ${price:,.2f}{vol_str}{pos_str}")
                 lines.append(f"    {assessment_str}")
 
             except Exception as e:
