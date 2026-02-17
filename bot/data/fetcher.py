@@ -106,6 +106,8 @@ class DataFetcher:
             "BTC": [("kraken", "BTC/USDT"), ("bybit", "BTC/USDT")],
             "SOL": [("kraken", "SOL/USDT"), ("bybit", "SOL/USDT")],
             "HYPE": [("hyperliquid", "HYPE/USDC:USDC")],
+            "FARTCOIN": [("hyperliquid", "FARTCOIN/USDC:USDC"), ("bybit", "FARTCOIN/USDT")],
+            "PEPE": [("kraken", "PEPE/USDT"), ("bybit", "PEPE/USDT")],
         }
 
         # Try to initialize CCXT exchanges

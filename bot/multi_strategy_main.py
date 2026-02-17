@@ -18,6 +18,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any
 
+import pandas as pd
+
 from data.fetcher import DataFetcher
 from data.db import init_db, log_signal, log_trade, log_equity, get_daily_summary
 from trading_config import TradingConfig, DEFAULT_SYMBOLS
@@ -208,7 +210,7 @@ class MultiStrategyBot:
         # Record market snapshot for ML passive learning
         if self.ml:
             snapshot = MarketSnapshot(symbol=symbol, price=current_price)
-            # Try to compute market context from available data
+            # Compute market context from available data
             try:
                 df_1h = data.get("1h")
                 if df_1h is not None and not df_1h.empty and len(df_1h) > 2:
@@ -218,6 +220,16 @@ class MultiStrategyBot:
                     avg_vol = float(df_1h["volume"].tail(20).mean())
                     if avg_vol > 0:
                         snapshot.volume_ratio = float(df_1h["volume"].iloc[-1]) / avg_vol
+                    # ATR-based volatility (ATR14 / price as percentage)
+                    if len(df_1h) > 14:
+                        prev_c = df_1h["close"].shift(1)
+                        tr = pd.concat([
+                            df_1h["high"] - df_1h["low"],
+                            (df_1h["high"] - prev_c).abs(),
+                            (df_1h["low"] - prev_c).abs(),
+                        ], axis=1).max(axis=1)
+                        atr14 = float(tr.rolling(14, min_periods=1).mean().iloc[-1])
+                        snapshot.volatility = atr14 / current_price * 100
             except Exception:
                 pass
             self.ml.record_snapshot(snapshot)
@@ -289,6 +301,15 @@ class MultiStrategyBot:
             return  # Already have position in this symbol
 
         signal_result = self.ensemble.evaluate(symbol, data)
+
+        # Update last snapshot with ensemble context for ML learning
+        if self.ml and self.ml.snapshots:
+            last_snap = self.ml.snapshots[-1]
+            if last_snap.symbol == symbol:
+                if signal_result:
+                    last_snap.ensemble_direction = signal_result.side
+                    last_snap.ensemble_confidence = signal_result.confidence
+
         if signal_result is None:
             return
 
@@ -308,9 +329,35 @@ class MultiStrategyBot:
             metadata=signal_result.metadata
         )
 
-        # ML confidence adjustment
+        # ML confidence adjustment (pass full market context for both models)
         original_conf = signal_result.confidence
         if self.ml:
+            # Compute market context for ML
+            ml_pchange_1h = 0.0
+            ml_pchange_24h = 0.0
+            ml_vol_ratio = 1.0
+            ml_volatility = 0.0
+            try:
+                df_1h = data.get("1h")
+                if df_1h is not None and not df_1h.empty and len(df_1h) > 2:
+                    ml_pchange_1h = (current_price - float(df_1h["close"].iloc[-2])) / float(df_1h["close"].iloc[-2]) * 100
+                    if len(df_1h) > 24:
+                        ml_pchange_24h = (current_price - float(df_1h["close"].iloc[-24])) / float(df_1h["close"].iloc[-24]) * 100
+                    avg_vol = float(df_1h["volume"].tail(20).mean())
+                    if avg_vol > 0:
+                        ml_vol_ratio = float(df_1h["volume"].iloc[-1]) / avg_vol
+                    if len(df_1h) > 14:
+                        prev_c = df_1h["close"].shift(1)
+                        tr = pd.concat([
+                            df_1h["high"] - df_1h["low"],
+                            (df_1h["high"] - prev_c).abs(),
+                            (df_1h["low"] - prev_c).abs(),
+                        ], axis=1).max(axis=1)
+                        atr14 = float(tr.rolling(14, min_periods=1).mean().iloc[-1])
+                        ml_volatility = atr14 / current_price * 100
+            except Exception:
+                pass
+
             adjusted_conf = self.ml.adjust_confidence(
                 original_conf,
                 regime_score=signal_result.metadata.get("align_long", 0) or signal_result.metadata.get("regime_score", 0),
@@ -319,6 +366,11 @@ class MultiStrategyBot:
                 stop_width_ratio=signal_result.stop_width / max(signal_result.atr, 1e-9) if signal_result.atr else 1.5,
                 leverage=1.0,
                 side=signal_result.side,
+                price_change_1h_pct=ml_pchange_1h,
+                price_change_24h_pct=ml_pchange_24h,
+                volume_ratio=ml_vol_ratio,
+                volatility=ml_volatility,
+                num_strategies_agree=signal_result.metadata.get("num_agree", 1),
             )
             signal_result.confidence = adjusted_conf
 
@@ -401,11 +453,17 @@ class MultiStrategyBot:
     def _send_heartbeat(self):
         """Send periodic status heartbeat."""
         fetcher_stats = self.fetcher.get_stats()
+        ml_snap_filled = 0
+        if self.ml:
+            ml_snap_filled = sum(1 for s in self.ml.snapshots if s.future_return_1h is not None)
         status = {
             "equity": self.risk_mgr.equity,
             "open_positions": self.pos_mgr.get_open_count(),
             "daily_pnl": self.risk_mgr.circuit_breaker.daily_pnl,
             "ml_samples": len(self.ml.outcomes) if self.ml else 0,
+            "ml_snapshots": len(self.ml.snapshots) if self.ml else 0,
+            "ml_snap_trained": ml_snap_filled,
+            "ml_direction_model": self.ml.snapshot_weights is not None if self.ml else False,
             "circuit_breaker": self.risk_mgr.circuit_breaker.get_status(),
         }
 
@@ -425,10 +483,11 @@ class MultiStrategyBot:
             f"[HEARTBEAT] equity=${status['equity']:,.2f} "
             f"positions={status['open_positions']} "
             f"daily_pnl=${status['daily_pnl']:+,.2f} "
-            f"ml_samples={status['ml_samples']} "
-            f"api_calls={fetcher_stats['total_requests']} "
-            f"cache_hits={fetcher_stats['cache_hits']} "
-            f"gap={fetcher_stats['request_gap']}"
+            f"ml_trades={status['ml_samples']} "
+            f"ml_snaps={status['ml_snapshots']}({status['ml_snap_trained']}filled) "
+            f"direction_model={'YES' if status['ml_direction_model'] else 'no'} "
+            f"api={fetcher_stats['total_requests']} "
+            f"cache={fetcher_stats['cache_hits']}"
         )
 
     def _send_market_update(self, trace_id: str = ""):

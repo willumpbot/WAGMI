@@ -61,6 +61,7 @@ class MarketSnapshot:
     symbol: str
     price: float
     price_change_1h_pct: float = 0.0
+    price_change_24h_pct: float = 0.0
     volume_ratio: float = 1.0
     volatility: float = 0.0
     regime_score: float = 0.0
@@ -108,6 +109,11 @@ class SignalLearner:
         self.bias: float = 0.0
         self._samples_since_train = 0
 
+        # Snapshot-based direction model (learns from market observations, not trades)
+        self.snapshot_weights: Optional[np.ndarray] = None
+        self.snapshot_bias: float = 0.0
+        self._snapshots_since_train = 0
+
         # Per-strategy rolling performance
         self.strategy_stats: Dict[str, Dict] = self._load_strategy_stats()
 
@@ -144,7 +150,12 @@ class SignalLearner:
             try:
                 with open(self.snapshots_path) as f:
                     data = json.load(f)
-                return [MarketSnapshot(**d) for d in data[-2000:]]
+                loaded = []
+                for d in data[-2000:]:
+                    # Handle old snapshots missing new fields
+                    d.setdefault("price_change_24h_pct", 0.0)
+                    loaded.append(MarketSnapshot(**d))
+                return loaded
             except Exception:
                 pass
         return []
@@ -162,25 +173,48 @@ class SignalLearner:
             try:
                 with open(self.model_path) as f:
                     data = json.load(f)
-                self.weights = np.array(data["weights"])
-                self.bias = data["bias"]
-                logger.info(f"Loaded ML model with {len(self.weights)} features")
-            except Exception:
-                pass
+                # New format with trade_model/snapshot_model keys
+                if "trade_model" in data:
+                    tm = data["trade_model"]
+                    self.weights = np.array(tm["weights"])
+                    self.bias = tm["bias"]
+                elif "weights" in data:
+                    # Old format - backwards compatible
+                    self.weights = np.array(data["weights"])
+                    self.bias = data["bias"]
+
+                if "snapshot_model" in data:
+                    sm = data["snapshot_model"]
+                    self.snapshot_weights = np.array(sm["weights"])
+                    self.snapshot_bias = sm["bias"]
+
+                n_trade = len(self.weights) if self.weights is not None else 0
+                n_snap = len(self.snapshot_weights) if self.snapshot_weights is not None else 0
+                logger.info(f"Loaded ML models: trade={n_trade}f, snapshot={n_snap}f")
+            except Exception as e:
+                logger.warning(f"Failed to load ML model: {e}")
 
     def _save_model(self):
-        if self.weights is not None:
-            try:
-                with open(self.model_path, "w") as f:
-                    json.dump({
-                        "weights": self.weights.tolist(),
-                        "bias": self.bias,
-                        "trained_at": datetime.now(timezone.utc).isoformat(),
-                        "num_samples": len(self.outcomes),
-                        "feature_names": self._feature_names(),
-                    }, f, indent=2)
-            except Exception as e:
-                logger.warning(f"Failed to save model: {e}")
+        try:
+            data = {"trained_at": datetime.now(timezone.utc).isoformat()}
+            if self.weights is not None:
+                data["trade_model"] = {
+                    "weights": self.weights.tolist(),
+                    "bias": self.bias,
+                    "feature_names": self._feature_names(),
+                }
+            if self.snapshot_weights is not None:
+                data["snapshot_model"] = {
+                    "weights": self.snapshot_weights.tolist(),
+                    "bias": self.snapshot_bias,
+                    "feature_names": self._snapshot_feature_names(),
+                }
+            data["num_trade_samples"] = len(self.outcomes)
+            data["num_snapshot_samples"] = len(self.snapshots)
+            with open(self.model_path, "w") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to save model: {e}")
 
     def _load_strategy_stats(self) -> Dict[str, Dict]:
         if self.stats_path.exists():
@@ -232,6 +266,32 @@ class SignalLearner:
             outcome.num_strategies_agree / 4.0,
         ], dtype=np.float64)
 
+    # ─── Snapshot feature engineering ─────────────────────────────────
+
+    def _snapshot_feature_names(self) -> List[str]:
+        return [
+            "price_change_1h", "price_change_24h", "volume_ratio",
+            "volatility", "hour_sin", "hour_cos",
+        ]
+
+    def _featurize_snapshot(self, snap: MarketSnapshot) -> np.ndarray:
+        """Convert a market snapshot into a feature vector for direction prediction."""
+        try:
+            ts = datetime.fromisoformat(snap.timestamp)
+            hour = ts.hour
+        except Exception:
+            hour = 12
+        hour_rad = 2 * np.pi * hour / 24.0
+
+        return np.array([
+            np.clip(snap.price_change_1h_pct / 5.0, -1, 1),
+            np.clip(snap.price_change_24h_pct / 10.0, -1, 1),
+            np.clip(snap.volume_ratio / 3.0, 0, 1),
+            np.clip(snap.volatility / 5.0, 0, 1),
+            np.sin(hour_rad),
+            np.cos(hour_rad),
+        ], dtype=np.float64)
+
     # ─── Recording ───────────────────────────────────────────────────
 
     def record_outcome(self, outcome: TradeOutcome):
@@ -281,6 +341,14 @@ class SignalLearner:
         # Save periodically (every 50 snapshots)
         if len(self.snapshots) % 50 == 0:
             self._save_snapshots()
+
+        # Auto-train snapshot model when enough filled observations exist
+        self._snapshots_since_train += 1
+        if self._snapshots_since_train >= 100:
+            filled = sum(1 for s in self.snapshots if s.future_return_1h is not None)
+            if filled >= 30:
+                self.train_from_snapshots()
+                self._snapshots_since_train = 0
 
     def _backfill_returns(self, symbol: str, current_price: float):
         """Fill in future returns for past snapshots of same symbol."""
@@ -367,6 +435,93 @@ class SignalLearner:
         top5 = ", ".join(f"{n}={w:+.3f}" for n, w in importances[:5])
         logger.info(f"Top features: {top5}")
 
+    # ─── Snapshot-based training ─────────────────────────────────────
+
+    def train_from_snapshots(self):
+        """Train a direction model from market snapshots with filled future returns.
+        This gives learning data from hour 1, without waiting for trades to close."""
+        filled = [s for s in self.snapshots if s.future_return_1h is not None]
+        if len(filled) < 30:
+            return
+
+        X = np.array([self._featurize_snapshot(s) for s in filled])
+        y = np.array([1.0 if s.future_return_1h > 0 else 0.0 for s in filled])
+
+        n_features = X.shape[1]
+        if self.snapshot_weights is None or len(self.snapshot_weights) != n_features:
+            self.snapshot_weights = np.zeros(n_features)
+            self.snapshot_bias = 0.0
+
+        # Gradient descent with momentum (same approach as trade model)
+        lr = 0.01
+        momentum = 0.9
+        v_w = np.zeros_like(self.snapshot_weights)
+        v_b = 0.0
+        epochs = max(50, min(200, 2000 // len(filled)))
+
+        for _ in range(epochs):
+            z = X @ self.snapshot_weights + self.snapshot_bias
+            pred = 1.0 / (1.0 + np.exp(-np.clip(z, -500, 500)))
+            error = pred - y
+
+            reg = 0.001
+            grad_w = (X.T @ error) / len(y) + reg * self.snapshot_weights
+            grad_b = error.mean()
+
+            v_w = momentum * v_w - lr * grad_w
+            v_b = momentum * v_b - lr * grad_b
+            self.snapshot_weights += v_w
+            self.snapshot_bias += v_b
+
+        self._save_model()
+
+        # Log accuracy
+        z = X @ self.snapshot_weights + self.snapshot_bias
+        pred_prob = 1.0 / (1.0 + np.exp(-np.clip(z, -500, 500)))
+        pred_labels = pred_prob > 0.5
+        accuracy = (pred_labels == y).mean()
+        baseline = max(y.mean(), 1 - y.mean())
+
+        # Log feature importances for snapshot model
+        feature_names = self._snapshot_feature_names()
+        importances = sorted(
+            zip(feature_names, self.snapshot_weights),
+            key=lambda x: abs(x[1]), reverse=True
+        )
+        top = ", ".join(f"{n}={w:+.3f}" for n, w in importances[:4])
+
+        logger.info(
+            f"Snapshot model trained on {len(filled)} observations | "
+            f"Direction accuracy: {accuracy:.1%} (baseline {baseline:.1%}) | "
+            f"Top: {top}"
+        )
+
+    def predict_direction(
+        self,
+        price_change_1h_pct: float = 0.0,
+        price_change_24h_pct: float = 0.0,
+        volume_ratio: float = 1.0,
+        volatility: float = 0.0,
+    ) -> Optional[float]:
+        """Predict probability of upward price movement from market conditions.
+        Returns float between 0 and 1, or None if no model available."""
+        if self.snapshot_weights is None:
+            return None
+
+        snap = MarketSnapshot(
+            symbol="", price=0,
+            price_change_1h_pct=price_change_1h_pct,
+            price_change_24h_pct=price_change_24h_pct,
+            volume_ratio=volume_ratio,
+            volatility=volatility,
+        )
+        x = self._featurize_snapshot(snap)
+        if len(self.snapshot_weights) != len(x):
+            return None
+
+        z = float(x @ self.snapshot_weights + self.snapshot_bias)
+        return float(1.0 / (1.0 + np.exp(-np.clip(z, -500, 500))))
+
     # ─── Prediction ──────────────────────────────────────────────────
 
     def predict_win_probability(
@@ -430,17 +585,39 @@ class SignalLearner:
         volatility: float = 0.0,
         num_strategies_agree: int = 1,
     ) -> float:
-        """Adjust signal confidence based on ML prediction."""
+        """Adjust signal confidence by blending trade model + snapshot direction model."""
+        # Trade model: predict win probability from signal features
         win_prob = self.predict_win_probability(
             original_confidence, regime_score, vwap_aligned,
             ema_aligned, stop_width_ratio, leverage, side,
             price_change_1h_pct, price_change_24h_pct,
             volume_ratio, volatility, num_strategies_agree,
         )
-        if win_prob is None:
+
+        # Snapshot model: predict market direction from conditions
+        direction_prob = self.predict_direction(
+            price_change_1h_pct, price_change_24h_pct,
+            volume_ratio, volatility,
+        )
+        # For SELL signals, invert (we want prob of price moving in our favor)
+        if direction_prob is not None and side == "SELL":
+            direction_prob = 1.0 - direction_prob
+
+        # Blend available models
+        if win_prob is not None and direction_prob is not None:
+            combined = win_prob * 0.6 + direction_prob * 0.4
+            source = f"trade={win_prob:.1%}+snap={direction_prob:.1%}"
+        elif win_prob is not None:
+            combined = win_prob
+            source = f"trade={win_prob:.1%}"
+        elif direction_prob is not None:
+            # Snapshot-only: use with lower weight (less certain without trade data)
+            combined = direction_prob
+            source = f"snap={direction_prob:.1%}"
+        else:
             return original_confidence
 
-        ml_confidence = win_prob * 100.0
+        ml_confidence = combined * 100.0
         adjusted = (
             original_confidence * (1 - self.adjustment_weight)
             + ml_confidence * self.adjustment_weight
@@ -450,7 +627,7 @@ class SignalLearner:
         if abs(adjusted - original_confidence) > 2:
             logger.info(
                 f"ML adjustment: {original_confidence:.0f}% -> {adjusted:.0f}% "
-                f"(win_prob={win_prob:.1%})"
+                f"({source})"
             )
 
         return adjusted
@@ -522,8 +699,10 @@ class SignalLearner:
             "losses": total - wins,
             "win_rate": wins / total if total else 0,
             "total_pnl": total_pnl,
-            "model_trained": self.weights is not None,
-            "model_features": len(self.weights) if self.weights is not None else 0,
+            "trade_model_trained": self.weights is not None,
+            "trade_model_features": len(self.weights) if self.weights is not None else 0,
+            "snapshot_model_trained": self.snapshot_weights is not None,
+            "snapshot_model_features": len(self.snapshot_weights) if self.snapshot_weights is not None else 0,
             "market_snapshots": len(self.snapshots),
             "snapshots_with_returns": filled,
             "by_strategy": by_strategy,
