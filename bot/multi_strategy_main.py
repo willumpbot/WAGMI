@@ -22,6 +22,7 @@ import pandas as pd
 
 from data.fetcher import DataFetcher
 from data.db import init_db, log_signal, log_trade, log_equity, get_daily_summary
+from data.strategy_weights import StrategyWeightManager
 from trading_config import TradingConfig, DEFAULT_SYMBOLS
 from strategies.regime_trend import RegimeTrendStrategy
 from strategies.monte_carlo_zones import MonteCarloZonesStrategy
@@ -74,6 +75,12 @@ class MultiStrategyBot:
             cache_ttl=max(30, config.scan_interval_s - 5),
         )
 
+        # Strategy accuracy weights
+        self.weight_mgr = StrategyWeightManager(
+            path="ml_data/strategy_weights.json",
+            decay_alpha=0.9,
+        )
+
         # Strategies
         sym_configs = DEFAULT_SYMBOLS
         self.strategies = [
@@ -86,6 +93,7 @@ class MultiStrategyBot:
             strategies=self.strategies,
             mode=config.ensemble_mode,
             min_votes=config.min_votes_required,
+            weight_manager=self.weight_mgr,
         )
 
         # Execution
@@ -252,6 +260,10 @@ class MultiStrategyBot:
                 strategy=event.strategy,
                 metadata=event.metadata
             )
+
+            # Record outcome for strategy weight tracking
+            if event.action in ("SL", "TP1", "TP2", "TRAILING_STOP") and event.strategy:
+                self.weight_mgr.record_outcome(event.strategy, event.pnl > 0)
 
             # Record outcome for ML
             if self.ml and event.action in ("SL", "TP2", "TRAILING_STOP"):
@@ -478,7 +490,12 @@ class MultiStrategyBot:
             })
         )
 
+        # Daily strategy weight recompute from trades DB
+        self.weight_mgr.recompute_from_db()
+
         self.alerts.send_heartbeat(status)
+        strat_weights = self.weight_mgr.get_all_weights()
+        weights_str = " ".join(f"{k}={v:.2f}" for k, v in strat_weights.items()) if strat_weights else "none"
         logger.info(
             f"[HEARTBEAT] equity=${status['equity']:,.2f} "
             f"positions={status['open_positions']} "
@@ -486,6 +503,7 @@ class MultiStrategyBot:
             f"ml_trades={status['ml_samples']} "
             f"ml_snaps={status['ml_snapshots']}({status['ml_snap_trained']}filled) "
             f"direction_model={'YES' if status['ml_direction_model'] else 'no'} "
+            f"strat_weights=[{weights_str}] "
             f"api={fetcher_stats['total_requests']} "
             f"cache={fetcher_stats['cache_hits']}"
         )

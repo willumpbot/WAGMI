@@ -32,11 +32,13 @@ class EnsembleStrategy:
         mode: str = "voting",
         min_votes: int = 2,
         weights: Optional[Dict[str, float]] = None,
+        weight_manager=None,
     ):
         self.strategies = strategies
         self.mode = mode
         self.min_votes = min_votes
         self.weights = weights or {s.name: 1.0 for s in strategies}
+        self.weight_manager = weight_manager  # StrategyWeightManager instance
 
     def get_all_required_timeframes(self) -> List[str]:
         """Get the union of all timeframes needed by all strategies."""
@@ -108,10 +110,12 @@ class EnsembleStrategy:
         sell_enough = len(sell_signals) >= self.min_votes
 
         if buy_enough and sell_enough:
-            # Both sides have min_votes - pick stronger side
-            if len(buy_signals) > len(sell_signals):
+            # Both sides have min_votes - break tie using weighted confidence
+            buy_w = self._weighted_confidence_sum(buy_signals)
+            sell_w = self._weighted_confidence_sum(sell_signals)
+            if buy_w > sell_w:
                 chosen, opposition = buy_signals, sell_signals
-            elif len(sell_signals) > len(buy_signals):
+            elif sell_w > buy_w:
                 chosen, opposition = sell_signals, buy_signals
             else:
                 return None  # tied
@@ -168,13 +172,33 @@ class EnsembleStrategy:
         best = max(signals, key=lambda s: s.confidence)
         return best
 
+    def _get_strategy_weight(self, strategy_name: str) -> float:
+        """Get weight for a strategy from weight manager, falling back to static weights."""
+        if self.weight_manager is not None:
+            return self.weight_manager.get_weight(strategy_name)
+        return self.weights.get(strategy_name, 1.0)
+
+    def _weighted_confidence_sum(self, signals: List[Signal]) -> float:
+        """Compute sum of weight * confidence for a list of signals."""
+        return sum(self._get_strategy_weight(s.strategy) * s.confidence for s in signals)
+
     def _merge_signals(self, symbol: str, signals: List[Signal]) -> Signal:
-        """Merge multiple agreeing signals into one consensus signal."""
+        """Merge multiple agreeing signals into one consensus signal.
+        Uses strategy accuracy weights for weighted-average confidence."""
         side = signals[0].side
-        avg_conf = sum(s.confidence for s in signals) / len(signals)
+
+        # Weighted average confidence using strategy accuracy weights
+        total_weight = sum(self._get_strategy_weight(s.strategy) for s in signals)
+        if total_weight > 0:
+            weighted_conf = sum(
+                self._get_strategy_weight(s.strategy) * s.confidence for s in signals
+            ) / total_weight
+        else:
+            weighted_conf = sum(s.confidence for s in signals) / len(signals)
+
         # Consensus bonus: more strategies agree -> higher confidence
         consensus_bonus = (len(signals) - 1) * 3
-        combined_conf = min(100, avg_conf + consensus_bonus)
+        combined_conf = min(100, weighted_conf + consensus_bonus)
 
         # Use the most conservative stop (widest) and most conservative TP
         if side == "BUY":
@@ -205,6 +229,7 @@ class EnsembleStrategy:
                 "num_agree": len(signals),
                 "total_strategies": len(self.strategies),
                 "individual_confidences": {s.strategy: s.confidence for s in signals},
+                "strategy_weights": {s.strategy: round(self._get_strategy_weight(s.strategy), 3) for s in signals},
                 "mode": self.mode,
             },
         )
