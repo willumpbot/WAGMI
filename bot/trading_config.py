@@ -38,6 +38,8 @@ DEFAULT_SYMBOLS = {
     "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "medium"),
     "SOL": SymbolConfig("SOL", "SOL-USD", "solana", "medium"),
     "BTC": SymbolConfig("BTC", "BTC-USD", "bitcoin", "low"),
+    "FARTCOIN": SymbolConfig("FARTCOIN", "FARTCOIN-USD", "fartcoin", "high"),
+    "PEPE": SymbolConfig("PEPE", "PEPE-USD", "pepe", "high"),
 }
 
 # Risk multipliers for zone computation (from user's original bots)

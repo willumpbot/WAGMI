@@ -18,7 +18,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any
 
+import pandas as pd
+
 from data.fetcher import DataFetcher
+from data.db import init_db, log_signal, log_trade, log_equity, get_daily_summary
+from data.strategy_weights import StrategyWeightManager
 from trading_config import TradingConfig, DEFAULT_SYMBOLS
 from strategies.regime_trend import RegimeTrendStrategy
 from strategies.monte_carlo_zones import MonteCarloZonesStrategy
@@ -29,7 +33,7 @@ from execution.position_manager import PositionManager
 from execution.leverage import LeverageManager
 from execution.risk import RiskManager, CircuitBreaker
 from execution.trade_logger import TradeLogger
-from ml.learner import SignalLearner, TradeOutcome
+from ml.learner import SignalLearner, TradeOutcome, MarketSnapshot
 from alerts.router import AlertRouter
 
 # Setup logging
@@ -72,6 +76,12 @@ class MultiStrategyBot:
             cache_ttl=max(30, config.scan_interval_s - 5),
         )
 
+        # Strategy accuracy weights
+        self.weight_mgr = StrategyWeightManager(
+            path="ml_data/strategy_weights.json",
+            decay_alpha=0.9,
+        )
+
         # Strategies
         sym_configs = DEFAULT_SYMBOLS
         self.strategies = [
@@ -84,6 +94,7 @@ class MultiStrategyBot:
             strategies=self.strategies,
             mode=config.ensemble_mode,
             min_votes=config.min_votes_required,
+            weight_manager=self.weight_mgr,
         )
 
         # Execution
@@ -201,12 +212,58 @@ class MultiStrategyBot:
         if current_price is None:
             return
 
+        # Record market snapshot for ML passive learning
+        if self.ml:
+            snapshot = MarketSnapshot(symbol=symbol, price=current_price)
+            # Compute market context from available data
+            try:
+                df_1h = data.get("1h")
+                if df_1h is not None and not df_1h.empty and len(df_1h) > 2:
+                    snapshot.price_change_1h_pct = (current_price - float(df_1h["close"].iloc[-2])) / float(df_1h["close"].iloc[-2]) * 100
+                    if len(df_1h) > 24:
+                        snapshot.price_change_24h_pct = (current_price - float(df_1h["close"].iloc[-24])) / float(df_1h["close"].iloc[-24]) * 100
+                    avg_vol = float(df_1h["volume"].tail(20).mean())
+                    if avg_vol > 0:
+                        snapshot.volume_ratio = float(df_1h["volume"].iloc[-1]) / avg_vol
+                    # ATR-based volatility (ATR14 / price as percentage)
+                    if len(df_1h) > 14:
+                        prev_c = df_1h["close"].shift(1)
+                        tr = pd.concat([
+                            df_1h["high"] - df_1h["low"],
+                            (df_1h["high"] - prev_c).abs(),
+                            (df_1h["low"] - prev_c).abs(),
+                        ], axis=1).max(axis=1)
+                        atr14 = float(tr.rolling(14, min_periods=1).mean().iloc[-1])
+                        snapshot.volatility = atr14 / current_price * 100
+            except Exception:
+                pass
+            self.ml.record_snapshot(snapshot)
+
+
         # Update existing positions
         events = self.pos_mgr.update_price(symbol, current_price)
         for event in events:
             self.risk_mgr.update_equity(event.pnl - event.fee)
 
-            # Log trade event (paper trading)
+            # Log trade event to database
+            log_trade(
+                symbol=event.symbol,
+                action=event.action,
+                side=event.side,
+                price=event.price,
+                qty=event.qty,
+                pnl=event.pnl,
+                fee=event.fee,
+                leverage=event.leverage,
+                strategy=event.strategy,
+                metadata=event.metadata
+            )
+
+            # Record outcome for strategy weight tracking
+            if event.action in ("SL", "TP1", "TP2", "TRAILING_STOP") and event.strategy:
+                self.weight_mgr.record_outcome(event.strategy, event.pnl > 0)
+
+            # Log trade event (paper trading compatibility)
             if self.trade_logger:
                 hold_time = event.metadata.get("hold_time_s", 0)
                 self.trade_logger.log_trade_event(event, hold_time_s=hold_time)
@@ -259,10 +316,35 @@ class MultiStrategyBot:
             return  # Already have position in this symbol
 
         signal_result = self.ensemble.evaluate(symbol, data)
+
+        # Update last snapshot with ensemble context for ML learning
+        if self.ml and self.ml.snapshots:
+            last_snap = self.ml.snapshots[-1]
+            if last_snap.symbol == symbol:
+                if signal_result:
+                    last_snap.ensemble_direction = signal_result.side
+                    last_snap.ensemble_confidence = signal_result.confidence
+
         if signal_result is None:
             return
 
-        # Log signal (paper trading)
+        # Log every signal generated to database (even if not traded)
+        log_signal(
+            symbol=symbol,
+            strategy=signal_result.strategy,
+            side=signal_result.side,
+            confidence=signal_result.confidence,
+            entry=signal_result.entry,
+            sl=signal_result.sl,
+            tp1=signal_result.tp1,
+            tp2=signal_result.tp2,
+            atr=signal_result.atr,
+            leverage=1.0,
+            traded=False,
+            metadata=signal_result.metadata
+        )
+
+        # Log signal (paper trading compatibility)
         if self.trade_logger:
             regime_score = signal_result.metadata.get("align_long", 0) or signal_result.metadata.get("regime_score", 0)
             num_agree = signal_result.metadata.get("num_agree", 1)
@@ -276,9 +358,35 @@ class MultiStrategyBot:
                 total_strategies=total_strategies,
             )
 
-        # ML confidence adjustment
+        # ML confidence adjustment (pass full market context for both models)
         original_conf = signal_result.confidence
         if self.ml:
+            # Compute market context for ML
+            ml_pchange_1h = 0.0
+            ml_pchange_24h = 0.0
+            ml_vol_ratio = 1.0
+            ml_volatility = 0.0
+            try:
+                df_1h = data.get("1h")
+                if df_1h is not None and not df_1h.empty and len(df_1h) > 2:
+                    ml_pchange_1h = (current_price - float(df_1h["close"].iloc[-2])) / float(df_1h["close"].iloc[-2]) * 100
+                    if len(df_1h) > 24:
+                        ml_pchange_24h = (current_price - float(df_1h["close"].iloc[-24])) / float(df_1h["close"].iloc[-24]) * 100
+                    avg_vol = float(df_1h["volume"].tail(20).mean())
+                    if avg_vol > 0:
+                        ml_vol_ratio = float(df_1h["volume"].iloc[-1]) / avg_vol
+                    if len(df_1h) > 14:
+                        prev_c = df_1h["close"].shift(1)
+                        tr = pd.concat([
+                            df_1h["high"] - df_1h["low"],
+                            (df_1h["high"] - prev_c).abs(),
+                            (df_1h["low"] - prev_c).abs(),
+                        ], axis=1).max(axis=1)
+                        atr14 = float(tr.rolling(14, min_periods=1).mean().iloc[-1])
+                        ml_volatility = atr14 / current_price * 100
+            except Exception:
+                pass
+
             adjusted_conf = self.ml.adjust_confidence(
                 original_conf,
                 regime_score=signal_result.metadata.get("align_long", 0) or signal_result.metadata.get("regime_score", 0),
@@ -287,6 +395,11 @@ class MultiStrategyBot:
                 stop_width_ratio=signal_result.stop_width / max(signal_result.atr, 1e-9) if signal_result.atr else 1.5,
                 leverage=1.0,
                 side=signal_result.side,
+                price_change_1h_pct=ml_pchange_1h,
+                price_change_24h_pct=ml_pchange_24h,
+                volume_ratio=ml_vol_ratio,
+                volatility=ml_volatility,
+                num_strategies_agree=signal_result.metadata.get("num_agree", 1),
             )
             signal_result.confidence = adjusted_conf
 
@@ -328,6 +441,34 @@ class MultiStrategyBot:
             confidence=signal_result.confidence,
         )
 
+        # Log trade open to database
+        log_trade(
+            symbol=symbol,
+            action="OPEN",
+            side=side,
+            price=signal_result.entry,
+            qty=qty,
+            leverage=lev_decision.leverage,
+            strategy=signal_result.strategy,
+            metadata={"confidence": signal_result.confidence, "strategies": signal_result.metadata.get("strategies_agree", [])}
+        )
+
+        # Mark signal as traded
+        log_signal(
+            symbol=symbol,
+            strategy=signal_result.strategy,
+            side=signal_result.side,
+            confidence=signal_result.confidence,
+            entry=signal_result.entry,
+            sl=signal_result.sl,
+            tp1=signal_result.tp1,
+            tp2=signal_result.tp2,
+            atr=signal_result.atr,
+            leverage=lev_decision.leverage,
+            traded=True,
+            metadata=signal_result.metadata
+        )
+
         # Send signal alert
         tier = signal_result.metadata.get("tier", "")
         self.alerts.send_signal(signal_result, lev_decision.leverage, tier)
@@ -340,19 +481,48 @@ class MultiStrategyBot:
 
     def _send_heartbeat(self):
         """Send periodic status heartbeat."""
+        fetcher_stats = self.fetcher.get_stats()
+        ml_snap_filled = 0
+        if self.ml:
+            ml_snap_filled = sum(1 for s in self.ml.snapshots if s.future_return_1h is not None)
         status = {
             "equity": self.risk_mgr.equity,
             "open_positions": self.pos_mgr.get_open_count(),
             "daily_pnl": self.risk_mgr.circuit_breaker.daily_pnl,
             "ml_samples": len(self.ml.outcomes) if self.ml else 0,
+            "ml_snapshots": len(self.ml.snapshots) if self.ml else 0,
+            "ml_snap_trained": ml_snap_filled,
+            "ml_direction_model": self.ml.snapshot_weights is not None if self.ml else False,
             "circuit_breaker": self.risk_mgr.circuit_breaker.get_status(),
         }
+
+        # Log equity snapshot to database
+        log_equity(
+            equity=self.risk_mgr.equity,
+            open_positions=self.pos_mgr.get_open_count(),
+            daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,
+            unrealized_pnl=self.pos_mgr.get_total_unrealized_pnl({
+                sym: self.fetcher.latest_price(sym, DEFAULT_SYMBOLS[sym].coingecko_id) or 0
+                for sym in DEFAULT_SYMBOLS.keys()
+            })
+        )
+
+        # Daily strategy weight recompute from trades DB
+        self.weight_mgr.recompute_from_db()
+
         self.alerts.send_heartbeat(status)
+        strat_weights = self.weight_mgr.get_all_weights()
+        weights_str = " ".join(f"{k}={v:.2f}" for k, v in strat_weights.items()) if strat_weights else "none"
         logger.info(
             f"[HEARTBEAT] equity=${status['equity']:,.2f} "
             f"positions={status['open_positions']} "
             f"daily_pnl=${status['daily_pnl']:+,.2f} "
-            f"ml_samples={status['ml_samples']}"
+            f"ml_trades={status['ml_samples']} "
+            f"ml_snaps={status['ml_snapshots']}({status['ml_snap_trained']}filled) "
+            f"direction_model={'YES' if status['ml_direction_model'] else 'no'} "
+            f"strat_weights=[{weights_str}] "
+            f"api={fetcher_stats['total_requests']} "
+            f"cache={fetcher_stats['cache_hits']}"
         )
 
     def _send_market_update(self, trace_id: str = ""):
@@ -369,6 +539,16 @@ class MultiStrategyBot:
 
                 # Get all strategy assessments
                 statuses = self.ensemble.get_all_status(symbol, data)
+
+                # Volume ratio for chop detection
+                vol_str = ""
+                df_1h = data.get("1h")
+                if df_1h is not None and not df_1h.empty and len(df_1h) >= 20:
+                    avg_v = float(df_1h["volume"].tail(20).mean())
+                    cur_v = float(df_1h["volume"].iloc[-1])
+                    if avg_v > 0:
+                        vr = cur_v / avg_v
+                        vol_str = f" vol={vr:.1f}x" + (" [LOW]" if vr < 0.4 else "")
 
                 # Build compact summary
                 assessments = []
@@ -402,7 +582,7 @@ class MultiStrategyBot:
                     pnl = (price - pos.entry) * pos.qty if pos.side == "LONG" else (pos.entry - price) * pos.qty
                     pos_str = f" [OPEN {pos.side} {pos.leverage:.0f}x PnL=${pnl:+,.0f}]"
 
-                lines.append(f"  {symbol} ${price:,.2f}{pos_str}")
+                lines.append(f"  {symbol} ${price:,.2f}{vol_str}{pos_str}")
                 lines.append(f"    {assessment_str}")
 
             except Exception as e:
@@ -415,6 +595,7 @@ class MultiStrategyBot:
 
 def main():
     os.makedirs("ml_data", exist_ok=True)
+    init_db()  # Initialize SQLite database for trade journal
 
     config = TradingConfig()
     bot = MultiStrategyBot(config)

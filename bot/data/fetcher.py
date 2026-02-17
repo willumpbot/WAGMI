@@ -62,6 +62,15 @@ class DataFetcher:
         self._last_request_ts = 0.0
         self._min_request_gap = 1.5  # seconds between CoinGecko requests (rate limit)
 
+        # Exchange fallback chains per symbol (tried in order)
+        self._symbol_exchanges = {
+            "BTC": [("kraken", "BTC/USDT"), ("bybit", "BTC/USDT")],
+            "SOL": [("kraken", "SOL/USDT"), ("bybit", "SOL/USDT")],
+            "HYPE": [("hyperliquid", "HYPE/USDC:USDC")],
+            "FARTCOIN": [("hyperliquid", "FARTCOIN/USDC:USDC"), ("bybit", "FARTCOIN/USDT")],
+            "PEPE": [("kraken", "PEPE/USDT"), ("bybit", "PEPE/USDT")],
+        }
+
     def _rate_limit(self):
         """Enforce minimum gap between API requests."""
         with self._lock:
@@ -233,3 +242,11 @@ class DataFetcher:
     def clear_cache(self):
         """Clear the data cache."""
         self._cache.clear()
+
+    def get_stats(self) -> Dict[str, int]:
+        """Return fetcher statistics."""
+        # Return basic stats (can be enhanced to track actual request counts)
+        return {
+            "total_requests": 0,  # Placeholder - can track if needed
+            "cache_hits": len(self._cache),
+        }
