@@ -6,7 +6,7 @@ Quality gates (applied to ALL modes):
 1. Volume chop filter: skip if volume < 50% of 20-bar avg
 2. Require 2+ strategies agreeing on same direction (weighted_veto)
 3. Minimum 65% confidence after merge
-4. 1h trend alignment: counter-trend signals penalized 10-15%
+4. 1h trend alignment: counter-trend penalized 10-15%, trend-aligned boosted +5%
 
 Modes:
 - "voting": Require min_votes strategies to agree on side before trading.
@@ -105,16 +105,17 @@ class EnsembleStrategy:
             )
             return None
 
-        # 2. Trend alignment check — penalize counter-trend signals
-        trend_penalty = self._trend_alignment_penalty(symbol, data, result.side)
-        if trend_penalty > 0:
-            result.confidence = max(0, result.confidence - trend_penalty)
-            result.metadata["trend_penalty"] = trend_penalty
-            # Re-check floor after penalty
+        # 2. Trend alignment: penalize counter-trend, bonus trend-aligned
+        # Returns positive = penalty, negative = bonus
+        trend_adj = self._trend_alignment_penalty(symbol, data, result.side)
+        if trend_adj != 0:
+            result.confidence = min(100, max(0, result.confidence - trend_adj))
+            result.metadata["trend_adjustment"] = round(trend_adj, 1)
+            # Re-check floor after adjustment
             if result.confidence < 65:
                 logger.info(
                     f"[{symbol}] Signal rejected: confidence {result.confidence:.0f}% "
-                    f"after trend penalty (-{trend_penalty})"
+                    f"after trend adjustment ({trend_adj:+.0f})"
                 )
                 return None
 
@@ -140,13 +141,17 @@ class EnsembleStrategy:
     def _trend_alignment_penalty(
         self, symbol: str, data: Dict[str, pd.DataFrame], side: str
     ) -> float:
-        """Penalize signals that go against the 1h EMA trend.
-        Counter-trend trades get a confidence penalty; aligned trades get 0.
+        """Adjust confidence based on 1h EMA trend alignment.
+        Returns POSITIVE value = penalty (counter-trend), NEGATIVE = bonus (trend-aligned).
+
+        In a bear market: SHORTs get +5 bonus, LONGs get -10 to -15 penalty.
+        Net swing of 15-20 points naturally favors trend-following trades.
 
         Uses EMA20 vs EMA50 on 1h chart as trend proxy:
-        - BUY when EMA20 < EMA50 (downtrend) -> penalty 10-15
-        - SELL when EMA20 > EMA50 (uptrend) -> penalty 10-15
-        - Stronger penalty if slope confirms the opposing trend
+        - BUY into downtrend -> penalty 10-15
+        - SELL into uptrend  -> penalty 10-15
+        - BUY into uptrend   -> bonus -5 (negative penalty = confidence boost)
+        - SELL into downtrend -> bonus -5
         """
         df_1h = data.get("1h")
         if df_1h is None or df_1h.empty or len(df_1h) < 50:
@@ -162,10 +167,11 @@ class EnsembleStrategy:
         # Determine 1h trend direction
         trend_bullish = current_ema20 > current_ema50
 
-        # Check if signal opposes the trend
+        # EMA gap percentage (how strong is the trend?)
+        gap_pct = abs(current_ema20 - current_ema50) / current_ema50 * 100
+
+        # Counter-trend: penalty
         if side == "BUY" and not trend_bullish:
-            # Buying into a downtrend — check how strong
-            gap_pct = (current_ema50 - current_ema20) / current_ema50 * 100
             penalty = 10 + min(gap_pct * 2, 5)  # 10-15 penalty
             logger.info(
                 f"[{symbol}] Counter-trend BUY: EMA20 < EMA50 by {gap_pct:.2f}%, "
@@ -173,8 +179,6 @@ class EnsembleStrategy:
             )
             return penalty
         elif side == "SELL" and trend_bullish:
-            # Selling into an uptrend
-            gap_pct = (current_ema20 - current_ema50) / current_ema50 * 100
             penalty = 10 + min(gap_pct * 2, 5)  # 10-15 penalty
             logger.info(
                 f"[{symbol}] Counter-trend SELL: EMA20 > EMA50 by {gap_pct:.2f}%, "
@@ -182,7 +186,16 @@ class EnsembleStrategy:
             )
             return penalty
 
-        return 0.0  # trend-aligned, no penalty
+        # Trend-aligned: bonus (negative penalty = confidence boost)
+        bonus = -5
+        if side == "SELL" and not trend_bullish:
+            logger.info(f"[{symbol}] Trend-aligned SHORT: +5 confidence bonus")
+            return bonus
+        elif side == "BUY" and trend_bullish:
+            logger.info(f"[{symbol}] Trend-aligned LONG: +5 confidence bonus")
+            return bonus
+
+        return 0.0
 
     def _voting(self, symbol: str, signals: List[Signal]) -> Optional[Signal]:
         """Require min_votes strategies to agree on direction.
