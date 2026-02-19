@@ -1,10 +1,18 @@
 """
-Multi-strategy ensemble / voting system.
+Multi-strategy ensemble / voting system with quality gates.
 Combines signals from all 4 strategies into consensus decisions.
+
+Quality gates (applied to ALL modes):
+1. Volume chop filter: skip if volume < 50% of 20-bar avg
+2. Require 2+ strategies agreeing on same direction (weighted_veto)
+3. Minimum 65% confidence after merge
+4. 1h trend alignment: counter-trend signals penalized 10-15%
 
 Modes:
 - "voting": Require min_votes strategies to agree on side before trading.
   Confidence = average of agreeing strategies.
+- "weighted_veto": Weight-aware voting with graduated veto.
+  Chosen side must have veto_ratio × opposition strength.
 - "weighted": Weight each strategy by historical performance.
   Combined confidence = weighted average.
 - "best": Take the highest-confidence signal.
@@ -75,19 +83,46 @@ class EnsembleStrategy:
             return None
 
         if self.mode == "voting":
-            return self._voting(symbol, signals)
+            result = self._voting(symbol, signals)
         elif self.mode == "weighted_veto":
-            return self._weighted_veto(symbol, signals)
+            result = self._weighted_veto(symbol, signals)
         elif self.mode == "weighted":
-            return self._weighted(symbol, signals)
+            result = self._weighted(symbol, signals)
         elif self.mode == "best":
-            return self._best(symbol, signals)
+            result = self._best(symbol, signals)
         else:
-            return self._voting(symbol, signals)
+            result = self._voting(symbol, signals)
+
+        if result is None:
+            return None
+
+        # ── Post-merge quality gates ──
+
+        # 1. Minimum confidence floor — reject weak consensus signals
+        if result.confidence < 65:
+            logger.info(
+                f"[{symbol}] Signal rejected: confidence {result.confidence:.0f}% < 65% floor"
+            )
+            return None
+
+        # 2. Trend alignment check — penalize counter-trend signals
+        trend_penalty = self._trend_alignment_penalty(symbol, data, result.side)
+        if trend_penalty > 0:
+            result.confidence = max(0, result.confidence - trend_penalty)
+            result.metadata["trend_penalty"] = trend_penalty
+            # Re-check floor after penalty
+            if result.confidence < 65:
+                logger.info(
+                    f"[{symbol}] Signal rejected: confidence {result.confidence:.0f}% "
+                    f"after trend penalty (-{trend_penalty})"
+                )
+                return None
+
+        return result
 
     def _is_low_volume(self, symbol: str, data: Dict[str, pd.DataFrame]) -> bool:
         """Check if current volume is too low for reliable signals.
-        Returns True if volume < 40% of 20-bar average (choppy market)."""
+        Returns True if volume < 50% of 20-bar average (choppy market)."""
         df_1h = data.get("1h")
         if df_1h is None or df_1h.empty or len(df_1h) < 20:
             return False  # can't determine, allow trading
@@ -97,10 +132,57 @@ class EnsembleStrategy:
             return False
         current_vol = float(vol.iloc[-1])
         ratio = current_vol / avg_vol
-        if ratio < 0.4:
+        if ratio < 0.5:
             logger.info(f"[{symbol}] Volume ratio {ratio:.2f} (current={current_vol:.0f}, avg={avg_vol:.0f})")
             return True
         return False
+
+    def _trend_alignment_penalty(
+        self, symbol: str, data: Dict[str, pd.DataFrame], side: str
+    ) -> float:
+        """Penalize signals that go against the 1h EMA trend.
+        Counter-trend trades get a confidence penalty; aligned trades get 0.
+
+        Uses EMA20 vs EMA50 on 1h chart as trend proxy:
+        - BUY when EMA20 < EMA50 (downtrend) -> penalty 10-15
+        - SELL when EMA20 > EMA50 (uptrend) -> penalty 10-15
+        - Stronger penalty if slope confirms the opposing trend
+        """
+        df_1h = data.get("1h")
+        if df_1h is None or df_1h.empty or len(df_1h) < 50:
+            return 0.0  # not enough data to judge
+
+        close = df_1h["close"].astype(float)
+        ema20 = close.ewm(span=20, adjust=False).mean()
+        ema50 = close.ewm(span=50, adjust=False).mean()
+
+        current_ema20 = float(ema20.iloc[-1])
+        current_ema50 = float(ema50.iloc[-1])
+
+        # Determine 1h trend direction
+        trend_bullish = current_ema20 > current_ema50
+
+        # Check if signal opposes the trend
+        if side == "BUY" and not trend_bullish:
+            # Buying into a downtrend — check how strong
+            gap_pct = (current_ema50 - current_ema20) / current_ema50 * 100
+            penalty = 10 + min(gap_pct * 2, 5)  # 10-15 penalty
+            logger.info(
+                f"[{symbol}] Counter-trend BUY: EMA20 < EMA50 by {gap_pct:.2f}%, "
+                f"penalty -{penalty:.0f}"
+            )
+            return penalty
+        elif side == "SELL" and trend_bullish:
+            # Selling into an uptrend
+            gap_pct = (current_ema20 - current_ema50) / current_ema50 * 100
+            penalty = 10 + min(gap_pct * 2, 5)  # 10-15 penalty
+            logger.info(
+                f"[{symbol}] Counter-trend SELL: EMA20 > EMA50 by {gap_pct:.2f}%, "
+                f"penalty -{penalty:.0f}"
+            )
+            return penalty
+
+        return 0.0  # trend-aligned, no penalty
 
     def _voting(self, symbol: str, signals: List[Signal]) -> Optional[Signal]:
         """Require min_votes strategies to agree on direction.
@@ -157,12 +239,18 @@ class EnsembleStrategy:
     def _weighted_veto(self, symbol: str, signals: List[Signal]) -> Optional[Signal]:
         """Weight-aware voting with graduated veto.
         Uses strategy accuracy weights * confidence to determine direction.
-        Requires chosen side to have veto_ratio times the opposition's strength."""
-        if len(signals) < 2:
-            return None  # need at least 2 strategies participating
-
+        Requires chosen side to have veto_ratio times the opposition's strength.
+        Minimum 2 strategies must agree on the same side for a trade."""
         buy_signals = [s for s in signals if s.side == "BUY"]
         sell_signals = [s for s in signals if s.side == "SELL"]
+
+        # Require at least 2 strategies agreeing on the same direction
+        if len(buy_signals) < 2 and len(sell_signals) < 2:
+            if buy_signals:
+                logger.info(f"[{symbol}] Only {len(buy_signals)} BUY signal(s), need 2+ same-side")
+            elif sell_signals:
+                logger.info(f"[{symbol}] Only {len(sell_signals)} SELL signal(s), need 2+ same-side")
+            return None
 
         buy_strength = self._weighted_confidence_sum(buy_signals) if buy_signals else 0
         sell_strength = self._weighted_confidence_sum(sell_signals) if sell_signals else 0
