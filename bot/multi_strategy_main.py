@@ -36,6 +36,22 @@ from execution.trade_logger import TradeLogger
 from ml.learner import SignalLearner, TradeOutcome, MarketSnapshot
 from alerts.router import AlertRouter
 
+
+def _fmt_price(price: float) -> str:
+    """Format price with appropriate precision (handles micro-prices like PEPE)."""
+    if price == 0:
+        return "0"
+    abs_p = abs(price)
+    if abs_p >= 1.0:
+        return f"{price:,.2f}"
+    elif abs_p >= 0.001:
+        return f"{price:.4f}"
+    elif abs_p >= 0.000001:
+        return f"{price:.8f}"
+    else:
+        return f"{price:.12f}"
+
+
 # Setup logging
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
@@ -260,26 +276,29 @@ class MultiStrategyBot:
                 metadata=event.metadata
             )
 
-            # Record outcome for strategy weight tracking
-            if event.action in ("SL", "TP1", "TP2", "TRAILING_STOP") and event.strategy:
-                self.weight_mgr.record_outcome(event.strategy, event.pnl > 0)
+            # Record outcome for strategy weight tracking (only on full close, use total PnL)
+            if event.action in ("SL", "TP2", "TRAILING_STOP") and event.strategy:
+                pos = self.pos_mgr.positions.get(symbol)
+                total_pnl = pos.realized_pnl if pos else event.pnl
+                self.weight_mgr.record_outcome(event.strategy, total_pnl > 0)
 
             # Log trade event (paper trading compatibility)
             if self.trade_logger:
                 hold_time = event.metadata.get("hold_time_s", 0)
                 self.trade_logger.log_trade_event(event, hold_time_s=hold_time)
 
-            # Record outcome for ML
+            # Record outcome for ML (use TOTAL trade PnL, not just final leg)
             if self.ml and event.action in ("SL", "TP2", "TRAILING_STOP"):
                 pos = self.pos_mgr.positions.get(symbol)
+                total_pnl = pos.realized_pnl if pos else event.pnl
                 self.ml.record_outcome(TradeOutcome(
                     symbol=symbol,
                     strategy=event.strategy,
                     side=event.side,
                     confidence=pos.confidence if pos else 0,
                     leverage=event.leverage,
-                    win=event.pnl > 0,
-                    pnl=event.pnl,
+                    win=total_pnl > 0,
+                    pnl=total_pnl,
                     exit_action=event.action,
                     hold_time_s=event.metadata.get("hold_time_s", 0),
                     hour_of_day=datetime.now(timezone.utc).hour,
@@ -420,8 +439,12 @@ class MultiStrategyBot:
         if lev_decision.leverage <= 0:
             return  # Confidence too low
 
-        # Calculate position size
-        qty = self.risk_mgr.calculate_qty(signal_result.entry, signal_result.sl)
+        # Calculate position size (pass leverage + risk_multiplier for correct sizing)
+        qty = self.risk_mgr.calculate_qty(
+            signal_result.entry, signal_result.sl,
+            leverage=lev_decision.leverage,
+            risk_multiplier=lev_decision.risk_multiplier,
+        )
         if qty <= 0:
             return
 
@@ -583,7 +606,7 @@ class MultiStrategyBot:
                     pnl = (price - pos.entry) * pos.qty if pos.side == "LONG" else (pos.entry - price) * pos.qty
                     pos_str = f" [OPEN {pos.side} {pos.leverage:.0f}x PnL=${pnl:+,.0f}]"
 
-                lines.append(f"  {symbol} ${price:,.2f}{vol_str}{pos_str}")
+                lines.append(f"  {symbol} ${_fmt_price(price)}{vol_str}{pos_str}")
                 lines.append(f"    {assessment_str}")
 
             except Exception as e:

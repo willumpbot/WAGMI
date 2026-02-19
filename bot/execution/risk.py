@@ -158,16 +158,20 @@ class RiskManager:
             return False
         return True
 
-    def calculate_qty(self, entry: float, stop_loss: float, leverage: float = 1.0) -> float:
+    def calculate_qty(self, entry: float, stop_loss: float,
+                       leverage: float = 1.0, risk_multiplier: float = 1.0) -> float:
         """Calculate position quantity based on risk per trade.
 
         With leverage, PnL = price_move * qty * leverage, so to keep
         dollar risk constant: qty = risk_usd / (stop_width * leverage).
+
+        risk_multiplier scales the base risk allocation for high-conviction
+        setups (e.g. 2.0x = double the normal risk budget).
         """
         stop_width = abs(entry - stop_loss)
         if stop_width <= 0:
             return 0.0
-        risk_usd = self.equity * self.risk_per_trade
+        risk_usd = self.equity * self.risk_per_trade * max(risk_multiplier, 0.1)
         effective_leverage = max(leverage, 1.0)
         return risk_usd / (stop_width * effective_leverage)
 
