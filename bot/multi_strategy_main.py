@@ -447,10 +447,11 @@ class MultiStrategyBot:
             signal_result.confidence = adjusted_conf
 
         # R:R sanity filter: reject trades with tiny reward relative to risk
+        # At 1.5R TP1 targets, R:R1 should naturally be ~1.5; reject anything under 0.5
         rr1 = signal_result.risk_reward_tp1
-        if rr1 < 0.3:
+        if rr1 < 0.5:
             logger.info(
-                f"[{trace_id}][{symbol}] Signal rejected: R:R1={rr1:.2f} < 0.3 "
+                f"[{trace_id}][{symbol}] Signal rejected: R:R1={rr1:.2f} < 0.5 "
                 f"(stop too wide or TP1 too close)"
             )
             return
@@ -471,10 +472,11 @@ class MultiStrategyBot:
         if lev_decision.leverage <= 0:
             return  # Confidence too low
 
-        # Extra R:R gate for high leverage: need R:R1 >= 0.5 above 8x
-        if lev_decision.leverage > 8.0 and rr1 < 0.5:
+        # Extra R:R gate for high leverage: need R:R1 >= 1.0 above 8x
+        # At high leverage, fees eat more of the profit margin
+        if lev_decision.leverage > 8.0 and rr1 < 1.0:
             logger.info(
-                f"[{trace_id}][{symbol}] Signal rejected: R:R1={rr1:.2f} < 0.5 "
+                f"[{trace_id}][{symbol}] Signal rejected: R:R1={rr1:.2f} < 1.0 "
                 f"at {lev_decision.leverage:.1f}x leverage"
             )
             return

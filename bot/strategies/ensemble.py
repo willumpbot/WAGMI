@@ -425,15 +425,16 @@ class EnsembleStrategy:
         consensus_bonus = (len(signals) - 1) * 3
         combined_conf = min(100, weighted_conf + consensus_bonus)
 
-        # Use the most conservative stop (widest) and most conservative TP
+        # Widest SL (most conservative), average TP1 (balanced), widest TP2 (aggressive)
+        # Using average TP1 prevents zone-based strategies from pulling targets too close
         if side == "BUY":
             best_sl = min(s.sl for s in signals)
-            best_tp1 = min(s.tp1 for s in signals)
+            best_tp1 = sum(s.tp1 for s in signals) / len(signals)
             best_tp2 = max(s.tp2 for s in signals)
             entry = sum(s.entry for s in signals) / len(signals)
         else:
             best_sl = max(s.sl for s in signals)
-            best_tp1 = max(s.tp1 for s in signals)
+            best_tp1 = sum(s.tp1 for s in signals) / len(signals)
             best_tp2 = min(s.tp2 for s in signals)
             entry = sum(s.entry for s in signals) / len(signals)
 
