@@ -6,7 +6,7 @@ Quality gates (applied to ALL modes):
 1. Volume chop filter: skip if volume < 50% of 20-bar avg
 2. Require 2+ strategies agreeing on same direction (weighted_veto)
 3. Minimum 65% confidence after merge
-4. 1h trend alignment: counter-trend penalized 10-15%, trend-aligned boosted +5%
+4. Multi-TF trend consensus (5m+1h+6h+daily): aligned +3..+8, counter -8..-15
 
 Modes:
 - "voting": Require min_votes strategies to agree on side before trading.
@@ -141,61 +141,134 @@ class EnsembleStrategy:
     def _trend_alignment_penalty(
         self, symbol: str, data: Dict[str, pd.DataFrame], side: str
     ) -> float:
-        """Adjust confidence based on 1h EMA trend alignment.
-        Returns POSITIVE value = penalty (counter-trend), NEGATIVE = bonus (trend-aligned).
+        """Multi-timeframe trend consensus adjustment.
+        Reads 5m + 1h + 6h + daily data to build a unified trend picture.
+        Returns POSITIVE = penalty (counter-trend), NEGATIVE = bonus (trend-aligned).
 
-        In a bear market: SHORTs get +5 bonus, LONGs get -10 to -15 penalty.
-        Net swing of 15-20 points naturally favors trend-following trades.
+        Each timeframe contributes a score from -1 (bearish) to +1 (bullish):
+          5m:    EMA20 vs EMA50
+          1h:    EMA20 vs EMA50 + MACD direction
+          6h:    EMA20 vs EMA50 + price vs EMA50 (higher weight)
+          daily: Price vs SMA50 + RSI position
 
-        Uses EMA20 vs EMA50 on 1h chart as trend proxy:
-        - BUY into downtrend -> penalty 10-15
-        - SELL into uptrend  -> penalty 10-15
-        - BUY into uptrend   -> bonus -5 (negative penalty = confidence boost)
-        - SELL into downtrend -> bonus -5
+        Total score: -4 (strong bear) to +4 (strong bull)
+
+        Adjustments:
+          Strong trend (±3..4): aligned +8 bonus / counter -15 penalty
+          Moderate trend (±1..2): aligned +3 / counter -8
+          Neutral (0): no adjustment
         """
+        scores = []
+        details = []
+
+        # ── 5m: fast momentum ──
+        df_5m = data.get("5m")
+        if df_5m is not None and not df_5m.empty and len(df_5m) >= 50:
+            c = df_5m["close"].astype(float)
+            e20 = float(c.ewm(span=20, adjust=False).mean().iloc[-1])
+            e50 = float(c.ewm(span=50, adjust=False).mean().iloc[-1])
+            s = 1 if e20 > e50 else -1
+            scores.append(s)
+            details.append(f"5m={'B' if s > 0 else 'S'}")
+
+        # ── 1h: core trend + MACD momentum ──
         df_1h = data.get("1h")
-        if df_1h is None or df_1h.empty or len(df_1h) < 50:
-            return 0.0  # not enough data to judge
+        if df_1h is not None and not df_1h.empty and len(df_1h) >= 50:
+            c = df_1h["close"].astype(float)
+            e20 = c.ewm(span=20, adjust=False).mean()
+            e50 = c.ewm(span=50, adjust=False).mean()
+            ema_bull = float(e20.iloc[-1]) > float(e50.iloc[-1])
 
-        close = df_1h["close"].astype(float)
-        ema20 = close.ewm(span=20, adjust=False).mean()
-        ema50 = close.ewm(span=50, adjust=False).mean()
+            # MACD direction (12/26/9)
+            e12 = c.ewm(span=12, adjust=False).mean()
+            e26 = c.ewm(span=26, adjust=False).mean()
+            macd_line = e12 - e26
+            macd_signal = macd_line.ewm(span=9, adjust=False).mean()
+            macd_hist = float((macd_line - macd_signal).iloc[-1])
+            macd_bull = macd_hist > 0
 
-        current_ema20 = float(ema20.iloc[-1])
-        current_ema50 = float(ema50.iloc[-1])
+            # Both agree = strong signal, otherwise neutral
+            if ema_bull and macd_bull:
+                s = 1
+            elif not ema_bull and not macd_bull:
+                s = -1
+            else:
+                s = 0  # conflicting
+            scores.append(s)
+            details.append(f"1h={'B' if s > 0 else 'S' if s < 0 else 'N'}")
 
-        # Determine 1h trend direction
-        trend_bullish = current_ema20 > current_ema50
+        # ── 6h: higher timeframe structure (most important) ──
+        df_6h = data.get("6h")
+        if df_6h is not None and not df_6h.empty and len(df_6h) >= 20:
+            c = df_6h["close"].astype(float)
+            e20 = c.ewm(span=20, adjust=False).mean()
+            e50 = c.ewm(span=50, min_periods=10, adjust=False).mean()
+            price = float(c.iloc[-1])
+            ema50_val = float(e50.iloc[-1])
+            ema_bull = float(e20.iloc[-1]) > ema50_val
+            price_above = price > ema50_val
+            s = 1 if (ema_bull and price_above) else (-1 if (not ema_bull and not price_above) else 0)
+            scores.append(s)
+            details.append(f"6h={'B' if s > 0 else 'S' if s < 0 else 'N'}")
 
-        # EMA gap percentage (how strong is the trend?)
-        gap_pct = abs(current_ema20 - current_ema50) / current_ema50 * 100
+        # ── Daily: macro trend + RSI ──
+        df_d = data.get("daily")
+        if df_d is not None and not df_d.empty and len(df_d) >= 50:
+            c = df_d["close"].astype(float)
+            sma50 = float(c.rolling(50).mean().iloc[-1])
+            price = float(c.iloc[-1])
 
-        # Counter-trend: penalty
-        if side == "BUY" and not trend_bullish:
-            penalty = 10 + min(gap_pct * 2, 5)  # 10-15 penalty
-            logger.info(
-                f"[{symbol}] Counter-trend BUY: EMA20 < EMA50 by {gap_pct:.2f}%, "
-                f"penalty -{penalty:.0f}"
-            )
-            return penalty
-        elif side == "SELL" and trend_bullish:
-            penalty = 10 + min(gap_pct * 2, 5)  # 10-15 penalty
-            logger.info(
-                f"[{symbol}] Counter-trend SELL: EMA20 > EMA50 by {gap_pct:.2f}%, "
-                f"penalty -{penalty:.0f}"
-            )
-            return penalty
+            # RSI 14
+            delta = c.diff()
+            gain = delta.clip(lower=0).rolling(14).mean()
+            loss = (-delta.clip(upper=0)).rolling(14).mean()
+            rs = gain / loss.replace(0, 1e-9)
+            rsi = float((100 - 100 / (1 + rs)).iloc[-1])
 
-        # Trend-aligned: bonus (negative penalty = confidence boost)
-        bonus = -5
-        if side == "SELL" and not trend_bullish:
-            logger.info(f"[{symbol}] Trend-aligned SHORT: +5 confidence bonus")
-            return bonus
-        elif side == "BUY" and trend_bullish:
-            logger.info(f"[{symbol}] Trend-aligned LONG: +5 confidence bonus")
-            return bonus
+            price_bull = price > sma50
+            rsi_bull = rsi > 50
+            if price_bull and rsi_bull:
+                s = 1
+            elif not price_bull and not rsi_bull:
+                s = -1
+            else:
+                s = 0
+            scores.append(s)
+            details.append(f"D={'B' if s > 0 else 'S' if s < 0 else 'N'}")
 
-        return 0.0
+        if not scores:
+            return 0.0
+
+        total = sum(scores)
+        n = len(scores)
+        detail_str = " ".join(details)
+
+        # Determine adjustment based on trend score vs signal direction
+        is_buy = side == "BUY"
+
+        if abs(total) >= 3:
+            # Strong trend consensus
+            trend_bullish = total > 0
+            if is_buy == trend_bullish:
+                adj = -8  # strong alignment bonus
+                logger.info(f"[{symbol}] Strong trend aligned {side}: score={total}/{n} [{detail_str}] +8 bonus")
+            else:
+                adj = 15  # strong counter-trend penalty
+                logger.info(f"[{symbol}] Strong counter-trend {side}: score={total}/{n} [{detail_str}] -15 penalty")
+        elif abs(total) >= 1:
+            # Moderate trend
+            trend_bullish = total > 0
+            if is_buy == trend_bullish:
+                adj = -3  # mild alignment bonus
+                logger.info(f"[{symbol}] Trend aligned {side}: score={total}/{n} [{detail_str}] +3 bonus")
+            else:
+                adj = 8  # moderate counter-trend penalty
+                logger.info(f"[{symbol}] Counter-trend {side}: score={total}/{n} [{detail_str}] -8 penalty")
+        else:
+            adj = 0  # neutral
+            logger.info(f"[{symbol}] Neutral trend: score={total}/{n} [{detail_str}]")
+
+        return adj
 
     def _voting(self, symbol: str, signals: List[Signal]) -> Optional[Signal]:
         """Require min_votes strategies to agree on direction.
