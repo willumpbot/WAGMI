@@ -4,7 +4,7 @@ CCXT-primary multi-exchange data fetcher with CoinGecko fallback.
 Exchange priority per symbol (tried in order):
   BTC:      Kraken -> Bybit -> CoinGecko
   SOL:      Kraken -> Bybit -> CoinGecko
-  PEPE:     Kraken -> Bybit -> CoinGecko
+  PEPE:     Hyperliquid -> Kraken -> Bybit -> CoinGecko
   HYPE:     Hyperliquid -> CoinGecko
   FARTCOIN: Hyperliquid -> Bybit -> CoinGecko
 
@@ -84,7 +84,7 @@ class DataFetcher:
             "SOL": [("kraken", "SOL/USDT"), ("bybit", "SOL/USDT")],
             "HYPE": [("hyperliquid", "HYPE/USDC:USDC")],
             "FARTCOIN": [("hyperliquid", "FARTCOIN/USDC:USDC"), ("bybit", "FARTCOIN/USDT")],
-            "PEPE": [("kraken", "PEPE/USDT"), ("bybit", "PEPE/USDT")],
+            "PEPE": [("hyperliquid", "PEPE/USDC:USDC"), ("kraken", "PEPE/USDT"), ("bybit", "PEPE/USDT")],
         }
 
         # CCXT exchange instances
