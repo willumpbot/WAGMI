@@ -440,6 +440,11 @@ class EnsembleStrategy:
 
         atr = max((s.atr for s in signals), default=0)
 
+        # Preserve per-signal ATR and SL for profile classification
+        per_signal_atr = {s.strategy: s.atr for s in signals}
+        per_signal_sl = {s.strategy: s.sl for s in signals}
+        per_signal_tp1 = {s.strategy: s.tp1 for s in signals}
+
         return Signal(
             strategy="ensemble",
             symbol=symbol,
@@ -456,6 +461,9 @@ class EnsembleStrategy:
                 "total_strategies": len(self.strategies),
                 "individual_confidences": {s.strategy: s.confidence for s in signals},
                 "strategy_weights": {s.strategy: round(self._get_strategy_weight(s.strategy), 3) for s in signals},
+                "per_signal_atr": per_signal_atr,
+                "per_signal_sl": per_signal_sl,
+                "per_signal_tp1": per_signal_tp1,
                 "mode": self.mode,
             },
         )

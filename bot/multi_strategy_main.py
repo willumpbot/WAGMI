@@ -40,20 +40,22 @@ from execution.trade_logger import TradeLogger
 from ml.learner import SignalLearner, TradeOutcome, MarketSnapshot
 from alerts.router import AlertRouter
 from alerts.telegram_bot import TelegramCommandBot
+from execution.trade_profile import classify_trade, apply_profile_to_signal
 
 
 def get_tp1_close_pct(confidence: float) -> float:
-    """Confidence-based TP1 close percentage.
-    Lower confidence = lock in more profit. Higher = let more ride.
-    Conservative by design: default to closing more, not less."""
+    """Legacy confidence-based TP1 close percentage.
+    Now superseded by TradeProfile for live trading, but kept for
+    backward compat (backtest engine, tests).
+    Lower confidence = lock in more profit. Higher = let more ride."""
     if confidence < 70:
-        return 1.00   # very low confidence: close 100% at TP1 (full take-profit)
+        return 1.00
     elif confidence < 85:
-        return 0.70   # moderate: close 70% at TP1, 30% rides
+        return 0.70
     elif confidence < 92:
-        return 0.50   # high: close 50%, 50% rides
+        return 0.50
     else:
-        return 0.30   # very high: close 30%, 70% rides (strong conviction)
+        return 0.30
 
 
 def _fmt_price(price: float) -> str:
@@ -353,6 +355,12 @@ class MultiStrategyBot:
                 self._symbol_cooldown[symbol] = time.time()
                 pos = self.pos_mgr.positions.get(symbol)
                 if pos:
+                    # Extract profile data for logging
+                    _et = pos.trade_profile.entry_type if pos.trade_profile else ""
+                    _pd = pos.trade_profile.primary_driver if pos.trade_profile else ""
+                    _rg = pos.trade_profile.regime if pos.trade_profile else ""
+                    _vb = pos.trade_profile.volatility_band if pos.trade_profile else ""
+
                     # Record to data/analysis/trade_outcomes.csv
                     record_trade_outcome(
                         symbol=symbol,
@@ -370,6 +378,10 @@ class MultiStrategyBot:
                         confidence=pos.confidence,
                         strategy=pos.strategy,
                         entry_reasons=pos.entry_reasons,
+                        entry_type=_et,
+                        primary_driver=_pd,
+                        regime=_rg,
+                        volatility_band=_vb,
                     )
                     # Record to data/trades.csv (enhanced)
                     log_closed_trade(
@@ -388,6 +400,10 @@ class MultiStrategyBot:
                         ml_samples_at_entry=0,
                         ml_samples_at_exit=len(self.ml.outcomes) if self.ml else 0,
                         entry_reasons=pos.entry_reasons,
+                        entry_type=_et,
+                        primary_driver=_pd,
+                        regime=_rg,
+                        volatility_band=_vb,
                     )
 
             # Send alert
@@ -588,8 +604,41 @@ class MultiStrategyBot:
         if qty <= 0:
             return
 
-        # Dynamic TP1 close % from confidence-based mapping
-        tp1_pct = get_tp1_close_pct(signal_result.confidence)
+        # ── Trade Classification Layer ──
+        # Classify trade → TradeProfile (drives exits, TP1%, trailing)
+        # Add volume_ratio to metadata for regime detection
+        try:
+            df_1h_vol = data.get("1h")
+            if df_1h_vol is not None and not df_1h_vol.empty and len(df_1h_vol) >= 20:
+                avg_v = float(df_1h_vol["volume"].tail(20).mean())
+                cur_v = float(df_1h_vol["volume"].iloc[-1])
+                if avg_v > 0:
+                    signal_result.metadata["volume_ratio"] = cur_v / avg_v
+        except Exception:
+            pass
+
+        trade_prof = classify_trade(
+            signal_metadata=signal_result.metadata,
+            confidence=signal_result.confidence,
+            atr=signal_result.atr,
+            entry=signal_result.entry,
+            side=signal_result.side,
+        )
+
+        # Apply profile-recommended TP1/SL/TP2 (overrides strategy levels)
+        adjusted = apply_profile_to_signal(
+            trade_prof,
+            entry=signal_result.entry,
+            sl=signal_result.sl,
+            tp1=signal_result.tp1,
+            tp2=signal_result.tp2,
+            atr=signal_result.atr,
+            side=signal_result.side,
+        )
+        adj_sl = adjusted["sl"]
+        adj_tp1 = adjusted["tp1"]
+        adj_tp2 = adjusted["tp2"]
+        tp1_pct = adjusted["tp1_close_pct"]
 
         # Build entry reasons: WHY this trade was entered (for EV analysis)
         entry_reasons = {
@@ -601,18 +650,22 @@ class MultiStrategyBot:
             "mode": signal_result.metadata.get("mode", ""),
             "rr1": round(rr1, 2),
             "ml_adjusted": original_conf != signal_result.confidence,
+            "entry_type": trade_prof.entry_type,
+            "primary_driver": trade_prof.primary_driver,
+            "regime": trade_prof.regime,
+            "volatility_band": trade_prof.volatility_band,
         }
 
-        # Open position
+        # Open position with profile-adjusted levels
         side = "LONG" if signal_result.side == "BUY" else "SHORT"
         self.pos_mgr.open_position(
             symbol=symbol,
             side=side,
             entry=signal_result.entry,
             qty=qty,
-            sl=signal_result.sl,
-            tp1=signal_result.tp1,
-            tp2=signal_result.tp2,
+            sl=adj_sl,
+            tp1=adj_tp1,
+            tp2=adj_tp2,
             atr=signal_result.atr,
             leverage=lev_decision.leverage,
             mode=lev_decision.mode,
@@ -620,6 +673,7 @@ class MultiStrategyBot:
             confidence=signal_result.confidence,
             tp1_close_pct=tp1_pct,
             entry_reasons=entry_reasons,
+            trade_profile=trade_prof,
         )
 
         # Log trade open to database
@@ -655,9 +709,13 @@ class MultiStrategyBot:
         self.alerts.send_signal(signal_result, lev_decision.leverage, tier)
 
         logger.info(
-            f"[{trace_id}][{symbol}] OPENED {side} | Conf: {original_conf:.0f}%->{signal_result.confidence:.0f}% | "
+            f"[{trace_id}][{symbol}] OPENED {side} | "
+            f"Type: {trade_prof.entry_type} | "
+            f"Conf: {original_conf:.0f}%->{signal_result.confidence:.0f}% | "
             f"Lev: {lev_decision.leverage:.1f}x ({lev_decision.reason}) | "
-            f"TP1close: {tp1_pct:.0%} | "
+            f"TP1close: {tp1_pct:.0%} | Trail: {trade_prof.exit_params.trailing_style} | "
+            f"Regime: {trade_prof.regime} | "
+            f"Driver: {trade_prof.primary_driver} | "
             f"Strategies: {signal_result.metadata.get('strategies_agree', [signal_result.strategy])}"
         )
 

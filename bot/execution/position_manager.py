@@ -5,13 +5,19 @@ State machine: IDLE → OPEN → TP1_HIT → TRAILING → CLOSED
                         ↓                              ↑
                         └── CLOSED (SL, EARLY_EXIT) ───┘
 
+Exit behavior is driven by TradeProfile (entry_type + regime + volatility):
+- SCALP:  tight SL/TP, high TP1%, tight trailing, very short hold
+- MEDIUM: balanced SL/TP, medium TP1%, medium trailing
+- TREND:  wide SL/TP, low TP1%, loose trailing, let winners run
+- REGIME: conservative defaults
+
 Flow:
-1. Open position (IDLE → OPEN)
+1. Open position (IDLE → OPEN) with TradeProfile attached
 2. Monitor price each tick
 3. Early exit check (OPEN → CLOSED if momentum reverses hard)
-4. If TP1 hit: partial close, SL → breakeven (OPEN → TP1_HIT → TRAILING)
-5. Trailing stop tightens progressively as price approaches TP2
-6. Profit lock floor: once past 30% of entry→TP2, guarantee minimum gains
+4. If TP1 hit: partial close (% from profile), SL → breakeven
+5. Trailing stop tightens per profile curve (tight/medium/loose)
+6. Profit lock floor per profile (varies by entry_type)
 7. If TP2 hit or trailing stop triggered (TRAILING → CLOSED)
 """
 
@@ -24,6 +30,7 @@ from execution.position_state import (
     IDLE, OPEN, TP1_HIT, TRAILING, CLOSED, transition,
 )
 from execution.precision import round_price, round_qty
+from execution.trade_profile import TradeProfile, ExitParams, MEDIUM, _BASE_PROFILES
 
 logger = logging.getLogger("bot.execution.positions")
 
@@ -54,6 +61,9 @@ class Position:
 
     # Entry reasons: WHY we opened this position (for EV analysis)
     entry_reasons: Dict[str, Any] = field(default_factory=dict)
+
+    # Trade profile: drives exit behavior (TP1%, trailing, floors)
+    trade_profile: Optional[TradeProfile] = None
 
     # Trailing stop
     trailing_distance: float = 0.0  # absolute distance from peak
@@ -159,6 +169,7 @@ class PositionManager:
         confidence: float = 0.0,
         tp1_close_pct: float = 0.7,
         entry_reasons: Optional[Dict[str, Any]] = None,
+        trade_profile: Optional[TradeProfile] = None,
     ) -> Optional[Position]:
         """Open a new position. Enforces one position per symbol."""
         # Don't open if already have a position in this symbol
@@ -177,7 +188,17 @@ class PositionManager:
             logger.warning(f"[{symbol}] Qty rounds to 0, skipping")
             return None
 
-        trailing_distance = atr * self.trailing_atr_mult if atr > 0 else abs(entry - sl)
+        # Profile-driven trailing distance: SCALP=tight, TREND=loose
+        if trade_profile:
+            # Use profile's trailing style to scale the ATR multiplier
+            style_mult = {
+                "tight": 0.8, "medium": 1.0, "loose": 1.5, "none": 1.0,
+            }.get(trade_profile.exit_params.trailing_style, 1.0)
+            trailing_distance = atr * self.trailing_atr_mult * style_mult if atr > 0 else abs(entry - sl)
+            # Profile overrides tp1_close_pct
+            tp1_close_pct = trade_profile.exit_params.tp1_close_pct
+        else:
+            trailing_distance = atr * self.trailing_atr_mult if atr > 0 else abs(entry - sl)
 
         pos = Position(
             symbol=symbol,
@@ -195,6 +216,7 @@ class PositionManager:
             tp1_close_pct=tp1_close_pct,
             trailing_distance=trailing_distance,
             entry_reasons=entry_reasons or {},
+            trade_profile=trade_profile,
         )
 
         # State: IDLE → OPEN
@@ -217,10 +239,12 @@ class PositionManager:
         )
         self.trade_log.append(event)
 
+        entry_type = trade_profile.entry_type if trade_profile else "UNKNOWN"
         logger.info(
             f"[{symbol}] OPEN {side} @ {entry} qty={qty} "
             f"SL={sl} TP1={tp1} TP2={tp2} "
-            f"leverage={leverage}x tp1_close={tp1_close_pct:.0%}"
+            f"leverage={leverage}x tp1_close={tp1_close_pct:.0%} "
+            f"type={entry_type}"
         )
 
         return pos
@@ -390,7 +414,10 @@ class PositionManager:
     def _update_trailing_stop(self, pos: Position, current_price: float):
         """
         Progressive trailing stop with profit lock floor.
-        Tightens from 67% → 33% of original distance as price → TP2.
+        Tighten curve and floor are driven by TradeProfile when available:
+        - SCALP:  fast tightening (0.80→0.50), early floor (20%)
+        - MEDIUM: standard (0.67→0.33), floor at 30%
+        - TREND:  slow tightening (0.50→0.25), late floor (35%)
         """
         is_long = pos.side == "LONG"
 
@@ -410,7 +437,12 @@ class PositionManager:
 
         progress = min(peak_move / total_range, 1.0) if total_range > 0 else 0.0
 
-        tighten_factor = max(0.67 - progress * 0.34, 0.33)
+        # Profile-driven tighten curve (falls back to MEDIUM defaults)
+        ep = pos.trade_profile.exit_params if pos.trade_profile else _BASE_PROFILES[MEDIUM]
+        tighten_start = ep.trailing_tighten_start
+        tighten_end = ep.trailing_tighten_end
+        tighten_range = tighten_start - tighten_end
+        tighten_factor = max(tighten_start - progress * tighten_range, tighten_end)
         effective_distance = pos.trailing_distance * tighten_factor
 
         if is_long:
@@ -418,10 +450,17 @@ class PositionManager:
         else:
             trailing_sl = pos.peak_price + effective_distance
 
-        # Profit lock floor: guarantee minimum gain past 30% progress
+        # Profile-driven profit lock floor
+        floor_start = ep.floor_progress_start
+        floor_lock_start = ep.floor_lock_start
+        floor_lock_max = ep.floor_lock_max
+
         floor_sl = None
-        if progress > 0.3 and peak_move > 0:
-            lock_pct = min(0.3 + (progress - 0.3) * 0.5, 0.65)
+        if progress > floor_start and peak_move > 0:
+            lock_pct = min(
+                floor_lock_start + (progress - floor_start) * 0.5,
+                floor_lock_max,
+            )
             if is_long:
                 floor_sl = pos.entry + peak_move * lock_pct
             else:
@@ -499,6 +538,8 @@ class PositionManager:
             f"Outcome={pos.outcome} | Path={pos.state_path_str}"
         )
 
+        profile_data = pos.trade_profile.to_dict() if pos.trade_profile else {}
+
         return TradeEvent(
             symbol=pos.symbol,
             action=action,
@@ -517,6 +558,11 @@ class PositionManager:
                 "outcome": pos.outcome,
                 "state_path": pos.state_path_str,
                 "entry_reasons": pos.entry_reasons,
+                "entry_type": profile_data.get("entry_type", "UNKNOWN"),
+                "primary_driver": profile_data.get("primary_driver", ""),
+                "regime": profile_data.get("regime", ""),
+                "volatility_band": profile_data.get("volatility_band", ""),
+                "trade_profile": profile_data,
             },
         )
 

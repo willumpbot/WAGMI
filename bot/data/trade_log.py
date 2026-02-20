@@ -23,6 +23,7 @@ _HEADERS = [
     "ml_conf_at_entry", "ml_conf_at_exit",
     "state_path", "outcome", "leverage", "confidence",
     "strategy", "entry_reasons",
+    "entry_type", "primary_driver", "regime", "volatility_band",
 ]
 
 
@@ -51,6 +52,10 @@ def log_closed_trade(
     ml_conf_at_entry: float = 0.0,
     ml_conf_at_exit: float = 0.0,
     entry_reasons: Optional[Dict[str, Any]] = None,
+    entry_type: str = "",
+    primary_driver: str = "",
+    regime: str = "",
+    volatility_band: str = "",
 ):
     """Log a fully closed trade to CSV."""
     import json
@@ -71,6 +76,7 @@ def log_closed_trade(
         f"{ml_conf_at_entry:.4f}", f"{ml_conf_at_exit:.4f}",
         state_path, outcome, f"{leverage:.1f}", f"{confidence:.1f}",
         strategy, json.dumps(entry_reasons or {}),
+        entry_type, primary_driver, regime, volatility_band,
     ]
 
     try:
