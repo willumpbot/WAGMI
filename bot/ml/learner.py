@@ -109,9 +109,11 @@ class SignalLearner:
         self.bias: float = 0.0
         self._samples_since_train = 0
 
-        # Snapshot-based direction model (learns from market observations, not trades)
-        self.snapshot_weights: Optional[np.ndarray] = None
+        # Snapshot-based direction models (learn from market observations, not trades)
+        self.snapshot_weights: Optional[np.ndarray] = None  # 1h model
         self.snapshot_bias: float = 0.0
+        self.fast_weights: Optional[np.ndarray] = None      # 5m model (quick feedback)
+        self.fast_bias: float = 0.0
         self._snapshots_since_train = 0
 
         # Per-strategy rolling performance
@@ -136,6 +138,13 @@ class SignalLearner:
                 return loaded
             except Exception as e:
                 logger.warning(f"Failed to load outcomes: {e}")
+                # Auto-recover: rename corrupted file so we start fresh
+                corrupt = self.outcomes_path.with_suffix(".json.corrupt")
+                try:
+                    self.outcomes_path.rename(corrupt)
+                    logger.warning(f"Renamed corrupted outcomes to {corrupt}")
+                except Exception:
+                    pass
         return []
 
     def _save_outcomes(self):
@@ -154,10 +163,19 @@ class SignalLearner:
                 for d in data[-2000:]:
                     # Handle old snapshots missing new fields
                     d.setdefault("price_change_24h_pct", 0.0)
+                    d.setdefault("regime_score", 0.0)
+                    d.setdefault("ensemble_direction", "")
+                    d.setdefault("ensemble_confidence", 0.0)
                     loaded.append(MarketSnapshot(**d))
                 return loaded
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to load snapshots: {e}")
+                corrupt = self.snapshots_path.with_suffix(".json.corrupt")
+                try:
+                    self.snapshots_path.rename(corrupt)
+                    logger.warning(f"Renamed corrupted snapshots to {corrupt}")
+                except Exception:
+                    pass
         return []
 
     def _save_snapshots(self):
@@ -188,9 +206,15 @@ class SignalLearner:
                     self.snapshot_weights = np.array(sm["weights"])
                     self.snapshot_bias = sm["bias"]
 
+                if "fast_model" in data:
+                    fm = data["fast_model"]
+                    self.fast_weights = np.array(fm["weights"])
+                    self.fast_bias = fm["bias"]
+
                 n_trade = len(self.weights) if self.weights is not None else 0
                 n_snap = len(self.snapshot_weights) if self.snapshot_weights is not None else 0
-                logger.info(f"Loaded ML models: trade={n_trade}f, snapshot={n_snap}f")
+                n_fast = len(self.fast_weights) if self.fast_weights is not None else 0
+                logger.info(f"Loaded ML models: trade={n_trade}f, snapshot={n_snap}f, fast={n_fast}f")
             except Exception as e:
                 logger.warning(f"Failed to load ML model: {e}")
 
@@ -207,6 +231,12 @@ class SignalLearner:
                 data["snapshot_model"] = {
                     "weights": self.snapshot_weights.tolist(),
                     "bias": self.snapshot_bias,
+                    "feature_names": self._snapshot_feature_names(),
+                }
+            if self.fast_weights is not None:
+                data["fast_model"] = {
+                    "weights": self.fast_weights.tolist(),
+                    "bias": self.fast_bias,
                     "feature_names": self._snapshot_feature_names(),
                 }
             data["num_trade_samples"] = len(self.outcomes)
@@ -272,6 +302,7 @@ class SignalLearner:
         return [
             "price_change_1h", "price_change_24h", "volume_ratio",
             "volatility", "hour_sin", "hour_cos",
+            "regime_score", "ensemble_buy", "ensemble_confidence",
         ]
 
     def _featurize_snapshot(self, snap: MarketSnapshot) -> np.ndarray:
@@ -290,6 +321,9 @@ class SignalLearner:
             np.clip(snap.volatility / 5.0, 0, 1),
             np.sin(hour_rad),
             np.cos(hour_rad),
+            snap.regime_score / 4.0,  # regime: -2 to +2 → -0.5 to +0.5
+            1.0 if snap.ensemble_direction == "BUY" else (-1.0 if snap.ensemble_direction == "SELL" else 0.0),
+            snap.ensemble_confidence / 100.0,
         ], dtype=np.float64)
 
     # ─── Recording ───────────────────────────────────────────────────
@@ -342,8 +376,16 @@ class SignalLearner:
         if len(self.snapshots) % 50 == 0:
             self._save_snapshots()
 
-        # Auto-train snapshot model when enough filled observations exist
+        # Auto-train models when enough filled observations exist
         self._snapshots_since_train += 1
+
+        # Fast 5m model: trains early, updates often (every 20 snapshots = ~10 min)
+        if self._snapshots_since_train % 20 == 0:
+            filled_5m = sum(1 for s in self.snapshots if s.future_return_5m is not None)
+            if filled_5m >= 20:
+                self._train_fast_model()
+
+        # 1h direction model: trains less frequently (every 100 snapshots)
         if self._snapshots_since_train >= 100:
             filled = sum(1 for s in self.snapshots if s.future_return_1h is not None)
             if filled >= 30:
@@ -356,8 +398,9 @@ class SignalLearner:
         for snap in reversed(self.snapshots[-200:]):
             if snap.symbol != symbol:
                 continue
-            if snap.future_return_5m is not None:
-                break  # already filled
+            # Only break when ALL return windows are filled
+            if snap.future_return_1h is not None:
+                break  # fully filled, everything older is too
 
             snap_time = datetime.fromisoformat(snap.timestamp).timestamp()
             age_min = (now - snap_time) / 60.0
@@ -496,12 +539,60 @@ class SignalLearner:
             f"Top: {top}"
         )
 
+    def _train_fast_model(self):
+        """Train a fast 5-minute direction model for quick feedback.
+        Starts learning ~10 min after boot instead of 60+ min for the 1h model."""
+        filled = [s for s in self.snapshots if s.future_return_5m is not None]
+        if len(filled) < 20:
+            return
+
+        X = np.array([self._featurize_snapshot(s) for s in filled])
+        y = np.array([1.0 if s.future_return_5m > 0 else 0.0 for s in filled])
+
+        n_features = X.shape[1]
+        if self.fast_weights is None or len(self.fast_weights) != n_features:
+            self.fast_weights = np.zeros(n_features)
+            self.fast_bias = 0.0
+
+        lr = 0.01
+        momentum = 0.9
+        v_w = np.zeros_like(self.fast_weights)
+        v_b = 0.0
+        epochs = max(30, min(150, 1000 // len(filled)))
+
+        for _ in range(epochs):
+            z = X @ self.fast_weights + self.fast_bias
+            pred = 1.0 / (1.0 + np.exp(-np.clip(z, -500, 500)))
+            error = pred - y
+            reg = 0.001
+            grad_w = (X.T @ error) / len(y) + reg * self.fast_weights
+            grad_b = error.mean()
+            v_w = momentum * v_w - lr * grad_w
+            v_b = momentum * v_b - lr * grad_b
+            self.fast_weights += v_w
+            self.fast_bias += v_b
+
+        self._save_model()
+
+        z = X @ self.fast_weights + self.fast_bias
+        pred_prob = 1.0 / (1.0 + np.exp(-np.clip(z, -500, 500)))
+        accuracy = ((pred_prob > 0.5) == y).mean()
+        baseline = max(y.mean(), 1 - y.mean())
+
+        logger.info(
+            f"Fast 5m model trained on {len(filled)} samples | "
+            f"Accuracy: {accuracy:.1%} (baseline {baseline:.1%})"
+        )
+
     def predict_direction(
         self,
         price_change_1h_pct: float = 0.0,
         price_change_24h_pct: float = 0.0,
         volume_ratio: float = 1.0,
         volatility: float = 0.0,
+        regime_score: float = 0.0,
+        ensemble_direction: str = "",
+        ensemble_confidence: float = 0.0,
     ) -> Optional[float]:
         """Predict probability of upward price movement from market conditions.
         Returns float between 0 and 1, or None if no model available."""
@@ -514,12 +605,38 @@ class SignalLearner:
             price_change_24h_pct=price_change_24h_pct,
             volume_ratio=volume_ratio,
             volatility=volatility,
+            regime_score=regime_score,
+            ensemble_direction=ensemble_direction,
+            ensemble_confidence=ensemble_confidence,
         )
         x = self._featurize_snapshot(snap)
         if len(self.snapshot_weights) != len(x):
             return None
 
         z = float(x @ self.snapshot_weights + self.snapshot_bias)
+        return float(1.0 / (1.0 + np.exp(-np.clip(z, -500, 500))))
+
+    def _predict_fast(
+        self,
+        price_change_1h_pct: float = 0.0,
+        price_change_24h_pct: float = 0.0,
+        volume_ratio: float = 1.0,
+        volatility: float = 0.0,
+    ) -> Optional[float]:
+        """Quick 5m direction prediction. Available ~10 min after boot."""
+        if self.fast_weights is None:
+            return None
+        snap = MarketSnapshot(
+            symbol="", price=0,
+            price_change_1h_pct=price_change_1h_pct,
+            price_change_24h_pct=price_change_24h_pct,
+            volume_ratio=volume_ratio,
+            volatility=volatility,
+        )
+        x = self._featurize_snapshot(snap)
+        if len(self.fast_weights) != len(x):
+            return None
+        z = float(x @ self.fast_weights + self.fast_bias)
         return float(1.0 / (1.0 + np.exp(-np.clip(z, -500, 500))))
 
     # ─── Prediction ──────────────────────────────────────────────────
@@ -603,7 +720,15 @@ class SignalLearner:
         if direction_prob is not None and side == "SELL":
             direction_prob = 1.0 - direction_prob
 
-        # Blend available models
+        # Fast 5m model as fallback when 1h model isn't ready
+        fast_prob = self._predict_fast(
+            price_change_1h_pct, price_change_24h_pct,
+            volume_ratio, volatility,
+        )
+        if fast_prob is not None and side == "SELL":
+            fast_prob = 1.0 - fast_prob
+
+        # Blend available models (trade > 1h snapshot > 5m fast)
         if win_prob is not None and direction_prob is not None:
             combined = win_prob * 0.6 + direction_prob * 0.4
             source = f"trade={win_prob:.1%}+snap={direction_prob:.1%}"
@@ -611,9 +736,11 @@ class SignalLearner:
             combined = win_prob
             source = f"trade={win_prob:.1%}"
         elif direction_prob is not None:
-            # Snapshot-only: use with lower weight (less certain without trade data)
             combined = direction_prob
             source = f"snap={direction_prob:.1%}"
+        elif fast_prob is not None:
+            combined = fast_prob
+            source = f"fast5m={fast_prob:.1%}"
         else:
             return original_confidence
 

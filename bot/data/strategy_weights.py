@@ -88,11 +88,22 @@ class StrategyWeightManager:
             ingested = 0
             for trade in trades:
                 action = trade.get("action", "")
-                if action in ("SL", "TP1", "TP2", "TRAILING_STOP"):
+                # Only count full closes (TP1 is partial — don't double-count)
+                if action in ("SL", "TP2", "TRAILING_STOP"):
                     strategy = trade.get("strategy", "")
                     if not strategy:
                         continue
-                    win = trade.get("pnl", 0) > 0
+                    # Prefer total_pnl from metadata (includes TP1 partial)
+                    pnl = trade.get("pnl", 0)
+                    meta = trade.get("metadata")
+                    if meta:
+                        try:
+                            import json
+                            md = json.loads(meta) if isinstance(meta, str) else meta
+                            pnl = md.get("total_pnl", pnl)
+                        except Exception:
+                            pass
+                    win = pnl > 0
                     self._ensure_entry(strategy)
                     self.data[strategy]["trials"] += 1
                     if win:

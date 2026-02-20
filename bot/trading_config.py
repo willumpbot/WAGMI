@@ -90,10 +90,13 @@ class TradingConfig:
 
     # Strategy ensemble
     ensemble_mode: str = field(
-        default_factory=lambda: _env("ENSEMBLE_MODE", "voting")
-    )  # "voting", "weighted", "independent"
+        default_factory=lambda: _env("ENSEMBLE_MODE", "weighted_veto")
+    )  # "voting", "weighted_veto", "weighted", "best"
     min_votes_required: int = field(
         default_factory=lambda: _env_int("MIN_VOTES_REQUIRED", 2)
+    )
+    veto_ratio: float = field(
+        default_factory=lambda: _env_float("VETO_RATIO", 1.1)
     )
 
     # ML

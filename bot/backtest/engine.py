@@ -106,6 +106,7 @@ class BacktestEngine:
             strategies=active_strategies,
             mode=self.config.ensemble_mode,
             min_votes=self.config.min_votes_required,
+            veto_ratio=self.config.veto_ratio,
         )
 
         # Fetch historical data for all symbols
@@ -246,7 +247,9 @@ class BacktestEngine:
         if lev_decision.leverage <= 0:
             return
 
-        qty = self.risk_mgr.calculate_qty(signal.entry, signal.sl, lev_decision.leverage)
+        qty = self.risk_mgr.calculate_qty(
+            signal.entry, signal.sl, lev_decision.leverage, lev_decision.risk_multiplier
+        )
         if qty <= 0:
             return
 

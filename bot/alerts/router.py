@@ -139,21 +139,37 @@ class AlertRouter:
         self._send_discord(msg, priority=True)
         self._send_telegram(msg)
 
+    @staticmethod
+    def _fmt(price: float) -> str:
+        """Format price with appropriate precision (handles micro-prices like PEPE)."""
+        if price == 0:
+            return "0"
+        abs_p = abs(price)
+        if abs_p >= 1.0:
+            return f"{price:,.2f}"
+        elif abs_p >= 0.001:
+            return f"{price:.4f}"
+        elif abs_p >= 0.000001:
+            return f"{price:.8f}"
+        else:
+            return f"{price:.12f}"
+
     def _format_signal(self, signal: Signal, leverage: float, tier: str) -> str:
         icon = {"PRIORITY": "PRIORITY", "REGULAR": "REGULAR", "MANUAL": "MANUAL"}.get(tier, "SIGNAL")
         lev_str = f" | {leverage:.1f}x" if leverage > 1 else " | Spot"
         strategies = signal.metadata.get("strategies_agree", [signal.strategy])
         strat_str = ", ".join(strategies) if isinstance(strategies, list) else str(strategies)
+        f = self._fmt
 
         lines = [
             f"[{icon}] {signal.symbol} {signal.side} | Conf {signal.confidence:.0f}%{lev_str}",
             f"Strategies: {strat_str}",
-            f"Entry: {signal.entry:.4f} | SL: {signal.sl:.4f}",
-            f"TP1: {signal.tp1:.4f} | TP2: {signal.tp2:.4f}",
+            f"Entry: {f(signal.entry)} | SL: {f(signal.sl)}",
+            f"TP1: {f(signal.tp1)} | TP2: {f(signal.tp2)}",
         ]
 
         if signal.atr > 0:
-            lines.append(f"ATR: {signal.atr:.4f} | R:R1={signal.risk_reward_tp1:.1f} R:R2={signal.risk_reward_tp2:.1f}")
+            lines.append(f"ATR: {f(signal.atr)} | R:R1={signal.risk_reward_tp1:.1f} R:R2={signal.risk_reward_tp2:.1f}")
 
         return "\n".join(lines)
 

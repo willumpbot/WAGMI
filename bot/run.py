@@ -28,6 +28,9 @@ def cmd_paper(args):
     os.makedirs("logs", exist_ok=True)
     os.makedirs("ml_data", exist_ok=True)
 
+    from data.db import init_db
+    init_db()
+
     from trading_config import TradingConfig, DEFAULT_SYMBOLS
     from multi_strategy_main import MultiStrategyBot
 
@@ -99,7 +102,7 @@ def cmd_signals(args):
         ConfidenceScorerStrategy(DEFAULT_SYMBOLS, data_dir="ml_data"),
         MultiTierQualityStrategy(DEFAULT_SYMBOLS),
     ]
-    ensemble = EnsembleStrategy(strategies=strategies, mode=config.ensemble_mode, min_votes=config.min_votes_required)
+    ensemble = EnsembleStrategy(strategies=strategies, mode=config.ensemble_mode, min_votes=config.min_votes_required, veto_ratio=config.veto_ratio)
     needed_tfs = ensemble.get_all_required_timeframes()
 
     symbols = [s.strip().upper() for s in args.symbols.split(",")] if args.symbols else list(DEFAULT_SYMBOLS.keys())
@@ -159,7 +162,7 @@ def cmd_status(args):
         ConfidenceScorerStrategy(DEFAULT_SYMBOLS, data_dir="ml_data"),
         MultiTierQualityStrategy(DEFAULT_SYMBOLS),
     ]
-    ensemble = EnsembleStrategy(strategies=strategies, mode=config.ensemble_mode, min_votes=config.min_votes_required)
+    ensemble = EnsembleStrategy(strategies=strategies, mode=config.ensemble_mode, min_votes=config.min_votes_required, veto_ratio=config.veto_ratio)
     needed_tfs = ensemble.get_all_required_timeframes()
 
     symbols = [s.strip().upper() for s in args.symbols.split(",")] if args.symbols else list(DEFAULT_SYMBOLS.keys())

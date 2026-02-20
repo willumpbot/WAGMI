@@ -36,6 +36,22 @@ from execution.trade_logger import TradeLogger
 from ml.learner import SignalLearner, TradeOutcome, MarketSnapshot
 from alerts.router import AlertRouter
 
+
+def _fmt_price(price: float) -> str:
+    """Format price with appropriate precision (handles micro-prices like PEPE)."""
+    if price == 0:
+        return "0"
+    abs_p = abs(price)
+    if abs_p >= 1.0:
+        return f"{price:,.2f}"
+    elif abs_p >= 0.001:
+        return f"{price:.4f}"
+    elif abs_p >= 0.000001:
+        return f"{price:.8f}"
+    else:
+        return f"{price:.12f}"
+
+
 # Setup logging
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
@@ -95,6 +111,7 @@ class MultiStrategyBot:
             mode=config.ensemble_mode,
             min_votes=config.min_votes_required,
             weight_manager=self.weight_mgr,
+            veto_ratio=config.veto_ratio,
         )
 
         # Execution
@@ -138,6 +155,10 @@ class MultiStrategyBot:
 
         self._tick = 0
         self._needed_tfs = self.ensemble.get_all_required_timeframes()
+
+        # Per-symbol cooldown: prevent rapid re-entry after a position closes
+        self._symbol_cooldown: Dict[str, float] = {}  # symbol -> timestamp of last close
+        self._cooldown_seconds = 120  # 2 minutes minimum between close and re-entry
 
     def run(self):
         """Main run loop."""
@@ -205,10 +226,10 @@ class MultiStrategyBot:
     def _process_symbol(self, symbol: str, sym_cfg, trace_id: str = ""):
         """Process one symbol: fetch data, check positions, generate signals."""
         # Fetch data for all needed timeframes
-        data = self.fetcher.fetch_multi_timeframe(sym_cfg.coingecko_id, self._needed_tfs)
+        data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, self._needed_tfs)
 
         # Get current price
-        current_price = self.fetcher.latest_price(sym_cfg.coingecko_id)
+        current_price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
         if current_price is None:
             return
 
@@ -259,37 +280,48 @@ class MultiStrategyBot:
                 metadata=event.metadata
             )
 
-            # Record outcome for strategy weight tracking
-            if event.action in ("SL", "TP1", "TP2", "TRAILING_STOP") and event.strategy:
-                self.weight_mgr.record_outcome(event.strategy, event.pnl > 0)
+            # Record outcome for strategy weight tracking (only on full close, use total PnL)
+            if event.action in ("SL", "TP2", "TRAILING_STOP") and event.strategy:
+                pos = self.pos_mgr.positions.get(symbol)
+                total_pnl = pos.realized_pnl if pos else event.pnl
+                self.weight_mgr.record_outcome(event.strategy, total_pnl > 0)
 
             # Log trade event (paper trading compatibility)
             if self.trade_logger:
                 hold_time = event.metadata.get("hold_time_s", 0)
                 self.trade_logger.log_trade_event(event, hold_time_s=hold_time)
 
-            # Record outcome for ML
+            # Record outcome for ML (use TOTAL trade PnL, not just final leg)
             if self.ml and event.action in ("SL", "TP2", "TRAILING_STOP"):
                 pos = self.pos_mgr.positions.get(symbol)
+                total_pnl = pos.realized_pnl if pos else event.pnl
                 self.ml.record_outcome(TradeOutcome(
                     symbol=symbol,
                     strategy=event.strategy,
                     side=event.side,
                     confidence=pos.confidence if pos else 0,
                     leverage=event.leverage,
-                    win=event.pnl > 0,
-                    pnl=event.pnl,
+                    win=total_pnl > 0,
+                    pnl=total_pnl,
                     exit_action=event.action,
                     hold_time_s=event.metadata.get("hold_time_s", 0),
                     hour_of_day=datetime.now(timezone.utc).hour,
                     day_of_week=datetime.now(timezone.utc).weekday(),
                 ))
 
+            # Track cooldown on full closes
+            if event.action in ("SL", "TP2", "TRAILING_STOP", "EMERGENCY", "LIQUIDATION_AVOID"):
+                self._symbol_cooldown[symbol] = time.time()
+
             # Send alert
             details = (
-                f"{event.action} {event.side} @ {event.price:.4f}\n"
+                f"{event.action} {event.side} @ {_fmt_price(event.price)}\n"
                 f"PnL: ${event.pnl:+.2f} | Leverage: {event.leverage:.1f}x"
             )
+            if event.action in ("SL", "TP2", "TRAILING_STOP"):
+                pos = self.pos_mgr.positions.get(symbol)
+                if pos:
+                    details += f"\nTotal PnL: ${pos.realized_pnl:+.2f}"
             self.alerts.send_trade_event(event.action, symbol, details)
 
             # Check circuit breaker
@@ -309,11 +341,22 @@ class MultiStrategyBot:
                     logger.warning(f"[{symbol}] LIQUIDATION RISK: {liq_check}")
                     self.pos_mgr.force_close(symbol, current_price, "LIQUIDATION_AVOID")
 
+        # Clean up stale closed positions (prevent memory growth overnight)
+        stale = [s for s, p in self.pos_mgr.positions.items()
+                 if p.status == "closed" and s not in open_pos]
+        for s in stale:
+            del self.pos_mgr.positions[s]
+
         # Try to generate new signal
         if not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count()):
             return
         if symbol in open_pos:
             return  # Already have position in this symbol
+
+        # Per-symbol cooldown: don't re-enter too quickly after closing
+        last_close = self._symbol_cooldown.get(symbol, 0)
+        if time.time() - last_close < self._cooldown_seconds:
+            return
 
         signal_result = self.ensemble.evaluate(symbol, data)
 
@@ -403,6 +446,16 @@ class MultiStrategyBot:
             )
             signal_result.confidence = adjusted_conf
 
+        # R:R sanity filter: reject trades with tiny reward relative to risk
+        # At 1.5R TP1 targets, R:R1 should naturally be ~1.5; reject anything under 0.5
+        rr1 = signal_result.risk_reward_tp1
+        if rr1 < 0.5:
+            logger.info(
+                f"[{trace_id}][{symbol}] Signal rejected: R:R1={rr1:.2f} < 0.5 "
+                f"(stop too wide or TP1 too close)"
+            )
+            return
+
         # Determine leverage
         num_agree = signal_result.metadata.get("num_agree", 1)
         total = signal_result.metadata.get("total_strategies", len(self.strategies))
@@ -419,8 +472,21 @@ class MultiStrategyBot:
         if lev_decision.leverage <= 0:
             return  # Confidence too low
 
-        # Calculate position size
-        qty = self.risk_mgr.calculate_qty(signal_result.entry, signal_result.sl)
+        # Extra R:R gate for high leverage: need R:R1 >= 1.0 above 8x
+        # At high leverage, fees eat more of the profit margin
+        if lev_decision.leverage > 8.0 and rr1 < 1.0:
+            logger.info(
+                f"[{trace_id}][{symbol}] Signal rejected: R:R1={rr1:.2f} < 1.0 "
+                f"at {lev_decision.leverage:.1f}x leverage"
+            )
+            return
+
+        # Calculate position size (pass leverage + risk_multiplier for correct sizing)
+        qty = self.risk_mgr.calculate_qty(
+            signal_result.entry, signal_result.sl,
+            leverage=lev_decision.leverage,
+            risk_multiplier=lev_decision.risk_multiplier,
+        )
         if qty <= 0:
             return
 
@@ -532,8 +598,8 @@ class MultiStrategyBot:
 
         for symbol, sym_cfg in DEFAULT_SYMBOLS.items():
             try:
-                data = self.fetcher.fetch_multi_timeframe(sym_cfg.coingecko_id, self._needed_tfs)
-                price = self.fetcher.latest_price(sym_cfg.coingecko_id)
+                data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, self._needed_tfs)
+                price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
                 if price is None:
                     continue
 
@@ -582,7 +648,7 @@ class MultiStrategyBot:
                     pnl = (price - pos.entry) * pos.qty if pos.side == "LONG" else (pos.entry - price) * pos.qty
                     pos_str = f" [OPEN {pos.side} {pos.leverage:.0f}x PnL=${pnl:+,.0f}]"
 
-                lines.append(f"  {symbol} ${price:,.2f}{vol_str}{pos_str}")
+                lines.append(f"  {symbol} ${_fmt_price(price)}{vol_str}{pos_str}")
                 lines.append(f"    {assessment_str}")
 
             except Exception as e:

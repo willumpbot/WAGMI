@@ -224,8 +224,8 @@ class MultiTierQualityStrategy(BaseStrategy):
             stop_width = abs(entry - stop)
 
         # TPs based on R-multiple
-        tp1 = entry + stop_width if side == "BUY" else entry - stop_width
-        tp2 = entry + 2 * stop_width if side == "BUY" else entry - 2 * stop_width
+        tp1 = entry + 1.5 * stop_width if side == "BUY" else entry - 1.5 * stop_width
+        tp2 = entry + 3.0 * stop_width if side == "BUY" else entry - 3.0 * stop_width
 
         # Confidence
         conf = self._compute_confidence(regime, ema5m_side, side, vwap_align, stop_width, atr_val)

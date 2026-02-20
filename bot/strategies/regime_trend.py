@@ -142,22 +142,38 @@ class RegimeTrendStrategy(BaseStrategy):
         buy = cu and (mfi_1h_val > 50) and multi_bull
         sell = cd and (mfi_1h_val < 50) and multi_bear
 
+        # Regime momentum: strong alignment + recent cross (within 5 bars, not just this bar)
+        # Enables directional trades in strong regimes without waiting for exact-bar cross
+        is_momentum = False
+        if not buy and not sell:
+            has_enough_bars = len(cross_up) >= 5 and len(cross_dn) >= 5
+            if has_enough_bars:
+                recent_cu = bool(cross_up.iloc[-5:].any())
+                recent_cd = bool(cross_dn.iloc[-5:].any())
+
+                if align_long >= 3 and recent_cu and multi_bull:
+                    buy = True
+                    is_momentum = True
+                elif align_short >= 3 and recent_cd and multi_bear:
+                    sell = True
+                    is_momentum = True
+
         if not buy and not sell:
             return None
 
         # Build confidence from alignment
         if buy:
-            confidence = align_long * 25.0  # max 100 with 4/4
+            confidence = align_long * (22.0 if is_momentum else 25.0)
             side = "BUY"
             sl = c - R
-            tp1 = c + 1.0 * R
-            tp2 = c + 2.0 * R
+            tp1 = c + 1.5 * R
+            tp2 = c + 3.0 * R
         else:
-            confidence = align_short * 25.0
+            confidence = align_short * (22.0 if is_momentum else 25.0)
             side = "SELL"
             sl = c + R
-            tp1 = c - 1.0 * R
-            tp2 = c - 2.0 * R
+            tp1 = c - 1.5 * R
+            tp2 = c - 3.0 * R
 
         # Cross recency: boost confidence if multiple recent crosses confirm direction
         try:
@@ -193,6 +209,7 @@ class RegimeTrendStrategy(BaseStrategy):
                 "regime_htf": regime_htf,
                 "atr_1h": A,
                 "cross": "up" if cu else ("down" if cd else "none"),
+                "is_momentum": is_momentum,
             },
         )
 

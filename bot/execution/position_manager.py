@@ -1,13 +1,16 @@
 """
-Position manager with trailing stop loss.
+Position manager with progressive trailing stop.
 Handles position lifecycle: open -> TP1 partial -> trailing stop -> TP2/close.
 
 Flow:
 1. Open position with entry, SL, TP1, TP2
 2. Monitor price each tick
-3. If TP1 hit: close 40%, move SL to breakeven, activate trailing stop
-4. Trailing stop follows price by ATR*multiplier
-5. If TP2 hit or trailing stop triggered: close remaining
+3. If TP1 hit: close 40%, move SL above breakeven (+0.2%), activate trailing
+4. Trailing stop tightens progressively as price approaches TP2:
+   - Near TP1: trail distance ≈ ATR*1.0 (67% of original ATR*1.5)
+   - Near TP2: trail distance ≈ ATR*0.5 (33% of original)
+5. Profit lock floor: once past 30% of entry->TP2, guarantee minimum gains
+6. If TP2 hit or trailing stop triggered: close remaining
 """
 
 import logging
@@ -32,6 +35,8 @@ class Position:
     mode: str = "spot"      # "spot" or "leverage"
     strategy: str = ""
     confidence: float = 0.0
+
+    atr: float = 0.0            # ATR at entry (for progressive trailing)
 
     # State
     status: str = "open"    # "open", "closed"
@@ -138,6 +143,7 @@ class PositionManager:
             mode=mode,
             strategy=strategy,
             confidence=confidence,
+            atr=atr,
             trailing_distance=trailing_distance,
         )
 
@@ -210,7 +216,7 @@ class PositionManager:
         return events
 
     def _partial_close_tp1(self, pos: Position, price: float) -> TradeEvent:
-        """Close 40% at TP1, move SL to breakeven, activate trailing stop."""
+        """Close 40% at TP1, move SL above breakeven, activate trailing stop."""
         close_qty = pos.qty * 0.4
         fee = self._fee(price, close_qty)
         pos.fees_paid += fee
@@ -223,13 +229,20 @@ class PositionManager:
         pos.realized_pnl += (pnl - fee)
         pos.qty -= close_qty
         pos.filled_tp1 = True
-        pos.sl = pos.entry  # Move SL to breakeven
+
+        # Move SL to breakeven + buffer (0.2% covers fees, ensures small profit)
+        fee_buffer = pos.entry * 0.002
+        if pos.side == "LONG":
+            pos.sl = pos.entry + fee_buffer
+        else:
+            pos.sl = pos.entry - fee_buffer
+
         pos.trailing_active = True
         pos.peak_price = price
 
         logger.info(
             f"[{pos.symbol}] TP1 @ {price:.4f} | Closed {close_qty:.6f} | "
-            f"PnL={pnl:.2f} | SL->BE={pos.entry:.4f} | Trailing ON"
+            f"PnL={pnl:.2f} | SL->BE+={pos.sl:.4f} | Trailing ON"
         )
 
         return TradeEvent(
@@ -246,34 +259,81 @@ class PositionManager:
         )
 
     def _update_trailing_stop(self, pos: Position, current_price: float):
-        """Update the trailing stop based on current price."""
+        """
+        Progressive trailing stop with profit lock floor.
+
+        After TP1:
+        - Trailing distance tightens as price moves from TP1 toward TP2
+        - At TP1 level: 67% of original distance (≈ ATR*1.0)
+        - Near TP2: 33% of original distance (≈ ATR*0.5)
+        - Profit lock floor guarantees minimum gain once past 30% progress
+        """
         is_long = pos.side == "LONG"
 
         # Update peak price
         if is_long:
             if current_price > pos.peak_price:
                 pos.peak_price = current_price
-                new_sl = pos.peak_price - pos.trailing_distance
-                # Only move SL up (for longs), never down
-                if new_sl > pos.sl:
-                    old_sl = pos.sl
-                    pos.sl = new_sl
-                    logger.info(
-                        f"[{pos.symbol}] Trailing SL: {old_sl:.4f} -> {new_sl:.4f} "
-                        f"(peak={pos.peak_price:.4f})"
-                    )
         else:
             if current_price < pos.peak_price:
                 pos.peak_price = current_price
-                new_sl = pos.peak_price + pos.trailing_distance
-                # Only move SL down (for shorts), never up
-                if new_sl < pos.sl:
-                    old_sl = pos.sl
-                    pos.sl = new_sl
-                    logger.info(
-                        f"[{pos.symbol}] Trailing SL: {old_sl:.4f} -> {new_sl:.4f} "
-                        f"(peak={pos.peak_price:.4f})"
-                    )
+
+        # Calculate progress toward TP2 (0.0 at entry, 1.0 at TP2)
+        if is_long:
+            total_range = pos.tp2 - pos.entry
+            peak_move = pos.peak_price - pos.entry
+        else:
+            total_range = pos.entry - pos.tp2
+            peak_move = pos.entry - pos.peak_price
+
+        progress = min(peak_move / total_range, 1.0) if total_range > 0 else 0.0
+
+        # Progressive tightening: shrink trailing distance as we approach TP2
+        # 67% at start -> 33% near TP2
+        tighten_factor = max(0.67 - progress * 0.34, 0.33)
+        effective_distance = pos.trailing_distance * tighten_factor
+
+        # Calculate trailing stop level
+        if is_long:
+            trailing_sl = pos.peak_price - effective_distance
+        else:
+            trailing_sl = pos.peak_price + effective_distance
+
+        # Profit lock floor: once past 30% of entry->TP2, lock in minimum profit
+        # Scales from 30% of gains locked at 30% progress to 65% locked near TP2
+        floor_sl = None
+        if progress > 0.3 and peak_move > 0:
+            lock_pct = min(0.3 + (progress - 0.3) * 0.5, 0.65)
+            if is_long:
+                floor_sl = pos.entry + peak_move * lock_pct
+            else:
+                floor_sl = pos.entry - peak_move * lock_pct
+
+        # Use the tighter (more protective) of trailing and floor
+        new_sl = trailing_sl
+        if floor_sl is not None:
+            if is_long:
+                new_sl = max(trailing_sl, floor_sl)
+            else:
+                new_sl = min(trailing_sl, floor_sl)
+
+        # Only move SL in the protective direction (up for longs, down for shorts)
+        if is_long:
+            if new_sl > pos.sl:
+                old_sl = pos.sl
+                pos.sl = new_sl
+                logger.info(
+                    f"[{pos.symbol}] Trail SL: {old_sl:.4f} -> {new_sl:.4f} "
+                    f"(peak={pos.peak_price:.4f} prog={progress:.0%})"
+                )
+        else:
+            if new_sl < pos.sl:
+                old_sl = pos.sl
+                pos.sl = new_sl
+                logger.info(
+                    f"[{pos.symbol}] Trail SL: {old_sl:.4f} -> {new_sl:.4f} "
+                    f"(peak={pos.peak_price:.4f} prog={progress:.0%})"
+                )
 
     def _close_position(self, pos: Position, price: float, action: str) -> TradeEvent:
         """Fully close a position."""
