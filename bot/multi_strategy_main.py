@@ -160,6 +160,10 @@ class MultiStrategyBot:
         self._symbol_cooldown: Dict[str, float] = {}  # symbol -> timestamp of last close
         self._cooldown_seconds = 120  # 2 minutes minimum between close and re-entry
 
+        # Signal dedup: prevent spam from repeated same-side evaluations
+        self._last_signal: Dict[str, tuple] = {}  # symbol -> (side, timestamp)
+        self._signal_dedup_seconds = 300  # 5 minutes between same-side signals per symbol
+
     def run(self):
         """Main run loop."""
         logger.info("=" * 60)
@@ -261,8 +265,9 @@ class MultiStrategyBot:
             self.ml.record_snapshot(snapshot)
 
 
-        # Update existing positions
-        events = self.pos_mgr.update_price(symbol, current_price)
+        # Update existing positions (pass 5m data for early exit momentum detection)
+        df_5m = data.get("5m")
+        events = self.pos_mgr.update_price(symbol, current_price, df_5m=df_5m)
         for event in events:
             self.risk_mgr.update_equity(event.pnl - event.fee)
 
@@ -280,8 +285,12 @@ class MultiStrategyBot:
                 metadata=event.metadata
             )
 
+            # Full close actions (for ML, weight tracking, cooldown)
+            _FULL_CLOSE = ("SL", "TP2", "TRAILING_STOP", "EARLY_EXIT",
+                           "EMERGENCY", "LIQUIDATION_AVOID")
+
             # Record outcome for strategy weight tracking (only on full close, use total PnL)
-            if event.action in ("SL", "TP2", "TRAILING_STOP") and event.strategy:
+            if event.action in _FULL_CLOSE and event.strategy:
                 pos = self.pos_mgr.positions.get(symbol)
                 total_pnl = pos.realized_pnl if pos else event.pnl
                 self.weight_mgr.record_outcome(event.strategy, total_pnl > 0)
@@ -292,7 +301,7 @@ class MultiStrategyBot:
                 self.trade_logger.log_trade_event(event, hold_time_s=hold_time)
 
             # Record outcome for ML (use TOTAL trade PnL, not just final leg)
-            if self.ml and event.action in ("SL", "TP2", "TRAILING_STOP"):
+            if self.ml and event.action in _FULL_CLOSE:
                 pos = self.pos_mgr.positions.get(symbol)
                 total_pnl = pos.realized_pnl if pos else event.pnl
                 self.ml.record_outcome(TradeOutcome(
@@ -310,7 +319,7 @@ class MultiStrategyBot:
                 ))
 
             # Track cooldown on full closes
-            if event.action in ("SL", "TP2", "TRAILING_STOP", "EMERGENCY", "LIQUIDATION_AVOID"):
+            if event.action in _FULL_CLOSE:
                 self._symbol_cooldown[symbol] = time.time()
 
             # Send alert
@@ -318,7 +327,7 @@ class MultiStrategyBot:
                 f"{event.action} {event.side} @ {_fmt_price(event.price)}\n"
                 f"PnL: ${event.pnl:+.2f} | Leverage: {event.leverage:.1f}x"
             )
-            if event.action in ("SL", "TP2", "TRAILING_STOP"):
+            if event.action in _FULL_CLOSE:
                 pos = self.pos_mgr.positions.get(symbol)
                 if pos:
                     details += f"\nTotal PnL: ${pos.realized_pnl:+.2f}"
@@ -370,6 +379,15 @@ class MultiStrategyBot:
 
         if signal_result is None:
             return
+
+        # Signal dedup: skip if we just saw the same side signal for this symbol
+        now = time.time()
+        last_sig = self._last_signal.get(symbol)
+        if last_sig and last_sig[0] == signal_result.side:
+            elapsed = now - last_sig[1]
+            if elapsed < self._signal_dedup_seconds:
+                return  # same signal, skip silently
+        self._last_signal[symbol] = (signal_result.side, now)
 
         # Log every signal generated to database (even if not traded)
         log_signal(
@@ -490,6 +508,16 @@ class MultiStrategyBot:
         if qty <= 0:
             return
 
+        # Dynamic TP1 close %: lock in more profit at lower confidence,
+        # let more ride at high confidence (where TP2 is more likely)
+        conf = signal_result.confidence
+        if conf >= 85:
+            tp1_pct = 0.40   # high confidence: 40% at TP1, 60% rides
+        elif conf >= 75:
+            tp1_pct = 0.60   # medium: 60% at TP1, 40% rides
+        else:
+            tp1_pct = 0.80   # low confidence: 80% at TP1, only 20% rides
+
         # Open position
         side = "LONG" if signal_result.side == "BUY" else "SHORT"
         self.pos_mgr.open_position(
@@ -505,6 +533,7 @@ class MultiStrategyBot:
             mode=lev_decision.mode,
             strategy=signal_result.strategy,
             confidence=signal_result.confidence,
+            tp1_close_pct=tp1_pct,
         )
 
         # Log trade open to database
@@ -542,6 +571,7 @@ class MultiStrategyBot:
         logger.info(
             f"[{trace_id}][{symbol}] OPENED {side} | Conf: {original_conf:.0f}%->{signal_result.confidence:.0f}% | "
             f"Lev: {lev_decision.leverage:.1f}x ({lev_decision.reason}) | "
+            f"TP1close: {tp1_pct:.0%} | "
             f"Strategies: {signal_result.metadata.get('strategies_agree', [signal_result.strategy])}"
         )
 

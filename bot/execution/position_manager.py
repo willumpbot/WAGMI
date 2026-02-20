@@ -1,16 +1,17 @@
 """
-Position manager with progressive trailing stop.
+Position manager with progressive trailing stop and dynamic TP1 sizing.
 Handles position lifecycle: open -> TP1 partial -> trailing stop -> TP2/close.
 
 Flow:
 1. Open position with entry, SL, TP1, TP2
 2. Monitor price each tick
-3. If TP1 hit: close 40%, move SL above breakeven (+0.2%), activate trailing
+3. If TP1 hit: close tp1_close_pct (dynamic, 40-80%), move SL above breakeven, trailing ON
 4. Trailing stop tightens progressively as price approaches TP2:
-   - Near TP1: trail distance ≈ ATR*1.0 (67% of original ATR*1.5)
-   - Near TP2: trail distance ≈ ATR*0.5 (33% of original)
+   - Near TP1: trail distance ~ ATR*1.0 (67% of original ATR*1.5)
+   - Near TP2: trail distance ~ ATR*0.5 (33% of original)
 5. Profit lock floor: once past 30% of entry->TP2, guarantee minimum gains
 6. If TP2 hit or trailing stop triggered: close remaining
+7. Early exit: if momentum reverses hard against position, cut early to minimize loss
 """
 
 import logging
@@ -37,6 +38,7 @@ class Position:
     confidence: float = 0.0
 
     atr: float = 0.0            # ATR at entry (for progressive trailing)
+    tp1_close_pct: float = 0.7  # fraction to close at TP1 (dynamic per-trade)
 
     # State
     status: str = "open"    # "open", "closed"
@@ -122,6 +124,7 @@ class PositionManager:
         mode: str = "spot",
         strategy: str = "",
         confidence: float = 0.0,
+        tp1_close_pct: float = 0.7,
     ) -> Optional[Position]:
         """Open a new position."""
         # Don't open if already have a position in this symbol
@@ -144,6 +147,7 @@ class PositionManager:
             strategy=strategy,
             confidence=confidence,
             atr=atr,
+            tp1_close_pct=tp1_close_pct,
             trailing_distance=trailing_distance,
         )
 
@@ -172,11 +176,13 @@ class PositionManager:
 
         return pos
 
-    def update_price(self, symbol: str, current_price: float) -> List[TradeEvent]:
+    def update_price(
+        self, symbol: str, current_price: float, df_5m=None
+    ) -> List[TradeEvent]:
         """
         Process a price update for a position.
-        Checks SL, TP1, trailing stop, TP2 in order.
-        Returns list of trade events that occurred.
+        Checks early exit, SL, TP1, trailing stop, TP2 in order.
+        df_5m: optional 5m DataFrame for momentum-based early exit.
         """
         if symbol not in self.positions:
             return []
@@ -188,6 +194,15 @@ class PositionManager:
         events = []
         is_long = pos.side == "LONG"
 
+        # 0. Early exit: cut position if momentum is accelerating toward SL
+        # Only before TP1 (after TP1, breakeven SL protects us)
+        if not pos.filled_tp1 and df_5m is not None:
+            early = self._check_early_exit(pos, current_price, df_5m)
+            if early:
+                event = self._close_position(pos, current_price, "EARLY_EXIT")
+                events.append(event)
+                return events
+
         # 1. Check stop loss (including trailing stop)
         sl_hit = (current_price <= pos.sl) if is_long else (current_price >= pos.sl)
         if sl_hit:
@@ -196,7 +211,7 @@ class PositionManager:
             events.append(event)
             return events
 
-        # 2. Check TP1 (40% partial close + move SL to breakeven + activate trailing)
+        # 2. Check TP1 (dynamic partial close + move SL to breakeven + trailing)
         if not pos.filled_tp1:
             tp1_hit = (current_price >= pos.tp1) if is_long else (current_price <= pos.tp1)
             if tp1_hit:
@@ -215,9 +230,72 @@ class PositionManager:
 
         return events
 
+    def _check_early_exit(self, pos: Position, price: float, df_5m) -> bool:
+        """
+        Detect momentum reversal heading toward SL and cut early to minimize loss.
+        Triggers when ALL of:
+        1. Price has moved >50% of the way from entry to SL
+        2. Last 3 candles show accelerating movement against the position
+        3. EMA5 has crossed below EMA13 (for longs) or above (for shorts)
+
+        Cutting at 50-60% loss is better than waiting for 100% SL hit.
+        """
+        if df_5m is None or df_5m.empty or len(df_5m) < 15:
+            return False
+
+        try:
+            is_long = pos.side == "LONG"
+            stop_dist = abs(pos.entry - pos.original_sl)
+            if stop_dist == 0:
+                return False
+
+            # How far toward SL are we? (0 = at entry, 1 = at SL)
+            if is_long:
+                sl_progress = (pos.entry - price) / stop_dist
+            else:
+                sl_progress = (price - pos.entry) / stop_dist
+
+            # Only consider early exit if >50% toward SL
+            if sl_progress < 0.5:
+                return False
+
+            c = df_5m["close"].astype(float)
+
+            # Check last 3 candles: accelerating against position
+            last3 = c.iloc[-3:].values
+            if is_long:
+                accelerating = last3[2] < last3[1] < last3[0]  # consecutive drops
+            else:
+                accelerating = last3[2] > last3[1] > last3[0]  # consecutive rises
+
+            if not accelerating:
+                return False
+
+            # EMA5 vs EMA13 crossover (fast momentum)
+            ema5 = float(c.ewm(span=5, adjust=False).mean().iloc[-1])
+            ema13 = float(c.ewm(span=13, adjust=False).mean().iloc[-1])
+
+            if is_long and ema5 < ema13:
+                logger.info(
+                    f"[{pos.symbol}] EARLY EXIT: {sl_progress:.0%} toward SL, "
+                    f"3 bars accelerating down, EMA5<EMA13"
+                )
+                return True
+            elif not is_long and ema5 > ema13:
+                logger.info(
+                    f"[{pos.symbol}] EARLY EXIT: {sl_progress:.0%} toward SL, "
+                    f"3 bars accelerating up, EMA5>EMA13"
+                )
+                return True
+
+        except Exception as e:
+            logger.debug(f"[{pos.symbol}] Early exit check error: {e}")
+
+        return False
+
     def _partial_close_tp1(self, pos: Position, price: float) -> TradeEvent:
-        """Close 40% at TP1, move SL above breakeven, activate trailing stop."""
-        close_qty = pos.qty * 0.4
+        """Close tp1_close_pct at TP1, move SL above breakeven, activate trailing stop."""
+        close_qty = pos.qty * pos.tp1_close_pct
         fee = self._fee(price, close_qty)
         pos.fees_paid += fee
 
