@@ -34,6 +34,8 @@ docker-compose.override.yml
 bot/ml_data/
 bot/backtest_ml_data/
 bot/logs/
+bot/data/
+bot/paper_trades/
 
 # IDE & editor
 .vscode/
