@@ -143,6 +143,61 @@ def cmd_signals(args):
     print("\n" + "=" * 60)
 
 
+def cmd_positions(args):
+    """Show open positions and unrealized PnL."""
+    from trading_config import TradingConfig, DEFAULT_SYMBOLS
+    from data.fetcher import DataFetcher
+    from multi_strategy_main import MultiStrategyBot
+
+    config = TradingConfig()
+    bot = MultiStrategyBot(config)
+
+    open_pos = bot.pos_mgr.get_open_positions()
+    if not open_pos:
+        print("No open positions.")
+        return
+
+    print("=" * 80)
+    print(f"Open Positions ({len(open_pos)})")
+    print("=" * 80)
+
+    prices = {}
+    for symbol in open_pos.keys():
+        sym_cfg = DEFAULT_SYMBOLS.get(symbol)
+        if sym_cfg:
+            price = bot.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
+            if price:
+                prices[symbol] = price
+
+    total_unrealized = 0.0
+    for symbol, pos in open_pos.items():
+        price = prices.get(symbol)
+        if price:
+            if pos.side == "LONG":
+                unrealized = (price - pos.entry) * pos.qty * pos.leverage
+            else:
+                unrealized = (pos.entry - price) * pos.qty * pos.leverage
+            total_unrealized += unrealized
+
+            pct_move = ((price - pos.entry) / pos.entry * 100) if pos.side == "LONG" else ((pos.entry - price) / pos.entry * 100)
+            print(
+                f"  {symbol:10s} | {pos.side:5s} | "
+                f"Entry: ${pos.entry:>12,.4f} | "
+                f"Price: ${price:>12,.4f} | "
+                f"Qty: {pos.qty:>10.4f} | "
+                f"Lev: {pos.leverage:>4.1f}x | "
+                f"Unrealized: ${unrealized:>10,.2f} | "
+                f"Move: {pct_move:>+6.2f}%"
+            )
+            if pos.state != "CLOSED":
+                print(f"    State: {pos.state_path_str} | SL: ${pos.sl:,.4f} | TP1: ${pos.tp1:,.4f} | TP2: ${pos.tp2:,.4f}")
+
+    print("=" * 80)
+    print(f"Total Unrealized PnL: ${total_unrealized:+,.2f}")
+    print(f"Equity: ${bot.risk_mgr.equity:,.2f}")
+    print("=" * 80)
+
+
 def cmd_status(args):
     """Show market assessment from all strategies without trading."""
     from trading_config import TradingConfig, DEFAULT_SYMBOLS
@@ -235,6 +290,9 @@ Commands:
     sub_status = subparsers.add_parser("status", help="Market assessment")
     sub_status.add_argument("--symbols", default="", help="Comma-separated symbols (empty=all)")
 
+    # Positions
+    sub_pos = subparsers.add_parser("positions", help="Show open positions")
+
     args = parser.parse_args()
 
     if args.command == "paper":
@@ -245,6 +303,8 @@ Commands:
         cmd_signals(args)
     elif args.command == "status":
         cmd_status(args)
+    elif args.command == "positions":
+        cmd_positions(args)
     else:
         parser.print_help()
 
