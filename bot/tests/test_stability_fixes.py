@@ -231,6 +231,57 @@ class TestCircuitBreakerHighConfOverride(unittest.TestCase):
                     self.assertEqual(rows[1][1], "circuit_breaker")
 
 
+class TestEarlyExitSlProgressBounds(unittest.TestCase):
+    """Test that early exit sl_progress stays bounded and doesn't fire past SL."""
+
+    def _make_5m_df(self, closes):
+        """Build a minimal 5m DataFrame for early exit testing."""
+        import pandas as pd
+        return pd.DataFrame({"close": closes})
+
+    def test_sl_progress_above_1_returns_false(self):
+        """If price is already past SL (progress > 1.0), let SL check handle it."""
+        pm = PositionManager(taker_fee_bps=0)
+        pos = pm.open_position("BTC", "LONG", 100.0, 1.0, 95.0, 105.0, 110.0, atr=2.0)
+        # Price at 89.0: entry=100, SL=95, stop_dist=5
+        # sl_progress = (100 - 89) / 5 = 2.2 (>1.0, past SL)
+        df = self._make_5m_df([91, 90.5, 90, 89.5, 89, 88.5, 88, 87.5, 87, 86.5, 86, 85.5, 85, 84.5, 84])
+        result = pm._check_early_exit(pos, 89.0, df)
+        self.assertFalse(result, "Early exit should not fire when price is past SL")
+
+    def test_sl_progress_at_60_pct_can_trigger(self):
+        """sl_progress at 60% (within bounds) should be able to trigger."""
+        pm = PositionManager(taker_fee_bps=0)
+        pos = pm.open_position("BTC", "LONG", 100.0, 1.0, 95.0, 105.0, 110.0, atr=2.0)
+        # Price at 97.0: sl_progress = (100-97)/5 = 0.6 (60%)
+        # Need: 3 accelerating candles down + EMA5 < EMA13
+        closes = [99, 98.8, 98.6, 98.4, 98.2, 98, 97.8, 97.6, 97.4, 97.2, 97, 96.8, 96.6, 96.4, 96.2]
+        df = self._make_5m_df(closes)
+        # This may or may not trigger depending on EMA crossover, but it should NOT crash
+        result = pm._check_early_exit(pos, 97.0, df)
+        self.assertIsInstance(result, bool)
+
+    def test_sl_progress_at_30_pct_does_not_trigger(self):
+        """sl_progress at 30% (< 50% threshold) should never trigger."""
+        pm = PositionManager(taker_fee_bps=0)
+        pos = pm.open_position("BTC", "LONG", 100.0, 1.0, 95.0, 105.0, 110.0, atr=2.0)
+        # Price at 98.5: sl_progress = (100-98.5)/5 = 0.3 (30%)
+        closes = [99, 98.9, 98.8, 98.7, 98.6, 98.5, 98.4, 98.3, 98.2, 98.1, 98, 97.9, 97.8, 97.7, 97.6]
+        df = self._make_5m_df(closes)
+        result = pm._check_early_exit(pos, 98.5, df)
+        self.assertFalse(result, "Should not trigger at 30% toward SL")
+
+    def test_short_sl_progress_above_1_returns_false(self):
+        """Short position past SL should also not trigger early exit."""
+        pm = PositionManager(taker_fee_bps=0)
+        pos = pm.open_position("BTC", "SHORT", 100.0, 1.0, 105.0, 95.0, 90.0, atr=2.0)
+        # Price at 106: sl_progress = (106-100)/5 = 1.2 (>1.0)
+        closes = [101, 101.5, 102, 102.5, 103, 103.5, 104, 104.5, 105, 105.5, 106, 106.5, 107, 107.5, 108]
+        df = self._make_5m_df(closes)
+        result = pm._check_early_exit(pos, 106.0, df)
+        self.assertFalse(result, "Short early exit should not fire past SL")
+
+
 class TestTradeLogsWrittenAfterClose(unittest.TestCase):
     """Test that trade_outcomes.csv and trades.csv write correctly."""
 

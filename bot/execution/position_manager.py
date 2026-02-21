@@ -326,6 +326,10 @@ class PositionManager:
             else:
                 sl_progress = (price - pos.entry) / stop_dist
 
+            # If price already past SL (progress > 1.0), let the SL check handle it
+            if sl_progress > 1.0:
+                return False
+
             if sl_progress < 0.5:
                 return False
 
