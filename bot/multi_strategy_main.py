@@ -41,6 +41,7 @@ from ml.learner import SignalLearner, TradeOutcome, MarketSnapshot
 from alerts.router import AlertRouter
 from alerts.telegram_bot import TelegramCommandBot
 from execution.trade_profile import classify_trade, apply_profile_to_signal
+from execution.precision import validate_fill_price, get_min_qty, get_max_leverage, get_all_symbol_specs
 
 
 def get_tp1_close_pct(confidence: float) -> float:
@@ -179,11 +180,19 @@ class MultiStrategyBot:
 
         # Per-symbol cooldown: prevent rapid re-entry after a position closes
         self._symbol_cooldown: Dict[str, float] = {}  # symbol -> timestamp of last close
-        self._cooldown_seconds = 120  # 2 minutes minimum between close and re-entry
+        self._cooldown_seconds = 120  # 2 minutes after a loss
+        self._win_cooldown_seconds = 300  # 5 minutes after a win (anti-round-trip)
+
+        # Track last close result per symbol for anti-round-tripping
+        self._last_close_win: Dict[str, bool] = {}  # symbol -> was_win
+        self._last_close_side: Dict[str, str] = {}  # symbol -> "LONG"/"SHORT"
 
         # Signal dedup: prevent spam from repeated same-side evaluations
         self._last_signal: Dict[str, tuple] = {}  # symbol -> (side, timestamp)
         self._signal_dedup_seconds = 300  # 5 minutes between same-side signals per symbol
+
+        # Last known prices for fill-price validation
+        self._last_prices: Dict[str, float] = {}  # symbol -> price
 
         # Telegram command bot
         tg_user_id = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0"))
@@ -193,19 +202,63 @@ class MultiStrategyBot:
             bot_instance=self,
         )
 
+    def _run_health_check(self):
+        """Startup symbol health check: validate precision, connectivity, leverage caps."""
+        logger.info("=" * 60)
+        logger.info("SYMBOL HEALTH CHECK")
+        logger.info("=" * 60)
+        specs = get_all_symbol_specs()
+        healthy = 0
+        total = len(DEFAULT_SYMBOLS)
+
+        for symbol, sym_cfg in DEFAULT_SYMBOLS.items():
+            spec = specs.get(symbol, {})
+            price_dp = spec.get("price", 2)
+            qty_dp = spec.get("qty", 4)
+            min_q = spec.get("min_qty", 0.01)
+            tick = spec.get("tick_size", 0.01)
+            max_lev = spec.get("max_leverage", 25)
+
+            # Try to fetch a ticker price
+            price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
+            if price and price > 0:
+                status = "OK"
+                healthy += 1
+            else:
+                status = "NO DATA"
+
+            logger.info(
+                f"  {symbol:10s} | {status:7s} | "
+                f"price={f'${price:,.{price_dp}f}' if price else 'N/A':>16s} | "
+                f"tick={tick} | qty_dp={qty_dp} min_qty={min_q} | "
+                f"max_lev={max_lev}x | tier={sym_cfg.risk_tier}"
+            )
+
+            # Cache the price for fill validation
+            if price and price > 0:
+                self._last_prices[symbol] = price
+
+        logger.info(f"Health: {healthy}/{total} symbols reachable")
+        logger.info("=" * 60)
+
     def run(self):
         """Main run loop."""
         logger.info("=" * 60)
         logger.info(f"Multi-Strategy Bot Starting")
         logger.info(f"  Environment: {self.config.environment}")
-        logger.info(f"  Symbols: {list(DEFAULT_SYMBOLS.keys())}")
+        logger.info(f"  Symbols: {len(DEFAULT_SYMBOLS)} ({', '.join(DEFAULT_SYMBOLS.keys())})")
         logger.info(f"  Strategies: {[s.name for s in self.strategies]}")
         logger.info(f"  Ensemble mode: {self.config.ensemble_mode} (min_votes={self.config.min_votes_required})")
         logger.info(f"  Leverage: {'enabled' if self.config.enable_leverage else 'disabled'} (max={self.config.max_leverage}x)")
         logger.info(f"  ML: {'enabled' if self.config.enable_ml else 'disabled'}")
         logger.info(f"  Trailing stop: {'enabled' if self.config.enable_trailing_stop else 'disabled'}")
         logger.info(f"  Scan interval: {self.config.scan_interval_s}s")
+        logger.info(f"  Max positions: {self.config.max_open_positions}")
+        logger.info(f"  Risk per trade: {self.config.risk_per_trade:.1%}")
         logger.info("=" * 60)
+
+        # Startup health check
+        self._run_health_check()
 
         if self.config.auto_trade:
             logger.warning("AUTO-TRADING ENABLED - REAL MONEY MODE")
@@ -268,6 +321,16 @@ class MultiStrategyBot:
         current_price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
         if current_price is None:
             return
+
+        # Fill-price guardrail: validate against last known price
+        last_known = self._last_prices.get(symbol)
+        if last_known is not None:
+            err = validate_fill_price(symbol, current_price, last_known)
+            if err:
+                log_rejection(symbol, "FILL_PRICE_OFFSCALE", confidence=0)
+                logger.warning(f"[{symbol}] PRICE REJECTED: {err}")
+                return
+        self._last_prices[symbol] = current_price
 
         # Record market snapshot for ML passive learning
         if self.ml:
@@ -354,6 +417,10 @@ class MultiStrategyBot:
             if event.action in _FULL_CLOSE:
                 self._symbol_cooldown[symbol] = time.time()
                 pos = self.pos_mgr.positions.get(symbol)
+                # Anti-round-trip: track win/loss and side for cooldown logic
+                if pos:
+                    self._last_close_win[symbol] = pos.realized_pnl > 0
+                    self._last_close_side[symbol] = pos.side
                 if pos:
                     # Extract profile data for logging
                     _et = pos.trade_profile.entry_type if pos.trade_profile else ""
@@ -450,8 +517,11 @@ class MultiStrategyBot:
             return  # Max positions reached (hard limit, no override)
 
         # Per-symbol cooldown: don't re-enter too quickly after closing
+        # Longer cooldown after WINS to prevent round-tripping profits
         last_close = self._symbol_cooldown.get(symbol, 0)
-        if time.time() - last_close < self._cooldown_seconds:
+        was_win = self._last_close_win.get(symbol, False)
+        cd = self._win_cooldown_seconds if was_win else self._cooldown_seconds
+        if time.time() - last_close < cd:
             return
 
         signal_result = self.ensemble.evaluate(symbol, data)
@@ -475,6 +545,19 @@ class MultiStrategyBot:
             if elapsed < self._signal_dedup_seconds:
                 return  # same signal, skip silently
         self._last_signal[symbol] = (signal_result.side, now)
+
+        # Anti-round-trip: same-direction re-entry after a win needs 10% more confidence
+        last_side = self._last_close_side.get(symbol)
+        was_win = self._last_close_win.get(symbol, False)
+        new_side = "LONG" if signal_result.side == "BUY" else "SHORT"
+        if was_win and last_side == new_side and signal_result.confidence < 75:
+            log_rejection(symbol, "ANTI_ROUNDTRIP",
+                          confidence=signal_result.confidence)
+            logger.info(
+                f"[{trace_id}][{symbol}] Anti-round-trip: same-dir re-entry "
+                f"after win needs >=75% conf (got {signal_result.confidence:.0f}%)"
+            )
+            return
 
         # Log every signal generated to database (even if not traded)
         log_signal(
@@ -593,6 +676,12 @@ class MultiStrategyBot:
         if lev_decision.leverage <= 0:
             return  # Confidence too low
 
+        # Per-symbol leverage cap from precision config
+        sym_max_lev = get_max_leverage(symbol)
+        if lev_decision.leverage > sym_max_lev:
+            lev_decision.leverage = sym_max_lev
+            lev_decision.reason = f"capped to {sym_max_lev}x ({symbol} limit)"
+
         # Extra R:R gate for high leverage: need R:R1 >= 1.0 above 8x
         if lev_decision.leverage > 8.0 and rr1 < 1.0:
             log_rejection(symbol, "rr1_too_low_high_lev", rr1=rr1,
@@ -611,6 +700,13 @@ class MultiStrategyBot:
             symbol=symbol,
         )
         if qty <= 0:
+            return
+
+        # Enforce minimum order size
+        min_q = get_min_qty(symbol)
+        if qty < min_q:
+            log_rejection(symbol, "BELOW_MIN_QTY", confidence=signal_result.confidence)
+            logger.info(f"[{trace_id}][{symbol}] Rejected: qty {qty} < min {min_q}")
             return
 
         # ── Trade Classification Layer ──
@@ -638,7 +734,6 @@ class MultiStrategyBot:
         if self.risk_mgr.circuit_breaker.tripped:
             allowed_types = ("TREND", "REGIME")
             if trade_prof.entry_type not in allowed_types:
-                from data.risk_log import log_rejection
                 log_rejection(
                     symbol, "CB_HIGH_CONF_ONLY",
                     confidence=signal_result.confidence,

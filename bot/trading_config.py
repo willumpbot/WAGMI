@@ -33,13 +33,31 @@ class SymbolConfig:
     risk_tier: str      # "low", "medium", "high"
 
 
-# Primary trading targets
+# Primary trading targets — top 20 Hyperliquid perpetuals by volume
 DEFAULT_SYMBOLS = {
-    "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "medium"),
-    "SOL": SymbolConfig("SOL", "SOL-USD", "solana", "medium"),
+    # Large caps (low risk)
     "BTC": SymbolConfig("BTC", "BTC-USD", "bitcoin", "low"),
-    "FARTCOIN": SymbolConfig("FARTCOIN", "FARTCOIN-USD", "fartcoin", "high"),
+    "ETH": SymbolConfig("ETH", "ETH-USD", "ethereum", "low"),
+    # Mid caps (medium risk)
+    "SOL": SymbolConfig("SOL", "SOL-USD", "solana", "medium"),
+    "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "medium"),
+    "XRP": SymbolConfig("XRP", "XRP-USD", "ripple", "medium"),
+    "AVAX": SymbolConfig("AVAX", "AVAX-USD", "avalanche-2", "medium"),
+    "LINK": SymbolConfig("LINK", "LINK-USD", "chainlink", "medium"),
+    "SUI": SymbolConfig("SUI", "SUI-USD", "sui", "medium"),
+    "NEAR": SymbolConfig("NEAR", "NEAR-USD", "near", "medium"),
+    "INJ": SymbolConfig("INJ", "INJ-USD", "injective-protocol", "medium"),
+    "ARB": SymbolConfig("ARB", "ARB-USD", "arbitrum", "medium"),
+    # Smaller / meme (high risk)
+    "DOGE": SymbolConfig("DOGE", "DOGE-USD", "dogecoin", "high"),
+    "WIF": SymbolConfig("WIF", "WIF-USD", "dogwifcoin", "high"),
     "PEPE": SymbolConfig("PEPE", "PEPE-USD", "pepe", "high"),
+    "BONK": SymbolConfig("BONK", "BONK-USD", "bonk", "high"),
+    "TIA": SymbolConfig("TIA", "TIA-USD", "celestia", "high"),
+    "SEI": SymbolConfig("SEI", "SEI-USD", "sei-network", "high"),
+    "JUP": SymbolConfig("JUP", "JUP-USD", "jupiter-exchange-solana", "high"),
+    "ONDO": SymbolConfig("ONDO", "ONDO-USD", "ondo-finance", "high"),
+    "FARTCOIN": SymbolConfig("FARTCOIN", "FARTCOIN-USD", "fartcoin", "high"),
 }
 
 # Risk multipliers for zone computation (from user's original bots)
@@ -62,7 +80,7 @@ class TradingConfig:
     # Equity & risk
     starting_equity: float = field(default_factory=lambda: _env_float("STARTING_EQUITY", 10000.0))
     risk_per_trade: float = field(default_factory=lambda: _env_float("RISK_PER_TRADE", 0.01))
-    max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 3))
+    max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 5))
     taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 5))
 
     # Circuit breakers
