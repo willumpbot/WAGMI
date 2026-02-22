@@ -43,6 +43,17 @@ from alerts.telegram_bot import TelegramCommandBot
 from execution.trade_profile import classify_trade, apply_profile_to_signal
 from execution.precision import validate_fill_price, get_min_qty, get_max_leverage, get_all_symbol_specs
 
+# LLM meta-brain
+from llm.autonomy import LLMMode, get_llm_mode, should_call_llm, describe_mode
+from llm.decision_engine import get_trading_decision, DecisionResult
+from llm.decision_types import (
+    StrategySignal as LLMStrategySignal,
+    MarketSnapshot as LLMMarketSnapshot,
+    GlobalContext as LLMGlobalContext,
+)
+from llm.risk_gating import RiskContext as LLMRiskContext
+from llm.triggers import LLMTrigger, TriggerAccumulator, TRIGGER_LABELS
+
 
 def get_tp1_close_pct(confidence: float) -> float:
     """Legacy confidence-based TP1 close percentage.
@@ -194,6 +205,13 @@ class MultiStrategyBot:
         # Last known prices for fill-price validation
         self._last_prices: Dict[str, float] = {}  # symbol -> price
 
+        # LLM meta-brain
+        self.llm_mode = get_llm_mode()
+        self._llm_triggers = TriggerAccumulator()
+
+        # Track 1h price changes for cross-market divergence detection
+        self._price_changes_1h: Dict[str, float] = {}
+
         # Telegram command bot
         tg_user_id = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0"))
         self.telegram_bot = TelegramCommandBot(
@@ -255,6 +273,7 @@ class MultiStrategyBot:
         logger.info(f"  Scan interval: {self.config.scan_interval_s}s")
         logger.info(f"  Max positions: {self.config.max_open_positions}")
         logger.info(f"  Risk per trade: {self.config.risk_per_trade:.1%}")
+        logger.info(f"  LLM meta-brain: {self.llm_mode.name} ({describe_mode(self.llm_mode)})")
         logger.info("=" * 60)
 
         # Startup health check
@@ -304,6 +323,34 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.error(f"[{trace_id}][{symbol}] Error: {e}", exc_info=True)
 
+        # LLM meta-brain: hybrid trigger system
+        # Triggers accumulated during symbol processing; also check periodic + cross-market
+        if should_call_llm(self.llm_mode):
+            # Check cross-market divergence (BTC vs alts)
+            divergence = self._llm_triggers.check_cross_market_divergence(
+                self._price_changes_1h
+            )
+            if divergence:
+                self._llm_triggers.add(
+                    LLMTrigger.CROSS_MARKET_DIVERGENCE,
+                    context=divergence,
+                )
+
+            # Check periodic fallback (5-minute heartbeat)
+            if self._llm_triggers.event_count == 0:
+                if self._llm_triggers.check_periodic():
+                    self._llm_triggers.add(LLMTrigger.PERIODIC)
+
+            # Fire if any trigger should run
+            if self._llm_triggers.should_fire():
+                try:
+                    self._run_llm_metabrain(trace_id)
+                except Exception as e:
+                    logger.warning(f"[{trace_id}] LLM meta-brain error: {e}")
+                self._llm_triggers.clear()
+            else:
+                self._llm_triggers.clear()
+
         # Heartbeat every 60 ticks (~1 hour at 60s intervals)
         if self._tick % 60 == 0:
             self._send_heartbeat()
@@ -331,6 +378,15 @@ class MultiStrategyBot:
                 logger.warning(f"[{symbol}] PRICE REJECTED: {err}")
                 return
         self._last_prices[symbol] = current_price
+
+        # Track 1h price changes for cross-market divergence detection
+        try:
+            df_1h_div = data.get("1h")
+            if df_1h_div is not None and not df_1h_div.empty and len(df_1h_div) > 2:
+                pch = (current_price - float(df_1h_div["close"].iloc[-2])) / float(df_1h_div["close"].iloc[-2]) * 100
+                self._price_changes_1h[symbol] = pch
+        except Exception:
+            pass
 
         # Record market snapshot for ML passive learning
         if self.ml:
@@ -421,6 +477,16 @@ class MultiStrategyBot:
                 if pos:
                     self._last_close_win[symbol] = pos.realized_pnl > 0
                     self._last_close_side[symbol] = pos.side
+
+                # LLM trigger: position closed -> learn from it
+                _close_pnl = pos.realized_pnl if pos else event.pnl
+                _close_side = pos.side if pos else event.side
+                self._llm_triggers.add(
+                    LLMTrigger.POSITION_CLOSED,
+                    symbol=symbol,
+                    context=f"Closed {_close_side} {symbol} via {event.action} "
+                            f"PnL=${_close_pnl:+.2f}",
+                )
                 if pos:
                     # Extract profile data for logging
                     _et = pos.trade_profile.entry_type if pos.trade_profile else ""
@@ -545,6 +611,37 @@ class MultiStrategyBot:
             if elapsed < self._signal_dedup_seconds:
                 return  # same signal, skip silently
         self._last_signal[symbol] = (signal_result.side, now)
+
+        # LLM triggers: detect meaningful decision boundaries
+        num_agree = signal_result.metadata.get("num_agree", 1)
+
+        # High-confidence signal trigger (>=75%)
+        if signal_result.confidence >= 75:
+            self._llm_triggers.add(
+                LLMTrigger.HIGH_CONFIDENCE,
+                symbol=symbol,
+                context=f"{symbol} {signal_result.side} signal "
+                        f"conf={signal_result.confidence:.0f}%",
+            )
+
+        # Strategy consensus trigger (3+ agree)
+        if num_agree >= 3:
+            strategies = signal_result.metadata.get("strategies_agree", [])
+            self._llm_triggers.add(
+                LLMTrigger.STRATEGY_CONSENSUS,
+                symbol=symbol,
+                context=f"{num_agree} strategies agree on {symbol} "
+                        f"{signal_result.side}: {strategies}",
+            )
+
+        # Regime shift detection (from strategy metadata)
+        current_regime = signal_result.metadata.get("regime", "")
+        if current_regime and self._llm_triggers.check_regime_shift(symbol, current_regime):
+            self._llm_triggers.add(
+                LLMTrigger.REGIME_SHIFT,
+                symbol=symbol,
+                context=f"{symbol} regime shifted to '{current_regime}'",
+            )
 
         # Anti-round-trip: same-direction re-entry after a win needs 10% more confidence
         last_side = self._last_close_side.get(symbol)
@@ -776,8 +873,17 @@ class MultiStrategyBot:
             "volatility_band": trade_prof.volatility_band,
         }
 
-        # Open position with profile-adjusted levels
+        # LLM trigger: about to open a position (highest priority)
         side = "LONG" if signal_result.side == "BUY" else "SHORT"
+        self._llm_triggers.add(
+            LLMTrigger.PRE_TRADE,
+            symbol=symbol,
+            context=f"Opening {side} {symbol} @ {_fmt_price(signal_result.entry)} "
+                    f"lev={lev_decision.leverage:.1f}x conf={signal_result.confidence:.0f}% "
+                    f"type={trade_prof.entry_type}",
+        )
+
+        # Open position with profile-adjusted levels
         self.pos_mgr.open_position(
             symbol=symbol,
             side=side,
@@ -838,6 +944,236 @@ class MultiStrategyBot:
             f"Driver: {trade_prof.primary_driver} | "
             f"Strategies: {signal_result.metadata.get('strategies_agree', [signal_result.strategy])}"
         )
+
+    # ── LLM Meta-Brain Integration ────────────────────────────────
+
+    def _build_llm_context(self):
+        """Build MarketSnapshot + GlobalContext + RiskContext from current bot state.
+
+        Uses cached fetcher data (still hot from _tick_once processing).
+        Called once per tick, not per symbol.
+        """
+        markets = []
+        btc_price = 0.0
+        btc_1h = 0.0
+        btc_24h = 0.0
+        eth_price = 0.0
+
+        for symbol, sym_cfg in DEFAULT_SYMBOLS.items():
+            price = self._last_prices.get(symbol)
+            if not price or price <= 0:
+                continue
+
+            # Track BTC/ETH for global context
+            if symbol == "BTC":
+                btc_price = price
+            elif symbol == "ETH":
+                eth_price = price
+
+            # Get cached data (fetcher cache is still warm)
+            data = self.fetcher.fetch_multi_timeframe(
+                symbol, sym_cfg.coingecko_id, self._needed_tfs
+            )
+
+            # Compute market context from 1h data
+            pchange_1h = 0.0
+            pchange_24h = 0.0
+            vol_ratio = 1.0
+            volatility = 0.0
+
+            df_1h = data.get("1h")
+            if df_1h is not None and not df_1h.empty and len(df_1h) > 2:
+                try:
+                    pchange_1h = (price - float(df_1h["close"].iloc[-2])) / float(df_1h["close"].iloc[-2]) * 100
+                    if len(df_1h) > 24:
+                        pchange_24h = (price - float(df_1h["close"].iloc[-24])) / float(df_1h["close"].iloc[-24]) * 100
+                    avg_vol = float(df_1h["volume"].tail(20).mean())
+                    if avg_vol > 0:
+                        vol_ratio = float(df_1h["volume"].iloc[-1]) / avg_vol
+                    if len(df_1h) > 14:
+                        prev_c = df_1h["close"].shift(1)
+                        tr = pd.concat([
+                            df_1h["high"] - df_1h["low"],
+                            (df_1h["high"] - prev_c).abs(),
+                            (df_1h["low"] - prev_c).abs(),
+                        ], axis=1).max(axis=1)
+                        atr14 = float(tr.rolling(14, min_periods=1).mean().iloc[-1])
+                        volatility = atr14 / price * 100
+                except Exception:
+                    pass
+
+                if symbol == "BTC":
+                    btc_1h = pchange_1h
+                    btc_24h = pchange_24h
+
+            # Get strategy signals from ensemble (uses cached evaluations)
+            signals = []
+            try:
+                statuses = self.ensemble.get_all_status(symbol, data)
+                for s in statuses:
+                    strat_name = s.get("strategy", "unknown")
+                    # Determine side from strategy output
+                    action = s.get("action", s.get("side", "neutral"))
+                    if action in ("BUY", "buy"):
+                        side = "long"
+                    elif action in ("SELL", "sell"):
+                        side = "short"
+                    else:
+                        side = "neutral"
+
+                    # Extract confidence-like metric
+                    conf = s.get("confidence", 0)
+                    if conf == 0:
+                        # Try to infer from other fields
+                        align_l = s.get("align_long", 0)
+                        align_s = s.get("align_short", 0)
+                        conf = max(align_l, align_s) / 100.0 if max(align_l, align_s) > 1 else max(align_l, align_s)
+
+                    regime_score = s.get("regime_score", s.get("align_long", 0))
+                    if isinstance(regime_score, (int, float)) and regime_score > 1:
+                        regime_score = regime_score / 100.0
+
+                    signals.append(LLMStrategySignal(
+                        symbol=symbol,
+                        strategy=strat_name,
+                        side=side,
+                        confidence=min(conf, 1.0),
+                        regime_score=min(regime_score, 1.0) if isinstance(regime_score, (int, float)) else 0.0,
+                    ))
+            except Exception:
+                pass
+
+            markets.append(LLMMarketSnapshot(
+                symbol=symbol,
+                price=price,
+                price_change_1h_pct=pchange_1h,
+                price_change_24h_pct=pchange_24h,
+                volume_ratio=vol_ratio,
+                volatility=volatility,
+                signals=signals,
+            ))
+
+        # Global context
+        eth_btc = eth_price / btc_price if btc_price > 0 else 0.0
+        global_ctx = LLMGlobalContext(
+            timestamp=int(time.time() * 1000),
+            btc_price=btc_price,
+            btc_change_1h_pct=btc_1h,
+            btc_change_24h_pct=btc_24h,
+            eth_btc_ratio=eth_btc,
+            total_open_positions=self.pos_mgr.get_open_count(),
+            daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,
+            equity=self.risk_mgr.equity,
+            circuit_breaker_active=self.risk_mgr.circuit_breaker.tripped,
+        )
+
+        # Risk context
+        risk_ctx = LLMRiskContext(
+            daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,
+            max_daily_loss=self.risk_mgr.equity * self.config.circuit_breaker_daily_loss_pct,
+            equity=self.risk_mgr.equity,
+            max_leverage=self.config.max_leverage,
+            current_leverage=0.0,  # TODO: sum of open position leverages
+            volatility=max((m.volatility for m in markets), default=0.0),
+            max_volatility=15.0,  # 15% ATR/price = extreme
+            open_positions=self.pos_mgr.get_open_count(),
+            max_positions=self.config.max_open_positions,
+            circuit_breaker_active=self.risk_mgr.circuit_breaker.tripped,
+            consecutive_losses=self.risk_mgr.circuit_breaker.consecutive_losses,
+        )
+
+        # Active positions
+        active_positions = []
+        open_pos = self.pos_mgr.get_open_positions()
+        for sym, pos in open_pos.items():
+            p = self._last_prices.get(sym, 0)
+            if pos.side == "LONG":
+                unrealized = (p - pos.entry) * pos.qty * pos.leverage if p else 0
+            else:
+                unrealized = (pos.entry - p) * pos.qty * pos.leverage if p else 0
+            active_positions.append({
+                "symbol": sym,
+                "side": pos.side,
+                "entry": pos.entry,
+                "leverage": pos.leverage,
+                "unrealized_pnl": round(unrealized, 2),
+            })
+
+        return markets, global_ctx, risk_ctx, active_positions
+
+    def _run_llm_metabrain(self, trace_id: str = ""):
+        """Run the LLM meta-brain via hybrid trigger system.
+
+        Called when at least one trigger has fired. The trigger accumulator
+        determines the highest-priority trigger and combines context from
+        all pending events.
+
+        In ADVISORY mode: call LLM, log decision, send to alerts, no influence.
+        """
+        # Get the best trigger and combined context
+        trigger_type, trigger_ctx = self._llm_triggers.get_best()
+        trigger_label = TRIGGER_LABELS.get(trigger_type, "unknown") if trigger_type else "periodic"
+        is_event = trigger_type is not None and trigger_type != LLMTrigger.PERIODIC
+
+        logger.info(
+            f"[{trace_id}][LLM] Trigger: {trigger_label} "
+            f"(events: {self._llm_triggers.event_summary})"
+        )
+
+        markets, global_ctx, risk_ctx, positions = self._build_llm_context()
+
+        if not markets:
+            return
+
+        result = get_trading_decision(
+            markets=markets,
+            global_context=global_ctx,
+            risk_context=risk_ctx,
+            active_positions=positions,
+            mode=self.llm_mode,
+            trigger_reason=trigger_label,
+            trigger_context=trigger_ctx,
+            event_triggered=is_event,
+        )
+
+        # Mark the trigger as called (for cooldown tracking)
+        if trigger_type:
+            self._llm_triggers.mark_called(trigger_type)
+
+        # Log result
+        if result.source == "none" and result.reason in ("throttled_no_cache", "off"):
+            return  # Silent skip
+
+        if result.source == "cache":
+            return  # Already logged when cached
+
+        if result.decision:
+            d = result.decision
+            logger.info(
+                f"[{trace_id}][LLM] {d.action.upper()} conf={d.confidence:.2f} "
+                f"regime={d.regime} trigger={trigger_label} | {d.notes}"
+            )
+
+            # In ADVISORY mode: send to alerts for visibility
+            if self.llm_mode == LLMMode.ADVISORY:
+                self.alerts.send_market_update(
+                    f"[LLM META-BRAIN] {d.action.upper()} "
+                    f"conf={d.confidence:.0%} regime={d.regime}\n"
+                    f"Trigger: {trigger_label}\n"
+                    f"{d.notes}"
+                )
+        elif result.reason:
+            logger.info(f"[{trace_id}][LLM] No decision: {result.reason}")
+
+        # Log API usage periodically
+        if result.usage and result.usage.get("input_tokens", 0) > 0:
+            from llm.client import get_usage_stats
+            stats = get_usage_stats()
+            logger.info(
+                f"[LLM-COST] calls={stats['total_calls']} "
+                f"tokens={stats['total_input_tokens']}in/{stats['total_output_tokens']}out "
+                f"est=${stats['estimated_cost_usd']:.4f}"
+            )
 
     def _send_heartbeat(self):
         """Send periodic status heartbeat."""

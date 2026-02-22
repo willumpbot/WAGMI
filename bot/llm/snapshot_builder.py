@@ -95,6 +95,8 @@ def build_snapshot(
     global_context: GlobalContext,
     memory_summary: Optional[str] = None,
     active_positions: Optional[List[Dict[str, Any]]] = None,
+    trigger_reason: str = "",
+    trigger_context: str = "",
 ) -> LLMInputSnapshot:
     """Build a token-efficient snapshot for the LLM.
 
@@ -142,6 +144,8 @@ def build_snapshot(
         global_context=global_context,
         memory_summary=trimmed_memory,
         active_positions=active_positions or [],
+        trigger_reason=trigger_reason,
+        trigger_context=trigger_context,
     )
 
 

@@ -33,7 +33,7 @@ class SymbolConfig:
     risk_tier: str      # "low", "medium", "high"
 
 
-# Primary trading targets — top 20 Hyperliquid perpetuals by volume
+# Primary trading targets — top Hyperliquid perpetuals by volume (18 symbols)
 DEFAULT_SYMBOLS = {
     # Large caps (low risk)
     "BTC": SymbolConfig("BTC", "BTC-USD", "bitcoin", "low"),
@@ -46,13 +46,11 @@ DEFAULT_SYMBOLS = {
     "LINK": SymbolConfig("LINK", "LINK-USD", "chainlink", "medium"),
     "SUI": SymbolConfig("SUI", "SUI-USD", "sui", "medium"),
     "NEAR": SymbolConfig("NEAR", "NEAR-USD", "near", "medium"),
-    "INJ": SymbolConfig("INJ", "INJ-USD", "injective-protocol", "medium"),
     "ARB": SymbolConfig("ARB", "ARB-USD", "arbitrum", "medium"),
     # Smaller / meme (high risk)
     "DOGE": SymbolConfig("DOGE", "DOGE-USD", "dogecoin", "high"),
     "WIF": SymbolConfig("WIF", "WIF-USD", "dogwifcoin", "high"),
     "PEPE": SymbolConfig("PEPE", "PEPE-USD", "pepe", "high"),
-    "BONK": SymbolConfig("BONK", "BONK-USD", "bonk", "high"),
     "TIA": SymbolConfig("TIA", "TIA-USD", "celestia", "high"),
     "SEI": SymbolConfig("SEI", "SEI-USD", "sei-network", "high"),
     "JUP": SymbolConfig("JUP", "JUP-USD", "jupiter-exchange-solana", "high"),

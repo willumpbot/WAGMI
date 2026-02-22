@@ -235,9 +235,11 @@ class LLMInputSnapshot:
     global_context: GlobalContext
     memory_summary: Optional[str] = None
     active_positions: List[Dict[str, Any]] = field(default_factory=list)
+    trigger_reason: str = ""       # Why the LLM was called (e.g. "pre-trade validation")
+    trigger_context: str = ""      # Details about what triggered the call
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        result = {
             "markets": [
                 {
                     "symbol": m.symbol,
@@ -272,6 +274,14 @@ class LLMInputSnapshot:
                 "equity": round(self.global_context.equity, 2),
                 "cb_active": self.global_context.circuit_breaker_active,
             },
-            **({"memory": self.memory_summary} if self.memory_summary else {}),
-            **({"open_positions": self.active_positions} if self.active_positions else {}),
         }
+        if self.trigger_reason:
+            result["trigger"] = {
+                "reason": self.trigger_reason,
+                "context": self.trigger_context,
+            }
+        if self.memory_summary:
+            result["memory"] = self.memory_summary
+        if self.active_positions:
+            result["open_positions"] = self.active_positions
+        return result

@@ -101,6 +101,9 @@ def get_trading_decision(
     active_positions: Optional[List[Dict[str, Any]]] = None,
     mode: Optional[LLMMode] = None,
     use_compact_prompt: bool = False,
+    trigger_reason: str = "",
+    trigger_context: str = "",
+    event_triggered: bool = False,
 ) -> DecisionResult:
     """Main entry point: get a trading decision from the LLM meta-brain.
 
@@ -111,6 +114,10 @@ def get_trading_decision(
         active_positions: List of open position dicts (symbol, side, entry, unrealized_pnl)
         mode: Override LLM mode (default: read from env)
         use_compact_prompt: Use shorter prompt to save tokens
+        trigger_reason: Why the LLM was called (e.g. "pre-trade validation")
+        trigger_context: Details about the trigger event
+        event_triggered: If True, bypass periodic throttle (event cooldown is
+                         already enforced by TriggerAccumulator)
 
     Returns:
         DecisionResult with decision (or None) + reason + source
@@ -131,10 +138,12 @@ def get_trading_decision(
         global_context=global_context,
         memory_summary=memory_summary,
         active_positions=active_positions,
+        trigger_reason=trigger_reason,
+        trigger_context=trigger_context,
     )
 
-    # Step 2: Check throttle
-    if not should_call_throttle(snapshot):
+    # Step 2: Check throttle (event-triggered calls bypass periodic throttle)
+    if not event_triggered and not should_call_throttle(snapshot):
         cached = get_cached_decision()
         if cached:
             return DecisionResult(
