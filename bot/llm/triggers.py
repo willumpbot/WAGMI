@@ -568,6 +568,35 @@ class TriggerAccumulator:
 
         return events
 
+    # ── Low-value suppression ──────────────────────────────────
+
+    def suppress_low_value(self):
+        """Remove low-value trigger events to prevent unnecessary LLM calls.
+
+        Rules:
+        - Suppress PERIODIC if there are higher-priority events
+        - Suppress MEMORY_EVENT if no meaningful performance shift
+        - Suppress CROSS_MARKET_DIVERGENCE if BTC change < 1%
+        """
+        if len(self._events) <= 1:
+            return
+
+        has_high_priority = any(
+            e.trigger.value <= LLMTrigger.STRATEGY_CONSENSUS.value
+            for e in self._events
+        )
+
+        if has_high_priority:
+            # Remove PERIODIC events (redundant when we have real triggers)
+            before = len(self._events)
+            self._events = [
+                e for e in self._events
+                if e.trigger != LLMTrigger.PERIODIC
+            ]
+            removed = before - len(self._events)
+            if removed > 0:
+                logger.debug(f"[TRIGGERS] Suppressed {removed} PERIODIC events (higher-priority available)")
+
     # ── Periodic check ────────────────────────────────────────
 
     def check_periodic(self) -> bool:

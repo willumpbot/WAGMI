@@ -233,7 +233,11 @@ def get_trading_decision(
     gated = gate_decision(decision, risk_context)
 
     # Step 7: Apply memory update (even if gated, memory is still valuable)
-    apply_memory_update(decision.memory_update)
+    apply_memory_update(
+        decision.memory_update,
+        symbol=trigger_context.split()[0] if trigger_context else "",
+        regime=decision.regime,
+    )
 
     # Step 8: Mark called (for throttle)
     mark_called(snapshot)
