@@ -22,7 +22,7 @@ from llm.decision_types import (
 
 logger = logging.getLogger("bot.llm.validation")
 
-_VALID_ACTIONS = {"long", "short", "flat"}
+_VALID_ACTIONS = {"proceed", "flat", "flip"}
 _VALID_REGIMES = {r.value for r in Regime}
 
 
@@ -75,7 +75,7 @@ def is_valid_decision(dec: dict) -> Tuple[bool, Optional[str]]:
     # action
     action = dec.get("action")
     if action not in _VALID_ACTIONS:
-        return False, f"Invalid action: {action!r} (must be long/short/flat)"
+        return False, f"Invalid action: {action!r} (must be proceed/flat/flip)"
 
     # confidence
     conf = dec.get("confidence")
@@ -89,20 +89,32 @@ def is_valid_decision(dec: dict) -> Tuple[bool, Optional[str]]:
     if regime not in _VALID_REGIMES:
         return False, f"Invalid regime: {regime!r} (must be one of {_VALID_REGIMES})"
 
-    # strategy_weights
+    # strategy_weights (optional - LLM may omit in veto-only mode)
     sw = dec.get("strategy_weights")
-    if not isinstance(sw, dict):
-        return False, f"strategy_weights not a dict: {type(sw).__name__}"
+    if sw is not None:
+        if not isinstance(sw, dict):
+            return False, f"strategy_weights not a dict: {type(sw).__name__}"
+        for key in EXTENDED_WEIGHT_KEYS:
+            val = sw.get(key)
+            if val is None:
+                continue
+            if not isinstance(val, (int, float)):
+                return False, f"strategy_weights.{key} not a number: {val!r}"
+            if val < 0.0 or val > 1.0:
+                return False, f"strategy_weights.{key} out of range: {val}"
 
-    for key in EXTENDED_WEIGHT_KEYS:
-        val = sw.get(key)
-        if val is None:
-            # Allow missing extended keys, default to 0
-            continue
-        if not isinstance(val, (int, float)):
-            return False, f"strategy_weights.{key} not a number: {val!r}"
-        if val < 0.0 or val > 1.0:
-            return False, f"strategy_weights.{key} out of range: {val}"
+    # size_multiplier (optional, 0.0-2.0)
+    sm = dec.get("size_multiplier")
+    if sm is not None:
+        if not isinstance(sm, (int, float)):
+            return False, f"size_multiplier not a number: {sm!r}"
+        if sm < 0.0 or sm > 2.0:
+            return False, f"size_multiplier out of range: {sm} (must be 0.0-2.0)"
+
+    # entry_adjustment (optional string)
+    ea = dec.get("entry_adjustment")
+    if ea is not None and not isinstance(ea, str):
+        return False, f"entry_adjustment must be string or null, got {type(ea).__name__}"
 
     # memory_update
     mu = dec.get("memory_update")
@@ -143,6 +155,7 @@ def validate_and_parse(raw_text: str) -> Tuple[Optional[LLMDecision], Optional[s
 
     logger.info(
         f"[LLM-VAL] Valid decision: {decision.action} "
-        f"conf={decision.confidence:.2f} regime={decision.regime}"
+        f"conf={decision.confidence:.2f} regime={decision.regime} "
+        f"size_mult={decision.size_multiplier:.2f}"
     )
     return decision, None

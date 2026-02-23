@@ -45,7 +45,7 @@ def gate_decision(decision: LLMDecision, risk: RiskContext) -> GatedResult:
     """Apply risk rules to an LLM decision.
 
     Rules (in priority order):
-    1. Circuit breaker active -> reject everything
+    1. Circuit breaker active -> reject everything except flat
     2. Confidence floor (< 0.6 for non-flat actions)
     3. Daily loss limit hit
     4. Max positions reached (for non-flat actions)
@@ -55,6 +55,9 @@ def gate_decision(decision: LLMDecision, risk: RiskContext) -> GatedResult:
     8. Low liquidity regime with non-flat action -> reject
     9. Consecutive losses > 4 requires >= 0.75 confidence
     10. Strategy weight sanity check
+    11. Flip requires higher confidence (>= 0.7)
+
+    Actions: "proceed" (go with ensemble), "flat" (skip), "flip" (reverse)
 
     Returns GatedResult(allowed=True, decision=...) if all checks pass.
     """
@@ -128,10 +131,17 @@ def gate_decision(decision: LLMDecision, risk: RiskContext) -> GatedResult:
             decision,
         )
 
+    # Rule 11: Flip requires higher confidence (contradicting ensemble is risky)
+    if action == "flip" and decision.confidence < 0.70:
+        return _reject(
+            f"flip_confidence_too_low ({decision.confidence:.2f} < 0.70)",
+            decision,
+        )
+
     # All checks passed
     logger.info(
         f"[LLM-GATE] ALLOWED: {action} conf={decision.confidence:.2f} "
-        f"regime={decision.regime}"
+        f"regime={decision.regime} size_mult={decision.size_multiplier:.2f}"
     )
     return GatedResult(allowed=True, decision=decision, reason="all_checks_passed")
 

@@ -154,13 +154,20 @@ class LLMDecision:
     """The structured output the LLM must produce.
 
     This is the ONLY format accepted. Anything else is rejected.
+
+    Actions:
+      "proceed" - go with ensemble direction (default, safest)
+      "flat"    - skip this trade entirely
+      "flip"    - reverse ensemble direction (requires DIRECTION+ mode)
     """
-    action: str              # "long", "short", or "flat"
+    action: str              # "proceed", "flat", or "flip"
     confidence: float        # 0.0 - 1.0
     regime: str              # one of Regime values
     strategy_weights: StrategyWeights
     memory_update: Optional[str]  # short note for persistent memory, or null
     notes: str               # brief explanation of reasoning
+    size_multiplier: float = 1.0      # 0.0-2.0, scales position size
+    entry_adjustment: Optional[str] = None  # "market now", "wait for pullback", etc.
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -170,6 +177,8 @@ class LLMDecision:
             "strategy_weights": self.strategy_weights.to_dict(),
             "memory_update": self.memory_update,
             "notes": self.notes,
+            "size_multiplier": self.size_multiplier,
+            "entry_adjustment": self.entry_adjustment,
         }
 
     @classmethod
@@ -182,6 +191,8 @@ class LLMDecision:
             strategy_weights=StrategyWeights.from_dict(sw) if isinstance(sw, dict) else StrategyWeights(),
             memory_update=d.get("memory_update"),
             notes=d.get("notes", ""),
+            size_multiplier=float(d.get("size_multiplier", 1.0)),
+            entry_adjustment=d.get("entry_adjustment"),
         )
 
 

@@ -44,7 +44,7 @@ from execution.trade_profile import classify_trade, apply_profile_to_signal
 from execution.precision import validate_fill_price, get_min_qty, get_max_leverage, get_all_symbol_specs
 
 # LLM meta-brain
-from llm.autonomy import LLMMode, get_llm_mode, should_call_llm, describe_mode
+from llm.autonomy import LLMMode, get_llm_mode, should_call_llm, llm_has_veto, describe_mode
 from llm.decision_engine import get_trading_decision, DecisionResult
 from llm.decision_types import (
     StrategySignal as LLMStrategySignal,
@@ -53,6 +53,7 @@ from llm.decision_types import (
 )
 from llm.risk_gating import RiskContext as LLMRiskContext
 from llm.triggers import LLMTrigger, TriggerAccumulator, TRIGGER_LABELS
+from execution.candidate import TradeCandidate, CandidateLogger
 
 
 def get_tp1_close_pct(confidence: float) -> float:
@@ -212,6 +213,9 @@ class MultiStrategyBot:
         # LLM meta-brain
         self.llm_mode = get_llm_mode()
         self._llm_triggers = TriggerAccumulator()
+
+        # Dual-world candidate logging (baseline vs LLM)
+        self._candidate_logger = CandidateLogger()
 
         # Track 1h price changes for cross-market divergence detection
         self._price_changes_1h: Dict[str, float] = {}
@@ -980,6 +984,64 @@ class MultiStrategyBot:
                     f"type={trade_prof.entry_type}",
         )
 
+        # ── VETO_ONLY+ mode: synchronous LLM check before trade entry ──
+        # Build a TradeCandidate for dual-world logging regardless of mode
+        candidate = TradeCandidate(
+            symbol=symbol,
+            side=side,
+            entry=signal_result.entry,
+            sl=adj_sl,
+            tp1=adj_tp1,
+            tp2=adj_tp2,
+            atr=signal_result.atr,
+            ensemble_confidence=signal_result.confidence,
+            ensemble_strategy=signal_result.strategy,
+            entry_type=trade_prof.entry_type,
+            primary_driver=trade_prof.primary_driver,
+            regime=trade_prof.regime,
+            timestamp=time.time(),
+            trace_id=trace_id,
+            num_agree=num_agree,
+            strategies_agree=signal_result.metadata.get("strategies_agree", []),
+            risk_reward_tp1=rr1,
+        )
+
+        if llm_has_veto(self.llm_mode):
+            veto_result = self._llm_veto_check(candidate, trace_id)
+            if veto_result is not None:
+                # LLM vetoed this trade
+                candidate.llm_action = "flat"
+                candidate.llm_confidence = veto_result.decision.confidence if veto_result.decision else None
+                candidate.llm_regime = veto_result.decision.regime if veto_result.decision else None
+                candidate.llm_notes = veto_result.decision.notes if veto_result.decision else veto_result.reason
+                candidate.leverage_used = lev_decision.leverage
+                self._candidate_logger.log_candidate(candidate)
+
+                log_rejection(symbol, "LLM_VETO",
+                              confidence=signal_result.confidence)
+                logger.info(
+                    f"[{trace_id}][{symbol}] LLM VETO: {side} trade rejected | "
+                    f"reason: {veto_result.reason}"
+                )
+                self.alerts.send_market_update(
+                    f"[LLM VETO] {symbol} {side} {trade_prof.entry_type} "
+                    f"conf={signal_result.confidence:.0f}% "
+                    f"lev={lev_decision.leverage:.1f}x\n"
+                    f"Reason: {candidate.llm_notes or 'no reason given'}"
+                )
+                return
+            else:
+                # LLM approved (or API failed -> default proceed)
+                candidate.llm_action = "proceed"
+                if veto_result is None:
+                    # _llm_veto_check returns None for proceed
+                    pass
+
+        # Log candidate as proceeding (will be updated with outcome on close)
+        candidate.llm_action = candidate.llm_action or "no_llm"
+        candidate.leverage_used = lev_decision.leverage
+        self._candidate_logger.log_candidate(candidate)
+
         # Open position with profile-adjusted levels
         self.pos_mgr.open_position(
             symbol=symbol,
@@ -1043,6 +1105,74 @@ class MultiStrategyBot:
         )
 
     # ── LLM Meta-Brain Integration ────────────────────────────────
+
+    def _llm_veto_check(self, candidate: TradeCandidate, trace_id: str = ""):
+        """Synchronous LLM check before opening a trade (VETO_ONLY+ mode).
+
+        Returns DecisionResult if LLM says "flat" (veto), None if "proceed".
+        If LLM fails (API error, timeout), defaults to proceed (no veto).
+        """
+        logger.info(
+            f"[{trace_id}][{candidate.symbol}] LLM veto check: "
+            f"{candidate.side} {candidate.entry_type} "
+            f"conf={candidate.ensemble_confidence:.0f}%"
+        )
+
+        markets, global_ctx, risk_ctx, positions = self._build_llm_context()
+        if not markets:
+            return None  # No data -> no veto
+
+        trigger_ctx = (
+            f"PRE_TRADE veto check: {candidate.side} {candidate.symbol} "
+            f"@ {_fmt_price(candidate.entry)} "
+            f"type={candidate.entry_type} conf={candidate.ensemble_confidence:.0f}% "
+            f"regime={candidate.regime} rr1={candidate.risk_reward_tp1:.2f} "
+            f"strategies={candidate.strategies_agree}"
+        )
+
+        result = get_trading_decision(
+            markets=markets,
+            global_context=global_ctx,
+            risk_context=risk_ctx,
+            active_positions=positions,
+            mode=self.llm_mode,
+            use_compact_prompt=True,  # Save tokens on veto checks
+            trigger_reason="pre_trade_veto",
+            trigger_context=trigger_ctx,
+            event_triggered=True,  # Bypass periodic throttle
+        )
+
+        # Log API usage
+        if result.usage and result.usage.get("input_tokens", 0) > 0:
+            from llm.client import get_usage_stats
+            stats = get_usage_stats()
+            logger.info(
+                f"[LLM-VETO] tokens={result.usage.get('input_tokens', 0)}in/"
+                f"{result.usage.get('output_tokens', 0)}out "
+                f"est=${stats['estimated_cost_usd']:.4f}"
+            )
+
+        if result.decision is None:
+            # API error or validation failure -> default to proceed
+            logger.info(
+                f"[{trace_id}][{candidate.symbol}] LLM veto: "
+                f"no decision ({result.reason}), defaulting to proceed"
+            )
+            return None
+
+        if result.decision.action == "flat":
+            # LLM says skip this trade
+            return result
+
+        # LLM says proceed (or was downgraded from flip)
+        candidate.llm_action = result.decision.action
+        candidate.llm_confidence = result.decision.confidence
+        candidate.llm_regime = result.decision.regime
+        candidate.llm_size_mult = result.decision.size_multiplier
+        candidate.llm_entry_adj = result.decision.entry_adjustment
+        candidate.llm_notes = result.decision.notes
+        candidate.llm_memory_update = result.decision.memory_update
+        return None
 
     def _build_llm_context(self):
         """Build MarketSnapshot + GlobalContext + RiskContext from current bot state.
@@ -1249,17 +1379,23 @@ class MultiStrategyBot:
             d = result.decision
             logger.info(
                 f"[{trace_id}][LLM] {d.action.upper()} conf={d.confidence:.2f} "
-                f"regime={d.regime} trigger={trigger_label} | {d.notes}"
+                f"regime={d.regime} size_mult={d.size_multiplier:.2f} "
+                f"trigger={trigger_label} | {d.notes}"
             )
 
-            # In ADVISORY mode: send to alerts for visibility
-            if self.llm_mode == LLMMode.ADVISORY:
+            # In ADVISORY/VETO_ONLY mode: send to alerts for visibility
+            if self.llm_mode in (LLMMode.ADVISORY, LLMMode.VETO_ONLY):
                 reasons_str = ", ".join(all_reasons) if all_reasons else trigger_label
+                orig_str = ""
+                if result.original_action and result.original_action != d.action:
+                    orig_str = f"\nOriginal: {result.original_action} (downgraded)"
                 self.alerts.send_market_update(
                     f"[LLM META-BRAIN] {d.action.upper()} "
                     f"conf={d.confidence:.0%} regime={d.regime}\n"
+                    f"Size mult: {d.size_multiplier:.2f}x\n"
                     f"Trigger: {trigger_label}\n"
-                    f"All reasons: {reasons_str}\n"
+                    f"All reasons: {reasons_str}"
+                    f"{orig_str}\n"
                     f"{d.notes}"
                 )
         elif result.reason:
