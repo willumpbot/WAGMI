@@ -54,6 +54,8 @@ from llm.decision_types import (
 from llm.risk_gating import RiskContext as LLMRiskContext
 from llm.triggers import LLMTrigger, TriggerAccumulator, TRIGGER_LABELS
 from execution.candidate import TradeCandidate, CandidateLogger
+from execution.reconciliation import reconcile_positions
+from execution.time_sizing import get_time_multiplier
 
 
 def get_tp1_close_pct(confidence: float) -> float:
@@ -267,6 +269,29 @@ class MultiStrategyBot:
         logger.info(f"Health: {healthy}/{total} symbols reachable")
         logger.info("=" * 60)
 
+    def _reconcile_exchange_positions(self):
+        """Restore open positions from Hyperliquid on startup."""
+        logger.info("=" * 60)
+        logger.info("POSITION RECONCILIATION")
+        logger.info("=" * 60)
+        try:
+            count = reconcile_positions(
+                pos_mgr=self.pos_mgr,
+                exchanges=self.fetcher._exchanges,
+                last_prices=self._last_prices,
+                risk_mgr=self.risk_mgr,
+            )
+            if count > 0:
+                logger.info(f"Reconciled {count} open positions from Hyperliquid")
+                self.alerts.send_market_update(
+                    f"[STARTUP] Reconciled {count} open position(s) from Hyperliquid"
+                )
+            else:
+                logger.info("No open positions to reconcile")
+        except Exception as e:
+            logger.warning(f"Position reconciliation failed: {e}")
+        logger.info("=" * 60)
+
     def run(self):
         """Main run loop."""
         logger.info("=" * 60)
@@ -286,6 +311,9 @@ class MultiStrategyBot:
 
         # Startup health check
         self._run_health_check()
+
+        # Position reconciliation: restore open positions from exchange
+        self._reconcile_exchange_positions()
 
         if self.config.auto_trade:
             logger.warning("AUTO-TRADING ENABLED - REAL MONEY MODE")
@@ -888,6 +916,14 @@ class MultiStrategyBot:
         )
         if qty <= 0:
             return
+
+        # Time-aware sizing: reduce during weekends / low-liquidity hours
+        time_mult = get_time_multiplier()
+        if time_mult < 1.0:
+            qty = qty * time_mult
+            logger.info(
+                f"[{trace_id}][{symbol}] Time sizing: qty * {time_mult:.2f} = {qty:.6f}"
+            )
 
         # Enforce minimum order size
         min_q = get_min_qty(symbol)

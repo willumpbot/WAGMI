@@ -154,6 +154,9 @@ class TelegramCommandBot:
             "/ml": self._cmd_ml,
             "/performance": self._cmd_performance,
             "/llm": self._cmd_llm,
+            "/mode": lambda: self._cmd_mode(args),
+            "/health": self._cmd_health,
+            "/uplift": self._cmd_uplift,
             "/close": lambda: self._cmd_close(args),
             "/closeall": self._cmd_closeall,
             "/pause": self._cmd_pause,
@@ -281,6 +284,85 @@ class TelegramCommandBot:
             f"Events: {triggers.event_summary}"
         )
 
+    def _cmd_mode(self, args: str) -> str:
+        if not self.bot:
+            return "Bot not connected"
+        from llm.autonomy import LLMMode, describe_mode
+        args = args.strip()
+        if not args:
+            mode = self.bot.llm_mode
+            return (
+                f"Current LLM mode: *{mode.name}* ({mode.value})\n"
+                f"{describe_mode(mode)}\n\n"
+                f"Usage: /mode <0-5>\n"
+                f"0=OFF, 1=ADVISORY, 2=VETO\\_ONLY, 3=SIZING, 4=DIRECTION, 5=FULL"
+            )
+        try:
+            new_mode_val = int(args)
+            if new_mode_val < 0 or new_mode_val > 5:
+                return "Mode must be 0-5"
+            new_mode = LLMMode(new_mode_val)
+            old_mode = self.bot.llm_mode
+            self.bot.llm_mode = new_mode
+            return (
+                f"LLM mode changed: {old_mode.name} -> *{new_mode.name}*\n"
+                f"{describe_mode(new_mode)}"
+            )
+        except (ValueError, KeyError):
+            return "Invalid mode. Use /mode <0-5>"
+
+    def _cmd_health(self) -> str:
+        if not self.bot:
+            return "Bot not connected"
+        from trading_config import DEFAULT_SYMBOLS
+        from execution.time_sizing import is_weekend, is_low_liquidity_hours
+
+        lines = ["*Health Check*"]
+
+        # Bot status
+        eq = self.bot.risk_mgr.equity
+        cb = self.bot.risk_mgr.circuit_breaker
+        lines.append(f"Equity: ${eq:,.2f}")
+        lines.append(f"CB: {'TRIPPED' if cb.tripped else 'OK'}")
+        lines.append(f"Paused: {'YES' if self._paused else 'NO'}")
+        lines.append(f"Weekend: {'YES' if is_weekend() else 'NO'}")
+        lines.append(f"Low-liq hours: {'YES' if is_low_liquidity_hours() else 'NO'}")
+
+        # Exchange connectivity
+        fetcher = self.bot.fetcher
+        stats = fetcher.get_stats()
+        lines.append(f"\n*Data*")
+        lines.append(f"CCXT requests: {stats['ccxt_requests']}")
+        lines.append(f"CCXT failures: {stats['ccxt_failures']}")
+        lines.append(f"CoinGecko: {stats['cg_requests']}")
+        lines.append(f"Cache entries: {stats['cache_hits']}")
+
+        # Symbol status (compact)
+        symbols_ok = 0
+        symbols_fail = 0
+        for sym in DEFAULT_SYMBOLS:
+            if sym in self.bot._last_prices and self.bot._last_prices[sym] > 0:
+                symbols_ok += 1
+            else:
+                symbols_fail += 1
+        lines.append(f"\n*Symbols*: {symbols_ok} OK, {symbols_fail} no data")
+
+        # LLM status
+        from llm.recovery import get_error_stats
+        err_stats = get_error_stats()
+        lines.append(f"\n*LLM*")
+        lines.append(f"Mode: {self.bot.llm_mode.name}")
+        lines.append(f"API calls: {err_stats.total_calls}")
+        lines.append(f"Errors: {err_stats.total_errors} ({err_stats.error_rate:.1f}%)")
+        lines.append(f"Consecutive errs: {err_stats.consecutive_errors}")
+
+        return "\n".join(lines)
+
+    def _cmd_uplift(self) -> str:
+        from llm.uplift_analytics import compute_uplift, format_uplift_report
+        analytics = compute_uplift()
+        return format_uplift_report(analytics)
+
     def _cmd_help(self) -> str:
         return (
             "*nunuIRL Bot Commands*\n"
@@ -289,6 +371,9 @@ class TelegramCommandBot:
             "/ml - ML learner stats\n"
             "/performance - Win rate and metrics\n"
             "/llm - LLM meta-brain status\n"
+            "/mode <0-5> - View/change LLM mode\n"
+            "/health - System health check\n"
+            "/uplift - LLM uplift analytics\n"
             "/close <SYM> - Force close position\n"
             "/closeall - Close all positions\n"
             "/pause - Pause trading\n"
