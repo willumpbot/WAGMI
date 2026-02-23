@@ -157,6 +157,7 @@ class TelegramCommandBot:
             "/mode": lambda: self._cmd_mode(args),
             "/health": self._cmd_health,
             "/uplift": self._cmd_uplift,
+            "/progression": self._cmd_progression,
             "/close": lambda: self._cmd_close(args),
             "/closeall": self._cmd_closeall,
             "/pause": self._cmd_pause,
@@ -363,6 +364,12 @@ class TelegramCommandBot:
         analytics = compute_uplift()
         return format_uplift_report(analytics)
 
+    def _cmd_progression(self) -> str:
+        if not self.bot:
+            return "Bot not connected"
+        from llm.progression import format_progression_status
+        return format_progression_status(self.bot.llm_mode)
+
     def _cmd_help(self) -> str:
         return (
             "*nunuIRL Bot Commands*\n"
@@ -374,6 +381,7 @@ class TelegramCommandBot:
             "/mode <0-5> - View/change LLM mode\n"
             "/health - System health check\n"
             "/uplift - LLM uplift analytics\n"
+            "/progression - Mode promotion readiness\n"
             "/close <SYM> - Force close position\n"
             "/closeall - Close all positions\n"
             "/pause - Pause trading\n"

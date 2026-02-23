@@ -157,49 +157,60 @@ def _mode_sizing(baseline: Dict[str, Any], llm: Optional[LLMDecision]) -> Dict[s
     """SIZING mode: LLM scales position size (but not direction).
 
     Rules:
-    - Direction always from baseline
-    - Size scaled by llm.size_multiplier
-    - If LLM says "flat", use baseline but scale by 0.0 (skip)
-    - If LLM says "flip", downgrade to flat (flip not allowed)
-    - Confidence updated to max(baseline, llm) for risk gating
+    - Direction always from baseline (flip -> flat downgrade)
+    - Size scaled by llm.size_multiplier (clamped 0.0-2.0)
+    - If LLM says "flat", veto the trade
+    - Confidence = max(baseline_conf, llm_conf) for risk gating
+    - entry_adjustment ignored (not allowed in SIZING)
+    - Logs: baseline_size, llm_multiplier, final_size
     """
     decision = baseline.copy()
+    decision["mode_used"] = "SIZING"
 
     if llm is None:
-        # LLM failed: use baseline size
         decision["source"] = "baseline"
         decision["llm_veto"] = False
         decision["size_multiplier"] = 1.0
         return decision
 
     if llm.action == "flat":
-        # Skip this trade
         decision["action"] = "flat"
         decision["source"] = "llm_veto"
         decision["llm_veto"] = True
         decision["veto_reason"] = llm.notes
+        decision["llm_confidence"] = llm.confidence
+        decision["llm_regime"] = llm.regime
         return decision
 
     if llm.action == "flip":
-        # SIZING doesn't allow flips: skip
         decision["action"] = "flat"
         decision["source"] = "llm_veto"
         decision["llm_veto"] = True
-        decision["veto_reason"] = f"flip not allowed in SIZING"
+        decision["veto_reason"] = "flip not allowed in SIZING"
+        decision["llm_confidence"] = llm.confidence
         return decision
 
-    # "proceed": scale baseline size by llm.size_multiplier
+    # "proceed": scale baseline size by clamped size_multiplier
+    clamped_mult = max(0.0, min(llm.size_multiplier, 2.0))
     baseline_size = decision.get("size", 1.0)
-    scaled_size = baseline_size * llm.size_multiplier
+    scaled_size = baseline_size * clamped_mult
+    baseline_conf = decision.get("confidence", 0.0)
+    upgraded_conf = max(baseline_conf, llm.confidence)
+
     decision["size"] = scaled_size
     decision["source"] = "sizing"
     decision["llm_veto"] = False
-    decision["size_multiplier"] = llm.size_multiplier
+    decision["size_multiplier"] = clamped_mult
+    decision["baseline_size"] = baseline_size
+    decision["final_size"] = scaled_size
     decision["llm_confidence"] = llm.confidence
     decision["llm_regime"] = llm.regime
+    decision["confidence"] = upgraded_conf
+    decision["llm_notes"] = llm.notes
+    decision["llm_memory_update"] = llm.memory_update
     logger.info(
-        f"[AUTONOMY-ROUTER] Mode SIZING: size {baseline_size:.2f} -> {scaled_size:.2f} "
-        f"(mult={llm.size_multiplier:.2f})"
+        f"[AUTONOMY-ROUTER] Mode SIZING: size {baseline_size:.4f} * {clamped_mult:.2f} = {scaled_size:.4f} "
+        f"| conf {baseline_conf:.2f} -> {upgraded_conf:.2f} | regime={llm.regime}"
     )
     return decision
 
@@ -208,49 +219,80 @@ def _mode_direction(baseline: Dict[str, Any], llm: Optional[LLMDecision]) -> Dic
     """DIRECTION mode: LLM picks direction and size.
 
     Rules:
-    - Direction from LLM (proceed = use baseline side, flip = reverse, flat = skip)
-    - Size scaled by llm.size_multiplier (baseline * mult)
-    - Entry refinement from llm.entry_adjustment
+    - proceed = use baseline direction, flip = reverse, flat = skip
+    - flip requires confidence >= 0.65 (enforced here as soft guard)
+    - Size scaled by clamped size_multiplier (0.0-2.0)
+    - entry_adjustment passed through for execution layer
+    - Confidence = max(baseline, llm)
+    - Baseline still provides SL/TP (LLM doesn't set exit levels)
     """
     decision = baseline.copy()
+    decision["mode_used"] = "DIRECTION"
 
     if llm is None:
-        # LLM failed: use baseline
         decision["source"] = "baseline"
         decision["llm_veto"] = False
         return decision
 
     if llm.action == "flat":
-        # Skip
         decision["action"] = "flat"
         decision["source"] = "llm_veto"
         decision["llm_veto"] = True
         decision["veto_reason"] = llm.notes
+        decision["llm_confidence"] = llm.confidence
+        decision["llm_regime"] = llm.regime
         return decision
 
+    baseline_side = decision.get("action", "long")
+
     if llm.action == "flip":
-        # Reverse direction
-        baseline_side = decision.get("action", "long")
+        # Soft confidence gate for flips (hard gate is in risk_gating)
+        if llm.confidence < 0.65:
+            logger.warning(
+                f"[AUTONOMY-ROUTER] Mode DIRECTION: flip rejected, "
+                f"confidence {llm.confidence:.2f} < 0.65"
+            )
+            decision["action"] = "flat"
+            decision["source"] = "llm_veto"
+            decision["llm_veto"] = True
+            decision["veto_reason"] = f"flip confidence too low ({llm.confidence:.2f})"
+            decision["llm_confidence"] = llm.confidence
+            return decision
+
         flipped_side = "short" if baseline_side == "long" else "long"
         decision["action"] = flipped_side
+        decision["llm_direction"] = "flip"
+        decision["flip_reason"] = llm.notes
         logger.info(
-            f"[AUTONOMY-ROUTER] Mode DIRECTION: flipped "
-            f"{baseline_side} -> {flipped_side}"
+            f"[AUTONOMY-ROUTER] Mode DIRECTION: FLIP {baseline_side} -> {flipped_side} "
+            f"(conf={llm.confidence:.2f})"
         )
+    else:
+        decision["llm_direction"] = "proceed"
 
-    # Scale size
+    # Scale size (clamped)
+    clamped_mult = max(0.0, min(llm.size_multiplier, 2.0))
     baseline_size = decision.get("size", 1.0)
-    scaled_size = baseline_size * llm.size_multiplier
+    scaled_size = baseline_size * clamped_mult
+    baseline_conf = decision.get("confidence", 0.0)
+    upgraded_conf = max(baseline_conf, llm.confidence)
+
     decision["size"] = scaled_size
     decision["source"] = "llm_direction"
     decision["llm_veto"] = False
-    decision["size_multiplier"] = llm.size_multiplier
+    decision["size_multiplier"] = clamped_mult
+    decision["baseline_size"] = baseline_size
+    decision["final_size"] = scaled_size
     decision["llm_confidence"] = llm.confidence
     decision["llm_regime"] = llm.regime
+    decision["confidence"] = upgraded_conf
     decision["entry_adjustment"] = llm.entry_adjustment
+    decision["llm_notes"] = llm.notes
+    decision["llm_memory_update"] = llm.memory_update
     logger.info(
-        f"[AUTONOMY-ROUTER] Mode DIRECTION: "
-        f"side={decision.get('action')} size={scaled_size:.2f} mult={llm.size_multiplier:.2f}"
+        f"[AUTONOMY-ROUTER] Mode DIRECTION: side={decision.get('action')} "
+        f"size={scaled_size:.4f} mult={clamped_mult:.2f} "
+        f"conf={upgraded_conf:.2f} entry_adj={llm.entry_adjustment}"
     )
     return decision
 
@@ -258,51 +300,96 @@ def _mode_direction(baseline: Dict[str, Any], llm: Optional[LLMDecision]) -> Dic
 def _mode_full(baseline: Dict[str, Any], llm: Optional[LLMDecision]) -> Dict[str, Any]:
     """FULL mode: LLM drives everything.
 
-    Rules:
-    - Direction from LLM
-    - Size from LLM (llm.size_multiplier)
-    - Entry refinement from LLM
-    - Confidence from LLM
-    - Regime from LLM
-    - Still subject to RiskManager + CircuitBreaker
+    LLM overrides:
+    - Direction (proceed/flip/flat)
+    - Size (size_multiplier, clamped 0.0-2.0)
+    - Confidence (LLM confidence replaces baseline)
+    - Regime (LLM regime replaces baseline)
+    - Entry refinement (entry_adjustment)
+    - Strategy weights (per-strategy scaling)
+
+    Bot still enforces:
+    - Risk gating (daily loss, drawdown, leverage caps)
+    - Circuit breaker
+    - Correlation guard
+    - Weekend/liquidity sizing (applied later)
+    - Min quantity enforcement
     """
     decision = baseline.copy()
+    decision["mode_used"] = "FULL"
 
     if llm is None:
-        # LLM failed: fallback to baseline
         decision["source"] = "baseline"
         decision["llm_veto"] = False
         logger.warning("[AUTONOMY-ROUTER] Mode FULL: LLM failed, fallback to baseline")
         return decision
 
     if llm.action == "flat":
-        # Skip
         decision["action"] = "flat"
         decision["source"] = "llm_veto"
         decision["llm_veto"] = True
         decision["veto_reason"] = llm.notes
+        decision["llm_confidence"] = llm.confidence
+        decision["llm_regime"] = llm.regime
         return decision
 
-    if llm.action == "flip":
-        # Reverse direction
-        baseline_side = decision.get("action", "long")
-        decision["action"] = "short" if baseline_side == "long" else "long"
+    baseline_side = decision.get("action", "long")
 
-    # Full LLM control
+    if llm.action == "flip":
+        if llm.confidence < 0.65:
+            logger.warning(
+                f"[AUTONOMY-ROUTER] Mode FULL: flip rejected, "
+                f"confidence {llm.confidence:.2f} < 0.65"
+            )
+            decision["action"] = "flat"
+            decision["source"] = "llm_veto"
+            decision["llm_veto"] = True
+            decision["veto_reason"] = f"flip confidence too low ({llm.confidence:.2f})"
+            return decision
+
+        flipped_side = "short" if baseline_side == "long" else "long"
+        decision["action"] = flipped_side
+        decision["llm_direction"] = "flip"
+        decision["flip_reason"] = llm.notes
+        logger.info(
+            f"[AUTONOMY-ROUTER] Mode FULL: FLIP {baseline_side} -> {flipped_side}"
+        )
+    else:
+        decision["llm_direction"] = "proceed"
+
+    # Full LLM override
+    clamped_mult = max(0.0, min(llm.size_multiplier, 2.0))
     baseline_size = decision.get("size", 1.0)
-    scaled_size = baseline_size * llm.size_multiplier
+    scaled_size = baseline_size * clamped_mult
+
     decision["size"] = scaled_size
     decision["source"] = "llm_full"
     decision["llm_veto"] = False
-    decision["size_multiplier"] = llm.size_multiplier
-    decision["confidence"] = llm.confidence  # Override confidence
-    decision["regime"] = llm.regime  # Override regime
+    decision["size_multiplier"] = clamped_mult
+    decision["baseline_size"] = baseline_size
+    decision["final_size"] = scaled_size
+    decision["confidence"] = llm.confidence        # Override confidence
+    decision["regime"] = llm.regime                 # Override regime
+    decision["llm_confidence"] = llm.confidence
+    decision["llm_regime"] = llm.regime
     decision["entry_adjustment"] = llm.entry_adjustment
-    decision["strategy_weights"] = llm.strategy_weights.to_dict()
+    decision["llm_notes"] = llm.notes
+    decision["llm_memory_update"] = llm.memory_update
+
+    # Apply strategy weights (normalize sum to 1.0)
+    if llm.strategy_weights:
+        sw = llm.strategy_weights.to_dict()
+        total = sum(v for v in sw.values() if isinstance(v, (int, float)) and v > 0)
+        if total > 0:
+            normalized_weights = {k: v / total for k, v in sw.items() if isinstance(v, (int, float))}
+            decision["strategy_weights"] = normalized_weights
+        else:
+            decision["strategy_weights"] = sw
+
     logger.info(
-        f"[AUTONOMY-ROUTER] Mode FULL: "
-        f"side={decision.get('action')} size={scaled_size:.2f} "
-        f"conf={llm.confidence:.2f} regime={llm.regime}"
+        f"[AUTONOMY-ROUTER] Mode FULL: side={decision.get('action')} "
+        f"size={scaled_size:.4f} conf={llm.confidence:.2f} "
+        f"regime={llm.regime} entry_adj={llm.entry_adjustment}"
     )
     return decision
 
