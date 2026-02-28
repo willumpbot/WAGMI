@@ -33,28 +33,16 @@ class SymbolConfig:
     risk_tier: str      # "low", "medium", "high"
 
 
-# Primary trading targets — top Hyperliquid perpetuals by volume (18 symbols)
+# Focused symbol set — 3 large caps + 3 high-volume small caps
+# Fewer symbols = faster rescan loop = better scalp coverage
 DEFAULT_SYMBOLS = {
-    # Large caps (low risk)
+    # Large caps (priority)
     "BTC": SymbolConfig("BTC", "BTC-USD", "bitcoin", "low"),
-    "ETH": SymbolConfig("ETH", "ETH-USD", "ethereum", "low"),
-    # Mid caps (medium risk)
     "SOL": SymbolConfig("SOL", "SOL-USD", "solana", "medium"),
     "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "medium"),
-    "XRP": SymbolConfig("XRP", "XRP-USD", "ripple", "medium"),
-    "AVAX": SymbolConfig("AVAX", "AVAX-USD", "avalanche-2", "medium"),
-    "LINK": SymbolConfig("LINK", "LINK-USD", "chainlink", "medium"),
-    "SUI": SymbolConfig("SUI", "SUI-USD", "sui", "medium"),
-    "NEAR": SymbolConfig("NEAR", "NEAR-USD", "near", "medium"),
-    "ARB": SymbolConfig("ARB", "ARB-USD", "arbitrum", "medium"),
-    # Smaller / meme (high risk)
+    # Small caps (high volume memes)
     "DOGE": SymbolConfig("DOGE", "DOGE-USD", "dogecoin", "high"),
-    "WIF": SymbolConfig("WIF", "WIF-USD", "dogwifcoin", "high"),
     "PEPE": SymbolConfig("PEPE", "PEPE-USD", "pepe", "high"),
-    "TIA": SymbolConfig("TIA", "TIA-USD", "celestia", "high"),
-    "SEI": SymbolConfig("SEI", "SEI-USD", "sei-network", "high"),
-    "JUP": SymbolConfig("JUP", "JUP-USD", "jupiter-exchange-solana", "high"),
-    "ONDO": SymbolConfig("ONDO", "ONDO-USD", "ondo-finance", "high"),
     "FARTCOIN": SymbolConfig("FARTCOIN", "FARTCOIN-USD", "fartcoin", "high"),
 }
 
@@ -78,7 +66,7 @@ class TradingConfig:
     # Equity & risk
     starting_equity: float = field(default_factory=lambda: _env_float("STARTING_EQUITY", 10000.0))
     risk_per_trade: float = field(default_factory=lambda: _env_float("RISK_PER_TRADE", 0.01))
-    max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 5))
+    max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 3))
     taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 5))
 
     # Circuit breakers
@@ -135,6 +123,23 @@ class TradingConfig:
     discord_webhook: str = field(default_factory=lambda: _env("DISCORD_WEBHOOK", ""))
     telegram_token: str = field(default_factory=lambda: _env("TELEGRAM_TOKEN", ""))
     telegram_chat_id: str = field(default_factory=lambda: _env("TELEGRAM_CHAT_ID", ""))
+
+    # Trade rotation
+    enable_rotation: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_ROTATION", True)
+    )
+    rotation_min_hold_s: int = field(
+        default_factory=lambda: _env_int("ROTATION_MIN_HOLD_S", 300)
+    )
+    rotation_global_cooldown_s: int = field(
+        default_factory=lambda: _env_int("ROTATION_GLOBAL_COOLDOWN_S", 600)
+    )
+    rotation_max_per_hour: int = field(
+        default_factory=lambda: _env_int("ROTATION_MAX_PER_HOUR", 2)
+    )
+    rotation_max_per_day: int = field(
+        default_factory=lambda: _env_int("ROTATION_MAX_PER_DAY", 6)
+    )
 
     # API integration
     api_base_url: str = field(default_factory=lambda: _env("BASE_URL", "http://api:8000"))
