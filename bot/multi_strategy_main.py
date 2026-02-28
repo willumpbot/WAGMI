@@ -60,6 +60,10 @@ from execution.ops_guard import OpsGuard
 from execution.rotation_manager import RotationManager, RotationConfig
 from data.fetchers.telemetry import Telemetry
 
+# Feedback loop system
+from feedback.loop import FeedbackLoop
+from feedback.signal_quality import QualityFeatures
+
 
 def get_tp1_close_pct(confidence: float) -> float:
     """Legacy confidence-based TP1 close percentage.
@@ -236,6 +240,9 @@ class MultiStrategyBot:
             ))
         else:
             self.rotation_mgr = None
+
+        # Feedback loop: self-improving confidence, backtesting, quality scoring
+        self.feedback = FeedbackLoop(data_dir="data/feedback")
 
         # Track 1h price changes for cross-market divergence detection
         self._price_changes_1h: Dict[str, float] = {}
@@ -424,6 +431,12 @@ class MultiStrategyBot:
             else:
                 self._llm_triggers.clear()
 
+        # Feedback loop: run periodic backtests and apply parameter adjustments
+        try:
+            self.feedback.tick()
+        except Exception as e:
+            logger.warning(f"[{trace_id}] Feedback loop tick error: {e}")
+
         # Heartbeat every 60 ticks (~1 hour at 60s intervals)
         if self._tick % 60 == 0:
             self._send_heartbeat()
@@ -556,6 +569,35 @@ class MultiStrategyBot:
             if self.trade_logger:
                 hold_time = event.metadata.get("hold_time_s", 0)
                 self.trade_logger.log_trade_event(event, hold_time_s=hold_time)
+
+            # Record outcome for feedback loop (TOTAL trade PnL)
+            if event.action in _FULL_CLOSE:
+                pos = self.pos_mgr.positions.get(symbol)
+                total_pnl = pos.realized_pnl if pos else event.pnl
+                _et_fb = ""
+                _pd_fb = ""
+                _rg_fb = ""
+                if pos and pos.trade_profile:
+                    _et_fb = pos.trade_profile.entry_type
+                    _pd_fb = pos.trade_profile.primary_driver
+                    _rg_fb = pos.trade_profile.regime
+                try:
+                    self.feedback.record_outcome(
+                        confidence=pos.confidence if pos else 0,
+                        win=total_pnl > 0,
+                        pnl=total_pnl,
+                        strategy=event.strategy,
+                        symbol=symbol,
+                        regime=_rg_fb,
+                        side=event.side,
+                        entry_type=_et_fb,
+                        num_agree=pos.entry_reasons.get("num_agree", 1) if pos and pos.entry_reasons else 1,
+                        hold_time_s=event.metadata.get("hold_time_s", 0),
+                        exit_action=event.action,
+                        leverage=event.leverage,
+                    )
+                except Exception as e:
+                    logger.warning(f"Feedback outcome error: {e}")
 
             # Record outcome for ML (use TOTAL trade PnL, not just final leg)
             if self.ml and event.action in _FULL_CLOSE:
@@ -856,6 +898,7 @@ class MultiStrategyBot:
 
         # ML confidence adjustment (pass full market context for both models)
         original_conf = signal_result.confidence
+        ml_volatility = 0.0  # Used by feedback loop below even if ML is disabled
         if self.ml:
             # Compute market context for ML
             ml_pchange_1h = 0.0
@@ -899,6 +942,50 @@ class MultiStrategyBot:
             )
             signal_result.confidence = adjusted_conf
 
+        # ── Feedback loop: adaptive confidence floor + quality scoring ──
+        # Replaces static 65% floor with dynamic, learned thresholds
+        try:
+            _regime = signal_result.metadata.get("regime", "")
+            _entry_type_fb = ""
+            _vol_ratio_fb = signal_result.metadata.get("volume_ratio", 1.0)
+
+            should_trade, fb_adjusted_conf, fb_floor, fb_reason = self.feedback.evaluate_signal(
+                confidence=signal_result.confidence,
+                strategy=signal_result.strategy,
+                symbol=symbol,
+                regime=_regime,
+                side=signal_result.side,
+                entry_type=_entry_type_fb,
+                num_agree=signal_result.metadata.get("num_agree", 1),
+                total_strategies=signal_result.metadata.get("total_strategies", len(self.strategies)),
+                volume_ratio=_vol_ratio_fb,
+                volatility=ml_volatility if self.ml else 0.0,
+                rr1=signal_result.risk_reward_tp1,
+                trend_alignment=signal_result.metadata.get("trend_adjustment", 0.0),
+            )
+
+            # Apply quality-adjusted confidence
+            signal_result.confidence = fb_adjusted_conf
+
+            # Record signal for backtest tracking
+            self.feedback.record_signal(
+                symbol=symbol,
+                side=signal_result.side,
+                confidence=signal_result.confidence,
+                strategy=signal_result.strategy,
+                entry=signal_result.entry,
+                sl=signal_result.sl,
+                tp1=signal_result.tp1,
+                regime=_regime,
+                num_agree=signal_result.metadata.get("num_agree", 1),
+            )
+
+            if not should_trade:
+                logger.info(f"[{trace_id}][{symbol}] Feedback floor: {fb_reason}")
+                return
+        except Exception as e:
+            logger.warning(f"[{trace_id}][{symbol}] Feedback loop error (proceeding): {e}")
+
         # ── Circuit breaker check (with high-confidence override) ──
         if not self.risk_mgr.can_open_position(
             self.pos_mgr.get_open_count(),
@@ -940,6 +1027,16 @@ class MultiStrategyBot:
 
         if lev_decision.leverage <= 0:
             return  # Confidence too low
+
+        # Feedback-driven leverage cap (learned from backtest performance)
+        try:
+            _fb_regime = signal_result.metadata.get("regime", "")
+            fb_lev_cap = self.feedback.get_leverage_cap(symbol, _fb_regime)
+            if lev_decision.leverage > fb_lev_cap:
+                lev_decision.leverage = fb_lev_cap
+                lev_decision.reason = f"feedback-capped to {fb_lev_cap:.0f}x"
+        except Exception:
+            pass  # Feedback failure shouldn't block trading
 
         # Per-symbol leverage cap from precision config
         sym_max_lev = get_max_leverage(symbol)
