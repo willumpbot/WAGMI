@@ -1102,7 +1102,7 @@ class MultiStrategyBot:
         )
         ops_check = self.ops_guard.can_execute(
             position_size_usd=position_size_usd,
-            equity=self.risk_mgr.current_equity,
+            equity=self.risk_mgr.equity,
             total_exposure_usd=total_exposure,
         )
         if not ops_check["allowed"]:
