@@ -11,6 +11,8 @@ import pandas as pd
 from datetime import datetime, timezone
 from typing import Optional
 
+from execution.rotation_manager import RotationManager, RotationConfig
+
 # ===== CONFIG =====
 SYMBOLS = {
     "BTC": "BTC-USD",
@@ -34,6 +36,16 @@ DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK", "")
 equity = STARTING_EQUITY
 open_positions: dict = {}
 trade_log: list = []
+
+# Rotation manager (fee-aware, anti-spam)
+ENABLE_ROTATION = os.getenv("ENABLE_ROTATION", "1") not in ("0", "False", "false")
+rotation_mgr = RotationManager(RotationConfig(
+    min_hold_before_rotation_s=int(os.getenv("ROTATION_MIN_HOLD_S", "300")),
+    global_rotation_cooldown_s=int(os.getenv("ROTATION_GLOBAL_COOLDOWN_S", "600")),
+    max_rotations_per_hour=int(os.getenv("ROTATION_MAX_PER_HOUR", "2")),
+    max_rotations_per_day=int(os.getenv("ROTATION_MAX_PER_DAY", "6")),
+    estimated_round_trip_fee_pct=TAKER_FEE_BPS / 100.0,
+)) if ENABLE_ROTATION else None
 
 # Callbacks
 on_open_callback = None
@@ -455,21 +467,116 @@ def latest_close(prod: str) -> Optional[float]:
         return None
     return float(df1.sort_values("time")["close"].iloc[-1])
 
+def _close_for_rotation(symbol: str, last_price: float, reason: str):
+    """Close a position due to rotation (profit rotation or loss avoidance)."""
+    global equity, open_positions, trade_log
+    if symbol not in open_positions:
+        return
+    p = open_positions[symbol]
+    if p["status"] != "open":
+        return
+
+    side = p["side"]
+    qty = p["qty"]
+    entry = p["entry"]
+    fee = fee_amount(last_price, qty)
+    pnl = (last_price - entry) * qty if side == "BUY" else (entry - last_price) * qty
+    equity += (pnl - fee)
+    trade_log.append({
+        "symbol": symbol, "action": reason, "price": last_price,
+        "qty": qty, "fee": fee, "pnl": pnl,
+        "time": datetime.now(timezone.utc).isoformat(),
+    })
+    p["status"] = "closed"
+    msg = f"[{symbol}] {reason} @ {last_price:.2f} PnL={pnl:.2f} eq={equity:.2f}"
+    log(msg)
+    send_discord(msg)
+    if on_close_callback:
+        try:
+            on_close_callback({
+                "action": reason, "symbol": symbol, "side": side,
+                "price": last_price, "exit": last_price,
+                "qty": qty, "fee": fee, "pnl": pnl,
+            })
+        except Exception as e:
+            log(f"on_close_callback error: {e}")
+
+
 def loop_once():
+    global equity, open_positions
+
+    candidate_signals = []
+    current_prices = {}
+
     for sym, prod in SYMBOLS.items():
         try:
-            if sym not in open_positions or open_positions[sym]["status"] != "open":
-                sig = generate_signal(sym, prod)
-                if sig:
-                    open_position(sig)
-
+            # Always fetch latest price
             lp = latest_close(prod)
             if lp is not None:
+                current_prices[sym] = lp
                 process_tp_sl(sym, lp)
+
+            # Generate signal (even if we have a position, for rotation eval)
+            sig = generate_signal(sym, prod)
+
+            if sig:
+                has_position = (sym in open_positions
+                                and open_positions[sym]["status"] == "open")
+                if not has_position:
+                    # No position: open normally AND collect as rotation candidate
+                    open_position(sig)
+                    candidate_signals.append(sig)
+                elif rotation_mgr:
+                    # Have position: collect as rotation candidate only
+                    candidate_signals.append(sig)
 
         except Exception as e:
             log(f"[{sym}] ERROR: {e}")
             continue
+
+    # ── Rotation evaluation ──
+    # Check if any open position should rotate into a better candidate signal
+    if rotation_mgr and candidate_signals:
+        active = {sym: pos for sym, pos in open_positions.items()
+                  if isinstance(pos, dict) and pos.get("status") == "open"}
+        if active:
+            # Filter candidates to only include symbols without open positions
+            rotation_candidates = [
+                c for c in candidate_signals
+                if c["symbol"] not in active
+            ]
+            if rotation_candidates:
+                actions = rotation_mgr.evaluate_rotations(
+                    active, rotation_candidates, current_prices
+                )
+                for action in actions:
+                    close_sym = action.close_symbol
+                    close_price = current_prices.get(close_sym)
+                    if close_price is None:
+                        continue
+
+                    new_sig = action.open_signal
+                    log(
+                        f"[ROTATION] {close_sym} -> {new_sig['symbol']} | "
+                        f"reason={action.close_reason} | "
+                        f"pnl={action.current_unrealized_pct:+.2f}% | "
+                        f"R/R: {action.old_rr_ratio:.2f} -> {action.new_rr_ratio:.2f} "
+                        f"({action.rr_improvement:.1f}x better)"
+                    )
+                    send_discord(
+                        f"ROTATION: {close_sym} -> {new_sig['symbol']} | "
+                        f"{action.close_reason} | "
+                        f"R/R improvement {action.rr_improvement:.1f}x"
+                    )
+
+                    # Close old position
+                    _close_for_rotation(close_sym, close_price, action.close_reason)
+
+                    # Open new position
+                    open_position(new_sig)
+
+                    # Record rotation
+                    rotation_mgr.record_rotation(action)
 
     open_count = sum(1 for v in open_positions.values() if isinstance(v, dict) and v.get("status") == "open")
     log(f"[HEARTBEAT] equity={equity:.2f} open_positions={open_count}")

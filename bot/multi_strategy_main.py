@@ -57,6 +57,7 @@ from execution.candidate import TradeCandidate, CandidateLogger
 from execution.reconciliation import reconcile_positions
 from execution.time_sizing import get_time_multiplier
 from execution.ops_guard import OpsGuard
+from execution.rotation_manager import RotationManager, RotationConfig
 from data.fetchers.telemetry import Telemetry
 
 
@@ -224,6 +225,18 @@ class MultiStrategyBot:
         # Operations guard: kill switch, rate limiting, exposure limits
         self.ops_guard = OpsGuard()
 
+        # Trade rotation manager: rotate stale/losing positions into better signals
+        if config.enable_rotation:
+            self.rotation_mgr = RotationManager(RotationConfig(
+                min_hold_before_rotation_s=config.rotation_min_hold_s,
+                global_rotation_cooldown_s=config.rotation_global_cooldown_s,
+                max_rotations_per_hour=config.rotation_max_per_hour,
+                max_rotations_per_day=config.rotation_max_per_day,
+                estimated_round_trip_fee_pct=config.taker_fee_bps / 100.0,  # bps -> %
+            ))
+        else:
+            self.rotation_mgr = None
+
         # Track 1h price changes for cross-market divergence detection
         self._price_changes_1h: Dict[str, float] = {}
 
@@ -358,11 +371,22 @@ class MultiStrategyBot:
         """One iteration of the main loop."""
         trace_id = uuid.uuid4().hex[:8]
 
+        # Collect candidate signals for rotation evaluation
+        self._tick_candidates: list = []
+
         for symbol, sym_cfg in DEFAULT_SYMBOLS.items():
             try:
                 self._process_symbol(symbol, sym_cfg, trace_id)
             except Exception as e:
                 logger.error(f"[{trace_id}][{symbol}] Error: {e}", exc_info=True)
+
+        # ── Trade rotation evaluation ──
+        # Check if any open position should be rotated into a better signal
+        if self.rotation_mgr and self._tick_candidates:
+            try:
+                self._evaluate_rotations(trace_id)
+            except Exception as e:
+                logger.warning(f"[{trace_id}] Rotation evaluation error: {e}")
 
         # LLM meta-brain: hybrid trigger system
         # Triggers accumulated during symbol processing; also check periodic + cross-market
@@ -509,7 +533,8 @@ class MultiStrategyBot:
 
             # Full close actions (for ML, weight tracking, cooldown)
             _FULL_CLOSE = ("SL", "TP2", "TRAILING_STOP", "EARLY_EXIT",
-                           "EMERGENCY", "LIQUIDATION_AVOID")
+                           "EMERGENCY", "LIQUIDATION_AVOID",
+                           "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
 
             # Record outcome for strategy weight tracking (only on full close, use total PnL)
             if event.action in _FULL_CLOSE and event.strategy:
@@ -666,29 +691,38 @@ class MultiStrategyBot:
             return  # Paused via Telegram /pause command
         if self.ops_guard.is_killed:
             return  # Kill switch active
-        if symbol in open_pos:
-            return  # Already have position in this symbol
-        if self.pos_mgr.get_open_count() >= self.risk_mgr.max_open_positions:
-            return  # Max positions reached (hard limit, no override)
+
+        # If we already have a position in this symbol, still evaluate signals
+        # for rotation candidates (other symbols may want to rotate into this one)
+        has_position = symbol in open_pos
+        at_max_positions = self.pos_mgr.get_open_count() >= self.risk_mgr.max_open_positions
+
+        # If we have a position and rotation is enabled, still evaluate the
+        # ensemble so the signal can serve as a rotation candidate for OTHER
+        # open positions that might want to rotate into this symbol.
+        if has_position and not self.rotation_mgr:
+            return  # No rotation, nothing to do
 
         # Per-symbol cooldown: don't re-enter too quickly after closing
-        # Longer cooldown after WINS to prevent round-tripping profits
-        last_close = self._symbol_cooldown.get(symbol, 0)
-        was_win = self._last_close_win.get(symbol, False)
-        cd = self._win_cooldown_seconds if was_win else self._cooldown_seconds
-        if time.time() - last_close < cd:
-            return
+        # (skip for rotation candidate collection — cooldown is for fresh entries)
+        if not has_position:
+            last_close = self._symbol_cooldown.get(symbol, 0)
+            was_win = self._last_close_win.get(symbol, False)
+            cd = self._win_cooldown_seconds if was_win else self._cooldown_seconds
+            if time.time() - last_close < cd:
+                return
 
         # Correlation guard: check before evaluating (saves compute)
         # We need to know the signal direction first, so we do a quick check
         # on existing positions to reject early if same-tier is maxed out
-        sym_tier = sym_cfg.risk_tier
-        tier_count = sum(
-            1 for s, p in open_pos.items()
-            if DEFAULT_SYMBOLS.get(s) and DEFAULT_SYMBOLS[s].risk_tier == sym_tier
-        )
-        if tier_count >= self._max_same_tier:
-            return  # Too many positions in same risk tier
+        if not has_position:
+            sym_tier = sym_cfg.risk_tier
+            tier_count = sum(
+                1 for s, p in open_pos.items()
+                if DEFAULT_SYMBOLS.get(s) and DEFAULT_SYMBOLS[s].risk_tier == sym_tier
+            )
+            if tier_count >= self._max_same_tier:
+                return  # Too many positions in same risk tier
 
         signal_result = self.ensemble.evaluate(symbol, data)
 
@@ -921,6 +955,27 @@ class MultiStrategyBot:
             logger.info(
                 f"[{trace_id}][{symbol}] Rejected: R:R1={rr1:.2f} < 1.0 at {lev_decision.leverage:.1f}x"
             )
+            return
+
+        # ── Rotation candidate collection ──
+        # If we already have a position in this symbol or are at max positions,
+        # don't open a new position — but save the signal as a potential rotation
+        # target for other open positions that may want to rotate into this one.
+        if has_position or at_max_positions:
+            if self.rotation_mgr and not has_position:
+                self._tick_candidates.append({
+                    "symbol": symbol,
+                    "side": signal_result.side,
+                    "entry": signal_result.entry,
+                    "sl": signal_result.sl,
+                    "tp1": signal_result.tp1,
+                    "tp2": signal_result.tp2,
+                    "atr": signal_result.atr,
+                    "confidence": signal_result.confidence,
+                    "align_score": signal_result.metadata.get("num_agree", 1),
+                    "strategy": signal_result.strategy,
+                    "rr1": rr1,
+                })
             return
 
         # Calculate position size (risk-based: qty = risk$ / (stop_dist * leverage))
@@ -1181,6 +1236,22 @@ class MultiStrategyBot:
         entry_reasons["live_entry"] = actual_entry
         entry_reasons["entry_slippage_pct"] = round(slippage_pct, 4)
 
+        # Collect as rotation candidate for other open positions
+        if self.rotation_mgr:
+            self._tick_candidates.append({
+                "symbol": symbol,
+                "side": signal_result.side,
+                "entry": actual_entry,
+                "sl": adj_sl,
+                "tp1": adj_tp1,
+                "tp2": adj_tp2,
+                "atr": signal_result.atr,
+                "confidence": signal_result.confidence,
+                "align_score": signal_result.metadata.get("num_agree", 1),
+                "strategy": signal_result.strategy,
+                "rr1": rr1,
+            })
+
         # Telemetry: record trade and slippage
         Telemetry.inc("total_trades")
         Telemetry.record("slippages", slippage_pct)
@@ -1253,6 +1324,130 @@ class MultiStrategyBot:
             f"Regime: {trade_prof.regime} | "
             f"Driver: {trade_prof.primary_driver} | "
             f"Strategies: {signal_result.metadata.get('strategies_agree', [signal_result.strategy])}"
+        )
+
+    # ── Trade Rotation ─────────────────────────────────────────────
+
+    def _evaluate_rotations(self, trace_id: str = ""):
+        """
+        Evaluate whether any open position should be rotated into a better signal.
+
+        Called once per tick after all symbols have been processed. Uses the
+        candidate signals collected during symbol processing.
+        """
+        open_pos = self.pos_mgr.get_open_positions()
+        if not open_pos:
+            return
+
+        # Build position dicts compatible with rotation manager
+        positions_dict = {}
+        for sym, pos in open_pos.items():
+            positions_dict[sym] = {
+                "symbol": sym,
+                "side": pos.side,
+                "entry": pos.entry,
+                "sl": pos.sl,
+                "tp1": pos.tp1,
+                "tp2": pos.tp2,
+                "qty": pos.qty,
+                "status": "open",
+                "open_time": pos.open_time.isoformat() if pos.open_time else None,
+            }
+
+        # Filter candidates: exclude symbols that already have open positions
+        # (can't rotate INTO a symbol we already hold)
+        candidates = [
+            c for c in self._tick_candidates
+            if c["symbol"] not in open_pos
+        ]
+
+        if not candidates:
+            return
+
+        # Get current prices
+        current_prices = {sym: self._last_prices[sym]
+                          for sym in positions_dict if sym in self._last_prices}
+
+        actions = self.rotation_mgr.evaluate_rotations(
+            positions_dict, candidates, current_prices
+        )
+
+        for action in actions:
+            self._execute_rotation(action, trace_id)
+
+    def _execute_rotation(self, action, trace_id: str = ""):
+        """Execute a rotation: close the old position, open the new one."""
+        close_symbol = action.close_symbol
+        new_signal = action.open_signal
+        new_symbol = new_signal["symbol"]
+
+        logger.info(
+            f"[{trace_id}] ROTATION: {close_symbol} -> {new_symbol} | "
+            f"reason={action.close_reason} | "
+            f"current_pnl={action.current_unrealized_pct:+.2f}% | "
+            f"old_rr={action.old_rr_ratio:.2f} -> new_rr={action.new_rr_ratio:.2f} "
+            f"({action.rr_improvement:.2f}x improvement) | "
+            f"new_conf={action.confidence_new:.0f}%"
+        )
+
+        # 1. Close the old position
+        close_price = self._last_prices.get(close_symbol)
+        if close_price is None:
+            logger.warning(f"[{trace_id}] Rotation aborted: no price for {close_symbol}")
+            return
+
+        close_event = self.pos_mgr.force_close(
+            close_symbol, close_price, action.close_reason
+        )
+        if close_event is None:
+            logger.warning(f"[{trace_id}] Rotation aborted: could not close {close_symbol}")
+            return
+
+        # Process the close event (equity, logging, ML, etc.)
+        self.risk_mgr.update_equity(close_event.pnl - close_event.fee)
+        log_trade(
+            symbol=close_event.symbol,
+            action=close_event.action,
+            side=close_event.side,
+            price=close_event.price,
+            qty=close_event.qty,
+            pnl=close_event.pnl,
+            fee=close_event.fee,
+            leverage=close_event.leverage,
+            strategy=close_event.strategy,
+            metadata={
+                **close_event.metadata,
+                "rotation_to": new_symbol,
+                "rotation_reason": action.close_reason,
+                "rotation_rr_improvement": action.rr_improvement,
+            }
+        )
+
+        # Record cooldown for the closed symbol
+        self._symbol_cooldown[close_symbol] = time.time()
+        pos = self.pos_mgr.positions.get(close_symbol)
+        if pos:
+            self._last_close_win[close_symbol] = pos.realized_pnl > 0
+            self._last_close_side[close_symbol] = pos.side
+
+        # Send alert
+        self.alerts.send_trade_event(
+            action.close_reason, close_symbol,
+            f"ROTATION: {close_symbol} -> {new_symbol}\n"
+            f"PnL: ${close_event.pnl:+.2f} | R/R improvement: {action.rr_improvement:.1f}x\n"
+            f"New signal confidence: {action.confidence_new:.0f}%"
+        )
+
+        # 2. Record the rotation
+        self.rotation_mgr.record_rotation(action)
+        Telemetry.inc("rotations")
+
+        # 3. The new position will be opened on the next tick when
+        # the signal is re-evaluated (don't double-open here since
+        # the signal may have already been opened in _process_symbol)
+        logger.info(
+            f"[{trace_id}] Rotation complete: closed {close_symbol}, "
+            f"{new_symbol} signal available for entry next tick"
         )
 
     # ── LLM Meta-Brain Integration ────────────────────────────────

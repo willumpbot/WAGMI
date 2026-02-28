@@ -124,6 +124,23 @@ class TradingConfig:
     telegram_token: str = field(default_factory=lambda: _env("TELEGRAM_TOKEN", ""))
     telegram_chat_id: str = field(default_factory=lambda: _env("TELEGRAM_CHAT_ID", ""))
 
+    # Trade rotation
+    enable_rotation: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_ROTATION", True)
+    )
+    rotation_min_hold_s: int = field(
+        default_factory=lambda: _env_int("ROTATION_MIN_HOLD_S", 300)
+    )
+    rotation_global_cooldown_s: int = field(
+        default_factory=lambda: _env_int("ROTATION_GLOBAL_COOLDOWN_S", 600)
+    )
+    rotation_max_per_hour: int = field(
+        default_factory=lambda: _env_int("ROTATION_MAX_PER_HOUR", 2)
+    )
+    rotation_max_per_day: int = field(
+        default_factory=lambda: _env_int("ROTATION_MAX_PER_DAY", 6)
+    )
+
     # API integration
     api_base_url: str = field(default_factory=lambda: _env("BASE_URL", "http://api:8000"))
     api_key: str = field(default_factory=lambda: _env("NUNUIRL_API_KEY", _env("HEYANON_API_KEY", "")))

@@ -506,6 +506,8 @@ class PositionManager:
             return "EARLY_EXIT_SAVE" if pos.realized_pnl > -(abs(pos.entry - pos.original_sl) * pos.original_qty * pos.leverage * 0.5) else "EARLY_EXIT_FAIL"
         elif action == "TRAILING_STOP":
             return "TRAILING_WIN" if win else "TRAILING_FAIL"
+        elif action in ("ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE"):
+            return "ROTATION_WIN" if win else "ROTATION_LOSS_AVOIDANCE"
         elif action == "SL":
             if tp1_was_hit:
                 return "TP1_THEN_SL"
@@ -598,7 +600,8 @@ class PositionManager:
     def get_trade_summary(self) -> Dict[str, Any]:
         """Summary of all trades taken."""
         closed = [e for e in self.trade_log if e.action in
-                  ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY")]
+                  ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY",
+                   "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")]
         if not closed:
             return {"total_trades": 0}
 
@@ -619,6 +622,7 @@ class PositionManager:
             "avg_loss": sum(e.pnl for e in losses) / len(losses) if losses else 0,
             "by_action": {
                 action: sum(1 for e in closed if e.action == action)
-                for action in ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY")
+                for action in ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY",
+                               "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
             },
         }
