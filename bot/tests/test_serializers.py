@@ -1,5 +1,10 @@
+import os
 import re
-from bot.serializers import build_trade_event, build_position_event
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from serializers import build_trade_event, build_position_event
 
 
 def is_iso_z(s: str) -> bool:

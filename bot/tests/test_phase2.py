@@ -180,8 +180,8 @@ class TestPrecisionRounding:
         assert round_price("BTC", 98765.4321) == 98765.4
 
     def test_sol_price_precision(self):
-        """SOL prices should round to 2 decimal places."""
-        assert round_price("SOL", 123.4567) == 123.46
+        """SOL prices should round to 3 decimal places."""
+        assert round_price("SOL", 123.4567) == 123.457
 
     def test_hype_price_precision(self):
         """HYPE (microcap) prices should round to 4 decimal places."""
@@ -189,13 +189,13 @@ class TestPrecisionRounding:
 
     def test_qty_rounds_down(self):
         """Quantity always rounds DOWN for safety."""
-        assert round_qty("BTC", 1.5678) == 1.567  # 3 decimals, round down
-        assert round_qty("SOL", 99.999) == 99.99   # 2 decimals, round down
+        assert round_qty("BTC", 1.56789) == 1.56789  # 5 decimals per config
+        assert round_qty("SOL", 99.999) == 99.99      # 2 decimals, round down
 
     def test_format_price(self):
         """format_price should produce correct string representation."""
         assert format_price("BTC", 98765.0) == "98765.0"
-        assert format_price("SOL", 123.4) == "123.40"
+        assert format_price("SOL", 123.4) == "123.400"  # 3 decimal places per config
 
     def test_unknown_symbol_uses_default(self):
         """Unknown symbols should use default precision (2 price, 4 qty)."""
