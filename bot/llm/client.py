@@ -53,7 +53,7 @@ def call_llm(
     system_prompt: str,
     snapshot_json: str,
     model: str = "claude-sonnet-4-5-20250929",
-    max_tokens: int = 600,
+    max_tokens: int = 1024,
     max_retries: int = 2,
     timeout: float = 30.0,
 ) -> Tuple[Optional[str], dict]:
@@ -90,6 +90,14 @@ def call_llm(
             for block in response.content:
                 if hasattr(block, "text"):
                     text += block.text
+
+            # Detect truncation (stop_reason == "max_tokens" means output was cut off)
+            stop_reason = getattr(response, "stop_reason", None)
+            if stop_reason == "max_tokens":
+                logger.warning(
+                    f"[LLM] Response truncated at {max_tokens} tokens — "
+                    f"JSON likely incomplete. Consider increasing max_tokens."
+                )
 
             # Track usage
             in_tok = getattr(response.usage, "input_tokens", 0)

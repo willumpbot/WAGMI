@@ -152,7 +152,7 @@ TIER_CONSERVATIVE = UsageTier(
     min_cooldown_s=30,
     min_snapshot_interval_s=300,
     force_snapshot_interval_s=900,
-    max_output_tokens=500,
+    max_output_tokens=800,
     estimated_monthly_cost=18.0,
 )
 
@@ -165,7 +165,7 @@ TIER_RECOMMENDED = UsageTier(
     min_cooldown_s=20,
     min_snapshot_interval_s=180,
     force_snapshot_interval_s=600,
-    max_output_tokens=600,
+    max_output_tokens=1024,
     estimated_monthly_cost=130.0,
 )
 
