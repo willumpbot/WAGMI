@@ -62,8 +62,40 @@ class StrategyWeightManager:
         self.data[strategy]["trials"] += 1
         if win:
             self.data[strategy]["wins"] += 1
+        # Track recent outcomes for rolling weight calculation
+        if "recent_outcomes" not in self.data[strategy]:
+            self.data[strategy]["recent_outcomes"] = []
+        self.data[strategy]["recent_outcomes"].append(1 if win else 0)
+        # Keep last 20 outcomes
+        if len(self.data[strategy]["recent_outcomes"]) > 20:
+            self.data[strategy]["recent_outcomes"] = self.data[strategy]["recent_outcomes"][-20:]
         self.data[strategy]["weight"] = self.get_weight(strategy)
         self._save()
+
+    def get_rolling_weights(self, window: int = 10) -> Dict[str, float]:
+        """Get strategy weights scaled by rolling win rate.
+
+        Formula: weight = base_weight * max(0.1, rolling_wr / 0.5)
+        Hot strategies (>50% WR) get boosted, cold strategies get quieted.
+
+        Args:
+            window: Number of recent outcomes to consider.
+        Returns:
+            Dict of strategy name -> dynamic weight.
+        """
+        dynamic = {}
+        for name, entry in self.data.items():
+            base = self.get_weight(name)
+            # Use recent outcomes if available
+            recent = entry.get("recent_outcomes", [])
+            if len(recent) >= 3:
+                rolling_wr = sum(recent[-window:]) / len(recent[-window:])
+            else:
+                rolling_wr = base  # Fall back to smoothed weight
+            # Scale: 50% WR = 1.0x, 80% = 1.6x, 20% = 0.4x (floored at 0.1)
+            scale = max(0.1, rolling_wr / 0.5)
+            dynamic[name] = round(base * scale, 4)
+        return dynamic
 
     def apply_decay(self):
         """Apply exponential decay to historical counts.

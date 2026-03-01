@@ -1,240 +1,100 @@
 """
-Bot health monitoring and alerting.
+Health monitoring: heartbeat tracking and stall detection.
 
-Checks every minute:
-- Is bot process running?
-- Last data fetch time
-- Exchange connection status
-- Equity trend
-- Memory usage
-- Log file size
-- ML training status
+Writes periodic heartbeats to data/heartbeat.json so external monitors
+can detect when the bot's main loop has stalled (not just when it crashes).
 
-Sends Discord alerts if issues detected.
+Usage:
+    monitor = HealthMonitor()
+    monitor.record_heartbeat(loop_duration_s=2.5, positions=3)
+    status = monitor.get_status()
+    if status["stalled"]:
+        alert("Bot stalled!")
 """
 
+import json
 import logging
 import os
-import psutil
 import time
-from datetime import datetime, timezone, timedelta
-from pathlib import Path
-from typing import Dict, Any, Optional
+from datetime import datetime, timezone
+from typing import Dict, Any
 
 logger = logging.getLogger("bot.monitoring.health")
 
+_HEARTBEAT_FILE = os.path.join("data", "heartbeat.json")
+_STALL_THRESHOLD_S = 600  # 10 minutes without heartbeat = stalled
+
 
 class HealthMonitor:
-    """Monitors bot health and detects issues."""
+    """Tracks bot health via periodic heartbeats."""
 
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or {}
-        self.last_check = None
-        self.alerts_sent = {}  # Track sent alerts to avoid spam
+    def __init__(self, heartbeat_file: str = _HEARTBEAT_FILE, stall_threshold_s: int = _STALL_THRESHOLD_S):
+        self._file = heartbeat_file
+        self._stall_threshold = stall_threshold_s
+        self._last_heartbeat = time.time()
+        self._loop_durations: list = []  # Last 20 loop durations
+        self._scan_count = 0
+        self._error_count = 0
+        self._start_time = time.time()
 
-        # Defaults
-        self.max_memory_mb = self.config.get("max_memory_mb", 500)
-        self.max_log_size_mb = self.config.get("max_log_size_mb", 100)
-        self.data_fetch_timeout_s = self.config.get("data_fetch_timeout_s", 60)
-        self.equity_stale_threshold_min = self.config.get("equity_stale_threshold_min", 5)
+    def record_heartbeat(
+        self,
+        loop_duration_s: float = 0.0,
+        positions: int = 0,
+        equity: float = 0.0,
+        extra: Dict[str, Any] = None,
+    ):
+        """Record a heartbeat from the main trading loop."""
+        self._last_heartbeat = time.time()
+        self._scan_count += 1
 
-    def check_all(self, bot_process: Optional[psutil.Process] = None) -> Dict[str, Any]:
-        """
-        Run all health checks.
+        if loop_duration_s > 0:
+            self._loop_durations.append(loop_duration_s)
+            if len(self._loop_durations) > 20:
+                self._loop_durations = self._loop_durations[-20:]
 
-        Returns: Dict with status of each check and any issues found
-        """
-        status = {
+        heartbeat = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "checks": {},
-            "alerts": [],
+            "epoch": self._last_heartbeat,
+            "uptime_s": round(self._last_heartbeat - self._start_time, 0),
+            "scan_count": self._scan_count,
+            "loop_duration_s": round(loop_duration_s, 2),
+            "avg_loop_s": round(
+                sum(self._loop_durations) / len(self._loop_durations), 2
+            ) if self._loop_durations else 0,
+            "positions": positions,
+            "equity": round(equity, 2),
+            "errors": self._error_count,
+        }
+        if extra:
+            heartbeat.update(extra)
+
+        try:
+            os.makedirs(os.path.dirname(self._file), exist_ok=True)
+            with open(self._file, "w") as f:
+                json.dump(heartbeat, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to write heartbeat: {e}")
+
+    def record_error(self):
+        """Record an error occurrence."""
+        self._error_count += 1
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get current health status."""
+        now = time.time()
+        since_last = now - self._last_heartbeat
+        return {
+            "last_heartbeat_s_ago": round(since_last, 1),
+            "stalled": since_last > self._stall_threshold,
+            "uptime_s": round(now - self._start_time, 0),
+            "scan_count": self._scan_count,
+            "error_count": self._error_count,
+            "avg_loop_s": round(
+                sum(self._loop_durations) / len(self._loop_durations), 2
+            ) if self._loop_durations else 0,
         }
 
-        # Bot process health
-        if bot_process:
-            status["checks"]["bot_running"] = self._check_process(bot_process)
-
-        # Memory usage
-        memory_status = self._check_memory()
-        status["checks"]["memory"] = memory_status
-
-        if memory_status["alert"]:
-            status["alerts"].append({
-                "severity": "WARN",
-                "message": f"⚠️ Memory usage {memory_status['mb']:.0f}MB (threshold: {self.max_memory_mb}MB)",
-            })
-
-        # Log file size
-        log_status = self._check_log_size()
-        status["checks"]["log_size"] = log_status
-
-        if log_status["alert"]:
-            status["alerts"].append({
-                "severity": "WARN",
-                "message": f"⚠️ Log file {log_status['mb']:.0f}MB (threshold: {self.max_log_size_mb}MB)",
-            })
-
-        # Data freshness
-        data_status = self._check_data_freshness()
-        status["checks"]["data_freshness"] = data_status
-
-        if data_status["alert"]:
-            status["alerts"].append({
-                "severity": "CRITICAL",
-                "message": f"🚨 No data fetch for {data_status['minutes']:.0f} minutes (threshold: {self.data_fetch_timeout_s}s)",
-            })
-
-        self.last_check = status
-        return status
-
-    def _check_process(self, process: psutil.Process) -> Dict[str, Any]:
-        """Check if bot process is running."""
-        try:
-            is_alive = process.is_running()
-            return {
-                "ok": is_alive,
-                "alert": not is_alive,
-                "message": "✅ Bot process running" if is_alive else "🚨 Bot process not found",
-            }
-        except Exception as e:
-            logger.warning(f"Could not check process: {e}")
-            return {"ok": False, "alert": True, "message": f"Could not verify: {e}"}
-
-    def _check_memory(self) -> Dict[str, Any]:
-        """Check memory usage."""
-        try:
-            process = psutil.Process()
-            mem_mb = process.memory_info().rss / (1024 * 1024)
-            is_ok = mem_mb < self.max_memory_mb
-
-            return {
-                "ok": is_ok,
-                "alert": not is_ok,
-                "mb": mem_mb,
-                "message": f"Memory: {mem_mb:.0f}MB",
-            }
-        except Exception as e:
-            logger.warning(f"Could not check memory: {e}")
-            return {"ok": True, "alert": False, "mb": 0}
-
-    def _check_log_size(self) -> Dict[str, Any]:
-        """Check log file size."""
-        log_file = Path("logs") / f"bot_{datetime.now().strftime('%Y%m%d')}.log"
-        if not log_file.exists():
-            return {"ok": True, "alert": False, "mb": 0}
-
-        try:
-            size_mb = log_file.stat().st_size / (1024 * 1024)
-            is_ok = size_mb < self.max_log_size_mb
-
-            return {
-                "ok": is_ok,
-                "alert": not is_ok,
-                "mb": size_mb,
-                "message": f"Log file: {size_mb:.0f}MB",
-            }
-        except Exception as e:
-            logger.warning(f"Could not check log size: {e}")
-            return {"ok": True, "alert": False, "mb": 0}
-
-    def _check_data_freshness(self) -> Dict[str, Any]:
-        """Check how recently data was fetched."""
-        # Look for recent files in logs
-        log_dir = Path("logs")
-        if not log_dir.exists():
-            return {"ok": True, "alert": False, "minutes": 0}
-
-        try:
-            # Find most recent log file
-            log_files = list(log_dir.glob("bot_*.log"))
-            if not log_files:
-                return {"ok": False, "alert": True, "minutes": 999}
-
-            latest_log = max(log_files, key=lambda f: f.stat().st_mtime)
-            last_modified = datetime.fromtimestamp(latest_log.stat().st_mtime, tz=timezone.utc)
-            age_seconds = (datetime.now(timezone.utc) - last_modified).total_seconds()
-            age_minutes = age_seconds / 60
-
-            is_ok = age_seconds < self.data_fetch_timeout_s
-
-            return {
-                "ok": is_ok,
-                "alert": not is_ok,
-                "minutes": age_minutes,
-                "message": f"Last data: {age_minutes:.1f}min ago",
-            }
-        except Exception as e:
-            logger.warning(f"Could not check data freshness: {e}")
-            return {"ok": False, "alert": True, "minutes": 999}
-
-    def print_status(self):
-        """Print current health status."""
-        if not self.last_check:
-            print("❌ No health check performed yet")
-            return
-
-        print("\n" + "=" * 60)
-        print("BOT HEALTH STATUS")
-        print("=" * 60)
-        print(f"Checked: {self.last_check['timestamp']}")
-
-        print("\n✅ CHECKS:")
-        for check_name, result in self.last_check["checks"].items():
-            status = "✅" if result.get("ok") else "❌"
-            print(f"  {status} {check_name}: {result.get('message', 'ok')}")
-
-        if self.last_check["alerts"]:
-            print(f"\n🚨 ALERTS ({len(self.last_check['alerts'])}):")
-            for alert in self.last_check["alerts"]:
-                print(f"  {alert['severity']}: {alert['message']}")
-        else:
-            print("\n✅ No alerts")
-
-        print("=" * 60 + "\n")
-
-    def should_restart(self) -> bool:
-        """Determine if bot should be restarted for recovery."""
-        if not self.last_check:
-            return False
-
-        # Check for critical alerts
-        for alert in self.last_check["alerts"]:
-            if alert["severity"] == "CRITICAL":
-                return True
-
-        return False
-
-
-def format_alert_message(status: Dict[str, Any]) -> str:
-    """Format health status for Discord."""
-    checks = status.get("checks", {})
-
-    if not status.get("alerts"):
-        # All good - send normal status
-        emoji = "✅"
-        lines = [f"{emoji} Bot Healthy"]
-
-        if "memory" in checks:
-            mb = checks["memory"].get("mb", 0)
-            lines.append(f"  Memory: {mb:.0f}MB")
-
-        if "data_freshness" in checks:
-            mins = checks["data_freshness"].get("minutes", 0)
-            lines.append(f"  Last data: {mins:.1f}min ago")
-
-        return "\n".join(lines)
-
-    else:
-        # Problems - send alert
-        lines = ["🚨 **BOT HEALTH ALERT**"]
-        for alert in status["alerts"]:
-            lines.append(f"  {alert['message']}")
-
-        return "\n".join(lines)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    monitor = HealthMonitor()
-    status = monitor.check_all()
-    monitor.print_status()
+    def is_healthy(self) -> bool:
+        """Quick health check."""
+        return not self.get_status()["stalled"]

@@ -77,6 +77,12 @@ from llm.cost_tracker import get_cost_tracker
 from llm.operator_channel import get_operator_channel
 from llm.self_performance import get_performance_stats
 
+# Phase D+E+F: new modules
+from execution.funding_timer import should_close_before_funding, minutes_until_next_funding
+from strategies.regime_detector import RegimeTransitionDetector
+from monitoring.health import HealthMonitor
+from execution.graceful_degradation import DegradationManager
+
 
 def get_tp1_close_pct(confidence: float) -> float:
     """Legacy confidence-based TP1 close percentage.
@@ -268,6 +274,11 @@ class MultiStrategyBot:
         # Veto tracker: counterfactual validation for LLM vetoes
         self.veto_tracker = get_veto_tracker()
 
+        # Phase D+E+F: new subsystems
+        self.regime_detector = RegimeTransitionDetector()
+        self.health_monitor = HealthMonitor()
+        self.degradation = DegradationManager()
+
         # Track 1h price changes for cross-market divergence detection
         self._price_changes_1h: Dict[str, float] = {}
 
@@ -410,6 +421,7 @@ class MultiStrategyBot:
     def _tick_once(self):
         """One iteration of the main loop."""
         trace_id = uuid.uuid4().hex[:8]
+        _loop_start = time.time()
 
         # Collect candidate signals for rotation evaluation
         self._tick_candidates: list = []
@@ -419,6 +431,7 @@ class MultiStrategyBot:
                 self._process_symbol(symbol, sym_cfg, trace_id)
             except Exception as e:
                 logger.error(f"[{trace_id}][{symbol}] Error: {e}", exc_info=True)
+                self.health_monitor.record_error()
 
         # ── Trade rotation evaluation ──
         # Check if any open position should be rotated into a better signal
@@ -485,6 +498,13 @@ class MultiStrategyBot:
             )
         except Exception as e:
             logger.debug(f"[{trace_id}] Growth tick error: {e}")
+
+        # Record health monitor heartbeat every tick
+        self.health_monitor.record_heartbeat(
+            loop_duration_s=time.time() - _loop_start,
+            positions=self.pos_mgr.get_open_count(),
+            equity=self.risk_mgr.equity,
+        )
 
         # Heartbeat every 60 ticks (~1 hour at 60s intervals)
         if self._tick % 60 == 0:
@@ -602,6 +622,30 @@ class MultiStrategyBot:
                         f"[{trace_id}][{symbol}] Liquidation warning: "
                         f"{_liq_dist:.1%} distance — tightened SL to {_new_sl:.4f}"
                     )
+
+        # D2: Funding-aware hold time optimization
+        # Close marginal positions before 8-hour funding payments
+        if symbol in open_pos and open_pos[symbol].leverage > 1.0:
+            _fund_pos = open_pos[symbol]
+            _fr = self._last_funding_rates.get(symbol, 0.0)
+            if _fr != 0:
+                _p = self._last_prices.get(symbol, _fund_pos.entry)
+                if _fund_pos.side == "LONG":
+                    _unrealized_pct = (_p - _fund_pos.entry) / _fund_pos.entry * 100
+                else:
+                    _unrealized_pct = (_fund_pos.entry - _p) / _fund_pos.entry * 100
+                if should_close_before_funding(
+                    pnl_pct=_unrealized_pct,
+                    funding_rate=_fr,
+                    leverage=_fund_pos.leverage,
+                    side=_fund_pos.side,
+                ):
+                    logger.info(
+                        f"[{trace_id}][{symbol}] Closing before funding: "
+                        f"PnL={_unrealized_pct:.2f}%, rate={_fr:.5f}, "
+                        f"lev={_fund_pos.leverage:.0f}x"
+                    )
+                    self.pos_mgr.force_close(symbol, current_price, "FUNDING_AVOIDANCE")
 
         # Update existing positions (pass 5m data for early exit momentum detection)
         df_5m = data.get("5m")
@@ -939,14 +983,30 @@ class MultiStrategyBot:
                         f"{signal_result.side}: {strategies}",
             )
 
-        # Regime shift detection (from strategy metadata)
+        # Regime shift detection (from strategy metadata) + transition tracking
         current_regime = signal_result.metadata.get("regime", "")
-        if current_regime and self._llm_triggers.check_regime_shift(symbol, current_regime):
-            self._llm_triggers.add(
-                LLMTrigger.REGIME_SHIFT,
-                symbol=symbol,
-                context=f"{symbol} regime shifted to '{current_regime}'",
-            )
+        if current_regime:
+            # E2: Feed regime detector for transition detection
+            regime_result = self.regime_detector.update(symbol, current_regime)
+            if regime_result["transitioning"]:
+                signal_result.metadata["regime_transition"] = {
+                    "from": regime_result["from_regime"],
+                    "to": regime_result["to_regime"],
+                    "confidence": regime_result["confidence"],
+                }
+            if self._llm_triggers.check_regime_shift(symbol, current_regime):
+                _transition_ctx = ""
+                if regime_result.get("transitioning"):
+                    _transition_ctx = (
+                        f" (transition: {regime_result['from_regime']}->"
+                        f"{regime_result['to_regime']} "
+                        f"conf={regime_result['confidence']:.0%})"
+                    )
+                self._llm_triggers.add(
+                    LLMTrigger.REGIME_SHIFT,
+                    symbol=symbol,
+                    context=f"{symbol} regime shifted to '{current_regime}'{_transition_ctx}",
+                )
 
         # Strategy disagreement detection (2 long vs 2 short, or high-conf outlier)
         try:
@@ -1959,6 +2019,10 @@ class MultiStrategyBot:
             "portfolio_leverage": self._compute_portfolio_leverage(),
             # Estimated daily funding cost (% of equity)
             "estimated_daily_funding_cost": self._compute_estimated_daily_funding(),
+            # D5: Session performance for LLM context
+            "session_performance": self.feedback.quality.get_session_performance(),
+            # E2: Active regime transitions
+            "regime_transitions": self.regime_detector.get_transition_summary(),
         }
 
         # Risk context

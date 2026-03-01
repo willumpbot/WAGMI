@@ -33,11 +33,13 @@ def main():
             "  paper   - Paper trading with live data (default, safe)\n"
             "  replay  - Replay trade logs and detect anomalies\n"
             "  live    - Real money trading (requires confirmation)\n"
+            "  evolve  - Strategy evolution report (daily review)\n"
+            "  tiers   - Show LLM usage tier comparison\n"
         ),
     )
     parser.add_argument(
         "--mode", "-m",
-        choices=["paper", "replay", "live"],
+        choices=["paper", "replay", "live", "evolve", "tiers"],
         default="paper",
         help="Trading mode (default: paper)",
     )
@@ -58,6 +60,10 @@ def main():
         _run_replay(args.replay_file)
     elif args.mode == "live":
         _run_live(args.yes)
+    elif args.mode == "evolve":
+        _run_evolve()
+    elif args.mode == "tiers":
+        _run_tiers()
     else:
         _run_paper()
 
@@ -147,6 +153,20 @@ def _run_replay(replay_file: str = None):
     else:
         print("\nNo high severity anomalies.")
         sys.exit(0)
+
+
+def _run_evolve():
+    """Strategy evolution report — the student's daily journal."""
+    from feedback.evolution_tracker import EvolutionTracker
+    tracker = EvolutionTracker("data")
+    report = tracker.generate_report()
+    print(tracker.format_report(report))
+
+
+def _run_tiers():
+    """Show LLM usage tier comparison and current configuration."""
+    from llm.usage_tiers import format_tier_comparison
+    print(format_tier_comparison())
 
 
 if __name__ == "__main__":

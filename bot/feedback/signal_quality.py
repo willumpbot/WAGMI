@@ -98,6 +98,11 @@ class SignalQualityScorer:
             lambda: {"wins": 0, "total": 0, "pnl": 0.0, "recent": []}
         )
 
+        # Session-level tracking (Asia/Europe/US/Late)
+        self.by_session: Dict[str, Dict] = defaultdict(
+            lambda: {"wins": 0, "total": 0, "pnl": 0.0, "recent": []}
+        )
+
         # Overall quality trend
         self.overall_recent: List[int] = []  # 1=win, 0=loss, last 100
 
@@ -130,6 +135,11 @@ class SignalQualityScorer:
         _update(self.by_consensus, features.num_strategies_agree)
         _update(self.by_entry_type, features.entry_type or "unknown")
         _update(self.by_hour, features.hour_of_day)
+
+        # Session tracking
+        session = self._hour_to_session(features.hour_of_day)
+        _update(self.by_session, session)
+
         _update(self.by_side, features.side)
 
         # LLM agreement tracking
@@ -300,6 +310,18 @@ class SignalQualityScorer:
         # Wider range punishes truly bad signals harder
         return 0.5 + win_rate * 0.8
 
+    @staticmethod
+    def _hour_to_session(hour: int) -> str:
+        """Map hour-of-day (UTC) to trading session."""
+        if 0 <= hour < 6:
+            return "asia"
+        elif 6 <= hour < 12:
+            return "europe"
+        elif 12 <= hour < 18:
+            return "us"
+        else:
+            return "late"
+
     def get_report(self) -> Dict[str, Any]:
         """Get quality scoring report."""
         report = {
@@ -347,6 +369,40 @@ class SignalQualityScorer:
 
         return report
 
+    def get_symbol_confidence_floor(self, symbol: str, base_floor: float = 65.0) -> float:
+        """Compute adjusted confidence floor based on symbol difficulty.
+
+        Symbols where we consistently lose need HIGHER confidence to trade.
+        Symbols where we consistently win can have LOWER floors.
+
+        Formula: floor = base_floor * (1 + difficulty * 0.3)
+        Where difficulty = 1.0 - symbol_win_rate
+        """
+        sym_data = self.by_symbol.get(symbol)
+        if not sym_data or sym_data["total"] < 5:
+            return base_floor  # Not enough data
+
+        wr = self._recent_win_rate(sym_data)
+        difficulty = 1.0 - wr
+        adjusted = base_floor * (1 + difficulty * 0.3)
+        # Cap: don't make floor impossibly high or too low
+        adjusted = max(base_floor - 5, min(base_floor + 15, adjusted))
+        return round(adjusted, 1)
+
+    def get_session_performance(self) -> Dict[str, Any]:
+        """Get per-session performance for LLM context."""
+        result = {}
+        for session in ("asia", "europe", "us", "late"):
+            data = self.by_session.get(session)
+            if data and data["total"] >= 3:
+                wr = self._recent_win_rate(data)
+                result[session] = {
+                    "wr": round(wr * 100, 1),
+                    "trades": data["total"],
+                    "pnl": round(data["pnl"], 2),
+                }
+        return result
+
     def _save_state(self):
         try:
             def _serialize(tracker):
@@ -368,6 +424,7 @@ class SignalQualityScorer:
                 "by_hour": _serialize(self.by_hour),
                 "by_side": _serialize(self.by_side),
                 "by_llm_agreement": _serialize(self.by_llm_agreement),
+                "by_session": _serialize(self.by_session),
                 "overall_recent": self.overall_recent[-100:],
             }
             os.makedirs(os.path.dirname(self._state_file), exist_ok=True)
@@ -404,6 +461,7 @@ class SignalQualityScorer:
             _deserialize(state.get("by_hour", {}), self.by_hour)
             _deserialize(state.get("by_side", {}), self.by_side)
             _deserialize(state.get("by_llm_agreement", {}), self.by_llm_agreement)
+            _deserialize(state.get("by_session", {}), self.by_session)
             self.overall_recent = state.get("overall_recent", [])
 
             total = sum(d["total"] for d in self.by_symbol.values())

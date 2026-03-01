@@ -50,6 +50,16 @@ class EnsembleStrategy:
         self.weight_manager = weight_manager  # StrategyWeightManager instance
         self.veto_ratio = veto_ratio
 
+    def _refresh_dynamic_weights(self):
+        """Refresh ensemble weights using rolling strategy performance."""
+        if self.weight_manager is not None:
+            try:
+                dynamic = self.weight_manager.get_rolling_weights()
+                if dynamic:
+                    self.weights = dynamic
+            except Exception as e:
+                logger.debug(f"Dynamic weight refresh failed: {e}")
+
     def get_all_required_timeframes(self) -> List[str]:
         """Get the union of all timeframes needed by all strategies."""
         tfs = set()
@@ -64,6 +74,9 @@ class EnsembleStrategy:
         Run all strategies and combine their signals.
         Returns a single consensus Signal or None.
         """
+        # Dynamic weight refresh: pull rolling weights before each evaluation
+        self._refresh_dynamic_weights()
+
         signals: List[Signal] = []
 
         for strategy in self.strategies:

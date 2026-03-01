@@ -345,6 +345,14 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
         daily_funding = g.extra.get("estimated_daily_funding_cost", 0)
         if daily_funding > 0.01:
             result["funding_cost_pct"] = round(daily_funding, 2)
+        # D5: Session performance (win rates by trading session)
+        session_perf = g.extra.get("session_performance")
+        if session_perf:
+            result["session_perf"] = session_perf
+        # E2: Regime transitions in progress
+        transitions = g.extra.get("regime_transitions")
+        if transitions:
+            result["regime_shifts"] = transitions
 
     # Funding cost reminder — injected when positions are open
     if snapshot.active_positions:
