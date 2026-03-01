@@ -269,7 +269,7 @@ class SelfImprovementEngine:
                 p.status = "rejected"
                 p.outcome_notes = reason
                 self._save()
-                logger.info(f"[SELF-IMPROVE] Rejected: {p.title} — {reason}")
+                logger.info(f"[SELF-IMPROVE] Rejected: {p.title} -- {reason}")
                 return True
         return False
 

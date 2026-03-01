@@ -327,7 +327,7 @@ class TestContinuousBacktester:
 class TestParameterTuner:
     def test_initial_state(self, tmp_data_dir):
         tuner = ParameterTuner(data_dir=tmp_data_dir)
-        assert tuner.params.confidence_floor == 65.0
+        assert tuner.params.confidence_floor == 55.0
         assert tuner.params.trust_score == 0.3
         assert tuner.params.max_leverage == 25.0
 

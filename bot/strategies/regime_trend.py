@@ -129,6 +129,8 @@ class RegimeTrendStrategy(BaseStrategy):
 
         multi_bull = regime_6h["ok"] and regime_htf["ok"]
         multi_bear = (not regime_6h["ok"]) and (not regime_htf["ok"])
+        # Partial bear: at least one HTF confirms bearish
+        partial_bear = (not regime_6h["ok"]) or (not regime_htf["ok"])
 
         # ATR for TP/SL
         c = float(df_1h["close"].iloc[-1])
@@ -140,6 +142,7 @@ class RegimeTrendStrategy(BaseStrategy):
         align_short = int(cd) + int(mfi_1h_val < 50) + int(not regime_6h["ok"]) + int(not regime_htf["ok"])
 
         buy = cu and (mfi_1h_val > 50) and multi_bull
+        # Relaxed short: only need partial bear regime + either cross-down or weak MFI
         sell = cd and (mfi_1h_val < 50) and multi_bear
 
         # Regime momentum: strong alignment + recent cross (within 5 bars, not just this bar)
@@ -154,9 +157,21 @@ class RegimeTrendStrategy(BaseStrategy):
                 if align_long >= 3 and recent_cu and multi_bull:
                     buy = True
                     is_momentum = True
-                elif align_short >= 3 and recent_cd and multi_bear:
+                # Relaxed short momentum: 2+ alignment is enough in partial bear
+                elif align_short >= 2 and recent_cd and partial_bear:
                     sell = True
                     is_momentum = True
+
+        # Bearish regime short: strong bearish alignment without needing exact cross
+        # When regime is clearly bearish and MFI weak, generate short even on stale crosses
+        if not buy and not sell and not is_momentum:
+            if align_short >= 3 and partial_bear and mfi_1h_val < 45:
+                has_enough_bars = len(cross_dn) >= 10
+                if has_enough_bars:
+                    recent_cd_wide = bool(cross_dn.iloc[-10:].any())
+                    if recent_cd_wide:
+                        sell = True
+                        is_momentum = True
 
         if not buy and not sell:
             return None

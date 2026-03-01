@@ -113,7 +113,7 @@ class TradingConfig:
         default_factory=lambda: _env_int("ML_RETRAIN_INTERVAL", 10)
     )
     ml_adjustment_weight: float = field(
-        default_factory=lambda: _env_float("ML_ADJUSTMENT_WEIGHT", 0.4)
+        default_factory=lambda: _env_float("ML_ADJUSTMENT_WEIGHT", 0.20)
     )
 
     # Regime (for Bot 3)

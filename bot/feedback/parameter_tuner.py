@@ -39,7 +39,7 @@ MAX_TRUST_SCORE = 0.95       # Cap trust to always maintain some caution
 @dataclass
 class TunedParameters:
     """The current set of tuned parameters."""
-    confidence_floor: float = 65.0
+    confidence_floor: float = 55.0
     max_leverage: float = 25.0
     risk_per_trade: float = 0.01
     strategy_weights: Dict[str, float] = field(default_factory=dict)
@@ -308,7 +308,7 @@ class ParameterTuner:
         try:
             with open(self._state_file) as f:
                 state = json.load(f)
-            self.params.confidence_floor = state.get("confidence_floor", 65.0)
+            self.params.confidence_floor = state.get("confidence_floor", 55.0)
             self.params.max_leverage = state.get("max_leverage", 25.0)
             self.params.risk_per_trade = state.get("risk_per_trade", 0.01)
             self.params.strategy_weights = state.get("strategy_weights", {})

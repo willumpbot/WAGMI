@@ -31,7 +31,7 @@ logger = logging.getLogger("bot.feedback.confidence")
 # Hard bounds
 ABSOLUTE_MIN_FLOOR = 50.0
 ABSOLUTE_MAX_FLOOR = 80.0
-DEFAULT_FLOOR = 65.0
+DEFAULT_FLOOR = 55.0
 MAX_DAILY_CHANGE = 5.0
 
 

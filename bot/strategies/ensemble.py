@@ -105,19 +105,16 @@ class EnsembleStrategy:
             )
             return None
 
-        # 2. Trend alignment: penalize counter-trend, bonus trend-aligned
-        # Returns positive = penalty, negative = bonus
-        trend_adj = self._trend_alignment_penalty(symbol, data, result.side)
-        if trend_adj != 0:
-            result.confidence = min(100, max(0, result.confidence - trend_adj))
-            result.metadata["trend_adjustment"] = round(trend_adj, 1)
-            # Re-check floor after adjustment
-            if result.confidence < 65:
-                logger.info(
-                    f"[{symbol}] Signal rejected: confidence {result.confidence:.0f}% "
-                    f"after trend adjustment ({trend_adj:+.0f})"
-                )
-                return None
+        # 2. Trend alignment: FLIP counter-trend signals to ride the trend
+        result = self._trend_alignment_adjust(symbol, data, result)
+
+        # Re-check floor after adjustment (should rarely fail now since we flip instead of crush)
+        if result.confidence < 65:
+            logger.info(
+                f"[{symbol}] Signal rejected: confidence {result.confidence:.0f}% "
+                f"after trend adjustment"
+            )
+            return None
 
         return result
 
@@ -138,25 +135,10 @@ class EnsembleStrategy:
             return True
         return False
 
-    def _trend_alignment_penalty(
-        self, symbol: str, data: Dict[str, pd.DataFrame], side: str
-    ) -> float:
-        """Multi-timeframe trend consensus adjustment.
-        Reads 5m + 1h + 6h + daily data to build a unified trend picture.
-        Returns POSITIVE = penalty (counter-trend), NEGATIVE = bonus (trend-aligned).
-
-        Each timeframe contributes a score from -1 (bearish) to +1 (bullish):
-          5m:    EMA20 vs EMA50
-          1h:    EMA20 vs EMA50 + MACD direction
-          6h:    EMA20 vs EMA50 + price vs EMA50 (higher weight)
-          daily: Price vs SMA50 + RSI position
-
-        Total score: -4 (strong bear) to +4 (strong bull)
-
-        Adjustments:
-          Strong trend (±3..4): aligned +8 bonus / counter -15 penalty
-          Moderate trend (±1..2): aligned +3 / counter -8
-          Neutral (0): no adjustment
+    def _compute_trend_scores(self, symbol: str, data: Dict[str, pd.DataFrame]):
+        """Compute multi-timeframe trend scores.
+        Returns (total_score, num_timeframes, detail_string).
+        Score range: -4 (strong bear) to +4 (strong bull).
         """
         scores = []
         details = []
@@ -187,17 +169,16 @@ class EnsembleStrategy:
             macd_hist = float((macd_line - macd_signal).iloc[-1])
             macd_bull = macd_hist > 0
 
-            # Both agree = strong signal, otherwise neutral
             if ema_bull and macd_bull:
                 s = 1
             elif not ema_bull and not macd_bull:
                 s = -1
             else:
-                s = 0  # conflicting
+                s = 0
             scores.append(s)
             details.append(f"1h={'B' if s > 0 else 'S' if s < 0 else 'N'}")
 
-        # ── 6h: higher timeframe structure (most important) ──
+        # ── 6h: higher timeframe structure ──
         df_6h = data.get("6h")
         if df_6h is not None and not df_6h.empty and len(df_6h) >= 20:
             c = df_6h["close"].astype(float)
@@ -218,7 +199,6 @@ class EnsembleStrategy:
             sma50 = float(c.rolling(50).mean().iloc[-1])
             price = float(c.iloc[-1])
 
-            # RSI 14
             delta = c.diff()
             gain = delta.clip(lower=0).rolling(14).mean()
             loss = (-delta.clip(upper=0)).rolling(14).mean()
@@ -236,39 +216,122 @@ class EnsembleStrategy:
             scores.append(s)
             details.append(f"D={'B' if s > 0 else 'S' if s < 0 else 'N'}")
 
-        if not scores:
-            return 0.0
-
-        total = sum(scores)
+        total = sum(scores) if scores else 0
         n = len(scores)
         detail_str = " ".join(details)
+        return total, n, detail_str
 
-        # Determine adjustment based on trend score vs signal direction
+    def _trend_alignment_adjust(
+        self, symbol: str, data: Dict[str, pd.DataFrame], result: "Signal"
+    ) -> "Signal":
+        """Multi-timeframe trend alignment: flip or boost signals.
+
+        Instead of crushing confidence on counter-trend signals, this method
+        FLIPS the signal direction when the trend strongly disagrees, turning
+        weak counter-trend buys into trend-aligned shorts (and vice versa).
+
+        Strong trend (±3..4):
+          - Counter-trend → FLIP side, recalculate levels, +5 bonus
+          - Aligned → +8 bonus
+        Moderate trend (±1..2):
+          - Counter-trend → FLIP side, recalculate levels, +0 (neutral)
+          - Aligned → +3 bonus
+        Neutral (0): no adjustment
+        """
+        total, n, detail_str = self._compute_trend_scores(symbol, data)
+
+        if n == 0:
+            return result
+
+        side = result.side
         is_buy = side == "BUY"
 
         if abs(total) >= 3:
-            # Strong trend consensus
             trend_bullish = total > 0
             if is_buy == trend_bullish:
-                adj = -8  # strong alignment bonus
-                logger.info(f"[{symbol}] Strong trend aligned {side}: score={total}/{n} [{detail_str}] +8 bonus")
+                # Aligned with strong trend — bonus
+                result.confidence = min(100, result.confidence + 8)
+                result.metadata["trend_adjustment"] = -8
+                logger.info(
+                    f"[{symbol}] Strong trend aligned {side}: "
+                    f"score={total}/{n} [{detail_str}] +8 bonus"
+                )
             else:
-                adj = 15  # strong counter-trend penalty
-                logger.info(f"[{symbol}] Strong counter-trend {side}: score={total}/{n} [{detail_str}] -15 penalty")
+                # Strong counter-trend — FLIP the signal
+                result = self._flip_signal(symbol, result, data)
+                result.confidence = min(100, result.confidence + 5)
+                result.metadata["trend_adjustment"] = -5
+                result.metadata["trend_flipped"] = True
+                logger.info(
+                    f"[{symbol}] FLIP {side}->{result.side}: strong trend "
+                    f"score={total}/{n} [{detail_str}] -- sniper mode"
+                )
         elif abs(total) >= 1:
-            # Moderate trend
             trend_bullish = total > 0
             if is_buy == trend_bullish:
-                adj = -3  # mild alignment bonus
-                logger.info(f"[{symbol}] Trend aligned {side}: score={total}/{n} [{detail_str}] +3 bonus")
+                # Mild alignment — small bonus
+                result.confidence = min(100, result.confidence + 3)
+                result.metadata["trend_adjustment"] = -3
+                logger.info(
+                    f"[{symbol}] Trend aligned {side}: "
+                    f"score={total}/{n} [{detail_str}] +3 bonus"
+                )
             else:
-                adj = 8  # moderate counter-trend penalty
-                logger.info(f"[{symbol}] Counter-trend {side}: score={total}/{n} [{detail_str}] -8 penalty")
+                # Moderate counter-trend — FLIP the signal
+                result = self._flip_signal(symbol, result, data)
+                result.metadata["trend_adjustment"] = 0
+                result.metadata["trend_flipped"] = True
+                logger.info(
+                    f"[{symbol}] FLIP {side}->{result.side}: moderate trend "
+                    f"score={total}/{n} [{detail_str}] -- sniper mode"
+                )
         else:
-            adj = 0  # neutral
+            result.metadata["trend_adjustment"] = 0
             logger.info(f"[{symbol}] Neutral trend: score={total}/{n} [{detail_str}]")
 
-        return adj
+        return result
+
+    def _flip_signal(
+        self, symbol: str, signal: "Signal", data: Dict[str, pd.DataFrame]
+    ) -> "Signal":
+        """Flip a signal's direction: BUY→SELL or SELL→BUY.
+        Recalculates entry/SL/TP levels for the new direction using ATR."""
+        entry = signal.entry
+        atr = signal.atr
+
+        if atr <= 0:
+            # Estimate ATR from 1h data if not available
+            df_1h = data.get("1h")
+            if df_1h is not None and not df_1h.empty and len(df_1h) >= 14:
+                prev = df_1h["close"].shift(1)
+                tr = pd.concat([
+                    df_1h["high"] - df_1h["low"],
+                    (df_1h["high"] - prev).abs(),
+                    (df_1h["low"] - prev).abs(),
+                ], axis=1).max(axis=1)
+                atr = float(tr.rolling(14, min_periods=1).mean().iloc[-1])
+            else:
+                atr = entry * 0.02  # fallback: 2% of price
+
+        if signal.side == "BUY":
+            # Flip to SELL (short)
+            new_side = "SELL"
+            sl = entry + 1.5 * atr
+            tp1 = entry - 1.5 * atr
+            tp2 = entry - 3.0 * atr
+        else:
+            # Flip to BUY (long)
+            new_side = "BUY"
+            sl = entry - 1.5 * atr
+            tp1 = entry + 1.5 * atr
+            tp2 = entry + 3.0 * atr
+
+        signal.side = new_side
+        signal.sl = sl
+        signal.tp1 = tp1
+        signal.tp2 = tp2
+        signal.atr = atr
+        return signal
 
     def _voting(self, symbol: str, signals: List[Signal]) -> Optional[Signal]:
         """Require min_votes strategies to agree on direction.

@@ -104,6 +104,36 @@ class ConfidenceScorerStrategy(BaseStrategy):
             return "SELL"
         return "HOLD"
 
+    def _detect_bounce_short(self, df: pd.DataFrame, zones: Dict) -> bool:
+        """Detect bounce-to-resistance in downtrend (short setup).
+        Returns True if price is bouncing toward SMA20 in a confirmed downtrend."""
+        if len(df) < 20:
+            return False
+
+        current = zones["current"]
+        sma20 = zones["sma20"]
+        stdev = zones["stdev"]
+
+        sma50 = df["SMA50"].iloc[-1] if "SMA50" in df.columns else None
+        if sma50 is None or pd.isna(sma50):
+            return False
+
+        # Downtrend: SMA20 < SMA50
+        if not (sma20 < sma50):
+            return False
+
+        # Price bounced from recent low
+        recent_low = float(df["close"].iloc[-5:].min())
+        bounce = current - recent_low
+        if bounce < 0.3 * stdev:
+            return False
+
+        # Price near or above SMA20 (resistance)
+        if current > sma20 - 0.5 * stdev:
+            return True
+
+        return False
+
     def _log_signal(self, symbol: str, action: str, price: float):
         """Record a signal for later evaluation."""
         if symbol not in self.signal_log:
@@ -185,16 +215,23 @@ class ConfidenceScorerStrategy(BaseStrategy):
         self.evaluate_past_signals(symbol, current)
 
         action = self._zone_action(zones)
-        if action == "HOLD":
-            return None
 
         rsi = df["RSI14"].iloc[-1] if "RSI14" in df.columns else 50
         vol_spike = bool(df["vol_spike"].iloc[-1]) if "vol_spike" in df.columns else False
+
+        # Bounce-short in HOLD zone: detect downtrend bounces to resistance
+        if action == "HOLD":
+            if self._detect_bounce_short(df, zones):
+                action = "BOUNCE_SHORT"
+            else:
+                return None
 
         # Base confidence from zone position
         confidence = 50.0
         if action in ("DEEP_BUY", "SAFE_SELL"):
             confidence += 20
+        elif action == "BOUNCE_SHORT":
+            confidence += 12
         else:
             confidence += 10
 
@@ -203,22 +240,36 @@ class ConfidenceScorerStrategy(BaseStrategy):
             confidence += 10
         elif action in ("SELL", "SAFE_SELL") and rsi > 65:
             confidence += 10
+        elif action == "BOUNCE_SHORT" and rsi > 45:
+            confidence += 8  # not oversold = room to drop
 
         # Volume spike boost
         if vol_spike:
             confidence += 5
 
         # Historical accuracy adjustment (the key differentiator of this strategy)
-        hist_conf = self._get_historical_confidence(symbol, action)
+        hist_action = action if action != "BOUNCE_SHORT" else "SELL"
+        hist_conf = self._get_historical_confidence(symbol, hist_action)
         if hist_conf is not None:
-            # Blend: if historical win rate is 80%, boost confidence
-            # If 30%, reduce it
             adjustment = (hist_conf - 0.5) * 30  # -15 to +15
             confidence += adjustment
             logger.info(
                 f"[{symbol}] {action} historical confidence={hist_conf:.0%}, "
                 f"adjustment={adjustment:+.1f}, final={confidence:.1f}"
             )
+
+        # If BUY action has terrible historical win rate, consider flipping to short
+        if action in ("DEEP_BUY", "BUY") and hist_conf is not None and hist_conf < 0.15:
+            if self._detect_bounce_short(df, zones):
+                logger.info(
+                    f"[{symbol}] {action} win rate {hist_conf:.0%} too low + bounce detected -> flipping to SHORT"
+                )
+                action = "BOUNCE_SHORT"
+                confidence = 55.0  # reset base
+                if rsi > 45:
+                    confidence += 8
+                if vol_spike:
+                    confidence += 5
 
         confidence = max(0, min(100, confidence))
 
@@ -234,6 +285,11 @@ class ConfidenceScorerStrategy(BaseStrategy):
             sl = zones["deep_buy"] - stdev if action == "BUY" else current - 2.5 * stdev
             tp1 = zones["sma20"]
             tp2 = zones["regular_sell"]
+        elif action == "BOUNCE_SHORT":
+            side = "SELL"
+            sl = zones["sma20"] + 0.8 * stdev  # stop above SMA20 resistance
+            tp1 = zones["regular_buy"]
+            tp2 = zones["deep_buy"]
         else:
             side = "SELL"
             sl = zones["safe_sell"] + stdev if action == "SELL" else current + 2.5 * stdev

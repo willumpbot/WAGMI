@@ -90,7 +90,7 @@ class SignalLearner:
         data_dir: str = "ml_data",
         min_samples: int = 20,
         retrain_interval: int = 10,
-        adjustment_weight: float = 0.4,
+        adjustment_weight: float = 0.20,
     ):
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -745,16 +745,23 @@ class SignalLearner:
             return original_confidence
 
         ml_confidence = combined * 100.0
+
+        # Cold-start protection: scale ML influence by trade experience.
+        # 0 trades = 0 influence, ramps linearly to full at min_samples.
+        n_outcomes = len(self.outcomes)
+        cold_start_factor = min(1.0, n_outcomes / self.min_samples) if self.min_samples > 0 else 1.0
+        effective_weight = self.adjustment_weight * cold_start_factor
+
         adjusted = (
-            original_confidence * (1 - self.adjustment_weight)
-            + ml_confidence * self.adjustment_weight
+            original_confidence * (1 - effective_weight)
+            + ml_confidence * effective_weight
         )
         adjusted = max(0, min(100, adjusted))
 
         if abs(adjusted - original_confidence) > 2:
             logger.info(
                 f"ML adjustment: {original_confidence:.0f}% -> {adjusted:.0f}% "
-                f"({source})"
+                f"({source}, weight={effective_weight:.2f}, trades={n_outcomes})"
             )
 
         return adjusted

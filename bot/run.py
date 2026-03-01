@@ -251,6 +251,12 @@ def cmd_status(args):
 
 
 def main():
+    # Fix Windows console encoding (cp1252 can't handle Unicode in log messages)
+    if sys.platform == 'win32':
+        for stream in [sys.stdout, sys.stderr]:
+            if hasattr(stream, 'reconfigure'):
+                stream.reconfigure(encoding='utf-8', errors='replace')
+
     # Load .env if present (check project root first, then bot/)
     try:
         from dotenv import load_dotenv
