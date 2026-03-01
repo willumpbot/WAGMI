@@ -314,14 +314,23 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
         logger.warning(f"[SNAPSHOT] Teaching engine unavailable: {e}")
         result["knowledge"] = "Teaching engine unavailable — rely on memory notes and market data."
 
-    # Deep memory: trade DNA and pattern summaries
+    # Deep memory: full knowledge summary (trade DNA, strategy fingerprints,
+    # pattern library, regime history, insights) via singleton manager
     try:
-        from llm.deep_memory import TradeDNAStore
-        dna_store = TradeDNAStore()
-        dna_summary = dna_store.get_summary_stats()
-        if dna_summary:
-            # Compact summary for LLM context
-            result["trade_dna"] = str(dna_summary)[:400]
+        from llm.deep_memory import get_deep_memory
+        dm = get_deep_memory()
+        # Extract symbol/regime from trigger context for targeted knowledge
+        _dm_symbol = ""
+        _dm_regime = ""
+        if snapshot.trigger_context:
+            _dm_parts = snapshot.trigger_context.split()
+            if _dm_parts:
+                _dm_symbol = _dm_parts[0]
+        knowledge = dm.build_llm_knowledge_summary(
+            symbol=_dm_symbol, regime=_dm_regime
+        )
+        if knowledge:
+            result["deep_memory"] = knowledge[:800]
     except Exception as e:
         logger.debug(f"[SNAPSHOT] Deep memory unavailable: {e}")
 
@@ -353,6 +362,17 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
         transitions = g.extra.get("regime_transitions")
         if transitions:
             result["regime_shifts"] = transitions
+
+        # Cross-symbol lead-lag signals: active signals where a leader moved
+        # and a follower is expected to follow (e.g., BTC dropped, SOL expected to drop)
+        cs_signals = g.extra.get("cross_symbol_signals")
+        if cs_signals:
+            result["cross_sym"] = cs_signals
+
+        # Cross-symbol confirmed patterns: historically validated lead-lag relationships
+        cs_patterns = g.extra.get("cross_symbol_patterns")
+        if cs_patterns:
+            result["cross_pat"] = cs_patterns
 
     # Funding cost reminder — injected when positions are open
     if snapshot.active_positions:

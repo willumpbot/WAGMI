@@ -71,6 +71,14 @@ from signals.llm_analyzer import analyze_signal, format_analysis_for_telegram
 # Growth intelligence — self-evolving meta-brain
 from llm.growth.orchestrator import get_growth_orchestrator
 
+# LLM exit engine — dynamic SL/TP management for open positions
+try:
+    from llm.exit_engine import ExitEngine
+    from llm.exit_types import ExitDecision
+    _EXIT_ENGINE_AVAILABLE = True
+except ImportError:
+    _EXIT_ENGINE_AVAILABLE = False
+
 # Feedback loop closers — self-performance, veto tracking, cost, operator channel
 from llm.veto_tracker import get_veto_tracker
 from llm.cost_tracker import get_cost_tracker
@@ -82,6 +90,19 @@ from execution.funding_timer import should_close_before_funding, minutes_until_n
 from strategies.regime_detector import RegimeTransitionDetector
 from monitoring.health import HealthMonitor
 from execution.graceful_degradation import DegradationManager
+
+# Deep memory + cross-symbol pattern tracking
+try:
+    from llm.deep_memory import get_deep_memory, TradeDNA
+    _DEEP_MEMORY_AVAILABLE = True
+except ImportError:
+    _DEEP_MEMORY_AVAILABLE = False
+
+try:
+    from strategies.cross_symbol_patterns import CrossSymbolTracker
+    _CROSS_SYMBOL_AVAILABLE = True
+except ImportError:
+    _CROSS_SYMBOL_AVAILABLE = False
 
 
 def get_tp1_close_pct(confidence: float) -> float:
@@ -278,6 +299,18 @@ class MultiStrategyBot:
         self.regime_detector = RegimeTransitionDetector()
         self.health_monitor = HealthMonitor()
         self.degradation = DegradationManager()
+
+        # LLM exit engine: dynamic SL/TP management for open positions
+        if _EXIT_ENGINE_AVAILABLE:
+            self.exit_engine = ExitEngine()
+            logger.info("[INIT] LLM exit engine loaded")
+        else:
+            self.exit_engine = None
+            logger.warning("[INIT] LLM exit engine unavailable — running without dynamic exits")
+        self._exit_check_counter = 0
+
+        # Cross-symbol pattern tracker: detects lead-lag relationships
+        self.cross_symbol_tracker = CrossSymbolTracker() if _CROSS_SYMBOL_AVAILABLE else None
 
         # Track 1h price changes for cross-market divergence detection
         self._price_changes_1h: Dict[str, float] = {}
@@ -499,12 +532,40 @@ class MultiStrategyBot:
         except Exception as e:
             logger.debug(f"[{trace_id}] Growth tick error: {e}")
 
+        # LLM exit intelligence: evaluate open positions for dynamic SL/TP adjustments
+        # Runs every 5th tick (~5 min at 60s intervals) to balance responsiveness vs cost
+        self._exit_check_counter += 1
+        if self._exit_check_counter >= 5:
+            self._exit_check_counter = 0
+            try:
+                self._check_llm_exit_suggestions()
+            except Exception as e:
+                logger.warning(f"[{trace_id}] Exit intelligence error: {e}")
+
         # Record health monitor heartbeat every tick
         self.health_monitor.record_heartbeat(
             loop_duration_s=time.time() - _loop_start,
             positions=self.pos_mgr.get_open_count(),
             equity=self.risk_mgr.equity,
         )
+
+        # Strategy research cycle: every 240 ticks (~4 hours at 60s intervals)
+        if self._tick % 240 == 0 and self._tick > 0:
+            try:
+                from llm.strategy_discovery.research_agent import run_research_cycle
+                notify_fn = None
+                if self.alerts:
+                    notify_fn = self.alerts.send_market_update
+                proposals = run_research_cycle(
+                    max_proposals=3,
+                    notify_fn=notify_fn,
+                )
+                if proposals:
+                    logger.info(
+                        f"[{trace_id}] Research cycle: {len(proposals)} new proposals"
+                    )
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Research cycle error: {e}")
 
         # Heartbeat every 60 ticks (~1 hour at 60s intervals)
         if self._tick % 60 == 0:
@@ -517,8 +578,21 @@ class MultiStrategyBot:
 
     def _process_symbol(self, symbol: str, sym_cfg, trace_id: str = ""):
         """Process one symbol: fetch data, check positions, generate signals."""
+        # F3: Graceful degradation — halt new entries if exchange is down
+        if self.degradation.should_halt_entries():
+            # Still process existing positions for SL/TP, but skip new entries
+            open_pos = self.pos_mgr.get_open_positions()
+            if symbol not in open_pos:
+                return  # Skip signal evaluation for symbols without positions
+
         # Fetch data for all needed timeframes
-        data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, self._needed_tfs)
+        try:
+            data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, self._needed_tfs)
+            self.degradation.record_exchange_success()
+        except Exception as e:
+            self.degradation.record_exchange_error()
+            logger.warning(f"[{symbol}] Exchange fetch failed: {e}")
+            return
 
         # Get current price
         current_price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
@@ -534,6 +608,13 @@ class MultiStrategyBot:
                 logger.warning(f"[{symbol}] PRICE REJECTED: {err}")
                 return
         self._last_prices[symbol] = current_price
+
+        # Cross-symbol pattern tracking: record price for lead-lag detection
+        if self.cross_symbol_tracker:
+            try:
+                self.cross_symbol_tracker.record_price(symbol, current_price)
+            except Exception:
+                pass  # Non-critical
 
         # Fetch and cache funding rate (throttled: once per 60 ticks per symbol)
         if self._tick % 60 == 0 or symbol not in self._last_funding_rates:
@@ -776,6 +857,14 @@ class MultiStrategyBot:
                     )
                 except Exception:
                     pass  # Corpus not critical
+
+                # Deep memory: record full trade DNA for LLM knowledge base
+                try:
+                    _dm_pos = self.pos_mgr.positions.get(symbol)
+                    if _dm_pos:
+                        self._record_trade_dna(symbol, _dm_pos, event)
+                except Exception as e:
+                    logger.debug(f"Deep memory trade DNA error: {e}")
 
             # Record outcome for ML (use TOTAL trade PnL, not just final leg)
             if self.ml and event.action in _FULL_CLOSE:
@@ -1021,6 +1110,13 @@ class MultiStrategyBot:
                     "to": regime_result["to_regime"],
                     "confidence": regime_result["confidence"],
                 }
+                # Fire explicit LLM trigger on regime transition
+                self._llm_triggers.add(
+                    LLMTrigger.REGIME_SHIFT,
+                    symbol=symbol,
+                    context=f"Regime transition: {regime_result.get('from_regime', '?')} -> "
+                            f"{regime_result.get('to_regime', '?')} for {symbol}",
+                )
             if self._llm_triggers.check_regime_shift(symbol, current_regime):
                 _transition_ctx = ""
                 if regime_result.get("transitioning"):
@@ -1535,6 +1631,51 @@ class MultiStrategyBot:
         candidate.leverage_used = lev_decision.leverage
         self._candidate_logger.log_candidate(candidate)
 
+        # ── LLM size multiplier: apply the meta-brain's sizing adjustment ──
+        # In SIZING+ modes, the LLM can scale position size 0.5x-2.0x
+        llm_sz = getattr(candidate, 'llm_size_mult', None)
+        if llm_sz is not None and llm_sz != 1.0 and self.llm_mode >= LLMMode.SIZING:
+            llm_sz = max(0.5, min(2.0, llm_sz))  # Safety clamp
+            qty = qty * llm_sz
+            logger.info(
+                f"[{trace_id}][{symbol}] LLM size mult: qty * {llm_sz:.2f} = {qty:.6f}"
+            )
+
+        # ── Profitable pattern boost: confirmed winners get larger size ──
+        # Uses deep memory: if this strategy+regime+symbol combo has >60% WR
+        # over 10+ trades, allow up to 1.3x size boost
+        try:
+            sym_data = self.feedback.quality.by_symbol.get(symbol)
+            strat_data = self.feedback.quality.by_strategy.get(signal_result.strategy)
+            regime_data = self.feedback.quality.by_regime.get(
+                signal_result.metadata.get("regime", "")
+            )
+            # Need at least one dimension with enough data
+            pattern_boost = 1.0
+            if sym_data and sym_data["total"] >= 10:
+                sym_wr = sym_data["wins"] / sym_data["total"]
+                if sym_wr >= 0.60:
+                    pattern_boost = max(pattern_boost, 1.0 + (sym_wr - 0.50) * 0.6)
+            if strat_data and strat_data["total"] >= 10:
+                strat_wr = strat_data["wins"] / strat_data["total"]
+                if strat_wr >= 0.60:
+                    pattern_boost = max(pattern_boost, 1.0 + (strat_wr - 0.50) * 0.6)
+            # Regime alignment: if this regime has good WR, boost
+            if regime_data and regime_data["total"] >= 8:
+                reg_wr = regime_data["wins"] / regime_data["total"]
+                if reg_wr >= 0.55:
+                    pattern_boost = max(pattern_boost, 1.0 + (reg_wr - 0.50) * 0.4)
+            # Cap at 1.3x (confirmed profitable = up to 30% more aggressive)
+            pattern_boost = min(1.3, pattern_boost)
+            if pattern_boost > 1.0:
+                qty = qty * pattern_boost
+                logger.info(
+                    f"[{trace_id}][{symbol}] Profitable pattern boost: "
+                    f"qty * {pattern_boost:.2f} = {qty:.6f}"
+                )
+        except Exception:
+            pass
+
         # ── OpsGuard: rate limiting, exposure limits ──
         position_size_usd = qty * signal_result.entry * lev_decision.leverage
         total_exposure = sum(
@@ -1824,6 +1965,258 @@ class MultiStrategyBot:
             f"{new_symbol} signal available for entry next tick"
         )
 
+    # ── LLM Exit Intelligence ─────────────────────────────────────
+
+    def _check_llm_exit_suggestions(self):
+        """Evaluate open positions for dynamic SL/TP adjustments using the exit engine.
+
+        Uses heuristic rules informed by deep memory data (strategy win rates,
+        regime-specific patterns) to decide when to tighten stops on losing patterns
+        and widen TPs on confirmed winning patterns.
+
+        Called every 5th tick from _tick_once() to avoid excessive computation.
+        """
+        if not self.exit_engine:
+            return
+
+        open_positions = self.pos_mgr.get_open_positions()
+        if not open_positions:
+            return
+
+        now = datetime.now(timezone.utc)
+
+        # Deep memory: fetch strategy effectiveness for pattern-aware decisions
+        deep_mem = None
+        strategy_effectiveness = {}
+        if _DEEP_MEMORY_AVAILABLE:
+            try:
+                deep_mem = get_deep_memory()
+                strategy_effectiveness = deep_mem.trade_dna.get_strategy_effectiveness()
+            except Exception:
+                pass  # Non-critical — fall back to heuristics without memory
+
+        for symbol, pos in open_positions.items():
+            try:
+                # Respect per-symbol cooldown built into the exit engine
+                if not self.exit_engine.should_evaluate(symbol):
+                    continue
+
+                current_price = self._last_prices.get(symbol)
+                if current_price is None or current_price <= 0:
+                    continue
+
+                # ── Build exit context ──
+                is_long = pos.side == "LONG"
+                if is_long:
+                    unrealized_pnl = (current_price - pos.entry) * pos.qty * pos.leverage
+                    unrealized_pct = (current_price - pos.entry) / pos.entry
+                else:
+                    unrealized_pnl = (pos.entry - current_price) * pos.qty * pos.leverage
+                    unrealized_pct = (pos.entry - current_price) / pos.entry
+
+                # Time in position
+                hold_seconds = (now - pos.open_time).total_seconds()
+                hold_minutes = hold_seconds / 60.0
+
+                # Current regime
+                regime = "unknown"
+                try:
+                    regime = self.regime_detector.get_regime(symbol)
+                except Exception:
+                    pass
+
+                # Funding rate
+                funding_rate = self._last_funding_rates.get(symbol, 0.0)
+
+                # ── Qualification gate: skip positions that don't warrant review ──
+                # Position must meet at least one criterion:
+                should_review = False
+
+                # 1. Position open > 30 minutes
+                if hold_minutes > 30:
+                    should_review = True
+
+                # 2. Losing position open > 15 minutes
+                if unrealized_pnl < 0 and hold_minutes > 15:
+                    should_review = True
+
+                # 3. Regime has shifted to an adverse state
+                if regime in ("panic", "crash", "extreme_fear"):
+                    should_review = True
+
+                if not should_review:
+                    continue
+
+                # ── Deep memory pattern lookup ──
+                # Check if the strategy combo that opened this trade is historically
+                # profitable or a known loser, so we can be more/less aggressive
+                strategy_key = pos.strategy  # e.g. "RegimeTrend,MonteCarlo"
+                strategy_wr = 0.5  # default neutral
+                strategy_sample_size = 0
+                if strategy_effectiveness and strategy_key in strategy_effectiveness:
+                    se = strategy_effectiveness[strategy_key]
+                    strategy_wr = se.get("win_rate", 0.5)
+                    strategy_sample_size = se.get("total", 0)
+
+                # Also check symbol-specific history from deep memory
+                symbol_wr = 0.5
+                if deep_mem:
+                    try:
+                        symbol_trades = deep_mem.trade_dna.get_by_symbol(symbol, limit=20)
+                        if len(symbol_trades) >= 5:
+                            wins = sum(1 for t in symbol_trades if t.get("outcome") == "WIN")
+                            symbol_wr = wins / len(symbol_trades)
+                    except Exception:
+                        pass
+
+                # ── Heuristic exit decision rules ──
+                # These rules use regime, PnL, funding, and deep memory patterns
+                # to make fast, cost-free decisions (no LLM API call per position)
+                decision = None
+                risk_distance = abs(pos.entry - pos.original_sl) if pos.original_sl else 0
+                equity = self.risk_mgr.equity if self.risk_mgr.equity > 0 else 1.0
+                loss_pct_of_equity = abs(unrealized_pnl) / equity if unrealized_pnl < 0 else 0
+
+                # Rule 1: Panic/crash regime + LONG position → tighten SL aggressively
+                if regime in ("panic", "crash", "extreme_fear") and is_long:
+                    # Move SL to halfway between current SL and current price
+                    new_sl = (pos.sl + current_price) / 2.0
+                    if new_sl > pos.sl:  # Only tighten (move up for longs)
+                        confidence = 0.75 if regime == "panic" else 0.85
+                        decision = ExitDecision(
+                            symbol=symbol,
+                            exit_action="tighten_sl",
+                            exit_confidence=confidence,
+                            new_sl=new_sl,
+                            reason=f"Regime={regime}, protecting capital on LONG "
+                                   f"(strategy WR={strategy_wr:.0%} in this combo)",
+                        )
+
+                # Rule 2: Unrealized loss > 2% of equity → tighten SL
+                elif loss_pct_of_equity > 0.02:
+                    # Tighten to 60% of remaining distance
+                    if is_long:
+                        new_sl = pos.sl + (current_price - pos.sl) * 0.4
+                    else:
+                        new_sl = pos.sl - (pos.sl - current_price) * 0.4
+                    # Only if it actually tightens
+                    tightens = (is_long and new_sl > pos.sl) or (not is_long and new_sl < pos.sl)
+                    if tightens:
+                        # Lower confidence if strategy has a good track record (give it room)
+                        conf = 0.65 if strategy_wr < 0.5 or strategy_sample_size < 5 else 0.55
+                        decision = ExitDecision(
+                            symbol=symbol,
+                            exit_action="tighten_sl",
+                            exit_confidence=conf,
+                            new_sl=new_sl,
+                            reason=f"Unrealized loss {loss_pct_of_equity:.1%} of equity "
+                                   f"(strat WR={strategy_wr:.0%}, n={strategy_sample_size})",
+                        )
+
+                # Rule 3: Big winner → partial close or widen TP based on pattern strength
+                elif risk_distance > 0 and unrealized_pnl > 0:
+                    gain_vs_risk = abs(unrealized_pct * pos.entry) / risk_distance
+                    if gain_vs_risk >= 3.0 and pos.state not in ("TP1_HIT", "TRAILING"):
+                        # On confirmed winning patterns, widen TP instead of partial close
+                        if strategy_wr >= 0.6 and strategy_sample_size >= 10:
+                            # Strong pattern → let it ride, widen TP2
+                            if is_long:
+                                new_tp = current_price + risk_distance * 2.0
+                                if new_tp > pos.tp2:
+                                    decision = ExitDecision(
+                                        symbol=symbol,
+                                        exit_action="widen_tp",
+                                        exit_confidence=0.70,
+                                        new_tp=new_tp,
+                                        reason=f"Confirmed winning pattern "
+                                               f"(strat WR={strategy_wr:.0%}, n={strategy_sample_size}), "
+                                               f"gain={gain_vs_risk:.1f}x risk — letting winner run",
+                                    )
+                            else:
+                                new_tp = current_price - risk_distance * 2.0
+                                if new_tp < pos.tp2:
+                                    decision = ExitDecision(
+                                        symbol=symbol,
+                                        exit_action="widen_tp",
+                                        exit_confidence=0.70,
+                                        new_tp=new_tp,
+                                        reason=f"Confirmed winning pattern "
+                                               f"(strat WR={strategy_wr:.0%}, n={strategy_sample_size}), "
+                                               f"gain={gain_vs_risk:.1f}x risk — letting winner run",
+                                    )
+                        else:
+                            # Unproven or weak pattern → lock in partial profit
+                            decision = ExitDecision(
+                                symbol=symbol,
+                                exit_action="partial",
+                                exit_confidence=0.65,
+                                partial_pct=0.5,
+                                reason=f"Gain={gain_vs_risk:.1f}x risk, "
+                                       f"pattern unproven (strat WR={strategy_wr:.0%}, "
+                                       f"n={strategy_sample_size}) — locking 50%",
+                            )
+
+                # Rule 4: Adverse funding rate > 0.05% → tighten SL
+                elif abs(funding_rate) > 0.0005:
+                    funding_is_adverse = (is_long and funding_rate > 0) or \
+                                         (not is_long and funding_rate < 0)
+                    if funding_is_adverse and hold_minutes > 30:
+                        # Tighten SL modestly (20% closer to price)
+                        if is_long:
+                            new_sl = pos.sl + (current_price - pos.sl) * 0.2
+                        else:
+                            new_sl = pos.sl - (pos.sl - current_price) * 0.2
+                        tightens = (is_long and new_sl > pos.sl) or (not is_long and new_sl < pos.sl)
+                        if tightens:
+                            decision = ExitDecision(
+                                symbol=symbol,
+                                exit_action="tighten_sl",
+                                exit_confidence=0.55,
+                                new_sl=new_sl,
+                                reason=f"Adverse funding rate {funding_rate:.5f} "
+                                       f"(hold={hold_minutes:.0f}min, "
+                                       f"symbol WR={symbol_wr:.0%})",
+                            )
+
+                # ── Apply decision via exit engine ──
+                if decision is not None:
+                    result = self.exit_engine.apply_exit_decision(
+                        decision=decision,
+                        position=pos,
+                        current_price=current_price,
+                    )
+
+                    if result["applied"]:
+                        action = result["action"]
+                        logger.info(
+                            f"[EXIT-INTEL] {symbol} {action}: {result['details']} "
+                            f"(regime={regime}, hold={hold_minutes:.0f}min)"
+                        )
+
+                        # Handle close/partial actions that need exchange execution
+                        if action == "close":
+                            self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_ENGINE")
+                        elif action == "partial":
+                            # Partial close: reduce qty, log the partial
+                            partial_pct = result.get("partial_pct", 0.5)
+                            close_qty = pos.qty * partial_pct
+                            pos.qty -= close_qty
+                            logger.info(
+                                f"[EXIT-INTEL] {symbol} partial close: "
+                                f"closed {close_qty:.6f}, remaining {pos.qty:.6f}"
+                            )
+                    else:
+                        logger.debug(
+                            f"[EXIT-INTEL] {symbol} decision not applied: "
+                            f"{result.get('details', 'unknown')}"
+                        )
+                else:
+                    # No action needed — mark as evaluated to respect cooldown
+                    self.exit_engine.mark_evaluated(symbol)
+
+            except Exception as e:
+                logger.warning(f"[EXIT-INTEL] Error evaluating {symbol}: {e}")
+
     # ── LLM Meta-Brain Integration ────────────────────────────────
 
     def _llm_veto_check(self, candidate: TradeCandidate, trace_id: str = ""):
@@ -2052,6 +2445,18 @@ class MultiStrategyBot:
             "regime_transitions": self.regime_detector.get_transition_summary(),
         }
 
+        # Cross-symbol pattern signals: inject lead-lag relationships for LLM
+        if self.cross_symbol_tracker:
+            try:
+                _cs_signals = self.cross_symbol_tracker.get_active_signals()
+                if _cs_signals:
+                    global_ctx.extra["cross_symbol_signals"] = _cs_signals[:5]  # Cap at 5
+                _cs_patterns = self.cross_symbol_tracker.get_pattern_summary()
+                if _cs_patterns:
+                    global_ctx.extra["cross_symbol_patterns"] = _cs_patterns
+            except Exception as e:
+                logger.debug(f"Cross-symbol pattern injection error: {e}")
+
         # Risk context
         risk_ctx = LLMRiskContext(
             daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,
@@ -2082,6 +2487,7 @@ class MultiStrategyBot:
                 "entry": pos.entry,
                 "leverage": pos.leverage,
                 "unrealized_pnl": round(unrealized, 2),
+                "funding_rate": self._last_funding_rates.get(sym, 0.0),
             })
 
         return markets, global_ctx, risk_ctx, active_positions
@@ -2106,6 +2512,13 @@ class MultiStrategyBot:
             f"(events: {self._llm_triggers.event_summary})"
         )
 
+        # F3: Graceful degradation — skip LLM if API is degraded
+        if self.degradation.should_skip_llm():
+            logger.info(
+                f"[{trace_id}][LLM] Skipping — LLM API degraded (ensemble-only mode)"
+            )
+            return
+
         markets, global_ctx, risk_ctx, positions = self._build_llm_context()
 
         if not markets:
@@ -2121,6 +2534,12 @@ class MultiStrategyBot:
             trigger_context=trigger_ctx,
             event_triggered=is_event,
         )
+
+        # F3: Track LLM API health for graceful degradation
+        if result.reason and result.reason.startswith("api_error"):
+            self.degradation.record_llm_error()
+        else:
+            self.degradation.record_llm_success()
 
         # Mark the trigger as called (for cooldown tracking)
         if trigger_type:
@@ -2218,6 +2637,125 @@ class MultiStrategyBot:
                 daily_cost = abs(fr) * 3 * pos.leverage * pos_value / equity * 100
                 total_daily_cost_pct += daily_cost
         return round(total_daily_cost_pct, 4)
+
+    def _record_trade_dna(self, symbol: str, pos, event):
+        """Record full trade DNA to deep memory after a position closes.
+
+        Populates the deep memory system with complete trade anatomy
+        so the LLM can learn from every trade: what worked, what failed,
+        and which strategy/regime/symbol combos are most profitable.
+        """
+        if not _DEEP_MEMORY_AVAILABLE:
+            return
+        try:
+            dm = get_deep_memory()
+
+            # Determine outcome
+            total_pnl = pos.realized_pnl if pos else event.pnl
+            if total_pnl > 0:
+                outcome = "WIN"
+            elif total_pnl < -0.01:
+                outcome = "LOSS"
+            else:
+                outcome = "BREAKEVEN"
+
+            # Extract trade profile data
+            _regime = ""
+            _entry_type = ""
+            if pos.trade_profile:
+                _regime = pos.trade_profile.regime or ""
+                _entry_type = pos.trade_profile.entry_type or ""
+
+            # Extract LLM decision context from entry_reasons
+            _er = pos.entry_reasons or {}
+            _llm_action = _er.get("llm_action", "")
+            _llm_conf = _er.get("llm_confidence", 0.0)
+            _llm_reasoning = _er.get("llm_reasoning", "")
+            _strategies_agreed = _er.get("strategies_agreed", [])
+            if not _strategies_agreed and pos.strategy:
+                _strategies_agreed = [pos.strategy]
+
+            # Hold time
+            hold_time_s = 0.0
+            if pos.open_time:
+                hold_time_s = (datetime.now(timezone.utc) - pos.open_time).total_seconds()
+
+            # BTC trend context
+            btc_price = self._last_prices.get("BTC", 0)
+            btc_1h_change = self._price_changes_1h.get("BTC", 0)
+            if btc_1h_change > 0.5:
+                btc_trend = "bullish"
+            elif btc_1h_change < -0.5:
+                btc_trend = "bearish"
+            else:
+                btc_trend = "neutral"
+
+            # Volume ratio and funding rate
+            _vol_ratio = 0.0
+            _funding_rate = self._last_funding_rates.get(symbol, 0.0)
+
+            # ATR at entry (stored on position)
+            _atr = pos.atr if pos.atr else 0.0
+
+            # Generate trade ID
+            trade_id = f"{symbol}_{pos.side}_{int(pos.open_time.timestamp())}"
+
+            dm.record_full_trade(
+                trade_id=trade_id,
+                symbol=symbol,
+                side=pos.side,
+                entry_price=pos.entry,
+                exit_price=event.price,
+                sl=pos.original_sl,
+                tp1=pos.tp1,
+                tp2=pos.tp2,
+                confidence=pos.confidence,
+                leverage=pos.leverage,
+                regime=_regime,
+                strategies_agreed=_strategies_agreed,
+                outcome=outcome,
+                pnl=total_pnl,
+                hold_time_s=hold_time_s,
+                exit_reason=event.action,
+                llm_action=_llm_action,
+                llm_confidence=_llm_conf,
+                llm_reasoning=_llm_reasoning,
+                entry_type=_entry_type,
+                btc_trend=btc_trend,
+                volume_ratio=_vol_ratio,
+                funding_rate=_funding_rate,
+                atr=_atr,
+            )
+
+            # Record regime transition if regime changed during trade
+            if _regime:
+                current_regime = ""
+                try:
+                    current_regime = self.regime_detector.get_transition_summary()
+                    if isinstance(current_regime, dict):
+                        current_regime = current_regime.get("current", "")
+                    elif isinstance(current_regime, list) and current_regime:
+                        current_regime = str(current_regime[0])
+                    else:
+                        current_regime = str(current_regime) if current_regime else ""
+                except Exception:
+                    pass
+                if current_regime and current_regime != _regime:
+                    dm.regimes.record_transition(
+                        from_regime=_regime,
+                        to_regime=current_regime,
+                        symbol=symbol,
+                        trigger=f"trade_close_{event.action}",
+                        context={"pnl": total_pnl, "hold_time_s": hold_time_s},
+                    )
+
+            logger.info(
+                f"[DEEP-MEM] Recorded trade DNA: {symbol} {pos.side} "
+                f"{outcome} PnL=${total_pnl:+.2f}"
+            )
+
+        except Exception as e:
+            logger.debug(f"[DEEP-MEM] Failed to record trade DNA: {e}")
 
     def _compute_portfolio_correlation(self) -> Dict[str, Any]:
         """Compute directional correlation risk across open positions.

@@ -136,6 +136,11 @@ class FeedbackLoop:
         # Blend: 60% adaptive (data-driven) + 40% tuner (backtest-driven)
         effective_floor = adaptive_floor * 0.6 + tuner_floor * 0.4
 
+        # Step 4.5: Symbol difficulty adjustment — hard-to-trade symbols get higher floor
+        symbol_floor = self.quality.get_symbol_confidence_floor(symbol, base_floor=effective_floor)
+        if symbol_floor > effective_floor:
+            effective_floor = symbol_floor
+
         # Check
         if adjusted_conf >= effective_floor:
             margin = adjusted_conf - effective_floor

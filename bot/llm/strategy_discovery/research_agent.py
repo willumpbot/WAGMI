@@ -188,6 +188,97 @@ def create_proposals_from_research(
     return proposals
 
 
+def run_research_cycle(
+    max_proposals: int = 3,
+    notify_fn=None,
+) -> List[StrategyProposal]:
+    """Run a single research cycle: analyze corpus, generate proposals.
+
+    This is the main entry point called from the bot's learning cycle.
+    Uses deep memory + corpus data to generate strategy proposals.
+
+    Args:
+        max_proposals: Maximum number of proposals to generate
+        notify_fn: Optional callback to send notifications (e.g., Telegram)
+
+    Returns:
+        List of generated StrategyProposal objects
+    """
+    try:
+        # Step 1: Build corpus summary
+        corpus_summary = get_corpus_summary(max_observations=50)
+        total_obs = corpus_summary.get("total_observations", 0)
+        if total_obs < 5:
+            logger.info("[RESEARCH] Not enough observations for research cycle")
+            return []
+
+        # Step 2: Enrich with deep memory knowledge
+        enriched_summary = dict(corpus_summary)
+        try:
+            from llm.deep_memory import get_deep_memory
+            dm = get_deep_memory()
+            knowledge = dm.build_llm_knowledge_summary()
+            if knowledge:
+                enriched_summary["deep_memory_knowledge"] = knowledge
+            # Add strategy effectiveness data
+            effectiveness = dm.trade_dna.get_strategy_effectiveness()
+            if effectiveness:
+                enriched_summary["strategy_effectiveness"] = {
+                    k: {"win_rate": v.get("win_rate", 0), "total": v["total"]}
+                    for k, v in effectiveness.items()
+                    if v["total"] >= 3
+                }
+        except Exception as e:
+            logger.debug(f"[RESEARCH] Deep memory enrichment failed: {e}")
+
+        # Step 3: Build research prompt
+        prompt = build_research_prompt(enriched_summary)
+
+        # Step 4: Call LLM (use low-cost model for research)
+        try:
+            from llm.client import call_llm
+            raw_text, usage = call_llm(
+                system_prompt=prompt,
+                snapshot_json="{}",
+                model="haiku",
+                max_tokens=2000,
+            )
+        except Exception as e:
+            logger.warning(f"[RESEARCH] LLM call failed: {e}")
+            return []
+
+        if not raw_text:
+            return []
+
+        # Step 5: Parse output
+        research_output = parse_research_output(raw_text)
+        if "error" in research_output:
+            logger.warning(f"[RESEARCH] Parse error: {research_output['error']}")
+            return []
+
+        # Step 6: Create proposals
+        proposals = create_proposals_from_research(research_output)
+        proposals = proposals[:max_proposals]
+
+        # Step 7: Notify operator
+        if proposals and notify_fn:
+            try:
+                msg = format_proposals_telegram(proposals)
+                notify_fn(msg)
+            except Exception:
+                pass
+
+        logger.info(
+            f"[RESEARCH] Cycle complete: {len(proposals)} proposals from "
+            f"{total_obs} observations"
+        )
+        return proposals
+
+    except Exception as e:
+        logger.error(f"[RESEARCH] Research cycle failed: {e}")
+        return []
+
+
 def format_proposals_telegram(proposals: List[StrategyProposal]) -> str:
     """Format proposals for Telegram display."""
     if not proposals:
