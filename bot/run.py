@@ -251,10 +251,14 @@ def cmd_status(args):
 
 
 def main():
-    # Load .env if present
+    # Load .env if present (check project root first, then bot/)
     try:
         from dotenv import load_dotenv
-        load_dotenv()
+        root_env = Path(__file__).parent.parent / ".env"
+        if root_env.exists():
+            load_dotenv(root_env)
+        else:
+            load_dotenv()  # falls back to current directory
     except ImportError:
         pass
 

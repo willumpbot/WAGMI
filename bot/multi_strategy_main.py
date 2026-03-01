@@ -64,6 +64,10 @@ from data.fetchers.telemetry import Telemetry
 from feedback.loop import FeedbackLoop
 from feedback.signal_quality import QualityFeatures
 
+# Signal ingestion pipeline
+from signals.telegram_ingest import TelegramSignalMonitor, IngestedSignal
+from signals.llm_analyzer import analyze_signal, format_analysis_for_telegram
+
 
 def get_tp1_close_pct(confidence: float) -> float:
     """Legacy confidence-based TP1 close percentage.
@@ -255,6 +259,11 @@ class MultiStrategyBot:
             bot_instance=self,
         )
 
+        # Telegram signal ingestion pipeline
+        self.signal_monitor = TelegramSignalMonitor(
+            on_signal=self._handle_ingested_signal,
+        )
+
     def _run_health_check(self):
         """Startup symbol health check: validate precision, connectivity, leverage caps."""
         logger.info("=" * 60)
@@ -332,6 +341,7 @@ class MultiStrategyBot:
         logger.info(f"  Max positions: {self.config.max_open_positions}")
         logger.info(f"  Risk per trade: {self.config.risk_per_trade:.1%}")
         logger.info(f"  LLM meta-brain: {self.llm_mode.name} ({describe_mode(self.llm_mode)})")
+        logger.info(f"  Signal monitor: {len(self.signal_monitor.channel_ids)} channels configured")
         logger.info("=" * 60)
 
         # Startup health check
@@ -347,6 +357,9 @@ class MultiStrategyBot:
 
         # Start Telegram command bot
         self.telegram_bot.start()
+
+        # Start signal ingestion pipeline
+        self.signal_monitor.start()
 
         # Signal handlers
         signal.signal(signal.SIGINT, self._handle_signal)
@@ -1939,6 +1952,100 @@ class MultiStrategyBot:
             f"cache={fetcher_stats['cache_hits']}"
         )
 
+    def _handle_ingested_signal(self, signal: IngestedSignal):
+        """Handle an incoming signal from the Telegram signal ingestion pipeline.
+
+        Runs LLM analysis, sends the thought process to Telegram, and
+        optionally routes TAKE signals into the trading pipeline.
+        """
+        logger.info(
+            f"[SIGNAL-PIPE] Received: {signal.symbol} {signal.side} "
+            f"entry={signal.entry_price} sl={signal.stop_loss} tp1={signal.take_profit_1} "
+            f"quality={signal.parse_quality:.0%}"
+        )
+
+        # Skip low-quality parses
+        if signal.parse_quality < 0.6:
+            logger.info(f"[SIGNAL-PIPE] Skipping low-quality parse ({signal.parse_quality:.0%})")
+            return
+
+        # Get knowledge context for the LLM
+        knowledge_context = ""
+        try:
+            from llm.knowledge_seed import get_course_summary_for_prompt
+            from llm.self_teaching import get_teaching_engine
+            engine = get_teaching_engine()
+            knowledge_context = (
+                get_course_summary_for_prompt(signal.symbol, "") + "\n" +
+                engine.get_knowledge_for_prompt(signal.symbol, "")
+            )
+        except Exception as e:
+            logger.debug(f"[SIGNAL-PIPE] Knowledge context error: {e}")
+
+        # Get roadmap state for curriculum level
+        curriculum_level = 1
+        learning_phase = "ABSORB"
+        try:
+            from llm.knowledge_roadmap import get_roadmap_state, PHASE_CONFIGS
+            state = get_roadmap_state()
+            config = PHASE_CONFIGS.get(state.current_phase, {})
+            curriculum_level = config.get("curriculum_level", 1)
+            learning_phase = config.get("learning_phase", "ABSORB")
+        except Exception:
+            pass
+
+        # Get market data for context
+        market_data = {}
+        sym_cfg = DEFAULT_SYMBOLS.get(signal.symbol)
+        if sym_cfg:
+            try:
+                price = self.fetcher.latest_price(signal.symbol, sym_cfg.coingecko_id)
+                if price:
+                    market_data["current_price"] = price
+                    market_data["signal_vs_market_pct"] = (
+                        (signal.entry_price - price) / price * 100
+                    ) if signal.entry_price > 0 else 0
+            except Exception:
+                pass
+
+        # Run LLM analysis
+        from dataclasses import asdict
+        analysis = analyze_signal(
+            signal_data=asdict(signal),
+            market_data=market_data,
+            knowledge_context=knowledge_context,
+            curriculum_level=curriculum_level,
+            learning_phase=learning_phase,
+        )
+
+        if analysis:
+            # Send the digestible thought process to Telegram
+            telegram_msg = format_analysis_for_telegram(analysis)
+            self.alerts.send_market_update(telegram_msg)
+
+            logger.info(
+                f"[SIGNAL-PIPE] Analysis complete: {signal.symbol} {signal.side} -> "
+                f"{analysis.verdict} (conf={analysis.verdict_confidence:.0%})"
+            )
+
+            # Update the ingested signal with analysis results
+            signal.llm_analyzed = True
+            signal.llm_verdict = analysis.verdict
+            signal.llm_reasoning = analysis.verdict_reasoning
+            signal.llm_confidence = analysis.verdict_confidence
+            signal.llm_analysis_id = analysis.analysis_id
+
+            # Log updated signal
+            from signals.telegram_ingest import log_ingested_signal
+            log_ingested_signal(signal)
+        else:
+            logger.warning(f"[SIGNAL-PIPE] LLM analysis failed for {signal.symbol}")
+            self.alerts.send_market_update(
+                f"[SIGNAL] {signal.symbol} {signal.side} "
+                f"entry={signal.entry_price} sl={signal.stop_loss} tp1={signal.take_profit_1}\n"
+                f"(LLM analysis unavailable)"
+            )
+
     def _send_market_update(self, trace_id: str = ""):
         """Send periodic market assessment even when no signals fire.
         Helps testers stay informed and feeds data for ML improvement."""
@@ -2008,6 +2115,18 @@ class MultiStrategyBot:
 
 
 def main():
+    # Load .env (project root first, then bot/)
+    try:
+        from pathlib import Path
+        from dotenv import load_dotenv
+        root_env = Path(__file__).parent.parent / ".env"
+        if root_env.exists():
+            load_dotenv(root_env)
+        else:
+            load_dotenv()
+    except ImportError:
+        pass
+
     os.makedirs("ml_data", exist_ok=True)
     init_db()  # Initialize SQLite database for trade journal
 

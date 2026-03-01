@@ -126,7 +126,16 @@ class TelegramCommandBot:
             return
 
         # Security: only allow configured user
-        if user_id != self.allowed_user_id:
+        if self.allowed_user_id == 0:
+            # No user ID configured - accept this user and log a setup hint
+            logger.warning(
+                f"TELEGRAM_ALLOWED_USER_ID not set! "
+                f"Add TELEGRAM_ALLOWED_USER_ID={user_id} to your .env file "
+                f"to authorize this user and silence this warning."
+            )
+            # Auto-authorize so the bot works during initial setup
+            self.allowed_user_id = user_id
+        elif user_id != self.allowed_user_id:
             logger.warning(f"Unauthorized Telegram command from user {user_id}")
             return
 
@@ -171,6 +180,15 @@ class TelegramCommandBot:
             "/kill": lambda: self._cmd_kill(args),
             "/unkill": self._cmd_unkill,
             "/ops": self._cmd_ops,
+            # Knowledge roadmap & signal analysis commands
+            "/roadmap": self._cmd_roadmap,
+            "/promote": self._cmd_promote,
+            "/demote": lambda: self._cmd_demote(args),
+            "/curriculum": self._cmd_curriculum,
+            "/knowledge": self._cmd_knowledge,
+            "/signals": self._cmd_signals,
+            "/analyze": lambda: self._cmd_analyze(args),
+            "/accuracy": self._cmd_accuracy,
             "/help": self._cmd_help,
         }
         handler = handlers.get(command)
@@ -441,31 +459,207 @@ class TelegramCommandBot:
         guard = OpsGuard()
         return guard.format_status()
 
+    # ── Knowledge Roadmap & Signal Analysis Commands ─────────────
+
+    def _cmd_roadmap(self) -> str:
+        from llm.knowledge_roadmap import format_roadmap_status
+        return format_roadmap_status()
+
+    def _cmd_promote(self) -> str:
+        from llm.knowledge_roadmap import promote_phase
+        result = promote_phase()
+        if result["success"]:
+            return (
+                f"PROMOTED to Phase {result['to_phase']}: {result['phase_name']}\n"
+                f"LLM Mode: {result['llm_mode']}\n"
+                f"Money: {'$' + str(result['max_stake_usd']) + ' max' if result['money_allowed'] else 'Paper only'}"
+            )
+        return f"Cannot promote: {result['reason']}"
+
+    def _cmd_demote(self, args: str) -> str:
+        from llm.knowledge_roadmap import demote_phase
+        args = args.strip()
+        if not args:
+            return "Usage: /demote <phase_number> [reason]"
+        parts = args.split(None, 1)
+        try:
+            target = int(parts[0])
+        except ValueError:
+            return "Invalid phase number"
+        reason = parts[1] if len(parts) > 1 else "manual demotion"
+        result = demote_phase(target, reason)
+        if result["success"]:
+            return f"Demoted to Phase {result['to_phase']}: {result['phase_name']}\nReason: {result['reason']}"
+        return f"Cannot demote: {result['reason']}"
+
+    def _cmd_curriculum(self) -> str:
+        from llm.self_teaching import get_teaching_engine
+        report = get_teaching_engine().get_curriculum_report()
+        c = report["curriculum"]
+        k = report["knowledge"]
+        return (
+            f"*LLM Curriculum*\n"
+            f"Level: {c['level']} - {c['level_name']}\n"
+            f"Hours at level: {c['hours_at_level']:.0f}h\n"
+            f"Total hours: {c['total_hours']:.0f}h\n"
+            f"Trades analyzed: {c['trades_analyzed']}\n"
+            f"Hypotheses: {c['hypotheses_total']} total, "
+            f"{c['hypotheses_validated']} validated, {c['hypotheses_invalidated']} invalidated\n"
+            f"Prediction accuracy: {c['prediction_accuracy']:.0%}\n"
+            f"Sniper profiles: {c['sniper_profiles']}\n"
+            f"Novel rules: {c['novel_rules']}\n"
+            f"\n*Knowledge Base*\n"
+            f"Total entries: {k['total_entries']}\n"
+            f"Avg confidence: {k['avg_confidence']:.0%}\n"
+            f"Validated: {k['validated_count']}"
+        )
+
+    def _cmd_knowledge(self) -> str:
+        from llm.self_teaching import get_teaching_engine
+        engine = get_teaching_engine()
+        kb = engine.knowledge
+
+        axioms = kb.get_axioms()
+        principles = kb.get_principles(min_confidence=0.6)
+        anti = kb.get_anti_patterns()
+        hypotheses = kb.get_active_hypotheses()
+        stats = kb.get_stats()
+
+        lines = [
+            f"*Knowledge Base ({stats['total_entries']} entries)*\n",
+            f"*Axioms ({len(axioms)})*:",
+        ]
+        for a in axioms[:5]:
+            lines.append(f"  - {a['content'][:80]}")
+
+        lines.append(f"\n*Principles ({len(principles)})*:")
+        for p in principles[:5]:
+            lines.append(f"  - [{p.get('confidence', 0):.0%}] {p['content'][:80]}")
+
+        if anti:
+            lines.append(f"\n*Anti-Patterns ({len(anti)})*:")
+            for a in anti[:3]:
+                lines.append(f"  - {a['content'][:80]}")
+
+        if hypotheses:
+            lines.append(f"\n*Active Hypotheses ({len(hypotheses)})*:")
+            for h in hypotheses[:3]:
+                lines.append(f"  - {h['content'][:80]}")
+
+        return "\n".join(lines)
+
+    def _cmd_signals(self) -> str:
+        from signals.telegram_ingest import get_recent_signals
+        signals = get_recent_signals(10)
+        if not signals:
+            return "No signals ingested yet."
+
+        lines = [f"*Recent Ingested Signals ({len(signals)})*\n"]
+        for s in reversed(signals[-5:]):
+            ago = int(time.time() - s.get("timestamp", 0))
+            lines.append(
+                f"  {s.get('symbol', '?')} {s.get('side', '?')} "
+                f"entry={s.get('entry_price', 0)} sl={s.get('stop_loss', 0)} "
+                f"tp1={s.get('take_profit_1', 0)} "
+                f"[{s.get('parse_quality', 0):.0%}] "
+                f"verdict={s.get('llm_verdict', 'pending')} "
+                f"({ago}s ago)"
+            )
+        return "\n".join(lines)
+
+    def _cmd_analyze(self, args: str) -> str:
+        """Manually submit a signal for analysis. Usage: /analyze LONG BTC 97500 SL 96000 TP 100000"""
+        args = args.strip()
+        if not args:
+            return (
+                "Usage: /analyze <signal text>\n"
+                "Example: /analyze LONG BTC 97500 SL 96000 TP 100000"
+            )
+        from signals.telegram_ingest import parse_signal
+        from signals.llm_analyzer import analyze_signal, format_analysis_for_telegram
+        from llm.knowledge_roadmap import get_roadmap_state
+
+        signal = parse_signal(args)
+        if not signal:
+            return f"Could not parse signal from: {args}"
+
+        # Get roadmap state for context
+        state = get_roadmap_state()
+        from llm.knowledge_roadmap import PHASE_CONFIGS
+        config = PHASE_CONFIGS.get(state.current_phase, {})
+
+        # Get knowledge context
+        try:
+            from llm.knowledge_seed import get_course_summary_for_prompt
+            from llm.self_teaching import get_teaching_engine
+            engine = get_teaching_engine()
+            knowledge = (
+                get_course_summary_for_prompt(signal.symbol, "") + "\n" +
+                engine.get_knowledge_for_prompt(signal.symbol, "")
+            )
+        except Exception:
+            knowledge = ""
+
+        from dataclasses import asdict
+        analysis = analyze_signal(
+            signal_data=asdict(signal),
+            knowledge_context=knowledge,
+            curriculum_level=config.get("curriculum_level", 1),
+            learning_phase=config.get("learning_phase", "ABSORB"),
+        )
+
+        if analysis:
+            return format_analysis_for_telegram(analysis)
+        return "Analysis failed (LLM error or timeout)"
+
+    def _cmd_accuracy(self) -> str:
+        from signals.llm_analyzer import get_analysis_accuracy
+        acc = get_analysis_accuracy()
+        if acc["total_analyses"] == 0:
+            return "No signal analyses recorded yet."
+        return (
+            f"*Signal Analysis Accuracy*\n"
+            f"Total analyses: {acc['total_analyses']}\n"
+            f"Outcomes tracked: {acc['outcomes_tracked']}\n"
+            f"Overall accuracy: {acc['overall_accuracy']:.0%}\n"
+            f"TAKE accuracy: {acc['take_accuracy']:.0%} ({acc['take_total']} signals)\n"
+            f"SKIP accuracy: {acc['skip_accuracy']:.0%} ({acc['skip_total']} signals)"
+        )
+
     def _cmd_help(self) -> str:
         return (
-            "*nunuIRL Bot Commands*\n"
+            "*nunuIRL Bot Commands*\n\n"
+            "*Trading:*\n"
             "/status - Equity, positions, PnL\n"
             "/positions - Open position details\n"
-            "/ml - ML learner stats\n"
-            "/performance - Win rate and metrics\n"
-            "/llm - LLM meta-brain status\n"
-            "/mode <0-5> - View/change LLM mode\n"
-            "/health - System health check\n"
-            "/uplift - LLM uplift analytics\n"
-            "/progression - Mode promotion readiness\n"
-            "/copytrades - Human copy-tradable signals\n"
-            "/telemetry - Execution quality metrics\n"
-            "/replay - Trade log replay analysis\n"
-            "/proposals - Strategy discovery proposals\n"
-            "/approve <id> - Approve a strategy proposal\n"
-            "/reject <id> - Reject a strategy proposal\n"
-            "/kill [reason] - Emergency kill switch\n"
-            "/unkill - Deactivate kill switch\n"
-            "/ops - Ops guard status (throttles, limits)\n"
             "/close <SYM> - Force close position\n"
             "/closeall - Close all positions\n"
             "/pause - Pause trading\n"
-            "/resume - Resume trading"
+            "/resume - Resume trading\n\n"
+            "*LLM & Learning:*\n"
+            "/llm - LLM meta-brain status\n"
+            "/mode <0-5> - View/change LLM mode\n"
+            "/roadmap - Knowledge roadmap status & gates\n"
+            "/promote - Advance to next roadmap phase\n"
+            "/demote <phase> - Demote to lower phase\n"
+            "/curriculum - Curriculum level & stats\n"
+            "/knowledge - Browse knowledge base\n"
+            "/progression - Mode promotion readiness\n\n"
+            "*Signals:*\n"
+            "/signals - Recent ingested signals\n"
+            "/analyze <text> - Analyze a signal with LLM\n"
+            "/accuracy - Signal analysis accuracy\n\n"
+            "*System:*\n"
+            "/health - System health check\n"
+            "/ml - ML learner stats\n"
+            "/performance - Win rate and metrics\n"
+            "/uplift - LLM uplift analytics\n"
+            "/copytrades - Human copy-tradable signals\n"
+            "/telemetry - Execution quality metrics\n"
+            "/proposals - Strategy discovery proposals\n"
+            "/kill [reason] - Emergency kill switch\n"
+            "/unkill - Deactivate kill switch\n"
+            "/ops - Ops guard status"
         )
 
     def _cmd_pause(self) -> str:
