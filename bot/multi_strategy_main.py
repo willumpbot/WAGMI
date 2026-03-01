@@ -71,6 +71,12 @@ from signals.llm_analyzer import analyze_signal, format_analysis_for_telegram
 # Growth intelligence — self-evolving meta-brain
 from llm.growth.orchestrator import get_growth_orchestrator
 
+# Feedback loop closers — self-performance, veto tracking, cost, operator channel
+from llm.veto_tracker import get_veto_tracker
+from llm.cost_tracker import get_cost_tracker
+from llm.operator_channel import get_operator_channel
+from llm.self_performance import get_performance_stats
+
 
 def get_tp1_close_pct(confidence: float) -> float:
     """Legacy confidence-based TP1 close percentage.
@@ -253,6 +259,12 @@ class MultiStrategyBot:
 
         # Growth intelligence: self-evolving meta-brain
         self.growth = get_growth_orchestrator()
+
+        # Operator channel: LLM → operator communication via Telegram
+        self.operator_channel = get_operator_channel(alert_router=self.alerts)
+
+        # Veto tracker: counterfactual validation for LLM vetoes
+        self.veto_tracker = get_veto_tracker()
 
         # Track 1h price changes for cross-market divergence detection
         self._price_changes_1h: Dict[str, float] = {}
@@ -616,6 +628,10 @@ class MultiStrategyBot:
                     _et_fb = pos.trade_profile.entry_type
                     _pd_fb = pos.trade_profile.primary_driver
                     _rg_fb = pos.trade_profile.regime
+                # Extract LLM decision data from position's entry_reasons
+                _llm_action = pos.entry_reasons.get("llm_action", "") if pos and pos.entry_reasons else ""
+                _llm_conf = pos.entry_reasons.get("llm_confidence", 0.0) if pos and pos.entry_reasons else 0.0
+                _llm_agreed = pos.entry_reasons.get("llm_agreed", True) if pos and pos.entry_reasons else True
                 try:
                     self.feedback.record_outcome(
                         confidence=pos.confidence if pos else 0,
@@ -630,6 +646,9 @@ class MultiStrategyBot:
                         hold_time_s=event.metadata.get("hold_time_s", 0),
                         exit_action=event.action,
                         leverage=event.leverage,
+                        llm_action=_llm_action,
+                        llm_confidence=_llm_conf,
+                        llm_agreed=_llm_agreed,
                     )
                 except Exception as e:
                     logger.warning(f"Feedback outcome error: {e}")
@@ -1070,6 +1089,11 @@ class MultiStrategyBot:
         ):
             return
 
+        # Get CB override constraints (graduated risk during CB override)
+        cb_constraints = self.risk_mgr.circuit_breaker.get_override_constraints(
+            confidence=signal_result.confidence
+        )
+
         # ── Risk filters (all rejections logged to data/logs/risk_rejections.csv) ──
         rr1 = signal_result.risk_reward_tp1
         sl_distance = signal_result.stop_width
@@ -1113,6 +1137,16 @@ class MultiStrategyBot:
                 lev_decision.reason = f"feedback-capped to {fb_lev_cap:.0f}x"
         except Exception:
             pass  # Feedback failure shouldn't block trading
+
+        # Circuit breaker override constraints: cap leverage during CB
+        if cb_constraints.get("constrained"):
+            cb_max_lev = cb_constraints["max_leverage"]
+            if lev_decision.leverage > cb_max_lev:
+                logger.info(
+                    f"[{trace_id}][{symbol}] CB override: leverage {lev_decision.leverage:.1f}x → {cb_max_lev:.1f}x"
+                )
+                lev_decision.leverage = cb_max_lev
+                lev_decision.reason = f"CB override capped to {cb_max_lev:.0f}x"
 
         # Per-symbol leverage cap from precision config
         sym_max_lev = get_max_leverage(symbol)
@@ -1160,6 +1194,26 @@ class MultiStrategyBot:
         )
         if qty <= 0:
             return
+
+        # Circuit breaker override: reduce size during CB
+        if cb_constraints.get("constrained"):
+            cb_size_mult = cb_constraints["size_multiplier"]
+            qty = qty * cb_size_mult
+            logger.info(
+                f"[{trace_id}][{symbol}] CB override: qty * {cb_size_mult:.2f} = {qty:.6f}"
+            )
+
+        # Portfolio correlation guard: reduce size for correlated same-direction trades
+        try:
+            corr_info = self._compute_portfolio_correlation()
+            if corr_info["risk_level"] == "high":
+                qty = qty * 0.70  # 30% reduction
+                logger.info(f"[{trace_id}][{symbol}] Correlation guard (high): qty * 0.70")
+            elif corr_info["risk_level"] == "medium":
+                qty = qty * 0.85  # 15% reduction
+                logger.info(f"[{trace_id}][{symbol}] Correlation guard (medium): qty * 0.85")
+        except Exception:
+            pass
 
         # Time-aware sizing: reduce during weekends / low-liquidity hours
         time_mult = get_time_multiplier()
@@ -1228,6 +1282,10 @@ class MultiStrategyBot:
         tp1_pct = adjusted["tp1_close_pct"]
 
         # Build entry reasons: WHY this trade was entered (for EV analysis)
+        # Extract LLM decision info from candidate (if LLM was involved)
+        _cand_llm_action = candidate.llm_action if hasattr(candidate, 'llm_action') and candidate.llm_action else ""
+        _cand_llm_conf = candidate.llm_confidence if hasattr(candidate, 'llm_confidence') and candidate.llm_confidence else 0.0
+
         entry_reasons = {
             "strategies_agree": signal_result.metadata.get("strategies_agree", []),
             "num_agree": num_agree,
@@ -1241,6 +1299,10 @@ class MultiStrategyBot:
             "primary_driver": trade_prof.primary_driver,
             "regime": trade_prof.regime,
             "volatility_band": trade_prof.volatility_band,
+            # LLM decision data for feedback loop
+            "llm_action": _cand_llm_action,
+            "llm_confidence": _cand_llm_conf,
+            "llm_agreed": _cand_llm_action in ("proceed", "go", "", None),
         }
 
         # Correlation guard: max same-direction positions
@@ -1846,6 +1908,8 @@ class MultiStrategyBot:
             "consecutive_losses": cb.consecutive_losses,
             "recent_outcomes": _recent_out_str,
             "daily_win_rate": _daily_wr,
+            # Portfolio correlation risk for LLM sizing adjustment
+            "correlation_risk": self._compute_portfolio_correlation().get("risk_level", "low"),
         }
 
         # Risk context
@@ -1965,6 +2029,48 @@ class MultiStrategyBot:
                 f"est=${stats['estimated_cost_usd']:.4f}"
             )
 
+    def _compute_portfolio_correlation(self) -> Dict[str, Any]:
+        """Compute directional correlation risk across open positions.
+
+        Returns risk assessment: low/medium/high based on same-direction
+        exposure in correlated assets (BTC/ETH/SOL etc.).
+        """
+        open_pos = self.pos_mgr.get_open_positions()
+        if len(open_pos) < 2:
+            return {"avg_correlation": 0.0, "net_delta": 0, "risk_level": "low"}
+
+        longs = [(s, p) for s, p in open_pos.items() if p.side == "LONG"]
+        shorts = [(s, p) for s, p in open_pos.items() if p.side == "SHORT"]
+        net_delta = len(longs) - len(shorts)
+
+        HIGH_CORR_PAIRS = {
+            frozenset({"BTC", "ETH"}): 0.85,
+            frozenset({"SOL", "ETH"}): 0.70,
+            frozenset({"BTC", "SOL"}): 0.65,
+            frozenset({"AVAX", "SOL"}): 0.55,
+            frozenset({"LINK", "ETH"}): 0.55,
+        }
+
+        # Check correlation among same-direction positions
+        same_dir = [s for s, _ in longs] if len(longs) >= len(shorts) else [s for s, _ in shorts]
+        max_corr = 0.0
+        for i, s1 in enumerate(same_dir):
+            for s2 in same_dir[i + 1:]:
+                pair = frozenset({s1.split("/")[0], s2.split("/")[0]})
+                corr = HIGH_CORR_PAIRS.get(pair, 0.3)
+                max_corr = max(max_corr, corr)
+
+        risk_level = "high" if max_corr > 0.7 or abs(net_delta) >= 3 else (
+            "medium" if max_corr > 0.5 or abs(net_delta) >= 2 else "low"
+        )
+
+        return {
+            "avg_correlation": round(max_corr, 2),
+            "net_delta": net_delta,
+            "same_dir_count": max(len(longs), len(shorts)),
+            "risk_level": risk_level,
+        }
+
     def _send_heartbeat(self):
         """Send periodic status heartbeat."""
         fetcher_stats = self.fetcher.get_stats()
@@ -2018,6 +2124,40 @@ class MultiStrategyBot:
 
         # Rolling performance from learning hooks
         perf = get_performance()
+
+        # Veto tracker: check counterfactual outcomes for vetoed signals
+        try:
+            def _price_fetcher(sym):
+                return self.fetcher.latest_price(sym, "") or 0
+            self.veto_tracker.check_outcomes(price_fetcher=_price_fetcher)
+        except Exception as e:
+            logger.debug(f"[HEARTBEAT] Veto check failed: {e}")
+
+        # Operator channel: detect and report operational anomalies
+        try:
+            perf_stats = get_performance_stats()
+            correlation_info = self._compute_portfolio_correlation()
+            cost_stats = get_cost_tracker().get_stats()
+
+            op_context = {
+                "consecutive_losses": self.risk_mgr.circuit_breaker.consecutive_losses,
+                "llm_accuracy": perf_stats.get("accuracy", 0.5),
+                "llm_decisions_count": perf_stats.get("total_decisions", 0),
+                "budget_used_pct": cost_stats.get("budget_used_pct", 0),
+                "correlation_risk": correlation_info.get("risk_level", "low"),
+                "hours_since_last_trade": 0,  # populated below
+                "signals_generated": len(get_daily_summary().get("by_strategy", {})),
+                "estimated_daily_funding_cost": 0,  # TODO: compute from positions
+                "flip_success_rate": perf_stats.get("flip_success_rate", 0.5),
+                "flip_count": perf_stats.get("flip_count", 0),
+                "calibration": perf_stats.get("calibration", 0.0),
+                "veto_accuracy": perf_stats.get("veto_accuracy", 0.5),
+                "veto_count": self.veto_tracker.get_stats().get("resolved", 0),
+                "streak": perf_stats.get("streak", ""),
+            }
+            self.operator_channel.check_and_report(op_context)
+        except Exception as e:
+            logger.debug(f"[HEARTBEAT] Operator channel check failed: {e}")
 
         self.alerts.send_heartbeat(status)
         strat_weights = self.weight_mgr.get_all_weights()

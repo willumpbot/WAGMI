@@ -325,6 +325,21 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
     except Exception as e:
         logger.debug(f"[SNAPSHOT] Deep memory unavailable: {e}")
 
+    # Self-performance stats — the LLM's mirror for self-calibration
+    try:
+        from llm.self_performance import get_compact_stats
+        self_perf = get_compact_stats()
+        if self_perf:
+            result["self_perf"] = self_perf
+    except Exception as e:
+        logger.debug(f"[SNAPSHOT] Self-performance unavailable: {e}")
+
+    # Portfolio correlation risk (injected by main bot via global_ctx.extra)
+    if g and g.extra:
+        corr_risk = g.extra.get("correlation_risk")
+        if corr_risk and corr_risk != "low":
+            result["corr_risk"] = corr_risk
+
     # Funding cost reminder — injected when positions are open
     if snapshot.active_positions:
         funding_notes = []

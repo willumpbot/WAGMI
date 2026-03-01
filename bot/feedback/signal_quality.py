@@ -45,6 +45,10 @@ class QualityFeatures:
     volatility: float = 0.0
     rr1: float = 1.0
     trend_alignment: float = 0.0
+    # LLM decision data (for tracking LLM agreement → outcome correlation)
+    llm_action: str = ""              # "go", "skip", "flip", "" (no LLM)
+    llm_confidence: float = 0.0
+    llm_agreed_with_ensemble: bool = True
 
 
 class SignalQualityScorer:
@@ -89,6 +93,11 @@ class SignalQualityScorer:
             lambda: {"wins": 0, "total": 0, "pnl": 0.0, "recent": []}
         )
 
+        # LLM agreement tracking: does LLM agreement predict wins?
+        self.by_llm_agreement: Dict[str, Dict] = defaultdict(
+            lambda: {"wins": 0, "total": 0, "pnl": 0.0, "recent": []}
+        )
+
         # Overall quality trend
         self.overall_recent: List[int] = []  # 1=win, 0=loss, last 100
 
@@ -122,6 +131,11 @@ class SignalQualityScorer:
         _update(self.by_entry_type, features.entry_type or "unknown")
         _update(self.by_hour, features.hour_of_day)
         _update(self.by_side, features.side)
+
+        # LLM agreement tracking
+        if features.llm_action:
+            agreement_key = "agreed" if features.llm_agreed_with_ensemble else "disagreed"
+            _update(self.by_llm_agreement, agreement_key)
 
         self.overall_recent.append(result)
         if len(self.overall_recent) > 100:
@@ -213,6 +227,18 @@ class SignalQualityScorer:
         else:
             scores["overall"] = 1.0
             weights["overall"] = 0.05
+
+        # 8. LLM agreement quality (does LLM agreement predict wins?)
+        if features.llm_action:
+            agreement_key = "agreed" if features.llm_agreed_with_ensemble else "disagreed"
+            llm_data = self.by_llm_agreement.get(agreement_key)
+            if llm_data and llm_data["total"] >= 5:
+                wr = self._recent_win_rate(llm_data)
+                scores["llm_agreement"] = self._wr_to_score(wr)
+                weights["llm_agreement"] = 0.15
+            else:
+                scores["llm_agreement"] = 1.0
+                weights["llm_agreement"] = 0.05
 
         # Weighted combination
         total_weight = sum(weights.values())
@@ -341,6 +367,7 @@ class SignalQualityScorer:
                 "by_entry_type": _serialize(self.by_entry_type),
                 "by_hour": _serialize(self.by_hour),
                 "by_side": _serialize(self.by_side),
+                "by_llm_agreement": _serialize(self.by_llm_agreement),
                 "overall_recent": self.overall_recent[-100:],
             }
             os.makedirs(os.path.dirname(self._state_file), exist_ok=True)
@@ -376,6 +403,7 @@ class SignalQualityScorer:
             _deserialize(state.get("by_entry_type", {}), self.by_entry_type)
             _deserialize(state.get("by_hour", {}), self.by_hour)
             _deserialize(state.get("by_side", {}), self.by_side)
+            _deserialize(state.get("by_llm_agreement", {}), self.by_llm_agreement)
             self.overall_recent = state.get("overall_recent", [])
 
             total = sum(d["total"] for d in self.by_symbol.values())

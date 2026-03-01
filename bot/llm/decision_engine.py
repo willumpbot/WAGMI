@@ -59,6 +59,20 @@ try:
 except ImportError:
     _HAS_USAGE_TIERS = False
 
+# Cost tracker: budget-aware model selection
+try:
+    from llm.cost_tracker import get_cost_tracker
+    _HAS_COST_TRACKER = True
+except ImportError:
+    _HAS_COST_TRACKER = False
+
+# Veto tracker: counterfactual validation
+try:
+    from llm.veto_tracker import get_veto_tracker
+    _HAS_VETO_TRACKER = True
+except ImportError:
+    _HAS_VETO_TRACKER = False
+
 logger = logging.getLogger("bot.llm.engine")
 
 # ── Audit log ────────────────────────────────────────────────────
@@ -193,6 +207,13 @@ def get_trading_decision(
         try:
             tier = get_active_tier()
             routed_model = tier.get_model_for_trigger(trigger_reason)
+            # Apply cost-aware downgrade if approaching budget
+            if _HAS_COST_TRACKER:
+                try:
+                    cost_tracker = get_cost_tracker()
+                    routed_model = cost_tracker.get_safe_model(routed_model, trigger_reason)
+                except Exception as ce:
+                    logger.debug(f"[LLM-ENGINE] Cost tracker check failed: {ce}")
             call_kwargs["model"] = routed_model
             call_kwargs["max_tokens"] = tier.max_output_tokens
             logger.debug(
@@ -202,6 +223,18 @@ def get_trading_decision(
             logger.warning(f"[LLM-ENGINE] Tier routing failed: {e}, using default model")
 
     raw_text, usage = call_llm(**call_kwargs)
+
+    # Record API call cost
+    if _HAS_COST_TRACKER and usage:
+        try:
+            cost_tracker = get_cost_tracker()
+            cost_tracker.record_call(
+                input_tokens=usage.get("input_tokens", 0),
+                output_tokens=usage.get("output_tokens", 0),
+                model=call_kwargs.get("model", "unknown"),
+            )
+        except Exception as ce:
+            logger.debug(f"[LLM-ENGINE] Cost recording failed: {ce}")
 
     if raw_text is None:
         _log_audit({
@@ -311,6 +344,34 @@ def get_trading_decision(
         "trigger_context": trigger_context,
         "usage": usage,
     })
+
+    # Step 9.5: Record veto for counterfactual tracking
+    if is_veto and _HAS_VETO_TRACKER:
+        try:
+            vt = get_veto_tracker()
+            # Extract signal data from trigger context
+            _sym = trigger_context.split()[0] if trigger_context else ""
+            _side = trigger_context.split()[1] if trigger_context and len(trigger_context.split()) > 1 else ""
+            # Entry/SL/TP come from the markets in snapshot (best-effort extraction)
+            _entry, _sl, _tp1 = 0.0, 0.0, 0.0
+            if snapshot.markets:
+                for m in snapshot.markets:
+                    if _sym and _sym in m.symbol:
+                        _entry = m.price
+                        break
+            vt.record_veto(
+                symbol=_sym,
+                side=_side,
+                entry_price=_entry,
+                sl_price=_sl,
+                tp1_price=_tp1,
+                confidence=0.0,  # ensemble confidence not available here
+                llm_confidence=decision.confidence,
+                llm_reason=decision.notes or "",
+                regime=decision.regime,
+            )
+        except Exception as ve:
+            logger.debug(f"[LLM-ENGINE] Veto recording failed: {ve}")
 
     if gated.allowed:
         # Step 10: Apply memory update ONLY for allowed decisions

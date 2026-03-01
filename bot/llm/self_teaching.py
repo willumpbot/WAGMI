@@ -638,6 +638,20 @@ class LearningCycleEngine:
         advanced = self._check_level_advancement()
         report["level_advanced"] = advanced
 
+        # Cross-reference LLM decisions with outcomes (meta-learning)
+        llm_insights = self._analyze_llm_decisions(recent_trades)
+        if llm_insights:
+            for insight in llm_insights:
+                self.knowledge.add(
+                    knowledge_type=KnowledgeType.OBSERVATION,
+                    content=insight["content"],
+                    confidence=insight.get("confidence", 0.7),
+                    category=insight.get("category", "meta_learning"),
+                    tags=["llm", "self_performance"],
+                    source="llm_decision_analysis",
+                )
+                report["knowledge_added"].append(insight["content"])
+
         _save_curriculum(self.curriculum)
 
         logger.info(
@@ -648,6 +662,99 @@ class LearningCycleEngine:
         )
 
         return report
+
+    def _analyze_llm_decisions(self, recent_trades: List[Dict]) -> List[Dict]:
+        """Cross-reference LLM decisions with trade outcomes for meta-learning.
+
+        Checks:
+        - Is the LLM overconfident in certain regimes?
+        - Are flips working?
+        - Is the LLM adding value vs baseline?
+        - Are vetoes correctly filtering losers?
+        """
+        try:
+            from llm.self_performance import get_performance_stats
+            stats = get_performance_stats()
+        except Exception:
+            return []
+
+        if not stats or stats.get("total_decisions", 0) < 10:
+            return []
+
+        insights = []
+
+        # Check: Is LLM overconfident in certain regimes?
+        for regime, acc in stats.get("regime_accuracy", {}).items():
+            count = stats.get("regime_counts", {}).get(regime, 0)
+            if acc < 0.40 and count >= 5:
+                insights.append({
+                    "type": "llm_weakness",
+                    "content": (
+                        f"LLM accuracy in {regime} regime is {acc:.0%} "
+                        f"({count} decisions) — consider defaulting to skip"
+                    ),
+                    "category": "meta_learning",
+                    "confidence": 0.7,
+                })
+
+        # Check: Are flips working?
+        flip_sr = stats.get("flip_success_rate", 0.5)
+        flip_count = stats.get("flip_count", 0)
+        if flip_sr < 0.35 and flip_count >= 5:
+            insights.append({
+                "type": "llm_weakness",
+                "content": (
+                    f"LLM flips succeed only {flip_sr:.0%} — "
+                    f"prefer skip over flip when uncertain"
+                ),
+                "category": "meta_learning",
+                "confidence": 0.8,
+            })
+
+        # Check: Is LLM adding value vs baseline?
+        accuracy = stats.get("accuracy", 0.5)
+        total = stats.get("total_decisions", 0)
+        if accuracy < 0.45 and total >= 20:
+            insights.append({
+                "type": "llm_performance",
+                "content": (
+                    f"LLM overall accuracy {accuracy:.0%} is below baseline — "
+                    f"consider reducing autonomy level"
+                ),
+                "category": "operational",
+                "confidence": 0.9,
+            })
+
+        # Check: Strong veto accuracy (positive feedback)
+        veto_acc = stats.get("veto_accuracy", 0.5)
+        skip_count = stats.get("skip_count", 0)
+        if veto_acc > 0.75 and skip_count >= 10:
+            insights.append({
+                "type": "llm_strength",
+                "content": (
+                    f"LLM veto accuracy is strong ({veto_acc:.0%}) — "
+                    f"vetoes are effectively filtering losers"
+                ),
+                "category": "meta_learning",
+                "confidence": 0.7,
+            })
+
+        # Check: Calibration drift
+        calibration = stats.get("calibration", 0.0)
+        if abs(calibration) > 0.12 and total >= 15:
+            direction = "overconfident" if calibration > 0 else "underconfident"
+            insights.append({
+                "type": "llm_calibration",
+                "content": (
+                    f"LLM is {direction} by {abs(calibration):.0%} — "
+                    f"stated confidence {'exceeds' if calibration > 0 else 'trails'} "
+                    f"actual win rate"
+                ),
+                "category": "meta_learning",
+                "confidence": 0.8,
+            })
+
+        return insights
 
     def _extract_patterns(self, trades: List[Dict]) -> List[Dict]:
         """Level 1: Extract basic patterns from recent trades."""

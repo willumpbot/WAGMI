@@ -148,6 +148,35 @@ class CircuitBreaker:
 
         return False
 
+    def get_override_constraints(self, confidence: float = 0.0) -> Dict[str, Any]:
+        """When CB is overridden by high confidence, return risk constraints.
+
+        During a CB override, we still allow the trade but with REDUCED risk:
+          - Max leverage capped at 2x (not the usual 25x)
+          - Position size halved (0.5x multiplier)
+
+        This prevents a single high-confidence override from taking
+        full-size risk during a drawdown event.
+
+        Returns:
+            Dict with max_leverage, size_multiplier, constrained flag, and reason.
+            If CB is not tripped, returns unconstrained defaults.
+        """
+        if not self.tripped:
+            return {
+                "max_leverage": 25.0,
+                "size_multiplier": 1.0,
+                "constrained": False,
+                "reason": "",
+            }
+
+        return {
+            "max_leverage": 2.0,
+            "size_multiplier": 0.5,
+            "constrained": True,
+            "reason": f"circuit_breaker_override: {self.trip_reason}",
+        }
+
     def get_status(self) -> Dict[str, Any]:
         return {
             "tripped": self.tripped,

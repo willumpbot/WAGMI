@@ -195,6 +195,9 @@ class FeedbackLoop:
         hold_time_s: float = 0,
         exit_action: str = "",
         leverage: float = 1.0,
+        llm_action: str = "",
+        llm_confidence: float = 0.0,
+        llm_agreed: bool = True,
     ):
         """Record a trade outcome. Updates all feedback components."""
         now = datetime.now(timezone.utc)
@@ -222,7 +225,7 @@ class FeedbackLoop:
             leverage=leverage,
         )
 
-        # 3. Update signal quality scorer
+        # 3. Update signal quality scorer (with LLM decision data)
         features = QualityFeatures(
             confidence=confidence,
             num_strategies_agree=num_agree,
@@ -232,6 +235,9 @@ class FeedbackLoop:
             entry_type=entry_type,
             hour_of_day=now.hour,
             day_of_week=now.weekday(),
+            llm_action=llm_action,
+            llm_confidence=llm_confidence,
+            llm_agreed_with_ensemble=llm_agreed,
         )
         self.quality.record_outcome(features, win, pnl)
 
