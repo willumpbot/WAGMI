@@ -6,10 +6,14 @@ Usage:
     python cli.py --mode paper       # Explicit paper mode
     python cli.py --mode replay      # Replay mode (analyze trade logs)
     python cli.py --mode live        # Live trading (requires confirmation)
+    python cli.py --mode evolve      # Strategy evolution report (daily review)
+    python cli.py --mode tiers       # Show LLM usage tier comparison
 
 Paper mode: Uses live feeds, simulates fills, logs identical schema to live.
 Replay mode: Runs replay engine against trade logs, outputs anomaly report.
-Live mode: Real execution on Hyperliquid. Requires explicit confirmation.
+Evolve mode: Generates the Strategy Evolution Report — the student's daily journal.
+Tiers mode: Shows LLM usage tier comparison and current configuration.
+Live mode: Real execution on Hyperliquid. Requires confirmation.
 """
 
 import argparse

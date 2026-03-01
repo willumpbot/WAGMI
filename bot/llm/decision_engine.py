@@ -51,6 +51,13 @@ from llm.recovery import handle_validation_error, should_disable_llm_temporarily
 from llm.normalizers import normalize_llm_output, decision_from_normalized_dict
 from llm.autonomy_router import apply_autonomy_mode
 
+# Usage tier system: smart model routing by trigger importance
+try:
+    from llm.usage_tiers import get_active_tier
+    _HAS_USAGE_TIERS = True
+except ImportError:
+    _HAS_USAGE_TIERS = False
+
 logger = logging.getLogger("bot.llm.engine")
 
 # ── Audit log ────────────────────────────────────────────────────
@@ -160,12 +167,24 @@ def get_trading_decision(
     # Step 3: Serialize snapshot
     snapshot_json = snapshot_to_json(snapshot)
 
-    # Step 4: Call Claude
+    # Step 4: Call Claude (with smart model routing if usage tiers are configured)
     prompt = LLM_SYSTEM_PROMPT_COMPACT if use_compact_prompt else LLM_SYSTEM_PROMPT
-    raw_text, usage = call_llm(
-        system_prompt=prompt,
-        snapshot_json=snapshot_json,
-    )
+
+    # Resolve model: tier-based routing overrides default
+    call_kwargs = {
+        "system_prompt": prompt,
+        "snapshot_json": snapshot_json,
+    }
+    if _HAS_USAGE_TIERS:
+        tier = get_active_tier()
+        routed_model = tier.get_model_for_trigger(trigger_reason)
+        call_kwargs["model"] = routed_model
+        call_kwargs["max_tokens"] = tier.max_output_tokens
+        logger.debug(
+            f"[LLM-ENGINE] Tier {tier.name}: using {routed_model} for trigger={trigger_reason}"
+        )
+
+    raw_text, usage = call_llm(**call_kwargs)
 
     if raw_text is None:
         _log_audit({
