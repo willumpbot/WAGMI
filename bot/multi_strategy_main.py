@@ -535,6 +535,15 @@ class MultiStrategyBot:
                 return
         self._last_prices[symbol] = current_price
 
+        # Fetch and cache funding rate (throttled: once per 60 ticks per symbol)
+        if self._tick % 60 == 0 or symbol not in self._last_funding_rates:
+            try:
+                fr = self.fetcher.fetch_funding_rate(symbol)
+                if fr is not None:
+                    self._last_funding_rates[symbol] = fr
+            except Exception:
+                pass
+
         # Track 1h price changes for cross-market divergence detection
         try:
             df_1h_div = data.get("1h")
@@ -749,6 +758,24 @@ class MultiStrategyBot:
                     })
                 except Exception as e:
                     logger.debug(f"Growth trade record error: {e}")
+
+                # E1: Feed strategy discovery corpus with trade observations
+                try:
+                    from llm.strategy_discovery.corpus import add_observation
+                    _outcome_str = "WIN" if total_pnl > 0 else "LOSS"
+                    add_observation(
+                        category="trade_outcome",
+                        symbol=symbol,
+                        text=(
+                            f"{event.strategy} {event.side} {_outcome_str}: "
+                            f"pnl=${total_pnl:.2f}, regime={_rg_fb}, "
+                            f"exit={event.action}, entry_type={_et_fb}, "
+                            f"lev={event.leverage:.0f}x, "
+                            f"hold={event.metadata.get('hold_time_s', 0):.0f}s"
+                        ),
+                    )
+                except Exception:
+                    pass  # Corpus not critical
 
             # Record outcome for ML (use TOTAL trade PnL, not just final leg)
             if self.ml and event.action in _FULL_CLOSE:

@@ -295,10 +295,38 @@ positions in correlated assets. Factor this into sizing:
 - "medium": Reduce size_multiplier by 15% for new same-direction trades
 - Consider suggesting the opposite direction as a hedge
 
+**PORTFOLIO LEVERAGE:**
+`port_lev` shows total portfolio leverage. This is the sum of all position notional * leverage / equity.
+- port_lev < 3.0: Safe — normal sizing
+- port_lev 3.0-5.0: Moderate — reduce size_multiplier by 20%
+- port_lev 5.0-8.0: High — only take high-conviction setups (confidence >= 0.80)
+- port_lev >= 8.0: System will auto-block new entries. Focus on managing existing positions.
+
+**FUNDING COST:**
+`funding_cost_pct` shows estimated daily cost as % of equity from funding payments.
+- < 0.1%: Negligible — ignore
+- 0.1-0.3%: Monitor — factor into exit timing
+- > 0.3%: Significant drag — consider closing marginal positions or flipping to earn funding
+- Funding payments occur at 0:00, 8:00, 16:00 UTC
+
+**SESSION PERFORMANCE:**
+`session_perf` shows win rates by trading session (Asia 00-06, Europe 06-12, US 12-18, Late 18-24 UTC).
+Use this to adjust confidence: if current session has low WR, raise your bar for entry.
+
+**REGIME TRANSITIONS:**
+`regime_shifts` shows symbols where the market regime is changing. These are high-alpha moments:
+- Transitions FROM range TO trend: look for breakout entries
+- Transitions TO panic: reduce exposure, tighten stops
+- Transitions FROM panic: look for bounce/reversal setups
+
 ## META-INSTRUCTION
 Before deciding:
 - Pause and think deeply
 - Check self_perf — adjust for your known biases
+- Check port_lev — are we already leveraged enough?
+- Check funding_cost_pct — are we bleeding from funding?
+- Check session_perf — is this a good time to trade?
+- Check regime_shifts — is the market character changing?
 - Evaluate regime using ALL criteria (volume, OI, funding, correlation, etc.)
 - Consider volatility and liquidity impact on size
 - Consider funding cost impact on hold time and sizing

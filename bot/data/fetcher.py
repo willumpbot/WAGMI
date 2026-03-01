@@ -518,6 +518,31 @@ class DataFetcher:
             self._set_cache(f"price:{symbol_name}", df)
         return price
 
+    def fetch_funding_rate(self, symbol_name: str) -> Optional[float]:
+        """Fetch the current 8-hour funding rate for a symbol via CCXT.
+
+        Returns the funding rate as a decimal (e.g., 0.0005 = 0.05%).
+        Returns None if not available.
+        """
+        if not self._ccxt_available:
+            return None
+
+        chain = self._symbol_exchanges.get(symbol_name, [])
+        for ex_name, pair in chain:
+            exchange = self._exchanges.get(ex_name)
+            if exchange is None:
+                continue
+            try:
+                self._ccxt_requests += 1
+                fr_data = exchange.fetch_funding_rate(pair)
+                rate = fr_data.get("fundingRate")
+                if rate is not None:
+                    return float(rate)
+            except Exception as e:
+                logger.debug(f"[{symbol_name}] Funding rate {ex_name}: {e}")
+                continue
+        return None
+
     def clear_cache(self):
         """Clear the data cache."""
         self._cache.clear()
