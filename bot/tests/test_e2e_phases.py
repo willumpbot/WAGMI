@@ -496,9 +496,12 @@ def test_snapshot_compaction():
     assert parsed["m"][0]["s"] == "BTC"
     assert "d1h" in parsed["m"][0]
 
-    # Compact should be shorter than verbose
+    # Compact core data (excluding growth context) should be shorter than verbose
+    parsed_compact = json.loads(compact_json)
+    parsed_compact.pop("growth", None)  # Growth context only in compact
+    compact_core = json.dumps(parsed_compact, separators=(",", ":"))
     verbose_json = snapshot_to_json(snapshot, compact=False)
-    assert len(compact_json) < len(verbose_json)
+    assert len(compact_core) < len(verbose_json)
 
     print("  [PASS] Snapshot compaction")
 

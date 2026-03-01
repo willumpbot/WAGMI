@@ -511,8 +511,8 @@ class LearningCycleEngine:
         self.curriculum = _load_curriculum()
         self._last_cycle_time: float = 0
         self._trades_since_cycle: int = 0
-        self._cycle_interval_s: float = 1800  # 30 minutes
-        self._trades_per_cycle: int = 10
+        self._cycle_interval_s: float = 900   # 15 min for aggressive learning (was 30)
+        self._trades_per_cycle: int = 5        # Learn faster (was 10)
         self._cycle_count: int = 0
 
         # Seed axioms on first run
@@ -936,23 +936,23 @@ class LearningCycleEngine:
         level = CurriculumLevel(c.current_level)
 
         if level == CurriculumLevel.PATTERN_RECOGNITION:
-            # Advance after 20+ trades and 72+ hours
-            if c.trades_analyzed >= 20 and c.hours_at_level >= 72:
+            # Accelerated: advance after 15+ trades and 24+ hours (was 20/72h)
+            if c.trades_analyzed >= 15 and c.hours_at_level >= 24:
                 return self._advance_level()
 
         elif level == CurriculumLevel.CAUSAL_ANALYSIS:
-            # Advance after generating and testing 10+ hypotheses
-            if c.hypotheses_total >= 10 and (c.hypotheses_validated + c.hypotheses_invalidated) >= 5 and c.hours_at_level >= 96:
+            # Accelerated: advance after generating and testing 7+ hypotheses (was 10/5/96h)
+            if c.hypotheses_total >= 7 and (c.hypotheses_validated + c.hypotheses_invalidated) >= 3 and c.hours_at_level >= 48:
                 return self._advance_level()
 
         elif level == CurriculumLevel.PREDICTIVE_MODELING:
-            # Advance after 30+ predictions with > 55% accuracy
-            if c.predictions_made >= 30 and c.prediction_accuracy >= 0.55 and c.hours_at_level >= 168:
+            # Accelerated: 20+ predictions with > 52% accuracy (was 30/55%/168h)
+            if c.predictions_made >= 20 and c.prediction_accuracy >= 0.52 and c.hours_at_level >= 72:
                 return self._advance_level()
 
         elif level == CurriculumLevel.SNIPER_REPLICATION:
-            # Advance after building 5+ sniper profiles
-            if c.sniper_profiles_built >= 5 and c.hours_at_level >= 336:
+            # Accelerated: 3+ sniper profiles (was 5/336h)
+            if c.sniper_profiles_built >= 3 and c.hours_at_level >= 168:
                 return self._advance_level()
 
         # Level 5 is the final level - no advancement needed

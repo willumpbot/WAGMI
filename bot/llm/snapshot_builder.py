@@ -255,6 +255,63 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
             for p in snapshot.active_positions
         ]
 
+    # Growth intelligence context (knowledge, hypotheses, recent outcomes)
+    try:
+        from llm.growth.orchestrator import get_growth_orchestrator
+        growth_ctx = get_growth_orchestrator().get_llm_context()
+        if growth_ctx:
+            # Truncate to save tokens (max ~400 chars)
+            result["growth"] = growth_ctx[:400]
+    except Exception:
+        pass  # Growth system not available — no problem
+
+    # Survival pressure context — constant accountability awareness
+    try:
+        from llm.survival_pressure import get_survival_context_for_llm
+        survival_ctx = get_survival_context_for_llm()
+        if survival_ctx:
+            result["survival"] = survival_ctx[:500]
+    except Exception:
+        pass
+
+    # Knowledge base injection — axioms, principles, anti-patterns
+    try:
+        from llm.self_teaching import get_teaching_engine
+        engine = get_teaching_engine()
+        # Extract current symbol/regime from trigger context
+        symbol = ""
+        regime = ""
+        if snapshot.trigger_context:
+            parts = snapshot.trigger_context.split()
+            if parts:
+                symbol = parts[0]
+        knowledge_ctx = engine.get_knowledge_for_prompt(symbol=symbol, regime=regime)
+        if knowledge_ctx:
+            result["knowledge"] = knowledge_ctx[:600]
+    except Exception:
+        pass
+
+    # Funding cost reminder — injected when positions are open
+    if snapshot.active_positions:
+        funding_notes = []
+        for p in snapshot.active_positions:
+            fr = p.get("funding_rate", 0)
+            side = p.get("side", "").lower()
+            sym = p.get("symbol", "")
+            lev = p.get("leverage", 1)
+            if fr and abs(fr) >= 0.0001:
+                daily_cost = abs(fr) * 3 * lev * 100  # 3 payments/day, as % of position
+                if (side in ("long", "buy") and fr > 0) or (side in ("short", "sell") and fr < 0):
+                    funding_notes.append(
+                        f"{sym}: PAYING {abs(fr)*100:.3f}%/8h funding ({daily_cost:.2f}%/day at {lev}x)"
+                    )
+                else:
+                    funding_notes.append(
+                        f"{sym}: EARNING {abs(fr)*100:.3f}%/8h funding"
+                    )
+        if funding_notes:
+            result["funding_alert"] = " | ".join(funding_notes)
+
     return result
 
 

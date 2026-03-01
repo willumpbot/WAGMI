@@ -246,6 +246,37 @@ CRYPTO_SPECIFICS = [
         "category": "crypto",
         "tags": ["memecoins", "volatility", "risk"],
     },
+    # Funding cost awareness
+    {
+        "type": "axiom",
+        "content": "Funding rate is a REAL COST paid every 8 hours. At 0.05% funding on 5x leverage, you lose 0.75%/day just holding. Your PnL = Price Move - Funding Paid - Fees. Never forget the funding term.",
+        "category": "crypto",
+        "tags": ["funding", "cost", "hold_time", "critical"],
+    },
+    {
+        "type": "axiom",
+        "content": "High positive funding (>0.03%) on longs means you are PAYING to hold. Either trade quickly (scalp), take the opposite side (get paid), or stay flat. Holding a long in high funding is bleeding money.",
+        "category": "crypto",
+        "tags": ["funding", "cost", "longs", "critical"],
+    },
+    {
+        "type": "principle",
+        "content": "Funding cost scales with leverage. 0.01% funding on 10x = 0.3%/day cost. On a trade expecting 2% move over 3 days, funding eats 0.9% — nearly half your profit. Always factor funding into R:R math.",
+        "category": "crypto",
+        "tags": ["funding", "leverage", "risk_reward"],
+    },
+    {
+        "type": "principle",
+        "content": "When funding is extreme (>0.05%), the crowded side usually gets liquidated. This is both a reversal signal AND a cost signal. Trading against extreme funding is often free money — you get paid to hold AND profit from the reversal.",
+        "category": "crypto",
+        "tags": ["funding", "reversal", "opportunity"],
+    },
+    {
+        "type": "principle",
+        "content": "In high funding environments, prefer shorter hold times. A 2-hour scalp avoids the 8-hour funding payment entirely. Adjust your entry refinement: 'market now' for quick scalps, avoid 'scale in' which extends hold time.",
+        "category": "crypto",
+        "tags": ["funding", "hold_time", "scalp"],
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
@@ -511,9 +542,11 @@ def get_course_summary_for_prompt(symbol: str = "", regime: str = "") -> str:
         "Never risk >2% per trade. Stop loss is sacred.",
         "R:R minimum 1.5:1. Below that, skip.",
         "Never long alts into BTC dump.",
-        "Funding extremes precede reversals.",
+        "Funding extremes precede reversals AND cost money to hold against.",
+        "Funding is REAL COST: 0.05% on 5x = 0.75%/day. Factor into every trade.",
         "3+ strategy agreement = highest probability.",
         "Circuit breaker = stop trading, no exceptions.",
+        "Improve or die. Every trade counts. Learn from every outcome.",
     ]
     parts.append("CORE RULES: " + " | ".join(core_axioms))
 

@@ -314,8 +314,8 @@ def _check_graduation(state: LearningState):
         return
 
     if phase == LearningPhase.ABSORB:
-        # Graduate to APPRENTICE after 48h AND 20+ trades
-        if state.hours_elapsed >= 48 and state.trades_observed >= 20:
+        # Accelerated: Graduate to APPRENTICE after 24h AND 10+ trades (was 48h/20)
+        if state.hours_elapsed >= 24 and state.trades_observed >= 10:
             state.phase = LearningPhase.APPRENTICE.value
             state.phase_transitions.append({
                 "ts": time.time(),
@@ -330,15 +330,15 @@ def _check_graduation(state: LearningState):
             )
 
     elif phase == LearningPhase.APPRENTICE:
-        # Graduate to ACTIVE after:
-        # - 50+ trades observed
-        # - Counterfactual accuracy > 55%
-        # - 7+ days elapsed
+        # Accelerated: Graduate to ACTIVE after:
+        # - 25+ trades observed (was 50)
+        # - Counterfactual accuracy > 52% (was 55%)
+        # - 3+ days elapsed (was 7)
         can_graduate = (
-            state.trades_observed >= 50
-            and state.counterfactual_total >= 20
-            and state.counterfactual_accuracy >= 0.55
-            and state.hours_elapsed >= 168  # 7 days
+            state.trades_observed >= 25
+            and state.counterfactual_total >= 10
+            and state.counterfactual_accuracy >= 0.52
+            and state.hours_elapsed >= 72  # 3 days (was 7)
         )
 
         if can_graduate:

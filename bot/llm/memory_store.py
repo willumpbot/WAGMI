@@ -39,10 +39,10 @@ logger = logging.getLogger("bot.llm.memory")
 
 _MEMORY_DIR = os.path.join("data", "llm")
 _MEMORY_PATH = os.path.join(_MEMORY_DIR, "llm_memory.json")
-_MAX_NOTES = 50
-_SUMMARY_NOTES = 10        # How many recent notes to include in summary
-_MAX_NOTE_LENGTH = 150      # Truncate individual notes
-_STALE_SECONDS = 48 * 3600  # Drop notes older than 48 hours
+_MAX_NOTES = 100            # Doubled for aggressive learning (was 50)
+_SUMMARY_NOTES = 15         # More context for LLM (was 10)
+_MAX_NOTE_LENGTH = 200      # Longer notes for richer context (was 150)
+_STALE_SECONDS = 168 * 3600 # 7 days retention for learning persistence (was 48h)
 _DEDUP_SIMILARITY = 0.8     # Drop notes > 80% similar to recent ones
 
 _lock = threading.Lock()

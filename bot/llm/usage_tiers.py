@@ -69,6 +69,10 @@ MEDIUM_VALUE_TRIGGERS = {
     "strategy consensus",
     "CROSS_MARKET_DIVERGENCE",
     "cross-market divergence",
+    "LEARNING_CYCLE",
+    "learning cycle",
+    "FUNDING_ALERT",
+    "funding alert",
 }
 
 # Low-value triggers: routine, heartbeat
@@ -167,29 +171,29 @@ TIER_RECOMMENDED = UsageTier(
 
 TIER_AGGRESSIVE = UsageTier(
     name="AGGRESSIVE",
-    description="Smart model routing. Opus for critical decisions, Sonnet for routine.",
+    description="Smart model routing. Opus for critical decisions, Sonnet for routine. Tuned for maximum learning velocity.",
     default_model=MODEL_SONNET,
     high_value_model=MODEL_OPUS,
     medium_value_model=MODEL_SONNET,
     low_value_model=MODEL_SONNET,
-    max_calls_hour=50,
-    max_calls_day=800,
-    min_cooldown_s=15,
+    max_calls_hour=60,         # Up from 50 — more learning opportunities
+    max_calls_day=1000,        # Up from 800 — full day of aggressive learning
+    min_cooldown_s=10,         # Down from 15 — faster response to events
     trigger_cooldowns={
-        "PRE_TRADE": 15,
-        "PRE_CLOSE": 15,
-        "REGIME_SHIFT": 30,
-        "HIGH_CONFIDENCE": 30,
-        "STRATEGY_CONSENSUS": 30,
-        "STRATEGY_DISAGREEMENT": 30,
-        "CROSS_MARKET_DIVERGENCE": 60,
-        "MEMORY_EVENT": 120,
-        "PERIODIC": 180,
+        "PRE_TRADE": 10,       # Down from 15 — never miss a trade evaluation
+        "PRE_CLOSE": 10,       # Down from 15 — evaluate exits aggressively
+        "REGIME_SHIFT": 20,    # Down from 30 — regime awareness is critical
+        "HIGH_CONFIDENCE": 20, # Down from 30 — act on high-conf signals fast
+        "STRATEGY_CONSENSUS": 20,   # Down from 30
+        "STRATEGY_DISAGREEMENT": 20, # Down from 30 — disagreements need fast resolution
+        "CROSS_MARKET_DIVERGENCE": 45, # Down from 60
+        "MEMORY_EVENT": 90,    # Down from 120 — learn faster from events
+        "PERIODIC": 120,       # Down from 180 — more frequent check-ins
     },
-    min_snapshot_interval_s=120,
-    force_snapshot_interval_s=300,
-    max_output_tokens=800,
-    estimated_monthly_cost=600.0,
+    min_snapshot_interval_s=90,  # Down from 120 — tighter feedback loop
+    force_snapshot_interval_s=240,  # Down from 300 — more frequent forced updates
+    max_output_tokens=1000,    # Up from 800 — richer reasoning and memory updates
+    estimated_monthly_cost=750.0,
 )
 
 TIER_UNLEASHED = UsageTier(
