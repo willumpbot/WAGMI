@@ -189,6 +189,7 @@ class TelegramCommandBot:
             "/signals": self._cmd_signals,
             "/analyze": lambda: self._cmd_analyze(args),
             "/accuracy": self._cmd_accuracy,
+            "/growth": self._cmd_growth,
             "/help": self._cmd_help,
         }
         handler = handlers.get(command)
@@ -657,10 +658,20 @@ class TelegramCommandBot:
             "/copytrades - Human copy-tradable signals\n"
             "/telemetry - Execution quality metrics\n"
             "/proposals - Strategy discovery proposals\n"
+            "/growth - Growth intelligence dashboard\n"
             "/kill [reason] - Emergency kill switch\n"
             "/unkill - Deactivate kill switch\n"
             "/ops - Ops guard status"
         )
+
+    def _cmd_growth(self) -> str:
+        """Growth intelligence dashboard — hypotheses, recommendations, self-improvement."""
+        if not self.bot:
+            return "Bot not connected"
+        try:
+            return self.bot.growth.format_telegram_dashboard()
+        except Exception as e:
+            return f"Growth dashboard error: {e}"
 
     def _cmd_pause(self) -> str:
         self._paused = True

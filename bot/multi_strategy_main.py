@@ -68,6 +68,9 @@ from feedback.signal_quality import QualityFeatures
 from signals.telegram_ingest import TelegramSignalMonitor, IngestedSignal
 from signals.llm_analyzer import analyze_signal, format_analysis_for_telegram
 
+# Growth intelligence — self-evolving meta-brain
+from llm.growth.orchestrator import get_growth_orchestrator
+
 
 def get_tp1_close_pct(confidence: float) -> float:
     """Legacy confidence-based TP1 close percentage.
@@ -247,6 +250,9 @@ class MultiStrategyBot:
 
         # Feedback loop: self-improving confidence, backtesting, quality scoring
         self.feedback = FeedbackLoop(data_dir="data/feedback")
+
+        # Growth intelligence: self-evolving meta-brain
+        self.growth = get_growth_orchestrator()
 
         # Track 1h price changes for cross-market divergence detection
         self._price_changes_1h: Dict[str, float] = {}
@@ -450,6 +456,22 @@ class MultiStrategyBot:
         except Exception as e:
             logger.warning(f"[{trace_id}] Feedback loop tick error: {e}")
 
+        # Growth intelligence: periodic learning cycles, hypothesis graduation,
+        # veto resolution, auto-safe proposal application, report generation
+        try:
+            # Build current prices for veto resolution
+            _growth_prices = {}
+            for _sym, _cfg in DEFAULT_SYMBOLS.items():
+                p = self._last_prices.get(_sym)
+                if p:
+                    _growth_prices[_sym] = {"high": p, "low": p, "close": p}
+            self.growth.tick(
+                current_prices=_growth_prices,
+                market_state={"price_changes_1h": self._price_changes_1h},
+            )
+        except Exception as e:
+            logger.debug(f"[{trace_id}] Growth tick error: {e}")
+
         # Heartbeat every 60 ticks (~1 hour at 60s intervals)
         if self._tick % 60 == 0:
             self._send_heartbeat()
@@ -611,6 +633,27 @@ class MultiStrategyBot:
                     )
                 except Exception as e:
                     logger.warning(f"Feedback outcome error: {e}")
+
+                # Growth intelligence: feed trade data to self-evolving systems
+                try:
+                    now_utc = datetime.now(timezone.utc)
+                    self.growth.on_trade_closed({
+                        "symbol": symbol,
+                        "side": event.side,
+                        "outcome": "WIN" if total_pnl > 0 else "LOSS",
+                        "pnl": total_pnl,
+                        "pnl_pct": (total_pnl / self.risk_mgr.equity * 100) if self.risk_mgr.equity > 0 else 0,
+                        "confidence": pos.confidence if pos else 0,
+                        "regime": _rg_fb,
+                        "strategy": event.strategy,
+                        "num_agree": pos.entry_reasons.get("num_agree", 1) if pos and pos.entry_reasons else 1,
+                        "hold_time_s": event.metadata.get("hold_time_s", 0),
+                        "leverage": event.leverage,
+                        "hour": now_utc.hour,
+                        "entry_type": _et_fb,
+                    })
+                except Exception as e:
+                    logger.debug(f"Growth trade record error: {e}")
 
             # Record outcome for ML (use TOTAL trade PnL, not just final leg)
             if self.ml and event.action in _FULL_CLOSE:
@@ -1246,6 +1289,25 @@ class MultiStrategyBot:
                     f"lev={lev_decision.leverage:.1f}x\n"
                     f"Reason: {candidate.llm_notes or 'no reason given'}"
                 )
+
+                # Growth intelligence: track veto for outcome analysis
+                try:
+                    self.growth.on_veto(
+                        symbol=symbol,
+                        side=side,
+                        confidence=signal_result.confidence,
+                        entry_price=signal_result.entry,
+                        sl_price=signal_result.sl,
+                        tp1_price=signal_result.tp1,
+                        tp2_price=signal_result.tp2,
+                        llm_reason=candidate.llm_notes or "",
+                        regime=signal_result.metadata.get("regime", ""),
+                        trigger="pre_trade_veto",
+                        strategies_agreed=num_agree,
+                    )
+                except Exception as e:
+                    logger.debug(f"Growth veto record error: {e}")
+
                 return
             else:
                 # LLM approved (or API failed -> default proceed)

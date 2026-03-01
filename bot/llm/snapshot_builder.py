@@ -255,6 +255,16 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
             for p in snapshot.active_positions
         ]
 
+    # Growth intelligence context (knowledge, hypotheses, recent outcomes)
+    try:
+        from llm.growth.orchestrator import get_growth_orchestrator
+        growth_ctx = get_growth_orchestrator().get_llm_context()
+        if growth_ctx:
+            # Truncate to save tokens (max ~400 chars)
+            result["growth"] = growth_ctx[:400]
+    except Exception:
+        pass  # Growth system not available — no problem
+
     return result
 
 
