@@ -3,6 +3,7 @@ infra/.env
 .env
 .env.*
 !bot/.env.example
+!.env.example
 *.key
 *.pem
 *.json.bak
