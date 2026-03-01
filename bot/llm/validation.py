@@ -25,6 +25,63 @@ logger = logging.getLogger("bot.llm.validation")
 _VALID_ACTIONS = {"proceed", "flat", "flip"}
 _VALID_REGIMES = {r.value for r in Regime}
 
+# ── Short-key expansion maps ────────────────────────────────────
+# The LLM outputs compact keys to save tokens. We expand them here
+# so the rest of the pipeline uses full names.
+
+_ACTION_ALIASES = {"go": "proceed", "skip": "flat"}  # "flip" stays "flip"
+
+_TOP_KEY_MAP = {
+    "a": "action",
+    "c": "confidence",
+    "rg": "regime",
+    "sz": "size_multiplier",
+    "ea": "entry_adjustment",
+    "sw": "strategy_weights",
+    "mu": "memory_update",
+    "n": "notes",
+}
+
+_WEIGHT_KEY_MAP = {
+    "rt": "regime_trend",
+    "mc": "monte_carlo_zones",
+    "cs": "confidence_scorer",
+    "mq": "multi_tier_quality",
+    "fr": "funding_rate",
+    "oi": "open_interest",
+    "vm": "volume_momentum",
+    "ca": "cross_asset",
+}
+
+
+def _expand_short_keys(raw: dict) -> dict:
+    """Expand compact LLM output keys to full names.
+
+    Accepts both short keys (a, c, rg, sz) and full keys (action, confidence, regime).
+    Short keys take precedence if both are present.
+    """
+    out = {}
+
+    # Expand top-level keys
+    for key, val in raw.items():
+        full_key = _TOP_KEY_MAP.get(key, key)
+        out[full_key] = val
+
+    # Expand action aliases (go -> proceed, skip -> flat)
+    if "action" in out and out["action"] in _ACTION_ALIASES:
+        out["action"] = _ACTION_ALIASES[out["action"]]
+
+    # Expand strategy_weights sub-keys
+    sw = out.get("strategy_weights")
+    if isinstance(sw, dict):
+        expanded_sw = {}
+        for key, val in sw.items():
+            full_key = _WEIGHT_KEY_MAP.get(key, key)
+            expanded_sw[full_key] = val
+        out["strategy_weights"] = expanded_sw
+
+    return out
+
 
 def parse_llm_response(raw_text: str) -> Tuple[Optional[dict], Optional[str]]:
     """Parse raw LLM text into a dict.
@@ -139,6 +196,9 @@ def validate_and_parse(raw_text: str) -> Tuple[Optional[LLMDecision], Optional[s
     if parse_err:
         logger.warning(f"[LLM-VAL] Parse failed: {parse_err}")
         return None, parse_err
+
+    # Step 1.5: Expand compact keys (a->action, go->proceed, etc.)
+    parsed = _expand_short_keys(parsed)
 
     # Step 2: Validate schema
     valid, val_err = is_valid_decision(parsed)
