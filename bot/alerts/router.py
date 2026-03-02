@@ -89,17 +89,18 @@ class AlertRouter:
 
         # Format message
         msg = self._format_signal(signal, leverage, tier)
+        tg_msg = self._format_signal_telegram(signal, leverage, tier)
 
         # Route (set timestamps AFTER successful send)
         if tier == "PRIORITY":
             self._send_discord(msg, priority=True)
             self._send_discord(msg, priority=False)
-            self._send_telegram(msg)
+            self._send_telegram(tg_msg)
             ls["prio_ts"] = now  # Set after send, not before
         elif tier == "REGULAR":
             self._send_discord(msg, priority=False)
             if signal.confidence >= self.telegram_conf_threshold:
-                self._send_telegram(msg)
+                self._send_telegram(tg_msg)
             ls["reg_ts"] = now  # Set after send, not before
         else:  # MANUAL
             self._send_discord(msg, priority=False)
@@ -110,8 +111,10 @@ class AlertRouter:
         """Send a trade event notification (open, close, TP, SL, etc.)."""
         msg = f"[TRADE] {event_type} | {symbol}\n{details}"
         self._send_discord(msg)
-        if event_type in ("OPEN", "TP2", "SL", "TRAILING_STOP"):
-            self._send_telegram(msg)
+        if event_type in ("OPEN", "TP2", "SL", "TRAILING_STOP", "EARLY_EXIT",
+                          "EMERGENCY", "LIQUIDATION_AVOID"):
+            tg_msg = self._format_trade_event_telegram(event_type, symbol, details)
+            self._send_telegram(tg_msg)
 
     def send_heartbeat(self, status: Dict[str, Any]):
         """Send periodic heartbeat with bot status."""
@@ -184,6 +187,72 @@ class AlertRouter:
             lines.append(f"ATR: {f(signal.atr)} | R:R1={signal.risk_reward_tp1:.1f} R:R2={signal.risk_reward_tp2:.1f}")
 
         return "\n".join(lines)
+
+    def _format_signal_telegram(self, signal: Signal, leverage: float, tier: str) -> str:
+        """Format a signal as a rich, actionable Telegram message (MarkdownV2)."""
+        side_emoji = "\U0001f7e2" if signal.side == "BUY" else "\U0001f534"
+        tier_emoji = "\U0001f525" if tier == "PRIORITY" else "\u26a1" if tier == "REGULAR" else "\U0001f4cb"
+
+        strategies = signal.metadata.get("strategies_agree", [signal.strategy])
+        strat_str = ", ".join(strategies) if isinstance(strategies, list) else str(strategies)
+        num_agree = signal.metadata.get("num_agree", 1)
+        total_strats = signal.metadata.get("total_strategies", 4)
+        regime = signal.metadata.get("regime", "unknown")
+        f = self._fmt
+
+        # Confidence bar
+        filled = int(signal.confidence / 10)
+        bar = "\u2588" * filled + "\u2591" * (10 - filled)
+
+        # Risk/reward
+        rr1 = signal.risk_reward_tp1 if hasattr(signal, 'risk_reward_tp1') else 0
+        rr2 = signal.risk_reward_tp2 if hasattr(signal, 'risk_reward_tp2') else 0
+
+        # SL distance %
+        sl_dist = abs(signal.entry - signal.sl) / signal.entry * 100 if signal.entry > 0 else 0
+        tp1_dist = abs(signal.tp1 - signal.entry) / signal.entry * 100 if signal.entry > 0 else 0
+        tp2_dist = abs(signal.tp2 - signal.entry) / signal.entry * 100 if signal.entry > 0 else 0
+
+        # Signal flags
+        flags = signal.metadata.get("signal_flags", "")
+        flag_line = f"\nFlags: {flags}" if flags else ""
+
+        lev_str = f"{leverage:.1f}x" if leverage > 1 else "Spot"
+
+        msg = (
+            f"{side_emoji} {signal.symbol} {signal.side} {tier_emoji} {tier}\n"
+            f"{'=' * 28}\n"
+            f"Confidence: {bar} {signal.confidence:.0f}%\n"
+            f"Consensus: {num_agree}/{total_strats} agree\n"
+            f"Strategies: {strat_str}\n"
+            f"Regime: {regime} | Leverage: {lev_str}\n"
+            f"{'=' * 28}\n"
+            f"Entry:  {f(signal.entry)}\n"
+            f"SL:     {f(signal.sl)} ({sl_dist:.1f}%)\n"
+            f"TP1:    {f(signal.tp1)} ({tp1_dist:.1f}%) R:R {rr1:.1f}\n"
+            f"TP2:    {f(signal.tp2)} ({tp2_dist:.1f}%) R:R {rr2:.1f}"
+            f"{flag_line}"
+        )
+        return msg
+
+    def _format_trade_event_telegram(self, event_type: str, symbol: str, details: str) -> str:
+        """Format a trade event as a rich Telegram message."""
+        event_emojis = {
+            "OPEN": "\U0001f680",
+            "SL": "\U0001f6d1",
+            "TP1": "\U0001f4b0",
+            "TP2": "\U0001f3af",
+            "TRAILING_STOP": "\U0001f4c8",
+            "EARLY_EXIT": "\u23f1",
+            "EMERGENCY": "\U0001f6a8",
+            "LIQUIDATION_AVOID": "\u26a0",
+            "ROTATE_PROFIT": "\U0001f504",
+            "ROTATE_LOSS_AVOIDANCE": "\U0001f504",
+            "FUNDING_AVOIDANCE": "\U0001f4b8",
+        }
+        emoji = event_emojis.get(event_type, "\u2139")
+
+        return f"{emoji} {event_type} | {symbol}\n{'=' * 28}\n{details}"
 
     def _send_discord(self, msg: str, priority: bool = False):
         webhook = self.discord_priority_webhook if priority else self.discord_webhook

@@ -21,7 +21,10 @@ from typing import Dict, Any
 import pandas as pd
 
 from data.fetcher import DataFetcher
-from data.db import init_db, log_signal, log_trade, log_equity, get_daily_summary, update_signal_traded
+from data.db import (
+    init_db, log_signal, log_trade, log_equity, get_daily_summary,
+    update_signal_traded, log_signal_outcome, log_health_event,
+)
 from data.strategy_weights import StrategyWeightManager
 from data.risk_log import log_rejection, get_rejection_counts
 from data.ml_log import log_ml_stats, log_ml_confidence
@@ -429,7 +432,7 @@ class MultiStrategyBot:
 
         # Phase D+E+F: new subsystems
         self.regime_detector = RegimeTransitionDetector()
-        self.health_monitor = HealthMonitor()
+        self.health_monitor = HealthMonitor(alert_router=self.alerts)
         self.degradation = DegradationManager()
 
         # LLM exit engine: dynamic SL/TP management for open positions
@@ -698,6 +701,29 @@ class MultiStrategyBot:
             positions=self.pos_mgr.get_open_count(),
             equity=self.risk_mgr.equity,
         )
+
+        # Watchdog: check for stalls/anomalies
+        self.health_monitor.check_watchdog()
+
+        # Equity snapshot: log to SQLite every 5th tick for equity curve tracking
+        if self._tick % 5 == 0:
+            try:
+                open_pos = self.pos_mgr.get_open_positions()
+                unrealized = 0.0
+                for sym, pos in open_pos.items():
+                    p = self._last_prices.get(sym, pos.entry)
+                    if pos.side == "LONG":
+                        unrealized += (p - pos.entry) * pos.qty * pos.leverage
+                    else:
+                        unrealized += (pos.entry - p) * pos.qty * pos.leverage
+                log_equity(
+                    equity=self.risk_mgr.equity,
+                    open_positions=self.pos_mgr.get_open_count(),
+                    daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,
+                    unrealized_pnl=unrealized,
+                )
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Equity snapshot error: {e}")
 
         # Strategy research cycle: every 240 ticks (~4 hours at 60s intervals)
         if self._tick % 240 == 0 and self._tick > 0:
@@ -1423,7 +1449,28 @@ class MultiStrategyBot:
                         volatility_band=_vb,
                     )
 
-            # Send alert
+                    # Signal outcome tracking: link signal -> trade result in SQLite
+                    try:
+                        _signal_id = pos.entry_reasons.get("signal_id") if pos.entry_reasons else None
+                        _hold_s = event.metadata.get("hold_time_s", 0)
+                        _outcome = "WIN" if pos.realized_pnl > 0 else "LOSS"
+                        log_signal_outcome(
+                            signal_id=_signal_id or 0,
+                            symbol=symbol,
+                            strategy=pos.strategy or "",
+                            side=event.side,
+                            confidence=pos.confidence or 0,
+                            entry_price=pos.entry,
+                            exit_price=event.price,
+                            exit_action=event.action,
+                            pnl=pos.realized_pnl,
+                            hold_time_s=_hold_s,
+                            outcome=_outcome,
+                        )
+                    except Exception as e:
+                        logger.debug(f"Signal outcome tracking error: {e}")
+
+            # Send alert with enriched details
             details = (
                 f"{event.action} {event.side} @ {_fmt_price(event.price)}\n"
                 f"PnL: ${event.pnl:+.2f} | Leverage: {event.leverage:.1f}x"
@@ -1431,7 +1478,22 @@ class MultiStrategyBot:
             if event.action in _FULL_CLOSE:
                 pos = self.pos_mgr.positions.get(symbol)
                 if pos:
-                    details += f"\nTotal PnL: ${pos.realized_pnl:+.2f}"
+                    _hold_s = event.metadata.get("hold_time_s", 0)
+                    _hold_str = ""
+                    if _hold_s > 3600:
+                        _hold_str = f"{_hold_s / 3600:.1f}h"
+                    elif _hold_s > 60:
+                        _hold_str = f"{_hold_s / 60:.0f}m"
+                    else:
+                        _hold_str = f"{_hold_s:.0f}s"
+                    _pnl_emoji = "\u2705" if pos.realized_pnl > 0 else "\u274c"
+                    details = (
+                        f"{_pnl_emoji} {event.action} {event.side} @ {_fmt_price(event.price)}\n"
+                        f"Entry: {_fmt_price(pos.entry)}\n"
+                        f"Total PnL: ${pos.realized_pnl:+.2f}\n"
+                        f"Leverage: {event.leverage:.1f}x | Hold: {_hold_str}\n"
+                        f"Strategy: {pos.strategy or 'unknown'}"
+                    )
             self.alerts.send_trade_event(event.action, symbol, details)
 
             # Check circuit breaker
@@ -2176,6 +2238,8 @@ class MultiStrategyBot:
             # Signal flagger data for post-trade analysis
             "signal_flags": signal_result.metadata.get("signal_flags", ""),
             "flag_max_priority": signal_result.metadata.get("flag_max_priority", 0),
+            # Signal ID for outcome tracking (links signal -> trade result in SQLite)
+            "signal_id": _signal_id,
         }
 
         # Correlation guard: max same-direction positions
