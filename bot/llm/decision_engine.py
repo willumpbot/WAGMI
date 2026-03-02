@@ -80,6 +80,16 @@ try:
 except ImportError:
     _HAS_LLM_ENSEMBLE = False
 
+# Multi-Agent system: specialist agents for focused decision-making
+try:
+    from llm.agents.coordinator import (
+        is_multi_agent_enabled,
+        get_coordinator as get_agent_coordinator,
+    )
+    _HAS_MULTI_AGENT = True
+except ImportError:
+    _HAS_MULTI_AGENT = False
+
 # High-priority triggers that warrant multi-LLM ensemble
 _ENSEMBLE_TRIGGERS = {"pre_trade_veto", "regime_shift", "high_confidence_signal"}
 
@@ -213,6 +223,72 @@ def get_trading_decision(
     # Step 3: Serialize snapshot
     snapshot_json = snapshot_to_json(snapshot)
 
+    # Step 3.5: Multi-Agent path (if enabled, replaces monolithic LLM call)
+    _multi_agent_active = (
+        _HAS_MULTI_AGENT
+        and is_multi_agent_enabled()
+        and trigger_reason not in ("periodic update", "PERIODIC")  # Don't burn budget on heartbeats
+    )
+    if _multi_agent_active:
+        try:
+            coordinator = get_agent_coordinator()
+            # Resolve model for trigger (used as fallback for agents without override)
+            _ma_model = None
+            if _HAS_USAGE_TIERS:
+                try:
+                    tier = get_active_tier()
+                    _ma_model = tier.get_model_for_trigger(trigger_reason)
+                except Exception:
+                    pass
+
+            # The snapshot_json is compact JSON — parse to dict for agents
+            snapshot_data = json.loads(snapshot_json)
+            decision = coordinator.get_trading_decision(
+                snapshot_data=snapshot_data,
+                trigger_reason=trigger_reason,
+                model_for_trigger=_ma_model,
+            )
+
+            if decision is not None:
+                usage = coordinator.get_stats()
+                # Jump to Step 5.5 (mode constraints + gating)
+                # by setting markers so the monolithic path is skipped
+                logger.info(
+                    f"[LLM-ENGINE] Multi-agent pipeline: action={decision.action} "
+                    f"conf={decision.confidence:.2f} regime={decision.regime}"
+                )
+                # Record API cost
+                if _HAS_COST_TRACKER:
+                    try:
+                        cost_tracker = get_cost_tracker()
+                        cost_tracker.record_call(
+                            input_tokens=usage.get("total_input_tokens", 0),
+                            output_tokens=usage.get("total_output_tokens", 0),
+                            model="multi-agent",
+                        )
+                    except Exception:
+                        pass
+
+                _log_audit({
+                    "ts": time.time(),
+                    "action": "multi_agent_decision",
+                    "pipeline_action": decision.action,
+                    "confidence": decision.confidence,
+                    "regime": decision.regime,
+                    "agent_stats": usage,
+                })
+
+                # Skip to post-decision processing (Step 5.4+)
+                raw_text = "__multi_agent__"
+                val_err = None
+                _ensemble_enabled = False  # Don't also run ensemble
+            else:
+                logger.warning("[LLM-ENGINE] Multi-agent pipeline returned None, falling back to monolithic")
+                _multi_agent_active = False
+        except Exception as ma_err:
+            logger.warning(f"[LLM-ENGINE] Multi-agent failed: {ma_err}, falling back to monolithic")
+            _multi_agent_active = False
+
     # Step 4: Call Claude (with smart model routing if usage tiers are configured)
     prompt = LLM_SYSTEM_PROMPT_COMPACT if use_compact_prompt else LLM_SYSTEM_PROMPT
 
@@ -330,7 +406,7 @@ def get_trading_decision(
                 # No valid ensemble decisions, fall through to single model
                 _ensemble_enabled = False
 
-    if not _ensemble_enabled:
+    if not _ensemble_enabled and not _multi_agent_active:
         # Single-model path (default)
         raw_text, usage = call_llm(**call_kwargs)
 
@@ -360,7 +436,10 @@ def get_trading_decision(
             )
 
     # Step 5: Validate + Normalize + Sanitize
-    if _ensemble_enabled and raw_text == "__ensemble__":
+    if _multi_agent_active and raw_text == "__multi_agent__":
+        # Decision already built by multi-agent coordinator — skip parsing
+        val_err = None
+    elif _ensemble_enabled and raw_text == "__ensemble__":
         # Decision already parsed and aggregated via ensemble
         val_err = None
     else:

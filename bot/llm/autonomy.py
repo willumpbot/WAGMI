@@ -37,13 +37,43 @@ class LLMMode(IntEnum):
 
 
 def get_llm_mode() -> LLMMode:
-    """Read LLM mode from environment. Defaults to OFF."""
+    """Read LLM mode from environment, enforced by roadmap phase ceiling.
+
+    The roadmap phase defines the maximum allowed LLM mode. If the env var
+    requests a higher mode than the phase allows, it is clamped down.
+    Set ROADMAP_ENFORCE=false to disable enforcement (default: true).
+    """
     raw = os.getenv("LLM_MODE", "0")
     try:
         mode = LLMMode(int(raw))
     except (ValueError, KeyError):
         logger.warning(f"Invalid LLM_MODE={raw!r}, defaulting to OFF")
         mode = LLMMode.OFF
+
+    # Enforce roadmap phase ceiling (unless explicitly disabled)
+    enforce = os.getenv("ROADMAP_ENFORCE", "true").lower() in ("1", "true", "yes")
+    if enforce:
+        try:
+            from llm.knowledge_roadmap import get_recommended_llm_mode, get_roadmap_state, PHASE_CONFIGS
+            roadmap_max = get_recommended_llm_mode()
+            state = get_roadmap_state()
+            phase = state.current_phase
+            phase_name = PHASE_CONFIGS.get(phase, {}).get("name", "UNKNOWN")
+            if mode.value > roadmap_max:
+                clamped = LLMMode(roadmap_max)
+                logger.info(
+                    f"[ROADMAP] Current phase: {phase} ({phase_name}), "
+                    f"enforced LLM mode: {clamped.name} "
+                    f"(requested {mode.name} clamped to phase max {clamped.name})"
+                )
+                mode = clamped
+            else:
+                logger.debug(
+                    f"[ROADMAP] Current phase: {phase} ({phase_name}), "
+                    f"enforced LLM mode: {mode.name} (within phase max {LLMMode(roadmap_max).name})"
+                )
+        except Exception as e:
+            logger.debug(f"[ROADMAP] Enforcement skipped: {e}")
 
     return mode
 

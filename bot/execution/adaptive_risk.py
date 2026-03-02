@@ -7,6 +7,7 @@ multiplier that scales position sizing based on:
 2. Regime-specific win rate
 3. Deep memory confidence level
 """
+import json
 import logging
 import os
 import time
@@ -18,6 +19,7 @@ logger = logging.getLogger("bot.execution.adaptive_risk")
 _BASE_RISK = float(os.getenv("RISK_PER_TRADE", "0.01"))  # 1%
 _MIN_RISK_MULT = 0.5   # Never go below 50% of base risk
 _MAX_RISK_MULT = 1.5   # Never exceed 150% of base risk
+_STATE_PATH = os.path.join("data", "feedback", "adaptive_risk_state.json")
 
 class AdaptiveRiskManager:
     """Computes dynamic risk-per-trade multiplier."""
@@ -26,6 +28,7 @@ class AdaptiveRiskManager:
         self.base_risk = base_risk or _BASE_RISK
         self._recent_outcomes: list = []  # True=win, False=loss (last 20)
         self._regime_wr: Dict[str, Dict] = {}  # {regime: {wins, total}}
+        self._load_state()
 
     def record_outcome(self, win: bool, regime: str = ""):
         """Record a trade outcome for streak tracking."""
@@ -38,6 +41,7 @@ class AdaptiveRiskManager:
             self._regime_wr[regime]["total"] += 1
             if win:
                 self._regime_wr[regime]["wins"] += 1
+        self._save_state()
 
     def get_risk_multiplier(self, regime: str = "", symbol_wr: float = 0.0) -> float:
         """Get the adaptive risk multiplier.
@@ -97,6 +101,37 @@ class AdaptiveRiskManager:
                 if v["total"] >= 3
             },
         }
+
+    def _save_state(self):
+        """Persist recent outcomes and regime WR to disk."""
+        try:
+            os.makedirs(os.path.dirname(_STATE_PATH), exist_ok=True)
+            state = {
+                "recent_outcomes": self._recent_outcomes,
+                "regime_wr": self._regime_wr,
+            }
+            with open(_STATE_PATH, "w") as f:
+                json.dump(state, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to save adaptive risk state: {e}")
+
+    def _load_state(self):
+        """Restore persisted state from disk."""
+        if not os.path.exists(_STATE_PATH):
+            return
+        try:
+            with open(_STATE_PATH) as f:
+                state = json.load(f)
+            self._recent_outcomes = state.get("recent_outcomes", [])[-20:]
+            self._regime_wr = state.get("regime_wr", {})
+            total_outcomes = len(self._recent_outcomes)
+            if total_outcomes:
+                logger.info(
+                    f"[ADAPTIVE_RISK] Restored state: {total_outcomes} outcomes, "
+                    f"{len(self._regime_wr)} regimes tracked"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to load adaptive risk state: {e}")
 
 
 # Singleton

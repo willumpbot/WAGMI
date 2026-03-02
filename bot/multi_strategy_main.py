@@ -305,14 +305,19 @@ def _fmt_price(price: float) -> str:
         return f"{price:.12f}"
 
 
-# Setup logging
+# Setup logging with rotating file handler
 os.makedirs("logs", exist_ok=True)
+from logging.handlers import RotatingFileHandler
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(name)s] %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(f"logs/bot_{datetime.now().strftime('%Y%m%d')}.log"),
+        RotatingFileHandler(
+            f"logs/bot_{datetime.now().strftime('%Y%m%d')}.log",
+            maxBytes=50 * 1024 * 1024,  # 50 MB
+            backupCount=10,
+        ),
     ],
 )
 logger = logging.getLogger("bot.main")
@@ -359,12 +364,23 @@ class MultiStrategyBot:
             ConfidenceScorerStrategy(sym_configs, data_dir="ml_data"),
             MultiTierQualityStrategy(sym_configs),
         ]
+        # Chop detector: multi-factor choppy market filter
+        chop = None
+        if config.enable_chop_detector:
+            try:
+                from strategies.chop_detector import ChopDetector
+                chop = ChopDetector(threshold=config.chop_threshold)
+                logger.info(f"[INIT] Chop detector enabled (threshold={config.chop_threshold})")
+            except Exception as e:
+                logger.warning(f"[INIT] Chop detector init failed: {e}")
+
         self.ensemble = EnsembleStrategy(
             strategies=self.strategies,
             mode=config.ensemble_mode,
             min_votes=config.min_votes_required,
             weight_manager=self.weight_mgr,
             veto_ratio=config.veto_ratio,
+            chop_detector=chop,
         )
 
         # Execution
@@ -3391,9 +3407,13 @@ class MultiStrategyBot:
     # ── Position Aging Alerts ─────────────────────────────────────
 
     def _check_position_aging(self):
-        """Alert on positions held too long — funding costs eat profits."""
+        """Alert on positions held too long — funding costs eat profits.
+        Also enforces max hold time limits (tighten SL or force close)."""
         open_pos = self.pos_mgr.get_open_positions()
         now = time.time()
+        max_hold = self.config.max_hold_hours
+        hold_action = self.config.hold_limit_action
+
         for sym, pos in open_pos.items():
             if not hasattr(pos, 'open_time') or pos.open_time is None:
                 continue
@@ -3403,13 +3423,27 @@ class MultiStrategyBot:
             else:
                 age_hours = (now - pos.open_time) / 3600
 
+            # Hold limit enforcement
+            price = self._last_prices.get(sym, pos.entry)
+            event = self.pos_mgr.check_hold_limits(sym, price, max_hold, hold_action)
+            if event:
+                logger.warning(f"[HOLD_LIMIT] {sym} force-closed after {age_hours:.0f}h")
+                if self.alerts:
+                    try:
+                        self.alerts.send_trade_event(
+                            "HOLD_LIMIT", sym,
+                            f"Force closed after {age_hours:.0f}h (max {max_hold}h)\nPnL: ${event.pnl:.2f}"
+                        )
+                    except Exception:
+                        pass
+                continue  # Position is now closed
+
             # Alert thresholds
             funding_rate = self._last_funding_rates.get(sym, 0.0)
             is_paying = (pos.side == "LONG" and funding_rate > 0) or \
                         (pos.side == "SHORT" and funding_rate < 0)
 
             # Calculate estimated funding cost since entry
-            price = self._last_prices.get(sym, pos.entry)
             notional = pos.qty * price * pos.leverage
             periods_since_entry = age_hours / 8  # 8h funding periods
             est_funding_paid = abs(funding_rate) * periods_since_entry * notional if is_paying else 0

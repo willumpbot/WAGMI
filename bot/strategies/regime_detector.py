@@ -12,6 +12,7 @@ Usage:
 """
 
 import logging
+import os
 from collections import defaultdict, deque
 from typing import Dict, Any, Optional
 
@@ -19,8 +20,10 @@ logger = logging.getLogger("bot.strategies.regime_detector")
 
 # Number of recent regime classifications to track
 _HISTORY_SIZE = 10
-# Minimum confirmations before declaring a transition
-_MIN_CONFIRMATIONS = 2
+# Minimum confirmations before declaring a transition (env-overridable)
+_MIN_CONFIRMATIONS = int(os.getenv("REGIME_MIN_CONFIRMATIONS", "3"))
+# New regime must represent > this fraction of recent labels to confirm
+_DOMINANCE_RATIO = 0.60
 
 
 class RegimeTransitionDetector:
@@ -90,12 +93,22 @@ class RegimeTransitionDetector:
             result["to_regime"] = current_regime
             result["confidence"] = min(1.0, new_count / max(len(recent), 1))
 
-            # If new regime dominates, confirm the transition
-            if new_count > old_count:
+            # Dominance ratio check: new regime must have > 60% of recent labels
+            dominance = new_count / max(len(recent), 1)
+            if dominance <= _DOMINANCE_RATIO:
+                logger.info(
+                    f"[REGIME] {symbol}: DOMINANCE CHECK BLOCKED transition "
+                    f"{confirmed} -> {current_regime} "
+                    f"(dominance {dominance:.0%} <= {_DOMINANCE_RATIO:.0%}, "
+                    f"{new_count}/{len(recent)} labels)"
+                )
+            elif new_count > old_count:
+                # If new regime dominates, confirm the transition
                 logger.info(
                     f"[REGIME] {symbol}: CONFIRMED transition "
                     f"{confirmed} -> {current_regime} "
-                    f"({new_count}/{len(recent)} confirmations)"
+                    f"({new_count}/{len(recent)} confirmations, "
+                    f"dominance {dominance:.0%})"
                 )
                 self._confirmed[symbol] = current_regime
                 result["regime"] = current_regime

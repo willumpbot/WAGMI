@@ -143,6 +143,10 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_health_type ON health_events(event_type);
         CREATE INDEX IF NOT EXISTS idx_perf_date ON performance_daily(date);
     """)
+    # Run any pending schema migrations
+    from data.migrations import MigrationRunner
+    MigrationRunner(conn).run_pending()
+
     conn.close()
     logger.info(f"Database initialized: {DB_PATH}")
 
