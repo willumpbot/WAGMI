@@ -145,6 +145,19 @@ class GrowthOrchestrator:
             except Exception as e:
                 logger.debug(f"[GROWTH] Teaching record error: {e}")
 
+        # Multi-Agent Learning Agent: run dedicated LLM analysis on closed trade
+        # This produces deeper insights than the deterministic post_trade_learner
+        try:
+            from llm.agents.coordinator import is_multi_agent_enabled, get_coordinator
+            if is_multi_agent_enabled():
+                coordinator = get_coordinator()
+                lesson_data = coordinator.get_post_trade_lesson(trade_data)
+                if lesson_data:
+                    from llm.agents.learning_integration import process_agent_lesson
+                    process_agent_lesson(lesson_data, trade_data)
+        except Exception as e:
+            logger.debug(f"[GROWTH] Multi-agent learning error: {e}")
+
         logger.debug(
             f"[GROWTH] Trade closed: {trade_data.get('symbol')} "
             f"{trade_data.get('outcome')} ${trade_data.get('pnl', 0):+.2f}"
