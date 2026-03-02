@@ -202,6 +202,8 @@ class TelegramCommandBot:
             "/analyze": lambda: self._cmd_analyze(args),
             "/accuracy": self._cmd_accuracy,
             "/growth": self._cmd_growth,
+            "/risk": self._cmd_risk,
+            "/rl": self._cmd_rl,
             "/help": self._cmd_help,
         }
         handler = handlers.get(command)
@@ -671,6 +673,8 @@ class TelegramCommandBot:
             "/telemetry - Execution quality metrics\n"
             "/proposals - Strategy discovery proposals\n"
             "/growth - Growth intelligence dashboard\n"
+            "/risk - Self-tuning risk engine status\n"
+            "/rl - RL system status (buffer + policy)\n"
             "/kill [reason] - Emergency kill switch\n"
             "/unkill - Deactivate kill switch\n"
             "/ops - Ops guard status"
@@ -684,6 +688,32 @@ class TelegramCommandBot:
             return self.bot.growth.format_telegram_dashboard()
         except Exception as e:
             return f"Growth dashboard error: {e}"
+
+    def _cmd_risk(self) -> str:
+        """Self-Tuning Risk Engine status."""
+        try:
+            from risk.self_tuning import format_risk_status
+            return format_risk_status()
+        except Exception as e:
+            return f"Risk engine: {e}"
+
+    def _cmd_rl(self) -> str:
+        """RL system status: buffer stats + policy state."""
+        try:
+            from rl.buffer import get_buffer_stats
+            from rl.apply_policy import is_rl_enabled
+            stats = get_buffer_stats()
+            lines = [
+                "*RL System*",
+                f"Policy enabled: {is_rl_enabled()}",
+                f"Buffer transitions: {stats.get('total', 0)}",
+            ]
+            if stats.get("total", 0) > 0:
+                lines.append(f"Avg reward: {stats.get('avg_reward', 0):.4f}")
+                lines.append(f"Win rate: {stats.get('win_rate', 0):.1%}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"RL system: {e}"
 
     def _cmd_pause(self) -> str:
         self._paused = True
