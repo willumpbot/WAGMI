@@ -150,6 +150,75 @@ try:
 except ImportError:
     _CROSS_SYMBOL_AVAILABLE = False
 
+# Survival Pressure: performance accountability injected into LLM context
+try:
+    from llm.survival_pressure import (
+        record_trade_outcome as survival_record_outcome,
+        get_survival_context_for_llm,
+        get_survival_report,
+    )
+    _SURVIVAL_PRESSURE_AVAILABLE = True
+except ImportError:
+    _SURVIVAL_PRESSURE_AVAILABLE = False
+
+# Learning Mode: progressive LLM autonomy (ABSORB -> APPRENTICE -> ACTIVE)
+try:
+    from llm.learning_mode import (
+        is_learning_mode_active,
+        get_current_phase,
+        record_signal_observed as learning_record_signal,
+        record_trade_observed as learning_record_trade,
+        record_counterfactual,
+        apply_learning_constraints,
+        get_learning_report,
+        LearningPhase,
+    )
+    _LEARNING_MODE_AVAILABLE = True
+except ImportError:
+    _LEARNING_MODE_AVAILABLE = False
+
+# Autonomy Progression: gate-based mode advancement (VETO_ONLY -> SIZING -> DIRECTION -> FULL)
+try:
+    from llm.progression import evaluate_progression, format_progression_status
+    _PROGRESSION_AVAILABLE = True
+except ImportError:
+    _PROGRESSION_AVAILABLE = False
+
+# Uplift Analytics: baseline vs LLM-filtered performance comparison
+try:
+    from llm.uplift_analytics import compute_uplift, format_uplift_report
+    _UPLIFT_AVAILABLE = True
+except ImportError:
+    _UPLIFT_AVAILABLE = False
+
+# Adaptive Risk: dynamic risk-per-trade based on streak and regime
+try:
+    from execution.adaptive_risk import get_adaptive_risk
+    _ADAPTIVE_RISK_AVAILABLE = True
+except ImportError:
+    _ADAPTIVE_RISK_AVAILABLE = False
+
+# Strategy Pruning: auto-reduce weights for underperforming strategies
+try:
+    from execution.strategy_pruning import evaluate_and_adjust as pruning_evaluate, get_strategy_weight
+    _STRATEGY_PRUNING_AVAILABLE = True
+except ImportError:
+    _STRATEGY_PRUNING_AVAILABLE = False
+
+# Human Copy-Trade Classifier: gate for copy-tradable signal publication
+try:
+    from classification.human_copy_classifier import classify_human_copy_tradable, CopyTradeResult
+    _COPY_CLASSIFIER_AVAILABLE = True
+except ImportError:
+    _COPY_CLASSIFIER_AVAILABLE = False
+
+# LLM Self-Performance: rolling accuracy stats for self-calibration
+try:
+    from llm.self_performance import get_compact_stats as get_llm_self_stats
+    _SELF_PERF_AVAILABLE = True
+except ImportError:
+    _SELF_PERF_AVAILABLE = False
+
 
 def get_tp1_close_pct(confidence: float) -> float:
     """Legacy confidence-based TP1 close percentage.
@@ -380,6 +449,9 @@ class MultiStrategyBot:
 
         # Self-tuning risk engine: adaptive profiles based on equity curve
         self.risk_telemetry = get_risk_telemetry()
+
+        # Adaptive risk: dynamic risk-per-trade based on streak and regime
+        self.adaptive_risk = get_adaptive_risk() if _ADAPTIVE_RISK_AVAILABLE else None
 
         # Cache global bias from Global Brain (updated each LLM context build)
         self._global_bias: str = "neutral"
@@ -716,6 +788,81 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"Evolution tracker error: {e}")
 
+        # Uplift Analytics + Progression: evaluate LLM value and autonomy readiness
+        # Runs every 720 ticks (~12 hours) — gives enough time for data to accumulate
+        if self._tick % 720 == 360 and self._tick > 360:
+            # Uplift Analytics: compute baseline vs LLM-filtered performance delta
+            if _UPLIFT_AVAILABLE:
+                try:
+                    uplift_data = compute_uplift()
+                    if uplift_data.get("with_outcome", 0) >= 10:
+                        uplift_report = format_uplift_report(uplift_data)
+                        logger.info(f"[UPLIFT]\n{uplift_report}")
+                        _uplift_delta = uplift_data.get("uplift", {})
+                        if _uplift_delta.get("has_data"):
+                            _is_positive = _uplift_delta.get("is_positive", False)
+                            if self.alerts:
+                                self.alerts.send_market_update(
+                                    f"*LLM Uplift Report*\n"
+                                    f"Verdict: {'POSITIVE' if _is_positive else 'NEGATIVE'}\n"
+                                    f"WR delta: {_uplift_delta.get('win_rate_delta', 0):+.1%}\n"
+                                    f"Avg PnL delta: ${_uplift_delta.get('avg_pnl_delta', 0):+.2f}"
+                                )
+                except Exception as e:
+                    logger.debug(f"Uplift analytics error: {e}")
+
+            # Progression Controller: evaluate readiness for next autonomy level
+            if _PROGRESSION_AVAILABLE:
+                try:
+                    prog_report = evaluate_progression(self.llm_mode)
+                    if prog_report and prog_report.all_passed:
+                        logger.info(
+                            f"[PROGRESSION] READY to advance: "
+                            f"{prog_report.current_mode.name} -> {prog_report.target_mode.name} "
+                            f"({prog_report.passed_count}/{prog_report.total_count} gates passed)"
+                        )
+                        if self.alerts:
+                            self.alerts.send_market_update(
+                                f"*Autonomy Progression Ready*\n"
+                                f"{prog_report.current_mode.name} -> {prog_report.target_mode.name}\n"
+                                f"All {prog_report.total_count} gates passed.\n"
+                                f"Use /mode to advance."
+                            )
+                    elif prog_report:
+                        logger.info(
+                            f"[PROGRESSION] Not ready: "
+                            f"{prog_report.passed_count}/{prog_report.total_count} gates"
+                        )
+                except Exception as e:
+                    logger.debug(f"Progression evaluation error: {e}")
+
+        # Strategy Pruning: evaluate and adjust weights for underperforming strategies
+        # Runs every 1440 ticks (~24h) offset by 480 to avoid overlap with evolution report
+        if self._tick % 1440 == 480 and self._tick > 480:
+            if _STRATEGY_PRUNING_AVAILABLE:
+                try:
+                    _perf_path = os.path.join("data", "analysis", "performance.json")
+                    if os.path.exists(_perf_path):
+                        import json as _json
+                        with open(_perf_path) as _f:
+                            _perf_data = _json.load(_f)
+                        adjustments = pruning_evaluate(_perf_data)
+                        if adjustments:
+                            logger.info(
+                                f"[PRUNING] {len(adjustments)} strategy weight adjustments made"
+                            )
+                            if self.alerts:
+                                _adj_lines = [
+                                    f"  {a['name']}: {a['old_weight']:.2f} -> {a['new_weight']:.2f} ({a['action']})"
+                                    for a in adjustments
+                                ]
+                                self.alerts.send_market_update(
+                                    f"*Strategy Pruning*\n"
+                                    + "\n".join(_adj_lines)
+                                )
+                except Exception as e:
+                    logger.debug(f"Strategy pruning error: {e}")
+
         # RL auto-training: retrain policy daily if buffer has enough data
         if self._tick % 1440 == 720 and self._tick > 720:
             try:
@@ -1003,7 +1150,8 @@ class MultiStrategyBot:
                     add_observation(
                         category="trade_outcome",
                         symbol=symbol,
-                        text=(
+                        regime=_rg_fb or "unknown",
+                        observation=(
                             f"{event.strategy} {event.side} {_outcome_str}: "
                             f"pnl=${total_pnl:.2f}, regime={_rg_fb}, "
                             f"exit={event.action}, entry_type={_et_fb}, "
@@ -1120,6 +1268,46 @@ class MultiStrategyBot:
                     )
                 except Exception as e:
                     logger.debug(f"Risk telemetry update error: {e}")
+
+                # Survival Pressure: track outcome for LLM accountability
+                if _SURVIVAL_PRESSURE_AVAILABLE:
+                    try:
+                        _funding_cost = 0.0
+                        _fr = self._last_funding_rates.get(symbol, 0)
+                        if _fr and pos:
+                            _hold_h = event.metadata.get("hold_time_s", 0) / 3600
+                            _funding_cost = abs(_fr) * pos.leverage * abs(pos.qty) * pos.entry * (_hold_h / 8)
+                        survival_record_outcome(
+                            outcome="WIN" if total_pnl > 0 else "LOSS",
+                            pnl=total_pnl,
+                            funding_cost=_funding_cost,
+                            equity=self.risk_mgr.equity,
+                        )
+                    except Exception as e:
+                        logger.debug(f"Survival pressure record error: {e}")
+
+                # Adaptive Risk: record outcome for dynamic risk sizing
+                if self.adaptive_risk:
+                    try:
+                        self.adaptive_risk.record_outcome(
+                            win=total_pnl > 0,
+                            regime=_rg_fb,
+                        )
+                    except Exception as e:
+                        logger.debug(f"Adaptive risk record error: {e}")
+
+                # Learning Mode: record trade observation for phase progression
+                if _LEARNING_MODE_AVAILABLE and is_learning_mode_active():
+                    try:
+                        learning_record_trade(
+                            symbol=symbol,
+                            side=event.side,
+                            outcome="WIN" if total_pnl > 0 else "LOSS",
+                            pnl=total_pnl,
+                            confidence=pos.confidence if pos else 0,
+                        )
+                    except Exception as e:
+                        logger.debug(f"Learning mode trade record error: {e}")
 
             # Record outcome for ML (use TOTAL trade PnL, not just final leg)
             if self.ml and event.action in _FULL_CLOSE:
@@ -2075,13 +2263,61 @@ class MultiStrategyBot:
                 except Exception as e:
                     logger.debug(f"Growth veto record error: {e}")
 
-                return
+                # Learning Mode: record counterfactual for veto accuracy tracking
+                if _LEARNING_MODE_AVAILABLE and is_learning_mode_active():
+                    try:
+                        record_counterfactual(
+                            llm_would_have_vetoed=True,
+                            actual_outcome="PENDING",  # Will be resolved later
+                            pnl=0.0,
+                            symbol=symbol,
+                            reasoning=candidate.llm_notes or "",
+                        )
+                    except Exception:
+                        pass
+
+                # Learning Mode: in ABSORB phase, override veto to proceed
+                if _LEARNING_MODE_AVAILABLE and is_learning_mode_active():
+                    try:
+                        _lm_action, _lm_size, _lm_reason = apply_learning_constraints(
+                            llm_action="flat",
+                            llm_confidence=candidate.llm_confidence or 0.5,
+                            llm_size_multiplier=1.0,
+                            signal_confidence=signal_result.confidence,
+                        )
+                        if _lm_action != "flat":
+                            logger.info(
+                                f"[{trace_id}][{symbol}] Learning mode OVERRIDE: "
+                                f"veto -> {_lm_action} ({_lm_reason})"
+                            )
+                            candidate.llm_action = _lm_action
+                            # Fall through to proceed instead of returning
+                        else:
+                            return  # Veto still stands
+                    except Exception:
+                        return  # Default: respect veto if learning mode fails
+                else:
+                    return
             else:
                 # LLM approved (or API failed -> default proceed)
                 candidate.llm_action = "proceed"
                 if veto_result is None:
                     # _llm_veto_check returns None for proceed
                     pass
+
+        # Learning Mode: record signal observation
+        if _LEARNING_MODE_AVAILABLE and is_learning_mode_active():
+            try:
+                learning_record_signal(
+                    symbol=symbol,
+                    side=side,
+                    confidence=signal_result.confidence,
+                    regime=signal_result.metadata.get("regime", ""),
+                    strategies=signal_result.metadata.get("strategies_agree", [signal_result.strategy]),
+                    num_agree=num_agree,
+                )
+            except Exception:
+                pass
 
         # Log candidate as proceeding (will be updated with outcome on close)
         candidate.llm_action = candidate.llm_action or "no_llm"
@@ -2092,11 +2328,39 @@ class MultiStrategyBot:
         # In SIZING+ modes, the LLM can scale position size 0.5x-2.0x
         llm_sz = getattr(candidate, 'llm_size_mult', None)
         if llm_sz is not None and llm_sz != 1.0 and self.llm_mode >= LLMMode.SIZING:
+            # Learning Mode: constrain size adjustment during learning phases
+            if _LEARNING_MODE_AVAILABLE and is_learning_mode_active():
+                try:
+                    _, llm_sz, _lm_reason = apply_learning_constraints(
+                        llm_action="proceed",
+                        llm_confidence=candidate.llm_confidence or 0.5,
+                        llm_size_multiplier=llm_sz,
+                        signal_confidence=signal_result.confidence,
+                    )
+                except Exception:
+                    pass
             llm_sz = max(0.5, min(2.0, llm_sz))  # Safety clamp
             qty = qty * llm_sz
             logger.info(
                 f"[{trace_id}][{symbol}] LLM size mult: qty * {llm_sz:.2f} = {qty:.6f}"
             )
+
+        # ── Adaptive Risk: dynamic risk-per-trade multiplier based on streak/regime ──
+        if self.adaptive_risk:
+            try:
+                _regime_label = signal_result.metadata.get("regime", "")
+                _sym_wr = self.feedback.quality.get_symbol_win_rate(symbol) if hasattr(self.feedback.quality, 'get_symbol_win_rate') else 0.0
+                _ar_mult = self.adaptive_risk.get_risk_multiplier(
+                    regime=_regime_label,
+                    symbol_wr=_sym_wr,
+                )
+                if _ar_mult != 1.0:
+                    qty = qty * _ar_mult
+                    logger.info(
+                        f"[{trace_id}][{symbol}] Adaptive risk: qty * {_ar_mult:.3f} = {qty:.6f}"
+                    )
+            except Exception as e:
+                logger.debug(f"Adaptive risk application error: {e}")
 
         # ── RL policy multiplier: apply learned regime/symbol adjustments ──
         if is_rl_enabled():
@@ -2310,6 +2574,41 @@ class MultiStrategyBot:
             f"Driver: {trade_prof.primary_driver} | "
             f"Strategies: {signal_result.metadata.get('strategies_agree', [signal_result.strategy])}"
         )
+
+        # Human Copy-Trade Classifier: check if signal qualifies for copy-trading
+        if _COPY_CLASSIFIER_AVAILABLE:
+            try:
+                _copy_result = classify_human_copy_tradable(
+                    confidence=signal_result.confidence,
+                    regime=trade_prof.regime or "",
+                    volatility_band=trade_prof.volatility_band or "",
+                    entry_type=trade_prof.entry_type or "",
+                    primary_driver=trade_prof.primary_driver or "",
+                    leverage=lev_decision.leverage,
+                    rr=rr1,
+                    snapshot_age_s=slippage_pct,
+                    slippage_pct=slippage_pct,
+                    circuit_breaker_active=self.risk_mgr.circuit_breaker.tripped,
+                )
+                if _copy_result.eligible:
+                    logger.info(
+                        f"[{trace_id}][{symbol}] COPY-TRADABLE: score={_copy_result.score:.0f}"
+                    )
+                    self.alerts.send_market_update(
+                        f"*COPY-TRADE SIGNAL*\n"
+                        f"{symbol} {side} @ {_fmt_price(actual_entry)}\n"
+                        f"Confidence: {signal_result.confidence:.0f}%\n"
+                        f"R:R: {rr1:.2f}\n"
+                        f"Leverage: {lev_decision.leverage:.1f}x\n"
+                        f"Regime: {trade_prof.regime}\n"
+                        f"Type: {trade_prof.entry_type}\n"
+                        f"Score: {_copy_result.score:.0f}/100"
+                    )
+                    # Tag the candidate for copy-trade tracking
+                    entry_reasons["human_copy_tradable"] = True
+                    entry_reasons["copy_score"] = _copy_result.score
+            except Exception as e:
+                logger.debug(f"Copy classifier error: {e}")
 
     # ── Trade Rotation ─────────────────────────────────────────────
 
@@ -3048,6 +3347,52 @@ class MultiStrategyBot:
         except Exception as e:
             logger.debug(f"Risk profile context error: {e}")
 
+        # Survival Pressure: inject accountability context into LLM prompt
+        if _SURVIVAL_PRESSURE_AVAILABLE:
+            try:
+                global_ctx.extra["survival_status"] = get_survival_context_for_llm()
+            except Exception as e:
+                logger.debug(f"Survival context injection error: {e}")
+
+        # LLM Self-Performance: inject rolling accuracy stats for self-calibration
+        if _SELF_PERF_AVAILABLE:
+            try:
+                _sp_stats = get_llm_self_stats()
+                if _sp_stats:
+                    global_ctx.extra["llm_self_performance"] = _sp_stats
+            except Exception as e:
+                logger.debug(f"Self-performance stats injection error: {e}")
+
+        # Learning Mode: inject current phase for LLM awareness
+        if _LEARNING_MODE_AVAILABLE:
+            try:
+                if is_learning_mode_active():
+                    _lm_phase = get_current_phase()
+                    global_ctx.extra["learning_mode"] = {
+                        "active": True,
+                        "phase": _lm_phase.name,
+                        "description": (
+                            "ABSORB: Observing only, cannot veto" if _lm_phase == LearningPhase.ABSORB
+                            else "APPRENTICE: Learning, limited influence" if _lm_phase == LearningPhase.APPRENTICE
+                            else "ACTIVE: Full autonomy earned"
+                        ),
+                    }
+                else:
+                    global_ctx.extra["learning_mode"] = {"active": False, "phase": "GRADUATED"}
+            except Exception as e:
+                logger.debug(f"Learning mode context injection error: {e}")
+
+        # Adaptive Risk: inject current risk multiplier for LLM sizing awareness
+        if self.adaptive_risk:
+            try:
+                _ar_status = self.adaptive_risk.get_status()
+                global_ctx.extra["adaptive_risk"] = {
+                    "recent_streak": _ar_status.get("recent_streak", ""),
+                    "recent_wr": round(_ar_status.get("recent_wr", 0), 2),
+                }
+            except Exception as e:
+                logger.debug(f"Adaptive risk context injection error: {e}")
+
         return markets, global_ctx, risk_ctx, active_positions
 
     def _run_llm_metabrain(self, trace_id: str = ""):
@@ -3445,16 +3790,45 @@ class MultiStrategyBot:
         except Exception as e:
             logger.debug(f"[HEARTBEAT] Operator channel check failed: {e}")
 
+        # Survival Pressure: include survival score in heartbeat
+        if _SURVIVAL_PRESSURE_AVAILABLE:
+            try:
+                _surv_report = get_survival_report()
+                status["survival_score"] = _surv_report.get("survival_score", 50)
+                status["survival_trend"] = _surv_report.get("improvement_trend", "neutral")
+                status["net_pnl_after_funding"] = _surv_report.get("net_pnl_after_funding", 0)
+            except Exception:
+                pass
+
+        # Learning Mode: include phase in heartbeat
+        if _LEARNING_MODE_AVAILABLE:
+            try:
+                _lm_report = get_learning_report()
+                status["learning_phase"] = _lm_report.get("phase", "UNKNOWN")
+                status["learning_graduated"] = _lm_report.get("graduated", False)
+            except Exception:
+                pass
+
         self.alerts.send_heartbeat(status)
         strat_weights = self.weight_mgr.get_all_weights()
         weights_str = " ".join(f"{k}={v:.2f}" for k, v in strat_weights.items()) if strat_weights else "none"
         rej_str = " ".join(f"{k}={v}" for k, v in rejections.items()) if rejections else "none"
         wr20 = perf.get("win_rate_20", 0)
+
+        _surv_str = ""
+        if "survival_score" in status:
+            _surv_str = f"survival={status['survival_score']:.0f}/{status['survival_trend']} "
+        _learn_str = ""
+        if "learning_phase" in status:
+            _learn_str = f"learn={status['learning_phase']} "
+
         logger.info(
             f"[HEARTBEAT] equity=${status['equity']:,.2f} "
             f"positions={status['open_positions']} "
             f"daily_pnl=${status['daily_pnl']:+,.2f} "
             f"WR20={wr20:.0%} "
+            f"{_surv_str}"
+            f"{_learn_str}"
             f"ml_trades={status['ml_samples']} "
             f"ml_snaps={status['ml_snapshots']}({status['ml_snap_trained']}filled) "
             f"direction_model={'YES' if status['ml_direction_model'] else 'no'} "

@@ -204,6 +204,8 @@ class TelegramCommandBot:
             "/growth": self._cmd_growth,
             "/risk": self._cmd_risk,
             "/rl": self._cmd_rl,
+            "/survival": self._cmd_survival,
+            "/learn": self._cmd_learn,
             "/help": self._cmd_help,
         }
         handler = handlers.get(command)
@@ -659,7 +661,9 @@ class TelegramCommandBot:
             "/demote <phase> - Demote to lower phase\n"
             "/curriculum - Curriculum level & stats\n"
             "/knowledge - Browse knowledge base\n"
-            "/progression - Mode promotion readiness\n\n"
+            "/progression - Mode promotion readiness\n"
+            "/survival - Survival pressure score & trend\n"
+            "/learn - Learning mode phase & progress\n\n"
             "*Signals:*\n"
             "/signals - Recent ingested signals\n"
             "/analyze <text> - Analyze a signal with LLM\n"
@@ -696,6 +700,53 @@ class TelegramCommandBot:
             return format_risk_status()
         except Exception as e:
             return f"Risk engine: {e}"
+
+    def _cmd_survival(self) -> str:
+        """Survival pressure dashboard — accountability metrics."""
+        try:
+            from llm.survival_pressure import get_survival_report
+            report = get_survival_report()
+            score = report.get("survival_score", 50)
+            trend = report.get("improvement_trend", "neutral")
+            net_pnl = report.get("net_pnl_after_funding", 0)
+            trades = report.get("total_trades", 0)
+            wr = report.get("win_rate", 0)
+            streak = report.get("current_streak", 0)
+            lines = [
+                "*Survival Pressure*",
+                f"Score: {score:.0f}/100 ({trend})",
+                f"Net PnL (after funding): ${net_pnl:+,.2f}",
+                f"Trades: {trades} | WR: {wr:.0%}",
+                f"Streak: {streak:+d}",
+            ]
+            warnings = report.get("warnings", [])
+            if warnings:
+                lines.append(f"Warnings: {', '.join(warnings[-3:])}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Survival pressure: {e}"
+
+    def _cmd_learn(self) -> str:
+        """Learning mode status — phase, progress, counterfactual accuracy."""
+        try:
+            from llm.learning_mode import get_learning_report
+            report = get_learning_report()
+            phase = report.get("phase", "UNKNOWN")
+            graduated = report.get("graduated", False)
+            signals = report.get("signals_observed", 0)
+            trades = report.get("trades_observed", 0)
+            cf_acc = report.get("counterfactual_accuracy", 0)
+            cf_total = report.get("counterfactual_total", 0)
+            lines = [
+                "*Learning Mode*",
+                f"Phase: {phase}" + (" (GRADUATED)" if graduated else ""),
+                f"Signals observed: {signals}",
+                f"Trades observed: {trades}",
+                f"Counterfactual accuracy: {cf_acc:.0%} ({cf_total} samples)",
+            ]
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Learning mode: {e}"
 
     def _cmd_rl(self) -> str:
         """RL system status: buffer stats + policy state."""
