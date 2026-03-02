@@ -401,6 +401,44 @@ class TelegramCommandBot:
         lines.append(f"Errors: {err_stats.total_errors} ({err_stats.error_rate:.1f}%)")
         lines.append(f"Consecutive errs: {err_stats.consecutive_errors}")
 
+        # Watchdog status
+        try:
+            wd = self.bot.watchdog.get_status()
+            lines.append(f"\n*Watchdog*")
+            lines.append(f"Running: {'YES' if wd['running'] else 'NO'}")
+            lines.append(f"Last heartbeat: {wd['last_heartbeat_s_ago']:.0f}s ago")
+            lines.append(f"Stalled: {'YES' if wd['stalled'] else 'NO'}")
+            lines.append(f"Total errors: {wd['total_errors']}")
+            lines.append(f"Exchange: {'OK' if wd['exchange_healthy'] else 'DOWN'}")
+            if wd.get('drawdown_pct', 0) > 0:
+                lines.append(f"Drawdown: {wd['drawdown_pct']:.1f}%")
+        except Exception:
+            pass
+
+        # Recent health events from DB
+        try:
+            from data.db import get_health_events
+            events = get_health_events(hours=6, severity="ALERT")
+            if events:
+                lines.append(f"\n*Recent Alerts ({len(events)})*")
+                for e in events[:3]:
+                    lines.append(f"  {e['event_type']}: {e['message'][:80]}")
+        except Exception:
+            pass
+
+        # Signal performance (7d)
+        try:
+            from data.db import get_signal_performance
+            sp = get_signal_performance(7)
+            if sp.get("total", 0) > 0:
+                lines.append(f"\n*Signal Performance (7d)*")
+                lines.append(f"Signals scored: {sp['total']}")
+                lines.append(f"Win rate: {sp['win_rate']:.0%}")
+                lines.append(f"Avg score: {sp['avg_score']:.0f}/100")
+                lines.append(f"Total PnL: ${sp['total_pnl']:+,.2f}")
+        except Exception:
+            pass
+
         return "\n".join(lines)
 
     def _cmd_uplift(self) -> str:

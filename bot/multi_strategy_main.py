@@ -21,7 +21,11 @@ from typing import Dict, Any
 import pandas as pd
 
 from data.fetcher import DataFetcher
-from data.db import init_db, log_signal, log_trade, log_equity, get_daily_summary, update_signal_traded
+from data.db import (
+    init_db, log_signal, log_trade, log_equity, get_daily_summary,
+    update_signal_traded, log_signal_outcome, log_health_event,
+    update_daily_performance, get_signal_performance,
+)
 from data.strategy_weights import StrategyWeightManager
 from data.risk_log import log_rejection, get_rejection_counts
 from data.ml_log import log_ml_stats, log_ml_confidence
@@ -120,6 +124,15 @@ from execution.funding_timer import should_close_before_funding, minutes_until_n
 from strategies.regime_detector import RegimeTransitionDetector
 from monitoring.health import HealthMonitor
 from execution.graceful_degradation import DegradationManager
+
+# Watchdog: background health monitoring with stall detection and auto-alerts
+from monitoring.watchdog import get_watchdog
+
+# Enhanced Telegram alerts: actionable signal formatting
+from alerts.enhanced_telegram import (
+    format_signal_telegram, format_trade_event_telegram,
+    format_heartbeat_telegram, format_daily_report_telegram,
+)
 
 # Global Brain + Portfolio Brain: cross-market reasoning for LLM
 from llm.global_brain import build_global_context, apply_global_bias
@@ -470,6 +483,11 @@ class MultiStrategyBot:
             on_signal=self._handle_ingested_signal,
         )
 
+        # Watchdog: background health monitoring with stall detection
+        self.watchdog = get_watchdog(
+            alert_fn=self.alerts.send_market_update if self.alerts else None,
+        )
+
     def _run_health_check(self):
         """Startup symbol health check: validate precision, connectivity, leverage caps."""
         logger.info("=" * 60)
@@ -567,6 +585,10 @@ class MultiStrategyBot:
         # Start signal ingestion pipeline
         self.signal_monitor.start()
 
+        # Start watchdog (background health monitoring)
+        self.watchdog.start()
+        log_health_event("BOT_START", "INFO", f"Bot started: {len(DEFAULT_SYMBOLS)} symbols, LLM={self.llm_mode.name}")
+
         # Signal handlers
         signal.signal(signal.SIGINT, self._handle_signal)
         signal.signal(signal.SIGTERM, self._handle_signal)
@@ -576,10 +598,13 @@ class MultiStrategyBot:
                 self._tick_once()
             except Exception as e:
                 logger.error(f"Error in main loop: {e}", exc_info=True)
+                self.watchdog.record_error()
 
             self._tick += 1
             self._sleep_interruptible(self.config.scan_interval_s)
 
+        self.watchdog.stop()
+        log_health_event("BOT_STOP", "INFO", f"Bot stopped gracefully after {self._tick} ticks")
         logger.info("Bot stopped gracefully")
 
     def _handle_signal(self, signum, frame):
@@ -693,11 +718,30 @@ class MultiStrategyBot:
                 logger.debug(f"[{trace_id}] Position aging check error: {e}")
 
         # Record health monitor heartbeat every tick
+        _loop_elapsed = time.time() - _loop_start
         self.health_monitor.record_heartbeat(
-            loop_duration_s=time.time() - _loop_start,
+            loop_duration_s=_loop_elapsed,
             positions=self.pos_mgr.get_open_count(),
             equity=self.risk_mgr.equity,
         )
+
+        # Watchdog heartbeat: report we're alive
+        self.watchdog.heartbeat(
+            equity=self.risk_mgr.equity,
+            scan_count=self._tick,
+            exchange_healthy=not self.degradation.should_halt_entries(),
+        )
+
+        # Equity snapshot to DB every 15 ticks (~15 min at 60s intervals)
+        if self._tick % 15 == 0:
+            try:
+                log_equity(
+                    equity=self.risk_mgr.equity,
+                    open_positions=self.pos_mgr.get_open_count(),
+                    daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,
+                )
+            except Exception:
+                pass
 
         # Strategy research cycle: every 240 ticks (~4 hours at 60s intervals)
         if self._tick % 240 == 0 and self._tick > 0:
@@ -777,13 +821,32 @@ class MultiStrategyBot:
                 tracker = EvolutionTracker("data")
                 report = tracker.generate_report()
                 if self.alerts and report:
-                    summary = (
-                        f"*Daily Evolution Report*\n"
-                        f"Trades: {report.total_trades}\n"
-                        f"Win rate: {report.win_rate:.1%}\n"
-                        f"Net PnL: ${report.net_pnl:+.2f}"
-                    )
-                    self.alerts.send_market_update(summary)
+                    # Enhanced daily report with full breakdown
+                    _dr_ds = get_daily_summary()
+                    _dr_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                    try:
+                        _dr_msg = format_daily_report_telegram(
+                            date=_dr_date,
+                            total_trades=report.total_trades,
+                            wins=_dr_ds.get("wins", 0),
+                            losses=_dr_ds.get("losses", 0),
+                            net_pnl=report.net_pnl,
+                            equity=self.risk_mgr.equity,
+                            by_strategy=_dr_ds.get("by_strategy"),
+                        )
+                        self.alerts.send_market_update(_dr_msg)
+                    except Exception:
+                        # Fallback to simple
+                        summary = (
+                            f"*Daily Evolution Report*\n"
+                            f"Trades: {report.total_trades}\n"
+                            f"Win rate: {report.win_rate:.1%}\n"
+                            f"Net PnL: ${report.net_pnl:+.2f}"
+                        )
+                        self.alerts.send_market_update(summary)
+
+                    # Aggregate daily performance into SQLite
+                    update_daily_performance(_dr_date)
                 logger.info(f"[EVOLUTION] Daily report generated: {report.total_trades} trades")
             except Exception as e:
                 logger.debug(f"Evolution tracker error: {e}")
@@ -1309,6 +1372,29 @@ class MultiStrategyBot:
                     except Exception as e:
                         logger.debug(f"Learning mode trade record error: {e}")
 
+                # Signal Outcome Tracking: log to SQLite for performance scoring
+                try:
+                    _so_entry = pos.entry if pos else 0
+                    _so_conf = pos.confidence if pos else 0
+                    _so_pnl_pct = (total_pnl / (self.risk_mgr.equity * self.config.risk_per_trade) * 100) if self.risk_mgr.equity > 0 else 0
+                    log_signal_outcome(
+                        symbol=symbol,
+                        strategy=event.strategy or "",
+                        side=event.side,
+                        confidence=_so_conf,
+                        entry_price=_so_entry,
+                        exit_price=event.price,
+                        exit_action=event.action,
+                        pnl=total_pnl,
+                        pnl_pct=_so_pnl_pct,
+                        hold_time_s=event.metadata.get("hold_time_s", 0),
+                        regime=_rg_fb,
+                        leverage=event.leverage,
+                        win=total_pnl > 0,
+                    )
+                except Exception as e:
+                    logger.debug(f"Signal outcome tracking error: {e}")
+
             # Record outcome for ML (use TOTAL trade PnL, not just final leg)
             if self.ml and event.action in _FULL_CLOSE:
                 pos = self.pos_mgr.positions.get(symbol)
@@ -1423,16 +1509,33 @@ class MultiStrategyBot:
                         volatility_band=_vb,
                     )
 
-            # Send alert
-            details = (
-                f"{event.action} {event.side} @ {_fmt_price(event.price)}\n"
-                f"PnL: ${event.pnl:+.2f} | Leverage: {event.leverage:.1f}x"
-            )
-            if event.action in _FULL_CLOSE:
-                pos = self.pos_mgr.positions.get(symbol)
-                if pos:
+            # Send enhanced trade event alert
+            pos = self.pos_mgr.positions.get(symbol)
+            _total_pnl_alert = pos.realized_pnl if pos else event.pnl
+            _hold_time_alert = event.metadata.get("hold_time_s", 0)
+            try:
+                _enhanced_msg = format_trade_event_telegram(
+                    action=event.action,
+                    symbol=symbol,
+                    side=event.side,
+                    price=event.price,
+                    pnl=event.pnl,
+                    leverage=event.leverage,
+                    total_pnl=_total_pnl_alert if event.action in _FULL_CLOSE else 0,
+                    hold_time_s=_hold_time_alert,
+                    strategy=event.strategy or "",
+                    equity=self.risk_mgr.equity,
+                )
+                self.alerts.send_trade_event(event.action, symbol, _enhanced_msg)
+            except Exception:
+                # Fallback to simple format
+                details = (
+                    f"{event.action} {event.side} @ {_fmt_price(event.price)}\n"
+                    f"PnL: ${event.pnl:+.2f} | Leverage: {event.leverage:.1f}x"
+                )
+                if event.action in _FULL_CLOSE and pos:
                     details += f"\nTotal PnL: ${pos.realized_pnl:+.2f}"
-            self.alerts.send_trade_event(event.action, symbol, details)
+                self.alerts.send_trade_event(event.action, symbol, details)
 
             # Check circuit breaker
             if not self.risk_mgr.circuit_breaker.is_trading_allowed():
@@ -2559,9 +2662,39 @@ class MultiStrategyBot:
         if _signal_id:
             update_signal_traded(_signal_id, traded=True)
 
-        # Send signal alert
+        # Send signal alert (enhanced format with actionable data)
         tier = signal_result.metadata.get("tier", "")
-        self.alerts.send_signal(signal_result, lev_decision.leverage, tier)
+        try:
+            # Fetch historical win rates for context
+            _sp = get_signal_performance(7, symbol=symbol)
+            _sym_wr = _sp.get("by_symbol", {}).get(symbol, {}).get("win_rate", 0)
+            _sym_trades = _sp.get("by_symbol", {}).get(symbol, {}).get("trades", 0)
+            _strat_wr = _sp.get("by_strategy", {}).get(signal_result.strategy, {}).get("win_rate", 0)
+            _enhanced_signal = format_signal_telegram(
+                symbol=symbol,
+                side=side,
+                confidence=signal_result.confidence,
+                entry=actual_entry,
+                sl=signal_result.sl,
+                tp1=signal_result.tp1,
+                tp2=signal_result.tp2,
+                leverage=lev_decision.leverage,
+                strategies_agree=signal_result.metadata.get("strategies_agree"),
+                num_agree=signal_result.metadata.get("num_agree", 1),
+                total_strategies=len(self.strategies),
+                regime=trade_prof.regime or "",
+                equity=self.risk_mgr.equity,
+                risk_per_trade=self.config.risk_per_trade,
+                win_rate_symbol=_sym_wr,
+                win_rate_strategy=_strat_wr,
+                total_trades_symbol=_sym_trades,
+            )
+            # Send enhanced to Telegram, normal to Discord
+            if self.alerts.telegram_token and self.alerts.telegram_chat_id:
+                self.alerts._send_telegram(_enhanced_signal)
+            self.alerts.send_signal(signal_result, lev_decision.leverage, tier)
+        except Exception:
+            self.alerts.send_signal(signal_result, lev_decision.leverage, tier)
 
         logger.info(
             f"[{trace_id}][{symbol}] OPENED {side} | "
@@ -3810,6 +3943,31 @@ class MultiStrategyBot:
                 pass
 
         self.alerts.send_heartbeat(status)
+
+        # Enhanced Telegram heartbeat with actionable format
+        try:
+            _hb_ds = get_daily_summary()
+            _hb_msg = format_heartbeat_telegram(
+                equity=status["equity"],
+                open_positions=status["open_positions"],
+                daily_pnl=status.get("daily_pnl", 0),
+                daily_trades=_hb_ds.get("total_trades", 0),
+                daily_wins=_hb_ds.get("wins", 0),
+                llm_mode=self.llm_mode.name,
+                health_status="OK" if self.watchdog.get_status().get("stalled") is False else "STALLED",
+            )
+            # Only send enhanced heartbeat to Telegram (Discord gets normal one)
+            if self.alerts.telegram_token and self.alerts.telegram_chat_id:
+                self.alerts._send_telegram(_hb_msg)
+        except Exception:
+            pass
+
+        # Update daily performance aggregation in SQLite
+        try:
+            update_daily_performance()
+        except Exception:
+            pass
+
         strat_weights = self.weight_mgr.get_all_weights()
         weights_str = " ".join(f"{k}={v:.2f}" for k, v in strat_weights.items()) if strat_weights else "none"
         rej_str = " ".join(f"{k}={v}" for k, v in rejections.items()) if rejections else "none"
