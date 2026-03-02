@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "updated_at": 1772484074.6001332,
+  "scenarios": [
+    {
+      "id": "cf_1772484074_afa91e76",
+      "timestamp": 1772484074.5978572,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_LONG",
+      "counterfactual_action": "entered_LONG",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": -6.666666666666667,
+      "delta": -6.666666666666667,
+      "resolved": true,
+      "metadata": {
+        "side": "LONG",
+        "entry_price": 60000,
+        "sl_price": 59000,
+        "tp1_price": 62000,
+        "tp2_price": 64000,
+        "confidence": 75.0,
+        "reason": "LLM veto: regime choppy",
+        "hit": "tp2"
+      }
+    },
+    {
+      "id": "cf_1772484074_0012ffc0",
+      "timestamp": 1772484074.599078,
+      "symbol": "ETH",
+      "scenario_type": "exit_timing",
+      "actual_action": "TP1_HIT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": 1.6666666666666667,
+      "counterfactual_pnl": 6.666666666666667,
+      "delta": 5.0,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 3000,
+        "actual_exit_price": 3100,
+        "tp1_price": 3100,
+        "tp2_price": 3200,
+        "actual_pnl_raw": 50.0,
+        "pnl_at_tp1_pct": 3.3333,
+        "pnl_at_tp2_pct": 6.6667
+      }
+    }
+  ]
+}

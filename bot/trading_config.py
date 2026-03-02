@@ -178,6 +178,39 @@ class TradingConfig:
         default_factory=lambda: _env_bool("ENABLE_SMART_ORDERS", False)
     )
 
+    # ── Wave 3: Portfolio-level alpha ──
+    enable_portfolio_risk: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_PORTFOLIO_RISK", True)
+    )
+    max_portfolio_risk_pct: float = field(
+        default_factory=lambda: _env_float("MAX_PORTFOLIO_RISK_PCT", 5.0)
+    )
+    enable_cascade_signals: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_CASCADE_SIGNALS", True)
+    )
+
+    # ── Wave 4: Self-evolving architecture ──
+    enable_ab_testing: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_AB_TESTING", True)
+    )
+    enable_counterfactual: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_COUNTERFACTUAL", True)
+    )
+    enable_meta_learning: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_META_LEARNING", True)
+    )
+    enable_attribution: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_ATTRIBUTION", True)
+    )
+
+    # ── Web Dashboard ──
+    enable_dashboard: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_DASHBOARD", True)
+    )
+    dashboard_port: int = field(
+        default_factory=lambda: _env_int("DASHBOARD_PORT", 8080)
+    )
+
     # API integration
     api_base_url: str = field(default_factory=lambda: _env("BASE_URL", "http://api:8000"))
     api_key: str = field(default_factory=lambda: _env("NUNUIRL_API_KEY", _env("HEYANON_API_KEY", "")))

@@ -24,7 +24,7 @@ from data.fetcher import DataFetcher
 from data.db import (
     init_db, log_signal, log_trade, log_equity, get_daily_summary,
     update_signal_traded, log_signal_outcome, log_health_event,
-    update_daily_performance, get_signal_performance,
+    update_daily_performance, get_signal_performance, get_recent_trades,
 )
 from data.strategy_weights import StrategyWeightManager
 from data.risk_log import log_rejection, get_rejection_counts
@@ -231,6 +231,48 @@ try:
     _SELF_PERF_AVAILABLE = True
 except ImportError:
     _SELF_PERF_AVAILABLE = False
+
+# Wave 3: Portfolio Risk Engine — correlation matrix, vol forecasting, risk budgeting
+try:
+    from analytics.portfolio_risk import get_portfolio_risk_engine
+    _PORTFOLIO_RISK_AVAILABLE = True
+except ImportError:
+    _PORTFOLIO_RISK_AVAILABLE = False
+
+# Wave 4: Performance Attribution — which decisions actually made money
+try:
+    from analytics.attribution import compute_attribution, format_attribution_report
+    _ATTRIBUTION_AVAILABLE = True
+except ImportError:
+    _ATTRIBUTION_AVAILABLE = False
+
+# Wave 4: A/B Testing — live strategy variant testing
+try:
+    from analytics.ab_testing import get_ab_manager
+    _AB_TESTING_AVAILABLE = True
+except ImportError:
+    _AB_TESTING_AVAILABLE = False
+
+# Wave 4: Counterfactual Learning — what-if analysis for vetoes and sizing
+try:
+    from analytics.counterfactual import get_counterfactual_engine
+    _COUNTERFACTUAL_AVAILABLE = True
+except ImportError:
+    _COUNTERFACTUAL_AVAILABLE = False
+
+# Wave 4: Meta-Learning — pattern analysis and strategy idea generation
+try:
+    from analytics.meta_learning import get_meta_engine
+    _META_LEARNING_AVAILABLE = True
+except ImportError:
+    _META_LEARNING_AVAILABLE = False
+
+# Web Dashboard: visual monitoring
+try:
+    from dashboard.server import get_dashboard_server
+    _DASHBOARD_AVAILABLE = True
+except ImportError:
+    _DASHBOARD_AVAILABLE = False
 
 
 def get_tp1_close_pct(confidence: float) -> float:
@@ -488,6 +530,31 @@ class MultiStrategyBot:
             alert_fn=self.alerts.send_market_update if self.alerts else None,
         )
 
+        # Wave 3: Portfolio Risk Engine — correlation, vol forecasting, risk budgeting
+        self.portfolio_risk = get_portfolio_risk_engine() if (
+            _PORTFOLIO_RISK_AVAILABLE and config.enable_portfolio_risk
+        ) else None
+
+        # Wave 4: A/B Testing — live strategy variant testing
+        self.ab_manager = get_ab_manager() if (
+            _AB_TESTING_AVAILABLE and config.enable_ab_testing
+        ) else None
+
+        # Wave 4: Counterfactual Learning — what-if veto and sizing analysis
+        self.counterfactual = get_counterfactual_engine() if (
+            _COUNTERFACTUAL_AVAILABLE and config.enable_counterfactual
+        ) else None
+
+        # Wave 4: Meta-Learning — pattern analysis and strategy idea generation
+        self.meta_engine = get_meta_engine() if (
+            _META_LEARNING_AVAILABLE and config.enable_meta_learning
+        ) else None
+
+        # Web Dashboard
+        self.dashboard = get_dashboard_server() if (
+            _DASHBOARD_AVAILABLE and config.enable_dashboard
+        ) else None
+
     def _run_health_check(self):
         """Startup symbol health check: validate precision, connectivity, leverage caps."""
         logger.info("=" * 60)
@@ -588,6 +655,14 @@ class MultiStrategyBot:
         # Start watchdog (background health monitoring)
         self.watchdog.start()
         log_health_event("BOT_START", "INFO", f"Bot started: {len(DEFAULT_SYMBOLS)} symbols, LLM={self.llm_mode.name}")
+
+        # Start web dashboard (background HTTP server)
+        if self.dashboard:
+            try:
+                self.dashboard.start(bot_instance=self)
+                logger.info(f"[INIT] Web dashboard started on port {self.config.dashboard_port}")
+            except Exception as e:
+                logger.warning(f"[INIT] Dashboard start failed: {e}")
 
         # Signal handlers
         signal.signal(signal.SIGINT, self._handle_signal)
@@ -942,6 +1017,120 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"RL auto-training error: {e}")
 
+        # ── Wave 3: Portfolio Risk Engine — periodic correlation/vol updates ──
+        # Every 30 ticks (~30 min): update forecasts and rebalance suggestions
+        if self._tick % 30 == 15 and self.portfolio_risk:
+            try:
+                self.portfolio_risk.tick(
+                    prices=self._last_prices,
+                    open_positions={s: {"side": p.side, "entry": p.entry,
+                                       "qty": p.qty, "leverage": p.leverage}
+                                   for s, p in self.pos_mgr.get_open_positions().items()},
+                    equity=self.risk_mgr.equity,
+                )
+                # Check for cascade signals
+                if self.config.enable_cascade_signals:
+                    _cascades = self.portfolio_risk.detect_cascade_signals(
+                        self._price_changes_1h, threshold_pct=2.0
+                    )
+                    for _cs in _cascades[:2]:  # Cap at 2 alerts per tick
+                        logger.info(
+                            f"[CASCADE] {_cs.get('leader')} -> {_cs.get('follower')}: "
+                            f"expected {_cs.get('expected_direction')}"
+                        )
+                        self._llm_triggers.add(
+                            LLMTrigger.CROSS_MARKET_DIVERGENCE,
+                            context=f"Cascade: {_cs.get('leader')} moved {_cs.get('leader_change', 0):.1f}%, "
+                                    f"{_cs.get('follower')} may follow {_cs.get('expected_direction')}",
+                        )
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Portfolio risk tick error: {e}")
+
+        # ── Wave 4: Counterfactual Resolution — resolve pending veto scenarios ──
+        # Every 60 ticks (~1 hour): check if vetoed trades would have hit TP/SL
+        if self._tick % 60 == 45 and self.counterfactual:
+            try:
+                self.counterfactual.resolve_pending(
+                    current_prices=self._last_prices,
+                    lookback_hours=24,
+                )
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Counterfactual resolution error: {e}")
+
+        # ── Wave 4: Meta-Learning — periodic pattern analysis ──
+        # Every 360 ticks (~6 hours): analyze decision patterns and generate ideas
+        if self._tick % 360 == 180 and self._tick > 180 and self.meta_engine:
+            try:
+                # Gather recent trades from DB
+                _ml_trades = get_recent_trades(50)
+                self.meta_engine.tick(
+                    recent_trades=_ml_trades,
+                    market_state={
+                        "price_changes_1h": self._price_changes_1h,
+                        "global_bias": self._global_bias,
+                        "equity": self.risk_mgr.equity,
+                    },
+                )
+                _meta_ideas = self.meta_engine.get_active_ideas()
+                if _meta_ideas:
+                    logger.info(
+                        f"[META-LEARN] {len(_meta_ideas)} active strategy ideas"
+                    )
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Meta-learning tick error: {e}")
+
+        # ── Wave 4: Performance Attribution — daily attribution report ──
+        # Every 1440 ticks (~24h), offset by 960 to avoid overlap
+        if self._tick % 1440 == 960 and self._tick > 960 and _ATTRIBUTION_AVAILABLE:
+            try:
+                _attr_report = compute_attribution(days=7)
+                if _attr_report and _attr_report.total_trades >= 5:
+                    _attr_text = format_attribution_report(_attr_report)
+                    logger.info(f"[ATTRIBUTION]\n{_attr_text}")
+                    if self.alerts:
+                        # Send summary to Telegram
+                        _top = ", ".join(_attr_report.top_contributors[:3]) if _attr_report.top_contributors else "none"
+                        _worst = ", ".join(_attr_report.worst_detractors[:3]) if _attr_report.worst_detractors else "none"
+                        self.alerts.send_market_update(
+                            f"*Performance Attribution (7d)*\n"
+                            f"PnL: ${_attr_report.total_pnl:+.2f} | "
+                            f"Trades: {_attr_report.total_trades}\n"
+                            f"Top contributors: {_top}\n"
+                            f"Worst detractors: {_worst}\n"
+                            f"LLM value-add: ${_attr_report.llm_value_add:+.2f}\n"
+                            f"Sizing alpha: ${_attr_report.sizing_alpha:+.2f}"
+                        )
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Attribution report error: {e}")
+
+        # ── Wave 4: A/B Testing — evaluate experiments periodically ──
+        # Every 720 ticks (~12h): check experiment results
+        if self._tick % 720 == 420 and self._tick > 420 and self.ab_manager:
+            try:
+                for _exp in self.ab_manager.get_active_experiments():
+                    _result = self.ab_manager.evaluate_experiment(_exp.id)
+                    if _result and _result.is_significant:
+                        _action_msg = _result.recommended_action.replace("_", " ").title()
+                        logger.info(
+                            f"[A/B TEST] {_exp.name}: SIGNIFICANT result! "
+                            f"p={_result.p_value:.4f}, recommendation={_action_msg}"
+                        )
+                        if self.alerts:
+                            self.alerts.send_market_update(
+                                f"*A/B Test Result*\n"
+                                f"Experiment: {_exp.name}\n"
+                                f"Control WR: {_result.control_win_rate:.1%} | "
+                                f"Variant WR: {_result.variant_win_rate:.1%}\n"
+                                f"Control PnL: ${_result.control_avg_pnl:+.2f} | "
+                                f"Variant PnL: ${_result.variant_avg_pnl:+.2f}\n"
+                                f"p-value: {_result.p_value:.4f} | "
+                                f"Action: {_action_msg}"
+                            )
+                        if _result.recommended_action == "graduate_variant":
+                            self.ab_manager.graduate_experiment(_exp.id)
+            except Exception as e:
+                logger.debug(f"[{trace_id}] A/B test evaluation error: {e}")
+
     def _process_symbol(self, symbol: str, sym_cfg, trace_id: str = ""):
         """Process one symbol: fetch data, check positions, generate signals."""
         # F3: Graceful degradation — halt new entries if exchange is down
@@ -979,6 +1168,13 @@ class MultiStrategyBot:
         if self.cross_symbol_tracker:
             try:
                 self.cross_symbol_tracker.record_price(symbol, current_price)
+            except Exception:
+                pass  # Non-critical
+
+        # Wave 3: Portfolio risk engine — record price for correlation/vol tracking
+        if self.portfolio_risk:
+            try:
+                self.portfolio_risk.record_price(symbol, current_price)
             except Exception:
                 pass  # Non-critical
 
@@ -1358,6 +1554,43 @@ class MultiStrategyBot:
                         )
                     except Exception as e:
                         logger.debug(f"Adaptive risk record error: {e}")
+
+                # Wave 4: Counterfactual — record exit alternative (TP1 vs TP2)
+                if self.counterfactual:
+                    try:
+                        self.counterfactual.record_exit_alternative(
+                            symbol=symbol,
+                            actual_exit_action=event.action,
+                            actual_exit_price=event.price,
+                            tp1_price=pos.tp1 if pos else 0,
+                            tp2_price=pos.tp2 if pos else 0,
+                            entry_price=pos.entry if pos else 0,
+                            actual_pnl=total_pnl,
+                        )
+                    except Exception as e:
+                        logger.debug(f"Counterfactual exit record error: {e}")
+
+                # Wave 4: A/B Testing — record outcome for active experiments
+                if self.ab_manager:
+                    try:
+                        for exp in self.ab_manager.get_active_experiments():
+                            _ab_group = self.ab_manager.get_assignment(
+                                exp.id, symbol, event.strategy or ""
+                            )
+                            self.ab_manager.record_outcome(
+                                experiment_id=exp.id,
+                                group=_ab_group,
+                                symbol=symbol,
+                                pnl=total_pnl,
+                                win=total_pnl > 0,
+                                metadata={
+                                    "strategy": event.strategy,
+                                    "regime": _rg_fb,
+                                    "leverage": event.leverage,
+                                },
+                            )
+                    except Exception as e:
+                        logger.debug(f"A/B testing outcome record error: {e}")
 
                 # Learning Mode: record trade observation for phase progression
                 if _LEARNING_MODE_AVAILABLE and is_learning_mode_active():
@@ -2180,6 +2413,26 @@ class MultiStrategyBot:
         except Exception:
             pass
 
+        # Wave 3: Portfolio Risk Engine — dynamic position limits based on correlation/vol
+        if self.portfolio_risk:
+            try:
+                _pr_limit = self.portfolio_risk.get_position_limit(
+                    symbol=symbol,
+                    side=side,
+                    open_positions={s: {"side": p.side, "entry": p.entry, "qty": p.qty, "leverage": p.leverage}
+                                   for s, p in open_pos.items()},
+                    equity=self.risk_mgr.equity,
+                )
+                _pr_max_pct = _pr_limit.get("max_qty_pct", 1.0)
+                if _pr_max_pct < 1.0:
+                    qty = qty * _pr_max_pct
+                    logger.info(
+                        f"[{trace_id}][{symbol}] Portfolio risk limit: "
+                        f"qty * {_pr_max_pct:.2f} ({_pr_limit.get('reason', '')})"
+                    )
+            except Exception as e:
+                logger.debug(f"Portfolio risk limit error: {e}")
+
         # Time-aware sizing: reduce during weekends / low-liquidity hours
         time_mult = get_time_multiplier()
         if time_mult < 1.0:
@@ -2378,6 +2631,22 @@ class MultiStrategyBot:
                         )
                     except Exception:
                         pass
+
+                # Wave 4: Counterfactual — record vetoed trade for later resolution
+                if self.counterfactual:
+                    try:
+                        self.counterfactual.record_veto(
+                            symbol=symbol,
+                            side=side,
+                            entry_price=signal_result.entry,
+                            sl_price=signal_result.sl,
+                            tp1_price=signal_result.tp1,
+                            tp2_price=signal_result.tp2,
+                            confidence=signal_result.confidence,
+                            reason=candidate.llm_notes or "LLM veto",
+                        )
+                    except Exception as e:
+                        logger.debug(f"Counterfactual veto record error: {e}")
 
                 # Learning Mode: in ABSORB phase, override veto to proceed
                 if _LEARNING_MODE_AVAILABLE and is_learning_mode_active():
@@ -3487,6 +3756,44 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"Survival context injection error: {e}")
 
+        # Wave 3: Portfolio Risk Engine — inject vol forecasts and risk budget
+        if self.portfolio_risk:
+            try:
+                _pr_budget = self.portfolio_risk.compute_risk_budget(
+                    equity=self.risk_mgr.equity,
+                    open_positions={s: {"side": p.side, "entry": p.entry,
+                                       "qty": p.qty, "leverage": p.leverage}
+                                   for s, p in self.pos_mgr.get_open_positions().items()},
+                )
+                global_ctx.extra["portfolio_risk_budget"] = {
+                    "utilization": round(_pr_budget.utilization, 2),
+                    "remaining_pct": round(_pr_budget.remaining_budget, 2),
+                    "concentration_warning": _pr_budget.concentration_warning,
+                }
+            except Exception as e:
+                logger.debug(f"Portfolio risk context error: {e}")
+
+        # Wave 4: Meta-Learning — inject active insights for LLM awareness
+        if self.meta_engine:
+            try:
+                _meta_insights = self.meta_engine.get_active_ideas()
+                if _meta_insights:
+                    global_ctx.extra["meta_learning_ideas"] = [
+                        {"name": i.name, "trigger": i.trigger_condition, "status": i.status}
+                        for i in _meta_insights[:3]
+                    ]
+            except Exception as e:
+                logger.debug(f"Meta-learning context error: {e}")
+
+        # Wave 4: Counterfactual — inject veto accuracy for LLM calibration
+        if self.counterfactual:
+            try:
+                _cf_stats = self.counterfactual.get_summary_stats()
+                if _cf_stats:
+                    global_ctx.extra["counterfactual_stats"] = _cf_stats
+            except Exception as e:
+                logger.debug(f"Counterfactual context error: {e}")
+
         # LLM Self-Performance: inject rolling accuracy stats for self-calibration
         if _SELF_PERF_AVAILABLE:
             try:
@@ -3967,6 +4274,35 @@ class MultiStrategyBot:
             update_daily_performance()
         except Exception:
             pass
+
+        # Wave 3: Portfolio Risk — rebalance suggestions in heartbeat
+        if self.portfolio_risk and self.pos_mgr.get_open_count() >= 2:
+            try:
+                _rebal = self.portfolio_risk.get_rebalance_suggestions(
+                    open_positions={s: {"side": p.side, "entry": p.entry,
+                                       "qty": p.qty, "leverage": p.leverage}
+                                   for s, p in self.pos_mgr.get_open_positions().items()},
+                    equity=self.risk_mgr.equity,
+                )
+                if _rebal:
+                    _rebal_str = "; ".join(
+                        f"{r.get('symbol')}: {r.get('action')} ({r.get('reason', '')})"
+                        for r in _rebal[:3]
+                    )
+                    logger.info(f"[REBALANCE] Suggestions: {_rebal_str}")
+                    status["rebalance_suggestions"] = _rebal_str
+            except Exception as e:
+                logger.debug(f"Rebalance suggestion error: {e}")
+
+        # Wave 4: Counterfactual — include veto accuracy in heartbeat
+        if self.counterfactual:
+            try:
+                _cf_acc = self.counterfactual.get_veto_accuracy()
+                if _cf_acc.get("total_resolved", 0) > 0:
+                    status["veto_accuracy_cf"] = round(_cf_acc.get("accuracy", 0), 2)
+                    status["veto_net_value"] = round(_cf_acc.get("net_veto_value", 0), 2)
+            except Exception:
+                pass
 
         strat_weights = self.weight_mgr.get_all_weights()
         weights_str = " ".join(f"{k}={v:.2f}" for k, v in strat_weights.items()) if strat_weights else "none"
