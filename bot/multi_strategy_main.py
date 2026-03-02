@@ -620,6 +620,40 @@ class MultiStrategyBot:
         if self._tick % 15 == 0 and self._tick % 60 != 0:
             self._send_market_update(trace_id)
 
+        # Evolution tracker: daily strategy evolution report (~1440 ticks at 60s = 24h)
+        if self._tick % 1440 == 0 and self._tick > 0:
+            try:
+                from feedback.evolution_tracker import EvolutionTracker
+                tracker = EvolutionTracker("data")
+                report = tracker.generate_report()
+                if self.alerts and report:
+                    summary = (
+                        f"*Daily Evolution Report*\n"
+                        f"Trades: {report.total_trades}\n"
+                        f"Win rate: {report.win_rate:.1%}\n"
+                        f"Net PnL: ${report.net_pnl:+.2f}"
+                    )
+                    self.alerts.send_market_update(summary)
+                logger.info(f"[EVOLUTION] Daily report generated: {report.total_trades} trades")
+            except Exception as e:
+                logger.debug(f"Evolution tracker error: {e}")
+
+        # RL auto-training: retrain policy daily if buffer has enough data
+        if self._tick % 1440 == 720 and self._tick > 720:
+            try:
+                from rl.buffer import get_buffer_stats
+                from rl.train_offline import train
+                stats = get_buffer_stats()
+                if stats.get("total", 0) >= 50:
+                    policy = train()
+                    if policy:
+                        logger.info(
+                            f"[RL-AUTO] Daily retrain: {stats['total']} transitions, "
+                            f"policy updated"
+                        )
+            except Exception as e:
+                logger.debug(f"RL auto-training error: {e}")
+
     def _process_symbol(self, symbol: str, sym_cfg, trace_id: str = ""):
         """Process one symbol: fetch data, check positions, generate signals."""
         # F3: Graceful degradation — halt new entries if exchange is down
