@@ -542,6 +542,14 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.warning(f"[{trace_id}] Exit intelligence error: {e}")
 
+        # Position aging alerts: flag positions held too long with adverse funding
+        # Runs every 10th tick (~10 min at 60s intervals)
+        if self._tick % 10 == 0:
+            try:
+                self._check_position_aging()
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Position aging check error: {e}")
+
         # Record health monitor heartbeat every tick
         self.health_monitor.record_heartbeat(
             loop_duration_s=time.time() - _loop_start,
@@ -2216,6 +2224,50 @@ class MultiStrategyBot:
 
             except Exception as e:
                 logger.warning(f"[EXIT-INTEL] Error evaluating {symbol}: {e}")
+
+    # ── Position Aging Alerts ─────────────────────────────────────
+
+    def _check_position_aging(self):
+        """Alert on positions held too long — funding costs eat profits."""
+        open_pos = self.pos_mgr.get_open_positions()
+        now = time.time()
+        for sym, pos in open_pos.items():
+            if not hasattr(pos, 'open_time') or pos.open_time is None:
+                continue
+            # Calculate age
+            if isinstance(pos.open_time, datetime):
+                age_hours = (now - pos.open_time.timestamp()) / 3600
+            else:
+                age_hours = (now - pos.open_time) / 3600
+
+            # Alert thresholds
+            funding_rate = self._last_funding_rates.get(sym, 0.0)
+            is_paying = (pos.side == "LONG" and funding_rate > 0) or \
+                        (pos.side == "SHORT" and funding_rate < 0)
+
+            # Calculate estimated funding cost since entry
+            price = self._last_prices.get(sym, pos.entry)
+            notional = pos.qty * price * pos.leverage
+            periods_since_entry = age_hours / 8  # 8h funding periods
+            est_funding_paid = abs(funding_rate) * periods_since_entry * notional if is_paying else 0
+            est_funding_pct = est_funding_paid / self.risk_mgr.equity * 100 if self.risk_mgr.equity > 0 else 0
+
+            # Alert conditions
+            if age_hours > 24 and is_paying and est_funding_pct > 0.1:
+                logger.warning(
+                    f"[AGING] {sym} {pos.side} open {age_hours:.0f}h, "
+                    f"estimated funding paid: {est_funding_pct:.2f}% of equity"
+                )
+                if self.alerts and age_hours > 48:
+                    try:
+                        self.alerts.send_market_update(
+                            f"[POSITION AGING] {sym} {pos.side}\n"
+                            f"Open: {age_hours:.0f}h\n"
+                            f"Funding paid: ~{est_funding_pct:.2f}% of equity\n"
+                            f"Current PnL: ${pos.realized_pnl:.2f}"
+                        )
+                    except Exception:
+                        pass
 
     # ── LLM Meta-Brain Integration ────────────────────────────────
 
