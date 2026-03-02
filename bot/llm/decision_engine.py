@@ -111,6 +111,14 @@ _CACHE_TTL = 180  # 3 minutes (reduced from 5 for faster market response)
 _flip_history: deque = deque(maxlen=20)
 _FLIP_RATE_LIMIT = 0.30  # Reject flips if >30% of last 20 decisions are flips
 
+# Recent decisions ring buffer: enables LLM consistency + self-awareness
+_recent_decisions: deque = deque(maxlen=8)
+
+
+def get_recent_decisions(n: int = 5) -> list:
+    """Return last N decisions for snapshot consistency context."""
+    return list(_recent_decisions)[-n:]
+
 
 def get_cached_decision() -> Optional[LLMDecision]:
     """Return the most recent LLM decision if still fresh."""
@@ -400,6 +408,58 @@ def get_trading_decision(
             usage=usage,
         )
 
+    # Step 5.4: Programmatic confidence calibration + per-regime penalty
+    try:
+        from llm.self_performance import get_performance_stats
+        perf = get_performance_stats()
+        if perf and perf.get("total_decisions", 0) >= 15:
+            # Auto-calibrate: apply 50% of calibration offset
+            cal = perf.get("calibration", 0.0)
+            if abs(cal) > 0.05:
+                correction = cal * 0.5
+                old_conf = decision.confidence
+                decision.confidence = max(0.0, min(1.0, decision.confidence - correction))
+                if abs(correction) > 0.01:
+                    logger.info(
+                        f"[LLM-ENGINE] Calibration correction: {old_conf:.2f} -> "
+                        f"{decision.confidence:.2f} (cal={cal:+.2f}, applied={-correction:+.2f})"
+                    )
+
+            # Per-regime penalty: if accuracy < 40% in this regime, apply 10% haircut
+            rg_acc = perf.get("regime_accuracy", {})
+            rg_counts = perf.get("regime_counts", {})
+            if decision.regime in rg_acc and decision.regime in rg_counts:
+                regime_wr = rg_acc[decision.regime]
+                regime_n = rg_counts[decision.regime]
+                if regime_wr < 0.40 and regime_n >= 5 and decision.action != "flat":
+                    penalty = 0.10
+                    old_conf = decision.confidence
+                    decision.confidence = max(0.0, decision.confidence - penalty)
+                    logger.info(
+                        f"[LLM-ENGINE] Regime penalty: {decision.regime} "
+                        f"WR={regime_wr:.0%} ({regime_n} trades), "
+                        f"conf {old_conf:.2f} -> {decision.confidence:.2f}"
+                    )
+    except Exception as e:
+        logger.debug(f"[LLM-ENGINE] Calibration/regime check error: {e}")
+
+    # Step 5.45: Regime stability check — if LLM oscillates between regimes, prefer flat
+    try:
+        recent = list(_recent_decisions)[-6:]
+        recent_regimes = [
+            r.get("rg") for r in recent
+            if (time.time() - r.get("ts", 0)) < 1200  # last 20 minutes
+        ]
+        unique_regimes = set(r for r in recent_regimes if r)
+        if len(unique_regimes) >= 3 and decision.confidence < 0.75 and decision.action != "flat":
+            logger.info(
+                f"[LLM-ENGINE] Regime instability ({unique_regimes}), "
+                f"conf={decision.confidence:.2f} < 0.75 — downgrading to flat"
+            )
+            decision.action = "flat"
+    except Exception:
+        pass
+
     # Step 5.5: Apply mode-specific constraints
     original_action = decision.action
     decision, mode_overrides = _apply_mode_constraints(decision, mode)
@@ -419,6 +479,33 @@ def get_trading_decision(
             )
             decision.action = "flat"
             mode_overrides.append("flip_rate_limited")
+
+    # Step 5.7: Consistency check — don't contradict recent same-symbol decisions
+    _sym_for_consistency = trigger_context.split()[0] if trigger_context else ""
+    if _sym_for_consistency and decision.action != "flat":
+        try:
+            now = time.time()
+            for rd in reversed(list(_recent_decisions)):
+                if rd.get("sym") != _sym_for_consistency:
+                    continue
+                if (now - rd.get("ts", 0)) > 600:  # Only check last 10 minutes
+                    break
+                prev_action = rd.get("a", "")
+                # If we previously said flat/skip but now say proceed, need higher confidence
+                if prev_action in ("flat", "skip", "REJECTED_go", "REJECTED_proceed") \
+                        and decision.action in ("proceed", "go"):
+                    if decision.confidence < rd.get("c", 0) + 0.15:
+                        logger.info(
+                            f"[LLM-ENGINE] Consistency check: {_sym_for_consistency} "
+                            f"was recently {prev_action} (conf={rd.get('c', 0):.2f}), "
+                            f"now {decision.action} conf={decision.confidence:.2f} — "
+                            f"need +0.15 to override, downgrading to flat"
+                        )
+                        decision.action = "flat"
+                        mode_overrides.append("consistency_override_recent_flat")
+                break  # Only check most recent decision for this symbol
+        except Exception:
+            pass
 
     # Step 6: Risk gate
     gated = gate_decision(decision, risk_context)
@@ -455,7 +542,18 @@ def get_trading_decision(
         "usage": usage,
     })
 
-    # Step 9.5: Record veto for counterfactual tracking
+    # Step 9.5: Record to recent decisions buffer (for consistency context)
+    _recent_decisions.append({
+        "ts": time.time(),
+        "sym": trigger_context.split()[0] if trigger_context else "",
+        "a": decision.action if gated.allowed else f"REJECTED_{decision.action}",
+        "c": round(decision.confidence, 2),
+        "rg": decision.regime,
+        "allowed": gated.allowed,
+        "gate": gated.reason if not gated.allowed else "",
+    })
+
+    # Step 9.6: Record veto for counterfactual tracking
     if is_veto and _HAS_VETO_TRACKER:
         try:
             vt = get_veto_tracker()

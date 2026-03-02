@@ -394,6 +394,46 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
     except Exception as e:
         logger.debug(f"[SNAPSHOT] Self-performance unavailable: {e}")
 
+    # Recent decisions: the LLM's own decision trail for consistency
+    try:
+        from llm.decision_engine import get_recent_decisions
+        recent = get_recent_decisions(5)
+        if recent:
+            now = time.time()
+            lines = []
+            for d in reversed(recent[-3:]):  # Last 3 only for token efficiency
+                age_m = int((now - d.get("ts", 0)) / 60)
+                action = d.get("a", "?")
+                sym = d.get("sym", "")
+                conf = d.get("c", 0)
+                regime = d.get("rg", "")
+                gate = d.get("gate", "")
+                line = f"{age_m}m: {action} {sym} c={conf:.2f} {regime}"
+                if gate:
+                    line += f" ({gate})"
+                lines.append(line)
+            result["recent_dec"] = " | ".join(lines)
+    except Exception as e:
+        logger.debug(f"[SNAPSHOT] Recent decisions unavailable: {e}")
+
+    # Recent post-trade lessons: immediate feedback from closed trades
+    try:
+        from llm.post_trade_learner import get_recent_lessons
+        lessons = get_recent_lessons(3)
+        if lessons:
+            result["recent_lessons"] = " | ".join(lessons)
+    except Exception:
+        pass
+
+    # Trade autopsy: structured analysis of recent trade batch
+    try:
+        from llm.trade_autopsy import get_cached_autopsy
+        autopsy = get_cached_autopsy()
+        if autopsy:
+            result["autopsy"] = autopsy
+    except Exception:
+        pass
+
     # Portfolio-level risk indicators (injected by main bot via global_ctx.extra)
     if g and g.extra:
         corr_risk = g.extra.get("correlation_risk")

@@ -347,6 +347,14 @@ class MultiStrategyBot:
         # Wave 1: Self-Teaching — periodic learning cycles
         self.teaching_engine = get_teaching_engine() if _SELF_TEACHING_AVAILABLE else None
 
+        # Seed knowledge base with foundational axioms (idempotent — skips if already seeded)
+        if self.teaching_engine:
+            try:
+                from llm.knowledge_seed import seed_knowledge_base
+                seed_knowledge_base()
+            except Exception as e:
+                logger.debug(f"Knowledge seed error (non-fatal): {e}")
+
         # Veto tracker: counterfactual validation for LLM vetoes
         self.veto_tracker = get_veto_tracker()
 
@@ -1013,6 +1021,41 @@ class MultiStrategyBot:
                         self._record_trade_dna(symbol, _dm_pos, event)
                 except Exception as e:
                     logger.debug(f"Deep memory trade DNA error: {e}")
+
+                # Post-Trade Learner: generate immediate lesson and inject into memory
+                try:
+                    from llm.post_trade_learner import generate_immediate_lesson
+                    from llm.memory_store import apply_memory_update as _ptl_mem_update
+                    _ptl_lesson = generate_immediate_lesson({
+                        "symbol": symbol,
+                        "side": event.side,
+                        "outcome": "WIN" if total_pnl > 0 else "LOSS",
+                        "pnl": total_pnl,
+                        "confidence": pos.confidence if pos else 0,
+                        "regime": _rg_fb,
+                        "strategy": event.strategy,
+                        "hold_time_s": event.metadata.get("hold_time_s", 0),
+                        "exit_action": event.action,
+                        "llm_action": _llm_action,
+                        "llm_confidence": _llm_conf,
+                        "funding_rate": self._last_funding_rates.get(symbol, 0)
+                            if hasattr(self, '_last_funding_rates') else 0,
+                    })
+                    if _ptl_lesson:
+                        _ptl_mem_update(_ptl_lesson, symbol=symbol, regime=_rg_fb)
+                except Exception as e:
+                    logger.debug(f"Post-trade learner error: {e}")
+
+                # Trade Autopsy: generate periodic structured analysis every 5 trades
+                try:
+                    from llm.trade_autopsy import should_run_autopsy, generate_autopsy
+                    # Count closed trades (approximate via feedback loop or counter)
+                    _trade_count = getattr(self, '_closed_trade_count', 0) + 1
+                    self._closed_trade_count = _trade_count
+                    if should_run_autopsy(_trade_count):
+                        generate_autopsy()  # Pulls from deep memory, caches result
+                except Exception as e:
+                    logger.debug(f"Trade autopsy error: {e}")
 
                 # Self-Teaching: feed closed trade to learning engine
                 if self.teaching_engine and self.config.enable_self_teaching:

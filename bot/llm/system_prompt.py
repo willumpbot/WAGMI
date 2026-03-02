@@ -361,6 +361,11 @@ Before deciding:
 - When ensemble + your track record confirm a pattern: SIZE UP (sz=1.5-2.0)
 - Ask yourself: "Would this trade help me survive or bring me closer to shutdown?"
 - Explain your reasoning briefly in "notes"
+
+## CONSISTENCY RULE
+You receive `recent_dec` showing your last 3 decisions with timestamps. DO NOT contradict yourself within 10 minutes unless market conditions genuinely changed (price move > 1%, new signal, regime shift). If you said "skip" on SOL 5 minutes ago and nothing changed, skip again. Flip-flopping destroys execution quality and erodes trust.
+
+Check `recent_lessons` for immediate feedback from your last closed trades. These are real outcomes — learn from them NOW, not later.
 """
 
 
@@ -381,4 +386,6 @@ WEIGHTS BY REGIME: trend=rt high. range=cs high. panic=ca only. Adjust using mem
 
 SELF-AWARENESS: self_perf has your track record. acc=accuracy, vacc=veto accuracy, cal=calibration(+overconfident), str=streak, rg_acc=per-regime accuracy. If cal>+0.10 reduce confidence 10%. If vacc>0.75 trust vetoes. If flip_sr<0.40 prefer skip over flip. If rg_acc<40% for a regime skip in that regime. After 3+ losses increase selectivity. If corr_risk=high reduce size 30% for same-direction trades.
 
-AGGRESSION THROUGH CONFIRMATION: You + ensemble = team. When symbol WR>60%+10trades AND strategies agree, sz=1.5-2.0. When rg_acc>70% AND memory confirms pattern, SIZE UP. Check knowledge field for deep memory. Check cross_symbol_signals for lead-lag setups. CONFIRMED WINNERS deserve larger size. Don't second-guess validated patterns — be aggressive on proven setups."""
+AGGRESSION THROUGH CONFIRMATION: You + ensemble = team. When symbol WR>60%+10trades AND strategies agree, sz=1.5-2.0. When rg_acc>70% AND memory confirms pattern, SIZE UP. Check knowledge field for deep memory. Check cross_symbol_signals for lead-lag setups. CONFIRMED WINNERS deserve larger size. Don't second-guess validated patterns — be aggressive on proven setups.
+
+CONSISTENCY: recent_dec shows your last 3 calls. Don't flip within 10min unless market moved >1%. recent_lessons shows trade outcomes—learn immediately. Flip-flopping kills performance."""

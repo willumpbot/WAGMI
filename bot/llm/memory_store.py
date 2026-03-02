@@ -212,12 +212,25 @@ def _is_quality_note(text: str) -> bool:
     Quality notes should contain specific, actionable insights about market
     conditions, strategy behavior, or trading patterns. Generic observations
     like "BTC went up" or "lost money" are noise.
+
+    Structured lessons from post-trade learner always pass (they contain
+    specific symbol, regime, action, and outcome data).
     """
     text_lower = text.lower().strip()
 
     # Too short to be useful
     if len(text_lower) < 20:
         return False
+
+    # Structured lessons from post-trade learner are always quality
+    # (they contain symbol + regime + actionable insight with em-dash markers)
+    _STRUCTURED_MARKERS = [
+        "—replicate", "—be cautious", "—exit earlier", "—reduce confidence",
+        "—entry timing", "—setup works", "—consider", "—flip side",
+        "win +$", "loss despite", "sl in ", "gated by",
+    ]
+    if any(marker in text_lower for marker in _STRUCTURED_MARKERS):
+        return True
 
     # Generic/obvious statements that don't teach anything
     _NOISE_PATTERNS = [

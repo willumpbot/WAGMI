@@ -103,6 +103,20 @@ def get_compact_stats() -> Dict[str, Any]:
     if rg_acc:
         compact["rg_acc"] = rg_acc
 
+    # Per-symbol accuracy (only symbols with 3+ decisions)
+    sym_acc = {}
+    for symbol, acc in stats.get("symbol_accuracy", {}).items():
+        count = stats.get("symbol_counts", {}).get(symbol, 0)
+        if count >= 3:
+            sym_acc[symbol] = round(acc, 2)
+    if sym_acc:
+        compact["sym_acc"] = sym_acc
+
+    # Recent outcomes with detail (last 5)
+    recent_out = stats.get("recent_outcomes", [])
+    if recent_out:
+        compact["recent"] = recent_out
+
     return compact
 
 
@@ -136,8 +150,15 @@ def _compute_stats() -> Dict[str, Any]:
     # Regime accuracy
     regime_accuracy, regime_counts = _compute_regime_accuracy(go_outcomes + flip_outcomes)
 
+    # Symbol accuracy
+    symbol_accuracy, symbol_counts = _compute_symbol_accuracy(go_outcomes + flip_outcomes)
+
     # Streak
     streak = _compute_streak(go_outcomes + flip_outcomes)
+
+    # Recent outcomes with detail (last 5)
+    all_outcomes = go_outcomes + flip_outcomes
+    recent_outcomes = _get_recent_outcomes(all_outcomes, n=5)
 
     return {
         "accuracy": accuracy,
@@ -147,6 +168,9 @@ def _compute_stats() -> Dict[str, Any]:
         "streak": streak,
         "regime_accuracy": regime_accuracy,
         "regime_counts": regime_counts,
+        "symbol_accuracy": symbol_accuracy,
+        "symbol_counts": symbol_counts,
+        "recent_outcomes": recent_outcomes,
         "total_decisions": len(decisions),
         "go_count": len(go_decisions),
         "skip_count": len(skip_decisions),
@@ -357,6 +381,49 @@ def _compute_regime_accuracy(outcomes: List[Dict]) -> tuple:
     return accuracy, counts
 
 
+def _compute_symbol_accuracy(outcomes: List[Dict]) -> tuple:
+    """Compute per-symbol win rates.
+
+    Returns (symbol_accuracy: Dict[str, float], symbol_counts: Dict[str, int])
+    """
+    by_symbol = defaultdict(list)
+    for o in outcomes:
+        symbol = o.get("symbol", "")
+        if symbol:
+            by_symbol[symbol].append(o)
+
+    accuracy = {}
+    counts = {}
+    for symbol, sym_outcomes in by_symbol.items():
+        counts[symbol] = len(sym_outcomes)
+        if len(sym_outcomes) >= 3:
+            accuracy[symbol] = _win_rate(sym_outcomes)
+
+    return accuracy, counts
+
+
+def _get_recent_outcomes(outcomes: List[Dict], n: int = 5) -> List[Dict]:
+    """Get the N most recent outcomes with compact detail.
+
+    Returns list of {s: symbol, w: bool, c: confidence, pnl: float}
+    """
+    if not outcomes:
+        return []
+
+    sorted_out = sorted(outcomes, key=lambda o: o.get("decision", {}).get("ts", 0))
+    recent = sorted_out[-n:]
+
+    return [
+        {
+            "s": o.get("symbol", "")[:6],
+            "w": o.get("win", False),
+            "c": round(o.get("decision", {}).get("confidence", 0), 2),
+            "pnl": round(o.get("pnl", 0), 1),
+        }
+        for o in recent
+    ]
+
+
 def _compute_streak(outcomes: List[Dict]) -> str:
     """Compute recent win/loss streak as a compact string.
 
@@ -383,6 +450,9 @@ def _empty_stats() -> Dict[str, Any]:
         "streak": "",
         "regime_accuracy": {},
         "regime_counts": {},
+        "symbol_accuracy": {},
+        "symbol_counts": {},
+        "recent_outcomes": [],
         "total_decisions": 0,
         "go_count": 0,
         "skip_count": 0,
