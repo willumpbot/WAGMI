@@ -389,6 +389,32 @@ class SignalQualityScorer:
         adjusted = max(base_floor - 5, min(base_floor + 15, adjusted))
         return round(adjusted, 1)
 
+    def get_regime_profitability(self, regime: str) -> Dict[str, Any]:
+        """Get profitability stats for a specific regime.
+
+        Args:
+            regime: Regime label (e.g. "trend", "mean_reversion", "volatile").
+
+        Returns:
+            Dict with keys:
+                - win_rate: float (0.0-1.0), 0.0 if no data
+                - total: int, number of trades in this regime
+                - avg_pnl: float, average PnL per trade in this regime
+        """
+        data = self.by_regime.get(regime)
+        if not data or data["total"] == 0:
+            return {"win_rate": 0.0, "total": 0, "avg_pnl": 0.0}
+
+        total = data["total"]
+        wins = data["wins"]
+        pnl = data["pnl"]
+
+        return {
+            "win_rate": round(wins / total, 4),
+            "total": total,
+            "avg_pnl": round(pnl / total, 4),
+        }
+
     def get_session_performance(self) -> Dict[str, Any]:
         """Get per-session performance for LLM context."""
         result = {}

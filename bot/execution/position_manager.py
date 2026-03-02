@@ -609,6 +609,65 @@ class PositionManager:
             return None
         return self._close_position(pos, price, reason)
 
+    def check_hold_limits(
+        self, symbol: str, price: float, max_hold_hours: float = 48, action: str = "tighten_sl"
+    ) -> Optional[TradeEvent]:
+        """Check if a position has exceeded its max hold time.
+
+        At max_hold_hours: tighten SL to breakeven (or force close if action='force_close').
+        At 1.5x max_hold_hours: force close regardless.
+
+        Returns TradeEvent if position was force-closed, None otherwise.
+        """
+        pos = self.positions.get(symbol)
+        if not pos or pos.state == CLOSED:
+            return None
+
+        if pos.open_time is None:
+            return None
+
+        now = datetime.now(timezone.utc)
+        if isinstance(pos.open_time, datetime):
+            age_hours = (now - pos.open_time).total_seconds() / 3600
+        else:
+            age_hours = (now.timestamp() - pos.open_time) / 3600
+
+        force_close_hours = max_hold_hours * 1.5
+
+        if age_hours >= force_close_hours:
+            # Hard limit: force close
+            logger.warning(
+                f"[HOLD_LIMIT] {symbol} {pos.side} open {age_hours:.1f}h "
+                f">= {force_close_hours:.0f}h hard limit — FORCE CLOSING"
+            )
+            return self.force_close(symbol, price, reason="HOLD_LIMIT")
+
+        if age_hours >= max_hold_hours:
+            if action == "force_close":
+                logger.warning(
+                    f"[HOLD_LIMIT] {symbol} {pos.side} open {age_hours:.1f}h "
+                    f">= {max_hold_hours:.0f}h — FORCE CLOSING (action=force_close)"
+                )
+                return self.force_close(symbol, price, reason="HOLD_LIMIT")
+
+            # Default: tighten SL to breakeven
+            if pos.side == "LONG" and pos.sl < pos.entry:
+                old_sl = pos.sl
+                pos.sl = pos.entry
+                logger.info(
+                    f"[HOLD_LIMIT] {symbol} LONG open {age_hours:.1f}h "
+                    f">= {max_hold_hours:.0f}h — SL tightened {old_sl:.2f} -> {pos.entry:.2f} (breakeven)"
+                )
+            elif pos.side == "SHORT" and pos.sl > pos.entry:
+                old_sl = pos.sl
+                pos.sl = pos.entry
+                logger.info(
+                    f"[HOLD_LIMIT] {symbol} SHORT open {age_hours:.1f}h "
+                    f">= {max_hold_hours:.0f}h — SL tightened {old_sl:.2f} -> {pos.entry:.2f} (breakeven)"
+                )
+
+        return None
+
     def get_open_positions(self) -> Dict[str, Position]:
         return {s: p for s, p in self.positions.items() if p.state != CLOSED}
 

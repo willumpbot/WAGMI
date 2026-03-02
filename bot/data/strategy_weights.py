@@ -30,9 +30,22 @@ class StrategyWeightManager:
         if self.path.exists():
             try:
                 with open(self.path) as f:
-                    return json.load(f)
+                    data = json.load(f)
+                if data:
+                    weights_summary = {
+                        name: round((entry.get("wins", 0) + 1) / (entry.get("trials", 0) + 2), 3)
+                        for name, entry in data.items()
+                    }
+                    logger.info(
+                        f"[WEIGHTS] Loaded persisted weights from {self.path}: {weights_summary}"
+                    )
+                else:
+                    logger.info(f"[WEIGHTS] Weight file exists but empty, starting fresh")
+                return data
             except Exception as e:
                 logger.warning(f"Failed to load strategy weights: {e}")
+        else:
+            logger.info(f"[WEIGHTS] No persisted weights at {self.path}, starting fresh")
         return {}
 
     def _save(self):

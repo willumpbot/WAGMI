@@ -1,0 +1,34 @@
+{
+  "recent_outcomes": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "regime_wr": {
+    "trending_up": {
+      "wins": 25,
+      "total": 25
+    },
+    "choppy": {
+      "wins": 0,
+      "total": 5
+    }
+  }
+}

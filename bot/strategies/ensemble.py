@@ -42,6 +42,7 @@ class EnsembleStrategy:
         weights: Optional[Dict[str, float]] = None,
         weight_manager=None,
         veto_ratio: float = 1.1,
+        chop_detector=None,
     ):
         self.strategies = strategies
         self.mode = mode
@@ -49,7 +50,9 @@ class EnsembleStrategy:
         self.weights = weights or {s.name: 1.0 for s in strategies}
         self.weight_manager = weight_manager  # StrategyWeightManager instance
         self.veto_ratio = veto_ratio
+        self.chop_detector = chop_detector  # ChopDetector instance (Wave 1)
         self._disabled_strategies: set = set()  # Strategy names to skip
+        self._regime_profitability: Dict[str, Dict] = {}  # Push 3: regime WR data
 
     def set_disabled_strategies(self, names: set):
         """Temporarily disable specific strategies (e.g., for regime filtering)."""
@@ -98,8 +101,16 @@ class EnsembleStrategy:
         if not signals:
             return None
 
-        # Volume chop filter: reject signals during low-volume periods
-        if self._is_low_volume(symbol, data):
+        # Chop detector: multi-factor choppy market filter (replaces simple volume check)
+        if self.chop_detector:
+            is_chop, chop_score, chop_detail = self.chop_detector.is_choppy(symbol, data)
+            if is_chop:
+                return None
+            # Attach chop score to metadata for downstream use
+            for sig in signals:
+                sig.metadata["chop_score"] = round(chop_score, 3)
+        elif self._is_low_volume(symbol, data):
+            # Fallback to simple volume filter if no chop detector
             logger.info(f"[{symbol}] Signal skipped: low volume (chop filter)")
             return None
 

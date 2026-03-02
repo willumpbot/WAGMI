@@ -17,6 +17,7 @@ import sys
 import json
 import time
 import tempfile
+import unittest.mock
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -321,6 +322,13 @@ class TestUpliftAnalytics:
 
 class TestAdaptiveRisk:
     """Adaptive risk adjusts position sizing based on recent streaks and regime."""
+
+    @pytest.fixture(autouse=True)
+    def _isolate_state(self, tmp_path):
+        """Ensure each test gets a fresh adaptive risk manager (no persisted state)."""
+        fake_path = str(tmp_path / "adaptive_risk_state.json")
+        with unittest.mock.patch("execution.adaptive_risk._STATE_PATH", fake_path):
+            yield
 
     def test_import_and_singleton(self):
         from execution.adaptive_risk import get_adaptive_risk, AdaptiveRiskManager

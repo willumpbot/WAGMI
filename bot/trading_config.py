@@ -100,7 +100,7 @@ class TradingConfig:
         default_factory=lambda: _env("ENSEMBLE_MODE", "weighted_veto")
     )  # "voting", "weighted_veto", "weighted", "best"
     min_votes_required: int = field(
-        default_factory=lambda: _env_int("MIN_VOTES_REQUIRED", 2)
+        default_factory=lambda: _env_int("MIN_VOTES_REQUIRED", 3)
     )
     veto_ratio: float = field(
         default_factory=lambda: _env_float("VETO_RATIO", 1.1)
@@ -139,6 +139,28 @@ class TradingConfig:
     )
     rotation_max_per_day: int = field(
         default_factory=lambda: _env_int("ROTATION_MAX_PER_DAY", 6)
+    )
+
+    # ── Profitability shield ──
+    enable_chop_detector: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_CHOP_DETECTOR", True)
+    )
+    chop_threshold: float = field(
+        default_factory=lambda: _env_float("CHOP_THRESHOLD", 0.55)
+    )
+    max_hold_hours: int = field(
+        default_factory=lambda: _env_int("MAX_HOLD_HOURS", 48)
+    )
+    hold_limit_action: str = field(
+        default_factory=lambda: _env("HOLD_LIMIT_ACTION", "tighten_sl")
+    )  # "tighten_sl" or "force_close"
+
+    # ── Regime & RL ──
+    regime_min_confirmations: int = field(
+        default_factory=lambda: _env_int("REGIME_MIN_CONFIRMATIONS", 3)
+    )
+    enable_rl_policy: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_RL_POLICY", True)
     )
 
     # ── Wave 1: Dormant feature activation ──

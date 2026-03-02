@@ -10,7 +10,9 @@ Priority routing:
 Includes dedup, rate limiting, and burst protection.
 """
 
+import json
 import logging
+import os
 import time
 import requests
 from collections import defaultdict, deque
@@ -50,6 +52,64 @@ class AlertRouter:
             lambda: {"prio_ts": 0, "reg_ts": 0, "fingerprint": ""}
         )
         self._prio_burst: Dict[str, deque] = defaultdict(lambda: deque(maxlen=5))
+
+        self._state_path = os.path.join("data", "alert_state.json")
+        self._load_state()
+
+    def _load_state(self) -> None:
+        """Restore rate-limit state from disk, pruning entries older than 600s."""
+        try:
+            if not os.path.exists(self._state_path):
+                return
+            with open(self._state_path, "r") as f:
+                data = json.load(f)
+            now = int(time.time())
+            max_age = 600  # seconds
+
+            for symbol, entry in data.get("last_sent", {}).items():
+                prio_ts = entry.get("prio_ts", 0)
+                reg_ts = entry.get("reg_ts", 0)
+                # Only restore entries less than 600 seconds old
+                if (now - max(prio_ts, reg_ts)) < max_age:
+                    self._last_sent[symbol] = {
+                        "prio_ts": prio_ts,
+                        "reg_ts": reg_ts,
+                        "fingerprint": entry.get("fingerprint", ""),
+                    }
+
+            for symbol, timestamps in data.get("prio_burst", {}).items():
+                recent = deque(
+                    (ts for ts in timestamps if (now - ts) < max_age),
+                    maxlen=5,
+                )
+                if recent:
+                    self._prio_burst[symbol] = recent
+
+            logger.info(
+                "[ALERT] Restored rate-limit state: %d symbols",
+                len(self._last_sent),
+            )
+        except Exception as exc:
+            logger.warning("[ALERT] Failed to load alert state: %s", exc)
+
+    def _save_state(self) -> None:
+        """Persist current rate-limit state to disk."""
+        try:
+            os.makedirs(os.path.dirname(self._state_path), exist_ok=True)
+            data = {
+                "last_sent": {
+                    sym: dict(entry)
+                    for sym, entry in self._last_sent.items()
+                },
+                "prio_burst": {
+                    sym: list(dq)
+                    for sym, dq in self._prio_burst.items()
+                },
+            }
+            with open(self._state_path, "w") as f:
+                json.dump(data, f, indent=2)
+        except Exception as exc:
+            logger.warning("[ALERT] Failed to save alert state: %s", exc)
 
     def send_signal(self, signal: Signal, leverage: float = 1.0, tier: str = ""):
         """Route a signal to appropriate channels."""
@@ -105,6 +165,7 @@ class AlertRouter:
             self._send_discord(msg, priority=False)
 
         ls["fingerprint"] = fp
+        self._save_state()
 
     def send_trade_event(self, event_type: str, symbol: str, details: str):
         """Send a trade event notification (open, close, TP, SL, etc.)."""
