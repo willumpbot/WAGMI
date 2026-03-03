@@ -88,6 +88,7 @@ class ParameterTuner:
         symbol_offsets: Optional[Dict[str, float]] = None,
         calibration_offset: Optional[float] = None,
         backtest_validated: bool = False,
+        suggestion_confidence: float = 0.0,
     ):
         """Apply parameter suggestions with trust-gated gradualism.
 
@@ -100,9 +101,22 @@ class ParameterTuner:
             symbol_offsets: {symbol: confidence_offset}
             calibration_offset: ML calibration correction
             backtest_validated: Whether this update is validated by backtest
+            suggestion_confidence: Confidence of the suggestion source (0-1).
+                If > 0.7, bypass the 3% per-cycle cap and apply directly.
         """
         trust = self.params.trust_score
-        max_step = MAX_CHANGE_PER_CYCLE * trust  # Trust gates the step size
+
+        # High-confidence bypass: if suggestion source is very confident (>0.7),
+        # apply directly without the 3% per-cycle cap. This lets the bot adapt
+        # to regime changes in hours instead of days.
+        if suggestion_confidence > 0.7 and backtest_validated:
+            max_step = 1.0 * trust  # ~33x larger step (effectively uncapped within bounds)
+            logger.info(
+                f"[TUNER] High-confidence bypass: conf={suggestion_confidence:.2f}, "
+                f"trust={trust:.2f}, max_step={max_step:.3f}"
+            )
+        else:
+            max_step = MAX_CHANGE_PER_CYCLE * trust  # Normal: 3% cap gated by trust
 
         if confidence_floor_suggestion is not None:
             target = max(50, min(80, confidence_floor_suggestion))

@@ -752,10 +752,17 @@ class SignalLearner:
         ml_confidence = combined * 100.0
 
         # Cold-start protection: scale ML influence by trade experience.
-        # 0 trades = 0 influence, ramps linearly to full at min_samples.
+        # Phase 1 (0→min_samples trades): ramp from 0 to base weight (20%)
+        # Phase 2 (min_samples→50 trades): ramp from 20% to 30% (earned trust)
         n_outcomes = len(self.outcomes)
-        cold_start_factor = min(1.0, n_outcomes / self.min_samples) if self.min_samples > 0 else 1.0
-        effective_weight = self.adjustment_weight * cold_start_factor
+        if self.min_samples > 0 and n_outcomes < self.min_samples:
+            cold_start_factor = n_outcomes / self.min_samples
+            effective_weight = self.adjustment_weight * cold_start_factor
+        elif n_outcomes >= 50:
+            # Phase 2: earned trust — ML gets 30% influence after 50 trades
+            effective_weight = 0.30
+        else:
+            effective_weight = self.adjustment_weight  # Base 20%
 
         adjusted = (
             original_confidence * (1 - effective_weight)
