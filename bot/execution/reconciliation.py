@@ -261,3 +261,130 @@ def _reconcile_one(
         "unrealized_pnl": unrealized,
         "state": pos.state,
     }
+
+
+# ── Circuit Breaker State Persistence ─────────────────────────────
+
+import json
+import os
+
+_CB_STATE_FILE = os.path.join("data", "circuit_breaker_state.json")
+
+
+def save_circuit_breaker_state(risk_mgr, filepath: str = _CB_STATE_FILE):
+    """Persist circuit breaker state so it survives restarts.
+
+    During drawdowns, a restart should NOT reset the circuit breaker —
+    it should resume where it left off to prevent continued losses.
+    """
+    try:
+        state = {
+            "tripped": risk_mgr.tripped,
+            "trip_reason": risk_mgr.trip_reason,
+            "daily_pnl": risk_mgr.daily_pnl,
+            "consecutive_losses": risk_mgr.consecutive_losses,
+            "peak_equity": risk_mgr.peak_equity,
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+        }
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        with open(filepath, "w") as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        logger.warning(f"[RECONCILE] Failed to save CB state: {e}")
+
+
+def restore_circuit_breaker_state(risk_mgr, filepath: str = _CB_STATE_FILE):
+    """Restore circuit breaker state from disk on startup.
+
+    Only restores if the saved state is < 24h old (to avoid stale trips).
+    """
+    try:
+        if not os.path.exists(filepath):
+            return
+
+        with open(filepath) as f:
+            state = json.load(f)
+
+        # Don't restore stale state (> 24h old)
+        saved_at = state.get("saved_at", "")
+        if saved_at:
+            saved_dt = datetime.fromisoformat(saved_at)
+            age_hours = (datetime.now(timezone.utc) - saved_dt).total_seconds() / 3600
+            if age_hours > 24:
+                logger.info(f"[RECONCILE] CB state is {age_hours:.1f}h old, ignoring")
+                return
+
+        risk_mgr.daily_pnl = state.get("daily_pnl", 0.0)
+        risk_mgr.consecutive_losses = state.get("consecutive_losses", 0)
+        risk_mgr.peak_equity = state.get("peak_equity", risk_mgr.peak_equity)
+
+        if state.get("tripped"):
+            risk_mgr.tripped = True
+            risk_mgr.trip_reason = state.get("trip_reason", "restored from disk")
+            logger.warning(
+                f"[RECONCILE] Circuit breaker RESTORED as tripped: "
+                f"{risk_mgr.trip_reason}"
+            )
+        else:
+            logger.info(
+                f"[RECONCILE] CB state restored: daily_pnl=${risk_mgr.daily_pnl:.2f}, "
+                f"consec_losses={risk_mgr.consecutive_losses}"
+            )
+
+    except Exception as e:
+        logger.warning(f"[RECONCILE] Failed to restore CB state: {e}")
+
+
+def periodic_reconciliation_check(
+    pos_mgr: PositionManager,
+    exchanges: Dict[str, object],
+    last_prices: Dict[str, float],
+) -> Dict[str, Any]:
+    """Periodic reconciliation check — detect position mismatches.
+
+    Call every 10-20 scans to catch positions that were manually closed
+    on the exchange but still tracked in pos_mgr.
+
+    Returns dict with mismatch details.
+    """
+    exchange = exchanges.get("hyperliquid")
+    if exchange is None:
+        return {"status": "no_exchange"}
+
+    try:
+        raw_positions = exchange.fetch_positions()
+    except Exception as e:
+        return {"status": "fetch_failed", "error": str(e)}
+
+    # Build set of exchange-side open positions
+    exchange_open = set()
+    for raw in raw_positions or []:
+        contracts = abs(float(raw.get("contracts", 0) or 0))
+        if contracts <= 0:
+            continue
+        pair = raw.get("symbol", "")
+        symbol = _PAIR_TO_SYMBOL.get(pair)
+        if symbol:
+            exchange_open.add(symbol)
+
+    # Compare with pos_mgr
+    bot_open = {s for s, p in pos_mgr.positions.items() if p.state != "CLOSED"}
+    phantom = bot_open - exchange_open   # Bot thinks open, exchange says closed
+    orphan = exchange_open - bot_open     # Exchange has position, bot doesn't track
+
+    if phantom:
+        logger.warning(
+            f"[RECONCILE] PHANTOM positions (bot tracking, exchange closed): {phantom}"
+        )
+    if orphan:
+        logger.warning(
+            f"[RECONCILE] ORPHAN positions (exchange has, bot missing): {orphan}"
+        )
+
+    return {
+        "status": "ok",
+        "bot_open": list(bot_open),
+        "exchange_open": list(exchange_open),
+        "phantom": list(phantom),
+        "orphan": list(orphan),
+    }

@@ -64,19 +64,74 @@ COINGECKO_TIMEFRAME_MAP = {
 }
 
 
+class ExchangeCircuitBreaker:
+    """Per-exchange circuit breaker to stop hammering downed exchanges.
+
+    Opens after `threshold` consecutive failures.
+    Resets after `reset_s` seconds (half-open → try one request).
+    """
+
+    def __init__(self, threshold: int = 5, reset_s: int = 300):
+        self.threshold = threshold
+        self.reset_s = reset_s
+        self._failures: Dict[str, int] = {}
+        self._open_since: Dict[str, float] = {}
+
+    def is_open(self, exchange: str) -> bool:
+        """Check if circuit is open (exchange should be skipped)."""
+        if exchange not in self._open_since:
+            return False
+        # Half-open: allow retry after reset_s
+        if time.time() - self._open_since[exchange] >= self.reset_s:
+            return False  # Half-open — let one request through
+        return True
+
+    def record_success(self, exchange: str):
+        self._failures[exchange] = 0
+        self._open_since.pop(exchange, None)
+
+    def record_failure(self, exchange: str):
+        self._failures[exchange] = self._failures.get(exchange, 0) + 1
+        if self._failures[exchange] >= self.threshold:
+            if exchange not in self._open_since:
+                logger.warning(
+                    f"[CB] Circuit breaker OPEN for {exchange} "
+                    f"({self._failures[exchange]} consecutive failures)"
+                )
+            self._open_since[exchange] = time.time()
+
+    def get_status(self) -> Dict[str, Dict]:
+        return {
+            ex: {
+                "failures": self._failures.get(ex, 0),
+                "open": self.is_open(ex),
+                "open_since": self._open_since.get(ex),
+            }
+            for ex in set(list(self._failures.keys()) + list(self._open_since.keys()))
+        }
+
+
 class DataFetcher:
     """
     CCXT-primary market data fetcher with CoinGecko fallback.
     Uses real OHLCV from exchanges (Kraken, Hyperliquid, Bybit).
     Falls back to CoinGecko if CCXT is unavailable.
+
+    Resilience features:
+    - Per-exchange circuit breaker (stop hammering downed exchanges)
+    - Exponential backoff with jitter on retries
+    - Data freshness validation
+    - Fallback chain with automatic recovery
     """
 
-    def __init__(self, max_retries: int = 3, retry_delay: float = 5.0, cache_ttl: int = 45):
+    def __init__(self, max_retries: int = 3, retry_delay: float = 5.0, cache_ttl: int = 45,
+                 cb_threshold: int = 5, cb_reset_s: int = 300):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.cache_ttl = cache_ttl
         self._cache: Dict[str, tuple] = {}
         self._lock = threading.Lock()
+        self._circuit_breaker = ExchangeCircuitBreaker(cb_threshold, cb_reset_s)
 
         # Exchange fallback chains per symbol (Hyperliquid primary for all)
         self._symbol_exchanges = {
@@ -202,6 +257,10 @@ class DataFetcher:
             if exchange is None:
                 continue
 
+            # Circuit breaker: skip exchanges that are consistently failing
+            if self._circuit_breaker.is_open(ex_name):
+                continue
+
             try:
                 fetch_tf, limit, aggregate_to = self._resolve_ccxt_params(
                     exchange, timeframe
@@ -234,7 +293,21 @@ class DataFetcher:
                 if df.empty or len(df) < 5:
                     continue
 
-                # Log candle count for every successful fetch
+                # Data freshness check: warn if latest candle is too old
+                if "time" in df.columns:
+                    latest = df["time"].iloc[-1]
+                    if hasattr(latest, 'timestamp'):
+                        age_min = (datetime.now(timezone.utc) - latest.to_pydatetime()).total_seconds() / 60
+                        expected_freshness = {"5m": 15, "1h": 120, "6h": 720, "1d": 2880}
+                        max_age = expected_freshness.get(timeframe, 180)
+                        if age_min > max_age:
+                            logger.warning(
+                                f"[DATA] {symbol_name} {timeframe} data is {age_min:.0f}m old "
+                                f"(max {max_age}m) from {ex_name}"
+                            )
+
+                self._circuit_breaker.record_success(ex_name)
+
                 logger.info(
                     f"[DATA] {symbol_name} fetched {len(df)} candles for {timeframe} "
                     f"via CCXT {ex_name}"
@@ -244,6 +317,11 @@ class DataFetcher:
 
             except Exception as e:
                 self._ccxt_failures += 1
+                self._circuit_breaker.record_failure(ex_name)
+                # Exponential backoff with jitter before trying next exchange
+                if chain.index((ex_name, pair)) < len(chain) - 1:
+                    backoff = min(self.retry_delay * (2 ** chain.index((ex_name, pair))) + random.uniform(0, 1), 10.0)
+                    time.sleep(backoff)
                 logger.warning(
                     f"[{symbol_name}] CCXT {ex_name} {timeframe}: {e}"
                 )
@@ -546,6 +624,18 @@ class DataFetcher:
     def clear_cache(self):
         """Clear the data cache."""
         self._cache.clear()
+
+    def get_health_status(self) -> Dict:
+        """Get comprehensive health status for monitoring."""
+        return {
+            "ccxt_available": self._ccxt_available,
+            "ccxt_requests": self._ccxt_requests,
+            "ccxt_failures": self._ccxt_failures,
+            "cg_requests": self._cg_requests,
+            "circuit_breakers": self._circuit_breaker.get_status(),
+            "cache_size": len(self._cache),
+            "exchanges_initialized": list(self._exchanges.keys()),
+        }
 
     def get_stats(self) -> Dict[str, int]:
         """Return fetcher statistics."""
