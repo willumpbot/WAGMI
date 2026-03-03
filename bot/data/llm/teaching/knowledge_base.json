@@ -149,6 +149,1114 @@
       "category": "general",
       "tags": [],
       "source": "seed"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Price moves toward liquidity. Stop losses cluster at obvious levels (round numbers, recent highs/lows). Smart money hunts these clusters before reversing.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.7882156,
+      "last_validated": 1772563847.788216,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "market_structure",
+      "tags": [
+        "liquidity",
+        "stops",
+        "manipulation"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Volume confirms price movement. A move up on high volume is real. A move up on low volume is suspect and likely to reverse.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.7892303,
+      "last_validated": 1772563847.7892306,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "market_structure",
+      "tags": [
+        "volume",
+        "confirmation"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Support becomes resistance once broken, and resistance becomes support once reclaimed. Always check these flips before entering.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.7900944,
+      "last_validated": 1772563847.7900949,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "market_structure",
+      "tags": [
+        "support",
+        "resistance",
+        "flip"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "The trend is determined by higher highs and higher lows (uptrend) or lower highs and lower lows (downtrend). A break of structure signals potential reversal.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.7910845,
+      "last_validated": 1772563847.791085,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "market_structure",
+      "tags": [
+        "trend",
+        "structure"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Whales accumulate in ranges and distribute at highs. Prolonged consolidation after a move up often means distribution. After a move down, it means accumulation.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.7920668,
+      "last_validated": 1772563847.792067,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "market_structure",
+      "tags": [
+        "accumulation",
+        "distribution",
+        "whales"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Large buy walls can be fake (spoofing). Don't rely on order book depth alone. Actual fills (volume on candles) are more reliable than standing orders.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.7930157,
+      "last_validated": 1772563847.7930164,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "market_structure",
+      "tags": [
+        "orderbook",
+        "spoofing"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Market makers profit from the spread. In low liquidity, spreads widen and slippage increases. Avoid market orders in thin markets - use limits.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.793891,
+      "last_validated": 1772563847.7938914,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "market_structure",
+      "tags": [
+        "spread",
+        "slippage",
+        "liquidity"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "RSI above 70 is overbought, below 30 is oversold. BUT in a strong trend, RSI can stay overbought for extended periods. Don't short RSI 80 in a bull trend.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.7948403,
+      "last_validated": 1772563847.7948406,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "technical",
+      "tags": [
+        "RSI",
+        "overbought",
+        "oversold"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "MACD crossover (signal line cross) confirms momentum shifts. MACD histogram divergence from price is a strong reversal signal.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.7958834,
+      "last_validated": 1772563847.795884,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "technical",
+      "tags": [
+        "MACD",
+        "momentum",
+        "divergence"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "EMA 20 and EMA 50 crossovers (golden cross / death cross) are lagging but reliable. Price above both EMAs = bullish structure. Below both = bearish.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.7968633,
+      "last_validated": 1772563847.7968636,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "technical",
+      "tags": [
+        "EMA",
+        "crossover",
+        "trend"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "ATR (Average True Range) measures volatility. When ATR is high, use wider stops. When ATR is low, tighter stops work. Always scale stops to ATR, not fixed percentages.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.7978473,
+      "last_validated": 1772563847.7978475,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "technical",
+      "tags": [
+        "ATR",
+        "volatility",
+        "stops"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "VWAP (Volume Weighted Average Price) is institutional. Price above VWAP = buyers in control. Below = sellers. VWAP acts as dynamic support/resistance.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.799074,
+      "last_validated": 1772563847.7990744,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "technical",
+      "tags": [
+        "VWAP",
+        "institutional",
+        "support"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Higher timeframe structure always wins. A 1h buy signal against a daily downtrend will likely fail. Always check the 4h and daily trend before trading lower timeframes.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.80046,
+      "last_validated": 1772563847.8004603,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "technical",
+      "tags": [
+        "timeframe",
+        "alignment",
+        "HTF"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Breakouts from tight ranges (Bollinger Band squeeze, low ATR) produce the strongest moves. The longer the compression, the bigger the expansion.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8015928,
+      "last_validated": 1772563847.8015928,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "technical",
+      "tags": [
+        "breakout",
+        "squeeze",
+        "compression"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "observation",
+      "content": "Failed breakouts (price breaks above resistance then immediately returns below) are one of the strongest reversal signals. Trade the failure, not the breakout.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8027606,
+      "last_validated": 1772563847.802761,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "technical",
+      "tags": [
+        "failed_breakout",
+        "reversal",
+        "trap"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Divergence between price and RSI/MACD is a leading indicator. Bullish divergence: price makes lower low, RSI makes higher low = potential bottom.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8040235,
+      "last_validated": 1772563847.8040237,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "technical",
+      "tags": [
+        "divergence",
+        "RSI",
+        "reversal"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Never risk more than 1-2% of equity on a single trade. A string of 5 losses at 2% risk = 10% drawdown, which is recoverable. 5 losses at 10% = game over.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8051376,
+      "last_validated": 1772563847.8051379,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "position_sizing",
+        "risk_per_trade"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "The stop loss is sacred. Once set, NEVER widen it to avoid getting stopped out. Moving a stop further away is the #1 way traders blow up.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.806424,
+      "last_validated": 1772563847.8064241,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "stop_loss",
+        "discipline"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Risk-reward ratio must be at least 1.5:1 for any trade. If risking $100, the target must be at least $150. Below 1.5:1, the math doesn't work over time.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.807548,
+      "last_validated": 1772563847.8075485,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "risk_reward",
+        "RR"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Take partial profits at TP1 (40-50% of position). This locks in gains and lets the rest ride risk-free. Emotion cannot affect a position that's already in profit.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.80886,
+      "last_validated": 1772563847.80886,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "partial_profits",
+        "TP1",
+        "risk_free"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "After TP1 is hit, move stop loss to breakeven. Now the trade is risk-free. The remaining position either hits TP2 for bonus profit or gets stopped at breakeven.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8099504,
+      "last_validated": 1772563847.8099508,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "breakeven_stop",
+        "risk_free"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Correlation kills portfolios. Don't open 3 long positions on correlated assets (BTC + ETH + SOL). If BTC dumps, they all dump. Diversify or accept concentrated risk.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8111565,
+      "last_validated": 1772563847.8111567,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "correlation",
+        "diversification"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Leverage amplifies BOTH gains and losses. 10x leverage means a 10% move against you wipes out the position. Only use high leverage (5x+) with tight stops and high confidence.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.812359,
+      "last_validated": 1772563847.812359,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "leverage",
+        "amplification"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Circuit breakers exist for a reason. After 5% daily loss, STOP TRADING. The tilt is real. Come back tomorrow with fresh eyes. Overriding circuit breakers requires 92%+ confidence.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8135364,
+      "last_validated": 1772563847.813537,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "circuit_breaker",
+        "tilt",
+        "discipline"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Funding rate is the cost of holding a leveraged position. Positive funding = longs pay shorts (market is overleveraged long). Negative = shorts pay longs. Extreme funding precedes reversals.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8147838,
+      "last_validated": 1772563847.814784,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "funding",
+        "cost",
+        "reversal"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Open Interest (OI) shows total outstanding contracts. Rising OI + rising price = new longs entering (trend continuation). Rising OI + falling price = new shorts entering (bearish). Falling OI = positions closing.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8160667,
+      "last_validated": 1772563847.816067,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "open_interest",
+        "trend",
+        "positioning"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Liquidation cascades create the biggest moves. When OI drops rapidly + price drops rapidly, it's a liquidation cascade. These create overshoots and snap-back rallies.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.817614,
+      "last_validated": 1772563847.8176143,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "liquidation",
+        "cascade",
+        "overshoot"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "BTC dominance drives alt behavior. When BTC dominance rises, alts bleed. When BTC dominance falls, alts pump. Never long alts when BTC is dumping - they fall 2-3x harder.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.818952,
+      "last_validated": 1772563847.8189528,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "BTC_dominance",
+        "alts",
+        "correlation"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Crypto is 24/7 but not equally liquid. Asian session (00:00-08:00 UTC) and European open (07:00-09:00 UTC) are high activity. US close to Asian open (21:00-00:00 UTC) is thin.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8202069,
+      "last_validated": 1772563847.820207,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "sessions",
+        "liquidity",
+        "timing"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "observation",
+      "content": "Weekend markets are thinner, more manipulable, and produce more false signals. Reduce position size on weekends. Best signals come Tuesday-Thursday.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8214562,
+      "last_validated": 1772563847.8214564,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "weekend",
+        "liquidity",
+        "timing"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Meme coins (DOGE, PEPE, FARTCOIN) have higher volatility and thinner books. They move 2-5x faster than BTC. Use wider stops, lower leverage, and expect bigger swings.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8229718,
+      "last_validated": 1772563847.8229723,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "memecoins",
+        "volatility",
+        "risk"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Funding rate is a REAL COST paid every 8 hours. At 0.05% funding on 5x leverage, you lose 0.75%/day just holding. Your PnL = Price Move - Funding Paid - Fees. Never forget the funding term.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8244748,
+      "last_validated": 1772563847.824475,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "funding",
+        "cost",
+        "hold_time",
+        "critical"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "High positive funding (>0.03%) on longs means you are PAYING to hold. Either trade quickly (scalp), take the opposite side (get paid), or stay flat. Holding a long in high funding is bleeding money.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.825918,
+      "last_validated": 1772563847.8259182,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "funding",
+        "cost",
+        "longs",
+        "critical"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Funding cost scales with leverage. 0.01% funding on 10x = 0.3%/day cost. On a trade expecting 2% move over 3 days, funding eats 0.9% \u2014 nearly half your profit. Always factor funding into R:R math.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8274558,
+      "last_validated": 1772563847.8274558,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "funding",
+        "leverage",
+        "risk_reward"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "When funding is extreme (>0.05%), the crowded side usually gets liquidated. This is both a reversal signal AND a cost signal. Trading against extreme funding is often free money \u2014 you get paid to hold AND profit from the reversal.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.829184,
+      "last_validated": 1772563847.8291843,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "funding",
+        "reversal",
+        "opportunity"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "In high funding environments, prefer shorter hold times. A 2-hour scalp avoids the 8-hour funding payment entirely. Adjust your entry refinement: 'market now' for quick scalps, avoid 'scale in' which extends hold time.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8307004,
+      "last_validated": 1772563847.8307006,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "crypto",
+      "tags": [
+        "funding",
+        "hold_time",
+        "scalp"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "A good trading signal must have: clear entry, defined stop loss, at least one take profit target, and a reason (why NOW, not just why this direction).",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8320687,
+      "last_validated": 1772563847.832069,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "signals",
+      "tags": [
+        "quality",
+        "components"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Signal timing matters as much as direction. A correct direction with wrong timing gets stopped out before the move happens. Check if the signal is early, on time, or late.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8334644,
+      "last_validated": 1772563847.8334649,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "signals",
+      "tags": [
+        "timing",
+        "entry"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Never take a signal blindly. Every signal should be verified against the chart, the current regime, and cross-market conditions. The signal provider doesn't know YOUR risk tolerance.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8350644,
+      "last_validated": 1772563847.8350646,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "signals",
+      "tags": [
+        "verification",
+        "independence"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Multiple timeframe confirmation increases signal quality. A buy signal on 1h that aligns with 4h uptrend and daily support = high quality. A buy signal on 1h against daily downtrend = low quality.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8365157,
+      "last_validated": 1772563847.836516,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "signals",
+      "tags": [
+        "MTF",
+        "confirmation",
+        "quality"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Strategy agreement is the strongest predictor of trade success. When 3+ independent strategies agree on direction, the probability of success increases significantly.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8379893,
+      "last_validated": 1772563847.8379896,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "signals",
+      "tags": [
+        "agreement",
+        "ensemble",
+        "probability"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "observation",
+      "content": "Signals with vague entry zones ('buy around 95k-97k') are weaker than precise entries ('buy at 96,200 on the retest'). Precision = conviction from the signal source.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.839461,
+      "last_validated": 1772563847.8394613,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "signals",
+      "tags": [
+        "precision",
+        "conviction"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Check the signal's risk-reward BEFORE taking it. If the stop is 3% away and the target is 2% away, the R:R is 0.67:1 - that's a bad trade even if the direction is right.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8410861,
+      "last_validated": 1772563847.8410864,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "signals",
+      "tags": [
+        "risk_reward",
+        "evaluation"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Read charts from left to right. Start with the daily, then 4h, then 1h. The higher timeframe sets the bias, the lower timeframe finds the entry.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8430374,
+      "last_validated": 1772563847.8430376,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "chart_reading",
+      "tags": [
+        "top_down",
+        "HTF",
+        "LTF"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Key levels come from: previous day high/low, weekly open, monthly open, significant swing points, round numbers (90k, 95k, 100k). These are where orders cluster.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8446105,
+      "last_validated": 1772563847.8446105,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "chart_reading",
+      "tags": [
+        "key_levels",
+        "support",
+        "resistance"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Candlestick wicks show rejection. A long lower wick on a daily candle means buyers stepped in hard. A long upper wick means sellers rejected the price. Pay attention to wick length relative to body.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.846239,
+      "last_validated": 1772563847.8462393,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "chart_reading",
+      "tags": [
+        "wicks",
+        "rejection",
+        "candles"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Volume profile shows where most trading occurred. High Volume Nodes (HVN) act as magnets. Low Volume Nodes (LVN) get passed through quickly. Price spends time at HVN and gaps through LVN.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8477533,
+      "last_validated": 1772563847.8477535,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "chart_reading",
+      "tags": [
+        "volume_profile",
+        "HVN",
+        "LVN"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "When evaluating a signal's entry/SL/TP: map the levels onto the chart structure. Is the entry at support/resistance? Is the SL below the last swing low? Is the TP at a logical target?",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.849348,
+      "last_validated": 1772563847.8493483,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "chart_reading",
+      "tags": [
+        "mapping",
+        "structure",
+        "evaluation"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Consolidation (low ATR, tight range) followed by expansion (volume + breakout) is the highest-probability setup. The entry is on the breakout retest, not the initial break.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8517299,
+      "last_validated": 1772563847.85173,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "chart_reading",
+      "tags": [
+        "consolidation",
+        "expansion",
+        "retest"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "FOMO (Fear Of Missing Out) is the enemy. If you missed the entry, let it go. Chasing a move that already happened is how you buy tops and sell bottoms.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8534005,
+      "last_validated": 1772563847.853401,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "psychology",
+      "tags": [
+        "FOMO",
+        "discipline"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "axiom",
+      "content": "Revenge trading after a loss is the fastest way to blow up. After a loss, the correct action is to WAIT, not trade more aggressively. The circuit breaker enforces this.",
+      "confidence": 0.9,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8549583,
+      "last_validated": 1772563847.8549585,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "psychology",
+      "tags": [
+        "revenge_trading",
+        "tilt",
+        "discipline"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "The best trade is often NO trade. If the setup isn't clear, if the regime is uncertain, if cross-market is conflicting - staying flat IS a position. Cash has zero drawdown.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8569458,
+      "last_validated": 1772563847.856946,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "psychology",
+      "tags": [
+        "patience",
+        "flat",
+        "discipline"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Confirmation bias makes you see what you want to see. If you're already long, you'll interpret neutral data as bullish. Always consider the counter-argument before confirming a bias.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8587165,
+      "last_validated": 1772563847.858717,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "psychology",
+      "tags": [
+        "confirmation_bias",
+        "objectivity"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Size down after a losing streak, size up after a winning streak. This is counterintuitive but mathematically optimal - winning streaks compound, losing streaks preserve capital.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8606863,
+      "last_validated": 1772563847.8606865,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "psychology",
+      "tags": [
+        "streak",
+        "sizing",
+        "optimal"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "RegimeTrend strategy uses WaveTrend on 1h filtered by MACD/MFI on 6h/16h. It excels in trending markets and fails in ranges. Trust it most when the 16h regime confirms direction.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8624027,
+      "last_validated": 1772563847.862403,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "strategy",
+      "tags": [
+        "regime_trend",
+        "WaveTrend",
+        "trending"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "MonteCarlo strategy uses SMA20/SMA50/RSI14 zones with 1000-simulation forward prediction. It's probabilistic - good at identifying high-probability zones but can lag in fast moves.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8643503,
+      "last_validated": 1772563847.8643506,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "strategy",
+      "tags": [
+        "monte_carlo",
+        "zones",
+        "probabilistic"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "ConfidenceScorer is a meta-strategy that learns which signals historically worked. It's the most adaptive but needs data to calibrate. Trust it more as trade count increases.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8660626,
+      "last_validated": 1772563847.8660626,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "strategy",
+      "tags": [
+        "confidence_scorer",
+        "meta",
+        "adaptive"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "MultiTierQuality uses EMA crossover + VWAP on 5m/30m/1h. Best for scalp confirmation. It's fast-reacting but noisy - trust it more when it aligns with slower strategies.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.868138,
+      "last_validated": 1772563847.8681383,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "strategy",
+      "tags": [
+        "multi_tier",
+        "EMA",
+        "VWAP",
+        "scalp"
+      ],
+      "source": "student_course"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "The ensemble voting system requires 2+ strategy agreement for a trade. This is the primary quality filter. 3-strategy agreement has historically 2x better win rate than 2-strategy.",
+      "confidence": 0.75,
+      "evidence_count": 0,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1772563847.8698037,
+      "last_validated": 1772563847.8698041,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "strategy",
+      "tags": [
+        "ensemble",
+        "voting",
+        "agreement"
+      ],
+      "source": "student_course"
     }
   ]
 }

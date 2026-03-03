@@ -1,0 +1,20 @@
+{
+  "current_phase": 2,
+  "phase_started_at": 1772563996.509853,
+  "roadmap_started_at": 1772563996.5098443,
+  "phase_history": [
+    {
+      "from_phase": 1,
+      "to_phase": 2,
+      "at": 1772563996.5098536,
+      "type": "manual_override",
+      "reason": "Small account needs veto protection from day 1"
+    }
+  ],
+  "last_gate_check": 0.0,
+  "last_gate_results": {},
+  "demotions": [],
+  "auto_demotion_enabled": true,
+  "manual_override": true,
+  "override_reason": "Small account needs veto protection from day 1"
+}

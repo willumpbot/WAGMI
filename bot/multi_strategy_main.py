@@ -538,7 +538,7 @@ class MultiStrategyBot:
         self._global_bias_adjustment: Dict[str, Any] = {}
 
         # Telegram command bot
-        tg_user_id = int(os.getenv("TELEGRAM_ALLOWED_USER_ID", "0"))
+        tg_user_id = int(os.getenv("TELEGRAM_ALLOWED_USER_ID") or "0")
         self.telegram_bot = TelegramCommandBot(
             token=config.telegram_token,
             allowed_user_id=tg_user_id,

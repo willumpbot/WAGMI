@@ -1,0 +1,84 @@
+{
+  "insights": [
+    {
+      "ts": 1772563847.8727984,
+      "category": "strategy_insight",
+      "insight": "3+ strategy agreement has 2x better win rate than 2-strategy agreement",
+      "confidence": 0.85,
+      "evidence": "Student course foundational knowledge",
+      "source": "student_course",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1772563847.8735852,
+      "category": "risk_insight",
+      "insight": "Never risk more than 1-2% per trade. 5 losses at 2% = 10% drawdown, recoverable",
+      "confidence": 0.85,
+      "evidence": "Student course foundational knowledge",
+      "source": "student_course",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1772563847.874288,
+      "category": "regime_insight",
+      "insight": "Trending markets favor regime_trend strategy. Ranging markets favor confidence_scorer",
+      "confidence": 0.85,
+      "evidence": "Student course foundational knowledge",
+      "source": "student_course",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1772563847.8750875,
+      "category": "timing_insight",
+      "insight": "Best signals come Tuesday-Thursday. Weekend markets are thin and unreliable",
+      "confidence": 0.85,
+      "evidence": "Student course foundational knowledge",
+      "source": "student_course",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1772563847.875854,
+      "category": "execution_insight",
+      "insight": "Take 40-50% profit at TP1, move stop to breakeven, let rest ride to TP2",
+      "confidence": 0.85,
+      "evidence": "Student course foundational knowledge",
+      "source": "student_course",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1772563847.87662,
+      "category": "symbol_insight",
+      "insight": "Meme coins move 2-5x faster than BTC. Use wider stops and lower leverage",
+      "confidence": 0.85,
+      "evidence": "Student course foundational knowledge",
+      "source": "student_course",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1772563847.8773072,
+      "category": "correlation_insight",
+      "insight": "When BTC dumps, alts dump 2-3x harder. Never long alts into a BTC nuke",
+      "confidence": 0.85,
+      "evidence": "Student course foundational knowledge",
+      "source": "student_course",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1772563847.8780267,
+      "category": "meta_insight",
+      "insight": "The best trade is often no trade. Cash has zero drawdown. Patience > action",
+      "confidence": 0.85,
+      "evidence": "Student course foundational knowledge",
+      "source": "student_course",
+      "validated": false,
+      "validation_count": 0
+    }
+  ]
+}

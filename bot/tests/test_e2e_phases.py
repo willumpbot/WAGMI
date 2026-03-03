@@ -499,7 +499,7 @@ def test_snapshot_compaction():
     # Compact core data (excluding enrichment context) should be shorter than verbose
     parsed_compact = json.loads(compact_json)
     # Remove enrichment fields only present in compact mode
-    for key in ("growth", "survival", "knowledge", "trade_dna"):
+    for key in ("growth", "survival", "knowledge", "trade_dna", "deep_memory"):
         parsed_compact.pop(key, None)
     compact_core = json.dumps(parsed_compact, separators=(",", ":"))
     verbose_json = snapshot_to_json(snapshot, compact=False)
