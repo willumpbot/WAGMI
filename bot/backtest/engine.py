@@ -227,8 +227,16 @@ class BacktestEngine:
             })
 
     def _execute_signal(self, signal: Signal, current_price: float):
-        """Execute a signal in backtest mode."""
+        """Execute a signal in backtest mode with slippage simulation."""
         from execution.trade_profile import classify_trade, apply_profile_to_signal
+
+        # Apply slippage to entry price (simulate realistic fills)
+        slippage_bps = getattr(self.config, "slippage_bps", 0)
+        slip_mult = slippage_bps / 10000.0
+        if signal.side == "BUY":
+            fill_price = signal.entry * (1 + slip_mult)  # Buy higher
+        else:
+            fill_price = signal.entry * (1 - slip_mult)  # Sell lower
 
         # Determine leverage
         num_agree = signal.metadata.get("num_agree", 1)
@@ -250,7 +258,8 @@ class BacktestEngine:
             return
 
         qty = self.risk_mgr.calculate_qty(
-            signal.entry, signal.sl, lev_decision.leverage, lev_decision.risk_multiplier
+            fill_price, signal.sl, lev_decision.leverage, lev_decision.risk_multiplier,
+            slippage_bps=slippage_bps,
         )
         if qty <= 0:
             return
@@ -262,12 +271,12 @@ class BacktestEngine:
             signal_metadata=signal.metadata,
             confidence=signal.confidence,
             atr=signal.atr,
-            entry=signal.entry,
+            entry=fill_price,
             side=signal.side,
         )
         adjusted = apply_profile_to_signal(
             trade_prof,
-            entry=signal.entry,
+            entry=fill_price,
             sl=signal.sl,
             tp1=signal.tp1,
             tp2=signal.tp2,
@@ -278,7 +287,7 @@ class BacktestEngine:
         self.pos_mgr.open_position(
             symbol=signal.symbol,
             side=side,
-            entry=signal.entry,
+            entry=fill_price,
             qty=qty,
             sl=adjusted["sl"],
             tp1=adjusted["tp1"],

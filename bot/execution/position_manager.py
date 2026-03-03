@@ -77,6 +77,7 @@ class Position:
     # PnL tracking
     realized_pnl: float = 0.0
     fees_paid: float = 0.0
+    funding_costs: float = 0.0  # Cumulative funding payments (positive = cost paid)
 
     # Outcome classification (set on close)
     outcome: str = ""  # CLEAN_WIN, CLEAN_LOSS, TP1_ONLY, TP1_THEN_SL, etc.
@@ -411,8 +412,8 @@ class PositionManager:
         pos.realized_pnl += (pnl - fee)
         pos.qty = round_qty(pos.symbol, pos.qty - close_qty)
 
-        # Move SL to breakeven + buffer (0.2% covers fees)
-        fee_buffer = pos.entry * 0.002
+        # Move SL to breakeven + buffer covering round-trip fees (entry + exit)
+        fee_buffer = pos.entry * (self.taker_fee_bps * 2 / 10000.0)
         if pos.side == "LONG":
             pos.sl = round_price(pos.symbol, pos.entry + fee_buffer)
         else:
@@ -673,6 +674,32 @@ class PositionManager:
 
     def get_open_count(self) -> int:
         return sum(1 for p in self.positions.values() if p.state != CLOSED)
+
+    def get_total_open_notional(self) -> float:
+        """Sum of all open position notional values (qty * entry * leverage)."""
+        total = 0.0
+        for pos in self.positions.values():
+            if pos.state != CLOSED:
+                total += pos.qty * pos.entry * pos.leverage
+        return total
+
+    def check_portfolio_notional_cap(
+        self, new_notional: float, equity: float, max_portfolio_leverage: float = 3.0,
+    ) -> bool:
+        """Check if adding a new position would exceed aggregate portfolio leverage cap.
+
+        Returns True if the new position is allowed, False if it would breach the cap.
+        """
+        current_notional = self.get_total_open_notional()
+        cap = equity * max_portfolio_leverage
+        if current_notional + new_notional > cap:
+            logger.warning(
+                f"[PORTFOLIO-CAP] Rejected: current_notional=${current_notional:.0f} + "
+                f"new=${new_notional:.0f} > cap=${cap:.0f} "
+                f"(equity=${equity:.0f} * {max_portfolio_leverage}x)"
+            )
+            return False
+        return True
 
     def get_total_unrealized_pnl(self, prices: Dict[str, float]) -> float:
         total = 0.0

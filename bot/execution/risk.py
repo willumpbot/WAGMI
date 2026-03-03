@@ -257,28 +257,33 @@ class RiskManager:
 
     def calculate_qty(self, entry: float, stop_loss: float,
                        leverage: float = 1.0, risk_multiplier: float = 1.0,
-                       symbol: str = "") -> float:
+                       symbol: str = "", slippage_bps: int = 0) -> float:
         """Calculate position quantity based on fixed-risk sizing.
 
         Formula (keeps dollar risk constant regardless of leverage):
           risk_amount = equity * risk_per_trade_pct
-          stop_distance = abs(entry - SL)
-          qty = risk_amount / (stop_distance * leverage)
+          effective_stop = abs(entry - SL) + slippage_spread
+          qty = risk_amount / (effective_stop * leverage)
 
         Guards:
         - risk_multiplier capped at 1.5
         - Minimum stop width enforced (0.3% of entry)
         - Notional value capped at equity * leverage * 2
+        - Slippage/spread added to stop distance for realistic sizing
         """
         stop_width = abs(entry - stop_loss)
         if entry <= 0:
             return 0.0
 
+        # Add estimated slippage to stop distance for spread-aware sizing
+        slippage_spread = entry * (slippage_bps / 10000.0)
+        effective_stop = stop_width + slippage_spread
+
         # Enforce minimum stop width to prevent near-zero stops
         min_width = entry * 0.003  # 0.3% of entry
-        if stop_width < min_width:
+        if effective_stop < min_width:
             logger.warning(
-                f"[SIZE] {symbol or '?'} stop width {stop_width:.6f} < min "
+                f"[SIZE] {symbol or '?'} effective stop {effective_stop:.6f} < min "
                 f"{min_width:.6f} (0.3% of {entry:.2f}), rejecting"
             )
             return 0.0
@@ -287,7 +292,7 @@ class RiskManager:
         capped_rm = min(max(risk_multiplier, 0.1), 1.5)
         risk_usd = self.equity * self.risk_per_trade * capped_rm
         effective_leverage = max(leverage, 1.0)
-        qty = risk_usd / (stop_width * effective_leverage)
+        qty = risk_usd / (effective_stop * effective_leverage)
 
         # Notional cap: prevent position from exceeding reasonable bounds
         notional = qty * entry
@@ -300,7 +305,7 @@ class RiskManager:
             )
         logger.info(
             f"[SIZE] {symbol or '?'} risk=${risk_usd:.2f} "
-            f"stop={stop_width:.6f} lev={effective_leverage:.1f}x "
+            f"stop={stop_width:.6f}+slip={slippage_spread:.6f} lev={effective_leverage:.1f}x "
             f"rm={capped_rm:.2f} qty={qty:.6f}"
         )
         return qty

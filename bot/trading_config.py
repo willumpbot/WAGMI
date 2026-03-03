@@ -152,6 +152,24 @@ class TradingConfig:
     )
 
     # ── Profitability shield ──
+    max_portfolio_leverage: float = field(
+        default_factory=lambda: _env_float("MAX_PORTFOLIO_LEVERAGE", 3.0)
+    )  # Aggregate notional cap: total_open_notional <= equity * this
+    slippage_bps: int = field(
+        default_factory=lambda: _env_int("SLIPPAGE_BPS", 5)
+    )  # Estimated slippage in basis points (added to stop distance for sizing)
+    min_profit_threshold_mult: float = field(
+        default_factory=lambda: _env_float("MIN_PROFIT_THRESHOLD_MULT", 3.0)
+    )  # Reject trades where TP1 target < this * total expected costs
+    enable_funding_check: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_FUNDING_CHECK", True)
+    )
+    enable_correlation_check: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_CORRELATION_CHECK", True)
+    )
+    correlation_rejection_threshold: float = field(
+        default_factory=lambda: _env_float("CORRELATION_REJECTION_THRESHOLD", 0.8)
+    )
     enable_chop_detector: bool = field(
         default_factory=lambda: _env_bool("ENABLE_CHOP_DETECTOR", True)
     )

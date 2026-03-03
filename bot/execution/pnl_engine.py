@@ -17,6 +17,7 @@ def compute_pnl(
     side: str,
     size_usd: float,
     fee_bps: int = 5,
+    funding_costs: float = 0.0,
 ) -> Dict[str, Any]:
     """Compute realized PnL from effective entry and exit.
 
@@ -26,14 +27,16 @@ def compute_pnl(
         side: "LONG" or "SHORT"
         size_usd: Position size in USD
         fee_bps: Fee in basis points (both entry + exit)
+        funding_costs: Cumulative funding payments during hold (positive = cost)
 
     Returns:
-        dict with pnl, fees, pnl_pct, outcome
+        dict with pnl, fees, funding_costs, pnl_pct, outcome
     """
     if effective_entry <= 0 or exit_price <= 0 or size_usd <= 0:
         return {
             "pnl": 0.0,
             "fees": 0.0,
+            "funding_costs": 0.0,
             "pnl_pct": 0.0,
             "outcome": "INVALID",
         }
@@ -45,13 +48,15 @@ def compute_pnl(
     elif side.upper() == "SHORT":
         raw_pnl = (effective_entry - exit_price) * qty
     else:
-        return {"pnl": 0.0, "fees": 0.0, "pnl_pct": 0.0, "outcome": "INVALID"}
+        return {"pnl": 0.0, "fees": 0.0, "funding_costs": 0.0, "pnl_pct": 0.0, "outcome": "INVALID"}
 
     # Fees: entry + exit (in BPS of notional)
     fee_rate = fee_bps / 10000.0
     fees = size_usd * fee_rate * 2  # Entry + exit
 
-    net_pnl = raw_pnl - fees
+    # Total costs = trading fees + funding payments
+    total_costs = fees + abs(funding_costs)
+    net_pnl = raw_pnl - total_costs
     pnl_pct = (net_pnl / size_usd) * 100
 
     if net_pnl > 0.01:
@@ -64,6 +69,7 @@ def compute_pnl(
     return {
         "pnl": round(net_pnl, 4),
         "fees": round(fees, 4),
+        "funding_costs": round(abs(funding_costs), 4),
         "pnl_pct": round(pnl_pct, 4),
         "outcome": outcome,
         "raw_pnl": round(raw_pnl, 4),
