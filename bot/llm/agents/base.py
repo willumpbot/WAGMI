@@ -55,32 +55,32 @@ class AgentConfig:
 DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     AgentRole.REGIME: AgentConfig(
         role=AgentRole.REGIME,
-        max_tokens=1024,
-        timeout_s=10.0,
+        max_tokens=2048,
+        timeout_s=15.0,
         required=True,
     ),
     AgentRole.TRADE: AgentConfig(
         role=AgentRole.TRADE,
-        max_tokens=1536,
-        timeout_s=15.0,
+        max_tokens=3072,
+        timeout_s=20.0,
         required=True,
     ),
     AgentRole.RISK: AgentConfig(
         role=AgentRole.RISK,
-        max_tokens=1024,
-        timeout_s=10.0,
+        max_tokens=2048,
+        timeout_s=15.0,
         required=False,
     ),
     AgentRole.LEARNING: AgentConfig(
         role=AgentRole.LEARNING,
-        max_tokens=1024,
-        timeout_s=10.0,
+        max_tokens=2048,
+        timeout_s=15.0,
         required=False,
     ),
     AgentRole.CRITIC: AgentConfig(
         role=AgentRole.CRITIC,
-        max_tokens=1536,
-        timeout_s=12.0,
+        max_tokens=3072,
+        timeout_s=20.0,
         required=False,
     ),
 }
