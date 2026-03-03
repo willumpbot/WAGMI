@@ -1966,6 +1966,8 @@ class MultiStrategyBot:
         if signal_result is None:
             return
 
+        side = "LONG" if signal_result.side == "BUY" else "SHORT"
+
         Telemetry.inc("total_signals")
 
         # Signal dedup: skip if we just saw the same side signal for this symbol
@@ -2066,8 +2068,7 @@ class MultiStrategyBot:
         # Anti-round-trip: same-direction re-entry after a win needs 10% more confidence
         last_side = self._last_close_side.get(symbol)
         was_win = self._last_close_win.get(symbol, False)
-        new_side = "LONG" if signal_result.side == "BUY" else "SHORT"
-        if was_win and last_side == new_side and signal_result.confidence < 75:
+        if was_win and last_side == side and signal_result.confidence < 75:
             log_rejection(symbol, "ANTI_ROUNDTRIP",
                           confidence=signal_result.confidence)
             logger.info(
@@ -2682,7 +2683,6 @@ class MultiStrategyBot:
         }
 
         # Correlation guard: max same-direction positions
-        side = "LONG" if signal_result.side == "BUY" else "SHORT"
         same_dir_count = sum(1 for p in open_pos.values() if p.side == side)
         if same_dir_count >= self._max_same_direction:
             log_rejection(symbol, "CORRELATION_GUARD",
@@ -3765,11 +3765,18 @@ class MultiStrategyBot:
                         # Try to infer from other fields
                         align_l = s.get("align_long", 0)
                         align_s = s.get("align_short", 0)
-                        conf = max(align_l, align_s) / 100.0 if max(align_l, align_s) > 1 else max(align_l, align_s)
+                        best_align = max(align_l, align_s)
+                        if best_align > 0:
+                            # align values are 0-4 criteria counts, normalize to 0-1
+                            conf = best_align / 4.0
+                        elif side != "neutral":
+                            # Strategy has definitive action but no confidence — assign moderate default
+                            conf = 0.5
 
                     regime_score = s.get("regime_score", s.get("align_long", 0))
                     if isinstance(regime_score, (int, float)) and regime_score > 1:
-                        regime_score = regime_score / 100.0
+                        # align values are 0-4 criteria counts, normalize to 0-1
+                        regime_score = regime_score / 4.0
 
                     signals.append(LLMStrategySignal(
                         symbol=symbol,

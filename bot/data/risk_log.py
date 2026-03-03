@@ -38,6 +38,7 @@ def log_rejection(
     leverage: float = 0.0,
     spread: float = 0.0,
     confidence: float = 0.0,
+    **kwargs,
 ):
     """Log a risk rejection."""
     _ensure_file()

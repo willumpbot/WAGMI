@@ -55,7 +55,7 @@ class AgentConfig:
 DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     AgentRole.REGIME: AgentConfig(
         role=AgentRole.REGIME,
-        max_tokens=512,
+        max_tokens=768,
         timeout_s=10.0,
         required=True,
     ),
@@ -67,19 +67,19 @@ DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     ),
     AgentRole.RISK: AgentConfig(
         role=AgentRole.RISK,
-        max_tokens=512,
+        max_tokens=768,
         timeout_s=10.0,
         required=False,
     ),
     AgentRole.LEARNING: AgentConfig(
         role=AgentRole.LEARNING,
-        max_tokens=512,
+        max_tokens=768,
         timeout_s=10.0,
         required=False,
     ),
     AgentRole.CRITIC: AgentConfig(
         role=AgentRole.CRITIC,
-        max_tokens=768,
+        max_tokens=1024,
         timeout_s=12.0,
         required=False,
     ),

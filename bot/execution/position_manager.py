@@ -684,7 +684,7 @@ class PositionManager:
         return total
 
     def check_portfolio_notional_cap(
-        self, new_notional: float, equity: float, max_portfolio_leverage: float = 3.0,
+        self, new_notional: float, equity: float, max_portfolio_leverage: float = 5.0,
     ) -> bool:
         """Check if adding a new position would exceed aggregate portfolio leverage cap.
 
