@@ -152,7 +152,7 @@ class TradingConfig:
 
     # ── Profitability shield ──
     max_portfolio_leverage: float = field(
-        default_factory=lambda: _env_float("MAX_PORTFOLIO_LEVERAGE", 3.0)
+        default_factory=lambda: _env_float("MAX_PORTFOLIO_LEVERAGE", 5.0)
     )  # Aggregate notional cap: total_open_notional <= equity * this
     slippage_bps: int = field(
         default_factory=lambda: _env_int("SLIPPAGE_BPS", 5)

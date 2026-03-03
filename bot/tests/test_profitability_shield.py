@@ -335,7 +335,7 @@ class TestNewConfigParams:
     def test_max_portfolio_leverage(self):
         from trading_config import TradingConfig
         config = TradingConfig()
-        assert config.max_portfolio_leverage == 3.0
+        assert config.max_portfolio_leverage == 5.0
 
     def test_slippage_bps(self):
         from trading_config import TradingConfig
