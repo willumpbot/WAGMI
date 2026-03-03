@@ -8,7 +8,7 @@
   "phase_transitions": [],
   "counterfactuals": [
     {
-      "ts": 1772506251.4167323,
+      "ts": 1772507801.8835464,
       "would_veto": true,
       "actual": "WIN",
       "pnl": 50.0,
