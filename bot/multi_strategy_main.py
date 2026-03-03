@@ -1966,6 +1966,8 @@ class MultiStrategyBot:
         if signal_result is None:
             return
 
+        side = "LONG" if signal_result.side == "BUY" else "SHORT"
+
         Telemetry.inc("total_signals")
 
         # Signal dedup: skip if we just saw the same side signal for this symbol
@@ -2066,8 +2068,7 @@ class MultiStrategyBot:
         # Anti-round-trip: same-direction re-entry after a win needs 10% more confidence
         last_side = self._last_close_side.get(symbol)
         was_win = self._last_close_win.get(symbol, False)
-        new_side = "LONG" if signal_result.side == "BUY" else "SHORT"
-        if was_win and last_side == new_side and signal_result.confidence < 75:
+        if was_win and last_side == side and signal_result.confidence < 75:
             log_rejection(symbol, "ANTI_ROUNDTRIP",
                           confidence=signal_result.confidence)
             logger.info(
@@ -2527,8 +2528,6 @@ class MultiStrategyBot:
         )
         if qty <= 0:
             return
-
-        side = "LONG" if signal_result.side == "BUY" else "SHORT"
 
         # Circuit breaker override: reduce size during CB
         if cb_constraints.get("constrained"):
