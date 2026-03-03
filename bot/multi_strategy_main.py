@@ -31,7 +31,7 @@ from data.risk_log import log_rejection, get_rejection_counts
 from data.ml_log import log_ml_stats, log_ml_confidence
 from data.trade_log import log_closed_trade
 from data.learning import record_trade_outcome, get_performance
-from trading_config import TradingConfig, DEFAULT_SYMBOLS
+from trading_config import TradingConfig, DEFAULT_SYMBOLS, apply_profile, get_symbol_param
 from strategies.regime_trend import RegimeTrendStrategy
 from strategies.monte_carlo_zones import MonteCarloZonesStrategy
 from strategies.confidence_scorer import ConfidenceScorerStrategy
@@ -341,6 +341,9 @@ class MultiStrategyBot:
     def __init__(self, config: TradingConfig):
         self.config = config
         self.stop_event = threading.Event()
+
+        # Apply paper/live profile overrides (caps leverage, risk, etc.)
+        apply_profile(config)
 
         # Data
         self.fetcher = DataFetcher(
@@ -967,6 +970,22 @@ class MultiStrategyBot:
 
                     # Aggregate daily performance into SQLite
                     update_daily_performance(_dr_date)
+                # ── Feed lessons into LLM memory for future decisions ──
+                if hasattr(report, "lessons") and report.lessons:
+                    try:
+                        from llm.memory_store import apply_memory_update
+                        _fed = 0
+                        for lesson in report.lessons[:5]:  # Top 5 highest-confidence lessons
+                            if lesson.confidence >= 0.5 and lesson.action:
+                                # Format with structured markers so quality gate passes
+                                _note = f"{lesson.category}: {lesson.message} — {lesson.action}"
+                                apply_memory_update(update=_note)
+                                _fed += 1
+                        if _fed:
+                            logger.info(f"[EVOLUTION] Fed {_fed} lessons into LLM memory")
+                    except Exception as e:
+                        logger.debug(f"Evolution→LLM memory feed error: {e}")
+
                 logger.info(f"[EVOLUTION] Daily report generated: {report.total_trades} trades")
             except Exception as e:
                 logger.debug(f"Evolution tracker error: {e}")
@@ -1912,7 +1931,7 @@ class MultiStrategyBot:
         # Disable strategies that historically fail in the current regime
         if self.config.enable_regime_strategy_filter:
             try:
-                _cur_regime = self.regime_detector.get_current_regime(symbol)
+                _cur_regime = self.regime_detector.get_regime(symbol)
                 if _cur_regime:
                     from llm.deep_memory import get_deep_memory
                     _dm = get_deep_memory()
@@ -2291,7 +2310,7 @@ class MultiStrategyBot:
 
         # Portfolio leverage guard: block new entries when total leverage too high
         _portfolio_lev = self._compute_portfolio_leverage()
-        _max_portfolio_lev = float(os.getenv("MAX_PORTFOLIO_LEVERAGE", "8.0"))
+        _max_portfolio_lev = max(self.config.max_portfolio_leverage * 2.5, 8.0)  # Notional-based cap is primary
         if _portfolio_lev >= _max_portfolio_lev:
             log_rejection(symbol, "PORTFOLIO_LEVERAGE",
                           confidence=signal_result.confidence,
@@ -2447,12 +2466,63 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"Liquidity guard error: {e}")
 
+        # ── Push 1: Funding rate entry filter ──
+        # Reject entries near negative funding (avoid paying funding right after entry)
+        if self.config.enable_funding_check:
+            _fr_entry = self._last_funding_rates.get(symbol, 0.0)
+            if _fr_entry != 0 and lev_decision.leverage > 2.0:
+                _side_lower = side.lower()
+                _is_paying = (
+                    (_side_lower == "long" and _fr_entry > 0) or
+                    (_side_lower == "short" and _fr_entry < 0)
+                )
+                if _is_paying and abs(_fr_entry) > 0.0005:
+                    from execution.funding_timer import minutes_until_next_funding
+                    _mins = minutes_until_next_funding()
+                    if _mins < 60:
+                        log_rejection(symbol, "FUNDING_ENTRY_FILTER",
+                                      confidence=signal_result.confidence,
+                                      funding_rate=_fr_entry)
+                        logger.info(
+                            f"[{trace_id}][{symbol}] Funding entry filter: "
+                            f"{side} at {lev_decision.leverage:.0f}x, rate={_fr_entry:.5f}, "
+                            f"{_mins}min to payment — skipping"
+                        )
+                        return
+
+        # ── Push 1: Min profit threshold gate ──
+        # Reject trades where TP1 profit < min_mult * total expected costs
+        _tp1_distance_pct = abs(signal_result.tp1 - signal_result.entry) / signal_result.entry if signal_result.entry > 0 else 0
+        _total_cost_pct = (self.config.taker_fee_bps + self.config.slippage_bps) * 2 / 10000.0
+        if _tp1_distance_pct < self.config.min_profit_threshold_mult * _total_cost_pct:
+            log_rejection(symbol, "MIN_PROFIT_THRESHOLD",
+                          confidence=signal_result.confidence,
+                          tp1_pct=_tp1_distance_pct * 100,
+                          cost_pct=_total_cost_pct * 100)
+            logger.info(
+                f"[{trace_id}][{symbol}] Min profit gate: "
+                f"TP1 distance={_tp1_distance_pct*100:.3f}% < "
+                f"{self.config.min_profit_threshold_mult}x costs={_total_cost_pct*100:.3f}%"
+            )
+            return
+
+        # ── Push 1: Per-symbol parameter overrides ──
+        _sym_max_lev = get_symbol_param(symbol, "max_leverage", self.config)
+        if lev_decision.leverage > _sym_max_lev:
+            logger.info(
+                f"[{trace_id}][{symbol}] Per-symbol override: "
+                f"leverage {lev_decision.leverage:.1f}x → {_sym_max_lev:.1f}x"
+            )
+            lev_decision.leverage = _sym_max_lev
+        _sym_risk = get_symbol_param(symbol, "risk_per_trade", self.config)
+
         # Calculate position size (risk-based: qty = risk$ / (stop_dist * leverage))
         qty = self.risk_mgr.calculate_qty(
             signal_result.entry, signal_result.sl,
             leverage=lev_decision.leverage,
             risk_multiplier=lev_decision.risk_multiplier,
             symbol=symbol,
+            slippage_bps=self.config.slippage_bps,
         )
         if qty <= 0:
             return
@@ -2857,6 +2927,19 @@ class MultiStrategyBot:
                 )
         except Exception:
             pass
+
+        # ── Push 1: Portfolio notional cap ──
+        # Prevent aggregate over-leverage across all positions
+        _new_notional = qty * signal_result.entry * lev_decision.leverage
+        if not self.pos_mgr.check_portfolio_notional_cap(
+            new_notional=_new_notional,
+            equity=self.risk_mgr.equity,
+            max_portfolio_leverage=self.config.max_portfolio_leverage,
+        ):
+            log_rejection(symbol, "PORTFOLIO_NOTIONAL_CAP",
+                          confidence=signal_result.confidence,
+                          new_notional=_new_notional)
+            return
 
         # ── OpsGuard: rate limiting, exposure limits ──
         position_size_usd = qty * signal_result.entry * lev_decision.leverage

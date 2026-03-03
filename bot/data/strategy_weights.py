@@ -90,6 +90,7 @@ class StrategyWeightManager:
 
         Formula: weight = base_weight * max(0.1, rolling_wr / 0.5)
         Hot strategies (>50% WR) get boosted, cold strategies get quieted.
+        Hard floor: strategies with <35% WR over 20+ recent trades are muted to 0.1.
 
         Args:
             window: Number of recent outcomes to consider.
@@ -105,6 +106,15 @@ class StrategyWeightManager:
                 rolling_wr = sum(recent[-window:]) / len(recent[-window:])
             else:
                 rolling_wr = base  # Fall back to smoothed weight
+
+            # Hard floor: mute consistently losing strategies
+            if len(recent) >= 20 and rolling_wr < 0.35:
+                dynamic[name] = 0.1
+                logger.info(
+                    f"[WEIGHTS] {name} MUTED: WR={rolling_wr:.1%} over {len(recent)} trades < 35% threshold"
+                )
+                continue
+
             # Scale: 50% WR = 1.0x, 80% = 1.6x, 20% = 0.4x (floored at 0.1)
             scale = max(0.1, rolling_wr / 0.5)
             dynamic[name] = round(base * scale, 4)
