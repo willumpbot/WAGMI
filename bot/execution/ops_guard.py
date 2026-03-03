@@ -41,8 +41,8 @@ class OpsGuard:
         self.max_trades_per_day: int = _env_int("MAX_TRADES_PER_DAY", 50)
 
         # Position sizing limits
-        self.max_single_position_pct: float = _env_float("MAX_SINGLE_POSITION_PCT", 0.10)  # 10% of equity
-        self.max_total_exposure_pct: float = _env_float("MAX_TOTAL_EXPOSURE_PCT", 0.50)  # 50% of equity
+        self.max_single_position_pct: float = _env_float("MAX_SINGLE_POSITION_PCT", 5.0)  # 500% of equity (notional with leverage)
+        self.max_total_exposure_pct: float = _env_float("MAX_TOTAL_EXPOSURE_PCT", 10.0)  # 1000% of equity (aggregate notional)
 
         # Kill switch
         self._killed = False

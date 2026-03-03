@@ -3765,11 +3765,18 @@ class MultiStrategyBot:
                         # Try to infer from other fields
                         align_l = s.get("align_long", 0)
                         align_s = s.get("align_short", 0)
-                        conf = max(align_l, align_s) / 100.0 if max(align_l, align_s) > 1 else max(align_l, align_s)
+                        best_align = max(align_l, align_s)
+                        if best_align > 0:
+                            # align values are 0-4 criteria counts, normalize to 0-1
+                            conf = best_align / 4.0
+                        elif side != "neutral":
+                            # Strategy has definitive action but no confidence — assign moderate default
+                            conf = 0.5
 
                     regime_score = s.get("regime_score", s.get("align_long", 0))
                     if isinstance(regime_score, (int, float)) and regime_score > 1:
-                        regime_score = regime_score / 100.0
+                        # align values are 0-4 criteria counts, normalize to 0-1
+                        regime_score = regime_score / 4.0
 
                     signals.append(LLMStrategySignal(
                         symbol=symbol,

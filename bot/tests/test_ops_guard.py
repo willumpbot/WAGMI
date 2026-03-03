@@ -87,16 +87,16 @@ class TestPositionLimits:
 
     def test_oversized_position_blocked(self, guard):
         result = guard.can_execute(
-            position_size_usd=2000.0,
-            equity=10000.0,  # 20% > default 10%
+            position_size_usd=60000.0,
+            equity=10000.0,  # 600% > default 500%
         )
         assert not result["allowed"]
         assert "Position size" in result["reason"]
 
     def test_normal_position_allowed(self, guard):
         result = guard.can_execute(
-            position_size_usd=500.0,
-            equity=10000.0,  # 5% < 10%
+            position_size_usd=40000.0,
+            equity=10000.0,  # 400% < 500%
         )
         assert result["allowed"]
 
@@ -104,7 +104,7 @@ class TestPositionLimits:
         result = guard.can_execute(
             position_size_usd=1000.0,
             equity=10000.0,
-            total_exposure_usd=5000.0,  # 60% > 50%
+            total_exposure_usd=110000.0,  # 1100% > 1000%
         )
         assert not result["allowed"]
         assert "exposure" in result["reason"]
