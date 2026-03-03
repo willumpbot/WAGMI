@@ -198,7 +198,6 @@ class DataFetcher:
                     ex = cls(exchange_configs.get(name, {}))
                     # Increase urllib3 connection pool for concurrent fetches
                     if hasattr(ex, 'session') and ex.session is not None:
-                        import urllib3
                         adapter = requests.adapters.HTTPAdapter(
                             pool_connections=25, pool_maxsize=25,
                         )
