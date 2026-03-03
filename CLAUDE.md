@@ -38,10 +38,34 @@ bot/                    # Main bot code (run from here: cd bot && python run.py 
   │   ├── execution-safety.md # Rules for execution/risk code
   │   ├── testing.md          # Testing requirements
   │   └── data-pipeline.md    # Data pipeline rules
-  └── prompts/          # Reusable prompt templates
-      ├── add-agent.md        # Checklist for adding new agents
-      ├── debug-agent.md      # Steps to debug agent decisions
-      └── refactor-checklist.md  # Safe refactoring workflow
+  ├── prompts/          # Reusable prompt templates
+  │   ├── add-agent.md        # Checklist for adding new agents
+  │   ├── debug-agent.md      # Steps to debug agent decisions
+  │   └── refactor-checklist.md  # Safe refactoring workflow
+  └── skills/           # Custom slash command skills (invoke with /skill-name)
+      ├── backtest.md         # /backtest — Smart backtesting with comparison
+      ├── agent-debug.md      # /agent-debug — Trace and debug agent decisions
+      ├── add-agent.md        # /add-agent — Full agent creation workflow
+      ├── refactor.md         # /refactor — Safe refactoring checklist
+      ├── optimize.md         # /optimize — Quick parameter optimization
+      ├── signal-check.md     # /signal-check — Live signal analysis
+      ├── trade-postmortem.md # /trade-postmortem — Closed trade analysis
+      ├── deploy-paper.md     # /deploy-paper — Safe paper trading deployment
+      ├── health-check.md     # /health-check — Bot health and anomaly audit
+      ├── evolution.md        # /evolution — Strategy evolution summary
+      ├── cost-audit.md       # /cost-audit — LLM cost tracking and optimization
+      ├── safety-audit.md     # /safety-audit — Review all safety systems
+      ├── stress-test.md      # /stress-test — Scenario and stress testing
+      ├── prompt-calibrate.md  # /prompt-calibrate — Benchmark and tune agent prompts
+      ├── agent-consistency.md # /agent-consistency — Cross-agent consistency audit
+      ├── memory-optimize.md   # /memory-optimize — Prune and audit memory stores
+      ├── confidence-calibrate.md # /confidence-calibrate — Fix calibration drift
+      ├── knowledge-distill.md # /knowledge-distill — Graduate hypotheses into rules
+      ├── veto-review.md       # /veto-review — Analyze veto decisions and accuracy
+      ├── agent-replay.md      # /agent-replay — Replay data through agent pipeline
+      ├── growth-report.md     # /growth-report — Learning intelligence report
+      ├── curriculum-advance.md # /curriculum-advance — Self-teaching level advancement
+      └── model-route-tune.md  # /model-route-tune — Optimize model routing
 ```
 
 ## Key Commands
@@ -98,6 +122,58 @@ Smart model routing based on trigger importance:
 - Circuit breakers: consecutive loss limits, daily drawdown caps
 - **Always use Context7 when needing library/API docs or code examples**
 - See `ROADMAP.md` for full development roadmap and priority order
+
+## Custom Skills (Slash Commands)
+Invoke these with `/skill-name` in Claude Code sessions:
+
+**Daily Operations:**
+- `/signal-check [symbols]` — One-shot signal analysis with per-strategy breakdown
+- `/health-check [quick|deep]` — Bot health, positions, error scan, anomaly detection
+- `/evolution [24h|7d|30d]` — Strategy evolution: what's working, what's degrading
+- `/trade-postmortem [last|last N|today|week]` — Deep analysis of closed trades
+
+**Development Workflows:**
+- `/backtest [symbols days compare]` — Smart backtesting with auto-comparison
+- `/optimize [quick|deep] [symbols]` — Parameter optimization with sensitivity analysis
+- `/stress-test [flash-crash|vol-spike|chop|gap|all]` — Extreme scenario testing
+- `/deploy-paper [symbols]` — Full pre-flight validation before paper trading
+
+**Code Quality:**
+- `/refactor [target]` — Safe refactoring with contract preservation
+- `/safety-audit [quick|deep]` — Verify all safety gates, circuit breakers, risk limits
+- `/cost-audit [today|7d|30d]` — LLM spending analysis and optimization
+
+**Agent Development:**
+- `/add-agent [name and purpose]` — Guided workflow for new specialist agents
+- `/agent-debug [symbol|trade-id|last]` — Trace full agent decision pipeline
+
+**LLM Agent Efficiency & Consistency:**
+- `/prompt-calibrate [agent|all]` — Benchmark agent prompts against outcomes, tune for accuracy
+- `/agent-consistency [quick|deep]` — Audit cross-agent vocabulary, reasoning, contradictions
+- `/confidence-calibrate [agent|system]` — Fix calibration drift, build calibration curves
+- `/memory-optimize [short-term|deep|prune]` — Audit memory stores, prune noise, optimize tokens
+- `/knowledge-distill [hypotheses|rules|gaps]` — Graduate validated hypotheses into codified rules
+- `/veto-review [today|7d|30d]` — Analyze Critic veto accuracy, PnL saved/missed
+- `/agent-replay [last N|7d|compare]` — Replay historical data through pipeline, A/B test prompts
+- `/growth-report [summary|deep]` — Unified learning intelligence across all growth systems
+- `/curriculum-advance [status|evaluate|advance]` — Self-teaching curriculum progress and level-up
+- `/model-route-tune [cost|accuracy|balanced]` — Optimize Haiku/Sonnet/Opus routing per agent/trigger
+
+**Profitability (the skills that matter most):**
+- `/pnl-maximize [quick|deep|execute]` — Master skill: end-to-end profitability optimization
+- `/edge-finder [by-regime|by-strategy|by-symbol|full]` — Discover where the bot makes and loses money
+- `/loss-autopsy [worst|patterns|preventable]` — Forensic analysis of losses, find profit killers
+- `/sniper-setup [top10|template]` — Reverse-engineer best trades, build reusable sniper profile
+- `/strategy-discover [scan|propose|test]` — Activate strategy discovery, find new alpha sources
+- `/bug-triage [critical|all]` — Fix money-losing bugs ranked by PnL impact
+- `/config-audit [hardcoded|current|recommend]` — Find and tune every parameter that affects PnL
+
+**System Understanding:**
+- `/system-map [layer|connections|full]` — Full inventory of what's built, working, stubbed, planned
+- `/roadmap-status [status|next]` — ROADMAP progress, profitability-ranked next steps
+- `/telegram-signals [setup|test|analyze|debug]` — Telegram signal ingestion pipeline
+- `/alert-config [setup|test|status|tune]` — Discord/Telegram alert configuration
+- `/web-dashboard [dashboard|api|health|monitoring]` — Web systems health check
 
 ## Claude Code Rules
 Domain-specific rules in `.claude/rules/` auto-load when editing matching files:
