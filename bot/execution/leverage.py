@@ -16,15 +16,42 @@ Combined with leverage, this delivers "big wins" on high-confidence setups.
 
 Safety:
   - Max 2 extreme leverage positions (>10x) at a time
-  - Liquidation distance monitoring
+  - Liquidation distance monitoring using Hyperliquid's tiered maintenance margins
   - Automatic deleveraging if equity drops
+  - Position sizing guards against near-zero stop widths
 """
 
 import logging
 from typing import Dict, Optional, Any
 from dataclasses import dataclass
 
+# Hyperliquid tiered maintenance margins by position notional (USD).
+# At higher notional, maintenance margin increases — liquidation is CLOSER.
+# Source: Hyperliquid docs. Format: (max_notional, maintenance_margin_rate)
+HYPERLIQUID_MAINTENANCE_TIERS = [
+    (100_000, 0.004),       # 0.4% for positions up to $100k
+    (300_000, 0.006),       # 0.6% for $100k-$300k
+    (600_000, 0.008),       # 0.8% for $300k-$600k
+    (1_000_000, 0.01),      # 1.0% for $600k-$1M
+    (5_000_000, 0.02),      # 2.0% for $1M-$5M
+    (10_000_000, 0.03),     # 3.0% for $5M-$10M
+    (float("inf"), 0.05),   # 5.0% for $10M+
+]
+
 logger = logging.getLogger("bot.execution.leverage")
+
+
+def get_maintenance_margin_rate(notional_usd: float) -> float:
+    """Return Hyperliquid's tiered maintenance margin rate for a position size."""
+    for max_notional, mm_rate in HYPERLIQUID_MAINTENANCE_TIERS:
+        if notional_usd <= max_notional:
+            return mm_rate
+    return HYPERLIQUID_MAINTENANCE_TIERS[-1][1]
+
+
+# Minimum stop width as a fraction of entry price.
+# Prevents near-zero stops from creating infinite R:R and giant positions.
+MIN_STOP_WIDTH_PCT = 0.003  # 0.3% of entry price
 
 
 @dataclass
@@ -164,39 +191,74 @@ class LeverageManager:
         """
         Calculate position size accounting for leverage.
         Risk is based on the equity at risk, not the leveraged position value.
+
+        Guards against near-zero stop widths that would create oversized positions.
         """
         stop_width = abs(entry - stop_loss)
-        if stop_width <= 0 or entry <= 0:
+        if entry <= 0:
+            return 0.0
+
+        # Enforce minimum stop width (0.3% of entry) to prevent
+        # infinite R:R from near-zero stops creating giant positions
+        min_width = entry * MIN_STOP_WIDTH_PCT
+        if stop_width < min_width:
+            logger.warning(
+                f"Stop width {stop_width:.6f} < min {min_width:.6f} "
+                f"({MIN_STOP_WIDTH_PCT:.1%} of {entry:.2f}), rejecting"
+            )
             return 0.0
 
         risk_usd = equity * risk_per_trade
-        # PnL = price_move * qty * leverage
-        # At stop loss: loss = stop_width * qty * leverage
-        # To keep loss = risk_usd: qty = risk_usd / (stop_width * leverage)
         effective_leverage = max(leverage, 1.0)
         qty = risk_usd / (stop_width * effective_leverage)
+
+        # Sanity check: notional value shouldn't exceed equity * leverage * 2
+        notional = qty * entry
+        max_notional = equity * effective_leverage * 2
+        if notional > max_notional:
+            qty = max_notional / entry
+            logger.warning(
+                f"Position capped: notional ${notional:.0f} > "
+                f"max ${max_notional:.0f}, qty reduced to {qty:.6f}"
+            )
+
         return qty
 
     def liquidation_price(
-        self, entry: float, side: str, leverage: float
+        self, entry: float, side: str, leverage: float,
+        notional_usd: float = 0.0,
     ) -> Optional[float]:
-        """Calculate approximate liquidation price for a leveraged position."""
+        """Calculate liquidation price using Hyperliquid's tiered maintenance margins.
+
+        The simple 1/leverage formula underestimates liquidation risk.
+        Hyperliquid uses variable maintenance margins based on position size:
+          - Small positions ($0-100k): 0.4% maintenance margin
+          - Larger positions: up to 5% maintenance margin
+
+        For longs:  liq = entry * (1 - 1/L) / (1 - mm_rate)
+        For shorts: liq = entry * (1 + 1/L) / (1 + mm_rate)
+
+        The maintenance margin makes liquidation CLOSER to entry than 1/leverage.
+        """
         if leverage <= 1.0:
-            return None  # No liquidation for spot
-        # Liquidation occurs when loss = collateral = entry / leverage
-        # For longs: liq = entry * (1 - 1/leverage)
-        # For shorts: liq = entry * (1 + 1/leverage)
+            return None
+
+        mm_rate = get_maintenance_margin_rate(notional_usd) if notional_usd > 0 else 0.004
+
         if side in ("LONG", "BUY"):
-            return entry * (1 - 1 / leverage)
+            denom = 1 - mm_rate
+            if denom <= 0:
+                return entry  # pathological case
+            return entry * (1 - 1 / leverage) / denom
         else:
-            return entry * (1 + 1 / leverage)
+            return entry * (1 + 1 / leverage) / (1 + mm_rate)
 
     def check_liquidation_risk(
         self, entry: float, current_price: float, side: str, leverage: float,
-        safety_buffer: float = 0.15,
+        safety_buffer: float = 0.15, notional_usd: float = 0.0,
     ) -> Dict[str, Any]:
-        """Check how close we are to liquidation."""
-        liq_price = self.liquidation_price(entry, side, leverage)
+        """Check how close we are to liquidation using real maintenance margins."""
+        liq_price = self.liquidation_price(entry, side, leverage, notional_usd)
         if liq_price is None:
             return {"at_risk": False, "leverage": leverage}
 
@@ -213,4 +275,34 @@ class LeverageManager:
             "distance_pct": distance_pct,
             "leverage": leverage,
             "current_price": current_price,
+            "maintenance_margin_rate": get_maintenance_margin_rate(notional_usd),
+        }
+
+    def validate_stop_vs_liquidation(
+        self, entry: float, stop_loss: float, side: str,
+        leverage: float, notional_usd: float = 0.0,
+    ) -> Dict[str, Any]:
+        """Verify stop loss triggers BEFORE liquidation.
+
+        Returns whether the trade is safe and the gap between SL and liquidation.
+        If SL is beyond liquidation, the position will be liquidated before
+        the stop loss can execute — a catastrophic outcome.
+        """
+        liq_price = self.liquidation_price(entry, side, leverage, notional_usd)
+        if liq_price is None:
+            return {"safe": True, "reason": "no liquidation risk (spot)"}
+
+        if side in ("LONG", "BUY"):
+            sl_safe = stop_loss > liq_price
+            gap_pct = (stop_loss - liq_price) / entry if entry > 0 else 0
+        else:
+            sl_safe = stop_loss < liq_price
+            gap_pct = (liq_price - stop_loss) / entry if entry > 0 else 0
+
+        return {
+            "safe": sl_safe,
+            "stop_loss": stop_loss,
+            "liquidation_price": liq_price,
+            "gap_pct": gap_pct,
+            "reason": "SL inside liquidation zone" if not sl_safe else "OK",
         }

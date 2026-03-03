@@ -171,16 +171,20 @@ class TestLiquidationDistance:
     def test_long_liquidation_price(self):
         from execution.leverage import LeverageManager
         mgr = LeverageManager()
-        # 10x long at 50000: liq = 50000 * (1 - 1/10) = 45000
+        # 10x long at 50000 with 0.4% mm: liq = 50000 * 0.9 / (1 - 0.004) ≈ 45180.7
+        # Liquidation is CLOSER to entry than naive 1/leverage formula (which gives 45000)
         liq = mgr.liquidation_price(50000, "LONG", 10.0)
-        assert liq == 45000
+        assert liq > 45000  # closer to entry due to maintenance margin
+        assert abs(liq - 45180.72) < 1.0
 
     def test_short_liquidation_price(self):
         from execution.leverage import LeverageManager
         mgr = LeverageManager()
-        # 10x short at 50000: liq = 50000 * (1 + 1/10) = 55000
+        # 10x short at 50000 with 0.4% mm: liq = 50000 * 1.1 / (1 + 0.004) ≈ 54780.9
+        # Liquidation is CLOSER to entry than naive formula (which gives 55000)
         liq = mgr.liquidation_price(50000, "SHORT", 10.0)
-        assert abs(liq - 55000) < 0.01
+        assert liq < 55000  # closer to entry due to maintenance margin
+        assert abs(liq - 54780.88) < 1.0
 
     def test_high_leverage_small_distance(self):
         from execution.leverage import LeverageManager

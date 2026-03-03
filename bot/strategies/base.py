@@ -26,21 +26,61 @@ class Signal:
     metadata: Dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
+    # Minimum stop width as fraction of entry price (0.3%).
+    # Prevents near-zero stops from creating infinite R:R and giant positions.
+    MIN_STOP_WIDTH_PCT = 0.003
+
     @property
     def stop_width(self) -> float:
         return abs(self.entry - self.sl)
 
     @property
+    def stop_width_pct(self) -> float:
+        """Stop width as a percentage of entry price."""
+        if self.entry <= 0:
+            return 0.0
+        return self.stop_width / self.entry
+
+    @property
+    def has_valid_stop(self) -> bool:
+        """Check if stop width is large enough to be meaningful."""
+        return self.stop_width_pct >= self.MIN_STOP_WIDTH_PCT
+
+    @property
     def risk_reward_tp1(self) -> float:
-        if self.stop_width == 0:
-            return 0
+        if not self.has_valid_stop:
+            return 0.0
         return abs(self.entry - self.tp1) / self.stop_width
 
     @property
     def risk_reward_tp2(self) -> float:
-        if self.stop_width == 0:
-            return 0
+        if not self.has_valid_stop:
+            return 0.0
         return abs(self.entry - self.tp2) / self.stop_width
+
+    @property
+    def is_valid(self) -> bool:
+        """Comprehensive signal validation.
+
+        Checks:
+        - Stop width is meaningful (>= 0.3% of entry)
+        - SL is on the correct side of entry
+        - TP1 is on the correct side of entry
+        - R:R >= 1.0 for TP1 (worth taking after fees)
+        """
+        if self.entry <= 0:
+            return False
+        if not self.has_valid_stop:
+            return False
+        if self.side == "BUY":
+            if self.sl >= self.entry or self.tp1 <= self.entry:
+                return False
+        elif self.side == "SELL":
+            if self.sl <= self.entry or self.tp1 >= self.entry:
+                return False
+        if self.risk_reward_tp1 < 1.0:
+            return False
+        return True
 
 
 class BaseStrategy(ABC):

@@ -59,20 +59,23 @@ class CircuitBreaker:
         self.daily_pnl = 0.0
         self.consecutive_losses = 0
         self.peak_equity = 0.0
+        self.start_of_day_equity = 0.0  # Reset at start of each trading day
         self.tripped = False
         self.trip_time: Optional[float] = None
         self.trip_reason: str = ""
         self.last_reset_date: Optional[str] = None
+        self._override_count = 0  # Track CB overrides per trip
 
-    def _maybe_reset_daily(self):
+    def _maybe_reset_daily(self, equity: float = 0.0):
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         if self.last_reset_date != today:
             self.daily_pnl = 0.0
+            self.start_of_day_equity = equity if equity > 0 else self.peak_equity
             self.last_reset_date = today
 
     def record_trade(self, pnl: float, equity: float):
         """Record a completed trade's PnL for circuit breaker evaluation."""
-        self._maybe_reset_daily()
+        self._maybe_reset_daily(equity)
         self.daily_pnl += pnl
 
         if pnl < 0:
@@ -90,9 +93,12 @@ class CircuitBreaker:
         if self.tripped:
             return
 
-        # 1. Daily loss limit
-        if self.peak_equity > 0:
-            daily_loss_pct = abs(self.daily_pnl) / self.peak_equity
+        # 1. Daily loss limit — use CURRENT equity, not peak.
+        # During drawdowns, losses are a bigger % of actual capital.
+        # Using peak equity makes the breaker too lenient when it matters most.
+        base_equity = equity if equity > 0 else self.start_of_day_equity or self.peak_equity
+        if base_equity > 0:
+            daily_loss_pct = abs(self.daily_pnl) / base_equity
             if self.daily_pnl < 0 and daily_loss_pct >= self.daily_loss_limit_pct:
                 self._trip(f"Daily loss {daily_loss_pct:.1%} >= {self.daily_loss_limit_pct:.1%} limit")
                 return
@@ -120,11 +126,12 @@ class CircuitBreaker:
         })
 
     def is_trading_allowed(self, confidence: float = 0.0,
-                            cb_conf_override_pct: float = 0.92) -> bool:
+                            cb_conf_override_pct: float = 0.92,
+                            max_overrides: int = 2) -> bool:
         """Check if trading is currently allowed.
 
-        When tripped, still allows trades with confidence >= cb_conf_override_pct.
-        This prevents total shutdown while maintaining safety.
+        When tripped, allows up to max_overrides trades with
+        confidence >= cb_conf_override_pct. After that, hard-locked until cooldown.
         """
         if not self.tripped:
             return True
@@ -135,14 +142,23 @@ class CircuitBreaker:
             self.trip_reason = ""
             self.trip_time = None
             self.consecutive_losses = 0
+            self._override_count = 0
             logger.info("Circuit breaker cooldown complete, trading resumed")
             return True
 
         # High-confidence override: allow exceptional setups through
+        # but limit the number of overrides per trip to prevent CB bypass
         if confidence >= cb_conf_override_pct * 100:
+            if self._override_count >= max_overrides:
+                logger.warning(
+                    f"[SAFETY] CB override limit reached ({max_overrides}), "
+                    f"hard-locked until cooldown"
+                )
+                return False
+            self._override_count += 1
             logger.info(
-                f"[SAFETY] Circuit breaker active but allowing trade: "
-                f"confidence {confidence:.0f}% >= {cb_conf_override_pct:.0%} override"
+                f"[SAFETY] Circuit breaker override {self._override_count}/{max_overrides}: "
+                f"confidence {confidence:.0f}% >= {cb_conf_override_pct:.0%}"
             )
             return True
 
@@ -249,16 +265,39 @@ class RiskManager:
           stop_distance = abs(entry - SL)
           qty = risk_amount / (stop_distance * leverage)
 
-        risk_multiplier is capped at 1.5 to prevent oversizing.
+        Guards:
+        - risk_multiplier capped at 1.5
+        - Minimum stop width enforced (0.3% of entry)
+        - Notional value capped at equity * leverage * 2
         """
         stop_width = abs(entry - stop_loss)
-        if stop_width <= 0:
+        if entry <= 0:
             return 0.0
+
+        # Enforce minimum stop width to prevent near-zero stops
+        min_width = entry * 0.003  # 0.3% of entry
+        if stop_width < min_width:
+            logger.warning(
+                f"[SIZE] {symbol or '?'} stop width {stop_width:.6f} < min "
+                f"{min_width:.6f} (0.3% of {entry:.2f}), rejecting"
+            )
+            return 0.0
+
         # Cap risk_multiplier to prevent oversizing (was up to 3.5x before)
         capped_rm = min(max(risk_multiplier, 0.1), 1.5)
         risk_usd = self.equity * self.risk_per_trade * capped_rm
         effective_leverage = max(leverage, 1.0)
         qty = risk_usd / (stop_width * effective_leverage)
+
+        # Notional cap: prevent position from exceeding reasonable bounds
+        notional = qty * entry
+        max_notional = self.equity * effective_leverage * 2
+        if notional > max_notional:
+            qty = max_notional / entry
+            logger.warning(
+                f"[SIZE] {symbol or '?'} notional capped: "
+                f"${notional:.0f} > max ${max_notional:.0f}"
+            )
         logger.info(
             f"[SIZE] {symbol or '?'} risk=${risk_usd:.2f} "
             f"stop={stop_width:.6f} lev={effective_leverage:.1f}x "

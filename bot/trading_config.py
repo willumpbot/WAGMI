@@ -247,44 +247,6 @@ class TradingConfig:
         return self.environment == "production"
 
 
-def get_leverage_tier(confidence: float, num_strategies_agree: int, total_strategies: int) -> float:
-    """
-    Determine leverage based on confidence and strategy agreement.
-    Returns leverage multiplier. Minimum 2x (no spot trading).
-
-    Tiers:
-      <60%  confidence -> no trade
-      60-69% -> 2x (low leverage)
-      70-79% -> 2-3x
-      80-89% -> 3-5x
-      90-94% -> 5-10x
-      95%+   -> 10-25x (RARE: requires all strategies to agree)
-    """
-    if confidence < 60:
-        return 0.0  # no trade
-
-    if confidence < 70:
-        return 2.0  # minimum low leverage
-
-    if confidence < 80:
-        return 2.0 + (confidence - 70) / 10.0  # 2.0 to 3.0
-
-    if confidence < 90:
-        base = 3.0 + 2.0 * (confidence - 80) / 10.0  # 3.0 to 5.0
-        if num_strategies_agree >= 3:
-            base = min(base * 1.2, 5.0)
-        return base
-
-    if confidence < 95:
-        base = 5.0 + 5.0 * (confidence - 90) / 5.0  # 5.0 to 10.0
-        if num_strategies_agree < 3:
-            base = min(base, 7.0)  # cap without consensus
-        return base
-
-    # 95%+ RARE extreme leverage
-    if num_strategies_agree >= total_strategies and total_strategies >= 3:
-        return min(10.0 + 15.0 * (confidence - 95) / 5.0, 25.0)  # 10-25x
-    elif num_strategies_agree >= 3:
-        return min(10.0 + 5.0 * (confidence - 95) / 5.0, 15.0)  # 10-15x
-    else:
-        return 10.0  # cap at 10x without full consensus
+    # NOTE: Leverage calculation is handled exclusively by
+    # execution.leverage.LeverageManager.decide() — the single source of truth.
+    # A duplicate get_leverage_tier() was removed to prevent divergent thresholds.

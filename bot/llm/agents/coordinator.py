@@ -551,11 +551,12 @@ class AgentCoordinator:
                 notes += " | RISK: reduced sizing"
 
         # Critic Agent: can adjust or override
+        # Treat any non-"approve" verdict as a challenge (defensive normalization)
         if critic_out and critic_out.ok:
             cd = critic_out.data
-            verdict = cd.get("verdict", "approve")
+            verdict = cd.get("verdict", "approve").lower().strip()
 
-            if verdict == "challenge":
+            if verdict != "approve":
                 adj_action = cd.get("adjusted_action")
                 adj_conf = cd.get("adjusted_confidence")
                 reason = cd.get("reason", "")
@@ -598,8 +599,13 @@ class AgentCoordinator:
 
 # ── Module-level helpers ────────────────────────────────────────
 
-_ACTION_MAP = {"go": "proceed", "skip": "flat", "proceed": "proceed",
-               "flat": "flat", "flip": "flip"}
+_ACTION_MAP = {
+    "go": "proceed", "proceed": "proceed", "long": "proceed", "short": "proceed",
+    "buy": "proceed", "sell": "proceed", "enter": "proceed", "trade": "proceed",
+    "skip": "flat", "flat": "flat", "hold": "flat", "pass": "flat",
+    "wait": "flat", "no": "flat", "none": "flat",
+    "flip": "flip", "reverse": "flip",
+}
 
 
 def _normalize_action(raw: str) -> str:
@@ -667,22 +673,23 @@ def _extract_section(text: str, keyword: str, max_len: int = 300) -> Optional[st
     """Extract a section from deep memory text by keyword.
 
     Looks for lines containing the keyword and returns surrounding context.
+    Stops at the next blank line after the keyword section to prevent bleeding.
     """
     lines = text.split("\n")
     result_lines = []
     capturing = False
     chars = 0
     for line in lines:
-        if keyword.upper() in line.upper():
+        if not capturing and keyword.upper() in line.upper():
             capturing = True
-        if capturing:
+            result_lines.append(line)
+            chars += len(line)
+        elif capturing:
+            if not line.strip():
+                break  # End of section (blank line)
             result_lines.append(line)
             chars += len(line)
             if chars >= max_len:
-                break
-        elif result_lines:
-            # Stop capturing after the section ends (blank line)
-            if not line.strip():
                 break
     return "\n".join(result_lines) if result_lines else None
 
