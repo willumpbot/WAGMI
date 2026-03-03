@@ -349,7 +349,7 @@ class MultiStrategyBot:
         self.fetcher = DataFetcher(
             max_retries=config.fetcher_max_retries,
             retry_delay=5.0,
-            cache_ttl=max(30, config.scan_interval_s - 5),
+            cache_ttl=max(90, config.scan_interval_s * 3),  # survive full tick + LLM pipeline
             cb_threshold=config.fetcher_circuit_breaker_threshold,
             cb_reset_s=config.fetcher_circuit_breaker_reset_s,
         )
@@ -745,6 +745,13 @@ class MultiStrategyBot:
         """One iteration of the main loop."""
         trace_id = uuid.uuid4().hex[:8]
         _loop_start = time.time()
+
+        # ── PARALLEL PREFETCH: fetch all symbols' data concurrently ──
+        # This front-loads all exchange I/O so _process_symbol hits cache.
+        _prefetch_start = time.time()
+        self.fetcher.prefetch_all_symbols(DEFAULT_SYMBOLS, self._needed_tfs)
+        _prefetch_ms = (time.time() - _prefetch_start) * 1000
+        logger.info(f"[{trace_id}] Prefetch done: {len(DEFAULT_SYMBOLS)} symbols in {_prefetch_ms:.0f}ms")
 
         # Collect candidate signals for rotation evaluation
         self._tick_candidates: list = []
@@ -2700,6 +2707,47 @@ class MultiStrategyBot:
             context=f"Opening {side} {symbol} @ {_fmt_price(signal_result.entry)} "
                     f"lev={lev_decision.leverage:.1f}x conf={signal_result.confidence:.0f}% "
                     f"type={trade_prof.entry_type}",
+        )
+
+        # ── PRE-LLM PRICE REFRESH: use live price so everything is consistent ──
+        # Strategies set entry from candle closes, which can be minutes old.
+        # Refresh BEFORE the LLM pipeline so (a) we don't waste LLM calls on
+        # stale signals, and (b) the LLM sees current market prices.
+        pre_llm_live = self.fetcher.fetch_live_price(symbol)
+        if pre_llm_live is None:
+            pre_llm_live = current_price  # fall back to tick-start price
+
+        pre_llm_slippage = abs(pre_llm_live - signal_result.entry) / signal_result.entry * 100 if signal_result.entry > 0 else 0
+        max_slippage = float(os.getenv("MAX_ENTRY_SLIPPAGE_PCT", "1.5"))
+
+        if pre_llm_slippage > max_slippage:
+            log_rejection(symbol, "ENTRY_SLIPPAGE",
+                          confidence=signal_result.confidence)
+            logger.warning(
+                f"[{trace_id}][{symbol}] PRE-LLM REJECT: price moved {pre_llm_slippage:.2f}% "
+                f"(signal={_fmt_price(signal_result.entry)} live={_fmt_price(pre_llm_live)} "
+                f"max={max_slippage}%) — skipping LLM call"
+            )
+            return
+
+        # Shift entry + SL/TP to live price so entire pipeline uses fresh numbers
+        _price_shift = pre_llm_live - signal_result.entry
+        signal_result.entry = pre_llm_live
+        adj_sl = adj_sl + _price_shift
+        adj_tp1 = adj_tp1 + _price_shift
+        adj_tp2 = adj_tp2 + _price_shift
+
+        # Safety: ensure SL/TP still on correct side after shift
+        if side == "LONG":
+            if adj_sl >= signal_result.entry:
+                adj_sl = signal_result.entry - signal_result.atr * 1.5 if signal_result.atr > 0 else signal_result.entry * 0.98
+        else:
+            if adj_sl <= signal_result.entry:
+                adj_sl = signal_result.entry + signal_result.atr * 1.5 if signal_result.atr > 0 else signal_result.entry * 1.02
+
+        logger.info(
+            f"[{trace_id}][{symbol}] Price refreshed: {_fmt_price(pre_llm_live)} "
+            f"(shift={_price_shift:+.6f}, slip={pre_llm_slippage:.2f}%)"
         )
 
         # ── VETO_ONLY+ mode: synchronous LLM check before trade entry ──
@@ -4717,14 +4765,18 @@ class MultiStrategyBot:
 
 
 def main():
-    # Load .env (project root first, then bot/)
+    # Load .env: bot/.env first (specific config), then root .env (fallback)
+    # load_dotenv does NOT override existing vars, so first-loaded wins
     try:
         from pathlib import Path
         from dotenv import load_dotenv
+        local_env = Path(__file__).parent / ".env"
         root_env = Path(__file__).parent.parent / ".env"
+        if local_env.exists():
+            load_dotenv(local_env)
         if root_env.exists():
             load_dotenv(root_env)
-        else:
+        if not local_env.exists() and not root_env.exists():
             load_dotenv()
     except ImportError:
         pass

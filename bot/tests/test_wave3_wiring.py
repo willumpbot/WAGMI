@@ -135,8 +135,8 @@ class TestLearningMode:
         finally:
             lm._state = old_state
 
-    def test_absorb_prevents_veto(self):
-        """In ABSORB phase, LLM should not be allowed to veto."""
+    def test_absorb_respects_veto(self):
+        """In ABSORB phase, LLM vetoes should be respected (not overridden)."""
         import llm.learning_mode as lm
         old_state = lm._state
         try:
@@ -148,8 +148,9 @@ class TestLearningMode:
                 llm_size_multiplier=1.0,
                 signal_confidence=80.0,
             )
-            # In ABSORB, "flat" (veto) should be overridden to "proceed"
-            assert action != "flat"
+            # In ABSORB, vetoes are now respected (not overridden)
+            assert action == "flat"
+            assert "respect" in reason
         finally:
             lm._state = old_state
 

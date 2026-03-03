@@ -261,18 +261,20 @@ def apply_learning_constraints(
         return llm_action, llm_size_multiplier, "graduated"
 
     if phase == LearningPhase.ABSORB:
-        # ABSORB: LLM is a student. Never block trades.
+        # ABSORB: LLM observes and learns, but vetoes are RESPECTED.
+        # Overriding vetoes was counterproductive — the LLM's veto logic is
+        # valuable (catches chases, bad RR, etc.) and forcing trades through
+        # just wastes money on entries the slippage guard rejects anyway.
         if llm_action == "flat":
-            # Record the veto desire as counterfactual, but don't enforce it
             logger.info(
-                f"[LEARNING-ABSORB] LLM wanted to veto (conf={llm_confidence:.2f}), "
-                f"but ABSORB mode overrides to proceed. Recording counterfactual."
+                f"[LEARNING-ABSORB] LLM veto (conf={llm_confidence:.2f}) — "
+                f"respecting veto, recording counterfactual."
             )
-            return "proceed", 1.0, "absorb_override_veto"
+            return "flat", 1.0, "absorb_respect_veto"
 
         if llm_action == "flip":
-            logger.info("[LEARNING-ABSORB] LLM wanted to flip, ABSORB mode overrides to proceed")
-            return "proceed", 1.0, "absorb_override_flip"
+            logger.info("[LEARNING-ABSORB] LLM flip request — respecting, recording counterfactual")
+            return "flip", 1.0, "absorb_respect_flip"
 
         # Size adjustment: cap at ±20%
         constrained_mult = max(0.8, min(1.2, llm_size_multiplier))
