@@ -214,8 +214,8 @@ def normalize_llm_output(raw_dict: Dict[str, Any]) -> Dict[str, Any]:
     # Normalize notes: ensure string, truncate if needed
     if "notes" in normalized:
         notes = str(normalized["notes"]).strip()
-        if len(notes) > 500:
-            notes = notes[:497] + "..."
+        if len(notes) > 1000:
+            notes = notes[:997] + "..."
         normalized["notes"] = notes
     else:
         normalized["notes"] = ""

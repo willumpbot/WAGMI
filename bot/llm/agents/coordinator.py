@@ -671,7 +671,7 @@ class AgentCoordinator:
             notes += f" | RISKS: {', '.join(str(f) for f in risk_flags[:3])}"
 
         # Build the final notes: regime + trade + risk + critic
-        combined_notes = f"[MA] {regime_note} | {notes}"[:500]
+        combined_notes = f"[MA] {regime_note} | {notes}"[:1000]
 
         return LLMDecision(
             action=action,

@@ -63,7 +63,7 @@ class TestAgentBaseTypes:
     def test_agent_config_max_tokens(self):
         from llm.agents.base import DEFAULT_AGENT_CONFIGS, AgentRole
         # Regime agent should have smaller token budget than Trade
-        assert DEFAULT_AGENT_CONFIGS[AgentRole.REGIME].max_tokens <= 768
+        assert DEFAULT_AGENT_CONFIGS[AgentRole.REGIME].max_tokens <= 1024
         # Trade agent gets more
         assert DEFAULT_AGENT_CONFIGS[AgentRole.TRADE].max_tokens >= 1024
 

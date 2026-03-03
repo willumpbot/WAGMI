@@ -74,8 +74,8 @@ def validate_schema(decision: LLMDecision) -> Tuple[bool, Optional[str]]:
     # Notes
     if not isinstance(decision.notes, str):
         return False, f"notes must be string"
-    if len(decision.notes) > 500:
-        return False, f"notes too long (>{500})"
+    if len(decision.notes) > 1000:
+        return False, f"notes too long (>{1000})"
 
     # Strategy weights (optional)
     sw = decision.strategy_weights
@@ -187,8 +187,8 @@ def _sanitize(decision: LLMDecision) -> LLMDecision:
     decision.size_multiplier = max(0.0, min(2.0, decision.size_multiplier))
 
     # Truncate notes/memory
-    if decision.notes and len(decision.notes) > 500:
-        decision.notes = decision.notes[:500]
+    if decision.notes and len(decision.notes) > 1000:
+        decision.notes = decision.notes[:1000]
     if decision.memory_update and len(decision.memory_update) > 200:
         decision.memory_update = decision.memory_update[:200]
 

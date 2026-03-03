@@ -4717,14 +4717,18 @@ class MultiStrategyBot:
 
 
 def main():
-    # Load .env (project root first, then bot/)
+    # Load .env: bot/.env first (specific config), then root .env (fallback)
+    # load_dotenv does NOT override existing vars, so first-loaded wins
     try:
         from pathlib import Path
         from dotenv import load_dotenv
+        local_env = Path(__file__).parent / ".env"
         root_env = Path(__file__).parent.parent / ".env"
+        if local_env.exists():
+            load_dotenv(local_env)
         if root_env.exists():
             load_dotenv(root_env)
-        else:
+        if not local_env.exists() and not root_env.exists():
             load_dotenv()
     except ImportError:
         pass
