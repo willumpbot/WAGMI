@@ -1,0 +1,53 @@
+{
+  "hooks": {
+    "pre-edit": {
+      "description": "Security scan before any file edit",
+      "rules": [
+        {
+          "pattern": "**/*.py",
+          "checks": [
+            "no_hardcoded_secrets",
+            "no_eval_exec",
+            "no_shell_injection"
+          ]
+        }
+      ]
+    },
+    "post-edit": {
+      "description": "Verify edited files maintain consistency",
+      "rules": [
+        {
+          "pattern": "bot/llm/agents/*.py",
+          "action": "Verify agent prompts maintain shared vocabulary and thought protocol"
+        },
+        {
+          "pattern": "bot/strategies/*.py",
+          "action": "Verify Signal dataclass contract is maintained"
+        },
+        {
+          "pattern": "bot/execution/*.py",
+          "action": "Verify risk gates are not bypassed"
+        }
+      ]
+    }
+  },
+  "context_rules": {
+    "always_load": [
+      "CLAUDE.md",
+      "ROADMAP.md"
+    ],
+    "load_on_match": {
+      "bot/llm/**": [".claude/rules/llm-agents.md"],
+      "bot/strategies/**": [".claude/rules/strategies.md"],
+      "bot/execution/**": [".claude/rules/execution-safety.md"],
+      "bot/tests/**": [".claude/rules/testing.md"],
+      "bot/data/**": [".claude/rules/data-pipeline.md"]
+    }
+  },
+  "preferences": {
+    "planning_mode": true,
+    "verify_before_complete": true,
+    "test_after_change": true,
+    "max_file_edit_size": 200
+  }
+}

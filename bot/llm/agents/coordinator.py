@@ -34,6 +34,17 @@ from llm.agents.base import (
     DEFAULT_AGENT_CONFIGS,
 )
 from llm.agents.prompts import AGENT_PROMPTS
+from llm.agents.shared_context import (
+    build_shared_context_block,
+    get_pipeline_scratchpad,
+    get_shared_lessons,
+    reset_pipeline_scratchpad,
+)
+from llm.agents.thought_protocol import build_protocol_prefix
+from llm.agents.consistency_checker import (
+    check_pipeline_consistency,
+    get_consistency_tracker,
+)
 from llm.client import call_llm
 from llm.decision_types import LLMDecision, StrategyWeights
 
@@ -84,6 +95,10 @@ class AgentCoordinator:
         start = time.monotonic()
         pipeline_results: Dict[AgentRole, AgentOutput] = {}
 
+        # Reset per-pipeline shared state
+        scratchpad = reset_pipeline_scratchpad()
+        shared_lessons = get_shared_lessons()
+
         # ── Step 1: Regime Agent ────────────────────────────────
         regime_input = self._build_regime_input(snapshot_data)
         regime_out = self._call_agent(
@@ -102,6 +117,11 @@ class AgentCoordinator:
                       "bias": "neutral", "transition": "uncertain"},
             )
 
+        # Write regime output to scratchpad for downstream agents
+        scratchpad.write("regime", "regime", regime_out.data.get("rg", "unknown"))
+        scratchpad.write("regime", "regime_conf", regime_out.data.get("conf", 0.5))
+        scratchpad.write("regime", "bias", regime_out.data.get("bias", "neutral"))
+
         # ── Step 2: Trade Agent ─────────────────────────────────
         trade_input = self._build_trade_input(snapshot_data, regime_out)
         trade_out = self._call_agent(
@@ -118,6 +138,10 @@ class AgentCoordinator:
                 role=AgentRole.TRADE,
                 data={"a": "skip", "c": 0.0, "n": "trade agent failed"},
             )
+
+        # Write trade output to scratchpad for downstream agents
+        scratchpad.write("trade", "action", trade_out.data.get("a", "skip"))
+        scratchpad.write("trade", "confidence", trade_out.data.get("c", 0.0))
 
         # ── Step 3: Risk Agent (optional) ───────────────────────
         risk_out = None
@@ -143,6 +167,38 @@ class AgentCoordinator:
             if not critic_out.ok:
                 critic_out = None
 
+        # ── Consistency Check ──────────────────────────────────────
+        consistency_report = check_pipeline_consistency(
+            regime_data=regime_out.data if regime_out.ok else {},
+            trade_data=trade_out.data if trade_out.ok else {},
+            risk_data=risk_out.data if risk_out and risk_out.ok else None,
+            critic_data=critic_out.data if critic_out and critic_out.ok else None,
+        )
+        get_consistency_tracker().record(consistency_report)
+
+        if not consistency_report.is_consistent:
+            logger.warning(
+                f"[MULTI-AGENT] Pipeline inconsistency detected: "
+                f"{consistency_report.summary()}"
+            )
+            # On critical inconsistency: override to skip for safety
+            critical_issues = [
+                i for i in consistency_report.issues if i.severity == "critical"
+            ]
+            if critical_issues:
+                logger.warning(
+                    f"[MULTI-AGENT] Critical issues found — overriding to skip: "
+                    f"{[i.description[:80] for i in critical_issues]}"
+                )
+                trade_out = AgentOutput(
+                    role=AgentRole.TRADE,
+                    data={
+                        "a": "skip",
+                        "c": 0.0,
+                        "n": f"consistency_override: {critical_issues[0].description[:100]}",
+                    },
+                )
+
         # ── Merge into LLMDecision ──────────────────────────────
         decision = self._merge_outputs(regime_out, trade_out, risk_out, critic_out)
 
@@ -150,11 +206,26 @@ class AgentCoordinator:
         self._total_latency_ms += elapsed_ms
 
         agents_called = sum(1 for r in pipeline_results.values() if r.ok)
+        consistency_score = consistency_report.score
         logger.info(
             f"[MULTI-AGENT] Pipeline done: {agents_called} agents, "
             f"{elapsed_ms}ms total, action={decision.action} "
-            f"conf={decision.confidence:.2f} regime={decision.regime}"
+            f"conf={decision.confidence:.2f} regime={decision.regime} "
+            f"consistency={consistency_score:.2f}"
         )
+
+        # Append consistency score to decision notes for audit trail
+        if decision.notes and consistency_score < 1.0:
+            decision = LLMDecision(
+                action=decision.action,
+                confidence=decision.confidence,
+                regime=decision.regime,
+                strategy_weights=decision.strategy_weights,
+                memory_update=decision.memory_update,
+                notes=f"{decision.notes} | CONSISTENCY={consistency_score:.2f}",
+                size_multiplier=decision.size_multiplier,
+                entry_adjustment=decision.entry_adjustment,
+            )
 
         # ── Feed decision pipeline into learning systems ────────
         try:
@@ -222,10 +293,27 @@ class AgentCoordinator:
         if not prompt:
             return AgentOutput(role=role, data={}, error="no_prompt")
 
+        # Inject thought protocol and shared context into the prompt
+        protocol_prefix = build_protocol_prefix(role.value)
+        shared_context = build_shared_context_block(
+            agent_role=role.value,
+            scratchpad=get_pipeline_scratchpad(),
+            shared_lessons=get_shared_lessons(),
+            include_axioms=(role in (AgentRole.TRADE, AgentRole.CRITIC)),
+            include_regime_map=(role in (AgentRole.TRADE, AgentRole.CRITIC)),
+        )
+
+        # Prepend protocol and context to the agent's system prompt
+        enhanced_prompt = prompt
+        if protocol_prefix:
+            enhanced_prompt = f"{protocol_prefix}\n\n{enhanced_prompt}"
+        if shared_context:
+            enhanced_prompt = f"{enhanced_prompt}\n\nSHARED CONTEXT: {shared_context}"
+
         model = config.model_override or fallback_model or _get_default_model(role)
 
         raw_text, usage = call_llm(
-            system_prompt=prompt,
+            system_prompt=enhanced_prompt,
             snapshot_json=input_json,
             model=model,
             max_tokens=config.max_tokens,
