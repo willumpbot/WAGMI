@@ -46,6 +46,7 @@ class BacktestRunner:
         starting_equity: float = 50000,
         risk_per_trade: float = 0.015,
         strategies: Optional[list] = None,
+        learn: bool = False,
     ) -> dict:
         """
         Run a backtest.
@@ -56,6 +57,7 @@ class BacktestRunner:
             starting_equity: Starting account size in USD
             risk_per_trade: Risk per trade as % of equity (default 1.5%)
             strategies: Which strategies to include (default: all 4)
+            learn: If True, feed results into all learning systems
 
         Returns:
             Dictionary with backtest results
@@ -76,6 +78,8 @@ class BacktestRunner:
         logger.info(f"  Days: {days}")
         logger.info(f"  Starting Equity: ${starting_equity:,.2f}")
         logger.info(f"  Risk/Trade: {risk_per_trade*100:.1f}%")
+        if learn:
+            logger.info(f"  Learning: ENABLED (feeding all learning systems)")
         logger.info("=" * 60)
 
         # Build config
@@ -85,7 +89,7 @@ class BacktestRunner:
 
         # Run backtest
         engine = BacktestEngine(config)
-        results = engine.run(symbols=symbols, days=days, strategies=strategies)
+        results = engine.run(symbols=symbols, days=days, strategies=strategies, learn=learn)
 
         # Save results
         self._save_results(results, symbols, days)

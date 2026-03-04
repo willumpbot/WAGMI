@@ -84,6 +84,7 @@ class BacktestEngine:
         symbols: List[str],
         days: int = 30,
         strategies: Optional[List[str]] = None,
+        learn: bool = False,
     ) -> Dict[str, Any]:
         """
         Run a backtest.
@@ -92,9 +93,10 @@ class BacktestEngine:
             symbols: List of symbol names (e.g. ["BTC", "ETH", "SOL"])
             days: Number of days of historical data to test on
             strategies: Which strategies to use (default: all)
+            learn: If True, feed results into all learning systems
 
         Returns:
-            Dict with backtest results
+            Dict with backtest results (includes learning_summary if learn=True)
         """
         logger.info(f"Starting backtest: {symbols} | {days} days | strategies={strategies or 'all'}")
 
@@ -137,7 +139,26 @@ class BacktestEngine:
                 self._walk_hourly(symbol, data, ensemble)
 
         # Generate report
-        return self._generate_report(symbols, days)
+        report = self._generate_report(symbols, days)
+
+        # Feed learning systems if requested
+        if learn:
+            report["learning_summary"] = self._run_learning_bridge()
+
+        return report
+
+    def _run_learning_bridge(self) -> Dict[str, Any]:
+        """Feed backtest results into all learning systems."""
+        try:
+            from backtest.learning_bridge import BacktestLearningBridge
+
+            bridge = BacktestLearningBridge()
+            result = bridge.ingest(self)
+            print("\n" + bridge.get_summary())
+            return result
+        except Exception as e:
+            logger.warning(f"Learning bridge failed: {e}")
+            return {"status": "error", "error": str(e)}
 
     def _build_strategies(self, sym_configs, strategy_names) -> list:
         """Build strategy instances."""
@@ -448,6 +469,7 @@ def main():
     parser.add_argument("--strategies", default="", help="Comma-separated strategy names (empty=all)")
     parser.add_argument("--equity", type=float, default=10000, help="Starting equity")
     parser.add_argument("--output", default="", help="Save results to JSON file")
+    parser.add_argument("--learn", action="store_true", help="Feed results into all learning systems")
     args = parser.parse_args()
 
     config = TradingConfig()
@@ -457,7 +479,7 @@ def main():
     symbols = [s.strip() for s in args.symbols.split(",")]
     strategies = [s.strip() for s in args.strategies.split(",") if s.strip()] or None
 
-    report = engine.run(symbols, args.days, strategies)
+    report = engine.run(symbols, args.days, strategies, learn=args.learn)
     print_report(report)
 
     if args.output:

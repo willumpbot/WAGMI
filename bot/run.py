@@ -71,8 +71,15 @@ def cmd_backtest(args):
     symbols = [s.strip().upper() for s in args.symbols.split(",")]
     strategies = [s.strip() for s in args.strategies.split(",") if s.strip()] or None
 
-    print(f"Running backtest: {symbols} | {args.days} days | equity=${args.equity:,.0f}")
-    report = engine.run(symbols, args.days, strategies)
+    learn = getattr(args, "learn", False)
+    if learn:
+        print(f"Running backtest with LEARNING: {symbols} | {args.days} days | equity=${args.equity:,.0f}")
+        print("  Results will feed: strategy weights, deep memory, feedback loop,")
+        print("  self-teaching knowledge base, growth orchestrator, insight journal")
+    else:
+        print(f"Running backtest: {symbols} | {args.days} days | equity=${args.equity:,.0f}")
+
+    report = engine.run(symbols, args.days, strategies, learn=learn)
     print_report(report)
 
     if args.output:
@@ -329,6 +336,7 @@ Commands:
     sub_bt.add_argument("--strategies", default="", help="Strategy names (empty=all)")
     sub_bt.add_argument("--equity", type=float, default=10000, help="Starting equity")
     sub_bt.add_argument("--output", default="", help="Save JSON results to file")
+    sub_bt.add_argument("--learn", action="store_true", help="Feed results into all learning systems (strategy weights, deep memory, feedback, knowledge base, growth)")
 
     # Signals
     sub_sig = subparsers.add_parser("signals", help="One-shot signal check")
