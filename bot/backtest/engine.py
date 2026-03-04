@@ -51,8 +51,9 @@ class BacktestEngine:
     6. Track equity curve, PnL, etc.
     """
 
-    def __init__(self, config: Optional[TradingConfig] = None):
+    def __init__(self, config: Optional[TradingConfig] = None, llm_integration=None):
         self.config = config or TradingConfig()
+        self.llm = llm_integration  # Optional BacktestLLMIntegration
 
         # Initialize components
         self.fetcher = DataFetcher(cache_ttl=3600, backtest_mode=True)
@@ -123,9 +124,48 @@ class BacktestEngine:
             data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, needed_tfs)
             all_data[symbol] = data
 
+        # LLM preflight: validate everything before spending API credits
+        if self.llm:
+            preflight = self.llm.run_preflight(symbols, all_data, ensemble, self.config)
+            if not preflight.passed:
+                return {
+                    "error": "preflight_failed",
+                    "errors": preflight.errors,
+                    "warnings": preflight.warnings,
+                }
+            print(f"\n  Preflight: PASSED")
+            print(f"  Estimated cost: ${preflight.estimated_cost:.2f} ({preflight.estimated_llm_calls} API calls)")
+            print(f"  Candles to process: {preflight.candle_count}")
+            if preflight.warnings:
+                for w in preflight.warnings:
+                    print(f"  WARNING: {w}")
+            try:
+                confirm = input(f"\n  Proceed with LLM backtest (budget ${self.llm.budget_usd:.2f})? [y/N] ")
+                if confirm.strip().lower() != "y":
+                    return {"error": "user_cancelled"}
+            except (EOFError, KeyboardInterrupt):
+                return {"error": "user_cancelled"}
+            print()
+
+            # Handle resume: restore equity from checkpoint
+            if self.llm.resume_state:
+                self.risk_mgr.equity = self.llm.resume_state.equity
+                logger.info(
+                    f"Resumed from checkpoint: equity=${self.llm.resume_state.equity:.2f}"
+                )
+
+        # Track which symbols are completed (for checkpoint/resume)
+        symbols_completed = []
+        if self.llm and self.llm.resume_state:
+            symbols_completed = list(self.llm.resume_state.symbols_completed)
+
         # Walk forward through data
         # Use 1h timeframe as the primary clock
         for symbol in symbols:
+            # Skip already-completed symbols on resume
+            if symbol in symbols_completed:
+                logger.info(f"Skipping {symbol} (already completed in checkpoint)")
+                continue
             data = all_data.get(symbol, {})
             df_1h = data.get("1h", pd.DataFrame())
             if df_1h.empty:
@@ -138,7 +178,12 @@ class BacktestEngine:
             else:
                 self._walk_hourly(symbol, data, ensemble)
 
-        # Generate report
+            symbols_completed.append(symbol)
+
+        # Flush LLM decisions and generate report
+        if self.llm:
+            self.llm.flush_decisions()
+
         report = self._generate_report(symbols, days)
 
         # Feed learning systems if requested
@@ -181,8 +226,16 @@ class BacktestEngine:
 
         # We need enough history before we start generating signals
         warmup = 50
+        total_candles = len(df_1h)
 
-        for i in range(warmup, len(df_1h)):
+        # Handle resume: skip to checkpointed candle
+        start_idx = warmup
+        if (self.llm and self.llm.resume_state
+                and self.llm.resume_state.symbol == symbol):
+            start_idx = max(warmup, self.llm.resume_state.candle_index + 1)
+            logger.info(f"[{symbol}] Resuming from candle {start_idx}")
+
+        for i in range(start_idx, total_candles):
             # Build windowed data for this point in time
             windowed = {}
             for tf, df in data.items():
@@ -205,12 +258,25 @@ class BacktestEngine:
             events = self.pos_mgr.update_price(symbol, current_price)
             for event in events:
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
+                # LLM: run Learning Agent on closed trades
+                if self.llm and event.action in self._CLOSE_ACTIONS:
+                    self.llm.clear_exit_counter(event.symbol)
+                    self._run_llm_learning(event, current_price)
+
+            # LLM: run Exit Agent on open positions
+            if self.llm:
+                self._run_llm_exit(symbol, current_price, windowed, sim_dt)
 
             # Try to generate signal
             if self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt):
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal:
-                    self._execute_signal(signal, current_price)
+                    # LLM: evaluate signal through multi-agent pipeline
+                    signal = self._apply_llm_entry(
+                        signal, symbol, windowed, current_price, sim_dt
+                    )
+                    if signal:
+                        self._execute_signal(signal, current_price)
 
             # Record equity
             self.equity_curve.append({
@@ -218,6 +284,18 @@ class BacktestEngine:
                 "equity": self.risk_mgr.equity,
                 "open_positions": self.pos_mgr.get_open_count(),
             })
+
+            # LLM: checkpoint and progress
+            if self.llm:
+                if i % 10 == 0:
+                    self.llm.save_checkpoint(
+                        candle_index=i,
+                        symbol=symbol,
+                        symbols_completed=[],  # Updated after symbol completes
+                        equity=self.risk_mgr.equity,
+                    )
+                if i % 50 == 0:
+                    print(self.llm.get_progress_line(i - warmup, total_candles - warmup))
 
         # Force-close any open position at end of symbol walk
         self._force_close_open(symbol, current_price, sim_dt)
@@ -229,8 +307,14 @@ class BacktestEngine:
             return
 
         warmup = 50
+        total_candles = len(df)
 
-        for i in range(warmup, len(df)):
+        start_idx = warmup
+        if (self.llm and self.llm.resume_state
+                and self.llm.resume_state.symbol == symbol):
+            start_idx = max(warmup, self.llm.resume_state.candle_index + 1)
+
+        for i in range(start_idx, total_candles):
             windowed = {}
             for tf, df_tf in data.items():
                 if df_tf.empty:
@@ -250,11 +334,21 @@ class BacktestEngine:
             events = self.pos_mgr.update_price(symbol, current_price)
             for event in events:
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
+                if self.llm and event.action in self._CLOSE_ACTIONS:
+                    self.llm.clear_exit_counter(event.symbol)
+                    self._run_llm_learning(event, current_price)
+
+            if self.llm:
+                self._run_llm_exit(symbol, current_price, windowed, sim_dt)
 
             if self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt):
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal:
-                    self._execute_signal(signal, current_price)
+                    signal = self._apply_llm_entry(
+                        signal, symbol, windowed, current_price, sim_dt
+                    )
+                    if signal:
+                        self._execute_signal(signal, current_price)
 
             self.equity_curve.append({
                 "time": str(df["time"].iloc[i]),
@@ -262,8 +356,107 @@ class BacktestEngine:
                 "open_positions": self.pos_mgr.get_open_count(),
             })
 
+            if self.llm:
+                if i % 10 == 0:
+                    self.llm.save_checkpoint(i, symbol, [], self.risk_mgr.equity)
+                if i % 50 == 0:
+                    print(self.llm.get_progress_line(i - warmup, total_candles - warmup))
+
         # Force-close any open position at end of symbol walk
         self._force_close_open(symbol, current_price, sim_dt)
+
+    # ── LLM Integration Helpers ────────────────────────────────────
+
+    def _apply_llm_entry(self, signal, symbol, windowed, current_price, sim_dt):
+        """Run LLM multi-agent pipeline on a signal. Returns signal or None (vetoed)."""
+        if not self.llm:
+            return signal
+
+        snapshot_data = self.llm.build_backtest_snapshot(
+            symbol=symbol,
+            windowed_data=windowed,
+            signal=signal,
+            current_price=current_price,
+            open_positions=self.pos_mgr.get_open_positions(),
+            equity=self.risk_mgr.equity,
+            circuit_breaker_active=not self.risk_mgr.can_open_position(
+                self.pos_mgr.get_open_count(), sim_time=sim_dt
+            ),
+        )
+
+        decision = self.llm.evaluate_entry(snapshot_data, signal, "pre_trade_backtest")
+        if decision is None:
+            return signal  # No LLM opinion -> use strategy signal as-is
+
+        # Apply LLM decision
+        if decision.action == "flat":
+            logger.debug(f"[{symbol}] LLM vetoed signal: {decision.notes[:80] if decision.notes else ''}")
+            return None  # Vetoed
+
+        # Apply size multiplier to confidence (influences position sizing)
+        if decision.size_multiplier != 1.0:
+            signal.confidence = max(1.0, min(100.0, signal.confidence * decision.size_multiplier))
+
+        return signal
+
+    def _run_llm_exit(self, symbol, current_price, windowed, sim_dt):
+        """Run Exit Agent on open position for this symbol."""
+        pos = self.pos_mgr.positions.get(symbol)
+        if not pos or pos.state == "CLOSED":
+            return
+
+        position_data = {
+            "symbol": symbol,
+            "side": pos.side,
+            "entry": pos.entry,
+            "sl": pos.sl,
+            "tp1": pos.tp1,
+            "tp2": pos.tp2,
+            "leverage": pos.leverage,
+            "state": pos.state,
+            "unrealized_pnl": (
+                (current_price - pos.entry) * pos.qty
+                if pos.side == "LONG"
+                else (pos.entry - current_price) * pos.qty
+            ),
+        }
+
+        # Build minimal market snapshot for exit context
+        market_data = self.llm.build_backtest_snapshot(
+            symbol=symbol,
+            windowed_data=windowed,
+            signal=None,
+            current_price=current_price,
+            open_positions=self.pos_mgr.get_open_positions(),
+            equity=self.risk_mgr.equity,
+        )
+
+        exit_rec = self.llm.evaluate_exit(position_data, market_data)
+        if (exit_rec
+                and exit_rec.get("action") == "close"
+                and exit_rec.get("urgency") in ("high", "critical")):
+            event = self.pos_mgr.force_close(symbol, current_price, reason="LLM_EXIT")
+            if event:
+                self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
+                logger.info(
+                    f"[{symbol}] LLM Exit Agent closed position: "
+                    f"PnL={event.pnl:.2f}, reason={exit_rec.get('reason', '')[:60]}"
+                )
+
+    def _run_llm_learning(self, event, current_price):
+        """Run Learning Agent on a closed trade."""
+        trade_data = {
+            "symbol": event.symbol,
+            "side": event.side,
+            "pnl": event.pnl,
+            "outcome": "WIN" if event.pnl > 0 else "LOSS",
+            "exit_reason": event.action,
+            "leverage": event.leverage,
+            "strategy": event.strategy or "unknown",
+            "exit_price": current_price,
+            "entry_price": event.price,
+        }
+        self.llm.run_learning(trade_data)
 
     def _force_close_open(self, symbol: str, last_price: float, sim_dt: datetime):
         """Force-close any open position at the end of a symbol's walk."""
@@ -398,6 +591,10 @@ class BacktestEngine:
             "equity_curve_length": len(self.equity_curve),
         }
 
+        # Add LLM stats if LLM integration was used
+        if self.llm:
+            report["llm_stats"] = self.llm.get_summary()
+
         return report
 
     # Actions that represent trade closes (not OPEN events)
@@ -488,6 +685,19 @@ def print_report(report: Dict):
         print(f"    Spot trades:      {lev.get('spot', {}).get('trades', 0)} | PnL: ${lev.get('spot', {}).get('pnl', 0):,.2f}")
         print(f"    Leveraged trades: {lev.get('leveraged', {}).get('trades', 0)} | PnL: ${lev.get('leveraged', {}).get('pnl', 0):,.2f}")
         print(f"    Avg leverage:     {lev.get('leveraged', {}).get('avg_leverage', 0):.1f}x")
+
+    llm_stats = report.get("llm_stats")
+    if llm_stats:
+        print(f"\n  LLM Agent Stats:")
+        print(f"    Total cost:       ${llm_stats.get('total_cost_usd', 0):.4f}")
+        print(f"    Budget:           ${llm_stats.get('budget_usd', 0):.2f} ({llm_stats.get('budget_used_pct', 0):.1f}% used)")
+        print(f"    API calls:        {llm_stats.get('llm_calls', 0)}")
+        print(f"    Failures:         {llm_stats.get('llm_failures', 0)}")
+        print(f"    Candles w/ LLM:   {llm_stats.get('candles_with_llm', 0)}")
+        print(f"    Candles fallback: {llm_stats.get('candles_fallback', 0)}")
+        print(f"    Decisions logged: {llm_stats.get('decisions_logged', 0)}")
+        if llm_stats.get("budget_exhausted"):
+            print(f"    WARNING: Budget was exhausted during run")
 
     print("=" * 60)
 

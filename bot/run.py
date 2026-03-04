@@ -67,7 +67,21 @@ def cmd_backtest(args):
     config = TradingConfig()
     config.starting_equity = args.equity
 
-    engine = BacktestEngine(config)
+    # LLM integration (opt-in)
+    llm_integration = None
+    use_llm = getattr(args, "llm", False)
+    budget = getattr(args, "budget", 5.0)
+    resume = getattr(args, "resume", False)
+
+    if use_llm:
+        from backtest.llm_integration import BacktestLLMIntegration
+        llm_integration = BacktestLLMIntegration(
+            budget_usd=budget,
+            checkpoint_dir="data/backtest_checkpoints",
+            resume=resume,
+        )
+
+    engine = BacktestEngine(config, llm_integration=llm_integration)
     symbols = [s.strip().upper() for s in args.symbols.split(",")]
     strategies = [s.strip() for s in args.strategies.split(",") if s.strip()] or None
 
@@ -79,7 +93,25 @@ def cmd_backtest(args):
     else:
         print(f"Running backtest: {symbols} | {args.days} days | equity=${args.equity:,.0f}")
 
+    if use_llm:
+        print(f"  LLM Agents: ENABLED (budget=${budget:.2f})")
+        print("  Pipeline: Regime -> Trade -> Risk -> Critic (entry)")
+        print("  + Exit Agent (open positions) + Learning Agent (closed trades)")
+        if resume:
+            print("  Resume: from last checkpoint")
+
     report = engine.run(symbols, args.days, strategies, learn=learn)
+
+    if report.get("error") == "preflight_failed":
+        print("\nBACKTEST ABORTED: LLM preflight checks failed.")
+        for err in report.get("errors", []):
+            print(f"  ERROR: {err}")
+        return
+
+    if report.get("error") == "user_cancelled":
+        print("\nBacktest cancelled by user.")
+        return
+
     print_report(report)
 
     if args.output:
@@ -337,6 +369,9 @@ Commands:
     sub_bt.add_argument("--equity", type=float, default=10000, help="Starting equity")
     sub_bt.add_argument("--output", default="", help="Save JSON results to file")
     sub_bt.add_argument("--learn", action="store_true", help="Feed results into all learning systems (strategy weights, deep memory, feedback, knowledge base, growth)")
+    sub_bt.add_argument("--llm", action="store_true", help="Enable LLM multi-agent pipeline during backtest (requires ANTHROPIC_API_KEY)")
+    sub_bt.add_argument("--budget", type=float, default=5.0, help="Max LLM API spend in USD (default: $5)")
+    sub_bt.add_argument("--resume", action="store_true", help="Resume LLM backtest from last checkpoint")
 
     # Signals
     sub_sig = subparsers.add_parser("signals", help="One-shot signal check")
