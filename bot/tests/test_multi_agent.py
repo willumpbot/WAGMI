@@ -29,12 +29,13 @@ class TestAgentBaseTypes:
     def test_agent_roles_all_defined(self):
         from llm.agents.base import AgentRole
         roles = list(AgentRole)
-        assert len(roles) == 5
+        assert len(roles) == 6
         assert AgentRole.REGIME in roles
         assert AgentRole.TRADE in roles
         assert AgentRole.RISK in roles
         assert AgentRole.LEARNING in roles
         assert AgentRole.CRITIC in roles
+        assert AgentRole.EXIT in roles
 
     def test_agent_output_ok_property(self):
         from llm.agents.base import AgentOutput, AgentRole

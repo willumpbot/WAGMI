@@ -269,6 +269,83 @@ class AgentCoordinator:
             return out.data
         return None
 
+    def get_exit_intelligence(
+        self,
+        position_data: Dict[str, Any],
+        market_data: Optional[dict] = None,
+        model_for_trigger: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Run the Exit Intelligence Agent on an open position.
+
+        Args:
+            position_data: Open position state (symbol, side, entry, sl, tp1, tp2,
+                           unrealized_pnl, hold_time_s, state, thesis, setup_type)
+            market_data: Current market snapshot (regime, BTC direction, funding, signals)
+            model_for_trigger: Model override (defaults to Haiku for cost efficiency)
+
+        Returns:
+            Parsed exit recommendation dict or None.
+        """
+        if not self.configs.get(AgentRole.EXIT, AgentConfig(role=AgentRole.EXIT)).enabled:
+            return None
+
+        exit_input = self._build_exit_input(position_data, market_data)
+        out = self._call_agent(AgentRole.EXIT, exit_input, model_for_trigger)
+
+        if out.ok:
+            action = out.data.get("action", "hold")
+            urgency = out.data.get("urgency", "low")
+            logger.info(
+                f"[MULTI-AGENT] Exit agent: {position_data.get('symbol', '?')} "
+                f"action={action} urgency={urgency} "
+                f"thesis_valid={out.data.get('thesis_still_valid', '?')} "
+                f"reason={out.data.get('reason', '')[:60]}"
+            )
+            return out.data
+        return None
+
+    def _build_exit_input(
+        self, position_data: Dict[str, Any], market_data: Optional[dict] = None
+    ) -> str:
+        """Build exit agent input: position state + current market + thesis context."""
+        exit_data = dict(position_data)
+
+        # Inject current market context if available
+        if market_data:
+            if "m" in market_data:
+                # Extract just the relevant market for this symbol
+                symbol = position_data.get("symbol", "")
+                for m in market_data.get("m", []):
+                    if m.get("s") == symbol or m.get("sym") == symbol:
+                        exit_data["current_market"] = m
+                        break
+            if "g" in market_data:
+                exit_data["global"] = market_data["g"]
+
+            # Run a quick regime classification from scratchpad if available
+            scratchpad = get_pipeline_scratchpad()
+            regime = scratchpad.read_by_key("regime")
+            if regime:
+                exit_data["current_regime"] = regime
+                exit_data["regime_bias"] = scratchpad.read_by_key("bias") or "neutral"
+                exit_data["regime_outlook"] = scratchpad.read_by_key("outlook") or ""
+
+        # Add deep memory context for this symbol's exit patterns
+        try:
+            from llm.deep_memory import get_deep_memory
+            dm = get_deep_memory()
+            symbol = position_data.get("symbol", "")
+            regime = position_data.get("regime", "")
+            summary = dm.build_llm_knowledge_summary(
+                symbol=symbol, regime=regime, max_tokens=300
+            )
+            if summary:
+                exit_data["exit_history"] = summary[:300]
+        except Exception:
+            pass
+
+        return json.dumps(exit_data, separators=(",", ":"))
+
     def get_stats(self) -> Dict[str, Any]:
         """Return coordinator statistics."""
         return {
@@ -887,7 +964,7 @@ def _get_default_model(role: AgentRole) -> str:
     except ImportError:
         return "claude-sonnet-4-5-20250929"
 
-    if role in (AgentRole.REGIME, AgentRole.RISK, AgentRole.LEARNING):
+    if role in (AgentRole.REGIME, AgentRole.RISK, AgentRole.LEARNING, AgentRole.EXIT):
         return MODEL_HAIKU
     return MODEL_SONNET
 
@@ -908,6 +985,7 @@ def _build_configs_from_env() -> Dict[AgentRole, AgentConfig]:
         AgentRole.RISK: "AGENT_RISK_MODEL",
         AgentRole.LEARNING: "AGENT_LEARNING_MODEL",
         AgentRole.CRITIC: "AGENT_CRITIC_MODEL",
+        AgentRole.EXIT: "AGENT_EXIT_MODEL",
     }
     for role, env_key in env_model_map.items():
         model = os.getenv(env_key, "").strip()
@@ -920,6 +998,7 @@ def _build_configs_from_env() -> Dict[AgentRole, AgentConfig]:
         AgentRole.RISK: "AGENT_RISK_ENABLED",
         AgentRole.LEARNING: "AGENT_LEARNING_ENABLED",
         AgentRole.CRITIC: "AGENT_CRITIC_ENABLED",
+        AgentRole.EXIT: "AGENT_EXIT_ENABLED",
     }
     for role, env_key in env_enabled_map.items():
         val = os.getenv(env_key, "true").lower()

@@ -89,14 +89,16 @@ cd bot && pytest tests/ -k "agent"     # Agent-specific tests
   - `ENVIRONMENT` (paper/production)
 
 ## Multi-Agent System
-Enable with `LLM_MULTI_AGENT=true`. Pipeline: Regime → Trade → Risk → Critic → (Learning post-close)
-- **Regime Agent** (Haiku): Classifies market regime from raw data
-- **Trade Agent** (Sonnet): Decides go/skip/flip with full context
+Enable with `LLM_MULTI_AGENT=true`. Pipeline: Regime → Trade → Risk → Critic → (Learning post-close) + Exit (on open positions)
+- **Regime Agent** (Haiku): Classifies market regime + directional outlook
+- **Trade Agent** (Sonnet): Forms directional thesis, decides go/skip/flip with confluence scoring
 - **Risk Agent** (Haiku): Sizes positions, flags portfolio risks
-- **Critic Agent** (Sonnet): Reviews decision, can approve or challenge/veto
-- **Learning Agent** (Haiku): Extracts lessons from closed trades into deep memory
+- **Critic Agent** (Sonnet): Stress-tests thesis, must provide counter-thesis to veto
+- **Learning Agent** (Haiku): Extracts lessons from closed trades, tracks thesis accuracy
+- **Exit Agent** (Haiku): Monitors open positions, reassesses thesis validity, recommends hold/adjust/close
 
-Per-agent model overrides: `AGENT_REGIME_MODEL`, `AGENT_TRADE_MODEL`, etc.
+Per-agent model overrides: `AGENT_REGIME_MODEL`, `AGENT_TRADE_MODEL`, `AGENT_EXIT_MODEL`, etc.
+Per-agent enable/disable: `AGENT_EXIT_ENABLED=true/false`, `AGENT_CRITIC_ENABLED=true/false`, etc.
 
 ## Agent Consistency Framework
 All agents share:
@@ -158,6 +160,11 @@ Invoke these with `/skill-name` in Claude Code sessions:
 - `/growth-report [summary|deep]` — Unified learning intelligence across all growth systems
 - `/curriculum-advance [status|evaluate|advance]` — Self-teaching curriculum progress and level-up
 - `/model-route-tune [cost|accuracy|balanced]` — Optimize Haiku/Sonnet/Opus routing per agent/trigger
+
+**Prediction & Exit Intelligence:**
+- `/thesis-track [summary|deep|by-regime|by-setup]` — Track directional prediction accuracy
+- `/exit-review [all|symbol|urgent]` — LLM exit intelligence on open positions
+- `/setup-edge [summary|deep|by-regime|profitable|losers]` — Setup type profitability map
 
 **Profitability (the skills that matter most):**
 - `/pnl-maximize [quick|deep|execute]` — Master skill: end-to-end profitability optimization

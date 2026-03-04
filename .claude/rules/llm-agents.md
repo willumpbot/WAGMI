@@ -1,19 +1,21 @@
 # LLM Agent Development Rules
 
 ## Architecture Awareness
-You are working on a **multi-agent LLM trading system** with 5 specialist agents:
-1. **Regime Agent** (Haiku) — classifies market regime
-2. **Trade Agent** (Sonnet) — decides go/skip/flip
+You are working on a **multi-agent LLM trading system** with 6 specialist agents:
+1. **Regime Agent** (Haiku) — classifies market regime + directional outlook
+2. **Trade Agent** (Sonnet) — forms directional thesis, decides go/skip/flip
 3. **Risk Agent** (Haiku) — sizes positions, flags risks
-4. **Critic Agent** (Sonnet) — reviews decisions, approves/challenges
-5. **Learning Agent** (Haiku) — extracts lessons from closed trades
+4. **Critic Agent** (Sonnet) — stress-tests thesis, requires counter-thesis for vetoes
+5. **Learning Agent** (Haiku) — extracts lessons, tracks thesis accuracy per setup type
+6. **Exit Agent** (Haiku) — monitors open positions, reassesses thesis validity
 
 These agents are orchestrated by `bot/llm/agents/coordinator.py` in a sequential pipeline.
+The Exit Agent runs independently on open positions via `get_exit_intelligence()` method.
 
 ## Key Files
 - `bot/llm/agents/base.py` — AgentRole, AgentOutput, AgentConfig types
 - `bot/llm/agents/coordinator.py` — Pipeline orchestration and output merging
-- `bot/llm/agents/prompts.py` — All 5 agent prompts (REGIME/TRADE/RISK/LEARNING/CRITIC)
+- `bot/llm/agents/prompts.py` — All 6 agent prompts (REGIME/TRADE/RISK/LEARNING/CRITIC/EXIT)
 - `bot/llm/agents/learning_integration.py` — Wires agent output to deep memory, hypotheses, knowledge
 - `bot/llm/agents/shared_context.py` — Shared reasoning framework (if exists)
 - `bot/llm/agents/thought_protocol.py` — Structured reasoning template (if exists)
@@ -58,8 +60,9 @@ All agents should follow this reasoning chain (when applicable):
 - Mock LLM responses for deterministic testing (use `bot/llm/test_harness.py`)
 
 ## Cost Awareness
-- Haiku agents: ~$0.0001/call — can run frequently
-- Sonnet agents: ~$0.003/call — moderate frequency
+- Haiku agents (Regime, Risk, Learning, Exit): ~$0.0001/call — can run frequently
+- Sonnet agents (Trade, Critic): ~$0.003/call — moderate frequency
 - Opus agents: ~$0.015/call — use sparingly
-- Total multi-agent pipeline: ~$0.007/decision cycle
+- Total multi-agent entry pipeline: ~$0.007/decision cycle
+- Exit Agent per position: ~$0.0001/call (Haiku, runs on open positions only)
 - Monitor via `bot/llm/cost_tracker.py`

@@ -3578,6 +3578,113 @@ class MultiStrategyBot:
                 if not should_review:
                     continue
 
+                # ── LLM Exit Intelligence Agent (when multi-agent enabled) ──
+                # Replaces heuristic rules with thesis-aware LLM reasoning
+                if os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
+                    try:
+                        from llm.agents.coordinator import get_coordinator, is_multi_agent_enabled
+                        if is_multi_agent_enabled():
+                            coordinator = get_coordinator()
+                            pos_data = {
+                                "symbol": symbol,
+                                "side": pos.side,
+                                "entry": pos.entry,
+                                "current_price": current_price,
+                                "sl": pos.sl,
+                                "original_sl": getattr(pos, 'original_sl', pos.sl),
+                                "tp1": pos.tp1,
+                                "tp2": pos.tp2,
+                                "state": pos.state,
+                                "unrealized_pnl": round(unrealized_pnl, 2),
+                                "unrealized_pct": round(unrealized_pct * 100, 2),
+                                "hold_minutes": round(hold_minutes, 1),
+                                "leverage": getattr(pos, 'leverage', 1),
+                                "regime": regime,
+                                "funding_rate": funding_rate,
+                                "strategy": getattr(pos, 'strategy', ''),
+                                "entry_type": getattr(pos, 'entry_type', ''),
+                            }
+                            # Pull thesis from position notes if available
+                            notes = getattr(pos, 'notes', '') or ''
+                            if 'THESIS:' in notes:
+                                thesis_start = notes.index('THESIS:') + 7
+                                thesis_end = notes.index('|', thesis_start) if '|' in notes[thesis_start:] else len(notes)
+                                pos_data["original_thesis"] = notes[thesis_start:thesis_start + thesis_end].strip()[:100]
+                            if 'setup=' in notes:
+                                setup_start = notes.index('setup=') + 6
+                                setup_end = notes.index(' ', setup_start) if ' ' in notes[setup_start:] else len(notes)
+                                pos_data["setup_type"] = notes[setup_start:setup_start + setup_end].strip()
+
+                            snapshot = getattr(self, '_last_snapshot_data', None)
+                            exit_rec = coordinator.get_exit_intelligence(
+                                pos_data, market_data=snapshot
+                            )
+
+                            if exit_rec and exit_rec.get("action", "hold") != "hold":
+                                exit_action = exit_rec["action"]
+                                urgency = exit_rec.get("urgency", "medium")
+
+                                # Convert LLM exit recommendation to ExitDecision
+                                if exit_action == "tighten_sl" and exit_rec.get("new_sl"):
+                                    decision = ExitDecision(
+                                        symbol=symbol,
+                                        exit_action="tighten_sl",
+                                        exit_confidence=0.80 if urgency in ("high", "critical") else 0.65,
+                                        new_sl=exit_rec["new_sl"],
+                                        reason=f"[LLM-EXIT] {exit_rec.get('reason', '')[:120]}",
+                                    )
+                                elif exit_action == "widen_tp" and exit_rec.get("new_tp"):
+                                    decision = ExitDecision(
+                                        symbol=symbol,
+                                        exit_action="widen_tp",
+                                        exit_confidence=0.70,
+                                        new_tp=exit_rec["new_tp"],
+                                        reason=f"[LLM-EXIT] {exit_rec.get('reason', '')[:120]}",
+                                    )
+                                elif exit_action == "partial_close":
+                                    decision = ExitDecision(
+                                        symbol=symbol,
+                                        exit_action="partial",
+                                        exit_confidence=0.75 if urgency in ("high", "critical") else 0.60,
+                                        partial_pct=exit_rec.get("partial_pct", 0.5),
+                                        reason=f"[LLM-EXIT] {exit_rec.get('reason', '')[:120]}",
+                                    )
+                                elif exit_action == "full_close":
+                                    decision = ExitDecision(
+                                        symbol=symbol,
+                                        exit_action="close",
+                                        exit_confidence=0.85 if urgency == "critical" else 0.75,
+                                        reason=f"[LLM-EXIT] {exit_rec.get('reason', '')[:120]}",
+                                    )
+
+                                if decision is not None:
+                                    # Skip heuristic rules — LLM made the call
+                                    result = self.exit_engine.apply_exit_decision(
+                                        decision=decision,
+                                        position=pos,
+                                        current_price=current_price,
+                                    )
+                                    if result["applied"]:
+                                        action_name = result["action"]
+                                        logger.info(
+                                            f"[EXIT-INTEL-LLM] {symbol} {action_name}: "
+                                            f"{result['details']} (urgency={urgency})"
+                                        )
+                                        if action_name == "close":
+                                            self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_AGENT")
+                                        elif action_name == "partial":
+                                            partial_pct = result.get("partial_pct", 0.5)
+                                            close_qty = pos.qty * partial_pct
+                                            pos.qty -= close_qty
+                                            logger.info(
+                                                f"[EXIT-INTEL-LLM] {symbol} partial: "
+                                                f"closed {close_qty:.6f}, remaining {pos.qty:.6f}"
+                                            )
+                                    self.exit_engine.mark_evaluated(symbol)
+                                    continue  # Skip heuristic rules below
+                    except Exception as e:
+                        logger.debug(f"[EXIT-INTEL-LLM] Error for {symbol}: {e}")
+
                 # ── Deep memory pattern lookup ──
                 # Check if the strategy combo that opened this trade is historically
                 # profitable or a known loser, so we can be more/less aggressive
