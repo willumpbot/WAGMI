@@ -346,6 +346,71 @@ class AgentCoordinator:
 
         return json.dumps(exit_data, separators=(",", ":"))
 
+    def run_scout(
+        self,
+        scout_data: Dict[str, Any],
+        model_for_trigger: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Run the Scout/Preparation Agent during idle time.
+
+        The Scout Agent runs between signal evaluations to:
+        - Identify setups forming (approaching key levels)
+        - Pre-form directional theses for likely trades
+        - Forecast regime transitions
+        - Surface lead-lag opportunities
+        - Calculate risk budget and correlation warnings
+
+        Results are written to the pipeline scratchpad so downstream
+        agents (Trade, Risk) can read preparation data.
+
+        Args:
+            scout_data: Market overview (all symbols, prices, levels, regime, positions)
+            model_for_trigger: Model override (defaults to Haiku)
+
+        Returns:
+            Parsed scout output dict or None.
+        """
+        if not self.configs.get(AgentRole.SCOUT, AgentConfig(role=AgentRole.SCOUT)).enabled:
+            return None
+
+        scout_input = json.dumps(scout_data, separators=(",", ":"))
+        out = self._call_agent(AgentRole.SCOUT, scout_input, model_for_trigger)
+
+        if out.ok:
+            # Write scout findings to scratchpad for Trade Agent to consume
+            scratchpad = get_pipeline_scratchpad()
+
+            watchlist = out.data.get("watchlist", [])
+            if watchlist:
+                scratchpad.write("scout", "watchlist", watchlist)
+                high_priority = [w for w in watchlist if w.get("priority") == "high"]
+                if high_priority:
+                    scratchpad.write("scout", "high_priority_setups", high_priority)
+
+            regime_forecast = out.data.get("regime_forecast")
+            if regime_forecast:
+                scratchpad.write("scout", "regime_forecast", regime_forecast)
+
+            lead_lag = out.data.get("lead_lag_alerts", [])
+            if lead_lag:
+                scratchpad.write("scout", "lead_lag_alerts", lead_lag)
+
+            corr_warning = out.data.get("correlation_warning")
+            if corr_warning:
+                scratchpad.write("scout", "correlation_warning", corr_warning)
+
+            risk_budget = out.data.get("risk_budget")
+            if risk_budget:
+                scratchpad.write("scout", "risk_budget", risk_budget)
+
+            logger.info(
+                f"[MULTI-AGENT] Scout: {len(watchlist)} watchlist items, "
+                f"regime_forecast={regime_forecast.get('direction', '?') if regime_forecast else 'none'}, "
+                f"lead_lag={len(lead_lag)} alerts"
+            )
+            return out.data
+        return None
+
     def get_stats(self) -> Dict[str, Any]:
         """Return coordinator statistics."""
         return {
@@ -964,7 +1029,7 @@ def _get_default_model(role: AgentRole) -> str:
     except ImportError:
         return "claude-sonnet-4-5-20250929"
 
-    if role in (AgentRole.REGIME, AgentRole.RISK, AgentRole.LEARNING, AgentRole.EXIT):
+    if role in (AgentRole.REGIME, AgentRole.RISK, AgentRole.LEARNING, AgentRole.EXIT, AgentRole.SCOUT):
         return MODEL_HAIKU
     return MODEL_SONNET
 
@@ -986,6 +1051,7 @@ def _build_configs_from_env() -> Dict[AgentRole, AgentConfig]:
         AgentRole.LEARNING: "AGENT_LEARNING_MODEL",
         AgentRole.CRITIC: "AGENT_CRITIC_MODEL",
         AgentRole.EXIT: "AGENT_EXIT_MODEL",
+        AgentRole.SCOUT: "AGENT_SCOUT_MODEL",
     }
     for role, env_key in env_model_map.items():
         model = os.getenv(env_key, "").strip()
@@ -999,6 +1065,7 @@ def _build_configs_from_env() -> Dict[AgentRole, AgentConfig]:
         AgentRole.LEARNING: "AGENT_LEARNING_ENABLED",
         AgentRole.CRITIC: "AGENT_CRITIC_ENABLED",
         AgentRole.EXIT: "AGENT_EXIT_ENABLED",
+        AgentRole.SCOUT: "AGENT_SCOUT_ENABLED",
     }
     for role, env_key in env_enabled_map.items():
         val = os.getenv(env_key, "true").lower()

@@ -76,10 +76,21 @@ def call_llm(
             start = time.monotonic()
             _total_calls += 1
 
+            # Use Anthropic prompt caching for system prompts.
+            # System prompts are reused across calls — caching saves ~90% on
+            # input tokens after the first call with the same prompt.
+            system_content = [
+                {
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+
             response = client.messages.create(
                 model=model,
                 max_tokens=max_tokens,
-                system=system_prompt,
+                system=system_content,
                 messages=[{"role": "user", "content": snapshot_json}],
             )
 
@@ -99,9 +110,11 @@ def call_llm(
                     f"JSON likely incomplete. Consider increasing max_tokens."
                 )
 
-            # Track usage
+            # Track usage (including cache hits)
             in_tok = getattr(response.usage, "input_tokens", 0)
             out_tok = getattr(response.usage, "output_tokens", 0)
+            cache_read = getattr(response.usage, "cache_read_input_tokens", 0)
+            cache_create = getattr(response.usage, "cache_creation_input_tokens", 0)
             _total_input_tokens += in_tok
             _total_output_tokens += out_tok
 
@@ -109,6 +122,8 @@ def call_llm(
                 "input_tokens": in_tok,
                 "output_tokens": out_tok,
                 "latency_ms": elapsed_ms,
+                "cache_read_tokens": cache_read,
+                "cache_create_tokens": cache_create,
             }
 
             logger.info(

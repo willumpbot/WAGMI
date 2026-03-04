@@ -62,6 +62,8 @@ class RiskFilterChain:
         current_extreme_count: int = 0,
         risk_tier: str = "medium",
         cb_conf_override_pct: float = 0.92,
+        open_positions: Optional[Dict[str, Any]] = None,
+        portfolio_risk_engine=None,
     ) -> FilterResult:
         """Run a signal through all risk gates.
 
@@ -96,7 +98,43 @@ class RiskFilterChain:
                 rejection_reason=f"Max positions ({self.config.max_open_positions}) reached"
             )
 
-        # Gate 4: Leverage decision
+        # Gate 4: Correlation guard — prevent clustered directional risk
+        # If we already hold positions, check that adding this trade doesn't
+        # create excessive correlated exposure (e.g., 3 long alts all 0.8+ corr)
+        if portfolio_risk_engine and open_positions and current_open_count >= 2:
+            try:
+                corr_matrix = portfolio_risk_engine.get_correlation_matrix()
+                if corr_matrix:
+                    # Build positions map including the proposed new trade
+                    positions_map = {}
+                    for sym, pos in open_positions.items():
+                        side = getattr(pos, 'side', 'LONG').lower()
+                        positions_map[sym] = side
+                    proposed_side = "long" if signal.side == "BUY" else "short"
+                    positions_map[signal.symbol] = proposed_side
+
+                    cluster_risk = corr_matrix.get_cluster_risk(positions_map)
+                    meta["cluster_risk"] = round(cluster_risk, 3)
+
+                    # High correlation cluster → reduce size or reject
+                    if cluster_risk >= 0.85:
+                        return FilterResult(
+                            approved=False, signal=signal,
+                            rejection_reason=f"Correlation cluster risk {cluster_risk:.2f} >= 0.85 "
+                                             f"(too many correlated positions in same direction)",
+                            metadata=meta,
+                        )
+                    elif cluster_risk >= 0.70:
+                        # Don't reject, but reduce risk multiplier by 40%
+                        meta["correlation_size_reduction"] = 0.6
+                        logger.info(
+                            f"[CORR-GUARD] {signal.symbol} cluster_risk={cluster_risk:.2f} "
+                            f"— reducing position size by 40%"
+                        )
+            except Exception as e:
+                logger.debug(f"[CORR-GUARD] Error: {e}")
+
+        # Gate 5: Leverage decision
         lev_decision = self.leverage_mgr.decide(
             confidence=signal.confidence,
             num_strategies_agree=num_strategies_agree,
@@ -115,6 +153,11 @@ class RiskFilterChain:
         override_constraints = self.risk_mgr.get_override_constraints(signal.confidence)
         leverage = min(lev_decision.leverage, override_constraints["max_leverage"])
         risk_mult = lev_decision.risk_multiplier * override_constraints["size_multiplier"]
+
+        # Apply correlation-based size reduction if flagged
+        corr_reduction = meta.get("correlation_size_reduction", 1.0)
+        if corr_reduction < 1.0:
+            risk_mult *= corr_reduction
 
         meta["leverage"] = leverage
         meta["leverage_tier"] = lev_decision.tier

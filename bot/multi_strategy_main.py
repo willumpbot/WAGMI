@@ -759,7 +759,11 @@ class MultiStrategyBot:
         # Collect candidate signals for rotation evaluation
         self._tick_candidates: list = []
 
-        for symbol, sym_cfg in DEFAULT_SYMBOLS.items():
+        # Smart symbol evaluation priority: evaluate symbols most likely
+        # to produce actionable signals first (lead-lag targets, volatile, open positions)
+        eval_order = self._prioritize_symbols(DEFAULT_SYMBOLS)
+
+        for symbol, sym_cfg in eval_order:
             try:
                 self._process_symbol(symbol, sym_cfg, trace_id)
             except Exception as e:
@@ -801,6 +805,27 @@ class MultiStrategyBot:
                     LLMTrigger.CROSS_MARKET_DIVERGENCE,
                     context=divergence,
                 )
+
+            # Check lead-lag signals: a leader moved, follower hasn't responded yet
+            # This proactively triggers LLM evaluation BEFORE the follower moves
+            if self.cross_symbol_tracker:
+                try:
+                    lead_lag_signals = self.cross_symbol_tracker.get_active_signals()
+                    for ll_sig in lead_lag_signals:
+                        if ll_sig.get("confidence", 0) >= 0.45:
+                            self._llm_triggers.add(
+                                LLMTrigger.LEAD_LAG_SIGNAL,
+                                context={
+                                    "leader": ll_sig["leader"],
+                                    "follower": ll_sig["follower"],
+                                    "leader_move": ll_sig["leader_move"],
+                                    "expected_follower_move": ll_sig["expected_follower_move"],
+                                    "avg_lag_min": ll_sig["avg_lag_min"],
+                                },
+                            )
+                            break  # One lead-lag trigger per tick is enough
+                except Exception:
+                    pass
 
             # Check memory-worthy events (performance shifts, streaks)
             mem_events = self._llm_triggers.check_memory_events()
@@ -856,6 +881,14 @@ class MultiStrategyBot:
                 self._check_llm_exit_suggestions()
             except Exception as e:
                 logger.warning(f"[{trace_id}] Exit intelligence error: {e}")
+
+        # Scout Agent: idle-time preparation and forecasting
+        # Runs every 10th tick (~5 min at 30s intervals) to prepare for upcoming trades
+        if self._tick % 10 == 0 and os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
+            try:
+                self._run_scout_preparation(trace_id)
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Scout preparation error: {e}")
 
         # Position aging alerts: flag positions held too long with adverse funding
         # Runs every 10th tick (~10 min at 60s intervals)
@@ -3497,6 +3530,161 @@ class MultiStrategyBot:
         )
 
     # ── LLM Exit Intelligence ─────────────────────────────────────
+
+    def _prioritize_symbols(self, symbols_dict):
+        """Order symbols by evaluation priority for the current tick.
+
+        Priority scoring (higher = evaluated first):
+        - +10: Has open position (need to monitor)
+        - +8:  Is a lead-lag follower with active signal (about to move)
+        - +5:  High recent price change (>2% in 1h, volatile = actionable)
+        - +3:  In favorable regime (trend or high_volatility)
+        - +0:  Default (evaluated last)
+
+        Returns list of (symbol, config) tuples sorted by priority (descending).
+        """
+        scored = []
+        open_positions = self.pos_mgr.get_open_positions()
+
+        # Get lead-lag follower symbols
+        lead_lag_followers = set()
+        if self.cross_symbol_tracker:
+            try:
+                for sig in self.cross_symbol_tracker.get_active_signals():
+                    if sig.get("confidence", 0) >= 0.3:
+                        lead_lag_followers.add(sig["follower"])
+            except Exception:
+                pass
+
+        for symbol, cfg in symbols_dict.items():
+            priority = 0
+
+            # Open position → high priority (monitoring)
+            if symbol in open_positions:
+                priority += 10
+
+            # Lead-lag follower → expected to move soon
+            if symbol in lead_lag_followers:
+                priority += 8
+
+            # High volatility → more likely to produce signals
+            change_1h = abs(self._price_changes_1h.get(symbol, 0.0))
+            if change_1h >= 2.0:
+                priority += 5
+            elif change_1h >= 1.0:
+                priority += 2
+
+            # Favorable regime
+            try:
+                regime = self.regime_detector.get_regime(symbol)
+                if regime in ("trend", "high_volatility"):
+                    priority += 3
+            except Exception:
+                pass
+
+            scored.append((priority, symbol, cfg))
+
+        # Sort descending by priority, stable sort preserves original order for ties
+        scored.sort(key=lambda x: -x[0])
+        return [(sym, cfg) for _, sym, cfg in scored]
+
+    def _run_scout_preparation(self, trace_id: str):
+        """Run the Scout Agent during idle time for trade preparation.
+
+        Gathers cross-market data and runs the Scout Agent (Haiku) to:
+        - Build a watchlist of symbols approaching key levels
+        - Pre-form directional theses for likely setups
+        - Forecast regime transitions
+        - Surface lead-lag opportunities
+        - Calculate risk budget and correlation warnings
+
+        Findings are written to the pipeline scratchpad for downstream
+        agents to consume when a signal fires.
+        """
+        try:
+            from llm.agents.coordinator import get_coordinator, is_multi_agent_enabled
+            if not is_multi_agent_enabled():
+                return
+            coordinator = get_coordinator()
+        except Exception:
+            return
+
+        # Build scout context: all symbols, prices, regimes, positions, lead-lag
+        scout_data = {"symbols": {}}
+
+        for symbol in DEFAULT_SYMBOLS:
+            sym_data = {}
+            # Current price and recent change
+            price = self._last_prices.get(symbol)
+            if price:
+                sym_data["price"] = round(price, 4)
+                change_1h = self._price_changes_1h.get(symbol, 0.0)
+                sym_data["change_1h_pct"] = round(change_1h, 2)
+
+            # Current regime
+            try:
+                sym_data["regime"] = self.regime_detector.get_regime(symbol)
+            except Exception:
+                sym_data["regime"] = "unknown"
+
+            # Funding rate
+            funding = self._last_funding_rates.get(symbol, 0.0)
+            if funding:
+                sym_data["funding_rate"] = round(funding, 6)
+
+            scout_data["symbols"][symbol] = sym_data
+
+        # Open positions summary
+        open_pos = self.pos_mgr.get_open_positions()
+        if open_pos:
+            scout_data["open_positions"] = {}
+            for sym, pos in open_pos.items():
+                price = self._last_prices.get(sym, pos.entry)
+                is_long = pos.side == "LONG"
+                upnl_pct = ((price - pos.entry) / pos.entry * 100) if is_long else ((pos.entry - price) / pos.entry * 100)
+                scout_data["open_positions"][sym] = {
+                    "side": pos.side,
+                    "entry": pos.entry,
+                    "unrealized_pct": round(upnl_pct, 2),
+                }
+
+        # Lead-lag signals
+        if hasattr(self, 'cross_symbol_tracker') and self.cross_symbol_tracker:
+            try:
+                lead_lag = self.cross_symbol_tracker.get_active_signals()
+                if lead_lag:
+                    scout_data["lead_lag_signals"] = lead_lag[:5]
+            except Exception:
+                pass
+
+        # Portfolio correlation risk
+        if hasattr(self, 'portfolio_risk') and self.portfolio_risk and open_pos:
+            try:
+                positions_map = {sym: pos.side.lower() for sym, pos in open_pos.items()}
+                corr_matrix = self.portfolio_risk.get_correlation_matrix()
+                if corr_matrix:
+                    cluster_risk = corr_matrix.get_cluster_risk(positions_map)
+                    scout_data["portfolio_cluster_risk"] = round(cluster_risk, 3)
+            except Exception:
+                pass
+
+        # Risk budget
+        equity = self.risk_mgr.equity
+        open_count = self.pos_mgr.get_open_count()
+        max_positions = self.risk_mgr.max_open_positions
+        scout_data["risk_budget"] = {
+            "equity": round(equity, 2),
+            "open_positions": open_count,
+            "max_positions": max_positions,
+            "slots_available": max(0, max_positions - open_count),
+            "risk_per_trade": self.risk_mgr.risk_per_trade,
+        }
+
+        # Run scout
+        result = coordinator.run_scout(scout_data)
+        if result:
+            logger.info(f"[{trace_id}][SCOUT] Preparation complete: "
+                        f"{len(result.get('watchlist', []))} watchlist items")
 
     def _check_llm_exit_suggestions(self):
         """Evaluate open positions for dynamic SL/TP adjustments using the exit engine.

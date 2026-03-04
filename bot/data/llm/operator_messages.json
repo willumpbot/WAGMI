@@ -567,6 +567,22 @@
       "message": "Lost 5 trades in a row. Current regime detection may be off.",
       "suggestion": "Consider pausing for 30min or switching to VETO_ONLY mode",
       "auto_fixable": false
+    },
+    {
+      "ts": 1772589620.7117465,
+      "severity": "WARNING",
+      "category": "performance",
+      "message": "Lost 5 trades in a row. Current regime detection may be off.",
+      "suggestion": "Consider pausing for 30min or switching to VETO_ONLY mode",
+      "auto_fixable": false
+    },
+    {
+      "ts": 1772589649.5161488,
+      "severity": "WARNING",
+      "category": "performance",
+      "message": "Lost 5 trades in a row. Current regime detection may be off.",
+      "suggestion": "Consider pausing for 30min or switching to VETO_ONLY mode",
+      "auto_fixable": false
     }
   ],
   "last_sent_by_category": {}

@@ -45,8 +45,9 @@ class LLMTrigger(IntEnum):
     STRATEGY_CONSENSUS = 6
     STRATEGY_DISAGREEMENT = 7
     CROSS_MARKET_DIVERGENCE = 8
-    MEMORY_EVENT = 9
-    PERIODIC = 10
+    LEAD_LAG_SIGNAL = 9           # Lead-lag pattern: leader moved, follower hasn't yet
+    MEMORY_EVENT = 10
+    PERIODIC = 11
 
 
 # Minimum seconds between LLM calls for each trigger type.
@@ -59,6 +60,7 @@ TRIGGER_COOLDOWNS: Dict[LLMTrigger, int] = {
     LLMTrigger.STRATEGY_CONSENSUS: 60,
     LLMTrigger.STRATEGY_DISAGREEMENT: 60,
     LLMTrigger.CROSS_MARKET_DIVERGENCE: 120,
+    LLMTrigger.LEAD_LAG_SIGNAL: 90,
     LLMTrigger.MEMORY_EVENT: 180,
     LLMTrigger.PERIODIC: 300,
 }
@@ -73,6 +75,7 @@ TRIGGER_LABELS: Dict[LLMTrigger, str] = {
     LLMTrigger.STRATEGY_CONSENSUS: "strategy consensus",
     LLMTrigger.STRATEGY_DISAGREEMENT: "strategy disagreement",
     LLMTrigger.CROSS_MARKET_DIVERGENCE: "cross-market divergence",
+    LLMTrigger.LEAD_LAG_SIGNAL: "lead-lag signal (follower expected to move)",
     LLMTrigger.MEMORY_EVENT: "memory-worthy event",
     LLMTrigger.PERIODIC: "periodic update",
 }
