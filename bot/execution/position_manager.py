@@ -466,7 +466,7 @@ class PositionManager:
             f"PnL={pnl:.2f} | SL->BE+={pos.sl} | Trailing ON"
         )
 
-        return TradeEvent(
+        event = TradeEvent(
             symbol=pos.symbol,
             action="TP1",
             side=pos.side,
@@ -482,6 +482,8 @@ class PositionManager:
                 "tp1_close_pct": dynamic_close_pct,
             },
         )
+        self.trade_log.append(event)
+        return event
 
     def _update_trailing_stop(self, pos: Position, current_price: float):
         """
@@ -616,7 +618,7 @@ class PositionManager:
 
         profile_data = pos.trade_profile.to_dict() if pos.trade_profile else {}
 
-        return TradeEvent(
+        event = TradeEvent(
             symbol=pos.symbol,
             action=action,
             side=pos.side,
@@ -642,6 +644,8 @@ class PositionManager:
                 "trade_profile": profile_data,
             },
         )
+        self.trade_log.append(event)
+        return event
 
     def force_close(self, symbol: str, price: float, reason: str = "EMERGENCY") -> Optional[TradeEvent]:
         """Force close a position (circuit breaker, liquidation avoidance, etc.)."""
@@ -757,7 +761,7 @@ class PositionManager:
         """Summary of all trades taken."""
         closed = [e for e in self.trade_log if e.action in
                   ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY",
-                   "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")]
+                   "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE", "BACKTEST_END", "HOLD_LIMIT")]
         if not closed:
             return {"total_trades": 0}
 
@@ -779,6 +783,6 @@ class PositionManager:
             "by_action": {
                 action: sum(1 for e in closed if e.action == action)
                 for action in ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY",
-                               "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
+                               "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE", "BACKTEST_END", "HOLD_LIMIT")
             },
         }

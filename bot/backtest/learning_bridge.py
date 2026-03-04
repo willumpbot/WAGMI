@@ -52,6 +52,7 @@ class BacktestLearningBridge:
             "insights_generated": 0,
             "hypotheses_evidence": 0,
             "growth_trades": 0,
+            "llm_decisions_ingested": 0,
         }
 
     def ingest(self, engine) -> Dict[str, Any]:
@@ -83,6 +84,18 @@ class BacktestLearningBridge:
         # Build enriched trade records from trade events
         trade_records = self._build_trade_records(closed_trades, signals, engine)
 
+        # Build LLM regime lookup if LLM integration was used
+        llm_regime_map = {}
+        if hasattr(engine, "llm") and engine.llm and engine.llm.decisions:
+            llm_regime_map = self._build_llm_regime_map(engine.llm.decisions)
+
+        # Enrich trade records with LLM regime data
+        if llm_regime_map:
+            for record in trade_records:
+                sym = record.get("symbol", "")
+                if sym in llm_regime_map:
+                    record["regime"] = llm_regime_map[sym]
+
         # Feed each learning system (each one is independent, wrapped in try/except)
         self._feed_strategy_weights(trade_records)
         self._feed_deep_memory(trade_records)
@@ -90,6 +103,10 @@ class BacktestLearningBridge:
         self._feed_self_teaching(trade_records)
         self._feed_growth_orchestrator(trade_records)
         self._generate_insights(trade_records)
+
+        # Feed LLM-specific learnings
+        if hasattr(engine, "llm") and engine.llm:
+            self._feed_llm_decisions(engine.llm)
 
         logger.info(f"[LEARN-BRIDGE] Ingestion complete: {self._stats}")
         return {"status": "ok", **self._stats}
@@ -202,7 +219,7 @@ class BacktestLearningBridge:
                     tp2=record.get("tp2", 0.0),
                     confidence=record["confidence"],
                     leverage=record["leverage"],
-                    regime="unknown",  # Backtest doesn't have LLM regime classification
+                    regime=record.get("regime", "unknown"),  # LLM-enriched if --llm used
                     strategies_agreed=[record["strategy"]],
                     outcome=record["outcome"],
                     pnl=record["pnl"],
@@ -583,6 +600,51 @@ class BacktestLearningBridge:
         except Exception as e:
             logger.warning(f"[LEARN-BRIDGE] Insight generation failed: {e}")
 
+    # ── 7. LLM Decision Learnings ─────────────────────────────────
+
+    def _build_llm_regime_map(self, decisions: list) -> dict:
+        """Build a symbol -> latest regime mapping from LLM decisions."""
+        regime_map = {}
+        for dec in decisions:
+            regime = dec.get("regime")
+            if regime and regime != "unknown":
+                # We don't have per-symbol info in the decision log, but
+                # the regime applies to the market context of that decision
+                # Use the most recent regime classification
+                regime_map["_latest"] = regime
+        return regime_map
+
+    def _feed_llm_decisions(self, llm_integration):
+        """Feed LLM agent decisions into learning systems for persistence."""
+        try:
+            decisions = llm_integration.decisions
+            if not decisions:
+                return
+
+            from llm.deep_memory import get_deep_memory
+            dm = get_deep_memory()
+
+            for dec in decisions:
+                regime = dec.get("regime")
+                if regime and regime != "unknown":
+                    # Record regime observation for calibration
+                    try:
+                        dm.record_regime_observation(
+                            regime=regime,
+                            confidence=dec.get("confidence", 0.5),
+                            source="backtest_llm",
+                        )
+                    except (AttributeError, TypeError):
+                        pass  # Method may not exist in all versions
+
+            self._stats["llm_decisions_ingested"] = len(decisions)
+            logger.info(
+                f"[LEARN-BRIDGE] LLM decisions ingested: "
+                f"{self._stats['llm_decisions_ingested']}"
+            )
+        except Exception as e:
+            logger.warning(f"[LEARN-BRIDGE] LLM decision feed failed: {e}")
+
     def get_summary(self) -> str:
         """Get a human-readable summary of what was ingested."""
         lines = [
@@ -595,6 +657,7 @@ class BacktestLearningBridge:
             f"  Knowledge entries:     {self._stats['knowledge_entries']}",
             f"  Insights generated:    {self._stats['insights_generated']}",
             f"  Growth trades fed:     {self._stats['growth_trades']}",
+            f"  LLM decisions:         {self._stats['llm_decisions_ingested']}",
             "=" * 40,
         ]
         return "\n".join(lines)

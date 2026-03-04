@@ -126,10 +126,11 @@ class DataFetcher:
     """
 
     def __init__(self, max_retries: int = 3, retry_delay: float = 5.0, cache_ttl: int = 45,
-                 cb_threshold: int = 5, cb_reset_s: int = 300):
+                 cb_threshold: int = 5, cb_reset_s: int = 300, backtest_mode: bool = False):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.cache_ttl = cache_ttl
+        self.backtest_mode = backtest_mode
         self._cache: Dict[str, tuple] = {}
         self._lock = threading.Lock()
         self._circuit_breaker = ExchangeCircuitBreaker(cb_threshold, cb_reset_s)
@@ -318,7 +319,7 @@ class DataFetcher:
                             "1d": 4320,
                         }
                         max_age = expected_freshness.get(timeframe, 360)
-                        if age_min > max_age:
+                        if age_min > max_age and not self.backtest_mode:
                             logger.warning(
                                 f"[DATA] {symbol_name} {timeframe} data is {age_min:.0f}m old "
                                 f"(max {max_age}m) from {ex_name}"

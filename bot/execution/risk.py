@@ -66,16 +66,25 @@ class CircuitBreaker:
         self.last_reset_date: Optional[str] = None
         self._override_count = 0  # Track CB overrides per trip
 
-    def _maybe_reset_daily(self, equity: float = 0.0):
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    def _maybe_reset_daily(self, equity: float = 0.0, sim_time: Optional[datetime] = None):
+        ref_time = sim_time or datetime.now(timezone.utc)
+        today = ref_time.strftime("%Y-%m-%d")
         if self.last_reset_date != today:
             self.daily_pnl = 0.0
             self.start_of_day_equity = equity if equity > 0 else self.peak_equity
             self.last_reset_date = today
 
-    def record_trade(self, pnl: float, equity: float):
-        """Record a completed trade's PnL for circuit breaker evaluation."""
-        self._maybe_reset_daily(equity)
+    def record_trade(self, pnl: float, equity: float, sim_time: Optional[datetime] = None):
+        """Record a completed trade's PnL for circuit breaker evaluation.
+
+        Args:
+            pnl: Trade PnL (positive = profit, negative = loss)
+            equity: Current equity after this trade
+            sim_time: Optional simulation timestamp (for backtest mode).
+                      When provided, daily resets and cooldown use sim_time
+                      instead of wall-clock time.
+        """
+        self._maybe_reset_daily(equity, sim_time=sim_time)
         self.daily_pnl += pnl
 
         if pnl < 0:
@@ -86,9 +95,9 @@ class CircuitBreaker:
         if equity > self.peak_equity:
             self.peak_equity = equity
 
-        self._check_breakers(equity)
+        self._check_breakers(equity, sim_time=sim_time)
 
-    def _check_breakers(self, equity: float):
+    def _check_breakers(self, equity: float, sim_time: Optional[datetime] = None):
         """Check if any circuit breaker should trigger."""
         if self.tripped:
             return
@@ -100,24 +109,25 @@ class CircuitBreaker:
         if base_equity > 0:
             daily_loss_pct = abs(self.daily_pnl) / base_equity
             if self.daily_pnl < 0 and daily_loss_pct >= self.daily_loss_limit_pct:
-                self._trip(f"Daily loss {daily_loss_pct:.1%} >= {self.daily_loss_limit_pct:.1%} limit")
+                self._trip(f"Daily loss {daily_loss_pct:.1%} >= {self.daily_loss_limit_pct:.1%} limit", sim_time=sim_time)
                 return
 
         # 2. Consecutive losses
         if self.consecutive_losses >= self.max_consecutive_losses:
-            self._trip(f"{self.consecutive_losses} consecutive losses >= {self.max_consecutive_losses} limit")
+            self._trip(f"{self.consecutive_losses} consecutive losses >= {self.max_consecutive_losses} limit", sim_time=sim_time)
             return
 
         # 3. Drawdown from peak
         if self.peak_equity > 0:
             drawdown = (self.peak_equity - equity) / self.peak_equity
             if drawdown >= self.max_drawdown_pct:
-                self._trip(f"Drawdown {drawdown:.1%} >= {self.max_drawdown_pct:.1%} limit")
+                self._trip(f"Drawdown {drawdown:.1%} >= {self.max_drawdown_pct:.1%} limit", sim_time=sim_time)
                 return
 
-    def _trip(self, reason: str):
+    def _trip(self, reason: str, sim_time: Optional[datetime] = None):
         self.tripped = True
         self.trip_time = time.time()
+        self._trip_sim_time = sim_time  # For backtest cooldown tracking
         self.trip_reason = reason
         logger.warning(f"CIRCUIT BREAKER TRIPPED: {reason}")
         _log_safety_event("circuit_breaker", reason, {
@@ -127,24 +137,43 @@ class CircuitBreaker:
 
     def is_trading_allowed(self, confidence: float = 0.0,
                             cb_conf_override_pct: float = 0.92,
-                            max_overrides: int = 2) -> bool:
+                            max_overrides: int = 2,
+                            sim_time: Optional[datetime] = None) -> bool:
         """Check if trading is currently allowed.
 
         When tripped, allows up to max_overrides trades with
         confidence >= cb_conf_override_pct. After that, hard-locked until cooldown.
+
+        Args:
+            sim_time: Optional simulation timestamp. When provided, cooldown is
+                      checked against sim_time instead of wall-clock time.
         """
         if not self.tripped:
             return True
 
-        # Check cooldown
-        if self.trip_time and (time.time() - self.trip_time) >= self.cooldown_minutes * 60:
-            self.tripped = False
-            self.trip_reason = ""
-            self.trip_time = None
-            self.consecutive_losses = 0
-            self._override_count = 0
-            logger.info("Circuit breaker cooldown complete, trading resumed")
-            return True
+        # Check cooldown — use sim_time elapsed if provided, else wall-clock
+        if self.trip_time:
+            if sim_time is not None:
+                # In backtest: trip_time is stored as wall-clock, but we track
+                # sim elapsed via _trip_sim_time set at trip time
+                trip_sim = getattr(self, "_trip_sim_time", None)
+                if trip_sim and (sim_time - trip_sim).total_seconds() >= self.cooldown_minutes * 60:
+                    self.tripped = False
+                    self.trip_reason = ""
+                    self.trip_time = None
+                    self._trip_sim_time = None
+                    self.consecutive_losses = 0
+                    self._override_count = 0
+                    logger.info("Circuit breaker cooldown complete (sim time), trading resumed")
+                    return True
+            elif (time.time() - self.trip_time) >= self.cooldown_minutes * 60:
+                self.tripped = False
+                self.trip_reason = ""
+                self.trip_time = None
+                self.consecutive_losses = 0
+                self._override_count = 0
+                logger.info("Circuit breaker cooldown complete, trading resumed")
+                return True
 
         # High-confidence override: allow exceptional setups through
         # but limit the number of overrides per trip to prevent CB bypass
@@ -211,6 +240,7 @@ class CircuitBreaker:
         self.tripped = False
         self.trip_reason = ""
         self.trip_time = None
+        self._trip_sim_time = None
         self.consecutive_losses = 0
         self._override_count = 0  # Reset override counter so new overrides are allowed
         logger.info("Circuit breaker force reset")
@@ -237,14 +267,16 @@ class RiskManager:
         self.circuit_breaker.peak_equity = starting_equity
 
     def can_open_position(self, current_open: int, confidence: float = 0.0,
-                          cb_conf_override_pct: float = 0.92) -> bool:
+                          cb_conf_override_pct: float = 0.92,
+                          sim_time: Optional[datetime] = None) -> bool:
         """Check if we can open a new position.
 
         When circuit breaker is tripped, only high-confidence trades
         (>= cb_conf_override_pct) are allowed through.
         """
         if not self.circuit_breaker.is_trading_allowed(
-            confidence=confidence, cb_conf_override_pct=cb_conf_override_pct
+            confidence=confidence, cb_conf_override_pct=cb_conf_override_pct,
+            sim_time=sim_time,
         ):
             if confidence > 0:
                 logger.info(
@@ -313,10 +345,15 @@ class RiskManager:
         )
         return qty
 
-    def update_equity(self, pnl: float):
-        """Update equity after a trade closes."""
+    def update_equity(self, pnl: float, sim_time: Optional[datetime] = None):
+        """Update equity after a trade closes.
+
+        Args:
+            pnl: Net PnL from the trade (after fees)
+            sim_time: Optional simulation timestamp for backtest mode
+        """
         self.equity += pnl
-        self.circuit_breaker.record_trade(pnl, self.equity)
+        self.circuit_breaker.record_trade(pnl, self.equity, sim_time=sim_time)
 
     def get_status(self) -> Dict[str, Any]:
         return {
