@@ -162,6 +162,49 @@ LEARNING_AGENT_PROTOCOL = [
 ]
 
 
+EXIT_AGENT_PROTOCOL = [
+    ThoughtStep(
+        "OBSERVE",
+        "Position state: side, entry, current price, unrealized PnL, hold time, regime at entry vs now, funding accumulated.",
+        required=True,
+        max_tokens_hint=50,
+    ),
+    ThoughtStep(
+        "VALIDATE_THESIS",
+        "Is the original thesis still valid? Has regime shifted? Has BTC reversed? Has volume died? Has the key level broken?",
+        required=True,
+        max_tokens_hint=60,
+    ),
+    ThoughtStep(
+        "DECIDE",
+        "hold/tighten_sl/widen_tp/partial_close/full_close. Set urgency (low/medium/high/critical).",
+        required=True,
+        max_tokens_hint=40,
+    ),
+]
+
+SCOUT_AGENT_PROTOCOL = [
+    ThoughtStep(
+        "SCAN",
+        "Cross-market overview: which symbols are near key levels? Which have favorable regime + momentum alignment?",
+        required=True,
+        max_tokens_hint=60,
+    ),
+    ThoughtStep(
+        "FORECAST",
+        "Is the current regime stable or shifting? Any lead-lag opportunities? Correlation warnings?",
+        required=True,
+        max_tokens_hint=50,
+    ),
+    ThoughtStep(
+        "PREPARE",
+        "Build watchlist priorities and pre-formed theses. Keep output under 500 tokens.",
+        required=True,
+        max_tokens_hint=40,
+    ),
+]
+
+
 # ── Protocol Registry ────────────────────────────────────────────
 
 AGENT_PROTOCOLS: Dict[str, List[ThoughtStep]] = {
@@ -170,6 +213,8 @@ AGENT_PROTOCOLS: Dict[str, List[ThoughtStep]] = {
     "risk": RISK_AGENT_PROTOCOL,
     "critic": CRITIC_AGENT_PROTOCOL,
     "learning": LEARNING_AGENT_PROTOCOL,
+    "exit": EXIT_AGENT_PROTOCOL,
+    "scout": SCOUT_AGENT_PROTOCOL,
 }
 
 

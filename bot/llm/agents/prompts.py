@@ -29,7 +29,7 @@ Given market data, classify the regime into exactly ONE of:
 
 OUTPUT (JSON only, no prose):
 ```json
-{"rg": "trend|range|panic|high_volatility|low_liquidity|news_dislocation|unknown", "conf": 0.0-1.0, "factors": "brief 1-line evidence", "bias": "bullish|bearish|neutral", "transition": "stable|shifting_to_X|uncertain", "outlook": "1-line prediction: where is price likely headed in next 4-12h and why"}
+{"rg": "trend|range|panic|high_volatility|low_liquidity|news_dislocation|unknown", "conf": 0.0-1.0, "factors": "brief 1-line evidence", "bias": "bullish|bearish|neutral", "transition": "stable|shifting_to_trend|shifting_to_range|shifting_to_panic|shifting_to_high_volatility|uncertain", "outlook": "1-line prediction: where is price likely headed in next 4-12h and why"}
 ```
 
 RULES:
@@ -152,11 +152,11 @@ Set mu=null if nothing notable.
 ## CONSISTENCY RULE
 Don't contradict recent_dec within 10min unless market genuinely changed (>1% move, new signal, regime shift).
 
-## HARD LIMITS
-- circuit_breaker active → always skip, c=0.0
-- low_liquidity regime → always skip
-- port_lev >= 8.0 → skip
-- Never long alts into BTC nuke
+## HARD LIMITS — VIOLATION = AUTOMATIC OVERRIDE TO skip, c=0.0
+- circuit_breaker active → MUST output `{"a": "skip", "c": 0.0}`. No exceptions.
+- low_liquidity regime → MUST skip. No edge exists, wicks eat PnL.
+- port_lev >= 8.0 → MUST skip. System auto-blocks; save the LLM call.
+- BTC dropping >3% in 1h → NEVER long alts. Output skip or short only.
 """
 
 # ── Risk & Sizing Agent ─────────────────────────────────────────

@@ -4508,6 +4508,37 @@ class MultiStrategyBot:
                 scout_compact["corr_warning"] = cw
             global_ctx.extra["scout_preparation"] = scout_compact
 
+        # Inject deep memory edge map: which setups and strategies have proven edge
+        try:
+            from llm.deep_memory import get_deep_memory
+            _dm = get_deep_memory()
+            # Setup type win rates (most actionable for Trade Agent)
+            _setup_wr = _dm.trade_dna.get_win_rate_by("setup_type")
+            if _setup_wr:
+                edge_map = {}
+                for stype, stats in _setup_wr.items():
+                    if stats["total"] >= 5:  # Only include statistically meaningful
+                        wr = stats["wins"] / stats["total"] if stats["total"] else 0
+                        edge_map[stype] = {
+                            "wr": round(wr * 100),
+                            "n": stats["total"],
+                            "pnl": round(stats["pnl"], 2),
+                        }
+                if edge_map:
+                    global_ctx.extra["setup_edge_map"] = edge_map
+            # Strategy win rates by regime (helps Trade Agent weigh signals)
+            _strat_wr = _dm.trade_dna.get_win_rate_by("strategy")
+            if _strat_wr:
+                strat_perf = {}
+                for strat, stats in _strat_wr.items():
+                    if stats["total"] >= 3:
+                        wr = stats["wins"] / stats["total"] if stats["total"] else 0
+                        strat_perf[strat] = {"wr": round(wr * 100), "n": stats["total"]}
+                if strat_perf:
+                    global_ctx.extra["strategy_performance"] = strat_perf
+        except Exception as e:
+            logger.debug(f"Deep memory edge map injection error: {e}")
+
         # Risk context
         risk_ctx = LLMRiskContext(
             daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,

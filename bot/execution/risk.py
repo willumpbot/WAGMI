@@ -212,6 +212,7 @@ class CircuitBreaker:
         self.trip_reason = ""
         self.trip_time = None
         self.consecutive_losses = 0
+        self._override_count = 0  # Reset override counter so new overrides are allowed
         logger.info("Circuit breaker force reset")
 
 

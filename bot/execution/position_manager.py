@@ -290,7 +290,8 @@ class PositionManager:
     ) -> List[TradeEvent]:
         """
         Process a price update for a position.
-        Checks early exit, SL, TP1, trailing stop, TP2 in order.
+        Checks SL, early exit, TP1, trailing stop, TP2 in order.
+        SL is checked first to prevent early exit from closing at a worse price.
         df_5m: optional 5m DataFrame for momentum-based early exit.
         """
         if symbol not in self.positions:
@@ -303,7 +304,16 @@ class PositionManager:
         events = []
         is_long = pos.side == "LONG"
 
-        # 0. Early exit: cut position if momentum accelerating toward SL
+        # 0. Check stop loss FIRST — on flash crashes, SL must fire before early exit
+        # to prevent closing at a worse price than the SL level
+        sl_hit = (current_price <= pos.sl) if is_long else (current_price >= pos.sl)
+        if sl_hit:
+            action = "TRAILING_STOP" if pos.state == TRAILING else "SL"
+            event = self._close_position(pos, current_price, action)
+            events.append(event)
+            return events
+
+        # 1. Early exit: cut position if momentum accelerating toward SL
         # Only in OPEN state (after TP1, breakeven SL protects us)
         if pos.state == OPEN and df_5m is not None:
             early = self._check_early_exit(pos, current_price, df_5m)
@@ -311,14 +321,6 @@ class PositionManager:
                 event = self._close_position(pos, current_price, "EARLY_EXIT")
                 events.append(event)
                 return events
-
-        # 1. Check stop loss (including trailing stop)
-        sl_hit = (current_price <= pos.sl) if is_long else (current_price >= pos.sl)
-        if sl_hit:
-            action = "TRAILING_STOP" if pos.state == TRAILING else "SL"
-            event = self._close_position(pos, current_price, action)
-            events.append(event)
-            return events
 
         # 2. Check TP1 (dynamic partial close -> TP1_HIT -> TRAILING)
         if pos.state == OPEN:

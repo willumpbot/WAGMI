@@ -250,7 +250,18 @@ def _classify_setup(strategies: List[str], best_confluence: str, regime: str) ->
     if n >= 4:
         return f"full_confluence_{regime}" if regime else "full_confluence"
 
-    # Named setup patterns
+    # Named 3-strategy setup patterns (check before 2-strategy to capture specifics)
+    if n >= 3:
+        if {"regime_trend", "monte_carlo_zones", "multi_tier_quality"}.issubset(strats):
+            return "trend_zone_micro"  # Macro trend + statistical zone + micro entry
+        if {"regime_trend", "monte_carlo_zones", "confidence_scorer"}.issubset(strats):
+            return "trend_zone_validated"  # Macro trend + zone + historical validation
+        if {"regime_trend", "multi_tier_quality", "confidence_scorer"}.issubset(strats):
+            return "trend_micro_validated"  # Macro trend + micro + validated
+        if {"monte_carlo_zones", "multi_tier_quality", "confidence_scorer"}.issubset(strats):
+            return "zone_micro_validated"  # Mean-reversion zone + micro + validated
+
+    # Named 2-strategy setup patterns
     if {"regime_trend", "monte_carlo_zones"}.issubset(strats):
         return "trend_at_zone"  # Trending + at statistical buy/sell zone
     if {"regime_trend", "multi_tier_quality"}.issubset(strats):
@@ -265,9 +276,7 @@ def _classify_setup(strategies: List[str], best_confluence: str, regime: str) ->
         return "trend_validated"  # Trend + historically validated
 
     # Fallback: generic
-    if n >= 3:
-        return f"triple_{best_confluence}"
-    return f"pair_{best_confluence}"
+    return f"pair_{best_confluence}" if n >= 2 else f"solo_{best_confluence}"
 
 
 STRATEGY_REGIME_FIT = {

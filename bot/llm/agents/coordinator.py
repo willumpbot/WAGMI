@@ -836,10 +836,13 @@ class AgentCoordinator:
             override = rk.get("override")
             if override == "skip":
                 action = "flat"
-                notes += " | RISK: override to skip"
-            elif override == "reduce" and size_mult > 0.7:
+                risk_reason = rk.get("reason", rk.get("n", "unspecified"))
+                notes += f" | RISK: override to skip ({risk_reason})"
+            elif override == "reduce":
+                old_mult = size_mult
                 size_mult = min(size_mult, 0.7)
-                notes += " | RISK: reduced sizing"
+                risk_reason = rk.get("reason", rk.get("n", ""))
+                notes += f" | RISK: sizing {old_mult:.1f}x→{size_mult:.1f}x ({risk_reason})"
 
         # Critic Agent: can adjust or override
         # Treat any non-"approve" verdict as a challenge (defensive normalization)
