@@ -335,7 +335,7 @@ class GrowthOrchestrator:
             self._run_learning_cycle(market_state)
             self._last_learning_cycle = now
 
-        # 4. Apply auto-safe improvement proposals
+        # 4. Apply auto-safe improvement proposals (with real dispatch)
         if self._improvement_engine:
             try:
                 auto = self._improvement_engine.get_auto_applicable()
@@ -343,9 +343,20 @@ class GrowthOrchestrator:
                     logger.info(
                         f"[GROWTH] Auto-applying: {proposal.title}"
                     )
+                    # Actually dispatch the proposal action (not just mark as applied)
+                    dispatched = False
+                    try:
+                        from llm.learning_integrator import get_learning_integrator
+                        dispatched = get_learning_integrator().dispatch_proposal(proposal)
+                    except Exception as de:
+                        logger.debug(f"[GROWTH] Dispatch error: {de}")
+
                     self._improvement_engine.apply_proposal(
                         proposal.proposal_id,
-                        outcome_notes="Auto-applied (AUTO_SAFE level)",
+                        outcome_notes=(
+                            "Auto-applied and dispatched" if dispatched
+                            else "Auto-applied (display-only, no dispatcher)"
+                        ),
                     )
             except Exception as e:
                 logger.debug(f"[GROWTH] Auto-apply error: {e}")

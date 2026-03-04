@@ -653,15 +653,25 @@ class AgentCoordinator:
         except Exception:
             pass
 
-        # 4. Growth state
+        # 4. Growth state (enriched with integrator context)
         try:
-            from llm.growth.orchestrator import get_growth_orchestrator
-            growth = get_growth_orchestrator()
-            ctx = growth.get_llm_context()
-            if ctx:
-                state["growth"] = ctx[:400]
+            from llm.learning_integrator import get_learning_integrator
+            integrator = get_learning_integrator()
+            # Get enriched context (includes growth + veto accuracy + session perf +
+            # symbol patterns + feedback status + self-improvement)
+            enriched = integrator.get_enriched_llm_context()
+            if enriched:
+                state["growth"] = enriched[:600]
         except Exception:
-            pass
+            # Fallback to basic growth context
+            try:
+                from llm.growth.orchestrator import get_growth_orchestrator
+                growth = get_growth_orchestrator()
+                ctx = growth.get_llm_context()
+                if ctx:
+                    state["growth"] = ctx[:400]
+            except Exception:
+                pass
 
         # 5. Cost tracking
         try:

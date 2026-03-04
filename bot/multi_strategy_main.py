@@ -529,6 +529,8 @@ class MultiStrategyBot:
 
         # Track 1h price changes for cross-market divergence detection
         self._price_changes_1h: Dict[str, float] = {}
+        self._price_highs_1h: Dict[str, float] = {}  # Rolling 1h high per symbol (for veto resolution)
+        self._price_lows_1h: Dict[str, float] = {}   # Rolling 1h low per symbol (for veto resolution)
 
         # Self-tuning risk engine: adaptive profiles based on equity curve
         self.risk_telemetry = get_risk_telemetry()
@@ -905,18 +907,29 @@ class MultiStrategyBot:
         # Growth intelligence: periodic learning cycles, hypothesis graduation,
         # veto resolution, auto-safe proposal application, report generation
         try:
-            # Build current prices for veto resolution
+            # Build current prices for veto resolution using actual candle high/low
+            # Previously used spot price for high=low=close, breaking veto resolution
             _growth_prices = {}
             for _sym, _cfg in DEFAULT_SYMBOLS.items():
                 p = self._last_prices.get(_sym)
                 if p:
-                    _growth_prices[_sym] = {"high": p, "low": p, "close": p}
+                    # Use 1h price range tracking if available for accurate veto resolution
+                    _high = getattr(self, '_price_highs_1h', {}).get(_sym, p)
+                    _low = getattr(self, '_price_lows_1h', {}).get(_sym, p)
+                    _growth_prices[_sym] = {"high": _high, "low": _low, "close": p}
             self.growth.tick(
                 current_prices=_growth_prices,
                 market_state={"price_changes_1h": self._price_changes_1h},
             )
         except Exception as e:
             logger.debug(f"[{trace_id}] Growth tick error: {e}")
+
+        # Learning integrator: evolution→growth bridge, weight sync, curriculum advance
+        try:
+            from llm.learning_integrator import get_learning_integrator
+            get_learning_integrator().tick()
+        except Exception as e:
+            logger.debug(f"[{trace_id}] Learning integrator tick error: {e}")
 
         # LLM exit intelligence: evaluate open positions for dynamic SL/TP adjustments
         # Runs every 5th tick (~5 min at 60s intervals) to balance responsiveness vs cost
@@ -1386,12 +1399,15 @@ class MultiStrategyBot:
             except Exception:
                 pass
 
-        # Track 1h price changes for cross-market divergence detection
+        # Track 1h price changes and high/low for cross-market divergence + veto resolution
         try:
             df_1h_div = data.get("1h")
             if df_1h_div is not None and not df_1h_div.empty and len(df_1h_div) > 2:
                 pch = (current_price - float(df_1h_div["close"].iloc[-2])) / float(df_1h_div["close"].iloc[-2]) * 100
                 self._price_changes_1h[symbol] = pch
+                # Track 1h high/low from the latest candle for accurate veto resolution
+                self._price_highs_1h[symbol] = float(df_1h_div["high"].iloc[-1])
+                self._price_lows_1h[symbol] = float(df_1h_div["low"].iloc[-1])
         except Exception:
             pass
 
@@ -1668,27 +1684,24 @@ class MultiStrategyBot:
                 except Exception as e:
                     logger.debug(f"Trade autopsy error: {e}")
 
-                # Self-Teaching: feed closed trade to learning engine
-                if self.teaching_engine and self.config.enable_self_teaching:
-                    try:
-                        self.teaching_engine.record_trade_for_learning({
-                            "symbol": symbol,
-                            "side": event.side,
-                            "outcome": "WIN" if total_pnl > 0 else "LOSS",
-                            "pnl": total_pnl,
-                            "confidence": getattr(
-                                self.pos_mgr.positions.get(symbol), "confidence", 0
-                            ),
-                            "regime": _rg_fb,
-                            "strategy": event.strategy,
-                            "entry_type": _et_fb,
-                            "num_agree": signal_result.metadata.get("num_agree", 1) if hasattr(signal_result, 'metadata') else 1,
-                            "hold_time_s": event.metadata.get("hold_time_s", 0),
-                            "leverage": event.leverage,
-                            "exit_action": event.action,
-                        })
-                    except Exception as e:
-                        logger.debug(f"Self-teaching trade record error: {e}")
+                # Self-Teaching: removed direct feed — now handled exclusively via
+                # growth.on_trade_closed() → orchestrator._teaching_engine.record_trade_for_learning()
+                # This fixes the duplicate feed that was counting every trade twice.
+
+                # Learning Integrator: validate insights, close broken feedback loops
+                try:
+                    from llm.learning_integrator import get_learning_integrator
+                    get_learning_integrator().on_trade_closed({
+                        "symbol": symbol,
+                        "side": event.side,
+                        "outcome": "WIN" if total_pnl > 0 else "LOSS",
+                        "pnl": total_pnl,
+                        "confidence": pos.confidence if pos else 0,
+                        "regime": _rg_fb,
+                        "strategy": event.strategy,
+                    })
+                except Exception as e:
+                    logger.debug(f"Learning integrator trade close error: {e}")
 
                 # RL buffer: record transition for offline learning
                 try:
