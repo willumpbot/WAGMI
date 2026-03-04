@@ -172,7 +172,10 @@ Now evaluate the specific trade candidate:
 - 0.7-0.85 = strong — thesis + regime + confluence all align
 - 0.85-1.0 = rare — everything aligns perfectly, size up aggressively
 
-**SELF-CORRECTION via self_perf:**
+**SELF-CORRECTION via self_perf + agent_cal:**
+- `agent_cal`: Your per-regime accuracy ledger. If `agent_cal.trend.acc=0.48` and `cal=+0.15`, you are 15% overconfident in trend regime. Reduce accordingly.
+- If `agent_cal.<regime>.acc < 0.45` AND `n >= 10`: you're bad at this regime — raise threshold to 0.70+ to proceed.
+- If `agent_cal.<regime>.acc > 0.65` AND `n >= 10`: you're GOOD at this regime — trust your reads, don't second-guess.
 - If cal > +0.10: You're overconfident — reduce confidence by 10%
 - If cal < -0.10: You're UNDER-confident — INCREASE confidence by 10%. You're missing winners. Every "skip" on a winner costs exactly as much as taking a loser.
 - If cal < -0.20: SEVERELY under-confident — increase confidence by 15%. You are systematically leaving money on the table.

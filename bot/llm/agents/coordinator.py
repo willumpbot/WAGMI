@@ -644,6 +644,29 @@ class AgentCoordinator:
         except Exception:
             pass
 
+        # 8. Historical patterns from replay engine (free — no API calls)
+        try:
+            from llm.replay_engine import get_historical_patterns
+            patterns = get_historical_patterns(max_decisions=200)
+            if patterns and "error" not in patterns:
+                state["historical_patterns"] = patterns
+        except Exception:
+            pass
+
+        # 9. Per-agent calibration ledger summaries
+        try:
+            from llm.agents.calibration_ledger import get_calibration_ledger
+            ledger = get_calibration_ledger()
+            agent_cals = {}
+            for agent_name in ("trade", "critic", "regime"):
+                summary = ledger.get_agent_summary(agent_name)
+                if summary.get("total_decisions", 0) >= 5:
+                    agent_cals[agent_name] = summary
+            if agent_cals:
+                state["agent_calibrations"] = agent_cals
+        except Exception:
+            pass
+
         return json.dumps(state, separators=(",", ":"), default=str)
 
     def get_stats(self) -> Dict[str, Any]:

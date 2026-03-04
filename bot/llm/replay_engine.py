@@ -271,6 +271,128 @@ def run_live_replay(
     }
 
 
+def get_historical_patterns(max_decisions: int = 200) -> Dict[str, Any]:
+    """Extract actionable patterns from historical decisions for agent training.
+
+    This is the bridge between replay data and agent learning — no API calls needed.
+    The Overseer and Learning agents consume this to understand system-level patterns.
+    """
+    decisions = load_historical_decisions(max_decisions, only_with_snapshot=False)
+    if len(decisions) < 5:
+        return {"error": "Insufficient historical data (need 5+ decisions)"}
+
+    # Per-regime win rate
+    regime_stats: Dict[str, Dict[str, int]] = {}
+    # Per-action win rate
+    action_stats: Dict[str, Dict[str, int]] = {}
+    # Confidence calibration buckets
+    conf_buckets: Dict[str, List[bool]] = {"low": [], "mid": [], "high": []}
+    # Time-of-day patterns
+    hour_stats: Dict[int, Dict[str, int]] = {}
+    # Streak analysis
+    outcomes: List[str] = []
+
+    for d in decisions:
+        regime = d.get("regime", "unknown")
+        action = d.get("action", "flat")
+        confidence = d.get("confidence", 0)
+        allowed = d.get("allowed", False)
+        outcome = d.get("outcome", "")  # WIN/LOSS if available
+
+        # Only count trades that were allowed AND have outcomes
+        if not outcome:
+            continue
+
+        is_win = outcome == "WIN"
+
+        # Regime stats
+        if regime not in regime_stats:
+            regime_stats[regime] = {"wins": 0, "total": 0}
+        regime_stats[regime]["total"] += 1
+        if is_win:
+            regime_stats[regime]["wins"] += 1
+
+        # Action stats
+        if action not in action_stats:
+            action_stats[action] = {"wins": 0, "total": 0}
+        action_stats[action]["total"] += 1
+        if is_win:
+            action_stats[action]["wins"] += 1
+
+        # Confidence calibration
+        if confidence < 0.55:
+            conf_buckets["low"].append(is_win)
+        elif confidence < 0.75:
+            conf_buckets["mid"].append(is_win)
+        else:
+            conf_buckets["high"].append(is_win)
+
+        # Hour of day
+        ts = d.get("ts", 0)
+        if ts:
+            import datetime
+            hour = datetime.datetime.fromtimestamp(ts).hour
+            if hour not in hour_stats:
+                hour_stats[hour] = {"wins": 0, "total": 0}
+            hour_stats[hour]["total"] += 1
+            if is_win:
+                hour_stats[hour]["wins"] += 1
+
+        outcomes.append("W" if is_win else "L")
+
+    # Compute results
+    result: Dict[str, Any] = {"total_with_outcomes": len(outcomes)}
+
+    # Regime WR
+    result["regime_wr"] = {
+        r: {"wr": round(s["wins"] / max(s["total"], 1) * 100), "n": s["total"]}
+        for r, s in regime_stats.items() if s["total"] >= 3
+    }
+
+    # Action WR
+    result["action_wr"] = {
+        a: {"wr": round(s["wins"] / max(s["total"], 1) * 100), "n": s["total"]}
+        for a, s in action_stats.items() if s["total"] >= 3
+    }
+
+    # Confidence calibration
+    for bucket_name, bucket_outcomes in conf_buckets.items():
+        if len(bucket_outcomes) >= 3:
+            wr = sum(1 for o in bucket_outcomes if o) / len(bucket_outcomes)
+            result[f"conf_{bucket_name}_wr"] = round(wr * 100)
+            result[f"conf_{bucket_name}_n"] = len(bucket_outcomes)
+
+    # Best/worst hours
+    if hour_stats:
+        sorted_hours = sorted(
+            [(h, s["wins"] / max(s["total"], 1), s["total"])
+             for h, s in hour_stats.items() if s["total"] >= 3],
+            key=lambda x: -x[1],
+        )
+        if sorted_hours:
+            result["best_hours"] = [(h, round(wr * 100)) for h, wr, _ in sorted_hours[:3]]
+            result["worst_hours"] = [(h, round(wr * 100)) for h, wr, _ in sorted_hours[-3:]]
+
+    # Streak analysis
+    if outcomes:
+        max_win_streak = max_loss_streak = 0
+        current_streak = 0
+        for i, o in enumerate(outcomes):
+            if i == 0 or outcomes[i] == outcomes[i - 1]:
+                current_streak += 1
+            else:
+                current_streak = 1
+            if o == "W":
+                max_win_streak = max(max_win_streak, current_streak)
+            else:
+                max_loss_streak = max(max_loss_streak, current_streak)
+        result["max_win_streak"] = max_win_streak
+        result["max_loss_streak"] = max_loss_streak
+        result["recent_outcomes"] = "".join(outcomes[-20:])
+
+    return result
+
+
 def get_replay_summary() -> str:
     """Quick summary of available replay data for CLI/monitoring."""
     decisions = load_historical_decisions(max_decisions=1000, only_with_snapshot=False)
