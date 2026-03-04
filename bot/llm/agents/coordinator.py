@@ -247,7 +247,8 @@ class AgentCoordinator:
         # ── Quant Agent confidence adjustment ─────────────────
         # If Quant Agent flagged signal as noise or adjusted confidence, apply
         if quant_out and quant_out.ok:
-            sq = quant_out.data.get("signal_quality", {})
+            sq_raw = quant_out.data.get("signal_quality", {})
+            sq = sq_raw if isinstance(sq_raw, dict) else {}
             quant_adj = sq.get("confidence_adjustment", 0)
             if quant_adj and isinstance(quant_adj, (int, float)):
                 td = trade_out.data
@@ -1588,7 +1589,7 @@ def _normalize_action(raw: str) -> str:
 
 
 def _parse_agent_json(raw_text: str) -> Optional[dict]:
-    """Parse JSON from agent response, handling markdown fences."""
+    """Parse JSON from agent response, handling markdown fences and truncation."""
     import re
     text = raw_text.strip()
     if text.startswith("```"):
@@ -1609,6 +1610,42 @@ def _parse_agent_json(raw_text: str) -> Optional[dict]:
                     return parsed
             except json.JSONDecodeError:
                 pass
+        # Try repairing truncated JSON by closing open braces/brackets
+        repaired = _try_repair_truncated_json(text)
+        if repaired:
+            return repaired
+    return None
+
+
+def _try_repair_truncated_json(text: str) -> Optional[dict]:
+    """Attempt to repair truncated JSON by closing open braces/brackets."""
+    # Find the start of JSON
+    start = text.find("{")
+    if start < 0:
+        return None
+    fragment = text[start:]
+    # Remove any trailing partial string (e.g., `"key": "some text` without closing quote)
+    # by finding the last complete key-value pair
+    # Strategy: progressively close open brackets/braces
+    open_braces = fragment.count("{") - fragment.count("}")
+    open_brackets = fragment.count("[") - fragment.count("]")
+    if open_braces <= 0 and open_brackets <= 0:
+        return None  # Not a truncation issue
+    # Strip trailing partial values (e.g., incomplete strings)
+    # Find last comma or colon, trim after that, then close
+    last_complete = max(fragment.rfind(","), fragment.rfind(":"), fragment.rfind("}"), fragment.rfind("]"))
+    if last_complete > 0:
+        # If last char before our closing is a colon, drop the incomplete key-value pair
+        trimmed = fragment[:last_complete]
+        if trimmed.rstrip().endswith(":") or trimmed.rstrip().endswith(","):
+            trimmed = trimmed.rstrip().rstrip(":,")
+        suffix = "]" * max(0, open_brackets) + "}" * max(0, open_braces)
+        try:
+            parsed = json.loads(trimmed + suffix)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
     return None
 
 

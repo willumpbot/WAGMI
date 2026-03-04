@@ -380,7 +380,11 @@ class BacktestLLMIntegration:
             return decision
 
         except Exception as e:
-            logger.warning(f"[BACKTEST-LLM] Entry evaluation failed: {e}")
+            import traceback
+            logger.warning(
+                f"[BACKTEST-LLM] Entry evaluation failed: {e}\n"
+                f"{traceback.format_exc()}"
+            )
             self.llm_failures += 1
             self.candles_fallback += 1
             return None
