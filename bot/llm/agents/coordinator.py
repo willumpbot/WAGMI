@@ -39,6 +39,7 @@ from llm.agents.shared_context import (
     get_pipeline_scratchpad,
     get_shared_lessons,
     reset_pipeline_scratchpad,
+    score_confluence,
 )
 from llm.agents.thought_protocol import build_protocol_prefix
 from llm.agents.consistency_checker import (
@@ -121,6 +122,8 @@ class AgentCoordinator:
         scratchpad.write("regime", "regime", regime_out.data.get("rg", "unknown"))
         scratchpad.write("regime", "regime_conf", regime_out.data.get("conf", 0.5))
         scratchpad.write("regime", "bias", regime_out.data.get("bias", "neutral"))
+        if regime_out.data.get("outlook"):
+            scratchpad.write("regime", "outlook", regime_out.data["outlook"])
 
         # ── Step 2: Trade Agent ─────────────────────────────────
         trade_input = self._build_trade_input(snapshot_data, regime_out)
@@ -142,6 +145,8 @@ class AgentCoordinator:
         # Write trade output to scratchpad for downstream agents
         scratchpad.write("trade", "action", trade_out.data.get("a", "skip"))
         scratchpad.write("trade", "confidence", trade_out.data.get("c", 0.0))
+        if trade_out.data.get("thesis"):
+            scratchpad.write("trade", "thesis", trade_out.data["thesis"])
 
         # ── Step 3: Risk Agent (optional) ───────────────────────
         risk_out = None
@@ -200,7 +205,7 @@ class AgentCoordinator:
                 )
 
         # ── Merge into LLMDecision ──────────────────────────────
-        decision = self._merge_outputs(regime_out, trade_out, risk_out, critic_out)
+        decision = self._merge_outputs(regime_out, trade_out, risk_out, critic_out, snapshot_data)
 
         elapsed_ms = int((time.monotonic() - start) * 1000)
         self._total_latency_ms += elapsed_ms
@@ -432,6 +437,13 @@ class AgentCoordinator:
         # Inject regime agent's output so trade agent knows the classified regime
         trade_data["regime_analysis"] = regime_out.data
 
+        # Compute and inject confluence quality scoring
+        confluence = _compute_confluence_from_snapshot(
+            snapshot, regime_out.data.get("rg", "unknown")
+        )
+        if confluence:
+            trade_data["confluence"] = confluence
+
         # Ensure all knowledge/learning fields are present with generous limits
         # (the Trade Agent is the decision-maker — don't starve it of context)
         _ensure_field(trade_data, "knowledge", snapshot, max_len=1000)
@@ -520,6 +532,13 @@ class AgentCoordinator:
         }
         if risk_out and risk_out.ok:
             critic_data["risk_assessment"] = risk_out.data
+
+        # Inject confluence quality so Critic can assess agreement type
+        confluence = _compute_confluence_from_snapshot(
+            snapshot, regime_out.data.get("rg", "unknown")
+        )
+        if confluence:
+            critic_data["confluence"] = confluence
         # Full self-awareness context — the critic's primary tool
         for key in ("self_perf", "recent_dec", "recent_lessons", "autopsy"):
             if key in snapshot:
@@ -552,6 +571,7 @@ class AgentCoordinator:
             "llm_action", "llm_confidence", "num_strategies_agreed",
             "ensemble_confidence", "chop_score", "entry_type",
             "funding_paid", "leverage", "size_multiplier",
+            "thesis", "counter_thesis", "setup_type", "confluence_quality",
         ):
             if key in trade_data:
                 relevant[key] = trade_data[key]
@@ -586,6 +606,7 @@ class AgentCoordinator:
         trade_out: AgentOutput,
         risk_out: Optional[AgentOutput],
         critic_out: Optional[AgentOutput],
+        snapshot_data: Optional[dict] = None,
     ) -> LLMDecision:
         """Merge all agent outputs into a single LLMDecision.
 
@@ -616,6 +637,10 @@ class AgentCoordinator:
             regime_note += f" bias={regime_bias}"
         if regime_transition != "stable":
             regime_note += f" {regime_transition}"
+        regime_outlook = rd.get("outlook", "")
+
+        # Trade thesis
+        trade_thesis = td.get("thesis", "")
 
         # Risk Agent: sizing + strategy weights
         size_mult = 1.0
@@ -643,9 +668,11 @@ class AgentCoordinator:
 
         # Critic Agent: can adjust or override
         # Treat any non-"approve" verdict as a challenge (defensive normalization)
+        counter_thesis = ""
         if critic_out and critic_out.ok:
             cd = critic_out.data
             verdict = cd.get("verdict", "approve").lower().strip()
+            counter_thesis = cd.get("counter_thesis", "")
 
             if verdict != "approve":
                 adj_action = cd.get("adjusted_action")
@@ -663,6 +690,9 @@ class AgentCoordinator:
                     confidence = max(0.0, min(1.0, confidence))
                     notes += f" | CRITIC: conf {old_conf:.2f}→{confidence:.2f}"
 
+                if counter_thesis:
+                    notes += f" | COUNTER: {counter_thesis[:80]}"
+
             cal_note = cd.get("calibration_note")
             if cal_note:
                 # Store as memory update if we don't already have one
@@ -673,8 +703,34 @@ class AgentCoordinator:
         if risk_flags:
             notes += f" | RISKS: {', '.join(str(f) for f in risk_flags[:3])}"
 
-        # Build the final notes: regime + trade + risk + critic
-        combined_notes = f"[MA] {regime_note} | {notes}"[:1000]
+        # Confluence quality for notes
+        confluence_info = _compute_confluence_from_snapshot(
+            snapshot_data or {}, regime,
+        )
+        confl_note = ""
+        setup_type = ""
+        if confluence_info:
+            setup_type = confluence_info.get("setup_type", "")
+            confl_note = (
+                f"CONFLUENCE: {confluence_info['count']}strat "
+                f"q={confluence_info['quality']:.0%} "
+                f"type={confluence_info['best_pair']} "
+                f"setup={setup_type}"
+            )
+
+        # Build the final notes: regime + thesis + confluence + trade + risk + critic
+        thesis_parts = []
+        if regime_outlook:
+            thesis_parts.append(f"OUTLOOK: {regime_outlook[:80]}")
+        if trade_thesis:
+            thesis_parts.append(f"THESIS: {trade_thesis[:80]}")
+        thesis_block = " | ".join(thesis_parts)
+        combined_notes = f"[MA] {regime_note}"
+        if thesis_block:
+            combined_notes += f" | {thesis_block}"
+        if confl_note:
+            combined_notes += f" | {confl_note}"
+        combined_notes = f"{combined_notes} | {notes}"[:1500]
 
         return LLMDecision(
             action=action,
@@ -783,6 +839,44 @@ def _extract_section(text: str, keyword: str, max_len: int = 300) -> Optional[st
             if chars >= max_len:
                 break
     return "\n".join(result_lines) if result_lines else None
+
+
+def _compute_confluence_from_snapshot(
+    snapshot: dict, regime: str
+) -> Optional[Dict[str, Any]]:
+    """Extract agreeing strategies from the snapshot and compute confluence quality."""
+    try:
+        markets = snapshot.get("m", [])
+        if not markets:
+            return None
+
+        # Find the primary market (first one with signals)
+        for market in markets:
+            sigs = market.get("sg", [])
+            if not sigs:
+                continue
+
+            # Find the consensus side
+            side_counts: Dict[str, list] = {}
+            for sig in sigs:
+                sd = sig.get("sd", "neutral")
+                if sd in ("neutral",):
+                    continue
+                side_counts.setdefault(sd, []).append(sig.get("st", ""))
+
+            if not side_counts:
+                continue
+
+            # Get the majority side
+            majority_side = max(side_counts, key=lambda s: len(side_counts[s]))
+            agreeing = side_counts[majority_side]
+
+            if agreeing:
+                return score_confluence(agreeing, regime)
+
+    except Exception:
+        pass
+    return None
 
 
 def _get_default_model(role: AgentRole) -> str:

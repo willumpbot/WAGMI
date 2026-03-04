@@ -156,6 +156,120 @@ STRATEGY_CONFLUENCE = {
     ("confidence_scorer", "multi_tier_quality"): "timeframe — historical validation + real-time micro entry. If both BUY: setup type historically profitable + clean current entry.",
 }
 
+# Confluence quality weights: convergent > timeframe > redundant
+_CONFLUENCE_TYPE_SCORES = {
+    "convergent": 1.0,
+    "timeframe": 0.8,
+    "redundant": 0.5,
+}
+
+
+def score_confluence(agreeing_strategies: List[str], regime: str = "") -> Dict[str, Any]:
+    """Score the quality of strategy agreement — not just count, but type.
+
+    Returns:
+        {
+            "count": int,
+            "quality": float (0-1, quality-weighted),
+            "best_pair": str (best confluence type found),
+            "pairs": [{"s1": x, "s2": y, "type": t}],
+            "regime_fit": float (0-1, how well agreeing strategies fit current regime),
+            "setup_type": str (classified setup pattern),
+        }
+    """
+    count = len(agreeing_strategies)
+    if count < 2:
+        setup_type = agreeing_strategies[0] if agreeing_strategies else "none"
+        regime_fit_score = 0.5
+        if regime and agreeing_strategies:
+            fit = STRATEGY_REGIME_FIT.get(regime, {})
+            fit_val = fit.get(agreeing_strategies[0], "moderate")
+            regime_fit_score = {"strong": 1.0, "moderate": 0.6, "weak": 0.3, "avoid": 0.0}.get(fit_val, 0.5)
+        return {
+            "count": count,
+            "quality": 0.3 if count == 1 else 0.0,
+            "best_pair": "none",
+            "pairs": [],
+            "regime_fit": regime_fit_score,
+            "setup_type": f"solo_{setup_type}",
+        }
+
+    pairs = []
+    best_type = "redundant"
+    best_score = 0.0
+
+    for i, s1 in enumerate(agreeing_strategies):
+        for s2 in agreeing_strategies[i + 1:]:
+            key = (s1, s2) if (s1, s2) in STRATEGY_CONFLUENCE else (s2, s1)
+            desc = STRATEGY_CONFLUENCE.get(key, "redundant — unknown pair")
+            confl_type = desc.split(" — ")[0].strip()
+            score = _CONFLUENCE_TYPE_SCORES.get(confl_type, 0.4)
+            pairs.append({"s1": s1, "s2": s2, "type": confl_type})
+            if score > best_score:
+                best_score = score
+                best_type = confl_type
+
+    # Quality = average pair quality, boosted by count
+    avg_pair_score = sum(_CONFLUENCE_TYPE_SCORES.get(p["type"], 0.4) for p in pairs) / max(len(pairs), 1)
+    count_boost = min(count / 4.0, 1.0)  # 4 strategies = max boost
+    quality = avg_pair_score * 0.7 + count_boost * 0.3
+
+    # Regime fit: average fit of agreeing strategies
+    regime_fit_score = 0.5
+    if regime:
+        fit = STRATEGY_REGIME_FIT.get(regime, {})
+        fit_scores = []
+        for s in agreeing_strategies:
+            fit_val = fit.get(s, "moderate")
+            fit_scores.append({"strong": 1.0, "moderate": 0.6, "weak": 0.3, "avoid": 0.0}.get(fit_val, 0.5))
+        regime_fit_score = sum(fit_scores) / len(fit_scores) if fit_scores else 0.5
+
+    # Classify setup type
+    setup_type = _classify_setup(agreeing_strategies, best_type, regime)
+
+    return {
+        "count": count,
+        "quality": round(quality, 2),
+        "best_pair": best_type,
+        "pairs": pairs,
+        "regime_fit": round(regime_fit_score, 2),
+        "setup_type": setup_type,
+    }
+
+
+def _classify_setup(strategies: List[str], best_confluence: str, regime: str) -> str:
+    """Classify the trade setup into a named pattern for tracking.
+
+    Setup types become the DNA of the trading system — the Learning Agent
+    tracks which setups win and which lose, building a statistical edge map.
+    """
+    strats = set(strategies)
+    n = len(strats)
+
+    # 4-strategy full agreement
+    if n >= 4:
+        return f"full_confluence_{regime}" if regime else "full_confluence"
+
+    # Named setup patterns
+    if {"regime_trend", "monte_carlo_zones"}.issubset(strats):
+        return "trend_at_zone"  # Trending + at statistical buy/sell zone
+    if {"regime_trend", "multi_tier_quality"}.issubset(strats):
+        return "trend_micro_entry"  # Macro trend + micro timing
+    if {"monte_carlo_zones", "confidence_scorer"}.issubset(strats):
+        return "zone_validated"  # Zone + historical validation
+    if {"monte_carlo_zones", "multi_tier_quality"}.issubset(strats):
+        return "zone_momentum"  # Zone level + EMA momentum shift
+    if {"confidence_scorer", "multi_tier_quality"}.issubset(strats):
+        return "validated_scalp"  # Historical edge + scalp entry
+    if {"regime_trend", "confidence_scorer"}.issubset(strats):
+        return "trend_validated"  # Trend + historically validated
+
+    # Fallback: generic
+    if n >= 3:
+        return f"triple_{best_confluence}"
+    return f"pair_{best_confluence}"
+
+
 STRATEGY_REGIME_FIT = {
     "trend":            {"regime_trend": "strong", "monte_carlo_zones": "weak",     "confidence_scorer": "moderate", "multi_tier_quality": "moderate"},
     "range":            {"regime_trend": "avoid",  "monte_carlo_zones": "strong",   "confidence_scorer": "strong",   "multi_tier_quality": "weak"},

@@ -106,11 +106,12 @@ def process_agent_decision_for_learning(
     if critic_data and critic_data.get("verdict") == "challenge":
         cal_note = critic_data.get("calibration_note")
         reason = critic_data.get("reason", "")
+        counter_thesis = critic_data.get("counter_thesis", "")
 
-        if cal_note:
-            try:
-                from llm.deep_memory import get_deep_memory
-                dm = get_deep_memory()
+        try:
+            from llm.deep_memory import get_deep_memory
+            dm = get_deep_memory()
+            if cal_note:
                 dm.insights.add_insight(
                     category="meta",
                     insight=f"Self-critique: {cal_note[:150]}",
@@ -118,8 +119,17 @@ def process_agent_decision_for_learning(
                     evidence=f"Critic challenged: {reason[:100]}",
                     source="critic_agent",
                 )
-            except Exception:
-                pass
+            # Store counter-thesis for later validation against actual outcome
+            if counter_thesis:
+                dm.insights.add_insight(
+                    category="prediction",
+                    insight=f"Counter-thesis: {counter_thesis[:150]}",
+                    confidence=0.5,
+                    evidence=f"Critic predicted opposite: {reason[:100]}",
+                    source="critic_agent",
+                )
+        except Exception:
+            pass
 
 
 # ── Internal helpers ────────────────────────────────────────────
