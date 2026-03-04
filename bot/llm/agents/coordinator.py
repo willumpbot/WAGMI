@@ -79,6 +79,10 @@ class AgentCoordinator:
         self._last_reported_input = 0
         self._last_reported_output = 0
         self._last_reported_latency = 0
+        # Preserve per-agent outputs from last pipeline run for external consumers
+        self.last_pipeline_results: Dict[AgentRole, AgentOutput] = {}
+        self.last_exit_output: Optional[AgentOutput] = None
+        self.last_consistency_score: Optional[float] = None
 
     # ── Public API ──────────────────────────────────────────────
 
@@ -115,6 +119,7 @@ class AgentCoordinator:
         if not regime_out.ok:
             if self.configs[AgentRole.REGIME].required:
                 logger.warning("[MULTI-AGENT] Regime agent failed — aborting pipeline")
+                self.last_pipeline_results = pipeline_results
                 return None
             # Fallback: unknown regime
             regime_out = AgentOutput(
@@ -169,6 +174,7 @@ class AgentCoordinator:
         if not trade_out.ok:
             if self.configs[AgentRole.TRADE].required:
                 logger.warning("[MULTI-AGENT] Trade agent failed — aborting pipeline")
+                self.last_pipeline_results = pipeline_results
                 return None
             # Fallback: skip
             trade_out = AgentOutput(
@@ -241,7 +247,8 @@ class AgentCoordinator:
         # ── Quant Agent confidence adjustment ─────────────────
         # If Quant Agent flagged signal as noise or adjusted confidence, apply
         if quant_out and quant_out.ok:
-            sq = quant_out.data.get("signal_quality", {})
+            sq_raw = quant_out.data.get("signal_quality", {})
+            sq = sq_raw if isinstance(sq_raw, dict) else {}
             quant_adj = sq.get("confidence_adjustment", 0)
             if quant_adj and isinstance(quant_adj, (int, float)):
                 td = trade_out.data
@@ -290,6 +297,7 @@ class AgentCoordinator:
 
         agents_called = sum(1 for r in pipeline_results.values() if r.ok)
         consistency_score = consistency_report.score
+        self.last_consistency_score = consistency_score
         logger.info(
             f"[MULTI-AGENT] Pipeline done: {agents_called} agents, "
             f"{elapsed_ms}ms total, action={decision.action} "
@@ -321,6 +329,9 @@ class AgentCoordinator:
             )
         except Exception as e:
             logger.debug(f"[MULTI-AGENT] Decision learning error: {e}")
+
+        # Store pipeline results for external consumers (backtest logging, etc.)
+        self.last_pipeline_results = pipeline_results
 
         return decision
 
@@ -369,6 +380,7 @@ class AgentCoordinator:
 
         exit_input = self._build_exit_input(position_data, market_data)
         out = self._call_agent(AgentRole.EXIT, exit_input, model_for_trigger)
+        self.last_exit_output = out
 
         if out.ok:
             action = out.data.get("action", "hold")
@@ -379,6 +391,15 @@ class AgentCoordinator:
                 f"thesis_valid={out.data.get('thesis_still_valid', '?')} "
                 f"reason={out.data.get('reason', '')[:60]}"
             )
+
+            # Feed exit reasoning to learning systems when closing
+            if action in ("full_close", "partial_close", "close"):
+                try:
+                    from llm.agents.learning_integration import process_exit_feedback
+                    process_exit_feedback(out.data, position_data)
+                except Exception as ef:
+                    logger.debug(f"[MULTI-AGENT] Exit feedback error: {ef}")
+
             return out.data
         return None
 
@@ -760,6 +781,29 @@ class AgentCoordinator:
             ),
         }
 
+    def get_last_pipeline_detail(self) -> Optional[Dict[str, Any]]:
+        """Return serialized per-agent outputs from the last pipeline run.
+
+        Returns None if no pipeline has run yet.
+        """
+        if not self.last_pipeline_results:
+            return None
+
+        detail = {}
+        for role, output in self.last_pipeline_results.items():
+            detail[role.value] = {
+                "data": output.data,
+                "model": output.model_used,
+                "input_tokens": output.input_tokens,
+                "output_tokens": output.output_tokens,
+                "latency_ms": output.latency_ms,
+                "ok": output.ok,
+                "error": output.error,
+            }
+        if self.last_consistency_score is not None:
+            detail["consistency_score"] = self.last_consistency_score
+        return detail
+
     # ── Agent calling ───────────────────────────────────────────
 
     def _call_agent(
@@ -822,8 +866,17 @@ class AgentCoordinator:
         )
 
         self._call_count += 1
-        self._total_input_tokens += usage.get("input_tokens", 0)
-        self._total_output_tokens += usage.get("output_tokens", 0)
+        in_tok = usage.get("input_tokens", 0)
+        out_tok = usage.get("output_tokens", 0)
+        self._total_input_tokens += in_tok
+        self._total_output_tokens += out_tok
+
+        # Feed cost tracker so daily budget enforcement stays accurate
+        try:
+            from llm.cost_tracker import get_cost_tracker
+            get_cost_tracker().record_call(in_tok, out_tok, model)
+        except Exception:
+            pass
 
         if raw_text is None:
             return AgentOutput(
@@ -1244,6 +1297,15 @@ class AgentCoordinator:
                 relevant["prior_lessons"] = " | ".join(lessons)
         except Exception:
             pass
+        # Inject exit agent reasoning if it was involved in closing this trade
+        if self.last_exit_output and self.last_exit_output.ok:
+            exit_data = self.last_exit_output.data
+            exit_reason = exit_data.get("reason", "")
+            exit_action = exit_data.get("action", "")
+            if exit_reason and exit_action in ("full_close", "partial_close", "close"):
+                relevant["exit_agent_reasoning"] = exit_reason[:200]
+                relevant["exit_thesis_valid"] = exit_data.get("thesis_still_valid", True)
+
         # Add deep memory context for this symbol/regime
         try:
             from llm.deep_memory import get_deep_memory
@@ -1527,7 +1589,7 @@ def _normalize_action(raw: str) -> str:
 
 
 def _parse_agent_json(raw_text: str) -> Optional[dict]:
-    """Parse JSON from agent response, handling markdown fences."""
+    """Parse JSON from agent response, handling markdown fences and truncation."""
     import re
     text = raw_text.strip()
     if text.startswith("```"):
@@ -1548,6 +1610,42 @@ def _parse_agent_json(raw_text: str) -> Optional[dict]:
                     return parsed
             except json.JSONDecodeError:
                 pass
+        # Try repairing truncated JSON by closing open braces/brackets
+        repaired = _try_repair_truncated_json(text)
+        if repaired:
+            return repaired
+    return None
+
+
+def _try_repair_truncated_json(text: str) -> Optional[dict]:
+    """Attempt to repair truncated JSON by closing open braces/brackets."""
+    # Find the start of JSON
+    start = text.find("{")
+    if start < 0:
+        return None
+    fragment = text[start:]
+    # Remove any trailing partial string (e.g., `"key": "some text` without closing quote)
+    # by finding the last complete key-value pair
+    # Strategy: progressively close open brackets/braces
+    open_braces = fragment.count("{") - fragment.count("}")
+    open_brackets = fragment.count("[") - fragment.count("]")
+    if open_braces <= 0 and open_brackets <= 0:
+        return None  # Not a truncation issue
+    # Strip trailing partial values (e.g., incomplete strings)
+    # Find last comma or colon, trim after that, then close
+    last_complete = max(fragment.rfind(","), fragment.rfind(":"), fragment.rfind("}"), fragment.rfind("]"))
+    if last_complete > 0:
+        # If last char before our closing is a colon, drop the incomplete key-value pair
+        trimmed = fragment[:last_complete]
+        if trimmed.rstrip().endswith(":") or trimmed.rstrip().endswith(","):
+            trimmed = trimmed.rstrip().rstrip(":,")
+        suffix = "]" * max(0, open_brackets) + "}" * max(0, open_braces)
+        try:
+            parsed = json.loads(trimmed + suffix)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
     return None
 
 

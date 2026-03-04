@@ -98,6 +98,18 @@ class BacktestLLMIntegration:
         self.decisions: List[Dict[str, Any]] = []
         self.decisions_log_path = os.path.join("data", "llm", "backtest_decisions.jsonl")
 
+        # Exit decisions log (captures ALL exit agent responses)
+        self.exit_decisions: List[Dict[str, Any]] = []
+
+        # Learning lessons buffer
+        self.learning_lessons: List[Dict[str, Any]] = []
+
+        # Regime timeline (tracks transitions)
+        self.regime_timeline: List[Dict[str, Any]] = []
+
+        # Per-agent cost tracking
+        self.agent_costs: Dict[str, float] = {}
+
         # Exit agent throttle
         self._exit_eval_counters: Dict[str, int] = {}
 
@@ -298,6 +310,17 @@ class BacktestLLMIntegration:
             f"({result.estimated_llm_calls} API calls, {total_candles} candles)"
         )
 
+        # 8. Learning systems validation — prevent spend-then-crash
+        try:
+            from llm.agents.learning_integration import process_agent_lesson  # noqa: F401
+            from llm.deep_memory import get_deep_memory
+            get_deep_memory()
+        except Exception as e:
+            result.warnings.append(
+                f"Learning systems init warning: {e}. "
+                f"Lessons may not persist to deep memory."
+            )
+
         return result
 
     # ── Entry Evaluation ──────────────────────────────────────────
@@ -340,6 +363,10 @@ class BacktestLLMIntegration:
                 self._log_decision(decision, snapshot_data, call_cost, trigger_reason)
             else:
                 self.candles_fallback += 1
+                self._log_skipped_decision(
+                    snapshot_data, call_cost, trigger_reason,
+                    reason="coordinator_returned_none",
+                )
 
             # Check budget
             if self.total_cost_usd >= self.budget_usd:
@@ -353,7 +380,11 @@ class BacktestLLMIntegration:
             return decision
 
         except Exception as e:
-            logger.warning(f"[BACKTEST-LLM] Entry evaluation failed: {e}")
+            import traceback
+            logger.warning(
+                f"[BACKTEST-LLM] Entry evaluation failed: {e}\n"
+                f"{traceback.format_exc()}"
+            )
             self.llm_failures += 1
             self.candles_fallback += 1
             return None
@@ -374,10 +405,10 @@ class BacktestLLMIntegration:
 
         symbol = position_data.get("symbol", "")
 
-        # Throttle: only evaluate every N candles
+        # Throttle: evaluate on first candle (counter==1) and every N candles after
         counter = self._exit_eval_counters.get(symbol, 0) + 1
         self._exit_eval_counters[symbol] = counter
-        if counter % _EXIT_EVAL_INTERVAL != 0:
+        if counter != 1 and counter % _EXIT_EVAL_INTERVAL != 0:
             return None
 
         try:
@@ -393,6 +424,10 @@ class BacktestLLMIntegration:
             if self.total_cost_usd >= self.budget_usd:
                 self.budget_exhausted = True
 
+            # Log ALL exit decisions for audit trail and learning
+            if result:
+                self._log_exit_decision(result, position_data, call_cost)
+
             return result
 
         except Exception as e:
@@ -407,7 +442,12 @@ class BacktestLLMIntegration:
     # ── Learning ──────────────────────────────────────────────────
 
     def run_learning(self, trade_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Run Learning Agent after a trade closes. Returns lesson or None."""
+        """Run Learning Agent after a trade closes. Returns lesson or None.
+
+        Feeds lessons into ALL 6 growth systems via process_agent_lesson():
+        deep memory, post-trade learner, hypothesis tracker, self-teaching,
+        improvement proposals, and calibration ledger.
+        """
         if self.budget_exhausted or self._coordinator is None:
             return None
 
@@ -421,6 +461,15 @@ class BacktestLLMIntegration:
 
             if self.total_cost_usd >= self.budget_usd:
                 self.budget_exhausted = True
+
+            # CRITICAL: Feed lesson into ALL growth systems
+            if result:
+                self.learning_lessons.append(result)
+                try:
+                    from llm.agents.learning_integration import process_agent_lesson
+                    process_agent_lesson(result, trade_data)
+                except Exception as e:
+                    logger.debug(f"[BACKTEST-LLM] Learning integration feed error: {e}")
 
             return result
 
@@ -546,7 +595,13 @@ class BacktestLLMIntegration:
         symbols_completed: List[str],
         equity: float,
     ):
-        """Save checkpoint state atomically."""
+        """Save checkpoint state atomically.
+
+        Flushes accumulated decisions to JSONL first so they survive crashes.
+        """
+        # Flush accumulated data to disk before checkpointing
+        self.flush_decisions()
+
         try:
             os.makedirs(self.checkpoint_dir, exist_ok=True)
             state = {
@@ -561,6 +616,8 @@ class BacktestLLMIntegration:
                     "candles_with_llm": self.candles_with_llm,
                     "candles_fallback": self.candles_fallback,
                     "budget_exhausted": self.budget_exhausted,
+                    "agent_costs": dict(self.agent_costs),
+                    "regime_timeline": self.regime_timeline,
                 },
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
@@ -593,6 +650,8 @@ class BacktestLLMIntegration:
             self.candles_with_llm = stats.get("candles_with_llm", 0)
             self.candles_fallback = stats.get("candles_fallback", 0)
             self.budget_exhausted = stats.get("budget_exhausted", False)
+            self.agent_costs = stats.get("agent_costs", {})
+            self.regime_timeline = stats.get("regime_timeline", [])
 
             state = CheckpointState(
                 candle_index=data["candle_index"],
@@ -647,24 +706,68 @@ class BacktestLLMIntegration:
             "candles_fallback": self.candles_fallback,
             "budget_exhausted": self.budget_exhausted,
             "decisions_logged": len(self.decisions),
+            "agent_costs": dict(self.agent_costs),
+            "exit_decisions_logged": len(self.exit_decisions),
+            "learning_lessons_processed": len(self.learning_lessons),
+            "regime_transitions": len(self.regime_timeline),
+            "regime_timeline": self.regime_timeline,
+            "veto_stats": self._compute_veto_stats(),
+        }
+
+    def _compute_veto_stats(self) -> Dict[str, Any]:
+        """Compute veto/approval stats from logged decisions."""
+        total = len(self.decisions)
+        if total == 0:
+            return {"total_decisions": 0, "approved": 0, "vetoed": 0,
+                    "veto_rate": 0.0}
+        vetoed = sum(1 for d in self.decisions if d["action"] == "flat")
+        approved = total - vetoed
+
+        # Identify critic-driven vetoes vs other
+        critic_vetoes = 0
+        for d in self.decisions:
+            if d["action"] != "flat":
+                continue
+            agents = d.get("agents", {})
+            critic = agents.get("critic", {})
+            if critic.get("ok") and critic.get("data", {}).get("verdict") == "challenge":
+                critic_vetoes += 1
+
+        return {
+            "total_decisions": total,
+            "approved": approved,
+            "vetoed": vetoed,
+            "critic_vetoes": critic_vetoes,
+            "veto_rate": round(vetoed / max(total, 1), 3),
         }
 
     def flush_decisions(self):
-        """Write all buffered decisions to the JSONL log file."""
-        if not self.decisions:
-            return
+        """Write all buffered decisions and exit decisions to JSONL log files."""
+        if self.decisions:
+            try:
+                os.makedirs(os.path.dirname(self.decisions_log_path), exist_ok=True)
+                with open(self.decisions_log_path, "a") as f:
+                    for dec in self.decisions:
+                        f.write(json.dumps(dec, default=str) + "\n")
+                logger.info(
+                    f"[BACKTEST-LLM] Flushed {len(self.decisions)} decisions to "
+                    f"{self.decisions_log_path}"
+                )
+            except Exception as e:
+                logger.warning(f"[BACKTEST-LLM] Failed to flush decisions: {e}")
 
-        try:
-            os.makedirs(os.path.dirname(self.decisions_log_path), exist_ok=True)
-            with open(self.decisions_log_path, "a") as f:
-                for dec in self.decisions:
-                    f.write(json.dumps(dec, default=str) + "\n")
-            logger.info(
-                f"[BACKTEST-LLM] Flushed {len(self.decisions)} decisions to "
-                f"{self.decisions_log_path}"
-            )
-        except Exception as e:
-            logger.warning(f"[BACKTEST-LLM] Failed to flush decisions: {e}")
+        if self.exit_decisions:
+            exit_log_path = os.path.join("data", "llm", "backtest_exits.jsonl")
+            try:
+                os.makedirs(os.path.dirname(exit_log_path), exist_ok=True)
+                with open(exit_log_path, "a") as f:
+                    for dec in self.exit_decisions:
+                        f.write(json.dumps(dec, default=str) + "\n")
+                logger.info(
+                    f"[BACKTEST-LLM] Flushed {len(self.exit_decisions)} exit decisions"
+                )
+            except Exception as e:
+                logger.warning(f"[BACKTEST-LLM] Failed to flush exit decisions: {e}")
 
     # ── Private Helpers ───────────────────────────────────────────
 
@@ -675,25 +778,139 @@ class BacktestLLMIntegration:
         cost: float,
         trigger: str,
     ):
-        """Buffer a decision for later flushing to JSONL."""
+        """Buffer a decision with full per-agent breakdown for learning."""
+        # Extract symbol from snapshot data
+        symbol = ""
+        try:
+            markets = snapshot_data.get("m", []) if snapshot_data else []
+            if markets:
+                symbol = markets[0].get("s", "")
+        except (AttributeError, IndexError):
+            pass
+
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "symbol": symbol,
             "action": decision.action,
             "confidence": decision.confidence,
             "regime": decision.regime,
             "size_multiplier": decision.size_multiplier,
-            "notes": decision.notes[:200] if decision.notes else "",
+            "notes": decision.notes[:500] if decision.notes else "",
             "cost_usd": round(cost, 6),
             "trigger": trigger,
             "source": "backtest",
         }
+
+        # Capture per-agent breakdown (regime, trade thesis, risk, critic)
+        if self._coordinator:
+            agent_detail = self._coordinator.get_last_pipeline_detail()
+            if agent_detail:
+                entry["agents"] = agent_detail
+                # Track per-agent costs with actual model pricing
+                for agent_name, detail in agent_detail.items():
+                    if detail.get("ok"):
+                        model = detail.get("model", "")
+                        pricing = _MODEL_PRICING.get(model, _DEFAULT_PRICING)
+                        agent_cost = (
+                            detail.get("input_tokens", 0) * pricing[0] / 1_000_000
+                            + detail.get("output_tokens", 0) * pricing[1] / 1_000_000
+                        )
+                        self.agent_costs[agent_name] = (
+                            self.agent_costs.get(agent_name, 0) + agent_cost
+                        )
+
+        # Track regime timeline (only on transitions)
+        regime = decision.regime
+        if regime and (
+            not self.regime_timeline
+            or self.regime_timeline[-1]["regime"] != regime
+        ):
+            self.regime_timeline.append({
+                "timestamp": entry["timestamp"],
+                "regime": regime,
+                "confidence": decision.confidence,
+            })
+
+        self.decisions.append(entry)
+
+    def _log_exit_decision(
+        self,
+        result: Dict[str, Any],
+        position_data: Dict[str, Any],
+        cost: float,
+    ):
+        """Buffer an exit agent decision for the audit trail."""
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "type": "exit",
+            "symbol": position_data.get("symbol", ""),
+            "action": result.get("action", "hold"),
+            "urgency": result.get("urgency", "low"),
+            "thesis_still_valid": result.get("thesis_still_valid"),
+            "reason": result.get("reason", "")[:300],
+            "cost_usd": round(cost, 6),
+            "source": "backtest",
+        }
+        # Store exit agent detail
+        if self._coordinator and self._coordinator.last_exit_output:
+            out = self._coordinator.last_exit_output
+            entry["agent_detail"] = {
+                "data": out.data,
+                "model": out.model_used,
+                "input_tokens": out.input_tokens,
+                "output_tokens": out.output_tokens,
+            }
+        self.exit_decisions.append(entry)
+
+    def _log_skipped_decision(
+        self,
+        snapshot_data: Optional[dict],
+        cost: float,
+        trigger: str,
+        reason: str,
+    ):
+        """Log a decision that was skipped (coordinator returned None)."""
+        symbol = ""
+        try:
+            markets = snapshot_data.get("m", []) if snapshot_data else []
+            if markets:
+                symbol = markets[0].get("s", "")
+        except (AttributeError, IndexError):
+            pass
+
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "symbol": symbol,
+            "action": "skipped",
+            "confidence": 0,
+            "regime": "",
+            "cost_usd": round(cost, 6),
+            "trigger": trigger,
+            "source": "backtest",
+            "skip_reason": reason,
+        }
+        # Capture partial pipeline results even on failure
+        if self._coordinator:
+            agent_detail = self._coordinator.get_last_pipeline_detail()
+            if agent_detail:
+                entry["agents"] = agent_detail
         self.decisions.append(entry)
 
     def _compute_cost_from_stats(self, stats: Dict[str, Any]) -> float:
-        """Compute cost from coordinator stats (uses Sonnet pricing as conservative estimate)."""
+        """Compute cost from coordinator stats using actual per-agent model pricing."""
+        # Use per-agent costs from pipeline results when available
+        if self._coordinator and self._coordinator.last_pipeline_results:
+            total = 0.0
+            for role, output in self._coordinator.last_pipeline_results.items():
+                if output.ok:
+                    pricing = _MODEL_PRICING.get(output.model_used, _DEFAULT_PRICING)
+                    total += output.input_tokens * pricing[0] / 1_000_000
+                    total += output.output_tokens * pricing[1] / 1_000_000
+            if total > 0:
+                return total
+        # Fallback to stats-based estimate
         in_tokens = stats.get("total_input_tokens", 0)
         out_tokens = stats.get("total_output_tokens", 0)
-        # Use Sonnet pricing as conservative default
         in_cost = in_tokens * _DEFAULT_PRICING[0] / 1_000_000
         out_cost = out_tokens * _DEFAULT_PRICING[1] / 1_000_000
         return in_cost + out_cost

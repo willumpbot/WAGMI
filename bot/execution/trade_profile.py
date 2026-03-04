@@ -59,8 +59,24 @@ STRATEGY_INTENT = {
 }
 
 
+# ── Env var helper ────────────────────────────────────────
+
+def _env_float(name: str, default: float) -> float:
+    """Read a float from environment, fall back to default."""
+    import os
+    val = os.environ.get(name)
+    if val is not None:
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            pass
+    return default
+
+
 # ── Exit profile parameters per entry type ───────────────
 # These are the recommended defaults. Regime and volatility can modify them.
+# Override any parameter via env var: PROFILE_{TYPE}_{PARAM}
+# e.g., PROFILE_SCALP_TP1_PCT=0.85, PROFILE_MEDIUM_SL_ATR=0.80
 
 @dataclass
 class ExitParams:
@@ -81,55 +97,42 @@ class ExitParams:
 
 # Conservative defaults per entry type.
 # Safety-first: when in doubt, tighter exits.
+def _build_profile(prefix: str, defaults: dict) -> ExitParams:
+    """Build ExitParams with env var overrides for the given profile prefix."""
+    return ExitParams(
+        tp1_atr_mult=_env_float(f"PROFILE_{prefix}_TP1_ATR", defaults["tp1_atr"]),
+        tp2_atr_mult=_env_float(f"PROFILE_{prefix}_TP2_ATR", defaults["tp2_atr"]),
+        sl_atr_mult=_env_float(f"PROFILE_{prefix}_SL_ATR", defaults["sl_atr"]),
+        tp1_close_pct=_env_float(f"PROFILE_{prefix}_TP1_PCT", defaults["tp1_pct"]),
+        trailing_style=defaults["trailing"],
+        trailing_tighten_start=_env_float(f"PROFILE_{prefix}_TRAIL_START", defaults["trail_start"]),
+        trailing_tighten_end=_env_float(f"PROFILE_{prefix}_TRAIL_END", defaults["trail_end"]),
+        floor_progress_start=_env_float(f"PROFILE_{prefix}_FLOOR_PROGRESS", defaults["floor_progress"]),
+        floor_lock_start=_env_float(f"PROFILE_{prefix}_FLOOR_START", defaults["floor_start"]),
+        floor_lock_max=_env_float(f"PROFILE_{prefix}_FLOOR_MAX", defaults["floor_max"]),
+    )
+
 _BASE_PROFILES: Dict[str, ExitParams] = {
-    SCALP: ExitParams(
-        tp1_atr_mult=0.5,
-        tp2_atr_mult=1.0,
-        sl_atr_mult=0.4,
-        tp1_close_pct=0.90,
-        trailing_style="tight",
-        trailing_tighten_start=0.80,
-        trailing_tighten_end=0.50,
-        floor_progress_start=0.2,
-        floor_lock_start=0.40,
-        floor_lock_max=0.75,
-    ),
-    MEDIUM: ExitParams(
-        tp1_atr_mult=1.0,
-        tp2_atr_mult=2.0,
-        sl_atr_mult=0.75,
-        tp1_close_pct=0.50,         # was 0.60 — let more ride for trailing
-        trailing_style="medium",
-        trailing_tighten_start=0.60, # was 0.67 — slightly looser to survive pullbacks
-        trailing_tighten_end=0.30,   # was 0.33 — slightly looser
-        floor_progress_start=0.35,   # was 0.30 — delay profit lock slightly
-        floor_lock_start=0.25,       # was 0.30 — lock less early
-        floor_lock_max=0.60,         # was 0.65 — cap profit lock lower
-    ),
-    TREND: ExitParams(
-        tp1_atr_mult=1.5,
-        tp2_atr_mult=3.0,
-        sl_atr_mult=1.0,
-        tp1_close_pct=0.35,
-        trailing_style="loose",
-        trailing_tighten_start=0.50,
-        trailing_tighten_end=0.25,
-        floor_progress_start=0.35,
-        floor_lock_start=0.25,
-        floor_lock_max=0.55,
-    ),
-    REGIME: ExitParams(
-        tp1_atr_mult=1.2,
-        tp2_atr_mult=2.5,
-        sl_atr_mult=0.8,
-        tp1_close_pct=0.50,
-        trailing_style="medium",
-        trailing_tighten_start=0.60,
-        trailing_tighten_end=0.30,
-        floor_progress_start=0.3,
-        floor_lock_start=0.30,
-        floor_lock_max=0.60,
-    ),
+    SCALP: _build_profile("SCALP", {
+        "tp1_atr": 0.5, "tp2_atr": 1.0, "sl_atr": 0.4, "tp1_pct": 0.90,
+        "trailing": "tight", "trail_start": 0.80, "trail_end": 0.50,
+        "floor_progress": 0.2, "floor_start": 0.40, "floor_max": 0.75,
+    }),
+    MEDIUM: _build_profile("MEDIUM", {
+        "tp1_atr": 1.0, "tp2_atr": 2.0, "sl_atr": 0.75, "tp1_pct": 0.50,
+        "trailing": "medium", "trail_start": 0.60, "trail_end": 0.30,
+        "floor_progress": 0.35, "floor_start": 0.25, "floor_max": 0.60,
+    }),
+    TREND: _build_profile("TREND", {
+        "tp1_atr": 1.5, "tp2_atr": 3.0, "sl_atr": 1.0, "tp1_pct": 0.35,
+        "trailing": "loose", "trail_start": 0.50, "trail_end": 0.25,
+        "floor_progress": 0.35, "floor_start": 0.25, "floor_max": 0.55,
+    }),
+    REGIME: _build_profile("REGIME", {
+        "tp1_atr": 1.2, "tp2_atr": 2.5, "sl_atr": 0.8, "tp1_pct": 0.50,
+        "trailing": "medium", "trail_start": 0.60, "trail_end": 0.30,
+        "floor_progress": 0.3, "floor_start": 0.30, "floor_max": 0.60,
+    }),
 }
 
 

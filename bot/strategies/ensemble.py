@@ -87,6 +87,22 @@ class EnsembleStrategy:
                 dynamic = self.weight_manager.get_rolling_weights()
                 if dynamic:
                     self.weights = dynamic
+                else:
+                    # Weights empty — likely no trade history yet.
+                    # Try loading persisted weights from file as fallback.
+                    # get_all_weights() reads from persisted file (smoothed, not rolling)
+                    fallback = self.weight_manager.get_all_weights()
+                    if fallback:
+                        self.weights = fallback
+                        logger.info(
+                            "[ENSEMBLE] Loaded persisted strategy weights as fallback "
+                            f"(no rolling data yet): {fallback}"
+                        )
+                        return
+                    logger.warning(
+                        "[ENSEMBLE] Dynamic strategy weights empty — using default equal weights. "
+                        "Run a backtest with learning bridge to seed performance data."
+                    )
             except Exception as e:
                 logger.debug(f"Dynamic weight refresh failed: {e}")
 

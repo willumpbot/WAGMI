@@ -75,10 +75,12 @@ class LeverageManager:
         enable_leverage: bool = True,
         max_leverage: float = 25.0,
         max_extreme_positions: int = 2,
+        max_risk_multiplier: float = 3.5,
     ):
         self.enable_leverage = enable_leverage
         self.max_leverage = max_leverage
         self.max_extreme_positions = max_extreme_positions
+        self.max_risk_multiplier = max_risk_multiplier
 
     def decide(
         self,

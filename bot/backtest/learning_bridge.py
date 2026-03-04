@@ -68,8 +68,10 @@ class BacktestLearningBridge:
         trade_log = engine.pos_mgr.trade_log
         signals = engine.signals_generated
 
-        # Filter to close events only (not OPENs)
-        close_actions = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT")
+        # Filter to close events only (not OPENs) — must match engine._CLOSE_ACTIONS
+        close_actions = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
+                         "EMERGENCY", "BACKTEST_END", "HOLD_LIMIT",
+                         "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
         closed_trades = [e for e in trade_log if e.action in close_actions]
 
         if not closed_trades:
@@ -93,8 +95,11 @@ class BacktestLearningBridge:
         if llm_regime_map:
             for record in trade_records:
                 sym = record.get("symbol", "")
+                # Try per-symbol regime, fall back to latest regime classification
                 if sym in llm_regime_map:
                     record["regime"] = llm_regime_map[sym]
+                elif "_latest" in llm_regime_map:
+                    record["regime"] = llm_regime_map["_latest"]
 
         # Feed each learning system (each one is independent, wrapped in try/except)
         self._feed_strategy_weights(trade_records)
@@ -603,19 +608,27 @@ class BacktestLearningBridge:
     # ── 7. LLM Decision Learnings ─────────────────────────────────
 
     def _build_llm_regime_map(self, decisions: list) -> dict:
-        """Build a symbol -> latest regime mapping from LLM decisions."""
+        """Build a symbol -> latest regime mapping from LLM decisions.
+
+        Each decision entry now has a 'symbol' field (added by Bug 17 fix).
+        Falls back to '_latest' for decisions without symbol.
+        """
         regime_map = {}
         for dec in decisions:
             regime = dec.get("regime")
             if regime and regime != "unknown":
-                # We don't have per-symbol info in the decision log, but
-                # the regime applies to the market context of that decision
-                # Use the most recent regime classification
                 regime_map["_latest"] = regime
+                symbol = dec.get("symbol", "")
+                if symbol:
+                    regime_map[symbol] = regime
         return regime_map
 
     def _feed_llm_decisions(self, llm_integration):
-        """Feed LLM agent decisions into learning systems for persistence."""
+        """Feed LLM agent decisions into learning systems for persistence.
+
+        Uses enriched per-agent data (regime, trade thesis, critic reasoning)
+        to feed deep memory, insights, and calibration systems.
+        """
         try:
             decisions = llm_integration.decisions
             if not decisions:
@@ -627,23 +640,126 @@ class BacktestLearningBridge:
             for dec in decisions:
                 regime = dec.get("regime")
                 if regime and regime != "unknown":
-                    # Record regime observation for calibration
+                    # Record regime observation using correct API
                     try:
-                        dm.record_regime_observation(
-                            regime=regime,
-                            confidence=dec.get("confidence", 0.5),
-                            source="backtest_llm",
+                        dm.regime_history.record_transition(
+                            from_regime=regime,
+                            to_regime=regime,
+                            symbol=dec.get("symbol", "market"),
+                            trigger="backtest_llm_classified",
+                            context={
+                                "confidence": dec.get("confidence", 0.5),
+                                "source": "backtest_llm",
+                            },
                         )
                     except (AttributeError, TypeError):
-                        pass  # Method may not exist in all versions
+                        pass
+
+                # Feed per-agent data for richer learning
+                agents = dec.get("agents", {})
+
+                # Critic counter-theses as prediction insights
+                critic = agents.get("critic", {})
+                if critic.get("ok"):
+                    critic_data = critic.get("data", {})
+                    counter_thesis = critic_data.get("counter_thesis", "")
+                    if counter_thesis and critic_data.get("verdict") == "challenge":
+                        try:
+                            dm.insights.add_insight(
+                                category="prediction",
+                                insight=f"Critic counter-thesis: {counter_thesis[:150]}",
+                                confidence=0.5,
+                                evidence=f"Backtest veto: {critic_data.get('reason', '')[:100]}",
+                                source="backtest_critic",
+                            )
+                        except (AttributeError, TypeError):
+                            pass
+
+                # Trade agent thesis accuracy tracking
+                trade = agents.get("trade", {})
+                if trade.get("ok"):
+                    trade_data = trade.get("data", {})
+                    thesis = trade_data.get("thesis", "")
+                    if thesis:
+                        try:
+                            dm.insights.add_insight(
+                                category="strategy",
+                                insight=f"Trade thesis: {thesis[:150]}",
+                                confidence=dec.get("confidence", 0.5),
+                                evidence=f"Regime: {regime or 'unknown'}, action: {dec.get('action', '')}",
+                                source="backtest_trade_agent",
+                            )
+                        except (AttributeError, TypeError):
+                            pass
 
             self._stats["llm_decisions_ingested"] = len(decisions)
             logger.info(
                 f"[LEARN-BRIDGE] LLM decisions ingested: "
-                f"{self._stats['llm_decisions_ingested']}"
+                f"{self._stats['llm_decisions_ingested']} "
+                f"(with per-agent data)"
             )
         except Exception as e:
             logger.warning(f"[LEARN-BRIDGE] LLM decision feed failed: {e}")
+
+    def finalize(self, merge_to_live: bool = False) -> Dict:
+        """Merge backtest learning data into live/paper trading data stores.
+
+        Call after ingest() to transfer backtest-learned strategy weights into
+        the production weights file so the ensemble can use them immediately.
+
+        Args:
+            merge_to_live: If True, merge seed data into live files.
+        Returns:
+            Summary dict of what was merged.
+        """
+        if not merge_to_live:
+            return {"status": "skipped"}
+
+        merged = {}
+
+        # Merge backtest strategy weights into live weights file
+        try:
+            from data.strategy_weights import StrategyWeightManager
+
+            seed_path = "ml_data/strategy_weights_backtest_seed.json"
+            live_path = "ml_data/strategy_weights.json"
+
+            seed_mgr = StrategyWeightManager(path=seed_path)
+            if not seed_mgr.data:
+                logger.info("[LEARN-BRIDGE] No backtest seed weights to merge")
+                return {"status": "no_seed_data"}
+
+            live_mgr = StrategyWeightManager(path=live_path)
+
+            for name, entry in seed_mgr.data.items():
+                seed_wins = entry.get("wins", 0)
+                seed_trials = entry.get("trials", 0)
+                seed_recent = entry.get("recent_outcomes", [])
+
+                if name not in live_mgr.data:
+                    live_mgr.data[name] = entry.copy()
+                else:
+                    # Merge: add seed counts to live counts
+                    live_mgr.data[name]["wins"] = live_mgr.data[name].get("wins", 0) + seed_wins
+                    live_mgr.data[name]["trials"] = live_mgr.data[name].get("trials", 0) + seed_trials
+                    # Append recent outcomes (keep last 20)
+                    existing = live_mgr.data[name].get("recent_outcomes", [])
+                    combined = existing + seed_recent
+                    live_mgr.data[name]["recent_outcomes"] = combined[-20:]
+
+                live_mgr.data[name]["weight"] = live_mgr.get_weight(name)
+
+            live_mgr._save()
+            merged["strategy_weights_merged"] = len(seed_mgr.data)
+            logger.info(
+                f"[LEARN-BRIDGE] Merged {len(seed_mgr.data)} strategy weights "
+                f"from backtest into live: {list(seed_mgr.data.keys())}"
+            )
+        except Exception as e:
+            logger.warning(f"[LEARN-BRIDGE] Strategy weight merge failed: {e}")
+            merged["strategy_weights_error"] = str(e)
+
+        return {"status": "merged", **merged}
 
     def get_summary(self) -> str:
         """Get a human-readable summary of what was ingested."""

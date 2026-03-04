@@ -419,6 +419,10 @@ class BacktestEngine:
                 if pos.side == "LONG"
                 else (pos.entry - current_price) * pos.qty
             ),
+            # Exit Agent expects these for thesis-based and duration-based decisions
+            "hold_time_s": (sim_dt - pos.open_time).total_seconds() if hasattr(pos, "open_time") and pos.open_time else 0,
+            "thesis": getattr(pos, "notes", "")[:200],
+            "setup_type": getattr(pos, "setup_type", ""),
         }
 
         # Build minimal market snapshot for exit context
@@ -444,17 +448,37 @@ class BacktestEngine:
                 )
 
     def _run_llm_learning(self, event, current_price):
-        """Run Learning Agent on a closed trade."""
+        """Run Learning Agent on a closed trade.
+
+        Enriches trade_data from event.metadata which contains regime,
+        hold_time_s, entry_reasons, setup_type from the Position.
+        Note: event.price on close events is the EXIT price, not entry.
+        Entry price is recovered from the OPEN event in trade_log.
+        """
+        meta = event.metadata or {}
+
+        # Find entry price from the OPEN event for this symbol
+        entry_price = 0.0
+        for log_event in self.pos_mgr.trade_log:
+            if log_event.symbol == event.symbol and log_event.action == "OPEN":
+                entry_price = log_event.price
+                # Don't break — use the most recent OPEN for this symbol
+
         trade_data = {
             "symbol": event.symbol,
             "side": event.side,
             "pnl": event.pnl,
-            "outcome": "WIN" if event.pnl > 0 else "LOSS",
+            "outcome": meta.get("outcome", "WIN" if event.pnl > 0 else "LOSS"),
             "exit_reason": event.action,
             "leverage": event.leverage,
             "strategy": event.strategy or "unknown",
             "exit_price": current_price,
-            "entry_price": event.price,
+            "entry_price": entry_price,
+            "regime": meta.get("regime", "unknown"),
+            "hold_time_s": meta.get("hold_time_s", 0),
+            "entry_reasons": meta.get("entry_reasons", {}),
+            "setup_type": meta.get("entry_type", ""),
+            "confidence": meta.get("confidence", 0),
         }
         self.llm.run_learning(trade_data)
 
@@ -591,9 +615,18 @@ class BacktestEngine:
             "equity_curve_length": len(self.equity_curve),
         }
 
-        # Add LLM stats if LLM integration was used
+        # Add LLM stats and detailed data if LLM integration was used
         if self.llm:
-            report["llm_stats"] = self.llm.get_summary()
+            llm_summary = self.llm.get_summary()
+            report["llm_stats"] = llm_summary
+            report["llm_agent_costs"] = llm_summary.get("agent_costs", {})
+            report["llm_regime_timeline"] = llm_summary.get("regime_timeline", [])
+            report["llm_veto_stats"] = llm_summary.get("veto_stats", {})
+            report["llm_exit_decisions"] = self.llm.exit_decisions
+            report["llm_learning_lessons"] = len(self.llm.learning_lessons)
+
+        # Per-trade timeline (always available, enriched with LLM data when present)
+        report["trade_timeline"] = self._report_trade_timeline()
 
         return report
 
@@ -650,6 +683,61 @@ class BacktestEngine:
         return {"spot": spot, "leveraged": leveraged}
 
 
+    def _report_trade_timeline(self) -> List[Dict[str, Any]]:
+        """Build per-trade timeline with LLM decision context if available."""
+        # Build LLM decision lookup by timestamp (approximate matching)
+        llm_lookup = {}
+        if self.llm:
+            for dec in self.llm.decisions:
+                # Key by action type for correlation
+                ts = dec.get("timestamp", "")
+                llm_lookup[ts] = dec
+
+        timeline = []
+        for event in self.pos_mgr.trade_log:
+            if event.action in self._CLOSE_ACTIONS:
+                entry = {
+                    "symbol": event.symbol,
+                    "side": getattr(event, "side", ""),
+                    "strategy": event.strategy or "unknown",
+                    "action": event.action,
+                    "entry_price": getattr(event, "entry_price", 0),
+                    "exit_price": event.price,
+                    "pnl": round(event.pnl, 2),
+                    "fee": round(getattr(event, "fee", 0), 2),
+                    "leverage": getattr(event, "leverage", 1.0),
+                }
+                # Enrich with LLM context if available
+                if self.llm and self.llm.decisions:
+                    # Find the most recent decision for this symbol (match by symbol field)
+                    for dec in reversed(self.llm.decisions):
+                        dec_symbol = dec.get("symbol", "")
+                        if dec_symbol == event.symbol:
+                            entry["llm_action"] = dec.get("action", "")
+                            entry["llm_regime"] = dec.get("regime", "")
+                            entry["llm_confidence"] = dec.get("confidence", 0)
+                            break
+                timeline.append(entry)
+        return timeline
+
+
+def export_trade_csv(report: Dict, filepath: str):
+    """Export per-trade timeline as CSV for spreadsheet analysis."""
+    import csv
+
+    timeline = report.get("trade_timeline", [])
+    if not timeline:
+        return
+
+    fieldnames = ["symbol", "side", "strategy", "action", "entry_price",
+                  "exit_price", "pnl", "fee", "leverage",
+                  "llm_action", "llm_regime", "llm_confidence"]
+    with open(filepath, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(timeline)
+
+
 def print_report(report: Dict):
     """Pretty-print a backtest report."""
     r = report["results"]
@@ -698,6 +786,56 @@ def print_report(report: Dict):
         print(f"    Decisions logged: {llm_stats.get('decisions_logged', 0)}")
         if llm_stats.get("budget_exhausted"):
             print(f"    WARNING: Budget was exhausted during run")
+
+        # Per-agent cost breakdown
+        agent_costs = report.get("llm_agent_costs", {})
+        if agent_costs:
+            print(f"\n  Per-Agent Costs:")
+            for agent, cost in sorted(agent_costs.items(), key=lambda x: -x[1]):
+                print(f"    {agent:12s}  ${cost:.4f}")
+
+        # Veto breakdown
+        veto_stats = report.get("llm_veto_stats", {})
+        if veto_stats and veto_stats.get("total_decisions", 0) > 0:
+            print(f"\n  LLM Decision Breakdown:")
+            print(f"    Approved:      {veto_stats['approved']}")
+            print(f"    Vetoed:        {veto_stats['vetoed']} ({veto_stats['veto_rate']:.0%})")
+            if veto_stats.get("critic_vetoes"):
+                print(f"    Critic vetoes: {veto_stats['critic_vetoes']}")
+
+        # Regime timeline
+        regime_timeline = report.get("llm_regime_timeline", [])
+        if regime_timeline:
+            print(f"\n  Regime Timeline ({len(regime_timeline)} transitions):")
+            for rt in regime_timeline[:15]:
+                print(f"    {rt['timestamp'][:16]}  {rt['regime']}")
+            if len(regime_timeline) > 15:
+                print(f"    ... and {len(regime_timeline) - 15} more")
+
+        # Learning stats
+        lessons = report.get("llm_learning_lessons", 0)
+        exits = len(report.get("llm_exit_decisions", []))
+        if lessons or exits:
+            print(f"\n  Learning Captured:")
+            print(f"    Lessons processed:   {lessons}")
+            print(f"    Exit evaluations:    {exits}")
+
+    # Top trades by PnL
+    timeline = report.get("trade_timeline", [])
+    if timeline:
+        sorted_trades = sorted(timeline, key=lambda t: t.get("pnl", 0))
+        worst = sorted_trades[:3]
+        best = sorted_trades[-3:][::-1]
+        if best and best[0].get("pnl", 0) > 0:
+            print(f"\n  Top Winning Trades:")
+            for t in best:
+                regime_str = f" [{t['llm_regime']}]" if t.get("llm_regime") else ""
+                print(f"    {t['symbol']:6s} {t['strategy']:20s} ${t['pnl']:+8.2f}{regime_str}")
+        if worst and worst[0].get("pnl", 0) < 0:
+            print(f"\n  Worst Losing Trades:")
+            for t in worst:
+                regime_str = f" [{t['llm_regime']}]" if t.get("llm_regime") else ""
+                print(f"    {t['symbol']:6s} {t['strategy']:20s} ${t['pnl']:+8.2f}{regime_str}")
 
     print("=" * 60)
 

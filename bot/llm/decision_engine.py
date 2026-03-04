@@ -125,6 +125,37 @@ _FLIP_RATE_LIMIT = 0.30  # Reject flips if >30% of last 20 decisions are flips
 _recent_decisions: deque = deque(maxlen=8)
 
 
+_last_monolithic_regime: Optional[str] = None
+
+
+def _record_monolithic_regime(regime: str, trigger: str = ""):
+    """Record regime classification from monolithic LLM to deep memory.
+
+    Only records on regime CHANGES to avoid flooding with identical entries.
+    Multi-agent path handles this via learning_integration.py instead.
+    """
+    global _last_monolithic_regime
+    if not regime or regime == "unknown":
+        return
+    if regime == _last_monolithic_regime:
+        return  # No change — skip
+    prev = _last_monolithic_regime or "unknown"
+    _last_monolithic_regime = regime
+    try:
+        from llm.deep_memory import get_deep_memory
+        dm = get_deep_memory()
+        dm.regime_history.record_transition(
+            from_regime=prev,
+            to_regime=regime,
+            symbol="market",
+            trigger=f"monolithic_llm: {trigger[:80]}",
+            context={"source": "decision_engine"},
+        )
+        logger.debug(f"[LLM-ENGINE] Regime transition recorded: {prev} → {regime}")
+    except Exception as e:
+        logger.debug(f"[LLM-ENGINE] Regime history error: {e}")
+
+
 def get_recent_decisions(n: int = 5) -> list:
     """Return last N decisions for snapshot consistency context."""
     return list(_recent_decisions)[-n:]
@@ -654,6 +685,14 @@ def get_trading_decision(
         "allowed": gated.allowed,
         "gate": gated.reason if not gated.allowed else "",
     })
+
+    # Step 9.55: Record regime in deep memory (monolithic mode only —
+    # multi-agent path records via learning_integration.py)
+    if not _multi_agent_active and decision.regime:
+        try:
+            _record_monolithic_regime(decision.regime, trigger_reason)
+        except Exception:
+            pass
 
     # Step 9.6: Record veto for counterfactual tracking (via growth orchestrator)
     if is_veto and _HAS_VETO_TRACKER:

@@ -119,6 +119,12 @@ def cmd_backtest(args):
             json.dump(report, f, indent=2, default=str)
         print(f"\nResults saved to {args.output}")
 
+    csv_path = getattr(args, "csv", "")
+    if csv_path:
+        from backtest.engine import export_trade_csv
+        export_trade_csv(report, csv_path)
+        print(f"Trade log exported to {csv_path}")
+
 
 def cmd_signals(args):
     """One-shot signal check across all symbols."""
@@ -372,6 +378,7 @@ Commands:
     sub_bt.add_argument("--llm", action="store_true", help="Enable LLM multi-agent pipeline during backtest (requires ANTHROPIC_API_KEY)")
     sub_bt.add_argument("--budget", type=float, default=5.0, help="Max LLM API spend in USD (default: $5)")
     sub_bt.add_argument("--resume", action="store_true", help="Resume LLM backtest from last checkpoint")
+    sub_bt.add_argument("--csv", default="", help="Export per-trade timeline to CSV file")
 
     # Signals
     sub_sig = subparsers.add_parser("signals", help="One-shot signal check")

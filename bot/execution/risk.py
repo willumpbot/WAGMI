@@ -49,9 +49,11 @@ class CircuitBreaker:
         max_consecutive_losses: int = 5,
         max_drawdown_pct: float = 0.10,
         cooldown_minutes: int = 60,
+        max_cb_overrides: int = 2,
     ):
         self.daily_loss_limit_pct = daily_loss_limit_pct
         self.max_consecutive_losses = max_consecutive_losses
+        self.max_cb_overrides = max_cb_overrides
         self.max_drawdown_pct = max_drawdown_pct
         self.cooldown_minutes = cooldown_minutes
 
@@ -137,7 +139,7 @@ class CircuitBreaker:
 
     def is_trading_allowed(self, confidence: float = 0.0,
                             cb_conf_override_pct: float = 0.92,
-                            max_overrides: int = 2,
+                            max_overrides: Optional[int] = None,
                             sim_time: Optional[datetime] = None) -> bool:
         """Check if trading is currently allowed.
 
@@ -145,9 +147,12 @@ class CircuitBreaker:
         confidence >= cb_conf_override_pct. After that, hard-locked until cooldown.
 
         Args:
+            max_overrides: Override limit per trip. Defaults to self.max_cb_overrides.
             sim_time: Optional simulation timestamp. When provided, cooldown is
                       checked against sim_time instead of wall-clock time.
         """
+        if max_overrides is None:
+            max_overrides = self.max_cb_overrides
         if not self.tripped:
             return True
 
@@ -258,11 +263,13 @@ class RiskManager:
         max_open_positions: int = 6,
         max_portfolio_leverage: float = 3.0,
         circuit_breaker: Optional[CircuitBreaker] = None,
+        max_risk_multiplier: float = 1.5,
     ):
         self.equity = starting_equity
         self.risk_per_trade = risk_per_trade
         self.max_open_positions = max_open_positions
         self.max_portfolio_leverage = max_portfolio_leverage
+        self.max_risk_multiplier = max_risk_multiplier
         self.circuit_breaker = circuit_breaker or CircuitBreaker()
         self.circuit_breaker.peak_equity = starting_equity
 
@@ -323,7 +330,7 @@ class RiskManager:
             return 0.0
 
         # Cap risk_multiplier to prevent oversizing (was up to 3.5x before)
-        capped_rm = min(max(risk_multiplier, 0.1), 1.5)
+        capped_rm = min(max(risk_multiplier, 0.1), self.max_risk_multiplier)
         effective_risk_pct = risk_per_trade_override if risk_per_trade_override > 0 else self.risk_per_trade
         risk_usd = self.equity * effective_risk_pct * capped_rm
         effective_leverage = max(leverage, 1.0)

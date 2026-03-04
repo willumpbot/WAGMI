@@ -107,7 +107,7 @@ DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     ),
     AgentRole.QUANT: AgentConfig(
         role=AgentRole.QUANT,
-        max_tokens=1024,
+        max_tokens=1536,
         timeout_s=15.0,
         required=False,
     ),
