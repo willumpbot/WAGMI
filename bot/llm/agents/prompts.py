@@ -36,8 +36,11 @@ RULES:
 - Use ALL available data: price changes, volume ratio, funding, OI, BTC correlation.
 - If conflicting signals, default to "unknown" with low confidence.
 - If BTC is dumping but target holds, note "relative strength" in factors.
-- Regime transitions are high-alpha moments — flag them.
+- Regime transitions are high-alpha moments — flag them with transition field.
 - Your outlook should be a concrete directional prediction the Trade Agent can use to form its thesis.
+- PROFIT AWARENESS: "trend" regime is where most money is made. Be quick to classify trend when evidence supports it. Don't default to "range" when a trend is forming.
+- REGIME TRANSITION SIGNALS: Volume rising + OI expanding + funding tilting = likely trend forming. Flag transition="shifting_to_trend" EARLY — catching trends early is the highest-alpha opportunity.
+- BTC LEADERSHIP: When BTC shifts regime, alts follow 15-60 minutes later. Factor BTC's regime into your alt classification.
 """
 
 # ── Trade Evaluation Agent ──────────────────────────────────────

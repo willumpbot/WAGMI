@@ -215,7 +215,7 @@ class TestBacktestSlippage:
     def test_slippage_default_value(self):
         from trading_config import TradingConfig
         config = TradingConfig()
-        assert config.slippage_bps == 5  # 5 bps default
+        assert config.slippage_bps == 3  # 3 bps default (HL perps tight spreads)
 
 
 # ---------------------------------------------------------------------------
@@ -340,12 +340,12 @@ class TestNewConfigParams:
     def test_slippage_bps(self):
         from trading_config import TradingConfig
         config = TradingConfig()
-        assert config.slippage_bps == 5
+        assert config.slippage_bps == 3
 
     def test_min_profit_threshold_mult(self):
         from trading_config import TradingConfig
         config = TradingConfig()
-        assert config.min_profit_threshold_mult == 3.0
+        assert config.min_profit_threshold_mult == 1.5
 
     def test_enable_funding_check(self):
         from trading_config import TradingConfig

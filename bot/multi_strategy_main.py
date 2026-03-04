@@ -476,7 +476,7 @@ class MultiStrategyBot:
                 global_rotation_cooldown_s=config.rotation_global_cooldown_s,
                 max_rotations_per_hour=config.rotation_max_per_hour,
                 max_rotations_per_day=config.rotation_max_per_day,
-                estimated_round_trip_fee_pct=config.taker_fee_bps / 100.0,  # bps -> %
+                estimated_round_trip_fee_pct=config.taker_fee_bps / 100.0,  # one-way fee in % (rotation mgr doubles for close+open)
             ))
         else:
             self.rotation_mgr = None

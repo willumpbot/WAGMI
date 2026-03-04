@@ -155,11 +155,11 @@ class TradingConfig:
         default_factory=lambda: _env_float("MAX_PORTFOLIO_LEVERAGE", 5.0)
     )  # Aggregate notional cap: total_open_notional <= equity * this
     slippage_bps: int = field(
-        default_factory=lambda: _env_int("SLIPPAGE_BPS", 5)
-    )  # Estimated slippage in basis points (added to stop distance for sizing)
+        default_factory=lambda: _env_int("SLIPPAGE_BPS", 3)
+    )  # Estimated slippage in basis points (3 bps for HL perps, override higher for alts)
     min_profit_threshold_mult: float = field(
-        default_factory=lambda: _env_float("MIN_PROFIT_THRESHOLD_MULT", 3.0)
-    )  # Reject trades where TP1 target < this * total expected costs
+        default_factory=lambda: _env_float("MIN_PROFIT_THRESHOLD_MULT", 1.5)
+    )  # Reject trades where TP1 target < this * total expected costs (was 3.0 — too strict)
     enable_funding_check: bool = field(
         default_factory=lambda: _env_bool("ENABLE_FUNDING_CHECK", True)
     )
