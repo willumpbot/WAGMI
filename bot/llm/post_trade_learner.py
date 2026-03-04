@@ -90,7 +90,24 @@ def generate_immediate_lesson(trade_data: Dict[str, Any]) -> Optional[str]:
             f"{exit_action}, {hold_min:.0f}min hold—setup works"
         )
 
-    # Pattern 8: Breakeven / tiny outcome — don't clutter memory
+    # Pattern 8: Win but gave back profits (TP2 hit → trailing stop → small win)
+    elif is_win and pnl < 3 and exit_action in ("TRAILING_STOP", "TRAILING"):
+        lesson = (
+            f"{symbol} {side} trailing exit +${pnl:.1f} in {regime}, "
+            f"held {hold_min:.0f}min—consider taking more at TP1 or tightening trail"
+        )
+
+    # Pattern 9: Regime mismatch (e.g., regime_trend signal in range regime)
+    elif is_loss and strategy and regime:
+        from llm.agents.shared_context import STRATEGY_REGIME_FIT
+        fit = STRATEGY_REGIME_FIT.get(regime, {}).get(strategy, "moderate")
+        if fit in ("avoid", "weak"):
+            lesson = (
+                f"{symbol} {side} LOSS in {regime}, driven by {strategy} "
+                f"(regime_fit={fit})—{strategy} unreliable in {regime}"
+            )
+
+    # Pattern 10: Breakeven / tiny outcome — don't clutter memory
     # (return None, not worth storing)
 
     if lesson:

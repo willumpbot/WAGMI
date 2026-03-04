@@ -113,13 +113,21 @@ def build_few_shot_examples(
         outcome = t.get("outcome", "?")
         hold_s = t.get("hold_time_s", 0)
         hold_str = f"{hold_s / 60:.0f}min" if hold_s else "?"
+        setup = t.get("setup_type", "")
+        setup_str = f" setup={setup}" if setup else ""
+        thesis_ok = t.get("thesis_correct")
+        thesis_str = ""
+        if thesis_ok is True:
+            thesis_str = " thesis=correct"
+        elif thesis_ok is False:
+            thesis_str = " thesis=wrong"
         line = (
             f"{outcome}: {t.get('symbol', '?')} {t.get('side', '?')} "
             f"in {t.get('regime', '?')}, "
             f"conf={t.get('confidence', 0):.0f}%, "
             f"${t.get('pnl', 0):+.0f}, "
             f"exit={t.get('exit_reason', t.get('exit_action', '?'))}, "
-            f"hold={hold_str}"
+            f"hold={hold_str}{setup_str}{thesis_str}"
         )
         lines.append(line)
 
