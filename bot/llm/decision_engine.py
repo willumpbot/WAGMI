@@ -769,9 +769,9 @@ def _apply_mode_constraints(
                 overrides.append(f"flip_conf_{decision.confidence:.2f}_to_flat")
 
     elif mode == LLMMode.FULL:
-        # FULL: flips allowed but still require minimum confidence (>= 0.55)
+        # FULL: flips allowed, very low soft gate (0.50) — hard gate in risk_gating at 0.65
         if decision.action == "flip":
-            if decision.confidence < 0.55:
+            if decision.confidence < 0.50:
                 logger.info(
                     f"[LLM-ENGINE] FULL: downgrading flip -> flat "
                     f"(confidence {decision.confidence:.2f} < 0.55 threshold)"
