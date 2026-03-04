@@ -419,6 +419,10 @@ class BacktestEngine:
                 if pos.side == "LONG"
                 else (pos.entry - current_price) * pos.qty
             ),
+            # Exit Agent expects these for thesis-based and duration-based decisions
+            "hold_time_s": (sim_dt - pos.open_time).total_seconds() if hasattr(pos, "open_time") and pos.open_time else 0,
+            "thesis": getattr(pos, "notes", "")[:200],
+            "setup_type": getattr(pos, "setup_type", ""),
         }
 
         # Build minimal market snapshot for exit context
@@ -444,17 +448,37 @@ class BacktestEngine:
                 )
 
     def _run_llm_learning(self, event, current_price):
-        """Run Learning Agent on a closed trade."""
+        """Run Learning Agent on a closed trade.
+
+        Enriches trade_data from event.metadata which contains regime,
+        hold_time_s, entry_reasons, setup_type from the Position.
+        Note: event.price on close events is the EXIT price, not entry.
+        Entry price is recovered from the OPEN event in trade_log.
+        """
+        meta = event.metadata or {}
+
+        # Find entry price from the OPEN event for this symbol
+        entry_price = 0.0
+        for log_event in self.pos_mgr.trade_log:
+            if log_event.symbol == event.symbol and log_event.action == "OPEN":
+                entry_price = log_event.price
+                # Don't break — use the most recent OPEN for this symbol
+
         trade_data = {
             "symbol": event.symbol,
             "side": event.side,
             "pnl": event.pnl,
-            "outcome": "WIN" if event.pnl > 0 else "LOSS",
+            "outcome": meta.get("outcome", "WIN" if event.pnl > 0 else "LOSS"),
             "exit_reason": event.action,
             "leverage": event.leverage,
             "strategy": event.strategy or "unknown",
             "exit_price": current_price,
-            "entry_price": event.price,
+            "entry_price": entry_price,
+            "regime": meta.get("regime", "unknown"),
+            "hold_time_s": meta.get("hold_time_s", 0),
+            "entry_reasons": meta.get("entry_reasons", {}),
+            "setup_type": meta.get("entry_type", ""),
+            "confidence": meta.get("confidence", 0),
         }
         self.llm.run_learning(trade_data)
 
@@ -685,9 +709,10 @@ class BacktestEngine:
                 }
                 # Enrich with LLM context if available
                 if self.llm and self.llm.decisions:
-                    # Find the most recent decision for this symbol
+                    # Find the most recent decision for this symbol (match by symbol field)
                     for dec in reversed(self.llm.decisions):
-                        if dec.get("trigger", "").endswith(event.symbol):
+                        dec_symbol = dec.get("symbol", "")
+                        if dec_symbol == event.symbol:
                             entry["llm_action"] = dec.get("action", "")
                             entry["llm_regime"] = dec.get("regime", "")
                             entry["llm_confidence"] = dec.get("confidence", 0)

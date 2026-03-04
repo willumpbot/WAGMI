@@ -118,6 +118,7 @@ class AgentCoordinator:
         if not regime_out.ok:
             if self.configs[AgentRole.REGIME].required:
                 logger.warning("[MULTI-AGENT] Regime agent failed — aborting pipeline")
+                self.last_pipeline_results = pipeline_results
                 return None
             # Fallback: unknown regime
             regime_out = AgentOutput(
@@ -172,6 +173,7 @@ class AgentCoordinator:
         if not trade_out.ok:
             if self.configs[AgentRole.TRADE].required:
                 logger.warning("[MULTI-AGENT] Trade agent failed — aborting pipeline")
+                self.last_pipeline_results = pipeline_results
                 return None
             # Fallback: skip
             trade_out = AgentOutput(

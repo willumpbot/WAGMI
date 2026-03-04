@@ -98,52 +98,58 @@ def process_agent_decision_for_learning(
             if transition not in ("stable", "uncertain"):
                 # Record regime transition — these are high-alpha
                 dm.regime_history.record_transition(
-                    from_regime="previous",
+                    from_regime="unknown",
                     to_regime=rg,
+                    symbol="market",
                     trigger=f"agent_classified: {transition}",
-                    context=trade_context[:100],
+                    context={"trade_context": trade_context[:100], "bias": bias},
                 )
                 logger.debug(f"[AGENT-LEARN] Regime transition recorded: {transition} → {rg}")
             else:
                 # Record stable regime confirmations too (less frequently)
-                # Knowing how long a regime persists is valuable for regime-fit
                 dm.regime_history.record_transition(
                     from_regime=rg,
                     to_regime=rg,
+                    symbol="market",
                     trigger=f"agent_confirmed: {transition}",
-                    context=f"bias={bias}",
+                    context={"bias": bias},
                 )
         except Exception as e:
             logger.debug(f"[AGENT-LEARN] Regime history error: {e}")
 
-    # Record critic challenges as self-awareness events
+    # Record critic challenges as self-awareness events (rate-limited to avoid churn)
     if critic_data and critic_data.get("verdict") == "challenge":
         cal_note = critic_data.get("calibration_note")
         reason = critic_data.get("reason", "")
         counter_thesis = critic_data.get("counter_thesis", "")
 
-        try:
-            from llm.deep_memory import get_deep_memory
-            dm = get_deep_memory()
-            if cal_note:
-                dm.insights.add_insight(
-                    category="meta",
-                    insight=f"Self-critique: {cal_note[:150]}",
-                    confidence=0.7,
-                    evidence=f"Critic challenged: {reason[:100]}",
-                    source="critic_agent",
-                )
-            # Store counter-thesis for later validation against actual outcome
-            if counter_thesis:
-                dm.insights.add_insight(
-                    category="prediction",
-                    insight=f"Counter-thesis: {counter_thesis[:150]}",
-                    confidence=0.5,
-                    evidence=f"Critic predicted opposite: {reason[:100]}",
-                    source="critic_agent",
-                )
-        except Exception:
-            pass
+        # Only record substantive challenges — skip trivial or empty ones
+        # to avoid churning the insight journal (capped at 500 entries)
+        has_substantive_critique = cal_note and len(cal_note) > 20
+        has_substantive_counter = counter_thesis and len(counter_thesis) > 20
+
+        if has_substantive_critique or has_substantive_counter:
+            try:
+                from llm.deep_memory import get_deep_memory
+                dm = get_deep_memory()
+                if has_substantive_critique:
+                    dm.insights.add_insight(
+                        category="meta",
+                        insight=f"Self-critique: {cal_note[:150]}",
+                        confidence=0.7,
+                        evidence=f"Critic challenged: {reason[:100]}",
+                        source="critic_agent",
+                    )
+                if has_substantive_counter:
+                    dm.insights.add_insight(
+                        category="prediction",
+                        insight=f"Counter-thesis: {counter_thesis[:150]}",
+                        confidence=0.5,
+                        evidence=f"Critic predicted opposite: {reason[:100]}",
+                        source="critic_agent",
+                    )
+            except Exception:
+                pass
 
 
 # ── Internal helpers ────────────────────────────────────────────
@@ -247,7 +253,7 @@ def _inject_into_knowledge_base(
         from llm.self_teaching import get_teaching_engine
         engine = get_teaching_engine()
 
-        knowledge_type = "observation" if strength == "moderate" else "principle"
+        knowledge_type = "principle"  # Only strong lessons reach here (guarded above)
         tags = [category]
         if symbol:
             tags.append(symbol.lower())
@@ -261,6 +267,7 @@ def _inject_into_knowledge_base(
             category=category,
             tags=tags,
             source="learning_agent",
+            evidence=f"{symbol} in {regime}" if symbol or regime else "",
         )
         logger.debug(f"[AGENT-LEARN] Knowledge added: [{category}] {lesson[:60]}")
 

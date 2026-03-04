@@ -408,19 +408,29 @@ class TestExitEvaluation:
 
         llm = BacktestLLMIntegration(budget_usd=5.0)
         mock_coord = MagicMock()
-        llm._coordinator = mock_coord
-
-        # First 5 calls should be throttled (interval is 6)
-        for _ in range(5):
-            result = llm.evaluate_exit({"symbol": "BTC"})
-            assert result is None
-
-        # 6th call should go through
         mock_coord.get_exit_intelligence.return_value = {"action": "hold"}
         mock_coord.get_stats.return_value = {"total_calls": 1, "total_input_tokens": 50, "total_output_tokens": 25}
+        mock_coord.last_exit_output = MagicMock(
+            data={"action": "hold"}, model_used="haiku",
+            input_tokens=50, output_tokens=25, ok=True,
+        )
+        llm._coordinator = mock_coord
+
+        # First call (counter==1) evaluates immediately (Bug 9 fix)
+        result = llm.evaluate_exit({"symbol": "BTC"})
+        assert result is not None
+        assert mock_coord.get_exit_intelligence.call_count == 1
+
+        # Calls 2-5 should be throttled
+        for _ in range(4):
+            result = llm.evaluate_exit({"symbol": "BTC"})
+            assert result is None
+        assert mock_coord.get_exit_intelligence.call_count == 1  # Still 1
+
+        # 6th call should go through (counter==6, 6%6==0)
         result = llm.evaluate_exit({"symbol": "BTC"})
         assert result == {"action": "hold"}
-        mock_coord.get_exit_intelligence.assert_called_once()
+        assert mock_coord.get_exit_intelligence.call_count == 2
 
     def test_clear_exit_counter(self):
         from backtest.llm_integration import BacktestLLMIntegration
@@ -927,3 +937,542 @@ class TestCSVExport:
             csv_path = os.path.join(tmpdir, "trades.csv")
             export_trade_csv({"trade_timeline": []}, csv_path)
             assert not os.path.exists(csv_path)
+
+
+# ---------------------------------------------------------------------------
+# 19. Bug 1: entry_price uses correct value (not exit price)
+# ---------------------------------------------------------------------------
+
+class TestBug1EntryPrice:
+    """Bug 1: _run_llm_learning must use OPEN event price, not close event price."""
+
+    def test_entry_price_from_open_event(self):
+        """Verify trade_data['entry_price'] comes from OPEN event, not close."""
+        from backtest.engine import BacktestEngine
+        from unittest.mock import MagicMock, patch
+
+        engine = BacktestEngine.__new__(BacktestEngine)
+        engine.pos_mgr = MagicMock()
+        engine.llm = MagicMock()
+
+        # Simulate trade_log with OPEN at 50000 and CLOSE at 51000
+        open_event = MagicMock()
+        open_event.symbol = "BTC"
+        open_event.action = "OPEN"
+        open_event.price = 50000.0  # Entry price
+
+        close_event = MagicMock()
+        close_event.symbol = "BTC"
+        close_event.action = "TP1"
+        close_event.price = 51000.0  # Exit price
+        close_event.side = "LONG"
+        close_event.pnl = 100.0
+        close_event.leverage = 2.0
+        close_event.strategy = "regime_trend"
+        close_event.metadata = {
+            "outcome": "WIN",
+            "regime": "trend",
+            "hold_time_s": 3600,
+            "entry_reasons": {"momentum": True},
+            "entry_type": "breakout",
+            "confidence": 80,
+        }
+
+        engine.pos_mgr.trade_log = [open_event, close_event]
+
+        engine._run_llm_learning(close_event, 51000.0)
+
+        # Verify run_learning was called with correct entry_price
+        call_args = engine.llm.run_learning.call_args[0][0]
+        assert call_args["entry_price"] == 50000.0  # From OPEN, NOT 51000
+        assert call_args["exit_price"] == 51000.0
+        assert call_args["regime"] == "trend"
+        assert call_args["hold_time_s"] == 3600
+        assert call_args["setup_type"] == "breakout"
+
+
+# ---------------------------------------------------------------------------
+# 20. Bug 3: Coordinator caches pipeline_results on early return
+# ---------------------------------------------------------------------------
+
+class TestBug3StaleCache:
+    """Bug 3: last_pipeline_results must be set even on early returns."""
+
+    def test_pipeline_results_set_on_regime_failure(self):
+        from llm.agents.coordinator import AgentCoordinator
+        from llm.agents.base import AgentOutput, AgentRole
+
+        coord = AgentCoordinator()
+        # Set up old results that should be overwritten
+        coord.last_pipeline_results = {"old": "data"}
+
+        # Mock regime agent to fail (ok is a property: True when data non-empty and error is None)
+        failed_regime = AgentOutput(
+            role=AgentRole.REGIME,
+            data={},  # Empty data + error => ok=False
+            error="test failure",
+        )
+
+        with patch.object(coord, "_call_agent", return_value=failed_regime), \
+             patch.object(coord, "_build_regime_input", return_value={}):
+            result = coord.get_trading_decision(
+                {"m": [{"s": "BTC"}]}, trigger_reason="test"
+            )
+
+        assert result is None
+        # Pipeline results must contain the failed regime output, not old data
+        assert AgentRole.REGIME in coord.last_pipeline_results
+        assert coord.last_pipeline_results[AgentRole.REGIME].ok is False
+
+
+# ---------------------------------------------------------------------------
+# 21. Bug 5: learning_bridge uses correct regime API
+# ---------------------------------------------------------------------------
+
+class TestBug5RegimeAPI:
+    """Bug 5: learning_bridge must use dm.regime_history.record_transition()."""
+
+    def test_feed_llm_decisions_uses_record_transition(self):
+        from backtest.learning_bridge import BacktestLearningBridge
+
+        bridge = BacktestLearningBridge()
+        mock_llm = MagicMock()
+        mock_llm.decisions = [
+            {"regime": "trend", "confidence": 0.8, "symbol": "BTC",
+             "agents": {}, "action": "proceed"},
+        ]
+
+        with patch("llm.deep_memory.get_deep_memory") as mock_gdm:
+            mock_dm = MagicMock()
+            mock_gdm.return_value = mock_dm
+
+            bridge._feed_llm_decisions(mock_llm)
+
+            # Must call record_transition, NOT record_regime_observation
+            mock_dm.regime_history.record_transition.assert_called_once()
+            call_kwargs = mock_dm.regime_history.record_transition.call_args
+            # Verify context is a dict (Bug 6 fix)
+            context = call_kwargs[1]["context"]
+            assert isinstance(context, dict)
+
+
+# ---------------------------------------------------------------------------
+# 22. Bug 4+18: regime map builds per-symbol mapping
+# ---------------------------------------------------------------------------
+
+class TestBug4RegimeMap:
+    """Bug 4+18: _build_llm_regime_map must produce per-symbol entries."""
+
+    def test_per_symbol_regime_map(self):
+        from backtest.learning_bridge import BacktestLearningBridge
+
+        bridge = BacktestLearningBridge()
+        decisions = [
+            {"regime": "trend", "symbol": "BTC"},
+            {"regime": "range", "symbol": "ETH"},
+            {"regime": "panic", "symbol": "BTC"},  # BTC should update to panic
+        ]
+        regime_map = bridge._build_llm_regime_map(decisions)
+        assert regime_map["BTC"] == "panic"  # Last one wins
+        assert regime_map["ETH"] == "range"
+        assert regime_map["_latest"] == "panic"
+
+    def test_regime_map_fallback_to_latest(self):
+        from backtest.learning_bridge import BacktestLearningBridge
+
+        bridge = BacktestLearningBridge()
+        decisions = [
+            {"regime": "trend", "symbol": "BTC"},
+        ]
+        regime_map = bridge._build_llm_regime_map(decisions)
+        # SOL has no explicit entry, should fall back to _latest
+        assert "SOL" not in regime_map
+        assert regime_map.get("_latest") == "trend"
+
+
+# ---------------------------------------------------------------------------
+# 23. Bug 6: process_agent_decision_for_learning uses correct types
+# ---------------------------------------------------------------------------
+
+class TestBug6CorrectTypes:
+    """Bug 6: regime transition must use dict context and valid regime names."""
+
+    def test_regime_transition_context_is_dict(self):
+        from llm.agents.learning_integration import process_agent_decision_for_learning
+
+        regime_data = {
+            "rg": "trend",
+            "bias": "bullish",
+            "transition": "shifting",
+        }
+
+        with patch("llm.deep_memory.get_deep_memory") as mock_gdm:
+            mock_dm = MagicMock()
+            mock_gdm.return_value = mock_dm
+
+            process_agent_decision_for_learning(
+                decision_notes="test",
+                regime_data=regime_data,
+                critic_data=None,
+                trade_context="some context",
+            )
+
+            # Verify record_transition was called with dict context
+            mock_dm.regime_history.record_transition.assert_called_once()
+            kwargs = mock_dm.regime_history.record_transition.call_args[1]
+            assert isinstance(kwargs["context"], dict)
+            assert kwargs["from_regime"] == "unknown"  # Not "previous"
+            assert kwargs["to_regime"] == "trend"
+            assert kwargs["symbol"] == "market"
+
+
+# ---------------------------------------------------------------------------
+# 24. Bug 7: Skipped decisions logged
+# ---------------------------------------------------------------------------
+
+class TestBug7SkippedDecisions:
+    """Bug 7: evaluate_entry must log decisions even when coordinator returns None."""
+
+    def test_skipped_decision_logged(self):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        mock_coord = MagicMock()
+        mock_coord.get_trading_decision.return_value = None
+        mock_coord.get_stats.return_value = {
+            "total_calls": 4, "total_input_tokens": 100, "total_output_tokens": 50
+        }
+        mock_coord.get_last_pipeline_detail.return_value = None
+        mock_coord.last_pipeline_results = {}
+        llm._coordinator = mock_coord
+
+        result = llm.evaluate_entry(
+            {"m": [{"s": "BTC"}]}, MagicMock(), "pre_trade_backtest"
+        )
+        assert result is None
+
+        # Must still have logged the skipped decision
+        assert len(llm.decisions) == 1
+        assert llm.decisions[0]["action"] == "skipped"
+        assert llm.decisions[0]["symbol"] == "BTC"
+        assert llm.decisions[0]["skip_reason"] == "coordinator_returned_none"
+
+
+# ---------------------------------------------------------------------------
+# 25. Bug 8: Checkpoint flushes decisions first
+# ---------------------------------------------------------------------------
+
+class TestBug8CheckpointFlush:
+    """Bug 8: save_checkpoint must flush decisions and include agent_costs."""
+
+    def test_checkpoint_includes_agent_costs(self):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            llm = BacktestLLMIntegration(budget_usd=5.0, checkpoint_dir=tmpdir)
+            llm.total_cost_usd = 1.0
+            llm.llm_calls = 10
+            llm.agent_costs = {"regime": 0.01, "trade": 0.05}
+            llm.regime_timeline = [{"regime": "trend", "timestamp": "t1"}]
+
+            llm.save_checkpoint(
+                candle_index=50, symbol="BTC",
+                symbols_completed=[], equity=10000.0,
+            )
+
+            # Load and verify
+            cp_path = os.path.join(tmpdir, "checkpoint.json")
+            with open(cp_path) as f:
+                state = json.load(f)
+
+            assert state["llm_stats"]["agent_costs"] == {"regime": 0.01, "trade": 0.05}
+            assert len(state["llm_stats"]["regime_timeline"]) == 1
+
+    def test_checkpoint_flushes_decisions_first(self):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_path = os.path.join(tmpdir, "decisions.jsonl")
+            llm = BacktestLLMIntegration(budget_usd=5.0, checkpoint_dir=tmpdir)
+            llm.decisions_log_path = log_path
+            llm.decisions = [
+                {"action": "proceed", "symbol": "BTC"},
+            ]
+
+            llm.save_checkpoint(
+                candle_index=50, symbol="BTC",
+                symbols_completed=[], equity=10000.0,
+            )
+
+            # Decisions should have been flushed to JSONL
+            assert os.path.exists(log_path)
+            with open(log_path) as f:
+                lines = f.readlines()
+            assert len(lines) == 1
+
+
+# ---------------------------------------------------------------------------
+# 26. Bug 9: Exit throttle fires on first candle
+# ---------------------------------------------------------------------------
+
+class TestBug9ExitThrottle:
+    """Bug 9: Exit agent must evaluate on first candle of a new position."""
+
+    def test_first_candle_evaluates(self):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        mock_coord = MagicMock()
+        mock_coord.get_exit_intelligence.return_value = {"action": "hold"}
+        mock_coord.get_stats.return_value = {
+            "total_calls": 1, "total_input_tokens": 50, "total_output_tokens": 25
+        }
+        mock_coord.last_exit_output = MagicMock(
+            data={"action": "hold"}, model_used="haiku",
+            input_tokens=50, output_tokens=25, ok=True,
+        )
+        llm._coordinator = mock_coord
+
+        # First call (counter becomes 1) should evaluate
+        result = llm.evaluate_exit({"symbol": "BTC"})
+        assert result is not None
+        assert result["action"] == "hold"
+        mock_coord.get_exit_intelligence.assert_called_once()
+
+    def test_second_candle_throttled(self):
+        from backtest.llm_integration import BacktestLLMIntegration
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        mock_coord = MagicMock()
+        mock_coord.get_exit_intelligence.return_value = {"action": "hold"}
+        mock_coord.get_stats.return_value = {
+            "total_calls": 1, "total_input_tokens": 50, "total_output_tokens": 25
+        }
+        mock_coord.last_exit_output = MagicMock(
+            data={"action": "hold"}, model_used="haiku",
+            input_tokens=50, output_tokens=25, ok=True,
+        )
+        llm._coordinator = mock_coord
+
+        # First call goes through
+        llm.evaluate_exit({"symbol": "BTC"})
+        mock_coord.get_exit_intelligence.reset_mock()
+
+        # Second call should be throttled
+        result = llm.evaluate_exit({"symbol": "BTC"})
+        assert result is None
+        mock_coord.get_exit_intelligence.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# 27. Bug 11: Trade timeline matches by symbol field
+# ---------------------------------------------------------------------------
+
+class TestBug11TradeTimeline:
+    """Bug 11: _report_trade_timeline matches by dec['symbol'], not trigger."""
+
+    def test_timeline_matches_by_symbol(self):
+        from backtest.engine import BacktestEngine
+
+        engine = BacktestEngine.__new__(BacktestEngine)
+        engine.pos_mgr = MagicMock()
+        engine.llm = MagicMock()
+
+        # Two decisions, one for BTC and one for ETH
+        engine.llm.decisions = [
+            {"symbol": "BTC", "action": "proceed", "regime": "trend",
+             "confidence": 0.8, "timestamp": "t1"},
+            {"symbol": "ETH", "action": "flat", "regime": "range",
+             "confidence": 0.3, "timestamp": "t2"},
+        ]
+
+        # Close event for ETH
+        close_event = MagicMock()
+        close_event.symbol = "ETH"
+        close_event.action = "SL"
+        close_event.price = 3000.0
+        close_event.pnl = -50.0
+        close_event.side = "LONG"
+        close_event.strategy = "regime_trend"
+        close_event.leverage = 1.0
+        close_event.fee = 1.0
+        close_event.entry_price = 3100.0
+
+        engine._CLOSE_ACTIONS = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
+                                 "EMERGENCY", "BACKTEST_END", "HOLD_LIMIT",
+                                 "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
+        engine.pos_mgr.trade_log = [close_event]
+
+        timeline = engine._report_trade_timeline()
+        assert len(timeline) == 1
+        # Should match ETH decision, not BTC
+        assert timeline[0]["llm_regime"] == "range"
+        assert timeline[0]["llm_action"] == "flat"
+
+
+# ---------------------------------------------------------------------------
+# 28. Bug 14: Insight churn rate-limiting
+# ---------------------------------------------------------------------------
+
+class TestBug14InsightChurn:
+    """Bug 14: Only substantive critic challenges should generate insights."""
+
+    def test_trivial_counter_thesis_skipped(self):
+        from llm.agents.learning_integration import process_agent_decision_for_learning
+
+        critic_data = {
+            "verdict": "challenge",
+            "calibration_note": "no",  # Too short (<20 chars)
+            "counter_thesis": "nah",   # Too short (<20 chars)
+            "reason": "test",
+        }
+
+        with patch("llm.deep_memory.get_deep_memory") as mock_gdm:
+            mock_dm = MagicMock()
+            mock_gdm.return_value = mock_dm
+
+            process_agent_decision_for_learning(
+                decision_notes="test",
+                regime_data={},
+                critic_data=critic_data,
+            )
+
+            # Insights should NOT be added (too short)
+            mock_dm.insights.add_insight.assert_not_called()
+
+    def test_substantive_counter_thesis_recorded(self):
+        from llm.agents.learning_integration import process_agent_decision_for_learning
+
+        critic_data = {
+            "verdict": "challenge",
+            "calibration_note": "The momentum indicators are diverging significantly from price action",
+            "counter_thesis": "Price may reverse due to bearish divergence on RSI and declining volume",
+            "reason": "momentum divergence detected",
+        }
+
+        with patch("llm.deep_memory.get_deep_memory") as mock_gdm:
+            mock_dm = MagicMock()
+            mock_gdm.return_value = mock_dm
+
+            process_agent_decision_for_learning(
+                decision_notes="test",
+                regime_data={},
+                critic_data=critic_data,
+            )
+
+            # Both cal_note and counter_thesis are substantive (>20 chars)
+            assert mock_dm.insights.add_insight.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# 29. Bug 16: All close action types captured
+# ---------------------------------------------------------------------------
+
+class TestBug16CloseActions:
+    """Bug 16: Learning bridge must recognize all 10 close action types."""
+
+    def test_all_close_actions_captured(self):
+        from backtest.learning_bridge import BacktestLearningBridge
+
+        bridge = BacktestLearningBridge()
+        # Verify the bridge has all 10 close actions (see engine._CLOSE_ACTIONS)
+        # Read from the ingest method source
+        import inspect
+        source = inspect.getsource(bridge.ingest)
+        for action in ["EMERGENCY", "BACKTEST_END", "HOLD_LIMIT",
+                        "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE"]:
+            assert action in source, f"Missing close action: {action}"
+
+
+# ---------------------------------------------------------------------------
+# 30. Bug 17: Decision entries contain symbol
+# ---------------------------------------------------------------------------
+
+class TestBug17DecisionSymbol:
+    """Bug 17: Decision log entries must contain 'symbol' field."""
+
+    def test_log_decision_extracts_symbol(self):
+        from backtest.llm_integration import BacktestLLMIntegration
+        from llm.decision_types import LLMDecision, StrategyWeights
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        mock_coord = MagicMock()
+        mock_coord.get_last_pipeline_detail.return_value = None
+        mock_coord.last_pipeline_results = {}
+        llm._coordinator = mock_coord
+
+        decision = LLMDecision(
+            action="proceed", confidence=0.8, regime="trend",
+            strategy_weights=StrategyWeights(), memory_update=None,
+            notes="test",
+        )
+        snapshot = {"m": [{"s": "ETH"}]}
+        llm._log_decision(decision, snapshot, 0.001, "pre_trade_backtest")
+
+        assert llm.decisions[0]["symbol"] == "ETH"
+
+    def test_log_decision_handles_empty_snapshot(self):
+        from backtest.llm_integration import BacktestLLMIntegration
+        from llm.decision_types import LLMDecision, StrategyWeights
+
+        llm = BacktestLLMIntegration(budget_usd=5.0)
+        mock_coord = MagicMock()
+        mock_coord.get_last_pipeline_detail.return_value = None
+        mock_coord.last_pipeline_results = {}
+        llm._coordinator = mock_coord
+
+        decision = LLMDecision(
+            action="proceed", confidence=0.8, regime="trend",
+            strategy_weights=StrategyWeights(), memory_update=None,
+            notes="test",
+        )
+        llm._log_decision(decision, {}, 0.001, "test")
+
+        # Should have empty symbol, not crash
+        assert llm.decisions[0]["symbol"] == ""
+
+
+# ---------------------------------------------------------------------------
+# 31. Bug 2: Exit Agent receives hold_time, thesis, setup_type
+# ---------------------------------------------------------------------------
+
+class TestBug2ExitAgentData:
+    """Bug 2: _run_llm_exit must pass hold_time_s, thesis, setup_type."""
+
+    def test_exit_position_data_complete(self):
+        from backtest.engine import BacktestEngine
+        from datetime import datetime, timezone, timedelta
+
+        engine = BacktestEngine.__new__(BacktestEngine)
+        engine.llm = MagicMock()
+        engine.pos_mgr = MagicMock()
+        engine.risk_mgr = MagicMock()
+
+        # Create mock position
+        pos = MagicMock()
+        pos.side = "LONG"
+        pos.entry = 50000.0
+        pos.sl = 49000.0
+        pos.tp1 = 52000.0
+        pos.tp2 = 54000.0
+        pos.leverage = 2.0
+        pos.state = "OPEN"
+        pos.qty = 0.1
+        pos.open_time = datetime(2026, 3, 1, tzinfo=timezone.utc)
+        pos.notes = "Strong breakout thesis with momentum confirmation"
+        pos.setup_type = "breakout"
+
+        engine.pos_mgr.positions = {"BTC": pos}
+        engine.pos_mgr.get_open_positions.return_value = {"BTC": pos}
+        engine.llm.build_backtest_snapshot.return_value = {"m": [{"s": "BTC"}]}
+        engine.llm.evaluate_exit.return_value = None
+
+        sim_dt = datetime(2026, 3, 1, 1, 0, 0, tzinfo=timezone.utc)
+        engine._run_llm_exit("BTC", 51000.0, {"1h": MagicMock()}, sim_dt)
+
+        # Verify evaluate_exit was called with enriched position_data
+        call_args = engine.llm.evaluate_exit.call_args
+        position_data = call_args[0][0]
+        assert position_data["hold_time_s"] == 3600.0  # 1 hour
+        assert "Strong breakout thesis" in position_data["thesis"]
+        assert position_data["setup_type"] == "breakout"

@@ -363,6 +363,10 @@ class BacktestLLMIntegration:
                 self._log_decision(decision, snapshot_data, call_cost, trigger_reason)
             else:
                 self.candles_fallback += 1
+                self._log_skipped_decision(
+                    snapshot_data, call_cost, trigger_reason,
+                    reason="coordinator_returned_none",
+                )
 
             # Check budget
             if self.total_cost_usd >= self.budget_usd:
@@ -397,10 +401,10 @@ class BacktestLLMIntegration:
 
         symbol = position_data.get("symbol", "")
 
-        # Throttle: only evaluate every N candles
+        # Throttle: evaluate on first candle (counter==1) and every N candles after
         counter = self._exit_eval_counters.get(symbol, 0) + 1
         self._exit_eval_counters[symbol] = counter
-        if counter % _EXIT_EVAL_INTERVAL != 0:
+        if counter != 1 and counter % _EXIT_EVAL_INTERVAL != 0:
             return None
 
         try:
@@ -587,7 +591,13 @@ class BacktestLLMIntegration:
         symbols_completed: List[str],
         equity: float,
     ):
-        """Save checkpoint state atomically."""
+        """Save checkpoint state atomically.
+
+        Flushes accumulated decisions to JSONL first so they survive crashes.
+        """
+        # Flush accumulated data to disk before checkpointing
+        self.flush_decisions()
+
         try:
             os.makedirs(self.checkpoint_dir, exist_ok=True)
             state = {
@@ -602,6 +612,8 @@ class BacktestLLMIntegration:
                     "candles_with_llm": self.candles_with_llm,
                     "candles_fallback": self.candles_fallback,
                     "budget_exhausted": self.budget_exhausted,
+                    "agent_costs": dict(self.agent_costs),
+                    "regime_timeline": self.regime_timeline,
                 },
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
@@ -634,6 +646,8 @@ class BacktestLLMIntegration:
             self.candles_with_llm = stats.get("candles_with_llm", 0)
             self.candles_fallback = stats.get("candles_fallback", 0)
             self.budget_exhausted = stats.get("budget_exhausted", False)
+            self.agent_costs = stats.get("agent_costs", {})
+            self.regime_timeline = stats.get("regime_timeline", [])
 
             state = CheckpointState(
                 candle_index=data["candle_index"],
@@ -761,8 +775,18 @@ class BacktestLLMIntegration:
         trigger: str,
     ):
         """Buffer a decision with full per-agent breakdown for learning."""
+        # Extract symbol from snapshot data
+        symbol = ""
+        try:
+            markets = snapshot_data.get("m", []) if snapshot_data else []
+            if markets:
+                symbol = markets[0].get("s", "")
+        except (AttributeError, IndexError):
+            pass
+
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "symbol": symbol,
             "action": decision.action,
             "confidence": decision.confidence,
             "regime": decision.regime,
@@ -833,6 +857,40 @@ class BacktestLLMIntegration:
                 "output_tokens": out.output_tokens,
             }
         self.exit_decisions.append(entry)
+
+    def _log_skipped_decision(
+        self,
+        snapshot_data: Optional[dict],
+        cost: float,
+        trigger: str,
+        reason: str,
+    ):
+        """Log a decision that was skipped (coordinator returned None)."""
+        symbol = ""
+        try:
+            markets = snapshot_data.get("m", []) if snapshot_data else []
+            if markets:
+                symbol = markets[0].get("s", "")
+        except (AttributeError, IndexError):
+            pass
+
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "symbol": symbol,
+            "action": "skipped",
+            "confidence": 0,
+            "regime": "",
+            "cost_usd": round(cost, 6),
+            "trigger": trigger,
+            "source": "backtest",
+            "skip_reason": reason,
+        }
+        # Capture partial pipeline results even on failure
+        if self._coordinator:
+            agent_detail = self._coordinator.get_last_pipeline_detail()
+            if agent_detail:
+                entry["agents"] = agent_detail
+        self.decisions.append(entry)
 
     def _compute_cost_from_stats(self, stats: Dict[str, Any]) -> float:
         """Compute cost from coordinator stats using actual per-agent model pricing."""

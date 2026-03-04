@@ -68,8 +68,10 @@ class BacktestLearningBridge:
         trade_log = engine.pos_mgr.trade_log
         signals = engine.signals_generated
 
-        # Filter to close events only (not OPENs)
-        close_actions = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT")
+        # Filter to close events only (not OPENs) — must match engine._CLOSE_ACTIONS
+        close_actions = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
+                         "EMERGENCY", "BACKTEST_END", "HOLD_LIMIT",
+                         "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
         closed_trades = [e for e in trade_log if e.action in close_actions]
 
         if not closed_trades:
@@ -93,8 +95,11 @@ class BacktestLearningBridge:
         if llm_regime_map:
             for record in trade_records:
                 sym = record.get("symbol", "")
+                # Try per-symbol regime, fall back to latest regime classification
                 if sym in llm_regime_map:
                     record["regime"] = llm_regime_map[sym]
+                elif "_latest" in llm_regime_map:
+                    record["regime"] = llm_regime_map["_latest"]
 
         # Feed each learning system (each one is independent, wrapped in try/except)
         self._feed_strategy_weights(trade_records)
@@ -603,15 +608,19 @@ class BacktestLearningBridge:
     # ── 7. LLM Decision Learnings ─────────────────────────────────
 
     def _build_llm_regime_map(self, decisions: list) -> dict:
-        """Build a symbol -> latest regime mapping from LLM decisions."""
+        """Build a symbol -> latest regime mapping from LLM decisions.
+
+        Each decision entry now has a 'symbol' field (added by Bug 17 fix).
+        Falls back to '_latest' for decisions without symbol.
+        """
         regime_map = {}
         for dec in decisions:
             regime = dec.get("regime")
             if regime and regime != "unknown":
-                # We don't have per-symbol info in the decision log, but
-                # the regime applies to the market context of that decision
-                # Use the most recent regime classification
                 regime_map["_latest"] = regime
+                symbol = dec.get("symbol", "")
+                if symbol:
+                    regime_map[symbol] = regime
         return regime_map
 
     def _feed_llm_decisions(self, llm_integration):
@@ -631,12 +640,17 @@ class BacktestLearningBridge:
             for dec in decisions:
                 regime = dec.get("regime")
                 if regime and regime != "unknown":
-                    # Record regime observation for calibration
+                    # Record regime observation using correct API
                     try:
-                        dm.record_regime_observation(
-                            regime=regime,
-                            confidence=dec.get("confidence", 0.5),
-                            source="backtest_llm",
+                        dm.regime_history.record_transition(
+                            from_regime=regime,
+                            to_regime=regime,
+                            symbol=dec.get("symbol", "market"),
+                            trigger="backtest_llm_classified",
+                            context={
+                                "confidence": dec.get("confidence", 0.5),
+                                "source": "backtest_llm",
+                            },
                         )
                     except (AttributeError, TypeError):
                         pass
