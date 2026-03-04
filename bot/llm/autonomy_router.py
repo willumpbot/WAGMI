@@ -374,29 +374,21 @@ def _mode_full(baseline: Dict[str, Any], llm: Optional[LLMDecision]) -> Dict[str
     baseline_side = decision.get("action", "long")
 
     if llm.action == "flip":
-        if llm.confidence < 0.65:
-            logger.warning(
-                f"[AUTONOMY-ROUTER] Mode FULL: flip rejected, "
-                f"confidence {llm.confidence:.2f} < 0.65"
-            )
-            decision["action"] = "flat"
-            decision["source"] = "llm_veto"
-            decision["llm_veto"] = True
-            decision["veto_reason"] = f"flip confidence too low ({llm.confidence:.2f})"
-            return decision
-
+        # No soft gate here — risk_gating.py enforces the hard floor (0.65).
+        # In FULL mode, trust the LLM's flip decisions more aggressively.
         flipped_side = "short" if baseline_side == "long" else "long"
         decision["action"] = flipped_side
         decision["llm_direction"] = "flip"
         decision["flip_reason"] = llm.notes
         logger.info(
-            f"[AUTONOMY-ROUTER] Mode FULL: FLIP {baseline_side} -> {flipped_side}"
+            f"[AUTONOMY-ROUTER] Mode FULL: FLIP {baseline_side} -> {flipped_side} "
+            f"(conf={llm.confidence:.2f})"
         )
     else:
         decision["llm_direction"] = "proceed"
 
-    # Full LLM override
-    clamped_mult = max(0.0, min(llm.size_multiplier, 2.0))
+    # Full LLM override — higher cap (2.5x) since FULL mode trusts the LLM
+    clamped_mult = max(0.0, min(llm.size_multiplier, 2.5))
     baseline_size = decision.get("size", 1.0)
     scaled_size = baseline_size * clamped_mult
 
