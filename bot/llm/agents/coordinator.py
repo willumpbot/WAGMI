@@ -129,6 +129,11 @@ class AgentCoordinator:
         scratchpad.write("regime", "bias", regime_out.data.get("bias", "neutral"))
         if regime_out.data.get("outlook"):
             scratchpad.write("regime", "outlook", regime_out.data["outlook"])
+        # Gap 3: Regime transition prediction fields
+        if regime_out.data.get("regime_momentum"):
+            scratchpad.write("regime", "regime_momentum", regime_out.data["regime_momentum"])
+        if regime_out.data.get("expected_duration_h"):
+            scratchpad.write("regime", "expected_duration_h", regime_out.data["expected_duration_h"])
 
         # ── Step 2: Trade Agent ─────────────────────────────────
         trade_input = self._build_trade_input(snapshot_data, regime_out)
@@ -209,8 +214,22 @@ class AgentCoordinator:
                     },
                 )
 
+        # ── Confidence Consensus & Consistency Scaling ─────────
+        # Gap 1: Compound conviction across agents
+        # Gap 7: Consistency score scales confidence
+        consensus_conf = _compute_confidence_consensus(
+            trade_out, regime_out, risk_out, critic_out, consistency_report.score,
+        )
+        if consensus_conf is not None:
+            # Write to scratchpad for audit trail
+            scratchpad.write("system", "consensus_confidence", round(consensus_conf, 3))
+
         # ── Merge into LLMDecision ──────────────────────────────
-        decision = self._merge_outputs(regime_out, trade_out, risk_out, critic_out, snapshot_data)
+        decision = self._merge_outputs(
+            regime_out, trade_out, risk_out, critic_out, snapshot_data,
+            consistency_score=consistency_report.score,
+            consensus_confidence=consensus_conf,
+        )
 
         elapsed_ms = int((time.monotonic() - start) * 1000)
         self._total_latency_ms += elapsed_ms
@@ -684,8 +703,21 @@ class AgentCoordinator:
             current_regime=scratchpad.read_by_key("regime") or "",
         )
 
-        # Prepend protocol and context to the agent's system prompt
+        # Gap 5: Dynamic calibration injection for Trade and Critic agents
+        calibration_prefix = ""
+        if role in (AgentRole.TRADE, AgentRole.CRITIC):
+            try:
+                from llm.agents.calibration_ledger import get_calibration_ledger
+                ledger = get_calibration_ledger()
+                current_regime = scratchpad.read_by_key("regime") or ""
+                calibration_prefix = ledger.get_prompt_calibration(role.value, current_regime)
+            except Exception:
+                pass
+
+        # Prepend protocol, calibration, and context to the agent's system prompt
         enhanced_prompt = prompt
+        if calibration_prefix:
+            enhanced_prompt = f"CALIBRATION: {calibration_prefix}\n\n{enhanced_prompt}"
         if protocol_prefix:
             enhanced_prompt = f"{protocol_prefix}\n\n{enhanced_prompt}"
         if shared_context:
@@ -837,6 +869,16 @@ class AgentCoordinator:
         _ensure_field(trade_data, "funding_cost_pct", snapshot)
         _ensure_field(trade_data, "funding_alert", snapshot)
 
+        # Gap 4+5: Inject per-agent calibration data into trade input
+        try:
+            from llm.agents.calibration_ledger import get_calibration_ledger
+            ledger = get_calibration_ledger()
+            cal_data = ledger.get_compact_for_snapshot("trade")
+            if cal_data:
+                trade_data["agent_cal"] = cal_data
+        except Exception:
+            pass
+
         return json.dumps(trade_data, separators=(",", ":"))
 
     def _build_risk_input(
@@ -939,6 +981,17 @@ class AgentCoordinator:
                 critic_data[key] = snapshot[key]
         # Memory notes for pattern checking
         _ensure_field(critic_data, "mem", snapshot, max_len=400)
+
+        # Gap 4+5: Inject calibration data for the critic
+        try:
+            from llm.agents.calibration_ledger import get_calibration_ledger
+            ledger = get_calibration_ledger()
+            cal_data = ledger.get_compact_for_snapshot("critic")
+            if cal_data:
+                critic_data["agent_cal"] = cal_data
+        except Exception:
+            pass
+
         return json.dumps(critic_data, separators=(",", ":"))
 
     def _build_learning_input(self, trade_data: Dict[str, Any]) -> str:
@@ -993,6 +1046,8 @@ class AgentCoordinator:
         risk_out: Optional[AgentOutput],
         critic_out: Optional[AgentOutput],
         snapshot_data: Optional[dict] = None,
+        consistency_score: float = 1.0,
+        consensus_confidence: Optional[float] = None,
     ) -> LLMDecision:
         """Merge all agent outputs into a single LLMDecision.
 
@@ -1111,6 +1166,27 @@ class AgentCoordinator:
                 if not memory_update:
                     memory_update = cal_note[:100]
 
+        # Gap 7: Scale confidence by consistency score (soft circuit breaker)
+        if consistency_score < 0.7 and action != "flat":
+            old_conf = confidence
+            # Scale: consistency 0.5 → reduce 15%, consistency 0.3 → reduce 35%
+            scale = 0.5 + consistency_score * 0.5  # maps [0, 1] → [0.5, 1.0]
+            confidence = round(confidence * scale, 3)
+            confidence = max(0.0, min(1.0, confidence))
+            notes += (f" | CONSISTENCY_ADJ: {old_conf:.2f}→{confidence:.2f} "
+                      f"(agents disagreeing, score={consistency_score:.2f})")
+
+        # Gap 1: Apply consensus confidence if it significantly differs
+        if consensus_confidence is not None and action != "flat":
+            # If consensus is much lower than trade agent's confidence, reduce
+            if consensus_confidence < confidence - 0.1:
+                old_conf = confidence
+                # Blend: 60% trade agent, 40% consensus
+                confidence = round(confidence * 0.6 + consensus_confidence * 0.4, 3)
+                confidence = max(0.0, min(1.0, confidence))
+                notes += (f" | CONSENSUS_ADJ: {old_conf:.2f}→{confidence:.2f} "
+                          f"(agents not fully aligned)")
+
         # Add risk flags to notes
         if risk_flags:
             notes += f" | RISKS: {', '.join(str(f) for f in risk_flags[:3])}"
@@ -1157,6 +1233,62 @@ class AgentCoordinator:
 
 
 # ── Module-level helpers ────────────────────────────────────────
+
+def _compute_confidence_consensus(
+    trade_out: AgentOutput,
+    regime_out: AgentOutput,
+    risk_out: Optional[AgentOutput],
+    critic_out: Optional[AgentOutput],
+    consistency_score: float,
+) -> Optional[float]:
+    """Compute compound conviction score across all agents.
+
+    Returns a consensus confidence that reflects how aligned ALL agents are,
+    not just the Trade Agent's confidence. Returns None if insufficient data.
+    """
+    trade_conf = float(trade_out.data.get("c", trade_out.data.get("confidence", 0.0)))
+    if trade_conf == 0.0:
+        return None  # Skip decisions don't need consensus
+
+    # Regime Agent: high regime confidence boosts, low reduces
+    regime_conf = float(regime_out.data.get("conf", regime_out.data.get("confidence", 0.5)))
+    regime_factor = 0.7 + regime_conf * 0.3  # maps [0, 1] → [0.7, 1.0]
+
+    # Risk Agent: sizing as proxy for agreement
+    risk_factor = 1.0
+    if risk_out and risk_out.ok:
+        size_mult = float(risk_out.data.get("sz", risk_out.data.get("size_multiplier", 1.0)))
+        override = risk_out.data.get("override")
+        if override == "skip":
+            risk_factor = 0.3  # Risk Agent strongly disagrees
+        elif override == "reduce":
+            risk_factor = 0.7
+        else:
+            # size_mult maps: 0.5→0.75, 1.0→1.0, 1.5→1.15
+            risk_factor = 0.5 + min(size_mult, 2.0) * 0.5
+
+    # Critic Agent: approval boosts, challenge reduces
+    critic_factor = 1.0
+    if critic_out and critic_out.ok:
+        verdict = critic_out.data.get("verdict", "approve").lower().strip()
+        if verdict == "approve":
+            critic_factor = 1.05  # Small boost for explicit approval
+        else:
+            adj_conf = critic_out.data.get("adjusted_confidence")
+            if adj_conf is not None:
+                # How much did critic reduce? More reduction = more disagreement
+                reduction = trade_conf - float(adj_conf)
+                critic_factor = max(0.5, 1.0 - reduction)
+            else:
+                critic_factor = 0.6  # Challenge without adjustment = moderate disagreement
+
+    # Consistency score directly factors in
+    consistency_factor = 0.7 + consistency_score * 0.3  # maps [0, 1] → [0.7, 1.0]
+
+    # Compound consensus
+    consensus = trade_conf * regime_factor * risk_factor * critic_factor * consistency_factor
+    return max(0.0, min(1.0, round(consensus, 3)))
+
 
 _ACTION_MAP = {
     "go": "proceed", "proceed": "proceed", "long": "proceed", "short": "proceed",

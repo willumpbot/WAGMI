@@ -67,6 +67,11 @@ def process_agent_lesson(
     if strength == "strong" and category in ("pattern_loss", "regime_mismatch", "funding_cost"):
         _propose_improvement(lesson_text, category, trade_data)
 
+    # 6. Record thesis accuracy into per-agent calibration ledger
+    thesis_correct = lesson_data.get("thesis_correct")
+    if thesis_correct is not None:
+        _record_agent_calibration(trade_data, thesis_correct)
+
 
 def process_agent_decision_for_learning(
     decision_notes: str,
@@ -279,6 +284,31 @@ def _propose_improvement(lesson: str, category: str, trade_data: Dict):
         )
     except Exception as e:
         logger.debug(f"[AGENT-LEARN] Improvement proposal error: {e}")
+
+
+def _record_agent_calibration(trade_data: Dict, thesis_correct: bool) -> None:
+    """Record trade outcome into the per-agent calibration ledger."""
+    try:
+        from llm.agents.calibration_ledger import get_calibration_ledger
+        ledger = get_calibration_ledger()
+        regime = trade_data.get("regime", "unknown")
+        confidence = trade_data.get("confidence", 0.5)
+
+        # Trade Agent's directional prediction
+        ledger.record_outcome("trade", regime, thesis_correct, confidence)
+
+        # If critic challenged and was wrong (trade won despite veto), record
+        critic_challenged = trade_data.get("critic_challenged", False)
+        if critic_challenged:
+            # Critic said "no" — if thesis_correct, the veto was wrong
+            ledger.record_outcome("critic", regime, not thesis_correct, 1.0 - confidence)
+
+        logger.debug(
+            f"[CALIBRATION] Recorded: trade_agent {regime} "
+            f"correct={thesis_correct} conf={confidence:.2f}"
+        )
+    except Exception as e:
+        logger.debug(f"[CALIBRATION] Recording error: {e}")
 
 
 def _category_to_pattern_type(category: str) -> str:
