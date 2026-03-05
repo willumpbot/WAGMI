@@ -263,6 +263,8 @@ class BacktestEngine:
             events = self.pos_mgr.update_price(symbol, current_price)
             for event in events:
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
+                if event.action in self._CLOSE_ACTIONS:
+                    self._record_trade_outcome(event, current_price)
                 # LLM: run Learning Agent on closed trades
                 if self.llm and event.action in self._CLOSE_ACTIONS:
                     self.llm.clear_exit_counter(event.symbol)
@@ -284,6 +286,7 @@ class BacktestEngine:
                         self.risk_mgr.update_equity(
                             cb_event.pnl - cb_event.fee, sim_time=sim_dt
                         )
+                        self._record_trade_outcome(cb_event, current_price)
                         if self.llm and cb_event.action in self._CLOSE_ACTIONS:
                             self.llm.clear_exit_counter(cb_event.symbol)
                             self._run_llm_learning(cb_event, current_price)
@@ -359,6 +362,8 @@ class BacktestEngine:
             events = self.pos_mgr.update_price(symbol, current_price)
             for event in events:
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
+                if event.action in self._CLOSE_ACTIONS:
+                    self._record_trade_outcome(event, current_price)
                 if self.llm and event.action in self._CLOSE_ACTIONS:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
@@ -378,6 +383,7 @@ class BacktestEngine:
                         self.risk_mgr.update_equity(
                             cb_event.pnl - cb_event.fee, sim_time=sim_dt
                         )
+                        self._record_trade_outcome(cb_event, current_price)
                         if self.llm and cb_event.action in self._CLOSE_ACTIONS:
                             self.llm.clear_exit_counter(cb_event.symbol)
                             self._run_llm_learning(cb_event, current_price)
@@ -529,6 +535,82 @@ class BacktestEngine:
         }
         self.llm.run_learning(trade_data)
 
+    def _record_trade_outcome(self, event, current_price: float):
+        """Record a closed trade to data/analysis for performance tracking.
+
+        This ensures backtest trades populate performance.json and
+        trade_outcomes.csv just like live trades do, enabling the
+        analyze_backtest.py script to show real PnL per trade.
+        """
+        if event.action not in self._CLOSE_ACTIONS:
+            return
+
+        try:
+            from data.learning import record_trade_outcome
+
+            pos = self.pos_mgr.positions.get(event.symbol)
+            meta = event.metadata or {}
+
+            # Determine outcome
+            pnl = pos.realized_pnl if pos else event.pnl
+            if pnl > 0:
+                outcome = "WIN"
+            elif pnl < -0.01:
+                outcome = "LOSS"
+            else:
+                outcome = "BREAKEVEN"
+
+            record_trade_outcome(
+                symbol=event.symbol,
+                side=event.side,
+                outcome=outcome,
+                pnl=pnl,
+                entry=pos.entry if pos else 0,
+                sl=pos.original_sl if pos and hasattr(pos, "original_sl") else (pos.sl if pos else 0),
+                tp1=pos.tp1 if pos else 0,
+                tp2=pos.tp2 if pos else 0,
+                tp1_hit=pos.state in ("TP1_HIT", "TRAILING") if pos else False,
+                sl_after_tp1=(event.action == "SL" and pos.state == "TP1_HIT") if pos else False,
+                state_path=pos.state_path_str if pos and hasattr(pos, "state_path_str") else event.action,
+                leverage=event.leverage,
+                confidence=pos.confidence if pos else 0,
+                strategy=event.strategy or "",
+                entry_reasons=meta.get("entry_reasons", {}),
+                entry_type=meta.get("entry_type", ""),
+                primary_driver=event.strategy or "",
+                regime=meta.get("regime", ""),
+            )
+
+            # Also update self-teaching system's trade counter
+            try:
+                from llm.learning_mode import record_trade_observed
+                record_trade_observed(
+                    symbol=event.symbol,
+                    side=event.side,
+                    outcome=outcome,
+                    pnl=pnl,
+                    confidence=pos.confidence if pos else 0,
+                )
+            except Exception:
+                pass  # Self-teaching is optional
+
+            # Validate insights against this trade outcome
+            try:
+                from llm.learning_integrator import get_integrator
+                integrator = get_integrator()
+                integrator.validate_insights_from_trade({
+                    "symbol": event.symbol,
+                    "side": event.side,
+                    "outcome": outcome,
+                    "pnl": pnl,
+                    "strategy": event.strategy or "",
+                    "regime": meta.get("regime", ""),
+                })
+            except Exception:
+                pass  # Insight validation is optional
+        except Exception as e:
+            logger.debug(f"[BACKTEST] Failed to record trade outcome: {e}")
+
     def _force_close_open(self, symbol: str, last_price: float, sim_dt: datetime):
         """Force-close any open position at the end of a symbol's walk."""
         pos = self.pos_mgr.positions.get(symbol)
@@ -536,6 +618,7 @@ class BacktestEngine:
             event = self.pos_mgr.force_close(symbol, last_price, reason="BACKTEST_END")
             if event:
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
+                self._record_trade_outcome(event, last_price)
                 logger.info(f"[{symbol}] Force-closed at backtest end: PnL={event.pnl:.2f}")
 
     def _execute_signal(self, signal: Signal, current_price: float):

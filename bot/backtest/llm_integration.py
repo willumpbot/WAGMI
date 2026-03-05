@@ -389,6 +389,23 @@ class BacktestLLMIntegration:
             if decision:
                 self.candles_with_llm += 1
                 self._log_decision(decision, snapshot_data, call_cost, trigger_reason)
+
+                # Persist memory update from Trade Agent's 'mu' field
+                # (mirrors decision_engine.py:726-730 behavior)
+                if decision.memory_update:
+                    try:
+                        from llm.memory_store import apply_memory_update
+                        symbol = ""
+                        markets = snapshot_data.get("m", []) if snapshot_data else []
+                        if markets:
+                            symbol = markets[0].get("s", "")
+                        apply_memory_update(
+                            decision.memory_update,
+                            symbol=symbol,
+                            regime=decision.regime or "",
+                        )
+                    except Exception as e:
+                        logger.debug(f"[BACKTEST-LLM] Memory update failed: {e}")
             else:
                 self.candles_fallback += 1
                 self._log_skipped_decision(

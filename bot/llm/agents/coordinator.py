@@ -273,15 +273,35 @@ class AgentCoordinator:
                     output_tokens=trade_out.output_tokens,
                     latency_ms=trade_out.latency_ms,
                 )
-            # If quant says it's noise, force skip for very low-confidence signals
-            if sq.get("is_noise") and float(trade_out.data.get("c", 0)) < 0.55:
-                trade_out = AgentOutput(
-                    role=AgentRole.TRADE,
-                    data={**trade_out.data, "a": "skip", "c": 0.0,
-                          "n": f"QUANT_NOISE: {sq.get('reason', 'statistical noise')}"},
-                    raw_text=trade_out.raw_text,
-                    model_used=trade_out.model_used,
-                )
+            # If quant says it's noise, apply graduated response:
+            # - Very low confidence (<0.35): hard skip (genuinely noise)
+            # - Marginal confidence (0.35-0.50): reduce size 50% but let Critic review
+            # - Above 0.50: leave alone (may have positive EV with good R:R)
+            if sq.get("is_noise"):
+                trade_conf = float(trade_out.data.get("c", 0))
+                noise_reason = sq.get("reason", "statistical noise")
+                if trade_conf < 0.35:
+                    trade_out = AgentOutput(
+                        role=AgentRole.TRADE,
+                        data={**trade_out.data, "a": "skip", "c": 0.0,
+                              "n": f"QUANT_NOISE: {noise_reason}"},
+                        raw_text=trade_out.raw_text,
+                        model_used=trade_out.model_used,
+                    )
+                elif trade_conf < 0.50:
+                    # Reduce size but let trade proceed for Critic review
+                    td = trade_out.data
+                    old_sm = float(td.get("sm", td.get("size_multiplier", 1.0)))
+                    trade_out = AgentOutput(
+                        role=AgentRole.TRADE,
+                        data={**td, "sm": round(old_sm * 0.5, 2),
+                              "n": (td.get("n", "") + f" | QUANT_NOISE_REDUCE: {noise_reason}")},
+                        raw_text=trade_out.raw_text,
+                        model_used=trade_out.model_used,
+                        input_tokens=trade_out.input_tokens,
+                        output_tokens=trade_out.output_tokens,
+                        latency_ms=trade_out.latency_ms,
+                    )
 
         # ── Confidence Consensus & Consistency Scaling ─────────
         # Gap 1: Compound conviction across agents
