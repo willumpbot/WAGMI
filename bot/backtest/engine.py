@@ -34,6 +34,7 @@ from strategies.ensemble import EnsembleStrategy
 from execution.position_manager import PositionManager
 from execution.leverage import LeverageManager
 from execution.risk import RiskManager, CircuitBreaker
+from execution.candidate import TradeCandidate, CandidateLogger
 
 logger = logging.getLogger("bot.backtest")
 
@@ -90,6 +91,10 @@ class BacktestEngine:
         self.equity_curve: List[Dict] = []
         self.signals_generated: List[Dict] = []
 
+        # Candidate tracking for counterfactual analysis
+        self._candidate_logger = None
+        self._active_candidates: Dict[str, 'TradeCandidate'] = {}  # symbol -> candidate
+
     def run(
         self,
         symbols: List[str],
@@ -110,6 +115,10 @@ class BacktestEngine:
             Dict with backtest results (includes learning_summary if learn=True)
         """
         logger.info(f"Starting backtest: {symbols} | {days} days | strategies={strategies or 'all'}")
+
+        # Initialize candidate logger for dual-world analysis
+        self._candidate_logger = CandidateLogger()
+        self._active_candidates = {}
 
         # Build strategies
         sym_configs = {s: DEFAULT_SYMBOLS[s] for s in symbols if s in DEFAULT_SYMBOLS}
@@ -309,12 +318,24 @@ class BacktestEngine:
             if self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt):
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal:
+                    # Create candidate for dual-world tracking
+                    candidate = self._create_candidate(signal, sim_dt)
+
                     # LLM: evaluate signal through multi-agent pipeline
                     signal = self._apply_llm_entry(
                         signal, symbol, windowed, current_price, sim_dt
                     )
                     if signal:
+                        # Update candidate with LLM decision
+                        candidate.llm_action = signal.metadata.get("llm_status", "approved")
+                        candidate.llm_confidence = signal.confidence
+                        candidate.llm_notes = signal.metadata.get("llm_notes")
+                        self._active_candidates[symbol] = candidate
                         self._execute_signal(signal, current_price)
+                    else:
+                        # LLM vetoed — log candidate with flat action
+                        candidate.llm_action = "flat"
+                        self._candidate_logger.log_candidate(candidate)
 
             # Record equity
             self.equity_curve.append({
@@ -404,11 +425,21 @@ class BacktestEngine:
             if self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt):
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal:
+                    # Create candidate for dual-world tracking
+                    candidate = self._create_candidate(signal, sim_dt)
+
                     signal = self._apply_llm_entry(
                         signal, symbol, windowed, current_price, sim_dt
                     )
                     if signal:
+                        candidate.llm_action = signal.metadata.get("llm_status", "approved")
+                        candidate.llm_confidence = signal.confidence
+                        candidate.llm_notes = signal.metadata.get("llm_notes")
+                        self._active_candidates[symbol] = candidate
                         self._execute_signal(signal, current_price)
+                    else:
+                        candidate.llm_action = "flat"
+                        self._candidate_logger.log_candidate(candidate)
 
             self.equity_curve.append({
                 "time": str(df["time"].iloc[i]),
@@ -424,6 +455,64 @@ class BacktestEngine:
 
         # Force-close any open position at end of symbol walk
         self._force_close_open(symbol, current_price, sim_dt)
+
+    # ── Candidate Tracking ──────────────────────────────────────────
+
+    def _create_candidate(self, signal: Signal, sim_dt: datetime) -> TradeCandidate:
+        """Create a TradeCandidate from an ensemble signal for dual-world logging."""
+        import time as _time
+        return TradeCandidate(
+            symbol=signal.symbol,
+            side="LONG" if signal.side == "BUY" else "SHORT",
+            entry=signal.entry,
+            sl=signal.sl,
+            tp1=signal.tp1,
+            tp2=signal.tp2,
+            atr=signal.atr,
+            ensemble_confidence=signal.confidence,
+            ensemble_strategy=signal.strategy,
+            entry_type=signal.metadata.get("entry_type", "MEDIUM"),
+            primary_driver=signal.strategy,
+            regime=signal.metadata.get("regime", "unknown"),
+            timestamp=sim_dt.timestamp(),
+            num_agree=signal.metadata.get("num_agree", 1),
+            strategies_agree=signal.metadata.get("strategies_agree", []),
+        )
+
+    def _update_candidate_on_close(self, event):
+        """Update the active candidate with realized PnL when a position closes."""
+        candidate = self._active_candidates.pop(event.symbol, None)
+        if not candidate:
+            return
+
+        pos = self.pos_mgr.positions.get(event.symbol)
+        pnl = pos.realized_pnl if pos else event.pnl
+
+        candidate.realized_pnl = pnl
+        candidate.leverage_used = event.leverage
+        candidate.close_reason = event.action
+
+        if pnl > 0:
+            candidate.outcome = "WIN"
+        elif pnl < -0.01:
+            candidate.outcome = "LOSS"
+        else:
+            candidate.outcome = "BREAK_EVEN"
+
+        # Calculate realized R-multiple
+        stop_width = abs(candidate.entry - candidate.sl)
+        if stop_width > 0:
+            candidate.realized_r = pnl / (stop_width * (pos.qty if pos else 1))
+
+        # Hold time
+        if pos and hasattr(pos, "open_time") and pos.open_time:
+            import time as _time
+            close_time = _time.time()
+            if hasattr(event, "timestamp") and event.timestamp:
+                close_time = event.timestamp
+            candidate.hold_time_s = close_time - candidate.timestamp
+
+        self._candidate_logger.log_candidate(candidate)
 
     # ── LLM Integration Helpers ────────────────────────────────────
 
@@ -460,6 +549,17 @@ class BacktestEngine:
             signal.confidence = max(1.0, min(100.0, signal.confidence * decision.size_multiplier))
 
         signal.metadata["llm_status"] = "approved"
+
+        # Store LLM thesis and notes on signal metadata so they propagate
+        # to the Position object. Exit Agent needs thesis for continuity checks.
+        if decision.notes:
+            signal.metadata["llm_notes"] = decision.notes[:300]
+        if hasattr(decision, "thesis") and decision.thesis:
+            signal.metadata["llm_thesis"] = decision.thesis[:200]
+        elif decision.notes:
+            # Extract thesis from notes if available
+            signal.metadata["llm_thesis"] = decision.notes[:200]
+
         return signal
 
     def _run_llm_exit(self, symbol, current_price, windowed, sim_dt):
@@ -618,6 +718,9 @@ class BacktestEngine:
                 })
             except Exception:
                 pass  # Insight validation is optional
+
+            # Update trade candidate with realized PnL for counterfactual analysis
+            self._update_candidate_on_close(event)
         except Exception as e:
             logger.debug(f"[BACKTEST] Failed to record trade outcome: {e}")
 
@@ -689,6 +792,11 @@ class BacktestEngine:
             side=signal.side,
         )
 
+        # Extract LLM thesis/notes from signal metadata (stored by _apply_llm_entry)
+        llm_notes = signal.metadata.get("llm_notes", "")
+        llm_thesis = signal.metadata.get("llm_thesis", "")
+        position_notes = llm_thesis or llm_notes
+
         self.pos_mgr.open_position(
             symbol=signal.symbol,
             side=side,
@@ -705,6 +813,7 @@ class BacktestEngine:
             tp1_close_pct=adjusted["tp1_close_pct"],
             entry_reasons={"backtest": True, "strategy": signal.strategy},
             trade_profile=trade_prof,
+            notes=position_notes,
         )
 
         llm_tag = signal.metadata.get("llm_status", "unknown")

@@ -106,7 +106,7 @@ Strategy agreement quality matters more than count:
 ## SETUPS TO AVOID OR SIZE DOWN
 - **Low volume drift**: Price moving on no volume. Likely to reverse. Discount confidence 15%.
 - **Counter-trend in panic**: Buying dips in panic regime is catching knives. Skip unless 4/4 align + RSI<20.
-- **Solo strategy signal**: One strategy alone is noise. If rf="avoid" on the dominant signal, skip.
+- **Solo strategy signal**: One strategy alone has weaker edge. Cap confidence at 0.50 max for solo signals. If rf="avoid" on the dominant signal, skip.
 - **Funding-adverse holds**: If funding >0.04% against you and expected hold >4h, reduce size 30% or use SCALP profile.
 
 ## YOUR DATA SOURCES — USE ALL OF THEM
@@ -175,12 +175,13 @@ Now evaluate the specific trade candidate:
 - RULE: If expected hold > 4h AND funding > 0.03%, reduce confidence by 10% or switch to SCALP profile.
 
 ## CONFIDENCE CALIBRATION
-**CRITICAL RULE: If your confidence is below 0.50, you MUST output action "skip". NEVER output "go" or "flip" with confidence < 0.50. This is enforced by the consistency checker and will be automatically overridden — save the API call by doing it yourself.**
-- < 0.5 = MUST be "skip" — no edge, enforced automatically
-- 0.5-0.6 = marginal — only go if regime is crystal clear AND convergent confluence
-- 0.6-0.7 = moderate conviction — acceptable for normal sizing
-- 0.7-0.85 = strong — thesis + regime + confluence all align
+**CRITICAL RULE: If your confidence is below 0.40, you MUST output action "skip". NEVER output "go" or "flip" with confidence < 0.40. This is enforced by the consistency checker and will be automatically overridden — save the API call by doing it yourself.**
+- < 0.40 = MUST be "skip" — no edge, enforced automatically
+- 0.40-0.55 = marginal — only go if regime is crystal clear AND convergent confluence (2+ strategies)
+- 0.55-0.70 = moderate conviction — acceptable for normal sizing
+- 0.70-0.85 = strong — thesis + regime + confluence all align
 - 0.85-1.0 = rare — everything aligns perfectly, size up aggressively
+- When 3+ strategies agree with convergent confluence in a confirmed trend regime, confidence SHOULD be 0.65+. Don't be afraid to express conviction when the data supports it.
 
 **SELF-CORRECTION via self_perf + agent_cal:**
 - `agent_cal`: Your per-regime accuracy ledger. If `agent_cal.trend.acc=0.48` and `cal=+0.15`, you are 15% overconfident in trend regime. Reduce accordingly.

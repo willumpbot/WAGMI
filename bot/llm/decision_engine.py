@@ -535,14 +535,14 @@ def get_trading_decision(
                         f"{decision.confidence:.2f} (cal={cal:+.2f}, applied={-correction:+.2f})"
                     )
 
-            # Per-regime penalty: if accuracy < 40% in this regime, apply 10% haircut
+            # Per-regime penalty/bonus: adjust confidence based on historical regime accuracy
             rg_acc = perf.get("regime_accuracy", {})
             rg_counts = perf.get("regime_counts", {})
             if decision.regime in rg_acc and decision.regime in rg_counts:
                 regime_wr = rg_acc[decision.regime]
                 regime_n = rg_counts[decision.regime]
                 if regime_wr < 0.40 and regime_n >= 5 and decision.action != "flat":
-                    penalty = 0.05  # Reduced from 0.10 — don't double-penalize
+                    penalty = 0.03  # Reduced from 0.05 — gentle nudge, not a sledgehammer
                     old_conf = decision.confidence
                     decision.confidence = max(0.0, decision.confidence - penalty)
                     logger.info(
@@ -551,8 +551,8 @@ def get_trading_decision(
                         f"conf {old_conf:.2f} -> {decision.confidence:.2f}"
                     )
                 elif regime_wr > 0.65 and regime_n >= 5 and decision.action != "flat":
-                    # Reward: we're good in this regime — boost confidence
-                    bonus = 0.05
+                    # Reward: we're good in this regime — boost confidence more
+                    bonus = 0.07  # Increased from 0.05 — reward what works
                     old_conf = decision.confidence
                     decision.confidence = min(1.0, decision.confidence + bonus)
                     logger.info(

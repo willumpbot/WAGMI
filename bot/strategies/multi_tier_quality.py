@@ -250,8 +250,17 @@ class MultiTierQualityStrategy(BaseStrategy):
         if tier == "PRIORITY" and not ema_1h_align and conf < 80:
             tier = "REGULAR"
 
-        if conf < 50:
-            return None  # Too low even for manual
+        # Regime alignment gate: this is a momentum/trend strategy.
+        # In non-trending regimes (regime_score == 0), require higher confidence
+        # and 1h EMA alignment to avoid false EMA crossover signals in chop.
+        if abs(regime) == 0:
+            # No trend alignment across timeframes — require extra confirmation
+            if not ema_1h_align or not vwap_align:
+                return None  # No edge in range without both VWAP and 1h alignment
+            conf = min(conf, 68)  # Cap confidence — we're not in a trend
+
+        if conf < 55:
+            return None  # Raised from 50 — reduce weak signal noise
 
         rr = abs(entry - tp1) / stop_width if stop_width > 0 else 0
         ctx = (

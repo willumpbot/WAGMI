@@ -210,13 +210,13 @@ def _check_confidence_coherence(
         ))
 
     # Acting with very low confidence
-    if action_normalized == "go" and trade_conf < 0.5:
+    if action_normalized == "go" and trade_conf < 0.40:
         issues.append(ConsistencyIssue(
             check_name="confidence_coherence",
             severity="critical",
             description=(
                 f"Proceeding with trade at confidence {trade_conf:.2f} "
-                f"(below 0.5 minimum for action)"
+                f"(below 0.40 minimum for action)"
             ),
             agents_involved=["trade"],
             suggestion="Override to skip — no edge at this confidence",

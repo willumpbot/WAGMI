@@ -96,6 +96,7 @@ class BacktestLLMIntegration:
         self.llm_failures: int = 0
         self.candles_with_llm: int = 0
         self.candles_fallback: int = 0
+        self.pre_filter_skips: int = 0  # Signals skipped before LLM call
 
         # Decision log
         self.decisions: List[Dict[str, Any]] = []
@@ -350,6 +351,34 @@ class BacktestLLMIntegration:
             f"global spent ${self.total_cost_usd:.2f}/${self.budget_usd:.2f}"
         )
 
+    # ── Pre-LLM Signal Filter ─────────────────────────────────────
+
+    def _should_skip_llm(self, snapshot_data: Optional[dict], signal) -> bool:
+        """Pre-filter signals BEFORE calling the LLM API to save budget.
+
+        Skips signals that are almost certainly going to be vetoed anyway:
+        - No signal at all
+        - Solo strategy signal with low confidence (< 55%)
+        - Signal in low_liquidity regime (hard limit in Trade Agent prompt)
+
+        Returns True if we should skip the LLM call entirely.
+        """
+        if not snapshot_data or not signal:
+            return True
+
+        # Check signal confidence — solo signals below 55% almost always get
+        # quant_noise vetoed. Save the ~$0.007 API call.
+        markets = snapshot_data.get("m", [])
+        if markets:
+            sigs = markets[0].get("sg", [])
+            if sigs and len(sigs) == 1:
+                # Solo strategy signal — check confidence
+                sig_conf = sigs[0].get("c", 0)
+                if sig_conf < 0.55:
+                    return True
+
+        return False
+
     # ── Entry Evaluation ──────────────────────────────────────────
 
     def evaluate_entry(
@@ -371,6 +400,12 @@ class BacktestLLMIntegration:
             return None
 
         if self._coordinator is None:
+            self.candles_fallback += 1
+            return None
+
+        # Pre-filter: skip obviously bad signals before spending API credits
+        if self._should_skip_llm(snapshot_data, signal):
+            self.pre_filter_skips += 1
             self.candles_fallback += 1
             return None
 
@@ -737,6 +772,7 @@ class BacktestLLMIntegration:
         return (
             f"[BACKTEST-LLM] [{candle_idx}/{total_candles}] "
             f"LLM: {self.candles_with_llm} calls (${self.total_cost_usd:.2f}) | "
+            f"Pre-filtered: {self.pre_filter_skips} | "
             f"Fallback: {self.candles_fallback} | "
             f"Budget: ${self.total_cost_usd:.2f}/${self.budget_usd:.2f} ({budget_pct:.1f}%)"
         )
@@ -756,6 +792,7 @@ class BacktestLLMIntegration:
             "llm_failures": self.llm_failures,
             "candles_with_llm": self.candles_with_llm,
             "candles_fallback": self.candles_fallback,
+            "pre_filter_skips": self.pre_filter_skips,
             "budget_exhausted": self.budget_exhausted,
             "decisions_logged": len(self.decisions),
             "agent_costs": dict(self.agent_costs),

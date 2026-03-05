@@ -146,44 +146,29 @@ class RegimeTrendStrategy(BaseStrategy):
         # Relaxed short: only need partial bear regime + either cross-down or weak MFI
         sell = cd and (mfi_1h_val < 50) and multi_bear
 
-        # Regime momentum: strong alignment + recent cross (within 5 bars, not just this bar)
+        # Regime momentum: strong alignment + recent cross (within 3 bars, not just this bar)
         # Enables directional trades in strong regimes without waiting for exact-bar cross
+        # NOTE: Tightened from 5-bar to 3-bar window and raised alignment requirements
+        # to reduce false signals. Previous 28.6% WR was caused by stale momentum entries.
         is_momentum = False
         if not buy and not sell:
-            has_enough_bars = len(cross_up) >= 5 and len(cross_dn) >= 5
+            has_enough_bars = len(cross_up) >= 3 and len(cross_dn) >= 3
             if has_enough_bars:
-                recent_cu = bool(cross_up.iloc[-5:].any())
-                recent_cd = bool(cross_dn.iloc[-5:].any())
+                recent_cu = bool(cross_up.iloc[-3:].any())
+                recent_cd = bool(cross_dn.iloc[-3:].any())
 
-                if align_long >= 3 and recent_cu and partial_bull:
+                # Require FULL multi-timeframe bull (not just partial) for momentum longs
+                if align_long >= 3 and recent_cu and multi_bull:
                     buy = True
                     is_momentum = True
-                # Relaxed short momentum: 2+ alignment is enough in partial bear
-                elif align_short >= 2 and recent_cd and partial_bear:
+                # Require 3+ alignment for momentum shorts (was 2, too loose)
+                elif align_short >= 3 and recent_cd and multi_bear:
                     sell = True
                     is_momentum = True
 
-        # Bearish regime short: strong bearish alignment without needing exact cross
-        # When regime is clearly bearish and MFI weak, generate short even on stale crosses
-        if not buy and not sell and not is_momentum:
-            if align_short >= 3 and partial_bear and mfi_1h_val < 45:
-                has_enough_bars = len(cross_dn) >= 10
-                if has_enough_bars:
-                    recent_cd_wide = bool(cross_dn.iloc[-10:].any())
-                    if recent_cd_wide:
-                        sell = True
-                        is_momentum = True
-
-        # Bullish regime long: strong bullish alignment without needing exact cross
-        # Mirror of bearish regime short above
-        if not buy and not sell and not is_momentum:
-            if align_long >= 3 and partial_bull and mfi_1h_val > 55:
-                has_enough_bars = len(cross_up) >= 10
-                if has_enough_bars:
-                    recent_cu_wide = bool(cross_up.iloc[-10:].any())
-                    if recent_cu_wide:
-                        buy = True
-                        is_momentum = True
+        # Wide-window momentum entries removed — they generated stale signals
+        # that contributed to the 28.6% WR. Only enter on fresh crosses or
+        # strong regime-confirmed momentum within 3 bars.
 
         if not buy and not sell:
             return None

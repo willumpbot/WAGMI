@@ -124,9 +124,13 @@ _BASE_PROFILES: Dict[str, ExitParams] = {
         "floor_progress": 0.35, "floor_start": 0.25, "floor_max": 0.60,
     }),
     TREND: _build_profile("TREND", {
-        "tp1_atr": 1.5, "tp2_atr": 3.0, "sl_atr": 1.0, "tp1_pct": 0.50,  # was 0.35
-        "trailing": "loose", "trail_start": 0.50, "trail_end": 0.25,
-        "floor_progress": 0.35, "floor_start": 0.25, "floor_max": 0.55,
+        "tp1_atr": 1.2, "tp2_atr": 2.5, "sl_atr": 0.85, "tp1_pct": 0.55,
+        # Tightened from tp1=1.5/tp2=3.0/sl=1.0/tp1_pct=0.50
+        # TREND at 21% WR was letting losers run too long. Tighter SL (0.85 vs 1.0 ATR),
+        # closer TP1 (1.2 vs 1.5 ATR), and take more profit at TP1 (55% vs 50%).
+        "trailing": "medium", "trail_start": 0.55, "trail_end": 0.30,
+        # Changed trailing from "loose" to "medium" — don't let winners reverse
+        "floor_progress": 0.30, "floor_start": 0.30, "floor_max": 0.60,
     }),
     REGIME: _build_profile("REGIME", {
         "tp1_atr": 1.2, "tp2_atr": 2.5, "sl_atr": 0.8, "tp1_pct": 0.50,

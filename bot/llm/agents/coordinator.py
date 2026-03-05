@@ -259,6 +259,8 @@ class AgentCoordinator:
             sq = sq_raw if isinstance(sq_raw, dict) else {}
             quant_adj = sq.get("confidence_adjustment", 0)
             if quant_adj and isinstance(quant_adj, (int, float)):
+                # Cap quant adjustment to prevent cascading reductions
+                quant_adj = max(-0.15, min(0.15, quant_adj))
                 td = trade_out.data
                 old_c = float(td.get("c", td.get("confidence", 0.0)))
                 new_c = max(0.0, min(1.0, old_c + quant_adj))
@@ -274,13 +276,15 @@ class AgentCoordinator:
                     latency_ms=trade_out.latency_ms,
                 )
             # If quant says it's noise, apply graduated response:
-            # - Very low confidence (<0.35): hard skip (genuinely noise)
-            # - Marginal confidence (0.35-0.50): reduce size 50% but let Critic review
-            # - Above 0.50: leave alone (may have positive EV with good R:R)
+            # - Very low confidence (<0.20): hard skip (genuinely garbage)
+            # - Low confidence (0.20-0.40): reduce size 50% but let Critic review
+            # - Above 0.40: leave alone (may have positive EV with good R:R)
+            # NOTE: Thresholds relaxed from 0.35/0.50 to 0.20/0.40 — previous
+            # values killed 88% of signals as quant_noise, far too aggressive.
             if sq.get("is_noise"):
                 trade_conf = float(trade_out.data.get("c", 0))
                 noise_reason = sq.get("reason", "statistical noise")
-                if trade_conf < 0.35:
+                if trade_conf < 0.20:
                     trade_out = AgentOutput(
                         role=AgentRole.TRADE,
                         data={**trade_out.data, "a": "skip", "c": 0.0,
@@ -288,7 +292,7 @@ class AgentCoordinator:
                         raw_text=trade_out.raw_text,
                         model_used=trade_out.model_used,
                     )
-                elif trade_conf < 0.50:
+                elif trade_conf < 0.40:
                     # Reduce size but let trade proceed for Critic review
                     td = trade_out.data
                     old_sm = float(td.get("sm", td.get("size_multiplier", 1.0)))
@@ -1531,6 +1535,10 @@ class AgentCoordinator:
         if confl_note:
             combined_notes += f" | {confl_note}"
         combined_notes = f"{combined_notes} | {notes}"[:1500]
+
+        # Default memory note from thesis if Trade Agent didn't provide mu
+        if not memory_update and trade_thesis and action in ("go", "proceed"):
+            memory_update = trade_thesis[:100]
 
         return LLMDecision(
             action=action,

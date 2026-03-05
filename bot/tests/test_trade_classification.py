@@ -96,7 +96,7 @@ class TestExitProfileDifferences:
         scalp = _BASE_PROFILES[SCALP]
         trend = _BASE_PROFILES[TREND]
         assert scalp.trailing_style == "tight"
-        assert trend.trailing_style == "loose"
+        assert trend.trailing_style == "medium"
         # SCALP end factor > TREND end factor (tighter = higher)
         assert scalp.trailing_tighten_end > trend.trailing_tighten_end
 
@@ -280,8 +280,8 @@ class TestPositionManagerWithProfile:
             sl=98.0, tp1=103.0, tp2=106.0, atr=2.0,
             leverage=2.0, trade_profile=prof,
         )
-        # TREND uses loose trailing -> trailing_distance = atr * 1.5 * 1.5 = 4.5
-        assert pos.trailing_distance > 2.0 * 1.5  # atr * trailing_atr_mult * loose_mult
+        # TREND uses medium trailing -> trailing_distance = atr * 1.5 = 3.0
+        assert pos.trailing_distance >= 2.0 * 1.5  # atr * trailing_atr_mult
 
     def test_profile_overrides_tp1_close_pct(self):
         """Profile TP1% should override the passed tp1_close_pct."""
