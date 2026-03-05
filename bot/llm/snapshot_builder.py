@@ -291,6 +291,8 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
             result["g"]["edge"] = g.extra["setup_edge_map"]
         if g.extra.get("strategy_performance"):
             result["g"]["stperf"] = g.extra["strategy_performance"]
+        if g.extra.get("symbol_win_rates"):
+            result["g"]["symwr"] = g.extra["symbol_win_rates"]
         # Scout Agent preparation (pre-formed theses, watchlist priority)
         if g.extra.get("scout_preparation"):
             result["g"]["scout"] = g.extra["scout_preparation"]

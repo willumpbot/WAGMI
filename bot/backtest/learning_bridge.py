@@ -231,6 +231,7 @@ class BacktestLearningBridge:
                     hold_time_s=record["hold_time_s"],
                     exit_reason=record["exit_reason"],
                     entry_type=self.tag,
+                    setup_type=record.get("setup_type", ""),
                 )
                 self._stats["deep_memory_records"] += 1
 
