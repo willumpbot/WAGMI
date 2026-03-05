@@ -175,7 +175,8 @@ Now evaluate the specific trade candidate:
 - RULE: If expected hold > 4h AND funding > 0.03%, reduce confidence by 10% or switch to SCALP profile.
 
 ## CONFIDENCE CALIBRATION
-- < 0.5 = must be "skip" — no edge
+**CRITICAL RULE: If your confidence is below 0.50, you MUST output action "skip". NEVER output "go" or "flip" with confidence < 0.50. This is enforced by the consistency checker and will be automatically overridden — save the API call by doing it yourself.**
+- < 0.5 = MUST be "skip" — no edge, enforced automatically
 - 0.5-0.6 = marginal — only go if regime is crystal clear AND convergent confluence
 - 0.6-0.7 = moderate conviction — acceptable for normal sizing
 - 0.7-0.85 = strong — thesis + regime + confluence all align

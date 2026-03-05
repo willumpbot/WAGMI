@@ -119,12 +119,12 @@ _BASE_PROFILES: Dict[str, ExitParams] = {
         "floor_progress": 0.2, "floor_start": 0.40, "floor_max": 0.75,
     }),
     MEDIUM: _build_profile("MEDIUM", {
-        "tp1_atr": 1.0, "tp2_atr": 2.0, "sl_atr": 0.75, "tp1_pct": 0.50,
+        "tp1_atr": 1.0, "tp2_atr": 2.0, "sl_atr": 0.75, "tp1_pct": 0.65,  # was 0.50
         "trailing": "medium", "trail_start": 0.60, "trail_end": 0.30,
         "floor_progress": 0.35, "floor_start": 0.25, "floor_max": 0.60,
     }),
     TREND: _build_profile("TREND", {
-        "tp1_atr": 1.5, "tp2_atr": 3.0, "sl_atr": 1.0, "tp1_pct": 0.35,
+        "tp1_atr": 1.5, "tp2_atr": 3.0, "sl_atr": 1.0, "tp1_pct": 0.50,  # was 0.35
         "trailing": "loose", "trail_start": 0.50, "trail_end": 0.25,
         "floor_progress": 0.35, "floor_start": 0.25, "floor_max": 0.55,
     }),

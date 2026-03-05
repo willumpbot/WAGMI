@@ -226,27 +226,35 @@ class AgentCoordinator:
                 f"[MULTI-AGENT] Pipeline inconsistency detected: "
                 f"{consistency_report.summary()}"
             )
-            # On critical inconsistency: override to skip for safety
+            # On critical inconsistency: override action to skip but preserve
+            # a fraction of the agent's confidence for downstream analysis.
+            # Previously zeroed confidence, losing all signal information.
             critical_issues = [
                 i for i in consistency_report.issues if i.severity == "critical"
             ]
             if critical_issues:
+                original_conf = float(
+                    trade_out.data.get("c", trade_out.data.get("confidence", 0.0))
+                )
                 logger.warning(
-                    f"[MULTI-AGENT] Critical issues found — overriding to skip: "
+                    f"[MULTI-AGENT] Critical issues found — overriding to skip "
+                    f"(original conf={original_conf:.2f}): "
                     f"{[i.description[:80] for i in critical_issues]}"
                 )
                 trade_out = AgentOutput(
                     role=AgentRole.TRADE,
                     data={
                         "a": "skip",
-                        "c": 0.0,
+                        "c": original_conf * 0.5,  # halve instead of zero
                         "n": f"consistency_override: {critical_issues[0].description[:100]}",
                     },
                 )
 
         # ── Quant Agent confidence adjustment ─────────────────
-        # If Quant Agent flagged signal as noise or adjusted confidence, apply
-        if quant_out and quant_out.ok:
+        # If Quant Agent flagged signal as noise or adjusted confidence, apply.
+        # Skip if consistency already overrode to avoid cascading reductions.
+        _consistency_overrode = "consistency_override" in trade_out.data.get("n", "")
+        if quant_out and quant_out.ok and not _consistency_overrode:
             sq_raw = quant_out.data.get("signal_quality", {})
             sq = sq_raw if isinstance(sq_raw, dict) else {}
             quant_adj = sq.get("confidence_adjustment", 0)

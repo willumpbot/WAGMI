@@ -166,6 +166,11 @@ class BacktestEngine:
             if symbol in symbols_completed:
                 logger.info(f"Skipping {symbol} (already completed in checkpoint)")
                 continue
+
+            # Reset per-symbol LLM budget so each symbol gets fair share
+            if self.llm:
+                self.llm.reset_for_symbol(symbol)
+
             data = all_data.get(symbol, {})
             df_1h = data.get("1h", pd.DataFrame())
             if df_1h.empty:
@@ -263,6 +268,26 @@ class BacktestEngine:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
 
+            # Circuit breaker force-close: if CB tripped, close open positions
+            # to prevent unlimited drawdown (CB only blocks NEW trades otherwise)
+            if self.risk_mgr.circuit_breaker.tripped:
+                pos = self.pos_mgr.positions.get(symbol)
+                if pos and pos.state != "CLOSED":
+                    logger.warning(
+                        f"[{symbol}] CB tripped — force-closing position "
+                        f"in state {pos.state}"
+                    )
+                    cb_event = self.pos_mgr.force_close(
+                        symbol, current_price, reason="CIRCUIT_BREAKER"
+                    )
+                    if cb_event:
+                        self.risk_mgr.update_equity(
+                            cb_event.pnl - cb_event.fee, sim_time=sim_dt
+                        )
+                        if self.llm and cb_event.action in self._CLOSE_ACTIONS:
+                            self.llm.clear_exit_counter(cb_event.symbol)
+                            self._run_llm_learning(cb_event, current_price)
+
             # LLM: run Exit Agent on open positions
             if self.llm:
                 self._run_llm_exit(symbol, current_price, windowed, sim_dt)
@@ -338,6 +363,25 @@ class BacktestEngine:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
 
+            # Circuit breaker force-close (same as _walk_hourly)
+            if self.risk_mgr.circuit_breaker.tripped:
+                pos = self.pos_mgr.positions.get(symbol)
+                if pos and pos.state != "CLOSED":
+                    logger.warning(
+                        f"[{symbol}] CB tripped — force-closing position "
+                        f"in state {pos.state}"
+                    )
+                    cb_event = self.pos_mgr.force_close(
+                        symbol, current_price, reason="CIRCUIT_BREAKER"
+                    )
+                    if cb_event:
+                        self.risk_mgr.update_equity(
+                            cb_event.pnl - cb_event.fee, sim_time=sim_dt
+                        )
+                        if self.llm and cb_event.action in self._CLOSE_ACTIONS:
+                            self.llm.clear_exit_counter(cb_event.symbol)
+                            self._run_llm_learning(cb_event, current_price)
+
             if self.llm:
                 self._run_llm_exit(symbol, current_price, windowed, sim_dt)
 
@@ -370,6 +414,7 @@ class BacktestEngine:
     def _apply_llm_entry(self, signal, symbol, windowed, current_price, sim_dt):
         """Run LLM multi-agent pipeline on a signal. Returns signal or None (vetoed)."""
         if not self.llm:
+            signal.metadata["llm_status"] = "no_llm"
             return signal
 
         snapshot_data = self.llm.build_backtest_snapshot(
@@ -386,6 +431,7 @@ class BacktestEngine:
 
         decision = self.llm.evaluate_entry(snapshot_data, signal, "pre_trade_backtest")
         if decision is None:
+            signal.metadata["llm_status"] = "fallback"
             return signal  # No LLM opinion -> use strategy signal as-is
 
         # Apply LLM decision
@@ -397,6 +443,7 @@ class BacktestEngine:
         if decision.size_multiplier != 1.0:
             signal.confidence = max(1.0, min(100.0, signal.confidence * decision.size_multiplier))
 
+        signal.metadata["llm_status"] = "approved"
         return signal
 
     def _run_llm_exit(self, symbol, current_price, windowed, sim_dt):
@@ -567,6 +614,13 @@ class BacktestEngine:
             trade_profile=trade_prof,
         )
 
+        llm_tag = signal.metadata.get("llm_status", "unknown")
+        logger.info(
+            f"[{signal.symbol}] TRADE {signal.side} "
+            f"conf={signal.confidence:.0f}% lev={lev_decision.leverage:.1f}x "
+            f"({llm_tag})"
+        )
+
         self.signals_generated.append({
             "symbol": signal.symbol,
             "strategy": signal.strategy,
@@ -577,6 +631,7 @@ class BacktestEngine:
             "sl": signal.sl,
             "tp1": signal.tp1,
             "tp2": signal.tp2,
+            "llm_status": llm_tag,
         })
 
     def _generate_report(self, symbols: List[str], days: int) -> Dict[str, Any]:

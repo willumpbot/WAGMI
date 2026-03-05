@@ -137,12 +137,12 @@ class LeverageManager:
         if confidence < 80:
             t = (confidence - 75) / 5.0
             if num_strategies_agree < 2:
-                lev = min(4.0, cap)
+                lev = min(3.0, cap)
                 return LeverageDecision(lev, "leverage", "medium",
                                         f"{lev:.1f}x: only {num_strategies_agree} strats", 1.3)
-            lev = min(5.0 + t * 3.0, cap)  # 5-8x
-            rm = 1.5 + t * 0.5  # 1.5-2.0x
-            tier = "high" if lev > 5.0 else "medium"
+            lev = min(3.0 + t * 2.0, cap)  # 3-5x (was 5-8x)
+            rm = 1.3 + t * 0.4  # 1.3-1.7x (was 1.5-2.0x)
+            tier = "high" if lev > 4.0 else "medium"
             return LeverageDecision(lev, "leverage", tier,
                                     f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm)
 
@@ -150,31 +150,31 @@ class LeverageManager:
         if confidence < 90:
             t = (confidence - 80) / 10.0
             if num_strategies_agree < 2:
-                lev = min(5.0, cap)
+                lev = min(4.0, cap)
                 return LeverageDecision(lev, "leverage", "medium",
                                         f"{lev:.1f}x: need 2+ strats for high lev", 1.5)
-            lev = min(8.0 + t * 7.0, cap)  # 8-15x
-            rm = 2.0 + t * 0.5  # 2.0-2.5x
+            lev = min(5.0 + t * 3.0, cap)  # 5-8x (was 8-15x)
+            rm = 1.7 + t * 0.3  # 1.7-2.0x (was 2.0-2.5x)
             # Check extreme position limit
-            if lev > 10.0 and current_extreme_count >= self.max_extreme_positions:
-                lev = 10.0
+            if lev > 7.0 and current_extreme_count >= self.max_extreme_positions:
+                lev = 7.0
                 return LeverageDecision(lev, "leverage", "high",
                                         f"{lev:.1f}x: extreme limit reached", rm)
-            tier = "extreme" if lev >= 10.0 else "high"
+            tier = "extreme" if lev >= 7.0 else "high"
             return LeverageDecision(lev, "leverage", tier,
                                     f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm)
 
         # ── Tier 6: 90%+ — EXTREME (rare, max conviction) ──
         t = min((confidence - 90) / 10.0, 1.0)
         if num_strategies_agree >= 3:
-            lev = min(15.0 + t * 10.0, cap)  # 15-25x
-            rm = 2.5 + t * 1.0  # 2.5-3.5x
+            lev = min(8.0 + t * 4.0, cap)  # 8-12x (was 15-25x)
+            rm = 2.0 + t * 0.5  # 2.0-2.5x (was 2.5-3.5x)
         elif num_strategies_agree >= 2:
-            lev = min(12.0 + t * 5.0, cap)  # 12-17x
-            rm = 2.0 + t * 0.5  # 2.0-2.5x
+            lev = min(6.0 + t * 4.0, cap)  # 6-10x (was 12-17x)
+            rm = 1.8 + t * 0.4  # 1.8-2.2x (was 2.0-2.5x)
         else:
-            lev = min(8.0, cap)
-            rm = 1.8
+            lev = min(5.0, cap)  # was 8.0
+            rm = 1.5  # was 1.8
 
         if lev > 10.0 and current_extreme_count >= self.max_extreme_positions:
             lev = 10.0

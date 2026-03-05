@@ -67,6 +67,7 @@ class CircuitBreaker:
         self.trip_reason: str = ""
         self.last_reset_date: Optional[str] = None
         self._override_count = 0  # Track CB overrides per trip
+        self._trip_count = 0  # Total trips for log deduplication
 
     def _maybe_reset_daily(self, equity: float = 0.0, sim_time: Optional[datetime] = None):
         ref_time = sim_time or datetime.now(timezone.utc)
@@ -131,7 +132,12 @@ class CircuitBreaker:
         self.trip_time = time.time()
         self._trip_sim_time = sim_time  # For backtest cooldown tracking
         self.trip_reason = reason
-        logger.warning(f"CIRCUIT BREAKER TRIPPED: {reason}")
+        self._trip_count += 1
+        # Log first few trips at WARNING, then throttle to reduce noise
+        if self._trip_count <= 3 or self._trip_count % 10 == 0:
+            logger.warning(f"CIRCUIT BREAKER TRIPPED (#{self._trip_count}): {reason}")
+        else:
+            logger.debug(f"CIRCUIT BREAKER TRIPPED (#{self._trip_count}): {reason}")
         _log_safety_event("circuit_breaker", reason, {
             "daily_pnl": self.daily_pnl,
             "consecutive_losses": self.consecutive_losses,
@@ -151,6 +157,11 @@ class CircuitBreaker:
             sim_time: Optional simulation timestamp. When provided, cooldown is
                       checked against sim_time instead of wall-clock time.
         """
+        # Reset daily PnL on day boundary even if no trade closed today.
+        # Without this, daily_pnl accumulates across sim-days in backtests.
+        if sim_time is not None:
+            self._maybe_reset_daily(sim_time=sim_time)
+
         if max_overrides is None:
             max_overrides = self.max_cb_overrides
         if not self.tripped:

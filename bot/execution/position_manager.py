@@ -209,7 +209,7 @@ class PositionManager:
         # Don't open if already have a position in this symbol
         existing = self.positions.get(symbol)
         if existing and existing.state != CLOSED:
-            logger.warning(f"[{symbol}] Already have position in state {existing.state}, skipping")
+            logger.debug(f"[{symbol}] Already have position in state {existing.state}, skipping")
             return None
 
         # Apply precision rounding
