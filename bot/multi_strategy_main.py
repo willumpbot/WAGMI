@@ -4576,6 +4576,29 @@ class MultiStrategyBot:
                         strat_perf[strat] = {"wr": round(wr * 100), "n": stats["total"]}
                 if strat_perf:
                     global_ctx.extra["strategy_performance"] = strat_perf
+            # Confluence win rates by agreement count (how many strategies agreed)
+            _combo_wr = _dm.trade_dna.get_strategy_effectiveness()
+            if _combo_wr:
+                confl_wr = {}
+                for combo_key, stats in _combo_wr.items():
+                    if combo_key == "unknown" or stats["total"] < 3:
+                        continue
+                    n_strats = len(combo_key.split(",")) if combo_key else 0
+                    level = str(n_strats)
+                    if level not in confl_wr:
+                        confl_wr[level] = {"wins": 0, "total": 0, "pnl": 0.0}
+                    confl_wr[level]["wins"] += stats["wins"]
+                    confl_wr[level]["total"] += stats["total"]
+                    confl_wr[level]["pnl"] += stats["pnl"]
+                for level, agg in confl_wr.items():
+                    wr = agg["wins"] / agg["total"] if agg["total"] else 0
+                    confl_wr[level] = {
+                        "wr": round(wr * 100),
+                        "n": agg["total"],
+                        "pnl": round(agg["pnl"], 2),
+                    }
+                if confl_wr:
+                    global_ctx.extra["confluence_wr"] = confl_wr
         except Exception as e:
             logger.debug(f"Deep memory edge map injection error: {e}")
 

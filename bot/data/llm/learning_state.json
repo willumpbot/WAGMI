@@ -1,14 +1,14 @@
 {
   "phase": 0,
-  "started_at": 1772745753.0490808,
-  "trades_observed": 10,
+  "started_at": 0.0,
+  "trades_observed": 0,
   "signals_observed": 0,
   "counterfactual_correct": 0,
   "counterfactual_total": 1,
   "phase_transitions": [],
   "counterfactuals": [
     {
-      "ts": 1772745618.717363,
+      "ts": 1772753338.5090506,
       "would_veto": true,
       "actual": "WIN",
       "pnl": 50.0,

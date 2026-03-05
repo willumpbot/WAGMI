@@ -204,7 +204,6 @@ class BacktestEngine:
                 cb.trip_time = None
                 cb._trip_sim_time = None
                 cb.trip_reason = ""
-                cb.consecutive_losses = 0
                 cb._override_count = 0
                 # DO NOT reset daily_pnl — portfolio-level daily loss tracking
                 # DO NOT reset last_reset_date — let daily boundary handle it
