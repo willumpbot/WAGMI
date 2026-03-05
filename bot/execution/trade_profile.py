@@ -14,7 +14,7 @@ Every Position carries a TradeProfile that drives:
 
 Strategy -> entry_type mapping:
 - regime_trend       -> TREND
-- multi_tier_quality -> TREND
+- multi_tier_quality  -> TREND
 - monte_carlo_zones  -> MEDIUM
 - confidence_scorer  -> MEDIUM
 - (future) microstructure / fast_ml -> SCALP
@@ -42,7 +42,7 @@ ALL_ENTRY_TYPES = {SCALP, MEDIUM, TREND, REGIME}
 
 STRATEGY_ENTRY_TYPE = {
     "regime_trend": TREND,
-    "multi_tier_quality": MEDIUM,  # Uses 5m/1h data — MEDIUM targets fit better than TREND
+    "multi_tier_quality": TREND,
     "monte_carlo_zones": MEDIUM,
     "confidence_scorer": MEDIUM,
     # Future strategies:
@@ -53,7 +53,7 @@ STRATEGY_ENTRY_TYPE = {
 
 STRATEGY_INTENT = {
     "regime_trend": "higher timeframe trend alignment",
-    "multi_tier_quality": "multi-timeframe signal quality, medium horizon",
+    "multi_tier_quality": "multi-signal, high-quality trend setup",
     "monte_carlo_zones": "zone-based, medium horizon",
     "confidence_scorer": "ML-driven scoring, medium horizon",
 }
@@ -114,26 +114,22 @@ def _build_profile(prefix: str, defaults: dict) -> ExitParams:
 
 _BASE_PROFILES: Dict[str, ExitParams] = {
     SCALP: _build_profile("SCALP", {
-        "tp1_atr": 0.5, "tp2_atr": 1.2, "sl_atr": 0.3, "tp1_pct": 0.50,
-        # R:R = 0.5/0.3 = 1.67:1. Reachable TP1 + tight SL + 50% rides.
+        "tp1_atr": 0.5, "tp2_atr": 1.0, "sl_atr": 0.4, "tp1_pct": 0.90,
         "trailing": "tight", "trail_start": 0.80, "trail_end": 0.50,
         "floor_progress": 0.2, "floor_start": 0.40, "floor_max": 0.75,
     }),
     MEDIUM: _build_profile("MEDIUM", {
-        "tp1_atr": 1.0, "tp2_atr": 2.5, "sl_atr": 0.6, "tp1_pct": 0.45,
-        # R:R = 1.0/0.6 = 1.67:1. Tighter SL (was 0.75) + 55% rides to TP2.
+        "tp1_atr": 1.0, "tp2_atr": 2.0, "sl_atr": 0.75, "tp1_pct": 0.50,
         "trailing": "medium", "trail_start": 0.60, "trail_end": 0.30,
         "floor_progress": 0.35, "floor_start": 0.25, "floor_max": 0.60,
     }),
     TREND: _build_profile("TREND", {
-        "tp1_atr": 1.2, "tp2_atr": 3.0, "sl_atr": 0.7, "tp1_pct": 0.40,
-        # R:R = 1.2/0.7 = 1.71:1. Tighter SL (was 0.85) + 60% rides.
-        "trailing": "medium", "trail_start": 0.55, "trail_end": 0.30,
-        "floor_progress": 0.30, "floor_start": 0.30, "floor_max": 0.60,
+        "tp1_atr": 1.5, "tp2_atr": 3.0, "sl_atr": 1.0, "tp1_pct": 0.35,
+        "trailing": "loose", "trail_start": 0.50, "trail_end": 0.25,
+        "floor_progress": 0.35, "floor_start": 0.25, "floor_max": 0.55,
     }),
     REGIME: _build_profile("REGIME", {
-        "tp1_atr": 1.2, "tp2_atr": 3.0, "sl_atr": 0.7, "tp1_pct": 0.40,
-        # R:R = 1.2/0.7 = 1.71:1. Tighter SL (was 0.8) + 60% rides.
+        "tp1_atr": 1.2, "tp2_atr": 2.5, "sl_atr": 0.8, "tp1_pct": 0.50,
         "trailing": "medium", "trail_start": 0.60, "trail_end": 0.30,
         "floor_progress": 0.3, "floor_start": 0.30, "floor_max": 0.60,
     }),

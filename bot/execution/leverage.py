@@ -1,15 +1,15 @@
 """
-Dynamic leverage manager with conservative-moderate scaling.
+Dynamic leverage manager with aggressive scaling.
 Determines leverage AND risk_multiplier based on confidence and consensus.
 
-Leverage tiers (tightened for risk control):
+Leverage tiers (aggressive - designed for max profit at high conviction):
   <60%  confidence  -> No trade
   60-64%            -> 2x lev, 1.0x risk
   65-69%            -> 2-3x lev, 1.0-1.2x risk
   70-74%            -> 3-5x lev, 1.2-1.5x risk (needs 2+ strats)
-  75-79%            -> 3-5x lev, 1.3-1.7x risk (needs 2+ strats)
-  80-89%            -> 5-8x lev, 1.7-2.0x risk (needs 2+ strats)
-  90%+              -> 8-12x lev, 2.0-2.5x risk (needs 3+ strats)
+  75-79%            -> 5-8x lev, 1.5-2.0x risk (strong)
+  80-89%            -> 8-15x lev, 2.0-2.5x risk (high, 2+ strats)
+  90%+              -> 15-25x lev, 2.5-3.5x risk (extreme, 3+ strats)
 
 risk_multiplier scales risk_per_trade so higher conviction = bigger position.
 Combined with leverage, this delivers "big wins" on high-confidence setups.
@@ -51,9 +51,10 @@ def get_maintenance_margin_rate(notional_usd: float) -> float:
 
 # Minimum stop width as a fraction of entry price.
 # Prevents near-zero stops from creating infinite R:R and giant positions.
-# Single source of truth: trading_config.py MIN_STOP_WIDTH_PCT env var (default 0.002).
-from trading_config import TradingConfig as _TC
-MIN_STOP_WIDTH_PCT = _TC().min_stop_width_pct
+# NOTE: Also configurable via trading_config.py (MIN_STOP_WIDTH_PCT env var).
+# Lowered from 0.003 to 0.002 — 0.3% was killing valid scalp setups
+# on Hyperliquid perps where tight stops (0.2-0.3%) are profitable.
+MIN_STOP_WIDTH_PCT = 0.002  # 0.2% of entry price
 
 
 @dataclass
@@ -74,12 +75,10 @@ class LeverageManager:
         enable_leverage: bool = True,
         max_leverage: float = 25.0,
         max_extreme_positions: int = 2,
-        max_risk_multiplier: float = 1.5,
     ):
         self.enable_leverage = enable_leverage
         self.max_leverage = max_leverage
         self.max_extreme_positions = max_extreme_positions
-        self.max_risk_multiplier = max_risk_multiplier
 
     def decide(
         self,
@@ -136,12 +135,12 @@ class LeverageManager:
         if confidence < 80:
             t = (confidence - 75) / 5.0
             if num_strategies_agree < 2:
-                lev = min(3.0, cap)
+                lev = min(4.0, cap)
                 return LeverageDecision(lev, "leverage", "medium",
                                         f"{lev:.1f}x: only {num_strategies_agree} strats", 1.3)
-            lev = min(3.0 + t * 2.0, cap)  # 3-5x (was 5-8x)
-            rm = 1.3 + t * 0.4  # 1.3-1.7x (was 1.5-2.0x)
-            tier = "high" if lev > 4.0 else "medium"
+            lev = min(5.0 + t * 3.0, cap)  # 5-8x
+            rm = 1.5 + t * 0.5  # 1.5-2.0x
+            tier = "high" if lev > 5.0 else "medium"
             return LeverageDecision(lev, "leverage", tier,
                                     f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm)
 
@@ -149,31 +148,31 @@ class LeverageManager:
         if confidence < 90:
             t = (confidence - 80) / 10.0
             if num_strategies_agree < 2:
-                lev = min(4.0, cap)
+                lev = min(5.0, cap)
                 return LeverageDecision(lev, "leverage", "medium",
                                         f"{lev:.1f}x: need 2+ strats for high lev", 1.5)
-            lev = min(5.0 + t * 3.0, cap)  # 5-8x (was 8-15x)
-            rm = 1.7 + t * 0.3  # 1.7-2.0x (was 2.0-2.5x)
+            lev = min(8.0 + t * 7.0, cap)  # 8-15x
+            rm = 2.0 + t * 0.5  # 2.0-2.5x
             # Check extreme position limit
-            if lev > 7.0 and current_extreme_count >= self.max_extreme_positions:
-                lev = 7.0
+            if lev > 10.0 and current_extreme_count >= self.max_extreme_positions:
+                lev = 10.0
                 return LeverageDecision(lev, "leverage", "high",
                                         f"{lev:.1f}x: extreme limit reached", rm)
-            tier = "extreme" if lev >= 7.0 else "high"
+            tier = "extreme" if lev >= 10.0 else "high"
             return LeverageDecision(lev, "leverage", tier,
                                     f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm)
 
         # ── Tier 6: 90%+ — EXTREME (rare, max conviction) ──
         t = min((confidence - 90) / 10.0, 1.0)
         if num_strategies_agree >= 3:
-            lev = min(8.0 + t * 4.0, cap)  # 8-12x (was 15-25x)
-            rm = 2.0 + t * 0.5  # 2.0-2.5x (was 2.5-3.5x)
+            lev = min(15.0 + t * 10.0, cap)  # 15-25x
+            rm = 2.5 + t * 1.0  # 2.5-3.5x
         elif num_strategies_agree >= 2:
-            lev = min(6.0 + t * 4.0, cap)  # 6-10x (was 12-17x)
-            rm = 1.8 + t * 0.4  # 1.8-2.2x (was 2.0-2.5x)
+            lev = min(12.0 + t * 5.0, cap)  # 12-17x
+            rm = 2.0 + t * 0.5  # 2.0-2.5x
         else:
-            lev = min(5.0, cap)  # was 8.0
-            rm = 1.5  # was 1.8
+            lev = min(8.0, cap)
+            rm = 1.8
 
         if lev > 10.0 and current_extreme_count >= self.max_extreme_positions:
             lev = 10.0

@@ -1136,6 +1136,100 @@ def print_report(report: Dict):
         for sym, stats in report["by_symbol"].items():
             print(f"    {sym}: {stats['trades']} trades, {stats['win_rate']:.0%} win rate, ${stats['pnl']:,.2f}")
 
+    # ── Detailed Analytics ──
+    if timeline:
+        # Per-strategy deep stats
+        strat_trades: dict = {}
+        for t in timeline:
+            s = t.get("strategy", "unknown")
+            strat_trades.setdefault(s, []).append(t)
+
+        print("\n  Strategy Deep Stats:")
+        print(f"    {'Strategy':<22s} {'Trades':>6s} {'WR':>5s} {'AvgW':>8s} {'AvgL':>8s} {'PF':>5s} {'PnL':>10s}")
+        print(f"    {'-'*22} {'-'*6} {'-'*5} {'-'*8} {'-'*8} {'-'*5} {'-'*10}")
+        for s, trades in sorted(strat_trades.items()):
+            w = [t["pnl"] for t in trades if t["pnl"] > 0]
+            l = [t["pnl"] for t in trades if t["pnl"] < -0.01]
+            wr = len(w) / len(trades) if trades else 0
+            aw = sum(w) / len(w) if w else 0
+            al = sum(l) / len(l) if l else 0
+            pf = abs(sum(w) / sum(l)) if l and sum(l) != 0 else float("inf") if w else 0
+            pnl = sum(t["pnl"] for t in trades)
+            pf_str = f"{pf:.2f}" if pf != float("inf") else "inf"
+            print(f"    {s:<22s} {len(trades):>6d} {wr:>4.0%} ${aw:>7.2f} ${al:>7.2f} {pf_str:>5s} ${pnl:>9.2f}")
+
+        # Exit reason breakdown
+        exit_counts: dict = {}
+        exit_pnl: dict = {}
+        for t in timeline:
+            reason = t.get("close_reason", "unknown")
+            exit_counts[reason] = exit_counts.get(reason, 0) + 1
+            exit_pnl[reason] = exit_pnl.get(reason, 0) + t["pnl"]
+
+        print("\n  Exit Reason Breakdown:")
+        print(f"    {'Reason':<18s} {'Count':>6s} {'PnL':>10s} {'Avg PnL':>10s}")
+        print(f"    {'-'*18} {'-'*6} {'-'*10} {'-'*10}")
+        for reason in sorted(exit_counts.keys()):
+            cnt = exit_counts[reason]
+            pnl = exit_pnl[reason]
+            avg = pnl / cnt if cnt else 0
+            print(f"    {reason:<18s} {cnt:>6d} ${pnl:>9.2f} ${avg:>9.2f}")
+
+        # Entry type breakdown (SCALP/MEDIUM/TREND/REGIME)
+        type_trades: dict = {}
+        for t in timeline:
+            sp = t.get("state_path", "")
+            # Try to get entry type from trade metadata if available
+            etype = "UNKNOWN"
+            for event in report.get("trade_timeline", []):
+                if event is t:
+                    # Extract from state_path or metadata
+                    break
+            type_trades.setdefault(etype, []).append(t)
+
+        # Hold time analysis
+        w_holds = [t["duration_h"] for t in timeline if t["pnl"] > 0 and t.get("duration_h")]
+        l_holds = [t["duration_h"] for t in timeline if t["pnl"] < -0.01 and t.get("duration_h")]
+        if w_holds or l_holds:
+            print("\n  Hold Time Analysis:")
+            if w_holds:
+                print(f"    Winners: avg {sum(w_holds)/len(w_holds):.1f}h, min {min(w_holds):.1f}h, max {max(w_holds):.1f}h ({len(w_holds)} trades)")
+            if l_holds:
+                print(f"    Losers:  avg {sum(l_holds)/len(l_holds):.1f}h, min {min(l_holds):.1f}h, max {max(l_holds):.1f}h ({len(l_holds)} trades)")
+
+        # Side analysis (LONG vs SHORT)
+        long_trades = [t for t in timeline if t.get("side") == "LONG"]
+        short_trades = [t for t in timeline if t.get("side") == "SHORT"]
+        if long_trades or short_trades:
+            print("\n  Side Analysis:")
+            for side_name, side_list in [("LONG", long_trades), ("SHORT", short_trades)]:
+                if not side_list:
+                    continue
+                sw = [t for t in side_list if t["pnl"] > 0]
+                wr = len(sw) / len(side_list) if side_list else 0
+                pnl = sum(t["pnl"] for t in side_list)
+                print(f"    {side_name}: {len(side_list)} trades, {wr:.0%} WR, ${pnl:,.2f}")
+
+        # PnL distribution histogram (text-based)
+        pnls = [t["pnl"] for t in timeline]
+        if pnls:
+            print("\n  PnL Distribution:")
+            buckets = [
+                ("< -$500", lambda p: p < -500),
+                ("-$500 to -$100", lambda p: -500 <= p < -100),
+                ("-$100 to -$10", lambda p: -100 <= p < -10),
+                ("-$10 to $0", lambda p: -10 <= p < 0),
+                ("$0 to $10", lambda p: 0 <= p < 10),
+                ("$10 to $100", lambda p: 10 <= p < 100),
+                ("$100 to $500", lambda p: 100 <= p < 500),
+                ("> $500", lambda p: p >= 500),
+            ]
+            for label, fn in buckets:
+                count = sum(1 for p in pnls if fn(p))
+                if count > 0:
+                    bar = "#" * min(count, 40)
+                    print(f"    {label:>16s} | {bar} {count}")
+
     lev = report.get("leverage_stats", {})
     if lev:
         print(f"\n  Leverage Stats:")

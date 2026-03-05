@@ -296,17 +296,15 @@ class RiskManager:
     def __init__(
         self,
         starting_equity: float = 10000.0,
-        risk_per_trade: float = 0.02,
-        max_open_positions: int = 3,
+        risk_per_trade: float = 0.015,
+        max_open_positions: int = 6,
         max_portfolio_leverage: float = 5.0,
         circuit_breaker: Optional[CircuitBreaker] = None,
-        max_risk_multiplier: float = 1.5,
     ):
         self.equity = starting_equity
         self.risk_per_trade = risk_per_trade
         self.max_open_positions = max_open_positions
         self.max_portfolio_leverage = max_portfolio_leverage
-        self.max_risk_multiplier = max_risk_multiplier
         self.circuit_breaker = circuit_breaker or CircuitBreaker()
         self.circuit_breaker.peak_equity = starting_equity
 
@@ -367,7 +365,7 @@ class RiskManager:
             return 0.0
 
         # Cap risk_multiplier to prevent oversizing (was up to 3.5x before)
-        capped_rm = min(max(risk_multiplier, 0.1), self.max_risk_multiplier)
+        capped_rm = min(max(risk_multiplier, 0.1), 1.5)
         effective_risk_pct = risk_per_trade_override if risk_per_trade_override > 0 else self.risk_per_trade
         risk_usd = self.equity * effective_risk_pct * capped_rm
         effective_leverage = max(leverage, 1.0)

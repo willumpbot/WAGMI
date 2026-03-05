@@ -322,34 +322,6 @@ class PositionManager:
                 events.append(event)
                 return events
 
-        # 1b. Early breakeven: move SL to entry when price reaches 50% of TP1
-        # Kills losers that reverse after showing initial promise
-        if pos.state == OPEN:
-            tp1_dist = abs(pos.tp1 - pos.entry)
-            if tp1_dist > 0:
-                if is_long:
-                    tp1_progress = (current_price - pos.entry) / tp1_dist
-                else:
-                    tp1_progress = (pos.entry - current_price) / tp1_dist
-                if tp1_progress >= 0.50:
-                    fee_buffer = pos.entry * (self.taker_fee_bps * 2 / 10000.0 + 0.001)
-                    if is_long:
-                        be_sl = round_price(pos.symbol, pos.entry + fee_buffer)
-                        if be_sl > pos.sl:
-                            logger.info(
-                                f"[{pos.symbol}] EARLY BE: price {tp1_progress:.0%} to TP1, "
-                                f"SL {pos.sl:.4f} -> {be_sl:.4f} (breakeven)"
-                            )
-                            pos.sl = be_sl
-                    else:
-                        be_sl = round_price(pos.symbol, pos.entry - fee_buffer)
-                        if be_sl < pos.sl:
-                            logger.info(
-                                f"[{pos.symbol}] EARLY BE: price {tp1_progress:.0%} to TP1, "
-                                f"SL {pos.sl:.4f} -> {be_sl:.4f} (breakeven)"
-                            )
-                            pos.sl = be_sl
-
         # 2. Check TP1 (dynamic partial close -> TP1_HIT -> TRAILING)
         if pos.state == OPEN:
             tp1_hit = (current_price >= pos.tp1) if is_long else (current_price <= pos.tp1)
@@ -373,10 +345,10 @@ class PositionManager:
         """
         Detect momentum reversal heading toward SL and cut early.
         Triggers when ALL of:
-        1. Price moved >50% toward SL (cut early, don't wait)
+        1. Price moved >65% toward SL (close to stop, not just noise)
         2. Last 3 candles accelerating against position
         3. EMA5 crossed against EMA13
-        Cutting at 50-70% loss is better than waiting for full SL.
+        Cutting at 65-80% loss is better than waiting for full SL.
         """
         if df_5m is None or df_5m.empty or len(df_5m) < 15:
             return False
@@ -396,7 +368,7 @@ class PositionManager:
             if sl_progress > 1.0:
                 return False
 
-            if sl_progress < 0.50:
+            if sl_progress < 0.65:
                 return False
 
             c = df_5m["close"].astype(float)
