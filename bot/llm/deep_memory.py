@@ -113,6 +113,8 @@ class TradeDNA:
     entry_accuracy: float = 0.0  # How close to optimal entry (0-1)
     exit_accuracy: float = 0.0  # How close to optimal exit (0-1)
     quality_score: float = 0.0  # Overall trade quality (0-1)
+    # Setup classification
+    setup_type: str = ""  # e.g. "trend_at_zone", "zone_validated", "solo_regime_trend"
     # Learning
     lessons: List[str] = field(default_factory=list)
 
@@ -706,6 +708,7 @@ class DeepMemoryManager:
         volume_ratio: float = 0.0,
         funding_rate: float = 0.0,
         atr: float = 0.0,
+        setup_type: str = "",
     ):
         """Record a complete trade with all context.
 
@@ -757,6 +760,7 @@ class DeepMemoryManager:
             volume_ratio=volume_ratio,
             funding_rate=funding_rate,
             atr=atr,
+            setup_type=setup_type,
             was_sniper=was_sniper,
             entry_accuracy=entry_accuracy,
             quality_score=quality_score,

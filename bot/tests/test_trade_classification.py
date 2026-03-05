@@ -55,8 +55,8 @@ class TestStrategyMapping:
     def test_regime_trend_is_trend(self):
         assert STRATEGY_ENTRY_TYPE["regime_trend"] == TREND
 
-    def test_multi_tier_is_medium(self):
-        assert STRATEGY_ENTRY_TYPE["multi_tier_quality"] == MEDIUM
+    def test_multi_tier_is_trend(self):
+        assert STRATEGY_ENTRY_TYPE["multi_tier_quality"] == TREND
 
     def test_monte_carlo_is_medium(self):
         assert STRATEGY_ENTRY_TYPE["monte_carlo_zones"] == MEDIUM
@@ -96,7 +96,7 @@ class TestExitProfileDifferences:
         scalp = _BASE_PROFILES[SCALP]
         trend = _BASE_PROFILES[TREND]
         assert scalp.trailing_style == "tight"
-        assert trend.trailing_style == "medium"
+        assert trend.trailing_style == "loose"
         # SCALP end factor > TREND end factor (tighter = higher)
         assert scalp.trailing_tighten_end > trend.trailing_tighten_end
 

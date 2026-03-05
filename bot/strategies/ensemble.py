@@ -45,7 +45,7 @@ class EnsembleStrategy:
         weight_manager=None,
         veto_ratio: float = 1.1,
         chop_detector=None,
-        confidence_floor: float = 65.0,
+        confidence_floor: float = 72.0,
     ):
         self.strategies = strategies
         self.mode = mode
@@ -634,20 +634,35 @@ class EnsembleStrategy:
             consensus_bonus += 3  # Unanimous agreement bonus (reduced from 5)
         combined_conf = min(100, weighted_conf + consensus_bonus)
 
-        # Widest SL (most conservative), average TP1 (balanced), widest TP2 (aggressive)
-        # Using average TP1 prevents zone-based strategies from pulling targets too close
+        # Widest SL (most conservative), then enforce minimum R:R on TP1/TP2
         if side == "BUY":
             best_sl = min(s.sl for s in signals)
-            best_tp1 = sum(s.tp1 for s in signals) / len(signals)
+            avg_tp1 = sum(s.tp1 for s in signals) / len(signals)
             best_tp2 = max(s.tp2 for s in signals)
             entry = sum(s.entry for s in signals) / len(signals)
         else:
             best_sl = max(s.sl for s in signals)
-            best_tp1 = sum(s.tp1 for s in signals) / len(signals)
+            avg_tp1 = sum(s.tp1 for s in signals) / len(signals)
             best_tp2 = min(s.tp2 for s in signals)
             entry = sum(s.entry for s in signals) / len(signals)
 
         atr = max((s.atr for s in signals), default=0)
+
+        # Enforce minimum R:R after merge. The widest-SL + averaged-TP1
+        # combination often compresses R:R to ~1:1 which is unprofitable.
+        # Guarantee TP1 is at least 1.5× the stop width from entry.
+        stop_width = abs(entry - best_sl)
+        min_rr = 1.5
+        if side == "BUY":
+            min_tp1 = entry + min_rr * stop_width
+            best_tp1 = max(avg_tp1, min_tp1)
+            min_tp2 = entry + 3.0 * stop_width
+            best_tp2 = max(best_tp2, min_tp2)
+        else:
+            min_tp1 = entry - min_rr * stop_width
+            best_tp1 = min(avg_tp1, min_tp1)
+            min_tp2 = entry - 3.0 * stop_width
+            best_tp2 = min(best_tp2, min_tp2)
 
         # Preserve per-signal ATR and SL for profile classification
         per_signal_atr = {s.strategy: s.atr for s in signals}

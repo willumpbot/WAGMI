@@ -297,8 +297,14 @@ class BacktestEngine:
             # Check existing positions
             events = self.pos_mgr.update_price(symbol, current_price)
             for event in events:
+                # Set sim timestamp on event for accurate duration tracking
+                event.timestamp = sim_dt
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
                 if event.action in self._CLOSE_ACTIONS:
+                    # Also set close_time on position for hold_time_s calculation
+                    pos = self.pos_mgr.positions.get(symbol)
+                    if pos:
+                        pos.close_time = sim_dt
                     self._record_trade_outcome(event, current_price)
                 # LLM: run Learning Agent on closed trades
                 if self.llm and event.action in self._CLOSE_ACTIONS:
@@ -348,7 +354,7 @@ class BacktestEngine:
                         candidate.llm_confidence = signal.confidence
                         candidate.llm_notes = signal.metadata.get("llm_notes")
                         self._active_candidates[symbol] = candidate
-                        self._execute_signal(signal, current_price)
+                        self._execute_signal(signal, current_price, sim_dt=sim_dt)
                     else:
                         # LLM vetoed — log candidate with flat action
                         candidate.llm_action = "flat"
@@ -409,8 +415,12 @@ class BacktestEngine:
 
             events = self.pos_mgr.update_price(symbol, current_price)
             for event in events:
+                event.timestamp = sim_dt
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
                 if event.action in self._CLOSE_ACTIONS:
+                    pos = self.pos_mgr.positions.get(symbol)
+                    if pos:
+                        pos.close_time = sim_dt
                     self._record_trade_outcome(event, current_price)
                 if self.llm and event.action in self._CLOSE_ACTIONS:
                     self.llm.clear_exit_counter(event.symbol)
@@ -452,7 +462,7 @@ class BacktestEngine:
                         candidate.llm_confidence = signal.confidence
                         candidate.llm_notes = signal.metadata.get("llm_notes")
                         self._active_candidates[symbol] = candidate
-                        self._execute_signal(signal, current_price)
+                        self._execute_signal(signal, current_price, sim_dt=sim_dt)
                     else:
                         candidate.llm_action = "flat"
                         self._candidate_logger.log_candidate(candidate)
@@ -752,7 +762,7 @@ class BacktestEngine:
                 self._record_trade_outcome(event, last_price)
                 logger.info(f"[{symbol}] Force-closed at backtest end: PnL={event.pnl:.2f}")
 
-    def _execute_signal(self, signal: Signal, current_price: float):
+    def _execute_signal(self, signal: Signal, current_price: float, sim_dt=None):
         """Execute a signal in backtest mode with slippage simulation."""
         from execution.trade_profile import classify_trade, apply_profile_to_signal
 
@@ -833,6 +843,11 @@ class BacktestEngine:
             trade_profile=trade_prof,
             notes=position_notes,
         )
+
+        # Set sim_time on position for accurate duration tracking in CSV
+        pos = self.pos_mgr.positions.get(signal.symbol)
+        if pos and sim_dt:
+            pos.open_time = sim_dt
 
         llm_tag = signal.metadata.get("llm_status", "unknown")
         logger.info(
@@ -1098,6 +1113,19 @@ def print_report(report: Dict):
     print(f"  Win Rate:        {r.get('win_rate', 0):.1%}")
     print(f"  Net PnL:         ${r.get('net_pnl', 0):,.2f}")
 
+    # Avg win vs avg loss analysis
+    timeline = report.get("trade_timeline", [])
+    if timeline:
+        wins = [t["pnl"] for t in timeline if t.get("pnl", 0) > 0]
+        losses = [t["pnl"] for t in timeline if t.get("pnl", 0) < -0.01]
+        avg_win = sum(wins) / len(wins) if wins else 0
+        avg_loss = sum(losses) / len(losses) if losses else 0
+        profit_factor = abs(sum(wins) / sum(losses)) if losses and sum(losses) != 0 else 0
+        print(f"  Avg Win:         ${avg_win:,.2f}  ({len(wins)} wins)")
+        print(f"  Avg Loss:        ${avg_loss:,.2f}  ({len(losses)} losses)")
+        print(f"  Win/Loss Ratio:  {abs(avg_win/avg_loss):.2f}x" if avg_loss else "")
+        print(f"  Profit Factor:   {profit_factor:.2f}")
+
     if report.get("by_strategy"):
         print("\n  By Strategy:")
         for strat, stats in report["by_strategy"].items():
@@ -1107,6 +1135,100 @@ def print_report(report: Dict):
         print("\n  By Symbol:")
         for sym, stats in report["by_symbol"].items():
             print(f"    {sym}: {stats['trades']} trades, {stats['win_rate']:.0%} win rate, ${stats['pnl']:,.2f}")
+
+    # ── Detailed Analytics ──
+    if timeline:
+        # Per-strategy deep stats
+        strat_trades: dict = {}
+        for t in timeline:
+            s = t.get("strategy", "unknown")
+            strat_trades.setdefault(s, []).append(t)
+
+        print("\n  Strategy Deep Stats:")
+        print(f"    {'Strategy':<22s} {'Trades':>6s} {'WR':>5s} {'AvgW':>8s} {'AvgL':>8s} {'PF':>5s} {'PnL':>10s}")
+        print(f"    {'-'*22} {'-'*6} {'-'*5} {'-'*8} {'-'*8} {'-'*5} {'-'*10}")
+        for s, trades in sorted(strat_trades.items()):
+            w = [t["pnl"] for t in trades if t["pnl"] > 0]
+            l = [t["pnl"] for t in trades if t["pnl"] < -0.01]
+            wr = len(w) / len(trades) if trades else 0
+            aw = sum(w) / len(w) if w else 0
+            al = sum(l) / len(l) if l else 0
+            pf = abs(sum(w) / sum(l)) if l and sum(l) != 0 else float("inf") if w else 0
+            pnl = sum(t["pnl"] for t in trades)
+            pf_str = f"{pf:.2f}" if pf != float("inf") else "inf"
+            print(f"    {s:<22s} {len(trades):>6d} {wr:>4.0%} ${aw:>7.2f} ${al:>7.2f} {pf_str:>5s} ${pnl:>9.2f}")
+
+        # Exit reason breakdown
+        exit_counts: dict = {}
+        exit_pnl: dict = {}
+        for t in timeline:
+            reason = t.get("close_reason", "unknown")
+            exit_counts[reason] = exit_counts.get(reason, 0) + 1
+            exit_pnl[reason] = exit_pnl.get(reason, 0) + t["pnl"]
+
+        print("\n  Exit Reason Breakdown:")
+        print(f"    {'Reason':<18s} {'Count':>6s} {'PnL':>10s} {'Avg PnL':>10s}")
+        print(f"    {'-'*18} {'-'*6} {'-'*10} {'-'*10}")
+        for reason in sorted(exit_counts.keys()):
+            cnt = exit_counts[reason]
+            pnl = exit_pnl[reason]
+            avg = pnl / cnt if cnt else 0
+            print(f"    {reason:<18s} {cnt:>6d} ${pnl:>9.2f} ${avg:>9.2f}")
+
+        # Entry type breakdown (SCALP/MEDIUM/TREND/REGIME)
+        type_trades: dict = {}
+        for t in timeline:
+            sp = t.get("state_path", "")
+            # Try to get entry type from trade metadata if available
+            etype = "UNKNOWN"
+            for event in report.get("trade_timeline", []):
+                if event is t:
+                    # Extract from state_path or metadata
+                    break
+            type_trades.setdefault(etype, []).append(t)
+
+        # Hold time analysis
+        w_holds = [t["duration_h"] for t in timeline if t["pnl"] > 0 and t.get("duration_h")]
+        l_holds = [t["duration_h"] for t in timeline if t["pnl"] < -0.01 and t.get("duration_h")]
+        if w_holds or l_holds:
+            print("\n  Hold Time Analysis:")
+            if w_holds:
+                print(f"    Winners: avg {sum(w_holds)/len(w_holds):.1f}h, min {min(w_holds):.1f}h, max {max(w_holds):.1f}h ({len(w_holds)} trades)")
+            if l_holds:
+                print(f"    Losers:  avg {sum(l_holds)/len(l_holds):.1f}h, min {min(l_holds):.1f}h, max {max(l_holds):.1f}h ({len(l_holds)} trades)")
+
+        # Side analysis (LONG vs SHORT)
+        long_trades = [t for t in timeline if t.get("side") == "LONG"]
+        short_trades = [t for t in timeline if t.get("side") == "SHORT"]
+        if long_trades or short_trades:
+            print("\n  Side Analysis:")
+            for side_name, side_list in [("LONG", long_trades), ("SHORT", short_trades)]:
+                if not side_list:
+                    continue
+                sw = [t for t in side_list if t["pnl"] > 0]
+                wr = len(sw) / len(side_list) if side_list else 0
+                pnl = sum(t["pnl"] for t in side_list)
+                print(f"    {side_name}: {len(side_list)} trades, {wr:.0%} WR, ${pnl:,.2f}")
+
+        # PnL distribution histogram (text-based)
+        pnls = [t["pnl"] for t in timeline]
+        if pnls:
+            print("\n  PnL Distribution:")
+            buckets = [
+                ("< -$500", lambda p: p < -500),
+                ("-$500 to -$100", lambda p: -500 <= p < -100),
+                ("-$100 to -$10", lambda p: -100 <= p < -10),
+                ("-$10 to $0", lambda p: -10 <= p < 0),
+                ("$0 to $10", lambda p: 0 <= p < 10),
+                ("$10 to $100", lambda p: 10 <= p < 100),
+                ("$100 to $500", lambda p: 100 <= p < 500),
+                ("> $500", lambda p: p >= 500),
+            ]
+            for label, fn in buckets:
+                count = sum(1 for p in pnls if fn(p))
+                if count > 0:
+                    bar = "#" * min(count, 40)
+                    print(f"    {label:>16s} | {bar} {count}")
 
     lev = report.get("leverage_stats", {})
     if lev:

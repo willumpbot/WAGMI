@@ -4576,6 +4576,20 @@ class MultiStrategyBot:
                         strat_perf[strat] = {"wr": round(wr * 100), "n": stats["total"]}
                 if strat_perf:
                     global_ctx.extra["strategy_performance"] = strat_perf
+            # Per-symbol win rates (helps LLM avoid bad symbols)
+            _sym_wr = _dm.trade_dna.get_win_rate_by("symbol")
+            if _sym_wr:
+                sym_perf = {}
+                for sym, stats in _sym_wr.items():
+                    if stats["total"] >= 3:
+                        wr = stats["wins"] / stats["total"] if stats["total"] else 0
+                        sym_perf[sym] = {
+                            "wr": round(wr * 100),
+                            "n": stats["total"],
+                            "pnl": round(stats["pnl"], 1),
+                        }
+                if sym_perf:
+                    global_ctx.extra["symbol_win_rates"] = sym_perf
         except Exception as e:
             logger.debug(f"Deep memory edge map injection error: {e}")
 
@@ -4952,6 +4966,7 @@ class MultiStrategyBot:
                 volume_ratio=_vol_ratio,
                 funding_rate=_funding_rate,
                 atr=_atr,
+                setup_type=getattr(pos, "setup_type", ""),
             )
 
             # Record regime transition if regime changed during trade

@@ -703,6 +703,15 @@ class AgentCoordinator:
                         "n": v.get("total", 0)}
                     for k, v in setup_wr.items() if v.get("total", 0) >= 5
                 }
+            # Per-symbol win rate
+            symbol_wr = dm.trade_dna.get_win_rate_by("symbol")
+            if symbol_wr:
+                state["symbol_wr"] = {
+                    k: {"wr": round(v.get("wins", 0) / max(v.get("total", 1), 1) * 100),
+                        "n": v.get("total", 0),
+                        "pnl": round(v.get("pnl", 0), 1)}
+                    for k, v in symbol_wr.items() if v.get("total", 0) >= 3
+                }
         except Exception:
             pass
 

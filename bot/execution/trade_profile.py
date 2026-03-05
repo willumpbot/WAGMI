@@ -14,7 +14,7 @@ Every Position carries a TradeProfile that drives:
 
 Strategy -> entry_type mapping:
 - regime_trend       -> TREND
-- multi_tier_quality -> TREND
+- multi_tier_quality  -> TREND
 - monte_carlo_zones  -> MEDIUM
 - confidence_scorer  -> MEDIUM
 - (future) microstructure / fast_ml -> SCALP
@@ -42,7 +42,7 @@ ALL_ENTRY_TYPES = {SCALP, MEDIUM, TREND, REGIME}
 
 STRATEGY_ENTRY_TYPE = {
     "regime_trend": TREND,
-    "multi_tier_quality": MEDIUM,  # Uses 5m/1h data — MEDIUM targets fit better than TREND
+    "multi_tier_quality": TREND,
     "monte_carlo_zones": MEDIUM,
     "confidence_scorer": MEDIUM,
     # Future strategies:
@@ -53,7 +53,7 @@ STRATEGY_ENTRY_TYPE = {
 
 STRATEGY_INTENT = {
     "regime_trend": "higher timeframe trend alignment",
-    "multi_tier_quality": "multi-timeframe signal quality, medium horizon",
+    "multi_tier_quality": "multi-signal, high-quality trend setup",
     "monte_carlo_zones": "zone-based, medium horizon",
     "confidence_scorer": "ML-driven scoring, medium horizon",
 }
@@ -119,18 +119,14 @@ _BASE_PROFILES: Dict[str, ExitParams] = {
         "floor_progress": 0.2, "floor_start": 0.40, "floor_max": 0.75,
     }),
     MEDIUM: _build_profile("MEDIUM", {
-        "tp1_atr": 1.0, "tp2_atr": 2.0, "sl_atr": 0.75, "tp1_pct": 0.65,  # was 0.50
+        "tp1_atr": 1.0, "tp2_atr": 2.0, "sl_atr": 0.75, "tp1_pct": 0.50,
         "trailing": "medium", "trail_start": 0.60, "trail_end": 0.30,
         "floor_progress": 0.35, "floor_start": 0.25, "floor_max": 0.60,
     }),
     TREND: _build_profile("TREND", {
-        "tp1_atr": 1.2, "tp2_atr": 2.5, "sl_atr": 0.85, "tp1_pct": 0.55,
-        # Tightened from tp1=1.5/tp2=3.0/sl=1.0/tp1_pct=0.50
-        # TREND at 21% WR was letting losers run too long. Tighter SL (0.85 vs 1.0 ATR),
-        # closer TP1 (1.2 vs 1.5 ATR), and take more profit at TP1 (55% vs 50%).
-        "trailing": "medium", "trail_start": 0.55, "trail_end": 0.30,
-        # Changed trailing from "loose" to "medium" — don't let winners reverse
-        "floor_progress": 0.30, "floor_start": 0.30, "floor_max": 0.60,
+        "tp1_atr": 1.5, "tp2_atr": 3.0, "sl_atr": 1.0, "tp1_pct": 0.35,
+        "trailing": "loose", "trail_start": 0.50, "trail_end": 0.25,
+        "floor_progress": 0.35, "floor_start": 0.25, "floor_max": 0.55,
     }),
     REGIME: _build_profile("REGIME", {
         "tp1_atr": 1.2, "tp2_atr": 2.5, "sl_atr": 0.8, "tp1_pct": 0.50,

@@ -74,7 +74,7 @@ class TradingConfig:
 
     # Equity & risk
     starting_equity: float = field(default_factory=lambda: _env_float("STARTING_EQUITY", 10000.0))
-    risk_per_trade: float = field(default_factory=lambda: _env_float("RISK_PER_TRADE", 0.02))
+    risk_per_trade: float = field(default_factory=lambda: _env_float("RISK_PER_TRADE", 0.01))
     max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 3))
     taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 5))
 
@@ -95,7 +95,6 @@ class TradingConfig:
     # Leverage tiers: (min_confidence, max_confidence) -> leverage
     enable_leverage: bool = field(default_factory=lambda: _env_bool("ENABLE_LEVERAGE", True))
     max_leverage: float = field(default_factory=lambda: _env_float("MAX_LEVERAGE", 25.0))
-    max_risk_multiplier: float = field(default_factory=lambda: _env_float("MAX_RISK_MULTIPLIER", 1.5))
 
     # Trailing stop
     enable_trailing_stop: bool = field(
@@ -113,7 +112,7 @@ class TradingConfig:
         default_factory=lambda: _env_int("MIN_VOTES_REQUIRED", 2)
     )
     veto_ratio: float = field(
-        default_factory=lambda: _env_float("VETO_RATIO", 1.5)
+        default_factory=lambda: _env_float("VETO_RATIO", 1.1)
     )
 
     # ML
@@ -269,10 +268,10 @@ class TradingConfig:
     # ── Strategy Parameters (ATR multiples, confidence floors) ──
     # Previously hardcoded across strategy files. Now centralized.
     ensemble_confidence_floor: float = field(
-        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 72.0)
+        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 65.0)
     )
     min_signal_rr: float = field(
-        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.5)
+        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.0)
     )
     min_stop_width_pct: float = field(
         default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.002)
@@ -341,14 +340,14 @@ class TradingConfig:
 
     # ── Cooldowns & Time Intervals ──
     loss_cooldown_s: int = field(
-        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 900)
-    )  # 15 min after a loss
+        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 180)
+    )
     win_cooldown_s: int = field(
-        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 300)
-    )  # 5 min after a win
+        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 120)
+    )
     signal_dedup_window_s: int = field(
-        default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 900)
-    )  # 15 min dedup to prevent same-candle repeats
+        default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 300)
+    )
 
     # ── Timeframe Trend Weights ──
     tf_weight_5m: float = field(
@@ -434,7 +433,7 @@ DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
     "BTC": SymbolOverrides(max_leverage=25.0),
     "SOL": SymbolOverrides(max_leverage=20.0),
     "HYPE": SymbolOverrides(max_leverage=20.0),
-    "DOGE": SymbolOverrides(max_leverage=12.0),
+    "DOGE": SymbolOverrides(max_leverage=20.0),
     "FARTCOIN": SymbolOverrides(max_leverage=10.0),
 }
 
@@ -453,7 +452,7 @@ def get_symbol_param(symbol: str, param: str, config: TradingConfig) -> float:
 
 PAPER_PROFILE_OVERRIDES = {
     "max_leverage": 25.0,       # Match live — paper should test real sizing
-    "risk_per_trade": 0.02,     # 2% risk per trade (was 5% — too aggressive with leverage)
+    "risk_per_trade": 0.05,     # 5% risk per trade
     "max_open_positions": 3,
     "max_portfolio_leverage": 5.0,  # Notional cap: equity * 5x (leveraged trades need headroom)
     "enable_smart_orders": False,
@@ -461,7 +460,7 @@ PAPER_PROFILE_OVERRIDES = {
 
 LIVE_PROFILE_OVERRIDES = {
     "max_leverage": 25.0,       # Full leverage in live
-    "risk_per_trade": 0.02,     # 2% risk per trade (was 5% — too aggressive with leverage)
+    "risk_per_trade": 0.05,     # 5% risk per trade
     "max_open_positions": 3,
     "max_portfolio_leverage": 5.0,  # Notional cap: equity * 5x (leveraged trades need headroom)
     "enable_smart_orders": True,
