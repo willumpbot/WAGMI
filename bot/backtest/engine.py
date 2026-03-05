@@ -76,6 +76,16 @@ class BacktestEngine:
             max_leverage=self.config.max_leverage,
         )
 
+        # Widen circuit breakers for backtest to avoid cascading starvation
+        # Live: 5% daily / 10% drawdown (tight, protects real money)
+        # Backtest: 8% daily / 15% drawdown (looser, prioritizes learning data)
+        self.risk_mgr.circuit_breaker.daily_loss_limit_pct = float(
+            os.getenv("BACKTEST_CB_DAILY_LOSS_PCT", "0.08")
+        )
+        self.risk_mgr.circuit_breaker.max_drawdown_pct = float(
+            os.getenv("BACKTEST_CB_MAX_DRAWDOWN_PCT", "0.15")
+        )
+
         # Results
         self.equity_curve: List[Dict] = []
         self.signals_generated: List[Dict] = []

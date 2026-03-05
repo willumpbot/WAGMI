@@ -41,6 +41,7 @@ KNOWLEDGE_FILE = LLM_DIR / "teaching" / "knowledge_base.json"
 LEARNING_FILE = LLM_DIR / "learning_state.json"
 MEMORY_FILE = LLM_DIR / "llm_memory.json"
 TRADE_CANDIDATES = DATA_DIR / "analysis" / "trade_candidates.csv"
+TRADE_OUTCOMES = DATA_DIR / "analysis" / "trade_outcomes.csv"
 PERFORMANCE_FILE = DATA_DIR / "analysis" / "performance.json"
 SAFETY_FILE = DATA_DIR / "logs" / "safety_events.csv"
 STATE_FILE = DATA_DIR / "logs" / "state_transitions.csv"
@@ -472,6 +473,231 @@ def analyze_trades():
             bar = "#" * (count * 2)
             print(f"    {bucket:6s} {count:3d} {bar}")
 
+    # Leverage vs outcome correlation
+    lev_outcomes = {"1-2x": {"trades": 0, "wins": 0, "pnl": 0.0},
+                    "2-3x": {"trades": 0, "wins": 0, "pnl": 0.0},
+                    "3-5x": {"trades": 0, "wins": 0, "pnl": 0.0},
+                    "5-8x": {"trades": 0, "wins": 0, "pnl": 0.0},
+                    "8x+":  {"trades": 0, "wins": 0, "pnl": 0.0}}
+    for t in trades:
+        try:
+            lev = float(t.get("leverage_used", 0) or 0)
+            pnl = float(t.get("realized_pnl", 0) or 0)
+        except (ValueError, TypeError):
+            continue
+        if lev <= 0:
+            continue
+        if lev <= 2:
+            bucket = "1-2x"
+        elif lev <= 3:
+            bucket = "2-3x"
+        elif lev <= 5:
+            bucket = "3-5x"
+        elif lev <= 8:
+            bucket = "5-8x"
+        else:
+            bucket = "8x+"
+        lev_outcomes[bucket]["trades"] += 1
+        lev_outcomes[bucket]["pnl"] += pnl
+        if pnl > 0:
+            lev_outcomes[bucket]["wins"] += 1
+
+    has_lev_data = any(v["trades"] > 0 for v in lev_outcomes.values())
+    if has_lev_data:
+        print(f"\n  Leverage vs Outcome:")
+        print(f"    {'Bucket':8s} {'Trades':>7s} {'WR':>6s} {'Total PnL':>12s} {'Avg PnL':>10s}")
+        for bucket, data in lev_outcomes.items():
+            if data["trades"] == 0:
+                continue
+            wr = data["wins"] / data["trades"] * 100
+            avg_pnl = data["pnl"] / data["trades"]
+            print(f"    {bucket:8s} {data['trades']:7d} {wr:5.1f}% ${data['pnl']:>10.2f} ${avg_pnl:>8.2f}")
+
+
+# ── Section: Exit Type Analysis ──────────────────────────
+
+def _lev_bucket(lev: float) -> str:
+    if lev <= 2:
+        return "1-2x"
+    elif lev <= 3:
+        return "2-3x"
+    elif lev <= 5:
+        return "3-5x"
+    elif lev <= 8:
+        return "5-8x"
+    return "8x+"
+
+
+def analyze_exits():
+    print("\n" + "=" * 60)
+    print("  EXIT TYPE ANALYSIS (trade_outcomes.csv + trade_candidates.csv)")
+    print("=" * 60)
+
+    outcomes = _load_csv(TRADE_OUTCOMES)
+    candidates = _load_csv(TRADE_CANDIDATES)
+
+    # Prefer outcomes (has state_path, tp1_hit, sl_after_tp1)
+    # Fall back to candidates (has close_reason)
+    if not outcomes and not candidates:
+        print("  No trade data found. Run a backtest with outcome recording enabled.")
+        return
+
+    # ── From trade_outcomes.csv ──
+    if outcomes:
+        print(f"\n  Trade Outcomes: {len(outcomes)} trades")
+
+        # Exit type distribution from state_path
+        exit_types = Counter()
+        exit_pnl = defaultdict(lambda: {"trades": 0, "wins": 0, "pnl": 0.0})
+        tp1_hit_count = 0
+        sl_after_tp1_count = 0
+        total_with_tp1_data = 0
+
+        for row in outcomes:
+            state_path = row.get("state_path", "unknown")
+            # state_path can be complex like "OPEN→TP1_HIT→TRAILING→CLOSED"
+            # Extract the final exit action
+            exit_action = state_path.split("→")[-1] if "→" in state_path else state_path
+            # Normalize common exit types
+            if exit_action in ("SL", "TP1", "TP2", "TRAILING_STOP", "BACKTEST_END",
+                               "CIRCUIT_BREAKER", "LLM_EXIT", "EARLY_EXIT",
+                               "HOLD_LIMIT", "EMERGENCY"):
+                exit_type = exit_action
+            elif exit_action == "CLOSED":
+                # Look back in path for the trigger
+                if "TRAILING" in state_path:
+                    exit_type = "TRAILING_STOP"
+                elif "TP1" in state_path:
+                    exit_type = "TP1"
+                else:
+                    exit_type = "CLOSED"
+            else:
+                exit_type = exit_action
+
+            exit_types[exit_type] += 1
+
+            try:
+                pnl = float(row.get("pnl", 0) or 0)
+            except (ValueError, TypeError):
+                pnl = 0.0
+            exit_pnl[exit_type]["trades"] += 1
+            exit_pnl[exit_type]["pnl"] += pnl
+            if pnl > 0:
+                exit_pnl[exit_type]["wins"] += 1
+
+            # TP1 hit rate
+            tp1_hit_val = row.get("tp1_hit", "").lower()
+            if tp1_hit_val in ("true", "1", "yes"):
+                tp1_hit_count += 1
+                total_with_tp1_data += 1
+            elif tp1_hit_val in ("false", "0", "no"):
+                total_with_tp1_data += 1
+
+            # SL after TP1
+            sl_tp1_val = row.get("sl_after_tp1", "").lower()
+            if sl_tp1_val in ("true", "1", "yes"):
+                sl_after_tp1_count += 1
+
+        # Exit type distribution
+        print(f"\n  Exit Type Distribution:")
+        total = sum(exit_types.values())
+        for etype, count in exit_types.most_common():
+            pct = count / total * 100 if total else 0
+            bar = "#" * max(1, int(count / max(1, total) * 40))
+            print(f"    {etype:18s} {count:4d} ({pct:5.1f}%) {bar}")
+
+        # Win rate and PnL by exit type
+        print(f"\n  Performance by Exit Type:")
+        print(f"    {'Exit Type':18s} {'Trades':>7s} {'WR':>6s} {'Total PnL':>12s} {'Avg PnL':>10s}")
+        for etype, data in sorted(exit_pnl.items(), key=lambda x: x[1]["pnl"]):
+            if data["trades"] == 0:
+                continue
+            wr = data["wins"] / data["trades"] * 100
+            avg_pnl = data["pnl"] / data["trades"]
+            print(f"    {etype:18s} {data['trades']:7d} {wr:5.1f}% ${data['pnl']:>10.2f} ${avg_pnl:>8.2f}")
+
+        # TP1 hit rate
+        if total_with_tp1_data > 0:
+            tp1_rate = tp1_hit_count / total_with_tp1_data * 100
+            print(f"\n  TP1 Hit Rate: {tp1_hit_count}/{total_with_tp1_data} ({tp1_rate:.1f}%)")
+            if sl_after_tp1_count > 0:
+                giveback_rate = sl_after_tp1_count / total_with_tp1_data * 100
+                print(f"  SL After TP1 (profit give-back): {sl_after_tp1_count} ({giveback_rate:.1f}%)")
+
+        # Exit type by strategy
+        strat_exits = defaultdict(lambda: Counter())
+        for row in outcomes:
+            strat = row.get("strategy", "unknown")
+            state_path = row.get("state_path", "unknown")
+            exit_action = state_path.split("→")[-1] if "→" in state_path else state_path
+            if exit_action == "CLOSED" and "TRAILING" in state_path:
+                exit_action = "TRAILING_STOP"
+            elif exit_action == "CLOSED" and "TP1" in state_path:
+                exit_action = "TP1"
+            strat_exits[strat][exit_action] += 1
+
+        if strat_exits:
+            # Collect all exit types for column headers
+            all_exits = sorted(set(e for counts in strat_exits.values() for e in counts))
+            print(f"\n  Exit Type by Strategy:")
+            header = f"    {'Strategy':22s}" + "".join(f" {e:>8s}" for e in all_exits)
+            print(header)
+            for strat in sorted(strat_exits.keys()):
+                row_str = f"    {strat:22s}"
+                for e in all_exits:
+                    row_str += f" {strat_exits[strat].get(e, 0):>8d}"
+                print(row_str)
+
+    # ── From trade_candidates.csv (close_reason) ──
+    if candidates and not outcomes:
+        print(f"\n  Trade Candidates Exit Reasons: {len(candidates)} candidates")
+        close_reasons = Counter()
+        reason_pnl = defaultdict(lambda: {"trades": 0, "wins": 0, "pnl": 0.0})
+        for t in candidates:
+            reason = t.get("close_reason", "unknown") or "unknown"
+            pnl = float(t.get("realized_pnl", 0) or 0)
+            close_reasons[reason] += 1
+            reason_pnl[reason]["trades"] += 1
+            reason_pnl[reason]["pnl"] += pnl
+            if pnl > 0:
+                reason_pnl[reason]["wins"] += 1
+
+        print(f"\n  Close Reason Distribution:")
+        for reason, count in close_reasons.most_common():
+            print(f"    {reason:18s} {count:4d}")
+
+        print(f"\n  Performance by Close Reason:")
+        print(f"    {'Reason':18s} {'Trades':>7s} {'WR':>6s} {'Total PnL':>12s}")
+        for reason, data in sorted(reason_pnl.items(), key=lambda x: x[1]["pnl"]):
+            if data["trades"] == 0:
+                continue
+            wr = data["wins"] / data["trades"] * 100
+            print(f"    {reason:18s} {data['trades']:7d} {wr:5.1f}% ${data['pnl']:>10.2f}")
+
+    # ── Cross-reference: exit type by trade profile (entry_type) ──
+    if outcomes:
+        profile_exits = defaultdict(lambda: Counter())
+        for row in outcomes:
+            entry_type = row.get("entry_type", "unknown") or "unknown"
+            state_path = row.get("state_path", "unknown")
+            exit_action = state_path.split("→")[-1] if "→" in state_path else state_path
+            if exit_action == "CLOSED" and "TRAILING" in state_path:
+                exit_action = "TRAILING_STOP"
+            elif exit_action == "CLOSED" and "TP1" in state_path:
+                exit_action = "TP1"
+            profile_exits[entry_type][exit_action] += 1
+
+        if profile_exits and any(k != "unknown" for k in profile_exits):
+            all_exits = sorted(set(e for counts in profile_exits.values() for e in counts))
+            print(f"\n  Exit Type by Trade Profile:")
+            header = f"    {'Profile':14s}" + "".join(f" {e:>8s}" for e in all_exits)
+            print(header)
+            for profile in sorted(profile_exits.keys()):
+                row_str = f"    {profile:14s}"
+                for e in all_exits:
+                    row_str += f" {profile_exits[profile].get(e, 0):>8d}"
+                print(row_str)
+
 
 # ── Section: Safety Events ────────────────────────────────
 
@@ -551,6 +777,7 @@ SECTIONS = {
     "learning": analyze_learning,
     "memory": analyze_memory,
     "trades": analyze_trades,
+    "exits": analyze_exits,
     "safety": analyze_safety,
     "performance": analyze_performance,
 }
