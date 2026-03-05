@@ -193,18 +193,21 @@ class BacktestEngine:
             if self.llm:
                 self.llm.reset_for_symbol(symbol)
 
-            # Soft reset between symbols: clear the tripped flag so the next
-            # symbol can trade, but KEEP cumulative daily_pnl and drawdown
-            # tracking. This prevents the old bug where each symbol got a
-            # fresh 8% budget (3 symbols × 8% = 24% potential daily loss).
-            # Now the 8% budget is shared across ALL symbols in a day.
+            # Between symbols: re-evaluate circuit breaker against current
+            # equity. If thresholds are still exceeded (daily loss, drawdown),
+            # the breaker stays tripped and the next symbol won't trade.
+            # Only reset override count so cooldown logic works cleanly.
             if hasattr(self.risk_mgr, "circuit_breaker") and self.risk_mgr.circuit_breaker:
                 cb = self.risk_mgr.circuit_breaker
-                cb.tripped = False
-                cb.trip_time = None
-                cb._trip_sim_time = None
-                cb.trip_reason = ""
                 cb._override_count = 0
+                # Re-check breakers: if daily_pnl or drawdown still exceed
+                # limits, the breaker stays tripped. If a cooldown elapsed
+                # (checked in is_trading_allowed), it will clear naturally.
+                if cb.tripped:
+                    # Keep it tripped — don't reset between symbols.
+                    # The cooldown mechanism in is_trading_allowed() will
+                    # clear it when enough sim-time has passed.
+                    pass
                 # DO NOT reset daily_pnl — portfolio-level daily loss tracking
                 # DO NOT reset last_reset_date — let daily boundary handle it
                 # DO NOT reset peak_equity — track drawdown across all symbols
