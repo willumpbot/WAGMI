@@ -42,7 +42,7 @@ ALL_ENTRY_TYPES = {SCALP, MEDIUM, TREND, REGIME}
 
 STRATEGY_ENTRY_TYPE = {
     "regime_trend": TREND,
-    "multi_tier_quality": TREND,
+    "multi_tier_quality": MEDIUM,  # Uses 5m/1h data — MEDIUM targets fit better than TREND
     "monte_carlo_zones": MEDIUM,
     "confidence_scorer": MEDIUM,
     # Future strategies:
@@ -53,7 +53,7 @@ STRATEGY_ENTRY_TYPE = {
 
 STRATEGY_INTENT = {
     "regime_trend": "higher timeframe trend alignment",
-    "multi_tier_quality": "multi-signal, high-quality trend setup",
+    "multi_tier_quality": "multi-timeframe signal quality, medium horizon",
     "monte_carlo_zones": "zone-based, medium horizon",
     "confidence_scorer": "ML-driven scoring, medium horizon",
 }

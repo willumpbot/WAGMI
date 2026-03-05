@@ -55,8 +55,8 @@ class TestStrategyMapping:
     def test_regime_trend_is_trend(self):
         assert STRATEGY_ENTRY_TYPE["regime_trend"] == TREND
 
-    def test_multi_tier_is_trend(self):
-        assert STRATEGY_ENTRY_TYPE["multi_tier_quality"] == TREND
+    def test_multi_tier_is_medium(self):
+        assert STRATEGY_ENTRY_TYPE["multi_tier_quality"] == MEDIUM
 
     def test_monte_carlo_is_medium(self):
         assert STRATEGY_ENTRY_TYPE["monte_carlo_zones"] == MEDIUM
