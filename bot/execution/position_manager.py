@@ -480,6 +480,12 @@ class PositionManager:
                 "remaining_qty": pos.qty,
                 "new_sl": pos.sl,
                 "tp1_close_pct": dynamic_close_pct,
+                "entry": pos.entry,
+                "sl": pos.original_sl,
+                "tp1": pos.tp1,
+                "tp2": pos.tp2,
+                "confidence": pos.confidence,
+                "state_path": pos.state_path_str,
             },
         )
         self.trade_log.append(event)
