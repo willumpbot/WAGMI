@@ -71,6 +71,17 @@ class CircuitBreaker:
         self._override_count = 0  # Track CB overrides per trip
         self._trip_count = 0  # Total trips for log deduplication
 
+    def reset(self):
+        """Full reset of circuit breaker state. Used between backtest symbols."""
+        self.daily_pnl = 0.0
+        self.consecutive_losses = 0
+        self.tripped = False
+        self.trip_time = None
+        self._trip_sim_time = None
+        self.trip_reason = ""
+        self._override_count = 0
+        # Note: peak_equity is NOT reset here — caller should set it explicitly
+
     def _maybe_reset_daily(self, equity: float = 0.0, sim_time: Optional[datetime] = None):
         ref_time = sim_time or datetime.now(timezone.utc)
         today = ref_time.strftime("%Y-%m-%d")
@@ -181,6 +192,7 @@ class CircuitBreaker:
                     self.trip_time = None
                     self._trip_sim_time = None
                     self.consecutive_losses = 0
+                    self.daily_pnl = 0.0  # Reset so we don't immediately re-trip
                     self._override_count = 0
                     logger.info("Circuit breaker cooldown complete (sim time), trading resumed")
                     return True
@@ -189,6 +201,7 @@ class CircuitBreaker:
                 self.trip_reason = ""
                 self.trip_time = None
                 self.consecutive_losses = 0
+                self.daily_pnl = 0.0  # Reset so we don't immediately re-trip
                 self._override_count = 0
                 logger.info("Circuit breaker cooldown complete, trading resumed")
                 return True

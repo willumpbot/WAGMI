@@ -117,6 +117,8 @@ class BacktestEngine:
         logger.info(f"Starting backtest: {symbols} | {days} days | strategies={strategies or 'all'}")
 
         # Initialize candidate logger for dual-world analysis
+        # Clear stale data from previous runs so results aren't contaminated
+        self._clear_stale_analysis_data()
         self._candidate_logger = CandidateLogger()
         self._active_candidates = {}
 
@@ -189,6 +191,12 @@ class BacktestEngine:
             # Reset per-symbol LLM budget so each symbol gets fair share
             if self.llm:
                 self.llm.reset_for_symbol(symbol)
+
+            # Reset circuit breaker between symbols so one bad symbol
+            # doesn't starve the next symbol of trades
+            if hasattr(self.risk_mgr, "circuit_breaker") and self.risk_mgr.circuit_breaker:
+                self.risk_mgr.circuit_breaker.reset()
+                self.risk_mgr.circuit_breaker.peak_equity = self.risk_mgr.equity
 
             data = all_data.get(symbol, {})
             df_1h = data.get("1h", pd.DataFrame())
@@ -501,8 +509,10 @@ class BacktestEngine:
 
         # Calculate realized R-multiple
         stop_width = abs(candidate.entry - candidate.sl)
-        if stop_width > 0:
-            candidate.realized_r = pnl / (stop_width * (pos.qty if pos else 1))
+        qty = pos.qty if pos and pos.qty else 1
+        denom = stop_width * qty
+        if denom > 0:
+            candidate.realized_r = pnl / denom
 
         # Hold time
         if pos and hasattr(pos, "open_time") and pos.open_time:
@@ -835,6 +845,21 @@ class BacktestEngine:
             "tp2": signal.tp2,
             "llm_status": llm_tag,
         })
+
+    def _clear_stale_analysis_data(self):
+        """Remove stale data files from previous runs to prevent contamination."""
+        stale_files = [
+            os.path.join("data", "analysis", "trade_candidates.csv"),
+            os.path.join("data", "analysis", "performance.json"),
+            os.path.join("data", "logs", "safety_events.csv"),
+        ]
+        for f in stale_files:
+            if os.path.exists(f):
+                try:
+                    os.remove(f)
+                    logger.debug(f"Cleared stale file: {f}")
+                except OSError:
+                    pass
 
     def _generate_report(self, symbols: List[str], days: int) -> Dict[str, Any]:
         """Generate comprehensive backtest report."""
