@@ -464,6 +464,7 @@ class MultiStrategyBot:
 
         # Dual-world candidate logging (baseline vs LLM)
         self._candidate_logger = CandidateLogger()
+        self._active_candidates: Dict[str, TradeCandidate] = {}  # symbol -> last candidate that opened a trade
 
         # Operations guard: kill switch, rate limiting, exposure limits
         self.ops_guard = OpsGuard()
@@ -1957,6 +1958,18 @@ class MultiStrategyBot:
                         volatility_band=_vb,
                     )
 
+                    # Backfill candidate with realized outcome for dual-world analysis
+                    _candidate = self._active_candidates.pop(symbol, None)
+                    if _candidate:
+                        _candidate.realized_pnl = pos.realized_pnl
+                        _hold = event.metadata.get("hold_time_s", 0)
+                        _risk = abs(pos.entry - pos.original_sl) if pos.original_sl else 1e-9
+                        _candidate.realized_r = pos.realized_pnl / _risk if _risk > 0 else 0
+                        _candidate.hold_time_s = _hold
+                        _candidate.close_reason = event.action
+                        _candidate.outcome = pos.outcome
+                        self._candidate_logger.log_candidate(_candidate)
+
             # Send enhanced trade event alert
             pos = self.pos_mgr.positions.get(symbol)
             _total_pnl_alert = pos.realized_pnl if pos else event.pnl
@@ -3082,6 +3095,8 @@ class MultiStrategyBot:
         candidate.llm_action = candidate.llm_action or "no_llm"
         candidate.leverage_used = lev_decision.leverage
         self._candidate_logger.log_candidate(candidate)
+        # Track for outcome backfill when trade closes
+        self._active_candidates[symbol] = candidate
 
         # Update entry_reasons with LLM decision info now that candidate is populated
         entry_reasons["llm_action"] = candidate.llm_action or ""
