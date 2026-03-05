@@ -269,10 +269,10 @@ class TradingConfig:
     # ── Strategy Parameters (ATR multiples, confidence floors) ──
     # Previously hardcoded across strategy files. Now centralized.
     ensemble_confidence_floor: float = field(
-        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 65.0)
+        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 72.0)
     )
     min_signal_rr: float = field(
-        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.3)
+        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.5)
     )
     min_stop_width_pct: float = field(
         default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.002)
@@ -341,13 +341,13 @@ class TradingConfig:
 
     # ── Cooldowns & Time Intervals ──
     loss_cooldown_s: int = field(
-        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 180)
-    )
+        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 3600)
+    )  # 1 hour after a loss (was 3 min — way too short for hourly candles)
     win_cooldown_s: int = field(
-        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 120)
-    )
+        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 1800)
+    )  # 30 min after a win (was 2 min)
     signal_dedup_window_s: int = field(
-        default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 300)
+        default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 3600)
     )
 
     # ── Timeframe Trend Weights ──

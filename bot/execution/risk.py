@@ -182,27 +182,38 @@ class CircuitBreaker:
 
         # Check cooldown — use sim_time elapsed if provided, else wall-clock
         if self.trip_time:
+            cooldown_elapsed = False
             if sim_time is not None:
-                # In backtest: trip_time is stored as wall-clock, but we track
-                # sim elapsed via _trip_sim_time set at trip time
                 trip_sim = getattr(self, "_trip_sim_time", None)
                 if trip_sim and (sim_time - trip_sim).total_seconds() >= self.cooldown_minutes * 60:
-                    self.tripped = False
-                    self.trip_reason = ""
-                    self.trip_time = None
-                    self._trip_sim_time = None
-                    self.consecutive_losses = 0
-                    self.daily_pnl = 0.0  # Reset so we don't immediately re-trip
-                    self._override_count = 0
-                    logger.info("Circuit breaker cooldown complete (sim time), trading resumed")
-                    return True
+                    cooldown_elapsed = True
             elif (time.time() - self.trip_time) >= self.cooldown_minutes * 60:
-                self.tripped = False
-                self.trip_reason = ""
-                self.trip_time = None
+                cooldown_elapsed = True
+
+            if cooldown_elapsed:
+                # Re-check if underlying conditions are still violated.
+                # Don't blindly resume — if drawdown is still beyond limit,
+                # stay tripped. This prevents the bot from losing 8%/hour.
+                # Only the CONSECUTIVE LOSSES condition resets on cooldown.
                 self.consecutive_losses = 0
-                self.daily_pnl = 0.0  # Reset so we don't immediately re-trip
                 self._override_count = 0
+                self.tripped = False
+                self.trip_time = None
+                self._trip_sim_time = None
+                self.trip_reason = ""
+
+                # Re-check daily loss and drawdown — re-trip if still violated
+                # (pass equity=0 to skip equity-based checks if we don't have it)
+                # _check_breakers will re-trip if conditions are still bad
+                # We need equity to check, but we don't have it here.
+                # Instead, just check if daily_pnl is still beyond limit.
+                base = self.start_of_day_equity or self.peak_equity
+                if base > 0 and self.daily_pnl < 0:
+                    daily_loss_pct = abs(self.daily_pnl) / base
+                    if daily_loss_pct >= self.daily_loss_limit_pct:
+                        self._trip(f"Daily loss still {daily_loss_pct:.1%} >= {self.daily_loss_limit_pct:.1%} (post-cooldown)", sim_time=sim_time)
+                        return False
+
                 logger.info("Circuit breaker cooldown complete, trading resumed")
                 return True
 
