@@ -1,15 +1,15 @@
 """
-Dynamic leverage manager with aggressive scaling.
+Dynamic leverage manager with conservative-moderate scaling.
 Determines leverage AND risk_multiplier based on confidence and consensus.
 
-Leverage tiers (aggressive - designed for max profit at high conviction):
+Leverage tiers (tightened for risk control):
   <60%  confidence  -> No trade
   60-64%            -> 2x lev, 1.0x risk
   65-69%            -> 2-3x lev, 1.0-1.2x risk
   70-74%            -> 3-5x lev, 1.2-1.5x risk (needs 2+ strats)
-  75-79%            -> 5-8x lev, 1.5-2.0x risk (strong)
-  80-89%            -> 8-15x lev, 2.0-2.5x risk (high, 2+ strats)
-  90%+              -> 15-25x lev, 2.5-3.5x risk (extreme, 3+ strats)
+  75-79%            -> 3-5x lev, 1.3-1.7x risk (needs 2+ strats)
+  80-89%            -> 5-8x lev, 1.7-2.0x risk (needs 2+ strats)
+  90%+              -> 8-12x lev, 2.0-2.5x risk (needs 3+ strats)
 
 risk_multiplier scales risk_per_trade so higher conviction = bigger position.
 Combined with leverage, this delivers "big wins" on high-confidence setups.
@@ -51,10 +51,9 @@ def get_maintenance_margin_rate(notional_usd: float) -> float:
 
 # Minimum stop width as a fraction of entry price.
 # Prevents near-zero stops from creating infinite R:R and giant positions.
-# NOTE: Also configurable via trading_config.py (MIN_STOP_WIDTH_PCT env var).
-# Lowered from 0.003 to 0.002 — 0.3% was killing valid scalp setups
-# on Hyperliquid perps where tight stops (0.2-0.3%) are profitable.
-MIN_STOP_WIDTH_PCT = 0.002  # 0.2% of entry price
+# Single source of truth: trading_config.py MIN_STOP_WIDTH_PCT env var (default 0.002).
+from trading_config import TradingConfig as _TC
+MIN_STOP_WIDTH_PCT = _TC().min_stop_width_pct
 
 
 @dataclass
@@ -75,7 +74,7 @@ class LeverageManager:
         enable_leverage: bool = True,
         max_leverage: float = 25.0,
         max_extreme_positions: int = 2,
-        max_risk_multiplier: float = 3.5,
+        max_risk_multiplier: float = 1.5,
     ):
         self.enable_leverage = enable_leverage
         self.max_leverage = max_leverage

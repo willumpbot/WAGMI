@@ -258,18 +258,15 @@ class ConfidenceScorerStrategy(BaseStrategy):
                 f"adjustment={adjustment:+.1f}, final={confidence:.1f}"
             )
 
-        # If BUY action has terrible historical win rate, consider flipping to short
-        if action in ("DEEP_BUY", "BUY") and hist_conf is not None and hist_conf < 0.15:
-            if self._detect_bounce_short(df, zones):
-                logger.info(
-                    f"[{symbol}] {action} win rate {hist_conf:.0%} too low + bounce detected -> flipping to SHORT"
-                )
-                action = "BOUNCE_SHORT"
-                confidence = 55.0  # reset base
-                if rsi > 45:
-                    confidence += 8
-                if vol_spike:
-                    confidence += 5
+        # If BUY or SELL action has terrible historical win rate, reduce
+        # confidence instead of trading. Don't flip direction — that
+        # introduces asymmetric SHORT bias.
+        if hist_conf is not None and hist_conf < 0.15:
+            confidence -= 15
+            logger.info(
+                f"[{symbol}] {action} win rate {hist_conf:.0%} too low, "
+                f"reducing confidence by 15"
+            )
 
         confidence = max(0, min(100, confidence))
 

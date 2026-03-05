@@ -84,9 +84,12 @@ class RegimeTrendStrategy(BaseStrategy):
 
         macd_h = float(hist.iloc[-1])
         mfi_val = float(mfi.iloc[-1])
+        # Bullish: both indicators agree
         ok = macd_h > 0 and mfi_val > 50
+        # Bearish: both indicators agree (symmetric with bullish)
+        bearish = macd_h < 0 and mfi_val < 50
 
-        return {"ok": ok, "macd_h": macd_h, "mfi": mfi_val}
+        return {"ok": ok, "bearish": bearish, "macd_h": macd_h, "mfi": mfi_val}
 
     def _build_htf_candles(self, df_1h: pd.DataFrame) -> pd.DataFrame:
         """Resample 1h data to HTF (e.g. 16h) candles."""
@@ -128,10 +131,10 @@ class RegimeTrendStrategy(BaseStrategy):
         regime_htf = self._check_regime(df_htf)
 
         multi_bull = regime_6h["ok"] and regime_htf["ok"]
-        multi_bear = (not regime_6h["ok"]) and (not regime_htf["ok"])
+        multi_bear = regime_6h["bearish"] and regime_htf["bearish"]
         # Partial: at least one HTF confirms direction
         partial_bull = regime_6h["ok"] or regime_htf["ok"]
-        partial_bear = (not regime_6h["ok"]) or (not regime_htf["ok"])
+        partial_bear = regime_6h["bearish"] or regime_htf["bearish"]
 
         # ATR for TP/SL
         c = float(df_1h["close"].iloc[-1])
@@ -140,7 +143,7 @@ class RegimeTrendStrategy(BaseStrategy):
 
         # Alignment scoring
         align_long = int(cu) + int(mfi_1h_val > 50) + int(regime_6h["ok"]) + int(regime_htf["ok"])
-        align_short = int(cd) + int(mfi_1h_val < 50) + int(not regime_6h["ok"]) + int(not regime_htf["ok"])
+        align_short = int(cd) + int(mfi_1h_val < 50) + int(regime_6h["bearish"]) + int(regime_htf["bearish"])
 
         buy = cu and (mfi_1h_val > 50) and multi_bull
         # Relaxed short: only need partial bear regime + either cross-down or weak MFI

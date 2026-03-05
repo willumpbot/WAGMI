@@ -78,6 +78,13 @@ class RiskFilterChain:
                 rejection_reason=f"Invalid signal: stop_width_pct={signal.stop_width_pct:.4f}, "
                                  f"rr={signal.risk_reward_tp1:.2f}"
             )
+        # Gate 1b: Minimum R:R from config (stricter than is_valid's 1.0 floor)
+        min_rr = getattr(self.config, "min_signal_rr", 1.0)
+        if signal.risk_reward_tp1 < min_rr:
+            return FilterResult(
+                approved=False, signal=signal,
+                rejection_reason=f"R:R {signal.risk_reward_tp1:.2f} < min {min_rr:.1f}"
+            )
         meta["rr_tp1"] = round(signal.risk_reward_tp1, 2)
         meta["rr_tp2"] = round(signal.risk_reward_tp2, 2)
 

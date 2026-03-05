@@ -117,6 +117,8 @@ class BacktestEngine:
         logger.info(f"Starting backtest: {symbols} | {days} days | strategies={strategies or 'all'}")
 
         # Initialize candidate logger for dual-world analysis
+        # Clear stale data from previous runs so results aren't contaminated
+        self._clear_stale_analysis_data()
         self._candidate_logger = CandidateLogger()
         self._active_candidates = {}
 
@@ -189,6 +191,20 @@ class BacktestEngine:
             # Reset per-symbol LLM budget so each symbol gets fair share
             if self.llm:
                 self.llm.reset_for_symbol(symbol)
+
+            # Reset circuit breaker trip state between symbols so one bad
+            # symbol doesn't starve the next. But keep daily_pnl and
+            # peak_equity so overall drawdown protection still works.
+            if hasattr(self.risk_mgr, "circuit_breaker") and self.risk_mgr.circuit_breaker:
+                cb = self.risk_mgr.circuit_breaker
+                cb.tripped = False
+                cb.trip_time = None
+                cb._trip_sim_time = None
+                cb.trip_reason = ""
+                cb.consecutive_losses = 0
+                cb._override_count = 0
+                # Update peak to current equity for per-symbol drawdown tracking
+                cb.peak_equity = self.risk_mgr.equity
 
             data = all_data.get(symbol, {})
             df_1h = data.get("1h", pd.DataFrame())
@@ -289,14 +305,15 @@ class BacktestEngine:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
 
-            # Circuit breaker force-close: if CB tripped, close open positions
-            # to prevent unlimited drawdown (CB only blocks NEW trades otherwise)
+            # Circuit breaker force-close: only close OPEN positions (still
+            # exposed to initial risk). TRAILING/TP1_HIT positions already hit
+            # profit targets and are protected by trailing stops — cutting
+            # these kills winners. Let trailing stops do their job.
             if self.risk_mgr.circuit_breaker.tripped:
                 pos = self.pos_mgr.positions.get(symbol)
-                if pos and pos.state != "CLOSED":
+                if pos and pos.state == "OPEN":
                     logger.warning(
-                        f"[{symbol}] CB tripped — force-closing position "
-                        f"in state {pos.state}"
+                        f"[{symbol}] CB tripped — force-closing OPEN position"
                     )
                     cb_event = self.pos_mgr.force_close(
                         symbol, current_price, reason="CIRCUIT_BREAKER"
@@ -399,13 +416,12 @@ class BacktestEngine:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
 
-            # Circuit breaker force-close (same as _walk_hourly)
+            # Circuit breaker force-close (same as _walk_hourly — OPEN only)
             if self.risk_mgr.circuit_breaker.tripped:
                 pos = self.pos_mgr.positions.get(symbol)
-                if pos and pos.state != "CLOSED":
+                if pos and pos.state == "OPEN":
                     logger.warning(
-                        f"[{symbol}] CB tripped — force-closing position "
-                        f"in state {pos.state}"
+                        f"[{symbol}] CB tripped — force-closing OPEN position"
                     )
                     cb_event = self.pos_mgr.force_close(
                         symbol, current_price, reason="CIRCUIT_BREAKER"
@@ -501,8 +517,10 @@ class BacktestEngine:
 
         # Calculate realized R-multiple
         stop_width = abs(candidate.entry - candidate.sl)
-        if stop_width > 0:
-            candidate.realized_r = pnl / (stop_width * (pos.qty if pos else 1))
+        qty = pos.qty if pos and pos.qty else 1
+        denom = stop_width * qty
+        if denom > 0:
+            candidate.realized_r = pnl / denom
 
         # Hold time
         if pos and hasattr(pos, "open_time") and pos.open_time:
@@ -836,6 +854,21 @@ class BacktestEngine:
             "llm_status": llm_tag,
         })
 
+    def _clear_stale_analysis_data(self):
+        """Remove stale data files from previous runs to prevent contamination."""
+        stale_files = [
+            os.path.join("data", "analysis", "trade_candidates.csv"),
+            os.path.join("data", "analysis", "performance.json"),
+            os.path.join("data", "logs", "safety_events.csv"),
+        ]
+        for f in stale_files:
+            if os.path.exists(f):
+                try:
+                    os.remove(f)
+                    logger.debug(f"Cleared stale file: {f}")
+                except OSError:
+                    pass
+
     def _generate_report(self, symbols: List[str], days: int) -> Dict[str, Any]:
         """Generate comprehensive backtest report."""
         trade_summary = self.pos_mgr.get_trade_summary()
@@ -941,40 +974,87 @@ class BacktestEngine:
 
 
     def _report_trade_timeline(self) -> List[Dict[str, Any]]:
-        """Build per-trade timeline with LLM decision context if available."""
-        # Build LLM decision lookup by timestamp (approximate matching)
+        """Build per-trade timeline with full position context for analysis."""
+        # Index open events by symbol to match with close events
+        open_events: Dict[str, Any] = {}
+        for event in self.pos_mgr.trade_log:
+            if event.action == "OPEN":
+                open_events[event.symbol] = event
+
+        # Build LLM decision lookup
         llm_lookup = {}
         if self.llm:
             for dec in self.llm.decisions:
-                # Key by action type for correlation
                 ts = dec.get("timestamp", "")
                 llm_lookup[ts] = dec
 
         timeline = []
         for event in self.pos_mgr.trade_log:
             if event.action in self._CLOSE_ACTIONS:
-                entry = {
+                meta = event.metadata or {}
+                open_ev = open_events.get(event.symbol)
+                open_meta = open_ev.metadata if open_ev and open_ev.metadata else {}
+
+                entry_price = meta.get("entry", 0) or getattr(event, "entry_price", 0) or (open_ev.price if open_ev else 0)
+                exit_price = event.price
+
+                sl = meta.get("sl", 0)
+                tp1 = meta.get("tp1", 0)
+                tp2 = meta.get("tp2", 0)
+                confidence = meta.get("confidence", 0)
+
+                # Calculate R:R achieved
+                try:
+                    risk = abs(float(entry_price) - float(sl)) if entry_price and sl else 0
+                    reward = abs(float(event.pnl))
+                    qty = float(event.qty) if event.qty else 0
+                    rr_achieved = (reward / risk / qty) if risk > 0 and qty > 0 else 0
+                except (TypeError, ValueError):
+                    rr_achieved = 0
+
+                # Duration in hours
+                hold_s = meta.get("hold_time_s", 0)
+                if hold_s:
+                    duration_h = round(hold_s / 3600, 1)
+                elif open_ev:
+                    delta = event.timestamp - open_ev.timestamp
+                    duration_h = round(delta.total_seconds() / 3600, 1)
+                else:
+                    duration_h = 0
+
+                # State path from metadata
+                state_path = meta.get("state_path", "")
+
+                row = {
                     "symbol": event.symbol,
                     "side": getattr(event, "side", ""),
                     "strategy": event.strategy or "unknown",
-                    "action": event.action,
-                    "entry_price": getattr(event, "entry_price", 0),
-                    "exit_price": event.price,
+                    "close_reason": event.action,
+                    "entry": round(entry_price, 2) if entry_price else "",
+                    "exit": round(exit_price, 2),
+                    "sl": round(sl, 2) if sl else "",
+                    "tp1": round(tp1, 2) if tp1 else "",
+                    "tp2": round(tp2, 2) if tp2 else "",
                     "pnl": round(event.pnl, 2),
                     "fee": round(getattr(event, "fee", 0), 2),
-                    "leverage": getattr(event, "leverage", 1.0),
+                    "leverage": round(getattr(event, "leverage", 1.0), 2),
+                    "confidence": round(confidence, 1) if confidence else "",
+                    "rr_achieved": round(rr_achieved, 2) if rr_achieved else "",
+                    "duration_h": duration_h,
+                    "state_path": state_path,
+                    "outcome": "WIN" if event.pnl > 0 else ("LOSS" if event.pnl < -0.01 else "BE"),
                 }
-                # Enrich with LLM context if available
+
+                # LLM context
                 if self.llm and self.llm.decisions:
-                    # Find the most recent decision for this symbol (match by symbol field)
                     for dec in reversed(self.llm.decisions):
-                        dec_symbol = dec.get("symbol", "")
-                        if dec_symbol == event.symbol:
-                            entry["llm_action"] = dec.get("action", "")
-                            entry["llm_regime"] = dec.get("regime", "")
-                            entry["llm_confidence"] = dec.get("confidence", 0)
+                        if dec.get("symbol", "") == event.symbol:
+                            row["llm_action"] = dec.get("action", "")
+                            row["llm_regime"] = dec.get("regime", "")
+                            row["llm_confidence"] = dec.get("confidence", 0)
                             break
-                timeline.append(entry)
+
+                timeline.append(row)
         return timeline
 
 
@@ -986,9 +1066,13 @@ def export_trade_csv(report: Dict, filepath: str):
     if not timeline:
         return
 
-    fieldnames = ["symbol", "side", "strategy", "action", "entry_price",
-                  "exit_price", "pnl", "fee", "leverage",
-                  "llm_action", "llm_regime", "llm_confidence"]
+    fieldnames = [
+        "symbol", "side", "strategy", "close_reason",
+        "entry", "exit", "sl", "tp1", "tp2",
+        "pnl", "fee", "leverage", "confidence",
+        "rr_achieved", "duration_h", "state_path", "outcome",
+        "llm_action", "llm_regime", "llm_confidence",
+    ]
     with open(filepath, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()

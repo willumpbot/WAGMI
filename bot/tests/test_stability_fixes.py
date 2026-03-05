@@ -71,8 +71,8 @@ class TestPositionSizingRiskBased(unittest.TestCase):
         # Default without env override
         with patch.dict(os.environ, {}, clear=False):
             config = TradingConfig()
-            # Should be 0.01 unless overridden by env
-            self.assertLessEqual(config.risk_per_trade, 0.015)
+            # Should be 0.02 (2%) unless overridden by env
+            self.assertLessEqual(config.risk_per_trade, 0.025)
 
     def test_max_dollar_risk_per_trade(self):
         """With $10k equity and 1% risk capped at 1.5x rm, max risk = $150."""

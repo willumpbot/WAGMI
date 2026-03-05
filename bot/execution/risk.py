@@ -47,10 +47,12 @@ class CircuitBreaker:
         self,
         daily_loss_limit_pct: float = 0.05,
         max_consecutive_losses: int = 5,
-        max_drawdown_pct: float = 0.10,
+        max_drawdown_pct: float = None,
         cooldown_minutes: int = 60,
         max_cb_overrides: int = 2,
     ):
+        if max_drawdown_pct is None:
+            max_drawdown_pct = float(os.getenv("MAX_DRAWDOWN_PCT", "0.10"))
         self.daily_loss_limit_pct = daily_loss_limit_pct
         self.max_consecutive_losses = max_consecutive_losses
         self.max_cb_overrides = max_cb_overrides
@@ -68,6 +70,17 @@ class CircuitBreaker:
         self.last_reset_date: Optional[str] = None
         self._override_count = 0  # Track CB overrides per trip
         self._trip_count = 0  # Total trips for log deduplication
+
+    def reset(self):
+        """Full reset of circuit breaker state. Used between backtest symbols."""
+        self.daily_pnl = 0.0
+        self.consecutive_losses = 0
+        self.tripped = False
+        self.trip_time = None
+        self._trip_sim_time = None
+        self.trip_reason = ""
+        self._override_count = 0
+        # Note: peak_equity is NOT reset here — caller should set it explicitly
 
     def _maybe_reset_daily(self, equity: float = 0.0, sim_time: Optional[datetime] = None):
         ref_time = sim_time or datetime.now(timezone.utc)
@@ -169,25 +182,38 @@ class CircuitBreaker:
 
         # Check cooldown — use sim_time elapsed if provided, else wall-clock
         if self.trip_time:
+            cooldown_elapsed = False
             if sim_time is not None:
-                # In backtest: trip_time is stored as wall-clock, but we track
-                # sim elapsed via _trip_sim_time set at trip time
                 trip_sim = getattr(self, "_trip_sim_time", None)
                 if trip_sim and (sim_time - trip_sim).total_seconds() >= self.cooldown_minutes * 60:
-                    self.tripped = False
-                    self.trip_reason = ""
-                    self.trip_time = None
-                    self._trip_sim_time = None
-                    self.consecutive_losses = 0
-                    self._override_count = 0
-                    logger.info("Circuit breaker cooldown complete (sim time), trading resumed")
-                    return True
+                    cooldown_elapsed = True
             elif (time.time() - self.trip_time) >= self.cooldown_minutes * 60:
-                self.tripped = False
-                self.trip_reason = ""
-                self.trip_time = None
+                cooldown_elapsed = True
+
+            if cooldown_elapsed:
+                # Re-check if underlying conditions are still violated.
+                # Don't blindly resume — if drawdown is still beyond limit,
+                # stay tripped. This prevents the bot from losing 8%/hour.
+                # Only the CONSECUTIVE LOSSES condition resets on cooldown.
                 self.consecutive_losses = 0
                 self._override_count = 0
+                self.tripped = False
+                self.trip_time = None
+                self._trip_sim_time = None
+                self.trip_reason = ""
+
+                # Re-check daily loss and drawdown — re-trip if still violated
+                # (pass equity=0 to skip equity-based checks if we don't have it)
+                # _check_breakers will re-trip if conditions are still bad
+                # We need equity to check, but we don't have it here.
+                # Instead, just check if daily_pnl is still beyond limit.
+                base = self.start_of_day_equity or self.peak_equity
+                if base > 0 and self.daily_pnl < 0:
+                    daily_loss_pct = abs(self.daily_pnl) / base
+                    if daily_loss_pct >= self.daily_loss_limit_pct:
+                        self._trip(f"Daily loss still {daily_loss_pct:.1%} >= {self.daily_loss_limit_pct:.1%} (post-cooldown)", sim_time=sim_time)
+                        return False
+
                 logger.info("Circuit breaker cooldown complete, trading resumed")
                 return True
 
@@ -270,9 +296,9 @@ class RiskManager:
     def __init__(
         self,
         starting_equity: float = 10000.0,
-        risk_per_trade: float = 0.015,
-        max_open_positions: int = 6,
-        max_portfolio_leverage: float = 3.0,
+        risk_per_trade: float = 0.02,
+        max_open_positions: int = 3,
+        max_portfolio_leverage: float = 5.0,
         circuit_breaker: Optional[CircuitBreaker] = None,
         max_risk_multiplier: float = 1.5,
     ):

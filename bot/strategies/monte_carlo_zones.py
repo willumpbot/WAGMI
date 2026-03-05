@@ -242,31 +242,10 @@ class MonteCarloZonesStrategy(BaseStrategy):
             tp2 = zones["regular_buy"]
 
         elif action == "HOLD":
-            # Check for bounce-short opportunity in downtrend
-            bounce = self._detect_bounce_short(df, zones)
-            if bounce and mc["down_prob"] > 0.5:
-                confidence = 55.0
-                if bounce["proximity"] in ("above_sma20", "near_sma20"):
-                    confidence += 15
-                else:
-                    confidence += 8
-                if mc["down_prob"] > 0.6:
-                    confidence += 10
-                if rsi > 45:  # not oversold = room to fall
-                    confidence += 5
-                if vol_spike:
-                    confidence += 5
-                side = "SELL"
-                sl = zones["sma20"] + 0.8 * stdev  # stop above SMA20 resistance
-                tp1 = zones["regular_buy"]
-                tp2 = zones["deep_buy"]
-                logger.info(
-                    f"[{symbol}] Bounce-short detected: {bounce['proximity']}, "
-                    f"bounce={bounce['bounce']:.2f}, MC down={mc['down_prob']:.0%}, "
-                    f"conf={confidence:.0f}%"
-                )
-            else:
-                return None
+            # HOLD = no zone-based edge. Previously had a bounce-short
+            # special case here that created asymmetric SHORT bias.
+            # Removed: HOLD means no trade.
+            return None
 
         else:
             return None

@@ -386,9 +386,10 @@ class EnsembleStrategy:
                 )
             else:
                 # Strong counter-trend — FLIP the signal (returns new object)
+                # No confidence bonus: flipped signals have zero original strategy
+                # conviction in the new direction. Let them prove themselves.
                 result = self._flip_signal(symbol, result, data)
-                result.confidence = min(100, result.confidence + 5)
-                result.metadata["trend_adjustment"] = 5
+                result.metadata["trend_adjustment"] = 0
                 result.metadata["trend_flipped"] = True
                 logger.info(
                     f"[{symbol}] FLIP {side}->{result.side}: strong trend "

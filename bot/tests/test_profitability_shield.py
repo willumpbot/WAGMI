@@ -299,9 +299,9 @@ class TestSymbolOverrides:
     def test_get_symbol_param_uses_override(self):
         from trading_config import TradingConfig, get_symbol_param
         config = TradingConfig()
-        # DOGE has max_leverage=20.0 in overrides
+        # DOGE has max_leverage=12.0 in overrides (reduced from 20 for memecoin safety)
         val = get_symbol_param("DOGE", "max_leverage", config)
-        assert val == 20.0
+        assert val == 12.0
 
     def test_get_symbol_param_falls_back_to_global(self):
         from trading_config import TradingConfig, get_symbol_param

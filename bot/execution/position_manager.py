@@ -642,6 +642,12 @@ class PositionManager:
                 "regime": profile_data.get("regime", ""),
                 "volatility_band": profile_data.get("volatility_band", ""),
                 "trade_profile": profile_data,
+                # Position context for CSV analysis
+                "entry": pos.entry,
+                "sl": pos.original_sl,
+                "tp1": pos.tp1,
+                "tp2": pos.tp2,
+                "confidence": pos.confidence,
             },
         )
         self.trade_log.append(event)
