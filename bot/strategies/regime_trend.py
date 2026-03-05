@@ -77,7 +77,7 @@ class RegimeTrendStrategy(BaseStrategy):
     def _check_regime(self, df: pd.DataFrame, min_bars: int = 10) -> Dict[str, Any]:
         """Check MACD + MFI regime on a higher timeframe."""
         if df.empty or len(df) < min_bars:
-            return {"ok": False, "macd_h": 0, "mfi": 50}
+            return {"ok": False, "bearish": False, "macd_h": 0, "mfi": 50}
 
         _, _, hist = _macd(df["close"])
         mfi = _mfi_like(df, period=min(60, len(df)))
@@ -257,9 +257,9 @@ class RegimeTrendStrategy(BaseStrategy):
         cu = bool(cross_up.iloc[-1])
         cd = bool(cross_dn.iloc[-1])
 
-        regime_6h = self._check_regime(df_6h) if df_6h is not None and not df_6h.empty else {"ok": False}
+        regime_6h = self._check_regime(df_6h) if df_6h is not None and not df_6h.empty else {"ok": False, "bearish": False, "macd_h": 0, "mfi": 50}
         df_htf = self._build_htf_candles(df_1h)
-        regime_htf = self._check_regime(df_htf) if not df_htf.empty else {"ok": False}
+        regime_htf = self._check_regime(df_htf) if not df_htf.empty else {"ok": False, "bearish": False, "macd_h": 0, "mfi": 50}
 
         align_long = int(cu) + int(float(mfi_1h.iloc[-1]) > 50) + int(regime_6h["ok"]) + int(regime_htf["ok"])
         align_short = int(cd) + int(float(mfi_1h.iloc[-1]) < 50) + int(not regime_6h["ok"]) + int(not regime_htf["ok"])

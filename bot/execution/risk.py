@@ -209,17 +209,15 @@ class CircuitBreaker:
                 self._trip_sim_time = None
                 self.trip_reason = ""
 
-                # Re-check drawdown from peak — this condition persists
-                # across cooldowns since it measures total damage, not daily.
-                if self.peak_equity > 0:
-                    base = self.start_of_day_equity or self.peak_equity
-                    drawdown = (self.peak_equity - base) / self.peak_equity
-                    if drawdown >= self.max_drawdown_pct:
-                        self._trip(
-                            f"Drawdown {drawdown:.1%} >= {self.max_drawdown_pct:.1%} (post-cooldown)",
-                            sim_time=sim_time,
-                        )
-                        return False
+                # Accept current equity as new peak after cooldown.
+                # The cooldown itself was the penalty. Without this,
+                # drawdown from original peak re-trips immediately
+                # creating an infinite trip→cooldown→re-trip loop.
+                # The breaker still protects against NEW drawdown from
+                # the updated baseline.
+                current_eq = self.start_of_day_equity if self.start_of_day_equity > 0 else self.peak_equity
+                if current_eq < self.peak_equity:
+                    self.peak_equity = current_eq
 
                 logger.info("Circuit breaker cooldown complete, trading resumed")
                 return True
