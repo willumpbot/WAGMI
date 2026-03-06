@@ -126,11 +126,13 @@ class DataFetcher:
     """
 
     def __init__(self, max_retries: int = 3, retry_delay: float = 5.0, cache_ttl: int = 45,
-                 cb_threshold: int = 5, cb_reset_s: int = 300, backtest_mode: bool = False):
+                 cb_threshold: int = 5, cb_reset_s: int = 300, backtest_mode: bool = False,
+                 backtest_days: Optional[int] = None):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.cache_ttl = cache_ttl
         self.backtest_mode = backtest_mode
+        self.backtest_days = backtest_days
         self._cache: Dict[str, tuple] = {}
         self._lock = threading.Lock()
         self._circuit_breaker = ExchangeCircuitBreaker(cb_threshold, cb_reset_s)
@@ -249,6 +251,13 @@ class DataFetcher:
 
     # ─── CCXT fetching ────────────────────────────────────────────
 
+    def _candles_for_days(self, timeframe: str, days: int) -> int:
+        """Calculate number of candles needed to cover `days` of data."""
+        tf_ms = TIMEFRAME_MS.get(timeframe, 60 * 60_000)
+        candles_per_day = (24 * 60 * 60_000) / tf_ms
+        # Add 10% buffer for warmup and gaps
+        return int(candles_per_day * days * 1.1)
+
     def _resolve_ccxt_params(
         self, exchange, timeframe: str
     ) -> Tuple[str, int, Optional[str]]:
@@ -258,15 +267,22 @@ class DataFetcher:
 
         if timeframe == "daily":
             # Zone strategies expect hourly-granularity data
-            return "1h", 720, None
+            limit = self._candles_for_days("1h", self.backtest_days) if self.backtest_days else 720
+            return "1h", limit, None
         elif timeframe == "16h":
             # No exchange supports 16h natively; aggregate from 1h
-            return "1h", 500, "16h"
+            limit = self._candles_for_days("1h", self.backtest_days) if self.backtest_days else 500
+            return "1h", limit, "16h"
         elif timeframe == "6h" and "6h" not in supported:
             # Kraken doesn't have 6h; aggregate from 1h
-            return "1h", 720, "6h"
+            limit = self._candles_for_days("1h", self.backtest_days) if self.backtest_days else 720
+            return "1h", limit, "6h"
         else:
-            return timeframe, CCXT_LIMITS.get(timeframe, 200), None
+            if self.backtest_days:
+                limit = self._candles_for_days(timeframe, self.backtest_days)
+            else:
+                limit = CCXT_LIMITS.get(timeframe, 200)
+            return timeframe, limit, None
 
     def _fetch_ccxt_ohlcv(
         self, symbol_name: str, timeframe: str
