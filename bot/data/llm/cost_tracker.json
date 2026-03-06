@@ -1,14 +1,14 @@
 {
   "date": "2026-03-06",
-  "spend": 0.0034000000000000007,
-  "calls": 10,
+  "spend": 0.0068,
+  "calls": 20,
   "calls_by_model": {
-    "claude-haiku-4-5-20251001": 7,
-    "claude-sonnet-4-5-20250929": 3
+    "claude-haiku-4-5-20251001": 14,
+    "claude-sonnet-4-5-20250929": 6
   },
   "spend_by_model": {
-    "claude-haiku-4-5-20251001": 0.0011499999999999998,
-    "claude-sonnet-4-5-20250929": 0.0022500000000000003
+    "claude-haiku-4-5-20251001": 0.0023,
+    "claude-sonnet-4-5-20250929": 0.0045000000000000005
   },
   "budget": 25.0
 }
