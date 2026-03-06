@@ -100,6 +100,13 @@ class EnsembleStrategy:
                 dynamic = self.weight_manager.get_rolling_weights()
                 if dynamic:
                     self.weights = dynamic
+                    # Log strategies that have been auto-muted
+                    for name, w in dynamic.items():
+                        if w <= 0.05:
+                            logger.warning(
+                                f"[ENSEMBLE] {name} effectively muted (weight={w}) "
+                                f"-- sustained poor performance"
+                            )
                 else:
                     # Weights empty — likely no trade history yet.
                     # Try loading persisted weights from file as fallback.

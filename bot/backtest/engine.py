@@ -971,6 +971,9 @@ class BacktestEngine:
             "equity_curve_length": len(self.equity_curve),
             "circuit_breaker_stats": self._report_circuit_breaker(),
             "by_agreement": self._report_by_agreement(),
+            "strategy_health": self._report_strategy_health(),
+            "recommendations": self._generate_recommendations(),
+            "equity_curve": self.equity_curve,
         }
 
         # Add LLM stats and detailed data if LLM integration was used
@@ -1087,7 +1090,156 @@ class BacktestEngine:
         for key, stats in result.items():
             stats["win_rate"] = stats["wins"] / stats["trades"] if stats["trades"] else 0
             stats["avg_pnl"] = stats["pnl"] / stats["trades"] if stats["trades"] else 0
+            # Add profit factor per combo
+            combo_details = {}
+            for combo_key, combo_count in stats.get("strategy_combos", {}).items():
+                combo_details[combo_key] = {
+                    "trades": combo_count, "wins": 0, "gross_win": 0.0, "gross_loss": 0.0,
+                }
+            # Re-walk to compute combo-level PF
+            for event in self.pos_mgr.trade_log:
+                if event.action in self._CLOSE_ACTIONS:
+                    meta = event.metadata or {}
+                    n = meta.get("num_agree", 0)
+                    if f"{n}_agree" != key:
+                        continue
+                    strats = meta.get("strategies_agree", [])
+                    combo = "+".join(sorted(strats)) if strats else "unknown"
+                    if combo in combo_details:
+                        if event.pnl > 0:
+                            combo_details[combo]["wins"] += 1
+                            combo_details[combo]["gross_win"] += event.pnl
+                        else:
+                            combo_details[combo]["gross_loss"] += abs(event.pnl)
+            for combo, cd in combo_details.items():
+                cd["pf"] = round(cd["gross_win"] / cd["gross_loss"], 2) if cd["gross_loss"] > 0 else 99.0
+                cd["wr"] = round(cd["wins"] / cd["trades"], 2) if cd["trades"] > 0 else 0
+            stats["combo_details"] = combo_details
         return result
+
+    def _report_strategy_health(self) -> Dict[str, Any]:
+        """Per-strategy health metrics: PF, EV, streaks, worst trade."""
+        # Track contributing strategies, not just "ensemble"
+        contrib: Dict[str, Dict] = {}
+        for event in self.pos_mgr.trade_log:
+            if event.action in self._CLOSE_ACTIONS:
+                meta = event.metadata or {}
+                strategies = meta.get("strategies_agree", [])
+                for strat in strategies:
+                    if strat not in contrib:
+                        contrib[strat] = {
+                            "trades": 0, "wins": 0, "gross_win": 0.0,
+                            "gross_loss": 0.0, "worst_trade": 0.0,
+                            "max_loss_streak": 0, "_cur_streak": 0,
+                            "pnl_curve": [],
+                        }
+                    c = contrib[strat]
+                    c["trades"] += 1
+                    c["pnl_curve"].append(event.pnl)
+                    if event.pnl > 0:
+                        c["wins"] += 1
+                        c["gross_win"] += event.pnl
+                        c["_cur_streak"] = 0
+                    else:
+                        c["gross_loss"] += abs(event.pnl)
+                        c["_cur_streak"] += 1
+                        c["max_loss_streak"] = max(c["max_loss_streak"], c["_cur_streak"])
+                        c["worst_trade"] = min(c["worst_trade"], event.pnl)
+
+        result = {}
+        for strat, c in contrib.items():
+            t = c["trades"]
+            w = c["wins"]
+            wr = w / t if t > 0 else 0
+            pf = round(c["gross_win"] / c["gross_loss"], 2) if c["gross_loss"] > 0 else 99.0
+            avg_win = c["gross_win"] / w if w > 0 else 0
+            avg_loss = c["gross_loss"] / (t - w) if (t - w) > 0 else 0
+            ev = round(avg_win * wr - avg_loss * (1 - wr), 2)
+            net = round(c["gross_win"] - c["gross_loss"], 2)
+            result[strat] = {
+                "trades": t,
+                "win_rate": round(wr, 3),
+                "profit_factor": pf,
+                "expected_value": ev,
+                "net_pnl": net,
+                "max_loss_streak": c["max_loss_streak"],
+                "worst_trade": round(c["worst_trade"], 2),
+                "gross_win": round(c["gross_win"], 2),
+                "gross_loss": round(c["gross_loss"], 2),
+            }
+            del c["_cur_streak"]
+            del c["pnl_curve"]
+        return result
+
+    def _generate_recommendations(self) -> List[str]:
+        """Auto-generate actionable recommendations from backtest results."""
+        recs = []
+        health = self._report_strategy_health()
+
+        # Flag strategies with poor profit factor
+        for strat, h in health.items():
+            if h["profit_factor"] < 0.8 and h["trades"] >= 10:
+                recs.append(
+                    f"CONSIDER DISABLING {strat} -- profit factor {h['profit_factor']}, "
+                    f"net ${h['net_pnl']:,.2f} over {h['trades']} trades"
+                )
+            elif h["profit_factor"] < 1.0 and h["trades"] >= 20:
+                recs.append(
+                    f"WATCH {strat} -- profit factor {h['profit_factor']}, "
+                    f"losing ${abs(h['net_pnl']):,.2f}"
+                )
+
+        # Compare agreement levels
+        by_agree = self._report_by_agreement()
+        agree_keys = sorted(by_agree.keys())
+        if len(agree_keys) >= 2:
+            best_agree = max(agree_keys, key=lambda k: by_agree[k].get("avg_pnl", 0))
+            worst_agree = min(agree_keys, key=lambda k: by_agree[k].get("avg_pnl", 0))
+            if by_agree[worst_agree]["avg_pnl"] < 0:
+                recs.append(
+                    f"{best_agree} outperforms {worst_agree} by "
+                    f"${by_agree[best_agree]['pnl'] - by_agree[worst_agree]['pnl']:,.2f} "
+                    f"-- review losing combos in {worst_agree}"
+                )
+
+        # Flag losing combos
+        for key, stats in by_agree.items():
+            for combo, cd in stats.get("combo_details", {}).items():
+                if cd.get("pf", 99) < 0.8 and cd.get("trades", 0) >= 5:
+                    recs.append(
+                        f"LOSING COMBO in {key}: {combo} -- PF={cd['pf']}, "
+                        f"{cd['trades']} trades"
+                    )
+
+        # Symbol recommendation
+        by_sym = self._report_by_symbol()
+        if by_sym:
+            best_sym = max(by_sym.items(), key=lambda x: x[1].get("win_rate", 0))
+            recs.append(
+                f"Strongest symbol: {best_sym[0]} ({best_sym[1]['win_rate']:.0%} WR, "
+                f"${best_sym[1]['pnl']:,.2f})"
+            )
+
+        # CB lockout warning
+        cb = self._report_circuit_breaker()
+        if cb.get("lockout_pct", 0) > 20:
+            recs.append(
+                f"Circuit breakers locked out {cb['lockout_pct']:.1f}% of backtest "
+                f"-- signals may be too aggressive or risk limits too tight"
+            )
+
+        # Drawdown warning
+        if self.equity_curve:
+            equities = [e["equity"] for e in self.equity_curve]
+            peak = max(equities)
+            max_dd = max((peak - e) / peak for e in equities) * 100
+            if max_dd > 30:
+                recs.append(
+                    f"Max drawdown {max_dd:.1f}% exceeds safe threshold "
+                    f"-- consider reducing leverage or risk_per_trade"
+                )
+
+        return recs
 
     def _report_trade_timeline(self) -> List[Dict[str, Any]]:
         """Build per-trade timeline with full position context for analysis."""
@@ -1193,6 +1345,26 @@ def export_trade_csv(report: Dict, filepath: str):
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(timeline)
+
+    # Auto-export equity curve alongside trade CSV
+    equity_path = filepath.replace(".csv", "_equity_curve.csv")
+    export_equity_curve_csv(report, equity_path)
+
+
+def export_equity_curve_csv(report: Dict, filepath: str):
+    """Export equity curve as CSV for visualization."""
+    import csv
+
+    curve = report.get("equity_curve", [])
+    if not curve:
+        return
+
+    fieldnames = ["time", "equity", "open_positions", "cb_active", "drawdown_pct"]
+    with open(filepath, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(curve)
+    print(f"  Equity curve exported to {filepath}")
 
 
 def print_report(report: Dict):
@@ -1301,6 +1473,42 @@ def print_report(report: Dict):
             print(f"\n  Learning Captured:")
             print(f"    Lessons processed:   {lessons}")
             print(f"    Exit evaluations:    {exits}")
+
+    # Strategy health
+    health = report.get("strategy_health", {})
+    if health:
+        print(f"\n  Strategy Health (contributing strategies):")
+        for strat in sorted(health.keys(), key=lambda k: -health[k].get("net_pnl", 0)):
+            h = health[strat]
+            flag = "  !! LOSING" if h["profit_factor"] < 1.0 and h["trades"] >= 10 else ""
+            print(
+                f"    {strat:22s}  PF={h['profit_factor']:<5}  "
+                f"EV=${h['expected_value']:<8}  "
+                f"net=${h['net_pnl']:>9,.2f}  "
+                f"WR={h['win_rate']:.0%}  "
+                f"streak={h['max_loss_streak']}  "
+                f"worst=${h['worst_trade']:,.2f}{flag}"
+            )
+
+    # Agreement combos with PF
+    by_agree = report.get("by_agreement", {})
+    if by_agree:
+        has_losing_combo = False
+        for key in sorted(by_agree.keys()):
+            combo_details = by_agree[key].get("combo_details", {})
+            for combo, cd in sorted(combo_details.items(), key=lambda x: -x[1].get("trades", 0)):
+                if cd.get("pf", 99) < 1.0 and cd.get("trades", 0) >= 5:
+                    if not has_losing_combo:
+                        print(f"\n  Losing Strategy Combos:")
+                        has_losing_combo = True
+                    print(f"    {key} {combo}: PF={cd['pf']} WR={cd['wr']:.0%} ({cd['trades']} trades) -- LOSING")
+
+    # Recommendations
+    recs = report.get("recommendations", [])
+    if recs:
+        print(f"\n  Recommendations:")
+        for rec in recs:
+            print(f"    > {rec}")
 
     # Top trades by PnL
     timeline = report.get("trade_timeline", [])

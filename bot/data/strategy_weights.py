@@ -107,11 +107,20 @@ class StrategyWeightManager:
             else:
                 rolling_wr = base  # Fall back to smoothed weight
 
-            # Hard floor: mute consistently losing strategies
+            # Hard mute: severely underperforming strategies get near-zero weight
+            # so they can't contribute to agreement counts or drag combos negative.
+            # Recoverable: if WR climbs above 40%, normal weight calculation resumes.
+            if len(recent) >= 15 and rolling_wr < 0.30:
+                dynamic[name] = 0.05
+                logger.warning(
+                    f"[WEIGHTS] {name} AUTO-MUTED: WR={rolling_wr:.1%} over "
+                    f"{len(recent)} trades < 30% threshold (weight=0.05)"
+                )
+                continue
             if len(recent) >= 20 and rolling_wr < 0.35:
                 dynamic[name] = 0.1
                 logger.info(
-                    f"[WEIGHTS] {name} MUTED: WR={rolling_wr:.1%} over {len(recent)} trades < 35% threshold"
+                    f"[WEIGHTS] {name} DEMOTED: WR={rolling_wr:.1%} over {len(recent)} trades < 35% threshold"
                 )
                 continue
 
