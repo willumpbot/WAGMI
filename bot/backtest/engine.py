@@ -58,6 +58,7 @@ class BacktestEngine:
 
         # Initialize components
         self.fetcher = DataFetcher(cache_ttl=3600, backtest_mode=True)
+        self._backtest_days = None  # Set during run()
         self.risk_mgr = RiskManager(
             starting_equity=self.config.starting_equity,
             risk_per_trade=self.config.risk_per_trade,
@@ -116,6 +117,10 @@ class BacktestEngine:
         """
         logger.info(f"Starting backtest: {symbols} | {days} days | strategies={strategies or 'all'}")
 
+        # Configure fetcher to pull enough data for the requested backtest period
+        self._backtest_days = days
+        self.fetcher.backtest_days = days
+
         # Initialize candidate logger for dual-world analysis
         # Clear stale data from previous runs so results aren't contaminated
         self._clear_stale_analysis_data()
@@ -144,6 +149,19 @@ class BacktestEngine:
             logger.info(f"Fetching data for {symbol} ({sym_cfg.coingecko_id})")
             data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, needed_tfs)
             all_data[symbol] = data
+
+        # Log data coverage for transparency
+        print(f"\n  Data Coverage (requested {days} days):")
+        for symbol, data in all_data.items():
+            for tf, df in sorted(data.items()):
+                if df is not None and not df.empty:
+                    first = df["time"].iloc[0] if "time" in df.columns else df.index[0]
+                    last = df["time"].iloc[-1] if "time" in df.columns else df.index[-1]
+                    actual_days = (last - first).total_seconds() / 86400
+                    print(f"    {symbol:>6s} {tf:>5s}: {len(df):>5d} candles | {actual_days:.1f} days ({first.strftime('%Y-%m-%d')} to {last.strftime('%Y-%m-%d')})")
+                else:
+                    print(f"    {symbol:>6s} {tf:>5s}: NO DATA")
+        print()
 
         # LLM preflight: validate everything before spending API credits
         if self.llm:
