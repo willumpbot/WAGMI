@@ -425,17 +425,21 @@ class SymbolOverrides:
     atr_mult_tp1: Optional[float] = None
     atr_mult_tp2: Optional[float] = None
     enabled: bool = True
+    # Volatility profile: "low" (BTC-like), "medium" (SOL-like), "high" (HYPE/meme)
+    # Affects chop detection sensitivity and ensemble confidence floor
+    volatility_profile: str = "medium"
 
 
 # Default per-symbol overrides
 # Leverage caps align with Hyperliquid exchange maximums in symbol_precision.json
 # risk_per_trade overrides let memecoins risk slightly less than large caps
+# volatility_profile tunes chop detection + strategy sensitivity per asset
 DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
-    "BTC": SymbolOverrides(max_leverage=25.0),
-    "SOL": SymbolOverrides(max_leverage=20.0),
-    "HYPE": SymbolOverrides(max_leverage=20.0),
-    "DOGE": SymbolOverrides(max_leverage=12.0),
-    "FARTCOIN": SymbolOverrides(max_leverage=10.0),
+    "BTC": SymbolOverrides(max_leverage=25.0, volatility_profile="low"),
+    "SOL": SymbolOverrides(max_leverage=20.0, volatility_profile="medium"),
+    "HYPE": SymbolOverrides(max_leverage=20.0, volatility_profile="high"),
+    "DOGE": SymbolOverrides(max_leverage=12.0, volatility_profile="high"),
+    "FARTCOIN": SymbolOverrides(max_leverage=10.0, volatility_profile="high"),
 }
 
 

@@ -29,17 +29,40 @@ _WEIGHTS = {
     "whipsaw": 0.15,
 }
 
+# Per-volatility-profile chop thresholds.
+# High-vol assets (HYPE, memes) naturally have wider ranges and more
+# whipsaws — using the default threshold falsely flags them as "choppy"
+# and kills signals that are actually valid.
+VOLATILITY_THRESHOLDS = {
+    "low": 0.50,     # BTC: tighter — chop detection triggers earlier
+    "medium": 0.55,  # SOL: default
+    "high": 0.65,    # HYPE/memes: looser — allow more volatility through
+}
+
 
 class ChopDetector:
     """Multi-factor choppy market detector."""
 
     def __init__(self, threshold: float = None):
         self.threshold = threshold or float(os.getenv("CHOP_THRESHOLD", "0.55"))
+        self._symbol_profiles: Dict[str, str] = {}  # symbol -> volatility profile
+
+    def set_symbol_profile(self, symbol: str, profile: str):
+        """Set volatility profile for a symbol (low/medium/high)."""
+        self._symbol_profiles[symbol] = profile
+
+    def _get_threshold(self, symbol: str) -> float:
+        """Get chop threshold adjusted for symbol's volatility profile."""
+        profile = self._symbol_profiles.get(symbol, "medium")
+        return VOLATILITY_THRESHOLDS.get(profile, self.threshold)
 
     def is_choppy(
         self, symbol: str, data: Dict[str, pd.DataFrame]
     ) -> Tuple[bool, float, str]:
         """Evaluate whether the market is choppy.
+
+        Uses per-symbol volatility profile to adjust threshold.
+        High-volatility assets get a higher threshold (harder to flag as choppy).
 
         Returns:
             (is_choppy, chop_score, detail_string)
@@ -81,13 +104,14 @@ class ChopDetector:
             _WEIGHTS[k] * factors[k] for k in _WEIGHTS if k in factors
         )
 
-        is_chop = chop_score >= self.threshold
+        effective_threshold = self._get_threshold(symbol)
+        is_chop = chop_score >= effective_threshold
         detail_str = " ".join(details) + f" => {chop_score:.2f}"
 
         if is_chop:
             logger.info(
                 f"[{symbol}] CHOP DETECTED: score={chop_score:.2f} "
-                f"(threshold={self.threshold}) [{detail_str}]"
+                f"(threshold={effective_threshold}) [{detail_str}]"
             )
 
         return is_chop, chop_score, detail_str

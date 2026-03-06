@@ -24,7 +24,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from data.fetcher import DataFetcher
-from trading_config import TradingConfig, DEFAULT_SYMBOLS
+from trading_config import TradingConfig, DEFAULT_SYMBOLS, DEFAULT_SYMBOL_OVERRIDES
 from strategies.base import Signal
 from strategies.regime_trend import RegimeTrendStrategy
 from strategies.monte_carlo_zones import MonteCarloZonesStrategy
@@ -35,6 +35,7 @@ from execution.position_manager import PositionManager
 from execution.leverage import LeverageManager
 from execution.risk import RiskManager, CircuitBreaker
 from execution.candidate import TradeCandidate, CandidateLogger
+from strategies.chop_detector import ChopDetector
 
 logger = logging.getLogger("bot.backtest")
 
@@ -91,6 +92,8 @@ class BacktestEngine:
         # Results
         self.equity_curve: List[Dict] = []
         self.signals_generated: List[Dict] = []
+        self.cb_events: List[Dict] = []  # Circuit breaker trip log
+        self.signals_blocked_by_cb = 0  # Signals skipped due to CB
 
         # Candidate tracking for counterfactual analysis
         self._candidate_logger = None
@@ -135,11 +138,19 @@ class BacktestEngine:
         sym_configs = {s: DEFAULT_SYMBOLS[s] for s in symbols if s in DEFAULT_SYMBOLS}
         active_strategies = self._build_strategies(sym_configs, strategies)
 
+        # Build chop detector with per-symbol volatility profiles
+        chop = ChopDetector(threshold=getattr(self.config, "chop_threshold", 0.55))
+        for sym in symbols:
+            sym_overrides = DEFAULT_SYMBOL_OVERRIDES.get(sym)
+            if sym_overrides and hasattr(sym_overrides, "volatility_profile"):
+                chop.set_symbol_profile(sym, sym_overrides.volatility_profile)
+
         ensemble = EnsembleStrategy(
             strategies=active_strategies,
             mode=self.config.ensemble_mode,
             min_votes=self.config.min_votes_required,
             veto_ratio=self.config.veto_ratio,
+            chop_detector=chop,
         )
 
         # Fetch historical data for all symbols
@@ -214,19 +225,14 @@ class BacktestEngine:
             if self.llm:
                 self.llm.reset_for_symbol(symbol)
 
-            # Reset circuit breaker trip state between symbols so one bad
-            # symbol doesn't starve the next. But keep daily_pnl and
-            # peak_equity so overall drawdown protection still works.
+            # Circuit breaker persists across symbols (matches live behavior).
+            # Only reset the consecutive_losses counter (which is symbol-specific
+            # noise) — drawdown, daily PnL, and trip state carry over so the
+            # backtest reflects real account-level protection.
             if hasattr(self.risk_mgr, "circuit_breaker") and self.risk_mgr.circuit_breaker:
                 cb = self.risk_mgr.circuit_breaker
-                cb.tripped = False
-                cb.trip_time = None
-                cb._trip_sim_time = None
-                cb.trip_reason = ""
-                cb.consecutive_losses = 0
-                cb._override_count = 0
-                # Update peak to current equity for per-symbol drawdown tracking
-                cb.peak_equity = self.risk_mgr.equity
+                cb.consecutive_losses = 0  # New symbol = fresh streak
+                # Do NOT reset: tripped, trip_time, peak_equity, daily_pnl, _override_count
 
             data = all_data.get(symbol, {})
             df_1h = data.get("1h", pd.DataFrame())
@@ -350,6 +356,14 @@ class BacktestEngine:
                         if self.llm and cb_event.action in self._CLOSE_ACTIONS:
                             self.llm.clear_exit_counter(cb_event.symbol)
                             self._run_llm_learning(cb_event, current_price)
+                        self.cb_events.append({
+                            "time": str(df_1h["time"].iloc[i]),
+                            "symbol": symbol,
+                            "action": "force_close",
+                            "reason": self.risk_mgr.circuit_breaker.trip_reason,
+                            "equity": self.risk_mgr.equity,
+                            "pnl": cb_event.pnl,
+                        })
 
             # LLM: run Exit Agent on open positions
             if self.llm:
@@ -360,8 +374,9 @@ class BacktestEngine:
             if i <= last_close_idx + 1:
                 continue  # Let the market breathe for 1 candle after a close
 
-            # Try to generate signal
-            if self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt):
+            # Try to generate signal — track CB blocks
+            cb_blocked = not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt)
+            if not cb_blocked:
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal:
                     # Create candidate for dual-world tracking
@@ -382,12 +397,19 @@ class BacktestEngine:
                         # LLM vetoed — log candidate with flat action
                         candidate.llm_action = "flat"
                         self._candidate_logger.log_candidate(candidate)
+            else:
+                self.signals_blocked_by_cb += 1
 
-            # Record equity
+            # Record equity with CB state
             self.equity_curve.append({
                 "time": str(df_1h["time"].iloc[i]),
                 "equity": self.risk_mgr.equity,
                 "open_positions": self.pos_mgr.get_open_count(),
+                "cb_active": self.risk_mgr.circuit_breaker.tripped,
+                "drawdown_pct": round(
+                    (self.risk_mgr.circuit_breaker.peak_equity - self.risk_mgr.equity)
+                    / self.risk_mgr.circuit_breaker.peak_equity * 100, 1
+                ) if self.risk_mgr.circuit_breaker.peak_equity > 0 else 0,
             })
 
             # LLM: checkpoint and progress
@@ -474,7 +496,8 @@ class BacktestEngine:
             if i <= last_close_idx + 1:
                 continue
 
-            if self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt):
+            cb_blocked = not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt)
+            if not cb_blocked:
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal:
                     # Create candidate for dual-world tracking
@@ -492,11 +515,18 @@ class BacktestEngine:
                     else:
                         candidate.llm_action = "flat"
                         self._candidate_logger.log_candidate(candidate)
+            else:
+                self.signals_blocked_by_cb += 1
 
             self.equity_curve.append({
                 "time": str(df["time"].iloc[i]),
                 "equity": self.risk_mgr.equity,
                 "open_positions": self.pos_mgr.get_open_count(),
+                "cb_active": self.risk_mgr.circuit_breaker.tripped,
+                "drawdown_pct": round(
+                    (self.risk_mgr.circuit_breaker.peak_equity - self.risk_mgr.equity)
+                    / self.risk_mgr.circuit_breaker.peak_equity * 100, 1
+                ) if self.risk_mgr.circuit_breaker.peak_equity > 0 else 0,
             })
 
             if self.llm:
@@ -939,6 +969,8 @@ class BacktestEngine:
             "by_symbol": self._report_by_symbol(),
             "leverage_stats": self._report_leverage(),
             "equity_curve_length": len(self.equity_curve),
+            "circuit_breaker_stats": self._report_circuit_breaker(),
+            "by_agreement": self._report_by_agreement(),
         }
 
         # Add LLM stats and detailed data if LLM integration was used
@@ -1008,6 +1040,54 @@ class BacktestEngine:
             leveraged["avg_leverage"] = sum(levs) / len(levs)
         return {"spot": spot, "leveraged": leveraged}
 
+    def _report_circuit_breaker(self) -> Dict[str, Any]:
+        """Report circuit breaker impact on backtest."""
+        cb = self.risk_mgr.circuit_breaker
+        # Count candles spent in CB-tripped state
+        cb_candles = sum(1 for e in self.equity_curve if e.get("cb_active"))
+        total_candles = len(self.equity_curve) or 1
+        # Track equity curve valleys during CB
+        cb_force_close_pnl = sum(e.get("pnl", 0) for e in self.cb_events)
+        return {
+            "total_trips": cb._trip_count,
+            "signals_blocked": self.signals_blocked_by_cb,
+            "candles_locked_out": cb_candles,
+            "lockout_pct": round(cb_candles / total_candles * 100, 1),
+            "force_close_events": len(self.cb_events),
+            "force_close_pnl": round(cb_force_close_pnl, 2),
+            "peak_equity": round(cb.peak_equity, 2),
+        }
+
+    def _report_by_agreement(self) -> Dict[str, Any]:
+        """Report performance by number of strategies agreeing."""
+        result = {}
+        for event in self.pos_mgr.trade_log:
+            if event.action in self._CLOSE_ACTIONS:
+                meta = event.metadata or {}
+                num_agree = meta.get("num_agree", 0)
+                strategies = meta.get("strategies_agree", [])
+                key = f"{num_agree}_agree"
+                if key not in result:
+                    result[key] = {
+                        "trades": 0, "wins": 0, "pnl": 0.0,
+                        "close_types": {}, "strategy_combos": {},
+                    }
+                bucket = result[key]
+                bucket["trades"] += 1
+                if event.pnl > 0:
+                    bucket["wins"] += 1
+                bucket["pnl"] += event.pnl
+                # Track close types
+                ct = bucket["close_types"]
+                ct[event.action] = ct.get(event.action, 0) + 1
+                # Track which strategy combos appear
+                combo = "+".join(sorted(strategies)) if strategies else "unknown"
+                sc = bucket["strategy_combos"]
+                sc[combo] = sc.get(combo, 0) + 1
+        for key, stats in result.items():
+            stats["win_rate"] = stats["wins"] / stats["trades"] if stats["trades"] else 0
+            stats["avg_pnl"] = stats["pnl"] / stats["trades"] if stats["trades"] else 0
+        return result
 
     def _report_trade_timeline(self) -> List[Dict[str, Any]]:
         """Build per-trade timeline with full position context for analysis."""
@@ -1143,6 +1223,31 @@ def print_report(report: Dict):
         print("\n  By Symbol:")
         for sym, stats in report["by_symbol"].items():
             print(f"    {sym}: {stats['trades']} trades, {stats['win_rate']:.0%} win rate, ${stats['pnl']:,.2f}")
+
+    # Circuit breaker impact
+    cb = report.get("circuit_breaker_stats", {})
+    if cb:
+        print(f"\n  Circuit Breaker Impact:")
+        print(f"    Total trips:       {cb.get('total_trips', 0)}")
+        print(f"    Signals blocked:   {cb.get('signals_blocked', 0)}")
+        print(f"    Candles locked:    {cb.get('candles_locked_out', 0)} ({cb.get('lockout_pct', 0):.1f}% of backtest)")
+        print(f"    Force closes:      {cb.get('force_close_events', 0)} (PnL: ${cb.get('force_close_pnl', 0):,.2f})")
+
+    # Agreement level breakdown
+    by_agree = report.get("by_agreement", {})
+    if by_agree:
+        print(f"\n  By Agreement Level:")
+        for key in sorted(by_agree.keys()):
+            stats = by_agree[key]
+            wr = stats['win_rate']
+            avg = stats['avg_pnl']
+            print(f"    {key}: {stats['trades']} trades, {wr:.0%} WR, "
+                  f"${stats['pnl']:,.2f} total, ${avg:,.2f} avg/trade")
+            # Show top strategy combos
+            combos = stats.get("strategy_combos", {})
+            top_combos = sorted(combos.items(), key=lambda x: -x[1])[:3]
+            for combo, count in top_combos:
+                print(f"      {combo}: {count} trades")
 
     lev = report.get("leverage_stats", {})
     if lev:

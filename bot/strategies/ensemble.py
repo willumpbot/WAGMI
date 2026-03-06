@@ -76,6 +76,19 @@ class EnsembleStrategy:
         "monte_carlo_zones": "TREND",      # Uses daily → longer-term levels
     }
 
+    # Strategy primary timeframe — used for duration-aware opposition penalty.
+    # Daily-timeframe strategies penalize intraday signals less (and vice versa).
+    STRATEGY_TIMEFRAME = {
+        "multi_tier_quality": "intraday",   # 5m + 1h
+        "confidence_scorer": "intraday",    # multi-factor, mostly 1h
+        "regime_trend": "swing",            # 1h + 6h
+        "monte_carlo_zones": "daily",       # daily zones
+    }
+
+    # Max effective weight for any single strategy's opposition penalty.
+    # Prevents a single bad strategy from swinging outcomes too much.
+    MAX_OPPOSITION_WEIGHT = 0.8
+
     def _infer_duration(self, strategy_name: str) -> str:
         """Infer trade duration from the driving strategy."""
         return self.STRATEGY_DURATION_MAP.get(strategy_name, "")
@@ -562,12 +575,26 @@ class EnsembleStrategy:
 
         merged = self._merge_signals(symbol, chosen)
 
-        # Weighted opposition penalty (scaled by opposer's weight AND confidence)
+        # Duration-aware opposition penalty: daily strategies penalize
+        # intraday signals less (different timeframe = weaker opposition).
+        # Also cap per-strategy weight to prevent one bad strategy from
+        # dominating the penalty.
         if opposition:
-            penalty = sum(
-                self._get_strategy_weight(s.strategy) * 15 * (s.confidence / 100)
-                for s in opposition
+            # Infer the chosen side's dominant timeframe from the strongest signal
+            chosen_tf = self.STRATEGY_TIMEFRAME.get(
+                max(chosen, key=lambda s: s.confidence).strategy, "swing"
             )
+            penalty = 0.0
+            for s in opposition:
+                raw_weight = self._get_strategy_weight(s.strategy)
+                capped_weight = min(raw_weight, self.MAX_OPPOSITION_WEIGHT)
+                # Duration mismatch discount: daily opposing intraday = 40% penalty
+                opp_tf = self.STRATEGY_TIMEFRAME.get(s.strategy, "swing")
+                if chosen_tf != opp_tf:
+                    tf_discount = 0.4  # Cross-timeframe = much weaker opposition
+                else:
+                    tf_discount = 1.0  # Same timeframe = full penalty
+                penalty += capped_weight * 15 * (s.confidence / 100) * tf_discount
             merged.confidence = max(0, merged.confidence - penalty)
             merged.metadata["opposition_penalty"] = round(penalty, 1)
             opp_names = [s.strategy for s in opposition]
@@ -602,10 +629,17 @@ class EnsembleStrategy:
         return best
 
     def _get_strategy_weight(self, strategy_name: str) -> float:
-        """Get weight for a strategy from weight manager, falling back to static weights."""
+        """Get weight for a strategy from weight manager, falling back to static weights.
+        Caps daily-timeframe strategies (monte_carlo_zones) at MAX_OPPOSITION_WEIGHT
+        to prevent a single high-timeframe strategy from dominating voting."""
         if self.weight_manager is not None:
-            return self.weight_manager.get_weight(strategy_name)
-        return self.weights.get(strategy_name, 1.0)
+            w = self.weight_manager.get_weight(strategy_name)
+        else:
+            w = self.weights.get(strategy_name, 1.0)
+        # Cap daily-TF strategies so they can't overpower intraday consensus
+        if self.STRATEGY_TIMEFRAME.get(strategy_name) == "daily":
+            w = min(w, self.MAX_OPPOSITION_WEIGHT)
+        return w
 
     def _weighted_confidence_sum(self, signals: List[Signal]) -> float:
         """Compute sum of weight * confidence for a list of signals."""

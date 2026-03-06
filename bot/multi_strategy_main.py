@@ -377,7 +377,12 @@ class MultiStrategyBot:
         if config.enable_chop_detector:
             try:
                 from strategies.chop_detector import ChopDetector
+                from trading_config import DEFAULT_SYMBOL_OVERRIDES
                 chop = ChopDetector(threshold=config.chop_threshold)
+                # Set per-symbol volatility profiles for adaptive thresholds
+                for sym, overrides in DEFAULT_SYMBOL_OVERRIDES.items():
+                    if hasattr(overrides, "volatility_profile"):
+                        chop.set_symbol_profile(sym, overrides.volatility_profile)
                 logger.info(f"[INIT] Chop detector enabled (threshold={config.chop_threshold})")
             except Exception as e:
                 logger.warning(f"[INIT] Chop detector init failed: {e}")
