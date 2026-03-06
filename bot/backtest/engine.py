@@ -911,6 +911,7 @@ class BacktestEngine:
             },
             "by_strategy": self._report_by_strategy(),
             "by_contributing_strategy": self._report_by_contributing_strategy(),
+            "by_agreement_level": self._report_by_agreement_level(),
             "by_symbol": self._report_by_symbol(),
             "leverage_stats": self._report_leverage(),
             "equity_curve_length": len(self.equity_curve),
@@ -969,12 +970,37 @@ class BacktestEngine:
                     strategies = [event.strategy or "unknown"]
                 for strat in strategies:
                     if strat not in result:
-                        result[strat] = {"trades": 0, "wins": 0, "pnl": 0.0}
+                        result[strat] = {"trades": 0, "wins": 0, "pnl": 0.0, "by_action": {}}
                     result[strat]["trades"] += 1
                     if event.pnl > 0:
                         result[strat]["wins"] += 1
                     result[strat]["pnl"] += event.pnl
+                    # Track close action breakdown
+                    act = event.action
+                    result[strat]["by_action"][act] = result[strat]["by_action"].get(act, 0) + 1
         for strat, stats in result.items():
+            stats["win_rate"] = stats["wins"] / stats["trades"] if stats["trades"] else 0
+        return result
+
+    def _report_by_agreement_level(self) -> Dict:
+        """Break down performance by how many strategies agreed on each trade."""
+        result = {}
+        for event in self.pos_mgr.trade_log:
+            if event.action in self._CLOSE_ACTIONS:
+                meta = event.metadata or {}
+                entry_reasons = meta.get("entry_reasons", {})
+                strategies = entry_reasons.get("strategies_agree", [])
+                n = len(strategies) if strategies else 0
+                key = f"{n}_agree"
+                if key not in result:
+                    result[key] = {"trades": 0, "wins": 0, "pnl": 0.0, "by_action": {}}
+                result[key]["trades"] += 1
+                if event.pnl > 0:
+                    result[key]["wins"] += 1
+                result[key]["pnl"] += event.pnl
+                act = event.action
+                result[key]["by_action"][act] = result[key]["by_action"].get(act, 0) + 1
+        for level, stats in result.items():
             stats["win_rate"] = stats["wins"] / stats["trades"] if stats["trades"] else 0
         return result
 
@@ -1142,9 +1168,22 @@ def print_report(report: Dict):
             print(f"    {strat}: {stats['trades']} trades, {stats['win_rate']:.0%} win rate, ${stats['pnl']:,.2f}")
 
     if report.get("by_contributing_strategy"):
-        print("\n  By Contributing Strategy:")
+        print("\n  By Contributing Strategy (NOTE: PnL is multi-counted across contributors):")
         for strat, stats in sorted(report["by_contributing_strategy"].items(), key=lambda x: -x[1]["trades"]):
+            actions = stats.get("by_action", {})
+            action_str = ", ".join(f"{k}={v}" for k, v in sorted(actions.items()))
             print(f"    {strat}: {stats['trades']} trades, {stats['win_rate']:.0%} win rate, ${stats['pnl']:,.2f}")
+            if action_str:
+                print(f"      close types: {action_str}")
+
+    if report.get("by_agreement_level"):
+        print("\n  By Agreement Level:")
+        for level, stats in sorted(report["by_agreement_level"].items()):
+            actions = stats.get("by_action", {})
+            action_str = ", ".join(f"{k}={v}" for k, v in sorted(actions.items()))
+            print(f"    {level}: {stats['trades']} trades, {stats['win_rate']:.0%} win rate, ${stats['pnl']:,.2f}")
+            if action_str:
+                print(f"      close types: {action_str}")
 
     if report.get("by_symbol"):
         print("\n  By Symbol:")
