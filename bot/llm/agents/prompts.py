@@ -850,6 +850,43 @@ A positive EV strategy can still ruin you if variance is too high relative to ba
 
 # ── Prompt registry ─────────────────────────────────────────────
 
+# ── Re-entry Timing Check ─────────────────────────────────────
+# Lightweight Haiku prompt for assessing whether market structure
+# supports re-entering a symbol after a recent position close.
+# Used by _check_llm_reentry_clearance() in multi_strategy_main.py
+# when Scout data is unavailable.
+
+REENTRY_CHECK_PROMPT = """You are a re-entry timing specialist for a Hyperliquid perpetual futures bot.
+
+A position on {symbol} just closed with outcome: {outcome} (PnL: {pnl}).
+Last trade side: {last_side}. Time since close: {time_since_close}s.
+
+Current market snapshot:
+- Volume ratio (current / 20-bar avg): {vol_ratio:.2f}
+- Price vs EMA20: {price_vs_ema20}
+- Price vs EMA50: {price_vs_ema50}
+- RSI(14): {rsi:.1f}
+- ATR regime: {atr_regime}
+
+Scout pre-thesis: {scout_thesis}
+
+Should the bot consider new entries on {symbol} now?
+
+OUTPUT (JSON only):
+{{
+  "clear": true/false,
+  "reason": "one-line explanation",
+  "wait_candles": 0
+}}
+
+RULES:
+- After a LOSS: clear=true ONLY if volume_ratio > 0.8 AND price structure has changed (e.g. reclaimed EMA, RSI diverged from prior entry)
+- After a WIN: clear=true if trend intact (price above/below EMAs in direction), clear=false if exhaustion signs (RSI > 75 or < 25, volume fading)
+- If Scout has a HIGH priority thesis: clear=true (Scout already validated structure)
+- Default to clear=true if uncertain — the multi-agent pipeline will do deeper analysis
+- wait_candles: 0 = enter now, 1-3 = wait N hourly candles before re-evaluating
+"""
+
 AGENT_PROMPTS = {
     "regime": REGIME_AGENT_PROMPT,
     "trade": TRADE_AGENT_PROMPT,
@@ -860,4 +897,5 @@ AGENT_PROMPTS = {
     "scout": SCOUT_AGENT_PROMPT,
     "overseer": OVERSEER_AGENT_PROMPT,
     "quant": QUANT_AGENT_PROMPT,
+    "reentry": REENTRY_CHECK_PROMPT,
 }

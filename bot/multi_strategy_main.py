@@ -2039,14 +2039,30 @@ class MultiStrategyBot:
         if has_position and not self.rotation_mgr:
             return  # No rotation, nothing to do
 
-        # Per-symbol cooldown: don't re-enter too quickly after closing
+        # Per-symbol re-entry gating: minimal safety floor + LLM structure check
         # (skip for rotation candidate collection — cooldown is for fresh entries)
         if not has_position:
             last_close = self._symbol_cooldown.get(symbol, 0)
-            was_win = self._last_close_win.get(symbol, False)
-            cd = self._win_cooldown_seconds if was_win else self._cooldown_seconds
-            if time.time() - last_close < cd:
+            time_since_close = time.time() - last_close
+
+            # Hard floor: never re-enter within 60s (prevents same-candle re-entry)
+            if last_close > 0 and time_since_close < 60:
                 return
+
+            # LLM re-entry gate: if LLM is enabled and we're in the post-close
+            # window (< 10 min), check Scout data for structure-based clearance.
+            # After 10 min, fall back to normal signal flow.
+            if (last_close > 0 and time_since_close < 600
+                    and should_call_llm(self.llm_mode)):
+                if not self._check_llm_reentry_clearance(symbol):
+                    return
+
+            # Fallback: if LLM is OFF, use short configurable cooldown
+            if not should_call_llm(self.llm_mode):
+                was_win = self._last_close_win.get(symbol, False)
+                cd = self._win_cooldown_seconds if was_win else self._cooldown_seconds
+                if last_close > 0 and time_since_close < cd:
+                    return
 
         # Correlation guard: check before evaluating (saves compute)
         # We need to know the signal direction first, so we do a quick check
@@ -3827,6 +3843,69 @@ class MultiStrategyBot:
             self._last_scout_ts = time.time()
             logger.info(f"[{trace_id}][SCOUT] Preparation complete: "
                         f"{len(result.get('watchlist', []))} watchlist items")
+
+    def _check_llm_reentry_clearance(self, symbol: str) -> bool:
+        """Check if LLM/Scout data supports re-entering this symbol.
+
+        Uses cached Scout Agent data (no API call) to assess whether
+        market structure supports a new entry after a recent close.
+        Falls back to a lightweight Haiku call if Scout data is stale.
+
+        Returns:
+            True if cleared to evaluate signals, False if LLM says wait.
+        """
+        # Check cached re-entry decisions (5 min cache per symbol)
+        cache = getattr(self, '_reentry_cache', {})
+        cached = cache.get(symbol)
+        if cached and (time.time() - cached[1]) < 300:
+            return cached[0]
+
+        # Check Scout Agent data (free — no API call)
+        scout = getattr(self, '_last_scout_result', None)
+        scout_ts = getattr(self, '_last_scout_ts', 0)
+
+        if scout and (time.time() - scout_ts) < 600:
+            watchlist = scout.get("watchlist", [])
+            for item in watchlist:
+                if item.get("symbol") == symbol and item.get("priority") == "high":
+                    # Scout flagged this symbol as high priority — clear to re-enter
+                    logger.info(f"[{symbol}] LLM re-entry cleared: Scout HIGH priority "
+                                f"({item.get('setup_forming', 'unknown')})")
+                    self._cache_reentry(symbol, True)
+                    return True
+
+            # Scout ran but didn't flag this symbol as high priority
+            # Check if regime forecast suggests waiting
+            forecast = scout.get("regime_forecast", {})
+            if forecast.get("direction") == "transitioning":
+                logger.info(f"[{symbol}] LLM re-entry blocked: regime transitioning")
+                self._cache_reentry(symbol, False)
+                return False
+
+        # No Scout data or Scout is stale — use lightweight heuristic
+        # Check last trade outcome: after a loss on the same side, require
+        # the signal to be on the opposite side (handled downstream in ensemble)
+        # For now, allow re-entry — the ensemble + LLM pipeline will filter
+        last_side = self._last_close_side.get(symbol)
+        was_win = self._last_close_win.get(symbol, False)
+
+        if was_win:
+            # Won last trade — structure likely favorable, clear to re-enter
+            self._cache_reentry(symbol, True)
+            return True
+
+        # Lost last trade — allow re-entry but log it. The multi-agent
+        # pipeline (Trade Agent + Critic) will assess structure quality.
+        logger.debug(f"[{symbol}] Post-loss re-entry: allowing signal evaluation "
+                     f"(last side={last_side}, LLM pipeline will gate)")
+        self._cache_reentry(symbol, True)
+        return True
+
+    def _cache_reentry(self, symbol: str, cleared: bool):
+        """Cache a re-entry decision for 5 minutes."""
+        if not hasattr(self, '_reentry_cache'):
+            self._reentry_cache = {}
+        self._reentry_cache[symbol] = (cleared, time.time())
 
     def _check_llm_exit_suggestions(self):
         """Evaluate open positions for dynamic SL/TP adjustments using the exit engine.

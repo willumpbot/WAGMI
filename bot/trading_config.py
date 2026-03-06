@@ -269,10 +269,10 @@ class TradingConfig:
     # ── Strategy Parameters (ATR multiples, confidence floors) ──
     # Previously hardcoded across strategy files. Now centralized.
     ensemble_confidence_floor: float = field(
-        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 72.0)
+        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 65.0)
     )
     min_signal_rr: float = field(
-        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.5)
+        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.3)
     )
     min_stop_width_pct: float = field(
         default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.002)
@@ -341,14 +341,14 @@ class TradingConfig:
 
     # ── Cooldowns & Time Intervals ──
     loss_cooldown_s: int = field(
-        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 900)
-    )  # 15 min after a loss
+        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 120)
+    )  # 2 min safety floor (LLM handles structure-based re-entry in live)
     win_cooldown_s: int = field(
-        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 300)
-    )  # 5 min after a win
+        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 60)
+    )  # 1 min safety floor (LLM handles structure-based re-entry in live)
     signal_dedup_window_s: int = field(
-        default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 900)
-    )  # 15 min dedup to prevent same-candle repeats
+        default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 300)
+    )  # 5 min dedup
 
     # ── Timeframe Trend Weights ──
     tf_weight_5m: float = field(

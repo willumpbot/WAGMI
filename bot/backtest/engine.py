@@ -97,6 +97,10 @@ class BacktestEngine:
         self._candidate_logger = None
         self._active_candidates: Dict[str, 'TradeCandidate'] = {}  # symbol -> candidate
 
+        # Per-symbol re-entry gap: skip 1 candle after a close to prevent
+        # same-bar re-entry artifacts in backtest
+        self._last_close_candle: Dict[str, int] = {}  # symbol -> candle index
+
     def run(
         self,
         symbols: List[str],
@@ -324,6 +328,7 @@ class BacktestEngine:
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
                 if event.action in self._CLOSE_ACTIONS:
                     self._record_trade_outcome(event, current_price)
+                    self._last_close_candle[symbol] = i  # Track for re-entry gap
                 # LLM: run Learning Agent on closed trades
                 if self.llm and event.action in self._CLOSE_ACTIONS:
                     self.llm.clear_exit_counter(event.symbol)
@@ -347,6 +352,7 @@ class BacktestEngine:
                             cb_event.pnl - cb_event.fee, sim_time=sim_dt
                         )
                         self._record_trade_outcome(cb_event, current_price)
+                        self._last_close_candle[symbol] = i
                         if self.llm and cb_event.action in self._CLOSE_ACTIONS:
                             self.llm.clear_exit_counter(cb_event.symbol)
                             self._run_llm_learning(cb_event, current_price)
@@ -354,6 +360,11 @@ class BacktestEngine:
             # LLM: run Exit Agent on open positions
             if self.llm:
                 self._run_llm_exit(symbol, current_price, windowed, sim_dt)
+
+            # Re-entry gap: skip 1 candle after a close to prevent same-bar artifacts
+            last_close_idx = self._last_close_candle.get(symbol, -2)
+            if i <= last_close_idx + 1:
+                continue  # Let the market breathe for 1 candle after a close
 
             # Try to generate signal
             if self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt):
@@ -436,6 +447,7 @@ class BacktestEngine:
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
                 if event.action in self._CLOSE_ACTIONS:
                     self._record_trade_outcome(event, current_price)
+                    self._last_close_candle[symbol] = i
                 if self.llm and event.action in self._CLOSE_ACTIONS:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
@@ -455,12 +467,18 @@ class BacktestEngine:
                             cb_event.pnl - cb_event.fee, sim_time=sim_dt
                         )
                         self._record_trade_outcome(cb_event, current_price)
+                        self._last_close_candle[symbol] = i
                         if self.llm and cb_event.action in self._CLOSE_ACTIONS:
                             self.llm.clear_exit_counter(cb_event.symbol)
                             self._run_llm_learning(cb_event, current_price)
 
             if self.llm:
                 self._run_llm_exit(symbol, current_price, windowed, sim_dt)
+
+            # Re-entry gap: skip 1 candle after a close
+            last_close_idx = self._last_close_candle.get(symbol, -2)
+            if i <= last_close_idx + 1:
+                continue
 
             if self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt):
                 signal = ensemble.evaluate(symbol, windowed)
