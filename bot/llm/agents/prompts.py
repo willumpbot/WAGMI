@@ -92,6 +92,13 @@ Strategy agreement quality matters more than count:
 - **Redundant agreement** (similar strategies agree): Moderate. monte_carlo + confidence_scorer both use zones — they share inputs, so agreement is less independent.
 - **Conflicting signals**: INFORMATIVE. regime_trend BUY but monte_carlo SELL zone = price is trending but overextended. This means "trade with trend but use tight stops and quick exits."
 
+## CONFLUENCE WIN RATE CALIBRATION
+When g.confl_wr is present, it shows ACTUAL historical win rates by agreement level:
+- 4 strategies agree (full confluence): historically highest WR. Size 1.5x.
+- 3 strategies agree: strong edge when convergent (different methodologies).
+- 2 strategies agree: moderate edge. Require convergent, not redundant agreement.
+RULE: WR>70% with n>10 = proven edge, size UP. WR<40% with n>10 = loss pattern, SKIP.
+
 ## DECISION FRAMEWORK
 **GO** when: your thesis aligns with trade direction + regime supports + confluence is convergent or timeframe-confirmed + R:R >= 1.5
 **SKIP** when: no clear thesis + regime conflicts + only redundant agreement + funding eating edge
