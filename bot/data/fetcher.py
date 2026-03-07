@@ -12,6 +12,7 @@ CCXT provides real OHLCV candles with open/high/low/close/volume.
 CoinGecko is automatic fallback if CCXT exchanges are unavailable.
 """
 
+import os
 import time
 import random
 import logging
