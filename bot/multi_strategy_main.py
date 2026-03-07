@@ -364,14 +364,17 @@ class MultiStrategyBot:
         sym_configs = DEFAULT_SYMBOLS
         self.strategies = [
             RegimeTrendStrategy(sym_configs, config.htf_hours),
-            MonteCarloZonesStrategy(
-                sym_configs,
-                mc_sims=config.mc_num_sims,
-                mc_hours=config.mc_forward_hours,
-            ),
             ConfidenceScorerStrategy(sym_configs, data_dir="ml_data"),
             MultiTierQualityStrategy(sym_configs),
         ]
+        # monte_carlo_zones disabled — PF=0.0 in backtests, consistent loser.
+        # Re-enable via STRATEGY_MONTE_CARLO_ENABLED=true if needed.
+        if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "false").lower() == "true":
+            self.strategies.insert(1, MonteCarloZonesStrategy(
+                sym_configs,
+                mc_sims=config.mc_num_sims,
+                mc_hours=config.mc_forward_hours,
+            ))
         # Chop detector: multi-factor choppy market filter
         chop = None
         if config.enable_chop_detector:

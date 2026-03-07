@@ -24,7 +24,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from data.fetcher import DataFetcher
-from trading_config import TradingConfig, DEFAULT_SYMBOLS, DEFAULT_SYMBOL_OVERRIDES
+from trading_config import TradingConfig, DEFAULT_SYMBOLS, DEFAULT_SYMBOL_OVERRIDES, get_symbol_param
 from strategies.base import Signal
 from strategies.regime_trend import RegimeTrendStrategy
 from strategies.monte_carlo_zones import MonteCarloZonesStrategy
@@ -173,6 +173,7 @@ class BacktestEngine:
             min_votes=self.config.min_votes_required,
             veto_ratio=self.config.veto_ratio,
             chop_detector=chop,
+            confidence_floor=self.config.ensemble_confidence_floor,
         )
 
         # Fetch historical data for all symbols
@@ -309,10 +310,14 @@ class BacktestEngine:
         """Build strategy instances."""
         all_strats = {
             "regime_trend": RegimeTrendStrategy(sym_configs, self.config.htf_hours),
-            "monte_carlo_zones": MonteCarloZonesStrategy(sym_configs),
             "confidence_scorer": ConfidenceScorerStrategy(sym_configs, data_dir="backtest_ml_data"),
             "multi_tier_quality": MultiTierQualityStrategy(sym_configs),
         }
+        # monte_carlo_zones disabled — PF=0.0 (0% WR) in 10d backtest.
+        # Re-enable via STRATEGY_MONTE_CARLO_ENABLED=true if needed.
+        import os
+        if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "false").lower() == "true":
+            all_strats["monte_carlo_zones"] = MonteCarloZonesStrategy(sym_configs)
 
         if strategy_names:
             return [s for name, s in all_strats.items() if name in strategy_names]
@@ -914,10 +919,16 @@ class BacktestEngine:
             })
             return
 
+        # Per-symbol risk override (e.g., BTC=1% vs global 2%)
+        sym_risk = get_symbol_param(signal.symbol, "risk_per_trade", self.config)
+        risk_override = sym_risk if sym_risk != self.config.risk_per_trade else 0.0
+
         qty = self.risk_mgr.calculate_qty(
             fill_price, signal.sl, lev_decision.leverage, lev_decision.risk_multiplier,
             slippage_bps=slippage_bps,
             skip_notional_cap=self._raw_mode,
+            risk_per_trade_override=risk_override,
+            symbol=signal.symbol,
         )
         if qty <= 0:
             self.signal_rejections.append({

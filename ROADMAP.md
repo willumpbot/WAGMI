@@ -1,8 +1,8 @@
 # nunuIRL Trading Bot — Complete Roadmap
 
-> **Last updated**: 2026-03-03
-> **Current state**: Multi-agent LLM architecture built, risk gates wired, feedback loops closed.
-> **What's next**: Agent consistency hardening, production resilience, alpha generation.
+> **Last updated**: 2026-03-07
+> **Current state**: Profitability fixes landed. 3 active strategies (regime_trend, confidence_scorer, multi_tier_quality). 10d backtest: +14.75%, Sharpe 3.41. Agent consistency 80% built.
+> **What's next**: Validate 180d backtest → Build order execution layer → Go live.
 
 ---
 
@@ -57,7 +57,7 @@
 
 ---
 
-## 2. What's Done (Phases 1-2 Complete) <a id="2-whats-done"></a>
+## 2. What's Done (Phases 1-2.5 Complete) <a id="2-whats-done"></a>
 
 ### Phase 1: Stop Losing Money ✅
 - [x] Fixed leverage math (liquidation formula, position sizing) — `bot/execution/leverage.py`
@@ -76,62 +76,48 @@
 - [x] Risk gates wired into live execution path
 - [x] Feedback loops closed (signal quality → strategy weights → ensemble)
 
+### Phase 2.5: Profitability Overhaul ✅ (March 2026)
+**11 data-driven fixes based on 10d and 180d backtest analysis:**
+- [x] confidence_scorer: Added 6h MACD+MFI regime filter, reduced SL K=1.8→1.2 — PF 0.65→1.27
+- [x] monte_carlo_zones: Added trend filter + R:R minimum, then **disabled entirely** (PF=0.0)
+- [x] Ensemble confidence capped at 85% — prevents reaching highest leverage tiers
+- [x] Leverage compressed: Tier 5 from 3-4x→2.5-3x, Tier 6 from 4-5x→3-3.5x
+- [x] Ranging/illiquid market stops WIDENED (was backwards — tightening in noisy markets)
+- [x] Trend-flip threshold raised 1.0→1.5, moderate counter-trend REJECTS instead of flips
+- [x] Re-entry gap increased 1→3 candles (prevents revenge-trading clusters)
+- [x] Confidence floor raised 65→70% and enforced in backtest
+- [x] Hold time display bug fixed (< 60s check vs <= 0)
+- [x] MEDIUM profile: SL 0.50→0.55 ATR, TP1% 0.70→0.65
+- [x] BTC risk halved (risk_per_trade=0.01 vs 0.02, max_leverage 25→10)
+
+**Results (10-day backtest):** +14.75%, 45.2% WR, Sharpe 3.41, fee drag 16.1%.
+3 active strategies: regime_trend (PF=2.0), multi_tier_quality (PF=1.25), confidence_scorer (PF=1.27).
+
 ---
 
 ## 3. Phase 3: Agent Consistency & Thought Process Alignment <a id="3-phase-3"></a>
 
-> **Goal**: Make all 5 agents think consistently, share a unified mental model, and reinforce each other's learning.
+> **Goal**: Make all agents think consistently, share a unified mental model, and reinforce each other's learning.
+> **Status**: 80% complete — core framework built, only prompt versioning remains.
 
-### 3.1 Shared Reasoning Framework
-- [ ] **Create `bot/llm/agents/shared_context.py`** — Unified context builder
-  - Shared market axioms all agents reference (e.g., "never long alts into BTC nuke")
-  - Shared vocabulary/definitions (what "trend" means numerically, not vibes)
-  - Shared regime-action mapping (if regime=X, then acceptable actions are Y)
-  - Version the framework so agents evolve together
+### 3.1 Shared Reasoning Framework ✅
+- [x] **`bot/llm/agents/shared_context.py`** — Shared vocabulary, regime definitions, action names
+- [x] **`bot/llm/agents/thought_protocol.py`** — OBSERVE → RECALL → REASON → DECIDE → JUSTIFY
+- [x] **`bot/llm/agents/consistency_checker.py`** — Cross-agent coherence validation
 
-- [ ] **Create `bot/llm/agents/thought_protocol.py`** — Structured reasoning template
-  - Force all agents to follow: OBSERVE → RECALL → REASON → DECIDE → JUSTIFY
-  - Each step has explicit requirements (OBSERVE must cite data, RECALL must reference memory)
-  - This eliminates agents "winging it" with different reasoning styles
-  - Inject as a prefix to every agent prompt
+### 3.2 Shared Memory Protocol ✅
+- [x] Scratchpad-based memory bus in coordinator (upstream writes, downstream reads)
+- [x] Memory store with 100 notes, 7-day TTL — `bot/llm/memory_store.py`
+- [x] Deep memory with trade DNA, patterns — `bot/llm/deep_memory.py`
 
-- [ ] **Create `bot/llm/agents/consistency_checker.py`** — Cross-agent coherence validation
-  - After all agents run, check for contradictions (e.g., Regime says "panic" but Trade says "go")
-  - Score consistency 0-1, log disagreements
-  - If consistency < 0.5, re-run the Trade Agent with explicit conflict resolution prompt
-  - Track consistency over time to detect drift
-
-### 3.2 Shared Memory Protocol
-- [ ] **Create `bot/llm/agents/shared_memory.py`** — Agent-to-agent memory bus
-  - Each agent writes to a shared scratchpad during the pipeline
-  - Downstream agents read upstream scratchpad entries
-  - Persistent cross-session memory: lessons that apply to ALL agents
-  - Replace the current "inject everything" approach with structured memory routing
-
-- [ ] **Upgrade memory TTL** — Replace 50-note/48h limit
-  - Tier memory by importance: critical (no TTL), important (7 days), normal (48h), ephemeral (4h)
-  - Allow agents to promote/demote memories based on validation
-  - Learning Agent's "strong" lessons → critical tier automatically
-
-### 3.3 Agent Calibration Loop
-- [ ] **Create `bot/llm/agents/calibration.py`** — Per-agent performance tracking
-  - Track each agent's accuracy independently (Regime accuracy, Trade win rate, Critic veto value)
-  - Use calibration data to adjust agent confidence weights in the merger
-  - If Critic is consistently wrong, reduce its override power
-  - If Regime Agent nails panic detection, trust it more in panic regimes
-  - Feed calibration stats INTO each agent's prompt (they already see `self_perf`)
-
-- [ ] **Implement inter-agent feedback**
-  - After trade closes: score which agent was RIGHT and which was WRONG
-  - "Regime said trend, Trade said go, Critic approved → WIN" → all agents reinforced
-  - "Regime said range, Trade said go, Critic challenged → LOSS" → Trade penalized, Critic validated
-  - Store as structured feedback in deep memory
+### 3.3 Agent Calibration Loop ✅
+- [x] **`bot/llm/agents/calibration_ledger.py`** — Per-agent accuracy tracking
+- [x] Agent performance stats fed into prompts via `self_perf`
+- [x] Learning integration scores agents post-trade — `bot/llm/agents/learning_integration.py`
 
 ### 3.4 Prompt Versioning & A/B Testing
 - [ ] **Create `bot/llm/agents/prompt_registry.py`** — Versioned prompt management
-  - Store prompt versions with timestamps and performance metrics
-  - A/B test prompt variations (e.g., more aggressive Trade Agent vs conservative)
-  - Track which prompt version produces better outcomes
+  - A/B test prompt variations, track which version produces better outcomes
   - Rollback to previous version if new one underperforms
 
 ---
@@ -305,22 +291,19 @@
 ## 8. Critical Bugs Still Open <a id="8-critical-bugs"></a>
 
 ### Must Fix Before Live Trading
-| Bug | Location | Impact | Fix |
+| Bug | Location | Impact | Status |
 |---|---|---|---|
-| Ensemble modifies signals in-place | `ensemble.py:326-366` | Downstream logging sees flipped signal, not original | Deep-copy signal before mutation |
-| No exchange connection resilience | `data/fetcher.py` | Bot crashes on API outage | Add exponential backoff + circuit breaker |
-| Strategy data requirements incompatible | Multiple strategies | Silent no-signal when data is missing | Validate data availability before strategy eval |
-| Telegram can't parse decimals | `telegram_ingest.py:122` | Misses "97,500.50" format | Fix regex to handle comma+decimal |
-| Strategy weights recompute from ALL history equally | `data/strategy_weights.py` | Ancient trades have same weight as recent | Exponential decay weighting |
-| No position reconciliation on startup | `execution/reconciliation.py` | Lost positions after restart | Read exchange positions on boot |
+| ~~Ensemble modifies signals in-place~~ | `ensemble.py` | ~~Downstream sees flipped signal~~ | ✅ FIXED — deep copy before mutation |
+| No exchange connection resilience | `data/fetcher.py` | Bot crashes on API outage | Open — fetcher has circuit breaker but main loop needs stale data handling |
+| ~~Strategy weights all history equally~~ | `strategy_weights.py` | ~~Ancient trades same as recent~~ | ✅ FIXED — exponential decay exists |
+| No position reconciliation on startup | `execution/reconciliation.py` | Lost positions after restart | Open — code exists, not wired |
+| **No order execution to exchange** | `multi_strategy_main.py` | **All trading is paper-only** | **CRITICAL — the #1 blocker** |
 
 ### Should Fix for Reliability
-| Bug | Location | Impact | Fix |
+| Bug | Location | Impact | Status |
 |---|---|---|---|
-| LLM memory 50-note/48h limit | `memory_store.py` | Hard-won lessons forgotten | Tiered memory with variable TTL |
-| Self-teaching expensive/infrequent | `self_teaching.py` | Learning is periodic, not continuous | Learning Agent already solves this |
-| `multi_strategy_main.py` is 4,585 lines | `multi_strategy_main.py` | God object, hard to maintain | Break into modules (Phase 5) |
-| No structured logging | Various | Logs are text, hard to parse | Wire `structured_logging.py` everywhere |
+| `multi_strategy_main.py` is 4,585 lines | `multi_strategy_main.py` | God object, hard to maintain | Open — break into modules |
+| 7 pre-existing test failures | `tests/` | CB override, profile, symbol override tests | Open — not blocking functionality |
 
 ---
 
@@ -432,13 +415,17 @@ bot/feedback/parameter_tuner.py    → Parameter optimization (14KB)
 
 ## Priority Order (What to Work On Next)
 
-1. **Phase 3.1-3.2**: Agent consistency framework (shared context, thought protocol, shared memory)
-2. **Critical bugs**: Signal mutation, exchange resilience, data compatibility
-3. **Phase 3.3**: Agent calibration loop
-4. **Phase 4**: Configuration extraction
-5. **Phase 5**: Production hardening (break up main.py, integration tests)
-6. **Phase 6**: Backtesting + new strategies
-7. **Phase 7**: Advanced evolution (portfolio agent, prompt evolution, deep RL)
+> Updated March 2026. Agent consistency (Phase 3) is 80% done. Profitability fixes landed.
+
+1. **Validate 180-day backtest** — confirm profitability fixes work long-term
+2. **Build order execution layer** — THE blocker: CCXT order submission to Hyperliquid
+3. **Wire position reconciliation** — handle bot restart without losing positions
+4. **Exchange connection resilience** — stale data handling, graceful degradation
+5. **Paper trade on live API** — 48-72h validation before real money
+6. **Go live conservative** — SOL+HYPE first, 1% risk, 2x max leverage
+7. **Phase 6**: New strategies (funding rate, order flow), strategy discovery activation
+8. **Phase 4**: Config extraction (nice-to-have, not blocking profit)
+9. **Phase 7**: Advanced evolution (aspirational)
 
 ---
 
