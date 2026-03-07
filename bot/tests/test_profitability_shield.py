@@ -265,7 +265,7 @@ class TestApplyProfile:
         config = TradingConfig()
         config.environment = "paper"
         apply_profile(config)
-        assert config.max_leverage == 5.0
+        assert config.max_leverage == 25.0
         assert config.enable_smart_orders is False
 
     def test_apply_profile_live(self):
@@ -273,7 +273,7 @@ class TestApplyProfile:
         config = TradingConfig()
         config.environment = "production"
         apply_profile(config)
-        assert config.max_leverage == 5.0
+        assert config.max_leverage == 25.0
         assert config.enable_smart_orders is True
 
     def test_apply_profile_env_override_takes_priority(self):
@@ -299,9 +299,9 @@ class TestSymbolOverrides:
     def test_get_symbol_param_uses_override(self):
         from trading_config import TradingConfig, get_symbol_param
         config = TradingConfig()
-        # DOGE has max_leverage=3.0 in overrides (conservative for memecoin)
+        # DOGE has max_leverage=12.0 in overrides
         val = get_symbol_param("DOGE", "max_leverage", config)
-        assert val == 3.0
+        assert val == 12.0
 
     def test_get_symbol_param_falls_back_to_global(self):
         from trading_config import TradingConfig, get_symbol_param

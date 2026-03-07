@@ -49,7 +49,7 @@ class CircuitBreaker:
         max_consecutive_losses: int = 5,
         max_drawdown_pct: float = None,
         cooldown_minutes: int = 60,
-        max_cb_overrides: int = 2,
+        max_cb_overrides: int = 0,
     ):
         if max_drawdown_pct is None:
             max_drawdown_pct = float(os.getenv("MAX_DRAWDOWN_PCT", "0.10"))

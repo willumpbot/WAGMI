@@ -238,9 +238,9 @@ class TestDailyLossCalculation:
         cb.record_trade(-200.0, 9800.0)  # Trip it
         assert cb.tripped
 
-        # No overrides allowed, even at very high confidence
-        assert not cb.is_trading_allowed(confidence=95, max_overrides=2)
-        assert not cb.is_trading_allowed(confidence=99, max_overrides=2)
+        # No overrides allowed, even at very high confidence (default max_overrides=0)
+        assert not cb.is_trading_allowed(confidence=95)
+        assert not cb.is_trading_allowed(confidence=99)
 
     def test_position_sizing_min_stop_width(self):
         """RiskManager.calculate_qty should reject near-zero stops."""
