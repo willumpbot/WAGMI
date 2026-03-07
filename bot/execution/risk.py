@@ -338,7 +338,8 @@ class RiskManager:
     def calculate_qty(self, entry: float, stop_loss: float,
                        leverage: float = 1.0, risk_multiplier: float = 1.0,
                        symbol: str = "", slippage_bps: int = 0,
-                       risk_per_trade_override: float = 0.0) -> float:
+                       risk_per_trade_override: float = 0.0,
+                       skip_notional_cap: bool = False) -> float:
         """Calculate position quantity based on fixed-risk sizing.
 
         Formula (keeps dollar risk constant regardless of leverage):
@@ -377,14 +378,15 @@ class RiskManager:
         qty = risk_usd / (effective_stop * effective_leverage)
 
         # Notional cap: prevent position from exceeding reasonable bounds
-        notional = qty * entry
-        max_notional = self.equity * effective_leverage * 2
-        if notional > max_notional:
-            qty = max_notional / entry
-            logger.warning(
-                f"[SIZE] {symbol or '?'} notional capped: "
-                f"${notional:.0f} > max ${max_notional:.0f}"
-            )
+        if not skip_notional_cap:
+            notional = qty * entry
+            max_notional = self.equity * effective_leverage * 2
+            if notional > max_notional:
+                qty = max_notional / entry
+                logger.warning(
+                    f"[SIZE] {symbol or '?'} notional capped: "
+                    f"${notional:.0f} > max ${max_notional:.0f}"
+                )
         logger.info(
             f"[SIZE] {symbol or '?'} risk=${risk_usd:.2f} "
             f"stop={stop_width:.6f}+slip={slippage_spread:.6f} lev={effective_leverage:.1f}x "

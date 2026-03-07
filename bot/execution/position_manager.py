@@ -448,13 +448,28 @@ class PositionManager:
         pos.realized_pnl += (pnl - fee)
         pos.qty = round_qty(pos.symbol, pos.qty - close_qty)
 
-        # Move SL to breakeven + buffer covering round-trip fees + slippage margin
-        # 2x taker fee (entry+exit) + 0.1% slippage/noise buffer to avoid false SL hits
+        # Move SL to breakeven accounting for locked-in TP1 profit.
+        # The remaining position has a cost basis adjusted by the profit already banked.
+        # This prevents premature SL hits by giving the remaining qty more room.
+        # Formula: breakeven = entry - (locked_pnl / (remaining_qty * leverage)) for LONG
+        remaining_qty = pos.qty
         fee_buffer = pos.entry * (self.taker_fee_bps * 2 / 10000.0 + 0.001)
-        if pos.side == "LONG":
-            pos.sl = round_price(pos.symbol, pos.entry + fee_buffer)
+        if remaining_qty > 0 and pos.leverage > 0:
+            # How much room does the locked-in profit give us?
+            profit_cushion = pos.realized_pnl / (remaining_qty * pos.leverage)
+            if pos.side == "LONG":
+                # Entry - cushion = adjusted breakeven (lower = more room)
+                be_price = pos.entry - profit_cushion + fee_buffer
+                pos.sl = round_price(pos.symbol, be_price)
+            else:
+                be_price = pos.entry + profit_cushion - fee_buffer
+                pos.sl = round_price(pos.symbol, be_price)
         else:
-            pos.sl = round_price(pos.symbol, pos.entry - fee_buffer)
+            # Fallback to simple breakeven
+            if pos.side == "LONG":
+                pos.sl = round_price(pos.symbol, pos.entry + fee_buffer)
+            else:
+                pos.sl = round_price(pos.symbol, pos.entry - fee_buffer)
 
         pos.peak_price = price
 
@@ -481,6 +496,13 @@ class PositionManager:
                 "new_sl": pos.sl,
                 "tp1_close_pct": dynamic_close_pct,
                 "entry_reasons": pos.entry_reasons,
+                "num_agree": (pos.entry_reasons or {}).get("num_agree", 0),
+                "strategies_agree": (pos.entry_reasons or {}).get("strategies_agree", []),
+                "entry": pos.entry,
+                "sl": pos.original_sl,
+                "tp1": pos.tp1,
+                "tp2": pos.tp2,
+                "confidence": pos.confidence,
             },
         )
         self.trade_log.append(event)
@@ -638,6 +660,8 @@ class PositionManager:
                 "outcome": pos.outcome,
                 "state_path": pos.state_path_str,
                 "entry_reasons": pos.entry_reasons,
+                "num_agree": (pos.entry_reasons or {}).get("num_agree", 0),
+                "strategies_agree": (pos.entry_reasons or {}).get("strategies_agree", []),
                 "entry_type": profile_data.get("entry_type", "UNKNOWN"),
                 "primary_driver": profile_data.get("primary_driver", ""),
                 "regime": profile_data.get("regime", ""),
@@ -770,8 +794,9 @@ class PositionManager:
                   ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY",
                    "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE", "BACKTEST_END", "HOLD_LIMIT",
                    "CIRCUIT_BREAKER")]
+        opens = [e for e in self.trade_log if e.action == "OPEN"]
         if not closed:
-            return {"total_trades": 0}
+            return {"total_trades": 0, "positions_opened": len(opens), "close_events": 0}
 
         wins = [e for e in closed if e.pnl > 0]
         losses = [e for e in closed if e.pnl <= 0]
@@ -779,7 +804,9 @@ class PositionManager:
         total_fees = sum(e.fee for e in closed)
 
         return {
-            "total_trades": len(closed),
+            "positions_opened": len(opens),
+            "close_events": len(closed),
+            "total_trades": len(closed),  # backwards compat
             "wins": len(wins),
             "losses": len(losses),
             "win_rate": len(wins) / len(closed) if closed else 0,

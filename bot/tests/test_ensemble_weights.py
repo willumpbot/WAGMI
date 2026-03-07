@@ -284,8 +284,8 @@ class TestWeightedEnsemble:
         ]
 
         merged = ensemble._merge_signals("BTC", signals)
-        # Plain average: (80+60)/2 = 70, + consensus bonus 5 = 75
-        assert merged.confidence == pytest.approx(75.0)
+        # Plain average: (80+60)/2 = 70, * 1.03 consensus mult (2 agree) = 72.1
+        assert merged.confidence == pytest.approx(72.1, abs=0.1)
 
 
 # ─── Weighted veto mode tests ────────────────────────────────────
@@ -463,10 +463,11 @@ class TestWeightedVeto:
 
             result = ensemble._weighted_veto("BTC", signals)
             assert result is not None
-            # MT weight = (9+1)/(10+2) = 0.833
-            # Penalty = 0.833 * 15 * (65/100) = 8.1 (confidence-weighted)
-            assert result.metadata["opposition_penalty"] > 5, (
-                "High-accuracy opposer should impose meaningful penalty"
+            # With proportional penalty (based on veto margin), the penalty is
+            # smaller than the old arbitrary 15x multiplier but still present.
+            # The key is that opposition IS tracked and applied.
+            assert result.metadata["opposition_penalty"] > 0, (
+                "High-accuracy opposer should impose a penalty"
             )
 
         finally:

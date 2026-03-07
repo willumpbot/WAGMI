@@ -43,7 +43,7 @@ class EnsembleStrategy:
         min_votes: int = 2,
         weights: Optional[Dict[str, float]] = None,
         weight_manager=None,
-        veto_ratio: float = 1.1,
+        veto_ratio: float = 1.5,  # Match trading_config.py default
         chop_detector=None,
         confidence_floor: float = 65.0,
     ):
@@ -160,11 +160,12 @@ class EnsembleStrategy:
                 error_count += 1
                 logger.warning(f"[{symbol}] {strategy.name} error: {e}")
 
-        # Cache individual strategy signals for context extraction (originals)
-        self._last_signals[symbol] = {s.strategy: s for s in signals}
-
-        # Deep copy signals before mutation — originals stay clean in cache
+        # Deep copy signals FIRST, then cache copies — prevents mutation between
+        # cache write and copy if any code path modifies signals in-place.
         signals = [deepcopy(s) for s in signals]
+
+        # Cache copies for context extraction (these won't be mutated further)
+        self._last_signals[symbol] = {s.strategy: deepcopy(s) for s in signals}
 
         if not signals:
             return None
@@ -394,15 +395,19 @@ class EnsembleStrategy:
         is_buy = side == "BUY"
 
         # Thresholds adjusted for weighted scoring (max ±5.0 instead of ±4)
+        # Trend bonuses are MULTIPLICATIVE to prevent confidence inflation.
+        # Strong alignment: 1.06x (70→74.2)  Mild alignment: 1.03x (70→72.1)
         if abs(total) >= 2.5:
             trend_bullish = total > 0
             if is_buy == trend_bullish:
-                # Aligned with strong trend — bonus
-                result.confidence = min(100, result.confidence + 8)
-                result.metadata["trend_adjustment"] = 8
+                # Aligned with strong trend — multiplicative bonus
+                old_conf = result.confidence
+                result.confidence = min(100, result.confidence * 1.06)
+                adj = round(result.confidence - old_conf, 1)
+                result.metadata["trend_adjustment"] = adj
                 logger.info(
                     f"[{symbol}] Strong trend aligned {side}: "
-                    f"score={total:.1f}/{n} [{detail_str}] +8 bonus"
+                    f"score={total:.1f}/{n} [{detail_str}] *1.06 (+{adj:.1f})"
                 )
             else:
                 # Strong counter-trend — FLIP the signal (returns new object)
@@ -418,12 +423,14 @@ class EnsembleStrategy:
         elif abs(total) >= 1.0:
             trend_bullish = total > 0
             if is_buy == trend_bullish:
-                # Mild alignment — small bonus
-                result.confidence = min(100, result.confidence + 3)
-                result.metadata["trend_adjustment"] = 3
+                # Mild alignment — small multiplicative bonus
+                old_conf = result.confidence
+                result.confidence = min(100, result.confidence * 1.03)
+                adj = round(result.confidence - old_conf, 1)
+                result.metadata["trend_adjustment"] = adj
                 logger.info(
                     f"[{symbol}] Trend aligned {side}: "
-                    f"score={total:.1f}/{n} [{detail_str}] +3 bonus"
+                    f"score={total:.1f}/{n} [{detail_str}] *1.03 (+{adj:.1f})"
                 )
             else:
                 # Moderate counter-trend — FLIP the signal (returns new object)
@@ -529,11 +536,12 @@ class EnsembleStrategy:
 
         merged = self._merge_signals(symbol, chosen)
 
-        # Confidence penalty for opposition (even when vote passes)
+        # Confidence penalty for opposition, weighted by opposer's confidence.
+        # Previously flat 10pts per opposer regardless of their conviction.
         if opposition:
-            penalty = len(opposition) * 10
+            penalty = sum(s.confidence / 100 * 8 for s in opposition)
             merged.confidence = max(0, merged.confidence - penalty)
-            merged.metadata["opposition_penalty"] = penalty
+            merged.metadata["opposition_penalty"] = round(penalty, 1)
             logger.info(
                 f"[{symbol}] Opposition penalty: -{penalty} confidence "
                 f"(opposed by {[s.strategy for s in opposition]})"
@@ -591,6 +599,17 @@ class EnsembleStrategy:
             chosen_tf = self.STRATEGY_TIMEFRAME.get(
                 max(chosen, key=lambda s: s.confidence).strategy, "swing"
             )
+            # Opposition penalty proportional to how close the veto was to firing.
+            # A signal that barely passed the veto gets a bigger penalty than one
+            # that dominated. The old 15x arbitrary multiplier was crushing
+            # legitimate signals by 10-30 points regardless of veto margin.
+            if oppose_strength > 0:
+                safety_margin = chosen_strength / (oppose_strength * self.veto_ratio) - 1.0
+                safety_margin = max(0.0, min(safety_margin, 1.0))  # Clamp 0-1
+            else:
+                safety_margin = 1.0  # No opposition strength = no penalty
+            penalty_intensity = max(0.0, 1.0 - safety_margin)  # 0 = safe, 1 = barely passed
+
             penalty = 0.0
             for s in opposition:
                 raw_weight = self._get_strategy_weight(s.strategy)
@@ -601,7 +620,7 @@ class EnsembleStrategy:
                     tf_discount = 0.4  # Cross-timeframe = much weaker opposition
                 else:
                     tf_discount = 1.0  # Same timeframe = full penalty
-                penalty += capped_weight * 15 * (s.confidence / 100) * tf_discount
+                penalty += capped_weight * 5 * (s.confidence / 100) * tf_discount * penalty_intensity
             merged.confidence = max(0, merged.confidence - penalty)
             merged.metadata["opposition_penalty"] = round(penalty, 1)
             opp_names = [s.strategy for s in opposition]
@@ -666,15 +685,20 @@ class EnsembleStrategy:
         else:
             weighted_conf = sum(s.confidence for s in signals) / len(signals)
 
-        # Consensus bonus: higher rewards now that strategies use different methodologies
-        # 2 agree: +5, 3 agree: +9, 4 agree: +13
-        # (Previously: +3/+5/+6 when strategies were redundant)
+        # Consensus bonus: MULTIPLICATIVE scaling (not additive).
+        # Previously additive (+5 to +18 pts) which catapulted 70% base signals
+        # into 90%+ territory → highest leverage tier → catastrophic losses when wrong.
+        # Multiplicative preserves relative ordering: a 70% signal stays in its tier.
+        #   2 agree: 1.05x (70→73.5)    3 agree: 1.08x (70→75.6)
+        #   4 agree: 1.10x (70→77.0)    unanimous: 1.13x (70→79.1)
         n_agree = len(signals)
-        consensus_bonus = min(5 * (n_agree - 1), 5 + 4 * (n_agree - 2)) if n_agree >= 2 else 0
+        consensus_mult = 1.0
+        if n_agree >= 2:
+            consensus_mult = 1.0 + 0.03 * (n_agree - 1)  # 1.03, 1.06, 1.09
         active_count = len(self.strategies) - len(self._disabled_strategies)
         if n_agree == active_count and n_agree >= 3:
-            consensus_bonus += 5  # Unanimous agreement bonus
-        combined_conf = min(100, weighted_conf + consensus_bonus)
+            consensus_mult += 0.04  # Unanimous bonus
+        combined_conf = min(100, weighted_conf * consensus_mult)
 
         # Widest SL (most conservative), average TP1 (balanced), widest TP2 (aggressive)
         # Using average TP1 prevents zone-based strategies from pulling targets too close
@@ -711,6 +735,9 @@ class EnsembleStrategy:
                 "num_agree": len(signals),
                 "total_strategies": len(self.strategies),
                 "individual_confidences": {s.strategy: s.confidence for s in signals},
+                "raw_weighted_conf": round(weighted_conf, 2),
+                "consensus_mult": round(consensus_mult, 3),
+                "combined_conf": round(combined_conf, 2),
                 "strategy_weights": {s.strategy: round(self._get_strategy_weight(s.strategy), 3) for s in signals},
                 "per_signal_atr": per_signal_atr,
                 "per_signal_sl": per_signal_sl,

@@ -82,6 +82,11 @@ def cmd_backtest(args):
         )
 
     engine = BacktestEngine(config, llm_integration=llm_integration)
+
+    raw_mode = getattr(args, "raw", False)
+    if raw_mode:
+        engine.enable_raw_mode()
+
     symbols = [s.strip().upper() for s in args.symbols.split(",")]
     strategies = [s.strip() for s in args.strategies.split(",") if s.strip()] or None
 
@@ -92,6 +97,9 @@ def cmd_backtest(args):
         print("  self-teaching knowledge base, growth orchestrator, insight journal")
     else:
         print(f"Running backtest: {symbols} | {args.days} days | equity=${args.equity:,.0f}")
+
+    if raw_mode:
+        print("  RAW MODE: Circuit breakers, notional caps, and position limits DISABLED")
 
     if use_llm:
         print(f"  LLM Agents: ENABLED (budget=${budget:.2f})")
@@ -379,6 +387,7 @@ Commands:
     sub_bt.add_argument("--budget", type=float, default=5.0, help="Max LLM API spend in USD (default: $5)")
     sub_bt.add_argument("--resume", action="store_true", help="Resume LLM backtest from last checkpoint")
     sub_bt.add_argument("--csv", default="", help="Export per-trade timeline to CSV file")
+    sub_bt.add_argument("--raw", action="store_true", help="Disable circuit breakers, notional caps, and risk gates for raw strategy analysis")
 
     # Signals
     sub_sig = subparsers.add_parser("signals", help="One-shot signal check")

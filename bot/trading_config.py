@@ -272,7 +272,7 @@ class TradingConfig:
         default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 65.0)
     )
     min_signal_rr: float = field(
-        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.3)
+        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.5)
     )
     min_stop_width_pct: float = field(
         default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.002)
