@@ -357,6 +357,9 @@ class BacktestEngine:
             # Check existing positions
             events = self.pos_mgr.update_price(symbol, current_price)
             for event in events:
+                # Tag close events with simulated time for hold duration calculation
+                if event.action in self._CLOSE_ACTIONS:
+                    event.metadata["close_sim_time"] = str(sim_dt)
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
                 if event.action in self._CLOSE_ACTIONS:
                     self._record_trade_outcome(event, current_price)
@@ -426,6 +429,7 @@ class BacktestEngine:
                         candidate.llm_confidence = signal.confidence
                         candidate.llm_notes = signal.metadata.get("llm_notes")
                         self._active_candidates[symbol] = candidate
+                        signal.metadata["sim_time"] = str(sim_dt)
                         self._execute_signal(signal, current_price)
                     else:
                         # LLM vetoed — log candidate with flat action
@@ -497,6 +501,8 @@ class BacktestEngine:
 
             events = self.pos_mgr.update_price(symbol, current_price)
             for event in events:
+                if event.action in self._CLOSE_ACTIONS:
+                    event.metadata["close_sim_time"] = str(sim_dt)
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
                 if event.action in self._CLOSE_ACTIONS:
                     self._record_trade_outcome(event, current_price)
@@ -550,6 +556,7 @@ class BacktestEngine:
                         candidate.llm_confidence = signal.confidence
                         candidate.llm_notes = signal.metadata.get("llm_notes")
                         self._active_candidates[symbol] = candidate
+                        signal.metadata["sim_time"] = str(sim_dt)
                         self._execute_signal(signal, current_price)
                     else:
                         candidate.llm_action = "flat"
@@ -953,6 +960,7 @@ class BacktestEngine:
                 "strategy": signal.strategy,
                 "num_agree": signal.metadata.get("num_agree", 1),
                 "strategies_agree": signal.metadata.get("strategies_agree", [signal.strategy]),
+                "sim_time": signal.metadata.get("sim_time", ""),
             },
             trade_profile=trade_prof,
             notes=position_notes,
@@ -1312,10 +1320,11 @@ class BacktestEngine:
         positions = []
         current_pos: Dict[str, Dict] = {}
 
-        for event in self.pos_mgr.trade_log:
+        for idx, event in enumerate(self.pos_mgr.trade_log):
             if event.action == "OPEN":
                 current_pos[event.symbol] = {
                     "open": event,
+                    "open_idx": idx,
                     "closes": [],
                     "pnl": 0.0,
                     "fees": 0.0,
@@ -1335,7 +1344,24 @@ class BacktestEngine:
                         # Final close — position complete
                         pos["final_action"] = event.action
                         meta = event.metadata or {}
-                        pos["hold_time_s"] = meta.get("hold_time_s", 0)
+                        # hold_time_s may be 0 in backtest (simulated time).
+                        # Fall back to counting close events as a rough proxy:
+                        # open→close events span = approximate candles held.
+                        hold_s = meta.get("hold_time_s", 0)
+                        if hold_s <= 0:
+                            # In backtest, wallclock hold_time is ~0.
+                            # Use sim_time from entry_reasons + close_sim_time.
+                            entry_reasons = meta.get("entry_reasons") or {}
+                            open_sim = entry_reasons.get("sim_time", "")
+                            close_sim = meta.get("close_sim_time", "")
+                            if open_sim and close_sim:
+                                try:
+                                    open_t = pd.Timestamp(open_sim)
+                                    close_t = pd.Timestamp(close_sim)
+                                    hold_s = max((close_t - open_t).total_seconds(), 0)
+                                except Exception:
+                                    pass
+                        pos["hold_time_s"] = hold_s
                         pos["confidence"] = meta.get("confidence", 0)
                         pos["num_agree"] = meta.get("num_agree", 0)
                         pos["strategies_agree"] = meta.get("strategies_agree", [])
