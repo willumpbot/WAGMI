@@ -481,6 +481,13 @@ class PositionManager:
                 "new_sl": pos.sl,
                 "tp1_close_pct": dynamic_close_pct,
                 "entry_reasons": pos.entry_reasons,
+                "num_agree": (pos.entry_reasons or {}).get("num_agree", 0),
+                "strategies_agree": (pos.entry_reasons or {}).get("strategies_agree", []),
+                "entry": pos.entry,
+                "sl": pos.original_sl,
+                "tp1": pos.tp1,
+                "tp2": pos.tp2,
+                "confidence": pos.confidence,
             },
         )
         self.trade_log.append(event)
@@ -772,8 +779,9 @@ class PositionManager:
                   ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT", "EMERGENCY",
                    "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE", "BACKTEST_END", "HOLD_LIMIT",
                    "CIRCUIT_BREAKER")]
+        opens = [e for e in self.trade_log if e.action == "OPEN"]
         if not closed:
-            return {"total_trades": 0}
+            return {"total_trades": 0, "positions_opened": len(opens), "close_events": 0}
 
         wins = [e for e in closed if e.pnl > 0]
         losses = [e for e in closed if e.pnl <= 0]
@@ -781,7 +789,9 @@ class PositionManager:
         total_fees = sum(e.fee for e in closed)
 
         return {
-            "total_trades": len(closed),
+            "positions_opened": len(opens),
+            "close_events": len(closed),
+            "total_trades": len(closed),  # backwards compat
             "wins": len(wins),
             "losses": len(losses),
             "win_rate": len(wins) / len(closed) if closed else 0,

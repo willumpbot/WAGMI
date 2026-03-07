@@ -100,6 +100,9 @@ class BacktestEngine:
         self.signals_generated: List[Dict] = []
         self.cb_events: List[Dict] = []  # Circuit breaker trip log
         self.signals_blocked_by_cb = 0  # Signals skipped due to CB
+        self.signal_rejections: List[Dict] = []  # Track why signals were rejected
+        self.candle_stats = {"total": 0, "signal": 0, "no_signal": 0, "cb_blocked": 0}
+        self.symbol_pnl: Dict[str, float] = {}  # Per-symbol equity attribution
 
         # Candidate tracking for counterfactual analysis
         self._candidate_logger = None
@@ -259,6 +262,10 @@ class BacktestEngine:
 
             data = all_data.get(symbol, {})
             df_1h = data.get("1h", pd.DataFrame())
+
+            # Track equity before this symbol's walk for attribution
+            equity_before = self.risk_mgr.equity
+
             if df_1h.empty:
                 # Try daily data for zone strategies
                 df_daily = data.get("daily", pd.DataFrame())
@@ -269,6 +276,8 @@ class BacktestEngine:
             else:
                 self._walk_hourly(symbol, data, ensemble)
 
+            # Record per-symbol equity attribution
+            self.symbol_pnl[symbol] = self.risk_mgr.equity - equity_before
             symbols_completed.append(symbol)
 
         # Flush LLM decisions and generate report
@@ -398,10 +407,12 @@ class BacktestEngine:
                 continue  # Let the market breathe for 1 candle after a close
 
             # Try to generate signal — track CB blocks
+            self.candle_stats["total"] += 1
             cb_blocked = not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt)
             if not cb_blocked:
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal:
+                    self.candle_stats["signal"] += 1
                     # Create candidate for dual-world tracking
                     candidate = self._create_candidate(signal, sim_dt)
 
@@ -420,7 +431,10 @@ class BacktestEngine:
                         # LLM vetoed — log candidate with flat action
                         candidate.llm_action = "flat"
                         self._candidate_logger.log_candidate(candidate)
+                else:
+                    self.candle_stats["no_signal"] += 1
             else:
+                self.candle_stats["cb_blocked"] += 1
                 self.signals_blocked_by_cb += 1
 
             # Record equity with CB state
@@ -519,10 +533,12 @@ class BacktestEngine:
             if i <= last_close_idx + 1:
                 continue
 
+            self.candle_stats["total"] += 1
             cb_blocked = not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt)
             if not cb_blocked:
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal:
+                    self.candle_stats["signal"] += 1
                     # Create candidate for dual-world tracking
                     candidate = self._create_candidate(signal, sim_dt)
 
@@ -538,7 +554,10 @@ class BacktestEngine:
                     else:
                         candidate.llm_action = "flat"
                         self._candidate_logger.log_candidate(candidate)
+                else:
+                    self.candle_stats["no_signal"] += 1
             else:
+                self.candle_stats["cb_blocked"] += 1
                 self.signals_blocked_by_cb += 1
 
             self.equity_curve.append({
@@ -870,6 +889,11 @@ class BacktestEngine:
         )
 
         if lev_decision.leverage <= 0:
+            self.signal_rejections.append({
+                "symbol": signal.symbol, "strategy": signal.strategy,
+                "confidence": signal.confidence, "side": signal.side,
+                "gate": "leverage", "reason": lev_decision.reason,
+            })
             return
 
         qty = self.risk_mgr.calculate_qty(
@@ -878,6 +902,11 @@ class BacktestEngine:
             skip_notional_cap=self._raw_mode,
         )
         if qty <= 0:
+            self.signal_rejections.append({
+                "symbol": signal.symbol, "strategy": signal.strategy,
+                "confidence": signal.confidence, "side": signal.side,
+                "gate": "sizing", "reason": "qty=0 (stop too narrow or equity too low)",
+            })
             return
 
         side = "LONG" if signal.side == "BUY" else "SHORT"
@@ -968,14 +997,29 @@ class BacktestEngine:
         """Generate comprehensive backtest report."""
         trade_summary = self.pos_mgr.get_trade_summary()
 
-        # Equity curve stats
+        # Equity curve stats — use running peak for correct max drawdown
         if self.equity_curve:
             equities = [e["equity"] for e in self.equity_curve]
-            peak = max(equities)
-            drawdowns = [(peak - e) / peak for e in equities]
-            max_drawdown = max(drawdowns) if drawdowns else 0
+            running_peak = equities[0]
+            max_drawdown = 0
+            max_dd_duration = 0
+            dd_start = 0
+            for idx, e in enumerate(equities):
+                running_peak = max(running_peak, e)
+                if running_peak > 0:
+                    dd = (running_peak - e) / running_peak
+                    max_drawdown = max(max_drawdown, dd)
+                    if dd > 0 and dd_start == 0:
+                        dd_start = idx
+                    elif dd == 0:
+                        if dd_start > 0:
+                            max_dd_duration = max(max_dd_duration, idx - dd_start)
+                        dd_start = 0
+            if dd_start > 0:
+                max_dd_duration = max(max_dd_duration, len(equities) - dd_start)
         else:
             max_drawdown = 0
+            max_dd_duration = 0
 
         report = {
             "config": {
@@ -1002,6 +1046,13 @@ class BacktestEngine:
             "by_agreement": self._report_by_agreement(),
             "strategy_health": self._report_strategy_health(),
             "exit_types": self._report_exit_types(),
+            "signal_funnel": self._report_signal_funnel(),
+            "positions": self._report_positions(),
+            "costs": self._report_costs(),
+            "confidence_analysis": self._report_confidence_analysis(),
+            "risk_metrics": self._report_risk_metrics(max_drawdown, max_dd_duration),
+            "trailing_analysis": self._report_trailing_analysis(),
+            "symbol_pnl": self.symbol_pnl,
             "recommendations": self._generate_recommendations(),
             "equity_curve": self.equity_curve,
         }
@@ -1148,13 +1199,18 @@ class BacktestEngine:
         return result
 
     def _report_strategy_health(self) -> Dict[str, Any]:
-        """Per-strategy health metrics: PF, EV, streaks, worst trade."""
-        # Track contributing strategies, not just "ensemble"
+        """Per-strategy health metrics: PF, EV, streaks, worst trade.
+
+        PnL is attributed proportionally: if 2 strategies agreed on a trade,
+        each gets credited with 50% of the PnL (not 100% each).
+        """
         contrib: Dict[str, Dict] = {}
         for event in self.pos_mgr.trade_log:
             if event.action in self._CLOSE_ACTIONS:
                 meta = event.metadata or {}
                 strategies = meta.get("strategies_agree", [])
+                n_strats = max(len(strategies), 1)
+                attributed_pnl = event.pnl / n_strats
                 for strat in strategies:
                     if strat not in contrib:
                         contrib[strat] = {
@@ -1165,16 +1221,16 @@ class BacktestEngine:
                         }
                     c = contrib[strat]
                     c["trades"] += 1
-                    c["pnl_curve"].append(event.pnl)
-                    if event.pnl > 0:
+                    c["pnl_curve"].append(attributed_pnl)
+                    if attributed_pnl > 0:
                         c["wins"] += 1
-                        c["gross_win"] += event.pnl
+                        c["gross_win"] += attributed_pnl
                         c["_cur_streak"] = 0
                     else:
-                        c["gross_loss"] += abs(event.pnl)
+                        c["gross_loss"] += abs(attributed_pnl)
                         c["_cur_streak"] += 1
                         c["max_loss_streak"] = max(c["max_loss_streak"], c["_cur_streak"])
-                        c["worst_trade"] = min(c["worst_trade"], event.pnl)
+                        c["worst_trade"] = min(c["worst_trade"], attributed_pnl)
 
         result = {}
         for strat, c in contrib.items():
@@ -1219,6 +1275,294 @@ class BacktestEngine:
             stats["avg_pnl"] = round(stats["pnl"] / t, 2) if t > 0 else 0
             stats["pnl"] = round(stats["pnl"], 2)
         return result
+
+    # ── New Diagnostic Report Methods ─────────────────────────────────
+
+    def _report_signal_funnel(self) -> Dict[str, Any]:
+        """Signal pipeline conversion funnel — where signals are born and where they die."""
+        total = self.candle_stats["total"]
+        no_signal = self.candle_stats["no_signal"]
+        cb_blocked = self.candle_stats["cb_blocked"]
+        signal_gen = self.candle_stats["signal"]
+
+        # Count rejections by gate
+        gate_counts = {}
+        for rej in self.signal_rejections:
+            gate = rej.get("gate", "unknown")
+            gate_counts[gate] = gate_counts.get(gate, 0) + 1
+
+        executed = len(self.signals_generated)
+        llm_vetoed = signal_gen - executed - sum(gate_counts.values())
+        if llm_vetoed < 0:
+            llm_vetoed = 0
+
+        return {
+            "candles_processed": total,
+            "no_signal": no_signal,
+            "cb_blocked": cb_blocked,
+            "signals_generated": signal_gen,
+            "gate_rejections": gate_counts,
+            "llm_vetoed": llm_vetoed,
+            "executed": executed,
+            "conversion_rate": round(executed / total * 100, 1) if total > 0 else 0,
+        }
+
+    def _report_positions(self) -> Dict[str, Any]:
+        """Group close events into actual positions for lifecycle analysis."""
+        positions = []
+        current_pos: Dict[str, Dict] = {}
+
+        for event in self.pos_mgr.trade_log:
+            if event.action == "OPEN":
+                current_pos[event.symbol] = {
+                    "open": event,
+                    "closes": [],
+                    "pnl": 0.0,
+                    "fees": 0.0,
+                    "hit_tp1": False,
+                    "symbol": event.symbol,
+                    "side": getattr(event, "side", ""),
+                }
+            elif event.action in self._CLOSE_ACTIONS:
+                pos = current_pos.get(event.symbol)
+                if pos:
+                    pos["closes"].append(event)
+                    pos["pnl"] += event.pnl
+                    pos["fees"] += event.fee
+                    if event.action == "TP1":
+                        pos["hit_tp1"] = True
+                    else:
+                        # Final close — position complete
+                        pos["final_action"] = event.action
+                        meta = event.metadata or {}
+                        pos["hold_time_s"] = meta.get("hold_time_s", 0)
+                        pos["confidence"] = meta.get("confidence", 0)
+                        pos["num_agree"] = meta.get("num_agree", 0)
+                        pos["strategies_agree"] = meta.get("strategies_agree", [])
+                        positions.append(pos)
+                        del current_pos[event.symbol]
+
+        if not positions:
+            return {"count": 0}
+
+        # Classify outcomes
+        outcomes = {}
+        winners = [p for p in positions if p["pnl"] > 0]
+        losers = [p for p in positions if p["pnl"] <= 0]
+        hit_tp1 = [p for p in positions if p["hit_tp1"]]
+        hold_times = [p["hold_time_s"] for p in positions if p["hold_time_s"] > 0]
+
+        for p in positions:
+            if p["hit_tp1"]:
+                outcome_key = f"TP1 -> {p.get('final_action', 'unknown')}"
+            else:
+                outcome_key = p.get("final_action", "unknown")
+            outcomes[outcome_key] = outcomes.get(outcome_key, 0) + 1
+
+        win_pnls = [p["pnl"] for p in winners]
+        loss_pnls = [p["pnl"] for p in losers]
+
+        return {
+            "count": len(positions),
+            "win_rate": round(len(winners) / len(positions) * 100, 1),
+            "hit_tp1_count": len(hit_tp1),
+            "hit_tp1_pct": round(len(hit_tp1) / len(positions) * 100, 1),
+            "outcomes": outcomes,
+            "avg_hold_h": round(sum(hold_times) / len(hold_times) / 3600, 1) if hold_times else 0,
+            "median_hold_h": round(sorted(hold_times)[len(hold_times) // 2] / 3600, 1) if hold_times else 0,
+            "avg_winner": round(sum(win_pnls) / len(win_pnls), 2) if win_pnls else 0,
+            "avg_loser": round(sum(loss_pnls) / len(loss_pnls), 2) if loss_pnls else 0,
+            "largest_winner": round(max(win_pnls), 2) if win_pnls else 0,
+            "largest_loser": round(min(loss_pnls), 2) if loss_pnls else 0,
+            "payoff_ratio": round(abs(sum(win_pnls) / len(win_pnls)) / abs(sum(loss_pnls) / len(loss_pnls)), 2) if loss_pnls and win_pnls and sum(loss_pnls) != 0 else 0,
+        }
+
+    def _report_costs(self) -> Dict[str, Any]:
+        """Fee and funding cost breakdown — explains gross-to-net PnL gap."""
+        gross_pnl = 0.0
+        total_fees = 0.0
+        total_funding = 0.0
+        close_count = 0
+
+        for event in self.pos_mgr.trade_log:
+            if event.action in self._CLOSE_ACTIONS:
+                gross_pnl += event.pnl
+                total_fees += event.fee
+                close_count += 1
+                meta = event.metadata or {}
+                if event.action != "TP1":
+                    total_funding += meta.get("funding_costs", 0)
+
+        net_pnl = gross_pnl - total_fees - total_funding
+        fee_drag_pct = round(total_fees / gross_pnl * 100, 1) if gross_pnl > 0 else 0
+
+        # Break-even win rate: given avg win/loss sizes, what WR covers fees?
+        wins = [e.pnl for e in self.pos_mgr.trade_log if e.action in self._CLOSE_ACTIONS and e.pnl > 0]
+        losses = [e.pnl for e in self.pos_mgr.trade_log if e.action in self._CLOSE_ACTIONS and e.pnl <= 0]
+        avg_win = sum(wins) / len(wins) if wins else 1
+        avg_loss = abs(sum(losses) / len(losses)) if losses else 1
+        be_wr = round(avg_loss / (avg_win + avg_loss) * 100, 1) if (avg_win + avg_loss) > 0 else 50
+
+        return {
+            "gross_pnl": round(gross_pnl, 2),
+            "total_fees": round(total_fees, 2),
+            "total_funding": round(total_funding, 2),
+            "net_pnl": round(net_pnl, 2),
+            "fee_drag_pct": fee_drag_pct,
+            "avg_fee_per_event": round(total_fees / close_count, 2) if close_count else 0,
+            "breakeven_wr": be_wr,
+        }
+
+    def _report_confidence_analysis(self) -> Dict[str, Any]:
+        """Bucket positions by confidence range to find optimal threshold."""
+        buckets: Dict[str, Dict] = {}
+        ranges = [(60, 69), (70, 79), (80, 89), (90, 100)]
+
+        # Group by position (use OPEN events + sum close events)
+        current_pos: Dict[str, Dict] = {}
+        for event in self.pos_mgr.trade_log:
+            if event.action == "OPEN":
+                meta = event.metadata or {}
+                conf = meta.get("confidence", getattr(event, "confidence", 0)) or 0
+                current_pos[event.symbol] = {"pnl": 0.0, "confidence": conf}
+            elif event.action in self._CLOSE_ACTIONS:
+                pos = current_pos.get(event.symbol)
+                if pos:
+                    pos["pnl"] += event.pnl
+                    meta = event.metadata or {}
+                    if pos["confidence"] == 0:
+                        pos["confidence"] = meta.get("confidence", 0) or 0
+                    if event.action != "TP1":
+                        conf = pos["confidence"]
+                        bucket_key = "< 60%"
+                        for lo, hi in ranges:
+                            if lo <= conf <= hi:
+                                bucket_key = f"{lo}-{hi}%"
+                                break
+                        if conf > 100:
+                            bucket_key = "90-100%"
+                        if bucket_key not in buckets:
+                            buckets[bucket_key] = {"count": 0, "wins": 0, "pnl": 0.0, "gross_win": 0.0, "gross_loss": 0.0}
+                        b = buckets[bucket_key]
+                        b["count"] += 1
+                        b["pnl"] += pos["pnl"]
+                        if pos["pnl"] > 0:
+                            b["wins"] += 1
+                            b["gross_win"] += pos["pnl"]
+                        else:
+                            b["gross_loss"] += abs(pos["pnl"])
+                        del current_pos[event.symbol]
+
+        result = {}
+        optimal_threshold = None
+        for key in ["< 60%"] + [f"{lo}-{hi}%" for lo, hi in ranges]:
+            if key in buckets:
+                b = buckets[key]
+                wr = round(b["wins"] / b["count"] * 100, 1) if b["count"] > 0 else 0
+                pf = round(b["gross_win"] / b["gross_loss"], 2) if b["gross_loss"] > 0 else 99.0
+                result[key] = {
+                    "count": b["count"],
+                    "win_rate": wr,
+                    "pnl": round(b["pnl"], 2),
+                    "profit_factor": pf,
+                }
+                if b["pnl"] < 0 and optimal_threshold is None:
+                    optimal_threshold = key
+
+        return {"buckets": result, "optimal_threshold": optimal_threshold}
+
+    def _report_risk_metrics(self, max_drawdown: float, max_dd_duration: int) -> Dict[str, Any]:
+        """Standard quantitative risk/performance metrics."""
+        if not self.equity_curve or len(self.equity_curve) < 2:
+            return {}
+
+        equities = [e["equity"] for e in self.equity_curve]
+        starting = self.config.starting_equity
+        final = equities[-1]
+
+        # Daily returns (approximate: group equity curve by 24-candle chunks for hourly)
+        chunk_size = 24
+        daily_returns = []
+        for i in range(chunk_size, len(equities), chunk_size):
+            prev = equities[i - chunk_size]
+            curr = equities[i]
+            if prev > 0:
+                daily_returns.append((curr - prev) / prev)
+
+        if not daily_returns:
+            return {}
+
+        mean_daily = np.mean(daily_returns)
+        std_daily = np.std(daily_returns)
+        downside = [r for r in daily_returns if r < 0]
+        std_downside = np.std(downside) if downside else 0.001
+
+        # Annualize
+        trading_days = len(daily_returns)
+        annual_factor = 365  # crypto markets run 365 days
+        annualized_return = ((final / starting) ** (annual_factor / max(trading_days, 1))) - 1
+
+        sharpe = round(float(mean_daily / std_daily * np.sqrt(annual_factor)), 2) if std_daily > 0 else 0
+        sortino = round(float(mean_daily / std_downside * np.sqrt(annual_factor)), 2) if std_downside > 0 else 0
+        calmar = round(float(annualized_return / max_drawdown), 2) if max_drawdown > 0 else 0
+
+        # Profit factor
+        gross_wins = sum(e.pnl for e in self.pos_mgr.trade_log if e.action in self._CLOSE_ACTIONS and e.pnl > 0)
+        gross_losses = abs(sum(e.pnl for e in self.pos_mgr.trade_log if e.action in self._CLOSE_ACTIONS and e.pnl <= 0))
+        profit_factor = round(gross_wins / gross_losses, 2) if gross_losses > 0 else 99.0
+
+        # Time in market
+        in_market = sum(1 for e in self.equity_curve if e.get("open_positions", 0) > 0)
+        time_in_market = round(in_market / len(self.equity_curve) * 100, 1)
+
+        # Recovery factor
+        max_dd_dollars = max_drawdown * max(equities)
+        net_profit = final - starting
+        recovery_factor = round(net_profit / max_dd_dollars, 2) if max_dd_dollars > 0 else 0
+
+        return {
+            "sharpe": sharpe,
+            "sortino": sortino,
+            "calmar": calmar,
+            "profit_factor": profit_factor,
+            "recovery_factor": recovery_factor,
+            "time_in_market_pct": time_in_market,
+            "max_dd_duration_candles": max_dd_duration,
+            "annualized_return_pct": round(annualized_return * 100, 1),
+        }
+
+    def _report_trailing_analysis(self) -> Dict[str, Any]:
+        """Analyze trailing stop effectiveness vs fixed TP2."""
+        # Build position lifecycle: match TP1 events to their final close
+        tp1_positions: Dict[str, Dict] = {}  # symbol -> {tp1_pnl, tp1_price, ...}
+        results = {"entered_trailing": 0, "outcomes": {}, "net_trailing_edge": 0.0}
+
+        for event in self.pos_mgr.trade_log:
+            if event.action == "TP1":
+                tp1_positions[event.symbol] = {
+                    "tp1_pnl": event.pnl,
+                    "tp1_price": event.price,
+                    "tp1_qty_closed": event.qty,
+                }
+            elif event.action in self._CLOSE_ACTIONS and event.action != "TP1":
+                tp1_data = tp1_positions.pop(event.symbol, None)
+                if tp1_data:
+                    # This position hit TP1 then closed via trailing/SL/TP2
+                    results["entered_trailing"] += 1
+                    outcome_key = event.action
+                    if outcome_key not in results["outcomes"]:
+                        results["outcomes"][outcome_key] = {"count": 0, "pnl": 0.0}
+                    results["outcomes"][outcome_key]["count"] += 1
+                    results["outcomes"][outcome_key]["pnl"] += event.pnl
+                    # The trailing edge: pnl of the remaining portion after TP1
+                    results["net_trailing_edge"] += event.pnl
+
+        results["net_trailing_edge"] = round(results["net_trailing_edge"], 2)
+        for key in results["outcomes"]:
+            o = results["outcomes"][key]
+            o["avg_pnl"] = round(o["pnl"] / o["count"], 2) if o["count"] > 0 else 0
+            o["pnl"] = round(o["pnl"], 2)
+        return results
 
     def _generate_recommendations(self) -> List[str]:
         """Auto-generate actionable recommendations from backtest results."""
@@ -1280,13 +1624,38 @@ class BacktestEngine:
         # Drawdown warning
         if self.equity_curve:
             equities = [e["equity"] for e in self.equity_curve]
-            peak = max(equities)
-            max_dd = max((peak - e) / peak for e in equities) * 100
+            running_peak = equities[0]
+            max_dd = 0
+            for e in equities:
+                running_peak = max(running_peak, e)
+                if running_peak > 0:
+                    max_dd = max(max_dd, (running_peak - e) / running_peak * 100)
             if max_dd > 30:
                 recs.append(
                     f"Max drawdown {max_dd:.1f}% exceeds safe threshold "
                     f"-- consider reducing leverage or risk_per_trade"
                 )
+
+        # Fee drag warning
+        costs = self._report_costs()
+        if costs.get("fee_drag_pct", 0) > 50 and costs.get("gross_pnl", 0) > 0:
+            recs.append(
+                f"Fees consume {costs['fee_drag_pct']:.0f}% of gross PnL "
+                f"(${costs['total_fees']:,.2f} in fees vs ${costs['gross_pnl']:,.2f} gross) "
+                f"-- consider reducing trade frequency or tightening entry criteria"
+            )
+
+        # Signal funnel warning
+        funnel = self._report_signal_funnel()
+        if funnel.get("gate_rejections"):
+            total_rejected = sum(funnel["gate_rejections"].values())
+            if total_rejected > funnel.get("executed", 1) * 0.2:
+                for gate, count in funnel["gate_rejections"].items():
+                    if count > 5:
+                        recs.append(
+                            f"{count} signals rejected at {gate} gate "
+                            f"-- check {gate} configuration"
+                        )
 
         return recs
 
@@ -1417,116 +1786,101 @@ def export_equity_curve_csv(report: Dict, filepath: str):
 
 
 def print_report(report: Dict):
-    """Pretty-print a backtest report."""
+    """Pretty-print a comprehensive backtest diagnostic report."""
     r = report["results"]
     c = report["config"]
+    positions = report.get("positions", {})
+    costs = report.get("costs", {})
+    risk = report.get("risk_metrics", {})
 
-    print("\n" + "=" * 60)
-    print("BACKTEST RESULTS")
-    print("=" * 60)
-    print(f"  Symbols:         {', '.join(c['symbols'])}")
-    print(f"  Period:          {c['days']} days")
-    print(f"  Starting Equity: ${c['starting_equity']:,.2f}")
-    print(f"  Final Equity:    ${r['final_equity']:,.2f}")
-    print(f"  Total Return:    {r['total_return_pct']:+.2f}%")
+    W = 68  # report width
+
+    print("\n" + "=" * W)
+    print("BACKTEST REPORT")
+    print("=" * W)
+
+    # ── SUMMARY ──
+    print(f"\n{'── SUMMARY ':─<{W}}")
+    print(f"  Period:          {c['days']} days | {', '.join(c['symbols'])}")
+    print(f"  Equity:          ${c['starting_equity']:,.2f} -> ${r['final_equity']:,.2f} ({r['total_return_pct']:+.2f}%)")
     print(f"  Max Drawdown:    {r['max_drawdown_pct']:.2f}%")
-    print(f"  Total Signals:   {r['total_signals']}")
-    print(f"  Total Trades:    {r.get('total_trades', 0)}")
-    print(f"  Win Rate:        {r.get('win_rate', 0):.1%}")
-    print(f"  Net PnL:         ${r.get('net_pnl', 0):,.2f}")
+    if risk:
+        print(f"  Sharpe / Sortino / Calmar: {risk.get('sharpe', 0)} / {risk.get('sortino', 0)} / {risk.get('calmar', 0)}")
+    pos_count = positions.get("count", r.get("positions_opened", 0))
+    events_count = r.get("close_events", r.get("total_trades", 0))
+    tp1_pct = positions.get("hit_tp1_pct", 0)
+    pos_wr = positions.get("win_rate", 0)
+    print(f"\n  Positions:       {pos_count} opened | {positions.get('hit_tp1_count', 0)} hit TP1 ({tp1_pct:.1f}%)")
+    print(f"  Close Events:    {events_count} (TP1 partials counted separately)")
+    print(f"  Win Rate:        {pos_wr:.1f}% (by position) | {r.get('win_rate', 0):.1%} (by event)")
+    print(f"\n  Gross PnL:       ${costs.get('gross_pnl', 0):>10,.2f}")
+    print(f"  Fees:            ${costs.get('total_fees', 0):>10,.2f}")
+    if costs.get("total_funding", 0) != 0:
+        print(f"  Funding:         ${costs.get('total_funding', 0):>10,.2f}")
+    print(f"  Net PnL:         ${costs.get('net_pnl', r.get('net_pnl', 0)):>10,.2f}")
 
-    if report.get("by_strategy"):
-        print("\n  By Strategy:")
-        for strat, stats in report["by_strategy"].items():
-            print(f"    {strat}: {stats['trades']} trades, {stats['win_rate']:.0%} win rate, ${stats['pnl']:,.2f}")
+    # ── SIGNAL FUNNEL ──
+    funnel = report.get("signal_funnel", {})
+    if funnel.get("candles_processed", 0) > 0:
+        total = funnel["candles_processed"]
+        print(f"\n{'── SIGNAL FUNNEL ':─<{W}}")
+        print(f"  Candles processed: {total:,}")
+        print(f"    No signal:       {funnel.get('no_signal', 0):>6,} ({funnel.get('no_signal', 0)/total*100:.1f}%)")
+        print(f"    CB blocked:      {funnel.get('cb_blocked', 0):>6,} ({funnel.get('cb_blocked', 0)/total*100:.1f}%)")
+        print(f"    Signal gen:      {funnel.get('signals_generated', 0):>6,} ({funnel.get('signals_generated', 0)/total*100:.1f}%)")
+        gates = funnel.get("gate_rejections", {})
+        for gate, count in sorted(gates.items(), key=lambda x: -x[1]):
+            print(f"      {gate} rejected:  {count:>4}")
+        if funnel.get("llm_vetoed", 0) > 0:
+            print(f"      LLM vetoed:    {funnel['llm_vetoed']:>4}")
+        print(f"    Executed:        {funnel.get('executed', 0):>6,}")
+        print(f"  Conversion:        {funnel.get('conversion_rate', 0):.1f}% (candle -> trade)")
 
-    if report.get("by_symbol"):
-        print("\n  By Symbol:")
-        for sym, stats in report["by_symbol"].items():
-            print(f"    {sym}: {stats['trades']} trades, {stats['win_rate']:.0%} win rate, ${stats['pnl']:,.2f}")
+    # ── COST BREAKDOWN ──
+    if costs:
+        print(f"\n{'── COST BREAKDOWN ':─<{W}}")
+        print(f"  Gross PnL:         ${costs.get('gross_pnl', 0):>10,.2f}")
+        print(f"  Trading fees:      ${-costs.get('total_fees', 0):>10,.2f}")
+        if costs.get("total_funding", 0) != 0:
+            print(f"  Funding costs:     ${-costs.get('total_funding', 0):>10,.2f}")
+        print(f"  {'─' * 30}")
+        print(f"  Net PnL:           ${costs.get('net_pnl', 0):>10,.2f}")
+        print(f"  Fee drag:          {costs.get('fee_drag_pct', 0):.1f}% of gross PnL consumed by fees")
+        print(f"  Avg fee/event:     ${costs.get('avg_fee_per_event', 0):.2f}")
+        print(f"  Break-even WR:     {costs.get('breakeven_wr', 0):.1f}%")
 
-    # Circuit breaker impact
-    cb = report.get("circuit_breaker_stats", {})
-    if cb:
-        print(f"\n  Circuit Breaker Impact:")
-        print(f"    Total trips:       {cb.get('total_trips', 0)}")
-        print(f"    Signals blocked:   {cb.get('signals_blocked', 0)}")
-        print(f"    Candles locked:    {cb.get('candles_locked_out', 0)} ({cb.get('lockout_pct', 0):.1f}% of backtest)")
-        print(f"    Force closes:      {cb.get('force_close_events', 0)} (PnL: ${cb.get('force_close_pnl', 0):,.2f})")
+    # ── POSITION LIFECYCLE ──
+    if positions.get("count", 0) > 0:
+        print(f"\n{'── POSITION LIFECYCLE ':─<{W}}")
+        print(f"  Positions opened:  {positions['count']}")
+        print(f"  Avg hold:          {positions.get('avg_hold_h', 0):.1f}h | Median: {positions.get('median_hold_h', 0):.1f}h")
+        print(f"\n  Position outcomes:")
+        for outcome, count in sorted(positions.get("outcomes", {}).items(), key=lambda x: -x[1]):
+            pct = count / positions["count"] * 100
+            print(f"    {outcome:24s}  {count:>4} ({pct:5.1f}%)")
+        print(f"\n  Position win rate: {positions['win_rate']:.1f}%")
+        print(f"  Avg winner:        ${positions.get('avg_winner', 0):>8.2f}")
+        print(f"  Avg loser:         ${positions.get('avg_loser', 0):>8.2f}")
+        print(f"  Payoff ratio:      {positions.get('payoff_ratio', 0):.2f}:1")
+        print(f"  Largest winner:    ${positions.get('largest_winner', 0):>8.2f}")
+        print(f"  Largest loser:     ${positions.get('largest_loser', 0):>8.2f}")
 
-    # Agreement level breakdown
-    by_agree = report.get("by_agreement", {})
-    if by_agree:
-        print(f"\n  By Agreement Level:")
-        for key in sorted(by_agree.keys()):
-            stats = by_agree[key]
-            wr = stats['win_rate']
-            avg = stats['avg_pnl']
-            print(f"    {key}: {stats['trades']} trades, {wr:.0%} WR, "
-                  f"${stats['pnl']:,.2f} total, ${avg:,.2f} avg/trade")
-            # Show top strategy combos
-            combos = stats.get("strategy_combos", {})
-            top_combos = sorted(combos.items(), key=lambda x: -x[1])[:3]
-            for combo, count in top_combos:
-                print(f"      {combo}: {count} trades")
+    # ── BY SYMBOL ──
+    symbol_pnl = report.get("symbol_pnl", {})
+    by_symbol = report.get("by_symbol", {})
+    if by_symbol or symbol_pnl:
+        print(f"\n{'── BY SYMBOL ':─<{W}}")
+        for sym in sorted(set(list(by_symbol.keys()) + list(symbol_pnl.keys()))):
+            stats = by_symbol.get(sym, {})
+            net = symbol_pnl.get(sym, stats.get("pnl", 0))
+            trades = stats.get("trades", 0)
+            wr = stats.get("win_rate", 0)
+            print(f"    {sym:>6s}: {trades:>4} events, {wr:.0%} WR, ${net:>10,.2f} net PnL")
 
-    lev = report.get("leverage_stats", {})
-    if lev:
-        print(f"\n  Leverage Stats:")
-        print(f"    Spot trades:      {lev.get('spot', {}).get('trades', 0)} | PnL: ${lev.get('spot', {}).get('pnl', 0):,.2f}")
-        print(f"    Leveraged trades: {lev.get('leveraged', {}).get('trades', 0)} | PnL: ${lev.get('leveraged', {}).get('pnl', 0):,.2f}")
-        print(f"    Avg leverage:     {lev.get('leveraged', {}).get('avg_leverage', 0):.1f}x")
-
-    llm_stats = report.get("llm_stats")
-    if llm_stats:
-        print(f"\n  LLM Agent Stats:")
-        print(f"    Total cost:       ${llm_stats.get('total_cost_usd', 0):.4f}")
-        print(f"    Budget:           ${llm_stats.get('budget_usd', 0):.2f} ({llm_stats.get('budget_used_pct', 0):.1f}% used)")
-        print(f"    API calls:        {llm_stats.get('llm_calls', 0)}")
-        print(f"    Failures:         {llm_stats.get('llm_failures', 0)}")
-        print(f"    Candles w/ LLM:   {llm_stats.get('candles_with_llm', 0)}")
-        print(f"    Candles fallback: {llm_stats.get('candles_fallback', 0)}")
-        print(f"    Decisions logged: {llm_stats.get('decisions_logged', 0)}")
-        if llm_stats.get("budget_exhausted"):
-            print(f"    WARNING: Budget was exhausted during run")
-
-        # Per-agent cost breakdown
-        agent_costs = report.get("llm_agent_costs", {})
-        if agent_costs:
-            print(f"\n  Per-Agent Costs:")
-            for agent, cost in sorted(agent_costs.items(), key=lambda x: -x[1]):
-                print(f"    {agent:12s}  ${cost:.4f}")
-
-        # Veto breakdown
-        veto_stats = report.get("llm_veto_stats", {})
-        if veto_stats and veto_stats.get("total_decisions", 0) > 0:
-            print(f"\n  LLM Decision Breakdown:")
-            print(f"    Approved:      {veto_stats['approved']}")
-            print(f"    Vetoed:        {veto_stats['vetoed']} ({veto_stats['veto_rate']:.0%})")
-            if veto_stats.get("critic_vetoes"):
-                print(f"    Critic vetoes: {veto_stats['critic_vetoes']}")
-
-        # Regime timeline
-        regime_timeline = report.get("llm_regime_timeline", [])
-        if regime_timeline:
-            print(f"\n  Regime Timeline ({len(regime_timeline)} transitions):")
-            for rt in regime_timeline[:15]:
-                print(f"    {rt['timestamp'][:16]}  {rt['regime']}")
-            if len(regime_timeline) > 15:
-                print(f"    ... and {len(regime_timeline) - 15} more")
-
-        # Learning stats
-        lessons = report.get("llm_learning_lessons", 0)
-        exits = len(report.get("llm_exit_decisions", []))
-        if lessons or exits:
-            print(f"\n  Learning Captured:")
-            print(f"    Lessons processed:   {lessons}")
-            print(f"    Exit evaluations:    {exits}")
-
-    # Strategy health
+    # ── STRATEGY HEALTH ──
     health = report.get("strategy_health", {})
     if health:
-        print(f"\n  Strategy Health (contributing strategies):")
+        print(f"\n{'── STRATEGY HEALTH (attributed PnL) ':─<{W}}")
         for strat in sorted(health.keys(), key=lambda k: -health[k].get("net_pnl", 0)):
             h = health[strat]
             flag = "  !! LOSING" if h["profit_factor"] < 1.0 and h["trades"] >= 10 else ""
@@ -1539,57 +1893,129 @@ def print_report(report: Dict):
                 f"worst=${h['worst_trade']:,.2f}{flag}"
             )
 
-    # Agreement combos with PF
+    # ── STRATEGY COMBOS ──
     by_agree = report.get("by_agreement", {})
     if by_agree:
-        has_losing_combo = False
+        print(f"\n{'── STRATEGY COMBOS ':─<{W}}")
         for key in sorted(by_agree.keys()):
-            combo_details = by_agree[key].get("combo_details", {})
+            stats = by_agree[key]
+            wr = stats['win_rate']
+            avg = stats['avg_pnl']
+            print(f"  {key}: {stats['trades']} events, {wr:.0%} WR, "
+                  f"${stats['pnl']:,.2f} total, ${avg:,.2f} avg")
+            combo_details = stats.get("combo_details", {})
             for combo, cd in sorted(combo_details.items(), key=lambda x: -x[1].get("trades", 0)):
-                if cd.get("pf", 99) < 1.0 and cd.get("trades", 0) >= 5:
-                    if not has_losing_combo:
-                        print(f"\n  Losing Strategy Combos:")
-                        has_losing_combo = True
-                    print(f"    {key} {combo}: PF={cd['pf']} WR={cd['wr']:.0%} ({cd['trades']} trades) -- LOSING")
+                if cd.get("trades", 0) >= 3:
+                    label = "PROFITABLE" if cd.get("pf", 0) >= 1.0 else "LOSING"
+                    print(f"    {combo:40s}  {cd['trades']:>4} trades  PF={cd['pf']:<5} WR={cd['wr']:.0%}  {label}")
 
-    # Exit type breakdown
+    # ── CONFIDENCE ANALYSIS ──
+    conf = report.get("confidence_analysis", {})
+    conf_buckets = conf.get("buckets", {})
+    if conf_buckets:
+        print(f"\n{'── CONFIDENCE ANALYSIS ':─<{W}}")
+        for key, b in conf_buckets.items():
+            label = "PROFITABLE" if b["pnl"] > 0 else "LOSING"
+            print(f"    {key:>8s}:  {b['count']:>4} positions  {b['win_rate']:.1f}% WR  "
+                  f"${b['pnl']:>10,.2f}  PF={b['profit_factor']:<5}  {label}")
+        if conf.get("optimal_threshold"):
+            print(f"  Losing below: {conf['optimal_threshold']} -- consider raising confidence floor")
+
+    # ── TRAILING STOP ANALYSIS ──
+    trail = report.get("trailing_analysis", {})
+    if trail.get("entered_trailing", 0) > 0:
+        print(f"\n{'── TRAILING STOP ANALYSIS ':─<{W}}")
+        print(f"  Positions entering trailing: {trail['entered_trailing']}")
+        for outcome, data in sorted(trail.get("outcomes", {}).items(), key=lambda x: -x[1]["count"]):
+            print(f"    -> {outcome:16s}  {data['count']:>4}  avg ${data['avg_pnl']:>8.2f}  total ${data['pnl']:>10,.2f}")
+        print(f"  Net trailing edge: ${trail.get('net_trailing_edge', 0):>10,.2f}")
+        verdict = "HELPING" if trail.get("net_trailing_edge", 0) > 0 else "HURTING"
+        print(f"  Verdict: trailing stops are {verdict}")
+
+    # ── EXIT TYPE BREAKDOWN ──
     exit_types = report.get("exit_types", {})
     if exit_types:
-        print(f"\n  Exit Type Breakdown:")
+        print(f"\n{'── EXIT TYPE BREAKDOWN ':─<{W}}")
         for action in sorted(exit_types.keys(), key=lambda k: -exit_types[k]["trades"]):
             stats = exit_types[action]
             print(
-                f"    {action:16s}  {stats['trades']:>4} trades  "
+                f"    {action:16s}  {stats['trades']:>4} events  "
                 f"WR={stats['win_rate']:.0%}  "
                 f"avg=${stats['avg_pnl']:>8.2f}  "
                 f"total=${stats['pnl']:>10,.2f}"
             )
 
-    # Recommendations
+    # ── RISK METRICS ──
+    if risk:
+        print(f"\n{'── RISK METRICS ':─<{W}}")
+        print(f"  Sharpe ratio:      {risk.get('sharpe', 0):>6} (annualized)")
+        print(f"  Sortino ratio:     {risk.get('sortino', 0):>6}")
+        print(f"  Calmar ratio:      {risk.get('calmar', 0):>6}")
+        print(f"  Profit factor:     {risk.get('profit_factor', 0):>6}")
+        print(f"  Recovery factor:   {risk.get('recovery_factor', 0):>6}")
+        print(f"  Time in market:    {risk.get('time_in_market_pct', 0):>5.1f}%")
+        print(f"  Max DD duration:   {risk.get('max_dd_duration_candles', 0):>5} candles")
+        print(f"  Annualized return: {risk.get('annualized_return_pct', 0):>5.1f}%")
+
+    # ── LEVERAGE STATS ──
+    lev = report.get("leverage_stats", {})
+    if lev:
+        print(f"\n{'── LEVERAGE STATS ':─<{W}}")
+        print(f"  Spot:      {lev.get('spot', {}).get('trades', 0):>4} events  ${lev.get('spot', {}).get('pnl', 0):>10,.2f}")
+        print(f"  Leveraged: {lev.get('leveraged', {}).get('trades', 0):>4} events  ${lev.get('leveraged', {}).get('pnl', 0):>10,.2f}  avg {lev.get('leveraged', {}).get('avg_leverage', 0):.1f}x")
+
+    # ── CIRCUIT BREAKER ──
+    cb = report.get("circuit_breaker_stats", {})
+    if cb:
+        print(f"\n{'── CIRCUIT BREAKER ':─<{W}}")
+        print(f"  Trips: {cb.get('total_trips', 0)} | Signals blocked: {cb.get('signals_blocked', 0)} | "
+              f"Lockout: {cb.get('lockout_pct', 0):.1f}% of backtest")
+        if cb.get("force_close_events", 0) > 0:
+            print(f"  Force closes: {cb['force_close_events']} (PnL: ${cb.get('force_close_pnl', 0):,.2f})")
+
+    # ── LLM STATS (only if used) ──
+    llm_stats = report.get("llm_stats")
+    if llm_stats:
+        print(f"\n{'── LLM AGENT STATS ':─<{W}}")
+        print(f"  Cost: ${llm_stats.get('total_cost_usd', 0):.4f} / ${llm_stats.get('budget_usd', 0):.2f} budget ({llm_stats.get('budget_used_pct', 0):.1f}% used)")
+        print(f"  API calls: {llm_stats.get('llm_calls', 0)} | Failures: {llm_stats.get('llm_failures', 0)}")
+        if llm_stats.get("budget_exhausted"):
+            print(f"  WARNING: Budget was exhausted during run")
+
+        agent_costs = report.get("llm_agent_costs", {})
+        if agent_costs:
+            for agent, cost in sorted(agent_costs.items(), key=lambda x: -x[1]):
+                print(f"    {agent:12s}  ${cost:.4f}")
+
+        veto_stats = report.get("llm_veto_stats", {})
+        if veto_stats and veto_stats.get("total_decisions", 0) > 0:
+            print(f"  Approved: {veto_stats['approved']} | Vetoed: {veto_stats['vetoed']} ({veto_stats['veto_rate']:.0%})")
+
+    # ── RECOMMENDATIONS ──
     recs = report.get("recommendations", [])
     if recs:
-        print(f"\n  Recommendations:")
+        print(f"\n{'── RECOMMENDATIONS ':─<{W}}")
         for rec in recs:
-            print(f"    > {rec}")
+            print(f"  > {rec}")
 
-    # Top trades by PnL
+    # ── TOP / BOTTOM TRADES ──
     timeline = report.get("trade_timeline", [])
     if timeline:
         sorted_trades = sorted(timeline, key=lambda t: t.get("pnl", 0))
         worst = sorted_trades[:3]
         best = sorted_trades[-3:][::-1]
         if best and best[0].get("pnl", 0) > 0:
-            print(f"\n  Top Winning Trades:")
+            print(f"\n{'── TOP WINNERS ':─<{W}}")
             for t in best:
                 regime_str = f" [{t['llm_regime']}]" if t.get("llm_regime") else ""
-                print(f"    {t['symbol']:6s} {t['strategy']:20s} ${t['pnl']:+8.2f}{regime_str}")
+                print(f"    {t['symbol']:6s} {t['strategy']:20s} ${t['pnl']:+8.2f}  {t.get('close_reason', '')}{regime_str}")
         if worst and worst[0].get("pnl", 0) < 0:
-            print(f"\n  Worst Losing Trades:")
+            print(f"\n{'── WORST LOSERS ':─<{W}}")
             for t in worst:
                 regime_str = f" [{t['llm_regime']}]" if t.get("llm_regime") else ""
-                print(f"    {t['symbol']:6s} {t['strategy']:20s} ${t['pnl']:+8.2f}{regime_str}")
+                print(f"    {t['symbol']:6s} {t['strategy']:20s} ${t['pnl']:+8.2f}  {t.get('close_reason', '')}{regime_str}")
 
-    print("=" * 60)
+    print("\n" + "=" * W)
 
 
 def main():
