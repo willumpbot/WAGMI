@@ -95,6 +95,8 @@ def cmd_backtest(args):
         print(f"Running backtest with LEARNING: {symbols} | {args.days} days | equity=${args.equity:,.0f}")
         print("  Results will feed: strategy weights, deep memory, feedback loop,")
         print("  self-teaching knowledge base, growth orchestrator, insight journal")
+        if not use_llm:
+            print("  Learning mode: LOCAL ONLY (no LLM API calls)")
     else:
         print(f"Running backtest: {symbols} | {args.days} days | equity=${args.equity:,.0f}")
 

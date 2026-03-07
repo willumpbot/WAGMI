@@ -442,6 +442,7 @@ class BacktestLearningBridge:
             from llm.growth.orchestrator import get_growth_orchestrator
 
             growth = get_growth_orchestrator()
+            growth._backtest_mode = True  # Don't fire LLM API calls during backtest learning
 
             for record in records:
                 trade_data = {

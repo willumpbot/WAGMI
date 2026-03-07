@@ -49,6 +49,7 @@ class GrowthOrchestrator:
         self._last_learning_cycle: float = 0
         self._learning_cycle_interval_s: float = 1800  # 30 min
         self._trade_buffer: List[Dict[str, Any]] = []  # Buffer trades for batch learning
+        self._backtest_mode: bool = False  # When True, skip LLM API calls
 
         # Lazy-initialized subsystem references
         self._rec_engine = None
@@ -148,16 +149,18 @@ class GrowthOrchestrator:
 
         # Multi-Agent Learning Agent: run dedicated LLM analysis on closed trade
         # This produces deeper insights than the deterministic post_trade_learner
-        try:
-            from llm.agents.coordinator import is_multi_agent_enabled, get_coordinator
-            if is_multi_agent_enabled():
-                coordinator = get_coordinator()
-                lesson_data = coordinator.get_post_trade_lesson(trade_data)
-                if lesson_data:
-                    from llm.agents.learning_integration import process_agent_lesson
-                    process_agent_lesson(lesson_data, trade_data)
-        except Exception as e:
-            logger.debug(f"[GROWTH] Multi-agent learning error: {e}")
+        # Skip in backtest mode to avoid burning LLM credits
+        if not self._backtest_mode:
+            try:
+                from llm.agents.coordinator import is_multi_agent_enabled, get_coordinator
+                if is_multi_agent_enabled():
+                    coordinator = get_coordinator()
+                    lesson_data = coordinator.get_post_trade_lesson(trade_data)
+                    if lesson_data:
+                        from llm.agents.learning_integration import process_agent_lesson
+                        process_agent_lesson(lesson_data, trade_data)
+            except Exception as e:
+                logger.debug(f"[GROWTH] Multi-agent learning error: {e}")
 
         logger.debug(
             f"[GROWTH] Trade closed: {trade_data.get('symbol')} "
