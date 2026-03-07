@@ -638,6 +638,8 @@ class PositionManager:
                 "outcome": pos.outcome,
                 "state_path": pos.state_path_str,
                 "entry_reasons": pos.entry_reasons,
+                "num_agree": (pos.entry_reasons or {}).get("num_agree", 0),
+                "strategies_agree": (pos.entry_reasons or {}).get("strategies_agree", []),
                 "entry_type": profile_data.get("entry_type", "UNKNOWN"),
                 "primary_driver": profile_data.get("primary_driver", ""),
                 "regime": profile_data.get("regime", ""),
