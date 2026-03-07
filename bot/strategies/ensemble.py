@@ -536,11 +536,12 @@ class EnsembleStrategy:
 
         merged = self._merge_signals(symbol, chosen)
 
-        # Confidence penalty for opposition (even when vote passes)
+        # Confidence penalty for opposition, weighted by opposer's confidence.
+        # Previously flat 10pts per opposer regardless of their conviction.
         if opposition:
-            penalty = len(opposition) * 10
+            penalty = sum(s.confidence / 100 * 8 for s in opposition)
             merged.confidence = max(0, merged.confidence - penalty)
-            merged.metadata["opposition_penalty"] = penalty
+            merged.metadata["opposition_penalty"] = round(penalty, 1)
             logger.info(
                 f"[{symbol}] Opposition penalty: -{penalty} confidence "
                 f"(opposed by {[s.strategy for s in opposition]})"

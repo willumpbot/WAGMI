@@ -711,9 +711,9 @@ class BacktestEngine:
             "leverage": pos.leverage,
             "state": pos.state,
             "unrealized_pnl": (
-                (current_price - pos.entry) * pos.qty
+                (current_price - pos.entry) * pos.qty * pos.leverage
                 if pos.side == "LONG"
-                else (pos.entry - current_price) * pos.qty
+                else (pos.entry - current_price) * pos.qty * pos.leverage
             ),
             # Exit Agent expects these for thesis-based and duration-based decisions
             "hold_time_s": (sim_dt - pos.open_time).total_seconds() if hasattr(pos, "open_time") and pos.open_time else 0,
@@ -871,13 +871,21 @@ class BacktestEngine:
         """Execute a signal in backtest mode with slippage simulation."""
         from execution.trade_profile import classify_trade, apply_profile_to_signal
 
-        # Apply slippage to entry price (simulate realistic fills)
+        # Apply slippage to entry AND adjust SL/TP proportionally.
+        # Previously only entry was slipped, leaving SL/TP at ideal levels —
+        # this made backtests overoptimistic about risk control.
         slippage_bps = getattr(self.config, "slippage_bps", 0)
         slip_mult = slippage_bps / 10000.0
         if signal.side == "BUY":
-            fill_price = signal.entry * (1 + slip_mult)  # Buy higher
+            fill_price = signal.entry * (1 + slip_mult)  # Buy higher (worse)
+            signal.sl = signal.sl * (1 + slip_mult)      # SL also shifts up
+            signal.tp1 = signal.tp1 * (1 + slip_mult)    # TP1 shifts up
+            signal.tp2 = signal.tp2 * (1 + slip_mult)    # TP2 shifts up
         else:
-            fill_price = signal.entry * (1 - slip_mult)  # Sell lower
+            fill_price = signal.entry * (1 - slip_mult)  # Sell lower (worse)
+            signal.sl = signal.sl * (1 - slip_mult)      # SL also shifts down
+            signal.tp1 = signal.tp1 * (1 - slip_mult)    # TP1 shifts down
+            signal.tp2 = signal.tp2 * (1 - slip_mult)    # TP2 shifts down
 
         # Determine leverage
         num_agree = signal.metadata.get("num_agree", 1)
