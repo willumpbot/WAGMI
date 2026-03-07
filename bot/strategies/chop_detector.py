@@ -33,8 +33,10 @@ _WEIGHTS = {
 # High-vol assets (HYPE, memes) naturally have wider ranges and more
 # whipsaws — using the default threshold falsely flags them as "choppy"
 # and kills signals that are actually valid.
+# BTC raised from 0.50→0.55: the tighter threshold was over-filtering BTC
+# in normal sideways markets, suppressing valid signals (38% WR on 10d backtest).
 VOLATILITY_THRESHOLDS = {
-    "low": 0.50,     # BTC: tighter — chop detection triggers earlier
+    "low": 0.55,     # BTC: match default — intraday futures chop != spot calm
     "medium": 0.55,  # SOL: default
     "high": 0.65,    # HYPE/memes: looser — allow more volatility through
 }

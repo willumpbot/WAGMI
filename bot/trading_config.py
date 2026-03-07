@@ -56,8 +56,11 @@ DEFAULT_SYMBOLS = {
 }
 
 # Risk multipliers for zone computation (from user's original bots)
+# BTC "low" widened from (1.0, 1.8) → (1.3, 2.2): original tight zones designed
+# for spot trading caused 1-2% intraday futures swings to hit stops consistently.
+# BTC had 38% WR and -$2,120 loss on 10d backtest with the tight multipliers.
 RISK_MULTIPLIERS: Dict[str, Tuple[float, float]] = {
-    "low": (1.0, 1.8),
+    "low": (1.3, 2.2),
     "medium": (1.5, 2.5),
     "high": (2.0, 3.5),
 }
