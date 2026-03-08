@@ -44,6 +44,27 @@ class CalibrationBucket:
         return sum(o.get("confidence", 0.5) for o in self.outcomes) / len(self.outcomes)
 
     @property
+    def brier_score(self) -> float:
+        """Brier score: mean squared error of probabilistic predictions.
+
+        Measures both calibration AND sharpness. Lower = better.
+        - 0.25 = always predicting 50% (no skill)
+        - <0.20 = good calibration
+        - <0.10 = excellent calibration
+        - 0.0 = perfect (impossible in practice)
+
+        Unlike simple accuracy, Brier score penalizes overconfidence:
+        a model that says 90% confident but wins 60% scores worse than
+        one that says 60% confident and wins 60%.
+        """
+        if not self.outcomes:
+            return 0.25  # no-skill baseline
+        return sum(
+            (o.get("confidence", 0.5) - (1.0 if o.get("correct") else 0.0)) ** 2
+            for o in self.outcomes
+        ) / len(self.outcomes)
+
+    @property
     def calibration_drift(self) -> float:
         """Positive = overconfident, negative = underconfident."""
         return self.avg_confidence - self.accuracy
@@ -66,6 +87,7 @@ class CalibrationBucket:
             "accuracy": round(self.accuracy, 3),
             "avg_confidence": round(self.avg_confidence, 3),
             "calibration_drift": round(self.calibration_drift, 3),
+            "brier_score": round(self.brier_score, 4),
             "n": self.n,
             "outcomes": self.outcomes[-50:],  # Save last 50
         }
@@ -111,6 +133,7 @@ class CalibrationLedger:
             "accuracy": round(bucket.accuracy, 3),
             "avg_confidence": round(bucket.avg_confidence, 3),
             "calibration_drift": round(bucket.calibration_drift, 3),
+            "brier_score": round(bucket.brier_score, 4),
             "n": bucket.n,
             "reliable": bucket.n >= 10,
         }
@@ -128,6 +151,7 @@ class CalibrationLedger:
                     summary[regime] = {
                         "acc": round(bucket.accuracy, 2),
                         "cal": round(bucket.calibration_drift, 2),
+                        "brier": round(bucket.brier_score, 3),
                         "n": bucket.n,
                     }
                     total_correct += sum(1 for o in bucket.outcomes if o.get("correct"))
@@ -152,7 +176,21 @@ class CalibrationLedger:
         parts = []
         acc = cal["accuracy"]
         drift = cal["calibration_drift"]
+        brier = cal.get("brier_score", 0.25)
         n = cal["n"]
+
+        # Brier score feedback (probabilistic calibration quality)
+        if brier > 0.30 and n >= 10:
+            parts.append(
+                f"POOR CALIBRATION: Your Brier score in {regime} is {brier:.2f} "
+                f"(>{0.25} = worse than coin flip). Your confidence values are unreliable. "
+                f"Reduce extreme confidence levels — stay closer to 0.50-0.65."
+            )
+        elif brier < 0.15 and n >= 15:
+            parts.append(
+                f"EXCELLENT CALIBRATION: Brier={brier:.2f} in {regime}. "
+                f"Your probability estimates are well-calibrated."
+            )
 
         # Accuracy warning
         if acc < 0.45 and n >= 15:
@@ -191,7 +229,10 @@ class CalibrationLedger:
         compact = {}
         for regime, data in summary.get("per_regime", {}).items():
             if data["n"] >= 5:
-                compact[regime] = {"acc": data["acc"], "cal": data["cal"], "n": data["n"]}
+                compact[regime] = {
+                    "acc": data["acc"], "cal": data["cal"],
+                    "brier": data.get("brier", 0.25), "n": data["n"],
+                }
         if compact:
             return {"agent_cal": compact, "overall_acc": summary["overall_accuracy"]}
         return {}

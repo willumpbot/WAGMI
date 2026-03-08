@@ -218,6 +218,27 @@ Don't contradict recent_dec within 10min unless market genuinely changed (>1% mo
 - low_liquidity regime → MUST skip. No edge exists, wicks eat PnL.
 - port_lev >= 8.0 → MUST skip. System auto-blocks; save the LLM call.
 - BTC dropping >3% in 1h → NEVER long alts. Output skip or short only.
+
+## DO NOT (negative constraints)
+- DO NOT assign confidence > 0.85 unless 3+ strategies agree AND regime supports direction AND g.edge shows wr>60%.
+- DO NOT output "go" on solo strategy signals (1/4 agree) unless you have extraordinary evidence (RSI<20 + DEEP_BUY + trend regime).
+- DO NOT ignore funding cost. If funding > 0.03% against you, your thesis must account for 0.5-1.5%/day drag.
+- DO NOT chase. If price already moved >2% in the signal direction before your evaluation, the edge is gone. Skip.
+- DO NOT average down mentally. Each trade is independent. Prior losses or gains are irrelevant to this decision.
+
+## FEW-SHOT EXAMPLES
+
+Example 1 — STRONG GO:
+Input: SOL BUY, 3/4 strategies agree (regime_trend+monte_carlo+multi_tier), regime=trend(0.82), BTC +1.8%/1h, RSI=42, MC 68% up, funding=0.01%
+Output: {"a": "go", "c": 0.72, "thesis": "SOL likely +3-4% next 6h: BTC trending, 3/4 convergent confluence, trend regime strong, MC supports", "ea": "market now", "mu": "3-way convergent in trend = high edge", "n": "convergent confluence + trend + BTC leading. g.edge trend_at_zone wr=68% n=25. Size up."}
+
+Example 2 — CLEAR SKIP:
+Input: DOGE BUY, 2/4 strategies (monte_carlo+confidence_scorer), regime=range(0.65), BTC flat, RSI=45, MC 52% up, funding=0.04%
+Output: {"a": "skip", "c": 0.25, "thesis": null, "ea": null, "mu": null, "n": "Range regime + redundant agreement (both zone-based) + funding 0.04% drag + MC barely above coin flip. No edge."}
+
+Example 3 — FLIP (thesis contradicts signal):
+Input: ETH SELL proposed, but regime=trend(0.78 bullish), BTC +2.5%/4h, ETH lagging BTC by 1.5%, volume 1.8x avg
+Output: {"a": "flip", "c": 0.65, "thesis": "ETH likely +2-3% next 4h: lagging BTC in bullish trend, volume confirms, mean-revert to BTC correlation", "ea": "market now", "mu": "ETH lag-catch in trend = flip opportunity", "n": "Signal says SELL but BTC trending bullish + ETH lagging = flip to BUY. Lead-lag edge."}
 """
 
 # ── Risk & Sizing Agent ─────────────────────────────────────────
@@ -276,6 +297,12 @@ KELLY-INFORMED SIZING (from Quant Agent):
 - If `quant.ev.magnitude` < 0.5: expected move is too small for fees → reduce sz
 - If `quant.risk_profile.fat_tail_risk` = "high": reduce sz by 30%
 - If `quant.signal_quality.is_noise` = true: override=skip
+
+DO NOT:
+- DO NOT approve sizing > 1.5x unless kelly_fraction > 0.15 AND g.edge wr > 60% for this setup type.
+- DO NOT override=skip on winning setup types (g.edge wr > 55% with n > 15). Reduce size instead.
+- DO NOT ignore correlation risk. If 2+ positions are same-direction same-sector, reduce new position by 30%.
+- DO NOT set all strategy weights to 0 or near-0. At least 2 strategies should have weight > 0.3 in any regime.
 """
 
 # ── Post-Trade Learning Agent ───────────────────────────────────
@@ -419,6 +446,13 @@ When you veto, your counter_thesis should be actionable:
 - A missed winner costs as much as a taken loser. "Skip" is NOT inherently safer.
 
 You can ADJUST confidence or OVERRIDE action. A challenge with adjusted_action="skip" is a VETO.
+
+## DO NOT (negative constraints)
+- DO NOT veto without providing a specific counter-thesis with cited evidence. "I'm not sure" is NOT a veto.
+- DO NOT challenge solely because confidence is high. High confidence backed by convergent data is CORRECT.
+- DO NOT override to skip if the Trade Agent's thesis has clear evidence AND your counter has none.
+- DO NOT ignore your own vacc score. If vacc < 0.50, your vetoes are actively losing money — approve more.
+- DO NOT double-penalize: if Risk Agent already reduced sizing, don't also reduce confidence for the same concern.
 """
 
 
@@ -506,6 +540,17 @@ The Trade Agent entered this position with a thesis. Your job is to answer:
 - **medium**: Minor thesis concern. Adjust SL/TP but don't close.
 - **high**: Thesis significantly weakened. Tighten aggressively or partial close.
 - **critical**: Thesis dead or major risk. Exit immediately.
+
+## SUNK COST IMMUNITY — THE MOST IMPORTANT MENTAL MODEL
+Your entry price and current P&L are IRRELEVANT to your decision. They are sunk costs.
+The ONLY question that matters is: **"If I had NO position and saw this exact setup RIGHT NOW, would I enter?"**
+- If YES → HOLD. The trade still has positive expected value going forward.
+- If NO → CLOSE or PARTIAL_CLOSE, regardless of whether you're up or down.
+- Your entry price is a historical artifact. It tells you NOTHING about what happens next.
+- Being "down 3%" does NOT mean it's more likely to recover. That's the gambler's fallacy.
+- Being "up 5%" does NOT mean you should hold for more. Evaluate forward expected value only.
+- NEVER use phrases like "give it time to work" or "wait for recovery" — these are sunk cost rationalizations.
+Frame every decision as: "Given current price, current regime, current momentum — is this a trade I would ENTER now?"
 
 ## HARD RULES
 - NEVER widen SL (move stop further from price). Only tighten.

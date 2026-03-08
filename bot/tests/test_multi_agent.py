@@ -310,7 +310,9 @@ class TestCoordinatorPipeline:
         assert decision.action == "proceed"
         assert decision.confidence == 0.78
         assert decision.regime == "trend"
-        assert decision.size_multiplier == 1.3
+        # Kelly modulation: kelly_fraction=0.25, baseline=0.15 → mult=1.5 (clamped)
+        # Risk Agent sz=1.3 × kelly_mult=1.5 = 1.95
+        assert abs(decision.size_multiplier - 1.95) < 0.01
 
     def test_pipeline_regime_failure_aborts(self):
         """If regime agent fails and is required, pipeline should return None."""
