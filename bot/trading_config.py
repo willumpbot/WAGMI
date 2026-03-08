@@ -280,6 +280,12 @@ class TradingConfig:
     min_stop_width_pct: float = field(
         default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.002)
     )
+    # Minimum expected value per dollar risked. EV = (win_prob × R:R) - (1-win_prob).
+    # Filters trades where the probability × payoff doesn't justify the risk.
+    # Default 0.10 means trades must have positive expectancy of at least $0.10 per $1 risked.
+    min_signal_ev: float = field(
+        default_factory=lambda: _env_float("MIN_SIGNAL_EV", 0.10)
+    )
     # Monte Carlo strategy
     mc_num_sims: int = field(
         default_factory=lambda: _env_int("MC_NUM_SIMS", 1000)

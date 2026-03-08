@@ -726,6 +726,16 @@ class EnsembleStrategy:
         per_signal_sl = {s.strategy: s.sl for s in signals}
         per_signal_tp1 = {s.strategy: s.tp1 for s in signals}
 
+        # Expected Value per $1 risked:
+        #   EV = (win_prob × avg_R:R) - (loss_prob × 1.0)
+        # Positive EV means the trade has a statistical edge.
+        # This enables EV-based filtering: a 72% conf trade with 1.5 R:R
+        # (EV=0.80) beats a 78% conf trade with 0.9 R:R (EV=0.48).
+        stop_width = abs(entry - best_sl)
+        rr_tp1 = abs(entry - best_tp1) / stop_width if stop_width > 0 else 0
+        win_prob = combined_conf / 100.0
+        ev_per_dollar = round(win_prob * rr_tp1 - (1.0 - win_prob), 4)
+
         return Signal(
             strategy="ensemble",
             symbol=symbol,
@@ -749,6 +759,8 @@ class EnsembleStrategy:
                 "per_signal_sl": per_signal_sl,
                 "per_signal_tp1": per_signal_tp1,
                 "mode": self.mode,
+                "ev_per_dollar": ev_per_dollar,
+                "rr_tp1": round(rr_tp1, 3),
             },
         )
 

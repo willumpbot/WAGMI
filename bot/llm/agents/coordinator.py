@@ -1426,6 +1426,21 @@ class AgentCoordinator:
                 risk_reason = rk.get("reason", rk.get("n", ""))
                 notes += f" | RISK: sizing {old_mult:.1f}x→{size_mult:.1f}x ({risk_reason})"
 
+        # Kelly Criterion modulation from Quant Agent
+        # If Quant Agent computed a half-Kelly fraction, use it to modulate size.
+        # Kelly fraction ~0.15 is our "normal" baseline. Scale around it:
+        #   kelly=0.30 → 1.5x size (strong edge), kelly=0.05 → 0.5x (weak edge)
+        # Clamped to [0.5, 1.5] to prevent extreme swings.
+        scratchpad = get_pipeline_scratchpad()
+        kelly_frac = scratchpad.read_by_key("kelly_fraction")
+        if kelly_frac is not None and isinstance(kelly_frac, (int, float)) and kelly_frac > 0:
+            kelly_baseline = 0.15  # normalized baseline
+            kelly_mult = max(0.5, min(1.5, kelly_frac / kelly_baseline))
+            old_size = size_mult
+            size_mult = max(0.0, min(2.0, size_mult * kelly_mult))
+            if abs(kelly_mult - 1.0) > 0.05:
+                notes += f" | KELLY: f={kelly_frac:.3f} mult={kelly_mult:.2f} sz={old_size:.2f}→{size_mult:.2f}"
+
         # Critic Agent: can adjust or override
         # Treat any non-"approve" verdict as a challenge (defensive normalization)
         # PROFITABILITY GATE: if Critic's veto accuracy is poor, limit its power
@@ -1561,53 +1576,95 @@ def _compute_confidence_consensus(
     critic_out: Optional[AgentOutput],
     consistency_score: float,
 ) -> Optional[float]:
-    """Compute compound conviction score across all agents.
+    """Bayesian confidence consensus: sequential probability updating.
 
-    Returns a consensus confidence that reflects how aligned ALL agents are,
-    not just the Trade Agent's confidence. Returns None if insufficient data.
+    Instead of heuristic multiplicative factors, this computes a posterior
+    probability using Bayes' rule. Each agent contributes a likelihood ratio
+    (how much their analysis shifts the probability), and the prior is
+    updated sequentially:
+
+        posterior = prior × LR_regime × LR_risk × LR_critic × LR_consistency
+
+    Likelihood ratios > 1.0 increase confidence, < 1.0 decrease it.
+    The posterior is then converted back to a probability via normalization.
+
+    Returns consensus confidence [0, 1] or None for skip decisions.
     """
     trade_conf = float(trade_out.data.get("c", trade_out.data.get("confidence", 0.0)))
     if trade_conf == 0.0:
         return None  # Skip decisions don't need consensus
 
-    # Regime Agent: high regime confidence boosts, low reduces
-    regime_conf = float(regime_out.data.get("conf", regime_out.data.get("confidence", 0.5)))
-    regime_factor = 0.7 + regime_conf * 0.3  # maps [0, 1] → [0.7, 1.0]
+    # Prior: Trade Agent's confidence as the starting probability
+    prior_odds = trade_conf / max(1.0 - trade_conf, 0.01)  # convert to odds
 
-    # Risk Agent: sizing as proxy for agreement
-    risk_factor = 1.0
+    # Regime Agent likelihood ratio:
+    # High regime confidence in a clear regime → supports the trade
+    # Low regime confidence or "unknown" → uncertainty weakens it
+    regime_conf = float(regime_out.data.get("conf", regime_out.data.get("confidence", 0.5)))
+    regime = regime_out.data.get("rg", regime_out.data.get("regime", "unknown"))
+    regime_bias = regime_out.data.get("bias", "neutral")
+
+    # Regime clarity: clear regimes are informative, unknown is not
+    if regime == "unknown":
+        lr_regime = 0.85  # slight negative: uncertainty
+    elif regime_conf >= 0.7:
+        # High-confidence regime: does the trade agree with regime bias?
+        # If bias aligns with trade direction, boost; if not, reduce
+        trade_action = trade_out.data.get("a", trade_out.data.get("action", ""))
+        if regime_bias in ("bullish", "risk_on") and trade_action in ("go", "proceed"):
+            lr_regime = 1.0 + (regime_conf - 0.5) * 0.4  # 0.7→1.08, 0.9→1.16
+        elif regime_bias in ("bearish", "risk_off") and trade_action in ("go", "proceed"):
+            lr_regime = 1.0 - (regime_conf - 0.5) * 0.3  # mild headwind
+        else:
+            lr_regime = 0.9 + regime_conf * 0.1
+    else:
+        lr_regime = 0.9 + regime_conf * 0.1  # low conf → ~neutral
+
+    # Risk Agent likelihood ratio:
+    # Override=skip is strong negative evidence, reduce is moderate, normal sizing is neutral
+    lr_risk = 1.0
     if risk_out and risk_out.ok:
-        size_mult = float(risk_out.data.get("sz", risk_out.data.get("size_multiplier", 1.0)))
         override = risk_out.data.get("override")
         if override == "skip":
-            risk_factor = 0.3  # Risk Agent strongly disagrees
+            lr_risk = 0.2  # Risk Agent sees major problems
         elif override == "reduce":
-            risk_factor = 0.7
+            lr_risk = 0.6  # Moderate concern
         else:
-            # size_mult maps: 0.5→0.75, 1.0→1.0, 1.5→1.15
-            risk_factor = 0.5 + min(size_mult, 2.0) * 0.5
+            size_mult = float(risk_out.data.get("sz", risk_out.data.get("size_multiplier", 1.0)))
+            # Large size = bullish, small = bearish on this trade
+            lr_risk = 0.7 + min(size_mult, 2.0) * 0.3  # 0.5→0.85, 1.0→1.0, 1.5→1.15
 
-    # Critic Agent: approval boosts, challenge reduces
-    critic_factor = 1.0
+    # Critic Agent likelihood ratio:
+    # Approval is confirmatory evidence, veto is disconfirming
+    lr_critic = 1.0
     if critic_out and critic_out.ok:
         verdict = critic_out.data.get("verdict", "approve").lower().strip()
         if verdict == "approve":
-            critic_factor = 1.05  # Small boost for explicit approval
+            lr_critic = 1.1  # Confirmed by independent review
         else:
             adj_conf = critic_out.data.get("adjusted_confidence")
             if adj_conf is not None:
-                # How much did critic reduce? More reduction = more disagreement
-                reduction = trade_conf - float(adj_conf)
-                critic_factor = max(0.5, 1.0 - reduction)
+                # Critic's adjusted confidence implies their belief about the true probability
+                # LR = P(critic_says_challenge | trade_is_good) / P(critic_says_challenge | trade_is_bad)
+                # Approximate: if critic says conf=0.3, it's strong disconfirmation
+                lr_critic = max(0.3, 0.5 + float(adj_conf))
             else:
-                critic_factor = 0.6  # Challenge without adjustment = moderate disagreement
+                lr_critic = 0.5  # Challenge without specifics = moderate disconfirmation
 
-    # Consistency score directly factors in
-    consistency_factor = 0.7 + consistency_score * 0.3  # maps [0, 1] → [0.7, 1.0]
+    # Consistency score as likelihood ratio:
+    # Agents agreeing is evidence the analysis is sound
+    lr_consistency = 0.6 + consistency_score * 0.5  # [0,1] → [0.6, 1.1]
 
-    # Compound consensus
-    consensus = trade_conf * regime_factor * risk_factor * critic_factor * consistency_factor
-    return max(0.0, min(1.0, round(consensus, 3)))
+    # Bayesian update: multiply all likelihood ratios with prior odds
+    posterior_odds = prior_odds * lr_regime * lr_risk * lr_critic * lr_consistency
+
+    # Convert back to probability
+    posterior = posterior_odds / (1.0 + posterior_odds)
+
+    # Clamp to [0.05, 0.95] — never be absolutely certain
+    posterior = max(0.05, min(0.95, posterior))
+
+    return round(posterior, 3)
 
 
 _ACTION_MAP = {

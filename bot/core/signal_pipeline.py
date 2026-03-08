@@ -88,6 +88,21 @@ class RiskFilterChain:
         meta["rr_tp1"] = round(signal.risk_reward_tp1, 2)
         meta["rr_tp2"] = round(signal.risk_reward_tp2, 2)
 
+        # Gate 1c: Minimum Expected Value filter
+        # EV = (win_prob × R:R) - (loss_prob × 1.0) per dollar risked.
+        # Filters trades where probability × payoff doesn't justify the risk.
+        # A 72% conf trade with 1.5 R:R (EV=0.80) passes easily.
+        # A 65% conf trade with 1.0 R:R (EV=0.30) is borderline.
+        ev = signal.metadata.get("ev_per_dollar") if signal.metadata else None
+        min_ev = getattr(self.config, "min_signal_ev", 0.10)
+        if ev is not None and ev < min_ev:
+            return FilterResult(
+                approved=False, signal=signal,
+                rejection_reason=f"EV {ev:.3f} < min {min_ev:.2f} (low expected value)"
+            )
+        if ev is not None:
+            meta["ev_per_dollar"] = ev
+
         # Gate 2: Circuit breaker
         if not self.risk_mgr.is_trading_allowed(
             confidence=signal.confidence,
