@@ -175,6 +175,8 @@ class ConfidenceScorerStrategy(BaseStrategy):
             if e["evaluated"]:
                 continue
             price_at_signal = e["price"]
+            if price_at_signal <= 0:
+                continue
             pct_move = (current_price - price_at_signal) / price_at_signal * 100
 
             success = False

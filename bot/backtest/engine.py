@@ -53,12 +53,12 @@ class BacktestEngine:
     6. Track equity curve, PnL, etc.
     """
 
-    def __init__(self, config: Optional[TradingConfig] = None, llm_integration=None):
+    def __init__(self, config: Optional[TradingConfig] = None, llm_integration=None, fresh: bool = False):
         self.config = config or TradingConfig()
         self.llm = llm_integration  # Optional BacktestLLMIntegration
 
         # Initialize components
-        self.fetcher = DataFetcher(cache_ttl=3600, backtest_mode=True)
+        self.fetcher = DataFetcher(cache_ttl=3600, backtest_mode=True, fresh=fresh)
         self._backtest_days = None  # Set during run()
         self.risk_mgr = RiskManager(
             starting_equity=self.config.starting_equity,
@@ -349,7 +349,16 @@ class BacktestEngine:
                 current_time = df_1h["time"].iloc[i]
                 # Only include data up to current time
                 mask = df["time"] <= current_time
-                windowed[tf] = df[mask].copy()
+                w = df[mask].copy()
+                # Drop rows with NaN in critical OHLCV columns
+                ohlcv_cols = [c for c in ("open", "high", "low", "close", "volume") if c in w.columns]
+                if ohlcv_cols:
+                    w = w.dropna(subset=ohlcv_cols)
+                if not w.empty:
+                    windowed[tf] = w
+
+            if not windowed:
+                continue
 
             current_price = float(df_1h["close"].iloc[i])
 
@@ -421,6 +430,9 @@ class BacktestEngine:
             cb_blocked = not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt)
             if not cb_blocked:
                 signal = ensemble.evaluate(symbol, windowed)
+                if signal and not signal.is_valid:
+                    logger.debug(f"[{symbol}] Invalid signal rejected by is_valid")
+                    signal = None
                 if signal:
                     self.candle_stats["signal"] += 1
                     # Create candidate for dual-world tracking
@@ -551,6 +563,9 @@ class BacktestEngine:
             cb_blocked = not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt)
             if not cb_blocked:
                 signal = ensemble.evaluate(symbol, windowed)
+                if signal and not signal.is_valid:
+                    logger.debug(f"[{symbol}] Invalid signal rejected by is_valid (daily)")
+                    signal = None
                 if signal:
                     self.candle_stats["signal"] += 1
                     # Create candidate for dual-world tracking
@@ -878,24 +893,28 @@ class BacktestEngine:
     def _execute_signal(self, signal: Signal, current_price: float):
         """Execute a signal in backtest mode with slippage simulation."""
         from execution.trade_profile import classify_trade, apply_profile_to_signal
+        from core.signal_pipeline import RiskFilterChain
 
-        # Apply slippage to entry AND adjust SL/TP proportionally.
-        # Previously only entry was slipped, leaving SL/TP at ideal levels —
-        # this made backtests overoptimistic about risk control.
+        # Apply slippage: shift entry by slippage bps, then shift SL/TP by
+        # the same ABSOLUTE amount (not multiplicative — preserves R:R ratios).
         slippage_bps = getattr(self.config, "slippage_bps", 0)
         slip_mult = slippage_bps / 10000.0
         if signal.side == "BUY":
-            fill_price = signal.entry * (1 + slip_mult)  # Buy higher (worse)
-            signal.sl = signal.sl * (1 + slip_mult)      # SL also shifts up
-            signal.tp1 = signal.tp1 * (1 + slip_mult)    # TP1 shifts up
-            signal.tp2 = signal.tp2 * (1 + slip_mult)    # TP2 shifts up
+            slip_amount = signal.entry * slip_mult
+            fill_price = signal.entry + slip_amount      # Buy higher (worse)
+            signal.sl = signal.sl + slip_amount           # SL shifts by same $ amount
+            signal.tp1 = signal.tp1 + slip_amount         # TP1 shifts
+            signal.tp2 = signal.tp2 + slip_amount         # TP2 shifts
         else:
-            fill_price = signal.entry * (1 - slip_mult)  # Sell lower (worse)
-            signal.sl = signal.sl * (1 - slip_mult)      # SL also shifts down
-            signal.tp1 = signal.tp1 * (1 - slip_mult)    # TP1 shifts down
-            signal.tp2 = signal.tp2 * (1 - slip_mult)    # TP2 shifts down
+            slip_amount = signal.entry * slip_mult
+            fill_price = signal.entry - slip_amount      # Sell lower (worse)
+            signal.sl = signal.sl - slip_amount           # SL shifts
+            signal.tp1 = signal.tp1 - slip_amount         # TP1 shifts
+            signal.tp2 = signal.tp2 - slip_amount         # TP2 shifts
 
-        # Determine leverage
+        signal.entry = fill_price  # Update entry for downstream consumers
+
+        # Extract agreement metadata
         num_agree = signal.metadata.get("num_agree", 1)
         total = signal.metadata.get("total_strategies", 4)
 
@@ -907,36 +926,52 @@ class BacktestEngine:
             if p.leverage > 5.0
         )
 
-        lev_decision = self.leverage_mgr.decide(
-            signal.confidence, num_agree, total, risk_tier, extreme_count
-        )
+        # Raw mode: bypass RiskFilterChain for pure strategy analysis
+        if self._raw_mode:
+            lev_decision = self.leverage_mgr.decide(
+                signal.confidence, num_agree, total, risk_tier, extreme_count
+            )
+            if lev_decision.leverage <= 0:
+                return
+            qty = self.risk_mgr.calculate_qty(
+                fill_price, signal.sl, lev_decision.leverage,
+                lev_decision.risk_multiplier,
+                slippage_bps=slippage_bps,
+                skip_notional_cap=True,
+                symbol=signal.symbol,
+            )
+            if qty <= 0:
+                return
+            leverage = lev_decision.leverage
+            risk_mult = lev_decision.risk_multiplier
+        else:
+            # Run through the full RiskFilterChain — same pipeline as live trading.
+            # Includes: R:R check, EV filter, circuit breaker, max positions,
+            # correlation guard, leverage decision, liquidation safety, position sizing.
+            chain = RiskFilterChain(self.risk_mgr, self.leverage_mgr, self.config)
+            result = chain.evaluate(
+                signal=signal,
+                equity=self.risk_mgr.equity,
+                num_strategies_agree=num_agree,
+                total_strategies=total,
+                current_open_count=self.pos_mgr.get_open_count(),
+                current_extreme_count=extreme_count,
+                risk_tier=risk_tier,
+                open_positions=self.pos_mgr.get_open_positions(),
+            )
 
-        if lev_decision.leverage <= 0:
-            self.signal_rejections.append({
-                "symbol": signal.symbol, "strategy": signal.strategy,
-                "confidence": signal.confidence, "side": signal.side,
-                "gate": "leverage", "reason": lev_decision.reason,
-            })
-            return
+            if not result.approved:
+                self.signal_rejections.append({
+                    "symbol": signal.symbol, "strategy": signal.strategy,
+                    "confidence": signal.confidence, "side": signal.side,
+                    "gate": "risk_filter_chain",
+                    "reason": result.rejection_reason,
+                })
+                return
 
-        # Per-symbol risk override (e.g., BTC=1% vs global 2%)
-        sym_risk = get_symbol_param(signal.symbol, "risk_per_trade", self.config)
-        risk_override = sym_risk if sym_risk != self.config.risk_per_trade else 0.0
-
-        qty = self.risk_mgr.calculate_qty(
-            fill_price, signal.sl, lev_decision.leverage, lev_decision.risk_multiplier,
-            slippage_bps=slippage_bps,
-            skip_notional_cap=self._raw_mode,
-            risk_per_trade_override=risk_override,
-            symbol=signal.symbol,
-        )
-        if qty <= 0:
-            self.signal_rejections.append({
-                "symbol": signal.symbol, "strategy": signal.strategy,
-                "confidence": signal.confidence, "side": signal.side,
-                "gate": "sizing", "reason": "qty=0 (stop too narrow or equity too low)",
-            })
-            return
+            leverage = result.leverage
+            risk_mult = result.risk_multiplier
+            qty = result.position_qty
 
         side = "LONG" if signal.side == "BUY" else "SHORT"
 
@@ -972,8 +1007,8 @@ class BacktestEngine:
             tp1=adjusted["tp1"],
             tp2=adjusted["tp2"],
             atr=signal.atr,
-            leverage=lev_decision.leverage,
-            mode=lev_decision.mode,
+            leverage=leverage,
+            mode="leverage",
             strategy=signal.strategy,
             confidence=signal.confidence,
             tp1_close_pct=adjusted["tp1_close_pct"],
@@ -991,7 +1026,7 @@ class BacktestEngine:
         llm_tag = signal.metadata.get("llm_status", "unknown")
         logger.info(
             f"[{signal.symbol}] TRADE {signal.side} "
-            f"conf={signal.confidence:.0f}% lev={lev_decision.leverage:.1f}x "
+            f"conf={signal.confidence:.0f}% lev={leverage:.1f}x "
             f"({llm_tag})"
         )
 
@@ -1441,7 +1476,7 @@ class BacktestEngine:
                     total_funding += meta.get("funding_costs", 0)
 
         net_pnl = gross_pnl - total_fees - total_funding
-        fee_drag_pct = round(total_fees / gross_pnl * 100, 1) if gross_pnl > 0 else 0
+        fee_drag_pct = round(total_fees / abs(gross_pnl) * 100, 1) if gross_pnl != 0 else 0
 
         # Break-even win rate: given avg win/loss sizes, what WR covers fees?
         wins = [e.pnl for e in self.pos_mgr.trade_log if e.action in self._CLOSE_ACTIONS and e.pnl > 0]
@@ -1527,14 +1562,20 @@ class BacktestEngine:
         starting = self.config.starting_equity
         final = equities[-1]
 
-        # Daily returns (approximate: group equity curve by 24-candle chunks for hourly)
-        chunk_size = 24
+        # Daily returns: group equity curve by calendar date for accurate Sharpe
+        from collections import defaultdict
+        daily_equity_map = defaultdict(list)
+        for e in self.equity_curve:
+            date_str = str(e["time"])[:10]  # YYYY-MM-DD
+            daily_equity_map[date_str].append(e["equity"])
+
+        sorted_dates = sorted(daily_equity_map.keys())
         daily_returns = []
-        for i in range(chunk_size, len(equities), chunk_size):
-            prev = equities[i - chunk_size]
-            curr = equities[i]
-            if prev > 0:
-                daily_returns.append((curr - prev) / prev)
+        for j in range(1, len(sorted_dates)):
+            prev_eq = daily_equity_map[sorted_dates[j - 1]][-1]  # End of previous day
+            curr_eq = daily_equity_map[sorted_dates[j]][-1]       # End of current day
+            if prev_eq > 0:
+                daily_returns.append((curr_eq - prev_eq) / prev_eq)
 
         if not daily_returns:
             return {}
@@ -1714,12 +1755,7 @@ class BacktestEngine:
             if event.action == "OPEN":
                 open_events[event.symbol] = event
 
-        # Build LLM decision lookup
-        llm_lookup = {}
-        if self.llm:
-            for dec in self.llm.decisions:
-                ts = dec.get("timestamp", "")
-                llm_lookup[ts] = dec
+        # LLM decisions are looked up via reverse iteration in the loop below
 
         timeline = []
         for event in self.pos_mgr.trade_log:

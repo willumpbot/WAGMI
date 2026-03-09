@@ -751,7 +751,21 @@ class MultiStrategyBot:
                 self.watchdog.record_error()
 
             self._tick += 1
+
+            # Periodic paper trading summary (every 60 ticks ≈ 6 hours)
+            if self._tick % 60 == 0:
+                try:
+                    self._log_periodic_summary()
+                except Exception as e:
+                    logger.debug(f"Periodic summary error: {e}")
+
             self._sleep_interruptible(self._adaptive_scan_interval())
+
+        # Final session summary on shutdown
+        try:
+            self._log_periodic_summary(final=True)
+        except Exception:
+            pass
 
         self.watchdog.stop()
         log_health_event("BOT_STOP", "INFO", f"Bot stopped gracefully after {self._tick} ticks")
@@ -2566,11 +2580,39 @@ class MultiStrategyBot:
             logger.info(f"[{trace_id}][{symbol}] Rejected: SL distance {sl_distance:.4f} < 0.5*ATR")
             return
 
-        # Determine leverage
+        # Run signal through RiskFilterChain for EV filter, liquidation safety,
+        # and correlation guard. These gates don't exist in the inline checks above.
         num_agree = signal_result.metadata.get("num_agree", 1)
         total = signal_result.metadata.get("total_strategies", len(self.strategies))
         extreme_count = sum(1 for p in open_pos.values() if p.leverage > 5.0)
 
+        try:
+            from core.signal_pipeline import RiskFilterChain
+            _chain = RiskFilterChain(self.risk_mgr, self.leverage_mgr, self.config)
+            _chain_result = _chain.evaluate(
+                signal=signal_result,
+                equity=self.risk_mgr.equity,
+                num_strategies_agree=num_agree,
+                total_strategies=total,
+                current_open_count=len(open_pos),
+                current_extreme_count=extreme_count,
+                risk_tier=sym_cfg.risk_tier,
+                open_positions=open_pos,
+                portfolio_risk_engine=self.portfolio_risk if hasattr(self, 'portfolio_risk') else None,
+            )
+            if not _chain_result.approved:
+                log_rejection(symbol, "risk_filter_chain",
+                              confidence=signal_result.confidence,
+                              reason=_chain_result.rejection_reason)
+                logger.info(
+                    f"[{trace_id}][{symbol}] RiskFilterChain rejected: "
+                    f"{_chain_result.rejection_reason}"
+                )
+                return
+        except Exception as e:
+            logger.debug(f"RiskFilterChain error (falling back to inline): {e}")
+
+        # Determine leverage (inline path preserved for live-specific caps below)
         lev_decision = self.leverage_mgr.decide(
             signal_result.confidence,
             num_agree,
@@ -5578,6 +5620,60 @@ class MultiStrategyBot:
         msg = "\n".join(lines)
         self.alerts.send_market_update(msg)
         logger.info(msg.replace("\n", " | "))
+
+
+    def _log_periodic_summary(self, final: bool = False):
+        """Log periodic paper trading summary (every ~6 hours + on shutdown).
+
+        Computes win rate, PnL, per-symbol breakdown using TradeLogger data.
+        """
+        label = "FINAL SESSION SUMMARY" if final else "PERIODIC SUMMARY"
+        lines = [f"[{label}] tick={self._tick}"]
+
+        # Open positions snapshot
+        open_pos = self.pos_mgr.get_open_positions()
+        lines.append(f"  Open positions: {len(open_pos)}")
+        for sym, pos in open_pos.items():
+            price = self._last_prices.get(sym)
+            if price and pos.qty > 0:
+                if pos.side == "LONG":
+                    upnl = (price - pos.entry) * pos.qty * pos.leverage
+                else:
+                    upnl = (pos.entry - price) * pos.qty * pos.leverage
+                lines.append(f"    {sym} {pos.side} {pos.leverage:.0f}x uPnL=${upnl:+,.2f}")
+
+        # Circuit breaker state
+        cb = self.risk_mgr.circuit_breaker
+        lines.append(f"  Equity: ${self.risk_mgr.equity:,.2f} | Daily PnL: ${cb.daily_pnl:+,.2f} | Consec losses: {cb.consecutive_losses}")
+        if cb.tripped:
+            lines.append("  ** CIRCUIT BREAKER TRIPPED **")
+
+        # Use TradeLogger report if available
+        if self.trade_logger:
+            report = self.trade_logger.generate_report()
+            if "error" not in report:
+                s = report["summary"]
+                p = report["pnl"]
+                lines.append(f"  Closed trades: {s['total_closed_trades']} | WR: {s['win_rate_pct']:.1f}% | Net PnL: ${p['net_pnl']:+.2f}")
+                lines.append(f"  Avg win: ${p['avg_win']:+.2f} | Avg loss: ${p['avg_loss']:+.2f} | PF: {p['profit_factor']:.2f}x")
+
+                # Per-symbol breakdown
+                if report.get("by_symbol"):
+                    sym_parts = []
+                    for sym, st in report["by_symbol"].items():
+                        sym_parts.append(f"{sym}:{st['trades']}t/{st['win_rate']:.0f}%/${st['pnl']:+.0f}")
+                    lines.append(f"  By symbol: {' | '.join(sym_parts)}")
+            else:
+                lines.append(f"  Trades: {report['error']}")
+
+        msg = "\n".join(lines)
+        logger.info(msg.replace("\n", " | "))
+
+        # Also send via alerts so it reaches Telegram/Discord
+        try:
+            self.alerts.send_market_update(msg)
+        except Exception:
+            pass
 
 
 def main():

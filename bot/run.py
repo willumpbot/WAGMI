@@ -81,7 +81,8 @@ def cmd_backtest(args):
             resume=resume,
         )
 
-    engine = BacktestEngine(config, llm_integration=llm_integration)
+    fresh_mode = getattr(args, "fresh", False)
+    engine = BacktestEngine(config, llm_integration=llm_integration, fresh=fresh_mode)
 
     raw_mode = getattr(args, "raw", False)
     if raw_mode:
@@ -388,6 +389,7 @@ Commands:
     sub_bt.add_argument("--resume", action="store_true", help="Resume LLM backtest from last checkpoint")
     sub_bt.add_argument("--csv", default="", help="Export per-trade timeline to CSV file")
     sub_bt.add_argument("--raw", action="store_true", help="Disable circuit breakers, notional caps, and risk gates for raw strategy analysis")
+    sub_bt.add_argument("--fresh", action="store_true", help="Force re-fetch data from exchanges, ignoring disk cache")
 
     # Signals
     sub_sig = subparsers.add_parser("signals", help="One-shot signal check")

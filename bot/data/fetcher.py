@@ -128,15 +128,21 @@ class DataFetcher:
 
     def __init__(self, max_retries: int = 3, retry_delay: float = 5.0, cache_ttl: int = 45,
                  cb_threshold: int = 5, cb_reset_s: int = 300, backtest_mode: bool = False,
-                 backtest_days: Optional[int] = None):
+                 backtest_days: Optional[int] = None, fresh: bool = False):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.cache_ttl = cache_ttl
         self.backtest_mode = backtest_mode
         self.backtest_days = backtest_days
+        self._fresh = fresh  # --fresh flag: skip disk cache, re-fetch
         self._cache: Dict[str, tuple] = {}
         self._lock = threading.Lock()
         self._circuit_breaker = ExchangeCircuitBreaker(cb_threshold, cb_reset_s)
+
+        # Disk cache directory for backtest reproducibility
+        self._disk_cache_dir = os.path.join(os.path.dirname(__file__), "cache")
+        if self.backtest_mode:
+            os.makedirs(self._disk_cache_dir, exist_ok=True)
 
         # Exchange fallback chains per symbol (Hyperliquid primary for all)
         self._symbol_exchanges = {
@@ -259,6 +265,76 @@ class DataFetcher:
 
     def _set_cache(self, key: str, df: pd.DataFrame):
         self._cache[key] = (time.time(), df.copy())
+
+    # ─── Disk cache (backtest reproducibility) ────────────────────
+
+    def _disk_cache_path(self, symbol: str, timeframe: str, days: Optional[int] = None) -> str:
+        """Generate disk cache file path for a symbol/timeframe/days combo."""
+        d = days or self.backtest_days or 0
+        return os.path.join(self._disk_cache_dir, f"{symbol}_{timeframe}_{d}d.csv")
+
+    def _load_disk_cache(self, symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
+        """Load cached data from disk if available and not --fresh."""
+        if not self.backtest_mode or self._fresh:
+            return None
+        path = self._disk_cache_path(symbol, timeframe)
+        if not os.path.exists(path):
+            return None
+        try:
+            df = pd.read_csv(path, parse_dates=["time"])
+            if df.empty or len(df) < 5:
+                return None
+            logger.info(f"[CACHE] Loaded {len(df)} candles for {symbol}/{timeframe} from disk cache")
+            return df
+        except Exception as e:
+            logger.debug(f"[CACHE] Failed to load {path}: {e}")
+            return None
+
+    def _save_disk_cache(self, symbol: str, timeframe: str, df: pd.DataFrame):
+        """Save fetched data to disk cache for reproducibility."""
+        if not self.backtest_mode or df is None or df.empty:
+            return
+        path = self._disk_cache_path(symbol, timeframe)
+        try:
+            df.to_csv(path, index=False)
+            logger.debug(f"[CACHE] Saved {len(df)} candles for {symbol}/{timeframe} to disk cache")
+        except Exception as e:
+            logger.debug(f"[CACHE] Failed to save {path}: {e}")
+
+    # ─── Data continuity checks ──────────────────────────────────
+
+    def _check_data_continuity(self, df: pd.DataFrame, symbol: str, timeframe: str) -> pd.DataFrame:
+        """Check for gaps in candle data and log warnings.
+
+        A gap is defined as > 2x the expected timeframe interval.
+        Returns the dataframe unchanged (does not modify data).
+        """
+        if df is None or df.empty or "time" not in df.columns or len(df) < 2:
+            return df
+
+        tf_ms = TIMEFRAME_MS.get(timeframe)
+        if tf_ms is None:
+            return df
+
+        expected_gap_s = tf_ms / 1000.0  # convert ms to seconds
+        max_allowed_gap_s = expected_gap_s * 2.5  # allow some tolerance
+
+        times = pd.to_datetime(df["time"])
+        diffs = times.diff().dt.total_seconds().dropna()
+        gaps = diffs[diffs > max_allowed_gap_s]
+
+        if len(gaps) > 0:
+            gap_details = []
+            for idx in gaps.index[:5]:  # log up to 5 gaps
+                gap_s = gaps[idx]
+                gap_at = times.iloc[idx]
+                gap_details.append(f"{gap_at.strftime('%Y-%m-%d %H:%M')} ({gap_s/3600:.1f}h)")
+            logger.warning(
+                f"[DATA] {symbol}/{timeframe}: {len(gaps)} gap(s) detected "
+                f"(>{expected_gap_s/3600:.1f}h expected). Examples: {', '.join(gap_details)}"
+            )
+
+        return df
 
     # ─── CCXT fetching ────────────────────────────────────────────
 
@@ -566,9 +642,17 @@ class DataFetcher:
         if cached is not None:
             return cached
 
+        # Try disk cache first (backtest reproducibility)
+        disk_cached = self._load_disk_cache(symbol_name, timeframe)
+        if disk_cached is not None:
+            self._set_cache(cache_key, disk_cached)
+            return disk_cached
+
         # Try CCXT first
         df = self._fetch_ccxt_ohlcv(symbol_name, timeframe)
         if df is not None and not df.empty:
+            self._check_data_continuity(df, symbol_name, timeframe)
+            self._save_disk_cache(symbol_name, timeframe, df)
             self._set_cache(cache_key, df)
             return df
 
@@ -577,6 +661,8 @@ class DataFetcher:
         df = self._fetch_cg_ohlcv(coin_id, timeframe)
         if not df.empty:
             logger.info(f"[DATA] {symbol_name} fetched {len(df)} candles for {timeframe} via CoinGecko")
+            self._check_data_continuity(df, symbol_name, timeframe)
+            self._save_disk_cache(symbol_name, timeframe, df)
             self._set_cache(cache_key, df)
         return df
 

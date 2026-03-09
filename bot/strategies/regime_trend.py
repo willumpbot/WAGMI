@@ -264,7 +264,7 @@ class RegimeTrendStrategy(BaseStrategy):
         regime_htf = self._check_regime(df_htf) if not df_htf.empty else {"ok": False, "bearish": False, "macd_h": 0, "mfi": 50}
 
         align_long = int(cu) + int(float(mfi_1h.iloc[-1]) > 50) + int(regime_6h["ok"]) + int(regime_htf["ok"])
-        align_short = int(cd) + int(float(mfi_1h.iloc[-1]) < 50) + int(not regime_6h["ok"]) + int(not regime_htf["ok"])
+        align_short = int(cd) + int(float(mfi_1h.iloc[-1]) < 50) + int(regime_6h["bearish"]) + int(regime_htf["bearish"])
 
         return {
             "symbol": symbol,
