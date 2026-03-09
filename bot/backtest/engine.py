@@ -53,9 +53,11 @@ class BacktestEngine:
     6. Track equity curve, PnL, etc.
     """
 
-    def __init__(self, config: Optional[TradingConfig] = None, llm_integration=None, fresh: bool = False):
+    def __init__(self, config: Optional[TradingConfig] = None, llm_integration=None,
+                 fresh: bool = False, relaxed_cb: bool = False):
         self.config = config or TradingConfig()
         self.llm = llm_integration  # Optional BacktestLLMIntegration
+        self._relaxed_cb = relaxed_cb
 
         # Initialize components
         self.fetcher = DataFetcher(cache_ttl=3600, backtest_mode=True, fresh=fresh)
@@ -79,21 +81,20 @@ class BacktestEngine:
             max_leverage=self.config.max_leverage,
         )
 
-        # Widen circuit breakers for backtest to avoid cascading starvation
-        # Live: 5% daily / 10% drawdown (tight, protects real money)
-        # Backtest: 15% daily / 30% drawdown (loose, prioritizes learning data)
-        self.risk_mgr.circuit_breaker.daily_loss_limit_pct = float(
-            os.getenv("BACKTEST_CB_DAILY_LOSS_PCT", "0.15")
-        )
-        self.risk_mgr.circuit_breaker.max_drawdown_pct = float(
-            os.getenv("BACKTEST_CB_MAX_DRAWDOWN_PCT", "0.30")
-        )
-        # Widen consecutive loss limit for backtest (live default is often 3, too tight)
-        bt_consec = int(os.getenv("BACKTEST_CB_MAX_CONSEC", "0"))
-        if bt_consec > 0:
-            self.risk_mgr.circuit_breaker.max_consecutive_losses = bt_consec
-        elif self.risk_mgr.circuit_breaker.max_consecutive_losses <= 3:
-            self.risk_mgr.circuit_breaker.max_consecutive_losses = 6
+        # Circuit breaker settings: default to LIVE settings for realistic backtests.
+        # Use --relaxed-cb (or env vars) to widen for analysis/learning mode.
+        if self._relaxed_cb:
+            self.risk_mgr.circuit_breaker.daily_loss_limit_pct = float(
+                os.getenv("BACKTEST_CB_DAILY_LOSS_PCT", "0.15")
+            )
+            self.risk_mgr.circuit_breaker.max_drawdown_pct = float(
+                os.getenv("BACKTEST_CB_MAX_DRAWDOWN_PCT", "0.30")
+            )
+            bt_consec = int(os.getenv("BACKTEST_CB_MAX_CONSEC", "0"))
+            if bt_consec > 0:
+                self.risk_mgr.circuit_breaker.max_consecutive_losses = bt_consec
+            elif self.risk_mgr.circuit_breaker.max_consecutive_losses <= 3:
+                self.risk_mgr.circuit_breaker.max_consecutive_losses = 6
 
         # Results
         self.equity_curve: List[Dict] = []
@@ -111,6 +112,9 @@ class BacktestEngine:
         # Per-symbol re-entry gap: skip 1 candle after a close to prevent
         # same-bar re-entry artifacts in backtest
         self._last_close_candle: Dict[str, int] = {}  # symbol -> candle index
+
+        # Last prices per symbol for cross-symbol MTM equity calculation
+        self._last_prices: Dict[str, float] = {}
 
         # Raw mode: disable all risk gates for pure strategy analysis
         self._raw_mode = False
@@ -361,6 +365,8 @@ class BacktestEngine:
                 continue
 
             current_price = float(df_1h["close"].iloc[i])
+            candle_high = float(df_1h["high"].iloc[i])
+            candle_low = float(df_1h["low"].iloc[i])
 
             # Parse simulation timestamp for circuit breaker time awareness
             sim_time = pd.Timestamp(df_1h["time"].iloc[i])
@@ -368,8 +374,32 @@ class BacktestEngine:
                 sim_time = sim_time.tz_localize("UTC")
             sim_dt = sim_time.to_pydatetime()
 
-            # Check existing positions
-            events = self.pos_mgr.update_price(symbol, current_price)
+            # Check existing positions with intra-candle SL/TP simulation.
+            # Check worst-case price first (SL side), then best-case (TP side),
+            # then settle on close. This prevents backtest from surviving wicks
+            # that would stop out live positions.
+            # Exit slippage: exits slip AGAINST the trade (SL fills worse, TP fills worse)
+            exit_slip = getattr(self.config, "slippage_bps", 0) / 10000.0
+            pos = self.pos_mgr.positions.get(symbol)
+            events = []
+            if pos and pos.state != "CLOSED":
+                is_long = pos.side == "LONG"
+                # 1. Worst case first: check if SL was breached during candle
+                # Apply exit slippage: SL fills worse (lower for long, higher for short)
+                worst_price = candle_low if is_long else candle_high
+                worst_with_slip = worst_price * (1 - exit_slip) if is_long else worst_price * (1 + exit_slip)
+                events = self.pos_mgr.update_price(symbol, worst_with_slip)
+                if not events:
+                    # 2. Best case: check if TP was hit during candle
+                    # Apply exit slippage: TP fills slightly worse too
+                    best_price = candle_high if is_long else candle_low
+                    best_with_slip = best_price * (1 - exit_slip) if is_long else best_price * (1 + exit_slip)
+                    events = self.pos_mgr.update_price(symbol, best_with_slip)
+                if not events:
+                    # 3. Settle on close price for trailing stop updates etc
+                    events = self.pos_mgr.update_price(symbol, current_price)
+            else:
+                events = self.pos_mgr.update_price(symbol, current_price)
             for event in events:
                 # Tag close events with simulated time for hold duration calculation
                 if event.action in self._CLOSE_ACTIONS:
@@ -382,6 +412,15 @@ class BacktestEngine:
                 if self.llm and event.action in self._CLOSE_ACTIONS:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
+
+            # Accrue funding costs for open positions (1h per candle step)
+            avg_funding_rate = getattr(self.config, "backtest_funding_rate", 0.0001)  # 0.01% per 8h
+            _pos = self.pos_mgr.positions.get(symbol)
+            if _pos and _pos.state != "CLOSED" and _pos.qty > 0:
+                notional = _pos.entry * _pos.qty * _pos.leverage
+                # 1 hour out of 8h funding interval = 1/8 fraction
+                cost = abs(avg_funding_rate) * notional * (1.0 / 8.0)
+                _pos.funding_costs += cost
 
             # Circuit breaker force-close: only close OPEN positions (still
             # exposed to initial risk). TRAILING/TP1_HIT positions already hit
@@ -435,6 +474,24 @@ class BacktestEngine:
                     signal = None
                 if signal:
                     self.candle_stats["signal"] += 1
+                    # Tag regime at signal time for regime-aware reporting
+                    try:
+                        statuses = ensemble.get_all_status(symbol, windowed)
+                        for s in statuses:
+                            if s.get("strategy") == "regime_trend":
+                                al = s.get("align_long", 0)
+                                ash = s.get("align_short", 0)
+                                if al >= 3:
+                                    signal.metadata["regime"] = "trending_bull"
+                                elif ash >= 3:
+                                    signal.metadata["regime"] = "trending_bear"
+                                elif al >= 2 or ash >= 2:
+                                    signal.metadata["regime"] = "mixed"
+                                else:
+                                    signal.metadata["regime"] = "ranging"
+                                break
+                    except Exception:
+                        signal.metadata.setdefault("regime", "unknown")
                     # Create candidate for dual-world tracking
                     candidate = self._create_candidate(signal, sim_dt)
 
@@ -460,17 +517,30 @@ class BacktestEngine:
                 self.candle_stats["cb_blocked"] += 1
                 self.signals_blocked_by_cb += 1
 
-            # Record equity with CB state
+            # Record equity with mark-to-market (unrealized PnL included)
+            unrealized_pnl = 0.0
+            for _sym, _pos in self.pos_mgr.get_open_positions().items():
+                # For current symbol use current_price; for others use last known
+                _price = current_price if _sym == symbol else self._last_prices.get(_sym, _pos.entry)
+                if _pos.side == "LONG":
+                    unrealized_pnl += (_price - _pos.entry) * _pos.qty
+                else:
+                    unrealized_pnl += (_pos.entry - _price) * _pos.qty
+            mtm_equity = self.risk_mgr.equity + unrealized_pnl
+            peak_eq = self.risk_mgr.circuit_breaker.peak_equity
             self.equity_curve.append({
                 "time": str(df_1h["time"].iloc[i]),
                 "equity": self.risk_mgr.equity,
+                "mtm_equity": mtm_equity,
+                "unrealized_pnl": round(unrealized_pnl, 2),
                 "open_positions": self.pos_mgr.get_open_count(),
                 "cb_active": self.risk_mgr.circuit_breaker.tripped,
                 "drawdown_pct": round(
-                    (self.risk_mgr.circuit_breaker.peak_equity - self.risk_mgr.equity)
-                    / self.risk_mgr.circuit_breaker.peak_equity * 100, 1
-                ) if self.risk_mgr.circuit_breaker.peak_equity > 0 else 0,
+                    (peak_eq - mtm_equity) / peak_eq * 100, 1
+                ) if peak_eq > 0 else 0,
             })
+            # Track last price per symbol for cross-symbol MTM
+            self._last_prices[symbol] = current_price
 
             # LLM: checkpoint and progress
             if self.llm:
@@ -511,6 +581,8 @@ class BacktestEngine:
                 windowed[tf] = df_tf[mask].copy()
 
             current_price = float(df["close"].iloc[i])
+            candle_high = float(df["high"].iloc[i]) if "high" in df.columns else current_price
+            candle_low = float(df["low"].iloc[i]) if "low" in df.columns else current_price
 
             # Parse simulation timestamp for circuit breaker time awareness
             sim_time = pd.Timestamp(df["time"].iloc[i])
@@ -518,7 +590,23 @@ class BacktestEngine:
                 sim_time = sim_time.tz_localize("UTC")
             sim_dt = sim_time.to_pydatetime()
 
-            events = self.pos_mgr.update_price(symbol, current_price)
+            # Intra-candle SL/TP: worst case → best case → close (with exit slippage)
+            exit_slip = getattr(self.config, "slippage_bps", 0) / 10000.0
+            pos = self.pos_mgr.positions.get(symbol)
+            events = []
+            if pos and pos.state != "CLOSED":
+                is_long = pos.side == "LONG"
+                worst_price = candle_low if is_long else candle_high
+                worst_with_slip = worst_price * (1 - exit_slip) if is_long else worst_price * (1 + exit_slip)
+                events = self.pos_mgr.update_price(symbol, worst_with_slip)
+                if not events:
+                    best_price = candle_high if is_long else candle_low
+                    best_with_slip = best_price * (1 - exit_slip) if is_long else best_price * (1 + exit_slip)
+                    events = self.pos_mgr.update_price(symbol, best_with_slip)
+                if not events:
+                    events = self.pos_mgr.update_price(symbol, current_price)
+            else:
+                events = self.pos_mgr.update_price(symbol, current_price)
             for event in events:
                 if event.action in self._CLOSE_ACTIONS:
                     event.metadata["close_sim_time"] = str(sim_dt)
@@ -1018,6 +1106,7 @@ class BacktestEngine:
                 "num_agree": signal.metadata.get("num_agree", 1),
                 "strategies_agree": signal.metadata.get("strategies_agree", [signal.strategy]),
                 "sim_time": signal.metadata.get("sim_time", ""),
+                "regime": signal.metadata.get("regime", "unknown"),
             },
             trade_profile=trade_prof,
             notes=position_notes,
@@ -1041,6 +1130,7 @@ class BacktestEngine:
             "tp1": signal.tp1,
             "tp2": signal.tp2,
             "llm_status": llm_tag,
+            "regime": signal.metadata.get("regime", "unknown"),
         })
 
     def _clear_stale_analysis_data(self):
@@ -1062,9 +1152,9 @@ class BacktestEngine:
         """Generate comprehensive backtest report."""
         trade_summary = self.pos_mgr.get_trade_summary()
 
-        # Equity curve stats — use running peak for correct max drawdown
+        # Equity curve stats — use MTM equity (includes unrealized PnL) for accurate drawdown
         if self.equity_curve:
-            equities = [e["equity"] for e in self.equity_curve]
+            equities = [e.get("mtm_equity", e["equity"]) for e in self.equity_curve]
             running_peak = equities[0]
             max_drawdown = 0
             max_dd_duration = 0
@@ -1117,6 +1207,7 @@ class BacktestEngine:
             "confidence_analysis": self._report_confidence_analysis(),
             "risk_metrics": self._report_risk_metrics(max_drawdown, max_dd_duration),
             "trailing_analysis": self._report_trailing_analysis(),
+            "by_regime": self._report_by_regime(),
             "symbol_pnl": self.symbol_pnl,
             "recommendations": self._generate_recommendations(),
             "equity_curve": self.equity_curve,
@@ -1558,7 +1649,8 @@ class BacktestEngine:
         if not self.equity_curve or len(self.equity_curve) < 2:
             return {}
 
-        equities = [e["equity"] for e in self.equity_curve]
+        # Use MTM equity (includes unrealized PnL) for accurate risk metrics
+        equities = [e.get("mtm_equity", e["equity"]) for e in self.equity_curve]
         starting = self.config.starting_equity
         final = equities[-1]
 
@@ -1567,7 +1659,7 @@ class BacktestEngine:
         daily_equity_map = defaultdict(list)
         for e in self.equity_curve:
             date_str = str(e["time"])[:10]  # YYYY-MM-DD
-            daily_equity_map[date_str].append(e["equity"])
+            daily_equity_map[date_str].append(e.get("mtm_equity", e["equity"]))
 
         sorted_dates = sorted(daily_equity_map.keys())
         daily_returns = []
@@ -1618,6 +1710,39 @@ class BacktestEngine:
             "max_dd_duration_candles": max_dd_duration,
             "annualized_return_pct": round(annualized_return * 100, 1),
         }
+
+    def _report_by_regime(self) -> Dict[str, Any]:
+        """Performance breakdown by market regime at entry."""
+        regime_stats: Dict[str, Dict] = {}
+        for sig in self.signals_generated:
+            regime = sig.get("regime", "unknown")
+            if regime not in regime_stats:
+                regime_stats[regime] = {"trades": 0, "signals": 0}
+            regime_stats[regime]["signals"] += 1
+
+        # Match closed trades to their entry regime via trade_log metadata
+        for event in self.pos_mgr.trade_log:
+            if event.action not in self._CLOSE_ACTIONS:
+                continue
+            meta = event.metadata or {}
+            regime = meta.get("regime", "") or (meta.get("entry_reasons") or {}).get("regime", "unknown")
+            if regime not in regime_stats:
+                regime_stats[regime] = {"trades": 0, "signals": 0}
+            stats = regime_stats[regime]
+            stats["trades"] = stats.get("trades", 0) + 1
+            stats.setdefault("wins", 0)
+            stats.setdefault("pnl", 0.0)
+            if event.pnl > 0:
+                stats["wins"] += 1
+            stats["pnl"] += event.pnl
+
+        # Compute win rates
+        for regime, stats in regime_stats.items():
+            t = stats.get("trades", 0)
+            stats["win_rate"] = round(stats.get("wins", 0) / t * 100, 1) if t > 0 else 0
+            stats["pnl"] = round(stats.get("pnl", 0), 2)
+
+        return regime_stats
 
     def _report_trailing_analysis(self) -> Dict[str, Any]:
         """Analyze trailing stop effectiveness vs fixed TP2."""
@@ -2027,6 +2152,20 @@ def print_report(report: Dict):
                 f"avg=${stats['avg_pnl']:>8.2f}  "
                 f"total=${stats['pnl']:>10,.2f}"
             )
+
+    # ── BY REGIME ──
+    by_regime = report.get("by_regime", {})
+    if by_regime:
+        print(f"\n{'── BY REGIME ':─<{W}}")
+        for regime in sorted(by_regime.keys(), key=lambda k: -by_regime[k].get("trades", 0)):
+            stats = by_regime[regime]
+            t = stats.get("trades", 0)
+            if t > 0:
+                print(
+                    f"    {regime:18s}  {t:>3} trades  "
+                    f"WR={stats.get('win_rate', 0):>5.1f}%  "
+                    f"PnL=${stats.get('pnl', 0):>10,.2f}"
+                )
 
     # ── RISK METRICS ──
     if risk:
