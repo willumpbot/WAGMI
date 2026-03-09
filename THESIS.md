@@ -249,20 +249,20 @@ $10k at +5% monthly (conservative):
 
 ## Test Coverage Gaps (Holes That Matter)
 
-| Feature | Test Status | PnL Risk | Priority |
-|---------|-------------|----------|----------|
-| Intra-candle SL/TP (backtest) | **UNTESTED** | HIGH — backtest accuracy depends on this | P0 |
-| MTM equity curve | **UNTESTED** | HIGH — drawdown/Sharpe metrics wrong without it | P0 |
-| Hold limits (48h/72h) | **WEAK** — only tangentially tested | MEDIUM — stale positions bleed | P1 |
-| Signal flipping (counter-trend) | TESTED (2 files) | LOW | OK |
-| RiskFilterChain all 6 gates | TESTED (test_phase345) | LOW | OK |
-| Chop detector | TESTED (dedicated file) | LOW | OK |
-| Early exit | TESTED (stability_fixes) | LOW | OK |
-| Correlation guard | TESTED (6 files) | LOW | OK |
-| Funding simulation | TESTED (15 files) | LOW | OK |
-| Exit Agent | TESTED (2 files) | LOW | OK |
-| Scout Agent | TESTED (multi_agent) | LOW | OK |
-| Dynamic TP1 close % | TESTED (4 files) | LOW | OK |
+| Feature | Test Status | Detail | PnL Risk | Priority |
+|---------|-------------|--------|----------|----------|
+| Intra-candle SL/TP (backtest) | **UNTESTED** | Zero coverage — no wick check tests | HIGH | P0 |
+| RiskFilterChain 6 gates | **MINIMAL** | Only checks class exists, no gate-by-gate validation | HIGH | P0 |
+| MTM equity curve | **MINIMAL** | Only data field check, no equity/CB impact tests | HIGH | P0 |
+| Funding simulation accrual | **PARTIAL** | Funding alerts tested, per-candle accrual untested | HIGH | P1 |
+| Scout Agent | **UNTESTED** | Zero coverage — entire agent untested | MEDIUM | P1 |
+| Signal flip decision logic | **PARTIAL** | Flip handling tested, flip DECISION logic untested | MEDIUM | P1 |
+| Exit Agent thesis logic | **PARTIAL** | Logging tested, thesis reassessment untested | MEDIUM | P1 |
+| Correlation cluster risk | **PARTIAL** | Rejection tested, reduction thresholds untested | MEDIUM | P2 |
+| Early exit momentum | **PARTIAL** | SL progress bounds tested, momentum detection untested | LOW | P2 |
+| Hold limits (48h/72h) | TESTED | Full coverage in test_chop_detector.py | — | OK |
+| Chop detector | TESTED | 7 tests covering all 5 factors + integration | — | OK |
+| Dynamic TP1 close % | TESTED | 7 tests covering scaling math + caps | — | OK |
 
 ## Error-Swallowing Patterns
 
