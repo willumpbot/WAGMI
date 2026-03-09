@@ -159,7 +159,13 @@ class ConfidenceScorerStrategy(BaseStrategy):
         if len(evaluated) < 5:
             return None
         wins = sum(1 for e in evaluated if e["success"])
-        return wins / len(evaluated)
+        wr = wins / len(evaluated)
+        # With fewer than 20 samples, WR estimates are noisy — halve the
+        # downstream adjustment to avoid killing valid signals on thin data.
+        if len(evaluated) < 20:
+            # Return WR pulled toward 0.5 (prior) so adjustment is dampened
+            wr = 0.5 + (wr - 0.5) * 0.5
+        return wr
 
     def evaluate_past_signals(self, symbol: str, current_price: float):
         """Evaluate unresolved signals based on subsequent price movement."""
@@ -169,6 +175,8 @@ class ConfidenceScorerStrategy(BaseStrategy):
             if e["evaluated"]:
                 continue
             price_at_signal = e["price"]
+            if price_at_signal <= 0:
+                continue
             pct_move = (current_price - price_at_signal) / price_at_signal * 100
 
             success = False

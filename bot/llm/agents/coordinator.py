@@ -1416,6 +1416,21 @@ class AgentCoordinator:
 
             risk_flags = rk.get("risks", [])
             override = rk.get("override")
+
+            # Gate Risk Agent's skip power if its accuracy is poor
+            if override == "skip":
+                try:
+                    from llm.agents.calibration_ledger import get_calibration_ledger
+                    risk_cal = get_calibration_ledger().get_calibration(
+                        "risk", regime_out.data.get("rg", "unknown") if regime_out else "unknown"
+                    )
+                    if risk_cal.get("reliable") and risk_cal["accuracy"] < 0.45:
+                        # Risk Agent is wrong >55% of the time — downgrade skip to reduce
+                        override = "reduce"
+                        notes += f" | RISK: skip→reduce (risk_vacc={risk_cal['accuracy']:.0%})"
+                except Exception:
+                    pass
+
             if override == "skip":
                 action = "flat"
                 risk_reason = rk.get("reason", rk.get("n", "unspecified"))

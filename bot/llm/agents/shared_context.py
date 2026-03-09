@@ -382,10 +382,31 @@ class SharedLessons:
             "applies_to": applies_to,
             "strength": strength,
             "ts": time.time(),
+            "validation_count": 0,
         })
         # Keep within limit, removing oldest weak lessons first
         if len(self._lessons) > self._max:
             self._prune()
+
+    def contradict(self, lesson_substring: str) -> None:
+        """Record that a lesson was contradicted by an outcome.
+
+        Decrements validation_count. Lessons with count < -3 are purged.
+        """
+        for l in self._lessons:
+            if lesson_substring.lower() in l["lesson"].lower():
+                l["validation_count"] = l.get("validation_count", 0) - 1
+        # Purge lessons contradicted too many times
+        self._lessons = [
+            l for l in self._lessons
+            if l.get("validation_count", 0) >= -3
+        ]
+
+    def validate(self, lesson_substring: str) -> None:
+        """Record that a lesson was confirmed by an outcome."""
+        for l in self._lessons:
+            if lesson_substring.lower() in l["lesson"].lower():
+                l["validation_count"] = l.get("validation_count", 0) + 1
 
     def get_for_agent(self, agent_role: str, max_lessons: int = 5) -> List[str]:
         """Get lessons relevant to a specific agent role."""
@@ -393,13 +414,24 @@ class SharedLessons:
             l for l in self._lessons
             if agent_role in l["applies_to"] or "all" in l["applies_to"]
         ]
-        # Sort by strength (strong first) then recency
+        # Sort by strength (strong first), validation count, then recency
         strength_order = {"strong": 0, "moderate": 1, "weak": 2}
-        relevant.sort(key=lambda l: (strength_order.get(l["strength"], 2), -l["ts"]))
+        relevant.sort(key=lambda l: (
+            strength_order.get(l["strength"], 2),
+            -l.get("validation_count", 0),
+            -l["ts"],
+        ))
         return [l["lesson"] for l in relevant[:max_lessons]]
 
     def _prune(self) -> None:
-        """Remove oldest weak lessons to stay within limit."""
+        """Remove invalidated and oldest weak lessons to stay within limit."""
+        # First purge heavily contradicted lessons
+        self._lessons = [
+            l for l in self._lessons
+            if l.get("validation_count", 0) >= -3
+        ]
+        if len(self._lessons) <= self._max:
+            return
         # Keep all strong, trim weak/moderate by age
         strong = [l for l in self._lessons if l["strength"] == "strong"]
         others = [l for l in self._lessons if l["strength"] != "strong"]

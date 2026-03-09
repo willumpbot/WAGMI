@@ -701,10 +701,13 @@ class EnsembleStrategy:
         active_count = len(self.strategies) - len(self._disabled_strategies)
         if n_agree == active_count and n_agree >= 3:
             consensus_mult += 0.04  # Unanimous bonus
-        # Cap at 85 — 180-day data shows 90-100% confidence has 36% WR and loses money.
-        # This prevents ensemble from reaching the highest leverage tiers (4-5x).
-        MAX_ENSEMBLE_CONFIDENCE = 85.0
-        combined_conf = min(MAX_ENSEMBLE_CONFIDENCE, weighted_conf * consensus_mult)
+        # Cap ensemble confidence — 180-day data shows 90-100% has 36% WR.
+        try:
+            from trading_config import TradingConfig
+            max_conf = TradingConfig().max_ensemble_confidence
+        except Exception:
+            max_conf = 85.0
+        combined_conf = min(max_conf, weighted_conf * consensus_mult)
 
         # Widest SL (most conservative), average TP1 (balanced), widest TP2 (aggressive)
         # Using average TP1 prevents zone-based strategies from pulling targets too close

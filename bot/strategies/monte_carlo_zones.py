@@ -229,17 +229,22 @@ class MonteCarloZonesStrategy(BaseStrategy):
         vol_spike = bool(df["vol_spike"].iloc[-1]) if "vol_spike" in df.columns else False
         current = zones["current"]
         stdev = zones["stdev"]
+        mc_se = mc.get("mc_std_error", 0.0)
+
+        def _mc_significant(prob: float, threshold: float) -> bool:
+            """Only grant MC bonus if prob exceeds threshold by 2× std error."""
+            return prob > threshold + 2.0 * mc_se
 
         # Build confidence score
         confidence = 50.0  # base
 
         if action == "DEEP_BUY":
             confidence += 20
-            if mc["up_prob"] > 0.6:
+            if _mc_significant(mc["up_prob"], 0.6):
                 confidence += 15
             if rsi < 30:
                 confidence += 10
-            if vol_spike and mc["up_prob"] > 0.55:
+            if vol_spike and _mc_significant(mc["up_prob"], 0.55):
                 confidence += 5
             side = "BUY"
             sl = current - 2.0 * stdev
@@ -248,11 +253,11 @@ class MonteCarloZonesStrategy(BaseStrategy):
 
         elif action == "BUY":
             confidence += 10
-            if mc["up_prob"] > 0.55:
+            if _mc_significant(mc["up_prob"], 0.55):
                 confidence += 10
             if rsi < 40:
                 confidence += 5
-            if vol_spike and mc["up_prob"] > 0.5:
+            if vol_spike and _mc_significant(mc["up_prob"], 0.5):
                 confidence += 5
             side = "BUY"
             sl = zones["deep_buy"] - 0.5 * stdev
@@ -261,11 +266,11 @@ class MonteCarloZonesStrategy(BaseStrategy):
 
         elif action == "SAFE_SELL":
             confidence += 20
-            if mc["down_prob"] > 0.6:
+            if _mc_significant(mc["down_prob"], 0.6):
                 confidence += 15
             if rsi > 70:
                 confidence += 10
-            if vol_spike and mc["down_prob"] > 0.55:
+            if vol_spike and _mc_significant(mc["down_prob"], 0.55):
                 confidence += 5
             side = "SELL"
             sl = current + 2.0 * stdev
@@ -274,11 +279,11 @@ class MonteCarloZonesStrategy(BaseStrategy):
 
         elif action == "SELL":
             confidence += 10
-            if mc["down_prob"] > 0.55:
+            if _mc_significant(mc["down_prob"], 0.55):
                 confidence += 10
             if rsi > 60:
                 confidence += 5
-            if vol_spike and mc["down_prob"] > 0.5:
+            if vol_spike and _mc_significant(mc["down_prob"], 0.5):
                 confidence += 5
             side = "SELL"
             sl = zones["safe_sell"] + 0.5 * stdev

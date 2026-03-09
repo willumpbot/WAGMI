@@ -898,6 +898,76 @@ class EvolutionTracker:
                         continue
         return 0.0
 
+    def apply_lessons_to_tuner(self, report: EvolutionReport, tuner) -> int:
+        """Feed strong lessons from an evolution report into the parameter tuner.
+
+        Translates high-confidence lessons into concrete parameter suggestions:
+          - Regime WR lessons → regime confidence offsets
+          - Strategy WR lessons → strategy weight suggestions
+          - Trajectory lessons → confidence floor adjustments
+
+        Returns count of lessons applied.
+        """
+        applied = 0
+        strong_lessons = [l for l in report.lessons if l.confidence >= 0.7]
+
+        regime_suggestions: Dict[str, float] = {}
+        strategy_suggestions: Dict[str, float] = {}
+        conf_floor_suggestion = None
+
+        for lesson in strong_lessons:
+            # Regime edge: size up in strong regimes, reduce in weak
+            if "regime" in lesson.message.lower() and "edge" in lesson.category:
+                for edge in report.edge_by_regime:
+                    if edge.key in lesson.message and edge.trades >= 5:
+                        if edge.win_rate >= 65:
+                            regime_suggestions[edge.key] = min(25.0, 15.0)
+                        applied += 1
+            elif "regime" in lesson.message.lower() and "leak" in lesson.category:
+                for edge in report.edge_by_regime:
+                    if edge.key in lesson.message and edge.trades >= 5:
+                        if edge.win_rate <= 35:
+                            regime_suggestions[edge.key] = max(5.0, 8.0)
+                        applied += 1
+
+            # Strategy WR lessons → weight suggestions
+            if "strategy" in lesson.category or any(
+                s in lesson.message.lower()
+                for s in ("monte_carlo", "regime_trend", "confidence_scorer", "multi_tier")
+            ):
+                for edge in report.edge_by_strategy:
+                    if edge.key in lesson.message and edge.trades >= 5:
+                        strategy_suggestions[edge.key] = edge.win_rate / 100.0
+                        applied += 1
+
+            # Trajectory: adjust confidence floor
+            if "net-negative" in lesson.message.lower() or "trending DOWN" in lesson.message:
+                conf_floor_suggestion = 72.0  # Tighten
+                applied += 1
+            elif "confirmed edge" in lesson.message.lower() or "trending UP" in lesson.message:
+                conf_floor_suggestion = 65.0  # Relax
+                applied += 1
+
+        if applied > 0:
+            try:
+                tuner.update(
+                    confidence_floor_suggestion=conf_floor_suggestion,
+                    regime_suggestions=regime_suggestions or None,
+                    strategy_weight_suggestions=strategy_suggestions or None,
+                    suggestion_confidence=0.75,
+                    backtest_validated=False,
+                )
+                logger.info(
+                    f"[EVOLUTION→TUNER] Applied {applied} lessons: "
+                    f"regimes={list(regime_suggestions.keys())}, "
+                    f"strategies={list(strategy_suggestions.keys())}, "
+                    f"conf_floor={conf_floor_suggestion}"
+                )
+            except Exception as e:
+                logger.warning(f"[EVOLUTION→TUNER] Failed to apply lessons: {e}")
+
+        return applied
+
     @staticmethod
     def _parse_float(val: str) -> float:
         try:

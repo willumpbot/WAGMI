@@ -392,6 +392,17 @@ def _record_agent_calibration(trade_data: Dict, thesis_correct: bool) -> None:
             )
             ledger.record_outcome("regime", regime, regime_correct, regime_fit)
 
+        # Risk Agent override tracking: was the override correct?
+        # skip+loss = correct (avoided a loser), skip+win = wrong (missed a winner)
+        # reduce+loss = correct (limited damage), reduce+win = partially wrong
+        notes = trade_data.get("notes", "")
+        if "RISK: override to skip" in notes:
+            # Trade was skipped by Risk Agent — if thesis was correct, the skip was wrong
+            ledger.record_outcome("risk", regime, not thesis_correct, 0.8)
+        elif "RISK: sizing" in notes and "→" in notes:
+            # Risk Agent reduced size — less confident correct/wrong signal
+            ledger.record_outcome("risk", regime, not thesis_correct, 0.6)
+
         logger.debug(
             f"[CALIBRATION] Recorded: trade_agent {regime} "
             f"correct={thesis_correct} conf={confidence:.2f}"

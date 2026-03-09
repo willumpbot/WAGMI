@@ -81,7 +81,9 @@ def cmd_backtest(args):
             resume=resume,
         )
 
-    engine = BacktestEngine(config, llm_integration=llm_integration)
+    fresh_mode = getattr(args, "fresh", False)
+    relaxed_cb = getattr(args, "relaxed_cb", False)
+    engine = BacktestEngine(config, llm_integration=llm_integration, fresh=fresh_mode, relaxed_cb=relaxed_cb)
 
     raw_mode = getattr(args, "raw", False)
     if raw_mode:
@@ -100,6 +102,9 @@ def cmd_backtest(args):
 
     if raw_mode:
         print("  RAW MODE: Circuit breakers, notional caps, and position limits DISABLED")
+
+    if relaxed_cb:
+        print("  RELAXED CB: Using widened circuit breaker settings (15% daily / 30% drawdown)")
 
     if use_llm:
         print(f"  LLM Agents: ENABLED (budget=${budget:.2f})")
@@ -388,6 +393,8 @@ Commands:
     sub_bt.add_argument("--resume", action="store_true", help="Resume LLM backtest from last checkpoint")
     sub_bt.add_argument("--csv", default="", help="Export per-trade timeline to CSV file")
     sub_bt.add_argument("--raw", action="store_true", help="Disable circuit breakers, notional caps, and risk gates for raw strategy analysis")
+    sub_bt.add_argument("--fresh", action="store_true", help="Force re-fetch data from exchanges, ignoring disk cache")
+    sub_bt.add_argument("--relaxed-cb", action="store_true", help="Use relaxed circuit breaker settings (15%/30%) instead of live (5%/10%)")
 
     # Signals
     sub_sig = subparsers.add_parser("signals", help="One-shot signal check")

@@ -150,29 +150,23 @@ class RegimeTrendStrategy(BaseStrategy):
         buy = cu and (mfi_1h_val > 50) and partial_bull
         sell = cd and (mfi_1h_val < 50) and partial_bear
 
-        # Regime momentum: strong alignment + recent cross (within 3 bars, not just this bar)
-        # Enables directional trades in strong regimes without waiting for exact-bar cross
-        # NOTE: Tightened from 5-bar to 3-bar window and raised alignment requirements
-        # to reduce false signals. Previous 28.6% WR was caused by stale momentum entries.
+        # Regime momentum: strong alignment + current-bar cross only
+        # Tightened from 3-bar to 1-bar window. Even 2-bar staleness (48 min)
+        # permitted entries on faded momentum, hurting WR.
         is_momentum = False
         if not buy and not sell:
-            has_enough_bars = len(cross_up) >= 3 and len(cross_dn) >= 3
+            has_enough_bars = len(cross_up) >= 1 and len(cross_dn) >= 1
             if has_enough_bars:
-                recent_cu = bool(cross_up.iloc[-3:].any())
-                recent_cd = bool(cross_dn.iloc[-3:].any())
+                recent_cu = bool(cross_up.iloc[-1])
+                recent_cd = bool(cross_dn.iloc[-1])
 
-                # Require partial HTF alignment for momentum entries (relaxed from full)
+                # Require partial HTF alignment for momentum entries
                 if align_long >= 3 and recent_cu and partial_bull:
                     buy = True
                     is_momentum = True
-                # Require 3+ alignment for momentum shorts
                 elif align_short >= 3 and recent_cd and partial_bear:
                     sell = True
                     is_momentum = True
-
-        # Wide-window momentum entries removed — they generated stale signals
-        # that contributed to the 28.6% WR. Only enter on fresh crosses or
-        # strong regime-confirmed momentum within 3 bars.
 
         if not buy and not sell:
             return None
@@ -270,7 +264,7 @@ class RegimeTrendStrategy(BaseStrategy):
         regime_htf = self._check_regime(df_htf) if not df_htf.empty else {"ok": False, "bearish": False, "macd_h": 0, "mfi": 50}
 
         align_long = int(cu) + int(float(mfi_1h.iloc[-1]) > 50) + int(regime_6h["ok"]) + int(regime_htf["ok"])
-        align_short = int(cd) + int(float(mfi_1h.iloc[-1]) < 50) + int(not regime_6h["ok"]) + int(not regime_htf["ok"])
+        align_short = int(cd) + int(float(mfi_1h.iloc[-1]) < 50) + int(regime_6h["bearish"]) + int(regime_htf["bearish"])
 
         return {
             "symbol": symbol,
