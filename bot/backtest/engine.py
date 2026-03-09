@@ -527,6 +527,9 @@ class BacktestEngine:
                 else:
                     unrealized_pnl += (_pos.entry - _price) * _pos.qty
             mtm_equity = self.risk_mgr.equity + unrealized_pnl
+            # Check CB using MTM equity — catches open-position drawdowns
+            sim_time = df_1h["time"].iloc[i] if hasattr(df_1h["time"].iloc[i], "strftime") else None
+            self.risk_mgr.check_unrealized_risk(unrealized_pnl, sim_time=sim_time)
             peak_eq = self.risk_mgr.circuit_breaker.peak_equity
             self.equity_curve.append({
                 "time": str(df_1h["time"].iloc[i]),
@@ -678,15 +681,28 @@ class BacktestEngine:
                 self.candle_stats["cb_blocked"] += 1
                 self.signals_blocked_by_cb += 1
 
+            # MTM equity for daily walk (matches hourly walk behavior)
+            _unrealized_pnl = 0.0
+            for _sym, _pos in self.pos_mgr.get_open_positions().items():
+                _price = current_price if _sym == symbol else self._last_prices.get(_sym, _pos.entry)
+                if _pos.side == "LONG":
+                    _unrealized_pnl += (_price - _pos.entry) * _pos.qty
+                else:
+                    _unrealized_pnl += (_pos.entry - _price) * _pos.qty
+            _mtm_equity = self.risk_mgr.equity + _unrealized_pnl
+            _sim_time = df["time"].iloc[i] if hasattr(df["time"].iloc[i], "strftime") else None
+            self.risk_mgr.check_unrealized_risk(_unrealized_pnl, sim_time=_sim_time)
+            _peak_eq = self.risk_mgr.circuit_breaker.peak_equity
             self.equity_curve.append({
                 "time": str(df["time"].iloc[i]),
                 "equity": self.risk_mgr.equity,
+                "mtm_equity": _mtm_equity,
+                "unrealized_pnl": round(_unrealized_pnl, 2),
                 "open_positions": self.pos_mgr.get_open_count(),
                 "cb_active": self.risk_mgr.circuit_breaker.tripped,
                 "drawdown_pct": round(
-                    (self.risk_mgr.circuit_breaker.peak_equity - self.risk_mgr.equity)
-                    / self.risk_mgr.circuit_breaker.peak_equity * 100, 1
-                ) if self.risk_mgr.circuit_breaker.peak_equity > 0 else 0,
+                    (_peak_eq - _mtm_equity) / _peak_eq * 100, 1
+                ) if _peak_eq > 0 else 0,
             })
 
             if self.llm:

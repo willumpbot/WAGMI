@@ -692,3 +692,149 @@ class TestMTMEquityCircuitBreaker:
         assert constraints["constrained"]
         assert constraints["max_leverage"] <= 3.0
         assert constraints["size_multiplier"] == 0.5
+
+
+# ────────────────────────────────────────────────────────────────────
+# SECTION 4: RiskManager delegation + MTM circuit breaker awareness
+# ────────────────────────────────────────────────────────────────────
+
+class TestRiskManagerDelegation:
+    """RiskManager must expose is_trading_allowed() and get_override_constraints()
+    so that RiskFilterChain can call them (signal_pipeline.py:107,177)."""
+
+    def test_is_trading_allowed_delegates_to_cb(self):
+        """RiskManager.is_trading_allowed() delegates to CircuitBreaker."""
+        from execution.risk import RiskManager
+        rm = RiskManager(starting_equity=10000.0)
+        assert rm.is_trading_allowed(confidence=50.0) is True
+
+        # Trip the CB
+        rm.circuit_breaker.tripped = True
+        rm.circuit_breaker.trip_time = 1e18
+        rm.circuit_breaker.trip_reason = "test"
+        assert rm.is_trading_allowed(confidence=50.0) is False
+
+    def test_get_override_constraints_delegates_to_cb(self):
+        """RiskManager.get_override_constraints() delegates to CircuitBreaker."""
+        from execution.risk import RiskManager
+        rm = RiskManager(starting_equity=10000.0)
+        constraints = rm.get_override_constraints(confidence=50.0)
+        assert not constraints["constrained"]
+        assert constraints["max_leverage"] == 25.0
+
+        # Trip CB → constrained
+        rm.circuit_breaker.tripped = True
+        rm.circuit_breaker.trip_time = 1e18
+        rm.circuit_breaker.trip_reason = "test"
+        constraints = rm.get_override_constraints(confidence=99.0)
+        assert constraints["constrained"]
+        assert constraints["max_leverage"] == 2.0
+
+    def test_signal_pipeline_calls_work_with_risk_manager(self):
+        """RiskFilterChain gates 2 and 5 call is_trading_allowed / get_override_constraints
+        on the risk_mgr object — verify no AttributeError."""
+        from execution.risk import RiskManager
+        rm = RiskManager(starting_equity=10000.0)
+
+        # Simulate what signal_pipeline.py does
+        allowed = rm.is_trading_allowed(confidence=80.0, cb_conf_override_pct=0.92)
+        assert allowed is True
+
+        constraints = rm.get_override_constraints(confidence=80.0)
+        assert "max_leverage" in constraints
+        assert "size_multiplier" in constraints
+
+
+class TestMTMCircuitBreakerAwareness:
+    """CircuitBreaker.check_mtm_breakers() catches drawdowns from open positions."""
+
+    def test_mtm_drawdown_trips_cb(self):
+        """Unrealized losses that exceed drawdown threshold trip the CB."""
+        from execution.risk import CircuitBreaker
+        cb = CircuitBreaker(max_drawdown_pct=0.10)
+        cb.peak_equity = 10000
+
+        # Realized equity is still 10000, but open positions are -1500
+        # MTM equity = 10000 - 1500 = 8500 → 15% drawdown → should trip
+        cb.check_mtm_breakers(mtm_equity=8500)
+        assert cb.tripped
+        assert "MTM drawdown" in cb.trip_reason
+        assert "unrealized" in cb.trip_reason.lower()
+
+    def test_mtm_no_trip_within_threshold(self):
+        """Unrealized losses within threshold don't trip."""
+        from execution.risk import CircuitBreaker
+        cb = CircuitBreaker(max_drawdown_pct=0.10)
+        cb.peak_equity = 10000
+
+        # MTM equity = 9200 → 8% drawdown → within 10% limit
+        cb.check_mtm_breakers(mtm_equity=9200)
+        assert not cb.tripped
+
+    def test_mtm_updates_peak_equity(self):
+        """MTM check updates peak equity when MTM > current peak."""
+        from execution.risk import CircuitBreaker
+        cb = CircuitBreaker(max_drawdown_pct=0.10)
+        cb.peak_equity = 10000
+
+        # Open positions are profitable → MTM > peak
+        cb.check_mtm_breakers(mtm_equity=10500)
+        assert cb.peak_equity == 10500
+        assert not cb.tripped
+
+    def test_mtm_peak_then_drop_trips(self):
+        """Peak updates on unrealized gain, then drawdown measured from new peak."""
+        from execution.risk import CircuitBreaker
+        cb = CircuitBreaker(max_drawdown_pct=0.10)
+        cb.peak_equity = 10000
+
+        # Unrealized gain pushes peak to 11000
+        cb.check_mtm_breakers(mtm_equity=11000)
+        assert cb.peak_equity == 11000
+        assert not cb.tripped
+
+        # Now unrealized reversal: MTM drops to 9800 → 10.9% from 11000 peak
+        cb.check_mtm_breakers(mtm_equity=9800)
+        assert cb.tripped
+        assert "MTM drawdown" in cb.trip_reason
+
+    def test_mtm_noop_when_already_tripped(self):
+        """If CB is already tripped, MTM check is a no-op."""
+        from execution.risk import CircuitBreaker
+        cb = CircuitBreaker(max_drawdown_pct=0.10)
+        cb.peak_equity = 10000
+        cb.tripped = True
+        cb.trip_reason = "previous trip"
+
+        cb.check_mtm_breakers(mtm_equity=5000)  # 50% drawdown
+        assert cb.trip_reason == "previous trip"  # Unchanged
+
+    def test_risk_manager_check_unrealized_risk(self):
+        """RiskManager.check_unrealized_risk() feeds unrealized PnL to CB."""
+        from execution.risk import RiskManager
+        rm = RiskManager(starting_equity=10000.0)
+        rm.circuit_breaker.peak_equity = 10000
+
+        # Unrealized loss of -1500 → MTM = 8500 → 15% drawdown
+        rm.check_unrealized_risk(unrealized_pnl=-1500)
+        assert rm.circuit_breaker.tripped
+        assert "MTM" in rm.circuit_breaker.trip_reason
+
+    def test_risk_manager_mtm_no_trip_small_loss(self):
+        """Small unrealized loss doesn't trip CB."""
+        from execution.risk import RiskManager
+        rm = RiskManager(starting_equity=10000.0)
+        rm.circuit_breaker.peak_equity = 10000
+
+        rm.check_unrealized_risk(unrealized_pnl=-500)  # 5% drawdown
+        assert not rm.circuit_breaker.tripped
+
+    def test_mtm_with_sim_time(self):
+        """MTM check works with sim_time for backtests."""
+        from execution.risk import CircuitBreaker
+        cb = CircuitBreaker(max_drawdown_pct=0.10)
+        cb.peak_equity = 10000
+
+        sim_time = datetime(2025, 6, 1, 12, 0, tzinfo=timezone.utc)
+        cb.check_mtm_breakers(mtm_equity=8500, sim_time=sim_time)
+        assert cb.tripped

@@ -119,6 +119,33 @@ class CircuitBreaker:
 
         self._check_breakers(equity, sim_time=sim_time)
 
+    def check_mtm_breakers(self, mtm_equity: float, sim_time: Optional[datetime] = None):
+        """Check circuit breakers using mark-to-market equity (realized + unrealized).
+
+        Unlike _check_breakers (which runs on trade close), this runs on price
+        updates to catch drawdowns from open losing positions. Only checks the
+        drawdown-from-peak breaker — daily PnL and consecutive losses are
+        trade-close concepts.
+
+        Also updates peak_equity continuously (not just on trade closes).
+        """
+        if self.tripped:
+            return
+
+        # Update peak equity continuously — captures unrealized highs
+        if mtm_equity > self.peak_equity:
+            self.peak_equity = mtm_equity
+
+        # Drawdown from peak (includes open position losses)
+        if self.peak_equity > 0:
+            drawdown = (self.peak_equity - mtm_equity) / self.peak_equity
+            if drawdown >= self.max_drawdown_pct:
+                self._trip(
+                    f"MTM drawdown {drawdown:.1%} >= {self.max_drawdown_pct:.1%} limit "
+                    f"(includes unrealized PnL)",
+                    sim_time=sim_time,
+                )
+
     def _check_breakers(self, equity: float, sim_time: Optional[datetime] = None):
         """Check if any circuit breaker should trigger."""
         if self.tripped:
@@ -403,6 +430,30 @@ class RiskManager:
         """
         self.equity += pnl
         self.circuit_breaker.record_trade(pnl, self.equity, sim_time=sim_time)
+
+    def is_trading_allowed(self, confidence: float = 0.0,
+                            cb_conf_override_pct: float = 0.92,
+                            sim_time: Optional[datetime] = None) -> bool:
+        """Delegate to circuit breaker's is_trading_allowed."""
+        return self.circuit_breaker.is_trading_allowed(
+            confidence=confidence,
+            cb_conf_override_pct=cb_conf_override_pct,
+            sim_time=sim_time,
+        )
+
+    def get_override_constraints(self, confidence: float = 0.0) -> Dict[str, Any]:
+        """Delegate to circuit breaker's get_override_constraints."""
+        return self.circuit_breaker.get_override_constraints(confidence=confidence)
+
+    def check_unrealized_risk(self, unrealized_pnl: float,
+                               sim_time: Optional[datetime] = None):
+        """Check circuit breakers using mark-to-market equity (realized + unrealized).
+
+        Call this on each price update to catch drawdowns from open positions,
+        not just after trades close.
+        """
+        mtm_equity = self.equity + unrealized_pnl
+        self.circuit_breaker.check_mtm_breakers(mtm_equity, sim_time=sim_time)
 
     def get_status(self) -> Dict[str, Any]:
         return {
