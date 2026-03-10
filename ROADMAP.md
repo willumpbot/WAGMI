@@ -1,8 +1,8 @@
 # nunuIRL Trading Bot — Complete Roadmap
 
 > **Last updated**: 2026-03-10
-> **Current state**: Phase 2.8 DONE. Phase 2.9 DONE (fee-aware sizing, fee-drag gate, fee-aware EV, HL fee verified at 3.5bps, MIN_SIGNAL_RR=2.0, losing combo blocked). 8 profit leak fixes applied (funding allocation, TP slippage, re-entry gaps, consensus mult, opposition penalty, chop floor). Pattern cache + mode comparison + knowledge pipeline built.
-> **What's next**: Phase 3 signal quality (walk-forward validation, calibration curves) → 100d backtest validation → paper trade → go live.
+> **Current state**: Phase 2.8+2.9 DONE. Phase 3.1-3.5 DONE. Deep 10-agent audit complete: 30+ bugs fixed across execution, ensemble, strategies, LLM, and production hardening. 22 commits, 1006 tests passing.
+> **What's next**: Validate with 100d backtest → paper trade 48-72h → go live conservative.
 
 ---
 
@@ -315,25 +315,44 @@
 ### Must Fix Before Paper Trading
 | # | Bug | Location | Impact | Status |
 |---|---|---|---|---|
-| 1 | SHORT SL uses minus instead of plus after TP1 | `position_manager.py:465` | 5-15% of SHORT profits lost | 🔴 OPEN |
-| 2 | Backtest leverage logging references undefined var | `backtest/engine.py:1213` | Reports show wrong leverage in normal mode | 🔴 OPEN |
-| 3 | Trailing stop fallback too loose (uses original SL width) | `position_manager.py:235` | ~33% too loose when ATR=0 | 🟡 OPEN |
-| 4 | Ranging trade profile tightens TP (should widen) | `trade_profile.py:309-320` | Wrong R:R in ~30% of conditions | 🟡 OPEN |
-| 5 | Adaptive risk manager never wired | `adaptive_risk.py` (whole file) | No revenge-trading prevention | 🟡 OPEN |
-| 6 | TP1 close% too high (65-70%, should be 40-50%) | `trade_profile.py:115-141` | Early exits kill edge on winners | 🟡 OPEN |
-| 7 | No exchange connection resilience | `data/fetcher.py` | Bot crashes on API outage | 🟡 OPEN |
-| 8 | Position reconciliation not wired to main loop | `reconciliation.py` | Lost positions after restart | 🟡 OPEN |
-| 9 | `multi_strategy_main.py` is 4,585 lines | `multi_strategy_main.py` | Unmaintainable god object | 🟠 OPEN |
+| 9 | `multi_strategy_main.py` is 4,700+ lines | `multi_strategy_main.py` | Unmaintainable god object | 🟠 OPEN (deferred to Phase 4) |
 
-### Fixed
+### Fixed (Profitability Session — March 10, 2026)
 | Bug | Status |
 |---|---|
 | Ensemble modifies signals in-place | ✅ FIXED — deep copy before mutation |
 | Strategy weights all history equally | ✅ FIXED — exponential decay |
 | No order execution to exchange | ✅ FIXED — OrderExecutor built |
-| 7 pre-existing test failures | ✅ FIXED — 999 tests passing |
+| 7 pre-existing test failures | ✅ FIXED — 1006 tests passing |
 | Ranging regime destroys profitability | ✅ FIXED — multi-layer ADX filter |
 | Confidence inversion (80-89% = worst WR) | ✅ FIXED — ADX filter + leverage flatten |
+| SHORT SL reviewed: formula correct | ✅ VERIFIED — not a bug |
+| Backtest leverage logging undefined var | ✅ FIXED — use local `leverage` variable |
+| Trailing stop fallback too loose | ✅ FIXED — profile-aware % fallback |
+| Ranging trade profile logic inverted | ✅ FIXED — widened stops 20% |
+| Adaptive risk manager never wired | ✅ FIXED — wired into live loop |
+| TP1 close% too aggressive | ✅ FIXED — MEDIUM 50%, TREND 40% |
+| No exchange connection resilience | ✅ VERIFIED — retry/backoff already comprehensive |
+| Position reconciliation not wired | ✅ FIXED — periodic check + auto-correct phantoms |
+| LLM ensemble trigger names mismatched | ✅ FIXED — "regime_shift" → "regime shift" |
+| Leverage cliff at Tier 6 (90%+ → 2x) | ✅ FIXED — continues Kelly scaling to 5x |
+| TAKER_FEE_BPS inconsistent (4 vs 5) | ✅ FIXED — all defaults now 4 bps |
+| Reconciliation key mismatch ("phantoms" vs "phantom") | ✅ FIXED — correct key names |
+| Negative EV passes ensemble | ✅ FIXED — defense-in-depth EV floor in ensemble |
+| 4-agree same deflation as 3-agree | ✅ FIXED — 4-agree now 5% deflation |
+| Combo blocking only checks buy side | ✅ FIXED — checks both sides |
+| MAX_ENSEMBLE_CONFIDENCE silently overridden | ✅ FIXED — respects user config |
+| EMA span clamping → SELL bias | ✅ FIXED — proper spans with min_periods |
+| Regime transitioning false positive | ✅ FIXED — reset flag on dominance block |
+| RiskFilterChain exception falls through | ✅ FIXED — reject signal on error |
+| force_close not submitting exchange orders | ✅ FIXED — 4 paths now submit to exchange |
+| confidence_scorer 6h filter silently skipped | ✅ FIXED — log warning + 15% confidence penalty |
+| TP1 rounding leaves zero-qty trailing | ✅ FIXED — guard against degenerate rounding |
+| Chop detector NaN → false "not choppy" | ✅ FIXED — NaN defaults to choppy |
+| Double leverage computation in live loop | ✅ FIXED — use RiskFilterChain result |
+| ETH price always 0.0 in LLM context | ✅ FIXED — fetch ETH from data fetcher |
+| Log message says 0.55, code checks 0.50 | ✅ FIXED — log matches code |
+| Prefetch failures not tracked | ✅ FIXED — degradation triggered on all-fail |
 
 ---
 
@@ -406,11 +425,11 @@ bot/strategies/regime_detector.py  → Regime classification
 
 ### Execution
 ```
-bot/execution/position_manager.py  → Position lifecycle (HAS SHORT SL BUG)
+bot/execution/position_manager.py  → Position lifecycle (SHORT SL verified correct)
 bot/execution/leverage.py          → Leverage tiers and sizing
 bot/execution/risk.py              → Circuit breakers, daily loss limits
-bot/execution/adaptive_risk.py     → Dynamic risk adjustment (DEAD CODE — not wired)
-bot/execution/trade_profile.py     → Trade profiles (HAS RANGING LOGIC BUG)
+bot/execution/adaptive_risk.py     → Dynamic risk adjustment (wired into live loop)
+bot/execution/trade_profile.py     → Trade profiles (ranging logic fixed)
 bot/execution/order_executor.py    → CCXT order submission (paper/live)
 bot/execution/reconciliation.py    → Position reconciliation (built, not wired to loop)
 bot/execution/ops_guard.py         → Operational safety checks
@@ -443,7 +462,7 @@ bot/data/strategy_weights.py → Rolling strategy performance weights
 
 ### Backtest
 ```
-bot/backtest/engine.py  → Full backtest engine (HAS LEVERAGE LOGGING BUG)
+bot/backtest/engine.py  → Full backtest engine (leverage logging fixed)
 ```
 
 ### Feedback & Analytics
@@ -458,18 +477,19 @@ bot/feedback/parameter_tuner.py    → Parameter optimization (14KB)
 
 ## Priority Order (What to Work On Next)
 
-> Updated March 10, 2026. Based on comprehensive 5-layer audit.
+> Updated March 10, 2026. Based on comprehensive 10-agent deep audit (30+ bugs fixed).
 
 1. ~~**Phase 2.8: Fix 6 critical bugs**~~ ✅ DONE
-2. ~~**Phase 2.9: Fee economics**~~ ✅ DONE (fee-aware sizing, fee-drag gate, fee-aware EV, HL fee verified)
-3. **Validate with 100d backtest** — confirm all fixes produce positive Sharpe
-4. **Phase 3: Signal quality** — walk-forward validation, calibration curves
-5. **Paper trade on live API** — 48-72h validation with real exchange prices
-6. **Go live conservative** — SOL+HYPE, 1% risk, 2x max leverage, 3_agree required
-7. **Phase 4: Production hardening** — connection resilience, reconciliation, logging
-8. **Phase 5: Config extraction** — single source of truth for all parameters
-9. **Phase 6: New strategies** — funding rate, order flow, cross-exchange
-10. **Phase 7: Advanced evolution** — portfolio agent, auto-prompt evolution, RL
+2. ~~**Phase 2.9: Fee economics**~~ ✅ DONE
+3. ~~**Phase 3.1-3.5: Signal quality**~~ ✅ DONE (walk-forward, combo gating, shared reasoning)
+4. ~~**Deep 10-agent audit**~~ ✅ DONE — 30+ bugs fixed (execution, ensemble, strategies, LLM, hardening)
+5. **Validate with 100d backtest** — confirm all fixes produce positive Sharpe
+6. **Paper trade on live API** — 48-72h validation with real exchange prices
+7. **Go live conservative** — SOL+HYPE, 1% risk, 2x max leverage, 3_agree required
+8. **Phase 4: Production hardening** — break up main loop, connection health, logging
+9. **Phase 5: Config extraction** — single source of truth for all parameters
+10. **Phase 6: New strategies** — funding rate, order flow, cross-exchange
+11. **Phase 7: Advanced evolution** — portfolio agent, auto-prompt evolution, RL
 
 ---
 
