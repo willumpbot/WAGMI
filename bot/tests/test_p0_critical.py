@@ -441,8 +441,8 @@ class TestRiskFilterChainGates:
     def test_gate5b_rejects_low_ev_with_high_leverage(self):
         """Gate 5b: High leverage + low EV → rejected."""
         chain, _, _ = self._make_chain()
-        # EV=0.12: passes gate 1c (>0.10) but should fail gate 5b (>4x needs >=0.20)
-        sig = self._make_signal(confidence=85.0, metadata={"ev_per_dollar": 0.12})
+        # EV=0.16: passes gate 1c (>0.15) but should fail gate 5b (>4x needs >=0.20)
+        sig = self._make_signal(confidence=85.0, metadata={"ev_per_dollar": 0.16})
         result = chain.evaluate(sig, equity=10000, num_strategies_agree=3, total_strategies=4)
         # If leverage > 2.0, gate 5b should require higher EV
         if not result.approved and "EV" in result.rejection_reason:

@@ -287,17 +287,21 @@ class TradingConfig:
     max_ensemble_confidence: float = field(
         default_factory=lambda: _env_float("MAX_ENSEMBLE_CONFIDENCE", 85.0)
     )
+    # Raised from 1.5 to 2.0: at 45% WR + 5bps taker fee, 1.5 R:R makes
+    # net EV negative after fees. 2.0 R:R ensures TP1 is far enough to
+    # survive round-trip fee drag (~10bps on ~1% stop width).
     min_signal_rr: float = field(
-        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.5)
+        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 2.0)
     )
     min_stop_width_pct: float = field(
         default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.002)
     )
     # Minimum expected value per dollar risked. EV = (win_prob × R:R) - (1-win_prob).
     # Filters trades where the probability × payoff doesn't justify the risk.
-    # Default 0.10 means trades must have positive expectancy of at least $0.10 per $1 risked.
+    # Raised from 0.10 to 0.15: at 45% WR, trades need 15%+ edge per $1
+    # risked to survive fees (5bps round-trip = ~10bps per trade).
     min_signal_ev: float = field(
-        default_factory=lambda: _env_float("MIN_SIGNAL_EV", 0.10)
+        default_factory=lambda: _env_float("MIN_SIGNAL_EV", 0.15)
     )
     # Monte Carlo strategy
     mc_num_sims: int = field(
