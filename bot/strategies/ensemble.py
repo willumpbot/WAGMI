@@ -692,19 +692,14 @@ class EnsembleStrategy:
         else:
             weighted_conf = sum(s.confidence for s in signals) / len(signals)
 
-        # Consensus bonus: MULTIPLICATIVE scaling (not additive).
-        # Previously additive (+5 to +18 pts) which catapulted 70% base signals
-        # into 90%+ territory → highest leverage tier → catastrophic losses when wrong.
-        # Multiplicative preserves relative ordering: a 70% signal stays in its tier.
-        #   2 agree: 1.05x (70→73.5)    3 agree: 1.08x (70→75.6)
-        #   4 agree: 1.10x (70→77.0)    unanimous: 1.13x (70→79.1)
+        # Consensus bonus: nearly flat. 50d data shows 3_agree (PF=0.70) is WORSE
+        # than 2_agree because in ranging markets, correlated noise makes all
+        # strategies agree on wrong direction. Don't reward quantity of agreement.
+        #   2 agree: 1.01x    3 agree: 1.02x    No unanimous bonus.
         n_agree = len(signals)
         consensus_mult = 1.0
         if n_agree >= 2:
-            consensus_mult = 1.0 + 0.03 * (n_agree - 1)  # 1.03, 1.06, 1.09
-        active_count = len(self.strategies) - len(self._disabled_strategies)
-        if n_agree == active_count and n_agree >= 3:
-            consensus_mult += 0.04  # Unanimous bonus
+            consensus_mult = 1.0 + 0.01 * (n_agree - 1)  # 1.01, 1.02, 1.03
         # Cap ensemble confidence — 180-day data shows 90-100% has 36% WR.
         try:
             from trading_config import TradingConfig
