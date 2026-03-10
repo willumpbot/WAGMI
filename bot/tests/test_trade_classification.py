@@ -379,3 +379,48 @@ class TestEvPerEntryType:
         perf = get_performance()
         assert "by_strategy" in perf
         assert "regime_trend" in perf["by_strategy"]
+
+
+# ─── 8. Profile-Specific Hold Limits ─────────────────────
+
+class TestProfileHoldLimits:
+    def _make_profile(self, entry_type: str) -> TradeProfile:
+        return TradeProfile(
+            entry_type=entry_type,
+            entry_reasons=["regime_trend"],
+            primary_driver="regime_trend",
+            confidence=75.0,
+            regime="trending",
+            volatility_band="medium",
+            timeframe_bias="medium",
+            exit_params=_BASE_PROFILES[entry_type],
+        )
+
+    def test_hold_limits_use_profile(self, tmpdir_data):
+        """Position manager should use profile-specific max hold hours."""
+        pm = PositionManager()
+        # Verify the mapping exists
+        assert pm._PROFILE_MAX_HOLD_HOURS["SCALP"] == 4
+        assert pm._PROFILE_MAX_HOLD_HOURS["MEDIUM"] == 12
+        assert pm._PROFILE_MAX_HOLD_HOURS["TREND"] == 36
+        assert pm._PROFILE_MAX_HOLD_HOURS["REGIME"] == 48
+
+
+# ─── 9. R:R Validation After Regime Adjustment ──────────
+
+class TestRRValidation:
+    def test_rr_preserved_after_ranging_adjustment(self, tmpdir_data):
+        """Ranging regime tightens TP but widens SL — R:R should still be >= 0.8."""
+        base = _BASE_PROFILES[MEDIUM]
+        adjusted = _adjust_params_for_regime(base, "ranging", "medium")
+        # TP1 should be at least 0.8 * SL distance (minimum R:R)
+        assert adjusted.tp1_atr_mult >= adjusted.sl_atr_mult * 0.8, (
+            f"R:R too low after ranging adjustment: "
+            f"TP1={adjusted.tp1_atr_mult:.2f} < SL*0.8={adjusted.sl_atr_mult * 0.8:.2f}"
+        )
+
+    def test_rr_preserved_after_low_vol_adjustment(self, tmpdir_data):
+        """Low vol tightens SL — TP1 should still maintain min R:R."""
+        base = _BASE_PROFILES[TREND]
+        adjusted = _adjust_params_for_regime(base, "trending", "low")
+        assert adjusted.tp1_atr_mult >= adjusted.sl_atr_mult * 0.8

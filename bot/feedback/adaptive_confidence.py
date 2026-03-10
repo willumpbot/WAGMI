@@ -243,7 +243,7 @@ class AdaptiveConfidenceFloor:
         ev_positive_bin = None
         for b in self.bins:
             if b.total >= 3:  # Need at least 3 trades in a bin
-                if b.ev_per_trade > 0 or b.recent_win_rate > 0.45:
+                if b.ev_per_trade > 0:
                     ev_positive_bin = b
                     break
 

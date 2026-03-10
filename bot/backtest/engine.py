@@ -352,8 +352,9 @@ class BacktestEngine:
                 if df.empty:
                     continue
                 current_time = df_1h["time"].iloc[i]
-                # Only include data up to current time
-                mask = df["time"] <= current_time
+                # Only include data BEFORE current candle to avoid look-ahead bias.
+                # Signal evaluates on completed candles, entry fills on current close.
+                mask = df["time"] < current_time
                 w = df[mask].copy()
                 # Drop rows with NaN in critical OHLCV columns
                 ohlcv_cols = [c for c in ("open", "high", "low", "close", "volume") if c in w.columns]
@@ -611,7 +612,8 @@ class BacktestEngine:
                 if df_tf.empty:
                     continue
                 current_time = df["time"].iloc[i]
-                mask = df_tf["time"] <= current_time
+                # Exclude current candle from signal evaluation (look-ahead prevention)
+                mask = df_tf["time"] < current_time
                 windowed[tf] = df_tf[mask].copy()
 
             current_price = float(df["close"].iloc[i])

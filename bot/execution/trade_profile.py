@@ -374,6 +374,13 @@ def classify_trade(
     # 4. Adjust for regime and volatility
     params = _adjust_params_for_regime(base_params, regime, vol_band)
 
+    # 4b. Validate R:R preserved after adjustments (TP1 must exceed SL distance)
+    if params.tp1_atr_mult < params.sl_atr_mult * 0.8:
+        # Adjustments made R:R too unfavorable — clamp TP1 to min 0.8 R:R
+        params.tp1_atr_mult = params.sl_atr_mult * 0.8
+    if params.tp2_atr_mult < params.tp1_atr_mult:
+        params.tp2_atr_mult = params.tp1_atr_mult * 1.5
+
     # 5. Compute absolute prices
     if atr > 0:
         if side == "BUY":

@@ -223,9 +223,10 @@ class PositionManager:
             return None
 
         # Profile-driven trailing distance: SCALP=tight, TREND=loose
-        # Fallback: when ATR=0 (shouldn't happen in practice), use 1% of entry
-        # as conservative trailing distance instead of full stop width (too loose).
-        _trail_fallback = entry * 0.01 if entry > 0 else abs(entry - sl)
+        # Fallback: when ATR=0, use profile-aware % of entry instead of flat 1%.
+        _style_fallback_pct = {"tight": 0.006, "medium": 0.01, "loose": 0.015}
+        _fb_style = trade_profile.exit_params.trailing_style if trade_profile else "medium"
+        _trail_fallback = entry * _style_fallback_pct.get(_fb_style, 0.01) if entry > 0 else abs(entry - sl)
         if trade_profile:
             # Use profile's trailing style to scale the ATR multiplier
             style_mult = {
@@ -572,6 +573,14 @@ class PositionManager:
                 floor_sl = pos.entry + peak_move * lock_pct
             else:
                 floor_sl = pos.entry - peak_move * lock_pct
+        elif peak_move > 0:
+            # Minimum post-TP1 floor: guarantee at least breakeven + fees.
+            # Without this, a sharp reversal after TP1 can erase the entire gain.
+            fee_buffer = pos.entry * self.fee_bps * 2 / 10000.0
+            if is_long:
+                floor_sl = pos.entry + fee_buffer
+            else:
+                floor_sl = pos.entry - fee_buffer
 
         new_sl = trailing_sl
         if floor_sl is not None:
@@ -695,6 +704,14 @@ class PositionManager:
             return None
         return self._close_position(pos, price, reason)
 
+    # Profile-specific max hold hours: prevents stale positions from lingering
+    _PROFILE_MAX_HOLD_HOURS = {
+        "SCALP": 4,
+        "MEDIUM": 12,
+        "TREND": 36,
+        "REGIME": 48,
+    }
+
     def check_hold_limits(
         self, symbol: str, price: float, max_hold_hours: float = 48, action: str = "tighten_sl"
     ) -> Optional[TradeEvent]:
@@ -703,6 +720,7 @@ class PositionManager:
         At max_hold_hours: tighten SL to breakeven (or force close if action='force_close').
         At 1.5x max_hold_hours: force close regardless.
 
+        Uses profile-specific hold limits if a trade profile is attached.
         Returns TradeEvent if position was force-closed, None otherwise.
         """
         pos = self.positions.get(symbol)
@@ -711,6 +729,11 @@ class PositionManager:
 
         if pos.open_time is None:
             return None
+
+        # Use profile-specific hold limit if available
+        if pos.trade_profile and max_hold_hours == 48:
+            entry_type = pos.trade_profile.entry_type
+            max_hold_hours = self._PROFILE_MAX_HOLD_HOURS.get(entry_type, max_hold_hours)
 
         now = datetime.now(timezone.utc)
         if isinstance(pos.open_time, datetime):

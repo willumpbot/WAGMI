@@ -822,6 +822,8 @@ class EnsembleStrategy:
                 "mode": self.mode,
                 "ev_per_dollar": ev_per_dollar,
                 "rr_tp1": round(rr_tp1, 3),
+                "fee_drag_pct": round(fee_drag * 100, 1) if stop_width > 0 else 0.0,
+                "stop_width_pct": round(stop_width / entry * 100, 3) if entry > 0 else 0.0,
             },
         )
 
