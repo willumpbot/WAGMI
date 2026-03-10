@@ -594,5 +594,46 @@ class TestEnsembleSignalIntegration:
         assert qty == 0.0
 
 
+# ─── 11. Kelly-Informed Sizing ────────────────────────────────────────
+
+class TestKellySizing:
+    """Verify Kelly-optimal leverage tiers for 3-agree vs 2-agree."""
+
+    def test_3agree_gets_higher_leverage_than_2agree(self):
+        """3-agree should get significantly more leverage than 2-agree."""
+        from execution.leverage import LeverageManager
+        mgr = LeverageManager()
+        d3 = mgr.decide(80, 3, 4)
+        d2 = mgr.decide(80, 2, 4)
+        assert d3.leverage >= 3.0, f"3-agree at 80% should get >=3x, got {d3.leverage}"
+        assert d2.leverage <= 1.0, f"2-agree should stay at 1x, got {d2.leverage}"
+        assert d3.leverage / d2.leverage >= 3.0, "3-agree/2-agree leverage ratio should be >= 3x"
+
+    def test_3agree_tier5_scales_to_5x(self):
+        """At max Tier 5 (89%), 3-agree should reach up to 5x leverage."""
+        from execution.leverage import LeverageManager
+        mgr = LeverageManager()
+        d = mgr.decide(89, 3, 4)
+        assert d.leverage >= 4.5, f"3-agree at 89% should get >=4.5x, got {d.leverage}"
+        assert d.risk_multiplier >= 1.3, f"risk_mult should be >=1.3, got {d.risk_multiplier}"
+
+    def test_3agree_tier3_baseline(self):
+        """At Tier 3 (70-74%), 3-agree should get 3x baseline."""
+        from execution.leverage import LeverageManager
+        mgr = LeverageManager()
+        d = mgr.decide(72, 3, 4)
+        assert d.leverage >= 3.0, f"3-agree at 72% should get 3x, got {d.leverage}"
+        assert d.risk_multiplier >= 1.0
+
+    def test_risk_multiplier_stays_within_cap(self):
+        """risk_multiplier should never exceed the max_risk_multiplier cap (1.5)."""
+        from execution.leverage import LeverageManager
+        mgr = LeverageManager()
+        for conf in [70, 75, 80, 85, 89]:
+            d = mgr.decide(conf, 3, 4)
+            assert d.risk_multiplier <= 1.5, \
+                f"rm={d.risk_multiplier} at {conf}% exceeds 1.5 cap"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
