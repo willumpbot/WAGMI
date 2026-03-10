@@ -1,8 +1,8 @@
 # nunuIRL Trading Bot — Complete Roadmap
 
 > **Last updated**: 2026-03-10
-> **Current state**: Phase 2.8 bugs FIXED (4/6 genuine bugs resolved, 2 reviewed as non-issues). Phase 2.9 partially done (75% confidence floor, 3_agree leverage gate, TP1% tuned). TP1% lowered (MEDIUM→50%, TREND→40%) to improve payoff ratio. 2_agree trades now capped at 1.5x leverage.
-> **What's next**: Fee economics (verify HL fees, fee-aware sizing, fee-aware EV, raise min R:R) → validate 100d backtest → paper trade → go live.
+> **Current state**: Phase 2.8 DONE. Phase 2.9 DONE (fee-aware sizing, fee-drag gate, fee-aware EV, HL fee verified at 3.5bps, MIN_SIGNAL_RR=2.0, losing combo blocked). 8 profit leak fixes applied (funding allocation, TP slippage, re-entry gaps, consensus mult, opposition penalty, chop floor). Pattern cache + mode comparison + knowledge pipeline built.
+> **What's next**: Phase 3 signal quality (walk-forward validation, calibration curves) → 100d backtest validation → paper trade → go live.
 
 ---
 
@@ -159,29 +159,23 @@
 > **Goal**: Make the bot's edge survive fees. Current edge is ~$22/trade but fees eat 100%.
 > **Status**: PARTIALLY DONE — confidence floor raised, 3_agree leverage gate added.
 
-### 2.9.1 Verify Actual Hyperliquid Fee Structure
-- [ ] **Research**: Confirm taker fee is 5bps (0.05%) or 2.5bps
-  - If 2.5bps, update `TAKER_FEE_BPS` from 5 to 3 (2.5 + 0.5bps slippage buffer)
-  - This alone could halve fee drag from 100% to 50%
+### 2.9.1 Verify Actual Hyperliquid Fee Structure ✅ DONE
+- [x] **Confirmed**: Hyperliquid taker fee is 3.5 bps (0.035%). Updated `TAKER_FEE_BPS` default from 5 to 4 (3.5 + 0.5bps safety buffer). Fee drag cut by ~20%.
 
-### 2.9.2 Fee-Aware Position Sizing
-- [ ] **Update `bot/execution/risk.py` calculate_qty()**
-  - Current: Only adds slippage to stop width for sizing
-  - Fix: Add round-trip fees (entry + exit) to effective stop width
-  - `effective_stop = stop_width + entry * (taker_fee_bps * 2 + slippage_bps) / 10000`
-  - Effect: Positions auto-shrink when fees are a significant % of the stop width
+### 2.9.2 Fee-Aware Position Sizing ✅ DONE
+- [x] **Updated `bot/execution/risk.py` calculate_qty()**
+  - Round-trip fees (entry + exit) now added to effective stop width
+  - `effective_stop = stop_width + slippage_spread + round_trip_fee_width`
+  - Positions auto-shrink when fees consume significant % of stop distance
+  - Fee-drag gate in signal pipeline: rejects trades where fees > 40% of stop
 
-### 2.9.3 Fee-Aware EV Calculation in Ensemble
-- [ ] **Update `bot/strategies/ensemble.py` _merge_signals()**
-  - Current EV: `win_prob × R:R - (1 - win_prob)` — ignores fees
-  - Fix: Subtract fee drag from EV: `EV = win_prob × R:R_after_fees - (1 - win_prob) - fee_pct`
-  - Effect: EV filter catches trades where fees eat the expected edge
+### 2.9.3 Fee-Aware EV Calculation in Ensemble ✅ DONE
+- [x] **Updated `bot/strategies/ensemble.py` _merge_signals()**
+  - EV now: `win_prob × (R:R - fee_drag) - loss_prob × (1 + fee_drag)`
+  - Fee drag properly reduces expected win and increases expected loss
 
-### 2.9.4 Raise Minimum R:R After Fees
-- [ ] **Update `bot/trading_config.py`**
-  - Current: `MIN_SIGNAL_RR=1.5`
-  - Fix: `MIN_SIGNAL_RR=2.0` — ensures TP1 is far enough to survive fee drag
-  - With 10bps round-trip fees on ~1% stop width, effective R:R drops by ~0.1
+### 2.9.4 Raise Minimum R:R After Fees ✅ ALREADY DONE
+- [x] **`MIN_SIGNAL_RR=2.0`** already set in trading_config.py
 
 ### 2.9.5 Raise Confidence Floor to 75% ✅ ALREADY DONE
 - [x] **`bot/trading_config.py` already has `ensemble_confidence_floor=75.0`**
@@ -467,10 +461,10 @@ bot/feedback/parameter_tuner.py    → Parameter optimization (14KB)
 
 > Updated March 10, 2026. Based on comprehensive 5-layer audit.
 
-1. **Phase 2.8: Fix 6 critical bugs** — actively destroying edge, 2-4 hours of work
-2. **Phase 2.9: Fee economics** — fees eat 100% of edge, must fix before any backtest means anything
-3. **Validate with 100d backtest** — confirm bugs + fee fixes produce positive Sharpe
-4. **Phase 3: Signal quality** — walk-forward validation, block losing combos
+1. ~~**Phase 2.8: Fix 6 critical bugs**~~ ✅ DONE
+2. ~~**Phase 2.9: Fee economics**~~ ✅ DONE (fee-aware sizing, fee-drag gate, fee-aware EV, HL fee verified)
+3. **Validate with 100d backtest** — confirm all fixes produce positive Sharpe
+4. **Phase 3: Signal quality** — walk-forward validation, calibration curves
 5. **Paper trade on live API** — 48-72h validation with real exchange prices
 6. **Go live conservative** — SOL+HYPE, 1% risk, 2x max leverage, 3_agree required
 7. **Phase 4: Production hardening** — connection resilience, reconciliation, logging
