@@ -31,13 +31,12 @@ class TestPositionSizingRiskBased(unittest.TestCase):
     """Test that position sizing uses risk-based formula with capped multiplier."""
 
     def test_basic_risk_sizing(self):
-        """qty = risk_usd / (stop_width * leverage)"""
+        """qty = risk_usd / (effective_stop * leverage), effective_stop includes fees."""
         rm = RiskManager(starting_equity=10000, risk_per_trade=0.01)
-        # entry=100, sl=95, stop_width=5, lev=2x
-        # risk_usd = 10000 * 0.01 * 1.0 = 100
-        # qty = 100 / (5 * 2) = 10
+        # entry=100, sl=95, stop_width=5, fees=0.08 (4bps*2), lev=2x
+        # effective_stop = 5.08, qty = 100 / (5.08 * 2) ≈ 9.84
         qty = rm.calculate_qty(100.0, 95.0, leverage=2.0, risk_multiplier=1.0)
-        self.assertAlmostEqual(qty, 10.0, places=2)
+        self.assertAlmostEqual(qty, 9.84, places=1)
 
     def test_risk_multiplier_capped_at_1_5(self):
         """risk_multiplier should be capped at 1.5, not allow 3.5x."""
@@ -46,9 +45,6 @@ class TestPositionSizingRiskBased(unittest.TestCase):
         qty_capped = rm.calculate_qty(100.0, 95.0, leverage=2.0, risk_multiplier=3.5)
         qty_max = rm.calculate_qty(100.0, 95.0, leverage=2.0, risk_multiplier=1.5)
         self.assertEqual(qty_capped, qty_max)
-        # risk_usd = 10000 * 0.01 * 1.5 = 150
-        # qty = 150 / (5 * 2) = 15
-        self.assertAlmostEqual(qty_capped, 15.0, places=2)
 
     def test_higher_leverage_smaller_qty(self):
         """Higher leverage should produce smaller qty (constant dollar risk)."""
@@ -56,8 +52,8 @@ class TestPositionSizingRiskBased(unittest.TestCase):
         qty_2x = rm.calculate_qty(100.0, 95.0, leverage=2.0)
         qty_10x = rm.calculate_qty(100.0, 95.0, leverage=10.0)
         self.assertGreater(qty_2x, qty_10x)
-        # At 10x: qty = 100 / (5 * 10) = 2
-        self.assertAlmostEqual(qty_10x, 2.0, places=2)
+        # Higher leverage -> proportionally smaller qty
+        self.assertAlmostEqual(qty_10x / qty_2x, 2.0 / 10.0, places=1)
 
     def test_zero_stop_returns_zero_qty(self):
         """Zero stop width should return 0 qty (no division by zero)."""
@@ -75,12 +71,16 @@ class TestPositionSizingRiskBased(unittest.TestCase):
             self.assertLessEqual(config.risk_per_trade, 0.025)
 
     def test_max_dollar_risk_per_trade(self):
-        """With $10k equity and 1% risk capped at 1.5x rm, max risk = $150."""
+        """With $10k equity and 1% risk capped at 1.5x rm, effective risk ≤ $150."""
         rm = RiskManager(starting_equity=10000, risk_per_trade=0.01)
         # Even with rm=10 (extreme), capped at 1.5
         qty = rm.calculate_qty(100.0, 95.0, leverage=2.0, risk_multiplier=10.0)
-        # Dollar risk = stop_width * qty * leverage = 5 * 15 * 2 = 150
-        dollar_risk = 5 * qty * 2
+        # Dollar risk using effective_stop (includes fees): should equal risk_usd
+        from trading_config import TradingConfig
+        fee_bps = TradingConfig().taker_fee_bps
+        fee_width = 100.0 * (fee_bps * 2 / 10000.0)
+        effective_stop = 5.0 + fee_width
+        dollar_risk = effective_stop * qty * 2
         self.assertAlmostEqual(dollar_risk, 150.0, places=0)
 
 

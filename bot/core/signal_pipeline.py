@@ -88,11 +88,26 @@ class RiskFilterChain:
         meta["rr_tp1"] = round(signal.risk_reward_tp1, 2)
         meta["rr_tp2"] = round(signal.risk_reward_tp2, 2)
 
-        # Gate 1c: Minimum Expected Value filter
-        # EV = (win_prob × R:R) - (loss_prob × 1.0) per dollar risked.
-        # Filters trades where probability × payoff doesn't justify the risk.
-        # A 72% conf trade with 1.5 R:R (EV=0.80) passes easily.
-        # A 65% conf trade with 1.0 R:R (EV=0.30) is borderline.
+        # Gate 1c: Fee-drag filter
+        # Reject trades where round-trip fees consume too much of the stop width.
+        # A stop width of 0.3% with 0.10% round-trip fees = 33% fee drag — barely viable.
+        fee_bps = getattr(self.config, "taker_fee_bps", 5)
+        round_trip_fee_pct = fee_bps * 2 / 10000.0  # Entry + exit fee as fraction
+        stop_pct = signal.stop_width_pct
+        if stop_pct > 0:
+            fee_drag_pct = round_trip_fee_pct / stop_pct
+            meta["fee_drag_pct"] = round(fee_drag_pct * 100, 1)
+            max_fee_drag = 0.40  # Fees must be < 40% of stop distance
+            if fee_drag_pct > max_fee_drag:
+                return FilterResult(
+                    approved=False, signal=signal,
+                    rejection_reason=f"Fee drag {fee_drag_pct:.0%} > {max_fee_drag:.0%} "
+                                     f"(fees={round_trip_fee_pct:.4f}, stop={stop_pct:.4f})",
+                    metadata=meta,
+                )
+
+        # Gate 1d: Minimum Expected Value filter
+        # EV = (win_prob x R:R) - (loss_prob x 1.0) per dollar risked.
         ev = signal.metadata.get("ev_per_dollar") if signal.metadata else None
         min_ev = getattr(self.config, "min_signal_ev", 0.10)
         if ev is not None and ev < min_ev:

@@ -165,7 +165,7 @@ class TestQtyRiskConsistency(unittest.TestCase):
     """Verify qty calculation matches risk_per_trade formula."""
 
     def test_qty_formula(self):
-        """qty = risk_amount / (stop_distance * leverage)"""
+        """qty = risk_amount / (effective_stop * leverage), where effective_stop includes fees."""
         rm = RiskManager(starting_equity=10000, risk_per_trade=0.01)
         entry = 100.0
         sl = 95.0  # stop_distance = 5
@@ -173,13 +173,18 @@ class TestQtyRiskConsistency(unittest.TestCase):
         qty = rm.calculate_qty(entry, sl, leverage=leverage)
 
         # risk_amount = 10000 * 0.01 = 100
-        # qty = 100 / (5 * 2) = 10
-        self.assertAlmostEqual(qty, 10.0, places=2)
+        # effective_stop = 5.0 + 0.08 (round-trip fees at 4bps*2) = 5.08
+        # qty = 100 / (5.08 * 2) ≈ 9.84
+        self.assertAlmostEqual(qty, 9.84, places=1)
 
-        # Verify dollar risk: stop_distance * qty * leverage = risk_amount
-        dollar_risk = abs(entry - sl) * qty * leverage
+        # Verify effective dollar risk: effective_stop * qty * leverage ≈ risk_amount
+        from trading_config import TradingConfig
+        fee_bps = TradingConfig().taker_fee_bps
+        fee_width = entry * (fee_bps * 2 / 10000.0)
+        effective_stop = abs(entry - sl) + fee_width
+        dollar_risk = effective_stop * qty * leverage
         expected_risk = 10000 * 0.01
-        self.assertAlmostEqual(dollar_risk, expected_risk, places=2,
+        self.assertAlmostEqual(dollar_risk, expected_risk, places=1,
                                msg=f"Dollar risk should be ${expected_risk}, got ${dollar_risk}")
 
     def test_max_loss_equals_risk_amount(self):

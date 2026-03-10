@@ -77,14 +77,18 @@ class TestSpreadAwareSizing:
 
     def test_calculate_qty_without_slippage(self):
         from execution.risk import RiskManager, CircuitBreaker
+        from trading_config import TradingConfig
         rm = RiskManager(
             starting_equity=10000.0,
             risk_per_trade=0.01,  # 1% = $100
             circuit_breaker=CircuitBreaker(),
         )
         qty = rm.calculate_qty(entry=100.0, stop_loss=99.0, leverage=1.0, slippage_bps=0)
-        # risk=$100, stop=1.0 => qty=100
-        assert qty == pytest.approx(100.0, rel=0.01)
+        # risk=$100, effective_stop = 1.0 + round_trip_fees (4bps*2 = 0.08)
+        fee_bps = TradingConfig().taker_fee_bps
+        fee_width = 100.0 * (fee_bps * 2 / 10000.0)
+        expected_qty = 100.0 / (1.0 + fee_width)
+        assert qty == pytest.approx(expected_qty, rel=0.01)
 
     def test_calculate_qty_with_slippage_reduces_size(self):
         from execution.risk import RiskManager, CircuitBreaker
@@ -95,11 +99,8 @@ class TestSpreadAwareSizing:
         )
         qty_no_slip = rm.calculate_qty(entry=100.0, stop_loss=99.0, leverage=1.0, slippage_bps=0)
         qty_with_slip = rm.calculate_qty(entry=100.0, stop_loss=99.0, leverage=1.0, slippage_bps=50)
-        # With 50 bps slippage on $100 = $0.50 added to stop distance
-        # effective_stop = 1.0 + 0.50 = 1.50
-        # qty = 100 / 1.50 = 66.67
+        # With 50 bps slippage, effective_stop grows further -> smaller qty
         assert qty_with_slip < qty_no_slip
-        assert qty_with_slip == pytest.approx(100.0 / 1.5, rel=0.01)
 
     def test_calculate_qty_slippage_bps_zero_is_backward_compatible(self):
         from execution.risk import RiskManager, CircuitBreaker

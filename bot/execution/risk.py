@@ -386,9 +386,14 @@ class RiskManager:
         if entry <= 0:
             return 0.0
 
-        # Add estimated slippage to stop distance for spread-aware sizing
+        # Add estimated slippage AND round-trip fees to stop distance
+        # This prevents sizing as if 100% of stop distance is available for risk,
+        # when in reality fees consume a portion of every stop-out
         slippage_spread = entry * (slippage_bps / 10000.0)
-        effective_stop = stop_width + slippage_spread
+        from trading_config import TradingConfig as _TC2
+        _fee_bps = _TC2().taker_fee_bps
+        round_trip_fee_width = entry * (_fee_bps * 2 / 10000.0)  # Entry + exit fee
+        effective_stop = stop_width + slippage_spread + round_trip_fee_width
 
         # Enforce minimum stop width to prevent near-zero stops
         # Single source of truth: trading_config.py MIN_STOP_WIDTH_PCT
@@ -422,6 +427,7 @@ class RiskManager:
                 )
 
         # Store sizing breakdown for attribution/debugging
+        fee_pct_of_stop = round_trip_fee_width / effective_stop * 100 if effective_stop > 0 else 0
         self.last_sizing_breakdown = {
             "symbol": symbol or "?",
             "equity": self.equity,
@@ -431,6 +437,8 @@ class RiskManager:
             "risk_usd": risk_usd,
             "stop_width": stop_width,
             "slippage_spread": slippage_spread,
+            "round_trip_fee_width": round_trip_fee_width,
+            "fee_pct_of_stop": round(fee_pct_of_stop, 1),
             "effective_stop": effective_stop,
             "leverage": effective_leverage,
             "qty_before_cap": risk_usd / (effective_stop * effective_leverage),

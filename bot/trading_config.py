@@ -79,7 +79,7 @@ class TradingConfig:
     starting_equity: float = field(default_factory=lambda: _env_float("STARTING_EQUITY", 10000.0))
     risk_per_trade: float = field(default_factory=lambda: _env_float("RISK_PER_TRADE", 0.02))
     max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 3))
-    taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 5))
+    taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 4))  # Hyperliquid: 3.5 bps taker, rounded up for safety
 
     # Circuit breakers
     circuit_breaker_daily_loss_pct: float = field(

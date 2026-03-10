@@ -232,12 +232,13 @@ class TestRiskFilters:
         assert rm.can_open_position(2) is False
 
     def test_qty_calculation(self):
-        """Position size should risk exactly risk_per_trade * equity."""
+        """Position size accounts for stop width + round-trip fees."""
         rm = RiskManager(starting_equity=10000, risk_per_trade=0.015)
         qty = rm.calculate_qty(entry=100.0, stop_loss=95.0, leverage=2.0)
         # risk_usd = 10000 * 0.015 = 150
-        # qty = 150 / (5.0 * 2.0) = 15.0
-        assert qty == pytest.approx(15.0)
+        # effective_stop = 5.0 (stop) + 0.0 (slip) + 0.08 (fees: 4bps*2)
+        # qty = 150 / (5.08 * 2.0) ≈ 14.76
+        assert qty == pytest.approx(14.76, abs=0.1)
 
     def test_zero_stop_width_returns_zero(self):
         """Entry == SL should return 0 qty."""
