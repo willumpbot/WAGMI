@@ -329,6 +329,9 @@ class ConfidenceScorerStrategy(BaseStrategy):
 
         # 6h regime filter: reject signals that contradict higher-timeframe regime
         df_6h = data.get("6h")
+        if df_6h is None or len(df_6h) < 10:
+            logger.warning(f"[{symbol}] confidence_scorer: 6h data unavailable, HTF filter skipped")
+            confidence *= 0.85  # Penalize: no HTF confirmation
         if df_6h is not None and len(df_6h) >= 10:
             _, _, hist_6h = _macd(df_6h["close"])
             macd_h_6h = float(hist_6h.iloc[-1])

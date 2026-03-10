@@ -2110,7 +2110,19 @@ class MultiStrategyBot:
                 )
                 if liq_check["at_risk"]:
                     logger.warning(f"[{symbol}] LIQUIDATION RISK: {liq_check}")
-                    self.pos_mgr.force_close(symbol, current_price, "LIQUIDATION_AVOID")
+                    event = self.pos_mgr.force_close(symbol, current_price, "LIQUIDATION_AVOID")
+                    # Submit exchange close order (force_close only updates internal state)
+                    if event and event.qty > 0:
+                        close_side = "SELL" if event.side == "LONG" else "BUY"
+                        self.order_executor.close_position(
+                            symbol, close_side, event.qty, current_price,
+                            reason="LIQUIDATION_AVOID"
+                        )
+                        if self.alerts:
+                            self.alerts.send_trade_alert(
+                                f"🚨 LIQUIDATION AVOID: {symbol} {event.side} "
+                                f"force-closed @ {current_price}"
+                            )
 
         # Clean up stale closed positions (prevent memory growth overnight)
         from execution.position_state import CLOSED as _CLOSED
@@ -3767,12 +3779,20 @@ class MultiStrategyBot:
             f"new_conf={action.confidence_new:.0f}%"
         )
 
-        # 1. Close the old position
+        # 1. Close the old position (exchange order + internal state)
         close_price = self._last_prices.get(close_symbol)
         if close_price is None:
             logger.warning(f"[{trace_id}] Rotation aborted: no price for {close_symbol}")
             return
 
+        # Submit exchange close order BEFORE updating internal state
+        _rot_pos = self.pos_mgr.positions.get(close_symbol)
+        if _rot_pos and _rot_pos.qty > 0:
+            _rot_close_side = "SELL" if _rot_pos.side == "LONG" else "BUY"
+            self.order_executor.close_position(
+                close_symbol, _rot_close_side, _rot_pos.qty, close_price,
+                reason=action.close_reason
+            )
         close_event = self.pos_mgr.force_close(
             close_symbol, close_price, action.close_reason
         )
@@ -4228,6 +4248,13 @@ class MultiStrategyBot:
                                             f"{result['details']} (urgency={urgency})"
                                         )
                                         if action_name == "close":
+                                            _exit_pos = self.pos_mgr.positions.get(symbol)
+                                            if _exit_pos and _exit_pos.qty > 0:
+                                                _ex_side = "SELL" if _exit_pos.side == "LONG" else "BUY"
+                                                self.order_executor.close_position(
+                                                    symbol, _ex_side, _exit_pos.qty, current_price,
+                                                    reason="LLM_EXIT_AGENT"
+                                                )
                                             self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_AGENT")
                                         elif action_name == "partial":
                                             partial_pct = result.get("partial_pct", 0.5)
@@ -4390,6 +4417,13 @@ class MultiStrategyBot:
 
                         # Handle close/partial actions that need exchange execution
                         if action == "close":
+                            _exit_pos2 = self.pos_mgr.positions.get(symbol)
+                            if _exit_pos2 and _exit_pos2.qty > 0:
+                                _ex_side2 = "SELL" if _exit_pos2.side == "LONG" else "BUY"
+                                self.order_executor.close_position(
+                                    symbol, _ex_side2, _exit_pos2.qty, current_price,
+                                    reason="LLM_EXIT_ENGINE"
+                                )
                             self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_ENGINE")
                         elif action == "partial":
                             # Partial close: reduce qty, log the partial
