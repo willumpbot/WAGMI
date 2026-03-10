@@ -659,6 +659,15 @@ class BacktestEngine:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
 
+            # Accrue funding costs for open positions (daily candle = 3x 8h intervals)
+            avg_funding_rate = getattr(self.config, "backtest_funding_rate", 0.0001)
+            _pos = self.pos_mgr.positions.get(symbol)
+            if _pos and _pos.state != "CLOSED" and _pos.qty > 0:
+                notional = _pos.entry * _pos.qty * _pos.leverage
+                # 24h / 8h = 3 funding intervals per daily candle
+                cost = abs(avg_funding_rate) * notional * 3.0
+                _pos.funding_costs += cost
+
             # Circuit breaker force-close (same as _walk_hourly — OPEN only)
             if self.risk_mgr.circuit_breaker.tripped:
                 pos = self.pos_mgr.positions.get(symbol)

@@ -235,10 +235,11 @@ class EnsembleStrategy:
         result.metadata["chop_score_smoothed"] = round(chop_score, 3)
         if chop_score > 0.35:
             if chop_score >= 0.65:
-                # Extreme chop: floor rises to 88% (high bar but not impossible)
+                # Extreme chop: floor rises from ranging (88%) toward 93%.
+                # This creates a real gradient above the ranging floor.
                 chop_intensity = min(1.0, (chop_score - 0.65) / 0.20)  # 0→1 over 0.65→0.85
                 effective_floor = self.ranging_confidence_floor + chop_intensity * (
-                    88.0 - self.ranging_confidence_floor
+                    93.0 - self.ranging_confidence_floor
                 )
             else:
                 # Moderate chop: interpolate between normal and ranging floor
@@ -766,24 +767,39 @@ class EnsembleStrategy:
         # Old policy: "widest SL" destroyed R:R when strategies disagreed on stops.
         # New: weight SL by strategy accuracy, so trusted strategies get more say.
         # Average TP1 prevents zone-based strategies from pulling targets too close.
+        # Consistent accuracy-weighted averaging for SL, entry, TP1, ATR.
+        # Using the same weighting for all levels preserves R:R geometry.
+        # TP2 stays aggressive (widest) since it's the trailing target.
         if total_weight > 0:
             weighted_sl = sum(
                 self._get_strategy_weight(s.strategy) * s.sl for s in signals
             ) / total_weight
+            weighted_entry = sum(
+                self._get_strategy_weight(s.strategy) * s.entry for s in signals
+            ) / total_weight
+            weighted_tp1 = sum(
+                self._get_strategy_weight(s.strategy) * s.tp1 for s in signals
+            ) / total_weight
+            weighted_atr = sum(
+                self._get_strategy_weight(s.strategy) * s.atr for s in signals
+            ) / total_weight
         else:
             weighted_sl = sum(s.sl for s in signals) / len(signals)
+            weighted_entry = sum(s.entry for s in signals) / len(signals)
+            weighted_tp1 = sum(s.tp1 for s in signals) / len(signals)
+            weighted_atr = sum(s.atr for s in signals) / len(signals)
         if side == "BUY":
             best_sl = weighted_sl
-            best_tp1 = sum(s.tp1 for s in signals) / len(signals)
+            best_tp1 = weighted_tp1
             best_tp2 = max(s.tp2 for s in signals)
-            entry = sum(s.entry for s in signals) / len(signals)
+            entry = weighted_entry
         else:
             best_sl = weighted_sl
-            best_tp1 = sum(s.tp1 for s in signals) / len(signals)
+            best_tp1 = weighted_tp1
             best_tp2 = min(s.tp2 for s in signals)
-            entry = sum(s.entry for s in signals) / len(signals)
+            entry = weighted_entry
 
-        atr = max((s.atr for s in signals), default=0)
+        atr = weighted_atr
 
         # Preserve per-signal ATR and SL for profile classification
         per_signal_atr = {s.strategy: s.atr for s in signals}
@@ -806,9 +822,9 @@ class EnsembleStrategy:
         # Conservative win probability: deflate by empirical overconfidence ratio.
         # 3-agree trades are better calibrated (86% WR at ~80% conf) so less deflation.
         if n_agree >= 3:
-            win_prob = min(raw_win_prob, raw_win_prob * 0.90)  # 10% deflation
+            win_prob = raw_win_prob * 0.90  # 10% deflation (well-calibrated at 3-agree)
         else:
-            win_prob = min(raw_win_prob, raw_win_prob * 0.70)  # 30% deflation (70% conf → 49% WR)
+            win_prob = raw_win_prob * 0.70  # 30% deflation (70% conf → 49% WR empirical)
         try:
             from trading_config import TradingConfig as _TConf
             _fee_bps = _TConf().taker_fee_bps
