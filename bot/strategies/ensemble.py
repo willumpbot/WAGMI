@@ -227,6 +227,10 @@ class EnsembleStrategy:
         _duration_hint = self._infer_duration(_driver)
         result = self._trend_alignment_adjust(symbol, data, result, _duration_hint)
 
+        if result is None:
+            logger.info(f"[{symbol}] Signal rejected by trend alignment (counter-trend)")
+            return None
+
         # Re-check floor after adjustment (should rarely fail now since we flip instead of crush)
         if result.confidence < self.confidence_floor:
             logger.info(
