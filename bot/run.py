@@ -394,7 +394,7 @@ Commands:
     sub_bt.add_argument("--csv", default="", help="Export per-trade timeline to CSV file")
     sub_bt.add_argument("--raw", action="store_true", help="Disable circuit breakers, notional caps, and risk gates for raw strategy analysis")
     sub_bt.add_argument("--fresh", action="store_true", help="Force re-fetch data from exchanges, ignoring disk cache")
-    sub_bt.add_argument("--relaxed-cb", action="store_true", help="Use relaxed circuit breaker settings (15%/30%) instead of live (5%/10%)")
+    sub_bt.add_argument("--relaxed-cb", action="store_true", help="Use relaxed circuit breaker settings (15%%/30%%) instead of live (5%%/10%%)")
 
     # Signals
     sub_sig = subparsers.add_parser("signals", help="One-shot signal check")
