@@ -14,7 +14,7 @@ Every Position carries a TradeProfile that drives:
 
 Strategy -> entry_type mapping:
 - regime_trend       -> TREND
-- multi_tier_quality -> TREND
+- multi_tier_quality -> MEDIUM
 - monte_carlo_zones  -> MEDIUM
 - confidence_scorer  -> MEDIUM
 - (future) microstructure / fast_ml -> SCALP

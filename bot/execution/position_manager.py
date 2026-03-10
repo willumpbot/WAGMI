@@ -738,10 +738,12 @@ class PositionManager:
         if pos.open_time is None:
             return None
 
-        # Use profile-specific hold limit if available
-        if pos.trade_profile and max_hold_hours == 48:
+        # Use profile-specific hold limit (always apply, use min of config and profile)
+        if pos.trade_profile:
             entry_type = pos.trade_profile.entry_type
-            max_hold_hours = self._PROFILE_MAX_HOLD_HOURS.get(entry_type, max_hold_hours)
+            profile_max = self._PROFILE_MAX_HOLD_HOURS.get(entry_type)
+            if profile_max is not None:
+                max_hold_hours = min(max_hold_hours, profile_max)
 
         now = datetime.now(timezone.utc)
         if isinstance(pos.open_time, datetime):

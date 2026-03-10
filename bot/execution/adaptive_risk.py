@@ -58,10 +58,10 @@ class AdaptiveRiskManager:
                 mult *= 1.15  # 4+ wins in last 5 = boost
             elif wins >= 3:
                 mult *= 1.05  # 3/5 = slight boost
-            elif wins <= 1:
-                mult *= 0.75  # 1 or fewer wins = reduce
             elif wins == 0:
-                mult *= 0.60  # 0/5 = significant reduction
+                mult *= 0.60  # 0/5 = significant reduction (max losing streak)
+            elif wins == 1:
+                mult *= 0.75  # 1/5 = reduce risk
 
         # Factor 2: Regime-specific WR
         if regime and regime in self._regime_wr:
