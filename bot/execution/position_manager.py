@@ -664,7 +664,7 @@ class PositionManager:
                 "strategies_agree": (pos.entry_reasons or {}).get("strategies_agree", []),
                 "entry_type": profile_data.get("entry_type", "UNKNOWN"),
                 "primary_driver": profile_data.get("primary_driver", ""),
-                "regime": profile_data.get("regime", ""),
+                "regime": (pos.entry_reasons or {}).get("regime", "") or profile_data.get("regime", ""),
                 "volatility_band": profile_data.get("volatility_band", ""),
                 "trade_profile": profile_data,
                 # Position context for CSV analysis

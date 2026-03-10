@@ -494,9 +494,17 @@ class BacktestEngine:
                     except Exception:
                         signal.metadata.setdefault("regime", "unknown")
 
+                    # Also check trade_profile regime (uses trend_adjustment from ensemble)
+                    # This catches signals where align >= 2 but no actual trend alignment
+                    trend_adj = signal.metadata.get("trend_adjustment", 0)
+                    if trend_adj >= 0 and signal.metadata.get("regime") not in ("trending_bull", "trending_bear"):
+                        # No trend alignment bonus → trade_profile would classify as ranging
+                        # Override "mixed" to "ranging" since trend_adjustment confirms no trend
+                        signal.metadata["regime"] = "ranging"
+
                     # Regime filter: skip trades in ranging markets (29% WR historically)
                     regime = signal.metadata.get("regime", "unknown")
-                    if regime == "ranging":
+                    if regime in ("ranging", "unknown"):
                         logger.info(
                             f"[{symbol}] Signal SKIPPED: ranging regime "
                             f"(no directional alignment)"
@@ -691,10 +699,15 @@ class BacktestEngine:
                     except Exception:
                         signal.metadata.setdefault("regime", "unknown")
 
-                    # Regime filter: skip ranging trades
+                    # Cross-check with trend_adjustment (same as _walk_hourly)
+                    trend_adj = signal.metadata.get("trend_adjustment", 0)
+                    if trend_adj >= 0 and signal.metadata.get("regime") not in ("trending_bull", "trending_bear"):
+                        signal.metadata["regime"] = "ranging"
+
+                    # Regime filter: skip ranging and unknown trades
                     regime = signal.metadata.get("regime", "unknown")
-                    if regime == "ranging":
-                        logger.info(f"[{symbol}] Signal SKIPPED (daily): ranging regime")
+                    if regime in ("ranging", "unknown"):
+                        logger.info(f"[{symbol}] Signal SKIPPED (daily): {regime} regime")
                         self.candle_stats.setdefault("regime_blocked", 0)
                         self.candle_stats["regime_blocked"] += 1
                         continue
@@ -1827,13 +1840,24 @@ class BacktestEngine:
         for event in self.pos_mgr.trade_log:
             if event.action == "OPEN":
                 meta = event.metadata or {}
-                conf = meta.get("confidence", 0) or 0
-                regime = meta.get("regime", "unknown")
+                conf = meta.get("confidence", getattr(event, "confidence", 0)) or 0
+                regime = meta.get("regime", "") or (meta.get("entry_reasons") or {}).get("regime", "unknown")
                 current_pos[event.symbol] = {"pnl": 0.0, "confidence": conf, "regime": regime}
             elif event.action in self._CLOSE_ACTIONS:
                 pos = current_pos.get(event.symbol)
+                if not pos:
+                    # Position opened before this method saw the OPEN event — read from close
+                    meta = event.metadata or {}
+                    conf = meta.get("confidence", getattr(event, "confidence", 0)) or 0
+                    regime = meta.get("regime", "") or (meta.get("entry_reasons") or {}).get("regime", "unknown")
+                    pos = {"pnl": 0.0, "confidence": conf, "regime": regime}
+                    current_pos[event.symbol] = pos
                 if pos:
                     pos["pnl"] += event.pnl
+                    # Update regime from close event if open didn't have it
+                    if pos["regime"] == "unknown":
+                        meta = event.metadata or {}
+                        pos["regime"] = meta.get("regime", "") or (meta.get("entry_reasons") or {}).get("regime", "unknown")
                     if event.action != "TP1":
                         conf = pos["confidence"]
                         regime = pos["regime"]
