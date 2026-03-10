@@ -181,16 +181,16 @@ class RegimeTrendStrategy(BaseStrategy):
             confidence = align_long * base_mult
             side = "BUY"
             sl = c - R
-            tp1 = c + 1.5 * R
-            tp2 = c + 3.0 * R
+            tp1 = c + 2.0 * R
+            tp2 = c + 4.0 * R
         else:
             full_align = full_bear
             base_mult = 20.0 if not full_align else (22.0 if is_momentum else 25.0)
             confidence = align_short * base_mult
             side = "SELL"
             sl = c + R
-            tp1 = c - 1.5 * R
-            tp2 = c - 3.0 * R
+            tp1 = c - 2.0 * R
+            tp2 = c - 4.0 * R
 
         # Cross recency: boost confidence if multiple recent crosses confirm direction
         try:

@@ -261,13 +261,17 @@ class ConfidenceScorerStrategy(BaseStrategy):
         # --- Scoring system: 4 factors, each 0-25 points ---
 
         # Factor 1: ADX + DI direction (0-25)
+        # ADX < 20 means no trend — skip entirely (was allowing 0-ADX trades)
         adx_score = 0
         di_bullish = plus_di > minus_di
-        if adx > 25:
-            adx_score = 25 if adx > 35 else 20  # Strong vs moderate trend
-        elif adx > 20:
-            adx_score = 12  # Weak trend
-        # No score if ADX < 20 (no trend)
+        if adx < 20:
+            return None  # No trend = no trade
+        elif adx > 35:
+            adx_score = 25  # Strong trend
+        elif adx > 25:
+            adx_score = 20  # Moderate trend
+        else:
+            adx_score = 12  # Weak trend (ADX 20-25)
 
         # Factor 2: MACD histogram (0-25)
         macd_score = 0
@@ -333,11 +337,12 @@ class ConfidenceScorerStrategy(BaseStrategy):
                 mfi_6h = _mfi_like(df_6h, period=min(60, len(df_6h)))
                 mfi_6h_val = float(mfi_6h.iloc[-1])
 
-            # Reject if BOTH 6h indicators contradict the 1h direction
-            if di_bullish and macd_h_6h < 0 and mfi_6h_val < 45:
+            # Reject if EITHER 6h indicator contradicts the 1h direction
+            # (was AND — too permissive, let counter-trend trades through)
+            if di_bullish and (macd_h_6h < 0 or mfi_6h_val < 45):
                 logger.info(f"[{symbol}] confidence_scorer BUY rejected: 6h bearish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f})")
                 return None
-            if not di_bullish and macd_h_6h > 0 and mfi_6h_val > 55:
+            if not di_bullish and (macd_h_6h > 0 or mfi_6h_val > 55):
                 logger.info(f"[{symbol}] confidence_scorer SELL rejected: 6h bullish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f})")
                 return None
 
@@ -381,8 +386,8 @@ class ConfidenceScorerStrategy(BaseStrategy):
         K = 1.2
         sl = entry - K * atr_val if side == "BUY" else entry + K * atr_val
         stop_width = abs(entry - sl)
-        tp1 = entry + 1.5 * stop_width if side == "BUY" else entry - 1.5 * stop_width
-        tp2 = entry + 3.0 * stop_width if side == "BUY" else entry - 3.0 * stop_width
+        tp1 = entry + 2.0 * stop_width if side == "BUY" else entry - 2.0 * stop_width
+        tp2 = entry + 4.0 * stop_width if side == "BUY" else entry - 4.0 * stop_width
 
         rr = abs(entry - tp1) / stop_width if stop_width > 0 else 0
         hist_str = f"hist_WR={hist_conf:.0%}" if hist_conf is not None else "hist_WR=n/a"

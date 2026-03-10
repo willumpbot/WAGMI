@@ -272,7 +272,7 @@ class TradingConfig:
     # ── Strategy Parameters (ATR multiples, confidence floors) ──
     # Previously hardcoded across strategy files. Now centralized.
     ensemble_confidence_floor: float = field(
-        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 70.0)
+        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 75.0)
     )
     max_ensemble_confidence: float = field(
         default_factory=lambda: _env_float("MAX_ENSEMBLE_CONFIDENCE", 85.0)
@@ -324,10 +324,10 @@ class TradingConfig:
     )
     # TP/SL engine defaults
     tp_sl_rr1: float = field(
-        default_factory=lambda: _env_float("TP_SL_RR1", 1.5)
+        default_factory=lambda: _env_float("TP_SL_RR1", 2.0)
     )
     tp_sl_rr2: float = field(
-        default_factory=lambda: _env_float("TP_SL_RR2", 2.5)
+        default_factory=lambda: _env_float("TP_SL_RR2", 4.0)
     )
     tp_sl_atr_mult: float = field(
         default_factory=lambda: _env_float("TP_SL_ATR_MULT", 1.5)

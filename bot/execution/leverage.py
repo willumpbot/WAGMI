@@ -144,28 +144,25 @@ class LeverageManager:
             return LeverageDecision(lev, "leverage", "medium",
                                     f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm)
 
-        # ── Tier 5: 80-89% — high conviction (compressed: 2.5-3x, was 3-4x) ──
+        # ── Tier 5: 80-89% — flat leverage (confidence inversion fix) ──
+        # Data shows 80-89% conf has PF=0.75 — high confidence clusters in
+        # ranging markets where correlated strategies agree on noise.
+        # Don't reward unproven confidence with bigger positions.
         if confidence < 90:
-            t = (confidence - 80) / 10.0
             if num_strategies_agree < 2:
                 lev = min(2.0, cap)
                 return LeverageDecision(lev, "leverage", "low",
                                         f"{lev:.1f}x: need 2+ strats for high lev", 1.0)
-            lev = min(2.5 + t * 0.5, cap)  # 2.5-3x (was 3-4x)
-            rm = 1.1 + t * 0.1  # 1.1-1.2x (was 1.2-1.3x)
-            tier = "medium"
-            return LeverageDecision(lev, "leverage", tier,
+            lev = min(2.0, cap)  # flat 2x (was 2.5-3x)
+            rm = 1.0  # flat 1.0x (was 1.1-1.2x)
+            return LeverageDecision(lev, "leverage", "medium",
                                     f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm)
 
         # ── Tier 6: 90%+ — largely unreachable with 85% ensemble cap ──
-        # Only reachable via LLM override. Compressed: 3-3.5x (was 4-5x)
-        t = min((confidence - 90) / 10.0, 1.0)
-        if num_strategies_agree >= 3:
-            lev = min(3.0 + t * 0.5, cap)  # 3-3.5x (was 4-5x)
-            rm = 1.2 + t * 0.1  # 1.2-1.3x (was 1.3-1.5x)
-        elif num_strategies_agree >= 2:
-            lev = min(2.5 + t * 0.5, cap)  # 2.5-3x (was 3-4x)
-            rm = 1.1 + t * 0.1  # 1.1-1.2x (was 1.2-1.3x)
+        # Same flat treatment — no leverage premium for extreme confidence
+        if num_strategies_agree >= 2:
+            lev = min(2.0, cap)  # flat 2x (was 3-3.5x)
+            rm = 1.0  # flat (was 1.2-1.3x)
         else:
             lev = min(2.0, cap)
             rm = 1.0

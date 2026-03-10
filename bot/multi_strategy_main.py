@@ -360,21 +360,25 @@ class MultiStrategyBot:
             decay_alpha=0.9,
         )
 
-        # Strategies (pass config params to constructors)
+        # Strategies — each toggleable via STRATEGY_*_ENABLED env var
         sym_configs = DEFAULT_SYMBOLS
-        self.strategies = [
-            RegimeTrendStrategy(sym_configs, config.htf_hours),
-            ConfidenceScorerStrategy(sym_configs, data_dir="ml_data"),
-            MultiTierQualityStrategy(sym_configs),
-        ]
-        # monte_carlo_zones disabled — PF=0.0 in backtests, consistent loser.
-        # Re-enable via STRATEGY_MONTE_CARLO_ENABLED=true if needed.
+        self.strategies = []
+
+        if os.getenv("STRATEGY_REGIME_TREND_ENABLED", "true").lower() == "true":
+            self.strategies.append(RegimeTrendStrategy(sym_configs, config.htf_hours))
+        if os.getenv("STRATEGY_CONFIDENCE_SCORER_ENABLED", "true").lower() == "true":
+            self.strategies.append(ConfidenceScorerStrategy(sym_configs, data_dir="ml_data"))
+        if os.getenv("STRATEGY_MULTI_TIER_QUALITY_ENABLED", "true").lower() == "true":
+            self.strategies.append(MultiTierQualityStrategy(sym_configs))
         if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "false").lower() == "true":
-            self.strategies.insert(1, MonteCarloZonesStrategy(
+            self.strategies.append(MonteCarloZonesStrategy(
                 sym_configs,
                 mc_sims=config.mc_num_sims,
                 mc_hours=config.mc_forward_hours,
             ))
+
+        enabled_names = [s.name for s in self.strategies]
+        logger.info(f"[INIT] Active strategies: {enabled_names}")
         # Chop detector: multi-factor choppy market filter
         chop = None
         if config.enable_chop_detector:

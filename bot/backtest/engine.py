@@ -311,15 +311,16 @@ class BacktestEngine:
             return {"status": "error", "error": str(e)}
 
     def _build_strategies(self, sym_configs, strategy_names) -> list:
-        """Build strategy instances."""
-        all_strats = {
-            "regime_trend": RegimeTrendStrategy(sym_configs, self.config.htf_hours),
-            "confidence_scorer": ConfidenceScorerStrategy(sym_configs, data_dir="backtest_ml_data"),
-            "multi_tier_quality": MultiTierQualityStrategy(sym_configs),
-        }
-        # monte_carlo_zones disabled — PF=0.0 (0% WR) in 10d backtest.
-        # Re-enable via STRATEGY_MONTE_CARLO_ENABLED=true if needed.
+        """Build strategy instances. Each toggleable via STRATEGY_*_ENABLED env var."""
         import os
+        all_strats = {}
+
+        if os.getenv("STRATEGY_REGIME_TREND_ENABLED", "true").lower() == "true":
+            all_strats["regime_trend"] = RegimeTrendStrategy(sym_configs, self.config.htf_hours)
+        if os.getenv("STRATEGY_CONFIDENCE_SCORER_ENABLED", "true").lower() == "true":
+            all_strats["confidence_scorer"] = ConfidenceScorerStrategy(sym_configs, data_dir="backtest_ml_data")
+        if os.getenv("STRATEGY_MULTI_TIER_QUALITY_ENABLED", "true").lower() == "true":
+            all_strats["multi_tier_quality"] = MultiTierQualityStrategy(sym_configs)
         if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "false").lower() == "true":
             all_strats["monte_carlo_zones"] = MonteCarloZonesStrategy(sym_configs)
 
@@ -492,6 +493,18 @@ class BacktestEngine:
                                 break
                     except Exception:
                         signal.metadata.setdefault("regime", "unknown")
+
+                    # Regime filter: skip trades in ranging markets (29% WR historically)
+                    regime = signal.metadata.get("regime", "unknown")
+                    if regime == "ranging":
+                        logger.info(
+                            f"[{symbol}] Signal SKIPPED: ranging regime "
+                            f"(no directional alignment)"
+                        )
+                        self.candle_stats.setdefault("regime_blocked", 0)
+                        self.candle_stats["regime_blocked"] += 1
+                        continue
+
                     # Create candidate for dual-world tracking
                     candidate = self._create_candidate(signal, sim_dt)
 
@@ -659,6 +672,33 @@ class BacktestEngine:
                     signal = None
                 if signal:
                     self.candle_stats["signal"] += 1
+                    # Tag regime at signal time (same logic as _walk_hourly)
+                    try:
+                        statuses = ensemble.get_all_status(symbol, windowed)
+                        for s in statuses:
+                            if s.get("strategy") == "regime_trend":
+                                al = s.get("align_long", 0)
+                                ash = s.get("align_short", 0)
+                                if al >= 3:
+                                    signal.metadata["regime"] = "trending_bull"
+                                elif ash >= 3:
+                                    signal.metadata["regime"] = "trending_bear"
+                                elif al >= 2 or ash >= 2:
+                                    signal.metadata["regime"] = "mixed"
+                                else:
+                                    signal.metadata["regime"] = "ranging"
+                                break
+                    except Exception:
+                        signal.metadata.setdefault("regime", "unknown")
+
+                    # Regime filter: skip ranging trades
+                    regime = signal.metadata.get("regime", "unknown")
+                    if regime == "ranging":
+                        logger.info(f"[{symbol}] Signal SKIPPED (daily): ranging regime")
+                        self.candle_stats.setdefault("regime_blocked", 0)
+                        self.candle_stats["regime_blocked"] += 1
+                        continue
+
                     # Create candidate for dual-world tracking
                     candidate = self._create_candidate(signal, sim_dt)
 
@@ -1224,6 +1264,7 @@ class BacktestEngine:
             "risk_metrics": self._report_risk_metrics(max_drawdown, max_dd_duration),
             "trailing_analysis": self._report_trailing_analysis(),
             "by_regime": self._report_by_regime(),
+            "conf_regime_crosstab": self._report_confidence_regime_crosstab(),
             "symbol_pnl": self.symbol_pnl,
             "recommendations": self._generate_recommendations(),
             "equity_curve": self.equity_curve,
@@ -1266,17 +1307,29 @@ class BacktestEngine:
 
     def _report_by_symbol(self) -> Dict:
         result = {}
+        sym_winners = {}
+        sym_losers = {}
         for event in self.pos_mgr.trade_log:
             if event.action in self._CLOSE_ACTIONS:
                 sym = event.symbol
                 if sym not in result:
                     result[sym] = {"trades": 0, "wins": 0, "pnl": 0.0}
+                    sym_winners[sym] = []
+                    sym_losers[sym] = []
                 result[sym]["trades"] += 1
                 if event.pnl > 0:
                     result[sym]["wins"] += 1
+                    sym_winners[sym].append(event.pnl)
+                else:
+                    sym_losers[sym].append(event.pnl)
                 result[sym]["pnl"] += event.pnl
         for sym, stats in result.items():
             stats["win_rate"] = stats["wins"] / stats["trades"] if stats["trades"] else 0
+            w = sym_winners.get(sym, [])
+            l = sym_losers.get(sym, [])
+            stats["avg_winner"] = sum(w) / len(w) if w else 0.0
+            stats["avg_loser"] = sum(l) / len(l) if l else 0.0
+            stats["payoff_ratio"] = abs(stats["avg_winner"] / stats["avg_loser"]) if stats["avg_loser"] else 0.0
         return result
 
     def _report_leverage(self) -> Dict:
@@ -1468,10 +1521,13 @@ class BacktestEngine:
         if llm_vetoed < 0:
             llm_vetoed = 0
 
+        regime_blocked = self.candle_stats.get("regime_blocked", 0)
+
         return {
             "candles_processed": total,
             "no_signal": no_signal,
             "cb_blocked": cb_blocked,
+            "regime_blocked": regime_blocked,
             "signals_generated": signal_gen,
             "gate_rejections": gate_counts,
             "llm_vetoed": llm_vetoed,
@@ -1759,6 +1815,45 @@ class BacktestEngine:
             stats["pnl"] = round(stats.get("pnl", 0), 2)
 
         return regime_stats
+
+    def _report_confidence_regime_crosstab(self) -> Dict[str, Any]:
+        """Cross-tab: confidence band × regime → WR and PnL.
+        Reveals whether high confidence clusters in bad regimes."""
+        grid: Dict[str, Dict[str, Dict]] = {}
+        conf_ranges = [(0, 59, "< 60%"), (60, 69, "60-69%"), (70, 79, "70-79%"),
+                       (80, 89, "80-89%"), (90, 100, "90-100%")]
+
+        current_pos: Dict[str, Dict] = {}
+        for event in self.pos_mgr.trade_log:
+            if event.action == "OPEN":
+                meta = event.metadata or {}
+                conf = meta.get("confidence", 0) or 0
+                regime = meta.get("regime", "unknown")
+                current_pos[event.symbol] = {"pnl": 0.0, "confidence": conf, "regime": regime}
+            elif event.action in self._CLOSE_ACTIONS:
+                pos = current_pos.get(event.symbol)
+                if pos:
+                    pos["pnl"] += event.pnl
+                    if event.action != "TP1":
+                        conf = pos["confidence"]
+                        regime = pos["regime"]
+                        conf_label = "< 60%"
+                        for lo, hi, label in conf_ranges:
+                            if lo <= conf <= hi:
+                                conf_label = label
+                                break
+                        if conf_label not in grid:
+                            grid[conf_label] = {}
+                        if regime not in grid[conf_label]:
+                            grid[conf_label][regime] = {"count": 0, "wins": 0, "pnl": 0.0}
+                        cell = grid[conf_label][regime]
+                        cell["count"] += 1
+                        if pos["pnl"] > 0:
+                            cell["wins"] += 1
+                        cell["pnl"] += pos["pnl"]
+                        del current_pos[event.symbol]
+
+        return grid
 
     def _report_trailing_analysis(self) -> Dict[str, Any]:
         """Analyze trailing stop effectiveness vs fixed TP2."""
@@ -2051,6 +2146,9 @@ def print_report(report: Dict):
         print(f"  Candles processed: {total:,}")
         print(f"    No signal:       {funnel.get('no_signal', 0):>6,} ({funnel.get('no_signal', 0)/total*100:.1f}%)")
         print(f"    CB blocked:      {funnel.get('cb_blocked', 0):>6,} ({funnel.get('cb_blocked', 0)/total*100:.1f}%)")
+        regime_blk = funnel.get("regime_blocked", 0)
+        if regime_blk > 0:
+            print(f"    Regime blocked:  {regime_blk:>6,} ({regime_blk/total*100:.1f}%)")
         print(f"    Signal gen:      {funnel.get('signals_generated', 0):>6,} ({funnel.get('signals_generated', 0)/total*100:.1f}%)")
         gates = funnel.get("gate_rejections", {})
         for gate, count in sorted(gates.items(), key=lambda x: -x[1]):
@@ -2099,7 +2197,11 @@ def print_report(report: Dict):
             net = symbol_pnl.get(sym, stats.get("pnl", 0))
             trades = stats.get("trades", 0)
             wr = stats.get("win_rate", 0)
-            print(f"    {sym:>6s}: {trades:>4} events, {wr:.0%} WR, ${net:>10,.2f} net PnL")
+            avg_w = stats.get("avg_winner", 0)
+            avg_l = stats.get("avg_loser", 0)
+            pr = stats.get("payoff_ratio", 0)
+            print(f"    {sym:>6s}: {trades:>4} events, {wr:.0%} WR, ${net:>10,.2f} net PnL  "
+                  f"(W=${avg_w:>7.2f} / L=${avg_l:>8.2f} = {pr:.2f}:1)")
 
     # ── STRATEGY HEALTH ──
     health = report.get("strategy_health", {})
@@ -2168,6 +2270,31 @@ def print_report(report: Dict):
                 f"avg=${stats['avg_pnl']:>8.2f}  "
                 f"total=${stats['pnl']:>10,.2f}"
             )
+
+    # ── CONFIDENCE × REGIME CROSS-TAB ──
+    crosstab = report.get("conf_regime_crosstab", {})
+    if crosstab:
+        print(f"\n{'── CONFIDENCE × REGIME ':─<{W}}")
+        # Collect all regimes across all confidence bands
+        all_regimes = sorted({r for bands in crosstab.values() for r in bands})
+        # Header
+        hdr = f"    {'':>10s}"
+        for regime in all_regimes:
+            hdr += f"  {regime:>16s}"
+        print(hdr)
+        # Rows by confidence band
+        for conf_label in ["< 60%", "60-69%", "70-79%", "80-89%", "90-100%"]:
+            if conf_label not in crosstab:
+                continue
+            row = f"    {conf_label:>10s}"
+            for regime in all_regimes:
+                cell = crosstab[conf_label].get(regime)
+                if cell and cell["count"] > 0:
+                    wr = cell["wins"] / cell["count"] * 100
+                    row += f"  {cell['count']:>3}t {wr:>3.0f}%WR ${cell['pnl']:>7.0f}"
+                else:
+                    row += f"  {'---':>16s}"
+            print(row)
 
     # ── BY REGIME ──
     by_regime = report.get("by_regime", {})
