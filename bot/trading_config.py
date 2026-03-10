@@ -285,7 +285,7 @@ class TradingConfig:
         default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 75.0)
     )
     max_ensemble_confidence: float = field(
-        default_factory=lambda: _env_float("MAX_ENSEMBLE_CONFIDENCE", 85.0)
+        default_factory=lambda: _env_float("MAX_ENSEMBLE_CONFIDENCE", 92.0)
     )
     # Lowered from 2.0 to 1.5: fee-aware EV gate (0.15-0.20) now handles
     # profitability filtering directly. R:R 1.5 + positive EV = viable trade.

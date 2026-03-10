@@ -759,7 +759,7 @@ class EnsembleStrategy:
             max_conf = TradingConfig().max_ensemble_confidence
         except Exception:
             max_conf = 85.0
-        max_conf = max(max_conf, 92.0)  # Ensure cap is at least 92%
+        max_conf = max(max_conf, 92.0)  # Safety: ensure cap is at least 92%
         combined_conf = min(max_conf, weighted_conf * consensus_mult)
 
         # Weighted-average SL (preserves R:R), average TP1 (balanced), widest TP2 (aggressive).

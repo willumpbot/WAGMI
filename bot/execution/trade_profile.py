@@ -235,23 +235,25 @@ def _determine_entry_type(primary_driver: str, strategies_agree: List[str]) -> s
 
 
 def _determine_regime(signal_metadata: Dict[str, Any]) -> str:
-    """Detect market regime from signal metadata."""
+    """Detect market regime from signal metadata.
+
+    Uses trend_adjustment (positive = aligned with trend since multiplicative
+    bonuses were introduced) and chop_score to classify regime.
+    """
     trend_adj = signal_metadata.get("trend_adjustment", 0)
+    chop_score = signal_metadata.get("chop_score", signal_metadata.get("chop_score_smoothed", 0))
     vol_ratio = signal_metadata.get("volume_ratio", 1.0)
 
-    # Strong trend alignment bonus (negative trend_adj = aligned) -> trending
-    if trend_adj <= -5:
-        return "trending"
-    # Strong counter-trend penalty -> ranging/choppy
-    if trend_adj >= 10:
-        return "ranging"
     # Low volume -> illiquid
     if vol_ratio < 0.5:
         return "illiquid"
-    # Moderate trend -> trending
-    if trend_adj < 0:
+    # High chop -> ranging
+    if chop_score >= 0.5:
+        return "ranging"
+    # Trend alignment detected (positive adj = multiplicative bonus applied)
+    if trend_adj > 0:
         return "trending"
-
+    # No chop, no trend signal -> neutral (treat as mild ranging)
     return "ranging"
 
 

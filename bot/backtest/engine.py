@@ -406,11 +406,15 @@ class BacktestEngine:
                 if event.action in self._CLOSE_ACTIONS:
                     event.metadata["close_sim_time"] = str(sim_dt)
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
-                if event.action in self._CLOSE_ACTIONS:
+                # TP1 is a partial close — don't record as full trade outcome or
+                # run learning agent. The final close (TP2/SL/TRAILING_STOP) will
+                # capture the full trade. Without this, TP1 inflates win counts.
+                _is_final_close = event.action in self._CLOSE_ACTIONS and event.action != "TP1"
+                if _is_final_close:
                     self._record_trade_outcome(event, current_price)
                     self._last_close_candle[symbol] = i  # Track for re-entry gap
-                # LLM: run Learning Agent on closed trades
-                if self.llm and event.action in self._CLOSE_ACTIONS:
+                # LLM: run Learning Agent on closed trades (final close only)
+                if self.llm and _is_final_close:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
 
@@ -555,9 +559,9 @@ class BacktestEngine:
                 # For current symbol use current_price; for others use last known
                 _price = current_price if _sym == symbol else self._last_prices.get(_sym, _pos.entry)
                 if _pos.side == "LONG":
-                    unrealized_pnl += (_price - _pos.entry) * _pos.qty
+                    unrealized_pnl += (_price - _pos.entry) * _pos.qty * _pos.leverage
                 else:
-                    unrealized_pnl += (_pos.entry - _price) * _pos.qty
+                    unrealized_pnl += (_pos.entry - _price) * _pos.qty * _pos.leverage
             mtm_equity = self.risk_mgr.equity + unrealized_pnl
             # Check CB using MTM equity — catches open-position drawdowns
             sim_time = df_1h["time"].iloc[i] if hasattr(df_1h["time"].iloc[i], "strftime") else None
@@ -647,10 +651,11 @@ class BacktestEngine:
                 if event.action in self._CLOSE_ACTIONS:
                     event.metadata["close_sim_time"] = str(sim_dt)
                 self.risk_mgr.update_equity(event.pnl - event.fee, sim_time=sim_dt)
-                if event.action in self._CLOSE_ACTIONS:
+                _is_final_close = event.action in self._CLOSE_ACTIONS and event.action != "TP1"
+                if _is_final_close:
                     self._record_trade_outcome(event, current_price)
                     self._last_close_candle[symbol] = i
-                if self.llm and event.action in self._CLOSE_ACTIONS:
+                if self.llm and _is_final_close:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
 
@@ -762,9 +767,9 @@ class BacktestEngine:
             for _sym, _pos in self.pos_mgr.get_open_positions().items():
                 _price = current_price if _sym == symbol else self._last_prices.get(_sym, _pos.entry)
                 if _pos.side == "LONG":
-                    _unrealized_pnl += (_price - _pos.entry) * _pos.qty
+                    _unrealized_pnl += (_price - _pos.entry) * _pos.qty * _pos.leverage
                 else:
-                    _unrealized_pnl += (_pos.entry - _price) * _pos.qty
+                    _unrealized_pnl += (_pos.entry - _price) * _pos.qty * _pos.leverage
             _mtm_equity = self.risk_mgr.equity + _unrealized_pnl
             _sim_time = df["time"].iloc[i] if hasattr(df["time"].iloc[i], "strftime") else None
             self.risk_mgr.check_unrealized_risk(_unrealized_pnl, sim_time=_sim_time)
@@ -1362,7 +1367,8 @@ class BacktestEngine:
     # Actions that represent trade closes (not OPEN events)
     _CLOSE_ACTIONS = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
                       "EMERGENCY", "BACKTEST_END", "HOLD_LIMIT",
-                      "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
+                      "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE",
+                      "CIRCUIT_BREAKER", "LLM_EXIT")
 
     def _report_by_strategy(self) -> Dict:
         result = {}
