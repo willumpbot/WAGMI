@@ -16,7 +16,7 @@ def compute_pnl(
     exit_price: float,
     side: str,
     size_usd: float,
-    fee_bps: int = 5,
+    fee_bps: int = 4,
     funding_costs: float = 0.0,
 ) -> Dict[str, Any]:
     """Compute realized PnL from effective entry and exit.

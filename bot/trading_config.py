@@ -299,7 +299,7 @@ class TradingConfig:
     # Minimum expected value per dollar risked. EV = (win_prob × R:R) - (1-win_prob).
     # Filters trades where the probability × payoff doesn't justify the risk.
     # Raised from 0.10 to 0.15: at 45% WR, trades need 15%+ edge per $1
-    # risked to survive fees (5bps round-trip = ~10bps per trade).
+    # risked to survive fees (4bps each way = ~8bps round-trip).
     min_signal_ev: float = field(
         default_factory=lambda: _env_float("MIN_SIGNAL_EV", 0.15)
     )

@@ -54,7 +54,7 @@ def _generate_base_candles(n: int = 200, start_price: float = 100.0) -> pd.DataF
 
 def _run_scenario(name: str, candles: pd.DataFrame, positions_setup: dict) -> dict:
     """Run a scenario and return results."""
-    pos_mgr = PositionManager(taker_fee_bps=5, enable_trailing=True, trailing_atr_mult=1.5)
+    pos_mgr = PositionManager(taker_fee_bps=4, enable_trailing=True, trailing_atr_mult=1.5)
     risk_mgr = RiskManager(starting_equity=10000, risk_per_trade=0.015,
                            circuit_breaker=CircuitBreaker())
 

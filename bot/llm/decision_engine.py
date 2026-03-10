@@ -91,7 +91,7 @@ except ImportError:
     _HAS_MULTI_AGENT = False
 
 # High-priority triggers that warrant multi-LLM ensemble
-_ENSEMBLE_TRIGGERS = {"pre_trade_veto", "regime_shift", "high_confidence_signal"}
+_ENSEMBLE_TRIGGERS = {"pre_trade_veto", "regime shift", "high-confidence signal"}
 
 logger = logging.getLogger("bot.llm.engine")
 
@@ -819,7 +819,7 @@ def _apply_mode_constraints(
             if decision.confidence < 0.50:
                 logger.info(
                     f"[LLM-ENGINE] FULL: downgrading flip -> flat "
-                    f"(confidence {decision.confidence:.2f} < 0.55 threshold)"
+                    f"(confidence {decision.confidence:.2f} < 0.50 threshold)"
                 )
                 decision.action = "flat"
                 overrides.append(f"flip_conf_{decision.confidence:.2f}_to_flat")

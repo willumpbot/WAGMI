@@ -146,7 +146,7 @@ class PositionManager:
 
     def __init__(
         self,
-        taker_fee_bps: int = 5,
+        taker_fee_bps: int = 4,
         enable_trailing: bool = True,
         trailing_atr_mult: float = 1.5,
     ):

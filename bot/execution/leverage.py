@@ -173,17 +173,17 @@ class LeverageManager:
             return LeverageDecision(lev, "leverage", "medium",
                                     f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm)
 
-        # ── Tier 6: 90%+ — largely unreachable with 85% ensemble cap ──
-        # Same consensus-gated treatment
+        # ── Tier 6: 90%+ — rare but possible with 92% ensemble cap ──
+        # Continue Kelly scaling from Tier 5 (no cliff)
         if num_strategies_agree >= 3:
-            lev = min(2.0, cap)
-            rm = 1.0
+            lev = min(5.0, cap)  # Match Tier 5 top (no cliff from 5x->2x)
+            rm = 1.4
         elif num_strategies_agree >= 2:
-            lev = min(1.5, cap)
-            rm = 0.85
+            lev = min(1.0, cap)  # 2-agree: same cap as Tier 5
+            rm = 0.7
         else:
-            lev = min(1.5, cap)
-            rm = 0.8
+            lev = min(1.0, cap)
+            rm = 0.6
 
         if lev > 5.0 and current_extreme_count >= self.max_extreme_positions:
             lev = 5.0

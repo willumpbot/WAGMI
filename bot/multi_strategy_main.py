@@ -840,9 +840,20 @@ class MultiStrategyBot:
         # ── PARALLEL PREFETCH: fetch all symbols' data concurrently ──
         # This front-loads all exchange I/O so _process_symbol hits cache.
         _prefetch_start = time.time()
-        self.fetcher.prefetch_all_symbols(DEFAULT_SYMBOLS, self._needed_tfs)
+        prefetch_results = self.fetcher.prefetch_all_symbols(DEFAULT_SYMBOLS, self._needed_tfs)
         _prefetch_ms = (time.time() - _prefetch_start) * 1000
-        logger.info(f"[{trace_id}] Prefetch done: {len(DEFAULT_SYMBOLS)} symbols in {_prefetch_ms:.0f}ms")
+        # Track prefetch failures for degradation awareness
+        prefetch_failures = sum(1 for v in prefetch_results.values() if not v)
+        prefetch_total = len(prefetch_results)
+        if prefetch_failures > 0:
+            logger.warning(
+                f"[{trace_id}] Prefetch: {prefetch_failures}/{prefetch_total} symbols failed"
+            )
+            if prefetch_failures == prefetch_total:
+                logger.error(f"[{trace_id}] ALL prefetches failed — exchange may be down")
+                self.degradation.record_exchange_error()
+        else:
+            logger.info(f"[{trace_id}] Prefetch done: {prefetch_total} symbols in {_prefetch_ms:.0f}ms")
 
         # Collect candidate signals for rotation evaluation
         self._tick_candidates: list = []
@@ -1361,24 +1372,37 @@ class MultiStrategyBot:
                 pass
 
         # ── Periodic position reconciliation ──
-        # Every 60 ticks (~1h): detect phantom (bot-only) and orphan (exchange-only) positions
+        # Every 60 ticks (~1h): detect and auto-correct position mismatches
         if self._tick % 60 == 45 and self._tick > 0:
             try:
                 result = periodic_reconciliation_check(
                     pos_mgr=self.pos_mgr,
                     exchanges=self.fetcher._exchanges,
+                    last_prices=self._last_prices,
                 )
-                if result.get("phantoms") or result.get("orphans"):
+                phantoms = result.get("phantom", [])
+                orphans = result.get("orphan", [])
+                if phantoms or orphans:
                     logger.warning(
                         f"[RECONCILE] Drift detected: "
-                        f"{len(result.get('phantoms', []))} phantom, "
-                        f"{len(result.get('orphans', []))} orphan"
+                        f"{len(phantoms)} phantom, {len(orphans)} orphan"
                     )
-                    if self.alerts:
+                    # Auto-correct phantom positions (bot tracking, exchange closed)
+                    for sym in phantoms:
+                        pos = self.pos_mgr.positions.get(sym)
+                        if pos and pos.state != "CLOSED":
+                            logger.warning(
+                                f"[RECONCILE] Closing phantom position {sym} "
+                                f"(exchange says closed)"
+                            )
+                            pos.state = "CLOSED"
+                            pos.close_time = datetime.now(timezone.utc)
+                            pos.close_reason = "reconciliation_phantom"
+                    # Alert for orphans (need manual review)
+                    if self.alerts and orphans:
                         self.alerts.send_market_update(
-                            f"Position drift detected: "
-                            f"{len(result.get('phantoms', []))} phantom, "
-                            f"{len(result.get('orphans', []))} orphan positions"
+                            f"⚠️ {len(orphans)} orphan positions on exchange "
+                            f"not tracked by bot: {orphans}"
                         )
             except Exception as e:
                 logger.debug(f"[{trace_id}] Periodic reconciliation error: {e}")

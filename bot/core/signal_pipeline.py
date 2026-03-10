@@ -91,7 +91,7 @@ class RiskFilterChain:
         # Gate 1c: Fee-drag filter
         # Reject trades where round-trip fees consume too much of the stop width.
         # A stop width of 0.3% with 0.10% round-trip fees = 33% fee drag — barely viable.
-        fee_bps = getattr(self.config, "taker_fee_bps", 5)
+        fee_bps = getattr(self.config, "taker_fee_bps", 4)
         round_trip_fee_pct = fee_bps * 2 / 10000.0  # Entry + exit fee as fraction
         stop_pct = signal.stop_width_pct
         if stop_pct > 0:
