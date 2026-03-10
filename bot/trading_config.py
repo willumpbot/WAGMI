@@ -287,11 +287,11 @@ class TradingConfig:
     max_ensemble_confidence: float = field(
         default_factory=lambda: _env_float("MAX_ENSEMBLE_CONFIDENCE", 85.0)
     )
-    # Raised from 1.5 to 2.0: at 45% WR + 5bps taker fee, 1.5 R:R makes
-    # net EV negative after fees. 2.0 R:R ensures TP1 is far enough to
-    # survive round-trip fee drag (~10bps on ~1% stop width).
+    # Lowered from 2.0 to 1.5: fee-aware EV gate (0.15-0.20) now handles
+    # profitability filtering directly. R:R 1.5 + positive EV = viable trade.
+    # The old 2.0 floor was blocking valid trades that pass EV/fee-drag gates.
     min_signal_rr: float = field(
-        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 2.0)
+        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.5)
     )
     min_stop_width_pct: float = field(
         default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.002)
