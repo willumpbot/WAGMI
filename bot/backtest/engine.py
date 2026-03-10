@@ -392,10 +392,9 @@ class BacktestEngine:
                 events = self.pos_mgr.update_price(symbol, worst_with_slip)
                 if not events:
                     # 2. Best case: check if TP was hit during candle
-                    # Apply exit slippage: TP fills slightly worse too
+                    # TP exits are limit orders — fill at target price or better, no adverse slippage
                     best_price = candle_high if is_long else candle_low
-                    best_with_slip = best_price * (1 - exit_slip) if is_long else best_price * (1 + exit_slip)
-                    events = self.pos_mgr.update_price(symbol, best_with_slip)
+                    events = self.pos_mgr.update_price(symbol, best_price)
                 if not events:
                     # 3. Settle on close price for trailing stop updates etc
                     events = self.pos_mgr.update_price(symbol, current_price)
@@ -458,11 +457,13 @@ class BacktestEngine:
             if self.llm:
                 self._run_llm_exit(symbol, current_price, windowed, sim_dt)
 
-            # Re-entry gap: skip 3 candles after a close to prevent revenge-trading
-            # (raised from 1 to 3 — HYPE had 10 consecutive SL losses from rapid re-entry)
-            RE_ENTRY_GAP = 3
+            # Volatility-aware re-entry gap: fast movers need shorter cooldowns
+            from trading_config import DEFAULT_SYMBOL_OVERRIDES
+            _vol_profile = getattr(DEFAULT_SYMBOL_OVERRIDES.get(symbol), "volatility_profile", "medium") if DEFAULT_SYMBOL_OVERRIDES.get(symbol) else "medium"
+            _RE_ENTRY_GAPS = {"low": 4, "medium": 2, "high": 1}
+            re_entry_gap = _RE_ENTRY_GAPS.get(_vol_profile, 3)
             last_close_idx = self._last_close_candle.get(symbol, -2)
-            if i <= last_close_idx + RE_ENTRY_GAP:
+            if i <= last_close_idx + re_entry_gap:
                 continue  # Let the market breathe after a close
 
             # Try to generate signal — track CB blocks
@@ -633,9 +634,9 @@ class BacktestEngine:
                 worst_with_slip = worst_price * (1 - exit_slip) if is_long else worst_price * (1 + exit_slip)
                 events = self.pos_mgr.update_price(symbol, worst_with_slip)
                 if not events:
+                    # TP exits are limit orders — no adverse slippage
                     best_price = candle_high if is_long else candle_low
-                    best_with_slip = best_price * (1 - exit_slip) if is_long else best_price * (1 + exit_slip)
-                    events = self.pos_mgr.update_price(symbol, best_with_slip)
+                    events = self.pos_mgr.update_price(symbol, best_price)
                 if not events:
                     events = self.pos_mgr.update_price(symbol, current_price)
             else:
@@ -674,10 +675,13 @@ class BacktestEngine:
             if self.llm:
                 self._run_llm_exit(symbol, current_price, windowed, sim_dt)
 
-            # Re-entry gap: skip 3 candles after a close (same as main loop)
-            RE_ENTRY_GAP = 3
+            # Volatility-aware re-entry gap (same logic as main loop)
+            from trading_config import DEFAULT_SYMBOL_OVERRIDES
+            _vol_profile = getattr(DEFAULT_SYMBOL_OVERRIDES.get(symbol), "volatility_profile", "medium") if DEFAULT_SYMBOL_OVERRIDES.get(symbol) else "medium"
+            _RE_ENTRY_GAPS = {"low": 4, "medium": 2, "high": 1}
+            re_entry_gap = _RE_ENTRY_GAPS.get(_vol_profile, 3)
             last_close_idx = self._last_close_candle.get(symbol, -2)
-            if i <= last_close_idx + RE_ENTRY_GAP:
+            if i <= last_close_idx + re_entry_gap:
                 continue
 
             self.candle_stats["total"] += 1

@@ -431,7 +431,10 @@ class PositionManager:
                 if time_to_tp1_s < 1800:  # < 30 min -- fast runner
                     dynamic_close_pct *= 0.85
                 elif time_to_tp1_s > 14400:  # > 4 hours -- slow grind
-                    dynamic_close_pct = min(dynamic_close_pct * 1.10, 0.90)
+                    # Only increase TP1% if not in a clean trend (let trends run)
+                    regime = pos.metadata.get("regime", "unknown")
+                    if regime not in ("trending_bull", "trending_bear", "trend", "trending"):
+                        dynamic_close_pct = min(dynamic_close_pct * 1.10, 0.85)
 
             if dynamic_close_pct != pos.tp1_close_pct:
                 logger.info(
@@ -448,7 +451,11 @@ class PositionManager:
         else:
             pnl = (pos.entry - price) * close_qty * pos.leverage
 
-        pos.realized_pnl += (pnl - fee)
+        # Proportionally allocate funding costs to TP1 partial close
+        # (prevents dumping all funding onto final close, distorting per-leg PnL)
+        funding_share = pos.funding_costs * (close_qty / pos.qty) if pos.qty > 0 else 0.0
+        pos.realized_pnl += (pnl - fee - funding_share)
+        pos.funding_costs -= funding_share  # Reduce remaining balance for final close
         pos.qty = round_qty(pos.symbol, pos.qty - close_qty)
 
         # Move SL to breakeven accounting for locked-in TP1 profit.
@@ -599,7 +606,7 @@ class PositionManager:
         if action == "TP2":
             return "CLEAN_WIN"
         elif action == "EARLY_EXIT":
-            return "EARLY_EXIT_SAVE" if pos.realized_pnl > -(abs(pos.entry - pos.original_sl) * pos.original_qty * pos.leverage * 0.5) else "EARLY_EXIT_FAIL"
+            return "EARLY_EXIT_SAVE" if pos.realized_pnl > -(abs(pos.entry - pos.original_sl) * pos.original_qty * pos.leverage * 0.25) else "EARLY_EXIT_FAIL"
         elif action == "TRAILING_STOP":
             return "TRAILING_WIN" if win else "TRAILING_FAIL"
         elif action in ("ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE"):
