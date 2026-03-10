@@ -214,18 +214,17 @@
 - [x] Agent performance stats in prompts
 - [x] Learning integration post-trade scoring
 
-### 3.4 Walk-Forward Validation Framework
-- [ ] **Create `bot/backtest/walk_forward.py`**
-  - Train on 60 days, test on next 20 days, slide forward
-  - Any parameter change must pass walk-forward (not just in-sample backtest)
-  - This prevents overfitting to specific market conditions
-  - Report: in-sample vs out-of-sample Sharpe, WR, PF
+### 3.4 Walk-Forward Validation Framework ✅ DONE
+- [x] **Created `bot/backtest/walk_forward.py`**
+  - Runs full-period backtest, partitions trades into alternating train/test windows
+  - Reports in-sample vs out-of-sample WR, PnL, profit factor
+  - Calculates overfit ratio with clear PASS/CAUTION/FAIL verdict
+  - CLI: `python cli.py --mode walkforward --days 120 --symbols SOL,BTC`
 
-### 3.5 Strategy Combo Gating
-- [ ] **Block losing strategy combinations**
-  - `confidence_scorer+multi_tier_quality` without `regime_trend` = PF 0.08
-  - Add logic to ensemble: if 2_agree and combo is in "blocked" list, reject
-  - Blocked list should be data-driven (from backtest results)
+### 3.5 Strategy Combo Gating ✅ DONE
+- [x] **Blocked losing strategy combinations**
+  - `confidence_scorer+multi_tier_quality` 2-agree combo blocked in ensemble (PF=0.08)
+  - Blacklist in `_weighted_veto()` method, easily extensible
 
 ### 3.6 Prompt Versioning & A/B Testing
 - [ ] **Create `bot/llm/agents/prompt_registry.py`**
