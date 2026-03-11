@@ -205,6 +205,7 @@ class RiskFilterChain:
         meta["leverage"] = leverage
         meta["leverage_tier"] = lev_decision.tier
         meta["risk_multiplier"] = round(risk_mult, 2)
+        meta["num_agree"] = num_strategies_agree
 
         # Gate 5b: Leverage-scaled EV floor
         # Higher leverage amplifies both wins and losses — require higher EV.

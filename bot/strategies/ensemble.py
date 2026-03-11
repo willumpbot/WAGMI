@@ -847,6 +847,11 @@ class EnsembleStrategy:
             )
             return None
 
+        # Propagate chop_score from input signals (attached by chop detector pre-merge)
+        _chop_score = max(
+            (s.metadata.get("chop_score", 0) for s in signals), default=0
+        )
+
         return Signal(
             strategy="ensemble",
             symbol=symbol,
@@ -874,6 +879,7 @@ class EnsembleStrategy:
                 "rr_tp1": round(rr_tp1, 3),
                 "fee_drag_pct": round(fee_drag * 100, 1) if stop_width > 0 else 0.0,
                 "stop_width_pct": round(stop_width / entry * 100, 3) if entry > 0 else 0.0,
+                "chop_score": _chop_score,
             },
         )
 
