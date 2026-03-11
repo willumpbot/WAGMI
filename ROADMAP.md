@@ -1,8 +1,8 @@
 # nunuIRL Trading Bot — Complete Roadmap
 
 > **Last updated**: 2026-03-11
-> **Current state**: Phase 2.8-3.5 DONE. Anti-spam overhaul DONE (Phase 3.6). 100d backtest revealed massive signal spam losing $1k — fixed with 3-agree consensus + 10 tightened gates. 1006 tests passing.
-> **What's next**: Re-validate with 100d backtest (should show ~60-80% fewer trades) → paper trade 48-72h → go live conservative.
+> **Current state**: Phase 6 DONE. 10 trading strategies (3 original + 7 new quant), 3 LLM brain upgrades (thesis tracking, confidence calibration, counterfactual learning). 1065 tests passing.
+> **What's next**: Proactive risk management → regime-aware feedback → wire brain into live pipeline → paper trade → go live.
 
 ---
 
@@ -27,7 +27,7 @@
 ### Core Pipeline (Working)
 | Layer | Files | Status |
 |---|---|---|
-| **3 Trading Strategies** | `bot/strategies/{regime_trend,confidence_scorer,multi_tier_quality}.py` | Working — ADX<20 filter on all 3, monte_carlo_zones disabled |
+| **10 Trading Strategies** | `bot/strategies/{regime_trend,confidence_scorer,multi_tier_quality,funding_rate,oi_delta,bollinger_squeeze,vmc_cipher,lead_lag,liquidation_cascade,probability_engine}.py` | Working — 3 original + 7 new quant strategies (Phase 6), monte_carlo_zones disabled |
 | **Ensemble Voting** | `bot/strategies/ensemble.py` (27KB) | Working — weighted veto, regime-aware confidence floor, chop detection |
 | **Chop Detector** | `bot/strategies/chop_detector.py` | Working — 5-factor detection, tightened thresholds (0.45/0.45/0.55) |
 | **LLM Meta-Brain** | `bot/llm/` (50+ files, 595KB) | Working — 6 autonomy levels, smart model routing |
@@ -36,10 +36,11 @@
 | **Risk Management** | `bot/execution/risk.py` + `adaptive_risk.py` + `ops_guard.py` | Working — adaptive_risk wired in live mode |
 | **Data Pipeline** | `bot/data/fetcher.py` (25KB) + `bot/data/fetchers/` | Working — CCXT multi-exchange |
 | **Feedback Loop** | `bot/feedback/{signal_quality,evolution_tracker,loop,continuous_backtest,parameter_tuner}.py` | Working — signal scoring, evolution reports |
-| **Memory System** | `bot/llm/{memory_store,deep_memory}.py` | Working — short-term (50 notes) + deep memory |
+| **Memory System** | `bot/llm/{memory_store,deep_memory}.py` | Working — short-term (100 notes) + deep memory |
+| **LLM Brain Intelligence** | `bot/llm/{thesis_tracker,confidence_calibrator,counterfactual_learner}.py` | Built — thesis accuracy tracking, confidence calibration, skipped trade analysis |
 | **Order Execution** | `bot/execution/order_executor.py` | Working — paper/live modes, CCXT submission |
 | **Backtest Engine** | `bot/backtest/engine.py` | Working — 91% fidelity, leverage logging bug fixed |
-| **Tests** | `bot/tests/` (20+ test files) | 999 tests passing (0 failures) |
+| **Tests** | `bot/tests/` (21+ test files) | 1065 tests passing (0 failures) |
 | **Configuration** | `bot/trading_config.py` (490+ lines) | Dataclass-based, per-symbol overrides, new ADX/ranging params |
 
 ### Multi-Agent Architecture (Built, Needs Tuning)
@@ -296,18 +297,34 @@
 ## 8. Phase 6: Alpha Generation & Advanced Strategies <a id="8-phase-6"></a>
 
 > **Goal**: Find new edges beyond the current 3 strategies.
+> **Status**: 7/7 new strategies DONE. LLM brain upgrades DONE. 1065 tests passing.
 
 ### 6.1 Full Pipeline Replay Backtesting
 - [ ] Replay historical data through COMPLETE pipeline (including LLM decisions)
 - [ ] Compare: strategies-only vs strategies+LLM vs multi-agent
 - [ ] Walk-forward validation for all comparisons
 
-### 6.2 New Strategy Development
-- [ ] **Funding rate strategy** — counter-trade extreme funding (>0.05%)
-- [ ] **Order flow analysis** — Hyperliquid orderbook depth signals
-- [ ] **Cross-exchange signals** — Kraken/Bybit as leading indicators
+### 6.2 New Strategy Development ✅ DONE (March 11, 2026)
+**7 new quant strategies adding uncorrelated alpha sources to the ensemble:**
+- [x] **Funding Rate Mean-Reversion** (`funding_rate.py`) — counter-trade extreme funding, ADX trend guard, RSI confirmation
+- [x] **OI Delta** (`oi_delta.py`) — open interest expansion/contraction + price direction = positioning signals
+- [x] **Bollinger Squeeze** (`bollinger_squeeze.py`) — BB/KC squeeze detection + bandwalk continuation (John Carter TTM)
+- [x] **VMC Cipher** (`vmc_cipher.py`) — 5-oscillator confluence: WaveTrend, RSI, StochRSI, MACD, MFI + divergence detection
+- [x] **Lead-Lag** (`lead_lag.py`) — BTC→alt catch-up trades with relative strength scoring
+- [x] **Liquidation Cascade** (`liquidation_cascade.py`) — post-cascade reversal via volume spike + wick proxy detection
+- [x] **Probability Engine** (`probability_engine.py`) — regime-conditional Monte Carlo with antithetic variates, EV gating
+- [ ] **Order flow analysis** — Hyperliquid orderbook depth signals (future)
+- [ ] **Cross-exchange signals** — Kraken/Bybit as leading indicators (future)
 
-### 6.3 Strategy Discovery Agent Activation
+**All strategies**: env-toggleable (`STRATEGY_*_ENABLED`), follow Signal contract, 59 new tests.
+**Key benefit**: 10 active strategies → 3-agree consensus has MORE opportunities while maintaining quality.
+
+### 6.3 LLM Brain Intelligence ✅ DONE (March 11, 2026)
+- [x] **Thesis Tracker** (`thesis_tracker.py`) — records every Trade Agent prediction, measures accuracy by regime/symbol/setup type, injects calibration context into prompts
+- [x] **Confidence Calibrator** (`confidence_calibrator.py`) — builds calibration curve from observed outcomes, deflates overconfident predictions, auto-rebuilds every 10 observations
+- [x] **Counterfactual Learner** (`counterfactual_learner.py`) — tracks skipped trades, computes hypothetical PnL, identifies over-aggressive filters
+
+### 6.4 Strategy Discovery Agent Activation
 - [ ] Wire `bot/llm/strategy_discovery/` into growth orchestrator
 - [ ] LLM proposes ideas → sandbox backtests → promote winners
 
@@ -315,12 +332,26 @@
 
 ## 9. Phase 7: Advanced Multi-Agent Evolution <a id="9-phase-7"></a>
 
-> **Goal**: Self-improving agents.
+> **Goal**: Self-improving agents with proactive risk management.
 
+### 7.1 Proactive Risk Management
+- [ ] **Graduated drawdown risk reduction** — at 3% DD reduce leverage 30%, at 5% reduce 50%, at 7% reduce 70% (proactive, not just reactive CB)
+- [ ] **Regime-aware feedback splitting** — separate tuning loops for trending/ranging/volatile/panic
+- [ ] **Hour-gated trading** — auto-pause during historically losing hours
+
+### 7.2 Agent Pipeline Completion
+- [ ] Wire thesis tracker + confidence calibrator into coordinator pipeline
+- [ ] Wire counterfactual learner into ensemble reject path
+- [ ] **Overseer Agent** — periodic system health audits, degradation detection
+- [ ] Wire Scout Agent into main loop (idle-time preparation)
+- [ ] Complete Quant Agent prompt (Kelly fraction, EV calculation)
+
+### 7.3 Self-Improving Architecture
 - [ ] Portfolio Strategist Agent (cross-asset correlation)
 - [ ] Automated prompt evolution with A/B testing
 - [ ] Deep RL integration (DQN replacing Q-table)
 - [ ] Multi-bot coordination (shared memory, cross-instance awareness)
+- [ ] Curriculum advancement with measurable thresholds
 
 ---
 
@@ -491,7 +522,7 @@ bot/feedback/parameter_tuner.py    → Parameter optimization (14KB)
 
 ## Priority Order (What to Work On Next)
 
-> Updated March 11, 2026. Anti-spam overhaul complete. Focus: validate → paper → live.
+> Updated March 11, 2026. Phase 6 complete (7 new strategies + 3 LLM brain upgrades). Focus: proactive risk → regime intelligence → paper → live.
 
 ### Completed
 1. ~~**Phase 2.8: Fix 6 critical bugs**~~ ✅ DONE
@@ -499,22 +530,25 @@ bot/feedback/parameter_tuner.py    → Parameter optimization (14KB)
 3. ~~**Phase 3.1-3.5: Signal quality**~~ ✅ DONE
 4. ~~**Deep 10-agent audit**~~ ✅ DONE — 30+ bugs fixed
 5. ~~**Phase 3.6: Anti-spam overhaul**~~ ✅ DONE — 3-agree consensus, 10 tightened gates
+6. ~~**Phase 6.2: 7 new quant strategies**~~ ✅ DONE — funding rate, OI delta, BB squeeze, VMC cipher, lead-lag, liquidation cascade, probability engine
+7. ~~**Phase 6.3: LLM brain intelligence**~~ ✅ DONE — thesis tracker, confidence calibrator, counterfactual learner
 
-### This Week (Priority Order)
-6. **Re-validate with 100d backtest** — confirm anti-spam reduces trade count by 60-80% while maintaining 3-agree edge. Key metrics to beat: WR>55%, PF>2.0, Sharpe>0.5
-7. **Tune if backtest disappoints** — if too few signals, soften confidence_floor (80→78) or min_rr (1.8→1.6). If still losing, investigate which gate is leaking.
-8. **Paper trade on live API** — 48-72h with real exchange prices. Watch for:
-   - Signal frequency: should be 2-4 trades/day (not 20+)
-   - Win rate per trade profile (SCALP vs TREND)
-   - Fee drag as % of gross PnL
-9. **Telegram signal integration** — wire incoming Telegram signals to Scout Agent for correlation with internal signals
+### Now (Priority Order)
+8. **Graduated drawdown risk reduction** — proactive leverage reduction as drawdown approaches CB threshold (3%→-30% lev, 5%→-50%, 7%→-70%)
+9. **Regime-aware feedback splitting** — separate tuning per regime (trending WR=100% vs ranging WR=24% need different params)
+10. **Wire brain upgrades into live pipeline** — thesis tracker → coordinator, calibrator → ensemble, counterfactual → reject path
+11. **Overseer Agent** — periodic system health audits, auto-detect degradation, alert on anomalies
+12. **Paper trade on live API** — 48-72h with 10-strategy ensemble + brain upgrades. Watch for:
+    - Signal frequency with 10 strategies (expect more 3-agree opportunities)
+    - Which new strategies contribute to consensus most
+    - Thesis accuracy tracking from first live predictions
 
-### Next Week+
-10. **Go live conservative** — SOL+HYPE only, 1% risk, max 3x leverage, 3_agree required
-11. **Phase 4: Production hardening** — break up `multi_strategy_main.py` (4,700 lines), structured logging, connection health
-12. **Phase 5: Config extraction** — single source of truth, startup validation
-13. **Phase 6: New strategies** — funding rate arb, order flow, cross-exchange signals
-14. **Phase 7: Advanced evolution** — portfolio agent, auto-prompt evolution, RL
+### Next
+13. **Go live conservative** — SOL+HYPE only, 1% risk, max 3x leverage, 3_agree required
+14. **Phase 4: Production hardening** — break up `multi_strategy_main.py` (4,700 lines), structured logging, connection health
+15. **Phase 5: Config extraction** — single source of truth, startup validation
+16. **Telegram signal integration** — wire incoming Telegram signals to Scout Agent
+17. **Phase 7.3: Self-improving architecture** — portfolio agent, auto-prompt evolution, RL
 
 ---
 
