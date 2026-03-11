@@ -63,6 +63,11 @@ class EnsembleStrategy:
         # Hysteresis: EMA-smoothed chop scores prevent floor oscillation on noise
         self._smoothed_chop: Dict[str, float] = {}  # symbol -> smoothed chop_score
         self._chop_ema_alpha: float = 0.3  # Smoothing factor (higher = more reactive)
+        self._quality_scorer = None  # Optional: SignalQualityScorer for pre-floor adjustment
+
+    def set_quality_scorer(self, scorer):
+        """Inject SignalQualityScorer so quality feedback affects ensemble confidence."""
+        self._quality_scorer = scorer
 
     def set_disabled_strategies(self, names: set):
         """Temporarily disable specific strategies (e.g., for regime filtering)."""
@@ -220,6 +225,34 @@ class EnsembleStrategy:
 
         if result is None:
             return None
+
+        # ── Pre-floor quality adjustment ──
+        # Apply signal quality feedback to ensemble confidence BEFORE the floor check.
+        # This lets historically bad setups get rejected even with high raw confidence.
+        if self._quality_scorer is not None:
+            try:
+                from feedback.signal_quality import QualityFeatures
+                features = QualityFeatures(
+                    confidence=result.confidence,
+                    num_strategies_agree=result.metadata.get("num_agree", 1),
+                    total_strategies=len(self.strategies),
+                    symbol=symbol,
+                    side=result.side,
+                )
+                _adj, _mult, _breakdown = self._quality_scorer.adjust_confidence(
+                    result.confidence, features
+                )
+                # Bound multiplier to 0.5-1.3 (same as SignalQualityScorer range)
+                _mult = max(0.5, min(1.3, _mult))
+                if abs(_mult - 1.0) > 0.01:
+                    result.confidence = max(0, min(100, result.confidence * _mult))
+                    result.metadata["quality_multiplier"] = round(_mult, 3)
+                    logger.info(
+                        f"[{symbol}] Quality adjustment: *{_mult:.2f} -> "
+                        f"conf={result.confidence:.1f}%"
+                    )
+            except Exception as e:
+                logger.debug(f"Quality scorer error: {e}")
 
         # ── Post-merge quality gates ──
 

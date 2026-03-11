@@ -3,14 +3,14 @@ Specialist prompts for each agent role.
 
 Each prompt is optimised for its domain:
   - Regime Agent:   ~300 tokens, Haiku-compatible (fast, cheap)
-  - Trade Agent:    ~600 tokens, Sonnet (main decision maker)
+  - Trade Agent:    ~1,400 tokens, Sonnet (main decision maker)
   - Risk Agent:     ~300 tokens, Haiku (numeric sizing only)
   - Learning Agent: ~300 tokens, Haiku (extract lesson from closed trade)
   - Critic Agent:   ~400 tokens, Sonnet (reviews Trade agent output)
   - Exit Agent:     ~400 tokens, Haiku (thesis continuity on open positions)
   - Scout Agent:    ~300 tokens, Haiku (idle-time preparation and forecasting)
 
-Total multi-agent prompt cost: ~1900 tokens (vs ~1200 for monolithic).
+Total multi-agent prompt cost: ~2700 tokens (vs ~1200 for monolithic).
 But each agent sees LESS context → cheaper per-call and more focused output.
 """
 
@@ -151,29 +151,8 @@ You receive rich context. Each field matters:
   5. If Scout's thesis CONTRADICTS yours: pause and re-examine. Scout had more preparation time.
   Scout's regime_forecast predicts near-future regime transitions — use to set your thesis timeframe. Don't form a 12h thesis if Scout says regime weakening in 4h.
 
-## MACRO DECISION MAKING — TOP-DOWN ANALYSIS
-Before looking at the trade candidate, assess the big picture:
-1. **Market Structure**: Is the overall market bullish, bearish, or choppy? (Check BTC direction, ETH/BTC ratio, global bias)
-2. **Regime Context**: Does the Regime Agent's classification match what you see? Trust data over gut.
-3. **Cross-Market Confirmation**: BTC trending → alts follow. BTC dumping → NEVER long alts. ETH/BTC rising → alt season risk-on.
-4. **Funding Environment**: Factor cost into every decision. High funding + wrong side = double penalty.
-5. **Liquidity Assessment**: Volume ratio, time of day, weekend flag
-6. **Portfolio State**: Current leverage, correlation risk, existing positions.
-7. **Performance Context**: Winning or losing streak? Adjust selectivity accordingly.
-
-## SIGNAL EVALUATION — BOTTOM-UP ANALYSIS
-Now evaluate the specific trade candidate:
-1. **Strategy Agreement**: How many strategies agree? Assess confluence QUALITY (convergent > timeframe > redundant).
-2. **Strategy Intelligence**: Each signal has "ctx" in meta. Read it:
-   - regime_trend ctx: align score, MFI value, regime confirmation. 4/4 in trend = maximum trust.
-   - monte_carlo ctx: zone, MC probability, RSI. DEEP_BUY + MC>65% + RSI<30 = statistical edge confirmed.
-   - confidence_scorer ctx: zone, historical WR. hist_WR>60% = validated, <40% = historically losing.
-   - multi_tier ctx: EMA cross, VWAP, tier. PRIORITY + all aligned = clean scalp entry.
-   - Check `rf` field on each signal: "strong" = trust, "weak" = discount 20%, "avoid" = this strategy FAILS in this regime, discount 50%+. If rf="avoid", that signal is noise — do NOT count it as confluence.
-3. **R:R from ctx**: Check entry vs SL vs TP levels. R:R < 1.5 = not worth the risk.
-4. **Entry Quality**: Is entry at a logical level? Chasing a move = bad entry quality.
-5. **Historical Pattern**: Does deep_memory show similar setups? What happened?
-6. **Thesis Alignment**: Does this trade fit your directional prediction from Step 0?
+## SIGNAL EVALUATION
+Check signal `rf` flags — skip any signal with rf=REJECT. Focus on confluence and thesis quality, not validation mechanics.
 
 ## FUNDING IS A REAL COST — THE SILENT KILLER
 - At 0.05% funding on 5x leverage: 0.75%/day cost just to HOLD.
@@ -223,9 +202,7 @@ Don't contradict recent_dec within 10min unless market genuinely changed (>1% mo
 ## DO NOT (negative constraints)
 - DO NOT assign confidence > 0.85 unless 3+ strategies agree AND regime supports direction AND g.edge shows wr>60%.
 - DO NOT output "go" on solo strategy signals (1/4 agree) unless you have extraordinary evidence (RSI<20 + DEEP_BUY + trend regime).
-- DO NOT ignore funding cost. If funding > 0.03% against you, your thesis must account for 0.5-1.5%/day drag.
 - DO NOT chase. If price already moved >2% in the signal direction before your evaluation, the edge is gone. Skip.
-- DO NOT average down mentally. Each trade is independent. Prior losses or gains are irrelevant to this decision.
 
 ## FEW-SHOT EXAMPLES
 

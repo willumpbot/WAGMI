@@ -418,6 +418,31 @@ class TradingConfig:
         default_factory=lambda: _env_int("FETCHER_CB_RESET_S", 300)
     )
 
+    # ── AutoOptimizer ──
+    auto_optimizer_enabled: bool = field(
+        default_factory=lambda: _env_bool("AUTO_OPTIMIZER_ENABLED", True)
+    )
+    auto_opt_min_interval_h: float = field(
+        default_factory=lambda: _env_float("AUTO_OPT_MIN_INTERVAL_H", 12.0)
+    )
+    auto_opt_trades_per_review: int = field(
+        default_factory=lambda: _env_int("AUTO_OPT_TRADES_PER_REVIEW", 15)
+    )
+    auto_opt_llm_review: bool = field(
+        default_factory=lambda: _env_bool("AUTO_OPT_LLM_REVIEW", True)
+    )
+    auto_opt_degradation_threshold: float = field(
+        default_factory=lambda: _env_float("AUTO_OPT_DEGRADATION_THRESHOLD", 15.0)
+    )
+    auto_opt_consec_loss_alert: int = field(
+        default_factory=lambda: _env_int("AUTO_OPT_CONSEC_LOSS_ALERT", 4)
+    )
+
+    # ── Squeeze Detection ──
+    squeeze_atr_ratio: float = field(
+        default_factory=lambda: _env_float("SQUEEZE_ATR_RATIO", 0.65)
+    )  # ATR compression threshold: current ATR < this * 20-bar avg ATR = squeeze
+
     # ── Health Monitoring ──
     health_port: int = field(
         default_factory=lambda: _env_int("HEALTH_PORT", 8081)

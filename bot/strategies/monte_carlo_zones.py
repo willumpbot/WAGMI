@@ -54,7 +54,12 @@ class MonteCarloZonesStrategy(BaseStrategy):
         return df
 
     def _compute_zones(self, df: pd.DataFrame, risk_tier: str) -> Optional[Dict]:
-        if len(df) < 20 or risk_tier not in RISK_MULTIPLIERS:
+        if len(df) < 20:
+            return None
+        if risk_tier not in RISK_MULTIPLIERS:
+            logger.warning(f"Unknown risk_tier '{risk_tier}', falling back to 'medium'")
+            risk_tier = "medium"
+        if risk_tier not in RISK_MULTIPLIERS:
             return None
         sma20 = df["SMA20"].iloc[-1]
         if pd.isna(sma20):
@@ -134,7 +139,9 @@ class MonteCarloZonesStrategy(BaseStrategy):
 
         future_price = float(np.mean(final_prices))
         up_prob = float(np.mean(final_prices > current))
-        std_error = float(np.std(final_prices > current) / np.sqrt(len(final_prices)))
+        # Proper standard error of a proportion: sqrt(p*(1-p)/n)
+        n_paths = len(final_prices)
+        std_error = float(np.sqrt(up_prob * (1.0 - up_prob) / max(n_paths, 1)))
 
         return {
             "future_price": future_price,
@@ -315,9 +322,16 @@ class MonteCarloZonesStrategy(BaseStrategy):
                 logger.info(f"[{symbol}] monte_carlo SELL rejected: SMA20 > SMA50 (uptrend)")
                 return None
 
-        # Enforce minimum R:R — zone-based targets can be too close to entry
+        # Enforce minimum R:R — zone targets can be too close to entry.
+        # Use deeper zone level as TP2 when available (preserves zone logic).
         stop_width = abs(current - sl)
         if stop_width > 0:
+            # For TP2, prefer deeper zone level over arbitrary R:R multiple
+            if side == "BUY" and action in ("BUY", "DEEP_BUY"):
+                tp2 = max(tp2, zones["regular_sell"])  # Target opposite zone
+            elif side == "SELL" and action in ("SELL", "SAFE_SELL"):
+                tp2 = min(tp2, zones["regular_buy"])  # Target opposite zone
+
             min_tp1 = current + 1.5 * stop_width if side == "BUY" else current - 1.5 * stop_width
             min_tp2 = current + 3.0 * stop_width if side == "BUY" else current - 3.0 * stop_width
             if side == "BUY":

@@ -106,11 +106,23 @@ class Hypothesis:
 
     @property
     def is_ready_for_graduation(self) -> bool:
-        """Has enough evidence to graduate to a rule/principle."""
+        """Has enough evidence to graduate to a rule/principle.
+
+        Standard path: 10+ evidence, ratio >= 0.7 or <= 0.3
+        Fast-track path: 7+ evidence, ratio >= 0.85 or <= 0.15
+        """
+        if self.stage != "testing":
+            return False
+        # Fast-track: strong signal with fewer data points
+        if (
+            self.total_evidence >= 7
+            and (self.evidence_ratio >= 0.85 or self.evidence_ratio <= 0.15)
+        ):
+            return True
+        # Standard path
         return (
             self.total_evidence >= 10
             and (self.evidence_ratio >= 0.7 or self.evidence_ratio <= 0.3)
-            and self.stage == "testing"
         )
 
     def to_dict(self) -> dict:
@@ -343,24 +355,44 @@ class HypothesisTracker:
             if not h.is_ready_for_graduation:
                 continue
 
+            is_fast_track = (
+                h.total_evidence < 10
+                and h.total_evidence >= 7
+                and (h.evidence_ratio >= 0.85 or h.evidence_ratio <= 0.15)
+            )
+
             if h.evidence_ratio >= 0.7:
                 # Validated — graduate to principle/rule
                 h.stage = "validated"
                 h.graduated_to = h.graduation_target or "principle"
                 graduated.append(h)
-                logger.info(
-                    f"[HYPO] GRADUATED (validated): {h.statement[:60]} "
-                    f"-> {h.graduated_to} ({h.supporting_count}:{h.contradicting_count})"
-                )
+                if is_fast_track:
+                    logger.info(
+                        f"[HYPO] FAST-TRACK GRADUATED (validated): {h.statement[:60]} "
+                        f"-> {h.graduated_to} ({h.supporting_count}:{h.contradicting_count}, "
+                        f"ratio={h.evidence_ratio:.0%})"
+                    )
+                else:
+                    logger.info(
+                        f"[HYPO] GRADUATED (validated): {h.statement[:60]} "
+                        f"-> {h.graduated_to} ({h.supporting_count}:{h.contradicting_count})"
+                    )
             elif h.evidence_ratio <= 0.3:
                 # Invalidated
                 h.stage = "invalidated"
                 h.graduated_to = "anti_pattern"
                 graduated.append(h)
-                logger.info(
-                    f"[HYPO] INVALIDATED: {h.statement[:60]} "
-                    f"({h.supporting_count}:{h.contradicting_count})"
-                )
+                if is_fast_track:
+                    logger.info(
+                        f"[HYPO] FAST-TRACK INVALIDATED: {h.statement[:60]} "
+                        f"({h.supporting_count}:{h.contradicting_count}, "
+                        f"ratio={h.evidence_ratio:.0%})"
+                    )
+                else:
+                    logger.info(
+                        f"[HYPO] INVALIDATED: {h.statement[:60]} "
+                        f"({h.supporting_count}:{h.contradicting_count})"
+                    )
 
             h.last_updated = time.time()
 

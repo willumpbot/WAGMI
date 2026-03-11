@@ -29,11 +29,11 @@ def _add_emas(df: pd.DataFrame) -> pd.DataFrame:
         return df
     df = df.copy()
     n = len(df)
-    # Use proper spans — don't clamp to n, which makes EMA20==EMA50 at low bar counts
-    # and creates systematic SELL bias. If insufficient data, indicators are unreliable
-    # and the strategy's len() guards should prevent signal generation.
-    df["EMA20"] = df["close"].ewm(span=20, min_periods=min(20, n), adjust=False).mean()
-    df["EMA50"] = df["close"].ewm(span=50, min_periods=min(50, n), adjust=False).mean()
+    # Use proper min_periods (= span) to avoid garbage EMAs on sparse data.
+    # The strategy's len() guard requires 50+ bars, so EMA20/EMA50 will be valid.
+    # EMA200 will have NaN for early bars — downstream code handles this.
+    df["EMA20"] = df["close"].ewm(span=20, min_periods=20, adjust=False).mean()
+    df["EMA50"] = df["close"].ewm(span=50, min_periods=50, adjust=False).mean()
     df["EMA200"] = df["close"].ewm(span=200, min_periods=min(200, n), adjust=False).mean()
     prev = df["close"].shift(1)
     tr = pd.concat([
@@ -194,7 +194,7 @@ class MultiTierQualityStrategy(BaseStrategy):
         df_1h = data.get("1h")
         df_6h = data.get("6h")
 
-        if df_1h is None or df_1h.empty or len(df_1h) < 20:
+        if df_1h is None or df_1h.empty or len(df_1h) < 50:
             return None
         if df_6h is None or df_6h.empty or len(df_6h) < 5:
             return None
@@ -222,7 +222,12 @@ class MultiTierQualityStrategy(BaseStrategy):
         if "ATR14" in df_1h.columns and not df_1h["ATR14"].isna().all():
             _cur_atr = float(df_1h["ATR14"].iloc[-1])
             _avg_atr = float(df_1h["ATR14"].tail(20).mean())
-            if _avg_atr > 0 and _cur_atr < _avg_atr * 0.60:
+            try:
+                from trading_config import TradingConfig as _TC
+                _squeeze_ratio = _TC().squeeze_atr_ratio
+            except Exception:
+                _squeeze_ratio = 0.65
+            if _avg_atr > 0 and _cur_atr < _avg_atr * _squeeze_ratio:
                 return None  # Volatility squeeze — skip
 
         # Determine side from 1h EMA crossover
@@ -301,8 +306,15 @@ class MultiTierQualityStrategy(BaseStrategy):
             else:
                 ema_6h_align = df_6h["EMA20"].iloc[-1] < df_6h["EMA50"].iloc[-1]
 
-        if tier == "PRIORITY" and not ema_6h_align and conf < 80:
-            tier = "REGULAR"
+        # 6h misalignment downgrades ANY tier (not just PRIORITY).
+        # REGULAR/MANUAL signals with opposite 6h trend are net losers.
+        if not ema_6h_align and conf < 80:
+            if tier == "PRIORITY":
+                tier = "REGULAR"
+            elif tier == "REGULAR":
+                tier = "MANUAL"
+            elif tier == "MANUAL":
+                return None  # No tier left — reject signal
 
         # Hard regime gate: neutral regime (no directional conviction) → reject.
         # Backtest data shows neutral-regime trades are net losers. The previous

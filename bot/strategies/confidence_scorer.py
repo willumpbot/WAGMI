@@ -160,10 +160,9 @@ class ConfidenceScorerStrategy(BaseStrategy):
             return None
         wins = sum(1 for e in evaluated if e["success"])
         wr = wins / len(evaluated)
-        # With fewer than 20 samples, WR estimates are noisy — halve the
-        # downstream adjustment to avoid killing valid signals on thin data.
+        # With fewer than 20 samples, WR estimates are noisy — dampen toward 0.5.
+        # With 20+ samples, return raw WR for single-pass calibration (no double-dampening).
         if len(evaluated) < 20:
-            # Return WR pulled toward 0.5 (prior) so adjustment is dampened
             wr = 0.5 + (wr - 0.5) * 0.5
         return wr
 
@@ -357,12 +356,13 @@ class ConfidenceScorerStrategy(BaseStrategy):
                 mfi_6h = _mfi_like(df_6h, period=min(60, len(df_6h)))
                 mfi_6h_val = float(mfi_6h.iloc[-1])
 
-            # Reject if EITHER 6h indicator contradicts the 1h direction
-            # (was AND — too permissive, let counter-trend trades through)
-            if di_bullish and (macd_h_6h < 0 or mfi_6h_val < 45):
+            # Reject only if BOTH 6h indicators contradict 1h direction.
+            # Single indicator lag is normal; both bearish = real divergence.
+            # (was OR — too strict, rejected valid trades where one indicator lagged)
+            if di_bullish and (macd_h_6h < 0 and mfi_6h_val < 45):
                 logger.info(f"[{symbol}] confidence_scorer BUY rejected: 6h bearish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f})")
                 return None
-            if not di_bullish and (macd_h_6h > 0 or mfi_6h_val > 55):
+            if not di_bullish and (macd_h_6h > 0 and mfi_6h_val > 55):
                 logger.info(f"[{symbol}] confidence_scorer SELL rejected: 6h bullish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f})")
                 return None
 

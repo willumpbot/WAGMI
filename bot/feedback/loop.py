@@ -67,6 +67,11 @@ class FeedbackLoop:
         # Tick counter for periodic operations
         self._tick_count = 0
         self._last_tuner_update = 0
+        self._trade_count = 0  # Trade counter for fast weight updates
+        self._weight_manager = None  # Set externally for fast strategy weight recomputation
+
+        # AutoOptimizer (optional — requires EvolutionTracker)
+        self._auto_optimizer = None
 
         logger.info(
             f"[FEEDBACK] Initialized: "
@@ -249,11 +254,51 @@ class FeedbackLoop:
         # 4. Feed outcome to tuner for parameter validation tracking
         self.tuner.record_trade_outcome(pnl)
 
+        # 5. Fast strategy weight updates: every 10 trades, recompute weights
+        self._trade_count += 1
+        if self._weight_manager is not None and self._trade_count % 10 == 0:
+            try:
+                self._weight_manager.recompute_from_db()
+                logger.info(f"[FEEDBACK] Fast weight update at trade #{self._trade_count}")
+            except Exception as e:
+                logger.debug(f"Fast weight update failed: {e}")
+
+        # 6. AutoOptimizer: record trade for trigger checks
+        if self._auto_optimizer is not None:
+            try:
+                self._auto_optimizer.record_trade(pnl, win)
+            except Exception as e:
+                logger.debug(f"AutoOptimizer record_trade failed: {e}")
+
         logger.info(
             f"[FEEDBACK] Outcome recorded: {symbol} {side} "
             f"conf={confidence:.0f}% {'WIN' if win else 'LOSS'} "
             f"PnL=${pnl:+.2f} (floor={self.confidence.current_floor:.1f}%)"
         )
+
+    def set_weight_manager(self, weight_manager):
+        """Attach a StrategyWeightManager for fast weight recomputation."""
+        self._weight_manager = weight_manager
+
+    def setup_auto_optimizer(self, evolution_tracker, llm_client=None):
+        """Initialize the AutoOptimizer with an EvolutionTracker.
+
+        Args:
+            evolution_tracker: EvolutionTracker instance for report generation.
+            llm_client: Optional LLM client for Haiku review calls.
+        """
+        try:
+            from feedback.auto_optimizer import AutoOptimizer
+            self._auto_optimizer = AutoOptimizer(
+                evolution_tracker=evolution_tracker,
+                tuner=self.tuner,
+                data_dir=self.data_dir,
+                llm_client=llm_client,
+            )
+            self._auto_optimizer.set_feedback_loop(self)
+            logger.info("[FEEDBACK] AutoOptimizer initialized")
+        except Exception as e:
+            logger.warning(f"[FEEDBACK] AutoOptimizer init failed: {e}")
 
     def tick(self):
         """Called every main loop iteration. Runs periodic maintenance."""
@@ -267,6 +312,21 @@ class FeedbackLoop:
         if now - self._last_tuner_update >= 300:
             self._apply_suggestions(suggestions)
             self._last_tuner_update = now
+
+        # AutoOptimizer tick: check scheduled/trade-count/alert triggers
+        if self._auto_optimizer is not None:
+            try:
+                # Compute recent win rate from quality scorer
+                recent = self.quality.overall_recent
+                wr = (sum(recent) / len(recent) * 100) if recent else 50.0
+                avg_pnl = 0.0  # placeholder — tuner tracks this
+                self._auto_optimizer.tick(
+                    trade_count=self._trade_count,
+                    recent_win_rate=wr,
+                    recent_avg_pnl=avg_pnl,
+                )
+            except Exception as e:
+                logger.debug(f"AutoOptimizer tick failed: {e}")
 
     def _apply_suggestions(self, suggestions=None):
         """Apply accumulated suggestions from backtest to tuner."""

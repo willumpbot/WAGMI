@@ -102,19 +102,18 @@ class TestAgentPrompts:
         assert "growth" in TRADE_AGENT_PROMPT
         assert "examples" in TRADE_AGENT_PROMPT
 
-    def test_trade_prompt_has_macro_decision_framework(self):
-        """Trade agent must have the macro top-down analysis framework."""
-        from llm.agents.prompts import TRADE_AGENT_PROMPT
-        assert "MACRO DECISION MAKING" in TRADE_AGENT_PROMPT
-        assert "Market Structure" in TRADE_AGENT_PROMPT
-        assert "Cross-Market" in TRADE_AGENT_PROMPT
-        assert "Funding Environment" in TRADE_AGENT_PROMPT
-
-    def test_trade_prompt_has_signal_evaluation(self):
-        """Trade agent must have bottom-up signal evaluation."""
+    def test_trade_prompt_has_signal_evaluation_section(self):
+        """Trade agent must have signal evaluation guidance."""
         from llm.agents.prompts import TRADE_AGENT_PROMPT
         assert "SIGNAL EVALUATION" in TRADE_AGENT_PROMPT
-        assert "Strategy Agreement" in TRADE_AGENT_PROMPT
+        assert "rf" in TRADE_AGENT_PROMPT  # Signal quality flags
+        assert "confluence" in TRADE_AGENT_PROMPT
+
+    def test_trade_prompt_has_signal_evaluation(self):
+        """Trade agent must have signal evaluation guidance."""
+        from llm.agents.prompts import TRADE_AGENT_PROMPT
+        assert "SIGNAL EVALUATION" in TRADE_AGENT_PROMPT
+        assert "rf" in TRADE_AGENT_PROMPT  # Signal quality flags
         assert "R:R" in TRADE_AGENT_PROMPT
 
     def test_trade_prompt_has_funding_education(self):
