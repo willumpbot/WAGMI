@@ -512,7 +512,7 @@ class BacktestEngine:
                     # Also check trade_profile regime (uses trend_adjustment from ensemble)
                     # This catches signals where align >= 2 but no actual trend alignment
                     trend_adj = signal.metadata.get("trend_adjustment", 0)
-                    if trend_adj >= 0 and signal.metadata.get("regime") not in ("trending_bull", "trending_bear"):
+                    if trend_adj == 0 and signal.metadata.get("regime") not in ("trending_bull", "trending_bear"):
                         # No trend alignment bonus → trade_profile would classify as ranging
                         # Override "mixed" to "ranging" since trend_adjustment confirms no trend
                         signal.metadata["regime"] = "ranging"
@@ -738,7 +738,7 @@ class BacktestEngine:
 
                     # Cross-check with trend_adjustment (same as _walk_hourly)
                     trend_adj = signal.metadata.get("trend_adjustment", 0)
-                    if trend_adj >= 0 and signal.metadata.get("regime") not in ("trending_bull", "trending_bear"):
+                    if trend_adj == 0 and signal.metadata.get("regime") not in ("trending_bull", "trending_bear"):
                         signal.metadata["regime"] = "ranging"
 
                     # Regime filter: skip ranging and unknown trades
