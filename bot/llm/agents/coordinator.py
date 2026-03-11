@@ -362,6 +362,68 @@ class AgentCoordinator:
         except Exception as e:
             logger.debug(f"[MULTI-AGENT] Decision learning error: {e}")
 
+        # ── Brain Wiring: thesis tracking + counterfactual + calibration ──
+        try:
+            from llm.brain_wiring import (
+                record_thesis, record_skipped_trade, calibrate_confidence,
+            )
+            td = trade_out.data
+            regime = regime_out.data.get("rg", "unknown") if regime_out.ok else "unknown"
+
+            # Extract symbol from snapshot
+            _sym = ""
+            _markets = snapshot_data.get("m", []) if snapshot_data else []
+            if _markets:
+                _sym = _markets[0].get("s", _markets[0].get("sym", ""))
+
+            if decision.action in ("go", "proceed"):
+                # Record thesis for accuracy tracking
+                _entry = 0.0
+                if _markets and isinstance(_markets[0], dict):
+                    _entry = _markets[0].get("price", _markets[0].get("p", 0.0))
+                thesis_text = td.get("thesis", td.get("n", ""))
+                setup_type = td.get("setup_type", td.get("st", ""))
+                thesis_id = record_thesis(
+                    symbol=_sym,
+                    side=td.get("side", td.get("s", "BUY")),
+                    thesis=thesis_text[:200] if thesis_text else "",
+                    confidence=decision.confidence * 100 if decision.confidence <= 1 else decision.confidence,
+                    regime=regime,
+                    entry_price=_entry,
+                    setup_type=setup_type,
+                )
+                if thesis_id:
+                    decision = LLMDecision(
+                        action=decision.action,
+                        confidence=decision.confidence,
+                        regime=decision.regime,
+                        strategy_weights=decision.strategy_weights,
+                        memory_update=decision.memory_update,
+                        notes=f"{decision.notes} | thesis_id={thesis_id}",
+                        size_multiplier=decision.size_multiplier,
+                        entry_adjustment=decision.entry_adjustment,
+                    )
+
+            elif decision.action in ("flat", "skip"):
+                # Record skipped trade for counterfactual analysis
+                _signals = snapshot_data.get("signals", []) if snapshot_data else []
+                if _signals and isinstance(_signals[0], dict):
+                    _sig = _signals[0]
+                    record_skipped_trade(
+                        symbol=_sym or _sig.get("sym", ""),
+                        side=_sig.get("side", "BUY"),
+                        entry_price=_sig.get("entry", _sig.get("e", 0.0)),
+                        sl=_sig.get("sl", 0.0),
+                        tp1=_sig.get("tp1", 0.0),
+                        tp2=_sig.get("tp2", 0.0),
+                        confidence=_sig.get("confidence", _sig.get("c", 0.0)),
+                        skip_reason=decision.notes[:100] if decision.notes else "llm_skip",
+                        strategy=_sig.get("strategy", ""),
+                        regime=regime,
+                    )
+        except Exception as e:
+            logger.debug(f"[MULTI-AGENT] Brain wiring error: {e}")
+
         # Store pipeline results for external consumers (backtest logging, etc.)
         self.last_pipeline_results = pipeline_results
 
@@ -387,6 +449,34 @@ class AgentCoordinator:
                 f"[MULTI-AGENT] Learning agent lesson: "
                 f"{out.data.get('lesson', '')[:80]}"
             )
+
+            # ── Brain Wiring: close thesis + record regime trade ──
+            try:
+                from llm.brain_wiring import close_thesis, record_regime_trade
+                # Close thesis if thesis_id is in the trade notes
+                notes = trade_data.get("notes", "")
+                if "thesis_id=" in notes:
+                    tid = notes.split("thesis_id=")[1].split(" ")[0].split("|")[0].strip()
+                    if tid:
+                        close_thesis(
+                            thesis_id=tid,
+                            exit_price=trade_data.get("exit_price", 0.0),
+                            pnl_pct=trade_data.get("pnl_pct", 0.0),
+                            max_favorable=trade_data.get("max_favorable"),
+                            max_adverse=trade_data.get("max_adverse"),
+                            actual_hold_h=trade_data.get("hold_hours"),
+                        )
+                # Record trade for regime feedback
+                record_regime_trade(
+                    regime=trade_data.get("regime", "unknown"),
+                    pnl=trade_data.get("pnl_pct", 0.0),
+                    confidence=trade_data.get("confidence", 0.0),
+                    strategy=trade_data.get("strategy", ""),
+                    hold_hours=trade_data.get("hold_hours", 0.0),
+                )
+            except Exception as e:
+                logger.debug(f"[MULTI-AGENT] Brain post-trade wiring error: {e}")
+
             return out.data
         return None
 
@@ -1176,6 +1266,24 @@ class AgentCoordinator:
         except Exception:
             pass
 
+        # ── Brain Intelligence Injection ──
+        # Inject thesis accuracy, calibration, counterfactual, regime feedback,
+        # and drawdown context from the brain upgrade modules.
+        try:
+            from llm.brain_wiring import get_brain_context_for_trade
+            regime = regime_out.data.get("rg", "unknown") if regime_out else "unknown"
+            symbol = ""
+            signals = snapshot.get("signals", [])
+            if signals and isinstance(signals[0], dict):
+                symbol = signals[0].get("sym", "")
+            elif "m" in snapshot and snapshot["m"]:
+                symbol = snapshot["m"][0].get("s", snapshot["m"][0].get("sym", ""))
+            brain_ctx = get_brain_context_for_trade(symbol, regime)
+            if brain_ctx:
+                trade_data["brain"] = brain_ctx
+        except Exception as e:
+            logger.debug(f"[MULTI-AGENT] Brain context injection error: {e}")
+
         return json.dumps(trade_data, separators=(",", ":"))
 
     def _build_risk_input(
@@ -1250,6 +1358,17 @@ class AgentCoordinator:
                         risk_data["confluence"] = confluence
                 except Exception:
                     pass
+
+        # ── Brain Intelligence: regime feedback + graduated risk ──
+        try:
+            from llm.brain_wiring import get_brain_context_for_risk
+            regime = regime_out.data.get("rg", "unknown") if regime_out else "unknown"
+            brain_risk = get_brain_context_for_risk(regime)
+            if brain_risk:
+                risk_data["brain"] = brain_risk
+        except Exception as e:
+            logger.debug(f"[MULTI-AGENT] Brain risk context error: {e}")
+
         return json.dumps(risk_data, separators=(",", ":"))
 
     def _build_critic_input(
@@ -1395,6 +1514,21 @@ class AgentCoordinator:
         memory_update = td.get("mu", td.get("memory_update"))
         entry_adj = td.get("ea", td.get("entry_adjustment"))
 
+        # ── Confidence Calibration ──
+        # Apply calibration curve to deflate/inflate confidence based on historical accuracy.
+        try:
+            from llm.brain_wiring import calibrate_confidence
+            raw_conf = confidence
+            # Calibrator works on 0-100 scale
+            conf_pct = confidence * 100 if confidence <= 1.0 else confidence
+            calibrated_pct = calibrate_confidence(conf_pct, agent="trade_agent")
+            calibrated = calibrated_pct / 100.0 if confidence <= 1.0 else calibrated_pct
+            if abs(calibrated - confidence) > 0.01:
+                notes += f" | CAL: {raw_conf:.2f}→{calibrated:.2f}"
+                confidence = calibrated
+        except Exception:
+            pass
+
         # Regime from Regime Agent
         rd = regime_out.data
         regime = rd.get("rg", rd.get("regime", "unknown"))
@@ -1469,6 +1603,20 @@ class AgentCoordinator:
             size_mult = max(0.0, min(2.0, size_mult * kelly_mult))
             if abs(kelly_mult - 1.0) > 0.05:
                 notes += f" | KELLY: f={kelly_frac:.3f} mult={kelly_mult:.2f} sz={old_size:.2f}→{size_mult:.2f}"
+
+        # ── Graduated Risk: apply drawdown-proportional size reduction ──
+        try:
+            from llm.brain_wiring import get_graduated_risk
+            grm = get_graduated_risk()
+            if grm is not None:
+                old_size = size_mult
+                size_mult = grm.apply_to_risk_multiplier(size_mult)
+                if abs(size_mult - old_size) > 0.01:
+                    status = grm.get_status()
+                    notes += (f" | DD: {status['drawdown_pct']:.1f}% "
+                              f"band={status['band']} sz={old_size:.2f}→{size_mult:.2f}")
+        except Exception:
+            pass
 
         # Critic Agent: can adjust or override
         # Treat any non-"approve" verdict as a challenge (defensive normalization)

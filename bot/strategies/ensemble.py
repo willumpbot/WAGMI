@@ -288,6 +288,7 @@ class EnsembleStrategy:
                 f"[{symbol}] Signal rejected: confidence {result.confidence:.0f}% "
                 f"< {effective_floor:.0f}% floor (chop={chop_score:.2f})"
             )
+            self._record_counterfactual(result, f"confidence_floor_{effective_floor:.0f}")
             return None
 
         # 2. Trend alignment: FLIP counter-trend signals to ride the trend
@@ -307,6 +308,7 @@ class EnsembleStrategy:
                 f"[{symbol}] Signal rejected: confidence {result.confidence:.0f}% "
                 f"< {effective_floor:.0f}% after trend adjustment"
             )
+            self._record_counterfactual(result, f"trend_adj_floor_{effective_floor:.0f}")
             return None
 
         return result
@@ -496,6 +498,25 @@ class EnsembleStrategy:
             hard_rejected=False,
             filter_metadata=filter_meta,
         )
+
+    def _record_counterfactual(self, signal, skip_reason: str):
+        """Record a rejected signal for counterfactual analysis (missed opportunity tracking)."""
+        try:
+            from llm.brain_wiring import record_skipped_trade
+            record_skipped_trade(
+                symbol=signal.symbol,
+                side=signal.side,
+                entry_price=signal.entry,
+                sl=signal.sl,
+                tp1=signal.tp1,
+                tp2=signal.tp2,
+                confidence=signal.confidence,
+                skip_reason=skip_reason,
+                strategy=signal.strategy or "",
+                regime=signal.metadata.get("regime", ""),
+            )
+        except Exception:
+            pass  # Non-critical — don't let tracking break trading
 
     def _is_low_volume(self, symbol: str, data: Dict[str, pd.DataFrame]) -> bool:
         """Check if current volume is too low for reliable signals.
