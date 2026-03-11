@@ -874,6 +874,55 @@ class AgentCoordinator:
         except Exception:
             pass
 
+        # 10. Brain upgrades: thesis accuracy, calibration, counterfactual, regime feedback, drawdown
+        try:
+            from llm.brain_wiring import (
+                get_thesis_tracker, get_confidence_calibrator,
+                get_counterfactual_learner, get_regime_feedback, get_graduated_risk,
+            )
+            # Thesis accuracy
+            tt = get_thesis_tracker()
+            if tt:
+                stats = tt.get_accuracy_stats(lookback_days=14, min_samples=3)
+                if stats.get("sufficient_data"):
+                    state["thesis_accuracy"] = {
+                        "overall": round(stats["overall_accuracy"] * 100),
+                        "total": stats["total_theses"],
+                        "by_regime": {k: round(v["accuracy"] * 100) for k, v in
+                                      stats.get("by_regime", {}).items() if v["total"] >= 3},
+                    }
+            # Confidence calibration
+            cc = get_confidence_calibrator()
+            if cc:
+                cal_summary = cc.get_calibration_summary()
+                if cal_summary.get("overall_bias"):
+                    state["calibration"] = cal_summary["overall_bias"]
+            # Counterfactual (missed opportunities)
+            cf = get_counterfactual_learner()
+            if cf:
+                missed = cf.get_missed_opportunity_stats(lookback_days=7)
+                if missed.get("sufficient_data"):
+                    state["missed_opportunities"] = {
+                        "skips": missed["total_skips"],
+                        "would_win": missed["would_win"],
+                        "skip_accuracy": round((1 - missed["win_rate_of_skips"]) * 100),
+                        "problem_filters": list(missed.get("problem_filters", {}).keys()),
+                    }
+            # Regime feedback
+            rf = get_regime_feedback()
+            if rf:
+                state["regime_feedback"] = {
+                    name: {"wr": round(s.win_rate * 100), "n": s.total_trades,
+                           "floor": s.confidence_floor, "risk_mult": s.risk_multiplier}
+                    for name, s in rf.regimes.items() if s.total_trades >= 3
+                }
+            # Graduated risk
+            grm = get_graduated_risk()
+            if grm and grm.peak_equity > 0:
+                state["drawdown_status"] = grm.get_status()
+        except Exception as e:
+            logger.debug(f"[OVERSEER] Brain upgrade injection error: {e}")
+
         return json.dumps(state, separators=(",", ":"), default=str)
 
     def get_stats(self) -> Dict[str, Any]:
