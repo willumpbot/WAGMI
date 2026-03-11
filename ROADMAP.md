@@ -1,8 +1,8 @@
 # nunuIRL Trading Bot — Complete Roadmap
 
-> **Last updated**: 2026-03-10
-> **Current state**: Phase 2.8+2.9 DONE. Phase 3.1-3.5 DONE. Deep 10-agent audit complete: 30+ bugs fixed across execution, ensemble, strategies, LLM, and production hardening. 22 commits, 1006 tests passing.
-> **What's next**: Validate with 100d backtest → paper trade 48-72h → go live conservative.
+> **Last updated**: 2026-03-11
+> **Current state**: Phase 2.8-3.5 DONE. Anti-spam overhaul DONE (Phase 3.6). 100d backtest revealed massive signal spam losing $1k — fixed with 3-agree consensus + 10 tightened gates. 1006 tests passing.
+> **What's next**: Re-validate with 100d backtest (should show ~60-80% fewer trades) → paper trade 48-72h → go live conservative.
 
 ---
 
@@ -183,14 +183,13 @@
   - Both backtest engine and main loop pass config value to ensemble
   - Higher than the originally suggested 70% — more aggressive filtering
 
-### 2.9.6 3_agree Leverage Gate ✅ FIXED
+### 2.9.6 3_agree Leverage Gate ✅ FIXED (Updated March 11)
 - [x] **Implemented in `bot/execution/leverage.py`**
-  - Keep MIN_VOTES=2 so the bot still generates signals on 2-strategy agreement
-  - 2_agree: capped at 1.5x leverage, 0.85x risk_multiplier (smaller positions)
-  - 3_agree: full 2-3x leverage, 1.0x risk_multiplier
-  - Effect: 2_agree trades still happen but with reduced exposure, preventing the
-    40% WR / -$1,207 problem from 2_agree dominating PnL
-  - Or: MIN_VOTES=2 with `confidence_scorer+multi_tier_quality` combo BLOCKED (PF=0.08)
+  - MIN_VOTES raised to 3 (Phase 3.6): only 3-agree consensus trades pass
+  - 2_agree only allowed during graceful degradation (strategy errors)
+  - 2_agree if allowed: capped at 1.0x leverage, 0.6x risk_multiplier
+  - 3_agree: full 3-5x leverage, 1.0-1.4x risk_multiplier
+  - `confidence_scorer+multi_tier_quality` combo BLOCKED (PF=0.08)
 
 ---
 
@@ -226,7 +225,22 @@
   - `confidence_scorer+multi_tier_quality` 2-agree combo blocked in ensemble (PF=0.08)
   - Blacklist in `_weighted_veto()` method, easily extensible
 
-### 3.6 Prompt Versioning & A/B Testing
+### 3.6 Anti-Spam Overhaul ✅ DONE (March 11, 2026)
+**100-day backtest showed massive signal spam losing $1k. Root cause: 2-agree signals with negative PF.**
+- [x] `min_votes_required`: 2→3 (3-agree PF=4.05/86% WR vs 2-agree negative)
+- [x] `veto_ratio`: 1.3→1.5 (stricter opposition gating)
+- [x] `ensemble_confidence_floor`: 75→80 (eliminate marginal signals)
+- [x] `min_signal_rr`: 1.5→1.8 (better R:R to survive fees)
+- [x] `min_signal_ev`: 0.15→0.20 (higher edge requirement)
+- [x] `max_fee_drag`: 40%→30% (reject fee-heavy trades earlier)
+- [x] Cooldowns: loss 2→5min, win 1→3min, dedup 5→10min
+- [x] `scan_interval`: 30s→60s, rotations: 2/hr→1/hr, 6/day→4/day
+- [x] 2-agree win prob deflation: 70%→55% (matches actual ~25% WR)
+- [x] Leverage EV floors raised across all tiers
+- [x] Ensemble default confidence_floor: 65→75, veto_ratio: 1.3→1.5
+**Expected impact**: ~60-80% fewer signals, only strong consensus trades.
+
+### 3.7 Prompt Versioning & A/B Testing
 - [ ] **Create `bot/llm/agents/prompt_registry.py`**
   - Versioned prompt management, A/B testing
   - Rollback if new version underperforms
@@ -477,19 +491,30 @@ bot/feedback/parameter_tuner.py    → Parameter optimization (14KB)
 
 ## Priority Order (What to Work On Next)
 
-> Updated March 10, 2026. Based on comprehensive 10-agent deep audit (30+ bugs fixed).
+> Updated March 11, 2026. Anti-spam overhaul complete. Focus: validate → paper → live.
 
+### Completed
 1. ~~**Phase 2.8: Fix 6 critical bugs**~~ ✅ DONE
 2. ~~**Phase 2.9: Fee economics**~~ ✅ DONE
-3. ~~**Phase 3.1-3.5: Signal quality**~~ ✅ DONE (walk-forward, combo gating, shared reasoning)
-4. ~~**Deep 10-agent audit**~~ ✅ DONE — 30+ bugs fixed (execution, ensemble, strategies, LLM, hardening)
-5. **Validate with 100d backtest** — confirm all fixes produce positive Sharpe
-6. **Paper trade on live API** — 48-72h validation with real exchange prices
-7. **Go live conservative** — SOL+HYPE, 1% risk, 2x max leverage, 3_agree required
-8. **Phase 4: Production hardening** — break up main loop, connection health, logging
-9. **Phase 5: Config extraction** — single source of truth for all parameters
-10. **Phase 6: New strategies** — funding rate, order flow, cross-exchange
-11. **Phase 7: Advanced evolution** — portfolio agent, auto-prompt evolution, RL
+3. ~~**Phase 3.1-3.5: Signal quality**~~ ✅ DONE
+4. ~~**Deep 10-agent audit**~~ ✅ DONE — 30+ bugs fixed
+5. ~~**Phase 3.6: Anti-spam overhaul**~~ ✅ DONE — 3-agree consensus, 10 tightened gates
+
+### This Week (Priority Order)
+6. **Re-validate with 100d backtest** — confirm anti-spam reduces trade count by 60-80% while maintaining 3-agree edge. Key metrics to beat: WR>55%, PF>2.0, Sharpe>0.5
+7. **Tune if backtest disappoints** — if too few signals, soften confidence_floor (80→78) or min_rr (1.8→1.6). If still losing, investigate which gate is leaking.
+8. **Paper trade on live API** — 48-72h with real exchange prices. Watch for:
+   - Signal frequency: should be 2-4 trades/day (not 20+)
+   - Win rate per trade profile (SCALP vs TREND)
+   - Fee drag as % of gross PnL
+9. **Telegram signal integration** — wire incoming Telegram signals to Scout Agent for correlation with internal signals
+
+### Next Week+
+10. **Go live conservative** — SOL+HYPE only, 1% risk, max 3x leverage, 3_agree required
+11. **Phase 4: Production hardening** — break up `multi_strategy_main.py` (4,700 lines), structured logging, connection health
+12. **Phase 5: Config extraction** — single source of truth, startup validation
+13. **Phase 6: New strategies** — funding rate arb, order flow, cross-exchange signals
+14. **Phase 7: Advanced evolution** — portfolio agent, auto-prompt evolution, RL
 
 ---
 
