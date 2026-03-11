@@ -97,7 +97,7 @@ class RiskFilterChain:
         if stop_pct > 0:
             fee_drag_pct = round_trip_fee_pct / stop_pct
             meta["fee_drag_pct"] = round(fee_drag_pct * 100, 1)
-            max_fee_drag = 0.40  # Fees must be < 40% of stop distance
+            max_fee_drag = 0.30  # Fees must be < 30% of stop distance (tightened from 40%)
             if fee_drag_pct > max_fee_drag:
                 return FilterResult(
                     approved=False, signal=signal,
@@ -111,9 +111,9 @@ class RiskFilterChain:
         ev = signal.metadata.get("ev_per_dollar") if signal.metadata else None
         min_ev = getattr(self.config, "min_signal_ev", 0.10)
         if stop_pct > 0 and stop_pct < 0.004:
-            min_ev = max(min_ev, 0.20)  # Tight stops: fees eat more of the risk
+            min_ev = max(min_ev, 0.25)  # Tight stops: fees eat most of the risk
         elif stop_pct > 0 and stop_pct < 0.006:
-            min_ev = max(min_ev, 0.18)
+            min_ev = max(min_ev, 0.22)  # Medium-tight stops: still need higher EV
         if ev is not None and ev < min_ev:
             return FilterResult(
                 approved=False, signal=signal,
@@ -213,10 +213,10 @@ class RiskFilterChain:
         if ev is not None and leverage > 2.0:
             n_agree = meta.get("num_agree", 0)
             if leverage > 4.0:
-                # 3-agree EV estimates are better calibrated (10% deflation vs 30%)
-                lev_ev_floor = 0.17 if n_agree >= 3 else 0.20
+                # 3-agree EV estimates are better calibrated (20% deflation vs 45%)
+                lev_ev_floor = 0.22 if n_agree >= 3 else 0.28
             else:
-                lev_ev_floor = 0.15
+                lev_ev_floor = 0.20
             if ev < lev_ev_floor:
                 return FilterResult(
                     approved=False, signal=signal,

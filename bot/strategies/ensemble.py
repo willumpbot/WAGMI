@@ -43,9 +43,9 @@ class EnsembleStrategy:
         min_votes: int = 2,
         weights: Optional[Dict[str, float]] = None,
         weight_manager=None,
-        veto_ratio: float = 1.3,  # Match trading_config.py default (lowered from 1.5)
+        veto_ratio: float = 1.5,  # Match trading_config.py default (raised back to 1.5)
         chop_detector=None,
-        confidence_floor: float = 65.0,
+        confidence_floor: float = 75.0,  # Raised from 65: minimum viable signal quality
         ranging_confidence_floor: float = 88.0,
     ):
         self.strategies = strategies
@@ -824,11 +824,11 @@ class EnsembleStrategy:
         # Conservative win probability: deflate by empirical overconfidence ratio.
         # Higher agreement = better calibration = less deflation needed.
         if n_agree >= 4:
-            win_prob = raw_win_prob * 0.95  # 5% deflation (unanimous agreement, best calibrated)
+            win_prob = raw_win_prob * 0.90  # 10% deflation (unanimous, well calibrated)
         elif n_agree >= 3:
-            win_prob = raw_win_prob * 0.90  # 10% deflation (well-calibrated at 3-agree)
+            win_prob = raw_win_prob * 0.80  # 20% deflation (good but not perfect)
         else:
-            win_prob = raw_win_prob * 0.70  # 30% deflation (70% conf → 49% WR empirical)
+            win_prob = raw_win_prob * 0.55  # 45% deflation (2-agree = ~25% actual WR)
         try:
             from trading_config import TradingConfig as _TConf
             _fee_bps = _TConf().taker_fee_bps
