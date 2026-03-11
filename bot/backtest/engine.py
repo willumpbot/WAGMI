@@ -1226,6 +1226,33 @@ class BacktestEngine:
                     "gate": "risk_filter_chain",
                     "reason": result.rejection_reason,
                 })
+
+                # ── Annotated tracking for filter accuracy analysis ──
+                if getattr(self.config, 'enable_soft_filters', False) or getattr(self.config, 'soft_filter_log_only', False):
+                    try:
+                        annotated = chain.evaluate_annotated(
+                            signal=signal,
+                            equity=self.risk_mgr.equity,
+                            num_strategies_agree=num_agree,
+                            total_strategies=total,
+                            current_open_count=self.pos_mgr.get_open_count(),
+                            current_extreme_count=extreme_count,
+                            risk_tier=risk_tier,
+                            open_positions=self.pos_mgr.get_open_positions(),
+                        )
+                        # Store for post-backtest filter accuracy analysis
+                        if not hasattr(self, '_annotated_rejections'):
+                            self._annotated_rejections = []
+                        self._annotated_rejections.append({
+                            "symbol": signal.symbol,
+                            "side": signal.side,
+                            "confidence": signal.confidence,
+                            "annotations": annotated.to_compact_str(),
+                            "filter_dict": annotated.to_compact_dict(),
+                        })
+                    except Exception:
+                        pass
+
                 return
 
             leverage = result.leverage

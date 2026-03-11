@@ -1122,6 +1122,12 @@ class AgentCoordinator:
         _ensure_field(trade_data, "funding_cost_pct", snapshot)
         _ensure_field(trade_data, "funding_alert", snapshot)
 
+        # Inject filter annotations so Trade Agent sees what filters measured
+        if "filt" in snapshot:
+            trade_data["filter_assessment"] = snapshot["filt"]
+        if "near" in snapshot:
+            trade_data["near_miss_signals"] = snapshot["near"]
+
         # Inject Quant Agent's statistical analysis if available
         if quant_out and quant_out.ok:
             trade_data["quant_analysis"] = quant_out.data
@@ -1196,6 +1202,9 @@ class AgentCoordinator:
                      "funding_alert", "session_perf"):
             if key in snapshot:
                 risk_data[key] = snapshot[key]
+        # Filter annotations for risk-aware sizing (fd, ev, cr matter for sizing)
+        if "filt" in snapshot:
+            risk_data["filter_assessment"] = snapshot["filt"]
         # Self-awareness for risk decisions (losing streak → reduce size)
         if "self_perf" in snapshot:
             risk_data["self_perf"] = snapshot["self_perf"]
@@ -1274,6 +1283,11 @@ class AgentCoordinator:
         )
         if confluence:
             critic_data["confluence"] = confluence
+        # Filter annotations for veto reasoning (weight warnings in decisions)
+        if "filt" in snapshot:
+            critic_data["filter_assessment"] = snapshot["filt"]
+        if "near" in snapshot:
+            critic_data["near_miss_signals"] = snapshot["near"]
         # Full self-awareness context — the critic's primary tool
         for key in ("self_perf", "recent_dec", "recent_lessons", "autopsy"):
             if key in snapshot:

@@ -443,6 +443,22 @@ class TradingConfig:
         default_factory=lambda: _env_float("SQUEEZE_ATR_RATIO", 0.65)
     )  # ATR compression threshold: current ATR < this * 20-bar avg ATR = squeeze
 
+    # ── Soft Filters (Filter-to-Annotation Architecture) ──
+    # When enabled, non-safety filters become annotations instead of hard rejects.
+    # LLM agents see ALL signals with filter assessments and decide what to trade.
+    enable_soft_filters: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_SOFT_FILTERS", False)
+    )  # Master switch — default OFF for safety. Enable after backtest validation.
+    soft_filter_log_only: bool = field(
+        default_factory=lambda: _env_bool("SOFT_FILTER_LOG_ONLY", True)
+    )  # Log annotations but still hard-reject (Phase 1 validation mode)
+    soft_filter_near_miss: bool = field(
+        default_factory=lambda: _env_bool("SOFT_FILTER_NEAR_MISS", True)
+    )  # Include near-miss signals (soft-rejected) in LLM context
+    soft_filter_learning: bool = field(
+        default_factory=lambda: _env_bool("SOFT_FILTER_LEARNING", True)
+    )  # Enable filter accuracy feedback loop
+
     # ── Health Monitoring ──
     health_port: int = field(
         default_factory=lambda: _env_int("HEALTH_PORT", 8081)

@@ -541,6 +541,17 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
         if cs_patterns:
             result["cross_pat"] = cs_patterns
 
+    # ── Filter annotations (soft-filter architecture) ──
+    # When ENABLE_SOFT_FILTERS is active, signals carry filter assessments.
+    # Inject into snapshot so LLM agents see what each filter measured.
+    if g and g.extra:
+        filter_annotations = g.extra.get("filter_annotations")
+        if filter_annotations:
+            result["filt"] = filter_annotations  # Per-signal filter assessments
+        near_miss_signals = g.extra.get("near_miss_signals")
+        if near_miss_signals:
+            result["near"] = near_miss_signals  # Soft-rejected but annotated signals
+
     # Funding cost reminder — injected when positions are open
     if snapshot.active_positions:
         funding_notes = []

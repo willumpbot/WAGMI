@@ -2262,6 +2262,40 @@ class MultiStrategyBot:
 
         signal_result = self.ensemble.evaluate(symbol, data)
 
+        # ── Soft-filter annotation: run annotated ensemble in parallel ──
+        # When enabled, this captures filter assessments for LLM visibility
+        # even when the signal passes hard filters normally.
+        if getattr(self.config, 'enable_soft_filters', False) or getattr(self.config, 'soft_filter_log_only', False):
+            try:
+                annotated_ensemble = self.ensemble.evaluate_with_annotations(symbol, data)
+                if annotated_ensemble is not None:
+                    # Store for LLM snapshot injection and signal tracking
+                    if not hasattr(self, '_pending_annotations'):
+                        self._pending_annotations = {}
+                    self._pending_annotations[symbol] = annotated_ensemble
+
+                    # Track signal in signal tracker (all signals, not just approved)
+                    from core.signal_tracker import get_signal_tracker
+                    tracker = get_signal_tracker()
+                    tracker.record_signal(
+                        symbol=symbol,
+                        side=annotated_ensemble.signal.side if hasattr(annotated_ensemble.signal, 'side') else "",
+                        confidence=annotated_ensemble.signal.confidence if hasattr(annotated_ensemble.signal, 'confidence') else 0,
+                        strategy=annotated_ensemble.signal.strategy if hasattr(annotated_ensemble.signal, 'strategy') else "",
+                        passed=annotated_ensemble.passed_all,
+                        hard_rejected=annotated_ensemble.hard_rejected,
+                        hard_rejection_reason=annotated_ensemble.hard_rejection_reason,
+                        annotations=[
+                            {"gate": a.gate, "severity": a.severity, "value": a.value, "threshold": a.threshold}
+                            for a in annotated_ensemble.annotations
+                        ],
+                        filter_metadata=annotated_ensemble.filter_metadata,
+                        num_strategies_agree=annotated_ensemble.filter_metadata.get("num_strategies_signaled", 0),
+                        regime=annotated_ensemble.filter_metadata.get("regime", ""),
+                    )
+            except Exception as e:
+                logger.debug(f"[{symbol}] Soft-filter annotation error: {e}")
+
         # Update last snapshot with ensemble context for ML learning
         if self.ml and self.ml.snapshots:
             last_snap = self.ml.snapshots[-1]
@@ -2683,6 +2717,51 @@ class MultiStrategyBot:
                     f"[{trace_id}][{symbol}] RiskFilterChain rejected: "
                     f"{_chain_result.rejection_reason}"
                 )
+
+                # ── Annotated chain: record what filters measured even on rejection ──
+                if getattr(self.config, 'enable_soft_filters', False) or getattr(self.config, 'soft_filter_log_only', False):
+                    try:
+                        _annotated = _chain.evaluate_annotated(
+                            signal=signal_result,
+                            equity=self.risk_mgr.equity,
+                            num_strategies_agree=num_agree,
+                            total_strategies=total,
+                            current_open_count=len(open_pos),
+                            current_extreme_count=extreme_count,
+                            risk_tier=sym_cfg.risk_tier,
+                            open_positions=open_pos,
+                            portfolio_risk_engine=self.portfolio_risk if hasattr(self, 'portfolio_risk') else None,
+                        )
+                        # Merge pipeline annotations with ensemble annotations
+                        if hasattr(self, '_pending_annotations') and symbol in self._pending_annotations:
+                            existing = self._pending_annotations[symbol]
+                            existing.annotations.extend(_annotated.annotations)
+                            existing.filter_metadata.update(_annotated.filter_metadata)
+                            if _annotated.hard_rejected:
+                                existing.hard_rejected = True
+                                existing.hard_rejection_reason = _annotated.hard_rejection_reason
+
+                            # Track the chain-rejected signal
+                            from core.signal_tracker import get_signal_tracker
+                            tracker = get_signal_tracker()
+                            tracker.record_signal(
+                                symbol=symbol,
+                                side=signal_result.side,
+                                confidence=signal_result.confidence,
+                                strategy=signal_result.strategy or "ensemble",
+                                passed=False,
+                                hard_rejected=_annotated.hard_rejected,
+                                hard_rejection_reason=_annotated.hard_rejection_reason,
+                                annotations=[
+                                    {"gate": a.gate, "severity": a.severity, "value": a.value, "threshold": a.threshold}
+                                    for a in _annotated.annotations
+                                ],
+                                filter_metadata=_annotated.filter_metadata,
+                                num_strategies_agree=num_agree,
+                            )
+                    except Exception as ann_e:
+                        logger.debug(f"[{symbol}] Annotated chain error: {ann_e}")
+
                 return
         except Exception as e:
             logger.warning(f"[{trace_id}][{symbol}] RiskFilterChain error: {e} — rejecting signal for safety")
@@ -5044,6 +5123,31 @@ class MultiStrategyBot:
                 }
             except Exception as e:
                 logger.debug(f"Adaptive risk context injection error: {e}")
+
+        # ── Soft-filter annotations: inject into LLM context ──
+        if getattr(self.config, 'enable_soft_filters', False) or getattr(self.config, 'soft_filter_log_only', False):
+            if hasattr(self, '_pending_annotations') and self._pending_annotations:
+                try:
+                    # Build compact filter assessment for each annotated signal
+                    filter_assessments = []
+                    near_misses = []
+                    for sym, ann_sig in self._pending_annotations.items():
+                        compact = ann_sig.to_compact_dict()
+                        compact["sym"] = sym
+                        if ann_sig.passed_all:
+                            filter_assessments.append(compact)
+                        elif not ann_sig.hard_rejected:
+                            near_misses.append(compact)
+
+                    if filter_assessments:
+                        global_ctx.extra["filter_annotations"] = filter_assessments
+                    if near_misses and getattr(self.config, 'soft_filter_near_miss', True):
+                        global_ctx.extra["near_miss_signals"] = near_misses[:5]  # Cap at 5
+
+                    # Clear pending annotations for next tick
+                    self._pending_annotations = {}
+                except Exception as e:
+                    logger.debug(f"Filter annotation injection error: {e}")
 
         return markets, global_ctx, risk_ctx, active_positions
 

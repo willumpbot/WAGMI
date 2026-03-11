@@ -26,6 +26,7 @@ from typing import Optional, Dict, Any, List
 import pandas as pd
 
 from .base import BaseStrategy, Signal
+from core.filter_annotations import FilterAnnotation, AnnotatedSignal
 
 logger = logging.getLogger("bot.strategy.ensemble")
 
@@ -309,6 +310,192 @@ class EnsembleStrategy:
             return None
 
         return result
+
+    def evaluate_with_annotations(
+        self, symbol: str, data: Dict[str, pd.DataFrame]
+    ) -> Optional[AnnotatedSignal]:
+        """Run ensemble evaluation with soft-filter annotations instead of hard rejections.
+
+        Returns an AnnotatedSignal with filter assessments attached, or None if
+        no strategies produced any signal at all (nothing to annotate).
+
+        Filters converted to annotations:
+        - Confidence floor (normal, chop, ranging)
+        - Trend alignment rejection
+        - Volume/chop gating
+
+        Hard rejects (min_votes not met) still return None since there's no
+        meaningful signal to annotate.
+        """
+        # Dynamic weight refresh
+        self._refresh_dynamic_weights()
+
+        signals: List[Signal] = []
+        active_count = 0
+        error_count = 0
+
+        for strategy in self.strategies:
+            if strategy.name in self._disabled_strategies:
+                continue
+            active_count += 1
+            try:
+                sig = strategy.evaluate(symbol, data)
+                if sig is not None:
+                    signals.append(sig)
+            except Exception as e:
+                error_count += 1
+                logger.warning(f"[{symbol}] {strategy.name} error: {e}")
+
+        signals = [deepcopy(s) for s in signals]
+        self._last_signals[symbol] = {s.strategy: deepcopy(s) for s in signals}
+
+        if not signals:
+            return None
+
+        # Strategy degradation
+        effective_min_votes = self.min_votes
+        if error_count > 0 and active_count > 0:
+            effective_min_votes = max(2, min(self.min_votes, active_count - error_count))
+
+        # Chop detection — attach scores but don't reject
+        annotations: List[FilterAnnotation] = []
+        chop_score = 0.0
+
+        if self.chop_detector:
+            is_chop, chop_score, chop_detail = self.chop_detector.is_choppy(symbol, data)
+            for sig in signals:
+                sig.metadata["chop_score"] = round(chop_score, 3)
+            if is_chop:
+                annotations.append(FilterAnnotation(
+                    gate="chop_floor",
+                    passed=False,
+                    severity="warning" if chop_score < 0.65 else "reject",
+                    value=round(chop_score, 3),
+                    threshold=0.65,
+                    detail=f"chop={chop_score:.2f}",
+                ))
+        elif self._is_low_volume(symbol, data):
+            annotations.append(FilterAnnotation(
+                gate="volume_chop",
+                passed=False,
+                severity="reject",
+                value=0.0,
+                threshold=0.5,
+                detail="low volume",
+            ))
+
+        # Run voting/merge — if min_votes not met, no signal to annotate
+        if self.mode == "voting":
+            result = self._voting(symbol, signals, effective_min_votes)
+        elif self.mode == "weighted_veto":
+            result = self._weighted_veto(symbol, signals, effective_min_votes)
+        elif self.mode == "weighted":
+            result = self._weighted(symbol, signals)
+        elif self.mode == "best":
+            result = self._best(symbol, signals)
+        else:
+            result = self._voting(symbol, signals, effective_min_votes)
+
+        if result is None:
+            # Not enough votes — nothing meaningful to annotate
+            return None
+
+        # Quality adjustment (same as evaluate())
+        if self._quality_scorer is not None:
+            try:
+                from feedback.signal_quality import QualityFeatures
+                features = QualityFeatures(
+                    confidence=result.confidence,
+                    num_strategies_agree=result.metadata.get("num_agree", 1),
+                    total_strategies=len(self.strategies),
+                    symbol=symbol,
+                    side=result.side,
+                )
+                _adj, _mult, _breakdown = self._quality_scorer.adjust_confidence(
+                    result.confidence, features
+                )
+                _mult = max(0.5, min(1.3, _mult))
+                if abs(_mult - 1.0) > 0.01:
+                    result.confidence = max(0, min(100, result.confidence * _mult))
+                    result.metadata["quality_multiplier"] = round(_mult, 3)
+            except Exception as e:
+                logger.debug(f"Quality scorer error: {e}")
+
+        # ── Soft-annotated confidence floor ──
+        effective_floor = self.confidence_floor
+        raw_chop = result.metadata.get("chop_score", 0)
+        prev = self._smoothed_chop.get(symbol, raw_chop)
+        smoothed_chop = self._chop_ema_alpha * raw_chop + (1 - self._chop_ema_alpha) * prev
+        self._smoothed_chop[symbol] = smoothed_chop
+        result.metadata["chop_score_smoothed"] = round(smoothed_chop, 3)
+
+        if smoothed_chop > 0.35:
+            if smoothed_chop >= 0.65:
+                chop_intensity = min(1.0, (smoothed_chop - 0.65) / 0.20)
+                effective_floor = self.ranging_confidence_floor + chop_intensity * (
+                    93.0 - self.ranging_confidence_floor
+                )
+            else:
+                chop_intensity = (smoothed_chop - 0.35) / 0.30
+                effective_floor = self.confidence_floor + chop_intensity * (
+                    self.ranging_confidence_floor - self.confidence_floor
+                )
+            result.metadata["effective_confidence_floor"] = round(effective_floor, 1)
+
+        conf_passed = result.confidence >= effective_floor
+        annotations.append(FilterAnnotation(
+            gate="confidence_floor",
+            passed=conf_passed,
+            severity="reject" if not conf_passed else "ok",
+            value=round(result.confidence, 1),
+            threshold=round(effective_floor, 1),
+            detail=f"conf={result.confidence:.0f} vs floor={effective_floor:.0f} (chop={smoothed_chop:.2f})",
+        ))
+
+        # ── Soft-annotated trend alignment ──
+        _driver = result.strategy or ""
+        _duration_hint = self._infer_duration(_driver)
+        trend_result = self._trend_alignment_adjust(symbol, data, deepcopy(result), _duration_hint)
+
+        if trend_result is None:
+            annotations.append(FilterAnnotation(
+                gate="trend_alignment",
+                passed=False,
+                severity="reject",
+                value=0.0,
+                threshold=0.0,
+                detail="counter-trend rejected",
+            ))
+            # Use original result (not None) so LLM can see the signal
+            result.metadata["trend_rejected"] = True
+        else:
+            # Trend may have adjusted confidence
+            trend_score = trend_result.metadata.get("trend_score", 0)
+            result = trend_result
+            annotations.append(FilterAnnotation(
+                gate="trend_alignment",
+                passed=True,
+                severity="ok" if trend_score >= 0 else "warning",
+                value=round(trend_score, 1) if trend_score else 0.0,
+                threshold=0.0,
+                detail=f"trend={trend_score:+.1f}" if trend_score else "trend=ok",
+            ))
+            # Re-check confidence after trend adjustment
+            if result.confidence < effective_floor:
+                # Don't kill — already annotated above
+                result.metadata["post_trend_below_floor"] = True
+
+        # Build filter metadata from result
+        filter_meta = dict(result.metadata) if result.metadata else {}
+        filter_meta["num_strategies_signaled"] = len(signals)
+        filter_meta["num_strategies_active"] = active_count
+
+        return AnnotatedSignal(
+            signal=result,
+            annotations=annotations,
+            hard_rejected=False,
+            filter_metadata=filter_meta,
+        )
 
     def _is_low_volume(self, symbol: str, data: Dict[str, pd.DataFrame]) -> bool:
         """Check if current volume is too low for reliable signals.
