@@ -88,10 +88,16 @@ class LeverageManager:
         total_strategies: int,
         risk_tier: str = "medium",
         current_extreme_count: int = 0,
+        recent_win_rate: float = -1.0,
+        baseline_win_rate: float = 0.45,
     ) -> LeverageDecision:
         """
         Decide leverage and risk_multiplier based on confidence + consensus.
         Aggressive scaling: higher confidence -> exponentially more leverage + bigger size.
+
+        Win-rate scaling: if recent_win_rate is provided (>= 0), scale leverage
+        down when the bot is underperforming its baseline. This prevents the bot
+        from sizing up during losing streaks.
         """
         if not self.enable_leverage:
             return LeverageDecision(2.0, "leverage", "low", "Leverage disabled, min 2x", 1.0)
@@ -107,18 +113,22 @@ class LeverageManager:
         }
         cap = tier_cap.get(risk_tier, self.max_leverage)
 
+        # Helper to apply WR scaling to all return paths
+        def _wr(d: LeverageDecision) -> LeverageDecision:
+            return self._apply_wr_scaling(d, recent_win_rate, baseline_win_rate)
+
         # ── Tier 1: 60-64% — minimum viable trade ──
         if confidence < 65:
-            return LeverageDecision(1.0, "leverage", "low",
-                                    f"1x: confidence {confidence:.0f}%", 0.8)
+            return _wr(LeverageDecision(1.0, "leverage", "low",
+                                        f"1x: confidence {confidence:.0f}%", 0.8))
 
         # ── Tier 2: 65-69% — building conviction ──
         if confidence < 70:
             t = (confidence - 65) / 5.0  # 0..1
             lev = min(1.0 + t * 1.0, cap)  # 1-2x
             rm = 0.8 + t * 0.2  # 0.8-1.0x
-            return LeverageDecision(lev, "leverage", "low",
-                                    f"{lev:.1f}x: confidence {confidence:.0f}%", rm)
+            return _wr(LeverageDecision(lev, "leverage", "low",
+                                        f"{lev:.1f}x: confidence {confidence:.0f}%", rm))
 
         # ── Tier 3: 70-74% — moderate conviction ──
         # 3_agree gate: 10d data shows 2_agree=40% WR (-$1,207) vs 3_agree=86% WR (+$1,040).
@@ -126,23 +136,23 @@ class LeverageManager:
         if confidence < 75:
             if num_strategies_agree < 2:
                 lev = min(1.0, cap)
-                return LeverageDecision(lev, "leverage", "low",
-                                        f"{lev:.1f}x: only {num_strategies_agree} strats", 0.6)
+                return _wr(LeverageDecision(lev, "leverage", "low",
+                                            f"{lev:.1f}x: only {num_strategies_agree} strats", 0.6))
             if num_strategies_agree >= 3:
                 lev = min(3.0, cap)  # Kelly-informed: ~1/9 Kelly at this tier
                 rm = 1.1
             else:
                 lev = min(1.0, cap)  # 2_agree: minimal leverage (40% WR is net losing)
                 rm = 0.6  # much smaller position for weaker consensus
-            return LeverageDecision(lev, "leverage", "low",
-                                    f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm)
+            return _wr(LeverageDecision(lev, "leverage", "low",
+                                        f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm))
 
         # ── Tier 4: 75-79% — strong conviction ──
         if confidence < 80:
             if num_strategies_agree < 2:
                 lev = min(1.0, cap)
-                return LeverageDecision(lev, "leverage", "low",
-                                        f"{lev:.1f}x: only {num_strategies_agree} strats", 0.6)
+                return _wr(LeverageDecision(lev, "leverage", "low",
+                                            f"{lev:.1f}x: only {num_strategies_agree} strats", 0.6))
             if num_strategies_agree >= 3:
                 t = (confidence - 75) / 5.0
                 lev = min(3.0 + t * 1.0, cap)  # 3-4x for 3_agree (~1/6 Kelly)
@@ -150,8 +160,8 @@ class LeverageManager:
             else:
                 lev = min(1.0, cap)  # 2_agree: minimal leverage
                 rm = 0.7  # small position — just enough to participate
-            return LeverageDecision(lev, "leverage", "medium",
-                                    f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm)
+            return _wr(LeverageDecision(lev, "leverage", "medium",
+                                        f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm))
 
         # ── Tier 5: 80-89% — Kelly-informed scaling for 3-agree ──
         # With fee-aware EV, fee-drag gate, and losing combo blocking,
@@ -160,8 +170,8 @@ class LeverageManager:
         if confidence < 90:
             if num_strategies_agree < 2:
                 lev = min(1.0, cap)
-                return LeverageDecision(lev, "leverage", "low",
-                                        f"{lev:.1f}x: need 2+ strats for high lev", 0.6)
+                return _wr(LeverageDecision(lev, "leverage", "low",
+                                            f"{lev:.1f}x: need 2+ strats for high lev", 0.6))
             if num_strategies_agree >= 3:
                 # Scale 4.0-5.0x across 80-89% confidence (~1/5 Kelly at top)
                 # Starts at 4.0 to match Tier 4 end (was 3.5 = leverage cliff)
@@ -171,8 +181,8 @@ class LeverageManager:
             else:
                 lev = min(1.0, cap)  # 2_agree: minimal leverage
                 rm = 0.7
-            return LeverageDecision(lev, "leverage", "medium",
-                                    f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm)
+            return _wr(LeverageDecision(lev, "leverage", "medium",
+                                        f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm))
 
         # ── Tier 6: 90%+ — rare but possible with 92% ensemble cap ──
         # Continue Kelly scaling from Tier 5 (no cliff)
@@ -188,12 +198,42 @@ class LeverageManager:
 
         if lev > 5.0 and current_extreme_count >= self.max_extreme_positions:
             lev = 5.0
-            return LeverageDecision(lev, "leverage", "high",
-                                    f"{lev:.1f}x: extreme limit reached", rm)
+            return _wr(LeverageDecision(lev, "leverage", "high",
+                                        f"{lev:.1f}x: extreme limit reached", rm))
 
         tier = "medium"
-        return LeverageDecision(lev, "leverage", tier,
-                                f"{lev:.1f}x: {num_strategies_agree}/{total_strategies} strats, {confidence:.0f}%", rm)
+        return self._apply_wr_scaling(
+            LeverageDecision(lev, "leverage", tier,
+                             f"{lev:.1f}x: {num_strategies_agree}/{total_strategies} strats, {confidence:.0f}%", rm),
+            recent_win_rate, baseline_win_rate,
+        )
+
+    def _apply_wr_scaling(
+        self, decision: LeverageDecision,
+        recent_win_rate: float, baseline_win_rate: float,
+    ) -> LeverageDecision:
+        """Scale leverage and risk_multiplier by rolling win rate vs baseline.
+
+        When the bot is underperforming (recent WR < baseline), reduce exposure.
+        When at or above baseline, no change. This prevents compounding losses
+        during losing streaks while preserving full sizing during winning streaks.
+        """
+        if recent_win_rate < 0 or baseline_win_rate <= 0:
+            return decision  # No WR data available, skip scaling
+        if decision.leverage <= 0:
+            return decision  # No trade, nothing to scale
+
+        wr_scale = max(0.3, min(1.0, recent_win_rate / baseline_win_rate))
+        if wr_scale < 1.0:
+            old_lev = decision.leverage
+            decision.leverage = max(1.0, decision.leverage * wr_scale)
+            decision.risk_multiplier *= wr_scale
+            decision.reason += f" [WR decay {wr_scale:.2f}: recent={recent_win_rate:.0%} vs base={baseline_win_rate:.0%}]"
+            logger.info(
+                f"Win-rate scaling: {old_lev:.1f}x → {decision.leverage:.1f}x "
+                f"(WR {recent_win_rate:.0%}/{baseline_win_rate:.0%} = {wr_scale:.2f})"
+            )
+        return decision
 
     def calculate_position_size(
         self,

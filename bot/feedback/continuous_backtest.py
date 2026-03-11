@@ -369,7 +369,11 @@ class ContinuousBacktester:
         suggestions = []
 
         # Weight by level: deep results are more trustworthy
-        trust_weight = {"quick": 0.3, "medium": 0.6, "deep": 1.0}[level]
+        # Trust weights: quick backtests were too conservative at 0.3 —
+        # suggestions never reached the tuner's 0.7 high-confidence bypass.
+        # Raised quick to 0.5 so a 60% WR quick backtest produces 0.30 confidence,
+        # which the gradual-move tuner can act on.
+        trust_weight = {"quick": 0.5, "medium": 0.7, "deep": 1.0}[level]
 
         # 1. Confidence floor suggestion
         if result.optimal_floor != 65.0 and result.total_signals >= 5:

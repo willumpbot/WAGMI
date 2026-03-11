@@ -192,7 +192,8 @@ class CircuitBreaker:
     def is_trading_allowed(self, confidence: float = 0.0,
                             cb_conf_override_pct: float = 0.92,
                             max_overrides: Optional[int] = None,
-                            sim_time: Optional[datetime] = None) -> bool:
+                            sim_time: Optional[datetime] = None,
+                            equity: float = 0.0) -> bool:
         """Check if trading is currently allowed.
 
         When tripped, allows up to max_overrides trades with
@@ -236,7 +237,18 @@ class CircuitBreaker:
                 self._trip_sim_time = None
                 self.trip_reason = ""
                 self.post_cooldown_caution = 2  # Next 2 trades at half size
-                logger.info("Circuit breaker cooldown complete, trading resumed (caution mode: 2 trades at reduced size)")
+                # Reset peak_equity to current equity to prevent immediate re-trip.
+                # Without this, the drawdown from the old peak is still >10% and
+                # check_mtm_breakers() re-trips on the very next candle.
+                if equity > 0:
+                    old_peak = self.peak_equity
+                    self.peak_equity = equity
+                    logger.info(
+                        f"Circuit breaker cooldown complete, peak_equity reset "
+                        f"${old_peak:.2f} → ${equity:.2f} (caution mode: 2 trades at reduced size)"
+                    )
+                else:
+                    logger.info("Circuit breaker cooldown complete, trading resumed (caution mode: 2 trades at reduced size)")
                 return True
 
         # High-confidence override: allow exceptional setups through
@@ -352,7 +364,7 @@ class RiskManager:
         """
         if not self.circuit_breaker.is_trading_allowed(
             confidence=confidence, cb_conf_override_pct=cb_conf_override_pct,
-            sim_time=sim_time,
+            sim_time=sim_time, equity=self.equity,
         ):
             if confidence > 0:
                 logger.info(
@@ -472,6 +484,7 @@ class RiskManager:
             confidence=confidence,
             cb_conf_override_pct=cb_conf_override_pct,
             sim_time=sim_time,
+            equity=self.equity,
         )
 
     def get_override_constraints(self, confidence: float = 0.0) -> Dict[str, Any]:

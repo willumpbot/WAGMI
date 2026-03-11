@@ -69,6 +69,7 @@ class BacktestEngine:
             circuit_breaker=CircuitBreaker(
                 daily_loss_limit_pct=self.config.circuit_breaker_daily_loss_pct,
                 max_consecutive_losses=self.config.max_consecutive_losses,
+                max_drawdown_pct=getattr(self.config, "max_drawdown_pct", 0.15),
             ),
         )
         self.pos_mgr = PositionManager(
@@ -264,6 +265,10 @@ class BacktestEngine:
                 cb.trip_reason = ""
                 cb._override_count = 0
                 cb.post_cooldown_caution = 0
+                # Reset peak_equity to current equity so each symbol starts fresh.
+                # Without this, losses from prior symbols create a permanent drawdown
+                # that immediately re-trips the CB for subsequent symbols.
+                cb.peak_equity = self.risk_mgr.equity
 
             data = all_data.get(symbol, {})
             df_1h = data.get("1h", pd.DataFrame())

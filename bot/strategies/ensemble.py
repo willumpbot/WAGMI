@@ -615,6 +615,8 @@ class EnsembleStrategy:
         # Check BOTH sides (not just one) when both have exactly 2 signals
         _LOSING_COMBOS = {
             frozenset({"confidence_scorer", "multi_tier_quality"}),
+            frozenset({"multi_tier_quality", "regime_trend"}),  # PF 0.42-1.02 across all backtests
+            frozenset({"confidence_scorer", "regime_trend"}),   # Block all 2-agree: weak consensus with 3 strategies
         }
         for side_signals in [buy_signals, sell_signals]:
             if len(side_signals) == 2:

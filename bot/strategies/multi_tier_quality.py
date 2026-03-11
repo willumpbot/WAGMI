@@ -207,7 +207,13 @@ class MultiTierQualityStrategy(BaseStrategy):
         # multi_tier_quality is the biggest PnL loser — most vulnerable to chop.
         # ADX 20-22 is the "maybe trending" zone with terrible WR. Raised to 22.
         adx_val = self._compute_adx(df_1h)
-        if adx_val < 22.0:
+        # Use centralized ADX threshold from config
+        try:
+            from trading_config import TradingConfig as _TC
+            _adx_thresh = _TC().adx_min_trending
+        except Exception:
+            _adx_thresh = 22.0
+        if adx_val < _adx_thresh:
             return None
 
         # Squeeze detection: skip signals during volatility compression.
@@ -246,7 +252,12 @@ class MultiTierQualityStrategy(BaseStrategy):
         atr_val = float(df_1h["ATR14"].iloc[-1]) if "ATR14" in df_1h.columns and not df_1h["ATR14"].isna().all() else None
         swing = self._detect_swing(df_1h, side)
 
-        K = 1.8
+        # Use centralized ATR multiplier (was hardcoded 1.8, now from config for consistency)
+        try:
+            from trading_config import TradingConfig as _TC
+            K = _TC().sl_atr_multiplier
+        except Exception:
+            K = 1.5
         if swing is None or pd.isna(swing):
             if atr_val is None:
                 return None

@@ -266,7 +266,13 @@ class ConfidenceScorerStrategy(BaseStrategy):
         # Raising from 20→22 eliminates ~30% of weak signals at source.
         adx_score = 0
         di_bullish = plus_di > minus_di
-        if adx < 22:
+        # Use centralized ADX threshold from config
+        try:
+            from trading_config import TradingConfig as _TC
+            _adx_thresh = _TC().adx_min_trending
+        except Exception:
+            _adx_thresh = 22.0
+        if adx < _adx_thresh:
             return None  # No/weak trend = no trade
         elif adx > 35:
             adx_score = 25  # Strong trend
@@ -396,8 +402,12 @@ class ConfidenceScorerStrategy(BaseStrategy):
         if confidence < 55:
             return None
 
-        # Stop/TP placement using ATR (reduced from 1.8 to 1.2 — tighter stops cut losers faster)
-        K = 1.2
+        # Stop/TP placement using centralized ATR multiplier (was 1.2, now from config for consistency)
+        try:
+            from trading_config import TradingConfig as _TC
+            K = _TC().sl_atr_multiplier
+        except Exception:
+            K = 1.5
         sl = entry - K * atr_val if side == "BUY" else entry + K * atr_val
         stop_width = abs(entry - sl)
         tp1 = entry + 2.0 * stop_width if side == "BUY" else entry - 2.0 * stop_width

@@ -98,10 +98,18 @@ class RegimeTrendStrategy(BaseStrategy):
     """
 
     def __init__(self, symbols: Dict[str, Any], htf_hours: int = 16,
-                 adx_min_trending: float = 22.0):
+                 adx_min_trending: float = 0.0):
         super().__init__("regime_trend", symbols)
         self.htf_hours = htf_hours
-        self.adx_min_trending = adx_min_trending
+        # Use centralized ADX threshold from config (default 22.0)
+        if adx_min_trending > 0:
+            self.adx_min_trending = adx_min_trending
+        else:
+            try:
+                from trading_config import TradingConfig as _TC
+                self.adx_min_trending = _TC().adx_min_trending
+            except Exception:
+                self.adx_min_trending = 22.0
 
     def get_required_timeframes(self) -> List[str]:
         return ["1h", "6h"]
@@ -181,7 +189,13 @@ class RegimeTrendStrategy(BaseStrategy):
         # ATR for TP/SL
         c = float(df_1h["close"].iloc[-1])
         A = float(_atr(df_1h, 14).iloc[-1])
-        R = 1.5 * A
+        # Use centralized ATR multiplier from config (default 1.5)
+        try:
+            from trading_config import TradingConfig as _TC
+            _sl_mult = _TC().sl_atr_multiplier
+        except Exception:
+            _sl_mult = 1.5
+        R = _sl_mult * A
 
         # Alignment scoring
         align_long = int(cu) + int(mfi_1h_val > 50) + int(regime_6h["ok"]) + int(regime_htf["ok"])

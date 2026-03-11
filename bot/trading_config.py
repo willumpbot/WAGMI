@@ -94,6 +94,9 @@ class TradingConfig:
     cb_conf_override_pct: float = field(
         default_factory=lambda: _env_float("CB_CONF_OVERRIDE_PCT", 0.92)
     )
+    max_drawdown_pct: float = field(
+        default_factory=lambda: _env_float("MAX_DRAWDOWN_PCT", 0.15)
+    )  # 15%: 10% was too tight for crypto, caused permanent CB lockout
 
     # Leverage tiers: (min_confidence, max_confidence) -> leverage
     enable_leverage: bool = field(default_factory=lambda: _env_bool("ENABLE_LEVERAGE", True))
@@ -281,12 +284,15 @@ class TradingConfig:
 
     # ── Strategy Parameters (ATR multiples, confidence floors) ──
     # Previously hardcoded across strategy files. Now centralized.
+    sl_atr_multiplier: float = field(
+        default_factory=lambda: _env_float("SL_ATR_MULTIPLIER", 1.5)
+    )  # Unified SL distance: all strategies use same ATR mult for consistent ensemble merge
     ensemble_confidence_floor: float = field(
-        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 80.0)
-    )  # Raised from 75: eliminates marginal signals that bleed on fees
+        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 60.0)
+    )  # Lowered from 80: <60% is the ONLY profitable confidence bucket across all backtests. EV gate handles quality.
     max_ensemble_confidence: float = field(
-        default_factory=lambda: _env_float("MAX_ENSEMBLE_CONFIDENCE", 92.0)
-    )
+        default_factory=lambda: _env_float("MAX_ENSEMBLE_CONFIDENCE", 95.0)
+    )  # Raised from 92: reduces clustering at cap, lets unanimous signals get proper bonus
     # Lowered from 2.0 to 1.5: fee-aware EV gate (0.15-0.20) now handles
     # profitability filtering directly. R:R 1.5 + positive EV = viable trade.
     # The old 2.0 floor was blocking valid trades that pass EV/fee-drag gates.
@@ -294,8 +300,8 @@ class TradingConfig:
         default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.8)
     )  # Raised from 1.5: need better risk/reward to survive fees + slippage
     min_stop_width_pct: float = field(
-        default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.002)
-    )
+        default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.003)
+    )  # Raised from 0.2% to 0.3%: at 0.2%, fees consume 40% of stop distance
     # Minimum expected value per dollar risked. EV = (win_prob × R:R) - (1-win_prob).
     # Filters trades where the probability × payoff doesn't justify the risk.
     # Raised from 0.10 to 0.15: at 45% WR, trades need 15%+ edge per $1
