@@ -197,14 +197,20 @@ SOL + HYPE (best historical performance)
 - Circuit breakers, leverage tiers, liquidation checks
 - Trailing stops with progressive tightening
 - 1006 tests passing
+- ✅ **ADX raised to 22** — eliminates weak "maybe trending" signals (DONE)
+- ✅ **Stale data guard wired** — rejects signals on old data (DONE)
+- ✅ **Squeeze detection** — confidence_scorer + multi_tier_quality (DONE)
+- ✅ **Neutral regime hard-reject** in multi_tier_quality (DONE)
+- ✅ **Evolution→Tuner feedback loop** wired (DONE)
+- ✅ Periodic reconciliation already wired (every 60 ticks)
+- ✅ Adaptive risk already wired to sizing pipeline
+- ✅ OpsGuard enforced at all trade entry points
+- ✅ Breakeven SL logic verified correct (gives remaining qty more room via banked profit cushion)
+- ✅ Floor SL for shorts verified correct (locks profit correctly)
 
 ### Needs Fixing 🔴
-- **ADX boundary (20-22)** — strategies fire in marginal conditions
-- **6h regime filter OR-based** — allows weak counter-regime signals
-- **Neutral regime soft-cap** — 68% confidence trades lose money
-- **No stale data guard** — trades on old data after restart
-- **No periodic reconciliation** — phantom positions possible
-- **No internal squeeze detection** — strategies fire during squeeze
+- **Self-teaching learning cycles** — records trades but never runs learning cycles
+- **Parameter tuner outcome validation** — receives evolution lessons but can't validate suggestions
 
 ### Nice to Have 🟡
 - Prompt versioning & A/B testing
