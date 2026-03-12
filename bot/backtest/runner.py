@@ -226,7 +226,7 @@ def main():
     parser.add_argument("--symbols", nargs="+", default=None, help="Symbols to test (default: all)")
     parser.add_argument("--days", type=int, default=30, help="Days of historical data (default: 30)")
     parser.add_argument("--equity", type=float, default=50000, help="Starting equity (default: $50k)")
-    parser.add_argument("--risk", type=float, default=1.5, help="Risk per trade % (default: 1.5%%)")
+    parser.add_argument("--risk", type=float, default=1.5, help="Risk per trade %% (default: 1.5%%)")
     parser.add_argument("--compare", action="store_true", help="Compare paper vs backtest results")
 
     args = parser.parse_args()
