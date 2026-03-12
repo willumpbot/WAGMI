@@ -65,6 +65,8 @@ class EnsembleStrategy:
         self._smoothed_chop: Dict[str, float] = {}  # symbol -> smoothed chop_score
         self._chop_ema_alpha: float = 0.3  # Smoothing factor (higher = more reactive)
         self._quality_scorer = None  # Optional: SignalQualityScorer for pre-floor adjustment
+        # Rejection tracking: why signals were rejected (for LLM brain learning)
+        self._last_rejections: Dict[str, Dict] = {}  # symbol -> {reason, confidence, side, ...}
 
     def set_quality_scorer(self, scorer):
         """Inject SignalQualityScorer so quality feedback affects ensemble confidence."""
@@ -538,6 +540,14 @@ class EnsembleStrategy:
 
     def _record_counterfactual(self, signal, skip_reason: str):
         """Record a rejected signal for counterfactual analysis (missed opportunity tracking)."""
+        # Store for LLM brain visibility via signal digest
+        self._last_rejections[signal.symbol] = {
+            "reason": skip_reason,
+            "side": signal.side,
+            "confidence": round(signal.confidence, 1),
+            "strategy": signal.strategy or "",
+            "regime": signal.metadata.get("regime", ""),
+        }
         try:
             from llm.brain_wiring import record_skipped_trade
             record_skipped_trade(
@@ -1179,6 +1189,77 @@ class EnsembleStrategy:
                     "status": f"error: {e}",
                 })
         return statuses
+
+    def get_signal_digest(self, symbol: str) -> Dict[str, Any]:
+        """Build comprehensive signal digest for LLM brain visibility.
+
+        Returns ALL strategy readings for a symbol — not just passing ones.
+        This gives the LLM full visibility into what every strategy is detecting,
+        the ensemble decision, and why signals passed or were rejected.
+        """
+        cached = self._last_signals.get(symbol, {})
+        if not cached:
+            return {}
+
+        readings = []
+        sides = {"BUY": 0, "SELL": 0}
+        total_conf = 0.0
+        n_signals = 0
+
+        for strat_name, sig in cached.items():
+            reading = {
+                "strategy": strat_name,
+                "side": sig.side,
+                "confidence": round(sig.confidence, 1),
+                "entry": round(sig.entry, 2) if sig.entry else 0,
+                "weight": round(self.weights.get(strat_name, 1.0), 2),
+                "duration": self.STRATEGY_DURATION_MAP.get(strat_name, "unknown"),
+                "timeframe": self.STRATEGY_TIMEFRAME.get(strat_name, "swing"),
+            }
+            # Include key metadata that strategies computed
+            for key in ("regime_score", "chop_score", "quality_score", "signal_flags",
+                        "entry_type", "setup_type", "atr_pct", "vol_ratio"):
+                if key in sig.metadata:
+                    reading[key] = sig.metadata[key]
+            readings.append(reading)
+            sides[sig.side] = sides.get(sig.side, 0) + 1
+            total_conf += sig.confidence
+            n_signals += 1
+
+        # Compute agreement and consensus
+        dominant_side = max(sides, key=sides.get) if sides else "NONE"
+        agreement = sides.get(dominant_side, 0)
+        dissent = n_signals - agreement
+
+        digest = {
+            "symbol": symbol,
+            "n_strategies": n_signals,
+            "readings": readings,
+            "consensus": {
+                "dominant_side": dominant_side,
+                "agreement": agreement,
+                "dissent": dissent,
+                "avg_confidence": round(total_conf / n_signals, 1) if n_signals else 0,
+                "min_votes_needed": self.min_votes,
+                "would_pass_votes": agreement >= self.min_votes,
+            },
+        }
+
+        # Add rejection history if available
+        chop = self._smoothed_chop.get(symbol, 0)
+        if chop > 0:
+            digest["chop_score"] = round(chop, 3)
+
+        # Include last rejection reason so LLM knows WHY signals were blocked
+        rejection = self._last_rejections.get(symbol)
+        if rejection:
+            digest["last_rejection"] = rejection
+
+        return digest
+
+    def get_all_signal_digests(self) -> Dict[str, Dict]:
+        """Get signal digests for ALL symbols with cached readings."""
+        return {sym: self.get_signal_digest(sym) for sym in self._last_signals}
 
     def update_weights(self, performance: Dict[str, float]):
         """Update strategy weights based on observed performance."""

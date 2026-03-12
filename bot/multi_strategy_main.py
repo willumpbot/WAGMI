@@ -5013,6 +5013,47 @@ class MultiStrategyBot:
         except Exception as e:
             logger.debug(f"Deep memory edge map injection error: {e}")
 
+        # Strategy Signal Digest: full visibility into what ALL strategies are reading
+        # This gives the LLM brain access to every strategy's output — not just passing ones
+        try:
+            all_digests = self.ensemble.get_all_signal_digests()
+            if all_digests:
+                # Compact for token efficiency: only include symbols with signals
+                compact_digests = {}
+                for sym, digest in all_digests.items():
+                    if digest and digest.get("n_strategies", 0) > 0:
+                        compact_digests[sym] = {
+                            "n": digest["n_strategies"],
+                            "side": digest["consensus"]["dominant_side"],
+                            "agree": digest["consensus"]["agreement"],
+                            "dissent": digest["consensus"]["dissent"],
+                            "avg_conf": digest["consensus"]["avg_confidence"],
+                            "pass_votes": digest["consensus"]["would_pass_votes"],
+                            "readings": [
+                                {
+                                    "s": r["strategy"][:15],
+                                    "sd": r["side"][0],  # B or S
+                                    "c": r["confidence"],
+                                    "w": r["weight"],
+                                }
+                                for r in digest.get("readings", [])
+                            ],
+                        }
+                        if digest.get("chop_score", 0) > 0.3:
+                            compact_digests[sym]["chop"] = digest["chop_score"]
+                        # Include rejection reason so LLM knows why signals were blocked
+                        rej = digest.get("last_rejection")
+                        if rej:
+                            compact_digests[sym]["rejected"] = {
+                                "reason": rej["reason"],
+                                "conf": rej["confidence"],
+                                "side": rej["side"][0],  # B or S
+                            }
+                if compact_digests:
+                    global_ctx.extra["signal_digest"] = compact_digests
+        except Exception as e:
+            logger.debug(f"Signal digest injection error: {e}")
+
         # Risk context
         risk_ctx = LLMRiskContext(
             daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,

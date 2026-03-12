@@ -314,6 +314,10 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
             result["g"]["stperf"] = g.extra["strategy_performance"]
         if g.extra.get("confluence_wr"):
             result["g"]["confl_wr"] = g.extra["confluence_wr"]
+        # Strategy Signal Digest: every strategy's reading for every symbol
+        # Gives the LLM full visibility into what strategies detect (not just passing signals)
+        if g.extra.get("signal_digest"):
+            result["sd"] = g.extra["signal_digest"]
         # Quant data: convergence matrix + Bayesian priors (compact)
         try:
             from llm.quant_data import get_quant_provider
