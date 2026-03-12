@@ -254,6 +254,36 @@ def get_trading_decision(
     # Step 3: Serialize snapshot
     snapshot_json = snapshot_to_json(snapshot)
 
+    # Step 3.1: Inject deep memory knowledge into monolithic snapshot
+    try:
+        from llm.deep_memory import get_deep_memory
+        dm = get_deep_memory()
+        if dm:
+            snap_data = json.loads(snapshot_json)
+            # Inject key deep memory insights
+            knowledge = {}
+            try:
+                dna_store = dm.trade_dna
+                if dna_store:
+                    effectiveness = dna_store.get_strategy_effectiveness()
+                    if effectiveness:
+                        knowledge["strategy_effectiveness"] = {
+                            k: f"WR={v.get('win_rate', 0):.0%} n={v.get('count', 0)}"
+                            for k, v in list(effectiveness.items())[:6]
+                        }
+                    failures = dna_store.get_failures(limit=3)
+                    if failures:
+                        knowledge["recent_failures"] = [
+                            f.get("lesson", "")[:80] for f in failures if f.get("lesson")
+                        ]
+            except Exception:
+                pass
+            if knowledge:
+                snap_data["deep_memory"] = knowledge
+                snapshot_json = json.dumps(snap_data, separators=(",", ":"), default=str)
+    except Exception:
+        pass
+
     # Step 3.5: Multi-Agent path (if enabled, replaces monolithic LLM call)
     _multi_agent_active = (
         _HAS_MULTI_AGENT

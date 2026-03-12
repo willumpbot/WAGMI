@@ -390,6 +390,21 @@ class GrowthOrchestrator:
                                     f"[GROWTH] Auto-applicable: {h.statement[:60]} "
                                     f"({h.supporting_count}/{h.total_evidence} = {h.evidence_ratio:.0%})"
                                 )
+
+                    # Graduate validated hypotheses into executable signal rules
+                    try:
+                        from llm.graduated_rules import get_graduated_rules_engine
+                        gre = get_graduated_rules_engine()
+                        for h in graduated:
+                            if h.stage == "validated" and h.total_evidence >= 10 and h.evidence_ratio >= 0.70:
+                                rule = gre.graduate_hypothesis(h)
+                                if rule:
+                                    logger.info(
+                                        f"[GROWTH] Hypothesis → Rule: {rule.action.upper()} "
+                                        f"when {rule.conditions} ({h.statement[:50]})"
+                                    )
+                    except Exception as ge:
+                        logger.debug(f"[GROWTH] Graduated rules integration error: {ge}")
             except Exception as e:
                 logger.debug(f"[GROWTH] Hypothesis graduation error: {e}")
 

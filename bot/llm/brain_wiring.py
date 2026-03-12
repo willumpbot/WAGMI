@@ -272,6 +272,29 @@ def get_brain_context_for_trade(symbol: str, regime: str) -> Dict[str, Any]:
         except Exception:
             pass
 
+    # 6. Graduated rules (validated hypotheses → executable signal rules)
+    try:
+        from llm.graduated_rules import get_graduated_rules_engine
+        gre = get_graduated_rules_engine()
+        rules_summary = gre.get_active_rules_summary()
+        if rules_summary:
+            ctx["graduated_rules"] = rules_summary
+        rules_stats = gre.get_stats()
+        if rules_stats.get("active_rules", 0) > 0:
+            ctx["rules_stats"] = rules_stats
+    except Exception:
+        pass
+
+    # 7. Quant priors (Bayesian base rates for real-time updating)
+    try:
+        from llm.quant_data import get_quant_provider
+        qp = get_quant_provider()
+        priors = qp.compute_bayesian_priors()
+        if priors:
+            ctx["quant_priors"] = priors
+    except Exception:
+        pass
+
     return ctx
 
 

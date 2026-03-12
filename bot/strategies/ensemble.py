@@ -85,6 +85,13 @@ class EnsembleStrategy:
         "confidence_scorer": "MEDIUM",     # ADX/MACD/squeeze momentum → medium-term
         "regime_trend": "TREND",           # Uses 1h+6h → trend following
         "monte_carlo_zones": "TREND",      # Uses daily → longer-term levels
+        "bollinger_squeeze": "MEDIUM",     # BB squeeze/expansion → medium-term breakouts
+        "funding_rate": "SCALP",           # Counter-trade extreme funding → short-term
+        "lead_lag": "MEDIUM",              # BTC→alt catch-up → medium-term
+        "liquidation_cascade": "SCALP",    # Post-cascade reversal → short-term
+        "oi_delta": "MEDIUM",              # OI+price regime → medium-term
+        "probability_engine": "TREND",     # Monte Carlo probability cones → trend
+        "vmc_cipher": "MEDIUM",            # Multi-oscillator confluence → medium-term
     }
 
     # Strategy primary timeframe — used for duration-aware opposition penalty.
@@ -94,6 +101,13 @@ class EnsembleStrategy:
         "confidence_scorer": "intraday",    # multi-factor, mostly 1h
         "regime_trend": "swing",            # 1h + 6h
         "monte_carlo_zones": "daily",       # daily zones
+        "bollinger_squeeze": "intraday",    # BB on 1h candles
+        "funding_rate": "intraday",         # Funding rate scalps
+        "lead_lag": "intraday",             # BTC→alt lag on 1h
+        "liquidation_cascade": "intraday",  # Cascade events on 1h
+        "oi_delta": "intraday",             # OI changes on 1h
+        "probability_engine": "swing",      # MC paths on 1h, forward-looking
+        "vmc_cipher": "intraday",           # Multi-oscillator on 1h
     }
 
     # Max effective weight for any single strategy's opposition penalty.
@@ -256,6 +270,29 @@ class EnsembleStrategy:
                 logger.debug(f"Quality scorer error: {e}")
 
         # ── Post-merge quality gates ──
+
+        # 0. Graduated rules: apply learned rules from validated hypotheses
+        try:
+            from llm.graduated_rules import get_graduated_rules_engine
+            _gre = get_graduated_rules_engine()
+            _regime = result.metadata.get("regime", "")
+            _setup = result.metadata.get("entry_type", "")
+            _n_agree = result.metadata.get("num_agree", 1)
+            _vetoed, _adj_conf, _rule_summary = _gre.evaluate_signal(
+                symbol=symbol, regime=_regime, side=result.side,
+                strategy=result.strategy or "", setup_type=_setup,
+                num_agree=_n_agree, confidence=result.confidence,
+            )
+            if _vetoed:
+                logger.info(f"[{symbol}] Signal VETOED by graduated rule: {_rule_summary}")
+                self._record_counterfactual(result, "graduated_rule_veto")
+                return None
+            if _adj_conf != result.confidence:
+                logger.info(f"[{symbol}] Graduated rules: {result.confidence:.0f}% → {_adj_conf:.0f}% ({_rule_summary})")
+                result.confidence = _adj_conf
+                result.metadata["graduated_rule_adj"] = _rule_summary
+        except Exception:
+            pass
 
         # 1. Minimum confidence floor — regime-aware
         # In choppy markets, require much higher confidence to trade.

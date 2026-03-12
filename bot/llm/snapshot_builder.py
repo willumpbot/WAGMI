@@ -233,7 +233,17 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
             _fit = _regime_fit_map.get(s.strategy)
             if _fit and _fit != "moderate":  # Only flag non-neutral fitness
                 sig["rf"] = _fit  # regime_fit: strong/weak/avoid
+            # Quality score (from feedback loop learning)
+            if s.quality_score and s.quality_score > 0:
+                sig["qs"] = round(s.quality_score, 2)
             if s.meta:
+                # Surface signal flags prominently
+                _flags = s.meta.get("signal_flags")
+                if _flags:
+                    sig["flags"] = _flags
+                _fpri = s.meta.get("flag_max_priority")
+                if _fpri and _fpri >= 3:
+                    sig["fpri"] = _fpri
                 sig["meta"] = s.meta
             sigs.append(sig)
         if sigs:
@@ -304,6 +314,23 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
             result["g"]["stperf"] = g.extra["strategy_performance"]
         if g.extra.get("confluence_wr"):
             result["g"]["confl_wr"] = g.extra["confluence_wr"]
+        # Quant data: convergence matrix + Bayesian priors (compact)
+        try:
+            from llm.quant_data import get_quant_provider
+            _qp = get_quant_provider()
+            _conv = _qp.compute_convergence_matrix(min_trades=3)
+            if _conv:
+                _top = sorted(_conv.items(), key=lambda x: x[1]["n"], reverse=True)[:5]
+                _conv_data = {k: {"wr": v["wr"], "n": v["n"]} for k, v in _top if v.get("convergent")}
+                if _conv_data:
+                    result["g"]["conv"] = _conv_data
+            _priors = _qp.compute_bayesian_priors()
+            if _priors.get("base", {}).get("n", 0) >= 5:
+                result["g"]["bpr"] = {"base": _priors["base"]["wr"], "n": _priors["base"]["n"]}
+                if _priors.get("by_regime"):
+                    result["g"]["bpr"]["rg"] = {k: v["wr"] for k, v in _priors["by_regime"].items()}
+        except Exception:
+            pass
         # Scout Agent preparation (pre-formed theses, watchlist priority)
         if g.extra.get("scout_preparation"):
             result["g"]["scout"] = g.extra["scout_preparation"]
@@ -330,6 +357,16 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
                 result["g"]["surv"] = _ss[:100]
             elif isinstance(_ss, dict):
                 result["g"]["surv"] = _ss
+
+    # Graduated rules (learned patterns → executable rules)
+    try:
+        from llm.graduated_rules import get_graduated_rules_engine
+        _gre = get_graduated_rules_engine()
+        _rules_summary = _gre.get_active_rules_summary()
+        if _rules_summary:
+            result["rules"] = _rules_summary[:400]
+    except Exception:
+        pass
 
     # Trigger
     if snapshot.trigger_reason:
