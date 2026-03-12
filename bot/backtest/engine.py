@@ -511,6 +511,33 @@ class BacktestEngine:
             self.candle_stats["total"] += 1
             cb_blocked = not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt)
             if not cb_blocked:
+                # Regime-fit strategy filter: disable "avoid" strategies
+                # before ensemble evaluates (mirrors live path behavior)
+                try:
+                    from llm.agents.shared_context import STRATEGY_REGIME_FIT
+                    _bt_statuses = ensemble.get_all_status(symbol, windowed)
+                    _bt_adx = 25.0
+                    _bt_regime = "unknown"
+                    for _s in _bt_statuses:
+                        if _s.get("strategy") == "regime_trend":
+                            _bt_adx = _s.get("adx", 25.0)
+                            _al = _s.get("align_long", 0)
+                            _ash = _s.get("align_short", 0)
+                            if _al >= 3 or _ash >= 3:
+                                _bt_regime = "trend"
+                            elif _bt_adx < 20:
+                                _bt_regime = "range"
+                            elif _bt_adx > 40:
+                                _bt_regime = "high_volatility"
+                            else:
+                                _bt_regime = "consolidation"
+                            break
+                    _fit = STRATEGY_REGIME_FIT.get(_bt_regime, {})
+                    _disabled = {s for s, f in _fit.items() if f == "avoid"}
+                    ensemble.set_disabled_strategies(_disabled)
+                except Exception:
+                    ensemble.set_disabled_strategies(set())
+
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal and not signal.is_valid:
                     logger.debug(f"[{symbol}] Invalid signal rejected by is_valid")
@@ -768,6 +795,32 @@ class BacktestEngine:
             self.candle_stats["total"] += 1
             cb_blocked = not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt)
             if not cb_blocked:
+                # Regime-fit strategy filter (same as hourly walk path)
+                try:
+                    from llm.agents.shared_context import STRATEGY_REGIME_FIT
+                    _bt_statuses = ensemble.get_all_status(symbol, windowed)
+                    _bt_adx = 25.0
+                    _bt_regime = "unknown"
+                    for _s in _bt_statuses:
+                        if _s.get("strategy") == "regime_trend":
+                            _bt_adx = _s.get("adx", 25.0)
+                            _al = _s.get("align_long", 0)
+                            _ash = _s.get("align_short", 0)
+                            if _al >= 3 or _ash >= 3:
+                                _bt_regime = "trend"
+                            elif _bt_adx < 20:
+                                _bt_regime = "range"
+                            elif _bt_adx > 40:
+                                _bt_regime = "high_volatility"
+                            else:
+                                _bt_regime = "consolidation"
+                            break
+                    _fit = STRATEGY_REGIME_FIT.get(_bt_regime, {})
+                    _disabled = {s for s, f in _fit.items() if f == "avoid"}
+                    ensemble.set_disabled_strategies(_disabled)
+                except Exception:
+                    ensemble.set_disabled_strategies(set())
+
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal and not signal.is_valid:
                     logger.debug(f"[{symbol}] Invalid signal rejected by is_valid (daily)")

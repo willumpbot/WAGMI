@@ -434,7 +434,7 @@ class AgentCoordinator:
                         regime=regime,
                     )
         except Exception as e:
-            logger.debug(f"[MULTI-AGENT] Brain wiring error: {e}")
+            logger.info(f"[MULTI-AGENT] Brain wiring error: {e}")
 
         # Store pipeline results for external consumers (backtest logging, etc.)
         self.last_pipeline_results = pipeline_results
@@ -487,7 +487,7 @@ class AgentCoordinator:
                     hold_hours=trade_data.get("hold_hours", 0.0),
                 )
             except Exception as e:
-                logger.debug(f"[MULTI-AGENT] Brain post-trade wiring error: {e}")
+                logger.info(f"[MULTI-AGENT] Brain post-trade wiring error: {e}")
 
             return out.data
         return None
@@ -933,7 +933,7 @@ class AgentCoordinator:
             if grm and grm.peak_equity > 0:
                 state["drawdown_status"] = grm.get_status()
         except Exception as e:
-            logger.debug(f"[OVERSEER] Brain upgrade injection error: {e}")
+            logger.info(f"[OVERSEER] Brain upgrade injection error: {e}")
 
         return json.dumps(state, separators=(",", ":"), default=str)
 
@@ -1417,7 +1417,7 @@ class AgentCoordinator:
             if brain_ctx:
                 trade_data["brain"] = brain_ctx
         except Exception as e:
-            logger.debug(f"[MULTI-AGENT] Brain context injection error: {e}")
+            logger.info(f"[MULTI-AGENT] Brain context injection error: {e}")
 
         return json.dumps(trade_data, separators=(",", ":"))
 
@@ -1502,7 +1502,7 @@ class AgentCoordinator:
             if brain_risk:
                 risk_data["brain"] = brain_risk
         except Exception as e:
-            logger.debug(f"[MULTI-AGENT] Brain risk context error: {e}")
+            logger.info(f"[MULTI-AGENT] Brain risk context error: {e}")
 
         return json.dumps(risk_data, separators=(",", ":"))
 

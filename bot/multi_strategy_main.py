@@ -429,6 +429,7 @@ class MultiStrategyBot:
             veto_ratio=config.veto_ratio,
             chop_detector=chop,
             confidence_floor=config.ensemble_confidence_floor,
+            ranging_confidence_floor=config.ranging_confidence_floor,
         )
 
         # Execution

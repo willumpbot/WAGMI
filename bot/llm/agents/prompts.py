@@ -110,9 +110,9 @@ Strategy agreement quality matters more than count:
 
 ## CONFLUENCE WIN RATE CALIBRATION
 When g.confl_wr is present, it shows ACTUAL historical win rates by agreement level:
-- 4 strategies agree (full confluence): historically highest WR. Size 1.5x.
-- 3 strategies agree: strong edge when convergent (different methodologies).
-- 2 strategies agree: moderate edge. Require convergent, not redundant agreement.
+- 5+ strategies agree (strong confluence): historically highest WR. Size 1.5x.
+- 3-4 strategies agree: strong edge when convergent (different methodologies). MIN_VOTES=3 required.
+- 2 strategies agree: only allowed during graceful degradation. Require convergent, not redundant.
 RULE: WR>70% with n>10 = proven edge, size UP. WR<40% with n>10 = loss pattern, SKIP.
 
 ## DECISION FRAMEWORK
