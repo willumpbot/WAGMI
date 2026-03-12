@@ -184,6 +184,9 @@ class BacktestEngine:
         # Fetch historical data for all symbols
         all_data = {}
         needed_tfs = ensemble.get_all_required_timeframes()
+        # Always fetch 5m data for intra-bar SL/TP simulation (higher fidelity fills)
+        if "5m" not in needed_tfs:
+            needed_tfs.append("5m")
 
         for symbol in symbols:
             sym_cfg = sym_configs.get(symbol)
@@ -381,28 +384,58 @@ class BacktestEngine:
                 sim_time = sim_time.tz_localize("UTC")
             sim_dt = sim_time.to_pydatetime()
 
-            # Check existing positions with intra-candle SL/TP simulation.
-            # Check worst-case price first (SL side), then best-case (TP side),
-            # then settle on close. This prevents backtest from surviving wicks
-            # that would stop out live positions.
-            # Exit slippage: exits slip AGAINST the trade (SL fills worse, TP fills worse)
+            # ── Intra-bar position management ──────────────────────────
+            # When 5m data is available, walk through the 12 sub-candles inside
+            # each 1h bar for realistic SL/TP fill timing. This catches cases
+            # where price wicks through SL then recovers within the hour, or
+            # hits TP1 then reverses — things invisible at 1h resolution.
+            # Fallback: the original worst→best→close heuristic.
             exit_slip = getattr(self.config, "slippage_bps", 0) / 10000.0
             pos = self.pos_mgr.positions.get(symbol)
             events = []
-            if pos and pos.state != "CLOSED":
+
+            # Extract 5m candles that fall within the current 1h bar
+            current_time = df_1h["time"].iloc[i]
+            prev_time = df_1h["time"].iloc[i - 1] if i > 0 else current_time - pd.Timedelta(hours=1)
+            df_5m = data.get("5m", pd.DataFrame())
+            intra_5m = pd.DataFrame()
+            if not df_5m.empty:
+                _mask_5m = (df_5m["time"] >= prev_time) & (df_5m["time"] < current_time)
+                intra_5m = df_5m[_mask_5m]
+
+            if pos and pos.state != "CLOSED" and not intra_5m.empty and len(intra_5m) >= 2:
+                # ── 5m sub-loop: walk each 5-minute candle for precise fills ──
                 is_long = pos.side == "LONG"
-                # 1. Worst case first: check if SL was breached during candle
-                # Apply exit slippage: SL fills worse (lower for long, higher for short)
+                for _, row_5m in intra_5m.iterrows():
+                    pos = self.pos_mgr.positions.get(symbol)
+                    if not pos or pos.state == "CLOSED":
+                        break
+                    h5 = float(row_5m["high"])
+                    l5 = float(row_5m["low"])
+                    c5 = float(row_5m["close"])
+                    is_long = pos.side == "LONG"
+                    # 1. Check SL side (worst price with slippage)
+                    worst_5m = l5 if is_long else h5
+                    worst_5m_slip = worst_5m * (1 - exit_slip) if is_long else worst_5m * (1 + exit_slip)
+                    sub_events = self.pos_mgr.update_price(symbol, worst_5m_slip)
+                    if not sub_events:
+                        # 2. Check TP side (best price, no slippage — limit orders)
+                        best_5m = h5 if is_long else l5
+                        sub_events = self.pos_mgr.update_price(symbol, best_5m)
+                    if not sub_events:
+                        # 3. Settle on 5m close for trailing updates
+                        sub_events = self.pos_mgr.update_price(symbol, c5)
+                    events.extend(sub_events)
+            elif pos and pos.state != "CLOSED":
+                # ── Fallback: hourly worst→best→close heuristic ──
+                is_long = pos.side == "LONG"
                 worst_price = candle_low if is_long else candle_high
                 worst_with_slip = worst_price * (1 - exit_slip) if is_long else worst_price * (1 + exit_slip)
                 events = self.pos_mgr.update_price(symbol, worst_with_slip)
                 if not events:
-                    # 2. Best case: check if TP was hit during candle
-                    # TP exits are limit orders — fill at target price or better, no adverse slippage
                     best_price = candle_high if is_long else candle_low
                     events = self.pos_mgr.update_price(symbol, best_price)
                 if not events:
-                    # 3. Settle on close price for trailing stop updates etc
                     events = self.pos_mgr.update_price(symbol, current_price)
             else:
                 events = self.pos_mgr.update_price(symbol, current_price)
@@ -511,6 +544,33 @@ class BacktestEngine:
             self.candle_stats["total"] += 1
             cb_blocked = not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt)
             if not cb_blocked:
+                # Regime-fit strategy filter: disable "avoid" strategies
+                # before ensemble evaluates (mirrors live path behavior)
+                try:
+                    from llm.agents.shared_context import STRATEGY_REGIME_FIT
+                    _bt_statuses = ensemble.get_all_status(symbol, windowed)
+                    _bt_adx = 25.0
+                    _bt_regime = "unknown"
+                    for _s in _bt_statuses:
+                        if _s.get("strategy") == "regime_trend":
+                            _bt_adx = _s.get("adx", 25.0)
+                            _al = _s.get("align_long", 0)
+                            _ash = _s.get("align_short", 0)
+                            if _al >= 3 or _ash >= 3:
+                                _bt_regime = "trend"
+                            elif _bt_adx < 20:
+                                _bt_regime = "range"
+                            elif _bt_adx > 40:
+                                _bt_regime = "high_volatility"
+                            else:
+                                _bt_regime = "consolidation"
+                            break
+                    _fit = STRATEGY_REGIME_FIT.get(_bt_regime, {})
+                    _disabled = {s for s, f in _fit.items() if f == "avoid"}
+                    ensemble.set_disabled_strategies(_disabled)
+                except Exception:
+                    ensemble.set_disabled_strategies(set())
+
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal and not signal.is_valid:
                     logger.debug(f"[{symbol}] Invalid signal rejected by is_valid")
@@ -768,6 +828,32 @@ class BacktestEngine:
             self.candle_stats["total"] += 1
             cb_blocked = not self.risk_mgr.can_open_position(self.pos_mgr.get_open_count(), sim_time=sim_dt)
             if not cb_blocked:
+                # Regime-fit strategy filter (same as hourly walk path)
+                try:
+                    from llm.agents.shared_context import STRATEGY_REGIME_FIT
+                    _bt_statuses = ensemble.get_all_status(symbol, windowed)
+                    _bt_adx = 25.0
+                    _bt_regime = "unknown"
+                    for _s in _bt_statuses:
+                        if _s.get("strategy") == "regime_trend":
+                            _bt_adx = _s.get("adx", 25.0)
+                            _al = _s.get("align_long", 0)
+                            _ash = _s.get("align_short", 0)
+                            if _al >= 3 or _ash >= 3:
+                                _bt_regime = "trend"
+                            elif _bt_adx < 20:
+                                _bt_regime = "range"
+                            elif _bt_adx > 40:
+                                _bt_regime = "high_volatility"
+                            else:
+                                _bt_regime = "consolidation"
+                            break
+                    _fit = STRATEGY_REGIME_FIT.get(_bt_regime, {})
+                    _disabled = {s for s, f in _fit.items() if f == "avoid"}
+                    ensemble.set_disabled_strategies(_disabled)
+                except Exception:
+                    ensemble.set_disabled_strategies(set())
+
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal and not signal.is_valid:
                     logger.debug(f"[{symbol}] Invalid signal rejected by is_valid (daily)")

@@ -429,6 +429,7 @@ class MultiStrategyBot:
             veto_ratio=config.veto_ratio,
             chop_detector=chop,
             confidence_floor=config.ensemble_confidence_floor,
+            ranging_confidence_floor=config.ranging_confidence_floor,
         )
 
         # Execution
@@ -2286,6 +2287,36 @@ class MultiStrategyBot:
                     self.ensemble.set_disabled_strategies(set())
             except Exception:
                 self.ensemble.set_disabled_strategies(set())
+
+        # ── Standalone regime classification (runs every tick, independent of signals) ──
+        # Breaks the chicken-and-egg loop: regime was always "unknown" because it
+        # only got fed from signal metadata, but signals need regime to pass filters.
+        try:
+            df_1h = data.get("1h")
+            if df_1h is not None and not df_1h.empty and len(df_1h) > 20:
+                _adx = float(df_1h["close"].diff().abs().rolling(14).mean().iloc[-1] /
+                             df_1h["close"].iloc[-1] * 10000) if len(df_1h) > 14 else 0
+                # Simple but effective: use price volatility as ADX proxy
+                _returns = df_1h["close"].pct_change().tail(20)
+                _vol = float(_returns.std() * 100) if len(_returns) > 5 else 0
+                _trend_strength = abs(float(_returns.tail(10).mean() * 1000)) if len(_returns) > 10 else 0
+
+                if _vol > 5:
+                    _computed_regime = "high_volatility"
+                elif _trend_strength > 2 and _vol > 1.5:
+                    _computed_regime = "trend"
+                elif _vol < 1.0:
+                    _computed_regime = "range"
+                elif _trend_strength > 1:
+                    _computed_regime = "trend"
+                else:
+                    _computed_regime = "consolidation"
+
+                # Feed regime detector on every tick (not just when signals pass)
+                self.regime_detector.update(symbol, _computed_regime)
+                self._tick_regime_cache[symbol] = _computed_regime
+        except Exception:
+            pass
 
         signal_result = self.ensemble.evaluate(symbol, data)
 
@@ -5286,6 +5317,16 @@ class MultiStrategyBot:
                 f"regime={d.regime} size_mult={d.size_multiplier:.2f} "
                 f"trigger={trigger_label} | {d.notes}"
             )
+
+            # Feed LLM regime classification back to system-wide regime detector
+            # This closes the loop: LLM Regime Agent → system cache → strategy filters
+            if d.regime and d.regime != "unknown":
+                try:
+                    for sym in DEFAULT_SYMBOLS:
+                        self.regime_detector.update(sym, d.regime)
+                        self._tick_regime_cache[sym] = d.regime
+                except Exception:
+                    pass
 
             # In ADVISORY/VETO_ONLY mode: send to alerts for visibility
             if self.llm_mode in (LLMMode.ADVISORY, LLMMode.VETO_ONLY):

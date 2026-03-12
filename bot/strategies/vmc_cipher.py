@@ -386,6 +386,11 @@ class VMCCipherStrategy(BaseStrategy):
                 "mfi": osc["mfi"],
                 "macd_hist": osc["macd_hist"],
                 "divergence": divergence,
+                "regime": (
+                    "trend" if agreement_score >= 4 else
+                    "range" if agreement_score <= 2 else
+                    "unknown"
+                ),
             },
             signal_context=" | ".join(context_parts),
         )

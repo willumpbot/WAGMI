@@ -344,6 +344,11 @@ class BollingerSqueezeStrategy(BaseStrategy):
                 "hist_accelerating": hist_accelerating,
                 "volume_ratio": vol_ratio,
                 "rsi": rsi,
+                "regime": (
+                    "range" if signal_type == "squeeze_breakout" else
+                    "trend" if signal_type == "bandwalk" else
+                    "high_volatility"
+                ),
             },
             signal_context=" | ".join(context_parts),
         )

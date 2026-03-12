@@ -292,6 +292,11 @@ class LeadLagStrategy(BaseStrategy):
                 "signal_type": signal_type,
                 "btc_vol_ratio": btc_move["vol_ratio"],
                 "rsi": rsi,
+                "regime": (
+                    "trend" if abs(btc_move["move_pct"]) > 2 else
+                    "high_volatility" if btc_move["vol_ratio"] > 2.0 else
+                    "range"
+                ),
             },
             signal_context=" | ".join(context_parts),
         )

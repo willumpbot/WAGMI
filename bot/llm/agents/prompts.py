@@ -85,18 +85,34 @@ This is the key insight: **it is easier to trade if you can predict.** Don't jus
 
 If your thesis CONFLICTS with the proposed trade direction, that's a FLIP or SKIP signal.
 
+## 11 ACTIVE STRATEGIES — KNOW YOUR SIGNAL SOURCES
+The ensemble has 11 strategies. Understand what each detects for proper confluence scoring:
+- **regime_trend**: 6h/16h MACD+MFI regime alignment. Best in trending markets. ADX>20 required.
+- **confidence_scorer**: Multi-factor momentum (ADX, MACD, RSI, squeeze). Works across regimes.
+- **multi_tier_quality**: 5m+1h multi-timeframe signal quality. Micro-entry timing.
+- **funding_rate**: Counter-trades extreme funding rates. Mean-reversion signal.
+- **oi_delta**: Open interest expansion/contraction vs price = positioning signals.
+- **bollinger_squeeze**: BB/KC squeeze detection + bandwalk continuation. Range-to-trend breakouts.
+- **vmc_cipher**: 5-oscillator confluence (WaveTrend, RSI, StochRSI, MACD, MFI) + divergence.
+- **lead_lag**: BTC→alt catch-up trades. Relative strength scoring.
+- **liquidation_cascade**: Post-cascade reversal after volume spikes + wick detection.
+- **probability_engine**: Regime-conditional Monte Carlo simulations with EV gating.
+- **monte_carlo_zones** (if enabled): Monte Carlo S/R zones. Currently disabled.
+
 ## STRATEGY CONFLUENCE — NOT ALL AGREEMENT IS EQUAL
 Strategy agreement quality matters more than count:
-- **Convergent confirmation** (trend + mean-reversion agree): VERY strong. Different methodologies reaching same conclusion. regime_trend BUY + monte_carlo BUY zone = macro trend AND statistical edge both support it.
+- **Convergent confirmation** (trend + derivatives agree): VERY strong. Different methodologies reaching same conclusion. regime_trend BUY + oi_delta expansion + lead_lag BTC-leading = macro trend confirmed by positioning AND cross-market.
 - **Timeframe confirmation** (fast + slow agree): Strong. multi_tier (5m) + regime_trend (6h/16h) = micro-entry timing confirmed by macro direction.
-- **Redundant agreement** (similar strategies agree): Moderate. monte_carlo + confidence_scorer both use zones — they share inputs, so agreement is less independent.
-- **Conflicting signals**: INFORMATIVE. regime_trend BUY but monte_carlo SELL zone = price is trending but overextended. This means "trade with trend but use tight stops and quick exits."
+- **Derivatives confirmation** (funding + OI + price): Strong. funding_rate + oi_delta + liquidation_cascade all measure market positioning from different angles.
+- **Oscillator agreement** (vmc_cipher + confidence_scorer): Moderate-strong. Different oscillator combos but overlap on RSI/MACD.
+- **Redundant agreement** (similar strategies agree): Moderate. Strategies sharing many inputs — agreement is less independent.
+- **Conflicting signals**: INFORMATIVE. regime_trend BUY but bollinger_squeeze in squeeze = price trending but compression imminent. Trade with trend but expect volatility.
 
 ## CONFLUENCE WIN RATE CALIBRATION
 When g.confl_wr is present, it shows ACTUAL historical win rates by agreement level:
-- 4 strategies agree (full confluence): historically highest WR. Size 1.5x.
-- 3 strategies agree: strong edge when convergent (different methodologies).
-- 2 strategies agree: moderate edge. Require convergent, not redundant agreement.
+- 5+ strategies agree (strong confluence): historically highest WR. Size 1.5x.
+- 3-4 strategies agree: strong edge when convergent (different methodologies). MIN_VOTES=3 required.
+- 2 strategies agree: only allowed during graceful degradation. Require convergent, not redundant.
 RULE: WR>70% with n>10 = proven edge, size UP. WR<40% with n>10 = loss pattern, SKIP.
 
 ## DECISION FRAMEWORK
@@ -248,7 +264,7 @@ Your job: determine position SIZE and flag risk concerns.
 
 OUTPUT (JSON only):
 ```json
-{"sz": 0.0-2.0, "sw": {"rt":0-1,"mc":0-1,"cs":0-1,"mq":0-1,"fr":0-1,"oi":0-1,"vm":0-1,"ca":0-1}, "risks": ["list of risk flags"], "override": null|"reduce"|"skip"}
+{"sz": 0.0-2.0, "sw": {"rt":0-1,"cs":0-1,"mq":0-1,"fr":0-1,"oi":0-1,"bs":0-1,"vm":0-1,"ll":0-1,"lc":0-1,"pe":0-1,"mc":0-1}, "risks": ["list of risk flags"], "override": null|"reduce"|"skip"}
 ```
 
 SIZING LOGIC:
@@ -266,11 +282,11 @@ PORTFOLIO RULES:
 - corr_risk=medium: Reduce sz 15%
 - funding_cost > 0.3%/day: Flag as risk, prefer closing marginal positions
 
-STRATEGY WEIGHTS BY REGIME:
-- trend: rt=0.9, mc=0.7, mq=0.5, cs=0.3
-- range: cs=0.8, mq=0.7, mc=0.5, rt=0.1
-- panic: ca=0.8, all others low
-- high_volatility: mq=0.7, cs=0.6, others reduced
+STRATEGY WEIGHTS BY REGIME (11 strategies: rt=regime_trend, cs=confidence_scorer, mq=multi_tier, fr=funding_rate, oi=oi_delta, bs=bollinger_squeeze, vm=vmc_cipher, ll=lead_lag, lc=liquidation_cascade, pe=probability_engine, mc=monte_carlo):
+- trend: rt=0.9, oi=0.8, pe=0.8, ll=0.7, cs=0.7, mq=0.5, vm=0.5, fr=0.5, bs=0.3, lc=0.4, mc=0.3
+- range: bs=0.8, vm=0.8, mc=0.7, cs=0.5, mq=0.5, fr=0.5, pe=0.4, oi=0.4, rt=0.1, ll=0.3, lc=0.3
+- panic: lc=0.9, oi=0.8, fr=0.5, pe=0.4, all others low
+- high_volatility: lc=0.8, oi=0.8, ll=0.7, mq=0.6, cs=0.6, vm=0.5, pe=0.5, others reduced
 - low_liquidity: all near 0
 
 Adjust weights from these baselines using memory of what worked recently.
@@ -421,10 +437,14 @@ When `filter_assessment` is present, it shows what quantitative filters measured
 1. **Thesis quality**: Did Trade Agent form a clear directional thesis? Is it evidence-based or hand-wavy?
 2. **Regime match**: Does action match regime? Proceeding in panic without extreme confidence is wrong.
 3. **Confluence quality**: Is the agreement convergent (different methodologies) or redundant (similar inputs)?
-4. **Strategy-Regime Coherence**: Check REGIME_FIT:
+4. **Strategy-Regime Coherence**: Check REGIME_FIT (11 strategies):
    - regime_trend BUY in range regime → likely false WT cross, challenge
-   - monte_carlo DEEP_BUY + RSI<30 in range → strong mean-reversion, trust
-   - confidence_scorer hist_WR<40% → historically losing setup, challenge
+   - bollinger_squeeze in trend → bandwalk continuation = strong, trust
+   - liquidation_cascade in panic → post-cascade reversal = strong, trust
+   - oi_delta expansion in trend → positioning confirms direction, trust
+   - funding_rate counter-trade in panic → risky counter-trend, challenge unless extreme funding
+   - lead_lag without BTC confirmation → weak, challenge
+   - vmc_cipher or confidence_scorer hist_WR<40% → historically losing setup, challenge
    - multi_tier alone without slower strategy → weak, challenge
 5. **Calibration**: Is confidence inflated? (Check self_perf.cal)
 6. **Risk flags**: Did Trade Agent ignore Risk Agent's concerns?

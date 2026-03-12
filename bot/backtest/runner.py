@@ -226,7 +226,7 @@ def main():
     parser.add_argument("--symbols", nargs="+", default=None, help="Symbols to test (default: all)")
     parser.add_argument("--days", type=int, default=30, help="Days of historical data (default: 30)")
     parser.add_argument("--equity", type=float, default=50000, help="Starting equity (default: $50k)")
-    parser.add_argument("--risk", type=float, default=1.5, help="Risk per trade % (default: 1.5%%)")
+    parser.add_argument("--risk", type=float, default=1.5, help="Risk per trade %% (default: 1.5%%)")
     parser.add_argument("--compare", action="store_true", help="Compare paper vs backtest results")
 
     args = parser.parse_args()
@@ -256,22 +256,122 @@ def _print_backtest_summary(results: dict):
         print("❌ Backtest failed - no results")
         return
 
-    summary = results.get("summary", {})
-    pnl = results.get("pnl", {})
+    # Trade data lives in results["results"] (engine spreads trade_summary there)
+    res = results.get("results", {})
+    config = results.get("config", {})
+
+    total_trades = res.get("total_trades", 0)
+    wins = res.get("wins", 0)
+    losses = res.get("losses", 0)
+    win_rate = res.get("win_rate_pct", 0)
+    net_pnl = res.get("net_pnl", 0)
+    gross_pnl = res.get("gross_pnl", 0)
+    pf = res.get("profit_factor", 0)
+    final_eq = res.get("final_equity", config.get("starting_equity", 50000))
+    start_eq = config.get("starting_equity", 50000)
+    max_dd = res.get("max_drawdown_pct", 0)
+    total_return = res.get("total_return_pct", 0)
 
     print("\n" + "=" * 60)
     print("BACKTEST RESULTS")
     print("=" * 60)
 
-    print("\n📊 SUMMARY:")
-    print(f"  Total Trades: {summary.get('total_trades', 0)}")
-    print(f"  Wins: {summary.get('wins', 0)} | Losses: {summary.get('losses', 0)}")
-    print(f"  Win Rate: {summary.get('win_rate_pct', 0):.1f}%")
+    print(f"\n  Period: {config.get('days', '?')} days | Symbols: {config.get('symbols', [])}")
+    print(f"  Starting Equity: ${start_eq:,.2f}")
 
-    print("\n💵 PNL:")
-    print(f"  Net P&L: ${pnl.get('net_pnl', 0):+.2f}")
-    print(f"  Gross P&L: ${pnl.get('gross_pnl', 0):+.2f}")
-    print(f"  Profit Factor: {pnl.get('profit_factor', 0):.2f}x")
+    print("\n  TRADES:")
+    print(f"  Total: {total_trades} | Wins: {wins} | Losses: {losses}")
+    print(f"  Win Rate: {win_rate:.1f}%")
+
+    print("\n  PNL:")
+    print(f"  Net P&L: ${net_pnl:+,.2f}")
+    print(f"  Gross P&L: ${gross_pnl:+,.2f}")
+    print(f"  Profit Factor: {pf:.2f}x")
+    print(f"  Final Equity: ${final_eq:,.2f} ({total_return:+.1f}%)")
+    print(f"  Max Drawdown: {max_dd:.1f}%")
+
+    # Per-symbol breakdown
+    by_sym = results.get("by_symbol", {})
+    if by_sym:
+        print("\n  BY SYMBOL:")
+        for sym, data in by_sym.items():
+            sym_trades = data.get("total_trades", data.get("trades", 0))
+            sym_pnl = data.get("net_pnl", data.get("pnl", 0))
+            sym_wr = data.get("win_rate_pct", data.get("win_rate", 0))
+            if sym_trades > 0:
+                print(f"    {sym:>10}: {sym_trades} trades | WR {sym_wr:.0f}% | PnL ${sym_pnl:+,.2f}")
+
+    # Per-agreement breakdown
+    by_agree = results.get("by_agreement", {})
+    if by_agree:
+        print("\n  BY AGREEMENT:")
+        for level, data in sorted(by_agree.items()):
+            a_trades = data.get("trades", 0)
+            a_pf = data.get("profit_factor", 0)
+            a_wr = data.get("win_rate", 0)
+            if a_trades > 0:
+                print(f"    {level}_agree: {a_trades} trades | WR {a_wr:.0f}% | PF {a_pf:.2f}x")
+
+    # Exit types
+    exit_types = results.get("exit_types", {})
+    if exit_types:
+        print("\n  EXIT TYPES:")
+        for etype, count in sorted(exit_types.items(), key=lambda x: -x[1]):
+            if count > 0:
+                print(f"    {etype}: {count}")
+
+    # Quant risk metrics (Sharpe, Sortino, Calmar, etc.)
+    risk = results.get("risk_metrics", {})
+    if risk:
+        print("\n  RISK METRICS:")
+        print(f"    Sharpe Ratio:    {risk.get('sharpe', 0):+.2f}")
+        print(f"    Sortino Ratio:   {risk.get('sortino', 0):+.2f}")
+        print(f"    Calmar Ratio:    {risk.get('calmar', 0):+.2f}")
+        print(f"    Recovery Factor: {risk.get('recovery_factor', 0):+.2f}")
+        print(f"    Time in Market:  {risk.get('time_in_market_pct', 0):.1f}%%")
+        ann_ret = risk.get("annualized_return_pct", 0)
+        print(f"    Ann. Return:     {ann_ret:+.1f}%%")
+
+    # Signal funnel (shows where signals get filtered)
+    funnel = results.get("signal_funnel", {})
+    if funnel:
+        print("\n  SIGNAL FUNNEL:")
+        for key in ("total", "signal", "no_signal", "cb_blocked", "regime_blocked",
+                     "llm_approved", "llm_vetoed"):
+            val = funnel.get(key, 0)
+            if val > 0:
+                print(f"    {key:>16}: {val}")
+
+    # By-regime performance
+    by_regime = results.get("by_regime", {})
+    if by_regime:
+        print("\n  BY REGIME:")
+        for regime, data in sorted(by_regime.items()):
+            r_trades = data.get("trades", 0)
+            r_wr = data.get("win_rate", 0)
+            r_pnl = data.get("net_pnl", data.get("pnl", 0))
+            if r_trades > 0:
+                print(f"    {regime:>16}: {r_trades} trades | WR {r_wr:.0f}%% | PnL ${r_pnl:+,.2f}")
+
+    # Costs breakdown
+    costs = results.get("costs", {})
+    if costs:
+        total_fees = costs.get("total_fees", 0)
+        total_funding = costs.get("total_funding", 0)
+        total_slippage = costs.get("total_slippage", 0)
+        if total_fees or total_funding or total_slippage:
+            print(f"\n  COSTS:")
+            print(f"    Fees:     ${total_fees:,.2f}")
+            print(f"    Funding:  ${total_funding:,.2f}")
+            print(f"    Slippage: ${total_slippage:,.2f}")
+
+    # Leverage stats
+    lev = results.get("leverage_stats", {})
+    if lev:
+        avg_lev = lev.get("avg_leverage", 0)
+        max_lev = lev.get("max_leverage", 0)
+        if avg_lev:
+            print(f"\n  LEVERAGE: avg {avg_lev:.1f}x | max {max_lev:.1f}x")
 
     print("\n" + "=" * 60 + "\n")
 

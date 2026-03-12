@@ -298,6 +298,13 @@ class RegimeTrendStrategy(BaseStrategy):
                 "adx": round(adx_val, 1),
                 "cross": "up" if cu else ("down" if cd else "none"),
                 "is_momentum": is_momentum,
+                # Regime classification for system-wide regime detector
+                "regime": (
+                    "trend" if (regime_6h["ok"] or regime_6h["bearish"]) else
+                    "high_volatility" if adx_val > 40 else
+                    "range" if adx_val < 20 else
+                    "unknown"
+                ),
             },
         )
 

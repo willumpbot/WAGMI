@@ -354,6 +354,12 @@ class MultiTierQualityStrategy(BaseStrategy):
                 "stop_width": stop_width,
                 "swing_used": swing is not None,
                 "adx": round(adx_val, 1),
+                # Regime classification for system-wide regime detector
+                "regime": (
+                    "trend" if abs(regime) >= 2 else
+                    "range" if regime == 0 else
+                    "unknown"
+                ),
             },
         )
 

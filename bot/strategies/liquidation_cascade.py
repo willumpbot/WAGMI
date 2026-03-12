@@ -287,6 +287,10 @@ class LiquidationCascadeStrategy(BaseStrategy):
                 "vol_ratio": recent_cascade["vol_ratio"],
                 "cascade_price_change": recent_cascade["price_change_pct"],
                 "rsi": rsi,
+                "regime": (
+                    "panic" if recent_cascade["severity"] == "severe" else
+                    "high_volatility"
+                ),
             },
             signal_context=" | ".join(context_parts),
         )

@@ -95,7 +95,7 @@ DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     ),
     AgentRole.SCOUT: AgentConfig(
         role=AgentRole.SCOUT,
-        max_tokens=768,
+        max_tokens=1536,  # Was 768, caused JSON truncation
         timeout_s=10.0,
         required=False,
     ),

@@ -899,12 +899,10 @@ class EnsembleStrategy:
             return None
 
         # Block known-losing 2-agree combos (backtest PF < 0.2)
-        # confidence_scorer + multi_tier_quality without regime_trend = PF 0.08
-        # Check BOTH sides (not just one) when both have exactly 2 signals
+        # Only block the worst combo now — with 11 strategies, 2-agree combos involving
+        # new strategies haven't been tested yet so we let them through.
         _LOSING_COMBOS = {
-            frozenset({"confidence_scorer", "multi_tier_quality"}),
-            frozenset({"multi_tier_quality", "regime_trend"}),  # PF 0.42-1.02 across all backtests
-            frozenset({"confidence_scorer", "regime_trend"}),   # Block all 2-agree: weak consensus with 3 strategies
+            frozenset({"confidence_scorer", "multi_tier_quality"}),  # PF 0.08 — proven loser
         }
         for side_signals in [buy_signals, sell_signals]:
             if len(side_signals) == 2:

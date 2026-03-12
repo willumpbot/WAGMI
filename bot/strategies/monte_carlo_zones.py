@@ -371,6 +371,12 @@ class MonteCarloZonesStrategy(BaseStrategy):
                 "mc": mc,
                 "rsi": float(rsi),
                 "vol_spike": vol_spike,
+                # Regime classification for system-wide regime detector
+                "regime": (
+                    "high_volatility" if vol_spike else
+                    "range" if 40 < float(rsi) < 60 else
+                    "trend"
+                ),
             },
         )
 

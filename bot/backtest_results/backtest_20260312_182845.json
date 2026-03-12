@@ -1,0 +1,96 @@
+{
+  "config": {
+    "symbols": [
+      "SOL",
+      "BTC"
+    ],
+    "days": 30,
+    "starting_equity": 50000,
+    "risk_per_trade": 0.015,
+    "ensemble_mode": "weighted_veto",
+    "leverage_enabled": true,
+    "trailing_stop_enabled": true
+  },
+  "results": {
+    "final_equity": 50000,
+    "total_return_pct": 0.0,
+    "max_drawdown_pct": 0,
+    "total_signals": 0,
+    "total_trades": 0,
+    "positions_opened": 0,
+    "close_events": 0
+  },
+  "by_strategy": {},
+  "by_symbol": {},
+  "leverage_stats": {
+    "spot": {
+      "trades": 0,
+      "pnl": 0.0
+    },
+    "leveraged": {
+      "trades": 0,
+      "pnl": 0.0,
+      "avg_leverage": 0.0
+    }
+  },
+  "equity_curve_length": 0,
+  "circuit_breaker_stats": {
+    "total_trips": 0,
+    "signals_blocked": 0,
+    "candles_locked_out": 0,
+    "lockout_pct": 0.0,
+    "force_close_events": 0,
+    "force_close_pnl": 0,
+    "peak_equity": 50000
+  },
+  "by_agreement": {},
+  "strategy_health": {},
+  "exit_types": {},
+  "signal_funnel": {
+    "candles_processed": 0,
+    "no_signal": 0,
+    "cb_blocked": 0,
+    "regime_blocked": 0,
+    "signals_generated": 0,
+    "gate_rejections": {},
+    "llm_vetoed": 0,
+    "executed": 0,
+    "conversion_rate": 0
+  },
+  "positions": {
+    "count": 0
+  },
+  "costs": {
+    "gross_pnl": 0.0,
+    "total_fees": 0.0,
+    "total_funding": 0.0,
+    "net_pnl": 0.0,
+    "fee_drag_pct": 0,
+    "avg_fee_per_event": 0,
+    "breakeven_wr": 50.0
+  },
+  "confidence_analysis": {
+    "buckets": {},
+    "optimal_threshold": null
+  },
+  "risk_metrics": {},
+  "trailing_analysis": {
+    "entered_trailing": 0,
+    "outcomes": {},
+    "net_trailing_edge": 0.0
+  },
+  "by_regime": {},
+  "conf_regime_crosstab": {},
+  "symbol_pnl": {},
+  "recommendations": [],
+  "equity_curve": [],
+  "trade_timeline": [],
+  "metadata": {
+    "symbols": [
+      "SOL",
+      "BTC"
+    ],
+    "days": 30,
+    "timestamp": "20260312_182845"
+  }
+}

@@ -450,6 +450,13 @@ class ConfidenceScorerStrategy(BaseStrategy):
                     "squeeze": squeeze_score,
                     "rsi": rsi_score,
                 },
+                # Regime classification for system-wide regime detector
+                "regime": (
+                    "trend" if adx > 25 and not squeeze else
+                    "range" if adx < 20 else
+                    "high_volatility" if squeeze else
+                    "unknown"
+                ),
             },
         )
 

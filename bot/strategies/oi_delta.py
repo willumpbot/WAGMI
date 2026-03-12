@@ -270,6 +270,12 @@ class OIDeltaStrategy(BaseStrategy):
                 "oi_strength": regime["strength"],
                 "volume_ratio": vol_ratio,
                 "rsi": rsi,
+                "regime": (
+                    "panic" if regime["type"] == "capitulation_reversal" else
+                    "high_volatility" if regime["type"] == "short_squeeze" else
+                    "trend" if regime["type"] in ("oi_expansion", "oi_divergence") else
+                    "range"
+                ),
             },
             signal_context=" | ".join(context_parts),
         )

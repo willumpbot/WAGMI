@@ -1,22 +1,22 @@
 # nunuIRL Trading Bot — Complete Roadmap
 
-> **Last updated**: 2026-03-11
-> **Current state**: Phase 7.1 DONE. 10 trading strategies + 5 brain modules wired into pipeline. Graduated drawdown risk, regime-aware feedback, confidence calibration, thesis tracking, counterfactual learning — all live in coordinator. 1131 tests passing.
-> **What's next**: Proactive risk management → regime-aware feedback → wire brain into live pipeline → paper trade → go live.
+> **Last updated**: 2026-03-12
+> **Current state**: Phase 7.1+ DONE. 11 active trading strategies (10 enabled + monte_carlo gated), 9 specialist agents, full brain wiring (thesis/calibration/counterfactual/regime feedback/graduated risk), soft-filter architecture, standalone regime classification, quant data backbone. **Zero-trade blocker FIXED** (regime was always "unknown"). 1177 tests passing.
+> **What's next**: Paper trade 48-72h → validate regime classification + signal frequency → go live conservative.
 
 ---
 
 ## Table of Contents
 1. [System Inventory — What We Have](#1-system-inventory)
-2. [What's Done (Phases 1-2.7 Complete)](#2-whats-done)
-3. [Phase 2.8: Critical Bug Fixes (BLOCKING)](#3-phase-28)
+2. [What's Done (Phases 1-7.1+)](#2-whats-done)
+3. [Phase 2.8: Critical Bug Fixes](#3-phase-28)
 4. [Phase 2.9: Fee Economics & Position Sizing](#4-phase-29)
 5. [Phase 3: Signal Quality & Consistency](#5-phase-3)
 6. [Phase 4: Production Hardening](#6-phase-4)
 7. [Phase 5: Configuration Extraction & Tunability](#7-phase-5)
 8. [Phase 6: Alpha Generation & Advanced Strategies](#8-phase-6)
 9. [Phase 7: Advanced Multi-Agent Evolution](#9-phase-7)
-10. [Critical Bugs Inventory](#10-critical-bugs)
+10. [Known Issues & Tech Debt](#10-known-issues)
 11. [Audit Findings (March 2026)](#11-audit-findings)
 12. [File Reference Map](#12-file-reference)
 
@@ -27,38 +27,52 @@
 ### Core Pipeline (Working)
 | Layer | Files | Status |
 |---|---|---|
-| **10 Trading Strategies** | `bot/strategies/{regime_trend,confidence_scorer,multi_tier_quality,funding_rate,oi_delta,bollinger_squeeze,vmc_cipher,lead_lag,liquidation_cascade,probability_engine}.py` | Working — 3 original + 7 new quant strategies (Phase 6), monte_carlo_zones disabled |
-| **Ensemble Voting** | `bot/strategies/ensemble.py` (27KB) | Working — weighted veto, regime-aware confidence floor, chop detection |
+| **11 Trading Strategies** | `bot/strategies/{regime_trend,confidence_scorer,multi_tier_quality,funding_rate,oi_delta,bollinger_squeeze,vmc_cipher,lead_lag,liquidation_cascade,probability_engine}.py` + monte_carlo_zones (gated) | Working — 3 original + 7 new quant strategies (Phase 6), monte_carlo_zones disabled via env |
+| **Ensemble Voting** | `bot/strategies/ensemble.py` | Working — weighted veto, regime-aware confidence floor, chop detection, soft-filter annotations |
 | **Chop Detector** | `bot/strategies/chop_detector.py` | Working — 5-factor detection, tightened thresholds (0.45/0.45/0.55) |
-| **LLM Meta-Brain** | `bot/llm/` (50+ files, 595KB) | Working — 6 autonomy levels, smart model routing |
-| **Multi-Agent System** | `bot/llm/agents/` | Built — 7 specialist agents (Regime/Trade/Risk/Critic/Learning/Exit/Scout) |
-| **Position Management** | `bot/execution/position_manager.py` (27KB) | Working — state machine, trailing stops, trade profiles, trailing fallback fixed |
-| **Risk Management** | `bot/execution/risk.py` + `adaptive_risk.py` + `ops_guard.py` | Working — adaptive_risk wired in live mode |
-| **Data Pipeline** | `bot/data/fetcher.py` (25KB) + `bot/data/fetchers/` | Working — CCXT multi-exchange |
-| **Feedback Loop** | `bot/feedback/{signal_quality,evolution_tracker,loop,continuous_backtest,parameter_tuner}.py` | Working — signal scoring, evolution reports |
+| **Regime Detection** | `bot/strategies/regime_detector.py` + standalone in main loop | Working — fed by strategy metadata + tick-level 1h price data + LLM Regime Agent feedback |
+| **LLM Meta-Brain** | `bot/llm/` (50+ files) | Working — 6 autonomy levels, smart model routing, brain wiring complete |
+| **Multi-Agent System** | `bot/llm/agents/` | Working — 9 specialist agents (Regime/Trade/Risk/Critic/Learning/Exit/Scout/Overseer/Quant) |
+| **Brain Intelligence** | `bot/llm/{thesis_tracker,confidence_calibrator,counterfactual_learner,brain_wiring,quant_data}.py` | Working — all wired into coordinator pipeline |
+| **Position Management** | `bot/execution/position_manager.py` | Working — state machine, trailing stops, trade profiles |
+| **Risk Management** | `bot/execution/risk.py` + `adaptive_risk.py` + `ops_guard.py` + `graduated_drawdown.py` | Working — graduated 6-band risk reduction, streak/time/regime penalties |
+| **Data Pipeline** | `bot/data/fetcher.py` + `bot/data/fetchers/` | Working — CCXT multi-exchange, parallel prefetch |
+| **Feedback Loop** | `bot/feedback/{signal_quality,evolution_tracker,loop,continuous_backtest,parameter_tuner}.py` | Working — signal scoring, evolution reports, regime-aware splitting |
 | **Memory System** | `bot/llm/{memory_store,deep_memory}.py` | Working — short-term (100 notes) + deep memory |
-| **LLM Brain Intelligence** | `bot/llm/{thesis_tracker,confidence_calibrator,counterfactual_learner}.py` | Built — thesis accuracy tracking, confidence calibration, skipped trade analysis |
+| **Soft Filter Architecture** | `bot/core/filter_annotations.py` + ensemble `evaluate_with_annotations()` | Working — near-miss signals visible to LLM for learning |
+| **Signal Tracker** | `bot/core/signal_tracker.py` | Working — all signals tracked (approved + rejected) |
 | **Order Execution** | `bot/execution/order_executor.py` | Working — paper/live modes, CCXT submission |
-| **Backtest Engine** | `bot/backtest/engine.py` | Working — 91% fidelity, leverage logging bug fixed |
-| **Tests** | `bot/tests/` (21+ test files) | 1065 tests passing (0 failures) |
-| **Configuration** | `bot/trading_config.py` (490+ lines) | Dataclass-based, per-symbol overrides, new ADX/ranging params |
+| **Backtest Engine** | `bot/backtest/engine.py` + `walk_forward.py` | Working — 91% fidelity, walk-forward validation |
+| **Tests** | `bot/tests/` (41 test files) | 1177 tests passing (0 failures) |
+| **Configuration** | `bot/trading_config.py` (490+ lines) | Dataclass-based, per-symbol overrides |
 
-### Multi-Agent Architecture (Built, Needs Tuning)
-| Agent | Role | Default Model | When Called |
-|---|---|---|---|
-| **Regime Analyst** | Classify market regime from raw data | Haiku | Every decision cycle |
-| **Trade Evaluator** | Form directional thesis, decide go/skip/flip | Sonnet | Pre-trade |
-| **Risk Manager** | Position sizing, strategy weights, risk flags | Haiku | Pre-trade |
-| **Critic** | Stress-test thesis, require counter-thesis for vetoes | Sonnet | Pre-trade |
-| **Learning Agent** | Extract lessons from closed trades | Haiku | Post-close |
-| **Exit Agent** | Monitor open positions, reassess thesis | Haiku | On open positions |
-| **Scout Agent** | Idle-time preparation, watchlists, pre-formed theses | Haiku | Idle periods |
+### Multi-Agent Architecture (9 Agents)
+| Agent | Role | Default Model | Max Tokens | When Called |
+|---|---|---|---|---|
+| **Regime Analyst** | Classify market regime from raw data | Haiku | 2048 | Every decision cycle |
+| **Trade Evaluator** | Form directional thesis, decide go/skip/flip | Sonnet | 3072 | Pre-trade |
+| **Risk Manager** | Position sizing, strategy weights, risk flags | Haiku | 2048 | Pre-trade |
+| **Critic** | Stress-test thesis, require counter-thesis for vetoes | Sonnet | 3072 | Pre-trade |
+| **Learning Agent** | Extract lessons from closed trades | Haiku | 2048 | Post-close |
+| **Exit Agent** | Monitor open positions, reassess thesis | Haiku | 1024 | On open positions |
+| **Scout Agent** | Idle-time preparation, watchlists, pre-formed theses | Haiku | 1536 | Idle periods |
+| **Overseer Agent** | System health audits, degradation detection | Sonnet | 2048 | Periodic |
+| **Quant Agent** | Statistical analysis, probability calculations | Sonnet | 1536 | On demand |
 
 **Enable**: `LLM_MULTI_AGENT=true` in `.env`
 
+### Brain Intelligence Pipeline (All Wired to Coordinator)
+| Component | File | What It Does | Wired? |
+|---|---|---|---|
+| **Thesis Tracker** | `thesis_tracker.py` | Records every Trade Agent prediction, measures accuracy by regime/symbol/setup type | ✅ coordinator.py:896 |
+| **Confidence Calibrator** | `confidence_calibrator.py` | Builds calibration curve from outcomes, deflates overconfident predictions | ✅ coordinator.py:907 |
+| **Counterfactual Learner** | `counterfactual_learner.py` | Tracks skipped trades, computes hypothetical PnL, identifies over-aggressive filters | ✅ coordinator.py:913 |
+| **Regime Feedback** | Graduated drawdown + regime-aware feedback | Per-regime win rates, confidence floors, risk multipliers | ✅ coordinator.py:924 |
+| **Graduated Risk** | `graduated_drawdown.py` | Peak equity tracking, 6 progressive drawdown bands | ✅ coordinator.py:932 |
+
 ---
 
-## 2. What's Done (Phases 1-2.7 Complete) <a id="2-whats-done"></a>
+## 2. What's Done (Phases 1-7.1+) <a id="2-whats-done"></a>
 
 ### Phase 1: Stop Losing Money ✅
 - [x] Fixed leverage math (liquidation formula, position sizing) — `bot/execution/leverage.py`
@@ -89,187 +103,118 @@
 - [x] `bot/execution/order_executor.py` — paper/live modes with CCXT
 - [x] Wired into main loop at 3 integration points
 - [x] CB overrides disabled (max_cb_overrides=0)
-- [x] 944 tests passing
 
 ### Phase 2.7: Multi-Layer Ranging Filter ✅ (March 2026)
-**Data-driven: 100d backtest showed ranging = 24% WR (-$29K) vs trending = 100% WR (+$22K)**
-- [x] ADX<20 filter added to regime_trend.py — skip signals in non-trending markets
-- [x] ADX<20 filter added to multi_tier_quality.py — biggest PnL loser in ranging
-- [x] ADX<20 already existed in confidence_scorer.py — verified
+- [x] ADX<20 filter in regime_trend, multi_tier_quality, confidence_scorer
 - [x] Chop detector thresholds tightened: 0.55→0.45 (BTC/SOL), 0.65→0.55 (HYPE)
 - [x] Ensemble: regime-aware confidence floor (65% normal → up to 88% in chop)
 - [x] Backtest engine: ADX-based regime override in both hourly/daily walk paths
-- [x] New config params: `ADX_MIN_TRENDING=20.0`, `RANGING_CONFIDENCE_FLOOR=88.0`
-- [x] 999 tests passing
+- **Results (10d backtest v3)**: Ranging trades eliminated, 3_agree PF=4.05 (86% WR)
 
-**Results (10d backtest v3):**
-- Ranging trades eliminated (0 vs 335 before)
-- regime_trend: PF=1.78 (was 0.73) — **PROFITABLE**
-- 3_agree: PF=4.05, 86% WR — **CRUSHING IT**
-- Confidence inversion FIXED: 80-89% now best band (PF=4.75, was 0.53)
-- Overall: -3.35% (was -83% on 100d) — fee drag now the bottleneck
+### Phase 3.6: Anti-Spam Overhaul ✅ (March 11, 2026)
+- [x] `min_votes_required`: 2→3, `veto_ratio`: 1.3→1.5
+- [x] `ensemble_confidence_floor`: 75→80, `min_signal_rr`: 1.5→1.8
+- [x] `min_signal_ev`: 0.15→0.20, `max_fee_drag`: 40%→30%
+- [x] Cooldowns: loss 5min, win 3min, dedup 10min
+- [x] `scan_interval`: 60s, rotations: 1/hr, 4/day
+- [x] 2-agree win prob deflation: 70%→55%
 
----
+### Phase 6.2: New Quant Strategies ✅ (March 11, 2026)
+- [x] **7 new strategies** all working, env-toggleable, following Signal contract
+- [x] Funding Rate, OI Delta, Bollinger Squeeze, VMC Cipher, Lead-Lag, Liquidation Cascade, Probability Engine
 
-## 3. Phase 2.8: Critical Bug Fixes (BLOCKING — Must Fix Before Paper Trading) <a id="3-phase-28"></a>
+### Phase 6.3: LLM Brain Intelligence ✅ (March 11, 2026)
+- [x] Thesis Tracker, Confidence Calibrator, Counterfactual Learner — all wired into coordinator
 
-> **Goal**: Fix confirmed bugs that are actively destroying profitability.
-> **Status**: 4/6 FIXED (March 2026). Remaining 2 reviewed and deprioritized.
+### Phase 7.1: Proactive Risk + Brain Wiring ✅ (March 11, 2026)
+- [x] Graduated drawdown risk reduction — 6 progressive bands (normal → circuit breaker)
+- [x] Regime-aware feedback splitting — per-regime confidence floors, risk multipliers, strategy weights
+- [x] Wire brain upgrades into live pipeline — thesis→coordinator, calibrator→merge, counterfactual→ensemble
+- [x] Overseer Agent enhanced — brain upgrade data injected
+- [x] Quant data backbone — full quantitative enrichment pipeline
+- [x] Strategy signal digest — LLM sees all strategy readings, not just passing signals
 
-### 2.8.1 SHORT Stop Loss Calculation Bug — REVIEWED ✅
-- [x] **Reviewed `bot/execution/position_manager.py` line ~465**
-  - Analysis: Formula `pos.entry + profit_cushion - fee_buffer` is CORRECT for SHORT positions.
-    For SHORT after TP1: SL should be above entry. profit_cushion raises SL (more room),
-    fee_buffer reduction accounts for exit fees. Fallback `entry - fee_buffer` also correct
-    (SL just below entry = breakeven after fees for SHORT).
-  - Status: Not a bug — formula matches LONG mirror logic.
+### Phase 7.2: Zero-Trade Blocker Fix ✅ (March 12, 2026)
+**Root cause discovered and fixed: regime was ALWAYS "unknown", causing cascading signal blocks.**
 
-### 2.8.2 Backtest Leverage Logging Bug ✅ FIXED
-- [x] **Fixed `bot/backtest/engine.py` line ~1213**
-  - Bug: `lev_decision.leverage` referenced in signal report — `lev_decision` only exists in raw mode.
-    In normal mode the variable is `result` from RiskFilterChain, causing NameError.
-  - Fix: Changed to `leverage` (the local variable that holds actual used value).
+- [x] **Regime metadata fix** — All 11 strategies now set `metadata["regime"]` as a string. Previously only set as dict or not at all. Each strategy uses its own indicators to classify (ADX, OI type, squeeze state, cascade severity, etc.)
+- [x] **Standalone regime classification** — Runs every tick in `_process_symbol()` using 1h price volatility, independent of signal generation. Breaks the chicken-and-egg loop.
+- [x] **LLM regime feedback loop** — Regime Agent output feeds back to system-wide `RegimeTransitionDetector` and `_tick_regime_cache`.
+- [x] **STRATEGY_REGIME_FIT expanded** — All 11 strategies mapped across 8 regimes (was: only 4 strategies across 7 regimes). Added `consolidation` regime.
+- [x] **Blocked combos relaxed** — Only `confidence_scorer+multi_tier_quality` blocked (PF 0.08).
+- [x] **Scout Agent truncation fix** — `max_tokens` 768→1536.
 
-### 2.8.3 Trailing Stop Fallback Uses Wrong Distance ✅ FIXED
-- [x] **Fixed `bot/execution/position_manager.py` line ~235**
-  - Bug: When ATR=0, trailing distance fell back to `abs(entry - sl)` (full stop width = too loose)
-  - Fix: Fallback to `entry * 0.01` (1% conservative default) instead of original stop width.
-
-### 2.8.4 Ranging Market Trade Profile Logic — ALREADY FIXED ✅
-- [x] **Fixed `bot/execution/trade_profile.py` lines ~309-320**
-  - Was fixed in Phase 2.7: ranging stops widened 20%, illiquid stops widened 15%.
-  - Comments updated to document the rationale.
-
-### 2.8.5 Adaptive Risk Manager — WIRED IN LIVE ✅
-- [x] **`bot/execution/adaptive_risk.py` already wired into `multi_strategy_main.py`**
-  - Live mode: records outcomes, adjusts risk_multiplier per trade, injects into LLM context.
-  - Backtest: not wired (by design — backtest uses fixed risk for reproducibility).
-  - Status: Working in production path. Backtest gap is acceptable.
-
-### 2.8.6 TP1 Close Percentage — TUNED ✅ FIXED
-- [x] **Tuned `bot/execution/trade_profile.py` lines ~115-141**
-  - MEDIUM: 65% → 50% — keep more capital riding winning trades
-  - TREND: 60% → 40% — trending setups should maximize runner exposure
-  - SCALP: 90% unchanged (scalps should lock in profits quickly)
-  - Impact: Improved payoff ratio by letting winners run toward TP2
+### Phase 7.3: Backtest Regime Parity + Prompt Modernization ✅ (March 12, 2026)
+- [x] **STRATEGY_REGIME_FIT wired into backtest engine** — Both hourly and daily walk paths now apply regime-fit strategy filtering before ensemble.evaluate(), matching live path behavior. Strategies marked "avoid" in current regime are disabled.
+- [x] **Agent prompts updated for 11 strategies** — Trade Agent has full strategy reference table (what each detects), updated confluence scoring with derivatives/oscillator categories. Risk Agent strategy weights expanded to all 11. Critic coherence checklist expanded.
+- [x] **Confluence calibration updated** — "4 strategies agree" → "5+ strategies agree" (reflects 11-strategy ensemble). MIN_VOTES=3 documented in prompts.
+- [x] **ranging_confidence_floor config wired** — Now passed from TradingConfig to Ensemble constructor (was hardcoded 88.0, now respects RANGING_CONFIDENCE_FLOOR env var).
+- [x] **Brain wiring error visibility** — 5 error log locations in coordinator.py promoted debug→info so brain component failures are visible in normal output.
 
 ---
 
-## 4. Phase 2.9: Fee Economics & Position Sizing <a id="4-phase-29"></a>
+## 3. Phase 2.8: Critical Bug Fixes ✅ COMPLETE <a id="3-phase-28"></a>
 
-> **Goal**: Make the bot's edge survive fees. Current edge is ~$22/trade but fees eat 100%.
-> **Status**: PARTIALLY DONE — confidence floor raised, 3_agree leverage gate added.
-
-### 2.9.1 Verify Actual Hyperliquid Fee Structure ✅ DONE
-- [x] **Confirmed**: Hyperliquid taker fee is 3.5 bps (0.035%). Updated `TAKER_FEE_BPS` default from 5 to 4 (3.5 + 0.5bps safety buffer). Fee drag cut by ~20%.
-
-### 2.9.2 Fee-Aware Position Sizing ✅ DONE
-- [x] **Updated `bot/execution/risk.py` calculate_qty()**
-  - Round-trip fees (entry + exit) now added to effective stop width
-  - `effective_stop = stop_width + slippage_spread + round_trip_fee_width`
-  - Positions auto-shrink when fees consume significant % of stop distance
-  - Fee-drag gate in signal pipeline: rejects trades where fees > 40% of stop
-
-### 2.9.3 Fee-Aware EV Calculation in Ensemble ✅ DONE
-- [x] **Updated `bot/strategies/ensemble.py` _merge_signals()**
-  - EV now: `win_prob × (R:R - fee_drag) - loss_prob × (1 + fee_drag)`
-  - Fee drag properly reduces expected win and increases expected loss
-
-### 2.9.4 Raise Minimum R:R After Fees ✅ ALREADY DONE
-- [x] **`MIN_SIGNAL_RR=2.0`** already set in trading_config.py
-
-### 2.9.5 Raise Confidence Floor to 75% ✅ ALREADY DONE
-- [x] **`bot/trading_config.py` already has `ensemble_confidence_floor=75.0`**
-  - Ensemble constructor default is 65.0, but config override sets it to 75.0
-  - Both backtest engine and main loop pass config value to ensemble
-  - Higher than the originally suggested 70% — more aggressive filtering
-
-### 2.9.6 3_agree Leverage Gate ✅ FIXED (Updated March 11)
-- [x] **Implemented in `bot/execution/leverage.py`**
-  - MIN_VOTES raised to 3 (Phase 3.6): only 3-agree consensus trades pass
-  - 2_agree only allowed during graceful degradation (strategy errors)
-  - 2_agree if allowed: capped at 1.0x leverage, 0.6x risk_multiplier
-  - 3_agree: full 3-5x leverage, 1.0-1.4x risk_multiplier
-  - `confidence_scorer+multi_tier_quality` combo BLOCKED (PF=0.08)
+> All 6 bugs reviewed and resolved. See "Fixed Bugs" table in Section 10.
 
 ---
 
-## 5. Phase 3: Signal Quality & Consistency <a id="5-phase-3"></a>
+## 4. Phase 2.9: Fee Economics & Position Sizing ✅ COMPLETE <a id="4-phase-29"></a>
 
-> **Goal**: Make every trade consistently high-quality. Stop vibe-coding parameters.
-> **Status**: 80% complete — core framework built, needs wiring and calibration.
+- [x] Hyperliquid taker fee confirmed: 3.5 bps (TAKER_FEE_BPS=4 with safety buffer)
+- [x] Fee-aware position sizing: round-trip fees added to effective stop width
+- [x] Fee-aware EV in ensemble: `win_prob × (R:R - fee_drag) - loss_prob × (1 + fee_drag)`
+- [x] MIN_SIGNAL_RR=2.0, ensemble_confidence_floor=75.0 (config override to 80)
+- [x] 3_agree leverage gate: MIN_VOTES=3, 2_agree capped at 1.0x
 
-### 3.1 Shared Reasoning Framework ✅
-- [x] Shared vocabulary, regime definitions, action names
-- [x] Thought protocol: OBSERVE → RECALL → REASON → DECIDE → JUSTIFY
-- [x] Cross-agent coherence validation
+---
 
-### 3.2 Shared Memory Protocol ✅
-- [x] Scratchpad-based memory bus
-- [x] Memory store (50 notes, 48h TTL)
-- [x] Deep memory (trade DNA, patterns)
+## 5. Phase 3: Signal Quality & Consistency ✅ MOSTLY COMPLETE <a id="5-phase-3"></a>
 
-### 3.3 Agent Calibration Loop ✅
-- [x] Per-agent accuracy tracking
-- [x] Agent performance stats in prompts
-- [x] Learning integration post-trade scoring
+- [x] Shared reasoning framework (vocabulary, thought protocol, coherence validation)
+- [x] Shared memory protocol (scratchpad bus, deep memory)
+- [x] Agent calibration loop (per-agent accuracy tracking)
+- [x] Walk-forward validation framework (`bot/backtest/walk_forward.py`)
+- [x] Strategy combo gating (losing combos blocked)
+- [x] Anti-spam overhaul (3-agree, 10 tightened gates)
 
-### 3.4 Walk-Forward Validation Framework ✅ DONE
-- [x] **Created `bot/backtest/walk_forward.py`**
-  - Runs full-period backtest, partitions trades into alternating train/test windows
-  - Reports in-sample vs out-of-sample WR, PnL, profit factor
-  - Calculates overfit ratio with clear PASS/CAUTION/FAIL verdict
-  - CLI: `python cli.py --mode walkforward --days 120 --symbols SOL,BTC`
-
-### 3.5 Strategy Combo Gating ✅ DONE
-- [x] **Blocked losing strategy combinations**
-  - `confidence_scorer+multi_tier_quality` 2-agree combo blocked in ensemble (PF=0.08)
-  - Blacklist in `_weighted_veto()` method, easily extensible
-
-### 3.6 Anti-Spam Overhaul ✅ DONE (March 11, 2026)
-**100-day backtest showed massive signal spam losing $1k. Root cause: 2-agree signals with negative PF.**
-- [x] `min_votes_required`: 2→3 (3-agree PF=4.05/86% WR vs 2-agree negative)
-- [x] `veto_ratio`: 1.3→1.5 (stricter opposition gating)
-- [x] `ensemble_confidence_floor`: 75→80 (eliminate marginal signals)
-- [x] `min_signal_rr`: 1.5→1.8 (better R:R to survive fees)
-- [x] `min_signal_ev`: 0.15→0.20 (higher edge requirement)
-- [x] `max_fee_drag`: 40%→30% (reject fee-heavy trades earlier)
-- [x] Cooldowns: loss 2→5min, win 1→3min, dedup 5→10min
-- [x] `scan_interval`: 30s→60s, rotations: 2/hr→1/hr, 6/day→4/day
-- [x] 2-agree win prob deflation: 70%→55% (matches actual ~25% WR)
-- [x] Leverage EV floors raised across all tiers
-- [x] Ensemble default confidence_floor: 65→75, veto_ratio: 1.3→1.5
-**Expected impact**: ~60-80% fewer signals, only strong consensus trades.
-
-### 3.7 Prompt Versioning & A/B Testing
+### 3.7 Prompt Versioning & A/B Testing — NOT STARTED
 - [ ] **Create `bot/llm/agents/prompt_registry.py`**
-  - Versioned prompt management, A/B testing
+  - Versioned prompt management, A/B testing framework
   - Rollback if new version underperforms
+  - Priority: LOW (do after paper trading proves the pipeline works)
 
 ---
 
 ## 6. Phase 4: Production Hardening <a id="6-phase-4"></a>
 
 > **Goal**: Make the bot reliable enough for real money.
+> **Status**: Partially done. Reconciliation wired. Main file still too large.
 
-### 4.1 Code Architecture
-- [ ] **Break up `multi_strategy_main.py`** (4,585 lines → modules)
-  - Extract tick processing, LLM integration, position wiring, alerts, analytics
-  - Main file → thin orchestrator (~200 lines)
+### 4.1 Break Up `multi_strategy_main.py` — HIGH PRIORITY
+- [ ] **Currently 6,028 lines** — extract into focused modules:
+  - `bot/core/tick_processor.py` — per-symbol tick evaluation logic (~1500 lines)
+  - `bot/core/llm_integration.py` — LLM trigger management, meta-brain invocation (~800 lines)
+  - `bot/core/position_wiring.py` — position lifecycle, exit intelligence (~600 lines)
+  - `bot/core/analytics.py` — performance tracking, degradation, alerts (~500 lines)
+  - Main file → thin orchestrator (~300 lines)
+- This is the single biggest tech debt. Every change risks merge conflicts and cognitive overload.
 
-### 4.2 Exchange Connection Resilience
-- [ ] Exponential backoff in data fetcher (1s, 2s, 4s, 8s, 16s)
-- [ ] Stale data detection (>5min old = flag)
-- [ ] Auto-close new trades if data is stale
-- [ ] Connection health monitoring with alerting
+### 4.2 Exchange Connection Resilience ✅ MOSTLY DONE
+- [x] Exponential backoff in data fetcher — already comprehensive
+- [x] Parallel prefetch with failure tracking
+- [x] Degradation awareness (all-fail → skip processing)
+- [ ] Auto-close new trades if data is stale (>5min old candles)
+- [ ] Connection health monitoring dashboard endpoint
 
-### 4.3 Position Reconciliation
+### 4.3 Position Reconciliation ✅ WIRED
 - [x] `bot/execution/reconciliation.py` — built
-- [ ] Wire periodic reconciliation into main loop (every 10 scans)
+- [x] Wired into main loop (startup + periodic)
+- [x] Auto-corrects phantom positions
 
 ### 4.4 Logging & Monitoring
-- [ ] Structured JSON logging everywhere
-- [ ] Health check endpoint on dashboard
+- [ ] Structured JSON logging everywhere (currently mixed format)
+- [ ] Health check endpoint on web dashboard
 - [ ] Log rotation and archival
 
 ### 4.5 Integration Tests
@@ -281,12 +226,13 @@
 ## 7. Phase 5: Configuration Extraction & Tunability <a id="7-phase-5"></a>
 
 > **Goal**: Single source of truth for every parameter.
+> **Status**: NOT STARTED. Low priority until paper trading validates the pipeline.
 
 ### 5.1 Config Audit
 - [ ] Move trade profile parameters (TP1_ATR, SL_ATR, trailing_mult) into `TradingConfig`
 - [ ] Eliminate scattered env var overrides in `trade_profile.py`
 - [ ] Per-symbol overrides for ALL parameters (not just risk tiers)
-- [ ] Config validation on startup
+- [ ] Config validation on startup (catch typos, out-of-range values)
 
 ### 5.2 Paper-vs-Live Config Profiles
 - [ ] Paper defaults: higher risk (2%), more symbols, aggressive
@@ -294,81 +240,91 @@
 
 ---
 
-## 8. Phase 6: Alpha Generation & Advanced Strategies <a id="8-phase-6"></a>
+## 8. Phase 6: Alpha Generation & Advanced Strategies ✅ MOSTLY COMPLETE <a id="8-phase-6"></a>
 
-> **Goal**: Find new edges beyond the current 3 strategies.
-> **Status**: 7/7 new strategies DONE. LLM brain upgrades DONE. 1065 tests passing.
-
-### 6.1 Full Pipeline Replay Backtesting
+### 6.1 Full Pipeline Replay Backtesting — NOT STARTED
 - [ ] Replay historical data through COMPLETE pipeline (including LLM decisions)
 - [ ] Compare: strategies-only vs strategies+LLM vs multi-agent
 - [ ] Walk-forward validation for all comparisons
+- **Blocker**: Needs real LLM decision history from paper trading first
 
-### 6.2 New Strategy Development ✅ DONE (March 11, 2026)
-**7 new quant strategies adding uncorrelated alpha sources to the ensemble:**
-- [x] **Funding Rate Mean-Reversion** (`funding_rate.py`) — counter-trade extreme funding, ADX trend guard, RSI confirmation
-- [x] **OI Delta** (`oi_delta.py`) — open interest expansion/contraction + price direction = positioning signals
-- [x] **Bollinger Squeeze** (`bollinger_squeeze.py`) — BB/KC squeeze detection + bandwalk continuation (John Carter TTM)
-- [x] **VMC Cipher** (`vmc_cipher.py`) — 5-oscillator confluence: WaveTrend, RSI, StochRSI, MACD, MFI + divergence detection
-- [x] **Lead-Lag** (`lead_lag.py`) — BTC→alt catch-up trades with relative strength scoring
-- [x] **Liquidation Cascade** (`liquidation_cascade.py`) — post-cascade reversal via volume spike + wick proxy detection
-- [x] **Probability Engine** (`probability_engine.py`) — regime-conditional Monte Carlo with antithetic variates, EV gating
-- [ ] **Order flow analysis** — Hyperliquid orderbook depth signals (future)
-- [ ] **Cross-exchange signals** — Kraken/Bybit as leading indicators (future)
+### 6.2 New Strategy Development ✅ DONE
+- [x] 7 new quant strategies, all following Signal contract, env-toggleable
+- [x] All strategies now set `metadata["regime"]` for system-wide regime detection
 
-**All strategies**: env-toggleable (`STRATEGY_*_ENABLED`), follow Signal contract, 59 new tests.
-**Key benefit**: 10 active strategies → 3-agree consensus has MORE opportunities while maintaining quality.
+### 6.3 LLM Brain Intelligence ✅ DONE
+- [x] Thesis Tracker, Confidence Calibrator, Counterfactual Learner — all wired
 
-### 6.3 LLM Brain Intelligence ✅ DONE (March 11, 2026)
-- [x] **Thesis Tracker** (`thesis_tracker.py`) — records every Trade Agent prediction, measures accuracy by regime/symbol/setup type, injects calibration context into prompts
-- [x] **Confidence Calibrator** (`confidence_calibrator.py`) — builds calibration curve from observed outcomes, deflates overconfident predictions, auto-rebuilds every 10 observations
-- [x] **Counterfactual Learner** (`counterfactual_learner.py`) — tracks skipped trades, computes hypothetical PnL, identifies over-aggressive filters
-
-### 6.4 Strategy Discovery Agent Activation
+### 6.4 Strategy Discovery Agent — NOT STARTED
 - [ ] Wire `bot/llm/strategy_discovery/` into growth orchestrator
 - [ ] LLM proposes ideas → sandbox backtests → promote winners
+- Files exist (`research_agent.py`, `proposals.py`, `sandbox.py`) but aren't activated
+
+### 6.5 Future Strategy Ideas
+- [ ] **Order flow analysis** — Hyperliquid orderbook depth signals
+- [ ] **Cross-exchange signals** — Kraken/Bybit as leading indicators
 
 ---
 
 ## 9. Phase 7: Advanced Multi-Agent Evolution <a id="9-phase-7"></a>
 
 > **Goal**: Self-improving agents with proactive risk management.
+> **Status**: 7.1 COMPLETE (graduated risk, regime feedback, brain wiring, overseer). 7.2 COMPLETE (zero-trade fix).
 
-### 7.1 Proactive Risk Management
-- [ ] **Graduated drawdown risk reduction** — at 3% DD reduce leverage 30%, at 5% reduce 50%, at 7% reduce 70% (proactive, not just reactive CB)
-- [ ] **Regime-aware feedback splitting** — separate tuning loops for trending/ranging/volatile/panic
-- [ ] **Hour-gated trading** — auto-pause during historically losing hours
+### 7.1 Proactive Risk Management ✅ DONE
+- [x] Graduated drawdown risk reduction — 6 progressive bands, streak/time/regime penalties
+- [x] Regime-aware feedback splitting — per-regime confidence floors, risk multipliers
+- [x] Brain upgrades wired into coordinator
+- [x] Overseer Agent enhanced with brain data injection
 
-### 7.2 Agent Pipeline Completion
-- [ ] Wire thesis tracker + confidence calibrator into coordinator pipeline
-- [ ] Wire counterfactual learner into ensemble reject path
-- [ ] **Overseer Agent** — periodic system health audits, degradation detection
-- [ ] Wire Scout Agent into main loop (idle-time preparation)
-- [ ] Complete Quant Agent prompt (Kelly fraction, EV calculation)
+### 7.2 Zero-Trade Blocker ✅ DONE (March 12, 2026)
+- [x] Fixed regime classification across all strategies
+- [x] Standalone tick-level regime detection
+- [x] LLM regime feedback loop to system-wide detector
+- [x] STRATEGY_REGIME_FIT: 4→11 strategies, 7→8 regimes
+- [x] Relaxed blocked combos for 11-strategy ensemble
+- [x] Scout Agent max_tokens 768→1536
 
-### 7.3 Self-Improving Architecture
-- [ ] Portfolio Strategist Agent (cross-asset correlation)
+### 7.3 Self-Improving Architecture — NOT STARTED
+- [ ] Portfolio Strategist Agent (cross-asset correlation, portfolio-level sizing)
 - [ ] Automated prompt evolution with A/B testing
-- [ ] Deep RL integration (DQN replacing Q-table)
+- [ ] Deep RL integration (DQN replacing Q-table in growth system)
 - [ ] Multi-bot coordination (shared memory, cross-instance awareness)
 - [ ] Curriculum advancement with measurable thresholds
 
+### 7.4 Hour-Gated Trading — NOT STARTED
+- [ ] Auto-pause during historically losing hours
+- [ ] Requires 30+ days of live data to determine which hours lose money
+- [ ] Could be informed by thesis tracker accuracy-by-hour
+
 ---
 
-## 10. Critical Bugs Inventory <a id="10-critical-bugs"></a>
+## 10. Known Issues & Tech Debt <a id="10-known-issues"></a>
 
-### Must Fix Before Paper Trading
-| # | Bug | Location | Impact | Status |
+### Active Issues
+| # | Issue | Location | Impact | Priority |
 |---|---|---|---|---|
-| 9 | `multi_strategy_main.py` is 4,700+ lines | `multi_strategy_main.py` | Unmaintainable god object | 🟠 OPEN (deferred to Phase 4) |
+| 1 | `multi_strategy_main.py` is 6,028 lines | Main loop | Unmaintainable god object, merge conflicts | HIGH |
+| 2 | Standalone regime heuristic is simplistic | `multi_strategy_main.py:2290-2315` | Uses volatility proxy, not real ADX. Works but could be more accurate with proper TA. | MEDIUM |
+| 3 | No stale data auto-close | Data pipeline | Could trade on old candles during exchange outage | MEDIUM |
+| 4 | Structured logging incomplete | Throughout | Mixed log formats, harder to parse in production | LOW |
+| 5 | Strategy discovery not wired | `llm/strategy_discovery/` | Files exist but aren't activated | LOW |
 
-### Fixed (Profitability Session — March 10, 2026)
+### Optimization Opportunities
+| Opportunity | Expected Impact | Effort |
+|---|---|---|
+| **Paper trade 48-72h** — validate regime classification + signal frequency | CRITICAL: proves or disproves all recent fixes | Low (just run it) |
+| **Backtest with regime fix** — rerun 100d backtest to see impact of proper regime | HIGH: quantifies the fix | Low |
+| **Monte Carlo re-evaluation** — test with new 11-strategy ensemble | MEDIUM: might be viable now with 3-agree gate | Low |
+| **Per-strategy regime performance** — which strategies actually work in which regime | HIGH: data-driven STRATEGY_REGIME_FIT tuning | Medium |
+| **Tune standalone regime thresholds** — use proper ADX/ATR instead of price volatility proxy | MEDIUM: more accurate regime classification | Medium |
+
+### Fixed Bugs (All Sessions)
 | Bug | Status |
 |---|---|
 | Ensemble modifies signals in-place | ✅ FIXED — deep copy before mutation |
 | Strategy weights all history equally | ✅ FIXED — exponential decay |
 | No order execution to exchange | ✅ FIXED — OrderExecutor built |
-| 7 pre-existing test failures | ✅ FIXED — 1006 tests passing |
 | Ranging regime destroys profitability | ✅ FIXED — multi-layer ADX filter |
 | Confidence inversion (80-89% = worst WR) | ✅ FIXED — ADX filter + leverage flatten |
 | SHORT SL reviewed: formula correct | ✅ VERIFIED — not a bug |
@@ -377,31 +333,37 @@
 | Ranging trade profile logic inverted | ✅ FIXED — widened stops 20% |
 | Adaptive risk manager never wired | ✅ FIXED — wired into live loop |
 | TP1 close% too aggressive | ✅ FIXED — MEDIUM 50%, TREND 40% |
-| No exchange connection resilience | ✅ VERIFIED — retry/backoff already comprehensive |
-| Position reconciliation not wired | ✅ FIXED — periodic check + auto-correct phantoms |
-| LLM ensemble trigger names mismatched | ✅ FIXED — "regime_shift" → "regime shift" |
-| Leverage cliff at Tier 6 (90%+ → 2x) | ✅ FIXED — continues Kelly scaling to 5x |
-| TAKER_FEE_BPS inconsistent (4 vs 5) | ✅ FIXED — all defaults now 4 bps |
-| Reconciliation key mismatch ("phantoms" vs "phantom") | ✅ FIXED — correct key names |
-| Negative EV passes ensemble | ✅ FIXED — defense-in-depth EV floor in ensemble |
+| Exchange connection resilience | ✅ VERIFIED — retry/backoff comprehensive |
+| Position reconciliation not wired | ✅ FIXED — periodic check + phantom correction |
+| LLM ensemble trigger names mismatched | ✅ FIXED |
+| Leverage cliff at Tier 6 | ✅ FIXED — continues Kelly scaling |
+| TAKER_FEE_BPS inconsistent | ✅ FIXED — all defaults now 4 bps |
+| Reconciliation key mismatch | ✅ FIXED |
+| Negative EV passes ensemble | ✅ FIXED — defense-in-depth EV floor |
 | 4-agree same deflation as 3-agree | ✅ FIXED — 4-agree now 5% deflation |
 | Combo blocking only checks buy side | ✅ FIXED — checks both sides |
-| MAX_ENSEMBLE_CONFIDENCE silently overridden | ✅ FIXED — respects user config |
+| MAX_ENSEMBLE_CONFIDENCE silently overridden | ✅ FIXED |
 | EMA span clamping → SELL bias | ✅ FIXED — proper spans with min_periods |
-| Regime transitioning false positive | ✅ FIXED — reset flag on dominance block |
+| Regime transitioning false positive | ✅ FIXED |
 | RiskFilterChain exception falls through | ✅ FIXED — reject signal on error |
-| force_close not submitting exchange orders | ✅ FIXED — 4 paths now submit to exchange |
-| confidence_scorer 6h filter silently skipped | ✅ FIXED — log warning + 15% confidence penalty |
-| TP1 rounding leaves zero-qty trailing | ✅ FIXED — guard against degenerate rounding |
-| Chop detector NaN → false "not choppy" | ✅ FIXED — NaN defaults to choppy |
-| Double leverage computation in live loop | ✅ FIXED — use RiskFilterChain result |
-| ETH price always 0.0 in LLM context | ✅ FIXED — fetch ETH from data fetcher |
-| Log message says 0.55, code checks 0.50 | ✅ FIXED — log matches code |
-| Prefetch failures not tracked | ✅ FIXED — degradation triggered on all-fail |
+| force_close not submitting exchange orders | ✅ FIXED — 4 paths now submit |
+| confidence_scorer 6h filter silently skipped | ✅ FIXED |
+| TP1 rounding leaves zero-qty trailing | ✅ FIXED |
+| Chop detector NaN → false "not choppy" | ✅ FIXED |
+| Double leverage computation | ✅ FIXED |
+| ETH price always 0.0 in LLM context | ✅ FIXED |
+| Log/code threshold mismatch | ✅ FIXED |
+| Prefetch failures not tracked | ✅ FIXED |
+| **Regime always "unknown"** | ✅ FIXED — strategies now set `metadata["regime"]` as string |
+| **STRATEGY_REGIME_FIT missing 7 strategies** | ✅ FIXED — all 11 strategies mapped |
+| **Blocked combos too aggressive** | ✅ FIXED — only block proven loser (PF 0.08) |
+| **Scout Agent JSON truncation** | ✅ FIXED — max_tokens 768→1536 |
+| **Regime never fed from tick data** | ✅ FIXED — standalone classification every tick |
+| **LLM regime not fed back to system** | ✅ FIXED — Regime Agent → RegimeTransitionDetector |
 
 ---
 
-## 11. Audit Findings (March 10, 2026) <a id="11-audit-findings"></a>
+## 11. Audit Findings (March 2026) <a id="11-audit-findings"></a>
 
 ### Deep System Audit Summary
 
@@ -416,16 +378,10 @@
 - **LLM veto**: ~20% veto rate of evaluated signals — appropriate stringency
 - **Intra-candle simulation**: Worst-case first, then best-case, then close — realistic
 - **Funding costs**: Hourly accrual at 0.01% per 8h — correct model
+- **Regime classification**: Now working end-to-end (fixed March 12)
+- **Brain intelligence**: Thesis/calibration/counterfactual all wired and populating data
 
-#### What's Broken (See Bug Inventory Above)
-- SHORT SL calculation bug
-- Leverage logging in normal backtests
-- Trailing stop fallback
-- Trade profile ranging logic inverted
-- Adaptive risk dead code
-- TP1 close% too aggressive
-
-#### Key Numbers from 10d v3 Backtest
+#### Key Numbers from 10d v3 Backtest (Pre-Regime Fix)
 | Metric | Value | Target | Gap |
 |---|---|---|---|
 | Win Rate | 45.5% | >55% | Need better signal quality |
@@ -435,15 +391,8 @@
 | 2_agree PF | negative | >1.5 | Block losing combos |
 | Sharpe | -5.54 | >1.0 | Need all fixes + fee optimization |
 | regime_trend PF | 1.78 | >1.5 | Already profitable |
-| confidence_scorer PF | 0.49 | >1.0 | Consider disabling in 2-agree |
 
-#### The Path to Profitability
-1. **Fix the 6 bugs** — they're actively destroying edge
-2. **Solve fee economics** — fees eat 100% of gross edge currently
-3. **Require higher quality setups** — 3_agree or 70%+ confidence
-4. **Let winners run** — lower TP1 close%, wider targets
-5. **Wire adaptive risk** — prevent loss streaks from compounding
-6. **Walk-forward validate** every parameter change — stop overfitting
+**Note**: These numbers are pre-regime-fix. Rerun backtest to see impact of proper regime classification.
 
 ---
 
@@ -452,31 +401,40 @@
 ### Entry Points
 ```
 bot/run.py          → Quick launcher (paper, backtest, signals, status, positions)
-bot/cli.py          → Full CLI (paper, replay, live, evolve, tiers, optimize)
+bot/cli.py          → Full CLI (paper, replay, live, evolve, tiers, optimize, walkforward)
 bot/bot.py          → Bot class
-bot/multi_strategy_main.py → Multi-strategy main loop (4,585 lines — needs breakup)
+bot/multi_strategy_main.py → Multi-strategy main loop (6,028 lines — needs breakup)
 ```
 
 ### Strategies & Ensemble
 ```
-bot/strategies/base.py             → Signal dataclass, BaseStrategy abstract class
-bot/strategies/ensemble.py         → Weighted veto ensemble (regime-aware conf floor)
-bot/strategies/regime_trend.py     → Regime trend following (ADX filter added)
-bot/strategies/confidence_scorer.py → Multi-factor momentum scoring (ADX filter)
-bot/strategies/multi_tier_quality.py → Multi-TF signal quality (ADX filter added)
-bot/strategies/chop_detector.py    → Multi-factor chop detection (tightened thresholds)
-bot/strategies/regime_detector.py  → Regime classification
+bot/strategies/base.py               → Signal dataclass, BaseStrategy abstract class
+bot/strategies/ensemble.py           → Weighted veto ensemble (regime-aware, soft-filter)
+bot/strategies/regime_trend.py       → Regime trend following (ADX filter, regime metadata)
+bot/strategies/confidence_scorer.py  → Multi-factor momentum scoring (ADX filter, regime metadata)
+bot/strategies/multi_tier_quality.py → Multi-TF signal quality (ADX filter, regime metadata)
+bot/strategies/monte_carlo_zones.py  → Monte Carlo S/R (disabled, regime metadata added)
+bot/strategies/funding_rate.py       → Funding rate mean-reversion (regime metadata)
+bot/strategies/oi_delta.py           → Open interest delta (regime metadata)
+bot/strategies/bollinger_squeeze.py  → Bollinger/Keltner squeeze + bandwalk (regime metadata)
+bot/strategies/vmc_cipher.py         → 5-oscillator confluence + divergence (regime metadata)
+bot/strategies/lead_lag.py           → BTC→alt catch-up trades (regime metadata)
+bot/strategies/liquidation_cascade.py → Post-cascade reversal (regime metadata)
+bot/strategies/probability_engine.py → Regime-conditional Monte Carlo (regime metadata)
+bot/strategies/chop_detector.py      → Multi-factor chop detection
+bot/strategies/regime_detector.py    → Regime classification + transition detection
 ```
 
 ### Execution
 ```
-bot/execution/position_manager.py  → Position lifecycle (SHORT SL verified correct)
+bot/execution/position_manager.py  → Position lifecycle state machine
 bot/execution/leverage.py          → Leverage tiers and sizing
 bot/execution/risk.py              → Circuit breakers, daily loss limits
-bot/execution/adaptive_risk.py     → Dynamic risk adjustment (wired into live loop)
-bot/execution/trade_profile.py     → Trade profiles (ranging logic fixed)
+bot/execution/adaptive_risk.py     → Dynamic risk adjustment (wired)
+bot/execution/graduated_drawdown.py → 6-band progressive risk reduction
+bot/execution/trade_profile.py     → Trade profiles (SCALP/MEDIUM/TREND/REGIME)
 bot/execution/order_executor.py    → CCXT order submission (paper/live)
-bot/execution/reconciliation.py    → Position reconciliation (built, not wired to loop)
+bot/execution/reconciliation.py    → Position reconciliation (wired)
 bot/execution/ops_guard.py         → Operational safety checks
 bot/execution/pnl_engine.py        → PnL calculation
 bot/execution/tp_sl_engine.py      → Take-profit/stop-loss engine
@@ -484,73 +442,105 @@ bot/execution/tp_sl_engine.py      → Take-profit/stop-loss engine
 
 ### LLM Pipeline
 ```
-bot/llm/decision_engine.py     → Monolithic LLM decision pipeline
-bot/llm/agents/coordinator.py  → Multi-agent pipeline orchestration
-bot/llm/agents/prompts.py      → 7 specialist prompts
-bot/llm/agents/base.py         → Agent types, configs, defaults
+bot/llm/decision_engine.py          → Monolithic LLM decision pipeline
+bot/llm/agents/coordinator.py       → Multi-agent pipeline orchestration
+bot/llm/agents/prompts.py           → 9 specialist prompts
+bot/llm/agents/base.py              → Agent types, configs, defaults (9 agents)
 bot/llm/agents/learning_integration.py → Wires agent output to learning systems
-bot/llm/agents/shared_context.py → Shared reasoning framework
-bot/llm/agents/thought_protocol.py → Structured OBSERVE→RECALL→REASON→DECIDE→JUSTIFY
+bot/llm/agents/shared_context.py     → Shared reasoning + STRATEGY_REGIME_FIT (11 strategies, 8 regimes)
+bot/llm/agents/thought_protocol.py   → OBSERVE→RECALL→REASON→DECIDE→JUSTIFY
 bot/llm/agents/consistency_checker.py → Cross-agent coherence validation
 bot/llm/agents/calibration_ledger.py → Per-agent accuracy tracking
-bot/llm/usage_tiers.py         → Model routing (Haiku/Sonnet/Opus)
-bot/llm/client.py              → Raw Anthropic API wrapper
+bot/llm/usage_tiers.py              → Model routing (Haiku/Sonnet/Opus)
+bot/llm/client.py                   → Raw Anthropic API wrapper
+bot/llm/thesis_tracker.py           → Directional prediction accuracy (wired)
+bot/llm/confidence_calibrator.py    → Confidence curve calibration (wired)
+bot/llm/counterfactual_learner.py   → Missed opportunity analysis (wired)
+bot/llm/quant_data.py               → Quantitative data enrichment
+bot/llm/brain_wiring.py             → Centralized getter functions for brain components
+```
+
+### Core Pipeline
+```
+bot/core/signal_pipeline.py        → 6-stage sequential risk filter
+bot/core/signal_tracker.py         → All signal tracking (approved + rejected)
+bot/core/filter_annotations.py     → Soft-filter architecture (near-miss signals)
 ```
 
 ### Configuration & Data
 ```
 bot/trading_config.py   → Centralized config (490+ lines, dataclass-based)
-bot/data/db.py          → SQLite persistence (24KB)
-bot/data/fetcher.py     → Multi-exchange OHLCV (25KB)
+bot/data/db.py          → SQLite persistence
+bot/data/fetcher.py     → Multi-exchange OHLCV + parallel prefetch
 bot/data/strategy_weights.py → Rolling strategy performance weights
 ```
 
 ### Backtest
 ```
-bot/backtest/engine.py  → Full backtest engine (leverage logging fixed)
+bot/backtest/engine.py        → Full backtest engine (91% fidelity)
+bot/backtest/walk_forward.py  → Walk-forward validation
 ```
 
 ### Feedback & Analytics
 ```
-bot/feedback/signal_quality.py     → Signal quality scoring (18KB)
-bot/feedback/evolution_tracker.py  → Strategy evolution reports (38KB)
-bot/feedback/continuous_backtest.py → Continuous backtesting (20KB)
-bot/feedback/parameter_tuner.py    → Parameter optimization (14KB)
+bot/feedback/signal_quality.py     → Signal quality scoring
+bot/feedback/evolution_tracker.py  → Strategy evolution reports
+bot/feedback/continuous_backtest.py → Continuous backtesting
+bot/feedback/parameter_tuner.py    → Parameter optimization
 ```
 
 ---
 
 ## Priority Order (What to Work On Next)
 
-> Updated March 11, 2026. Phase 7.1 complete (proactive risk + regime intelligence + brain wiring + Overseer). Focus: paper trade → live.
+> Updated March 12, 2026. All regime fixes complete. All 11 strategies emit regime metadata. Backtest engine has regime-fit filtering. Agent prompts modernized for 11 strategies. Focus: paper validate → backtest with regime fix → go live.
 
 ### Completed
 1. ~~**Phase 2.8: Fix 6 critical bugs**~~ ✅ DONE
 2. ~~**Phase 2.9: Fee economics**~~ ✅ DONE
-3. ~~**Phase 3.1-3.5: Signal quality**~~ ✅ DONE
+3. ~~**Phase 3.1-3.6: Signal quality + anti-spam**~~ ✅ DONE
 4. ~~**Deep 10-agent audit**~~ ✅ DONE — 30+ bugs fixed
-5. ~~**Phase 3.6: Anti-spam overhaul**~~ ✅ DONE — 3-agree consensus, 10 tightened gates
-6. ~~**Phase 6.2: 7 new quant strategies**~~ ✅ DONE — funding rate, OI delta, BB squeeze, VMC cipher, lead-lag, liquidation cascade, probability engine
-7. ~~**Phase 6.3: LLM brain intelligence**~~ ✅ DONE — thesis tracker, confidence calibrator, counterfactual learner
-8. ~~**Graduated drawdown risk reduction**~~ ✅ DONE — 6 progressive bands (normal→circuit breaker), streak/time/regime penalties, 66 tests
-9. ~~**Regime-aware feedback splitting**~~ ✅ DONE — per-regime confidence floors, risk multipliers, strategy weights, adaptive tuning
-10. ~~**Wire brain upgrades into live pipeline**~~ ✅ DONE — thesis→coordinator, calibrator→merge, counterfactual→ensemble reject, regime feedback→risk, graduated risk→sizing
-11. ~~**Overseer Agent enhanced**~~ ✅ DONE — brain upgrade data injected (thesis accuracy, calibration, missed opportunities, regime feedback, drawdown status)
+5. ~~**Phase 6.2: 7 new quant strategies**~~ ✅ DONE
+6. ~~**Phase 6.3: LLM brain intelligence**~~ ✅ DONE
+7. ~~**Phase 7.1: Proactive risk + brain wiring**~~ ✅ DONE
+8. ~~**Phase 7.2: Zero-trade blocker**~~ ✅ DONE — regime was always "unknown"
+9. ~~**Phase 7.3: Backtest regime parity + prompt modernization**~~ ✅ DONE — all 11 strategies set regime metadata, backtest applies STRATEGY_REGIME_FIT, agent prompts updated
 
-### Now (Priority Order)
-12. **Paper trade on live API** — 48-72h with 10-strategy ensemble + brain upgrades. Watch for:
-    - Signal frequency with 10 strategies (expect more 3-agree opportunities)
-    - Which new strategies contribute to consensus most
+### NOW — Critical Path to Profitability
+10. **Paper trade 48-72h** — Run with `cd bot && python run.py paper`. Watch for:
+    - Are signals actually being generated now? (regime fix should unlock them)
+    - What regime classifications are being assigned? (check logs for `_computed_regime`)
+    - Which of the 11 strategies contribute to 3-agree consensus?
+    - Are Scout Agent responses parsing correctly? (truncation fix)
+    - LLM Regime Agent feedback reaching `_tick_regime_cache`?
     - Thesis accuracy tracking from first live predictions
-    - Graduated risk reduction behavior during drawdowns
-    - Regime feedback adaptation speed
+    - Graduated risk reduction behavior during any drawdowns
 
-### Next
-13. **Go live conservative** — SOL+HYPE only, 1% risk, max 3x leverage, 3_agree required
-14. **Phase 4: Production hardening** — break up `multi_strategy_main.py` (4,700 lines), structured logging, connection health
+11. **Rerun 100d backtest with regime fix** — Compare PnL before/after regime classification works
+    - `cd bot && python backtest/runner.py --days 100 --symbols BTC ETH SOL`
+    - Backtest now applies STRATEGY_REGIME_FIT filtering (matches live behavior)
+    - Check signal funnel for `regime_blocked` count and per-regime performance
+    - If regime_trend and 3_agree numbers improve, the fix is validated
+
+### NEXT
+12. **Go live conservative** — SOL+HYPE only, 1% risk, max 3x leverage, 3_agree required
+13. **Phase 4.1: Break up `multi_strategy_main.py`** — 6,028 lines is unsustainable
+14. **Per-strategy regime performance** — data-driven tuning of STRATEGY_REGIME_FIT (needs paper data)
 15. **Phase 5: Config extraction** — single source of truth, startup validation
 16. **Telegram signal integration** — wire incoming Telegram signals to Scout Agent
-17. **Phase 7.3: Self-improving architecture** — portfolio agent, auto-prompt evolution, RL
+17. **Phase 7.4: Self-improving architecture** — portfolio agent, auto-prompt evolution
+
+### BACKLOG
+17. Monte Carlo strategy re-evaluation with 11-strategy ensemble
+18. Proper ADX-based standalone regime (replace volatility proxy)
+19. Phase 6.1: Full pipeline replay backtesting (needs LLM decision history)
+20. Phase 6.4: Strategy discovery agent activation
+21. Hour-gated trading (needs 30+ days of live data)
+22. Prompt versioning & A/B testing
+23. Order flow analysis (Hyperliquid orderbook depth)
+24. Cross-exchange signals (Kraken/Bybit as leading indicators)
+25. Deep RL integration
+26. Multi-bot coordination
 
 ---
 

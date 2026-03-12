@@ -211,6 +211,12 @@ class FundingRateStrategy(BaseStrategy):
                 "rsi": rsi,
                 "adx": adx,
                 "rsi_confirms": rsi_confirms,
+                "regime": (
+                    "high_volatility" if abs(funding) > 0.0005 else
+                    "trend" if adx > 25 else
+                    "range" if adx < 20 else
+                    "unknown"
+                ),
             },
             signal_context=" | ".join(context_parts),
         )
