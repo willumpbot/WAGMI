@@ -128,6 +128,18 @@ class AgentCoordinator:
                       "bias": "neutral", "transition": "uncertain"},
             )
 
+        # Technical regime fallback: if LLM returns "unknown", classify from market data
+        if regime_out.data.get("rg", "unknown") == "unknown":
+            try:
+                _fb_regime = self._compute_regime_fallback(snapshot_data)
+                if _fb_regime and _fb_regime != "unknown":
+                    regime_out.data["rg"] = _fb_regime
+                    regime_out.data["factors"] = f"technical_fallback: {_fb_regime}"
+                    regime_out.data["conf"] = max(regime_out.data.get("conf", 0.3), 0.5)
+                    logger.info(f"[MULTI-AGENT] Regime fallback: unknown → {_fb_regime}")
+            except Exception as e:
+                logger.debug(f"[MULTI-AGENT] Regime fallback error: {e}")
+
         # Write regime output to scratchpad for downstream agents
         scratchpad.write("regime", "regime", regime_out.data.get("rg", "unknown"))
         scratchpad.write("regime", "regime_conf", regime_out.data.get("conf", 0.5))
@@ -1153,6 +1165,26 @@ class AgentCoordinator:
             if key in snapshot:
                 quant_data[key] = snapshot[key]
 
+        # Real quant data backbone: Kelly, conditional edge, fat-tail, priors
+        try:
+            from llm.quant_data import get_quant_provider
+            qp = get_quant_provider()
+            regime = regime_out.data.get("rg", "unknown") if regime_out.ok else "unknown"
+            n_agree = 0
+            setup_type = ""
+            if "m" in snapshot:
+                for mkt in (snapshot["m"] if isinstance(snapshot["m"], list) else []):
+                    sigs = mkt.get("sg", mkt.get("sigs", []))
+                    if sigs:
+                        n_agree = max(n_agree, len(sigs))
+                        if isinstance(sigs[0], dict):
+                            setup_type = sigs[0].get("st", "")
+            quant_package = qp.build_quant_package(regime=regime, num_agree=n_agree, setup_type=setup_type)
+            if quant_package:
+                quant_data["quant"] = quant_package
+        except Exception as e:
+            logger.debug(f"Quant data injection error: {e}")
+
         # Per-agent calibration for Bayesian updating
         try:
             from llm.agents.calibration_ledger import get_calibration_ledger
@@ -1182,6 +1214,60 @@ class AgentCoordinator:
             pass
 
         return json.dumps(quant_data, separators=(",", ":"))
+
+    def _compute_regime_fallback(self, snapshot: dict) -> str:
+        """Technical regime classification when LLM returns 'unknown'.
+
+        Uses price changes, volatility, and volume from snapshot to classify:
+        - Large moves (>3% 24h) with volume → 'trend'
+        - Large moves with extreme volatility → 'high_volatility'
+        - Tight ranges (<1% 24h) → 'range'
+        - Multiple symbols dropping hard → 'panic'
+        - Default → 'consolidation' (safe neutral)
+        """
+        markets = snapshot.get("m", [])
+        if not markets:
+            return "consolidation"
+
+        pct_changes = []
+        vol_signals = []
+        for mkt in (markets if isinstance(markets, list) else []):
+            # Try to extract price change from various snapshot formats
+            pct_24h = mkt.get("pct_24h", mkt.get("chg24h", 0))
+            if isinstance(pct_24h, str):
+                try:
+                    pct_24h = float(pct_24h.replace("%", ""))
+                except (ValueError, TypeError):
+                    pct_24h = 0
+            pct_changes.append(abs(float(pct_24h or 0)))
+
+            # Volume clues
+            vol_ratio = mkt.get("vol_ratio", mkt.get("vr", 1.0))
+            if isinstance(vol_ratio, (int, float)) and vol_ratio > 2.0:
+                vol_signals.append(True)
+
+        if not pct_changes:
+            return "consolidation"
+
+        avg_move = sum(pct_changes) / len(pct_changes)
+        max_move = max(pct_changes)
+        drops = sum(1 for m in (markets if isinstance(markets, list) else [])
+                     if float(m.get("pct_24h", m.get("chg24h", 0)) or 0) < -5)
+
+        # Panic: multiple symbols dropping >5%
+        if drops >= 2:
+            return "panic"
+        # High volatility: extreme moves
+        if max_move > 8 or avg_move > 5:
+            return "high_volatility"
+        # Trend: clear directional move with decent volume
+        if avg_move > 2.5 or (avg_move > 1.5 and len(vol_signals) >= 1):
+            return "trend"
+        # Range: very tight moves
+        if avg_move < 1.0:
+            return "range"
+        # Default: consolidation
+        return "consolidation"
 
     def _build_regime_input(self, snapshot: dict) -> str:
         """Build regime agent input: markets + global + regime history.

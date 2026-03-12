@@ -1,0 +1,245 @@
+"""
+Graduated Rules Engine — Converts validated hypotheses into executable trading rules.
+
+When a hypothesis reaches 'validated' status (10+ evidence, 70%+ ratio),
+it graduates into a codified rule that actively influences signal processing.
+
+Rule types: VETO (block), BOOST (increase confidence), PENALIZE (decrease),
+SIZE_ADJUST (modify sizing). Rules auto-retire if accuracy drops below 35%.
+"""
+
+import json
+import logging
+import os
+import re
+import time
+from dataclasses import dataclass, field, asdict
+from typing import Dict, List, Optional, Any
+
+logger = logging.getLogger("bot.llm.graduated_rules")
+
+_RULES_FILE = os.path.join("data", "llm", "graduated_rules.json")
+
+
+@dataclass
+class GraduatedRule:
+    rule_id: str = ""
+    hypothesis_statement: str = ""
+    action: str = "penalize"  # veto, boost, penalize, size_adjust
+    conditions: Dict[str, Any] = field(default_factory=dict)
+    adjustment: float = 0.0
+    confidence: float = 0.0
+    evidence_ratio: float = 0.0
+    total_evidence: int = 0
+    created_at: float = 0.0
+    last_applied: float = 0.0
+    times_applied: int = 0
+    times_correct: int = 0
+    active: bool = True
+
+    @property
+    def accuracy(self) -> float:
+        return self.times_correct / self.times_applied if self.times_applied > 0 else 0.5
+
+    def matches(self, symbol="", regime="", side="", strategy="",
+                setup_type="", num_agree=0) -> bool:
+        if not self.active:
+            return False
+        c = self.conditions
+        if c.get("symbol") and symbol.upper() != c["symbol"].upper():
+            return False
+        if c.get("regime") and regime.lower() != c["regime"].lower():
+            return False
+        if c.get("side") and side.upper() != c["side"].upper():
+            return False
+        if c.get("strategy") and strategy != c["strategy"]:
+            return False
+        if c.get("setup_type") and setup_type != c["setup_type"]:
+            return False
+        if c.get("min_agree") and num_agree < c["min_agree"]:
+            return False
+        return True
+
+
+class GraduatedRulesEngine:
+    def __init__(self):
+        self._rules: List[GraduatedRule] = []
+        self._loaded = False
+
+    def _ensure_loaded(self):
+        if self._loaded:
+            return
+        self._loaded = True
+        try:
+            os.makedirs(os.path.dirname(_RULES_FILE), exist_ok=True)
+            if os.path.exists(_RULES_FILE):
+                with open(_RULES_FILE, "r") as f:
+                    data = json.load(f)
+                self._rules = [GraduatedRule(**r) for r in data.get("rules", [])]
+                logger.info(f"[GRAD-RULES] Loaded {len(self._rules)} rules ({sum(1 for r in self._rules if r.active)} active)")
+        except Exception as e:
+            logger.warning(f"[GRAD-RULES] Load error: {e}")
+
+    def _save(self):
+        try:
+            os.makedirs(os.path.dirname(_RULES_FILE), exist_ok=True)
+            with open(_RULES_FILE, "w") as f:
+                json.dump({"rules": [asdict(r) for r in self._rules]}, f, indent=2, default=str)
+        except Exception as e:
+            logger.warning(f"[GRAD-RULES] Save error: {e}")
+
+    def graduate_hypothesis(self, hypothesis) -> Optional[GraduatedRule]:
+        """Convert a validated hypothesis into an executable rule."""
+        self._ensure_loaded()
+
+        for r in self._rules:
+            if r.hypothesis_statement == hypothesis.statement:
+                return None  # Already graduated
+
+        conditions, action, adjustment = self._parse_hypothesis(hypothesis)
+        if not conditions:
+            return None
+
+        rule = GraduatedRule(
+            rule_id=f"rule_{int(time.time())}_{len(self._rules)}",
+            hypothesis_statement=hypothesis.statement,
+            action=action, conditions=conditions, adjustment=adjustment,
+            confidence=hypothesis.confidence, evidence_ratio=hypothesis.evidence_ratio,
+            total_evidence=hypothesis.total_evidence, created_at=time.time(),
+        )
+        self._rules.append(rule)
+        self._save()
+        logger.info(f"[GRAD-RULES] Graduated: {rule.action} when {conditions}")
+        return rule
+
+    def _parse_hypothesis(self, hypothesis) -> tuple:
+        stmt = hypothesis.statement.lower()
+        conditions: Dict[str, Any] = {}
+
+        # Extract symbol
+        for sym in ["btc", "eth", "sol", "hype", "doge", "pepe", "fartcoin", "sui", "avax"]:
+            if sym in stmt:
+                conditions["symbol"] = sym.upper()
+                break
+
+        # Extract regime
+        for rg in ["trend", "range", "panic", "volatile", "high_volatility", "consolidation"]:
+            if rg in stmt:
+                conditions["regime"] = rg
+                break
+
+        # Extract side
+        if any(w in stmt for w in ["short", "sell"]):
+            conditions["side"] = "SELL"
+        elif any(w in stmt for w in ["long", "buy"]):
+            conditions["side"] = "BUY"
+
+        # Extract strategy
+        for strat in ["regime_trend", "confidence_scorer", "multi_tier_quality", "monte_carlo_zones",
+                       "bollinger_squeeze", "funding_rate", "lead_lag", "liquidation_cascade",
+                       "oi_delta", "probability_engine", "vmc_cipher"]:
+            if strat.replace("_", " ") in stmt or strat in stmt:
+                conditions["strategy"] = strat
+                break
+
+        # Extract agreement level
+        m = re.search(r"(\d+)[- ]agree", stmt)
+        if m:
+            conditions["min_agree"] = int(m.group(1))
+
+        # Determine action
+        if any(w in stmt for w in ["strong", "outperform", "reliable", "profitable", "edge"]):
+            action = "boost"
+            adjustment = 12.0 if hypothesis.evidence_ratio >= 0.8 else 8.0
+        elif any(w in stmt for w in ["weak", "unreliable", "underperform", "poor", "avoid"]):
+            action = "penalize"
+            adjustment = -15.0 if hypothesis.evidence_ratio <= 0.3 else -10.0
+        elif any(w in stmt for w in ["never", "block", "veto", "skip"]):
+            action = "veto"
+            adjustment = 0.0
+        else:
+            action = "penalize"
+            adjustment = -10.0
+
+        if len(conditions) < 1:
+            return {}, "", 0.0
+        return conditions, action, adjustment
+
+    def evaluate_signal(self, symbol="", regime="", side="", strategy="",
+                        setup_type="", num_agree=0, confidence=0.0) -> tuple:
+        """Returns (should_veto, adjusted_confidence, applied_rules_summary)."""
+        self._ensure_loaded()
+        vetoed, conf_delta, applied = False, 0.0, []
+
+        for rule in self._rules:
+            if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side,
+                                                    strategy=strategy, setup_type=setup_type, num_agree=num_agree):
+                continue
+            rule.times_applied += 1
+            rule.last_applied = time.time()
+
+            if rule.action == "veto":
+                vetoed = True
+                applied.append(f"VETO:{rule.hypothesis_statement[:40]}")
+            elif rule.action == "boost":
+                conf_delta += rule.adjustment
+                applied.append(f"BOOST+{rule.adjustment}:{rule.hypothesis_statement[:30]}")
+            elif rule.action == "penalize":
+                conf_delta += rule.adjustment
+                applied.append(f"PEN{rule.adjustment}:{rule.hypothesis_statement[:30]}")
+
+        if applied:
+            self._save()
+
+        return vetoed, max(0, min(100, confidence + conf_delta)), "; ".join(applied)
+
+    def record_outcome(self, symbol="", regime="", side="", won=False):
+        """Track rule accuracy after trade closes."""
+        self._ensure_loaded()
+        for rule in self._rules:
+            if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side):
+                continue
+            if rule.action == "veto":
+                if not won:
+                    rule.times_correct += 1
+            elif rule.action == "boost":
+                if won:
+                    rule.times_correct += 1
+            elif rule.action == "penalize":
+                if not won:
+                    rule.times_correct += 1
+
+            if rule.times_applied >= 10 and rule.accuracy < 0.35:
+                rule.active = False
+                logger.info(f"[GRAD-RULES] Auto-retired: {rule.hypothesis_statement[:50]} (acc={rule.accuracy:.0%})")
+        self._save()
+
+    def get_active_rules_summary(self) -> str:
+        self._ensure_loaded()
+        active = [r for r in self._rules if r.active]
+        if not active:
+            return ""
+        lines = []
+        for r in active[:10]:
+            acc = f"{r.accuracy:.0%}" if r.times_applied >= 3 else "new"
+            lines.append(f"  {r.action.upper()}: {r.hypothesis_statement[:50]} (acc={acc}, n={r.times_applied})")
+        return "GRADUATED RULES:\n" + "\n".join(lines)
+
+    def get_stats(self) -> Dict[str, Any]:
+        self._ensure_loaded()
+        active = [r for r in self._rules if r.active]
+        return {
+            "total_rules": len(self._rules), "active_rules": len(active),
+            "total_applied": sum(r.times_applied for r in self._rules),
+            "avg_accuracy": sum(r.accuracy for r in active) / len(active) if active else 0,
+        }
+
+
+_engine: Optional[GraduatedRulesEngine] = None
+
+
+def get_graduated_rules_engine() -> GraduatedRulesEngine:
+    global _engine
+    if _engine is None:
+        _engine = GraduatedRulesEngine()
+    return _engine
