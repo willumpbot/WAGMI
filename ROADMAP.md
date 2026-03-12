@@ -137,12 +137,19 @@
 ### Phase 7.2: Zero-Trade Blocker Fix ✅ (March 12, 2026)
 **Root cause discovered and fixed: regime was ALWAYS "unknown", causing cascading signal blocks.**
 
-- [x] **Regime metadata fix** — All 4 original strategies now set `metadata["regime"]` as a string (`trend`/`range`/`high_volatility`/`unknown`). Previously `regime_trend` set `metadata["regime_6h"]` (a dict), which `RegimeTransitionDetector` couldn't parse.
-- [x] **Standalone regime classification** — Runs every tick in `_process_symbol()` using 1h price volatility, independent of signal generation. Breaks the chicken-and-egg loop where signals needed regime but regime only updated from signals.
-- [x] **LLM regime feedback loop** — Regime Agent output now feeds back to system-wide `RegimeTransitionDetector` and `_tick_regime_cache`, so all symbols get LLM-quality regime classification.
-- [x] **STRATEGY_REGIME_FIT expanded** — All 11 strategies mapped across 8 regimes (was: only 4 strategies across 7 regimes). Added `consolidation` regime. New strategies get proper fit ratings (e.g., `liquidation_cascade` is "strong" in panic, `bollinger_squeeze` is "strong" in range).
-- [x] **Blocked combos relaxed** — Only `confidence_scorer+multi_tier_quality` blocked (PF 0.08). Removed `multi_tier_quality+regime_trend` and `confidence_scorer+regime_trend` blocks — with 11 strategies, blocking 3 of 6 old pairs was too aggressive.
-- [x] **Scout Agent truncation fix** — `max_tokens` 768→1536. Was causing JSON response truncation.
+- [x] **Regime metadata fix** — All 11 strategies now set `metadata["regime"]` as a string. Previously only set as dict or not at all. Each strategy uses its own indicators to classify (ADX, OI type, squeeze state, cascade severity, etc.)
+- [x] **Standalone regime classification** — Runs every tick in `_process_symbol()` using 1h price volatility, independent of signal generation. Breaks the chicken-and-egg loop.
+- [x] **LLM regime feedback loop** — Regime Agent output feeds back to system-wide `RegimeTransitionDetector` and `_tick_regime_cache`.
+- [x] **STRATEGY_REGIME_FIT expanded** — All 11 strategies mapped across 8 regimes (was: only 4 strategies across 7 regimes). Added `consolidation` regime.
+- [x] **Blocked combos relaxed** — Only `confidence_scorer+multi_tier_quality` blocked (PF 0.08).
+- [x] **Scout Agent truncation fix** — `max_tokens` 768→1536.
+
+### Phase 7.3: Backtest Regime Parity + Prompt Modernization ✅ (March 12, 2026)
+- [x] **STRATEGY_REGIME_FIT wired into backtest engine** — Both hourly and daily walk paths now apply regime-fit strategy filtering before ensemble.evaluate(), matching live path behavior. Strategies marked "avoid" in current regime are disabled.
+- [x] **Agent prompts updated for 11 strategies** — Trade Agent has full strategy reference table (what each detects), updated confluence scoring with derivatives/oscillator categories. Risk Agent strategy weights expanded to all 11. Critic coherence checklist expanded.
+- [x] **Confluence calibration updated** — "4 strategies agree" → "5+ strategies agree" (reflects 11-strategy ensemble). MIN_VOTES=3 documented in prompts.
+- [x] **ranging_confidence_floor config wired** — Now passed from TradingConfig to Ensemble constructor (was hardcoded 88.0, now respects RANGING_CONFIDENCE_FLOOR env var).
+- [x] **Brain wiring error visibility** — 5 error log locations in coordinator.py promoted debug→info so brain component failures are visible in normal output.
 
 ---
 
@@ -407,13 +414,13 @@ bot/strategies/regime_trend.py       → Regime trend following (ADX filter, reg
 bot/strategies/confidence_scorer.py  → Multi-factor momentum scoring (ADX filter, regime metadata)
 bot/strategies/multi_tier_quality.py → Multi-TF signal quality (ADX filter, regime metadata)
 bot/strategies/monte_carlo_zones.py  → Monte Carlo S/R (disabled, regime metadata added)
-bot/strategies/funding_rate.py       → Funding rate mean-reversion
-bot/strategies/oi_delta.py           → Open interest delta
-bot/strategies/bollinger_squeeze.py  → Bollinger/Keltner squeeze + bandwalk
-bot/strategies/vmc_cipher.py         → 5-oscillator confluence + divergence
-bot/strategies/lead_lag.py           → BTC→alt catch-up trades
-bot/strategies/liquidation_cascade.py → Post-cascade reversal
-bot/strategies/probability_engine.py → Regime-conditional Monte Carlo
+bot/strategies/funding_rate.py       → Funding rate mean-reversion (regime metadata)
+bot/strategies/oi_delta.py           → Open interest delta (regime metadata)
+bot/strategies/bollinger_squeeze.py  → Bollinger/Keltner squeeze + bandwalk (regime metadata)
+bot/strategies/vmc_cipher.py         → 5-oscillator confluence + divergence (regime metadata)
+bot/strategies/lead_lag.py           → BTC→alt catch-up trades (regime metadata)
+bot/strategies/liquidation_cascade.py → Post-cascade reversal (regime metadata)
+bot/strategies/probability_engine.py → Regime-conditional Monte Carlo (regime metadata)
 bot/strategies/chop_detector.py      → Multi-factor chop detection
 bot/strategies/regime_detector.py    → Regime classification + transition detection
 ```
@@ -486,7 +493,7 @@ bot/feedback/parameter_tuner.py    → Parameter optimization
 
 ## Priority Order (What to Work On Next)
 
-> Updated March 12, 2026. Zero-trade blocker FIXED. All brain upgrades wired. Focus: paper validate → backtest with regime fix → go live.
+> Updated March 12, 2026. All regime fixes complete. All 11 strategies emit regime metadata. Backtest engine has regime-fit filtering. Agent prompts modernized for 11 strategies. Focus: paper validate → backtest with regime fix → go live.
 
 ### Completed
 1. ~~**Phase 2.8: Fix 6 critical bugs**~~ ✅ DONE
@@ -497,9 +504,10 @@ bot/feedback/parameter_tuner.py    → Parameter optimization
 6. ~~**Phase 6.3: LLM brain intelligence**~~ ✅ DONE
 7. ~~**Phase 7.1: Proactive risk + brain wiring**~~ ✅ DONE
 8. ~~**Phase 7.2: Zero-trade blocker**~~ ✅ DONE — regime was always "unknown"
+9. ~~**Phase 7.3: Backtest regime parity + prompt modernization**~~ ✅ DONE — all 11 strategies set regime metadata, backtest applies STRATEGY_REGIME_FIT, agent prompts updated
 
 ### NOW — Critical Path to Profitability
-9. **Paper trade 48-72h** — Run with `cd bot && python run.py paper`. Watch for:
+10. **Paper trade 48-72h** — Run with `cd bot && python run.py paper`. Watch for:
     - Are signals actually being generated now? (regime fix should unlock them)
     - What regime classifications are being assigned? (check logs for `_computed_regime`)
     - Which of the 11 strategies contribute to 3-agree consensus?
@@ -508,19 +516,19 @@ bot/feedback/parameter_tuner.py    → Parameter optimization
     - Thesis accuracy tracking from first live predictions
     - Graduated risk reduction behavior during any drawdowns
 
-10. **Rerun 100d backtest with regime fix** — Compare PnL before/after regime classification works
-    - `cd bot && python run.py backtest` with current code
-    - Check if regime-aware confidence floor is actually being applied now
-    - Measure: how many trades were regime-blocked vs allowed
+11. **Rerun 100d backtest with regime fix** — Compare PnL before/after regime classification works
+    - `cd bot && python backtest/runner.py --days 100 --symbols BTC ETH SOL`
+    - Backtest now applies STRATEGY_REGIME_FIT filtering (matches live behavior)
+    - Check signal funnel for `regime_blocked` count and per-regime performance
     - If regime_trend and 3_agree numbers improve, the fix is validated
 
 ### NEXT
-11. **Go live conservative** — SOL+HYPE only, 1% risk, max 3x leverage, 3_agree required
-12. **Phase 4.1: Break up `multi_strategy_main.py`** — 6,028 lines is unsustainable
-13. **Per-strategy regime performance** — data-driven tuning of STRATEGY_REGIME_FIT (needs paper data)
-14. **Phase 5: Config extraction** — single source of truth, startup validation
-15. **Telegram signal integration** — wire incoming Telegram signals to Scout Agent
-16. **Phase 7.3: Self-improving architecture** — portfolio agent, auto-prompt evolution
+12. **Go live conservative** — SOL+HYPE only, 1% risk, max 3x leverage, 3_agree required
+13. **Phase 4.1: Break up `multi_strategy_main.py`** — 6,028 lines is unsustainable
+14. **Per-strategy regime performance** — data-driven tuning of STRATEGY_REGIME_FIT (needs paper data)
+15. **Phase 5: Config extraction** — single source of truth, startup validation
+16. **Telegram signal integration** — wire incoming Telegram signals to Scout Agent
+17. **Phase 7.4: Self-improving architecture** — portfolio agent, auto-prompt evolution
 
 ### BACKLOG
 17. Monte Carlo strategy re-evaluation with 11-strategy ensemble
