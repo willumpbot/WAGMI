@@ -53,6 +53,10 @@ class BacktestLearningBridge:
             "hypotheses_evidence": 0,
             "growth_trades": 0,
             "llm_decisions_ingested": 0,
+            "signal_digest_patterns": "",
+            "signal_quality_seeded": 0,
+            "calibration_seeded": 0,
+            "params_tuned": [],
         }
 
     def ingest(self, engine) -> Dict[str, Any]:
@@ -112,6 +116,16 @@ class BacktestLearningBridge:
         # Feed LLM-specific learnings
         if hasattr(engine, "llm") and engine.llm:
             self._feed_llm_decisions(engine.llm)
+
+        # Feed signal digest patterns for quant learning (Block 4)
+        if hasattr(engine, "_signal_digests") and engine._signal_digests:
+            self._feed_signal_digest_patterns(engine._signal_digests, trade_records)
+
+        # Pre-seed signal quality and calibration from backtest data (Block 5)
+        self._preseed_signal_quality(trade_records)
+
+        # Pre-seed parameter tuner from backtest results (Block 6)
+        self._preseed_parameters(trade_records, engine)
 
         logger.info(f"[LEARN-BRIDGE] Ingestion complete: {self._stats}")
         return {"status": "ok", **self._stats}
@@ -777,3 +791,264 @@ class BacktestLearningBridge:
             "=" * 40,
         ]
         return "\n".join(lines)
+
+    # ── Block 4: Signal Digest Pattern Extraction ───────────────────────
+
+    def _feed_signal_digest_patterns(self, digests, trade_records):
+        """Extract quant patterns from per-candle signal digests and feed to knowledge base."""
+        try:
+            from collections import defaultdict
+
+            # 1. Strategy combo win rates
+            combo_outcomes = defaultdict(lambda: {"wins": 0, "total": 0})
+            for rec in trade_records:
+                strategy = rec.get("strategy", "")
+                win = rec.get("win", rec.get("pnl", 0) > 0)
+                if strategy:
+                    combo_outcomes[strategy]["total"] += 1
+                    if win:
+                        combo_outcomes[strategy]["wins"] += 1
+
+            # 2. Near-miss analysis
+            min_votes = 3
+            near_miss_count = 0
+            for entry in digests:
+                d = entry.get("digest", {})
+                consensus = d.get("consensus", {})
+                agreement = consensus.get("agreement", 0)
+                min_votes = consensus.get("min_votes_needed", 3)
+                if agreement == min_votes - 1 and not entry.get("signal_generated"):
+                    near_miss_count += 1
+
+            # 3. Regime-strategy fire rates
+            regime_strat_fires = defaultdict(lambda: defaultdict(int))
+            for entry in digests:
+                d = entry.get("digest", {})
+                readings = d.get("readings", {})
+                for strat_name, reading in readings.items():
+                    regime = reading.get("regime", "unknown")
+                    if reading.get("side") and reading["side"] != "NONE":
+                        regime_strat_fires[regime][strat_name] += 1
+
+            # Feed patterns to self-teaching knowledge base
+            try:
+                from llm.self_teaching import get_teaching_engine
+                engine = get_teaching_engine()
+                if engine:
+                    # Feed strategy combo win rates as principles
+                    for combo, data in combo_outcomes.items():
+                        if data["total"] >= 5:
+                            wr = data["wins"] / data["total"]
+                            engine.knowledge.add(
+                                knowledge_type="principle",
+                                content=f"Strategy {combo}: {wr:.0%} WR over {data['total']} backtest trades",
+                                confidence=min(0.9, 0.5 + data["total"] / 100),
+                            )
+
+                    # Feed near-miss observation
+                    if near_miss_count > 0:
+                        total_evals = len(digests)
+                        engine.knowledge.add(
+                            knowledge_type="observation",
+                            content=(
+                                f"Backtest near-misses: {near_miss_count} signals missed by 1 vote "
+                                f"out of {total_evals} total evaluations "
+                                f"({near_miss_count/total_evals:.1%} near-miss rate)"
+                            ),
+                            confidence=0.8,
+                        )
+
+                    # Feed regime-strategy fire rates
+                    for regime, strats in regime_strat_fires.items():
+                        if regime == "unknown":
+                            continue
+                        top_strats = sorted(strats.items(), key=lambda x: -x[1])[:3]
+                        top_str = ", ".join(f"{s}({n})" for s, n in top_strats)
+                        engine.knowledge.add(
+                            knowledge_type="observation",
+                            content=f"In {regime} regime, most active strategies: {top_str}",
+                            confidence=0.7,
+                        )
+
+                    self._stats["signal_digest_patterns"] = (
+                        f"{len(combo_outcomes)} combos, {near_miss_count} near-misses, "
+                        f"{len(regime_strat_fires)} regimes"
+                    )
+            except Exception as e:
+                logger.debug(f"[LEARN-BRIDGE] Self-teaching feed failed: {e}")
+
+            logger.info(
+                f"[LEARN-BRIDGE] Signal digest: {len(digests)} evaluations, "
+                f"{near_miss_count} near-misses, {len(combo_outcomes)} strategy combos"
+            )
+        except Exception as e:
+            logger.warning(f"[LEARN-BRIDGE] Signal digest pattern extraction failed: {e}")
+
+    # ── Block 5: Pre-seed Signal Quality & Calibration ──────────────────
+
+    def _preseed_signal_quality(self, trade_records):
+        """Pre-seed signal quality scorer and confidence calibrator from backtest data.
+
+        This means paper trading starts with calibrated quality scores
+        instead of cold-start defaults.
+        """
+        if not trade_records:
+            return
+
+        # Pre-seed signal quality scorer
+        try:
+            from feedback.signal_quality import SignalQualityScorer
+            scorer = SignalQualityScorer()
+            seeded = 0
+            for rec in trade_records:
+                try:
+                    scorer.update(
+                        symbol=rec.get("symbol", "unknown"),
+                        regime=rec.get("regime", "unknown"),
+                        strategy=rec.get("strategy", "unknown"),
+                        side=rec.get("side", "BUY"),
+                        confidence=rec.get("confidence", 50),
+                        win=rec.get("win", rec.get("pnl", 0) > 0),
+                        pnl=rec.get("pnl", 0),
+                    )
+                    seeded += 1
+                except Exception:
+                    pass
+            scorer.save()
+            self._stats["signal_quality_seeded"] = seeded
+            logger.info(f"[LEARN-BRIDGE] Signal quality pre-seeded with {seeded} trades")
+        except Exception as e:
+            logger.debug(f"[LEARN-BRIDGE] Signal quality pre-seed failed: {e}")
+
+        # Pre-seed confidence calibrator
+        try:
+            from llm.confidence_calibrator import ConfidenceCalibrator
+            calibrator = ConfidenceCalibrator()
+            seeded = 0
+            for rec in trade_records:
+                conf = rec.get("confidence", 0)
+                win = rec.get("win", rec.get("pnl", 0) > 0)
+                if conf > 0:
+                    calibrator.record(claimed_confidence=conf, actual_win=win)
+                    seeded += 1
+            calibrator.save()
+            self._stats["calibration_seeded"] = seeded
+            logger.info(f"[LEARN-BRIDGE] Confidence calibrator pre-seeded with {seeded} records")
+        except Exception as e:
+            logger.debug(f"[LEARN-BRIDGE] Confidence calibrator pre-seed failed: {e}")
+
+    # ── Block 6: Pre-seed Parameter Tuner ───────────────────────────────
+
+    def _preseed_parameters(self, trade_records, engine):
+        """Pre-seed parameter tuner with optimized values from backtest analysis.
+
+        Computes per-regime, per-symbol, and per-strategy performance to set:
+        - regime_leverage_caps
+        - symbol_confidence_offsets
+        - strategy_weights
+        - confidence_floor (first EV-positive bin)
+        """
+        if not trade_records or len(trade_records) < 10:
+            return
+
+        try:
+            from collections import defaultdict
+            import json
+            from pathlib import Path
+
+            # Group by regime
+            regime_stats = defaultdict(lambda: {"wins": 0, "total": 0, "pnl": 0.0})
+            for rec in trade_records:
+                regime = rec.get("regime", "unknown")
+                regime_stats[regime]["total"] += 1
+                regime_stats[regime]["pnl"] += float(rec.get("pnl", 0))
+                if rec.get("win", rec.get("pnl", 0) > 0):
+                    regime_stats[regime]["wins"] += 1
+
+            # Group by symbol
+            symbol_stats = defaultdict(lambda: {"wins": 0, "total": 0})
+            for rec in trade_records:
+                sym = rec.get("symbol", "unknown")
+                symbol_stats[sym]["total"] += 1
+                if rec.get("win", rec.get("pnl", 0) > 0):
+                    symbol_stats[sym]["wins"] += 1
+
+            # Group by strategy
+            strategy_stats = defaultdict(lambda: {"wins": 0, "total": 0})
+            for rec in trade_records:
+                strat = rec.get("strategy", "unknown")
+                strategy_stats[strat]["total"] += 1
+                if rec.get("win", rec.get("pnl", 0) > 0):
+                    strategy_stats[strat]["wins"] += 1
+
+            # Confidence bin analysis
+            conf_bins = defaultdict(lambda: {"wins": 0, "total": 0, "pnl": 0.0})
+            for rec in trade_records:
+                conf = rec.get("confidence", 0)
+                bin_key = int(conf // 10) * 10  # 50, 60, 70, 80, 90
+                conf_bins[bin_key]["total"] += 1
+                conf_bins[bin_key]["pnl"] += float(rec.get("pnl", 0))
+                if rec.get("win", rec.get("pnl", 0) > 0):
+                    conf_bins[bin_key]["wins"] += 1
+
+            # Build optimized parameters
+            tuned = {}
+
+            # Regime leverage caps: lower cap for losing regimes
+            regime_caps = {}
+            for regime, stats in regime_stats.items():
+                if stats["total"] >= 3:
+                    wr = stats["wins"] / stats["total"]
+                    if wr < 0.40:
+                        regime_caps[regime] = 3  # Very conservative
+                    elif wr < 0.50:
+                        regime_caps[regime] = 5
+                    else:
+                        regime_caps[regime] = 10  # Let it breathe
+            if regime_caps:
+                tuned["regime_leverage_caps"] = regime_caps
+
+            # Symbol confidence offsets: raise floor on losing symbols
+            overall_wr = sum(s["wins"] for s in symbol_stats.values()) / max(1, sum(s["total"] for s in symbol_stats.values()))
+            symbol_offsets = {}
+            for sym, stats in symbol_stats.items():
+                if stats["total"] >= 5:
+                    sym_wr = stats["wins"] / stats["total"]
+                    offset = round((sym_wr - overall_wr) * 20, 1)  # Scale to ±10
+                    offset = max(-10, min(10, offset))
+                    if abs(offset) >= 2:
+                        symbol_offsets[sym] = offset
+            if symbol_offsets:
+                tuned["symbol_confidence_offsets"] = symbol_offsets
+
+            # Strategy weights: Laplace-smoothed WR
+            strategy_weights = {}
+            for strat, stats in strategy_stats.items():
+                if stats["total"] >= 3:
+                    wr = (stats["wins"] + 1) / (stats["total"] + 2)  # Laplace
+                    strategy_weights[strat] = round(max(0.2, min(2.0, wr / 0.5)), 3)
+            if strategy_weights:
+                tuned["strategy_weights"] = strategy_weights
+
+            # Confidence floor: first EV-positive bin
+            for bin_key in sorted(conf_bins.keys()):
+                stats = conf_bins[bin_key]
+                if stats["total"] >= 3 and stats["pnl"] > 0:
+                    tuned["confidence_floor"] = bin_key
+                    break
+
+            # Save tuned parameters
+            if tuned:
+                data_dir = Path("data")
+                data_dir.mkdir(exist_ok=True)
+                params_file = data_dir / "tuned_params.json"
+                with open(params_file, "w") as f:
+                    json.dump(tuned, f, indent=2)
+
+                self._stats["params_tuned"] = list(tuned.keys())
+                logger.info(
+                    f"[LEARN-BRIDGE] Parameters pre-seeded: {list(tuned.keys())} "
+                    f"→ {params_file}"
+                )
+        except Exception as e:
+            logger.warning(f"[LEARN-BRIDGE] Parameter pre-seed failed: {e}")

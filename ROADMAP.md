@@ -1,8 +1,8 @@
 # nunuIRL Trading Bot — Complete Roadmap
 
 > **Last updated**: 2026-03-12
-> **Current state**: Phase 7.1+ DONE. 11 active trading strategies (10 enabled + monte_carlo gated), 9 specialist agents, full brain wiring (thesis/calibration/counterfactual/regime feedback/graduated risk), soft-filter architecture, standalone regime classification, quant data backbone. **Zero-trade blocker FIXED** (regime was always "unknown"). 1177 tests passing.
-> **What's next**: Paper trade 48-72h → validate regime classification + signal frequency → go live conservative.
+> **Current state**: Phase 7.2 DONE. **Quant-grade backtest engine** — all 11 strategies wired into backtest (was 4), quant analytics module (Wilson CI, VaR/CVaR, strategy correlation, Kelly criterion, Monte Carlo robustness), signal digest capture (per-candle strategy fire rates, near-misses), pre-seeded signal quality + confidence calibration + parameter tuner from backtest data, 10-gate deployment readiness checker, enhanced walk-forward with quant metrics. 1177 tests passing.
+> **What's next**: Run 30d backtest (`cd bot && python backtest/runner.py --days 30 --symbols BTC SOL HYPE --learn`) → review Quant Intelligence Summary → pass Deployment Gate → paper trade.
 
 ---
 
@@ -42,7 +42,7 @@
 | **Soft Filter Architecture** | `bot/core/filter_annotations.py` + ensemble `evaluate_with_annotations()` | Working — near-miss signals visible to LLM for learning |
 | **Signal Tracker** | `bot/core/signal_tracker.py` | Working — all signals tracked (approved + rejected) |
 | **Order Execution** | `bot/execution/order_executor.py` | Working — paper/live modes, CCXT submission |
-| **Backtest Engine** | `bot/backtest/engine.py` + `walk_forward.py` | Working — 91% fidelity, walk-forward validation |
+| **Backtest Engine** | `bot/backtest/engine.py` + `walk_forward.py` + `quant_analytics.py` + `deployment_gate.py` | Working — all 11 strategies, quant analytics (VaR/CI/Kelly/MC), signal digest, deployment gate, pre-seed learning |
 | **Tests** | `bot/tests/` (41 test files) | 1177 tests passing (0 failures) |
 | **Configuration** | `bot/trading_config.py` (490+ lines) | Dataclass-based, per-symbol overrides |
 

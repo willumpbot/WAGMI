@@ -94,6 +94,12 @@ class BacktestRunner:
         # Save results
         self._save_results(results, symbols, days)
 
+        # Print Quant Intelligence Summary
+        self._print_quant_summary(results)
+
+        # Run Deployment Gate
+        self._run_deployment_gate(results)
+
         return results
 
     def _save_results(self, results: dict, symbols: list, days: int):
@@ -119,6 +125,127 @@ class BacktestRunner:
             df = pd.DataFrame(results["equity_curve"])
             df.to_csv(equity_file, index=False)
             logger.info(f"✅ Equity curve saved to {equity_file}")
+
+    def _print_quant_summary(self, results: dict):
+        """Print Quant Intelligence Summary from backtest results."""
+        try:
+            q = results.get("quant_analytics", {})
+            if not q or q.get("error"):
+                return
+
+            lines = []
+            lines.append("")
+            lines.append("=" * 58)
+            lines.append("           QUANT INTELLIGENCE SUMMARY")
+            lines.append("=" * 58)
+
+            # Win rate with CI
+            wr = q.get("win_rate", 0)
+            ci = q.get("win_rate_ci_95", [0, 0])
+            if isinstance(ci, list) and len(ci) >= 2:
+                lines.append(f"  Win Rate:       {wr:.1%} [{ci[0]:.1%} - {ci[1]:.1%}] (95% CI)")
+            else:
+                lines.append(f"  Win Rate:       {wr:.1%}")
+
+            # Expectancy & Kelly
+            exp = q.get("expectancy_per_trade", 0)
+            kelly = q.get("kelly_fraction", 0)
+            hk = q.get("half_kelly", 0)
+            lines.append(f"  Expectancy:     ${exp:+.2f}/trade {'(+)' if exp > 0 else '(-)'}")
+            lines.append(f"  Kelly:          {kelly:.1%} (half-Kelly: {hk:.1%})")
+
+            # Sharpe significance
+            p_val = q.get("sharpe_p_value", 1.0)
+            sig = "significant" if p_val < 0.05 else "marginal" if p_val < 0.10 else "not significant"
+            lines.append(f"  Sharpe p-value: {p_val:.3f} ({sig})")
+
+            # Tail risk
+            var = q.get("var_95_daily")
+            cvar = q.get("cvar_95_daily")
+            if var is not None:
+                lines.append(f"  VaR (95%):      {var:.4%} daily")
+            if cvar is not None:
+                lines.append(f"  CVaR (ES):      {cvar:.4%} daily")
+
+            # Distribution
+            dist = q.get("distribution", {})
+            if dist:
+                lines.append(f"  Skewness:       {dist.get('skewness', 0):.3f}")
+                lines.append(f"  Kurtosis:       {dist.get('kurtosis', 0):.3f}")
+
+            # Streaks
+            streaks = q.get("streaks", {})
+            if streaks:
+                lines.append(
+                    f"  Streaks:        max win={streaks.get('max_consecutive_wins', 0)}, "
+                    f"max loss={streaks.get('max_consecutive_losses', 0)}"
+                )
+
+            # Strategy correlation
+            corr = q.get("strategy_correlation", {})
+            if corr:
+                ind = corr.get("independent_count", 0)
+                total = corr.get("total_strategies", 0)
+                lines.append(f"  Independence:   {ind}/{total} truly independent (|r| < 0.3)")
+                for pair in corr.get("redundant_pairs", []):
+                    p = pair.get("pair", [])
+                    r = pair.get("correlation", 0)
+                    if len(p) >= 2:
+                        lines.append(f"    Redundant: {p[0]} <> {p[1]} (r={r:.2f})")
+
+            # Monte Carlo
+            mc = q.get("monte_carlo", {})
+            if mc and not mc.get("insufficient_data"):
+                pp = mc.get("p_profitable", 0)
+                verdict = mc.get("verdict", "?")
+                lines.append(f"  Monte Carlo:    {pp:.0%} profitable ({verdict})")
+                lines.append(
+                    f"    Median DD: {mc.get('median_max_drawdown', 0):.1%}, "
+                    f"95th DD: {mc.get('dd_95th_percentile', 0):.1%}"
+                )
+
+            # Best/worst regime
+            by_regime = q.get("by_regime", {})
+            if by_regime:
+                lines.append("")
+                lines.append("  Regime Breakdown:")
+                for regime, metrics in sorted(by_regime.items()):
+                    if isinstance(metrics, dict) and not metrics.get("insufficient_data"):
+                        e = metrics.get("expectancy", 0)
+                        w = metrics.get("win_rate", 0)
+                        n = metrics.get("n", 0)
+                        lines.append(
+                            f"    {regime:<20} WR={w:.0%}, E=${e:+.1f}, n={n}"
+                        )
+
+            # Signal digest summary
+            digest = results.get("signal_digest_summary", {})
+            if digest and digest.get("total_evaluations", 0) > 0:
+                lines.append("")
+                near = digest.get("near_misses", {}).get("count", 0)
+                lines.append(f"  Near-Misses:    {near} signals missed by 1 vote")
+                fire_rates = digest.get("strategy_fire_rates", {})
+                if fire_rates:
+                    lines.append("  Strategy Fire Rates:")
+                    for strat, data in sorted(fire_rates.items(), key=lambda x: -x[1].get("fire_rate", 0)):
+                        fr = data.get("fire_rate", 0)
+                        ac = data.get("avg_confidence", 0)
+                        lines.append(f"    {strat:<24} {fr:.1%} (avg conf: {ac:.0f})")
+
+            lines.append("=" * 58)
+            print("\n".join(lines))
+
+        except Exception as e:
+            logger.debug(f"Quant summary print failed: {e}")
+
+    def _run_deployment_gate(self, results: dict):
+        """Run the 10-gate deployment readiness check."""
+        try:
+            from backtest.deployment_gate import check_deployment_readiness, format_gate_report
+            verdict = check_deployment_readiness(results)
+            print(format_gate_report(verdict))
+        except Exception as e:
+            logger.debug(f"Deployment gate failed: {e}")
 
     def compare_paper_vs_backtest(
         self,

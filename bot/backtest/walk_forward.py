@@ -36,6 +36,10 @@ class WindowResult:
     total_pnl: float = 0.0
     avg_pnl: float = 0.0
     profit_factor: float = 0.0
+    # Quant metrics (populated by enhanced validation)
+    expectancy: float = 0.0
+    sharpe: float = 0.0
+    var_95: float = 0.0
 
     @property
     def win_rate(self) -> float:
@@ -226,6 +230,28 @@ class WalkForwardRunner:
         pf = gross_wins / gross_losses if gross_losses > 0 else (999.0 if gross_wins > 0 else 0.0)
         avg_pnl = total_pnl / len(trades) if trades else 0.0
 
+        # Compute quant metrics for this window
+        expectancy = 0.0
+        sharpe = 0.0
+        var_95 = 0.0
+        try:
+            from backtest.quant_analytics import compute_expectancy, compute_var
+            wr = wins / len(trades) if trades else 0
+            avg_win = gross_wins / wins if wins > 0 else 0
+            avg_loss_val = gross_losses / (len(trades) - wins) if (len(trades) - wins) > 0 else 0
+            expectancy = round(compute_expectancy(wr, avg_win, avg_loss_val), 2)
+
+            if trades:
+                import numpy as np
+                pnls = [t.get("pnl", 0) - t.get("fee", 0) for t in trades]
+                daily_rets = np.array(pnls) / 10000  # Approx % returns
+                mean_r = float(np.mean(daily_rets))
+                std_r = float(np.std(daily_rets, ddof=1)) if len(daily_rets) > 1 else 0
+                sharpe = round(mean_r / std_r * (365 ** 0.5), 3) if std_r > 0 else 0
+                var_95 = round(compute_var(daily_rets.tolist()), 6)
+        except Exception:
+            pass
+
         return WindowResult(
             window_type=window_type,
             window_idx=window_idx,
@@ -235,6 +261,9 @@ class WalkForwardRunner:
             total_pnl=round(total_pnl, 2),
             avg_pnl=round(avg_pnl, 2),
             profit_factor=round(pf, 2),
+            expectancy=expectancy,
+            sharpe=sharpe,
+            var_95=var_95,
         )
 
     def format_report(self, report: WalkForwardReport) -> str:
@@ -271,12 +300,14 @@ class WalkForwardRunner:
                 lines.append(
                     f"  Train: {train.total_trades} trades, WR={train.win_rate:.0%}, "
                     f"PnL=${train.total_pnl:+.0f}, PF={train.profit_factor:.2f}, "
+                    f"E=${train.expectancy:+.1f}, Sharpe={train.sharpe:.2f}, "
                     f"Avg=${train.avg_pnl:+.1f}"
                 )
             if test:
                 lines.append(
                     f"  Test:  {test.total_trades} trades, WR={test.win_rate:.0%}, "
                     f"PnL=${test.total_pnl:+.0f}, PF={test.profit_factor:.2f}, "
+                    f"E=${test.expectancy:+.1f}, Sharpe={test.sharpe:.2f}, "
                     f"Avg=${test.avg_pnl:+.1f}"
                 )
             lines.append("")

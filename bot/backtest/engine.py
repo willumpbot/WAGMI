@@ -36,6 +36,13 @@ from execution.leverage import LeverageManager
 from execution.risk import RiskManager, CircuitBreaker
 from execution.candidate import TradeCandidate, CandidateLogger
 from strategies.chop_detector import ChopDetector
+from strategies.bollinger_squeeze import BollingerSqueezeStrategy
+from strategies.vmc_cipher import VMCCipherStrategy
+from strategies.probability_engine import ProbabilityEngineStrategy
+from strategies.funding_rate import FundingRateStrategy
+from strategies.oi_delta import OIDeltaStrategy
+from strategies.lead_lag import LeadLagStrategy
+from strategies.liquidation_cascade import LiquidationCascadeStrategy
 
 logger = logging.getLogger("bot.backtest")
 
@@ -105,6 +112,7 @@ class BacktestEngine:
         self.signal_rejections: List[Dict] = []  # Track why signals were rejected
         self.candle_stats = {"total": 0, "signal": 0, "no_signal": 0, "cb_blocked": 0}
         self.symbol_pnl: Dict[str, float] = {}  # Per-symbol equity attribution
+        self._signal_digests: List[Dict] = []  # Per-candle signal digest for quant learning
 
         # Candidate tracking for counterfactual analysis
         self._candidate_logger = None
@@ -274,6 +282,13 @@ class BacktestEngine:
                 cb.peak_equity = self.risk_mgr.equity
 
             data = all_data.get(symbol, {})
+
+            # Inject BTC 1h data for lead_lag strategy on non-BTC symbols
+            if symbol != "BTC" and "BTC" in all_data:
+                btc_1h = all_data["BTC"].get("1h", pd.DataFrame())
+                if not btc_1h.empty:
+                    data["_btc_1h"] = btc_1h
+
             df_1h = data.get("1h", pd.DataFrame())
 
             # Track equity before this symbol's walk for attribution
@@ -331,6 +346,26 @@ class BacktestEngine:
             all_strats["multi_tier_quality"] = MultiTierQualityStrategy(sym_configs)
         if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "false").lower() == "true":
             all_strats["monte_carlo_zones"] = MonteCarloZonesStrategy(sym_configs)
+
+        # New OHLCV-compatible strategies (only need standard candle data)
+        if os.getenv("STRATEGY_BOLLINGER_SQUEEZE_ENABLED", "true").lower() == "true":
+            all_strats["bollinger_squeeze"] = BollingerSqueezeStrategy(sym_configs)
+        if os.getenv("STRATEGY_VMC_CIPHER_ENABLED", "true").lower() == "true":
+            all_strats["vmc_cipher"] = VMCCipherStrategy(sym_configs)
+        if os.getenv("STRATEGY_PROBABILITY_ENGINE_ENABLED", "true").lower() == "true":
+            all_strats["probability_engine"] = ProbabilityEngineStrategy(sym_configs)
+
+        # BTC cross-data strategy (data injected in run() symbol loop)
+        if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "true").lower() == "true":
+            all_strats["lead_lag"] = LeadLagStrategy(sym_configs)
+
+        # Metadata-dependent strategies (disabled by default — need exchange API data)
+        if os.getenv("STRATEGY_FUNDING_RATE_ENABLED", "false").lower() == "true":
+            all_strats["funding_rate"] = FundingRateStrategy(sym_configs)
+        if os.getenv("STRATEGY_OI_DELTA_ENABLED", "false").lower() == "true":
+            all_strats["oi_delta"] = OIDeltaStrategy(sym_configs)
+        if os.getenv("STRATEGY_LIQUIDATION_CASCADE_ENABLED", "false").lower() == "true":
+            all_strats["liquidation_cascade"] = LiquidationCascadeStrategy(sym_configs)
 
         if strategy_names:
             return [s for name, s in all_strats.items() if name in strategy_names]
@@ -575,6 +610,21 @@ class BacktestEngine:
                 if signal and not signal.is_valid:
                     logger.debug(f"[{symbol}] Invalid signal rejected by is_valid")
                     signal = None
+
+                # Capture signal digest for quant learning (every candle, not just trades)
+                try:
+                    digest = ensemble.get_signal_digest(symbol)
+                    if digest and digest.get("n_strategies", 0) > 0:
+                        self._signal_digests.append({
+                            "time": str(df_1h["time"].iloc[i]),
+                            "symbol": symbol,
+                            "candle_idx": i,
+                            "digest": digest,
+                            "signal_generated": signal is not None and signal.is_valid,
+                        })
+                except Exception:
+                    pass  # Never let digest capture break the backtest
+
                 if signal:
                     self.candle_stats["signal"] += 1
                     # Tag regime at signal time for regime-aware reporting
@@ -1549,7 +1599,119 @@ class BacktestEngine:
             import logging
             logging.getLogger("bot.backtest").debug(f"Pattern cache ingestion failed: {e}")
 
+        # ── Quant Analytics ─────────────────────────────────────────────
+        try:
+            from backtest.quant_analytics import compute_quant_metrics
+            trade_records = self._build_quant_trade_records()
+            report["quant_analytics"] = compute_quant_metrics(
+                trades=trade_records,
+                equity_curve=self.equity_curve,
+                starting_equity=self.config.starting_equity,
+            )
+        except Exception as e:
+            logger.warning(f"Quant analytics failed: {e}")
+            report["quant_analytics"] = {"error": str(e)}
+
+        # ── Signal Digest Summary ───────────────────────────────────────
+        try:
+            report["signal_digest_summary"] = self._summarize_signal_digests()
+        except Exception as e:
+            logger.warning(f"Signal digest summary failed: {e}")
+            report["signal_digest_summary"] = {"error": str(e)}
+
         return report
+
+    def _build_quant_trade_records(self) -> List[Dict[str, Any]]:
+        """Convert position manager trade log into records for quant analytics."""
+        records = []
+        close_actions = {"SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
+                         "EMERGENCY", "BACKTEST_END", "HOLD_LIMIT",
+                         "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE",
+                         "CIRCUIT_BREAKER", "LLM_EXIT"}
+        for event in self.pos_mgr.trade_log:
+            if event.get("action") not in close_actions:
+                continue
+            pnl = event.get("pnl", 0)
+            meta = event.get("metadata", {})
+            records.append({
+                "pnl": float(pnl),
+                "strategy": meta.get("strategy", event.get("strategy", "unknown")),
+                "regime": meta.get("regime", "unknown"),
+                "side": event.get("side", "unknown"),
+                "confidence": float(meta.get("confidence", 0)),
+                "leverage": float(event.get("leverage", meta.get("leverage", 1))),
+                "timestamp": str(event.get("time", event.get("timestamp", ""))),
+                "symbol": event.get("symbol", "unknown"),
+                "action": event.get("action", ""),
+                "win": pnl > 0,
+            })
+        return records
+
+    def _summarize_signal_digests(self) -> Dict[str, Any]:
+        """Aggregate signal digest data into a summary for the report."""
+        if not self._signal_digests:
+            return {"total_evaluations": 0}
+
+        from collections import defaultdict
+        strategy_fires = defaultdict(lambda: {"fired": 0, "total_conf": 0.0})
+        consensus_histogram = defaultdict(int)  # agreement_count -> occurrences
+        near_misses = []
+        total_with_signal = 0
+
+        min_votes = 3  # Default MIN_VOTES
+
+        for entry in self._signal_digests:
+            digest = entry.get("digest", {})
+            readings = digest.get("readings", {})
+            consensus = digest.get("consensus", {})
+            agreement = consensus.get("agreement", 0)
+            min_votes = consensus.get("min_votes_needed", 3)
+
+            # Track per-strategy fire rates
+            for strat_name, reading in readings.items():
+                if reading.get("side") and reading["side"] != "NONE":
+                    strategy_fires[strat_name]["fired"] += 1
+                    strategy_fires[strat_name]["total_conf"] += float(reading.get("confidence", 0))
+
+            # Consensus histogram
+            if agreement > 0:
+                consensus_histogram[agreement] += 1
+
+            # Near-miss detection
+            if agreement == min_votes - 1 and not entry.get("signal_generated"):
+                near_misses.append({
+                    "time": entry["time"],
+                    "symbol": entry["symbol"],
+                    "dominant_side": consensus.get("dominant_side", "?"),
+                    "agreement": agreement,
+                })
+
+            if entry.get("signal_generated"):
+                total_with_signal += 1
+
+        # Build fire rate summary
+        total_evals = len(self._signal_digests)
+        fire_rates = {}
+        for strat, data in sorted(strategy_fires.items()):
+            fired = data["fired"]
+            fire_rates[strat] = {
+                "fired": fired,
+                "fire_rate": round(fired / total_evals, 4) if total_evals > 0 else 0,
+                "avg_confidence": round(data["total_conf"] / fired, 1) if fired > 0 else 0,
+            }
+
+        return {
+            "total_evaluations": total_evals,
+            "total_signals_generated": total_with_signal,
+            "signal_rate": round(total_with_signal / total_evals, 4) if total_evals > 0 else 0,
+            "strategy_fire_rates": fire_rates,
+            "consensus_histogram": dict(sorted(consensus_histogram.items())),
+            "near_misses": {
+                "count": len(near_misses),
+                "samples": near_misses[:20],  # Cap for report size
+            },
+            "min_votes_required": min_votes,
+        }
 
     # Actions that represent trade closes (not OPEN events)
     _CLOSE_ACTIONS = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
