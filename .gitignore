@@ -38,6 +38,7 @@ bot/ml_data/
 bot/backtest_ml_data/
 bot/logs/
 bot/paper_trades/
+bot/backtest_results/
 # Runtime CSV/JSON outputs (not source code)
 bot/data/trades.csv
 bot/data/analysis/
