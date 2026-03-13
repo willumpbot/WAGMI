@@ -847,6 +847,10 @@ class PositionManager:
         # Include entry fees (OPEN events) + exit fees for accurate total
         total_fees = sum(e.fee for e in closed) + sum(e.fee for e in opens)
 
+        gross_wins = sum(e.pnl for e in wins)
+        gross_losses = abs(sum(e.pnl for e in losses))
+        profit_factor = round(gross_wins / gross_losses, 2) if gross_losses > 0 else 99.0
+
         return {
             "positions_opened": len(opens),
             "close_events": len(closed),
@@ -855,8 +859,10 @@ class PositionManager:
             "losses": len(losses),
             "win_rate": len(wins) / len(closed) if closed else 0,
             "total_pnl": total_pnl,
+            "gross_pnl": total_pnl,
             "total_fees": total_fees,
             "net_pnl": total_pnl - total_fees,
+            "profit_factor": profit_factor,
             "avg_win": sum(e.pnl for e in wins) / len(wins) if wins else 0,
             "avg_loss": sum(e.pnl for e in losses) / len(losses) if losses else 0,
             "by_action": {

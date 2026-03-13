@@ -1629,20 +1629,36 @@ class BacktestEngine:
                          "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE",
                          "CIRCUIT_BREAKER", "LLM_EXIT"}
         for event in self.pos_mgr.trade_log:
-            if event.get("action") not in close_actions:
+            # TradeEvent is a dataclass — use attribute access, not .get()
+            action = getattr(event, "action", None) if not isinstance(event, dict) else event.get("action")
+            if action not in close_actions:
                 continue
-            pnl = event.get("pnl", 0)
-            meta = event.get("metadata", {})
+            if isinstance(event, dict):
+                pnl = event.get("pnl", 0)
+                meta = event.get("metadata", {})
+                side = event.get("side", "unknown")
+                leverage = float(event.get("leverage", meta.get("leverage", 1)))
+                timestamp = str(event.get("time", event.get("timestamp", "")))
+                symbol = event.get("symbol", "unknown")
+                strategy = meta.get("strategy", event.get("strategy", "unknown"))
+            else:
+                pnl = getattr(event, "pnl", 0)
+                meta = getattr(event, "metadata", {}) or {}
+                side = getattr(event, "side", "unknown")
+                leverage = float(getattr(event, "leverage", 1))
+                timestamp = str(getattr(event, "timestamp", ""))
+                symbol = getattr(event, "symbol", "unknown")
+                strategy = meta.get("strategy", getattr(event, "strategy", "unknown"))
             records.append({
                 "pnl": float(pnl),
-                "strategy": meta.get("strategy", event.get("strategy", "unknown")),
+                "strategy": strategy,
                 "regime": meta.get("regime", "unknown"),
-                "side": event.get("side", "unknown"),
+                "side": side,
                 "confidence": float(meta.get("confidence", 0)),
-                "leverage": float(event.get("leverage", meta.get("leverage", 1))),
-                "timestamp": str(event.get("time", event.get("timestamp", ""))),
-                "symbol": event.get("symbol", "unknown"),
-                "action": event.get("action", ""),
+                "leverage": leverage,
+                "timestamp": timestamp,
+                "symbol": symbol,
+                "action": action,
                 "win": pnl > 0,
             })
         return records
@@ -1668,6 +1684,8 @@ class BacktestEngine:
             min_votes = consensus.get("min_votes_needed", 3)
 
             # Track per-strategy fire rates
+            if not isinstance(readings, dict):
+                continue  # Skip if readings is a list or unexpected type
             for strat_name, reading in readings.items():
                 if reading.get("side") and reading["side"] != "NONE":
                     strategy_fires[strat_name]["fired"] += 1

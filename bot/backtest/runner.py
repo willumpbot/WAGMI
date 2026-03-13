@@ -392,7 +392,7 @@ def _print_backtest_summary(results: dict):
     total_trades = res.get("total_trades", 0)
     wins = res.get("wins", 0)
     losses = res.get("losses", 0)
-    win_rate = res.get("win_rate_pct", 0)
+    win_rate = res.get("win_rate", 0) * 100  # win_rate is decimal 0-1, convert to pct
     net_pnl = res.get("net_pnl", 0)
     gross_pnl = res.get("gross_pnl", 0)
     pf = res.get("profit_factor", 0)
@@ -426,7 +426,7 @@ def _print_backtest_summary(results: dict):
         for sym, data in by_sym.items():
             sym_trades = data.get("total_trades", data.get("trades", 0))
             sym_pnl = data.get("net_pnl", data.get("pnl", 0))
-            sym_wr = data.get("win_rate_pct", data.get("win_rate", 0))
+            sym_wr = data.get("win_rate", 0) * 100  # decimal to pct
             if sym_trades > 0:
                 print(f"    {sym:>10}: {sym_trades} trades | WR {sym_wr:.0f}% | PnL ${sym_pnl:+,.2f}")
 
@@ -445,9 +445,15 @@ def _print_backtest_summary(results: dict):
     exit_types = results.get("exit_types", {})
     if exit_types:
         print("\n  EXIT TYPES:")
-        for etype, count in sorted(exit_types.items(), key=lambda x: -x[1]):
-            if count > 0:
-                print(f"    {etype}: {count}")
+        for etype, stats in sorted(exit_types.items(), key=lambda x: -x[1].get("trades", 0) if isinstance(x[1], dict) else -x[1]):
+            if isinstance(stats, dict):
+                trades = stats.get("trades", 0)
+                if trades > 0:
+                    wr = stats.get("win_rate", 0)
+                    pnl = stats.get("pnl", 0)
+                    print(f"    {etype}: {trades} trades | WR {wr:.0%} | PnL ${pnl:+,.2f}")
+            elif stats > 0:
+                print(f"    {etype}: {stats}")
 
     # Quant risk metrics (Sharpe, Sortino, Calmar, etc.)
     risk = results.get("risk_metrics", {})

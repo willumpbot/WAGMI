@@ -34,7 +34,7 @@ def check_deployment_readiness(report: Dict[str, Any]) -> Dict[str, Any]:
     gates = []
 
     # Gate 1: Trades Generated
-    total_trades = results.get("closed_trades", quant.get("total_trades", 0))
+    total_trades = results.get("total_trades", results.get("closed_trades", quant.get("total_trades", 0)))
     gates.append(_gate(
         "Trades Generated",
         total_trades > 0,
@@ -85,7 +85,9 @@ def check_deployment_readiness(report: Dict[str, Any]) -> Dict[str, Any]:
     ))
 
     # Gate 6: Max Drawdown Tolerable
-    max_dd = results.get("max_drawdown_pct", 1.0)
+    max_dd_raw = results.get("max_drawdown_pct", 100.0)
+    # max_drawdown_pct may be stored as percentage (10.4) or decimal (0.104)
+    max_dd = max_dd_raw / 100.0 if max_dd_raw > 1.0 else max_dd_raw
     gates.append(_gate(
         "Max Drawdown",
         max_dd < 0.20,
