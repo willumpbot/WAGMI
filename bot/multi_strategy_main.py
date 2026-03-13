@@ -3150,6 +3150,36 @@ class MultiStrategyBot:
             lev_decision.leverage = _sym_max_lev
         _sym_risk = get_symbol_param(symbol, "risk_per_trade", self.config)
 
+        # Compound sizing: apply 8-multiplier system from quant plan
+        _compound_mult = 1.0
+        try:
+            _regime = self._tick_regime_cache.get(symbol, "unknown")
+            # Kelly weight
+            if self.kelly_engine and signal_result.strategy:
+                _compound_mult *= self.kelly_engine.compute_kelly_weight(signal_result.strategy)
+            # Regime scalar
+            _compound_mult *= self.risk_mgr.get_regime_scalar(_regime)
+            # Drawdown dial
+            _compound_mult *= self.risk_mgr.get_drawdown_dial()
+            # Vol regime (from ATR data if available)
+            if symbol in self._last_prices and hasattr(signal_result, 'atr') and signal_result.atr > 0:
+                _atr_baseline = self._last_prices[symbol] * 0.02  # ~2% as baseline
+                _compound_mult *= self.risk_mgr.compute_vol_regime_multiplier(
+                    signal_result.atr, _atr_baseline
+                )
+            # BTC momentum alignment
+            _btc_ret = self._price_changes_1h.get("BTC", 0.0)
+            if symbol != "BTC" and abs(_btc_ret) > 0.001:
+                _compound_mult *= self.risk_mgr.compute_btc_momentum_multiplier(
+                    _btc_ret, signal_result.side
+                )
+            # Cap at 2× base, floor at 0.1×
+            _compound_mult = min(2.0, max(0.1, _compound_mult))
+            # Apply compound multiplier to symbol risk
+            _sym_risk = (_sym_risk or self.config.risk_per_trade) * _compound_mult
+        except Exception as e:
+            logger.debug(f"Compound sizing error (using base): {e}")
+
         # Calculate position size (risk-based: qty = risk$ / (stop_dist * leverage))
         qty = self.risk_mgr.calculate_qty(
             signal_result.entry, signal_result.sl,
