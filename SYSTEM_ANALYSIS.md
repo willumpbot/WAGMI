@@ -1,12 +1,12 @@
-# SYSTEM ANALYSIS — Full State Assessment (March 12, 2026)
+# SYSTEM ANALYSIS — Full State Assessment (March 13, 2026)
 
 ## Executive Summary
 
 nunuIRL is a **production-grade autonomous crypto trading system** with 11 strategies, 9 LLM specialist agents, multi-layered execution safety, and comprehensive monitoring. The architecture is mature. The challenge now is **proving profitability through systematic validation**.
 
-**Current phase:** Phase 1A (Baseline Backtest) — proving strategies alone can generate edge.
+**Current phase:** Phase 1B (Ensemble Tuning) — increasing trade count for statistical significance.
 
-**30-day backtest results (no LLM):**
+**30-day backtest results (no LLM, pre-tuning):**
 - Net PnL: +$5,536 (+11.2% on $50k)
 - 8 positions taken, 77% win rate by trade events
 - HYPE: 100% WR (4/4), SOL: 0% WR (0/2), BTC: 50% WR (1/2)
@@ -14,6 +14,14 @@ nunuIRL is a **production-grade autonomous crypto trading system** with 11 strat
 - Ensemble pass rate: 3.4% (1,500+ signals → 51 pass → 8 trades)
 
 **Key problem:** 8 trades is not statistically significant. Need 30+ per symbol to validate.
+
+**Completed fixes (March 12-13):**
+- Confidence/leverage inversion: stop-width-dependent leverage cap
+- Sortino ratio: aggregated hourly→daily returns, proper downside deviation
+- Monte Carlo: switched from degenerate permutation to bootstrap resampling
+- BY AGREEMENT display: win_rate decimal→pct, profit_factor computation
+- Deployment gate: fixed key lookups and drawdown format detection
+- Ensemble tuning: regime-aware min_votes, relaxed EV/R:R/veto filters
 
 ---
 
@@ -115,17 +123,19 @@ Cost: ~$0.007/decision cycle
 
 ## Known Bugs
 
-### Backtest Runner Display (runner.py)
-1. **Win rate shows 0%** — Line 393 reads `win_rate_pct` key but actual key is `win_rate` (decimal). Fix: `res.get("win_rate", 0) * 100`
-2. **exit_types crash** — Line 446 sorts dict values as ints, but they're nested dicts. Fix: access `.get("trades", 0)`
-3. **Quant analytics error** — TradeEvent objects vs expected dicts in some code paths
-4. **Deployment gate broken** — Reports 0 trades, -1036% drawdown (nonsensical)
+### Fixed (March 12-13)
+1. ~~**Win rate shows 0%**~~ — Fixed: `win_rate_pct` → `win_rate * 100`
+2. ~~**exit_types crash**~~ — Fixed: unpack dict values properly
+3. ~~**Quant analytics error**~~ — Fixed: TradeEvent dataclass vs dict handling
+4. ~~**Deployment gate broken**~~ — Fixed: key fallbacks + drawdown format detection
+5. ~~**4 test files fail import**~~ — Fixed: installed pandas dependency
+6. ~~**Sortino ratio 0.00**~~ — Fixed: hourly→daily aggregation + proper downside deviation
+7. ~~**Monte Carlo degenerate**~~ — Fixed: permutation→bootstrap resampling
+8. ~~**BY AGREEMENT PF 0.00x**~~ — Fixed: added profit_factor computation
+9. ~~**Confidence/leverage inversion**~~ — Fixed: stop-width leverage cap
 
-### Test Suite
-5. **4 test files fail import** — Missing pandas dependency (test_chop_detector, test_ensemble_weights, test_new_strategies, test_phase2)
-
-### Tech Debt
-6. **multi_strategy_main.py is 6,028 lines** — Needs breakup into tick_processor, llm_integration, position_wiring, analytics
+### Remaining
+10. **multi_strategy_main.py is 6,028 lines** — Needs breakup into tick_processor, llm_integration, position_wiring, analytics
 
 ---
 
@@ -147,21 +157,28 @@ Phase F: Live trading (conservative: 1 symbol, 1% risk, 3x max)
 Phase G: Scale + continuous improvement
 ```
 
-### Phase B Deep Dive: Why We Need More Trades
+### Phase B Deep Dive: Ensemble Tuning (COMPLETED)
 
-The system's 3.4% signal pass rate is driven by:
-- `min_votes=3` with only 4 active strategies = need 75% agreement
-- Confidence floors: 60% normal, 88% ranging (almost impossible)
-- ADX threshold 22 rejects weak-but-tradeable trends
-- Several strategies produce no signals (need exchange metadata)
-- Opposition veto ratio 1.5x kills borderline signals
+The system's 3.4% signal pass rate was driven by over-restrictive gates.
+**All changes are data-driven from backtest analysis, not blind loosening.**
 
-**Not proposing to blindly lower gates.** Proposing to:
-1. Analyze which strategy combinations produce profitable trades
-2. Test min_votes=2 with the BEST 2-strategy combos only
-3. Test ADX threshold sensitivity (22 → 18-20)
-4. Test confidence floor sensitivity (88% → 75-80% in ranging)
-5. Validate changes with walk-forward to prevent overfitting
+**Changes applied:**
+| Parameter | Before | After | Rationale |
+|-----------|--------|-------|-----------|
+| veto_ratio | 1.5 | 1.2 | Fee-drag + EV gates handle quality |
+| ranging_confidence_floor | 88% | 80% | 88% was unreachable |
+| min_signal_ev | 0.20 | 0.15 | Was #1 signal killer (39.7% blocked) |
+| min_signal_rr | 1.8 | 1.5 | Redundant with fee-drag filter |
+| min_votes in trending | 3 | 2 | Trending regime had 100% WR |
+
+**Safety nets preserved:**
+- Fee-drag filter (30% cap) still guards unprofitable tight-stop trades
+- EV floor still blocks negative-expectancy trades
+- Stop-width leverage cap prevents tight-stop + high-leverage blowups
+- Circuit breakers, liquidation safety, correlation guard unchanged
+- Known-losing combo block (confidence_scorer + multi_tier_quality) preserved
+
+**Next:** Run 100-day backtest with tuned params to validate more trades
 
 ### Execution Safety Gaps for Live Trading
 
