@@ -309,7 +309,7 @@ class TestLeverageGate:
         from trading_config import TradingConfig
         tc = TradingConfig()
         assert hasattr(tc, "min_leverage_entry_gate")
-        assert tc.min_leverage_entry_gate == 2.0
+        assert tc.min_leverage_entry_gate == 1.2
 
 
 class TestTimeStop:

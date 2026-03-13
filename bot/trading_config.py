@@ -174,8 +174,8 @@ class TradingConfig:
 
     # ── Leverage eligibility gate ──
     min_leverage_entry_gate: float = field(
-        default_factory=lambda: _env_float("MIN_LEVERAGE_ENTRY_GATE", 2.0)
-    )  # Skip trades below this leverage threshold. Leveraged: +$95/trade, spot: -$33/trade.
+        default_factory=lambda: _env_float("MIN_LEVERAGE_ENTRY_GATE", 1.2)
+    )  # Hard floor for leverage gate. Graduated sizing 1.2x–1.8x, full size above 1.8x.
 
     # ── Profitability shield ──
     max_portfolio_leverage: float = field(

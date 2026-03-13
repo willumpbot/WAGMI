@@ -21,6 +21,7 @@ from typing import Optional, Dict, Any, List
 
 from strategies.base import Signal
 from core.filter_annotations import FilterAnnotation, AnnotatedSignal
+from execution.leverage import LeverageDecision
 
 logger = logging.getLogger("bot.core.signal_pipeline")
 
@@ -193,17 +194,31 @@ class RiskFilterChain:
                 rejection_reason=f"Leverage denied: {lev_decision.reason}"
             )
 
-        # Gate 5a: Leverage eligibility entry gate (D2)
-        # Leveraged trades: +$95.20/trade avg. Spot trades: -$32.95/trade avg.
-        # If a trade doesn't qualify for at least 2x leverage, skip it.
-        min_leverage_gate = getattr(self.config, "min_leverage_entry_gate", 2.0)
+        # Gate 5a: Graduated leverage eligibility gate (D2)
+        # Hard floor at 1.2x (zero-conviction), graduated sizing 1.2x–1.8x,
+        # full size above 1.8x. Replaces binary 2.0x gate that blocked all
+        # signals in bearish/wide-stop conditions.
+        min_leverage_gate = getattr(self.config, "min_leverage_entry_gate", 1.2)
+        LEVERAGE_FULL_SIZE = 1.8
         if lev_decision.leverage < min_leverage_gate:
             return FilterResult(
                 approved=False, signal=signal,
-                rejection_reason=f"Below leverage gate: {lev_decision.leverage:.1f}x < {min_leverage_gate:.1f}x minimum "
-                                 f"(spot trades avg -$32.95/trade)",
+                rejection_reason=f"Below leverage gate: {lev_decision.leverage:.1f}x < {min_leverage_gate:.1f}x minimum",
                 metadata=meta,
             )
+
+        # Graduated size reduction for sub-optimal leverage (1.2x→0.6 rm, 1.8x→1.0 rm)
+        if lev_decision.leverage < LEVERAGE_FULL_SIZE:
+            lev_scalar = 0.6 + (lev_decision.leverage - min_leverage_gate) / (LEVERAGE_FULL_SIZE - min_leverage_gate) * 0.4
+            lev_decision = LeverageDecision(
+                leverage=lev_decision.leverage,
+                mode=lev_decision.mode,
+                tier=lev_decision.tier,
+                reason=lev_decision.reason,
+                risk_multiplier=lev_decision.risk_multiplier * lev_scalar,
+            )
+            logger.info(f"[{signal.symbol}] Leverage gate graduated: {lev_decision.leverage:.1f}x → "
+                        f"size scalar {lev_scalar:.2f} (rm={lev_decision.risk_multiplier:.2f})")
 
         # CB override constraints: if CB tripped, cap leverage
         override_constraints = self.risk_mgr.get_override_constraints(signal.confidence)
