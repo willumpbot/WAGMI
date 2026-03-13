@@ -121,7 +121,7 @@ class DailyReporter:
     def _metric_walk_forward(self) -> Dict[str, Any]:
         """Metric 3: Walk-forward ratio for the last window."""
         try:
-            from validation.walk_forward import WalkForwardValidator
+            from validation.walk_forward import run_rolling_walk_forward, avg_wf_ratio
             trades = self._ledger.get_trades(lookback_days=60)
             if len(trades) >= 10:
                 # Convert trades to format walk-forward expects
@@ -131,14 +131,13 @@ class DailyReporter:
                         "pnl": self._parse_float(t.get("net_pnl", "0")),
                         "timestamp": self._parse_float(t.get("timestamp", "0")),
                     })
-                validator = WalkForwardValidator()
-                wf_result = validator.run_rolling(results)
-                ratio = wf_result.get("avg_wf_ratio", None)
+                wf_results = run_rolling_walk_forward(results)
+                ratio = avg_wf_ratio(wf_results) if wf_results else None
                 return {
                     "label": "Walk-Forward Ratio (last window)",
                     "ratio": ratio,
                     "status": "computed",
-                    "windows": wf_result.get("num_windows", 0),
+                    "windows": len(wf_results) if wf_results else 0,
                     "alert_threshold": WALK_FORWARD_ALERT,
                 }
         except Exception as e:
