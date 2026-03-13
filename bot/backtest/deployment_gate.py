@@ -134,7 +134,7 @@ def check_deployment_readiness(report: Dict[str, Any]) -> Dict[str, Any]:
     ))
 
     # Gate 10: Signal Quality Pre-Seeded
-    sq_exists = Path("data/signal_quality.json").exists()
+    sq_exists = Path("data/feedback/signal_quality.json").exists() or Path("data/signal_quality.json").exists()
     gates.append(_gate(
         "Signal Quality Seeded",
         sq_exists,

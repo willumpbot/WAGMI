@@ -897,24 +897,25 @@ class BacktestLearningBridge:
 
         # Pre-seed signal quality scorer
         try:
-            from feedback.signal_quality import SignalQualityScorer
+            from feedback.signal_quality import SignalQualityScorer, QualityFeatures
             scorer = SignalQualityScorer()
             seeded = 0
             for rec in trade_records:
                 try:
-                    scorer.update(
+                    features = QualityFeatures(
                         symbol=rec.get("symbol", "unknown"),
                         regime=rec.get("regime", "unknown"),
-                        strategy=rec.get("strategy", "unknown"),
                         side=rec.get("side", "BUY"),
                         confidence=rec.get("confidence", 50),
-                        win=rec.get("win", rec.get("pnl", 0) > 0),
-                        pnl=rec.get("pnl", 0),
+                        num_strategies_agree=rec.get("num_agree", 2),
                     )
+                    win = rec.get("win", rec.get("pnl", 0) > 0)
+                    pnl = rec.get("pnl", 0)
+                    scorer.record_outcome(features=features, win=win, pnl=pnl)
                     seeded += 1
                 except Exception:
                     pass
-            scorer.save()
+            scorer._save_state()
             self._stats["signal_quality_seeded"] = seeded
             logger.info(f"[LEARN-BRIDGE] Signal quality pre-seeded with {seeded} trades")
         except Exception as e:
