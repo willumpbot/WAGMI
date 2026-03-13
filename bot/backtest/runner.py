@@ -355,6 +355,7 @@ def main():
     parser.add_argument("--equity", type=float, default=50000, help="Starting equity (default: $50k)")
     parser.add_argument("--risk", type=float, default=1.5, help="Risk per trade %% (default: 1.5%%)")
     parser.add_argument("--compare", action="store_true", help="Compare paper vs backtest results")
+    parser.add_argument("--learn", action="store_true", help="Feed results into all learning systems")
 
     args = parser.parse_args()
 
@@ -373,6 +374,7 @@ def main():
             days=args.days,
             starting_equity=args.equity,
             risk_per_trade=args.risk / 100,
+            learn=args.learn,
         )
         _print_backtest_summary(results)
 
