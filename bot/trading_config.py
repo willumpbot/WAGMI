@@ -313,8 +313,8 @@ class TradingConfig:
         default_factory=lambda: _env_float("SL_ATR_MULTIPLIER", 1.5)
     )  # Unified SL distance: all strategies use same ATR mult for consistent ensemble merge
     ensemble_confidence_floor: float = field(
-        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 60.0)
-    )  # Lowered from 80: <60% is the ONLY profitable confidence bucket across all backtests. EV gate handles quality.
+        default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 55.0)
+    )  # Lowered from 60: HTF penalty now reduces confidence by 15-20pts, floor at 60 double-penalizes. EV gate handles quality.
     max_ensemble_confidence: float = field(
         default_factory=lambda: _env_float("MAX_ENSEMBLE_CONFIDENCE", 95.0)
     )  # Raised from 92: reduces clustering at cap, lets unanimous signals get proper bonus

@@ -293,6 +293,32 @@ class ContinuousBacktester:
             f"optimal_floor={result.optimal_floor:.0f}%"
         )
 
+        # Deep cycle: run walk-forward validation for OOS generalization check
+        if level == "deep" and len(window_outcomes) >= 10:
+            try:
+                from validation.walk_forward import run_rolling_walk_forward, avg_wf_ratio
+                wf_trades = [
+                    {"pnl": o["pnl"], "timestamp": o["ts"]}
+                    for o in window_outcomes
+                ]
+                wf_results = run_rolling_walk_forward(wf_trades)
+                wf_ratio = avg_wf_ratio(wf_results) if wf_results else 0.0
+                self._last_wf_ratio = wf_ratio
+
+                if wf_ratio < 0.3:
+                    logger.critical(
+                        f"[BACKTEST] Walk-forward ratio CRITICAL: {wf_ratio:.3f} — "
+                        f"possible overfitting detected"
+                    )
+                elif wf_ratio < 0.5:
+                    logger.warning(
+                        f"[BACKTEST] Walk-forward ratio degraded: {wf_ratio:.3f}"
+                    )
+                else:
+                    logger.info(f"[BACKTEST] Walk-forward ratio: {wf_ratio:.3f}")
+            except Exception as e:
+                logger.debug(f"[BACKTEST] Walk-forward check error: {e}")
+
         return result
 
     def _find_optimal_floor(self, outcomes: List[Dict]) -> float:
@@ -509,6 +535,10 @@ class ContinuousBacktester:
                     },
                     "calibration": round(latest.confidence_calibration, 3),
                 }
+
+        # Walk-forward ratio from last deep cycle
+        if hasattr(self, '_last_wf_ratio'):
+            report["walk_forward_ratio"] = round(self._last_wf_ratio, 3)
 
         suggestions = self.get_aggregated_suggestions()
         if suggestions:

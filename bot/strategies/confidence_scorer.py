@@ -356,17 +356,21 @@ class ConfidenceScorerStrategy(BaseStrategy):
                 mfi_6h = _mfi_like(df_6h, period=min(60, len(df_6h)))
                 mfi_6h_val = float(mfi_6h.iloc[-1])
 
-            # Reject only if BOTH 6h indicators contradict 1h direction.
-            # Single indicator lag is normal; both bearish = real divergence.
-            # (was OR — too strict, rejected valid trades where one indicator lagged)
+            # HTF contra-trend: penalize (don't hard-kill) when 6h contradicts 1h.
+            # Hard reject was killing ALL buys in sustained downtrends — zero trades.
+            # Now symmetric: both BUY and SELL get sized down, not eliminated.
+            # Strong HTF divergence (both MACD + MFI) = heavier penalty.
             if di_bullish and (macd_h_6h < 0 and mfi_6h_val < 45):
-                logger.info(f"[{symbol}] confidence_scorer BUY rejected: 6h bearish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f})")
-                return None
+                htf_penalty = 20 if mfi_6h_val < 30 else 15  # Stronger penalty if MFI deeply bearish
+                confidence -= htf_penalty
+                logger.info(f"[{symbol}] confidence_scorer BUY penalized -{htf_penalty}: 6h bearish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f}), conf now {confidence:.0f}")
+                if confidence < 50:
+                    return None
             if not di_bullish and (macd_h_6h > 0 and mfi_6h_val > 55):
-                htf_penalty = 15  # Penalize but don't kill — 6h lags during bear bounces
+                htf_penalty = 20 if mfi_6h_val > 70 else 15
                 confidence -= htf_penalty
                 logger.info(f"[{symbol}] confidence_scorer SELL penalized -{htf_penalty}: 6h bullish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f}), conf now {confidence:.0f}")
-                if confidence < 55:
+                if confidence < 50:
                     return None
 
             # 6h confirmation bonus

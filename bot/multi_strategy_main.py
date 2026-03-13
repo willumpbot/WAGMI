@@ -403,6 +403,12 @@ class MultiStrategyBot:
                 num_sims=config.mc_num_sims,
                 forward_bars=config.mc_forward_hours,
             ))
+        if os.getenv("STRATEGY_CVD_SIGNAL_ENABLED", "false").lower() == "true":
+            try:
+                from strategies.cvd_signal import CVDSignalStrategy
+                self.strategies.append(CVDSignalStrategy(sym_configs))
+            except Exception as e:
+                logger.warning(f"[INIT] CVD signal strategy unavailable: {e}")
 
         enabled_names = [s.name for s in self.strategies]
         logger.info(f"[INIT] Active strategies: {enabled_names}")
@@ -555,6 +561,10 @@ class MultiStrategyBot:
             self.trade_ledger = TradeLedger(data_dir="data")
             self.shadow_ledger = ShadowLedger(data_dir="data")
             self.correlation_gate = CorrelationGate()
+            from execution.sector_exposure import SectorExposure
+            self._sector_exposure_cls = SectorExposure
+            from execution.execution_analytics import ExecutionAnalytics
+            self.execution_analytics = ExecutionAnalytics(data_dir="data")
             self.daily_reporter = DailyReporter(
                 trade_ledger=self.trade_ledger,
                 ic_tracker=self.ic_tracker,
@@ -569,6 +579,8 @@ class MultiStrategyBot:
             self.trade_ledger = None
             self.shadow_ledger = None
             self.correlation_gate = None
+            self._sector_exposure_cls = None
+            self.execution_analytics = None
             self.daily_reporter = None
 
         # Growth intelligence: self-evolving meta-brain
@@ -802,6 +814,28 @@ class MultiStrategyBot:
             logger.info(f"[INIT] Health server started on port {self.config.health_port}")
         except Exception as e:
             logger.warning(f"[INIT] Health server start failed: {e}")
+
+        # Go-live gate: evaluate 5 deployment criteria
+        try:
+            from validation.go_live_gate import GoLiveGate
+            self._go_live_gate = GoLiveGate(
+                trade_ledger=self.trade_ledger,
+                ic_tracker=self.ic_tracker,
+                circuit_breaker=self.risk_mgr.circuit_breaker if hasattr(self.risk_mgr, 'circuit_breaker') else None,
+            )
+            gate_result = self._go_live_gate.evaluate()
+            gate_text = self._go_live_gate.format_report(gate_result)
+            logger.info(f"\n{gate_text}")
+            if not gate_result["passed"] and os.environ.get("ENVIRONMENT") == "production":
+                logger.critical("GO-LIVE GATE FAILED — aborting live session")
+                raise SystemExit("Go-live gate not passed. Run in paper mode first.")
+            elif not gate_result["passed"]:
+                logger.warning("Go-live gate not passed — running in paper/backtest mode despite failures")
+        except SystemExit:
+            raise
+        except Exception as e:
+            logger.warning(f"[INIT] Go-live gate evaluation error: {e}")
+            self._go_live_gate = None
 
         # Signal handlers
         signal.signal(signal.SIGINT, self._handle_signal)
@@ -1242,6 +1276,38 @@ class MultiStrategyBot:
                         )
                 except Exception as e:
                     logger.debug(f"Quant daily report error: {e}")
+
+            # Execution analytics summary
+            if hasattr(self, 'execution_analytics') and self.execution_analytics:
+                try:
+                    _ea_summary = self.execution_analytics.get_slippage_summary(lookback_days=7)
+                    if _ea_summary.get("total_fills", 0) > 0:
+                        logger.info(
+                            f"[EXEC-ANALYTICS] 7d Summary: "
+                            f"mean_slippage={_ea_summary['overall_mean_bps']:.2f}bps "
+                            f"fills={_ea_summary['total_fills']} "
+                            f"maker_rate={_ea_summary['maker_rate']:.1%}"
+                        )
+                        if self.alerts and _ea_summary["overall_mean_bps"] > 3.0:
+                            self.alerts.send_market_update(
+                                f"Execution Alert: avg slippage {_ea_summary['overall_mean_bps']:.1f}bps > 3bps threshold"
+                            )
+                except Exception as e:
+                    logger.debug(f"Execution analytics summary error: {e}")
+
+            # Go-live gate status check (runs with daily report)
+            if hasattr(self, '_go_live_gate') and self._go_live_gate:
+                try:
+                    _gate_result = self._go_live_gate.evaluate()
+                    _gate_text = self._go_live_gate.format_report(_gate_result)
+                    logger.info(f"\n{_gate_text}")
+                    if self.alerts and not _gate_result["passed"]:
+                        _n_fail = len([g for g in _gate_result["gates"].values() if not g.get("passed")])
+                        self.alerts.send_market_update(
+                            f"Go-Live Gate: {_n_fail} gate(s) failed — {_gate_result['recommendation']}"
+                        )
+                except Exception as e:
+                    logger.debug(f"Go-live gate daily check error: {e}")
 
         # Uplift Analytics + Progression: evaluate LLM value and autonomy readiness
         # Runs every 720 ticks (~12 hours) — gives enough time for data to accumulate
@@ -3212,6 +3278,54 @@ class MultiStrategyBot:
         except Exception:
             pass
 
+        # Dedicated CorrelationGate: per-symbol cluster logic
+        if self.correlation_gate:
+            try:
+                _open_for_corr = [
+                    {"symbol": s, "side": p.side}
+                    for s, p in open_pos.items()
+                ]
+                _corr_mult = self.correlation_gate.check_correlation_budget(
+                    new_symbol=symbol,
+                    new_side=side,
+                    open_positions=_open_for_corr,
+                )
+                if _corr_mult == 0.0:
+                    logger.info(f"[{trace_id}][{symbol}] CorrelationGate: cluster at capacity — SKIP")
+                    return
+                elif _corr_mult < 1.0:
+                    qty = qty * _corr_mult
+                    logger.info(f"[{trace_id}][{symbol}] CorrelationGate: size reduced to {_corr_mult:.0%}")
+            except Exception as e:
+                logger.debug(f"CorrelationGate check error: {e}")
+
+        # Sector exposure gate: prevent thematic concentration
+        if hasattr(self, '_sector_exposure_cls') and self._sector_exposure_cls:
+            try:
+                _se = self._sector_exposure_cls(total_equity=self.risk_mgr.equity)
+                _open_notionals = [
+                    (s, p.qty * p.entry) for s, p in open_pos.items()
+                ]
+                _se_result = _se.check_new_position(
+                    symbol=symbol,
+                    new_notional=qty * actual_entry if 'actual_entry' in dir() else qty * signal_result.entry,
+                    open_positions=_open_notionals,
+                )
+                if not _se_result.allowed:
+                    logger.info(
+                        f"[{trace_id}][{symbol}] SectorExposure: blocked by "
+                        f"{_se_result.limiting_sector} cap — SKIP"
+                    )
+                    return
+                elif _se_result.size_multiplier < 1.0:
+                    qty = qty * _se_result.size_multiplier
+                    logger.info(
+                        f"[{trace_id}][{symbol}] SectorExposure: size reduced to "
+                        f"{_se_result.size_multiplier:.0%} ({_se_result.limiting_sector})"
+                    )
+            except Exception as e:
+                logger.debug(f"SectorExposure check error: {e}")
+
         # Global Brain bias: adjust sizing based on macro regime
         try:
             _gb_size_mult = self._global_bias_adjustment.get("size_multiplier", 1.0)
@@ -3852,6 +3966,22 @@ class MultiStrategyBot:
         # Use actual fill price and qty from exchange
         actual_entry = order_result.fill_price if order_result.fill_price > 0 else actual_entry
         qty = order_result.fill_qty if order_result.fill_qty > 0 else qty
+
+        # Record fill quality for execution analytics
+        if hasattr(self, 'execution_analytics') and self.execution_analytics:
+            try:
+                self.execution_analytics.record_fill(
+                    trade_id=f"{symbol}_{int(time.time())}",
+                    symbol=symbol,
+                    side=side,
+                    expected_price=snapshot_entry,
+                    actual_fill=order_result.fill_price if order_result.fill_price > 0 else actual_entry,
+                    notional=qty * actual_entry,
+                    regime=self._tick_regime_cache.get(symbol, "unknown"),
+                    signal_time=entry_reasons.get("signal_time", time.time()),
+                )
+            except Exception as e:
+                logger.debug(f"Execution analytics record error: {e}")
 
         self.pos_mgr.open_position(
             symbol=symbol,
