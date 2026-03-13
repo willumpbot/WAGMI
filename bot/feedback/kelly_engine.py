@@ -113,6 +113,10 @@ class KellyEngine:
         with self._lock:
             return dict(self._weights)
 
+    def get_weights_per_factor(self) -> Dict[str, float]:
+        """Return {factor: kelly_weight} for daily report compatibility."""
+        return self.get_all_weights()
+
     def get_report(self) -> Dict[str, Any]:
         """Generate a full Kelly report with per-factor diagnostics.
 

@@ -432,6 +432,9 @@ class MultiStrategyBot:
             ranging_confidence_floor=config.ranging_confidence_floor,
         )
 
+        # Apply quant system config disables (kill toxic strategies)
+        self.ensemble.apply_config_disables(config)
+
         # Execution
         self.risk_mgr = RiskManager(
             starting_equity=config.starting_equity,
@@ -538,6 +541,35 @@ class MultiStrategyBot:
 
         # Feedback loop: self-improving confidence, backtesting, quality scoring
         self.feedback = FeedbackLoop(data_dir="data/feedback")
+
+        # Quant system: IC tracker, Kelly engine, trade ledger, shadow ledger, daily report
+        try:
+            from feedback.ic_tracker import ICTracker
+            from feedback.kelly_engine import KellyEngine
+            from feedback.trade_ledger import TradeLedger
+            from feedback.shadow_ledger import ShadowLedger
+            from feedback.daily_report import DailyReporter
+            from execution.correlation_gate import CorrelationGate
+            self.ic_tracker = ICTracker(data_dir="data")
+            self.kelly_engine = KellyEngine(data_path="data/kelly_weights.json")
+            self.trade_ledger = TradeLedger(data_dir="data")
+            self.shadow_ledger = ShadowLedger(data_dir="data")
+            self.correlation_gate = CorrelationGate()
+            self.daily_reporter = DailyReporter(
+                trade_ledger=self.trade_ledger,
+                ic_tracker=self.ic_tracker,
+                kelly_engine=self.kelly_engine,
+            )
+            self.ensemble.set_shadow_ledger(self.shadow_ledger)
+            logger.info("[INIT] Quant system loaded: IC tracker, Kelly engine, trade ledger, shadow ledger, correlation gate, daily report")
+        except Exception as e:
+            logger.warning(f"[INIT] Quant system partially unavailable: {e}")
+            self.ic_tracker = None
+            self.kelly_engine = None
+            self.trade_ledger = None
+            self.shadow_ledger = None
+            self.correlation_gate = None
+            self.daily_reporter = None
 
         # Growth intelligence: self-evolving meta-brain
         self.growth = get_growth_orchestrator()
@@ -1197,6 +1229,20 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"Evolution tracker error: {e}")
 
+            # Quant daily report: 6 key metrics with alerting
+            if self.daily_reporter:
+                try:
+                    _qr = self.daily_reporter.generate_report()
+                    _qr_text = self.daily_reporter.format_report(_qr)
+                    logger.info(f"\n{_qr_text}")
+                    if self.alerts and _qr.get("alerts"):
+                        self.alerts.send_market_update(
+                            f"📊 Quant Daily Report — {len(_qr['alerts'])} alerts\n"
+                            + "\n".join(_qr["alerts"][:5])
+                        )
+                except Exception as e:
+                    logger.debug(f"Quant daily report error: {e}")
+
         # Uplift Analytics + Progression: evaluate LLM value and autonomy readiness
         # Runs every 720 ticks (~12 hours) — gives enough time for data to accumulate
         if self._tick % 720 == 360 and self._tick > 360:
@@ -1503,6 +1549,13 @@ class MultiStrategyBot:
                 return
         self._last_prices[symbol] = current_price
 
+        # Feed correlation gate with price data
+        if self.correlation_gate:
+            try:
+                self.correlation_gate.update_prices(symbol, current_price, time.time())
+            except Exception:
+                pass
+
         # Cross-symbol pattern tracking: record price for lead-lag detection
         if self.cross_symbol_tracker:
             try:
@@ -1759,6 +1812,75 @@ class MultiStrategyBot:
                     )
                 except Exception as e:
                     logger.warning(f"Feedback outcome error: {e}")
+
+                # Quant system: record to IC tracker, Kelly engine, trade ledger, resolve shadows
+                if pos:
+                    _factors = pos.entry_reasons.get("strategies", []) if pos.entry_reasons else []
+                    if not _factors and event.strategy:
+                        _factors = [event.strategy]
+                    _direction = 1 if (pos.side if hasattr(pos, 'side') else event.side) == "LONG" else -1
+                    _actual_return = total_pnl / (self.risk_mgr.equity or 1.0)
+                    _pnl_pct = _actual_return * 100
+
+                    if self.ic_tracker:
+                        try:
+                            for _factor in _factors:
+                                self.ic_tracker.record(_factor, _direction, _actual_return)
+                        except Exception as e:
+                            logger.debug(f"IC tracker record error: {e}")
+
+                    if self.kelly_engine:
+                        try:
+                            for _factor in _factors:
+                                self.kelly_engine.record_trade(_factor, total_pnl > 0, _pnl_pct)
+                        except Exception as e:
+                            logger.debug(f"Kelly engine record error: {e}")
+
+                    if self.trade_ledger:
+                        try:
+                            _hold_hours = event.metadata.get("hold_time_s", 0) / 3600
+                            _regime = _rg_fb or self._tick_regime_cache.get(symbol, "unknown")
+                            _factors_str = ",".join(_factors)
+                            _num_agree = pos.entry_reasons.get("num_agree", 1) if pos.entry_reasons else 1
+                            _session_dd = 0.0
+                            cb = self.risk_mgr.circuit_breaker
+                            if hasattr(cb, 'session_peak_equity') and cb.session_peak_equity > 0:
+                                _session_dd = round(
+                                    (cb.session_peak_equity - self.risk_mgr.equity) / cb.session_peak_equity * 100, 2
+                                )
+                            self.trade_ledger.record_trade({
+                                "symbol": symbol,
+                                "side": event.side,
+                                "regime_1h": _regime,
+                                "regime_4h": self._tick_regime_cache.get(f"{symbol}_4h", ""),
+                                "agreement_level": str(_num_agree),
+                                "contributing_factors": _factors_str,
+                                "confidence_score": str(pos.confidence),
+                                "kelly_weight_applied": str(
+                                    self.kelly_engine.compute_kelly_weight(event.strategy)
+                                    if self.kelly_engine and event.strategy else ""
+                                ),
+                                "compound_size_multiplier": "",
+                                "leverage": str(pos.leverage),
+                                "hold_hours": f"{_hold_hours:.2f}",
+                                "exit_type": event.action,
+                                "entry_price": str(pos.entry),
+                                "exit_price": str(event.price),
+                                "gross_pnl": str(round(total_pnl + (pos.fees_paid or 0), 2)),
+                                "fees": str(round(pos.fees_paid or 0, 2)),
+                                "funding": "0",
+                                "net_pnl": str(round(total_pnl, 2)),
+                                "running_equity": str(round(self.risk_mgr.equity, 2)),
+                                "session_dd_pct": str(_session_dd),
+                            })
+                        except Exception as e:
+                            logger.debug(f"Trade ledger record error: {e}")
+
+                    if self.shadow_ledger:
+                        try:
+                            self.shadow_ledger.resolve_shadows(symbol, event.price)
+                        except Exception as e:
+                            logger.debug(f"Shadow ledger resolve error: {e}")
 
                 # Growth intelligence: feed trade data to self-evolving systems
                 try:
@@ -2319,6 +2441,29 @@ class MultiStrategyBot:
                 # Feed regime detector on every tick (not just when signals pass)
                 self.regime_detector.update(symbol, _computed_regime)
                 self._tick_regime_cache[symbol] = _computed_regime
+        except Exception:
+            pass
+
+        # ── 4h regime confirmation (B2) ──
+        try:
+            df_4h = data.get("4h")
+            if df_4h is not None and not df_4h.empty and len(df_4h) > 20:
+                _returns_4h = df_4h["close"].pct_change().tail(20)
+                _vol_4h = float(_returns_4h.std() * 100) if len(_returns_4h) > 5 else 0
+                _trend_4h = abs(float(_returns_4h.tail(10).mean() * 1000)) if len(_returns_4h) > 10 else 0
+
+                if _vol_4h > 5:
+                    _regime_4h = "high_volatility"
+                elif _trend_4h > 2 and _vol_4h > 1.5:
+                    _regime_4h = "trend"
+                elif _vol_4h < 1.0:
+                    _regime_4h = "range"
+                elif _trend_4h > 1:
+                    _regime_4h = "trend"
+                else:
+                    _regime_4h = "consolidation"
+
+                self.ensemble.set_regime_4h(symbol, _regime_4h)
         except Exception:
             pass
 
@@ -3004,6 +3149,36 @@ class MultiStrategyBot:
             )
             lev_decision.leverage = _sym_max_lev
         _sym_risk = get_symbol_param(symbol, "risk_per_trade", self.config)
+
+        # Compound sizing: apply 8-multiplier system from quant plan
+        _compound_mult = 1.0
+        try:
+            _regime = self._tick_regime_cache.get(symbol, "unknown")
+            # Kelly weight
+            if self.kelly_engine and signal_result.strategy:
+                _compound_mult *= self.kelly_engine.compute_kelly_weight(signal_result.strategy)
+            # Regime scalar
+            _compound_mult *= self.risk_mgr.get_regime_scalar(_regime)
+            # Drawdown dial
+            _compound_mult *= self.risk_mgr.get_drawdown_dial()
+            # Vol regime (from ATR data if available)
+            if symbol in self._last_prices and hasattr(signal_result, 'atr') and signal_result.atr > 0:
+                _atr_baseline = self._last_prices[symbol] * 0.02  # ~2% as baseline
+                _compound_mult *= self.risk_mgr.compute_vol_regime_multiplier(
+                    signal_result.atr, _atr_baseline
+                )
+            # BTC momentum alignment
+            _btc_ret = self._price_changes_1h.get("BTC", 0.0)
+            if symbol != "BTC" and abs(_btc_ret) > 0.001:
+                _compound_mult *= self.risk_mgr.compute_btc_momentum_multiplier(
+                    _btc_ret, signal_result.side
+                )
+            # Cap at 2× base, floor at 0.1×
+            _compound_mult = min(2.0, max(0.1, _compound_mult))
+            # Apply compound multiplier to symbol risk
+            _sym_risk = (_sym_risk or self.config.risk_per_trade) * _compound_mult
+        except Exception as e:
+            logger.debug(f"Compound sizing error (using base): {e}")
 
         # Calculate position size (risk-based: qty = risk$ / (stop_dist * leverage))
         qty = self.risk_mgr.calculate_qty(

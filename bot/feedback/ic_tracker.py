@@ -233,6 +233,11 @@ class ICTracker:
 
         return report
 
+    def get_ic_per_factor(self) -> Dict[str, float]:
+        """Return {factor: rolling_ic_value} for daily report compatibility."""
+        report = self.get_report()
+        return {f: data.get("ic", 0.0) or 0.0 for f, data in report.items()}
+
     @staticmethod
     def _classify_ic(ic: float) -> str:
         """Classify an IC value into a status label."""

@@ -36,9 +36,9 @@ class DailyReporter:
 
     Args:
         trade_ledger: A ``TradeLedger`` instance for trade data.
-        ic_tracker: Optional object with a ``get_ic_per_factor() -> dict``
+        ic_tracker: Optional object with a ``get_report() -> dict``
             method.  If ``None``, IC metrics are reported as placeholders.
-        kelly_engine: Optional object with a ``get_weights_per_factor() -> dict``
+        kelly_engine: Optional object with a ``get_all_weights() -> dict``
             method.  If ``None``, Kelly metrics are reported as placeholders.
     """
 
@@ -119,16 +119,34 @@ class DailyReporter:
         }
 
     def _metric_walk_forward(self) -> Dict[str, Any]:
-        """Metric 3: Walk-forward ratio for the last window.
+        """Metric 3: Walk-forward ratio for the last window."""
+        try:
+            from validation.walk_forward import run_rolling_walk_forward, avg_wf_ratio
+            trades = self._ledger.get_trades(lookback_days=60)
+            if len(trades) >= 10:
+                # Convert trades to format walk-forward expects
+                results = []
+                for t in trades:
+                    results.append({
+                        "pnl": self._parse_float(t.get("net_pnl", "0")),
+                        "timestamp": self._parse_float(t.get("timestamp", "0")),
+                    })
+                wf_results = run_rolling_walk_forward(results)
+                ratio = avg_wf_ratio(wf_results) if wf_results else None
+                return {
+                    "label": "Walk-Forward Ratio (last window)",
+                    "ratio": ratio,
+                    "status": "computed",
+                    "windows": len(wf_results) if wf_results else 0,
+                    "alert_threshold": WALK_FORWARD_ALERT,
+                }
+        except Exception as e:
+            logger.warning(f"[DAILY] Walk-forward computation error: {e}")
 
-        Placeholder — returns ``None`` for the ratio until the
-        walk-forward evaluation module (E1) is built.  The alert
-        threshold is still defined so future integration is seamless.
-        """
         return {
             "label": "Walk-Forward Ratio (last window)",
             "ratio": None,
-            "status": "placeholder — E1 not yet built",
+            "status": "insufficient data or module unavailable",
             "alert_threshold": WALK_FORWARD_ALERT,
         }
 
@@ -174,7 +192,8 @@ class DailyReporter:
         status = "available"
         if self._ic_tracker is not None:
             try:
-                data = self._ic_tracker.get_ic_per_factor()
+                raw = self._ic_tracker.get_report()
+                data = {f: info.get("ic", 0.0) for f, info in raw.items() if info.get("ic") is not None}
             except Exception as e:
                 logger.warning(f"[DAILY] IC tracker error: {e}")
                 status = f"error: {e}"
@@ -198,7 +217,7 @@ class DailyReporter:
         status = "available"
         if self._kelly_engine is not None:
             try:
-                data = self._kelly_engine.get_weights_per_factor()
+                data = self._kelly_engine.get_all_weights()
             except Exception as e:
                 logger.warning(f"[DAILY] Kelly engine error: {e}")
                 status = f"error: {e}"

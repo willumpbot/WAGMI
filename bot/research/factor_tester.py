@@ -261,18 +261,11 @@ class FactorTester:
         }
         result["steps"]["5_regime_breakdown"] = step5
 
-        # Step 6: OOS pass (placeholder — requires walk-forward data)
-        # This step should be validated separately with shadow ledger data
-        step6 = {
-            "test": "out_of_sample_validation",
-            "wf_ratio": None,
-            "threshold": self.MIN_WF_RATIO,
-            "passed": None,  # Cannot evaluate without OOS data
-            "note": "Requires shadow ledger with 30+ OOS trades",
-        }
+        # Step 6: OOS validation via 70/30 time-split
+        step6 = self._step6_oos_validation(factor_name, trades)
         result["steps"]["6_oos_validation"] = step6
 
-        # Overall result (Step 6 excluded if no data)
+        # Overall result (include Step 6 if it produced a result)
         steps_to_check = [
             step1["passed"],
             step2["passed"],
@@ -280,6 +273,8 @@ class FactorTester:
             step4["passed"],
             step5["passed"],
         ]
+        if step6["passed"] is not None:
+            steps_to_check.append(step6["passed"])
         result["passed_all"] = all(steps_to_check)
         result["passed_count"] = sum(1 for s in steps_to_check if s)
         result["total_steps_checked"] = len(steps_to_check)
@@ -291,6 +286,52 @@ class FactorTester:
         )
 
         return result
+
+    def _step6_oos_validation(self, factor: str, trades: list) -> dict:
+        """Step 6: Out-of-sample validation via 70/30 time-split.
+
+        Splits trade data chronologically — first 70% train, last 30% test.
+        Checks if the edge persists out-of-sample (test WR >= 80% of train WR
+        and test WR > 50%).
+        """
+        if len(trades) < 30:
+            return {
+                "test": "out_of_sample_validation",
+                "passed": None,
+                "note": f"Need 30+ trades for OOS split, have {len(trades)}",
+            }
+
+        split_idx = int(len(trades) * 0.7)
+        train = trades[:split_idx]
+        test = trades[split_idx:]
+
+        if len(test) < 10:
+            return {
+                "test": "out_of_sample_validation",
+                "passed": None,
+                "note": f"Test set too small ({len(test)} trades)",
+            }
+
+        train_wins = sum(1 for t in train if t.get("won", t.get("pnl", 0) > 0))
+        train_wr = train_wins / len(train) if train else 0
+
+        test_wins = sum(1 for t in test if t.get("won", t.get("pnl", 0) > 0))
+        test_wr = test_wins / len(test) if test else 0
+
+        wr_ratio = test_wr / train_wr if train_wr > 0 else 0
+        passed = test_wr > 0.50 and wr_ratio > 0.80
+
+        return {
+            "test": "out_of_sample_validation",
+            "passed": passed,
+            "train_wr": round(train_wr, 4),
+            "test_wr": round(test_wr, 4),
+            "wr_retention": round(wr_ratio, 4),
+            "train_n": len(train),
+            "test_n": len(test),
+            "threshold": self.MIN_WF_RATIO,
+            "note": "OOS edge retained" if passed else "Edge degraded out-of-sample",
+        }
 
     def format_report(self, result: Dict[str, Any]) -> str:
         """Format factor validation result as human-readable text."""

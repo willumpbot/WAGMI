@@ -653,6 +653,42 @@ class RiskManager:
         else:
             return 0.0
 
+    @staticmethod
+    def compute_vol_regime_multiplier(atr_current: float, atr_baseline: float) -> float:
+        """Inverse vol scaling: high vol = smaller size, low vol = larger.
+
+        Returns multiplier between 0.3 and 1.5.
+        """
+        if atr_baseline <= 0:
+            return 1.0
+        ratio = atr_current / atr_baseline
+        multiplier = 1.0 / max(ratio, 0.5)
+        return max(0.3, min(1.5, multiplier))
+
+    @staticmethod
+    def compute_signal_decay(signal_age_seconds: float, max_age_seconds: float = 300.0) -> float:
+        """Signal freshness: 1.0 when fresh, decays to 0.5 at max age."""
+        if signal_age_seconds <= 0:
+            return 1.0
+        if signal_age_seconds >= max_age_seconds:
+            return 0.5
+        return 1.0 - 0.5 * (signal_age_seconds / max_age_seconds)
+
+    @staticmethod
+    def compute_btc_momentum_multiplier(btc_return_1h: float, alt_side: str) -> float:
+        """BTC direction alignment: boost when alt aligns with BTC momentum.
+
+        Returns multiplier between 0.5 and 1.2.
+        """
+        if abs(btc_return_1h) < 0.001:
+            return 1.0
+        btc_bullish = btc_return_1h > 0
+        trade_long = alt_side.upper() in ("LONG", "BUY")
+        if btc_bullish == trade_long:
+            return min(1.2, 1.0 + abs(btc_return_1h) * 5)
+        else:
+            return max(0.5, 1.0 - abs(btc_return_1h) * 5)
+
     def get_status(self) -> Dict[str, Any]:
         return {
             "equity": self.equity,

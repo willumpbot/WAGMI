@@ -539,7 +539,7 @@ DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
     # BTC: reduced leverage (was 25x), halved risk_per_trade — BTC lost -$2,120 on
     # 10d backtest (38% WR). Lower volatility = ATR stops proportionally tighter,
     # needs less risk per trade to compensate.
-    "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=0.01, volatility_profile="low"),
+    "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=_env_float("BTC_RISK_OVERRIDE", 0.005), volatility_profile="low"),
     "SOL": SymbolOverrides(max_leverage=20.0, volatility_profile="medium"),
     "HYPE": SymbolOverrides(max_leverage=20.0, volatility_profile="high"),
     "DOGE": SymbolOverrides(max_leverage=12.0, volatility_profile="high"),
