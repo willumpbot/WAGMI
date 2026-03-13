@@ -76,26 +76,37 @@ class TestRegimeStrategyFilter:
         ensemble.set_disabled_strategies(set())
         assert len(ensemble._disabled_strategies) == 0
 
-    def test_disabled_strategy_skipped_in_evaluate(self):
-        """Disabled strategies should not be called during evaluation."""
+    def test_disabled_strategy_excluded_from_voting(self):
+        """Disabled strategies are called for shadow tracking but excluded from voting."""
         from strategies.ensemble import EnsembleStrategy
+        from strategies.base import Signal
 
         # Create mock strategies that behave like BaseStrategy
         strat1 = MagicMock()
         strat1.name = "good_strategy"
-        strat1.evaluate.return_value = None
+        strat1.evaluate.return_value = Signal(
+            strategy="good_strategy", symbol="BTC", side="BUY",
+            confidence=80, entry=100, sl=97, tp1=106, tp2=112
+        )
 
         strat2 = MagicMock()
         strat2.name = "bad_strategy"
-        strat2.evaluate.return_value = None
+        strat2.evaluate.return_value = Signal(
+            strategy="bad_strategy", symbol="BTC", side="BUY",
+            confidence=80, entry=100, sl=97, tp1=106, tp2=112
+        )
 
-        ensemble = EnsembleStrategy(strategies=[strat1, strat2])
+        ensemble = EnsembleStrategy(strategies=[strat1, strat2], min_votes=2)
         ensemble.set_disabled_strategies({"bad_strategy"})
 
-        # evaluate() should skip bad_strategy
-        ensemble.evaluate("BTC", {"5m": MagicMock(), "1h": MagicMock()})
+        # evaluate() calls bad_strategy for shadow tracking but excludes from voting.
+        # With min_votes=2 and only 1 active strategy, no signal should be produced.
+        result = ensemble.evaluate("BTC", {"5m": MagicMock(), "1h": MagicMock()})
         strat1.evaluate.assert_called_once()
-        strat2.evaluate.assert_not_called()
+        # bad_strategy is called for shadow tracking
+        strat2.evaluate.assert_called_once()
+        # But result is None because we need 2 votes and only 1 active
+        assert result is None
 
 
 # ── Dynamic TP Scaling ──────────────────────────────────────

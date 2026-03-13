@@ -72,6 +72,29 @@ class CircuitBreaker:
         self._trip_count = 0  # Total trips for log deduplication
         self.post_cooldown_caution = 0  # Trades remaining at reduced size after CB cooldown
 
+        # Session-level drawdown protection (fixes peak_equity reset bug).
+        # The existing cooldown code resets peak_equity to current equity after
+        # each CB cooldown, allowing cumulative DD to exceed the limit:
+        # $10K → -15% CB → peak resets to $8,500 → -15% CB → cumulative -27.75%.
+        # session_peak_equity is set once at session start and NEVER resets.
+        self.session_peak_equity: float = 0.0
+        self.max_session_drawdown_pct: float = float(
+            os.getenv("MAX_SESSION_DRAWDOWN_PCT", "0.20")
+        )  # 20% cumulative hard stop — cannot be bypassed by cooldown resets
+        self._session_halted: bool = False
+
+    def start_session(self, equity: float):
+        """Set session peak equity once at trading session start.
+
+        This value NEVER resets during the session, preventing the cumulative
+        drawdown bug where peak_equity resets after cooldown.
+        """
+        if self.session_peak_equity <= 0:
+            self.session_peak_equity = equity
+            self._session_halted = False
+            logger.info(f"Session started: peak_equity=${equity:.2f}, "
+                        f"max_session_dd={self.max_session_drawdown_pct:.0%}")
+
     def reset(self):
         """Full reset of circuit breaker state. Used between backtest symbols."""
         self.daily_pnl = 0.0
@@ -103,6 +126,10 @@ class CircuitBreaker:
         """
         self._maybe_reset_daily(equity, sim_time=sim_time)
         self.daily_pnl += pnl
+
+        # Auto-initialize session peak if start_session() wasn't called
+        if self.session_peak_equity <= 0 and equity > 0:
+            self.session_peak_equity = equity
 
         # Decrement post-cooldown caution counter
         if self.post_cooldown_caution > 0:
@@ -148,8 +175,28 @@ class CircuitBreaker:
 
     def _check_breakers(self, equity: float, sim_time: Optional[datetime] = None):
         """Check if any circuit breaker should trigger."""
+        if self._session_halted:
+            return  # Session permanently halted — no recovery via cooldown
+
         if self.tripped:
             return
+
+        # 0. Cumulative session drawdown — NEVER resets, even after cooldown.
+        # This prevents: $10K → -15% CB → peak resets to $8.5K → -15% again = -27.75% total.
+        if self.session_peak_equity > 0:
+            session_dd = (self.session_peak_equity - equity) / self.session_peak_equity
+            if session_dd >= self.max_session_drawdown_pct:
+                self._trip(
+                    f"Session DD {session_dd:.1%} >= {self.max_session_drawdown_pct:.1%} — HALTED",
+                    sim_time=sim_time,
+                )
+                self._session_halted = True  # Cooldown cannot resume session
+                _log_safety_event("session_halt", f"Cumulative DD {session_dd:.1%}", {
+                    "session_peak": self.session_peak_equity,
+                    "current_equity": equity,
+                    "session_dd_pct": round(session_dd * 100, 2),
+                })
+                return
 
         # 1. Daily loss limit — use CURRENT equity, not peak.
         # During drawdowns, losses are a bigger % of actual capital.
@@ -211,6 +258,11 @@ class CircuitBreaker:
 
         if max_overrides is None:
             max_overrides = self.max_cb_overrides
+
+        # Session halted = permanent stop. No overrides, no cooldown recovery.
+        if self._session_halted:
+            return False
+
         if not self.tripped:
             return True
 
@@ -500,6 +552,106 @@ class RiskManager:
         """
         mtm_equity = self.equity + unrealized_pnl
         self.circuit_breaker.check_mtm_breakers(mtm_equity, sim_time=sim_time)
+
+    def calculate_compound_size(
+        self,
+        base_risk: float = 0.01,
+        kelly_weight: float = 1.0,
+        regime_scalar: float = 1.0,
+        vol_regime: float = 1.0,
+        correlation_adj: float = 1.0,
+        drawdown_dial: float = 1.0,
+        signal_decay: float = 1.0,
+        btc_momentum: float = 1.0,
+    ) -> float:
+        """Compound sizing formula with 8 multipliers.
+
+        Every trade passes through 8 multipliers before position size is issued.
+        Marginal trades compute to near-zero automatically — no human judgment required.
+
+        Args:
+            base_risk: Base risk as fraction of equity (e.g., 0.01 = 1%)
+            kelly_weight: Rolling Kelly fraction per factor (0.05-1.0)
+            regime_scalar: Per-regime multiplier (consolidation=1.0, bull=0.85, bear=0.5, high_vol=0.3, unknown=0.0)
+            vol_regime: Realized vol / baseline vol, inverted (high vol = smaller size)
+            correlation_adj: 1.0 if uncorrelated, 0.5 if cluster
+            drawdown_dial: 1.0 normal, 0.5 at -10%, 0.25 at -15%
+            signal_decay: 1.0 fresh signal, decays over max_age
+            btc_momentum: BTC direction alignment (1.0 aligned, 0.5 counter)
+
+        Returns:
+            Risk amount as fraction of equity (capped at 2× base_risk).
+        """
+        raw = (
+            base_risk
+            * kelly_weight
+            * regime_scalar
+            * vol_regime
+            * correlation_adj
+            * drawdown_dial
+            * signal_decay
+            * btc_momentum
+        )
+        capped = max(0.0, min(raw, base_risk * 2))
+
+        self._last_compound_breakdown = {
+            "base_risk": base_risk,
+            "kelly_weight": round(kelly_weight, 4),
+            "regime_scalar": round(regime_scalar, 2),
+            "vol_regime": round(vol_regime, 3),
+            "correlation_adj": round(correlation_adj, 2),
+            "drawdown_dial": round(drawdown_dial, 3),
+            "signal_decay": round(signal_decay, 3),
+            "btc_momentum": round(btc_momentum, 2),
+            "raw": round(raw, 6),
+            "capped": round(capped, 6),
+        }
+
+        return capped
+
+    # Regime scalar lookup: data-driven from 75-day backtest results
+    REGIME_SIZE_SCALARS = {
+        "consolidation": 1.0,      # 80-89% WR — full size
+        "trending_bull": 0.85,     # 58% WR — near full
+        "trend": 0.85,             # Legacy name
+        "range": 0.7,              # Unclear direction — reduced
+        "trending_bear": 0.5,      # 48-52% WR — half size
+        "high_volatility": 0.3,    # Unpredictable — minimal
+        "panic": 0.2,              # Extreme — minimal
+        "low_liquidity": 0.3,      # Thin books — minimal
+        "news_dislocation": 0.3,   # Event-driven — minimal
+        "unknown": 0.0,            # No regime = no trade
+    }
+
+    def get_regime_scalar(self, regime: str) -> float:
+        """Get position size scalar for current regime."""
+        return self.REGIME_SIZE_SCALARS.get(regime, 0.5)
+
+    def get_drawdown_dial(self) -> float:
+        """Get position size reduction based on current drawdown depth.
+
+        Graduated reduction:
+          0-5% DD: 1.0× (normal)
+          5-10% DD: 0.75× (caution)
+          10-15% DD: 0.5× (defensive)
+          15-20% DD: 0.25× (survival)
+          >20%: 0.0× (halted)
+        """
+        if self.equity <= 0 or self.circuit_breaker.session_peak_equity <= 0:
+            return 1.0
+
+        dd_pct = (self.circuit_breaker.session_peak_equity - self.equity) / self.circuit_breaker.session_peak_equity
+
+        if dd_pct <= 0.05:
+            return 1.0
+        elif dd_pct <= 0.10:
+            return 0.75
+        elif dd_pct <= 0.15:
+            return 0.5
+        elif dd_pct <= 0.20:
+            return 0.25
+        else:
+            return 0.0
 
     def get_status(self) -> Dict[str, Any]:
         return {

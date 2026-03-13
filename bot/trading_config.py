@@ -123,6 +123,20 @@ class TradingConfig:
     )  # Lowered from 1.5→1.2: with min_votes=3 and only 4 active strategies,
     # 1.5x veto killed too many positive-EV signals. Fee-drag + EV gates handle quality.
 
+    # ── Strategy Enable Flags ──
+    # Disable strategies with proven negative edge. Shadow ledger tracks what-if PnL.
+    strategy_lead_lag_enabled: bool = field(
+        default_factory=lambda: _env_bool("STRATEGY_LEAD_LAG_ENABLED", False)
+    )  # 0% WR across 8 trades, -$137/trade EV, -$1,100 net
+    strategy_multi_tier_quality_enabled: bool = field(
+        default_factory=lambda: _env_bool("STRATEGY_MULTI_TIER_QUALITY_ENABLED", False)
+    )  # PF 0.82, -$1,223 net, 10-consecutive-loss streak, common factor in every toxic combo
+
+    # ── BTC-Specific Risk Overrides ──
+    btc_atr_multiplier: float = field(
+        default_factory=lambda: _env_float("BTC_ATR_MULTIPLIER", 1.75)
+    )  # Widen from default 1.0-1.25: BTC capped 33/54 trades (61%), payoff ratio 0.76:1
+
     # ML
     enable_ml: bool = field(default_factory=lambda: _env_bool("ENABLE_ML", True))
     ml_min_samples: int = field(default_factory=lambda: _env_int("ML_MIN_SAMPLES", 20))
@@ -157,6 +171,11 @@ class TradingConfig:
     rotation_max_per_day: int = field(
         default_factory=lambda: _env_int("ROTATION_MAX_PER_DAY", 4)
     )  # Reduced from 6: max 4 trades/day prevents over-trading
+
+    # ── Leverage eligibility gate ──
+    min_leverage_entry_gate: float = field(
+        default_factory=lambda: _env_float("MIN_LEVERAGE_ENTRY_GATE", 2.0)
+    )  # Skip trades below this leverage threshold. Leveraged: +$95/trade, spot: -$33/trade.
 
     # ── Profitability shield ──
     max_portfolio_leverage: float = field(
@@ -197,6 +216,10 @@ class TradingConfig:
     max_hold_hours: int = field(
         default_factory=lambda: _env_int("MAX_HOLD_HOURS", 48)
     )
+    time_stop_hours: int = field(
+        default_factory=lambda: _env_int("TIME_STOP_HOURS", 8)
+    )  # Close positions that haven't hit TP1 after this many hours.
+    # 61.9% exit at SL after avg 15.5h drift. 8h time stop cuts slow bleeders early.
     hold_limit_action: str = field(
         default_factory=lambda: _env("HOLD_LIMIT_ACTION", "tighten_sl")
     )  # "tighten_sl" or "force_close"

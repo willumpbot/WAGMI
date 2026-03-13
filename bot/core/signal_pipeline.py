@@ -193,6 +193,18 @@ class RiskFilterChain:
                 rejection_reason=f"Leverage denied: {lev_decision.reason}"
             )
 
+        # Gate 5a: Leverage eligibility entry gate (D2)
+        # Leveraged trades: +$95.20/trade avg. Spot trades: -$32.95/trade avg.
+        # If a trade doesn't qualify for at least 2x leverage, skip it.
+        min_leverage_gate = getattr(self.config, "min_leverage_entry_gate", 2.0)
+        if lev_decision.leverage < min_leverage_gate:
+            return FilterResult(
+                approved=False, signal=signal,
+                rejection_reason=f"Below leverage gate: {lev_decision.leverage:.1f}x < {min_leverage_gate:.1f}x minimum "
+                                 f"(spot trades avg -$32.95/trade)",
+                metadata=meta,
+            )
+
         # CB override constraints: if CB tripped, cap leverage
         override_constraints = self.risk_mgr.get_override_constraints(signal.confidence)
         leverage = min(lev_decision.leverage, override_constraints["max_leverage"])

@@ -68,14 +68,15 @@ class EnsembleStrategy:
         # Rejection tracking: why signals were rejected (for LLM brain learning)
         self._last_rejections: Dict[str, Dict] = {}  # symbol -> {reason, confidence, side, ...}
         # Regime-aware min_votes: current regime per symbol (set externally by engine)
-        self._current_regime: Dict[str, str] = {}  # symbol -> regime string
+        self._current_regime: Dict[str, str] = {}  # symbol -> regime string (1h)
+        self._current_regime_4h: Dict[str, str] = {}  # symbol -> regime string (4h)
 
     def set_quality_scorer(self, scorer):
         """Inject SignalQualityScorer so quality feedback affects ensemble confidence."""
         self._quality_scorer = scorer
 
     def set_regime(self, symbol: str, regime: str):
-        """Set the current market regime for a symbol.
+        """Set the current 1h market regime for a symbol.
 
         Used for regime-aware min_votes: trending markets allow min_votes-1
         since trend direction provides strong confirmation.
@@ -83,20 +84,89 @@ class EnsembleStrategy:
         """
         self._current_regime[symbol] = regime
 
+    def set_regime_4h(self, symbol: str, regime_4h: str):
+        """Set the 4h regime for multi-timeframe confirmation.
+
+        When 1h regime disagrees with 4h, 2-agree signals require both to align.
+        This prevents counter-trend entries where 1h calls 'bull' but 4h is still 'bear'.
+        """
+        self._current_regime_4h[symbol] = regime_4h
+
+    # Compatible 1h/4h regime pairs: these mismatches are acceptable.
+    _COMPATIBLE_REGIME_PAIRS = {
+        ('consolidation', 'trending_bull'),
+        ('trending_bull', 'consolidation'),
+        ('consolidation', 'trend'),
+        ('trend', 'consolidation'),
+    }
+
+    def _check_timeframe_alignment(self, symbol: str, agreement_level: int) -> bool:
+        """Check if 1h and 4h regimes are aligned for trade entry.
+
+        For 2-agree signals: require 1h AND 4h regime agreement (or compatible pair).
+        For 3+ agree signals: 1h alone suffices — high conviction overrides.
+        """
+        if agreement_level >= 3:
+            return True  # 3-agree: 1h alone suffices
+
+        regime_1h = self._current_regime.get(symbol, "unknown")
+        regime_4h = self._current_regime_4h.get(symbol)
+
+        if regime_4h is None:
+            return True  # No 4h data available — don't block
+
+        if regime_1h == regime_4h:
+            return True  # Perfect alignment
+
+        if (regime_1h, regime_4h) in self._COMPATIBLE_REGIME_PAIRS:
+            return True  # Acceptable mismatch
+
+        logger.info(
+            f"[{symbol}] 4h regime filter: 1h={regime_1h} vs 4h={regime_4h} — "
+            f"blocking 2-agree entry (timeframe conflict)"
+        )
+        return False
+
+    # Regime-gated min_votes: data-driven from 75-day backtest results.
+    # trending_bear at 2-agree = -$25/trade × 96 trades = largest performance drag.
+    # consolidation 2-agree = 80-89% WR = best regime.
+    REGIME_MIN_VOTES = {
+        'trending_bear':   3,   # 52.9% WR only — full conviction required
+        'trending_bull':   2,   # 58% WR, $860 net — 2-agree allowed
+        'trend':           2,   # legacy name for trending_bull
+        'consolidation':   2,   # 80% WR — mean-reversion edge
+        'range':           3,   # ranging = unclear direction
+        'high_volatility': 3,   # too few trades — require conviction
+        'panic':           3,   # extreme conditions — full conviction
+        'low_liquidity':   3,   # thin books — full conviction
+        'news_dislocation': 3,  # event-driven — full conviction
+        'unknown':         3,   # no regime = no edge
+    }
+
+    # Regime-specific strategy allowlist: only strategies with proven edge
+    # in each regime are allowed to vote.
+    STRATEGY_REGIME_ALLOWLIST = {
+        'trending_bear':    {'confidence_scorer', 'regime_trend'},
+        'trending_bull':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher'},
+        'trend':            {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher'},
+        'consolidation':    {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher'},
+        'range':            {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher'},
+        'high_volatility':  {'confidence_scorer'},
+        'panic':            {'confidence_scorer'},
+        'low_liquidity':    {'confidence_scorer'},
+        'news_dislocation': {'confidence_scorer'},
+        'unknown':          set(),  # no signals in unknown regime
+    }
+
     def _get_effective_min_votes(self, symbol: str) -> int:
         """Get regime-aware min_votes for a symbol.
 
-        In trending regimes, reduce min_votes by 1 (floor 2) because:
-        - Backtest data: trending regime = 100% WR
-        - Trend direction itself provides high-quality confirmation
-        - With only 4-5 active strategies, min_votes=3 is too restrictive
-
-        In ranging/unknown regimes, keep standard min_votes for safety.
+        Uses data-driven lookup table instead of blanket trending→min_votes-1.
+        Bear regime at 2-agree was -$25/trade across 96 trades.
+        Only regimes with proven positive EV at 2-agree get the reduction.
         """
         regime = self._current_regime.get(symbol, "unknown")
-        if regime == "trend" and self.min_votes > 2:
-            return self.min_votes - 1  # e.g., 3 → 2 in trending
-        return self.min_votes
+        return self.REGIME_MIN_VOTES.get(regime, 3)  # default to 3 — when in doubt, require conviction
 
     def set_disabled_strategies(self, names: set):
         """Temporarily disable specific strategies (e.g., for regime filtering)."""
@@ -186,6 +256,36 @@ class EnsembleStrategy:
             tfs.update(s.get_required_timeframes())
         return list(tfs)
 
+    def apply_config_disables(self, config):
+        """Apply strategy disable flags from TradingConfig.
+
+        Strategies with proven negative edge are disabled via config flags
+        but continue to generate shadow signals for IC tracking.
+        """
+        if hasattr(config, 'strategy_lead_lag_enabled') and not config.strategy_lead_lag_enabled:
+            self._disabled_strategies.add('lead_lag')
+        if hasattr(config, 'strategy_multi_tier_quality_enabled') and not config.strategy_multi_tier_quality_enabled:
+            self._disabled_strategies.add('multi_tier_quality')
+
+    def _get_regime_allowed_strategies(self, symbol: str) -> Optional[set]:
+        """Get the set of strategies allowed in the current regime for this symbol.
+
+        Returns None if no regime filter should be applied:
+        - No regime has been set for this symbol
+        - Regime is not in the allowlist lookup
+        This ensures the filter only activates when we have explicit regime data.
+        """
+        if symbol not in self._current_regime:
+            return None  # No regime set — don't filter
+        regime = self._current_regime[symbol]
+        allowed = self.STRATEGY_REGIME_ALLOWLIST.get(regime)
+        # For 'unknown' regime, only filter if we actually have an empty set
+        # (which means "block all"). If the regime isn't in the lookup, don't filter.
+        if allowed is not None and len(allowed) == 0:
+            # Only block all if regime was explicitly set (not just defaulting to unknown)
+            return allowed
+        return allowed
+
     def evaluate(
         self, symbol: str, data: Dict[str, pd.DataFrame]
     ) -> Optional[Signal]:
@@ -196,13 +296,27 @@ class EnsembleStrategy:
         # Dynamic weight refresh: pull rolling weights before each evaluation
         self._refresh_dynamic_weights()
 
+        # Get regime-allowed strategies for this symbol
+        regime_allowed = self._get_regime_allowed_strategies(symbol)
+
         signals: List[Signal] = []
+        shadow_signals: List[Signal] = []  # Disabled strategy signals for IC tracking
         active_count = 0  # Strategies that ran (didn't error or get disabled)
         error_count = 0
 
         for strategy in self.strategies:
-            # Regime-based strategy filter: skip disabled strategies
+            # Config-disabled strategies: still generate shadow signals for IC tracking
             if strategy.name in self._disabled_strategies:
+                try:
+                    sig = strategy.evaluate(symbol, data)
+                    if sig is not None:
+                        shadow_signals.append(deepcopy(sig))
+                except Exception:
+                    pass
+                continue
+
+            # Regime-based strategy filter
+            if regime_allowed is not None and strategy.name not in regime_allowed:
                 continue
             active_count += 1
             try:
@@ -271,6 +385,19 @@ class EnsembleStrategy:
             result = self._voting(symbol, signals, effective_min_votes)
 
         if result is None:
+            return None
+
+        # ── 4h regime confirmation filter (B2) ──
+        # For 2-agree signals, require 1h and 4h regime alignment.
+        # Prevents counter-trend entries where 1h calls 'bull' but 4h is still 'bear'.
+        agreement_level = result.metadata.get("num_agree", 1) if result.metadata else 1
+        if not self._check_timeframe_alignment(symbol, agreement_level):
+            self._last_rejections[symbol] = {
+                "reason": "4h_regime_conflict",
+                "regime_1h": self._current_regime.get(symbol, "unknown"),
+                "regime_4h": self._current_regime_4h.get(symbol, "unknown"),
+                "agreement_level": agreement_level,
+            }
             return None
 
         # ── Pre-floor quality adjustment ──
@@ -931,20 +1058,25 @@ class EnsembleStrategy:
                 logger.info(f"[{symbol}] Only {len(sell_signals)} SELL signal(s), need {min_v}+ same-side")
             return None
 
-        # Block known-losing 2-agree combos (backtest PF < 0.2)
-        # Only block the worst combo now — with 11 strategies, 2-agree combos involving
-        # new strategies haven't been tested yet so we let them through.
+        # Block known-losing combos (backtest-validated toxic combinations).
+        # Uses subset matching: a 3-agree combo containing a toxic 2-agree pair is also blocked.
         _LOSING_COMBOS = {
-            frozenset({"confidence_scorer", "multi_tier_quality"}),  # PF 0.08 — proven loser
+            frozenset({"confidence_scorer", "multi_tier_quality"}),              # PF 0.08 — original
+            frozenset({"multi_tier_quality", "regime_trend"}),                   # PF 0.82, 58 trades
+            frozenset({"bollinger_squeeze", "multi_tier_quality"}),              # PF 0.37, 19 trades
+            frozenset({"lead_lag", "multi_tier_quality"}),                       # PF 0.00, 5 trades
+            frozenset({"bollinger_squeeze", "confidence_scorer", "multi_tier_quality"}),  # PF 0.79, 7 trades
         }
         for side_signals in [buy_signals, sell_signals]:
-            if len(side_signals) == 2:
-                combo = frozenset(s.strategy for s in side_signals)
-                if combo in _LOSING_COMBOS:
-                    logger.info(
-                        f"[{symbol}] Blocked losing 2-agree combo: {sorted(combo)}"
-                    )
-                    return None
+            if len(side_signals) >= 2:
+                signal_names = frozenset(s.strategy for s in side_signals)
+                for blocked in _LOSING_COMBOS:
+                    if blocked.issubset(signal_names):
+                        logger.info(
+                            f"[{symbol}] Blocked losing combo {sorted(blocked)} "
+                            f"in {sorted(signal_names)}"
+                        )
+                        return None
 
         buy_strength = self._weighted_confidence_sum(buy_signals) if buy_signals else 0
         sell_strength = self._weighted_confidence_sum(sell_signals) if sell_signals else 0

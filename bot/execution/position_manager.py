@@ -317,7 +317,23 @@ class PositionManager:
             events.append(event)
             return events
 
-        # 1. Early exit: cut position if momentum accelerating toward SL
+        # 1a. Time stop: close positions that haven't hit TP1 after max hold hours.
+        # 61.9% of trades exit at SL, most drift for hours then bleed out.
+        # Avg hold: 15.5h. An 8h time stop converts slow bleeders into controlled exits.
+        # Does NOT affect positions that hit TP1 — those trail profitably (100% WR).
+        if pos.state == OPEN:
+            hold_hours = (datetime.now(timezone.utc) - pos.open_time).total_seconds() / 3600
+            time_stop_hours = getattr(self, '_time_stop_hours', 8)
+            if hold_hours >= time_stop_hours:
+                logger.info(
+                    f"[{symbol}] TIME STOP: held {hold_hours:.1f}h >= {time_stop_hours}h "
+                    f"without hitting TP1 — closing at market"
+                )
+                event = self._close_position(pos, current_price, "TIME_STOP")
+                events.append(event)
+                return events
+
+        # 1b. Early exit: cut position if momentum accelerating toward SL
         # Only in OPEN state (after TP1, breakeven SL protects us)
         if pos.state == OPEN and df_5m is not None:
             early = self._check_early_exit(pos, current_price, df_5m)

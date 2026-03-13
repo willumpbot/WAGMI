@@ -485,10 +485,10 @@ class TestRiskFilterChainGates:
         """All gates pass → approved with leverage, risk_mult, and qty."""
         chain, _, _ = self._make_chain()
         sig = self._make_signal(
-            confidence=75.0, entry=100.0, sl=97.0, tp1=106.0, tp2=112.0,
+            confidence=85.0, entry=100.0, sl=97.0, tp1=106.0, tp2=112.0,
             metadata={"ev_per_dollar": 0.50},
         )
-        result = chain.evaluate(sig, equity=10000, num_strategies_agree=2, total_strategies=4)
+        result = chain.evaluate(sig, equity=10000, num_strategies_agree=3, total_strategies=4)
         assert result.approved
         assert result.leverage >= 1.0
         assert result.position_qty > 0
