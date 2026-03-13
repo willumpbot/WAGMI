@@ -65,6 +65,7 @@ class EnsembleStrategy:
         self._smoothed_chop: Dict[str, float] = {}  # symbol -> smoothed chop_score
         self._chop_ema_alpha: float = 0.3  # Smoothing factor (higher = more reactive)
         self._quality_scorer = None  # Optional: SignalQualityScorer for pre-floor adjustment
+        self._shadow_ledger = None  # Optional: ShadowLedger for dormant strategy tracking
         # Rejection tracking: why signals were rejected (for LLM brain learning)
         self._last_rejections: Dict[str, Dict] = {}  # symbol -> {reason, confidence, side, ...}
         # Regime-aware min_votes: current regime per symbol (set externally by engine)
@@ -74,6 +75,10 @@ class EnsembleStrategy:
     def set_quality_scorer(self, scorer):
         """Inject SignalQualityScorer so quality feedback affects ensemble confidence."""
         self._quality_scorer = scorer
+
+    def set_shadow_ledger(self, ledger):
+        """Inject ShadowLedger for tracking disabled strategy predictions."""
+        self._shadow_ledger = ledger
 
     def set_regime(self, symbol: str, regime: str):
         """Set the current 1h market regime for a symbol.
@@ -311,6 +316,18 @@ class EnsembleStrategy:
                     sig = strategy.evaluate(symbol, data)
                     if sig is not None:
                         shadow_signals.append(deepcopy(sig))
+                        # Persist shadow signal for dormant strategy tracking
+                        if self._shadow_ledger:
+                            try:
+                                self._shadow_ledger.record_shadow_signal(
+                                    factor=sig.strategy,
+                                    symbol=symbol,
+                                    side=sig.side,
+                                    confidence=sig.confidence,
+                                    entry_price=sig.entry,
+                                )
+                            except Exception:
+                                pass
                 except Exception:
                     pass
                 continue
