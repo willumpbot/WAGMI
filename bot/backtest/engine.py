@@ -327,6 +327,14 @@ class BacktestEngine:
 
             bridge = BacktestLearningBridge()
             result = bridge.ingest(self)
+
+            # Finalize: merge backtest-learned strategy weights into live weights
+            # so the ensemble benefits from backtest calibration data immediately.
+            finalize_result = bridge.finalize(merge_to_live=True)
+            if finalize_result.get("status") == "merged":
+                n = finalize_result.get("strategy_weights_merged", 0)
+                logger.info(f"[LEARN-BRIDGE] Finalized: merged {n} strategy weights to live")
+
             print("\n" + bridge.get_summary())
             return result
         except Exception as e:
@@ -341,6 +349,11 @@ class BacktestEngine:
         if os.getenv("STRATEGY_REGIME_TREND_ENABLED", "true").lower() == "true":
             all_strats["regime_trend"] = RegimeTrendStrategy(sym_configs, self.config.htf_hours)
         if os.getenv("STRATEGY_CONFIDENCE_SCORER_ENABLED", "true").lower() == "true":
+            # Fresh signal log each backtest — prevents stale WR data from prior
+            # runs poisoning the historical confidence adjustment.
+            _bt_sig_log = Path("backtest_ml_data") / "confidence_signal_log.json"
+            if _bt_sig_log.exists():
+                _bt_sig_log.unlink()
             all_strats["confidence_scorer"] = ConfidenceScorerStrategy(sym_configs, data_dir="backtest_ml_data")
         if os.getenv("STRATEGY_MULTI_TIER_QUALITY_ENABLED", "true").lower() == "true":
             all_strats["multi_tier_quality"] = MultiTierQualityStrategy(sym_configs)
@@ -630,41 +643,37 @@ class BacktestEngine:
 
                 if signal:
                     self.candle_stats["signal"] += 1
-                    # Tag regime at signal time for regime-aware reporting
-                    try:
-                        statuses = ensemble.get_all_status(symbol, windowed)
-                        adx_val = 25.0  # default neutral
-                        for s in statuses:
-                            if s.get("strategy") == "regime_trend":
-                                al = s.get("align_long", 0)
-                                ash = s.get("align_short", 0)
-                                adx_val = s.get("adx", 25.0)
-                                if al >= 2:
-                                    signal.metadata["regime"] = "trending_bull"
-                                elif ash >= 2:
-                                    signal.metadata["regime"] = "trending_bear"
-                                else:
-                                    signal.metadata["regime"] = "ranging"
-                                break
-                        signal.metadata["adx"] = round(adx_val, 1)
-                    except Exception:
-                        signal.metadata.setdefault("regime", "unknown")
-                        adx_val = 25.0
+                    # Use the SAME regime from pre-ensemble classification
+                    # to avoid inconsistency where pre-ensemble says "trend"
+                    # (allowing min_votes=2) but post-ensemble says "ranging"
+                    # (blocking the signal). The _bt_regime is computed at
+                    # lines 588-607 using the same alignment data.
+                    regime_map = {
+                        "trend": "trending_bull" if signal.side == "BUY" else "trending_bear",
+                        "range": "ranging",
+                        "high_volatility": "high_volatility",
+                        "consolidation": "consolidation",
+                        "unknown": "unknown",
+                    }
+                    signal.metadata["regime"] = regime_map.get(_bt_regime, "unknown")
+                    signal.metadata["adx"] = round(_bt_adx, 1)
+                    signal.metadata["bt_regime_raw"] = _bt_regime
 
-                    # ADX-based override: if ADX < 20, force ranging regardless of alignment
-                    # This catches cases where alignment says "mixed" but market has no trend
-                    if adx_val < 20.0 and signal.metadata.get("regime") not in ("trending_bull", "trending_bear"):
-                        signal.metadata["regime"] = "ranging"
-
-                    # trend_adjustment == 0 no longer forces "ranging" — align >= 2
-                    # already provides directional regime classification above
-
-                    # Regime filter: skip trades in ranging markets (24% WR historically)
+                    # Only block truly directionless markets:
+                    # ADX < 20 AND no alignment (regime=range)
                     regime = signal.metadata.get("regime", "unknown")
-                    if regime in ("ranging", "unknown"):
+                    if regime == "ranging" and _bt_adx < 20.0:
                         logger.info(
-                            f"[{symbol}] Signal SKIPPED: {regime} regime "
-                            f"(ADX={adx_val:.1f}, no directional alignment)"
+                            f"[{symbol}] Signal SKIPPED: ranging regime "
+                            f"(ADX={_bt_adx:.1f}, no directional alignment)"
+                        )
+                        self.candle_stats.setdefault("regime_blocked", 0)
+                        self.candle_stats["regime_blocked"] += 1
+                        continue
+                    elif regime in ("consolidation",) and _bt_adx < 15.0:
+                        logger.info(
+                            f"[{symbol}] Signal SKIPPED: {regime} "
+                            f"(ADX={_bt_adx:.1f}, very low directional movement)"
                         )
                         self.candle_stats.setdefault("regime_blocked", 0)
                         self.candle_stats["regime_blocked"] += 1

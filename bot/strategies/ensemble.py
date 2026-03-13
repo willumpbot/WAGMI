@@ -1113,6 +1113,23 @@ class EnsembleStrategy:
             weighted_entry = sum(s.entry for s in signals) / len(signals)
             weighted_tp1 = sum(s.tp1 for s in signals) / len(signals)
             weighted_atr = sum(s.atr for s in signals) / len(signals)
+        # Bear-market shorts: widen SL to survive bounce wicks.
+        # 1.5x ATR is too tight for SELL in volatile bear markets — bounces
+        # trigger stops before the move continues. Widen by 30% in trending regimes.
+        regime = self._current_regime.get(symbol, "unknown")
+        if side == "SELL" and regime == "trend":
+            sl_widen = 1.3  # 30% wider stop for bear-market shorts
+            old_sl = weighted_sl
+            # For SELL, SL is above entry — widen means push it higher
+            sl_dist = abs(weighted_sl - weighted_entry)
+            weighted_sl = weighted_entry + sl_dist * sl_widen
+            # Proportionally widen TP to maintain R:R geometry
+            weighted_tp1 = weighted_entry - abs(weighted_entry - weighted_tp1) * sl_widen
+            logger.info(
+                f"[ENSEMBLE] {symbol} SELL SL widened {sl_widen}x for bear regime: "
+                f"SL {old_sl:.2f} → {weighted_sl:.2f}"
+            )
+
         if side == "BUY":
             best_sl = weighted_sl
             best_tp1 = weighted_tp1
@@ -1151,7 +1168,14 @@ class EnsembleStrategy:
         elif n_agree >= 3:
             win_prob = raw_win_prob * 0.80  # 20% deflation (good but not perfect)
         else:
-            win_prob = raw_win_prob * 0.55  # 45% deflation (2-agree = ~25% actual WR)
+            # 2-agree: use regime info to adjust deflation.
+            # In confirmed trending regime with min_votes reduction, the trend
+            # itself acts as a third confirmation → less deflation needed.
+            regime = self._current_regime.get(symbol, "unknown")
+            if regime == "trend":
+                win_prob = raw_win_prob * 0.68  # 32% deflation (trend confirms)
+            else:
+                win_prob = raw_win_prob * 0.55  # 45% deflation (no trend support)
         try:
             from trading_config import TradingConfig as _TConf
             _fee_bps = _TConf().taker_fee_bps
