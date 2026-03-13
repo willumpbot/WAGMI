@@ -189,7 +189,62 @@ class ShadowLedger:
                     f"@ {exit_price}"
                 )
 
+        # Check reactivation eligibility for resolved factors
+        if resolved_count > 0:
+            resolved_factors = set()
+            with self._lock:
+                for row in self._rows:
+                    if row.get("resolved") == "true" and row.get("symbol") == symbol:
+                        resolved_factors.add(row.get("factor", ""))
+            for factor in resolved_factors:
+                if factor:
+                    self.check_reactivation(factor)
+
         return resolved_count
+
+    def check_reactivation(self, factor: str) -> Optional[Dict[str, Any]]:
+        """Check if a disabled strategy has enough shadow evidence to consider reactivation.
+
+        Runs power analysis on accumulated shadow trades. Returns reactivation
+        recommendation if 50+ resolved trades exist, else None.
+
+        IMPORTANT: This can RECOMMEND reactivation but never auto-enables.
+        Human must flip STRATEGY_X_ENABLED=true and redeploy.
+        """
+        REACTIVATION_THRESHOLD = 50
+
+        stats = self.get_factor_stats(factor)
+        if stats["count"] < REACTIVATION_THRESHOLD:
+            return None
+
+        try:
+            from validation.power_analysis import can_reactivate_strategy
+            result = can_reactivate_strategy(
+                strategy_name=factor,
+                shadow_trades=stats["count"],
+                shadow_win_rate=stats["win_rate"],
+                shadow_avg_pnl=stats["avg_return"],
+                min_delta=0.10,
+                alpha=0.05,
+            )
+
+            if result.get("can_reactivate"):
+                logger.warning(
+                    f"[SHADOW] REACTIVATION SIGNAL: {factor} shows significant edge "
+                    f"(WR={stats['win_rate']:.1%}, n={stats['count']}). "
+                    f"Human review required before enabling."
+                )
+            else:
+                logger.info(
+                    f"[SHADOW] Reactivation check: {factor} does not yet qualify "
+                    f"(WR={stats['win_rate']:.1%}, n={stats['count']}, "
+                    f"verdict={result.get('adequacy', 'unknown')})"
+                )
+
+            return result
+        except Exception as e:
+            logger.debug(f"[SHADOW] Power analysis error for {factor}: {e}")
+            return None
 
     # ── Read helpers ──────────────────────────────────────────────
 

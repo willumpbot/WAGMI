@@ -152,9 +152,9 @@ class EnsembleStrategy:
     # in each regime are allowed to vote.
     STRATEGY_REGIME_ALLOWLIST = {
         'trending_bear':    {'confidence_scorer', 'regime_trend'},
-        'trending_bull':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher'},
-        'trend':            {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher'},
-        'consolidation':    {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher'},
+        'trending_bull':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'cvd_signal'},
+        'trend':            {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'cvd_signal'},
+        'consolidation':    {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher', 'cvd_signal'},
         'range':            {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher'},
         'high_volatility':  {'confidence_scorer'},
         'panic':            {'confidence_scorer'},

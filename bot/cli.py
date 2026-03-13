@@ -41,7 +41,7 @@ def main():
     )
     parser.add_argument(
         "--mode", "-m",
-        choices=["paper", "replay", "live", "evolve", "tiers", "optimize", "compare", "walkforward"],
+        choices=["paper", "replay", "live", "evolve", "tiers", "optimize", "compare", "walkforward", "gate"],
         default="paper",
         help="Trading mode (default: paper)",
     )
@@ -100,6 +100,8 @@ def main():
         _run_tiers()
     elif args.mode == "optimize":
         _run_optimize(args.symbols, args.days, args.trials, args.metric)
+    elif args.mode == "gate":
+        _run_gate()
     else:
         _run_paper()
 
@@ -318,6 +320,34 @@ def _run_optimize(symbols_str: str, days: int, max_trials: int, metric: str):
             "days": days,
         }, f, indent=2)
     print(f"\nResults saved to {output_path}")
+
+
+def _run_gate():
+    """Run go-live gate evaluation and print results."""
+    from validation.go_live_gate import GoLiveGate
+    from feedback.trade_ledger import TradeLedger
+
+    print("=" * 60)
+    print("  GO-LIVE GATE EVALUATION")
+    print("=" * 60)
+
+    try:
+        ledger = TradeLedger("data")
+    except Exception:
+        ledger = None
+
+    ic_tracker = None
+    try:
+        from feedback.ic_tracker import ICTracker
+        ic_tracker = ICTracker(data_dir="data")
+    except Exception:
+        pass
+
+    gate = GoLiveGate(trade_ledger=ledger, ic_tracker=ic_tracker)
+    result = gate.evaluate()
+    print(gate.format_report(result))
+
+    sys.exit(0 if result["passed"] else 1)
 
 
 if __name__ == "__main__":
