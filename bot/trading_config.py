@@ -119,8 +119,9 @@ class TradingConfig:
         default_factory=lambda: _env_int("MIN_VOTES_REQUIRED", 3)
     )  # 3-agree PF=4.05/86% WR vs 2-agree negative PF. Only strong consensus trades.
     veto_ratio: float = field(
-        default_factory=lambda: _env_float("VETO_RATIO", 1.5)
-    )  # Raised back to 1.5: stricter veto prevents weak signals leaking through
+        default_factory=lambda: _env_float("VETO_RATIO", 1.2)
+    )  # Lowered from 1.5→1.2: with min_votes=3 and only 4 active strategies,
+    # 1.5x veto killed too many positive-EV signals. Fee-drag + EV gates handle quality.
 
     # ML
     enable_ml: bool = field(default_factory=lambda: _env_bool("ENABLE_ML", True))
@@ -190,8 +191,9 @@ class TradingConfig:
     # Confidence floor when market is ranging (chop_score > chop_threshold * 0.8)
     # Higher than normal floor to only allow very high conviction trades in chop
     ranging_confidence_floor: float = field(
-        default_factory=lambda: _env_float("RANGING_CONFIDENCE_FLOOR", 88.0)
-    )
+        default_factory=lambda: _env_float("RANGING_CONFIDENCE_FLOOR", 80.0)
+    )  # Lowered from 88→80: 88% was nearly impossible to reach, blocking ALL ranging
+    # signals. 80% still filters low-conviction setups while letting strong ones through.
     max_hold_hours: int = field(
         default_factory=lambda: _env_int("MAX_HOLD_HOURS", 48)
     )
@@ -297,8 +299,9 @@ class TradingConfig:
     # profitability filtering directly. R:R 1.5 + positive EV = viable trade.
     # The old 2.0 floor was blocking valid trades that pass EV/fee-drag gates.
     min_signal_rr: float = field(
-        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.8)
-    )  # Raised from 1.5: need better risk/reward to survive fees + slippage
+        default_factory=lambda: _env_float("MIN_SIGNAL_RR", 1.5)
+    )  # Lowered from 1.8→1.5: fee-drag filter (30% cap) already handles fee viability.
+    # 1.8 was redundantly blocking trades that pass EV + fee-drag gates.
     min_stop_width_pct: float = field(
         default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.003)
     )  # Raised from 0.2% to 0.3%: at 0.2%, fees consume 40% of stop distance
@@ -307,8 +310,10 @@ class TradingConfig:
     # Raised from 0.10 to 0.15: at 45% WR, trades need 15%+ edge per $1
     # risked to survive fees (4bps each way = ~8bps round-trip).
     min_signal_ev: float = field(
-        default_factory=lambda: _env_float("MIN_SIGNAL_EV", 0.20)
-    )  # Raised from 0.15: higher EV floor kills negative-expectancy trades
+        default_factory=lambda: _env_float("MIN_SIGNAL_EV", 0.15)
+    )  # Lowered from 0.20→0.15: EV floor was the #1 signal killer (blocked 39.7%).
+    # Fee-drag filter (30% cap) already handles unprofitable tight-stop trades.
+    # 0.15 EV + fee-drag + R:R 1.5 = sufficient quality gate without over-filtering.
     # Monte Carlo strategy
     mc_num_sims: int = field(
         default_factory=lambda: _env_int("MC_NUM_SIMS", 1000)

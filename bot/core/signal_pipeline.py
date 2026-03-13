@@ -112,9 +112,9 @@ class RiskFilterChain:
         ev = signal.metadata.get("ev_per_dollar") if signal.metadata else None
         min_ev = getattr(self.config, "min_signal_ev", 0.10)
         if stop_pct > 0 and stop_pct < 0.004:
-            min_ev = max(min_ev, 0.25)  # Tight stops: fees eat most of the risk
+            min_ev = max(min_ev, 0.22)  # Tight stops: fees eat most of the risk
         elif stop_pct > 0 and stop_pct < 0.006:
-            min_ev = max(min_ev, 0.22)  # Medium-tight stops: still need higher EV
+            min_ev = max(min_ev, 0.18)  # Medium-tight stops: moderate EV bump
         if ev is not None and ev < min_ev:
             return FilterResult(
                 approved=False, signal=signal,
@@ -229,9 +229,9 @@ class RiskFilterChain:
             n_agree = meta.get("num_agree", 0)
             if leverage > 4.0:
                 # 3-agree EV estimates are better calibrated (20% deflation vs 45%)
-                lev_ev_floor = 0.22 if n_agree >= 3 else 0.28
+                lev_ev_floor = 0.20 if n_agree >= 3 else 0.25
             else:
-                lev_ev_floor = 0.20
+                lev_ev_floor = 0.18
             if ev < lev_ev_floor:
                 return FilterResult(
                     approved=False, signal=signal,

@@ -603,8 +603,11 @@ class BacktestEngine:
                     _fit = STRATEGY_REGIME_FIT.get(_bt_regime, {})
                     _disabled = {s for s, f in _fit.items() if f == "avoid"}
                     ensemble.set_disabled_strategies(_disabled)
+                    # Set regime for regime-aware min_votes
+                    ensemble.set_regime(symbol, _bt_regime)
                 except Exception:
                     ensemble.set_disabled_strategies(set())
+                    ensemble.set_regime(symbol, "unknown")
 
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal and not signal.is_valid:
@@ -901,8 +904,11 @@ class BacktestEngine:
                     _fit = STRATEGY_REGIME_FIT.get(_bt_regime, {})
                     _disabled = {s for s, f in _fit.items() if f == "avoid"}
                     ensemble.set_disabled_strategies(_disabled)
+                    # Set regime for regime-aware min_votes
+                    ensemble.set_regime(symbol, _bt_regime)
                 except Exception:
                     ensemble.set_disabled_strategies(set())
+                    ensemble.set_regime(symbol, "unknown")
 
                 signal = ensemble.evaluate(symbol, windowed)
                 if signal and not signal.is_valid:

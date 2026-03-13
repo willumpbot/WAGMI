@@ -2283,10 +2283,14 @@ class MultiStrategyBot:
                         )
                     else:
                         self.ensemble.set_disabled_strategies(set())
+                    # Set regime for regime-aware min_votes
+                    self.ensemble.set_regime(symbol, _cur_regime)
                 else:
                     self.ensemble.set_disabled_strategies(set())
+                    self.ensemble.set_regime(symbol, "unknown")
             except Exception:
                 self.ensemble.set_disabled_strategies(set())
+                self.ensemble.set_regime(symbol, "unknown")
 
         # ── Standalone regime classification (runs every tick, independent of signals) ──
         # Breaks the chicken-and-egg loop: regime was always "unknown" because it
