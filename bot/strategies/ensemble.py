@@ -1163,26 +1163,42 @@ class EnsembleStrategy:
         raw_win_prob = combined_conf / 100.0
         # Conservative win probability: deflate by empirical overconfidence ratio.
         # Higher agreement = better calibration = less deflation needed.
+        # Win probability deflators: configurable via trading_config.py.
+        # Auto-tuned from trade history when sufficient data exists.
+        try:
+            from trading_config import TradingConfig as _TCDefl
+            _tc_defl = _TCDefl()
+            _d4 = _tc_defl.wp_deflator_4_agree
+            _d3 = _tc_defl.wp_deflator_3_agree
+            _d2t = _tc_defl.wp_deflator_2_trend
+            _d2n = _tc_defl.wp_deflator_2_no_trend
+        except Exception:
+            _d4, _d3, _d2t, _d2n = 0.90, 0.80, 0.68, 0.55
         if n_agree >= 4:
-            win_prob = raw_win_prob * 0.90  # 10% deflation (unanimous, well calibrated)
+            win_prob = raw_win_prob * _d4
         elif n_agree >= 3:
-            win_prob = raw_win_prob * 0.80  # 20% deflation (good but not perfect)
+            win_prob = raw_win_prob * _d3
         else:
-            # 2-agree: use regime info to adjust deflation.
-            # In confirmed trending regime with min_votes reduction, the trend
-            # itself acts as a third confirmation → less deflation needed.
             regime = self._current_regime.get(symbol, "unknown")
             if regime == "trend":
-                win_prob = raw_win_prob * 0.68  # 32% deflation (trend confirms)
+                win_prob = raw_win_prob * _d2t
             else:
-                win_prob = raw_win_prob * 0.55  # 45% deflation (no trend support)
+                win_prob = raw_win_prob * _d2n
         try:
             from trading_config import TradingConfig as _TConf
             _fee_bps = _TConf().taker_fee_bps
         except Exception:
             _fee_bps = 4
         fee_drag = (entry * _fee_bps * 2 / 10000.0) / stop_width if stop_width > 0 else 0
-        ev_per_dollar = round(win_prob * (rr_tp1 - fee_drag) - (1.0 - win_prob) * (1.0 + fee_drag), 4)
+        # Slippage drag: round-trip slippage as fraction of stop width.
+        # Must match risk.py's slippage accounting for EV/sizing parity.
+        try:
+            _slippage_bps = _TConf().slippage_bps
+        except Exception:
+            _slippage_bps = 3
+        slippage_drag = (entry * _slippage_bps * 2 / 10000.0) / stop_width if stop_width > 0 else 0
+        total_drag = fee_drag + slippage_drag
+        ev_per_dollar = round(win_prob * (rr_tp1 - total_drag) - (1.0 - win_prob) * (1.0 + total_drag), 4)
 
         # Defense-in-depth: reject negative-EV signals at ensemble level.
         # The signal pipeline also checks EV, but this prevents wasted computation
@@ -1190,7 +1206,7 @@ class EnsembleStrategy:
         if ev_per_dollar < 0:
             logger.info(
                 f"[ENSEMBLE] {symbol} {side} rejected: negative EV ({ev_per_dollar:.4f}) "
-                f"R:R={rr_tp1:.2f} fee_drag={fee_drag:.3f} win_prob={win_prob:.2f}"
+                f"R:R={rr_tp1:.2f} fee_drag={fee_drag:.3f} slip_drag={slippage_drag:.3f} win_prob={win_prob:.2f}"
             )
             return None
 

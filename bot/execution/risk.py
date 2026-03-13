@@ -343,6 +343,7 @@ class RiskManager:
         max_portfolio_leverage: float = 5.0,
         circuit_breaker: Optional[CircuitBreaker] = None,
         max_risk_multiplier: float = 1.5,
+        quant_data_provider=None,
     ):
         self.equity = starting_equity
         self.risk_per_trade = risk_per_trade
@@ -351,6 +352,11 @@ class RiskManager:
         self.max_risk_multiplier = max_risk_multiplier
         self.circuit_breaker = circuit_breaker or CircuitBreaker()
         self.circuit_breaker.peak_equity = starting_equity
+        # Kelly criterion provider (from quant_data.py)
+        self._quant_data = quant_data_provider
+        # Portfolio heat tracking: sum of risk% for open positions
+        self._open_position_risk: Dict[str, float] = {}
+        self.max_portfolio_heat: float = 0.06  # 6% max combined risk
         # Last sizing breakdown for attribution/debugging
         self.last_sizing_breakdown: Dict[str, Any] = {}
 
@@ -380,7 +386,8 @@ class RiskManager:
                        leverage: float = 1.0, risk_multiplier: float = 1.0,
                        symbol: str = "", slippage_bps: int = 0,
                        risk_per_trade_override: float = 0.0,
-                       skip_notional_cap: bool = False) -> float:
+                       skip_notional_cap: bool = False,
+                       entry_type: str = "", regime: str = "") -> float:
         """Calculate position quantity based on fixed-risk sizing.
 
         Formula (keeps dollar risk constant regardless of leverage):
@@ -420,7 +427,42 @@ class RiskManager:
 
         # Cap risk_multiplier to prevent oversizing (was up to 3.5x before)
         capped_rm = min(max(risk_multiplier, 0.1), self.max_risk_multiplier)
-        effective_risk_pct = risk_per_trade_override if risk_per_trade_override > 0 else self.risk_per_trade
+        base_risk_pct = risk_per_trade_override if risk_per_trade_override > 0 else self.risk_per_trade
+        kelly_source = "fixed"
+
+        # Kelly criterion modulation: use half-Kelly when sufficient trade history exists.
+        # Falls back to fixed risk_per_trade when data is insufficient.
+        if not risk_per_trade_override and self._quant_data is not None:
+            try:
+                kelly_result = self._quant_data.compute_kelly(
+                    setup_type=entry_type, regime=regime, min_trades=20
+                )
+                if kelly_result.get("sufficient_data") and kelly_result.get("half_kelly") is not None:
+                    kelly_risk = kelly_result["half_kelly"]
+                    # Bound Kelly between 0.5% and 4% (never go beyond 2x base risk)
+                    kelly_risk = max(0.005, min(0.04, kelly_risk))
+                    base_risk_pct = kelly_risk
+                    kelly_source = "kelly"
+                    logger.info(
+                        f"[SIZE] {symbol or '?'} Kelly sizing: half_kelly={kelly_risk:.3f} "
+                        f"(WR={kelly_result['win_rate']:.2f}, "
+                        f"ratio={kelly_result.get('avg_win_ratio', 0):.2f}, "
+                        f"n={kelly_result['n_trades']})"
+                    )
+            except Exception as e:
+                logger.debug(f"[SIZE] Kelly fallback to fixed: {e}")
+
+        # Portfolio heat cap: total open risk must not exceed max_portfolio_heat
+        effective_risk_pct = base_risk_pct
+        current_heat = sum(self._open_position_risk.values())
+        if current_heat + effective_risk_pct > self.max_portfolio_heat:
+            effective_risk_pct = max(0.005, self.max_portfolio_heat - current_heat)
+            logger.info(
+                f"[SIZE] {symbol or '?'} portfolio heat cap: risk reduced "
+                f"{base_risk_pct:.3f} → {effective_risk_pct:.3f} "
+                f"(heat={current_heat:.3f}/{self.max_portfolio_heat:.3f})"
+            )
+
         risk_usd = self.equity * effective_risk_pct * capped_rm
         effective_leverage = max(leverage, 1.0)
         qty = risk_usd / (effective_stop * effective_leverage)
@@ -444,6 +486,7 @@ class RiskManager:
             "symbol": symbol or "?",
             "equity": self.equity,
             "base_risk_pct": effective_risk_pct,
+            "kelly_source": kelly_source,
             "risk_multiplier_raw": risk_multiplier,
             "risk_multiplier_capped": capped_rm,
             "risk_usd": risk_usd,
@@ -465,6 +508,14 @@ class RiskManager:
             + (" [NOTIONAL-CAPPED]" if notional_cap_applied else "")
         )
         return qty
+
+    def register_position_risk(self, symbol: str, risk_pct: float):
+        """Track risk allocation for an open position (portfolio heat)."""
+        self._open_position_risk[symbol] = risk_pct
+
+    def release_position_risk(self, symbol: str):
+        """Remove position from portfolio heat tracking when closed."""
+        self._open_position_risk.pop(symbol, None)
 
     def update_equity(self, pnl: float, sim_time: Optional[datetime] = None):
         """Update equity after a trade closes.

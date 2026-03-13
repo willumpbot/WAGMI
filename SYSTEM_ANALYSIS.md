@@ -4,7 +4,7 @@
 
 nunuIRL is a **production-grade autonomous crypto trading system** with 11 strategies, 9 LLM specialist agents, multi-layered execution safety, and comprehensive monitoring. The architecture is mature. The challenge now is **proving profitability through systematic validation**.
 
-**Current phase:** Phase 1B (Ensemble Tuning) — increasing trade count for statistical significance.
+**Current phase:** Phase 8 Complete (Quant-Grade Math) → Phase 1 of Profitability Roadmap (30d baseline backtest).
 
 **30-day backtest results (no LLM, pre-tuning):**
 - Net PnL: +$5,536 (+11.2% on $50k)
@@ -134,8 +134,17 @@ Cost: ~$0.007/decision cycle
 8. ~~**BY AGREEMENT PF 0.00x**~~ — Fixed: added profit_factor computation
 9. ~~**Confidence/leverage inversion**~~ — Fixed: stop-width leverage cap
 
+### Fixed (March 13 — Quant Overhaul)
+10. ~~**Kelly criterion orphaned**~~ — Fixed: half-Kelly wired into `risk.py:calculate_qty()` with [0.5%, 4%] bounds
+11. ~~**EV missing slippage**~~ — Fixed: `slippage_drag` added to ensemble EV formula alongside `fee_drag`
+12. ~~**ADX binary cutoff**~~ — Fixed: graduated penalty for ADX 10-22, hard reject only below 10
+13. ~~**Hardcoded deflators**~~ — Fixed: win probability deflators (0.55/0.68/0.80/0.90) moved to `trading_config.py`
+14. ~~**Signal success arbitrary**~~ — Fixed: 0.5% price move → 1R-based (tied to stop loss distance)
+15. ~~**Strategy weights age-blind**~~ — Fixed: 14-day half-life exponential decay in Laplace smoothing
+16. ~~**Calibration too coarse**~~ — Fixed: 5→10 bins (5-point width), isotonic regression for monotonicity
+
 ### Remaining
-10. **multi_strategy_main.py is 6,028 lines** — Needs breakup into tick_processor, llm_integration, position_wiring, analytics
+17. **multi_strategy_main.py is 6,028 lines** — Needs breakup into tick_processor, llm_integration, position_wiring, analytics
 
 ---
 

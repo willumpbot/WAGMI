@@ -1,8 +1,8 @@
 # nunuIRL Trading Bot — Complete Roadmap
 
-> **Last updated**: 2026-03-12
-> **Current state**: Phase 7.2 DONE. **Quant-grade backtest engine** — all 11 strategies wired into backtest (was 4), quant analytics module (Wilson CI, VaR/CVaR, strategy correlation, Kelly criterion, Monte Carlo robustness), signal digest capture (per-candle strategy fire rates, near-misses), pre-seeded signal quality + confidence calibration + parameter tuner from backtest data, 10-gate deployment readiness checker, enhanced walk-forward with quant metrics. 1177 tests passing.
-> **What's next**: Run 30d backtest (`cd bot && python backtest/runner.py --days 30 --symbols BTC SOL HYPE --learn`) → review Quant Intelligence Summary → pass Deployment Gate → paper trade.
+> **Last updated**: 2026-03-13
+> **Current state**: Phase 8 DONE. **Quant-grade mathematical foundation** — Kelly criterion wired into live position sizing (half-Kelly, bounded [0.5%-4%], portfolio heat cap 6%), EV calculation includes slippage drag (parity with risk.py), ADX graduated penalty replaces binary cutoff, win probability deflators configurable via trading_config.py, signal success metric tied to 1R (stop-loss based), strategy weights use age-weighted exponential decay (14-day half-life), calibration bins doubled to 10 with isotonic regression, 14 stale docs removed. 1177+ tests.
+> **What's next**: Run 30d backtest to validate quant changes → paper trade → LLM value quantification (Phase 2 of profitability roadmap).
 
 ---
 
@@ -299,6 +299,42 @@
 
 ---
 
+## Phase 8: Quant-Grade Mathematical Foundation (March 13, 2026) <a id="phase-8"></a>
+
+> Remove hardcoded magic numbers, wire orphaned quant systems, and reach
+> mathematically rigorous position sizing and signal evaluation.
+
+### 8.1 Kelly Criterion Position Sizing ✅
+- [x] Wire half-Kelly from `quant_data.py` into `risk.py:calculate_qty()`
+- [x] Add portfolio heat cap (sum of open risk% ≤ 6%)
+- [x] Bound Kelly [0.5%, 4%], require 20+ trades per setup/regime
+- [x] Fallback to fixed 2% when insufficient data
+
+### 8.2 EV Calculation Parity ✅
+- [x] Add `slippage_drag` to ensemble EV formula (matches `risk.py`)
+- [x] Log slippage drag in negative-EV rejection messages
+
+### 8.3 Graduated Filters (Remove Binary Cliffs) ✅
+- [x] ADX: binary cutoff → graduated penalty (hard reject only below 10)
+- [x] Signal success: 0.5% arbitrary → 1R-based definition tied to stop loss
+
+### 8.4 Data-Driven Deflators ✅
+- [x] Move win_prob deflators (0.55/0.68/0.80/0.90) to `trading_config.py`
+- [x] Make configurable via env vars (WP_DEFLATOR_*)
+- [x] Strategy weights: add age-weighted decay (14-day half-life)
+- [ ] Build auto-tuner using Wilson CI from trade history (needs live data)
+
+### 8.5 Calibration Refinement ✅
+- [x] Increase calibration bins from 5→10 (5-point width)
+- [x] Increase MIN_SAMPLES_PER_BIN from 5→8 for thinner bins
+- [x] Add isotonic regression (pool-adjacent-violators) for monotonic curve
+
+### 8.6 Documentation Consolidation ✅
+- [x] Remove 14 stale markdown files from repo root
+- [x] Add Phase 8 to ROADMAP.md
+
+---
+
 ## 10. Known Issues & Tech Debt <a id="10-known-issues"></a>
 
 ### Active Issues
@@ -506,21 +542,18 @@ bot/feedback/parameter_tuner.py    → Parameter optimization
 8. ~~**Phase 7.2: Zero-trade blocker**~~ ✅ DONE — regime was always "unknown"
 9. ~~**Phase 7.3: Backtest regime parity + prompt modernization**~~ ✅ DONE — all 11 strategies set regime metadata, backtest applies STRATEGY_REGIME_FIT, agent prompts updated
 
-### NOW — Critical Path to Profitability
-10. **Paper trade 48-72h** — Run with `cd bot && python run.py paper`. Watch for:
-    - Are signals actually being generated now? (regime fix should unlock them)
-    - What regime classifications are being assigned? (check logs for `_computed_regime`)
-    - Which of the 11 strategies contribute to 3-agree consensus?
-    - Are Scout Agent responses parsing correctly? (truncation fix)
-    - LLM Regime Agent feedback reaching `_tick_regime_cache`?
-    - Thesis accuracy tracking from first live predictions
-    - Graduated risk reduction behavior during any drawdowns
+10. ~~**Phase 8: Quant-grade mathematical foundation**~~ ✅ DONE — Kelly sizing wired, EV slippage parity, ADX graduated, deflators configurable, age-weighted strategy weights, isotonic calibration
 
-11. **Rerun 100d backtest with regime fix** — Compare PnL before/after regime classification works
-    - `cd bot && python backtest/runner.py --days 100 --symbols BTC ETH SOL`
-    - Backtest now applies STRATEGY_REGIME_FIT filtering (matches live behavior)
-    - Check signal funnel for `regime_blocked` count and per-regime performance
-    - If regime_trend and 3_agree numbers improve, the fix is validated
+### NOW — Critical Path to Profitability
+11. **Run 30d backtest with quant changes** — Validate Kelly sizing, tighter EV, graduated ADX
+    - `cd bot && python run.py backtest --symbols BTC SOL HYPE --days 30`
+    - Check: Kelly sizing logs appear, fewer marginal signals pass EV, ADX 10-22 signals penalized not killed
+
+12. **Paper trade 48-72h** — Run with `cd bot && python run.py paper`. Watch for:
+    - Are signals actually being generated now? (regime fix should unlock them)
+    - Kelly sizing modulating risk per trade (check logs)
+    - Which of the 11 strategies contribute to consensus?
+    - Thesis accuracy tracking from first live predictions
 
 ### NEXT
 12. **Go live conservative** — SOL+HYPE only, 1% risk, max 3x leverage, 3_agree required

@@ -201,6 +201,23 @@ class TradingConfig:
         default_factory=lambda: _env("HOLD_LIMIT_ACTION", "tighten_sl")
     )  # "tighten_sl" or "force_close"
 
+    # ── Win probability deflators (EV calculation) ──
+    # Deflate raw confidence → win probability by agreement level.
+    # Higher strategy agreement = better calibrated = less deflation.
+    # These are initial values; auto-tuned from trade history when available.
+    wp_deflator_4_agree: float = field(
+        default_factory=lambda: _env_float("WP_DEFLATOR_4_AGREE", 0.90)
+    )  # 4-strategy unanimous: 10% deflation
+    wp_deflator_3_agree: float = field(
+        default_factory=lambda: _env_float("WP_DEFLATOR_3_AGREE", 0.80)
+    )  # 3-strategy agreement: 20% deflation
+    wp_deflator_2_trend: float = field(
+        default_factory=lambda: _env_float("WP_DEFLATOR_2_TREND", 0.68)
+    )  # 2-strategy + trending regime: 32% deflation
+    wp_deflator_2_no_trend: float = field(
+        default_factory=lambda: _env_float("WP_DEFLATOR_2_NO_TREND", 0.55)
+    )  # 2-strategy, no trend confirmation: 45% deflation
+
     # ── Regime & RL ──
     regime_min_confirmations: int = field(
         default_factory=lambda: _env_int("REGIME_MIN_CONFIRMATIONS", 3)

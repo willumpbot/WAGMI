@@ -5,10 +5,14 @@ with exponential decay for ensemble weighting.
 
 Weight formula: (wins + 1) / (trials + 2)  (Laplace/additive smoothing)
 Decay: before each recompute, multiply counts by alpha (0.9) to downweight old data.
+Age-weighted mode: when timestamped outcomes exist, uses 14-day half-life
+exponential decay so recent trades matter more than old ones.
 """
 
 import json
 import logging
+import math
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any
@@ -60,9 +64,27 @@ class StrategyWeightManager:
             self.data[name] = {"wins": 0.0, "trials": 0.0, "weight": 0.5}
 
     def get_weight(self, name: str) -> float:
-        """Get smoothed weight: (wins+1)/(trials+2) — Laplace prior."""
+        """Get smoothed weight with age-weighted decay.
+
+        When timestamped outcomes exist, uses 14-day half-life exponential
+        decay so recent trades matter more than old ones. Falls back to
+        simple Laplace (wins+1)/(trials+2) when no timestamps available.
+        """
         self._ensure_entry(name)
         entry = self.data[name]
+        ts_outcomes = entry.get("timestamped_outcomes")
+        if ts_outcomes and len(ts_outcomes) >= 3:
+            now = time.time()
+            half_life = 14 * 86400  # 14-day half-life
+            decay_wins = 0.0
+            decay_total = 0.0
+            for o in ts_outcomes:
+                age = now - o.get("ts", now)
+                weight = math.exp(-0.693 * age / half_life)
+                decay_total += weight
+                if o.get("win"):
+                    decay_wins += weight
+            return (decay_wins + 1) / (decay_total + 2)
         return (entry["wins"] + 1) / (entry["trials"] + 2)
 
     def get_all_weights(self) -> Dict[str, float]:
@@ -82,6 +104,16 @@ class StrategyWeightManager:
         # Keep last 20 outcomes
         if len(self.data[strategy]["recent_outcomes"]) > 20:
             self.data[strategy]["recent_outcomes"] = self.data[strategy]["recent_outcomes"][-20:]
+        # Timestamped outcomes for age-weighted Laplace smoothing
+        if "timestamped_outcomes" not in self.data[strategy]:
+            self.data[strategy]["timestamped_outcomes"] = []
+        self.data[strategy]["timestamped_outcomes"].append({
+            "win": win, "ts": time.time()
+        })
+        # Keep last 200 timestamped outcomes
+        if len(self.data[strategy]["timestamped_outcomes"]) > 200:
+            self.data[strategy]["timestamped_outcomes"] = \
+                self.data[strategy]["timestamped_outcomes"][-200:]
         self.data[strategy]["weight"] = self.get_weight(strategy)
         self._save()
 

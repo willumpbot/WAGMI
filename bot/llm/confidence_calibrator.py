@@ -36,11 +36,16 @@ class ConfidenceCalibrator:
     and adjusts new confidence values to match observed reliability.
     """
 
-    # Calibration bins (confidence % ranges)
-    BINS = [(50, 60), (60, 70), (70, 80), (80, 90), (90, 100)]
+    # Calibration bins: 5-point width for finer resolution.
+    # 10-point bins create false precision (everything in 70-80 maps to midpoint 75).
+    BINS = [
+        (50, 55), (55, 60), (60, 65), (65, 70), (70, 75),
+        (75, 80), (80, 85), (85, 90), (90, 95), (95, 100),
+    ]
 
-    # Minimum samples per bin before calibration is applied
-    MIN_SAMPLES_PER_BIN = 5
+    # Minimum samples per bin before calibration is applied.
+    # Raised from 5 to 8 to compensate for thinner bins.
+    MIN_SAMPLES_PER_BIN = 8
 
     # Smoothing: blend calibrated value with raw value (prevents overcorrection)
     # 0.0 = fully raw, 1.0 = fully calibrated
@@ -165,11 +170,59 @@ class ConfidenceCalibrator:
                 "updated": datetime.now(timezone.utc).isoformat(),
             }
 
+        # Apply isotonic regression (pool-adjacent-violators) to ensure
+        # monotonically non-decreasing calibration curve. Higher claimed
+        # confidence should always map to higher actual win rate.
+        if len(new_curve) >= 2:
+            sorted_keys = sorted(new_curve.keys(), key=lambda k: int(k.split("-")[0]))
+            win_rates = [new_curve[k]["actual_win_rate"] for k in sorted_keys]
+            weights = [new_curve[k]["n"] for k in sorted_keys]
+            isotonic_wr = self._isotonic_regression(win_rates, weights)
+            for i, k in enumerate(sorted_keys):
+                new_curve[k]["actual_win_rate_raw"] = new_curve[k]["actual_win_rate"]
+                new_curve[k]["actual_win_rate"] = isotonic_wr[i]
+                new_curve[k]["adjustment"] = (isotonic_wr[i] * 100) - new_curve[k]["claimed_mid"]
+
         if new_curve:
             self._curve = new_curve
             self._save_curve()
             logger.info(f"Rebuilt calibration curve from {len(recent)} observations, "
-                        f"{len(new_curve)} bins active")
+                        f"{len(new_curve)} bins active (isotonic={len(new_curve) >= 2})")
+
+    @staticmethod
+    def _isotonic_regression(values, weights=None):
+        """Pool-adjacent-violators algorithm for isotonic (monotone non-decreasing) regression.
+
+        Ensures that higher bins always have >= win rate of lower bins.
+        Standard calibration technique used in Platt scaling and reliability diagrams.
+        """
+        n = len(values)
+        if n <= 1:
+            return list(values)
+        if weights is None:
+            weights = [1] * n
+        # Make mutable copies
+        result = list(values)
+        w = list(weights)
+        i = 0
+        while i < n - 1:
+            if result[i] > result[i + 1]:
+                # Pool adjacent violators: merge i and i+1
+                total_w = w[i] + w[i + 1]
+                result[i] = (result[i] * w[i] + result[i + 1] * w[i + 1]) / total_w
+                result[i + 1] = result[i]
+                w[i] = total_w
+                w[i + 1] = total_w
+                # Check backwards
+                while i > 0 and result[i - 1] > result[i]:
+                    total_w = w[i - 1] + w[i]
+                    result[i - 1] = (result[i - 1] * w[i - 1] + result[i] * w[i]) / total_w
+                    result[i] = result[i - 1]
+                    w[i - 1] = total_w
+                    w[i] = total_w
+                    i -= 1
+            i += 1
+        return result
 
     def calibrate(self, raw_confidence: float, agent: str = "system") -> float:
         """

@@ -136,13 +136,15 @@ class ConfidenceScorerStrategy(BaseStrategy):
         except Exception as e:
             logger.warning(f"Failed to save signal log: {e}")
 
-    def _log_signal(self, symbol: str, action: str, price: float):
+    def _log_signal(self, symbol: str, action: str, price: float,
+                    stop_loss: float = 0.0):
         """Record a signal for later evaluation."""
         if symbol not in self.signal_log:
             self.signal_log[symbol] = []
         self.signal_log[symbol].append({
             "signal": action,
             "price": price,
+            "sl": stop_loss,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "evaluated": False,
         })
@@ -180,14 +182,23 @@ class ConfidenceScorerStrategy(BaseStrategy):
 
             success = False
             sig = e["signal"]
-            if sig == "STRONG_BUY" and pct_move > 1.0:
-                success = True
-            elif sig == "BUY" and pct_move > 0.5:
-                success = True
-            elif sig == "SELL" and pct_move < -0.5:
-                success = True
-            elif sig == "STRONG_SELL" and pct_move < -1.0:
-                success = True
+            sl_dist = abs(price_at_signal - e.get("sl", 0)) if e.get("sl") else 0
+            if sl_dist > 0:
+                # 1R-based success: price moved at least 1x stop-distance in the right direction
+                if sig in ("BUY", "STRONG_BUY"):
+                    success = (current_price - price_at_signal) >= sl_dist
+                elif sig in ("SELL", "STRONG_SELL"):
+                    success = (price_at_signal - current_price) >= sl_dist
+            else:
+                # Fallback for legacy entries without SL data
+                if sig == "STRONG_BUY" and pct_move > 1.0:
+                    success = True
+                elif sig == "BUY" and pct_move > 0.5:
+                    success = True
+                elif sig == "SELL" and pct_move < -0.5:
+                    success = True
+                elif sig == "STRONG_SELL" and pct_move < -1.0:
+                    success = True
 
             e["evaluated"] = True
             e["success"] = success
@@ -271,8 +282,13 @@ class ConfidenceScorerStrategy(BaseStrategy):
             _adx_thresh = _TC().adx_min_trending
         except Exception:
             _adx_thresh = 22.0
-        if adx < _adx_thresh:
-            return None  # No/weak trend = no trade
+        _adx_graduated_penalty = 0  # Applied after confidence is computed
+        if adx < 10:
+            return None  # Truly no directional movement — hard reject
+        elif adx < _adx_thresh:
+            # Graduated penalty: linear from -15 at ADX=10 to 0 at threshold
+            _adx_graduated_penalty = int(15 * (1 - (adx - 10) / max(_adx_thresh - 10, 1)))
+            adx_score = max(5, 12 - _adx_graduated_penalty)
         elif adx > 35:
             adx_score = 25  # Strong trend
         elif adx > 25:
@@ -343,6 +359,13 @@ class ConfidenceScorerStrategy(BaseStrategy):
         # Total confidence
         confidence = float(adx_score + macd_score + squeeze_score + rsi_score)
 
+        # Apply graduated ADX penalty for weak-trend signals (ADX between 10 and threshold)
+        if _adx_graduated_penalty > 0:
+            confidence -= _adx_graduated_penalty
+            logger.info(f"[{symbol}] ADX={adx:.1f} < {_adx_thresh}: confidence -{_adx_graduated_penalty} → {confidence:.0f}")
+            if confidence < 55:
+                return None  # Too weak after penalty
+
         # 6h regime filter: reject signals that contradict higher-timeframe regime
         df_6h = data.get("6h")
         if df_6h is None or len(df_6h) < 10:
@@ -399,10 +422,8 @@ class ConfidenceScorerStrategy(BaseStrategy):
 
         confidence = max(0, min(100, confidence))
 
-        # Log signal
-        self._log_signal(symbol, action, entry)
-
         if confidence < 55:
+            self._log_signal(symbol, action, entry)
             return None
 
         # Stop/TP placement using centralized ATR multiplier (was 1.2, now from config for consistency)
@@ -412,6 +433,8 @@ class ConfidenceScorerStrategy(BaseStrategy):
         except Exception:
             K = 1.5
         sl = entry - K * atr_val if side == "BUY" else entry + K * atr_val
+        # Log signal with SL for 1R-based success evaluation
+        self._log_signal(symbol, action, entry, stop_loss=sl)
         stop_width = abs(entry - sl)
         tp1 = entry + 2.0 * stop_width if side == "BUY" else entry - 2.0 * stop_width
         tp2 = entry + 4.0 * stop_width if side == "BUY" else entry - 4.0 * stop_width
