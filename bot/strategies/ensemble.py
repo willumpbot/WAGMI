@@ -896,6 +896,8 @@ class EnsembleStrategy:
                 return None
 
         merged = self._merge_signals(symbol, chosen)
+        if merged is None:
+            return None
 
         # Confidence penalty for opposition, weighted by opposer's confidence.
         # Previously flat 10pts per opposer regardless of their conviction.
@@ -965,6 +967,8 @@ class EnsembleStrategy:
             return None
 
         merged = self._merge_signals(symbol, chosen)
+        if merged is None:
+            return None
 
         # Duration-aware opposition penalty: daily strategies penalize
         # intraday signals less (different timeframe = weaker opposition).
