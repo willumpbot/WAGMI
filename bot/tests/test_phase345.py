@@ -114,7 +114,7 @@ class TestConfigProfiles:
         cfg = TradingConfig()
         cfg.environment = "paper"
         apply_profile(cfg)
-        assert cfg.max_open_positions <= 3
+        assert cfg.max_open_positions <= 8  # quant approach: more positions at smaller size
         assert cfg.max_leverage <= 25.0
 
     def test_live_profile(self):

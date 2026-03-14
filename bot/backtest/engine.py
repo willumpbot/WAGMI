@@ -354,7 +354,7 @@ class BacktestEngine:
             _bt_sig_log = Path("backtest_ml_data") / "confidence_signal_log.json"
             if _bt_sig_log.exists():
                 _bt_sig_log.unlink()
-            all_strats["confidence_scorer"] = ConfidenceScorerStrategy(sym_configs, data_dir="backtest_ml_data")
+            all_strats["confidence_scorer"] = ConfidenceScorerStrategy(sym_configs, data_dir="backtest_ml_data", backtest_mode=True)
         if os.getenv("STRATEGY_MULTI_TIER_QUALITY_ENABLED", "true").lower() == "true":
             all_strats["multi_tier_quality"] = MultiTierQualityStrategy(sym_configs)
         if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "false").lower() == "true":

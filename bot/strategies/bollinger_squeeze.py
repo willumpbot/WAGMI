@@ -295,15 +295,17 @@ class BollingerSqueezeStrategy(BaseStrategy):
 
         confidence = max(50.0, min(95.0, confidence))
 
-        # TP/SL
+        # TP/SL — widened for crypto volatility. Old 1.2x bandwalk stops hit on
+        # every wick, causing 100% SL loss rate in 7-day backtest. Fee drag at
+        # tight stops (14.5% of distance) made trades structurally unprofitable.
         if signal_type == "squeeze_breakout":
-            sl_mult = 1.5
-            tp1_mult = 2.0
-            tp2_mult = 4.0  # Squeeze breakouts can run far
+            sl_mult = 2.0   # was 1.5: wider stop, fee drag drops from 11.6% to 8.7%
+            tp1_mult = 2.5   # was 2.0: proportional to maintain R:R
+            tp2_mult = 5.0   # was 4.0: let breakouts run further
         else:  # bandwalk
-            sl_mult = 1.2
-            tp1_mult = 1.5
-            tp2_mult = 2.5
+            sl_mult = 1.8   # was 1.2: #1 profit killer, way too tight for crypto
+            tp1_mult = 2.2   # was 1.5: proportional to wider stop
+            tp2_mult = 3.5   # was 2.5: better trailing target
 
         if side == "BUY":
             sl = price - atr * sl_mult

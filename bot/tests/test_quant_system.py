@@ -152,27 +152,28 @@ class TestCircuitBreakerSessionDD:
 # ═══════════════════════════════════════════════════════════════
 
 class TestRegimeMinVotes:
-    """B1: Regime-gated min_votes lookup table."""
+    """B1: Regime-gated min_votes lookup table (quant approach: trade more, bet smaller)."""
 
     def test_bear_regime_requires_2(self):
         from strategies.ensemble import EnsembleStrategy
         assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bear") == 2
 
-    def test_bull_regime_allows_2(self):
+    def test_bull_regime_allows_1(self):
+        """Trending bull allows single-strategy high-conviction trades."""
         from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bull") == 2
+        assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bull") == 1
 
     def test_consolidation_allows_2(self):
         from strategies.ensemble import EnsembleStrategy
         assert EnsembleStrategy.REGIME_MIN_VOTES.get("consolidation") == 2
 
-    def test_unknown_defaults_to_3(self):
+    def test_unknown_defaults_to_2(self):
         from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("unknown") == 3
+        assert EnsembleStrategy.REGIME_MIN_VOTES.get("unknown") == 2
 
-    def test_high_vol_requires_3(self):
+    def test_high_vol_requires_2(self):
         from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("high_volatility") == 3
+        assert EnsembleStrategy.REGIME_MIN_VOTES.get("high_volatility") == 2
 
 
 class TestRegimeAllowlist:

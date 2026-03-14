@@ -135,17 +135,20 @@ class EnsembleStrategy:
     # Regime-gated min_votes: data-driven from 75-day backtest results.
     # trending_bear at 2-agree = -$25/trade × 96 trades = largest performance drag.
     # consolidation 2-agree = 80-89% WR = best regime.
+    # Quant philosophy: trade more often with smaller size. Single high-conviction
+    # strategy trades allowed in trending regimes (risk_mult=0.5 for 1-agree).
+    # EV gates + small position size handle quality; min_votes shouldn't over-filter.
     REGIME_MIN_VOTES = {
-        'trending_bear':   2,   # was 3: only 3 strategies allowed, 3 = unanimous = impossible. 2-of-3 is realistic.
-        'trending_bull':   2,   # 58% WR, $860 net — 2-agree allowed
-        'trend':           2,   # legacy name for trending_bull
-        'consolidation':   2,   # 80% WR — mean-reversion edge
-        'range':           2,   # was 3: with 4 allowed strategies, 3 = near-unanimous deadlock. EV gate handles quality.
-        'high_volatility': 3,   # too few trades — require conviction
+        'trending_bear':   2,   # 2-of-3 realistic in bear
+        'trending_bull':   1,   # was 2: allow single-strategy high-conf trades at half size
+        'trend':           1,   # same as trending_bull
+        'consolidation':   2,   # mean-reversion needs confirmation
+        'range':           2,   # ranging needs confirmation
+        'high_volatility': 2,   # was 3: impossible with 4 strategies. EV gate handles quality.
         'panic':           3,   # extreme conditions — full conviction
         'low_liquidity':   3,   # thin books — full conviction
         'news_dislocation': 3,  # event-driven — full conviction
-        'unknown':         3,   # no regime = no edge
+        'unknown':         2,   # was 3: blocked everything. EV gate handles quality.
     }
 
     # Regime-specific strategy allowlist: only strategies with proven edge
@@ -1067,13 +1070,24 @@ class EnsembleStrategy:
         buy_signals = [s for s in signals if s.side == "BUY"]
         sell_signals = [s for s in signals if s.side == "SELL"]
 
-        # Require at least min_votes strategies agreeing on the same direction
+        # Require at least min_votes strategies agreeing on the same direction.
+        # Single-strategy trades (1-agree) require 80%+ confidence from a proven strategy.
         if len(buy_signals) < min_v and len(sell_signals) < min_v:
-            if buy_signals:
-                logger.info(f"[{symbol}] Only {len(buy_signals)} BUY signal(s), need {min_v}+ same-side")
-            elif sell_signals:
-                logger.info(f"[{symbol}] Only {len(sell_signals)} SELL signal(s), need {min_v}+ same-side")
-            return None
+            # Check for single-strategy high-conviction trade (quant cherry-pick mode)
+            single_conf_threshold = 80.0
+            lone_signals = buy_signals or sell_signals
+            if min_v <= 1 and len(lone_signals) == 1 and lone_signals[0].confidence >= single_conf_threshold:
+                logger.info(
+                    f"[{symbol}] Single-strategy high-conviction {lone_signals[0].side}: "
+                    f"{lone_signals[0].strategy} conf={lone_signals[0].confidence:.0f}% (quant cherry-pick)"
+                )
+                # Allow it through — EV gate + half-size risk_mult will handle safety
+            else:
+                if buy_signals:
+                    logger.info(f"[{symbol}] Only {len(buy_signals)} BUY signal(s), need {min_v}+ same-side")
+                elif sell_signals:
+                    logger.info(f"[{symbol}] Only {len(sell_signals)} SELL signal(s), need {min_v}+ same-side")
+                return None
 
         # Block known-losing combos (backtest-validated toxic combinations).
         # Uses subset matching: a 3-agree combo containing a toxic 2-agree pair is also blocked.
@@ -1310,21 +1324,23 @@ class EnsembleStrategy:
         stop_width = abs(entry - best_sl)
         rr_tp1 = abs(entry - best_tp1) / stop_width if stop_width > 0 else 0
         raw_win_prob = combined_conf / 100.0
-        # Conservative win probability: deflate by empirical overconfidence ratio.
-        # Higher agreement = better calibration = less deflation needed.
+        # Win probability deflation: calibrate for overconfidence.
+        # Reduced deflation ratios — old values (0.55 for 2-agree) were too harsh,
+        # requiring 70%+ WR to break even after fees. Empirical data shows 2-agree
+        # in trending_bull had 58% WR, not the 39% the 0.55 deflation implied.
         if n_agree >= 4:
-            win_prob = raw_win_prob * 0.90  # 10% deflation (unanimous, well calibrated)
+            win_prob = raw_win_prob * 0.90  # 10% deflation (unanimous)
         elif n_agree >= 3:
-            win_prob = raw_win_prob * 0.80  # 20% deflation (good but not perfect)
-        else:
-            # 2-agree: use regime info to adjust deflation.
-            # In confirmed trending regime with min_votes reduction, the trend
-            # itself acts as a third confirmation → less deflation needed.
+            win_prob = raw_win_prob * 0.82  # was 0.80: slight relaxation
+        elif n_agree >= 2:
             regime = self._current_regime.get(symbol, "unknown")
-            if regime == "trend":
-                win_prob = raw_win_prob * 0.68  # 32% deflation (trend confirms)
+            if regime in ("trend", "trending_bull", "trending_bear"):
+                win_prob = raw_win_prob * 0.72  # was 0.68: trend confirms direction
             else:
-                win_prob = raw_win_prob * 0.55  # 45% deflation (no trend support)
+                win_prob = raw_win_prob * 0.65  # was 0.55: 45% was way too harsh
+        else:
+            # 1-agree (single strategy, high conviction) — heavy deflation but allowed
+            win_prob = raw_win_prob * 0.50  # 50% deflation for unconfirmed signals
         try:
             from trading_config import TradingConfig as _TConf
             _fee_bps = _TConf().taker_fee_bps

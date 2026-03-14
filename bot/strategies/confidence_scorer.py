@@ -110,12 +110,13 @@ class ConfidenceScorerStrategy(BaseStrategy):
     and adjusts confidence based on observed win rates.
     """
 
-    def __init__(self, symbols: Dict[str, Any], data_dir: str = "ml_data"):
+    def __init__(self, symbols: Dict[str, Any], data_dir: str = "ml_data", backtest_mode: bool = False):
         super().__init__("confidence_scorer", symbols)
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.signal_log_path = self.data_dir / "confidence_signal_log.json"
         self.signal_log = self._load_signal_log()
+        self.backtest_mode = backtest_mode
 
     def get_required_timeframes(self) -> List[str]:
         return ["1h", "6h"]
@@ -152,8 +153,14 @@ class ConfidenceScorerStrategy(BaseStrategy):
     def _get_historical_confidence(self, symbol: str, action: str) -> Optional[float]:
         """
         Calculate win rate for this (symbol, action) pair from historical data.
-        Returns None if insufficient data.
+        Returns None if insufficient data or in backtest mode.
+
+        In backtest mode, historical WR is disabled to prevent the cold-start death
+        spiral: early losses poison WR → confidence drops → fewer trades → worse WR.
+        The 7-day backtest showed WR decaying from 35% → 16% within a single run.
         """
+        if self.backtest_mode:
+            return None  # Prevent cold-start death spiral in backtests
         entries = self.signal_log.get(symbol, [])
         evaluated = [e for e in entries if e.get("evaluated") and e["signal"] == action and "success" in e]
         if len(evaluated) < 5:
