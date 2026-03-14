@@ -3365,81 +3365,31 @@ class MultiStrategyBot:
             lev_decision.leverage = _sym_max_lev
         _sym_risk = get_symbol_param(symbol, "risk_per_trade", self.config)
 
-        # Compound sizing: apply 8-multiplier system from quant plan
+        # Vol-targeting: single-parameter sizing (replaces 11-multiplier compound system).
+        # Scales risk inversely with current ATR vs 1.5% baseline ATR (crypto long-run avg).
+        # High vol (3% ATR) → 0.5× risk. Low vol (0.75% ATR) → 2× risk, capped at 2× base.
+        # Circuit breaker still halts trading on drawdowns — safety preserved.
+        # Kelly/IC weights can be re-enabled after 200+ trades of live calibration data.
         _compound_mult = 1.0
+        _atr_pct = 0.0
         try:
-            _regime = self._tick_regime_cache.get(symbol, "unknown")
-            # Kelly weight (edge quality — size up proven strategies, size down unproven)
-            if self.kelly_engine and signal_result.strategy:
-                _compound_mult *= self.kelly_engine.compute_kelly_weight(signal_result.strategy)
-            # IC weight (factor health — kill inverted, half-size decaying)
-            if self.ic_tracker and signal_result.strategy:
-                _ic_w = self.ic_tracker.get_ic_weight(signal_result.strategy)
-                if _ic_w < 1.0:
-                    logger.info(f"[{symbol}] IC weight for {signal_result.strategy}: {_ic_w:.2f}")
-                _compound_mult *= _ic_w
-            # Regime scalar
-            _compound_mult *= self.risk_mgr.get_regime_scalar(_regime)
-            # Drawdown dial
-            _compound_mult *= self.risk_mgr.get_drawdown_dial()
-            # Vol regime (from ATR data if available)
-            if symbol in self._last_prices and hasattr(signal_result, 'atr') and signal_result.atr > 0:
-                _atr_baseline = self._last_prices[symbol] * 0.02  # ~2% as baseline
-                _compound_mult *= self.risk_mgr.compute_vol_regime_multiplier(
-                    signal_result.atr, _atr_baseline
-                )
-            # BTC momentum alignment
-            _btc_ret = self._price_changes_1h.get("BTC", 0.0)
-            if symbol != "BTC" and abs(_btc_ret) > 0.001:
-                _compound_mult *= self.risk_mgr.compute_btc_momentum_multiplier(
-                    _btc_ret, signal_result.side
-                )
-            # Portfolio risk budget: scale down as budget fills up
-            if self.portfolio_risk:
-                try:
-                    _open = {s: {"side": p.side, "size_usd": p.notional or 0}
-                             for s, p in self.positions.items() if p and p.side}
-                    _budget = self.portfolio_risk.compute_risk_budget(
-                        self.risk_mgr.equity, _open, self.config.max_portfolio_risk_pct
-                    )
-                    if _budget.utilization > 0.5:
-                        # Linear scale: 1.0 at 50% util → 0.2 at 100% util
-                        _budget_mult = max(0.2, 1.0 - (_budget.utilization - 0.5) * 1.6)
-                        _compound_mult *= _budget_mult
-                        logger.info(
-                            f"[{symbol}] Portfolio risk budget {_budget.utilization:.0%} used, "
-                            f"sizing mult={_budget_mult:.2f}"
-                        )
-                except Exception as e:
-                    logger.debug(f"Portfolio risk budget check failed: {e}")
-            # Signal decay: stale signals also get smaller size (not just lower confidence)
-            if _signal_gen_time and self.config.signal_decay_seconds > 0:
-                _sig_age = time.time() - _signal_gen_time
-                _decay_mult = self.risk_mgr.compute_signal_decay(_sig_age, self.config.signal_decay_seconds * 5)
-                if _decay_mult < 1.0:
-                    _compound_mult *= _decay_mult
-                    logger.info(f"[{symbol}] Signal decay sizing: age={_sig_age:.0f}s, mult={_decay_mult:.2f}")
-            # Agreement-based sizing: 1-agree trades get half size (quant cherry-pick)
-            _n_agree = signal_result.metadata.get("num_agree", 1) if signal_result.metadata else 1
-            if _n_agree == 1:
-                _compound_mult *= 0.5
-                logger.info(f"[{symbol}] Single-strategy trade: half-size (0.5× compound mult)")
-            # Walk-forward degradation: reduce sizing when OOS performance degrades
-            _wf_mult = self._get_wf_multiplier()
-            if _wf_mult < 1.0:
-                _compound_mult *= _wf_mult
-                if _wf_mult <= 0.0:
-                    logger.warning(f"[{symbol}] WF HALT: ratio={self._wf_ratio:.3f}, blocking entry")
-                else:
-                    logger.info(f"[{symbol}] WF degradation: ratio={self._wf_ratio:.3f}, mult={_wf_mult:.2f}")
-            # Cap at 2× base, floor at 0.1×
-            _compound_mult = min(2.0, max(0.1, _compound_mult))
-            # Apply compound multiplier to symbol risk
-            _sym_risk = (_sym_risk or self.config.risk_per_trade) * _compound_mult
+            if hasattr(signal_result, 'atr') and signal_result.atr > 0 and signal_result.entry > 0:
+                _atr_pct = signal_result.atr / signal_result.entry
+                _BASELINE_ATR = 0.015  # 1.5% daily ATR = neutral
+                _compound_mult = _BASELINE_ATR / max(_atr_pct, 0.001)
+                _compound_mult = max(0.3, min(2.0, _compound_mult))  # bound 0.3×–2.0×
+            _sym_risk = self.config.vol_target_pct * _compound_mult
+            # Safety cap: never exceed 2× base risk_per_trade
+            _sym_risk = min(_sym_risk, self.config.risk_per_trade * 2)
             # Cache for trade ledger attribution at close
             self._compound_mult_cache[symbol] = round(_compound_mult, 4)
+            logger.debug(
+                f"[{symbol}] Vol-target sizing: atr_pct={_atr_pct:.3%}, "
+                f"mult={_compound_mult:.2f}, risk={_sym_risk:.4f}"
+            )
         except Exception as e:
-            logger.debug(f"Compound sizing error (using base): {e}")
+            logger.debug(f"Vol-target sizing error (using base): {e}")
+            _sym_risk = _sym_risk or self.config.risk_per_trade
 
         # Calculate position size (risk-based: qty = risk$ / (stop_dist * leverage))
         qty = self.risk_mgr.calculate_qty(

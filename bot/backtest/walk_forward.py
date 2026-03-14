@@ -131,9 +131,24 @@ class WalkForwardRunner:
         config = TradingConfig()
         engine = BacktestEngine(config=config)
 
+        # Adaptive split: if total_days < default window (train+test), use 75/25 proportion.
+        # This prevents the test window from being perpetually empty on short runs.
+        window_size = self.train_days + self.test_days
+        if self.total_days < window_size:
+            effective_train = max(1, int(self.total_days * 0.75))
+            effective_test = max(1, self.total_days - effective_train)
+            logger.info(
+                f"[WF] total_days={self.total_days} < window_size={window_size}: "
+                f"adapting to proportional split ({effective_train}d train / {effective_test}d test)"
+            )
+        else:
+            effective_train = self.train_days
+            effective_test = self.test_days
+        effective_window = effective_train + effective_test
+
         logger.info(
             f"[WF] Running {self.total_days}d backtest for walk-forward analysis "
-            f"({self.train_days}d train / {self.test_days}d test)"
+            f"({effective_train}d train / {effective_test}d test)"
         )
 
         raw_report = engine.run(symbols=self.symbols, days=self.total_days)
@@ -144,14 +159,13 @@ class WalkForwardRunner:
         risk_metrics = raw_report.get("risk_metrics", {})
 
         # Build time windows
-        window_size = self.train_days + self.test_days
-        n_windows = max(1, self.total_days // window_size)
+        n_windows = max(1, self.total_days // effective_window)
 
         report = WalkForwardReport(
             symbols=self.symbols,
             total_days=self.total_days,
-            train_days=self.train_days,
-            test_days=self.test_days,
+            train_days=effective_train,
+            test_days=effective_test,
             n_windows=n_windows,
             total_trades=len(trades),
             full_run_metrics={
@@ -176,9 +190,9 @@ class WalkForwardRunner:
 
         for i in range(n_windows):
             # Calculate trade indices for this window
-            window_start_trade = int(i * window_size * trades_per_day)
-            train_end_trade = int((i * window_size + self.train_days) * trades_per_day)
-            test_end_trade = int(((i + 1) * window_size) * trades_per_day)
+            window_start_trade = int(i * effective_window * trades_per_day)
+            train_end_trade = int((i * effective_window + effective_train) * trades_per_day)
+            test_end_trade = int(((i + 1) * effective_window) * trades_per_day)
 
             # Clamp to available trades
             train_trades = trades[window_start_trade:train_end_trade]
@@ -186,13 +200,13 @@ class WalkForwardRunner:
 
             # Compute stats for train window
             train_result = self._compute_window_stats(
-                train_trades, "train", i, self.train_days
+                train_trades, "train", i, effective_train
             )
             report.windows.append(train_result)
 
             # Compute stats for test window
             test_result = self._compute_window_stats(
-                test_trades, "test", i, self.test_days
+                test_trades, "test", i, effective_test
             )
             report.windows.append(test_result)
 
@@ -270,9 +284,13 @@ class WalkForwardRunner:
         """Format walk-forward report as readable text."""
         lines = []
         lines.append("=" * 70)
+        split_note = ""
+        orig_window = self.train_days + self.test_days
+        if report.total_days < orig_window:
+            split_note = f" [adaptive: was {self.train_days}/{self.test_days}]"
         lines.append(
             f"WALK-FORWARD VALIDATION: {', '.join(report.symbols)} | "
-            f"{report.total_days}d ({report.train_days}d train / {report.test_days}d test)"
+            f"{report.total_days}d ({report.train_days}d train / {report.test_days}d test{split_note})"
         )
         lines.append("=" * 70)
 

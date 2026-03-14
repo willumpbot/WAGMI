@@ -80,6 +80,12 @@ class TradingConfig:
     risk_per_trade: float = field(default_factory=lambda: _env_float("RISK_PER_TRADE", 0.005))
     # Was 0.02: quant approach = many small bets. 0.5% risk means a single loss
     # costs $250 on $50k, not $1,000. Law of large numbers over 40+ trades.
+    vol_target_pct: float = field(default_factory=lambda: _env_float("VOL_TARGET_PCT", 0.005))
+    # Vol-targeting: replaces 11-multiplier compound sizing system (single parameter).
+    # Position risk scales inversely with ATR vs 1.5% baseline ATR.
+    # At baseline vol (1.5% ATR): risk = vol_target_pct.
+    # High vol (3% ATR): risk → 0.25×. Low vol (0.75% ATR): risk → 2× (capped).
+    # Rule: need 30 trades/param for statistical validity. 4 core params = 120 trades needed.
     max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 8))
     # Was 3: with 0.5% risk/trade, 8 positions = 4% total risk (same as old 2 @ 2%)
     taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 4))  # Hyperliquid: 3.5 bps taker, rounded up for safety
