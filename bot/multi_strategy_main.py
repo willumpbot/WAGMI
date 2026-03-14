@@ -3342,6 +3342,13 @@ class MultiStrategyBot:
                         )
                 except Exception as e:
                     logger.debug(f"Portfolio risk budget check failed: {e}")
+            # Signal decay: stale signals also get smaller size (not just lower confidence)
+            if _signal_gen_time and self.config.signal_decay_seconds > 0:
+                _sig_age = time.time() - _signal_gen_time
+                _decay_mult = self.risk_mgr.compute_signal_decay(_sig_age, self.config.signal_decay_seconds * 5)
+                if _decay_mult < 1.0:
+                    _compound_mult *= _decay_mult
+                    logger.info(f"[{symbol}] Signal decay sizing: age={_sig_age:.0f}s, mult={_decay_mult:.2f}")
             # Agreement-based sizing: 1-agree trades get half size (quant cherry-pick)
             _n_agree = signal_result.metadata.get("num_agree", 1) if signal_result.metadata else 1
             if _n_agree == 1:
