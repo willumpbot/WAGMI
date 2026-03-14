@@ -400,3 +400,32 @@ class TestWalkForwardMultiplier:
 
     def test_zero_wf(self):
         assert self._get_wf_multiplier(0.0) == 0.0
+
+
+# ── Regime-Conditional SL/TP ──────────────────────────────────────
+
+class TestRegimeSlTp:
+    def test_trending_bull_widens_sl(self):
+        from trading_config import get_regime_sl_tp
+        sl, tp1, tp2 = get_regime_sl_tp("trending_bull", 2.0, 2.0, 4.0)
+        assert sl > 2.0  # Wider SL in trend
+        assert tp1 < 2.0  # Tighter TP1 (take profits)
+
+    def test_consolidation_tightens_sl(self):
+        from trading_config import get_regime_sl_tp
+        sl, tp1, tp2 = get_regime_sl_tp("consolidation", 2.0, 2.0, 4.0)
+        assert sl < 2.0  # Tighter SL
+        assert tp1 > 2.0  # Wider TP1 (breakout target)
+
+    def test_unknown_regime_no_change(self):
+        from trading_config import get_regime_sl_tp
+        sl, tp1, tp2 = get_regime_sl_tp("unknown", 2.0, 2.0, 4.0)
+        assert sl == 2.0
+        assert tp1 == 2.0
+        assert tp2 == 4.0
+
+    def test_high_vol_widest_sl(self):
+        from trading_config import get_regime_sl_tp
+        sl_hv, _, _ = get_regime_sl_tp("high_volatility", 2.0, 2.0, 4.0)
+        sl_con, _, _ = get_regime_sl_tp("consolidation", 2.0, 2.0, 4.0)
+        assert sl_hv > sl_con  # High vol needs wider stops

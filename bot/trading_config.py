@@ -574,6 +574,38 @@ PAPER_PROFILE_OVERRIDES = {
     "enable_smart_orders": False,
 }
 
+# Regime-conditional SL/TP multipliers (applied on top of base sl_atr_multiplier)
+# Trending: wider SL (let trends breathe), tighter TP (take profits)
+# Consolidation: tighter SL (clear breakout or stop), wider TP (breakout target)
+# High vol: widest SL (avoid wick stops), tightest TP (grab what you can)
+REGIME_SL_TP_SCALARS = {
+    "trending_bull":    {"sl_mult": 1.2, "tp1_mult": 0.9, "tp2_mult": 0.85},
+    "trending_bear":    {"sl_mult": 1.1, "tp1_mult": 0.8, "tp2_mult": 0.8},
+    "trend":            {"sl_mult": 1.15, "tp1_mult": 0.85, "tp2_mult": 0.85},
+    "consolidation":    {"sl_mult": 0.85, "tp1_mult": 1.2, "tp2_mult": 1.3},
+    "range":            {"sl_mult": 0.9, "tp1_mult": 1.1, "tp2_mult": 1.2},
+    "high_volatility":  {"sl_mult": 1.4, "tp1_mult": 0.7, "tp2_mult": 0.7},
+    "panic":            {"sl_mult": 1.5, "tp1_mult": 0.6, "tp2_mult": 0.6},
+    "low_liquidity":    {"sl_mult": 1.3, "tp1_mult": 0.8, "tp2_mult": 0.8},
+}
+
+
+def get_regime_sl_tp(regime: str, base_sl_mult: float, base_tp1_mult: float,
+                     base_tp2_mult: float) -> tuple:
+    """Apply regime-conditional scaling to SL/TP multipliers.
+
+    Returns (adjusted_sl_mult, adjusted_tp1_mult, adjusted_tp2_mult).
+    """
+    scalars = REGIME_SL_TP_SCALARS.get(regime)
+    if scalars is None:
+        return (base_sl_mult, base_tp1_mult, base_tp2_mult)
+    return (
+        base_sl_mult * scalars["sl_mult"],
+        base_tp1_mult * scalars["tp1_mult"],
+        base_tp2_mult * scalars["tp2_mult"],
+    )
+
+
 LIVE_PROFILE_OVERRIDES = {
     "max_leverage": 25.0,       # Full leverage in live
     "risk_per_trade": 0.005,    # 0.5% risk per trade: quant approach, many small bets

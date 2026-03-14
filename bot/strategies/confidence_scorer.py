@@ -418,16 +418,20 @@ class ConfidenceScorerStrategy(BaseStrategy):
         if confidence < 55:
             return None
 
-        # Stop/TP placement using centralized ATR multiplier (was 1.2, now from config for consistency)
+        # Stop/TP placement: regime-conditional ATR multipliers
         try:
-            from trading_config import TradingConfig as _TC
-            K = _TC().sl_atr_multiplier
+            from trading_config import TradingConfig as _TC, get_regime_sl_tp
+            _cfg = _TC()
+            _regime = self._current_regime if hasattr(self, '_current_regime') else "unknown"
+            K, _tp1_mult, _tp2_mult = get_regime_sl_tp(
+                _regime, _cfg.sl_atr_multiplier, 2.0, 4.0
+            )
         except Exception:
-            K = 1.5
+            K, _tp1_mult, _tp2_mult = 1.5, 2.0, 4.0
         sl = entry - K * atr_val if side == "BUY" else entry + K * atr_val
         stop_width = abs(entry - sl)
-        tp1 = entry + 2.0 * stop_width if side == "BUY" else entry - 2.0 * stop_width
-        tp2 = entry + 4.0 * stop_width if side == "BUY" else entry - 4.0 * stop_width
+        tp1 = entry + _tp1_mult * stop_width if side == "BUY" else entry - _tp1_mult * stop_width
+        tp2 = entry + _tp2_mult * stop_width if side == "BUY" else entry - _tp2_mult * stop_width
 
         rr = abs(entry - tp1) / stop_width if stop_width > 0 else 0
         hist_str = f"hist_WR={hist_conf:.0%}" if hist_conf is not None else "hist_WR=n/a"

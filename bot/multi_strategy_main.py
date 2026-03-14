@@ -1311,6 +1311,25 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"Walk-forward computation error: {e}")
 
+            # Rolling Sharpe: early edge degradation detection
+            try:
+                if self.trade_ledger:
+                    import math
+                    _sharpe_trades = self.trade_ledger.get_trades(lookback_days=30)
+                    _pnls = [float(t.get("net_pnl", "0")) for t in _sharpe_trades if t.get("net_pnl")]
+                    if len(_pnls) >= 10:
+                        _mean = sum(_pnls) / len(_pnls)
+                        _var = sum((p - _mean) ** 2 for p in _pnls) / len(_pnls)
+                        _std = math.sqrt(_var) if _var > 0 else 0.001
+                        _sharpe_30d = round(_mean / _std, 3)
+                        logger.info(f"[QUANT] 30-day rolling Sharpe: {_sharpe_30d:.3f} ({len(_pnls)} trades)")
+                        if _sharpe_30d < 0:
+                            logger.warning(f"[QUANT] NEGATIVE SHARPE ({_sharpe_30d:.3f}) — edge may be degraded")
+                        elif _sharpe_30d < 0.3:
+                            logger.warning(f"[QUANT] LOW SHARPE ({_sharpe_30d:.3f}) — monitor for further degradation")
+            except Exception as e:
+                logger.debug(f"Rolling Sharpe error: {e}")
+
             # Quant daily report: 6 key metrics with alerting
             if self.daily_reporter:
                 try:
