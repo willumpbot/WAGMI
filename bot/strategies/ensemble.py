@@ -1412,7 +1412,17 @@ class EnsembleStrategy:
             _fee_bps = _TConf().taker_fee_bps
         except Exception:
             _fee_bps = 4
-        fee_drag = (entry * _fee_bps * 2 / 10000.0) / stop_width if stop_width > 0 else 0
+        # Regime-specific slippage: high-vol/panic markets have wider spreads
+        # and worse fills. Add slippage as additional cost beyond fees.
+        _REGIME_SLIPPAGE_BPS = {
+            "trending_bull": 1, "trending_bear": 2, "trend": 1,
+            "consolidation": 1, "range": 1,
+            "high_volatility": 4, "panic": 6,
+            "low_liquidity": 5, "news_dislocation": 5,
+        }
+        _slippage_bps = _REGIME_SLIPPAGE_BPS.get(_regime_ev, 2)
+        _total_cost_bps = _fee_bps * 2 + _slippage_bps  # round-trip fees + slippage
+        fee_drag = (entry * _total_cost_bps / 10000.0) / stop_width if stop_width > 0 else 0
         ev_per_dollar = round(win_prob * (rr_tp1 - fee_drag) - (1.0 - win_prob) * (1.0 + fee_drag), 4)
 
         # Defense-in-depth: reject negative-EV signals at ensemble level.
