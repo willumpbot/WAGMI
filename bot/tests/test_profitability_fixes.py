@@ -266,12 +266,12 @@ class TestStrategyDegradation:
         return EnsembleStrategy(strategies, mode="voting", min_votes=min_votes)
 
     def test_normal_min_votes_enforced(self):
-        """With no errors, min_votes=3 is enforced."""
+        """With no errors, min_votes is enforced (regime-aware: unknown→2)."""
         from strategies.base import Signal
         ens = self._make_ensemble(min_votes=3)
-        # 2 strategies agree BUY, 2 return None → 2 signals, need 3
+        # 1 strategy agrees BUY, 3 return None → 1 signal, need 2 (unknown regime)
         for i, s in enumerate(ens.strategies):
-            if i < 2:
+            if i < 1:
                 s.evaluate.return_value = Signal(
                     strategy=s.name, symbol="BTC", side="BUY",
                     confidence=75, entry=100, sl=97, tp1=106, tp2=112
@@ -280,7 +280,7 @@ class TestStrategyDegradation:
                 s.evaluate.return_value = None
         import pandas as pd
         result = ens.evaluate("BTC", {"1h": pd.DataFrame({"close": [100]*60, "volume": [1000]*60, "high": [101]*60, "low": [99]*60})})
-        assert result is None  # Only 2 votes, need 3
+        assert result is None  # Only 1 vote, need 2 (unknown regime min_votes=2)
 
     def test_degraded_min_votes_on_error(self):
         """When a strategy errors, min_votes degrades to allow trading."""

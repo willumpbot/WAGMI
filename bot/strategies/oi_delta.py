@@ -62,9 +62,10 @@ class OIDeltaStrategy(BaseStrategy):
     """
 
     # OI change thresholds (% change over lookback period)
-    OI_EXPANSION_PCT = 0.03   # 3% OI increase = meaningful new positions
-    OI_CONTRACTION_PCT = -0.03  # 3% OI decrease = meaningful position closure
-    OI_STRONG_PCT = 0.08      # 8% = very strong OI move
+    # Raised from 3% → 5%: audit found 3% catches noise on $500M+ markets
+    OI_EXPANSION_PCT = 0.05   # 5% OI increase = meaningful new positions
+    OI_CONTRACTION_PCT = -0.05  # 5% OI decrease = meaningful position closure
+    OI_STRONG_PCT = 0.10      # 10% = very strong OI move (was 8%)
 
     # Price movement thresholds
     PRICE_MOVE_PCT = 0.015    # 1.5% price move = meaningful

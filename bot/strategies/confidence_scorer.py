@@ -110,12 +110,13 @@ class ConfidenceScorerStrategy(BaseStrategy):
     and adjusts confidence based on observed win rates.
     """
 
-    def __init__(self, symbols: Dict[str, Any], data_dir: str = "ml_data"):
+    def __init__(self, symbols: Dict[str, Any], data_dir: str = "ml_data", backtest_mode: bool = False):
         super().__init__("confidence_scorer", symbols)
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.signal_log_path = self.data_dir / "confidence_signal_log.json"
         self.signal_log = self._load_signal_log()
+        self.backtest_mode = backtest_mode
 
     def get_required_timeframes(self) -> List[str]:
         return ["1h", "6h"]
@@ -152,8 +153,14 @@ class ConfidenceScorerStrategy(BaseStrategy):
     def _get_historical_confidence(self, symbol: str, action: str) -> Optional[float]:
         """
         Calculate win rate for this (symbol, action) pair from historical data.
-        Returns None if insufficient data.
+        Returns None if insufficient data or in backtest mode.
+
+        In backtest mode, historical WR is disabled to prevent the cold-start death
+        spiral: early losses poison WR → confidence drops → fewer trades → worse WR.
+        The 7-day backtest showed WR decaying from 35% → 16% within a single run.
         """
+        if self.backtest_mode:
+            return None  # Prevent cold-start death spiral in backtests
         entries = self.signal_log.get(symbol, [])
         evaluated = [e for e in entries if e.get("evaluated") and e["signal"] == action and "success" in e]
         if len(evaluated) < 5:
@@ -317,23 +324,24 @@ class ConfidenceScorerStrategy(BaseStrategy):
                 squeeze_score = 10  # Momentum aligned without squeeze
 
         # Factor 4: RSI confirmation (0-25)
+        # Crypto-calibrated: 25/75 for extremes (not 30/70 — crypto RSI runs hotter)
         rsi_score = 0
         if di_bullish:
-            if rsi_val < 30:
+            if rsi_val < 25:
                 rsi_score = 25  # Oversold + bullish DI = strong reversal setup
             elif rsi_val < 50:
                 rsi_score = 15  # Below midline, room to run
-            elif rsi_val < 70:
+            elif rsi_val < 75:
                 rsi_score = 10  # In bullish territory but not overbought
-            # rsi > 70: overbought, no RSI score
+            # rsi > 75: overbought, no RSI score
         else:
-            if rsi_val > 70:
+            if rsi_val > 75:
                 rsi_score = 25  # Overbought + bearish DI = strong reversal setup
             elif rsi_val > 50:
                 rsi_score = 15  # Above midline, room to fall
-            elif rsi_val > 30:
+            elif rsi_val > 25:
                 rsi_score = 10  # In bearish territory but not oversold
-            # rsi < 30: oversold, no RSI score
+            # rsi < 25: oversold, no RSI score
 
         # RSI divergence bonus
         side = "BUY" if di_bullish else "SELL"
@@ -359,15 +367,16 @@ class ConfidenceScorerStrategy(BaseStrategy):
             # HTF contra-trend: penalize (don't hard-kill) when 6h contradicts 1h.
             # Hard reject was killing ALL buys in sustained downtrends — zero trades.
             # Now symmetric: both BUY and SELL get sized down, not eliminated.
-            # Strong HTF divergence (both MACD + MFI) = heavier penalty.
+            # Strong HTF divergence (both MACD + MFI) = moderate penalty.
+            # Softened from -15/-20: harsh penalties killed signals where 1h had strong edge.
             if di_bullish and (macd_h_6h < 0 and mfi_6h_val < 45):
-                htf_penalty = 20 if mfi_6h_val < 30 else 15  # Stronger penalty if MFI deeply bearish
+                htf_penalty = 12 if mfi_6h_val < 30 else 8
                 confidence -= htf_penalty
                 logger.info(f"[{symbol}] confidence_scorer BUY penalized -{htf_penalty}: 6h bearish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f}), conf now {confidence:.0f}")
                 if confidence < 50:
                     return None
             if not di_bullish and (macd_h_6h > 0 and mfi_6h_val > 55):
-                htf_penalty = 20 if mfi_6h_val > 70 else 15
+                htf_penalty = 12 if mfi_6h_val > 70 else 8
                 confidence -= htf_penalty
                 logger.info(f"[{symbol}] confidence_scorer SELL penalized -{htf_penalty}: 6h bullish (MACD_h={macd_h_6h:.2f}, MFI={mfi_6h_val:.0f}), conf now {confidence:.0f}")
                 if confidence < 50:
@@ -409,16 +418,20 @@ class ConfidenceScorerStrategy(BaseStrategy):
         if confidence < 55:
             return None
 
-        # Stop/TP placement using centralized ATR multiplier (was 1.2, now from config for consistency)
+        # Stop/TP placement: regime-conditional ATR multipliers
         try:
-            from trading_config import TradingConfig as _TC
-            K = _TC().sl_atr_multiplier
+            from trading_config import TradingConfig as _TC, get_regime_sl_tp
+            _cfg = _TC()
+            _regime = self._current_regime if hasattr(self, '_current_regime') else "unknown"
+            K, _tp1_mult, _tp2_mult = get_regime_sl_tp(
+                _regime, _cfg.sl_atr_multiplier, 2.0, 4.0
+            )
         except Exception:
-            K = 1.5
+            K, _tp1_mult, _tp2_mult = 1.5, 2.0, 4.0
         sl = entry - K * atr_val if side == "BUY" else entry + K * atr_val
         stop_width = abs(entry - sl)
-        tp1 = entry + 2.0 * stop_width if side == "BUY" else entry - 2.0 * stop_width
-        tp2 = entry + 4.0 * stop_width if side == "BUY" else entry - 4.0 * stop_width
+        tp1 = entry + _tp1_mult * stop_width if side == "BUY" else entry - _tp1_mult * stop_width
+        tp2 = entry + _tp2_mult * stop_width if side == "BUY" else entry - _tp2_mult * stop_width
 
         rr = abs(entry - tp1) / stop_width if stop_width > 0 else 0
         hist_str = f"hist_WR={hist_conf:.0%}" if hist_conf is not None else "hist_WR=n/a"

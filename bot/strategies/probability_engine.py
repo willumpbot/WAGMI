@@ -310,14 +310,18 @@ class ProbabilityEngineStrategy(BaseStrategy):
         # Compute probabilities
         probs = self._compute_probabilities(mc, price, tp1, tp2, sl, side)
 
-        # Check minimum probability threshold
-        if probs["prob_tp1"] < self.MIN_PROB_TP1:
+        # Check minimum probability threshold (tighter for high-vol: fat tails need more conviction)
+        from trading_config import DEFAULT_SYMBOL_OVERRIDES
+        _vol_prof = getattr(DEFAULT_SYMBOL_OVERRIDES.get(symbol), "volatility_profile", "medium") if symbol else "medium"
+        _min_prob = 0.48 if _vol_prof == "high" else self.MIN_PROB_TP1
+        _min_ev = 0.18 if _vol_prof == "high" else self.MIN_EV_PER_DOLLAR
+        if probs["prob_tp1"] < _min_prob:
             return None
 
         # Compute expected value
         ev = self._compute_ev(probs, price, tp1, tp2, sl)
 
-        if ev < self.MIN_EV_PER_DOLLAR:
+        if ev < _min_ev:
             return None
 
         # Confidence from probability + EV

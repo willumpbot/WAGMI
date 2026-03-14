@@ -144,11 +144,13 @@ class VMCCipherStrategy(BaseStrategy):
     Divergence detection provides high-probability reversal signals.
     """
 
-    # WaveTrend zones
+    # WaveTrend zones (default; loosened for high-vol symbols)
     WT_OVERBOUGHT = 60
     WT_OVERSOLD = -60
     WT_EXTREME_OB = 80
     WT_EXTREME_OS = -80
+    # High-vol symbols: relax zones by 5 pts (±55 instead of ±60)
+    _WT_HIGH_VOL_OFFSET = 5
 
     # Minimum oscillator agreement
     MIN_OSCILLATOR_AGREE = 3  # Out of 5 oscillators
@@ -284,8 +286,17 @@ class VMCCipherStrategy(BaseStrategy):
         if atr <= 0 or price <= 0:
             return None
 
-        # Compute all oscillators
+        # Compute all oscillators (relax WT zones for high-vol symbols)
+        from trading_config import DEFAULT_SYMBOL_OVERRIDES
+        _vol_prof = getattr(DEFAULT_SYMBOL_OVERRIDES.get(symbol), "volatility_profile", "medium") if symbol else "medium"
+        _is_high_vol = (_vol_prof == "high")
+        if _is_high_vol:
+            self.WT_OVERBOUGHT = 60 - self._WT_HIGH_VOL_OFFSET  # 55
+            self.WT_OVERSOLD = -60 + self._WT_HIGH_VOL_OFFSET   # -55
         osc = self._compute_oscillator_votes(df_1h)
+        if _is_high_vol:
+            self.WT_OVERBOUGHT = 60  # restore defaults
+            self.WT_OVERSOLD = -60
         votes = osc["votes"]
 
         # Count bullish/bearish agreement

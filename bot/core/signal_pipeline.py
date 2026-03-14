@@ -21,6 +21,7 @@ from typing import Optional, Dict, Any, List
 
 from strategies.base import Signal
 from core.filter_annotations import FilterAnnotation, AnnotatedSignal
+from execution.leverage import LeverageDecision
 
 logger = logging.getLogger("bot.core.signal_pipeline")
 
@@ -52,6 +53,22 @@ class RiskFilterChain:
         self.risk_mgr = risk_mgr
         self.leverage_mgr = leverage_mgr
         self.config = config
+        self._missed_trade_tracker = None  # Optional: set via set_missed_trade_tracker()
+
+    def set_missed_trade_tracker(self, tracker):
+        """Inject MissedTradeTracker for rejection tracking."""
+        self._missed_trade_tracker = tracker
+
+    def _track_pipeline_rejection(self, signal: Signal, reason: str):
+        """Record a pipeline rejection in the missed trade tracker."""
+        if self._missed_trade_tracker is None:
+            return
+        try:
+            self._missed_trade_tracker.record_rejection(
+                signal=signal, reason=reason, gate="pipeline",
+            )
+        except Exception:
+            pass
 
     def evaluate(
         self,
@@ -90,15 +107,27 @@ class RiskFilterChain:
         meta["rr_tp2"] = round(signal.risk_reward_tp2, 2)
 
         # Gate 1c: Fee-drag filter
-        # Reject trades where round-trip fees consume too much of the stop width.
+        # Reject trades where round-trip fees + slippage consume too much of stop width.
         # A stop width of 0.3% with 0.10% round-trip fees = 33% fee drag — barely viable.
         fee_bps = getattr(self.config, "taker_fee_bps", 4)
-        round_trip_fee_pct = fee_bps * 2 / 10000.0  # Entry + exit fee as fraction
+        slippage_bps = getattr(self.config, "slippage_bps", 3)
+        # Regime-specific slippage: high-vol/panic have wider spreads
+        _regime_slippage = {
+            "trending_bull": 1, "trending_bear": 2, "trend": 1,
+            "consolidation": 1, "range": 1,
+            "high_volatility": 4, "panic": 6,
+            "low_liquidity": 5, "news_dislocation": 5,
+        }
+        _sig_regime = (signal.metadata or {}).get("regime", "unknown")
+        _extra_slip = _regime_slippage.get(_sig_regime, 2)
+        round_trip_fee_pct = (fee_bps * 2 + _extra_slip) / 10000.0
         stop_pct = signal.stop_width_pct
         if stop_pct > 0:
             fee_drag_pct = round_trip_fee_pct / stop_pct
             meta["fee_drag_pct"] = round(fee_drag_pct * 100, 1)
-            max_fee_drag = 0.30  # Fees must be < 30% of stop distance (tightened from 40%)
+            # 3+ agree can tolerate more fee drag (higher WR compensates)
+            _n_agree = signal.metadata.get("num_agree", 1) if signal.metadata else 1
+            max_fee_drag = 0.25 if _n_agree >= 3 else 0.20
             if fee_drag_pct > max_fee_drag:
                 return FilterResult(
                     approved=False, signal=signal,
@@ -193,17 +222,31 @@ class RiskFilterChain:
                 rejection_reason=f"Leverage denied: {lev_decision.reason}"
             )
 
-        # Gate 5a: Leverage eligibility entry gate (D2)
-        # Leveraged trades: +$95.20/trade avg. Spot trades: -$32.95/trade avg.
-        # If a trade doesn't qualify for at least 2x leverage, skip it.
-        min_leverage_gate = getattr(self.config, "min_leverage_entry_gate", 2.0)
+        # Gate 5a: Graduated leverage eligibility gate (D2)
+        # Hard floor at 1.2x (zero-conviction), graduated sizing 1.2x–1.8x,
+        # full size above 1.8x. Replaces binary 2.0x gate that blocked all
+        # signals in bearish/wide-stop conditions.
+        min_leverage_gate = getattr(self.config, "min_leverage_entry_gate", 1.2)
+        LEVERAGE_FULL_SIZE = 1.8
         if lev_decision.leverage < min_leverage_gate:
             return FilterResult(
                 approved=False, signal=signal,
-                rejection_reason=f"Below leverage gate: {lev_decision.leverage:.1f}x < {min_leverage_gate:.1f}x minimum "
-                                 f"(spot trades avg -$32.95/trade)",
+                rejection_reason=f"Below leverage gate: {lev_decision.leverage:.1f}x < {min_leverage_gate:.1f}x minimum",
                 metadata=meta,
             )
+
+        # Graduated size reduction for sub-optimal leverage (1.2x→0.6 rm, 1.8x→1.0 rm)
+        if lev_decision.leverage < LEVERAGE_FULL_SIZE:
+            lev_scalar = 0.6 + (lev_decision.leverage - min_leverage_gate) / (LEVERAGE_FULL_SIZE - min_leverage_gate) * 0.4
+            lev_decision = LeverageDecision(
+                leverage=lev_decision.leverage,
+                mode=lev_decision.mode,
+                tier=lev_decision.tier,
+                reason=lev_decision.reason,
+                risk_multiplier=lev_decision.risk_multiplier * lev_scalar,
+            )
+            logger.info(f"[{signal.symbol}] Leverage gate graduated: {lev_decision.leverage:.1f}x → "
+                        f"size scalar {lev_scalar:.2f} (rm={lev_decision.risk_multiplier:.2f})")
 
         # CB override constraints: if CB tripped, cap leverage
         override_constraints = self.risk_mgr.get_override_constraints(signal.confidence)
@@ -230,6 +273,17 @@ class RiskFilterChain:
         corr_reduction = meta.get("correlation_size_reduction", 1.0)
         if corr_reduction < 1.0:
             risk_mult *= corr_reduction
+
+        # Apply regime-based risk sizing: bet bigger where edge is proven
+        try:
+            from trading_config import get_regime_risk_mult
+            _regime = signal.metadata.get("regime", "unknown")
+            _regime_rm = get_regime_risk_mult(_regime)
+            if _regime_rm != 1.0:
+                risk_mult *= _regime_rm
+                meta["regime_risk_mult"] = _regime_rm
+        except ImportError:
+            pass
 
         meta["leverage"] = leverage
         meta["leverage_tier"] = lev_decision.tier
@@ -343,14 +397,23 @@ class RiskFilterChain:
             detail=f"rr={rr:.2f} vs {min_rr:.1f}",
         ))
 
-        # ── Soft Gate: Fee-drag ──
+        # ── Soft Gate: Fee-drag (regime-aware slippage) ──
         fee_bps = getattr(self.config, "taker_fee_bps", 4)
-        round_trip_fee_pct = fee_bps * 2 / 10000.0
+        _regime_slip_ann = {
+            "trending_bull": 1, "trending_bear": 2, "trend": 1,
+            "consolidation": 1, "range": 1,
+            "high_volatility": 4, "panic": 6,
+            "low_liquidity": 5, "news_dislocation": 5,
+        }
+        _sig_regime_ann = (signal.metadata or {}).get("regime", "unknown")
+        _extra_slip_ann = _regime_slip_ann.get(_sig_regime_ann, 2)
+        round_trip_fee_pct = (fee_bps * 2 + _extra_slip_ann) / 10000.0
         stop_pct = signal.stop_width_pct
         if stop_pct > 0:
             fee_drag_pct = round_trip_fee_pct / stop_pct
             meta["fee_drag_pct"] = round(fee_drag_pct * 100, 1)
-            max_fee_drag = 0.30
+            _n_agree_ann = signal.metadata.get("num_agree", 1) if signal.metadata else 1
+            max_fee_drag = 0.25 if _n_agree_ann >= 3 else 0.20
             annotations.append(FilterAnnotation(
                 gate="fee_drag",
                 passed=fee_drag_pct <= max_fee_drag,
@@ -470,6 +533,17 @@ class RiskFilterChain:
         corr_reduction = meta.get("correlation_size_reduction", 1.0)
         if corr_reduction < 1.0:
             risk_mult *= corr_reduction
+
+        # Apply regime-based risk sizing (annotated path)
+        try:
+            from trading_config import get_regime_risk_mult
+            _regime = signal.metadata.get("regime", "unknown")
+            _regime_rm = get_regime_risk_mult(_regime)
+            if _regime_rm != 1.0:
+                risk_mult *= _regime_rm
+                meta["regime_risk_mult"] = _regime_rm
+        except ImportError:
+            pass
 
         meta["leverage"] = leverage
         meta["leverage_tier"] = lev_decision.tier

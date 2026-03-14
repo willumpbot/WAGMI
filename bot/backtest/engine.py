@@ -35,6 +35,7 @@ from execution.position_manager import PositionManager
 from execution.leverage import LeverageManager
 from execution.risk import RiskManager, CircuitBreaker
 from execution.candidate import TradeCandidate, CandidateLogger
+from feedback.missed_trade_tracker import MissedTradeTracker
 from strategies.chop_detector import ChopDetector
 from strategies.bollinger_squeeze import BollingerSqueezeStrategy
 from strategies.vmc_cipher import VMCCipherStrategy
@@ -110,6 +111,7 @@ class BacktestEngine:
         self.cb_events: List[Dict] = []  # Circuit breaker trip log
         self.signals_blocked_by_cb = 0  # Signals skipped due to CB
         self.signal_rejections: List[Dict] = []  # Track why signals were rejected
+        self.missed_trade_tracker = MissedTradeTracker(data_dir="data")
         self.candle_stats = {"total": 0, "signal": 0, "no_signal": 0, "cb_blocked": 0}
         self.symbol_pnl: Dict[str, float] = {}  # Per-symbol equity attribution
         self._signal_digests: List[Dict] = []  # Per-candle signal digest for quant learning
@@ -188,6 +190,15 @@ class BacktestEngine:
             chop_detector=chop,
             confidence_floor=self.config.ensemble_confidence_floor,
         )
+        # Wire missed trade tracker into ensemble for rejection feedback
+        ensemble.set_missed_trade_tracker(self.missed_trade_tracker)
+        # Wire volatility profiles for per-symbol confidence floor capping
+        vol_profiles = {
+            sym: ov.volatility_profile
+            for sym, ov in DEFAULT_SYMBOL_OVERRIDES.items()
+            if hasattr(ov, 'volatility_profile') and ov.volatility_profile
+        }
+        ensemble.set_symbol_volatility_profiles(vol_profiles)
 
         # Fetch historical data for all symbols
         all_data = {}
@@ -354,10 +365,10 @@ class BacktestEngine:
             _bt_sig_log = Path("backtest_ml_data") / "confidence_signal_log.json"
             if _bt_sig_log.exists():
                 _bt_sig_log.unlink()
-            all_strats["confidence_scorer"] = ConfidenceScorerStrategy(sym_configs, data_dir="backtest_ml_data")
-        if os.getenv("STRATEGY_MULTI_TIER_QUALITY_ENABLED", "true").lower() == "true":
+            all_strats["confidence_scorer"] = ConfidenceScorerStrategy(sym_configs, data_dir="backtest_ml_data", backtest_mode=True)
+        if os.getenv("STRATEGY_MULTI_TIER_QUALITY_ENABLED", "false").lower() == "true":  # PF 0.82, -$1,223 net
             all_strats["multi_tier_quality"] = MultiTierQualityStrategy(sym_configs)
-        if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "false").lower() == "true":
+        if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "true").lower() == "true":
             all_strats["monte_carlo_zones"] = MonteCarloZonesStrategy(sym_configs)
 
         # New OHLCV-compatible strategies (only need standard candle data)
@@ -369,15 +380,17 @@ class BacktestEngine:
             all_strats["probability_engine"] = ProbabilityEngineStrategy(sym_configs)
 
         # BTC cross-data strategy (data injected in run() symbol loop)
-        if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "true").lower() == "true":
+        if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "false").lower() == "true":  # 0% WR, -$137/trade EV
             all_strats["lead_lag"] = LeadLagStrategy(sym_configs)
 
-        # Metadata-dependent strategies (disabled by default — need exchange API data)
-        if os.getenv("STRATEGY_FUNDING_RATE_ENABLED", "false").lower() == "true":
+        # Metadata-dependent strategies — funding_rate and oi_delta need exchange API
+        # data (return None gracefully when missing). liquidation_cascade works with
+        # OHLCV proxy (volume spikes + wicks).
+        if os.getenv("STRATEGY_FUNDING_RATE_ENABLED", "true").lower() == "true":
             all_strats["funding_rate"] = FundingRateStrategy(sym_configs)
-        if os.getenv("STRATEGY_OI_DELTA_ENABLED", "false").lower() == "true":
+        if os.getenv("STRATEGY_OI_DELTA_ENABLED", "true").lower() == "true":
             all_strats["oi_delta"] = OIDeltaStrategy(sym_configs)
-        if os.getenv("STRATEGY_LIQUIDATION_CASCADE_ENABLED", "false").lower() == "true":
+        if os.getenv("STRATEGY_LIQUIDATION_CASCADE_ENABLED", "true").lower() == "true":
             all_strats["liquidation_cascade"] = LiquidationCascadeStrategy(sym_configs)
 
         if strategy_names:
@@ -402,6 +415,7 @@ class BacktestEngine:
             logger.info(f"[{symbol}] Resuming from candle {start_idx}")
 
         for i in range(start_idx, total_candles):
+            self._current_candle_idx = i  # Track for missed trade counterfactuals
             # Build windowed data for this point in time
             windowed = {}
             for tf, df in data.items():
@@ -580,7 +594,6 @@ class BacktestEngine:
                 self._run_llm_exit(symbol, current_price, windowed, sim_dt)
 
             # Volatility-aware re-entry gap: fast movers need shorter cooldowns
-            from trading_config import DEFAULT_SYMBOL_OVERRIDES
             _vol_profile = getattr(DEFAULT_SYMBOL_OVERRIDES.get(symbol), "volatility_profile", "medium") if DEFAULT_SYMBOL_OVERRIDES.get(symbol) else "medium"
             _RE_ENTRY_GAPS = {"low": 4, "medium": 2, "high": 1}
             re_entry_gap = _RE_ENTRY_GAPS.get(_vol_profile, 3)
@@ -604,8 +617,8 @@ class BacktestEngine:
                             _bt_adx = _s.get("adx", 25.0)
                             _al = _s.get("align_long", 0)
                             _ash = _s.get("align_short", 0)
-                            if _al >= 2 or _ash >= 2:
-                                _bt_regime = "trend"
+                            if _al >= 3 or _ash >= 3:
+                                _bt_regime = "trend"  # was >=2: alignment 2/4 is weak, not a real trend
                             elif _bt_adx < 20:
                                 _bt_regime = "range"
                             elif _bt_adx > 40:
@@ -669,6 +682,12 @@ class BacktestEngine:
                         )
                         self.candle_stats.setdefault("regime_blocked", 0)
                         self.candle_stats["regime_blocked"] += 1
+                        self.missed_trade_tracker.record_rejection(
+                            signal=signal,
+                            reason=f"Ranging regime ADX={_bt_adx:.1f} < 20",
+                            gate="regime_filter",
+                            candle_idx=i,
+                        )
                         continue
                     elif regime in ("consolidation",) and _bt_adx < 15.0:
                         logger.info(
@@ -677,6 +696,12 @@ class BacktestEngine:
                         )
                         self.candle_stats.setdefault("regime_blocked", 0)
                         self.candle_stats["regime_blocked"] += 1
+                        self.missed_trade_tracker.record_rejection(
+                            signal=signal,
+                            reason=f"Consolidation ADX={_bt_adx:.1f} < 15",
+                            gate="regime_filter",
+                            candle_idx=i,
+                        )
                         continue
 
                     # Create candidate for dual-world tracking
@@ -746,6 +771,18 @@ class BacktestEngine:
 
         # Force-close any open position at end of symbol walk
         self._force_close_open(symbol, current_price, sim_dt)
+
+        # Compute counterfactuals for missed trades using realized price data
+        try:
+            price_series = df_1h["close"].tolist()
+            self.missed_trade_tracker.compute_counterfactuals(
+                symbol=symbol,
+                price_series=price_series,
+                start_idx=0,
+                candle_duration_hours=1.0,
+            )
+        except Exception as e:
+            logger.debug(f"[{symbol}] Counterfactual computation error: {e}")
 
     def _walk_daily(self, symbol: str, data: Dict[str, pd.DataFrame], ensemble: EnsembleStrategy):
         """Walk forward through daily data points."""
@@ -872,7 +909,6 @@ class BacktestEngine:
                 self._run_llm_exit(symbol, current_price, windowed, sim_dt)
 
             # Volatility-aware re-entry gap (same logic as main loop)
-            from trading_config import DEFAULT_SYMBOL_OVERRIDES
             _vol_profile = getattr(DEFAULT_SYMBOL_OVERRIDES.get(symbol), "volatility_profile", "medium") if DEFAULT_SYMBOL_OVERRIDES.get(symbol) else "medium"
             _RE_ENTRY_GAPS = {"low": 4, "medium": 2, "high": 1}
             re_entry_gap = _RE_ENTRY_GAPS.get(_vol_profile, 3)
@@ -894,8 +930,8 @@ class BacktestEngine:
                             _bt_adx = _s.get("adx", 25.0)
                             _al = _s.get("align_long", 0)
                             _ash = _s.get("align_short", 0)
-                            if _al >= 2 or _ash >= 2:
-                                _bt_regime = "trend"
+                            if _al >= 3 or _ash >= 3:
+                                _bt_regime = "trend"  # was >=2: alignment 2/4 is weak, not a real trend
                             elif _bt_adx < 20:
                                 _bt_regime = "range"
                             elif _bt_adx > 40:
@@ -1368,6 +1404,13 @@ class BacktestEngine:
                     "gate": "risk_filter_chain",
                     "reason": result.rejection_reason,
                 })
+                # Missed trade tracker: full context + counterfactual analysis
+                self.missed_trade_tracker.record_rejection(
+                    signal=signal,
+                    reason=result.rejection_reason,
+                    gate="risk_filter_chain",
+                    candle_idx=getattr(self, '_current_candle_idx', 0),
+                )
 
                 # ── Annotated tracking for filter accuracy analysis ──
                 if getattr(self.config, 'enable_soft_filters', False) or getattr(self.config, 'soft_filter_log_only', False):
@@ -1552,6 +1595,8 @@ class BacktestEngine:
             "symbol_pnl": self.symbol_pnl,
             "recommendations": self._generate_recommendations(),
             "equity_curve": self.equity_curve,
+            "missed_trades": self.missed_trade_tracker.generate_report(),
+            "gate_effectiveness": self.missed_trade_tracker.get_gate_effectiveness(),
         }
 
         # Add LLM stats and detailed data if LLM integration was used
@@ -1978,9 +2023,9 @@ class BacktestEngine:
             gate_counts[gate] = gate_counts.get(gate, 0) + 1
 
         executed = len(self.signals_generated)
-        llm_vetoed = signal_gen - executed - sum(gate_counts.values())
-        if llm_vetoed < 0:
-            llm_vetoed = 0
+        other_rejections = signal_gen - executed - sum(gate_counts.values())
+        if other_rejections < 0:
+            other_rejections = 0
 
         regime_blocked = self.candle_stats.get("regime_blocked", 0)
 
@@ -1991,7 +2036,7 @@ class BacktestEngine:
             "regime_blocked": regime_blocked,
             "signals_generated": signal_gen,
             "gate_rejections": gate_counts,
-            "llm_vetoed": llm_vetoed,
+            "other_rejections": other_rejections,  # ensemble-level rejections (confidence floor, chop, etc.)
             "executed": executed,
             "conversion_rate": round(executed / total * 100, 1) if total > 0 else 0,
         }
@@ -2634,8 +2679,8 @@ def print_report(report: Dict):
         gates = funnel.get("gate_rejections", {})
         for gate, count in sorted(gates.items(), key=lambda x: -x[1]):
             print(f"      {gate} rejected:  {count:>4}")
-        if funnel.get("llm_vetoed", 0) > 0:
-            print(f"      LLM vetoed:    {funnel['llm_vetoed']:>4}")
+        if funnel.get("other_rejections", 0) > 0:
+            print(f"      other_rejected:{funnel['other_rejections']:>4}")
         print(f"    Executed:        {funnel.get('executed', 0):>6,}")
         print(f"  Conversion:        {funnel.get('conversion_rate', 0):.1f}% (candle -> trade)")
 
@@ -2860,6 +2905,46 @@ def print_report(report: Dict):
             for t in worst:
                 regime_str = f" [{t['llm_regime']}]" if t.get("llm_regime") else ""
                 print(f"    {t['symbol']:6s} {t['strategy']:20s} ${t['pnl']:+8.2f}  {t.get('close_reason', '')}{regime_str}")
+
+    # ── MISSED TRADES FEEDBACK ──
+    missed = report.get("missed_trades", {})
+    if missed.get("total_missed", 0) > 0:
+        print(f"\n{'── MISSED TRADES FEEDBACK ':─<{W}}")
+        print(f"  Total missed:    {missed['total_missed']}")
+        print(f"  With outcome:    {missed.get('with_counterfactual', 0)}")
+        w_won = missed.get('would_have_won', 0)
+        w_lost = missed.get('would_have_lost', 0)
+        if w_won + w_lost > 0:
+            print(f"  Would have won:  {w_won} ({w_won/(w_won+w_lost)*100:.0f}%)")
+            print(f"  Would have lost: {w_lost} ({w_lost/(w_won+w_lost)*100:.0f}%)")
+        gate_acc = missed.get('overall_gate_accuracy_pct', 0)
+        print(f"  Gate accuracy:   {gate_acc:.1f}% (% of rejections that saved us)")
+        net = missed.get('net_gate_value_pct', 0)
+        print(f"  Net gate value:  {net:+.3f}% {'(gates help)' if net > 0 else '(gates hurt — review!)'}")
+
+        by_cat = missed.get("by_category", {})
+        if by_cat:
+            print(f"\n  {'Category':<22s} {'Count':>5s} {'WouldWin':>8s} {'WouldLose':>9s} {'Accuracy':>8s} {'Net%':>7s}")
+            print(f"  {'─'*22} {'─'*5} {'─'*8} {'─'*9} {'─'*8} {'─'*7}")
+            for cat, stats in sorted(by_cat.items(), key=lambda x: -x[1]["count"]):
+                print(f"  {cat:<22s} {stats['count']:>5d} {stats['would_have_won']:>8d} "
+                      f"{stats['would_have_lost']:>9d} {stats['gate_accuracy_pct']:>7.0f}% "
+                      f"{stats['net_impact_pct']:>+7.3f}")
+
+        top_missed = missed.get("top_missed_opportunities", [])
+        if top_missed:
+            print(f"\n  Top Missed Opportunities:")
+            for m in top_missed[:5]:
+                print(f"    {m['symbol']:6s} {m['side']:4s} conf={m['confidence']:.0f}% "
+                      f"missed {m['missed_pnl_pct']:+.2f}% — {m['reason'][:50]}")
+
+    # ── GATE EFFECTIVENESS ──
+    gate_eff = report.get("gate_effectiveness", {})
+    if gate_eff:
+        print(f"\n{'── GATE EFFECTIVENESS ':─<{W}}")
+        for gate, stats in sorted(gate_eff.items(), key=lambda x: -x[1]["total_rejections"]):
+            print(f"  {gate:<20s}  {stats['total_rejections']:>3d} rejected | "
+                  f"{stats['accuracy_pct']:>5.1f}% correct | {stats['recommendation']}")
 
     print("\n" + "=" * W)
 

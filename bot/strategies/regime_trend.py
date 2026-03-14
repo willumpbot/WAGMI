@@ -158,7 +158,7 @@ class RegimeTrendStrategy(BaseStrategy):
         # This is the #1 profitability lever — ranging markets have 24% WR
         adx_val = _adx(df_1h, 14)
         if adx_val < self.adx_min_trending:
-            logger.debug(
+            logger.info(
                 f"[{symbol}] regime_trend: ADX {adx_val:.1f} < {self.adx_min_trending} "
                 f"— ranging market, skipping"
             )
@@ -189,12 +189,16 @@ class RegimeTrendStrategy(BaseStrategy):
         # ATR for TP/SL
         c = float(df_1h["close"].iloc[-1])
         A = float(_atr(df_1h, 14).iloc[-1])
-        # Use centralized ATR multiplier from config (default 1.5)
+        # Regime-conditional ATR multiplier for SL/TP
         try:
-            from trading_config import TradingConfig as _TC
-            _sl_mult = _TC().sl_atr_multiplier
+            from trading_config import TradingConfig as _TC, get_regime_sl_tp
+            _cfg = _TC()
+            _regime = self._current_regime if hasattr(self, '_current_regime') else "unknown"
+            _sl_mult, self._tp1_mult, self._tp2_mult = get_regime_sl_tp(
+                _regime, _cfg.sl_atr_multiplier, 2.0, 4.0
+            )
         except Exception:
-            _sl_mult = 1.5
+            _sl_mult, self._tp1_mult, self._tp2_mult = 1.5, 2.0, 4.0
         R = _sl_mult * A
 
         # Alignment scoring
@@ -237,16 +241,16 @@ class RegimeTrendStrategy(BaseStrategy):
             confidence = align_long * base_mult
             side = "BUY"
             sl = c - R
-            tp1 = c + 2.0 * R
-            tp2 = c + 4.0 * R
+            tp1 = c + self._tp1_mult * R
+            tp2 = c + self._tp2_mult * R
         else:
             full_align = full_bear
             base_mult = 20.0 if not full_align else (22.0 if is_momentum else 25.0)
             confidence = align_short * base_mult
             side = "SELL"
             sl = c + R
-            tp1 = c - 2.0 * R
-            tp2 = c - 4.0 * R
+            tp1 = c - self._tp1_mult * R
+            tp2 = c - self._tp2_mult * R
 
         # Cross recency: boost confidence if multiple recent crosses confirm direction
         try:

@@ -49,7 +49,7 @@ DEFAULT_SYMBOLS = {
     # Large caps (priority)
     "BTC": SymbolConfig("BTC", "BTC-USD", "bitcoin", "low"),
     "SOL": SymbolConfig("SOL", "SOL-USD", "solana", "medium"),
-    "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "medium"),
+    "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "high"),  # was "medium": inconsistent with volatility_profile="high" in overrides
     # Small caps (high volume memes)
     "DOGE": SymbolConfig("DOGE", "DOGE-USD", "dogecoin", "high"),
     "FARTCOIN": SymbolConfig("FARTCOIN", "FARTCOIN-USD", "fartcoin", "high"),
@@ -77,8 +77,11 @@ class TradingConfig:
 
     # Equity & risk
     starting_equity: float = field(default_factory=lambda: _env_float("STARTING_EQUITY", 10000.0))
-    risk_per_trade: float = field(default_factory=lambda: _env_float("RISK_PER_TRADE", 0.02))
-    max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 3))
+    risk_per_trade: float = field(default_factory=lambda: _env_float("RISK_PER_TRADE", 0.005))
+    # Was 0.02: quant approach = many small bets. 0.5% risk means a single loss
+    # costs $250 on $50k, not $1,000. Law of large numbers over 40+ trades.
+    max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 8))
+    # Was 3: with 0.5% risk/trade, 8 positions = 4% total risk (same as old 2 @ 2%)
     taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 4))  # Hyperliquid: 3.5 bps taker, rounded up for safety
 
     # Circuit breakers
@@ -116,8 +119,9 @@ class TradingConfig:
         default_factory=lambda: _env("ENSEMBLE_MODE", "weighted_veto")
     )  # "voting", "weighted_veto", "weighted", "best"
     min_votes_required: int = field(
-        default_factory=lambda: _env_int("MIN_VOTES_REQUIRED", 3)
-    )  # 3-agree PF=4.05/86% WR vs 2-agree negative PF. Only strong consensus trades.
+        default_factory=lambda: _env_int("MIN_VOTES_REQUIRED", 2)
+    )  # Was 3: with 4 active strategies, 3=near-unanimous. 2-agree is realistic consensus.
+    # Quant approach: more trades at smaller size. EV gates handle quality filtering.
     veto_ratio: float = field(
         default_factory=lambda: _env_float("VETO_RATIO", 1.2)
     )  # Lowered from 1.5→1.2: with min_votes=3 and only 4 active strategies,
@@ -166,21 +170,21 @@ class TradingConfig:
         default_factory=lambda: _env_int("ROTATION_GLOBAL_COOLDOWN_S", 600)
     )
     rotation_max_per_hour: int = field(
-        default_factory=lambda: _env_int("ROTATION_MAX_PER_HOUR", 1)
-    )  # Reduced from 2: fewer rotations = less fee bleed
+        default_factory=lambda: _env_int("ROTATION_MAX_PER_HOUR", 3)
+    )  # Was 1: quant approach needs more frequent rotation to cherry-pick edges
     rotation_max_per_day: int = field(
-        default_factory=lambda: _env_int("ROTATION_MAX_PER_DAY", 4)
-    )  # Reduced from 6: max 4 trades/day prevents over-trading
+        default_factory=lambda: _env_int("ROTATION_MAX_PER_DAY", 12)
+    )  # Was 4: with 0.5% risk/trade, more rotations are affordable
 
     # ── Leverage eligibility gate ──
     min_leverage_entry_gate: float = field(
-        default_factory=lambda: _env_float("MIN_LEVERAGE_ENTRY_GATE", 2.0)
-    )  # Skip trades below this leverage threshold. Leveraged: +$95/trade, spot: -$33/trade.
+        default_factory=lambda: _env_float("MIN_LEVERAGE_ENTRY_GATE", 1.2)
+    )  # Hard floor for leverage gate. Graduated sizing 1.2x–1.8x, full size above 1.8x.
 
     # ── Profitability shield ──
     max_portfolio_leverage: float = field(
-        default_factory=lambda: _env_float("MAX_PORTFOLIO_LEVERAGE", 5.0)
-    )  # Aggregate notional cap: total_open_notional <= equity * this
+        default_factory=lambda: _env_float("MAX_PORTFOLIO_LEVERAGE", 4.0)
+    )  # Was 5.0: with 8 max positions at smaller size, tighter cap prevents overleveraging
     slippage_bps: int = field(
         default_factory=lambda: _env_int("SLIPPAGE_BPS", 3)
     )  # Estimated slippage in basis points (3 bps for HL perps, override higher for alts)
@@ -205,8 +209,9 @@ class TradingConfig:
     # ADX below this = ranging market, strategies should not generate signals.
     # ADX 20 is the classic threshold; below 20 means no directional trend.
     adx_min_trending: float = field(
-        default_factory=lambda: _env_float("ADX_MIN_TRENDING", 20.0)
-    )
+        default_factory=lambda: _env_float("ADX_MIN_TRENDING", 15.0)
+    )  # Was 20: locked out regime_trend + confidence_scorer for entire 7-day backtest.
+    # ADX 15-19 = weak but present trend. Re-enables 2 more strategies for agreement.
     # Confidence floor when market is ranging (chop_score > chop_threshold * 0.8)
     # Higher than normal floor to only allow very high conviction trades in chop
     ranging_confidence_floor: float = field(
@@ -310,8 +315,9 @@ class TradingConfig:
     # ── Strategy Parameters (ATR multiples, confidence floors) ──
     # Previously hardcoded across strategy files. Now centralized.
     sl_atr_multiplier: float = field(
-        default_factory=lambda: _env_float("SL_ATR_MULTIPLIER", 1.5)
-    )  # Unified SL distance: all strategies use same ATR mult for consistent ensemble merge
+        default_factory=lambda: _env_float("SL_ATR_MULTIPLIER", 2.0)
+    )  # Was 1.5: at 0.69% stops, 8bps fees consume 11.6%. At 2.0x → 0.92% stops,
+    # fee drag drops to 8.7%. Fewer SL hits from wicks in volatile crypto.
     ensemble_confidence_floor: float = field(
         default_factory=lambda: _env_float("ENSEMBLE_CONFIDENCE_FLOOR", 55.0)
     )  # Lowered from 60: HTF penalty now reduces confidence by 15-20pts, floor at 60 double-penalizes. EV gate handles quality.
@@ -401,14 +407,14 @@ class TradingConfig:
 
     # ── Cooldowns & Time Intervals ──
     loss_cooldown_s: int = field(
-        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 300)
-    )  # 5 min: prevents revenge trading after loss (was 2 min)
+        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 60)
+    )  # Was 300 (5min): quant approach = quick re-entry. Small size makes revenge trading less risky.
     win_cooldown_s: int = field(
-        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 180)
-    )  # 3 min: prevents overconfident re-entry after win (was 1 min)
+        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 60)
+    )  # Was 180 (3min): faster re-entry to capitalize on momentum after wins.
     signal_dedup_window_s: int = field(
-        default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 600)
-    )  # 10 min dedup: prevents rapid-fire same-symbol entries (was 5 min)
+        default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 120)
+    )  # Was 600 (10min): 2min dedup allows faster signal capture across strategies.
 
     # ── Timeframe Trend Weights ──
     tf_weight_5m: float = field(
@@ -539,7 +545,8 @@ DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
     # BTC: reduced leverage (was 25x), halved risk_per_trade — BTC lost -$2,120 on
     # 10d backtest (38% WR). Lower volatility = ATR stops proportionally tighter,
     # needs less risk per trade to compensate.
-    "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=_env_float("BTC_RISK_OVERRIDE", 0.005), volatility_profile="low"),
+    "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=_env_float("BTC_RISK_OVERRIDE", 0.004), volatility_profile="low"),
+    # BTC risk slightly below global 0.5% since BTC ATR stops are proportionally tighter
     "SOL": SymbolOverrides(max_leverage=20.0, volatility_profile="medium"),
     "HYPE": SymbolOverrides(max_leverage=20.0, volatility_profile="high"),
     "DOGE": SymbolOverrides(max_leverage=12.0, volatility_profile="high"),
@@ -561,17 +568,70 @@ def get_symbol_param(symbol: str, param: str, config: TradingConfig) -> float:
 
 PAPER_PROFILE_OVERRIDES = {
     "max_leverage": 25.0,       # Match live — paper should test real sizing
-    "risk_per_trade": 0.02,     # 2% risk per trade (was 5% — too aggressive with leverage)
-    "max_open_positions": 3,
-    "max_portfolio_leverage": 5.0,  # Notional cap: equity * 5x (leveraged trades need headroom)
+    "risk_per_trade": 0.005,    # 0.5% risk per trade: quant approach, many small bets
+    "max_open_positions": 8,    # 8 concurrent positions at 0.5% risk = 4% max exposure
+    "max_portfolio_leverage": 4.0,  # Tighter cap with more positions
     "enable_smart_orders": False,
 }
 
+# Regime-conditional SL/TP multipliers (applied on top of base sl_atr_multiplier)
+# Trending: wider SL (let trends breathe), wider TP (let momentum carry)
+# Consolidation: tighter SL (mean-revert or stop), tighter TP (take profits before snap-back)
+# High vol: widest SL (avoid wick stops), tightest TP (grab what you can)
+REGIME_SL_TP_SCALARS = {
+    "trending_bull":    {"sl_mult": 1.2, "tp1_mult": 1.3, "tp2_mult": 1.5},   # was tp1=0.9/tp2=0.85: inverted R:R killed trending trades
+    "trending_bear":    {"sl_mult": 1.1, "tp1_mult": 1.2, "tp2_mult": 1.4},   # was tp1=0.8/tp2=0.8: same issue
+    "trend":            {"sl_mult": 1.15, "tp1_mult": 1.25, "tp2_mult": 1.4},  # was tp1=0.85/tp2=0.85
+    "consolidation":    {"sl_mult": 0.85, "tp1_mult": 0.9, "tp2_mult": 0.85},  # was tp1=1.2/tp2=1.3: mean-reversion should take profits fast
+    "range":            {"sl_mult": 0.9, "tp1_mult": 0.95, "tp2_mult": 0.9},   # was tp1=1.1/tp2=1.2: same as consolidation
+    "high_volatility":  {"sl_mult": 1.4, "tp1_mult": 1.2, "tp2_mult": 2.0},  # was tp1=0.7/tp2=0.7: same inverted R:R bug — risk 2.8 ATR to make 1.4 ATR
+    "panic":            {"sl_mult": 1.5, "tp1_mult": 0.6, "tp2_mult": 0.6},  # panic: still grab what you can
+    "low_liquidity":    {"sl_mult": 1.3, "tp1_mult": 0.8, "tp2_mult": 0.8},
+}
+
+
+# Regime-aware risk sizing: bet bigger where edge is proven, smaller where it isn't.
+# 30-day backtest: consolidation 78% WR (+$3.2k), trending_bull 40% WR (-$4k).
+REGIME_RISK_MULTIPLIERS = {
+    "trending_bull":    0.7,    # unproven edge — reduce size
+    "trending_bear":    0.7,
+    "trend":            0.8,
+    "consolidation":    1.0,    # was 1.3: 30d showed 78% WR but 70d shows 35% — noisy sample
+    "range":            0.8,
+    "high_volatility":  0.7,    # was 0.5: too punitive for HYPE which has tradeable edge
+    "panic":            0.3,
+    "low_liquidity":    0.5,
+    "news_dislocation": 0.4,
+    "unknown":          0.8,
+}
+
+
+def get_regime_risk_mult(regime: str) -> float:
+    """Return position-size multiplier for the given regime."""
+    return REGIME_RISK_MULTIPLIERS.get(regime, 0.8)
+
+
+def get_regime_sl_tp(regime: str, base_sl_mult: float, base_tp1_mult: float,
+                     base_tp2_mult: float) -> tuple:
+    """Apply regime-conditional scaling to SL/TP multipliers.
+
+    Returns (adjusted_sl_mult, adjusted_tp1_mult, adjusted_tp2_mult).
+    """
+    scalars = REGIME_SL_TP_SCALARS.get(regime)
+    if scalars is None:
+        return (base_sl_mult, base_tp1_mult, base_tp2_mult)
+    return (
+        base_sl_mult * scalars["sl_mult"],
+        base_tp1_mult * scalars["tp1_mult"],
+        base_tp2_mult * scalars["tp2_mult"],
+    )
+
+
 LIVE_PROFILE_OVERRIDES = {
     "max_leverage": 25.0,       # Full leverage in live
-    "risk_per_trade": 0.02,     # 2% risk per trade (was 5% — too aggressive with leverage)
-    "max_open_positions": 3,
-    "max_portfolio_leverage": 5.0,  # Notional cap: equity * 5x (leveraged trades need headroom)
+    "risk_per_trade": 0.005,    # 0.5% risk per trade: quant approach, many small bets
+    "max_open_positions": 8,    # 8 concurrent positions at 0.5% risk = 4% max exposure
+    "max_portfolio_leverage": 4.0,  # Tighter cap with more positions
     "enable_smart_orders": True,
 }
 

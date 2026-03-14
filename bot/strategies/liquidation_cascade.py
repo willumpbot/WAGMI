@@ -200,8 +200,8 @@ class LiquidationCascadeStrategy(BaseStrategy):
                 side = "BUY"
                 signal_type = "post_cascade_reversal"
 
-                # RSI confirmation: should be oversold
-                if rsi < 30:
+                # RSI confirmation: should be oversold (crypto-calibrated 25/75)
+                if rsi < 25:
                     confidence += 12.0
                 elif rsi < 40:
                     confidence += 5.0
@@ -213,7 +213,7 @@ class LiquidationCascadeStrategy(BaseStrategy):
                 side = "SELL"
                 signal_type = "post_cascade_reversal"
 
-                if rsi > 70:
+                if rsi > 75:
                     confidence += 12.0
                 elif rsi > 60:
                     confidence += 5.0

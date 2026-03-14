@@ -181,7 +181,8 @@ def normalize_llm_output(raw_dict: Dict[str, Any]) -> Dict[str, Any]:
         norm_sw = {}
         for key in [
             "regime_trend", "monte_carlo_zones", "confidence_scorer", "multi_tier_quality",
-            "funding_rate", "open_interest", "volume_momentum", "cross_asset"
+            "funding_rate", "oi_delta", "liquidation_cascade",
+            "bollinger_squeeze", "vmc_cipher", "probability_engine",
         ]:
             val = sw.get(key, 0.5)
             try:
@@ -196,10 +197,12 @@ def normalize_llm_output(raw_dict: Dict[str, Any]) -> Dict[str, Any]:
             "monte_carlo_zones": 0.5,
             "confidence_scorer": 0.5,
             "multi_tier_quality": 0.5,
-            "funding_rate": 0.0,
-            "open_interest": 0.0,
-            "volume_momentum": 0.0,
-            "cross_asset": 0.0,
+            "funding_rate": 0.5,
+            "oi_delta": 0.5,
+            "liquidation_cascade": 0.5,
+            "bollinger_squeeze": 0.5,
+            "vmc_cipher": 0.5,
+            "probability_engine": 0.5,
         }
 
     # Normalize memory_update: truncate if too long

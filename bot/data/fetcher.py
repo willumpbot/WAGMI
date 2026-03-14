@@ -62,7 +62,7 @@ COINGECKO_TIMEFRAME_MAP = {
     "6h":    {"days": 90, "freq": "6h"},
     "16h":   {"days": 90, "freq": "16h"},
     "1d":    {"days": 90, "freq": "1D"},
-    "daily": {"days": 30, "freq": "1h"},
+    "daily": {"days": 90, "freq": "1D"},
 }
 
 
@@ -321,25 +321,29 @@ class DataFetcher:
             self._ccxt_module = None
 
     def _ccxt_rate_limit(self, ex_name: str):
-        """Enforce per-exchange rate limiting."""
-        min_gap = self._exchange_rate_limits.get(ex_name, 0.2)
-        last_ts = self._last_exchange_request_ts.get(ex_name, 0.0)
-        gap = time.time() - last_ts
-        if gap < min_gap:
-            time.sleep(min_gap - gap + random.uniform(0, 0.05))
-        self._last_exchange_request_ts[ex_name] = time.time()
+        """Enforce per-exchange rate limiting (thread-safe)."""
+        with self._lock:
+            min_gap = self._exchange_rate_limits.get(ex_name, 0.2)
+            last_ts = self._last_exchange_request_ts.get(ex_name, 0.0)
+            gap = time.time() - last_ts
+            wait = min_gap - gap + random.uniform(0, 0.05) if gap < min_gap else 0
+            self._last_exchange_request_ts[ex_name] = time.time() + max(0, wait)
+        if wait > 0:
+            time.sleep(wait)
 
     # ─── Cache ────────────────────────────────────────────────────
 
     def _get_cached(self, key: str) -> Optional[pd.DataFrame]:
-        if key in self._cache:
-            ts, df = self._cache[key]
-            if time.time() - ts < self.cache_ttl:
-                return df.copy()
+        with self._lock:
+            if key in self._cache:
+                ts, df = self._cache[key]
+                if time.time() - ts < self.cache_ttl:
+                    return df.copy()
         return None
 
     def _set_cache(self, key: str, df: pd.DataFrame):
-        self._cache[key] = (time.time(), df.copy())
+        with self._lock:
+            self._cache[key] = (time.time(), df.copy())
 
     # ─── Disk cache (backtest reproducibility) ────────────────────
 
@@ -428,9 +432,11 @@ class DataFetcher:
         supported = getattr(exchange, "timeframes", {}) or {}
 
         if timeframe == "daily":
-            # Zone strategies expect hourly-granularity data
-            limit = self._candles_for_days("1h", self.backtest_days) if self.backtest_days else 720
-            return "1h", limit, None
+            # Zone strategies need actual daily OHLCV — aggregate from 1h
+            # Need 60+ days of 1h data to produce 50+ daily candles for indicators
+            days_needed = max(self.backtest_days, 60) if self.backtest_days else 90
+            limit = self._candles_for_days("1h", days_needed)
+            return "1h", limit, "1d"
         elif timeframe == "16h":
             # No exchange supports 16h natively; aggregate from 1h
             limit = self._candles_for_days("1h", self.backtest_days) if self.backtest_days else 500
@@ -700,8 +706,7 @@ class DataFetcher:
         if raw is None or raw.empty:
             return pd.DataFrame()
 
-        if timeframe == "daily":
-            return raw.copy()
+
 
         return self._resample_cg_to_ohlcv(raw, tf_config["freq"])
 
@@ -818,10 +823,7 @@ class DataFetcher:
                     continue
 
                 for tf, freq in tf_list:
-                    if tf == "daily":
-                        df = raw.copy()
-                    else:
-                        df = self._resample_cg_to_ohlcv(raw, freq)
+                    df = self._resample_cg_to_ohlcv(raw, freq)
                     cache_key = f"ohlcv:{symbol_name}:{tf}"
                     if not df.empty:
                         self._set_cache(cache_key, df)
@@ -931,6 +933,30 @@ class DataFetcher:
                     return float(rate)
             except Exception as e:
                 logger.debug(f"[{symbol_name}] Funding rate {ex_name}: {e}")
+                continue
+        return None
+
+    def fetch_open_interest(self, symbol_name: str) -> Optional[float]:
+        """Fetch current open interest for a symbol via CCXT.
+
+        Returns total OI in USD. Returns None if not available.
+        """
+        if not self._ccxt_available:
+            return None
+
+        chain = self._symbol_exchanges.get(symbol_name, [])
+        for ex_name, pair in chain:
+            exchange = self._exchanges.get(ex_name)
+            if exchange is None:
+                continue
+            try:
+                self._ccxt_requests += 1
+                oi_data = exchange.fetch_open_interest(pair)
+                oi_value = oi_data.get("openInterestAmount") or oi_data.get("openInterestValue")
+                if oi_value is not None:
+                    return float(oi_value)
+            except Exception as e:
+                logger.debug(f"[{symbol_name}] Open interest {ex_name}: {e}")
                 continue
         return None
 

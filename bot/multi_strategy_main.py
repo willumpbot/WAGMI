@@ -441,6 +441,15 @@ class MultiStrategyBot:
         # Apply quant system config disables (kill toxic strategies)
         self.ensemble.apply_config_disables(config)
 
+        # Wire volatility profiles for per-symbol confidence floor capping
+        from trading_config import DEFAULT_SYMBOL_OVERRIDES
+        vol_profiles = {
+            sym: ov.volatility_profile
+            for sym, ov in DEFAULT_SYMBOL_OVERRIDES.items()
+            if hasattr(ov, 'volatility_profile') and ov.volatility_profile
+        }
+        self.ensemble.set_symbol_volatility_profiles(vol_profiles)
+
         # Execution
         self.risk_mgr = RiskManager(
             starting_equity=config.starting_equity,
@@ -519,6 +528,7 @@ class MultiStrategyBot:
         self._last_prices: Dict[str, float] = {}  # symbol -> price
         # Last known funding rates per symbol (updated from fetcher)
         self._last_funding_rates: Dict[str, float] = {}  # symbol -> funding rate
+        self._last_open_interest: Dict[str, float] = {}  # symbol -> OI (for oi_delta strategy)
 
         # LLM meta-brain
         self.llm_mode = get_llm_mode()
@@ -571,6 +581,19 @@ class MultiStrategyBot:
                 kelly_engine=self.kelly_engine,
             )
             self.ensemble.set_shadow_ledger(self.shadow_ledger)
+            # Wire missed trade tracker into ensemble + main loop
+            try:
+                from feedback.missed_trade_tracker import MissedTradeTracker
+                self._missed_trade_tracker = MissedTradeTracker(data_dir="data")
+                self.ensemble.set_missed_trade_tracker(self._missed_trade_tracker)
+                logger.info("[INIT] MissedTradeTracker wired into ensemble + pipeline")
+            except Exception as mt_e:
+                logger.debug(f"[INIT] MissedTradeTracker unavailable: {mt_e}")
+                self._missed_trade_tracker = None
+            # Wire IC tracker into ensemble so inverted/decaying factors get downweighted in voting
+            if self.ic_tracker:
+                self.ensemble.ic_tracker = self.ic_tracker
+                logger.info("[INIT] IC tracker wired into ensemble voting — inverted factors will be auto-downweighted")
             logger.info("[INIT] Quant system loaded: IC tracker, Kelly engine, trade ledger, shadow ledger, correlation gate, daily report")
         except Exception as e:
             logger.warning(f"[INIT] Quant system partially unavailable: {e}")
@@ -581,6 +604,7 @@ class MultiStrategyBot:
             self.correlation_gate = None
             self._sector_exposure_cls = None
             self.execution_analytics = None
+            self._missed_trade_tracker = None
             self.daily_reporter = None
 
         # Growth intelligence: self-evolving meta-brain
@@ -921,6 +945,13 @@ class MultiStrategyBot:
         """One iteration of the main loop."""
         trace_id = uuid.uuid4().hex[:8]
         _loop_start = time.time()
+
+        # Per-trade compound sizing cache: stored at entry, read at close for attribution
+        self._compound_mult_cache: Dict[str, float] = {}
+
+        # Walk-forward degradation: auto-reduce sizing when OOS performance degrades
+        self._wf_ratio: float = 1.0  # Default: no degradation
+        self._wf_last_computed: float = 0.0  # Epoch of last computation
 
         # Per-tick regime cache: computed once, reused by all subsystems
         # (avoids 5x redundant get_regime() calls per symbol per tick)
@@ -1263,6 +1294,62 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"Evolution tracker error: {e}")
 
+            # Auto-decay Kelly and strategy weights daily (prevents stale data dominating)
+            try:
+                if self.kelly_engine:
+                    # Kelly engine doesn't have apply_decay — but strategy weights do
+                    pass
+                if hasattr(self, 'ensemble') and self.ensemble.weight_manager:
+                    self.ensemble.weight_manager.apply_decay()
+                    logger.info("[QUANT] Applied daily decay to strategy weights (alpha=0.9)")
+            except Exception as e:
+                logger.debug(f"Weight decay error: {e}")
+
+            # Walk-forward ratio: auto-reduce sizing when OOS performance degrades
+            try:
+                if self.trade_ledger:
+                    _wf_trades = self.trade_ledger.get_trades(lookback_days=60)
+                    if len(_wf_trades) >= 10:
+                        from validation.walk_forward import run_rolling_walk_forward, avg_wf_ratio
+                        _wf_input = [
+                            {"pnl": float(t.get("net_pnl", "0")),
+                             "timestamp": float(t.get("timestamp", "0"))}
+                            for t in _wf_trades
+                        ]
+                        _wf_results = run_rolling_walk_forward(_wf_input)
+                        self._wf_ratio = avg_wf_ratio(_wf_results) if _wf_results else 1.0
+                        _wf_mult = self._get_wf_multiplier()
+                        logger.info(
+                            f"[QUANT] Walk-forward ratio: {self._wf_ratio:.3f} "
+                            f"→ sizing mult={_wf_mult:.2f}"
+                        )
+                        if self._wf_ratio < 0.4:
+                            logger.warning(
+                                f"[QUANT] WALK-FORWARD CRITICAL: ratio={self._wf_ratio:.3f} "
+                                f"— sizing reduced to {_wf_mult:.0%}"
+                            )
+            except Exception as e:
+                logger.debug(f"Walk-forward computation error: {e}")
+
+            # Rolling Sharpe: early edge degradation detection
+            try:
+                if self.trade_ledger:
+                    import math
+                    _sharpe_trades = self.trade_ledger.get_trades(lookback_days=30)
+                    _pnls = [float(t.get("net_pnl", "0")) for t in _sharpe_trades if t.get("net_pnl")]
+                    if len(_pnls) >= 10:
+                        _mean = sum(_pnls) / len(_pnls)
+                        _var = sum((p - _mean) ** 2 for p in _pnls) / len(_pnls)
+                        _std = math.sqrt(_var) if _var > 0 else 0.001
+                        _sharpe_30d = round(_mean / _std, 3)
+                        logger.info(f"[QUANT] 30-day rolling Sharpe: {_sharpe_30d:.3f} ({len(_pnls)} trades)")
+                        if _sharpe_30d < 0:
+                            logger.warning(f"[QUANT] NEGATIVE SHARPE ({_sharpe_30d:.3f}) — edge may be degraded")
+                        elif _sharpe_30d < 0.3:
+                            logger.warning(f"[QUANT] LOW SHARPE ({_sharpe_30d:.3f}) — monitor for further degradation")
+            except Exception as e:
+                logger.debug(f"Rolling Sharpe error: {e}")
+
             # Quant daily report: 6 key metrics with alerting
             if self.daily_reporter:
                 try:
@@ -1558,6 +1645,18 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"[{trace_id}] Periodic reconciliation error: {e}")
 
+    def _get_wf_multiplier(self) -> float:
+        """Walk-forward degradation multiplier for compound sizing.
+        WF ratio >= 0.7: 1.0× (no reduction)
+        WF ratio 0.0-0.7: linear scale (0.0× to 1.0×)
+        WF ratio < 0.0: 0.0× (halt new entries — overfitting detected)
+        """
+        if self._wf_ratio >= 0.7:
+            return 1.0
+        if self._wf_ratio < 0.0:
+            return 0.0
+        return max(0.0, self._wf_ratio / 0.7)
+
     def _process_symbol(self, symbol: str, sym_cfg, trace_id: str = ""):
         """Process one symbol: fetch data, check positions, generate signals."""
         # F3: Graceful degradation — halt new entries if exchange is down
@@ -1576,6 +1675,29 @@ class MultiStrategyBot:
             logger.warning(f"[{symbol}] Exchange fetch failed: {e}")
             return
 
+        # Inject metadata for metadata-dependent strategies (funding_rate, oi_delta)
+        _meta = data.setdefault("_meta", {})
+        _fr = self._last_funding_rates.get(symbol)
+        if _fr is not None:
+            data["_funding_rate"] = _fr
+            _meta["funding_rate"] = _fr
+        # OI: fetch and inject current + previous for delta calculation
+        if self._tick % 60 == 0 or symbol not in self._last_open_interest:
+            try:
+                _oi = self.fetcher.fetch_open_interest(symbol)
+                if _oi is not None:
+                    _oi_prev = self._last_open_interest.get(symbol)
+                    self._last_open_interest[symbol] = _oi
+                    _meta["open_interest"] = _oi
+                    if _oi_prev is not None:
+                        _meta["open_interest_prev"] = _oi_prev
+            except Exception:
+                pass
+        else:
+            _oi = self._last_open_interest.get(symbol)
+            if _oi is not None:
+                _meta["open_interest"] = _oi
+
         # Stale data guard: reject signals if candle data is too old.
         # After restarts or API hiccups, strategies may fire on stale candles.
         # Check the most granular timeframe (5m or 1h) — if its last candle
@@ -1584,21 +1706,31 @@ class MultiStrategyBot:
         _stale_check_tf = "5m" if "5m" in data else ("1h" if "1h" in data else None)
         if _stale_check_tf and data.get(_stale_check_tf) is not None:
             _stale_df = data[_stale_check_tf]
-            if not _stale_df.empty and _stale_df.index.dtype.kind == 'M':
-                _last_candle_time = _stale_df.index[-1]
-                _candle_age_s = (pd.Timestamp.now(tz="UTC") - _last_candle_time).total_seconds()
-                _tf_period_s = {"5m": 300, "1h": 3600}.get(_stale_check_tf, 3600)
-                # Data is stale if the last candle closed more than (period + tolerance) ago
-                if _candle_age_s > _tf_period_s + _stale_max_s:
-                    # Still process existing positions (SL/TP), but skip new signal generation
-                    if symbol not in self.pos_mgr.get_open_positions():
-                        logger.warning(
-                            f"[{trace_id}][{symbol}] STALE DATA: {_stale_check_tf} candle "
-                            f"is {_candle_age_s:.0f}s old (max {_tf_period_s + _stale_max_s}s), "
-                            f"skipping signal generation"
-                        )
-                        Telemetry.inc("stale_data_skips")
-                        return
+            if not _stale_df.empty:
+                # DataFrame has numeric index with 'time' column (from fetcher)
+                # Fall back to index if 'time' column is missing
+                if "time" in _stale_df.columns:
+                    _last_candle_time = pd.Timestamp(_stale_df["time"].iloc[-1], unit="ms" if isinstance(_stale_df["time"].iloc[-1], (int, float)) and _stale_df["time"].iloc[-1] > 1e12 else None)
+                elif _stale_df.index.dtype.kind == 'M':
+                    _last_candle_time = _stale_df.index[-1]
+                else:
+                    _last_candle_time = None
+                if _last_candle_time is not None:
+                    if _last_candle_time.tzinfo is None:
+                        _last_candle_time = _last_candle_time.tz_localize("UTC")
+                    _candle_age_s = (pd.Timestamp.now(tz="UTC") - _last_candle_time).total_seconds()
+                    _tf_period_s = {"5m": 300, "1h": 3600}.get(_stale_check_tf, 3600)
+                    # Data is stale if the last candle closed more than (period + tolerance) ago
+                    if _candle_age_s > _tf_period_s + _stale_max_s:
+                        # Still process existing positions (SL/TP), but skip new signal generation
+                        if symbol not in self.pos_mgr.get_open_positions():
+                            logger.warning(
+                                f"[{trace_id}][{symbol}] STALE DATA: {_stale_check_tf} candle "
+                                f"is {_candle_age_s:.0f}s old (max {_tf_period_s + _stale_max_s}s), "
+                                f"skipping signal generation"
+                            )
+                            Telemetry.inc("stale_data_skips")
+                            return
 
         # Get current price
         current_price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
@@ -1914,6 +2046,10 @@ class MultiStrategyBot:
                                 _session_dd = round(
                                     (cb.session_peak_equity - self.risk_mgr.equity) / cb.session_peak_equity * 100, 2
                                 )
+                            # Compute realized R:R for EV calibration
+                            _stop_width = abs(pos.entry - pos.sl) if pos.sl else 0
+                            _realized_rr = round(total_pnl / (_stop_width * (pos.qty or 1)), 3) if _stop_width > 0 and pos.qty else 0
+                            _predicted_ev = pos.entry_reasons.get("ev_per_dollar", "") if pos.entry_reasons else ""
                             self.trade_ledger.record_trade({
                                 "symbol": symbol,
                                 "side": event.side,
@@ -1926,7 +2062,7 @@ class MultiStrategyBot:
                                     self.kelly_engine.compute_kelly_weight(event.strategy)
                                     if self.kelly_engine and event.strategy else ""
                                 ),
-                                "compound_size_multiplier": "",
+                                "compound_size_multiplier": str(self._compound_mult_cache.pop(symbol, "")),
                                 "leverage": str(pos.leverage),
                                 "hold_hours": f"{_hold_hours:.2f}",
                                 "exit_type": event.action,
@@ -1938,6 +2074,9 @@ class MultiStrategyBot:
                                 "net_pnl": str(round(total_pnl, 2)),
                                 "running_equity": str(round(self.risk_mgr.equity, 2)),
                                 "session_dd_pct": str(_session_dd),
+                                "predicted_ev": str(_predicted_ev),
+                                "realized_rr": str(_realized_rr),
+                                "win": "1" if total_pnl > 0 else "0",
                             })
                         except Exception as e:
                             logger.debug(f"Trade ledger record error: {e}")
@@ -2990,6 +3129,16 @@ class MultiStrategyBot:
                     f"[{trace_id}][{symbol}] RiskFilterChain rejected: "
                     f"{_chain_result.rejection_reason}"
                 )
+                # Track pipeline rejection in missed trade tracker
+                if self._missed_trade_tracker is not None:
+                    try:
+                        self._missed_trade_tracker.record_rejection(
+                            signal=signal_result,
+                            reason=_chain_result.rejection_reason,
+                            gate="pipeline",
+                        )
+                    except Exception:
+                        pass
 
                 # ── Annotated chain: record what filters measured even on rejection ──
                 if getattr(self.config, 'enable_soft_filters', False) or getattr(self.config, 'soft_filter_log_only', False):
@@ -3220,9 +3369,15 @@ class MultiStrategyBot:
         _compound_mult = 1.0
         try:
             _regime = self._tick_regime_cache.get(symbol, "unknown")
-            # Kelly weight
+            # Kelly weight (edge quality — size up proven strategies, size down unproven)
             if self.kelly_engine and signal_result.strategy:
                 _compound_mult *= self.kelly_engine.compute_kelly_weight(signal_result.strategy)
+            # IC weight (factor health — kill inverted, half-size decaying)
+            if self.ic_tracker and signal_result.strategy:
+                _ic_w = self.ic_tracker.get_ic_weight(signal_result.strategy)
+                if _ic_w < 1.0:
+                    logger.info(f"[{symbol}] IC weight for {signal_result.strategy}: {_ic_w:.2f}")
+                _compound_mult *= _ic_w
             # Regime scalar
             _compound_mult *= self.risk_mgr.get_regime_scalar(_regime)
             # Drawdown dial
@@ -3239,10 +3394,50 @@ class MultiStrategyBot:
                 _compound_mult *= self.risk_mgr.compute_btc_momentum_multiplier(
                     _btc_ret, signal_result.side
                 )
+            # Portfolio risk budget: scale down as budget fills up
+            if self.portfolio_risk:
+                try:
+                    _open = {s: {"side": p.side, "size_usd": p.notional or 0}
+                             for s, p in self.positions.items() if p and p.side}
+                    _budget = self.portfolio_risk.compute_risk_budget(
+                        self.risk_mgr.equity, _open, self.config.max_portfolio_risk_pct
+                    )
+                    if _budget.utilization > 0.5:
+                        # Linear scale: 1.0 at 50% util → 0.2 at 100% util
+                        _budget_mult = max(0.2, 1.0 - (_budget.utilization - 0.5) * 1.6)
+                        _compound_mult *= _budget_mult
+                        logger.info(
+                            f"[{symbol}] Portfolio risk budget {_budget.utilization:.0%} used, "
+                            f"sizing mult={_budget_mult:.2f}"
+                        )
+                except Exception as e:
+                    logger.debug(f"Portfolio risk budget check failed: {e}")
+            # Signal decay: stale signals also get smaller size (not just lower confidence)
+            if _signal_gen_time and self.config.signal_decay_seconds > 0:
+                _sig_age = time.time() - _signal_gen_time
+                _decay_mult = self.risk_mgr.compute_signal_decay(_sig_age, self.config.signal_decay_seconds * 5)
+                if _decay_mult < 1.0:
+                    _compound_mult *= _decay_mult
+                    logger.info(f"[{symbol}] Signal decay sizing: age={_sig_age:.0f}s, mult={_decay_mult:.2f}")
+            # Agreement-based sizing: 1-agree trades get half size (quant cherry-pick)
+            _n_agree = signal_result.metadata.get("num_agree", 1) if signal_result.metadata else 1
+            if _n_agree == 1:
+                _compound_mult *= 0.5
+                logger.info(f"[{symbol}] Single-strategy trade: half-size (0.5× compound mult)")
+            # Walk-forward degradation: reduce sizing when OOS performance degrades
+            _wf_mult = self._get_wf_multiplier()
+            if _wf_mult < 1.0:
+                _compound_mult *= _wf_mult
+                if _wf_mult <= 0.0:
+                    logger.warning(f"[{symbol}] WF HALT: ratio={self._wf_ratio:.3f}, blocking entry")
+                else:
+                    logger.info(f"[{symbol}] WF degradation: ratio={self._wf_ratio:.3f}, mult={_wf_mult:.2f}")
             # Cap at 2× base, floor at 0.1×
             _compound_mult = min(2.0, max(0.1, _compound_mult))
             # Apply compound multiplier to symbol risk
             _sym_risk = (_sym_risk or self.config.risk_per_trade) * _compound_mult
+            # Cache for trade ledger attribution at close
+            self._compound_mult_cache[symbol] = round(_compound_mult, 4)
         except Exception as e:
             logger.debug(f"Compound sizing error (using base): {e}")
 
@@ -3457,6 +3652,10 @@ class MultiStrategyBot:
             # Signal flagger data for post-trade analysis
             "signal_flags": signal_result.metadata.get("signal_flags", ""),
             "flag_max_priority": signal_result.metadata.get("flag_max_priority", 0),
+            # EV tracking for calibration
+            "ev_per_dollar": signal_result.metadata.get("ev_per_dollar", ""),
+            "win_prob_deflated": signal_result.metadata.get("win_prob", ""),
+            "fee_drag_pct": signal_result.metadata.get("fee_drag_pct", ""),
         }
 
         # Track portfolio correlation risk for LLM learning feedback

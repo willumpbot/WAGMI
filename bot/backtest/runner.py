@@ -472,7 +472,7 @@ def _print_backtest_summary(results: dict):
     if funnel:
         print("\n  SIGNAL FUNNEL:")
         for key in ("total", "signal", "no_signal", "cb_blocked", "regime_blocked",
-                     "llm_approved", "llm_vetoed"):
+                     "llm_approved", "other_rejections", "llm_vetoed"):
             val = funnel.get(key, 0)
             if val > 0:
                 print(f"    {key:>16}: {val}")

@@ -62,12 +62,12 @@ class RotationConfig:
     global_rotation_cooldown_s: int = 600  # 10 minutes between rotations
 
     # Per-symbol cooldown: can't rotate back into a symbol we just left
-    symbol_rotation_cooldown_s: int = 1800  # 30 minutes before re-entering same symbol
+    symbol_rotation_cooldown_s: int = 600  # Was 1800 (30min): 10min allows quant-style faster rotation
 
     # ── Rate limits ──
-    # Max rotations in a rolling window
-    max_rotations_per_hour: int = 2
-    max_rotations_per_day: int = 6
+    # Max rotations in a rolling window — quant approach needs more frequent rotation
+    max_rotations_per_hour: int = 3   # was 2
+    max_rotations_per_day: int = 12   # was 6: with 0.5% risk/trade, more rotations are affordable
 
     # ── Profit rotation thresholds ──
     # Minimum unrealized profit % before we consider rotating (for profit rotations)

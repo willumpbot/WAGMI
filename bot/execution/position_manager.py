@@ -361,14 +361,25 @@ class PositionManager:
 
         return events
 
+    # Regime-adaptive early exit thresholds:
+    # High-vol/range: cut losers earlier (price reverses fast)
+    # Trending: let trades breathe longer (trend may resume)
+    _EARLY_EXIT_THRESHOLDS = {
+        "high_volatility": {"sl_progress": 0.40, "conditions": 1},
+        "panic":           {"sl_progress": 0.35, "conditions": 1},
+        "range":           {"sl_progress": 0.45, "conditions": 2},
+        "consolidation":   {"sl_progress": 0.50, "conditions": 2},
+        "trending_bull":   {"sl_progress": 0.70, "conditions": 3},
+        "trending_bear":   {"sl_progress": 0.70, "conditions": 3},
+        "trend":           {"sl_progress": 0.70, "conditions": 3},
+    }
+    _DEFAULT_EARLY_EXIT = {"sl_progress": 0.65, "conditions": 3}
+
     def _check_early_exit(self, pos: Position, price: float, df_5m) -> bool:
         """
         Detect momentum reversal heading toward SL and cut early.
-        Triggers when ALL of:
-        1. Price moved >65% toward SL (close to stop, not just noise)
-        2. Last 3 candles accelerating against position
-        3. EMA5 crossed against EMA13
-        Cutting at 65-80% loss is better than waiting for full SL.
+        Regime-adaptive: high-vol/range cut faster (1-2 conditions at 35-45%),
+        trending lets trades breathe (3 conditions at 70%).
         """
         if df_5m is None or df_5m.empty or len(df_5m) < 15:
             return False
@@ -388,32 +399,44 @@ class PositionManager:
             if sl_progress > 1.0:
                 return False
 
-            if sl_progress < 0.65:
+            # Regime-adaptive thresholds
+            _regime = (pos.entry_reasons or {}).get("regime", "unknown")
+            _thresholds = self._EARLY_EXIT_THRESHOLDS.get(_regime, self._DEFAULT_EARLY_EXIT)
+            _min_progress = _thresholds["sl_progress"]
+            _min_conditions = _thresholds["conditions"]
+
+            if sl_progress < _min_progress:
                 return False
+
+            # Count how many exit conditions are met
+            _conditions_met = 0
 
             c = df_5m["close"].astype(float)
             last3 = c.iloc[-3:].values
+
+            # Condition 1: 3 candles accelerating against position
             if is_long:
                 accelerating = last3[2] < last3[1] < last3[0]
             else:
                 accelerating = last3[2] > last3[1] > last3[0]
+            if accelerating:
+                _conditions_met += 1
 
-            if not accelerating:
-                return False
-
+            # Condition 2: EMA5 crossed against EMA13
             ema5 = float(c.ewm(span=5, adjust=False).mean().iloc[-1])
             ema13 = float(c.ewm(span=13, adjust=False).mean().iloc[-1])
+            _ema_cross = (is_long and ema5 < ema13) or (not is_long and ema5 > ema13)
+            if _ema_cross:
+                _conditions_met += 1
 
-            if is_long and ema5 < ema13:
+            # Condition 3: SL progress is extreme (>80%)
+            if sl_progress >= 0.80:
+                _conditions_met += 1
+
+            if _conditions_met >= _min_conditions:
                 logger.info(
-                    f"[{pos.symbol}] EARLY EXIT: {sl_progress:.0%} toward SL, "
-                    f"3 bars accelerating down, EMA5<EMA13"
-                )
-                return True
-            elif not is_long and ema5 > ema13:
-                logger.info(
-                    f"[{pos.symbol}] EARLY EXIT: {sl_progress:.0%} toward SL, "
-                    f"3 bars accelerating up, EMA5>EMA13"
+                    f"[{pos.symbol}] EARLY EXIT ({_regime}): {sl_progress:.0%} toward SL, "
+                    f"{_conditions_met}/{_min_conditions} conditions met"
                 )
                 return True
 

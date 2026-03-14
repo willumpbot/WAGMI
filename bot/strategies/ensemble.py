@@ -48,12 +48,14 @@ class EnsembleStrategy:
         chop_detector=None,
         confidence_floor: float = 75.0,  # Raised from 65: minimum viable signal quality
         ranging_confidence_floor: float = 80.0,  # Lowered from 88: 88% was nearly impossible
+        ic_tracker=None,
     ):
         self.strategies = strategies
         self.mode = mode
         self.min_votes = min_votes
         self.weights = weights or {s.name: 1.0 for s in strategies}
         self.weight_manager = weight_manager  # StrategyWeightManager instance
+        self.ic_tracker = ic_tracker  # ICTracker: factor inversion protection
         self.veto_ratio = veto_ratio
         self.chop_detector = chop_detector  # ChopDetector instance (Wave 1)
         self.confidence_floor = confidence_floor
@@ -68,9 +70,11 @@ class EnsembleStrategy:
         self._shadow_ledger = None  # Optional: ShadowLedger for dormant strategy tracking
         # Rejection tracking: why signals were rejected (for LLM brain learning)
         self._last_rejections: Dict[str, Dict] = {}  # symbol -> {reason, confidence, side, ...}
+        self._missed_trade_tracker = None  # Optional: MissedTradeTracker for feedback
         # Regime-aware min_votes: current regime per symbol (set externally by engine)
         self._current_regime: Dict[str, str] = {}  # symbol -> regime string (1h)
         self._current_regime_4h: Dict[str, str] = {}  # symbol -> regime string (4h)
+        self._volatility_profiles: Dict[str, str] = {}  # symbol -> "low"/"medium"/"high"
 
     def set_quality_scorer(self, scorer):
         """Inject SignalQualityScorer so quality feedback affects ensemble confidence."""
@@ -79,6 +83,10 @@ class EnsembleStrategy:
     def set_shadow_ledger(self, ledger):
         """Inject ShadowLedger for tracking disabled strategy predictions."""
         self._shadow_ledger = ledger
+
+    def set_missed_trade_tracker(self, tracker):
+        """Inject MissedTradeTracker for comprehensive rejection feedback."""
+        self._missed_trade_tracker = tracker
 
     def set_regime(self, symbol: str, regime: str):
         """Set the current 1h market regime for a symbol.
@@ -135,32 +143,40 @@ class EnsembleStrategy:
     # Regime-gated min_votes: data-driven from 75-day backtest results.
     # trending_bear at 2-agree = -$25/trade × 96 trades = largest performance drag.
     # consolidation 2-agree = 80-89% WR = best regime.
+    # Quant philosophy: trade more often with smaller size. Single high-conviction
+    # strategy trades allowed in trending regimes (risk_mult=0.5 for 1-agree).
+    # EV gates + small position size handle quality; min_votes shouldn't over-filter.
+    # With 9 active strategies, 2/9 = 22% agreement is too weak.
+    # Raise to 3 for most regimes. Exception: high_volatility stays at 2
+    # because only 5 strategies are allowlisted there (2/5 = 40% agreement).
     REGIME_MIN_VOTES = {
-        'trending_bear':   3,   # 52.9% WR only — full conviction required
-        'trending_bull':   2,   # 58% WR, $860 net — 2-agree allowed
-        'trend':           2,   # legacy name for trending_bull
-        'consolidation':   2,   # 80% WR — mean-reversion edge
-        'range':           3,   # ranging = unclear direction
-        'high_volatility': 3,   # too few trades — require conviction
-        'panic':           3,   # extreme conditions — full conviction
-        'low_liquidity':   3,   # thin books — full conviction
-        'news_dislocation': 3,  # event-driven — full conviction
-        'unknown':         3,   # no regime = no edge
+        'trending_bear':   3,
+        'trending_bull':   3,
+        'trend':           3,
+        'consolidation':   3,
+        'range':           3,
+        'high_volatility': 2,   # only 5 strategies allowed in this regime
+        'panic':           3,
+        'low_liquidity':   3,
+        'news_dislocation': 3,
+        'unknown':         3,
     }
 
     # Regime-specific strategy allowlist: only strategies with proven edge
     # in each regime are allowed to vote.
+    # Regime-specific strategy allowlist: 9 active strategies, regime-gated.
+    # New additions: liquidation_cascade, monte_carlo_zones, funding_rate, oi_delta
     STRATEGY_REGIME_ALLOWLIST = {
-        'trending_bear':    {'confidence_scorer', 'regime_trend'},
-        'trending_bull':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'cvd_signal'},
-        'trend':            {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'cvd_signal'},
-        'consolidation':    {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher', 'cvd_signal'},
-        'range':            {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher'},
-        'high_volatility':  {'confidence_scorer'},
-        'panic':            {'confidence_scorer'},
+        'trending_bear':    {'confidence_scorer', 'regime_trend', 'probability_engine', 'oi_delta', 'liquidation_cascade'},
+        'trending_bull':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'oi_delta'},
+        'trend':            {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'oi_delta'},
+        'consolidation':    {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'monte_carlo_zones', 'funding_rate'},
+        'range':            {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'monte_carlo_zones', 'funding_rate'},
+        'high_volatility':  {'confidence_scorer', 'probability_engine', 'bollinger_squeeze', 'liquidation_cascade', 'oi_delta'},
+        'panic':            {'confidence_scorer', 'liquidation_cascade'},
         'low_liquidity':    {'confidence_scorer'},
         'news_dislocation': {'confidence_scorer'},
-        'unknown':          set(),  # no signals in unknown regime
+        'unknown':          {'confidence_scorer', 'probability_engine', 'monte_carlo_zones'},
     }
 
     def _get_effective_min_votes(self, symbol: str) -> int:
@@ -172,6 +188,14 @@ class EnsembleStrategy:
         """
         regime = self._current_regime.get(symbol, "unknown")
         return self.REGIME_MIN_VOTES.get(regime, 3)  # default to 3 — when in doubt, require conviction
+
+    def set_symbol_volatility_profiles(self, profiles: Dict[str, str]):
+        """Set volatility profiles for symbols (e.g., {"HYPE": "high", "BTC": "low"}).
+
+        Used for per-symbol confidence floor capping: high-vol assets get lower
+        max floors because their natural price action is inherently choppy.
+        """
+        self._volatility_profiles = profiles
 
     def set_disabled_strategies(self, names: set):
         """Temporarily disable specific strategies (e.g., for regime filtering)."""
@@ -388,6 +412,10 @@ class EnsembleStrategy:
         elif self._is_low_volume(symbol, data):
             # Fallback to simple volume filter if no chop detector
             logger.info(f"[{symbol}] Signal skipped: low volume (chop filter)")
+            if self._missed_trade_tracker is not None:
+                self._missed_trade_tracker.record_ensemble_rejection(
+                    symbol=symbol, signals=signals, reason="low_volume_chop"
+                )
             return None
 
         if self.mode == "voting":
@@ -415,6 +443,13 @@ class EnsembleStrategy:
                 "regime_4h": self._current_regime_4h.get(symbol, "unknown"),
                 "agreement_level": agreement_level,
             }
+            if self._missed_trade_tracker is not None:
+                try:
+                    self._missed_trade_tracker.record_rejection(
+                        signal=result, reason="4h_regime_conflict", gate="ensemble"
+                    )
+                except Exception:
+                    pass
             return None
 
         # ── Pre-floor quality adjustment ──
@@ -482,11 +517,13 @@ class EnsembleStrategy:
         result.metadata["chop_score_smoothed"] = round(chop_score, 3)
         if chop_score > 0.35:
             if chop_score >= 0.65:
-                # Extreme chop: floor rises from ranging (88%) toward 93%.
-                # This creates a real gradient above the ranging floor.
+                # Extreme chop: floor rises from ranging toward max.
+                # High-vol assets get lower max: their natural price action is choppy.
+                _vol_profile = getattr(self, '_volatility_profiles', {}).get(symbol, "medium")
+                _max_chop_floor = {"low": 93.0, "medium": 90.0, "high": 85.0}.get(_vol_profile, 93.0)
                 chop_intensity = min(1.0, (chop_score - 0.65) / 0.20)  # 0→1 over 0.65→0.85
                 effective_floor = self.ranging_confidence_floor + chop_intensity * (
-                    93.0 - self.ranging_confidence_floor
+                    _max_chop_floor - self.ranging_confidence_floor
                 )
             else:
                 # Moderate chop: interpolate between normal and ranging floor
@@ -722,6 +759,16 @@ class EnsembleStrategy:
             "strategy": signal.strategy or "",
             "regime": signal.metadata.get("regime", ""),
         }
+        # MissedTradeTracker: comprehensive rejection feedback (backtest + live)
+        if self._missed_trade_tracker is not None:
+            try:
+                self._missed_trade_tracker.record_rejection(
+                    signal=signal,
+                    reason=skip_reason,
+                    gate="ensemble",
+                )
+            except Exception:
+                pass
         try:
             from llm.brain_wiring import record_skipped_trade
             record_skipped_trade(
@@ -1067,13 +1114,28 @@ class EnsembleStrategy:
         buy_signals = [s for s in signals if s.side == "BUY"]
         sell_signals = [s for s in signals if s.side == "SELL"]
 
-        # Require at least min_votes strategies agreeing on the same direction
+        # Require at least min_votes strategies agreeing on the same direction.
+        # Single-strategy trades (1-agree) require 80%+ confidence from a proven strategy.
         if len(buy_signals) < min_v and len(sell_signals) < min_v:
-            if buy_signals:
-                logger.info(f"[{symbol}] Only {len(buy_signals)} BUY signal(s), need {min_v}+ same-side")
-            elif sell_signals:
-                logger.info(f"[{symbol}] Only {len(sell_signals)} SELL signal(s), need {min_v}+ same-side")
-            return None
+            # Check for single-strategy high-conviction trade (quant cherry-pick mode)
+            single_conf_threshold = 80.0
+            lone_signals = buy_signals or sell_signals
+            if min_v <= 1 and len(lone_signals) == 1 and lone_signals[0].confidence >= single_conf_threshold:
+                logger.info(
+                    f"[{symbol}] Single-strategy high-conviction {lone_signals[0].side}: "
+                    f"{lone_signals[0].strategy} conf={lone_signals[0].confidence:.0f}% (quant cherry-pick)"
+                )
+                # Allow it through — EV gate + half-size risk_mult will handle safety
+            else:
+                if buy_signals:
+                    logger.info(f"[{symbol}] Only {len(buy_signals)} BUY signal(s), need {min_v}+ same-side")
+                elif sell_signals:
+                    logger.info(f"[{symbol}] Only {len(sell_signals)} SELL signal(s), need {min_v}+ same-side")
+                if self._missed_trade_tracker is not None:
+                    self._missed_trade_tracker.record_ensemble_rejection(
+                        symbol=symbol, signals=signals, reason="insufficient_votes"
+                    )
+                return None
 
         # Block known-losing combos (backtest-validated toxic combinations).
         # Uses subset matching: a 3-agree combo containing a toxic 2-agree pair is also blocked.
@@ -1093,6 +1155,10 @@ class EnsembleStrategy:
                             f"[{symbol}] Blocked losing combo {sorted(blocked)} "
                             f"in {sorted(signal_names)}"
                         )
+                        if self._missed_trade_tracker is not None:
+                            self._missed_trade_tracker.record_ensemble_rejection(
+                                symbol=symbol, signals=signals, reason="losing_combo"
+                            )
                         return None
 
         buy_strength = self._weighted_confidence_sum(buy_signals) if buy_signals else 0
@@ -1114,6 +1180,10 @@ class EnsembleStrategy:
                 f"< {opposition[0].side} strength={oppose_strength:.1f} * {self.veto_ratio} "
                 f"= {oppose_strength * self.veto_ratio:.1f}"
             )
+            if self._missed_trade_tracker is not None:
+                self._missed_trade_tracker.record_ensemble_rejection(
+                    symbol=symbol, signals=signals, reason="opposition_veto"
+                )
             return None
 
         merged = self._merge_signals(symbol, chosen)
@@ -1190,12 +1260,24 @@ class EnsembleStrategy:
 
     def _get_strategy_weight(self, strategy_name: str) -> float:
         """Get weight for a strategy from weight manager, falling back to static weights.
+        Applies IC tracker weight to penalize inverted/decaying factors.
         Caps daily-timeframe strategies (monte_carlo_zones) at MAX_OPPOSITION_WEIGHT
         to prevent a single high-timeframe strategy from dominating voting."""
         if self.weight_manager is not None:
             w = self.weight_manager.get_weight(strategy_name)
         else:
             w = self.weights.get(strategy_name, 1.0)
+        # IC tracker: penalize inverted/decaying factors (0.0 = inverted, 0.5 = unknown, 1.0 = healthy)
+        if self.ic_tracker is not None:
+            try:
+                ic_weight = self.ic_tracker.get_ic_weight(strategy_name)
+                if ic_weight < 1.0:
+                    logger.info(
+                        f"[IC] {strategy_name} weight adjusted by IC: {w:.3f} * {ic_weight:.2f} = {w * ic_weight:.3f}"
+                    )
+                w *= ic_weight
+            except Exception:
+                pass  # IC tracker error shouldn't break voting
         # Cap daily-TF strategies so they can't overpower intraday consensus
         if self.STRATEGY_TIMEFRAME.get(strategy_name) == "daily":
             w = min(w, self.MAX_OPPOSITION_WEIGHT)
@@ -1220,12 +1302,22 @@ class EnsembleStrategy:
             weighted_conf = sum(s.confidence for s in signals) / len(signals)
 
         # Consensus bonus: reward genuine multi-strategy agreement.
-        # 10d backtest: 3_agree PF=4.05, 86% WR — genuine confluence has edge.
-        #   2 agree: 1.03x    3 agree: 1.06x    4 agree: 1.10x
+        # Regime-aware: trending regimes justify higher consensus bonus (WR jumps
+        # from 40% at 2-agree to 86% at 3-agree in consolidation).
+        # Exponential instead of flat 3% per strategy.
         n_agree = len(signals)
-        consensus_mult = 1.0
-        if n_agree >= 2:
-            consensus_mult = 1.0 + 0.03 * (n_agree - 1)
+        _regime = self._current_regime.get(symbol, "unknown")
+        _CONSENSUS_MULT = {
+            "trending_bull":    {2: 1.06, 3: 1.14, 4: 1.20},
+            "trending_bear":    {2: 1.04, 3: 1.10, 4: 1.15},
+            "consolidation":    {2: 1.08, 3: 1.18, 4: 1.28},
+            "range":            {2: 1.03, 3: 1.06, 4: 1.10},
+            "high_volatility":  {2: 1.02, 3: 1.04, 4: 1.06},
+            "panic":            {2: 1.01, 3: 1.02, 4: 1.03},
+        }
+        _default_mult = {2: 1.04, 3: 1.08, 4: 1.12}
+        _regime_mults = _CONSENSUS_MULT.get(_regime, _default_mult)
+        consensus_mult = _regime_mults.get(n_agree, 1.0) if n_agree >= 2 else 1.0
         # Cap ensemble confidence — raised to 92% so genuine unanimous signals pass
         try:
             from trading_config import TradingConfig
@@ -1309,29 +1401,58 @@ class EnsembleStrategy:
         # This makes EV a LOWER BOUND rather than an optimistic estimate.
         stop_width = abs(entry - best_sl)
         rr_tp1 = abs(entry - best_tp1) / stop_width if stop_width > 0 else 0
+        rr_tp2 = abs(entry - best_tp2) / stop_width if stop_width > 0 else 0
         raw_win_prob = combined_conf / 100.0
-        # Conservative win probability: deflate by empirical overconfidence ratio.
-        # Higher agreement = better calibration = less deflation needed.
-        if n_agree >= 4:
-            win_prob = raw_win_prob * 0.90  # 10% deflation (unanimous, well calibrated)
-        elif n_agree >= 3:
-            win_prob = raw_win_prob * 0.80  # 20% deflation (good but not perfect)
-        else:
-            # 2-agree: use regime info to adjust deflation.
-            # In confirmed trending regime with min_votes reduction, the trend
-            # itself acts as a third confirmation → less deflation needed.
-            regime = self._current_regime.get(symbol, "unknown")
-            if regime == "trend":
-                win_prob = raw_win_prob * 0.68  # 32% deflation (trend confirms)
-            else:
-                win_prob = raw_win_prob * 0.55  # 45% deflation (no trend support)
+        # Win probability deflation: regime-aware calibration.
+        # Trending regimes have empirically higher WR (58-86%), so deflate less.
+        # High-vol/range regimes have lower WR, so deflate more.
+        # Format: {n_agree: {regime: deflation_factor}}
+        _WP_DEFLATION = {
+            4: {"trending_bull": 0.93, "trending_bear": 0.90, "consolidation": 0.92,
+                "range": 0.85, "high_volatility": 0.80, "panic": 0.75},
+            3: {"trending_bull": 0.85, "trending_bear": 0.82, "consolidation": 0.88,
+                "range": 0.78, "high_volatility": 0.72, "panic": 0.68},
+            2: {"trending_bull": 0.75, "trending_bear": 0.72, "consolidation": 0.70,
+                "range": 0.65, "high_volatility": 0.60, "panic": 0.55},
+            1: {"trending_bull": 0.55, "trending_bear": 0.52, "consolidation": 0.50,
+                "range": 0.45, "high_volatility": 0.40, "panic": 0.35},
+        }
+        _DEFAULT_DEFLATION = {4: 0.88, 3: 0.80, 2: 0.65, 1: 0.50}
+        _regime_ev = self._current_regime.get(symbol, "unknown")
+        _agree_key = min(n_agree, 4)
+        _deflation = _WP_DEFLATION.get(_agree_key, {}).get(
+            _regime_ev, _DEFAULT_DEFLATION.get(_agree_key, 0.65)
+        )
+        win_prob = raw_win_prob * _deflation
         try:
             from trading_config import TradingConfig as _TConf
             _fee_bps = _TConf().taker_fee_bps
         except Exception:
             _fee_bps = 4
-        fee_drag = (entry * _fee_bps * 2 / 10000.0) / stop_width if stop_width > 0 else 0
-        ev_per_dollar = round(win_prob * (rr_tp1 - fee_drag) - (1.0 - win_prob) * (1.0 + fee_drag), 4)
+        # Regime-specific slippage: high-vol/panic markets have wider spreads
+        # and worse fills. Add slippage as additional cost beyond fees.
+        _REGIME_SLIPPAGE_BPS = {
+            "trending_bull": 1, "trending_bear": 2, "trend": 1,
+            "consolidation": 1, "range": 1,
+            "high_volatility": 4, "panic": 6,
+            "low_liquidity": 5, "news_dislocation": 5,
+        }
+        _slippage_bps = _REGIME_SLIPPAGE_BPS.get(_regime_ev, 2)
+        _total_cost_bps = _fee_bps * 2 + _slippage_bps  # round-trip fees + slippage
+        fee_drag = (entry * _total_cost_bps / 10000.0) / stop_width if stop_width > 0 else 0
+        # Partial-close-aware EV: model TP1 partial close + TP2 continuation
+        # After TP1 hit, SL moves to breakeven → remaining position is risk-free
+        # but only ~50% chance of reaching TP2 (conservative estimate)
+        _tp1_close_pct = 0.60  # Default: MEDIUM profile closes 60% at TP1
+        _p_tp2_given_tp1 = 0.45  # Conservative: once TP1 hit and SL at BE, 45% reach TP2
+        # Blended win payoff: tp1_pct gets rr_tp1, remainder gets expected rr_tp2
+        _win_payoff = (
+            _tp1_close_pct * (rr_tp1 - fee_drag)
+            + (1 - _tp1_close_pct) * _p_tp2_given_tp1 * (rr_tp2 - fee_drag)
+            # remaining position that doesn't reach TP2: exits at ~breakeven (0 gain, pay exit fee)
+            + (1 - _tp1_close_pct) * (1 - _p_tp2_given_tp1) * (-fee_drag * 0.5)
+        )
+        ev_per_dollar = round(win_prob * _win_payoff - (1.0 - win_prob) * (1.0 + fee_drag), 4)
 
         # Defense-in-depth: reject negative-EV signals at ensemble level.
         # The signal pipeline also checks EV, but this prevents wasted computation
@@ -1372,7 +1493,9 @@ class EnsembleStrategy:
                 "per_signal_tp1": per_signal_tp1,
                 "mode": self.mode,
                 "ev_per_dollar": ev_per_dollar,
+                "win_prob": round(win_prob, 4),
                 "rr_tp1": round(rr_tp1, 3),
+                "rr_tp2": round(rr_tp2, 3),
                 "fee_drag_pct": round(fee_drag * 100, 1) if stop_width > 0 else 0.0,
                 "stop_width_pct": round(stop_width / entry * 100, 3) if entry > 0 else 0.0,
                 "chop_score": _chop_score,
