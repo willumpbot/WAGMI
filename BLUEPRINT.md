@@ -839,14 +839,36 @@ Must achieve over 21 days:
 | 10 | Walk-forward | `_wf_ratio` | Auto-reduce on OOS degradation |
 | 11 | Cap/Floor | 0.1×-2.0× | Prevent extreme sizes |
 
+### Session 3g: EV Formula Fix + Calibration Tracking
+
+**Source**: Deep EV audit agent (10 critical findings). Implemented top 3.
+
+**Changes Implemented:**
+1. **Partial-close-aware EV formula** (`ensemble.py`)
+   - Old formula assumed 100% closes at TP1 (systematically underestimated true edge)
+   - New formula: 60% closes at TP1, 45% of remainder reaches TP2, rest at ~breakeven
+   - `EV = p_win × [0.6 × (rr1 - fee) + 0.4 × 0.45 × (rr2 - fee) + 0.4 × 0.55 × (-fee/2)] - p_loss × (1 + fee)`
+   - This corrects the single biggest source of false EV rejections
+2. **EV vs realized outcome tracking** (`multi_strategy_main.py`)
+   - Trade ledger now records: `predicted_ev`, `realized_rr`, `win` flag
+   - Enables post-hoc calibration: predicted vs actual WR by agreement/regime
+   - Foundation for adaptive deflation factor recalibration
+3. **Entry reasons now store EV data** (`multi_strategy_main.py`)
+   - `ev_per_dollar`, `win_prob_deflated`, `fee_drag_pct` in entry_reasons
+   - Available at close time for calibration tracking
+4. **Ensemble metadata expanded** (`ensemble.py`)
+   - Now includes `win_prob`, `rr_tp2` for downstream analysis
+
 ### Still Pending
 
 - [ ] Wire rebalance suggestions into exit intelligence (currently computed but ignored)
-- [ ] Run 30-day backtest with full missed trade tracking to calibrate gates
+- [ ] Run 30-day backtest with full missed trade tracking to calibrate EV
 - [ ] Seed signal quality from backtest before paper trading
 - [ ] Auto-reduce sizing when rolling Sharpe < 0 for 3+ consecutive days
 - [ ] ATR multiplier sweep for BTC-specific optimization
 - [ ] Graduated correlation size reduction (continuous vs binary 0.85 threshold)
+- [ ] Empirically validate win_prob deflation factors from trade data
+- [ ] Add funding cost model to EV calculation (estimated hold time × rate)
 
 ---
 
