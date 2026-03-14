@@ -91,10 +91,20 @@ class RiskFilterChain:
         meta["rr_tp2"] = round(signal.risk_reward_tp2, 2)
 
         # Gate 1c: Fee-drag filter
-        # Reject trades where round-trip fees consume too much of the stop width.
+        # Reject trades where round-trip fees + slippage consume too much of stop width.
         # A stop width of 0.3% with 0.10% round-trip fees = 33% fee drag — barely viable.
         fee_bps = getattr(self.config, "taker_fee_bps", 4)
-        round_trip_fee_pct = fee_bps * 2 / 10000.0  # Entry + exit fee as fraction
+        slippage_bps = getattr(self.config, "slippage_bps", 3)
+        # Regime-specific slippage: high-vol/panic have wider spreads
+        _regime_slippage = {
+            "trending_bull": 1, "trending_bear": 2, "trend": 1,
+            "consolidation": 1, "range": 1,
+            "high_volatility": 4, "panic": 6,
+            "low_liquidity": 5, "news_dislocation": 5,
+        }
+        _sig_regime = (signal.metadata or {}).get("regime", "unknown")
+        _extra_slip = _regime_slippage.get(_sig_regime, 2)
+        round_trip_fee_pct = (fee_bps * 2 + _extra_slip) / 10000.0
         stop_pct = signal.stop_width_pct
         if stop_pct > 0:
             fee_drag_pct = round_trip_fee_pct / stop_pct
@@ -360,9 +370,17 @@ class RiskFilterChain:
             detail=f"rr={rr:.2f} vs {min_rr:.1f}",
         ))
 
-        # ── Soft Gate: Fee-drag ──
+        # ── Soft Gate: Fee-drag (regime-aware slippage) ──
         fee_bps = getattr(self.config, "taker_fee_bps", 4)
-        round_trip_fee_pct = fee_bps * 2 / 10000.0
+        _regime_slip_ann = {
+            "trending_bull": 1, "trending_bear": 2, "trend": 1,
+            "consolidation": 1, "range": 1,
+            "high_volatility": 4, "panic": 6,
+            "low_liquidity": 5, "news_dislocation": 5,
+        }
+        _sig_regime_ann = (signal.metadata or {}).get("regime", "unknown")
+        _extra_slip_ann = _regime_slip_ann.get(_sig_regime_ann, 2)
+        round_trip_fee_pct = (fee_bps * 2 + _extra_slip_ann) / 10000.0
         stop_pct = signal.stop_width_pct
         if stop_pct > 0:
             fee_drag_pct = round_trip_fee_pct / stop_pct
