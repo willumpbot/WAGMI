@@ -44,6 +44,7 @@ from strategies.funding_rate import FundingRateStrategy
 from strategies.oi_delta import OIDeltaStrategy
 from strategies.lead_lag import LeadLagStrategy
 from strategies.liquidation_cascade import LiquidationCascadeStrategy
+from strategies.cvd_signal import CVDSignalStrategy
 
 logger = logging.getLogger("bot.backtest")
 
@@ -412,6 +413,8 @@ class BacktestEngine:
         # BTC cross-data strategy (data injected in run() symbol loop)
         if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "false").lower() == "true":  # 0% WR, -$137/trade EV
             all_strats["lead_lag"] = LeadLagStrategy(sym_configs)
+        if os.getenv("STRATEGY_CVD_SIGNAL_ENABLED", "true").lower() == "true":
+            all_strats["cvd_signal"] = CVDSignalStrategy(sym_configs)
 
         # Metadata-dependent strategies — funding_rate and oi_delta need exchange API
         # data (return None gracefully when missing). liquidation_cascade works with

@@ -189,13 +189,14 @@ class RegimeTrendStrategy(BaseStrategy):
         # ATR for TP/SL
         c = float(df_1h["close"].iloc[-1])
         A = float(_atr(df_1h, 14).iloc[-1])
-        # Regime-conditional ATR multiplier for SL/TP
+        # Regime-conditional ATR multiplier for SL/TP (per-symbol atr_mult_sl if set)
         try:
-            from trading_config import TradingConfig as _TC, get_regime_sl_tp
+            from trading_config import TradingConfig as _TC, get_regime_sl_tp, get_symbol_param
             _cfg = _TC()
             _regime = self._current_regime if hasattr(self, '_current_regime') else "unknown"
+            _base_sl = get_symbol_param(symbol, "atr_mult_sl", _cfg) or _cfg.sl_atr_multiplier
             _sl_mult, self._tp1_mult, self._tp2_mult = get_regime_sl_tp(
-                _regime, _cfg.sl_atr_multiplier, 2.0, 4.0
+                _regime, _base_sl, 2.0, 4.0
             )
         except Exception:
             _sl_mult, self._tp1_mult, self._tp2_mult = 1.5, 2.0, 4.0

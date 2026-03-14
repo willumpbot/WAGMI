@@ -142,11 +142,6 @@ class TradingConfig:
         default_factory=lambda: _env_bool("STRATEGY_MULTI_TIER_QUALITY_ENABLED", False)
     )  # PF 0.82, -$1,223 net, 10-consecutive-loss streak, common factor in every toxic combo
 
-    # ── BTC-Specific Risk Overrides ──
-    btc_atr_multiplier: float = field(
-        default_factory=lambda: _env_float("BTC_ATR_MULTIPLIER", 1.75)
-    )  # Widen from default 1.0-1.25: BTC capped 33/54 trades (61%), payoff ratio 0.76:1
-
     # ML
     enable_ml: bool = field(default_factory=lambda: _env_bool("ENABLE_ML", True))
     ml_min_samples: int = field(default_factory=lambda: _env_int("ML_MIN_SAMPLES", 20))
@@ -556,13 +551,15 @@ DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
     # BTC: reduced leverage (was 25x), halved risk_per_trade — BTC lost -$2,120 on
     # 10d backtest (38% WR). Lower volatility = ATR stops proportionally tighter,
     # needs less risk per trade to compensate.
-    "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=_env_float("BTC_RISK_OVERRIDE", 0.004), volatility_profile="low"),
+    "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=_env_float("BTC_RISK_OVERRIDE", 0.004),
+                           volatility_profile="low",
+                           atr_mult_sl=_env_float("BTC_ATR_MULTIPLIER", 1.75)),
+    # BTC_ATR_MULTIPLIER=1.75 (was btc_atr_multiplier in TradingConfig — now per-symbol, wired via get_symbol_param)
     # BTC risk slightly below global 0.5% since BTC ATR stops are proportionally tighter
-    # SOL: "high" volatility profile unlocks the same lenient chop floor as HYPE (85% max
-    # vs 90% with "medium") — SOL has strong intraday swings worth trading aggressively.
-    # regime_blocklist blocks trending_bear: 70d backtest showed 0% WR in that regime.
-    "SOL": SymbolOverrides(max_leverage=20.0, volatility_profile="high",
-                           regime_blocklist=["trending_bear"]),
+    # SOL: "high" volatility profile unlocks lenient chop floor (85% max vs 90% with "medium").
+    # atr_mult_sl=2.5 widens stops 25% vs global 2.0x — SOL wicks 1.5-2% intraday, global 2.0x
+    # gives only 0.6-1.0% room which gets hunted. 2.5x gives ~1.25% room to let moves breathe.
+    "SOL": SymbolOverrides(max_leverage=20.0, volatility_profile="high", atr_mult_sl=2.5),
     "HYPE": SymbolOverrides(max_leverage=20.0, volatility_profile="high"),
     "DOGE": SymbolOverrides(max_leverage=12.0, volatility_profile="high"),
     "FARTCOIN": SymbolOverrides(max_leverage=10.0, volatility_profile="high"),
