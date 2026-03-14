@@ -75,6 +75,8 @@ class EnsembleStrategy:
         self._current_regime: Dict[str, str] = {}  # symbol -> regime string (1h)
         self._current_regime_4h: Dict[str, str] = {}  # symbol -> regime string (4h)
         self._volatility_profiles: Dict[str, str] = {}  # symbol -> "low"/"medium"/"high"
+        # Diagnostic counters exposed for engine.py signal funnel reporting
+        self.regime_blocklist_rejections: int = 0  # Signals blocked by per-symbol regime_blocklist
 
     def set_quality_scorer(self, scorer):
         """Inject SignalQualityScorer so quality feedback affects ensemble confidence."""
@@ -447,6 +449,7 @@ class EnsembleStrategy:
                         f"for {symbol} (historical 0% WR)"
                     )
                     self._record_counterfactual(result, f"regime_blocklist_{_current_reg}")
+                    self.regime_blocklist_rejections += 1
                     return None
         except Exception:
             pass

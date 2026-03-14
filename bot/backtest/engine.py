@@ -123,6 +123,7 @@ class BacktestEngine:
         self.candle_stats = {"total": 0, "signal": 0, "no_signal": 0, "cb_blocked": 0}
         self.symbol_pnl: Dict[str, float] = {}  # Per-symbol equity attribution
         self._signal_digests: List[Dict] = []  # Per-candle signal digest for quant learning
+        self._ensemble: Optional[EnsembleStrategy] = None  # Stored for diagnostic access
 
         # Candidate tracking for counterfactual analysis
         self._candidate_logger = None
@@ -198,6 +199,7 @@ class BacktestEngine:
             chop_detector=chop,
             confidence_floor=self.config.ensemble_confidence_floor,
         )
+        self._ensemble = ensemble  # Store for diagnostic access in reporting methods
         # Wire missed trade tracker into ensemble for rejection feedback
         ensemble.set_missed_trade_tracker(self.missed_trade_tracker)
         # Wire volatility profiles for per-symbol confidence floor capping
@@ -1684,6 +1686,7 @@ class BacktestEngine:
             "risk_metrics": self._report_risk_metrics(max_drawdown, max_dd_duration),
             "trailing_analysis": self._report_trailing_analysis(),
             "by_regime": self._report_by_regime(),
+            "by_symbol_regime": self._report_by_symbol_regime(),
             "conf_regime_crosstab": self._report_confidence_regime_crosstab(),
             "symbol_pnl": self.symbol_pnl,
             "recommendations": self._generate_recommendations(),
@@ -2109,11 +2112,19 @@ class BacktestEngine:
         cb_blocked = self.candle_stats["cb_blocked"]
         signal_gen = self.candle_stats["signal"]
 
-        # Count rejections by gate
+        # Count rejections by gate (signals that passed ensemble but failed risk gates)
         gate_counts = {}
         for rej in self.signal_rejections:
             gate = rej.get("gate", "unknown")
             gate_counts[gate] = gate_counts.get(gate, 0) + 1
+
+        # Count rejection reasons (human-readable breakdown of what killed signals)
+        reason_counts: Dict[str, int] = {}
+        for rej in self.signal_rejections:
+            reason = rej.get("reason", "unknown")
+            # Truncate to first 60 chars to group similar reasons
+            short_reason = str(reason)[:60]
+            reason_counts[short_reason] = reason_counts.get(short_reason, 0) + 1
 
         executed = len(self.signals_generated)
         regime_blocked = self.candle_stats.get("regime_blocked", 0)
@@ -2123,13 +2134,20 @@ class BacktestEngine:
         if other_rejections < 0:
             other_rejections = 0
 
+        # Per-symbol regime blocklist rejections (from EnsembleStrategy)
+        sym_regime_blocklisted = 0
+        if self._ensemble is not None:
+            sym_regime_blocklisted = getattr(self._ensemble, 'regime_blocklist_rejections', 0)
+
         return {
             "candles_processed": total,
             "no_signal": no_signal,
             "cb_blocked": cb_blocked,
             "regime_blocked": regime_blocked,
+            "sym_regime_blocklisted": sym_regime_blocklisted,  # Per-symbol regime_blocklist hits
             "signals_generated": signal_gen,
             "gate_rejections": gate_counts,
+            "rejection_reasons": reason_counts,  # Human-readable: what killed each signal at gates
             "other_rejections": other_rejections,  # ensemble-level rejections (confidence floor, chop, etc.)
             "executed": executed,
             "conversion_rate": round(executed / total * 100, 1) if total > 0 else 0,
@@ -2424,6 +2442,37 @@ class BacktestEngine:
             stats["pnl"] = round(stats.get("pnl", 0), 2)
 
         return regime_stats
+
+    def _report_by_symbol_regime(self) -> Dict[str, Any]:
+        """Cross-table: symbol × regime → trades, WR, PnL.
+        Reveals exactly which symbol+regime combinations are destroying or making money.
+        E.g. 'SOL in trending_bear = 0% WR, -$820' vs 'BTC in consolidation = 100% WR, +$4,155'
+        """
+        result: Dict[str, Dict[str, Dict]] = {}
+        for event in self.pos_mgr.trade_log:
+            if event.action not in self._CLOSE_ACTIONS:
+                continue
+            sym = event.symbol or "unknown"
+            meta = event.metadata or {}
+            regime = meta.get("regime", "") or (meta.get("entry_reasons") or {}).get("regime", "unknown")
+            if not regime:
+                regime = "unknown"
+            if sym not in result:
+                result[sym] = {}
+            if regime not in result[sym]:
+                result[sym][regime] = {"trades": 0, "wins": 0, "pnl": 0.0}
+            bucket = result[sym][regime]
+            bucket["trades"] += 1
+            if event.pnl > 0:
+                bucket["wins"] += 1
+            bucket["pnl"] += event.pnl
+        # Compute win rates and round PnL
+        for sym in result:
+            for regime, stats in result[sym].items():
+                t = stats["trades"]
+                stats["win_rate"] = round(stats["wins"] / t * 100, 1) if t > 0 else 0
+                stats["pnl"] = round(stats["pnl"], 2)
+        return result
 
     def _report_confidence_regime_crosstab(self) -> Dict[str, Any]:
         """Cross-tab: confidence band × regime → WR and PnL.
