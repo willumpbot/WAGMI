@@ -152,30 +152,45 @@ class TestCircuitBreakerSessionDD:
 # ═══════════════════════════════════════════════════════════════
 
 class TestRegimeMinVotes:
-    """B1: Regime-gated min_votes lookup table (quant approach: trade more, bet smaller)."""
+    """B1: Regime-gated min_votes lookup table.
 
-    def test_bear_regime_requires_3(self):
-        """With 9 strategies, min_votes=3 ensures 33%+ agreement."""
-        from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bear") == 3
+    In backtest, funding_rate/oi_delta/liquidation_cascade return None (need live data).
+    Effective pool is 3-5 strategies per regime, not 9. Setting min_votes=3 with a 5-strategy
+    pool = 60% agreement rate, which kills signals. Use 2 for normal regimes; 3 only for
+    extreme regimes where the tighter gate is worth the signal loss.
+    """
 
-    def test_bull_regime_requires_3(self):
-        """With 9 strategies, min_votes=3 ensures conviction."""
+    def test_bear_regime_requires_2(self):
+        """Bear: 2-agree with reduced size; EV gate handles quality."""
         from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bull") == 3
+        assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bear") == 2
 
-    def test_consolidation_requires_3(self):
+    def test_bull_regime_requires_2(self):
+        """Bull: 2-agree; trend direction provides directional conviction."""
         from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("consolidation") == 3
+        assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bull") == 2
 
-    def test_unknown_defaults_to_3(self):
+    def test_consolidation_requires_2(self):
         from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("unknown") == 3
+        assert EnsembleStrategy.REGIME_MIN_VOTES.get("consolidation") == 2
+
+    def test_unknown_requires_2(self):
+        from strategies.ensemble import EnsembleStrategy
+        assert EnsembleStrategy.REGIME_MIN_VOTES.get("unknown") == 2
 
     def test_high_vol_requires_2(self):
-        """High vol stays at 2: only 5 strategies allowlisted (2/5 = 40% agreement)."""
+        """High vol stays at 2: only 5 strategies allowlisted."""
         from strategies.ensemble import EnsembleStrategy
         assert EnsembleStrategy.REGIME_MIN_VOTES.get("high_volatility") == 2
+
+    def test_panic_requires_3(self):
+        """Extreme regimes require conviction — thin liquidity, event-driven moves."""
+        from strategies.ensemble import EnsembleStrategy
+        assert EnsembleStrategy.REGIME_MIN_VOTES.get("panic") == 3
+
+    def test_low_liquidity_requires_3(self):
+        from strategies.ensemble import EnsembleStrategy
+        assert EnsembleStrategy.REGIME_MIN_VOTES.get("low_liquidity") == 3
 
 
 class TestRegimeAllowlist:

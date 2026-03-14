@@ -145,21 +145,21 @@ class EnsembleStrategy:
     # consolidation 2-agree = 80-89% WR = best regime.
     # Quant philosophy: trade more often with smaller size. Single high-conviction
     # strategy trades allowed in trending regimes (risk_mult=0.5 for 1-agree).
-    # EV gates + small position size handle quality; min_votes shouldn't over-filter.
-    # With 9 active strategies, 2/9 = 22% agreement is too weak.
-    # Raise to 3 for most regimes. Exception: high_volatility stays at 2
-    # because only 5 strategies are allowlisted there (2/5 = 40% agreement).
+    # In backtest, funding_rate/oi_delta/liquidation_cascade return None (need live data).
+    # Effective pool per regime is 3-5 strategies, not 9. Requiring 3/5 = 60% agreement
+    # kills almost all signals. Lowered to 2 for regimes with 4+ active strategies.
+    # High-risk regimes (panic, low_liquidity, news_dislocation) stay at 3.
     REGIME_MIN_VOTES = {
-        'trending_bear':   3,
-        'trending_bull':   3,
-        'trend':           3,
-        'consolidation':   3,
-        'range':           3,
-        'high_volatility': 2,   # only 5 strategies allowed in this regime
-        'panic':           3,
-        'low_liquidity':   3,
-        'news_dislocation': 3,
-        'unknown':         3,
+        'trending_bear':   2,
+        'trending_bull':   2,
+        'trend':           2,
+        'consolidation':   2,
+        'range':           2,
+        'high_volatility': 2,
+        'panic':           3,   # extreme regime: require conviction
+        'low_liquidity':   3,   # thin book: require conviction
+        'news_dislocation': 3,  # event-driven: require conviction
+        'unknown':         2,
     }
 
     # Regime-specific strategy allowlist: only strategies with proven edge
