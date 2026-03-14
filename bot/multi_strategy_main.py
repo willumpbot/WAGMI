@@ -571,6 +571,15 @@ class MultiStrategyBot:
                 kelly_engine=self.kelly_engine,
             )
             self.ensemble.set_shadow_ledger(self.shadow_ledger)
+            # Wire missed trade tracker into ensemble + main loop
+            try:
+                from feedback.missed_trade_tracker import MissedTradeTracker
+                self._missed_trade_tracker = MissedTradeTracker(data_dir="data")
+                self.ensemble.set_missed_trade_tracker(self._missed_trade_tracker)
+                logger.info("[INIT] MissedTradeTracker wired into ensemble + pipeline")
+            except Exception as mt_e:
+                logger.debug(f"[INIT] MissedTradeTracker unavailable: {mt_e}")
+                self._missed_trade_tracker = None
             # Wire IC tracker into ensemble so inverted/decaying factors get downweighted in voting
             if self.ic_tracker:
                 self.ensemble.ic_tracker = self.ic_tracker
@@ -585,6 +594,7 @@ class MultiStrategyBot:
             self.correlation_gate = None
             self._sector_exposure_cls = None
             self.execution_analytics = None
+            self._missed_trade_tracker = None
             self.daily_reporter = None
 
         # Growth intelligence: self-evolving meta-brain
@@ -3076,6 +3086,16 @@ class MultiStrategyBot:
                     f"[{trace_id}][{symbol}] RiskFilterChain rejected: "
                     f"{_chain_result.rejection_reason}"
                 )
+                # Track pipeline rejection in missed trade tracker
+                if self._missed_trade_tracker is not None:
+                    try:
+                        self._missed_trade_tracker.record_rejection(
+                            signal=signal_result,
+                            reason=_chain_result.rejection_reason,
+                            gate="pipeline",
+                        )
+                    except Exception:
+                        pass
 
                 # ── Annotated chain: record what filters measured even on rejection ──
                 if getattr(self.config, 'enable_soft_filters', False) or getattr(self.config, 'soft_filter_log_only', False):

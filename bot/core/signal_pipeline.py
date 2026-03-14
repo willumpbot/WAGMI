@@ -53,6 +53,22 @@ class RiskFilterChain:
         self.risk_mgr = risk_mgr
         self.leverage_mgr = leverage_mgr
         self.config = config
+        self._missed_trade_tracker = None  # Optional: set via set_missed_trade_tracker()
+
+    def set_missed_trade_tracker(self, tracker):
+        """Inject MissedTradeTracker for rejection tracking."""
+        self._missed_trade_tracker = tracker
+
+    def _track_pipeline_rejection(self, signal: Signal, reason: str):
+        """Record a pipeline rejection in the missed trade tracker."""
+        if self._missed_trade_tracker is None:
+            return
+        try:
+            self._missed_trade_tracker.record_rejection(
+                signal=signal, reason=reason, gate="pipeline",
+            )
+        except Exception:
+            pass
 
     def evaluate(
         self,

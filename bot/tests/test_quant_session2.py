@@ -478,6 +478,26 @@ class TestRegimeSlippage:
             compound_mult *= 0.5
         assert compound_mult == 1.0
 
+    def test_pipeline_rejection_tracking(self):
+        """Pipeline rejections should be trackable via MissedTradeTracker."""
+        from feedback.missed_trade_tracker import MissedTradeTracker
+        from strategies.base import Signal
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tracker = MissedTradeTracker(data_dir=tmpdir)
+            sig = Signal(
+                strategy="ensemble", symbol="BTC", side="BUY",
+                confidence=65.0, entry=100.0, sl=99.0, tp1=102.0, tp2=104.0, atr=1.0,
+                metadata={"num_agree": 2, "regime": "trending_bull"}
+            )
+            tracker.record_rejection(
+                signal=sig, reason="Fee drag 35% > 25%", gate="pipeline",
+            )
+            assert len(tracker._session_misses) == 1
+            assert tracker._session_misses[0].rejection_gate == "pipeline"
+            assert "fee drag" in tracker._session_misses[0].rejection_reason.lower()
+
     def test_slippage_bps_values(self):
         """Verify slippage values are reasonable (1-6 bps range)."""
         expected = {
