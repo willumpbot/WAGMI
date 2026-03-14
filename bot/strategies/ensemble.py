@@ -398,6 +398,10 @@ class EnsembleStrategy:
         elif self._is_low_volume(symbol, data):
             # Fallback to simple volume filter if no chop detector
             logger.info(f"[{symbol}] Signal skipped: low volume (chop filter)")
+            if self._missed_trade_tracker is not None:
+                self._missed_trade_tracker.record_ensemble_rejection(
+                    symbol=symbol, signals=signals, reason="low_volume_chop"
+                )
             return None
 
         if self.mode == "voting":
@@ -425,6 +429,13 @@ class EnsembleStrategy:
                 "regime_4h": self._current_regime_4h.get(symbol, "unknown"),
                 "agreement_level": agreement_level,
             }
+            if self._missed_trade_tracker is not None:
+                try:
+                    self._missed_trade_tracker.record_rejection(
+                        signal=result, reason="4h_regime_conflict", gate="ensemble"
+                    )
+                except Exception:
+                    pass
             return None
 
         # ── Pre-floor quality adjustment ──
@@ -732,6 +743,16 @@ class EnsembleStrategy:
             "strategy": signal.strategy or "",
             "regime": signal.metadata.get("regime", ""),
         }
+        # MissedTradeTracker: comprehensive rejection feedback (backtest + live)
+        if self._missed_trade_tracker is not None:
+            try:
+                self._missed_trade_tracker.record_rejection(
+                    signal=signal,
+                    reason=skip_reason,
+                    gate="ensemble",
+                )
+            except Exception:
+                pass
         try:
             from llm.brain_wiring import record_skipped_trade
             record_skipped_trade(
@@ -1094,6 +1115,10 @@ class EnsembleStrategy:
                     logger.info(f"[{symbol}] Only {len(buy_signals)} BUY signal(s), need {min_v}+ same-side")
                 elif sell_signals:
                     logger.info(f"[{symbol}] Only {len(sell_signals)} SELL signal(s), need {min_v}+ same-side")
+                if self._missed_trade_tracker is not None:
+                    self._missed_trade_tracker.record_ensemble_rejection(
+                        symbol=symbol, signals=signals, reason="insufficient_votes"
+                    )
                 return None
 
         # Block known-losing combos (backtest-validated toxic combinations).
@@ -1114,6 +1139,10 @@ class EnsembleStrategy:
                             f"[{symbol}] Blocked losing combo {sorted(blocked)} "
                             f"in {sorted(signal_names)}"
                         )
+                        if self._missed_trade_tracker is not None:
+                            self._missed_trade_tracker.record_ensemble_rejection(
+                                symbol=symbol, signals=signals, reason="losing_combo"
+                            )
                         return None
 
         buy_strength = self._weighted_confidence_sum(buy_signals) if buy_signals else 0
@@ -1135,6 +1164,10 @@ class EnsembleStrategy:
                 f"< {opposition[0].side} strength={oppose_strength:.1f} * {self.veto_ratio} "
                 f"= {oppose_strength * self.veto_ratio:.1f}"
             )
+            if self._missed_trade_tracker is not None:
+                self._missed_trade_tracker.record_ensemble_rejection(
+                    symbol=symbol, signals=signals, reason="opposition_veto"
+                )
             return None
 
         merged = self._merge_signals(symbol, chosen)

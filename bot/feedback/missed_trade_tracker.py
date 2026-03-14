@@ -373,7 +373,6 @@ class MissedTradeTracker:
 
         # Remove computed ones from pending
         with self._lock:
-            computed_symbols = {m for m in self._pending_counterfactuals if m.symbol == symbol}
             self._pending_counterfactuals = [
                 m for m in self._pending_counterfactuals if m.symbol != symbol
             ]

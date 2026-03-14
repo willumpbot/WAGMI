@@ -926,6 +926,9 @@ class MultiStrategyBot:
         trace_id = uuid.uuid4().hex[:8]
         _loop_start = time.time()
 
+        # Per-trade compound sizing cache: stored at entry, read at close for attribution
+        self._compound_mult_cache: Dict[str, float] = {}
+
         # Per-tick regime cache: computed once, reused by all subsystems
         # (avoids 5x redundant get_regime() calls per symbol per tick)
         self._tick_regime_cache = {}
@@ -1941,7 +1944,7 @@ class MultiStrategyBot:
                                     self.kelly_engine.compute_kelly_weight(event.strategy)
                                     if self.kelly_engine and event.strategy else ""
                                 ),
-                                "compound_size_multiplier": "",
+                                "compound_size_multiplier": str(self._compound_mult_cache.pop(symbol, "")),
                                 "leverage": str(pos.leverage),
                                 "hold_hours": f"{_hold_hours:.2f}",
                                 "exit_type": event.action,
@@ -3260,10 +3263,30 @@ class MultiStrategyBot:
                 _compound_mult *= self.risk_mgr.compute_btc_momentum_multiplier(
                     _btc_ret, signal_result.side
                 )
+            # Portfolio risk budget: scale down as budget fills up
+            if self.portfolio_risk:
+                try:
+                    _open = {s: {"side": p.side, "size_usd": p.notional or 0}
+                             for s, p in self.positions.items() if p and p.side}
+                    _budget = self.portfolio_risk.compute_risk_budget(
+                        self.risk_mgr.equity, _open, self.config.max_portfolio_risk_pct
+                    )
+                    if _budget.utilization > 0.5:
+                        # Linear scale: 1.0 at 50% util → 0.2 at 100% util
+                        _budget_mult = max(0.2, 1.0 - (_budget.utilization - 0.5) * 1.6)
+                        _compound_mult *= _budget_mult
+                        logger.info(
+                            f"[{symbol}] Portfolio risk budget {_budget.utilization:.0%} used, "
+                            f"sizing mult={_budget_mult:.2f}"
+                        )
+                except Exception as e:
+                    logger.debug(f"Portfolio risk budget check failed: {e}")
             # Cap at 2× base, floor at 0.1×
             _compound_mult = min(2.0, max(0.1, _compound_mult))
             # Apply compound multiplier to symbol risk
             _sym_risk = (_sym_risk or self.config.risk_per_trade) * _compound_mult
+            # Cache for trade ledger attribution at close
+            self._compound_mult_cache[symbol] = round(_compound_mult, 4)
         except Exception as e:
             logger.debug(f"Compound sizing error (using base): {e}")
 

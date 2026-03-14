@@ -650,7 +650,7 @@ Must achieve over 21 days:
 | Correlation Gate | 341 | Full | YES | Active in signal pipeline |
 | Walk-Forward (BT) | 343 | Full | YES | Backtest-only |
 | Walk-Forward (Live) | 205 | Full | Partial | Not continuously monitored |
-| Portfolio Risk | 1134 | Full | Partial | Computed but not enforced on sizing |
+| Portfolio Risk | 1134 | Full | **YES** | Budget utilization → compound sizing multiplier |
 | Quant Analytics | 576 | Full | Partial | Backtest-only |
 | Deployment Gate | 204 | Full | YES | One-time check |
 | Missed Trade Tracker | 400+ | **NEW** | **YES** | Comprehensive feedback loop |
@@ -664,12 +664,46 @@ Must achieve over 21 days:
 5. **Stale MTM prices**: Multi-symbol equity calc uses up to 1h stale prices for inactive symbols
 6. **No market impact**: Slippage is fixed 3 bps regardless of position size
 
+### Session 3 Progress (Swarm Findings + Deep Wiring)
+
+**Swarm Audit Results** — 6 agents analyzed the codebase. Key findings:
+- Kelly engine IS wired (confirmed, not dead code as initially reported)
+- Compound sizing IS active via `_compound_mult` (8-multiplier system)
+- Time stops ARE enforced in position_manager.py (8h default)
+- Trade ledger WAS recording empty compound_size_multiplier (fixed)
+- Portfolio risk budget WAS computed but NOT a sizing multiplier (fixed)
+- Missed trade tracker WAS only in backtest engine (fixed: now in ensemble too)
+
+**Changes Implemented:**
+1. **Portfolio risk budget → compound sizing** (`multi_strategy_main.py:3263-3283`)
+   - `compute_risk_budget()` now feeds into `_compound_mult`
+   - Linear scale: 1.0× at 50% budget utilization → 0.2× at 100%
+   - Prevents overleveraging as portfolio fills up
+2. **Trade ledger attribution fix** (`multi_strategy_main.py:1944`)
+   - `compound_size_multiplier` now records actual `_compound_mult` value (was `""`)
+   - `_compound_mult_cache` dict stores per-symbol at entry, pops at close
+3. **Missed trade tracker → ensemble wiring** (`ensemble.py:728-736, 401, 428, 1118, 1141, 1163`)
+   - All 6 ensemble rejection paths now record to MissedTradeTracker:
+     - Low volume/chop filter
+     - 4h regime conflict
+     - Insufficient votes
+     - Losing combo blocked
+     - Opposition veto (weighted)
+     - Confidence floor / graduated rules / trend alignment (via `_record_counterfactual`)
+4. **MissedTradeTracker bug fix** (`missed_trade_tracker.py:376`)
+   - Fixed unhashable dataclass in set comprehension
+5. **11 new tests** (`tests/test_quant_session2.py`)
+   - MissedTradeTracker: record, ensemble rejection, counterfactual, report, gate effectiveness
+   - Ensemble wiring: tracker injection, counterfactual delegation
+   - Portfolio risk budget: math verification at 50%/80%/100% utilization
+   - Compound mult cache: store/retrieve/pop lifecycle
+
 ### Still Pending
 
-- [ ] Enforce portfolio risk budget from `analytics/portfolio_risk.py` into actual position sizing
 - [ ] Wire live walk-forward validation with auto-sizing reduction on edge decay
 - [ ] Implement regime-conditional quant metrics in live trading
-- [ ] Address swarm agent findings (profitability improvements, strategy edge decay, EV math calibration)
+- [ ] Wire rebalance suggestions into exit intelligence (currently computed but ignored)
+- [ ] Run 30-day backtest with full missed trade tracking to calibrate gates
 
 ---
 

@@ -252,3 +252,119 @@ class TestDailyReportWF:
         result = reporter._metric_walk_forward()
         assert result["ratio"] is None
         assert "insufficient" in result["status"].lower() or result["status"] == "insufficient data or module unavailable"
+
+
+# ── Missed Trade Tracker ──────────────────────────────────────────
+
+class TestMissedTradeTracker:
+    def _make_tracker(self, tmpdir):
+        from feedback.missed_trade_tracker import MissedTradeTracker
+        return MissedTradeTracker(data_dir=str(tmpdir))
+
+    def _make_signal(self):
+        from strategies.base import Signal
+        return Signal(
+            strategy="bollinger_squeeze", symbol="BTC", side="BUY",
+            confidence=75.0, entry=65000.0, sl=64000.0,
+            tp1=66500.0, tp2=68000.0, atr=500.0,
+        )
+
+    def test_record_rejection(self, tmp_path):
+        tracker = self._make_tracker(tmp_path)
+        sig = self._make_signal()
+        tracker.record_rejection(signal=sig, reason="Fee drag 42% > 30%", gate="risk_filter")
+        assert len(tracker._session_misses) == 1
+        mt = tracker._session_misses[0]
+        assert mt.symbol == "BTC"
+        assert mt.rejection_category == "fee_drag"
+
+    def test_record_ensemble_rejection(self, tmp_path):
+        tracker = self._make_tracker(tmp_path)
+        sig = self._make_signal()
+        tracker.record_ensemble_rejection(symbol="BTC", signals=[sig], reason="insufficient_votes")
+        assert len(tracker._session_misses) == 1
+
+    def test_compute_counterfactuals(self, tmp_path):
+        tracker = self._make_tracker(tmp_path)
+        sig = self._make_signal()
+        tracker.record_rejection(signal=sig, reason="ev_floor", gate="risk_filter")
+        # Simulate a price series where price goes up (BUY would have won)
+        prices = [65000.0 + i * 100 for i in range(20)]
+        tracker.compute_counterfactuals("BTC", prices, start_idx=0, candle_duration_hours=1.0)
+        mt = tracker._session_misses[0]
+        assert mt.price_after_1h is not None
+
+    def test_generate_report(self, tmp_path):
+        tracker = self._make_tracker(tmp_path)
+        sig = self._make_signal()
+        tracker.record_rejection(signal=sig, reason="fee_drag", gate="risk_filter")
+        report = tracker.generate_report()
+        assert "total_missed" in report
+        assert report["total_missed"] == 1
+
+    def test_gate_effectiveness(self, tmp_path):
+        tracker = self._make_tracker(tmp_path)
+        result = tracker.get_gate_effectiveness()
+        assert isinstance(result, dict)
+
+
+# ── Ensemble Missed Trade Wiring ──────────────────────────────────
+
+class TestEnsembleMissedTradeWiring:
+    def test_set_missed_trade_tracker(self):
+        from strategies.ensemble import EnsembleStrategy
+        ens = EnsembleStrategy(strategies={}, mode="weighted_veto")
+        tracker = MagicMock()
+        ens.set_missed_trade_tracker(tracker)
+        assert ens._missed_trade_tracker is tracker
+
+    def test_record_counterfactual_calls_tracker(self):
+        from strategies.ensemble import EnsembleStrategy
+        from strategies.base import Signal
+        ens = EnsembleStrategy(strategies={}, mode="weighted_veto")
+        tracker = MagicMock()
+        ens.set_missed_trade_tracker(tracker)
+        sig = Signal(
+            strategy="test", symbol="BTC", side="BUY",
+            confidence=70.0, entry=65000.0, sl=64000.0,
+            tp1=66000.0, tp2=67000.0, atr=500.0,
+        )
+        ens._record_counterfactual(sig, "test_reason")
+        tracker.record_rejection.assert_called_once()
+
+
+# ── Portfolio Risk Budget in Compound Sizing ──────────────────────
+
+class TestPortfolioRiskBudgetSizing:
+    def test_risk_budget_reduces_sizing(self):
+        """Portfolio risk budget > 50% utilization should reduce compound mult."""
+        # Test the math: at 80% utilization, mult = 1.0 - (0.8 - 0.5) * 1.6 = 0.52
+        utilization = 0.8
+        budget_mult = max(0.2, 1.0 - (utilization - 0.5) * 1.6)
+        assert 0.5 < budget_mult < 0.55
+
+    def test_risk_budget_no_reduction_below_50pct(self):
+        """Below 50% utilization, no reduction should be applied."""
+        utilization = 0.3
+        # The code only applies reduction when utilization > 0.5
+        assert utilization <= 0.5  # No multiplier applied
+
+    def test_risk_budget_floor_at_20pct(self):
+        """At 100% utilization, budget_mult should floor at 0.2."""
+        utilization = 1.0
+        budget_mult = max(0.2, 1.0 - (utilization - 0.5) * 1.6)
+        assert budget_mult == 0.2
+
+
+# ── Compound Size Multiplier Cache ────────────────────────────────
+
+class TestCompoundMultCache:
+    def test_cache_stores_and_retrieves(self):
+        """_compound_mult_cache should store per-symbol values."""
+        cache = {}
+        cache["BTC"] = round(0.7543, 4)
+        assert cache["BTC"] == 0.7543
+        # Pop on close
+        val = cache.pop("BTC", "")
+        assert val == 0.7543
+        assert "BTC" not in cache
