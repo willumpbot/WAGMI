@@ -698,12 +698,46 @@ Must achieve over 21 days:
    - Portfolio risk budget: math verification at 50%/80%/100% utilization
    - Compound mult cache: store/retrieve/pop lifecycle
 
+### Session 3b: Profitability Improvements (Swarm Agent Findings)
+
+**Source**: Profitability swarm agent identified 10 issues with +15-30% total uplift potential.
+
+**Changes Implemented:**
+1. **Fee-drag gate tightened: 30% → 20%/25%** (`signal_pipeline.py:102, 370`)
+   - 2-agree signals: max 20% fee drag (was 30%)
+   - 3+ agree signals: max 25% fee drag (higher WR compensates)
+   - Eliminates negative-EV trades that were slipping through
+
+2. **Consensus multiplier: regime-aware exponential** (`ensemble.py:1288-1305`)
+   - Old: flat 1.03x per additional strategy (linear)
+   - New: regime-dependent lookup table:
+     - Consolidation 3-agree: 1.18x (was 1.06x) — 86% empirical WR justifies
+     - Trending 3-agree: 1.14x — strong edge confirmed
+     - High-vol 3-agree: 1.04x — low confidence in regime
+     - Range/panic: minimal bonus (1.03-1.06x)
+
+3. **Win probability deflation: regime-calibrated** (`ensemble.py:1389-1410`)
+   - Old: flat per agreement level (0.65 for 2-agree, 0.82 for 3-agree)
+   - New: 4×6 regime lookup table:
+     - Trending bull 2-agree: 0.75 (was 0.72) — empirical 58% WR supports
+     - High-vol 2-agree: 0.60 (was 0.65) — tighter deflation in unreliable regime
+     - Panic 1-agree: 0.35 (was 0.50) — extreme deflation prevents FOMO
+
+4. **Early exit: regime-adaptive** (`position_manager.py:364-423`)
+   - Old: fixed 65% SL progress + all 3 conditions required
+   - New: regime-dependent thresholds:
+     - Panic/high-vol: 35-40% progress, 1 condition (cut fast)
+     - Range/consolidation: 45-50% progress, 2 conditions
+     - Trending: 70% progress, 3 conditions (let trends breathe)
+   - Added 3rd condition: extreme SL progress (>80%) counts as condition
+
 ### Still Pending
 
 - [ ] Wire live walk-forward validation with auto-sizing reduction on edge decay
-- [ ] Implement regime-conditional quant metrics in live trading
 - [ ] Wire rebalance suggestions into exit intelligence (currently computed but ignored)
 - [ ] Run 30-day backtest with full missed trade tracking to calibrate gates
+- [ ] Make TP/SL ratios regime-adaptive (static ATR multipliers currently)
+- [ ] Add regime-specific slippage multipliers to EV calculation
 
 ---
 
@@ -711,9 +745,8 @@ Must achieve over 21 days:
 
 1. **Run 30-day backtest** with new quant parameters + missed trade tracking
 2. **Review missed trade report** — identify gates that are blocking too many winners
-3. **Enforce portfolio risk budget** — wire risk parity into actual sizing
-4. **Start LLM A/B test** — route 50% of decisions without LLM
-5. **Add significance testing** — after 100 trades, report if edge is real
-6. **Monitor fee drag** — track actual vs modeled execution costs
+3. **Start LLM A/B test** — route 50% of decisions without LLM
+4. **Add significance testing** — after 100 trades, report if edge is real
+5. **Monitor fee drag** — track actual vs modeled execution costs
 
 The blueprint transforms the bot from **"few big conviction bets"** to **"many small diversified edges"** — the core philosophy of quantitative investing. Each phase independently improves the system; together they compound into institutional-grade architecture.

@@ -99,7 +99,9 @@ class RiskFilterChain:
         if stop_pct > 0:
             fee_drag_pct = round_trip_fee_pct / stop_pct
             meta["fee_drag_pct"] = round(fee_drag_pct * 100, 1)
-            max_fee_drag = 0.30  # Fees must be < 30% of stop distance (tightened from 40%)
+            # 3+ agree can tolerate more fee drag (higher WR compensates)
+            _n_agree = signal.metadata.get("num_agree", 1) if signal.metadata else 1
+            max_fee_drag = 0.25 if _n_agree >= 3 else 0.20
             if fee_drag_pct > max_fee_drag:
                 return FilterResult(
                     approved=False, signal=signal,
@@ -365,7 +367,8 @@ class RiskFilterChain:
         if stop_pct > 0:
             fee_drag_pct = round_trip_fee_pct / stop_pct
             meta["fee_drag_pct"] = round(fee_drag_pct * 100, 1)
-            max_fee_drag = 0.30
+            _n_agree_ann = signal.metadata.get("num_agree", 1) if signal.metadata else 1
+            max_fee_drag = 0.25 if _n_agree_ann >= 3 else 0.20
             annotations.append(FilterAnnotation(
                 gate="fee_drag",
                 passed=fee_drag_pct <= max_fee_drag,
