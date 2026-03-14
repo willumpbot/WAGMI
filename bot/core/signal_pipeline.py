@@ -25,6 +25,35 @@ from execution.leverage import LeverageDecision
 
 logger = logging.getLogger("bot.core.signal_pipeline")
 
+# Optional db logging — disabled in backtest to avoid writes
+_rejection_log_enabled: bool = False
+
+
+def enable_rejection_logging(enabled: bool = True):
+    """Enable/disable signal rejection logging to SQLite (paper/live mode only)."""
+    global _rejection_log_enabled
+    _rejection_log_enabled = enabled
+
+
+def _log_rejection(signal, gate: str, reason: str):
+    """Best-effort rejection log — never raises."""
+    if not _rejection_log_enabled:
+        return
+    try:
+        from data import db
+        db.log_signal_rejection(
+            symbol=signal.symbol,
+            strategy=signal.strategy,
+            side=signal.side,
+            confidence=signal.confidence,
+            gate=gate,
+            reason=reason,
+            entry=getattr(signal, "entry", 0.0),
+            sl=getattr(signal, "sl", 0.0),
+        )
+    except Exception:
+        pass
+
 
 @dataclass
 class FilterResult:
@@ -91,18 +120,16 @@ class RiskFilterChain:
 
         # Gate 1: Signal validity (R:R, stop width, side)
         if not signal.is_valid:
-            return FilterResult(
-                approved=False, signal=signal,
-                rejection_reason=f"Invalid signal: stop_width_pct={signal.stop_width_pct:.4f}, "
-                                 f"rr={signal.risk_reward_tp1:.2f}"
-            )
+            _reason = (f"Invalid signal: stop_width_pct={signal.stop_width_pct:.4f}, "
+                       f"rr={signal.risk_reward_tp1:.2f}")
+            _log_rejection(signal, "validity", _reason)
+            return FilterResult(approved=False, signal=signal, rejection_reason=_reason)
         # Gate 1b: Minimum R:R from config (stricter than is_valid's 1.0 floor)
         min_rr = getattr(self.config, "min_signal_rr", 1.0)
         if signal.risk_reward_tp1 < min_rr:
-            return FilterResult(
-                approved=False, signal=signal,
-                rejection_reason=f"R:R {signal.risk_reward_tp1:.2f} < min {min_rr:.1f}"
-            )
+            _reason = f"R:R {signal.risk_reward_tp1:.2f} < min {min_rr:.1f}"
+            _log_rejection(signal, "rr_floor", _reason)
+            return FilterResult(approved=False, signal=signal, rejection_reason=_reason)
         meta["rr_tp1"] = round(signal.risk_reward_tp1, 2)
         meta["rr_tp2"] = round(signal.risk_reward_tp2, 2)
 
@@ -129,10 +156,12 @@ class RiskFilterChain:
             _n_agree = signal.metadata.get("num_agree", 1) if signal.metadata else 1
             max_fee_drag = 0.25 if _n_agree >= 3 else 0.20
             if fee_drag_pct > max_fee_drag:
+                _reason = (f"Fee drag {fee_drag_pct:.0%} > {max_fee_drag:.0%} "
+                           f"(fees={round_trip_fee_pct:.4f}, stop={stop_pct:.4f})")
+                _log_rejection(signal, "fee_drag", _reason)
                 return FilterResult(
                     approved=False, signal=signal,
-                    rejection_reason=f"Fee drag {fee_drag_pct:.0%} > {max_fee_drag:.0%} "
-                                     f"(fees={round_trip_fee_pct:.4f}, stop={stop_pct:.4f})",
+                    rejection_reason=_reason,
                     metadata=meta,
                 )
 
@@ -145,9 +174,11 @@ class RiskFilterChain:
         elif stop_pct > 0 and stop_pct < 0.006:
             min_ev = max(min_ev, 0.18)  # Medium-tight stops: moderate EV bump
         if ev is not None and ev < min_ev:
+            _reason = f"EV {ev:.3f} < min {min_ev:.2f} (low expected value)"
+            _log_rejection(signal, "ev_floor", _reason)
             return FilterResult(
                 approved=False, signal=signal,
-                rejection_reason=f"EV {ev:.3f} < min {min_ev:.2f} (low expected value)"
+                rejection_reason=_reason,
             )
         if ev is not None:
             meta["ev_per_dollar"] = ev
@@ -157,6 +188,7 @@ class RiskFilterChain:
             confidence=signal.confidence,
             cb_conf_override_pct=cb_conf_override_pct,
         ):
+            _log_rejection(signal, "circuit_breaker", "Circuit breaker active")
             return FilterResult(
                 approved=False, signal=signal,
                 rejection_reason="Circuit breaker active"
@@ -164,9 +196,11 @@ class RiskFilterChain:
 
         # Gate 3: Max open positions
         if current_open_count >= self.config.max_open_positions:
+            _reason = f"Max positions ({self.config.max_open_positions}) reached"
+            _log_rejection(signal, "max_positions", _reason)
             return FilterResult(
                 approved=False, signal=signal,
-                rejection_reason=f"Max positions ({self.config.max_open_positions}) reached"
+                rejection_reason=_reason,
             )
 
         # Gate 4: Correlation guard — prevent clustered directional risk
@@ -191,10 +225,12 @@ class RiskFilterChain:
                     # Lowered from 0.90 to 0.85 — 3 correlated longs at 0.85+ all
                     # stop out in a dump, creating compounded drawdown.
                     if cluster_risk >= 0.85:
+                        _reason = (f"Correlation cluster risk {cluster_risk:.2f} >= 0.85 "
+                                   f"(too many correlated positions in same direction)")
+                        _log_rejection(signal, "correlation", _reason)
                         return FilterResult(
                             approved=False, signal=signal,
-                            rejection_reason=f"Correlation cluster risk {cluster_risk:.2f} >= 0.85 "
-                                             f"(too many correlated positions in same direction)",
+                            rejection_reason=_reason,
                             metadata=meta,
                         )
                     elif cluster_risk >= 0.70:
@@ -217,9 +253,11 @@ class RiskFilterChain:
         )
 
         if lev_decision.leverage <= 0:
+            _reason = f"Leverage denied: {lev_decision.reason}"
+            _log_rejection(signal, "leverage", _reason)
             return FilterResult(
                 approved=False, signal=signal,
-                rejection_reason=f"Leverage denied: {lev_decision.reason}"
+                rejection_reason=_reason,
             )
 
         # Gate 5a: Graduated leverage eligibility gate (D2)
@@ -229,9 +267,11 @@ class RiskFilterChain:
         min_leverage_gate = getattr(self.config, "min_leverage_entry_gate", 1.2)
         LEVERAGE_FULL_SIZE = 1.8
         if lev_decision.leverage < min_leverage_gate:
+            _reason = f"Below leverage gate: {lev_decision.leverage:.1f}x < {min_leverage_gate:.1f}x minimum"
+            _log_rejection(signal, "leverage_gate", _reason)
             return FilterResult(
                 approved=False, signal=signal,
-                rejection_reason=f"Below leverage gate: {lev_decision.leverage:.1f}x < {min_leverage_gate:.1f}x minimum",
+                rejection_reason=_reason,
                 metadata=meta,
             )
 
@@ -301,10 +341,12 @@ class RiskFilterChain:
             else:
                 lev_ev_floor = 0.18
             if ev < lev_ev_floor:
+                _reason = (f"EV {ev:.3f} < {lev_ev_floor:.2f} "
+                           f"(required for {leverage:.1f}x leverage)")
+                _log_rejection(signal, "lev_ev_floor", _reason)
                 return FilterResult(
                     approved=False, signal=signal,
-                    rejection_reason=f"EV {ev:.3f} < {lev_ev_floor:.2f} "
-                                     f"(required for {leverage:.1f}x leverage)",
+                    rejection_reason=_reason,
                     metadata=meta,
                 )
 
@@ -319,9 +361,11 @@ class RiskFilterChain:
             notional_usd=notional_est,
         )
         if not liq_check["safe"]:
+            _reason = f"SL ({signal.sl}) beyond liquidation ({liq_check['liquidation_price']:.2f})"
+            _log_rejection(signal, "liquidation", _reason)
             return FilterResult(
                 approved=False, signal=signal,
-                rejection_reason=f"SL ({signal.sl}) beyond liquidation ({liq_check['liquidation_price']:.2f})"
+                rejection_reason=_reason,
             )
         meta["liq_gap_pct"] = round(liq_check.get("gap_pct", 0), 4)
 
@@ -334,6 +378,7 @@ class RiskFilterChain:
             symbol=signal.symbol,
         )
         if qty <= 0:
+            _log_rejection(signal, "sizing", "Position size zero (stop width too narrow or equity too low)")
             return FilterResult(
                 approved=False, signal=signal,
                 rejection_reason="Position size zero (stop width too narrow or equity too low)"

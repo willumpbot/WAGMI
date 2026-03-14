@@ -707,6 +707,24 @@ class MultiStrategyBot:
             _DASHBOARD_AVAILABLE and config.enable_dashboard
         ) else None
 
+        # Paper trading hourly checkpoint (paper mode only)
+        self.paper_validator = None
+        self._paper_checkpoint_last = time.time()
+        if config.is_paper:
+            try:
+                from monitoring.paper_validator import PaperValidator
+                from core.signal_pipeline import enable_rejection_logging
+                enable_rejection_logging(True)
+                self.paper_validator = PaperValidator(
+                    risk_mgr=self.risk_mgr,
+                    pos_mgr=self.pos_mgr,
+                    alert_router=self.alerts,
+                    start_equity=getattr(config, "starting_equity", 0.0),
+                )
+                logger.info("[PAPER-VALIDATOR] Hourly checkpoint monitoring enabled")
+            except Exception as e:
+                logger.debug(f"[PAPER-VALIDATOR] Not available: {e}")
+
     def _run_health_check(self):
         """Startup symbol health check: validate precision, connectivity, leverage caps."""
         logger.info("=" * 60)
@@ -880,6 +898,16 @@ class MultiStrategyBot:
                     self._log_periodic_summary()
                 except Exception as e:
                     logger.debug(f"Periodic summary error: {e}")
+
+            # Paper trading hourly checkpoint
+            if self.paper_validator is not None:
+                _now = time.time()
+                if _now - self._paper_checkpoint_last >= 3600:
+                    try:
+                        self.paper_validator.run_checkpoint()
+                        self._paper_checkpoint_last = _now
+                    except Exception as e:
+                        logger.debug(f"Paper validator checkpoint error: {e}")
 
             self._sleep_interruptible(self._adaptive_scan_interval())
 
