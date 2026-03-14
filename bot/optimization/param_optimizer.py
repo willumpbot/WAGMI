@@ -68,14 +68,16 @@ class ParamRange:
 
 # ── Pre-built Search Spaces ──────────────────────────────────────────
 
-# Common strategy parameter ranges for quick optimization
+# Reduced to 4 core optimizable parameters.
+# Rule: need 30 trades/param for statistical validity (Law of Large Numbers).
+# 4 params × 30 = 120 trades needed before trusting optimization results.
+# Was 6 params × 10,800 grid combos on 51 trades = 0.6 trades/param = overfitting.
+# Grid is now 5^4 = 625 combos — meaningful at 120+ trades.
 STRATEGY_PARAM_SPACES = {
-    "atr_mult": ParamRange.linspace("atr_mult", 0.8, 2.5, 6),
-    "rr1": ParamRange.linspace("rr1", 1.0, 3.0, 6),
-    "rr2": ParamRange.linspace("rr2", 2.0, 5.0, 5),
-    "confidence_floor": ParamRange.linspace("confidence_floor", 55.0, 80.0, 6),
-    "veto_ratio": ParamRange.linspace("veto_ratio", 1.0, 2.0, 5),
-    "min_votes": ParamRange.choices("min_votes", 2, 3),
+    "vol_target_pct": ParamRange.linspace("vol_target_pct", 0.002, 0.012, 5),
+    "atr_mult": ParamRange.linspace("atr_mult", 1.0, 3.0, 5),
+    "rr1": ParamRange.linspace("rr1", 1.2, 2.5, 5),
+    "confidence_floor": ParamRange.linspace("confidence_floor", 45.0, 70.0, 5),
 }
 
 TIMEFRAME_WEIGHT_SPACES = {
@@ -288,6 +290,7 @@ def compute_sharpe(equity_curve: List[Dict], annual_risk_free: float = 0.0) -> f
 
 # Maps optimizer param names → TradingConfig attributes
 _PARAM_CONFIG_MAP = {
+    "vol_target_pct": "vol_target_pct",
     "atr_mult": "tp_sl_atr_mult",
     "rr1": "tp_sl_rr1",
     "rr2": "tp_sl_rr2",
