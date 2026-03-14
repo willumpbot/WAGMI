@@ -142,6 +142,25 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_health_ts ON health_events(timestamp);
         CREATE INDEX IF NOT EXISTS idx_health_type ON health_events(event_type);
         CREATE INDEX IF NOT EXISTS idx_perf_date ON performance_daily(date);
+
+        -- Signal rejection audit log: every rejected signal with the gate that blocked it
+        CREATE TABLE IF NOT EXISTS signal_rejections (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            strategy TEXT NOT NULL,
+            side TEXT NOT NULL,
+            confidence REAL NOT NULL,
+            gate TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            entry REAL DEFAULT 0.0,
+            sl REAL DEFAULT 0.0,
+            metadata TEXT
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_rejections_ts ON signal_rejections(timestamp);
+        CREATE INDEX IF NOT EXISTS idx_rejections_gate ON signal_rejections(gate);
+        CREATE INDEX IF NOT EXISTS idx_rejections_symbol ON signal_rejections(symbol);
     """)
     # Run any pending schema migrations
     from data.migrations import MigrationRunner
@@ -493,6 +512,74 @@ def get_signal_performance(days: int = 7, symbol: str = "",
     finally:
         if conn:
             conn.close()
+
+
+def log_signal_rejection(symbol: str, strategy: str, side: str, confidence: float,
+                         gate: str, reason: str, entry: float = 0, sl: float = 0,
+                         metadata: Optional[Dict] = None):
+    """Log a rejected signal with the gate that blocked it."""
+    conn = None
+    try:
+        conn = get_connection()
+        conn.execute(
+            """INSERT INTO signal_rejections
+               (timestamp, symbol, strategy, side, confidence, gate, reason, entry, sl, metadata)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (datetime.now(timezone.utc).isoformat(), symbol, strategy, side,
+             confidence, gate, reason, entry, sl,
+             json.dumps(metadata) if metadata else None)
+        )
+        conn.commit()
+    except Exception as e:
+        logger.warning(f"Failed to log signal rejection: {e}")
+        if conn:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_signal_rejections(hours: int = 1, gate: str = "", symbol: str = "") -> List[Dict]:
+    """Get recent signal rejections."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+    try:
+        conn = get_connection()
+        query = "SELECT * FROM signal_rejections WHERE timestamp >= ?"
+        params: list = [cutoff]
+        if gate:
+            query += " AND gate = ?"
+            params.append(gate)
+        if symbol:
+            query += " AND symbol = ?"
+            params.append(symbol)
+        query += " ORDER BY timestamp DESC"
+        rows = conn.execute(query, params).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+def get_rejection_summary(hours: int = 1) -> Dict[str, Any]:
+    """Get rejection counts by gate for the last N hours."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+    try:
+        conn = get_connection()
+        rows = conn.execute(
+            """SELECT gate, COUNT(*) as count,
+               SUM(CASE WHEN confidence >= 65 THEN 1 ELSE 0 END) as high_conf_count
+               FROM signal_rejections WHERE timestamp >= ?
+               GROUP BY gate ORDER BY count DESC""",
+            (cutoff,)
+        ).fetchall()
+        conn.close()
+        return {r["gate"]: {"count": r["count"], "high_conf": r["high_conf_count"]}
+                for r in rows}
+    except Exception:
+        return {}
 
 
 def get_equity_curve(days: int = 30) -> List[Dict]:

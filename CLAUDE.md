@@ -51,6 +51,7 @@ bot/                    # Main bot code (run from here: cd bot && python run.py 
       ├── signal-check.md     # /signal-check — Live signal analysis
       ├── trade-postmortem.md # /trade-postmortem — Closed trade analysis
       ├── deploy-paper.md     # /deploy-paper — Safe paper trading deployment
+      ├── paper-status.md     # /paper-status — Real-time paper trading health & gate analysis
       ├── health-check.md     # /health-check — Bot health and anomaly audit
       ├── evolution.md        # /evolution — Strategy evolution summary
       ├── cost-audit.md       # /cost-audit — LLM cost tracking and optimization
@@ -140,6 +141,7 @@ Invoke these with `/skill-name` in Claude Code sessions:
 - `/optimize [quick|deep] [symbols]` — Parameter optimization with sensitivity analysis
 - `/stress-test [flash-crash|vol-spike|chop|gap|all]` — Extreme scenario testing
 - `/deploy-paper [symbols]` — Full pre-flight validation before paper trading
+- `/paper-status [quick|gates|rejections|signals]` — Real-time paper trading health: signal rejections, gate breakdown, go-live gate progress
 
 **Code Quality:**
 - `/refactor [target]` — Safe refactoring with contract preservation
