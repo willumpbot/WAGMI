@@ -154,9 +154,9 @@ class TestCircuitBreakerSessionDD:
 class TestRegimeMinVotes:
     """B1: Regime-gated min_votes lookup table."""
 
-    def test_bear_regime_requires_3(self):
+    def test_bear_regime_requires_2(self):
         from strategies.ensemble import EnsembleStrategy
-        assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bear") == 3
+        assert EnsembleStrategy.REGIME_MIN_VOTES.get("trending_bear") == 2
 
     def test_bull_regime_allows_2(self):
         from strategies.ensemble import EnsembleStrategy
@@ -178,11 +178,12 @@ class TestRegimeMinVotes:
 class TestRegimeAllowlist:
     """B3: Regime-specific strategy allowlist."""
 
-    def test_bear_only_allows_confidence_and_regime(self):
+    def test_bear_allows_confidence_regime_and_probability(self):
         from strategies.ensemble import EnsembleStrategy
         allowed = EnsembleStrategy.STRATEGY_REGIME_ALLOWLIST["trending_bear"]
         assert "confidence_scorer" in allowed
         assert "regime_trend" in allowed
+        assert "probability_engine" in allowed
         assert "bollinger_squeeze" not in allowed
         assert "vmc_cipher" not in allowed
 
@@ -192,10 +193,11 @@ class TestRegimeAllowlist:
         assert "bollinger_squeeze" in allowed
         assert "vmc_cipher" in allowed
 
-    def test_unknown_blocks_all(self):
+    def test_unknown_allows_fallback(self):
         from strategies.ensemble import EnsembleStrategy
         allowed = EnsembleStrategy.STRATEGY_REGIME_ALLOWLIST["unknown"]
-        assert len(allowed) == 0
+        assert "confidence_scorer" in allowed
+        assert "probability_engine" in allowed
 
 
 class TestTimeframeAlignment:

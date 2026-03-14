@@ -369,7 +369,7 @@ class BacktestEngine:
             all_strats["probability_engine"] = ProbabilityEngineStrategy(sym_configs)
 
         # BTC cross-data strategy (data injected in run() symbol loop)
-        if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "true").lower() == "true":
+        if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "false").lower() == "true":  # 0% WR, -$137/trade EV
             all_strats["lead_lag"] = LeadLagStrategy(sym_configs)
 
         # Metadata-dependent strategies (disabled by default — need exchange API data)

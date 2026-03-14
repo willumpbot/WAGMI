@@ -136,11 +136,11 @@ class EnsembleStrategy:
     # trending_bear at 2-agree = -$25/trade × 96 trades = largest performance drag.
     # consolidation 2-agree = 80-89% WR = best regime.
     REGIME_MIN_VOTES = {
-        'trending_bear':   3,   # 52.9% WR only — full conviction required
+        'trending_bear':   2,   # was 3: only 3 strategies allowed, 3 = unanimous = impossible. 2-of-3 is realistic.
         'trending_bull':   2,   # 58% WR, $860 net — 2-agree allowed
         'trend':           2,   # legacy name for trending_bull
         'consolidation':   2,   # 80% WR — mean-reversion edge
-        'range':           3,   # ranging = unclear direction
+        'range':           2,   # was 3: with 4 allowed strategies, 3 = near-unanimous deadlock. EV gate handles quality.
         'high_volatility': 3,   # too few trades — require conviction
         'panic':           3,   # extreme conditions — full conviction
         'low_liquidity':   3,   # thin books — full conviction
@@ -151,16 +151,16 @@ class EnsembleStrategy:
     # Regime-specific strategy allowlist: only strategies with proven edge
     # in each regime are allowed to vote.
     STRATEGY_REGIME_ALLOWLIST = {
-        'trending_bear':    {'confidence_scorer', 'regime_trend'},
-        'trending_bull':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'cvd_signal'},
-        'trend':            {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'cvd_signal'},
-        'consolidation':    {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher', 'cvd_signal'},
-        'range':            {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher'},
-        'high_volatility':  {'confidence_scorer'},
+        'trending_bear':    {'confidence_scorer', 'regime_trend', 'probability_engine'},
+        'trending_bull':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine'},
+        'trend':            {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine'},
+        'consolidation':    {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine'},
+        'range':            {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine'},
+        'high_volatility':  {'confidence_scorer', 'probability_engine'},
         'panic':            {'confidence_scorer'},
         'low_liquidity':    {'confidence_scorer'},
         'news_dislocation': {'confidence_scorer'},
-        'unknown':          set(),  # no signals in unknown regime
+        'unknown':          {'confidence_scorer', 'probability_engine'},  # was empty — blocked ALL signals
     }
 
     def _get_effective_min_votes(self, symbol: str) -> int:
