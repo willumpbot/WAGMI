@@ -69,12 +69,17 @@ class BacktestEngine:
     """
 
     def __init__(self, config: Optional[TradingConfig] = None, llm_integration=None,
-                 fresh: bool = False, relaxed_cb: bool = False, resume: bool = False):
+                 fresh: bool = False, relaxed_cb: bool = False, **kwargs):
         self.config = config or TradingConfig()
         self.llm = llm_integration  # Optional BacktestLLMIntegration
         self._relaxed_cb = relaxed_cb
-        self._resume = resume
+        self._resume = kwargs.get('resume', False)
         self._simple_resume_state: Optional[Dict] = None  # Populated from checkpoint on resume
+
+        # Generic checkpointing (non-LLM mode)
+        self.checkpoint_dir = "data/backtest_checkpoints"
+        self.checkpoint_interval = 100  # save every 100 candles
+        self.resume = kwargs.get('resume', False)
 
         # Initialize components
         self.fetcher = DataFetcher(cache_ttl=3600, backtest_mode=True, fresh=fresh)
@@ -468,6 +473,35 @@ class BacktestEngine:
             logger.warning(f"Simple checkpoint load failed: {e}")
         return None
 
+    # ── Generic per-symbol checkpoint helpers ──────────────────────────────
+
+    def _save_checkpoint(self, symbol: str, candle_idx: int, trades_so_far: list, equity: float):
+        """Save progress checkpoint so we can resume on crash."""
+        os.makedirs(self.checkpoint_dir, exist_ok=True)
+        ckpt = {
+            "symbol": symbol,
+            "candle_idx": candle_idx,
+            "equity": equity,
+            "trades_count": len(trades_so_far),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        path = os.path.join(self.checkpoint_dir, f"ckpt_{symbol.replace('/', '_')}.json")
+        with open(path, "w") as f:
+            json.dump(ckpt, f)
+        # Also append any new trades to a rolling CSV
+        if trades_so_far:
+            csv_path = os.path.join(self.checkpoint_dir, f"trades_{symbol.replace('/', '_')}.csv")
+            df_ckpt = pd.DataFrame(trades_so_far[-50:])  # only write last 50 (avoid rewriting whole file)
+            df_ckpt.to_csv(csv_path, mode='a', header=not os.path.exists(csv_path), index=False)
+
+    def _load_checkpoint(self, symbol: str) -> Optional[Dict]:
+        """Load checkpoint for a symbol if it exists."""
+        path = os.path.join(self.checkpoint_dir, f"ckpt_{symbol.replace('/', '_')}.json")
+        if os.path.exists(path):
+            with open(path) as f:
+                return json.load(f)
+        return None
+
     def _walk_hourly(self, symbol: str, data: Dict[str, pd.DataFrame], ensemble: EnsembleStrategy):
         """Walk forward through hourly candles."""
         df_1h = data.get("1h", pd.DataFrame())
@@ -491,6 +525,19 @@ class BacktestEngine:
             logger.info(f"[{symbol}] Resuming from candle {start_idx} (simple checkpoint)")
             self._simple_resume_state = None  # Consume once — next symbol starts fresh
 
+        # Generic (non-LLM) resume: restore start_idx from checkpoint file
+        if getattr(self, 'resume', False) and not self.llm:
+            ckpt = self._load_checkpoint(symbol)
+            if ckpt and ckpt.get('candle_idx', 0) > start_idx:
+                start_idx = ckpt['candle_idx'] + 1
+                logger.info(f"[{symbol}] Resuming from checkpoint at candle {start_idx}")
+
+        # Pre-sort time arrays for fast searchsorted (avoid per-candle sorting)
+        _tf_time_vals = {}
+        for tf, df in data.items():
+            if not df.empty and "time" in df.columns:
+                _tf_time_vals[tf] = df["time"].values
+
         for i in range(start_idx, total_candles):
             self._current_candle_idx = i  # Track for missed trade counterfactuals
             # Build windowed data for this point in time.
@@ -499,23 +546,25 @@ class BacktestEngine:
             # Replaces the old df[mask].copy() pattern which grew O(n) per candle and
             # caused 5+ GB peak RAM on 365-day runs with 5m data.
             windowed = {}
+            current_time = df_1h["time"].iloc[i]
+            # Convert to a raw value comparable with df["time"].values for searchsorted
+            _ct_val = current_time.value if hasattr(current_time, 'value') else current_time
             for tf, df in data.items():
                 if df.empty:
                     continue
-                current_time = df_1h["time"].iloc[i]
-                # Find the cutoff index (first row >= current_time) without scanning
-                # every row — searchsorted is O(log n) vs O(n) for boolean mask.
-                cutoff = int(df["time"].searchsorted(current_time, side="left"))
-                if cutoff == 0:
+                # Use searchsorted on pre-extracted time array for O(log n) lookup.
+                # This returns the insertion point — everything at indices [:cut] is
+                # strictly less than current_time, avoiding look-ahead bias.
+                tf_times = _tf_time_vals.get(tf)
+                if tf_times is None:
                     continue
-                # Cap window to _MAX_WINDOW_LOOKBACK rows (fixed-size copy, not growing).
-                start_w = max(0, cutoff - _MAX_WINDOW_LOOKBACK)
-                w = df.iloc[start_w:cutoff].copy()
-                # Drop rows with NaN in critical OHLCV columns
+                cut = int(np.searchsorted(tf_times, _ct_val, side='left'))
+                if cut == 0:
+                    continue
+                w = df.iloc[:cut]  # view, no copy — eliminates memory churn
+                # Drop rows with NaN in critical OHLCV columns (on view; creates copy only when needed)
                 ohlcv_cols = [c for c in ("open", "high", "low", "close", "volume") if c in w.columns]
-                if ohlcv_cols:
-                    w = w.dropna(subset=ohlcv_cols)
-                if not w.empty:
+                if ohlcv_cols and not w[ohlcv_cols].isna().all().all():
                     windowed[tf] = w
 
             if not windowed:
@@ -841,6 +890,14 @@ class BacktestEngine:
             })
             # Track last price per symbol for cross-symbol MTM
             self._last_prices[symbol] = current_price
+
+            # Generic (non-LLM) checkpoint: save every N candles
+            if not self.llm and i % self.checkpoint_interval == 0:
+                _trades_log = [
+                    {"action": e.action, "symbol": e.symbol, "pnl": e.pnl, "side": getattr(e, "side", "")}
+                    for e in self.pos_mgr.trade_log
+                ]
+                self._save_checkpoint(symbol, i, _trades_log, self.risk_mgr.equity)
 
             # LLM: checkpoint and progress
             if self.llm:
