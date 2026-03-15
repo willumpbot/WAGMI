@@ -86,8 +86,11 @@ def check_deployment_readiness(report: Dict[str, Any]) -> Dict[str, Any]:
 
     # Gate 6: Max Drawdown Tolerable
     max_dd_raw = results.get("max_drawdown_pct", 100.0)
-    # max_drawdown_pct may be stored as percentage (10.4) or decimal (0.104)
-    max_dd = max_dd_raw / 100.0 if max_dd_raw > 1.0 else max_dd_raw
+    # Engine always stores as max_drawdown * 100: 0.728 = 0.728%, 15.3 = 15.3%.
+    # Always divide by 100 to get the fraction used for comparison.
+    # The old heuristic (/ 100 only if > 1) incorrectly treated drawdowns < 1%
+    # as e.g. 72.8% instead of 0.728%.
+    max_dd = max_dd_raw / 100.0
     gates.append(_gate(
         "Max Drawdown",
         max_dd < 0.20,

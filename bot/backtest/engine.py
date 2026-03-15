@@ -1488,6 +1488,9 @@ class BacktestEngine:
             )
 
             if not result.approved:
+                logger.info(
+                    f"[{signal.symbol}] Signal REJECTED by risk chain: {result.rejection_reason}"
+                )
                 self.signal_rejections.append({
                     "symbol": signal.symbol, "strategy": signal.strategy,
                     "confidence": signal.confidence, "side": signal.side,
@@ -2113,11 +2116,12 @@ class BacktestEngine:
             gate_counts[gate] = gate_counts.get(gate, 0) + 1
 
         executed = len(self.signals_generated)
-        other_rejections = signal_gen - executed - sum(gate_counts.values())
+        regime_blocked = self.candle_stats.get("regime_blocked", 0)
+        # Subtract regime_blocked so they aren't counted twice (they already
+        # appear in the regime_blocked bucket and should not inflate other_rejections).
+        other_rejections = signal_gen - executed - sum(gate_counts.values()) - regime_blocked
         if other_rejections < 0:
             other_rejections = 0
-
-        regime_blocked = self.candle_stats.get("regime_blocked", 0)
 
         return {
             "candles_processed": total,
