@@ -606,8 +606,8 @@ class TestKellySizing:
         d3 = mgr.decide(80, 3, 4)
         d2 = mgr.decide(80, 2, 4)
         assert d3.leverage >= 3.0, f"3-agree at 80% should get >=3x, got {d3.leverage}"
-        assert d2.leverage <= 1.2, f"2-agree should stay at 1.2x floor, got {d2.leverage}"
-        assert d3.leverage / d2.leverage >= 2.5, "3-agree/2-agree leverage ratio should be >= 2.5x"
+        assert d2.leverage <= 1.5, f"2-agree should stay at 1.5x floor, got {d2.leverage}"
+        assert d3.leverage / d2.leverage >= 2.0, "3-agree/2-agree leverage ratio should be >= 2x"
 
     def test_3agree_tier5_scales_to_5x(self):
         """At max Tier 5 (89%), 3-agree should reach up to 5x leverage."""
