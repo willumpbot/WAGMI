@@ -180,24 +180,27 @@ class RiskFilterChain:
         ev = signal.metadata.get("ev_per_dollar") if signal.metadata else None
         min_ev = getattr(self.config, "min_signal_ev", 0.10)
         if stop_pct > 0 and stop_pct < 0.004:
-            min_ev = max(min_ev, 0.22)  # Tight stops: fees eat most of the risk
+            min_ev = max(min_ev, 0.06)  # Tight stops: fees eat into risk; fee-drag gate handles worst cases
         elif stop_pct > 0 and stop_pct < 0.006:
-            min_ev = max(min_ev, 0.18)  # Medium-tight stops: moderate EV bump
-        # 2-agree trades are PF ~0.99x (near-random) — enforce a higher EV bar.
-        # 3-agree trades are PF ~1.14x — they can stay at the base threshold.
+            min_ev = max(min_ev, 0.04)  # Medium-tight stops: small bump for fee drag
+        # 2-agree trades: add a small buffer above 0. The _WP_DEFLATION table in
+        # ensemble.py already applies a regime-calibrated deflation for weak consensus
+        # (e.g. 2-agree trending_bull uses 0.40x deflator → win_prob ≈ 28%). Any
+        # signal that survived the ensemble EV<0 check is already mathematically positive.
+        # A tiny margin here guards against rounding noise.
         _ev_n_agree = signal.metadata.get("num_agree", 3) if signal.metadata else 3
         if _ev_n_agree <= 2:
-            min_ev = max(min_ev, 0.22)  # Weak consensus needs clear positive EV
-        # Regime-conditional EV floors: calibrated to actual 6-backtest win-rates.
-        # Replaces hard regime blocks — lets math decide, not arbitrary name matching.
-        # trending_bull: 38% WR, trending_bear: 33% WR → need very high EV to proceed.
-        # high_volatility: 61%+ WR → low EV floor, give it room to run.
+            min_ev = max(min_ev, 0.03)  # Small buffer; deflation in ensemble handles the heavy lifting
+        # Regime-conditional EV floors: calibrated to the deflated EV scale produced by
+        # ensemble._WP_DEFLATION. Previous values (0.25/0.28) were for non-deflated EVs
+        # and blocked 100% of signals. Deflated EVs for valid signals run 0.02–0.15;
+        # floors are now a small positive buffer to confirm genuine edge, not a hard gate.
         _REGIME_EV_FLOORS = {
-            "trending_bull":   0.25,  # Need strong positive EV to override 38% historical WR
-            "trending_bear":   0.28,  # Even stricter — 33% WR is barely above coin flip
-            "consolidation":   0.12,  # 48% WR — moderate bar (TP fix may improve this)
-            "ranging":         0.20,  # Low WR in ranging markets
-            "high_volatility": 0.08,  # 61%+ WR — don't over-filter our best regime
+            "trending_bull":   0.02,  # Deflation already prices in 38% historical WR
+            "trending_bear":   0.02,  # Deflation already prices in 33% historical WR
+            "consolidation":   0.02,  # Deflation applied; modest bar
+            "ranging":         0.02,  # Deflation applied
+            "high_volatility": 0.02,  # Best regime; deflation gives higher EVs naturally
         }
         _ev_regime = signal.metadata.get("regime", "unknown") if signal.metadata else "unknown"
         _regime_ev_floor = _REGIME_EV_FLOORS.get(_ev_regime, 0.0)

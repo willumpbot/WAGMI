@@ -341,11 +341,11 @@ class TradingConfig:
     # Raised from 0.10 to 0.15: at 45% WR, trades need 15%+ edge per $1
     # risked to survive fees (4bps each way = ~8bps round-trip).
     min_signal_ev: float = field(
-        default_factory=lambda: _env_float("MIN_SIGNAL_EV", 0.08)
-    )  # Lowered from 0.15→0.08: EV gate was #1 signal killer (blocked 39.7% at 0.15).
-    # Fee-drag filter + R:R gate are the primary quality controls.
-    # At 45% WR + 1.2 RR: EV = 0.45×1.2 - 0.55 = -0.01 (needs RR > 1.22 to break even).
-    # 0.08 EV floor: allows 47% WR × 1.4 RR trades (EV=0.088) that fee-drag passes.
+        default_factory=lambda: _env_float("MIN_SIGNAL_EV", 0.03)
+    )  # Lowered from 0.08→0.03: ensemble._WP_DEFLATION now applies regime-calibrated
+    # deflation before EV reaches the pipeline, producing deflated EVs of 0.02–0.15
+    # for valid positive-EV signals. A base of 0.08 was blocking all deflated signals.
+    # 0.03 is a small positive buffer above zero (ensemble already rejects EV<0).
     # Monte Carlo strategy
     mc_num_sims: int = field(
         default_factory=lambda: _env_int("MC_NUM_SIMS", 1000)
