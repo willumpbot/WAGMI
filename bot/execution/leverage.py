@@ -142,7 +142,7 @@ class LeverageManager:
                 lev = min(3.0, cap)  # Kelly-informed: ~1/9 Kelly at this tier
                 rm = 1.1
             else:
-                lev = min(1.0, cap)  # 2_agree: minimal leverage (40% WR is net losing)
+                lev = min(1.2, cap)  # 2_agree: minimal leverage, just clears gate
                 rm = 0.6  # much smaller position for weaker consensus
             return _wr(LeverageDecision(lev, "leverage", "low",
                                         f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm))
@@ -158,7 +158,7 @@ class LeverageManager:
                 lev = min(3.0 + t * 1.0, cap)  # 3-4x for 3_agree (~1/6 Kelly)
                 rm = 1.1 + t * 0.2  # 1.1-1.3x
             else:
-                lev = min(1.0, cap)  # 2_agree: minimal leverage
+                lev = min(1.2, cap)  # 2_agree: minimal leverage, just clears gate
                 rm = 0.7  # small position — just enough to participate
             return _wr(LeverageDecision(lev, "leverage", "medium",
                                         f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm))
@@ -179,7 +179,7 @@ class LeverageManager:
                 lev = min(4.0 + t * 1.0, cap)
                 rm = 1.2 + t * 0.2  # 1.2-1.4x risk multiplier
             else:
-                lev = min(1.0, cap)  # 2_agree: minimal leverage
+                lev = min(1.2, cap)  # 2_agree: minimal leverage, just clears gate
                 rm = 0.7
             return _wr(LeverageDecision(lev, "leverage", "medium",
                                         f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm))
@@ -190,7 +190,7 @@ class LeverageManager:
             lev = min(5.0, cap)  # Match Tier 5 top (no cliff from 5x->2x)
             rm = 1.4
         elif num_strategies_agree >= 2:
-            lev = min(1.0, cap)  # 2-agree: same cap as Tier 5
+            lev = min(1.2, cap)  # 2-agree: minimal leverage, just clears gate
             rm = 0.7
         else:
             lev = min(1.0, cap)
