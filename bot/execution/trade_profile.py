@@ -344,22 +344,6 @@ def _adjust_params_for_regime(params: ExitParams, regime: str, volatility: str) 
     return p
 
 
-def _adjust_tp1_for_confidence(params: ExitParams, confidence: float) -> ExitParams:
-    """Scale tp1_close_pct by confidence.
-
-    Low confidence → close more at TP1 (take the money)
-    High confidence → close less at TP1 (let it run, we trust the thesis)
-    """
-    if confidence >= 90:
-        params.tp1_close_pct = 0.55
-    elif confidence >= 80:
-        params.tp1_close_pct = 0.60
-    elif confidence >= 70:
-        params.tp1_close_pct = 0.65
-    else:
-        params.tp1_close_pct = 0.70
-    return params
-
 
 def classify_trade(
     signal_metadata: Dict[str, Any],
@@ -398,9 +382,6 @@ def classify_trade(
 
     # 4. Adjust for regime and volatility
     params = _adjust_params_for_regime(base_params, regime, vol_band)
-
-    # 4a. Scale TP1 close % by confidence
-    params = _adjust_tp1_for_confidence(params, confidence)
 
     # 4b. Validate R:R preserved after adjustments (TP1 must exceed SL distance)
     if params.tp1_atr_mult < params.sl_atr_mult * 0.8:
