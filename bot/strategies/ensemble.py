@@ -1469,15 +1469,8 @@ class EnsembleStrategy:
             (s.metadata.get("chop_score", 0) for s in signals), default=0
         )
 
-        # Tag with the primary driver strategy (highest weighted confidence)
-        # so quant analytics can measure per-strategy independence
-        primary_strategy = max(
-            signals,
-            key=lambda s: s.confidence * self._get_strategy_weight(s.strategy),
-        ).strategy
-
         return Signal(
-            strategy=primary_strategy,
+            strategy="ensemble",
             symbol=symbol,
             side=side,
             confidence=combined_conf,
