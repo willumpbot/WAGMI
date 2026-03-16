@@ -351,13 +351,13 @@ def _adjust_tp1_for_confidence(params: ExitParams, confidence: float) -> ExitPar
     High confidence → close less at TP1 (let it run, we trust the thesis)
     """
     if confidence >= 90:
-        params.tp1_close_pct = 0.70
+        params.tp1_close_pct = 0.55
     elif confidence >= 80:
-        params.tp1_close_pct = 0.80
+        params.tp1_close_pct = 0.60
     elif confidence >= 70:
-        params.tp1_close_pct = 0.85
+        params.tp1_close_pct = 0.65
     else:
-        params.tp1_close_pct = 0.95
+        params.tp1_close_pct = 0.70
     return params
 
 

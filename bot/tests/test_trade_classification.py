@@ -123,7 +123,7 @@ class TestClassificationLogic:
         profile = classify_trade(metadata, confidence=78, atr=2.0, entry=100.0, side="BUY")
         assert profile.entry_type == TREND
         assert profile.primary_driver in ("regime_trend", "multi_tier_quality")
-        assert profile.exit_params.tp1_close_pct == 0.85  # confidence=78 → 70-80% band → 0.85
+        assert profile.exit_params.tp1_close_pct == 0.65  # confidence=78 → 70-80% band → 0.65
 
     def test_classify_medium_signal(self):
         """Two MEDIUM strategies -> MEDIUM classification."""
@@ -294,8 +294,8 @@ class TestPositionManagerWithProfile:
             leverage=2.0, tp1_close_pct=0.90,  # would be 90% without profile
             trade_profile=prof,
         )
-        # confidence=78 → 70-80% band → 0.85 (confidence scaling overrides base)
-        assert pos.tp1_close_pct == 0.85, f"Expected confidence-scaled TP1%=85%, got {pos.tp1_close_pct}"
+        # confidence=78 → 70-80% band → 0.65 (confidence scaling overrides base)
+        assert pos.tp1_close_pct == 0.65, f"Expected confidence-scaled TP1%=65%, got {pos.tp1_close_pct}"
 
     def test_close_event_includes_entry_type(self):
         """Trade close event metadata should include entry_type."""
