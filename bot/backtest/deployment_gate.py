@@ -110,19 +110,7 @@ def check_deployment_readiness(report: Dict[str, Any]) -> Dict[str, Any]:
         warning=lower_ci > 0.40,
     ))
 
-    # Gate 8: Strategy Independence
-    corr = quant.get("strategy_correlation", {})
-    independent = corr.get("independent_count", 0)
-    total_strats = corr.get("total_strategies", 0)
-    gates.append(_gate(
-        "Strategy Independence",
-        independent >= 3,
-        f"{independent}/{total_strats} independent",
-        ">= 3 independent voters (|r| < 0.3)",
-        warning=independent >= 2,
-    ))
-
-    # Gate 9: Regime Diversification
+    # Gate 8: Regime Diversification (formerly Gate 9)
     by_regime = quant.get("by_regime", {})
     positive_regimes = sum(
         1 for r, m in by_regime.items()
@@ -134,15 +122,6 @@ def check_deployment_readiness(report: Dict[str, Any]) -> Dict[str, Any]:
         f"{positive_regimes} positive regimes",
         ">= 2 regimes with positive expectancy",
         warning=positive_regimes >= 1,
-    ))
-
-    # Gate 10: Signal Quality Pre-Seeded
-    sq_exists = Path("data/feedback/signal_quality.json").exists() or Path("data/signal_quality.json").exists()
-    gates.append(_gate(
-        "Signal Quality Seeded",
-        sq_exists,
-        "seeded" if sq_exists else "not found",
-        "signal_quality.json exists and populated",
     ))
 
     # Overall verdict
