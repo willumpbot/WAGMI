@@ -83,20 +83,10 @@ class RiskFilterChain:
         self.leverage_mgr = leverage_mgr
         self.config = config
         self._missed_trade_tracker = None  # Optional: set via set_missed_trade_tracker()
-        self.quality_tracker = None  # Optional: set via set_quality_tracker() for Kelly sizing
 
     def set_missed_trade_tracker(self, tracker):
         """Inject MissedTradeTracker for rejection tracking."""
         self._missed_trade_tracker = tracker
-
-    def set_quality_tracker(self, tracker):
-        """Inject SignalQualityScorer for Kelly-calibrated regime sizing.
-
-        When set, the pipeline uses rolling per-regime win-rates to compute
-        fractional Kelly position sizes instead of static REGIME_RISK_MULTIPLIERS.
-        Falls back to static multipliers if a regime has fewer than 15 trades.
-        """
-        self.quality_tracker = tracker
 
     def _track_pipeline_rejection(self, signal: Signal, reason: str):
         """Record a pipeline rejection in the missed trade tracker."""
@@ -183,30 +173,8 @@ class RiskFilterChain:
             min_ev = max(min_ev, 0.22)  # Tight stops: fees eat most of the risk
         elif stop_pct > 0 and stop_pct < 0.006:
             min_ev = max(min_ev, 0.18)  # Medium-tight stops: moderate EV bump
-        # 2-agree trades are PF ~0.99x (near-random) — enforce a higher EV bar.
-        # 3-agree trades are PF ~1.14x — they can stay at the base threshold.
-        _ev_n_agree = signal.metadata.get("num_agree", 3) if signal.metadata else 3
-        if _ev_n_agree <= 2:
-            min_ev = max(min_ev, 0.22)  # Weak consensus needs clear positive EV
-        # Regime-conditional EV floors: calibrated to actual 6-backtest win-rates.
-        # Replaces hard regime blocks — lets math decide, not arbitrary name matching.
-        # trending_bull: 38% WR, trending_bear: 33% WR → need very high EV to proceed.
-        # high_volatility: 61%+ WR → low EV floor, give it room to run.
-        _REGIME_EV_FLOORS = {
-            "trending_bull":   0.25,  # Need strong positive EV to override 38% historical WR
-            "trending_bear":   0.28,  # Even stricter — 33% WR is barely above coin flip
-            "consolidation":   0.12,  # 48% WR — moderate bar (TP fix may improve this)
-            "ranging":         0.20,  # Low WR in ranging markets
-            "high_volatility": 0.08,  # 61%+ WR — don't over-filter our best regime
-        }
-        _ev_regime = signal.metadata.get("regime", "unknown") if signal.metadata else "unknown"
-        _regime_ev_floor = _REGIME_EV_FLOORS.get(_ev_regime, 0.0)
-        if _regime_ev_floor > 0:
-            min_ev = max(min_ev, _regime_ev_floor)
         if ev is not None and ev < min_ev:
-            _ev_reason = (f"regime floor {_ev_regime}" if _regime_ev_floor > 0 and min_ev <= _regime_ev_floor
-                          else "low expected value")
-            _reason = f"EV {ev:.3f} < min {min_ev:.2f} ({_ev_reason})"
+            _reason = f"EV {ev:.3f} < min {min_ev:.2f} (low expected value)"
             _log_rejection(signal, "ev_floor", _reason)
             return FilterResult(
                 approved=False, signal=signal,
@@ -346,30 +314,15 @@ class RiskFilterChain:
         if corr_reduction < 1.0:
             risk_mult *= corr_reduction
 
-        # Apply regime-based risk sizing — Kelly criterion when data is available,
-        # fall back to static REGIME_RISK_MULTIPLIERS until enough trades accumulate.
+        # Apply regime-based risk sizing: bet bigger where edge is proven
         try:
-            from trading_config import get_regime_risk_mult, get_regime_kelly_mult
+            from trading_config import get_regime_risk_mult
             _regime = signal.metadata.get("regime", "unknown")
-            # Try Kelly sizing first (requires min_trades=15 per regime)
-            _quality_tracker = getattr(self, "quality_tracker", None)
-            _regime_wr = (
-                _quality_tracker.get_regime_win_rate(_regime)
-                if _quality_tracker is not None else None
-            )
-            if _regime_wr is not None:
-                _rr = signal.metadata.get("rr_tp1", 1.5) if signal.metadata else 1.5
-                _regime_rm = get_regime_kelly_mult(_regime, _regime_wr, float(_rr))
-                meta["regime_sizing_method"] = "kelly"
-                meta["regime_kelly_wr"] = round(_regime_wr, 3)
-            else:
-                # Not enough regime data yet — use static multipliers
-                _regime_rm = get_regime_risk_mult(_regime)
-                meta["regime_sizing_method"] = "static"
+            _regime_rm = get_regime_risk_mult(_regime)
             if _regime_rm != 1.0:
                 risk_mult *= _regime_rm
-                meta["regime_risk_mult"] = round(_regime_rm, 3)
-        except Exception:
+                meta["regime_risk_mult"] = _regime_rm
+        except ImportError:
             pass
 
         meta["leverage"] = leverage

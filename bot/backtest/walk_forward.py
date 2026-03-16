@@ -1,8 +1,8 @@
 """
 Walk-Forward Validation: prevents overfitting by testing on unseen data.
 
-Runs the backtest engine window-by-window (train then test), saving results
-incrementally so crashes don't lose progress.
+Runs a single long backtest, then partitions the trade log into
+alternating train/test windows to measure in-sample vs out-of-sample performance.
 
 This reveals overfitting: if the strategy's parameters were tuned to the
 training data, test-window performance will be significantly worse.
@@ -16,9 +16,7 @@ CLI:
     python cli.py --mode walkforward --days 120 --symbols SOL,BTC
 """
 
-import json
 import logging
-import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -125,177 +123,102 @@ class WalkForwardRunner:
         self.train_days = train_days
         self.test_days = test_days
 
-    def run(self, symbols=None, days=None, output_path=None) -> WalkForwardReport:
-        """Run walk-forward validation window by window.
-
-        Each window runs the backtest engine separately on the train period then
-        the test period, so the full dataset is never loaded into memory at once.
-        Per-window results are saved to a JSON checkpoint file after each window
-        so a crash only loses the current in-progress window.
-        """
+    def run(self) -> WalkForwardReport:
+        """Run backtest for full period, then partition trades into windows."""
         from trading_config import TradingConfig
         from backtest.engine import BacktestEngine
-
-        symbols = symbols or self.symbols
-        total_days = days or self.total_days
-        window_size = self.train_days + self.test_days
-        n_windows = max(1, total_days // window_size)
 
         config = TradingConfig()
         engine = BacktestEngine(config=config)
 
-        # Output file for incremental saves
-        if output_path is None:
-            os.makedirs("data/backtest_checkpoints", exist_ok=True)
-            output_path = (
-                f"data/backtest_checkpoints/walkforward_{total_days}d_"
-                f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        # Adaptive split: if total_days < default window (train+test), use 75/25 proportion.
+        # This prevents the test window from being perpetually empty on short runs.
+        window_size = self.train_days + self.test_days
+        if self.total_days < window_size:
+            effective_train = max(1, int(self.total_days * 0.75))
+            effective_test = max(1, self.total_days - effective_train)
+            logger.info(
+                f"[WF] total_days={self.total_days} < window_size={window_size}: "
+                f"adapting to proportional split ({effective_train}d train / {effective_test}d test)"
             )
+        else:
+            effective_train = self.train_days
+            effective_test = self.test_days
+        effective_window = effective_train + effective_test
 
         logger.info(
-            f"[WF] Walk-forward: {n_windows} windows × "
-            f"({self.train_days}d train + {self.test_days}d test) = {total_days}d total"
+            f"[WF] Running {self.total_days}d backtest for walk-forward analysis "
+            f"({effective_train}d train / {effective_test}d test)"
         )
+
+        raw_report = engine.run(symbols=self.symbols, days=self.total_days)
+
+        # Extract trade timeline (chronological close events with pnl/fee)
+        trades = raw_report.get("trade_timeline", [])
+        results = raw_report.get("results", {})
+        risk_metrics = raw_report.get("risk_metrics", {})
+
+        # Build time windows
+        n_windows = max(1, self.total_days // effective_window)
 
         report = WalkForwardReport(
-            symbols=symbols,
-            total_days=total_days,
-            train_days=self.train_days,
-            test_days=self.test_days,
+            symbols=self.symbols,
+            total_days=self.total_days,
+            train_days=effective_train,
+            test_days=effective_test,
             n_windows=n_windows,
+            total_trades=len(trades),
+            full_run_metrics={
+                "total_trades": results.get("closed_trades", 0),
+                "win_rate": results.get("wins", 0) / max(1, results.get("closed_trades", 1)),
+                "total_pnl": results.get("total_pnl", 0.0),
+                "sharpe": risk_metrics.get("sharpe_ratio", 0.0),
+                "profit_factor": results.get("profit_factor", 0.0),
+                "max_drawdown_pct": results.get("max_drawdown_pct", 0.0),
+            },
         )
 
-        checkpoint_windows: List[Dict] = []
+        # Partition trades into train/test windows by candle index or trade sequence
+        # Since we don't have exact timestamps easily, partition by trade order
+        # (trades are in chronological order from the backtest)
+        if not trades:
+            logger.warning("[WF] No trades in backtest — cannot partition")
+            return report
 
-        for window_idx in range(n_windows):
+        total_trade_count = len(trades)
+        trades_per_day = total_trade_count / self.total_days if self.total_days > 0 else 1
+
+        for i in range(n_windows):
+            # Calculate trade indices for this window
+            window_start_trade = int(i * effective_window * trades_per_day)
+            train_end_trade = int((i * effective_window + effective_train) * trades_per_day)
+            test_end_trade = int(((i + 1) * effective_window) * trades_per_day)
+
+            # Clamp to available trades
+            train_trades = trades[window_start_trade:train_end_trade]
+            test_trades = trades[train_end_trade:test_end_trade]
+
+            # Compute stats for train window
+            train_result = self._compute_window_stats(
+                train_trades, "train", i, effective_train
+            )
+            report.windows.append(train_result)
+
+            # Compute stats for test window
+            test_result = self._compute_window_stats(
+                test_trades, "test", i, effective_test
+            )
+            report.windows.append(test_result)
+
             logger.info(
-                f"[WF] Window {window_idx + 1}/{n_windows}: "
-                f"train={self.train_days}d, test={self.test_days}d"
+                f"[WF] Window {i}: "
+                f"Train({train_result.total_trades} trades, WR={train_result.win_rate:.0%}, "
+                f"PnL=${train_result.total_pnl:+.0f}) | "
+                f"Test({test_result.total_trades} trades, WR={test_result.win_rate:.0%}, "
+                f"PnL=${test_result.total_pnl:+.0f})"
             )
-
-            try:
-                # --- Train window ---
-                train_raw = engine.run(symbols=symbols, days=self.train_days)
-                train_trades = train_raw.get("trade_timeline", [])
-                train_result = self._compute_window_stats(
-                    train_trades, "train", window_idx, self.train_days
-                )
-                report.windows.append(train_result)
-                train_metrics = self._extract_metrics(train_raw, "train", window_idx)
-
-                # --- Test window (out-of-sample) ---
-                test_raw = engine.run(symbols=symbols, days=self.test_days)
-                test_trades = test_raw.get("trade_timeline", [])
-                test_result = self._compute_window_stats(
-                    test_trades, "test", window_idx, self.test_days
-                )
-                report.windows.append(test_result)
-                test_metrics = self._extract_metrics(test_raw, "test", window_idx)
-
-                window_checkpoint = {
-                    "window": window_idx + 1,
-                    "train_days": self.train_days,
-                    "test_days": self.test_days,
-                    "train": train_metrics,
-                    "test": test_metrics,
-                    "degradation": self._calculate_degradation(train_metrics, test_metrics),
-                }
-                checkpoint_windows.append(window_checkpoint)
-
-                logger.info(
-                    f"[WF] Window {window_idx}: "
-                    f"Train({train_result.total_trades} trades, WR={train_result.win_rate:.0%}, "
-                    f"PnL=${train_result.total_pnl:+.0f}) | "
-                    f"Test({test_result.total_trades} trades, WR={test_result.win_rate:.0%}, "
-                    f"PnL=${test_result.total_pnl:+.0f})"
-                )
-
-                # Save progress after each window (crash recovery)
-                with open(output_path, "w") as f:
-                    json.dump(
-                        {"windows": checkpoint_windows, "complete": False},
-                        f, indent=2, default=str,
-                    )
-                logger.info(f"[WF] Window {window_idx + 1} checkpoint saved to {output_path}")
-
-            except Exception as e:
-                logger.error(f"[WF] Window {window_idx + 1} failed: {e}")
-                # Save what we have so far before giving up
-                with open(output_path, "w") as f:
-                    json.dump(
-                        {"windows": checkpoint_windows, "complete": False, "error": str(e)},
-                        f, indent=2, default=str,
-                    )
-                break
-
-        # Build full_run_metrics summary aggregated across all windows
-        all_trades = report.windows
-        total_trade_count = sum(w.total_trades for w in all_trades)
-        report.total_trades = total_trade_count
-        total_pnl = sum(w.total_pnl for w in all_trades)
-        total_wins = sum(w.wins for w in all_trades)
-        report.full_run_metrics = {
-            "total_trades": total_trade_count,
-            "win_rate": total_wins / total_trade_count if total_trade_count > 0 else 0.0,
-            "total_pnl": total_pnl,
-            "n_windows": n_windows,
-        }
-
-        # Final checkpoint with complete flag
-        summary = {
-            "total_trades": total_trade_count,
-            "total_pnl": total_pnl,
-            "n_windows": len(checkpoint_windows),
-        }
-        with open(output_path, "w") as f:
-            json.dump(
-                {"windows": checkpoint_windows, "summary": summary, "complete": True},
-                f, indent=2, default=str,
-            )
-        logger.info(f"[WF] Walk-forward complete. Results saved to {output_path}")
 
         return report
-
-    def _extract_metrics(self, report: dict, phase: str, window_idx: int) -> dict:
-        """Extract key metrics from a backtest engine report dict."""
-        results = report.get("results", {})
-        risk_metrics = report.get("risk_metrics", {})
-
-        # Results may be keyed by symbol or be a flat dict — handle both shapes
-        if results and isinstance(next(iter(results.values()), None), dict):
-            # Keyed by symbol
-            total_trades = sum(r.get("total_trades", 0) for r in results.values())
-            total_pnl = sum(r.get("total_pnl", 0.0) for r in results.values())
-            wins = sum(r.get("wins", 0) for r in results.values())
-        else:
-            total_trades = results.get("closed_trades", results.get("total_trades", 0))
-            total_pnl = results.get("total_pnl", 0.0)
-            wins = results.get("wins", 0)
-
-        wr = (wins / total_trades * 100) if total_trades > 0 else 0.0
-        return {
-            "phase": phase,
-            "window": window_idx + 1,
-            "total_trades": total_trades,
-            "total_pnl": total_pnl,
-            "win_rate": wr,
-            "sharpe": risk_metrics.get("sharpe_ratio", 0.0),
-            "max_drawdown": risk_metrics.get("max_drawdown_pct", 0.0),
-        }
-
-    def _calculate_degradation(self, train: dict, test: dict) -> dict:
-        """How much does performance degrade from train to test?"""
-        return {
-            "pnl_ratio": (
-                test["total_pnl"] / train["total_pnl"]
-                if train["total_pnl"] != 0 else 0.0
-            ),
-            "wr_delta": test["win_rate"] - train["win_rate"],
-            "trade_count_ratio": (
-                test["total_trades"] / train["total_trades"]
-                if train["total_trades"] > 0 else 0.0
-            ),
-        }
 
     def _compute_window_stats(
         self, trades: List[Dict], window_type: str, window_idx: int, days: int

@@ -418,14 +418,13 @@ class ConfidenceScorerStrategy(BaseStrategy):
         if confidence < 55:
             return None
 
-        # Stop/TP placement: regime-conditional ATR multipliers (per-symbol atr_mult_sl if set)
+        # Stop/TP placement: regime-conditional ATR multipliers
         try:
-            from trading_config import TradingConfig as _TC, get_regime_sl_tp, get_symbol_param
+            from trading_config import TradingConfig as _TC, get_regime_sl_tp
             _cfg = _TC()
             _regime = self._current_regime if hasattr(self, '_current_regime') else "unknown"
-            _base_sl = get_symbol_param(symbol, "atr_mult_sl", _cfg) or _cfg.sl_atr_multiplier
             K, _tp1_mult, _tp2_mult = get_regime_sl_tp(
-                _regime, _base_sl, 2.0, 4.0
+                _regime, _cfg.sl_atr_multiplier, 2.0, 4.0
             )
         except Exception:
             K, _tp1_mult, _tp2_mult = 1.5, 2.0, 4.0

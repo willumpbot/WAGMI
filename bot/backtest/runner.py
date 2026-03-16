@@ -471,62 +471,11 @@ def _print_backtest_summary(results: dict):
     funnel = results.get("signal_funnel", {})
     if funnel:
         print("\n  SIGNAL FUNNEL:")
-        candles = funnel.get("candles_processed", funnel.get("total", 0))
-        no_sig = funnel.get("no_signal", 0)
-        sig_gen = funnel.get("signals_generated", funnel.get("signal", 0))
-        executed = funnel.get("executed", 0)
-        if candles:
-            print(f"    {'candles_processed':>22}: {candles}")
-        if no_sig:
-            print(f"    {'no_signal (strategies)':>22}: {no_sig}  ← ensemble returned nothing")
-        for key in ("cb_blocked", "regime_blocked"):
+        for key in ("total", "signal", "no_signal", "cb_blocked", "regime_blocked",
+                     "llm_approved", "other_rejections", "llm_vetoed"):
             val = funnel.get(key, 0)
             if val > 0:
-                print(f"    {key:>22}: {val}")
-        sym_bl = funnel.get("sym_regime_blocklisted", 0)
-        if sym_bl > 0:
-            print(f"    {'sym_regime_blocklisted':>22}: {sym_bl}  ← per-symbol regime_blocklist")
-        other = funnel.get("other_rejections", 0)
-        if sig_gen:
-            print(f"    {'signals_generated':>22}: {sig_gen}  (passed ensemble)")
-        if other:
-            print(f"    {'other_rejections':>22}: {other}  ← conf/chop/trend alignment")
-        # Gate-level rejection breakdown (signals that passed ensemble but failed risk gates)
-        gate_rej = funnel.get("gate_rejections", {})
-        if gate_rej:
-            print(f"    {'GATE REJECTIONS':>22}:")
-            for gate, cnt in sorted(gate_rej.items(), key=lambda x: -x[1]):
-                print(f"      {gate:>24}: {cnt}")
-        # Top rejection reasons (text breakdown of WHY signals fail at gates)
-        reason_rej = funnel.get("rejection_reasons", {})
-        if reason_rej:
-            print(f"    {'TOP REJECTION REASONS':>22}:")
-            for reason, cnt in sorted(reason_rej.items(), key=lambda x: -x[1])[:8]:
-                print(f"      {cnt:>4}x  {reason}")
-        for key in ("llm_approved", "llm_vetoed"):
-            val = funnel.get(key, 0)
-            if val > 0:
-                print(f"    {key:>22}: {val}")
-        if executed:
-            conv = funnel.get("conversion_rate", 0)
-            print(f"    {'executed (trades)':>22}: {executed}  ({conv:.2f}% of candles)")
-
-    # By-symbol × regime cross-table (the key diagnostic: which symbol+regime makes/loses money)
-    by_sym_regime = results.get("by_symbol_regime", {})
-    if by_sym_regime:
-        print("\n  BY SYMBOL × REGIME:")
-        rows = []
-        for sym, regimes in sorted(by_sym_regime.items()):
-            for regime, data in sorted(regimes.items(), key=lambda x: x[1].get("pnl", 0)):
-                t = data.get("trades", 0)
-                wr = data.get("win_rate", 0)
-                pnl = data.get("pnl", 0)
-                rows.append((sym, regime, t, wr, pnl))
-        # Sort by PnL (worst first so losers are obvious)
-        rows.sort(key=lambda r: r[4])
-        for sym, regime, t, wr, pnl in rows:
-            flag = "  ← LOSER" if wr == 0 and t > 0 else ""
-            print(f"    {sym:>6} {regime:<18}: {t} trades | WR {wr:.0f}% | PnL ${pnl:+,.2f}{flag}")
+                print(f"    {key:>16}: {val}")
 
     # By-regime performance
     by_regime = results.get("by_regime", {})

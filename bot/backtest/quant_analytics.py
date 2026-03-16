@@ -178,24 +178,16 @@ def compute_strategy_correlation(trades: List[Dict[str, Any]]) -> Dict[str, Any]
     if len(trades) < 10:
         return {"matrix": {}, "independent_count": 0, "redundant_pairs": [], "total_strategies": 0}
 
-    # Group trades by time bucket (1h) and strategy.
-    # Ensemble signals carry metadata["strategies_agree"] — a list of individual
-    # strategy names. Expand that list so each strategy appears as its own row.
+    # Group trades by time bucket (1h) and strategy
     buckets = defaultdict(set)
     all_strategies = set()
     for t in trades:
-        # Prefer the strategies_agree list from ensemble metadata (more granular)
-        meta = t.get("metadata", {}) or {}
-        agreed = meta.get("strategies_agree") or t.get("strategies_agree")
-        if agreed and isinstance(agreed, list) and len(agreed) >= 1:
-            strategy_names = agreed
-        else:
-            strategy_names = [t.get("strategy", "unknown")]
+        strategy = t.get("strategy", "unknown")
+        all_strategies.add(strategy)
+        # Use trade timestamp rounded to hour
         ts = str(t.get("timestamp", t.get("time", "")))[:13]  # YYYY-MM-DD HH
         if ts:
-            for strategy in strategy_names:
-                all_strategies.add(strategy)
-                buckets[ts].add(strategy)
+            buckets[ts].add(strategy)
 
     if not buckets or len(all_strategies) < 2:
         return {"matrix": {}, "independent_count": len(all_strategies),
