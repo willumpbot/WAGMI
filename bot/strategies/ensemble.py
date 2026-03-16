@@ -1425,21 +1425,30 @@ class EnsembleStrategy:
         rr_tp1 = abs(entry - best_tp1) / stop_width if stop_width > 0 else 0
         rr_tp2 = abs(entry - best_tp2) / stop_width if stop_width > 0 else 0
         raw_win_prob = combined_conf / 100.0
-        # Win probability deflation: regime-aware calibration.
-        # Trending regimes have empirically higher WR (58-86%), so deflate less.
-        # High-vol/range regimes have lower WR, so deflate more.
+        # Win probability deflation: calibrated to actual observed win-rates from 6 backtests.
+        # Formula: deflation = observed_wr / median_confidence (70%).
+        # This ensures win_prob reflects reality, not optimistic priors.
+        #
+        # Observed WR (6 backtests, ~240 trending trades total):
+        #   trending_bull: 38% WR  → deflation@3agree = 0.38/0.70 = 0.54
+        #   trending_bear: 33% WR  → deflation@3agree = 0.33/0.70 = 0.47
+        #   consolidation: 48% WR  → deflation@3agree = 0.48/0.70 = 0.69 (variable: 30-78%)
+        #   high_volatility: 61%+ WR → deflation@3agree = 0.61/0.70 = 0.87
         # Format: {n_agree: {regime: deflation_factor}}
         _WP_DEFLATION = {
-            4: {"trending_bull": 0.93, "trending_bear": 0.90, "consolidation": 0.92,
-                "range": 0.85, "high_volatility": 0.80, "panic": 0.75},
-            3: {"trending_bull": 0.85, "trending_bear": 0.82, "consolidation": 0.88,
-                "range": 0.78, "high_volatility": 0.72, "panic": 0.68},
-            2: {"trending_bull": 0.75, "trending_bear": 0.72, "consolidation": 0.70,
-                "range": 0.65, "high_volatility": 0.60, "panic": 0.55},
-            1: {"trending_bull": 0.55, "trending_bear": 0.52, "consolidation": 0.50,
-                "range": 0.45, "high_volatility": 0.40, "panic": 0.35},
+            4: {"trending_bull": 0.68, "trending_bear": 0.65, "consolidation": 0.80,
+                "range": 0.78, "high_volatility": 0.93, "panic": 0.75},
+            3: {"trending_bull": 0.54, "trending_bear": 0.47, "consolidation": 0.69,
+                "range": 0.65, "high_volatility": 0.87, "panic": 0.68},
+            2: {"trending_bull": 0.40, "trending_bear": 0.36, "consolidation": 0.56,
+                "range": 0.52, "high_volatility": 0.75, "panic": 0.55},
+            1: {"trending_bull": 0.30, "trending_bear": 0.28, "consolidation": 0.42,
+                "range": 0.38, "high_volatility": 0.58, "panic": 0.35},
         }
-        _DEFAULT_DEFLATION = {4: 0.88, 3: 0.80, 2: 0.65, 1: 0.50}
+        # Note: at 3-agree, trending_bull win_prob = 0.70×0.54=0.378.
+        # Break-even for R:R=1.3 is 43.5% → EV is negative → rejected at ensemble level.
+        # Only 90%+ confidence trending signals (0.90×0.54=0.486 > break-even) pass through.
+        _DEFAULT_DEFLATION = {4: 0.82, 3: 0.68, 2: 0.54, 1: 0.40}
         _regime_ev = self._current_regime.get(symbol, "unknown")
         _agree_key = min(n_agree, 4)
         _deflation = _WP_DEFLATION.get(_agree_key, {}).get(

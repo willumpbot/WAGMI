@@ -127,6 +127,15 @@ class BacktestEngine:
         self.signal_rejections: List[Dict] = []  # Track why signals were rejected
         self.missed_trade_tracker = MissedTradeTracker(data_dir="data")
         self.candle_stats = {"total": 0, "signal": 0, "no_signal": 0, "cb_blocked": 0}
+
+        # Signal quality tracker: builds per-regime rolling win-rates during the backtest.
+        # Enables Kelly criterion sizing — RiskFilterChain queries this for live regime WR.
+        # Starts empty; Kelly only activates after 15+ trades per regime accumulate.
+        try:
+            from feedback.signal_quality import SignalQualityScorer
+            self.quality_tracker = SignalQualityScorer()
+        except Exception:
+            self.quality_tracker = None
         self.symbol_pnl: Dict[str, float] = {}  # Per-symbol equity attribution
         self._signal_digests: List[Dict] = []  # Per-candle signal digest for quant learning
         self._ensemble: Optional[EnsembleStrategy] = None  # Stored for diagnostic access
@@ -647,6 +656,26 @@ class BacktestEngine:
                 if _is_final_close:
                     self._record_trade_outcome(event, current_price)
                     self._last_close_candle[symbol] = i  # Track for re-entry gap
+                    # Feed outcome to quality tracker for Kelly sizing calibration.
+                    # Once a regime accumulates 15+ trades, Kelly replaces static sizing.
+                    if self.quality_tracker is not None:
+                        try:
+                            from feedback.signal_quality import QualityFeatures
+                            _meta = getattr(event, "metadata", {}) or {}
+                            _regime = _meta.get("regime", "unknown")
+                            _entry_reasons = _meta.get("entry_reasons", {}) or {}
+                            _regime = _regime or _entry_reasons.get("regime", "unknown")
+                            _pnl = float(getattr(event, "pnl", 0))
+                            _feats = QualityFeatures(
+                                symbol=str(getattr(event, "symbol", symbol)),
+                                regime=_regime,
+                                confidence=float(_meta.get("confidence", 0)),
+                                num_strategies_agree=int(_meta.get("num_agree", 1)),
+                                side=str(getattr(event, "side", "unknown")),
+                            )
+                            self.quality_tracker.record_outcome(_feats, _pnl > 0, _pnl)
+                        except Exception:
+                            pass
                 # LLM: run Learning Agent on closed trades (final close only)
                 if self.llm and _is_final_close:
                     self.llm.clear_exit_counter(event.symbol)
@@ -838,23 +867,11 @@ class BacktestEngine:
                         )
                         continue
 
-                    # Block trending regimes: negative-EV across 6 backtests (75-150 days).
-                    # trending_bear: avg 33% WR, -$15,542 total; trending_bull: 38% WR, -$8,904 total.
-                    # high_volatility (+$35k) and consolidation are the only edges.
-                    if regime in ("trending_bear", "trending_bull"):
-                        logger.info(
-                            f"[{symbol}] Signal SKIPPED: {regime} regime "
-                            f"(historically negative-EV, ADX={_bt_adx:.1f})"
-                        )
-                        self.candle_stats.setdefault("regime_blocked", 0)
-                        self.candle_stats["regime_blocked"] += 1
-                        self.missed_trade_tracker.record_rejection(
-                            signal=signal,
-                            reason=f"Trending regime {regime} blocked (negative-EV)",
-                            gate="regime_filter",
-                            candle_idx=i,
-                        )
-                        continue
+                    # Trending regimes (33-38% WR historically) are NOT hard-blocked here.
+                    # Instead, calibrated _WP_DEFLATION in ensemble.py and _REGIME_EV_FLOORS
+                    # in signal_pipeline.py reject negative-EV trending signals automatically.
+                    # Only the rare high-conviction trending breakout (conf 90%+) passes EV math.
+                    # This is quant methodology: let EV be the gate, not regime name matching.
 
                     # Create candidate for dual-world tracking
                     candidate = self._create_candidate(signal, sim_dt)
@@ -1013,6 +1030,26 @@ class BacktestEngine:
                 if _is_final_close:
                     self._record_trade_outcome(event, current_price)
                     self._last_close_candle[symbol] = i
+                    # Feed outcome to quality tracker (same as hourly loop) for Kelly sizing
+                    if self.quality_tracker is not None:
+                        try:
+                            from feedback.signal_quality import QualityFeatures
+                            _meta = getattr(event, "metadata", {}) or {}
+                            _regime = _meta.get("regime", "unknown")
+                            _entry_reasons = _meta.get("entry_reasons", {}) or {}
+                            _regime = _regime or _entry_reasons.get("regime", "unknown")
+                            _pnl = float(getattr(event, "pnl", 0))
+                            _feats = QualityFeatures(
+                                strategy=str(_meta.get("strategy", "ensemble")),
+                                symbol=str(getattr(event, "symbol", symbol)),
+                                regime=_regime,
+                                confidence=float(_meta.get("confidence", 0)),
+                                num_agree=int(_meta.get("num_agree", 1)),
+                                side=str(getattr(event, "side", "unknown")),
+                            )
+                            self.quality_tracker.update(_feats, _pnl > 0, _pnl)
+                        except Exception:
+                            pass
                 if self.llm and _is_final_close:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
@@ -1156,10 +1193,12 @@ class BacktestEngine:
                     if trend_adj == 0 and signal.metadata.get("regime") not in ("trending_bull", "trending_bear"):
                         signal.metadata["regime"] = "ranging"
 
-                    # Regime filter: skip ranging/unknown and negative-EV trending regimes.
-                    # trending_bear/bull: -$24k across 6 backtests (75-150 days), avg WR 33-38%.
+                    # Trending/ranging regimes: NOT hard-blocked (quant approach).
+                    # _WP_DEFLATION calibration + _REGIME_EV_FLOORS in signal_pipeline.py
+                    # act as the quality gate — only high-EV signals pass.
+                    # ranging/unknown still blocked (no edge measured, insufficient data).
                     regime = signal.metadata.get("regime", "unknown")
-                    if regime in ("ranging", "unknown", "trending_bear", "trending_bull"):
+                    if regime in ("ranging", "unknown"):
                         logger.info(f"[{symbol}] Signal SKIPPED (daily): {regime} regime")
                         self.candle_stats.setdefault("regime_blocked", 0)
                         self.candle_stats["regime_blocked"] += 1
@@ -1559,6 +1598,8 @@ class BacktestEngine:
             # Includes: R:R check, EV filter, circuit breaker, max positions,
             # correlation guard, leverage decision, liquidation safety, position sizing.
             chain = RiskFilterChain(self.risk_mgr, self.leverage_mgr, self.config)
+            if self.quality_tracker is not None:
+                chain.set_quality_tracker(self.quality_tracker)
             result = chain.evaluate(
                 signal=signal,
                 equity=self.risk_mgr.equity,

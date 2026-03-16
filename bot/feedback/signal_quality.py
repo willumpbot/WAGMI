@@ -24,7 +24,7 @@ import os
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 
 logger = logging.getLogger("bot.feedback.signal_quality")
 
@@ -414,6 +414,17 @@ class SignalQualityScorer:
             "total": total,
             "avg_pnl": round(pnl / total, 4),
         }
+
+    def get_regime_win_rate(self, regime: str, min_trades: int = 15) -> Optional[float]:
+        """Return rolling win-rate for regime if enough data exists for Kelly sizing.
+
+        Returns None when sample is too small — callers should fall back to
+        static REGIME_RISK_MULTIPLIERS until sufficient data accumulates.
+        """
+        data = self.by_regime.get(regime)
+        if not data or data.get("total", 0) < min_trades:
+            return None
+        return data["wins"] / data["total"]
 
     def get_session_performance(self) -> Dict[str, Any]:
         """Get per-session performance for LLM context."""

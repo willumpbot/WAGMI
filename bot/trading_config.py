@@ -605,9 +605,9 @@ REGIME_SL_TP_SCALARS = {
 # Regime-aware risk sizing: bet bigger where edge is proven, smaller where it isn't.
 # 30-day backtest: consolidation 78% WR (+$3.2k), trending_bull 40% WR (-$4k).
 REGIME_RISK_MULTIPLIERS = {
-    "trending_bull":    0.7,    # unproven edge — reduce size
-    "trending_bear":    0.7,
-    "trend":            0.8,
+    "trending_bull":    0.4,    # 38% WR observed — reduced 0.7→0.4 (Kelly fallback: small size)
+    "trending_bear":    0.4,    # 33% WR observed — even lower edge, same reduction
+    "trend":            0.7,
     "consolidation":    1.0,    # was 1.3: 30d showed 78% WR but 70d shows 35% — noisy sample
     "range":            0.8,
     "high_volatility":  0.7,    # was 0.5: too punitive for HYPE which has tradeable edge
@@ -619,8 +619,41 @@ REGIME_RISK_MULTIPLIERS = {
 
 
 def get_regime_risk_mult(regime: str) -> float:
-    """Return position-size multiplier for the given regime."""
+    """Return position-size multiplier for the given regime (static fallback).
+    Used when insufficient trade history exists for Kelly criterion sizing.
+    """
     return REGIME_RISK_MULTIPLIERS.get(regime, 0.8)
+
+
+def get_regime_kelly_mult(regime: str, win_rate: float, payoff_ratio: float) -> float:
+    """Fractional Kelly position-size multiplier for a specific regime.
+
+    Normalizes Kelly fraction relative to our best regime (high_volatility at 61% WR)
+    so the output maps to practical position-size range [0.25, 1.0]:
+      - Negative edge (kelly ≤ 0): returns 0.25 (minimum, don't size up on losers)
+      - Best regime (high_vol 61% WR): returns ~1.0
+      - Moderate edge (consolidation 48% WR): returns ~0.5
+
+    Args:
+        regime: Current market regime (for context/logging).
+        win_rate: Rolling win-rate for this regime (e.g. 0.61 for high_volatility).
+        payoff_ratio: avg_win / avg_loss for this regime (from signal rr_tp1).
+    """
+    try:
+        from backtest.quant_analytics import compute_kelly
+        full_kelly = compute_kelly(win_rate, payoff_ratio)
+    except Exception:
+        q = 1.0 - win_rate
+        full_kelly = max(0.0, (payoff_ratio * win_rate - q) / payoff_ratio) if payoff_ratio > 0 else 0.0
+    if full_kelly <= 0:
+        # Negative expected value: minimum position (regime failing EV gate anyway)
+        return 0.25
+    # Normalize: Kelly of best reference regime (61% WR @ 1.3 R:R = 0.310).
+    # Maps normalized Kelly to [0.30, 1.0] range for practical sizing.
+    _reference_kelly = 0.310  # high_vol reference (from 6-backtest data)
+    normalized = min(full_kelly / _reference_kelly, 1.0)  # cap at 1.0
+    practical = 0.30 + normalized * 0.70   # [0.30, 1.0] range
+    return round(practical, 3)
 
 
 def get_regime_sl_tp(regime: str, base_sl_mult: float, base_tp1_mult: float,
