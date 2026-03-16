@@ -142,11 +142,6 @@ class TradingConfig:
         default_factory=lambda: _env_bool("STRATEGY_MULTI_TIER_QUALITY_ENABLED", False)
     )  # PF 0.82, -$1,223 net, 10-consecutive-loss streak, common factor in every toxic combo
 
-    # ── BTC-Specific Risk Overrides ──
-    btc_atr_multiplier: float = field(
-        default_factory=lambda: _env_float("BTC_ATR_MULTIPLIER", 1.75)
-    )  # Widen from default 1.0-1.25: BTC capped 33/54 trades (61%), payoff ratio 0.76:1
-
     # ML
     enable_ml: bool = field(default_factory=lambda: _env_bool("ENABLE_ML", True))
     ml_min_samples: int = field(default_factory=lambda: _env_int("ML_MIN_SAMPLES", 20))
@@ -543,6 +538,9 @@ class SymbolOverrides:
     # Volatility profile: "low" (BTC-like), "medium" (SOL-like), "high" (HYPE/meme)
     # Affects chop detection sensitivity and ensemble confidence floor
     volatility_profile: str = "medium"
+    # Regimes where this symbol should never trade (e.g. historically negative-EV regimes)
+    # e.g. ["trending_bear"] blocks all signals when regime_trend classifies bear trend
+    regime_blocklist: List[str] = field(default_factory=list)
 
 
 # Default per-symbol overrides
@@ -553,9 +551,15 @@ DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
     # BTC: reduced leverage (was 25x), halved risk_per_trade — BTC lost -$2,120 on
     # 10d backtest (38% WR). Lower volatility = ATR stops proportionally tighter,
     # needs less risk per trade to compensate.
-    "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=_env_float("BTC_RISK_OVERRIDE", 0.004), volatility_profile="low"),
+    "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=_env_float("BTC_RISK_OVERRIDE", 0.004),
+                           volatility_profile="low",
+                           atr_mult_sl=_env_float("BTC_ATR_MULTIPLIER", 1.75)),
+    # BTC_ATR_MULTIPLIER=1.75 (was btc_atr_multiplier in TradingConfig — now per-symbol, wired via get_symbol_param)
     # BTC risk slightly below global 0.5% since BTC ATR stops are proportionally tighter
-    "SOL": SymbolOverrides(max_leverage=20.0, volatility_profile="medium"),
+    # SOL: "high" volatility profile unlocks lenient chop floor (85% max vs 90% with "medium").
+    # atr_mult_sl=2.5 widens stops 25% vs global 2.0x — SOL wicks 1.5-2% intraday, global 2.0x
+    # gives only 0.6-1.0% room which gets hunted. 2.5x gives ~1.25% room to let moves breathe.
+    "SOL": SymbolOverrides(max_leverage=20.0, volatility_profile="high", atr_mult_sl=2.5),
     "HYPE": SymbolOverrides(max_leverage=20.0, volatility_profile="high"),
     "DOGE": SymbolOverrides(max_leverage=12.0, volatility_profile="high"),
     "FARTCOIN": SymbolOverrides(max_leverage=10.0, volatility_profile="high"),
@@ -590,7 +594,7 @@ REGIME_SL_TP_SCALARS = {
     "trending_bull":    {"sl_mult": 1.2, "tp1_mult": 1.3, "tp2_mult": 1.5},   # was tp1=0.9/tp2=0.85: inverted R:R killed trending trades
     "trending_bear":    {"sl_mult": 1.1, "tp1_mult": 1.2, "tp2_mult": 1.4},   # was tp1=0.8/tp2=0.8: same issue
     "trend":            {"sl_mult": 1.15, "tp1_mult": 1.25, "tp2_mult": 1.4},  # was tp1=0.85/tp2=0.85
-    "consolidation":    {"sl_mult": 0.85, "tp1_mult": 0.9, "tp2_mult": 0.85},  # was tp1=1.2/tp2=1.3: mean-reversion should take profits fast
+    "consolidation":    {"sl_mult": 0.85, "tp1_mult": 1.0, "tp2_mult": 1.0},   # tp1/tp2 raised 0.9/0.85→1.0/1.0: tight targets caused -$6,947 loss in 150d
     "range":            {"sl_mult": 0.9, "tp1_mult": 0.95, "tp2_mult": 0.9},   # was tp1=1.1/tp2=1.2: same as consolidation
     "high_volatility":  {"sl_mult": 1.4, "tp1_mult": 1.2, "tp2_mult": 2.0},  # was tp1=0.7/tp2=0.7: same inverted R:R bug — risk 2.8 ATR to make 1.4 ATR
     "panic":            {"sl_mult": 1.5, "tp1_mult": 0.6, "tp2_mult": 0.6},  # panic: still grab what you can
@@ -601,9 +605,9 @@ REGIME_SL_TP_SCALARS = {
 # Regime-aware risk sizing: bet bigger where edge is proven, smaller where it isn't.
 # 30-day backtest: consolidation 78% WR (+$3.2k), trending_bull 40% WR (-$4k).
 REGIME_RISK_MULTIPLIERS = {
-    "trending_bull":    0.7,    # unproven edge — reduce size
-    "trending_bear":    0.7,
-    "trend":            0.8,
+    "trending_bull":    0.4,    # 38% WR observed — reduced 0.7→0.4 (Kelly fallback: small size)
+    "trending_bear":    0.4,    # 33% WR observed — even lower edge, same reduction
+    "trend":            0.7,
     "consolidation":    1.0,    # was 1.3: 30d showed 78% WR but 70d shows 35% — noisy sample
     "range":            0.8,
     "high_volatility":  0.7,    # was 0.5: too punitive for HYPE which has tradeable edge
@@ -615,8 +619,41 @@ REGIME_RISK_MULTIPLIERS = {
 
 
 def get_regime_risk_mult(regime: str) -> float:
-    """Return position-size multiplier for the given regime."""
+    """Return position-size multiplier for the given regime (static fallback).
+    Used when insufficient trade history exists for Kelly criterion sizing.
+    """
     return REGIME_RISK_MULTIPLIERS.get(regime, 0.8)
+
+
+def get_regime_kelly_mult(regime: str, win_rate: float, payoff_ratio: float) -> float:
+    """Fractional Kelly position-size multiplier for a specific regime.
+
+    Normalizes Kelly fraction relative to our best regime (high_volatility at 61% WR)
+    so the output maps to practical position-size range [0.25, 1.0]:
+      - Negative edge (kelly ≤ 0): returns 0.25 (minimum, don't size up on losers)
+      - Best regime (high_vol 61% WR): returns ~1.0
+      - Moderate edge (consolidation 48% WR): returns ~0.5
+
+    Args:
+        regime: Current market regime (for context/logging).
+        win_rate: Rolling win-rate for this regime (e.g. 0.61 for high_volatility).
+        payoff_ratio: avg_win / avg_loss for this regime (from signal rr_tp1).
+    """
+    try:
+        from backtest.quant_analytics import compute_kelly
+        full_kelly = compute_kelly(win_rate, payoff_ratio)
+    except Exception:
+        q = 1.0 - win_rate
+        full_kelly = max(0.0, (payoff_ratio * win_rate - q) / payoff_ratio) if payoff_ratio > 0 else 0.0
+    if full_kelly <= 0:
+        # Negative expected value: minimum position (regime failing EV gate anyway)
+        return 0.25
+    # Normalize: Kelly of best reference regime (61% WR @ 1.3 R:R = 0.310).
+    # Maps normalized Kelly to [0.30, 1.0] range for practical sizing.
+    _reference_kelly = 0.310  # high_vol reference (from 6-backtest data)
+    normalized = min(full_kelly / _reference_kelly, 1.0)  # cap at 1.0
+    practical = 0.30 + normalized * 0.70   # [0.30, 1.0] range
+    return round(practical, 3)
 
 
 def get_regime_sl_tp(regime: str, base_sl_mult: float, base_tp1_mult: float,

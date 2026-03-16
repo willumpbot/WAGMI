@@ -141,8 +141,7 @@ class DataFetcher:
 
         # Disk cache directory for backtest reproducibility
         self._disk_cache_dir = os.path.join(os.path.dirname(__file__), "cache")
-        if self.backtest_mode:
-            os.makedirs(self._disk_cache_dir, exist_ok=True)
+        os.makedirs(self._disk_cache_dir, exist_ok=True)
 
         # Exchange fallback chains per symbol (Hyperliquid primary for all)
         self._symbol_exchanges = {
@@ -350,35 +349,79 @@ class DataFetcher:
     def _disk_cache_path(self, symbol: str, timeframe: str, days: Optional[int] = None) -> str:
         """Generate disk cache file path for a symbol/timeframe/days combo."""
         d = days or self.backtest_days or 0
-        return os.path.join(self._disk_cache_dir, f"{symbol}_{timeframe}_{d}d.csv")
+        # Sanitize symbol to remove characters unsafe in filenames (/, :, *)
+        safe_symbol = symbol.replace("/", "_").replace(":", "_").replace("*", "_")
+        return os.path.join(self._disk_cache_dir, f"{safe_symbol}_{timeframe}_{d}d.csv")
 
-    def _load_disk_cache(self, symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
-        """Load cached data from disk if available and not --fresh."""
-        if not self.backtest_mode or self._fresh:
+    def _load_disk_cache(self, symbol: str, timeframe: str, days: Optional[int] = None) -> Optional[pd.DataFrame]:
+        """Load cached data from disk if available and not --fresh.
+
+        Cache TTL:
+        - backtest_mode: no expiry (data is static for reproducibility)
+        - live mode: 1 hour for intraday timeframes, 24 hours for daily
+
+        Coverage check: if `days` is specified, the cached data must cover at
+        least 80% of the requested period or it is rejected as incomplete
+        (e.g. prevents a 90-day CoinGecko fallback from being served as 365 days).
+        """
+        if self._fresh:
             return None
-        path = self._disk_cache_path(symbol, timeframe)
+        path = self._disk_cache_path(symbol, timeframe, days)
         if not os.path.exists(path):
             return None
         try:
+            # Enforce cache TTL in live mode
+            if not self.backtest_mode:
+                age_hours = (time.time() - os.path.getmtime(path)) / 3600
+                max_age_hours = 24.0 if timeframe in ("1d", "daily") else 1.0
+                if age_hours >= max_age_hours:
+                    logger.debug(
+                        f"[CACHE] Disk cache for {symbol}/{timeframe} is {age_hours:.1f}h old "
+                        f"(max {max_age_hours}h), re-fetching"
+                    )
+                    return None
             df = pd.read_csv(path, parse_dates=["time"])
             if df.empty or len(df) < 5:
                 return None
-            logger.info(f"[CACHE] Loaded {len(df)} candles for {symbol}/{timeframe} from disk cache")
+
+            # Restore UTC timezone on the time column (lost when written to CSV)
+            if "time" in df.columns:
+                df["time"] = pd.to_datetime(df["time"], utc=True)
+
+            # Coverage check: reject cache if it doesn't cover the requested period.
+            # This prevents a CoinGecko 90-day fallback being served for a 365-day request.
+            req_days = days or self.backtest_days or 0
+            if req_days > 0 and "time" in df.columns and not df.empty:
+                first_ts = df["time"].iloc[0]
+                last_ts = df["time"].iloc[-1]
+                actual_days = (last_ts - first_ts).total_seconds() / 86400
+                min_required_days = req_days * 0.80  # allow up to 20% shortfall
+                if actual_days < min_required_days:
+                    logger.info(
+                        f"[CACHE] Disk cache for {symbol}/{timeframe} covers only "
+                        f"{actual_days:.1f} days (need {min_required_days:.0f}+ of {req_days}), "
+                        f"discarding and re-fetching"
+                    )
+                    return None
+
+            logger.info(f"[CACHE] Loaded {len(df)} candles for {symbol}/{timeframe} from disk cache ({path})")
             return df
         except Exception as e:
             logger.debug(f"[CACHE] Failed to load {path}: {e}")
             return None
 
-    def _save_disk_cache(self, symbol: str, timeframe: str, df: pd.DataFrame):
+    def _save_disk_cache(self, symbol: str, timeframe: str, df: pd.DataFrame, days: Optional[int] = None):
         """Save fetched data to disk cache for reproducibility."""
-        if not self.backtest_mode or df is None or df.empty:
+        if df is None or df.empty:
             return
-        path = self._disk_cache_path(symbol, timeframe)
+        path = self._disk_cache_path(symbol, timeframe, days)
         try:
+            # Ensure cache directory exists (in case it was deleted mid-run)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             df.to_csv(path, index=False)
-            logger.debug(f"[CACHE] Saved {len(df)} candles for {symbol}/{timeframe} to disk cache")
+            logger.info(f"[CACHE] Saved {len(df)} candles for {symbol}/{timeframe} to {path}")
         except Exception as e:
-            logger.debug(f"[CACHE] Failed to save {path}: {e}")
+            logger.warning(f"[CACHE] Failed to save {path}: {e}")
 
     # ─── Data continuity checks ──────────────────────────────────
 
@@ -723,13 +766,14 @@ class DataFetcher:
             coin_id: CoinGecko coin ID for fallback (e.g. "bitcoin", "hyperliquid")
             timeframe: "5m", "15m", "30m", "1h", "4h", "6h", "16h", "1d", "daily"
         """
-        cache_key = f"ohlcv:{symbol_name}:{timeframe}"
+        days = self.backtest_days or 0
+        cache_key = f"ohlcv:{symbol_name}:{timeframe}:{days}d"
         cached = self._get_cached(cache_key)
         if cached is not None:
             return cached
 
-        # Try disk cache first (backtest reproducibility)
-        disk_cached = self._load_disk_cache(symbol_name, timeframe)
+        # Try disk cache first (backtest reproducibility + live data reuse)
+        disk_cached = self._load_disk_cache(symbol_name, timeframe, days)
         if disk_cached is not None:
             self._set_cache(cache_key, disk_cached)
             return disk_cached
@@ -738,7 +782,7 @@ class DataFetcher:
         df = self._fetch_ccxt_ohlcv(symbol_name, timeframe)
         if df is not None and not df.empty:
             self._check_data_continuity(df, symbol_name, timeframe)
-            self._save_disk_cache(symbol_name, timeframe, df)
+            self._save_disk_cache(symbol_name, timeframe, df, days)
             self._set_cache(cache_key, df)
             return df
 
@@ -749,7 +793,7 @@ class DataFetcher:
             df = self._validate_ohlcv(df, symbol_name, timeframe)
             logger.info(f"[DATA] {symbol_name} fetched {len(df)} candles for {timeframe} via CoinGecko")
             self._check_data_continuity(df, symbol_name, timeframe)
-            self._save_disk_cache(symbol_name, timeframe, df)
+            self._save_disk_cache(symbol_name, timeframe, df, days)
             self._set_cache(cache_key, df)
             self._last_fetch_ts[(symbol_name, timeframe)] = time.time()
         return df
@@ -769,15 +813,28 @@ class DataFetcher:
         result = {}
         cg_fallback_tfs = []
         tfs_to_fetch = []
+        req_days = self.backtest_days or 0
 
-        # Check cache first (instant, no I/O)
+        # Check in-memory cache first (instant, no I/O)
         for tf in timeframes:
-            cache_key = f"ohlcv:{symbol_name}:{tf}"
+            cache_key = f"ohlcv:{symbol_name}:{tf}:{req_days}d"
             cached = self._get_cached(cache_key)
             if cached is not None:
                 result[tf] = cached
             else:
                 tfs_to_fetch.append(tf)
+
+        # Check disk cache for remaining timeframes
+        still_to_fetch = []
+        for tf in tfs_to_fetch:
+            disk_cached = self._load_disk_cache(symbol_name, tf, req_days)
+            if disk_cached is not None:
+                cache_key = f"ohlcv:{symbol_name}:{tf}:{req_days}d"
+                self._set_cache(cache_key, disk_cached)
+                result[tf] = disk_cached
+            else:
+                still_to_fetch.append(tf)
+        tfs_to_fetch = still_to_fetch
 
         # Fetch uncached timeframes concurrently via CCXT
         if tfs_to_fetch:
@@ -791,7 +848,9 @@ class DataFetcher:
                     try:
                         tf, df = fut.result()
                         if df is not None and not df.empty:
-                            self._set_cache(f"ohlcv:{symbol_name}:{tf}", df)
+                            cache_key = f"ohlcv:{symbol_name}:{tf}:{req_days}d"
+                            self._save_disk_cache(symbol_name, tf, df, req_days)
+                            self._set_cache(cache_key, df)
                             result[tf] = df
                         else:
                             cg_fallback_tfs.append(tf)
@@ -804,19 +863,19 @@ class DataFetcher:
                 f"[{symbol_name}] CoinGecko fallback for: {cg_fallback_tfs}"
             )
             # Group by CoinGecko lookback days to minimize API requests
-            by_days: Dict[int, list] = {}
+            by_cg_days: Dict[int, list] = {}
             for tf in cg_fallback_tfs:
                 tf_config = COINGECKO_TIMEFRAME_MAP.get(tf)
                 if tf_config is None:
                     result[tf] = pd.DataFrame()
                     continue
-                days = tf_config["days"]
-                if days not in by_days:
-                    by_days[days] = []
-                by_days[days].append((tf, tf_config["freq"]))
+                cg_days = tf_config["days"]
+                if cg_days not in by_cg_days:
+                    by_cg_days[cg_days] = []
+                by_cg_days[cg_days].append((tf, tf_config["freq"]))
 
-            for days, tf_list in by_days.items():
-                raw = self._fetch_cg_market_chart(coin_id, days)
+            for cg_days, tf_list in by_cg_days.items():
+                raw = self._fetch_cg_market_chart(coin_id, cg_days)
                 if raw is None or raw.empty:
                     for tf, _ in tf_list:
                         result[tf] = pd.DataFrame()
@@ -824,8 +883,9 @@ class DataFetcher:
 
                 for tf, freq in tf_list:
                     df = self._resample_cg_to_ohlcv(raw, freq)
-                    cache_key = f"ohlcv:{symbol_name}:{tf}"
+                    cache_key = f"ohlcv:{symbol_name}:{tf}:{req_days}d"
                     if not df.empty:
+                        self._save_disk_cache(symbol_name, tf, df, req_days)
                         self._set_cache(cache_key, df)
                     result[tf] = df
 

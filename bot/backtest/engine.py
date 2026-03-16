@@ -44,6 +44,7 @@ from strategies.funding_rate import FundingRateStrategy
 from strategies.oi_delta import OIDeltaStrategy
 from strategies.lead_lag import LeadLagStrategy
 from strategies.liquidation_cascade import LiquidationCascadeStrategy
+from strategies.cvd_signal import CVDSignalStrategy
 
 logger = logging.getLogger("bot.backtest")
 
@@ -68,12 +69,17 @@ class BacktestEngine:
     """
 
     def __init__(self, config: Optional[TradingConfig] = None, llm_integration=None,
-                 fresh: bool = False, relaxed_cb: bool = False, resume: bool = False):
+                 fresh: bool = False, relaxed_cb: bool = False, **kwargs):
         self.config = config or TradingConfig()
         self.llm = llm_integration  # Optional BacktestLLMIntegration
         self._relaxed_cb = relaxed_cb
-        self._resume = resume
+        self._resume = kwargs.get('resume', False)
         self._simple_resume_state: Optional[Dict] = None  # Populated from checkpoint on resume
+
+        # Generic checkpointing (non-LLM mode)
+        self.checkpoint_dir = "data/backtest_checkpoints"
+        self.checkpoint_interval = 100  # save every 100 candles
+        self.resume = kwargs.get('resume', False)
 
         # Initialize components
         self.fetcher = DataFetcher(cache_ttl=3600, backtest_mode=True, fresh=fresh)
@@ -121,8 +127,18 @@ class BacktestEngine:
         self.signal_rejections: List[Dict] = []  # Track why signals were rejected
         self.missed_trade_tracker = MissedTradeTracker(data_dir="data")
         self.candle_stats = {"total": 0, "signal": 0, "no_signal": 0, "cb_blocked": 0}
+
+        # Signal quality tracker: builds per-regime rolling win-rates during the backtest.
+        # Enables Kelly criterion sizing — RiskFilterChain queries this for live regime WR.
+        # Starts empty; Kelly only activates after 15+ trades per regime accumulate.
+        try:
+            from feedback.signal_quality import SignalQualityScorer
+            self.quality_tracker = SignalQualityScorer()
+        except Exception:
+            self.quality_tracker = None
         self.symbol_pnl: Dict[str, float] = {}  # Per-symbol equity attribution
         self._signal_digests: List[Dict] = []  # Per-candle signal digest for quant learning
+        self._ensemble: Optional[EnsembleStrategy] = None  # Stored for diagnostic access
 
         # Candidate tracking for counterfactual analysis
         self._candidate_logger = None
@@ -198,6 +214,7 @@ class BacktestEngine:
             chop_detector=chop,
             confidence_floor=self.config.ensemble_confidence_floor,
         )
+        self._ensemble = ensemble  # Store for diagnostic access in reporting methods
         # Wire missed trade tracker into ensemble for rejection feedback
         ensemble.set_missed_trade_tracker(self.missed_trade_tracker)
         # Wire volatility profiles for per-symbol confidence floor capping
@@ -410,6 +427,8 @@ class BacktestEngine:
         # BTC cross-data strategy (data injected in run() symbol loop)
         if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "false").lower() == "true":  # 0% WR, -$137/trade EV
             all_strats["lead_lag"] = LeadLagStrategy(sym_configs)
+        if os.getenv("STRATEGY_CVD_SIGNAL_ENABLED", "true").lower() == "true":
+            all_strats["cvd_signal"] = CVDSignalStrategy(sym_configs)
 
         # Metadata-dependent strategies — funding_rate and oi_delta need exchange API
         # data (return None gracefully when missing). liquidation_cascade works with
@@ -463,6 +482,35 @@ class BacktestEngine:
             logger.warning(f"Simple checkpoint load failed: {e}")
         return None
 
+    # ── Generic per-symbol checkpoint helpers ──────────────────────────────
+
+    def _save_checkpoint(self, symbol: str, candle_idx: int, trades_so_far: list, equity: float):
+        """Save progress checkpoint so we can resume on crash."""
+        os.makedirs(self.checkpoint_dir, exist_ok=True)
+        ckpt = {
+            "symbol": symbol,
+            "candle_idx": candle_idx,
+            "equity": equity,
+            "trades_count": len(trades_so_far),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        path = os.path.join(self.checkpoint_dir, f"ckpt_{symbol.replace('/', '_')}.json")
+        with open(path, "w") as f:
+            json.dump(ckpt, f)
+        # Also append any new trades to a rolling CSV
+        if trades_so_far:
+            csv_path = os.path.join(self.checkpoint_dir, f"trades_{symbol.replace('/', '_')}.csv")
+            df_ckpt = pd.DataFrame(trades_so_far[-50:])  # only write last 50 (avoid rewriting whole file)
+            df_ckpt.to_csv(csv_path, mode='a', header=not os.path.exists(csv_path), index=False)
+
+    def _load_checkpoint(self, symbol: str) -> Optional[Dict]:
+        """Load checkpoint for a symbol if it exists."""
+        path = os.path.join(self.checkpoint_dir, f"ckpt_{symbol.replace('/', '_')}.json")
+        if os.path.exists(path):
+            with open(path) as f:
+                return json.load(f)
+        return None
+
     def _walk_hourly(self, symbol: str, data: Dict[str, pd.DataFrame], ensemble: EnsembleStrategy):
         """Walk forward through hourly candles."""
         df_1h = data.get("1h", pd.DataFrame())
@@ -486,6 +534,19 @@ class BacktestEngine:
             logger.info(f"[{symbol}] Resuming from candle {start_idx} (simple checkpoint)")
             self._simple_resume_state = None  # Consume once — next symbol starts fresh
 
+        # Generic (non-LLM) resume: restore start_idx from checkpoint file
+        if getattr(self, 'resume', False) and not self.llm:
+            ckpt = self._load_checkpoint(symbol)
+            if ckpt and ckpt.get('candle_idx', 0) > start_idx:
+                start_idx = ckpt['candle_idx'] + 1
+                logger.info(f"[{symbol}] Resuming from checkpoint at candle {start_idx}")
+
+        # Pre-sort time arrays for fast searchsorted (avoid per-candle sorting)
+        _tf_time_vals = {}
+        for tf, df in data.items():
+            if not df.empty and "time" in df.columns:
+                _tf_time_vals[tf] = df["time"].values
+
         for i in range(start_idx, total_candles):
             self._current_candle_idx = i  # Track for missed trade counterfactuals
             # Build windowed data for this point in time.
@@ -494,23 +555,25 @@ class BacktestEngine:
             # Replaces the old df[mask].copy() pattern which grew O(n) per candle and
             # caused 5+ GB peak RAM on 365-day runs with 5m data.
             windowed = {}
+            current_time = df_1h["time"].iloc[i]
+            # Convert to a raw value comparable with df["time"].values for searchsorted
+            _ct_val = current_time.value if hasattr(current_time, 'value') else current_time
             for tf, df in data.items():
                 if df.empty:
                     continue
-                current_time = df_1h["time"].iloc[i]
-                # Find the cutoff index (first row >= current_time) without scanning
-                # every row — searchsorted is O(log n) vs O(n) for boolean mask.
-                cutoff = int(df["time"].searchsorted(current_time, side="left"))
-                if cutoff == 0:
+                # Use searchsorted on pre-extracted time array for O(log n) lookup.
+                # This returns the insertion point — everything at indices [:cut] is
+                # strictly less than current_time, avoiding look-ahead bias.
+                tf_times = _tf_time_vals.get(tf)
+                if tf_times is None:
                     continue
-                # Cap window to _MAX_WINDOW_LOOKBACK rows (fixed-size copy, not growing).
-                start_w = max(0, cutoff - _MAX_WINDOW_LOOKBACK)
-                w = df.iloc[start_w:cutoff].copy()
-                # Drop rows with NaN in critical OHLCV columns
+                cut = int(np.searchsorted(tf_times, _ct_val, side='left'))
+                if cut == 0:
+                    continue
+                w = df.iloc[:cut]  # view, no copy — eliminates memory churn
+                # Drop rows with NaN in critical OHLCV columns (on view; creates copy only when needed)
                 ohlcv_cols = [c for c in ("open", "high", "low", "close", "volume") if c in w.columns]
-                if ohlcv_cols:
-                    w = w.dropna(subset=ohlcv_cols)
-                if not w.empty:
+                if ohlcv_cols and not w[ohlcv_cols].isna().all().all():
                     windowed[tf] = w
 
             if not windowed:
@@ -593,6 +656,26 @@ class BacktestEngine:
                 if _is_final_close:
                     self._record_trade_outcome(event, current_price)
                     self._last_close_candle[symbol] = i  # Track for re-entry gap
+                    # Feed outcome to quality tracker for Kelly sizing calibration.
+                    # Once a regime accumulates 15+ trades, Kelly replaces static sizing.
+                    if self.quality_tracker is not None:
+                        try:
+                            from feedback.signal_quality import QualityFeatures
+                            _meta = getattr(event, "metadata", {}) or {}
+                            _regime = _meta.get("regime", "unknown")
+                            _entry_reasons = _meta.get("entry_reasons", {}) or {}
+                            _regime = _regime or _entry_reasons.get("regime", "unknown")
+                            _pnl = float(getattr(event, "pnl", 0))
+                            _feats = QualityFeatures(
+                                symbol=str(getattr(event, "symbol", symbol)),
+                                regime=_regime,
+                                confidence=float(_meta.get("confidence", 0)),
+                                num_strategies_agree=int(_meta.get("num_agree", 1)),
+                                side=str(getattr(event, "side", "unknown")),
+                            )
+                            self.quality_tracker.record_outcome(_feats, _pnl > 0, _pnl)
+                        except Exception:
+                            pass
                 # LLM: run Learning Agent on closed trades (final close only)
                 if self.llm and _is_final_close:
                     self.llm.clear_exit_counter(event.symbol)
@@ -784,6 +867,12 @@ class BacktestEngine:
                         )
                         continue
 
+                    # Trending regimes (33-38% WR historically) are NOT hard-blocked here.
+                    # Instead, calibrated _WP_DEFLATION in ensemble.py and _REGIME_EV_FLOORS
+                    # in signal_pipeline.py reject negative-EV trending signals automatically.
+                    # Only the rare high-conviction trending breakout (conf 90%+) passes EV math.
+                    # This is quant methodology: let EV be the gate, not regime name matching.
+
                     # Create candidate for dual-world tracking
                     candidate = self._create_candidate(signal, sim_dt)
 
@@ -836,6 +925,14 @@ class BacktestEngine:
             })
             # Track last price per symbol for cross-symbol MTM
             self._last_prices[symbol] = current_price
+
+            # Generic (non-LLM) checkpoint: save every N candles
+            if not self.llm and i % self.checkpoint_interval == 0:
+                _trades_log = [
+                    {"action": e.action, "symbol": e.symbol, "pnl": e.pnl, "side": getattr(e, "side", "")}
+                    for e in self.pos_mgr.trade_log
+                ]
+                self._save_checkpoint(symbol, i, _trades_log, self.risk_mgr.equity)
 
             # LLM: checkpoint and progress
             if self.llm:
@@ -933,6 +1030,26 @@ class BacktestEngine:
                 if _is_final_close:
                     self._record_trade_outcome(event, current_price)
                     self._last_close_candle[symbol] = i
+                    # Feed outcome to quality tracker (same as hourly loop) for Kelly sizing
+                    if self.quality_tracker is not None:
+                        try:
+                            from feedback.signal_quality import QualityFeatures
+                            _meta = getattr(event, "metadata", {}) or {}
+                            _regime = _meta.get("regime", "unknown")
+                            _entry_reasons = _meta.get("entry_reasons", {}) or {}
+                            _regime = _regime or _entry_reasons.get("regime", "unknown")
+                            _pnl = float(getattr(event, "pnl", 0))
+                            _feats = QualityFeatures(
+                                strategy=str(_meta.get("strategy", "ensemble")),
+                                symbol=str(getattr(event, "symbol", symbol)),
+                                regime=_regime,
+                                confidence=float(_meta.get("confidence", 0)),
+                                num_agree=int(_meta.get("num_agree", 1)),
+                                side=str(getattr(event, "side", "unknown")),
+                            )
+                            self.quality_tracker.update(_feats, _pnl > 0, _pnl)
+                        except Exception:
+                            pass
                 if self.llm and _is_final_close:
                     self.llm.clear_exit_counter(event.symbol)
                     self._run_llm_learning(event, current_price)
@@ -1053,12 +1170,14 @@ class BacktestEngine:
                                 al = s.get("align_long", 0)
                                 ash = s.get("align_short", 0)
                                 adx_val = s.get("adx", 25.0)
-                                if al >= 2:
+                                if al >= 3:
                                     signal.metadata["regime"] = "trending_bull"
-                                elif ash >= 2:
+                                elif ash >= 3:
                                     signal.metadata["regime"] = "trending_bear"
                                 else:
                                     signal.metadata["regime"] = "ranging"
+                                # Aligned with hourly threshold (>=3): prevents daily loop
+                                # from tagging "trending" with lower conviction than hourly.
                                 break
                         signal.metadata["adx"] = round(adx_val, 1)
                     except Exception:
@@ -1074,7 +1193,10 @@ class BacktestEngine:
                     if trend_adj == 0 and signal.metadata.get("regime") not in ("trending_bull", "trending_bear"):
                         signal.metadata["regime"] = "ranging"
 
-                    # Regime filter: skip ranging and unknown trades
+                    # Trending/ranging regimes: NOT hard-blocked (quant approach).
+                    # _WP_DEFLATION calibration + _REGIME_EV_FLOORS in signal_pipeline.py
+                    # act as the quality gate — only high-EV signals pass.
+                    # ranging/unknown still blocked (no edge measured, insufficient data).
                     regime = signal.metadata.get("regime", "unknown")
                     if regime in ("ranging", "unknown"):
                         logger.info(f"[{symbol}] Signal SKIPPED (daily): {regime} regime")
@@ -1476,6 +1598,8 @@ class BacktestEngine:
             # Includes: R:R check, EV filter, circuit breaker, max positions,
             # correlation guard, leverage decision, liquidation safety, position sizing.
             chain = RiskFilterChain(self.risk_mgr, self.leverage_mgr, self.config)
+            if self.quality_tracker is not None:
+                chain.set_quality_tracker(self.quality_tracker)
             result = chain.evaluate(
                 signal=signal,
                 equity=self.risk_mgr.equity,
@@ -1684,6 +1808,7 @@ class BacktestEngine:
             "risk_metrics": self._report_risk_metrics(max_drawdown, max_dd_duration),
             "trailing_analysis": self._report_trailing_analysis(),
             "by_regime": self._report_by_regime(),
+            "by_symbol_regime": self._report_by_symbol_regime(),
             "conf_regime_crosstab": self._report_confidence_regime_crosstab(),
             "symbol_pnl": self.symbol_pnl,
             "recommendations": self._generate_recommendations(),
@@ -1763,6 +1888,41 @@ class BacktestEngine:
             logger.warning(f"Signal digest summary failed: {e}")
             report["signal_digest_summary"] = {"error": str(e)}
 
+        # ── Walk-Forward Validation ──────────────────────────────────────
+        # Uses the existing trade log (no extra backtests). Partitions completed
+        # trades into rolling train/test windows to check OOS generalization.
+        try:
+            import pandas as pd
+            from validation.walk_forward import run_rolling_walk_forward, avg_wf_ratio
+            _wf_records = self._build_quant_trade_records()
+            _wf_input = []
+            for t in _wf_records:
+                ts = t.get("timestamp", "")
+                try:
+                    epoch = pd.Timestamp(ts).timestamp()
+                    _wf_input.append({"timestamp": epoch, "net_pnl": float(t.get("pnl", 0))})
+                except Exception:
+                    pass
+            if len(_wf_input) >= 10:
+                _wf_results = run_rolling_walk_forward(_wf_input)
+                _wf_ratio = avg_wf_ratio(_wf_results) if _wf_results else 0.0
+                _wf_test_profit = sum(r["oos_pnl"] for r in _wf_results) > 0 if _wf_results else False
+                report["walk_forward"] = {
+                    "overfit_ratio": round(_wf_ratio, 3),
+                    "test_profitable": _wf_test_profit,
+                    "n_windows": len(_wf_results),
+                }
+                logger.info(
+                    f"[WF] Walk-forward: {len(_wf_results)} windows, "
+                    f"ratio={_wf_ratio:.2f}, test_profitable={_wf_test_profit}"
+                )
+            else:
+                report["walk_forward"] = {"overfit_ratio": 0.0, "test_profitable": False, "n_windows": 0}
+                logger.info(f"[WF] Insufficient trades for walk-forward ({len(_wf_input)} < 10)")
+        except Exception as e:
+            logger.warning(f"Walk-forward validation failed: {e}")
+            report["walk_forward"] = {"overfit_ratio": 0.0, "test_profitable": False, "error": str(e)}
+
         return report
 
     def _build_quant_trade_records(self) -> List[Dict[str, Any]]:
@@ -1793,9 +1953,11 @@ class BacktestEngine:
                 timestamp = str(getattr(event, "timestamp", ""))
                 symbol = getattr(event, "symbol", "unknown")
                 strategy = meta.get("strategy", getattr(event, "strategy", "unknown"))
+            strategies_agree = meta.get("strategies_agree", [])
             records.append({
                 "pnl": float(pnl),
                 "strategy": strategy,
+                "strategies_agree": strategies_agree,  # individual strategy names for correlation
                 "regime": meta.get("regime", "unknown"),
                 "side": side,
                 "confidence": float(meta.get("confidence", 0)),
@@ -2109,11 +2271,19 @@ class BacktestEngine:
         cb_blocked = self.candle_stats["cb_blocked"]
         signal_gen = self.candle_stats["signal"]
 
-        # Count rejections by gate
+        # Count rejections by gate (signals that passed ensemble but failed risk gates)
         gate_counts = {}
         for rej in self.signal_rejections:
             gate = rej.get("gate", "unknown")
             gate_counts[gate] = gate_counts.get(gate, 0) + 1
+
+        # Count rejection reasons (human-readable breakdown of what killed signals)
+        reason_counts: Dict[str, int] = {}
+        for rej in self.signal_rejections:
+            reason = rej.get("reason", "unknown")
+            # Truncate to first 60 chars to group similar reasons
+            short_reason = str(reason)[:60]
+            reason_counts[short_reason] = reason_counts.get(short_reason, 0) + 1
 
         executed = len(self.signals_generated)
         regime_blocked = self.candle_stats.get("regime_blocked", 0)
@@ -2123,13 +2293,20 @@ class BacktestEngine:
         if other_rejections < 0:
             other_rejections = 0
 
+        # Per-symbol regime blocklist rejections (from EnsembleStrategy)
+        sym_regime_blocklisted = 0
+        if self._ensemble is not None:
+            sym_regime_blocklisted = getattr(self._ensemble, 'regime_blocklist_rejections', 0)
+
         return {
             "candles_processed": total,
             "no_signal": no_signal,
             "cb_blocked": cb_blocked,
             "regime_blocked": regime_blocked,
+            "sym_regime_blocklisted": sym_regime_blocklisted,  # Per-symbol regime_blocklist hits
             "signals_generated": signal_gen,
             "gate_rejections": gate_counts,
+            "rejection_reasons": reason_counts,  # Human-readable: what killed each signal at gates
             "other_rejections": other_rejections,  # ensemble-level rejections (confidence floor, chop, etc.)
             "executed": executed,
             "conversion_rate": round(executed / total * 100, 1) if total > 0 else 0,
@@ -2424,6 +2601,37 @@ class BacktestEngine:
             stats["pnl"] = round(stats.get("pnl", 0), 2)
 
         return regime_stats
+
+    def _report_by_symbol_regime(self) -> Dict[str, Any]:
+        """Cross-table: symbol × regime → trades, WR, PnL.
+        Reveals exactly which symbol+regime combinations are destroying or making money.
+        E.g. 'SOL in trending_bear = 0% WR, -$820' vs 'BTC in consolidation = 100% WR, +$4,155'
+        """
+        result: Dict[str, Dict[str, Dict]] = {}
+        for event in self.pos_mgr.trade_log:
+            if event.action not in self._CLOSE_ACTIONS:
+                continue
+            sym = event.symbol or "unknown"
+            meta = event.metadata or {}
+            regime = meta.get("regime", "") or (meta.get("entry_reasons") or {}).get("regime", "unknown")
+            if not regime:
+                regime = "unknown"
+            if sym not in result:
+                result[sym] = {}
+            if regime not in result[sym]:
+                result[sym][regime] = {"trades": 0, "wins": 0, "pnl": 0.0}
+            bucket = result[sym][regime]
+            bucket["trades"] += 1
+            if event.pnl > 0:
+                bucket["wins"] += 1
+            bucket["pnl"] += event.pnl
+        # Compute win rates and round PnL
+        for sym in result:
+            for regime, stats in result[sym].items():
+                t = stats["trades"]
+                stats["win_rate"] = round(stats["wins"] / t * 100, 1) if t > 0 else 0
+                stats["pnl"] = round(stats["pnl"], 2)
+        return result
 
     def _report_confidence_regime_crosstab(self) -> Dict[str, Any]:
         """Cross-tab: confidence band × regime → WR and PnL.

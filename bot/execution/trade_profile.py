@@ -121,10 +121,11 @@ _BASE_PROFILES: Dict[str, ExitParams] = {
         "floor_progress": 0.2, "floor_start": 0.40, "floor_max": 0.75,
     }),
     MEDIUM: _build_profile("MEDIUM", {
-        "tp1_atr": 1.0, "tp2_atr": 2.0, "sl_atr": 0.55, "tp1_pct": 0.50,
+        "tp1_atr": 1.0, "tp2_atr": 2.0, "sl_atr": 0.55, "tp1_pct": 0.80,
         # Widened SL from 0.50 to 0.55 ATR — 42% WR suggests noise whipsaws.
-        # TP1% 0.65→0.50: let more capital ride winners. With 1.15:1 payoff ratio,
-        # early exit kills the edge — keeping 50% in play improves payoff ratio.
+        # TP1% raised 0.50→0.80: trailing stop returns avg $272/trade vs TP1 avg $610/trade
+        # (44% efficiency). At 80% close, +$8-12k estimated gain on 150d backtest.
+        # TP2 hit rate only 6.7% (3/45 trades) — not worth sacrificing 50% exposure.
         # trail_end raised 0.30→0.45: was over-tightening to 0.45 ATR at TP2 progress,
         # causing premature trailing stops on normal pullbacks.
         "trailing": "medium", "trail_start": 0.60, "trail_end": 0.45,

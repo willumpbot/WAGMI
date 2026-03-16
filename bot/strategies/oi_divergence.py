@@ -128,7 +128,13 @@ class OIDivergenceStrategy(BaseStrategy):
             return None
 
         entry = current_price
-        atr_mult_sl = 1.5
+        # Per-symbol atr_mult_sl from trading config (e.g. SOL=2.5x, BTC=1.75x)
+        try:
+            from trading_config import TradingConfig as _TC, get_symbol_param
+            _cfg = _TC()
+            atr_mult_sl = get_symbol_param(symbol, "atr_mult_sl", _cfg) or 1.5
+        except Exception:
+            atr_mult_sl = 1.5
         atr_mult_tp1 = 1.5
         atr_mult_tp2 = 3.0
 
