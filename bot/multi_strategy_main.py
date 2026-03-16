@@ -375,9 +375,9 @@ class MultiStrategyBot:
             self.strategies.append(RegimeTrendStrategy(sym_configs, config.htf_hours))
         if os.getenv("STRATEGY_CONFIDENCE_SCORER_ENABLED", "true").lower() == "true":
             self.strategies.append(ConfidenceScorerStrategy(sym_configs, data_dir="ml_data", backtest_mode=True))
-        if os.getenv("STRATEGY_MULTI_TIER_QUALITY_ENABLED", "true").lower() == "true":
+        if os.getenv("STRATEGY_MULTI_TIER_QUALITY_ENABLED", "false").lower() == "true":  # PF 0.82, -$1,223 net — disabled
             self.strategies.append(MultiTierQualityStrategy(sym_configs))
-        if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "false").lower() == "true":
+        if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "true").lower() == "true":
             self.strategies.append(MonteCarloZonesStrategy(
                 sym_configs,
                 mc_sims=config.mc_num_sims,
@@ -393,7 +393,7 @@ class MultiStrategyBot:
             self.strategies.append(BollingerSqueezeStrategy(sym_configs))
         if os.getenv("STRATEGY_VMC_CIPHER_ENABLED", "true").lower() == "true":
             self.strategies.append(VMCCipherStrategy(sym_configs))
-        if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "true").lower() == "true":
+        if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "false").lower() == "true":  # 0% WR, -$137/trade — disabled
             self.strategies.append(LeadLagStrategy(sym_configs))
         if os.getenv("STRATEGY_LIQUIDATION_CASCADE_ENABLED", "true").lower() == "true":
             self.strategies.append(LiquidationCascadeStrategy(sym_configs))
