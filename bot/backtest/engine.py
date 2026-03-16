@@ -1714,7 +1714,7 @@ class BacktestEngine:
                 for t in report["trade_timeline"]
                 if t.get("timestamp", 0) > 0
             ]
-            wf_results = run_rolling_walk_forward(wf_trades, train_days=60, test_days=20)
+            wf_results = run_rolling_walk_forward(wf_trades)
             if wf_results:
                 ratio = avg_wf_ratio(wf_results)
                 test_pnl = sum(r["oos_pnl"] for r in wf_results)
