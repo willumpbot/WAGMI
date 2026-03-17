@@ -483,9 +483,9 @@ tr:hover td { background: rgba(255,255,255,0.015); }
 .quiz-option.selected .quiz-radio { border-color:var(--cyan); background:var(--cyan); box-shadow:inset 0 0 0 3px var(--card); }
 .quiz-submit { padding:10px 24px; background:var(--cyan); color:var(--bg); border:none; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; margin-top:8px; transition:opacity 0.2s; }
 .quiz-submit:hover { opacity:0.9; }
-.quiz-result { padding:12px 16px; border-radius:6px; margin-top:12px; font-size:12px; font-weight:600; }
-.quiz-result.pass { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,230,160,0.2); }
-.quiz-result.fail { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,68,102,0.2); }
+.quiz-result { padding:12px 16px; border-radius:6px; margin-top:12px; font-size:12px; font-weight:600; display:none; }
+.quiz-result.quiz-pass, .quiz-result.pass { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,230,160,0.2); display:block; }
+.quiz-result.quiz-fail, .quiz-result.fail { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,68,102,0.2); display:block; }
 
 /* Calculator */
 .calc-container { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin:16px 0; }
@@ -760,6 +760,16 @@ tr.pos-row:hover { background:var(--card-hover); }
     </div>
   </div>
 
+  <!-- System Activity Status -->
+  <div class="full-width">
+    <div class="card" style="border-left:3px solid var(--cyan);">
+      <h3 style="display:flex;align-items:center;gap:8px;">System Activity <span id="system-activity-dot" style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span></h3>
+      <div id="system-activity-status" style="font-size:12px;color:var(--text-dim);padding:8px 0;">
+        <span>Scanning for high-probability setups... The system only trades when all conditions align.</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Market Heatmap -->
   <div class="full-width">
     <div class="card">
@@ -837,6 +847,52 @@ tr.pos-row:hover { background:var(--card-hover); }
 <!-- TAB 3: SIGNALS -->
 <!-- ════════════════════════════════════════════════════════════════════ -->
 <div class="tab-content" id="tab-signals">
+
+  <!-- ═══ LIVE MARKET INTELLIGENCE PANEL ═══ -->
+  <div class="section-title">Live Market Intelligence <span style="font-size:10px;color:var(--green);margin-left:8px;">&#9679; Auto-refreshing</span></div>
+
+  <!-- Market Regime Overview -->
+  <div id="market-intel-regimes" class="grid-3" style="margin-bottom:16px;">
+    <div class="card" style="text-align:center;padding:16px;"><div class="empty" style="font-size:11px;">Loading market regimes...</div></div>
+  </div>
+
+  <!-- Signal Pipeline Status + Why No Trades -->
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="card">
+      <h3 style="display:flex;align-items:center;gap:8px;">Signal Pipeline Status</h3>
+      <div id="intel-pipeline-status"><div class="empty" style="font-size:11px;">Loading...</div></div>
+    </div>
+    <div class="card">
+      <h3 style="display:flex;align-items:center;gap:8px;">Why No Trades?</h3>
+      <div id="intel-why-no-trades"><div class="empty" style="font-size:11px;">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- Strategy Consensus + Risk Status -->
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="card">
+      <h3>Strategy Consensus</h3>
+      <div id="intel-strategy-consensus"><div class="empty" style="font-size:11px;">Loading strategy weights...</div></div>
+    </div>
+    <div class="card">
+      <h3>Circuit Breaker & Risk</h3>
+      <div id="intel-risk-status"><div class="empty" style="font-size:11px;">Loading risk data...</div></div>
+    </div>
+  </div>
+
+  <!-- LLM Agent Intelligence -->
+  <div class="card" style="margin-bottom:16px;">
+    <h3>AI Agent Intelligence</h3>
+    <div id="intel-agent-insights"><div class="empty"><div class="empty-icon">&#129302;</div>Loading agent data...<div class="empty-msg">Multi-agent insights will appear here when available</div></div></div>
+  </div>
+
+  <!-- Best Opportunities (Highest Confidence Rejections) -->
+  <div class="card" style="margin-bottom:24px;">
+    <h3>Best Current Opportunities <span style="font-size:10px;color:var(--text-dim);font-weight:400;">(highest confidence rejected signals)</span></h3>
+    <div id="intel-best-opportunities"><div class="empty" style="font-size:11px;">Loading opportunity data...</div></div>
+  </div>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:24px 0;">
 
   <!-- Active Signals -->
   <div class="section-title">Active Signals <button class="info-btn" onclick="showEdu('signals')">?</button></div>
@@ -1070,7 +1126,7 @@ tr.pos-row:hover { background:var(--card-hover); }
     <!-- Sidebar Navigation -->
     <div class="course-sidebar" id="course-sidebar">
       <div style="padding:8px 16px 12px;border-bottom:1px solid var(--border);margin-bottom:8px;">
-        <div style="font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Lewieville's Masterclass</div>
+        <div style="font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Nunu's Masterclass</div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px;">Master the art of trading</div>
         <div class="progress-wrap" style="margin:8px 0 0;">
           <div class="progress-bar-outer" style="height:5px;">
@@ -1115,6 +1171,7 @@ tr.pos-row:hover { background:var(--card-hover); }
         <div class="course-nav-item" onclick="navigateCourse('alerts')"><span class="course-nav-icon">&#128276;</span>Alerts &amp; Signals</div>
         <div class="course-nav-item" onclick="navigateCourse('dictionary')"><span class="course-nav-icon">&#128214;</span>Trading Dictionary</div>
         <div class="course-nav-item" onclick="navigateCourse('faq')"><span class="course-nav-icon">&#10067;</span>FAQ</div>
+        <div class="course-nav-item" onclick="navigateCourse('video-library')"><span class="course-nav-icon">&#127909;</span>Video Library</div>
       </div>
     </div>
 
@@ -1355,6 +1412,7 @@ async function loadChartData(symbol) {
   ]);
 
   // Set candle data
+  let hasChartData = false;
   if(ohlcvRes.status==='fulfilled' && ohlcvRes.value.ok) {
     try {
       const candles = await ohlcvRes.value.json();
@@ -1366,9 +1424,20 @@ async function loadChartData(symbol) {
         if(chartData.length > 0) {
           tvCandleSeries.setData(chartData);
           tvChart.timeScale().fitContent();
+          hasChartData = true;
         }
       }
     } catch(e) { console.error('OHLCV parse error:', e); }
+  }
+
+  // Fallback: show TradingView widget if no OHLCV data available
+  if(!hasChartData) {
+    if(tvChart) { tvChart.remove(); tvChart = null; }
+    var tvSymbolMap = { 'BTC': 'COINBASE:BTCUSD', 'SOL': 'COINBASE:SOLUSD', 'ETH': 'COINBASE:ETHUSD', 'HYPE': 'BYBIT:HYPEUSDT', 'DOGE': 'COINBASE:DOGEUSD', 'FARTCOIN': 'BYBIT:FARTCOINUSDT' };
+    var tvSymbol = tvSymbolMap[symbol] || 'COINBASE:BTCUSD';
+    container.innerHTML = '<div style="text-align:center;padding:12px 0 8px;"><span style="color:var(--yellow);font-size:11px;">Live data unavailable \u2014 showing TradingView widget for ' + symbol + '</span></div>' +
+      '<iframe src="https://www.tradingview.com/widgetembed/?symbol=' + encodeURIComponent(tvSymbol) + '&interval=60&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=0a0a1a&theme=dark&style=1&timezone=exchange&withdateranges=1&hidevolume=0&width=100%25&height=400" style="width:100%;height:400px;border:none;border-radius:8px;"></iframe>';
+    return;
   }
 
   // Overlay zones
@@ -1820,6 +1889,23 @@ async function loadAll() {
     renderRejections(rejections);
     renderPipeline(pipeline, 'pipeline-funnel');
     renderPipeline(pipeline, 'pipeline-funnel-full');
+
+    // System Activity Status
+    var actEl = document.getElementById('system-activity-status');
+    var dotEl = document.getElementById('system-activity-dot');
+    if(actEl) {
+      var executed = pipeline ? (pipeline.executed || 0) : 0;
+      var generated = pipeline ? (pipeline.generated || 0) : 0;
+      var lastTrade = rt && rt.length > 0 ? rt[0] : null;
+      var regimes = market && Array.isArray(market) ? market.map(function(m) { return (m.symbol||'?') + ': ' + (m.regime||'unknown'); }).join(' | ') : 'No regime data';
+      var statusParts = [];
+      if(executed > 0) { statusParts.push('\u2705 ' + executed + ' trade(s) executed today'); if(dotEl) dotEl.style.background='var(--green)'; }
+      else if(generated > 0) { statusParts.push('\u26A0 ' + generated + ' signals generated but none passed all gates'); if(dotEl) dotEl.style.background='var(--yellow)'; }
+      else { statusParts.push('\uD83D\uDD0D Scanning for setups \u2014 no signals yet this cycle'); if(dotEl) dotEl.style.background='var(--cyan)'; }
+      statusParts.push('\uD83C\uDF0D Regimes: ' + regimes);
+      if(lastTrade) { statusParts.push('\u23F1 Last trade: ' + (lastTrade.symbol||'--') + ' ' + fmtDateTime(lastTrade.timestamp)); }
+      actEl.innerHTML = statusParts.map(function(s) { return '<div style="margin-bottom:3px;">' + s + '</div>'; }).join('');
+    }
     document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString();
   } catch(err) {
     console.error('Dashboard load error:', err);
@@ -2333,13 +2419,18 @@ function navigateCourse(page) {
     'resources': renderResources,
     'alerts': renderAlerts,
     'dictionary': renderDictionary,
-    'faq': renderFaq
+    'faq': renderFaq,
+    'video-library': renderVideoLibrary
   };
 
   var fn = renderers[page] || renderDashboard;
   main.innerHTML = fn();
   main.scrollTop = 0;
   updateProgressUI();
+
+  // Initialize any quiz on the rendered page
+  var quizContainers = main.querySelectorAll('.quiz-container[id]');
+  quizContainers.forEach(function(qc) { initQuiz(qc.id); });
 }
 
 // ---- Quiz System ----
@@ -2356,6 +2447,9 @@ function initQuiz(quizId) {
         sib.classList.remove('selected');
       });
       opt.classList.add('selected');
+      // Also check the radio input
+      var radio = opt.querySelector('input.quiz-radio');
+      if (radio) radio.checked = true;
     });
   });
 }
@@ -2370,14 +2464,16 @@ function submitQuiz(quizId, stepId) {
 
   questions.forEach(function(q) {
     var correctAnswer = q.getAttribute('data-correct');
-    var selected = q.querySelector('.quiz-option.selected');
-    var selectedVal = selected ? selected.getAttribute('data-value') : null;
+    var checkedRadio = q.querySelector('input.quiz-radio:checked');
+    var selectedVal = checkedRadio ? checkedRadio.value : null;
 
     q.querySelectorAll('.quiz-option').forEach(function(opt) {
+      var radio = opt.querySelector('input.quiz-radio');
+      var val = radio ? radio.value : null;
       opt.classList.remove('correct', 'incorrect');
-      if (opt.getAttribute('data-value') === correctAnswer) {
+      if (val === correctAnswer) {
         opt.classList.add('correct');
-      } else if (opt.classList.contains('selected') && opt.getAttribute('data-value') !== correctAnswer) {
+      } else if (radio && radio.checked && val !== correctAnswer) {
         opt.classList.add('incorrect');
       }
     });
@@ -2476,7 +2572,7 @@ function renderDashboard() {
   }
 
   return '<div class="course-page-header">' +
-    '<h1>Welcome to Lewieville\'s Masterclass</h1>' +
+    '<h1>Welcome to Nunu\'s Masterclass</h1>' +
     '<p class="subtitle">Master the art of trading with our comprehensive program</p>' +
   '</div>' +
 
@@ -2582,7 +2678,7 @@ function renderStartHere() {
 
   return '<div class="course-page-header">' +
     '<h1>Start Your Trading Journey</h1>' +
-    '<p class="subtitle">Welcome to Lewieville\'s Masterclass!</p>' +
+    '<p class="subtitle">Welcome to Nunu\'s Masterclass!</p>' +
   '</div>' +
 
   '<div class="info-box tip">' +
@@ -2724,6 +2820,9 @@ function renderStep1() {
     <div class="course-page-header">
       <h1>Step 1: Trading Fundamentals</h1>
       <p class="subtitle">Master the essential building blocks of technical analysis</p>
+    </div>
+    <div style="position:relative;padding-bottom:56.25%;height:0;margin:1rem 0;border-radius:10px;overflow:hidden;">
+      <iframe src="https://www.youtube.com/embed/JzTMlClbM84" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
     </div>
 
     <h2>What You'll Learn</h2>
@@ -2944,7 +3043,7 @@ function renderStep1() {
     </div>
 
     <h2>Knowledge Check Quiz</h2>
-    <div class="quiz-container">
+    <div class="quiz-container" id="quiz-step1">
       <div class="quiz-question" data-correct="b">
         <p><strong>1.</strong> What does a long lower wick indicate?</p>
         <label class="quiz-option"><input type="radio" name="q1" value="a" class="quiz-radio"> a) Strong buying pressure</label>
@@ -2969,7 +3068,7 @@ function renderStep1() {
         <label class="quiz-option"><input type="radio" name="q4" value="b" class="quiz-radio"> b) Strong seller conviction</label>
         <label class="quiz-option"><input type="radio" name="q4" value="c" class="quiz-radio"> c) Market consolidation</label>
       </div>
-      <button class="quiz-submit" onclick="checkQuiz(this)">Check Answers</button>
+      <button class="quiz-submit" onclick="submitQuiz('quiz-step1','step1')">Check Answers</button>
       <div class="quiz-result"></div>
     </div>
 
@@ -2998,8 +3097,8 @@ function renderStep1() {
     </div>
 
     <div class="step-nav">
-      <button class="step-nav-btn" onclick="navigateTo('dashboard')">&#8592; Back to Dashboard</button>
-      <button class="step-nav-btn primary" onclick="navigateTo('step2')">Next: Professional Setup &#8594;</button>
+      <button class="step-nav-btn" onclick="navigateCourse('dashboard')">&#8592; Back to Dashboard</button>
+      <button class="step-nav-btn primary" onclick="navigateCourse('step2')">Next: Professional Setup &#8594;</button>
     </div>
   `;
 }
@@ -3009,6 +3108,9 @@ function renderStep2() {
     <div class="course-page-header">
       <h1>Step 2: Professional Trading Setup</h1>
       <p class="subtitle">Build your professional trading workspace</p>
+    </div>
+    <div style="position:relative;padding-bottom:56.25%;height:0;margin:1rem 0;border-radius:10px;overflow:hidden;">
+      <iframe src="https://www.youtube.com/embed/ucR2gg8v9Uo" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
     </div>
 
     <h2>What You'll Master</h2>
@@ -3208,7 +3310,7 @@ function renderStep2() {
     </div>
 
     <h2>Knowledge Check Quiz</h2>
-    <div class="quiz-container">
+    <div class="quiz-container" id="quiz-step2">
       <div class="quiz-question" data-correct="b">
         <p><strong>1.</strong> What are the optimal EMA lengths for our setup?</p>
         <label class="quiz-option"><input type="radio" name="s2q1" value="a" class="quiz-radio"> a) 10, 30, 100</label>
@@ -3233,13 +3335,13 @@ function renderStep2() {
         <label class="quiz-option"><input type="radio" name="s2q4" value="b" class="quiz-radio"> b) KRAKEN:BTCUSD</label>
         <label class="quiz-option"><input type="radio" name="s2q4" value="c" class="quiz-radio"> c) COINBASE:BTCUSD</label>
       </div>
-      <button class="quiz-submit" onclick="checkQuiz(this)">Check Answers</button>
+      <button class="quiz-submit" onclick="submitQuiz('quiz-step2','step2')">Check Answers</button>
       <div class="quiz-result"></div>
     </div>
 
     <div class="step-nav">
-      <button class="step-nav-btn" onclick="navigateTo('step1')">&#8592; Step 1: Fundamentals</button>
-      <button class="step-nav-btn primary" onclick="navigateTo('step3')">Next: Strategy Fundamentals &#8594;</button>
+      <button class="step-nav-btn" onclick="navigateCourse('step1')">&#8592; Step 1: Fundamentals</button>
+      <button class="step-nav-btn primary" onclick="navigateCourse('step3')">Next: Strategy Fundamentals &#8594;</button>
     </div>
   `;
 }
@@ -3249,6 +3351,9 @@ function renderStep3() {
     <div class="course-page-header">
       <h1>Step 3: Strategy Fundamentals Mastery</h1>
       <p class="subtitle">Master market structure analysis, trend identification, and support/resistance</p>
+    </div>
+    <div style="position:relative;padding-bottom:56.25%;height:0;margin:1rem 0;border-radius:10px;overflow:hidden;">
+      <iframe src="https://www.youtube.com/embed/XeNp9drLM9s" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
     </div>
 
     <h2>Market Structure Analysis</h2>
@@ -3437,7 +3542,7 @@ function renderStep3() {
     </div>
 
     <h2>Knowledge Check Quiz</h2>
-    <div class="quiz-container">
+    <div class="quiz-container" id="quiz-step3">
       <div class="quiz-question" data-correct="b">
         <p><strong>1.</strong> Which confirms bullish market structure on the Weekly chart?</p>
         <label class="quiz-option"><input type="radio" name="s3q1" value="a" class="quiz-radio"> a) Lower highs and lower lows</label>
@@ -3462,13 +3567,13 @@ function renderStep3() {
         <label class="quiz-option"><input type="radio" name="s3q4" value="b" class="quiz-radio"> b) Start with 1-minute and work up</label>
         <label class="quiz-option"><input type="radio" name="s3q4" value="c" class="quiz-radio"> c) Only use the 4-hour chart</label>
       </div>
-      <button class="quiz-submit" onclick="checkQuiz(this)">Check Answers</button>
+      <button class="quiz-submit" onclick="submitQuiz('quiz-step3','step3')">Check Answers</button>
       <div class="quiz-result"></div>
     </div>
 
     <div class="step-nav">
-      <button class="step-nav-btn" onclick="navigateTo('step2')">&#8592; Step 2: Professional Setup</button>
-      <button class="step-nav-btn primary" onclick="navigateTo('step4')">Next: Step 4 &#8594;</button>
+      <button class="step-nav-btn" onclick="navigateCourse('step2')">&#8592; Step 2: Professional Setup</button>
+      <button class="step-nav-btn primary" onclick="navigateCourse('step4')">Next: Step 4 &#8594;</button>
     </div>
   `;
 }
@@ -3479,6 +3584,9 @@ function renderStep4() {
     <div class="course-page-header">
       <h1>Step 4: Professional Risk Management Mastery</h1>
       <p class="subtitle">Master institutional-level risk management, position sizing, and capital preservation</p>
+    </div>
+    <div style="position:relative;padding-bottom:56.25%;height:0;margin:1rem 0;border-radius:10px;overflow:hidden;">
+      <iframe src="https://www.youtube.com/embed/T2D0PtADAu0" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
     </div>
 
     <div class="metric-row">
@@ -3801,28 +3909,28 @@ function renderStep4() {
 
     <h2 style="color:var(--cyan);margin:2rem 0 1rem">Knowledge Check</h2>
     <div class="quiz-container" id="quiz-step4">
-      <div class="quiz-question">
+      <div class="quiz-question" data-correct="b">
         <p><strong>1.</strong> With a $10,000 account and 1% risk per trade, what is your risk amount?</p>
         <label class="quiz-option"><input type="radio" name="q4-1" value="a" class="quiz-radio"> $10</label>
         <label class="quiz-option"><input type="radio" name="q4-1" value="b" class="quiz-radio"> $100</label>
         <label class="quiz-option"><input type="radio" name="q4-1" value="c" class="quiz-radio"> $1,000</label>
         <label class="quiz-option"><input type="radio" name="q4-1" value="d" class="quiz-radio"> $50</label>
       </div>
-      <div class="quiz-question">
+      <div class="quiz-question" data-correct="c">
         <p><strong>2.</strong> If your entry is $30,000 and stop loss is $29,700, what is the per-unit risk?</p>
         <label class="quiz-option"><input type="radio" name="q4-2" value="a" class="quiz-radio"> $30</label>
         <label class="quiz-option"><input type="radio" name="q4-2" value="b" class="quiz-radio"> $3,000</label>
         <label class="quiz-option"><input type="radio" name="q4-2" value="c" class="quiz-radio"> $300</label>
         <label class="quiz-option"><input type="radio" name="q4-2" value="d" class="quiz-radio"> $297</label>
       </div>
-      <div class="quiz-question">
+      <div class="quiz-question" data-correct="b">
         <p><strong>3.</strong> If you risk $100 with a 1:2 risk/reward ratio, what is your target profit?</p>
         <label class="quiz-option"><input type="radio" name="q4-3" value="a" class="quiz-radio"> $100</label>
         <label class="quiz-option"><input type="radio" name="q4-3" value="b" class="quiz-radio"> $200</label>
         <label class="quiz-option"><input type="radio" name="q4-3" value="c" class="quiz-radio"> $50</label>
         <label class="quiz-option"><input type="radio" name="q4-3" value="d" class="quiz-radio"> $300</label>
       </div>
-      <div class="quiz-question">
+      <div class="quiz-question" data-correct="c">
         <p><strong>4.</strong> What is the maximum recommended daily risk limit?</p>
         <label class="quiz-option"><input type="radio" name="q4-4" value="a" class="quiz-radio"> 2%</label>
         <label class="quiz-option"><input type="radio" name="q4-4" value="b" class="quiz-radio"> 10%</label>
@@ -3866,6 +3974,9 @@ function renderStep5() {
     <div class="course-page-header">
       <h1>Step 5: Technical Indicators Mastery</h1>
       <p class="subtitle">Master RSI, MACD, MFI, and Stochastic RSI for precise market timing</p>
+    </div>
+    <div style="position:relative;padding-bottom:56.25%;height:0;margin:1rem 0;border-radius:10px;overflow:hidden;">
+      <iframe src="https://www.youtube.com/embed/F8LbNp7aUsg" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
     </div>
 
     <div class="metric-row">
@@ -4149,28 +4260,28 @@ function renderStep5() {
 
     <h2 style="color:var(--cyan);margin:2rem 0 1rem">Knowledge Check</h2>
     <div class="quiz-container" id="quiz-step5">
-      <div class="quiz-question">
+      <div class="quiz-question" data-correct="b">
         <p><strong>1.</strong> MACD histogram above zero and rising suggests:</p>
         <label class="quiz-option"><input type="radio" name="q5-1" value="a" class="quiz-radio"> Bearish reversal incoming</label>
         <label class="quiz-option"><input type="radio" name="q5-1" value="b" class="quiz-radio"> Bullish momentum building and accelerating</label>
         <label class="quiz-option"><input type="radio" name="q5-1" value="c" class="quiz-radio"> Market is range-bound</label>
         <label class="quiz-option"><input type="radio" name="q5-1" value="d" class="quiz-radio"> Volume is declining</label>
       </div>
-      <div class="quiz-question">
+      <div class="quiz-question" data-correct="c">
         <p><strong>2.</strong> A Stochastic RSI bullish crossover in the oversold zone indicates:</p>
         <label class="quiz-option"><input type="radio" name="q5-2" value="a" class="quiz-radio"> Strong sell signal</label>
         <label class="quiz-option"><input type="radio" name="q5-2" value="b" class="quiz-radio"> Market is about to crash</label>
         <label class="quiz-option"><input type="radio" name="q5-2" value="c" class="quiz-radio"> Momentum turning up, potential buy opportunity</label>
         <label class="quiz-option"><input type="radio" name="q5-2" value="d" class="quiz-radio"> Indicator is broken</label>
       </div>
-      <div class="quiz-question">
+      <div class="quiz-question" data-correct="b">
         <p><strong>3.</strong> MFI green and rising while price is also rising suggests:</p>
         <label class="quiz-option"><input type="radio" name="q5-3" value="a" class="quiz-radio"> Retail panic buying</label>
         <label class="quiz-option"><input type="radio" name="q5-3" value="b" class="quiz-radio"> Capital inflow, smart money buying</label>
         <label class="quiz-option"><input type="radio" name="q5-3" value="c" class="quiz-radio"> Market is about to reverse</label>
         <label class="quiz-option"><input type="radio" name="q5-3" value="d" class="quiz-radio"> Low volume manipulation</label>
       </div>
-      <div class="quiz-question">
+      <div class="quiz-question" data-correct="c">
         <p><strong>4.</strong> The correct multi-timeframe sequence for an MFI+MACD strategy is:</p>
         <label class="quiz-option"><input type="radio" name="q5-4" value="a" class="quiz-radio"> Start on 1H, then check higher timeframes</label>
         <label class="quiz-option"><input type="radio" name="q5-4" value="b" class="quiz-radio"> Only use one timeframe for simplicity</label>
@@ -4192,6 +4303,9 @@ function renderStep6() {
     <div class="course-page-header">
       <h1>Step 6: Trading Readiness Assessment</h1>
       <p class="subtitle">Complete your comprehensive readiness evaluation</p>
+    </div>
+    <div style="position:relative;padding-bottom:56.25%;height:0;margin:1rem 0;border-radius:10px;overflow:hidden;">
+      <iframe src="https://www.youtube.com/embed/H7Gnh1W6VuE" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
     </div>
 
     <div class="metric-row">
@@ -4503,7 +4617,7 @@ function updateReadinessMetrics() {
 
 // ── Strategies ──
 // ============================================
-// Lewieville's Trading Masterclass - Part 4
+// Nunu's Trading Masterclass - Part 4
 // Strategy Pages: Trendline, MFI+MACD, Macro
 // ============================================
 
@@ -5457,7 +5571,7 @@ function renderStratMacro() {
 
 // ── Bull Market, Backtesting, Resources, Alerts ──
 // ============================================
-// Lewieville's Trading Masterclass - Part 5
+// Nunu's Trading Masterclass - Part 5
 // Bull Market, Backtesting, Resources, Alerts
 // ============================================
 
@@ -6498,6 +6612,36 @@ function renderFaq() {
   return html;
 }
 
+function renderVideoLibrary() {
+  var videos = [
+    { id: 'JzTMlClbM84', title: 'Step 1: Trading Fundamentals', desc: 'Essential building blocks of technical analysis and candlestick reading.' },
+    { id: 'ucR2gg8v9Uo', title: 'Step 2: Professional Setup', desc: 'Build your professional TradingView workspace with proper indicators.' },
+    { id: 'XeNp9drLM9s', title: 'Step 3: Market Structure', desc: 'Master market structure, trend identification, and support/resistance.' },
+    { id: 'T2D0PtADAu0', title: 'Step 4: Risk Management', desc: 'Institutional-level position sizing, stop losses, and capital preservation.' },
+    { id: 'F8LbNp7aUsg', title: 'Step 5: Technical Indicators', desc: 'RSI, MACD, MFI, and Stochastic RSI for precise market timing.' },
+    { id: 'H7Gnh1W6VuE', title: 'Step 6: Trading Readiness', desc: 'Complete your comprehensive readiness evaluation.' }
+  ];
+
+  var html = '<div class="course-page-header"><h1>Video Library</h1><p class="subtitle">All course videos in one place</p></div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:24px;margin-top:20px;">';
+
+  videos.forEach(function(v) {
+    html += '<div class="card" style="padding:0;overflow:hidden;">' +
+      '<div style="position:relative;padding-bottom:56.25%;height:0;">' +
+      '<iframe src="https://www.youtube.com/embed/' + v.id + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>' +
+      '</div>' +
+      '<div style="padding:16px;">' +
+      '<h3 style="font-size:14px;color:var(--text);margin-bottom:6px;">' + v.title + '</h3>' +
+      '<p style="font-size:12px;color:var(--text-dim);margin:0;">' + v.desc + '</p>' +
+      '</div></div>';
+  });
+
+  html += '</div>';
+  html += '<div style="text-align:center;margin-top:24px;"><button onclick="navigateCourse(\'dashboard\')" style="padding:10px 24px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:14px;">&larr; Back to Dashboard</button></div>';
+
+  return html;
+}
+
 function toggleFaq(idx) {
   const item = document.getElementById('faq-item-' + idx);
   if (item) {
@@ -6946,6 +7090,268 @@ loadAll = async function() {
 };
 
 /* ═══════════════════════════════════════════════════════════════════ */
+/* LIVE MARKET INTELLIGENCE PANEL                                     */
+/* ═══════════════════════════════════════════════════════════════════ */
+
+let marketIntelInitialized = false;
+let marketIntelInterval = null;
+
+async function loadMarketIntel() {
+  try {
+    const [marketRes, pipelineRes, rejectionsRes, weightsRes, riskRes, agentsRes] = await Promise.allSettled([
+      fetch('/api/market'), fetch('/api/pipeline'), fetch('/api/rejections'),
+      fetch('/api/weights'), fetch('/api/risk'), fetch('/api/agents/last')
+    ]);
+
+    let market=null, pipeline=null, rejections=null, weights=null, risk=null, agents=null;
+    if(marketRes.status==='fulfilled' && marketRes.value.ok) try { market = await marketRes.value.json(); } catch {}
+    if(pipelineRes.status==='fulfilled' && pipelineRes.value.ok) try { pipeline = await pipelineRes.value.json(); } catch {}
+    if(rejectionsRes.status==='fulfilled' && rejectionsRes.value.ok) try { rejections = await rejectionsRes.value.json(); } catch {}
+    if(weightsRes.status==='fulfilled' && weightsRes.value.ok) try { weights = await weightsRes.value.json(); } catch {}
+    if(riskRes.status==='fulfilled' && riskRes.value.ok) try { risk = await riskRes.value.json(); } catch {}
+    if(agentsRes.status==='fulfilled' && agentsRes.value.ok) try { agents = await agentsRes.value.json(); } catch {}
+
+    renderMarketRegimes(market);
+    renderIntelPipeline(pipeline, rejections);
+    renderStrategyConsensus(weights);
+    renderRiskIntel(risk);
+    renderAgentIntel(agents);
+    renderBestOpportunities(rejections);
+  } catch(e) { console.error('Market intel error:', e); }
+}
+
+function renderMarketRegimes(market) {
+  var el = document.getElementById('market-intel-regimes');
+  if(!el) return;
+  if(!market || !Array.isArray(market) || market.length === 0) {
+    el.innerHTML = '<div class="card" style="grid-column:1/-1;text-align:center;padding:20px;"><div style="color:var(--text-dim);font-size:12px;">No market data available yet. Regimes will appear once the bot generates signals.</div></div>';
+    return;
+  }
+  var regimeColors = { trend:'var(--green)', range:'var(--yellow)', panic:'var(--red)', high_volatility:'var(--orange)', low_liquidity:'var(--purple)', news_dislocation:'var(--red)', consolidation:'var(--yellow)', unknown:'var(--muted)' };
+  var regimeIcons = { trend:'\u2197', range:'\u2194', panic:'\u26A0', high_volatility:'\u26A1', low_liquidity:'\uD83D\uDCA7', news_dislocation:'\uD83D\uDCF0', consolidation:'\u23F8', unknown:'?' };
+  el.innerHTML = market.map(function(m) {
+    var regime = m.regime || 'unknown';
+    var color = regimeColors[regime] || 'var(--muted)';
+    var icon = regimeIcons[regime] || '?';
+    var bias = m.bias || 'neutral';
+    var biasColor = bias==='bullish' ? 'var(--green)' : (bias==='bearish' ? 'var(--red)' : 'var(--text-dim)');
+    var danger = m.danger || 0;
+    var dangerColor = danger > 60 ? 'var(--red)' : (danger > 30 ? 'var(--yellow)' : 'var(--green)');
+    var confidence = m.confidence != null ? (m.confidence * 100).toFixed(0) + '%' : '--';
+    return '<div class="card" style="padding:16px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+      '<strong style="font-size:14px;color:var(--text);">' + (m.symbol||'--') + '</strong>' +
+      '<span style="font-size:18px;">' + icon + '</span></div>' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
+      '<span style="font-size:11px;font-weight:700;color:' + color + ';text-transform:uppercase;">' + regime + '</span>' +
+      '<span style="font-size:10px;color:var(--text-dim);">' + confidence + ' conf</span></div>' +
+      '<div style="font-size:11px;color:' + biasColor + ';margin-bottom:6px;">Bias: ' + bias + '</div>' +
+      '<div style="font-size:10px;color:var(--text-dim);margin-bottom:4px;">Danger Level</div>' +
+      '<div style="background:var(--bg2);border-radius:4px;height:6px;overflow:hidden;">' +
+      '<div style="width:' + danger + '%;height:100%;background:' + dangerColor + ';border-radius:4px;transition:width 0.3s;"></div></div>' +
+      '<div style="font-size:10px;color:' + dangerColor + ';text-align:right;margin-top:2px;">' + danger + '/100</div>' +
+      '</div>';
+  }).join('');
+}
+
+function renderIntelPipeline(pipeline, rejections) {
+  var pipeEl = document.getElementById('intel-pipeline-status');
+  var whyEl = document.getElementById('intel-why-no-trades');
+  if(!pipeEl || !whyEl) return;
+
+  if(pipeline) {
+    var gen = pipeline.generated || 0;
+    var approved = pipeline.approved || 0;
+    var executed = pipeline.executed || 0;
+    var rejected = gen - approved;
+    pipeEl.innerHTML =
+      '<div style="display:flex;gap:12px;margin-bottom:12px;">' +
+      '<div style="flex:1;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--cyan);">' + gen + '</div><div style="font-size:10px;color:var(--text-dim);">Generated</div></div>' +
+      '<div style="flex:1;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--yellow);">' + approved + '</div><div style="font-size:10px;color:var(--text-dim);">Approved</div></div>' +
+      '<div style="flex:1;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--green);">' + executed + '</div><div style="font-size:10px;color:var(--text-dim);">Executed</div></div>' +
+      '<div style="flex:1;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--red);">' + rejected + '</div><div style="font-size:10px;color:var(--text-dim);">Rejected</div></div></div>';
+
+    // Gate breakdown from pipeline
+    if(pipeline.gates) {
+      var gateHtml = '<div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;">Gate Breakdown</div>';
+      Object.entries(pipeline.gates).forEach(function(g) {
+        var name = g[0], count = g[1];
+        gateHtml += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--border);">' +
+          '<span style="color:var(--text-dim);">' + name + '</span><span style="color:var(--yellow);font-weight:600;">' + count + '</span></div>';
+      });
+      pipeEl.innerHTML += gateHtml;
+    }
+  } else {
+    pipeEl.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;">No pipeline data \u2014 waiting for bot cycle</div>';
+  }
+
+  // Why no trades - analyze rejections
+  if(rejections && Array.isArray(rejections) && rejections.length > 0) {
+    var gateCounts = {};
+    rejections.forEach(function(r) {
+      var gate = r.gate || r.blocked_by || 'unknown';
+      gateCounts[gate] = (gateCounts[gate] || 0) + 1;
+    });
+    var sorted = Object.entries(gateCounts).sort(function(a,b) { return b[1]-a[1]; });
+    var topGate = sorted[0];
+    var reasons = {
+      'chop_filter': 'Market is too choppy \u2014 price is whipsawing without clear direction.',
+      'confidence_floor': 'Signal confidence is below the adaptive minimum threshold.',
+      'ensemble_veto': 'Not enough strategies agree on direction.',
+      'circuit_breaker': 'Circuit breaker tripped due to recent losses.',
+      'rr_floor': 'Risk/reward ratio is below minimum (< 1.2:1).',
+      'fee_drag': 'Expected profit would be eaten by trading fees.',
+      'ev_floor': 'Expected value per dollar risked is too low.',
+      'max_positions': 'Maximum number of concurrent positions reached.',
+      'correlation': 'Too correlated with existing open positions.'
+    };
+    whyEl.innerHTML = '<div style="padding:8px 12px;background:var(--bg2);border-radius:6px;margin-bottom:8px;">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:4px;">Top blocker: ' + topGate[0] + ' (' + topGate[1] + 'x)</div>' +
+      '<div style="font-size:11px;color:var(--text-dim);">' + (reasons[topGate[0]] || 'This gate is preventing signals from becoming trades.') + '</div></div>';
+    if(sorted.length > 1) {
+      whyEl.innerHTML += '<div style="font-size:10px;color:var(--muted);margin-top:6px;">Other blockers: ' +
+        sorted.slice(1,4).map(function(g) { return g[0] + ' (' + g[1] + ')'; }).join(', ') + '</div>';
+    }
+  } else {
+    whyEl.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;padding:12px;">No rejected signals yet. The bot may be between scan cycles, or conditions are very quiet.</div>';
+  }
+}
+
+function renderStrategyConsensus(weights) {
+  var el = document.getElementById('intel-strategy-consensus');
+  if(!el) return;
+  if(!weights || typeof weights !== 'object') {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;">No strategy weight data available</div>';
+    return;
+  }
+  var stratNames = { 'regime_trend': 'Regime Trend', 'monte_carlo_zones': 'Monte Carlo Zones', 'multi_tier_quality': 'Multi-TF Quality', 'confidence_scorer': 'Confidence Scorer' };
+  var html = '';
+  Object.entries(weights).forEach(function(w) {
+    var name = w[0], weight = w[1];
+    if(typeof weight !== 'number') return;
+    var pct = (weight * 100).toFixed(1);
+    var barColor = weight > 0.3 ? 'var(--green)' : (weight > 0.15 ? 'var(--yellow)' : 'var(--red)');
+    html += '<div style="margin-bottom:10px;">' +
+      '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">' +
+      '<span style="color:var(--text);">' + (stratNames[name] || name) + '</span>' +
+      '<span style="color:' + barColor + ';font-weight:700;">' + pct + '%</span></div>' +
+      '<div style="background:var(--bg2);border-radius:3px;height:5px;overflow:hidden;">' +
+      '<div style="width:' + pct + '%;height:100%;background:' + barColor + ';border-radius:3px;"></div></div></div>';
+  });
+  el.innerHTML = html || '<div style="font-size:11px;color:var(--text-dim);">No weight data</div>';
+}
+
+function renderRiskIntel(risk) {
+  var el = document.getElementById('intel-risk-status');
+  if(!el) return;
+  if(!risk) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;">No risk data available</div>';
+    return;
+  }
+  var cbActive = risk.circuit_breaker_active || false;
+  var cbColor = cbActive ? 'var(--red)' : 'var(--green)';
+  var cbText = cbActive ? 'TRIPPED' : 'OK';
+  var consLosses = risk.consecutive_losses || 0;
+  var dailyDD = risk.daily_drawdown_pct != null ? risk.daily_drawdown_pct.toFixed(2) : '0.00';
+  var ddColor = parseFloat(dailyDD) > 3 ? 'var(--red)' : (parseFloat(dailyDD) > 1 ? 'var(--yellow)' : 'var(--green)');
+
+  el.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+    '<div style="background:var(--bg2);border-radius:6px;padding:10px;text-align:center;">' +
+    '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Circuit Breaker</div>' +
+    '<div style="font-size:14px;font-weight:700;color:' + cbColor + ';">' + cbText + '</div></div>' +
+    '<div style="background:var(--bg2);border-radius:6px;padding:10px;text-align:center;">' +
+    '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Consec. Losses</div>' +
+    '<div style="font-size:14px;font-weight:700;color:' + (consLosses > 2 ? 'var(--red)' : 'var(--text)') + ';">' + consLosses + '</div></div>' +
+    '<div style="background:var(--bg2);border-radius:6px;padding:10px;text-align:center;grid-column:1/-1;">' +
+    '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Daily Drawdown</div>' +
+    '<div style="font-size:14px;font-weight:700;color:' + ddColor + ';">' + dailyDD + '%</div></div></div>';
+}
+
+function renderAgentIntel(agents) {
+  var el = document.getElementById('intel-agent-insights');
+  if(!el) return;
+  if(!agents || (Array.isArray(agents) && agents.length === 0) || (typeof agents === 'object' && Object.keys(agents).length === 0)) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">&#129302;</div>No agent data available<div class="empty-msg">Agent insights appear when LLM_MULTI_AGENT=true and the bot runs a decision cycle</div></div>';
+    return;
+  }
+
+  var agentList = Array.isArray(agents) ? agents : (agents.agents || [agents]);
+  var agentColors = { regime:'var(--cyan)', trade:'var(--green)', risk:'var(--yellow)', critic:'var(--red)', learning:'var(--purple)', exit:'var(--orange)', scout:'var(--blue)' };
+  var agentIcons = { regime:'\uD83C\uDF0D', trade:'\uD83C\uDFAF', risk:'\uD83D\uDEE1', critic:'\uD83E\uDD14', learning:'\uD83D\uDCDA', exit:'\uD83D\uDEAA', scout:'\uD83D\uDD2D' };
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">';
+  agentList.forEach(function(a) {
+    if(!a) return;
+    var role = (a.role || a.agent || 'unknown').toLowerCase();
+    var color = agentColors[role] || 'var(--muted)';
+    var icon = agentIcons[role] || '\uD83E\uDD16';
+    var output = a.output || a.result || a;
+
+    var summary = '';
+    if(typeof output === 'string') { summary = output.substring(0, 150); }
+    else if(typeof output === 'object') {
+      if(output.rg) summary = 'Regime: ' + output.rg + (output.bias ? ' | Bias: ' + output.bias : '') + (output.conf != null ? ' | Conf: ' + (output.conf*100).toFixed(0) + '%' : '');
+      else if(output.a) summary = 'Action: ' + output.a + (output.c != null ? ' | Conf: ' + output.c + '%' : '') + (output.thesis ? ' | ' + output.thesis.substring(0, 80) : '');
+      else if(output.approved != null) summary = (output.approved ? '\u2705 Approved' : '\u274C Vetoed') + (output.counter_thesis ? ' \u2014 ' + output.counter_thesis.substring(0, 80) : '');
+      else if(output.size != null) summary = 'Size: ' + output.size + ' | Lev: ' + (output.lev || '--') + (output.flags && output.flags.length > 0 ? ' | Flags: ' + output.flags.join(', ') : '');
+      else summary = JSON.stringify(output).substring(0, 120);
+    }
+
+    html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;border-left:3px solid ' + color + ';">' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
+      '<span style="font-size:16px;">' + icon + '</span>' +
+      '<span style="font-size:11px;font-weight:700;color:' + color + ';text-transform:uppercase;">' + role + ' Agent</span></div>' +
+      '<div style="font-size:11px;color:var(--text-dim);line-height:1.4;">' + summary + '</div></div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function renderBestOpportunities(rejections) {
+  var el = document.getElementById('intel-best-opportunities');
+  if(!el) return;
+  if(!rejections || !Array.isArray(rejections) || rejections.length === 0) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);text-align:center;padding:12px;">No rejected signals to analyze. The bot will show its best near-miss opportunities here.</div>';
+    return;
+  }
+
+  // Sort by confidence descending - highest confidence rejections are the best opportunities
+  var sorted = rejections.slice().sort(function(a,b) { return (b.confidence||0) - (a.confidence||0); }).slice(0, 5);
+  var html = '<div style="overflow-x:auto;"><table style="width:100%;font-size:11px;"><thead><tr>' +
+    '<th style="padding:6px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border);">Symbol</th>' +
+    '<th style="padding:6px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border);">Side</th>' +
+    '<th style="padding:6px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border);">Confidence</th>' +
+    '<th style="padding:6px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border);">Strategy</th>' +
+    '<th style="padding:6px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border);">Blocked By</th>' +
+    '<th style="padding:6px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border);">Entry</th>' +
+    '<th style="padding:6px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border);">SL</th>' +
+    '<th style="padding:6px;text-align:left;color:var(--muted);border-bottom:1px solid var(--border);">TP1</th>' +
+    '</tr></thead><tbody>';
+
+  sorted.forEach(function(r) {
+    var side = (r.side || '').toUpperCase();
+    var sideColor = side === 'BUY' ? 'var(--green)' : 'var(--red)';
+    var conf = r.confidence || 0;
+    var confColor = conf > 70 ? 'var(--green)' : (conf > 50 ? 'var(--yellow)' : 'var(--text-dim)');
+    html += '<tr>' +
+      '<td style="padding:6px;font-weight:700;color:var(--text);">' + (r.symbol || '--') + '</td>' +
+      '<td style="padding:6px;color:' + sideColor + ';font-weight:600;">' + side + '</td>' +
+      '<td style="padding:6px;color:' + confColor + ';font-weight:700;">' + conf.toFixed(1) + '</td>' +
+      '<td style="padding:6px;color:var(--text-dim);">' + (r.strategy || '--') + '</td>' +
+      '<td style="padding:6px;color:var(--yellow);">' + (r.gate || r.blocked_by || '--') + '</td>' +
+      '<td style="padding:6px;color:var(--text);">' + (r.entry ? '$' + parseFloat(r.entry).toLocaleString() : '--') + '</td>' +
+      '<td style="padding:6px;color:var(--red);">' + (r.sl ? '$' + parseFloat(r.sl).toLocaleString() : '--') + '</td>' +
+      '<td style="padding:6px;color:var(--green);">' + (r.tp1 ? '$' + parseFloat(r.tp1).toLocaleString() : '--') + '</td>' +
+      '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  html += '<div style="font-size:10px;color:var(--text-dim);margin-top:8px;padding:6px;background:var(--bg2);border-radius:4px;">\u26A0 These signals were rejected by safety gates but had the highest confidence. Use your own judgment for manual trades.</div>';
+  el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
 /* INITIALIZATION                                                     */
 /* ═══════════════════════════════════════════════════════════════════ */
 loadAll();
@@ -6960,7 +7366,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if(btn.dataset.tab === 'system' && !systemDataLoaded) { systemDataLoaded=true; setTimeout(() => { loadSystemTab(); loadAgentPipeline(); loadInsights(); }, 100); }
     else if(btn.dataset.tab === 'system') { loadAgentPipeline(); loadInsights(); }
     if(btn.dataset.tab === 'learn' && !learnInitialized) { learnInitialized=true; setTimeout(initLearnTab, 100); }
-    if(btn.dataset.tab === 'signals') { loadMissedTrades(); }
+    if(btn.dataset.tab === 'signals') { loadMissedTrades(); loadMarketIntel(); if(!marketIntelInterval) { marketIntelInterval = setInterval(loadMarketIntel, 30000); } }
     if(btn.dataset.tab === 'trades') { loadOutcomes(); }
     if(btn.dataset.tab === 'analytics') { loadFingerprints(); loadRegimeTimeline(); loadCalibration(); loadPnlCalendar(); }
     if(btn.dataset.tab === 'overview') { loadCorrelation(); }
