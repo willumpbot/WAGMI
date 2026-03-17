@@ -520,7 +520,7 @@ class EnsembleStrategy:
                 # Extreme chop: floor rises from ranging toward max.
                 # High-vol assets get lower max: their natural price action is choppy.
                 _vol_profile = getattr(self, '_volatility_profiles', {}).get(symbol, "medium")
-                _max_chop_floor = {"low": 85.0, "medium": 82.0, "high": 80.0}.get(_vol_profile, 85.0)
+                _max_chop_floor = {"low": 90.0, "medium": 87.0, "high": 83.0}.get(_vol_profile, 90.0)
                 chop_intensity = min(1.0, (chop_score - 0.65) / 0.20)  # 0→1 over 0.65→0.85
                 effective_floor = self.ranging_confidence_floor + chop_intensity * (
                     _max_chop_floor - self.ranging_confidence_floor
@@ -684,7 +684,7 @@ class EnsembleStrategy:
         if smoothed_chop > 0.35:
             if smoothed_chop >= 0.65:
                 _vol_profile = getattr(self, '_volatility_profiles', {}).get(symbol, "medium")
-                _max_chop_floor = {"low": 85.0, "medium": 82.0, "high": 80.0}.get(_vol_profile, 85.0)
+                _max_chop_floor = {"low": 90.0, "medium": 87.0, "high": 83.0}.get(_vol_profile, 90.0)
                 chop_intensity = min(1.0, (smoothed_chop - 0.65) / 0.20)
                 effective_floor = self.ranging_confidence_floor + chop_intensity * (
                     _max_chop_floor - self.ranging_confidence_floor
