@@ -520,7 +520,7 @@ class EnsembleStrategy:
                 # Extreme chop: floor rises from ranging toward max.
                 # High-vol assets get lower max: their natural price action is choppy.
                 _vol_profile = getattr(self, '_volatility_profiles', {}).get(symbol, "medium")
-                _max_chop_floor = {"low": 93.0, "medium": 90.0, "high": 85.0}.get(_vol_profile, 93.0)
+                _max_chop_floor = {"low": 90.0, "medium": 87.0, "high": 83.0}.get(_vol_profile, 90.0)
                 chop_intensity = min(1.0, (chop_score - 0.65) / 0.20)  # 0→1 over 0.65→0.85
                 effective_floor = self.ranging_confidence_floor + chop_intensity * (
                     _max_chop_floor - self.ranging_confidence_floor
@@ -683,9 +683,11 @@ class EnsembleStrategy:
 
         if smoothed_chop > 0.35:
             if smoothed_chop >= 0.65:
+                _vol_profile = getattr(self, '_volatility_profiles', {}).get(symbol, "medium")
+                _max_chop_floor = {"low": 90.0, "medium": 87.0, "high": 83.0}.get(_vol_profile, 90.0)
                 chop_intensity = min(1.0, (smoothed_chop - 0.65) / 0.20)
                 effective_floor = self.ranging_confidence_floor + chop_intensity * (
-                    93.0 - self.ranging_confidence_floor
+                    _max_chop_floor - self.ranging_confidence_floor
                 )
             else:
                 chop_intensity = (smoothed_chop - 0.35) / 0.30
@@ -1140,11 +1142,7 @@ class EnsembleStrategy:
         # Block known-losing combos (backtest-validated toxic combinations).
         # Uses subset matching: a 3-agree combo containing a toxic 2-agree pair is also blocked.
         _LOSING_COMBOS = {
-            frozenset({"confidence_scorer", "multi_tier_quality"}),              # PF 0.08 — original
-            frozenset({"multi_tier_quality", "regime_trend"}),                   # PF 0.82, 58 trades
-            frozenset({"bollinger_squeeze", "multi_tier_quality"}),              # PF 0.37, 19 trades
-            frozenset({"lead_lag", "multi_tier_quality"}),                       # PF 0.00, 5 trades
-            frozenset({"bollinger_squeeze", "confidence_scorer", "multi_tier_quality"}),  # PF 0.79, 7 trades
+            frozenset({"confidence_scorer", "multi_tier_quality"}),              # PF 0.08 — genuinely toxic
         }
         for side_signals in [buy_signals, sell_signals]:
             if len(side_signals) >= 2:

@@ -1,18 +1,1 @@
-[
-  {
-    "id": "exp_3557885c6289",
-    "name": "Confidence Floor Test",
-    "description": "Testing 60% vs 65% confidence floor",
-    "control_config": {
-      "confidence_floor": 65.0
-    },
-    "variant_config": {
-      "confidence_floor": 60.0
-    },
-    "parameter_name": "confidence_floor",
-    "start_time": 1772484062.7576628,
-    "min_trades": 20,
-    "max_duration_days": 14,
-    "status": "active"
-  }
-]
+{"experiments": []}
