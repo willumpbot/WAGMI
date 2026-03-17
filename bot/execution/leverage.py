@@ -119,85 +119,78 @@ class LeverageManager:
 
         # ── Tier 1: 60-64% — minimum viable trade ──
         if confidence < 65:
-            return _wr(LeverageDecision(1.0, "leverage", "low",
-                                        f"1x: confidence {confidence:.0f}%", 0.8))
+            return _wr(LeverageDecision(1.5, "leverage", "low",
+                                        f"1.5x: confidence {confidence:.0f}%", 0.8))
 
         # ── Tier 2: 65-69% — building conviction ──
         if confidence < 70:
             t = (confidence - 65) / 5.0  # 0..1
-            lev = min(1.0 + t * 1.0, cap)  # 1-2x
+            lev = min(1.5 + t * 0.5, cap)  # 1.5-2x
             rm = 0.8 + t * 0.2  # 0.8-1.0x
             return _wr(LeverageDecision(lev, "leverage", "low",
                                         f"{lev:.1f}x: confidence {confidence:.0f}%", rm))
 
         # ── Tier 3: 70-74% — moderate conviction ──
-        # 3_agree gate: 10d data shows 2_agree=40% WR (-$1,207) vs 3_agree=86% WR (+$1,040).
-        # 2-agree gets MINIMAL exposure (PF=0.25), 3-agree gets full sizing (PF=4.0).
         if confidence < 75:
             if num_strategies_agree < 2:
-                lev = min(1.0, cap)
+                lev = min(1.5, cap)
                 return _wr(LeverageDecision(lev, "leverage", "low",
-                                            f"{lev:.1f}x: only {num_strategies_agree} strats", 0.6))
+                                            f"{lev:.1f}x: only {num_strategies_agree} strats", 0.7))
             if num_strategies_agree >= 3:
-                lev = min(3.0, cap)  # Kelly-informed: ~1/9 Kelly at this tier
-                rm = 1.1
+                lev = min(2.0, cap)
+                rm = 1.0
             else:
-                lev = min(1.0, cap)  # 2_agree: minimal leverage (40% WR is net losing)
-                rm = 0.6  # much smaller position for weaker consensus
+                lev = min(1.5, cap)  # 2-agree: low-medium leverage
+                rm = 0.75
             return _wr(LeverageDecision(lev, "leverage", "low",
                                         f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm))
 
         # ── Tier 4: 75-79% — strong conviction ──
         if confidence < 80:
             if num_strategies_agree < 2:
-                lev = min(1.0, cap)
+                lev = min(1.5, cap)
                 return _wr(LeverageDecision(lev, "leverage", "low",
-                                            f"{lev:.1f}x: only {num_strategies_agree} strats", 0.6))
+                                            f"{lev:.1f}x: only {num_strategies_agree} strats", 0.7))
             if num_strategies_agree >= 3:
                 t = (confidence - 75) / 5.0
-                lev = min(3.0 + t * 1.0, cap)  # 3-4x for 3_agree (~1/6 Kelly)
+                lev = min(2.0 + t * 1.0, cap)  # 2-3x for 3-agree
                 rm = 1.1 + t * 0.2  # 1.1-1.3x
             else:
-                lev = min(1.0, cap)  # 2_agree: minimal leverage
-                rm = 0.7  # small position — just enough to participate
+                lev = min(2.0, cap)  # 2-agree: moderate leverage
+                rm = 0.85
             return _wr(LeverageDecision(lev, "leverage", "medium",
                                         f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm))
 
-        # ── Tier 5: 80-89% — Kelly-informed scaling for 3-agree ──
-        # With fee-aware EV, fee-drag gate, and losing combo blocking,
-        # high-confidence 3-agree signals that reach here have genuine edge.
-        # Quarter-Kelly at top end (~1/5 Kelly). Liquidation gap remains 17%+.
+        # ── Tier 5: 80-89% — strong edge, scale toward full leverage ──
         if confidence < 90:
             if num_strategies_agree < 2:
-                lev = min(1.0, cap)
+                lev = min(2.0, cap)
                 return _wr(LeverageDecision(lev, "leverage", "low",
-                                            f"{lev:.1f}x: need 2+ strats for high lev", 0.6))
+                                            f"{lev:.1f}x: need 2+ strats for high lev", 0.7))
             if num_strategies_agree >= 3:
-                # Scale 4.0-5.0x across 80-89% confidence (~1/5 Kelly at top)
-                # Starts at 4.0 to match Tier 4 end (was 3.5 = leverage cliff)
+                # Scale 3.0-4.0x across 80-89% confidence
                 t = (confidence - 80) / 10.0
-                lev = min(4.0 + t * 1.0, cap)
+                lev = min(3.0 + t * 1.0, cap)
                 rm = 1.2 + t * 0.2  # 1.2-1.4x risk multiplier
             else:
-                lev = min(1.0, cap)  # 2_agree: minimal leverage
-                rm = 0.7
+                lev = min(2.0, cap)  # 2-agree: moderate leverage
+                rm = 0.9
             return _wr(LeverageDecision(lev, "leverage", "medium",
                                         f"{lev:.1f}x: {num_strategies_agree} strats, {confidence:.0f}%", rm))
 
-        # ── Tier 6: 90%+ — rare but possible with 92% ensemble cap ──
-        # Continue Kelly scaling from Tier 5 (no cliff)
+        # ── Tier 6: 90%+ — rare, highest conviction ──
         if num_strategies_agree >= 3:
-            lev = min(5.0, cap)  # Match Tier 5 top (no cliff from 5x->2x)
+            lev = min(4.0, cap)  # Full leverage cap at 4x
             rm = 1.4
         elif num_strategies_agree >= 2:
-            lev = min(1.0, cap)  # 2-agree: same cap as Tier 5
-            rm = 0.7
+            lev = min(2.0, cap)
+            rm = 0.9
         else:
-            lev = min(1.0, cap)
-            rm = 0.6
+            lev = min(1.5, cap)
+            rm = 0.7
 
-        if lev > 5.0 and current_extreme_count >= self.max_extreme_positions:
-            lev = 5.0
+        if lev > 4.0 and current_extreme_count >= self.max_extreme_positions:
+            lev = 4.0
             return _wr(LeverageDecision(lev, "leverage", "high",
                                         f"{lev:.1f}x: extreme limit reached", rm))
 

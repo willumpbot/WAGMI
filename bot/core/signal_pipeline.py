@@ -265,8 +265,8 @@ class RiskFilterChain:
         # with reduced sizing via the graduated scalar below. Graduated sizing 1.0x–1.8x
         # (scalar 0.6→1.0), full size above 1.8x. Replaces binary 2.0x gate that blocked
         # all signals in bearish/wide-stop conditions.
-        min_leverage_gate = getattr(self.config, "min_leverage_entry_gate", 1.2)
-        LEVERAGE_FULL_SIZE = 1.8
+        min_leverage_gate = getattr(self.config, "min_leverage_entry_gate", 1.0)
+        LEVERAGE_FULL_SIZE = 2.5  # full position size at 2.5x+; graduated 1.0x→2.5x
         if lev_decision.leverage < min_leverage_gate:
             _reason = f"Below leverage gate: {lev_decision.leverage:.1f}x < {min_leverage_gate:.1f}x minimum"
             _log_rejection(signal, "leverage_gate", _reason)
