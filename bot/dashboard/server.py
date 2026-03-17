@@ -425,8 +425,156 @@ tr:hover td { background: rgba(255,255,255,0.015); }
 /* ── Footer ── */
 .footer { text-align: center; color: var(--muted); font-size: 10px; padding: 24px 0 12px 0; border-top: 1px solid var(--border); margin-top: 24px; }
 
-/* ── Learn Tab ── */
+/* ── Learn Tab — Course Dashboard ── */
 .lesson-item:hover { background: var(--bg2); }
+
+/* Course Layout */
+.course-layout { display:flex; gap:0; min-height:calc(100vh - 120px); margin:-20px -24px; }
+.course-sidebar { width:260px; min-width:260px; background:var(--bg2); border-right:1px solid var(--border); padding:16px 0; overflow-y:auto; max-height:calc(100vh - 120px); position:sticky; top:0; }
+.course-main { flex:1; padding:24px 28px; overflow-y:auto; max-width:calc(100% - 260px); }
+
+.course-nav-section { padding:0 12px; margin-bottom:8px; }
+.course-nav-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted); padding:12px 12px 6px; }
+.course-nav-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:6px; cursor:pointer; font-size:12px; color:var(--text-dim); transition:all 0.15s; border:1px solid transparent; margin-bottom:2px; }
+.course-nav-item:hover { background:var(--card); color:var(--text); }
+.course-nav-item.active { background:var(--cyan-dim); color:var(--cyan); border-color:rgba(34,211,238,0.15); font-weight:700; }
+.course-nav-item .nav-num { width:22px; height:22px; border-radius:50%; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; color:var(--muted); flex-shrink:0; }
+.course-nav-item.active .nav-num { background:var(--cyan); color:var(--bg); }
+.course-nav-item.completed .nav-num { background:var(--green); color:var(--bg); }
+.course-nav-icon { font-size:16px; flex-shrink:0; width:22px; text-align:center; }
+
+/* Course Page Header */
+.course-page-header { margin-bottom:24px; }
+.course-page-header h1 { font-size:24px; font-weight:800; margin-bottom:6px; letter-spacing:-0.5px; }
+.course-page-header .subtitle { font-size:13px; color:var(--text-dim); line-height:1.6; }
+
+/* Progress Bar */
+.progress-wrap { margin:16px 0; }
+.progress-bar-outer { width:100%; height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+.progress-bar-fill { height:100%; background:linear-gradient(90deg, var(--cyan), var(--green)); border-radius:4px; transition:width 0.5s ease; }
+.progress-label { font-size:11px; color:var(--muted); margin-top:4px; }
+
+/* Course Cards Grid */
+.course-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin:16px 0; }
+.course-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden; }
+.course-card:hover { border-color:var(--border-bright); transform:translateY(-2px); box-shadow:var(--shadow-md); }
+.course-card .card-icon { font-size:32px; margin-bottom:12px; }
+.course-card .card-title { font-size:15px; font-weight:800; margin-bottom:6px; }
+.course-card .card-desc { font-size:12px; color:var(--text-dim); line-height:1.6; }
+.course-card .card-tag { position:absolute; top:12px; right:12px; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:3px 8px; border-radius:4px; }
+
+/* Step Navigation */
+.step-nav { display:flex; justify-content:space-between; margin-top:32px; padding-top:20px; border-top:1px solid var(--border); }
+.step-nav-btn { padding:10px 20px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; border:1px solid var(--border); background:var(--card); color:var(--text-dim); transition:all 0.2s; }
+.step-nav-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+.step-nav-btn.primary { background:var(--cyan); color:var(--bg); border-color:var(--cyan); }
+.step-nav-btn.primary:hover { opacity:0.9; }
+
+/* Quiz Styles */
+.quiz-container { margin:20px 0; }
+.quiz-question { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
+.quiz-question h4 { font-size:13px; font-weight:700; margin-bottom:14px; color:var(--text); }
+.quiz-option { display:flex; align-items:center; gap:10px; padding:10px 14px; border:1px solid var(--border); border-radius:6px; margin-bottom:8px; cursor:pointer; transition:all 0.15s; font-size:12px; }
+.quiz-option:hover { border-color:var(--cyan-dim); background:var(--bg2); }
+.quiz-option.selected { border-color:var(--cyan); background:var(--cyan-dim); }
+.quiz-option.correct { border-color:var(--green); background:var(--green-dim); }
+.quiz-option.incorrect { border-color:var(--red); background:var(--red-dim); }
+.quiz-radio { width:16px; height:16px; border-radius:50%; border:2px solid var(--border-bright); flex-shrink:0; transition:all 0.15s; }
+.quiz-option.selected .quiz-radio { border-color:var(--cyan); background:var(--cyan); box-shadow:inset 0 0 0 3px var(--card); }
+.quiz-submit { padding:10px 24px; background:var(--cyan); color:var(--bg); border:none; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; margin-top:8px; transition:opacity 0.2s; }
+.quiz-submit:hover { opacity:0.9; }
+.quiz-result { padding:12px 16px; border-radius:6px; margin-top:12px; font-size:12px; font-weight:600; }
+.quiz-result.pass { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,230,160,0.2); }
+.quiz-result.fail { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,68,102,0.2); }
+
+/* Calculator */
+.calc-container { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin:16px 0; }
+.calc-row { display:flex; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+.calc-field { flex:1; min-width:180px; }
+.calc-field label { display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:6px; }
+.calc-field input, .calc-field select { width:100%; padding:8px 12px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:inherit; font-size:13px; outline:none; }
+.calc-field input:focus, .calc-field select:focus { border-color:var(--cyan); }
+.calc-btn { padding:10px 24px; background:var(--cyan); color:var(--bg); border:none; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; }
+.calc-results { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-top:16px; }
+.calc-result-item { background:var(--bg2); border-radius:6px; padding:12px; text-align:center; }
+.calc-result-item .label { font-size:10px; color:var(--muted); text-transform:uppercase; margin-bottom:4px; }
+.calc-result-item .value { font-size:18px; font-weight:800; }
+
+/* Checklist */
+.checklist { margin:16px 0; }
+.checklist-item { display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-bottom:1px solid var(--border); font-size:12px; cursor:pointer; transition:background 0.15s; }
+.checklist-item:hover { background:var(--bg2); }
+.checklist-item:last-child { border-bottom:none; }
+.checklist-box { width:18px; height:18px; border:2px solid var(--border-bright); border-radius:4px; flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; font-size:11px; }
+.checklist-item.checked .checklist-box { background:var(--green); border-color:var(--green); color:var(--bg); }
+
+/* Info Boxes */
+.info-box { padding:16px; border-radius:var(--radius); margin:16px 0; font-size:12px; line-height:1.7; }
+.info-box.tip { background:var(--cyan-dim); border-left:3px solid var(--cyan); }
+.info-box.warning { background:var(--yellow-dim); border-left:3px solid var(--yellow); }
+.info-box.danger { background:var(--red-dim); border-left:3px solid var(--red); }
+.info-box.success { background:var(--green-dim); border-left:3px solid var(--green); }
+.info-box strong { color:var(--text); }
+
+/* Strategy Metric Cards */
+.metric-row { display:flex; gap:12px; margin:16px 0; flex-wrap:wrap; }
+.metric-card { flex:1; min-width:120px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; text-align:center; }
+.metric-card .metric-val { font-size:22px; font-weight:800; }
+.metric-card .metric-label { font-size:10px; color:var(--muted); text-transform:uppercase; margin-top:4px; }
+
+/* Indicator Phase Box */
+.phase-box { display:flex; gap:3px; margin:16px 0; }
+.phase-item { flex:1; padding:14px 8px; text-align:center; border-radius:6px; font-size:11px; font-weight:600; position:relative; }
+.phase-item.active-phase { outline:2px solid var(--cyan); outline-offset:2px; }
+.phase-item .phase-num { font-size:18px; font-weight:800; display:block; margin-bottom:4px; }
+
+/* FAQ Accordion */
+.faq-item { border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px; overflow:hidden; }
+.faq-q { padding:14px 18px; cursor:pointer; font-size:13px; font-weight:700; display:flex; justify-content:space-between; align-items:center; background:var(--card); transition:background 0.15s; }
+.faq-q:hover { background:var(--card-hover); }
+.faq-a { padding:0 18px; max-height:0; overflow:hidden; transition:all 0.3s ease; font-size:12px; color:var(--text-dim); line-height:1.7; }
+.faq-item.open .faq-a { padding:14px 18px; max-height:2000px; }
+.faq-arrow { transition:transform 0.3s; color:var(--muted); }
+.faq-item.open .faq-arrow { transform:rotate(180deg); }
+
+/* Dictionary */
+.dict-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; }
+.dict-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; transition:border-color 0.2s; }
+.dict-card:hover { border-color:var(--border-bright); }
+.dict-card .term { font-size:14px; font-weight:800; margin-bottom:4px; }
+.dict-card .cat-badge { font-size:9px; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:10px; display:inline-block; margin-bottom:8px; }
+.dict-card .def { font-size:12px; color:var(--text-dim); line-height:1.6; }
+.dict-card .example { font-size:11px; color:var(--muted); margin-top:8px; font-style:italic; }
+.dict-card .related { display:flex; gap:4px; flex-wrap:wrap; margin-top:8px; }
+.dict-card .related span { font-size:9px; padding:2px 6px; background:var(--bg2); border-radius:4px; color:var(--text-dim); }
+
+/* Video Card */
+.video-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin:16px 0; display:flex; align-items:center; gap:16px; cursor:pointer; transition:all 0.2s; }
+.video-card:hover { border-color:var(--cyan); transform:translateY(-1px); }
+.video-card .play-icon { width:48px; height:48px; border-radius:50%; background:var(--cyan); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; color:var(--bg); }
+
+/* Indicator Cards */
+.indicator-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+.indicator-card h4 { font-size:13px; font-weight:800; margin-bottom:10px; }
+.indicator-card .param-row { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border); font-size:11px; }
+.indicator-card .param-row:last-child { border-bottom:none; }
+
+/* Peak Indicator */
+.peak-indicator { display:flex; align-items:center; gap:12px; padding:12px; background:var(--bg2); border-radius:6px; margin-bottom:8px; }
+.peak-indicator .pi-name { flex:1; font-size:12px; font-weight:600; }
+.peak-indicator .pi-status { font-size:11px; font-weight:700; padding:3px 10px; border-radius:10px; }
+
+/* Responsive overrides */
+@media(max-width:900px) {
+  .course-sidebar { display:none; }
+  .course-main { max-width:100%; padding:16px; }
+  .course-layout { margin:-14px -12px; }
+}
+@media(max-width:600px) {
+  .metric-row { flex-direction:column; }
+  .calc-row { flex-direction:column; }
+  .dict-grid { grid-template-columns:1fr; }
+}
 
 /* ── Toast Notifications ── */
 .toast-container { position:fixed; top:60px; right:20px; z-index:10000; display:flex; flex-direction:column; gap:8px; pointer-events:none; }
@@ -918,60 +1066,63 @@ tr.pos-row:hover { background:var(--card-hover); }
 <!-- TAB 7: LEARN -->
 <!-- ════════════════════════════════════════════════════════════════════ -->
 <div class="tab-content" id="tab-learn">
+  <div class="course-layout">
+    <!-- Sidebar Navigation -->
+    <div class="course-sidebar" id="course-sidebar">
+      <div style="padding:8px 16px 12px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+        <div style="font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Lewieville's Masterclass</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">Master the art of trading</div>
+        <div class="progress-wrap" style="margin:8px 0 0;">
+          <div class="progress-bar-outer" style="height:5px;">
+            <div class="progress-bar-fill" id="course-progress-bar" style="width:0%"></div>
+          </div>
+          <div class="progress-label" id="course-progress-label">0/10 steps completed</div>
+        </div>
+      </div>
 
-  <!-- Course Header -->
-  <div class="card-hero" style="margin-bottom:20px;">
-    <h3 style="color:var(--cyan);font-size:14px;">&#127891; NunuIRL Trading Academy</h3>
-    <div style="font-size:22px;font-weight:800;margin-bottom:6px;">Your Path to Algorithmic Trading Mastery</div>
-    <div style="color:var(--text-dim);font-size:13px;">8 modules covering everything from crypto basics to AI-powered autonomous trading. Click any module to expand lessons.</div>
-  </div>
+      <div class="course-nav-section">
+        <div class="course-nav-label">Overview</div>
+        <div class="course-nav-item active" onclick="navigateCourse('dashboard')"><span class="course-nav-icon">&#9670;</span>Dashboard</div>
+        <div class="course-nav-item" onclick="navigateCourse('start-here')"><span class="course-nav-icon">&#128640;</span>Start Here</div>
+      </div>
 
-  <!-- Course Modules Accordion -->
-  <div class="section-title">Course Modules</div>
-  <div id="course-modules"></div>
+      <div class="course-nav-section">
+        <div class="course-nav-label">Course Steps</div>
+        <div class="course-nav-item" onclick="navigateCourse('step1')"><span class="nav-num">1</span>Basics &amp; Candlesticks</div>
+        <div class="course-nav-item" onclick="navigateCourse('step2')"><span class="nav-num">2</span>TradingView Setup</div>
+        <div class="course-nav-item" onclick="navigateCourse('step3')"><span class="nav-num">3</span>Market Structure</div>
+        <div class="course-nav-item" onclick="navigateCourse('step4')"><span class="nav-num">4</span>Risk Management</div>
+        <div class="course-nav-item" onclick="navigateCourse('step5')"><span class="nav-num">5</span>Technical Indicators</div>
+        <div class="course-nav-item" onclick="navigateCourse('step6')"><span class="nav-num">6</span>Readiness Assessment</div>
+      </div>
 
-  <!-- Concept Library -->
-  <div class="section-title" style="margin-top:28px;">Concept Library</div>
-  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-    <input type="text" id="concept-search" placeholder="Search concepts..." style="flex:1;min-width:200px;padding:8px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;font-size:12px;outline:none;" oninput="filterConcepts()">
-    <button class="symbol-tab active" onclick="filterConceptCat('all',this)">All</button>
-    <button class="symbol-tab" onclick="filterConceptCat('market',this)">Market</button>
-    <button class="symbol-tab" onclick="filterConceptCat('technical',this)">Technical</button>
-    <button class="symbol-tab" onclick="filterConceptCat('risk',this)">Risk</button>
-    <button class="symbol-tab" onclick="filterConceptCat('bot',this)">Bot</button>
-    <button class="symbol-tab" onclick="filterConceptCat('ai',this)">AI/LLM</button>
-  </div>
-  <div class="heatmap-grid" id="concept-library"></div>
+      <div class="course-nav-section">
+        <div class="course-nav-label">Strategies</div>
+        <div class="course-nav-item" onclick="navigateCourse('strat-trendline')"><span class="course-nav-icon">&#128200;</span>Trendline Breakout</div>
+        <div class="course-nav-item" onclick="navigateCourse('strat-mfi')"><span class="course-nav-icon">&#9889;</span>MFI + MACD</div>
+        <div class="course-nav-item" onclick="navigateCourse('strat-macro')"><span class="course-nav-icon">&#127758;</span>2-Week Macro</div>
+      </div>
 
-  <!-- See It Live -->
-  <div class="section-title" style="margin-top:28px;">See It Live</div>
-  <div class="grid-3" id="see-it-live">
-    <div class="card" style="cursor:pointer;" onclick="switchToTab('overview')">
-      <h3 style="color:var(--green);">&#127758; Current Market Regime</h3>
-      <div id="live-regime-preview" style="font-size:14px;font-weight:700;">Loading...</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:6px;">Go to Overview &rarr;</div>
+      <div class="course-nav-section">
+        <div class="course-nav-label">Analysis</div>
+        <div class="course-nav-item" onclick="navigateCourse('bull-market')"><span class="course-nav-icon">&#128200;</span>Bull Market Analysis</div>
+        <div class="course-nav-item" onclick="navigateCourse('backtesting')"><span class="course-nav-icon">&#128202;</span>Backtesting Lab</div>
+      </div>
+
+      <div class="course-nav-section">
+        <div class="course-nav-label">Resources</div>
+        <div class="course-nav-item" onclick="navigateCourse('resources')"><span class="course-nav-icon">&#128218;</span>Resources &amp; Templates</div>
+        <div class="course-nav-item" onclick="navigateCourse('alerts')"><span class="course-nav-icon">&#128276;</span>Alerts &amp; Signals</div>
+        <div class="course-nav-item" onclick="navigateCourse('dictionary')"><span class="course-nav-icon">&#128214;</span>Trading Dictionary</div>
+        <div class="course-nav-item" onclick="navigateCourse('faq')"><span class="course-nav-icon">&#10067;</span>FAQ</div>
+      </div>
     </div>
-    <div class="card" style="cursor:pointer;" onclick="switchToTab('signals')">
-      <h3 style="color:var(--yellow);">&#9889; Signal Pipeline Now</h3>
-      <div id="live-pipeline-preview" style="font-size:14px;font-weight:700;">Loading...</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:6px;">Go to Signals &rarr;</div>
-    </div>
-    <div class="card" style="cursor:pointer;" onclick="switchToTab('system')">
-      <h3 style="color:var(--red);">&#9889; Circuit Breaker Status</h3>
-      <div id="live-cb-preview" style="font-size:14px;font-weight:700;">Loading...</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:6px;">Go to System &rarr;</div>
+
+    <!-- Main Content Area -->
+    <div class="course-main" id="course-main">
+      <!-- Content rendered by JavaScript -->
     </div>
   </div>
-
-  <!-- Glossary -->
-  <div class="section-title" style="margin-top:28px;">Glossary</div>
-  <div style="margin-bottom:12px;">
-    <input type="text" id="glossary-search" placeholder="Search glossary..." style="width:100%;max-width:400px;padding:8px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;font-size:12px;outline:none;" oninput="filterGlossary()">
-  </div>
-  <div class="card">
-    <div class="scroll-y" style="max-height:500px;" id="glossary-list"></div>
-  </div>
-
 </div>
 
 <!-- ═══ Educational Modal ═══ -->
@@ -2079,179 +2230,4281 @@ function renderInsights(insights) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════ */
-/* EDUCATIONAL TAB — LEARN                                            */
+/* EDUCATIONAL TAB — LEARN (Course Dashboard)                         */
 /* ═══════════════════════════════════════════════════════════════════ */
-const COURSE_MODULES = [
-  { num: 1, title: "Introduction to Crypto Trading", icon: "\ud83d\ude80", desc: "The fundamentals of cryptocurrency markets, exchanges, and how trading works.",
-    lessons: ["What is Cryptocurrency?", "How Exchanges Work (CEX vs DEX)", "Order Types: Market, Limit, Stop", "Reading Your First Chart", "Paper Trading Basics"] },
-  { num: 2, title: "Market Structure & Regimes", icon: "\ud83c\udf0a", desc: "Understanding market phases and why regime detection is the foundation of profitable trading.",
-    lessons: ["What is Market Structure?", "Trend vs Range Markets", "Identifying Regime Changes", "Volatility Regimes", "How the Bot Detects Regimes"] },
-  { num: 3, title: "Technical Analysis Fundamentals", icon: "\ud83d\udcca", desc: "Key indicators, support/resistance, and the math behind trading signals.",
-    lessons: ["Support & Resistance Zones", "Moving Averages (SMA/EMA)", "ATR and Volatility", "Monte Carlo Simulation Zones", "Multi-Timeframe Analysis"] },
-  { num: 4, title: "Risk Management & Position Sizing", icon: "\ud83d\udee1\ufe0f", desc: "The most important skill in trading \u2014 protecting your capital.",
-    lessons: ["Risk Per Trade (1-2% Rule)", "Stop Loss Placement", "Position Sizing Formulas", "Leverage: Friend or Foe?", "Circuit Breakers & Safety Nets"] },
-  { num: 5, title: "Signal Generation & Strategy Logic", icon: "\u26a1", desc: "How the bot generates trading signals and what makes a good signal.",
-    lessons: ["What is a Trading Signal?", "The 4 Bot Strategies Explained", "Signal Confidence Scoring", "Signal Validation & Quality Gates", "The 6-Stage Safety Pipeline"] },
-  { num: 6, title: "The Ensemble Approach", icon: "\ud83e\udd1d", desc: "Why multiple strategies voting together beats any single strategy.",
-    lessons: ["What is Ensemble Trading?", "Weighted Voting System", "Confluence & Agreement", "Veto Power & Risk Rejection", "Adaptive Strategy Weights"] },
-  { num: 7, title: "AI-Powered Trading Decisions", icon: "\ud83e\udd16", desc: "How the multi-agent LLM system adds intelligence to mechanical trading.",
-    lessons: ["Introduction to AI Trading", "The 6 Specialist Agents", "Agent Pipeline: Regime\u2192Trade\u2192Risk\u2192Critic", "LLM Memory & Learning", "Self-Teaching Curriculum"] },
-  { num: 8, title: "Going Live: Paper to Production", icon: "\ud83d\udfe2", desc: "The journey from paper trading to real money \u2014 safely.",
-    lessons: ["Go-Live Gate System", "Paper Trading Validation", "Monitoring & Dashboards", "Common Pitfalls", "Continuous Improvement"] }
-];
 
-function buildCourseModules() {
-  const el = document.getElementById('course-modules');
-  if(!el) return;
-  el.innerHTML = COURSE_MODULES.map((m, idx) => {
-    const lessons = m.lessons.map((l,li) =>
-      '<div class="lesson-item" style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="this.querySelector(\'.lesson-content\').style.display=this.querySelector(\'.lesson-content\').style.display===\'block\'?\'none\':\'block\'">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;font-weight:600;"><span style="color:var(--muted);margin-right:8px;">'+(li+1)+'.</span>'+l+'</span><span style="color:var(--muted);font-size:10px;">&#9660;</span></div>' +
-      '<div class="lesson-content" style="display:none;margin-top:10px;padding:12px;background:var(--bg);border-radius:6px;color:var(--text-dim);font-size:12px;line-height:1.7;">Your lesson content here. Replace this placeholder with your course material for <strong>'+l+'</strong>.</div></div>'
-    ).join('');
-    return '<div class="card" style="margin-bottom:10px;overflow:hidden;">' +
-      '<div style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:4px 0;" onclick="const b=this.nextElementSibling;b.style.display=b.style.display===\'block\'?\'none\':\'block\';this.querySelector(\'.expand-arrow\').textContent=b.style.display===\'block\'?\'\\u25B2\':\'\\u25BC\'">' +
-      '<div style="font-size:28px;">'+m.icon+'</div>' +
-      '<div style="flex:1;"><div style="font-size:14px;font-weight:800;">Module '+m.num+': '+m.title+'</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px;">'+m.desc+'</div></div>' +
-      '<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:var(--muted);">'+m.lessons.length+' lessons</span><span class="expand-arrow" style="color:var(--cyan);font-size:12px;">&#9660;</span></div></div>' +
-      '<div style="display:none;border-top:1px solid var(--border);margin-top:10px;">'+lessons+'</div></div>';
-  }).join('');
-}
+// ============================================================
+// Course Navigation System & Core Renderers
+// ============================================================
 
-const CONCEPT_LIBRARY = [
-  { title:"Market Regime", cat:"market", icon:"\ud83c\udf0a", short:"Current market personality \u2014 trend, range, panic, or volatile.", key:"market_regime" },
-  { title:"Signal Pipeline", cat:"bot", icon:"\ud83d\udd0d", short:"6-stage safety filter every signal passes through.", key:"signal_pipeline" },
-  { title:"Ensemble Voting", cat:"bot", icon:"\ud83d\uddf3\ufe0f", short:"4 strategies vote on each trade \u2014 majority rules.", key:"ensemble" },
-  { title:"Circuit Breaker", cat:"risk", icon:"\u26a1", short:"Emergency stop after too many losses.", key:"circuit_breaker" },
-  { title:"Leverage", cat:"risk", icon:"\ud83d\udd0d", short:"Borrowed money that amplifies gains AND losses.", key:"leverage" },
-  { title:"Candlestick Charts", cat:"technical", icon:"\ud83d\udcca", short:"OHLC price visualization for each time period.", key:"candlestick" },
-  { title:"Monte Carlo Zones", cat:"technical", icon:"\ud83c\udfb2", short:"Statistical S/R zones from thousands of simulations.", key:"monte_carlo" },
-  { title:"Win Rate", cat:"market", icon:"\ud83c\udfaf", short:"Percentage of trades that made money.", key:"win_rate" },
-  { title:"PnL (Profit & Loss)", cat:"market", icon:"\ud83d\udcc8", short:"Net money made or lost over a period.", key:"daily_pnl" },
-  { title:"Stop Loss", cat:"risk", icon:"\ud83d\uded1", short:"Automatic exit to limit losses on a trade.", key:"positions" },
-  { title:"Take Profit", cat:"risk", icon:"\ud83c\udf1f", short:"Automatic exit to lock in gains at target levels.", key:"positions" },
-  { title:"Equity Curve", cat:"market", icon:"\ud83d\udcc8", short:"Chart of account value over time.", key:"equity_curve" },
-  { title:"Confluence", cat:"bot", icon:"\ud83e\udd1d", short:"Multiple strategies agreeing on the same direction.", key:"signal_confluence" },
-  { title:"Strategy Weights", cat:"bot", icon:"\u2696\ufe0f", short:"Adaptive influence of each strategy in voting.", key:"strategy_weights" },
-  { title:"Go-Live Gates", cat:"bot", icon:"\ud83d\udea6", short:"5 checkpoints before real money trading.", key:"go_live_gates" },
-  { title:"Paper Trading", cat:"market", icon:"\ud83d\udcdd", short:"Simulated trading to validate strategies.", key:"paper_trading" },
-  { title:"LLM Agents", cat:"ai", icon:"\ud83e\udd16", short:"6 AI agents analyzing trades from different angles.", key:"llm_agents" },
-  { title:"Correlation", cat:"risk", icon:"\ud83d\udd17", short:"How similarly assets move together.", key:"correlation" },
-  { title:"Calibration", cat:"ai", icon:"\ud83d\udccf", short:"Is predicted confidence matching actual outcomes?", key:"calibration" },
-  { title:"Trade Outcomes", cat:"bot", icon:"\ud83c\udfaf", short:"Detailed exit types: CLEAN_WIN, TRAILING_WIN, etc.", key:"trade_outcomes" },
-];
+const COURSE_STEPS = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'];
 
-let conceptFilter = 'all';
-function buildConceptLibrary() {
-  const el = document.getElementById('concept-library');
-  if(!el) return;
-  renderConceptCards(CONCEPT_LIBRARY);
-}
-function renderConceptCards(items) {
-  const el = document.getElementById('concept-library');
-  const catColors = { market:'var(--blue)', technical:'var(--cyan)', risk:'var(--red)', bot:'var(--green)', ai:'var(--purple)' };
-  el.innerHTML = items.map(c => {
-    const color = catColors[c.cat] || 'var(--muted)';
-    return '<div class="heatmap-cell concept-card" data-cat="'+c.cat+'" data-title="'+c.title.toLowerCase()+'" data-short="'+c.short.toLowerCase()+'" style="border-left-color:'+color+';cursor:pointer;" onclick="showEdu(\''+c.key+'\')">' +
-      '<div style="font-size:20px;margin-bottom:6px;">'+c.icon+'</div>' +
-      '<div style="font-size:13px;font-weight:700;margin-bottom:4px;">'+c.title+'</div>' +
-      '<div style="font-size:11px;color:var(--text-dim);line-height:1.5;">'+c.short+'</div>' +
-      '<div style="font-size:9px;color:'+color+';margin-top:6px;text-transform:uppercase;">'+c.cat+'</div></div>';
-  }).join('');
-}
-function filterConceptCat(cat, btn) {
-  conceptFilter = cat;
-  document.querySelectorAll('#concept-search').value = '';
-  const cards = document.querySelectorAll('.concept-card');
-  cards.forEach(c => { c.style.display = (cat==='all' || c.dataset.cat===cat) ? '' : 'none'; });
-  // Toggle active button
-  btn.parentElement.querySelectorAll('.symbol-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-function filterConcepts() {
-  const q = document.getElementById('concept-search').value.toLowerCase();
-  document.querySelectorAll('.concept-card').forEach(c => {
-    const match = c.dataset.title.includes(q) || c.dataset.short.includes(q);
-    c.style.display = match ? '' : 'none';
-  });
-}
+// ---- Progress Tracking (localStorage) ----
 
-const GLOSSARY = [
-  { term:"ATR", def:"Average True Range \u2014 measures market volatility over a period." },
-  { term:"Backtest", def:"Testing a strategy against historical data to evaluate performance." },
-  { term:"Candlestick", def:"A chart element showing open, high, low, close prices for a time period." },
-  { term:"Circuit Breaker", def:"Safety mechanism that halts trading after excessive losses." },
-  { term:"Confluence", def:"When multiple independent signals agree on the same trade direction." },
-  { term:"Drawdown", def:"Peak-to-trough decline in account equity, expressed as a percentage." },
-  { term:"Ensemble", def:"A group of strategies that vote together on trading decisions." },
-  { term:"Equity", def:"Total account value including cash and unrealized PnL from open positions." },
-  { term:"Fee Drag", def:"The cumulative cost of trading fees eating into profits over time." },
-  { term:"Go-Live Gate", def:"A validation checkpoint that must pass before live trading is authorized." },
-  { term:"Leverage", def:"Using borrowed capital to increase position size; amplifies gains and losses." },
-  { term:"Liquidation", def:"Forced closure of a leveraged position when losses approach margin." },
-  { term:"Long", def:"A trade that profits when price goes up (buying)." },
-  { term:"Monte Carlo", def:"Statistical technique using thousands of random simulations to predict outcomes." },
-  { term:"OHLCV", def:"Open, High, Low, Close, Volume \u2014 the 5 data points in each candle." },
-  { term:"Paper Trading", def:"Simulated trading with fake money to test strategies without risk." },
-  { term:"PnL", def:"Profit and Loss \u2014 net result of trading activity." },
-  { term:"Position Sizing", def:"Determining how much capital to allocate to each trade." },
-  { term:"Regime", def:"The current market state (trend, range, panic, high_volatility)." },
-  { term:"R:R Ratio", def:"Risk-to-Reward ratio \u2014 potential profit divided by potential loss." },
-  { term:"Sharpe Ratio", def:"Risk-adjusted return metric; higher is better (above 1.0 is good)." },
-  { term:"Short", def:"A trade that profits when price goes down (selling borrowed assets)." },
-  { term:"Signal", def:"A buy or sell recommendation generated by analysis strategies." },
-  { term:"Slippage", def:"The difference between expected and actual execution price." },
-  { term:"SMA", def:"Simple Moving Average \u2014 average price over N periods." },
-  { term:"Stop Loss", def:"An order that automatically closes a trade to limit losses." },
-  { term:"Take Profit", def:"An order that automatically closes a trade to lock in gains." },
-  { term:"Trailing Stop", def:"A stop loss that moves with price to protect accumulating profits." },
-  { term:"Veto", def:"When a strategy or agent blocks a trade it considers too risky." },
-  { term:"Win Rate", def:"Percentage of trades that were profitable." },
-];
-
-function buildGlossary() {
-  const el = document.getElementById('glossary-list');
-  if(!el) return;
-  renderGlossaryItems(GLOSSARY);
-}
-function renderGlossaryItems(items) {
-  const el = document.getElementById('glossary-list');
-  let currentLetter = '';
-  let html = '';
-  items.forEach(g => {
-    const letter = g.term[0].toUpperCase();
-    if(letter !== currentLetter) {
-      currentLetter = letter;
-      html += '<div style="font-size:16px;font-weight:800;color:var(--cyan);margin:16px 0 8px 0;border-bottom:1px solid var(--border);padding-bottom:4px;">'+letter+'</div>';
+function getCourseProgress() {
+  try {
+    var raw = localStorage.getItem('courseProgress');
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      return {
+        quizzesPassed: parsed.quizzesPassed || {},
+        checklistItems: parsed.checklistItems || {},
+        practiceTrades: parsed.practiceTrades || []
+      };
     }
-    html += '<div class="glossary-item" data-term="'+g.term.toLowerCase()+'" style="padding:6px 0;"><strong style="color:var(--text);">'+g.term+'</strong> <span style="color:var(--text-dim);">\u2014 '+g.def+'</span></div>';
-  });
-  el.innerHTML = html;
+  } catch (e) {
+    console.warn('Failed to read courseProgress:', e);
+  }
+  return { quizzesPassed: {}, checklistItems: {}, practiceTrades: [] };
 }
-function filterGlossary() {
-  const q = document.getElementById('glossary-search').value.toLowerCase();
-  document.querySelectorAll('.glossary-item').forEach(el => {
-    el.style.display = el.dataset.term.includes(q) ? '' : 'none';
+
+function saveCourseProgress(progress) {
+  try {
+    localStorage.setItem('courseProgress', JSON.stringify(progress));
+  } catch (e) {
+    console.warn('Failed to save courseProgress:', e);
+  }
+}
+
+function getCompletedSteps() {
+  var progress = getCourseProgress();
+  var count = 0;
+  COURSE_STEPS.forEach(function(step) {
+    if (progress.quizzesPassed[step]) count++;
+  });
+  return count;
+}
+
+function updateProgressUI() {
+  var completed = getCompletedSteps();
+  var total = COURSE_STEPS.length;
+  var pct = Math.round((completed / total) * 100);
+
+  var barFill = document.querySelector('.progress-bar-fill');
+  if (barFill) barFill.style.width = pct + '%';
+
+  var label = document.querySelector('.progress-label');
+  if (label) label.textContent = completed + '/' + total + ' steps completed (' + pct + '%)';
+
+  var progress = getCourseProgress();
+  document.querySelectorAll('.course-nav-item').forEach(function(el) {
+    var onclick = el.getAttribute('onclick') || '';
+    COURSE_STEPS.forEach(function(step) {
+      if (onclick.includes("'" + step + "'") && progress.quizzesPassed[step]) {
+        el.classList.add('completed');
+      }
+    });
   });
 }
+
+// ---- Navigation ----
+
+var currentCoursePage = 'dashboard';
+
+function navigateCourse(page) {
+  currentCoursePage = page;
+  var main = document.getElementById('course-main');
+  if (!main) return;
+
+  document.querySelectorAll('.course-nav-item').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  document.querySelectorAll('.course-nav-item').forEach(function(el) {
+    var onclick = el.getAttribute('onclick') || '';
+    if (onclick.includes("'" + page + "'")) {
+      el.classList.add('active');
+    }
+  });
+
+  var renderers = {
+    'dashboard': renderDashboard,
+    'start-here': renderStartHere,
+    'step1': renderStep1,
+    'step2': renderStep2,
+    'step3': renderStep3,
+    'step4': renderStep4,
+    'step5': renderStep5,
+    'step6': renderStep6,
+    'strat-trendline': renderStratTrendline,
+    'strat-mfi': renderStratMfi,
+    'strat-macro': renderStratMacro,
+    'bull-market': renderBullMarket,
+    'backtesting': renderBacktesting,
+    'resources': renderResources,
+    'alerts': renderAlerts,
+    'dictionary': renderDictionary,
+    'faq': renderFaq
+  };
+
+  var fn = renderers[page] || renderDashboard;
+  main.innerHTML = fn();
+  main.scrollTop = 0;
+  updateProgressUI();
+}
+
+// ---- Quiz System ----
+
+function initQuiz(quizId) {
+  var container = document.getElementById(quizId);
+  if (!container) return;
+
+  container.querySelectorAll('.quiz-option').forEach(function(opt) {
+    opt.addEventListener('click', function() {
+      var question = opt.closest('.quiz-question');
+      if (!question) return;
+      question.querySelectorAll('.quiz-option').forEach(function(sib) {
+        sib.classList.remove('selected');
+      });
+      opt.classList.add('selected');
+    });
+  });
+}
+
+function submitQuiz(quizId, stepId) {
+  var container = document.getElementById(quizId);
+  if (!container) return;
+
+  var questions = container.querySelectorAll('.quiz-question');
+  var total = questions.length;
+  var correct = 0;
+
+  questions.forEach(function(q) {
+    var correctAnswer = q.getAttribute('data-correct');
+    var selected = q.querySelector('.quiz-option.selected');
+    var selectedVal = selected ? selected.getAttribute('data-value') : null;
+
+    q.querySelectorAll('.quiz-option').forEach(function(opt) {
+      opt.classList.remove('correct', 'incorrect');
+      if (opt.getAttribute('data-value') === correctAnswer) {
+        opt.classList.add('correct');
+      } else if (opt.classList.contains('selected') && opt.getAttribute('data-value') !== correctAnswer) {
+        opt.classList.add('incorrect');
+      }
+    });
+
+    if (selectedVal === correctAnswer) correct++;
+  });
+
+  var pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+  var passed = pct >= 75;
+
+  var resultEl = container.querySelector('.quiz-result');
+  if (resultEl) {
+    if (passed) {
+      resultEl.className = 'quiz-result quiz-pass';
+      resultEl.innerHTML = '<strong>Passed!</strong> You scored ' + correct + '/' + total + ' (' + pct + '%). Great job!';
+    } else {
+      resultEl.className = 'quiz-result quiz-fail';
+      resultEl.innerHTML = '<strong>Not quite.</strong> You scored ' + correct + '/' + total + ' (' + pct + '%). You need 75% to pass. Review the material and try again.';
+    }
+    resultEl.style.display = 'block';
+  }
+
+  if (passed) {
+    var progress = getCourseProgress();
+    progress.quizzesPassed[stepId] = true;
+    saveCourseProgress(progress);
+  }
+
+  updateProgressUI();
+}
+
+// ---- Checklist System ----
+
+function toggleChecklist(itemId) {
+  var el = document.getElementById(itemId);
+  if (!el) return;
+
+  el.classList.toggle('checked');
+
+  var progress = getCourseProgress();
+  progress.checklistItems[itemId] = el.classList.contains('checked');
+  saveCourseProgress(progress);
+}
+
+// ---- Dashboard Renderer ----
+
+function renderDashboard() {
+  var progress = getCourseProgress();
+  var completed = getCompletedSteps();
+  var total = COURSE_STEPS.length;
+  var pct = Math.round((completed / total) * 100);
+  var allDone = completed === total && (progress.practiceTrades || []).length > 0;
+
+  var stepData = [
+    { id: 'step1', num: 1, title: 'Basics', desc: 'Candlesticks & Timeframes', icon: '\ud83d\udcca' },
+    { id: 'step2', num: 2, title: 'Setup', desc: 'TradingView Configuration', icon: '\u2699\ufe0f' },
+    { id: 'step3', num: 3, title: 'Structure', desc: 'Trends & Levels', icon: '\ud83d\udcd0' },
+    { id: 'step4', num: 4, title: 'Risk', desc: 'Position Sizing & Stops', icon: '\ud83d\udee1\ufe0f' },
+    { id: 'step5', num: 5, title: 'Indicators', desc: 'RSI, MACD, MFI, Stoch RSI', icon: '\ud83d\udcc8' },
+    { id: 'step6', num: 6, title: 'Assessment', desc: 'Readiness Evaluation', icon: '\ud83c\udfaf' }
+  ];
+
+  var stepCards = '';
+  for (var i = 0; i < stepData.length; i++) {
+    var s = stepData[i];
+    var isCompleted = !!progress.quizzesPassed[s.id];
+    var prevDone = s.num === 1 ? true : !!progress.quizzesPassed['step' + (s.num - 1)];
+    var isAvailable = s.num === 1 || prevDone;
+    var statusTag, statusClass;
+
+    if (isCompleted) {
+      statusTag = 'Completed';
+      statusClass = 'completed';
+    } else if (isAvailable) {
+      statusTag = 'Available';
+      statusClass = 'available';
+    } else {
+      statusTag = 'Locked';
+      statusClass = 'locked';
+    }
+
+    var cardOpacity = (!isAvailable && !isCompleted) ? 'opacity:0.5;' : '';
+    stepCards += '<div class="course-card ' + statusClass + '" onclick="navigateCourse(\'' + s.id + '\')" style="cursor:pointer;' + cardOpacity + '">' +
+      '<div class="card-icon">' + s.icon + '</div>' +
+      '<div class="card-tag">' + statusTag + '</div>' +
+      '<div class="card-title">Step ' + s.num + ': ' + s.title + '</div>' +
+      '<div class="card-desc">' + s.desc + '</div>' +
+    '</div>';
+  }
+
+  var readinessHtml;
+  if (allDone) {
+    readinessHtml = '<div class="info-box success"><strong>Ready!</strong> You have completed all quizzes and logged practice trades. You are prepared to begin live trading with small positions.</div>';
+  } else {
+    readinessHtml = '<div class="info-box tip"><strong>Am I ready?</strong> Not yet \u2014 pass all quizzes and log practice trades in Step 6 to unlock your readiness assessment.</div>';
+  }
+
+  return '<div class="course-page-header">' +
+    '<h1>Welcome to Lewieville\'s Masterclass</h1>' +
+    '<p class="subtitle">Master the art of trading with our comprehensive program</p>' +
+  '</div>' +
+
+  '<div class="card" style="margin-bottom:24px;">' +
+    '<h3 style="margin-top:0;">Progress: ' + completed + '/' + total + ' steps (' + pct + '%)</h3>' +
+    '<div class="progress-wrap"><div class="progress-bar-outer"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div></div>' +
+    '<div class="progress-label">' + completed + '/' + total + ' steps completed (' + pct + '%)</div>' +
+    readinessHtml +
+  '</div>' +
+
+  '<h2 style="margin-bottom:16px;">Your Learning Journey</h2>' +
+  '<div class="course-grid">' + stepCards + '</div>' +
+
+  '<h2 style="margin-top:32px;margin-bottom:16px;">Bull Market Analysis</h2>' +
+  '<div class="course-card" onclick="navigateCourse(\'bull-market\')" style="cursor:pointer;max-width:480px;">' +
+    '<div class="card-icon">\ud83d\udc02</div>' +
+    '<div class="card-title">Bull Market Analysis</div>' +
+    '<div class="card-desc">Current Market Phase: <strong>Phase 2: Early Bull Market</strong></div>' +
+    '<div class="card-desc">Peak Probability: <strong>15%</strong></div>' +
+    '<div class="card-tag">Explore</div>' +
+  '</div>' +
+
+  '<h2 style="margin-top:32px;margin-bottom:16px;">Core Concepts</h2>' +
+  '<div class="course-grid">' +
+    '<div class="course-card" onclick="navigateCourse(\'step3\')" style="cursor:pointer;">' +
+      '<div class="card-icon">\ud83d\udcd0</div>' +
+      '<div class="card-title">Trend Analysis</div>' +
+      '<div class="card-desc">Learn to identify trends, support & resistance on higher timeframes.</div>' +
+    '</div>' +
+    '<div class="course-card" onclick="navigateCourse(\'step5\')" style="cursor:pointer;">' +
+      '<div class="card-icon">\ud83d\udcc8</div>' +
+      '<div class="card-title">Entry Signals</div>' +
+      '<div class="card-desc">Master RSI, MACD, MFI, and Stochastic RSI for high-probability entries.</div>' +
+    '</div>' +
+    '<div class="course-card" onclick="navigateCourse(\'step4\')" style="cursor:pointer;">' +
+      '<div class="card-icon">\ud83d\udee1\ufe0f</div>' +
+      '<div class="card-title">Risk Management</div>' +
+      '<div class="card-desc">Position sizing, stop placement, and protecting your capital.</div>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="card" style="margin-top:32px;text-align:center;">' +
+    '<h2 style="margin-top:0;">Ready to Begin?</h2>' +
+    '<p style="color:var(--text-dim);margin-bottom:16px;">Start your journey from the very first step.</p>' +
+    '<button class="step-nav-btn primary" onclick="navigateCourse(\'start-here\')">Start Here</button>' +
+  '</div>' +
+
+  '<h2 style="margin-top:32px;margin-bottom:16px;">Strategies</h2>' +
+  '<div class="course-grid">' +
+    '<div class="course-card" onclick="navigateCourse(\'strat-trendline\')" style="cursor:pointer;">' +
+      '<div class="card-icon">\ud83d\udcc9</div>' +
+      '<div class="card-title">Trendline Breakout</div>' +
+      '<div class="card-desc">Win Rate: <strong>65%</strong> | R:R 1:2.5</div>' +
+      '<div class="card-tag">Strategy</div>' +
+    '</div>' +
+    '<div class="course-card" onclick="navigateCourse(\'strat-mfi\')" style="cursor:pointer;">' +
+      '<div class="card-icon">\ud83d\udca7</div>' +
+      '<div class="card-title">MFI + MACD</div>' +
+      '<div class="card-desc">Win Rate: <strong>62%</strong> | R:R 1:2.0</div>' +
+      '<div class="card-tag">Strategy</div>' +
+    '</div>' +
+    '<div class="course-card" onclick="navigateCourse(\'strat-macro\')" style="cursor:pointer;">' +
+      '<div class="card-icon">\ud83d\udd2d</div>' +
+      '<div class="card-title">2-Week Macro</div>' +
+      '<div class="card-desc">Win Rate: <strong>68%</strong> | R:R 1:3.0</div>' +
+      '<div class="card-tag">Strategy</div>' +
+    '</div>' +
+  '</div>';
+}
+
+// ---- Start Here Renderer ----
+
+function renderStartHere() {
+  var progress = getCourseProgress();
+
+  var timelineSteps = [
+    { label: 'Foundation Setup', note: 'You\'re here!', time: '5 min', active: true },
+    { label: 'Step 1: Master the Basics', note: '', time: '30\u201345 min', done: !!progress.quizzesPassed['step1'] },
+    { label: 'Step 2: Trading Terminology & Setup', note: '', time: '20\u201330 min', done: !!progress.quizzesPassed['step2'] },
+    { label: 'Step 3: HTF Structure Analysis', note: '', time: '45\u201360 min', done: !!progress.quizzesPassed['step3'] },
+    { label: 'Step 4: Risk Management', note: '', time: '30\u201345 min', done: !!progress.quizzesPassed['step4'] },
+    { label: 'Step 5: Technical Indicators', note: '', time: '60\u201390 min', done: !!progress.quizzesPassed['step5'] },
+    { label: 'Step 6: Practice & Assessment', note: '', time: '1\u20132 weeks', done: !!progress.quizzesPassed['step6'] },
+    { label: 'Advanced Strategies Unlocked', note: '', time: 'Ongoing', done: false }
+  ];
+
+  var timelineHtml = '';
+  for (var i = 0; i < timelineSteps.length; i++) {
+    var ts = timelineSteps[i];
+    var cls = '';
+    if (ts.active) cls = ' active-phase';
+    else if (ts.done) cls = ' completed';
+    var dotSymbol = ts.done ? '\u2713' : (ts.active ? '\u25b6' : '\u25cf');
+    timelineHtml += '<div class="phase-item' + cls + '">' +
+      '<span class="phase-num">' + dotSymbol + '</span>' +
+      '<div>' +
+        '<strong>' + ts.label + '</strong>' +
+        (ts.note ? ' <em style="color:var(--cyan);">(' + ts.note + ')</em>' : '') +
+        '<div style="color:var(--text-dim);font-size:0.85em;">' + ts.time + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  return '<div class="course-page-header">' +
+    '<h1>Start Your Trading Journey</h1>' +
+    '<p class="subtitle">Welcome to Lewieville\'s Masterclass!</p>' +
+  '</div>' +
+
+  '<div class="info-box tip">' +
+    '<strong>What you\'ll learn:</strong>' +
+    '<ul style="margin:8px 0 0 0;padding-left:20px;">' +
+      '<li>Professional BTC trading strategies</li>' +
+      '<li>Multi-timeframe analysis (16H \u2192 6H \u2192 1H)</li>' +
+      '<li>High-probability setups with 60\u201370% win rates</li>' +
+      '<li>Advanced risk management</li>' +
+      '<li>Market psychology</li>' +
+    '</ul>' +
+  '</div>' +
+
+  '<div class="info-box" style="margin-bottom:24px;">' +
+    '<strong>Time Investment:</strong> 2\u20133 weeks to complete all modules.' +
+  '</div>' +
+
+  '<h2 style="margin-bottom:16px;">Your Learning Path</h2>' +
+  '<div class="phase-box">' + timelineHtml + '</div>' +
+
+  '<h2 style="margin-top:32px;margin-bottom:16px;">What Makes This Program Different</h2>' +
+  '<div class="course-grid">' +
+    '<div class="course-card">' +
+      '<div class="card-icon">\ud83c\udf0d</div>' +
+      '<div class="card-title">Real-World Focus</div>' +
+      '<div class="card-desc">Every concept is taught with live BTC chart examples and actionable setups.</div>' +
+    '</div>' +
+    '<div class="course-card">' +
+      '<div class="card-icon">\ud83d\udd0d</div>' +
+      '<div class="card-title">Multi-Timeframe Approach</div>' +
+      '<div class="card-desc">Learn to read charts from 16H down to 1H for confluence-based entries.</div>' +
+    '</div>' +
+    '<div class="course-card">' +
+      '<div class="card-icon">\ud83d\udee1\ufe0f</div>' +
+      '<div class="card-title">Risk-First Mentality</div>' +
+      '<div class="card-desc">Capital preservation is priority one. You learn sizing and stops before entries.</div>' +
+    '</div>' +
+    '<div class="course-card">' +
+      '<div class="card-icon">\ud83e\udde0</div>' +
+      '<div class="card-title">Psychology Integration</div>' +
+      '<div class="card-desc">Mindset, discipline, and emotional control woven into every module.</div>' +
+    '</div>' +
+  '</div>' +
+
+  '<h2 style="margin-top:32px;margin-bottom:16px;">Prerequisites</h2>' +
+  '<div class="course-grid">' +
+    '<div class="card" style="flex:1;min-width:280px;">' +
+      '<h3 style="margin-top:0;color:var(--green);">What You Need</h3>' +
+      '<ul style="padding-left:20px;color:var(--text-dim);">' +
+        '<li>A free TradingView account</li>' +
+        '<li>2\u20133 hours per week to study</li>' +
+        '<li>A demo/paper trading account</li>' +
+        '<li>A notebook for journaling trades</li>' +
+        '<li>Commitment to follow the process</li>' +
+      '</ul>' +
+    '</div>' +
+    '<div class="card" style="flex:1;min-width:280px;">' +
+      '<h3 style="margin-top:0;color:var(--text-dim);">What You DON\'T Need</h3>' +
+      '<ul style="padding-left:20px;color:var(--text-dim);">' +
+        '<li>Prior trading experience</li>' +
+        '<li>Large starting capital</li>' +
+        '<li>Expensive software or tools</li>' +
+        '<li>Advanced math background</li>' +
+        '<li>Full-time availability</li>' +
+      '</ul>' +
+    '</div>' +
+  '</div>' +
+
+  '<h2 style="margin-top:32px;margin-bottom:16px;">Success Metrics</h2>' +
+  '<div class="metric-row">' +
+    '<div class="metric-card">' +
+      '<div class="metric-val" style="color:var(--green);">60\u201370%</div>' +
+      '<div class="metric-label">Target Win Rate</div>' +
+    '</div>' +
+    '<div class="metric-card">' +
+      '<div class="metric-val" style="color:var(--cyan);">1:2+</div>' +
+      '<div class="metric-label">Risk / Reward</div>' +
+    '</div>' +
+    '<div class="metric-card">' +
+      '<div class="metric-val" style="color:var(--yellow);">2\u20133%</div>' +
+      '<div class="metric-label">Max Risk Per Trade</div>' +
+    '</div>' +
+    '<div class="metric-card">' +
+      '<div class="metric-val" style="color:var(--purple);">6\u201312 Mo</div>' +
+      '<div class="metric-label">Time to Proficiency</div>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="info-box warning" style="margin-top:24px;">' +
+    '<strong>Important Disclaimers:</strong>' +
+    '<ul style="margin:8px 0 0 0;padding-left:20px;">' +
+      '<li>This course is for <strong>educational purposes only</strong> and is not financial advice.</li>' +
+      '<li>Trading cryptocurrency involves <strong>significant risk of loss</strong>.</li>' +
+      '<li>Past performance does not guarantee future results.</li>' +
+      '<li>Always <strong>practice on a demo account</strong> before risking real capital.</li>' +
+      '<li>You are solely responsible for your own trading decisions.</li>' +
+    '</ul>' +
+  '</div>' +
+
+  '<h2 style="margin-top:32px;margin-bottom:16px;">Ready to Start?</h2>' +
+  '<div class="course-grid">' +
+    '<div class="course-card" onclick="navigateCourse(\'step1\')" style="cursor:pointer;">' +
+      '<div class="card-icon">\ud83d\udcca</div>' +
+      '<div class="card-title">Step 1: The Basics</div>' +
+      '<div class="card-desc">Begin learning candlesticks and timeframes.</div>' +
+    '</div>' +
+    '<div class="course-card" onclick="navigateCourse(\'resources\')" style="cursor:pointer;">' +
+      '<div class="card-icon">\ud83d\udcda</div>' +
+      '<div class="card-title">Resources</div>' +
+      '<div class="card-desc">Tools, links, and reference materials.</div>' +
+    '</div>' +
+    '<div class="course-card" onclick="navigateCourse(\'bull-market\')" style="cursor:pointer;">' +
+      '<div class="card-icon">\ud83d\udc02</div>' +
+      '<div class="card-title">Bull Market Analysis</div>' +
+      '<div class="card-desc">Understand the current market cycle.</div>' +
+    '</div>' +
+    '<div class="course-card" onclick="navigateCourse(\'faq\')" style="cursor:pointer;">' +
+      '<div class="card-icon">\u2753</div>' +
+      '<div class="card-title">FAQ</div>' +
+      '<div class="card-desc">Common questions answered.</div>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="step-nav" style="margin-top:32px;">' +
+    '<button class="step-nav-btn" onclick="navigateCourse(\'dashboard\')">\u2190 Dashboard</button>' +
+    '<button class="step-nav-btn primary" onclick="navigateCourse(\'step1\')">Step 1 \u2192</button>' +
+  '</div>';
+}
+
+// ---- Init ----
 
 function initLearnTab() {
-  buildCourseModules();
-  buildConceptLibrary();
-  buildGlossary();
-  // Load live previews
-  fetch('/api/market').then(r=>r.json()).then(d => {
-    const regimes = d.map(m => m.regime).filter(Boolean);
-    document.getElementById('live-regime-preview').textContent = regimes.length > 0 ? regimes.join(', ') : 'No data';
-  }).catch(() => {});
-  fetch('/api/pipeline').then(r=>r.json()).then(d => {
-    document.getElementById('live-pipeline-preview').textContent = (d.total_signals||0)+' signals, '+(d.passed||0)+' passed, '+(d.total_rejected||0)+' rejected';
-  }).catch(() => {});
-  fetch('/api/risk').then(r=>r.json()).then(d => {
-    document.getElementById('live-cb-preview').textContent = d.cb_tripped ? 'TRIPPED!' : 'SAFE \u2014 '+Math.abs(d.daily_pnl||0).toFixed(2)+' / '+d.daily_limit+' daily limit';
-    if(d.cb_tripped) document.getElementById('live-cb-preview').style.color = 'var(--red)';
-  }).catch(() => {});
+  navigateCourse('dashboard');
 }
+
+// ── Steps 1-3 ──
+function renderStep1() {
+  return `
+    <div class="course-page-header">
+      <h1>Step 1: Trading Fundamentals</h1>
+      <p class="subtitle">Master the essential building blocks of technical analysis</p>
+    </div>
+
+    <h2>What You'll Learn</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">🕯️</div>
+        <div class="card-title">Candlestick Mastery</div>
+        <div class="card-desc">Read price action like a professional trader through candlestick analysis</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">⏱️</div>
+        <div class="card-title">Timeframe Analysis</div>
+        <div class="card-desc">Understand how different timeframes interact and influence each other</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">📐</div>
+        <div class="card-title">Pattern Recognition</div>
+        <div class="card-desc">Identify high-probability reversal and continuation patterns</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">🧠</div>
+        <div class="card-title">Market Psychology</div>
+        <div class="card-desc">Decode the emotions behind price movements and exploit crowd behavior</div>
+      </div>
+    </div>
+
+    <h2>Candlestick Anatomy Deep Dive</h2>
+    <div class="info-box tip">
+      <p>Every candlestick tells a story of battle between buyers and sellers. Learning to read them is the foundation of all technical analysis.</p>
+    </div>
+
+    <h3>The Four Critical Price Points</h3>
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--green)">Open</div>
+        <div class="metric-label">The price at which the candle began trading during the period</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--cyan)">High</div>
+        <div class="metric-label">The highest price reached during the period — top of the upper wick</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--red)">Low</div>
+        <div class="metric-label">The lowest price reached during the period — bottom of the lower wick</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--yellow)">Close</div>
+        <div class="metric-label">The price at which the candle finished trading — determines body color</div>
+      </div>
+    </div>
+
+    <h3>Candlestick Types</h3>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-icon" style="color: var(--green)">&#9650;</div>
+        <div class="card-title" style="color: var(--green)">Bullish</div>
+        <div class="card-desc">Green body — close is higher than open. Buyers controlled the period and pushed price up.</div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--red)">
+        <div class="card-icon" style="color: var(--red)">&#9660;</div>
+        <div class="card-title" style="color: var(--red)">Bearish</div>
+        <div class="card-desc">Red body — close is lower than open. Sellers controlled the period and pushed price down.</div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-icon" style="color: var(--yellow)">&#10010;</div>
+        <div class="card-title" style="color: var(--yellow)">Doji</div>
+        <div class="card-desc">Tiny body — open is approximately equal to close. Neither buyers nor sellers won the battle.</div>
+      </div>
+    </div>
+
+    <h3>Wick Analysis</h3>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--green)">&#9475;</div>
+        <div class="card-title">Long Lower Wick</div>
+        <div class="card-desc">Buyers rejected lower prices — price was pushed down but recovered. Potential bullish reversal signal, especially near support.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--red)">&#9475;</div>
+        <div class="card-title">Long Upper Wick</div>
+        <div class="card-desc">Sellers rejected higher prices — price was pushed up but pulled back. Potential bearish reversal signal, especially near resistance.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--cyan)">&#9608;</div>
+        <div class="card-title">Large Body, Small Wicks</div>
+        <div class="card-desc">Strong directional conviction — one side completely dominated with little opposition. High confidence move.</div>
+      </div>
+    </div>
+
+    <h2>Timeframe Mastery</h2>
+    <div class="card" style="text-align: center; padding: 24px; margin-bottom: 20px;">
+      <p style="color: var(--text-dim); margin-bottom: 12px;">Timeframe Hierarchy</p>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; font-size: 1.2em; font-weight: bold;">
+        <span style="color: var(--purple)">1Y</span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--blue)">1M</span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--cyan)">1W</span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--green)">1D</span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--yellow)">4H</span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--red)">1H</span>
+      </div>
+    </div>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--cyan)">
+        <div class="card-title" style="color: var(--cyan)">Higher Timeframes (HTF)</div>
+        <div class="card-desc"><strong>1W &amp; 1D</strong> — Identify the major trend direction. These timeframes show the big picture and should always be checked first. Use <strong>16H &amp; 6H</strong> to confirm bias and find entry zones.</div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-title" style="color: var(--yellow)">Entry Timeframes</div>
+        <div class="card-desc"><strong>4H &amp; 1H</strong> — Use these for precise entry timing. Once higher timeframes confirm the direction, drop to lower timeframes to find optimal entry points with tight stop losses.</div>
+      </div>
+    </div>
+
+    <h2>Essential Candlestick Patterns</h2>
+
+    <h3 style="color: var(--green)">Reversal Patterns</h3>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--green)">T</div>
+        <div class="card-title">Hammer</div>
+        <div class="card-desc">Bullish reversal at support. Long lower wick, small body near the top. Sellers pushed down but buyers reclaimed control.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--red)">&#8593;</div>
+        <div class="card-title">Shooting Star</div>
+        <div class="card-desc">Bearish reversal at resistance. Long upper wick, small body near the bottom. Buyers pushed up but sellers rejected the advance.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--green)">&#9646;&#9608;</div>
+        <div class="card-title">Bullish Engulfing</div>
+        <div class="card-desc">Large green candle completely engulfs the prior red candle. Strong shift from selling to buying pressure.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--red)">&#9608;&#9646;</div>
+        <div class="card-title">Bearish Engulfing</div>
+        <div class="card-desc">Large red candle completely engulfs the prior green candle. Strong shift from buying to selling pressure.</div>
+      </div>
+    </div>
+
+    <h3 style="color: var(--cyan)">Continuation Patterns</h3>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--green)">&#9650;&#9650;&#9650;</div>
+        <div class="card-title">Three White Soldiers</div>
+        <div class="card-desc">Three consecutive bullish candles with higher closes. Strong buying momentum and trend continuation signal.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--red)">&#9660;&#9660;&#9660;</div>
+        <div class="card-title">Three Black Crows</div>
+        <div class="card-desc">Three consecutive bearish candles with lower closes. Strong selling momentum and bearish continuation.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--yellow)">&#10010;</div>
+        <div class="card-title">Doji</div>
+        <div class="card-desc">Open equals close with visible wicks. Signals indecision — wait for the next candle to confirm direction.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--green)">&#9585;</div>
+        <div class="card-title">Piercing Pattern</div>
+        <div class="card-desc">Green candle opens below prior red candle and closes above its midpoint. Bullish reversal signal at support levels.</div>
+      </div>
+    </div>
+
+    <h2>Market Psychology</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-icon">&#128200;</div>
+        <div class="card-title">FOMO (Fear of Missing Out)</div>
+        <div class="card-desc">Appears as long green candles with increasing volume. The crowd is piling in. <strong>Strategy:</strong> Wait for pullbacks rather than chasing. FOMO entries are often the worst entries.</div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--red)">
+        <div class="card-icon">&#128200;</div>
+        <div class="card-title">Panic Selling</div>
+        <div class="card-desc">Appears as long red candles on high volume. Fear dominates. <strong>Strategy:</strong> Look for buying opportunities at key support levels. Panic often marks bottoms.</div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-icon">&#9878;</div>
+        <div class="card-title">Indecision</div>
+        <div class="card-desc">Appears as doji candles and small-bodied candles. Neither side is winning. <strong>Strategy:</strong> Wait for confirmation before entering. Let the market show its hand.</div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--cyan)">
+        <div class="card-icon">&#128170;</div>
+        <div class="card-title">Strong Conviction</div>
+        <div class="card-desc">Appears as large bodies with small wicks. One side is in full control. <strong>Strategy:</strong> Trade in the direction of conviction. These moves tend to follow through.</div>
+      </div>
+    </div>
+
+    <h2>Practice Exercises</h2>
+    <div class="checklist">
+      <div class="checklist-item">
+        <span class="checklist-box">1</span>
+        <div>
+          <strong>Candlestick Identification:</strong> Open a 1D chart on BTC. Identify and label 10 candles as bullish, bearish, or doji. Note the body size and wick lengths for each.
+        </div>
+      </div>
+      <div class="checklist-item">
+        <span class="checklist-box">2</span>
+        <div>
+          <strong>Wick Analysis:</strong> Find 5 candles with long lower wicks and 5 with long upper wicks. Record what happened on the next candle after each. Do wicks predict direction?
+        </div>
+      </div>
+      <div class="checklist-item">
+        <span class="checklist-box">3</span>
+        <div>
+          <strong>Timeframe Comparison:</strong> Look at the same date on 1W, 1D, 4H, and 1H charts. Write down how the story changes at each timeframe. Which gives the clearest picture?
+        </div>
+      </div>
+      <div class="checklist-item">
+        <span class="checklist-box">4</span>
+        <div>
+          <strong>Psychology Reading:</strong> Find recent examples of FOMO (long green run), panic selling (sharp drop), and indecision (doji cluster). What happened after each?
+        </div>
+      </div>
+    </div>
+
+    <h2>Knowledge Check Quiz</h2>
+    <div class="quiz-container">
+      <div class="quiz-question" data-correct="b">
+        <p><strong>1.</strong> What does a long lower wick indicate?</p>
+        <label class="quiz-option"><input type="radio" name="q1" value="a" class="quiz-radio"> a) Strong buying pressure</label>
+        <label class="quiz-option"><input type="radio" name="q1" value="b" class="quiz-radio"> b) Price was rejected at lower levels by buyers</label>
+        <label class="quiz-option"><input type="radio" name="q1" value="c" class="quiz-radio"> c) Sellers dominated</label>
+      </div>
+      <div class="quiz-question" data-correct="c">
+        <p><strong>2.</strong> Which timeframe should you check FIRST?</p>
+        <label class="quiz-option"><input type="radio" name="q2" value="a" class="quiz-radio"> a) 1 minute</label>
+        <label class="quiz-option"><input type="radio" name="q2" value="b" class="quiz-radio"> b) 1 hour</label>
+        <label class="quiz-option"><input type="radio" name="q2" value="c" class="quiz-radio"> c) Daily or weekly for overall trend</label>
+      </div>
+      <div class="quiz-question" data-correct="b">
+        <p><strong>3.</strong> A doji candle typically indicates:</p>
+        <label class="quiz-option"><input type="radio" name="q3" value="a" class="quiz-radio"> a) Strong bullish momentum</label>
+        <label class="quiz-option"><input type="radio" name="q3" value="b" class="quiz-radio"> b) Market indecision and potential reversal</label>
+        <label class="quiz-option"><input type="radio" name="q3" value="c" class="quiz-radio"> c) Guaranteed price continuation</label>
+      </div>
+      <div class="quiz-question" data-correct="a">
+        <p><strong>4.</strong> What psychology does a hammer pattern reveal?</p>
+        <label class="quiz-option"><input type="radio" name="q4" value="a" class="quiz-radio"> a) Panic selling followed by buyer rejection</label>
+        <label class="quiz-option"><input type="radio" name="q4" value="b" class="quiz-radio"> b) Strong seller conviction</label>
+        <label class="quiz-option"><input type="radio" name="q4" value="c" class="quiz-radio"> c) Market consolidation</label>
+      </div>
+      <button class="quiz-submit" onclick="checkQuiz(this)">Check Answers</button>
+      <div class="quiz-result"></div>
+    </div>
+
+    <h2>Key Takeaways</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">1</div>
+        <div class="card-desc">Candlesticks encode the battle between buyers and sellers — body size shows conviction, wicks show rejection.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">2</div>
+        <div class="card-desc">Always start analysis on higher timeframes (Weekly/Daily) and work down to entry timeframes (4H/1H).</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">3</div>
+        <div class="card-desc">Reversal patterns (hammer, engulfing) signal potential trend changes — always confirm with context and volume.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">4</div>
+        <div class="card-desc">Market psychology drives price — learn to recognize FOMO, panic, and indecision in candlestick formations.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">5</div>
+        <div class="card-desc">Practice reading candles daily until pattern recognition becomes second nature. Consistent practice is the fastest path to mastery.</div>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateTo('dashboard')">&#8592; Back to Dashboard</button>
+      <button class="step-nav-btn primary" onclick="navigateTo('step2')">Next: Professional Setup &#8594;</button>
+    </div>
+  `;
+}
+
+function renderStep2() {
+  return `
+    <div class="course-page-header">
+      <h1>Step 2: Professional Trading Setup</h1>
+      <p class="subtitle">Build your professional trading workspace</p>
+    </div>
+
+    <h2>What You'll Master</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">&#128202;</div>
+        <div class="card-title">TradingView Mastery</div>
+        <div class="card-desc">Set up and optimize TradingView for professional-grade charting and analysis</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128200;</div>
+        <div class="card-title">Indicator Setup</div>
+        <div class="card-desc">Configure the exact indicators used by professionals — EMAs, RSI, MACD, and more</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128187;</div>
+        <div class="card-title">Multi-Chart Layout</div>
+        <div class="card-desc">Build multi-timeframe workspaces for complete market visibility</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128276;</div>
+        <div class="card-title">Alert Systems</div>
+        <div class="card-desc">Set up price and indicator alerts so you never miss a trade setup</div>
+      </div>
+    </div>
+
+    <h2>TradingView Account Setup</h2>
+
+    <h3>Step 1: Create Your Account</h3>
+    <div class="info-box tip">
+      <p>Go to <strong>tradingview.com</strong> and create a free account. For crypto charting, we recommend using <strong>COINBASE:BTCUSD</strong> as your primary chart for the cleanest data and highest liquidity.</p>
+    </div>
+
+    <h3>Account Tiers</h3>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-title">Free Tier</div>
+        <div class="card-desc">
+          <ul style="margin: 0; padding-left: 16px;">
+            <li>1 chart per tab</li>
+            <li>3 indicators per chart</li>
+            <li>Basic price alerts</li>
+            <li>Limited saved layouts</li>
+          </ul>
+          <p style="margin-top: 8px; color: var(--text-dim);">Good for getting started and learning the platform.</p>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--cyan)">
+        <div class="card-title" style="color: var(--cyan)">Pro — $14.95/mo</div>
+        <div class="card-desc">
+          <ul style="margin: 0; padding-left: 16px;">
+            <li>Multiple chart layouts</li>
+            <li>5 indicators per chart</li>
+            <li>Advanced alerts (multi-condition)</li>
+            <li>Multi-timeframe workspace</li>
+          </ul>
+          <p style="margin-top: 8px; color: var(--cyan);">Recommended for serious traders who need full indicator suite.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Chart Settings</h3>
+    <div class="info-box success">
+      <p><strong>Chart Type:</strong> Candlesticks (always)<br>
+      <strong>Scale:</strong> Log Scale for long-term analysis / Linear Scale for intraday<br>
+      <strong>Colors:</strong> Green Up / Red Down (standard convention)</p>
+    </div>
+
+    <h2>Timeframe Configuration</h2>
+
+    <h3>The 5-Timeframe System</h3>
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--purple)">1W</div>
+        <div class="metric-label">Weekly — Major trend direction and key levels</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--blue)">1D</div>
+        <div class="metric-label">Daily — Swing structure and intermediate trend</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--cyan)">16H</div>
+        <div class="metric-label">16-Hour — Bias confirmation between daily and intraday</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--green)">6H</div>
+        <div class="metric-label">6-Hour — Setup alignment and zone identification</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--yellow)">1H</div>
+        <div class="metric-label">1-Hour — Precise entry timing and stop placement</div>
+      </div>
+    </div>
+
+    <h3>Analysis Workflow</h3>
+    <div class="card" style="text-align: center; padding: 24px;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; font-size: 1.1em; font-weight: bold;">
+        <span style="color: var(--purple)">Weekly</span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--blue)">Daily</span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--cyan)">16H / 6H</span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--yellow)">1H</span>
+      </div>
+      <p style="color: var(--text-dim); margin-top: 12px;">Always analyze from highest to lowest timeframe. Never skip the weekly check.</p>
+    </div>
+
+    <h2>Indicator Configuration</h2>
+
+    <h3>Exponential Moving Averages (EMAs)</h3>
+    <div class="course-grid">
+      <div class="indicator-card">
+        <div style="font-size: 1.3em; font-weight: bold; color: #3B82F6; margin-bottom: 8px;">EMA 20</div>
+        <p style="margin: 0;"><strong>Color:</strong> Blue (#3B82F6)</p>
+        <p style="margin: 4px 0; color: var(--text-dim);">Short-term trend. Price above = bullish bias. Acts as dynamic support/resistance on pullbacks.</p>
+      </div>
+      <div class="indicator-card">
+        <div style="font-size: 1.3em; font-weight: bold; color: #F59E0B; margin-bottom: 8px;">EMA 50</div>
+        <p style="margin: 0;"><strong>Color:</strong> Orange (#F59E0B)</p>
+        <p style="margin: 4px 0; color: var(--text-dim);">Medium-term trend. Key level for swing traders. Crossover with EMA 20 signals trend shifts.</p>
+      </div>
+      <div class="indicator-card">
+        <div style="font-size: 1.3em; font-weight: bold; color: #6B7280; margin-bottom: 8px;">EMA 200</div>
+        <p style="margin: 0;"><strong>Color:</strong> Gray (#6B7280)</p>
+        <p style="margin: 4px 0; color: var(--text-dim);">Long-term trend. The most watched moving average. Price above = bull market, below = bear market.</p>
+      </div>
+    </div>
+
+    <div class="info-box tip">
+      <p><strong>EMA Alignment Rules:</strong><br>
+      <span style="color: var(--green);">&#9650; Bullish:</span> EMA 20 &gt; EMA 50 &gt; EMA 200 — all moving averages stacked in order<br>
+      <span style="color: var(--red);">&#9660; Bearish:</span> EMA 20 &lt; EMA 50 &lt; EMA 200 — inverse stack confirms downtrend</p>
+    </div>
+
+    <h3>Oscillators &amp; Momentum</h3>
+    <div class="course-grid">
+      <div class="indicator-card">
+        <div style="font-size: 1.1em; font-weight: bold; color: var(--cyan); margin-bottom: 8px;">RSI (Relative Strength Index)</div>
+        <p style="margin: 0;"><strong>Length:</strong> 14</p>
+        <p style="margin: 4px 0;"><strong>Overbought:</strong> 70 &nbsp;|&nbsp; <strong>Oversold:</strong> 30</p>
+        <p style="margin: 4px 0; color: var(--text-dim);">Measures momentum. Above 70 = overbought, below 30 = oversold. Look for divergences with price.</p>
+      </div>
+      <div class="indicator-card">
+        <div style="font-size: 1.1em; font-weight: bold; color: var(--purple); margin-bottom: 8px;">Stochastic RSI</div>
+        <p style="margin: 0;"><strong>K:</strong> 3 &nbsp;|&nbsp; <strong>D:</strong> 3</p>
+        <p style="margin: 4px 0;"><strong>RSI Length:</strong> 14 &nbsp;|&nbsp; <strong>Stoch Length:</strong> 14</p>
+        <p style="margin: 4px 0; color: var(--text-dim);">More sensitive than RSI. Great for timing entries within a trend. K crossing above D = bullish.</p>
+      </div>
+      <div class="indicator-card">
+        <div style="font-size: 1.1em; font-weight: bold; color: var(--green); margin-bottom: 8px;">MACD</div>
+        <p style="margin: 0;"><strong>Fast:</strong> 12 &nbsp;|&nbsp; <strong>Slow:</strong> 26 &nbsp;|&nbsp; <strong>Signal:</strong> 9</p>
+        <p style="margin: 4px 0; color: var(--text-dim);">Trend-following momentum. Histogram above zero = bullish. Signal line crossovers confirm entries.</p>
+      </div>
+      <div class="indicator-card">
+        <div style="font-size: 1.1em; font-weight: bold; color: var(--yellow); margin-bottom: 8px;">MFI (Money Flow Index)</div>
+        <p style="margin: 0;"><strong>Length:</strong> 14</p>
+        <p style="margin: 4px 0;"><strong>Overbought:</strong> 80 &nbsp;|&nbsp; <strong>Oversold:</strong> 20</p>
+        <p style="margin: 4px 0; color: var(--text-dim);">Volume-weighted RSI. Confirms whether money is flowing in or out. Divergences are powerful signals.</p>
+      </div>
+    </div>
+
+    <h2>Workspace Layouts</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-title" style="color: var(--green)">Single Chart Pro (Recommended)</div>
+        <div class="card-desc">
+          <p style="color: var(--text-dim); margin-bottom: 8px;">Works with the free tier. One chart with layered analysis.</p>
+          <ul style="margin: 0; padding-left: 16px;">
+            <li><strong>Main Chart:</strong> Candlesticks + EMA 20/50/200</li>
+            <li><strong>Panel 1:</strong> RSI + Stochastic RSI overlay</li>
+            <li><strong>Panel 2:</strong> MACD + MFI overlay</li>
+          </ul>
+          <p style="margin-top: 8px;">Switch timeframes manually using the toolbar. Start here.</p>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--cyan)">
+        <div class="card-title" style="color: var(--cyan)">Multi-Timeframe Pro (Advanced)</div>
+        <div class="card-desc">
+          <p style="color: var(--text-dim); margin-bottom: 8px;">Requires Pro subscription for multiple chart layouts.</p>
+          <ul style="margin: 0; padding-left: 16px;">
+            <li><strong>Chart 1:</strong> Weekly/Daily for trend direction</li>
+            <li><strong>Chart 2:</strong> 16H/6H for setup identification</li>
+            <li><strong>Chart 3:</strong> 1H for entry precision</li>
+          </ul>
+          <p style="margin-top: 8px;">See all timeframes simultaneously for faster analysis.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>Visual Optimization Tips</h2>
+    <div class="info-box tip">
+      <p><strong>Dark Theme:</strong> Easier on the eyes during long sessions. Go to Settings &gt; Appearance &gt; Dark.<br>
+      <strong>Proper Scaling:</strong> Use Auto Scale for most charts. Lock scale when comparing specific levels.<br>
+      <strong>Crosshair Magnet Mode:</strong> Enable to snap crosshair to OHLC values — reduces guesswork.<br>
+      <strong>Subtle Grid:</strong> Reduce grid opacity so price action stands out. Grid is a guide, not a distraction.</p>
+    </div>
+
+    <h2>Knowledge Check Quiz</h2>
+    <div class="quiz-container">
+      <div class="quiz-question" data-correct="b">
+        <p><strong>1.</strong> What are the optimal EMA lengths for our setup?</p>
+        <label class="quiz-option"><input type="radio" name="s2q1" value="a" class="quiz-radio"> a) 10, 30, 100</label>
+        <label class="quiz-option"><input type="radio" name="s2q1" value="b" class="quiz-radio"> b) 20, 50, 200</label>
+        <label class="quiz-option"><input type="radio" name="s2q1" value="c" class="quiz-radio"> c) 5, 20, 50</label>
+      </div>
+      <div class="quiz-question" data-correct="b">
+        <p><strong>2.</strong> Which timeframes are used for higher timeframe (HTF) analysis?</p>
+        <label class="quiz-option"><input type="radio" name="s2q2" value="a" class="quiz-radio"> a) 1m, 5m, 15m</label>
+        <label class="quiz-option"><input type="radio" name="s2q2" value="b" class="quiz-radio"> b) 1W, 1D, 16H, 6H</label>
+        <label class="quiz-option"><input type="radio" name="s2q2" value="c" class="quiz-radio"> c) 4H, 1H, 30m</label>
+      </div>
+      <div class="quiz-question" data-correct="a">
+        <p><strong>3.</strong> What does bullish EMA alignment look like?</p>
+        <label class="quiz-option"><input type="radio" name="s2q3" value="a" class="quiz-radio"> a) EMA 20 &gt; EMA 50 &gt; EMA 200</label>
+        <label class="quiz-option"><input type="radio" name="s2q3" value="b" class="quiz-radio"> b) EMA 200 &gt; EMA 50 &gt; EMA 20</label>
+        <label class="quiz-option"><input type="radio" name="s2q3" value="c" class="quiz-radio"> c) All EMAs at the same level</label>
+      </div>
+      <div class="quiz-question" data-correct="c">
+        <p><strong>4.</strong> What is the recommended exchange for BTC charting?</p>
+        <label class="quiz-option"><input type="radio" name="s2q4" value="a" class="quiz-radio"> a) BINANCE:BTCUSDT</label>
+        <label class="quiz-option"><input type="radio" name="s2q4" value="b" class="quiz-radio"> b) KRAKEN:BTCUSD</label>
+        <label class="quiz-option"><input type="radio" name="s2q4" value="c" class="quiz-radio"> c) COINBASE:BTCUSD</label>
+      </div>
+      <button class="quiz-submit" onclick="checkQuiz(this)">Check Answers</button>
+      <div class="quiz-result"></div>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateTo('step1')">&#8592; Step 1: Fundamentals</button>
+      <button class="step-nav-btn primary" onclick="navigateTo('step3')">Next: Strategy Fundamentals &#8594;</button>
+    </div>
+  `;
+}
+
+function renderStep3() {
+  return `
+    <div class="course-page-header">
+      <h1>Step 3: Strategy Fundamentals Mastery</h1>
+      <p class="subtitle">Master market structure analysis, trend identification, and support/resistance</p>
+    </div>
+
+    <h2>Market Structure Analysis</h2>
+    <p style="color: var(--text-dim); margin-bottom: 16px;">Understanding market structure is the foundation of every trading decision. Markets move in three phases:</p>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-icon" style="color: var(--green)">&#8599;</div>
+        <div class="card-title" style="color: var(--green)">Uptrend</div>
+        <div class="card-desc">
+          <p><strong>Structure:</strong> Higher Highs (HH) and Higher Lows (HL)</p>
+          <p><strong>Characteristics:</strong> Each swing high surpasses the previous. Pullbacks find support above the prior low. Volume tends to increase on rallies.</p>
+          <p><strong>Trading Bias:</strong> Look for long entries on pullbacks to higher lows or key support levels.</p>
+          <p><strong>Invalidation:</strong> Break below the most recent higher low signals potential trend change.</p>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--red)">
+        <div class="card-icon" style="color: var(--red)">&#8600;</div>
+        <div class="card-title" style="color: var(--red)">Downtrend</div>
+        <div class="card-desc">
+          <p><strong>Structure:</strong> Lower Highs (LH) and Lower Lows (LL)</p>
+          <p><strong>Characteristics:</strong> Each swing low breaks below the previous. Rallies fail to reclaim the prior high. Volume tends to increase on sell-offs.</p>
+          <p><strong>Trading Bias:</strong> Look for short entries on rallies to lower highs or key resistance levels.</p>
+          <p><strong>Invalidation:</strong> Break above the most recent lower high signals potential trend change.</p>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-icon" style="color: var(--yellow)">&#8596;</div>
+        <div class="card-title" style="color: var(--yellow)">Range (Consolidation)</div>
+        <div class="card-desc">
+          <p><strong>Structure:</strong> Horizontal support and resistance with price oscillating between</p>
+          <p><strong>Characteristics:</strong> Swing highs and lows are roughly equal. Volume typically decreases. Market is building energy for a breakout.</p>
+          <p><strong>Trading Bias:</strong> Buy at support, sell at resistance — or wait for breakout with confirmation.</p>
+          <p><strong>Invalidation:</strong> A decisive break above resistance or below support ends the range.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>Professional Trendline Analysis</h2>
+
+    <h3>Drawing Rules</h3>
+    <div class="info-box tip">
+      <p><strong>Connect 2+ significant swing points</strong> — the more touches, the more valid the trendline.<br>
+      <strong>Use the ray tool</strong> to extend trendlines into the future for anticipating reactions.<br>
+      <strong>Avoid forcing through minor wicks</strong> — trendlines should fit naturally, not be manufactured.<br>
+      <strong>Focus on body closes</strong> rather than exact wick tips for more reliable trendlines.</p>
+    </div>
+
+    <h3>Breakout Criteria</h3>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--green)">&#10003;</div>
+        <div class="card-title">Body Closes Beyond Trendline</div>
+        <div class="card-desc">A wick piercing the trendline is not enough. The candle body must close beyond the trendline for a valid breakout.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--green)">&#10003;</div>
+        <div class="card-title">Volume Confirmation</div>
+        <div class="card-desc">Genuine breakouts occur on increased volume. Low-volume breakouts are more likely to fail and reverse.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--green)">&#10003;</div>
+        <div class="card-title">Retest of Broken Level</div>
+        <div class="card-desc">The best breakouts pull back to retest the broken trendline as new support or resistance before continuing.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--green)">&#10003;</div>
+        <div class="card-title">Follow-Through</div>
+        <div class="card-desc">After the breakout candle, subsequent candles should continue in the breakout direction with momentum.</div>
+      </div>
+    </div>
+
+    <h3>False Breakout Signs</h3>
+    <div class="info-box warning">
+      <p><strong>Wick pierces but body stays inside</strong> — the breakout is not confirmed, likely a trap.<br>
+      <strong>Low volume</strong> — no conviction behind the move, high probability of reversal.<br>
+      <strong>Immediate reversal</strong> — price quickly snaps back inside, trapping breakout traders.<br>
+      <strong>Multiple failed attempts</strong> — repeated tests without follow-through weaken the breakout case.</p>
+    </div>
+
+    <h3>Trendline Strength</h3>
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--cyan)">Touches</div>
+        <div class="metric-label">More touches = stronger trendline. 3+ touches confirms significance.</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--purple)">Timeframe</div>
+        <div class="metric-label">Longer timeframe = more significant. A weekly trendline outweighs an hourly one.</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--yellow)">Angle</div>
+        <div class="metric-label">Steeper = less reliable. Sustainable trends have moderate, not extreme, angles.</div>
+      </div>
+    </div>
+
+    <h2>HTF Structure Analysis</h2>
+    <div class="card" style="text-align: center; padding: 24px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; font-size: 1.1em; font-weight: bold;">
+        <span style="color: var(--purple)">Monthly<br><span style="font-weight: normal; font-size: 0.8em; color: var(--text-dim);">Overall market cycle</span></span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--blue)">Weekly<br><span style="font-weight: normal; font-size: 0.8em; color: var(--text-dim);">Intermediate trend</span></span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--cyan)">Daily<br><span style="font-weight: normal; font-size: 0.8em; color: var(--text-dim);">Short-term structure</span></span>
+        <span style="color: var(--muted)">&rarr;</span>
+        <span style="color: var(--yellow)">4H<br><span style="font-weight: normal; font-size: 0.8em; color: var(--text-dim);">Intraday structure</span></span>
+      </div>
+    </div>
+
+    <h3>HTF Analysis Process</h3>
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--purple)">1</div>
+        <div class="metric-label"><strong>Start High</strong> — Begin with monthly/weekly to identify the macro trend and key levels</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--blue)">2</div>
+        <div class="metric-label"><strong>Work Down</strong> — Move to daily to refine structure and identify swing points</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--cyan)">3</div>
+        <div class="metric-label"><strong>Align Bias</strong> — Confirm all timeframes agree on direction before trading</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--green)">4</div>
+        <div class="metric-label"><strong>Find Entries</strong> — Use 4H/1H for precise entry timing within the HTF bias</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--yellow)">5</div>
+        <div class="metric-label"><strong>Manage Risk</strong> — Set stops based on structure, not arbitrary levels</div>
+      </div>
+    </div>
+
+    <h2 style="margin-top: 32px;">Video Resource</h2>
+    <div class="video-card">
+      <div class="play-icon">&#9654;</div>
+      <div>
+        <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 4px;">Trendline Breakout Strategy Masterclass</div>
+        <div style="color: var(--text-dim);">Learn how to draw, validate, and trade trendline breakouts like a professional. Covers real chart examples with entry, stop loss, and target placement.</div>
+      </div>
+    </div>
+
+    <h2>Practice Drills</h2>
+    <div class="checklist">
+      <div class="checklist-item">
+        <span class="checklist-box">1</span>
+        <div>
+          <strong>HTF Structure Drill:</strong> Open BTC on Monthly, Weekly, and Daily charts. Mark all Higher Highs (HH), Higher Lows (HL), Lower Highs (LH), and Lower Lows (LL) on each timeframe. Identify the current structure phase.
+        </div>
+      </div>
+      <div class="checklist-item">
+        <span class="checklist-box">2</span>
+        <div>
+          <strong>Trendline Drawing Practice:</strong> Find a clear uptrend on the daily chart. Connect the swing lows with a trendline using the ray tool. Extend it forward and watch how price reacts at the projected trendline.
+        </div>
+      </div>
+      <div class="checklist-item">
+        <span class="checklist-box">3</span>
+        <div>
+          <strong>Breakout Analysis:</strong> Find a recent trendline breakout. Check: Did the body close beyond the line? Was there volume confirmation? Did price retest the broken level? Was there follow-through?
+        </div>
+      </div>
+    </div>
+
+    <h2>Mastery Checklist</h2>
+    <div class="checklist">
+      <div class="checklist-item">
+        <input type="checkbox" class="checklist-box">
+        <span>I can identify uptrends, downtrends, and ranges by marking HH/HL/LH/LL on any chart</span>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" class="checklist-box">
+        <span>I can draw valid trendlines connecting 2+ significant swing points using body closes</span>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" class="checklist-box">
+        <span>I can distinguish between genuine breakouts and false breakouts using volume and body close</span>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" class="checklist-box">
+        <span>I can perform top-down multi-timeframe analysis from Monthly down to 4H</span>
+      </div>
+      <div class="checklist-item">
+        <input type="checkbox" class="checklist-box">
+        <span>I understand trendline strength factors: number of touches, timeframe significance, and angle</span>
+      </div>
+    </div>
+
+    <h2>Knowledge Check Quiz</h2>
+    <div class="quiz-container">
+      <div class="quiz-question" data-correct="b">
+        <p><strong>1.</strong> Which confirms bullish market structure on the Weekly chart?</p>
+        <label class="quiz-option"><input type="radio" name="s3q1" value="a" class="quiz-radio"> a) Lower highs and lower lows</label>
+        <label class="quiz-option"><input type="radio" name="s3q1" value="b" class="quiz-radio"> b) Higher highs and higher lows</label>
+        <label class="quiz-option"><input type="radio" name="s3q1" value="c" class="quiz-radio"> c) Price trading sideways in a range</label>
+      </div>
+      <div class="quiz-question" data-correct="c">
+        <p><strong>2.</strong> What is the most reliable breakout confirmation?</p>
+        <label class="quiz-option"><input type="radio" name="s3q2" value="a" class="quiz-radio"> a) A long wick piercing through the trendline</label>
+        <label class="quiz-option"><input type="radio" name="s3q2" value="b" class="quiz-radio"> b) Price touching the trendline multiple times</label>
+        <label class="quiz-option"><input type="radio" name="s3q2" value="c" class="quiz-radio"> c) Candle body closes beyond the trendline with volume confirmation</label>
+      </div>
+      <div class="quiz-question" data-correct="b">
+        <p><strong>3.</strong> What is the correct trendline drawing approach?</p>
+        <label class="quiz-option"><input type="radio" name="s3q3" value="a" class="quiz-radio"> a) Connect any two points and force through wicks</label>
+        <label class="quiz-option"><input type="radio" name="s3q3" value="b" class="quiz-radio"> b) Connect 2+ significant swing points, focus on body closes</label>
+        <label class="quiz-option"><input type="radio" name="s3q3" value="c" class="quiz-radio"> c) Draw horizontal lines at random price levels</label>
+      </div>
+      <div class="quiz-question" data-correct="a">
+        <p><strong>4.</strong> What is the correct sequence for multi-timeframe analysis?</p>
+        <label class="quiz-option"><input type="radio" name="s3q4" value="a" class="quiz-radio"> a) Monthly/Weekly down to Daily and then lower timeframes</label>
+        <label class="quiz-option"><input type="radio" name="s3q4" value="b" class="quiz-radio"> b) Start with 1-minute and work up</label>
+        <label class="quiz-option"><input type="radio" name="s3q4" value="c" class="quiz-radio"> c) Only use the 4-hour chart</label>
+      </div>
+      <button class="quiz-submit" onclick="checkQuiz(this)">Check Answers</button>
+      <div class="quiz-result"></div>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateTo('step2')">&#8592; Step 2: Professional Setup</button>
+      <button class="step-nav-btn primary" onclick="navigateTo('step4')">Next: Step 4 &#8594;</button>
+    </div>
+  `;
+}
+
+// ── Steps 4-6 ──
+function renderStep4() {
+  return `
+    <div class="course-page-header">
+      <h1>Step 4: Professional Risk Management Mastery</h1>
+      <p class="subtitle">Master institutional-level risk management, position sizing, and capital preservation</p>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--cyan)">1-3%</div>
+        <div class="metric-label">Max Risk Per Trade</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--green)">1:2+</div>
+        <div class="metric-label">Min Risk/Reward</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--red)">6%</div>
+        <div class="metric-label">Max Daily Risk</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--purple)">Pro Level</div>
+        <div class="metric-label">Skills</div>
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Fundamental Principles</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">📐</div>
+        <div class="card-title">Position Sizing Formula</div>
+        <div class="card-desc">
+          <strong>Position Size = Risk Amount / (Entry - Stop)</strong><br><br>
+          Risk Amount = Balance × Risk%<br><br>
+          Never exceed your predetermined risk limit. This formula ensures consistent risk regardless of asset price or volatility.
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Risk Percentage Guidelines</div>
+        <div class="card-desc">
+          <strong>By Style:</strong><br>
+          Conservative: 0.5%<br>
+          Standard: 1-2%<br>
+          Aggressive: 2-3%<br><br>
+          <strong>By Strategy:</strong><br>
+          Scalping: 0.25-0.5%<br>
+          Swing: 1-2%<br>
+          Position: 2-3%<br><br>
+          <span style="color:var(--red)">Never more than 6% daily.</span>
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">Risk/Reward Ratios</div>
+        <div class="card-desc">
+          Minimum: <strong>1:2</strong><br>
+          Target: <strong>1:3+</strong><br>
+          Elite: <strong>1:5+</strong><br><br>
+          1:2 = Risk $100 to make $200<br><br>
+          Higher R/R allows lower win rates. At 1:3, you only need 25%+ win rate to be profitable.
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">🛑</div>
+        <div class="card-title">Stop Loss Placement</div>
+        <div class="card-desc">
+          Place stops:<br>
+          - Below/above key support/resistance<br>
+          - Beyond significant swing points<br>
+          - Outside consolidation ranges<br><br>
+          <span style="color:var(--red)"><strong>Never move stops against your position.</strong></span> Only move them in your favor.
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">⏰</div>
+        <div class="card-title">Time-Based Risk Management</div>
+        <div class="card-desc">
+          - Exit if no progress in expected timeframe<br>
+          - Reduce size before major news events<br>
+          - Close positions before weekends if needed<br><br>
+          Time is a risk factor. A trade that hasn't moved is tying up capital and mental energy.
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">🔥</div>
+        <div class="card-title">Portfolio Heat Management</div>
+        <div class="card-desc">
+          - Max 15-20% total portfolio risk at any time<br>
+          - Correlated positions count as one combined risk<br>
+          - Scale down position sizes during drawdowns<br><br>
+          If BTC and ETH are both long, that's essentially one bet on crypto going up.
+        </div>
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Position Sizing Calculator</h2>
+    <div class="calc-container">
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Account Balance ($)</label>
+          <input type="number" id="calc-balance" placeholder="10000" value="10000">
+        </div>
+        <div class="calc-field">
+          <label>Risk Percentage (%)</label>
+          <input type="number" id="calc-risk-pct" placeholder="1" value="1" step="0.25">
+        </div>
+      </div>
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Entry Price ($)</label>
+          <input type="number" id="calc-entry" placeholder="30000" step="0.01">
+        </div>
+        <div class="calc-field">
+          <label>Stop Loss ($)</label>
+          <input type="number" id="calc-sl" placeholder="29700" step="0.01">
+        </div>
+      </div>
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Take Profit ($) <span style="color:var(--text-dim)">(optional)</span></label>
+          <input type="number" id="calc-tp" placeholder="30900" step="0.01">
+        </div>
+        <div class="calc-field" style="display:flex;align-items:flex-end">
+          <button class="calc-btn" onclick="calculatePosition()">Calculate Position</button>
+        </div>
+      </div>
+      <div class="calc-results" id="calc-results">
+        <div class="calc-result-item">
+          <span class="label">Position Size</span>
+          <span class="value" id="calc-res-size">--</span>
+        </div>
+        <div class="calc-result-item">
+          <span class="label">Risk Amount ($)</span>
+          <span class="value" id="calc-res-risk">--</span>
+        </div>
+        <div class="calc-result-item">
+          <span class="label">Risk/Reward Ratio</span>
+          <span class="value" id="calc-res-rr">--</span>
+        </div>
+        <div class="calc-result-item">
+          <span class="label">Potential Profit</span>
+          <span class="value" id="calc-res-profit">--</span>
+        </div>
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Institutional Risk Framework</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">✅</div>
+        <div class="card-title">Pre-Trade Checklist</div>
+        <div class="card-desc">
+          Before every trade, confirm:<br>
+          - Risk % predetermined<br>
+          - Stop loss identified on chart<br>
+          - R/R ratio calculated (min 1:2)<br>
+          - Position size calculated via formula<br>
+          - Total portfolio risk checked (<20%)
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">📏</div>
+        <div class="card-title">Risk Scaling Rules</div>
+        <div class="card-desc">
+          <span style="color:var(--red)">Drawdown >10%:</span> Reduce size by 50%<br>
+          <span style="color:var(--yellow)">Drawdown 5-10%:</span> Reduce size by 25%<br>
+          <span style="color:var(--green)">Profitable streak:</span> Increase size by 25%<br><br>
+          Scale with performance, not emotion.
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">🚨</div>
+        <div class="card-title">Emergency Protocols</div>
+        <div class="card-desc">
+          <strong>Stop trading immediately when:</strong><br><br>
+          <span style="color:var(--red)">Daily loss: 6%</span> → Stop for the day<br>
+          <span style="color:var(--red)">Weekly loss: 10%</span> → Stop for the week<br>
+          <span style="color:var(--red)">Monthly loss: 15%</span> → Stop, review strategy
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Performance Metrics</div>
+        <div class="card-desc">
+          Track these over 30+ trades:<br><br>
+          Win Rate: Track across 30+ trades<br>
+          Average R/R: Target 1:2.5+<br>
+          Max Drawdown: Keep under 20%<br>
+          Profit Factor: Target >1.5
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">Position Management</div>
+        <div class="card-desc">
+          - Scale out at key levels<br>
+          - Trail stops with market structure<br>
+          - Move to breakeven at 1:1<br>
+          - Take partial profit at 1:2<br><br>
+          Let winners run, cut losers short.
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">📝</div>
+        <div class="card-title">Documentation</div>
+        <div class="card-desc">
+          - Log every single trade<br>
+          - Record your reasoning before entry<br>
+          - Track emotional state during trades<br>
+          - Review your journal weekly<br><br>
+          What gets measured gets managed.
+        </div>
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Trading Psychology</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">🧠</div>
+        <div class="card-title">Emotional Risk Factors</div>
+        <div class="card-desc">
+          <strong>Fear:</strong> Missing entries, cutting winners early<br>
+          <strong>Greed:</strong> Oversizing, ignoring exits<br>
+          <strong>Revenge:</strong> Trading to recover losses<br>
+          <strong>Overconfidence:</strong> Ignoring risk after wins<br><br>
+          <span style="color:var(--green)"><strong>Solution:</strong> Mechanical rules, journaling, scheduled breaks</span>
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">🛡️</div>
+        <div class="card-title">Mental Stop Losses</div>
+        <div class="card-desc">
+          Stop trading when:<br>
+          - Daily loss reaches 6%<br>
+          - 3-4 consecutive losses hit<br>
+          - Emotional state compromised<br>
+          - Market is choppy/unclear<br><br>
+          Protecting your mental capital is as important as protecting financial capital.
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">💪</div>
+        <div class="card-title">Building Discipline</div>
+        <div class="card-desc">
+          1. Start small (0.25% risk per trade)<br>
+          2. Follow mechanical rules exactly<br>
+          3. Track everything in a journal<br>
+          4. Regular weekly/monthly reviews<br><br>
+          Discipline is a muscle. Build it gradually with small, consistent actions.
+        </div>
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Practice Scenarios</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">1</div>
+        <div class="card-title">Conservative Swing Trade</div>
+        <div class="card-desc">
+          <strong>Setup:</strong><br>
+          Account: $5,000 | Risk: 1%<br>
+          Entry: $28,000 | Stop: $27,580<br><br>
+          <strong>Solution:</strong><br>
+          Risk Amount: $5,000 × 1% = <span style="color:var(--green)">$50</span><br>
+          Per-Unit Risk: $28,000 - $27,580 = <span style="color:var(--green)">$420</span><br>
+          Position Size: $50 / $420 = <span style="color:var(--green)">0.119 units</span>
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">2</div>
+        <div class="card-title">Scalping Setup</div>
+        <div class="card-desc">
+          <strong>Setup:</strong><br>
+          Account: $12,000 | Risk: 0.5%<br>
+          Entry: $31,200 | Stop: $30,936<br><br>
+          <strong>Solution:</strong><br>
+          Risk Amount: $12,000 × 0.5% = <span style="color:var(--green)">$60</span><br>
+          Per-Unit Risk: $31,200 - $30,936 = <span style="color:var(--green)">$264</span><br>
+          Position Size: $60 / $264 = <span style="color:var(--green)">0.227 units</span>
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">3</div>
+        <div class="card-title">Aggressive Position</div>
+        <div class="card-desc">
+          <strong>Setup:</strong><br>
+          Account: $20,000 | Risk: 2%<br>
+          Entry: $29,500 | Stop: $28,905<br><br>
+          <strong>Solution:</strong><br>
+          Risk Amount: $20,000 × 2% = <span style="color:var(--green)">$400</span><br>
+          Per-Unit Risk: $29,500 - $28,905 = <span style="color:var(--green)">$595</span><br>
+          Position Size: $400 / $595 = <span style="color:var(--green)">0.672 units</span>
+        </div>
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Mastery Checklist</h2>
+    <div class="checklist">
+      <div class="checklist-item" onclick="toggleChecklist('s4-sizing')">
+        <span class="checklist-box" id="s4-sizing"></span>
+        I can calculate position size using the formula for any trade
+      </div>
+      <div class="checklist-item" onclick="toggleChecklist('s4-rr')">
+        <span class="checklist-box" id="s4-rr"></span>
+        I understand risk/reward ratios and only take 1:2+ setups
+      </div>
+      <div class="checklist-item" onclick="toggleChecklist('s4-stops')">
+        <span class="checklist-box" id="s4-stops"></span>
+        I know how to place stop losses at structural levels
+      </div>
+      <div class="checklist-item" onclick="toggleChecklist('s4-daily')">
+        <span class="checklist-box" id="s4-daily"></span>
+        I understand daily loss limits and emergency protocols
+      </div>
+      <div class="checklist-item" onclick="toggleChecklist('s4-psychology')">
+        <span class="checklist-box" id="s4-psychology"></span>
+        I recognize emotional risk factors and have mitigation strategies
+      </div>
+      <div class="checklist-item" onclick="toggleChecklist('s4-portfolio')">
+        <span class="checklist-box" id="s4-portfolio"></span>
+        I understand portfolio heat management and correlation risk
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Knowledge Check</h2>
+    <div class="quiz-container" id="quiz-step4">
+      <div class="quiz-question">
+        <p><strong>1.</strong> With a $10,000 account and 1% risk per trade, what is your risk amount?</p>
+        <label class="quiz-option"><input type="radio" name="q4-1" value="a" class="quiz-radio"> $10</label>
+        <label class="quiz-option"><input type="radio" name="q4-1" value="b" class="quiz-radio"> $100</label>
+        <label class="quiz-option"><input type="radio" name="q4-1" value="c" class="quiz-radio"> $1,000</label>
+        <label class="quiz-option"><input type="radio" name="q4-1" value="d" class="quiz-radio"> $50</label>
+      </div>
+      <div class="quiz-question">
+        <p><strong>2.</strong> If your entry is $30,000 and stop loss is $29,700, what is the per-unit risk?</p>
+        <label class="quiz-option"><input type="radio" name="q4-2" value="a" class="quiz-radio"> $30</label>
+        <label class="quiz-option"><input type="radio" name="q4-2" value="b" class="quiz-radio"> $3,000</label>
+        <label class="quiz-option"><input type="radio" name="q4-2" value="c" class="quiz-radio"> $300</label>
+        <label class="quiz-option"><input type="radio" name="q4-2" value="d" class="quiz-radio"> $297</label>
+      </div>
+      <div class="quiz-question">
+        <p><strong>3.</strong> If you risk $100 with a 1:2 risk/reward ratio, what is your target profit?</p>
+        <label class="quiz-option"><input type="radio" name="q4-3" value="a" class="quiz-radio"> $100</label>
+        <label class="quiz-option"><input type="radio" name="q4-3" value="b" class="quiz-radio"> $200</label>
+        <label class="quiz-option"><input type="radio" name="q4-3" value="c" class="quiz-radio"> $50</label>
+        <label class="quiz-option"><input type="radio" name="q4-3" value="d" class="quiz-radio"> $300</label>
+      </div>
+      <div class="quiz-question">
+        <p><strong>4.</strong> What is the maximum recommended daily risk limit?</p>
+        <label class="quiz-option"><input type="radio" name="q4-4" value="a" class="quiz-radio"> 2%</label>
+        <label class="quiz-option"><input type="radio" name="q4-4" value="b" class="quiz-radio"> 10%</label>
+        <label class="quiz-option"><input type="radio" name="q4-4" value="c" class="quiz-radio"> 6%</label>
+        <label class="quiz-option"><input type="radio" name="q4-4" value="d" class="quiz-radio"> 15%</label>
+      </div>
+      <button class="quiz-submit" onclick="submitQuiz('quiz-step4','step4')">Submit Answers</button>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateCourse('step3')">&#8592; Step 3: Market Structure</button>
+      <button class="step-nav-btn primary" onclick="navigateCourse('step5')">Step 5: Technical Indicators &#8594;</button>
+    </div>
+  `;
+}
+
+function calculatePosition() {
+  const bal = parseFloat(document.getElementById('calc-balance').value) || 0;
+  const riskPct = parseFloat(document.getElementById('calc-risk-pct').value) || 1;
+  const entry = parseFloat(document.getElementById('calc-entry').value) || 0;
+  const sl = parseFloat(document.getElementById('calc-sl').value) || 0;
+  const tp = parseFloat(document.getElementById('calc-tp').value) || 0;
+  if (!bal || !entry || !sl) return;
+  const riskAmt = bal * (riskPct / 100);
+  const perUnitRisk = Math.abs(entry - sl);
+  const posSize = perUnitRisk > 0 ? riskAmt / perUnitRisk : 0;
+  const rr = tp && perUnitRisk > 0 ? (Math.abs(tp - entry) / perUnitRisk).toFixed(2) : 'N/A';
+  const potProfit = tp ? (Math.abs(tp - entry) * posSize).toFixed(2) : 'N/A';
+  const resultsEl = document.getElementById('calc-results');
+  if (resultsEl) {
+    document.getElementById('calc-res-size').textContent = posSize.toFixed(4) + ' units';
+    document.getElementById('calc-res-risk').textContent = '$' + riskAmt.toFixed(2);
+    document.getElementById('calc-res-rr').textContent = rr !== 'N/A' ? '1:' + rr : 'N/A';
+    document.getElementById('calc-res-profit').textContent = potProfit !== 'N/A' ? '$' + potProfit : 'N/A';
+    resultsEl.style.display = 'flex';
+  }
+}
+
+function renderStep5() {
+  return `
+    <div class="course-page-header">
+      <h1>Step 5: Technical Indicators Mastery</h1>
+      <p class="subtitle">Master RSI, MACD, MFI, and Stochastic RSI for precise market timing</p>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--cyan)">4</div>
+        <div class="metric-label">Core Indicators</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--green)">MTF</div>
+        <div class="metric-label">Multi-Timeframe</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--yellow)">Pro Level</div>
+        <div class="metric-label">Signals</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--purple)">Real Time</div>
+        <div class="metric-label">Analysis</div>
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">RSI (Relative Strength Index)</h2>
+    <div class="indicator-card">
+      <h3 style="color:var(--green);margin-bottom:1rem">Fundamentals</h3>
+      <div class="metric-row">
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--cyan)">0-100</div>
+          <div class="metric-label">Range</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--text)">14</div>
+          <div class="metric-label">Period</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--red)">70</div>
+          <div class="metric-label">Overbought</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--green)">30</div>
+          <div class="metric-label">Oversold</div>
+        </div>
+      </div>
+
+      <h3 style="color:var(--green);margin:1.5rem 0 1rem">Trading Signals</h3>
+      <div class="course-grid">
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--green)">BUY</div>
+          <div class="card-title">Bullish Signal</div>
+          <div class="card-desc">RSI crosses above 30 in an uptrend. Indicates oversold bounce with trend support.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--red)">SELL</div>
+          <div class="card-title">Bearish Signal</div>
+          <div class="card-desc">RSI crosses below 70 in a downtrend. Indicates overbought reversal with trend confirmation.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--yellow)">DIV</div>
+          <div class="card-title">Divergence</div>
+          <div class="card-desc">Price makes new high/low but RSI does not. Signals potential reversal or weakening momentum.</div>
+        </div>
+      </div>
+
+      <div class="info-box warning" style="margin-top:1rem">
+        <strong>Common Mistakes:</strong> Don't buy just because RSI is oversold in a downtrend. Don't sell just because RSI is overbought in an uptrend. Always consider the trend context first.
+      </div>
+
+      <h3 style="color:var(--green);margin:1.5rem 0 1rem">Multi-Timeframe RSI</h3>
+      <p style="color:var(--text-dim)">
+        <strong style="color:var(--cyan)">HTF (4H/Daily):</strong> Determine overall bias - is RSI trending up or down?<br>
+        <strong style="color:var(--yellow)">MTF (1H):</strong> Timing - wait for RSI to reach actionable zones<br>
+        <strong style="color:var(--green)">LTF (15m):</strong> Precise entries - fine-tune entry on lower timeframe RSI signals
+      </p>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">MACD (Moving Average Convergence Divergence)</h2>
+    <div class="indicator-card">
+      <h3 style="color:var(--green);margin-bottom:1rem">Components</h3>
+      <div class="metric-row">
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--cyan);font-size:1rem">12 EMA - 26 EMA</div>
+          <div class="metric-label">MACD Line</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--yellow);font-size:1rem">9 EMA of MACD</div>
+          <div class="metric-label">Signal Line</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--green);font-size:1rem">MACD - Signal</div>
+          <div class="metric-label">Histogram</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--text-dim);font-size:1rem">Baseline</div>
+          <div class="metric-label">Zero Line</div>
+        </div>
+      </div>
+
+      <h3 style="color:var(--green);margin:1.5rem 0 1rem">Trading Signals</h3>
+      <div class="course-grid">
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--green)">BUY</div>
+          <div class="card-title">Bullish Signals</div>
+          <div class="card-desc">Histogram above zero and rising. Bullish crossover: MACD line crosses above signal line.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--red)">SELL</div>
+          <div class="card-title">Bearish Signals</div>
+          <div class="card-desc">Histogram below zero and falling. Bearish crossover: MACD line crosses below signal line.</div>
+        </div>
+      </div>
+
+      <h3 style="color:var(--green);margin:1.5rem 0 1rem">Histogram Analysis</h3>
+      <p style="color:var(--text-dim)">
+        <span style="color:var(--green)">Rising histogram</span> = Bullish momentum building<br>
+        <span style="color:var(--red)">Falling histogram</span> = Bearish momentum building<br>
+        <span style="color:var(--green)">Above zero</span> = Bulls in control<br>
+        <span style="color:var(--red)">Below zero</span> = Bears in control
+      </p>
+
+      <h3 style="color:var(--green);margin:1.5rem 0 1rem">Advanced MACD</h3>
+      <p style="color:var(--text-dim)">
+        <strong>Hidden Divergence:</strong> Continuation signal - trend likely to persist<br>
+        <strong>Regular Divergence:</strong> Reversal signal - trend may be exhausting<br>
+        <strong>Histogram Peaks:</strong> Extreme readings signal momentum exhaustion
+      </p>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">MFI (Money Flow Index)</h2>
+    <div class="indicator-card">
+      <h3 style="color:var(--green);margin-bottom:1rem">Fundamentals</h3>
+      <div class="metric-row">
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--cyan)">0-100</div>
+          <div class="metric-label">Range</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--text)">14</div>
+          <div class="metric-label">Period</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--red)">80</div>
+          <div class="metric-label">Overbought</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--green)">20</div>
+          <div class="metric-label">Oversold</div>
+        </div>
+      </div>
+
+      <div class="info-box tip" style="margin:1rem 0">
+        <strong>Key Difference from RSI:</strong> MFI incorporates volume data, making it a volume-weighted momentum indicator. This gives it an edge in detecting institutional money flow that pure price-based indicators miss.
+      </div>
+
+      <h3 style="color:var(--green);margin:1.5rem 0 1rem">Money Flow Signals</h3>
+      <div class="course-grid">
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--green)">IN</div>
+          <div class="card-title">Capital Inflow</div>
+          <div class="card-desc">MFI rising alongside price indicates genuine buying pressure with volume confirmation.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--red)">OUT</div>
+          <div class="card-title">Capital Outflow</div>
+          <div class="card-desc">MFI falling alongside price indicates selling pressure with volume confirmation.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--yellow)">DIV</div>
+          <div class="card-title">Divergences</div>
+          <div class="card-desc">MFI diverging from price signals that volume does not support the current move. High probability reversal signal.</div>
+        </div>
+      </div>
+
+      <h3 style="color:var(--green);margin:1.5rem 0 1rem">Smart Money Detection</h3>
+      <p style="color:var(--text-dim)">
+        <span style="color:var(--green)">Rising MFI + Rising Price</span> = Smart money buying (strong signal)<br>
+        <span style="color:var(--yellow)">Falling MFI + Rising Price</span> = Retail buying without volume support (weak/trap)<br>
+        <span style="color:var(--red)">Rising MFI + Falling Price</span> = Accumulation phase (watch for reversal)<br>
+        <span style="color:var(--red)">Falling MFI + Falling Price</span> = Smart money selling (strong bearish)
+      </p>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Stochastic RSI</h2>
+    <div class="indicator-card">
+      <h3 style="color:var(--green);margin-bottom:1rem">Basics</h3>
+      <div class="metric-row">
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--cyan)">0-1</div>
+          <div class="metric-label">Range</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--text)">%K / %D</div>
+          <div class="metric-label">Lines</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--red)">0.8</div>
+          <div class="metric-label">Overbought</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--green)">0.2</div>
+          <div class="metric-label">Oversold</div>
+        </div>
+      </div>
+      <p style="color:var(--text-dim);margin:1rem 0">More sensitive than standard RSI. Applies stochastic oscillator formula to RSI values for faster signals.</p>
+
+      <h3 style="color:var(--green);margin:1.5rem 0 1rem">Crossover Signals</h3>
+      <div class="course-grid">
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--green)">BUY</div>
+          <div class="card-title">Bullish Crossover</div>
+          <div class="card-desc">%K crosses above %D in the oversold zone (below 0.2). Best signal when confirmed by higher timeframe trend.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--red)">SELL</div>
+          <div class="card-title">Bearish Crossover</div>
+          <div class="card-desc">%K crosses below %D in the overbought zone (above 0.8). Best signal when confirmed by higher timeframe trend.</div>
+        </div>
+      </div>
+
+      <div class="info-box warning" style="margin-top:1rem">
+        <strong>Warning:</strong> Stochastic RSI is very noisy on lower timeframes. Best used on 1H and above. On 5m/15m charts, expect many false signals. Always combine with higher timeframe analysis.
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Multi-Timeframe Analysis Strategy</h2>
+    <div class="indicator-card">
+      <div class="course-grid">
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--purple)">16H</div>
+          <div class="card-title">Overall Trend Bias</div>
+          <div class="card-desc">Use MACD direction and MFI trend to determine the dominant market direction. This is your directional filter.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--blue)">6H</div>
+          <div class="card-title">Intermediate Confirmation</div>
+          <div class="card-desc">Confirm with RSI levels and MACD alignment. Both timeframes should agree on direction before proceeding.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-icon" style="color:var(--cyan)">1H</div>
+          <div class="card-title">Precise Entry Timing</div>
+          <div class="card-desc">Use Stochastic RSI crossovers and MFI readings for precise entry timing once higher timeframes confirm.</div>
+        </div>
+      </div>
+
+      <div class="info-box success" style="margin-top:1rem">
+        <strong>MTF Strategy Flow:</strong> Check 16H bias (MACD + MFI) → Confirm 6H alignment (RSI + MACD) → Wait for 1H trigger signal (Stoch RSI + MFI) → Execute trade with trend
+      </div>
+    </div>
+
+    <div class="video-card" style="margin:2rem 0">
+      <div class="play-icon">&#9654;</div>
+      <h3>Golden Pocket Fibonacci Strategy</h3>
+      <p style="color:var(--text-dim)">Masterclass: Combining Fibonacci retracements with indicator confluence for high-probability entries</p>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Mastery Checklist</h2>
+    <div class="checklist">
+      <div class="checklist-item" onclick="toggleChecklist('s5-rsi')">
+        <span class="checklist-box" id="s5-rsi"></span>
+        I understand RSI overbought/oversold levels and divergence signals
+      </div>
+      <div class="checklist-item" onclick="toggleChecklist('s5-macd')">
+        <span class="checklist-box" id="s5-macd"></span>
+        I can read MACD histogram, crossovers, and divergences
+      </div>
+      <div class="checklist-item" onclick="toggleChecklist('s5-mfi')">
+        <span class="checklist-box" id="s5-mfi"></span>
+        I understand MFI and how volume-weighting differs from RSI
+      </div>
+      <div class="checklist-item" onclick="toggleChecklist('s5-stoch')">
+        <span class="checklist-box" id="s5-stoch"></span>
+        I can identify Stochastic RSI crossover signals in overbought/oversold zones
+      </div>
+      <div class="checklist-item" onclick="toggleChecklist('s5-mtf')">
+        <span class="checklist-box" id="s5-mtf"></span>
+        I understand the multi-timeframe analysis workflow (16H → 6H → 1H)
+      </div>
+      <div class="checklist-item" onclick="toggleChecklist('s5-combine')">
+        <span class="checklist-box" id="s5-combine"></span>
+        I can combine multiple indicators for confluence-based entries
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Knowledge Check</h2>
+    <div class="quiz-container" id="quiz-step5">
+      <div class="quiz-question">
+        <p><strong>1.</strong> MACD histogram above zero and rising suggests:</p>
+        <label class="quiz-option"><input type="radio" name="q5-1" value="a" class="quiz-radio"> Bearish reversal incoming</label>
+        <label class="quiz-option"><input type="radio" name="q5-1" value="b" class="quiz-radio"> Bullish momentum building and accelerating</label>
+        <label class="quiz-option"><input type="radio" name="q5-1" value="c" class="quiz-radio"> Market is range-bound</label>
+        <label class="quiz-option"><input type="radio" name="q5-1" value="d" class="quiz-radio"> Volume is declining</label>
+      </div>
+      <div class="quiz-question">
+        <p><strong>2.</strong> A Stochastic RSI bullish crossover in the oversold zone indicates:</p>
+        <label class="quiz-option"><input type="radio" name="q5-2" value="a" class="quiz-radio"> Strong sell signal</label>
+        <label class="quiz-option"><input type="radio" name="q5-2" value="b" class="quiz-radio"> Market is about to crash</label>
+        <label class="quiz-option"><input type="radio" name="q5-2" value="c" class="quiz-radio"> Momentum turning up, potential buy opportunity</label>
+        <label class="quiz-option"><input type="radio" name="q5-2" value="d" class="quiz-radio"> Indicator is broken</label>
+      </div>
+      <div class="quiz-question">
+        <p><strong>3.</strong> MFI green and rising while price is also rising suggests:</p>
+        <label class="quiz-option"><input type="radio" name="q5-3" value="a" class="quiz-radio"> Retail panic buying</label>
+        <label class="quiz-option"><input type="radio" name="q5-3" value="b" class="quiz-radio"> Capital inflow, smart money buying</label>
+        <label class="quiz-option"><input type="radio" name="q5-3" value="c" class="quiz-radio"> Market is about to reverse</label>
+        <label class="quiz-option"><input type="radio" name="q5-3" value="d" class="quiz-radio"> Low volume manipulation</label>
+      </div>
+      <div class="quiz-question">
+        <p><strong>4.</strong> The correct multi-timeframe sequence for an MFI+MACD strategy is:</p>
+        <label class="quiz-option"><input type="radio" name="q5-4" value="a" class="quiz-radio"> Start on 1H, then check higher timeframes</label>
+        <label class="quiz-option"><input type="radio" name="q5-4" value="b" class="quiz-radio"> Only use one timeframe for simplicity</label>
+        <label class="quiz-option"><input type="radio" name="q5-4" value="c" class="quiz-radio"> Check 16H/6H for bias, trigger on 1H</label>
+        <label class="quiz-option"><input type="radio" name="q5-4" value="d" class="quiz-radio"> Use 5m for all decisions</label>
+      </div>
+      <button class="quiz-submit" onclick="submitQuiz('quiz-step5','step5')">Submit Answers</button>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateCourse('step4')">&#8592; Step 4: Risk Management</button>
+      <button class="step-nav-btn primary" onclick="navigateCourse('step6')">Step 6: Readiness Assessment &#8594;</button>
+    </div>
+  `;
+}
+
+function renderStep6() {
+  return `
+    <div class="course-page-header">
+      <h1>Step 6: Trading Readiness Assessment</h1>
+      <p class="subtitle">Complete your comprehensive readiness evaluation</p>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--cyan)"><span id="ra-quizzes">0/5</span></div>
+        <div class="metric-label">Quizzes Passed</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--green)"><span id="ra-trades">0/2</span></div>
+        <div class="metric-label">Practice Trades</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--yellow)"><span id="ra-progress">0%</span></div>
+        <div class="metric-label">Overall Progress</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--red)"><span id="ra-status">Not Ready</span></div>
+        <div class="metric-label">Status</div>
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Requirements Assessment</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">📝</div>
+        <div class="card-title">Knowledge Assessment</div>
+        <div class="card-desc">
+          Pass all 5 core quizzes from Steps 1-5.<br><br>
+          Each quiz tests critical trading knowledge. You must demonstrate understanding of fundamentals, market structure, risk management, and technical analysis.<br><br>
+          <strong>Progress:</strong> <span id="ra-quiz-detail">Check your quiz results in each step.</span>
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Practical Application</div>
+        <div class="card-desc">
+          Submit at least 2 practice trades with detailed analysis.<br><br>
+          Each practice trade must include a strategy, entry/stop/target levels, trade reasoning, and risk management plan.<br><br>
+          <strong>Progress:</strong> <span id="ra-trade-detail">Submit practice trades below.</span>
+        </div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">🏆</div>
+        <div class="card-title">Overall Readiness</div>
+        <div class="card-desc">
+          Combined score from quizzes and practice trades determines your readiness.<br><br>
+          <strong>Quizzes:</strong> 70% weight<br>
+          <strong>Practice Trades:</strong> 30% weight<br><br>
+          You need 100% completion to be marked as ready.
+        </div>
+      </div>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Learning Journey Progress</h2>
+    <div class="card" style="padding:2rem">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem">
+        <div class="phase-box" id="phase-step1">
+          <div class="phase-item">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem">1</div>
+            <div style="font-weight:600;color:var(--text)">Trading Fundamentals</div>
+            <div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.25rem" id="phase-status-1">Incomplete</div>
+          </div>
+        </div>
+        <div class="phase-box" id="phase-step2">
+          <div class="phase-item">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem">2</div>
+            <div style="font-weight:600;color:var(--text)">Professional Setup</div>
+            <div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.25rem" id="phase-status-2">Incomplete</div>
+          </div>
+        </div>
+        <div class="phase-box" id="phase-step3">
+          <div class="phase-item">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem">3</div>
+            <div style="font-weight:600;color:var(--text)">Market Structure</div>
+            <div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.25rem" id="phase-status-3">Incomplete</div>
+          </div>
+        </div>
+        <div class="phase-box" id="phase-step4">
+          <div class="phase-item">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem">4</div>
+            <div style="font-weight:600;color:var(--text)">Risk Management</div>
+            <div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.25rem" id="phase-status-4">Incomplete</div>
+          </div>
+        </div>
+        <div class="phase-box" id="phase-step5">
+          <div class="phase-item">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem">5</div>
+            <div style="font-weight:600;color:var(--text)">Technical Indicators</div>
+            <div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.25rem" id="phase-status-5">Incomplete</div>
+          </div>
+        </div>
+        <div class="phase-box" id="phase-step6">
+          <div class="phase-item">
+            <div style="font-size:1.5rem;margin-bottom:0.5rem">6</div>
+            <div style="font-weight:600;color:var(--text)">Readiness Assessment</div>
+            <div style="color:var(--text-dim);font-size:0.85rem;margin-top:0.25rem" id="phase-status-6">In Progress</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="video-card" style="margin:2rem 0">
+      <div class="play-icon">&#9654;</div>
+      <h3>Advanced Fibonacci Extensions</h3>
+      <p style="color:var(--text-dim)">Masterclass: Using Fibonacci extensions to identify high-probability profit targets and trend projections</p>
+    </div>
+
+    <h2 style="color:var(--cyan);margin:2rem 0 1rem">Practice Trade Logger</h2>
+    <div class="card" style="padding:2rem">
+      <div style="display:grid;gap:1rem">
+        <div class="calc-row">
+          <div class="calc-field">
+            <label>Strategy</label>
+            <select id="pt-strategy" style="width:100%;padding:0.5rem;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:6px">
+              <option value="Trendline Breakout">Trendline Breakout</option>
+              <option value="MFI+MACD">MFI+MACD</option>
+              <option value="2-Week Macro">2-Week Macro</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </div>
+        </div>
+        <div class="calc-row">
+          <div class="calc-field">
+            <label>Entry Price ($)</label>
+            <input type="number" id="pt-entry" placeholder="30000" step="0.01">
+          </div>
+          <div class="calc-field">
+            <label>Stop Loss ($)</label>
+            <input type="number" id="pt-stop" placeholder="29700" step="0.01">
+          </div>
+          <div class="calc-field">
+            <label>Target Price ($)</label>
+            <input type="number" id="pt-target" placeholder="30900" step="0.01">
+          </div>
+        </div>
+        <div class="calc-field">
+          <label>Trade Reasoning</label>
+          <textarea id="pt-reasoning" rows="3" placeholder="Explain your trade thesis, confluence factors, and why you chose this entry..." style="width:100%;padding:0.5rem;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:6px;resize:vertical"></textarea>
+        </div>
+        <div class="calc-field">
+          <label>Risk Management Notes</label>
+          <textarea id="pt-risk-notes" rows="3" placeholder="Position size, risk %, R/R ratio, max daily risk, stop placement logic..." style="width:100%;padding:0.5rem;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:6px;resize:vertical"></textarea>
+        </div>
+        <button class="calc-btn" onclick="submitPracticeTrade()">Submit Practice Trade</button>
+      </div>
+    </div>
+
+    <div id="practice-trades-list" style="margin-top:1rem"></div>
+
+    <div class="info-box warning" style="margin:2rem 0">
+      <strong>Important Disclaimers</strong><br><br>
+      <strong>Educational Purpose:</strong> This course is for educational purposes only and does not constitute financial advice.<br>
+      <strong>Risk Warning:</strong> Trading cryptocurrencies involves substantial risk of loss and is not suitable for all investors.<br>
+      <strong>No Financial Advice:</strong> Nothing in this course should be construed as investment advice or a recommendation to trade.<br>
+      <strong>Practice First:</strong> Always practice with paper trading before risking real capital.<br>
+      <strong>Market Volatility:</strong> Cryptocurrency markets are highly volatile. Past performance does not guarantee future results.<br>
+      <strong>Continuous Learning:</strong> Markets evolve constantly. Commit to ongoing education and adaptation.
+    </div>
+
+    <div style="text-align:center;margin:2rem 0">
+      <button class="step-nav-btn primary" onclick="navigateCourse('dashboard')" style="font-size:1.1rem;padding:1rem 2rem">Back to Dashboard</button>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateCourse('step5')">&#8592; Step 5: Technical Indicators</button>
+      <button class="step-nav-btn primary" onclick="navigateCourse('dashboard')">Back to Dashboard</button>
+    </div>
+  `;
+}
+
+function submitPracticeTrade() {
+  const strategy = document.getElementById('pt-strategy').value;
+  const entry = document.getElementById('pt-entry').value;
+  const stop = document.getElementById('pt-stop').value;
+  const target = document.getElementById('pt-target').value;
+  const reasoning = document.getElementById('pt-reasoning').value;
+  const riskNotes = document.getElementById('pt-risk-notes').value;
+
+  if (!entry || !stop || !target || !reasoning) {
+    alert('Please fill in all required fields (Entry, Stop, Target, and Reasoning).');
+    return;
+  }
+
+  var progress = {};
+  try {
+    progress = JSON.parse(localStorage.getItem('courseProgress') || '{}');
+  } catch (e) {
+    progress = {};
+  }
+
+  if (!progress.practiceTrades) {
+    progress.practiceTrades = [];
+  }
+
+  progress.practiceTrades.push({
+    id: Date.now(),
+    strategy: strategy,
+    entry: parseFloat(entry),
+    stop: parseFloat(stop),
+    target: parseFloat(target),
+    reasoning: reasoning,
+    riskNotes: riskNotes,
+    timestamp: new Date().toISOString()
+  });
+
+  localStorage.setItem('courseProgress', JSON.stringify(progress));
+
+  document.getElementById('pt-entry').value = '';
+  document.getElementById('pt-stop').value = '';
+  document.getElementById('pt-target').value = '';
+  document.getElementById('pt-reasoning').value = '';
+  document.getElementById('pt-risk-notes').value = '';
+
+  renderPracticeTradesList();
+  updateReadinessMetrics();
+}
+
+function renderPracticeTradesList() {
+  var progress = {};
+  try {
+    progress = JSON.parse(localStorage.getItem('courseProgress') || '{}');
+  } catch (e) {
+    progress = {};
+  }
+
+  var trades = progress.practiceTrades || [];
+  var container = document.getElementById('practice-trades-list');
+  if (!container) return;
+
+  if (trades.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  var html = '<h3 style="color:var(--green);margin-bottom:1rem">Submitted Practice Trades (' + trades.length + ')</h3>';
+
+  trades.forEach(function(trade, index) {
+    var entryVal = trade.entry;
+    var stopVal = trade.stop;
+    var targetVal = trade.target;
+    var perUnitRisk = Math.abs(entryVal - stopVal);
+    var rr = perUnitRisk > 0 ? (Math.abs(targetVal - entryVal) / perUnitRisk).toFixed(2) : 'N/A';
+    var date = new Date(trade.timestamp).toLocaleDateString();
+
+    html += '<div class="card" style="padding:1.5rem;margin-bottom:1rem">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">';
+    html += '<strong style="color:var(--cyan)">Trade #' + (index + 1) + ' - ' + trade.strategy + '</strong>';
+    html += '<span style="color:var(--text-dim);font-size:0.85rem">' + date + '</span>';
+    html += '</div>';
+    html += '<div class="metric-row" style="margin-bottom:0.75rem">';
+    html += '<div class="metric-card"><div class="metric-val" style="font-size:1rem;color:var(--green)">$' + entryVal + '</div><div class="metric-label">Entry</div></div>';
+    html += '<div class="metric-card"><div class="metric-val" style="font-size:1rem;color:var(--red)">$' + stopVal + '</div><div class="metric-label">Stop</div></div>';
+    html += '<div class="metric-card"><div class="metric-val" style="font-size:1rem;color:var(--green)">$' + targetVal + '</div><div class="metric-label">Target</div></div>';
+    html += '<div class="metric-card"><div class="metric-val" style="font-size:1rem;color:var(--cyan)">1:' + rr + '</div><div class="metric-label">R/R</div></div>';
+    html += '</div>';
+    html += '<p style="color:var(--text-dim);font-size:0.9rem;margin-bottom:0.5rem"><strong style="color:var(--text)">Reasoning:</strong> ' + trade.reasoning + '</p>';
+    if (trade.riskNotes) {
+      html += '<p style="color:var(--text-dim);font-size:0.9rem"><strong style="color:var(--text)">Risk Management:</strong> ' + trade.riskNotes + '</p>';
+    }
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function updateReadinessMetrics() {
+  var progress = {};
+  try {
+    progress = JSON.parse(localStorage.getItem('courseProgress') || '{}');
+  } catch (e) {
+    progress = {};
+  }
+
+  var quizzesPassed = 0;
+  var quizSteps = ['step1', 'step2', 'step3', 'step4', 'step5'];
+  quizSteps.forEach(function(step) {
+    if (progress[step] && progress[step].passed) {
+      quizzesPassed++;
+    }
+  });
+
+  var trades = progress.practiceTrades || [];
+  var tradeCount = Math.min(trades.length, 2);
+
+  var quizzesEl = document.getElementById('ra-quizzes');
+  var tradesEl = document.getElementById('ra-trades');
+  var progressEl = document.getElementById('ra-progress');
+  var statusEl = document.getElementById('ra-status');
+
+  if (quizzesEl) quizzesEl.textContent = quizzesPassed + '/5';
+  if (tradesEl) tradesEl.textContent = tradeCount + '/2';
+
+  var totalProgress = Math.round(((quizzesPassed / 5) * 70) + ((tradeCount / 2) * 30));
+  if (progressEl) progressEl.textContent = totalProgress + '%';
+
+  if (statusEl) {
+    if (totalProgress >= 100) {
+      statusEl.textContent = 'Ready';
+      statusEl.style.color = 'var(--green)';
+    } else if (totalProgress >= 50) {
+      statusEl.textContent = 'In Progress';
+      statusEl.style.color = 'var(--yellow)';
+    } else {
+      statusEl.textContent = 'Not Ready';
+      statusEl.style.color = 'var(--red)';
+    }
+  }
+}
+
+// ── Strategies ──
+// ============================================
+// Lewieville's Trading Masterclass - Part 4
+// Strategy Pages: Trendline, MFI+MACD, Macro
+// ============================================
+
+// --- Fibonacci Calculator ---
+function calcFibLevels() {
+  var low = parseFloat(document.getElementById('fib-swing-low').value);
+  var high = parseFloat(document.getElementById('fib-swing-high').value);
+  var resultsEl = document.getElementById('fib-results');
+  if (!resultsEl) return;
+  if (isNaN(low) || isNaN(high) || low >= high) {
+    resultsEl.innerHTML = '<div class="calc-result-item"><span class="label">Error</span><span class="value" style="color:var(--red)">Swing Low must be less than Swing High</span></div>';
+    return;
+  }
+  var diff = high - low;
+  var levels = [
+    { name: '0.236 Retracement', val: high - diff * 0.236 },
+    { name: '0.382 Retracement', val: high - diff * 0.382 },
+    { name: '0.500 Retracement', val: high - diff * 0.5 },
+    { name: '0.618 Retracement', val: high - diff * 0.618 },
+    { name: '0.786 Retracement', val: high - diff * 0.786 },
+    { name: '1.272 Extension', val: high + diff * 0.272 },
+    { name: '1.618 Extension', val: high + diff * 0.618 },
+    { name: '2.618 Extension', val: high + diff * 1.618 }
+  ];
+  var html = '';
+  levels.forEach(function(l) {
+    var color = l.name.includes('Extension') ? 'var(--green)' : 'var(--cyan)';
+    html += '<div class="calc-result-item"><span class="label">' + l.name + '</span><span class="value" style="color:' + color + '">$' + l.val.toFixed(2) + '</span></div>';
+  });
+  resultsEl.innerHTML = html;
+}
+
+// --- MFI Position Size Calculator ---
+function calcMfiPosition() {
+  var balance = parseFloat(document.getElementById('mfi-balance').value);
+  var riskPct = parseFloat(document.getElementById('mfi-risk').value);
+  var entry = parseFloat(document.getElementById('mfi-entry').value);
+  var stop = parseFloat(document.getElementById('mfi-stop').value);
+  var resultsEl = document.getElementById('mfi-results');
+  if (!resultsEl) return;
+  if (isNaN(balance) || isNaN(riskPct) || isNaN(entry) || isNaN(stop) || entry <= 0 || stop <= 0) {
+    resultsEl.innerHTML = '<div class="calc-result-item"><span class="label">Error</span><span class="value" style="color:var(--red)">Please fill all fields with valid numbers</span></div>';
+    return;
+  }
+  var riskAmount = balance * (riskPct / 100);
+  var stopDist = Math.abs(entry - stop);
+  var stopPct = (stopDist / entry) * 100;
+  var positionSize = riskAmount / stopDist;
+  var positionValue = positionSize * entry;
+  var leverage = positionValue / balance;
+  resultsEl.innerHTML =
+    '<div class="calc-result-item"><span class="label">Risk Amount</span><span class="value" style="color:var(--yellow)">$' + riskAmount.toFixed(2) + '</span></div>' +
+    '<div class="calc-result-item"><span class="label">Stop Distance</span><span class="value" style="color:var(--red)">' + stopPct.toFixed(2) + '%</span></div>' +
+    '<div class="calc-result-item"><span class="label">Position Size</span><span class="value" style="color:var(--green)">' + positionSize.toFixed(6) + ' units</span></div>' +
+    '<div class="calc-result-item"><span class="label">Position Value</span><span class="value" style="color:var(--cyan)">$' + positionValue.toFixed(2) + '</span></div>' +
+    '<div class="calc-result-item"><span class="label">Effective Leverage</span><span class="value" style="color:' + (leverage > 5 ? 'var(--red)' : 'var(--green)') + '">' + leverage.toFixed(2) + 'x</span></div>';
+}
+
+// --- Fib Trailing Calculator ---
+function calcFibTrail() {
+  var low = parseFloat(document.getElementById('fib-trail-low').value);
+  var high = parseFloat(document.getElementById('fib-trail-high').value);
+  var current = parseFloat(document.getElementById('fib-trail-current').value);
+  var lastLevel = parseFloat(document.getElementById('fib-trail-level').value);
+  var resultsEl = document.getElementById('fib-trail-results');
+  if (!resultsEl) return;
+  if (isNaN(low) || isNaN(high) || isNaN(current) || low >= high) {
+    resultsEl.innerHTML = '<div class="calc-result-item"><span class="label">Error</span><span class="value" style="color:var(--red)">Please fill all fields correctly</span></div>';
+    return;
+  }
+  var diff = high - low;
+  var fibLevels = [
+    { name: '0.618', mult: 0.618 },
+    { name: '1.000', mult: 1.0 },
+    { name: '1.618', mult: 1.618 },
+    { name: '2.618', mult: 2.618 },
+    { name: '3.618', mult: 3.618 },
+    { name: '4.236', mult: 4.236 },
+    { name: '6.618', mult: 6.618 },
+    { name: '9.618', mult: 9.618 }
+  ];
+  var html = '';
+  var suggestedStop = low;
+  fibLevels.forEach(function(l) {
+    var price = high + diff * (l.mult - 1);
+    if (l.mult <= 1) price = low + diff * l.mult;
+    else price = high + diff * (l.mult - 1);
+    var active = current >= price ? 'var(--green)' : 'var(--text-dim)';
+    html += '<div class="calc-result-item"><span class="label">' + l.name + ' Extension</span><span class="value" style="color:' + active + '">$' + price.toFixed(2) + '</span></div>';
+  });
+  // Determine suggested stop
+  var trailRules = [
+    { above: 1.618, stop: 0.618 },
+    { above: 2.618, stop: 1.618 },
+    { above: 3.618, stop: 2.618 },
+    { above: 4.236, stop: 3.618 },
+    { above: 6.618, stop: 4.236 },
+    { above: 9.618, stop: 6.618 }
+  ];
+  var stopName = 'Initial (Swing Low)';
+  var stopPrice = low;
+  trailRules.forEach(function(r) {
+    var abovePrice = high + diff * (r.above - 1);
+    var stPrice = r.stop <= 1 ? low + diff * r.stop : high + diff * (r.stop - 1);
+    if (current >= abovePrice) {
+      stopPrice = stPrice;
+      stopName = r.stop + ' level';
+    }
+  });
+  html += '<div class="calc-result-item" style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px"><span class="label">Suggested Trailing Stop</span><span class="value" style="color:var(--yellow)">$' + stopPrice.toFixed(2) + ' (' + stopName + ')</span></div>';
+  resultsEl.innerHTML = html;
+}
+
+// --- Macro Position Calculator ---
+function calcMacroPosition() {
+  var balance = parseFloat(document.getElementById('macro-balance').value);
+  var riskPct = parseFloat(document.getElementById('macro-risk').value);
+  var entry = parseFloat(document.getElementById('macro-entry').value);
+  var stop = parseFloat(document.getElementById('macro-stop').value);
+  var tp1 = parseFloat(document.getElementById('macro-tp1').value);
+  var tp2 = parseFloat(document.getElementById('macro-tp2').value);
+  var resultsEl = document.getElementById('macro-results');
+  if (!resultsEl) return;
+  if (isNaN(balance) || isNaN(riskPct) || isNaN(entry) || isNaN(stop)) {
+    resultsEl.innerHTML = '<div class="calc-result-item"><span class="label">Error</span><span class="value" style="color:var(--red)">Please fill all required fields</span></div>';
+    return;
+  }
+  var riskAmount = balance * (riskPct / 100);
+  var stopDist = Math.abs(entry - stop);
+  var stopPct = (stopDist / entry) * 100;
+  var positionSize = riskAmount / stopDist;
+  var positionValue = positionSize * entry;
+  var portfolioPct = (positionValue / balance) * 100;
+  var html =
+    '<div class="calc-result-item"><span class="label">Risk Amount</span><span class="value" style="color:var(--yellow)">$' + riskAmount.toFixed(2) + '</span></div>' +
+    '<div class="calc-result-item"><span class="label">Stop Distance</span><span class="value" style="color:var(--red)">' + stopPct.toFixed(2) + '%</span></div>' +
+    '<div class="calc-result-item"><span class="label">Position Size</span><span class="value" style="color:var(--green)">' + positionSize.toFixed(6) + ' units</span></div>' +
+    '<div class="calc-result-item"><span class="label">Position Value</span><span class="value" style="color:var(--cyan)">$' + positionValue.toFixed(2) + '</span></div>' +
+    '<div class="calc-result-item"><span class="label">Portfolio Allocation</span><span class="value" style="color:' + (portfolioPct > 20 ? 'var(--red)' : 'var(--green)') + '">' + portfolioPct.toFixed(1) + '%</span></div>';
+  if (!isNaN(tp1) && tp1 > 0) {
+    var rr1 = Math.abs(tp1 - entry) / stopDist;
+    var profit1 = positionSize * Math.abs(tp1 - entry) * 0.25;
+    html += '<div class="calc-result-item"><span class="label">TP1 R:R (25% exit)</span><span class="value" style="color:var(--green)">' + rr1.toFixed(2) + ':1 (+$' + profit1.toFixed(2) + ')</span></div>';
+  }
+  if (!isNaN(tp2) && tp2 > 0) {
+    var rr2 = Math.abs(tp2 - entry) / stopDist;
+    var profit2 = positionSize * Math.abs(tp2 - entry) * 0.50;
+    html += '<div class="calc-result-item"><span class="label">TP2 R:R (50% exit)</span><span class="value" style="color:var(--green)">' + rr2.toFixed(2) + ':1 (+$' + profit2.toFixed(2) + ')</span></div>';
+  }
+  resultsEl.innerHTML = html;
+}
+
+// ============================================
+// Trendline Breakout Strategy
+// ============================================
+function renderStratTrendline() {
+  return `
+    <div class="course-page-header">
+      <h1>Trendline Breakout Strategy</h1>
+      <p class="subtitle">Master trendline breakout trading with Bitcoin's 4-year cycle analysis</p>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--green)">78%</div>
+        <div class="metric-label">Win Rate (Backtested)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--cyan)">3.2:1</div>
+        <div class="metric-label">Risk/Reward</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--yellow)">Weekly</div>
+        <div class="metric-label">Primary Timeframe</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--purple)">4-6</div>
+        <div class="metric-label">Trades per Month</div>
+      </div>
+    </div>
+
+    <div class="video-card" style="cursor:pointer; text-align:center; padding: 32px;">
+      <div class="play-icon">&#9654;</div>
+      <h3>Watch Complete Strategy Breakdown</h3>
+      <p style="color: var(--text-dim)">Full masterclass walkthrough of the Trendline Breakout Strategy</p>
+      <span style="color: var(--muted)">Duration: 15:32</span>
+    </div>
+
+    <h2>Strategy Overview</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--cyan)">&#9585;</div>
+        <div class="card-title">Market Structure Focus</div>
+        <div class="card-desc">Identify key trendlines on BTC logarithmic scale. Focus on major structural levels that have been tested multiple times across the 4-year cycle.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--green)">&#128200;</div>
+        <div class="card-title">Multi-Indicator Confirmation</div>
+        <div class="card-desc">Combine Stochastic RSI, RSI, and MACD for triple confirmation. Each indicator must align before entry to filter out false breakouts.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--yellow)">&#9889;</div>
+        <div class="card-title">Momentum-Based Execution</div>
+        <div class="card-desc">Enter only on confirmed breakouts with strong volume. Momentum must be present to validate the trendline break and sustain the move.</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon" style="color: var(--red)">&#128737;</div>
+        <div class="card-title">Risk Management</div>
+        <div class="card-desc">Strict stop loss placement and position sizing based on account risk percentage. Never risk more than 2% per trade.</div>
+      </div>
+    </div>
+
+    <h2>Breakout Patterns</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="card-title" style="color: var(--green)">Bullish Breakout</div>
+          <span style="background:var(--green);color:var(--bg);padding:2px 10px;border-radius:4px;font-weight:bold;font-size:0.85em">BUY</span>
+        </div>
+        <div class="card-desc">Price breaks above a bearish (descending) trendline with significant volume increase. The candle must close above the trendline to confirm the breakout. Look for volume 2-3x the average to validate the move.</div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--red)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="card-title" style="color: var(--red)">Bearish Breakout</div>
+          <span style="background:var(--red);color:var(--bg);padding:2px 10px;border-radius:4px;font-weight:bold;font-size:0.85em">SELL</span>
+        </div>
+        <div class="card-desc">Price breaks below a bullish (ascending) trendline with significant volume increase. The candle must close below the trendline to confirm the breakdown. Volume should spike on the break to confirm seller conviction.</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding: 20px; margin-bottom: 20px;">
+      <h3 style="color: var(--cyan); margin-bottom: 12px;">Key Principles</h3>
+      <div class="course-grid" style="margin-bottom: 0;">
+        <div class="course-card">
+          <div class="card-title">Volume Confirmation</div>
+          <div class="card-desc">Breakout candle must show 2-3x average volume. Low volume breakouts are likely to fail and reverse.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">Wait for Candle Close</div>
+          <div class="card-desc">Never enter on a wick through the trendline. Wait for the candle to fully close beyond the level.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">Retest Opportunity</div>
+          <div class="card-desc">After breakout, price often retests the broken trendline. This retest provides a second, often safer entry point.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">False Breakout Avoidance</div>
+          <div class="card-desc">Use indicator confirmation to filter false breakouts. If RSI and Stoch RSI do not confirm, stay out of the trade.</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Professional Setup Checklist</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-title" style="color: var(--green)">Part I &mdash; Trendline Breakout</div>
+        <div class="checklist">
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>Candle breaks and closes beyond the trendline</div></div>
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>Volume spike of at least 2x average</div></div>
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>No immediate rejection or long wick back inside</div></div>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--cyan)">
+        <div class="card-title" style="color: var(--cyan)">Part II &mdash; Stochastic RSI Confirmation</div>
+        <div class="checklist">
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>K line crosses above D line on the daily</div></div>
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>Crossover occurs in oversold zone (&lt;20)</div></div>
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>Strong momentum shown by steep upward angle</div></div>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-title" style="color: var(--yellow)">Part III &mdash; RSI Momentum</div>
+        <div class="checklist">
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>RSI breaks above 50 with conviction</div></div>
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>No bearish divergence present</div></div>
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>Strong upward slope on the RSI line</div></div>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--purple)">
+        <div class="card-title" style="color: var(--purple)">Part IV &mdash; MACD Confirmation (Optional)</div>
+        <div class="checklist">
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>MACD line crosses above the signal line</div></div>
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>Histogram turning green / positive</div></div>
+          <div class="checklist-item"><span class="checklist-box">&#10003;</span><div>Moving toward or above the zero line</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box tip">
+      <p><strong>Note:</strong> Parts I, II, and III must all align before entering a trade. Part IV (MACD) adds extra confirmation but is not strictly required. When all four parts align, it represents the highest probability setup.</p>
+    </div>
+
+    <h2>Risk Management Framework</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--red)">
+        <div class="card-icon" style="color: var(--red)">&#128721;</div>
+        <div class="card-title">Stop Loss Placement</div>
+        <div class="card-desc">
+          <ul style="margin:8px 0;padding-left:18px;color:var(--text-dim)">
+            <li>Place stop 2-3% below the broken trendline</li>
+            <li>Account for current volatility (ATR-based adjustment)</li>
+            <li>Maximum 2% account risk per trade</li>
+          </ul>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-icon" style="color: var(--green)">&#127919;</div>
+        <div class="card-title">Take Profit Targets</div>
+        <div class="card-desc">
+          <ul style="margin:8px 0;padding-left:18px;color:var(--text-dim)">
+            <li>First target: 1.618 Fibonacci extension</li>
+            <li>Second target: previous swing high/low</li>
+            <li>Trail stops on remaining runners</li>
+          </ul>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-icon" style="color: var(--yellow)">&#9878;</div>
+        <div class="card-title">Position Sizing</div>
+        <div class="card-desc">
+          <ul style="margin:8px 0;padding-left:18px;color:var(--text-dim)">
+            <li>Calculate position size based on stop distance</li>
+            <li>Risk 1-2% of account maximum per trade</li>
+            <li>Reduce size in periods of high volatility</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2>Fibonacci Calculator</h2>
+    <div class="calc-container">
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Swing Low Price</label>
+          <input type="number" id="fib-swing-low" placeholder="e.g. 25000" step="any" />
+        </div>
+        <div class="calc-field">
+          <label>Swing High Price</label>
+          <input type="number" id="fib-swing-high" placeholder="e.g. 45000" step="any" />
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcFibLevels()">Calculate Fibonacci Levels</button>
+      <div class="calc-results" id="fib-results"></div>
+    </div>
+
+    <h2>Psychology Tips</h2>
+    <div class="card" style="padding: 20px;">
+      <div class="course-grid" style="margin-bottom:0">
+        <div class="course-card">
+          <div class="card-title" style="color: var(--cyan)">Wait for All Confirmations</div>
+          <div class="card-desc">Patience is your edge. Never enter a trade until all three required parts of the checklist are satisfied. Half-confirmed setups lead to losses.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title" style="color: var(--yellow)">Don't Chase Moves</div>
+          <div class="card-desc">If price has already moved 5% or more beyond the breakout point, do not chase. Wait for a pullback retest or move on to the next opportunity.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title" style="color: var(--red)">Accept Small Losses</div>
+          <div class="card-desc">Losses are the cost of doing business. A 2% stop loss is a planned expense, not a failure. Protect capital by cutting losers quickly.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title" style="color: var(--green)">Trust Your System</div>
+          <div class="card-desc">Once your checklist is confirmed and you enter, trust the system. Do not second-guess mid-trade. Let the stop loss or take profit do its job.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box warning">
+      <p><strong>Disclaimer:</strong> This strategy is provided for educational purposes only. Past performance does not guarantee future results. Trading cryptocurrency involves substantial risk of loss. Never risk more than you can afford to lose. Always practice with paper trading before using real capital.</p>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateCourse('dashboard')">&larr; Back to Dashboard</button>
+    </div>
+  `;
+}
+
+// ============================================
+// MFI + MACD Multi-Timeframe Strategy
+// ============================================
+function renderStratMfi() {
+  return `
+    <div class="course-page-header">
+      <h1>MFI + MACD Multi-Timeframe Strategy</h1>
+      <p class="subtitle">Master momentum trading with MFI and MACD convergence across multiple timeframes</p>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--green)">85%</div>
+        <div class="metric-label">Win Rate</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--cyan)">3:1</div>
+        <div class="metric-label">Risk/Reward</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--yellow)">16h/6h/1h</div>
+        <div class="metric-label">Timeframes</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--purple)">Advanced</div>
+        <div class="metric-label">Difficulty</div>
+      </div>
+    </div>
+
+    <div class="video-card" style="cursor:pointer; text-align:center; padding: 32px;">
+      <div class="play-icon">&#9654;</div>
+      <h3>MFI + MACD Strategy Deep Dive</h3>
+      <p style="color: var(--text-dim)">Complete masterclass on multi-timeframe momentum trading</p>
+      <span style="color: var(--muted)">Duration: 45 min</span>
+    </div>
+
+    <h2>Strategy Overview</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--cyan)">
+        <div class="card-icon" style="color: var(--cyan)">&#128200;</div>
+        <div class="card-title">Primary Indicators</div>
+        <div class="card-desc">
+          <strong>MFI (Money Flow Index)</strong> &mdash; volume-weighted RSI that measures buying and selling pressure.<br/>
+          <strong>MACD Histogram</strong> &mdash; momentum direction and strength above/below zero line.<br/>
+          <strong>Stochastic RSI</strong> &mdash; VuManChu dot proxy for precise momentum entry signals.
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-icon" style="color: var(--yellow)">&#9202;</div>
+        <div class="card-title">Timeframe Structure</div>
+        <div class="card-desc">
+          <strong>16h</strong> &mdash; Primary trend direction and momentum bias.<br/>
+          <strong>6h</strong> &mdash; Secondary momentum confirmation layer.<br/>
+          <strong>1h</strong> &mdash; Precise entry timing with VuManChu dot signal.
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-icon" style="color: var(--green)">&#9989;</div>
+        <div class="card-title">Entry Conditions</div>
+        <div class="card-desc">
+          HTF structure must be bullish. 16h and 6h MFI must be green (above 50) with MACD histogram above zero. Enter when 1h MFI turns green and VuManChu dot confirms (Stoch RSI bull cross).
+        </div>
+      </div>
+    </div>
+
+    <h2>Setup Checklist</h2>
+    <div class="card" style="padding: 20px; margin-bottom: 20px;">
+      <h3 style="color: var(--cyan); margin-bottom: 16px;">TradingView Configuration</h3>
+      <div class="course-grid" style="margin-bottom: 16px;">
+        <div class="course-card">
+          <div class="card-title">Chart Layouts</div>
+          <div class="card-desc">Set up 3 chart layouts side by side: 16h, 6h, and 1h timeframes. This gives you simultaneous visibility across all confirmation layers.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">Indicators to Add</div>
+          <div class="card-desc">
+            <ul style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+              <li>MFI (period: 14)</li>
+              <li>MACD (12, 26, 9)</li>
+              <li>Stochastic RSI (14, 14, 3, 3)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="color: var(--yellow); margin-bottom: 16px;">Indicator Configuration</h3>
+      <div class="course-grid" style="margin-bottom: 0;">
+        <div class="course-card">
+          <div class="card-title">MFI Config</div>
+          <div class="card-desc">
+            <ul style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+              <li>Period: 14</li>
+              <li>Bullish: above 50 (green)</li>
+              <li>Overbought: above 80</li>
+              <li>Oversold: below 20</li>
+              <li>Green = above 50 midline</li>
+            </ul>
+          </div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">MACD Config</div>
+          <div class="card-desc">
+            <ul style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+              <li>Fast Length: 12</li>
+              <li>Slow Length: 26</li>
+              <li>Signal Smoothing: 9</li>
+              <li>Focus on histogram above/below zero</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Signal Checklist &mdash; Full 9-Point Confirmation</h2>
+    <div class="card" style="padding: 20px; margin-bottom: 20px;">
+      <div class="checklist">
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--purple);color:var(--bg)">1</span><div><strong>Monthly structure bullish</strong> &mdash; confirm the macro trend direction</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--purple);color:var(--bg)">2</span><div><strong>Weekly structure bullish</strong> &mdash; intermediate trend aligns with monthly</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--purple);color:var(--bg)">3</span><div><strong>Daily structure bullish</strong> &mdash; short-term trend supports the setup</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--cyan);color:var(--bg)">4</span><div><strong>16h MFI green</strong> &mdash; MFI above 50 on the 16-hour chart</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--cyan);color:var(--bg)">5</span><div><strong>16h MACD histogram > 0</strong> &mdash; positive momentum on 16h</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--yellow);color:var(--bg)">6</span><div><strong>6h MFI green</strong> &mdash; MFI above 50 on the 6-hour chart</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--yellow);color:var(--bg)">7</span><div><strong>6h MACD histogram > 0</strong> &mdash; positive momentum on 6h</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--green);color:var(--bg)">8</span><div><strong>1h MFI turns green</strong> &mdash; MFI crosses above 50 on 1-hour chart</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--green);color:var(--bg)">9</span><div><strong>1h VuManChu dot closes</strong> &mdash; Stoch RSI bullish cross from low region confirms entry</div></div>
+      </div>
+    </div>
+
+    <div class="info-box tip">
+      <p><strong>Pro Tips:</strong> For additional confluence, look for the 20 EMA above the 50 EMA with price holding above both. Both EMAs should be above the 200 EMA for the strongest setups. On pullbacks, watch for price to recross above the 20 EMA as a re-entry signal.</p>
+    </div>
+
+    <h2>VuManChu Dot Explanation</h2>
+    <div class="card" style="padding: 20px; margin-bottom: 20px;">
+      <h3 style="color: var(--green); margin-bottom: 12px;">Understanding the Entry Signal</h3>
+      <div class="course-grid" style="margin-bottom: 0;">
+        <div class="course-card">
+          <div class="card-title">What Is the Dot?</div>
+          <div class="card-desc">The VuManChu dot appears when multiple momentum conditions align simultaneously. It represents a high-probability momentum entry point. <strong>Always wait for the candle to CLOSE</strong> before acting on the dot.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">Stoch RSI Proxy</div>
+          <div class="card-desc">If you do not have the VuManChu indicator, use Stochastic RSI as a proxy. Look for the K line crossing above the D line from the lower region (below 20-30) as the equivalent signal.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">Entry Rule</div>
+          <div class="card-desc">After the dot closes (candle completes), enter on the <strong>next candle open</strong>. No early entries allowed. The dot must be fully confirmed with a closed candle.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">HTF Requirement</div>
+          <div class="card-desc">A 1h VuManChu dot alone is not enough. You <strong>must</strong> have 16h and 6h confirmation (MFI green + MACD positive) before acting on any 1h entry signal.</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Trade Management: Trend-Based Fib Trailing</h2>
+    <div class="card" style="padding: 20px; margin-bottom: 20px;">
+      <h3 style="color: var(--yellow); margin-bottom: 12px;">Trailing Stop System</h3>
+      <div class="course-grid" style="margin-bottom: 16px;">
+        <div class="course-card">
+          <div class="card-title">Initial Stop</div>
+          <div class="card-desc">Place initial stop loss at the <strong>previous swing low</strong>. This gives the trade room to breathe while protecting against a full reversal.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">Fib Extension Levels</div>
+          <div class="card-desc">Apply trend-based Fibonacci extension from swing low to swing high. Levels range from 0.618 all the way up to 9.618 for extended moves.</div>
+        </div>
+      </div>
+      <h3 style="color: var(--cyan); margin-bottom: 12px;">Trailing Rules</h3>
+      <div class="checklist">
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--green);color:var(--bg)">&#8593;</span><div>Price above <strong>1.618</strong> &rarr; Move stop to <strong>0.618</strong> level</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--green);color:var(--bg)">&#8593;</span><div>Price above <strong>2.618</strong> &rarr; Move stop to <strong>1.618</strong> level</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--green);color:var(--bg)">&#8593;</span><div>Price above <strong>3.618</strong> &rarr; Move stop to <strong>2.618</strong> level</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--green);color:var(--bg)">&#8593;</span><div>Price above <strong>4.236</strong> &rarr; Move stop to <strong>3.618</strong> level</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--green);color:var(--bg)">&#8593;</span><div>Continue trailing at each subsequent Fibonacci extension level</div></div>
+      </div>
+    </div>
+
+    <h2>Position Size Calculator</h2>
+    <div class="calc-container">
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Account Balance ($)</label>
+          <input type="number" id="mfi-balance" placeholder="e.g. 10000" step="any" />
+        </div>
+        <div class="calc-field">
+          <label>Risk %</label>
+          <input type="number" id="mfi-risk" placeholder="e.g. 2" step="any" />
+        </div>
+      </div>
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Entry Price ($)</label>
+          <input type="number" id="mfi-entry" placeholder="e.g. 65000" step="any" />
+        </div>
+        <div class="calc-field">
+          <label>Stop Loss ($)</label>
+          <input type="number" id="mfi-stop" placeholder="e.g. 63000" step="any" />
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcMfiPosition()">Calculate Position Size</button>
+      <div class="calc-results" id="mfi-results"></div>
+    </div>
+
+    <h2>Fib Trailing Calculator</h2>
+    <div class="calc-container">
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Swing Low ($)</label>
+          <input type="number" id="fib-trail-low" placeholder="e.g. 60000" step="any" />
+        </div>
+        <div class="calc-field">
+          <label>Swing High ($)</label>
+          <input type="number" id="fib-trail-high" placeholder="e.g. 65000" step="any" />
+        </div>
+      </div>
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Current Price ($)</label>
+          <input type="number" id="fib-trail-current" placeholder="e.g. 72000" step="any" />
+        </div>
+        <div class="calc-field">
+          <label>Last Closed Level</label>
+          <select id="fib-trail-level">
+            <option value="0">Initial (Swing Low)</option>
+            <option value="0.618">0.618</option>
+            <option value="1.0">1.000</option>
+            <option value="1.618">1.618</option>
+            <option value="2.618">2.618</option>
+            <option value="3.618">3.618</option>
+            <option value="4.236">4.236</option>
+          </select>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcFibTrail()">Calculate Trailing Levels</button>
+      <div class="calc-results" id="fib-trail-results"></div>
+    </div>
+
+    <h2>Psychology</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--cyan)">
+        <div class="card-icon" style="color: var(--cyan)">&#128270;</div>
+        <div class="card-title">Signal Discipline</div>
+        <div class="card-desc">Wait for ALL 9 confirmation points before entering. Skipping even one reduces win rate significantly. The edge comes from confluence, not speed.</div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-icon" style="color: var(--yellow)">&#129504;</div>
+        <div class="card-title">Emotional Control</div>
+        <div class="card-desc">Accept losses as part of the process. After 3 consecutive losses, take a mandatory break. Review your checklist adherence before resuming trading.</div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-icon" style="color: var(--green)">&#128202;</div>
+        <div class="card-title">Performance Tracking</div>
+        <div class="card-desc">Track your win rate per setup type. Review your trading journal weekly. Identify which checklist points you most frequently skip and address the pattern.</div>
+      </div>
+    </div>
+
+    <div class="info-box warning">
+      <p><strong>Disclaimer:</strong> This strategy is provided for educational purposes only. Past performance does not guarantee future results. Trading cryptocurrency involves substantial risk of loss. Never risk more than you can afford to lose. Always practice with paper trading before using real capital.</p>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateCourse('dashboard')">&larr; Back to Dashboard</button>
+    </div>
+  `;
+}
+
+// ============================================
+// 2-Week Macro Trading Strategy
+// ============================================
+function renderStratMacro() {
+  return `
+    <div class="course-page-header">
+      <h1>2-Week Macro Trading Strategy</h1>
+      <p class="subtitle">Master institutional-level macro analysis with 2-week timeframe cycles</p>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--green)">78%</div>
+        <div class="metric-label">Win Rate</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--cyan)">5:1</div>
+        <div class="metric-label">Risk/Reward</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--yellow)">2-Week</div>
+        <div class="metric-label">Primary Timeframe</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color: var(--purple)">Institutional</div>
+        <div class="metric-label">Approach</div>
+      </div>
+    </div>
+
+    <div class="video-card" style="cursor:pointer; text-align:center; padding: 32px;">
+      <div class="play-icon">&#9654;</div>
+      <h3>2-Week Macro Strategy Masterclass</h3>
+      <p style="color: var(--text-dim)">Complete institutional-level macro trading breakdown</p>
+      <span style="color: var(--muted)">Full Masterclass</span>
+    </div>
+
+    <h2>Strategy Overview</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--purple)">
+        <div class="card-icon" style="color: var(--purple)">&#127970;</div>
+        <div class="card-title">Core Philosophy</div>
+        <div class="card-desc">Think like an institution. Focus on major trends with high conviction. Higher timeframes provide stronger signals with less noise. Size positions for macro-scale moves that play out over weeks or months.</div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--cyan)">
+        <div class="card-icon" style="color: var(--cyan)">&#9202;</div>
+        <div class="card-title">Timeframe Hierarchy</div>
+        <div class="card-desc">
+          <strong>Monthly</strong> &mdash; overall market cycle direction.<br/>
+          <strong>2-Week</strong> &mdash; primary analysis and bias.<br/>
+          <strong>Weekly</strong> &mdash; trend confirmation.<br/>
+          <strong>Daily</strong> &mdash; entry refinement and precise timing.
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-icon" style="color: var(--green)">&#128176;</div>
+        <div class="card-title">Position Characteristics</div>
+        <div class="card-desc">
+          Larger position sizes (3-5% account risk). Wider stop losses to accommodate macro volatility. Extended hold periods spanning weeks to months. Multiple take profit levels for scaled exits.
+        </div>
+      </div>
+    </div>
+
+    <h2>Timeframe Hierarchy</h2>
+    <div class="card" style="text-align: center; padding: 24px; margin-bottom: 20px;">
+      <p style="color: var(--text-dim); margin-bottom: 12px;">Analysis Flow: Top-Down Approach</p>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; font-size: 1.1em; font-weight: bold;">
+        <div style="text-align:center">
+          <div style="color: var(--purple); font-size: 1.3em;">1M</div>
+          <div style="color: var(--muted); font-size: 0.7em;">Market Cycle</div>
+        </div>
+        <span style="color: var(--muted)">&rarr;</span>
+        <div style="text-align:center">
+          <div style="color: var(--blue); font-size: 1.3em;">2W</div>
+          <div style="color: var(--muted); font-size: 0.7em;">Primary Analysis</div>
+        </div>
+        <span style="color: var(--muted)">&rarr;</span>
+        <div style="text-align:center">
+          <div style="color: var(--cyan); font-size: 1.3em;">1W</div>
+          <div style="color: var(--muted); font-size: 0.7em;">Trend Confirmation</div>
+        </div>
+        <span style="color: var(--muted)">&rarr;</span>
+        <div style="text-align:center">
+          <div style="color: var(--green); font-size: 1.3em;">3D</div>
+          <div style="color: var(--muted); font-size: 0.7em;">Structure</div>
+        </div>
+        <span style="color: var(--muted)">&rarr;</span>
+        <div style="text-align:center">
+          <div style="color: var(--yellow); font-size: 1.3em;">1D</div>
+          <div style="color: var(--muted); font-size: 0.7em;">Entry Refinement</div>
+        </div>
+        <span style="color: var(--muted)">&rarr;</span>
+        <div style="text-align:center">
+          <div style="color: var(--red); font-size: 1.3em;">12H</div>
+          <div style="color: var(--muted); font-size: 0.7em;">Precise Timing</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>2-Week Candle Analysis</h2>
+    <div class="card" style="padding: 20px; margin-bottom: 20px;">
+      <h3 style="color: var(--cyan); margin-bottom: 16px;">Key Patterns</h3>
+      <div class="course-grid" style="margin-bottom: 16px;">
+        <div class="course-card">
+          <div class="card-title" style="color: var(--green)">Bullish Engulfing on 2W</div>
+          <div class="card-desc">Extremely powerful reversal signal. A green 2-week candle that fully engulfs the prior red candle indicates a major shift in institutional sentiment. High probability long setup.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title" style="color: var(--yellow)">Hammer / Doji on 2W</div>
+          <div class="card-desc">Long lower wick or doji at key support levels on the 2-week chart signals strong buyer interest. Wait for confirmation candle before entry.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title" style="color: var(--cyan)">Higher Highs / Higher Lows</div>
+          <div class="card-desc">Consecutive 2-week candles forming higher highs and higher lows confirm a macro uptrend. This is the most reliable directional confirmation on macro timeframes.</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title" style="color: var(--purple)">Key S/R Levels</div>
+          <div class="card-desc">Support and resistance levels that have held across multiple 2-week candles are extremely significant. These levels represent true institutional interest zones.</div>
+        </div>
+      </div>
+      <h3 style="color: var(--yellow); margin-bottom: 12px;">Volume Analysis</h3>
+      <div class="info-box tip">
+        <p>Volume should increase on breakouts above resistance, bounces from key support levels, and during trend continuation moves. Decreasing volume on pullbacks is healthy and suggests the trend remains intact.</p>
+      </div>
+    </div>
+
+    <h2>Macro Setup Checklist</h2>
+    <div class="card" style="padding: 20px; margin-bottom: 20px;">
+      <div class="checklist">
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--purple);color:var(--bg)">1</span><div><strong>Monthly Trend</strong> &mdash; Confirm the overall direction on the 1M chart. Is the macro cycle bullish, bearish, or ranging?</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--blue);color:var(--bg)">2</span><div><strong>2W Structure</strong> &mdash; Identify key support and resistance levels on the 2-week chart. Mark levels that have been tested multiple times.</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--cyan);color:var(--bg)">3</span><div><strong>Weekly Confirmation</strong> &mdash; Verify that the 1W chart aligns with your 2W directional bias. Look for trend structure agreement.</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--green);color:var(--bg)">4</span><div><strong>Daily Entry</strong> &mdash; Wait for a 1D or 12H signal that aligns with macro direction. Use candlestick patterns and momentum indicators for timing.</div></div>
+        <div class="checklist-item"><span class="checklist-box" style="background:var(--yellow);color:var(--bg)">5</span><div><strong>Risk Management</strong> &mdash; Size position appropriately for macro timeframe. Wider stops require smaller position sizes to maintain acceptable account risk.</div></div>
+      </div>
+    </div>
+
+    <h2>Market Structure Analysis</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-title" style="color: var(--green)">Bullish Patterns</div>
+        <div class="card-desc">
+          <ul style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+            <li>2W bullish engulfing at support</li>
+            <li>Higher highs and higher lows on 2W</li>
+            <li>Volume breakout above resistance</li>
+            <li>Price reclaims key moving averages</li>
+          </ul>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--red)">
+        <div class="card-title" style="color: var(--red)">Bearish Patterns</div>
+        <div class="card-desc">
+          <ul style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+            <li>2W bearish engulfing at resistance</li>
+            <li>Lower highs and lower lows on 2W</li>
+            <li>Volume breakdown below support</li>
+            <li>Price rejected at key moving averages</li>
+          </ul>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-title" style="color: var(--yellow)">Reversal Signals</div>
+        <div class="card-desc">
+          <ul style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+            <li>2W Hammer or Doji at key levels</li>
+            <li>Volume spike at major support/resistance</li>
+            <li>RSI divergence on 2W timeframe</li>
+            <li>Market structure break (trend change)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2>Risk Framework</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--cyan)">
+        <div class="card-icon" style="color: var(--cyan)">&#9878;</div>
+        <div class="card-title">Position Sizing</div>
+        <div class="card-desc">
+          <ul style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+            <li>3-5% risk per macro trade</li>
+            <li>Maximum 15% total portfolio exposure</li>
+            <li>Scale size with conviction level</li>
+          </ul>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--red)">
+        <div class="card-icon" style="color: var(--red)">&#128721;</div>
+        <div class="card-title">Stop Management</div>
+        <div class="card-desc">
+          <ul style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+            <li>Previous 2W swing as initial stop</li>
+            <li>Never risk more than 15% on a single trade</li>
+            <li>Move to breakeven after achieving 1:1 R:R</li>
+          </ul>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-icon" style="color: var(--green)">&#127919;</div>
+        <div class="card-title">Profit Taking</div>
+        <div class="card-desc">
+          <ul style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+            <li>Scale out 25% at 2:1 R:R</li>
+            <li>Scale out 50% at Fibonacci extensions</li>
+            <li>Trail stop on final 25% position</li>
+          </ul>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-icon" style="color: var(--yellow)">&#9202;</div>
+        <div class="card-title">Time Management</div>
+        <div class="card-desc">
+          <ul style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+            <li>Review positions weekly, not daily</li>
+            <li>Exit if no progress after 4 weeks</li>
+            <li>Reduce size before major macro events</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2>Macro Position Calculator</h2>
+    <div class="calc-container">
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Portfolio Balance ($)</label>
+          <input type="number" id="macro-balance" placeholder="e.g. 50000" step="any" />
+        </div>
+        <div class="calc-field">
+          <label>Risk %</label>
+          <input type="number" id="macro-risk" placeholder="e.g. 3" step="any" />
+        </div>
+      </div>
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Entry Price ($)</label>
+          <input type="number" id="macro-entry" placeholder="e.g. 65000" step="any" />
+        </div>
+        <div class="calc-field">
+          <label>Stop Loss ($)</label>
+          <input type="number" id="macro-stop" placeholder="e.g. 58000" step="any" />
+        </div>
+      </div>
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>First Target ($)</label>
+          <input type="number" id="macro-tp1" placeholder="e.g. 79000" step="any" />
+        </div>
+        <div class="calc-field">
+          <label>Final Target ($)</label>
+          <input type="number" id="macro-tp2" placeholder="e.g. 95000" step="any" />
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcMacroPosition()">Calculate Macro Position</button>
+      <div class="calc-results" id="macro-results"></div>
+    </div>
+
+    <h2>Setup Examples</h2>
+    <div class="course-grid">
+      <div class="course-card" style="border-left: 3px solid var(--green)">
+        <div class="card-title" style="color: var(--green)">Bullish Macro Setup</div>
+        <div class="card-desc">
+          <ol style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+            <li>Monthly chart in confirmed uptrend</li>
+            <li>2W candle breaking above key resistance with 2x average volume</li>
+            <li>Weekly chart showing higher highs and higher lows</li>
+            <li>Enter on daily pullback to 50-61.8% Fibonacci retracement</li>
+            <li>Targets at 1.618 / 2.618 / 4.236 Fibonacci extensions</li>
+          </ol>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--red)">
+        <div class="card-title" style="color: var(--red)">Bearish Macro Setup</div>
+        <div class="card-desc">
+          <ol style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+            <li>Monthly chart in confirmed downtrend</li>
+            <li>2W candle breaking below key support with volume</li>
+            <li>Weekly chart showing lower highs and lower lows</li>
+            <li>Enter on daily rally to 38.2-50% Fibonacci retracement</li>
+            <li>Target previous major lows and extension levels</li>
+          </ol>
+        </div>
+      </div>
+      <div class="course-card" style="border-left: 3px solid var(--yellow)">
+        <div class="card-title" style="color: var(--yellow)">Accumulation Setup</div>
+        <div class="card-desc">
+          <ol style="margin:4px 0;padding-left:18px;color:var(--text-dim)">
+            <li>Price in long-term range on 2W chart</li>
+            <li>Multiple 2W tests of support level holding</li>
+            <li>Decreasing volume on each retest (selling exhaustion)</li>
+            <li>Scale into position on each support test</li>
+            <li>Exit on confirmed range breakout to the upside</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box warning">
+      <p><strong>Disclaimer:</strong> This strategy is provided for educational purposes only. Past performance does not guarantee future results. Trading cryptocurrency involves substantial risk of loss. Never risk more than you can afford to lose. Macro trading involves extended hold periods and wider stops — ensure you are comfortable with the capital at risk before entering any position.</p>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateCourse('dashboard')">&larr; Back to Dashboard</button>
+    </div>
+  `;
+}
+
+// ── Bull Market, Backtesting, Resources, Alerts ──
+// ============================================
+// Lewieville's Trading Masterclass - Part 5
+// Bull Market, Backtesting, Resources, Alerts
+// ============================================
+
+function renderBullMarket() {
+  return `
+    <div class="course-page-header">
+      <h1>Bull Market Analysis</h1>
+      <p class="subtitle">Comprehensive analysis of bull market cycles, peak indicators, and the 2025 outlook</p>
+    </div>
+
+    <div class="course-grid">
+      <div class="video-card" style="cursor:pointer;">
+        <div class="play-icon">&#9654;</div>
+        <div class="card-title">2025 Bull Run Breakdown</div>
+        <div class="card-desc">Watch Bull Run Analysis</div>
+      </div>
+      <div class="video-card" style="cursor:pointer;">
+        <div class="play-icon">&#9654;</div>
+        <div class="card-title">5 Phase Bull Run Fib Retracement</div>
+        <div class="card-desc">Watch 5 Phase Analysis</div>
+      </div>
+    </div>
+
+    <h2>Bull Market Peak Indicators</h2>
+    <div class="course-grid">
+      <div class="peak-indicator">
+        <div class="pi-name">Pi Cycle Top Indicator</div>
+        <div class="card-desc">111-day MA crosses 350-day MA &times; 2</div>
+        <div class="pi-status" style="background: var(--green); color: #000; display: inline-block; padding: 4px 12px; border-radius: 12px; font-weight: 600; margin-top: 8px;">Not Hit</div>
+      </div>
+      <div class="peak-indicator">
+        <div class="pi-name">Stock-to-Flow Model</div>
+        <div class="card-desc">Price vs predicted S2F value</div>
+        <div class="pi-status" style="background: var(--green); color: #000; display: inline-block; padding: 4px 12px; border-radius: 12px; font-weight: 600; margin-top: 8px;">Below Target</div>
+      </div>
+      <div class="peak-indicator">
+        <div class="pi-name">MVRV Z-Score</div>
+        <div class="card-desc">Market cap vs realized cap</div>
+        <div class="pi-status" style="background: var(--yellow); color: #000; display: inline-block; padding: 4px 12px; border-radius: 12px; font-weight: 600; margin-top: 8px;">Approaching</div>
+      </div>
+      <div class="peak-indicator">
+        <div class="pi-name">Puell Multiple</div>
+        <div class="card-desc">Daily issuance vs 365-day average</div>
+        <div class="pi-status" style="background: var(--green); color: #000; display: inline-block; padding: 4px 12px; border-radius: 12px; font-weight: 600; margin-top: 8px;">Normal Range</div>
+      </div>
+      <div class="peak-indicator">
+        <div class="pi-name">200-Week Moving Average</div>
+        <div class="card-desc">Price distance from 200W MA</div>
+        <div class="pi-status" style="background: var(--green); color: #000; display: inline-block; padding: 4px 12px; border-radius: 12px; font-weight: 600; margin-top: 8px;">Below Peak Zone</div>
+      </div>
+      <div class="peak-indicator">
+        <div class="pi-name">NVT Golden Cross</div>
+        <div class="card-desc">Network value to transactions</div>
+        <div class="pi-status" style="background: var(--green); color: #000; display: inline-block; padding: 4px 12px; border-radius: 12px; font-weight: 600; margin-top: 8px;">Not Overvalued</div>
+      </div>
+    </div>
+
+    <h3>Market Top Probability</h3>
+    <div class="metric-row">
+      <div class="metric-card" style="flex: 1;">
+        <div class="metric-val" style="color: var(--green); font-size: 3rem;">15%</div>
+        <div class="metric-label">Market Top Probability</div>
+        <div style="width: 100%; background: var(--bg2); border-radius: 8px; height: 12px; margin-top: 12px; overflow: hidden;">
+          <div style="width: 15%; height: 100%; background: var(--green); border-radius: 8px;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px; color: var(--text-dim); font-size: 0.8rem;">
+          <span>Low Risk</span>
+          <span>High Risk</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>5 Phases of a Bull Run</h2>
+    <div class="phase-box">
+      <div class="phase-item" style="border-left: 4px solid var(--blue);">
+        <div class="phase-num" style="background: var(--blue); color: #000;">1</div>
+        <div>
+          <strong>Accumulation Phase</strong>
+          <p style="margin: 4px 0 0; color: var(--text-dim);">Smart money accumulates, retail fearful. Key: 0.618-0.786 Fib retracement.</p>
+        </div>
+      </div>
+      <div class="phase-item active-phase" style="border-left: 4px solid var(--cyan);">
+        <div class="phase-num" style="background: var(--cyan); color: #000;">2</div>
+        <div>
+          <strong>Early Bull Phase <span style="background: var(--cyan); color: #000; padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; margin-left: 8px;">ACTIVE</span></strong>
+          <p style="margin: 4px 0 0; color: var(--text-dim);">Breaks key resistance, institutional interest. Previous cycle high becomes support.</p>
+        </div>
+      </div>
+      <div class="phase-item" style="border-left: 4px solid var(--green);">
+        <div class="phase-num" style="background: var(--green); color: #000;">3</div>
+        <div>
+          <strong>Main Bull Run</strong>
+          <p style="margin: 4px 0 0; color: var(--text-dim);">Parabolic action, retail FOMO, media coverage. Key: 1.618-2.618 Fib extensions.</p>
+        </div>
+      </div>
+      <div class="phase-item" style="border-left: 4px solid var(--yellow);">
+        <div class="phase-num" style="background: var(--yellow); color: #000;">4</div>
+        <div>
+          <strong>Euphoria Phase</strong>
+          <p style="margin: 4px 0 0; color: var(--text-dim);">Peak indicators flash, everyone talking. Key: 3.618-4.236 Fib.</p>
+        </div>
+      </div>
+      <div class="phase-item" style="border-left: 4px solid var(--red);">
+        <div class="phase-num" style="background: var(--red); color: #000;">5</div>
+        <div>
+          <strong>Distribution / Top</strong>
+          <p style="margin: 4px 0 0; color: var(--text-dim);">Smart money distributes. Monitor all peak indicators.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="course-grid">
+      <div class="card">
+        <h3>Key Fibonacci Levels</h3>
+        <div class="metric-row" style="flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: var(--bg2); border-radius: 8px;">
+            <span style="color: var(--cyan); font-weight: 600;">0.618 (Golden Pocket)</span>
+            <span style="color: var(--text-dim);">Strong Support</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: var(--bg2); border-radius: 8px;">
+            <span style="color: var(--green); font-weight: 600;">1.618 (First Extension)</span>
+            <span style="color: var(--text-dim);">Take Profits</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: var(--bg2); border-radius: 8px;">
+            <span style="color: var(--yellow); font-weight: 600;">2.618 (Second Extension)</span>
+            <span style="color: var(--text-dim);">Major Resistance</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: var(--bg2); border-radius: 8px;">
+            <span style="color: var(--red); font-weight: 600;">3.618+ (Peak Zone)</span>
+            <span style="color: var(--text-dim);">Distribution Zone</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Trading Strategy by Phase</h3>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg2); border-radius: 8px;">
+            <span style="color: var(--blue); font-weight: 700; min-width: 80px;">Phase 1-2</span>
+            <span style="color: var(--text-dim);">Accumulate on dips to key support</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg2); border-radius: 8px;">
+            <span style="color: var(--green); font-weight: 700; min-width: 80px;">Phase 3</span>
+            <span style="color: var(--text-dim);">Hold and ride, add on pullbacks</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg2); border-radius: 8px;">
+            <span style="color: var(--yellow); font-weight: 700; min-width: 80px;">Phase 4</span>
+            <span style="color: var(--text-dim);">Begin systematic profit-taking</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg2); border-radius: 8px;">
+            <span style="color: var(--red); font-weight: 700; min-width: 80px;">Phase 5</span>
+            <span style="color: var(--text-dim);">Complete distribution, prepare for bear</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Current Market Assessment</h2>
+    <div class="course-grid">
+      <div class="card">
+        <h3>Phase Analysis</h3>
+        <div class="metric-val" style="color: var(--cyan); font-size: 1.4rem; margin-bottom: 12px;">Phase 2 (Early Bull)</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; color: var(--green);">
+            <span style="font-size: 1.1rem;">&#10003;</span> Broke above previous cycle high
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; color: var(--green);">
+            <span style="font-size: 1.1rem;">&#10003;</span> Institutional adoption increasing
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; color: var(--text-dim);">
+            <span style="font-size: 1.1rem;">&#9711;</span> Retail FOMO not peaked
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; color: var(--text-dim);">
+            <span style="font-size: 1.1rem;">&#9711;</span> Peak indicators far from warning
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Key Levels</h3>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="padding: 10px 14px; background: var(--bg2); border-radius: 8px; border-left: 3px solid var(--yellow);">
+            <div style="color: var(--yellow); font-weight: 600;">Next Resistance</div>
+            <div style="color: var(--text-dim);">$85,000 - $90,000 (1.618 Fib)</div>
+          </div>
+          <div style="padding: 10px 14px; background: var(--bg2); border-radius: 8px; border-left: 3px solid var(--green);">
+            <div style="color: var(--green); font-weight: 600;">Support Zone</div>
+            <div style="color: var(--text-dim);">$55,000 - $60,000 (0.618 + previous ATH)</div>
+          </div>
+          <div style="padding: 10px 14px; background: var(--bg2); border-radius: 8px; border-left: 3px solid var(--cyan);">
+            <div style="color: var(--cyan); font-weight: 600;">Cycle Target</div>
+            <div style="color: var(--text-dim);">$120,000 - $150,000 (2.618-3.618 Fib)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateCourse('dashboard')">&larr; Back to Dashboard</button>
+    </div>
+  `;
+}
+
+function renderBacktesting() {
+  return `
+    <div class="course-page-header">
+      <h1>Strategy Backtesting Lab</h1>
+      <p class="subtitle">Comprehensive backtesting tools and methodologies</p>
+    </div>
+
+    <h2>Why Backtest?</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">&#9989;</div>
+        <div class="card-title">Validate Performance</div>
+        <div class="card-desc">Prove your strategy works before risking real capital</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128737;</div>
+        <div class="card-title">Risk Assessment</div>
+        <div class="card-desc">Understand worst-case drawdowns and risk exposure</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128170;</div>
+        <div class="card-title">Build Confidence</div>
+        <div class="card-desc">Trade with conviction backed by data, not hope</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#9881;</div>
+        <div class="card-title">Optimize Parameters</div>
+        <div class="card-desc">Fine-tune indicator settings and risk parameters</div>
+      </div>
+    </div>
+
+    <h2>5-Step Backtesting Process</h2>
+
+    <div class="card" style="border-left: 4px solid var(--cyan); margin-bottom: 16px;">
+      <h3><span style="background: var(--cyan); color: #000; padding: 2px 10px; border-radius: 8px; margin-right: 8px;">1</span> Setup Environment</h3>
+      <div class="metric-row">
+        <div class="metric-card">
+          <div class="metric-val" style="color: var(--cyan);">BTC/USD</div>
+          <div class="metric-label">Symbol</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color: var(--cyan);">4H</div>
+          <div class="metric-label">TF Recommended</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color: var(--cyan);">6+ Months</div>
+          <div class="metric-label">Min Data</div>
+        </div>
+      </div>
+      <p style="color: var(--text-dim);">Add all indicators your strategy uses to the chart.</p>
+      <div class="info-box tip">
+        <p>Use different market conditions (trending, ranging, volatile) for more robust results.</p>
+      </div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid var(--green); margin-bottom: 16px;">
+      <h3><span style="background: var(--green); color: #000; padding: 2px 10px; border-radius: 8px; margin-right: 8px;">2</span> Initialize Bar Replay</h3>
+      <p style="color: var(--text-dim);">Go to earliest date, click Bar Replay, hide right portion.</p>
+      <div class="info-box warning">
+        <p>Never look at future price action. This introduces look-ahead bias and invalidates results.</p>
+      </div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid var(--yellow); margin-bottom: 16px;">
+      <h3><span style="background: var(--yellow); color: #000; padding: 2px 10px; border-radius: 8px; margin-right: 8px;">3</span> Execute Strategy Rules</h3>
+      <p style="color: var(--text-dim);">Step through each bar, apply exact criteria, record every setup.</p>
+      <div class="checklist" style="margin-top: 12px;">
+        <div class="checklist-item">
+          <div class="checklist-box">&#9744;</div>
+          <span>HTF trend confirmed?</span>
+        </div>
+        <div class="checklist-item">
+          <div class="checklist-box">&#9744;</div>
+          <span>Entry criteria met?</span>
+        </div>
+        <div class="checklist-item">
+          <div class="checklist-box">&#9744;</div>
+          <span>R/R acceptable?</span>
+        </div>
+        <div class="checklist-item">
+          <div class="checklist-box">&#9744;</div>
+          <span>SL identified?</span>
+        </div>
+        <div class="checklist-item">
+          <div class="checklist-box">&#9744;</div>
+          <span>TP set?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid var(--purple); margin-bottom: 16px;">
+      <h3><span style="background: var(--purple); color: #000; padding: 2px 10px; border-radius: 8px; margin-right: 8px;">4</span> Record Trade Details</h3>
+      <div class="course-grid">
+        <div class="course-card">
+          <div class="card-title">Entry Details</div>
+          <div class="card-desc">Date, time, price, position size</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">Exit Details</div>
+          <div class="card-desc">Date, time, price, reason for exit</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">Risk Management</div>
+          <div class="card-desc">Stop loss, take profit, R-multiple</div>
+        </div>
+        <div class="course-card">
+          <div class="card-title">Notes</div>
+          <div class="card-desc">Performance metrics, observations, lessons</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left: 4px solid var(--red); margin-bottom: 16px;">
+      <h3><span style="background: var(--red); color: #000; padding: 2px 10px; border-radius: 8px; margin-right: 8px;">5</span> Calculate Metrics</h3>
+      <div class="course-grid">
+        <div class="metric-card">
+          <div class="metric-val" style="color: var(--cyan);">Win Rate</div>
+          <div class="metric-label">Wins / Total &times; 100</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color: var(--green);">Avg R-Multiple</div>
+          <div class="metric-label">Average reward per unit of risk</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color: var(--yellow);">Profit Factor</div>
+          <div class="metric-label">Gross Profit / Gross Loss</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color: var(--red);">Max Drawdown</div>
+          <div class="metric-label">Largest peak-to-trough decline</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color: var(--purple);">Sharpe Ratio</div>
+          <div class="metric-label">Risk-adjusted return measure</div>
+        </div>
+      </div>
+      <div class="info-box success" style="margin-top: 12px;">
+        <p><strong>Targets:</strong> Win Rate &ge; 50% &bull; Avg R &ge; 0.5 &bull; Profit Factor &ge; 1.5 &bull; Max Drawdown &lt; 15%</p>
+      </div>
+    </div>
+
+    <h2>Performance Calculator</h2>
+    <div class="calc-container">
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Total Trades</label>
+          <input type="number" id="bt-total-trades" placeholder="e.g. 100" />
+        </div>
+        <div class="calc-field">
+          <label>Winning Trades</label>
+          <input type="number" id="bt-winning-trades" placeholder="e.g. 58" />
+        </div>
+      </div>
+      <div class="calc-row">
+        <div class="calc-field">
+          <label>Total Profit ($)</label>
+          <input type="number" id="bt-total-profit" placeholder="e.g. 5000" />
+        </div>
+        <div class="calc-field">
+          <label>Total Loss ($)</label>
+          <input type="number" id="bt-total-loss" placeholder="e.g. 2500" />
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcBacktestPerformance()">Calculate Performance</button>
+      <div class="calc-results" id="bt-results" style="display:none;">
+        <div class="calc-result-item">
+          <span class="label">Win Rate</span>
+          <span class="value" id="bt-winrate">--</span>
+        </div>
+        <div class="calc-result-item">
+          <span class="label">Profit Factor</span>
+          <span class="value" id="bt-pf">--</span>
+        </div>
+        <div class="calc-result-item">
+          <span class="label">Net P&amp;L</span>
+          <span class="value" id="bt-netpnl">--</span>
+        </div>
+        <div class="calc-result-item">
+          <span class="label">Strategy Grade</span>
+          <span class="value" id="bt-grade">--</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Best Practices</h2>
+    <div class="course-grid">
+      <div class="card" style="border-left: 4px solid var(--green);">
+        <h3 style="color: var(--green);">Essential Do's</h3>
+        <div class="checklist">
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--green);">&#10003;</div><span>Use sufficient data (100+ trades minimum)</span></div>
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--green);">&#10003;</div><span>Test across multiple timeframes</span></div>
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--green);">&#10003;</div><span>Include all trading costs and fees</span></div>
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--green);">&#10003;</div><span>Be honest with your results</span></div>
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--green);">&#10003;</div><span>Document every trade thoroughly</span></div>
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--green);">&#10003;</div><span>Test out-of-sample data separately</span></div>
+        </div>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--red);">
+        <h3 style="color: var(--red);">Critical Don'ts</h3>
+        <div class="checklist">
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--red);">&#10007;</div><span>No look-ahead bias — never peek at future price</span></div>
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--red);">&#10007;</div><span>No curve fitting — don't over-optimize to past data</span></div>
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--red);">&#10007;</div><span>No cherry picking — record ALL trades, not just winners</span></div>
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--red);">&#10007;</div><span>Don't use insufficient sample size</span></div>
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--red);">&#10007;</div><span>Don't ignore drawdowns — they matter most</span></div>
+          <div class="checklist-item"><div class="checklist-box" style="color: var(--red);">&#10007;</div><span>Account for human error and slippage</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Ready to Start Backtesting?</h2>
+    <div class="course-grid">
+      <div class="course-card" onclick="navigateCourse('strat-trendline')" style="cursor:pointer;">
+        <div class="card-icon">&#128200;</div>
+        <div class="card-title">Trendline Strategy</div>
+        <div class="card-desc">Backtest the Trendline Breakout strategy</div>
+      </div>
+      <div class="course-card" onclick="navigateCourse('strat-mfi')" style="cursor:pointer;">
+        <div class="card-icon">&#128202;</div>
+        <div class="card-title">MFI + MACD Strategy</div>
+        <div class="card-desc">Backtest the MFI multi-timeframe strategy</div>
+      </div>
+      <div class="course-card" onclick="navigateCourse('resources')" style="cursor:pointer;">
+        <div class="card-icon">&#128218;</div>
+        <div class="card-title">Resources & Templates</div>
+        <div class="card-desc">Download trading journal and cheatsheets</div>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateCourse('dashboard')">&larr; Back to Dashboard</button>
+    </div>
+  `;
+}
+
+function calcBacktestPerformance() {
+  var totalTrades = parseFloat(document.getElementById('bt-total-trades').value) || 0;
+  var winningTrades = parseFloat(document.getElementById('bt-winning-trades').value) || 0;
+  var totalProfit = parseFloat(document.getElementById('bt-total-profit').value) || 0;
+  var totalLoss = Math.abs(parseFloat(document.getElementById('bt-total-loss').value)) || 0;
+
+  if (totalTrades <= 0) {
+    alert('Please enter the total number of trades.');
+    return;
+  }
+
+  var winRate = (winningTrades / totalTrades) * 100;
+  var profitFactor = totalLoss > 0 ? totalProfit / totalLoss : totalProfit > 0 ? Infinity : 0;
+  var netPnL = totalProfit - totalLoss;
+
+  var grade = 'F';
+  if (profitFactor >= 2 && winRate >= 60) {
+    grade = 'A';
+  } else if (profitFactor >= 1.5 && winRate >= 50) {
+    grade = 'B';
+  } else if (profitFactor >= 1.2) {
+    grade = 'C';
+  } else if (profitFactor >= 1) {
+    grade = 'D';
+  }
+
+  var gradeColors = { A: 'var(--green)', B: 'var(--cyan)', C: 'var(--yellow)', D: 'var(--red)', F: 'var(--red)' };
+
+  document.getElementById('bt-winrate').textContent = winRate.toFixed(1) + '%';
+  document.getElementById('bt-winrate').style.color = winRate >= 50 ? 'var(--green)' : 'var(--red)';
+
+  document.getElementById('bt-pf').textContent = profitFactor === Infinity ? 'Infinite' : profitFactor.toFixed(2);
+  document.getElementById('bt-pf').style.color = profitFactor >= 1.5 ? 'var(--green)' : profitFactor >= 1 ? 'var(--yellow)' : 'var(--red)';
+
+  document.getElementById('bt-netpnl').textContent = (netPnL >= 0 ? '+' : '') + '$' + netPnL.toFixed(2);
+  document.getElementById('bt-netpnl').style.color = netPnL >= 0 ? 'var(--green)' : 'var(--red)';
+
+  document.getElementById('bt-grade').textContent = grade;
+  document.getElementById('bt-grade').style.color = gradeColors[grade];
+
+  document.getElementById('bt-results').style.display = '';
+}
+
+function renderResources() {
+  return `
+    <div class="course-page-header">
+      <h1>Resources</h1>
+      <p class="subtitle">Professional trading resources, guides, and TradingView templates</p>
+    </div>
+
+    <h2>PDF Cheatsheets &amp; Guides</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">&#128196;</div>
+        <div class="card-title">Terminology Cheatsheet</div>
+        <div class="card-desc">Essential trading terms and definitions every trader must know</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128295;</div>
+        <div class="card-title">Indicator Settings Guide</div>
+        <div class="card-desc">Optimized RSI, Stoch RSI, MACD, and MFI parameters for crypto</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128203;</div>
+        <div class="card-title">HTF Drill Worksheet</div>
+        <div class="card-desc">Higher timeframe analysis practice worksheet for daily use</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128178;</div>
+        <div class="card-title">Risk Calculator Guide</div>
+        <div class="card-desc">Position sizing and risk management reference guide</div>
+      </div>
+    </div>
+
+    <h2>TradingView Templates</h2>
+
+    <div class="card" style="margin-bottom: 16px;">
+      <h3>Trendline Breakout Strategy</h3>
+      <p style="color: var(--text-dim); margin-bottom: 12px;">Complete setup guide with all required indicators and settings.</p>
+      <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: monospace; font-size: 0.85rem; color: var(--cyan); overflow-x: auto; white-space: pre; line-height: 1.6;">{
+  "indicators": {
+    "EMA 21":  { "length": 21,  "color": "#FF6B35" },
+    "EMA 50":  { "length": 50,  "color": "#4ECDC4" },
+    "EMA 200": { "length": 200, "color": "#45B7D1" },
+    "RSI":     { "length": 14 },
+    "MACD":    { "fast": 12, "slow": 26, "signal": 9 },
+    "Volume":  { "type": "standard" }
+  }
+}</div>
+    </div>
+
+    <div class="card" style="margin-bottom: 16px;">
+      <h3>MFI + MACD Multi-Timeframe</h3>
+      <p style="color: var(--text-dim); margin-bottom: 12px;">16H / 6H / 1H analysis system with alert configurations.</p>
+      <h4 style="color: var(--cyan); margin-bottom: 8px;">6H MFI + MACD Setup Alert</h4>
+      <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: monospace; font-size: 0.85rem; color: var(--green); overflow-x: auto; white-space: pre; line-height: 1.6;">// Pine Script Alert Condition — 6H MFI + MACD
+// Add to 6H chart
+mfiVal = ta.mfi(hlc3, 14)
+[macdLine, signalLine, hist] = ta.macd(close, 12, 26, 9)
+longSetup = ta.crossover(macdLine, signalLine) and mfiVal > 50
+alertcondition(longSetup, "6H MFI+MACD Long", "6H LONG setup: MACD crossed above signal, MFI > 50")</div>
+      <h4 style="color: var(--cyan); margin-top: 16px; margin-bottom: 8px;">1H Stoch RSI Entry Alert</h4>
+      <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: monospace; font-size: 0.85rem; color: var(--green); overflow-x: auto; white-space: pre; line-height: 1.6;">// Pine Script Alert Condition — 1H Stoch RSI Entry
+// Add to 1H chart
+rsiVal = ta.rsi(close, 14)
+[k, d] = ta.stoch(rsiVal, rsiVal, rsiVal, 14)
+kSmooth = ta.sma(k, 3)
+dSmooth = ta.sma(d, 3)
+entrySignal = ta.crossover(kSmooth, dSmooth)
+alertcondition(entrySignal, "1H StochRSI Entry", "1H ENTRY: Stoch RSI K crossed above D — confirm HTF bias")</div>
+    </div>
+
+    <div class="card" style="margin-bottom: 16px;">
+      <h3>BTC Strategy Workspace</h3>
+      <p style="color: var(--text-dim);">Professional 4-chart layout template for comprehensive BTC analysis. Set up TradingView with a 4-panel layout: Daily (HTF bias), 6H (setup identification), 1H (entry timing), and 15m (precision entries).</p>
+    </div>
+
+    <h2>Trade Journal Template</h2>
+    <div class="card">
+      <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; line-height: 2;">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 4px 16px;">
+          <span style="color: var(--cyan); font-weight: 600;">Date</span><span style="color: var(--text-dim);">YYYY-MM-DD HH:MM</span>
+          <span style="color: var(--cyan); font-weight: 600;">Symbol</span><span style="color: var(--text-dim);">BTC/USD</span>
+          <span style="color: var(--cyan); font-weight: 600;">Timeframe</span><span style="color: var(--text-dim);">1H / 4H / Daily</span>
+          <span style="color: var(--cyan); font-weight: 600;">Setup Type</span><span style="color: var(--text-dim);">Trendline Break / MFI+MACD / etc.</span>
+          <span style="color: var(--cyan); font-weight: 600;">Direction</span><span style="color: var(--text-dim);">Long / Short</span>
+          <span style="color: var(--cyan); font-weight: 600;">Entry</span><span style="color: var(--text-dim);">$XX,XXX.XX</span>
+          <span style="color: var(--cyan); font-weight: 600;">Stop Loss</span><span style="color: var(--text-dim);">$XX,XXX.XX</span>
+          <span style="color: var(--cyan); font-weight: 600;">Take Profit</span><span style="color: var(--text-dim);">$XX,XXX.XX</span>
+          <span style="color: var(--cyan); font-weight: 600;">R/R Ratio</span><span style="color: var(--text-dim);">X.X : 1</span>
+          <span style="color: var(--cyan); font-weight: 600;">Position Size</span><span style="color: var(--text-dim);">X% of account</span>
+          <span style="color: var(--cyan); font-weight: 600;">Setup Notes</span><span style="color: var(--text-dim);">Why did you take this trade?</span>
+          <span style="color: var(--cyan); font-weight: 600;">Outcome</span><span style="color: var(--text-dim);">Win / Loss / Break-even</span>
+          <span style="color: var(--cyan); font-weight: 600;">Lessons</span><span style="color: var(--text-dim);">What did you learn?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateCourse('dashboard')">&larr; Back to Dashboard</button>
+    </div>
+  `;
+}
+
+function renderAlerts() {
+  return `
+    <div class="course-page-header">
+      <h1>Trading Alerts &amp; Signals</h1>
+      <p class="subtitle">Professional alert setups for TradingView</p>
+    </div>
+
+    <div class="card" style="border: 2px solid var(--purple); margin-bottom: 24px; position: relative; overflow: hidden;">
+      <div style="position: absolute; top: 12px; right: 12px; background: var(--purple); color: #000; padding: 2px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;">COMING SOON</div>
+      <h3 style="color: var(--purple);">VIP Discord Community</h3>
+      <div class="course-grid" style="margin: 16px 0;">
+        <div class="course-card" style="border-color: var(--purple);">
+          <div class="card-icon" style="color: var(--purple);">&#128227;</div>
+          <div class="card-title">Live Trade Alerts</div>
+          <div class="card-desc">Real-time entry and exit signals</div>
+        </div>
+        <div class="course-card" style="border-color: var(--purple);">
+          <div class="card-icon" style="color: var(--purple);">&#128200;</div>
+          <div class="card-title">Market Analysis</div>
+          <div class="card-desc">Daily and weekly market breakdowns</div>
+        </div>
+        <div class="course-card" style="border-color: var(--purple);">
+          <div class="card-icon" style="color: var(--purple);">&#128172;</div>
+          <div class="card-title">Strategy Discussions</div>
+          <div class="card-desc">Share and refine trading strategies</div>
+        </div>
+        <div class="course-card" style="border-color: var(--purple);">
+          <div class="card-icon" style="color: var(--purple);">&#127942;</div>
+          <div class="card-title">Elite Community</div>
+          <div class="card-desc">Network with serious traders</div>
+        </div>
+      </div>
+      <div style="text-align: center; padding: 16px; background: var(--bg2); border-radius: 8px;">
+        <p style="color: var(--purple); font-weight: 600; margin-bottom: 4px;">Premium Access Required</p>
+        <p style="color: var(--text-dim); font-size: 0.9rem;">Upgrade to Premium (Coming Soon)</p>
+      </div>
+    </div>
+
+    <h2>Free TradingView Alert Setups</h2>
+
+    <h3>MFI + MACD Strategy Alerts</h3>
+    <div class="course-grid">
+      <div class="card">
+        <h4 style="color: var(--cyan);">HTF Bias Change (Weekly/Daily)</h4>
+        <p style="color: var(--text-dim); margin: 8px 0;">Switch to 1W timeframe, add MFI + MACD indicators. Set alert when MACD Histogram crosses zero line.</p>
+        <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; color: var(--green); margin-top: 8px; white-space: pre-wrap;">Alert Message:
+"WEEKLY BIAS CHANGE: MACD histogram crossed zero.
+Direction: {{strategy.order.action}}
+Price: {{close}}
+Check MFI confirmation before acting."</div>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--cyan);">16H/6H Alignment Signal</h4>
+        <p style="color: var(--text-dim); margin: 8px 0;">Set chart to 16H timeframe, add MFI + MACD. Alert when MACD crosses above signal line AND MFI is above 50.</p>
+        <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; color: var(--green); margin-top: 8px; white-space: pre-wrap;">Alert Message:
+"16H ALIGNMENT: MACD crossed above signal.
+MFI confirms bullish (>50).
+Move to 1H for entry timing."</div>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--cyan);">1H Entry Trigger</h4>
+        <p style="color: var(--text-dim); margin: 8px 0;">Set chart to 1H timeframe, add Stoch RSI. Alert when K line crosses above D line.</p>
+        <div class="info-box warning" style="margin-top: 8px;">
+          <p>Always confirm HTF bias is aligned before taking the entry signal.</p>
+        </div>
+        <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; color: var(--green); margin-top: 8px; white-space: pre-wrap;">Alert Message:
+"1H ENTRY: Stoch RSI K crossed above D.
+Price: {{close}}
+Confirm 16H/6H bias before entering."</div>
+      </div>
+    </div>
+
+    <h3>Trendline Breakout Alerts</h3>
+    <div class="card" style="margin-bottom: 16px;">
+      <h4 style="color: var(--cyan);">Trendline Break Alert</h4>
+      <p style="color: var(--text-dim); margin: 8px 0;">Draw trendlines on your chart, right-click the trendline and select "Add Alert". Configure the crossing condition.</p>
+      <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; color: var(--green); margin-top: 8px; white-space: pre-wrap;">Alert Message:
+"TRENDLINE BREAK: Price crossed trendline.
+Price: {{close}}
+Check volume + RSI for confirmation."</div>
+      <div class="info-box warning" style="margin-top: 12px;">
+        <p>Always confirm breakouts with volume expansion and RSI momentum before entering a trade.</p>
+      </div>
+    </div>
+
+    <h2>Alert Management Best Practices</h2>
+    <div class="course-grid">
+      <div class="course-card">
+        <div class="card-icon">&#128241;</div>
+        <div class="card-title">Mobile Notifications</div>
+        <div class="card-desc">Enable the TradingView mobile app for instant push notifications on all alerts</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128264;</div>
+        <div class="card-title">Custom Sounds</div>
+        <div class="card-desc">Use different alert sounds for different strategies so you know what triggered</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128231;</div>
+        <div class="card-title">Email Backup</div>
+        <div class="card-desc">Set up email notifications as a backup in case you miss a push notification</div>
+      </div>
+      <div class="course-card">
+        <div class="card-icon">&#128465;</div>
+        <div class="card-title">Regular Cleanup</div>
+        <div class="card-desc">Review and delete old or expired alerts weekly to keep your alert list clean</div>
+      </div>
+    </div>
+
+    <h2>Webhook Integration</h2>
+    <div class="info-box tip">
+      <h4 style="margin-bottom: 8px;">Automate Your Alerts</h4>
+      <p style="margin-bottom: 12px;">Connect TradingView alerts to external services via webhooks for automated workflows.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+        <span style="background: var(--bg2); padding: 4px 12px; border-radius: 8px; color: var(--cyan); font-weight: 600;">Discord Bots</span>
+        <span style="background: var(--bg2); padding: 4px 12px; border-radius: 8px; color: var(--cyan); font-weight: 600;">Telegram</span>
+        <span style="background: var(--bg2); padding: 4px 12px; border-radius: 8px; color: var(--cyan); font-weight: 600;">Slack</span>
+        <span style="background: var(--bg2); padding: 4px 12px; border-radius: 8px; color: var(--cyan); font-weight: 600;">Custom APIs</span>
+      </div>
+      <p style="color: var(--text-dim); font-size: 0.9rem;"><strong>Note:</strong> Webhook functionality requires TradingView Pro+ or Premium subscription.</p>
+    </div>
+
+    <div class="step-nav">
+      <button class="step-nav-btn" onclick="navigateCourse('dashboard')">&larr; Back to Dashboard</button>
+    </div>
+  `;
+}
+
+// ── Dictionary & FAQ ──
+function renderDictionary() {
+  const DICTIONARY = [
+    // Market Structure (15 terms)
+    { term: "Support", cat: "structure", def: "Price level where buying interest consistently prevents further decline. Acts as a floor where demand exceeds supply.", example: "Bitcoin finds support at $40,000 after multiple bounces from that level.", related: ["Resistance", "Breakout", "Retest", "Demand Zone"] },
+    { term: "Resistance", cat: "structure", def: "Price level where selling pressure consistently prevents further advance. Acts as a ceiling where supply exceeds demand.", example: "Ethereum faces resistance at $3,000, failing to break through on three separate attempts.", related: ["Support", "Breakout", "Supply Zone", "Double Top"] },
+    { term: "Trend", cat: "structure", def: "The general direction of price movement over time. Uptrends consist of higher highs and higher lows; downtrends consist of lower highs and lower lows.", example: "Stock makes successive peaks at $50, $55, $60 with lows at $45, $50, $55 \u2014 a clear uptrend.", related: ["Trendline", "Support", "Resistance", "Breakout"] },
+    { term: "Breakout", cat: "structure", def: "A decisive price move beyond an established support or resistance level, typically accompanied by increased volume.", example: "Gold breaks above $1,800 resistance with 3x average volume, confirming the breakout.", related: ["Retest", "Volume", "Resistance", "Support"] },
+    { term: "Retest", cat: "structure", def: "When price returns to test a recently broken support or resistance level, confirming the breakout\u2019s validity.", example: "After breaking $50 resistance, stock pulls back to test $50 as new support before continuing higher.", related: ["Breakout", "Support", "Resistance"] },
+    { term: "Market Structure", cat: "structure", def: "The framework of swing highs and swing lows that indicates the current trend direction and potential reversals.", example: "Bullish market structure shows a series of higher highs and higher lows on the 4H chart.", related: ["Swing High/Low", "Break of Structure", "Trend"] },
+    { term: "Liquidity", cat: "structure", def: "Areas where stop-loss orders and pending orders cluster, typically at key support/resistance levels. Smart money targets these pools.", example: "Stop losses cluster below $100 support level, creating a liquidity pool that gets swept before reversal.", related: ["Inducement", "Support", "Order Block"] },
+    { term: "Fair Value Gap (FVG)", cat: "structure", def: "An imbalance created between candle wicks where price moved too quickly, leaving an area of inefficient price discovery that often gets filled.", example: "A large green candle creates a gap between $45 and $47 that price later returns to fill.", related: ["Order Block", "Liquidity", "Market Structure"] },
+    { term: "Order Block", cat: "structure", def: "A consolidation zone before a strong directional move, where institutional orders were likely placed. These zones act as future support/resistance.", example: "Price consolidates between $95-$98 before breaking sharply higher; the zone becomes future support.", related: ["Fair Value Gap (FVG)", "Support", "Resistance", "Liquidity"] },
+    { term: "Break of Structure (BOS)", cat: "structure", def: "Occurs when price breaks a significant swing high or swing low, signaling a potential change or continuation of trend.", example: "Price breaks above the previous swing high at $120, confirming bullish break of structure.", related: ["Market Structure", "Swing High/Low", "Trend"] },
+    { term: "Inducement", cat: "structure", def: "A price move designed to trigger stop losses and trap retail traders before the real move occurs in the opposite direction.", example: "Price briefly breaks below support to trigger stops, then reverses sharply higher \u2014 a classic inducement.", related: ["Liquidity", "Stop Loss", "Market Structure"] },
+    { term: "Premium/Discount", cat: "structure", def: "Price levels relative to a defined range. Premium zones (upper half) are ideal for selling; discount zones (lower half) are ideal for buying.", example: "In a $90-$110 range, buying below $95 (discount) and selling above $105 (premium) improves edge.", related: ["Support", "Resistance", "Fair Value Gap (FVG)"] },
+    { term: "Swing High/Low", cat: "structure", def: "Local peaks (swing highs) and troughs (swing lows) in price action that define the market structure and trend direction.", example: "Swing high at $150 becomes key resistance; swing low at $130 becomes key support.", related: ["Market Structure", "Trend", "Break of Structure (BOS)"] },
+    { term: "Trendline", cat: "structure", def: "A line connecting two or more price points that shows the direction and speed of a trend. Acts as dynamic support or resistance.", example: "Uptrend line connects rising lows at $40, $45, and $50, providing dynamic support.", related: ["Trend", "Support", "Resistance", "Channel"] },
+    { term: "Channel", cat: "structure", def: "Two parallel trendlines containing price action, creating a trading range. Can be ascending, descending, or horizontal.", example: "Stock trades within an ascending channel between $95 support trendline and $105 resistance trendline.", related: ["Trendline", "Support", "Resistance", "Trend"] },
+
+    // Indicators (12 terms)
+    { term: "EMA", cat: "indicators", def: "Exponential Moving Average gives more weight to recent prices than a simple MA, making it more responsive to new information.", example: "The 21 EMA sits at $100 with price trading above it, suggesting bullish short-term momentum.", related: ["Golden Cross", "Death Cross", "VWAP"] },
+    { term: "RSI", cat: "indicators", def: "Relative Strength Index measures momentum on a 0-100 scale. Above 70 is considered overbought; below 30 is oversold.", example: "RSI reads 78 on the daily chart, suggesting the asset is overbought and may pull back.", related: ["Stochastic RSI", "Divergence", "MACD"] },
+    { term: "MACD", cat: "indicators", def: "Moving Average Convergence Divergence shows the relationship between two moving averages through a signal line and histogram.", example: "MACD histogram crosses above zero, confirming bullish momentum shift.", related: ["EMA", "Divergence", "RSI"] },
+    { term: "Stochastic RSI", cat: "indicators", def: "A stochastic oscillator applied to RSI values, providing a more sensitive momentum indicator that oscillates between 0 and 1.", example: "Stochastic RSI crossing above 20 from oversold territory signals a potential bullish reversal.", related: ["RSI", "Divergence", "MACD"] },
+    { term: "MFI", cat: "indicators", def: "Money Flow Index is a volume-weighted RSI that measures buying and selling pressure using both price and volume data.", example: "MFI reading green and rising above 50 indicates increasing buying pressure in the market.", related: ["RSI", "Volume", "VWAP"] },
+    { term: "Volume", cat: "indicators", def: "The number of shares or contracts traded in a given period. Confirms price movements and signals strength of trends.", example: "Breakout accompanied by 3x average volume is significantly more reliable than one on low volume.", related: ["MFI", "VWAP", "Breakout", "Liquidity"] },
+    { term: "Bollinger Bands", cat: "indicators", def: "Volatility bands placed above and below a moving average, typically 2 standard deviations. Bands widen with volatility.", example: "Price touching the upper Bollinger Band while RSI is overbought may indicate a reversal.", related: ["ATR", "EMA", "RSI"] },
+    { term: "ATR", cat: "indicators", def: "Average True Range measures market volatility by calculating the average range between high and low prices over a period.", example: "Stock with a 2% ATR suggests placing stops at least 2-3% away to avoid noise.", related: ["Bollinger Bands", "Stop Loss", "Position Size"] },
+    { term: "VWAP", cat: "indicators", def: "Volume Weighted Average Price represents the average price weighted by volume throughout the trading session.", example: "Price trading above VWAP suggests bullish intraday sentiment; institutional buyers are active.", related: ["EMA", "Volume", "MFI"] },
+    { term: "Divergence", cat: "indicators", def: "When price and an indicator move in opposite directions, signaling potential trend exhaustion or reversal.", example: "Price makes a higher high while RSI makes a lower high \u2014 bearish divergence warns of potential reversal.", related: ["RSI", "MACD", "Stochastic RSI"] },
+    { term: "Golden Cross", cat: "indicators", def: "A bullish signal when a short-term moving average crosses above a long-term moving average, suggesting upward momentum.", example: "The 50 EMA crosses above the 200 EMA on the daily chart, triggering a golden cross buy signal.", related: ["Death Cross", "EMA", "Trend"] },
+    { term: "Death Cross", cat: "indicators", def: "A bearish signal when a short-term moving average crosses below a long-term moving average, suggesting downward momentum.", example: "The 50 EMA crosses below the 200 EMA, triggering a death cross and confirming the downtrend.", related: ["Golden Cross", "EMA", "Trend"] },
+
+    // Patterns (8 terms)
+    { term: "Double Top", cat: "patterns", def: "A bearish reversal pattern with two peaks at similar price levels, indicating resistance and potential trend change.", example: "Stock reaches $60 twice but fails to break higher, then drops below $55 neckline support.", related: ["Double Bottom", "Resistance", "Head and Shoulders"] },
+    { term: "Double Bottom", cat: "patterns", def: "A bullish reversal pattern with two troughs at similar price levels, indicating support and potential trend change.", example: "Crypto finds support at $30,000 twice, forming a W-shape, then breaks above $35,000 neckline.", related: ["Double Top", "Support", "Cup and Handle"] },
+    { term: "Head and Shoulders", cat: "patterns", def: "A bearish reversal pattern with three peaks where the middle peak (head) is highest. The pattern completes when price breaks the neckline.", example: "Left shoulder at $55, head at $60, right shoulder at $55 \u2014 pattern completes when price breaks below neckline.", related: ["Double Top", "Resistance", "Break of Structure (BOS)"] },
+    { term: "Ascending Triangle", cat: "patterns", def: "A bullish continuation pattern with horizontal resistance and rising support, showing buyers becoming more aggressive.", example: "Price consolidates between flat $50 resistance and a rising support line from $42 to $48.", related: ["Descending Triangle", "Breakout", "Flag Pattern"] },
+    { term: "Descending Triangle", cat: "patterns", def: "A bearish continuation pattern with horizontal support and declining resistance, showing sellers becoming more aggressive.", example: "Price consolidates between flat $40 support and declining resistance from $48 to $43.", related: ["Ascending Triangle", "Breakout", "Flag Pattern"] },
+    { term: "Flag Pattern", cat: "patterns", def: "A rectangular consolidation pattern after a strong directional move (the flagpole), typically a continuation signal.", example: "After a 20% rally, price consolidates in a narrow downward-sloping range before continuing higher.", related: ["Ascending Triangle", "Wedge", "Breakout"] },
+    { term: "Cup and Handle", cat: "patterns", def: "A bullish continuation pattern forming a rounded bottom (cup) followed by a small pullback (handle) before breakout.", example: "Stock forms a rounded bottom from $80 to $65 to $80 (cup), then pulls back to $76 (handle) before breaking out.", related: ["Double Bottom", "Breakout", "Flag Pattern"] },
+    { term: "Wedge", cat: "patterns", def: "A pattern with converging trendlines. Rising wedges are bearish; falling wedges are bullish. Shows diminishing momentum.", example: "Rising wedge with higher highs and higher lows converging shows weakening bullish momentum before breakdown.", related: ["Flag Pattern", "Trendline", "Divergence"] },
+
+    // Risk Management (8 terms)
+    { term: "Stop Loss", cat: "risk", def: "A predetermined price level where a losing position is automatically closed to limit losses. Essential for capital preservation.", example: "Buy at $100 with stop loss at $95, limiting maximum loss to 5% of position value.", related: ["Take Profit", "Risk-Reward Ratio", "Position Size"] },
+    { term: "Take Profit", cat: "risk", def: "A predetermined price level where a winning position is automatically closed to secure gains before potential reversal.", example: "Buy at $100 with take profit at $120, automatically securing a 20% gain.", related: ["Stop Loss", "Risk-Reward Ratio", "Trailing Stop"] },
+    { term: "Risk-Reward Ratio", cat: "risk", def: "The ratio comparing potential loss to potential gain on a trade. Higher ratios allow profitability with lower win rates.", example: "Risking $100 to potentially make $200 gives a 1:2 risk-reward ratio \u2014 only need 40% win rate.", related: ["Stop Loss", "Take Profit", "Position Size"] },
+    { term: "Position Size", cat: "risk", def: "The amount of capital allocated to a single trade, calculated based on account size and risk tolerance per trade.", example: "$10,000 account risking 2% per trade = $200 maximum loss, determining how many shares to buy.", related: ["Risk-Reward Ratio", "Leverage", "Stop Loss", "Drawdown"] },
+    { term: "Drawdown", cat: "risk", def: "The peak-to-trough decline in account value, measuring the largest loss from a high point before recovery.", example: "Account drops from $10,000 peak to $8,500 trough = 15% maximum drawdown.", related: ["Position Size", "Risk-Reward Ratio", "Sharpe Ratio"] },
+    { term: "Leverage", cat: "risk", def: "Using borrowed capital to amplify position size beyond account balance. Amplifies both gains and losses equally.", example: "2:1 leverage with $1,000 capital allows controlling a $2,000 position \u2014 gains and losses are doubled.", related: ["Position Size", "Drawdown", "Stop Loss"] },
+    { term: "Sharpe Ratio", cat: "risk", def: "A risk-adjusted return metric comparing excess returns to volatility. Higher values indicate better risk-adjusted performance.", example: "A strategy with 15% annual return and 10% volatility has a Sharpe Ratio of 1.5 \u2014 considered good.", related: ["Drawdown", "Risk-Reward Ratio", "ATR"] },
+    { term: "Maximum Adverse Excursion (MAE)", cat: "risk", def: "The largest unrealized loss experienced during a winning trade. Helps optimize stop placement by analyzing historical drawdowns.", example: "Winning trade bought at $100 dropped to $95 before reaching $115 profit target = $5 MAE.", related: ["Stop Loss", "Drawdown", "Position Size"] },
+
+    // Orders & Execution (7 terms)
+    { term: "Market Order", cat: "orders", def: "An order to buy or sell immediately at the best available current price. Guarantees execution but not price.", example: "Market buy order for 100 shares executes instantly at current ask price of $50.25.", related: ["Limit Order", "Slippage", "Bid-Ask Spread"] },
+    { term: "Limit Order", cat: "orders", def: "An order to buy or sell at a specific price or better. Guarantees price but not execution.", example: "Limit buy at $49.50 only executes if price drops to $49.50 or lower \u2014 may not fill.", related: ["Market Order", "Stop Order", "Fill or Kill"] },
+    { term: "Stop Order", cat: "orders", def: "An order that becomes a market order once the stop price is reached. Used to limit losses or enter on breakouts.", example: "Stop sell at $95 becomes a market order when price drops to $95, protecting against further decline.", related: ["Stop Loss", "Market Order", "Limit Order"] },
+    { term: "OCO (One Cancels Other)", cat: "orders", def: "A pair of linked orders where execution of one automatically cancels the other. Commonly used for TP and SL.", example: "Buy at $100 with OCO: take profit at $110 and stop loss at $95 \u2014 whichever hits first cancels the other.", related: ["Stop Loss", "Take Profit", "Limit Order"] },
+    { term: "Slippage", cat: "orders", def: "The difference between the expected execution price and the actual fill price, common during high volatility or low liquidity.", example: "Expected to buy at $100.00 but order fills at $100.15 = $0.15 negative slippage.", related: ["Market Order", "Bid-Ask Spread", "Liquidity"] },
+    { term: "Bid-Ask Spread", cat: "orders", def: "The difference between the highest price a buyer will pay (bid) and the lowest price a seller will accept (ask).", example: "Bid at $99.95 and ask at $100.05 = $0.10 spread. Tighter spreads indicate better liquidity.", related: ["Slippage", "Liquidity", "Market Order"] },
+    { term: "Fill or Kill", cat: "orders", def: "An order that must be executed immediately in its entirety or cancelled completely. No partial fills allowed.", example: "Fill or Kill order for 1,000 shares at $50 \u2014 either all 1,000 fill instantly or the entire order is cancelled.", related: ["Market Order", "Limit Order", "OCO (One Cancels Other)"] },
+
+    // Psychology (8 terms)
+    { term: "FOMO", cat: "psychology", def: "Fear Of Missing Out \u2014 the emotional urge to enter trades impulsively because of rapid price movement, often leading to buying tops.", example: "Chasing a stock after a 50% rally because you fear missing more upside, entering at the peak.", related: ["Revenge Trading", "Overconfidence", "Recency Bias"] },
+    { term: "Revenge Trading", cat: "psychology", def: "Making aggressive, poorly planned trades in an attempt to quickly recover from losses, usually leading to larger losses.", example: "After a $500 loss, immediately doubling position size on the next trade to try to 'get even.'", related: ["FOMO", "Loss Aversion", "Overconfidence"] },
+    { term: "Confirmation Bias", cat: "psychology", def: "The tendency to seek out information that confirms existing beliefs while ignoring contradictory evidence.", example: "Only reading bullish analysis and ignoring bearish signals while holding a long position.", related: ["Anchoring Bias", "Overconfidence", "Analysis Paralysis"] },
+    { term: "Overconfidence", cat: "psychology", def: "Excessive confidence in trading abilities, especially after a winning streak, leading to oversized positions and ignored risk.", example: "After 5 consecutive wins, increasing position size by 3x without proper risk management.", related: ["FOMO", "Revenge Trading", "Position Size"] },
+    { term: "Analysis Paralysis", cat: "psychology", def: "Overthinking and over-analyzing to the point of being unable to make a trading decision, missing valid opportunities.", example: "Spending hours analyzing every indicator and timeframe but never executing the trade.", related: ["Confirmation Bias", "FOMO", "Recency Bias"] },
+    { term: "Anchoring Bias", cat: "psychology", def: "Over-relying on the first piece of information encountered when making decisions, even when it is no longer relevant.", example: "Fixating on a stock's 52-week high of $200 and refusing to sell at $180 because it 'should' return.", related: ["Confirmation Bias", "Loss Aversion", "Recency Bias"] },
+    { term: "Loss Aversion", cat: "psychology", def: "The psychological tendency to prefer avoiding losses over acquiring equivalent gains, leading to holding losers too long.", example: "Holding a losing position for weeks hoping to break even while cutting winning trades after small gains.", related: ["Revenge Trading", "Anchoring Bias", "Stop Loss"] },
+    { term: "Recency Bias", cat: "psychology", def: "Giving disproportionate weight to recent events while undervaluing historical patterns and long-term data.", example: "After three consecutive losing trades, assuming the next valid setup will also lose and skipping it.", related: ["FOMO", "Confirmation Bias", "Overconfidence"] }
+  ];
+
+  const catColors = {
+    structure: 'var(--blue)',
+    indicators: 'var(--cyan)',
+    patterns: 'var(--purple)',
+    risk: 'var(--red)',
+    orders: 'var(--yellow)',
+    psychology: 'var(--green)'
+  };
+
+  const catLabels = {
+    structure: 'Market Structure',
+    indicators: 'Indicators',
+    patterns: 'Patterns',
+    risk: 'Risk Management',
+    orders: 'Orders & Execution',
+    psychology: 'Psychology'
+  };
+
+  const catCounts = {};
+  DICTIONARY.forEach(d => { catCounts[d.cat] = (catCounts[d.cat] || 0) + 1; });
+
+  const advancedTerms = ['Fair Value Gap (FVG)', 'Order Block', 'Break of Structure (BOS)', 'Inducement', 'Premium/Discount', 'Maximum Adverse Excursion (MAE)', 'Sharpe Ratio', 'Divergence', 'Stochastic RSI', 'Fill or Kill'];
+
+  window._dictionaryData = DICTIONARY;
+  window._catColors = catColors;
+  window._catLabels = catLabels;
+
+  let html = `
+    <div class="course-page-header">
+      <h1>Trading Dictionary</h1>
+      <p class="subtitle">Your comprehensive reference for all trading terminology</p>
+    </div>
+
+    <div style="margin-bottom:24px;">
+      <input type="text" id="dict-search" oninput="filterDictionary()" placeholder="Search terms, definitions, examples..."
+        style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:15px;outline:none;">
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;" id="dict-cat-filters">
+      <button onclick="filterDictCat('all')" class="cat-filter-btn active" data-cat="all"
+        style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--cyan);color:var(--bg);cursor:pointer;font-weight:600;font-size:13px;">All Terms</button>
+      <button onclick="filterDictCat('structure')" class="cat-filter-btn" data-cat="structure"
+        style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:13px;">Market Structure</button>
+      <button onclick="filterDictCat('indicators')" class="cat-filter-btn" data-cat="indicators"
+        style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:13px;">Indicators</button>
+      <button onclick="filterDictCat('patterns')" class="cat-filter-btn" data-cat="patterns"
+        style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:13px;">Patterns</button>
+      <button onclick="filterDictCat('risk')" class="cat-filter-btn" data-cat="risk"
+        style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:13px;">Risk Management</button>
+      <button onclick="filterDictCat('orders')" class="cat-filter-btn" data-cat="orders"
+        style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:13px;">Orders & Execution</button>
+      <button onclick="filterDictCat('psychology')" class="cat-filter-btn" data-cat="psychology"
+        style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:13px;">Psychology</button>
+    </div>
+
+    <div class="metric-row" style="margin-bottom:24px;">
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--cyan)">${DICTIONARY.length}</div>
+        <div class="metric-label">Total Terms</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--purple)">${Object.keys(catCounts).length}</div>
+        <div class="metric-label">Categories</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--green)">${DICTIONARY.length}</div>
+        <div class="metric-label">With Examples</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" style="color:var(--yellow)">${advancedTerms.length}</div>
+        <div class="metric-label">Advanced Terms</div>
+      </div>
+    </div>
+
+    <div id="dict-count" style="margin-bottom:16px;color:var(--text-dim);font-size:14px;">Showing all ${DICTIONARY.length} terms</div>
+
+    <div class="dict-grid" id="dict-grid">
+  `;
+
+  DICTIONARY.forEach((item, idx) => {
+    const color = catColors[item.cat] || 'var(--text-dim)';
+    const label = catLabels[item.cat] || item.cat;
+    const relatedHtml = (item.related || []).map(r => `<span class="related">${r}</span>`).join(' ');
+    const isAdvanced = advancedTerms.includes(item.term);
+
+    html += `
+      <div class="dict-card" data-cat="${item.cat}" data-term="${item.term.toLowerCase()}" data-def="${item.def.toLowerCase()}">
+        <div class="term">${item.term}${isAdvanced ? ' <span style="font-size:10px;color:var(--yellow);vertical-align:super;">ADV</span>' : ''}</div>
+        <span class="cat-badge" style="background:${color}22;color:${color};border:1px solid ${color}44;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">${label}</span>
+        <div class="def" style="margin-top:10px;">${item.def}</div>
+        <div class="example" style="margin-top:8px;font-style:italic;color:var(--text-dim);font-size:13px;">Example: ${item.example}</div>
+        ${relatedHtml ? `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px;">${relatedHtml}</div>` : ''}
+      </div>
+    `;
+  });
+
+  html += `
+    </div>
+
+    <div style="text-align:center;margin-top:32px;">
+      <button onclick="navigateCourse('dashboard')" style="padding:10px 24px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:14px;">&larr; Back to Dashboard</button>
+    </div>
+  `;
+
+  return html;
+}
+
+function filterDictionary() {
+  const query = document.getElementById('dict-search').value.toLowerCase().trim();
+  const cards = document.querySelectorAll('#dict-grid .dict-card');
+  let visible = 0;
+
+  cards.forEach(card => {
+    const term = card.getAttribute('data-term');
+    const def = card.getAttribute('data-def');
+    const match = !query || term.includes(query) || def.includes(query);
+    card.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+
+  const countEl = document.getElementById('dict-count');
+  if (countEl) {
+    countEl.textContent = query ? `Showing ${visible} of ${document.querySelectorAll('#dict-grid .dict-card').length} terms` : `Showing all ${document.querySelectorAll('#dict-grid .dict-card').length} terms`;
+  }
+}
+
+function filterDictCat(cat) {
+  const buttons = document.querySelectorAll('#dict-cat-filters .cat-filter-btn');
+  buttons.forEach(btn => {
+    const isActive = btn.getAttribute('data-cat') === cat;
+    btn.classList.toggle('active', isActive);
+    if (isActive) {
+      btn.style.background = 'var(--cyan)';
+      btn.style.color = 'var(--bg)';
+      btn.style.fontWeight = '600';
+    } else {
+      btn.style.background = 'var(--card)';
+      btn.style.color = 'var(--text)';
+      btn.style.fontWeight = 'normal';
+    }
+  });
+
+  const cards = document.querySelectorAll('#dict-grid .dict-card');
+  let visible = 0;
+
+  cards.forEach(card => {
+    const cardCat = card.getAttribute('data-cat');
+    const match = cat === 'all' || cardCat === cat;
+    card.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+
+  const countEl = document.getElementById('dict-count');
+  if (countEl) {
+    const total = document.querySelectorAll('#dict-grid .dict-card').length;
+    countEl.textContent = cat === 'all' ? `Showing all ${total} terms` : `Showing ${visible} of ${total} terms`;
+  }
+
+  // Clear search when changing category
+  const searchEl = document.getElementById('dict-search');
+  if (searchEl) searchEl.value = '';
+}
+
+
+function renderFaq() {
+  const faqs = [
+    {
+      q: "Signals conflict (e.g., HTF up, 1h dot appears during chop)",
+      a: "Stay out. Always require 16H and 6H MFI+MACD alignment before acting on 1H signals. Higher timeframe takes priority \u2014 if the 6H or 16H is not confirming, the 1H signal is unreliable. Wait for multi-timeframe confluence before entering any position."
+    },
+    {
+      q: "False VuManChu dots / Indicator signals",
+      a: "Wait for candle close confirmation before acting on any signal. Require HTF + 16H/6H confirmations to validate the signal. Avoid trading during low-volume hours when false signals are most common. Always use volume as a confirmation filter \u2014 signals without volume support are unreliable."
+    },
+    {
+      q: "Trading in choppy ranges",
+      a: "Trade less frequently. Use the trendline strategy sparingly in ranges \u2014 it performs best in trending markets. Widen your filters by requiring stronger HTF bias and higher MFI thresholds. Focus on support and resistance bounces instead of breakout strategies during chop."
+    },
+    {
+      q: "How do I know if a trendline is valid?",
+      a: "A valid trendline needs at least 3 touch points with clear rejection wicks at each touch. The angle should be consistent \u2014 not too steep (unsustainable) or too flat (weak trend). Confirm across multiple timeframes and always draw trendlines on higher timeframes first, then validate on lower ones."
+    },
+    {
+      q: "What's the best risk/reward ratio?",
+      a: "Minimum 1:2 is recommended for most setups. A 1:1 ratio is only acceptable for setups with 80%+ historical win rate. At 1:2, you only need a 50%+ win rate to be profitable. For swing trades, aim for 1:3 or higher \u2014 this allows profitability even with a 40-50% win rate."
+    },
+    {
+      q: "What are the best trading hours for BTC?",
+      a: "Best hours: 8AM-12PM EST (European and US session overlap with highest volume), 9:30AM-4PM EST (US market hours, strong correlation moves), and 6PM-10PM EST (Asian session overlap). Avoid late Friday through early Monday (weekend gaps) and 2AM-6AM EST (lowest liquidity period)."
+    },
+    {
+      q: "How much should I risk per trade?",
+      a: "Conservative approach: 1-2% of account per trade. For accounts $1k-$10k: risk 1% maximum. For $10k-$50k: 1-2%. For $50k+: 0.5-1.5%. Never risk more than 6% of your account in a single day across all open positions. Reduce size during losing streaks."
+    },
+    {
+      q: "When should I move my stop loss?",
+      a: "Never move your stop against your position (further from entry). Move to breakeven after TP1 is hit. Trail using previous swing highs/lows or moving averages as dynamic levels. Use time-based stops: if a trade shows no progress in 24-48 hours, consider closing or tightening the stop."
+    },
+    {
+      q: "Should I use leverage?",
+      a: "Beginners: No leverage for the first 6 months \u2014 learn risk management with spot first. Intermediate traders: 2-3x maximum with tight stops and proven risk management. Advanced: Up to 5x only on highest conviction setups. Remember that leverage amplifies both gains AND losses equally."
+    },
+    {
+      q: "My indicators aren't showing the same signals",
+      a: "Check that your timeframes are synced across all charts. Verify you are using the exact indicator settings from the course templates. Always wait for candle close before reading signals \u2014 mid-candle readings change. Slight variations between exchanges are normal due to data feed differences."
+    },
+    {
+      q: "How often should I review performance?",
+      a: "Daily: Review open positions and current P&L. Weekly: Detailed analysis including win rate, average R-multiples, and best/worst trades. Monthly: Full strategy review \u2014 identify what patterns are working and what needs adjustment. Quarterly: Make major strategy adjustments based on accumulated data."
+    },
+    {
+      q: "How long before I become profitable?",
+      a: "Months 1-3: Learning phase, practice on demo accounts only. Months 4-6: Small live positions, focus on consistency over profit. Months 7-12: Developing your edge, refining strategy. Year 2+: Consistent profitability becomes achievable. Remember that 80% of traders lose money initially. Focus on education, risk management, and patience."
+    }
+  ];
+
+  let html = `
+    <div class="course-page-header">
+      <h1>FAQ & Troubleshooting</h1>
+      <p class="subtitle">Common questions and solutions for trading strategies, indicators, and platform usage</p>
+    </div>
+
+    <div style="margin-bottom:32px;">
+  `;
+
+  faqs.forEach((faq, idx) => {
+    html += `
+      <div class="faq-item" id="faq-item-${idx}" onclick="toggleFaq(${idx})">
+        <div class="faq-q">
+          <span>${faq.q}</span>
+          <span class="faq-arrow">&#9660;</span>
+        </div>
+        <div class="faq-a">${faq.a}</div>
+      </div>
+    `;
+  });
+
+  html += `
+    </div>
+
+    <div class="card" style="text-align:center;padding:32px;">
+      <h3 style="margin-bottom:12px;color:var(--text);">Still have questions?</h3>
+      <p style="color:var(--text-dim);margin-bottom:20px;">Explore more resources to deepen your understanding.</p>
+      <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+        <button onclick="navigateCourse('dictionary')" style="padding:10px 20px;border-radius:8px;border:1px solid var(--cyan);background:var(--cyan)22;color:var(--cyan);cursor:pointer;font-size:14px;font-weight:600;">Trading Dictionary</button>
+        <button onclick="navigateCourse('bull-market')" style="padding:10px 20px;border-radius:8px;border:1px solid var(--green);background:var(--green)22;color:var(--green);cursor:pointer;font-size:14px;font-weight:600;">Bull Market Guide</button>
+        <button onclick="navigateCourse('dashboard')" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:14px;">Back to Dashboard</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;">
+      <button onclick="navigateCourse('dashboard')" style="padding:10px 24px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;font-size:14px;">&larr; Back to Dashboard</button>
+    </div>
+  `;
+
+  return html;
+}
+
+function toggleFaq(idx) {
+  const item = document.getElementById('faq-item-' + idx);
+  if (item) {
+    item.classList.toggle('open');
+  }
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════ */
 /* TOAST NOTIFICATION SYSTEM                                          */
