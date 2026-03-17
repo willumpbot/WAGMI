@@ -566,14 +566,23 @@ tr:hover td { background: rgba(255,255,255,0.015); }
 
 /* Responsive overrides */
 @media(max-width:900px) {
-  .course-sidebar { display:none; }
+  .course-sidebar { display:none; position:fixed; top:52px; left:0; z-index:50; height:calc(100vh - 52px); box-shadow:0 4px 20px rgba(0,0,0,0.4); overflow-y:auto; }
+  .course-sidebar.sidebar-open { display:block; }
+  .course-sidebar-toggle { display:block !important; }
   .course-main { max-width:100%; padding:16px; }
   .course-layout { margin:-14px -12px; }
+  .chart-container.large { height:320px; }
 }
 @media(max-width:600px) {
   .metric-row { flex-direction:column; }
   .calc-row { flex-direction:column; }
   .dict-grid { grid-template-columns:1fr; }
+  .chart-container.large { height:200px; }
+  .chart-container.medium { height:160px; }
+  .scroll-y { max-height:250px; }
+  table { font-size:10px; }
+  th, td { padding:4px 6px; }
+  .card { padding:12px; }
 }
 
 /* ── Toast Notifications ── */
@@ -747,6 +756,15 @@ tr.pos-row:hover { background:var(--card-hover); }
     <div class="quick-stat"><span class="quick-stat-label">Signals Today:</span><span class="quick-stat-value" id="qs-signals-today">--</span></div>
   </div>
 
+  <!-- Getting Started Hint (auto-hides once trades appear) -->
+  <div id="first-load-hint" class="card" style="border-left:3px solid var(--blue);margin-bottom:16px;display:none;">
+    <div style="font-size:12px;color:var(--text-dim);">
+      <strong style="color:var(--blue);">Getting Started</strong> &mdash;
+      Metrics populate as the bot executes trades. Signals and regime data appear within the first scan cycle (~1-2 min).
+      Quick stats require at least one closed trade.
+    </div>
+  </div>
+
   <!-- Live Positions Hero -->
   <div class="full-width">
     <div class="card-hero" style="animation: glow-pulse 3s ease infinite;">
@@ -792,6 +810,26 @@ tr.pos-row:hover { background:var(--card-hover); }
           <tbody id="rejections-body-mini"><tr><td colspan="4" class="empty">No rejections</td></tr></tbody>
         </table>
       </div>
+    </div>
+  </div>
+
+  <!-- Strategy Performance + Paper Trading Health (2-col) -->
+  <div class="grid-2">
+    <div class="card">
+      <h3>Strategy Performance</h3>
+      <div id="overview-strategy-perf"><div class="empty" style="font-size:11px;">Strategy performance appears after trades close.</div></div>
+    </div>
+    <div class="card">
+      <h3>Paper Trading Health</h3>
+      <div id="overview-go-live-gates"><div class="empty" style="font-size:11px;">Health gates populate once the bot starts scanning.</div></div>
+    </div>
+  </div>
+
+  <!-- Top Rejection Gates (compact) -->
+  <div class="full-width">
+    <div class="card">
+      <h3>Top Rejection Gates <span style="font-size:10px;color:var(--text-dim);font-weight:400;">(why signals aren't becoming trades)</span></h3>
+      <div id="overview-rejection-audit"><div class="empty" style="font-size:11px;">No rejection data yet. Gates will show once signals are generated.</div></div>
     </div>
   </div>
 
@@ -889,7 +927,7 @@ tr.pos-row:hover { background:var(--card-hover); }
   <!-- LLM Agent Intelligence -->
   <div class="card" style="margin-bottom:16px;">
     <h3>AI Agent Intelligence</h3>
-    <div id="intel-agent-insights"><div class="empty"><div class="empty-icon">&#129302;</div>Loading agent data...<div class="empty-msg">Multi-agent insights will appear here when available</div></div></div>
+    <div id="intel-agent-insights"><div style="text-align:center;padding:16px;"><div style="font-size:18px;margin-bottom:8px;opacity:0.5;">&#129302;</div><div style="font-size:12px;font-weight:700;color:var(--text-dim);">AI Agents Offline</div><div style="font-size:11px;color:var(--muted);margin-top:4px;">Running on ensemble strategy signals. Set <code style="background:var(--bg2);padding:1px 4px;border-radius:3px;">LLM_MULTI_AGENT=true</code> in .env to enable AI agent analysis.</div></div></div>
   </div>
 
   <!-- Best Opportunities (Highest Confidence Rejections) -->
@@ -1128,6 +1166,7 @@ tr.pos-row:hover { background:var(--card-hover); }
 <!-- TAB 7: LEARN -->
 <!-- ════════════════════════════════════════════════════════════════════ -->
 <div class="tab-content" id="tab-learn">
+  <button class="course-sidebar-toggle" style="display:none;padding:8px 16px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--cyan);cursor:pointer;font-family:inherit;margin-bottom:12px;font-size:12px;" onclick="var sb=document.getElementById('course-sidebar');sb.classList.toggle('sidebar-open');">&#9776; Course Menu</button>
   <div class="course-layout">
     <!-- Sidebar Navigation -->
     <div class="course-sidebar" id="course-sidebar">
@@ -1306,6 +1345,13 @@ const EDUCATION = {
 /* ═══════════════════════════════════════════════════════════════════ */
 /* UTILITY FUNCTIONS                                                  */
 /* ═══════════════════════════════════════════════════════════════════ */
+function fetchWithTimeout(url, timeoutMs) {
+  timeoutMs = timeoutMs || 10000;
+  var controller = new AbortController();
+  var timer = setTimeout(function() { controller.abort(); }, timeoutMs);
+  return fetch(url, { signal: controller.signal }).finally(function() { clearTimeout(timer); });
+}
+
 function fmt$(v) { if(v==null||isNaN(v)) return '--'; return (v>=0?'+':'')+'\u0024'+Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtAbs$(v) { if(v==null||isNaN(v)) return '--'; return '\u0024'+Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtPct(v) { if(v==null||isNaN(v)) return '--'; return (v>=0?'+':'')+v.toFixed(2)+'%'; }
@@ -1363,7 +1409,7 @@ function initChartTab() {
 
 async function loadChartSymbols() {
   try {
-    const res = await fetch('/api/market');
+    const res = await fetchWithTimeout('/api/market');
     let symbols = [];
     if(res.ok) {
       const market = await res.json();
@@ -1413,8 +1459,8 @@ async function loadChartData(symbol) {
 
   // Fetch OHLCV + zones in parallel
   const [ohlcvRes, zonesRes] = await Promise.allSettled([
-    fetch('/api/ohlcv?symbol='+symbol+'&timeframe=1h'),
-    fetch('/api/zones?symbol='+symbol)
+    fetchWithTimeout('/api/ohlcv?symbol='+symbol+'&timeframe=1h'),
+    fetchWithTimeout('/api/zones?symbol='+symbol)
   ]);
 
   // Set candle data
@@ -1744,6 +1790,107 @@ function renderStrategyBars(byStrategy) {
   }).join('');
 }
 
+function renderOverviewStrategyPerf(byStrat) {
+  var el = document.getElementById('overview-strategy-perf');
+  if(!el) return;
+  var entries = Object.entries(byStrat || {});
+  if(entries.length === 0) { el.innerHTML = '<div class="empty" style="font-size:11px;">Strategy performance appears after trades close.</div>'; return; }
+  entries.sort(function(a,b) { return (b[1].pnl||0) - (a[1].pnl||0); });
+  var html = '';
+  entries.forEach(function(e) {
+    var name = e[0], s = e[1];
+    var wr = s.trades > 0 ? (s.wins / s.trades) : 0;
+    var wrPct = (wr * 100).toFixed(0);
+    var wrColor = wr >= 0.55 ? 'var(--green)' : (wr >= 0.45 ? 'var(--yellow)' : 'var(--red)');
+    var pnlCol = (s.pnl||0) >= 0 ? 'var(--green)' : 'var(--red)';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+      '<span style="font-size:11px;color:var(--text-dim);min-width:110px;">' + name + '</span>' +
+      '<div style="flex:1;background:var(--bg2);border-radius:4px;height:8px;overflow:hidden;">' +
+      '<div style="width:' + wrPct + '%;height:100%;background:' + wrColor + ';border-radius:4px;transition:width 0.3s;"></div></div>' +
+      '<span style="font-size:10px;font-weight:600;color:' + wrColor + ';min-width:32px;text-align:right;">' + wrPct + '%</span>' +
+      '<span style="font-size:10px;font-weight:600;color:' + pnlCol + ';min-width:55px;text-align:right;">' + fmt$(s.pnl||0) + '</span>' +
+      '<span style="font-size:9px;color:var(--muted);min-width:20px;text-align:right;">' + (s.trades||0) + 't</span></div>';
+  });
+  el.innerHTML = html;
+}
+
+function renderGoLiveGates(data, risk, pipeline) {
+  var el = document.getElementById('overview-go-live-gates');
+  if(!el) return;
+  var ds = data ? (data.daily_summary || {}) : {};
+  var rt = data ? (data.recent_trades || []) : [];
+  var totalTrades = rt.length;
+  var winRate = (ds.win_rate || 0) * 100;
+  var drawdown = risk ? (risk.drawdown_pct || 0) : 0;
+  var cbTripped = risk ? (risk.cb_tripped || false) : false;
+  var signalsGenerated = pipeline ? (pipeline.generated || 0) : 0;
+
+  var gates = [
+    { name: 'Min Trades (10+)', pass: totalTrades >= 10, value: totalTrades + ' trades' },
+    { name: 'Win Rate (40%+)', pass: winRate >= 40, value: winRate.toFixed(1) + '%' },
+    { name: 'Max Drawdown (<10%)', pass: drawdown < 10, value: drawdown.toFixed(1) + '%' },
+    { name: 'Signal Generation Active', pass: signalsGenerated > 0, value: signalsGenerated + ' signals' },
+    { name: 'No Circuit Breaker Trips', pass: !cbTripped, value: cbTripped ? 'TRIPPED' : 'Clear' }
+  ];
+
+  var passed = gates.filter(function(g) { return g.pass; }).length;
+  var total = gates.length;
+  var pct = Math.round((passed / total) * 100);
+  var barColor = pct >= 80 ? 'var(--green)' : (pct >= 60 ? 'var(--yellow)' : 'var(--red)');
+
+  var html = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
+    '<div style="flex:1;background:var(--bg2);border-radius:4px;height:8px;overflow:hidden;">' +
+    '<div style="width:' + pct + '%;height:100%;background:' + barColor + ';border-radius:4px;transition:width 0.3s;"></div></div>' +
+    '<span style="font-size:12px;font-weight:700;color:' + barColor + ';">' + passed + '/' + total + '</span></div>';
+
+  gates.forEach(function(g) {
+    var icon = g.pass ? '&#9989;' : '&#10060;';
+    var color = g.pass ? 'var(--green)' : 'var(--red)';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px;">' +
+      '<span>' + icon + ' <span style="color:var(--text-dim);">' + g.name + '</span></span>' +
+      '<span style="font-weight:600;color:' + color + ';">' + g.value + '</span></div>';
+  });
+
+  el.innerHTML = html;
+}
+
+function renderOverviewRejectionAudit(pipeline) {
+  var el = document.getElementById('overview-rejection-audit');
+  if(!el) return;
+  var byGate = pipeline ? (pipeline.by_gate || {}) : {};
+  var entries = Object.entries(byGate);
+  if(entries.length === 0) { el.innerHTML = '<div class="empty" style="font-size:11px;">No rejection data yet.</div>'; return; }
+  entries.sort(function(a,b) { return b[1] - a[1]; });
+  var top = entries.slice(0, 5);
+  var total = entries.reduce(function(sum, e) { return sum + e[1]; }, 0);
+  var reasons = {
+    chop_filter: 'Market is too choppy for reliable signals.',
+    confidence_floor: 'Signal confidence below adaptive threshold.',
+    ensemble_veto: 'Not enough strategies agree on direction.',
+    circuit_breaker: 'Circuit breaker tripped from recent losses.',
+    rr_floor: 'Risk/reward ratio below minimum (< 1.2:1).',
+    fee_drag: 'Expected profit would be eaten by trading fees.',
+    ev_floor: 'Expected value per dollar risked is too low.',
+    max_positions: 'Maximum concurrent positions reached.',
+    correlation: 'Too correlated with existing positions.',
+    leverage_gate: 'Position would exceed leverage limits.',
+    liquidation_risk: 'Stop loss too close to liquidation price.'
+  };
+
+  var html = '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+  top.forEach(function(e) {
+    var gate = e[0], count = e[1];
+    var pct = total > 0 ? Math.round((count / total) * 100) : 0;
+    html += '<div style="flex:1;min-width:140px;background:var(--bg2);border-radius:8px;padding:10px;text-align:center;">' +
+      '<div style="font-size:18px;font-weight:700;color:var(--yellow);">' + count + '</div>' +
+      '<div style="font-size:10px;font-weight:600;color:var(--text);margin-top:2px;">' + gate + '</div>' +
+      '<div style="font-size:9px;color:var(--muted);margin-top:4px;">' + (reasons[gate] || 'Blocking signals from execution.') + '</div>' +
+      '<div style="font-size:9px;color:var(--text-dim);margin-top:2px;">' + pct + '% of rejections</div></div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 function renderWeights(weightsData) {
   const el = document.getElementById('strategy-weights');
   if(!el) return;
@@ -1814,15 +1961,20 @@ function renderActiveSignals(signalData) {
 
 async function loadAll() {
   try {
-    const [dataRes, healthRes, marketRes, rejectionsRes, pipelineRes] = await Promise.allSettled([
-      fetch('/api/data'), fetch('/api/health'), fetch('/api/market'), fetch('/api/rejections'), fetch('/api/pipeline')
+    const [dataRes, healthRes, marketRes, rejectionsRes, pipelineRes, riskRes] = await Promise.allSettled([
+      fetchWithTimeout('/api/data'), fetchWithTimeout('/api/health'), fetchWithTimeout('/api/market'), fetchWithTimeout('/api/rejections'), fetchWithTimeout('/api/pipeline'), fetchWithTimeout('/api/risk')
     ]);
-    let data=null, healthInfo=null, market=null, rejections=null, pipeline=null;
+    let data=null, healthInfo=null, market=null, rejections=null, pipeline=null, risk=null;
     if(dataRes.status==='fulfilled' && dataRes.value.ok) try { data = await dataRes.value.json(); } catch {}
     if(healthRes.status==='fulfilled' && healthRes.value.ok) try { healthInfo = await healthRes.value.json(); } catch {}
     if(marketRes.status==='fulfilled' && marketRes.value.ok) try { market = await marketRes.value.json(); } catch {}
     if(rejectionsRes.status==='fulfilled' && rejectionsRes.value.ok) try { rejections = await rejectionsRes.value.json(); } catch {}
     if(pipelineRes.status==='fulfilled' && pipelineRes.value.ok) try { pipeline = await pipelineRes.value.json(); } catch {}
+    if(riskRes.status==='fulfilled' && riskRes.value.ok) try { risk = await riskRes.value.json(); } catch {}
+
+    // Show/hide getting-started hint
+    var hintEl = document.getElementById('first-load-hint');
+    if(hintEl) { hintEl.style.display = (data && (data.recent_trades||[]).length > 0) ? 'none' : 'block'; }
 
     if(data) {
       const ds = data.daily_summary || {};
@@ -1896,6 +2048,12 @@ async function loadAll() {
     renderPipeline(pipeline, 'pipeline-funnel');
     renderPipeline(pipeline, 'pipeline-funnel-full');
 
+    // New Overview cards
+    var sp = data ? (data.signal_performance || {}) : {};
+    renderOverviewStrategyPerf(sp.by_strategy || {});
+    renderGoLiveGates(data, risk, pipeline);
+    renderOverviewRejectionAudit(pipeline);
+
     // System Activity Status
     var actEl = document.getElementById('system-activity-status');
     var dotEl = document.getElementById('system-activity-dot');
@@ -1916,24 +2074,24 @@ async function loadAll() {
   } catch(err) {
     console.error('Dashboard load error:', err);
     document.getElementById('health-dot').className = 'dot dot-red';
-    document.getElementById('health-label').textContent = 'Connection error';
+    document.getElementById('health-label').textContent = err.name === 'AbortError' ? 'Timeout' : 'Connection error';
   }
 }
 
 async function refreshPositionsOnly() {
-  try { const res = await fetch('/api/positions'); if(res.ok) { const positions = await res.json(); renderPositions(positions); } } catch {}
+  try { const res = await fetchWithTimeout('/api/positions'); if(res.ok) { const positions = await res.json(); renderPositions(positions); } } catch {}
 }
 
 async function loadAnalytics() {
   analyticsInitialized = true;
   // Load weights and risk data
   const [weightsRes, riskRes, perfRes] = await Promise.allSettled([
-    fetch('/api/weights'), fetch('/api/risk'), fetch('/api/performance')
+    fetchWithTimeout('/api/weights'), fetchWithTimeout('/api/risk'), fetchWithTimeout('/api/performance')
   ]);
   if(weightsRes.status==='fulfilled' && weightsRes.value.ok) { try { renderWeights(await weightsRes.value.json()); } catch {} }
   if(riskRes.status==='fulfilled' && riskRes.value.ok) { try { renderCircuitBreakers(await riskRes.value.json()); } catch {} }
   // Equity chart
-  try { const eqRes = await fetch('/api/equity'); if(eqRes.ok) { const eq = await eqRes.json(); if(eq.length >= 2) buildEquityChart(eq); } } catch {}
+  try { const eqRes = await fetchWithTimeout('/api/equity'); if(eqRes.ok) { const eq = await eqRes.json(); if(eq.length >= 2) buildEquityChart(eq); } } catch {}
   // Daily PnL chart
   if(perfRes.status==='fulfilled' && perfRes.value.ok) {
     try {
@@ -1957,7 +2115,7 @@ async function loadAnalytics() {
 
 async function loadSystemTab() {
   const [riskRes, gatesRes] = await Promise.allSettled([
-    fetch('/api/risk'), fetch('/api/gates')
+    fetchWithTimeout('/api/risk'), fetchWithTimeout('/api/gates')
   ]);
   if(riskRes.status==='fulfilled' && riskRes.value.ok) { try { renderCircuitBreakers(await riskRes.value.json()); } catch {} }
   if(gatesRes.status==='fulfilled' && gatesRes.value.ok) {
@@ -2010,7 +2168,7 @@ function switchToTab(tabName) {
 /* ═══════════════════════════════════════════════════════════════════ */
 async function loadCorrelation() {
   try {
-    const res = await fetch('/api/correlation');
+    const res = await fetchWithTimeout('/api/correlation');
     if(!res.ok) return;
     const data = await res.json();
     const el = document.getElementById('correlation-heatmap');
@@ -2048,7 +2206,7 @@ async function loadCorrelation() {
 /* ═══════════════════════════════════════════════════════════════════ */
 async function loadMissedTrades() {
   try {
-    const res = await fetch('/api/missed-trades');
+    const res = await fetchWithTimeout('/api/missed-trades');
     if(!res.ok) return;
     const data = await res.json();
     const trades = data.trades || [];
@@ -2076,7 +2234,7 @@ async function loadMissedTrades() {
 /* ═══════════════════════════════════════════════════════════════════ */
 async function loadOutcomes() {
   try {
-    const res = await fetch('/api/outcomes');
+    const res = await fetchWithTimeout('/api/outcomes');
     if(!res.ok) return;
     const data = await res.json();
     const outcomes = data.outcomes || {};
@@ -2112,7 +2270,7 @@ async function loadOutcomes() {
 /* ═══════════════════════════════════════════════════════════════════ */
 async function loadFingerprints() {
   try {
-    const res = await fetch('/api/fingerprints');
+    const res = await fetchWithTimeout('/api/fingerprints');
     if(!res.ok) return;
     const data = await res.json();
 
@@ -2154,7 +2312,7 @@ async function loadFingerprints() {
 /* ═══════════════════════════════════════════════════════════════════ */
 async function loadRegimeTimeline() {
   try {
-    const res = await fetch('/api/regimes/history');
+    const res = await fetchWithTimeout('/api/regimes/history');
     if(!res.ok) return;
     const data = await res.json();
     const el = document.getElementById('regime-timeline');
@@ -2209,7 +2367,7 @@ async function loadRegimeTimeline() {
 /* ═══════════════════════════════════════════════════════════════════ */
 async function loadCalibration() {
   try {
-    const res = await fetch('/api/calibration');
+    const res = await fetchWithTimeout('/api/calibration');
     if(!res.ok) return;
     const data = await res.json();
     const el = document.getElementById('calibration-chart-container');
@@ -2246,7 +2404,7 @@ async function loadCalibration() {
 /* ═══════════════════════════════════════════════════════════════════ */
 async function loadAgentPipeline() {
   try {
-    const res = await fetch('/api/agents/last');
+    const res = await fetchWithTimeout('/api/agents/last');
     if(!res.ok) return;
     const data = await res.json();
     const el = document.getElementById('agent-pipeline');
@@ -2286,7 +2444,7 @@ async function loadAgentPipeline() {
 let allInsights = [];
 async function loadInsights() {
   try {
-    const res = await fetch('/api/insights');
+    const res = await fetchWithTimeout('/api/insights');
     if(!res.ok) return;
     const data = await res.json();
     allInsights = data.insights || [];
@@ -6755,7 +6913,7 @@ let lastLatency = 0;
 async function measureLatency() {
   const start = performance.now();
   try {
-    await fetch('/api/health');
+    await fetchWithTimeout('/api/health');
     lastLatency = Math.round(performance.now() - start);
   } catch { lastLatency = -1; }
   const dot = document.getElementById('latency-dot');
@@ -6839,7 +6997,13 @@ document.addEventListener('click', function(e) {
 /* QUICK STATS & STREAK CALCULATION                                    */
 /* ═══════════════════════════════════════════════════════════════════ */
 function updateQuickStats(trades, pipeline) {
-  if(!trades || trades.length === 0) return;
+  if(!trades || trades.length === 0) {
+    var ids = ['qs-streak','qs-best-trade','qs-worst-trade','qs-avg-hold','qs-profit-factor'];
+    ids.forEach(function(id) { var el = document.getElementById(id); if(el) { el.textContent = '--'; el.style.color = 'var(--muted)'; } });
+    var sigEl = document.getElementById('qs-signals-today');
+    if(sigEl && pipeline) { sigEl.textContent = (pipeline.generated||0) + ' signals'; sigEl.style.color = (pipeline.generated||0) > 0 ? 'var(--cyan)' : 'var(--muted)'; }
+    return;
+  }
 
   // Win/Loss streak
   let streak = 0;
@@ -6890,7 +7054,7 @@ function updateQuickStats(trades, pipeline) {
 /* ═══════════════════════════════════════════════════════════════════ */
 async function loadPnlCalendar() {
   try {
-    const res = await fetch('/api/performance?days=90');
+    const res = await fetchWithTimeout('/api/performance?days=90');
     if(!res.ok) return;
     const data = await res.json();
     const el = document.getElementById('pnl-calendar');
@@ -7057,7 +7221,7 @@ loadAll = async function() {
 
   // Load quick stats data
   try {
-    const [dataRes, pipelineRes] = await Promise.allSettled([fetch('/api/data'), fetch('/api/pipeline')]);
+    const [dataRes, pipelineRes] = await Promise.allSettled([fetchWithTimeout('/api/data'), fetchWithTimeout('/api/pipeline')]);
     let trades = [], pipeline = null;
     if(dataRes.status==='fulfilled' && dataRes.value.ok) {
       const data = await dataRes.value.json();
@@ -7069,7 +7233,7 @@ loadAll = async function() {
 
     // Toast alerts for state changes
     try {
-      const riskRes = await fetch('/api/risk');
+      const riskRes = await fetchWithTimeout('/api/risk');
       if(riskRes.ok) {
         const risk = await riskRes.json();
         if(risk.cb_tripped && !prevCBTripped) showToast('Circuit Breaker', 'Circuit breaker has been TRIPPED! Trading paused.', 'error', 8000);
@@ -7080,7 +7244,7 @@ loadAll = async function() {
 
     // Position change alerts
     try {
-      const posRes = await fetch('/api/positions');
+      const posRes = await fetchWithTimeout('/api/positions');
       if(posRes.ok) {
         const positions = await posRes.json();
         if(positions.length > prevPositionCount && prevPositionCount >= 0) {
@@ -7105,8 +7269,8 @@ let marketIntelInterval = null;
 async function loadMarketIntel() {
   try {
     const [marketRes, pipelineRes, rejectionsRes, weightsRes, riskRes, agentsRes, mlRes] = await Promise.allSettled([
-      fetch('/api/market'), fetch('/api/pipeline'), fetch('/api/rejections'),
-      fetch('/api/weights'), fetch('/api/risk'), fetch('/api/agents/last'), fetch('/api/ml')
+      fetchWithTimeout('/api/market'), fetchWithTimeout('/api/pipeline'), fetchWithTimeout('/api/rejections'),
+      fetchWithTimeout('/api/weights'), fetchWithTimeout('/api/risk'), fetchWithTimeout('/api/agents/last'), fetchWithTimeout('/api/ml')
     ]);
 
     let market=null, pipeline=null, rejections=null, weights=null, risk=null, agents=null, ml=null;
@@ -7355,15 +7519,25 @@ function renderMLIntel(ml) {
   el.innerHTML = html;
 }
 
-function renderAgentIntel(agents) {
+function renderAgentIntel(agentData) {
   var el = document.getElementById('intel-agent-insights');
   if(!el) return;
-  if(!agents || (Array.isArray(agents) && agents.length === 0) || (typeof agents === 'object' && Object.keys(agents).length === 0)) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">&#129302;</div>No agent data available<div class="empty-msg">Agent insights appear when LLM_MULTI_AGENT=true and the bot runs a decision cycle</div></div>';
+
+  // Detect LLM offline state from API response
+  var active = agentData && agentData.active;
+  var agents = agentData ? (agentData.agents || []) : [];
+  if(Array.isArray(agentData)) { agents = agentData; active = agents.length > 0; }
+
+  if(!active && agents.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:16px;">' +
+      '<div style="font-size:18px;margin-bottom:8px;opacity:0.5;">&#129302;</div>' +
+      '<div style="font-size:12px;font-weight:700;color:var(--text-dim);">AI Agents Offline</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-top:4px;">' +
+      'Running on ensemble strategy signals. Set <code style="background:var(--bg2);padding:1px 4px;border-radius:3px;">LLM_MULTI_AGENT=true</code> in .env to enable.</div></div>';
     return;
   }
 
-  var agentList = Array.isArray(agents) ? agents : (agents.agents || [agents]);
+  var agentList = agents.length > 0 ? agents : (Array.isArray(agentData) ? agentData : [agentData]);
   var agentColors = { regime:'var(--cyan)', trade:'var(--green)', risk:'var(--yellow)', critic:'var(--red)', learning:'var(--purple)', exit:'var(--orange)', scout:'var(--blue)' };
   var agentIcons = { regime:'\uD83C\uDF0D', trade:'\uD83C\uDFAF', risk:'\uD83D\uDEE1', critic:'\uD83E\uDD14', learning:'\uD83D\uDCDA', exit:'\uD83D\uDEAA', scout:'\uD83D\uDD2D' };
 
