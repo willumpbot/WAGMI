@@ -479,7 +479,7 @@ class DataFetcher:
 
                 # Calculate `since` — always pass it (required for Hyperliquid)
                 tf_ms = TIMEFRAME_MS.get(fetch_tf, 60 * 60_000)
-                since_ms = int((time.time() * 1000) - (limit * tf_ms * 1.1))
+                since_ms = int((time.time() * 1000) - (limit * tf_ms))
 
                 # Rate limit + retry on 429
                 candles = None
