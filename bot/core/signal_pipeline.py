@@ -261,9 +261,10 @@ class RiskFilterChain:
             )
 
         # Gate 5a: Graduated leverage eligibility gate (D2)
-        # Hard floor at 1.2x (zero-conviction), graduated sizing 1.2x–1.8x,
-        # full size above 1.8x. Replaces binary 2.0x gate that blocked all
-        # signals in bearish/wide-stop conditions.
+        # Floor at 1.0x — allows 2-agree signals (which return 1.0x leverage) to pass
+        # with reduced sizing via the graduated scalar below. Graduated sizing 1.0x–1.8x
+        # (scalar 0.6→1.0), full size above 1.8x. Replaces binary 2.0x gate that blocked
+        # all signals in bearish/wide-stop conditions.
         min_leverage_gate = getattr(self.config, "min_leverage_entry_gate", 1.2)
         LEVERAGE_FULL_SIZE = 1.8
         if lev_decision.leverage < min_leverage_gate:
@@ -275,7 +276,7 @@ class RiskFilterChain:
                 metadata=meta,
             )
 
-        # Graduated size reduction for sub-optimal leverage (1.2x→0.6 rm, 1.8x→1.0 rm)
+        # Graduated size reduction for sub-optimal leverage (1.0x→0.6 rm, 1.8x→1.0 rm)
         if lev_decision.leverage < LEVERAGE_FULL_SIZE:
             lev_scalar = 0.6 + (lev_decision.leverage - min_leverage_gate) / (LEVERAGE_FULL_SIZE - min_leverage_gate) * 0.4
             lev_decision = LeverageDecision(

@@ -180,8 +180,10 @@ class TradingConfig:
 
     # ── Leverage eligibility gate ──
     min_leverage_entry_gate: float = field(
-        default_factory=lambda: _env_float("MIN_LEVERAGE_ENTRY_GATE", 1.2)
-    )  # Hard floor for leverage gate. Graduated sizing 1.2x–1.8x, full size above 1.8x.
+        default_factory=lambda: _env_float("MIN_LEVERAGE_ENTRY_GATE", 1.0)
+    )  # Floor for leverage gate. 1.0x = allow all non-zero leverage (2-agree signals at 1.0x
+    # pass through with 0.6-0.7x risk multiplier via graduated sizing). Use 1.2+ to block
+    # lower-conviction trades. Graduated sizing 1.0x–1.8x, full size above 1.8x.
 
     # ── Profitability shield ──
     max_portfolio_leverage: float = field(
