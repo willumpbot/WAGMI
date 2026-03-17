@@ -163,14 +163,15 @@ class ConfidenceScorerStrategy(BaseStrategy):
             return None  # Prevent cold-start death spiral in backtests
         entries = self.signal_log.get(symbol, [])
         evaluated = [e for e in entries if e.get("evaluated") and e["signal"] == action and "success" in e]
-        if len(evaluated) < 5:
+        if len(evaluated) < 30:
             return None
         wins = sum(1 for e in evaluated if e["success"])
         wr = wins / len(evaluated)
-        # With fewer than 20 samples, WR estimates are noisy — dampen toward 0.5.
-        # With 20+ samples, return raw WR for single-pass calibration (no double-dampening).
-        if len(evaluated) < 20:
-            wr = 0.5 + (wr - 0.5) * 0.5
+        # With fewer than 50 samples, WR estimates are noisy — dampen toward 0.5.
+        # Progressive dampening: 60% strength at 30 samples, full strength at 50.
+        if len(evaluated) < 50:
+            dampen_factor = len(evaluated) / 50
+            wr = 0.5 + (wr - 0.5) * dampen_factor
         return wr
 
     def evaluate_past_signals(self, symbol: str, current_price: float):
@@ -398,17 +399,12 @@ class ConfidenceScorerStrategy(BaseStrategy):
         # Historical accuracy adjustment (key differentiator)
         hist_conf = self._get_historical_confidence(symbol, action)
         if hist_conf is not None:
-            adjustment = (hist_conf - 0.5) * 30  # -15 to +15
+            adjustment = (hist_conf - 0.5) * 20  # -10 to +10
             confidence += adjustment
             logger.info(
                 f"[{symbol}] {action} hist WR={hist_conf:.0%}, "
                 f"adj={adjustment:+.1f}, final={confidence:.1f}"
             )
-
-        # Penalize terrible historical WR
-        if hist_conf is not None and hist_conf < 0.15:
-            confidence -= 15
-            logger.info(f"[{symbol}] {action} WR {hist_conf:.0%} too low, -15 penalty")
 
         confidence = max(0, min(100, confidence))
 

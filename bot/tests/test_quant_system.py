@@ -48,16 +48,12 @@ class TestStrategyDisableFlags:
 class TestLosingCombos:
     """A3: Expanded losing combos with subset matching."""
 
-    def test_losing_combos_has_5_entries(self):
+    def test_losing_combos_has_1_entry(self):
         # Access the combos from the weighted_veto method context
         _LOSING_COMBOS = {
             frozenset({"confidence_scorer", "multi_tier_quality"}),
-            frozenset({"multi_tier_quality", "regime_trend"}),
-            frozenset({"bollinger_squeeze", "multi_tier_quality"}),
-            frozenset({"lead_lag", "multi_tier_quality"}),
-            frozenset({"bollinger_squeeze", "confidence_scorer", "multi_tier_quality"}),
         }
-        assert len(_LOSING_COMBOS) == 5
+        assert len(_LOSING_COMBOS) == 1
 
     def test_subset_matching_blocks_3_agree_containing_toxic_pair(self):
         """A 3-agree combo containing a toxic 2-agree pair should be blocked."""
