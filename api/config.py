@@ -3,7 +3,7 @@ import os
 COINS = {
     "BTC": {"id": "bitcoin", "risk": "low"},
     "SOL": {"id": "solana", "risk": "medium"},
-    "PUMP": {"id": "pump-2", "risk": "high"},  # pump.fun token ID on CoinGecko
+    "HYPE": {"id": "hyperliquid", "risk": "high"},
 }
 
 VS_CURRENCY = "usd"

@@ -214,7 +214,7 @@ async def get_strategy_summary():
     return {
         "id": STRATEGY_ID,
         "name": "Swing Perp (16h)",
-        "markets": ["BTC", "SOL", "PUMP"],  # Multi-asset strategy
+        "markets": ["BTC", "SOL", "HYPE"],
         "status": status,
         "lastEvaluated": last_evaluated,
         "latestSignal": latest_signal,

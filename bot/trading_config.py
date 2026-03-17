@@ -43,16 +43,12 @@ class SymbolConfig:
     risk_tier: str      # "low", "medium", "high"
 
 
-# Focused symbol set — 3 large caps + 3 high-volume small caps
+# Focused symbol set — backtested assets only
 # Fewer symbols = faster rescan loop = better scalp coverage
 DEFAULT_SYMBOLS = {
-    # Large caps (priority)
     "BTC": SymbolConfig("BTC", "BTC-USD", "bitcoin", "low"),
     "SOL": SymbolConfig("SOL", "SOL-USD", "solana", "medium"),
-    "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "high"),  # was "medium": inconsistent with volatility_profile="high" in overrides
-    # Small caps (high volume memes)
-    "DOGE": SymbolConfig("DOGE", "DOGE-USD", "dogecoin", "high"),
-    "FARTCOIN": SymbolConfig("FARTCOIN", "FARTCOIN-USD", "fartcoin", "high"),
+    "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "high"),
 }
 
 # Risk multipliers for zone computation (from user's original bots)
@@ -184,8 +180,10 @@ class TradingConfig:
 
     # ── Leverage eligibility gate ──
     min_leverage_entry_gate: float = field(
-        default_factory=lambda: _env_float("MIN_LEVERAGE_ENTRY_GATE", 1.2)
-    )  # Hard floor for leverage gate. Graduated sizing 1.2x–1.8x, full size above 1.8x.
+        default_factory=lambda: _env_float("MIN_LEVERAGE_ENTRY_GATE", 1.0)
+    )  # Floor for leverage gate. 1.0x = allow all non-zero leverage (2-agree signals at 1.0x
+    # pass through with 0.6-0.7x risk multiplier via graduated sizing). Use 1.2+ to block
+    # lower-conviction trades. Graduated sizing 1.0x–1.8x, full size above 1.8x.
 
     # ── Profitability shield ──
     max_portfolio_leverage: float = field(
@@ -557,8 +555,6 @@ DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
     # BTC risk slightly below global 0.5% since BTC ATR stops are proportionally tighter
     "SOL": SymbolOverrides(max_leverage=20.0, volatility_profile="medium"),
     "HYPE": SymbolOverrides(max_leverage=20.0, volatility_profile="high"),
-    "DOGE": SymbolOverrides(max_leverage=12.0, volatility_profile="high"),
-    "FARTCOIN": SymbolOverrides(max_leverage=10.0, volatility_profile="high"),
 }
 
 

@@ -28,7 +28,7 @@ POLL_SECONDS = 60
 COINS = {
     "BTC": {"id": "bitcoin", "risk": "low"},
     "SOL": {"id": "solana", "risk": "medium"},
-    "PUMP": {"id": "pump", "risk": "high"},
+    "HYPE": {"id": "hyperliquid", "risk": "high"},
 }
 
 # ATR-based zone multipliers (k1, k2) for risk tiers
