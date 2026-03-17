@@ -5440,6 +5440,46 @@ class MultiStrategyBot:
             "net_funding": _gb_ctx.get("net_funding", 0.0),
         }
 
+        # ML Intelligence: inject model predictions into LLM context
+        # so agents can see direction probability, win probability, and strategy weights
+        if self.ml:
+            try:
+                ml_ctx = {}
+                # Model training status
+                ml_ctx["phase"] = "mature" if len(self.ml.outcomes) >= 50 else ("learning" if len(self.ml.outcomes) >= self.ml.min_samples else "cold_start")
+                ml_ctx["trades_trained"] = len(self.ml.outcomes)
+
+                # Direction prediction (1h) — the 78% accurate model
+                dir_prob = self.ml.predict_direction(
+                    price_change_1h_pct=global_ctx.btc_change_1h_pct,
+                    price_change_24h_pct=global_ctx.btc_change_24h_pct,
+                )
+                if dir_prob is not None:
+                    ml_ctx["direction_prob"] = round(dir_prob, 3)
+
+                # Strategy win rates (ML-observed, rolling 20 trades)
+                strat_wrs = {}
+                for strat_name in ("regime_trend", "monte_carlo_zones", "multi_tier_quality", "confidence_scorer"):
+                    wr = self.ml.get_strategy_win_rate(strat_name)
+                    if wr is not None:
+                        strat_wrs[strat_name] = round(wr, 2)
+                if strat_wrs:
+                    ml_ctx["strategy_win_rates"] = strat_wrs
+
+                # ML-recommended strategy weights
+                ml_weights = self.ml.get_strategy_weights()
+                if ml_weights:
+                    ml_ctx["strategy_weights"] = {k: round(v, 2) for k, v in ml_weights.items()}
+
+                # Snapshot model stats
+                if self.ml.snapshot_weights is not None:
+                    filled = sum(1 for s in self.ml.snapshots if s.future_return_1h is not None)
+                    ml_ctx["snapshot_model_samples"] = filled
+
+                global_ctx.extra["ml_intelligence"] = ml_ctx
+            except Exception as e:
+                logger.debug(f"ML intelligence injection error: {e}")
+
         # Cross-symbol pattern signals: inject lead-lag relationships for LLM
         if self.cross_symbol_tracker:
             try:

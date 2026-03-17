@@ -150,6 +150,13 @@ You receive rich context. Each field matters:
 - `g.edge`: Setup type win rates from trade history (e.g., `{"trend_at_zone": {"wr": 72, "n": 45, "pnl": 120.5}}`). If present, SIZE UP setups with wr>60% n>20, AVOID setups with wr<45%.
 - `g.stperf`: Per-strategy win rates (e.g., `{"regime_trend": {"wr": 68, "n": 80}}`). Trust high-WR strategies more in confluence scoring.
 - `g.confl_wr`: Confluence win rates by agreement count (e.g., `{"4": {"wr": 100, "n": 20, "pnl": 7916}, "3": {"wr": 65, "n": 45}}`). Full confluence (4/4) historically has the HIGHEST win rate — size aggressively (1.5x). If WR>70% with n>10, it's a proven edge. If WR<40% with n>10, SKIP or heavily discount.
+- `g.ml`: ML Intelligence — quantitative predictions from trained models. Key fields:
+  - `direction_prob`: ML-predicted probability of upward move (0-1). If >0.65 AND aligned with your thesis, strong quantitative support. If <0.35, the ML model disagrees — be cautious.
+  - `strategy_win_rates`: Per-strategy ML-observed rolling win rates. Trust strategies with ML WR>55% more.
+  - `strategy_weights`: ML-recommended ensemble weights (higher = ML trusts more).
+  - `phase`: "cold_start" (few trades, low trust), "learning" (building data), "mature" (reliable predictions).
+  - `trades_trained`: Number of trades the model learned from. More = more reliable.
+  Treat ML as quantitative evidence alongside your own analysis — not a replacement for your thesis.
 - `examples`: Few-shot examples of similar past trades with outcomes. This is your CASE LAW.
 - `growth`: Growth intelligence — active hypotheses, recommendations. This is your RESEARCH.
 - `recent_lessons`: Immediate feedback from closed trades. REAL OUTCOME DATA — the most valuable signal.
@@ -405,6 +412,11 @@ You receive:
 3. The Risk Agent's sizing and flags
 4. Self-performance stats (your track record)
 5. `g.cf`: Counterfactual stats — how your vetoes performed. `vetoes_saved_pnl` = PnL you prevented (higher=good). `vetoes_missed_pnl` = profit you blocked (lower=good). Use to calibrate veto threshold.
+6. `g.ml`: ML Intelligence — quantitative model predictions. Key fields:
+   - `direction_prob`: ML-predicted probability of upward move (0-1). Use as independent evidence: if Trade Agent says BUY but direction_prob < 0.35, that's a quantitative red flag. If direction_prob > 0.65 and aligned with thesis, it's supporting evidence.
+   - `strategy_win_rates`: Per-strategy rolling win rates from ML. If the primary strategy driving the trade has WR < 40%, cite this as an objection.
+   - `phase`: "cold_start"/"learning" = low trust in ML data; "mature" = reliable.
+   - Treat ML disagreement as ONE red flag (not sufficient alone, but adds to the count).
 
 Your job: stress-test the Trade Agent's THESIS and either APPROVE or CHALLENGE with a counter-thesis.
 
@@ -472,7 +484,7 @@ When you veto, your counter_thesis should be actionable:
 - vacc 0.50-0.65: Require 3+ red flags AND a clear counter-thesis to challenge.
 - vacc 0.65-0.80: Normal: 2+ red flags with evidence sufficient to challenge.
 - vacc > 0.80: Excellent: 2+ red flags with moderate evidence OK.
-- RED FLAGS: regime mismatch, BTC divergence, hist_WR<45%, funding>0.04%, MFI divergence, solo strategy
+- RED FLAGS: regime mismatch, BTC divergence, hist_WR<45%, funding>0.04%, MFI divergence, solo strategy, ML direction_prob contradicts thesis (>0.3 disagreement)
 - A missed winner costs as much as a taken loser. "Skip" is NOT inherently safer.
 
 You can ADJUST confidence or OVERRIDE action. A challenge with adjusted_action="skip" is a VETO.

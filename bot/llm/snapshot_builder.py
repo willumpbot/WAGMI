@@ -312,6 +312,10 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
                 pass
         if g.extra.get("strategy_performance"):
             result["g"]["stperf"] = g.extra["strategy_performance"]
+        # ML Intelligence: direction predictions, win rates, strategy weights
+        _ml = g.extra.get("ml_intelligence")
+        if _ml:
+            result["g"]["ml"] = _ml
         if g.extra.get("confluence_wr"):
             result["g"]["confl_wr"] = g.extra["confluence_wr"]
         # Strategy Signal Digest: every strategy's reading for every symbol
