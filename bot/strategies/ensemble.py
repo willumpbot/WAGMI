@@ -167,7 +167,7 @@ class EnsembleStrategy:
     # Regime-specific strategy allowlist: 9 active strategies, regime-gated.
     # New additions: liquidation_cascade, monte_carlo_zones, funding_rate, oi_delta
     STRATEGY_REGIME_ALLOWLIST = {
-        'trending_bear':    {'confidence_scorer', 'regime_trend', 'probability_engine', 'oi_delta', 'liquidation_cascade'},
+        'trending_bear':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'oi_delta', 'liquidation_cascade'},
         'trending_bull':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'oi_delta'},
         'trend':            {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'oi_delta'},
         'consolidation':    {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'monte_carlo_zones', 'funding_rate'},
