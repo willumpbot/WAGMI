@@ -584,7 +584,7 @@ PAPER_PROFILE_OVERRIDES = {
 # High vol: widest SL (avoid wick stops), tightest TP (grab what you can)
 REGIME_SL_TP_SCALARS = {
     "trending_bull":    {"sl_mult": 1.2, "tp1_mult": 1.3, "tp2_mult": 1.5},   # was tp1=0.9/tp2=0.85: inverted R:R killed trending trades
-    "trending_bear":    {"sl_mult": 1.2, "tp1_mult": 1.3, "tp2_mult": 1.5},   # matched to trending_bull: stop penalizing shorts
+    "trending_bear":    {"sl_mult": 1.1, "tp1_mult": 1.2, "tp2_mult": 1.4},   # was tp1=0.8/tp2=0.8: same issue
     "trend":            {"sl_mult": 1.15, "tp1_mult": 1.25, "tp2_mult": 1.4},  # was tp1=0.85/tp2=0.85
     "consolidation":    {"sl_mult": 0.85, "tp1_mult": 0.9, "tp2_mult": 0.85},  # was tp1=1.2/tp2=1.3: mean-reversion should take profits fast
     "range":            {"sl_mult": 0.9, "tp1_mult": 0.95, "tp2_mult": 0.9},   # was tp1=1.1/tp2=1.2: same as consolidation

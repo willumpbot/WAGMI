@@ -140,7 +140,7 @@ class RiskFilterChain:
         slippage_bps = getattr(self.config, "slippage_bps", 3)
         # Regime-specific slippage: high-vol/panic have wider spreads
         _regime_slippage = {
-            "trending_bull": 1, "trending_bear": 1, "trend": 1,
+            "trending_bull": 1, "trending_bear": 2, "trend": 1,
             "consolidation": 1, "range": 1,
             "high_volatility": 4, "panic": 6,
             "low_liquidity": 5, "news_dislocation": 5,
@@ -446,7 +446,7 @@ class RiskFilterChain:
         # ── Soft Gate: Fee-drag (regime-aware slippage) ──
         fee_bps = getattr(self.config, "taker_fee_bps", 4)
         _regime_slip_ann = {
-            "trending_bull": 1, "trending_bear": 1, "trend": 1,
+            "trending_bull": 1, "trending_bear": 2, "trend": 1,
             "consolidation": 1, "range": 1,
             "high_volatility": 4, "panic": 6,
             "low_liquidity": 5, "news_dislocation": 5,
