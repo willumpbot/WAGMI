@@ -176,15 +176,8 @@ class ICTracker:
         ic = self.compute_rolling_ic(factor)
 
         if ic is None:
-            # Not enough data or no scipy — be cautious
-            with self._lock:
-                buf = self._buffers.get(factor)
-                sample_count = len(buf) if buf else 0
-
-            if sample_count < MIN_SAMPLES:
-                return 0.5
-            # Have enough samples but scipy missing
-            return 0.5
+            # Not enough data or no scipy — don't penalize without evidence
+            return 1.0
 
         if ic < INVERSION_THRESHOLD:
             return 0.0
