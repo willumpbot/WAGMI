@@ -300,9 +300,9 @@ class TestSymbolOverrides:
     def test_get_symbol_param_uses_override(self):
         from trading_config import TradingConfig, get_symbol_param
         config = TradingConfig()
-        # DOGE has max_leverage=12.0 in overrides
-        val = get_symbol_param("DOGE", "max_leverage", config)
-        assert val == 12.0
+        # HYPE has max_leverage=20.0 in overrides
+        val = get_symbol_param("HYPE", "max_leverage", config)
+        assert val == 20.0
 
     def test_get_symbol_param_falls_back_to_global(self):
         from trading_config import TradingConfig, get_symbol_param
@@ -314,8 +314,8 @@ class TestSymbolOverrides:
     def test_get_symbol_param_risk_per_trade_falls_back(self):
         from trading_config import TradingConfig, get_symbol_param
         config = TradingConfig()
-        # DOGE has no risk_per_trade override, falls back to global
-        val = get_symbol_param("DOGE", "risk_per_trade", config)
+        # HYPE has no risk_per_trade override, falls back to global
+        val = get_symbol_param("HYPE", "risk_per_trade", config)
         assert val == config.risk_per_trade
 
     def test_get_symbol_param_unknown_symbol_fallback(self):
