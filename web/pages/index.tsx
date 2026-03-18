@@ -581,7 +581,7 @@ export default function Home() {
       )}
 
       {/* ── Page header ───────────────────────────────── */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>
@@ -601,6 +601,77 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* ── Always Watching Intelligence Bar ──────────── */}
+      {llmView && (
+        <div style={{
+          background: 'linear-gradient(90deg, #0f172a 0%, #1e293b 100%)',
+          border: `1px solid ${C.border}`,
+          borderRadius: R.lg,
+          padding: '14px 20px',
+          marginBottom: 24,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0,
+          flexWrap: 'wrap',
+        }}>
+          {/* Live pulse */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 20, flexShrink: 0 }}>
+            <div style={{ position: 'relative', width: 10, height: 10 }}>
+              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: C.bull, opacity: 0.8 }} />
+              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: C.bull, animation: 'ripplePulse 2s ease-out infinite' }} />
+            </div>
+            <span style={{ fontSize: F.xs, fontWeight: 700, color: C.bull, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Always On
+            </span>
+          </div>
+
+          {/* Divider */}
+          <div style={{ width: 1, height: 28, background: C.border, marginRight: 20 }} />
+
+          {/* Regime */}
+          <div style={{ marginRight: 24 }}>
+            <span style={{ fontSize: F.xs, color: C.muted }}>Regime </span>
+            <span style={{
+              fontSize: F.sm,
+              fontWeight: 700,
+              color: regime.toLowerCase() === 'trend' ? C.bull :
+                     regime.toLowerCase() === 'panic' ? C.bear :
+                     regime.toLowerCase() === 'range' ? '#60a5fa' :
+                     regime.toLowerCase() === 'high_volatility' ? '#fbbf24' : C.text,
+            }}>
+              {regime.toUpperCase()}
+            </span>
+          </div>
+
+          {/* Decision counts */}
+          {llmView.decision_counts && (
+            <div style={{ display: 'flex', gap: 16, marginRight: 24, fontSize: F.xs }}>
+              <span style={{ color: C.bull, fontWeight: 700 }}>✓ {llmView.decision_counts.proceed} trade</span>
+              <span style={{ color: C.muted }}>— {llmView.decision_counts.flat} skip</span>
+              <span style={{ color: '#a78bfa' }}>↔ {llmView.decision_counts.flip} flip</span>
+            </div>
+          )}
+
+          {/* Spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* CTA */}
+          <Link href="/signals" style={{
+            fontSize: F.xs,
+            fontWeight: 700,
+            color: C.brand,
+            textDecoration: 'none',
+            padding: '5px 12px',
+            border: `1px solid ${C.brand}44`,
+            borderRadius: R.pill,
+            flexShrink: 0,
+          }}>
+            View Signal Feed →
+          </Link>
+        </div>
+      )}
+      <style>{`@keyframes ripplePulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.8); opacity: 0; } }`}</style>
 
       {/* ── KPI Hero Row ──────────────────────────────── */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap' }}>
@@ -718,30 +789,70 @@ export default function Home() {
             background: C.surface,
             border: `1px solid ${C.border}`,
             borderRadius: R.lg,
-            padding: '16px 20px',
+            padding: '20px 24px',
             marginBottom: 28,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <span style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>LLM Brain</span>
-            <span style={{ fontSize: F.xs, padding: '2px 8px', borderRadius: R.pill, background: C.surfaceHover, color: C.muted }}>ADVISORY MODE</span>
-          </div>
-          <div style={{ fontSize: F.sm, color: C.textSub, lineHeight: 1.6 }}>
-            {llmView.summary || `Regime: ${llmView.regime} · Bias: ${llmView.overall_bias}`}
-          </div>
-          {llmView.decision_counts && (
-            <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: F.xs, color: C.muted }}>
-              <span>Last 10 decisions:</span>
-              <span style={{ color: C.bull, fontWeight: 600 }}>{llmView.decision_counts.proceed} trade</span>
-              <span style={{ color: C.muted, fontWeight: 600 }}>{llmView.decision_counts.flat} skip</span>
-              <span style={{ color: C.purple, fontWeight: 600 }}>{llmView.decision_counts.flip} flip</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 20 }}>🧠</span>
+              <span style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>AI Brain Summary</span>
+              <span style={{ fontSize: F.xs, padding: '2px 8px', borderRadius: R.pill, background: '#1e293b', color: C.muted }}>Advisory Mode</span>
             </div>
-          )}
-          <div style={{ marginTop: 10, textAlign: 'right' }}>
-            <Link href="/copy-trade" style={{ fontSize: F.xs, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>
-              Full AI analysis →
+            <Link href="/signals" style={{ fontSize: F.xs, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>
+              Full signal feed →
             </Link>
           </div>
+
+          {/* Per-symbol stance row */}
+          {llmView.per_symbol && (
+            <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+              {Object.entries(llmView.per_symbol).map(([sym, dec]: [string, any]) => {
+                const action = (dec.action || 'skip').toLowerCase();
+                const isGo = action === 'proceed' || action === 'go';
+                const isVeto = dec.is_veto;
+                const conf = dec.confidence || 0;
+                const confPct = Math.round(conf * 100);
+                const stanceColor = isVeto ? C.bear : isGo ? C.bull : C.muted;
+                return (
+                  <div key={sym} style={{
+                    flex: '1 1 120px',
+                    background: '#0f172a',
+                    border: `1px solid ${stanceColor}33`,
+                    borderRadius: R.md,
+                    padding: '10px 14px',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: F.sm, fontWeight: 800, color: C.text }}>{sym}</span>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '1px 6px',
+                        borderRadius: R.pill,
+                        background: stanceColor + '22',
+                        color: stanceColor,
+                      }}>
+                        {isVeto ? 'VETO' : isGo ? 'GO' : 'SKIP'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ flex: 1, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ width: `${confPct}%`, height: '100%', background: stanceColor, borderRadius: 2 }} />
+                      </div>
+                      <span style={{ fontSize: F.xs, color: stanceColor, fontWeight: 700, minWidth: 28 }}>{confPct}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Summary text */}
+          {llmView.summary && (
+            <div style={{ fontSize: F.sm, color: C.textSub, lineHeight: 1.6, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+              {llmView.summary}
+            </div>
+          )}
         </div>
       )}
 

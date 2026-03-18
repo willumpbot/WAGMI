@@ -554,6 +554,88 @@ function RiskCalculator({ entry, sl, symbol }: { entry: number; sl: number; symb
   );
 }
 
+// ─── Agent Chain Strip ───────────────────────────────────────────────────────
+
+function AgentChainStrip({ decision }: { decision: LlmDecision | null }) {
+  if (!decision) return null;
+
+  const action = (decision.action || 'skip').toLowerCase();
+  const isGo = action === 'proceed' || action === 'go';
+  const isFlip = action === 'flip' || action === 'reverse';
+  const isVeto = decision.is_veto;
+  const conf = decision.confidence || 0;
+  const confPct = Math.round(conf * 100);
+  const regime = (decision.regime || 'unknown').toLowerCase();
+  const allowed = decision.allowed !== false;
+
+  const regimeColors: Record<string, string> = {
+    trend: '#16a34a', range: '#2563eb', panic: '#dc2626',
+    high_volatility: '#d97706', low_liquidity: '#64748b', unknown: '#64748b',
+  };
+  const regimeColor = regimeColors[regime] || '#64748b';
+
+  const actionColor = isVeto ? '#dc2626' : isGo ? '#16a34a' : isFlip ? '#7c3aed' : '#64748b';
+  const actionLabel = isVeto ? 'VETOED' : isGo ? `GO ${confPct}%` : isFlip ? `FLIP ${confPct}%` : `SKIP ${confPct}%`;
+
+  const gateColor = allowed ? '#16a34a' : '#dc2626';
+  const gateLabel = allowed ? 'Passed' : 'Blocked';
+
+  const finalLabel = isVeto ? 'BLOCKED' : isGo && allowed ? 'WATCHING' : isFlip && allowed ? 'FLIP WATCH' : 'SKIP';
+  const finalColor = isVeto ? '#dc2626' : isGo && allowed ? '#6366f1' : '#64748b';
+
+  const Step = ({ label, value, color }: { label: string; value: string; color: string }) => (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 3,
+    }}>
+      <span style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+      <span style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color,
+        padding: '3px 8px',
+        borderRadius: 6,
+        background: color + '18',
+        border: `1px solid ${color}44`,
+        whiteSpace: 'nowrap',
+      }}>
+        {value}
+      </span>
+    </div>
+  );
+
+  return (
+    <div style={{
+      padding: '10px 20px',
+      borderBottom: '1px solid #f0f0f0',
+      background: '#f8faff',
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        AI Reasoning Chain
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <Step label="Regime" value={regime.toUpperCase()} color={regimeColor} />
+        <span style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 300 }}>→</span>
+        <Step label="AI Decision" value={actionLabel} color={actionColor} />
+        <span style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 300 }}>→</span>
+        <Step label="Gate Status" value={gateLabel} color={gateColor} />
+        <span style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 300 }}>→</span>
+        <Step label="Result" value={finalLabel} color={finalColor} />
+        {decision.gate_reason && (
+          <>
+            <span style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 300, marginLeft: 4 }}>·</span>
+            <span style={{ fontSize: 10, color: '#94a3b8', marginLeft: 4, fontStyle: 'italic' }}>
+              {String(decision.gate_reason).slice(0, 60)}
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Copy Trade Card ─────────────────────────────────────────────────────────
 
 function CopyTradeCard({
@@ -617,6 +699,9 @@ function CopyTradeCard({
         </div>
         <LlmDecisionPanel decision={llmDecision} />
       </div>
+
+      {/* Agent Chain Strip */}
+      <AgentChainStrip decision={llmDecision} />
 
       {/* Signal Summary */}
       <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>

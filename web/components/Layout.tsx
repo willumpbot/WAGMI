@@ -5,6 +5,7 @@ import { C, R, S, timeAgo } from '../src/theme';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard' },
+  { href: '/signals', label: '🔴 Signals' },
   { href: '/copy-trade', label: 'Copy Trade' },
   { href: '/results', label: 'Results' },
   { href: '/backtest', label: 'Backtest' },
