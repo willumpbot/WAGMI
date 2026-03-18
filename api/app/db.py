@@ -5,10 +5,11 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    # Provide a sensible default for local dev when .env not loaded
-    DATABASE_URL = "postgresql+psycopg2://app:app@postgres:5432/anon"
+    # SQLite for local dev (no Postgres needed)
+    DATABASE_URL = "sqlite:///./local_dev.db"
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 
