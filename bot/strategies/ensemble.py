@@ -1307,7 +1307,7 @@ class EnsembleStrategy:
         _regime = self._current_regime.get(symbol, "unknown")
         _CONSENSUS_MULT = {
             "trending_bull":    {2: 1.06, 3: 1.14, 4: 1.20},
-            "trending_bear":    {2: 1.06, 3: 1.14, 4: 1.20},
+            "trending_bear":    {2: 1.04, 3: 1.10, 4: 1.15},
             "consolidation":    {2: 1.08, 3: 1.18, 4: 1.28},
             "range":            {2: 1.03, 3: 1.06, 4: 1.10},
             "high_volatility":  {2: 1.02, 3: 1.04, 4: 1.06},
@@ -1352,6 +1352,23 @@ class EnsembleStrategy:
             weighted_entry = sum(s.entry for s in signals) / len(signals)
             weighted_tp1 = sum(s.tp1 for s in signals) / len(signals)
             weighted_atr = sum(s.atr for s in signals) / len(signals)
+        # Bear-market shorts: widen SL to survive bounce wicks.
+        # 1.5x ATR is too tight for SELL in volatile bear markets — bounces
+        # trigger stops before the move continues. Widen by 30% in trending regimes.
+        regime = self._current_regime.get(symbol, "unknown")
+        if side == "SELL" and regime == "trend":
+            sl_widen = 1.3  # 30% wider stop for bear-market shorts
+            old_sl = weighted_sl
+            # For SELL, SL is above entry — widen means push it higher
+            sl_dist = abs(weighted_sl - weighted_entry)
+            weighted_sl = weighted_entry + sl_dist * sl_widen
+            # Proportionally widen TP to maintain R:R geometry
+            weighted_tp1 = weighted_entry - abs(weighted_entry - weighted_tp1) * sl_widen
+            logger.info(
+                f"[ENSEMBLE] {symbol} SELL SL widened {sl_widen}x for bear regime: "
+                f"SL {old_sl:.2f} → {weighted_sl:.2f}"
+            )
+
         if side == "BUY":
             best_sl = weighted_sl
             best_tp1 = weighted_tp1
@@ -1389,13 +1406,13 @@ class EnsembleStrategy:
         # High-vol/range regimes have lower WR, so deflate more.
         # Format: {n_agree: {regime: deflation_factor}}
         _WP_DEFLATION = {
-            4: {"trending_bull": 0.93, "trending_bear": 0.93, "consolidation": 0.92,
+            4: {"trending_bull": 0.93, "trending_bear": 0.90, "consolidation": 0.92,
                 "range": 0.85, "high_volatility": 0.80, "panic": 0.75},
-            3: {"trending_bull": 0.85, "trending_bear": 0.85, "consolidation": 0.88,
+            3: {"trending_bull": 0.85, "trending_bear": 0.82, "consolidation": 0.88,
                 "range": 0.78, "high_volatility": 0.72, "panic": 0.68},
-            2: {"trending_bull": 0.75, "trending_bear": 0.75, "consolidation": 0.70,
+            2: {"trending_bull": 0.75, "trending_bear": 0.72, "consolidation": 0.70,
                 "range": 0.65, "high_volatility": 0.60, "panic": 0.55},
-            1: {"trending_bull": 0.55, "trending_bear": 0.55, "consolidation": 0.50,
+            1: {"trending_bull": 0.55, "trending_bear": 0.52, "consolidation": 0.50,
                 "range": 0.45, "high_volatility": 0.40, "panic": 0.35},
         }
         _DEFAULT_DEFLATION = {4: 0.88, 3: 0.80, 2: 0.65, 1: 0.50}
@@ -1413,7 +1430,7 @@ class EnsembleStrategy:
         # Regime-specific slippage: high-vol/panic markets have wider spreads
         # and worse fills. Add slippage as additional cost beyond fees.
         _REGIME_SLIPPAGE_BPS = {
-            "trending_bull": 1, "trending_bear": 1, "trend": 1,
+            "trending_bull": 1, "trending_bear": 2, "trend": 1,
             "consolidation": 1, "range": 1,
             "high_volatility": 4, "panic": 6,
             "low_liquidity": 5, "news_dislocation": 5,
