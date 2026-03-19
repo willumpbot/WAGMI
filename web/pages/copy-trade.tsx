@@ -1395,6 +1395,279 @@ function HowToTrade({
   );
 }
 
+// ─── Trade Setup Quality Matrix ──────────────────────────────────────────────
+
+function TradeSetupQualityMatrix() {
+  const regimes = [
+    { key: 'trend', label: 'Trend' },
+    { key: 'range', label: 'Range' },
+    { key: 'high_volatility', label: 'High Vol' },
+    { key: 'panic', label: 'Panic' },
+  ];
+  const zones = [
+    { key: 'deep_accum', label: 'Deep Accum' },
+    { key: 'accum', label: 'Accum' },
+    { key: 'neutral', label: 'Neutral' },
+    { key: 'distrib', label: 'Distrib' },
+    { key: 'safe_distrib', label: 'Safe Distrib' },
+  ];
+
+  // Realistic quality scores: how well each regime × zone combo performs
+  // Trend + cheap zones = excellent; Panic + distribution = terrible; etc.
+  const scores: Record<string, Record<string, number>> = {
+    trend:           { deep_accum: 92, accum: 84, neutral: 55, distrib: 28, safe_distrib: 14 },
+    range:           { deep_accum: 78, accum: 70, neutral: 62, distrib: 45, safe_distrib: 38 },
+    high_volatility: { deep_accum: 60, accum: 52, neutral: 35, distrib: 22, safe_distrib: 10 },
+    panic:           { deep_accum: 45, accum: 38, neutral: 20, distrib: 12, safe_distrib: 5  },
+  };
+
+  const cellColor = (score: number): string => {
+    if (score > 75) return C.bull;
+    if (score >= 50) return C.warn;
+    return C.bear;
+  };
+
+  const CELL_W = 80;
+  const CELL_H = 36;
+  const ROW_LABEL_W = 72;
+  const COL_LABEL_H = 32;
+  const PAD = 3;
+
+  const svgW = ROW_LABEL_W + zones.length * (CELL_W + PAD) + PAD;
+  const svgH = COL_LABEL_H + regimes.length * (CELL_H + PAD) + PAD;
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
+      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Quality Matrix</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+        Expected signal quality (0–100) by market <strong style={{ color: C.textSub }}>regime</strong> (rows) ×{' '}
+        price <strong style={{ color: C.textSub }}>zone</strong> (columns). Green = high-quality setup, yellow = marginal, red = avoid.
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <svg
+          viewBox={`0 0 ${svgW} ${svgH}`}
+          style={{ display: 'block', width: '100%', minWidth: 360, height: 'auto' }}
+          aria-label="Trade setup quality heatmap"
+        >
+          {/* Column headers */}
+          {zones.map((z, ci) => {
+            const cx = ROW_LABEL_W + PAD + ci * (CELL_W + PAD) + CELL_W / 2;
+            return (
+              <text
+                key={z.key}
+                x={cx}
+                y={COL_LABEL_H - 6}
+                textAnchor="middle"
+                fontSize={9}
+                fontWeight="600"
+                fill={C.muted}
+                fontFamily="inherit"
+              >
+                {z.label}
+              </text>
+            );
+          })}
+
+          {/* Row headers + cells */}
+          {regimes.map((reg, ri) => {
+            const cellY = COL_LABEL_H + PAD + ri * (CELL_H + PAD);
+            const midY = cellY + CELL_H / 2;
+            return (
+              <g key={reg.key}>
+                {/* Row label */}
+                <text
+                  x={ROW_LABEL_W - 6}
+                  y={midY + 4}
+                  textAnchor="end"
+                  fontSize={9}
+                  fontWeight="600"
+                  fill={C.textSub}
+                  fontFamily="inherit"
+                >
+                  {reg.label}
+                </text>
+
+                {/* Cells */}
+                {zones.map((z, ci) => {
+                  const score = scores[reg.key]?.[z.key] ?? 50;
+                  const color = cellColor(score);
+                  const cellX = ROW_LABEL_W + PAD + ci * (CELL_W + PAD);
+                  const opacity = 0.18 + (score / 100) * 0.55;
+
+                  return (
+                    <g key={z.key}>
+                      <rect
+                        x={cellX}
+                        y={cellY}
+                        width={CELL_W}
+                        height={CELL_H}
+                        rx={4}
+                        fill={color}
+                        fillOpacity={opacity}
+                        stroke={color}
+                        strokeOpacity={0.3}
+                        strokeWidth={1}
+                      />
+                      <text
+                        x={cellX + CELL_W / 2}
+                        y={midY + 1}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fontSize={11}
+                        fontWeight="700"
+                        fill={color}
+                        fontFamily="inherit"
+                      >
+                        {score}
+                      </text>
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
+        {[
+          { color: C.bull, label: '> 75 — Strong setup' },
+          { color: C.warn, label: '50–75 — Marginal' },
+          { color: C.bear, label: '< 50 — Avoid' },
+        ].map(({ color, label }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: F.xs, color: C.muted }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: color, display: 'inline-block', opacity: 0.8 }} />
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Signal Timeline ──────────────────────────────────────────────────────────
+
+function SignalTimeline() {
+  const steps = [
+    { label: 'Signal Fires',  desc: 'bot fires signal',    color: C.brand  },
+    { label: 'AI Reviews',    desc: 'Claude evaluates',    color: C.info   },
+    { label: 'Score ≥ 75',    desc: 'quality threshold',   color: C.warn   },
+    { label: 'You Enter',     desc: 'you place order',      color: C.bull   },
+    { label: 'TP1 Hit',       desc: 'first target reached', color: C.bull   },
+    { label: 'Trail Stop',    desc: 'lock in profits',      color: C.bull   },
+    { label: 'Exit',          desc: 'trade closes',         color: C.muted  },
+  ];
+
+  const R_CIRCLE = 14;
+  const STEP_W = 100;
+  const SVG_H = 90;
+  const CY = 34;
+  const svgW = steps.length * STEP_W;
+  const LINE_Y = CY;
+
+  return (
+    <div style={{ background: C.surfaceHover, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20 }}>
+      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Lifecycle</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+        Every copy-trade follows this path — from bot detection to your exit.
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <svg
+          viewBox={`0 0 ${svgW} ${SVG_H}`}
+          style={{ display: 'block', width: '100%', minWidth: 460, height: SVG_H }}
+          aria-label="Signal lifecycle timeline"
+        >
+          {/* Connecting lines */}
+          {steps.slice(0, -1).map((step, i) => {
+            const x1 = i * STEP_W + STEP_W / 2 + R_CIRCLE;
+            const x2 = (i + 1) * STEP_W + STEP_W / 2 - R_CIRCLE;
+            const nextColor = steps[i + 1].color;
+            const gradId = `lineGrad${i}`;
+            return (
+              <g key={i}>
+                <defs>
+                  <linearGradient id={gradId} x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0%" stopColor={step.color} stopOpacity="0.7" />
+                    <stop offset="100%" stopColor={nextColor} stopOpacity="0.7" />
+                  </linearGradient>
+                </defs>
+                <line
+                  x1={x1} y1={LINE_Y}
+                  x2={x2} y2={LINE_Y}
+                  stroke={`url(#${gradId})`}
+                  strokeWidth={2}
+                  strokeDasharray={i === 0 ? 'none' : '4 2'}
+                />
+              </g>
+            );
+          })}
+
+          {/* Step nodes */}
+          {steps.map((step, i) => {
+            const cx = i * STEP_W + STEP_W / 2;
+            return (
+              <g key={step.label}>
+                {/* Outer glow ring */}
+                <circle
+                  cx={cx} cy={CY}
+                  r={R_CIRCLE + 4}
+                  fill={step.color}
+                  fillOpacity={0.1}
+                />
+                {/* Main circle */}
+                <circle
+                  cx={cx} cy={CY}
+                  r={R_CIRCLE}
+                  fill={step.color}
+                  fillOpacity={0.2}
+                  stroke={step.color}
+                  strokeWidth={2}
+                />
+                {/* Step number */}
+                <text
+                  x={cx} y={CY}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={10}
+                  fontWeight="700"
+                  fill={step.color}
+                  fontFamily="inherit"
+                >
+                  {i + 1}
+                </text>
+                {/* Label below */}
+                <text
+                  x={cx} y={CY + R_CIRCLE + 12}
+                  textAnchor="middle"
+                  fontSize={9}
+                  fontWeight="700"
+                  fill={C.textSub}
+                  fontFamily="inherit"
+                >
+                  {step.label}
+                </text>
+                {/* Description below label */}
+                <text
+                  x={cx} y={CY + R_CIRCLE + 23}
+                  textAnchor="middle"
+                  fontSize={8}
+                  fill={C.muted}
+                  fontFamily="inherit"
+                >
+                  {step.desc}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 // ─── Risk Calculator ─────────────────────────────────────────────────────────
 
 function StandaloneRiskCalc({ defaultEntry, defaultSl }: { defaultEntry?: number; defaultSl?: number }) {
@@ -1582,7 +1855,15 @@ export default function CopyTrade() {
             <strong>4.</strong> Always use a stop loss. Start with small size. This is a tool, not a guarantee.
           </div>
         </div>
+
+        {/* Signal Lifecycle Timeline */}
+        <div style={{ marginTop: 20 }}>
+          <SignalTimeline />
+        </div>
       </div>
+
+      {/* Signal Quality Matrix */}
+      <TradeSetupQualityMatrix />
 
       {/* Signal Cards */}
       {loading ? (
