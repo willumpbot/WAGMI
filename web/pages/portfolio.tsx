@@ -81,7 +81,6 @@ function Badge({ label, color, bg }: { label: string; color: string; bg: string 
 // ─── Daily PnL Waterfall ──────────────────────────────────────────────────────
 
 function DailyWaterfall({ trades }: { trades: TradeRecord[] }) {
-  const today = new Date();
   const todayTrades = trades.filter((t) => {
     // We don't have a closed_at timestamp in TradeRecord, so use the last N trades as proxy
     return t.pnl != null;
@@ -769,7 +768,7 @@ function RiskBudgetMeter() {
     { label: 'Drawdown buffer',    used: 0.15, limit: 0.5 },
   ];
 
-  const barColor = usedPct > 80 ? C.bear : usedPct > 55 ? C.warn : C.bear;
+  const barColor = usedPct > 80 ? C.bear : usedPct > 55 ? C.warn : C.bull;
 
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', flex: 1, minWidth: 260 }}>
@@ -784,7 +783,7 @@ function RiskBudgetMeter() {
         <div style={{ height: 14, background: C.surface, borderRadius: R.pill, overflow: 'hidden', display: 'flex' }}>
           <div style={{
             width: `${usedPct}%`, height: '100%',
-            background: `linear-gradient(90deg, ${C.bear}cc, ${barColor})`,
+            background: `linear-gradient(90deg, ${barColor}cc, ${barColor})`,
             borderRadius: `${R.pill}px 0 0 ${R.pill}px`,
             transition: 'width 0.4s',
           }} />
@@ -1867,13 +1866,19 @@ export default function PortfolioPage() {
               </div>
             </div>
 
-            {/* ── Sunburst + Risk Budget ── */}
+            {/* ── Allocation & Risk Overview ── */}
+            <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+              Allocation &amp; Risk Overview
+            </h2>
             <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
               <PortfolioSunburst />
               <RiskBudgetMeter />
             </div>
 
             {/* ── Efficiency Frontier ── */}
+            <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+              Risk / Reward Efficiency
+            </h2>
             <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
               <EfficiencyFrontierChart />
             </div>
@@ -1913,7 +1918,10 @@ export default function PortfolioPage() {
               </div>
             )}
 
-            {/* ── Correlation Warning Heatmap ── */}
+            {/* ── Correlation Analysis ── */}
+            <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+              Correlation Analysis
+            </h2>
             <CorrelationWarning
               symbols={openPositions.length >= 2
                 ? openPositions.map((s) => s.id.replace(/USDT?$/i, '').toUpperCase())

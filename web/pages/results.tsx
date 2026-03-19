@@ -2810,12 +2810,8 @@ function ConsecutiveTradePnlChart({ trades }: { trades: TradeRecord[] }) {
 
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }} preserveAspectRatio="xMinYMid meet">
         <defs>
-          {/* Halo filter for highlighted dots */}
-          <filter id="seqHaloWin" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-          <filter id="seqHaloLoss" x="-50%" y="-50%" width="200%" height="200%">
+          {/* Shared halo filter for highlighted dots */}
+          <filter id="seqHalo" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
@@ -3324,6 +3320,11 @@ export default function Results() {
         </div>
       )}
 
+      {/* ── Performance Attribution ──────────────────── */}
+      <h2 style={{ margin: '0 0 16px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+        Performance Attribution
+      </h2>
+
       {/* ── Profit Attribution Chart ─────────────────── */}
       <ProfitAttributionChart trades={trades} backtest={backtest} />
 
@@ -3411,6 +3412,11 @@ export default function Results() {
 
       {/* ── By-Symbol Accordion ───────────────────────── */}
       <BySymbolAccordion bySymbol={backtest?.by_symbol} />
+
+      {/* ── Trade Dynamics ───────────────────────────── */}
+      <h2 style={{ margin: '0 0 16px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+        Trade Dynamics
+      </h2>
 
       {/* ── Daily Equity Waterfall ────────────────────── */}
       <DailyEquityWaterfall trades={trades} />

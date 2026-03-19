@@ -780,7 +780,7 @@ function CopyTradeCard({
         </div>
 
         {/* SVG Price Ruler */}
-        <VisualPriceRuler price={signal.price} zones={signal.zones} />
+        <VisualPriceRuler price={signal.price} zones={signal.zones} symbol={signal.symbol} />
 
         {/* Supplementary price level details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 500 }}>
@@ -826,10 +826,13 @@ function CopyTradeCard({
 function VisualPriceRuler({
   price,
   zones,
+  symbol,
 }: {
   price: number;
   zones: { deepAccum: number; accum: number; distrib: number; safeDistrib: number };
+  symbol: string;
 }) {
+  const gradSuffix = symbol.replace(/[^a-zA-Z0-9]/g, '');
   const W = 600;
   const H = 80;
   const BAR_Y = 44;
@@ -881,11 +884,11 @@ function VisualPriceRuler({
       >
         {/* Green bar: deepAccum → currentX */}
         <defs>
-          <linearGradient id="greenGrad" x1="0" x2="1" y1="0" y2="0">
+          <linearGradient id={`greenGrad-${gradSuffix}`} x1="0" x2="1" y1="0" y2="0">
             <stop offset="0%" stopColor="#16a34a" stopOpacity="0.55" />
             <stop offset="100%" stopColor="#86efac" stopOpacity="0.75" />
           </linearGradient>
-          <linearGradient id="redGrad" x1="0" x2="1" y1="0" y2="0">
+          <linearGradient id={`redGrad-${gradSuffix}`} x1="0" x2="1" y1="0" y2="0">
             <stop offset="0%" stopColor="#fca5a5" stopOpacity="0.75" />
             <stop offset="100%" stopColor="#dc2626" stopOpacity="0.55" />
           </linearGradient>
@@ -898,7 +901,7 @@ function VisualPriceRuler({
           width={Math.max(0, currentX - deepAccumX)}
           height={BAR_H}
           rx={4}
-          fill="url(#greenGrad)"
+          fill={`url(#greenGrad-${gradSuffix})`}
         />
         {/* Expensive zone (red) */}
         <rect
@@ -907,7 +910,7 @@ function VisualPriceRuler({
           width={Math.max(0, safeDistribX - currentX)}
           height={BAR_H}
           rx={4}
-          fill="url(#redGrad)"
+          fill={`url(#redGrad-${gradSuffix})`}
         />
 
         {/* Tick marks + labels */}
@@ -1580,28 +1583,29 @@ function SignalTimeline() {
           style={{ display: 'block', width: '100%', minWidth: 460, height: SVG_H }}
           aria-label="Signal lifecycle timeline"
         >
+          {/* Gradient defs for connecting lines */}
+          <defs>
+            {steps.slice(0, -1).map((step, i) => (
+              <linearGradient key={i} id={`lineGrad${i}`} x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor={step.color} stopOpacity="0.7" />
+                <stop offset="100%" stopColor={steps[i + 1].color} stopOpacity="0.7" />
+              </linearGradient>
+            ))}
+          </defs>
+
           {/* Connecting lines */}
           {steps.slice(0, -1).map((step, i) => {
             const x1 = i * STEP_W + STEP_W / 2 + R_CIRCLE;
             const x2 = (i + 1) * STEP_W + STEP_W / 2 - R_CIRCLE;
-            const nextColor = steps[i + 1].color;
-            const gradId = `lineGrad${i}`;
             return (
-              <g key={i}>
-                <defs>
-                  <linearGradient id={gradId} x1="0" x2="1" y1="0" y2="0">
-                    <stop offset="0%" stopColor={step.color} stopOpacity="0.7" />
-                    <stop offset="100%" stopColor={nextColor} stopOpacity="0.7" />
-                  </linearGradient>
-                </defs>
-                <line
-                  x1={x1} y1={LINE_Y}
-                  x2={x2} y2={LINE_Y}
-                  stroke={`url(#${gradId})`}
-                  strokeWidth={2}
-                  strokeDasharray={i === 0 ? 'none' : '4 2'}
-                />
-              </g>
+              <line
+                key={i}
+                x1={x1} y1={LINE_Y}
+                x2={x2} y2={LINE_Y}
+                stroke={`url(#lineGrad${i})`}
+                strokeWidth={2}
+                strokeDasharray={i === 0 ? 'none' : '4 2'}
+              />
             );
           })}
 
