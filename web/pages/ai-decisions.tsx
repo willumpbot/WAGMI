@@ -525,6 +525,126 @@ function ModelPanel({ decisions }: { decisions: LlmDecision[] }) {
   );
 }
 
+// ─── Confidence Trend Sparkline ───────────────────────────────────────────────
+
+function ConfidenceTrendSparkline({ decisions }: { decisions: LlmDecision[] }) {
+  if (decisions.length < 5) return null;
+  const last30 = [...decisions].sort((a, b) => a.ts - b.ts).slice(-30);
+  const W = 240, H = 60;
+  const vals = last30.map((d) => (d.confidence ?? 0) * 100);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals) || 1;
+  const range = max - min || 1;
+  const x = (i: number) => (i / (vals.length - 1)) * W;
+  const y = (v: number) => H - 4 - ((v - min) / range) * (H - 8);
+  const pts = vals.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+  const areaPath = [`0,${H}`, ...vals.map((v, i) => `${x(i)},${y(v)}`), `${W},${H}`].join(' ');
+  const avgConf = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const avgY = y(avgConf);
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Confidence Trend</span>
+        <span style={{ fontSize: F.xs, fontWeight: 700, color: avgConf >= 65 ? C.bull : avgConf >= 45 ? C.warn : C.bear }}>
+          avg {Math.round(avgConf)}%
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
+        <defs>
+          <linearGradient id="confGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={C.brand} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={C.brand} stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        {/* 65% threshold line */}
+        {(() => {
+          const threshY = y(65);
+          return (
+            <line x1={0} y1={threshY} x2={W} y2={threshY} stroke={C.bull} strokeWidth={0.8} strokeDasharray="3 4" opacity={0.5} />
+          );
+        })()}
+        {/* Area fill */}
+        <polygon points={areaPath} fill="url(#confGrad)" />
+        {/* Line */}
+        <polyline points={pts} fill="none" stroke={C.brand} strokeWidth={1.5} strokeLinejoin="round" />
+        {/* End dot */}
+        <circle cx={x(vals.length - 1)} cy={y(vals[vals.length - 1])} r={3} fill={C.brand} />
+        {/* Labels */}
+        <text x={2} y={H - 2} fontSize={8} fill={C.muted}>older</text>
+        <text x={W - 2} y={H - 2} fontSize={8} fill={C.muted} textAnchor="end">now</text>
+        <text x={W + 2} y={avgY + 3} fontSize={8} fill={C.bull} textAnchor="start">65%</text>
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: C.muted }}>
+        <span>min: {Math.round(min)}%</span>
+        <span>{last30.length} decisions</span>
+        <span>max: {Math.round(max)}%</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Decision Mix Donut ───────────────────────────────────────────────────────
+
+function DecisionMixDonut({ decisions }: { decisions: LlmDecision[] }) {
+  if (!decisions.length) return null;
+  const goes = decisions.filter((d) => (d.action === 'proceed' || d.action === 'go') && d.allowed && !d.is_veto).length;
+  const vetoes = decisions.filter((d) => d.is_veto).length;
+  const blocked = decisions.filter((d) => !d.allowed && !d.is_veto).length;
+  const flips = decisions.filter((d) => d.action === 'flip').length;
+  const skips = decisions.length - goes - vetoes - blocked - flips;
+
+  const segments = [
+    { label: 'GO', count: goes, color: C.bull },
+    { label: 'SKIP', count: Math.max(skips, 0), color: C.muted },
+    { label: 'VETO', count: vetoes, color: C.purple },
+    { label: 'BLOCKED', count: blocked, color: C.bear },
+    { label: 'FLIP', count: flips, color: C.warn },
+  ].filter((s) => s.count > 0);
+
+  const total = segments.reduce((a, s) => a + s.count, 0) || 1;
+  const CX = 60, CY = 60, R_out = 52, R_in = 34;
+
+  const arcPath = (startPct: number, endPct: number) => {
+    const a1 = (startPct * 360 - 90) * (Math.PI / 180);
+    const a2 = (endPct * 360 - 90) * (Math.PI / 180);
+    const large = (endPct - startPct) * 360 > 180 ? 1 : 0;
+    const x1 = CX + R_out * Math.cos(a1), y1 = CY + R_out * Math.sin(a1);
+    const x2 = CX + R_out * Math.cos(a2), y2 = CY + R_out * Math.sin(a2);
+    const x3 = CX + R_in * Math.cos(a2), y3 = CY + R_in * Math.sin(a2);
+    const x4 = CX + R_in * Math.cos(a1), y4 = CY + R_in * Math.sin(a1);
+    return `M ${x1} ${y1} A ${R_out} ${R_out} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${R_in} ${R_in} 0 ${large} 0 ${x4} ${y4} Z`;
+  };
+
+  let cumulative = 0;
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>Decision Mix</div>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <svg width={120} height={120} viewBox="0 0 120 120" style={{ flexShrink: 0 }}>
+          {segments.map((seg) => {
+            const startPct = cumulative / total;
+            const endPct = (cumulative + seg.count) / total;
+            cumulative += seg.count;
+            const d = arcPath(startPct, endPct);
+            return <path key={seg.label} d={d} fill={seg.color} opacity={0.85} stroke={C.bg} strokeWidth={1} />;
+          })}
+          <text x={CX} y={CY - 5} textAnchor="middle" fontSize={14} fontWeight="800" fill={C.text}>{total}</text>
+          <text x={CX} y={CY + 10} textAnchor="middle" fontSize={8} fill={C.muted}>total</text>
+        </svg>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {segments.map((seg) => (
+            <div key={seg.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: seg.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 10, color: C.textSub, flex: 1 }}>{seg.label}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: seg.color }}>{Math.round((seg.count / total) * 100)}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const ACTION_TABS = ['ALL', 'GO', 'SKIP', 'VETOED', 'BLOCKED', 'FLIP'];
@@ -731,6 +851,8 @@ export default function AiDecisionsPage() {
 
           {/* ── Right: Stats panels ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 80 }}>
+            <DecisionMixDonut decisions={decisions} />
+            <ConfidenceTrendSparkline decisions={decisions} />
             <VetoPanel decisions={decisions} />
             <VetoReasonWordCloud decisions={decisions.filter((d) => d.is_veto).slice(0, 100)} />
             <ModelPanel decisions={decisions} />
