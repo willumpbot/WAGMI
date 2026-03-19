@@ -140,7 +140,7 @@ function KpiCard({ label, value, sub, color }: { label: string; value: string; s
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="fade-in" style={{ marginBottom: 36 }}>
+    <div className="fade-in" style={{ marginBottom: 32 }}>
       <h2 className="section-label" style={{ margin: '0 0 16px' }}>{title}</h2>
       {children}
     </div>
@@ -1711,7 +1711,7 @@ function TradeQualityMatrix({ trades }: { trades: TradeRecord[] }) {
       {trades.length === 0 && (
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 16 }}>
           <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
+          <span style={{ fontSize: F.xs, color: C.warn, fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
 
@@ -1878,7 +1878,7 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
       {trades.length === 0 && (
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 14 }}>
           <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
+          <span style={{ fontSize: F.xs, color: C.warn, fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
 
@@ -2016,7 +2016,7 @@ function StreakAnalysisChart({ trades }: { trades: TradeRecord[] }) {
       {trades.length === 0 && (
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 14 }}>
           <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
+          <span style={{ fontSize: F.xs, color: C.warn, fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
 
@@ -2546,26 +2546,55 @@ export default function PerformancePage() {
   }, []);
 
   // ── Filter by date range ──────────────────────────────────────────────────
-  // trades.csv has no timestamp; approximate by slicing from the end (most recent N%)
   const filteredTrades = useMemo(() => {
     if (dateRange === 'all') return trades;
-    const now = Date.now();
-    const cutoffMs = dateRange === '7d' ? 7 * 86400000 : 30 * 86400000;
-    // If trades have a timestamp field use it; otherwise fall back to tail slice
-    const hasTs = trades.some((t) => (t as { timestamp?: number }).timestamp != null);
+    const daysBack = dateRange === '7d' ? 7 : 30;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - daysBack);
+    // Use timestamp field (ISO string or epoch ms/s) when available; skip trades with missing/invalid timestamps
+    const hasTs = trades.some((t) => (t as { timestamp?: string | number }).timestamp != null);
     if (hasTs) {
       return trades.filter((t) => {
-        const ts = (t as { timestamp?: number }).timestamp;
-        return ts != null && (now - ts) <= cutoffMs;
+        const raw = (t as { timestamp?: string | number }).timestamp;
+        if (raw == null) return false;
+        let d: Date;
+        if (typeof raw === 'number') {
+          // Epoch seconds (< 1e12) or epoch ms (>= 1e12)
+          d = new Date(raw < 1e12 ? raw * 1000 : raw);
+        } else {
+          d = new Date(raw);
+        }
+        if (isNaN(d.getTime())) return false;
+        return d >= cutoff;
       });
     }
-    // Approximate: assume trades are sorted oldest→newest
+    // Fallback: assume trades are sorted oldest→newest, slice the tail
     const fraction = dateRange === '7d' ? 0.25 : 0.6;
     return trades.slice(Math.floor(trades.length * (1 - fraction)));
   }, [trades, dateRange]);
 
   const filteredCurve = useMemo(() => {
     if (dateRange === 'all') return curve;
+    const daysBack = dateRange === '7d' ? 7 : 30;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - daysBack);
+    // Use timestamp field on curve points if present
+    const hasTs = curve.some((p) => (p as { timestamp?: string | number }).timestamp != null);
+    if (hasTs) {
+      return curve.filter((p) => {
+        const raw = (p as { timestamp?: string | number }).timestamp;
+        if (raw == null) return false;
+        let d: Date;
+        if (typeof raw === 'number') {
+          d = new Date(raw < 1e12 ? raw * 1000 : raw);
+        } else {
+          d = new Date(raw);
+        }
+        if (isNaN(d.getTime())) return false;
+        return d >= cutoff;
+      });
+    }
+    // Fallback: slice from tail
     const fraction = dateRange === '7d' ? 0.25 : 0.6;
     return curve.slice(Math.floor(curve.length * (1 - fraction)));
   }, [curve, dateRange]);
@@ -2662,8 +2691,9 @@ export default function PerformancePage() {
         </div>
 
         {fetchError && !loading && (
-          <div style={{ marginBottom: 20, padding: '12px 16px', background: 'rgba(217,119,6,.1)', border: '1px solid rgba(217,119,6,.3)', borderRadius: 8, color: C.warnMid, fontSize: 14 }}>
-            Failed to load performance data. The API may be offline — data shown may be stale or empty.
+          <div style={{ marginBottom: 20, padding: '12px 16px', background: C.bearMuted, border: `1px solid ${C.bear}40`, borderRadius: R.md, color: C.bear, fontSize: F.md, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontWeight: 700, fontSize: F.lg }}>!</span>
+            <span>Unable to load performance data. The API may be offline — showing empty or stale data.</span>
           </div>
         )}
 
@@ -2680,7 +2710,7 @@ export default function PerformancePage() {
         {loading ? (
           <div>
             {/* KPI skeleton row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 36 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
                   <Skeleton h={11} w="55%" />

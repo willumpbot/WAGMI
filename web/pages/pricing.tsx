@@ -924,6 +924,7 @@ function PFAQ({ q, a }: { q: string; a: string }) {
 
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
+  const [hoveredTier, setHoveredTier] = useState<string | null>(null);
   const returnPct = 11.34; // from backtest results
 
   return (
@@ -936,7 +937,7 @@ export default function PricingPage() {
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 20px' }}>
 
         {/* ── Header ── */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1 style={{ margin: '0 0 12px', fontSize: F['3xl'], fontWeight: 900, color: C.text, letterSpacing: -0.5 }}>Pick your <span className="gradient-text">edge.</span></h1>
           <p style={{ margin: '0 0 24px', fontSize: F.base, color: C.muted }}>Start free. Upgrade when you're ready to automate.</p>
 
@@ -951,16 +952,24 @@ export default function PricingPage() {
 
         {/* ── Tier Cards ── */}
         <style>{`@media (max-width: 720px) { .tier-grid { grid-template-columns: 1fr !important; } }`}</style>
-        <div className="tier-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 48, alignItems: 'start' }}>
+        <div className="tier-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32, alignItems: 'start' }}>
           {TIERS.map((tier) => {
             const price = annual && tier.annual != null ? tier.annual / 12 : tier.monthly;
+            const isHovered = hoveredTier === tier.name;
             return (
-              <div key={tier.name} className="card-hover" style={{
-                background: G.card, border: `1px solid ${tier.highlighted ? C.brand : C.border}`,
-                borderRadius: R.xl, padding: '28px 24px', position: 'relative',
-                boxShadow: tier.highlighted ? S.glow : S.sm,
-                transform: tier.highlighted ? 'translateY(-6px)' : 'none',
-              }}>
+              <div
+                key={tier.name}
+                onMouseEnter={() => setHoveredTier(tier.name)}
+                onMouseLeave={() => setHoveredTier(null)}
+                style={{
+                  background: isHovered ? C.surfaceHover : G.card,
+                  border: tier.highlighted ? `2px solid ${C.brand}` : `1px solid ${C.border}`,
+                  borderRadius: R.xl, padding: '28px 24px', position: 'relative',
+                  boxShadow: tier.highlighted ? S.glow : S.sm,
+                  transform: tier.highlighted ? 'translateY(-6px)' : 'none',
+                  transition: 'background 0.18s ease',
+                  cursor: 'default',
+                }}>
                 {tier.badge && (
                   <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '3px 14px', borderRadius: R.pill, background: C.brand, color: '#fff', fontSize: F.xs, fontWeight: 700, whiteSpace: 'nowrap' }}>{tier.badge}</div>
                 )}
@@ -977,8 +986,8 @@ export default function PricingPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
                   {tier.features.map((f) => (
                     <div key={f.label} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                      <span style={{ color: f.included ? C.bull : C.faint, flexShrink: 0, fontWeight: 700, marginTop: 1 }}>{f.included ? '✓' : '—'}</span>
-                      <span style={{ fontSize: F.xs, color: f.included ? C.textSub : C.faint, lineHeight: 1.4 }}>
+                      <span style={{ color: f.included ? C.bull : C.muted, flexShrink: 0, fontWeight: 700, marginTop: 1 }}>{f.included ? '✓' : '×'}</span>
+                      <span style={{ fontSize: F.xs, color: f.included ? C.textSub : C.muted, lineHeight: 1.4 }}>
                         {f.label}{f.note && <span style={{ color: C.muted }}> ({f.note})</span>}
                       </span>
                     </div>
@@ -997,23 +1006,23 @@ export default function PricingPage() {
         </div>
 
         {/* ── Tier Value Bars ── */}
-        <div style={{ marginBottom: 40 }}>
+        <div style={{ marginBottom: 32 }}>
           <h2 style={{ margin: '0 0 16px', fontSize: F.xl, fontWeight: 700, color: C.text, textAlign: 'center' }}>What each tier unlocks</h2>
           <TierValueBars />
         </div>
 
         {/* ── Returns Calculator ── */}
-        <div style={{ marginBottom: 52 }}>
+        <div style={{ marginBottom: 32 }}>
           <ReturnsCalc returnPct={returnPct} />
         </div>
 
         {/* ── ROI Timeline Chart ── */}
-        <div style={{ marginBottom: 52 }}>
+        <div style={{ marginBottom: 32 }}>
           <RoiTimelineChart />
         </div>
 
         {/* ── Feature Table ── */}
-        <div style={{ marginBottom: 52 }}>
+        <div style={{ marginBottom: 32 }}>
           <h2 style={{ margin: '0 0 20px', fontSize: F.xl, fontWeight: 700, color: C.text, textAlign: 'center' }}>Full feature comparison</h2>
           <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
             <FeatureTable annual={annual} />
@@ -1021,13 +1030,13 @@ export default function PricingPage() {
         </div>
 
         {/* ── Social Proof ── */}
-        <div style={{ background: `${C.brand}10`, border: `1px solid ${C.brand}30`, borderRadius: R.xl, padding: '24px 28px', marginBottom: 48, textAlign: 'center' }}>
+        <div style={{ background: `${C.brand}10`, border: `1px solid ${C.brand}30`, borderRadius: R.xl, padding: '24px 28px', marginBottom: 32, textAlign: 'center' }}>
           <div style={{ fontSize: F.xl, fontWeight: 700, color: C.text, marginBottom: 8 }}>7-day money back guarantee</div>
           <div style={{ fontSize: F.sm, color: C.muted }}>Try Pro or Elite for 7 days. If it's not for you, we'll refund without questions.</div>
         </div>
 
         {/* ── Break-Even Calculator + Growth Projection ── */}
-        <div style={{ marginBottom: 52 }}>
+        <div style={{ marginBottom: 32 }}>
           <h2 style={{ margin: '0 0 16px', fontSize: F.xl, fontWeight: 700, color: C.text, textAlign: 'center' }}>Is it worth it for your account?</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
             <BreakEvenCalculator />
@@ -1036,12 +1045,12 @@ export default function PricingPage() {
         </div>
 
         {/* ── Monthly Return Heatmap ── */}
-        <div style={{ marginBottom: 52 }}>
+        <div style={{ marginBottom: 32 }}>
           <MonthlyReturnHeatmap />
         </div>
 
         {/* ── FAQ ── */}
-        <div style={{ marginBottom: 40 }}>
+        <div style={{ marginBottom: 32 }}>
           <h2 style={{ margin: '0 0 20px', fontSize: F.xl, fontWeight: 700, color: C.text, textAlign: 'center' }}>Pricing FAQ</h2>
           <PFAQ q="Is there a free trial?" a="Yes — Pro has a 7-day free trial, no credit card required. Observer is free forever with no time limit." />
           <PFAQ q="Can I cancel anytime?" a="Yes. Monthly plans cancel immediately. Annual plans get a prorated refund in the first 30 days." />

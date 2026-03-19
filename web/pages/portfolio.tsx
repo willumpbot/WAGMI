@@ -95,8 +95,8 @@ function DailyWaterfall({ trades }: { trades: TradeRecord[] }) {
 
   if (!todayTrades.length) {
     return (
-      <div style={{ textAlign: 'center', padding: '40px 20px', color: C.textSub }}>
-        <div style={{ fontSize: 40, marginBottom: 10 }}>📉</div>
+      <div style={{ textAlign: 'center', padding: '24px 20px', color: C.textSub }}>
+        <div style={{ fontSize: 36, marginBottom: 10 }}>📉</div>
         <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 6 }}>No recent trade data</div>
         <div style={{ fontSize: F.sm, color: C.muted }}>Closed trades will appear here once the bot starts trading.</div>
       </div>
@@ -179,7 +179,7 @@ function PositionCard({ strategy }: { strategy: Strategy }) {
           <Badge
             label={side.toUpperCase()}
             color={sideColor(side)}
-            bg={side.toUpperCase() === 'BUY' || side.toUpperCase() === 'LONG' ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)'}
+            bg={side.toUpperCase() === 'BUY' || side.toUpperCase() === 'LONG' ? C.bullMuted : C.bearMuted}
           />
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -1762,6 +1762,8 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [tradePage, setTradePage] = useState(0);
+  const PAGE_SIZE = 20;
 
   const fetchData = async () => {
     try {
@@ -1834,7 +1836,7 @@ export default function PortfolioPage() {
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px' }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 900, color: C.text, letterSpacing: -0.5 }}>
               <span className="gradient-text">Portfolio</span>
@@ -1867,25 +1869,42 @@ export default function PortfolioPage() {
         {loading ? (
           <div>
             {/* KPI skeleton row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px' }}>
-                  <Skeleton h={12} w="60%" />
-                  <div style={{ marginTop: 10 }}><Skeleton h={28} w="80%" /></div>
-                  <div style={{ marginTop: 8 }}><Skeleton h={10} w="50%" /></div>
+                <div key={i} style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
+                  <Skeleton h={11} w="55%" />
+                  <div style={{ marginTop: 12 }}><Skeleton h={30} w="75%" /></div>
+                  <div style={{ marginTop: 8 }}><Skeleton h={10} w="45%" /></div>
                 </div>
               ))}
             </div>
-            {/* Section skeletons */}
-            <Skeleton h={20} w="30%" />
-            <div style={{ marginTop: 12, marginBottom: 24 }}><Skeleton h={180} /></div>
-            <Skeleton h={20} w="30%" />
-            <div style={{ marginTop: 12, marginBottom: 24 }}><Skeleton h={260} /></div>
+            {/* Section header skeletons */}
+            <Skeleton h={18} w="32%" />
+            {/* Card skeleton with inner table rows */}
+            <div style={{ marginTop: 14, marginBottom: 32, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px' }}>
+              <Skeleton h={160} />
+            </div>
+            <Skeleton h={18} w="28%" />
+            {/* Table skeleton */}
+            <div style={{ marginTop: 14, marginBottom: 32, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+              <div style={{ background: C.surface, padding: '10px 16px', borderBottom: `1px solid ${C.border}` }}>
+                <Skeleton h={10} w="80%" />
+              </div>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{ padding: '12px 16px', borderBottom: i < 5 ? `1px solid ${C.border}` : 'none', display: 'flex', gap: 16 }}>
+                  <Skeleton h={12} w="15%" />
+                  <Skeleton h={12} w="12%" />
+                  <Skeleton h={12} w="20%" />
+                  <Skeleton h={12} w="14%" />
+                  <Skeleton h={12} w="10%" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <>
             {/* ── Summary KPIs ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
               {[
                 { label: 'UNREALIZED P&L', value: fmtUsd(totalUnrealPnl), sub: `${openPositions.length} open position${openPositions.length !== 1 ? 's' : ''}`, color: pnlColor(totalUnrealPnl) },
                 { label: 'REALIZED P&L', value: fmtUsd(totalRealizedPnl), sub: 'All-time closed trades', color: pnlColor(totalRealizedPnl) },
@@ -1984,7 +2003,7 @@ export default function PortfolioPage() {
               {openPositions.length === 0 ? (
                 <div style={{
                   background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
-                  padding: 32, textAlign: 'center',
+                  padding: '24px 24px', textAlign: 'center',
                 }}>
                   <div style={{ fontSize: 36, marginBottom: 8 }}>💤</div>
                   <div style={{ fontSize: F.base, color: C.muted }}>No open positions right now.</div>
@@ -2025,7 +2044,7 @@ export default function PortfolioPage() {
                   <tbody>
                     {strategies.length === 0 && (
                       <tr>
-                        <td colSpan={5} style={{ padding: '48px 24px', textAlign: 'center' }}>
+                        <td colSpan={5} style={{ padding: '32px 24px', textAlign: 'center' }}>
                           <div style={{ fontSize: 36, marginBottom: 8 }}>🤖</div>
                           <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 6 }}>No strategies connected</div>
                           <div style={{ fontSize: F.sm, color: C.muted }}>Start the bot to see live strategy status here.</div>
@@ -2041,7 +2060,7 @@ export default function PortfolioPage() {
                             <Badge
                               label={isLive ? '● LIVE' : 'OFFLINE'}
                               color={isLive ? C.bull : C.muted}
-                              bg={isLive ? 'rgba(22,163,74,0.12)' : C.surface}
+                              bg={isLive ? C.bullMuted : C.surface}
                             />
                           </td>
                           <td style={{ padding: '12px 16px', color: pnlColor(s.pnl_realized), fontWeight: 600 }}>
@@ -2066,34 +2085,50 @@ export default function PortfolioPage() {
             </div>
 
             {/* ── Recent Trades Waterfall ── */}
-            {recentTrades.length > 0 && (
-              <div style={{ marginBottom: 32 }}>
-                <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
-                  Recent Closed Trades
-                </h2>
-                <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto' }}>
-                  <DailyWaterfall trades={[...recentTrades].reverse()} />
+            <div style={{ marginBottom: 32 }}>
+              <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+                Recent Closed Trades
+              </h2>
+              {recentTrades.length === 0 ? (
+                <div style={{
+                  background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
+                  padding: '32px 24px', textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.5 }}>📋</div>
+                  <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 8 }}>
+                    No trades recorded yet
+                  </div>
+                  <div style={{ fontSize: F.sm, color: C.muted, maxWidth: 360, margin: '0 auto' }}>
+                    The bot will log trades here as they occur. Start the bot in paper or live mode to begin trading.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', overflowX: 'auto' }}>
+                  {/* Daily waterfall chart — capped at 600px to prevent overflow */}
+                  <div style={{ maxWidth: 600, overflow: 'hidden' }}>
+                    <DailyWaterfall trades={[...recentTrades].reverse()} />
+                  </div>
                   <div style={{ marginTop: 16, overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: F.sm, minWidth: 600 }}>
                       <thead>
-                        <tr>
+                        <tr style={{ background: C.surface }}>
                           {['Symbol', 'Side', 'Strategy', 'P&L', 'Outcome', 'Close Reason', 'R:R'].map((h) => (
-                            <th key={h} style={{ padding: '6px 12px', textAlign: 'left', color: C.muted, fontWeight: 600, fontSize: F.xs, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                            <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: C.muted, fontWeight: 600, fontSize: F.xs, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.border}` }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {recentTrades.slice(0, 15).map((t, i) => (
+                        {recentTrades.slice(0, (tradePage + 1) * PAGE_SIZE).map((t, i) => (
                           <tr key={i} style={{
                             borderBottom: `1px solid ${C.border}`,
-                            background: t.outcome === 'WIN' ? 'rgba(22,163,74,0.06)' : t.outcome === 'LOSS' ? 'rgba(220,38,38,0.06)' : 'transparent',
+                            background: t.outcome === 'WIN' ? C.bullMuted : t.outcome === 'LOSS' ? C.bearMuted : 'transparent',
                           }}>
                             <td style={{ padding: '8px 12px', fontWeight: 700, color: C.text }}>{t.symbol}</td>
                             <td style={{ padding: '8px 12px', color: sideColor(t.side) }}>{t.side}</td>
                             <td style={{ padding: '8px 12px', color: C.muted, fontSize: F.xs }}>{t.strategy}</td>
                             <td style={{ padding: '8px 12px', fontWeight: 600, color: pnlColor(t.pnl) }}>{t.pnl != null ? fmtUsd(t.pnl) : '—'}</td>
                             <td style={{ padding: '8px 12px' }}>
-                              <Badge label={t.outcome} color={t.outcome === 'WIN' ? C.bull : C.bear} bg={t.outcome === 'WIN' ? 'rgba(22,163,74,0.12)' : 'rgba(220,38,38,0.12)'} />
+                              <Badge label={t.outcome} color={t.outcome === 'WIN' ? C.bull : C.bear} bg={t.outcome === 'WIN' ? C.bullMuted : C.bearMuted} />
                             </td>
                             <td style={{ padding: '8px 12px', color: C.muted, fontSize: F.xs }}>{t.close_reason || '—'}</td>
                             <td style={{ padding: '8px 12px', color: t.rr_achieved != null && t.rr_achieved >= 1 ? C.bull : C.bear }}>
@@ -2104,9 +2139,33 @@ export default function PortfolioPage() {
                       </tbody>
                     </table>
                   </div>
+                  {/* Pagination: show count and load-more button */}
+                  {recentTrades.length > (tradePage + 1) * PAGE_SIZE && (
+                    <div style={{ marginTop: 16, textAlign: 'center' }}>
+                      <span style={{ fontSize: F.xs, color: C.muted, marginRight: 12 }}>
+                        Showing {Math.min((tradePage + 1) * PAGE_SIZE, recentTrades.length)} of {recentTrades.length} trades
+                      </span>
+                      <button
+                        onClick={() => setTradePage((p) => p + 1)}
+                        style={{
+                          padding: '6px 18px', fontSize: F.sm, fontWeight: 600,
+                          background: C.surface, color: C.text,
+                          border: `1px solid ${C.border}`, borderRadius: R.sm,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Show more
+                      </button>
+                    </div>
+                  )}
+                  {recentTrades.length > 0 && recentTrades.length <= (tradePage + 1) * PAGE_SIZE && tradePage > 0 && (
+                    <div style={{ marginTop: 12, textAlign: 'center', fontSize: F.xs, color: C.muted }}>
+                      All {recentTrades.length} trades shown
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </>
         )}
       </div>

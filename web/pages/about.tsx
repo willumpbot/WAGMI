@@ -92,7 +92,7 @@ function FAQ({ q, a }: { q: string; a: React.ReactNode }) {
 
 function Section({ id, eyebrow, title, children }: { id?: string; eyebrow: string; title: string; children: React.ReactNode }) {
   return (
-    <div id={id} style={{ marginBottom: 60, scrollMarginTop: 80 }}>
+    <div id={id} style={{ marginBottom: 32, scrollMarginTop: 80 }}>
       <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{eyebrow}</div>
       <h2 style={{ margin: '0 0 24px', fontSize: F['2xl'], fontWeight: 800, color: C.text }}>{title}</h2>
       {children}
@@ -134,7 +134,7 @@ const TECH_ITEMS: TechItem[] = [
 
 function TechStackGrid() {
   return (
-    <div style={{ marginBottom: 60 }}>
+    <div style={{ marginBottom: 32 }}>
       <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
         Powered By
       </div>
@@ -222,7 +222,7 @@ function SafetyStats() {
       background: C.border,
       borderRadius: R.lg,
       overflow: 'hidden',
-      marginBottom: 60,
+      marginBottom: 32,
       border: `1px solid ${C.border}`,
     }}>
       {SAFETY_STATS.map((stat, i) => (
@@ -681,7 +681,7 @@ export default function AboutPage() {
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '32px 20px' }}>
 
         {/* ── Hero ── */}
-        <div style={{ textAlign: 'center', marginBottom: 60 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1 style={{ margin: '0 0 14px', fontSize: F['3xl'], fontWeight: 900, color: C.text, letterSpacing: -0.5, lineHeight: 1.15 }}>
             Built in public.<br /><span className="gradient-text">Every trade logged.</span><br />Every decision explained.
           </h1>
@@ -691,7 +691,7 @@ export default function AboutPage() {
         </div>
 
         {/* ── Stats Hero Bar ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 60 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 32 }}>
           {[
             { value: '$0.0067', label: 'per decision', color: C.brand },
             { value: '23%', label: 'veto rate', color: C.bear },
@@ -713,7 +713,7 @@ export default function AboutPage() {
         </div>
 
         {/* ── In-page nav ── */}
-        <nav style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
+        <nav style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
           {[
             { href: '#strategies', label: 'Strategies' },
             { href: '#agents',     label: 'AI Agents' },
@@ -1013,7 +1013,7 @@ export default function AboutPage() {
         </div>
 
         {/* ── Contact / Get Started ── */}
-        <div id="contact" style={{ marginTop: 60, padding: '32px 28px', background: `linear-gradient(135deg, ${C.brand}12, ${C.surface})`, border: `1px solid ${C.brand}30`, borderRadius: R.xl, textAlign: 'center', scrollMarginTop: 80 }}>
+        <div id="contact" style={{ marginTop: 32, padding: '32px 28px', background: `linear-gradient(135deg, ${C.brand}12, ${C.surface})`, border: `1px solid ${C.brand}30`, borderRadius: R.xl, textAlign: 'center', scrollMarginTop: 80 }}>
           <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Get Started</div>
           <h2 style={{ margin: '0 0 12px', fontSize: F['2xl'], fontWeight: 800, color: C.text }}>Start free. No credit card required.</h2>
           <p style={{ margin: '0 0 24px', fontSize: F.sm, color: C.muted, maxWidth: 440, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>

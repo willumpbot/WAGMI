@@ -2003,22 +2003,10 @@ function SignalQualityTrendChart({ signals }: { signals: Record<string, Signal> 
 
 // ─── Momentum Indicator Panel ─────────────────────────────────────────────────
 
-const MOMENTUM_DATA = {
-  BTC:  { rsi: 62, macd: +0.8, atrPct: 1.2, price: 95333 },
-  SOL:  { rsi: 48, macd: +1.2, atrPct: 2.4, price: 152   },
-  HYPE: { rsi: 71, macd: -0.3, atrPct: 3.1, price: 18     },
-} as const;
-
-type MomentumSymbol = keyof typeof MOMENTUM_DATA;
-
 function rsiIndicatorColor(rsi: number): string {
   if (rsi < 40)  return C.bull;
   if (rsi > 70)  return C.bear;
   return C.muted;
-}
-
-function macdIndicatorColor(macd: number): string {
-  return macd >= 0 ? C.bull : C.bear;
 }
 
 function atrIndicatorColor(atrPct: number): string {
@@ -2027,44 +2015,67 @@ function atrIndicatorColor(atrPct: number): string {
   return C.bear;
 }
 
-function MomentumIndicatorPanel() {
-  const SYMBOLS: MomentumSymbol[] = ['BTC', 'SOL', 'HYPE'];
+function MomentumIndicatorPanel({ signals }: { signals: Record<string, Signal> | null }) {
+  const symbols = signals && Object.keys(signals).length > 0
+    ? Object.keys(signals).slice(0, 5)
+    : null;
+
+  const COL_W = 88;
+  const LABEL_W = 90;
+
+  if (!symbols) {
+    return (
+      <div style={{
+        background: G.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '20px 24px',
+        marginBottom: 28,
+        textAlign: 'center',
+        color: C.muted,
+        fontSize: F.sm,
+      }}>
+        <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 8 }}>Momentum Indicators</div>
+        <div>No signal data available yet. The bot will populate this once it starts evaluating markets.</div>
+      </div>
+    );
+  }
 
   const ROWS: Array<{
     label: string;
-    render: (sym: MomentumSymbol) => { value: string; color: string; arrow: string };
+    render: (sym: string) => { value: string; color: string; arrow: string };
   }> = [
     {
       label: 'RSI',
       render: (sym) => {
-        const { rsi } = MOMENTUM_DATA[sym];
+        const rsi = signals?.[sym]?.rsi;
+        if (rsi == null) return { value: '—', color: C.muted, arrow: '·' };
         const color = rsiIndicatorColor(rsi);
         const arrow = rsi > 55 ? '▲' : rsi < 45 ? '▼' : '▶';
-        return { value: String(rsi), color, arrow };
-      },
-    },
-    {
-      label: 'MACD Signal',
-      render: (sym) => {
-        const { macd } = MOMENTUM_DATA[sym];
-        const color = macdIndicatorColor(macd);
-        const arrow = macd >= 0 ? '▲' : '▼';
-        return { value: (macd >= 0 ? '+' : '') + macd.toFixed(1), color, arrow };
+        return { value: rsi.toFixed(1), color, arrow };
       },
     },
     {
       label: 'ATR %',
       render: (sym) => {
-        const { atrPct } = MOMENTUM_DATA[sym];
+        const atrPct = signals?.[sym]?.atr_pct;
+        if (atrPct == null) return { value: '—', color: C.muted, arrow: '·' };
         const color = atrIndicatorColor(atrPct);
         const arrow = atrPct >= 3 ? '▲' : atrPct < 1.5 ? '▼' : '▶';
         return { value: atrPct.toFixed(1) + '%', color, arrow };
       },
     },
+    {
+      label: 'Vol Spike',
+      render: (sym) => {
+        const spike = signals?.[sym]?.vol_spike;
+        if (spike == null) return { value: '—', color: C.muted, arrow: '·' };
+        return spike
+          ? { value: 'Yes', color: C.warn, arrow: '⚡' }
+          : { value: 'No', color: C.bull, arrow: '·' };
+      },
+    },
   ];
-
-  const COL_W = 88;
-  const LABEL_W = 90;
 
   return (
     <div style={{
@@ -2100,11 +2111,11 @@ function MomentumIndicatorPanel() {
       </div>
 
       {/* Grid table */}
-      <table style={{ borderCollapse: 'separate', borderSpacing: 4, minWidth: LABEL_W + SYMBOLS.length * (COL_W + 4) }}>
+      <table style={{ borderCollapse: 'separate', borderSpacing: 4, minWidth: LABEL_W + symbols.length * (COL_W + 4) }}>
         <thead>
           <tr>
             <th style={{ width: LABEL_W, minWidth: LABEL_W }} />
-            {SYMBOLS.map(sym => (
+            {symbols.map(sym => (
               <th
                 key={sym}
                 style={{
@@ -2144,9 +2155,8 @@ function MomentumIndicatorPanel() {
               </td>
 
               {/* Data cells */}
-              {SYMBOLS.map(sym => {
+              {symbols.map(sym => {
                 const cell = row.render(sym);
-                // Build a subtle background from the cell color
                 const bg = cell.color === C.bull
                   ? 'rgba(22,163,74,0.12)'
                   : cell.color === C.bear
@@ -2208,20 +2218,14 @@ function MomentumIndicatorPanel() {
         lineHeight: 1.6,
       }}>
         <span><span style={{ color: C.text, fontWeight: 600 }}>RSI:</span> &lt;40 oversold (green), &gt;70 overbought (red), else neutral</span>
-        <span><span style={{ color: C.text, fontWeight: 600 }}>MACD:</span> positive = bullish momentum, negative = bearish</span>
         <span><span style={{ color: C.text, fontWeight: 600 }}>ATR%:</span> &lt;1.5% low vol, 1.5–3% normal, &gt;3% high vol</span>
+        <span><span style={{ color: C.text, fontWeight: 600 }}>Vol Spike:</span> elevated volume detected</span>
       </div>
     </div>
   );
 }
 
 // ─── Volatility Ranking Bars ──────────────────────────────────────────────────
-
-const VOLATILITY_DATA: Array<{ symbol: string; atrPct: number; price: number }> = [
-  { symbol: 'HYPE', atrPct: 3.1, price: 18     },
-  { symbol: 'SOL',  atrPct: 2.4, price: 152    },
-  { symbol: 'BTC',  atrPct: 1.2, price: 95333  },
-];
 
 function volBarColor(atrPct: number): { bar: string; bg: string; border: string } {
   if (atrPct >= 3)   return { bar: C.bear,  bg: 'rgba(220,38,38,0.10)',  border: 'rgba(220,38,38,0.30)'  };
@@ -2235,10 +2239,34 @@ function volTierLabel(atrPct: number): string {
   return 'Low';
 }
 
-function VolatilityRankingBars({ signals: _signals }: { signals: Record<string, Signal> | null }) {
-  // Use seeded data; in a future iteration real atrPct could be injected from signals
-  const sorted = VOLATILITY_DATA; // already sorted highest → lowest
-  const maxAtr = sorted[0].atrPct;
+function VolatilityRankingBars({ signals }: { signals: Record<string, Signal> | null }) {
+  const hasData = signals && Object.keys(signals).some(s => signals[s]?.atr_pct != null);
+
+  if (!hasData) {
+    return (
+      <div style={{
+        background: G.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '20px 24px',
+        marginBottom: 28,
+        textAlign: 'center',
+        color: C.muted,
+        fontSize: F.sm,
+      }}>
+        <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 8 }}>Volatility Ranking (Current ATR%)</div>
+        <div>No ATR data available yet. Volatility rankings will appear once signal data is loaded.</div>
+      </div>
+    );
+  }
+
+  const volatilityData = Object.entries(signals!)
+    .filter(([, sig]) => sig.atr_pct != null)
+    .map(([symbol, sig]) => ({ symbol, atrPct: sig.atr_pct as number, price: sig.price ?? 0 }))
+    .sort((a, b) => b.atrPct - a.atrPct);
+
+  const sorted = volatilityData;
+  const maxAtr = sorted[0]?.atrPct ?? 1;
 
   return (
     <div style={{
@@ -3399,6 +3427,7 @@ export default function SignalsPage() {
   const [fetchError, setFetchError] = useState(false);
   const [filter, setFilter] = useState<string>('all');
   const [selectedSymbol, setSelectedSymbol] = useState<string>('BTC');
+  const [visibleEventCount, setVisibleEventCount] = useState<number>(20);
   const apiBase = resolveApiBase();
   const mounted = useRef(true);
 
@@ -3466,6 +3495,8 @@ export default function SignalsPage() {
   ];
 
   const filteredEvents = filter === 'all' ? events : events.filter(e => e.event_type === filter);
+  const visibleEvents = filteredEvents.slice(0, visibleEventCount);
+  const hasMoreEvents = filteredEvents.length > visibleEventCount;
 
   const SYMBOLS = ['BTC', 'SOL', 'HYPE'];
 
@@ -3627,7 +3658,7 @@ export default function SignalsPage() {
         </>
       )}
 
-      <MomentumIndicatorPanel />
+      <MomentumIndicatorPanel signals={signalsData?.signals ?? null} />
       <VolatilityRankingBars signals={signalsData?.signals ?? null} />
 
       {/* ── Decision Pipeline ────────────────────────────────────────────── */}
@@ -3665,7 +3696,7 @@ export default function SignalsPage() {
             {FILTERS.map(f => (
               <button
                 key={f.key}
-                onClick={() => setFilter(f.key)}
+                onClick={() => { setFilter(f.key); setVisibleEventCount(20); }}
                 style={{
                   padding: '5px 12px',
                   borderRadius: R.pill,
@@ -3725,9 +3756,28 @@ export default function SignalsPage() {
 
         {!loading && filteredEvents.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {filteredEvents.map((event, i) => (
+            {visibleEvents.map((event, i) => (
               <SignalCard key={`${event.ts}-${i}`} event={event} index={i} />
             ))}
+            {hasMoreEvents && (
+              <button
+                onClick={() => setVisibleEventCount(c => c + 20)}
+                style={{
+                  marginTop: 8,
+                  padding: '10px 20px',
+                  borderRadius: R.md,
+                  border: `1px solid ${C.border}`,
+                  background: C.surface,
+                  color: C.textSub,
+                  fontSize: F.sm,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  width: '100%',
+                }}
+              >
+                Load More ({filteredEvents.length - visibleEventCount} remaining)
+              </button>
+            )}
           </div>
         )}
       </div>
