@@ -3226,14 +3226,21 @@ export default function Forensics() {
         </div>
       ) : null}
 
+      {/* ════════════════════════════════════════════════
+          SECTION: Summary
+          ════════════════════════════════════════════════ */}
+      <h2 style={{ marginTop: 0, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+        Summary
+      </h2>
+
       {/* Signal Quality Funnel */}
       {!loading && <SignalQualityFunnel trades={filtered} />}
 
-      {/* Scatter Plot */}
+      {/* Confidence vs R/R Scatter */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Confidence vs R/R Achieved</h2>
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Confidence vs R/R Achieved</h3>
             <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
               Does higher LLM confidence actually predict better outcomes? Green = WIN, Red = LOSS. Dashed line = regression.
             </div>
@@ -3251,25 +3258,10 @@ export default function Forensics() {
         )}
       </div>
 
-      {/* Risk:Reward Scatter */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
-        <div style={{ marginBottom: 14 }}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Signal Confidence vs R:R Achieved</h2>
-          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
-            Plots strategy signal confidence against actual risk:reward per trade. Dashed lines at 1.0×, 2.0× R:R and 75% confidence threshold.
-          </div>
-        </div>
-        {loading ? (
-          <Skeleton h={200} />
-        ) : (
-          <RiskRewardScatter trades={filtered} />
-        )}
-      </div>
-
       {/* Trade Waterfall */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Cumulative P&L Journey</h2>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Cumulative P&L Journey</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
             Each bar shows one trade&apos;s impact on running P&L. Green = profit, Red = loss. Final value shown at right.
           </div>
@@ -3281,11 +3273,18 @@ export default function Forensics() {
         )}
       </div>
 
+      {/* ════════════════════════════════════════════════
+          SECTION: Time Analysis
+          ════════════════════════════════════════════════ */}
+      <h2 style={{ marginTop: 48, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+        Time Analysis
+      </h2>
+
       {/* Hourly Win Rate */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Win Rate by Hour (UTC)</h2>
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Win Rate by Hour (UTC)</h3>
             <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
               When does the bot win? Each cell = one hour of day. Darker green = higher win rate.
             </div>
@@ -3312,6 +3311,7 @@ export default function Forensics() {
       {/* Hour of Day Win Rate — entry_timestamp_ms based, with seeded fallback */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Hour-of-Day Win Rate</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
             Derived from <code style={{ fontSize: F.xs, color: C.brand }}>entry_timestamp_ms</code> field. Shows which hours of the day (UTC) historically produce wins vs losses.
           </div>
@@ -3323,23 +3323,10 @@ export default function Forensics() {
         )}
       </div>
 
-      {/* Rolling Sharpe Chart */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
-            10-trade rolling window. Green fill = positive Sharpe. Dashed lines at 1.0 (Good) and 2.0 (Excellent).
-          </div>
-        </div>
-        {loading ? (
-          <Skeleton h={100} />
-        ) : (
-          <RollingSharpeChart trades={filtered} />
-        )}
-      </div>
-
       {/* Trade Clusters Chart */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Trade Clusters</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
             Scatter of every trade by day-of-week (Mon–Sun) vs hour of day (UTC). Dot size ∝ |P&L|.
           </div>
@@ -3354,6 +3341,7 @@ export default function Forensics() {
       {/* Exit Timing Heatmap */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Exit Timing Heatmap</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
             Average P&amp;L per exit hour and day of week. Gold border = top-3 best exit windows.
           </div>
@@ -3365,32 +3353,60 @@ export default function Forensics() {
         )}
       </div>
 
-      {/* Leverage PnL Chart */}
+      {/* ════════════════════════════════════════════════
+          SECTION: Setup Analysis
+          ════════════════════════════════════════════════ */}
+      <h2 style={{ marginTop: 48, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+        Setup Analysis
+      </h2>
+
+      {/* Risk:Reward Scatter */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ marginBottom: 14 }}>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Signal Confidence vs R:R Achieved</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
-            Win/loss dollar size and win rate across leverage tiers. Dashed line shows declining win rate at higher leverage.
+            Plots strategy signal confidence against actual risk:reward per trade. Dashed lines at 1.0×, 2.0× R:R and 75% confidence threshold.
           </div>
         </div>
         {loading ? (
-          <Skeleton h={140} />
+          <Skeleton h={200} />
         ) : (
-          <LeveragePnlChart trades={filtered} />
+          <RiskRewardScatter trades={filtered} />
         )}
       </div>
-
-      {/* ── Regime Performance Matrix ── */}
-      <RegimePerformanceMatrix trades={filtered} />
 
       {/* ── Trade Duration Histogram ── */}
       <TradeDurationHistogram trades={filtered} />
 
-      <MultiSymbolPnlChart trades={filtered} />
+      {/* ── Regime Performance Matrix ── */}
+      <RegimePerformanceMatrix trades={filtered} />
+
+      {/* ════════════════════════════════════════════════
+          SECTION: Sequence Analysis
+          ════════════════════════════════════════════════ */}
+      <h2 style={{ marginTop: 48, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+        Sequence Analysis
+      </h2>
+
+      {/* Rolling Sharpe Chart */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Rolling Sharpe Ratio</h3>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            10-trade rolling window. Green fill = positive Sharpe. Dashed lines at 1.0 (Good) and 2.0 (Excellent).
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={100} />
+        ) : (
+          <RollingSharpeChart trades={filtered} />
+        )}
+      </div>
 
       {/* Trade Replay Timeline */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Trade Sequence Timeline</div>
+          <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Trade Sequence Timeline</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
             Each segment is one trade — width ∝ hold duration, height ∝ |P&L|. Running equity line above. Hover for detail.
           </div>
@@ -3402,10 +3418,19 @@ export default function Forensics() {
         )}
       </div>
 
+      <MultiSymbolPnlChart trades={filtered} />
+
+      {/* ════════════════════════════════════════════════
+          SECTION: Outcome Probability
+          ════════════════════════════════════════════════ */}
+      <h2 style={{ marginTop: 48, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+        Outcome Probability
+      </h2>
+
       {/* Win Probability by Context */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Win Probability by Context</div>
+          <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Win Probability by Context</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
             Conditional win rates by regime, confidence level, and trade sequence. Shows where the bot has the strongest edge.
           </div>
@@ -3417,10 +3442,25 @@ export default function Forensics() {
         )}
       </div>
 
+      {/* Leverage PnL Chart */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>P&L by Leverage Tier</h3>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            Win/loss dollar size and win rate across leverage tiers. Dashed line shows declining win rate at higher leverage.
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={140} />
+        ) : (
+          <LeveragePnlChart trades={filtered} />
+        )}
+      </div>
+
       {/* Trade Autopsy Card */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Worst Trade Autopsy</div>
+          <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Worst Trade Autopsy</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
             Deep-dive on the single worst trade — entry/exit marked on price chart, root cause analysis, lessons for next time.
           </div>
@@ -3431,7 +3471,7 @@ export default function Forensics() {
       {/* Signal Decay Chart */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Signal Confidence Decay</div>
+          <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Signal Confidence Decay</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
             How each strategy&apos;s confidence score evolves after entry. Dashed line = action threshold. Marker = actual close point.
           </div>
@@ -3442,13 +3482,20 @@ export default function Forensics() {
       {/* Exposure Risk Matrix */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Exposure Risk Matrix</div>
+          <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Exposure Risk Matrix</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
             Average risk exposure (position size × volatility) per symbol and UTC time slot. Darker red = higher risk concentration.
           </div>
         </div>
         <ExposureRiskMatrix />
       </div>
+
+      {/* ════════════════════════════════════════════════
+          SECTION: Raw Trade Cards
+          ════════════════════════════════════════════════ */}
+      <h2 style={{ marginTop: 48, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+        Raw Trade Cards
+      </h2>
 
       {/* Filters */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20 }}>
@@ -3475,7 +3522,7 @@ export default function Forensics() {
       {/* Trade list */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Trade Records</h2>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Trade Records</h3>
           <span style={{ fontSize: F.xs, color: C.muted }}>
             {filtered.length} of {trades.length} trades · click any card to expand
           </span>

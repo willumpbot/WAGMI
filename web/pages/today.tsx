@@ -2470,7 +2470,7 @@ export default function TodayPage() {
             <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Get this brief every morning</div>
             <div style={{ fontSize: F.sm, color: C.muted, marginTop: 4 }}>Connect Telegram to receive the daily brief at 06:00 UTC, plus instant signal alerts.</div>
           </div>
-          <a href="/settings" style={{ padding: '9px 20px', background: C.brand, color: '#fff', borderRadius: R.sm, fontSize: F.sm, fontWeight: 700, textDecoration: 'none' }}>
+          <a href="/copy-trade" style={{ padding: '9px 20px', background: C.brand, color: '#fff', borderRadius: R.sm, fontSize: F.sm, fontWeight: 700, textDecoration: 'none' }}>
             Set Up Alerts →
           </a>
         </div>
