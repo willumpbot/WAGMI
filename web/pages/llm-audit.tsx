@@ -632,6 +632,95 @@ function ActionRateTimeline({ decisions }: { decisions: LlmDecision[] }) {
   );
 }
 
+// ─── Trigger Breakdown Chart ──────────────────────────────────────────────────
+
+function TriggerBreakdownChart({ decisions }: { decisions: LlmDecision[] }) {
+  if (!decisions.length) return null;
+
+  // Build trigger stats
+  const byTrigger: Record<string, { total: number; proceed: number; veto: number; skip: number; avgConf: number; confSum: number }> = {};
+  for (const d of decisions) {
+    const t = d.trigger || 'unknown';
+    if (!byTrigger[t]) byTrigger[t] = { total: 0, proceed: 0, veto: 0, skip: 0, avgConf: 0, confSum: 0 };
+    byTrigger[t].total++;
+    byTrigger[t].confSum += d.confidence ?? 0;
+    const action = (d.action || '').toLowerCase();
+    if (d.is_veto) byTrigger[t].veto++;
+    else if (['proceed', 'go'].includes(action)) byTrigger[t].proceed++;
+    else byTrigger[t].skip++;
+  }
+  for (const v of Object.values(byTrigger)) v.avgConf = v.total ? v.confSum / v.total : 0;
+
+  const sorted = Object.entries(byTrigger).sort((a, b) => b[1].total - a[1].total).slice(0, 8);
+  const maxTotal = sorted[0]?.[1].total || 1;
+
+  const triggerShort: Record<string, string> = {
+    PRE_TRADE: 'Pre-Trade',
+    REGIME_SHIFT: 'Regime',
+    PERIODIC: 'Periodic',
+    POSITION_CLOSED: 'Pos.Closed',
+    HIGH_CONFIDENCE: 'Hi-Conf',
+    MEMORY_EVENT: 'Memory',
+    STARTUP: 'Startup',
+    unknown: 'Unknown',
+  };
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <h2 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: C.text }}>Trigger Breakdown</h2>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>
+        Which triggers fire most often — and what the AI decides for each
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {sorted.map(([trigger, s]) => {
+          const proceedW = s.total ? (s.proceed / s.total) * 100 : 0;
+          const skipW = s.total ? (s.skip / s.total) * 100 : 0;
+          const vetoW = s.total ? (s.veto / s.total) * 100 : 0;
+          const barW = (s.total / maxTotal) * 100;
+          const avgConfPct = Math.round(s.avgConf * 100);
+          return (
+            <div key={trigger}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <div style={{ width: 90, flexShrink: 0, fontSize: F.xs, color: C.textSub, fontWeight: 600 }}>
+                  {triggerShort[trigger] || trigger.replace('_', ' ').slice(0, 10)}
+                </div>
+                {/* Stacked bar */}
+                <div style={{ flex: 1, height: 20, background: C.surfaceHover, borderRadius: R.sm, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ display: 'flex', height: '100%', width: `${barW}%` }}>
+                    <div style={{ width: `${proceedW}%`, background: C.bull, opacity: 0.85 }} />
+                    <div style={{ width: `${skipW}%`, background: C.muted, opacity: 0.5 }} />
+                    <div style={{ width: `${vetoW}%`, background: C.bear, opacity: 0.85 }} />
+                  </div>
+                </div>
+                {/* Count + conf */}
+                <div style={{ minWidth: 70, display: 'flex', gap: 8, fontSize: F.xs, color: C.muted, flexShrink: 0 }}>
+                  <span style={{ fontWeight: 700, color: C.text }}>{s.total}</span>
+                  <span style={{ color: avgConfPct >= 65 ? C.bull : avgConfPct >= 42 ? C.warn : C.bear }}>
+                    {avgConfPct}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: F.xs, color: C.muted }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.bull, borderRadius: 2, display: 'inline-block' }} />GO
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.muted, opacity: 0.6, borderRadius: 2, display: 'inline-block' }} />SKIP
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.bear, borderRadius: 2, display: 'inline-block' }} />VETO
+        </span>
+        <span style={{ marginLeft: 'auto' }}>Bar width = relative frequency · % = avg confidence</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Decision Row ─────────────────────────────────────────────────────────────
 
 function DecisionRow({ d }: { d: LlmDecision }) {
@@ -873,6 +962,9 @@ export default function LlmAudit() {
 
       {/* Per-Symbol Decision Grid */}
       {decisions.length > 0 && <SymbolDecisionGrid decisions={decisions} />}
+
+      {/* Trigger Breakdown */}
+      {decisions.length > 0 && <TriggerBreakdownChart decisions={decisions} />}
 
       {/* Veto Analysis */}
       {decisions.some((d) => d.is_veto) && (
