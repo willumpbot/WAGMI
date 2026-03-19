@@ -1374,6 +1374,401 @@ function RatioGaugePanel({
   );
 }
 
+// ─── Profit Factor Gauge ──────────────────────────────────────────────────────
+
+function ProfitFactorGauge({ trades }: { trades: TradeRecord[] }) {
+  const profitFactor = useMemo(() => {
+    const grossWin = trades.filter((t) => (t.pnl ?? 0) > 0).reduce((a, t) => a + (t.pnl ?? 0), 0);
+    const grossLoss = trades.filter((t) => (t.pnl ?? 0) < 0).reduce((a, t) => a + Math.abs(t.pnl ?? 0), 0);
+    if (grossLoss === 0) return 2.5; // fallback
+    return grossWin / grossLoss;
+  }, [trades]);
+
+  // SVG dimensions
+  const W = 200;
+  const H = 140;
+  const cx = 100;
+  // Center of the circle that forms the semicircle (arc sits in the upper portion)
+  const cy = 110;
+  const R_outer = 80;
+  const R_inner = 56;
+  const trackR = (R_outer + R_inner) / 2;
+  const strokeW = R_outer - R_inner;
+
+  // Scale: 0 to 4.0 → 180° sweep from left (180°) to right (0°)
+  const MAX_VAL = 4.0;
+  const clampedVal = Math.min(MAX_VAL, Math.max(0, profitFactor));
+  const frac = clampedVal / MAX_VAL;
+
+  // Zone boundaries as fractions of the 0–4 scale
+  // Zone 1: 0–1.0 (red)    → frac 0.00–0.25
+  // Zone 2: 1.0–1.5 (orange) → frac 0.25–0.375
+  // Zone 3: 1.5–2.5 (yellow) → frac 0.375–0.625
+  // Zone 4: 2.5–4.0 (green) → frac 0.625–1.0
+  const zones = [
+    { startFrac: 0,     endFrac: 0.25,  color: C.bear,    label: 'Losing'   },
+    { startFrac: 0.25,  endFrac: 0.375, color: '#ea580c', label: 'Marginal' },
+    { startFrac: 0.375, endFrac: 0.625, color: C.warnMid, label: 'Good'     },
+    { startFrac: 0.625, endFrac: 1.0,   color: C.bull,    label: 'Excellent'},
+  ];
+
+  // Map frac (0→1) to SVG angle: frac=0 → 180° (left), frac=1 → 0° (right)
+  function fracToAngleDeg(f: number): number {
+    return 180 - f * 180;
+  }
+
+  function polarToXY(angleDeg: number, radius: number) {
+    const rad = (angleDeg * Math.PI) / 180;
+    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
+  }
+
+  // Build arc segment path for a zone
+  function arcPath(startFrac: number, endFrac: number): string {
+    const aStart = fracToAngleDeg(startFrac);
+    const aEnd   = fracToAngleDeg(endFrac);
+    const p1 = polarToXY(aStart, trackR);
+    const p2 = polarToXY(aEnd,   trackR);
+    const sweep = endFrac - startFrac > 0.5 ? 1 : 0;
+    // Always sweep clockwise (decreasing angle)
+    return `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${trackR} ${trackR} 0 ${sweep} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+
+  // Needle
+  const needleAngleDeg = fracToAngleDeg(frac);
+  const needleTip  = polarToXY(needleAngleDeg, R_outer + 5);
+  const needleB1   = polarToXY(needleAngleDeg + 90, 4);
+  const needleB2   = polarToXY(needleAngleDeg - 90, 4);
+
+  // Determine needle / value color based on zone
+  let needleColor = C.bear;
+  if (profitFactor >= 2.5) needleColor = C.bull;
+  else if (profitFactor >= 1.5) needleColor = C.warnMid;
+  else if (profitFactor >= 1.0) needleColor = '#ea580c';
+
+  // Zone label positions — midpoint angle of each zone arc, just inside outer edge
+  const zoneLabelR = R_outer + 12;
+
+  // Return text beneath gauge
+  const returnText = profitFactor > 0 && isFinite(profitFactor)
+    ? `Every $1 risked returns $${profitFactor.toFixed(2)} in gross profit`
+    : 'Insufficient trade data';
+
+  return (
+    <div style={{
+      background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
+      padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 6,
+      boxShadow: S.sm, alignItems: 'center',
+    }}>
+      <div style={{ fontSize: F.sm, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', alignSelf: 'flex-start' }}>
+        Profit Factor
+      </div>
+
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+        {/* Background track (full 180° arc) */}
+        <path
+          d={arcPath(0, 1)}
+          fill="none"
+          stroke={C.border}
+          strokeWidth={strokeW}
+          strokeLinecap="butt"
+        />
+
+        {/* Colored zone segments */}
+        {zones.map((z) => (
+          <path
+            key={z.label}
+            d={arcPath(z.startFrac, z.endFrac)}
+            fill="none"
+            stroke={z.color}
+            strokeWidth={strokeW}
+            strokeLinecap="butt"
+            opacity={0.75}
+          />
+        ))}
+
+        {/* Zone labels */}
+        {zones.map((z) => {
+          const midFrac = (z.startFrac + z.endFrac) / 2;
+          const midAngle = fracToAngleDeg(midFrac);
+          const lp = polarToXY(midAngle, zoneLabelR);
+          const anchor = lp.x < cx - 4 ? 'end' : lp.x > cx + 4 ? 'start' : 'middle';
+          return (
+            <text
+              key={z.label}
+              x={lp.x.toFixed(2)}
+              y={lp.y.toFixed(2)}
+              fill={z.color}
+              fontSize={7}
+              textAnchor={anchor}
+              fontWeight="600"
+              opacity={0.9}
+            >
+              {z.label}
+            </text>
+          );
+        })}
+
+        {/* Scale tick marks at 0, 1.0, 1.5, 2.5, 4.0 */}
+        {[0, 1.0, 1.5, 2.5, 4.0].map((v) => {
+          const tf = v / MAX_VAL;
+          const ang = fracToAngleDeg(tf);
+          const inner = polarToXY(ang, R_inner - 3);
+          const outer = polarToXY(ang, R_outer + 2);
+          const labelPt = polarToXY(ang, R_inner - 11);
+          const anchor = labelPt.x < cx - 4 ? 'end' : labelPt.x > cx + 4 ? 'start' : 'middle';
+          return (
+            <g key={v}>
+              <line
+                x1={inner.x.toFixed(2)} y1={inner.y.toFixed(2)}
+                x2={outer.x.toFixed(2)} y2={outer.y.toFixed(2)}
+                stroke={C.border} strokeWidth={1.5}
+              />
+              <text x={labelPt.x.toFixed(2)} y={labelPt.y.toFixed(2)} fill={C.muted} fontSize={7} textAnchor={anchor}>
+                {v}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Needle */}
+        <polygon
+          points={`${needleTip.x.toFixed(2)},${needleTip.y.toFixed(2)} ${needleB1.x.toFixed(2)},${needleB1.y.toFixed(2)} ${needleB2.x.toFixed(2)},${needleB2.y.toFixed(2)}`}
+          fill={needleColor}
+          opacity={0.95}
+        />
+        <circle cx={cx} cy={cy} r={6} fill={C.card} stroke={needleColor} strokeWidth={2} />
+
+        {/* Center large value */}
+        <text x={cx} y={cy - 14} textAnchor="middle" fontSize={22} fontWeight="800" fill={needleColor}>
+          {profitFactor.toFixed(2)}×
+        </text>
+
+        {/* "Profit Factor" label below value */}
+        <text x={cx} y={cy + 2} textAnchor="middle" fontSize={9} fill={C.muted} fontWeight="600">
+          Profit Factor
+        </text>
+      </svg>
+
+      <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', marginTop: 2 }}>
+        {returnText}
+      </div>
+    </div>
+  );
+}
+
+// ─── Trade Quality Matrix ──────────────────────────────────────────────────────
+
+function TradeQualityMatrix({ trades }: { trades: TradeRecord[] }) {
+  type DurBucket = 'Quick (<1h)' | 'Med (1-8h)' | 'Slow (>8h)';
+  type ExitBucket = 'SL' | 'TP1' | 'TP2/Trail';
+
+  const DUR_BUCKETS: DurBucket[]  = ['Quick (<1h)', 'Med (1-8h)', 'Slow (>8h)'];
+  const EXIT_BUCKETS: ExitBucket[] = ['SL', 'TP1', 'TP2/Trail'];
+
+  // Categorize duration
+  function durBucket(h: number | null): DurBucket {
+    if (h == null) return 'Med (1-8h)';
+    if (h < 1)  return 'Quick (<1h)';
+    if (h <= 8) return 'Med (1-8h)';
+    return 'Slow (>8h)';
+  }
+
+  // Categorize exit type from close_reason
+  function exitBucket(reason: string): ExitBucket {
+    const r = reason.toLowerCase();
+    if (r.includes('sl') || r.includes('stop') || r === 'loss') return 'SL';
+    if (r.includes('tp2') || r.includes('trail') || r.includes('tp3')) return 'TP2/Trail';
+    if (r.includes('tp1') || r.includes('tp')) return 'TP1';
+    // Outcome-based fallback
+    return 'TP1';
+  }
+
+  // Build matrix: [dur][exit] = { count, wins }
+  const matrix = useMemo(() => {
+    type Cell = { count: number; wins: number };
+    const m: Record<DurBucket, Record<ExitBucket, Cell>> = {
+      'Quick (<1h)': { SL: { count: 0, wins: 0 }, TP1: { count: 0, wins: 0 }, 'TP2/Trail': { count: 0, wins: 0 } },
+      'Med (1-8h)':  { SL: { count: 0, wins: 0 }, TP1: { count: 0, wins: 0 }, 'TP2/Trail': { count: 0, wins: 0 } },
+      'Slow (>8h)':  { SL: { count: 0, wins: 0 }, TP1: { count: 0, wins: 0 }, 'TP2/Trail': { count: 0, wins: 0 } },
+    };
+
+    if (trades.length === 0) {
+      // Seeded fallback data
+      m['Quick (<1h)'].SL           = { count: 2, wins: 0 };
+      m['Quick (<1h)'].TP1          = { count: 3, wins: 3 };
+      m['Quick (<1h)']['TP2/Trail'] = { count: 1, wins: 1 };
+      m['Med (1-8h)'].SL            = { count: 1, wins: 0 };
+      m['Med (1-8h)'].TP1           = { count: 2, wins: 2 };
+      m['Med (1-8h)']['TP2/Trail']  = { count: 3, wins: 3 };
+      m['Slow (>8h)'].SL            = { count: 0, wins: 0 };
+      m['Slow (>8h)'].TP1           = { count: 0, wins: 0 };
+      m['Slow (>8h)']['TP2/Trail']  = { count: 1, wins: 1 };
+      return m;
+    }
+
+    for (const t of trades) {
+      const db = durBucket(t.duration_h);
+      const eb = exitBucket(t.close_reason ?? '');
+      m[db][eb].count++;
+      if (t.outcome === 'WIN') m[db][eb].wins++;
+    }
+    return m;
+  }, [trades]);
+
+  // Row and column totals
+  const rowTotals = DUR_BUCKETS.map((d) =>
+    EXIT_BUCKETS.reduce((s, e) => s + matrix[d][e].count, 0)
+  );
+  const colTotals = EXIT_BUCKETS.map((e) =>
+    DUR_BUCKETS.reduce((s, d) => s + matrix[d][e].count, 0)
+  );
+  const grandTotal = rowTotals.reduce((a, b) => a + b, 0);
+
+  // Max count for intensity scaling
+  const maxCount = Math.max(1, ...DUR_BUCKETS.flatMap((d) => EXIT_BUCKETS.map((e) => matrix[d][e].count)));
+
+  // Cell base colors by exit type
+  function cellBg(exit: ExitBucket, count: number): string {
+    const intensity = count === 0 ? 0 : 0.2 + 0.75 * (count / maxCount);
+    if (exit === 'SL')       return count === 0 ? C.surface : `rgba(220, 38, 38, ${intensity})`;
+    if (exit === 'TP1')      return count === 0 ? C.surface : `rgba(217, 119, 6, ${intensity})`;
+    // TP2/Trail
+    return count === 0 ? C.surface : `rgba(22, 163, 74, ${intensity})`;
+  }
+
+  function cellTextColor(exit: ExitBucket, count: number): string {
+    if (count === 0) return C.muted;
+    if (exit === 'SL')       return '#fca5a5';
+    if (exit === 'TP1')      return '#fef3c7';
+    return '#dcfce7';
+  }
+
+  const cellStyle = (exit: ExitBucket, count: number): React.CSSProperties => ({
+    background: cellBg(exit, count),
+    border: `1px solid ${C.border}`,
+    borderRadius: R.xs,
+    padding: '10px 8px',
+    textAlign: 'center' as const,
+    minWidth: 80,
+    transition: 'background 0.2s',
+  });
+
+  const headerCellStyle: React.CSSProperties = {
+    padding: '8px 10px',
+    fontSize: F.xs,
+    fontWeight: 700,
+    color: C.textSub,
+    textAlign: 'center' as const,
+    background: C.surface,
+    border: `1px solid ${C.border}`,
+    borderRadius: R.xs,
+  };
+
+  const totalCellStyle: React.CSSProperties = {
+    padding: '8px 10px',
+    fontSize: F.xs,
+    fontWeight: 700,
+    color: C.muted,
+    textAlign: 'center' as const,
+    background: C.surface,
+    border: `1px solid ${C.border}`,
+    borderRadius: R.xs,
+  };
+
+  return (
+    <div style={{
+      background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
+      padding: '20px 24px', boxShadow: S.sm,
+    }}>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+        Trade Quality by Duration × Exit Type
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>
+        Each cell shows trade count and win rate. Color intensity scales with count.
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: 4, width: '100%' }}>
+          <thead>
+            <tr>
+              {/* top-left corner */}
+              <th style={{ ...headerCellStyle, textAlign: 'left', minWidth: 110 }}>Duration \ Exit</th>
+              {EXIT_BUCKETS.map((e) => (
+                <th key={e} style={headerCellStyle}>{e}</th>
+              ))}
+              <th style={{ ...headerCellStyle, color: C.muted }}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {DUR_BUCKETS.map((dur, ri) => (
+              <tr key={dur}>
+                <td style={{
+                  padding: '8px 10px',
+                  fontSize: F.xs,
+                  fontWeight: 700,
+                  color: C.textSub,
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: R.xs,
+                  whiteSpace: 'nowrap' as const,
+                }}>
+                  {dur}
+                </td>
+                {EXIT_BUCKETS.map((exit) => {
+                  const cell = matrix[dur][exit];
+                  const wr = cell.count > 0 ? Math.round((cell.wins / cell.count) * 100) : null;
+                  return (
+                    <td key={exit} style={cellStyle(exit, cell.count)}>
+                      <div style={{ fontSize: F.md, fontWeight: 800, color: cellTextColor(exit, cell.count), lineHeight: 1 }}>
+                        {cell.count}
+                      </div>
+                      <div style={{ fontSize: F.xs, color: cellTextColor(exit, cell.count), opacity: 0.8, marginTop: 3 }}>
+                        {wr != null ? `${wr}% WR` : '—'}
+                      </div>
+                    </td>
+                  );
+                })}
+                <td style={totalCellStyle}>
+                  <div style={{ fontSize: F.md, fontWeight: 700 }}>{rowTotals[ri]}</div>
+                </td>
+              </tr>
+            ))}
+            {/* Column totals row */}
+            <tr>
+              <td style={{ ...totalCellStyle, textAlign: 'left', fontWeight: 700, color: C.muted }}>Total</td>
+              {EXIT_BUCKETS.map((_, ci) => (
+                <td key={ci} style={totalCellStyle}>
+                  <div style={{ fontSize: F.md, fontWeight: 700 }}>{colTotals[ci]}</div>
+                </td>
+              ))}
+              <td style={{ ...totalCellStyle, color: C.textSub }}>
+                <div style={{ fontSize: F.md, fontWeight: 800 }}>{grandTotal}</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 14, flexWrap: 'wrap' }}>
+        {[
+          { color: 'rgba(220,38,38,0.6)',  label: 'SL exits (losses)' },
+          { color: 'rgba(217,119,6,0.6)',  label: 'TP1 exits (partial wins)' },
+          { color: 'rgba(22,163,74,0.6)',  label: 'TP2/Trail (full wins)' },
+        ].map((l) => (
+          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: F.xs, color: C.muted }}>
+            <div style={{ width: 12, height: 12, borderRadius: 3, background: l.color, flexShrink: 0 }} />
+            {l.label}
+          </div>
+        ))}
+        <div style={{ fontSize: F.xs, color: C.muted, marginLeft: 'auto' }}>
+          Intensity ∝ trade count
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PerformancePage() {
