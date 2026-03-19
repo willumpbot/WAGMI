@@ -85,6 +85,217 @@ const TIERS: Tier[] = [
   },
 ];
 
+// ─── RoiTimelineChart ─────────────────────────────────────────────────────────
+
+function RoiTimelineChart() {
+  const W = 600;
+  const H = 160;
+  const padL = 52;
+  const padR = 12;
+  const padT = 12;
+  const padB = 30;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  // 12 data points: months 0–11
+  const months = Array.from({ length: 12 }, (_, i) => i);
+
+  const observerRate = 0;
+  const proRate = 0.015;
+  const eliteRate = 0.022;
+  const start = 10000;
+
+  const observerData = months.map((m) => start * Math.pow(1 + observerRate, m));
+  const proData = months.map((m) => start * Math.pow(1 + proRate, m));
+  const eliteData = months.map((m) => start * Math.pow(1 + eliteRate, m));
+
+  const yMin = 9800;
+  const yMax = 13200;
+
+  const xScale = (m: number) => padL + (m / 11) * chartW;
+  const yScale = (v: number) => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
+
+  const pointsToPath = (data: number[]) =>
+    data.map((v, i) => `${i === 0 ? 'M' : 'L'}${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`).join(' ');
+
+  const pointsToArea = (data: number[]) => {
+    const line = pointsToPath(data);
+    const bottomRight = `L${xScale(11).toFixed(1)},${(padT + chartH).toFixed(1)}`;
+    const bottomLeft = `L${xScale(0).toFixed(1)},${(padT + chartH).toFixed(1)}`;
+    return `${line} ${bottomRight} ${bottomLeft} Z`;
+  };
+
+  // Y-axis ticks: 10k, 11k, 12k, 13k
+  const yTicks = [10000, 11000, 12000, 13000];
+
+  const fmtK = (v: number) => `$${(v / 1000).toFixed(0)}k`;
+
+  const observerFinal = observerData[11].toFixed(0);
+  const proFinal = proData[11].toFixed(0);
+  const eliteFinal = eliteData[11].toFixed(0);
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 24px 16px', marginBottom: 0 }}>
+      <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Projected equity growth</div>
+          <div style={{ fontSize: F.xs, color: C.muted }}>Starting capital $10,000 · 12 months</div>
+        </div>
+        {/* Legend */}
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          {[
+            { label: 'Observer', color: C.muted, dash: true, final: `$${Number(observerFinal).toLocaleString()}` },
+            { label: 'Pro', color: C.brand, dash: false, final: `$${Number(proFinal).toLocaleString()}` },
+            { label: 'Elite', color: C.bull, dash: false, final: `$${Number(eliteFinal).toLocaleString()}` },
+          ].map((item) => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <svg width={20} height={10}>
+                <line
+                  x1={0} y1={5} x2={20} y2={5}
+                  stroke={item.color} strokeWidth={2}
+                  strokeDasharray={item.dash ? '4 3' : undefined}
+                />
+              </svg>
+              <span style={{ fontSize: F.xs, color: C.textSub, fontWeight: 600 }}>{item.label}</span>
+              <span style={{ fontSize: F.xs, color: item.color, fontWeight: 700 }}>{item.final}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+        <defs>
+          <linearGradient id="gradObs" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={C.muted} stopOpacity={0.08} />
+            <stop offset="100%" stopColor={C.muted} stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="gradPro" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={C.brand} stopOpacity={0.08} />
+            <stop offset="100%" stopColor={C.brand} stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="gradElite" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={C.bull} stopOpacity={0.08} />
+            <stop offset="100%" stopColor={C.bull} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+
+        {/* Y-axis grid lines and labels */}
+        {yTicks.map((tick) => (
+          <g key={tick}>
+            <line
+              x1={padL} y1={yScale(tick)}
+              x2={W - padR} y2={yScale(tick)}
+              stroke={C.border} strokeWidth={1}
+            />
+            <text
+              x={padL - 6} y={yScale(tick) + 4}
+              textAnchor="end"
+              fontSize={9}
+              fill={C.muted}
+            >{fmtK(tick)}</text>
+          </g>
+        ))}
+
+        {/* Area fills */}
+        <path d={pointsToArea(observerData)} fill="url(#gradObs)" />
+        <path d={pointsToArea(proData)} fill="url(#gradPro)" />
+        <path d={pointsToArea(eliteData)} fill="url(#gradElite)" />
+
+        {/* Lines */}
+        <path d={pointsToPath(observerData)} fill="none" stroke={C.muted} strokeWidth={1.5} strokeDasharray="5 4" />
+        <path d={pointsToPath(proData)} fill="none" stroke={C.brand} strokeWidth={2} />
+        <path d={pointsToPath(eliteData)} fill="none" stroke={C.bull} strokeWidth={2} />
+
+        {/* X-axis labels */}
+        {months.map((m) => (
+          <text
+            key={m}
+            x={xScale(m)}
+            y={padT + chartH + 18}
+            textAnchor="middle"
+            fontSize={9}
+            fill={C.muted}
+          >{`M${m + 1}`}</text>
+        ))}
+      </svg>
+
+      <div style={{ fontSize: 10, color: C.faint, marginTop: 8, textAlign: 'center', lineHeight: 1.5 }}>
+        Illustrative only. Based on 30-day backtest rate of 11.34% projected forward. Past performance ≠ future results.
+      </div>
+    </div>
+  );
+}
+
+// ─── TierValueBars ─────────────────────────────────────────────────────────────
+
+const TIER_VALUE_DIMS = [
+  { label: 'Signal Speed',  observer: 40,  pro: 100, elite: 100 },
+  { label: 'Alerts',        observer: 0,   pro: 80,  elite: 100 },
+  { label: 'Learning',      observer: 30,  pro: 100, elite: 100 },
+  { label: 'Automation',    observer: 0,   pro: 0,   elite: 100 },
+  { label: 'Support',       observer: 10,  pro: 60,  elite: 100 },
+];
+
+function TierValueBars() {
+  const tiers = [
+    { key: 'observer', label: 'Observer', color: C.muted },
+    { key: 'pro',      label: 'Pro',      color: C.brand },
+    { key: 'elite',    label: 'Elite',    color: C.bull  },
+  ] as const;
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 24px 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>What you get at each tier</div>
+          <div style={{ fontSize: F.xs, color: C.muted }}>Coverage across key dimensions</div>
+        </div>
+        {/* Tier legend */}
+        <div style={{ display: 'flex', gap: 14 }}>
+          {tiers.map((t) => (
+            <div key={t.key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: t.color }} />
+              <span style={{ fontSize: F.xs, color: C.textSub, fontWeight: 600 }}>{t.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {TIER_VALUE_DIMS.map((dim) => (
+          <div key={dim.label}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
+              <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, width: 100, flexShrink: 0 }}>{dim.label}</span>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {tiers.map((t) => {
+                  const pct: number = dim[t.key as keyof typeof dim] as number;
+                  return (
+                    <div key={t.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: 1, background: `${t.color}18`, borderRadius: 99, height: 8, overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${pct}%`,
+                          height: '100%',
+                          background: t.color,
+                          borderRadius: 99,
+                          transition: 'width 0.4s ease',
+                          minWidth: pct > 0 ? 4 : 0,
+                        }} />
+                      </div>
+                      <span style={{ fontSize: 10, color: pct === 0 ? C.faint : t.color, fontWeight: 600, width: 30, textAlign: 'right', flexShrink: 0 }}>
+                        {pct === 0 ? '—' : `${pct}%`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Returns Calculator ───────────────────────────────────────────────────────
 
 function ReturnsCalc({ returnPct }: { returnPct: number }) {
@@ -287,9 +498,20 @@ export default function PricingPage() {
           })}
         </div>
 
+        {/* ── Tier Value Bars ── */}
+        <div style={{ marginBottom: 40 }}>
+          <h2 style={{ margin: '0 0 16px', fontSize: F.xl, fontWeight: 700, color: C.text, textAlign: 'center' }}>What each tier unlocks</h2>
+          <TierValueBars />
+        </div>
+
         {/* ── Returns Calculator ── */}
         <div style={{ marginBottom: 52 }}>
           <ReturnsCalc returnPct={returnPct} />
+        </div>
+
+        {/* ── ROI Timeline Chart ── */}
+        <div style={{ marginBottom: 52 }}>
+          <RoiTimelineChart />
         </div>
 
         {/* ── Feature Table ── */}

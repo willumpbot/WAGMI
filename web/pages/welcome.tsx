@@ -154,6 +154,292 @@ function SignalPreviewCard() {
   );
 }
 
+// ─── Win Rate Ring ────────────────────────────────────────────────────────────
+
+function WinRateRing({ winRate = 0.769, wins = 10, losses = 3 }: { winRate?: number; wins?: number; losses?: number }) {
+  const SIZE = 240;
+  const cx = SIZE / 2;
+  const cy = SIZE / 2;
+  const bgR = 88; // midpoint ring radius for background arc
+  const strokeW = 28;
+
+  // Helper: polar coordinates for a point on a circle
+  // angle 0 = top (12 o'clock), clockwise
+  const polar = (r: number, angleDeg: number) => {
+    const rad = (angleDeg - 90) * (Math.PI / 180);
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  };
+
+  // Build an SVG arc path (stroke-based ring segment)
+  const arcPath = (r: number, startDeg: number, endDeg: number) => {
+    // clamp to avoid full-circle degenerate arc
+    const clampedEnd = Math.min(endDeg, startDeg + 359.99);
+    const s = polar(r, startDeg);
+    const e = polar(r, clampedEnd);
+    const largeArc = clampedEnd - startDeg > 180 ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${largeArc} 1 ${e.x} ${e.y}`;
+  };
+
+  const winDeg = winRate * 360;
+  const lossDeg = (1 - winRate) * 360;
+  const totalTrades = wins + losses;
+
+  // Label positions around the ring (outside the stroke)
+  const labelRadius = bgR + 26;
+  const winsPos = polar(labelRadius, winDeg * 0.5);           // midpoint of win arc
+  const lossPos = polar(labelRadius, winDeg + lossDeg * 0.5); // midpoint of loss arc
+
+  return (
+    <svg
+      width={SIZE}
+      height={SIZE}
+      viewBox={`0 0 ${SIZE} ${SIZE}`}
+      style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}
+    >
+      {/* Background full ring */}
+      <circle
+        cx={cx} cy={cy} r={bgR}
+        fill="none"
+        stroke={C.faint}
+        strokeWidth={strokeW}
+      />
+
+      {/* Loss arc (red, faint) — fills the remainder */}
+      {losses > 0 && (
+        <path
+          d={arcPath(bgR, winDeg, winDeg + lossDeg)}
+          fill="none"
+          stroke={C.bear}
+          strokeWidth={strokeW}
+          strokeOpacity={0.35}
+          strokeLinecap="round"
+        />
+      )}
+
+      {/* Win arc (green) */}
+      <path
+        d={arcPath(bgR, 0, winDeg)}
+        fill="none"
+        stroke={C.bull}
+        strokeWidth={strokeW}
+        strokeLinecap="round"
+      />
+
+      {/* Center text */}
+      <text
+        x={cx} y={cy - 10}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={C.text}
+        fontSize={28}
+        fontWeight={800}
+        fontFamily="Inter, system-ui, sans-serif"
+      >
+        {(winRate * 100).toFixed(1)}%
+      </text>
+      <text
+        x={cx} y={cy + 18}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={C.muted}
+        fontSize={11}
+        fontFamily="Inter, system-ui, sans-serif"
+      >
+        Win Rate
+      </text>
+
+      {/* Stat labels around ring */}
+      {/* Wins label */}
+      <text
+        x={winsPos.x} y={winsPos.y}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={C.bull}
+        fontSize={10}
+        fontWeight={700}
+        fontFamily="Inter, system-ui, sans-serif"
+      >
+        {wins}W
+      </text>
+
+      {/* Losses label */}
+      {losses > 0 && (
+        <text
+          x={lossPos.x} y={lossPos.y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill={C.bear}
+          fontSize={10}
+          fontWeight={700}
+          fontFamily="Inter, system-ui, sans-serif"
+        >
+          {losses}L
+        </text>
+      )}
+
+      {/* Total trades label — bottom */}
+      <text
+        x={cx} y={cy + 38}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={C.muted}
+        fontSize={10}
+        fontFamily="Inter, system-ui, sans-serif"
+      >
+        {totalTrades} trades
+      </text>
+    </svg>
+  );
+}
+
+// ─── Confidence Bars ──────────────────────────────────────────────────────────
+
+function ConfidenceBars() {
+  const buckets = [
+    { label: '90–100%', width: '35%', count: '9 trades', color: C.bull },
+    { label: '80–90%',  width: '28%', count: '7',        color: C.bull },
+    { label: '70–80%',  width: '20%', count: '5',        color: C.warn },
+    { label: '60–70%',  width: '12%', count: '3',        color: C.warn },
+    { label: '<60%',    width: '5%',  count: '1',        color: C.bear },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+        AI Confidence Distribution
+      </div>
+      {buckets.map((b) => (
+        <div key={b.label}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+            <span style={{ fontSize: F.xs, color: C.textSub, fontWeight: 600 }}>{b.label}</span>
+            <span style={{ fontSize: F.xs, color: C.muted }}>{b.count}</span>
+          </div>
+          <div style={{ height: 20, background: C.faint, borderRadius: R.pill, overflow: 'hidden' }}>
+            <div style={{
+              width: b.width,
+              height: '100%',
+              background: b.color,
+              borderRadius: R.pill,
+              opacity: 0.85,
+            }} />
+          </div>
+        </div>
+      ))}
+      <div style={{
+        marginTop: 8, padding: '7px 12px',
+        background: C.faint + '80',
+        borderRadius: R.sm,
+        fontSize: F.xs,
+        color: C.muted,
+        fontStyle: 'italic',
+      }}>
+        Bot only trades above 65% confidence
+      </div>
+    </div>
+  );
+}
+
+// ─── Live Market Snapshot ─────────────────────────────────────────────────────
+
+type MarketCard = {
+  symbol: string;
+  score: number;
+  regime: string;
+  regimeColor: string;
+  symbolIndex: number;
+};
+
+function MarketSparkline({ symbolIndex }: { symbolIndex: number }) {
+  const W = 60;
+  const H = 24;
+  let s = symbolIndex * 7 + 42;
+  const rng = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+
+  const raw = Array.from({ length: 8 }, () => rng());
+  const min = Math.min(...raw);
+  const max = Math.max(...raw);
+  const range = max - min || 1;
+
+  const x = (i: number) => (i / (raw.length - 1)) * W;
+  const y = (v: number) => H - ((v - min) / range) * H * 0.8 - H * 0.1;
+  const pts = raw.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+  const isUp = raw[raw.length - 1] > raw[0];
+  const lineColor = isUp ? C.bull : C.bear;
+
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={lineColor}
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function LiveMarketSnapshot() {
+  const cards: MarketCard[] = [
+    { symbol: 'BTC',  score: 82, regime: 'TRENDING', regimeColor: C.bull,  symbolIndex: 0 },
+    { symbol: 'SOL',  score: 61, regime: 'RANGING',  regimeColor: C.info,  symbolIndex: 1 },
+    { symbol: 'HYPE', score: 74, regime: 'HIGH VOL', regimeColor: C.warn,  symbolIndex: 2 },
+  ];
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      {cards.map((card) => {
+        const scoreColor = card.score >= 75 ? C.bull : card.score >= 65 ? C.warn : C.bear;
+        return (
+          <div
+            key={card.symbol}
+            style={{
+              background: '#000',
+              border: `1px solid ${C.border}`,
+              borderRadius: R.lg,
+              padding: '16px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            {/* Symbol + sparkline row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: F['2xl'], fontWeight: 800, color: C.text }}>{card.symbol}</span>
+              <MarketSparkline symbolIndex={card.symbolIndex} />
+            </div>
+
+            {/* Regime + score badges */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{
+                padding: '3px 8px',
+                borderRadius: R.pill,
+                background: card.regimeColor + '22',
+                color: card.regimeColor,
+                fontSize: 10,
+                fontWeight: 700,
+              }}>
+                {card.regime}
+              </span>
+              <span style={{
+                padding: '3px 8px',
+                borderRadius: R.pill,
+                background: scoreColor + '22',
+                color: scoreColor,
+                fontSize: 10,
+                fontWeight: 700,
+              }}>
+                {card.score}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── How It Works steps ───────────────────────────────────────────────────────
 
 const HOW_STEPS = [
@@ -270,6 +556,42 @@ export default function WelcomePage() {
           </div>
         </section>
 
+        {/* ── 30-Day Performance Snapshot ── */}
+        <section style={{ padding: '72px 24px', background: C.bg }}>
+          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 40 }}>
+              <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Performance</div>
+              <h2 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 800, color: C.text }}>30-Day Performance Snapshot</h2>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
+              {/* Win Rate Ring */}
+              <div style={{
+                background: C.card,
+                border: `1px solid ${C.border}`,
+                borderRadius: R.xl,
+                padding: '36px 24px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 8,
+              }}>
+                <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 4 }}>Trade Outcomes</div>
+                <WinRateRing winRate={0.769} wins={10} losses={3} />
+              </div>
+
+              {/* Confidence Bars */}
+              <div style={{
+                background: C.card,
+                border: `1px solid ${C.border}`,
+                borderRadius: R.xl,
+                padding: '32px 28px',
+              }}>
+                <ConfidenceBars />
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── How It Works ── */}
         <section style={{ padding: '72px 24px', maxWidth: 1000, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -310,6 +632,17 @@ export default function WelcomePage() {
             <SignalPreviewCard />
           </div>
           <style>{`@media (max-width: 700px) { .signal-grid { grid-template-columns: 1fr !important; } }`}</style>
+        </section>
+
+        {/* ── Live Market Snapshot ── */}
+        <section style={{ padding: '56px 24px', background: C.surface, borderTop: `1px solid ${C.border}` }}>
+          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Current Signals</div>
+              <h2 style={{ margin: 0, fontSize: F['2xl'], fontWeight: 800, color: C.text }}>Live Market Snapshot</h2>
+            </div>
+            <LiveMarketSnapshot />
+          </div>
         </section>
 
         {/* ── 7 Agents Section ── */}

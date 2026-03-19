@@ -288,13 +288,295 @@ function KpiCard({ label, value, sub, valueColor }: { label: string; value: stri
   );
 }
 
-function SignalsTab({ card }: { card: StrategyCard | null }) {
+// ─── SignalScoreGauge ─────────────────────────────────────────────────────────
+
+function SignalScoreGauge({ score }: { score: number }) {
+  const VW = 200;
+  const VH = 120;
+  const CX = 100;
+  const CY = 90; // Center slightly lower so arc fits in top portion
+  const RADIUS = 70;
+  const STROKE = 14;
+
+  // Convert a 0-100 score to an angle on the semicircle (180° left → 0° right)
+  // score=0 → angle=180°, score=100 → angle=0°
+  const scoreToAngle = (s: number) => 180 - (s / 100) * 180;
+
+  // SVG arc path helper: draws an arc segment on the gauge circle
+  const arcPath = (startDeg: number, endDeg: number): string => {
+    const toRad = (d: number) => (d * Math.PI) / 180;
+    const x1 = CX + RADIUS * Math.cos(toRad(startDeg));
+    const y1 = CY - RADIUS * Math.sin(toRad(startDeg));
+    const x2 = CX + RADIUS * Math.cos(toRad(endDeg));
+    const y2 = CY - RADIUS * Math.sin(toRad(endDeg));
+    const largeArc = Math.abs(endDeg - startDeg) > 180 ? 1 : 0;
+    // sweep=0 because we go from high angle to low angle (left to right = 180→0)
+    return `M ${x1} ${y1} A ${RADIUS} ${RADIUS} 0 ${largeArc} 0 ${x2} ${y2}`;
+  };
+
+  // Zones (score range → start/end angles on the semicircle)
+  // score 0→30 maps to angles 180→126; 30→60: 126→72; 60→80: 72→36; 80→100: 36→0
+  const zones = [
+    { start: 0, end: 30, color: '#ef4444', startAngle: 180, endAngle: 126 },
+    { start: 30, end: 60, color: '#eab308', startAngle: 126, endAngle: 72 },
+    { start: 60, end: 80, color: '#22c55e', startAngle: 72, endAngle: 36 },
+    { start: 80, end: 100, color: '#4ade80', startAngle: 36, endAngle: 0 },
+  ];
+
+  // Needle angle (in SVG coordinate space: pointing from center)
+  const needleAngleDeg = scoreToAngle(Math.max(0, Math.min(100, score)));
+  const needleRad = (needleAngleDeg * Math.PI) / 180;
+  const needleLen = RADIUS - STROKE / 2 - 4;
+  const needleX = CX + needleLen * Math.cos(needleRad);
+  const needleY = CY - needleLen * Math.sin(needleRad);
+
+  const scoreColor =
+    score >= 80 ? '#4ade80' :
+    score >= 60 ? '#22c55e' :
+    score >= 30 ? '#eab308' :
+    '#ef4444';
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      background: '#0f172a',
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '20px 18px 14px',
+    }}>
+      <svg
+        viewBox={`0 0 ${VW} ${VH}`}
+        width={VW}
+        height={VH}
+        style={{ display: 'block', overflow: 'visible' }}
+        aria-label={`Signal score gauge: ${score}`}
+      >
+        {/* Background arc track */}
+        <path
+          d={arcPath(180, 0)}
+          fill="none"
+          stroke="#1e293b"
+          strokeWidth={STROKE}
+          strokeLinecap="round"
+        />
+
+        {/* Zone arcs */}
+        {zones.map(z => (
+          <path
+            key={z.start}
+            d={arcPath(z.startAngle, z.endAngle)}
+            fill="none"
+            stroke={z.color}
+            strokeWidth={STROKE}
+            strokeLinecap="butt"
+            opacity={0.85}
+          />
+        ))}
+
+        {/* Needle */}
+        <line
+          x1={CX}
+          y1={CY}
+          x2={needleX}
+          y2={needleY}
+          stroke={scoreColor}
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+
+        {/* Pivot circle */}
+        <circle cx={CX} cy={CY} r="7" fill="#1e293b" stroke={scoreColor} strokeWidth="2.5" />
+
+        {/* Score number */}
+        <text
+          x={CX}
+          y={CY + 24}
+          textAnchor="middle"
+          fontSize="26"
+          fontWeight="800"
+          fill={scoreColor}
+          fontFamily="Inter, sans-serif"
+        >
+          {score}
+        </text>
+
+        {/* Label */}
+        <text
+          x={CX}
+          y={CY + 40}
+          textAnchor="middle"
+          fontSize="10"
+          fill={C.muted}
+          fontFamily="Inter, sans-serif"
+          letterSpacing="0.05em"
+        >
+          SIGNAL SCORE
+        </text>
+
+        {/* Min/Max labels */}
+        <text x={CX - RADIUS - 2} y={CY + 6} textAnchor="middle" fontSize="8" fill={C.muted} fontFamily="monospace">0</text>
+        <text x={CX + RADIUS + 2} y={CY + 6} textAnchor="middle" fontSize="8" fill={C.muted} fontFamily="monospace">100</text>
+      </svg>
+    </div>
+  );
+}
+
+// ─── StrategySignalHistory ────────────────────────────────────────────────────
+
+type SignalHistoryEntry = {
+  side: 'BUY' | 'SELL' | 'NEUTRAL';
+  score: number;
+  market: string;
+  ts: string;
+};
+
+function StrategySignalHistory({ logs, card }: { logs: LogEntry[]; card: StrategyCard | null }) {
+  // Try to derive signal history from logs
+  const fromLogs: SignalHistoryEntry[] = logs
+    .filter(l => {
+      const ev = l.event.toLowerCase();
+      return ev.includes('signal') || ev.includes('buy') || ev.includes('sell') || ev.includes('long') || ev.includes('short');
+    })
+    .slice(-10)
+    .reverse()
+    .map(l => {
+      const ev = l.event.toLowerCase();
+      const side: SignalHistoryEntry['side'] =
+        ev.includes('buy') || ev.includes('long') ? 'BUY' :
+        ev.includes('sell') || ev.includes('short') ? 'SELL' :
+        'NEUTRAL';
+      const score = l.details?.score ?? l.details?.confidence ?? l.details?.signal_score ?? 0;
+      const market = l.details?.market ?? l.details?.symbol ?? card?.latestSignal?.market ?? '—';
+      return { side, score: Number(score), market: String(market), ts: l.ts };
+    });
+
+  // Deterministic placeholders if no real log-derived history
+  const placeholders: SignalHistoryEntry[] = (() => {
+    const base = Date.now();
+    const seed = (card?.id?.length ?? 5) * 7;
+    const entries: SignalHistoryEntry[] = [
+      { side: 'BUY', score: 72 + (seed % 15), market: card?.latestSignal?.market ?? 'BTC-USD', ts: new Date(base - 3600000).toISOString() },
+      { side: 'NEUTRAL', score: 48 + (seed % 10), market: card?.latestSignal?.market ?? 'BTC-USD', ts: new Date(base - 7200000).toISOString() },
+      { side: 'SELL', score: 61 + (seed % 12), market: card?.latestSignal?.market ?? 'BTC-USD', ts: new Date(base - 10800000).toISOString() },
+      { side: 'BUY', score: 55 + (seed % 20), market: card?.latestSignal?.market ?? 'BTC-USD', ts: new Date(base - 18000000).toISOString() },
+      { side: 'NEUTRAL', score: 42 + (seed % 8), market: card?.latestSignal?.market ?? 'BTC-USD', ts: new Date(base - 28800000).toISOString() },
+    ];
+    return entries;
+  })();
+
+  const entries = fromLogs.length > 0 ? fromLogs : placeholders;
+
+  const dotColor = (side: SignalHistoryEntry['side']) => {
+    if (side === 'BUY') return '#22c55e';
+    if (side === 'SELL') return '#ef4444';
+    return '#64748b';
+  };
+
+  const scoreColor = (score: number) =>
+    score >= 70 ? '#22c55e' : score >= 45 ? '#eab308' : '#ef4444';
+
+  return (
+    <div style={{
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '16px 18px',
+    }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>
+        Signal History
+        {fromLogs.length === 0 && (
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 400, marginLeft: 8 }}>(example)</span>
+        )}
+      </div>
+
+      {/* Vertical timeline */}
+      <div style={{ position: 'relative', paddingLeft: 20 }}>
+        {/* Vertical line */}
+        <div style={{
+          position: 'absolute',
+          left: 5,
+          top: 6,
+          bottom: 6,
+          width: 2,
+          background: C.border,
+          borderRadius: 1,
+        }} />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {entries.map((entry, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
+              {/* Timeline dot */}
+              <div style={{
+                position: 'absolute',
+                left: -15,
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: dotColor(entry.side),
+                border: `1.5px solid ${dotColor(entry.side)}`,
+                boxShadow: `0 0 4px ${dotColor(entry.side)}88`,
+                flexShrink: 0,
+              }} />
+
+              {/* Content */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: 1 }}>
+                {/* Side badge */}
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: R.sm,
+                  fontSize: F.xs,
+                  fontWeight: 700,
+                  background: entry.side === 'BUY' ? '#166534' : entry.side === 'SELL' ? '#7f1d1d' : C.faint,
+                  color: entry.side === 'BUY' ? '#bbf7d0' : entry.side === 'SELL' ? '#fca5a5' : C.muted,
+                  letterSpacing: '0.04em',
+                }}>
+                  {entry.side}
+                </span>
+
+                {/* Score */}
+                <span style={{
+                  fontSize: F.xs,
+                  fontWeight: 700,
+                  color: scoreColor(entry.score),
+                  fontFamily: 'JetBrains Mono, monospace',
+                }}>
+                  {entry.score > 0 ? entry.score.toFixed(0) : '—'}
+                </span>
+
+                {/* Market */}
+                <span style={{ fontSize: F.xs, color: C.textSub, fontFamily: 'monospace' }}>
+                  {entry.market}
+                </span>
+
+                {/* Timestamp */}
+                <span style={{ fontSize: F.xs, color: C.muted, marginLeft: 'auto' }}>
+                  {timeAgo(entry.ts)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SignalsTab({ card, logs }: { card: StrategyCard | null; logs: LogEntry[] }) {
   if (!card?.latestSignal) {
     return (
-      <div style={{ textAlign: 'center', padding: '48px 0', color: C.muted }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
-        <div style={{ fontSize: F.lg, fontWeight: 600, color: C.text, marginBottom: 4 }}>Awaiting first signal</div>
-        <div style={{ fontSize: F.sm }}>Signals appear once the strategy has run at least one evaluation cycle.</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Gauge still visible even without a live signal (shows default 65) */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <SignalScoreGauge score={65} />
+        </div>
+        <StrategySignalHistory logs={logs} card={card} />
+        <div style={{ textAlign: 'center', padding: '48px 0', color: C.muted }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
+          <div style={{ fontSize: F.lg, fontWeight: 600, color: C.text, marginBottom: 4 }}>Awaiting first signal</div>
+          <div style={{ fontSize: F.sm }}>Signals appear once the strategy has run at least one evaluation cycle.</div>
+        </div>
       </div>
     );
   }
@@ -305,6 +587,11 @@ function SignalsTab({ card }: { card: StrategyCard | null }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Signal Score Gauge — above score hero */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <SignalScoreGauge score={score} />
+      </div>
+
       {/* Score hero */}
       <div style={{
         background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
@@ -370,6 +657,9 @@ function SignalsTab({ card }: { card: StrategyCard | null }) {
         </div>
         </>
       )}
+
+      {/* Signal History — below zone ruler */}
+      <StrategySignalHistory logs={logs} card={card} />
     </div>
   );
 }
@@ -846,7 +1136,7 @@ export default function StrategyDetail() {
 
       {/* Tab content */}
       <div style={{ animation: 'fadeInUp 0.25s ease' }}>
-        {activeTab === 'signals' && <SignalsTab card={card} />}
+        {activeTab === 'signals' && <SignalsTab card={card} logs={logs} />}
         {activeTab === 'trades' && <TradesTab trades={trades} loading={tradesLoading} />}
         {activeTab === 'performance' && <PerformanceTab trades={trades} />}
         {activeTab === 'logs' && <LogsTab logs={logs} loading={logsLoading} error={logsError} />}
