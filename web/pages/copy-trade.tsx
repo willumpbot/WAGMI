@@ -764,6 +764,9 @@ function CopyTradeCard({
         </div>
       </div>
 
+      {/* Ensemble Vote Strip */}
+      <EnsembleVoteStrip signal={signal} />
+
       {/* Key Price Levels */}
       <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ fontSize: F.xs, fontWeight: 700, marginBottom: 12, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -773,7 +776,10 @@ function CopyTradeCard({
           These zones show where the bot considers price to be cheap (accumulation) or expensive (distribution) based on volatility analysis.
         </div>
 
-        {/* Visual price ladder */}
+        {/* SVG Price Ruler */}
+        <VisualPriceRuler price={signal.price} zones={signal.zones} />
+
+        {/* Supplementary price level details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 500 }}>
           <PriceLevel label="Safe Distribution (very expensive)" price={signal.zones.safeDistrib} color={C.bear} currentPrice={signal.price} />
           <PriceLevel label="Distribution (expensive)" price={signal.zones.distrib} color="#ea580c" currentPrice={signal.price} />
@@ -807,6 +813,310 @@ function CopyTradeCard({
           How to Trade This (Manual)
         </div>
         <HowToTrade signal={signal} info={info} llmDecision={llmDecision} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Visual Price Ruler ───────────────────────────────────────────────────────
+
+function VisualPriceRuler({
+  price,
+  zones,
+}: {
+  price: number;
+  zones: { deepAccum: number; accum: number; distrib: number; safeDistrib: number };
+}) {
+  const W = 600;
+  const H = 80;
+  const BAR_Y = 44;
+  const BAR_H = 14;
+  const TICK_H = 10;
+
+  const { deepAccum, accum, distrib, safeDistrib } = zones;
+  const rangeMin = deepAccum;
+  const rangeMax = safeDistrib;
+  const range = rangeMax - rangeMin;
+
+  if (range <= 0) return null;
+
+  const toX = (p: number) => ((p - rangeMin) / range) * W;
+
+  const currentX = toX(price);
+  const deepAccumX = toX(deepAccum);
+  const accumX = toX(accum);
+  const distribX = toX(distrib);
+  const safeDistribX = toX(safeDistrib);
+
+  const pctFrom = (p: number) => {
+    const d = ((p - price) / price) * 100;
+    return (d >= 0 ? '+' : '') + d.toFixed(1) + '%';
+  };
+
+  type MarkerDef = {
+    x: number;
+    label: string;
+    subLabel: string;
+    color: string;
+    isCurrent?: boolean;
+  };
+
+  const markers: MarkerDef[] = [
+    { x: deepAccumX, label: fmt.format(deepAccum), subLabel: pctFrom(deepAccum), color: '#16a34a' },
+    { x: accumX,     label: fmt.format(accum),     subLabel: pctFrom(accum),     color: '#65a30d' },
+    { x: currentX,   label: 'NOW',                 subLabel: fmt.format(price),  color: '#3b82f6', isCurrent: true },
+    { x: distribX,   label: fmt.format(distrib),   subLabel: pctFrom(distrib),   color: '#ea580c' },
+    { x: safeDistribX, label: fmt.format(safeDistrib), subLabel: pctFrom(safeDistrib), color: '#dc2626' },
+  ];
+
+  return (
+    <div style={{ width: '100%', overflowX: 'auto', marginBottom: 12 }}>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: '100%', height: H, display: 'block', minWidth: 320 }}
+        aria-label="Price range ruler"
+      >
+        {/* Green bar: deepAccum → currentX */}
+        <defs>
+          <linearGradient id="greenGrad" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="#16a34a" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#86efac" stopOpacity="0.75" />
+          </linearGradient>
+          <linearGradient id="redGrad" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="#fca5a5" stopOpacity="0.75" />
+            <stop offset="100%" stopColor="#dc2626" stopOpacity="0.55" />
+          </linearGradient>
+        </defs>
+
+        {/* Cheap zone (green) */}
+        <rect
+          x={deepAccumX}
+          y={BAR_Y}
+          width={Math.max(0, currentX - deepAccumX)}
+          height={BAR_H}
+          rx={4}
+          fill="url(#greenGrad)"
+        />
+        {/* Expensive zone (red) */}
+        <rect
+          x={currentX}
+          y={BAR_Y}
+          width={Math.max(0, safeDistribX - currentX)}
+          height={BAR_H}
+          rx={4}
+          fill="url(#redGrad)"
+        />
+
+        {/* Tick marks + labels */}
+        {markers.map((m, i) => {
+          const isLeft = m.x < W * 0.15;
+          const isRight = m.x > W * 0.85;
+          const anchor: React.SVGAttributes<SVGTextElement>['textAnchor'] =
+            isLeft ? 'start' : isRight ? 'end' : 'middle';
+
+          if (m.isCurrent) {
+            return (
+              <g key={i}>
+                {/* Vertical line through bar */}
+                <line
+                  x1={m.x} y1={BAR_Y - 2}
+                  x2={m.x} y2={BAR_Y + BAR_H + 2}
+                  stroke={m.color}
+                  strokeWidth={2}
+                />
+                {/* Circle above bar */}
+                <circle cx={m.x} cy={BAR_Y - 8} r={6} fill={m.color} />
+                {/* NOW label above circle */}
+                <text
+                  x={m.x} y={BAR_Y - 18}
+                  textAnchor={anchor}
+                  fontSize={9}
+                  fontWeight="700"
+                  fill={m.color}
+                  fontFamily="inherit"
+                >
+                  {m.label}
+                </text>
+                {/* Price below bar */}
+                <text
+                  x={m.x} y={BAR_Y + BAR_H + TICK_H + 4}
+                  textAnchor={anchor}
+                  fontSize={8}
+                  fill={m.color}
+                  fontFamily="inherit"
+                >
+                  {m.subLabel}
+                </text>
+              </g>
+            );
+          }
+
+          return (
+            <g key={i}>
+              {/* Tick line above bar */}
+              <line
+                x1={m.x} y1={BAR_Y - TICK_H}
+                x2={m.x} y2={BAR_Y}
+                stroke={m.color}
+                strokeWidth={1.5}
+              />
+              {/* Tick line below bar */}
+              <line
+                x1={m.x} y1={BAR_Y + BAR_H}
+                x2={m.x} y2={BAR_Y + BAR_H + TICK_H}
+                stroke={m.color}
+                strokeWidth={1.5}
+              />
+              {/* Price label above tick */}
+              <text
+                x={m.x} y={BAR_Y - TICK_H - 3}
+                textAnchor={anchor}
+                fontSize={8}
+                fontWeight="600"
+                fill={m.color}
+                fontFamily="inherit"
+              >
+                {m.label}
+              </text>
+              {/* % label below tick */}
+              <text
+                x={m.x} y={BAR_Y + BAR_H + TICK_H + 9}
+                textAnchor={anchor}
+                fontSize={8}
+                fill={m.color}
+                fontFamily="inherit"
+              >
+                {m.subLabel}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+// ─── Ensemble Vote Strip ──────────────────────────────────────────────────────
+
+function EnsembleVoteStrip({ signal }: { signal: Signal }) {
+  const agreementCount = Math.min(4, Math.max(0, Math.round(signal.score / 25)));
+
+  const strategies = [
+    { name: 'Regime', short: 'RGM' },
+    { name: 'MonteCarlo', short: 'MCZ' },
+    { name: 'ConfScore', short: 'CSC' },
+    { name: 'MTF Quality', short: 'MTF' },
+  ];
+
+  const label = signal.label || '';
+  const isBull = label.includes('Accumulation');
+  const isBear = label.includes('Distribution');
+  const voteColor = isBull ? '#16a34a' : isBear ? '#dc2626' : '#6b7280';
+  const voteBg   = isBull ? '#dcfce7' : isBear ? '#fee2e2' : '#f3f4f6';
+  const voteDir  = isBull ? 'BUY' : isBear ? 'SELL' : 'FLAT';
+
+  return (
+    <div
+      style={{
+        padding: '12px 20px',
+        borderBottom: `1px solid ${C.border}`,
+        background: C.surface,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          color: C.muted,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          marginBottom: 8,
+        }}
+      >
+        Strategy Agreement
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {strategies.map((s, i) => {
+          const voting = i < agreementCount;
+          return (
+            <div
+              key={s.name}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 3,
+                padding: '6px 10px',
+                borderRadius: 8,
+                background: voting ? voteBg : C.surfaceHover,
+                border: `1px solid ${voting ? voteColor + '55' : C.border}`,
+                minWidth: 64,
+                transition: 'background 0.2s',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  color: voting ? voteColor : C.faint,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {s.short}
+              </span>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: voting ? voteColor : C.muted,
+                }}
+              >
+                {voting ? voteDir : '—'}
+              </span>
+            </div>
+          );
+        })}
+
+        {/* Summary badge */}
+        <div
+          style={{
+            marginLeft: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 2,
+          }}
+        >
+          <span style={{ fontSize: 10, color: C.muted, fontWeight: 600 }}>
+            Agreement
+          </span>
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 800,
+              color: agreementCount >= 3 ? '#16a34a' : agreementCount >= 2 ? '#eab308' : '#dc2626',
+            }}
+          >
+            {agreementCount}/4
+          </span>
+          <div style={{ display: 'flex', gap: 3 }}>
+            {strategies.map((_, i) => (
+              <span
+                key={i}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: i < agreementCount ? voteColor : C.border,
+                  display: 'inline-block',
+                  transition: 'background 0.2s',
+                }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -105,6 +105,28 @@ export default function AboutPage() {
           </p>
         </div>
 
+        {/* ── Stats Hero Bar ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 60 }}>
+          {[
+            { value: '$0.0067', label: 'per decision', color: C.brand },
+            { value: '23%', label: 'veto rate', color: C.bear },
+            { value: '7', label: 'AI agents', color: C.brand },
+            { value: '6', label: 'risk gates', color: C.bull },
+          ].map(({ value, label, color }) => (
+            <div key={label} style={{
+              background: C.card,
+              border: `1px solid ${color}30`,
+              borderRadius: R.lg,
+              padding: '20px 16px',
+              textAlign: 'center',
+              boxShadow: `0 0 0 0 transparent`,
+            }}>
+              <div style={{ fontSize: F['3xl'], fontWeight: 900, color, lineHeight: 1.1, marginBottom: 6 }}>{value}</div>
+              <div style={{ fontSize: F.xs, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+
         {/* ── Problem ── */}
         <Section eyebrow="Why We Built This" title="Most trading bots are black boxes.">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -145,6 +167,155 @@ export default function AboutPage() {
           <p style={{ margin: '0 0 24px', color: C.muted, fontSize: F.sm, lineHeight: 1.7 }}>
             Each agent has a specific role and is prevented from stepping outside it. The Critic must provide a counter-thesis before vetoing — vague objections are not allowed.
           </p>
+          {/* ── Pipeline Diagram ── */}
+          <div style={{ overflowX: 'auto', marginBottom: 28 }}>
+            {/* Pre-Trade Pipeline */}
+            <div style={{ marginBottom: 6 }}>
+              <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Pre-Trade Pipeline</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 0, minWidth: 720 }}>
+                {/* Signal source */}
+                <div style={{
+                  flexShrink: 0,
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: R.md,
+                  padding: '10px 14px',
+                  textAlign: 'center',
+                  minWidth: 72,
+                }}>
+                  <div style={{ fontSize: 16, marginBottom: 2 }}>📊</div>
+                  <div style={{ fontSize: F.xs, fontWeight: 700, color: C.textSub }}>Signal</div>
+                  <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>4 strategies</div>
+                </div>
+
+                {/* Arrow */}
+                <div style={{ flex: '0 0 20px', textAlign: 'center', color: C.muted, fontSize: F.base }}>→</div>
+
+                {/* Regime */}
+                <div style={{
+                  flexShrink: 0,
+                  background: `linear-gradient(135deg, ${C.info}22, ${C.info}10)`,
+                  border: `1px solid ${C.info}40`,
+                  borderRadius: R.md,
+                  padding: '10px 14px',
+                  textAlign: 'center',
+                  minWidth: 84,
+                }}>
+                  <div style={{ fontSize: 16, marginBottom: 2 }}>🌐</div>
+                  <div style={{ fontSize: F.xs, fontWeight: 700, color: C.info }}>Regime</div>
+                  <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>Haiku</div>
+                </div>
+
+                {/* Arrow */}
+                <div style={{ flex: '0 0 20px', textAlign: 'center', color: C.muted, fontSize: F.base }}>→</div>
+
+                {/* Trade */}
+                <div style={{
+                  flexShrink: 0,
+                  background: `linear-gradient(135deg, ${C.brand}22, ${C.brand}10)`,
+                  border: `1px solid ${C.brand}40`,
+                  borderRadius: R.md,
+                  padding: '10px 14px',
+                  textAlign: 'center',
+                  minWidth: 84,
+                }}>
+                  <div style={{ fontSize: 16, marginBottom: 2 }}>🧠</div>
+                  <div style={{ fontSize: F.xs, fontWeight: 700, color: C.brand }}>Trade</div>
+                  <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>Sonnet</div>
+                </div>
+
+                {/* Arrow */}
+                <div style={{ flex: '0 0 20px', textAlign: 'center', color: C.muted, fontSize: F.base }}>→</div>
+
+                {/* Risk */}
+                <div style={{
+                  flexShrink: 0,
+                  background: `linear-gradient(135deg, ${C.warn}22, ${C.warn}10)`,
+                  border: `1px solid ${C.warn}40`,
+                  borderRadius: R.md,
+                  padding: '10px 14px',
+                  textAlign: 'center',
+                  minWidth: 84,
+                }}>
+                  <div style={{ fontSize: 16, marginBottom: 2 }}>🛡️</div>
+                  <div style={{ fontSize: F.xs, fontWeight: 700, color: C.warn }}>Risk</div>
+                  <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>Haiku</div>
+                </div>
+
+                {/* Arrow */}
+                <div style={{ flex: '0 0 20px', textAlign: 'center', color: C.muted, fontSize: F.base }}>→</div>
+
+                {/* Critic */}
+                <div style={{
+                  flexShrink: 0,
+                  background: `linear-gradient(135deg, ${C.purple}22, ${C.purple}10)`,
+                  border: `1px solid ${C.purple}40`,
+                  borderRadius: R.md,
+                  padding: '10px 14px',
+                  textAlign: 'center',
+                  minWidth: 84,
+                }}>
+                  <div style={{ fontSize: 16, marginBottom: 2 }}>⚖️</div>
+                  <div style={{ fontSize: F.xs, fontWeight: 700, color: C.purple }}>Critic</div>
+                  <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>Sonnet</div>
+                </div>
+
+                {/* Arrow */}
+                <div style={{ flex: '0 0 20px', textAlign: 'center', color: C.muted, fontSize: F.base }}>→</div>
+
+                {/* Fork: Execute or Veto */}
+                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{
+                    background: `linear-gradient(135deg, ${C.bull}25, ${C.bull}10)`,
+                    border: `1px solid ${C.bull}50`,
+                    borderRadius: R.md,
+                    padding: '8px 12px',
+                    textAlign: 'center',
+                    minWidth: 90,
+                  }}>
+                    <div style={{ fontSize: F.xs, fontWeight: 800, color: C.bull }}>✓ EXECUTE</div>
+                  </div>
+                  <div style={{
+                    background: `linear-gradient(135deg, ${C.bear}22, ${C.bear}10)`,
+                    border: `1px solid ${C.bear}50`,
+                    borderRadius: R.md,
+                    padding: '8px 12px',
+                    textAlign: 'center',
+                    minWidth: 90,
+                  }}>
+                    <div style={{ fontSize: F.xs, fontWeight: 800, color: C.bear }}>✗ VETO</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Ongoing Agents */}
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Ongoing Agents</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 720 }}>
+                {[
+                  { emoji: '📚', name: 'Learning', sub: 'post-trade', color: C.bull },
+                  { emoji: '👁️', name: 'Exit', sub: 'monitors positions', color: C.warnMid },
+                  { emoji: '🔭', name: 'Scout', sub: 'idle preparation', color: C.muted },
+                ].map(({ emoji, name, sub, color }) => (
+                  <div key={name} style={{
+                    background: `linear-gradient(135deg, ${color}15, ${color}08)`,
+                    border: `1px dashed ${color}50`,
+                    borderRadius: R.md,
+                    padding: '10px 16px',
+                    textAlign: 'center',
+                    minWidth: 110,
+                  }}>
+                    <div style={{ fontSize: 16, marginBottom: 2 }}>{emoji}</div>
+                    <div style={{ fontSize: F.xs, fontWeight: 700, color }}>{name}</div>
+                    <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>{sub}</div>
+                  </div>
+                ))}
+                <div style={{ fontSize: F.xs, color: C.faint, fontStyle: 'italic', paddingLeft: 4 }}>run async — not on critical path</div>
+              </div>
+            </div>
+          </div>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {AGENTS.map((a) => (
               <div key={a.name} style={{ background: C.card, border: `1px solid ${a.color}30`, borderRadius: R.lg, padding: '16px 20px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
