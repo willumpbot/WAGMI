@@ -1684,7 +1684,7 @@ function TradeLog({ result }: { result: BacktestResult }) {
   const totalTrades = result.results?.total_trades ?? trades.length;
   const missedSignals = Math.max(0, totalSignals - totalTrades);
 
-  const sigFunnel = result.signal_funnel ?? {};
+  const sigFunnel = result.signal_funnel ?? null;
 
   function handleSort(key: typeof sortKey) {
     if (sortKey === key) setSortDir((d) => (d === 1 ? -1 : 1));
@@ -1769,36 +1769,52 @@ function TradeLog({ result }: { result: BacktestResult }) {
       </div>
 
       {/* Missed signals */}
-      {(missedSignals > 0 || Object.keys(sigFunnel).length > 0) && (
+      {sigFunnel && (
         <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
-          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.warn, marginBottom: 10 }}>⚠️ Missed / Rejected Signals</div>
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: Object.keys(sigFunnel).length > 0 ? 12 : 0 }}>
-            <div>
-              <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>Total Signals Generated</div>
-              <div style={{ fontSize: F.md, fontWeight: 800, color: C.text }}>{totalSignals || '—'}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>Trades Executed</div>
-              <div style={{ fontSize: F.md, fontWeight: 800, color: C.bull }}>{totalTrades}</div>
-            </div>
-            {missedSignals > 0 && (
-              <div>
-                <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>Rejected at Gates</div>
-                <div style={{ fontSize: F.md, fontWeight: 800, color: C.bear }}>{missedSignals}</div>
-              </div>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.warn, marginBottom: 12 }}>⚠️ Signal Funnel — Why Trades Were Skipped</div>
+
+          {/* Funnel flow */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+            {[
+              { label: 'Candles', value: sigFunnel.candles_processed, color: C.muted },
+              { label: 'No Signal', value: sigFunnel.no_signal, color: C.muted },
+              { label: 'Signals Gen.', value: sigFunnel.signals_generated, color: C.textSub },
+              { label: 'Gate Rejected', value: Object.values(sigFunnel.gate_rejections ?? {}).reduce((s, v) => s + v, 0), color: C.bear },
+              { label: 'LLM Vetoed', value: sigFunnel.llm_vetoed, color: '#f59e0b' },
+              { label: 'CB Blocked', value: sigFunnel.cb_blocked, color: C.bear },
+              { label: 'Regime Blocked', value: sigFunnel.regime_blocked, color: '#6366f1' },
+              { label: 'Executed', value: sigFunnel.executed, color: C.bull },
+            ].filter((s) => s.value != null && s.value > 0).map((s, i, arr) => (
+              <React.Fragment key={s.label}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: F.md, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 10, color: C.muted }}>{s.label}</div>
+                </div>
+                {i < arr.length - 1 && <span style={{ color: C.faint, fontSize: F.sm }}>→</span>}
+              </React.Fragment>
+            ))}
+            {sigFunnel.conversion_rate != null && (
+              <span style={{ marginLeft: 'auto', fontSize: 10, color: C.muted }}>
+                Conversion: <strong style={{ color: C.text }}>{(sigFunnel.conversion_rate * 100).toFixed(1)}%</strong>
+              </span>
             )}
           </div>
-          {Object.keys(sigFunnel).length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {Object.entries(sigFunnel).map(([gate, count]) => (
-                <div key={gate} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 10, color: C.muted, width: 200, flexShrink: 0 }}>{gate.replace(/_/g, ' ')}</span>
-                  <div style={{ flex: 1, height: 6, background: C.border, borderRadius: 3 }}>
-                    <div style={{ width: `${Math.min(100, (count / (totalSignals || 1)) * 100)}%`, height: '100%', background: C.bear + 'cc', borderRadius: 3 }} />
+
+          {/* Gate rejection breakdown */}
+          {sigFunnel.gate_rejections && Object.keys(sigFunnel.gate_rejections).length > 0 && (
+            <div>
+              <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Gate Breakdown</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {Object.entries(sigFunnel.gate_rejections).map(([gate, count]) => (
+                  <div key={gate} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 10, color: C.muted, width: 200, flexShrink: 0 }}>{gate.replace(/_/g, ' ')}</span>
+                    <div style={{ flex: 1, height: 6, background: C.border, borderRadius: 3 }}>
+                      <div style={{ width: `${Math.min(100, (count / (sigFunnel.signals_generated || 1)) * 100)}%`, height: '100%', background: C.bear + 'cc', borderRadius: 3 }} />
+                    </div>
+                    <span style={{ fontSize: 10, color: C.muted, width: 30, textAlign: 'right' }}>{count}</span>
                   </div>
-                  <span style={{ fontSize: 10, color: C.muted, width: 30, textAlign: 'right' }}>{count}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>

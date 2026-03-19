@@ -176,7 +176,17 @@ export type BacktestResult = {
     state_path: string;
     outcome: string;
   }>;
-  signal_funnel?: Record<string, number>;
+  signal_funnel?: {
+    candles_processed?: number;
+    no_signal?: number;
+    cb_blocked?: number;
+    regime_blocked?: number;
+    signals_generated?: number;
+    gate_rejections?: Record<string, number>;
+    llm_vetoed?: number;
+    executed?: number;
+    conversion_rate?: number;
+  };
   recommendations?: string[];
   learning_summary?: Record<string, unknown>;
 };
