@@ -1176,6 +1176,316 @@ function DecisionTimeHeatmap() {
   );
 }
 
+// ─── Memory Evolution Chart ───────────────────────────────────────────────────
+
+function seedMemoryData(): { shortTerm: number[]; longTerm: number[] } {
+  // 14 days of seeded memory growth
+  const rng = (() => {
+    let s = 77;
+    return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+  })();
+
+  const shortTerm: number[] = [];
+  const longTerm: number[] = [];
+
+  let st = 20;
+  let lt = 5;
+  for (let i = 0; i < 14; i++) {
+    // Short-term: spiky adds and expires, stays under 100
+    const adds = Math.round(2 + rng() * 5);
+    const expires = i < 4 ? 0 : Math.round(rng() * 3);
+    st = Math.min(100, Math.max(st + adds - expires, st - 2));
+    shortTerm.push(st);
+    // Long-term: monotonically increasing
+    lt = lt + Math.round(rng() * 2);
+    longTerm.push(lt);
+  }
+  return { shortTerm, longTerm };
+}
+
+const MEMORY_DATA = seedMemoryData();
+
+function MemoryEvolutionChart() {
+  const W = 460, H = 110;
+  const PAD = { top: 18, right: 10, bottom: 28, left: 34 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const days = MEMORY_DATA.shortTerm.length; // 14
+  const maxY = 110; // slightly above 100 for visual headroom
+
+  const toX = (i: number) => PAD.left + (i / (days - 1)) * plotW;
+  const toY = (v: number) => PAD.top + plotH - (v / maxY) * plotH;
+
+  const stPts = MEMORY_DATA.shortTerm.map((v, i) => `${toX(i)},${toY(v)}`).join(' ');
+  const ltPts = MEMORY_DATA.longTerm.map((v, i) => `${toX(i)},${toY(v)}`).join(' ');
+
+  const stArea = [
+    `${PAD.left},${PAD.top + plotH}`,
+    ...MEMORY_DATA.shortTerm.map((v, i) => `${toX(i)},${toY(v)}`),
+    `${PAD.left + plotW},${PAD.top + plotH}`,
+  ].join(' ');
+
+  const ltArea = [
+    `${PAD.left},${PAD.top + plotH}`,
+    ...MEMORY_DATA.longTerm.map((v, i) => `${toX(i)},${toY(v)}`),
+    `${PAD.left + plotW},${PAD.top + plotH}`,
+  ].join(' ');
+
+  const capY = toY(100);
+  const lastSt = MEMORY_DATA.shortTerm[days - 1];
+  const lastLt = MEMORY_DATA.longTerm[days - 1];
+  const lastX = toX(days - 1);
+
+  // X-axis tick labels: day 1, 4, 7, 10, 14
+  const xTicks = [0, 3, 6, 9, 13];
+
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '14px 16px',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        <div>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Memory System Growth</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>Last 14 days of memory accumulation</div>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: R.pill,
+            background: C.info + '20', color: C.info, border: `1px solid ${C.info}35`,
+          }}>{lastSt} notes</span>
+          <span style={{
+            fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: R.pill,
+            background: C.brand + '20', color: C.brand, border: `1px solid ${C.brand}35`,
+          }}>{lastLt} patterns</span>
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
+        <defs>
+          <linearGradient id="stGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={C.info} stopOpacity="0.18" />
+            <stop offset="100%" stopColor={C.info} stopOpacity="0.01" />
+          </linearGradient>
+          <linearGradient id="ltGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={C.brand} stopOpacity="0.18" />
+            <stop offset="100%" stopColor={C.brand} stopOpacity="0.01" />
+          </linearGradient>
+        </defs>
+
+        {/* Y-axis grid lines */}
+        {[0, 25, 50, 75, 100].map((v) => (
+          <g key={v}>
+            <line
+              x1={PAD.left} y1={toY(v)}
+              x2={PAD.left + plotW} y2={toY(v)}
+              stroke={C.border} strokeWidth={0.5} strokeDasharray="3 3"
+            />
+            <text x={PAD.left - 4} y={toY(v) + 3} fontSize={8} fill={C.muted} textAnchor="end">{v}</text>
+          </g>
+        ))}
+
+        {/* Max capacity reference line at 100 */}
+        <line
+          x1={PAD.left} y1={capY}
+          x2={PAD.left + plotW} y2={capY}
+          stroke={C.warn} strokeWidth={1.2} strokeDasharray="5 4" opacity={0.8}
+        />
+        <text x={PAD.left + plotW - 2} y={capY - 4} fontSize={8} fill={C.warn} textAnchor="end" fontWeight={600}>
+          Max capacity
+        </text>
+
+        {/* Short-term area fill */}
+        <polygon points={stArea} fill="url(#stGrad)" />
+        {/* Long-term area fill */}
+        <polygon points={ltArea} fill="url(#ltGrad)" />
+
+        {/* Short-term line */}
+        <polyline points={stPts} fill="none" stroke={C.info} strokeWidth={1.8} strokeLinejoin="round" />
+        {/* Long-term line */}
+        <polyline points={ltPts} fill="none" stroke={C.brand} strokeWidth={1.8} strokeLinejoin="round" />
+
+        {/* Today marker dots */}
+        <circle cx={lastX} cy={toY(lastSt)} r={3.5} fill={C.info} stroke={C.card} strokeWidth={1.5} />
+        <circle cx={lastX} cy={toY(lastLt)} r={3.5} fill={C.brand} stroke={C.card} strokeWidth={1.5} />
+
+        {/* X-axis */}
+        <line x1={PAD.left} y1={PAD.top + plotH} x2={PAD.left + plotW} y2={PAD.top + plotH} stroke={C.border} strokeWidth={0.8} />
+        {xTicks.map((i) => (
+          <g key={i}>
+            <line x1={toX(i)} y1={PAD.top + plotH} x2={toX(i)} y2={PAD.top + plotH + 4} stroke={C.border} strokeWidth={0.8} />
+            <text x={toX(i)} y={PAD.top + plotH + 13} fontSize={8} fill={C.muted} textAnchor="middle">d{i + 1}</text>
+          </g>
+        ))}
+        <text x={PAD.left + plotW - 2} y={PAD.top + plotH + 13} fontSize={8} fill={C.muted} textAnchor="end">today</text>
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, marginTop: 6, fontSize: F.xs, color: C.muted }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 14, height: 2, background: C.info, display: 'inline-block', borderRadius: 1 }} />
+          Short-term (7d TTL)
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 14, height: 2, background: C.brand, display: 'inline-block', borderRadius: 1 }} />
+          Long-term (permanent)
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Agent Latency Breakdown ──────────────────────────────────────────────────
+
+const AGENT_SEGS = [
+  { key: 'regime',   label: 'Regime',   color: C.info,   baseMsMin: 90,  baseMsMax: 160 },
+  { key: 'trade',    label: 'Trade',    color: C.brand,  baseMsMin: 650, baseMsMax: 950 },
+  { key: 'risk',     label: 'Risk',     color: C.warn,   baseMsMin: 110, baseMsMax: 200 },
+  { key: 'critic',   label: 'Critic',   color: '#7c3aed',baseMsMin: 700, baseMsMax: 1100 },
+  { key: 'learning', label: 'Learning', color: C.bull,   baseMsMin: 70,  baseMsMax: 140 },
+] as const;
+
+function seedLatencyRows(): { regime: number; trade: number; risk: number; critic: number; learning: number }[] {
+  const rng = (() => {
+    let s = 31;
+    return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+  })();
+
+  return Array.from({ length: 10 }, () => ({
+    regime:   Math.round(AGENT_SEGS[0].baseMsMin + rng() * (AGENT_SEGS[0].baseMsMax - AGENT_SEGS[0].baseMsMin)),
+    trade:    Math.round(AGENT_SEGS[1].baseMsMin + rng() * (AGENT_SEGS[1].baseMsMax - AGENT_SEGS[1].baseMsMin)),
+    risk:     Math.round(AGENT_SEGS[2].baseMsMin + rng() * (AGENT_SEGS[2].baseMsMax - AGENT_SEGS[2].baseMsMin)),
+    critic:   Math.round(AGENT_SEGS[3].baseMsMin + rng() * (AGENT_SEGS[3].baseMsMax - AGENT_SEGS[3].baseMsMin)),
+    learning: Math.round(AGENT_SEGS[4].baseMsMin + rng() * (AGENT_SEGS[4].baseMsMax - AGENT_SEGS[4].baseMsMin)),
+  }));
+}
+
+const LATENCY_ROWS = seedLatencyRows();
+
+function AgentLatencyBreakdown() {
+  const W = 400, H = 120;
+  const PAD = { top: 10, right: 60, bottom: 32, left: 30 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const totals = LATENCY_ROWS.map((r) => r.regime + r.trade + r.risk + r.critic + r.learning);
+  const maxTotal = Math.max(...totals);
+
+  const avgTotal = Math.round(totals.reduce((a, b) => a + b, 0) / totals.length);
+  const fastestIdx = totals.indexOf(Math.min(...totals));
+  const slowestIdx = totals.indexOf(Math.max(...totals));
+
+  const barH = Math.floor(plotH / LATENCY_ROWS.length) - 2;
+  const barStep = Math.floor(plotH / LATENCY_ROWS.length);
+
+  // X-axis ticks: 0, 1000, 2000, 3000
+  const xTicks = [0, 1000, 2000, 3000];
+  const toBarX = (ms: number) => PAD.left + (ms / maxTotal) * plotW;
+
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '14px 16px',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        <div>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Agent Pipeline Latency (last 10 decisions)</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>Stacked bar = per-agent time contribution</div>
+        </div>
+        <span style={{
+          fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: R.pill,
+          background: C.brand + '18', color: C.brand, border: `1px solid ${C.brand}30`,
+          whiteSpace: 'nowrap',
+        }}>Avg: {avgTotal.toLocaleString()}ms</span>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
+        {/* X-axis grid + labels */}
+        {xTicks.map((ms) => {
+          const bx = toBarX(ms);
+          if (bx > PAD.left + plotW + 5) return null;
+          return (
+            <g key={ms}>
+              <line
+                x1={bx} y1={PAD.top}
+                x2={bx} y2={PAD.top + plotH}
+                stroke={C.border} strokeWidth={0.5} strokeDasharray="3 3"
+              />
+              <text x={bx} y={PAD.top + plotH + 12} fontSize={8} fill={C.muted} textAnchor="middle">
+                {ms === 0 ? '0' : `${ms / 1000}s`}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Bars — most recent at top (row 0 = most recent = index 9 in data) */}
+        {LATENCY_ROWS.map((row, dataIdx) => {
+          const displayIdx = LATENCY_ROWS.length - 1 - dataIdx; // most recent at top
+          const y = PAD.top + displayIdx * barStep;
+          const segments = [row.regime, row.trade, row.risk, row.critic, row.learning];
+          const total = segments.reduce((a, b) => a + b, 0);
+
+          let offsetX = PAD.left;
+          const isFastest = dataIdx === fastestIdx;
+          const isSlowest = dataIdx === slowestIdx;
+
+          return (
+            <g key={dataIdx}>
+              {/* Y-axis label */}
+              <text x={PAD.left - 4} y={y + barH / 2 + 3} fontSize={8} fill={C.muted} textAnchor="end">
+                {dataIdx === 0 ? 'now' : `${dataIdx + 1}`}
+              </text>
+
+              {/* Stacked segments */}
+              {segments.map((ms, si) => {
+                const segW = (ms / maxTotal) * plotW;
+                const rx = offsetX;
+                offsetX += segW;
+                return (
+                  <rect
+                    key={si}
+                    x={rx} y={y}
+                    width={Math.max(segW, 0.5)} height={barH}
+                    fill={AGENT_SEGS[si].color}
+                    opacity={0.82}
+                  />
+                );
+              })}
+
+              {/* Total label + fastest/slowest annotation */}
+              <text x={toBarX(total) + 4} y={y + barH / 2 + 3} fontSize={8} fill={C.muted}>
+                {total}ms
+                {isFastest ? ' ⚡' : isSlowest ? ' 🐢' : ''}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* X-axis baseline */}
+        <line x1={PAD.left} y1={PAD.top + plotH} x2={PAD.left + plotW} y2={PAD.top + plotH} stroke={C.border} strokeWidth={0.8} />
+        <text x={PAD.left + plotW / 2} y={H - 2} fontSize={8} fill={C.muted} textAnchor="middle">time (ms)</text>
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 6, fontSize: F.xs, color: C.muted }}>
+        {AGENT_SEGS.map((ag) => (
+          <span key={ag.key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: ag.color, display: 'inline-block', flexShrink: 0 }} />
+            {ag.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const ACTION_TABS = ['ALL', 'GO', 'SKIP', 'VETOED', 'BLOCKED', 'FLIP'];
@@ -1378,6 +1688,11 @@ export default function AiDecisionsPage() {
                 <DecisionCard key={`${d.ts}-${d.symbol}`} d={d} isNew={newIds.has(d.ts)} />
               ))
             )}
+
+            {/* Agent latency breakdown — after decision list */}
+            <div style={{ marginTop: 24 }}>
+              <AgentLatencyBreakdown />
+            </div>
           </div>
 
           {/* ── Right: Stats panels ── */}
@@ -1391,6 +1706,7 @@ export default function AiDecisionsPage() {
             <DecisionTimeHeatmap />
             <AgentSequenceTimeline />
             <AIThinkingSpeed />
+            <MemoryEvolutionChart />
 
             {/* "What makes this unique" callout */}
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
