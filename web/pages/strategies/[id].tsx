@@ -1696,8 +1696,8 @@ export default function StrategyDetail() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
               <div>
-                <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: '-0.02em' }}>
-                  {card?.name || (id ? `Strategy ${id}` : 'Loading…')}
+                <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 900, color: C.text, letterSpacing: '-0.02em' }}>
+                  <span className="gradient-text">{card?.name || (id ? `Strategy ${id}` : 'Loading…')}</span>
                 </h1>
                 <div style={{ marginTop: 6, fontSize: F.sm, color: C.muted }}>
                   ID: {id ?? '—'} · Last evaluated: {card?.lastEvaluated ? timeAgo(card.lastEvaluated) : '—'}
@@ -1709,8 +1709,8 @@ export default function StrategyDetail() {
                   borderRadius: 20,
                   fontSize: F.xs,
                   fontWeight: 700,
-                  background: online ? '#166534' : C.border,
-                  color: online ? '#bbf7d0' : C.muted,
+                  background: online ? C.heatBull2 : C.border,
+                  color: online ? C.bullMid : C.muted,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 5,
