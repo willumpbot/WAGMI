@@ -3573,7 +3573,6 @@ class MultiStrategyBot:
             atr=signal_result.atr,
             entry=signal_result.entry,
             side=signal_result.side,
-            symbol=signal_result.symbol,
         )
 
         # ── CB entry_type filter: when CB is active, only allow TREND/REGIME ──

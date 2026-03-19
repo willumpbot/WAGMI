@@ -175,12 +175,29 @@ class ConfidenceScorerStrategy(BaseStrategy):
         return wr
 
     def evaluate_past_signals(self, symbol: str, current_price: float):
-        """Evaluate unresolved signals based on subsequent price movement."""
+        """Evaluate unresolved signals based on subsequent price movement.
+
+        Signals must be at least 1 hour old before evaluation to give the
+        market time to move.  Evaluating on the next 1-minute tick was
+        poisoning the historical WR with near-zero-move "failures".
+        """
         entries = self.signal_log.get(symbol, [])
         changed = False
+        now = datetime.now(timezone.utc)
         for e in entries:
             if e["evaluated"]:
                 continue
+            # ── Wait at least 1 hour before evaluating ──
+            try:
+                ts = datetime.fromisoformat(e["timestamp"])
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                age_minutes = (now - ts).total_seconds() / 60
+                if age_minutes < 60:
+                    continue  # Too young to evaluate
+            except (KeyError, ValueError):
+                pass  # Missing/bad timestamp — evaluate anyway
+
             price_at_signal = e["price"]
             if price_at_signal <= 0:
                 continue

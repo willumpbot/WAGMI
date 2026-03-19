@@ -170,8 +170,8 @@ class EnsembleStrategy:
         'trending_bear':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'oi_delta', 'liquidation_cascade'},
         'trending_bull':    {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'oi_delta'},
         'trend':            {'confidence_scorer', 'regime_trend', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'oi_delta'},
-        'consolidation':    {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'monte_carlo_zones', 'funding_rate'},
-        'range':            {'confidence_scorer', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'monte_carlo_zones', 'funding_rate'},
+        'consolidation':    {'confidence_scorer', 'multi_tier_quality', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'monte_carlo_zones', 'funding_rate'},
+        'range':            {'confidence_scorer', 'multi_tier_quality', 'bollinger_squeeze', 'vmc_cipher', 'probability_engine', 'monte_carlo_zones', 'funding_rate'},
         'high_volatility':  {'confidence_scorer', 'probability_engine', 'bollinger_squeeze', 'liquidation_cascade', 'oi_delta'},
         'panic':            {'confidence_scorer', 'liquidation_cascade'},
         'low_liquidity':    {'confidence_scorer'},
@@ -1140,7 +1140,8 @@ class EnsembleStrategy:
                 return None
 
         # Block known-losing combos (backtest-validated toxic combinations).
-        # Uses subset matching: a 3-agree combo containing a toxic 2-agree pair is also blocked.
+        # Only block when 3+ strategies agree and the toxic pair is a subset —
+        # if the toxic pair are the ONLY voters, blocking guarantees zero trades.
         _LOSING_COMBOS = {
             frozenset({"confidence_scorer", "multi_tier_quality"}),              # PF 0.08 — genuinely toxic
         }
@@ -1148,7 +1149,9 @@ class EnsembleStrategy:
             if len(side_signals) >= 2:
                 signal_names = frozenset(s.strategy for s in side_signals)
                 for blocked in _LOSING_COMBOS:
-                    if blocked.issubset(signal_names):
+                    # Only block when a 3rd strategy also voted — exact-match
+                    # means these were the only option, so let them through.
+                    if blocked.issubset(signal_names) and signal_names != blocked:
                         logger.info(
                             f"[{symbol}] Blocked losing combo {sorted(blocked)} "
                             f"in {sorted(signal_names)}"
