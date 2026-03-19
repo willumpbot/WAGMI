@@ -594,6 +594,185 @@ function PerformanceRadar({
   );
 }
 
+// ─── Benchmark Comparison ─────────────────────────────────────────────────────
+
+function BenchmarkComparison({ trades, backtest }: { trades: TradeRecord[]; backtest: BacktestResult | null }) {
+  const metrics = useMemo(() => {
+    const tradeWins = trades.filter((t) => t.outcome === 'WIN');
+    const tradeLosses = trades.filter((t) => t.outcome === 'LOSS');
+    const totalTrades = trades.length;
+
+    // Win rate (0–100)
+    const winRate = totalTrades > 0 ? (tradeWins.length / totalTrades) * 100 : 0;
+
+    // Profit factor: prefer backtest, fall back to computing from trades
+    let profitFactor = 0;
+    if (backtest?.results?.profit_factor != null && backtest.results.profit_factor > 0) {
+      profitFactor = backtest.results.profit_factor;
+    } else {
+      const grossWin = tradeWins.reduce((a, t) => a + (t.pnl ?? 0), 0);
+      const grossLoss = tradeLosses.reduce((a, t) => a + Math.abs(t.pnl ?? 0), 0);
+      profitFactor = grossLoss > 0 ? grossWin / grossLoss : 0;
+    }
+
+    // Max drawdown (absolute %) from backtest if available
+    let maxDrawdown = 0;
+    if (backtest?.results?.max_drawdown_pct != null) {
+      maxDrawdown = Math.abs(backtest.results.max_drawdown_pct);
+    }
+
+    // Avg win / Avg loss ratio
+    let avgWinLossRatio = 0;
+    if (
+      backtest?.results?.avg_win != null &&
+      backtest.results.avg_loss != null &&
+      Math.abs(backtest.results.avg_loss) > 0
+    ) {
+      avgWinLossRatio = Math.abs(backtest.results.avg_win) / Math.abs(backtest.results.avg_loss);
+    } else {
+      const avgWin = tradeWins.length > 0
+        ? tradeWins.reduce((a, t) => a + (t.pnl ?? 0), 0) / tradeWins.length
+        : 0;
+      const avgLoss = tradeLosses.length > 0
+        ? tradeLosses.reduce((a, t) => a + Math.abs(t.pnl ?? 0), 0) / tradeLosses.length
+        : 0;
+      avgWinLossRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
+    }
+
+    // Return per trade: avg pnl as % of avg entry price
+    const avgPnl = totalTrades > 0
+      ? trades.reduce((a, t) => a + (t.pnl ?? 0), 0) / totalTrades
+      : 0;
+    const entriesWithPrice = trades.filter((t) => t.entry != null);
+    const avgEntry = entriesWithPrice.length > 0
+      ? entriesWithPrice.reduce((a, t) => a + (t.entry ?? 0), 0) / entriesWithPrice.length
+      : 0;
+    const returnPerTrade = avgEntry > 0 ? (avgPnl / avgEntry) * 100 : 0;
+
+    // Risk-adjusted return = totalReturn% / maxDrawdown%
+    let riskAdjReturn = 0;
+    if (backtest?.results?.total_return_pct != null && maxDrawdown > 0) {
+      riskAdjReturn = backtest.results.total_return_pct / maxDrawdown;
+    }
+
+    return { winRate, profitFactor, maxDrawdown, avgWinLossRatio, returnPerTrade, riskAdjReturn };
+  }, [trades, backtest]);
+
+  const vbW = 600;
+  const vbH = 180;
+  const padL = 148; // label area
+  const padR = 80;  // value area on right
+  const padT = 22;
+  const padB = 18;
+  const barAreaW = vbW - padL - padR;
+  const totalRows = 6;
+  const rowH = (vbH - padT - padB) / totalRows;
+
+  // [label, botValue, benchmark, lowerIsBetter, formatFn]
+  type MetricRow = [string, number, number, boolean, (v: number) => string];
+  const rows: MetricRow[] = [
+    ['Win Rate',          metrics.winRate,         60,  false, (v) => `${v.toFixed(1)}%`],
+    ['Profit Factor',     metrics.profitFactor,    1.5, false, (v) => v.toFixed(2)],
+    ['Max Drawdown',      metrics.maxDrawdown,     15,  true,  (v) => `${v.toFixed(1)}%`],
+    ['Avg Win / Avg Loss',metrics.avgWinLossRatio, 2.0, false, (v) => v.toFixed(2)],
+    ['Return per Trade',  metrics.returnPerTrade,  0.5, false, (v) => `${v.toFixed(2)}%`],
+    ['Risk-Adj Return',   metrics.riskAdjReturn,   1.5, false, (v) => v.toFixed(2)],
+  ];
+
+  // Benchmark marker sits at 70% of bar area width for visual balance
+  // → the "full scale" that maps to barAreaW is bench / 0.70
+  const BENCH_FRAC = 0.70;
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${vbW} ${vbH}`} style={{ display: 'block' }}>
+      {/* Chart title */}
+      <text x={vbW / 2} y={13} fill={C.muted} fontSize={9.5} textAnchor="middle" fontWeight="600">
+        vs. Excellence Benchmarks
+      </text>
+
+      {rows.map(([label, botVal, bench, lowerBetter, fmt], i) => {
+        const rowY = padT + i * rowH;
+        const barCenterY = rowY + rowH * 0.5;
+        const barH = rowH * 0.42;
+        const barTop = barCenterY - barH / 2;
+
+        // Full scale: bench / BENCH_FRAC maps to full barAreaW
+        const fullScale = bench / BENCH_FRAC;
+        const clampedVal = Math.min(botVal, fullScale * 1.02);
+        const barW = barAreaW * Math.max(0, clampedVal / fullScale);
+
+        const isBetter = lowerBetter ? botVal <= bench : botVal >= bench;
+        const barColor = botVal === 0 ? C.border : isBetter ? C.bull : C.bear;
+        const bLineX = padL + barAreaW * BENCH_FRAC;
+
+        return (
+          <g key={label}>
+            {/* Alternating row bg */}
+            <rect
+              x={padL} y={rowY}
+              width={barAreaW} height={rowH}
+              fill={i % 2 === 0 ? 'rgba(255,255,255,0.018)' : 'transparent'}
+            />
+            {/* Metric label */}
+            <text
+              x={padL - 8} y={barCenterY + 3.5}
+              fill={C.textSub} fontSize={8.5} textAnchor="end"
+            >
+              {label}
+            </text>
+            {/* Bar track */}
+            <rect x={padL} y={barTop} width={barAreaW} height={barH} fill={C.surface} rx={2} />
+            {/* Bot value bar */}
+            {barW > 0 && (
+              <rect
+                x={padL} y={barTop}
+                width={Math.min(barW, barAreaW)} height={barH}
+                fill={barColor} rx={2} opacity={0.80}
+              />
+            )}
+            {/* Benchmark dashed vertical line */}
+            <line
+              x1={bLineX} y1={barTop - 3}
+              x2={bLineX} y2={barTop + barH + 3}
+              stroke="#d4a017" strokeWidth={1.5} strokeDasharray="3,2"
+            />
+            {/* Benchmark triangle marker at top */}
+            <polygon
+              points={`${bLineX - 4},${barTop - 4} ${bLineX + 4},${barTop - 4} ${bLineX},${barTop}`}
+              fill="#d4a017"
+            />
+            {/* Bot value label */}
+            <text
+              x={padL + barAreaW + 6} y={barCenterY + 1}
+              fill={barColor} fontSize={8.5} textAnchor="start" fontWeight="600"
+            >
+              {fmt(botVal)}
+            </text>
+            {/* Benchmark value label */}
+            <text
+              x={padL + barAreaW + 6} y={barCenterY + 11}
+              fill={C.muted} fontSize={7} textAnchor="start"
+            >
+              /{fmt(bench)}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Legend */}
+      <line
+        x1={padL} y1={vbH - 6} x2={padL + 14} y2={vbH - 6}
+        stroke="#d4a017" strokeWidth={1.5} strokeDasharray="3,2"
+      />
+      <text x={padL + 18} y={vbH - 2} fill={C.muted} fontSize={7}>Benchmark target</text>
+      <rect x={padL + 108} y={vbH - 11} width={10} height={7} fill={C.bull} rx={1} opacity={0.80} />
+      <text x={padL + 122} y={vbH - 2} fill={C.muted} fontSize={7}>Above benchmark</text>
+      <rect x={padL + 210} y={vbH - 11} width={10} height={7} fill={C.bear} rx={1} opacity={0.80} />
+      <text x={padL + 224} y={vbH - 2} fill={C.muted} fontSize={7}>Below benchmark</text>
+    </svg>
+  );
+}
+
 // ─── Strategy Contribution Bars ───────────────────────────────────────────────
 
 function StrategyBars({ data }: { data: Record<string, { trades: number; wins: number; pnl: number; win_rate: number }> }) {
@@ -772,6 +951,19 @@ export default function PerformancePage() {
           <div style={{ color: C.muted, padding: 40, textAlign: 'center', fontSize: F.base }}>Loading performance data…</div>
         ) : (
           <>
+            {/* ── Benchmark Comparison ── */}
+            {trades.length > 0 && (
+              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 32, overflowX: 'auto' }}>
+                <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+                  Performance vs. Benchmarks
+                </div>
+                <BenchmarkComparison trades={trades} backtest={null} />
+                <div style={{ fontSize: F.xs, color: C.muted, marginTop: 8 }}>
+                  Horizontal bars show bot metrics vs. excellence thresholds. Green = above benchmark, red = below. Values shown: bot / target.
+                </div>
+              </div>
+            )}
+
             {/* ── Risk-Adjusted Return KPIs + Radar ── */}
             <Section title="Risk-Adjusted Returns">
               <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -882,19 +1074,19 @@ export default function PerformancePage() {
               </Section>
             )}
 
+            {/* ── Rolling Metrics (dual-panel: WR + Avg P&L) ── */}
+            {trades.length >= 12 && (
+              <Section title="Rolling 10-Trade Metrics">
+                <RollingMetrics trades={trades} />
+              </Section>
+            )}
+
             {/* ── Rolling Win Rate ── */}
             <Section title="Rolling Win Rate (10-trade window)">
               <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto' }}>
                 <RollingWinRateChart data={rollingWR} width={860} height={130} />
               </div>
             </Section>
-
-            {/* ── Rolling Metrics (dual: WR + Avg P&L) ── */}
-            {trades.length >= 12 && (
-              <Section title="Rolling 10-Trade Metrics">
-                <RollingMetrics trades={trades} />
-              </Section>
-            )}
 
             {/* ── R:R Achieved Histogram ── */}
             <Section title="R:R Achieved Distribution">
