@@ -2460,6 +2460,513 @@ function ProfitAttributionChart({ trades, backtest }: {
   );
 }
 
+// ─── PnL Distribution Histogram ───────────────────────────────────────────────
+
+function PnlDistributionHistogram({ trades }: { trades: TradeRecord[] }) {
+  const W = 480, H = 140;
+  const pad = { top: 18, right: 20, bottom: 38, left: 44 };
+  const iW = W - pad.left - pad.right;
+  const iH = H - pad.top - pad.bottom;
+
+  const pnls = trades.map((t) => t.pnl ?? 0).filter((v) => isFinite(v));
+  if (pnls.length < 2) {
+    return (
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+        <h2 style={{ margin: '0 0 8px', fontSize: F.lg, fontWeight: 700, color: C.text }}>P&amp;L Distribution</h2>
+        <div style={{ color: C.muted, fontSize: F.sm }}>Not enough trade data yet.</div>
+      </div>
+    );
+  }
+
+  // Stats
+  const n = pnls.length;
+  const sorted = [...pnls].sort((a, b) => a - b);
+  const mean = pnls.reduce((s, v) => s + v, 0) / n;
+  const median = n % 2 === 0
+    ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2
+    : sorted[Math.floor(n / 2)];
+  const variance = pnls.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
+  const stdDev = Math.sqrt(variance);
+
+  // Skewness (Pearson's moment)
+  const skew = stdDev === 0
+    ? 0
+    : pnls.reduce((s, v) => s + ((v - mean) / stdDev) ** 3, 0) / n;
+
+  // Bins: 12 equal-width bins from min to max
+  const minPnl = sorted[0];
+  const maxPnl = sorted[n - 1];
+  const range = maxPnl - minPnl || 1;
+  const numBins = 12;
+  const binWidth = range / numBins;
+
+  type Bin = { lo: number; hi: number; count: number; isWin: boolean };
+  const bins: Bin[] = Array.from({ length: numBins }, (_, i) => ({
+    lo: minPnl + i * binWidth,
+    hi: minPnl + (i + 1) * binWidth,
+    count: 0,
+    isWin: (minPnl + (i + 0.5) * binWidth) >= 0,
+  }));
+
+  pnls.forEach((v) => {
+    let bi = Math.floor((v - minPnl) / binWidth);
+    if (bi >= numBins) bi = numBins - 1;
+    if (bi < 0) bi = 0;
+    bins[bi].count++;
+  });
+
+  // Slightly boost bins near zero for emphasis
+  bins.forEach((b) => {
+    if (Math.abs(b.lo) < binWidth * 0.5 || Math.abs(b.hi) < binWidth * 0.5) {
+      b.count = Math.ceil(b.count * 1.05);
+    }
+  });
+
+  const maxCount = Math.max(...bins.map((b) => b.count), 1);
+
+  const bw = iW / numBins;
+  const toX = (i: number) => pad.left + i * bw;
+  const toY = (count: number) => pad.top + iH - (count / maxCount) * iH;
+
+  // Gaussian curve: sample at 60 points
+  const gaussPoints = Array.from({ length: 60 }, (_, i) => {
+    const x = minPnl + (i / 59) * range;
+    const gauss = (n * binWidth / (stdDev * Math.sqrt(2 * Math.PI))) *
+      Math.exp(-0.5 * ((x - mean) / stdDev) ** 2);
+    const svgX = pad.left + ((x - minPnl) / range) * iW;
+    const svgY = pad.top + iH - (gauss / maxCount) * iH;
+    return `${svgX.toFixed(1)},${Math.max(pad.top, svgY).toFixed(1)}`;
+  }).join(' ');
+
+  // Reference line X positions
+  const medianX = pad.left + ((median - minPnl) / range) * iW;
+  const meanX = pad.left + ((mean - minPnl) / range) * iW;
+
+  // X-axis ticks: show 5 evenly spaced
+  const xTicks = Array.from({ length: 5 }, (_, i) => {
+    const val = minPnl + (i / 4) * range;
+    const x = pad.left + (i / 4) * iW;
+    return { val, x };
+  });
+
+  // Y-axis ticks: 4 levels
+  const yTicks = [0, Math.ceil(maxCount / 3), Math.ceil((2 * maxCount) / 3), maxCount];
+
+  const skewLabel = Math.abs(skew) < 0.2
+    ? 'Roughly symmetric'
+    : skew > 0
+    ? 'Positive skew (more large wins than large losses)'
+    : 'Negative skew (more large losses than large wins)';
+
+  const fmtVal = (v: number) =>
+    (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(0);
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>P&amp;L Distribution</h2>
+          <p style={{ margin: '4px 0 0', fontSize: F.xs, color: C.muted }}>
+            Individual trade P&amp;L distribution — {n} trades
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 16, fontSize: F.xs, flexWrap: 'wrap' }}>
+          <span style={{ color: C.info }}>
+            Median: <strong>{fmtVal(median)}</strong>
+          </span>
+          <span style={{ color: C.warn }}>
+            Mean: <strong>{fmtVal(mean)}</strong>
+          </span>
+          <span style={{ color: C.muted }}>
+            Std Dev: <strong>${stdDev.toFixed(0)}</strong>
+          </span>
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }} preserveAspectRatio="xMinYMid meet">
+        <defs>
+          <linearGradient id="pnlDistBull" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={C.bull} stopOpacity={0.85} />
+            <stop offset="100%" stopColor={C.bull} stopOpacity={0.35} />
+          </linearGradient>
+          <linearGradient id="pnlDistBear" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={C.bear} stopOpacity={0.85} />
+            <stop offset="100%" stopColor={C.bear} stopOpacity={0.35} />
+          </linearGradient>
+        </defs>
+
+        {/* Y grid + labels */}
+        {yTicks.map((tick, i) => {
+          const y = pad.top + iH - (tick / maxCount) * iH;
+          return (
+            <g key={i}>
+              <line x1={pad.left} y1={y} x2={pad.left + iW} y2={y}
+                stroke={tick === 0 ? C.borderBright : C.border}
+                strokeWidth={tick === 0 ? 1.5 : 0.5}
+                strokeDasharray={tick === 0 ? '' : '3 4'}
+                opacity={0.7}
+              />
+              <text x={pad.left - 4} y={y + 3.5} textAnchor="end"
+                fontSize={9} fill={C.muted} fontFamily="Inter, system-ui">
+                {tick}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Bars */}
+        {bins.map((b, i) => {
+          const bh = (b.count / maxCount) * iH;
+          const x = toX(i) + 1;
+          const bwInner = bw - 2;
+          const y = toY(b.count);
+          return (
+            <g key={i}>
+              <rect
+                x={x} y={y} width={bwInner} height={bh}
+                fill={b.isWin ? 'url(#pnlDistBull)' : 'url(#pnlDistBear)'}
+                rx={2}
+              >
+                <title>{`$${b.lo.toFixed(0)}–$${b.hi.toFixed(0)}: ${b.count} trades`}</title>
+              </rect>
+              {b.count > 0 && bh > 14 && (
+                <text x={x + bwInner / 2} y={y + bh / 2 + 3.5}
+                  textAnchor="middle" fontSize={8} fill="#fff" fontFamily="Inter, system-ui" opacity={0.8}>
+                  {b.count}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Gaussian curve overlay */}
+        {stdDev > 0 && (
+          <polyline
+            fill="none"
+            stroke={C.brand}
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            points={gaussPoints}
+            opacity={0.7}
+          />
+        )}
+
+        {/* Median reference line */}
+        {medianX >= pad.left && medianX <= pad.left + iW && (
+          <g>
+            <line x1={medianX} y1={pad.top} x2={medianX} y2={pad.top + iH}
+              stroke={C.info} strokeWidth={1.2} strokeDasharray="5 3" opacity={0.85} />
+            <text x={medianX + 3} y={pad.top + 10}
+              fontSize={8} fill={C.info} fontFamily="Inter, system-ui" fontWeight="600">
+              Median
+            </text>
+          </g>
+        )}
+
+        {/* Mean reference line */}
+        {meanX >= pad.left && meanX <= pad.left + iW && (
+          <g>
+            <line x1={meanX} y1={pad.top} x2={meanX} y2={pad.top + iH}
+              stroke={C.warn} strokeWidth={1.2} strokeDasharray="5 3" opacity={0.85} />
+            <text x={meanX + 3} y={pad.top + 20}
+              fontSize={8} fill={C.warn} fontFamily="Inter, system-ui" fontWeight="600">
+              Mean
+            </text>
+          </g>
+        )}
+
+        {/* X-axis ticks */}
+        {xTicks.map(({ val, x }, i) => (
+          <text key={i} x={x} y={H - 6}
+            textAnchor="middle" fontSize={8.5} fill={C.muted} fontFamily="Inter, system-ui">
+            {val >= 0 ? `+$${Math.round(val)}` : `-$${Math.abs(Math.round(val))}`}
+          </text>
+        ))}
+
+        {/* Legend */}
+        <g>
+          <line x1={pad.left + iW - 80} y1={pad.top + 8} x2={pad.left + iW - 66} y2={pad.top + 8}
+            stroke={C.brand} strokeWidth={1.5} strokeDasharray="4 2" opacity={0.7} />
+          <text x={pad.left + iW - 62} y={pad.top + 12}
+            fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">Gaussian fit</text>
+        </g>
+      </svg>
+
+      {/* Skew label */}
+      <div style={{ marginTop: 8, fontSize: F.xs, color: C.muted }}>
+        Skew: <strong style={{ color: skew > 0.2 ? C.bull : skew < -0.2 ? C.bear : C.textSub }}>{skewLabel}</strong>
+      </div>
+    </div>
+  );
+}
+
+// ─── Consecutive Trade PnL Chart ──────────────────────────────────────────────
+
+function ConsecutiveTradePnlChart({ trades }: { trades: TradeRecord[] }) {
+  const W = 540, H = 100;
+  const pad = { top: 16, right: 60, bottom: 28, left: 44 };
+  const iW = W - pad.left - pad.right;
+  const iH = H - pad.top - pad.bottom;
+
+  const validTrades = trades.filter((t) => t.pnl != null);
+  if (validTrades.length < 2) {
+    return (
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+        <h2 style={{ margin: '0 0 8px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Trade Sequence P&amp;L</h2>
+        <div style={{ color: C.muted, fontSize: F.sm }}>Not enough trade data yet.</div>
+      </div>
+    );
+  }
+
+  const pnls = validTrades.map((t) => t.pnl!);
+  const n = pnls.length;
+
+  // Cumulative equity
+  const cumPnls: number[] = [];
+  let cum = 0;
+  pnls.forEach((v) => { cum += v; cumPnls.push(cum); });
+
+  const minPnl = Math.min(...pnls);
+  const maxPnl = Math.max(...pnls);
+  const absMax = Math.max(Math.abs(minPnl), Math.abs(maxPnl), 1);
+  // Y axis range: symmetric around 0 with some headroom
+  const yMax = absMax * 1.2;
+  const yMin = -yMax;
+  const yRange = yMax - yMin;
+
+  const cumMin = Math.min(...cumPnls);
+  const cumMax = Math.max(...cumPnls);
+  const cumRange = cumMax - cumMin || 1;
+
+  const toX = (i: number) => pad.left + (n <= 1 ? iW / 2 : (i / (n - 1)) * iW);
+  const toY = (v: number) => pad.top + iH - ((v - yMin) / yRange) * iH;
+  const toCumY = (v: number) => pad.top + iH - ((v - cumMin) / cumRange) * iH;
+
+  const zeroY = toY(0);
+
+  // Dot radius: scaled by abs(pnl), min 3 max 9
+  const dotR = (pnl: number) => 3 + (Math.abs(pnl) / absMax) * 6;
+
+  // Largest win / loss indices
+  const maxWinIdx = pnls.indexOf(maxPnl);
+  const maxLossIdx = pnls.indexOf(minPnl);
+
+  // Current streak
+  let streak = 0;
+  let streakType: 'win' | 'loss' = 'win';
+  for (let i = n - 1; i >= 0; i--) {
+    const isWin = validTrades[i].outcome === 'WIN';
+    if (i === n - 1) {
+      streakType = isWin ? 'win' : 'loss';
+      streak = 1;
+    } else if ((streakType === 'win') === isWin) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  // Connecting line segments (colored by direction)
+  const segments: Array<{ x1: number; y1: number; x2: number; y2: number; isWin: boolean }> = [];
+  for (let i = 0; i < n - 1; i++) {
+    segments.push({
+      x1: toX(i), y1: toY(pnls[i]),
+      x2: toX(i + 1), y2: toY(pnls[i + 1]),
+      isWin: pnls[i + 1] >= 0,
+    });
+  }
+
+  // Cumulative line polyline
+  const cumPolyline = cumPnls.map((v, i) => `${toX(i).toFixed(1)},${toCumY(v).toFixed(1)}`).join(' ');
+
+  // X-axis ticks: first, every ~5, last
+  const xTickIndices = [0];
+  for (let i = 5; i < n - 1; i += 5) xTickIndices.push(i);
+  if (!xTickIndices.includes(n - 1)) xTickIndices.push(n - 1);
+
+  // Y-axis ticks (right axis for cumulative)
+  const cumTicks = [cumMin, (cumMin + cumMax) / 2, cumMax];
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Trade Sequence P&amp;L</h2>
+          <p style={{ margin: '4px 0 0', fontSize: F.xs, color: C.muted }}>
+            Each dot = one trade · dot size = magnitude · {n} trades
+          </p>
+        </div>
+        <div style={{
+          fontSize: F.xs, fontWeight: 700, padding: '4px 10px',
+          borderRadius: R.pill,
+          background: streakType === 'win' ? `${C.bull}22` : `${C.bear}22`,
+          border: `1px solid ${streakType === 'win' ? C.bull : C.bear}55`,
+          color: streakType === 'win' ? C.bull : C.bear,
+        }}>
+          {streak} {streakType === 'win' ? 'win' : 'loss'} streak {streakType === 'win' ? '🔥' : ''}
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }} preserveAspectRatio="xMinYMid meet">
+        <defs>
+          {/* Halo filter for highlighted dots */}
+          <filter id="seqHaloWin" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="seqHaloLoss" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
+        {/* Y-axis left grid lines */}
+        {[-yMax, 0, yMax].map((tick, i) => {
+          const y = toY(tick);
+          const isZero = tick === 0;
+          return (
+            <g key={i}>
+              <line x1={pad.left} y1={y} x2={pad.left + iW} y2={y}
+                stroke={isZero ? C.borderBright : C.border}
+                strokeWidth={isZero ? 1.5 : 0.5}
+                strokeDasharray={isZero ? '6 3' : '3 4'}
+                opacity={0.7}
+              />
+              <text x={pad.left - 4} y={y + 3.5} textAnchor="end"
+                fontSize={8.5} fill={isZero ? C.textSub : C.muted} fontFamily="Inter, system-ui"
+                fontWeight={isZero ? '700' : '400'}>
+                {tick === 0 ? '$0' : tick > 0 ? `+$${Math.round(tick)}` : `-$${Math.abs(Math.round(tick))}`}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Right Y-axis labels for cumulative */}
+        {cumTicks.map((tick, i) => {
+          const y = toCumY(tick);
+          return (
+            <text key={i} x={pad.left + iW + 4} y={y + 3.5}
+              fontSize={8} fill={C.info} fontFamily="Inter, system-ui" opacity={0.8}>
+              {tick >= 0 ? `+$${Math.round(tick)}` : `-$${Math.abs(Math.round(tick))}`}
+            </text>
+          );
+        })}
+
+        {/* Zero reference dashed line */}
+        <line x1={pad.left} y1={zeroY} x2={pad.left + iW} y2={zeroY}
+          stroke={C.muted} strokeWidth={1} strokeDasharray="4 3" opacity={0.5} />
+
+        {/* Connecting segments */}
+        {segments.map((seg, i) => (
+          <line key={i}
+            x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2}
+            stroke={seg.isWin ? C.bull : C.bear}
+            strokeWidth={1.2}
+            opacity={0.45}
+          />
+        ))}
+
+        {/* Cumulative equity line */}
+        {cumPnls.length >= 2 && (
+          <polyline
+            fill="none"
+            stroke={C.info}
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            points={cumPolyline}
+            opacity={0.65}
+            strokeDasharray="5 2"
+          />
+        )}
+
+        {/* Dots */}
+        {pnls.map((v, i) => {
+          const cx = toX(i);
+          const cy = toY(v);
+          const r = dotR(v);
+          const isWin = v >= 0;
+          const isBigWin = i === maxWinIdx;
+          const isBigLoss = i === maxLossIdx;
+          const isFirst = i === 0;
+          const isLast = i === n - 1;
+
+          return (
+            <g key={i}>
+              {/* Halo for biggest win/loss */}
+              {isBigWin && (
+                <circle cx={cx} cy={cy} r={r + 5}
+                  fill="none" stroke={C.bull} strokeWidth={1.5} opacity={0.4} />
+              )}
+              {isBigLoss && (
+                <circle cx={cx} cy={cy} r={r + 5}
+                  fill="none" stroke={C.bear} strokeWidth={1.5} opacity={0.4} />
+              )}
+
+              <circle cx={cx} cy={cy} r={r}
+                fill={isWin ? C.bull : C.bear}
+                stroke={C.card} strokeWidth={1.2}
+                opacity={0.88}
+              >
+                <title>{`Trade ${i + 1}: ${v >= 0 ? '+' : ''}$${v.toFixed(0)} | ${validTrades[i].outcome}`}</title>
+              </circle>
+
+              {/* Label first/last dots */}
+              {(isFirst || isLast) && (
+                <text
+                  x={isFirst ? cx + r + 3 : cx - r - 3}
+                  y={cy - r - 3}
+                  textAnchor={isFirst ? 'start' : 'end'}
+                  fontSize={8.5} fontWeight="700"
+                  fill={isWin ? C.bull : C.bear}
+                  fontFamily="Inter, system-ui"
+                >
+                  {v >= 0 ? '+' : ''}${v.toFixed(0)}
+                </text>
+              )}
+
+              {/* Label biggest win/loss */}
+              {isBigWin && !isFirst && !isLast && (
+                <text x={cx} y={cy - r - 5}
+                  textAnchor="middle" fontSize={8} fontWeight="700"
+                  fill={C.bull} fontFamily="Inter, system-ui">
+                  Best
+                </text>
+              )}
+              {isBigLoss && !isFirst && !isLast && (
+                <text x={cx} y={cy + r + 12}
+                  textAnchor="middle" fontSize={8} fontWeight="700"
+                  fill={C.bear} fontFamily="Inter, system-ui">
+                  Worst
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* X-axis ticks */}
+        {xTickIndices.map((i) => (
+          <text key={i} x={toX(i)} y={H - 6}
+            textAnchor="middle" fontSize={8.5} fill={C.muted} fontFamily="Inter, system-ui">
+            {i + 1}
+          </text>
+        ))}
+
+        {/* X-axis label */}
+        <text x={pad.left + iW / 2} y={H - 1} textAnchor="middle"
+          fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">Trade #</text>
+
+        {/* Legend: cumulative line */}
+        <line x1={pad.left + 2} y1={pad.top + 6} x2={pad.left + 16} y2={pad.top + 6}
+          stroke={C.info} strokeWidth={1.5} strokeDasharray="5 2" opacity={0.65} />
+        <text x={pad.left + 19} y={pad.top + 10}
+          fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">Cumulative</text>
+      </svg>
+    </div>
+  );
+}
+
 // ─── Max Adverse Excursion Chart ──────────────────────────────────────────────
 
 function MaxAdverseExcursion({ trades }: { trades: TradeRecord[] }) {
@@ -2908,8 +3415,14 @@ export default function Results() {
       {/* ── Daily Equity Waterfall ────────────────────── */}
       <DailyEquityWaterfall trades={trades} />
 
+      {/* ── Consecutive Trade PnL Chart ───────────────── */}
+      <ConsecutiveTradePnlChart trades={trades} />
+
       {/* ── Max Adverse Excursion ─────────────────────── */}
       <MaxAdverseExcursion trades={trades} />
+
+      {/* ── P&L Distribution Histogram ────────────────── */}
+      <PnlDistributionHistogram trades={trades} />
 
       {/* ── Trade history table ───────────────────────── */}
       <div style={{ marginBottom: 28 }}>
