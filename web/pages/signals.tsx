@@ -3137,7 +3137,7 @@ function SignalTimelineWithRegime() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>48-Hour Signal + Regime Timeline</div>
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>Colored bands = regime; triangles = signals fired</div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>Colored bands = regime; triangles = signals fired <span style={{ color: C.faint }}>(illustrative view)</span></div>
         </div>
         <div style={{ display: 'flex', gap: 10, fontSize: 10, color: C.muted, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {Object.entries(REGIME_BAND_COLOR).map(([k, col]) => (
@@ -3327,7 +3327,7 @@ function MarketStructureGrid() {
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>Market Structure Grid</div>
           <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
-            Trend direction and regime per symbol/timeframe — click a column to highlight
+            Trend direction and regime per symbol/timeframe — click a column to highlight <span style={{ color: C.faint }}>(illustrative view)</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, fontSize: 10, color: C.muted, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
