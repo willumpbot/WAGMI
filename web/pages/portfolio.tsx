@@ -1417,6 +1417,333 @@ function DrawdownRecoveryChart() {
   );
 }
 
+// ─── Efficiency Frontier Chart ───────────────────────────────────────────────
+
+function EfficiencyFrontierChart() {
+  const SVG_W = 380, SVG_H = 220;
+  const PAD = { t: 32, r: 24, b: 36, l: 52 };
+  const W = SVG_W - PAD.l - PAD.r;
+  const H = SVG_H - PAD.t - PAD.b;
+
+  // Axis ranges: X = volatility 0–30%, Y = return 0–22%
+  const xMin = 0, xMax = 30;
+  const yMin = 0, yMax = 22;
+
+  const toX = (vol: number) => PAD.l + ((vol - xMin) / (xMax - xMin)) * W;
+  const toY = (ret: number) => PAD.t + H - ((ret - yMin) / (yMax - yMin)) * H;
+
+  // Individual assets
+  const assets = [
+    { id: 'BTC',  vol: 18, ret: 15,   color: '#f7931a', r: 6 },
+    { id: 'SOL',  vol: 22, ret: 17,   color: '#9945ff', r: 6 },
+    { id: 'HYPE', vol: 28, ret: 14,   color: C.bear,    r: 6 },
+  ];
+
+  // Portfolio allocations
+  const portfolios = [
+    { id: 'Equal weight',    vol: 17,   ret: 15.3, color: C.info,  r: 6,  label: null },
+    { id: 'Current bot',     vol: 16,   ret: 15.8, color: C.brand, r: 10, label: 'Current Portfolio \u2605 (best Sharpe)' },
+    { id: 'Min variance',    vol: 14.5, ret: 13.5, color: C.muted, r: 6,  label: null },
+  ];
+
+  // Efficient frontier: a quadratic arc through feasible combinations
+  // Points roughly from (vol=14, ret=13) curving up to (vol=24, ret=17.5)
+  const frontierPts: Array<[number, number]> = [
+    [13.5, 12.5],
+    [14.5, 13.5],
+    [15,   14.2],
+    [15.5, 14.8],
+    [16,   15.2],
+    [17,   15.6],
+    [18,   16],
+    [19.5, 16.6],
+    [21,   17.1],
+    [22.5, 17.4],
+    [24,   17.5],
+  ];
+
+  // Build a smooth cubic bezier from frontier points
+  function smoothCurve(pts: Array<[number, number]>): string {
+    if (pts.length < 2) return '';
+    const mapped = pts.map(([v, r]) => ({ x: toX(v), y: toY(r) }));
+    let d = `M ${mapped[0].x.toFixed(1)} ${mapped[0].y.toFixed(1)}`;
+    for (let i = 0; i < mapped.length - 1; i++) {
+      const p0 = mapped[Math.max(0, i - 1)];
+      const p1 = mapped[i];
+      const p2 = mapped[i + 1];
+      const p3 = mapped[Math.min(mapped.length - 1, i + 2)];
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    return d;
+  }
+
+  const frontierPath = smoothCurve(frontierPts);
+
+  // Inefficient zone: polygon below/left of frontier (filled red)
+  // Close the area down to the x-axis bottom-left corner
+  const firstFP = frontierPts[0];
+  const lastFP  = frontierPts[frontierPts.length - 1];
+  const ineffArea = frontierPath
+    + ` L ${toX(lastFP[0]).toFixed(1)} ${(PAD.t + H).toFixed(1)}`
+    + ` L ${toX(firstFP[0]).toFixed(1)} ${(PAD.t + H).toFixed(1)} Z`;
+
+  // Efficient zone: polygon above/right of frontier (filled green)
+  const effArea = frontierPath
+    + ` L ${toX(lastFP[0]).toFixed(1)} ${PAD.t.toFixed(1)}`
+    + ` L ${toX(firstFP[0]).toFixed(1)} ${PAD.t.toFixed(1)} Z`;
+
+  // Y-axis ticks: 0, 5, 10, 15, 20
+  const yTicks = [0, 5, 10, 15, 20];
+  // X-axis ticks: 0, 5, 10, 15, 20, 25
+  const xTicks = [0, 5, 10, 15, 20, 25, 30];
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', flex: 1, minWidth: 320 }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 16 }}>Risk-Return Efficiency Frontier</div>
+
+      <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ display: 'block', overflow: 'visible' }}>
+        {/* Axis grid lines */}
+        {yTicks.map((v) => (
+          <g key={`yt-${v}`}>
+            <line x1={PAD.l} y1={toY(v)} x2={PAD.l + W} y2={toY(v)}
+              stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" />
+            <text x={PAD.l - 5} y={toY(v) + 4} fill={C.muted} fontSize={8} textAnchor="end">{v}%</text>
+          </g>
+        ))}
+        {xTicks.map((v) => (
+          <g key={`xt-${v}`}>
+            <line x1={toX(v)} y1={PAD.t} x2={toX(v)} y2={PAD.t + H}
+              stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" />
+            <text x={toX(v)} y={PAD.t + H + 14} fill={C.muted} fontSize={8} textAnchor="middle">{v}%</text>
+          </g>
+        ))}
+
+        {/* Axis borders */}
+        <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + H} stroke={C.border} strokeWidth={1} />
+        <line x1={PAD.l} y1={PAD.t + H} x2={PAD.l + W} y2={PAD.t + H} stroke={C.border} strokeWidth={1} />
+
+        {/* Axis labels */}
+        <text x={PAD.l + W / 2} y={SVG_H - 2} fill={C.muted} fontSize={8} textAnchor="middle">Volatility (Std Dev of Returns)</text>
+        <text
+          x={12} y={PAD.t + H / 2}
+          fill={C.muted} fontSize={8} textAnchor="middle"
+          transform={`rotate(-90, 12, ${PAD.t + H / 2})`}
+        >
+          Expected Return
+        </text>
+
+        {/* Inefficient zone shading (below frontier) */}
+        <path d={ineffArea} fill={C.bear} fillOpacity={0.07} />
+
+        {/* Efficient zone shading (above frontier) */}
+        <path d={effArea} fill={C.bull} fillOpacity={0.06} />
+
+        {/* Frontier curve */}
+        <path d={frontierPath} fill="none" stroke={C.brand} strokeWidth={2} strokeDasharray="5 3"
+          style={{ filter: `drop-shadow(0 0 3px ${C.brand}80)` }} />
+
+        {/* Zone labels */}
+        <text x={toX(25)} y={toY(11)} fill={C.bear} fontSize={8} fontWeight={700} opacity={0.75} textAnchor="middle">Inefficient zone</text>
+        <text x={toX(20)} y={toY(19)} fill={C.bull} fontSize={8} fontWeight={700} opacity={0.8} textAnchor="middle">Efficient zone</text>
+
+        {/* Individual asset dots */}
+        {assets.map((a) => (
+          <g key={a.id}>
+            <circle cx={toX(a.vol)} cy={toY(a.ret)} r={a.r + 3} fill={a.color} opacity={0.15} />
+            <circle cx={toX(a.vol)} cy={toY(a.ret)} r={a.r} fill={a.color} stroke="#ffffff" strokeWidth={1.5} opacity={0.9} />
+            <text x={toX(a.vol)} y={toY(a.ret) - a.r - 4}
+              fill={a.color} fontSize={8} fontWeight={700} textAnchor="middle">{a.id}</text>
+          </g>
+        ))}
+
+        {/* Portfolio allocation dots */}
+        {portfolios.map((p) => (
+          <g key={p.id}>
+            <circle cx={toX(p.vol)} cy={toY(p.ret)} r={p.r + 4} fill={p.color} opacity={0.18} />
+            <circle cx={toX(p.vol)} cy={toY(p.ret)} r={p.r} fill={p.color} stroke="#ffffff" strokeWidth={1.5} opacity={0.9}
+              style={p.r > 8 ? { filter: `drop-shadow(0 0 5px ${p.color}90)` } : undefined} />
+            {p.label ? (
+              <text x={toX(p.vol)} y={toY(p.ret) - p.r - 5}
+                fill={p.color} fontSize={8} fontWeight={700} textAnchor="middle">{p.label}</text>
+            ) : (
+              <text x={toX(p.vol) + p.r + 4} y={toY(p.ret) + 3}
+                fill={C.muted} fontSize={7} textAnchor="start">{p.id}</text>
+            )}
+          </g>
+        ))}
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap' }}>
+        {[
+          { label: 'BTC', color: '#f7931a' },
+          { label: 'SOL', color: '#9945ff' },
+          { label: 'HYPE', color: C.bear },
+          { label: 'Equal weight', color: C.info },
+          { label: 'Current bot', color: C.brand },
+          { label: 'Min variance', color: C.muted },
+        ].map(({ label, color }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+            <span style={{ fontSize: F.xs, color: C.muted }}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Position P&L Waterfall ──────────────────────────────────────────────────
+
+function PositionPnlWaterfall({ positions }: { positions: Strategy[] }) {
+  const SVG_W = 380, SVG_H = 120;
+  const PAD = { t: 20, r: 20, b: 36, l: 16 };
+  const W = SVG_W - PAD.l - PAD.r;
+  const H = SVG_H - PAD.t - PAD.b;
+
+  // Build per-position PnL rows: use real data or seeded fallback
+  type PnlRow = { symbol: string; pnl: number; duration: string };
+
+  const hasPosData = positions.length > 0;
+
+  const rows: PnlRow[] = hasPosData
+    ? positions.map((s) => {
+        const pnl = s.open_position?.unrealized_pnl ?? 0;
+        const updatedAt = s.open_position?.updated_at;
+        let duration = '';
+        if (updatedAt) {
+          const diffMs = Date.now() - new Date(updatedAt).getTime();
+          const diffH = diffMs / 3_600_000;
+          duration = diffH < 1 ? `${Math.round(diffH * 60)}m` : `${diffH.toFixed(1)}h`;
+        }
+        return {
+          symbol: s.id.replace(/USDT?$/i, '').toUpperCase(),
+          pnl,
+          duration,
+        };
+      })
+    : [
+        { symbol: 'BTC',  pnl:  182, duration: '3.2h' },
+        { symbol: 'SOL',  pnl:   94, duration: '1.7h' },
+        { symbol: 'HYPE', pnl:  -47, duration: '5.1h' },
+      ];
+
+  const totalPnl = rows.reduce((a, r) => a + r.pnl, 0);
+  const maxAbs = Math.max(1, ...rows.map((r) => Math.abs(r.pnl)));
+
+  // Layout: rows + 1 "Total" bar
+  const barCount = rows.length + 1; // last bar = total
+  const barW = W / barCount;
+  const barPad = barW * 0.18;
+  const zeroY = PAD.t + H * 0.55; // zero line at 55% down
+
+  // Map a PnL value to a bar rect (above or below zeroY)
+  function barRect(pnl: number, idx: number) {
+    const ratio = Math.abs(pnl) / maxAbs;
+    const barH = Math.max(2, ratio * (H * 0.45));
+    const x = PAD.l + idx * barW + barPad;
+    const w = barW - barPad * 2;
+    const y = pnl >= 0 ? zeroY - barH : zeroY;
+    return { x, y, w, h: barH };
+  }
+
+  if (!hasPosData && rows.every((r) => r.pnl === 0)) {
+    return (
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px' }}>
+        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 8 }}>Open Position P&amp;L</div>
+        <div style={{ color: C.muted, fontSize: F.sm, textAlign: 'center', padding: '20px 0' }}>
+          No open positions — bot is flat
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Open Position P&amp;L</span>
+        <span style={{ fontSize: F.sm, fontWeight: 700, color: pnlColor(totalPnl) }}>
+          {totalPnl >= 0 ? '+' : ''}{fmtUsd(totalPnl)}
+        </span>
+      </div>
+
+      {rows.length === 0 ? (
+        <div style={{ color: C.muted, fontSize: F.sm, textAlign: 'center', padding: '20px 0' }}>
+          No open positions — bot is flat
+        </div>
+      ) : (
+        <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ display: 'block', overflow: 'visible' }}>
+          {/* Zero baseline */}
+          <line x1={PAD.l} y1={zeroY} x2={PAD.l + W} y2={zeroY}
+            stroke={C.borderBright} strokeWidth={1} />
+          <text x={PAD.l - 4} y={zeroY + 4} fill={C.muted} fontSize={7} textAnchor="end">$0</text>
+
+          {/* Per-position bars */}
+          {rows.map((row, i) => {
+            const { x, y, w, h } = barRect(row.pnl, i);
+            const col = row.pnl >= 0 ? C.bull : C.bear;
+            return (
+              <g key={row.symbol + i}>
+                {/* Glow */}
+                <rect x={x - 1} y={row.pnl >= 0 ? y - 1 : y} width={w + 2} height={h + 2}
+                  rx={3} fill={col} opacity={0.15} />
+                {/* Bar */}
+                <rect x={x} y={y} width={w} height={h}
+                  rx={3} fill={col} opacity={0.85} />
+                {/* PnL label above/below bar */}
+                <text
+                  x={x + w / 2}
+                  y={row.pnl >= 0 ? y - 5 : y + h + 10}
+                  fill={col} fontSize={8} fontWeight={700} textAnchor="middle"
+                >
+                  {row.pnl >= 0 ? '+' : ''}{fmtUsd(row.pnl, 0)}
+                </text>
+                {/* Symbol label below zero */}
+                <text x={x + w / 2} y={zeroY + 13} fill={C.text} fontSize={8} fontWeight={700} textAnchor="middle">
+                  {row.symbol}
+                </text>
+                {/* Duration label */}
+                {row.duration && (
+                  <text x={x + w / 2} y={zeroY + 23} fill={C.muted} fontSize={7} textAnchor="middle">
+                    {row.duration}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+
+          {/* Total bar (rightmost) */}
+          {(() => {
+            const { x, y, w, h } = barRect(totalPnl, rows.length);
+            const col = totalPnl >= 0 ? C.bull : C.bear;
+            return (
+              <g key="total">
+                <rect x={x} y={y} width={w} height={h}
+                  rx={3} fill={col} opacity={0.55}
+                  strokeDasharray="3 2" stroke={col} strokeWidth={1} />
+                <text
+                  x={x + w / 2}
+                  y={totalPnl >= 0 ? y - 5 : y + h + 10}
+                  fill={col} fontSize={8} fontWeight={800} textAnchor="middle"
+                >
+                  {totalPnl >= 0 ? '+' : ''}{fmtUsd(totalPnl, 0)}
+                </text>
+                <text x={x + w / 2} y={zeroY + 13} fill={C.textSub} fontSize={8} fontWeight={700} textAnchor="middle">
+                  TOTAL
+                </text>
+              </g>
+            );
+          })()}
+        </svg>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PortfolioPage() {
@@ -1546,6 +1873,11 @@ export default function PortfolioPage() {
               <RiskBudgetMeter />
             </div>
 
+            {/* ── Efficiency Frontier ── */}
+            <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+              <EfficiencyFrontierChart />
+            </div>
+
             {/* ── Visual Analytics Row: Allocation Donut + Health Score ── */}
             {(openPositions.length > 0 || recentTrades.length > 0) && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 24 }}>
@@ -1596,6 +1928,9 @@ export default function PortfolioPage() {
               <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
                 Open Positions ({openPositions.length})
               </h2>
+
+              {/* ── Position P&L Waterfall ── */}
+              <PositionPnlWaterfall positions={openPositions} />
 
               {/* ── Position Visual Intelligence: Bubble Chart + Thesis Validity ── */}
               <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
