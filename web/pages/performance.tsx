@@ -179,6 +179,337 @@ function RRHistogram({ data }: { data: { label: string; count: number }[] }) {
   );
 }
 
+// ─── Monthly P&L Bar Chart ────────────────────────────────────────────────────
+
+function MonthlyPnlChart({ trades }: { trades: TradeRecord[] }) {
+  const periods = useMemo(() => {
+    if (!trades.length) return [];
+    const chunkSize = 5;
+    const result: { label: string; pnl: number }[] = [];
+    for (let i = 0; i < trades.length; i += chunkSize) {
+      const chunk = trades.slice(i, i + chunkSize);
+      const pnl = chunk.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
+      result.push({ label: `${Math.floor(i / chunkSize) + 1}`, pnl });
+    }
+    return result;
+  }, [trades]);
+
+  if (!periods.length) {
+    return <div style={{ color: C.muted, fontSize: F.sm, padding: 20 }}>No trade data available.</div>;
+  }
+
+  const vbW = 700;
+  const vbH = 140;
+  const pad = { t: 28, r: 16, b: 30, l: 52 };
+  const W = vbW - pad.l - pad.r;
+  const H = vbH - pad.t - pad.b;
+
+  const maxAbs = Math.max(1, ...periods.map((p) => Math.abs(p.pnl)));
+  const barW = Math.max(4, W / periods.length - 4);
+  const zeroY = pad.t + H / 2;
+
+  const barX = (i: number) => pad.l + (i / periods.length) * W + (W / periods.length - barW) / 2;
+  const barH = (pnl: number) => Math.max(2, (Math.abs(pnl) / maxAbs) * (H / 2 - 4));
+  const barY = (pnl: number) => pnl >= 0 ? zeroY - barH(pnl) : zeroY;
+
+  const topLabel = fmtUsd(maxAbs);
+  const botLabel = fmtUsd(-maxAbs);
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${vbW} ${vbH}`} style={{ display: 'block' }}>
+      {/* Title */}
+      <text x={vbW / 2} y={12} fill={C.muted} fontSize={10} textAnchor="middle" fontWeight="600">P&amp;L by Period</text>
+
+      {/* Y-axis labels */}
+      <text x={pad.l - 4} y={pad.t + 4} fill={C.muted} fontSize={8} textAnchor="end">{topLabel}</text>
+      <text x={pad.l - 4} y={zeroY + 4} fill={C.muted} fontSize={8} textAnchor="end">$0</text>
+      <text x={pad.l - 4} y={pad.t + H + 4} fill={C.muted} fontSize={8} textAnchor="end">{botLabel}</text>
+
+      {/* Reference line at 0 */}
+      <line x1={pad.l} y1={zeroY} x2={pad.l + W} y2={zeroY} stroke={C.border} strokeWidth={1} />
+
+      {/* Bars */}
+      {periods.map((p, i) => {
+        const positive = p.pnl >= 0;
+        const bx = barX(i);
+        const bh = barH(p.pnl);
+        const by = barY(p.pnl);
+        const labelY = positive ? by - 3 : by + bh + 9;
+        const labelText = (positive ? '+' : '') + fmtUsd(p.pnl, 0);
+        return (
+          <g key={i}>
+            <rect
+              x={bx} y={by} width={barW} height={bh}
+              fill={positive ? C.bull : C.bear}
+              rx={2} opacity={0.85}
+            />
+            {/* Bar value label — only show if bar is wide enough */}
+            {barW > 20 && (
+              <text
+                x={bx + barW / 2} y={labelY}
+                fill={positive ? C.bull : C.bear}
+                fontSize={7} textAnchor="middle" fontWeight="600"
+              >
+                {labelText}
+              </text>
+            )}
+            {/* X-axis period label */}
+            <text
+              x={bx + barW / 2} y={vbH - 4}
+              fill={C.muted} fontSize={7} textAnchor="middle"
+            >
+              {p.label}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* X-axis label */}
+      <text x={pad.l + W / 2} y={vbH - 2} fill={C.muted} fontSize={8} textAnchor="middle" dy={-10}>
+        Period (every 5 trades)
+      </text>
+    </svg>
+  );
+}
+
+// ─── Drawdown Timeline ────────────────────────────────────────────────────────
+
+function DrawdownTimeline({ points }: { points: EquityCurvePoint[] }) {
+  if (points.length < 2) {
+    return <div style={{ color: C.muted, fontSize: F.sm, padding: 20 }}>No equity curve data for drawdown timeline.</div>;
+  }
+
+  const vbW = 700;
+  const vbH = 80;
+  const pad = { t: 8, r: 16, b: 20, l: 52 };
+  const W = vbW - pad.l - pad.r;
+  const H = vbH - pad.t - pad.b;
+
+  // Top strip: equity line (20% of H)
+  const eqH = Math.round(H * 0.30);
+  // Bottom strip: drawdown bars (remaining)
+  const ddH = H - eqH - 4;
+  const ddTop = pad.t + eqH + 4;
+
+  const equities = points.map((p) => p.equity);
+  const minE = Math.min(...equities);
+  const maxE = Math.max(...equities);
+  const eqRange = maxE - minE || 1;
+
+  const drawdowns = points.map((p) => p.drawdown_pct ?? 0); // negative values
+  const minDD = Math.min(...drawdowns); // most negative = worst
+  const ddRange = Math.abs(minDD) || 1;
+
+  const x = (i: number) => pad.l + (i / Math.max(1, points.length - 1)) * W;
+  const yEq = (v: number) => pad.t + eqH - ((v - minE) / eqRange) * eqH;
+  const ddBarH = (dd: number) => Math.max(1, (Math.abs(dd) / ddRange) * ddH);
+
+  // Find max drawdown trough index
+  const maxDDIdx = drawdowns.indexOf(minDD);
+
+  // Equity line path
+  const eqPts = points.map((p, i) => `${x(i)},${yEq(p.equity)}`).join(' ');
+
+  // Identify recovery periods: dd < -1% and recovering (dd improving toward 0)
+  // For simplicity: use opacity scaled to drawdown depth
+  const barOpacity = (dd: number) => 0.3 + 0.7 * (Math.abs(dd) / ddRange);
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${vbW} ${vbH}`} style={{ display: 'block' }}>
+      {/* Equity line strip */}
+      <polyline points={eqPts} fill="none" stroke={C.bull} strokeWidth={1.5} strokeLinejoin="round" />
+
+      {/* Drawdown bars */}
+      {points.map((p, i) => {
+        const dd = drawdowns[i];
+        if (dd >= -0.001) return null;
+        const bh = ddBarH(dd);
+        const bx = x(i) - 0.5;
+        const isRecovering = i > 0 && drawdowns[i] > drawdowns[i - 1];
+        return (
+          <rect
+            key={i}
+            x={bx} y={ddTop} width={Math.max(1, W / points.length)}
+            height={bh}
+            fill={isRecovering ? '#e05050' : C.bear}
+            opacity={barOpacity(dd)}
+          />
+        );
+      })}
+
+      {/* Max drawdown trough annotation */}
+      {maxDDIdx >= 0 && minDD < -0.001 && (
+        <g>
+          <line
+            x1={x(maxDDIdx)} y1={ddTop}
+            x2={x(maxDDIdx)} y2={ddTop + ddBarH(minDD)}
+            stroke={C.bear} strokeWidth={1.5} strokeDasharray="3,2"
+          />
+          <circle cx={x(maxDDIdx)} cy={ddTop + ddBarH(minDD)} r={3} fill={C.bear} />
+          <text
+            x={Math.min(x(maxDDIdx) + 4, pad.l + W - 40)}
+            y={ddTop + ddBarH(minDD) - 4}
+            fill={C.bear} fontSize={7.5} fontWeight="700"
+          >
+            {fmtPct(minDD, 1)}
+          </text>
+        </g>
+      )}
+
+      {/* Y-axis label for drawdown strip */}
+      <text x={pad.l - 4} y={ddTop + ddH / 2 + 3} fill={C.muted} fontSize={7.5} textAnchor="end">DD</text>
+      <text x={pad.l - 4} y={pad.t + eqH / 2 + 3} fill={C.muted} fontSize={7.5} textAnchor="end">Eq.</text>
+
+      {/* Divider line between eq and dd strips */}
+      <line x1={pad.l} y1={ddTop - 2} x2={pad.l + W} y2={ddTop - 2} stroke={C.border} strokeWidth={0.5} />
+
+      {/* Legend */}
+      <circle cx={pad.l} cy={vbH - 5} r={3} fill={C.bear} />
+      <text x={pad.l + 6} y={vbH - 2} fill={C.muted} fontSize={7}>Max drawdown trough</text>
+      <line x1={pad.l + 110} y1={vbH - 5} x2={pad.l + 125} y2={vbH - 5} stroke={C.bear} strokeWidth={1.5} />
+      <text x={pad.l + 128} y={vbH - 2} fill={C.muted} fontSize={7}>Drawdown depth</text>
+    </svg>
+  );
+}
+
+// ─── Performance Radar / Spider Chart ─────────────────────────────────────────
+
+function PerformanceRadar({
+  sharpe, sortino, winRate, profitFactor, calmar,
+}: {
+  sharpe: number | null;
+  sortino: number | null;
+  winRate: number | null;
+  profitFactor: number | null;
+  calmar: number | null;
+}) {
+  const size = 250;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = 88; // outer radius of pentagon
+
+  const axes = [
+    { label: 'Sharpe', value: sharpe, max: 3 },
+    { label: 'Sortino', value: sortino, max: 3 },
+    { label: 'Win Rate', value: winRate, max: 100 },
+    { label: 'Prof. Factor', value: profitFactor, max: 3 },
+    { label: 'Calmar', value: calmar, max: 2 },
+  ];
+
+  const n = axes.length;
+
+  // Angle: start at top (-π/2), go clockwise
+  const angle = (i: number) => (2 * Math.PI * i) / n - Math.PI / 2;
+  const pt = (i: number, radius: number) => ({
+    x: cx + radius * Math.cos(angle(i)),
+    y: cy + radius * Math.sin(angle(i)),
+  });
+
+  // Normalized 0-1 for each axis
+  const norm = (v: number | null, max: number) => {
+    if (v == null || isNaN(v)) return 0;
+    return Math.min(1, Math.max(0, v / max));
+  };
+
+  const targetR = 0.7;
+
+  // Build polygon points
+  const valuePts = axes
+    .map((a, i) => pt(i, norm(a.value, a.max) * r))
+    .map((p) => `${p.x},${p.y}`)
+    .join(' ');
+
+  const targetPts = axes
+    .map((_, i) => pt(i, targetR * r))
+    .map((p) => `${p.x},${p.y}`)
+    .join(' ');
+
+  const outerPts = axes
+    .map((_, i) => pt(i, r))
+    .map((p) => `${p.x},${p.y}`)
+    .join(' ');
+
+  // Concentric grid rings
+  const gridRings = [0.25, 0.5, 0.75, 1.0];
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: 'block', margin: '0 auto' }}>
+      <defs>
+        <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={C.brand} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={C.brand} stopOpacity="0.12" />
+        </radialGradient>
+      </defs>
+
+      {/* Concentric grid rings */}
+      {gridRings.map((t) => (
+        <polygon
+          key={t}
+          points={axes.map((_, i) => { const p = pt(i, t * r); return `${p.x},${p.y}`; }).join(' ')}
+          fill="none"
+          stroke={C.border}
+          strokeWidth={t === 1.0 ? 1 : 0.5}
+          opacity={0.6}
+        />
+      ))}
+
+      {/* Axis spokes */}
+      {axes.map((_, i) => {
+        const outer = pt(i, r);
+        return <line key={i} x1={cx} y1={cy} x2={outer.x} y2={outer.y} stroke={C.border} strokeWidth={0.75} />;
+      })}
+
+      {/* Target reference pentagon (0.7) */}
+      <polygon
+        points={targetPts}
+        fill="none"
+        stroke={C.brand}
+        strokeWidth={1}
+        strokeDasharray="3,3"
+        opacity={0.4}
+      />
+
+      {/* Value polygon */}
+      <polygon
+        points={valuePts}
+        fill="url(#radarFill)"
+        stroke={C.brand}
+        strokeWidth={2}
+        strokeLinejoin="round"
+      />
+
+      {/* Vertex dots */}
+      {axes.map((a, i) => {
+        const p = pt(i, norm(a.value, a.max) * r);
+        return <circle key={i} cx={p.x} cy={p.y} r={3} fill={C.brand} />;
+      })}
+
+      {/* Axis labels */}
+      {axes.map((a, i) => {
+        const labelR = r + 18;
+        const p = pt(i, labelR);
+        const anchor =
+          Math.abs(p.x - cx) < 8 ? 'middle' : p.x < cx ? 'end' : 'start';
+        const displayVal = a.value != null && !isNaN(a.value)
+          ? a.label === 'Win Rate'
+            ? `${a.value.toFixed(0)}%`
+            : a.value.toFixed(2)
+          : '—';
+        return (
+          <g key={i}>
+            <text x={p.x} y={p.y - 3} fill={C.textSub} fontSize={8.5} textAnchor={anchor} fontWeight="600">
+              {a.label}
+            </text>
+            <text x={p.x} y={p.y + 8} fill={C.muted} fontSize={7.5} textAnchor={anchor}>
+              {displayVal}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // ─── Strategy Contribution Bars ───────────────────────────────────────────────
 
 function StrategyBars({ data }: { data: Record<string, { trades: number; wins: number; pnl: number; win_rate: number }> }) {
@@ -293,6 +624,13 @@ export default function PerformancePage() {
   const avgLossDuration = useMemo(() => calcAvgDuration(trades, 'LOSS'), [trades]);
   const feeDrag = useMemo(() => calcFeeDrag(trades), [trades]);
 
+  const profitFactor = useMemo(() => {
+    const grossWin = trades.filter((t) => (t.pnl ?? 0) > 0).reduce((a, t) => a + (t.pnl ?? 0), 0);
+    const grossLoss = trades.filter((t) => (t.pnl ?? 0) < 0).reduce((a, t) => a + Math.abs(t.pnl ?? 0), 0);
+    if (grossLoss === 0) return grossWin > 0 ? null : null;
+    return grossWin / grossLoss;
+  }, [trades]);
+
   const rollingWR = useMemo(() => rollingWinRate(trades, Math.min(10, Math.floor(trades.length / 3) || 5)), [trades]);
   const rrHisto = useMemo(() => rrHistogram(trades), [trades]);
 
@@ -350,48 +688,72 @@ export default function PerformancePage() {
           <div style={{ color: C.muted, padding: 40, textAlign: 'center', fontSize: F.base }}>Loading performance data…</div>
         ) : (
           <>
-            {/* ── Risk-Adjusted Return KPIs ── */}
+            {/* ── Risk-Adjusted Return KPIs + Radar ── */}
             <Section title="Risk-Adjusted Returns">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 8 }}>
-                <KpiCard
-                  label="Sharpe Ratio"
-                  value={sharpe != null ? sharpe.toFixed(2) : '—'}
-                  sub="Annualised (risk-free = 0%)"
-                  color={ratioColor(sharpe)}
-                />
-                <KpiCard
-                  label="Sortino Ratio"
-                  value={sortino != null ? sortino.toFixed(2) : '—'}
-                  sub="Downside deviation only"
-                  color={ratioColor(sortino)}
-                />
-                <KpiCard
-                  label="Calmar Ratio"
-                  value={calmar != null ? calmar.toFixed(2) : '—'}
-                  sub="Return ÷ max drawdown"
-                  color={ratioColor(calmar)}
-                />
-                <KpiCard
-                  label="Total Return"
-                  value={totalReturnPct != null ? fmtPct(totalReturnPct) : '—'}
-                  sub="Equity curve, live"
-                  color={totalReturnPct != null && totalReturnPct >= 0 ? C.bull : C.bear}
-                />
-                <KpiCard
-                  label="Max Drawdown"
-                  value={maxDrawdownPct != null ? fmtPct(maxDrawdownPct) : '—'}
-                  sub="Worst peak-to-trough"
-                  color={C.bear}
-                />
-                <KpiCard
-                  label="Win Rate"
-                  value={winRate != null ? fmtPct(winRate, 1) : '—'}
-                  sub={`${wins}W / ${losses}L`}
-                  color={winRate != null && winRate >= 50 ? C.bull : C.bear}
-                />
-              </div>
-              <div style={{ fontSize: F.xs, color: C.muted, marginTop: 8 }}>
-                Sharpe &gt; 1.0 = good · &gt; 2.0 = excellent · Calmar &gt; 1.0 = acceptable · &gt; 3.0 = strong
+              <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                {/* KPI cards column */}
+                <div style={{ flex: '1 1 420px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 8 }}>
+                    <KpiCard
+                      label="Sharpe Ratio"
+                      value={sharpe != null ? sharpe.toFixed(2) : '—'}
+                      sub="Annualised (risk-free = 0%)"
+                      color={ratioColor(sharpe)}
+                    />
+                    <KpiCard
+                      label="Sortino Ratio"
+                      value={sortino != null ? sortino.toFixed(2) : '—'}
+                      sub="Downside deviation only"
+                      color={ratioColor(sortino)}
+                    />
+                    <KpiCard
+                      label="Calmar Ratio"
+                      value={calmar != null ? calmar.toFixed(2) : '—'}
+                      sub="Return ÷ max drawdown"
+                      color={ratioColor(calmar)}
+                    />
+                    <KpiCard
+                      label="Total Return"
+                      value={totalReturnPct != null ? fmtPct(totalReturnPct) : '—'}
+                      sub="Equity curve, live"
+                      color={totalReturnPct != null && totalReturnPct >= 0 ? C.bull : C.bear}
+                    />
+                    <KpiCard
+                      label="Max Drawdown"
+                      value={maxDrawdownPct != null ? fmtPct(maxDrawdownPct) : '—'}
+                      sub="Worst peak-to-trough"
+                      color={C.bear}
+                    />
+                    <KpiCard
+                      label="Win Rate"
+                      value={winRate != null ? fmtPct(winRate, 1) : '—'}
+                      sub={`${wins}W / ${losses}L`}
+                      color={winRate != null && winRate >= 50 ? C.bull : C.bear}
+                    />
+                  </div>
+                  <div style={{ fontSize: F.xs, color: C.muted, marginTop: 8 }}>
+                    Sharpe &gt; 1.0 = good · &gt; 2.0 = excellent · Calmar &gt; 1.0 = acceptable · &gt; 3.0 = strong
+                  </div>
+                </div>
+                {/* Radar chart column */}
+                <div style={{
+                  flex: '0 0 260px', background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: R.lg, padding: '16px 8px', boxShadow: S.sm,
+                }}>
+                  <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', marginBottom: 8 }}>
+                    Performance Radar
+                  </div>
+                  <PerformanceRadar
+                    sharpe={sharpe}
+                    sortino={sortino}
+                    winRate={winRate}
+                    profitFactor={profitFactor}
+                    calmar={calmar}
+                  />
+                  <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', marginTop: 6 }}>
+                    Dashed pentagon = 0.7× target
+                  </div>
+                </div>
               </div>
             </Section>
 
@@ -406,11 +768,32 @@ export default function PerformancePage() {
               </div>
             </Section>
 
-            {/* ── Equity Curve ── */}
+            {/* ── Equity Curve + Drawdown Timeline ── */}
             {curve.length > 1 && (
               <Section title="Equity Curve">
                 <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto' }}>
                   <EquityChart points={curve} width={860} height={200} />
+                </div>
+                <div style={{
+                  background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
+                  padding: '16px 20px', overflowX: 'auto', marginTop: 12,
+                }}>
+                  <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                    Drawdown Depth Timeline
+                  </div>
+                  <DrawdownTimeline points={curve} />
+                </div>
+              </Section>
+            )}
+
+            {/* ── P&L Timeline ── */}
+            {trades.length >= 5 && (
+              <Section title="P&L Timeline">
+                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto' }}>
+                  <MonthlyPnlChart trades={trades} />
+                  <div style={{ fontSize: F.xs, color: C.muted, marginTop: 10 }}>
+                    Each period = 5 consecutive trades. Green = net positive, red = net negative. Useful for spotting hot/cold streaks.
+                  </div>
                 </div>
               </Section>
             )}
