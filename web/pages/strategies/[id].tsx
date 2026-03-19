@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useId } from 'react';
 import { useRouter } from 'next/router';
-import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../../src/theme';
+import { C, R, S, F, G, fmtUsd, fmtPct, timeAgo } from '../../src/theme';
 import type { TradeRecord } from '../../src/types';
 
 // ─── Types ───────────────────────────────────────────────────────────────────

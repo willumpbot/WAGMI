@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useId } from 'react';
 import Head from 'next/head';
 import Layout from '../components/Layout';
-import { C, R, S, F, fmtUsd, fmtPct } from '../src/theme';
+import { C, G, R, S, F, fmtUsd, fmtPct } from '../src/theme';
 import { apiFetch } from '../src/api';
 import type { TradeHistoryResponse, TradeRecord, EquityCurveResponse, EquityCurvePoint, BacktestResult } from '../src/types';
 
@@ -125,13 +125,14 @@ function rrHistogram(trades: TradeRecord[]): { label: string; count: number }[] 
 
 function KpiCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div style={{
-      background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
+    <div className="card-hover" style={{
+      background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
       padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 6,
-      boxShadow: S.sm,
+      boxShadow: S.sm, position: 'relative', overflow: 'hidden',
     }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: color ?? C.brand, borderRadius: `${R.lg}px ${R.lg}px 0 0` }} />
       <div style={{ fontSize: F.sm, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div style={{ fontSize: F['2xl'], fontWeight: 700, color: color ?? C.text }}>{value}</div>
+      <div className="num" style={{ fontSize: F['2xl'], fontWeight: 700, color: color ?? C.text }}>{value}</div>
       {sub && <div style={{ fontSize: F.xs, color: C.muted }}>{sub}</div>}
     </div>
   );
@@ -139,8 +140,8 @@ function KpiCard({ label, value, sub, color }: { label: string; value: string; s
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 36 }}>
-      <h2 style={{ margin: '0 0 16px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>{title}</h2>
+    <div className="fade-in" style={{ marginBottom: 36 }}>
+      <h2 className="section-label" style={{ margin: '0 0 16px' }}>{title}</h2>
       {children}
     </div>
   );
@@ -286,7 +287,7 @@ function RollingMetrics({ trades }: { trades: TradeRecord[] }) {
   const pnlPath = rollingPnL.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${pnlY(v).toFixed(1)}`).join(' ');
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
+    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Rolling 10-Trade Performance</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>How win rate and avg P&L evolve across each rolling window of 10 trades</div>
 
@@ -299,7 +300,7 @@ function RollingMetrics({ trades }: { trades: TradeRecord[] }) {
         <text x={padL - 4} y={wrY(0.5) + 3} textAnchor="end" fontSize={8} fill={C.muted}>50%</text>
         <text x={padL - 4} y={wrY(1) + 3} textAnchor="end" fontSize={8} fill={C.muted}>100%</text>
         {/* Win rate line */}
-        <path d={wrPath} fill="none" stroke="#2563eb" strokeWidth={2} strokeLinejoin="round" />
+        <path d={wrPath} fill="none" stroke={C.brand} strokeWidth={2} strokeLinejoin="round" />
 
         {/* Divider */}
         <line x1={padL} y1={pnlBase} x2={padL + iW} y2={pnlBase} stroke={C.border} strokeWidth={1} />
@@ -322,7 +323,7 @@ function RollingMetrics({ trades }: { trades: TradeRecord[] }) {
 
       <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 10, color: C.muted }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ width: 16, height: 2, background: '#2563eb', display: 'inline-block' }} /> Rolling Win Rate
+          <span style={{ width: 16, height: 2, background: C.brand, display: 'inline-block' }} /> Rolling Win Rate
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <span style={{ width: 8, height: 8, background: C.bull, borderRadius: 2, display: 'inline-block' }} /> Avg P&L (positive)
@@ -1337,7 +1338,7 @@ function RatioGaugePanel({
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.xl,
         padding: '20px 24px',
@@ -1475,8 +1476,8 @@ function ProfitFactorGauge({ trades }: { trades: TradeRecord[] }) {
     : 'Insufficient trade data';
 
   return (
-    <div style={{
-      background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
+    <div className="card-hover" style={{
+      background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
       padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 6,
       boxShadow: S.sm, alignItems: 'center',
     }}>
@@ -2731,7 +2732,7 @@ export default function PerformancePage() {
 
               {/* Equity curve with EMA overlays */}
               {filteredCurve.length > 1 && (
-                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto', marginBottom: 16 }}>
+                <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto', marginBottom: 16 }}>
                   <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                     Equity Curve with EMA-9 / EMA-21
                   </div>
@@ -2741,7 +2742,7 @@ export default function PerformancePage() {
 
               {/* Monthly PnL bars */}
               {filteredTrades.length >= 5 && (
-                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto' }}>
+                <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto' }}>
                   <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                     P&L by Period (every 5 trades)
                   </div>

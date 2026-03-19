@@ -94,7 +94,7 @@ function timeAgo(isoOrTs: string | number | null): string {
 function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
   if (!view) {
     return (
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: C.muted }}>
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: C.muted }}>
         LLM Brain View loading...
       </div>
     );
@@ -323,7 +323,7 @@ function TradingViewChart({ symbol }: { symbol: string }) {
 function ActivityFeed({ events }: { events: ActivityEvent[] }) {
   if (events.length === 0) {
     return (
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.md, padding: '16px 20px', marginBottom: 24 }}>
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.md, padding: '16px 20px', marginBottom: 24 }}>
         <div style={{ fontSize: F.sm, fontWeight: 600, color: C.text, marginBottom: 6 }}>Bot Activity</div>
         <div style={{ fontSize: F.sm, color: C.muted }}>
           No activity yet. Start the bot with <code style={{ background: C.surfaceHover, padding: '1px 4px', borderRadius: R.xs, color: C.brand }}>LLM_MODE=1</code> to see live decisions here.
@@ -1426,7 +1426,7 @@ function TradeSetupQualityMatrix() {
   const svgH = COL_LABEL_H + regimes.length * (CELL_H + PAD) + PAD;
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
       <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Quality Matrix</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
         Expected signal quality (0–100) by market <strong style={{ color: C.textSub }}>regime</strong> (rows) ×{' '}
@@ -1686,7 +1686,7 @@ function StandaloneRiskCalc({ defaultEntry, defaultSl }: { defaultEntry?: number
   };
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, marginBottom: 24, overflow: 'hidden' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, marginBottom: 24, overflow: 'hidden' }}>
       <button
         onClick={() => setShow(v => !v)}
         style={{
@@ -2579,7 +2579,7 @@ function MultiTimeframeConfluence() {
   };
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
       <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Multi-Timeframe Confluence
       </div>
@@ -2723,7 +2723,7 @@ function SlippageCalculator() {
   const labelY = 38;
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
       <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Slippage Calculator
       </div>
@@ -4263,7 +4263,7 @@ export default function CopyTrade() {
           ))}
         </div>
       ) : orderedSignals.length === 0 ? (
-        <div style={{ padding: 40, textAlign: 'center', color: '#6b7280', background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, marginBottom: 32 }}>
+        <div style={{ padding: 40, textAlign: 'center', color: '#6b7280', background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, marginBottom: 32 }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
           <div style={{ fontSize: F.lg, fontWeight: 700, color: C.text, marginBottom: 6 }}>No signals yet</div>
           <div style={{ color: C.muted }}>The bot needs ~60 seconds to generate the first scan.</div>

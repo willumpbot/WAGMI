@@ -23,7 +23,7 @@ function GateFunnelChart() {
   const maxW = 440;
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px', marginTop: 20 }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px', marginTop: 20 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Funnel — typical 100-signal run</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>How signals are filtered before reaching the exchange. Only the highest-quality setups survive all gates.</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -268,7 +268,7 @@ function SafetyStats() {
 
 function StrategyCard({ name, desc, data, why }: { name: string; desc: string; data: string; why: string }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
         <span style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>{name}</span>
         <span style={{ fontSize: F.xs, padding: '2px 8px', borderRadius: R.pill, background: 'rgba(22,163,74,0.12)', color: C.bull, fontWeight: 700 }}>● LIVE</span>
@@ -315,7 +315,7 @@ function TransparencyScoreCard() {
   const svgH = dimensions.length * (ROW_H + GAP) + 40; // rows + legend space
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>Transparency Comparison</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>How open are trading bots about their inner workings? Scored 0–100.</div>
 
@@ -514,7 +514,7 @@ function RegimeTransitionDiagram() {
   };
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Regime Transition Map — How Markets Evolve
       </div>
@@ -925,7 +925,7 @@ export default function AboutPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {AGENTS.map((a) => (
-              <div key={a.name} style={{ background: C.card, border: `1px solid ${a.color}30`, borderRadius: R.lg, padding: '16px 20px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div key={a.name} style={{ background: G.card, border: `1px solid ${a.color}30`, borderRadius: R.lg, padding: '16px 20px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ flexShrink: 0, minWidth: 160 }}>
                   <div style={{ fontSize: F.sm, fontWeight: 800, color: a.color }}>{a.name}</div>
                   <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>Model: {a.model}</div>

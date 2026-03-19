@@ -9,7 +9,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Layout from '../components/Layout';
-import { C, R, S, F, timeAgo } from '../src/theme';
+import { C, R, S, F, G, timeAgo } from '../src/theme';
 import { apiFetch } from '../src/api';
 import type { LlmDecision, LlmFeedResponse } from '../src/types';
 
@@ -459,7 +459,7 @@ function VetoPanel({ decisions }: { decisions: LlmDecision[] }) {
   const maxReasonCount = Math.max(1, ...reasonEntries.map((e) => e[1]));
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.purple}30`, borderRadius: R.lg, padding: '18px 20px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.purple}30`, borderRadius: R.lg, padding: '18px 20px' }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: 16 }}>🚫</span> Critic Veto Analysis
       </div>
@@ -506,7 +506,7 @@ function ModelPanel({ decisions }: { decisions: LlmDecision[] }) {
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>Model Routing</div>
       {entries.map(([model, count]) => {
         const mb = modelBadge(model);
@@ -544,7 +544,7 @@ function ConfidenceTrendSparkline({ decisions }: { decisions: LlmDecision[] }) {
   const avgConf = vals.reduce((a, b) => a + b, 0) / vals.length;
   const avgY = y(avgConf);
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Confidence Trend</span>
         <span style={{ fontSize: F.xs, fontWeight: 700, color: avgConf >= 65 ? C.bull : avgConf >= 45 ? C.warn : C.bear }}>
@@ -629,7 +629,7 @@ function DecisionMixDonut({ decisions }: { decisions: LlmDecision[] }) {
 
   let cumulative = 0;
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>Decision Mix</div>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <svg width={120} height={120} viewBox="0 0 120 120" style={{ flexShrink: 0 }}>
@@ -1628,7 +1628,7 @@ export default function AiDecisionsPage() {
             { label: 'Models Used', value: String(stats.models), color: C.info },
           ].map(({ label, value, color }) => (
             <div key={label} style={{
-              flex: '1 1 130px', background: C.card, border: `1px solid ${C.border}`,
+              flex: '1 1 130px', background: G.card, border: `1px solid ${C.border}`,
               borderRadius: R.md, padding: '12px 16px', boxShadow: S.sm,
             }}>
               <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 3 }}>{label}</div>
@@ -1695,7 +1695,7 @@ export default function AiDecisionsPage() {
               <div style={{ color: C.muted, padding: 32, textAlign: 'center', fontSize: F.base }}>Loading decisions…</div>
             ) : filtered.length === 0 ? (
               <div style={{
-                background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl,
+                background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl,
                 padding: 40, textAlign: 'center',
               }}>
                 <div style={{ fontSize: 32, marginBottom: 10 }}>🤖</div>
@@ -1730,7 +1730,7 @@ export default function AiDecisionsPage() {
             <MemoryEvolutionChart />
 
             {/* "What makes this unique" callout */}
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
+            <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
               <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>Why this matters</div>
               {[
                 { icon: '🔍', text: 'Every decision has a reason — no black box' },
@@ -1748,7 +1748,7 @@ export default function AiDecisionsPage() {
             </div>
 
             {/* Deep dive links */}
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
+            <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
               <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>Explore further</div>
               {[
                 { href: '/forensics', label: 'Trade Forensics', desc: 'Pair decisions with trade outcomes' },

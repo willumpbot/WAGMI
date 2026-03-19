@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { C, R, S, F, fmtUsd, timeAgo } from '../../src/theme';
+import { C, R, S, F, G, fmtUsd, timeAgo } from '../../src/theme';
 import { fmtPnlK } from '../../lib/fmt';
 
 type OpenPosition = {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useId } from 'react';
-import { C, R, S, F, fmtUsd, fmtPct } from '../src/theme';
+import { C, R, S, F, G, fmtUsd, fmtPct } from '../src/theme';
 import { seededRand as mkSeededRand } from '../lib/fmt';
 import type { BacktestResult, BacktestRunMeta, BacktestJob } from '../src/types';
 import { resolveApiBase } from '../src/api';
@@ -1013,7 +1013,7 @@ function MonteCarloForecast({ result }: { result: BacktestResult }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Based on current win rate &amp; avg win/loss — for illustration only
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg
           width="100%"
           viewBox={`0 0 ${W} ${H}`}
@@ -1188,7 +1188,7 @@ function ParameterSensitivityChart() {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Horizontal bars show return % at each parameter setting. Green = better than current, red = worse.
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: W }}>
           {/* Title axis */}
           <text x={pad.l + LABEL_W} y={pad.t - 10} fontSize={8} fill={C.muted} fontWeight={600}>Return %</text>
@@ -1378,7 +1378,7 @@ function WalkForwardChart() {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Strategy performance on held-out out-of-sample periods — positive test bars confirm generalization
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: W }}>
           {/* Y-axis gridlines + labels */}
           {yTicks.map((tick) => (
@@ -1507,7 +1507,7 @@ function RunDetail({ result }: { result: BacktestResult }) {
       {/* KPI grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, marginBottom: 20 }}>
         {kpis.map(({ label, value, color }) => (
-          <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.md, padding: '12px 14px' }}>
+          <div key={label} style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.md, padding: '12px 14px' }}>
             <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>{label}</div>
             <div style={{ fontSize: F.lg, fontWeight: 800, color }}>{value}</div>
           </div>
@@ -1541,7 +1541,7 @@ function RunDetail({ result }: { result: BacktestResult }) {
               </span>
               <div style={{ flex: 1, height: 1, background: C.border }} />
             </div>
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+            <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
               <EquityCurveChart trades={result.trades} startEquity={startEq} />
               <RSISubplot values={equityValues} width={580} height={60} />
             </div>
@@ -1878,7 +1878,7 @@ function JobProgress({ jobId, apiBase, onDone }: { jobId: string; apiBase: strin
   const currentStep = steps.indexOf(job.status);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 16 }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>
           Backtest Running — {job.symbols}
@@ -2017,7 +2017,7 @@ function SymbolRotationChart({ result }: { result: BacktestResult }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>
         {SYMBOLS.map((s) => `${s}: ${symCounts[s]}`).join(' · ')} trades
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '12px 16px', overflowX: 'auto' }}>
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '12px 16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ display: 'block', minWidth: SVG_W }}>
 
           {/* Track backgrounds */}
@@ -2290,7 +2290,7 @@ function BacktestSummaryScorecard({ result }: { result: BacktestResult }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Letter grades for key performance metrics — weighted overall score
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px' }}>
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px' }}>
 
         {/* Metric grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
@@ -2503,7 +2503,7 @@ function BacktestCalendarView({ result }: { result?: BacktestResult | null }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         GitHub-style contribution graph — green = profit day, red = loss day
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg
           width="100%"
           viewBox={`0 0 ${SVG_W} ${SVG_H}`}
@@ -2637,7 +2637,7 @@ function StrategyAlphaChart({ result }: { result?: BacktestResult | null }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Cumulative alpha generated by each strategy over time
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg
           width="100%"
           viewBox={`0 0 ${W} ${H}`}
@@ -2870,7 +2870,7 @@ function BacktestConfidenceIntervals({ result }: { result?: BacktestResult | nul
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         10th / 50th / 90th percentile trade outcome bands with actual equity curve
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg
           width="100%"
           viewBox={`0 0 ${W} ${H}`}
@@ -3137,7 +3137,7 @@ export default function Backtest() {
           {runs.length >= 2 && selectedResult && (
             <div style={{
               marginBottom: 20, padding: '12px 16px',
-              background: C.card, border: `1px solid ${C.border}`,
+              background: G.card, border: `1px solid ${C.border}`,
               borderRadius: R.lg, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
             }}>
               <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -3195,7 +3195,7 @@ export default function Backtest() {
           {/* Detail panels (side by side if comparing) */}
           <div style={{ display: 'grid', gridTemplateColumns: compareResult ? '1fr 1fr' : '1fr', gap: 16 }}>
             {/* Selected run */}
-            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px' }}>
+            <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px' }}>
               {loadingDetail ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <Skeleton h={24} w="60%" />
@@ -3214,7 +3214,7 @@ export default function Backtest() {
 
             {/* Compare run */}
             {compareResult && (
-              <div style={{ background: C.card, border: `1px solid ${C.brand}40`, borderRadius: R.lg, padding: '20px 24px' }}>
+              <div style={{ background: G.card, border: `1px solid ${C.brand}40`, borderRadius: R.lg, padding: '20px 24px' }}>
                 <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Comparison</div>
                 <RunDetail result={compareResult} />
               </div>

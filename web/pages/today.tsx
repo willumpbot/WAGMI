@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useState } from 'react';
 import Head from 'next/head';
 import Layout from '../components/Layout';
-import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
+import { C, G, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
 import { fmtPnl, seededRand } from '../lib/fmt';
 import { apiFetch } from '../src/api';
 import type { ActivityFeedResponse, ActivityEvent, LlmMarketView, TradeHistoryResponse, TradeRecord } from '../src/types';
@@ -24,7 +24,7 @@ function WatchlistScoreChart({ items }: { items: WatchItem[] }) {
   };
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Pre-Score Ranking</div>
       <svg viewBox={`0 0 ${W} ${totalH}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
         <defs>
@@ -118,7 +118,7 @@ function PriceLevelTable({ levels }: { levels: Level[] }) {
   const sorted = [...levels].sort((a, b) => b.price - a.price);
   const current = levels.find((l) => l.type === 'current');
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: F.sm }}>
         <thead>
           <tr style={{ background: C.surface }}>
@@ -248,7 +248,7 @@ function RegimeDial({ regime }: { regime: string }) {
   const activeColor = segments[safeActiveIdx]?.color ?? C.muted;
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px' }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Market Regime Dial</div>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible', maxWidth: W }}>
@@ -331,7 +331,7 @@ function StreakBar({ trades }: { trades: TradeRecord[] }) {
   const wins = trades.filter(t => t.outcome === 'WIN').length;
   const total = trades.length;
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 18px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 18px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>Win/Loss Streak</span>
         <span style={{ fontSize: F.xs, color: C.muted }}>{wins}/{total} wins · {total > 0 ? Math.round((wins/total)*100) : 0}% WR</span>
@@ -417,7 +417,7 @@ function IntradayActivityHeatmap({ activity }: { activity: ActivityEvent[] }) {
   ];
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Bot Activity by Hour (UTC)</div>
@@ -508,7 +508,7 @@ function RiskGatesPanel() {
   }
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
       {/* Title row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Safety Gates — All Systems Active</div>
@@ -637,7 +637,7 @@ function HourlyTradeTimeline() {
   const COLS = 8;
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
       {/* Title */}
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>24h Activity Grid</div>
 
@@ -774,12 +774,14 @@ function MarketSessionClock() {
 
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.xl,
       padding: '18px 20px',
       position: 'relative',
+      overflow: 'hidden',
     }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: C.brand, opacity: 0.4 }} />
       {/* LIVE badge */}
       <div style={{
         position: 'absolute', top: 14, right: 14,
@@ -962,7 +964,7 @@ function TodayEquityMini() {
 
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.xl,
       padding: '14px 16px',
@@ -1064,7 +1066,7 @@ const SEEDED_ALERTS: AlertItem[] = [
 function AlertsPanel() {
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.xl,
       padding: '14px 16px',
@@ -1303,7 +1305,7 @@ function CircuitBreakerStatus() {
   const overallColor = cbColor(overallStatus);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
@@ -1457,7 +1459,7 @@ function BotScheduleTimeline() {
   const nowX = toX(nowDecimal);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '16px 18px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '16px 18px' }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Today's Bot Activity Timeline</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>UTC — past events left of NOW, upcoming right</div>
 
@@ -1609,7 +1611,7 @@ function GateFlowAnimated() {
   const activeGateIdx = gates.reduce((acc, g, i) => (g.passed < gates[acc].passed ? i : acc), 0);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
       <style>{`
         @keyframes gateGlow {
           0%, 100% { box-shadow: 0 0 0px transparent; }
@@ -1771,7 +1773,7 @@ function TodayPnlByHour() {
   const yLabels = [maxAbs, maxAbs / 2, 0, -maxAbs / 2, -maxAbs];
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '16px 18px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '16px 18px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Today's P&L by Hour (UTC)</div>

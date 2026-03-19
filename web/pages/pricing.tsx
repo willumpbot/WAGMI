@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Layout from '../components/Layout';
-import { C, R, S, F, fmtUsd } from '../src/theme';
+import { C, R, S, F, G, fmtUsd } from '../src/theme';
 
 // ─── Tier Config ──────────────────────────────────────────────────────────────
 
@@ -135,7 +135,7 @@ function RoiTimelineChart() {
   const eliteFinal = eliteData[11].toFixed(0);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 24px 16px', marginBottom: 0 }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 24px 16px', marginBottom: 0 }}>
       <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Projected equity growth</div>
@@ -244,7 +244,7 @@ function TierValueBars() {
   ] as const;
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 24px 20px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 24px 20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>What you get at each tier</div>
@@ -302,7 +302,7 @@ function ReturnsCalc({ returnPct }: { returnPct: number }) {
   const [capital, setCapital] = useState(3000);
   const projected = capital * (returnPct / 100);
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 28px', maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 28px', maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 16 }}>What could this mean for you?</div>
       <div style={{ marginBottom: 14 }}>
         <label style={{ fontSize: F.xs, color: C.muted, display: 'block', marginBottom: 6 }}>Your trading capital</label>
@@ -401,7 +401,7 @@ function FeatureTable({ annual }: { annual: boolean }) {
         </table>
       </div>
       {!expanded && (
-        <button onClick={() => setExpanded(true)} style={{ width: '100%', padding: '12px', background: C.card, border: `1px solid ${C.border}`, borderTop: 'none', borderRadius: `0 0 ${R.lg}px ${R.lg}px`, cursor: 'pointer', color: C.brand, fontSize: F.sm, fontWeight: 600 }}>
+        <button onClick={() => setExpanded(true)} style={{ width: '100%', padding: '12px', background: G.card, border: `1px solid ${C.border}`, borderTop: 'none', borderRadius: `0 0 ${R.lg}px ${R.lg}px`, cursor: 'pointer', color: C.brand, fontSize: F.sm, fontWeight: 600 }}>
           Show all features ↓
         </button>
       )}
@@ -474,7 +474,7 @@ function MonthlyReturnHeatmap() {
   const rowY = (rowIdx: number) => PAD + HEADER_H + GAP + rowIdx * (CELL_H + GAP);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 24px 16px' }}>
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 24px 16px' }}>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>
           Projected Cumulative Returns (monthly compounding)
@@ -939,7 +939,7 @@ export default function PricingPage() {
           <p style={{ margin: '0 0 24px', fontSize: F.base, color: C.muted }}>Start free. Upgrade when you're ready to automate.</p>
 
           {/* Annual toggle */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: C.card, border: `1px solid ${C.border}`, borderRadius: R.pill, padding: '4px 8px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.pill, padding: '4px 8px' }}>
             <button onClick={() => setAnnual(false)} style={{ padding: '5px 16px', borderRadius: R.pill, border: 'none', cursor: 'pointer', background: !annual ? C.brand : 'transparent', color: !annual ? '#fff' : C.muted, fontSize: F.sm, fontWeight: 600 }}>Monthly</button>
             <button onClick={() => setAnnual(true)} style={{ padding: '5px 16px', borderRadius: R.pill, border: 'none', cursor: 'pointer', background: annual ? C.brand : 'transparent', color: annual ? '#fff' : C.muted, fontSize: F.sm, fontWeight: 600 }}>
               Annual <span style={{ fontSize: F.xs, color: annual ? '#c7d2fe' : C.bull, marginLeft: 4 }}>Save 33%</span>
@@ -954,7 +954,7 @@ export default function PricingPage() {
             const price = annual && tier.annual != null ? tier.annual / 12 : tier.monthly;
             return (
               <div key={tier.name} style={{
-                background: C.card, border: `1px solid ${tier.highlighted ? C.brand : C.border}`,
+                background: G.card, border: `1px solid ${tier.highlighted ? C.brand : C.border}`,
                 borderRadius: R.xl, padding: '28px 24px', position: 'relative',
                 boxShadow: tier.highlighted ? S.glow : S.sm,
                 transform: tier.highlighted ? 'translateY(-6px)' : 'none',
@@ -1013,7 +1013,7 @@ export default function PricingPage() {
         {/* ── Feature Table ── */}
         <div style={{ marginBottom: 52 }}>
           <h2 style={{ margin: '0 0 20px', fontSize: F.xl, fontWeight: 700, color: C.text, textAlign: 'center' }}>Full feature comparison</h2>
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+          <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
             <FeatureTable annual={annual} />
           </div>
         </div>
