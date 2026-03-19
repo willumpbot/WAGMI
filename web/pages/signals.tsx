@@ -1560,7 +1560,25 @@ function StrategyVoteGrid({ signals }: { signals: Record<string, Signal> | null 
   const extras = apiSymbols.filter(s => !DEFAULT_SYMBOLS.includes(s));
   const symbols = signals
     ? [...DEFAULT_SYMBOLS.filter(s => apiSymbols.includes(s)), ...extras]
-    : DEFAULT_SYMBOLS;
+    : [];
+
+  if (!signals || symbols.length === 0) {
+    return (
+      <div style={{
+        background: G.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '40px 24px',
+        marginBottom: 28,
+        textAlign: 'center',
+        color: C.muted,
+        fontSize: F.sm,
+      }}>
+        <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 8 }}>Strategy Vote Matrix</div>
+        <div>No signal data available yet. Strategy votes will appear once the bot starts evaluating markets.</div>
+      </div>
+    );
+  }
 
   // Build per-symbol per-strategy scores.
   // We use signal_score as a shared anchor and offset by strategy index.
@@ -1589,8 +1607,7 @@ function StrategyVoteGrid({ signals }: { signals: Record<string, Signal> | null 
         <div>
           <div style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>Strategy Vote Matrix</div>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
-            Per-symbol vote from each of the 4 strategies
-            {!signals && <span style={{ marginLeft: 8 }}>(example data)</span>}
+            Per-symbol vote from each of the 4 strategies (scores derived from live signal data)
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, fontSize: F.xs, color: C.muted, alignItems: 'center' }}>
