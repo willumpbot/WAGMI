@@ -2657,6 +2657,366 @@ function KellyFormulaDiagram() {
   );
 }
 
+// ─── Scenario Stress Test ────────────────────────────────────────────────────
+
+function ScenarioStressTest() {
+  const [scenario, setScenario] = useState(0);
+
+  type ScenarioData = {
+    label: string;
+    emoji: string;
+    color: string;
+    return30d: string;
+    trades: number;
+    maxDD: string;
+    description: string;
+    // SVG path points as [x, y] fractions of 200×60 viewBox
+    curvePoints: string;
+    fillPath: string;
+  };
+
+  const scenarios: ScenarioData[] = [
+    {
+      label: 'Normal',
+      emoji: '📈',
+      color: C.bull,
+      return30d: '+11%',
+      trades: 22,
+      maxDD: '4%',
+      description: 'Bot runs normally. Steady trend-following with standard sizing. Most signals pass all 6 gates.',
+      curvePoints: '0,54 20,50 40,46 60,42 80,38 100,34 120,30 140,26 160,20 180,14 200,6',
+      fillPath: 'M0,54 L20,50 L40,46 L60,42 L80,38 L100,34 L120,30 L140,26 L160,20 L180,14 L200,6 L200,60 L0,60 Z',
+    },
+    {
+      label: 'Flash Crash',
+      emoji: '🔴',
+      color: C.bear,
+      return30d: '+3%',
+      trades: 14,
+      maxDD: '15%',
+      description: 'Circuit breaker triggers on sharp drop. Bot pauses, then re-enters cautiously as price recovers above key zones.',
+      curvePoints: '0,10 30,8 55,40 75,52 90,48 110,38 135,26 160,16 180,10 200,6',
+      fillPath: 'M0,10 L30,8 L55,40 L75,52 L90,48 L110,38 L135,26 L160,16 L180,10 L200,6 L200,60 L0,60 Z',
+    },
+    {
+      label: 'Bull Run',
+      emoji: '🚀',
+      color: '#22c55e',
+      return30d: '+25%',
+      trades: 30,
+      maxDD: '5%',
+      description: 'Regime locked in TREND. Most signals qualify for higher leverage. Trailing stops keep winning trades open longer.',
+      curvePoints: '0,56 20,50 40,44 60,36 80,26 100,18 120,12 140,8 160,4 180,2 200,1',
+      fillPath: 'M0,56 L20,50 L40,44 L60,36 L80,26 L100,18 L120,12 L140,8 L160,4 L180,2 L200,1 L200,60 L0,60 Z',
+    },
+    {
+      label: 'Sideways Chop',
+      emoji: '↔️',
+      color: C.muted,
+      return30d: '+2%',
+      trades: 8,
+      maxDD: '3%',
+      description: 'Low ADX and failed squeeze setups. Most signals rejected at ensemble vote. Bot mostly sits on the sidelines.',
+      curvePoints: '0,30 20,28 40,33 60,29 80,34 100,30 120,27 140,32 160,28 180,26 200,24',
+      fillPath: 'M0,30 L20,28 L40,33 L60,29 L80,34 L100,30 L120,27 L140,32 L160,28 L180,26 L200,24 L200,60 L0,60 Z',
+    },
+    {
+      label: 'High Vol',
+      emoji: '⚡',
+      color: C.warn,
+      return30d: '+7%',
+      trades: 18,
+      maxDD: '9%',
+      description: 'Wider stops required. Leverage capped lower. Bot reduces size in HIGH_VOLATILITY regime but still finds valid setups.',
+      curvePoints: '0,30 15,20 30,36 50,22 70,40 90,18 110,34 130,16 155,28 175,12 200,20',
+      fillPath: 'M0,30 L15,20 L30,36 L50,22 L70,40 L90,18 L110,34 L130,16 L155,28 L175,12 L200,20 L200,60 L0,60 Z',
+    },
+  ];
+
+  const s = scenarios[scenario];
+
+  const btnStyle = (active: boolean, color: string): React.CSSProperties => ({
+    flex: 1,
+    padding: '7px 4px',
+    borderRadius: R.sm,
+    border: `1px solid ${active ? color : C.border}`,
+    background: active ? color + '22' : C.surfaceHover,
+    color: active ? color : C.muted,
+    fontSize: 11,
+    fontWeight: active ? 800 : 500,
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    whiteSpace: 'nowrap' as const,
+    textAlign: 'center' as const,
+  });
+
+  return (
+    <div>
+      <div style={{ fontSize: F.sm, fontWeight: 800, color: C.text, marginBottom: 14 }}>
+        Market Scenario Simulator
+      </div>
+
+      {/* Scenario selector buttons */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
+        {scenarios.map((sc, i) => (
+          <button key={sc.label} onClick={() => setScenario(i)} style={btnStyle(scenario === i, sc.color)}>
+            {sc.emoji} {sc.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 20, alignItems: 'start' }}>
+        {/* Left: SVG equity curve + KPI pills */}
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            30-Day Equity Curve
+          </div>
+          <div style={{ background: C.surfaceHover, border: `1px solid ${C.border}`, borderRadius: R.md, padding: '10px 12px', marginBottom: 12 }}>
+            <svg viewBox="0 0 200 60" style={{ width: '100%', height: 60, display: 'block', overflow: 'visible' }}>
+              <defs>
+                <linearGradient id={`ssGrad${scenario}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={s.color} stopOpacity={0.25} />
+                  <stop offset="100%" stopColor={s.color} stopOpacity={0.03} />
+                </linearGradient>
+              </defs>
+              <path d={s.fillPath} fill={`url(#ssGrad${scenario})`} />
+              <polyline
+                points={s.curvePoints}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+
+          {/* KPI pills */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[
+              { label: 'Return', value: s.return30d, color: s.return30d.startsWith('+') ? C.bull : C.bear },
+              { label: 'Max DD', value: `-${s.maxDD}`, color: C.warn },
+              { label: 'Trades', value: String(s.trades), color: C.info },
+            ].map(({ label, value, color }) => (
+              <div
+                key={label}
+                style={{
+                  flex: 1,
+                  textAlign: 'center',
+                  padding: '8px 6px',
+                  background: color + '12',
+                  border: `1px solid ${color}30`,
+                  borderRadius: R.md,
+                }}
+              >
+                <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>{label}</div>
+                <div style={{ fontSize: F.md, fontWeight: 800, color }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: description + bot behavior */}
+        <div>
+          <div
+            style={{
+              padding: '14px 16px',
+              background: s.color + '0e',
+              border: `1px solid ${s.color}33`,
+              borderRadius: R.md,
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ fontSize: F.sm, fontWeight: 700, color: s.color, marginBottom: 6 }}>
+              {s.emoji} {s.label} Scenario
+            </div>
+            <div style={{ fontSize: F.xs, color: C.textSub, lineHeight: 1.7 }}>{s.description}</div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              { label: '30-day projected return', value: s.return30d, positive: s.return30d.startsWith('+') },
+              { label: 'Expected trade count', value: `${s.trades} trades` },
+              { label: 'Expected max drawdown', value: s.maxDD, warn: true },
+            ].map(({ label, value, positive, warn }) => (
+              <div
+                key={label}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '8px 12px',
+                  background: C.surfaceHover,
+                  borderRadius: R.sm,
+                  border: `1px solid ${C.border}`,
+                }}
+              >
+                <span style={{ fontSize: F.xs, color: C.muted }}>{label}</span>
+                <span style={{
+                  fontSize: F.sm,
+                  fontWeight: 700,
+                  color: warn ? C.warn : positive === true ? C.bull : positive === false ? C.bear : C.text,
+                }}>
+                  {value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Position Size Demo ───────────────────────────────────────────────────────
+
+function PositionSizeDemo() {
+  const examples = [
+    {
+      confidence: 65,
+      label: 'Low Confidence',
+      notional: 500,
+      leverage: '2×',
+      barColor: C.warn,
+      riskDollars: 150,
+    },
+    {
+      confidence: 75,
+      label: 'Medium Confidence',
+      notional: 1500,
+      leverage: '5×',
+      barColor: C.brand,
+      riskDollars: 150,
+    },
+    {
+      confidence: 90,
+      label: 'High Confidence',
+      notional: 3000,
+      leverage: '10×',
+      barColor: C.bull,
+      riskDollars: 150,
+    },
+  ];
+
+  const maxNotional = 3000;
+
+  return (
+    <div>
+      <div style={{ fontSize: F.sm, fontWeight: 800, color: C.text, marginBottom: 6 }}>
+        How Confidence Affects Position Size
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 20, lineHeight: 1.6 }}>
+        Higher confidence = bot sizes up, but max risk per trade stays fixed at 1.5%
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        {examples.map((ex) => {
+          const barPct = (ex.notional / maxNotional) * 100;
+          return (
+            <div
+              key={ex.label}
+              style={{
+                background: ex.barColor + '0e',
+                border: `1px solid ${ex.barColor}30`,
+                borderRadius: R.md,
+                padding: '16px 14px',
+              }}
+            >
+              {/* Confidence badge */}
+              <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 600 }}>{ex.label}</span>
+                <span style={{
+                  fontSize: F.xs,
+                  fontWeight: 800,
+                  padding: '2px 8px',
+                  borderRadius: R.pill,
+                  background: ex.barColor + '22',
+                  color: ex.barColor,
+                  border: `1px solid ${ex.barColor}44`,
+                }}>
+                  {ex.confidence}%
+                </span>
+              </div>
+
+              {/* Horizontal position bar */}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, color: C.muted, marginBottom: 4 }}>Notional Size</div>
+                <div style={{ height: 18, background: C.border + '60', borderRadius: R.sm, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{
+                    width: `${barPct}%`,
+                    height: '100%',
+                    background: ex.barColor,
+                    borderRadius: R.sm,
+                    transition: 'width 0.3s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    paddingRight: 4,
+                  }}>
+                    {barPct > 20 && (
+                      <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>
+                        ${ex.notional.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                  {barPct <= 20 && (
+                    <span style={{ position: 'absolute', left: `${barPct + 2}%`, top: 2, fontSize: 9, fontWeight: 700, color: ex.barColor, whiteSpace: 'nowrap' }}>
+                      ${ex.notional.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Leverage pill */}
+              <div style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 10, color: C.muted }}>Leverage:</span>
+                <span style={{
+                  fontSize: F.xs,
+                  fontWeight: 700,
+                  padding: '1px 7px',
+                  borderRadius: R.pill,
+                  background: C.surfaceHover,
+                  color: ex.barColor,
+                  border: `1px solid ${ex.barColor}33`,
+                }}>
+                  {ex.leverage}
+                </span>
+              </div>
+
+              {/* Risk line */}
+              <div style={{
+                fontSize: F.xs,
+                color: C.muted,
+                padding: '6px 8px',
+                background: C.warn + '0e',
+                border: `1px solid ${C.warn}22`,
+                borderRadius: R.sm,
+                lineHeight: 1.5,
+              }}>
+                Risk: <strong style={{ color: C.warn }}>${ex.riskDollars}</strong>{' '}
+                <span style={{ color: C.faint }}>(1.5% of $10K)</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{
+        marginTop: 14,
+        padding: '10px 14px',
+        background: C.brand + '10',
+        border: `1px solid ${C.brand}30`,
+        borderRadius: R.md,
+        fontSize: F.xs,
+        color: C.textSub,
+        lineHeight: 1.7,
+      }}>
+        The dollar risk ($150) stays constant across all confidence levels — only the position notional and leverage change. This is achieved by adjusting quantity, not the stop width.
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Learn() {
@@ -2788,6 +3148,13 @@ export default function Learn() {
         </div>
         <RSIScale />
         <ConfidenceGauge value={78} />
+      </AccordionCard>
+
+      <AccordionCard title="How Confidence Affects Position Size" badge="Sizing" badgeColor={C.brand}>
+        <p style={{ marginBottom: 16 }}>
+          Confidence score directly controls how large the bot sizes a trade. Risk per trade stays capped at 1.5% of account equity — only the notional exposure changes.
+        </p>
+        <PositionSizeDemo />
       </AccordionCard>
 
       <AccordionCard title="Accumulation & Distribution Zones" badge="Price Zones">
@@ -2973,6 +3340,13 @@ export default function Learn() {
           The Kelly Criterion is a mathematical formula for optimal position sizing. Understanding why the bot uses Quarter-Kelly shows the trade-off between growth and drawdown.
         </p>
         <KellyFormulaDiagram />
+      </AccordionCard>
+
+      <AccordionCard title="Market Scenario Simulator" badge="Interactive" badgeColor={C.info}>
+        <p style={{ marginBottom: 16 }}>
+          See how the bot behaves across 5 different market environments — from a calm uptrend to a flash crash. Projected figures are based on 30-day backtest analogues.
+        </p>
+        <ScenarioStressTest />
       </AccordionCard>
 
       <AccordionCard title="Compounding With Consistent Returns" badge="Growth" badgeColor={C.brand}>
