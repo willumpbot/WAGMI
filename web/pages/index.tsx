@@ -1076,6 +1076,19 @@ function MarketMomentumStrip({
         // Bar chart dimensions
         const barW = 14, barGap = 6, chartW = 120, chartH = 30;
         const maxBarH = chartH - 4;
+        const midX = chartW / 2;
+
+        // RSI indicator dot
+        const rsi = sig?.rsi14 ?? 50;
+        const rsiDotColor = rsi > 70 ? C.bear : rsi < 30 ? C.bull : C.muted;
+        const rsiDotTitle = rsi > 70 ? 'Overbought' : rsi < 30 ? 'Oversold' : 'Neutral RSI';
+
+        // Percentage change: use score delta as proxy (seeded), or real ATR-based estimate
+        const pctChange = sig
+          ? ((sig.sma20 - sig.sma50) / sig.sma50) * 100
+          : (rng() * 6 - 3);
+        const pctLabel = (pctChange >= 0 ? '+' : '') + pctChange.toFixed(1) + '%';
+        const pctColor = pctChange >= 0 ? C.bull : C.bear;
 
         return (
           <div
@@ -1112,8 +1125,12 @@ function MarketMomentumStrip({
 
             {/* Micro momentum bar chart */}
             <div>
-              <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Momentum
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Momentum
+                </span>
+                {/* Percentage change label */}
+                <span style={{ fontSize: 10, fontWeight: 700, color: pctColor }}>{pctLabel}</span>
               </div>
               <svg width={chartW} height={chartH} style={{ display: 'block', overflow: 'visible' }}>
                 <defs>
@@ -1122,6 +1139,17 @@ function MarketMomentumStrip({
                     <stop offset="100%" stopColor="#16a34a" stopOpacity={0.3} />
                   </linearGradient>
                 </defs>
+                {/* Midpoint vertical reference line */}
+                <line
+                  x1={midX}
+                  y1={0}
+                  x2={midX}
+                  y2={chartH}
+                  stroke={C.border}
+                  strokeWidth={1}
+                  strokeDasharray="2 2"
+                  opacity={0.5}
+                />
                 {bars.map((v, i) => {
                   const bh = Math.round(4 + v * maxBarH);
                   const bx = i * (barW + barGap);
@@ -1141,7 +1169,7 @@ function MarketMomentumStrip({
               </svg>
             </div>
 
-            {/* Score circle + buy zone pill */}
+            {/* Score circle + buy zone pill + RSI dot */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{
@@ -1160,6 +1188,18 @@ function MarketMomentumStrip({
                   </span>
                 </div>
                 <span style={{ fontSize: F.xs, color: C.muted }}>score</span>
+                {/* RSI indicator dot */}
+                <div
+                  title={`RSI ${rsi.toFixed(1)} — ${rsiDotTitle}`}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: rsiDotColor,
+                    flexShrink: 0,
+                    boxShadow: rsi > 70 || rsi < 30 ? `0 0 5px ${rsiDotColor}` : 'none',
+                  }}
+                />
               </div>
               <span style={{
                 fontSize: 10,

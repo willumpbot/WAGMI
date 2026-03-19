@@ -809,7 +809,7 @@ function StrategyBars({ data }: { data: Record<string, { trades: number; wins: n
 
 // ─── Equity Curve with Drawdown ───────────────────────────────────────────────
 
-function EquityChart({ points, width = 700, height = 180 }: { points: EquityCurvePoint[]; width?: number; height?: number }) {
+function EquityChart({ points, trades = [], width = 700, height = 180 }: { points: EquityCurvePoint[]; trades?: TradeRecord[]; width?: number; height?: number }) {
   if (!points.length) return <div style={{ color: C.muted, fontSize: F.sm, padding: 20 }}>No equity curve data.</div>;
   const pad = { t: 12, r: 20, b: 28, l: 64 };
   const W = width - pad.l - pad.r;
@@ -824,6 +824,41 @@ function EquityChart({ points, width = 700, height = 180 }: { points: EquityCurv
   const areaPts = [`${x(0)},${y(minE)}`, ...points.map((p, i) => `${x(i)},${y(p.equity)}`), `${x(points.length - 1)},${y(minE)}`].join(' ');
   const startEq = equities[0];
   const endEq = equities[equities.length - 1];
+
+  // EMA overlays
+  const ema9 = calcEMA(equities, 9);
+  const ema21 = calcEMA(equities, 21);
+  const ema9Pts = ema9.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+  const ema21Pts = ema21.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+
+  // Golden/Death cross markers (EMA9 crosses EMA21)
+  type CrossMarker = { i: number; golden: boolean };
+  const crossMarkers: CrossMarker[] = [];
+  for (let i = 1; i < ema9.length && i < ema21.length; i++) {
+    const prevAbove = ema9[i - 1] > ema21[i - 1];
+    const curAbove = ema9[i] > ema21[i];
+    if (!prevAbove && curAbove) crossMarkers.push({ i, golden: true });
+    else if (prevAbove && !curAbove) crossMarkers.push({ i, golden: false });
+  }
+
+  // Max drawdown period: find peak then trough
+  let peakIdx = 0;
+  let troughIdx = 0;
+  let maxDD = 0;
+  let runPeak = equities[0];
+  let runPeakIdx = 0;
+  for (let i = 1; i < equities.length; i++) {
+    if (equities[i] > runPeak) { runPeak = equities[i]; runPeakIdx = i; }
+    const dd = (equities[i] - runPeak) / runPeak;
+    if (dd < maxDD) { maxDD = dd; peakIdx = runPeakIdx; troughIdx = i; }
+  }
+
+  // Trade annotation dots — spread trades evenly across the x axis by index
+  const tradeAnnotations = trades.map((t, i) => {
+    const xPos = pad.l + (i / Math.max(1, trades.length - 1)) * W;
+    return { xPos, win: t.outcome === 'WIN' };
+  });
+
   return (
     <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: 'block' }}>
       <defs>
@@ -832,6 +867,32 @@ function EquityChart({ points, width = 700, height = 180 }: { points: EquityCurv
           <stop offset="100%" stopColor={C.bull} stopOpacity="0.02" />
         </linearGradient>
       </defs>
+
+      {/* Weekend / low-activity bands: every 5 data points */}
+      {points.map((_, i) => {
+        if (i % 5 !== 0 || i + 1 >= points.length) return null;
+        const x0 = x(i);
+        const x1 = x(i + 1);
+        return (
+          <rect
+            key={`wknd-${i}`}
+            x={x0} y={pad.t}
+            width={x1 - x0} height={H}
+            fill="rgba(148,163,184,0.04)"
+          />
+        );
+      })}
+
+      {/* Max drawdown shaded region */}
+      {maxDD < -0.001 && (
+        <rect
+          x={x(peakIdx)} y={pad.t}
+          width={Math.max(2, x(troughIdx) - x(peakIdx))} height={H}
+          fill="rgba(220,38,38,0.10)"
+        />
+      )}
+
+      {/* Grid lines */}
       {[0, 0.25, 0.5, 0.75, 1].map((t) => {
         const val = minE + t * range;
         const yy = y(val);
@@ -840,8 +901,62 @@ function EquityChart({ points, width = 700, height = 180 }: { points: EquityCurv
           <text x={pad.l - 4} y={yy + 4} fill={C.muted} fontSize={9} textAnchor="end">{fmtUsd(val, 0)}</text>
         </g>;
       })}
+
+      {/* Area fill */}
       <polyline points={areaPts} fill="url(#perfEqGrad)" stroke="none" />
+
+      {/* EMA-21 (solid, C.info) */}
+      {ema21.length > 1 && (
+        <polyline points={ema21Pts} fill="none" stroke={C.info} strokeWidth={1} strokeLinejoin="round" opacity={0.7} />
+      )}
+
+      {/* EMA-9 (dashed, C.warn) */}
+      {ema9.length > 1 && (
+        <polyline points={ema9Pts} fill="none" stroke={C.warn} strokeWidth={1} strokeLinejoin="round" strokeDasharray="4,3" opacity={0.7} />
+      )}
+
+      {/* Main equity line */}
       <polyline points={linePts} fill="none" stroke={C.bull} strokeWidth={2} strokeLinejoin="round" />
+
+      {/* Trade annotation dots */}
+      {tradeAnnotations.map((ta, i) => (
+        <circle
+          key={`trade-${i}`}
+          cx={ta.xPos}
+          cy={pad.t + H + 6}
+          r={2.5}
+          fill={ta.win ? C.bull : C.bear}
+          opacity={0.75}
+        />
+      ))}
+
+      {/* Golden/Death cross markers */}
+      {crossMarkers.map((cm) => {
+        const cx2 = x(cm.i);
+        const cy2 = y(ema9[cm.i]);
+        if (cm.golden) {
+          // Gold star ★
+          return (
+            <text key={`cross-${cm.i}`} x={cx2} y={cy2 - 4} fontSize={10} textAnchor="middle" fill="#f59e0b">
+              ★
+            </text>
+          );
+        } else {
+          // Gray downward triangle ▼
+          return (
+            <text key={`cross-${cm.i}`} x={cx2} y={cy2 + 10} fontSize={9} textAnchor="middle" fill={C.muted}>
+              ▼
+            </text>
+          );
+        }
+      })}
+
+      {/* EMA legend */}
+      <line x1={pad.l} y1={height - 6} x2={pad.l + 14} y2={height - 6} stroke={C.warn} strokeWidth={1} strokeDasharray="4,3" />
+      <text x={pad.l + 17} y={height - 2} fill={C.muted} fontSize={7.5}>EMA9</text>
+      <line x1={pad.l + 44} y1={height - 6} x2={pad.l + 58} y2={height - 6} stroke={C.info} strokeWidth={1} />
+      <text x={pad.l + 61} y={height - 2} fill={C.muted} fontSize={7.5}>EMA21</text>
+
       {/* Start/end labels */}
       <circle cx={x(0)} cy={y(startEq)} r={3} fill={C.bull} />
       <circle cx={x(points.length - 1)} cy={y(endEq)} r={4} fill={endEq >= startEq ? C.bull : C.bear} />

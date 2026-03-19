@@ -21,6 +21,18 @@ function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
   return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
 }
 
+function linearRegression(points: { x: number; y: number }[]): { slope: number; intercept: number } {
+  const n = points.length;
+  if (n < 2) return { slope: 0, intercept: 0 };
+  const sumX = points.reduce((s, p) => s + p.x, 0);
+  const sumY = points.reduce((s, p) => s + p.y, 0);
+  const sumXY = points.reduce((s, p) => s + p.x * p.y, 0);
+  const sumX2 = points.reduce((s, p) => s + p.x * p.x, 0);
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  return { slope, intercept };
+}
+
 // ─── Confidence Ring ───────────────────────────────────────────────────────────
 
 function ConfRing({ value, size = 36 }: { value: number; size?: number }) {
@@ -75,17 +87,26 @@ function ConfScatterPlot({ trades }: { trades: TradeRecord[] }) {
   const px = (c: number) => pad.left + ((c - minConf) / (maxConf - minConf)) * plotW;
   const py = (rr: number) => pad.top + plotH - ((rr - minRR) / rangeRR) * plotH;
 
-  // Linear regression
-  const n = plotTrades.length;
-  const sumX = confs.reduce((a, b) => a + b, 0);
-  const sumY = rrs.reduce((a, b) => a + b, 0);
-  const sumXY = confs.reduce((s, x, i) => s + x * rrs[i], 0);
-  const sumX2 = confs.reduce((s, x) => s + x * x, 0);
-  const denom = n * sumX2 - sumX * sumX;
-  const slope = denom !== 0 ? (n * sumXY - sumX * sumY) / denom : 0;
-  const intercept = (sumY - slope * sumX) / n;
+  // Linear regression using helper
+  const regPoints = plotTrades.map((t, i) => ({ x: confs[i], y: rrs[i] }));
+  const { slope, intercept } = linearRegression(regPoints);
   const regY1 = intercept + slope * minConf;
   const regY2 = intercept + slope * maxConf;
+
+  // Pearson correlation coefficient
+  const n = plotTrades.length;
+  const meanX = confs.reduce((a, b) => a + b, 0) / n;
+  const meanY = rrs.reduce((a, b) => a + b, 0) / n;
+  const cov = confs.reduce((s, x, i) => s + (x - meanX) * (rrs[i] - meanY), 0) / n;
+  const stdX = Math.sqrt(confs.reduce((s, x) => s + (x - meanX) ** 2, 0) / n) || 1;
+  const stdY = Math.sqrt(rrs.reduce((s, y) => s + (y - meanY) ** 2, 0) / n) || 1;
+  const corr = cov / (stdX * stdY);
+
+  // Cluster center (mean of all points for the ellipse)
+  const clusterCx = px(meanX);
+  const clusterCy = py(meanY);
+  const clusterRx = (stdX / (maxConf - minConf)) * plotW * 1.2;
+  const clusterRy = (stdY / rangeRR) * plotH * 1.2;
 
   const yTicks = [Math.floor(minRR), 0, Math.ceil(maxRR / 2), Math.ceil(maxRR)].filter((v, i, a) => a.indexOf(v) === i);
   const xTicks = [0, 25, 50, 75, 100];
