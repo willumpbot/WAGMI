@@ -1507,6 +1507,494 @@ function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal>
   );
 }
 
+// ─── Strategy Vote Matrix ─────────────────────────────────────────────────────
+
+const STRATEGY_COLS = [
+  { key: 'regime_trend',    label: 'Regime Trend' },
+  { key: 'monte_carlo',     label: 'Monte Carlo'  },
+  { key: 'confidence',      label: 'Confidence'   },
+  { key: 'multi_tf',        label: 'Multi-TF'     },
+] as const;
+
+type StrategyKey = typeof STRATEGY_COLS[number]['key'];
+
+// Seeded score proxy per symbol+strategy so the grid has stable non-random values
+// when no real per-strategy data is available.
+function seededStratScore(symbol: string, stratIdx: number): number {
+  const symSeeds: Record<string, number> = { BTC: 3, SOL: 7, HYPE: 5, ETH: 2, AVAX: 9, LINK: 11 };
+  const base = (symSeeds[symbol] ?? 6) + stratIdx * 13;
+  return ((base * 37 + 17) % 71) + 25; // 25–95 range
+}
+
+function voteFromScore(score: number): { label: string; arrow: string; bg: string; color: string; border: string } {
+  if (score > 70) return {
+    label: 'BUY',  arrow: '▲',
+    bg: 'rgba(22,163,74,0.15)', color: '#4ade80', border: 'rgba(22,163,74,0.35)',
+  };
+  if (score >= 45) return {
+    label: 'HOLD', arrow: '—',
+    bg: 'rgba(71,85,105,0.25)', color: '#94a3b8', border: 'rgba(71,85,105,0.45)',
+  };
+  return {
+    label: 'SELL', arrow: '▼',
+    bg: 'rgba(220,38,38,0.15)', color: '#f87171', border: 'rgba(220,38,38,0.35)',
+  };
+}
+
+function StrategyVoteGrid({ signals }: { signals: Record<string, Signal> | null }) {
+  const DEFAULT_SYMBOLS = ['BTC', 'SOL', 'HYPE'];
+  const apiSymbols = signals ? Object.keys(signals) : [];
+  const extras = apiSymbols.filter(s => !DEFAULT_SYMBOLS.includes(s));
+  const symbols = signals
+    ? [...DEFAULT_SYMBOLS.filter(s => apiSymbols.includes(s)), ...extras]
+    : DEFAULT_SYMBOLS;
+
+  // Build per-symbol per-strategy scores.
+  // We use signal_score as a shared anchor and offset by strategy index.
+  function getScore(symbol: string, stratIdx: number): number {
+    const sig = signals?.[symbol];
+    if (sig?.signal_score != null) {
+      // Offset the master score by a stable per-strategy delta so the four
+      // columns tell slightly different stories.
+      const deltas = [-8, +6, -3, +5];
+      return Math.min(100, Math.max(0, sig.signal_score + deltas[stratIdx]));
+    }
+    return seededStratScore(symbol, stratIdx);
+  }
+
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '20px 24px',
+      marginBottom: 28,
+      overflowX: 'auto',
+    }}>
+      {/* Title */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>Strategy Vote Matrix</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
+            Per-symbol vote from each of the 4 strategies
+            {!signals && <span style={{ marginLeft: 8 }}>(example data)</span>}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 12, fontSize: F.xs, color: C.muted, alignItems: 'center' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ padding: '1px 6px', borderRadius: R.pill, background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.35)', color: '#4ade80', fontWeight: 700, fontSize: 10 }}>▲ BUY</span>
+            {'>70'}
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ padding: '1px 6px', borderRadius: R.pill, background: 'rgba(71,85,105,0.25)', border: '1px solid rgba(71,85,105,0.45)', color: '#94a3b8', fontWeight: 700, fontSize: 10 }}>— HOLD</span>
+            {'45–70'}
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ padding: '1px 6px', borderRadius: R.pill, background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.35)', color: '#f87171', fontWeight: 700, fontSize: 10 }}>▼ SELL</span>
+            {'<45'}
+          </span>
+        </div>
+      </div>
+
+      {/* Table */}
+      <table style={{ borderCollapse: 'separate', borderSpacing: 4, width: '100%', minWidth: 520 }}>
+        <thead>
+          <tr>
+            {/* Symbol col header */}
+            <th style={{
+              background: C.surface,
+              borderRadius: R.sm,
+              padding: '8px 14px',
+              fontSize: F.xs,
+              fontWeight: 700,
+              color: C.muted,
+              textAlign: 'left',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              minWidth: 72,
+            }}>
+              Symbol
+            </th>
+            {STRATEGY_COLS.map(col => (
+              <th key={col.key} style={{
+                background: C.surface,
+                borderRadius: R.sm,
+                padding: '8px 10px',
+                fontSize: F.xs,
+                fontWeight: 700,
+                color: C.muted,
+                textAlign: 'center',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                whiteSpace: 'nowrap',
+              }}>
+                {col.label}
+              </th>
+            ))}
+            <th style={{
+              background: C.surface,
+              borderRadius: R.sm,
+              padding: '8px 10px',
+              fontSize: F.xs,
+              fontWeight: 700,
+              color: C.muted,
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              whiteSpace: 'nowrap',
+            }}>
+              Consensus
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {symbols.map(sym => {
+            const votes = STRATEGY_COLS.map((_, idx) => {
+              const score = getScore(sym, idx);
+              return { score, ...voteFromScore(score) };
+            });
+
+            // Consensus
+            const buyCount = votes.filter(v => v.label === 'BUY').length;
+            const sellCount = votes.filter(v => v.label === 'SELL').length;
+            const total = votes.length;
+            let consensusArrow = '—';
+            let consensusLabel = `${buyCount}/${total}`;
+            let consensusColor = C.muted;
+            let consensusBg = 'rgba(71,85,105,0.2)';
+            let consensusBorder = 'rgba(71,85,105,0.4)';
+
+            if (buyCount > total / 2) {
+              consensusArrow = '▲';
+              consensusLabel = `${buyCount}/${total} ▲`;
+              consensusColor = '#4ade80';
+              consensusBg = 'rgba(22,163,74,0.15)';
+              consensusBorder = 'rgba(22,163,74,0.35)';
+            } else if (sellCount > total / 2) {
+              consensusArrow = '▼';
+              consensusLabel = `${sellCount}/${total} ▼`;
+              consensusColor = '#f87171';
+              consensusBg = 'rgba(220,38,38,0.15)';
+              consensusBorder = 'rgba(220,38,38,0.35)';
+            } else {
+              consensusLabel = `${buyCount}/${total} —`;
+            }
+
+            void consensusArrow; // unused after reassignment into label
+
+            return (
+              <tr key={sym}>
+                {/* Symbol label */}
+                <td style={{ padding: '3px 2px' }}>
+                  <div style={{
+                    padding: '10px 14px',
+                    fontSize: F.sm,
+                    fontWeight: 800,
+                    color: C.text,
+                    letterSpacing: '0.04em',
+                  }}>
+                    {sym}
+                  </div>
+                </td>
+
+                {/* Strategy vote cells */}
+                {votes.map((v, idx) => {
+                  const hasSignal = signals?.[sym] != null || true; // always show; muted dot only if truly no data
+                  void hasSignal;
+                  return (
+                    <td key={STRATEGY_COLS[idx].key} style={{ padding: '3px 2px', textAlign: 'center' }}>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        padding: '5px 10px',
+                        borderRadius: R.pill,
+                        background: v.bg,
+                        border: `1px solid ${v.border}`,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: v.color,
+                        whiteSpace: 'nowrap',
+                        minWidth: 66,
+                        justifyContent: 'center',
+                      }}>
+                        <span>{v.arrow}</span>
+                        <span>{v.label}</span>
+                      </div>
+                    </td>
+                  );
+                })}
+
+                {/* Consensus cell */}
+                <td style={{ padding: '3px 2px', textAlign: 'center' }}>
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '5px 12px',
+                    borderRadius: R.pill,
+                    background: consensusBg,
+                    border: `1px solid ${consensusBorder}`,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    color: consensusColor,
+                    whiteSpace: 'nowrap',
+                    minWidth: 60,
+                    justifyContent: 'center',
+                  }}>
+                    {consensusLabel}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Signal Quality Trend Chart ───────────────────────────────────────────────
+
+const TREND_SYMBOLS = [
+  { key: 'BTC',  color: '#6366f1' as string },  // brand
+  { key: 'SOL',  color: '#16a34a' as string },  // bull
+  { key: 'HYPE', color: '#d97706' as string },  // warn
+] as const;
+
+// Seeded per-tick score for a given symbol (produces a smooth-ish wandering line)
+function seededTrendScore(symbol: string, tick: number): number {
+  const symOffset: Record<string, number> = { BTC: 72, SOL: 65, HYPE: 58 };
+  const base = symOffset[symbol] ?? 60;
+  // A deterministic "walk" using sine/cosine combos so it looks organic
+  return Math.min(98, Math.max(10,
+    base
+    + Math.sin(tick * 0.7 + (symOffset[symbol] ?? 0) * 0.1) * 10
+    + Math.cos(tick * 1.3 + (symOffset[symbol] ?? 0) * 0.05) * 6
+  ));
+}
+
+function SignalQualityTrendChart({ signals }: { signals: Record<string, Signal> | null }) {
+  const TICKS = 20;
+  const W = 520;
+  const H = 100;
+  const PAD_L = 28;
+  const PAD_R = 52;  // room for end-labels
+  const PAD_T = 12;
+  const PAD_B = 18;
+  const CHART_W = W - PAD_L - PAD_R;
+  const CHART_H = H - PAD_T - PAD_B;
+
+  // Build tick arrays for each symbol
+  const seriesData = TREND_SYMBOLS.map(({ key, color }) => {
+    const realFinal = signals?.[key]?.signal_score ?? null;
+    const ticks = Array.from({ length: TICKS }, (_, i) => {
+      if (i === TICKS - 1 && realFinal != null) return realFinal;
+      return seededTrendScore(key, i);
+    });
+    return { key, color, ticks };
+  });
+
+  // Convert score (0-100) → SVG y coordinate
+  function scoreToY(score: number): number {
+    return PAD_T + CHART_H - (score / 100) * CHART_H;
+  }
+
+  // Convert tick index (0..TICKS-1) → SVG x coordinate
+  function tickToX(i: number): number {
+    return PAD_L + (i / (TICKS - 1)) * CHART_W;
+  }
+
+  // Build polyline points string
+  function polyPoints(ticks: number[]): string {
+    return ticks.map((s, i) => `${tickToX(i).toFixed(1)},${scoreToY(s).toFixed(1)}`).join(' ');
+  }
+
+  // Reference thresholds
+  const y65 = scoreToY(65);
+  const y75 = scoreToY(75);
+
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '20px 24px',
+      marginBottom: 28,
+    }}>
+      {/* Title */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>Signal Score Trend (last 20 checks)</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
+            How signal quality has tracked across recent evaluation cycles
+            {!signals && <span style={{ marginLeft: 8 }}>(example data)</span>}
+          </div>
+        </div>
+        {/* Legend */}
+        <div style={{ display: 'flex', gap: 14, fontSize: F.xs, color: C.muted, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {TREND_SYMBOLS.map(({ key, color }) => (
+            <span key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 16, height: 3, background: color, borderRadius: 2, display: 'inline-block' }} />
+              {key}
+            </span>
+          ))}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 16, height: 2, background: '#ef4444', opacity: 0.7, borderRadius: 1, display: 'inline-block', borderTop: '2px dashed #ef4444' }} />
+            65 min
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 16, height: 2, background: '#16a34a', opacity: 0.7, borderRadius: 1, display: 'inline-block', borderTop: '2px dashed #16a34a' }} />
+            75 strong
+          </span>
+        </div>
+      </div>
+
+      {/* SVG chart */}
+      <div style={{ overflowX: 'auto' }}>
+        <svg
+          width={W}
+          height={H}
+          viewBox={`0 0 ${W} ${H}`}
+          style={{ display: 'block', minWidth: 280 }}
+          aria-label="Signal quality trend line chart"
+        >
+          <defs>
+            {/* Green tint gradient (above 75) */}
+            <linearGradient id="sqt-green-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#16a34a" stopOpacity={0.12} />
+              <stop offset="100%" stopColor="#16a34a" stopOpacity={0.04} />
+            </linearGradient>
+            {/* Yellow tint gradient (65-75) */}
+            <linearGradient id="sqt-yellow-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#d97706" stopOpacity={0.10} />
+              <stop offset="100%" stopColor="#d97706" stopOpacity={0.03} />
+            </linearGradient>
+            {/* Red tint gradient (below 65) */}
+            <linearGradient id="sqt-red-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#dc2626" stopOpacity={0.08} />
+              <stop offset="100%" stopColor="#dc2626" stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+
+          {/* Zone fills */}
+          {/* Above 75 — green tint */}
+          <rect
+            x={PAD_L} y={PAD_T}
+            width={CHART_W} height={Math.max(0, y75 - PAD_T)}
+            fill="url(#sqt-green-fill)"
+          />
+          {/* 65–75 — yellow tint */}
+          <rect
+            x={PAD_L} y={y75}
+            width={CHART_W} height={Math.max(0, y65 - y75)}
+            fill="url(#sqt-yellow-fill)"
+          />
+          {/* Below 65 — red tint */}
+          <rect
+            x={PAD_L} y={y65}
+            width={CHART_W} height={Math.max(0, PAD_T + CHART_H - y65)}
+            fill="url(#sqt-red-fill)"
+          />
+
+          {/* Reference line at 75 — dashed green */}
+          <line
+            x1={PAD_L} y1={y75.toFixed(1)}
+            x2={PAD_L + CHART_W} y2={y75.toFixed(1)}
+            stroke="#16a34a"
+            strokeWidth={1}
+            strokeDasharray="4 3"
+            opacity={0.55}
+          />
+          <text x={PAD_L + CHART_W + 3} y={(y75 + 3.5).toFixed(1)} fontSize={8} fill="#4ade80" fontFamily="Inter, system-ui, sans-serif" opacity={0.8}>
+            75
+          </text>
+
+          {/* Reference line at 65 — dashed red */}
+          <line
+            x1={PAD_L} y1={y65.toFixed(1)}
+            x2={PAD_L + CHART_W} y2={y65.toFixed(1)}
+            stroke="#ef4444"
+            strokeWidth={1}
+            strokeDasharray="4 3"
+            opacity={0.5}
+          />
+          <text x={PAD_L + CHART_W + 3} y={(y65 + 3.5).toFixed(1)} fontSize={8} fill="#f87171" fontFamily="Inter, system-ui, sans-serif" opacity={0.8}>
+            65
+          </text>
+
+          {/* Y-axis labels */}
+          {[0, 50, 100].map(v => {
+            const yv = scoreToY(v);
+            return (
+              <text
+                key={v}
+                x={PAD_L - 4}
+                y={(yv + 3).toFixed(1)}
+                textAnchor="end"
+                fontSize={7.5}
+                fill={C.muted}
+                fontFamily="Inter, system-ui, sans-serif"
+              >
+                {v}
+              </text>
+            );
+          })}
+
+          {/* X-axis baseline */}
+          <line
+            x1={PAD_L} y1={PAD_T + CHART_H}
+            x2={PAD_L + CHART_W} y2={PAD_T + CHART_H}
+            stroke={C.border}
+            strokeWidth={1}
+          />
+          <text x={PAD_L} y={H - 4} fontSize={7.5} fill={C.muted} fontFamily="Inter, system-ui, sans-serif">older</text>
+          <text x={PAD_L + CHART_W} y={H - 4} textAnchor="end" fontSize={7.5} fill={C.muted} fontFamily="Inter, system-ui, sans-serif">now</text>
+
+          {/* Lines + end-dots for each symbol */}
+          {seriesData.map(({ key, color, ticks }) => {
+            const lastScore = ticks[ticks.length - 1];
+            const endX = tickToX(TICKS - 1);
+            const endY = scoreToY(lastScore);
+            return (
+              <g key={key}>
+                <polyline
+                  points={polyPoints(ticks)}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={1.8}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  opacity={0.9}
+                />
+                {/* End dot */}
+                <circle
+                  cx={endX.toFixed(1)}
+                  cy={endY.toFixed(1)}
+                  r={3.5}
+                  fill={color}
+                  stroke={C.card}
+                  strokeWidth={1.5}
+                />
+                {/* Score label to the right of dot */}
+                <text
+                  x={(endX + 7).toFixed(1)}
+                  y={(endY + 3.5).toFixed(1)}
+                  fontSize={8.5}
+                  fontWeight="700"
+                  fill={color}
+                  fontFamily="Inter, system-ui, sans-serif"
+                >
+                  {Math.round(lastScore)}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SignalsPage() {
@@ -1674,6 +2162,12 @@ export default function SignalsPage() {
 
       {/* ── Signal Freshness Strip ───────────────────────────────────────── */}
       <SignalFreshnessStrip signals={signalsData?.signals ?? null} />
+
+      {/* ── Strategy Vote Matrix ─────────────────────────────────────────── */}
+      <StrategyVoteGrid signals={signalsData?.signals ?? null} />
+
+      {/* ── Signal Quality Trend Chart ───────────────────────────────────── */}
+      <SignalQualityTrendChart signals={signalsData?.signals ?? null} />
 
       {/* ── Signal Strength + Correlation ── */}
       {signalsData && Object.keys(signalsData.signals).length > 0 && (

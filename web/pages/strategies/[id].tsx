@@ -990,6 +990,404 @@ function TradeStreakVisual({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
+// ─── WinRateByRegimeHeatmap ───────────────────────────────────────────────────
+
+function WinRateByRegimeHeatmap({ trades }: { trades: TradeRecord[] }) {
+  const REGIMES = [
+    { key: 'trend',           label: 'Trend',    color: '#22c55e' },
+    { key: 'range',           label: 'Range',    color: '#6366f1' },
+    { key: 'high_volatility', label: 'High Vol', color: '#eab308' },
+    { key: 'panic',           label: 'Panic',    color: '#dc2626' },
+    { key: 'low_liquidity',   label: 'Low Liq',  color: '#64748b' },
+  ] as const;
+
+  const SYMBOLS = ['BTC', 'SOL', 'HYPE'] as const;
+
+  // Seeded fallback matrix (rows = regimes, cols = symbols)
+  const FALLBACK: Record<string, Record<string, number>> = {
+    trend:           { BTC: 82, SOL: 78, HYPE: 71 },
+    range:           { BTC: 55, SOL: 61, HYPE: 48 },
+    high_volatility: { BTC: 43, SOL: 52, HYPE: 38 },
+    panic:           { BTC: 30, SOL: 25, HYPE: 33 },
+    low_liquidity:   { BTC: 60, SOL: 55, HYPE: 58 },
+  };
+
+  const useFallback = trades.length === 0;
+
+  // Build matrix from real trades
+  type Cell = { wins: number; total: number };
+  const matrix: Record<string, Record<string, Cell>> = {};
+  for (const r of REGIMES) {
+    matrix[r.key] = {};
+    for (const sym of SYMBOLS) {
+      matrix[r.key][sym] = { wins: 0, total: 0 };
+    }
+  }
+
+  if (!useFallback) {
+    for (const t of trades) {
+      const regime = ((t as any).regime || t.llm_regime || '').toLowerCase();
+      const sym = (t.symbol || '').toUpperCase().replace(/-.*$/, ''); // strip -USD etc.
+      if (!REGIMES.find(r => r.key === regime)) continue;
+      if (!SYMBOLS.includes(sym as typeof SYMBOLS[number])) continue;
+      const cell = matrix[regime][sym];
+      cell.total++;
+      if (t.outcome === 'WIN' || (t.pnl != null && t.pnl > 0)) cell.wins++;
+    }
+  }
+
+  const cellBg = (pct: number): string => {
+    if (pct < 40)  return `rgba(220,38,38,${0.15 + (40 - pct) / 40 * 0.35})`;
+    if (pct <= 60) return `rgba(217,119,6,${0.15 + Math.abs(pct - 50) / 10 * 0.2})`;
+    return `rgba(22,163,74,${0.15 + (pct - 60) / 40 * 0.45})`;
+  };
+
+  const cellFg = (pct: number): string =>
+    pct < 40 ? '#fca5a5' : pct <= 60 ? '#fde68a' : '#86efac';
+
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>
+        Win Rate by Regime × Symbol
+        {useFallback && (
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 400, marginLeft: 8 }}>(example)</span>
+        )}
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', minWidth: 320 }}>
+          <thead>
+            <tr>
+              {/* Empty corner cell */}
+              <th style={{ padding: '6px 12px', width: 90 }} />
+              {SYMBOLS.map(sym => (
+                <th key={sym} style={{
+                  padding: '6px 14px',
+                  fontSize: F.xs,
+                  fontWeight: 700,
+                  color: C.textSub,
+                  textAlign: 'center',
+                  letterSpacing: '0.06em',
+                }}>
+                  {sym}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {REGIMES.map(regime => (
+              <tr key={regime.key}>
+                {/* Row header */}
+                <td style={{ padding: '6px 12px', whiteSpace: 'nowrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <div style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: regime.color,
+                      flexShrink: 0,
+                      boxShadow: `0 0 5px ${regime.color}88`,
+                    }} />
+                    <span style={{ fontSize: F.xs, fontWeight: 600, color: C.textSub }}>{regime.label}</span>
+                  </div>
+                </td>
+
+                {SYMBOLS.map(sym => {
+                  let pct: number | null = null;
+                  if (useFallback) {
+                    pct = FALLBACK[regime.key][sym];
+                  } else {
+                    const cell = matrix[regime.key][sym];
+                    pct = cell.total > 0 ? (cell.wins / cell.total) * 100 : null;
+                  }
+
+                  const bg = pct !== null ? cellBg(pct) : C.faint;
+                  const fg = pct !== null ? cellFg(pct) : C.muted;
+
+                  return (
+                    <td key={sym} style={{ padding: '5px 8px', textAlign: 'center' }}>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: 52,
+                        height: 34,
+                        borderRadius: R.md,
+                        background: bg,
+                        border: `1px solid ${pct !== null ? fg + '44' : C.border}`,
+                        fontSize: F.sm,
+                        fontWeight: 700,
+                        color: fg,
+                        fontFamily: 'JetBrains Mono, monospace',
+                      }}>
+                        {pct !== null ? `${Math.round(pct)}%` : '—'}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 14, flexWrap: 'wrap' }}>
+        {[
+          { label: '< 40%', color: '#fca5a5', bg: 'rgba(220,38,38,0.3)' },
+          { label: '40–60%', color: '#fde68a', bg: 'rgba(217,119,6,0.3)' },
+          { label: '> 60%', color: '#86efac', bg: 'rgba(22,163,74,0.35)' },
+        ].map(item => (
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 16, height: 12, borderRadius: 3, background: item.bg, border: `1px solid ${item.color}44` }} />
+            <span style={{ fontSize: F.xs, color: C.muted }}>{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── SignalEntryDistribution ──────────────────────────────────────────────────
+
+function SignalEntryDistribution({ trades }: { trades: TradeRecord[] }) {
+  const SVG_W = 460;
+  const SVG_H = 140;
+  const PAD_L = 36;
+  const PAD_R = 16;
+  const PAD_T = 16;
+  const PAD_B = 36;
+  const CHART_W = SVG_W - PAD_L - PAD_R;
+  const CHART_H = SVG_H - PAD_T - PAD_B;
+
+  const BUCKETS = 10; // 0-9, 10-19, ..., 90-100
+
+  const CONFIDENCE_THRESHOLD = 65;
+
+  // Seeded fallback: normal distribution centered ~77
+  const FALLBACK_COUNTS = [0, 1, 2, 5, 9, 14, 20, 24, 16, 9];
+  const FALLBACK_WINS   = [0, 0, 1, 2, 4,  7, 13, 19, 14, 8];
+
+  const useFallback = trades.length === 0;
+
+  const counts: number[] = Array(BUCKETS).fill(0);
+  const winCounts: number[] = Array(BUCKETS).fill(0);
+
+  if (!useFallback) {
+    for (const t of trades) {
+      const score = t.confidence != null ? t.confidence : null;
+      if (score == null) continue;
+      // confidence is 0–100 (already a percentage in TradeRecord, but could be 0–1)
+      const normalized = score > 1 ? score : score * 100;
+      const bucket = Math.min(BUCKETS - 1, Math.floor(normalized / 10));
+      counts[bucket]++;
+      if (t.outcome === 'WIN' || (t.pnl != null && t.pnl > 0)) winCounts[bucket]++;
+    }
+  }
+
+  const displayCounts = useFallback ? FALLBACK_COUNTS : counts;
+  const displayWins   = useFallback ? FALLBACK_WINS   : winCounts;
+
+  const maxCount = Math.max(...displayCounts, 1);
+
+  const barColor = (bucketIdx: number): string => {
+    const midScore = bucketIdx * 10 + 5;
+    if (midScore < 65)  return `rgba(220,38,38,0.65)`;
+    if (midScore < 75)  return `rgba(217,119,6,0.75)`;
+    if (midScore < 85)  return `rgba(99,102,241,0.8)`;
+    return `rgba(22,163,74,0.85)`;
+  };
+
+  // Bar geometry
+  const barW = CHART_W / BUCKETS;
+  const barGap = 3;
+  const barInnerW = barW - barGap;
+
+  // x for bar center (bucket index)
+  const bx = (i: number) => PAD_L + i * barW + barW / 2;
+
+  // y for a count value on the primary Y axis (count → SVG y)
+  const cy = (count: number) => PAD_T + CHART_H - (count / maxCount) * CHART_H;
+
+  // Win rate line points
+  const linePoints = displayCounts.map((cnt, i) => {
+    const wr = cnt > 0 ? (displayWins[i] / cnt) * 100 : null;
+    return wr;
+  });
+
+  // x tick position for bucket i
+  const tx = (i: number) => PAD_L + i * barW;
+
+  // Confidence threshold x coordinate
+  const threshX = PAD_L + (CONFIDENCE_THRESHOLD / 100) * CHART_W;
+
+  // Y axis labels (count)
+  const yLabels = [0, Math.round(maxCount / 2), maxCount];
+
+  // Build SVG polyline points for win-rate overlay (only for buckets with data)
+  const wrLineSegments: { x1: number; y1: number; x2: number; y2: number }[] = [];
+  let prevWr: { x: number; y: number } | null = null;
+  for (let i = 0; i < BUCKETS; i++) {
+    const wr = linePoints[i];
+    if (wr === null) { prevWr = null; continue; }
+    // win rate y: map 0-100 onto chart height (top = 100%, bottom = 0%)
+    const wrY = PAD_T + CHART_H - (wr / 100) * CHART_H;
+    const cx_ = bx(i);
+    if (prevWr !== null) {
+      wrLineSegments.push({ x1: prevWr.x, y1: prevWr.y, x2: cx_, y2: wrY });
+    }
+    prevWr = { x: cx_, y: wrY };
+  }
+
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>
+        Entry Signal Score Distribution
+        {useFallback && (
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 400, marginLeft: 8 }}>(example)</span>
+        )}
+      </div>
+
+      <svg
+        viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+        aria-label="Entry signal score distribution histogram"
+      >
+        {/* Y-axis gridlines + labels */}
+        {yLabels.map((val, li) => {
+          const yPos = PAD_T + CHART_H - (val / maxCount) * CHART_H;
+          return (
+            <g key={li}>
+              <line
+                x1={PAD_L} y1={yPos} x2={PAD_L + CHART_W} y2={yPos}
+                stroke={C.border} strokeWidth="1" strokeDasharray="3 4"
+              />
+              <text x={PAD_L - 4} y={yPos + 4} textAnchor="end" fontSize="8" fill={C.muted} fontFamily="monospace">
+                {val}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Histogram bars */}
+        {displayCounts.map((count, i) => {
+          const barH = (count / maxCount) * CHART_H;
+          const bx_ = PAD_L + i * barW + barGap / 2;
+          const by_ = PAD_T + CHART_H - barH;
+          return (
+            <rect
+              key={i}
+              x={bx_}
+              y={by_}
+              width={barInnerW}
+              height={barH}
+              rx={3}
+              fill={barColor(i)}
+            />
+          );
+        })}
+
+        {/* Win-rate overlay line */}
+        {wrLineSegments.map((seg, i) => (
+          <line
+            key={i}
+            x1={seg.x1} y1={seg.y1}
+            x2={seg.x2} y2={seg.y2}
+            stroke="#f0abfc"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        ))}
+
+        {/* Win-rate dots */}
+        {displayCounts.map((cnt, i) => {
+          const wr = cnt > 0 ? (displayWins[i] / cnt) * 100 : null;
+          if (wr === null) return null;
+          const wrY = PAD_T + CHART_H - (wr / 100) * CHART_H;
+          return (
+            <circle key={i} cx={bx(i)} cy={wrY} r={2.5} fill="#f0abfc" stroke={C.surface} strokeWidth="1" />
+          );
+        })}
+
+        {/* Confidence threshold vertical dashed line */}
+        <line
+          x1={threshX} y1={PAD_T - 4}
+          x2={threshX} y2={PAD_T + CHART_H}
+          stroke={C.warn}
+          strokeWidth="1.5"
+          strokeDasharray="4 3"
+        />
+        <text x={threshX + 3} y={PAD_T + 4} fontSize="8" fill={C.warn} fontFamily="monospace">65%</text>
+
+        {/* X-axis tick labels */}
+        {Array.from({ length: BUCKETS }, (_, i) => (
+          <text
+            key={i}
+            x={tx(i) + barW / 2}
+            y={PAD_T + CHART_H + 14}
+            textAnchor="middle"
+            fontSize="8"
+            fill={C.muted}
+            fontFamily="monospace"
+          >
+            {i * 10}
+          </text>
+        ))}
+
+        {/* X-axis label */}
+        <text
+          x={PAD_L + CHART_W / 2}
+          y={SVG_H - 2}
+          textAnchor="middle"
+          fontSize="8"
+          fill={C.muted}
+          fontFamily="Inter, sans-serif"
+        >
+          Signal Score (0–100)
+        </text>
+
+        {/* Y-axis label */}
+        <text
+          x={8}
+          y={PAD_T + CHART_H / 2}
+          textAnchor="middle"
+          fontSize="8"
+          fill={C.muted}
+          fontFamily="Inter, sans-serif"
+          transform={`rotate(-90, 8, ${PAD_T + CHART_H / 2})`}
+        >
+          Trades
+        </text>
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        {[
+          { label: '< 65', color: 'rgba(220,38,38,0.65)' },
+          { label: '65–75', color: 'rgba(217,119,6,0.75)' },
+          { label: '75–85', color: 'rgba(99,102,241,0.8)' },
+          { label: '85+', color: 'rgba(22,163,74,0.85)' },
+        ].map(item => (
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ width: 12, height: 10, borderRadius: 2, background: item.color }} />
+            <span style={{ fontSize: F.xs, color: C.muted }}>{item.label}</span>
+          </div>
+        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <svg width="20" height="8"><line x1="0" y1="4" x2="20" y2="4" stroke="#f0abfc" strokeWidth="1.5" /><circle cx="10" cy="4" r="2.5" fill="#f0abfc" /></svg>
+          <span style={{ fontSize: F.xs, color: C.muted }}>Win rate</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <svg width="16" height="8"><line x1="0" y1="4" x2="16" y2="4" stroke={C.warn} strokeWidth="1.5" strokeDasharray="3 2" /></svg>
+          <span style={{ fontSize: F.xs, color: C.muted }}>65% threshold</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PerformanceTab ───────────────────────────────────────────────────────────
+
 function PerformanceTab({ trades }: { trades: TradeRecord[] }) {
   if (!trades.length) {
     return (
@@ -1022,6 +1420,12 @@ function PerformanceTab({ trades }: { trades: TradeRecord[] }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Streak tracker */}
       <TradeStreakVisual trades={trades} />
+
+      {/* Win rate heatmap by regime × symbol */}
+      <WinRateByRegimeHeatmap trades={trades} />
+
+      {/* Signal score distribution histogram */}
+      <SignalEntryDistribution trades={trades} />
 
       {/* KPI grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>

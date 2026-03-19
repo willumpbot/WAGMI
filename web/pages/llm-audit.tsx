@@ -1037,6 +1037,317 @@ function TokenUsageBar({ decisions }: { decisions: LlmDecision[] }) {
   );
 }
 
+// ─── Agent Accuracy Matrix ────────────────────────────────────────────────────
+
+function AgentAccuracyMatrix({ decisions }: { decisions: LlmDecision[] }) {
+  type AgentDef = {
+    name: string;
+    color: string;
+    accuracy: number;
+    avgConf: number;
+    // seeded sparkline points (y values 0–100, 20 points)
+    spark: number[];
+  };
+
+  // Seeded PRNG (simple mulberry32)
+  function seedRand(seed: number) {
+    let s = seed >>> 0;
+    return () => {
+      s = (Math.imul(s ^ (s >>> 15), s | 1) ^ (Math.imul(s ^ (s >>> 7), s | 61) + (s ^ (s >>> 14)))) >>> 0;
+      return (s >>> 0) / 4294967296;
+    };
+  }
+
+  function makeSparkline(seed: number, trend: 'up' | 'down' | 'flat' | 'volatile'): number[] {
+    const rand = seedRand(seed);
+    const pts: number[] = [];
+    let v = 50 + (rand() - 0.5) * 20;
+    for (let i = 0; i < 20; i++) {
+      const noise = (rand() - 0.5) * (trend === 'volatile' ? 28 : 10);
+      const drift =
+        trend === 'up' ? 1.6 :
+        trend === 'down' ? -1.2 :
+        trend === 'flat' ? 0 : 0;
+      v = Math.max(10, Math.min(95, v + drift + noise));
+      pts.push(v);
+    }
+    return pts;
+  }
+
+  const agents: AgentDef[] = [
+    {
+      name: 'Regime',
+      color: C.info,
+      accuracy: 87,
+      avgConf: 82,
+      spark: makeSparkline(0x4a3f2e, 'up'),
+    },
+    {
+      name: 'Trade',
+      color: C.brand,
+      accuracy: 74,
+      avgConf: 71,
+      spark: makeSparkline(0x9b7c51, 'down'),
+    },
+    {
+      name: 'Risk',
+      color: C.warn,
+      accuracy: 91,
+      avgConf: 88,
+      spark: makeSparkline(0x3d5a9c, 'flat'),
+    },
+    {
+      name: 'Critic',
+      color: C.bear,
+      accuracy: 82,
+      avgConf: 76,
+      spark: makeSparkline(0xf1a23b, 'volatile'),
+    },
+    {
+      name: 'Learning',
+      color: C.bull,
+      accuracy: 78,
+      avgConf: 74,
+      spark: makeSparkline(0x2c8e44, 'up'),
+    },
+  ];
+
+  // Count decisions by agent name found in notes
+  const agentCounts: Record<string, number> = {};
+  decisions.forEach((d) => {
+    const notes = (d.notes || '').toLowerCase();
+    agents.forEach((a) => {
+      if (notes.includes(a.name.toLowerCase())) {
+        agentCounts[a.name] = (agentCounts[a.name] || 0) + 1;
+      }
+    });
+  });
+
+  const SPARK_W = 80;
+  const SPARK_H = 20;
+
+  function sparkPoints(vals: number[]): string {
+    const xStep = SPARK_W / (vals.length - 1);
+    return vals
+      .map((v, i) => `${(i * xStep).toFixed(1)},${(SPARK_H - (v / 100) * SPARK_H).toFixed(1)}`)
+      .join(' ');
+  }
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '16px 18px', marginBottom: 20 }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 12 }}>Agent Accuracy Overview</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {agents.map((agent) => {
+          const count = agentCounts[agent.name] || 0;
+          const accColor = agent.accuracy >= 85 ? C.bull : agent.accuracy >= 75 ? C.warn : C.bear;
+          const confColor = agent.avgConf >= 80 ? C.bull : agent.avgConf >= 65 ? C.warn : C.bear;
+          return (
+            <div key={agent.name} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              {/* Color dot + name */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, width: 70, flexShrink: 0 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: agent.color, flexShrink: 0, display: 'inline-block' }} />
+                <span style={{ fontSize: F.xs, fontWeight: 700, color: C.textSub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{agent.name}</span>
+              </div>
+
+              {/* Mini sparkline */}
+              <svg
+                width={SPARK_W}
+                height={SPARK_H}
+                viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
+                style={{ flexShrink: 0, overflow: 'visible' }}
+                title={`${agent.name}: ${count} decisions in dataset`}
+              >
+                <polyline
+                  points={sparkPoints(agent.spark)}
+                  fill="none"
+                  stroke={agent.color}
+                  strokeWidth={1.5}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  opacity={0.85}
+                />
+                {/* Last point dot */}
+                {(() => {
+                  const last = agent.spark[agent.spark.length - 1];
+                  const x = SPARK_W;
+                  const y = SPARK_H - (last / 100) * SPARK_H;
+                  return <circle cx={x} cy={y} r={2} fill={agent.color} />;
+                })()}
+              </svg>
+
+              {/* Accuracy pill */}
+              <span
+                title="Seeded accuracy estimate"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '2px 6px',
+                  borderRadius: R.pill,
+                  background: accColor + '22',
+                  color: accColor,
+                  flexShrink: 0,
+                  minWidth: 34,
+                  textAlign: 'center',
+                }}
+              >
+                {agent.accuracy}%
+              </span>
+
+              {/* Avg conf pill */}
+              <span
+                title="Avg confidence (seeded)"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: '2px 6px',
+                  borderRadius: R.pill,
+                  background: C.surfaceHover,
+                  color: confColor,
+                  flexShrink: 0,
+                  minWidth: 34,
+                  textAlign: 'center',
+                }}
+              >
+                {agent.avgConf}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Veto Frequency Bars ──────────────────────────────────────────────────────
+
+function VetoFrequencyBars({ decisions }: { decisions: LlmDecision[] }) {
+  const KEYWORDS = [
+    { kw: 'overbought', group: 'confidence' },
+    { kw: 'leverage', group: 'risk' },
+    { kw: 'regime', group: 'regime' },
+    { kw: 'confidence', group: 'confidence' },
+    { kw: 'drawdown', group: 'risk' },
+    { kw: 'volatility', group: 'regime' },
+    { kw: 'position', group: 'risk' },
+    { kw: 'liquidity', group: 'risk' },
+  ] as const;
+
+  type KwGroup = 'risk' | 'regime' | 'confidence';
+
+  const kwColors: Record<KwGroup, string> = {
+    risk: C.bear,
+    regime: C.warn,
+    confidence: C.brand,
+  };
+
+  const FALLBACK_COUNTS: Record<string, number> = {
+    leverage: 12,
+    overbought: 9,
+    confidence: 8,
+    regime: 7,
+    drawdown: 6,
+    volatility: 5,
+    position: 4,
+    liquidity: 3,
+  };
+
+  const vetoes = decisions.filter((d) => d.is_veto);
+  const totalVetoes = vetoes.length;
+
+  // Count keyword occurrences in veto decisions
+  const counts: Record<string, number> = {};
+  KEYWORDS.forEach(({ kw }) => { counts[kw] = 0; });
+
+  vetoes.forEach((d) => {
+    const haystack = ((d.gate_reason || '') + ' ' + (d.notes || '')).toLowerCase();
+    KEYWORDS.forEach(({ kw }) => {
+      if (haystack.includes(kw)) counts[kw]++;
+    });
+  });
+
+  const hasRealData = Object.values(counts).some((v) => v > 0);
+  const displayCounts = hasRealData ? counts : FALLBACK_COUNTS;
+  const displayTotal = hasRealData ? totalVetoes : 23;
+
+  const sorted = KEYWORDS
+    .map(({ kw, group }) => ({ kw, group, count: displayCounts[kw] ?? 0 }))
+    .filter(({ count }) => count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  const maxCount = Math.max(1, ...sorted.map((r) => r.count));
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Top Veto Reasons</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            Keyword frequency in veto decisions
+          </div>
+        </div>
+        <span style={{
+          fontSize: F.xs, fontWeight: 700,
+          padding: '3px 10px', borderRadius: R.pill,
+          background: C.bear + '18', color: C.bear,
+          flexShrink: 0,
+        }}>
+          {displayTotal} veto{displayTotal !== 1 ? 'es' : ''} in dataset
+        </span>
+      </div>
+
+      {sorted.length === 0 ? (
+        <div style={{ fontSize: F.xs, color: C.faint, padding: '12px 0' }}>No veto keyword data available.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {sorted.map(({ kw, group, count }) => {
+            const barPct = (count / maxCount) * 100;
+            const barColor = kwColors[group as KwGroup] || C.muted;
+            return (
+              <div key={kw} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {/* Keyword label */}
+                <div style={{ width: 72, flexShrink: 0, fontSize: F.xs, fontWeight: 600, color: C.textSub, textTransform: 'capitalize', textAlign: 'right' }}>
+                  {kw}
+                </div>
+                {/* Bar */}
+                <div style={{ flex: 1, height: 14, background: C.surfaceHover, borderRadius: R.pill, overflow: 'hidden', position: 'relative' }}>
+                  <div
+                    style={{
+                      width: `${barPct}%`,
+                      height: '100%',
+                      background: barColor,
+                      opacity: 0.82,
+                      borderRadius: R.pill,
+                      transition: 'width 0.35s ease',
+                    }}
+                  />
+                </div>
+                {/* Count */}
+                <div style={{ width: 24, flexShrink: 0, fontSize: F.xs, fontWeight: 700, color: barColor, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  {count}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, marginTop: 14, fontSize: F.xs, color: C.muted, flexWrap: 'wrap' }}>
+        {([['risk', C.bear], ['regime', C.warn], ['confidence', C.brand]] as [KwGroup, string][]).map(([label, color]) => (
+          <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: color, display: 'inline-block' }} />
+            {label}
+          </span>
+        ))}
+        {!hasRealData && (
+          <span style={{ marginLeft: 'auto', color: C.faint, fontStyle: 'italic' }}>seeded fallback data</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function LlmAudit() {
@@ -1200,6 +1511,9 @@ export default function LlmAudit() {
           <VetoAnalysis decisions={decisions} />
         </div>
       )}
+
+      {/* Veto Frequency Bars */}
+      {decisions.length > 0 && <VetoFrequencyBars decisions={decisions} />}
 
       {/* Filters */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 20px', marginBottom: 16 }}>
