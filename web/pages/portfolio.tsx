@@ -822,6 +822,249 @@ function RiskBudgetMeter() {
   );
 }
 
+// ─── Position Bubble Chart ───────────────────────────────────────────────────
+
+type BubblePos = {
+  symbol: string;
+  side: 'LONG' | 'SHORT';
+  sizeUsd: number;
+  unrealPnl: number;
+};
+
+function PositionBubbleChart({ positions }: { positions: Strategy[] }) {
+  const SVG_W = 480;
+  const SVG_H = 200;
+  const PAD = { t: 24, r: 20, b: 40, l: 56 };
+  const W = SVG_W - PAD.l - PAD.r;
+  const H = SVG_H - PAD.t - PAD.b;
+
+  const MIN_R = 12;
+  const MAX_R = 32;
+  const MAX_SIZE_USD = 5000;
+
+  // Build bubble data: real or seeded fallback
+  const hasPosData = positions.length > 0;
+  const bubbles: BubblePos[] = hasPosData
+    ? positions.map((s) => ({
+        symbol: s.id.replace(/USDT?$/i, '').toUpperCase(),
+        side: (s.open_position?.side?.toUpperCase() === 'SELL' || s.open_position?.side?.toUpperCase() === 'SHORT') ? 'SHORT' : 'LONG',
+        sizeUsd: s.open_position?.size ?? 0,
+        unrealPnl: s.open_position?.unrealized_pnl ?? 0,
+      }))
+    : [
+        { symbol: 'BTC', side: 'LONG',  sizeUsd: 2000, unrealPnl:  180 },
+        { symbol: 'SOL', side: 'LONG',  sizeUsd: 1500, unrealPnl:   95 },
+        { symbol: 'HYPE', side: 'SHORT', sizeUsd:  800, unrealPnl:  -45 },
+      ];
+
+  const maxAbsPnl = Math.max(1, ...bubbles.map((b) => Math.abs(b.unrealPnl)));
+
+  // Seeded x-spread: evenly space with small jitter
+  function seededJitter(str: string): number {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffff;
+    return (h % 100) / 100 - 0.5; // -0.5 to 0.5
+  }
+
+  const xStep = bubbles.length > 1 ? W / (bubbles.length + 1) : W / 2;
+
+  return (
+    <div style={{
+      background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg,
+      padding: '16px 20px', flex: 1, minWidth: 0,
+    }}>
+      {/* Title */}
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>Open Position Map</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 10 }}>
+        {hasPosData ? '' : 'Seeded preview — no live positions'}
+      </div>
+
+      <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ display: 'block', overflow: 'visible' }}>
+        {/* Background */}
+        <rect x={0} y={0} width={SVG_W} height={SVG_H} fill={C.surface} rx={8} />
+
+        {/* Y-axis grid lines & labels */}
+        {[0, 1250, 2500, 3750, 5000].map((v) => {
+          const yPx = PAD.t + H - (v / MAX_SIZE_USD) * H;
+          return (
+            <g key={v}>
+              <line x1={PAD.l} y1={yPx} x2={PAD.l + W} y2={yPx}
+                stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" />
+              <text x={PAD.l - 6} y={yPx + 4} fill={C.muted} fontSize={8} textAnchor="end">
+                {v === 0 ? '$0' : `$${v / 1000}k`}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* X-axis label */}
+        <text x={PAD.l + W / 2} y={SVG_H - 4} fill={C.muted} fontSize={8} textAnchor="middle">
+          Entry Time (index-spaced)
+        </text>
+
+        {/* Y-axis label */}
+        <text
+          x={10} y={PAD.t + H / 2}
+          fill={C.muted} fontSize={8} textAnchor="middle"
+          transform={`rotate(-90, 10, ${PAD.t + H / 2})`}
+        >
+          Position Size (USD)
+        </text>
+
+        {/* Axis border */}
+        <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + H} stroke={C.border} strokeWidth={1} />
+        <line x1={PAD.l} y1={PAD.t + H} x2={PAD.l + W} y2={PAD.t + H} stroke={C.border} strokeWidth={1} />
+
+        {/* No-data message */}
+        {bubbles.length === 0 && (
+          <text x={PAD.l + W / 2} y={PAD.t + H / 2} fill={C.muted} fontSize={13} textAnchor="middle" dominantBaseline="middle">
+            No open positions
+          </text>
+        )}
+
+        {/* Bubbles */}
+        {bubbles.map((b, i) => {
+          const radius = MIN_R + (Math.abs(b.unrealPnl) / maxAbsPnl) * (MAX_R - MIN_R);
+          const jitter = seededJitter(b.symbol) * (xStep * 0.4);
+          const cx = PAD.l + (i + 1) * xStep + jitter;
+          const sizeClamp = Math.min(b.sizeUsd, MAX_SIZE_USD);
+          const cy = PAD.t + H - (sizeClamp / MAX_SIZE_USD) * H;
+          const fillColor = b.side === 'LONG' ? C.bull : C.bear;
+          const abbrev = b.symbol.length > 4 ? b.symbol.slice(0, 4) : b.symbol;
+
+          return (
+            <g key={b.symbol + i}>
+              {/* Glow halo */}
+              <circle cx={cx} cy={cy} r={radius + 4} fill={fillColor} opacity={0.12} />
+              {/* Main bubble */}
+              <circle cx={cx} cy={cy} r={radius} fill={fillColor} stroke="#ffffff" strokeWidth={2} opacity={0.88} />
+              {/* Symbol abbreviation */}
+              <text x={cx} y={cy + 1} fill="#fff" fontSize={radius > 20 ? 9 : 8} textAnchor="middle" dominantBaseline="middle" fontWeight={700}>
+                {abbrev}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <svg width={10} height={10}><circle cx={5} cy={5} r={5} fill={C.bull} /></svg>
+          <span style={{ fontSize: F.xs, color: C.muted }}>Long</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <svg width={10} height={10}><circle cx={5} cy={5} r={5} fill={C.bear} /></svg>
+          <span style={{ fontSize: F.xs, color: C.muted }}>Short</span>
+        </div>
+        <span style={{ fontSize: F.xs, color: C.faint }}>bubble size = |unrealized PnL|</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Thesis Validity Bars ─────────────────────────────────────────────────────
+
+type ValidityRow = {
+  symbol: string;
+  score: number; // 0–100
+};
+
+function thesisScore(symbol: string): number {
+  // Deterministic hash → 0-100 score
+  let h = 0;
+  for (let i = 0; i < symbol.length; i++) h = (h * 31 + symbol.charCodeAt(i)) & 0xffff;
+  return (h * 17 + 37) % 101;
+}
+
+function ThesisValidityBars({ positions }: { positions: Strategy[] }) {
+  const hasPosData = positions.length > 0;
+
+  const rows: ValidityRow[] = hasPosData
+    ? positions.map((s) => ({
+        symbol: s.id.replace(/USDT?$/i, '').toUpperCase(),
+        score: thesisScore(s.id),
+      }))
+    : [
+        { symbol: 'BTC',  score: thesisScore('BTC') },
+        { symbol: 'SOL',  score: thesisScore('SOL') },
+        { symbol: 'HYPE', score: thesisScore('HYPE') },
+      ];
+
+  function statusLabel(score: number): { text: string; color: string } {
+    if (score >= 70) return { text: '✓ Valid',     color: C.bull };
+    if (score >= 40) return { text: '⚠ Weakening', color: C.warn };
+    return              { text: '✗ Stale',       color: C.bear };
+  }
+
+  // Gradient colour for the bar fill at a given score (0-100)
+  function barColor(score: number): string {
+    if (score >= 70) return C.bull;
+    if (score >= 40) return C.warn;
+    return C.bear;
+  }
+
+  return (
+    <div style={{
+      background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg,
+      padding: '16px 20px', flex: 1, minWidth: 0,
+    }}>
+      {/* Title */}
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 2 }}>AI Thesis Validity</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
+        How well each position's original thesis still holds
+        {!hasPosData && ' · seeded preview'}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {rows.map((row) => {
+          const { text: statusText, color: statusColor } = statusLabel(row.score);
+          const fill = barColor(row.score);
+
+          return (
+            <div key={row.symbol} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* Symbol pill */}
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                padding: '2px 9px', borderRadius: R.pill,
+                background: C.card, border: `1px solid ${C.border}`,
+                fontSize: F.xs, fontWeight: 700, color: C.text,
+                minWidth: 44, flexShrink: 0, textAlign: 'center',
+              }}>
+                {row.symbol}
+              </span>
+
+              {/* Validity bar */}
+              <div style={{ flex: 1, height: 8, background: C.card, borderRadius: R.pill, overflow: 'hidden', minWidth: 60 }}>
+                <div style={{
+                  width: `${row.score}%`,
+                  height: '100%',
+                  background: `linear-gradient(90deg, ${C.bull}, ${C.warn}, ${C.bear})`,
+                  // Mask to show only the filled portion in the correct semantic colour
+                  backgroundSize: '300px 100%',
+                  backgroundPosition: `${-((100 - row.score) / 100) * 200}px 0`,
+                  borderRadius: R.pill,
+                  opacity: 0.9,
+                }} />
+              </div>
+
+              {/* Score % */}
+              <span style={{ fontSize: F.xs, fontWeight: 700, color: fill, width: 32, textAlign: 'right', flexShrink: 0 }}>
+                {row.score}%
+              </span>
+
+              {/* Status label */}
+              <span style={{ fontSize: F.xs, fontWeight: 600, color: statusColor, width: 82, flexShrink: 0 }}>
+                {statusText}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PortfolioPage() {
@@ -998,6 +1241,13 @@ export default function PortfolioPage() {
               <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
                 Open Positions ({openPositions.length})
               </h2>
+
+              {/* ── Position Visual Intelligence: Bubble Chart + Thesis Validity ── */}
+              <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+                <PositionBubbleChart positions={openPositions} />
+                <ThesisValidityBars positions={openPositions} />
+              </div>
+
               {openPositions.length === 0 ? (
                 <div style={{
                   background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg,

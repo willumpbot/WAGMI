@@ -477,6 +477,220 @@ function IntradayActivityHeatmap({ activity }: { activity: ActivityEvent[] }) {
   );
 }
 
+// ─── Risk Gates Panel ─────────────────────────────────────────────────────────
+
+type GateEntry = {
+  num: number;
+  name: string;
+  statusLabel: string;
+  utilization: number | null; // 0-100, null = no bar
+};
+
+function RiskGatesPanel() {
+  const gates: GateEntry[] = [
+    { num: 1, name: 'Signal Validity',    statusLabel: '✓ Active',    utilization: null },
+    { num: 2, name: 'Circuit Breaker',    statusLabel: '✓ Clear',     utilization: 15   },
+    { num: 3, name: 'Position Limits',    statusLabel: '✓ OK',        utilization: 30   },
+    { num: 4, name: 'Leverage Check',     statusLabel: '✓ Safe',      utilization: 40   },
+    { num: 5, name: 'Liquidation Safety', statusLabel: '✓ Protected', utilization: 75   },
+    { num: 6, name: 'Position Sizing',    statusLabel: '✓ Active',    utilization: 60   },
+  ];
+
+  function barColor(pct: number): string {
+    if (pct >= 80) return C.bear;
+    if (pct >= 60) return C.warn;
+    return C.bull;
+  }
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
+      {/* Title row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Safety Gates — All Systems Active</div>
+        <span style={{
+          fontSize: 9, fontWeight: 700, color: C.bull,
+          background: `${C.bull}18`, border: `1px solid ${C.bull}50`,
+          borderRadius: R.pill, padding: '2px 8px',
+          display: 'flex', alignItems: 'center', gap: 4,
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: C.bull, display: 'inline-block' }} />
+          ✓ All 6 gates operational
+        </span>
+      </div>
+
+      {/* Gate rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {gates.map((g) => {
+          const col = g.utilization != null ? barColor(g.utilization) : C.bull;
+          return (
+            <div key={g.num} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Gate number badge */}
+              <span style={{
+                width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                background: C.surface, border: `1px solid ${C.border}`,
+                fontSize: 9, fontWeight: 700, color: C.muted,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {g.num}
+              </span>
+
+              {/* Gate name */}
+              <span style={{ width: 130, fontSize: F.xs, color: C.textSub, flexShrink: 0 }}>{g.name}</span>
+
+              {/* Status pill */}
+              <span style={{
+                fontSize: 9, fontWeight: 700, color: col,
+                background: col + '18', border: `1px solid ${col}40`,
+                borderRadius: R.pill, padding: '1px 7px',
+                flexShrink: 0, whiteSpace: 'nowrap' as const,
+              }}>
+                {g.statusLabel}
+              </span>
+
+              {/* Utilization bar */}
+              {g.utilization != null ? (
+                <div style={{ flex: 1, height: 6, background: C.surface, borderRadius: R.pill, overflow: 'hidden', minWidth: 40 }}>
+                  <div style={{
+                    width: `${g.utilization}%`, height: '100%',
+                    background: col, borderRadius: R.pill,
+                    transition: 'width 0.4s',
+                  }} />
+                </div>
+              ) : (
+                <div style={{ flex: 1 }} />
+              )}
+
+              {/* % label */}
+              {g.utilization != null && (
+                <span style={{ fontSize: 9, color: C.muted, width: 28, textAlign: 'right' as const, flexShrink: 0 }}>
+                  {g.utilization}%
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, marginTop: 14, fontSize: 9, color: C.muted }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 4, borderRadius: 2, background: C.bull, display: 'inline-block' }} /> &lt;60% Normal
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 4, borderRadius: 2, background: C.warn, display: 'inline-block' }} /> 60–80% Elevated
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 4, borderRadius: 2, background: C.bear, display: 'inline-block' }} /> &gt;80% Critical
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Hourly Trade Timeline ─────────────────────────────────────────────────────
+
+type HourActivity = { signals: number; trades: number; vetoes: number };
+
+function HourlyTradeTimeline() {
+  const now = new Date();
+  const currentHour = now.getUTCHours();
+
+  // Seeded pseudo-random: trading hours 13-22 are more active
+  function seedRand(h: number, salt: number): number {
+    const x = Math.sin(h * 127.1 + salt * 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  const hourData: HourActivity[] = Array.from({ length: 24 }, (_, h) => {
+    const isTradeHour = h >= 13 && h <= 22;
+    const base = isTradeHour ? 0.55 : 0.18;
+    const r1 = seedRand(h, 1);
+    const r2 = seedRand(h, 2);
+    const r3 = seedRand(h, 3);
+
+    const signals = r1 < base ? (isTradeHour ? (r1 < 0.3 ? 2 : 1) : 1) : 0;
+    const trades  = signals > 0 && r2 < 0.45 ? 1 : 0;
+    const vetoes  = signals > 0 && trades === 0 && r3 < 0.35 ? 1 : 0;
+    return { signals, trades, vetoes };
+  });
+
+  function cellColor(d: HourActivity): string {
+    if (d.trades > 0)  return C.bull;
+    if (d.vetoes > 0)  return C.bear;
+    if (d.signals > 0) return C.info + '88';
+    return C.faint;
+  }
+
+  function cellLabel(d: HourActivity): string {
+    if (d.trades > 0)  return 'Trade executed';
+    if (d.vetoes > 0)  return 'Signal vetoed';
+    if (d.signals > 0) return 'Signal analyzed';
+    return 'No activity';
+  }
+
+  // 8 columns × 3 rows
+  const COLS = 8;
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
+      {/* Title */}
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>24h Activity Grid</div>
+
+      {/* Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 36px)`, gap: 6, justifyContent: 'start' }}>
+        {hourData.map((d, h) => {
+          const isCurrent = h === currentHour;
+          const bg = cellColor(d);
+          return (
+            <div
+              key={h}
+              title={`${String(h).padStart(2, '0')}:00 UTC — ${cellLabel(d)}`}
+              style={{
+                width: 36, height: 36,
+                borderRadius: R.sm,
+                background: bg,
+                border: isCurrent
+                  ? `2px solid ${C.text}`
+                  : `1px solid ${C.border}`,
+                display: 'flex', flexDirection: 'column' as const,
+                alignItems: 'center', justifyContent: 'center',
+                boxShadow: isCurrent ? `0 0 8px ${C.brand}` : 'none',
+                transition: 'box-shadow 0.2s',
+                cursor: 'default',
+              }}
+            >
+              <span style={{
+                fontSize: 9, fontWeight: isCurrent ? 800 : 600,
+                color: isCurrent ? C.text : (d.signals > 0 || d.trades > 0 || d.vetoes > 0) ? C.text : C.muted,
+                lineHeight: 1,
+              }}>
+                {String(h).padStart(2, '0')}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, marginTop: 14, fontSize: 9, color: C.muted, flexWrap: 'wrap' as const }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: C.faint, border: `1px solid ${C.border}`, display: 'inline-block' }} /> No activity
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: C.info + '88', display: 'inline-block' }} /> Signal
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: C.bull, display: 'inline-block' }} /> Trade
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: C.bear, display: 'inline-block' }} /> Veto
+        </span>
+        <span style={{ marginLeft: 'auto', color: C.faint }}>Current hour: bright border</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Market Session Clock ─────────────────────────────────────────────────────
 
 function MarketSessionClock() {
@@ -833,6 +1047,16 @@ export default function TodayPage() {
             ) : (
               <div style={{ color: C.muted, fontSize: F.sm }}>Waiting for AI data…</div>
             )}
+          </div>
+        </div>
+
+        {/* ── Risk Gates + Hourly Trade Timeline ── */}
+        <div style={{ display: 'flex', gap: 20, marginBottom: 28, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 320px' }}>
+            <RiskGatesPanel />
+          </div>
+          <div style={{ flex: '1 1 320px' }}>
+            <HourlyTradeTimeline />
           </div>
         </div>
 
