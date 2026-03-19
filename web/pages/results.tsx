@@ -10,6 +10,18 @@ function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
   return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
 }
 
+// ─── Awaiting Results Placeholder ─────────────────────────────────────────────
+
+function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+      <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
+      {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
+    </div>
+  );
+}
+
 // ─── KPI Grid ─────────────────────────────────────────────────────────────────
 
 function KpiBlock({ label, value, sub, color, big }: {
@@ -1436,19 +1448,6 @@ function TimeOfDayHeatmap({ trades }: { trades: TradeRecord[] }) {
 
 // ─── PnL Ticker Banner ────────────────────────────────────────────────────────
 
-const SEED_TRADES: Array<{ symbol: string; side: string; pnl: number }> = [
-  { symbol: 'BTC/USDT', side: 'BUY',  pnl:  420 },
-  { symbol: 'SOL/USDT', side: 'BUY',  pnl:  215 },
-  { symbol: 'ETH/USDT', side: 'SELL', pnl: -180 },
-  { symbol: 'HYPE/USDT',side: 'BUY',  pnl:  310 },
-  { symbol: 'BTC/USDT', side: 'SELL', pnl: -95  },
-  { symbol: 'SOL/USDT', side: 'BUY',  pnl:  540 },
-  { symbol: 'ETH/USDT', side: 'BUY',  pnl:  130 },
-  { symbol: 'BTC/USDT', side: 'BUY',  pnl:  780 },
-  { symbol: 'HYPE/USDT',side: 'SELL', pnl: -140 },
-  { symbol: 'SOL/USDT', side: 'SELL', pnl:  220 },
-];
-
 function PnlTickerBanner({ trades }: { trades: TradeRecord[] }) {
   const styleId = 'pnl-ticker-keyframes';
 
@@ -1472,12 +1471,25 @@ function PnlTickerBanner({ trades }: { trades: TradeRecord[] }) {
 
   type BubbleData = { symbol: string; side: string; pnl: number };
 
-  const bubbles: BubbleData[] = trades.length > 0
-    ? trades
-        .filter((t) => t.pnl != null)
-        .slice(-30)
-        .map((t) => ({ symbol: t.symbol, side: t.side?.toUpperCase() ?? '—', pnl: t.pnl! }))
-    : SEED_TRADES;
+  const hasTrades = trades.filter((t) => t.pnl != null).length > 0;
+
+  if (!hasTrades) {
+    return (
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', background: `linear-gradient(90deg, ${C.brand}22, ${G.card})`, border: `1px solid ${C.brand}44`, borderBottom: 'none', borderRadius: `${R.md}px ${R.md}px 0 0` }}>
+          <span style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>● LIVE TRADE RESULTS</span>
+        </div>
+        <div style={{ padding: '18px 20px', background: G.card, border: `1px solid ${C.brand}44`, borderTop: 'none', borderRadius: `0 0 ${R.md}px ${R.md}px` }}>
+          <AwaitingResults label="Awaiting first closed trade" sub="Trades will appear here once the bot closes its first position" />
+        </div>
+      </div>
+    );
+  }
+
+  const bubbles: BubbleData[] = trades
+    .filter((t) => t.pnl != null)
+    .slice(-30)
+    .map((t) => ({ symbol: t.symbol, side: t.side?.toUpperCase() ?? '—', pnl: t.pnl! }));
 
   const netPnl = bubbles.reduce((s, b) => s + b.pnl, 0);
   const netSign = netPnl >= 0 ? '+' : '';
@@ -1610,9 +1622,8 @@ function CumulativePnlMilestones({ trades }: { trades: TradeRecord[] }) {
         </div>
       </div>
       {trades.length === 0 && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 18 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 18 }}>
+          Awaiting results — progress will update as the bot closes trades
         </div>
       )}
 
@@ -1745,19 +1756,10 @@ function WeeklySymbolHeatmap({ trades }: { trades: TradeRecord[] }) {
     weekStarts.push(d);
   }
 
-  // Seed fallback data when no real trades available
-  const SEED: Record<string, number[]> = {
-    'BTC':  [280, -95, 420, 167, 0],
-    'SOL':  [820, 445, -120, 890, 989],
-    'HYPE': [450, 230, 181, -85, 855],
-    'ETH':  [0, 0, 0, 0, 0],
-  };
-
   // Build symbol × week matrix from real trades
-  const hasTrades = trades.length > 0;
   const pnlMatrix: Record<string, number[]> = {};
 
-  if (hasTrades) {
+  if (trades.length > 0) {
     const symbols = Array.from(new Set(trades.map((t) => t.symbol.replace('/USDT', '').replace('/USD', ''))));
     symbols.forEach((sym) => { pnlMatrix[sym] = [0, 0, 0, 0, 0]; });
 
@@ -1768,7 +1770,6 @@ function WeeklySymbolHeatmap({ trades }: { trades: TradeRecord[] }) {
       if (isNaN(dt.getTime())) return;
       const sym = t.symbol.replace('/USDT', '').replace('/USD', '');
       if (!pnlMatrix[sym]) pnlMatrix[sym] = [0, 0, 0, 0, 0];
-      // Find which week bucket this trade falls into
       for (let wi = 0; wi < weekStarts.length; wi++) {
         const wStart = weekStarts[wi];
         const wEnd = wi + 1 < weekStarts.length ? weekStarts[wi + 1] : new Date(8640000000000000);
@@ -1778,11 +1779,19 @@ function WeeklySymbolHeatmap({ trades }: { trades: TradeRecord[] }) {
         }
       }
     });
-  } else {
-    Object.assign(pnlMatrix, SEED);
   }
 
   const symbols = Object.keys(pnlMatrix);
+
+  if (symbols.length === 0) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+        <h3 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Weekly Performance by Symbol</h3>
+        <AwaitingResults label="Awaiting results" sub="Weekly breakdown will appear once the bot has closed trades with timestamps" />
+      </div>
+    );
+  }
+
   const weekLabels = ['W1', 'W2', 'W3', 'W4', 'W5'];
 
   // Compute totals
@@ -1915,12 +1924,6 @@ function WeeklySymbolHeatmap({ trades }: { trades: TradeRecord[] }) {
           </tbody>
         </table>
       </div>
-      {!hasTrades && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginTop: 10 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -1933,12 +1936,6 @@ function DailyEquityWaterfall({ trades }: { trades: TradeRecord[] }) {
   const iW = W - pad.left - pad.right;
   const iH = H - pad.top - pad.bottom;
   const BAR_W = 22, BAR_GAP = 4;
-
-  // Seed ~20 days with ~70% positive days, total ~+$5.6K
-  const SEED_DAYS: number[] = [
-    320, -85, 210, 450, -120, 380, 195, -55, 510, 280,
-    -160, 420, 315, -90, 240, 560, 185, -75, 390, 430,
-  ];
 
   // Build daily PnL from trades
   let dailyPnls: number[] = [];
@@ -1957,8 +1954,14 @@ function DailyEquityWaterfall({ trades }: { trades: TradeRecord[] }) {
     dailyPnls = sortedKeys.slice(-20).map((k) => dayMap[k]);
   }
 
-  const useSeed = dailyPnls.length < 3;
-  if (useSeed) dailyPnls = SEED_DAYS;
+  if (dailyPnls.length < 3) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+        <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Daily P&amp;L Waterfall</h2>
+        <AwaitingResults label="Awaiting trade data" sub="Waterfall will populate once the bot has at least 3 closed trading days" />
+      </div>
+    );
+  }
 
   // Limit to 20 days
   const days = dailyPnls.slice(-20);
@@ -2168,12 +2171,6 @@ function DailyEquityWaterfall({ trades }: { trades: TradeRecord[] }) {
         </g>
       </svg>
 
-      {useSeed && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginTop: 8 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -2189,31 +2186,22 @@ function ProfitAttributionChart({ trades, backtest }: {
   const iW = W - pad.left - pad.right;
   const iH = H - pad.top - pad.bottom;
 
-  // ── Seed data (totals add up to $5,621) ──────────────────────────────────
-  const seedStrategy = [
-    { name: 'RGM (Regime Trend)', pnl: 2140 },
-    { name: 'MCZ (Monte Carlo)',  pnl: 1580 },
-    { name: 'MTQ (Multi-Tier)',   pnl:  910 },
-    { name: 'CNF (Confidence)',   pnl:  991 },
-  ];
-  const seedSymbol = [
-    { name: 'BTC',  pnl: 2820 },
-    { name: 'SOL',  pnl: 1945 },
-    { name: 'HYPE', pnl:  856 },
-  ];
-  const seedExit = [
-    { name: 'TP2',      pnl: 2580 },
-    { name: 'TP1',      pnl: 1610 },
-    { name: 'Trailing', pnl: 1431 },
-    { name: 'SL',       pnl: -600 },
-  ];
+  if (trades.length < 3) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Profit Attribution Breakdown</h2>
+        <p style={{ margin: '0 0 14px', fontSize: F.xs, color: C.muted }}>What drove the total return — by strategy, symbol, and exit type</p>
+        <AwaitingResults label="Awaiting results" sub="Attribution will populate once the bot has at least 3 closed trades" />
+      </div>
+    );
+  }
 
-  // ── Derive from real data when available ─────────────────────────────────
-  let stratRows = seedStrategy;
-  let symRows   = seedSymbol;
-  let exitRows  = seedExit;
+  // ── Derive from real data ─────────────────────────────────────────────────
+  let stratRows: Array<{ name: string; pnl: number }> = [];
+  let symRows:   Array<{ name: string; pnl: number }> = [];
+  let exitRows:  Array<{ name: string; pnl: number }> = [];
 
-  if (trades.length >= 5) {
+  if (trades.length >= 3) {
     // By strategy (use backtest.by_strategy if present)
     if (backtest?.by_strategy && Object.keys(backtest.by_strategy).length > 0) {
       stratRows = Object.entries(backtest.by_strategy)
@@ -2410,12 +2398,6 @@ function ProfitAttributionChart({ trades, backtest }: {
         </text>
       </svg>
 
-      {trades.length < 5 && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginTop: 8 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -2935,33 +2917,9 @@ function MaxAdverseExcursion({ trades }: { trades: TradeRecord[] }) {
   const iW = W - pad.left - pad.right;
   const iH = H - pad.top - pad.bottom;
 
-  // ── Seed trades (deterministic; some w/ MAE, some without) ───────────────
   type MaeDot = { mae: number; pnl: number; win: boolean };
 
-  const seedDots: MaeDot[] = [
-    { mae: 0.10, pnl:  420, win: true  },
-    { mae: 0.22, pnl:  215, win: true  },
-    { mae: 0.05, pnl: -180, win: false },
-    { mae: 0.42, pnl:  310, win: true  },
-    { mae: 0.28, pnl:  -95, win: false },
-    { mae: 0.18, pnl:  540, win: true  },
-    { mae: 0.55, pnl:  130, win: true  },
-    { mae: 0.08, pnl:  780, win: true  },
-    { mae: 0.65, pnl: -140, win: false },
-    { mae: 0.35, pnl:  220, win: true  },
-    { mae: 0.12, pnl:  185, win: true  },
-    { mae: 0.48, pnl: -260, win: false },
-    { mae: 0.72, pnl: -320, win: false },
-    { mae: 0.20, pnl:  390, win: true  },
-    { mae: 0.15, pnl:  280, win: true  },
-    { mae: 0.38, pnl: -110, win: false },
-    { mae: 0.82, pnl: -400, win: false },
-    { mae: 0.06, pnl:  490, win: true  },
-    { mae: 0.31, pnl:  160, win: true  },
-    { mae: 0.58, pnl: -200, win: false },
-  ];
-
-  // Try to build real dots from trades (MAE not usually available, so fall back to seed)
+  // Build real dots from trades (requires MAE field in trade records)
   const realDots: MaeDot[] = [];
   trades.forEach((t) => {
     const mae = (t as any).mae_pct ?? (t as any).max_adverse_excursion ?? null;
@@ -2969,8 +2927,17 @@ function MaxAdverseExcursion({ trades }: { trades: TradeRecord[] }) {
     realDots.push({ mae: Math.abs(mae) * 100, pnl: t.pnl, win: t.outcome === 'WIN' });
   });
 
-  const dots: MaeDot[] = realDots.length >= 5 ? realDots : seedDots;
-  const useSeed = realDots.length < 5;
+  const dots: MaeDot[] = realDots;
+
+  if (dots.length < 5) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Max Adverse Excursion Analysis</h2>
+        <p style={{ margin: '0 0 14px', fontSize: F.xs, color: C.muted }}>How far each trade went against you before resolving</p>
+        <AwaitingResults label="Awaiting MAE data" sub="MAE data will appear once trades include max_adverse_excursion field (needs at least 5 trades)" />
+      </div>
+    );
+  }
 
   // Axis ranges
   const maeMax = Math.max(...dots.map((d) => d.mae), 1) * 1.1;
@@ -3135,12 +3102,6 @@ function MaxAdverseExcursion({ trades }: { trades: TradeRecord[] }) {
         </g>
       </svg>
 
-      {useSeed && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginTop: 8 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — MAE field not yet in trade records</span>
-        </div>
-      )}
     </div>
   );
 }

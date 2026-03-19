@@ -10,6 +10,16 @@ function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
   return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
 }
 
+function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+      <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
+      {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
+    </div>
+  );
+}
+
 // ─── EMA Helper ───────────────────────────────────────────────────────────────
 
 function calcEMA(data: number[], period: number): number[] {
@@ -1613,19 +1623,7 @@ function TradeQualityMatrix({ trades }: { trades: TradeRecord[] }) {
       'Slow (>8h)':  { SL: { count: 0, wins: 0 }, TP1: { count: 0, wins: 0 }, 'TP2/Trail': { count: 0, wins: 0 } },
     };
 
-    if (trades.length === 0) {
-      // Seeded fallback data
-      m['Quick (<1h)'].SL           = { count: 2, wins: 0 };
-      m['Quick (<1h)'].TP1          = { count: 3, wins: 3 };
-      m['Quick (<1h)']['TP2/Trail'] = { count: 1, wins: 1 };
-      m['Med (1-8h)'].SL            = { count: 1, wins: 0 };
-      m['Med (1-8h)'].TP1           = { count: 2, wins: 2 };
-      m['Med (1-8h)']['TP2/Trail']  = { count: 3, wins: 3 };
-      m['Slow (>8h)'].SL            = { count: 0, wins: 0 };
-      m['Slow (>8h)'].TP1           = { count: 0, wins: 0 };
-      m['Slow (>8h)']['TP2/Trail']  = { count: 1, wins: 1 };
-      return m;
-    }
+    if (trades.length === 0) return m;
 
     for (const t of trades) {
       const db = durBucket(t.duration_h);
@@ -1704,15 +1702,10 @@ function TradeQualityMatrix({ trades }: { trades: TradeRecord[] }) {
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Trade Quality by Duration × Exit Type
       </div>
-      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: trades.length === 0 ? 8 : 16 }}>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>
         Each cell shows trade count and win rate. Color intensity scales with count.
       </div>
-      {trades.length === 0 && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 16 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: C.warn, fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
+      {trades.length === 0 && <AwaitingResults label="Awaiting trade data" sub="Matrix will populate once the bot has closed trades" />}
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: 4, width: '100%' }}>
@@ -1806,12 +1799,7 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
   const iH = H - pad.t - pad.b;
 
   const { grossPnlSeries, netPnlSeries, totalGross, totalFees, totalNet } = useMemo(() => {
-    // Use seeded data if no trades
-    const source = trades.length > 0 ? trades : Array.from({ length: 12 }, (_, i) => ({
-      pnl: (i % 3 === 0 ? -30 : i % 2 === 0 ? 80 : 120) as number | null,
-      fee: 4 as number | null,
-      outcome: (i % 3 === 0 ? 'LOSS' : 'WIN') as string,
-    } as TradeRecord));
+    const source = trades;
 
     let cumGross = 0;
     let cumNet = 0;
@@ -1838,7 +1826,15 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
     };
   }, [trades]);
 
-  if (!grossPnlSeries.length) return null;
+  if (!grossPnlSeries.length) {
+    return (
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+        <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Fee Impact Analysis</div>
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>Hyperliquid: 0.05% taker · 0.02% maker</div>
+        <AwaitingResults label="Awaiting trade data" sub="Fee drag chart will appear once the bot has closed trades" />
+      </div>
+    );
+  }
 
   const n = grossPnlSeries.length;
   const allVals = [...grossPnlSeries, ...netPnlSeries];
@@ -1874,13 +1870,6 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: trades.length === 0 ? 8 : 14 }}>
         Hyperliquid: 0.05% taker · 0.02% maker
       </div>
-      {trades.length === 0 && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 14 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: C.warn, fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
-
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
         {/* Zero reference */}
         {zeroY >= pad.t && zeroY <= pad.t + iH && (
@@ -1945,19 +1934,7 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
 
 function StreakAnalysisChart({ trades }: { trades: TradeRecord[] }) {
   const streaks = useMemo(() => {
-    if (trades.length === 0) {
-      // Seeded fallback: 8 alternating streaks
-      return [
-        { isWin: true,  length: 4 },
-        { isWin: false, length: 2 },
-        { isWin: true,  length: 6 },
-        { isWin: false, length: 1 },
-        { isWin: true,  length: 3 },
-        { isWin: false, length: 8 },
-        { isWin: true,  length: 2 },
-        { isWin: false, length: 5 },
-      ];
-    }
+    if (trades.length === 0) return [] as { isWin: boolean; length: number }[];
 
     const result: { isWin: boolean; length: number }[] = [];
     let curIsWin = trades[0].outcome === 'WIN';
@@ -2009,15 +1986,10 @@ function StreakAnalysisChart({ trades }: { trades: TradeRecord[] }) {
   return (
     <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Win/Loss Streak History</div>
-      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: trades.length === 0 ? 8 : 14 }}>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
         Each bar = one consecutive run. Green = win streak, red = loss streak.
       </div>
-      {trades.length === 0 && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 14 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: C.warn, fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
+      {trades.length === 0 && <AwaitingResults label="Awaiting trade data" sub="Streak history will appear once the bot has closed trades" />}
 
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
         {/* Chart title */}
@@ -2140,12 +2112,27 @@ function StreakAnalysisChart({ trades }: { trades: TradeRecord[] }) {
 
 // ─── Alpha Decay Chart ────────────────────────────────────────────────────────
 
-function AlphaDecayChart() {
-  // Seeded rolling 5-trade window avg PnL data
-  // Start at ~+$320/trade, slight decline to ~+$280, then stabilize at ~+$310
-  const seedData: number[] = [
-    320, 315, 308, 298, 285, 281, 279, 283, 290, 298, 305, 308, 310, 311, 310,
-  ];
+function AlphaDecayChart({ trades }: { trades: TradeRecord[] }) {
+  // Build rolling 5-trade window avg PnL from real trades
+  const WINDOW = 5;
+  const realData: number[] = [];
+  for (let i = WINDOW - 1; i < trades.length; i++) {
+    const window = trades.slice(i - WINDOW + 1, i + 1);
+    const avg = window.reduce((s, t) => s + (t.pnl ?? 0), 0) / WINDOW;
+    realData.push(Math.round(avg));
+  }
+
+  if (realData.length < 3) {
+    return (
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+        <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Alpha Persistence — Is the Edge Holding?</div>
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>Rolling 5-trade window avg PnL. Flat or rising = edge holding. Declining = needs reoptimization.</div>
+        <AwaitingResults label="Need at least 7 trades" sub={`${trades.length} closed so far — chart appears at 7+`} />
+      </div>
+    );
+  }
+
+  const seedData = realData;
 
   const W = 480;
   const H = 120;
@@ -2292,22 +2279,33 @@ function AlphaDecayChart() {
 
 // ─── Performance Attribution Treemap ─────────────────────────────────────────
 
-function PerformanceAttributionTreemap() {
+function PerformanceAttributionTreemap({ trades }: { trades: TradeRecord[] }) {
   type Cell = { symbol: string; strategy: string; pnl: number };
 
-  const data: Cell[] = [
-    { symbol: 'BTC', strategy: 'RGM', pnl:  867 },
-    { symbol: 'BTC', strategy: 'MCZ', pnl:  420 },
-    { symbol: 'BTC', strategy: 'CSC', pnl:  210 },
-    { symbol: 'SOL', strategy: 'RGM', pnl: 1240 },
-    { symbol: 'SOL', strategy: 'MCZ', pnl:  890 },
-    { symbol: 'SOL', strategy: 'CSC', pnl:  580 },
-    { symbol: 'SOL', strategy: 'MTF', pnl:  414 },
-    { symbol: 'HYPE', strategy: 'RGM', pnl:  580 },
-    { symbol: 'HYPE', strategy: 'MCZ', pnl:  -80 },
-  ];
+  // Build real data from trades (symbol × strategy)
+  if (trades.length < 3) {
+    return (
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+        <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Performance Attribution Treemap</div>
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>Rectangle size ∝ |PnL|. Color = positive (green) or negative (red).</div>
+        <AwaitingResults label="Awaiting results" sub="Treemap will appear once the bot has at least 3 closed trades" />
+      </div>
+    );
+  }
 
-  const symbols = ['BTC', 'SOL', 'HYPE'];
+  const pnlMap: Record<string, Record<string, number>> = {};
+  for (const t of trades) {
+    const sym = t.symbol.replace('/USDT', '').replace('/USD', '');
+    const strat = t.strategy ?? 'ensemble';
+    if (!pnlMap[sym]) pnlMap[sym] = {};
+    pnlMap[sym][strat] = (pnlMap[sym][strat] ?? 0) + (t.pnl ?? 0);
+  }
+
+  const data: Cell[] = Object.entries(pnlMap).flatMap(([sym, strats]) =>
+    Object.entries(strats).map(([strat, pnl]) => ({ symbol: sym, strategy: strat, pnl: Math.round(pnl) }))
+  );
+
+  const symbols = Object.keys(pnlMap);
 
   // Group by symbol
   const bySymbol = symbols.map((sym) => {
@@ -2911,7 +2909,7 @@ export default function PerformancePage() {
               </div>
 
               {/* Alpha Decay */}
-              <AlphaDecayChart />
+              <AlphaDecayChart trades={filteredTrades} />
 
               {/* Rolling 10-trade metrics */}
               {filteredTrades.length >= 12 && (
@@ -2946,7 +2944,7 @@ export default function PerformancePage() {
               )}
 
               {/* Performance Attribution Treemap */}
-              <PerformanceAttributionTreemap />
+              <PerformanceAttributionTreemap trades={filteredTrades} />
             </Section>
 
             {/* ── Methodology Note ── */}
