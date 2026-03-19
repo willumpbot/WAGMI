@@ -14,10 +14,10 @@ const NAV_ITEMS = [
   { href: '/backtest', label: 'Backtest' },
   { href: '/forensics', label: 'Forensics' },
   { href: '/llm-audit', label: 'AI Audit' },
+  { href: '/ai-decisions', label: 'Decision Theater' },
   { href: '/strategies', label: 'How It Trades' },
   { href: '/learn', label: 'Understand' },
   { href: '/about', label: 'About' },
-  { href: '/pricing', label: 'Pricing' },
 ];
 
 function resolveApiBase(): string {
