@@ -179,8 +179,6 @@ function RRHistogram({ data }: { data: { label: string; count: number }[] }) {
   );
 }
 
-// ─── Monthly P&L Bar Chart ────────────────────────────────────────────────────
-
 // ─── Rolling Metrics Chart ────────────────────────────────────────────────────
 
 function RollingMetrics({ trades }: { trades: TradeRecord[] }) {
