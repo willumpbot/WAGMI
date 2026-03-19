@@ -89,6 +89,17 @@ export const F = {
 /** Transition shorthand */
 export const T = 'transition: all 0.18s ease;';
 
+/** Gradient tokens */
+export const G = {
+  brand: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+  brandSubtle: 'linear-gradient(135deg, rgba(99,102,241,.12) 0%, rgba(168,85,247,.08) 100%)',
+  bull: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
+  bear: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+  surface: 'linear-gradient(180deg, #1a2236 0%, #111827 100%)',
+  hero: 'linear-gradient(135deg, #0a0f1e 0%, #0d1529 50%, #0f172a 100%)',
+  card: 'linear-gradient(145deg, #1a2236 0%, #151e30 100%)',
+} as const;
+
 /** Format a number as USD */
 export function fmtUsd(n: number | null | undefined, decimals = 2): string {
   if (n == null || isNaN(n)) return '—';

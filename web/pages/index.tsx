@@ -3,7 +3,7 @@
 import React, { useEffect, useId, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
+import { C, R, S, F, G, fmtUsd, fmtPct, timeAgo } from '../src/theme';
 import type { BacktestResult, ActivityEvent, LlmMarketView } from '../src/types';
 import { resolveApiBase } from '../src/api';
 
@@ -71,18 +71,24 @@ function KpiCard({
 }) {
   return (
     <div
-      className="fade-in"
+      className="fade-in card-hover"
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '20px 24px',
         boxShadow: S.sm,
         flex: '1 1 180px',
         minWidth: 160,
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
+      {/* Subtle top accent bar */}
+      {color && !loading && (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: color, opacity: 0.6 }} />
+      )}
+      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
         {label}
       </div>
       {loading ? (
@@ -92,7 +98,7 @@ function KpiCard({
         </>
       ) : (
         <>
-          <div style={{ fontSize: F['2xl'], fontWeight: 800, color: color || C.text, lineHeight: 1.2, marginBottom: 4 }}>
+          <div className="num" style={{ fontSize: F['2xl'], fontWeight: 800, color: color || C.text, lineHeight: 1.15, marginBottom: 5 }}>
             {value}
           </div>
           <div style={{ fontSize: F.xs, color: C.muted }}>{sub}</div>
@@ -440,27 +446,19 @@ function MarketSnapshotCard({ sym, signal, loading, onSelect }: {
 
   return (
     <div
+      className="card-hover"
       onClick={() => onSelect(sym)}
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${isHighConf ? scoreColor + '55' : C.border}`,
         borderRadius: R.lg,
         padding: '20px 22px',
         cursor: 'pointer',
-        transition: 'border-color 0.2s, box-shadow 0.2s',
         boxShadow: isHighConf ? `0 0 16px ${scoreColor}22` : 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
         minWidth: 0,
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = scoreColor;
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${scoreColor}33`;
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = isHighConf ? scoreColor + '55' : C.border;
-        (e.currentTarget as HTMLElement).style.boxShadow = isHighConf ? `0 0 16px ${scoreColor}22` : 'none';
       }}
     >
       {/* Header: symbol + zone badge */}
@@ -654,23 +652,14 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
 
   return (
     <div
-      className="fade-in"
+      className="fade-in card-hover"
       onClick={() => router.push(`/strategies/${strategy.id}`)}
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
         cursor: 'pointer',
-        transition: 'border-color 0.15s, box-shadow 0.15s',
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = C.brand;
-        (e.currentTarget as HTMLElement).style.boxShadow = S.glow;
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = C.border;
-        (e.currentTarget as HTMLElement).style.boxShadow = 'none';
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
@@ -2668,22 +2657,23 @@ export default function Home() {
       {apiError && !loading && (
         <div
           style={{
-            background: C.warnLight,
-            border: `1px solid ${C.warnMid}`,
+            background: 'rgba(217,119,6,.1)',
+            border: `1px solid rgba(217,119,6,.3)`,
             borderRadius: R.md,
             padding: '10px 16px',
             marginBottom: 20,
             fontSize: F.sm,
-            color: '#92400e',
+            color: C.warnMid,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            gap: 12,
           }}
         >
-          <span>⚠ Can't reach the API — showing cached data. Your positions are unaffected. Check that the API server is running.</span>
+          <span>⚠ API offline — showing last known data. Start the API server to see live updates.</span>
           <button
             onClick={() => window.location.reload()}
-            style={{ background: 'none', border: `1px solid #d97706`, borderRadius: R.sm, padding: '2px 10px', fontSize: F.xs, cursor: 'pointer', color: '#92400e' }}
+            style={{ background: 'none', border: `1px solid rgba(217,119,6,.4)`, borderRadius: R.sm, padding: '3px 12px', fontSize: F.xs, cursor: 'pointer', color: C.warnMid, fontWeight: 700, flexShrink: 0 }}
           >
             Retry
           </button>
@@ -2692,43 +2682,43 @@ export default function Home() {
 
       {/* ── 1. Page header ────────────────────────────── */}
       <div style={{ marginBottom: 32 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-              <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>
-                WAGMI Dashboard
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+              <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 900, color: C.text, letterSpacing: -0.8, lineHeight: 1.1 }}>
+                WAGMI{' '}
+                <span className="gradient-text">Dashboard</span>
               </h1>
-              {/* Mode indicator */}
               <span style={{
                 fontSize: F.xs,
                 fontWeight: 700,
                 padding: '3px 10px',
                 borderRadius: R.pill,
-                background: C.bull + '22',
-                color: C.bull,
-                border: `1px solid ${C.bull}44`,
-                letterSpacing: 0.5,
+                background: 'rgba(22,163,74,.12)',
+                color: '#4ade80',
+                border: `1px solid rgba(22,163,74,.2)`,
+                letterSpacing: 0.6,
                 textTransform: 'uppercase',
               }}>
-                ● Paper Mode
+                Paper Mode
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-              <p style={{ margin: 0, fontSize: F.sm, color: C.muted }}>
-                Seven AI models analyze every major crypto pair, every 15 minutes. You see the verdict — and exactly why.
+              <p style={{ margin: 0, fontSize: F.sm, color: C.muted, maxWidth: 480 }}>
+                Seven AI models analyze every major crypto pair, every 15 minutes — verdict and full reasoning, live.
               </p>
               {signalsData.last_updated && (
-                <span style={{ fontSize: F.xs, color: C.muted, flexShrink: 0 }}>
+                <span style={{ fontSize: F.xs, color: C.faint, flexShrink: 0 }}>
                   Updated {timeAgo(signalsData.last_updated)}
                 </span>
               )}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <Link href="/results" style={{ fontSize: F.sm, color: C.brand, fontWeight: 600, textDecoration: 'none', border: `1px solid ${C.brand}40`, padding: '6px 14px', borderRadius: R.md }}>
-              See the Track Record →
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Link href="/results" style={{ fontSize: F.sm, color: C.textSub, fontWeight: 600, textDecoration: 'none', border: `1px solid ${C.border}`, padding: '7px 16px', borderRadius: R.md, background: C.card }}>
+              Track Record →
             </Link>
-            <Link href="/copy-trade" style={{ fontSize: F.sm, color: '#fff', fontWeight: 600, textDecoration: 'none', background: C.brand, padding: '6px 14px', borderRadius: R.md }}>
+            <Link href="/copy-trade" style={{ fontSize: F.sm, color: '#fff', fontWeight: 700, textDecoration: 'none', background: G.brand, padding: '7px 16px', borderRadius: R.md, boxShadow: S.glow }}>
               Follow a Signal →
             </Link>
           </div>
@@ -2812,11 +2802,8 @@ export default function Home() {
         }}>
           {/* Live pulse */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <div style={{ position: 'relative', width: 10, height: 10 }}>
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: C.bull, opacity: 0.8 }} />
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: C.bull, animation: 'ripplePulse 2s ease-out infinite' }} />
-            </div>
-            <span style={{ fontSize: F.xs, fontWeight: 700, color: C.bull, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <span className="live-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', display: 'inline-block', flexShrink: 0 }} />
+            <span style={{ fontSize: F.xs, fontWeight: 700, color: '#4ade80', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Always On
             </span>
           </div>
@@ -2866,7 +2853,6 @@ export default function Home() {
           </Link>
         </div>
       )}
-      <style>{`@keyframes ripplePulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.8); opacity: 0; } }`}</style>
 
       {/* ── 4. Top Opportunity + Regime History ───────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 40, alignItems: 'start' }}>

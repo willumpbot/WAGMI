@@ -121,20 +121,89 @@ export default function Document() {
 
           /* Fade in cards */
           @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(12px); }
+            from { opacity: 0; transform: translateY(14px); }
             to   { opacity: 1; transform: translateY(0); }
           }
-          .fade-in { animation: fadeInUp 0.3s ease both; }
+          .fade-in { animation: fadeInUp 0.35s cubic-bezier(.22,.68,0,1.2) both; }
+          .fade-in-1 { animation: fadeInUp 0.35s cubic-bezier(.22,.68,0,1.2) 0.05s both; }
+          .fade-in-2 { animation: fadeInUp 0.35s cubic-bezier(.22,.68,0,1.2) 0.10s both; }
+          .fade-in-3 { animation: fadeInUp 0.35s cubic-bezier(.22,.68,0,1.2) 0.15s both; }
+          .fade-in-4 { animation: fadeInUp 0.35s cubic-bezier(.22,.68,0,1.2) 0.20s both; }
+
+          /* Live indicator pulse */
+          @keyframes livePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(22,163,74,.5); }
+            50%       { box-shadow: 0 0 0 5px rgba(22,163,74,0); }
+          }
+          .live-dot { animation: livePulse 2s ease-in-out infinite; }
+
+          /* Gradient shimmer (hero/banner elements) */
+          @keyframes gradientShift {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+          .gradient-text {
+            background: linear-gradient(135deg, #6366f1, #a855f7, #06b6d4);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease infinite;
+          }
+
+          /* Slide-down for mobile menu */
+          @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          .slide-down { animation: slideDown 0.2s ease both; }
+
+          /* Card hover lift */
+          .card-hover {
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+          }
+          .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(0,0,0,.45);
+            border-color: var(--color-border-bright) !important;
+          }
+
+          /* Pill badge */
+          .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 9px; border-radius: 9999px;
+            font-size: 11px; font-weight: 600; letter-spacing: .4px;
+          }
+          .badge-bull  { background: rgba(22,163,74,.15);  color: #4ade80; }
+          .badge-bear  { background: rgba(220,38,38,.15);  color: #f87171; }
+          .badge-warn  { background: rgba(217,119,6,.15);  color: #fbbf24; }
+          .badge-info  { background: rgba(37,99,235,.15);  color: #60a5fa; }
+          .badge-muted { background: rgba(100,116,139,.12); color: #94a3b8; }
+
+          /* Section header style */
+          .section-label {
+            font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+            text-transform: uppercase; color: var(--color-muted);
+            display: flex; align-items: center; gap: 8px;
+          }
+          .section-label::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(to right, var(--color-border), transparent);
+          }
 
           /* Scrollbar styling */
           ::-webkit-scrollbar { width: 6px; height: 6px; }
-          ::-webkit-scrollbar-track { background: var(--color-surface); }
+          ::-webkit-scrollbar-track { background: transparent; }
           ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
           ::-webkit-scrollbar-thumb:hover { background: var(--color-border-bright); }
 
           /* Table base */
           table { border-collapse: collapse; width: 100%; }
           th { text-align: left; }
+
+          /* Number font for data */
+          .num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
         `}</style>
       </Head>
       <body>

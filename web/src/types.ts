@@ -156,7 +156,7 @@ export type BacktestResult = {
   };
   by_strategy?: Record<string, { trades: number; wins: number; pnl: number; win_rate: number }>;
   by_symbol?: Record<string, BacktestBySymbol>;
-  trades?: Array<{ symbol: string; side: string; entry: number; exit: number; pnl: number; pnl_pct: number; duration_bars: number; strategy: string }>;
+  trades?: Array<{ symbol: string; side: string; entry: number; exit: number; pnl: number; pnl_pct: number; duration_bars: number; strategy: string; outcome?: string; duration_h?: number | null }>;
 };
 
 export type BacktestRunMeta = {
