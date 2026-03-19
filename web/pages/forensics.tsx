@@ -1693,6 +1693,409 @@ function SignalQualityFunnel({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
+// ─── Rolling Sharpe Chart ─────────────────────────────────────────────────────
+
+function RollingSharpeChart({ trades }: { trades: TradeRecord[] }) {
+  const validTrades = trades.filter((t) => t.pnl != null && !isNaN(t.pnl!));
+  const WINDOW = 10;
+
+  if (validTrades.length < WINDOW) {
+    return (
+      <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm, background: C.surfaceHover, borderRadius: R.md }}>
+        Need at least {WINDOW} trades with P&L data to compute rolling Sharpe.
+      </div>
+    );
+  }
+
+  // Build rolling Sharpe points: center index = i + WINDOW/2 - 0.5
+  const sharpePoints: { x: number; sharpe: number }[] = [];
+  for (let i = 0; i <= validTrades.length - WINDOW; i++) {
+    const slice = validTrades.slice(i, i + WINDOW).map((t) => t.pnl!);
+    const mean = slice.reduce((a, b) => a + b, 0) / WINDOW;
+    const variance = slice.reduce((a, b) => a + (b - mean) ** 2, 0) / WINDOW;
+    const std = Math.sqrt(variance);
+    const sharpe = std > 0 ? (mean / std) * Math.sqrt(WINDOW) : 0;
+    sharpePoints.push({ x: i + WINDOW / 2, sharpe });
+  }
+
+  const W = 540, H = 100;
+  const pad = { top: 18, right: 80, bottom: 22, left: 44 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  const yMin = -1, yMax = 3;
+  const xMax = validTrades.length;
+
+  const px = (x: number) => pad.left + (x / xMax) * plotW;
+  const py = (v: number) => pad.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+  // Build fill path split at y=0
+  const abovePath: string[] = [];
+  const belowPath: string[] = [];
+
+  sharpePoints.forEach((pt, i) => {
+    const x = px(pt.x);
+    const y = py(pt.sharpe);
+    const y0 = py(0);
+    if (i === 0) {
+      abovePath.push(`M ${x} ${y0}`);
+      belowPath.push(`M ${x} ${y0}`);
+    }
+    abovePath.push(`L ${x} ${Math.min(y, y0)}`);
+    belowPath.push(`L ${x} ${Math.max(y, y0)}`);
+  });
+  if (sharpePoints.length > 0) {
+    const lastX = px(sharpePoints[sharpePoints.length - 1].x);
+    const y0 = py(0);
+    abovePath.push(`L ${lastX} ${y0} Z`);
+    belowPath.push(`L ${lastX} ${y0} Z`);
+  }
+
+  // Polyline
+  const linePoints = sharpePoints.map((pt) => `${px(pt.x)},${py(pt.sharpe)}`).join(' ');
+
+  const currentSharpe = sharpePoints.length > 0 ? sharpePoints[sharpePoints.length - 1].sharpe : 0;
+  const lineColor = currentSharpe >= 1.0 ? C.bull : currentSharpe >= 0 ? C.warn : C.bear;
+
+  const lastPt = sharpePoints[sharpePoints.length - 1];
+  const lastX = px(lastPt.x);
+  const lastY = py(lastPt.sharpe);
+
+  return (
+    <div>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 6 }}>
+        Rolling Sharpe Ratio (10-trade window)
+      </div>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+      >
+        <defs>
+          <clipPath id="sharpeClip">
+            <rect x={pad.left} y={pad.top} width={plotW} height={plotH} />
+          </clipPath>
+        </defs>
+
+        {/* Fill above 0 */}
+        <path d={abovePath.join(' ')} fill={C.bull + '15'} clipPath="url(#sharpeClip)" />
+        {/* Fill below 0 */}
+        <path d={belowPath.join(' ')} fill={C.bear + '15'} clipPath="url(#sharpeClip)" />
+
+        {/* Reference line: 0 (bold gray) */}
+        <line x1={pad.left} y1={py(0)} x2={pad.left + plotW} y2={py(0)}
+          stroke={C.borderBright} strokeWidth={1.5} />
+        <text x={pad.left - 4} y={py(0) + 4} textAnchor="end" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">0</text>
+
+        {/* Reference line: 1.0 (dashed green "Good") */}
+        <line x1={pad.left} y1={py(1.0)} x2={pad.left + plotW} y2={py(1.0)}
+          stroke={C.bull} strokeWidth={1} strokeDasharray="5 4" clipPath="url(#sharpeClip)" />
+        <text x={pad.left + plotW + 3} y={py(1.0) + 3} fontSize={8} fill={C.bull} fontFamily="Inter, system-ui">Good</text>
+        <text x={pad.left - 4} y={py(1.0) + 4} textAnchor="end" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">1.0</text>
+
+        {/* Reference line: 2.0 (dashed C.bull "Excellent") */}
+        <line x1={pad.left} y1={py(2.0)} x2={pad.left + plotW} y2={py(2.0)}
+          stroke={C.bull} strokeWidth={1} strokeDasharray="5 4" clipPath="url(#sharpeClip)" />
+        <text x={pad.left + plotW + 3} y={py(2.0) + 3} fontSize={8} fill={C.bull} fontFamily="Inter, system-ui">Excellent</text>
+        <text x={pad.left - 4} y={py(2.0) + 4} textAnchor="end" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">2.0</text>
+
+        {/* Y tick: -1 */}
+        <text x={pad.left - 4} y={py(-1) + 4} textAnchor="end" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">-1</text>
+        <line x1={pad.left} y1={py(-1)} x2={pad.left + plotW} y2={py(-1)}
+          stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" clipPath="url(#sharpeClip)" />
+
+        {/* Sharpe line */}
+        {sharpePoints.length > 1 && (
+          <polyline
+            points={linePoints}
+            fill="none"
+            stroke={lineColor}
+            strokeWidth={2}
+            strokeLinejoin="round"
+            clipPath="url(#sharpeClip)"
+          />
+        )}
+
+        {/* Current value dot */}
+        <circle cx={lastX} cy={lastY} r={4} fill={lineColor} />
+        <text
+          x={lastX + 6}
+          y={lastY + 4}
+          fontSize={9}
+          fontWeight={700}
+          fill={lineColor}
+          fontFamily="Inter, system-ui"
+        >
+          Current: {currentSharpe.toFixed(1)}
+        </text>
+
+        {/* X axis label */}
+        <text x={pad.left + plotW / 2} y={H - 3} textAnchor="middle" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">
+          Trade index
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+// ─── Trade Clusters Chart ──────────────────────────────────────────────────────
+
+function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
+  type AnyRecord = TradeRecord & { open_time?: string | number | null; entry_timestamp_ms?: number | null };
+
+  const W = 520, H = 180;
+  const pad = { top: 18, right: 20, bottom: 28, left: 44 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // day 0 = Mon (ISO weekday 1), day 6 = Sun (ISO weekday 0)
+
+  interface DotData {
+    hour: number;
+    day: number;
+    win: boolean;
+    pnl: number;
+    jitterX: number;
+    jitterY: number;
+  }
+
+  const dots: DotData[] = [];
+  let hasTimestamps = false;
+
+  trades.forEach((t, i) => {
+    const r = t as AnyRecord;
+    const raw = r.entry_timestamp_ms ?? r.open_time;
+    if (raw == null) return;
+    try {
+      const ts = typeof raw === 'number'
+        ? (raw > 1e12 ? raw : raw * 1000)
+        : new Date(raw as string).getTime();
+      if (isNaN(ts)) return;
+      const d = new Date(ts);
+      const hour = d.getUTCHours();
+      // ISO: 0=Sun,1=Mon,...,6=Sat → remap to Mon=0..Sun=6
+      const isoDay = d.getUTCDay(); // 0=Sun
+      const day = isoDay === 0 ? 6 : isoDay - 1;
+      hasTimestamps = true;
+      // Deterministic jitter based on index
+      const jitterX = ((i * 7919 + 13) % 40) / 40 - 0.5; // -0.5 to 0.5
+      const jitterY = ((i * 3761 + 7) % 40) / 40 - 0.5;
+      dots.push({ hour, day, win: t.outcome === 'WIN', pnl: Math.abs(t.pnl ?? 1), jitterX, jitterY });
+    } catch {/* skip */}
+  });
+
+  // Seeded fallback
+  if (!hasTimestamps) {
+    for (let i = 0; i < 40; i++) {
+      const hour = (i * 7 + 3) % 24;
+      const day = i % 7;
+      const win = ((i * 13 + 5) % 3) !== 0;
+      const pnl = 1 + (i % 10);
+      const jitterX = ((i * 7919 + 13) % 40) / 40 - 0.5;
+      const jitterY = ((i * 3761 + 7) % 40) / 40 - 0.5;
+      dots.push({ hour, day, win, pnl, jitterX, jitterY });
+    }
+  }
+
+  const cellW = plotW / 24;
+  const cellH = plotH / 7;
+
+  const cx = (hour: number, jitter: number) => pad.left + (hour + 0.5 + jitter * 0.6) * cellW;
+  const cy = (day: number, jitter: number) => pad.top + (day + 0.5 + jitter * 0.6) * cellH;
+
+  // Compute per-cell win rate for cluster circles
+  const cellStats: { wins: number; total: number }[][] = Array.from({ length: 7 }, () =>
+    Array.from({ length: 24 }, () => ({ wins: 0, total: 0 }))
+  );
+  dots.forEach((d) => {
+    cellStats[d.day][d.hour].total++;
+    if (d.win) cellStats[d.day][d.hour].wins++;
+  });
+
+  // Find best and worst clusters (contiguous 4-hour windows per day with ≥3 trades)
+  type ClusterInfo = { day: number; startHour: number; endHour: number; wr: number; total: number };
+  const clusters: ClusterInfo[] = [];
+  for (let day = 0; day < 7; day++) {
+    for (let h = 0; h <= 20; h++) {
+      let wins = 0, total = 0;
+      for (let dh = 0; dh < 4; dh++) {
+        wins += cellStats[day][h + dh].wins;
+        total += cellStats[day][h + dh].total;
+      }
+      if (total >= 3) clusters.push({ day, startHour: h, endHour: h + 4, wr: wins / total, total });
+    }
+  }
+  clusters.sort((a, b) => b.wr - a.wr);
+  const bestCluster = clusters[0] ?? null;
+  const worstCluster = clusters.length > 1 ? clusters[clusters.length - 1] : null;
+
+  const maxPnl = Math.max(...dots.map((d) => d.pnl), 1);
+
+  return (
+    <div>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 6 }}>
+        Trade Cluster Map — When Does Bot Win?
+      </div>
+      {!hasTimestamps && (
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 8 }}>
+          No timestamp data — showing illustrative seeded pattern.
+        </div>
+      )}
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+      >
+        <defs>
+          <clipPath id="clusterClip">
+            <rect x={pad.left} y={pad.top} width={plotW} height={plotH} />
+          </clipPath>
+        </defs>
+
+        {/* Grid lines — hours */}
+        {Array.from({ length: 25 }, (_, h) => (
+          <line key={`gh${h}`}
+            x1={pad.left + h * cellW} y1={pad.top}
+            x2={pad.left + h * cellW} y2={pad.top + plotH}
+            stroke={C.border} strokeWidth={0.4}
+          />
+        ))}
+        {/* Grid lines — days */}
+        {Array.from({ length: 8 }, (_, d) => (
+          <line key={`gd${d}`}
+            x1={pad.left} y1={pad.top + d * cellH}
+            x2={pad.left + plotW} y2={pad.top + d * cellH}
+            stroke={C.border} strokeWidth={0.4}
+          />
+        ))}
+
+        {/* Best cluster ellipse */}
+        {bestCluster && (() => {
+          const ecx = pad.left + (bestCluster.startHour + 2) * cellW;
+          const ecy = pad.top + (bestCluster.day + 0.5) * cellH;
+          const erx = cellW * 2.2;
+          const ery = cellH * 0.55;
+          return (
+            <ellipse cx={ecx} cy={ecy} rx={erx} ry={ery}
+              fill={C.bull + '15'} stroke={C.bull} strokeWidth={1} strokeDasharray="4 3"
+              clipPath="url(#clusterClip)"
+            />
+          );
+        })()}
+
+        {/* Worst cluster ellipse */}
+        {worstCluster && (() => {
+          const ecx = pad.left + (worstCluster.startHour + 2) * cellW;
+          const ecy = pad.top + (worstCluster.day + 0.5) * cellH;
+          const erx = cellW * 2.2;
+          const ery = cellH * 0.55;
+          return (
+            <ellipse cx={ecx} cy={ecy} rx={erx} ry={ery}
+              fill={C.bear + '15'} stroke={C.bear} strokeWidth={1} strokeDasharray="4 3"
+              clipPath="url(#clusterClip)"
+            />
+          );
+        })()}
+
+        {/* Dots */}
+        {dots.map((d, i) => {
+          const r = Math.max(2, Math.min(7, 2 + (d.pnl / maxPnl) * 5));
+          return (
+            <circle
+              key={i}
+              cx={cx(d.hour, d.jitterX)}
+              cy={cy(d.day, d.jitterY)}
+              r={r}
+              fill={d.win ? C.bull : C.bear}
+              fillOpacity={0.65}
+              stroke={d.win ? C.bullMid : C.bearMid}
+              strokeWidth={0.6}
+              clipPath="url(#clusterClip)"
+            >
+              <title>{`${DAYS[d.day]} ${d.hour}:00 UTC — ${d.win ? 'WIN' : 'LOSS'} $${d.pnl.toFixed(2)}`}</title>
+            </circle>
+          );
+        })}
+
+        {/* Y axis: day labels */}
+        {DAYS.map((label, d) => (
+          <text
+            key={label}
+            x={pad.left - 5}
+            y={pad.top + (d + 0.5) * cellH + 4}
+            textAnchor="end"
+            fontSize={8}
+            fill={C.muted}
+            fontFamily="Inter, system-ui"
+          >
+            {label}
+          </text>
+        ))}
+
+        {/* X axis: hour labels every 4h */}
+        {[0, 4, 8, 12, 16, 20].map((h) => (
+          <text
+            key={h}
+            x={pad.left + (h + 0.5) * cellW}
+            y={pad.top + plotH + 12}
+            textAnchor="middle"
+            fontSize={8}
+            fill={C.muted}
+            fontFamily="Inter, system-ui"
+          >
+            {h}h
+          </text>
+        ))}
+
+        {/* Best cluster label */}
+        {bestCluster && (
+          <text
+            x={pad.left + (bestCluster.startHour + 2) * cellW}
+            y={pad.top + (bestCluster.day + 0.5) * cellH - cellH * 0.6 - 3}
+            textAnchor="middle"
+            fontSize={8}
+            fontWeight={700}
+            fill={C.bull}
+            fontFamily="Inter, system-ui"
+          >
+            {`Best: ${DAYS[bestCluster.day]} ${bestCluster.startHour}–${bestCluster.endHour} UTC (${Math.round(bestCluster.wr * 100)}% WR)`}
+          </text>
+        )}
+
+        {/* Worst cluster label */}
+        {worstCluster && worstCluster.day !== (bestCluster?.day ?? -1) && (
+          <text
+            x={pad.left + (worstCluster.startHour + 2) * cellW}
+            y={pad.top + (worstCluster.day + 0.5) * cellH + cellH * 0.7 + 8}
+            textAnchor="middle"
+            fontSize={8}
+            fontWeight={700}
+            fill={C.bear}
+            fontFamily="Inter, system-ui"
+          >
+            {`Avoid: ${DAYS[worstCluster.day]} ${worstCluster.startHour}–${worstCluster.endHour} UTC (${Math.round(worstCluster.wr * 100)}% WR)`}
+          </text>
+        )}
+
+        {/* X axis title */}
+        <text x={pad.left + plotW / 2} y={H - 3} textAnchor="middle" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">
+          Hour of day (UTC)
+        </text>
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, fontSize: 10, color: C.muted, marginTop: 6, flexWrap: 'wrap' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.bull, display: 'inline-block' }} /> WIN
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.bear, display: 'inline-block' }} /> LOSS
+        </span>
+        <span style={{ color: C.muted }}>Dot size ∝ |P&L|</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function Forensics() {
@@ -1941,6 +2344,34 @@ export default function Forensics() {
           <Skeleton h={74} />
         ) : (
           <HourOfDayWinRate trades={filtered} />
+        )}
+      </div>
+
+      {/* Rolling Sharpe Chart */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            10-trade rolling window. Green fill = positive Sharpe. Dashed lines at 1.0 (Good) and 2.0 (Excellent).
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={100} />
+        ) : (
+          <RollingSharpeChart trades={filtered} />
+        )}
+      </div>
+
+      {/* Trade Clusters Chart */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            Scatter of every trade by day-of-week (Mon–Sun) vs hour of day (UTC). Dot size ∝ |P&L|.
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={180} />
+        ) : (
+          <TradeClustersChart trades={filtered} />
         )}
       </div>
 

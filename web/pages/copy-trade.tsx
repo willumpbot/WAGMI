@@ -2494,7 +2494,16 @@ function EntryZoneVisual() {
 
 function MultiTimeframeConfluence() {
   type TfCell = { trend: 'up' | 'down' | 'neutral'; strength: 'strong' | 'medium' | 'weak' };
-  type SymbolRow = { sym: string; cells: TfCell[]; confluenceLabel: string; confluenceColor: string; confluenceBg: string };
+  type LastSignalMeta = { ago: string; side: 'BUY' | 'SELL'; conf: number };
+  type SymbolRow = {
+    sym: string;
+    cells: TfCell[];
+    confluenceLabel: string;
+    confluenceColor: string;
+    confluenceBg: string;
+    lastTrade: 'buy' | 'sell';
+    lastSignal: LastSignalMeta;
+  };
 
   const TFS = ['5m', '1h', '6h', '1D'];
 
@@ -2510,6 +2519,8 @@ function MultiTimeframeConfluence() {
       confluenceLabel: 'Strong Confluence',
       confluenceColor: C.bull,
       confluenceBg: C.bullLight,
+      lastTrade: 'buy',
+      lastSignal: { ago: '2h ago', side: 'BUY', conf: 78 },
     },
     {
       sym: 'SOL',
@@ -2522,6 +2533,8 @@ function MultiTimeframeConfluence() {
       confluenceLabel: 'Moderate',
       confluenceColor: C.warn,
       confluenceBg: C.warnLight,
+      lastTrade: 'buy',
+      lastSignal: { ago: '45m ago', side: 'BUY', conf: 62 },
     },
     {
       sym: 'HYPE',
@@ -2534,6 +2547,8 @@ function MultiTimeframeConfluence() {
       confluenceLabel: 'Mixed',
       confluenceColor: C.bear,
       confluenceBg: C.bearLight,
+      lastTrade: 'sell',
+      lastSignal: { ago: '5h ago', side: 'SELL', conf: 55 },
     },
   ];
 
@@ -2600,29 +2615,60 @@ function MultiTimeframeConfluence() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, ri) => (
-              <tr key={row.sym} style={{ borderBottom: ri < rows.length - 1 ? `1px solid ${C.border}` : 'none', background: ri % 2 === 0 ? 'transparent' : `${C.surface}50` }}>
-                <td style={{ padding: '10px 10px', fontWeight: 800, fontSize: F.md, color: C.text }}>{row.sym}</td>
-                {row.cells.map((cell, ci) => (
-                  <TfCell key={ci} cell={cell} />
-                ))}
-                <td style={{ padding: '10px 10px', textAlign: 'center' }}>
-                  <span style={{
-                    display: 'inline-block',
-                    padding: '3px 10px',
-                    borderRadius: R.pill,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: row.confluenceColor,
-                    background: row.confluenceBg,
-                    border: `1px solid ${row.confluenceColor}44`,
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {row.confluenceLabel}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            {rows.map((row, ri) => {
+              const tradeTriColor = row.lastTrade === 'buy' ? C.bull : C.bear;
+              const sigSideColor  = row.lastSignal.side === 'BUY' ? C.bull : C.bear;
+              const confColor     = row.lastSignal.conf >= 70 ? C.bull : row.lastSignal.conf >= 50 ? C.warn : C.bear;
+              return (
+                <tr key={row.sym} style={{ borderBottom: ri < rows.length - 1 ? `1px solid ${C.border}` : 'none', background: ri % 2 === 0 ? 'transparent' : `${C.surface}50` }}>
+                  {/* Symbol cell — direction triangle + last signal metadata */}
+                  <td style={{ padding: '10px 10px', minWidth: 120 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      {/* Direction triangle */}
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 900,
+                          color: tradeTriColor,
+                          lineHeight: 1,
+                          filter: `drop-shadow(0 0 3px ${tradeTriColor}66)`,
+                        }}
+                        title={`Last trade: ${row.lastTrade.toUpperCase()}`}
+                      >
+                        {row.lastTrade === 'buy' ? '▲' : '▼'}
+                      </span>
+                      <span style={{ fontWeight: 800, fontSize: F.md, color: C.text }}>{row.sym}</span>
+                    </div>
+                    {/* Last Signal metadata */}
+                    <div style={{ fontSize: 9, color: C.muted, lineHeight: 1.5 }}>
+                      Last Signal: <span style={{ color: C.textSub }}>{row.lastSignal.ago}</span>
+                      {' · '}
+                      <span style={{ fontWeight: 700, color: sigSideColor }}>{row.lastSignal.side}</span>
+                      {' · '}
+                      Conf: <span style={{ fontWeight: 700, color: confColor }}>{row.lastSignal.conf}%</span>
+                    </div>
+                  </td>
+                  {row.cells.map((cell, ci) => (
+                    <TfCell key={ci} cell={cell} />
+                  ))}
+                  <td style={{ padding: '10px 10px', textAlign: 'center' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '3px 10px',
+                      borderRadius: R.pill,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: row.confluenceColor,
+                      background: row.confluenceBg,
+                      border: `1px solid ${row.confluenceColor}44`,
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {row.confluenceLabel}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -3258,6 +3304,363 @@ function PositionSizingWorksheet() {
   );
 }
 
+// ─── Mini Candle Chart ────────────────────────────────────────────────────────
+
+function MiniCandleChart() {
+  // Seeded pseudo-random helper — stable across renders
+  function s(n: number): number {
+    return Math.abs((Math.sin(n * 127.1 + 311.7) * 43758.5453) % 1);
+  }
+
+  // Generate 20 seeded OHLCV candles — overall uptrend from ~$94,000 to ~$95,400
+  type Candle = { open: number; high: number; low: number; close: number; volume: number };
+  const candles: Candle[] = [];
+  let prevClose = 94000;
+  for (let i = 0; i < 20; i++) {
+    const trend = i * 70; // ~+70/candle net drift → ends near 95400
+    const range = prevClose * 0.015; // ±1.5% max swing per candle
+    const open = prevClose;
+    // Body move: trend bias + noise
+    const bodyMove = (s(i * 13 + 1) - 0.45) * range + trend * 0.5;
+    const close = Math.round(open + bodyMove);
+    const wickExtra = s(i * 7 + 3) * range * 0.6;
+    const high = Math.round(Math.max(open, close) + wickExtra);
+    const low  = Math.round(Math.min(open, close) - wickExtra * 0.8);
+    const volume = 0.4 + s(i * 11 + 5) * 1.6; // relative volume units
+    candles.push({ open, high, low, close, volume });
+    prevClose = close;
+  }
+
+  // Compute SMA20 (all 20 candles available, so SMA = avg of all closes)
+  const sma20 = candles.reduce((sum, c) => sum + c.close, 0) / candles.length;
+
+  // Derive support/resistance from data
+  const allHighs = candles.map((c) => c.high);
+  const allLows  = candles.map((c) => c.low);
+  // S/R: resistance = 80th-percentile high, support = 20th-percentile low
+  const sortedHighs = [...allHighs].sort((a, b) => a - b);
+  const sortedLows  = [...allLows].sort((a, b) => a - b);
+  const resistance  = sortedHighs[Math.floor(sortedHighs.length * 0.82)];
+  const support     = sortedLows[Math.floor(sortedLows.length * 0.18)];
+
+  // SVG dimensions
+  const SVG_W = 480;
+  const SVG_H = 160;
+  const VOL_H = 20;        // volume bar area at bottom
+  const PAD_L = 8;
+  const PAD_R = 64;        // space for current price label on right
+  const PAD_T = 22;        // space for title / labels at top
+  const PAD_B = VOL_H + 4; // volume + gap
+
+  const chartW = SVG_W - PAD_L - PAD_R;
+  const chartH = SVG_H - PAD_T - PAD_B;
+
+  const N = candles.length;
+  const candleSlotW = chartW / N;
+  const bodyW = Math.max(2, candleSlotW * 0.55);
+
+  // Y scale: based on full price range with 5% padding
+  const priceMin = Math.min(...allLows);
+  const priceMax = Math.max(...allHighs);
+  const pricePad = (priceMax - priceMin) * 0.08;
+  const yMin = priceMin - pricePad;
+  const yMax = priceMax + pricePad;
+
+  function yOf(price: number): number {
+    return PAD_T + chartH - ((price - yMin) / (yMax - yMin)) * chartH;
+  }
+  function xCenter(i: number): number {
+    return PAD_L + i * candleSlotW + candleSlotW / 2;
+  }
+
+  // Volume scale
+  const maxVol = Math.max(...candles.map((c) => c.volume));
+  function volBarH(vol: number): number {
+    return Math.max(2, (vol / maxVol) * (VOL_H - 2));
+  }
+
+  // SMA20 points for polyline (one point per candle)
+  // We only have 20 candles so SMA20 is a flat line (all candles average)
+  // Use a running SMA instead for a more realistic overlay
+  const smaPoints: { x: number; y: number }[] = candles.map((_, i) => {
+    const slice = candles.slice(0, i + 1);
+    const avg = slice.reduce((sum, c) => sum + c.close, 0) / slice.length;
+    return { x: xCenter(i), y: yOf(avg) };
+  });
+  const smaPath = smaPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  // Last candle close (current price)
+  const currentPrice = candles[N - 1].close;
+
+  // Color tokens
+  const bullBody = C.bull;     // green body fill
+  const bullWick = '#22c55e';  // green wick
+  const bearBody = C.bear;     // red body fill
+  const bearWick = '#f87171';  // red wick
+
+  const volY = SVG_H - VOL_H + 2; // top of volume bar area
+
+  // Timeframe pills
+  const tfPills = ['15m', '1H', '4H', '1D'];
+
+  return (
+    <div
+      style={{
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '16px 20px',
+        marginBottom: 24,
+      }}
+    >
+      {/* Header row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>
+          BTC — 1H Chart (20 periods)
+        </div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {tfPills.map((tf) => (
+            <span
+              key={tf}
+              style={{
+                padding: '2px 9px',
+                borderRadius: R.pill,
+                fontSize: F.xs,
+                fontWeight: 700,
+                background: tf === '1H' ? C.brand + '28' : C.surfaceHover,
+                color: tf === '1H' ? C.brand : C.muted,
+                border: `1px solid ${tf === '1H' ? C.brand + '55' : C.border}`,
+                letterSpacing: '0.03em',
+              }}
+            >
+              {tf}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* SVG chart */}
+      <div style={{ overflowX: 'auto' }}>
+        <svg
+          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+          style={{ display: 'block', width: '100%', minWidth: 320, height: SVG_H }}
+          aria-label="BTC 1H mini candlestick chart (20 periods)"
+        >
+          <defs>
+            <clipPath id="candleClip">
+              <rect x={PAD_L} y={PAD_T} width={chartW} height={chartH} />
+            </clipPath>
+          </defs>
+
+          {/* Chart background */}
+          <rect x={PAD_L} y={PAD_T} width={chartW} height={chartH} fill={C.surface} rx={2} />
+
+          {/* Horizontal grid lines (4 price levels) */}
+          {[0.25, 0.5, 0.75].map((frac) => {
+            const gy = PAD_T + chartH * frac;
+            const price = yMax - (yMax - yMin) * frac;
+            return (
+              <g key={frac}>
+                <line
+                  x1={PAD_L} y1={gy.toFixed(1)}
+                  x2={PAD_L + chartW} y2={gy.toFixed(1)}
+                  stroke={C.border}
+                  strokeWidth={0.5}
+                  strokeDasharray="3 4"
+                />
+                <text
+                  x={PAD_L + chartW + 3}
+                  y={gy + 3}
+                  fontSize={7}
+                  fill={C.muted}
+                  fontFamily="inherit"
+                >
+                  {Math.round(price).toLocaleString()}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Support line */}
+          <line
+            x1={PAD_L} y1={yOf(support).toFixed(1)}
+            x2={PAD_L + chartW} y2={yOf(support).toFixed(1)}
+            stroke={C.bull}
+            strokeWidth={1}
+            strokeDasharray="5 3"
+            strokeOpacity={0.7}
+          />
+          <text
+            x={PAD_L + chartW + 3}
+            y={yOf(support) + 3}
+            fontSize={7}
+            fontWeight="600"
+            fill={C.bull}
+            fillOpacity={0.9}
+            fontFamily="inherit"
+          >
+            S {Math.round(support).toLocaleString()}
+          </text>
+
+          {/* Resistance line */}
+          <line
+            x1={PAD_L} y1={yOf(resistance).toFixed(1)}
+            x2={PAD_L + chartW} y2={yOf(resistance).toFixed(1)}
+            stroke={C.bear}
+            strokeWidth={1}
+            strokeDasharray="5 3"
+            strokeOpacity={0.7}
+          />
+          <text
+            x={PAD_L + chartW + 3}
+            y={yOf(resistance) + 3}
+            fontSize={7}
+            fontWeight="600"
+            fill={C.bear}
+            fillOpacity={0.9}
+            fontFamily="inherit"
+          >
+            R {Math.round(resistance).toLocaleString()}
+          </text>
+
+          {/* Candles (clipped) */}
+          <g clipPath="url(#candleClip)">
+            {candles.map((c, i) => {
+              const isBull = c.close >= c.open;
+              const bodyColor = isBull ? bullBody : bearBody;
+              const wickColor = isBull ? bullWick : bearWick;
+              const cx = xCenter(i);
+              const bodyTop    = yOf(Math.max(c.open, c.close));
+              const bodyBottom = yOf(Math.min(c.open, c.close));
+              const bodyHeight = Math.max(1, bodyBottom - bodyTop);
+              const wickTop    = yOf(c.high);
+              const wickBot    = yOf(c.low);
+
+              return (
+                <g key={i}>
+                  {/* Wick */}
+                  <line
+                    x1={cx.toFixed(1)} y1={wickTop.toFixed(1)}
+                    x2={cx.toFixed(1)} y2={wickBot.toFixed(1)}
+                    stroke={wickColor}
+                    strokeWidth={1.2}
+                  />
+                  {/* Body */}
+                  <rect
+                    x={(cx - bodyW / 2).toFixed(1)}
+                    y={bodyTop.toFixed(1)}
+                    width={bodyW.toFixed(1)}
+                    height={bodyHeight.toFixed(1)}
+                    fill={bodyColor}
+                    fillOpacity={0.85}
+                    rx={1}
+                  />
+                </g>
+              );
+            })}
+          </g>
+
+          {/* SMA20 line overlay */}
+          <path
+            d={smaPath}
+            fill="none"
+            stroke={C.brand}
+            strokeWidth={1.2}
+            strokeDasharray="4 2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            clipPath="url(#candleClip)"
+            opacity={0.85}
+          />
+
+          {/* Current price line */}
+          <line
+            x1={PAD_L} y1={yOf(currentPrice).toFixed(1)}
+            x2={PAD_L + chartW} y2={yOf(currentPrice).toFixed(1)}
+            stroke={C.brand}
+            strokeWidth={0.8}
+            strokeDasharray="2 3"
+            strokeOpacity={0.55}
+          />
+
+          {/* Current price label on right */}
+          <rect
+            x={PAD_L + chartW + 2}
+            y={yOf(currentPrice) - 9}
+            width={58}
+            height={14}
+            rx={3}
+            fill={C.brand}
+            fillOpacity={0.18}
+            stroke={C.brand}
+            strokeOpacity={0.5}
+            strokeWidth={0.8}
+          />
+          <text
+            x={PAD_L + chartW + 31}
+            y={yOf(currentPrice) + 1}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={8}
+            fontWeight="700"
+            fill={C.brand}
+            fontFamily="inherit"
+          >
+            ${currentPrice.toLocaleString()}
+          </text>
+
+          {/* Volume bars */}
+          {candles.map((c, i) => {
+            const isBull = c.close >= c.open;
+            const volColor = isBull ? bullBody : bearBody;
+            const bh = volBarH(c.volume);
+            const cx = xCenter(i);
+            return (
+              <rect
+                key={`vol-${i}`}
+                x={(cx - bodyW / 2).toFixed(1)}
+                y={(volY + (VOL_H - bh - 2)).toFixed(1)}
+                width={bodyW.toFixed(1)}
+                height={bh.toFixed(1)}
+                fill={volColor}
+                fillOpacity={0.55}
+                rx={1}
+              />
+            );
+          })}
+
+          {/* Volume area label */}
+          <text
+            x={PAD_L + 3}
+            y={volY + 8}
+            fontSize={7}
+            fill={C.muted}
+            fontFamily="inherit"
+          >
+            VOL
+          </text>
+
+          {/* Chart border */}
+          <rect
+            x={PAD_L} y={PAD_T}
+            width={chartW} height={chartH}
+            fill="none"
+            stroke={C.border}
+            strokeWidth={1}
+          />
+
+          {/* SMA legend */}
+          <line x1={PAD_L + 6} y1={PAD_T + 8} x2={PAD_L + 22} y2={PAD_T + 8}
+            stroke={C.brand} strokeWidth={1.2} strokeDasharray="4 2" />
+          <text x={PAD_L + 26} y={PAD_T + 11} fontSize={7} fill={C.brand} fontFamily="inherit">
+            SMA20
+          </text>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function CopyTrade() {
@@ -3391,6 +3794,9 @@ export default function CopyTrade() {
 
       {/* Entry Zone Visual */}
       <EntryZoneVisual />
+
+      {/* BTC Mini Candle Chart */}
+      <MiniCandleChart />
 
       {/* Order Book Depth Chart */}
       <OrderBookDepthChart />
