@@ -4263,10 +4263,14 @@ export default function CopyTrade() {
           ))}
         </div>
       ) : orderedSignals.length === 0 ? (
-        <div style={{ padding: 40, textAlign: 'center', color: C.muted, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, marginBottom: 32 }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
-          <div style={{ fontSize: F.lg, fontWeight: 700, color: C.text, marginBottom: 6 }}>No signals yet</div>
-          <div style={{ color: C.muted }}>The bot needs ~60 seconds to generate the first scan.</div>
+        <div style={{ padding: '48px 40px', textAlign: 'center', background: G.card, border: `2px dashed ${C.border}`, borderRadius: R.xl, marginBottom: 32 }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: C.brandMuted, border: `1px solid ${C.brand}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 22 }}>📡</div>
+          <div style={{ fontSize: F.xl, fontWeight: 800, color: C.text, marginBottom: 8 }}>Waiting for first scan</div>
+          <div style={{ color: C.muted, fontSize: F.sm, marginBottom: 20 }}>The bot analyzes every 15 minutes. First result arrives within 60 seconds of starting.</div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <a href="/learn#what-is-this-bot" style={{ fontSize: F.sm, color: C.brand, fontWeight: 600, textDecoration: 'none', padding: '6px 16px', border: `1px solid ${C.brand}44`, borderRadius: R.md, background: C.brandMuted }}>How it works →</a>
+            <a href="/results" style={{ fontSize: F.sm, color: C.textSub, fontWeight: 600, textDecoration: 'none', padding: '6px 16px', border: `1px solid ${C.border}`, borderRadius: R.md }}>See past results →</a>
+          </div>
         </div>
       ) : (
         orderedSignals.map((signal) => (
