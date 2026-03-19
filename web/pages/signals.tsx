@@ -3596,7 +3596,14 @@ export default function SignalsPage() {
       </div>
 
       {/* ── Stat row ────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 28 }} className="fade-in-1">
+      {loading && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 28 }}>
+          {[0, 1, 2, 3, 4].map(i => (
+            <div key={i} className="skeleton" style={{ height: 90, borderRadius: R.lg }} />
+          ))}
+        </div>
+      )}
+      {!loading && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 28 }} className="fade-in-1">
         {[
           {
             label: 'Decisions Made',
@@ -3649,15 +3656,33 @@ export default function SignalsPage() {
             <div style={{ fontSize: F.xs, color: C.muted }}>{stat.sub}</div>
           </div>
         ))}
-      </div>
+      </div>}
 
       {/* ── Signal Analysis ──────────────────────────────────────────────── */}
       <h2 className="fade-in-2" style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '0 0 16px', letterSpacing: '-0.02em' }}>
         Signal Analysis
       </h2>
 
-      {signalsData !== null && (
+      {loading && (
+        <div className="skeleton" style={{ height: 200, borderRadius: R.lg, marginBottom: 28 }} />
+      )}
+      {!loading && signalsData !== null && (
         <SignalScoreRanking signals={signalsData?.signals ?? {}} />
+      )}
+      {!loading && signalsData === null && (
+        <div style={{
+          background: C.surface,
+          border: `1px solid ${C.border}`,
+          borderRadius: R.lg,
+          padding: '40px 24px',
+          marginBottom: 28,
+          textAlign: 'center',
+          color: C.muted,
+          fontSize: F.sm,
+        }}>
+          <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 8 }}>Signal Ranking</div>
+          <div>No signal data available. Ensure the bot API is running.</div>
+        </div>
       )}
 
       {/* Symbol selector — controls the radar chart below */}
