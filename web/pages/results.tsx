@@ -634,6 +634,129 @@ function WinLossHistogram({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
+// ─── Time-of-Day Win Rate Heatmap ─────────────────────────────────────────────
+
+function TimeOfDayHeatmap({ trades }: { trades: TradeRecord[] }) {
+  const HOURS = [0, 4, 8, 12, 16, 20]; // 4-hour UTC blocks
+  const HOUR_LABELS = ['00–04', '04–08', '08–12', '12–16', '16–20', '20–24'];
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  // Build a 7×6 grid of { wins, total }
+  const grid: Record<string, { wins: number; total: number }> = {};
+  DAYS.forEach((d) => HOURS.forEach((h) => { grid[`${d}_${h}`] = { wins: 0, total: 0 }; }));
+
+  let hasTimestamps = false;
+  trades.forEach((t) => {
+    const ts = (t as any).entry_time ?? (t as any).timestamp ?? (t as any).created_at;
+    if (!ts) return;
+    const dt = new Date(ts);
+    if (isNaN(dt.getTime())) return;
+    hasTimestamps = true;
+    const dayIdx = (dt.getUTCDay() + 6) % 7; // Mon=0
+    const dayKey = DAYS[dayIdx];
+    const hourBlock = HOURS.filter((h) => dt.getUTCHours() >= h).pop() ?? 0;
+    const key = `${dayKey}_${hourBlock}`;
+    if (!grid[key]) grid[key] = { wins: 0, total: 0 };
+    grid[key].total++;
+    if (t.outcome === 'WIN') grid[key].wins++;
+  });
+
+  if (!hasTimestamps) return null;
+
+  function cellColor(wins: number, total: number): string {
+    if (total === 0) return C.surface;
+    const wr = wins / total;
+    if (wr >= 0.8) return 'rgba(22,163,74,0.75)';
+    if (wr >= 0.65) return 'rgba(22,163,74,0.5)';
+    if (wr >= 0.5) return 'rgba(22,163,74,0.28)';
+    if (wr >= 0.35) return 'rgba(234,179,8,0.3)';
+    if (wr >= 0.2) return 'rgba(220,38,38,0.3)';
+    return 'rgba(220,38,38,0.55)';
+  }
+
+  function cellText(wins: number, total: number): string {
+    if (total === 0) return '—';
+    return `${Math.round((wins / total) * 100)}%`;
+  }
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Win Rate by Day & Time (UTC)</h2>
+          <p style={{ margin: '4px 0 0', fontSize: F.xs, color: C.muted }}>When does the bot win most? Green = high win rate, red = avoid these windows.</p>
+        </div>
+        <div style={{ display: 'flex', gap: 10, fontSize: 10, color: C.muted, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {[['≥80%', 'rgba(22,163,74,0.75)'], ['65–80%', 'rgba(22,163,74,0.5)'], ['50–65%', 'rgba(22,163,74,0.28)'], ['35–50%', 'rgba(234,179,8,0.3)'], ['<35%', 'rgba(220,38,38,0.55)'], ['No data', C.surface]].map(([label, bg]) => (
+            <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 12, height: 12, borderRadius: 2, background: bg, border: `1px solid ${C.border}`, display: 'inline-block' }} />
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: 3, minWidth: 420 }}>
+          <thead>
+            <tr>
+              <th style={{ width: 38, padding: '4px 6px', fontSize: 10, color: C.muted, textAlign: 'right', paddingRight: 8 }} />
+              {HOUR_LABELS.map((h) => (
+                <th key={h} style={{ padding: '4px 2px', fontSize: 9, color: C.muted, fontWeight: 600, textAlign: 'center', minWidth: 54 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {DAYS.map((day) => (
+              <tr key={day}>
+                <td style={{ padding: '2px 8px 2px 0', fontSize: 10, color: C.muted, fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>{day}</td>
+                {HOURS.map((h) => {
+                  const { wins, total } = grid[`${day}_${h}`] ?? { wins: 0, total: 0 };
+                  return (
+                    <td key={h} style={{ padding: 1 }}>
+                      <div
+                        title={`${day} ${h}:00–${h + 4}:00 UTC — ${wins}W / ${total} total`}
+                        style={{
+                          width: 54, height: 30, borderRadius: 4,
+                          background: cellColor(wins, total),
+                          border: `1px solid ${C.border}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 9, fontWeight: 700,
+                          color: total > 0 ? '#fff' : C.muted,
+                        }}
+                      >
+                        {cellText(wins, total)}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Summary: best trading window */}
+      {(() => {
+        let bestWr = 0; let bestLabel = '';
+        DAYS.forEach((d) => HOURS.forEach((h) => {
+          const { wins, total } = grid[`${d}_${h}`] ?? { wins: 0, total: 0 };
+          if (total >= 2 && wins / total > bestWr) {
+            bestWr = wins / total;
+            bestLabel = `${d} ${h}:00–${h + 4}:00 UTC`;
+          }
+        }));
+        if (!bestLabel) return null;
+        return (
+          <div style={{ marginTop: 14, padding: '10px 14px', background: `${C.bull}15`, borderRadius: R.sm, fontSize: F.xs, color: C.textSub }}>
+            <strong style={{ color: C.bull }}>Best window:</strong> {bestLabel} ({Math.round(bestWr * 100)}% win rate) — when data shows this is prime trading territory.
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Results() {
@@ -788,6 +911,9 @@ export default function Results() {
 
       {/* ── P&L Distribution Histogram ───────────────── */}
       <WinLossHistogram trades={trades} />
+
+      {/* ── Time-of-Day Heatmap ───────────────────────── */}
+      <TimeOfDayHeatmap trades={trades} />
 
       {/* ── By-Strategy + Regime Win Rate ──────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>

@@ -96,6 +96,164 @@ function RunCard({ run, selected, onClick }: { run: BacktestRunMeta; selected: b
   );
 }
 
+// ─── Equity Curve Chart ───────────────────────────────────────────────────────
+
+function EquityCurveChart({ trades, startEquity = 50000 }: { trades?: Array<{ pnl?: number | null }>; startEquity?: number }) {
+  if (!trades || trades.length === 0) {
+    // Generate synthetic curve from return %
+    return null;
+  }
+  const W = 600, H = 160;
+  const pad = { t: 16, r: 16, b: 28, l: 64 };
+  const iW = W - pad.l - pad.r;
+  const iH = H - pad.t - pad.b;
+
+  // Build equity curve
+  let equity = startEquity;
+  const points: { i: number; eq: number }[] = [{ i: 0, eq: equity }];
+  trades.forEach((t, idx) => {
+    equity += t.pnl ?? 0;
+    points.push({ i: idx + 1, eq: equity });
+  });
+
+  const minEq = Math.min(...points.map(p => p.eq));
+  const maxEq = Math.max(...points.map(p => p.eq));
+  const range = maxEq - minEq || 1;
+  const n = points.length;
+
+  const toX = (i: number) => pad.l + (i / (n - 1)) * iW;
+  const toY = (eq: number) => pad.t + iH - ((eq - minEq) / range) * iH;
+
+  // Peak tracking for drawdown shading
+  let peak = startEquity;
+  const ddRegions: Array<{ x1: number; x2: number; yPeak: number; yTrough: number }> = [];
+  let ddStart: number | null = null;
+
+  points.forEach((p, i) => {
+    if (p.eq > peak) {
+      if (ddStart !== null) {
+        ddRegions.push({ x1: toX(ddStart), x2: toX(i), yPeak: toY(peak), yTrough: toY(Math.min(...points.slice(ddStart, i + 1).map(q => q.eq))) });
+        ddStart = null;
+      }
+      peak = p.eq;
+    } else if (p.eq < peak && ddStart === null) {
+      ddStart = i - 1;
+    }
+  });
+  if (ddStart !== null) {
+    ddRegions.push({ x1: toX(ddStart), x2: toX(n - 1), yPeak: toY(peak), yTrough: toY(Math.min(...points.slice(ddStart).map(q => q.eq))) });
+  }
+
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(p.eq).toFixed(1)}`).join(' ');
+  const areaD = `${pathD} L ${toX(n - 1)} ${pad.t + iH} L ${pad.l} ${pad.t + iH} Z`;
+
+  const isPos = points[points.length - 1].eq >= startEquity;
+  const lineColor = isPos ? C.bull : C.bear;
+
+  // Y-axis labels
+  const yTicks = [minEq, (minEq + maxEq) / 2, maxEq].map(v => ({
+    y: toY(v),
+    label: '$' + (v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v.toFixed(0)),
+  }));
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+      <defs>
+        <linearGradient id="eqArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={lineColor} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={lineColor} stopOpacity="0.02" />
+        </linearGradient>
+        <clipPath id="eqClip">
+          <rect x={pad.l} y={pad.t} width={iW} height={iH} />
+        </clipPath>
+      </defs>
+
+      {/* Y grid lines */}
+      {yTicks.map((t, i) => (
+        <g key={i}>
+          <line x1={pad.l} y1={t.y} x2={pad.l + iW} y2={t.y} stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" />
+          <text x={pad.l - 6} y={t.y} textAnchor="end" dominantBaseline="middle" fontSize={9} fill={C.muted}>{t.label}</text>
+        </g>
+      ))}
+
+      {/* Drawdown shading */}
+      {ddRegions.map((r, i) => (
+        <rect key={i} x={r.x1} y={r.yPeak} width={r.x2 - r.x1} height={Math.abs(r.yTrough - r.yPeak)} fill="rgba(220,38,38,0.12)" clipPath="url(#eqClip)" />
+      ))}
+
+      {/* Area fill */}
+      <path d={areaD} fill="url(#eqArea)" clipPath="url(#eqClip)" />
+
+      {/* Line */}
+      <path d={pathD} fill="none" stroke={lineColor} strokeWidth={2} strokeLinejoin="round" clipPath="url(#eqClip)" />
+
+      {/* Start dot */}
+      <circle cx={toX(0)} cy={toY(points[0].eq)} r={3} fill={C.muted} />
+      {/* End dot */}
+      <circle cx={toX(n - 1)} cy={toY(points[n - 1].eq)} r={4} fill={lineColor} style={{ filter: `drop-shadow(0 0 4px ${lineColor})` }} />
+
+      {/* Start/end labels */}
+      <text x={pad.l} y={pad.t + iH + 16} fontSize={9} fill={C.muted} textAnchor="start">Trade 1</text>
+      <text x={pad.l + iW} y={pad.t + iH + 16} fontSize={9} fill={C.muted} textAnchor="end">Trade {n - 1}</text>
+    </svg>
+  );
+}
+
+// ─── Exit Type Donut ──────────────────────────────────────────────────────────
+
+function ExitTypeDonut({ byAction }: { byAction: Record<string, number> }) {
+  const entries = Object.entries(byAction).filter(([, v]) => v > 0);
+  if (!entries.length) return null;
+
+  const EXIT_COLORS: Record<string, string> = {
+    TP1: '#16a34a', TP2: '#22c55e',
+    TRAILING_STOP: '#2563eb', SL: '#dc2626',
+  };
+  const total = entries.reduce((s, [, v]) => s + v, 0);
+  const W = 120, cx = W / 2, cy = W / 2, R_outer = 50, R_inner = 32;
+
+  let cumAngle = -Math.PI / 2;
+  const slices = entries.map(([key, val]) => {
+    const frac = val / total;
+    const angle = frac * 2 * Math.PI;
+    const startA = cumAngle;
+    const endA = cumAngle + angle - 0.03;
+    cumAngle += angle;
+    const sx = cx + R_outer * Math.cos(startA);
+    const sy = cy + R_outer * Math.sin(startA);
+    const ex = cx + R_outer * Math.cos(endA);
+    const ey = cy + R_outer * Math.sin(endA);
+    const ix = cx + R_inner * Math.cos(endA);
+    const iy = cy + R_inner * Math.sin(endA);
+    const fx = cx + R_inner * Math.cos(startA);
+    const fy = cy + R_inner * Math.sin(startA);
+    const large = angle > Math.PI ? 1 : 0;
+    const color = EXIT_COLORS[key] || C.muted;
+    return { key, val, frac, color, path: `M ${sx} ${sy} A ${R_outer} ${R_outer} 0 ${large} 1 ${ex} ${ey} L ${ix} ${iy} A ${R_inner} ${R_inner} 0 ${large} 0 ${fx} ${fy} Z` };
+  });
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+      <svg width={W} height={W} style={{ flexShrink: 0 }}>
+        {slices.map((s, i) => (
+          <path key={i} d={s.path} fill={s.color} opacity={0.9} />
+        ))}
+        <text x={cx} y={cy - 5} textAnchor="middle" fontSize={10} fill={C.muted}>EXITS</text>
+        <text x={cx} y={cy + 10} textAnchor="middle" fontSize={13} fontWeight="800" fill={C.text}>{total}</text>
+      </svg>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {slices.map((s) => (
+          <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: s.color, flexShrink: 0 }} />
+            <span style={{ fontSize: F.xs, color: C.text, fontWeight: 600, width: 96 }}>{s.key}</span>
+            <span style={{ fontSize: F.xs, color: C.muted }}>{s.val} ({Math.round(s.frac * 100)}%)</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Run Detail Panel ─────────────────────────────────────────────────────────
 
 function BySymbolBars({ bySymbol }: { bySymbol: Record<string, { trades: number; wins: number; pnl: number; win_rate: number }> }) {
@@ -278,33 +436,35 @@ function RunDetail({ result }: { result: BacktestResult }) {
         ))}
       </div>
 
-      {/* By symbol */}
-      {result.by_symbol && Object.keys(result.by_symbol).length > 0 && (
+      {/* Equity Curve Chart */}
+      {result.trades && result.trades.length > 1 && (
         <div style={{ marginBottom: 20 }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: F.md, fontWeight: 700, color: C.text }}>By Symbol</h3>
-          <BySymbolBars bySymbol={result.by_symbol} />
-        </div>
-      )}
-
-      {/* By exit type */}
-      {r.by_action && (
-        <div>
-          <h3 style={{ margin: '0 0 10px', fontSize: F.md, fontWeight: 700, color: C.text }}>Exit Types</h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {Object.entries(r.by_action)
-              .filter(([, v]) => v > 0)
-              .map(([key, val]) => {
-                const colors: Record<string, string> = { TP1: C.bull, TP2: '#22c55e', TRAILING_STOP: C.info, SL: C.bear };
-                return (
-                  <div key={key} style={{ padding: '6px 12px', background: (colors[key] || C.muted) + '22', border: `1px solid ${(colors[key] || C.muted)}44`, borderRadius: R.sm, fontSize: F.xs }}>
-                    <span style={{ fontWeight: 700, color: colors[key] || C.muted }}>{key}</span>
-                    <span style={{ color: C.muted, marginLeft: 6 }}>×{val}</span>
-                  </div>
-                );
-              })}
+          <h3 style={{ margin: '0 0 12px', fontSize: F.md, fontWeight: 700, color: C.text }}>Equity Curve</h3>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+            <EquityCurveChart trades={result.trades} startEquity={cfg.starting_equity ?? 50000} />
+          </div>
+          <div style={{ fontSize: 10, color: C.muted, marginTop: 6 }}>
+            Red shading = drawdown zones · End dot = final equity · Dashed lines = reference levels
           </div>
         </div>
       )}
+
+      {/* By symbol + Exit types side-by-side */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, marginBottom: 20, alignItems: 'start' }}>
+        {result.by_symbol && Object.keys(result.by_symbol).length > 0 && (
+          <div>
+            <h3 style={{ margin: '0 0 12px', fontSize: F.md, fontWeight: 700, color: C.text }}>By Symbol</h3>
+            <BySymbolBars bySymbol={result.by_symbol} />
+          </div>
+        )}
+
+        {r.by_action && Object.values(r.by_action).some(v => v > 0) && (
+          <div style={{ minWidth: 220 }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: F.md, fontWeight: 700, color: C.text }}>Exit Types</h3>
+            <ExitTypeDonut byAction={r.by_action} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
