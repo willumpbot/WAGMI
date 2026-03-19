@@ -3319,10 +3319,13 @@ export default function Results() {
           }}
         >
           <div>
-            <div style={{ fontSize: F.xs, color: C.bull, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
-              LIVE PAPER TRADING · {cfg?.days ?? 30} Days
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: F.xs, color: C.bull, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                LIVE PAPER TRADING · {cfg?.days ?? 30} Days
+              </span>
+              <span className="live-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: C.bull, display: 'inline-block' }} />
             </div>
-            <div style={{ fontSize: 42, fontWeight: 800, color: C.bull, lineHeight: 1, marginBottom: 6 }}>
+            <div className="num" style={{ fontSize: 56, fontWeight: 900, color: C.bull, lineHeight: 1, marginBottom: 6, textShadow: `0 0 24px ${C.bull}66` }}>
               {fmtPct(r.total_return_pct)}
             </div>
             <div style={{ fontSize: F.md, color: C.textSub }}>

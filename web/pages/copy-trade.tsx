@@ -49,17 +49,17 @@ const TV_SYMBOLS: Record<string, string> = {
 function getActionStyle(action: string): { label: string; color: string; bgColor: string } {
   const a = (action || '').toLowerCase();
   if (a === 'proceed' || a === 'go')
-    return { label: 'TRADE', color: '#16a34a', bgColor: '#dcfce7' };
+    return { label: 'TRADE', color: C.bull, bgColor: '#dcfce7' };
   if (a === 'flip' || a === 'reverse')
     return { label: 'FLIP', color: '#7c3aed', bgColor: '#ede9fe' };
-  return { label: 'SKIP', color: '#6b7280', bgColor: '#f3f4f6' };
+  return { label: 'SKIP', color: C.muted, bgColor: '#f3f4f6' };
 }
 
 function getBiasStyle(bias: string): { color: string; bgColor: string } {
-  if (bias === 'bullish') return { color: '#16a34a', bgColor: '#dcfce7' };
+  if (bias === 'bullish') return { color: C.bull, bgColor: '#dcfce7' };
   if (bias === 'volatile') return { color: '#7c3aed', bgColor: '#ede9fe' };
   if (bias === 'mixed') return { color: '#ea580c', bgColor: '#fff7ed' };
-  return { color: '#6b7280', bgColor: '#f3f4f6' };
+  return { color: C.muted, bgColor: '#f3f4f6' };
 }
 
 function ConfidenceBar({ value }: { value: number }) {
@@ -115,17 +115,17 @@ function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
   const symbols = Object.keys(view.per_symbol);
 
   return (
-    <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, padding: '16px 20px', marginBottom: 24, color: '#e2e8f0' }}>
+    <div style={{ background: C.bg, border: `1px solid `, borderRadius: 12, padding: '16px 20px', marginBottom: 24, color: C.text }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 0.3 }}>LLM Brain</span>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#1e293b', color: '#94a3b8' }}>
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: C.surface, color: C.textSub }}>
             ADVISORY MODE
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: '#64748b' }}>
-          <span>Regime: <strong style={{ color: '#cbd5e1' }}>{view.regime}</strong></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: C.muted }}>
+          <span>Regime: <strong style={{ color: C.textSub }}>{view.regime}</strong></span>
           <span
             style={{
               padding: '2px 10px', borderRadius: 10,
@@ -136,7 +136,7 @@ function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
             {(view.overall_bias || 'neutral').toUpperCase()}
           </span>
           {view.last_updated && (
-            <span style={{ color: '#475569' }}>{timeAgo(view.last_updated)}</span>
+            <span style={{ color: C.muted }}>{timeAgo(view.last_updated)}</span>
           )}
         </div>
       </div>
@@ -148,12 +148,12 @@ function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
             const d = view.per_symbol[sym];
             const style = getActionStyle(d.action);
             return (
-              <div key={sym} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1e293b', borderRadius: 8, padding: '6px 12px' }}>
+              <div key={sym} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.surface, borderRadius: 8, padding: '6px 12px' }}>
                 <span style={{ fontWeight: 700, fontSize: 13 }}>{sym}</span>
                 <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 6, background: style.bgColor, color: style.color }}>
                   {style.label}
                 </span>
-                <span style={{ fontSize: 11, color: '#64748b' }}>{Math.round(d.confidence * 100)}%</span>
+                <span style={{ fontSize: 11, color: C.muted }}>{Math.round(d.confidence * 100)}%</span>
               </div>
             );
           })}
@@ -162,19 +162,19 @@ function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
 
       {/* Summary text */}
       {view.summary && (
-        <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6, borderTop: '1px solid #1e293b', paddingTop: 10 }}>
+        <div style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6, borderTop: `1px solid `, paddingTop: 10 }}>
           {view.summary}
         </div>
       )}
 
       {/* Decision counts */}
       {view.decision_counts && (
-        <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 11, color: '#475569' }}>
-          <span>Last 10: <strong style={{ color: '#16a34a' }}>{view.decision_counts.proceed} trade</strong></span>
-          <span><strong style={{ color: '#6b7280' }}>{view.decision_counts.flat} skip</strong></span>
+        <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 11, color: C.muted }}>
+          <span>Last 10: <strong style={{ color: C.bull }}>{view.decision_counts.proceed} trade</strong></span>
+          <span><strong style={{ color: C.muted }}>{view.decision_counts.flat} skip</strong></span>
           <span><strong style={{ color: '#7c3aed' }}>{view.decision_counts.flip} flip</strong></span>
           {view.avg_confidence !== null && (
-            <span>avg confidence <strong style={{ color: '#e2e8f0' }}>{Math.round((view.avg_confidence || 0) * 100)}%</strong></span>
+            <span>avg confidence <strong style={{ color: C.text }}>{Math.round((view.avg_confidence || 0) * 100)}%</strong></span>
           )}
         </div>
       )}
@@ -187,7 +187,7 @@ function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
 function LlmDecisionPanel({ decision }: { decision: LlmDecision | null }) {
   if (!decision) {
     return (
-      <div style={{ padding: '12px 16px', background: '#f8fafc', borderRadius: 8, fontSize: 13, color: '#94a3b8' }}>
+      <div style={{ padding: '12px 16px', background: '#f8fafc', borderRadius: 8, fontSize: 13, color: C.textSub }}>
         No LLM analysis for this symbol yet.
       </div>
     );
@@ -196,10 +196,10 @@ function LlmDecisionPanel({ decision }: { decision: LlmDecision | null }) {
   const actionStyle = getActionStyle(decision.action);
 
   return (
-    <div style={{ padding: '14px 16px', background: '#0f172a', borderRadius: 8, color: '#e2e8f0' }}>
+    <div style={{ padding: '14px 16px', background: C.bg, borderRadius: 8, color: C.text }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 8, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>LLM Decision</div>
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>LLM Decision</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span
               style={{
@@ -210,36 +210,36 @@ function LlmDecisionPanel({ decision }: { decision: LlmDecision | null }) {
               {actionStyle.label}
             </span>
             {decision.is_veto && (
-              <span style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: '#dc2626', borderRadius: 5, fontWeight: 600 }}>
+              <span style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: C.bear, borderRadius: 5, fontWeight: 600 }}>
                 VETOED
               </span>
             )}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>Regime</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#cbd5e1' }}>{decision.regime || '—'}</div>
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Regime</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub }}>{decision.regime || '—'}</div>
         </div>
       </div>
 
       <div style={{ marginBottom: 10 }}>
-        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>Confidence</div>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Confidence</div>
         <ConfidenceBar value={decision.confidence} />
       </div>
 
       {decision.notes && (
-        <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.6, borderTop: '1px solid #1e293b', paddingTop: 8, marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: C.textSub, lineHeight: 1.6, borderTop: `1px solid `, paddingTop: 8, marginTop: 4 }}>
           {decision.notes}
         </div>
       )}
 
       {decision.gate_reason && !decision.allowed && (
-        <div style={{ fontSize: 11, marginTop: 8, padding: '6px 10px', background: '#1e293b', borderRadius: 5, color: '#94a3b8' }}>
+        <div style={{ fontSize: 11, marginTop: 8, padding: '6px 10px', background: C.surface, borderRadius: 5, color: C.textSub }}>
           Blocked: {decision.gate_reason}
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 10, fontSize: 11, color: '#475569' }}>
+      <div style={{ display: 'flex', gap: 12, marginTop: 10, fontSize: 11, color: C.muted }}>
         <span>{decision.mode}</span>
         {decision.model && <span>{decision.model}</span>}
         <span>{timeAgo(decision.ts_iso || decision.ts)}</span>
@@ -260,18 +260,18 @@ function getSignalStrength(signal: Signal): {
   const label = signal.label || '';
 
   if (label.includes('Aggressive Accumulation')) {
-    return { direction: 'BULLISH', color: '#16a34a', bgColor: '#dcfce7', strength: 'Strong', emoji: '' };
+    return { direction: 'BULLISH', color: C.bull, bgColor: '#dcfce7', strength: 'Strong', emoji: '' };
   }
   if (label.includes('Accumulation')) {
     return { direction: 'LEANING BULLISH', color: '#65a30d', bgColor: '#ecfccb', strength: 'Moderate', emoji: '' };
   }
   if (label.includes('Aggressive Distribution')) {
-    return { direction: 'BEARISH', color: '#dc2626', bgColor: '#fee2e2', strength: 'Strong', emoji: '' };
+    return { direction: 'BEARISH', color: C.bear, bgColor: '#fee2e2', strength: 'Strong', emoji: '' };
   }
   if (label.includes('Distribution')) {
     return { direction: 'LEANING BEARISH', color: '#ea580c', bgColor: '#fff7ed', strength: 'Moderate', emoji: '' };
   }
-  return { direction: 'NEUTRAL', color: '#6b7280', bgColor: '#f3f4f6', strength: 'Weak', emoji: '' };
+  return { direction: 'NEUTRAL', color: C.muted, bgColor: '#f3f4f6', strength: 'Weak', emoji: '' };
 }
 
 // ─── TradingView Chart ───────────────────────────────────────────────────────
@@ -337,7 +337,7 @@ function ActivityFeed({ events }: { events: ActivityEvent[] }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div style={{ fontSize: F.sm, fontWeight: 600, color: C.text }}>
           Bot Activity
-          <span style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#16a34a', fontWeight: 400 }}>
+          <span style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.bull, fontWeight: 400 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
             live
           </span>
@@ -379,7 +379,7 @@ function ActivityFeed({ events }: { events: ActivityEvent[] }) {
             </div>
 
             {/* Detail line */}
-            <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 5 }}>{event.detail}</div>
+            <div style={{ fontSize: 12, color: C.muted, marginBottom: 5 }}>{event.detail}</div>
 
             {/* Scalp insight */}
             {event.scalp_insight && (
@@ -576,7 +576,7 @@ function AgentChainStrip({ decision }: { decision: LlmDecision | null }) {
       alignItems: 'center',
       gap: 3,
     }}>
-      <span style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+      <span style={{ fontSize: 9, color: C.textSub, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
       <span style={{
         fontSize: 11,
         fontWeight: 700,
@@ -598,21 +598,21 @@ function AgentChainStrip({ decision }: { decision: LlmDecision | null }) {
       borderBottom: `1px solid ${C.border}`,
       background: C.surfaceHover,
     }}>
-      <div style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: C.textSub, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         AI Reasoning Chain
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         <Step label="Regime" value={regime.toUpperCase()} color={regimeColor} />
-        <span style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 300 }}>→</span>
+        <span style={{ color: C.textSub, fontSize: 14, fontWeight: 300 }}>→</span>
         <Step label="AI Decision" value={actionLabel} color={actionColor} />
-        <span style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 300 }}>→</span>
+        <span style={{ color: C.textSub, fontSize: 14, fontWeight: 300 }}>→</span>
         <Step label="Gate Status" value={gateLabel} color={gateColor} />
-        <span style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 300 }}>→</span>
+        <span style={{ color: C.textSub, fontSize: 14, fontWeight: 300 }}>→</span>
         <Step label="Result" value={finalLabel} color={finalColor} />
         {decision.gate_reason && (
           <>
-            <span style={{ color: '#cbd5e1', fontSize: 14, fontWeight: 300, marginLeft: 4 }}>·</span>
-            <span style={{ fontSize: 10, color: '#94a3b8', marginLeft: 4, fontStyle: 'italic' }}>
+            <span style={{ color: C.textSub, fontSize: 14, fontWeight: 300, marginLeft: 4 }}>·</span>
+            <span style={{ fontSize: 10, color: C.textSub, marginLeft: 4, fontStyle: 'italic' }}>
               {String(decision.gate_reason).slice(0, 60)}
             </span>
           </>
@@ -854,11 +854,11 @@ function VisualPriceRuler({
   };
 
   const markers: MarkerDef[] = [
-    { x: deepAccumX, label: fmt.format(deepAccum), subLabel: pctFrom(deepAccum), color: '#16a34a' },
+    { x: deepAccumX, label: fmt.format(deepAccum), subLabel: pctFrom(deepAccum), color: C.bull },
     { x: accumX,     label: fmt.format(accum),     subLabel: pctFrom(accum),     color: '#65a30d' },
     { x: currentX,   label: 'NOW',                 subLabel: fmt.format(price),  color: '#3b82f6', isCurrent: true },
     { x: distribX,   label: fmt.format(distrib),   subLabel: pctFrom(distrib),   color: '#ea580c' },
-    { x: safeDistribX, label: fmt.format(safeDistrib), subLabel: pctFrom(safeDistrib), color: '#dc2626' },
+    { x: safeDistribX, label: fmt.format(safeDistrib), subLabel: pctFrom(safeDistrib), color: C.bear },
   ];
 
   return (
@@ -1275,7 +1275,7 @@ function HowToTrade({
 
   if (isNeutral) {
     return (
-      <div style={{ padding: 16, background: '#f3f4f6', borderRadius: 8, fontSize: 14, color: '#6b7280' }}>
+      <div style={{ padding: 16, background: '#f3f4f6', borderRadius: 8, fontSize: 14, color: C.muted }}>
         <strong>No clear signal right now.</strong> The bot sees mixed indicators. Best to wait for a stronger setup.
         Check back in a few minutes — signals update every 60 seconds.
       </div>
@@ -1301,15 +1301,15 @@ function HowToTrade({
           }}
         >
           {llmSaysSkip ? (
-            <span style={{ color: '#dc2626', fontWeight: 600 }}>
+            <span style={{ color: C.bear, fontWeight: 600 }}>
               LLM says SKIP — the AI would not trade this setup right now. ({llmDecision.notes?.slice(0, 80) || 'No details'})
             </span>
           ) : llmSaysTrade ? (
-            <span style={{ color: '#16a34a', fontWeight: 600 }}>
+            <span style={{ color: C.bull, fontWeight: 600 }}>
               LLM agrees — the AI would also trade this setup ({Math.round(llmDecision.confidence * 100)}% confidence).
             </span>
           ) : (
-            <span style={{ color: '#6b7280' }}>LLM stance: {llmDecision.action} — use your judgment.</span>
+            <span style={{ color: C.muted }}>LLM stance: {llmDecision.action} — use your judgment.</span>
           )}
         </div>
       )}
@@ -1339,7 +1339,7 @@ function HowToTrade({
           </li>
           <li style={{ marginBottom: 8 }}>
             Select <strong>{isBullish ? 'Long' : 'Short'}</strong> and choose your leverage
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
               Recommended: 2-5x for beginners, never more than 10x
             </div>
           </li>
@@ -1348,13 +1348,13 @@ function HowToTrade({
           </li>
           <li style={{ marginBottom: 8 }}>
             Set a <strong>Stop Loss</strong> near <strong>{fmt.format(slZone)}</strong>
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
               This is the {isBullish ? 'Deep Accumulation' : 'Safe Distribution'} zone — if price reaches here, the trade idea is invalid
             </div>
           </li>
           <li style={{ marginBottom: 8 }}>
             Set a <strong>Take Profit</strong> near <strong>{fmt.format(tpZone)}</strong>
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
               This is the {isBullish ? 'Distribution' : 'Accumulation'} zone — where the bot expects price resistance/support
             </div>
           </li>
@@ -1778,10 +1778,10 @@ function VolatilityRegimeBands() {
 
   // Zone boundaries in ATR%
   const zones = [
-    { from: 0,   to: 1.5, color: '#16a34a', label: 'Low Vol',  alpha: '1a' },
+    { from: 0,   to: 1.5, color: C.bull, label: 'Low Vol',  alpha: '1a' },
     { from: 1.5, to: 2.5, color: '#2563eb', label: 'Normal',   alpha: '18' },
     { from: 2.5, to: 3.5, color: '#d97706', label: 'High Vol', alpha: '1c' },
-    { from: 3.5, to: 5.0, color: '#dc2626', label: 'Extreme',  alpha: '1a' },
+    { from: 3.5, to: 5.0, color: C.bear, label: 'Extreme',  alpha: '1a' },
   ];
 
   // Reference lines (dashed)
@@ -1820,10 +1820,10 @@ function VolatilityRegimeBands() {
 
   // Pill styles
   const pills = [
-    { color: '#16a34a', bg: '#dcfce7', label: 'Low Vol', desc: 'Tighter stops, larger size' },
+    { color: C.bull, bg: '#dcfce7', label: 'Low Vol', desc: 'Tighter stops, larger size' },
     { color: '#2563eb', bg: '#dbeafe', label: 'Normal',  desc: 'Standard parameters' },
     { color: '#d97706', bg: '#fef3c7', label: 'High Vol', desc: 'Wider stops, reduce size' },
-    { color: '#dc2626', bg: '#fee2e2', label: 'Extreme', desc: 'Bot may pause trading' },
+    { color: C.bear, bg: '#fee2e2', label: 'Extreme', desc: 'Bot may pause trading' },
   ];
 
   return (
@@ -2321,11 +2321,11 @@ function EntryZoneVisual() {
 
   // Price labels below bar: deep accum, accum, current, distrib, safeDistrib
   const priceMarkers = [
-    { x: deepAccumX, price: deepAccum, color: '#16a34a' },
+    { x: deepAccumX, price: deepAccum, color: C.bull },
     { x: accumX,     price: accum,     color: '#22c55e' },
     { x: currentX,   price: current,   color: C.brand   },
     { x: distribX,   price: distrib,   color: '#ef4444' },
-    { x: safeDistX,  price: safeDistrib, color: '#dc2626' },
+    { x: safeDistX,  price: safeDistrib, color: C.bear },
   ];
 
   const inAccumZone = current >= accum && current < distrib;
@@ -3700,11 +3700,11 @@ function StrategyConsensusGauge() {
 
   // 5 positions: 0=strong sell, 1=weak sell, 2=neutral, 3=weak buy, 4=strong buy
   const POSITIONS = [
-    { label: 'SELL\n0/4', x: 28,  color: '#dc2626' },
+    { label: 'SELL\n0/4', x: 28,  color: C.bear },
     { label: 'SELL\n1/4', x: 84,  color: '#ef4444' },
-    { label: 'NEUTRAL\n2/4', x: 140, color: '#6b7280' },
+    { label: 'NEUTRAL\n2/4', x: 140, color: C.muted },
     { label: 'BUY\n3/4',  x: 196, color: '#22c55e' },
-    { label: 'BUY\n4/4',  x: 252, color: '#16a34a' },
+    { label: 'BUY\n4/4',  x: 252, color: C.bull },
   ];
 
   // Map vote count → position index
@@ -4194,7 +4194,7 @@ export default function CopyTrade() {
       {/* Page Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Copy Trade</h1>
-        <p style={{ fontSize: 15, color: '#6b7280', margin: 0, maxWidth: 700 }}>
+        <p style={{ fontSize: 15, color: C.muted, margin: 0, maxWidth: 700 }}>
           See what the bot sees — including the AI brain — then decide for yourself. Each card shows signals,
           key price levels, the LLM&apos;s reasoning, and step-by-step trade instructions for Hyperliquid.
         </p>
@@ -4263,7 +4263,7 @@ export default function CopyTrade() {
           ))}
         </div>
       ) : orderedSignals.length === 0 ? (
-        <div style={{ padding: 40, textAlign: 'center', color: '#6b7280', background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, marginBottom: 32 }}>
+        <div style={{ padding: 40, textAlign: 'center', color: C.muted, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, marginBottom: 32 }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
           <div style={{ fontSize: F.lg, fontWeight: 700, color: C.text, marginBottom: 6 }}>No signals yet</div>
           <div style={{ color: C.muted }}>The bot needs ~60 seconds to generate the first scan.</div>

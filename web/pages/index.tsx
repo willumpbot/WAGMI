@@ -2694,9 +2694,9 @@ export default function Home() {
                 fontWeight: 700,
                 padding: '3px 10px',
                 borderRadius: R.pill,
-                background: 'rgba(22,163,74,.12)',
-                color: '#4ade80',
-                border: `1px solid rgba(22,163,74,.2)`,
+                background: C.bullMuted,
+                color: C.bull,
+                border: `1px solid ${C.bull}33`,
                 letterSpacing: 0.6,
                 textTransform: 'uppercase',
               }}>
