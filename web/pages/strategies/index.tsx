@@ -86,10 +86,10 @@ function RegimeStrategyMatrix() {
             {strategies.map((strat, si) => (
               <tr key={strat}>
                 <td style={{ padding: '4px 8px', fontSize: F.xs, color: C.textSub, fontWeight: 600, whiteSpace: 'nowrap' }}>{strat}</td>
-                {regimes.map((_, ri) => {
+                {regimes.map((regime, ri) => {
                   const score = scores[si][ri];
                   return (
-                    <td key={ri} style={{ padding: '2px' }}>
+                    <td key={regime} style={{ padding: '2px' }}>
                       <div style={{
                         background: cellColor(score),
                         borderRadius: R.xs,
@@ -1337,10 +1337,10 @@ function LiveSignalMatrix() {
                   <div style={{ fontSize: F.xs, fontWeight: 700, color: C.textSub }}>{strat.abbr}</div>
                   <div style={{ fontSize: 10, color: C.muted }}>{strat.label}</div>
                 </td>
-                {symbols.map((_, ci) => {
+                {symbols.map((sym, ci) => {
                   const cell = matrixData[si][ci];
                   return (
-                    <td key={ci} style={{ padding: '2px' }}>
+                    <td key={sym} style={{ padding: '2px' }}>
                       <div style={{
                         background: cellBg(cell),
                         borderRadius: R.sm,
@@ -1384,7 +1384,7 @@ function LiveSignalMatrix() {
                 </div>
               </td>
               {consensus.map((buyCount, ci) => (
-                <td key={ci} style={{ padding: '2px' }}>
+                <td key={symbols[ci]} style={{ padding: '2px' }}>
                   <div style={{
                     background: `${consensusColor(buyCount)}18`,
                     borderRadius: R.sm,
@@ -1450,7 +1450,7 @@ export default function StrategyList() {
   const liveCount = strategies.filter(isOnline).length;
 
   return (
-    <main style={{ padding: '32px 24px', maxWidth: 1100, margin: '0 auto', fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', fontFamily: "'Inter', system-ui, sans-serif" }}>
       <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(12px); }
@@ -1627,6 +1627,6 @@ export default function StrategyList() {
           ))}
         </div>
       )}
-    </main>
+    </div>
   );
 }

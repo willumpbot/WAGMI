@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useId } from 'react';
 import Link from 'next/link';
 import { C, R, F, S, fmtUsd, fmtPct } from '../src/theme';
 import type { TradeRecord, TradeHistoryResponse } from '../src/types';
@@ -58,6 +58,7 @@ function ConfRing({ value, size = 36 }: { value: number; size?: number }) {
 // ─── Scatter Plot ──────────────────────────────────────────────────────────────
 
 function ConfScatterPlot({ trades }: { trades: TradeRecord[] }) {
+  const uid = useId().replace(/:/g, '');
   const [tooltip, setTooltip] = useState<{ x: number; y: number; trade: TradeRecord } | null>(null);
 
   const plotTrades = trades.filter(
@@ -119,7 +120,7 @@ function ConfScatterPlot({ trades }: { trades: TradeRecord[] }) {
         onMouseLeave={() => setTooltip(null)}
       >
         <defs>
-          <clipPath id="scatterClip">
+          <clipPath id={`scatterClip-${uid}`}>
             <rect x={pad.left} y={pad.top} width={plotW} height={plotH} />
           </clipPath>
         </defs>
@@ -145,7 +146,7 @@ function ConfScatterPlot({ trades }: { trades: TradeRecord[] }) {
             rx={Math.min(clusterRx, plotW / 2)} ry={Math.min(clusterRy, plotH / 2)}
             fill={C.brand} fillOpacity={0.05}
             stroke={C.brand} strokeOpacity={0.25} strokeWidth={1} strokeDasharray="4 3"
-            clipPath="url(#scatterClip)"
+            clipPath={`url(#scatterClip-${uid})`}
           />
         )}
 
@@ -157,7 +158,7 @@ function ConfScatterPlot({ trades }: { trades: TradeRecord[] }) {
           x1={px(75)} y1={pad.top}
           x2={px(75)} y2={pad.top + plotH}
           stroke={C.muted} strokeWidth={1} strokeDasharray="5 4" strokeOpacity={0.6}
-          clipPath="url(#scatterClip)"
+          clipPath={`url(#scatterClip-${uid})`}
         />
 
         {/* Regression line */}
@@ -166,21 +167,21 @@ function ConfScatterPlot({ trades }: { trades: TradeRecord[] }) {
             x1={px(minConf)} y1={py(regY1)}
             x2={px(maxConf)} y2={py(regY2)}
             stroke={C.brand} strokeWidth={1.5} strokeDasharray="5 4"
-            clipPath="url(#scatterClip)"
+            clipPath={`url(#scatterClip-${uid})`}
           />
         )}
 
         {/* Quadrant labels */}
-        <text x={px(87.5)} y={pad.top + 14} textAnchor="middle" fontSize={8} fill={C.bull} fontFamily="Inter, system-ui" clipPath="url(#scatterClip)">
+        <text x={px(87.5)} y={pad.top + 14} textAnchor="middle" fontSize={8} fill={C.bull} fontFamily="Inter, system-ui" clipPath={`url(#scatterClip-${uid})`}>
           High conviction wins ✓
         </text>
-        <text x={px(87.5)} y={pad.top + plotH - 6} textAnchor="middle" fontSize={8} fill={C.bear} fontFamily="Inter, system-ui" clipPath="url(#scatterClip)">
+        <text x={px(87.5)} y={pad.top + plotH - 6} textAnchor="middle" fontSize={8} fill={C.bear} fontFamily="Inter, system-ui" clipPath={`url(#scatterClip-${uid})`}>
           Overconfident losses ✗
         </text>
-        <text x={px(37.5)} y={pad.top + 14} textAnchor="middle" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui" clipPath="url(#scatterClip)">
+        <text x={px(37.5)} y={pad.top + 14} textAnchor="middle" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui" clipPath={`url(#scatterClip-${uid})`}>
           Lucky wins
         </text>
-        <text x={px(37.5)} y={pad.top + plotH - 6} textAnchor="middle" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui" clipPath="url(#scatterClip)">
+        <text x={px(37.5)} y={pad.top + plotH - 6} textAnchor="middle" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui" clipPath={`url(#scatterClip-${uid})`}>
           Correct avoids
         </text>
 
@@ -249,6 +250,7 @@ function ConfScatterPlot({ trades }: { trades: TradeRecord[] }) {
 // ─── Trade Waterfall ──────────────────────────────────────────────────────────
 
 function TradeWaterfall({ trades }: { trades: TradeRecord[] }) {
+  const uid = useId().replace(/:/g, '');
   const validTrades = trades.filter((t) => t.pnl != null && !isNaN(t.pnl!));
 
   if (validTrades.length < 2) {
@@ -310,24 +312,24 @@ function TradeWaterfall({ trades }: { trades: TradeRecord[] }) {
       style={{ width: '100%', height: 'auto', display: 'block' }}
     >
       <defs>
-        <linearGradient id="wfBullGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`wfBullGrad-${uid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={C.bull} stopOpacity="0.18" />
           <stop offset="100%" stopColor={C.bull} stopOpacity="0.02" />
         </linearGradient>
-        <linearGradient id="wfBearGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`wfBearGrad-${uid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={C.bear} stopOpacity="0.02" />
           <stop offset="100%" stopColor={C.bear} stopOpacity="0.18" />
         </linearGradient>
-        <clipPath id="wfClip">
+        <clipPath id={`wfClip-${uid}`}>
           <rect x={pad.left} y={pad.top} width={plotW} height={plotH} />
         </clipPath>
       </defs>
 
       {/* Profit / loss background tint */}
       {finalPnl >= 0 ? (
-        <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill="url(#wfBullGrad)" rx={2} clipPath="url(#wfClip)" />
+        <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill={`url(#wfBullGrad-${uid})`} rx={2} clipPath={`url(#wfClip-${uid})`} />
       ) : (
-        <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill="url(#wfBearGrad)" rx={2} clipPath="url(#wfClip)" />
+        <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill={`url(#wfBearGrad-${uid})`} rx={2} clipPath={`url(#wfClip-${uid})`} />
       )}
 
       {/* Y-axis ticks */}

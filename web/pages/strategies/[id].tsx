@@ -1619,7 +1619,7 @@ export default function StrategyDetail() {
   ];
 
   return (
-    <main style={{ padding: '32px 24px', maxWidth: 1100, margin: '0 auto', fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', fontFamily: "'Inter', system-ui, sans-serif" }}>
       <style>{`
         @keyframes skeletonPulse {
           0%, 100% { opacity: 1; }
@@ -1784,6 +1784,6 @@ export default function StrategyDetail() {
         {activeTab === 'performance' && <PerformanceTab trades={trades} />}
         {activeTab === 'logs' && <LogsTab logs={logs} loading={logsLoading} error={logsError} />}
       </div>
-    </main>
+    </div>
   );
 }

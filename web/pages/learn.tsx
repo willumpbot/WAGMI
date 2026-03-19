@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import Link from 'next/link';
 import { C, R, S, F } from '../src/theme';
 
@@ -385,6 +385,8 @@ function RRCalc() {
 // ─── Compound Growth Calculator ────────────────────────────────────────────────
 
 function CompoundCalc() {
+  const uid = useId().replace(/:/g, '');
+  const gradId = `compGrad-${uid}`;
   const [capital, setCapital] = useState(10000);
   const [monthlyPct, setMonthlyPct] = useState(5);
   const [months, setMonths] = useState(12);
@@ -432,7 +434,7 @@ function CompoundCalc() {
       <div>
         <svg width="100%" viewBox={`0 0 400 160`} style={{ display: 'block', overflow: 'visible' }}>
           <defs>
-            <linearGradient id="compGrad" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={C.bull} stopOpacity={0.3} />
               <stop offset="100%" stopColor={C.bull} stopOpacity={0} />
             </linearGradient>
@@ -448,7 +450,7 @@ function CompoundCalc() {
             const line = pts.join(' ');
             return (
               <>
-                <path d={area} fill="url(#compGrad)" />
+                <path d={area} fill={`url(#${gradId})`} />
                 <polyline fill="none" stroke={C.bull} strokeWidth={2} points={line} strokeLinejoin="round" />
                 {/* Start + end labels */}
                 <text x={padL} y={padT + H + 16} fontSize={10} fill={C.muted}>${capital.toLocaleString()}</text>
