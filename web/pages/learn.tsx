@@ -3476,10 +3476,21 @@ export default function Learn() {
       g.def.toLowerCase().includes(glossarySearch.toLowerCase())
   );
 
+  const LEARN_SECTIONS = [
+    { href: '#what-is-this-bot',    num: '01', label: 'Foundation',        sub: 'What is this bot?' },
+    { href: '#signals',             num: '02', label: 'Signals',           sub: 'Score & indicators' },
+    { href: '#ai-brain',            num: '03', label: 'AI Brain',          sub: 'Agents & decisions' },
+    { href: '#risk-management',     num: '04', label: 'Risk Management',   sub: 'Safety & sizing' },
+    { href: '#trade-flow',          num: '05', label: 'Trade Flow',        sub: 'Signal → execution' },
+    { href: '#calculators',         num: '06', label: 'Calculators',       sub: 'Interactive tools' },
+    { href: '#copy-trade-guide',    num: '07', label: 'Copy Trade Guide',  sub: 'Step-by-step' },
+    { href: '#glossary',            num: '08', label: 'Glossary',          sub: `${GLOSSARY.length} terms` },
+  ];
+
   return (
     <div>
       {/* ── Header ───────────────────────────────────── */}
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           Knowledge Base
         </div>
@@ -3487,30 +3498,54 @@ export default function Learn() {
           Understand the <span className="gradient-text">Edge</span>
         </h1>
         <p style={{ margin: '6px 0 0', fontSize: F.sm, color: C.muted, maxWidth: 600 }}>
-          Every signal explained. Every decision unpacked. The more you know, the better you'll trade.
+          Every signal explained. Every decision unpacked. The more you know, the better you&apos;ll trade.
         </p>
       </div>
 
-      {/* ── Quick nav ─────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 32 }}>
-        {['What is this bot?', 'AI Simulator', 'Signals', 'AI Brain', 'Risk Management', 'Trade Flow', 'Calculators', 'Copy Trade Guide', 'Glossary'].map((label) => (
-          <a
-            key={label}
-            href={`#${label.toLowerCase().replace(/\?/g, '').replace(/ /g, '-')}`}
-            style={{
-              fontSize: F.sm,
-              padding: '6px 14px',
-              borderRadius: R.pill,
-              border: `1px solid ${C.border}`,
-              color: C.textSub,
-              textDecoration: 'none',
-              transition: 'all 0.15s',
-            }}
-          >
-            {label}
-          </a>
-        ))}
-      </div>
+      {/* ── Two-column layout: sidebar + content ─────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 40, alignItems: 'start' }} className="learn-layout">
+
+        {/* ── Sticky sidebar ───────────────────────────── */}
+        <aside
+          style={{
+            position: 'sticky',
+            top: 68,
+            maxHeight: 'calc(100vh - 90px)',
+            overflowY: 'auto',
+            paddingBottom: 20,
+          }}
+          className="learn-sidebar"
+        >
+          <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 14, paddingLeft: 10 }}>
+            Contents
+          </div>
+          {LEARN_SECTIONS.map(({ href, num, label, sub }) => (
+            <a
+              key={href}
+              href={href}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+                padding: '8px 10px',
+                borderRadius: R.md,
+                textDecoration: 'none',
+                marginBottom: 2,
+                transition: 'background 0.12s',
+              }}
+              className="sidebar-link"
+            >
+              <span style={{ fontSize: 10, fontWeight: 700, color: C.brand, minWidth: 18, paddingTop: 1 }}>{num}</span>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: C.textSub, lineHeight: 1.2, marginBottom: 1 }}>{label}</div>
+                <div style={{ fontSize: 10.5, color: C.muted }}>{sub}</div>
+              </div>
+            </a>
+          ))}
+        </aside>
+
+        {/* ── Main content ─────────────────────────────── */}
+        <div>
 
       {/* ─────────────────────────────────── */}
       <div id="what-is-this-bot" />
@@ -4023,6 +4058,22 @@ export default function Learn() {
           </Link>
         </div>
       </div>
+
+        </div> {/* end content column */}
+      </div> {/* end two-column grid */}
+
+      <style>{`
+        @media (max-width: 900px) {
+          .learn-layout { grid-template-columns: 1fr !important; }
+          .learn-sidebar { display: none !important; }
+        }
+        .sidebar-link:hover {
+          background: ${C.surfaceHover} !important;
+        }
+        .sidebar-link:hover div:first-child {
+          color: ${C.text} !important;
+        }
+      `}</style>
     </div>
   );
 }
