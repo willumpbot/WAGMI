@@ -2605,19 +2605,26 @@ class BacktestEngine:
 
     def _report_trade_timeline(self) -> List[Dict[str, Any]]:
         """Build per-trade timeline with full position context for analysis."""
-        # Index open events by symbol to match with close events
-        open_events: Dict[str, Any] = {}
+        # Build FIFO queue of open events per symbol — fixes multi-trade matching
+        # (dict-only approach overwrites earlier opens, giving wrong timestamps)
+        from collections import defaultdict as _dd
+        open_queues: Dict[str, list] = _dd(list)
         for event in self.pos_mgr.trade_log:
             if event.action == "OPEN":
-                open_events[event.symbol] = event
-
-        # LLM decisions are looked up via reverse iteration in the loop below
+                open_queues[event.symbol].append(event)
+        # Track how many opens we've consumed per symbol
+        open_cursors: Dict[str, int] = {}
 
         timeline = []
         for event in self.pos_mgr.trade_log:
             if event.action in self._CLOSE_ACTIONS:
                 meta = event.metadata or {}
-                open_ev = open_events.get(event.symbol)
+                # FIFO match: consume the oldest unmatched open for this symbol
+                cursor = open_cursors.get(event.symbol, 0)
+                sym_opens = open_queues.get(event.symbol, [])
+                open_ev = sym_opens[cursor] if cursor < len(sym_opens) else None
+                if open_ev:
+                    open_cursors[event.symbol] = cursor + 1
                 open_meta = open_ev.metadata if open_ev and open_ev.metadata else {}
 
                 entry_price = meta.get("entry", 0) or getattr(event, "entry_price", 0) or (open_ev.price if open_ev else 0)
@@ -2637,18 +2644,27 @@ class BacktestEngine:
                 except (TypeError, ValueError):
                     rr_achieved = 0
 
-                # Duration in hours
-                hold_s = meta.get("hold_time_s", 0)
-                if hold_s:
-                    duration_h = round(hold_s / 3600, 1)
-                elif open_ev:
-                    delta = event.timestamp - open_ev.timestamp
-                    duration_h = round(delta.total_seconds() / 3600, 1)
+                # Duration in hours — handle both datetime and float (Unix epoch) timestamps
+                hold_s = meta.get("hold_time_s") or open_meta.get("hold_time_s", 0)
+                if hold_s and hold_s > 0:
+                    # hold_time_s may be a timedelta or a float (seconds)
+                    try:
+                        duration_h = round(hold_s.total_seconds() / 3600, 1)
+                    except AttributeError:
+                        duration_h = round(float(hold_s) / 3600, 1)
+                elif open_ev and open_ev.timestamp and event.timestamp:
+                    try:
+                        # Timestamps may be datetime objects or Unix-epoch floats
+                        t_close = event.timestamp.timestamp() if hasattr(event.timestamp, 'timestamp') else float(event.timestamp)
+                        t_open = open_ev.timestamp.timestamp() if hasattr(open_ev.timestamp, 'timestamp') else float(open_ev.timestamp)
+                        duration_h = round(max(0.0, (t_close - t_open) / 3600), 1)
+                    except (TypeError, ValueError, AttributeError):
+                        duration_h = 0
                 else:
                     duration_h = 0
 
-                # State path from metadata
-                state_path = meta.get("state_path", "")
+                # State path — prefer close-event metadata, fall back to open-event metadata
+                state_path = meta.get("state_path", "") or open_meta.get("state_path", "")
 
                 row = {
                     "symbol": event.symbol,
