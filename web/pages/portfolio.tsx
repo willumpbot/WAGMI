@@ -448,6 +448,194 @@ function PortfolioHealthScore({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
+// ─── Correlation Warning Heatmap ─────────────────────────────────────────────
+
+function CorrelationWarning({ symbols }: { symbols?: string[] }) {
+  const SYMBOLS = symbols && symbols.length >= 2 ? symbols.slice(0, 4) : ['BTC', 'SOL', 'HYPE', 'ETH'];
+
+  // Default correlation matrix (upper triangle filled, diagonal = self)
+  const defaultCorr: Record<string, Record<string, number>> = {
+    BTC:  { BTC: 1, SOL: 0.72, HYPE: 0.55, ETH: 0.85 },
+    SOL:  { BTC: 0.72, SOL: 1, HYPE: 0.62, ETH: 0.68 },
+    HYPE: { BTC: 0.55, SOL: 0.62, HYPE: 1, ETH: 0.50 },
+    ETH:  { BTC: 0.85, SOL: 0.68, HYPE: 0.50, ETH: 1 },
+  };
+
+  const getCorr = (a: string, b: string): number | null => {
+    if (a === b) return null; // diagonal
+    return defaultCorr[a]?.[b] ?? defaultCorr[b]?.[a] ?? 0.5;
+  };
+
+  const cellColor = (val: number | null): string => {
+    if (val === null) return C.surface;
+    if (val < 0.3) return '#166534';  // dark green — low correlation
+    if (val < 0.6) return '#92400e';  // amber/yellow — medium
+    return '#7f1d1d';                 // deep red — high
+  };
+
+  const textColor = (val: number | null): string => {
+    if (val === null) return C.muted;
+    if (val < 0.3) return '#86efac';
+    if (val < 0.6) return '#fde68a';
+    return '#fca5a5';
+  };
+
+  // Find highest off-diagonal correlation for warning banner
+  let maxCorr = 0;
+  let maxPair: [string, string] = ['BTC', 'ETH'];
+  for (let i = 0; i < SYMBOLS.length; i++) {
+    for (let j = i + 1; j < SYMBOLS.length; j++) {
+      const v = getCorr(SYMBOLS[i], SYMBOLS[j]) ?? 0;
+      if (v > maxCorr) {
+        maxCorr = v;
+        maxPair = [SYMBOLS[i], SYMBOLS[j]];
+      }
+    }
+  }
+
+  const CELL = 56;
+  const LABEL_W = 44;
+  const PAD = 4;
+  const gridW = LABEL_W + SYMBOLS.length * (CELL + PAD) + PAD;
+  const gridH = LABEL_W + SYMBOLS.length * (CELL + PAD) + PAD;
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 20, marginBottom: 20 }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>Asset Correlation Heatmap</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>
+        Pairwise correlation between open position symbols. High correlation means positions may not provide true diversification.
+      </div>
+
+      {/* Heatmap grid */}
+      <div style={{ overflowX: 'auto' }}>
+        <svg width={gridW} height={gridH} style={{ display: 'block' }}>
+          {/* Column headers */}
+          {SYMBOLS.map((sym, j) => (
+            <text
+              key={`col-${sym}`}
+              x={LABEL_W + j * (CELL + PAD) + CELL / 2 + PAD}
+              y={LABEL_W - 8}
+              textAnchor="middle"
+              fontSize={10}
+              fontWeight={700}
+              fill={C.textSub}
+            >
+              {sym}
+            </text>
+          ))}
+
+          {/* Row headers + cells */}
+          {SYMBOLS.map((rowSym, i) => (
+            <g key={`row-${rowSym}`}>
+              {/* Row label */}
+              <text
+                x={LABEL_W - 6}
+                y={LABEL_W + i * (CELL + PAD) + CELL / 2 + PAD + 4}
+                textAnchor="end"
+                fontSize={10}
+                fontWeight={700}
+                fill={C.textSub}
+              >
+                {rowSym}
+              </text>
+
+              {/* Cells */}
+              {SYMBOLS.map((colSym, j) => {
+                const val = getCorr(rowSym, colSym);
+                const isDiag = rowSym === colSym;
+                const bg = cellColor(val);
+                const cx = LABEL_W + j * (CELL + PAD) + PAD;
+                const cy = LABEL_W + i * (CELL + PAD) + PAD;
+
+                return (
+                  <g key={`cell-${rowSym}-${colSym}`}>
+                    <rect
+                      x={cx}
+                      y={cy}
+                      width={CELL}
+                      height={CELL}
+                      rx={6}
+                      fill={bg}
+                      opacity={isDiag ? 0.4 : 1}
+                    />
+                    {isDiag ? (
+                      <text
+                        x={cx + CELL / 2}
+                        y={cy + CELL / 2 + 5}
+                        textAnchor="middle"
+                        fontSize={16}
+                        fill={C.muted}
+                      >
+                        —
+                      </text>
+                    ) : (
+                      <>
+                        <text
+                          x={cx + CELL / 2}
+                          y={cy + CELL / 2 - 2}
+                          textAnchor="middle"
+                          fontSize={13}
+                          fontWeight={800}
+                          fill={textColor(val)}
+                        >
+                          {(val ?? 0).toFixed(2)}
+                        </text>
+                        <text
+                          x={cx + CELL / 2}
+                          y={cy + CELL / 2 + 13}
+                          textAnchor="middle"
+                          fontSize={8}
+                          fill={textColor(val)}
+                          opacity={0.75}
+                        >
+                          {(val ?? 0) >= 0.6 ? 'HIGH' : (val ?? 0) >= 0.3 ? 'MED' : 'LOW'}
+                        </text>
+                      </>
+                    )}
+                  </g>
+                );
+              })}
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      {/* Color legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap' }}>
+        {[
+          { label: 'Low (<0.3)', bg: '#166534', text: '#86efac' },
+          { label: 'Medium (0.3–0.6)', bg: '#92400e', text: '#fde68a' },
+          { label: 'High (>0.6)', bg: '#7f1d1d', text: '#fca5a5' },
+        ].map(({ label, bg, text }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 14, height: 14, borderRadius: 3, background: bg }} />
+            <span style={{ fontSize: F.xs, color: C.muted }}>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Warning banner for highest correlation */}
+      {maxCorr >= 0.6 && (
+        <div style={{
+          marginTop: 14,
+          padding: '10px 14px',
+          background: 'rgba(127,29,29,0.25)',
+          border: '1px solid rgba(220,38,38,0.4)',
+          borderRadius: R.md,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 8,
+        }}>
+          <span style={{ fontSize: F.base, flexShrink: 0 }}>⚠</span>
+          <span style={{ fontSize: F.xs, color: '#fca5a5', lineHeight: 1.6 }}>
+            <strong>High correlation between {maxPair[0]} and {maxPair[1]} ({maxCorr.toFixed(2)})</strong> — these positions may not provide true diversification. A single market move could impact both simultaneously.
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PortfolioPage() {
@@ -605,6 +793,13 @@ export default function PortfolioPage() {
                 <span style={{ fontSize: F.sm, color: C.warnMid, fontWeight: 600 }}>{concentrationWarning}</span>
               </div>
             )}
+
+            {/* ── Correlation Warning Heatmap ── */}
+            <CorrelationWarning
+              symbols={openPositions.length >= 2
+                ? openPositions.map((s) => s.id.replace(/USDT?$/i, '').toUpperCase())
+                : undefined}
+            />
 
             {/* ── Open Positions ── */}
             <div style={{ marginBottom: 32 }}>
