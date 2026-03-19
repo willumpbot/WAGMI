@@ -879,8 +879,6 @@ function StrategyWeightHistory() {
 
 // ─── LiveSignalMatrix ─────────────────────────────────────────────────────────
 
-type SignalCell = { dir: 'BUY' | 'SELL' | 'WAIT'; conf?: number };
-
 function LiveSignalMatrix() {
   return (
     <div style={{
