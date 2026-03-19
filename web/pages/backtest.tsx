@@ -16,8 +16,8 @@ function resolveApiBase(): string {
   return 'http://localhost:8000';
 }
 
-function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
-  return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
+function Skeleton({ h = 16, w = '100%', style = {} }: { h?: number; w?: string | number; style?: React.CSSProperties }) {
+  return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm, ...style }} />;
 }
 
 // ─── Equity Sparkline ─────────────────────────────────────────────────────────
