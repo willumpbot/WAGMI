@@ -108,7 +108,7 @@ function timeAgo(isoOrTs: string | number | null): string {
 function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
   if (!view) {
     return (
-      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: '#94a3b8' }}>
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: C.muted }}>
         LLM Brain View loading...
       </div>
     );
@@ -116,10 +116,10 @@ function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
 
   if (!view.has_data) {
     return (
-      <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 10, padding: '14px 20px', marginBottom: 24 }}>
-        <div style={{ fontWeight: 600, fontSize: 14, color: '#92400e', marginBottom: 4 }}>LLM not running yet</div>
-        <div style={{ fontSize: 13, color: '#78350f' }}>
-          Start the bot with <code style={{ background: '#fef3c7', padding: '1px 4px', borderRadius: 3 }}>LLM_MODE=1 LLM_MULTI_AGENT=true</code> to see AI market analysis here.
+      <div style={{ background: C.warn + '12', border: `1px solid ${C.warn}33`, borderRadius: 10, padding: '14px 20px', marginBottom: 24 }}>
+        <div style={{ fontWeight: 600, fontSize: 14, color: C.warn, marginBottom: 4 }}>LLM not running yet</div>
+        <div style={{ fontSize: 13, color: C.textSub }}>
+          Start the bot with <code style={{ background: C.surfaceHover, padding: '1px 4px', borderRadius: 3, color: C.brand }}>LLM_MODE=1 LLM_MULTI_AGENT=true</code> to see AI market analysis here.
         </div>
       </div>
     );
@@ -314,7 +314,7 @@ function TradingViewChart({ symbol }: { symbol: string }) {
       symbol: tvSymbol,
       interval: '60',
       timezone: 'Etc/UTC',
-      theme: 'light',
+      theme: 'dark',
       style: '1',
       locale: 'en',
       hide_top_toolbar: false,
@@ -337,10 +337,10 @@ function TradingViewChart({ symbol }: { symbol: string }) {
 function ActivityFeed({ events }: { events: ActivityEvent[] }) {
   if (events.length === 0) {
     return (
-      <div style={{ background: '#fafafa', border: '1px solid #e5e7eb', borderRadius: 10, padding: '16px 20px', marginBottom: 24 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Bot Activity</div>
-        <div style={{ fontSize: 13, color: '#9ca3af' }}>
-          No activity yet. Start the bot with <code style={{ background: '#f3f4f6', padding: '1px 4px', borderRadius: 3 }}>LLM_MODE=1</code> to see live decisions here.
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.md, padding: '16px 20px', marginBottom: 24 }}>
+        <div style={{ fontSize: F.sm, fontWeight: 600, color: C.text, marginBottom: 6 }}>Bot Activity</div>
+        <div style={{ fontSize: F.sm, color: C.muted }}>
+          No activity yet. Start the bot with <code style={{ background: C.surfaceHover, padding: '1px 4px', borderRadius: R.xs, color: C.brand }}>LLM_MODE=1</code> to see live decisions here.
         </div>
       </div>
     );
@@ -349,24 +349,24 @@ function ActivityFeed({ events }: { events: ActivityEvent[] }) {
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
+        <div style={{ fontSize: F.sm, fontWeight: 600, color: C.text }}>
           Bot Activity
           <span style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#16a34a', fontWeight: 400 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block' }} />
             live
           </span>
         </div>
-        <span style={{ fontSize: 11, color: '#9ca3af' }}>last {events.length} events</span>
+        <span style={{ fontSize: F.xs, color: C.muted }}>last {events.length} events</span>
       </div>
 
-      <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden', maxHeight: 340, overflowY: 'auto' }}>
+      <div style={{ border: `1px solid ${C.border}`, borderRadius: R.md, overflow: 'hidden', maxHeight: 340, overflowY: 'auto' }}>
         {events.map((event, i) => (
           <div
             key={`${event.ts}-${i}`}
             style={{
               padding: '12px 16px',
-              borderBottom: i < events.length - 1 ? '1px solid #f3f4f6' : 'none',
-              background: '#fff',
+              borderBottom: i < events.length - 1 ? `1px solid ${C.border}` : 'none',
+              background: C.card,
             }}
           >
             {/* Header row */}
@@ -389,7 +389,7 @@ function ActivityFeed({ events }: { events: ActivityEvent[] }) {
                   <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{event.symbol}</span>
                 )}
               </div>
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>{timeAgo(event.ts_iso || event.ts)}</span>
+              <span style={{ fontSize: F.xs, color: C.muted }}>{timeAgo(event.ts_iso || event.ts)}</span>
             </div>
 
             {/* Detail line */}
@@ -399,9 +399,9 @@ function ActivityFeed({ events }: { events: ActivityEvent[] }) {
             {event.scalp_insight && (
               <div
                 style={{
-                  fontSize: 12,
-                  color: '#374151',
-                  background: '#f8fafc',
+                  fontSize: F.xs,
+                  color: C.textSub,
+                  background: C.surfaceHover,
                   borderLeft: `3px solid ${event.badge_color}`,
                   padding: '4px 8px',
                   borderRadius: '0 4px 4px 0',
@@ -609,8 +609,8 @@ function AgentChainStrip({ decision }: { decision: LlmDecision | null }) {
   return (
     <div style={{
       padding: '10px 20px',
-      borderBottom: '1px solid #f0f0f0',
-      background: '#f8faff',
+      borderBottom: `1px solid ${C.border}`,
+      background: C.surfaceHover,
     }}>
       <div style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         AI Reasoning Chain
@@ -656,9 +656,9 @@ function CopyTradeCard({
   return (
     <div
       style={{
-        border: '1px solid #e5e7eb',
-        borderRadius: 12,
-        background: '#fff',
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        background: C.card,
         marginBottom: 32,
         overflow: 'hidden',
       }}
@@ -670,13 +670,13 @@ function CopyTradeCard({
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '16px 20px',
-          borderBottom: '1px solid #e5e7eb',
-          background: '#fafafa',
+          borderBottom: `1px solid ${C.border}`,
+          background: C.surfaceHover,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 24, fontWeight: 700 }}>{signal.symbol}</span>
-          <span style={{ fontSize: 18, color: '#666' }}>{fmt.format(signal.price)}</span>
+          <span style={{ fontSize: 24, fontWeight: 700, color: C.text }}>{signal.symbol}</span>
+          <span style={{ fontSize: 18, color: C.textSub }}>{fmt.format(signal.price)}</span>
         </div>
         <div
           style={{
@@ -693,8 +693,8 @@ function CopyTradeCard({
       </div>
 
       {/* LLM Brain Section */}
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0', background: '#fafbfc' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, background: C.surface }}>
+        <div style={{ fontSize: F.xs, fontWeight: 700, marginBottom: 10, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           LLM Brain — What the AI Would Do
         </div>
         <LlmDecisionPanel decision={llmDecision} />
@@ -704,24 +704,24 @@ function CopyTradeCard({
       <AgentChainStrip decision={llmDecision} />
 
       {/* Signal Summary */}
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ fontSize: F.xs, fontWeight: 700, marginBottom: 12, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           What the Bot Sees
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
           {/* Signal Score */}
-          <div style={{ padding: 12, background: '#f9fafb', borderRadius: 8 }}>
-            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>Signal Score</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: signal.score >= 60 ? '#16a34a' : signal.score >= 40 ? '#eab308' : '#dc2626' }}>
+          <div style={{ padding: 12, background: C.surfaceHover, borderRadius: R.md }}>
+            <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>Signal Score</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: signal.score >= 60 ? C.bull : signal.score >= 40 ? C.warn : C.bear }}>
               {signal.score}/100
             </div>
-            <div style={{ fontSize: 11, color: '#9ca3af' }}>
+            <div style={{ fontSize: F.xs, color: C.faint }}>
               {signal.score >= 70 ? 'Strong signal' : signal.score >= 50 ? 'Moderate signal' : 'Weak signal'}
             </div>
             {backtestBySymbol && (
-              <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #e5e7eb', fontSize: 10, color: '#6b7280' }}>
+              <div style={{ marginTop: 6, paddingTop: 6, borderTop: `1px solid ${C.border}`, fontSize: 10, color: C.muted }}>
                 Backtest accuracy:{' '}
-                <strong style={{ color: backtestBySymbol.win_rate >= 0.65 ? '#16a34a' : '#d97706' }}>
+                <strong style={{ color: backtestBySymbol.win_rate >= 0.65 ? C.bull : C.warn }}>
                   {(backtestBySymbol.win_rate * 100).toFixed(0)}%
                 </strong>{' '}
                 ({backtestBySymbol.wins}W/{backtestBySymbol.trades - backtestBySymbol.wins}L)
@@ -730,34 +730,34 @@ function CopyTradeCard({
           </div>
 
           {/* Trend */}
-          <div style={{ padding: 12, background: '#f9fafb', borderRadius: 8 }}>
-            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>Trend (SMA 20/50)</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: trendUp ? '#16a34a' : '#dc2626' }}>
+          <div style={{ padding: 12, background: C.surfaceHover, borderRadius: R.md }}>
+            <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>Trend (SMA 20/50)</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: trendUp ? C.bull : C.bear }}>
               {trendUp ? 'Uptrend' : 'Downtrend'}
             </div>
-            <div style={{ fontSize: 11, color: '#9ca3af' }}>
+            <div style={{ fontSize: F.xs, color: C.faint }}>
               20: {fmt.format(signal.sma20)} / 50: {fmt.format(signal.sma50)}
             </div>
           </div>
 
           {/* RSI */}
-          <div style={{ padding: 12, background: '#f9fafb', borderRadius: 8 }}>
-            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>RSI (14)</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: isOverbought ? '#dc2626' : isOversold ? '#16a34a' : '#374151' }}>
+          <div style={{ padding: 12, background: C.surfaceHover, borderRadius: R.md }}>
+            <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>RSI (14)</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: isOverbought ? C.bear : isOversold ? C.bull : C.text }}>
               {rsiVal.toFixed(1)}
             </div>
-            <div style={{ fontSize: 11, color: '#9ca3af' }}>
+            <div style={{ fontSize: F.xs, color: C.faint }}>
               {isOverbought ? 'Overbought - caution' : isOversold ? 'Oversold - potential bounce' : 'Normal range'}
             </div>
           </div>
 
           {/* Volatility */}
-          <div style={{ padding: 12, background: '#f9fafb', borderRadius: 8 }}>
-            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>Volatility (ATR)</div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>
+          <div style={{ padding: 12, background: C.surfaceHover, borderRadius: R.md }}>
+            <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>Volatility (ATR)</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: C.text }}>
               {typeof signal.atr_pct === 'number' ? signal.atr_pct.toFixed(2) + '%' : fmt.format(signal.atr14)}
             </div>
-            <div style={{ fontSize: 11, color: '#9ca3af' }}>
+            <div style={{ fontSize: F.xs, color: C.faint }}>
               {signal.vol_spike ? 'Volume spike detected!' : 'Normal volume'}
             </div>
           </div>
@@ -765,37 +765,37 @@ function CopyTradeCard({
       </div>
 
       {/* Key Price Levels */}
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ fontSize: F.xs, fontWeight: 700, marginBottom: 12, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           Key Price Levels
         </div>
-        <div style={{ fontSize: 13, color: '#374151', marginBottom: 8 }}>
+        <div style={{ fontSize: F.sm, color: C.textSub, marginBottom: 8 }}>
           These zones show where the bot considers price to be cheap (accumulation) or expensive (distribution) based on volatility analysis.
         </div>
 
         {/* Visual price ladder */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 500 }}>
-          <PriceLevel label="Safe Distribution (very expensive)" price={signal.zones.safeDistrib} color="#dc2626" currentPrice={signal.price} />
+          <PriceLevel label="Safe Distribution (very expensive)" price={signal.zones.safeDistrib} color={C.bear} currentPrice={signal.price} />
           <PriceLevel label="Distribution (expensive)" price={signal.zones.distrib} color="#ea580c" currentPrice={signal.price} />
-          <div style={{ padding: '8px 12px', background: '#dbeafe', borderRadius: 6, fontWeight: 600, fontSize: 13 }}>
+          <div style={{ padding: '8px 12px', background: C.info + '20', border: `1px solid ${C.info}40`, borderRadius: R.sm, fontWeight: 700, fontSize: F.sm, color: C.info }}>
             Current Price: {fmt.format(signal.price)}
           </div>
           <PriceLevel label="Accumulation (cheap)" price={signal.zones.accum} color="#65a30d" currentPrice={signal.price} />
-          <PriceLevel label="Deep Accumulation (very cheap)" price={signal.zones.deepAccum} color="#16a34a" currentPrice={signal.price} />
+          <PriceLevel label="Deep Accumulation (very cheap)" price={signal.zones.deepAccum} color={C.bull} currentPrice={signal.price} />
         </div>
       </div>
 
       {/* Chart */}
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ fontSize: F.xs, fontWeight: 700, marginBottom: 12, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           1H Chart
         </div>
         <TradingViewChart symbol={signal.symbol} />
       </div>
 
       {/* Risk Calculator */}
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ fontSize: F.xs, fontWeight: 700, marginBottom: 12, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           Position Sizing Calculator
         </div>
         <RiskCalculator entry={signal.price} sl={info.direction.includes('BULLISH') ? signal.zones.deepAccum : signal.zones.safeDistrib} symbol={signal.symbol} />
@@ -803,7 +803,7 @@ function CopyTradeCard({
 
       {/* How to Trade This */}
       <div style={{ padding: '16px 20px' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <div style={{ fontSize: F.xs, fontWeight: 700, marginBottom: 12, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           How to Trade This (Manual)
         </div>
         <HowToTrade signal={signal} info={info} llmDecision={llmDecision} />
@@ -817,8 +817,8 @@ function CopyTradeCard({
 function PriceLevel({ label, price, color, currentPrice }: { label: string; price: number; color: string; currentPrice: number }) {
   const diff = ((price - currentPrice) / currentPrice) * 100;
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 12px', background: '#f9fafb', borderRadius: 6, borderLeft: `3px solid ${color}` }}>
-      <span style={{ fontSize: 12, color: '#6b7280' }}>{label}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 12px', background: C.surfaceHover, borderRadius: R.sm, borderLeft: `3px solid ${color}` }}>
+      <span style={{ fontSize: F.xs, color: C.muted }}>{label}</span>
       <div style={{ textAlign: 'right' }}>
         <span style={{ fontSize: 13, fontWeight: 600 }}>{fmt.format(price)}</span>
         <span style={{ fontSize: 11, color: diff > 0 ? '#16a34a' : '#dc2626', marginLeft: 6 }}>
@@ -870,8 +870,8 @@ function HowToTrade({
             padding: '10px 14px',
             borderRadius: 8,
             marginBottom: 12,
-            background: llmSaysSkip ? '#fef2f2' : llmSaysTrade ? '#f0fdf4' : '#fafafa',
-            border: `1px solid ${llmSaysSkip ? '#fca5a5' : llmSaysTrade ? '#86efac' : '#e5e7eb'}`,
+            background: llmSaysSkip ? C.bear + '10' : llmSaysTrade ? C.bull + '10' : C.surfaceHover,
+            border: `1px solid ${llmSaysSkip ? C.bear + '40' : llmSaysTrade ? C.bull + '40' : C.border}`,
             fontSize: 13,
           }}
         >
@@ -901,7 +901,7 @@ function HowToTrade({
         <div style={{ fontSize: 16, fontWeight: 700, color: info.color, marginBottom: 4 }}>
           Signal: {direction}
         </div>
-        <div style={{ fontSize: 13, color: '#374151' }}>
+        <div style={{ fontSize: F.sm, color: C.textSub }}>
           Strength: {info.strength} ({signal.score}/100)
         </div>
       </div>
@@ -944,17 +944,98 @@ function HowToTrade({
         style={{
           marginTop: 16,
           padding: 12,
-          background: '#fef3c7',
-          borderRadius: 8,
-          border: '1px solid #fbbf24',
-          fontSize: 12,
-          color: '#92400e',
+          background: C.warn + '12',
+          borderRadius: R.sm,
+          border: `1px solid ${C.warn}40`,
+          fontSize: F.xs,
+          color: C.textSub,
         }}
       >
         <strong>Risk Warning:</strong> This is not financial advice. The bot is showing what it sees in the data —
         you make your own decision. Always use a stop loss. Never risk more than 1-2% of your account on a single trade.
         Past signals do not guarantee future results.
       </div>
+    </div>
+  );
+}
+
+// ─── Risk Calculator ─────────────────────────────────────────────────────────
+
+function StandaloneRiskCalc({ defaultEntry, defaultSl }: { defaultEntry?: number; defaultSl?: number }) {
+  const [show, setShow] = useState(false);
+  const [accountSize, setAccountSize] = useState(10000);
+  const [riskPct, setRiskPct] = useState(1.5);
+  const [entry, setEntry] = useState(defaultEntry || 95000);
+  const [stopLoss, setStopLoss] = useState(defaultSl || 94200);
+
+  React.useEffect(() => {
+    if (defaultEntry) setEntry(defaultEntry);
+    if (defaultSl) setStopLoss(defaultSl);
+  }, [defaultEntry, defaultSl]);
+
+  const riskDollars = (accountSize * riskPct) / 100;
+  const stopDist = Math.abs(entry - stopLoss);
+  const stopDistPct = entry > 0 ? (stopDist / entry) * 100 : 0;
+  const positionSize = stopDist > 0 ? riskDollars / stopDist : 0;
+  const notionalValue = positionSize * entry;
+  const leverage = accountSize > 0 ? notionalValue / accountSize : 0;
+
+  const inp: React.CSSProperties = {
+    padding: '7px 10px', background: C.surfaceHover, border: `1px solid ${C.border}`,
+    borderRadius: R.sm, color: C.text, fontSize: F.sm, width: '100%', outline: 'none',
+    fontVariantNumeric: 'tabular-nums',
+  };
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, marginBottom: 24, overflow: 'hidden' }}>
+      <button
+        onClick={() => setShow(v => !v)}
+        style={{
+          width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>Risk Calculator</span>
+          <span style={{ fontSize: F.xs, padding: '2px 8px', borderRadius: R.pill, background: C.warn + '22', color: C.warn, fontWeight: 700 }}>Position Sizing</span>
+        </div>
+        <span style={{ color: C.muted, fontSize: 12, transform: show ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+      </button>
+      {show && (
+        <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${C.border}` }}>
+          <p style={{ fontSize: F.xs, color: C.muted, margin: '12px 0' }}>
+            Enter your account size and risk tolerance to get exact position sizing for any signal.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
+            {[
+              { label: 'Account Size ($)', val: accountSize, set: setAccountSize, min: 100 },
+              { label: 'Risk Per Trade (%)', val: riskPct, set: setRiskPct, step: 0.1, min: 0.1, max: 10 },
+              { label: 'Entry Price ($)', val: entry, set: setEntry, min: 0.01 },
+              { label: 'Stop Loss Price ($)', val: stopLoss, set: setStopLoss, min: 0.01 },
+            ].map(({ label, val, set, ...rest }) => (
+              <div key={label}>
+                <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, marginBottom: 4 }}>{label}</div>
+                <input type="number" style={inp} value={val} onChange={e => set(+e.target.value)} {...rest} />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
+            {[
+              { label: 'Dollar Risk', value: `$${riskDollars.toFixed(2)}`, sub: `${riskPct}% of account`, color: C.warn },
+              { label: 'Stop Distance', value: `${stopDistPct.toFixed(2)}%`, sub: `$${stopDist.toFixed(2)} per unit`, color: C.text },
+              { label: 'Position Size', value: positionSize > 0 ? positionSize.toFixed(4) + ' units' : '—', sub: 'coins / contracts', color: C.info },
+              { label: 'Notional Value', value: notionalValue > 0 ? `$${notionalValue.toFixed(0)}` : '—', sub: 'total exposure', color: C.text },
+              { label: 'Effective Leverage', value: leverage > 0 ? `${leverage.toFixed(1)}×` : '—', sub: leverage > 10 ? 'WARNING: very high' : leverage > 5 ? 'moderate-high' : 'healthy', color: leverage > 10 ? C.bear : leverage > 5 ? C.warn : C.bull },
+            ].map(({ label, value, sub, color }) => (
+              <div key={label} style={{ padding: '10px 14px', background: C.surfaceHover, border: `1px solid ${C.border}`, borderRadius: R.md }}>
+                <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 3 }}>{label}</div>
+                <div style={{ fontSize: F.lg, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+                <div style={{ fontSize: F.xs, color: C.faint }}>{sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1020,7 +1101,7 @@ export default function CopyTrade() {
           key price levels, the LLM&apos;s reasoning, and step-by-step trade instructions for Hyperliquid.
         </p>
         {data.last_updated && (
-          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 8 }}>
             Signals updated: {new Date(data.last_updated).toLocaleString()} | Regime: {data.regime || 'Neutral'}
           </div>
         )}
@@ -1035,20 +1116,23 @@ export default function CopyTrade() {
       {/* Activity Feed */}
       <ActivityFeed events={activityEvents} />
 
+      {/* Risk Calculator */}
+      <StandaloneRiskCalc />
+
       {/* Quick Guide */}
       <div
         style={{
-          background: '#eff6ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: 10,
+          background: C.info + '10',
+          border: `1px solid ${C.info}30`,
+          borderRadius: R.md,
           padding: 20,
           marginBottom: 28,
         }}
       >
-        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, color: '#1e40af' }}>
+        <div style={{ fontSize: F.md, fontWeight: 600, marginBottom: 10, color: C.info }}>
           How This Works
         </div>
-        <div style={{ fontSize: 14, color: '#1e3a5f', lineHeight: 1.7 }}>
+        <div style={{ fontSize: F.sm, color: C.textSub, lineHeight: 1.7 }}>
           <div style={{ marginBottom: 6 }}>
             <strong>1.</strong> The bot scans BTC, SOL, and HYPE every 60 seconds using 9 different strategies.
           </div>
@@ -1090,16 +1174,16 @@ export default function CopyTrade() {
             <div
               key={sym}
               style={{
-                border: '1px solid #e5e7eb',
-                borderRadius: 12,
-                background: '#fff',
+                border: `1px solid ${C.border}`,
+                borderRadius: R.lg,
+                background: C.card,
                 padding: 32,
                 marginBottom: 32,
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{sym}</div>
-              <div style={{ color: '#9ca3af', marginBottom: 16 }}>Waiting for signal data...</div>
+              <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, color: C.text }}>{sym}</div>
+              <div style={{ color: C.muted, marginBottom: 16 }}>Waiting for signal data...</div>
               <TradingViewChart symbol={sym} />
             </div>
           ))}
@@ -1107,10 +1191,10 @@ export default function CopyTrade() {
       {/* Footer */}
       <div
         style={{
-          fontSize: 11,
-          color: '#9ca3af',
+          fontSize: F.xs,
+          color: C.muted,
           padding: '20px 0',
-          borderTop: '1px solid #e5e7eb',
+          borderTop: `1px solid ${C.border}`,
           textAlign: 'center',
           lineHeight: 1.6,
         }}

@@ -546,11 +546,22 @@ export default function Home() {
   const btRes = backtest?.results;
   const regime = llmView?.regime || signalsData.regime || 'Unknown';
 
-  // Equity sparkline data from backtest equity (simplified: just use total_return as flat curve)
-  // We'll use by_symbol pnl data to derive a simple visual
-  const sparkData = btRes
-    ? [btRes.total_return_pct < 0 ? 0 : 2, 3, 1.5, 4, 2.5, 5, btRes.total_return_pct]
-    : [];
+  // Equity sparkline: derive running cumulative PnL from individual trades (real data)
+  const sparkData = (() => {
+    if (!btRes) return [];
+    const trades = (btRes as any).trades as Array<{ pnl?: number; pnl_pct?: number }> | undefined;
+    if (trades && trades.length >= 2) {
+      let cum = 0;
+      return trades.map((t) => { cum += t.pnl_pct ?? t.pnl ?? 0; return cum; });
+    }
+    // Fallback: use by_symbol cumulative values as rough curve points
+    const bySymbol = (btRes as any).by_symbol as Record<string, { pnl?: number }> | undefined;
+    if (bySymbol) {
+      let cum = 0;
+      return Object.values(bySymbol).map((s) => { cum += s.pnl ?? 0; return cum; });
+    }
+    return [];
+  })();
 
   return (
     <div>
