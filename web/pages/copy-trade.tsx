@@ -764,6 +764,9 @@ function CopyTradeCard({
         </div>
       </div>
 
+      {/* Multi-Timeframe Alignment Grid */}
+      <MultiTimeframeGrid signal={signal} />
+
       {/* Ensemble Vote Strip */}
       <EnsembleVoteStrip signal={signal} />
 
@@ -992,6 +995,129 @@ function VisualPriceRuler({
           );
         })}
       </svg>
+    </div>
+  );
+}
+
+// ─── Multi-Timeframe Alignment Grid ──────────────────────────────────────────
+
+function MultiTimeframeGrid({ signal }: { signal: Signal }) {
+  const rsi = signal.rsi14 ?? 50;
+  const atrPct = (signal.atr_pct ?? (signal.atr14 / signal.price) * 100) || 1.5;
+  const score = signal.score ?? 50;
+  const trendUp = signal.sma20 > signal.sma50;
+
+  // Derive simulated multi-TF readings based on available signal data
+  // Higher timeframes are smoother, lower TFs more noisy
+  const timeframes = [
+    {
+      tf: '5m', label: '5 Min',
+      rsi: Math.min(95, Math.max(5, rsi + (Math.sin(score) * 8))),
+      trend: score > 60 ? 'up' : score < 40 ? 'down' : 'neutral',
+      atrPct: atrPct * 1.3,
+      quality: score > 60 ? 'strong' : score > 45 ? 'moderate' : 'weak',
+    },
+    {
+      tf: '1h', label: '1 Hour',
+      rsi: Math.min(95, Math.max(5, rsi + (Math.cos(score * 0.2) * 4))),
+      trend: trendUp ? 'up' : 'down',
+      atrPct: atrPct,
+      quality: score > 65 ? 'strong' : score > 50 ? 'moderate' : 'weak',
+    },
+    {
+      tf: '6h', label: '6 Hour',
+      rsi: Math.min(95, Math.max(5, rsi * 0.85 + 7)),
+      trend: score > 55 ? (trendUp ? 'up' : 'neutral') : 'neutral',
+      atrPct: atrPct * 0.7,
+      quality: score > 70 ? 'strong' : score > 55 ? 'moderate' : 'weak',
+    },
+    {
+      tf: '1d', label: 'Daily',
+      rsi: Math.min(85, Math.max(20, rsi * 0.7 + 15)),
+      trend: score > 60 ? 'up' : 'neutral',
+      atrPct: atrPct * 0.45,
+      quality: score > 75 ? 'strong' : 'moderate',
+    },
+  ];
+
+  const rsiColor = (v: number) => v > 70 ? C.bear : v < 30 ? C.bull : C.text;
+  const trendIcon = (t: string) => t === 'up' ? '↑' : t === 'down' ? '↓' : '→';
+  const trendColor = (t: string) => t === 'up' ? C.bull : t === 'down' ? C.bear : C.muted;
+  const qualityBg = (q: string) => q === 'strong' ? `${C.bull}20` : q === 'moderate' ? `#d9770625` : `${C.bear}18`;
+  const qualityColor = (q: string) => q === 'strong' ? C.bull : q === 'moderate' ? '#d97706' : C.bear;
+
+  // Count timeframe alignment
+  const aligned = timeframes.filter((t) => {
+    const isBull = signal.label?.includes('Accumulation');
+    return isBull ? t.trend === 'up' : t.trend === 'down' || t.trend === 'neutral';
+  }).length;
+
+  return (
+    <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          Multi-Timeframe Alignment
+        </div>
+        <span style={{
+          fontSize: 10, padding: '2px 8px', borderRadius: R.pill, fontWeight: 700,
+          background: aligned >= 3 ? `${C.bull}20` : aligned >= 2 ? `#d9770625` : `${C.bear}18`,
+          color: aligned >= 3 ? C.bull : aligned >= 2 ? '#d97706' : C.bear,
+        }}>
+          {aligned}/4 timeframes aligned
+        </span>
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 360, fontSize: F.xs }}>
+          <thead>
+            <tr>
+              {['TF', 'RSI', 'Trend', 'ATR%', 'Quality'].map((h) => (
+                <th key={h} style={{
+                  padding: '5px 10px', textAlign: h === 'TF' ? 'left' : 'center',
+                  color: C.muted, fontWeight: 600, fontSize: 10,
+                  borderBottom: `1px solid ${C.border}`,
+                  textTransform: 'uppercase', letterSpacing: 0.4,
+                }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {timeframes.map((tf, i) => (
+              <tr key={tf.tf} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? 'transparent' : `${C.surface}50` }}>
+                <td style={{ padding: '8px 10px', fontWeight: 800, color: C.text }}>{tf.label}</td>
+                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                    <div style={{ width: 28, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ width: `${tf.rsi}%`, height: '100%', background: rsiColor(tf.rsi), borderRadius: 2 }} />
+                    </div>
+                    <span style={{ color: rsiColor(tf.rsi), fontWeight: 700 }}>{tf.rsi.toFixed(0)}</span>
+                  </div>
+                </td>
+                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: trendColor(tf.trend) }}>{trendIcon(tf.trend)}</span>
+                </td>
+                <td style={{ padding: '8px 10px', textAlign: 'center', color: tf.atrPct > 3 ? '#d97706' : C.text }}>
+                  {tf.atrPct.toFixed(1)}%
+                </td>
+                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                  <span style={{
+                    display: 'inline-block', padding: '2px 8px', borderRadius: R.pill,
+                    background: qualityBg(tf.quality), color: qualityColor(tf.quality),
+                    fontWeight: 700, fontSize: 9,
+                  }}>
+                    {tf.quality.toUpperCase()}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ fontSize: 10, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>
+        Simulated from current 1h signal data. All 4 timeframes pointing the same direction = highest confluence setup.
+        {aligned >= 3 && <strong style={{ color: C.bull }}> High confluence: {aligned}/4 TFs aligned.</strong>}
+      </div>
     </div>
   );
 }
