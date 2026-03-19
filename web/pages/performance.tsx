@@ -340,7 +340,7 @@ function MonthlyPnlChart({ trades }: { trades: TradeRecord[] }) {
   }
 
   const vbW = 700;
-  const vbH = 140;
+  const vbH = 160;
   const pad = { t: 28, r: 16, b: 30, l: 52 };
   const W = vbW - pad.l - pad.r;
   const H = vbH - pad.t - pad.b;
@@ -352,9 +352,29 @@ function MonthlyPnlChart({ trades }: { trades: TradeRecord[] }) {
   const barX = (i: number) => pad.l + (i / periods.length) * W + (W / periods.length - barW) / 2;
   const barH = (pnl: number) => Math.max(2, (Math.abs(pnl) / maxAbs) * (H / 2 - 4));
   const barY = (pnl: number) => pnl >= 0 ? zeroY - barH(pnl) : zeroY;
+  const barCenterX = (i: number) => pad.l + (i / periods.length) * W + W / periods.length / 2;
 
   const topLabel = fmtUsd(maxAbs);
   const botLabel = fmtUsd(-maxAbs);
+
+  // Average monthly PnL target line
+  const avgPnl = periods.reduce((s, p) => s + p.pnl, 0) / periods.length;
+  const avgY = zeroY - (avgPnl / maxAbs) * (H / 2 - 4);
+
+  // Best and worst periods
+  const bestIdx = periods.reduce((bi, p, i) => p.pnl > periods[bi].pnl ? i : bi, 0);
+  const worstIdx = periods.reduce((wi, p, i) => p.pnl < periods[wi].pnl ? i : wi, 0);
+
+  // Cumulative PnL for line overlay
+  const cumPnl: number[] = [];
+  let running = 0;
+  for (const p of periods) {
+    running += p.pnl;
+    cumPnl.push(running);
+  }
+  const maxCum = Math.max(...cumPnl.map(Math.abs), 1);
+  const cumY = (v: number) => zeroY - (v / maxCum) * (H / 2 - 4);
+  const cumPts = cumPnl.map((v, i) => `${barCenterX(i)},${cumY(v)}`).join(' ');
 
   return (
     <svg width="100%" viewBox={`0 0 ${vbW} ${vbH}`} style={{ display: 'block' }}>
@@ -368,6 +388,14 @@ function MonthlyPnlChart({ trades }: { trades: TradeRecord[] }) {
 
       {/* Reference line at 0 */}
       <line x1={pad.l} y1={zeroY} x2={pad.l + W} y2={zeroY} stroke={C.border} strokeWidth={1} />
+
+      {/* Average PnL target dashed line */}
+      {periods.length > 1 && (
+        <g>
+          <line x1={pad.l} y1={avgY} x2={pad.l + W} y2={avgY} stroke={C.brand} strokeWidth={1} strokeDasharray="5,3" opacity={0.6} />
+          <text x={pad.l + W + 2} y={avgY + 3} fill={C.brand} fontSize={7} opacity={0.7}>avg</text>
+        </g>
+      )}
 
       {/* Bars */}
       {periods.map((p, i) => {
@@ -396,7 +424,7 @@ function MonthlyPnlChart({ trades }: { trades: TradeRecord[] }) {
             )}
             {/* X-axis period label */}
             <text
-              x={bx + barW / 2} y={vbH - 4}
+              x={bx + barW / 2} y={vbH - 14}
               fill={C.muted} fontSize={7} textAnchor="middle"
             >
               {p.label}
@@ -405,10 +433,44 @@ function MonthlyPnlChart({ trades }: { trades: TradeRecord[] }) {
         );
       })}
 
+      {/* Best/Worst annotations */}
+      {periods.length > 1 && (
+        <>
+          <text
+            x={barCenterX(bestIdx)}
+            y={barY(periods[bestIdx].pnl) - 12}
+            fill={C.bull} fontSize={7} textAnchor="middle" fontWeight="700"
+          >
+            Best: +{fmtUsd(periods[bestIdx].pnl, 0)}
+          </text>
+          <text
+            x={barCenterX(worstIdx)}
+            y={barY(periods[worstIdx].pnl) + barH(periods[worstIdx].pnl) + 18}
+            fill={C.bear} fontSize={7} textAnchor="middle" fontWeight="700"
+          >
+            Worst: {fmtUsd(periods[worstIdx].pnl, 0)}
+          </text>
+        </>
+      )}
+
+      {/* Cumulative PnL overlay line */}
+      {cumPnl.length > 1 && (
+        <>
+          <polyline points={cumPts} fill="none" stroke={C.brand} strokeWidth={1.5} strokeLinejoin="round" strokeDasharray="3,2" opacity={0.8} />
+          {cumPnl.map((v, i) => (
+            <circle key={`cum-${i}`} cx={barCenterX(i)} cy={cumY(v)} r={2} fill={C.brand} opacity={0.7} />
+          ))}
+        </>
+      )}
+
       {/* X-axis label */}
-      <text x={pad.l + W / 2} y={vbH - 2} fill={C.muted} fontSize={8} textAnchor="middle" dy={-10}>
+      <text x={pad.l + W / 2} y={vbH - 2} fill={C.muted} fontSize={8} textAnchor="middle">
         Period (every 5 trades)
       </text>
+
+      {/* Legend */}
+      <line x1={pad.l} y1={vbH - 8} x2={pad.l + 14} y2={vbH - 8} stroke={C.brand} strokeWidth={1.5} strokeDasharray="3,2" />
+      <text x={pad.l + 17} y={vbH - 4} fill={C.muted} fontSize={7}>Cumulative PnL</text>
     </svg>
   );
 }
@@ -1522,7 +1584,7 @@ export default function PerformancePage() {
             {curve.length > 1 && (
               <Section title="Equity Curve">
                 <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto' }}>
-                  <EquityChart points={curve} width={860} height={200} />
+                  <EquityChart points={curve} trades={trades} width={860} height={200} />
                 </div>
                 <div style={{
                   background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
