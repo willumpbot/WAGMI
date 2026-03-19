@@ -453,6 +453,324 @@ function HourlyWinRate({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
+// ─── Hour of Day Win Rate Heat Strip ─────────────────────────────────────────
+
+function HourOfDayWinRate({ trades }: { trades: TradeRecord[] }) {
+  // Group trades by UTC hour derived from entry_timestamp_ms if present at runtime,
+  // falling back to seeded pseudo-random values so the component always renders.
+  type AnyRecord = TradeRecord & { entry_timestamp_ms?: number | null };
+
+  const buckets: { wins: number; total: number }[] = Array.from({ length: 24 }, () => ({ wins: 0, total: 0 }));
+  let hasRealData = false;
+
+  trades.forEach((t) => {
+    const ts = (t as AnyRecord).entry_timestamp_ms;
+    if (ts == null || isNaN(ts)) return;
+    const hour = Math.floor(ts / 3600000) % 24;
+    hasRealData = true;
+    buckets[hour].total++;
+    if (t.outcome === 'WIN') buckets[hour].wins++;
+  });
+
+  // Seeded fallback: deterministic pseudo-data so chart always renders
+  const displayBuckets = hasRealData
+    ? buckets
+    : Array.from({ length: 24 }, (_, h) => {
+        const seed = ((h * 7919 + 13) % 100);
+        const isGreen = seed > 50;
+        const total = 3 + (h % 5);
+        const wins = isGreen ? Math.ceil(total * (0.55 + (seed % 20) / 100)) : Math.floor(total * (0.25 + (seed % 20) / 100));
+        return { wins: Math.min(wins, total), total };
+      });
+
+  const CELL_W = 26;
+  const CELL_H = 44;
+  const LABEL_H = 16;
+  const PAD = 2;
+  const totalW = 24 * (CELL_W + PAD);
+  const totalH = CELL_H + LABEL_H;
+
+  function cellFill(b: { wins: number; total: number }): string {
+    if (b.total === 0) return C.heatNeutral;
+    const wr = b.wins / b.total;
+    if (wr >= 0.7) return C.heatBull3;
+    if (wr >= 0.55) return C.heatBull2;
+    if (wr >= 0.42) return C.heatBull1;
+    if (wr >= 0.35) return C.heatBear1;
+    if (wr >= 0.2) return C.heatBear2;
+    return C.heatBear3;
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 6 }}>
+        Win Rate by Hour of Day (UTC)
+      </div>
+      {!hasRealData && (
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 8 }}>
+          No timestamp data — showing illustrative seeded pattern.
+        </div>
+      )}
+      <svg
+        viewBox={`0 0 ${totalW} ${totalH}`}
+        style={{ width: '100%', height: 'auto', display: 'block' }}
+      >
+        {displayBuckets.map((b, h) => {
+          const x = h * (CELL_W + PAD);
+          const fill = cellFill(b);
+          const wr = b.total > 0 ? Math.round((b.wins / b.total) * 100) : null;
+          return (
+            <g key={h}>
+              <rect x={x} y={0} width={CELL_W} height={CELL_H} fill={fill} rx={3}>
+                <title>{`Hour ${h}:00 UTC — ${b.wins}/${b.total} wins${wr != null ? ` (${wr}%)` : ''}`}</title>
+              </rect>
+              {wr != null && (
+                <text
+                  x={x + CELL_W / 2}
+                  y={CELL_H / 2 - 4}
+                  textAnchor="middle"
+                  fontSize={8}
+                  fontWeight={700}
+                  fill="#fff"
+                  fillOpacity={0.9}
+                  fontFamily="Inter, system-ui"
+                >
+                  {wr}%
+                </text>
+              )}
+              <text
+                x={x + CELL_W / 2}
+                y={CELL_H / 2 + 8}
+                textAnchor="middle"
+                fontSize={7}
+                fill="#fff"
+                fillOpacity={0.6}
+                fontFamily="Inter, system-ui"
+              >
+                {b.total > 0 ? `${b.wins}/${b.total}` : '—'}
+              </text>
+              {/* Hour label below cell — show every 4 hours */}
+              {h % 4 === 0 && (
+                <text
+                  x={x + CELL_W / 2}
+                  y={CELL_H + LABEL_H - 2}
+                  textAnchor="middle"
+                  fontSize={8}
+                  fill={C.muted}
+                  fontFamily="Inter, system-ui"
+                >
+                  {h}h
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      <div style={{ display: 'flex', gap: 12, fontSize: 10, color: C.muted, marginTop: 6 }}>
+        {[
+          { color: C.heatBull3, label: '≥70%' },
+          { color: C.heatBull2, label: '55–70%' },
+          { color: C.heatBull1, label: '42–55%' },
+          { color: C.heatBear1, label: '35–42%' },
+          { color: C.heatBear2, label: '20–35%' },
+          { color: C.heatBear3, label: '<20%' },
+          { color: C.heatNeutral, label: 'No data' },
+        ].map(({ color, label }) => (
+          <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ width: 10, height: 10, background: color, borderRadius: 2, display: 'inline-block', flexShrink: 0 }} />
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Risk:Reward Scatter Plot ─────────────────────────────────────────────────
+
+function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
+  // Uses signal confidence (0-1) on X-axis vs actual R:R achieved on Y-axis.
+  // Distinct from ConfScatterPlot which plots llm_confidence.
+  const plotTrades = trades.filter(
+    (t) =>
+      t.confidence != null &&
+      t.rr_achieved != null &&
+      !isNaN(t.confidence!) &&
+      !isNaN(t.rr_achieved!)
+  );
+
+  const hasRealData = plotTrades.length >= 3;
+
+  // Seeded fallback dots — 20 deterministic points
+  const seedDots: { conf: number; rr: number; win: boolean }[] = Array.from({ length: 20 }, (_, i) => {
+    const conf = ((i * 4973 + 37) % 101);
+    const rr = ((i * 3761 + 19) % 400) / 100 - 1; // -1 to +3
+    const win = rr > 0.8 ? (i % 3 !== 0) : (i % 4 === 0);
+    return { conf, rr, win };
+  });
+
+  const W = 500, H = 200;
+  const pad = { top: 24, right: 24, bottom: 44, left: 52 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  const dots = hasRealData
+    ? plotTrades.map((t) => ({
+        conf: (t.confidence ?? 0) * 100,
+        rr: t.rr_achieved ?? 0,
+        win: t.outcome === 'WIN',
+        label: t.symbol,
+      }))
+    : seedDots.map((d) => ({ ...d, label: '' }));
+
+  const allRR = dots.map((d) => d.rr);
+  const minRR = Math.min(...allRR, -1.5);
+  const maxRR = Math.max(...allRR, 3);
+  const rangeRR = maxRR - minRR || 1;
+
+  const px = (conf: number) => pad.left + (conf / 100) * plotW;
+  const py = (rr: number) => pad.top + plotH - ((rr - minRR) / rangeRR) * plotH;
+
+  const xTicks = [0, 25, 50, 75, 100];
+  const yTickValues = Array.from(new Set([Math.floor(minRR), 0, 1, 2, Math.ceil(maxRR)])).sort((a, b) => a - b);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {!hasRealData && (
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 6 }}>
+          No signal confidence data — showing illustrative seeded data.
+        </div>
+      )}
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+      >
+        <defs>
+          <clipPath id="rrScatterClip">
+            <rect x={pad.left} y={pad.top} width={plotW} height={plotH} />
+          </clipPath>
+        </defs>
+
+        {/* Y grid lines */}
+        {yTickValues.map((v) => (
+          <g key={v}>
+            <line
+              x1={pad.left} y1={py(v)}
+              x2={pad.left + plotW} y2={py(v)}
+              stroke={C.border} strokeWidth={v === 0 ? 1.2 : 0.7}
+              strokeDasharray={v === 0 ? '' : '3 4'}
+            />
+            <text x={pad.left - 5} y={py(v) + 4} textAnchor="end" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">
+              {v.toFixed(1)}
+            </text>
+          </g>
+        ))}
+
+        {/* X grid lines */}
+        {xTicks.map((v) => (
+          <g key={v}>
+            <line
+              x1={px(v)} y1={pad.top}
+              x2={px(v)} y2={pad.top + plotH}
+              stroke={C.border} strokeWidth={0.7} strokeDasharray="3 4"
+            />
+            <text x={px(v)} y={pad.top + plotH + 13} textAnchor="middle" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">
+              {v}%
+            </text>
+          </g>
+        ))}
+
+        {/* R:R = 1.0 reference line */}
+        {minRR < 1.0 && 1.0 < maxRR && (
+          <g>
+            <line
+              x1={pad.left} y1={py(1.0)}
+              x2={pad.left + plotW} y2={py(1.0)}
+              stroke={C.warn} strokeWidth={1} strokeDasharray="6 4"
+              clipPath="url(#rrScatterClip)"
+            />
+            <text x={pad.left + plotW - 2} y={py(1.0) - 4} textAnchor="end" fontSize={8} fill={C.warn} fontFamily="Inter, system-ui">1.0×</text>
+          </g>
+        )}
+
+        {/* R:R = 2.0 reference line */}
+        {minRR < 2.0 && 2.0 < maxRR && (
+          <g>
+            <line
+              x1={pad.left} y1={py(2.0)}
+              x2={pad.left + plotW} y2={py(2.0)}
+              stroke={C.bull} strokeWidth={1} strokeDasharray="6 4"
+              clipPath="url(#rrScatterClip)"
+            />
+            <text x={pad.left + plotW - 2} y={py(2.0) - 4} textAnchor="end" fontSize={8} fill={C.bull} fontFamily="Inter, system-ui">2.0×</text>
+          </g>
+        )}
+
+        {/* Confidence = 75% vertical reference line */}
+        <line
+          x1={px(75)} y1={pad.top}
+          x2={px(75)} y2={pad.top + plotH}
+          stroke={C.brand} strokeWidth={1} strokeDasharray="6 4"
+          clipPath="url(#rrScatterClip)"
+        />
+        <text x={px(75) + 3} y={pad.top + 10} fontSize={8} fill={C.brand} fontFamily="Inter, system-ui">75%</text>
+
+        {/* Dots */}
+        {dots.map((d, i) => (
+          <circle
+            key={i}
+            cx={px(d.conf)}
+            cy={py(d.rr)}
+            r={4}
+            fill={d.win ? C.bull : C.bear}
+            fillOpacity={0.75}
+            stroke={d.win ? C.bullMid : C.bearMid}
+            strokeWidth={0.8}
+            clipPath="url(#rrScatterClip)"
+          >
+            <title>{d.label ? `${d.label} — Conf: ${d.conf.toFixed(0)}% R:R: ${d.rr.toFixed(2)} (${d.win ? 'WIN' : 'LOSS'})` : `Conf: ${d.conf.toFixed(0)}% R:R: ${d.rr.toFixed(2)}`}</title>
+          </circle>
+        ))}
+
+        {/* Axis labels */}
+        <text x={pad.left + plotW / 2} y={H - 4} textAnchor="middle" fontSize={10} fill={C.muted} fontFamily="Inter, system-ui">
+          Signal Confidence
+        </text>
+        <text
+          x={12}
+          y={pad.top + plotH / 2}
+          textAnchor="middle"
+          fontSize={10}
+          fill={C.muted}
+          fontFamily="Inter, system-ui"
+          transform={`rotate(-90 12 ${pad.top + plotH / 2})`}
+        >
+          R:R Achieved
+        </text>
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, fontSize: 10, color: C.muted, marginTop: 6 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.bull, display: 'inline-block' }} /> WIN
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.bear, display: 'inline-block' }} /> LOSS
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 16, height: 2, background: C.warn, display: 'inline-block', verticalAlign: 'middle' }} /> 1.0× R:R
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 16, height: 2, background: C.bull, display: 'inline-block', verticalAlign: 'middle' }} /> 2.0× R:R
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 2, height: 10, background: C.brand, display: 'inline-block', verticalAlign: 'middle' }} /> 75% conf
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Regime Performance Matrix ────────────────────────────────────────────────
 
 function RegimePerformanceMatrix({ trades }: { trades: TradeRecord[] }) {
@@ -1155,6 +1473,21 @@ export default function Forensics() {
         )}
       </div>
 
+      {/* Risk:Reward Scatter */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 14 }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Signal Confidence vs R:R Achieved</h2>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            Plots strategy signal confidence against actual risk:reward per trade. Dashed lines at 1.0×, 2.0× R:R and 75% confidence threshold.
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={200} />
+        ) : (
+          <RiskRewardScatter trades={filtered} />
+        )}
+      </div>
+
       {/* Trade Waterfall */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
@@ -1195,6 +1528,20 @@ export default function Forensics() {
           <Skeleton h={54} />
         ) : (
           <HourlyWinRate trades={filtered} />
+        )}
+      </div>
+
+      {/* Hour of Day Win Rate — entry_timestamp_ms based, with seeded fallback */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            Derived from <code style={{ fontSize: F.xs, color: C.brand }}>entry_timestamp_ms</code> field. Shows which hours of the day (UTC) historically produce wins vs losses.
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={74} />
+        ) : (
+          <HourOfDayWinRate trades={filtered} />
         )}
       </div>
 
