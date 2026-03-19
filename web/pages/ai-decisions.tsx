@@ -1594,8 +1594,8 @@ export default function AiDecisionsPage() {
             <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
               The Decision Theater
             </div>
-            <h1 style={{ margin: '0 0 4px', fontSize: F['3xl'], fontWeight: 800, color: C.text }}>
-              AI Thinks Out Loud
+            <h1 style={{ margin: '0 0 4px', fontSize: F['3xl'], fontWeight: 900, color: C.text }}>
+              AI <span className="gradient-text">Thinks Out Loud</span>
             </h1>
             <p style={{ margin: 0, color: C.muted, fontSize: F.base }}>
               Every trade decision, every agent's reasoning, every veto — fully transparent. No black box.

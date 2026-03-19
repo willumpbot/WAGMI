@@ -1798,8 +1798,8 @@ export default function LlmAudit() {
         <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           AI Transparency
         </div>
-        <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>
-          LLM Decision Audit
+        <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 900, color: C.text, letterSpacing: -0.5 }}>
+          LLM <span className="gradient-text">Decision Audit</span>
         </h1>
         <p style={{ margin: '6px 0 0', fontSize: F.sm, color: C.muted, maxWidth: 680 }}>
           Every AI decision, in full. What model was used, what trigger fired, the full reasoning, and whether the trade was blocked. Radical transparency.
