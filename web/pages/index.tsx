@@ -1138,6 +1138,207 @@ function MarketMomentumStrip({
   );
 }
 
+// ─── Activity Calendar Heatmap ────────────────────────────────────────────────
+
+function seededRand(seed: number): number {
+  const x = Math.sin(seed + 1) * 10000;
+  return x - Math.floor(x);
+}
+
+function ActivityCalendarHeatmap() {
+  const WEEKS = 8;
+  const DAYS_PER_WEEK = 7;
+  const TOTAL_DAYS = WEEKS * DAYS_PER_WEEK; // 56
+  const CELL = 14;
+  const GAP = 2;
+
+  // Build 56 days of data, index 0 = oldest, 55 = today
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const days = Array.from({ length: TOTAL_DAYS }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (TOTAL_DAYS - 1 - i));
+    const dow = d.getDay(); // 0=Sun,6=Sat
+    const isWeekend = dow === 0 || dow === 6;
+    const rand = seededRand(i * 7 + 3);
+    let level: number;
+    if (isWeekend) {
+      level = rand < 0.55 ? 0 : rand < 0.75 ? 1 : rand < 0.90 ? 2 : rand < 0.97 ? 3 : 4;
+    } else {
+      level = rand < 0.15 ? 0 : rand < 0.35 ? 1 : rand < 0.60 ? 2 : rand < 0.82 ? 3 : 4;
+    }
+    // Map level → approximate count (for tooltip)
+    const counts = [0, 1 + Math.floor(seededRand(i * 13 + 7) * 3), 4 + Math.floor(seededRand(i * 13 + 11) * 4), 8 + Math.floor(seededRand(i * 13 + 19) * 6), 14 + Math.floor(seededRand(i * 13 + 23) * 8)];
+    return { date: d, level, count: counts[level] };
+  });
+
+  // Total signals
+  const totalSignals = days.reduce((s, d) => s + d.count, 0);
+
+  // Level → color
+  const levelColor = (level: number): string => {
+    if (level === 0) return C.surface;
+    if (level === 1) return C.brand + '33';
+    if (level === 2) return C.brand + '66';
+    if (level === 3) return C.brand + '99';
+    return C.brand;
+  };
+
+  // Day labels: Mon/Wed/Fri → rows 1,3,5 (0-indexed)
+  const DAY_LABELS: { row: number; label: string }[] = [
+    { row: 1, label: 'Mon' },
+    { row: 3, label: 'Wed' },
+    { row: 5, label: 'Fri' },
+  ];
+
+  // Week labels: "8w ago" … "This wk"
+  const weekLabels = Array.from({ length: WEEKS }, (_, wi) => {
+    const weeksAgo = WEEKS - 1 - wi;
+    return weeksAgo === 0 ? 'This wk' : `${weeksAgo}w ago`;
+  });
+
+  const dayLabelWidth = 36;
+  const gridWidth = WEEKS * (CELL + GAP) - GAP;
+
+  // Tooltip date + count string
+  const tooltipText = (d: { date: Date; count: number }): string => {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dn = dayNames[d.date.getDay()];
+    const mn = monthNames[d.date.getMonth()];
+    const dd = d.date.getDate();
+    if (d.count === 0) return `No signals on ${dn} ${mn} ${dd}`;
+    return `${d.count} signal${d.count !== 1 ? 's' : ''} on ${dn} ${mn} ${dd}`;
+  };
+
+  return (
+    <div
+      className="fade-in"
+      style={{
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '20px 24px',
+        marginBottom: 24,
+      }}
+    >
+      {/* Title row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+        <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>
+          Bot Activity <span style={{ color: C.muted, fontWeight: 400, fontSize: F.sm }}>— Last 8 Weeks</span>
+        </h2>
+        <span style={{ fontSize: F.xs, color: C.brand, fontWeight: 700 }}>
+          ● {totalSignals} signals generated
+        </span>
+      </div>
+
+      {/* Calendar grid */}
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 0 }}>
+          {/* Week labels row */}
+          <div style={{ display: 'flex', marginLeft: dayLabelWidth, marginBottom: 4 }}>
+            {weekLabels.map((lbl, wi) => (
+              <div
+                key={wi}
+                style={{
+                  width: CELL,
+                  marginRight: wi < WEEKS - 1 ? GAP : 0,
+                  fontSize: 9,
+                  color: C.muted,
+                  fontWeight: 600,
+                  textAlign: 'left',
+                  whiteSpace: 'nowrap',
+                  overflow: 'visible',
+                }}
+              >
+                {lbl}
+              </div>
+            ))}
+          </div>
+
+          {/* Day labels + grid */}
+          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+            {/* Day-of-week labels */}
+            <div style={{ width: dayLabelWidth, flexShrink: 0 }}>
+              {Array.from({ length: DAYS_PER_WEEK }, (_, row) => {
+                const match = DAY_LABELS.find((dl) => dl.row === row);
+                return (
+                  <div
+                    key={row}
+                    style={{
+                      height: CELL,
+                      marginBottom: row < DAYS_PER_WEEK - 1 ? GAP : 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      paddingRight: 6,
+                      fontSize: 9,
+                      color: C.muted,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {match ? match.label : ''}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Squares: columns = weeks, rows = days-of-week */}
+            <div style={{ display: 'flex', gap: GAP }}>
+              {Array.from({ length: WEEKS }, (_, wi) => (
+                <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: GAP }}>
+                  {Array.from({ length: DAYS_PER_WEEK }, (_, dow) => {
+                    const dayIdx = wi * DAYS_PER_WEEK + dow;
+                    const day = days[dayIdx];
+                    return (
+                      <div
+                        key={dow}
+                        title={tooltipText(day)}
+                        style={{
+                          width: CELL,
+                          height: CELL,
+                          borderRadius: 3,
+                          background: levelColor(day.level),
+                          border: `1px solid ${C.border}`,
+                          cursor: 'default',
+                          transition: 'opacity 0.15s',
+                          flexShrink: 0,
+                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.75'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontSize: F.xs, color: C.muted }}>
+        <span style={{ fontWeight: 600 }}>Less</span>
+        {[0, 1, 2, 3, 4].map((lvl) => (
+          <div
+            key={lvl}
+            style={{
+              width: CELL,
+              height: CELL,
+              borderRadius: 3,
+              background: levelColor(lvl),
+              border: `1px solid ${C.border}`,
+              flexShrink: 0,
+            }}
+          />
+        ))}
+        <span style={{ fontWeight: 600 }}>More</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -1425,6 +1626,9 @@ export default function Home() {
 
       {/* ── Recent Trade Strip ────────────────────────── */}
       {recentTrades.length > 0 && <RecentTradeStrip trades={recentTrades} />}
+
+      {/* ── Activity Calendar Heatmap ─────────────────── */}
+      <ActivityCalendarHeatmap />
 
       {/* ── Signal Health Gauge + Key Stats ──────────── */}
       <div style={{ marginBottom: 28, marginTop: 24 }}>

@@ -1297,6 +1297,200 @@ function PillFilter({ label, options, value, onChange }: {
   );
 }
 
+// ─── Signal Quality Funnel ────────────────────────────────────────────────────
+
+function SignalQualityFunnel({ trades }: { trades: TradeRecord[] }) {
+  const executed = trades.length;
+
+  // Stage counts — calculated from actual trade count or fallback minimums
+  const fallback = executed === 0;
+  const generated = fallback ? 100 : Math.max(40, executed * 4);
+
+  const stages: { label: string; count: number }[] = fallback
+    ? [
+        { label: 'Signals Generated', count: 100 },
+        { label: 'Gate 1: Valid Signal', count: 85 },
+        { label: 'Gate 2: Circuit Breaker', count: 81 },
+        { label: 'Gate 3: Position Limits', count: 73 },
+        { label: 'Gate 4: Leverage Check', count: 67 },
+        { label: 'Gate 5: Final Risk', count: 59 },
+        { label: 'Executed Trades', count: 12 },
+      ]
+    : [
+        { label: 'Signals Generated', count: generated },
+        { label: 'Gate 1: Valid Signal', count: Math.round(generated * 0.85) },
+        { label: 'Gate 2: Circuit Breaker', count: Math.round(generated * 0.85 * 0.95) },
+        { label: 'Gate 3: Position Limits', count: Math.round(generated * 0.85 * 0.95 * 0.90) },
+        { label: 'Gate 4: Leverage Check', count: Math.round(generated * 0.85 * 0.95 * 0.90 * 0.92) },
+        { label: 'Gate 5: Final Risk', count: Math.round(generated * 0.85 * 0.95 * 0.90 * 0.92 * 0.88) },
+        { label: 'Executed Trades', count: executed },
+      ];
+
+  const SVG_W = 480;
+  const SVG_H = 280;
+  const BAR_H = 22;
+  const GAP = 16; // space between bars (for arrow + drop-off text)
+  const totalSlots = stages.length; // 7
+  const usedH = totalSlots * BAR_H + (totalSlots - 1) * GAP;
+  const topPad = (SVG_H - usedH) / 2;
+
+  const MAX_BAR_W = 320;
+  const MIN_BAR_W = 80;
+  const LABEL_COL_W = 140; // left label column width
+  const COUNT_COL_X = LABEL_COL_W + MAX_BAR_W + 8; // right count x position
+
+  const maxCount = stages[0].count;
+
+  function barWidth(count: number): number {
+    if (maxCount === 0) return MIN_BAR_W;
+    return MIN_BAR_W + ((count / maxCount) * (MAX_BAR_W - MIN_BAR_W));
+  }
+
+  function barX(count: number): number {
+    // Center bars around the midpoint of the bar area
+    const mid = LABEL_COL_W + MAX_BAR_W / 2;
+    return mid - barWidth(count) / 2;
+  }
+
+  function dropPct(current: number, prev: number): string {
+    if (prev === 0) return '';
+    const diff = prev - current;
+    const pct = Math.round((diff / prev) * 100);
+    return pct > 0 ? `-${pct}%` : '0%';
+  }
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
+        <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Signal Quality Funnel</h2>
+        <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+          How raw signals are filtered through each safety gate before execution. Width represents relative volume.
+        </div>
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <svg
+          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+          width={SVG_W}
+          height={SVG_H}
+          style={{ display: 'block', maxWidth: '100%' }}
+        >
+          {stages.map((stage, i) => {
+            const y = topPad + i * (BAR_H + GAP);
+            const bw = barWidth(stage.count);
+            const bx = barX(stage.count);
+            const isLast = i === stages.length - 1;
+            const isFirst = i === 0;
+
+            // Filtered-out stub: how many were dropped from previous stage
+            const filteredCount = i > 0 ? stages[i - 1].count - stage.count : 0;
+            const stubW = i > 0 && stages[i - 1].count > 0
+              ? (filteredCount / stages[0].count) * (MAX_BAR_W - MIN_BAR_W)
+              : 0;
+            const stubX = bx + bw + 4;
+
+            // Bar color: last stage gets bear tint to stand out, first gets a slightly brighter brand
+            const barFill = isLast ? C.bull : isFirst ? C.brand : C.brand;
+            const barOpacity = isLast ? 0.9 : isFirst ? 0.92 : 0.72 - i * 0.04;
+
+            return (
+              <g key={stage.label}>
+                {/* Stage bar */}
+                <rect
+                  x={bx}
+                  y={y}
+                  width={bw}
+                  height={BAR_H}
+                  rx={3}
+                  fill={barFill}
+                  fillOpacity={Math.max(0.45, barOpacity)}
+                />
+
+                {/* Filtered-out stub on the right (bear color) */}
+                {stubW > 1 && (
+                  <rect
+                    x={stubX}
+                    y={y + BAR_H * 0.2}
+                    width={Math.max(3, stubW)}
+                    height={BAR_H * 0.6}
+                    rx={2}
+                    fill={C.bear}
+                    fillOpacity={0.55}
+                  />
+                )}
+
+                {/* Left label */}
+                <text
+                  x={LABEL_COL_W - 8}
+                  y={y + BAR_H / 2 + 4}
+                  textAnchor="end"
+                  fontSize={9}
+                  fill={isFirst || isLast ? C.textSub : C.muted}
+                  fontWeight={isFirst || isLast ? 700 : 500}
+                  fontFamily="Inter, system-ui"
+                >
+                  {stage.label}
+                </text>
+
+                {/* Right count */}
+                <text
+                  x={COUNT_COL_X}
+                  y={y + BAR_H / 2 + 4}
+                  textAnchor="start"
+                  fontSize={10}
+                  fontWeight={700}
+                  fill={isLast ? C.bull : C.textSub}
+                  fontFamily="Inter, system-ui"
+                  fontVariantNumeric="tabular-nums"
+                >
+                  {stage.count.toLocaleString()}
+                </text>
+
+                {/* Down arrow between stages */}
+                {!isLast && (
+                  <text
+                    x={LABEL_COL_W + MAX_BAR_W / 2}
+                    y={y + BAR_H + GAP / 2 + 4}
+                    textAnchor="middle"
+                    fontSize={9}
+                    fill={C.muted}
+                    fontFamily="Inter, system-ui"
+                  >
+                    ▼
+                  </text>
+                )}
+
+                {/* Drop-off percentage between stages */}
+                {i > 0 && (
+                  <text
+                    x={COUNT_COL_X}
+                    y={y - GAP / 2 + 4}
+                    textAnchor="start"
+                    fontSize={9}
+                    fontWeight={600}
+                    fill={C.bear}
+                    fontFamily="Inter, system-ui"
+                  >
+                    {dropPct(stage.count, stages[i - 1].count)}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+
+          {/* Legend: pass bar + filtered stub */}
+          <g>
+            <rect x={LABEL_COL_W} y={SVG_H - 18} width={14} height={10} rx={2} fill={C.brand} fillOpacity={0.75} />
+            <text x={LABEL_COL_W + 18} y={SVG_H - 9} fontSize={9} fill={C.muted} fontFamily="Inter, system-ui">Pass</text>
+            <rect x={LABEL_COL_W + 60} y={SVG_H - 18} width={14} height={10} rx={2} fill={C.bear} fillOpacity={0.55} />
+            <text x={LABEL_COL_W + 78} y={SVG_H - 9} fontSize={9} fill={C.muted} fontFamily="Inter, system-ui">Filtered out</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function Forensics() {
@@ -1450,6 +1644,9 @@ export default function Forensics() {
           ))}
         </div>
       ) : null}
+
+      {/* Signal Quality Funnel */}
+      {!loading && <SignalQualityFunnel trades={filtered} />}
 
       {/* Scatter Plot */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>

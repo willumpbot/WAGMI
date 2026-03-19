@@ -757,6 +757,239 @@ function TradesTab({ trades, loading }: { trades: TradeRecord[]; loading: boolea
   );
 }
 
+// ─── TradeStreakVisual ────────────────────────────────────────────────────────
+
+function TradeStreakVisual({ trades }: { trades: TradeRecord[] }) {
+  // Seeded fallback: [W,W,L,W,W,W,W,L,W,W,W,L,W,W,W,W,L,W,W,W]
+  const FALLBACK: boolean[] = [
+    true, true, false, true, true, true, true, false,
+    true, true, true, false, true, true, true, true,
+    false, true, true, true,
+  ];
+
+  // Derive win/loss booleans from real trades (newest last → oldest first after slice)
+  const isWin = (t: TradeRecord): boolean =>
+    t.outcome === 'WIN' || (t.pnl != null && t.pnl > 0);
+
+  const useFallback = trades.length === 0;
+  const last20: boolean[] = useFallback
+    ? FALLBACK
+    : trades.slice(-20).map(isWin);
+
+  // Pad to 20 if fewer than 20 real trades (pad from front with nulls represented as false)
+  const grid: (boolean | null)[] = useFallback
+    ? last20
+    : Array.from({ length: 20 }, (_, i) => {
+        const offset = 20 - last20.length;
+        return i < offset ? null : last20[i - offset];
+      });
+
+  // Current streak (from the most-recent trade going backwards)
+  let streakCount = 0;
+  let streakType: 'WIN' | 'LOSS' | null = null;
+  for (let i = last20.length - 1; i >= 0; i--) {
+    if (streakType === null) {
+      streakType = last20[i] ? 'WIN' : 'LOSS';
+      streakCount = 1;
+    } else if (last20[i] === (streakType === 'WIN')) {
+      streakCount++;
+    } else {
+      break;
+    }
+  }
+
+  // Win rate of the last 20 displayed trades
+  const realCells = grid.filter(v => v !== null) as boolean[];
+  const winCount = realCells.filter(Boolean).length;
+  const lossCount = realCells.length - winCount;
+  const winRate = realCells.length > 0 ? (winCount / realCells.length) * 100 : 0;
+
+  const SQUARE = 22;
+  const GAP = 3;
+  const COLS = 4; // 4 columns × 5 rows = 20 squares
+  // Total grid width: 4 squares + 3 gaps
+  const gridWidth = COLS * SQUARE + (COLS - 1) * GAP;
+
+  const winColor = '#22c55e';
+  const lossColor = '#dc2626';
+  const emptyColor = C.faint;
+
+  const winRateColor =
+    winRate >= 60 ? winColor :
+    winRate >= 45 ? '#eab308' :
+    lossColor;
+
+  // Momentum bar proportions
+  const lossPct = realCells.length > 0 ? (lossCount / 20) * 100 : 0;
+  const winPct = realCells.length > 0 ? (winCount / 20) * 100 : 0;
+
+  return (
+    <div style={{
+      background: C.surface,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '18px 20px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 14,
+    }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>
+          Trade Streak
+          {useFallback && (
+            <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 400, marginLeft: 8 }}>(example)</span>
+          )}
+        </div>
+        {/* Win-rate pill */}
+        <span style={{
+          padding: '3px 10px',
+          borderRadius: R.pill,
+          fontSize: F.xs,
+          fontWeight: 700,
+          background: winRateColor === winColor ? '#166534' : winRateColor === '#eab308' ? '#713f12' : '#7f1d1d',
+          color: winRateColor === winColor ? '#bbf7d0' : winRateColor === '#eab308' ? '#fef08a' : '#fca5a5',
+          letterSpacing: '0.04em',
+        }}>
+          {winRate.toFixed(0)}% WIN RATE ({realCells.length} trades)
+        </span>
+      </div>
+
+      {/* Body: streak badge + grid side by side */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
+        {/* Current streak badge */}
+        {streakType && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: 100,
+            padding: '12px 16px',
+            background: streakType === 'WIN' ? 'rgba(22,163,74,0.12)' : 'rgba(220,38,38,0.12)',
+            border: `1.5px solid ${streakType === 'WIN' ? winColor : lossColor}`,
+            borderRadius: R.md,
+            gap: 4,
+          }}>
+            <div style={{ fontSize: 22, lineHeight: 1 }}>
+              {streakType === 'WIN' ? '🔥' : '⚠'}
+            </div>
+            <div style={{
+              fontSize: F['2xl'],
+              fontWeight: 800,
+              color: streakType === 'WIN' ? winColor : lossColor,
+              lineHeight: 1.1,
+              fontFamily: 'JetBrains Mono, monospace',
+            }}>
+              {streakCount}
+            </div>
+            <div style={{
+              fontSize: F.xs,
+              fontWeight: 700,
+              color: streakType === 'WIN' ? winColor : lossColor,
+              letterSpacing: '0.06em',
+            }}>
+              {streakType === 'WIN' ? 'WIN' : 'LOSS'} STREAK
+            </div>
+          </div>
+        )}
+
+        {/* 4×5 grid of squares */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${COLS}, ${SQUARE}px)`,
+          gap: GAP,
+        }}>
+          {grid.map((isWinCell, idx) => (
+            <div
+              key={idx}
+              title={isWinCell === null ? 'No trade' : isWinCell ? 'Win' : 'Loss'}
+              style={{
+                width: SQUARE,
+                height: SQUARE,
+                borderRadius: 4,
+                background: isWinCell === null ? emptyColor : isWinCell ? winColor : lossColor,
+                opacity: isWinCell === null ? 0.3 : 1,
+                cursor: 'pointer',
+                transition: 'opacity 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.opacity = '0.7'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.opacity = isWinCell === null ? '0.3' : '1'; }}
+            />
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignSelf: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: F.xs, color: C.muted }}>
+            <div style={{ width: 12, height: 12, borderRadius: 2, background: winColor, flexShrink: 0 }} />
+            Win ({winCount})
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: F.xs, color: C.muted }}>
+            <div style={{ width: 12, height: 12, borderRadius: 2, background: lossColor, flexShrink: 0 }} />
+            Loss ({lossCount})
+          </div>
+        </div>
+      </div>
+
+      {/* Momentum bar */}
+      <div>
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 5, fontWeight: 600, letterSpacing: '0.04em' }}>
+          MOMENTUM — last {realCells.length} trades
+        </div>
+        <div style={{
+          position: 'relative',
+          height: 12,
+          borderRadius: R.pill,
+          background: C.faint,
+          overflow: 'hidden',
+          width: '100%',
+        }}>
+          {/* Left half: red (losses), right half: green (wins) — each fills from center outward */}
+          {/* Full bar: red on left, green on right, split at center */}
+          <div style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: `${lossPct / 2}%`,
+            background: lossColor,
+            borderRadius: `${R.pill}px 0 0 ${R.pill}px`,
+            opacity: 0.85,
+            transition: 'width 0.5s',
+          }} />
+          <div style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: `${winPct / 2}%`,
+            background: winColor,
+            borderRadius: `0 ${R.pill}px ${R.pill}px 0`,
+            opacity: 0.85,
+            transition: 'width 0.5s',
+          }} />
+          {/* Center marker */}
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            top: 0,
+            bottom: 0,
+            width: 2,
+            background: C.border,
+            transform: 'translateX(-50%)',
+          }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+          <span style={{ fontSize: F.xs, color: lossColor, fontWeight: 600 }}>{lossCount}L</span>
+          <span style={{ fontSize: F.xs, color: C.muted }}>center</span>
+          <span style={{ fontSize: F.xs, color: winColor, fontWeight: 600 }}>{winCount}W</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PerformanceTab({ trades }: { trades: TradeRecord[] }) {
   if (!trades.length) {
     return (
@@ -787,6 +1020,9 @@ function PerformanceTab({ trades }: { trades: TradeRecord[] }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Streak tracker */}
+      <TradeStreakVisual trades={trades} />
+
       {/* KPI grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
         <KpiCard label="Total Trades" value={trades.length.toString()} sub={`${wins.length}W / ${losses.length}L`} />

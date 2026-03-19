@@ -724,6 +724,193 @@ function AIThinkingSpeed() {
   );
 }
 
+// ─── Agent Sequence Timeline ──────────────────────────────────────────────────
+
+const TIMELINE_AGENTS = [
+  {
+    key: 'regime',
+    label: 'Regime',
+    initial: 'R',
+    model: 'Haiku',
+    color: C.info,
+    latencyMs: 120,
+    outputs: ['market regime', 'directional bias', 'volatility class'],
+  },
+  {
+    key: 'trade',
+    label: 'Trade',
+    initial: 'T',
+    model: 'Sonnet',
+    color: C.brand,
+    latencyMs: 800,
+    outputs: ['go/skip/flip', 'entry thesis', 'confluence score'],
+  },
+  {
+    key: 'risk',
+    label: 'Risk',
+    initial: 'Rk',
+    model: 'Haiku',
+    color: C.warn,
+    latencyMs: 150,
+    outputs: ['position size', 'leverage tier', 'portfolio risk'],
+  },
+  {
+    key: 'critic',
+    label: 'Critic',
+    initial: 'C',
+    model: 'Sonnet',
+    color: C.bear,
+    latencyMs: 900,
+    outputs: ['veto/approve', 'counter-thesis', 'stress test'],
+  },
+  {
+    key: 'learning',
+    label: 'Learning',
+    initial: 'L',
+    model: 'Haiku',
+    color: C.bull,
+    latencyMs: 100,
+    outputs: ['lesson stored', 'hypothesis', 'calibration note'],
+  },
+] as const;
+
+const MAX_LATENCY_MS = Math.max(...TIMELINE_AGENTS.map((a) => a.latencyMs));
+
+function AgentSequenceTimeline() {
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '18px 16px 14px',
+    }}>
+      {/* Header */}
+      <div style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+        Agent Pipeline Sequence
+      </div>
+
+      {/* Horizontal node row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', overflowX: 'auto', paddingBottom: 4 }}>
+        {TIMELINE_AGENTS.map((agent, i) => (
+          <React.Fragment key={agent.key}>
+            {/* Node column */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flexShrink: 0, minWidth: 52 }}>
+              {/* Colored circle with initial */}
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                background: agent.color + '20',
+                border: `2px solid ${agent.color}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: `0 0 10px ${agent.color}35`,
+              }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: agent.color }}>{agent.initial}</span>
+              </div>
+
+              {/* Agent name */}
+              <span style={{ fontSize: 10, fontWeight: 700, color: C.text, textAlign: 'center', lineHeight: 1.2 }}>
+                {agent.label}
+              </span>
+
+              {/* Model badge */}
+              <span style={{
+                fontSize: 9,
+                fontWeight: 600,
+                padding: '1px 5px',
+                borderRadius: R.pill,
+                background: agent.color + '18',
+                color: agent.color,
+                lineHeight: 1.4,
+              }}>
+                {agent.model}
+              </span>
+
+              {/* Latency bar */}
+              <div style={{ width: 44, marginTop: 4 }}>
+                <div style={{ width: '100%', height: 5, background: C.surface, borderRadius: R.pill, overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${Math.round((agent.latencyMs / MAX_LATENCY_MS) * 100)}%`,
+                    height: '100%',
+                    background: `linear-gradient(90deg, ${agent.color}70, ${agent.color})`,
+                    borderRadius: R.pill,
+                  }} />
+                </div>
+                <div style={{ fontSize: 9, color: C.muted, textAlign: 'center', marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
+                  ~{agent.latencyMs}ms
+                </div>
+              </div>
+            </div>
+
+            {/* Arrow connector between nodes */}
+            {i < TIMELINE_AGENTS.length - 1 && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingTop: 14,
+                flexShrink: 0,
+                width: 20,
+                gap: 2,
+              }}>
+                {/* Arrow line + head */}
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <div style={{ width: 10, height: 1, background: C.border }} />
+                  <div style={{
+                    borderTop: '4px solid transparent',
+                    borderBottom: '4px solid transparent',
+                    borderLeft: `5px solid ${C.border}`,
+                  }} />
+                </div>
+                <span style={{ fontSize: 8, color: C.faint, whiteSpace: 'nowrap' }}>feeds</span>
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Output tag pills — two rows per agent laid out column by column */}
+      <div style={{
+        marginTop: 14,
+        paddingTop: 12,
+        borderTop: `1px solid ${C.border}`,
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: 4,
+        overflowX: 'auto',
+      }}>
+        {TIMELINE_AGENTS.map((agent) => (
+          <div key={agent.key} style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center', flexShrink: 0, minWidth: 52 }}>
+            {agent.outputs.map((tag) => (
+              <span key={tag} style={{
+                fontSize: 8,
+                fontWeight: 600,
+                padding: '2px 5px',
+                borderRadius: R.xs,
+                background: agent.color + '14',
+                border: `1px solid ${agent.color}28`,
+                color: agent.color,
+                lineHeight: 1.4,
+                textAlign: 'center',
+                whiteSpace: 'nowrap',
+              }}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 10, fontSize: 9, color: C.faint, lineHeight: 1.5 }}>
+        Latency bars are proportional to max agent time (~900ms Critic). Total pipeline: ~2.1s typical.
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const ACTION_TABS = ['ALL', 'GO', 'SKIP', 'VETOED', 'BLOCKED', 'FLIP'];
@@ -935,6 +1122,7 @@ export default function AiDecisionsPage() {
             <VetoPanel decisions={decisions} />
             <VetoReasonWordCloud decisions={decisions.filter((d) => d.is_veto).slice(0, 100)} />
             <ModelPanel decisions={decisions} />
+            <AgentSequenceTimeline />
             <AIThinkingSpeed />
 
             {/* "What makes this unique" callout */}
