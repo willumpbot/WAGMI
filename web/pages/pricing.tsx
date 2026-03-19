@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import Layout from '../components/Layout';
 import { C, R, S, F, G, fmtUsd } from '../src/theme';
 
 // ─── Tier Config ──────────────────────────────────────────────────────────────
@@ -928,7 +927,7 @@ export default function PricingPage() {
   const returnPct = 11.34; // from backtest results
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>Pricing — WAGMI</title>
         <meta name="description" content="Start free. Upgrade when you're ready to automate. Three clear tiers with honest feature differentiation." />
@@ -1075,6 +1074,6 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

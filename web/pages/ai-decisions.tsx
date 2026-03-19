@@ -8,7 +8,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import Layout from '../components/Layout';
 import { C, R, S, F, G, timeAgo } from '../src/theme';
 import { apiFetch } from '../src/api';
 import type { LlmDecision, LlmFeedResponse } from '../src/types';
@@ -1574,7 +1573,7 @@ export default function AiDecisionsPage() {
   }, [decisions]);
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>Decision Theater — WAGMI AI Reasoning</title>
         <meta name="description" content="Every AI trading decision, fully explained. See the agent chain, the Critic's veto reasoning, and the full thought process behind each trade." />
@@ -1765,6 +1764,6 @@ export default function AiDecisionsPage() {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

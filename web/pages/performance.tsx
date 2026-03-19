@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo, useId } from 'react';
 import Head from 'next/head';
-import Layout from '../components/Layout';
 import { C, G, R, S, F, fmtUsd, fmtPct } from '../src/theme';
 import { apiFetch } from '../src/api';
 import type { TradeHistoryResponse, TradeRecord, EquityCurveResponse, EquityCurvePoint, BacktestResult } from '../src/types';
@@ -2673,7 +2672,7 @@ export default function PerformancePage() {
   }
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>Performance Analytics — WAGMI</title>
         <meta name="description" content="Institutional-grade performance metrics: Sharpe, Sortino, Calmar ratios, monthly PnL heatmap, rolling win rate." />
@@ -2962,6 +2961,6 @@ export default function PerformancePage() {
           </>
         )}
       </div>
-    </Layout>
+    </>
   );
 }

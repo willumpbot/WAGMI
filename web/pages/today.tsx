@@ -1,6 +1,5 @@
 import React, { useEffect, useId, useState } from 'react';
 import Head from 'next/head';
-import Layout from '../components/Layout';
 import { C, G, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
 import { fmtPnl, seededRand } from '../lib/fmt';
 import { apiFetch } from '../src/api';
@@ -2237,7 +2236,7 @@ export default function TodayPage() {
   ];
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>Morning Brief — WAGMI</title>
         <meta name="description" content="Daily hub: regime, bot signals, AI decisions, and trade log." />
@@ -2573,6 +2572,6 @@ export default function TodayPage() {
         `}</style>
 
       </div>
-    </Layout>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import Layout from '../components/Layout';
 import { C, R, S, F, G } from '../src/theme';
 
 // ─── Gate Funnel Chart ────────────────────────────────────────────────────────
@@ -672,7 +671,7 @@ function RegimeTransitionDiagram() {
 
 export default function AboutPage() {
   return (
-    <Layout>
+    <>
       <Head>
         <title>About WAGMI — How It Works</title>
         <meta name="description" content="WAGMI doesn't have a black box. It has an audit trail. Learn about the 4 strategies, 7 AI agents, and the risk management system that protects your capital." />
@@ -1029,6 +1028,6 @@ export default function AboutPage() {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

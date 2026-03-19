@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Head from 'next/head';
-import Layout from '../components/Layout';
 import { C, R, S, F, G, fmtUsd, fmtPct, timeAgo } from '../src/theme';
 import { seededRand as mkSeededRand } from '../lib/fmt';
 import { apiFetch } from '../src/api';
@@ -1828,7 +1827,7 @@ export default function PortfolioPage() {
   );
 
   return (
-    <Layout>
+    <>
       <Head>
         <title>Portfolio — WAGMI</title>
         <meta name="description" content="Live portfolio view: open positions, exposure, unrealized P&L, and recent trade waterfall." />
@@ -2169,6 +2168,6 @@ export default function PortfolioPage() {
           </>
         )}
       </div>
-    </Layout>
+    </>
   );
 }
