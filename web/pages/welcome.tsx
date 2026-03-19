@@ -19,12 +19,12 @@ function HeroSparkline({ data, w = 320, h = 80 }: { data: number[]; w?: number; 
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
       <defs>
-        <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="heroSparkGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={C.bull} stopOpacity="0.35" />
           <stop offset="100%" stopColor={C.bull} stopOpacity="0.02" />
         </linearGradient>
       </defs>
-      <polyline points={area} fill="url(#heroGrad)" stroke="none" />
+      <polyline points={area} fill="url(#heroSparkGrad)" stroke="none" />
       <polyline points={pts} fill="none" stroke={C.bull} strokeWidth={2.5} strokeLinejoin="round" />
     </svg>
   );
@@ -50,7 +50,7 @@ function LiveTicker({ events }: { events: ActivityEvent[] }) {
         {[...visible, ...visible].map((e, i) => {
           const col = e.badge_color || C.muted;
           return (
-            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: F.xs }}>
+            <span key={`ticker-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: F.xs }}>
               <span style={{ padding: '1px 6px', borderRadius: R.pill, background: col + '22', color: col, fontWeight: 700, fontSize: 10 }}>{e.badge}</span>
               <span style={{ color: C.textSub, fontWeight: 600 }}>{e.symbol || '—'}</span>
               <span style={{ color: C.muted }}>{e.detail?.slice(0, 40) || e.title}</span>
@@ -738,9 +738,9 @@ export default function WelcomePage() {
         {/* ── Number Bar ── */}
         <section style={{ background: C.surface, borderBottom: `1px solid ${C.border}` }}>
           <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-            <StatBlock value={totalTrades ? String(totalTrades) : '847+'} label="Trades Analyzed" sub="Full audit trail available" />
-            <StatBlock value={winRate ? `${(winRate * 100).toFixed(1)}%` : '64.2%'} label="Win Rate" sub="Paper trading, verified" />
-            <StatBlock value={totalReturn ? fmtPct(totalReturn) : '+11.3%'} label="30-Day Return" sub="vs market conditions" />
+            <StatBlock value={totalTrades ? String(totalTrades) : '847+'} label="Trades Analyzed" sub={totalTrades ? 'Full audit trail available' : 'Demo figure — see /results'} />
+            <StatBlock value={winRate ? `${(winRate * 100).toFixed(1)}%` : '64.2%'} label="Win Rate" sub={winRate ? 'Paper trading, verified' : 'Demo figure — see /results'} />
+            <StatBlock value={totalReturn ? fmtPct(totalReturn) : '+11.3%'} label="30-Day Return" sub={totalReturn ? 'vs market conditions' : 'Demo figure — see /results'} />
             <StatBlock value="7" label="AI Agents" sub="Haiku + Sonnet + Opus" />
             <StatBlock value="24/7" label="Always On" sub="No sleep. No emotion." />
           </div>
@@ -752,6 +752,7 @@ export default function WelcomePage() {
             <div style={{ textAlign: 'center', marginBottom: 40 }}>
               <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Performance</div>
               <h2 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 800, color: C.text }}>30-Day Performance Snapshot</h2>
+              <p style={{ margin: '8px 0 0', fontSize: F.xs, color: C.muted }}>Demo figures shown when live data is unavailable — see <a href="/results" style={{ color: C.brand }}>Track Record</a> for verified results</p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
               {/* Win Rate Ring */}
@@ -790,7 +791,7 @@ export default function WelcomePage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 24 }}>
             {HOW_STEPS.map((s, i) => (
-              <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '28px 24px' }}>
+              <div key={s.title} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '28px 24px' }}>
                 <div style={{ fontSize: 36, marginBottom: 14 }}>{s.icon}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                   <span style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, background: C.surface, padding: '2px 8px', borderRadius: R.pill }}>Step {i + 1}</span>
@@ -914,8 +915,8 @@ export default function WelcomePage() {
               </Link>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {['Market regimes — why trending vs ranging changes everything', 'Reading AI confidence scores (0–100 explained)', 'Position sizing: how the 1.5% rule protects your account', 'The 7-agent pipeline — what each one decides', 'Risk management: circuit breakers and gate filters'].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0' }}>
+              {['Market regimes — why trending vs ranging changes everything', 'Reading AI confidence scores (0–100 explained)', 'Position sizing: how the 1.5% rule protects your account', 'The 7-agent pipeline — what each one decides', 'Risk management: circuit breakers and gate filters'].map((item) => (
+                <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0' }}>
                   <span style={{ color: C.bull, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>✓</span>
                   <span style={{ fontSize: F.sm, color: C.textSub }}>{item}</span>
                 </div>

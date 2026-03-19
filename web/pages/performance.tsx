@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useId } from 'react';
 import Head from 'next/head';
 import Layout from '../components/Layout';
 import { C, R, S, F, fmtUsd, fmtPct } from '../src/theme';
@@ -649,6 +649,7 @@ function PerformanceRadar({
   profitFactor: number | null;
   calmar: number | null;
 }) {
+  const uid = useId().replace(/:/g, '');
   const size = 250;
   const cx = size / 2;
   const cy = size / 2;
@@ -701,7 +702,7 @@ function PerformanceRadar({
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: 'block', margin: '0 auto' }}>
       <defs>
-        <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`radarFill-${uid}`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor={C.brand} stopOpacity="0.35" />
           <stop offset="100%" stopColor={C.brand} stopOpacity="0.12" />
         </radialGradient>
@@ -738,7 +739,7 @@ function PerformanceRadar({
       {/* Value polygon */}
       <polygon
         points={valuePts}
-        fill="url(#radarFill)"
+        fill={`url(#radarFill-${uid})`}
         stroke={C.brand}
         strokeWidth={2}
         strokeLinejoin="round"
@@ -984,6 +985,7 @@ function StrategyBars({ data }: { data: Record<string, { trades: number; wins: n
 // ─── Equity Curve with Drawdown ───────────────────────────────────────────────
 
 function EquityChart({ points, trades = [], width = 700, height = 180 }: { points: EquityCurvePoint[]; trades?: TradeRecord[]; width?: number; height?: number }) {
+  const uid = useId().replace(/:/g, '');
   if (!points.length) return <div style={{ color: C.muted, fontSize: F.sm, padding: 20 }}>No equity curve data.</div>;
   const pad = { t: 12, r: 20, b: 28, l: 64 };
   const W = width - pad.l - pad.r;
@@ -1036,7 +1038,7 @@ function EquityChart({ points, trades = [], width = 700, height = 180 }: { point
   return (
     <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: 'block' }}>
       <defs>
-        <linearGradient id="perfEqGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`perfEqGrad-${uid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={C.bull} stopOpacity="0.25" />
           <stop offset="100%" stopColor={C.bull} stopOpacity="0.02" />
         </linearGradient>
@@ -1077,7 +1079,7 @@ function EquityChart({ points, trades = [], width = 700, height = 180 }: { point
       })}
 
       {/* Area fill */}
-      <polyline points={areaPts} fill="url(#perfEqGrad)" stroke="none" />
+      <polyline points={areaPts} fill={`url(#perfEqGrad-${uid})`} stroke="none" />
 
       {/* EMA-21 (solid, C.info) */}
       {ema21.length > 1 && (

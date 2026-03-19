@@ -309,6 +309,7 @@ function ReturnsCalc({ returnPct }: { returnPct: number }) {
         <input
           type="range" min={1000} max={100000} step={1000} value={capital}
           onChange={(e) => setCapital(Number(e.target.value))}
+          aria-label="Trading capital amount"
           style={{ width: '100%', accentColor: C.brand }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
@@ -389,8 +390,8 @@ function FeatureTable({ annual }: { annual: boolean }) {
                 {cat.rows.map((row) => (
                   <tr key={row.feature} style={{ borderBottom: `1px solid ${C.border}` }}>
                     <td style={{ padding: '9px 16px', color: C.textSub }}>{row.feature}</td>
-                    {[row.observer, row.pro, row.elite].map((v, i) => (
-                      <td key={i} style={{ padding: '9px 16px', textAlign: 'center', color: v === '✓' ? C.bull : v === '—' ? C.faint : C.muted, fontWeight: v === '✓' ? 700 : 400 }}>{v}</td>
+                    {([['observer', row.observer], ['pro', row.pro], ['elite', row.elite]] as [string, string][]).map(([tier, v]) => (
+                      <td key={tier} style={{ padding: '9px 16px', textAlign: 'center', color: v === '✓' ? C.bull : v === '—' ? C.faint : C.muted, fontWeight: v === '✓' ? 700 : 400 }}>{v}</td>
                     ))}
                   </tr>
                 ))}

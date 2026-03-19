@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useId } from 'react';
 import { useRouter } from 'next/router';
 import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../../src/theme';
 import type { TradeRecord } from '../../src/types';
@@ -74,6 +74,9 @@ function eventColor(event: string): string {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ZoneRuler({ sig }: { sig: LatestSignal }) {
+  const uid = useId().replace(/:/g, '');
+  const gradLeftId = `zoneGradLeft-${uid}`;
+  const gradRightId = `zoneGradRight-${uid}`;
   const { deepAccum, accum, distrib, safeDistrib } = sig.zones;
   const current = sig.price;
 
@@ -128,11 +131,11 @@ function ZoneRuler({ sig }: { sig: LatestSignal }) {
         aria-label="Price zone ruler"
       >
         <defs>
-          <linearGradient id="zoneGradLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={gradLeftId} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#16a34a" stopOpacity="0.55" />
             <stop offset="100%" stopColor="#22c55e" stopOpacity="0.35" />
           </linearGradient>
-          <linearGradient id="zoneGradRight" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={gradRightId} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#f97316" stopOpacity="0.35" />
             <stop offset="100%" stopColor="#dc2626" stopOpacity="0.55" />
           </linearGradient>
@@ -149,7 +152,7 @@ function ZoneRuler({ sig }: { sig: LatestSignal }) {
             width={Math.max(0, xCurrent - xDeepAccum)}
             height={BAR_H}
             rx={BAR_H / 2}
-            fill="url(#zoneGradLeft)"
+            fill={`url(#${gradLeftId})`}
           />
         )}
 
@@ -161,7 +164,7 @@ function ZoneRuler({ sig }: { sig: LatestSignal }) {
             width={Math.max(0, xSafeDistrib - xCurrent)}
             height={BAR_H}
             rx={BAR_H / 2}
-            fill="url(#zoneGradRight)"
+            fill={`url(#${gradRightId})`}
           />
         )}
 
@@ -276,7 +279,7 @@ function WinLossRing({ wins, losses }: { wins: number; losses: number }) {
 function KpiCard({ label, value, sub, valueColor }: { label: string; value: string; sub?: string; valueColor?: string }) {
   return (
     <div style={{
-      background: '#0f172a',
+      background: C.surface,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '16px 18px',
@@ -341,7 +344,7 @@ function SignalScoreGauge({ score }: { score: number }) {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      background: '#0f172a',
+      background: C.surface,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 18px 14px',
