@@ -1514,65 +1514,141 @@ function RunDetail({ result }: { result: BacktestResult }) {
         ))}
       </div>
 
-      {/* Equity Curve Chart + RSI Subplot */}
+      {/* ── § Summary Scorecard ─────────────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+            Summary Scorecard
+          </span>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+        </div>
+        <BacktestSummaryScorecard result={result} />
+      </div>
+
+      {/* ── § Equity Curve + RSI Subplot ────────────── */}
       {result.trades && result.trades.length > 1 && (() => {
         const startEq = cfg.starting_equity ?? 50000;
         let eq = startEq;
         const equityValues: number[] = [eq];
         result.trades.forEach((t) => { eq += t.pnl ?? 0; equityValues.push(eq); });
         return (
-          <div style={{ marginBottom: 20 }}>
-            <h3 style={{ margin: '0 0 12px', fontSize: F.md, fontWeight: 700, color: C.text }}>Equity Curve</h3>
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ flex: 1, height: 1, background: C.border }} />
+              <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+                Equity Curve · Bollinger Bands · Trade Markers
+              </span>
+              <div style={{ flex: 1, height: 1, background: C.border }} />
+            </div>
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
               <EquityCurveChart trades={result.trades} startEquity={startEq} />
               <RSISubplot values={equityValues} width={580} height={60} />
             </div>
             <div style={{ fontSize: 10, color: C.muted, marginTop: 6 }}>
-              Red shading = drawdown zones · BB bands = 20-period Bollinger · RSI(14) below
+              Red shading = drawdown zones · BB bands = 20-period Bollinger (SMA±2σ) · RSI(14) subplot below · Trade markers: green dot = win, red dot = loss
             </div>
           </div>
         );
       })()}
 
-      {/* Monte Carlo Forecast */}
-      <MonteCarloForecast result={result} />
+      {/* ── § Confidence Intervals ──────────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+            Outcome Confidence Intervals
+          </span>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+        </div>
+        <BacktestConfidenceIntervals result={result} />
+      </div>
 
-      {/* Parameter Sensitivity */}
-      <ParameterSensitivityChart />
+      {/* ── § Monte Carlo Forecast ──────────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+            Monte Carlo Forecast
+          </span>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+        </div>
+        <MonteCarloForecast result={result} />
+      </div>
 
-      {/* Walk-Forward Validation */}
-      <WalkForwardChart />
+      {/* ── § Walk-Forward Validation ───────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+            Walk-Forward Validation
+          </span>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+        </div>
+        <WalkForwardChart />
+      </div>
 
-      {/* Symbol Rotation Timeline */}
-      <SymbolRotationChart result={result} />
+      {/* ── § Parameter Sensitivity ─────────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+            Parameter Sensitivity
+          </span>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+        </div>
+        <ParameterSensitivityChart />
+      </div>
 
-      {/* Backtest Report Card */}
-      <BacktestSummaryScorecard result={result} />
+      {/* ── § Calendar View ─────────────────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+            Daily PnL Calendar
+          </span>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+        </div>
+        <BacktestCalendarView result={result} />
+      </div>
 
-      {/* Daily PnL Calendar */}
-      <BacktestCalendarView result={result} />
+      {/* ── § Strategy Alpha Breakdown ──────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+            Strategy Alpha Breakdown
+          </span>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+        </div>
+        <StrategyAlphaChart result={result} />
+      </div>
 
-      {/* Strategy Alpha Contribution */}
-      <StrategyAlphaChart result={result} />
+      {/* ── § Symbol Rotation + Exit Types ─────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+            Symbol Rotation &amp; Exit Types
+          </span>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+        </div>
+        <SymbolRotationChart result={result} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, marginTop: 16, alignItems: 'start' }}>
+          {result.by_symbol && Object.keys(result.by_symbol).length > 0 && (
+            <div>
+              <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>By Symbol</div>
+              <BySymbolBars bySymbol={result.by_symbol} />
+            </div>
+          )}
 
-      {/* Outcome Confidence Intervals */}
-      <BacktestConfidenceIntervals result={result} />
-
-      {/* By symbol + Exit types side-by-side */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, marginBottom: 20, alignItems: 'start' }}>
-        {result.by_symbol && Object.keys(result.by_symbol).length > 0 && (
-          <div>
-            <h3 style={{ margin: '0 0 12px', fontSize: F.md, fontWeight: 700, color: C.text }}>By Symbol</h3>
-            <BySymbolBars bySymbol={result.by_symbol} />
-          </div>
-        )}
-
-        {r.by_action && Object.values(r.by_action).some(v => v > 0) && (
-          <div style={{ minWidth: 220 }}>
-            <h3 style={{ margin: '0 0 12px', fontSize: F.md, fontWeight: 700, color: C.text }}>Exit Types</h3>
-            <ExitTypeDonut byAction={r.by_action} />
-          </div>
-        )}
+          {r.by_action && Object.values(r.by_action).some(v => v > 0) && (
+            <div style={{ minWidth: 220 }}>
+              <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>Exit Types</div>
+              <ExitTypeDonut byAction={r.by_action} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -3008,9 +3084,9 @@ export default function Backtest() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 20, alignItems: 'start' }}>
-        {/* ── Left: run list ─────────────────────── */}
-        <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 24, alignItems: 'start' }}>
+        {/* ── Left: run list + form ─────────────── */}
+        <div style={{ position: 'sticky', top: 16 }}>
           {/* Active job progress */}
           {activeJobId && (
             <JobProgress jobId={activeJobId} apiBase={apiBase} onDone={handleJobDone} />
@@ -3019,9 +3095,21 @@ export default function Backtest() {
           {/* New backtest form */}
           <NewBacktestForm apiBase={apiBase} onJobStarted={setActiveJobId} />
 
-          {/* Run list */}
-          <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10 }}>
-            Saved Runs ({runs.length})
+          {/* Run list header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: 10, marginTop: 4,
+          }}>
+            <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7 }}>
+              Saved Runs
+            </div>
+            <div style={{
+              fontSize: F.xs, fontWeight: 700, color: C.brand,
+              background: C.brand + '18', borderRadius: R.pill,
+              padding: '2px 8px',
+            }}>
+              {runs.length}
+            </div>
           </div>
           {loadingRuns ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} h={72} style={{ marginBottom: 8 }} />)
@@ -3030,7 +3118,7 @@ export default function Backtest() {
               No runs yet. Run your first backtest above.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '60vh', overflowY: 'auto', paddingRight: 2 }}>
               {runs.map((run) => (
                 <RunCard
                   key={run.id}
@@ -3047,20 +3135,41 @@ export default function Backtest() {
         <div>
           {/* Compare dropdown */}
           {runs.length >= 2 && selectedResult && (
-            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: F.sm, color: C.muted }}>Compare with:</span>
+            <div style={{
+              marginBottom: 20, padding: '12px 16px',
+              background: C.card, border: `1px solid ${C.border}`,
+              borderRadius: R.lg, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+            }}>
+              <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Compare run:
+              </span>
               <select
                 value={compareId || ''}
                 onChange={(e) => setCompareId(e.target.value || null)}
-                style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.sm, color: C.text, padding: '4px 10px', fontSize: F.sm, cursor: 'pointer' }}
+                style={{
+                  flex: 1, minWidth: 200, background: C.surfaceHover,
+                  border: `1px solid ${compareId ? C.brand : C.border}`,
+                  borderRadius: R.sm, color: C.text, padding: '6px 10px',
+                  fontSize: F.sm, cursor: 'pointer',
+                  boxShadow: compareId ? `0 0 0 1px ${C.brand}40` : 'none',
+                }}
               >
-                <option value="">— none —</option>
+                <option value="">— Select a run to compare —</option>
                 {runs.filter((r) => r.id !== selectedId).map((r) => (
                   <option key={r.id} value={r.id}>{r.symbols?.join(', ')} · {r.days}d · {fmtPct(r.total_return_pct ?? 0)}</option>
                 ))}
               </select>
               {compareId && (
-                <button onClick={() => setCompareId(null)} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: F.sm }}>✕ Clear</button>
+                <button
+                  onClick={() => setCompareId(null)}
+                  style={{
+                    background: C.bear + '18', border: `1px solid ${C.bear}44`,
+                    borderRadius: R.sm, color: C.bear, cursor: 'pointer',
+                    fontSize: F.xs, fontWeight: 700, padding: '4px 10px',
+                  }}
+                >
+                  Clear
+                </button>
               )}
             </div>
           )}

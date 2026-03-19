@@ -1924,6 +1924,14 @@ export default function LlmAudit() {
               </select>
             </>
           )}
+          {(filterAction !== 'All' || filterSymbol !== 'All' || filterTrigger !== 'All') && (
+            <button
+              onClick={() => { setFilterAction('All'); setFilterSymbol('All'); setFilterTrigger('All'); }}
+              style={{ marginLeft: 'auto', fontSize: F.xs, padding: '3px 10px', borderRadius: R.pill, cursor: 'pointer', fontWeight: 600, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted }}
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       </div>
 

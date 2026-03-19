@@ -3452,7 +3452,17 @@ export default function Forensics() {
 
       {/* Filters */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20 }}>
-        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>Filter Trades</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Filter Trades</div>
+          {(filterOutcome !== 'All' || filterRegime !== 'All' || filterAction !== 'All' || filterStrategy !== 'All' || filterSymbol !== 'All') && (
+            <button
+              onClick={() => { setFilterOutcome('All'); setFilterRegime('All'); setFilterAction('All'); setFilterStrategy('All'); setFilterSymbol('All'); }}
+              style={{ fontSize: F.xs, padding: '3px 10px', borderRadius: R.pill, cursor: 'pointer', fontWeight: 600, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <PillFilter label="Outcome" options={['All', 'WIN', 'LOSS']} value={filterOutcome} onChange={setFilterOutcome} />
           <PillFilter label="Symbol" options={symbols} value={filterSymbol} onChange={setFilterSymbol} />
