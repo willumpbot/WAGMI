@@ -641,9 +641,9 @@ function TradingViewChart({ symbol }: { symbol: string }) {
 
 function StrategyCard({ strategy }: { strategy: Strategy }) {
   const router = useRouter();
-  const lastSeen = strategy.lastHeartbeat || (strategy as any).last_seen_ts;
-  const pnl = strategy.pnl_realized ?? (strategy as any).pnl_realized ?? null;
-  const pos = strategy.open_position || (strategy as any).open_position;
+  const lastSeen = strategy.lastHeartbeat;
+  const pnl = strategy.pnl_realized ?? null;
+  const pos = strategy.open_position;
 
   const ageSeconds = lastSeen
     ? (Date.now() - new Date(lastSeen).getTime()) / 1000
@@ -2637,13 +2637,13 @@ export default function Home() {
   // Equity sparkline: derive running cumulative PnL from individual trades (real data)
   const sparkData = (() => {
     if (!btRes) return [];
-    const trades = (btRes as any).trades as Array<{ pnl?: number; pnl_pct?: number }> | undefined;
+    const trades = backtest?.trades;
     if (trades && trades.length >= 2) {
       let cum = 0;
       return trades.map((t) => { cum += t.pnl_pct ?? t.pnl ?? 0; return cum; });
     }
     // Fallback: use by_symbol cumulative values as rough curve points
-    const bySymbol = (btRes as any).by_symbol as Record<string, { pnl?: number }> | undefined;
+    const bySymbol = backtest?.by_symbol;
     if (bySymbol) {
       let cum = 0;
       return Object.values(bySymbol).map((s) => { cum += s.pnl ?? 0; return cum; });

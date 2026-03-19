@@ -309,7 +309,7 @@ function SignalCard({ event, index }: { event: ActivityEvent; index: number }) {
           ].map(item => (
             <div key={item.label} style={{ background: '#0f172a', borderRadius: R.sm, padding: '8px 10px' }}>
               <div style={{ fontSize: 10, color: C.muted, fontWeight: 600, marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{item.label}</div>
-              <div style={{ fontSize: F.sm, fontWeight: 600, color: (item as any).color || C.text }}>{item.value}</div>
+              <div style={{ fontSize: F.sm, fontWeight: 600, color: ('color' in item ? (item as { color?: string }).color : undefined) || C.text }}>{item.value}</div>
             </div>
           ))}
           {event.detail && (
@@ -3446,11 +3446,11 @@ export default function SignalsPage() {
   }, []);
 
   // Stats
-  const counts = (marketView as any)?.decision_counts || {};
-  const totalAnalyzed = counts.total_recent || events.length;
-  const proceed = counts.proceed || events.filter(e => e.event_type === 'llm_would_trade').length;
+  const counts = marketView?.decision_counts;
+  const totalAnalyzed = counts?.total_recent || events.length;
+  const proceed = counts?.proceed || events.filter(e => e.event_type === 'llm_would_trade').length;
   const vetoed = events.filter(e => e.event_type === 'llm_veto').length;
-  const skipped = counts.flat || events.filter(e => e.event_type === 'llm_skip').length;
+  const skipped = counts?.flat || events.filter(e => e.event_type === 'llm_skip').length;
   const missedWins = events.filter(e => e.event_type === 'signal_blocked_miss').length;
   const regime = marketView?.regime || 'unknown';
   const regimeColor = REGIME_COLOR[regime.toLowerCase()] || C.muted;
@@ -3645,7 +3645,7 @@ export default function SignalsPage() {
             <SymbolStanceCard
               key={sym}
               symbol={sym}
-              decision={(marketView as any)?.per_symbol?.[sym] || null}
+              decision={marketView?.per_symbol?.[sym] || null}
             />
           ))}
         </div>
