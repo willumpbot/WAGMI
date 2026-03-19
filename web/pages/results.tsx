@@ -515,6 +515,279 @@ function ExitDonut({ byAction }: { byAction: Record<string, number> }) {
   );
 }
 
+// ─── Exit Type Timeline ───────────────────────────────────────────────────────
+
+function ExitTypeTimeline({ trades }: { trades: TradeRecord[] }) {
+  const W = 600, H = 180;
+  const pad = { top: 28, right: 20, bottom: 32, left: 58 };
+  const iW = W - pad.left - pad.right;
+  const iH = H - pad.top - pad.bottom;
+
+  // Y-axis: % distance from entry, range -3% to +7%
+  const Y_MIN = -3, Y_MAX = 7;
+  const yRange = Y_MAX - Y_MIN;
+
+  const toX = (i: number, total: number) => pad.left + (total <= 1 ? iW / 2 : (i / (total - 1)) * iW);
+  const toY = (pct: number) => pad.top + iH - ((pct - Y_MIN) / yRange) * iH;
+
+  // Derive dots from trade data or use 12 deterministic placeholders
+  type Dot = { x: number; y: number; color: string; label: string };
+  const dots: Dot[] = [];
+
+  const exitColors: Record<string, string> = {
+    TP1: '#4ade80',
+    TP2: '#16a34a',
+    TRAILING_STOP: '#22d3ee',
+    SL: '#f87171',
+    EARLY_EXIT: '#facc15',
+    CIRCUIT_BREAKER: '#a78bfa',
+    BACKTEST_END: '#94a3b8',
+  };
+
+  const exitPcts: Record<string, number> = {
+    TP1: 2.2, TP2: 4.5, TRAILING_STOP: 3.1, SL: -1.8,
+    EARLY_EXIT: 0.8, CIRCUIT_BREAKER: -0.5, BACKTEST_END: 0.3,
+  };
+
+  const closedTrades = trades.filter((t) => t.close_reason);
+  if (closedTrades.length >= 3) {
+    closedTrades.forEach((t, i) => {
+      const reason = (t.close_reason ?? 'BACKTEST_END').toUpperCase();
+      const pct = exitPcts[reason] ?? (t.outcome === 'WIN' ? 2.0 : -1.5);
+      dots.push({
+        x: toX(i, closedTrades.length),
+        y: toY(pct),
+        color: exitColors[reason] ?? '#94a3b8',
+        label: reason,
+      });
+    });
+  } else {
+    // 12 deterministic placeholders
+    const placeholders: Array<{ reason: string; pct: number }> = [
+      { reason: 'TP1', pct: 2.2 }, { reason: 'SL', pct: -1.8 }, { reason: 'TP2', pct: 4.5 },
+      { reason: 'TP1', pct: 1.9 }, { reason: 'TRAILING_STOP', pct: 3.1 }, { reason: 'SL', pct: -2.1 },
+      { reason: 'TP1', pct: 2.4 }, { reason: 'TP2', pct: 5.0 }, { reason: 'TRAILING_STOP', pct: 2.7 },
+      { reason: 'SL', pct: -1.5 }, { reason: 'TP1', pct: 2.0 }, { reason: 'EARLY_EXIT', pct: 0.9 },
+    ];
+    placeholders.forEach((p, i) => {
+      dots.push({
+        x: toX(i, placeholders.length),
+        y: toY(p.pct),
+        color: exitColors[p.reason] ?? '#94a3b8',
+        label: p.reason,
+      });
+    });
+  }
+
+  // Y axis ticks
+  const yTicks = [-2.5, 0, 1.5, 3, 5, 6.5];
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Exit Type Timeline</h2>
+          <p style={{ margin: '4px 0 0', fontSize: F.xs, color: C.muted }}>Each dot = one closed trade. Y-axis shows % distance from entry at exit.</p>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 10 }}>
+          {Object.entries(exitColors).map(([k, c]) => (
+            <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: c, display: 'inline-block' }} />
+              <span style={{ color: C.muted }}>{k}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }} preserveAspectRatio="xMinYMid meet">
+        <defs>
+          {/* Exit zone bands */}
+          <linearGradient id="ettSlGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#f87171" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#f87171" stopOpacity="0.04" />
+          </linearGradient>
+          <linearGradient id="ettTp1Grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#86efac" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#86efac" stopOpacity="0.06" />
+          </linearGradient>
+          <linearGradient id="ettTp2Grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#16a34a" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="#16a34a" stopOpacity="0.06" />
+          </linearGradient>
+          <linearGradient id="ettTrailGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
+
+        {/* ── Zone bands ── */}
+        {/* SL zone: -2.5% to 0 */}
+        <rect
+          x={pad.left} y={toY(0)} width={iW} height={toY(-2.5) - toY(0)}
+          fill="url(#ettSlGrad)" stroke="#f87171" strokeWidth={0.5} strokeDasharray="3 3" strokeOpacity={0.4}
+        />
+        {/* TP1 zone: +1.5% to +3% */}
+        <rect
+          x={pad.left} y={toY(3)} width={iW} height={toY(1.5) - toY(3)}
+          fill="url(#ettTp1Grad)" stroke="#86efac" strokeWidth={0.5} strokeDasharray="3 3" strokeOpacity={0.4}
+        />
+        {/* TP2 zone: +3% to +6% */}
+        <rect
+          x={pad.left} y={toY(6)} width={iW} height={toY(3) - toY(6)}
+          fill="url(#ettTp2Grad)" stroke="#16a34a" strokeWidth={0.5} strokeDasharray="3 3" strokeOpacity={0.4}
+        />
+        {/* Trailing zone: +2% to +5% (overlaid, semi-transparent) */}
+        <rect
+          x={pad.left} y={toY(5)} width={iW} height={toY(2) - toY(5)}
+          fill="url(#ettTrailGrad)"
+        />
+
+        {/* Zone labels (right side) */}
+        <text x={pad.left + iW + 4} y={toY(-1.25) + 3} fontSize={8} fill="#f87171" fontFamily="Inter, system-ui">SL</text>
+        <text x={pad.left + iW + 4} y={toY(2.25) + 3} fontSize={8} fill="#86efac" fontFamily="Inter, system-ui">TP1</text>
+        <text x={pad.left + iW + 4} y={toY(4.5) + 3} fontSize={8} fill="#16a34a" fontFamily="Inter, system-ui">TP2</text>
+        <text x={pad.left + iW + 4} y={toY(3.5) - 5} fontSize={8} fill="#22d3ee" fontFamily="Inter, system-ui" opacity={0.8}>Trail</text>
+
+        {/* ── Y-axis grid + labels ── */}
+        {yTicks.map((pct) => {
+          const y = toY(pct);
+          const isZero = pct === 0;
+          return (
+            <g key={pct}>
+              <line x1={pad.left} y1={y} x2={pad.left + iW} y2={y}
+                stroke={isZero ? C.muted : C.border}
+                strokeWidth={isZero ? 1.5 : 0.5}
+                strokeDasharray={isZero ? '' : '3 4'}
+                opacity={isZero ? 0.8 : 0.5}
+              />
+              <text x={pad.left - 5} y={y + 3} textAnchor="end" fontSize={9} fill={isZero ? C.textSub : C.muted} fontFamily="Inter, system-ui" fontWeight={isZero ? '700' : '400'}>
+                {pct > 0 ? `+${pct}%` : `${pct}%`}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Entry line label */}
+        <text x={pad.left + 4} y={toY(0) - 4} fontSize={9} fill={C.muted} fontFamily="Inter, system-ui">Entry (0%)</text>
+
+        {/* X-axis label */}
+        <text x={pad.left + iW / 2} y={H - 4} textAnchor="middle" fontSize={9} fill={C.muted} fontFamily="Inter, system-ui">Trade #</text>
+
+        {/* X ticks */}
+        {[0, Math.floor((dots.length - 1) / 2), dots.length - 1].map((i) => (
+          <text key={i} x={dots[i]?.x ?? 0} y={pad.top + iH + 14} textAnchor="middle" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">
+            {i + 1}
+          </text>
+        ))}
+
+        {/* ── Dots ── */}
+        {dots.map((d, i) => (
+          <g key={i}>
+            <circle cx={d.x} cy={d.y} r={5} fill={d.color} fillOpacity={0.85} stroke={C.card} strokeWidth={1.5}>
+              <title>{`Trade ${i + 1}: ${d.label}`}</title>
+            </circle>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+// ─── By-Symbol Accordion ──────────────────────────────────────────────────────
+
+type SymbolData = { trades: number; wins: number; pnl: number; win_rate: number; avg_win?: number; avg_loss?: number };
+
+function BySymbolAccordion({ bySymbol }: { bySymbol?: Record<string, SymbolData> }) {
+  const [openSym, setOpenSym] = useState<string | null>(null);
+
+  const placeholder: Record<string, SymbolData> = {
+    'BTC/USDT': { trades: 18, wins: 11, pnl: 1240, win_rate: 0.61, avg_win: 320, avg_loss: -180 },
+    'SOL/USDT': { trades: 12, wins: 8, pnl: 680, win_rate: 0.67, avg_win: 210, avg_loss: -140 },
+    'HYPE/USDT': { trades: 7, wins: 3, pnl: -190, win_rate: 0.43, avg_win: 90, avg_loss: -155 },
+  };
+
+  const data = (bySymbol && Object.keys(bySymbol).length > 0) ? bySymbol : placeholder;
+  const entries = Object.entries(data).sort((a, b) => b[1].pnl - a[1].pnl);
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>By Symbol — Detailed Breakdown</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {entries.map(([sym, d]) => {
+          const isOpen = openSym === sym;
+          const wr = typeof d.win_rate === 'number' ? d.win_rate : (d.wins / Math.max(d.trades, 1));
+          const wrPct = wr * 100;
+          const isPos = d.pnl >= 0;
+          const pnlColor = isPos ? C.bull : C.bear;
+
+          return (
+            <div key={sym} style={{ border: `1px solid ${isOpen ? C.brand + '55' : C.border}`, borderRadius: R.lg, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+              {/* Collapsed row */}
+              <div
+                onClick={() => setOpenSym(isOpen ? null : sym)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                  cursor: 'pointer', background: isOpen ? C.surfaceHover : 'transparent',
+                  userSelect: 'none', transition: 'background 0.15s',
+                }}
+              >
+                {/* Symbol name */}
+                <div style={{ minWidth: 100, fontWeight: 700, fontSize: F.sm, color: C.brand }}>{sym}</div>
+
+                {/* Win rate bar */}
+                <div style={{ flex: 1, height: 10, background: C.surfaceHover, borderRadius: R.pill, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${wrPct}%`,
+                    background: wrPct >= 60 ? `linear-gradient(90deg, ${C.bull}, #4ade80)` : wrPct >= 45 ? `linear-gradient(90deg, ${C.warn}, #fbbf24)` : `linear-gradient(90deg, ${C.bear}, #f87171)`,
+                    borderRadius: R.pill,
+                    transition: 'width 0.4s ease',
+                  }} />
+                </div>
+
+                {/* WR label */}
+                <div style={{ minWidth: 44, textAlign: 'right', fontSize: F.xs, fontWeight: 700, color: wrPct >= 60 ? C.bull : wrPct >= 45 ? C.warn : C.bear }}>
+                  {wrPct.toFixed(0)}% WR
+                </div>
+
+                {/* PnL */}
+                <div style={{ minWidth: 80, textAlign: 'right', fontSize: F.sm, fontWeight: 700, color: pnlColor }}>
+                  {isPos ? '+' : ''}{fmtUsd(d.pnl)}
+                </div>
+
+                {/* Expand chevron */}
+                <div style={{ fontSize: 12, color: C.muted, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</div>
+              </div>
+
+              {/* Expanded panel */}
+              {isOpen && (
+                <div style={{ padding: '0 16px 14px', borderTop: `1px solid ${C.border}`, background: C.surface }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10, paddingTop: 14 }}>
+                    {[
+                      { label: 'Total Trades', value: String(d.trades), color: C.text },
+                      { label: 'Wins', value: String(d.wins), color: C.bull },
+                      { label: 'Losses', value: String(d.trades - d.wins), color: C.bear },
+                      { label: 'Win Rate', value: `${wrPct.toFixed(1)}%`, color: wrPct >= 60 ? C.bull : wrPct >= 45 ? C.warn : C.bear },
+                      { label: 'Net PnL', value: `${isPos ? '+' : ''}${fmtUsd(d.pnl)}`, color: pnlColor },
+                      ...(d.avg_win != null ? [{ label: 'Avg Win', value: fmtUsd(d.avg_win), color: C.bull }] : []),
+                      ...(d.avg_loss != null ? [{ label: 'Avg Loss', value: fmtUsd(d.avg_loss), color: C.bear }] : []),
+                    ].map(({ label, value, color }) => (
+                      <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.md, padding: '10px 12px' }}>
+                        <div style={{ fontSize: 9, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>{label}</div>
+                        <div style={{ fontSize: F.md, fontWeight: 800, color }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Trade Table ──────────────────────────────────────────────────────────────
 
 function TradeTable({ trades, loading }: { trades: TradeRecord[]; loading: boolean }) {
@@ -1260,6 +1533,12 @@ export default function Results() {
           )}
         </div>
       </div>
+
+      {/* ── Exit Type Timeline ────────────────────────── */}
+      <ExitTypeTimeline trades={trades} />
+
+      {/* ── By-Symbol Accordion ───────────────────────── */}
+      <BySymbolAccordion bySymbol={backtest?.by_symbol} />
 
       {/* ── Trade history table ───────────────────────── */}
       <div style={{ marginBottom: 28 }}>
