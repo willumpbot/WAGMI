@@ -636,6 +636,192 @@ function CorrelationWarning({ symbols }: { symbols?: string[] }) {
   );
 }
 
+// ─── Portfolio Sunburst ───────────────────────────────────────────────────────
+
+function arcPath(
+  cx: number, cy: number,
+  r1: number, r2: number,
+  startAngle: number, endAngle: number,
+): string {
+  const cos = Math.cos, sin = Math.sin;
+  // Outer arc: start → end
+  const ox1 = cx + r2 * cos(startAngle), oy1 = cy + r2 * sin(startAngle);
+  const ox2 = cx + r2 * cos(endAngle),   oy2 = cy + r2 * sin(endAngle);
+  // Inner arc: end → start (reversed)
+  const ix1 = cx + r1 * cos(endAngle),   iy1 = cy + r1 * sin(endAngle);
+  const ix2 = cx + r1 * cos(startAngle), iy2 = cy + r1 * sin(startAngle);
+  const large = endAngle - startAngle > Math.PI ? 1 : 0;
+  return [
+    `M ${ox1.toFixed(2)} ${oy1.toFixed(2)}`,
+    `A ${r2} ${r2} 0 ${large} 1 ${ox2.toFixed(2)} ${oy2.toFixed(2)}`,
+    `L ${ix1.toFixed(2)} ${iy1.toFixed(2)}`,
+    `A ${r1} ${r1} 0 ${large} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)}`,
+    'Z',
+  ].join(' ');
+}
+
+function PortfolioSunburst() {
+  const cx = 160, cy = 160;
+  const R1_INNER = 55, R1_OUTER = 85;   // inner ring
+  const R2_INNER = 90, R2_OUTER = 130;  // outer ring
+  const GAP = 0.025; // radians gap between segments
+
+  // Inner ring: by strategy
+  const strategies = [
+    { label: 'regime_trend', pct: 45, color: C.brand },
+    { label: 'monte_carlo',  pct: 30, color: C.info },
+    { label: 'confidence',   pct: 15, color: C.bull },
+    { label: 'multi_tier',   pct: 10, color: C.warn },
+  ];
+
+  // Outer ring: by symbol
+  const symbols = [
+    { label: 'BTC',  pct: 40, color: '#f7931a' },
+    { label: 'SOL',  pct: 35, color: '#9945ff' },
+    { label: 'HYPE', pct: 15, color: C.bear },
+    { label: 'ETH',  pct: 10, color: '#627eea' },
+  ];
+
+  function buildArcs<T extends { pct: number; label: string; color: string }>(
+    items: T[], r1: number, r2: number,
+  ) {
+    let angle = -Math.PI / 2;
+    return items.map((item) => {
+      const sweep = (item.pct / 100) * 2 * Math.PI;
+      const startA = angle + GAP / 2;
+      const endA   = angle + sweep - GAP / 2;
+      angle += sweep;
+      return { ...item, path: arcPath(cx, cy, r1, r2, startA, endA) };
+    });
+  }
+
+  const innerArcs = buildArcs(strategies, R1_INNER, R1_OUTER);
+  const outerArcs = buildArcs(symbols,    R2_INNER, R2_OUTER);
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', flex: 1, minWidth: 300 }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 16 }}>Allocation Sunburst</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+        {/* SVG Sunburst */}
+        <svg width={320} height={320} viewBox="0 0 320 320" style={{ flexShrink: 0, display: 'block' }}>
+          {innerArcs.map((arc) => (
+            <path key={arc.label} d={arc.path} fill={arc.color} opacity={0.85}
+              style={{ filter: `drop-shadow(0 0 3px ${arc.color}60)` }}>
+              <title>{arc.label}: {arc.pct}%</title>
+            </path>
+          ))}
+          {outerArcs.map((arc) => (
+            <path key={arc.label} d={arc.path} fill={arc.color} opacity={0.9}
+              style={{ filter: `drop-shadow(0 0 4px ${arc.color}70)` }}>
+              <title>{arc.label}: {arc.pct}%</title>
+            </path>
+          ))}
+          {/* Center text */}
+          <text x={cx} y={cy - 6} textAnchor="middle" fontSize={13} fontWeight={700} fill={C.textSub}>Portfolio</text>
+          <text x={cx} y={cy + 11} textAnchor="middle" fontSize={11} fill={C.muted}>4 Assets</text>
+        </svg>
+
+        {/* Legend — two columns */}
+        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+          {/* Symbols */}
+          <div>
+            <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Symbols</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {outerArcs.map((arc) => (
+                <div key={arc.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: arc.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: F.xs, color: C.text, fontWeight: 600, width: 34 }}>{arc.label}</span>
+                  <span style={{ fontSize: F.xs, color: C.muted }}>{arc.pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Strategies */}
+          <div>
+            <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Strategies</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {innerArcs.map((arc) => (
+                <div key={arc.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: arc.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: F.xs, color: C.text, fontWeight: 600, width: 80 }}>{arc.label}</span>
+                  <span style={{ fontSize: F.xs, color: C.muted }}>{arc.pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Risk Budget Meter ────────────────────────────────────────────────────────
+
+function RiskBudgetMeter() {
+  const dailyLimit  = 3.0;
+  const usedToday   = 1.2;
+  const usedPct     = (usedToday / dailyLimit) * 100;
+  const remainPct   = 100 - usedPct;
+
+  const subBars = [
+    { label: 'Open position risk', used: 0.7,  limit: 1.5 },
+    { label: 'Signal risk',        used: 0.35, limit: 1.0 },
+    { label: 'Drawdown buffer',    used: 0.15, limit: 0.5 },
+  ];
+
+  const barColor = usedPct > 80 ? C.bear : usedPct > 55 ? C.warn : C.bear;
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', flex: 1, minWidth: 260 }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 16 }}>Risk Budget Used</div>
+
+      {/* Main bar */}
+      <div style={{ marginBottom: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontSize: F.xs, color: C.muted }}>Today</span>
+          <span style={{ fontSize: F.xs, fontWeight: 700, color: barColor }}>{usedToday.toFixed(1)}% / {dailyLimit.toFixed(1)}% daily limit</span>
+        </div>
+        <div style={{ height: 14, background: C.surface, borderRadius: R.pill, overflow: 'hidden', display: 'flex' }}>
+          <div style={{
+            width: `${usedPct}%`, height: '100%',
+            background: `linear-gradient(90deg, ${C.bear}cc, ${barColor})`,
+            borderRadius: `${R.pill}px 0 0 ${R.pill}px`,
+            transition: 'width 0.4s',
+          }} />
+          <div style={{
+            width: `${remainPct}%`, height: '100%',
+            background: `${C.bull}33`,
+            borderRadius: `0 ${R.pill}px ${R.pill}px 0`,
+          }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+          <span style={{ fontSize: 10, color: barColor, fontWeight: 600 }}>{usedToday.toFixed(1)}% used</span>
+          <span style={{ fontSize: 10, color: C.bull, fontWeight: 600 }}>{(dailyLimit - usedToday).toFixed(1)}% remaining</span>
+        </div>
+      </div>
+
+      {/* Sub-bars */}
+      <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {subBars.map((sb) => {
+          const pct = Math.min(100, (sb.used / sb.limit) * 100);
+          const col = pct > 80 ? C.bear : pct > 55 ? C.warn : '#2563eb';
+          return (
+            <div key={sb.label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: F.xs, color: C.muted }}>{sb.label}</span>
+                <span style={{ fontSize: F.xs, fontWeight: 600, color: col }}>{sb.used.toFixed(2)}% / {sb.limit.toFixed(1)}%</span>
+              </div>
+              <div style={{ height: 6, background: C.surface, borderRadius: R.pill, overflow: 'hidden' }}>
+                <div style={{ width: `${pct}%`, height: '100%', background: col, borderRadius: R.pill, opacity: 0.85, transition: 'width 0.4s' }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PortfolioPage() {
@@ -757,6 +943,12 @@ export default function PortfolioPage() {
                   {strategies.filter((s) => s.lastHeartbeat && (Date.now() - new Date(s.lastHeartbeat).getTime()) < 300_000).length} live
                 </div>
               </div>
+            </div>
+
+            {/* ── Sunburst + Risk Budget ── */}
+            <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+              <PortfolioSunburst />
+              <RiskBudgetMeter />
             </div>
 
             {/* ── Visual Analytics Row: Allocation Donut + Health Score ── */}
