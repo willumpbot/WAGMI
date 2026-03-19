@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { C, R, S, G } from '../src/theme';
+import { resolveApiBase } from '../src/api';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard' },
@@ -21,29 +22,13 @@ const NAV_ITEMS = [
   { href: '/about', label: 'About' },
 ];
 
-// Resolve once at module level for the env-based portion; window check happens in useMemo.
-const ENV_API_BASE =
-  (process.env.NEXT_PUBLIC_API_URL as string | undefined)?.trim() ||
-  (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined)?.trim() ||
-  '';
-
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [regime, setRegime] = useState<string | null>(null);
   const [botLive, setBotLive] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Resolved once on first render (window is available client-side only).
-  const apiBase = useMemo(() => {
-    if (ENV_API_BASE) return ENV_API_BASE;
-    if (typeof window !== 'undefined') {
-      const host = window.location.hostname;
-      if (host && host !== 'localhost' && host !== '127.0.0.1') {
-        return 'https://nunuirl-platform.onrender.com';
-      }
-    }
-    return 'http://localhost:8000';
-  }, []);
+  const apiBase = resolveApiBase();
 
   useEffect(() => {
     const fetchStatus = async () => {
