@@ -1585,6 +1585,452 @@ function BotScheduleTimeline() {
   );
 }
 
+// ─── GateFlowAnimated ─────────────────────────────────────────────────────────
+
+function GateFlowAnimated() {
+  const gates = [
+    { name: 'Validity Check',    passed: 98 },
+    { name: 'Circuit Breaker',   passed: 87 },
+    { name: 'Position Limits',   passed: 72 },
+    { name: 'Leverage Calc',     passed: 65 },
+    { name: 'Liquidation Guard', passed: 61 },
+    { name: 'Position Sizing',   passed: 58 },
+  ];
+  const total = 100;
+
+  // Determine the "active" gate: the last gate that still has signals passing through
+  // (lowest index where passed < previous passed, i.e. the bottleneck gate)
+  const activeGateIdx = gates.reduce((acc, g, i) => (g.passed < gates[acc].passed ? i : acc), 0);
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '18px 20px' }}>
+      <style>{`
+        @keyframes gateGlow {
+          0%, 100% { box-shadow: 0 0 0px transparent; }
+          50%       { box-shadow: 0 0 10px ${C.brand}80; }
+        }
+        @keyframes gatePulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.55; }
+        }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Signal Gate Funnel</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>6-stage sequential filter — 100 example signals</div>
+        </div>
+        <span style={{
+          fontSize: 9, fontWeight: 700, color: C.brand,
+          background: `${C.brand}18`, border: `1px solid ${C.brand}50`,
+          borderRadius: R.pill, padding: '2px 8px',
+        }}>
+          {gates[gates.length - 1].passed}/{total} reach execution
+        </span>
+      </div>
+
+      {/* Gate rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {gates.map((g, i) => {
+          const isActive = i === activeGateIdx;
+          const passRate = g.passed / total;
+          const failRate = 1 - passRate;
+          const prevPassed = i === 0 ? total : gates[i - 1].passed;
+          const droppedHere = prevPassed - g.passed;
+
+          return (
+            <div
+              key={g.name}
+              style={{
+                borderRadius: R.md,
+                border: `1px solid ${isActive ? C.brand + '60' : C.border}`,
+                background: isActive ? `${C.brand}08` : C.surface,
+                padding: '10px 12px',
+                animation: isActive ? 'gateGlow 2s ease-in-out infinite' : 'none',
+                transition: 'border-color 0.3s',
+              }}
+            >
+              {/* Row header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {/* Gate number */}
+                  <span style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                    background: isActive ? C.brand : C.surface,
+                    border: `1px solid ${isActive ? C.brand : C.border}`,
+                    fontSize: 9, fontWeight: 700, color: isActive ? '#fff' : C.muted,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    animation: isActive ? 'gatePulse 1.6s ease-in-out infinite' : 'none',
+                  }}>
+                    {i + 1}
+                  </span>
+                  <span style={{ fontSize: F.xs, fontWeight: isActive ? 700 : 500, color: isActive ? C.text : C.textSub }}>
+                    {g.name}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 10 }}>
+                  <span style={{ color: C.bull, fontWeight: 700 }}>{g.passed} passed</span>
+                  {droppedHere > 0 && (
+                    <span style={{ color: C.bear, fontWeight: 600 }}>−{droppedHere} dropped</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Dual fill bar: green (pass) + red (fail) */}
+              <div style={{ height: 8, background: C.border, borderRadius: R.pill, overflow: 'hidden', display: 'flex' }}>
+                <div style={{
+                  width: `${passRate * 100}%`, height: '100%',
+                  background: C.bull,
+                  borderRadius: `${R.pill}px 0 0 ${R.pill}px`,
+                  transition: 'width 0.5s',
+                }} />
+                <div style={{
+                  flex: 1, height: '100%',
+                  background: C.bear + '70',
+                  borderRadius: `0 ${R.pill}px ${R.pill}px 0`,
+                }} />
+              </div>
+
+              {/* % labels under bar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, fontSize: 9 }}>
+                <span style={{ color: C.bull }}>{Math.round(passRate * 100)}% pass</span>
+                <span style={{ color: C.bear + 'cc' }}>{Math.round(failRate * 100)}% fail</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Funnel summary */}
+      <div style={{ marginTop: 14, padding: '10px 12px', background: C.surface, borderRadius: R.md, border: `1px solid ${C.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+          {gates.map((g, i) => (
+            <React.Fragment key={g.name}>
+              <span style={{
+                fontSize: 10, fontWeight: 700,
+                color: i === gates.length - 1 ? C.brand : C.textSub,
+                padding: '1px 6px', borderRadius: R.pill,
+                background: i === gates.length - 1 ? `${C.brand}20` : 'transparent',
+              }}>
+                {g.passed}
+              </span>
+              {i < gates.length - 1 && (
+                <span style={{ fontSize: 9, color: C.muted }}>→</span>
+              )}
+            </React.Fragment>
+          ))}
+          <span style={{ marginLeft: 6, fontSize: F.xs, color: C.muted }}>signals surviving each gate</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TodayPnlByHour ───────────────────────────────────────────────────────────
+
+function TodayPnlByHour() {
+  const now = new Date();
+  const currentHour = now.getUTCHours();
+
+  // Seeded hourly PnL: hours 9-11 and 14-16 are highest activity (bull hours)
+  const hourlyPnl: number[] = [
+    0,     0,     0,     0,     0,     0,      // 0–5
+    0,     0,     12.5,  48.3,  -18.7, 91.2,  // 6–11
+    0,     0,     67.4,  -22.1, 88.6,  0,     // 12–17
+    0,     0,     0,     0,     0,     0,      // 18–23
+  ];
+
+  const W = 500, H = 120;
+  const padL = 36, padR = 8, padT = 8, padB = 24;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const maxAbs = Math.max(...hourlyPnl.map(Math.abs), 1);
+
+  function barX(h: number): number {
+    const slotW = chartW / 24;
+    return padL + h * slotW + slotW * 0.15;
+  }
+  function barWidth(): number {
+    return (chartW / 24) * 0.7;
+  }
+  function barH(pnl: number): number {
+    return (Math.abs(pnl) / maxAbs) * (chartH * 0.85);
+  }
+
+  // Y-axis labels
+  const yLabels = [maxAbs, maxAbs / 2, 0, -maxAbs / 2, -maxAbs];
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '16px 18px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Today's P&L by Hour (UTC)</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>Realized P&L distribution across 24 trading hours</div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, fontSize: 10 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: C.bull }}>
+            <span style={{ width: 8, height: 8, background: C.bull, borderRadius: 1, display: 'inline-block' }} /> Profit
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: C.bear }}>
+            <span style={{ width: 8, height: 8, background: C.bear, borderRadius: 1, display: 'inline-block' }} /> Loss
+          </span>
+        </div>
+      </div>
+
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+        {/* Horizontal zero line */}
+        <line
+          x1={padL} y1={padT + chartH / 2}
+          x2={W - padR} y2={padT + chartH / 2}
+          stroke={C.border} strokeWidth={1}
+        />
+
+        {/* Y-axis grid lines */}
+        {[0.25, 0.75].map(frac => (
+          <line
+            key={frac}
+            x1={padL} y1={padT + chartH * frac}
+            x2={W - padR} y2={padT + chartH * frac}
+            stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4"
+          />
+        ))}
+
+        {/* Y-axis labels */}
+        <text x={padL - 4} y={padT + 4} textAnchor="end" fontSize={7} fill={C.muted} dominantBaseline="hanging">
+          +${Math.round(maxAbs)}
+        </text>
+        <text x={padL - 4} y={padT + chartH / 2} textAnchor="end" fontSize={7} fill={C.muted} dominantBaseline="middle">
+          $0
+        </text>
+        <text x={padL - 4} y={padT + chartH - 2} textAnchor="end" fontSize={7} fill={C.muted} dominantBaseline="auto">
+          -${Math.round(maxAbs)}
+        </text>
+
+        {/* Bars */}
+        {hourlyPnl.map((pnl, h) => {
+          if (pnl === 0) return null;
+          const isPositive = pnl >= 0;
+          const bH = barH(pnl);
+          const bX = barX(h);
+          const bW = barWidth();
+          const midY = padT + chartH / 2;
+          const bY = isPositive ? midY - bH : midY;
+          const col = isPositive ? C.bull : C.bear;
+          const isCurrent = h === currentHour;
+
+          return (
+            <g key={h}>
+              <rect
+                x={bX} y={bY}
+                width={bW} height={bH}
+                fill={col}
+                fillOpacity={isCurrent ? 0 : 0.85}
+                rx={2}
+                stroke={isCurrent ? col : 'none'}
+                strokeWidth={isCurrent ? 1.5 : 0}
+                strokeDasharray={isCurrent ? '3 2' : 'none'}
+              />
+              {/* Subtle glow for significant bars */}
+              {Math.abs(pnl) > maxAbs * 0.5 && (
+                <rect
+                  x={bX - 1} y={bY - 1}
+                  width={bW + 2} height={bH + 2}
+                  fill="none"
+                  rx={3}
+                  stroke={col}
+                  strokeWidth={0.5}
+                  strokeOpacity={0.4}
+                />
+              )}
+            </g>
+          );
+        })}
+
+        {/* Current hour outline (if no pnl yet) */}
+        {hourlyPnl[currentHour] === 0 && (
+          <rect
+            x={barX(currentHour)} y={padT + chartH / 2 - 4}
+            width={barWidth()} height={8}
+            fill="none"
+            stroke={C.brand}
+            strokeWidth={1}
+            strokeDasharray="3 2"
+            rx={2}
+            opacity={0.6}
+          />
+        )}
+
+        {/* X-axis: hour labels at 0,4,8,12,16,20 */}
+        {[0, 4, 8, 12, 16, 20].map(h => {
+          const x = padL + (h / 24) * chartW + (chartW / 24) * 0.5;
+          return (
+            <g key={h}>
+              <line x1={x} y1={padT + chartH} x2={x} y2={padT + chartH + 3} stroke={C.border} strokeWidth={0.75} />
+              <text x={x} y={padT + chartH + 10} textAnchor="middle" fontSize={8} fill={C.muted}>
+                {String(h).padStart(2, '0')}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Summary row */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 4, fontSize: F.xs, color: C.muted }}>
+        <span>Total: <span style={{ color: C.bull, fontWeight: 700 }}>
+          {fmtUsd(hourlyPnl.reduce((a, b) => a + b, 0))}
+        </span></span>
+        <span>Best hour: <span style={{ color: C.bull, fontWeight: 700 }}>
+          {String(hourlyPnl.indexOf(Math.max(...hourlyPnl))).padStart(2, '0')}:00 UTC
+        </span></span>
+        <span style={{ marginLeft: 'auto', color: C.faint }}>Current hour: dashed border</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── LivePositionPnlStream ────────────────────────────────────────────────────
+
+type LivePosition = {
+  symbol: string;
+  side: 'LONG' | 'SHORT';
+  size: string;
+  entry: number;
+  current: number;
+};
+
+function LivePositionPnlStream() {
+  // Seeded open positions (would come from API in real use)
+  const positions: LivePosition[] = [
+    { symbol: 'BTC',  side: 'LONG',  size: '0.26',  entry: 95240, current: 96680 },
+    { symbol: 'SOL',  side: 'LONG',  size: '12.5',  entry: 145.2, current: 143.8 },
+    { symbol: 'HYPE', side: 'SHORT', size: '200',   entry: 18.45, current: 17.90 },
+  ];
+
+  if (positions.length === 0) {
+    return (
+      <div style={{
+        background: C.surface,
+        borderBottom: `1px solid ${C.border}`,
+        padding: '8px 16px',
+        fontSize: F.xs,
+        color: C.muted,
+        fontStyle: 'italic',
+        textAlign: 'center',
+      }}>
+        No open positions — bot is scanning
+      </div>
+    );
+  }
+
+  // Build ticker items (duplicate for seamless loop)
+  const items = [...positions, ...positions];
+
+  const totalPnl = positions.reduce((acc, p) => {
+    const mult = p.side === 'LONG' ? 1 : -1;
+    const raw = (p.current - p.entry) * parseFloat(p.size) * mult;
+    return acc + raw;
+  }, 0);
+
+  return (
+    <div style={{
+      background: C.surface,
+      borderBottom: `1px solid ${C.border}`,
+      overflow: 'hidden',
+      position: 'relative',
+    }}>
+      <style>{`
+        @keyframes wagmiTickerScroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+
+      {/* Left label */}
+      <div style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0, zIndex: 2,
+        display: 'flex', alignItems: 'center',
+        background: `linear-gradient(to right, ${C.surface} 80%, transparent)`,
+        paddingLeft: 12, paddingRight: 24,
+        pointerEvents: 'none',
+      }}>
+        <span style={{
+          fontSize: 9, fontWeight: 800, color: C.brand,
+          letterSpacing: '0.07em', textTransform: 'uppercase',
+          display: 'flex', alignItems: 'center', gap: 5,
+        }}>
+          <span style={{
+            width: 5, height: 5, borderRadius: '50%',
+            background: C.bull, display: 'inline-block',
+            animation: 'wagmiPulse 1.4s ease-in-out infinite',
+          }} />
+          LIVE
+        </span>
+      </div>
+
+      {/* Scrolling strip */}
+      <div style={{
+        display: 'inline-flex',
+        animation: 'wagmiTickerScroll 28s linear infinite',
+        paddingLeft: 80,
+        whiteSpace: 'nowrap' as const,
+      }}>
+        {items.map((p, i) => {
+          const mult = p.side === 'LONG' ? 1 : -1;
+          const pnl = (p.current - p.entry) * parseFloat(p.size) * mult;
+          const isPos = pnl >= 0;
+          const col = isPos ? C.bull : C.bear;
+          const pnlStr = (isPos ? '+' : '') + fmtUsd(pnl);
+
+          return (
+            <span key={i} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 18px',
+              borderRight: `1px solid ${C.border}`,
+              fontSize: F.xs,
+            }}>
+              {/* Symbol + side badge */}
+              <span style={{ fontWeight: 800, color: C.text }}>{p.symbol}</span>
+              <span style={{
+                fontSize: 9, fontWeight: 700,
+                padding: '1px 5px', borderRadius: R.pill,
+                background: p.side === 'LONG' ? `${C.bull}20` : `${C.bear}20`,
+                color: p.side === 'LONG' ? C.bull : C.bear,
+                border: `1px solid ${p.side === 'LONG' ? C.bull : C.bear}40`,
+              }}>
+                {p.side}
+              </span>
+              <span style={{ color: C.muted }}>{p.size}</span>
+              <span style={{ color: C.faint }}>@</span>
+              <span style={{ color: C.textSub }}>{fmtUsd(p.entry)}</span>
+              <span style={{ color: C.faint }}>→</span>
+              <span style={{ color: C.textSub }}>{fmtUsd(p.current)}</span>
+              <span style={{ fontWeight: 700, color: col }}>{pnlStr}</span>
+            </span>
+          );
+        })}
+      </div>
+
+      {/* Right total */}
+      <div style={{
+        position: 'absolute', right: 0, top: 0, bottom: 0, zIndex: 2,
+        display: 'flex', alignItems: 'center',
+        background: `linear-gradient(to left, ${C.surface} 80%, transparent)`,
+        paddingRight: 12, paddingLeft: 24,
+        pointerEvents: 'none',
+      }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700,
+          color: totalPnl >= 0 ? C.bull : C.bear,
+        }}>
+          {totalPnl >= 0 ? '+' : ''}{fmtUsd(totalPnl)} total
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function TodayPage() {
@@ -1646,6 +2092,9 @@ export default function TodayPage() {
         <meta name="description" content="Daily market brief: current regime, AI commentary, key levels, and what the bot is watching today." />
       </Head>
 
+      {/* ── Live Position PnL Ticker Strip ── */}
+      <LivePositionPnlStream />
+
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
         {/* ── Header ── */}
         <div style={{ marginBottom: 24 }}>
@@ -1678,6 +2127,11 @@ export default function TodayPage() {
         <div style={{ display: 'flex', gap: 20, marginBottom: 24, flexWrap: 'wrap' }}>
           <TodayEquityMini />
           <AlertsPanel />
+        </div>
+
+        {/* ── Today P&L by Hour ── */}
+        <div style={{ marginBottom: 24 }}>
+          <TodayPnlByHour />
         </div>
 
         {/* ── Bot Schedule Timeline ── */}
@@ -1755,6 +2209,11 @@ export default function TodayPage() {
           <div style={{ flex: '1 1 320px' }}>
             <HourlyTradeTimeline />
           </div>
+        </div>
+
+        {/* ── Gate Flow Animated Funnel ── */}
+        <div style={{ marginBottom: 28 }}>
+          <GateFlowAnimated />
         </div>
 
         {/* ── Safety: Circuit Breaker Dashboard ── */}

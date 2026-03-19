@@ -3372,6 +3372,39 @@ export default function Forensics() {
         )}
       </div>
 
+      {/* Trade Autopsy Card */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Worst Trade Autopsy</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
+            Deep-dive on the single worst trade — entry/exit marked on price chart, root cause analysis, lessons for next time.
+          </div>
+        </div>
+        <TradeAutopsyCard />
+      </div>
+
+      {/* Signal Decay Chart */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Signal Confidence Decay</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
+            How each strategy&apos;s confidence score evolves after entry. Dashed line = action threshold. Marker = actual close point.
+          </div>
+        </div>
+        <SignalDecayChart />
+      </div>
+
+      {/* Exposure Risk Matrix */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Exposure Risk Matrix</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
+            Average risk exposure (position size × volatility) per symbol and UTC time slot. Darker red = higher risk concentration.
+          </div>
+        </div>
+        <ExposureRiskMatrix />
+      </div>
+
       {/* Filters */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20 }}>
         <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>Filter Trades</div>

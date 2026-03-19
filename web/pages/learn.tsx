@@ -3017,6 +3017,437 @@ function PositionSizeDemo() {
   );
 }
 
+// ─── RegimeWheel ─────────────────────────────────────────────────────────────
+
+function RegimeWheel({ currentRegime = 'trend' }: { currentRegime?: string }) {
+  const cx = 150, cy = 150, r = 110, innerR = 42;
+  const regimes = [
+    { name: 'trend',             color: '#16a34a', brightColor: '#22c55e', label: 'trend' },
+    { name: 'range',             color: '#4b5563', brightColor: '#9ca3af', label: 'range' },
+    { name: 'panic',             color: '#dc2626', brightColor: '#f87171', label: 'panic' },
+    { name: 'high_volatility',   color: '#d97706', brightColor: '#fbbf24', label: 'hi-vol' },
+    { name: 'low_liquidity',     color: '#7c3aed', brightColor: '#a78bfa', label: 'lo-liq' },
+    { name: 'news_dislocation',  color: '#2563eb', brightColor: '#60a5fa', label: 'news' },
+  ];
+  const n = regimes.length;
+  const sliceDeg = 360 / n;
+  const gapDeg = 3;
+
+  // Transition probabilities shown on arcs between adjacent segments
+  const transitions = [
+    { from: 0, to: 1, label: '40%' },
+    { from: 1, to: 2, label: '15%' },
+    { from: 2, to: 0, label: '30%' },
+    { from: 3, to: 0, label: '55%' },
+    { from: 4, to: 1, label: '45%' },
+    { from: 5, to: 0, label: '35%' },
+  ];
+
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+
+  function slicePath(index: number): string {
+    const startDeg = index * sliceDeg - 90 + gapDeg / 2;
+    const endDeg   = startDeg + sliceDeg - gapDeg;
+    const a1 = toRad(startDeg);
+    const a2 = toRad(endDeg);
+    const ox1 = cx + r * Math.cos(a1), oy1 = cy + r * Math.sin(a1);
+    const ox2 = cx + r * Math.cos(a2), oy2 = cy + r * Math.sin(a2);
+    const ix1 = cx + innerR * Math.cos(a1), iy1 = cy + innerR * Math.sin(a1);
+    const ix2 = cx + innerR * Math.cos(a2), iy2 = cy + innerR * Math.sin(a2);
+    const large = sliceDeg - gapDeg > 180 ? 1 : 0;
+    return `M ${ix1} ${iy1} L ${ox1} ${oy1} A ${r} ${r} 0 ${large} 1 ${ox2} ${oy2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${large} 0 ${ix1} ${iy1} Z`;
+  }
+
+  function labelPos(index: number): { x: number; y: number } {
+    const midDeg = index * sliceDeg - 90 + sliceDeg / 2;
+    const midR = (r + innerR) / 2;
+    return { x: cx + midR * Math.cos(toRad(midDeg)), y: cy + midR * Math.sin(toRad(midDeg)) };
+  }
+
+  function arrowPos(fromIdx: number, toIdx: number): { x: number; y: number; angle: number } {
+    const midFromDeg = fromIdx * sliceDeg - 90 + sliceDeg / 2;
+    const midToDeg   = toIdx   * sliceDeg - 90 + sliceDeg / 2;
+    const edgeR = r + 14;
+    const mx = cx + edgeR * Math.cos(toRad((midFromDeg + midToDeg) / 2));
+    const my = cy + edgeR * Math.sin(toRad((midFromDeg + midToDeg) / 2));
+    const angle = (midFromDeg + midToDeg) / 2;
+    return { x: mx, y: my, angle };
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 12, marginBottom: 8 }}>
+      <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>
+        Market Regime Wheel
+      </div>
+      <div style={{ overflowX: 'auto', maxWidth: '100%' }}>
+        <svg width={300} height={300} style={{ display: 'block' }}>
+          <defs>
+            <filter id="regimePulse">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+
+          {/* Segment arcs */}
+          {regimes.map((regime, i) => {
+            const isActive = regime.name === currentRegime;
+            return (
+              <path
+                key={regime.name}
+                d={slicePath(i)}
+                fill={isActive ? regime.brightColor : regime.color}
+                opacity={isActive ? 1 : 0.65}
+                style={{ transition: 'fill 0.3s, opacity 0.3s' }}
+              />
+            );
+          })}
+
+          {/* Pulsing ring for active regime */}
+          {(() => {
+            const activeIdx = regimes.findIndex(r => r.name === currentRegime);
+            if (activeIdx < 0) return null;
+            const midDeg = activeIdx * sliceDeg - 90 + sliceDeg / 2;
+            const pr = (r + innerR) / 2;
+            const px = cx + pr * Math.cos(toRad(midDeg));
+            const py = cy + pr * Math.sin(toRad(midDeg));
+            return (
+              <circle
+                cx={px} cy={py} r={18}
+                fill="none"
+                stroke={regimes[activeIdx].brightColor}
+                strokeWidth={2}
+                opacity={0.6}
+                filter="url(#regimePulse)"
+              />
+            );
+          })()}
+
+          {/* Labels */}
+          {regimes.map((regime, i) => {
+            const pos = labelPos(i);
+            const isActive = regime.name === currentRegime;
+            return (
+              <text
+                key={regime.name}
+                x={pos.x} y={pos.y + 4}
+                textAnchor="middle"
+                fontSize={isActive ? 9 : 8}
+                fontWeight={isActive ? 800 : 600}
+                fill={isActive ? '#ffffff' : '#e2e8f0'}
+                opacity={isActive ? 1 : 0.85}
+              >
+                {regime.label}
+              </text>
+            );
+          })}
+
+          {/* Transition arrows */}
+          {transitions.map(({ from, to, label }, i) => {
+            const pos = arrowPos(from, to);
+            const fromColor = regimes[from].color;
+            return (
+              <g key={i}>
+                <text
+                  x={pos.x} y={pos.y}
+                  textAnchor="middle"
+                  fontSize={7}
+                  fontWeight={700}
+                  fill={fromColor}
+                  opacity={0.9}
+                >
+                  {label}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Center */}
+          <circle cx={cx} cy={cy} r={innerR - 2} fill="#0f172a" stroke="#334155" strokeWidth={1.5} />
+          <text x={cx} y={cy - 5} textAnchor="middle" fontSize={9} fontWeight={700} fill="#64748b">MARKET</text>
+          <text x={cx} y={cy + 7} textAnchor="middle" fontSize={9} fontWeight={700} fill="#64748b">REGIME</text>
+          <text x={cx} y={cy + 19} textAnchor="middle" fontSize={8} fill="#6366f1" fontWeight={800}>
+            {currentRegime}
+          </text>
+        </svg>
+      </div>
+      {/* Legend */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginTop: 8 }}>
+        {regimes.map(regime => (
+          <div key={regime.name} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 8, height: 8, borderRadius: 2, background: regime.brightColor }} />
+            <span style={{ fontSize: 10, color: regime.name === currentRegime ? regime.brightColor : '#64748b', fontWeight: regime.name === currentRegime ? 700 : 400 }}>
+              {regime.name}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── StrategyContributionSankey ───────────────────────────────────────────────
+
+function StrategyContributionSankey() {
+  const W = 500, H = 200;
+  const leftX = 10, rightX = 390;
+  const nodeW = 110;
+  const strategies = [
+    { name: 'regime_trend',      weight: 40, color: '#6366f1' },
+    { name: 'monte_carlo',       weight: 25, color: '#2563eb' },
+    { name: 'confidence_scorer', weight: 20, color: '#d97706' },
+    { name: 'multi_tier_quality',weight: 15, color: '#7c3aed' },
+  ];
+  const outcomes = [
+    { name: 'WIN',  pct: 77, color: '#16a34a' },
+    { name: 'LOSS', pct: 23, color: '#dc2626' },
+  ];
+
+  const padV = 10;
+  const totalH = H - padV * 2;
+
+  // Strategy box heights proportional to weight (sum=100)
+  const totalWeight = strategies.reduce((s, x) => s + x.weight, 0);
+  const stratGap = 6;
+  const stratBoxes: { y: number; h: number; strategy: typeof strategies[0] }[] = [];
+  let sy = padV;
+  strategies.forEach(st => {
+    const h = (st.weight / totalWeight) * totalH - stratGap;
+    stratBoxes.push({ y: sy, h: Math.max(h, 12), strategy: st });
+    sy += h + stratGap;
+  });
+
+  // Outcome box heights proportional to pct
+  const totalPct = outcomes.reduce((s, x) => s + x.pct, 0);
+  const outcomeGap = 10;
+  const outcomeBoxes: { y: number; h: number; outcome: typeof outcomes[0] }[] = [];
+  let oy = padV;
+  outcomes.forEach(oc => {
+    const h = (oc.pct / totalPct) * totalH - outcomeGap;
+    outcomeBoxes.push({ y: oy, h: Math.max(h, 14), outcome: oc });
+    oy += h + outcomeGap;
+  });
+
+  // Generate Sankey paths: each strategy connects to both outcomes
+  // Flow width ∝ strategy weight × outcome pct
+  const paths: { d: string; color: string; opacity: number }[] = [];
+  stratBoxes.forEach(sb => {
+    const sCenter = sb.y + sb.h / 2;
+    outcomeBoxes.forEach(ob => {
+      // Width of path at source proportional to (strategy weight) * (outcome %) / 100
+      const flowH = sb.h * (ob.outcome.pct / 100);
+      const halfFH = flowH / 2;
+      const oCenter = ob.y + ob.h * (ob.outcome.pct / 100) / 2 + (ob.outcome.name === 'WIN' ? 0 : ob.h * 0.77 / 2);
+
+      const x1 = leftX + nodeW;
+      const x2 = rightX;
+      const mx = (x1 + x2) / 2;
+
+      const ys = sCenter - halfFH;
+      const ye = ob.y + ob.h * (ob.outcome.name === 'WIN' ? 0 : 0.77);
+
+      const d = `M ${x1} ${ys} C ${mx} ${ys}, ${mx} ${ye}, ${x2} ${ye} L ${x2} ${ye + flowH} C ${mx} ${ye + flowH}, ${mx} ${ys + flowH}, ${x1} ${ys + flowH} Z`;
+      paths.push({ d, color: ob.outcome.color, opacity: 0.18 + sb.strategy.weight / 200 });
+    });
+  });
+
+  return (
+    <div style={{ marginTop: 12, marginBottom: 8 }}>
+      <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>
+        Strategy → Outcome Flow
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <svg width={W} height={H} style={{ display: 'block', minWidth: W }}>
+          {/* Sankey flow paths */}
+          {paths.map((p, i) => (
+            <path key={i} d={p.d} fill={p.color} opacity={p.opacity} />
+          ))}
+
+          {/* Strategy boxes (left) */}
+          {stratBoxes.map(({ y, h, strategy }) => (
+            <g key={strategy.name}>
+              <rect x={leftX} y={y} width={nodeW} height={h} rx={4} fill={strategy.color} opacity={0.85} />
+              <text x={leftX + 6} y={y + h / 2 - 4} fontSize={8} fontWeight={700} fill="#fff">{strategy.name}</text>
+              <text x={leftX + 6} y={y + h / 2 + 6} fontSize={8} fill="rgba(255,255,255,0.75)">{strategy.weight}% weight</text>
+            </g>
+          ))}
+
+          {/* Outcome boxes (right) */}
+          {outcomeBoxes.map(({ y, h, outcome }) => (
+            <g key={outcome.name}>
+              <rect x={rightX} y={y} width={nodeW} height={h} rx={4} fill={outcome.color} opacity={0.85} />
+              <text x={rightX + nodeW / 2} y={y + h / 2 - 4} textAnchor="middle" fontSize={11} fontWeight={800} fill="#fff">{outcome.name}</text>
+              <text x={rightX + nodeW / 2} y={y + h / 2 + 8} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.8)">{outcome.pct}%</text>
+            </g>
+          ))}
+
+          {/* Center label */}
+          <text x={W / 2} y={H / 2 + 4} textAnchor="middle" fontSize={9} fill="#334155" fontWeight={700}>contribution</text>
+        </svg>
+      </div>
+      <div style={{ fontSize: 10, color: '#64748b', marginTop: 6 }}>
+        Flow width is proportional to each strategy&apos;s contribution to wins and losses. Wider green paths = stronger edge.
+      </div>
+    </div>
+  );
+}
+
+// ─── RiskParameterSlider ──────────────────────────────────────────────────────
+
+function RiskParameterSlider() {
+  const [riskPct, setRiskPct]   = useState(15);  // 0–100 mapped to 0.1%–5%
+  const [confThresh, setConfThresh] = useState(75); // 0–100 raw
+  const [maxLevRaw, setMaxLevRaw]   = useState(50); // 0–100 mapped to 1×–20×
+
+  const actualRisk     = 0.1 + (riskPct / 100) * 4.9;          // 0.1%–5%
+  const actualConf     = confThresh;                             // 0–100
+  const actualMaxLev   = 1 + (maxLevRaw / 100) * 19;           // 1×–20×
+
+  // Derived stats — educational approximations
+  const winRate = 0.5 + (actualConf / 100) * 0.35;             // 50%–85% as conf rises
+  const avgWin  = 2.5 * actualRisk;                             // avg win ≈ 2.5× risk
+  const avgLoss = actualRisk;
+  const ev      = winRate * avgWin - (1 - winRate) * avgLoss;   // expected value %
+  const evPerTrade = ev;
+
+  // Risk of ruin (simplified Kelly formula)
+  const base    = (1 - winRate) / winRate;
+  const rawRoR  = base < 1 ? Math.pow(base, 100 / actualRisk) * 100 : 100;
+  const rorPct  = Math.min(99, Math.max(0, rawRoR));
+
+  // Projected monthly return (20 trades/month)
+  const monthlyReturn = ev * 20;
+
+  const evColor   = evPerTrade >= 0 ? '#16a34a' : '#dc2626';
+  const rorColor  = rorPct < 5 ? '#16a34a' : rorPct < 20 ? '#d97706' : '#dc2626';
+  const mthColor  = monthlyReturn >= 0 ? '#16a34a' : '#dc2626';
+
+  const sliders = [
+    {
+      label: 'Risk per Trade',
+      unit: '%',
+      value: riskPct,
+      display: actualRisk.toFixed(1) + '%',
+      setter: setRiskPct,
+      color: '#d97706',
+      min: 0, max: 100,
+      hint: 'Low → 0.1% | High → 5%',
+    },
+    {
+      label: 'Confidence Threshold',
+      unit: '',
+      value: confThresh,
+      display: actualConf + ' / 100',
+      setter: setConfThresh,
+      color: '#6366f1',
+      min: 0, max: 100,
+      hint: 'Low → more trades, less selective',
+    },
+    {
+      label: 'Max Leverage',
+      unit: '×',
+      value: maxLevRaw,
+      display: actualMaxLev.toFixed(0) + '×',
+      setter: setMaxLevRaw,
+      color: '#dc2626',
+      min: 0, max: 100,
+      hint: 'Low → 1× | High → 20×',
+    },
+  ];
+
+  return (
+    <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: '20px 22px', marginTop: 12 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: '#e2e8f0', marginBottom: 4 }}>Risk Parameter Explorer</div>
+      <div style={{ fontSize: 11, color: '#64748b', marginBottom: 20, lineHeight: 1.6 }}>
+        Drag the sliders to see how risk parameters affect expected value, risk of ruin, and monthly return.
+      </div>
+
+      {/* Sliders */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 22 }}>
+        {sliders.map(sl => (
+          <div key={sl.label}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 }}>{sl.label}</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: sl.color, fontVariantNumeric: 'tabular-nums' }}>{sl.display}</span>
+            </div>
+            {/* Visual bar track */}
+            <div style={{ position: 'relative', height: 20 }}>
+              <div style={{ position: 'absolute', top: 8, left: 0, right: 0, height: 4, background: '#334155', borderRadius: 4 }} />
+              <div style={{ position: 'absolute', top: 8, left: 0, height: 4, width: `${sl.value}%`, background: sl.color, borderRadius: 4 }} />
+              <input
+                type="range"
+                min={sl.min}
+                max={sl.max}
+                value={sl.value}
+                onChange={e => sl.setter(+e.target.value)}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: 20,
+                  opacity: 0,
+                  cursor: 'pointer',
+                  margin: 0,
+                  padding: 0,
+                  zIndex: 2,
+                }}
+              />
+              {/* Thumb indicator */}
+              <div style={{
+                position: 'absolute',
+                top: 4,
+                left: `calc(${sl.value}% - 6px)`,
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                background: sl.color,
+                border: '2px solid #0f172a',
+                pointerEvents: 'none',
+              }} />
+            </div>
+            <div style={{ fontSize: 9, color: '#475569', marginTop: 2 }}>{sl.hint}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Live output cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+        {[
+          { label: 'Expected Value', value: (evPerTrade >= 0 ? '+' : '') + evPerTrade.toFixed(2) + '%', sub: 'per trade', color: evColor },
+          { label: 'Risk of Ruin', value: rorPct.toFixed(1) + '%', sub: 'probability', color: rorColor },
+          { label: 'Proj. Monthly', value: (monthlyReturn >= 0 ? '+' : '') + monthlyReturn.toFixed(1) + '%', sub: '20 trades', color: mthColor },
+        ].map(card => (
+          <div key={card.label} style={{
+            padding: '12px 10px',
+            background: card.color + '12',
+            border: `1px solid ${card.color}30`,
+            borderRadius: 8,
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 9, color: '#64748b', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>{card.label}</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: card.color, fontVariantNumeric: 'tabular-nums' }}>{card.value}</div>
+            <div style={{ fontSize: 9, color: '#475569', marginTop: 2 }}>{card.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Formula */}
+      <div style={{ padding: '10px 14px', background: '#111827', border: '1px solid #1e293b', borderRadius: 8, fontFamily: 'monospace' }}>
+        <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Formula</div>
+        <div style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 700, marginBottom: 2 }}>
+          EV = WR &times; AvgWin &minus; (1&minus;WR) &times; AvgLoss
+        </div>
+        <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>
+          WR ≈ {(winRate * 100).toFixed(0)}% &nbsp;|&nbsp;
+          AvgWin ≈ {avgWin.toFixed(2)}% &nbsp;|&nbsp;
+          AvgLoss ≈ {avgLoss.toFixed(2)}% &nbsp;→&nbsp;
+          <span style={{ color: evColor, fontWeight: 700 }}>EV = {evPerTrade >= 0 ? '+' : ''}{evPerTrade.toFixed(2)}%</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Learn() {
@@ -3087,6 +3518,7 @@ export default function Learn() {
           ))}
         </div>
         <StrategyShinesGrid />
+        <StrategyContributionSankey />
       </AccordionCard>
 
       <AccordionCard title="How Ensemble Voting Works" badge="Weighted-Veto">
@@ -3197,6 +3629,7 @@ export default function Learn() {
 
       <AccordionCard title="Regime Types Explained" badge="Market States" defaultOpen={false}>
         <p>The Regime Agent classifies the market every evaluation cycle. This classification affects which strategies run and how aggressively the bot sizes up:</p>
+        <RegimeWheel currentRegime="trend" />
         <RegimeTable />
       </AccordionCard>
 
@@ -3323,6 +3756,7 @@ export default function Learn() {
           The 1.5% risk rule is not arbitrary — it is the result of ruin-probability mathematics. The chart below shows how ruin probability collapses as risk per trade decreases.
         </p>
         <RiskOfRuinChart />
+        <RiskParameterSlider />
       </AccordionCard>
 
       <AccordionCard title="Expected Value Calculator" badge="EV" badgeColor={C.brand}>
