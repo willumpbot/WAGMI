@@ -1754,6 +1754,263 @@ function ScenarioSimulator() {
   );
 }
 
+// ─── Exchange Comparison Chart ────────────────────────────────────────────────
+
+function ExchangeComparisonChart() {
+  const metrics = [
+    { label: 'Taker Fee', unit: '%', HL: 0.05, Binance: 0.10, Bybit: 0.10, dYdX: 0.05, higherIsBetter: false, fmt: (v: number) => v.toFixed(3) },
+    { label: 'Maker Fee', unit: '%', HL: 0.035, Binance: 0.02, Bybit: 0.01, dYdX: 0.02, higherIsBetter: false, fmt: (v: number) => v.toFixed(3) },
+    { label: 'Exec Speed', unit: 'ms', HL: 50, Binance: 80, Bybit: 90, dYdX: 150, higherIsBetter: false, fmt: (v: number) => String(v) },
+    { label: 'Max Leverage', unit: '×', HL: 50, Binance: 125, Bybit: 100, dYdX: 20, higherIsBetter: true, fmt: (v: number) => String(v) },
+    { label: 'Onchain Settlement', unit: '', HL: 1, Binance: 0, Bybit: 0, dYdX: 0.5, higherIsBetter: true, fmt: (v: number) => v === 1 ? '✓' : v === 0.5 ? '~' : '✗' },
+    { label: 'API Rate Limit', unit: '', HL: 5, Binance: 3, Bybit: 2, dYdX: 3, higherIsBetter: true, fmt: (v: number) => ['Low','Med','High','High+','Max'][v-1] || '?' },
+  ];
+  const exchanges = ['HL', 'Binance', 'Bybit', 'dYdX'] as const;
+  const colors: Record<string, string> = { HL: C.brand, Binance: C.warn, Bybit: C.info, dYdX: C.bull };
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+        Exchange Feature Comparison
+      </div>
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 14, flexWrap: 'wrap' }}>
+        {exchanges.map(ex => (
+          <div key={ex} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: colors[ex] }} />
+            <span style={{ fontSize: F.xs, color: ex === 'HL' ? C.brand : C.muted, fontWeight: ex === 'HL' ? 700 : 400 }}>
+              {ex === 'HL' ? 'Hyperliquid ★' : ex}
+            </span>
+          </div>
+        ))}
+      </div>
+      {/* Chart rows */}
+      {metrics.map(m => {
+        const vals: Record<string, number> = { HL: m.HL, Binance: m.Binance, Bybit: m.Bybit, dYdX: m.dYdX };
+        const max = Math.max(...exchanges.map(ex => vals[ex]));
+        return (
+          <div key={m.label} style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: F.xs, color: C.textSub, fontWeight: 600 }}>{m.label}</span>
+              {m.higherIsBetter
+                ? <span style={{ fontSize: F.xs, color: C.bull }}>higher = better ↑</span>
+                : <span style={{ fontSize: F.xs, color: C.warn }}>lower = better ↓</span>}
+            </div>
+            {exchanges.map(ex => {
+              const v = vals[ex];
+              const pct = max > 0 ? (v / max) * 100 : 100;
+              const isBest = m.higherIsBetter
+                ? v === Math.max(...exchanges.map(e => vals[e]))
+                : v === Math.min(...exchanges.map(e => vals[e]));
+              return (
+                <div key={ex} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <div style={{ width: 60, fontSize: F.xs, color: ex === 'HL' ? C.brand : C.muted, fontWeight: ex === 'HL' ? 700 : 400, flexShrink: 0 }}>{ex}</div>
+                  <div style={{ flex: 1, height: 18, background: C.surfaceHover, borderRadius: R.sm, overflow: 'hidden', position: 'relative' }}>
+                    <div style={{
+                      width: `${pct}%`, height: '100%',
+                      background: isBest ? colors[ex] : colors[ex] + '55',
+                      borderRadius: R.sm,
+                      transition: 'width 0.3s',
+                    }} />
+                  </div>
+                  <div style={{
+                    width: 52, fontSize: F.xs, textAlign: 'right', flexShrink: 0,
+                    color: isBest ? colors[ex] : C.muted,
+                    fontWeight: isBest ? 700 : 400,
+                  }}>
+                    {m.fmt(v)}{m.unit && m.unit !== '' && m.label !== 'Exec Speed' ? m.unit : m.label === 'Exec Speed' ? 'ms' : ''}
+                  </div>
+                  {isBest && (
+                    <div style={{ width: 14, fontSize: 10, color: isBest ? colors[ex] : 'transparent' }}>★</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+      <div style={{
+        marginTop: 8, padding: '8px 12px', background: C.brand + '11',
+        borderRadius: R.sm, border: `1px solid ${C.brand}33`,
+        fontSize: F.xs, color: C.textSub, lineHeight: 1.6,
+      }}>
+        ★ Best-in-class for algo trading: Hyperliquid leads on execution speed, fees, and onchain transparency.
+        The bot caps leverage at 10× regardless of what the exchange allows.
+      </div>
+    </div>
+  );
+}
+
+// ─── Autonomy Level Meter ─────────────────────────────────────────────────────
+
+function AutonomyLevelMeter() {
+  const levels = [
+    { n: 0, name: 'OFF', desc: 'Pure strategy', color: C.muted },
+    { n: 1, name: 'ADVISORY', desc: 'Log only', color: C.info },
+    { n: 2, name: 'VETO_ONLY', desc: 'Can block', color: C.warn },
+    { n: 3, name: 'SIZING', desc: '+ size control', color: '#f97316' },
+    { n: 4, name: 'DIRECTION', desc: '+ flip trades', color: C.bear + 'cc' },
+    { n: 5, name: 'FULL', desc: 'Full control', color: C.bear },
+  ];
+  const currentMode = 1; // ADVISORY (default shown)
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+        Autonomy Scale (default: Level 1 — Advisory)
+      </div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+        {levels.map(({ n, name, desc, color }) => (
+          <div key={n} style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              padding: '10px 6px',
+              borderRadius: R.sm,
+              background: n === currentMode ? color + '22' : C.surfaceHover,
+              border: `2px solid ${n === currentMode ? color : C.border}`,
+              textAlign: 'center',
+              transition: 'all 0.2s',
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 900, color: n === currentMode ? color : C.muted }}>{n}</div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: n === currentMode ? color : C.muted, textTransform: 'uppercase', letterSpacing: 0.3, marginTop: 2 }}>{name}</div>
+              <div style={{ fontSize: 9, color: C.muted, marginTop: 3, lineHeight: 1.3 }}>{desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Gradient risk bar */}
+      <div style={{ height: 6, borderRadius: R.pill, background: `linear-gradient(to right, ${C.muted}, ${C.info}, ${C.warn}, #f97316, ${C.bear + 'cc'}, ${C.bear})`, marginBottom: 4 }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: C.muted }}>
+        <span>Safe</span>
+        <span>← Increasing LLM Autonomy →</span>
+        <span>Full AI Control</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Leverage Matrix ──────────────────────────────────────────────────────────
+
+function LeverageMatrix() {
+  const confLabels = ['60–69%', '70–79%', '80–89%', '≥90%'];
+  const agrLabels = ['2/4', '3/4', '4/4'];
+  // [conf][agreement] → max leverage
+  const matrix = [
+    [2, 3, 4],   // 60-69%
+    [3, 5, 6],   // 70-79%
+    [4, 6, 8],   // 80-89%
+    [5, 7, 10],  // ≥90%
+  ];
+  const maxLev = 10;
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+        Max Leverage by Confidence × Agreement
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 280 }}>
+          <thead>
+            <tr>
+              <th style={{ padding: '6px 10px', fontSize: F.xs, color: C.muted, textAlign: 'left', fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Confidence</th>
+              {agrLabels.map(a => (
+                <th key={a} style={{ padding: '6px 10px', fontSize: F.xs, color: C.textSub, textAlign: 'center', fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>
+                  {a} agree
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {matrix.map((row, ri) => (
+              <tr key={ri}>
+                <td style={{ padding: '6px 10px', fontSize: F.xs, color: C.textSub, fontWeight: 600, borderBottom: `1px solid ${C.border}22` }}>{confLabels[ri]}</td>
+                {row.map((lev, ci) => {
+                  const intensity = lev / maxLev;
+                  const bg = `rgba(99, 102, 241, ${intensity * 0.5})`;
+                  return (
+                    <td key={ci} style={{
+                      padding: '8px 10px', textAlign: 'center',
+                      background: bg, borderBottom: `1px solid ${C.border}22`,
+                      fontSize: F.sm, fontWeight: 700,
+                      color: intensity > 0.5 ? C.brand : C.textSub,
+                    }}>
+                      {lev}×
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ marginTop: 8, fontSize: F.xs, color: C.muted, lineHeight: 1.6 }}>
+        Final leverage is also reduced in <span style={{ color: C.bear, fontWeight: 700 }}>PANIC</span> and <span style={{ color: C.warn, fontWeight: 700 }}>HIGH_VOLATILITY</span> regimes.
+        Stop width overrides: wider SL = lower leverage to keep dollar risk constant at 1.5% equity.
+      </div>
+    </div>
+  );
+}
+
+// ─── Stop Loss Visual ─────────────────────────────────────────────────────────
+
+function StopLossVisual() {
+  const W = 500, H = 220;
+  const levels = [
+    { label: 'Safe Distrib.', y: 30, price: 102400, color: '#7f1d1d', bg: '#7f1d1d22' },
+    { label: 'Distribution', y: 65, price: 100800, color: C.bear, bg: C.bear + '22' },
+    { label: 'ENTRY', y: 110, price: 99200, color: C.info, bg: C.info + '22', bold: true },
+    { label: 'Accumulation', y: 150, price: 97800, color: C.bull, bg: C.bull + '22' },
+    { label: 'Deep Accum. ← SL', y: 185, price: 96200, color: '#16a34a', bg: '#16a34a22', bold: true },
+  ];
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+        Where Stop Losses Are Placed (Long Trade)
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, height: 'auto', display: 'block' }}>
+          <defs>
+            <linearGradient id="slGreenGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={C.bull} stopOpacity="0.08" />
+              <stop offset="100%" stopColor={C.bull} stopOpacity="0.22" />
+            </linearGradient>
+            <linearGradient id="slRedGrad" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor={C.bear} stopOpacity="0.08" />
+              <stop offset="100%" stopColor={C.bear} stopOpacity="0.22" />
+            </linearGradient>
+          </defs>
+          {/* Green zone below entry */}
+          <rect x="140" y="110" width="360" height="110" fill="url(#slGreenGrad)" />
+          {/* Red zone above entry */}
+          <rect x="140" y="0" width="360" height="110" fill="url(#slRedGrad)" />
+          {/* Price levels */}
+          {levels.map(({ label, y, price, color, bold }) => (
+            <g key={label}>
+              <line x1="140" y1={y} x2="500" y2={y} stroke={color} strokeWidth={bold ? 2 : 1} strokeDasharray={bold ? undefined : '4 4'} strokeOpacity="0.7" />
+              <text x="135" y={y + 4} textAnchor="end" fontSize="11" fill={color} fontWeight={bold ? 700 : 400}>{label}</text>
+              <text x="490" y={y + 4} textAnchor="end" fontSize="10" fill={color} opacity="0.7">${price.toLocaleString()}</text>
+            </g>
+          ))}
+          {/* TP arrows */}
+          {[{ y: 65, label: 'TP2', color: C.bull }, { y: 82, label: 'TP1', color: C.bull + 'bb' }].map(({ y, label, color }) => (
+            <g key={label}>
+              <text x="148" y={y + 4} fontSize="10" fill={color} fontWeight={700}>{label} ↑</text>
+            </g>
+          ))}
+          {/* After TP1: stop to BE */}
+          <text x="148" y="128" fontSize="10" fill={C.brand} fontWeight={700}>After TP1: SL → BE</text>
+          {/* Price dot */}
+          <circle cx="320" cy="110" r="6" fill={C.info} />
+          <text x="328" y="106" fontSize="10" fill={C.info} fontWeight={700}>Current Price</text>
+        </svg>
+      </div>
+      <div style={{ marginTop: 6, fontSize: F.xs, color: C.muted, lineHeight: 1.6 }}>
+        The stop loss is placed at the <strong style={{ color: '#16a34a' }}>Deep Accumulation zone</strong> —
+        a statistically significant support level computed from 1,000 Monte Carlo price paths.
+        This is where the trade thesis is invalidated, not an arbitrary 2% below entry.
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Learn() {
@@ -1853,6 +2110,7 @@ export default function Learn() {
           <li style={{ marginBottom: 6 }}>Deep liquidity on BTC, ETH, SOL, HYPE and 50+ other perps</li>
           <li>Up to 50× leverage available (bot uses 2-10× depending on confidence)</li>
         </ul>
+        <ExchangeComparisonChart />
       </AccordionCard>
 
       {/* ─────────────────────────────────── */}
@@ -1977,6 +2235,7 @@ export default function Learn() {
             </div>
           ))}
         </div>
+        <AutonomyLevelMeter />
       </AccordionCard>
 
       <AccordionCard title="What 'AI VETO' Means" badge="VETO" badgeColor={C.bear}>
@@ -2030,6 +2289,7 @@ export default function Learn() {
           <li>Market regime (panic or high_volatility = leverage cap reduced)</li>
         </ul>
         <p>The result: leverage typically ranges 2-7× for normal setups and rarely exceeds 10×.</p>
+        <LeverageMatrix />
         <RiskRewardVisualizer />
       </AccordionCard>
 
@@ -2042,6 +2302,7 @@ export default function Learn() {
           <li>They adapt to each asset's current volatility regime</li>
         </ul>
         <p>After TP1 is hit, the stop loss moves to breakeven and a trailing stop activates — locking in profit progressively.</p>
+        <StopLossVisual />
       </AccordionCard>
 
       {/* ─────────────────────────────────── */}
