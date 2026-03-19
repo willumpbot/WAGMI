@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useMemo, useId } from 'react';
 import Link from 'next/link';
-import { C, R, F, S, fmtUsd, fmtPct } from '../src/theme';
+import { C, G, R, F, S, fmtUsd, fmtPct } from '../src/theme';
 import type { TradeRecord, TradeHistoryResponse } from '../src/types';
 import { resolveApiBase } from '../src/api';
 
@@ -941,7 +941,7 @@ function RegimePerformanceMatrix({ trades }: { trades: TradeRecord[] }) {
   const activeRegimes = REGIMES.filter((r) => stats[r].total > 0);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Performance by Regime</div>
         <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>How the bot performs in each market regime — hover cells for detail</div>
@@ -1088,7 +1088,7 @@ function TradeDurationHistogram({ trades }: { trades: TradeRecord[] }) {
   }, 0);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Trade Duration Distribution</div>
         <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>How long trades are held — stacked by win (green) / loss (red)</div>
@@ -1267,7 +1267,7 @@ function MultiSymbolPnlChart({ trades }: { trades: TradeRecord[] }) {
   const yTicks = [minY, 0, maxY / 2, maxY].filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <div>
           <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Cumulative P&L by Symbol</div>
@@ -1362,8 +1362,9 @@ function TradeCard({ trade }: { trade: TradeRecord }) {
 
   return (
     <div
+      className="card-hover fade-in"
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${win ? C.bull + '30' : C.bear + '20'}`,
         borderLeft: `3px solid ${win ? C.bull : C.bear}`,
         borderRadius: R.md,
@@ -1387,7 +1388,7 @@ function TradeCard({ trade }: { trade: TradeRecord }) {
             background: trade.side === 'BUY' ? C.bull + '18' : C.bear + '18',
             color: trade.side === 'BUY' ? C.bullMid : C.bearMid,
           }}>{trade.side}</span>
-          <span style={{ fontSize: F.sm, fontWeight: 700, color: win ? C.bull : C.bear, fontVariantNumeric: 'tabular-nums', minWidth: 72 }}>
+          <span className="num" style={{ fontSize: F.sm, fontWeight: 700, color: win ? C.bull : C.bear, minWidth: 72 }}>
             {fmtUsd(trade.pnl)}
           </span>
           <span style={{
@@ -1561,7 +1562,7 @@ function SignalQualityFunnel({ trades }: { trades: TradeRecord[] }) {
   }
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Signal Quality Funnel</h2>
         <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -1642,7 +1643,6 @@ function SignalQualityFunnel({ trades }: { trades: TradeRecord[] }) {
                   fontWeight={700}
                   fill={isLast ? C.bull : C.textSub}
                   fontFamily="Inter, system-ui"
-                  fontVariantNumeric="tabular-nums"
                 >
                   {stage.count.toLocaleString()}
                 </text>
@@ -3151,12 +3151,12 @@ export default function Forensics() {
   return (
     <div>
       {/* Header */}
-      <div style={{ marginBottom: 28 }}>
+      <div className="fade-in" style={{ marginBottom: 28 }}>
         <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           Deep Analysis
         </div>
         <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>
-          Trade Forensics
+          Trade <span className="gradient-text">Forensics</span>
         </h1>
         <p style={{ margin: '6px 0 0', fontSize: F.sm, color: C.muted, maxWidth: 680 }}>
           Cross-tabulate every trade — filter by regime, strategy, LLM action, and outcome. See where the bot&apos;s edge actually comes from.
@@ -3208,9 +3208,10 @@ export default function Forensics() {
               color: stats.llmAccuracy != null && stats.llmAccuracy >= 0.65 ? C.bull : C.warn,
             },
           ].map(({ label, value, sub, color }) => (
-            <div key={label} style={{ padding: '14px 16px', background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, boxShadow: '0 1px 3px rgba(0,0,0,.2)' }}>
+            <div key={label} className="card-hover" style={{ padding: '14px 16px', background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, boxShadow: '0 1px 3px rgba(0,0,0,.2)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: color ?? C.brand, borderRadius: `${R.lg}px ${R.lg}px 0 0` }} />
               <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color, marginBottom: 2, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+              <div className="num" style={{ fontSize: 22, fontWeight: 800, color, marginBottom: 2 }}>{value}</div>
               <div style={{ fontSize: 10, color: C.faint }}>{sub}</div>
             </div>
           ))}
@@ -3229,7 +3230,7 @@ export default function Forensics() {
       {/* ════════════════════════════════════════════════
           SECTION: Summary
           ════════════════════════════════════════════════ */}
-      <h2 style={{ marginTop: 0, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+      <h2 className="section-label" style={{ marginTop: 0, marginBottom: 16 }}>
         Summary
       </h2>
 
@@ -3237,7 +3238,7 @@ export default function Forensics() {
       {!loading && <SignalQualityFunnel trades={filtered} />}
 
       {/* Confidence vs R/R Scatter */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Confidence vs R/R Achieved</h3>
@@ -3259,7 +3260,7 @@ export default function Forensics() {
       </div>
 
       {/* Trade Waterfall */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Cumulative P&L Journey</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3276,12 +3277,12 @@ export default function Forensics() {
       {/* ════════════════════════════════════════════════
           SECTION: Time Analysis
           ════════════════════════════════════════════════ */}
-      <h2 style={{ marginTop: 48, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+      <h2 className="section-label" style={{ marginTop: 48, marginBottom: 16 }}>
         Time Analysis
       </h2>
 
       {/* Hourly Win Rate */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Win Rate by Hour (UTC)</h3>
@@ -3309,7 +3310,7 @@ export default function Forensics() {
       </div>
 
       {/* Hour of Day Win Rate — entry_timestamp_ms based, with seeded fallback */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Hour-of-Day Win Rate</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3324,7 +3325,7 @@ export default function Forensics() {
       </div>
 
       {/* Trade Clusters Chart */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Trade Clusters</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3339,7 +3340,7 @@ export default function Forensics() {
       </div>
 
       {/* Exit Timing Heatmap */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Exit Timing Heatmap</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3356,12 +3357,12 @@ export default function Forensics() {
       {/* ════════════════════════════════════════════════
           SECTION: Setup Analysis
           ════════════════════════════════════════════════ */}
-      <h2 style={{ marginTop: 48, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+      <h2 className="section-label" style={{ marginTop: 48, marginBottom: 16 }}>
         Setup Analysis
       </h2>
 
       {/* Risk:Reward Scatter */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Signal Confidence vs R:R Achieved</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3384,12 +3385,12 @@ export default function Forensics() {
       {/* ════════════════════════════════════════════════
           SECTION: Sequence Analysis
           ════════════════════════════════════════════════ */}
-      <h2 style={{ marginTop: 48, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+      <h2 className="section-label" style={{ marginTop: 48, marginBottom: 16 }}>
         Sequence Analysis
       </h2>
 
       {/* Rolling Sharpe Chart */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Rolling Sharpe Ratio</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3404,7 +3405,7 @@ export default function Forensics() {
       </div>
 
       {/* Trade Replay Timeline */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Trade Sequence Timeline</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
@@ -3423,12 +3424,12 @@ export default function Forensics() {
       {/* ════════════════════════════════════════════════
           SECTION: Outcome Probability
           ════════════════════════════════════════════════ */}
-      <h2 style={{ marginTop: 48, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+      <h2 className="section-label" style={{ marginTop: 48, marginBottom: 16 }}>
         Outcome Probability
       </h2>
 
       {/* Win Probability by Context */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Win Probability by Context</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
@@ -3443,7 +3444,7 @@ export default function Forensics() {
       </div>
 
       {/* Leverage PnL Chart */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>P&L by Leverage Tier</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3458,7 +3459,7 @@ export default function Forensics() {
       </div>
 
       {/* Trade Autopsy Card */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Worst Trade Autopsy</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
@@ -3469,7 +3470,7 @@ export default function Forensics() {
       </div>
 
       {/* Signal Decay Chart */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Signal Confidence Decay</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
@@ -3480,7 +3481,7 @@ export default function Forensics() {
       </div>
 
       {/* Exposure Risk Matrix */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Exposure Risk Matrix</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
@@ -3493,12 +3494,12 @@ export default function Forensics() {
       {/* ════════════════════════════════════════════════
           SECTION: Raw Trade Cards
           ════════════════════════════════════════════════ */}
-      <h2 style={{ marginTop: 48, marginBottom: 16, fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+      <h2 className="section-label" style={{ marginTop: 48, marginBottom: 16 }}>
         Raw Trade Cards
       </h2>
 
       {/* Filters */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20 }}>
+      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Filter Trades</div>
           {(filterOutcome !== 'All' || filterRegime !== 'All' || filterAction !== 'All' || filterStrategy !== 'All' || filterSymbol !== 'All') && (
@@ -3531,7 +3532,7 @@ export default function Forensics() {
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => <div key={i} style={{ marginBottom: 8 }}><Skeleton h={44} /></div>)
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '48px 24px', background: C.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center' }}>
+          <div style={{ padding: '48px 24px', background: G.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center' }}>
             <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
             <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 6 }}>
               {trades.length === 0 ? 'No trade history yet' : 'No trades match the current filters'}

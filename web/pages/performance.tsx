@@ -1698,8 +1698,8 @@ function TradeQualityMatrix({ trades }: { trades: TradeRecord[] }) {
   };
 
   return (
-    <div style={{
-      background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
+    <div className="card-hover" style={{
+      background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
       padding: '20px 24px', boxShadow: S.sm,
     }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
@@ -1870,7 +1870,7 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
   const zeroY = y(0);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Fee Impact Analysis</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: trades.length === 0 ? 8 : 14 }}>
         Hyperliquid: 0.05% taker · 0.02% maker
@@ -2008,7 +2008,7 @@ function StreakAnalysisChart({ trades }: { trades: TradeRecord[] }) {
     : [0, Math.round(maxLen / 4), Math.round(maxLen / 2), Math.round((maxLen * 3) / 4), maxLen];
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Win/Loss Streak History</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: trades.length === 0 ? 8 : 14 }}>
         Each bar = one consecutive run. Green = win streak, red = loss streak.
@@ -2191,7 +2191,7 @@ function AlphaDecayChart() {
   const linePts = seedData.map((v, i) => `${x(i)},${y(v)}`).join(' ');
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>
         Alpha Persistence — Is the Edge Holding?
       </div>
@@ -2354,7 +2354,7 @@ function PerformanceAttributionTreemap() {
   const totalPnl = data.reduce((s, d) => s + d.pnl, 0);
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>
         Performance Attribution Treemap
       </div>
@@ -2652,15 +2652,17 @@ export default function PerformancePage() {
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px' }}>
         {/* Header */}
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 800, color: C.text }}>Performance Analytics</h1>
+        <div className="fade-in" style={{ marginBottom: 32 }}>
+          <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 800, color: C.text }}>
+            <span className="gradient-text">Performance</span> Analytics
+          </h1>
           <p style={{ margin: '8px 0 0', color: C.muted, fontSize: F.base }}>
-            Institutional-grade metrics derived from {trades.length} trades and the live equity curve.
+            Institutional-grade metrics derived from <span className="num">{trades.length}</span> trades and the live equity curve.
           </p>
         </div>
 
         {fetchError && !loading && (
-          <div style={{ marginBottom: 20, padding: '12px 16px', background: '#3d1a1a', border: '1px solid #7f1d1d', borderRadius: 8, color: '#fca5a5', fontSize: 14 }}>
+          <div style={{ marginBottom: 20, padding: '12px 16px', background: 'rgba(217,119,6,.1)', border: '1px solid rgba(217,119,6,.3)', borderRadius: 8, color: C.warnMid, fontSize: 14 }}>
             Failed to load performance data. The API may be offline — data shown may be stale or empty.
           </div>
         )}
@@ -2785,8 +2787,8 @@ export default function PerformancePage() {
                 <div style={{ flex: '0 0 auto' }}>
                   <ProfitFactorGauge trades={filteredTrades} />
                 </div>
-                <div style={{
-                  flex: '0 0 260px', background: C.card, border: `1px solid ${C.border}`,
+                <div className="card-hover" style={{
+                  flex: '0 0 260px', background: G.card, border: `1px solid ${C.border}`,
                   borderRadius: R.lg, padding: '16px 8px', boxShadow: S.sm,
                 }}>
                   <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', marginBottom: 8 }}>
@@ -2815,8 +2817,8 @@ export default function PerformancePage() {
             ══════════════════════════════════════════════════════════════ */}
             <Section title="Drawdown Analysis">
               {filteredCurve.length > 1 && (
-                <div style={{
-                  background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
+                <div className="card-hover" style={{
+                  background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
                   padding: '16px 20px', overflowX: 'auto', marginBottom: 16,
                 }}>
                   <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
@@ -2836,7 +2838,7 @@ export default function PerformancePage() {
             <Section title="Benchmarks">
               {/* ── Benchmark Comparison ── */}
               {filteredTrades.length > 0 && (
-              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20, overflowX: 'auto' }}>
+              <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20, overflowX: 'auto' }}>
                 <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                   Performance vs. Benchmarks
                 </div>
@@ -2867,7 +2869,7 @@ export default function PerformancePage() {
               </div>
 
               {/* Rolling win rate chart */}
-              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto', marginBottom: 16 }}>
+              <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto', marginBottom: 16 }}>
                 <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                   Rolling Win Rate (10-trade window)
                 </div>
@@ -2888,7 +2890,7 @@ export default function PerformancePage() {
               )}
 
               {/* R:R Histogram */}
-              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, marginBottom: 16 }}>
+              <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, marginBottom: 16 }}>
                 <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                   R:R Achieved Distribution
                 </div>
@@ -2906,7 +2908,7 @@ export default function PerformancePage() {
             <Section title="Attribution">
               {/* By Strategy bars */}
               {Object.keys(byStrategy).length > 0 && (
-                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, marginBottom: 16 }}>
+                <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, marginBottom: 16 }}>
                   <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                     PnL by Strategy
                   </div>
