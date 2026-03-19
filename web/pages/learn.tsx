@@ -933,6 +933,334 @@ const GLOSSARY = [
   { term: 'Expectancy', def: 'The average profit per trade, accounting for both win rate and average win/loss size. Formula: (WinRate × AvgWin) − (LossRate × AvgLoss). Positive expectancy means the system is profitable over many trades.' },
 ];
 
+// ─── Scenario Simulator ───────────────────────────────────────────────────────
+
+function ScenarioSimulator() {
+  const [rsi, setRsi] = useState(62);
+  const [atr, setAtr] = useState(1.8);
+  const [score, setScore] = useState(72);
+  const [regime, setRegime] = useState<'trend' | 'range' | 'panic' | 'high_volatility' | 'low_liquidity'>('trend');
+  const [zone, setZone] = useState<'deep_accum' | 'accum' | 'neutral' | 'distrib' | 'safe_distrib'>('accum');
+  const [sma, setSma] = useState<'bullish' | 'bearish' | 'mixed'>('bullish');
+
+  // ── Regime Agent ──
+  let regimeAction: string;
+  let regimeConf: number;
+  if (regime === 'trend' && score > 60) {
+    regimeAction = 'CONFIRM TREND';
+    regimeConf = Math.round(75 + score * 0.25);
+  } else if (regime === 'panic') {
+    regimeAction = 'CAUTION — PANIC MODE';
+    regimeConf = 30;
+  } else if (regime === 'range' && (rsi < 35 || rsi > 65)) {
+    regimeAction = 'MEAN REVERSION SETUP';
+    regimeConf = Math.round(55 + score * 0.2);
+  } else {
+    regimeAction = 'NEUTRAL — GATHER DATA';
+    regimeConf = 40;
+  }
+  regimeConf = Math.min(regimeConf, 100);
+
+  // ── Trade Agent ──
+  let tradeAction: string;
+  let tradeConf: number;
+  const isAccumZone = zone === 'accum' || zone === 'deep_accum';
+  const isDistribZone = zone === 'distrib' || zone === 'safe_distrib';
+  if (score >= 75 && isAccumZone && sma === 'bullish' && regime === 'trend') {
+    tradeAction = 'GO LONG';
+    tradeConf = Math.round(score * 0.9);
+  } else if (score >= 75 && isDistribZone && sma === 'bearish') {
+    tradeAction = 'GO SHORT';
+    tradeConf = Math.round(score * 0.85);
+  } else if (score < 50) {
+    tradeAction = 'SKIP — WEAK SETUP';
+    tradeConf = Math.round(score * 0.6);
+  } else if (regime === 'panic') {
+    tradeAction = 'SKIP — PANIC REGIME';
+    tradeConf = 25;
+  } else {
+    tradeAction = 'SKIP — INSUFFICIENT CONFLUENCE';
+    tradeConf = Math.round(score * 0.65);
+  }
+
+  // ── Risk Agent ──
+  let riskNote: string;
+  let riskLeverage: number;
+  if (atr > 3) {
+    riskNote = 'High ATR — reduce position size 30%';
+    riskLeverage = 2;
+  } else if (atr > 1.5) {
+    riskNote = 'Normal ATR — standard sizing';
+    riskLeverage = 3;
+  } else {
+    riskNote = 'Low ATR — potential dead market, be cautious';
+    riskLeverage = 2;
+  }
+  if (rsi > 70) riskNote += ' · RSI overbought caution on longs';
+  if (rsi < 30) riskNote += ' · RSI oversold caution on shorts';
+
+  // ── Critic Agent ──
+  let criticAction: string;
+  let criticReason: string;
+  if (regime === 'panic') {
+    criticAction = 'VETO';
+    criticReason = 'Panic conditions — no clean entries';
+  } else if (score >= 75 && regime === 'trend' && sma === 'bullish' && isAccumZone) {
+    criticAction = 'APPROVE';
+    criticReason = 'Strong confluence across all factors';
+  } else if (score >= 65 && score < 75) {
+    criticAction = 'SKEPTICAL — PROCEED WITH CAUTION';
+    criticReason = 'Moderate confidence — requires tighter risk';
+  } else {
+    criticAction = 'VETO';
+    criticReason = 'Sub-threshold confidence — setup not mature';
+  }
+
+  // ── Final decision ──
+  const tradeIsGo = tradeAction === 'GO LONG' || tradeAction === 'GO SHORT';
+  let finalVerdict: string;
+  let finalColor: string;
+  let finalBg: string;
+  let finalGlow: string;
+  if (tradeIsGo && criticAction === 'APPROVE') {
+    finalVerdict = '✓ EXECUTE';
+    finalColor = C.bull;
+    finalBg = C.bull + '18';
+    finalGlow = C.bull + '44';
+  } else if (tradeIsGo && criticAction.startsWith('SKEPTICAL')) {
+    finalVerdict = '⚠ PROCEED — REDUCED SIZING';
+    finalColor = C.warn;
+    finalBg = C.warn + '18';
+    finalGlow = C.warn + '44';
+  } else if (criticAction === 'VETO') {
+    finalVerdict = '✗ BLOCKED — VETO';
+    finalColor = C.bear;
+    finalBg = C.bear + '18';
+    finalGlow = C.bear + '44';
+  } else {
+    finalVerdict = '— SKIP';
+    finalColor = C.muted;
+    finalBg = C.surfaceHover;
+    finalGlow = C.border;
+  }
+
+  // Setup quality score (0-100)
+  const qualityScore = Math.round(
+    (score * 0.4) +
+    (regime === 'trend' ? 20 : regime === 'range' ? 10 : regime === 'panic' ? 0 : 8) +
+    (isAccumZone && sma === 'bullish' ? 20 : isDistribZone && sma === 'bearish' ? 20 : 5) +
+    (atr > 0.5 && atr < 3 ? 10 : 0) +
+    (rsi >= 40 && rsi <= 65 ? 10 : 0)
+  );
+  const qualityPct = Math.min(qualityScore, 100);
+  const qualityColor = qualityPct >= 75 ? C.bull : qualityPct >= 55 ? C.warn : C.bear;
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: F.xs, color: C.muted, fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5,
+  };
+  const sliderStyle: React.CSSProperties = {
+    width: '100%', accentColor: C.brand as string, cursor: 'pointer', height: 4,
+  };
+  const selectStyle: React.CSSProperties = {
+    width: '100%', padding: '7px 10px', background: C.surfaceHover, border: `1px solid ${C.border}`,
+    borderRadius: R.sm, color: C.text, fontSize: F.sm, outline: 'none', cursor: 'pointer',
+  };
+
+  const agents = [
+    {
+      name: 'Regime',
+      model: 'Haiku',
+      color: C.info,
+      action: regimeAction,
+      conf: regimeConf,
+      note: `Regime: ${regime} · RSI: ${rsi}`,
+    },
+    {
+      name: 'Trade',
+      model: 'Sonnet',
+      color: C.brand,
+      action: tradeAction,
+      conf: tradeConf,
+      note: `Zone: ${zone} · SMA: ${sma} · Score: ${score}`,
+    },
+    {
+      name: 'Risk',
+      model: 'Haiku',
+      color: C.warn,
+      action: `Leverage ${riskLeverage}×`,
+      conf: null,
+      note: riskNote,
+    },
+    {
+      name: 'Critic',
+      model: 'Sonnet',
+      color: criticAction === 'APPROVE' ? C.bull : criticAction.startsWith('SKEPTICAL') ? C.warn : C.bear,
+      action: criticAction,
+      conf: null,
+      note: criticReason,
+    },
+  ];
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: F.md, fontWeight: 800, color: C.text, marginBottom: 4 }}>
+          What Would the AI Do?
+        </div>
+        <div style={{ fontSize: F.xs, color: C.muted, lineHeight: 1.6 }}>
+          Adjust the market conditions to see how the 7 agents would respond. All logic is based on the bot&apos;s actual decision rules.
+        </div>
+      </div>
+
+      <div id="ai-simulator" style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 320px) 1fr', gap: 24, alignItems: 'start' }}>
+        {/* ── Left: Controls ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* RSI */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={labelStyle}>RSI</div>
+              <span style={{ fontSize: F.sm, fontWeight: 700, color: rsi > 70 ? C.bear : rsi < 30 ? C.bull : C.text }}>{rsi}</span>
+            </div>
+            <input type="range" min={0} max={100} step={1} value={rsi} onChange={e => setRsi(+e.target.value)} style={sliderStyle} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.faint, marginTop: 2 }}>
+              <span>0 Oversold</span><span>100 Overbought</span>
+            </div>
+          </div>
+
+          {/* ATR% */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={labelStyle}>ATR %</div>
+              <span style={{ fontSize: F.sm, fontWeight: 700, color: atr > 3 ? C.bear : atr < 0.5 ? C.warn : C.text }}>{atr.toFixed(1)}%</span>
+            </div>
+            <input type="range" min={0} max={5} step={0.1} value={atr} onChange={e => setAtr(+e.target.value)} style={sliderStyle} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.faint, marginTop: 2 }}>
+              <span>0% Low</span><span>5% High</span>
+            </div>
+          </div>
+
+          {/* Signal Score */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={labelStyle}>Signal Score</div>
+              <span style={{ fontSize: F.sm, fontWeight: 700, color: score >= 75 ? C.bull : score >= 50 ? C.warn : C.bear }}>{score}</span>
+            </div>
+            <input type="range" min={0} max={100} step={1} value={score} onChange={e => setScore(+e.target.value)} style={sliderStyle} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.faint, marginTop: 2 }}>
+              <span>0 Weak</span><span>100 Strong</span>
+            </div>
+          </div>
+
+          {/* Regime */}
+          <div>
+            <div style={labelStyle}>Regime</div>
+            <select value={regime} onChange={e => setRegime(e.target.value as typeof regime)} style={selectStyle}>
+              <option value="trend">trend</option>
+              <option value="range">range</option>
+              <option value="panic">panic</option>
+              <option value="high_volatility">high_volatility</option>
+              <option value="low_liquidity">low_liquidity</option>
+            </select>
+          </div>
+
+          {/* Price Zone */}
+          <div>
+            <div style={labelStyle}>Price Zone</div>
+            <select value={zone} onChange={e => setZone(e.target.value as typeof zone)} style={selectStyle}>
+              <option value="deep_accum">deep_accum</option>
+              <option value="accum">accum</option>
+              <option value="neutral">neutral</option>
+              <option value="distrib">distrib</option>
+              <option value="safe_distrib">safe_distrib</option>
+            </select>
+          </div>
+
+          {/* SMA Alignment */}
+          <div>
+            <div style={labelStyle}>SMA Alignment</div>
+            <select value={sma} onChange={e => setSma(e.target.value as typeof sma)} style={selectStyle}>
+              <option value="bullish">bullish (SMA20 &gt; SMA50)</option>
+              <option value="bearish">bearish (SMA20 &lt; SMA50)</option>
+              <option value="mixed">mixed</option>
+            </select>
+          </div>
+
+          {/* Setup Quality bar */}
+          <div style={{ padding: '12px 14px', background: qualityColor + '12', border: `1px solid ${qualityColor}30`, borderRadius: R.md, marginTop: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Setup Quality</span>
+              <span style={{ fontSize: F.sm, fontWeight: 800, color: qualityColor }}>{qualityPct}</span>
+            </div>
+            <div style={{ height: 6, background: C.border, borderRadius: R.pill, overflow: 'hidden' }}>
+              <div style={{ width: `${qualityPct}%`, height: '100%', background: qualityColor, borderRadius: R.pill, transition: 'width 0.2s' }} />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Right: Pipeline results ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {agents.map((agent, i) => (
+            <React.Fragment key={agent.name}>
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 14px',
+                background: agent.color + '0d', border: `1px solid ${agent.color}2a`,
+                borderRadius: R.md,
+              }}>
+                {/* Badge */}
+                <div style={{
+                  minWidth: 52, padding: '3px 0', textAlign: 'center',
+                  background: agent.color + '22', border: `1px solid ${agent.color}44`,
+                  borderRadius: R.sm, flexShrink: 0,
+                }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: agent.color }}>{agent.name}</div>
+                  <div style={{ fontSize: 9, color: C.muted }}>{agent.model}</div>
+                </div>
+                {/* Content */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+                    <span style={{ fontSize: F.sm, fontWeight: 800, color: agent.color }}>{agent.action}</span>
+                    {agent.conf !== null && (
+                      <span style={{
+                        fontSize: F.xs, fontWeight: 700, padding: '1px 7px',
+                        background: agent.color + '22', color: agent.color, borderRadius: R.pill,
+                      }}>{agent.conf}%</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: F.xs, color: C.muted, lineHeight: 1.5 }}>{agent.note}</div>
+                </div>
+              </div>
+              {i < agents.length - 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '3px 0', color: C.muted, fontSize: 13 }}>↓</div>
+              )}
+            </React.Fragment>
+          ))}
+
+          {/* Final verdict */}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', color: C.muted, fontSize: 13, marginBottom: 6 }}>↓</div>
+            <div style={{
+              padding: '16px 20px', borderRadius: R.md, textAlign: 'center',
+              background: finalBg, border: `2px solid ${finalGlow}`,
+              boxShadow: `0 0 16px ${finalGlow}`,
+              transition: 'all 0.2s',
+            }}>
+              <div style={{ fontSize: F.xl, fontWeight: 900, color: finalColor, letterSpacing: 0.5 }}>{finalVerdict}</div>
+              <div style={{ fontSize: F.xs, color: C.muted, marginTop: 4 }}>
+                {finalVerdict.startsWith('✓') ? 'All agents aligned — trade meets execution criteria' :
+                  finalVerdict.startsWith('⚠') ? 'Trade approved with reduced sizing — moderate confidence' :
+                    finalVerdict.startsWith('✗') ? 'Trade blocked — Critic agent exercised veto power' :
+                      'Insufficient confluence — agents recommend waiting'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Learn() {
@@ -960,7 +1288,7 @@ export default function Learn() {
 
       {/* ── Quick nav ─────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 32 }}>
-        {['What is this bot?', 'Signals', 'AI Brain', 'Risk Management', 'Trade Flow', 'Calculators', 'Copy Trading', 'Glossary'].map((label) => (
+        {['What is this bot?', 'AI Simulator', 'Signals', 'AI Brain', 'Risk Management', 'Trade Flow', 'Calculators', 'Copy Trading', 'Glossary'].map((label) => (
           <a
             key={label}
             href={`#${label.toLowerCase().replace(/\?/g, '').replace(/ /g, '-')}`}
@@ -1016,6 +1344,10 @@ export default function Learn() {
         <InfoBox color={C.bull}>
           This system is designed to only trade when multiple independent analyses agree. A single strategy firing alone is not enough.
         </InfoBox>
+      </AccordionCard>
+
+      <AccordionCard title="What Would the AI Do? — Scenario Simulator" badge="Interactive" badgeColor={C.brand} defaultOpen>
+        <ScenarioSimulator />
       </AccordionCard>
 
       <AccordionCard title="Why Hyperliquid?">

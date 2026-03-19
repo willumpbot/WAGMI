@@ -73,6 +73,206 @@ function eventColor(event: string): string {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+function ZoneRuler({ sig }: { sig: LatestSignal }) {
+  const { deepAccum, accum, distrib, safeDistrib } = sig.zones;
+  const current = sig.price;
+
+  // Build a safe price range with fallback padding
+  const allPrices = [deepAccum, accum, current, distrib, safeDistrib].filter(Number.isFinite);
+  if (allPrices.length < 2) return null;
+  const rawMin = Math.min(...allPrices);
+  const rawMax = Math.max(...allPrices);
+  const pad = (rawMax - rawMin) * 0.08 || rawMin * 0.02;
+  const domainMin = rawMin - pad;
+  const domainMax = rawMax + pad;
+  const domainRange = domainMax - domainMin || 1;
+
+  const W = 600; // SVG viewBox width
+  const H = 90;
+  const BAR_Y = 34;
+  const BAR_H = 18;
+
+  const px = (price: number) => ((price - domainMin) / domainRange) * W;
+
+  const xDeepAccum = px(deepAccum);
+  const xAccum = px(accum);
+  const xCurrent = px(current);
+  const xDistrib = px(distrib);
+  const xSafeDistrib = px(safeDistrib);
+
+  const pctLabel = (price: number) => {
+    const diff = ((price - current) / current) * 100;
+    return (diff >= 0 ? '+' : '') + diff.toFixed(1) + '%';
+  };
+
+  // Format price compactly
+  const fmtP = (v: number) => {
+    if (v >= 10000) return '$' + Math.round(v).toLocaleString();
+    if (v >= 100) return '$' + v.toFixed(0);
+    return '$' + v.toFixed(2);
+  };
+
+  const ticks = [
+    { x: xDeepAccum, color: '#16a34a', label: 'Deep Accum', pct: pctLabel(deepAccum), fmtVal: fmtP(deepAccum) },
+    { x: xAccum, color: '#22c55e', label: 'Accum', pct: pctLabel(accum), fmtVal: fmtP(accum) },
+    { x: xDistrib, color: '#f97316', label: 'Distrib', pct: pctLabel(distrib), fmtVal: fmtP(distrib) },
+    { x: xSafeDistrib, color: '#dc2626', label: 'Safe Distrib', pct: pctLabel(safeDistrib), fmtVal: fmtP(safeDistrib) },
+  ];
+
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 18px 10px' }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>Price Zone Ruler</div>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+        aria-label="Price zone ruler"
+      >
+        <defs>
+          <linearGradient id="zoneGradLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#16a34a" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#22c55e" stopOpacity="0.35" />
+          </linearGradient>
+          <linearGradient id="zoneGradRight" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#f97316" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#dc2626" stopOpacity="0.55" />
+          </linearGradient>
+        </defs>
+
+        {/* Base track */}
+        <rect x={xDeepAccum} y={BAR_Y} width={xSafeDistrib - xDeepAccum} height={BAR_H} rx={BAR_H / 2} fill="#1e293b" />
+
+        {/* Green half: deepAccum → current */}
+        {xCurrent > xDeepAccum && (
+          <rect
+            x={xDeepAccum}
+            y={BAR_Y}
+            width={Math.max(0, xCurrent - xDeepAccum)}
+            height={BAR_H}
+            rx={BAR_H / 2}
+            fill="url(#zoneGradLeft)"
+          />
+        )}
+
+        {/* Red half: current → safeDistrib */}
+        {xSafeDistrib > xCurrent && (
+          <rect
+            x={xCurrent}
+            y={BAR_Y}
+            width={Math.max(0, xSafeDistrib - xCurrent)}
+            height={BAR_H}
+            rx={BAR_H / 2}
+            fill="url(#zoneGradRight)"
+          />
+        )}
+
+        {/* Non-current tick marks */}
+        {ticks.map(tick => (
+          <g key={tick.label}>
+            <line x1={tick.x} y1={BAR_Y - 6} x2={tick.x} y2={BAR_Y + BAR_H + 6} stroke={tick.color} strokeWidth="2" />
+            {/* pct label below bar */}
+            <text x={tick.x} y={BAR_Y + BAR_H + 20} textAnchor="middle" fontSize="9" fill={tick.color} fontFamily="JetBrains Mono, monospace">
+              {tick.pct}
+            </text>
+            {/* zone name further below */}
+            <text x={tick.x} y={BAR_Y + BAR_H + 32} textAnchor="middle" fontSize="8" fill="#64748b" fontFamily="Inter, sans-serif">
+              {tick.label}
+            </text>
+          </g>
+        ))}
+
+        {/* Current price — blue circle */}
+        <circle cx={xCurrent} cy={BAR_Y + BAR_H / 2} r={BAR_H / 2 + 3} fill="#1d4ed8" stroke="#60a5fa" strokeWidth="2" />
+        <text x={xCurrent} y={BAR_Y + BAR_H / 2 + 4} textAnchor="middle" fontSize="8" fill="#e0f2fe" fontWeight="700" fontFamily="Inter, sans-serif">NOW</text>
+
+        {/* Current price label above bar */}
+        <text x={xCurrent} y={BAR_Y - 12} textAnchor="middle" fontSize="10" fill="#60a5fa" fontWeight="700" fontFamily="JetBrains Mono, monospace">
+          ◀ {fmtP(current)}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+function WinLossRing({ wins, losses }: { wins: number; losses: number }) {
+  const total = wins + losses;
+  const winRate = total > 0 ? (wins / total) * 100 : 0;
+
+  const R_OUTER = 40;
+  const STROKE = 10;
+  const CX = 50;
+  const CY = 50;
+  const circumference = 2 * Math.PI * R_OUTER;
+  const winDash = total > 0 ? (wins / total) * circumference : 0;
+  const lossDash = circumference - winDash;
+  // strokeDashoffset of circumference*0.25 rotates start to top (12-o'clock)
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 8,
+    }}>
+      <svg viewBox="0 0 100 100" width="120" height="120" aria-label="Win/loss ring">
+        {/* Background ring */}
+        <circle
+          cx={CX} cy={CY} r={R_OUTER}
+          fill="none"
+          stroke="#1e293b"
+          strokeWidth={STROKE}
+        />
+        {/* Win arc */}
+        {winDash > 0 && (
+          <circle
+            cx={CX} cy={CY} r={R_OUTER}
+            fill="none"
+            stroke="#22c55e"
+            strokeWidth={STROKE}
+            strokeDasharray={`${winDash} ${circumference - winDash}`}
+            strokeDashoffset={circumference * 0.25}
+            strokeLinecap="round"
+          />
+        )}
+        {/* Loss arc */}
+        {lossDash > 0 && winDash > 0 && (
+          <circle
+            cx={CX} cy={CY} r={R_OUTER}
+            fill="none"
+            stroke="#dc2626"
+            strokeWidth={STROKE}
+            strokeDasharray={`${lossDash} ${circumference - lossDash}`}
+            strokeDashoffset={circumference * 0.25 - winDash}
+            strokeLinecap="round"
+            style={{ opacity: 0.75 }}
+          />
+        )}
+        {/* All-loss ring */}
+        {winDash === 0 && (
+          <circle
+            cx={CX} cy={CY} r={R_OUTER}
+            fill="none"
+            stroke="#dc2626"
+            strokeWidth={STROKE}
+            strokeDasharray={`${circumference} 0`}
+            strokeDashoffset={circumference * 0.25}
+          />
+        )}
+        {/* Center label */}
+        <text x={CX} y={CY - 4} textAnchor="middle" fontSize="16" fontWeight="800" fill={winRate >= 60 ? '#22c55e' : winRate >= 45 ? '#eab308' : '#dc2626'} fontFamily="Inter, sans-serif">
+          {winRate.toFixed(0)}%
+        </text>
+        <text x={CX} y={CY + 12} textAnchor="middle" fontSize="8" fill="#64748b" fontFamily="Inter, sans-serif">
+          WIN RATE
+        </text>
+      </svg>
+      <div style={{ display: 'flex', gap: 12, fontSize: F.xs, color: C.muted }}>
+        <span style={{ color: '#22c55e', fontWeight: 600 }}>Wins: {wins}</span>
+        <span style={{ color: '#dc2626', fontWeight: 600 }}>Losses: {losses}</span>
+      </div>
+    </div>
+  );
+}
+
 function KpiCard({ label, value, sub, valueColor }: { label: string; value: string; sub?: string; valueColor?: string }) {
   return (
     <div style={{
@@ -144,6 +344,8 @@ function SignalsTab({ card }: { card: StrategyCard | null }) {
 
       {/* Zones */}
       {sig.zones && (
+        <>
+        <ZoneRuler sig={sig} />
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 18 }}>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>Price Zones</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -166,6 +368,7 @@ function SignalsTab({ card }: { card: StrategyCard | null }) {
             ))}
           </div>
         </div>
+        </>
       )}
     </div>
   );
@@ -304,29 +507,38 @@ function PerformanceTab({ trades }: { trades: TradeRecord[] }) {
         <KpiCard label="Profit Factor" value={profitFactor !== null ? profitFactor.toFixed(2) + '×' : '—'} valueColor={profitFactor !== null && profitFactor >= 1.5 ? C.bull : C.muted} />
       </div>
 
-      {/* Exit type breakdown */}
-      {exitEntries.length > 0 && (
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 18 }}>
-          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>Exit Type Breakdown</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {exitEntries.map(([type, count]) => {
-              const pct = (count / trades.length) * 100;
-              const color = exitColors[type] || C.muted;
-              return (
-                <div key={type}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: F.sm, color: C.text }}>{type}</span>
-                    <span style={{ fontSize: F.sm, color: C.muted }}>{count} ({pct.toFixed(0)}%)</span>
-                  </div>
-                  <div style={{ height: 8, background: C.border, borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4, transition: 'width 0.5s' }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {/* Win/loss visual + exit breakdown — 2-column grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 16, alignItems: 'start' }}>
+        {/* Win/Loss donut ring */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 12, alignSelf: 'flex-start' }}>Outcome</div>
+          <WinLossRing wins={wins.length} losses={losses.length} />
         </div>
-      )}
+
+        {/* Exit type breakdown */}
+        {exitEntries.length > 0 && (
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 18 }}>
+            <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>Exit Type Breakdown</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {exitEntries.map(([type, count]) => {
+                const pct = (count / trades.length) * 100;
+                const color = exitColors[type] || C.muted;
+                return (
+                  <div key={type}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: F.sm, color: C.text }}>{type}</span>
+                      <span style={{ fontSize: F.sm, color: C.muted }}>{count} ({pct.toFixed(0)}%)</span>
+                    </div>
+                    <div style={{ height: 8, background: C.border, borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4, transition: 'width 0.5s' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -56,6 +56,51 @@ function isOnline(s: Strategy): boolean {
   return !isNaN(parsed) && (Date.now() - parsed) / 1000 <= 120;
 }
 
+function UptimeMeter({ heartTs }: { heartTs: string | null }) {
+  const now = Date.now();
+  const ageMinutes = heartTs ? (now - Date.parse(heartTs)) / 60000 : Infinity;
+
+  // Number of green dots: 5=within 5m, 4=30m, 3=1h, 2=2h, 1=8h, 0=offline
+  const greenCount =
+    ageMinutes <= 5 ? 5 :
+    ageMinutes <= 30 ? 4 :
+    ageMinutes <= 60 ? 3 :
+    ageMinutes <= 120 ? 2 :
+    ageMinutes <= 480 ? 1 : 0;
+
+  const label =
+    ageMinutes === Infinity ? 'Never seen' :
+    ageMinutes <= 1 ? 'Active now' :
+    ageMinutes < 60 ? `Active ${Math.round(ageMinutes)}m ago` :
+    ageMinutes < 1440 ? `Active ${Math.round(ageMinutes / 60)}h ago` :
+    `Active ${Math.round(ageMinutes / 1440)}d ago`;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 24 }}>
+      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        {[0, 1, 2, 3, 4].map(i => (
+          <span
+            key={i}
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: i < greenCount ? '#22c55e' : '#1e293b',
+              border: `1px solid ${i < greenCount ? '#16a34a' : '#334155'}`,
+              boxShadow: i < greenCount && i === greenCount - 1 ? '0 0 5px #22c55e88' : 'none',
+              display: 'inline-block',
+              transition: 'background 0.3s',
+            }}
+          />
+        ))}
+      </div>
+      <span style={{ fontSize: F.xs, color: greenCount >= 3 ? '#4ade80' : greenCount >= 1 ? '#eab308' : C.muted }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function SkeletonCard() {
   return (
     <div style={{
@@ -151,6 +196,9 @@ function StrategyCard({ strategy, index }: { strategy: Strategy; index: number }
           </span>
         </div>
       </div>
+
+      {/* Uptime meter */}
+      <UptimeMeter heartTs={heartTs} />
 
       {/* PnL row */}
       <div style={{
