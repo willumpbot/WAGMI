@@ -752,37 +752,13 @@ class BacktestEngine:
                     signal.metadata["adx"] = round(_bt_adx, 1)
                     signal.metadata["bt_regime_raw"] = _bt_regime
 
-                    # Only block truly directionless markets:
-                    # ADX < 20 AND no alignment (regime=range)
-                    regime = signal.metadata.get("regime", "unknown")
-                    if regime == "ranging" and _bt_adx < 20.0:
-                        logger.info(
-                            f"[{symbol}] Signal SKIPPED: ranging regime "
-                            f"(ADX={_bt_adx:.1f}, no directional alignment)"
-                        )
-                        self.candle_stats.setdefault("regime_blocked", 0)
-                        self.candle_stats["regime_blocked"] += 1
-                        self.missed_trade_tracker.record_rejection(
-                            signal=signal,
-                            reason=f"Ranging regime ADX={_bt_adx:.1f} < 20",
-                            gate="regime_filter",
-                            candle_idx=i,
-                        )
-                        continue
-                    elif regime in ("consolidation",) and _bt_adx < 15.0:
-                        logger.info(
-                            f"[{symbol}] Signal SKIPPED: {regime} "
-                            f"(ADX={_bt_adx:.1f}, very low directional movement)"
-                        )
-                        self.candle_stats.setdefault("regime_blocked", 0)
-                        self.candle_stats["regime_blocked"] += 1
-                        self.missed_trade_tracker.record_rejection(
-                            signal=signal,
-                            reason=f"Consolidation ADX={_bt_adx:.1f} < 15",
-                            gate="regime_filter",
-                            candle_idx=i,
-                        )
-                        continue
+                    # NOTE: per-strategy regime filtering already handled above
+                    # (lines ~688-716) via STRATEGY_REGIME_FIT table before the
+                    # ensemble runs. Blocking all signals here by raw ADX is more
+                    # restrictive than live trading (which only disables "avoid"
+                    # strategies, letting "strong" ones like monte_carlo_zones
+                    # still fire in range/consolidation). Removed to match live
+                    # trading behavior.
 
                     # Create candidate for dual-world tracking
                     candidate = self._create_candidate(signal, sim_dt)

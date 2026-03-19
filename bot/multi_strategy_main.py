@@ -2603,6 +2603,33 @@ class MultiStrategyBot:
             if tier_count >= self._max_same_tier:
                 return  # Too many positions in same risk tier
 
+        # ── Standalone regime classification (runs every tick, before filter) ──
+        # Uses regime_trend strategy's proper Wilder ADX + alignment scores —
+        # identical logic to backtest/engine.py (lines ~688-716). Replaces the
+        # previous volatility-proxy approach (std dev of returns < 1%) which
+        # triggered "range" far more aggressively than ADX < 20.
+        try:
+            _rt_strategy = next(
+                (s for s in self.ensemble.strategies if s.name == "regime_trend"), None
+            )
+            if _rt_strategy is not None:
+                _rt_status = _rt_strategy.get_status(symbol, data)
+                _adx_live = _rt_status.get("adx", 25.0)
+                _al_live = _rt_status.get("align_long", 0)
+                _ash_live = _rt_status.get("align_short", 0)
+                if _al_live >= 3 or _ash_live >= 3:
+                    _live_regime = "trend"
+                elif _adx_live < 20:
+                    _live_regime = "range"
+                elif _adx_live > 40:
+                    _live_regime = "high_volatility"
+                else:
+                    _live_regime = "consolidation"
+                self.regime_detector.update(symbol, _live_regime)
+                self._tick_regime_cache[symbol] = _live_regime
+        except Exception:
+            pass
+
         # ── Wave 2: Regime-based strategy filter ──
         # Disable strategies that are expected to fail in the current regime.
         # Uses STRATEGY_REGIME_FIT table (static theory) + historical WR (learned).
@@ -2640,52 +2667,22 @@ class MultiStrategyBot:
                 self.ensemble.set_disabled_strategies(set())
                 self.ensemble.set_regime(symbol, "unknown")
 
-        # ── Standalone regime classification (runs every tick, independent of signals) ──
-        # Breaks the chicken-and-egg loop: regime was always "unknown" because it
-        # only got fed from signal metadata, but signals need regime to pass filters.
-        try:
-            df_1h = data.get("1h")
-            if df_1h is not None and not df_1h.empty and len(df_1h) > 20:
-                _adx = float(df_1h["close"].diff().abs().rolling(14).mean().iloc[-1] /
-                             df_1h["close"].iloc[-1] * 10000) if len(df_1h) > 14 else 0
-                # Simple but effective: use price volatility as ADX proxy
-                _returns = df_1h["close"].pct_change().tail(20)
-                _vol = float(_returns.std() * 100) if len(_returns) > 5 else 0
-                _trend_strength = abs(float(_returns.tail(10).mean() * 1000)) if len(_returns) > 10 else 0
-
-                if _vol > 5:
-                    _computed_regime = "high_volatility"
-                elif _trend_strength > 2 and _vol > 1.5:
-                    _computed_regime = "trend"
-                elif _vol < 1.0:
-                    _computed_regime = "range"
-                elif _trend_strength > 1:
-                    _computed_regime = "trend"
-                else:
-                    _computed_regime = "consolidation"
-
-                # Feed regime detector on every tick (not just when signals pass)
-                self.regime_detector.update(symbol, _computed_regime)
-                self._tick_regime_cache[symbol] = _computed_regime
-        except Exception:
-            pass
-
         # ── 4h regime confirmation (B2) ──
+        # Uses proper Wilder ADX on 4h data (same threshold as 1h: < 20 = range).
         try:
+            from strategies.regime_trend import _adx as _adx_fn
             df_4h = data.get("4h")
             if df_4h is not None and not df_4h.empty and len(df_4h) > 20:
-                _returns_4h = df_4h["close"].pct_change().tail(20)
-                _vol_4h = float(_returns_4h.std() * 100) if len(_returns_4h) > 5 else 0
-                _trend_4h = abs(float(_returns_4h.tail(10).mean() * 1000)) if len(_returns_4h) > 10 else 0
+                _adx_4h = _adx_fn(df_4h, 14)
+                _returns_4h = df_4h["close"].pct_change().tail(10)
+                _dir_4h = abs(float(_returns_4h.mean())) / max(float(_returns_4h.std()), 1e-9)
 
-                if _vol_4h > 5:
+                if _adx_4h > 40:
                     _regime_4h = "high_volatility"
-                elif _trend_4h > 2 and _vol_4h > 1.5:
+                elif _adx_4h > 25 and _dir_4h > 0.5:
                     _regime_4h = "trend"
-                elif _vol_4h < 1.0:
+                elif _adx_4h < 20:
                     _regime_4h = "range"
-                elif _trend_4h > 1:
-                    _regime_4h = "trend"
                 else:
                     _regime_4h = "consolidation"
 
