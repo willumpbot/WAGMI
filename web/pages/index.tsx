@@ -470,6 +470,7 @@ function CandleChart({
 
       containerRef.current.innerHTML = '';
       chart = lc.createChart(containerRef.current, {
+        autoSize: true,
         layout: { background: { color: C.card }, textColor: C.textSub },
         grid: { vertLines: { color: C.border }, horzLines: { color: C.border } },
         crosshair: { mode: lc.CrosshairMode.Normal },

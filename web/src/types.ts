@@ -157,6 +157,28 @@ export type BacktestResult = {
   by_strategy?: Record<string, { trades: number; wins: number; pnl: number; win_rate: number }>;
   by_symbol?: Record<string, BacktestBySymbol>;
   trades?: Array<{ symbol: string; side: string; entry: number; exit: number; pnl: number; pnl_pct: number; duration_bars: number; strategy: string; outcome?: string; duration_h?: number | null }>;
+  trade_timeline?: Array<{
+    symbol: string;
+    side: string;
+    strategy: string;
+    close_reason: string;
+    entry: number;
+    exit: number;
+    sl: number;
+    tp1: number;
+    tp2: number;
+    pnl: number;
+    fee: number;
+    leverage: number;
+    confidence: number;
+    rr_achieved: number;
+    duration_h: number;
+    state_path: string;
+    outcome: string;
+  }>;
+  signal_funnel?: Record<string, number>;
+  recommendations?: string[];
+  learning_summary?: Record<string, unknown>;
 };
 
 export type BacktestRunMeta = {

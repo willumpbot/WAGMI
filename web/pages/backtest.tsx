@@ -1527,11 +1527,11 @@ function RunDetail({ result }: { result: BacktestResult }) {
       </div>
 
       {/* ── § Equity Curve + RSI Subplot ────────────── */}
-      {result.trades && result.trades.length > 1 && (() => {
+      {(result.trade_timeline ?? []).length > 1 && (() => {
         const startEq = cfg.starting_equity ?? 50000;
         let eq = startEq;
         const equityValues: number[] = [eq];
-        result.trades.forEach((t) => { eq += t.pnl ?? 0; equityValues.push(eq); });
+        (result.trade_timeline ?? []).forEach((t) => { eq += t.pnl ?? 0; equityValues.push(eq); });
         return (
           <div style={{ marginBottom: 28 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -1542,7 +1542,7 @@ function RunDetail({ result }: { result: BacktestResult }) {
               <div style={{ flex: 1, height: 1, background: C.border }} />
             </div>
             <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
-              <EquityCurveChart trades={result.trades} startEquity={startEq} />
+              <EquityCurveChart trades={result.trade_timeline} startEquity={startEq} />
               <RSISubplot values={equityValues} width={580} height={60} />
             </div>
             <div style={{ fontSize: 10, color: C.muted, marginTop: 6 }}>
@@ -1648,6 +1648,217 @@ function RunDetail({ result }: { result: BacktestResult }) {
               <ExitTypeDonut byAction={r.by_action} />
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ── § Trade Log ─────────────────────────────── */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+            Trade Log · Best · Worst · Missed Signals
+          </span>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+        </div>
+        <TradeLog result={result} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Trade Log ────────────────────────────────────────────────────────────────
+
+function TradeLog({ result }: { result: BacktestResult }) {
+  const trades = result.trade_timeline ?? [];
+  const [sortKey, setSortKey] = useState<'pnl' | 'rr_achieved' | 'duration_h' | 'confidence'>('pnl');
+  const [sortDir, setSortDir] = useState<1 | -1>(-1);
+  const [filter, setFilter] = useState<'all' | 'WIN' | 'LOSS'>('all');
+
+  const filtered = trades.filter((t) => filter === 'all' || t.outcome === filter);
+  const sorted = [...filtered].sort((a, b) => ((a[sortKey] ?? 0) - (b[sortKey] ?? 0)) * sortDir);
+
+  const bestTrades = [...trades].sort((a, b) => b.pnl - a.pnl).slice(0, 3);
+  const worstTrades = [...trades].sort((a, b) => a.pnl - b.pnl).slice(0, 3);
+
+  const totalSignals = result.results?.total_signals ?? 0;
+  const totalTrades = result.results?.total_trades ?? trades.length;
+  const missedSignals = Math.max(0, totalSignals - totalTrades);
+
+  const sigFunnel = result.signal_funnel ?? {};
+
+  function handleSort(key: typeof sortKey) {
+    if (sortKey === key) setSortDir((d) => (d === 1 ? -1 : 1));
+    else { setSortKey(key); setSortDir(-1); }
+  }
+
+  const SortHdr = ({ label, k }: { label: string; k: typeof sortKey }) => (
+    <th
+      onClick={() => handleSort(k)}
+      style={{ padding: '8px 10px', fontSize: F.xs, color: sortKey === k ? C.brand : C.muted, fontWeight: 700, cursor: 'pointer', textAlign: 'right', userSelect: 'none', whiteSpace: 'nowrap' }}
+    >
+      {label} {sortKey === k ? (sortDir === -1 ? '↓' : '↑') : ''}
+    </th>
+  );
+
+  const outcomeColor = (o: string) => o === 'WIN' ? C.bull : C.bear;
+  const closeReasonBadge = (r: string) => {
+    const map: Record<string, string> = { TP1: C.bull, TP2: '#16a34a', SL: C.bear, TRAILING_STOP: '#f59e0b', BACKTEST_END: C.muted };
+    return map[r] ?? C.muted;
+  };
+
+  if (trades.length === 0) {
+    return (
+      <div style={{ fontSize: F.xs, color: C.muted, padding: '20px 0' }}>No trade data — run a backtest to populate the trade log.</div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* Best & Worst highlights */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* Best trades */}
+        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.bull, marginBottom: 10 }}>🏆 Best Trades</div>
+          {bestTrades.map((t, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: i < bestTrades.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+              <div>
+                <span style={{ fontSize: F.xs, fontWeight: 800, color: C.text }}>{t.symbol}</span>
+                <span style={{ fontSize: 10, color: t.side === 'LONG' ? C.bull : C.bear, marginLeft: 6 }}>{t.side}</span>
+                <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: R.xs, background: closeReasonBadge(t.close_reason) + '22', color: closeReasonBadge(t.close_reason), marginLeft: 6 }}>{t.close_reason}</span>
+                <div style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>
+                  {t.leverage}× lev · {t.confidence?.toFixed(0)}% conf · {t.duration_h != null ? `${Math.abs(t.duration_h).toFixed(1)}h` : '—'}
+                </div>
+                <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>
+                  Entry {t.entry?.toLocaleString(undefined, { maximumFractionDigits: 2 })} → Exit {t.exit?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </div>
+                <div style={{ fontSize: 10, color: C.faint, marginTop: 2, fontFamily: 'monospace' }}>{t.state_path}</div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                <div style={{ fontSize: F.sm, fontWeight: 800, color: C.bull }}>${t.pnl?.toFixed(2)}</div>
+                <div style={{ fontSize: 10, color: C.muted }}>{t.rr_achieved?.toFixed(2)}R</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Worst trades */}
+        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.bear, marginBottom: 10 }}>💀 Worst Trades</div>
+          {worstTrades.map((t, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: i < worstTrades.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+              <div>
+                <span style={{ fontSize: F.xs, fontWeight: 800, color: C.text }}>{t.symbol}</span>
+                <span style={{ fontSize: 10, color: t.side === 'LONG' ? C.bull : C.bear, marginLeft: 6 }}>{t.side}</span>
+                <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: R.xs, background: closeReasonBadge(t.close_reason) + '22', color: closeReasonBadge(t.close_reason), marginLeft: 6 }}>{t.close_reason}</span>
+                <div style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>
+                  {t.leverage}× lev · {t.confidence?.toFixed(0)}% conf · {t.duration_h != null ? `${Math.abs(t.duration_h).toFixed(1)}h` : '—'}
+                </div>
+                <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>
+                  Entry {t.entry?.toLocaleString(undefined, { maximumFractionDigits: 2 })} → Exit {t.exit?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </div>
+                <div style={{ fontSize: 10, color: C.faint, marginTop: 2, fontFamily: 'monospace' }}>{t.state_path}</div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                <div style={{ fontSize: F.sm, fontWeight: 800, color: C.bear }}>${t.pnl?.toFixed(2)}</div>
+                <div style={{ fontSize: 10, color: C.muted }}>{t.rr_achieved?.toFixed(2)}R</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Missed signals */}
+      {(missedSignals > 0 || Object.keys(sigFunnel).length > 0) && (
+        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.warn, marginBottom: 10 }}>⚠️ Missed / Rejected Signals</div>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: Object.keys(sigFunnel).length > 0 ? 12 : 0 }}>
+            <div>
+              <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>Total Signals Generated</div>
+              <div style={{ fontSize: F.md, fontWeight: 800, color: C.text }}>{totalSignals || '—'}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>Trades Executed</div>
+              <div style={{ fontSize: F.md, fontWeight: 800, color: C.bull }}>{totalTrades}</div>
+            </div>
+            {missedSignals > 0 && (
+              <div>
+                <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>Rejected at Gates</div>
+                <div style={{ fontSize: F.md, fontWeight: 800, color: C.bear }}>{missedSignals}</div>
+              </div>
+            )}
+          </div>
+          {Object.keys(sigFunnel).length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {Object.entries(sigFunnel).map(([gate, count]) => (
+                <div key={gate} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 10, color: C.muted, width: 200, flexShrink: 0 }}>{gate.replace(/_/g, ' ')}</span>
+                  <div style={{ flex: 1, height: 6, background: C.border, borderRadius: 3 }}>
+                    <div style={{ width: `${Math.min(100, (count / (totalSignals || 1)) * 100)}%`, height: '100%', background: C.bear + 'cc', borderRadius: 3 }} />
+                  </div>
+                  <span style={{ fontSize: 10, color: C.muted, width: 30, textAlign: 'right' }}>{count}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Full trade table */}
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+        <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>All Trades ({trades.length})</span>
+          <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+            {(['all', 'WIN', 'LOSS'] as const).map((f) => (
+              <button key={f} onClick={() => setFilter(f)} style={{ padding: '3px 10px', borderRadius: R.pill, border: `1px solid ${filter === f ? C.brand : C.border}`, background: filter === f ? C.brand : 'transparent', color: filter === f ? '#fff' : C.muted, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>
+                {f === 'all' ? 'All' : f}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 860 }}>
+            <thead>
+              <tr style={{ background: '#0f172a' }}>
+                <th style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, fontWeight: 700, textAlign: 'left' }}>#</th>
+                <th style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, fontWeight: 700, textAlign: 'left' }}>Symbol</th>
+                <th style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, fontWeight: 700, textAlign: 'left' }}>Side</th>
+                <th style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, fontWeight: 700, textAlign: 'left' }}>Exit Reason</th>
+                <th style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, fontWeight: 700, textAlign: 'right' }}>Entry</th>
+                <th style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, fontWeight: 700, textAlign: 'right' }}>Exit</th>
+                <SortHdr label="PnL" k="pnl" />
+                <SortHdr label="R:R" k="rr_achieved" />
+                <th style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, fontWeight: 700, textAlign: 'right' }}>Lev</th>
+                <SortHdr label="Conf%" k="confidence" />
+                <SortHdr label="Dur(h)" k="duration_h" />
+                <th style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, fontWeight: 700, textAlign: 'left' }}>State Path</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((t, i) => (
+                <tr key={i} style={{ borderTop: `1px solid ${C.border}`, background: i % 2 === 0 ? 'transparent' : '#0f172a22' }}>
+                  <td style={{ padding: '8px 10px', fontSize: 10, color: C.faint }}>{i + 1}</td>
+                  <td style={{ padding: '8px 10px', fontSize: F.xs, fontWeight: 800, color: C.text }}>{t.symbol}</td>
+                  <td style={{ padding: '8px 10px', fontSize: F.xs, fontWeight: 700, color: t.side === 'LONG' ? C.bull : C.bear }}>{t.side}</td>
+                  <td style={{ padding: '8px 10px' }}>
+                    <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: R.xs, background: closeReasonBadge(t.close_reason) + '22', color: closeReasonBadge(t.close_reason), fontWeight: 700 }}>
+                      {t.close_reason}
+                    </span>
+                  </td>
+                  <td style={{ padding: '8px 10px', fontSize: F.xs, color: C.textSub, textAlign: 'right' }}>{t.entry?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '8px 10px', fontSize: F.xs, color: C.textSub, textAlign: 'right' }}>{t.exit?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '8px 10px', fontSize: F.xs, fontWeight: 700, color: (t.pnl ?? 0) >= 0 ? C.bull : C.bear, textAlign: 'right' }}>
+                    {(t.pnl ?? 0) >= 0 ? '+' : ''}{t.pnl?.toFixed(2)}
+                  </td>
+                  <td style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, textAlign: 'right' }}>{t.rr_achieved?.toFixed(2)}</td>
+                  <td style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, textAlign: 'right' }}>{t.leverage}×</td>
+                  <td style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, textAlign: 'right' }}>{t.confidence?.toFixed(0)}%</td>
+                  <td style={{ padding: '8px 10px', fontSize: F.xs, color: C.muted, textAlign: 'right' }}>{t.duration_h != null ? Math.abs(t.duration_h).toFixed(1) : '—'}</td>
+                  <td style={{ padding: '8px 10px', fontSize: 10, color: C.faint, fontFamily: 'monospace', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.state_path}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1939,7 +2150,7 @@ function JobProgress({ jobId, apiBase, onDone }: { jobId: string; apiBase: strin
 // ─── Symbol Rotation Timeline ─────────────────────────────────────────────────
 
 function SymbolRotationChart({ result }: { result: BacktestResult }) {
-  const trades = (result as BacktestResult & { trades?: Array<{ symbol?: string; outcome?: string; duration_h?: number | null; pnl?: number | null }> }).trades;
+  const trades = result.trade_timeline;
   if (!trades || trades.length === 0) return null;
 
   const SVG_W = 480;
@@ -2426,9 +2637,9 @@ function BacktestCalendarView({ result }: { result?: BacktestResult | null }) {
 
   // Build daily PnL map from trades if available
   const dailyPnl: Record<string, number> = {};
-  if (result?.trades && result.trades.length > 0) {
-    const tradesLen = result.trades.length;
-    result.trades.forEach((t, i) => {
+  if (result?.trade_timeline && result.trade_timeline.length > 0) {
+    const tradesLen = result.trade_timeline.length;
+    result.trade_timeline.forEach((t, i) => {
       // Spread trades across the year deterministically
       const dayOfYear = Math.floor((i / tradesLen) * 365);
       const month = MONTH_NAMES[Math.floor(dayOfYear / 30.5)];
@@ -2566,7 +2777,8 @@ function StrategyAlphaChart({ result }: { result?: BacktestResult | null }) {
   const NUM_POINTS = 30;
 
 
-  if (!result?.trades || result.trades.length < NUM_POINTS) {
+  const byStrat = result?.by_strategy ?? {};
+  if (!result?.trade_timeline || result.trade_timeline.length < 3 || Object.keys(byStrat).length === 0) {
     return (
       <div style={{ marginBottom: 20 }}>
         <h3 style={{ margin: '0 0 4px', fontSize: F.md, fontWeight: 700, color: C.text }}>Strategy Alpha Contribution</h3>
@@ -2575,15 +2787,22 @@ function StrategyAlphaChart({ result }: { result?: BacktestResult | null }) {
     );
   }
 
-  const strategyLines: Array<{ name: string; color: string; short: string; points: number[] }> = STRATEGIES.map((strat, si) => {
+  // Build cumulative PnL per strategy by walking the trade timeline and crediting the trade's strategy
+  const strategyLines: Array<{ name: string; color: string; short: string; points: number[] }> = STRATEGIES.map((strat) => {
     let cum = 0;
-    const step = Math.floor(result.trades!.length / NUM_POINTS);
+    const step = Math.max(1, Math.floor(result.trade_timeline!.length / NUM_POINTS));
     const points = [0];
-    for (let i = 0; i < NUM_POINTS; i++) {
-      const t = result.trades![i * step];
-      cum += (t.pnl ?? 0) / STRATEGIES.length;
+    const stratTrades = result.trade_timeline!.filter((t) => t.strategy === strat.name || t.strategy === 'ensemble');
+    const count = Math.min(NUM_POINTS, stratTrades.length);
+    for (let i = 0; i < count; i++) {
+      const t = stratTrades[i];
+      // Credit each ensemble trade proportionally across strategies, using by_strategy win rate as weight
+      const weight = byStrat[strat.name] != null ? (byStrat[strat.name].pnl / Object.values(byStrat).reduce((s, v) => s + Math.abs(v.pnl), 0.01)) : 1 / STRATEGIES.length;
+      cum += (t.pnl ?? 0) * Math.abs(weight);
       points.push(cum);
     }
+    // Pad to NUM_POINTS if fewer trades
+    while (points.length <= NUM_POINTS) points.push(points[points.length - 1]);
     return { ...strat, points };
   });
 
@@ -2754,13 +2973,14 @@ function BacktestConfidenceIntervals({ result }: { result?: BacktestResult | nul
   // Build 3 equity paths: p10 (pessimistic), p50 (median), p90 (optimistic)
   let p10: number[], p50: number[], p90: number[];
 
-  if (result?.trades && result.trades.length >= NUM_POINTS) {
+  if (result?.trade_timeline && result.trade_timeline.length >= 5) {
     // Bin trades into NUM_POINTS buckets, compute cumulative PnL
-    const step = Math.floor(result.trades.length / NUM_POINTS);
+    const tl = result.trade_timeline;
+    const step = Math.max(1, Math.floor(tl.length / NUM_POINTS));
     let cum50 = startEquity, cum10 = startEquity, cum90 = startEquity;
     p50 = [startEquity]; p10 = [startEquity]; p90 = [startEquity];
     for (let i = 0; i < NUM_POINTS; i++) {
-      const t = result.trades[i * step];
+      const t = tl[Math.min(i * step, tl.length - 1)];
       const base = t.pnl ?? 0;
       cum50 += base;
       cum10 += base * 0.5;  // pessimistic: half the real PnL
