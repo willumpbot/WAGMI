@@ -42,13 +42,10 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Understand',
-    href: '/learn',
-  },
-  {
     label: 'More',
     items: [
-      { href: '/about', label: 'About', desc: 'What is WAGMI?' },
+      { href: '/learn',  label: 'Understand', desc: 'Learn how it all works' },
+      { href: '/about',  label: 'About',      desc: 'What is WAGMI?' },
     ],
   },
 ];
