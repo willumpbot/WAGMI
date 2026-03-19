@@ -125,6 +125,290 @@ function ModelRoutingChart({ decisions }: { decisions: LlmDecision[] }) {
   );
 }
 
+// ─── Confidence Calibration Chart ─────────────────────────────────────────────
+
+function ConfCalibration({ decisions }: { decisions: LlmDecision[] }) {
+  const buckets = [
+    { label: '0–20%', min: 0, max: 0.20 },
+    { label: '20–40%', min: 0.20, max: 0.40 },
+    { label: '40–60%', min: 0.40, max: 0.60 },
+    { label: '60–80%', min: 0.60, max: 0.80 },
+    { label: '80–100%', min: 0.80, max: 1.01 },
+  ];
+
+  type BucketStats = { total: number; proceed: number; veto: number; skip: number };
+
+  const stats: BucketStats[] = buckets.map(({ min, max }) => {
+    const members = decisions.filter((d) => {
+      const c = d.confidence ?? 0;
+      return c >= min && c < max;
+    });
+    const total = members.length;
+    const proceed = members.filter((d) => ['proceed', 'go'].includes((d.action || '').toLowerCase())).length;
+    const veto = members.filter((d) => d.is_veto || (d.action || '').toLowerCase() === 'veto').length;
+    const skip = total - proceed - veto;
+    return { total, proceed, veto, skip };
+  });
+
+  const hasData = stats.some((s) => s.total > 0);
+
+  // SVG layout
+  const W = 700;
+  const H = 140;
+  const padL = 36;
+  const padR = 12;
+  const padTop = 16;
+  const padBot = 36;
+  const chartW = W - padL - padR;
+  const chartH = H - padTop - padBot;
+  const barGroupW = chartW / buckets.length;
+  const barW = Math.min(28, barGroupW * 0.28);
+  const gap = 2;
+
+  const yTicks = [0, 25, 50, 75, 100];
+
+  return (
+    <div>
+      <div style={{ fontWeight: 700, fontSize: F.sm, color: C.text, marginBottom: 2 }}>Is the AI Well-Calibrated?</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
+        Ideally, higher confidence → more GO decisions, fewer vetoes
+      </div>
+
+      {!hasData ? (
+        <div style={{ color: C.faint, fontSize: F.xs, padding: '12px 0' }}>Not enough data yet to show calibration.</div>
+      ) : (
+        <>
+          <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, display: 'block' }}>
+            {/* Y grid lines & labels */}
+            {yTicks.map((tick) => {
+              const y = padTop + chartH - (tick / 100) * chartH;
+              return (
+                <g key={tick}>
+                  <line x1={padL} y1={y} x2={W - padR} y2={y} stroke={C.border} strokeWidth={1} strokeDasharray={tick === 0 ? '0' : '3 3'} />
+                  <text x={padL - 4} y={y + 4} textAnchor="end" fontSize={9} fill={C.faint}>{tick}</text>
+                </g>
+              );
+            })}
+
+            {/* Bars per bucket */}
+            {stats.map((s, i) => {
+              const cx = padL + i * barGroupW + barGroupW / 2;
+              const proceedPct = s.total > 0 ? (s.proceed / s.total) * 100 : 0;
+              const vetoPct = s.total > 0 ? (s.veto / s.total) * 100 : 0;
+              const skipPct = s.total > 0 ? (s.skip / s.total) * 100 : 0;
+
+              const bars = [
+                { pct: proceedPct, color: C.bull, label: 'GO' },
+                { pct: vetoPct, color: C.bear, label: 'VETO' },
+                { pct: skipPct, color: C.muted, label: 'SKIP' },
+              ];
+
+              return (
+                <g key={i}>
+                  {bars.map((bar, bi) => {
+                    const x = cx - (barW + gap) * 1.5 + bi * (barW + gap);
+                    const barH = (bar.pct / 100) * chartH;
+                    const y = padTop + chartH - barH;
+                    return (
+                      <g key={bi}>
+                        <rect
+                          x={x}
+                          y={barH > 0 ? y : padTop + chartH}
+                          width={barW}
+                          height={Math.max(barH, 0)}
+                          fill={bar.color}
+                          opacity={s.total === 0 ? 0.2 : 0.85}
+                          rx={2}
+                        >
+                          <title>{`${buckets[i].label} · ${bar.label}: ${bar.pct.toFixed(0)}% (${s.total} decisions)`}</title>
+                        </rect>
+                        {barH > 10 && (
+                          <text x={x + barW / 2} y={y + 10} textAnchor="middle" fontSize={8} fill="#fff" fontWeight={700}>
+                            {bar.pct.toFixed(0)}
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                  {/* X label */}
+                  <text x={cx} y={H - padBot + 14} textAnchor="middle" fontSize={9} fill={C.muted}>
+                    {buckets[i].label}
+                  </text>
+                  {/* n= label */}
+                  <text x={cx} y={H - padBot + 26} textAnchor="middle" fontSize={8} fill={C.faint}>
+                    n={s.total}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+            {[{ label: 'GO / Proceed', color: C.bull }, { label: 'Veto', color: C.bear }, { label: 'Skip', color: C.muted }].map(({ label, color }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: color, display: 'inline-block', opacity: 0.85 }} />
+                <span style={{ fontSize: F.xs, color: C.textSub }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Decision Activity Heatmap ─────────────────────────────────────────────────
+
+function DecisionActivityMap({ decisions }: { decisions: LlmDecision[] }) {
+  // Build a density map: day (0–6, last 7 days) × hour-block (0–5, each 4 hours)
+  const DAYS = 7;
+  const HOUR_BLOCKS = 6; // 0-3, 4-7, 8-11, 12-15, 16-19, 20-23
+  const BLOCK_SIZE = 4;
+
+  const density: number[][] = Array.from({ length: DAYS }, () => Array(HOUR_BLOCKS).fill(0));
+
+  const now = Date.now();
+  const windowMs = DAYS * 24 * 3600 * 1000;
+  let mostActiveHour = -1;
+  let mostActiveCount = 0;
+  const hourTotal: number[] = Array(24).fill(0);
+
+  let hasTimestamps = false;
+
+  decisions.forEach((d) => {
+    const raw = d.ts_iso || d.ts;
+    if (!raw) return;
+    try {
+      const ts = typeof raw === 'number' ? raw * 1000 : new Date(raw).getTime();
+      if (isNaN(ts)) return;
+      const age = now - ts;
+      if (age < 0 || age > windowMs) return;
+      hasTimestamps = true;
+      const dayIdx = DAYS - 1 - Math.floor(age / (24 * 3600 * 1000));
+      const date = new Date(ts);
+      const hour = date.getHours();
+      const blockIdx = Math.floor(hour / BLOCK_SIZE);
+      if (dayIdx >= 0 && dayIdx < DAYS && blockIdx >= 0 && blockIdx < HOUR_BLOCKS) {
+        density[dayIdx][blockIdx]++;
+      }
+      hourTotal[hour]++;
+    } catch { /* skip */ }
+  });
+
+  // Find most active hour
+  hourTotal.forEach((count, h) => {
+    if (count > mostActiveCount) { mostActiveCount = count; mostActiveHour = h; }
+  });
+
+  const maxDensity = Math.max(1, ...density.flat());
+
+  const CELL_W = 18;
+  const CELL_H = 12;
+  const GAP = 2;
+  const PAD_L = 46;
+  const PAD_T = 18;
+  const totalW = PAD_L + DAYS * (CELL_W + GAP);
+  const totalH = PAD_T + HOUR_BLOCKS * (CELL_H + GAP) + 20;
+
+  // Day labels: last 7 days as Mon/Tue etc.
+  const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const BLOCK_LABELS = ['0h', '4h', '8h', '12h', '16h', '20h'];
+
+  const dayLabels = Array.from({ length: DAYS }, (_, i) => {
+    const d = new Date(now - (DAYS - 1 - i) * 24 * 3600 * 1000);
+    return DAY_LABELS[d.getDay()];
+  });
+
+  const fmtHour = (h: number) => {
+    if (h < 0) return '—';
+    const ampm = h < 12 ? 'am' : 'pm';
+    const disp = h % 12 === 0 ? 12 : h % 12;
+    return `${disp}${ampm}`;
+  };
+
+  // Brand color hex — extract base for opacity trick via SVG fill-opacity
+  const brandBase = C.brand;
+
+  if (!hasTimestamps) {
+    return (
+      <div style={{ color: C.faint, fontSize: F.xs, padding: '8px 0' }}>
+        No timestamp data available to build activity map.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 20 }}>
+      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+        Decision Activity (Last 7 Days)
+      </div>
+      <svg viewBox={`0 0 ${totalW} ${totalH}`} style={{ width: totalW, maxWidth: '100%', display: 'block' }}>
+        {/* Day column headers */}
+        {dayLabels.map((label, di) => (
+          <text
+            key={di}
+            x={PAD_L + di * (CELL_W + GAP) + CELL_W / 2}
+            y={PAD_T - 4}
+            textAnchor="middle"
+            fontSize={8}
+            fill={C.faint}
+          >
+            {label}
+          </text>
+        ))}
+
+        {/* Hour-block row labels */}
+        {BLOCK_LABELS.map((label, bi) => (
+          <text
+            key={bi}
+            x={PAD_L - 4}
+            y={PAD_T + bi * (CELL_H + GAP) + CELL_H / 2 + 3}
+            textAnchor="end"
+            fontSize={8}
+            fill={C.faint}
+          >
+            {label}
+          </text>
+        ))}
+
+        {/* Cells */}
+        {Array.from({ length: DAYS }, (_, di) =>
+          Array.from({ length: HOUR_BLOCKS }, (_, bi) => {
+            const count = density[di][bi];
+            const intensity = count / maxDensity;
+            const x = PAD_L + di * (CELL_W + GAP);
+            const y = PAD_T + bi * (CELL_H + GAP);
+            return (
+              <rect
+                key={`${di}-${bi}`}
+                x={x}
+                y={y}
+                width={CELL_W}
+                height={CELL_H}
+                rx={2}
+                fill={brandBase}
+                fillOpacity={count === 0 ? 0.06 : 0.12 + intensity * 0.78}
+                stroke={C.border}
+                strokeWidth={0.5}
+              >
+                <title>{`${dayLabels[di]} ${BLOCK_LABELS[bi]}–${BLOCK_LABELS[bi + 1] ?? '24h'}: ${count} decision${count !== 1 ? 's' : ''}`}</title>
+              </rect>
+            );
+          })
+        )}
+      </svg>
+
+      {mostActiveHour >= 0 && mostActiveCount > 0 && (
+        <div style={{ fontSize: F.xs, color: C.muted, marginTop: 6 }}>
+          Most active: <span style={{ color: C.brand, fontWeight: 700 }}>{fmtHour(mostActiveHour)}</span>
+          <span style={{ color: C.faint }}> ({mostActiveCount} decisions)</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Veto Analysis ────────────────────────────────────────────────────────────
 
 function VetoAnalysis({ decisions }: { decisions: LlmDecision[] }) {
@@ -395,6 +679,15 @@ export default function LlmAudit() {
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
           <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.text }}>Model Routing</h2>
           <ModelRoutingChart decisions={decisions} />
+          <DecisionActivityMap decisions={decisions} />
+        </div>
+      )}
+
+      {/* Confidence Calibration */}
+      {decisions.length > 0 && (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.text }}>Confidence Calibration</h2>
+          <ConfCalibration decisions={decisions} />
         </div>
       )}
 

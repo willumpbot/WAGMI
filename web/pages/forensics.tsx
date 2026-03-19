@@ -197,6 +197,262 @@ function ConfScatterPlot({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
+// ─── Trade Waterfall ──────────────────────────────────────────────────────────
+
+function TradeWaterfall({ trades }: { trades: TradeRecord[] }) {
+  const validTrades = trades.filter((t) => t.pnl != null && !isNaN(t.pnl!));
+
+  if (validTrades.length < 2) {
+    return (
+      <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm, background: C.surfaceHover, borderRadius: R.md }}>
+        Need at least 2 trades with P&L data to show waterfall.
+      </div>
+    );
+  }
+
+  // Thin out if too many trades
+  const MAX_BARS = 30;
+  let displayTrades = validTrades;
+  let step = 1;
+  if (validTrades.length > MAX_BARS) {
+    step = Math.ceil(validTrades.length / MAX_BARS);
+    displayTrades = validTrades.filter((_, i) => i % step === 0 || i === validTrades.length - 1);
+  }
+
+  // Build cumulative series for the display trades
+  // We need original indices for X-axis labels
+  const displayWithIdx = displayTrades.map((t, di) => ({
+    trade: t,
+    origIdx: di * step < validTrades.length ? di * step : validTrades.length - 1,
+  }));
+
+  // Compute cumulative PnL at each display trade
+  let cumulative = 0;
+  const bars = displayWithIdx.map(({ trade, origIdx }) => {
+    const prev = cumulative;
+    cumulative += trade.pnl!;
+    return { prev, curr: cumulative, pnl: trade.pnl!, origIdx };
+  });
+
+  const finalPnl = cumulative;
+  const allVals = bars.flatMap((b) => [b.prev, b.curr]);
+  const minVal = Math.min(...allVals, 0);
+  const maxVal = Math.max(...allVals, 0);
+  const range = maxVal - minVal || 1;
+
+  const VB_W = 700, VB_H = 160;
+  const pad = { top: 18, right: 72, bottom: 28, left: 56 };
+  const plotW = VB_W - pad.left - pad.right;
+  const plotH = VB_H - pad.top - pad.bottom;
+  const barW = Math.max(2, Math.floor(plotW / bars.length) - 1);
+
+  const xPos = (i: number) => pad.left + i * (plotW / bars.length) + (plotW / bars.length - barW) / 2;
+  const yPos = (v: number) => pad.top + plotH - ((v - minVal) / range) * plotH;
+  const zeroY = yPos(0);
+
+  // Key inflection points: first, last, largest gain, largest loss
+  const maxGainIdx = bars.reduce((best, b, i) => b.pnl > bars[best].pnl ? i : best, 0);
+  const maxLossIdx = bars.reduce((best, b, i) => b.pnl < bars[best].pnl ? i : best, 0);
+  const inflectionSet = new Set([0, bars.length - 1, maxGainIdx, maxLossIdx]);
+
+  return (
+    <svg
+      viewBox={`0 0 ${VB_W} ${VB_H}`}
+      style={{ width: '100%', height: 'auto', display: 'block' }}
+    >
+      <defs>
+        <linearGradient id="wfBullGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={C.bull} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={C.bull} stopOpacity="0.02" />
+        </linearGradient>
+        <linearGradient id="wfBearGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={C.bear} stopOpacity="0.02" />
+          <stop offset="100%" stopColor={C.bear} stopOpacity="0.18" />
+        </linearGradient>
+        <clipPath id="wfClip">
+          <rect x={pad.left} y={pad.top} width={plotW} height={plotH} />
+        </clipPath>
+      </defs>
+
+      {/* Profit / loss background tint */}
+      {finalPnl >= 0 ? (
+        <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill="url(#wfBullGrad)" rx={2} clipPath="url(#wfClip)" />
+      ) : (
+        <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill="url(#wfBearGrad)" rx={2} clipPath="url(#wfClip)" />
+      )}
+
+      {/* Y-axis ticks */}
+      {[minVal, 0, maxVal].filter((v, i, a) => a.indexOf(v) === i).map((v) => (
+        <g key={v}>
+          <line
+            x1={pad.left} y1={yPos(v)} x2={pad.left + plotW} y2={yPos(v)}
+            stroke={v === 0 ? C.borderBright : C.border}
+            strokeWidth={v === 0 ? 1.5 : 1}
+            strokeDasharray={v === 0 ? '' : '3 4'}
+          />
+          <text x={pad.left - 5} y={yPos(v) + 4} textAnchor="end" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">
+            {v >= 0 ? `+$${v.toFixed(0)}` : `-$${Math.abs(v).toFixed(0)}`}
+          </text>
+        </g>
+      ))}
+
+      {/* Bars */}
+      {bars.map((b, i) => {
+        const x = xPos(i);
+        const isWin = b.pnl >= 0;
+        const topY = Math.min(yPos(b.prev), yPos(b.curr));
+        const botY = Math.max(yPos(b.prev), yPos(b.curr));
+        const h = Math.max(1, botY - topY);
+        return (
+          <rect
+            key={i}
+            x={x} y={topY}
+            width={barW} height={h}
+            fill={isWin ? C.bull : C.bear}
+            fillOpacity={0.75}
+            rx={1}
+          />
+        );
+      })}
+
+      {/* X-axis labels at key inflection points */}
+      {bars.map((b, i) => {
+        if (!inflectionSet.has(i)) return null;
+        const x = xPos(i) + barW / 2;
+        return (
+          <text key={i} x={x} y={pad.top + plotH + 12} textAnchor="middle" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">
+            #{b.origIdx + 1}
+          </text>
+        );
+      })}
+
+      {/* Breakeven label */}
+      <text x={pad.left - 5} y={zeroY + 4} textAnchor="end" fontSize={8} fontWeight={700} fill={C.borderBright} fontFamily="Inter, system-ui">
+        $0
+      </text>
+
+      {/* Final cumulative P&L label */}
+      <text
+        x={pad.left + plotW + 5}
+        y={yPos(finalPnl) + 4}
+        fontSize={9}
+        fontWeight={700}
+        fill={finalPnl >= 0 ? C.bull : C.bear}
+        fontFamily="Inter, system-ui"
+      >
+        {finalPnl >= 0 ? '+' : ''}{finalPnl.toFixed(2)}
+      </text>
+
+      {/* Axis labels */}
+      <text x={pad.left + plotW / 2} y={VB_H - 2} textAnchor="middle" fontSize={9} fill={C.muted} fontFamily="Inter, system-ui">
+        Trade Index
+      </text>
+      <text x={10} y={pad.top + plotH / 2} textAnchor="middle" fontSize={9} fill={C.muted} fontFamily="Inter, system-ui"
+        transform={`rotate(-90 10 ${pad.top + plotH / 2})`}>
+        Cum. P&L
+      </text>
+    </svg>
+  );
+}
+
+// ─── Hourly Win Rate Heat Strip ────────────────────────────────────────────────
+
+function HourlyWinRate({ trades }: { trades: TradeRecord[] }) {
+  // TradeRecord doesn't have a timestamp field in the current type definition.
+  // We try to read open_time or close_time from the raw record if present at runtime,
+  // falling back to a graceful empty state.
+  type AnyRecord = TradeRecord & { open_time?: string | number | null; close_time?: string | number | null };
+
+  const buckets: { wins: number; total: number }[] = Array.from({ length: 24 }, () => ({ wins: 0, total: 0 }));
+  let hasTimestamps = false;
+
+  trades.forEach((t) => {
+    const r = t as AnyRecord;
+    const raw = r.open_time ?? r.close_time;
+    if (raw == null) return;
+    try {
+      const ts = typeof raw === 'number'
+        ? (raw > 1e10 ? raw : raw * 1000)
+        : new Date(raw as string).getTime();
+      if (isNaN(ts)) return;
+      const hour = new Date(ts).getUTCHours();
+      hasTimestamps = true;
+      buckets[hour].total++;
+      if (t.outcome === 'WIN') buckets[hour].wins++;
+    } catch {/* skip */}
+  });
+
+  const CELL_W = 28, CELL_H = 40;
+  const labelH = 14;
+  const totalW = 24 * CELL_W;
+  const totalH = CELL_H + labelH;
+
+  if (!hasTimestamps) {
+    return (
+      <div style={{ height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm, background: C.surfaceHover, borderRadius: R.md }}>
+        Hour data not available — trades have no timestamp field.
+      </div>
+    );
+  }
+
+  function cellColor(b: { wins: number; total: number }): string {
+    if (b.total === 0) return C.heatNeutral;
+    const wr = b.wins / b.total;
+    if (wr >= 0.7) return C.heatBull3;
+    if (wr >= 0.55) return C.heatBull2;
+    if (wr >= 0.45) return C.heatBull1;
+    if (wr >= 0.35) return C.heatBear1;
+    if (wr >= 0.2) return C.heatBear2;
+    return C.heatBear3;
+  }
+
+  const showLabelHours = new Set([0, 4, 8, 12, 16, 20]);
+
+  return (
+    <svg
+      viewBox={`0 0 ${totalW} ${totalH}`}
+      style={{ width: '100%', height: 'auto', display: 'block' }}
+    >
+      {buckets.map((b, h) => {
+        const x = h * CELL_W;
+        const fill = cellColor(b);
+        const wr = b.total > 0 ? Math.round((b.wins / b.total) * 100) : null;
+        return (
+          <g key={h}>
+            <rect x={x} y={0} width={CELL_W - 1} height={CELL_H} fill={fill} rx={2} />
+            {wr != null && (
+              <text
+                x={x + CELL_W / 2 - 0.5}
+                y={CELL_H / 2 + 4}
+                textAnchor="middle"
+                fontSize={b.total > 0 ? 8 : 7}
+                fontWeight={700}
+                fill="#fff"
+                fillOpacity={0.85}
+                fontFamily="Inter, system-ui"
+              >
+                {wr}%
+              </text>
+            )}
+            {showLabelHours.has(h) && (
+              <text
+                x={x + CELL_W / 2 - 0.5}
+                y={CELL_H + labelH - 2}
+                textAnchor="middle"
+                fontSize={8}
+                fill={C.muted}
+                fontFamily="Inter, system-ui"
+              >
+                {h}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // ─── Trade Card ───────────────────────────────────────────────────────────────
 
 function TradeCard({ trade }: { trade: TradeRecord }) {
@@ -523,6 +779,49 @@ export default function Forensics() {
           <Skeleton h={280} />
         ) : (
           <ConfScatterPlot trades={filtered} />
+        )}
+      </div>
+
+      {/* Trade Waterfall */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 14 }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Cumulative P&L Journey</h2>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            Each bar shows one trade&apos;s impact on running P&L. Green = profit, Red = loss. Final value shown at right.
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={160} />
+        ) : (
+          <TradeWaterfall trades={filtered} />
+        )}
+      </div>
+
+      {/* Hourly Win Rate */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Win Rate by Hour (UTC)</h2>
+            <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+              When does the bot win? Each cell = one hour of day. Darker green = higher win rate.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: F.xs, color: C.muted, flexWrap: 'wrap' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 2, background: C.heatBull3 }} /> High WR
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 2, background: C.heatBear3 }} /> Low WR
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 2, background: C.heatNeutral }} /> No trades
+            </span>
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={54} />
+        ) : (
+          <HourlyWinRate trades={filtered} />
         )}
       </div>
 
