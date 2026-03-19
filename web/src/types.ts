@@ -176,6 +176,7 @@ export type BacktestResult = {
     state_path: string;
     outcome: string;
   }>;
+  equity_curve?: Array<{ time: string; equity: number; mtm_equity?: number; drawdown_pct?: number }>;
   signal_funnel?: {
     candles_processed?: number;
     no_signal?: number;

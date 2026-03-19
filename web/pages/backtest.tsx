@@ -1131,45 +1131,46 @@ function MonteCarloForecast({ result }: { result: BacktestResult }) {
 
 // ─── Parameter Sensitivity Chart ─────────────────────────────────────────────
 
-function ParameterSensitivityChart() {
+function ParameterSensitivityChart({ result }: { result?: BacktestResult | null }) {
   const W = 480, H = 160;
   const pad = { t: 28, r: 16, b: 16, l: 16 };
   const iW = W - pad.l - pad.r;
 
-  // Three sensitivity groups
-  const groups = [
-    {
-      label: 'Confidence threshold',
-      bars: [
-        { param: '60%', ret: 9.2,  current: false },
-        { param: '65%', ret: 10.1, current: false },
-        { param: '70%', ret: 11.0, current: false },
-        { param: '75%', ret: 11.34, current: true  },
-        { param: '80%', ret: 10.8, current: false },
-      ],
-    },
-    {
-      label: 'Risk per trade',
-      bars: [
-        { param: '0.5%', ret: 6.1,   current: false },
-        { param: '1.0%', ret: 9.2,   current: false },
-        { param: '1.5%', ret: 11.34, current: true  },
-        { param: '2.0%', ret: 12.1,  current: false },
-        { param: '2.5%', ret: 11.8,  current: false },
-      ],
-    },
-    {
-      label: 'Min strategies',
-      bars: [
-        { param: '2',  ret: 13.1,  current: false },
-        { param: '3',  ret: 11.34, current: true  },
-        { param: '4',  ret: 8.7,   current: false },
-      ],
-    },
-  ] as const;
+  // Use actual backtest return as the baseline; fall back to placeholder
+  const actualRet = result?.results?.total_return_pct ?? null;
+  const BASE_RETURN = actualRet ?? 11.34;
 
-  const BASE_RETURN = 11.34;
-  const MAX_RETURN  = 14.0; // for bar width scaling
+  // Relative offsets from the current parameter setting — illustrative shapes only
+  // The current bar will use the real BASE_RETURN; others are scaled proportionally
+  const makeGroup = (label: string, rawBars: Array<{ param: string; offset: number; current: boolean }>) => ({
+    label,
+    bars: rawBars.map(b => ({ param: b.param, ret: +(BASE_RETURN + b.offset).toFixed(2), current: b.current })),
+  });
+
+  const groups = [
+    makeGroup('Confidence threshold', [
+      { param: '60%',  offset: -2.1, current: false },
+      { param: '65%',  offset: -1.3, current: false },
+      { param: '70%',  offset: -0.4, current: false },
+      { param: '75%',  offset:  0.0, current: true  },
+      { param: '80%',  offset: -0.6, current: false },
+    ]),
+    makeGroup('Risk per trade', [
+      { param: '0.5%', offset: -5.2, current: false },
+      { param: '1.0%', offset: -2.1, current: false },
+      { param: '1.5%', offset:  0.0, current: true  },
+      { param: '2.0%', offset:  0.8, current: false },
+      { param: '2.5%', offset:  0.5, current: false },
+    ]),
+    makeGroup('Min strategies', [
+      { param: '2',    offset:  1.8, current: false },
+      { param: '3',    offset:  0.0, current: true  },
+      { param: '4',    offset: -2.6, current: false },
+    ]),
+  ];
+  // Dynamic scale: fit all bars plus 20% headroom
+  const allRetVals = groups.flatMap(g => g.bars.map(b => b.ret));
+  const MAX_RETURN = Math.max(...allRetVals) * 1.2;
   const ROW_H = 36;         // height allocated per group row
   const BAR_H = 12;         // bar height
   const LABEL_W = 148;      // left label column width
@@ -1182,11 +1183,16 @@ function ParameterSensitivityChart() {
 
   return (
     <div style={{ marginBottom: 20 }}>
-      <h3 style={{ margin: '0 0 4px', fontSize: F.md, fontWeight: 700, color: C.text }}>
-        Parameter Sensitivity — How Return Changes
-      </h3>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <h3 style={{ margin: 0, fontSize: F.md, fontWeight: 700, color: C.text }}>
+          Parameter Sensitivity — How Return Changes
+        </h3>
+        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: R.pill, background: '#f59e0b22', color: '#f59e0b', fontWeight: 700 }}>
+          Illustrative
+        </span>
+      </div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
-        Horizontal bars show return % at each parameter setting. Green = better than current, red = worse.
+        Shows relative direction of sensitivity — bars are anchored to actual return ({BASE_RETURN >= 0 ? '+' : ''}{BASE_RETURN.toFixed(1)}%) but offsets are illustrative shapes. Re-run backtest with different params for real sensitivity data.
       </div>
       <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: W }}>
@@ -1331,144 +1337,130 @@ function ParameterSensitivityChart() {
 
 // ─── Walk-Forward Validation Chart ───────────────────────────────────────────
 
-function WalkForwardChart() {
-  const W = 520, H = 160;
-  const pad = { t: 28, r: 16, b: 40, l: 44 };
+function WalkForwardChart({ result }: { result?: BacktestResult | null }) {
+  const W = 520, H = 180;
+  const pad = { t: 36, r: 16, b: 48, l: 52 };
   const iW = W - pad.l - pad.r;
   const iH = H - pad.t - pad.b;
 
-  const segments = [
-    { label: 'Seg 1', trainRet: 4.2, testRet: 3.8 },
-    { label: 'Seg 2', trainRet: 5.1, testRet: 4.4 },
-    { label: 'Seg 3', trainRet: 3.8, testRet: 2.9 },
-    { label: 'Seg 4', trainRet: 6.2, testRet: 5.1 },
-    { label: 'Seg 5', trainRet: 4.9, testRet: 3.6 },
-  ];
+  const ec = result?.equity_curve;
 
-  const NUM_SEGS  = segments.length;
-  const MAX_RET   = 8.0; // y-axis max
-  const SEG_W     = iW / NUM_SEGS;
-  const BAR_PAD   = 4;   // gap between train/test bars within a segment
-  const GROUP_PAD = 8;   // gap on each side of a segment pair
-  const barPairW  = SEG_W - GROUP_PAD * 2;
-  const singleW   = (barPairW - BAR_PAD) / 2;
+  type Seg = { label: string; ret: number; dateRange?: string };
+  let segments: Seg[] = [];
+  let isReal = false;
 
-  const TRAIN_COLOR = '#3b82f6'; // blue
-  const TEST_POS    = '#22c55e'; // green
-  const TEST_NEG    = '#ef4444'; // red
+  if (ec && ec.length >= 10) {
+    const N = ec.length;
+    isReal = true;
+    for (let i = 0; i < 5; i++) {
+      const start = Math.floor((i / 5) * N);
+      const end   = i === 4 ? N - 1 : Math.floor(((i + 1) / 5) * N) - 1;
+      const startEq = ec[start].equity;
+      const endEq   = ec[end].equity;
+      const ret = startEq > 0 ? ((endEq - startEq) / startEq) * 100 : 0;
+      const ds  = ec[start].time?.slice(5, 10) ?? '';
+      const de  = ec[end].time?.slice(5, 10)   ?? '';
+      segments.push({ label: `P${i + 1}`, ret: Math.round(ret * 10) / 10, dateRange: ds && de ? `${ds}→${de}` : undefined });
+    }
+  } else {
+    segments = [
+      { label: 'P1', ret: 3.8 },
+      { label: 'P2', ret: 5.1 },
+      { label: 'P3', ret: -1.2 },
+      { label: 'P4', ret: 4.4 },
+      { label: 'P5', ret: 2.9 },
+    ];
+  }
 
-  const toY = (ret: number) => pad.t + iH - (ret / MAX_RET) * iH;
+  const NUM_SEGS = segments.length;
+  const allRets  = segments.map(s => s.ret);
+  const maxAbs   = Math.max(6, ...allRets.map(v => Math.abs(v)));
+  const yMin     = -maxAbs * 1.1;
+  const yMax     =  maxAbs * 1.1;
 
-  // Y-axis gridlines
-  const yTicks = [0, 2, 4, 6, 8].map(v => ({
-    v,
-    y: toY(v),
-    label: `${v}%`,
-  }));
+  const SEG_W    = iW / NUM_SEGS;
+  const BAR_PAD  = SEG_W * 0.22;
+  const barW     = SEG_W - BAR_PAD * 2;
 
-  const avgTestRet  = segments.reduce((s, seg) => s + seg.testRet, 0) / NUM_SEGS;
-  const avgTrainRet = segments.reduce((s, seg) => s + seg.trainRet, 0) / NUM_SEGS;
-  const ratio       = avgTrainRet > 0 ? avgTestRet / avgTrainRet : 0;
+  // Map value to SVG y
+  const toY = (v: number) => pad.t + iH - ((v - yMin) / (yMax - yMin)) * iH;
+  const zeroY = toY(0);
+
+  // Y-axis ticks: evenly spaced, round numbers
+  const step  = maxAbs > 10 ? 5 : maxAbs > 5 ? 2 : 1;
+  const yTicks: { v: number; y: number }[] = [];
+  for (let v = -Math.ceil(maxAbs / step) * step; v <= Math.ceil(maxAbs / step) * step; v += step) {
+    if (v >= yMin && v <= yMax) yTicks.push({ v, y: toY(v) });
+  }
+
+  const avgRet  = allRets.reduce((a, b) => a + b, 0) / NUM_SEGS;
+  const positive = allRets.filter(v => v > 0).length;
 
   return (
     <div style={{ marginBottom: 20 }}>
-      <h3 style={{ margin: '0 0 4px', fontSize: F.md, fontWeight: 700, color: C.text }}>
-        Walk-Forward Validation
-      </h3>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <h3 style={{ margin: 0, fontSize: F.md, fontWeight: 700, color: C.text }}>
+          {isReal ? 'Time-Period Consistency' : 'Walk-Forward Validation'}
+        </h3>
+        {!isReal && (
+          <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: R.pill, background: '#f59e0b22', color: '#f59e0b', fontWeight: 700 }}>
+            Illustrative
+          </span>
+        )}
+      </div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
-        Strategy performance on held-out out-of-sample periods — positive test bars confirm generalization
+        {isReal
+          ? `Equity curve split into ${NUM_SEGS} equal time windows — shows whether returns are consistent across different periods`
+          : 'Run a backtest to see real period-by-period return consistency'}
       </div>
       <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: W }}>
           {/* Y-axis gridlines + labels */}
           {yTicks.map((tick) => (
             <g key={tick.v}>
-              <line
-                x1={pad.l} y1={tick.y}
-                x2={pad.l + iW} y2={tick.y}
-                stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4"
-              />
-              <text
-                x={pad.l - 5} y={tick.y}
-                textAnchor="end" dominantBaseline="middle"
-                fontSize={8} fill={C.muted}
-              >
-                {tick.label}
+              <line x1={pad.l} y1={tick.y} x2={pad.l + iW} y2={tick.y}
+                stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" />
+              <text x={pad.l - 5} y={tick.y} textAnchor="end" dominantBaseline="middle" fontSize={8} fill={C.muted}>
+                {tick.v > 0 ? '+' : ''}{tick.v}%
               </text>
             </g>
           ))}
 
           {/* Zero baseline */}
-          <line
-            x1={pad.l} y1={toY(0)}
-            x2={pad.l + iW} y2={toY(0)}
-            stroke={C.borderBright} strokeWidth={1}
-          />
+          <line x1={pad.l} y1={zeroY} x2={pad.l + iW} y2={zeroY}
+            stroke={C.borderBright} strokeWidth={1.2} />
 
           {/* Segment bars */}
           {segments.map((seg, si) => {
-            const segX    = pad.l + si * SEG_W + GROUP_PAD;
-            const trainX  = segX;
-            const testX   = segX + singleW + BAR_PAD;
-
-            const trainY  = toY(seg.trainRet);
-            const trainH  = Math.max(1, toY(0) - trainY);
-
-            const testY   = seg.testRet >= 0 ? toY(seg.testRet) : toY(0);
-            const testH   = Math.max(1, seg.testRet >= 0 ? toY(0) - toY(seg.testRet) : toY(seg.testRet) - toY(0));
-            const testColor = seg.testRet >= 0 ? TEST_POS : TEST_NEG;
+            const barX   = pad.l + si * SEG_W + BAR_PAD;
+            const isPos  = seg.ret >= 0;
+            const barTop = isPos ? toY(seg.ret) : zeroY;
+            const barH   = Math.max(2, Math.abs(toY(seg.ret) - zeroY));
+            const color  = isPos ? '#22c55e' : '#ef4444';
+            const labelY = isPos ? toY(seg.ret) - 3 : toY(seg.ret) + 11;
 
             return (
               <g key={si}>
-                {/* Train bar */}
-                <rect
-                  x={trainX} y={trainY}
-                  width={singleW} height={trainH}
-                  fill={TRAIN_COLOR} rx={2} opacity={0.8}
-                />
-                {/* Test bar */}
-                <rect
-                  x={testX} y={testY}
-                  width={singleW} height={testH}
-                  fill={testColor} rx={2} opacity={0.85}
-                />
-                {/* Return labels above bars */}
-                <text
-                  x={trainX + singleW / 2} y={trainY - 3}
-                  textAnchor="middle" fontSize={7.5} fill={TRAIN_COLOR} fontWeight={600}
-                >
-                  +{seg.trainRet.toFixed(1)}%
+                <rect x={barX} y={barTop} width={barW} height={barH} fill={color} rx={2} opacity={0.85} />
+                <text x={barX + barW / 2} y={labelY} textAnchor="middle" fontSize={8} fill={color} fontWeight={700}>
+                  {seg.ret >= 0 ? '+' : ''}{seg.ret.toFixed(1)}%
                 </text>
-                <text
-                  x={testX + singleW / 2} y={testY - 3}
-                  textAnchor="middle" fontSize={7.5}
-                  fill={testColor} fontWeight={600}
-                >
-                  {seg.testRet >= 0 ? '+' : ''}{seg.testRet.toFixed(1)}%
-                </text>
-                {/* Segment label below */}
-                <text
-                  x={segX + barPairW / 2} y={pad.t + iH + 10}
-                  textAnchor="middle" fontSize={8} fill={C.muted}
-                >
+                <text x={barX + barW / 2} y={pad.t + iH + 12} textAnchor="middle" fontSize={8} fill={C.muted} fontWeight={600}>
                   {seg.label}
                 </text>
+                {seg.dateRange && (
+                  <text x={barX + barW / 2} y={pad.t + iH + 24} textAnchor="middle" fontSize={7} fill={C.faint}>
+                    {seg.dateRange}
+                  </text>
+                )}
               </g>
             );
           })}
-
-          {/* Legend */}
-          <rect x={pad.l} y={H - 18} width={8} height={8} fill={TRAIN_COLOR} rx={1} opacity={0.8} />
-          <text x={pad.l + 11} y={H - 14} dominantBaseline="middle" fontSize={8} fill={C.textSub}>
-            In-sample training
-          </text>
-          <rect x={pad.l + 112} y={H - 18} width={8} height={8} fill={TEST_POS} rx={1} opacity={0.85} />
-          <text x={pad.l + 123} y={H - 14} dominantBaseline="middle" fontSize={8} fill={C.textSub}>
-            Out-of-sample test
-          </text>
         </svg>
-        <div style={{ fontSize: F.xs, color: C.muted, marginTop: 4, paddingLeft: 2 }}>
-          Average test/train ratio: <strong style={{ color: C.bull }}>{ratio.toFixed(2)}</strong> (good generalization)
+        <div style={{ display: 'flex', gap: 16, fontSize: F.xs, color: C.muted, marginTop: 4, paddingLeft: 2 }}>
+          <span>Avg period return: <strong style={{ color: avgRet >= 0 ? C.bull : C.bear }}>{avgRet >= 0 ? '+' : ''}{avgRet.toFixed(1)}%</strong></span>
+          <span>Positive periods: <strong style={{ color: positive >= 3 ? C.bull : C.warn }}>{positive}/{NUM_SEGS}</strong></span>
+          {isReal && <span style={{ marginLeft: 'auto', color: C.brand, fontSize: 10 }}>Computed from live equity curve data</span>}
         </div>
       </div>
     </div>
@@ -1585,7 +1577,7 @@ function RunDetail({ result }: { result: BacktestResult }) {
           </span>
           <div style={{ flex: 1, height: 1, background: C.border }} />
         </div>
-        <WalkForwardChart />
+        <WalkForwardChart result={result} />
       </div>
 
       {/* ── § Parameter Sensitivity ─────────────────── */}
@@ -1597,7 +1589,7 @@ function RunDetail({ result }: { result: BacktestResult }) {
           </span>
           <div style={{ flex: 1, height: 1, background: C.border }} />
         </div>
-        <ParameterSensitivityChart />
+        <ParameterSensitivityChart result={result} />
       </div>
 
       {/* ── § Calendar View ─────────────────────────── */}
@@ -1793,9 +1785,9 @@ function TradeLog({ result }: { result: BacktestResult }) {
                 {i < arr.length - 1 && <span style={{ color: C.faint, fontSize: F.sm }}>→</span>}
               </React.Fragment>
             ))}
-            {sigFunnel.conversion_rate != null && (
+            {(sigFunnel.signals_generated ?? 0) > 0 && (
               <span style={{ marginLeft: 'auto', fontSize: 10, color: C.muted }}>
-                Conversion: <strong style={{ color: C.text }}>{(sigFunnel.conversion_rate * 100).toFixed(1)}%</strong>
+                Conversion: <strong style={{ color: C.text }}>{(((sigFunnel.executed ?? 0) / (sigFunnel.signals_generated || 1)) * 100).toFixed(1)}%</strong>
               </span>
             )}
           </div>
