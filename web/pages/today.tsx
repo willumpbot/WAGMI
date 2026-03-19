@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import Head from 'next/head';
 import Layout from '../components/Layout';
 import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
@@ -155,6 +155,10 @@ function PriceLevelTable({ levels }: { levels: Level[] }) {
 }
 
 // ─── Signal Funnel Bar ────────────────────────────────────────────────────────
+// NOTE: A separate SignalFunnel component exists in pages/signals.tsx with a
+// slightly different layout (3-step funnel with proceed/vetoed/skipped). These
+// are parallel implementations covering the same concept — consider consolidating
+// into a shared component when the API data shape stabilises.
 
 function SignalFunnelBar({ analyzed, passed, executed, vetoed }: { analyzed: number; passed: number; executed: number; vetoed: number }) {
   const pct = (n: number) => analyzed > 0 ? Math.round((n / analyzed) * 100) : 0;
@@ -902,6 +906,8 @@ function MarketSessionClock() {
 // ─── Today Equity Mini ────────────────────────────────────────────────────────
 
 function TodayEquityMini() {
+  const uid = useId();
+  const gradId = `equityFillGrad-${uid.replace(/:/g, '')}`;
   const W = 340, H = 80;
   const paddingL = 6, paddingR = 6, paddingT = 10, paddingB = 16;
   const chartW = W - paddingL - paddingR;
@@ -978,14 +984,14 @@ function TodayEquityMini() {
         preserveAspectRatio="none"
       >
         <defs>
-          <linearGradient id="equityFillGrad" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={lineColor} stopOpacity="0.25" />
             <stop offset="100%" stopColor={lineColor} stopOpacity="0.02" />
           </linearGradient>
         </defs>
 
         {/* Gradient fill under the line */}
-        <path d={fillPath} fill="url(#equityFillGrad)" />
+        <path d={fillPath} fill={`url(#${gradId})`} />
 
         {/* The equity line itself */}
         <polyline
@@ -2333,7 +2339,7 @@ export default function TodayPage() {
           <div style={{ marginBottom: 28 }}>
             <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Recent Trade Recap</h2>
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '4px 16px' }}>
-              {recentTrades.map((t, i) => <TradeRow key={i} t={t} />)}
+              {recentTrades.map((t, i) => <TradeRow key={`${t.symbol}-${t.side}-${t.entry ?? i}-${i}`} t={t} />)}
               {recentTrades.length === 0 && (
                 <div style={{ padding: '20px 0', color: C.muted, fontSize: F.sm, textAlign: 'center' }}>
                   No trades in recent history. The bot is watching the market.

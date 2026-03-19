@@ -255,19 +255,19 @@ function PositionSizeCalc() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <div style={labelStyle}>Account Size ($)</div>
-            <input type="number" style={inputStyle} value={accountSize} onChange={e => setAccountSize(+e.target.value)} min={100} />
+            <input type="number" aria-label="Account size in dollars" style={inputStyle} value={accountSize} onChange={e => setAccountSize(+e.target.value)} min={100} />
           </div>
           <div>
             <div style={labelStyle}>Risk Per Trade (%)</div>
-            <input type="number" style={inputStyle} value={riskPct} step={0.1} onChange={e => setRiskPct(+e.target.value)} min={0.1} max={10} />
+            <input type="number" aria-label="Risk per trade percentage" style={inputStyle} value={riskPct} step={0.1} onChange={e => setRiskPct(+e.target.value)} min={0.1} max={10} />
           </div>
           <div>
             <div style={labelStyle}>Entry Price ($)</div>
-            <input type="number" style={inputStyle} value={entry} onChange={e => setEntry(+e.target.value)} min={0.01} />
+            <input type="number" aria-label="Entry price in dollars" style={inputStyle} value={entry} onChange={e => setEntry(+e.target.value)} min={0.01} />
           </div>
           <div>
             <div style={labelStyle}>Stop Loss Price ($)</div>
-            <input type="number" style={inputStyle} value={stopLoss} onChange={e => setStopLoss(+e.target.value)} min={0.01} />
+            <input type="number" aria-label="Stop loss price in dollars" style={inputStyle} value={stopLoss} onChange={e => setStopLoss(+e.target.value)} min={0.01} />
           </div>
         </div>
         <div style={{ padding: '10px 14px', background: C.warn + '12', border: `1px solid ${C.warn}30`, borderRadius: R.sm, fontSize: F.xs, color: C.textSub }}>
@@ -330,19 +330,19 @@ function RRCalc() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div style={{ gridColumn: '1/-1' }}>
           <div style={labelStyle}>Entry Price ($)</div>
-          <input type="number" style={inputStyle} value={entry} onChange={e => setEntry(+e.target.value)} />
+          <input type="number" aria-label="Entry price" style={inputStyle} value={entry} onChange={e => setEntry(+e.target.value)} />
         </div>
         <div>
           <div style={labelStyle}>Stop Loss ($)</div>
-          <input type="number" style={inputStyle} value={sl} onChange={e => setSl(+e.target.value)} />
+          <input type="number" aria-label="Stop loss price" style={inputStyle} value={sl} onChange={e => setSl(+e.target.value)} />
         </div>
         <div>
           <div style={labelStyle}>TP1 ($)</div>
-          <input type="number" style={inputStyle} value={tp1} onChange={e => setTp1(+e.target.value)} />
+          <input type="number" aria-label="Take profit 1 price" style={inputStyle} value={tp1} onChange={e => setTp1(+e.target.value)} />
         </div>
         <div style={{ gridColumn: '1/-1' }}>
           <div style={labelStyle}>TP2 (Final Target) ($)</div>
-          <input type="number" style={inputStyle} value={tp2} onChange={e => setTp2(+e.target.value)} />
+          <input type="number" aria-label="Take profit 2 final target price" style={inputStyle} value={tp2} onChange={e => setTp2(+e.target.value)} />
         </div>
       </div>
 
@@ -413,15 +413,15 @@ function CompoundCalc() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
           <div style={labelStyle}>Starting Capital ($)</div>
-          <input type="number" style={inputStyle} value={capital} onChange={e => setCapital(+e.target.value)} min={100} />
+          <input type="number" aria-label="Starting capital in dollars" style={inputStyle} value={capital} onChange={e => setCapital(+e.target.value)} min={100} />
         </div>
         <div>
           <div style={labelStyle}>Monthly Return (%)</div>
-          <input type="number" style={inputStyle} value={monthlyPct} step={0.5} onChange={e => setMonthlyPct(+e.target.value)} min={0.1} max={100} />
+          <input type="number" aria-label="Monthly return percentage" style={inputStyle} value={monthlyPct} step={0.5} onChange={e => setMonthlyPct(+e.target.value)} min={0.1} max={100} />
         </div>
         <div>
           <div style={labelStyle}>Number of Months</div>
-          <input type="number" style={inputStyle} value={months} onChange={e => setMonths(Math.min(60, Math.max(1, +e.target.value)))} min={1} max={60} />
+          <input type="number" aria-label="Number of months" style={inputStyle} value={months} onChange={e => setMonths(Math.min(60, Math.max(1, +e.target.value)))} min={1} max={60} />
         </div>
         <div style={{ padding: '14px 16px', background: C.bull + '12', border: `1px solid ${C.bull}30`, borderRadius: R.md }}>
           <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>Final Equity</div>
@@ -1618,7 +1618,7 @@ function ScenarioSimulator() {
               <div style={labelStyle}>RSI</div>
               <span style={{ fontSize: F.sm, fontWeight: 700, color: rsi > 70 ? C.bear : rsi < 30 ? C.bull : C.text }}>{rsi}</span>
             </div>
-            <input type="range" min={0} max={100} step={1} value={rsi} onChange={e => setRsi(+e.target.value)} style={sliderStyle} />
+            <input type="range" min={0} max={100} step={1} value={rsi} onChange={e => setRsi(+e.target.value)} style={sliderStyle} aria-label="RSI value" />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.faint, marginTop: 2 }}>
               <span>0 Oversold</span><span>100 Overbought</span>
             </div>
@@ -1630,7 +1630,7 @@ function ScenarioSimulator() {
               <div style={labelStyle}>ATR %</div>
               <span style={{ fontSize: F.sm, fontWeight: 700, color: atr > 3 ? C.bear : atr < 0.5 ? C.warn : C.text }}>{atr.toFixed(1)}%</span>
             </div>
-            <input type="range" min={0} max={5} step={0.1} value={atr} onChange={e => setAtr(+e.target.value)} style={sliderStyle} />
+            <input type="range" min={0} max={5} step={0.1} value={atr} onChange={e => setAtr(+e.target.value)} style={sliderStyle} aria-label="ATR percentage" />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.faint, marginTop: 2 }}>
               <span>0% Low</span><span>5% High</span>
             </div>
@@ -1642,7 +1642,7 @@ function ScenarioSimulator() {
               <div style={labelStyle}>Signal Score</div>
               <span style={{ fontSize: F.sm, fontWeight: 700, color: score >= 75 ? C.bull : score >= 50 ? C.warn : C.bear }}>{score}</span>
             </div>
-            <input type="range" min={0} max={100} step={1} value={score} onChange={e => setScore(+e.target.value)} style={sliderStyle} />
+            <input type="range" min={0} max={100} step={1} value={score} onChange={e => setScore(+e.target.value)} style={sliderStyle} aria-label="Signal score" />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.faint, marginTop: 2 }}>
               <span>0 Weak</span><span>100 Strong</span>
             </div>
@@ -2441,6 +2441,7 @@ function ExpectedValueCalc() {
             value={Math.round(winRate * 100)}
             onChange={e => setWinRate(+e.target.value / 100)}
             style={{ width: '100%', accentColor: C.brand as string, cursor: 'pointer' }}
+            aria-label="Win rate percentage slider"
           />
           <div style={{ ...inputStyle, textAlign: 'center', marginTop: 4 }}>
             <input
@@ -2448,6 +2449,7 @@ function ExpectedValueCalc() {
               value={Math.round(winRate * 100)}
               onChange={e => setWinRate(Math.min(100, Math.max(0, +e.target.value)) / 100)}
               style={{ background: 'none', border: 'none', color: C.text, fontSize: F.sm, width: '100%', textAlign: 'center', outline: 'none' }}
+              aria-label="Win rate percentage"
             />
           </div>
         </div>
@@ -2459,6 +2461,7 @@ function ExpectedValueCalc() {
             value={avgWin}
             onChange={e => setAvgWin(+e.target.value)}
             style={{ width: '100%', accentColor: C.bull as string, cursor: 'pointer' }}
+            aria-label="Average win amount slider"
           />
           <div style={{ ...inputStyle, textAlign: 'center', marginTop: 4 }}>
             <input
@@ -2466,6 +2469,7 @@ function ExpectedValueCalc() {
               value={avgWin}
               onChange={e => setAvgWin(Math.max(1, +e.target.value))}
               style={{ background: 'none', border: 'none', color: C.text, fontSize: F.sm, width: '100%', textAlign: 'center', outline: 'none' }}
+              aria-label="Average win amount"
             />
           </div>
         </div>
@@ -2477,6 +2481,7 @@ function ExpectedValueCalc() {
             value={avgLoss}
             onChange={e => setAvgLoss(+e.target.value)}
             style={{ width: '100%', accentColor: C.bear as string, cursor: 'pointer' }}
+            aria-label="Average loss amount slider"
           />
           <div style={{ ...inputStyle, textAlign: 'center', marginTop: 4 }}>
             <input
@@ -2484,6 +2489,7 @@ function ExpectedValueCalc() {
               value={avgLoss}
               onChange={e => setAvgLoss(Math.max(1, +e.target.value))}
               style={{ background: 'none', border: 'none', color: C.text, fontSize: F.sm, width: '100%', textAlign: 'center', outline: 'none' }}
+              aria-label="Average loss amount"
             />
           </div>
         </div>
@@ -3381,6 +3387,7 @@ function RiskParameterSlider() {
                 max={sl.max}
                 value={sl.value}
                 onChange={e => sl.setter(+e.target.value)}
+                aria-label={sl.label}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -3937,6 +3944,7 @@ export default function Learn() {
         <input
           type="text"
           placeholder="Search terms…"
+          aria-label="Search glossary terms"
           value={glossarySearch}
           onChange={(e) => setGlossarySearch(e.target.value)}
           style={{

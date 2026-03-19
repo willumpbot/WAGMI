@@ -337,6 +337,9 @@ function SignalCard({ event, index }: { event: ActivityEvent; index: number }) {
 }
 
 // ─── Market Heatmap ───────────────────────────────────────────────────────────
+// NOTE: A separate MarketHeatmap component also exists in pages/index.tsx with
+// an additional `onSelect` prop. These are parallel implementations — consider
+// consolidating into a shared component if they diverge further.
 
 function MarketHeatmap({ signals, loading }: { signals: Record<string, Signal> | null; loading: boolean }) {
   // Derive ordered symbol list: start with known defaults, append any extras from API
@@ -1350,7 +1353,7 @@ function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal>
           style={{ display: 'block', overflow: 'visible' }}
         >
           <defs>
-            <filter id="radar-glow">
+            <filter id={`radar-glow-${symbol}`}>
               <feGaussianBlur stdDeviation="2" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
@@ -1414,7 +1417,7 @@ function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal>
             stroke={C.brand}
             strokeWidth={2}
             strokeLinejoin="round"
-            filter="url(#radar-glow)"
+            filter={`url(#radar-glow-${symbol})`}
           />
 
           {/* Data point circles at each axis tip value */}
@@ -3391,7 +3394,6 @@ export default function SignalsPage() {
   const [signalsData, setSignalsData] = useState<SignalsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
-  const [pulseCount, setPulseCount] = useState(0);
   const [selectedSymbol, setSelectedSymbol] = useState<string>('BTC');
   const apiBase = resolveApiBase();
   const mounted = useRef(true);
@@ -3423,7 +3425,6 @@ export default function SignalsPage() {
     fetchData();
     const iv = setInterval(() => {
       fetchData();
-      setPulseCount(c => c + 1);
     }, 20000);
     return () => { mounted.current = false; clearInterval(iv); };
   }, []);
@@ -3537,33 +3538,38 @@ export default function SignalsPage() {
         ))}
       </div>
 
-      {/* ── Signal Score Ranking ────────────────────────────────────────── */}
+      {/* ── Signal Analysis ──────────────────────────────────────────────── */}
+      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '0 0 16px', letterSpacing: '-0.02em' }}>
+        Signal Analysis
+      </h2>
+
       {signalsData !== null && (
         <SignalScoreRanking signals={signalsData?.signals ?? {}} />
       )}
 
-      {/* ── Signal Radar Chart ───────────────────────────────────────────── */}
       <SignalRadarChart signals={signalsData?.signals ?? null} symbol={selectedSymbol ?? 'BTC'} />
 
       {/* ── Market Heatmap ───────────────────────────────────────────────── */}
+      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '8px 0 16px', letterSpacing: '-0.02em' }}>
+        Market Heatmap
+      </h2>
       <MarketHeatmapSection payload={signalsData} loading={loading} />
 
-      {/* ── Signal Freshness Strip ───────────────────────────────────────── */}
+      {/* ── Signal Quality ───────────────────────────────────────────────── */}
+      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '8px 0 16px', letterSpacing: '-0.02em' }}>
+        Signal Quality
+      </h2>
       <SignalFreshnessStrip signals={signalsData?.signals ?? null} />
-
-      {/* ── Signal Age Distribution ──────────────────────────────────────── */}
       <SignalAgeDistribution signals={signalsData?.signals ?? null} />
-
-      {/* ── Strategy Vote Matrix ─────────────────────────────────────────── */}
       <StrategyVoteGrid signals={signalsData?.signals ?? null} />
-
-      {/* ── Signal Quality Trend Chart ───────────────────────────────────── */}
       <SignalQualityTrendChart signals={signalsData?.signals ?? null} />
 
-      {/* ── Symbol Dominance Chart ───────────────────────────────────────── */}
+      {/* ── Market Structure ─────────────────────────────────────────────── */}
+      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '8px 0 16px', letterSpacing: '-0.02em' }}>
+        Market Structure
+      </h2>
       <SymbolDominanceChart signals={signalsData?.signals ?? null} />
 
-      {/* ── Signal Strength + Correlation ── */}
       {signalsData && Object.keys(signalsData.signals).length > 0 && (
         <>
           <SignalStrengthTimeline signals={signalsData.signals} />
@@ -3571,13 +3577,13 @@ export default function SignalsPage() {
         </>
       )}
 
-      {/* ── Momentum Indicators ──────────────────────────────────────────── */}
       <MomentumIndicatorPanel />
-
-      {/* ── Volatility Ranking ───────────────────────────────────────────── */}
       <VolatilityRankingBars signals={signalsData?.signals ?? null} />
 
-      {/* ── Two-column layout ────────────────────────────────────────────── */}
+      {/* ── Decision Pipeline ────────────────────────────────────────────── */}
+      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '8px 0 16px', letterSpacing: '-0.02em' }}>
+        Decision Pipeline
+      </h2>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, marginBottom: 28 }}>
         {/* Gate funnel */}
         <SignalFunnel total={totalAnalyzed || 100} proceed={proceed} vetoed={vetoed} skipped={skipped} />
@@ -3596,12 +3602,14 @@ export default function SignalsPage() {
       </div>
 
       {/* ── Signal Timeline ──────────────────────────────────────────────── */}
+      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '8px 0 16px', letterSpacing: '-0.02em' }}>
+        Signal Timeline
+      </h2>
       <div>
         {/* Header + filter tabs */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <div style={{ fontSize: F.lg, fontWeight: 800, color: C.text }}>Signal Timeline</div>
-            <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>Click any row to expand full reasoning</div>
+            <div style={{ fontSize: F.md, fontWeight: 600, color: C.muted }}>Click any row to expand full reasoning</div>
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {FILTERS.map(f => (
@@ -3674,9 +3682,11 @@ export default function SignalsPage() {
         )}
       </div>
 
-      {/* ── Advanced Visual Components ───────────────────────────────────── */}
+      {/* ── Per-Symbol Mini Charts ───────────────────────────────────────── */}
+      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '8px 0 16px', letterSpacing: '-0.02em' }}>
+        Per-Symbol Mini Charts
+      </h2>
       <div style={{ marginBottom: 28 }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 6 }}>Per-Symbol Mini Charts</div>
         <div style={{ fontSize: 11, color: C.muted, marginBottom: 14 }}>
           Inline 20-candle candlestick with SMA5 overlay — seeded deterministic view
         </div>

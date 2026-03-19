@@ -968,7 +968,10 @@ function ConfidenceCalibrationChart({ decisions }: { decisions: LlmDecision[] })
       borderRadius: R.lg,
       padding: '18px 20px',
     }}>
-      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 2 }}>Confidence Calibration</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2, flexWrap: 'wrap', gap: 6 }}>
+        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Confidence Calibration</div>
+        <span style={{ fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>Seeded demo when &lt;3 decisions/bucket</span>
+      </div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
         How accurately the AI's confidence predicts actual outcomes
       </div>
@@ -1100,11 +1103,12 @@ function DecisionTimeHeatmap() {
       borderRadius: R.lg,
       padding: '18px 20px',
     }}>
-      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 2 }}>
-        Decision Activity Heatmap (UTC)
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2, flexWrap: 'wrap', gap: 6 }}>
+        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Decision Activity Heatmap (UTC)</div>
+        <span style={{ fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>Seeded demo data</span>
       </div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
-        {totalDecisions} decisions in last 7 days
+        {totalDecisions} decisions in last 7 days (illustrative)
       </div>
 
       <div style={{ overflowX: 'auto' }}>

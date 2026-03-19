@@ -406,7 +406,7 @@ function TradeWaterfall({ trades }: { trades: TradeRecord[] }) {
             strokeWidth={1.2}
             strokeDasharray="3 3"
             strokeLinejoin="round"
-            clipPath="url(#wfClip)"
+            clipPath={`url(#wfClip-${uid})`}
           />
         );
       })()}
@@ -690,6 +690,7 @@ function HourOfDayWinRate({ trades }: { trades: TradeRecord[] }) {
 function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
   // Uses signal confidence (0-1) on X-axis vs actual R:R achieved on Y-axis.
   // Distinct from ConfScatterPlot which plots llm_confidence.
+  const uid = useId().replace(/:/g, '');
   const plotTrades = trades.filter(
     (t) =>
       t.confidence != null &&
@@ -747,7 +748,7 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
       >
         <defs>
-          <clipPath id="rrScatterClip">
+          <clipPath id={`rrScatterClip-${uid}`}>
             <rect x={pad.left} y={pad.top} width={plotW} height={plotH} />
           </clipPath>
         </defs>
@@ -764,7 +765,7 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
               x={x1} y={y1}
               width={x2 - x1} height={Math.max(0, y2 - y1)}
               fill={C.bull} fillOpacity={0.08}
-              clipPath="url(#rrScatterClip)"
+              clipPath={`url(#rrScatterClip-${uid})`}
             />
           );
         })()}
@@ -805,7 +806,7 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
               x1={pad.left} y1={py(1.0)}
               x2={pad.left + plotW} y2={py(1.0)}
               stroke={C.warn} strokeWidth={1} strokeDasharray="6 4"
-              clipPath="url(#rrScatterClip)"
+              clipPath={`url(#rrScatterClip-${uid})`}
             />
             <text x={pad.left + plotW - 2} y={py(1.0) - 4} textAnchor="end" fontSize={8} fill={C.warn} fontFamily="Inter, system-ui">1.0×</text>
           </g>
@@ -818,7 +819,7 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
               x1={pad.left} y1={py(2.0)}
               x2={pad.left + plotW} y2={py(2.0)}
               stroke={C.bull} strokeWidth={1} strokeDasharray="6 4"
-              clipPath="url(#rrScatterClip)"
+              clipPath={`url(#rrScatterClip-${uid})`}
             />
             <text x={pad.left + plotW - 2} y={py(2.0) - 4} textAnchor="end" fontSize={8} fill={C.bull} fontFamily="Inter, system-ui">2.0×</text>
           </g>
@@ -829,7 +830,7 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
           x1={px(75)} y1={pad.top}
           x2={px(75)} y2={pad.top + plotH}
           stroke={C.brand} strokeWidth={1} strokeDasharray="6 4"
-          clipPath="url(#rrScatterClip)"
+          clipPath={`url(#rrScatterClip-${uid})`}
         />
         <text x={px(75) + 3} y={pad.top + 10} fontSize={8} fill={C.brand} fontFamily="Inter, system-ui">75%</text>
 
@@ -839,7 +840,7 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
           const cy = py(d.rr);
           const r = d.size ?? 4;
           return (
-            <g key={i} clipPath="url(#rrScatterClip)">
+            <g key={i} clipPath={`url(#rrScatterClip-${uid})`}>
               {/* White ring for recent trades (last 5) */}
               {d.isRecent && (
                 <circle cx={cx} cy={cy} r={r + 3} fill="none" stroke="#ffffff" strokeWidth={1.5} strokeOpacity={0.7} />
@@ -1029,6 +1030,7 @@ function RegimePerformanceMatrix({ trades }: { trades: TradeRecord[] }) {
 // ─── Trade Duration Histogram ─────────────────────────────────────────────────
 
 function TradeDurationHistogram({ trades }: { trades: TradeRecord[] }) {
+  const uid = useId().replace(/:/g, '');
   // Group trade durations into buckets (in hours)
   const BUCKETS = [
     { label: '<1h', max: 1 }, { label: '1–4h', max: 4 },
@@ -1099,11 +1101,11 @@ function TradeDurationHistogram({ trades }: { trades: TradeRecord[] }) {
 
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
         <defs>
-          <linearGradient id="durationWin" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`durationWin-${uid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={C.bull} stopOpacity="0.9" />
             <stop offset="100%" stopColor={C.bull} stopOpacity="0.5" />
           </linearGradient>
-          <linearGradient id="durationLoss" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`durationLoss-${uid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={C.bear} stopOpacity="0.9" />
             <stop offset="100%" stopColor={C.bear} stopOpacity="0.5" />
           </linearGradient>
@@ -1136,12 +1138,12 @@ function TradeDurationHistogram({ trades }: { trades: TradeRecord[] }) {
               {/* Loss bar (bottom) */}
               {lossH > 0 && (
                 <rect x={x} y={pad.t + iH - lossH} width={barW} height={lossH}
-                  fill="url(#durationLoss)" rx={2} />
+                  fill={`url(#durationLoss-${uid})`} rx={2} />
               )}
               {/* Win bar (stacked on top) */}
               {winH > 0 && (
                 <rect x={x} y={pad.t + iH - lossH - winH} width={barW} height={winH}
-                  fill="url(#durationWin)" rx={2} />
+                  fill={`url(#durationWin-${uid})`} rx={2} />
               )}
               {/* Total count label */}
               {total > 0 && (
@@ -1698,6 +1700,7 @@ function SignalQualityFunnel({ trades }: { trades: TradeRecord[] }) {
 // ─── Rolling Sharpe Chart ─────────────────────────────────────────────────────
 
 function RollingSharpeChart({ trades }: { trades: TradeRecord[] }) {
+  const uid = useId().replace(/:/g, '');
   const validTrades = trades.filter((t) => t.pnl != null && !isNaN(t.pnl!));
   const WINDOW = 10;
 
@@ -1773,15 +1776,15 @@ function RollingSharpeChart({ trades }: { trades: TradeRecord[] }) {
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
       >
         <defs>
-          <clipPath id="sharpeClip">
+          <clipPath id={`sharpeClip-${uid}`}>
             <rect x={pad.left} y={pad.top} width={plotW} height={plotH} />
           </clipPath>
         </defs>
 
         {/* Fill above 0 */}
-        <path d={abovePath.join(' ')} fill={C.bull + '15'} clipPath="url(#sharpeClip)" />
+        <path d={abovePath.join(' ')} fill={C.bull + '15'} clipPath={`url(#sharpeClip-${uid})`} />
         {/* Fill below 0 */}
-        <path d={belowPath.join(' ')} fill={C.bear + '15'} clipPath="url(#sharpeClip)" />
+        <path d={belowPath.join(' ')} fill={C.bear + '15'} clipPath={`url(#sharpeClip-${uid})`} />
 
         {/* Reference line: 0 (bold gray) */}
         <line x1={pad.left} y1={py(0)} x2={pad.left + plotW} y2={py(0)}
@@ -1790,20 +1793,20 @@ function RollingSharpeChart({ trades }: { trades: TradeRecord[] }) {
 
         {/* Reference line: 1.0 (dashed green "Good") */}
         <line x1={pad.left} y1={py(1.0)} x2={pad.left + plotW} y2={py(1.0)}
-          stroke={C.bull} strokeWidth={1} strokeDasharray="5 4" clipPath="url(#sharpeClip)" />
+          stroke={C.bull} strokeWidth={1} strokeDasharray="5 4" clipPath={`url(#sharpeClip-${uid})`} />
         <text x={pad.left + plotW + 3} y={py(1.0) + 3} fontSize={8} fill={C.bull} fontFamily="Inter, system-ui">Good</text>
         <text x={pad.left - 4} y={py(1.0) + 4} textAnchor="end" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">1.0</text>
 
         {/* Reference line: 2.0 (dashed C.bull "Excellent") */}
         <line x1={pad.left} y1={py(2.0)} x2={pad.left + plotW} y2={py(2.0)}
-          stroke={C.bull} strokeWidth={1} strokeDasharray="5 4" clipPath="url(#sharpeClip)" />
+          stroke={C.bull} strokeWidth={1} strokeDasharray="5 4" clipPath={`url(#sharpeClip-${uid})`} />
         <text x={pad.left + plotW + 3} y={py(2.0) + 3} fontSize={8} fill={C.bull} fontFamily="Inter, system-ui">Excellent</text>
         <text x={pad.left - 4} y={py(2.0) + 4} textAnchor="end" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">2.0</text>
 
         {/* Y tick: -1 */}
         <text x={pad.left - 4} y={py(-1) + 4} textAnchor="end" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">-1</text>
         <line x1={pad.left} y1={py(-1)} x2={pad.left + plotW} y2={py(-1)}
-          stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" clipPath="url(#sharpeClip)" />
+          stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" clipPath={`url(#sharpeClip-${uid})`} />
 
         {/* Sharpe line */}
         {sharpePoints.length > 1 && (
@@ -1813,7 +1816,7 @@ function RollingSharpeChart({ trades }: { trades: TradeRecord[] }) {
             stroke={lineColor}
             strokeWidth={2}
             strokeLinejoin="round"
-            clipPath="url(#sharpeClip)"
+            clipPath={`url(#sharpeClip-${uid})`}
           />
         )}
 
@@ -1842,6 +1845,7 @@ function RollingSharpeChart({ trades }: { trades: TradeRecord[] }) {
 // ─── Trade Clusters Chart ──────────────────────────────────────────────────────
 
 function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
+  const uid = useId().replace(/:/g, '');
   type AnyRecord = TradeRecord & { open_time?: string | number | null; entry_timestamp_ms?: number | null };
 
   const W = 520, H = 180;
@@ -1948,7 +1952,7 @@ function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
       >
         <defs>
-          <clipPath id="clusterClip">
+          <clipPath id={`clusterClip-${uid}`}>
             <rect x={pad.left} y={pad.top} width={plotW} height={plotH} />
           </clipPath>
         </defs>
@@ -1979,7 +1983,7 @@ function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
           return (
             <ellipse cx={ecx} cy={ecy} rx={erx} ry={ery}
               fill={C.bull + '15'} stroke={C.bull} strokeWidth={1} strokeDasharray="4 3"
-              clipPath="url(#clusterClip)"
+              clipPath={`url(#clusterClip-${uid})`}
             />
           );
         })()}
@@ -1993,7 +1997,7 @@ function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
           return (
             <ellipse cx={ecx} cy={ecy} rx={erx} ry={ery}
               fill={C.bear + '15'} stroke={C.bear} strokeWidth={1} strokeDasharray="4 3"
-              clipPath="url(#clusterClip)"
+              clipPath={`url(#clusterClip-${uid})`}
             />
           );
         })()}
@@ -2011,7 +2015,7 @@ function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
               fillOpacity={0.65}
               stroke={d.win ? C.bullMid : C.bearMid}
               strokeWidth={0.6}
-              clipPath="url(#clusterClip)"
+              clipPath={`url(#clusterClip-${uid})`}
             >
               <title>{`${DAYS[d.day]} ${d.hour}:00 UTC — ${d.win ? 'WIN' : 'LOSS'} $${d.pnl.toFixed(2)}`}</title>
             </circle>
@@ -2101,6 +2105,7 @@ function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
 // ─── Trade Replay Timeline ────────────────────────────────────────────────────
 
 function TradeReplayTimeline({ trades }: { trades: TradeRecord[] }) {
+  const uid = useId().replace(/:/g, '');
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   const validTrades = trades.filter((t) => t.pnl != null && !isNaN(t.pnl!));
@@ -2175,7 +2180,7 @@ function TradeReplayTimeline({ trades }: { trades: TradeRecord[] }) {
         onMouseLeave={() => setHoveredIdx(null)}
       >
         <defs>
-          <clipPath id="tlClip">
+          <clipPath id={`tlClip-${uid}`}>
             <rect x={PAD_L} y={0} width={timelineW} height={H} />
           </clipPath>
         </defs>
@@ -2188,7 +2193,7 @@ function TradeReplayTimeline({ trades }: { trades: TradeRecord[] }) {
             stroke={C.brand}
             strokeWidth={1.2}
             strokeLinejoin="round"
-            clipPath="url(#tlClip)"
+            clipPath={`url(#tlClip-${uid})`}
           />
         )}
 
@@ -2197,7 +2202,7 @@ function TradeReplayTimeline({ trades }: { trades: TradeRecord[] }) {
           x1={PAD_L} y1={toEqY(0)}
           x2={PAD_L + timelineW} y2={toEqY(0)}
           stroke={C.borderBright} strokeWidth={0.7} strokeDasharray="3 3"
-          clipPath="url(#tlClip)"
+          clipPath={`url(#tlClip-${uid})`}
         />
 
         {/* Baseline */}
@@ -2795,6 +2800,7 @@ function ExitTimingHeatmap({ trades }: { trades: TradeRecord[] }) {
 // ─── Leverage PnL Chart ────────────────────────────────────────────────────────
 
 function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
+  const uid = useId().replace(/:/g, '');
   const TIERS = [
     { label: '1-2×', min: 1, max: 2 },
     { label: '2-3×', min: 2, max: 3 },
@@ -2872,7 +2878,7 @@ function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
       >
         <defs>
-          <clipPath id="levClip">
+          <clipPath id={`levClip-${uid}`}>
             <rect x={PAD.left} y={PAD.top} width={plotW} height={plotH} />
           </clipPath>
         </defs>
@@ -2915,7 +2921,7 @@ function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
                 fill={C.bull}
                 fillOpacity={0.8}
                 rx={2}
-                clipPath="url(#levClip)"
+                clipPath={`url(#levClip-${uid})`}
               >
                 <title>{`${d.label} — Avg Win: $${d.avgWin.toFixed(0)}`}</title>
               </rect>
@@ -2928,7 +2934,7 @@ function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
                 fill={C.bear}
                 fillOpacity={0.8}
                 rx={2}
-                clipPath="url(#levClip)"
+                clipPath={`url(#levClip-${uid})`}
               >
                 <title>{`${d.label} — Avg Loss: $${d.avgLoss.toFixed(0)}`}</title>
               </rect>
@@ -2968,7 +2974,7 @@ function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
             strokeWidth={1.5}
             strokeLinejoin="round"
             strokeDasharray="4 3"
-            clipPath="url(#levClip)"
+            clipPath={`url(#levClip-${uid})`}
           />
         )}
 

@@ -1135,7 +1135,10 @@ function AgentAccuracyMatrix({ decisions }: { decisions: LlmDecision[] }) {
 
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '16px 18px', marginBottom: 20 }}>
-      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 12 }}>Agent Accuracy Overview</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 6 }}>
+        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Agent Accuracy Overview</div>
+        <span style={{ fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>Demo estimates — live calibration tracked in decisions</span>
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {agents.map((agent) => {
           const count = agentCounts[agent.name] || 0;
