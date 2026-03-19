@@ -4,18 +4,7 @@ import React, { useEffect, useState, useRef, useId } from 'react';
 import { C, R, S, F, fmtUsd, fmtPct } from '../src/theme';
 import { seededRand as mkSeededRand } from '../lib/fmt';
 import type { BacktestResult, BacktestRunMeta, BacktestJob } from '../src/types';
-
-function resolveApiBase(): string {
-  const envVal =
-    (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
-    (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined);
-  if (envVal && envVal.trim().length > 0) return envVal;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') return 'https://nunuirl-platform.onrender.com';
-  }
-  return 'http://localhost:8000';
-}
+import { resolveApiBase } from '../src/api';
 
 function Skeleton({ h = 16, w = '100%', style }: { h?: number; w?: string | number; style?: React.CSSProperties }) {
   return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm, ...style }} />;
@@ -2341,10 +2330,8 @@ function BacktestSummaryScorecard({ result }: { result: BacktestResult }) {
 
 function BacktestCalendarView({ result }: { result?: BacktestResult | null }) {
   // Seeded pseudo-random: deterministic daily PnL fallback
-  function seededRand(seed: number): number {
-    const x = Math.sin(seed * 7919 + 12345) * 43758.5453;
-    return x - Math.floor(x);
-  }
+  // Use shared lib/fmt seededRand (stateless single-shot wrapper)
+  function seededRand(seed: number): number { return mkSeededRand(seed)(); }
 
   // Build 12 months × up to 31 days of daily PnL
   // If real trades exist, bucket them by day-of-year; else use seeded fallback
@@ -2495,11 +2482,8 @@ function StrategyAlphaChart({ result }: { result?: BacktestResult | null }) {
 
   const NUM_POINTS = 30;
 
-  // Seeded random for deterministic fallback curves
-  function seedRand(s: number): number {
-    const x = Math.sin(s * 9301 + 49297) * 233280;
-    return x - Math.floor(x);
-  }
+  // Seeded random for deterministic fallback curves (delegates to lib/fmt)
+  function seedRand(s: number): number { return mkSeededRand(s)(); }
 
   // Build cumulative alpha lines per strategy
   // If real trades exist, bucket pnl by strategy name; else use seeded patterns
@@ -2692,11 +2676,8 @@ function BacktestConfidenceIntervals({ result }: { result?: BacktestResult | nul
   const iH = H - pad.t - pad.b;
   const NUM_POINTS = 40;
 
-  // Seeded deterministic generator
-  function seedRand(s: number): number {
-    const x = Math.sin(s * 6271 + 99991) * 83721.0;
-    return x - Math.floor(x);
-  }
+  // Seeded deterministic generator (delegates to lib/fmt)
+  function seedRand(s: number): number { return mkSeededRand(s)(); }
 
   // Build percentile paths from real trades or seeded fallback
   const startEquity = result?.config?.starting_equity ?? 50000;

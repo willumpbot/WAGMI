@@ -251,7 +251,7 @@ function RegimeDial({ regime }: { regime: string }) {
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px' }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Market Regime Dial</div>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
-        <svg width={W} height={H} style={{ overflow: 'visible', maxWidth: '100%' }}>
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible', maxWidth: W }}>
           {/* Background track */}
           <path d={`M ${polarToXY(180, R_outer).x} ${polarToXY(180, R_outer).y} A ${R_outer} ${R_outer} 0 0 1 ${polarToXY(0, R_outer).x} ${polarToXY(0, R_outer).y} L ${polarToXY(0, R_inner).x} ${polarToXY(0, R_inner).y} A ${R_inner} ${R_inner} 0 0 0 ${polarToXY(180, R_inner).x} ${polarToXY(180, R_inner).y} Z`} fill={C.surface} />
           {/* Segments */}
@@ -642,7 +642,8 @@ function HourlyTradeTimeline() {
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>24h Activity Grid</div>
 
       {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 36px)`, gap: 6, justifyContent: 'start' }}>
+      <div style={{ overflowX: 'auto' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, 36px)`, gap: 6, justifyContent: 'start', minWidth: `${COLS * 42}px` }}>
         {hourData.map((d, h) => {
           const isCurrent = h === currentHour;
           const bg = cellColor(d);
@@ -674,6 +675,7 @@ function HourlyTradeTimeline() {
             </div>
           );
         })}
+      </div>
       </div>
 
       {/* Legend */}
@@ -796,7 +798,7 @@ function MarketSessionClock() {
 
       {/* SVG Clock */}
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ overflow: 'visible' }}>
+        <svg width="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ overflow: 'visible', maxWidth: SIZE }}>
           {/* Clock face background */}
           <circle cx={CX} cy={CY} r={RADIUS_OUTER + 4} fill={C.surface} stroke={C.border} strokeWidth={1.5} />
 
@@ -2151,7 +2153,7 @@ export default function TodayPage() {
         <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
           Regime Analysis
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20, marginBottom: 28 }}>
           <RegimeDial regime={regime} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <MarketSessionClock />
@@ -2300,7 +2302,7 @@ export default function TodayPage() {
           )}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24, marginBottom: 28 }}>
           {/* ── Key Levels ── */}
           <div>
             <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Key Levels — BTC</h2>

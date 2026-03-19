@@ -40,21 +40,7 @@ type StrategyCard = {
 
 type Tab = 'signals' | 'trades' | 'performance' | 'logs';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function resolveApiBase(): string {
-  const envVal =
-    (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
-    (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined);
-  if (envVal && envVal.trim().length > 0) return envVal;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://nunuirl-platform.onrender.com';
-    }
-  }
-  return 'http://localhost:8000';
-}
+import { resolveApiBase } from '../../src/api';
 
 const fmt = (v: any, digits = 2) => {
   const n = typeof v === 'number' ? v : Number(v);

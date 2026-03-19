@@ -4,18 +4,7 @@ import React, { useEffect, useState, useMemo, useId } from 'react';
 import Link from 'next/link';
 import { C, R, F, S, fmtUsd, fmtPct } from '../src/theme';
 import type { TradeRecord, TradeHistoryResponse } from '../src/types';
-
-function resolveApiBase(): string {
-  const envVal =
-    (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
-    (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined);
-  if (envVal && envVal.trim().length > 0) return envVal;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') return 'https://nunuirl-platform.onrender.com';
-  }
-  return 'http://localhost:8000';
-}
+import { resolveApiBase } from '../src/api';
 
 function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
   return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
@@ -69,8 +58,10 @@ function ConfScatterPlot({ trades }: { trades: TradeRecord[] }) {
 
   if (plotTrades.length < 3) {
     return (
-      <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm, background: C.surfaceHover, borderRadius: R.md }}>
-        Need at least 3 trades with LLM confidence data to show scatter plot.
+      <div style={{ height: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: C.surfaceHover, borderRadius: R.md, textAlign: 'center', padding: '20px' }}>
+        <div style={{ fontSize: 36, marginBottom: 10 }}>🎯</div>
+        <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 6 }}>Not enough data yet</div>
+        <div style={{ fontSize: F.sm, color: C.muted }}>Need at least 3 trades with LLM confidence scores to plot. Trade more to unlock this chart.</div>
       </div>
     );
   }
@@ -608,8 +599,9 @@ function HourOfDayWinRate({ trades }: { trades: TradeRecord[] }) {
         Win Rate by Hour of Day (UTC)
       </div>
       {!hasRealData && (
-        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 8 }}>
-          No timestamp data — showing illustrative seeded pattern.
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 8 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
       <svg
@@ -741,8 +733,9 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
   return (
     <div style={{ position: 'relative' }}>
       {!hasRealData && (
-        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 6 }}>
-          No signal confidence data — showing illustrative seeded data.
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 6 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
       <svg
@@ -1945,8 +1938,9 @@ function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
         Trade Cluster Map — When Does Bot Win?
       </div>
       {!hasTimestamps && (
-        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 8 }}>
-          No timestamp data — showing illustrative seeded pattern.
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 8 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
       <svg
@@ -2426,8 +2420,9 @@ function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
   return (
     <div>
       {!hasData && (
-        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 8 }}>
-          Insufficient trade data — showing illustrative seeded values.
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 8 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
       <svg
@@ -2675,8 +2670,9 @@ function ExitTimingHeatmap({ trades }: { trades: TradeRecord[] }) {
         Exit Timing — Average P&amp;L by Hour &amp; Day
       </div>
       {!hasReal && (
-        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 6 }}>
-          No exit timestamp data — showing illustrative seeded pattern.
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 6 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
       <svg
@@ -2871,8 +2867,9 @@ function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
         Performance by Leverage Tier
       </div>
       {!hasReal && (
-        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>
-          No leverage data — showing illustrative seeded values.
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 4 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
       <svg
@@ -3216,6 +3213,15 @@ export default function Forensics() {
             </div>
           ))}
         </div>
+      ) : !loading ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: C.textSub, marginBottom: 28 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🔬</div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: C.text, marginBottom: 8 }}>No trade data to analyze</div>
+          <div style={{ fontSize: F.sm, color: C.muted, marginBottom: 16 }}>Start paper trading to see forensic stats here.</div>
+          <a href="/results" style={{ fontSize: F.sm, padding: '8px 16px', borderRadius: R.md, background: C.brand, color: '#fff', fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
+            View Results →
+          </a>
+        </div>
       ) : null}
 
       {/* Signal Quality Funnel */}
@@ -3466,8 +3472,21 @@ export default function Forensics() {
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => <div key={i} style={{ marginBottom: 8 }}><Skeleton h={44} /></div>)
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '32px 24px', background: C.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted, fontSize: F.sm }}>
-            No trades match the current filters.
+          <div style={{ padding: '48px 24px', background: C.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
+            <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 6 }}>
+              {trades.length === 0 ? 'No trade history yet' : 'No trades match the current filters'}
+            </div>
+            <div style={{ fontSize: F.sm, color: C.muted, marginBottom: trades.length === 0 ? 16 : 0 }}>
+              {trades.length === 0
+                ? 'Start paper trading to see forensic analysis here.'
+                : 'Try adjusting the filters above to broaden your search.'}
+            </div>
+            {trades.length === 0 && (
+              <a href="/results" style={{ fontSize: F.sm, padding: '8px 16px', borderRadius: R.md, background: C.brand, color: '#fff', fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
+                View Results →
+              </a>
+            )}
           </div>
         ) : (
           filtered.map((t, i) => <TradeCard key={i} trade={t} />)

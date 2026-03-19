@@ -4,18 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
 import type { BacktestResult, TradeRecord, TradeHistoryResponse, EquityCurvePoint } from '../src/types';
-
-function resolveApiBase(): string {
-  const envVal =
-    (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
-    (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined);
-  if (envVal && envVal.trim().length > 0) return envVal;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') return 'https://nunuirl-platform.onrender.com';
-  }
-  return 'http://localhost:8000';
-}
+import { resolveApiBase } from '../src/api';
 
 function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
   return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
@@ -1038,8 +1027,13 @@ function TradeTable({ trades, loading }: { trades: TradeRecord[]; loading: boole
             ))
           ) : sorted.length === 0 ? (
             <tr>
-              <td colSpan={cols.length} style={{ padding: '32px', textAlign: 'center', color: C.muted, fontSize: F.sm }}>
-                No trade history yet. Start the bot to see results here.
+              <td colSpan={cols.length} style={{ padding: '48px 24px', textAlign: 'center' }}>
+                <div style={{ fontSize: 40, marginBottom: 10 }}>📋</div>
+                <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 6 }}>No trade history yet</div>
+                <div style={{ fontSize: F.sm, color: C.muted, marginBottom: 14 }}>Start paper trading to see your closed trades here.</div>
+                <a href="/backtest" style={{ fontSize: F.sm, padding: '8px 16px', borderRadius: R.md, background: C.brand, color: '#fff', fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
+                  Run a Backtest →
+                </a>
               </td>
             </tr>
           ) : (
@@ -3264,7 +3258,7 @@ export default function Results() {
 
       {/* ── Hero banner ──────────────────────────────── */}
       {loadingBt ? (
-        <div style={{ marginBottom: 24 }}><Skeleton h={100} /></div>
+        <div style={{ marginBottom: 24 }}><Skeleton h={148} /></div>
       ) : r ? (
         <div
           style={{
@@ -3368,7 +3362,11 @@ export default function Results() {
           {backtest?.by_strategy && Object.keys(backtest.by_strategy).length > 0 ? (
             <ByStrategyBars byStrategy={backtest.by_strategy} />
           ) : (
-            <div style={{ color: C.muted, fontSize: F.sm }}>No per-strategy breakdown in this backtest.</div>
+            <div style={{ textAlign: 'center', padding: '32px 16px', color: C.textSub }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>📊</div>
+              <div style={{ fontSize: F.sm, fontWeight: 600, color: C.text, marginBottom: 4 }}>No per-strategy data</div>
+              <div style={{ fontSize: F.xs, color: C.muted }}>Run a full backtest to see strategy-level breakdown.</div>
+            </div>
           )}
         </div>
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px' }}>
@@ -3388,7 +3386,11 @@ export default function Results() {
           {backtest?.by_symbol ? (
             <BySymbolBars bySymbol={backtest.by_symbol} />
           ) : (
-            <div style={{ color: C.muted, fontSize: F.sm }}>No per-symbol data.</div>
+            <div style={{ textAlign: 'center', padding: '32px 16px', color: C.textSub }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🪙</div>
+              <div style={{ fontSize: F.sm, fontWeight: 600, color: C.text, marginBottom: 4 }}>No symbol data yet</div>
+              <div style={{ fontSize: F.xs, color: C.muted }}>Per-symbol P&amp;L appears after trades close.</div>
+            </div>
           )}
         </div>
 
@@ -3397,7 +3399,11 @@ export default function Results() {
           {r?.by_action ? (
             <ExitDonut byAction={r.by_action} />
           ) : (
-            <div style={{ color: C.muted, fontSize: F.sm }}>No exit breakdown data.</div>
+            <div style={{ textAlign: 'center', padding: '32px 16px', color: C.textSub }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🚪</div>
+              <div style={{ fontSize: F.sm, fontWeight: 600, color: C.text, marginBottom: 4 }}>No exit data yet</div>
+              <div style={{ fontSize: F.xs, color: C.muted }}>Exit breakdown (SL / TP1 / Trail) appears after trades close.</div>
+            </div>
           )}
           {r && (
             <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.border}`, fontSize: F.xs, color: C.muted, lineHeight: 1.7 }}>

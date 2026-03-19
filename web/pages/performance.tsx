@@ -143,7 +143,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ─── Rolling Win Rate Chart ───────────────────────────────────────────────────
 
 function RollingWinRateChart({ data, width = 700, height = 120 }: { data: { idx: number; wr: number }[]; width?: number; height?: number }) {
-  if (!data.length) return <div style={{ color: C.muted, fontSize: F.sm, padding: 20 }}>Not enough trades for rolling win rate.</div>;
+  if (!data.length) return (
+    <div style={{ textAlign: 'center', padding: '40px 20px', color: C.textSub }}>
+      <div style={{ fontSize: 36, marginBottom: 10 }}>📈</div>
+      <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 6 }}>Not enough trades yet</div>
+      <div style={{ fontSize: F.sm, color: C.muted }}>Need at least 10 closed trades to compute a rolling win rate.</div>
+    </div>
+  );
   const pad = { t: 10, r: 20, b: 30, l: 44 };
   const W = width - pad.l - pad.r;
   const H = height - pad.t - pad.b;
@@ -480,7 +486,13 @@ function MonthlyPnlChart({ trades }: { trades: TradeRecord[] }) {
 
 function DrawdownTimeline({ points }: { points: EquityCurvePoint[] }) {
   if (points.length < 2) {
-    return <div style={{ color: C.muted, fontSize: F.sm, padding: 20 }}>No equity curve data for drawdown timeline.</div>;
+    return (
+      <div style={{ textAlign: 'center', padding: '32px 20px', color: C.textSub }}>
+        <div style={{ fontSize: 32, marginBottom: 8 }}>📉</div>
+        <div style={{ fontSize: F.sm, fontWeight: 600, color: C.text, marginBottom: 4 }}>No equity curve data yet</div>
+        <div style={{ fontSize: F.xs, color: C.muted }}>Drawdown timeline will appear once the bot has run long enough to generate equity curve points.</div>
+      </div>
+    );
   }
 
   const vbW = 700;
@@ -2542,7 +2554,25 @@ export default function PerformancePage() {
         </div>
 
         {loading ? (
-          <div style={{ color: C.muted, padding: 40, textAlign: 'center', fontSize: F.base }}>Loading performance data…</div>
+          <div>
+            {/* KPI skeleton row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 36 }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
+                  <Skeleton h={11} w="55%" />
+                  <div style={{ marginTop: 10 }}><Skeleton h={32} w="75%" /></div>
+                  <div style={{ marginTop: 8 }}><Skeleton h={10} w="60%" /></div>
+                </div>
+              ))}
+            </div>
+            {/* Section heading + chart skeletons */}
+            <Skeleton h={22} w="35%" />
+            <div style={{ marginTop: 14, marginBottom: 32 }}><Skeleton h={200} /></div>
+            <Skeleton h={22} w="30%" />
+            <div style={{ marginTop: 14, marginBottom: 32 }}><Skeleton h={140} /></div>
+            <Skeleton h={22} w="40%" />
+            <div style={{ marginTop: 14, marginBottom: 32 }}><Skeleton h={130} /></div>
+          </div>
         ) : (
           <>
             {/* ── Ratio Gauge Panel ── */}

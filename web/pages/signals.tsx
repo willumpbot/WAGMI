@@ -25,21 +25,7 @@ type SignalsPayload = {
   last_updated?: string | null;
 };
 
-// ─── API helper ───────────────────────────────────────────────────────────────
-
-function resolveApiBase(): string {
-  const envVal =
-    (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
-    (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined);
-  if (envVal && envVal.trim().length > 0) return envVal;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://nunuirl-platform.onrender.com';
-    }
-  }
-  return 'http://localhost:8000';
-}
+import { resolveApiBase } from '../src/api';
 
 // ─── Event type config ────────────────────────────────────────────────────────
 
@@ -237,9 +223,9 @@ function SignalCard({ event, index }: { event: ActivityEvent; index: number }) {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '44px 64px 1fr auto auto',
-          gap: 12,
-          padding: '12px 16px',
+          gridTemplateColumns: '44px minmax(56px, 72px) 1fr auto auto',
+          gap: 8,
+          padding: '12px 14px',
           alignItems: 'center',
           cursor: 'pointer',
         }}
@@ -1856,7 +1842,7 @@ function SignalQualityTrendChart({ signals }: { signals: Record<string, Signal> 
       {/* SVG chart */}
       <div style={{ overflowX: 'auto' }}>
         <svg
-          width={W}
+          width="100%"
           height={H}
           viewBox={`0 0 ${W} ${H}`}
           style={{ display: 'block', minWidth: 280 }}

@@ -84,6 +84,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ── Top nav ─────────────────────────────────── */}
       <nav
+        aria-label="Main navigation"
         style={{
           position: 'sticky',
           top: 0,
@@ -156,6 +157,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={isActive ? 'page' : undefined}
                   style={{
                     fontSize: 13,
                     fontWeight: isActive ? 600 : 400,
@@ -164,8 +166,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     padding: '6px 12px',
                     borderRadius: R.sm,
                     background: isActive ? C.surfaceHover : 'transparent',
-                    transition: 'all 0.15s ease',
+                    transition: 'background 0.15s ease, color 0.15s ease',
                     whiteSpace: 'nowrap',
+                    borderBottom: isActive ? `2px solid ${C.brand}` : '2px solid transparent',
                   }}
                 >
                   {item.label}
@@ -253,6 +256,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMenuOpen(false)}
+                  aria-current={isActive ? 'page' : undefined}
                   style={{
                     display: 'block',
                     fontSize: 15,
@@ -272,7 +276,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* ── Page content ────────────────────────────── */}
-      <main id="main-content" style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 20px 60px' }}>
+      <main id="main-content" role="main" style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 20px 60px' }}>
         {children}
       </main>
 
@@ -294,12 +298,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         &nbsp; © 2026 WAGMI
       </footer>
 
-      {/* Responsive styles via style tag */}
+      {/* Responsive + interactive styles */}
       <style>{`
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
           .hamburger { display: block !important; }
         }
+        /* Hover state for desktop nav links (cannot be expressed via inline styles) */
+        .desktop-nav a:hover {
+          background: ${C.surfaceHover} !important;
+          color: ${C.textSub} !important;
+        }
+        /* Hover state for hamburger button */
+        .hamburger:hover { background: ${C.surfaceHover} !important; border-radius: 6px; }
       `}</style>
     </div>
   );

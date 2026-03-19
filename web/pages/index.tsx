@@ -5,22 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
 import type { BacktestResult, ActivityEvent, LlmMarketView } from '../src/types';
-
-// ─── API helper ───────────────────────────────────────────────────────────────
-
-function resolveApiBase(): string {
-  const envVal =
-    (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
-    (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined);
-  if (envVal && envVal.trim().length > 0) return envVal;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://nunuirl-platform.onrender.com';
-    }
-  }
-  return 'http://localhost:8000';
-}
+import { resolveApiBase } from '../src/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -165,7 +150,7 @@ function SparklineChart({ data, width = 220, height = 50 }: { data: number[]; wi
   const lastPt = pts[pts.length - 1];
 
   return (
-    <svg width={width} height={height} style={{ display: 'block' }}>
+    <svg width="100%" viewBox={`0 0 ${width} ${height}`} height={height} style={{ display: 'block', maxWidth: width }}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={fillTopColor} />
@@ -563,7 +548,7 @@ function MarketSnapshot({ signals, loading, onSelect }: {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
       gap: 16,
     }}>
       {SYMBOLS.map((sym) => (
@@ -932,7 +917,7 @@ function SignalHealthGauge({
       flexDirection: 'column',
       alignItems: 'center',
     }}>
-      <svg viewBox="0 0 280 150" width={280} height={150} style={{ display: 'block', overflow: 'visible' }}>
+      <svg viewBox="0 0 280 150" width="100%" height={150} style={{ display: 'block', overflow: 'visible', maxWidth: 280 }}>
         {/* Dark background arc */}
         <path
           d={arcPath(0, 100, r)}
@@ -1521,8 +1506,8 @@ function BotHealthIndicator() {
           border: `1px solid ${C.border}`,
           borderRadius: R.lg,
           padding: '14px 18px',
-          minWidth: 200,
-          flexShrink: 0,
+          minWidth: 0,
+          flexShrink: 1,
         }}
       >
         <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>
@@ -2885,7 +2870,7 @@ export default function Home() {
       {/* ── Signal Health Gauge + Market Sentiment + Key Stats ──────── */}
       <div style={{ marginBottom: 28, marginTop: 24 }}>
         <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Signal Health</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr', gap: 20, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20, alignItems: 'start' }}>
           {/* Left: bot health gauge */}
           <SignalHealthGauge
             signals={signals}

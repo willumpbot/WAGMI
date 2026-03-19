@@ -2,8 +2,15 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Head from 'next/head';
 import Layout from '../components/Layout';
 import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
+import { seededRand as mkSeededRand } from '../lib/fmt';
 import { apiFetch } from '../src/api';
 import type { Strategy, TradeHistoryResponse, TradeRecord } from '../src/types';
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
+  return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,7 +94,13 @@ function DailyWaterfall({ trades }: { trades: TradeRecord[] }) {
   }).slice(0, 20); // last 20 trades as "recent"
 
   if (!todayTrades.length) {
-    return <div style={{ color: C.muted, fontSize: F.sm, padding: 20 }}>No recent trade data.</div>;
+    return (
+      <div style={{ textAlign: 'center', padding: '40px 20px', color: C.textSub }}>
+        <div style={{ fontSize: 40, marginBottom: 10 }}>📉</div>
+        <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 6 }}>No recent trade data</div>
+        <div style={{ fontSize: F.sm, color: C.muted }}>Closed trades will appear here once the bot starts trading.</div>
+      </div>
+    );
   }
 
   const width = 700;
@@ -1224,11 +1237,8 @@ function DrawdownRecoveryChart() {
   const H = SVG_H - PAD.t - PAD.b;
   const DAYS = 30;
 
-  // Seeded deterministic equity curve
-  function seededRand(seed: number): number {
-    const x = Math.sin(seed + 1) * 43758.5453123;
-    return x - Math.floor(x);
-  }
+  // Seeded deterministic equity curve (delegates to lib/fmt)
+  function seededRand(seed: number): number { return mkSeededRand(seed)(); }
 
   const equity: number[] = [10000];
   for (let i = 1; i < DAYS; i++) {
@@ -1837,7 +1847,23 @@ export default function PortfolioPage() {
         </div>
 
         {loading ? (
-          <div style={{ color: C.muted, padding: 40, textAlign: 'center', fontSize: F.base }}>Loading portfolio data…</div>
+          <div>
+            {/* KPI skeleton row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px' }}>
+                  <Skeleton h={12} w="60%" />
+                  <div style={{ marginTop: 10 }}><Skeleton h={28} w="80%" /></div>
+                  <div style={{ marginTop: 8 }}><Skeleton h={10} w="50%" /></div>
+                </div>
+              ))}
+            </div>
+            {/* Section skeletons */}
+            <Skeleton h={20} w="30%" />
+            <div style={{ marginTop: 12, marginBottom: 24 }}><Skeleton h={180} /></div>
+            <Skeleton h={20} w="30%" />
+            <div style={{ marginTop: 12, marginBottom: 24 }}><Skeleton h={260} /></div>
+          </div>
         ) : (
           <>
             {/* ── Summary KPIs ── */}
@@ -1988,6 +2014,15 @@ export default function PortfolioPage() {
                     </tr>
                   </thead>
                   <tbody>
+                    {strategies.length === 0 && (
+                      <tr>
+                        <td colSpan={5} style={{ padding: '48px 24px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 36, marginBottom: 8 }}>🤖</div>
+                          <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 6 }}>No strategies connected</div>
+                          <div style={{ fontSize: F.sm, color: C.muted }}>Start the bot to see live strategy status here.</div>
+                        </td>
+                      </tr>
+                    )}
                     {strategies.map((s, i) => {
                       const isLive = s.lastHeartbeat && (Date.now() - new Date(s.lastHeartbeat).getTime()) < 300_000;
                       return (
