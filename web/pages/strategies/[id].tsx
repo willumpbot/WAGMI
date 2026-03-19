@@ -1605,10 +1605,12 @@ export default function StrategyDetail() {
     if (!id) return;
     if (activeTab !== 'trades' && activeTab !== 'performance') return;
     if (trades.length > 0) return;
+    const ctrl = new AbortController();
     setTradesLoading(true);
-    fetch(`${apiBase}/v1/trades/history?limit=200`, { cache: 'no-store' })
+    fetch(`${apiBase}/v1/trades/history?limit=200`, { cache: 'no-store', signal: ctrl.signal })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
+        if (ctrl.signal.aborted) return;
         if (data?.trades) {
           // filter to this strategy's symbol if possible
           const sym = card?.latestSignal?.market;
@@ -1619,7 +1621,8 @@ export default function StrategyDetail() {
         }
       })
       .catch(() => {})
-      .finally(() => setTradesLoading(false));
+      .finally(() => { if (!ctrl.signal.aborted) setTradesLoading(false); });
+    return () => ctrl.abort();
   }, [activeTab, apiBase, card, id, trades.length]);
 
   const tabs: { key: Tab; label: string; count?: number }[] = [

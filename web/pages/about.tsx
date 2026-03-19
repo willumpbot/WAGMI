@@ -712,6 +712,20 @@ export default function AboutPage() {
           ))}
         </div>
 
+        {/* ── In-page nav ── */}
+        <nav style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
+          {[
+            { href: '#strategies', label: 'Strategies' },
+            { href: '#agents',     label: 'AI Agents' },
+            { href: '#risk',       label: 'Risk Management' },
+            { href: '#contact',    label: 'Get Started' },
+          ].map(({ href, label }) => (
+            <a key={href} href={href} style={{ padding: '6px 16px', borderRadius: R.pill, border: `1px solid ${C.border}`, fontSize: F.xs, fontWeight: 600, color: C.textSub, textDecoration: 'none', background: C.card }}>
+              {label}
+            </a>
+          ))}
+        </nav>
+
         {/* ── Tech Stack Grid ── */}
         <TechStackGrid />
 
@@ -994,6 +1008,23 @@ export default function AboutPage() {
             </Link>
             <Link href="/llm-audit" style={{ padding: '10px 22px', border: `1px solid ${C.border}`, color: C.textSub, borderRadius: R.md, fontSize: F.sm, fontWeight: 600, textDecoration: 'none' }}>
               Audit the AI →
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Contact / Get Started ── */}
+        <div id="contact" style={{ marginTop: 60, padding: '32px 28px', background: `linear-gradient(135deg, ${C.brand}12, ${C.surface})`, border: `1px solid ${C.brand}30`, borderRadius: R.xl, textAlign: 'center', scrollMarginTop: 80 }}>
+          <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Get Started</div>
+          <h2 style={{ margin: '0 0 12px', fontSize: F['2xl'], fontWeight: 800, color: C.text }}>Start free. No credit card required.</h2>
+          <p style={{ margin: '0 0 24px', fontSize: F.sm, color: C.muted, maxWidth: 440, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+            Observer tier is free forever. Copy-trade access is open to all. Questions? Reach us in the Discord community.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/copy-trade" style={{ padding: '11px 26px', background: C.brand, color: '#fff', borderRadius: R.md, fontSize: F.sm, fontWeight: 700, textDecoration: 'none', boxShadow: S.glow }}>
+              Start Copy Trading →
+            </Link>
+            <Link href="/pricing" style={{ padding: '11px 26px', border: `1px solid ${C.border}`, color: C.textSub, borderRadius: R.md, fontSize: F.sm, fontWeight: 600, textDecoration: 'none' }}>
+              View Pricing →
             </Link>
           </div>
         </div>

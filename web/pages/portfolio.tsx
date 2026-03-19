@@ -1759,17 +1759,26 @@ export default function PortfolioPage() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [recentTrades, setRecentTrades] = useState<TradeRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   const fetchData = async () => {
-    const [stratRes, tradeRes] = await Promise.all([
-      apiFetch<StrategiesResponse>('/v1/strategies'),
-      apiFetch<TradeHistoryResponse>('/v1/trades/history?limit=30'),
-    ]);
-    setStrategies(Array.isArray(stratRes) ? stratRes : []);
-    setRecentTrades(tradeRes?.trades ?? []);
-    setLastUpdate(new Date());
-    setLoading(false);
+    try {
+      const [stratRes, tradeRes] = await Promise.allSettled([
+        apiFetch<StrategiesResponse>('/v1/strategies'),
+        apiFetch<TradeHistoryResponse>('/v1/trades/history?limit=30'),
+      ]);
+      const stratData = stratRes.status === 'fulfilled' ? stratRes.value : null;
+      setStrategies(Array.isArray(stratData) ? stratData : []);
+      const tradeData = tradeRes.status === 'fulfilled' ? tradeRes.value : null;
+      setRecentTrades(tradeData?.trades ?? []);
+      setLastUpdate(new Date());
+      setFetchError(false);
+    } catch {
+      setFetchError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -1845,6 +1854,12 @@ export default function PortfolioPage() {
             >Refresh</button>
           </div>
         </div>
+
+        {fetchError && !loading && (
+          <div style={{ marginBottom: 20, padding: '12px 16px', background: '#3d1a1a', border: '1px solid #7f1d1d', borderRadius: 8, color: '#fca5a5', fontSize: 14 }}>
+            Failed to load portfolio data. The API may be offline — data shown may be stale or empty.
+          </div>
+        )}
 
         {loading ? (
           <div>

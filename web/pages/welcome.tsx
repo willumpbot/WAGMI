@@ -41,8 +41,8 @@ function LiveTicker({ events }: { events: ActivityEvent[] }) {
       borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`,
       position: 'relative',
     }}>
-      <style>{`@keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
-      <div style={{
+      <style>{`@keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } } .ticker-track:hover { animation-play-state: paused !important; }`}</style>
+      <div className="ticker-track" style={{
         display: 'flex', alignItems: 'center', gap: 40, height: '100%',
         whiteSpace: 'nowrap', animation: 'ticker 30s linear infinite',
         paddingLeft: 20,
@@ -685,7 +685,7 @@ export default function WelcomePage() {
             <div style={{ display: 'flex', gap: 8 }}>
               <Link href="/about" style={{ padding: '6px 14px', fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>How It Works</Link>
               <Link href="/pricing" style={{ padding: '6px 14px', fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>Pricing</Link>
-              <Link href="/" style={{ padding: '6px 16px', fontSize: F.sm, fontWeight: 700, color: '#fff', background: C.brand, borderRadius: R.sm, textDecoration: 'none' }}>Open Dashboard →</Link>
+              <Link href="/copy-trade" style={{ padding: '6px 16px', fontSize: F.sm, fontWeight: 700, color: '#fff', background: C.brand, borderRadius: R.sm, textDecoration: 'none' }}>Copy Trade →</Link>
             </div>
           </div>
         </nav>

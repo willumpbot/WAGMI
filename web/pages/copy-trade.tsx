@@ -1714,7 +1714,7 @@ function StandaloneRiskCalc({ defaultEntry, defaultSl }: { defaultEntry?: number
             ].map(({ label, val, set, ...rest }) => (
               <div key={label}>
                 <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, marginBottom: 4 }}>{label}</div>
-                <input type="number" style={inp} value={val} onChange={e => set(+e.target.value)} {...rest} />
+                <input type="number" style={inp} value={val} onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) set(Math.max(0, v)); }} {...rest} />
               </div>
             ))}
           </div>

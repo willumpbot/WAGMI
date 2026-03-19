@@ -3380,31 +3380,44 @@ export default function SignalsPage() {
   const [marketView, setMarketView] = useState<LlmMarketView | null>(null);
   const [signalsData, setSignalsData] = useState<SignalsPayload | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [filter, setFilter] = useState<string>('all');
   const [selectedSymbol, setSelectedSymbol] = useState<string>('BTC');
   const apiBase = resolveApiBase();
   const mounted = useRef(true);
 
   const fetchData = async () => {
-    const [feedRes, mvRes, sigRes] = await Promise.allSettled([
-      fetch(`${apiBase}/v1/activity/feed?limit=100`, { cache: 'no-store' }),
-      fetch(`${apiBase}/v1/llm/market-view`, { cache: 'no-store' }),
-      fetch(`${apiBase}/v1/signals`, { cache: 'no-store' }),
-    ]);
+    try {
+      const [feedRes, mvRes, sigRes] = await Promise.allSettled([
+        fetch(`${apiBase}/v1/activity/feed?limit=100`, { cache: 'no-store' }),
+        fetch(`${apiBase}/v1/llm/market-view`, { cache: 'no-store' }),
+        fetch(`${apiBase}/v1/signals`, { cache: 'no-store' }),
+      ]);
 
-    if (!mounted.current) return;
+      if (!mounted.current) return;
 
-    if (feedRes.status === 'fulfilled' && feedRes.value.ok) {
-      const d = await feedRes.value.json();
-      setEvents(Array.isArray(d.items) ? d.items : []);
+      if (feedRes.status === 'fulfilled' && feedRes.value.ok) {
+        try {
+          const d = await feedRes.value.json();
+          setEvents(Array.isArray(d.items) ? d.items : []);
+        } catch { /* non-JSON response, skip */ }
+      }
+      if (mvRes.status === 'fulfilled' && mvRes.value.ok) {
+        try {
+          setMarketView(await mvRes.value.json());
+        } catch { /* non-JSON response, skip */ }
+      }
+      if (sigRes.status === 'fulfilled' && sigRes.value.ok) {
+        try {
+          setSignalsData(await sigRes.value.json());
+        } catch { /* non-JSON response, skip */ }
+      }
+      setFetchError(false);
+    } catch {
+      if (mounted.current) setFetchError(true);
+    } finally {
+      if (mounted.current) setLoading(false);
     }
-    if (mvRes.status === 'fulfilled' && mvRes.value.ok) {
-      setMarketView(await mvRes.value.json());
-    }
-    if (sigRes.status === 'fulfilled' && sigRes.value.ok) {
-      setSignalsData(await sigRes.value.json());
-    }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -3448,6 +3461,12 @@ export default function SignalsPage() {
         @keyframes ripple { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
         .sig-card:hover { transform: translateX(2px); transition: transform 0.15s; }
       `}</style>
+
+      {fetchError && !loading && (
+        <div style={{ marginBottom: 20, padding: '12px 16px', background: '#3d1a1a', border: '1px solid #7f1d1d', borderRadius: 8, color: '#fca5a5', fontSize: 14 }}>
+          Failed to load signals data. The API may be offline — data shown may be stale or empty.
+        </div>
+      )}
 
       {/* ── Hero header ─────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 32 }}>

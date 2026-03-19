@@ -3204,27 +3204,36 @@ export default function Results() {
   useEffect(() => {
     const ctrl = new AbortController();
     const load = async () => {
-      const [btRes, eqRes, tradesRes] = await Promise.allSettled([
-        fetch(`${apiBase}/v1/backtest/results/latest`, { signal: ctrl.signal }),
-        fetch(`${apiBase}/v1/trades/equity-curve?run=latest`, { signal: ctrl.signal }),
-        fetch(`${apiBase}/v1/trades/history?limit=200`, { signal: ctrl.signal }),
-      ]);
-      if (ctrl.signal.aborted) return;
-      if (btRes.status === 'fulfilled' && btRes.value.ok) {
-        setBacktest(await btRes.value.json());
+      try {
+        const [btRes, eqRes, tradesRes] = await Promise.allSettled([
+          fetch(`${apiBase}/v1/backtest/results/latest`, { signal: ctrl.signal }),
+          fetch(`${apiBase}/v1/trades/equity-curve?run=latest`, { signal: ctrl.signal }),
+          fetch(`${apiBase}/v1/trades/history?limit=200`, { signal: ctrl.signal }),
+        ]);
+        if (ctrl.signal.aborted) return;
+        if (btRes.status === 'fulfilled' && btRes.value.ok) {
+          try { setBacktest(await btRes.value.json()); } catch { /* non-JSON response */ }
+        }
+        if (eqRes.status === 'fulfilled' && eqRes.value.ok) {
+          try {
+            const d = await eqRes.value.json();
+            setEquityCurve(d?.points || []);
+          } catch { /* non-JSON response */ }
+        }
+        if (tradesRes.status === 'fulfilled' && tradesRes.value.ok) {
+          try {
+            const d: TradeHistoryResponse = await tradesRes.value.json();
+            setTrades(d?.trades || []);
+          } catch { /* non-JSON response */ }
+        }
+      } finally {
+        if (!ctrl.signal.aborted) {
+          setLoadingBt(false);
+          setLoadingTrades(false);
+        }
       }
-      setLoadingBt(false);
-      if (eqRes.status === 'fulfilled' && eqRes.value.ok) {
-        const d = await eqRes.value.json();
-        setEquityCurve(d?.points || []);
-      }
-      if (tradesRes.status === 'fulfilled' && tradesRes.value.ok) {
-        const d: TradeHistoryResponse = await tradesRes.value.json();
-        setTrades(d?.trades || []);
-      }
-      setLoadingTrades(false);
     };
-    load().catch(() => {});
+    load().catch(() => { setLoadingBt(false); setLoadingTrades(false); });
     return () => ctrl.abort();
   }, [apiBase]);
 

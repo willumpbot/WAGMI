@@ -80,7 +80,7 @@ const TIERS: Tier[] = [
       { label: 'Early access to new agents', included: true },
     ],
     cta: 'Talk to Us',
-    ctaHref: '/about',
+    ctaHref: '/copy-trade',
     highlighted: false,
   },
 ];
@@ -299,7 +299,7 @@ function TierValueBars() {
 // ─── Returns Calculator ───────────────────────────────────────────────────────
 
 function ReturnsCalc({ returnPct }: { returnPct: number }) {
-  const [capital, setCapital] = useState(10000);
+  const [capital, setCapital] = useState(3000);
   const projected = capital * (returnPct / 100);
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '24px 28px', maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
@@ -948,7 +948,8 @@ export default function PricingPage() {
         </div>
 
         {/* ── Tier Cards ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 48, alignItems: 'start' }}>
+        <style>{`@media (max-width: 720px) { .tier-grid { grid-template-columns: 1fr !important; } }`}</style>
+        <div className="tier-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 48, alignItems: 'start' }}>
           {TIERS.map((tier) => {
             const price = annual && tier.annual != null ? tier.annual / 12 : tier.monthly;
             return (

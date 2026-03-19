@@ -421,11 +421,11 @@ function CompoundCalc() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
           <div style={labelStyle}>Starting Capital ($)</div>
-          <input type="number" aria-label="Starting capital in dollars" style={inputStyle} value={capital} onChange={e => setCapital(+e.target.value)} min={100} />
+          <input type="number" aria-label="Starting capital in dollars" style={inputStyle} value={capital} onChange={e => { const v = parseFloat(e.target.value); setCapital(isNaN(v) ? 0 : Math.max(0, v)); }} min={100} />
         </div>
         <div>
           <div style={labelStyle}>Monthly Return (%)</div>
-          <input type="number" aria-label="Monthly return percentage" style={inputStyle} value={monthlyPct} step={0.5} onChange={e => setMonthlyPct(+e.target.value)} min={0.1} max={100} />
+          <input type="number" aria-label="Monthly return percentage" style={inputStyle} value={monthlyPct} step={0.5} onChange={e => { const v = parseFloat(e.target.value); setMonthlyPct(isNaN(v) ? 0 : Math.max(0, Math.min(100, v))); }} min={0.1} max={100} />
         </div>
         <div>
           <div style={labelStyle}>Number of Months</div>
@@ -433,8 +433,8 @@ function CompoundCalc() {
         </div>
         <div style={{ padding: '14px 16px', background: C.bull + '12', border: `1px solid ${C.bull}30`, borderRadius: R.md }}>
           <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>Final Equity</div>
-          <div style={{ fontSize: F['2xl'], fontWeight: 800, color: C.bull }}>${finalEquity.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-          <div style={{ fontSize: F.xs, color: C.bullMid }}>+{totalReturn.toFixed(1)}% total</div>
+          <div style={{ fontSize: F['2xl'], fontWeight: 800, color: C.bull }}>{isFinite(finalEquity) ? `$${finalEquity.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}</div>
+          <div style={{ fontSize: F.xs, color: C.bullMid }}>{isFinite(totalReturn) ? `${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(1)}%` : '—'} total</div>
         </div>
       </div>
 

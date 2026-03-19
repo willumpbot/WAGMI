@@ -2595,24 +2595,27 @@ export default function Home() {
 
         if (cancelled) return;
         if (sigRes.status === 'fulfilled' && sigRes.value.ok) {
-          setSignalsData(await sigRes.value.json());
-          setApiError(false);
+          try { setSignalsData(await sigRes.value.json()); setApiError(false); } catch { setApiError(true); }
         } else {
           setApiError(true);
         }
         if (stratRes.status === 'fulfilled' && stratRes.value.ok) {
-          const d = await stratRes.value.json();
-          setStrategies(Array.isArray(d) ? d : d?.items || []);
+          try {
+            const d = await stratRes.value.json();
+            setStrategies(Array.isArray(d) ? d : d?.items || []);
+          } catch { /* non-JSON response */ }
         }
         if (btRes.status === 'fulfilled' && btRes.value.ok) {
-          setBacktest(await btRes.value.json());
+          try { setBacktest(await btRes.value.json()); } catch { /* non-JSON response */ }
         }
         if (actRes.status === 'fulfilled' && actRes.value.ok) {
-          const d = await actRes.value.json();
-          setActivity(d?.items || []);
+          try {
+            const d = await actRes.value.json();
+            setActivity(d?.items || []);
+          } catch { /* non-JSON response */ }
         }
         if (llmRes.status === 'fulfilled' && llmRes.value.ok) {
-          setLlmView(await llmRes.value.json());
+          try { setLlmView(await llmRes.value.json()); } catch { /* non-JSON response */ }
         }
         // Fetch recent trades for the strip
         try {

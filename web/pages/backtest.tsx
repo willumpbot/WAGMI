@@ -2940,37 +2940,46 @@ export default function Backtest() {
   const apiBase = resolveApiBase();
 
   useEffect(() => {
+    const ctrl = new AbortController();
     const load = async () => {
       try {
-        const res = await fetch(`${apiBase}/v1/backtest/results`);
+        const res = await fetch(`${apiBase}/v1/backtest/results`, { signal: ctrl.signal });
         if (res.ok) {
           const d = await res.json();
-          setRuns(d.results || []);
-          // Auto-select latest
-          if (d.results?.length > 0) {
-            setSelectedId(d.results[0].id);
+          if (!ctrl.signal.aborted) {
+            setRuns(d.results || []);
+            // Auto-select latest
+            if (d.results?.length > 0) {
+              setSelectedId(d.results[0].id);
+            }
           }
         }
-      } catch { /* silent */ }
-      setLoadingRuns(false);
+      } catch { /* silent (includes AbortError) */ }
+      if (!ctrl.signal.aborted) setLoadingRuns(false);
     };
     load();
+    return () => ctrl.abort();
   }, [apiBase]);
 
   useEffect(() => {
     if (!selectedId) { setSelectedResult(null); return; }
+    const ctrl = new AbortController();
     setLoadingDetail(true);
-    fetch(`${apiBase}/v1/backtest/results/${selectedId}`)
+    fetch(`${apiBase}/v1/backtest/results/${selectedId}`, { signal: ctrl.signal })
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => { setSelectedResult(d); setLoadingDetail(false); })
-      .catch(() => setLoadingDetail(false));
+      .then((d) => { if (!ctrl.signal.aborted) { setSelectedResult(d); setLoadingDetail(false); } })
+      .catch(() => { if (!ctrl.signal.aborted) setLoadingDetail(false); });
+    return () => ctrl.abort();
   }, [selectedId, apiBase]);
 
   useEffect(() => {
     if (!compareId) { setCompareResult(null); return; }
-    fetch(`${apiBase}/v1/backtest/results/${compareId}`)
+    const ctrl = new AbortController();
+    fetch(`${apiBase}/v1/backtest/results/${compareId}`, { signal: ctrl.signal })
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => setCompareResult(d));
+      .then((d) => { if (!ctrl.signal.aborted) setCompareResult(d); })
+      .catch(() => {});
+    return () => ctrl.abort();
   }, [compareId, apiBase]);
 
   const handleJobDone = async (resultId: string) => {
