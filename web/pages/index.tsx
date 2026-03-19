@@ -1738,7 +1738,7 @@ function OpenInterestGauge() {
 
 function MarketMicrostructureRow() {
   return (
-    <div style={{ marginBottom: 40 }}>
+    <div style={{ marginBottom: 28 }}>
       <h2 style={{ margin: '0 0 12px', fontSize: F.lg, fontWeight: 700, color: C.text }}>
         Market Microstructure
       </h2>
@@ -2726,7 +2726,7 @@ export default function Home() {
       </div>
 
       {/* ── 2. KPI Hero Row ───────────────────────────── */}
-      <div style={{ display: 'flex', gap: 14, marginBottom: 40, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap', alignItems: 'flex-start' }}>
         <KpiCard
           label="Total Return"
           value={btRes ? fmtPct(btRes.total_return_pct) : '—'}
@@ -2794,7 +2794,7 @@ export default function Home() {
           border: `1px solid ${C.border}`,
           borderRadius: R.lg,
           padding: '14px 20px',
-          marginBottom: 40,
+          marginBottom: 28,
           display: 'flex',
           alignItems: 'center',
           gap: 16,
@@ -2855,76 +2855,13 @@ export default function Home() {
       )}
 
       {/* ── 4. Top Opportunity + Regime History ───────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 40, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 28, alignItems: 'start' }}>
         <TopOpportunityCard signals={signals} regime={regime} loading={loading} />
         <RegimeConfidenceHistory regime={regime} llmView={llmView} />
       </div>
 
-      {/* ── 5. Signal Health + Market Breadth ────────── */}
-      <div style={{ marginBottom: 40 }}>
-        <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Signal Health &amp; Market Breadth</h2>
-        <MarketBreadthBar signals={signals} />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20, alignItems: 'start' }}>
-          {/* Bot health gauge */}
-          <SignalHealthGauge
-            signals={signals}
-            backtestWinRate={btRes?.win_rate}
-          />
-          {/* Market sentiment gauge */}
-          <MarketSentimentGauge signals={signals} regime={regime} />
-          {/* Signal overview stats */}
-          <div style={{
-            background: G.card,
-            border: `1px solid ${C.border}`,
-            borderRadius: R.lg,
-            padding: '20px 24px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 18,
-            boxSizing: 'border-box',
-          }}>
-            <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-              Signal Overview
-            </div>
-            {[
-              {
-                label: 'Total Signals Today',
-                value: Object.keys(signals).length > 0 ? String(Object.keys(signals).length) : (btRes ? String(btRes.total_trades) : '—'),
-                color: C.text,
-              },
-              {
-                label: 'Avg Confidence',
-                value: Object.values(signals).length > 0
-                  ? `${Math.round(Object.values(signals).reduce((s, sig) => s + sig.score, 0) / Object.values(signals).length)}`
-                  : (btRes ? `${Math.round(btRes.win_rate * 100)}` : '—'),
-                color: (() => {
-                  const avg = Object.values(signals).length > 0
-                    ? Object.values(signals).reduce((s, sig) => s + sig.score, 0) / Object.values(signals).length
-                    : (btRes ? btRes.win_rate * 100 : 50);
-                  return avg >= 70 ? C.bull : avg >= 40 ? C.warn : C.bear;
-                })(),
-              },
-              {
-                label: 'Regime Type',
-                value: regime.toUpperCase(),
-                color: regime.toLowerCase() === 'trend' ? C.bull
-                  : regime.toLowerCase() === 'panic' ? C.bear
-                  : regime.toLowerCase() === 'range' ? C.info
-                  : regime.toLowerCase() === 'high_volatility' ? C.warn
-                  : C.textSub,
-              },
-            ].map(({ label, value, color }) => (
-              <div key={label}>
-                <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: F['2xl'], fontWeight: 800, color, lineHeight: 1.2 }}>{value}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── 6. Live Signal Cards ──────────────────────── */}
-      <div style={{ marginBottom: 40 }}>
+      {/* ── 5. Live Signal Cards ──────────────────────── */}
+      <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>
             Live Signal Cards <span style={{ color: C.muted, fontWeight: 400, fontSize: F.sm }}>— per symbol</span>
@@ -2939,7 +2876,7 @@ export default function Home() {
       </div>
 
       {/* ── 7. Market Heatmap ─────────────────────────── */}
-      <div style={{ marginBottom: 40 }}>
+      <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Market Heatmap</h2>
           <div style={{ fontSize: F.xs, color: C.muted }}>
@@ -2952,33 +2889,8 @@ export default function Home() {
         <MarketHeatmap signals={signals} loading={loading} onSelect={setActiveChart} />
       </div>
 
-      {/* ── 8. Market Momentum + Microstructure ──────── */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>
-            Market Momentum
-          </h2>
-          <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            padding: '2px 8px',
-            borderRadius: R.pill,
-            background: C.bull + '22',
-            color: C.bull,
-            textTransform: 'uppercase',
-            letterSpacing: 0.8,
-          }}>
-            LIVE
-          </span>
-        </div>
-        <MarketMomentumStrip signals={signals} regime={regime} />
-      </div>
-
-      {/* ── 9. Market Microstructure ──────────────────── */}
-      <MarketMicrostructureRow />
-
-      {/* ── 10. TradingView Chart ─────────────────────── */}
-      <div style={{ marginBottom: 40 }}>
+      {/* ── 8. TradingView Chart ─────────────────────── */}
+      <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Chart (1H)</h2>
           <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
@@ -3009,115 +2921,14 @@ export default function Home() {
       </div>
 
       {/* ── 11. Activity Feed + Recent Trades ─────────── */}
-      <div style={{ marginBottom: 40 }}>
+      <div style={{ marginBottom: 28 }}>
         <h2 style={{ margin: '0 0 12px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Activity Feed</h2>
         <ActivityTicker events={activity} />
         {recentTrades.length > 0 && <RecentTradeStrip trades={recentTrades} />}
         <ActivityCalendarHeatmap />
       </div>
 
-      {/* ── 12. LLM Brain Summary ─────────────────────── */}
-      {llmView?.has_data && (
-        <div
-          className="fade-in"
-          style={{
-            background: C.surface,
-            border: `1px solid ${C.border}`,
-            borderRadius: R.lg,
-            padding: '20px 24px',
-            marginBottom: 40,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 20 }}>🧠</span>
-              <span style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>Live AI Assessment</span>
-              <span style={{ fontSize: F.xs, padding: '2px 8px', borderRadius: R.pill, background: '#1e293b', color: C.muted }} title="The bot analyzes and flags opportunities — it does not auto-execute trades">Advisory Mode · signals only</span>
-            </div>
-            <Link href="/signals" style={{ fontSize: F.xs, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>
-              See every decision →
-            </Link>
-          </div>
-
-          {/* Per-symbol stance row */}
-          {llmView.per_symbol && (
-            <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-              {Object.entries(llmView.per_symbol).map(([sym, dec]: [string, any]) => {
-                const action = (dec.action || 'skip').toLowerCase();
-                const isGo = action === 'proceed' || action === 'go';
-                const isVeto = dec.is_veto;
-                const conf = dec.confidence || 0;
-                const confPct = Math.round(conf * 100);
-                const stanceColor = isVeto ? C.bear : isGo ? C.bull : C.muted;
-                return (
-                  <div key={sym} style={{
-                    flex: '1 1 120px',
-                    minWidth: 120,
-                    background: '#0f172a',
-                    border: `1px solid ${stanceColor}33`,
-                    borderRadius: R.md,
-                    padding: '10px 14px',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontSize: F.sm, fontWeight: 800, color: C.text }}>{sym}</span>
-                      <span style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        padding: '1px 6px',
-                        borderRadius: R.pill,
-                        background: stanceColor + '22',
-                        color: stanceColor,
-                      }}>
-                        {isVeto ? 'VETO' : isGo ? 'GO' : 'SKIP'}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ flex: 1, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{ width: `${confPct}%`, height: '100%', background: stanceColor, borderRadius: 2 }} />
-                      </div>
-                      <span style={{ fontSize: F.xs, color: stanceColor, fontWeight: 700, minWidth: 28 }}>{confPct}%</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Summary text */}
-          {llmView.summary && (
-            <div style={{ fontSize: F.sm, color: C.textSub, lineHeight: 1.6, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
-              {llmView.summary}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── 13. Strategies ────────────────────────────── */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Strategies</h2>
-          <Link href="/strategies" style={{ fontSize: F.sm, color: C.brand, textDecoration: 'none', fontWeight: 600 }}>
-            View all →
-          </Link>
-        </div>
-        {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
-            {[1, 2].map((i) => <Skeleton key={i} h={100} />)}
-          </div>
-        ) : strategies.length === 0 ? (
-          <div style={{ padding: '24px', background: G.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted, fontSize: F.sm }}>
-            Strategies appear here once the bot starts scanning. Nothing active yet — start the bot to begin receiving signals.
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
-            {strategies.slice(0, 4).map((s) => (
-              <StrategyCard key={s.id} strategy={s} />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── 14. Proof teaser ──────────────────────────── */}
+      {/* ── 10. Proof teaser ──────────────────────────── */}
       {btRes && (
         <div
           style={{
@@ -3125,7 +2936,7 @@ export default function Home() {
             border: `1px solid ${C.brand}40`,
             borderRadius: R.xl,
             padding: '24px 28px',
-            marginBottom: 40,
+            marginBottom: 28,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',

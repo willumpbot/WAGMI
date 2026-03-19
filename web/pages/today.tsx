@@ -2035,6 +2035,136 @@ function LivePositionPnlStream() {
   );
 }
 
+// ─── Trade Log Form ───────────────────────────────────────────────────────────
+
+type ManualTrade = {
+  id: number;
+  symbol: string;
+  side: 'LONG' | 'SHORT';
+  entry: string;
+  exit: string;
+  size: string;
+  notes: string;
+  ts: string;
+};
+
+function TradeLogForm() {
+  const [form, setForm] = useState({ symbol: 'BTC', side: 'LONG' as 'LONG' | 'SHORT', entry: '', exit: '', size: '', notes: '' });
+  const [saved, setSaved] = useState<ManualTrade[]>([]);
+  const [submitted, setSubmitted] = useState(false);
+
+  const pnlNum = (() => {
+    const e = parseFloat(form.entry), x = parseFloat(form.exit), s = parseFloat(form.size);
+    if (!e || !x || !s) return null;
+    return (form.side === 'LONG' ? x - e : e - x) * s;
+  })();
+
+  const handleSubmit = (ev: React.FormEvent) => {
+    ev.preventDefault();
+    if (!form.entry || !form.size) return;
+    setSaved(prev => [{ ...form, id: Date.now(), ts: new Date().toISOString() }, ...prev]);
+    setForm(f => ({ ...f, entry: '', exit: '', size: '', notes: '' }));
+    setSubmitted(true);
+    setTimeout(() => setSubmitted(false), 2000);
+  };
+
+  const inputS: React.CSSProperties = {
+    width: '100%', padding: '8px 11px', background: C.surfaceHover,
+    border: `1px solid ${C.border}`, borderRadius: R.sm,
+    color: C.text, fontSize: F.sm, outline: 'none',
+  };
+  const labelS: React.CSSProperties = { fontSize: F.xs, color: C.muted, fontWeight: 600, marginBottom: 3 };
+
+  return (
+    <div>
+      {/* Form */}
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginBottom: 20 }}>
+        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 16 }}>Log a Trade</div>
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div>
+              <div style={labelS}>Symbol</div>
+              <input style={inputS} value={form.symbol} onChange={e => setForm(f => ({ ...f, symbol: e.target.value.toUpperCase() }))} placeholder="BTC" />
+            </div>
+            <div>
+              <div style={labelS}>Entry Price</div>
+              <input type="number" style={inputS} value={form.entry} onChange={e => setForm(f => ({ ...f, entry: e.target.value }))} placeholder="67420" />
+            </div>
+            <div>
+              <div style={labelS}>Exit Price</div>
+              <input type="number" style={inputS} value={form.exit} onChange={e => setForm(f => ({ ...f, exit: e.target.value }))} placeholder="68200" />
+            </div>
+            <div>
+              <div style={labelS}>Size (units)</div>
+              <input type="number" style={inputS} value={form.size} onChange={e => setForm(f => ({ ...f, size: e.target.value }))} placeholder="0.05" step="0.001" />
+            </div>
+            <div>
+              <div style={labelS}>Direction</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {(['LONG', 'SHORT'] as const).map(s => (
+                  <button key={s} type="button" onClick={() => setForm(f => ({ ...f, side: s }))} style={{
+                    flex: 1, padding: '8px', borderRadius: R.sm, cursor: 'pointer', fontWeight: 700, fontSize: F.sm,
+                    background: form.side === s ? (s === 'LONG' ? C.bull + '22' : C.bear + '22') : C.surfaceHover,
+                    color: form.side === s ? (s === 'LONG' ? C.bull : C.bear) : C.muted,
+                    border: `1px solid ${form.side === s ? (s === 'LONG' ? C.bull : C.bear) + '55' : C.border}`,
+                  }}>{s}</button>
+                ))}
+              </div>
+            </div>
+            {pnlNum !== null && (
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{ padding: '10px 14px', borderRadius: R.md, background: (pnlNum >= 0 ? C.bull : C.bear) + '18', border: `1px solid ${(pnlNum >= 0 ? C.bull : C.bear)}33`, width: '100%' }}>
+                  <div style={{ fontSize: F.xs, color: C.muted }}>Est. P&L</div>
+                  <div style={{ fontSize: F.base, fontWeight: 800, color: pnlNum >= 0 ? C.bull : C.bear }}>
+                    {pnlNum >= 0 ? '+' : ''}{fmtUsd(pnlNum)}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={labelS}>Notes (optional)</div>
+            <input style={inputS} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Setup, reason for entry, what happened..." />
+          </div>
+          <button type="submit" style={{
+            padding: '9px 22px', background: C.brand, color: '#fff', border: 'none',
+            borderRadius: R.sm, fontSize: F.sm, fontWeight: 700, cursor: 'pointer',
+          }}>
+            {submitted ? '✓ Saved' : 'Log Trade'}
+          </button>
+        </form>
+      </div>
+
+      {/* Saved trades */}
+      {saved.length > 0 && (
+        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 18px', borderBottom: `1px solid ${C.border}`, fontSize: F.sm, fontWeight: 700, color: C.textSub }}>
+            Logged Trades ({saved.length})
+          </div>
+          {saved.map((t) => {
+            const pl = t.exit ? (t.side === 'LONG' ? parseFloat(t.exit) - parseFloat(t.entry) : parseFloat(t.entry) - parseFloat(t.exit)) * parseFloat(t.size || '0') : null;
+            return (
+              <div key={t.id} style={{ padding: '12px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700, color: C.text, minWidth: 44 }}>{t.symbol}</span>
+                <span style={{ fontSize: F.xs, fontWeight: 700, padding: '2px 7px', borderRadius: R.pill, background: (t.side === 'LONG' ? C.bull : C.bear) + '18', color: t.side === 'LONG' ? C.bull : C.bear }}>{t.side}</span>
+                <span style={{ fontSize: F.xs, color: C.muted }}>@ {t.entry} → {t.exit || '—'}</span>
+                {pl !== null && <span style={{ fontSize: F.sm, fontWeight: 700, color: pl >= 0 ? C.bull : C.bear }}>{pl >= 0 ? '+' : ''}{fmtUsd(pl)}</span>}
+                {t.notes && <span style={{ fontSize: F.xs, color: C.muted, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.notes}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {saved.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '32px 20px', color: C.muted, fontSize: F.sm }}>
+          No trades logged yet. Use the form above to track your entries.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function TodayPage() {
@@ -2043,6 +2173,7 @@ export default function TodayPage() {
   const [trades, setTrades] = useState<TradeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<'overview' | 'signals' | 'ai' | 'log'>('overview');
 
   useEffect(() => {
     let cancelled = false;
@@ -2098,378 +2229,348 @@ export default function TodayPage() {
   const hasLiveActivity = activity.length > 0;
   const hasLiveTrades = trades.length > 0;
 
-  // Shared demo badge style
-  const demoBadge: React.CSSProperties = {
-    display: 'inline-block',
-    fontSize: 9,
-    fontWeight: 700,
-    color: C.warn,
-    background: `${C.warn}18`,
-    border: `1px solid ${C.warn}40`,
-    borderRadius: R.pill,
-    padding: '1px 7px',
-    letterSpacing: '0.04em',
-    marginLeft: 8,
-    verticalAlign: 'middle',
-  };
-
-  // Shared section heading style
-  const sectionH2: React.CSSProperties = {
-    fontSize: F.lg,
-    fontWeight: 800,
-    color: C.text,
-    margin: '0 0 16px',
-    letterSpacing: '-0.02em',
-    paddingBottom: 8,
-    borderBottom: `1px solid ${C.border}`,
-  };
+  const TABS = [
+    { id: 'overview' as const, label: 'Overview',    icon: '📊' },
+    { id: 'signals'  as const, label: 'Bot Signals', icon: '📡' },
+    { id: 'ai'       as const, label: 'AI View',     icon: '🤖' },
+    { id: 'log'      as const, label: 'Trade Log',   icon: '📝' },
+  ];
 
   return (
     <Layout>
       <Head>
         <title>Morning Brief — WAGMI</title>
-        <meta name="description" content="Daily market brief: current regime, AI commentary, key levels, and what the bot is watching today." />
+        <meta name="description" content="Daily hub: regime, bot signals, AI decisions, and trade log." />
       </Head>
 
-      {/* ── Live Position PnL Ticker Strip ── */}
+      {/* ── Live Position Ticker ── */}
       <LivePositionPnlStream />
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px' }}>
+      <div style={{ maxWidth: 980, margin: '0 auto', padding: '0 20px' }}>
 
-        {/* ─────────────────────────────────────────────────────────────────────
-            Header
-        ───────────────────────────────────────────────────────────────────── */}
-        <div style={{ marginBottom: 32 }} className="fade-in">
-          <div className="gradient-text" style={{ fontSize: F.xs, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Daily Brief</div>
-          <h1 style={{ margin: '0 0 4px', fontSize: F['3xl'], fontWeight: 800, color: C.text }}>{dateStr}</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <p style={{ margin: 0, fontSize: F.sm, color: C.muted }}>
-              Generated by WAGMI AI · Updated every 60 seconds ·{' '}
-              <span style={{ fontWeight: 600, color: C.textSub }}>{now.toISOString().slice(11, 16)} UTC</span>
+        {/* ── Page header ── */}
+        <div style={{ paddingTop: 24, marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Daily Brief</div>
+              <h1 style={{ margin: '0 0 4px', fontSize: F['2xl'], fontWeight: 800, color: C.text }}>{dateStr}</h1>
+              <p style={{ margin: 0, fontSize: F.sm, color: C.muted }}>
+                Updated every 60s &nbsp;·&nbsp; <span style={{ fontWeight: 600, color: C.textSub }}>{now.toISOString().slice(11, 16)} UTC</span>
+              </p>
             </p>
             {/* Pulsing live indicator */}
+            {/* Live pulse */}
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
               fontSize: 10, fontWeight: 700, color: C.bull,
               background: `${C.bull}18`, border: `1px solid ${C.bull}40`,
               borderRadius: R.pill, padding: '2px 9px',
             }}>
-              <span style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: C.bull, display: 'inline-block',
-                animation: 'wagmiPulse 1.4s ease-in-out infinite',
-              }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.bull, display: 'inline-block', animation: 'wagmiPulse 1.4s ease-in-out infinite' }} />
               LIVE
             </span>
             <style>{`@keyframes wagmiPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.75)} }`}</style>
           </div>
-        </div>
 
-        {/* ─────────────────────────────────────────────────────────────────────
-            § 1 · Today's Equity Snapshot + Alerts
-        ───────────────────────────────────────────────────────────────────── */}
-        <h2 style={sectionH2} className="fade-in-1">
-          Today's Equity &amp; Alerts
-          {!hasLiveTrades && <span style={demoBadge}>SAMPLE DATA</span>}
-        </h2>
-
-        {/* Regime banner — sits at the very top as a quick-glance status */}
-        <div style={{
-          background: rs.bg, border: `1px solid ${rs.border}`, borderRadius: R.xl,
-          padding: '18px 24px', marginBottom: 20,
-          display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap',
-        }}>
-          <div>
-            <div style={{ fontSize: F.xs, color: rs.text, fontWeight: 700, letterSpacing: '0.06em', marginBottom: 6 }}>{rs.label}</div>
-            <div style={{ fontSize: F.lg, fontWeight: 800, color: rs.text, marginBottom: 4 }}>{regime.replace('_', ' ').toUpperCase()}</div>
-            {llmView?.avg_confidence != null && (
-              <div style={{ fontSize: F.sm, color: C.muted }}>Avg confidence: {Math.round(llmView.avg_confidence * 100)}%</div>
-            )}
-          </div>
-          {llmView?.summary && (
-            <div style={{ flex: 1, minWidth: 240, fontSize: F.sm, color: C.textSub, lineHeight: 1.6, borderLeft: `2px solid ${rs.border}40`, paddingLeft: 16 }}>
-              {llmView.summary}
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
-          <TodayEquityMini />
-          <AlertsPanel />
-        </div>
-
-        <div style={{ marginBottom: 40 }}>
-          <TodayPnlByHour />
-        </div>
-
-        {/* ─────────────────────────────────────────────────────────────────────
-            § 2 · Regime Analysis + Streak
-        ───────────────────────────────────────────────────────────────────── */}
-        <h2 style={sectionH2}>Regime Analysis</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20, marginBottom: 40 }}>
-          <RegimeDial regime={regime} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <MarketSessionClock />
-            <StreakBar trades={recentTrades} />
-            {/* Today at a Glance summary card */}
-            <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 18px', flex: 1 }}>
-              <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Today at a Glance</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div>
-                  <div style={{ fontSize: F.xs, color: C.muted }}>Signals analyzed</div>
-                  <div style={{ fontSize: F.xl, fontWeight: 700, color: C.text }}>{analyzed}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: F.xs, color: C.muted }}>Trades executed</div>
-                  <div style={{ fontSize: F.xl, fontWeight: 700, color: C.bull }}>{executed}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: F.xs, color: C.muted }}>AI vetoed</div>
-                  <div style={{ fontSize: F.xl, fontWeight: 700, color: C.purple }}>{vetoed}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: F.xs, color: C.muted }}>Recent P&L</div>
-                  <div style={{ fontSize: F.xl, fontWeight: 700, color: todayPnl >= 0 ? C.bull : C.bear }}>{fmtUsd(todayPnl)}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ─────────────────────────────────────────────────────────────────────
-            § 3 · Bot Schedule / Timeline
-        ───────────────────────────────────────────────────────────────────── */}
-        <h2 style={sectionH2}>
-          Bot Schedule &amp; Timeline
-          {!hasLiveActivity && <span style={demoBadge}>SAMPLE DATA</span>}
-        </h2>
-        <div style={{ marginBottom: 40 }}>
-          <BotScheduleTimeline />
-        </div>
-
-        {/* ─────────────────────────────────────────────────────────────────────
-            § 4 · Risk Gates + Hourly Heatmap
-        ───────────────────────────────────────────────────────────────────── */}
-        <h2 style={sectionH2}>Risk Gates &amp; Hourly Activity</h2>
-        <div style={{ display: 'flex', gap: 20, marginBottom: 24, flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 320px' }}>
-            <RiskGatesPanel />
-          </div>
-          <div style={{ flex: '1 1 320px' }}>
-            <HourlyTradeTimeline />
-          </div>
-        </div>
-        <div style={{ marginBottom: 24 }}>
-          <IntradayActivityHeatmap activity={activity} />
-        </div>
-        <div style={{ marginBottom: 40 }}>
-          <GateFlowAnimated />
-        </div>
-
-        {/* ─────────────────────────────────────────────────────────────────────
-            § 5 · Circuit Breaker Status
-        ───────────────────────────────────────────────────────────────────── */}
-        <h2 style={sectionH2}>Circuit Breakers</h2>
-        <div style={{ marginBottom: 40 }}>
-          <CircuitBreakerStatus />
-        </div>
-
-        {/* ─────────────────────────────────────────────────────────────────────
-            § 6 · Activity Summary (Safety & signal funnel detail)
-        ───────────────────────────────────────────────────────────────────── */}
-        <h2 style={sectionH2}>
-          Activity Summary
-          {!hasLiveActivity && <span style={demoBadge}>SAMPLE DATA</span>}
-        </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 40 }}>
-          <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
-            <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Recent Activity</div>
-            <StatCell label="Trades closed" value={String(recentTrades.length)} sub="Recent history" />
-            <div style={{ marginTop: 10 }}>
-              <StatCell label="P&L" value={fmtUsd(todayPnl)} color={todayPnl >= 0 ? C.bull : C.bear} sub={`${todayWins}W / ${recentTrades.length - todayWins}L`} />
-            </div>
-          </div>
-
-          <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
-            <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Signal Funnel (24h)</div>
-            <SignalFunnelBar analyzed={analyzed} passed={passed} executed={executed} vetoed={vetoed} />
-          </div>
-
-          <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
-            <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>AI Decisions</div>
-            {llmView?.decision_counts ? (
-              <>
-                <StatCell label="GO signals" value={String(llmView.decision_counts.proceed)} color={C.bull} />
-                <div style={{ height: 8 }} />
-                <StatCell label="Skipped" value={String(llmView.decision_counts.flat)} color={C.muted} />
-                <div style={{ height: 8 }} />
-                <StatCell label="Flipped" value={String(llmView.decision_counts.flip)} color={C.warn} />
-              </>
-            ) : (
-              <div style={{ color: C.muted, fontSize: F.sm, fontStyle: 'italic' }}>
-                {loading ? 'Loading AI data…' : 'Bot not yet active today — start with LLM_MODE=ADVISORY or higher.'}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ─────────────────────────────────────────────────────────────────────
-            § 7 · LLM Activity + Agent Decisions
-        ───────────────────────────────────────────────────────────────────── */}
-        <h2 style={sectionH2}>
-          LLM Activity &amp; Agent Decisions
-          {!llmView && <span style={demoBadge}>NO LIVE DATA</span>}
-        </h2>
-
-        {/* AI Assessment card */}
-        <div style={{ background: G.card, border: `1px solid ${C.brand}40`, borderRadius: R.xl, padding: '22px 26px', marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 20 }}>🤖</span>
-            <span style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Live AI Assessment</span>
-            <span style={{ fontSize: F.xs, padding: '2px 8px', borderRadius: R.pill, background: C.surface, color: C.muted }}>Advisory mode · signals only</span>
-            <span style={{ marginLeft: 'auto', fontSize: F.xs, color: C.muted }}>
-              {llmView?.last_updated
-                ? `Last updated: ${timeAgo(llmView.last_updated)}`
-                : 'Not yet updated today'}
-            </span>
-          </div>
-
-          {/* Per-symbol stances */}
-          {llmView?.per_symbol && Object.keys(llmView.per_symbol).length > 0 && (
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-              {Object.entries(llmView.per_symbol).map(([sym, dec]: [string, any]) => {
-                const action = (dec.action || 'skip').toLowerCase();
-                const isGo = action === 'proceed' || action === 'go';
-                const isVeto = dec.is_veto;
-                const col = isVeto ? C.bear : isGo ? C.bull : C.muted;
-                const confPct = Math.round((dec.confidence || 0) * 100);
-                return (
-                  <div key={sym} style={{
-                    flex: '1 1 140px', background: C.surface, borderRadius: R.md,
-                    padding: '12px 14px', border: `1px solid ${col}30`,
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <span style={{ fontWeight: 800, color: C.text }}>{sym}</span>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: R.pill, background: col + '22', color: col }}>
-                        {isVeto ? 'VETO' : isGo ? 'GO' : 'SKIP'}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ flex: 1, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{ width: `${confPct}%`, height: '100%', background: `linear-gradient(90deg, ${col}66, ${col})` }} />
-                      </div>
-                      <span style={{ fontSize: F.xs, color: col, fontWeight: 700 }}>{confPct}%</span>
-                    </div>
-                    {dec.regime && <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>{dec.regime}</div>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {llmView?.summary ? (
-            <div style={{ fontSize: F.sm, color: C.textSub, lineHeight: 1.7, borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-              {llmView.summary}
-            </div>
-          ) : loading ? (
-            <div style={{ color: C.muted, fontSize: F.sm }}>Loading AI commentary…</div>
-          ) : (
-            <div style={{ color: C.muted, fontSize: F.sm, fontStyle: 'italic' }}>
-              AI commentary is generated when the bot's LLM mode is active. Start the bot with <code style={{ fontSize: F.xs, background: C.surface, padding: '1px 5px', borderRadius: 3 }}>LLM_MODE=ADVISORY</code> or higher to see live reasoning here.
-            </div>
-          )}
-        </div>
-
-        {/* Key Levels + What the Bot Is Watching */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24, marginBottom: 40 }}>
-          <div>
-            <h3 style={{ margin: '0 0 12px', fontSize: F.base, fontWeight: 700, color: C.textSub }}>
-              Key Levels — BTC
-              <span style={{ ...demoBadge, color: C.info, background: `${C.info}15`, borderColor: `${C.info}40` }}>EXAMPLE</span>
-            </h3>
-            <PriceLevelTable levels={exampleLevels} />
-            <p style={{ margin: '8px 0 0', fontSize: F.xs, color: C.muted }}>
-              Levels derived from Monte Carlo zones, strategy stop clusters, and TP targets. Updates as new signals are generated.
-            </p>
-          </div>
-
-          <div>
-            <h3 style={{ margin: '0 0 12px', fontSize: F.base, fontWeight: 700, color: C.textSub }}>
-              What the Bot Is Watching
-              <span style={{ ...demoBadge, color: C.info, background: `${C.info}15`, borderColor: `${C.info}40` }}>EXAMPLE</span>
-            </h3>
-            {(() => {
-              const watchItems: WatchItem[] = [
-                { sym: 'BTC', setup: 'Breakout continuation', trigger: 'Close above $68,400 on 1h', quality: 78, eta: '2–4h', strategies: '3/4' },
-                { sym: 'SOL', setup: 'Accumulation zone bounce', trigger: 'Hold above $145 with vol spike', quality: 62, eta: 'If BTC confirms', strategies: '2/4' },
-                { sym: 'HYPE', setup: 'Momentum continuation', trigger: 'RSI reset + 6h uptrend', quality: 71, eta: 'Today', strategies: '3/4' },
-              ];
-              return (
-                <>
-                  <WatchlistScoreChart items={watchItems} />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
-                    {watchItems.map((s) => (
-                      <div key={s.sym} className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <div>
-                            <span style={{ fontWeight: 800, color: C.text }}>{s.sym}</span>
-                            <span style={{ marginLeft: 8, fontSize: F.xs, color: C.muted }}>{s.setup}</span>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <span style={{ fontSize: F.xs, fontWeight: 700, color: s.quality >= 70 ? C.bull : C.warn }}>Pre-score: {s.quality}</span>
-                          </div>
-                        </div>
-                        <div style={{ fontSize: F.xs, color: C.textSub, marginBottom: 4 }}>Trigger: {s.trigger}</div>
-                        <div style={{ display: 'flex', gap: 12, fontSize: 10, color: C.muted }}>
-                          <span>Strategies: {s.strategies}</span>
-                          <span>ETA: {s.eta}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-
-        {/* Recent Trades Recap — only shown when live data exists */}
-        {hasLiveTrades ? (
-          <div style={{ marginBottom: 40 }}>
-            <h2 style={sectionH2}>Recent Trade Recap</h2>
-            <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '4px 16px' }}>
-              {recentTrades.map((t, i) => <TradeRow key={`${t.symbol}-${t.side}-${t.entry ?? i}-${i}`} t={t} />)}
-            </div>
-          </div>
-        ) : !loading && (
+          {/* Regime badge */}
           <div style={{
-            marginBottom: 40,
-            background: C.surface,
-            border: `1px solid ${C.border}`,
-            borderRadius: R.lg,
-            padding: '20px 24px',
-            textAlign: 'center',
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '8px 16px', borderRadius: R.lg,
+            background: rs.bg, border: `1px solid ${rs.border}`,
           }}>
-            <div style={{ fontSize: F.sm, color: C.muted, marginBottom: 4 }}>No trades recorded today yet.</div>
-            <div style={{ fontSize: F.xs, color: C.faint }}>Completed trades will appear here as the bot executes and closes positions.</div>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: rs.text, flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: rs.text, textTransform: 'uppercase', letterSpacing: 0.8 }}>Regime</div>
+              <div style={{ fontSize: F.sm, fontWeight: 800, color: rs.text }}>{regime.replace('_', ' ').toUpperCase()}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Tab nav ── */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: `1px solid ${C.border}`, paddingBottom: 0 }}>
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '10px 16px',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === tab.id ? `2px solid ${C.brand}` : '2px solid transparent',
+                color: activeTab === tab.id ? C.text : C.muted,
+                fontWeight: activeTab === tab.id ? 700 : 400,
+                fontSize: F.sm,
+                cursor: 'pointer',
+                marginBottom: -1,
+                transition: 'color 0.15s',
+              }}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ══════════════ TAB: OVERVIEW ══════════════ */}
+        {activeTab === 'overview' && (
+          <div className="fade-in">
+            {/* KPI row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }} className="kpi-grid">
+              {[
+                { label: 'Analyzed', value: analyzed, color: C.info },
+                { label: 'Executed', value: executed, color: C.bull },
+                { label: 'AI Vetoed', value: vetoed, color: C.purple ?? C.brand },
+                { label: 'Recent P&L', value: fmtUsd(todayPnl), color: todayPnl >= 0 ? C.bull : C.bear },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+                  <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>{label}</div>
+                  <div style={{ fontSize: F.xl, fontWeight: 800, color }}>{value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Equity + Alerts */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }} className="two-col">
+              <TodayEquityMini />
+              <AlertsPanel />
+            </div>
+
+            {/* P&L by hour */}
+            <div style={{ marginBottom: 20 }}>
+              <TodayPnlByHour />
+            </div>
+
+            {/* Circuit breakers */}
+            <CircuitBreakerStatus />
           </div>
         )}
 
-        {/* ── CTA ── */}
+        {/* ══════════════ TAB: BOT SIGNALS ══════════════ */}
+        {activeTab === 'signals' && (
+          <div className="fade-in">
+            {/* Watchlist pre-scores */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Watchlist Pre-Scores</div>
+              {(() => {
+                const watchItems: WatchItem[] = [
+                  { sym: 'BTC', setup: 'Breakout continuation', trigger: 'Close above $68,400 on 1h', quality: 78, eta: '2–4h', strategies: '3/4' },
+                  { sym: 'SOL', setup: 'Accumulation zone bounce', trigger: 'Hold above $145 with vol spike', quality: 62, eta: 'If BTC confirms', strategies: '2/4' },
+                  { sym: 'HYPE', setup: 'Momentum continuation', trigger: 'RSI reset + 6h uptrend', quality: 71, eta: 'Today', strategies: '3/4' },
+                ];
+                return <WatchlistScoreChart items={watchItems} />;
+              })()}
+            </div>
+
+            {/* Watchlist cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12, marginBottom: 20 }}>
+              {[
+                { sym: 'BTC', setup: 'Breakout continuation', trigger: 'Close above $68,400 on 1h', quality: 78, eta: '2–4h', strategies: '3/4' },
+                { sym: 'SOL', setup: 'Accumulation zone bounce', trigger: 'Hold above $145 with vol spike', quality: 62, eta: 'If BTC confirms', strategies: '2/4' },
+                { sym: 'HYPE', setup: 'Momentum continuation', trigger: 'RSI reset + 6h uptrend', quality: 71, eta: 'Today', strategies: '3/4' },
+              ].map((s) => (
+                <div key={s.sym} style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div>
+                      <span style={{ fontWeight: 800, fontSize: F.base, color: C.text }}>{s.sym}</span>
+                      <span style={{ marginLeft: 8, fontSize: F.xs, color: C.muted }}>{s.setup}</span>
+                    </div>
+                    <span style={{ fontSize: F.xs, fontWeight: 700, color: s.quality >= 70 ? C.bull : C.warn }}>
+                      {s.quality}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: F.xs, color: C.textSub, marginBottom: 6 }}>Trigger: {s.trigger}</div>
+                  <div style={{ display: 'flex', gap: 12, fontSize: 10, color: C.muted }}>
+                    <span>Strategies: {s.strategies}</span>
+                    <span>ETA: {s.eta}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Key levels */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }} className="two-col">
+              <div>
+                <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Key Levels — BTC
+                  <span style={{ fontSize: 9, fontWeight: 700, color: C.info, background: `${C.info}15`, border: `1px solid ${C.info}40`, borderRadius: R.pill, padding: '1px 7px', marginLeft: 8 }}>EXAMPLE</span>
+                </div>
+                <PriceLevelTable levels={[
+                  { price: 71200, label: 'TP2 target', type: 'resistance', note: 'Trend continuation target' },
+                  { price: 69800, label: 'TP1 cluster', type: 'resistance', note: 'Previous close rejection zone' },
+                  { price: 68400, label: 'Overnight high', type: 'resistance', note: 'Supply zone from yesterday' },
+                  { price: 67420, label: 'BTC current price', type: 'current' },
+                  { price: 67200, label: 'Regime invalidation', type: 'support', note: 'If lost, regime shifts to range' },
+                  { price: 65800, label: 'Stop loss cluster', type: 'support', note: 'Bot stop orders near here' },
+                  { price: 64200, label: 'Monte Carlo major S/R', type: 'support', note: 'Deep accumulation zone' },
+                ]} />
+              </div>
+              <div>
+                <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Risk Gates Status</div>
+                <RiskGatesPanel />
+              </div>
+            </div>
+
+            {/* Gate flow */}
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Signal Flow</div>
+              <GateFlowAnimated />
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════ TAB: AI VIEW ══════════════ */}
+        {activeTab === 'ai' && (
+          <div className="fade-in">
+            {/* AI assessment */}
+            <div style={{ background: G.card, border: `1px solid ${C.brand}40`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 18 }}>🤖</span>
+                <span style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Live AI Assessment</span>
+                <span style={{ fontSize: F.xs, padding: '2px 8px', borderRadius: R.pill, background: C.surface, color: C.muted }}>Advisory mode</span>
+                <span style={{ marginLeft: 'auto', fontSize: F.xs, color: C.muted }}>
+                  {llmView?.last_updated ? `Updated ${timeAgo(llmView.last_updated)}` : 'Not yet updated today'}
+                </span>
+              </div>
+
+              {/* Per-symbol stances */}
+              {llmView?.per_symbol && Object.keys(llmView.per_symbol).length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
+                  {Object.entries(llmView.per_symbol).map(([sym, dec]: [string, any]) => {
+                    const action = (dec.action || 'skip').toLowerCase();
+                    const isGo = action === 'proceed' || action === 'go';
+                    const isVeto = dec.is_veto;
+                    const col = isVeto ? C.bear : isGo ? C.bull : C.muted;
+                    const confPct = Math.round((dec.confidence || 0) * 100);
+                    return (
+                      <div key={sym} style={{ background: C.surface, borderRadius: R.md, padding: '12px 14px', border: `1px solid ${col}30` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span style={{ fontWeight: 800, color: C.text, fontSize: F.sm }}>{sym}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: R.pill, background: col + '22', color: col }}>
+                            {isVeto ? 'VETO' : isGo ? 'GO' : 'SKIP'}
+                          </span>
+                        </div>
+                        <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
+                          <div style={{ width: `${confPct}%`, height: '100%', background: col }} />
+                        </div>
+                        <div style={{ fontSize: 10, color: col, fontWeight: 700 }}>{confPct}%</div>
+                        {dec.regime && <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{dec.regime}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ marginBottom: 16, padding: '14px 16px', background: C.surface, borderRadius: R.md, fontSize: F.sm, color: C.muted, fontStyle: 'italic' }}>
+                  {loading ? 'Loading AI data…' : 'AI data not available. Start bot with LLM_MODE=ADVISORY or higher.'}
+                </div>
+              )}
+
+              {llmView?.summary && (
+                <div style={{ fontSize: F.sm, color: C.textSub, lineHeight: 1.7, borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+                  {llmView.summary}
+                </div>
+              )}
+            </div>
+
+            {/* Activity + regime */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }} className="two-col">
+              <div>
+                <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Signal Funnel (24h)</div>
+                <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
+                  <SignalFunnelBar analyzed={analyzed} passed={passed} executed={executed} vetoed={vetoed} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 16 }}>
+                    {llmView?.decision_counts ? (
+                      <>
+                        <StatCell label="GO signals" value={String(llmView.decision_counts.proceed)} color={C.bull} />
+                        <StatCell label="Skipped" value={String(llmView.decision_counts.flat)} color={C.muted} />
+                        <StatCell label="Flipped" value={String(llmView.decision_counts.flip)} color={C.warn} />
+                        <StatCell label="Vetoed" value={String(vetoed)} color={C.bear} />
+                      </>
+                    ) : (
+                      <div style={{ gridColumn: '1/-1', color: C.muted, fontSize: F.sm, fontStyle: 'italic' }}>
+                        {loading ? 'Loading…' : 'No AI decisions recorded yet.'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Regime &amp; Streak</div>
+                <RegimeDial regime={regime} />
+                <div style={{ marginTop: 12 }}>
+                  <StreakBar trades={recentTrades} />
+                </div>
+              </div>
+            </div>
+
+            {/* Hourly heatmap */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Intraday Activity</div>
+              <HourlyTradeTimeline />
+              <div style={{ marginTop: 12 }}>
+                <IntradayActivityHeatmap activity={activity} />
+              </div>
+            </div>
+
+            {/* Bot schedule */}
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Bot Schedule</div>
+              <BotScheduleTimeline />
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════ TAB: TRADE LOG ══════════════ */}
+        {activeTab === 'log' && (
+          <div className="fade-in">
+            {/* Bot's recent trades */}
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Bot Trades
+                {!hasLiveTrades && <span style={{ fontSize: 9, fontWeight: 700, color: C.warn, background: `${C.warn}18`, border: `1px solid ${C.warn}40`, borderRadius: R.pill, padding: '1px 7px', marginLeft: 8 }}>SAMPLE DATA</span>}
+              </div>
+              {hasLiveTrades ? (
+                <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '4px 16px' }}>
+                  {recentTrades.map((t, i) => <TradeRow key={`${t.symbol}-${t.side}-${t.entry ?? i}-${i}`} t={t} />)}
+                </div>
+              ) : !loading ? (
+                <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', textAlign: 'center' }}>
+                  <div style={{ fontSize: F.sm, color: C.muted }}>No bot trades recorded yet.</div>
+                  <div style={{ fontSize: F.xs, color: C.faint, marginTop: 4 }}>Trades appear here as the bot executes and closes positions.</div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Manual trade logger */}
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>Log Your Own Trade</div>
+              <TradeLogForm />
+            </div>
+          </div>
+        )}
+
+        {/* ── Footer CTA ── */}
         <div style={{
-          background: `linear-gradient(135deg, ${C.brand}15, ${G.card})`,
+          marginTop: 40, background: `linear-gradient(135deg, ${C.brand}15, ${G.card})`,
           border: `1px solid ${C.brand}40`, borderRadius: R.xl,
-          padding: '22px 28px', marginBottom: 32,
+          padding: '20px 24px', marginBottom: 8,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
         }}>
           <div>
             <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Get this brief every morning</div>
-            <div style={{ fontSize: F.sm, color: C.muted, marginTop: 4 }}>Connect Telegram to receive the daily brief at 06:00 UTC, plus instant signal alerts.</div>
+            <div style={{ fontSize: F.sm, color: C.muted, marginTop: 2 }}>Connect Telegram to receive alerts at 06:00 UTC.</div>
           </div>
           <a href="/copy-trade" style={{ padding: '9px 20px', background: C.brand, color: '#fff', borderRadius: R.sm, fontSize: F.sm, fontWeight: 700, textDecoration: 'none' }}>
             Set Up Alerts →
           </a>
         </div>
+
+        <style>{`
+          .fade-in { animation: fadeInUp 0.2s ease; }
+          @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+          @media (max-width: 640px) {
+            .kpi-grid { grid-template-columns: 1fr 1fr !important; }
+            .two-col { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
 
       </div>
     </Layout>
