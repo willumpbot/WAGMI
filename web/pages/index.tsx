@@ -400,7 +400,7 @@ function MarketSnapshotCard({ sym, signal, loading, onSelect }: {
   if (loading || !signal) {
     return (
       <div style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '20px 22px',
@@ -566,7 +566,7 @@ function ActivityTicker({ events }: { events: ActivityEvent[] }) {
     <div
       style={{
         overflow: 'hidden',
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.md,
         padding: '8px 0',
@@ -746,7 +746,7 @@ function RecentTradeStrip({ trades }: { trades: MiniTrade[] }) {
 
   return (
     <div style={{
-      background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl,
+      background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl,
       padding: '16px 22px', marginBottom: 24,
       display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap',
     }}>
@@ -898,7 +898,7 @@ function SignalHealthGauge({
 
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -1072,7 +1072,7 @@ function MarketMomentumStrip({
             key={sym}
             style={{
               flex: '1 1 0',
-              background: C.card,
+              background: G.card,
               border: `1px solid ${C.border}`,
               borderRadius: R.lg,
               padding: '16px 18px',
@@ -1299,7 +1299,7 @@ function ActivityCalendarHeatmap() {
     <div
       className="fade-in"
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '20px 24px',
@@ -1490,7 +1490,7 @@ function BotHealthIndicator() {
       `}</style>
       <div
         style={{
-          background: C.card,
+          background: G.card,
           border: `1px solid ${C.border}`,
           borderRadius: R.lg,
           padding: '14px 18px',
@@ -1566,7 +1566,7 @@ function FundingRateBar() {
     <div
       style={{
         flex: '1 1 0',
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '12px 18px',
@@ -1694,7 +1694,7 @@ function OpenInterestGauge() {
     <div
       style={{
         flex: '1 1 0',
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '12px 18px',
@@ -1977,7 +1977,7 @@ function RegimeConfidenceHistory({
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -2225,7 +2225,7 @@ function MarketSentimentGauge({
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -2364,7 +2364,7 @@ function TopOpportunityCard({
   if (loading) {
     return (
       <div style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '20px 24px',
@@ -2715,7 +2715,7 @@ export default function Home() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            <Link href="/results" style={{ fontSize: F.sm, color: C.textSub, fontWeight: 600, textDecoration: 'none', border: `1px solid ${C.border}`, padding: '7px 16px', borderRadius: R.md, background: C.card }}>
+            <Link href="/results" style={{ fontSize: F.sm, color: C.textSub, fontWeight: 600, textDecoration: 'none', border: `1px solid ${C.border}`, padding: '7px 16px', borderRadius: R.md, background: G.card }}>
               Track Record →
             </Link>
             <Link href="/copy-trade" style={{ fontSize: F.sm, color: '#fff', fontWeight: 700, textDecoration: 'none', background: G.brand, padding: '7px 16px', borderRadius: R.md, boxShadow: S.glow }}>
@@ -2758,7 +2758,7 @@ export default function Home() {
         <div
           className="fade-in"
           style={{
-            background: C.card,
+            background: G.card,
             border: `1px solid ${C.border}`,
             borderRadius: R.lg,
             padding: '20px 24px',
@@ -2874,7 +2874,7 @@ export default function Home() {
           <MarketSentimentGauge signals={signals} regime={regime} />
           {/* Signal overview stats */}
           <div style={{
-            background: C.card,
+            background: G.card,
             border: `1px solid ${C.border}`,
             borderRadius: R.lg,
             padding: '20px 24px',
@@ -3003,7 +3003,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-        <div style={{ border: `1px solid ${C.border}`, borderRadius: R.md, overflow: 'hidden', background: C.card }}>
+        <div style={{ border: `1px solid ${C.border}`, borderRadius: R.md, overflow: 'hidden', background: G.card }}>
           <TradingViewChart symbol={activeChart} />
         </div>
       </div>
@@ -3105,7 +3105,7 @@ export default function Home() {
             {[1, 2].map((i) => <Skeleton key={i} h={100} />)}
           </div>
         ) : strategies.length === 0 ? (
-          <div style={{ padding: '24px', background: C.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted, fontSize: F.sm }}>
+          <div style={{ padding: '24px', background: G.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted, fontSize: F.sm }}>
             Strategies appear here once the bot starts scanning. Nothing active yet — start the bot to begin receiving signals.
           </div>
         ) : (

@@ -204,7 +204,8 @@ function SignalCard({ event, index }: { event: ActivityEvent; index: number }) {
   const [expanded, setExpanded] = useState(false);
   const type = event.event_type || 'llm_skip';
   const cfg = ETYPES[type] || ETYPES.llm_skip;
-  const data = (event as any).data || {};
+  type SignalEventData = { confidence?: number; regime?: string; side?: string; entry?: number; sl?: number; tp1?: number; mode?: string; gate?: string; reason?: string };
+  const data = (event.data || {}) as SignalEventData;
   const conf = data.confidence || 0;
   const isMissedWin = type === 'signal_blocked_miss';
 
