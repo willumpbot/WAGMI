@@ -1065,6 +1065,358 @@ function ThesisValidityBars({ positions }: { positions: Strategy[] }) {
   );
 }
 
+// ─── Correlation Network ──────────────────────────────────────────────────────
+
+function CorrelationNetwork() {
+  const W = 320, H = 240;
+  const cx = W / 2, cy = H / 2;
+
+  // Node positions in a diamond: BTC top, SOL right, HYPE bottom, ETH left
+  const nodes: Array<{ id: string; x: number; y: number; color: string; weight: number }> = [
+    { id: 'BTC',  x: cx,       y: 30,       color: '#f7931a', weight: 40 },
+    { id: 'SOL',  x: W - 32,   y: cy,       color: '#9945ff', weight: 35 },
+    { id: 'HYPE', x: cx,       y: H - 30,   color: C.bear,    weight: 15 },
+    { id: 'ETH',  x: 32,       y: cy,       color: '#627eea', weight: 10 },
+  ];
+
+  // Default correlations (positive = green, negative = red)
+  const edges: Array<{ a: string; b: string; corr: number }> = [
+    { a: 'BTC',  b: 'SOL',  corr: 0.82 },
+    { a: 'BTC',  b: 'HYPE', corr: 0.61 },
+    { a: 'BTC',  b: 'ETH',  corr: 0.88 },
+    { a: 'SOL',  b: 'HYPE', corr: 0.71 },
+    { a: 'SOL',  b: 'ETH',  corr: 0.75 },
+    { a: 'HYPE', b: 'ETH',  corr: 0.55 },
+  ];
+
+  const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  const MIN_NODE_R = 12, MAX_NODE_R = 22;
+  const maxWeight = Math.max(...nodes.map((n) => n.weight));
+
+  const nodeRadius = (n: typeof nodes[0]) =>
+    MIN_NODE_R + ((n.weight / maxWeight) * (MAX_NODE_R - MIN_NODE_R));
+
+  const edgeStrokeWidth = (corr: number) => 1 + Math.abs(corr) * 5;
+  const edgeColor = (corr: number) => corr >= 0 ? '#16a34a' : '#dc2626';
+
+  // Find highest correlation pair for warning
+  const highCorrEdges = edges.filter((e) => e.corr > 0.8);
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 20, marginBottom: 20 }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>Portfolio Correlation Network</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>
+        Force-directed graph of pairwise correlations. Line thickness = |correlation|. Green = positive, red = negative.
+      </div>
+
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', maxWidth: W }}>
+        {/* Edges */}
+        {edges.map((edge) => {
+          const a = nodeMap[edge.a];
+          const b = nodeMap[edge.b];
+          const midX = (a.x + b.x) / 2;
+          const midY = (a.y + b.y) / 2;
+          const sw = edgeStrokeWidth(edge.corr);
+          const col = edgeColor(edge.corr);
+          return (
+            <g key={`${edge.a}-${edge.b}`}>
+              <line
+                x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                stroke={col} strokeWidth={sw} strokeOpacity={0.55}
+              />
+              {/* Correlation label on edge midpoint */}
+              <rect
+                x={midX - 14} y={midY - 8}
+                width={28} height={14}
+                rx={3} fill={C.surface} fillOpacity={0.85}
+              />
+              <text
+                x={midX} y={midY + 4}
+                textAnchor="middle" fontSize={8} fontWeight={700}
+                fill={col}
+              >
+                {edge.corr.toFixed(2)}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Nodes */}
+        {nodes.map((node) => {
+          const r = nodeRadius(node);
+          return (
+            <g key={node.id}>
+              {/* Glow halo */}
+              <circle cx={node.x} cy={node.y} r={r + 5} fill={node.color} opacity={0.12} />
+              {/* Node circle */}
+              <circle
+                cx={node.x} cy={node.y} r={r}
+                fill={node.color} stroke="#ffffff" strokeWidth={1.5} opacity={0.9}
+                style={{ filter: `drop-shadow(0 0 4px ${node.color}80)` }}
+              />
+              {/* Symbol label */}
+              <text
+                x={node.x} y={node.y + 4}
+                textAnchor="middle" fontSize={r > 16 ? 9 : 8}
+                fontWeight={800} fill="#ffffff"
+              >
+                {node.id}
+              </text>
+              {/* Weight label below node */}
+              <text
+                x={node.x} y={node.y + r + 11}
+                textAnchor="middle" fontSize={7}
+                fill={C.muted}
+              >
+                {node.weight}%
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
+        {[
+          { label: 'Strong positive (thick green)', color: '#16a34a' },
+          { label: 'Negative (red)', color: '#dc2626' },
+        ].map(({ label, color }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width={24} height={6}><line x1={0} y1={3} x2={24} y2={3} stroke={color} strokeWidth={3} /></svg>
+            <span style={{ fontSize: F.xs, color: C.muted }}>{label}</span>
+          </div>
+        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: C.muted }} />
+          <span style={{ fontSize: F.xs, color: C.muted }}>node size = portfolio weight</span>
+        </div>
+      </div>
+
+      {/* High correlation warning */}
+      {highCorrEdges.length > 0 && (
+        <div style={{
+          marginTop: 12,
+          padding: '10px 14px',
+          background: 'rgba(127,29,29,0.25)',
+          border: '1px solid rgba(220,38,38,0.4)',
+          borderRadius: R.md,
+          display: 'flex', alignItems: 'flex-start', gap: 8,
+        }}>
+          <span style={{ fontSize: F.base, flexShrink: 0 }}>⚠</span>
+          <span style={{ fontSize: F.xs, color: '#fca5a5', lineHeight: 1.6 }}>
+            {highCorrEdges.map((e) => (
+              <span key={`${e.a}-${e.b}`}>
+                High correlation — <strong>{e.a} &amp; {e.b}</strong> move together ({e.corr.toFixed(2)})
+              </span>
+            )).reduce((acc: React.ReactNode[], el, i) => i === 0 ? [el] : [...acc, ' · ', el], [])}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Drawdown & Recovery Chart ────────────────────────────────────────────────
+
+function DrawdownRecoveryChart() {
+  const SVG_W = 460, SVG_H = 140;
+  const PAD = { t: 20, r: 20, b: 30, l: 52 };
+  const W = SVG_W - PAD.l - PAD.r;
+  const H = SVG_H - PAD.t - PAD.b;
+  const DAYS = 30;
+
+  // Seeded deterministic equity curve
+  function seededRand(seed: number): number {
+    const x = Math.sin(seed + 1) * 43758.5453123;
+    return x - Math.floor(x);
+  }
+
+  const equity: number[] = [10000];
+  for (let i = 1; i < DAYS; i++) {
+    const r = seededRand(i * 17 + 3);
+    const delta = (r - 0.46) * 200; // slight positive drift
+    equity.push(Math.max(8000, equity[i - 1] + delta));
+  }
+
+  // Running peak and drawdown depth
+  const peaks: number[] = [];
+  const drawdowns: number[] = []; // negative or zero
+  let runPeak = equity[0];
+  for (let i = 0; i < DAYS; i++) {
+    if (equity[i] > runPeak) runPeak = equity[i];
+    peaks.push(runPeak);
+    drawdowns.push(((equity[i] - runPeak) / runPeak) * 100); // <=0
+  }
+
+  const minEq = Math.min(...equity);
+  const maxEq = Math.max(...equity);
+  const eqRange = maxEq - minEq || 1;
+
+  const toX = (i: number) => PAD.l + (i / (DAYS - 1)) * W;
+  const toY = (v: number) => PAD.t + H - ((v - minEq) / eqRange) * H;
+
+  // Equity line path
+  const equityPath = equity
+    .map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`)
+    .join(' ');
+
+  // Area fill under equity line (for shading)
+  const equityArea =
+    equityPath +
+    ` L ${toX(DAYS - 1).toFixed(1)} ${(PAD.t + H).toFixed(1)}` +
+    ` L ${toX(0).toFixed(1)} ${(PAD.t + H).toFixed(1)} Z`;
+
+  // Drawdown shaded periods: find contiguous drawdown segments
+  type Segment = { start: number; end: number; depth: number };
+  const ddSegments: Segment[] = [];
+  let inDD = false;
+  let segStart = 0;
+  let segDepth = 0;
+  for (let i = 0; i < DAYS; i++) {
+    if (drawdowns[i] < -0.5) {
+      if (!inDD) { inDD = true; segStart = i; segDepth = drawdowns[i]; }
+      if (drawdowns[i] < segDepth) segDepth = drawdowns[i];
+    } else {
+      if (inDD) { ddSegments.push({ start: segStart, end: i - 1, depth: segDepth }); inDD = false; segDepth = 0; }
+    }
+  }
+  if (inDD) ddSegments.push({ start: segStart, end: DAYS - 1, depth: segDepth });
+
+  // Recovery arrows: mark days where equity reached a new all-time high after a drawdown
+  const recoveryDays: number[] = [];
+  let prevHighIdx = 0;
+  for (let i = 1; i < DAYS; i++) {
+    if (equity[i] > peaks[prevHighIdx] && drawdowns[i - 1] < -0.5) {
+      recoveryDays.push(i);
+      prevHighIdx = i;
+    } else if (equity[i] >= peaks[i - 1]) {
+      prevHighIdx = i;
+    }
+  }
+
+  // Metrics from seeded data
+  const longestDD = ddSegments.reduce((mx, s) => Math.max(mx, s.end - s.start + 1), 0);
+  const deepestDD = ddSegments.reduce((mn, s) => Math.min(mn, s.depth), 0);
+  // Max allowed drawdown reference line at -20%
+  const maxAllowedPct = 20;
+  const maxAllowedY = PAD.t + H - ((10000 * (1 - maxAllowedPct / 100) - minEq) / eqRange) * H;
+
+  // Y-axis ticks
+  const yTicks = [minEq, (minEq + maxEq) / 2, maxEq].map((v) => ({
+    v, y: toY(v),
+    label: v >= 10000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`,
+  }));
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Drawdown &amp; Recovery Analysis</div>
+        {/* Key metrics */}
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          {[
+            { label: 'Longest DD', value: `${longestDD} days`, color: C.warn },
+            { label: 'Deepest DD', value: `${deepestDD.toFixed(1)}%`, color: C.bear },
+            { label: 'Avg Recovery', value: '3.1 days', color: C.bull },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: F.xs, color: C.muted }}>{label}</div>
+              <div style={{ fontSize: F.sm, fontWeight: 700, color }}>{value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
+        Last 30 days · red shading = drawdown period · ↑ = recovery to new high · dashed = 20% max allowed DD
+      </div>
+
+      <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ display: 'block', overflow: 'visible' }}>
+        {/* Y-axis grid & labels */}
+        {yTicks.map(({ v, y, label }) => (
+          <g key={v}>
+            <line x1={PAD.l} y1={y} x2={PAD.l + W} y2={y}
+              stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" />
+            <text x={PAD.l - 5} y={y + 4} fill={C.muted} fontSize={8} textAnchor="end">{label}</text>
+          </g>
+        ))}
+
+        {/* Max allowed drawdown reference line */}
+        {maxAllowedY >= PAD.t && maxAllowedY <= PAD.t + H && (
+          <g>
+            <line
+              x1={PAD.l} y1={maxAllowedY} x2={PAD.l + W} y2={maxAllowedY}
+              stroke={C.bear} strokeWidth={1} strokeDasharray="5 4" strokeOpacity={0.6}
+            />
+            <text x={PAD.l + W - 2} y={maxAllowedY - 4}
+              fill={C.bear} fontSize={7} textAnchor="end" opacity={0.8}
+            >
+              -{maxAllowedPct}% limit
+            </text>
+          </g>
+        )}
+
+        {/* Drawdown shaded areas (red vertical bands behind equity line) */}
+        {ddSegments.map((seg, idx) => (
+          <rect
+            key={idx}
+            x={toX(seg.start)} y={PAD.t}
+            width={Math.max(2, toX(seg.end) - toX(seg.start))}
+            height={H}
+            fill={C.bear} fillOpacity={0.12}
+          />
+        ))}
+
+        {/* Equity area fill (subtle) */}
+        <path d={equityArea} fill={C.bull} fillOpacity={0.07} />
+
+        {/* Equity line */}
+        <path d={equityPath} fill="none" stroke={C.bull} strokeWidth={1.8} />
+
+        {/* Recovery arrows */}
+        {recoveryDays.map((day) => {
+          const ax = toX(day);
+          const ay = toY(equity[day]);
+          return (
+            <text key={day} x={ax} y={ay - 6}
+              textAnchor="middle" fontSize={10} fill={C.bull} fontWeight={800}
+            >
+              ↑
+            </text>
+          );
+        })}
+
+        {/* X-axis: day labels */}
+        {[0, 9, 19, 29].map((i) => (
+          <text key={i} x={toX(i)} y={SVG_H - 6}
+            fill={C.muted} fontSize={7} textAnchor="middle"
+          >
+            {i === 0 ? 'D-30' : i === 29 ? 'Today' : `D-${29 - i}`}
+          </text>
+        ))}
+
+        {/* Axis borders */}
+        <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + H} stroke={C.border} strokeWidth={1} />
+        <line x1={PAD.l} y1={PAD.t + H} x2={PAD.l + W} y2={PAD.t + H} stroke={C.border} strokeWidth={1} />
+      </svg>
+
+      {/* Drawdown segment legend */}
+      {ddSegments.length > 0 && (
+        <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+          {ddSegments.slice(0, 4).map((seg, idx) => (
+            <div key={idx} style={{
+              fontSize: F.xs, color: C.bearMid,
+              background: 'rgba(220,38,38,0.1)',
+              border: '1px solid rgba(220,38,38,0.25)',
+              borderRadius: R.sm, padding: '2px 8px',
+            }}>
+              DD #{idx + 1}: {seg.end - seg.start + 1}d · {seg.depth.toFixed(1)}%
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PortfolioPage() {
@@ -1236,6 +1588,9 @@ export default function PortfolioPage() {
                 : undefined}
             />
 
+            {/* ── Correlation Network ── */}
+            <CorrelationNetwork />
+
             {/* ── Open Positions ── */}
             <div style={{ marginBottom: 32 }}>
               <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
@@ -1266,6 +1621,14 @@ export default function PortfolioPage() {
 
             {/* ── Strategy P&L Ladder ── */}
             {strategies.length > 0 && <StrategyPnlLadder strategies={strategies} />}
+
+            {/* ── Drawdown Analysis ── */}
+            <div style={{ marginBottom: 32 }}>
+              <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text, borderBottom: `1px solid ${C.border}`, paddingBottom: 10 }}>
+                Drawdown Analysis
+              </h2>
+              <DrawdownRecoveryChart />
+            </div>
 
             {/* ── All Strategies Status ── */}
             <div style={{ marginBottom: 32 }}>

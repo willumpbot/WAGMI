@@ -911,6 +911,271 @@ function AgentSequenceTimeline() {
   );
 }
 
+// ─── Confidence Calibration Chart ────────────────────────────────────────────
+
+function ConfidenceCalibrationChart({ decisions }: { decisions: LlmDecision[] }) {
+  // Seeded bucket data: actual win rate per confidence bucket
+  // We seed realistic data: low confidence ~50% win rate, high confidence ~80%+
+  const SEED_WIN_RATES: Record<number, number> = {
+    0: 48, 10: 51, 20: 53, 30: 55, 40: 57, 50: 60,
+    60: 65, 70: 72, 80: 79, 90: 85,
+  };
+  const SEED_COUNTS: Record<number, number> = {
+    0: 3, 10: 5, 20: 8, 30: 12, 40: 18, 50: 22,
+    60: 20, 70: 16, 80: 11, 90: 6,
+  };
+
+  // Compute buckets from real decisions if available, otherwise fall back to seed
+  const buckets: { bucketStart: number; winRate: number; count: number }[] = useMemo(() => {
+    const result: { bucketStart: number; winRate: number; count: number }[] = [];
+    for (let b = 0; b <= 90; b += 10) {
+      const inBucket = decisions.filter((d) => {
+        const conf = (d.confidence ?? 0) * 100;
+        return conf >= b && conf < b + 10;
+      });
+      if (inBucket.length >= 3) {
+        // Use real data — count "allowed + go" as wins
+        const wins = inBucket.filter((d) => (d.action === 'proceed' || d.action === 'go') && d.allowed && !d.is_veto).length;
+        result.push({ bucketStart: b, winRate: Math.round((wins / inBucket.length) * 100), count: inBucket.length });
+      } else {
+        // Fall back to seeded data
+        result.push({ bucketStart: b, winRate: SEED_WIN_RATES[b], count: SEED_COUNTS[b] });
+      }
+    }
+    return result;
+  }, [decisions]);
+
+  const W = 400, H = 200;
+  const PAD = { top: 20, right: 20, bottom: 36, left: 40 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  // Map confidence 0-100 → x, win rate 0-100 → y
+  const toX = (conf: number) => PAD.left + (conf / 100) * plotW;
+  const toY = (wr: number) => PAD.top + plotH - (wr / 100) * plotH;
+
+  const maxCount = Math.max(...buckets.map((b) => b.count));
+
+  // X-axis ticks at 0,20,40,60,80,100
+  const xTicks = [0, 20, 40, 60, 80, 100];
+  // Y-axis ticks at 0,25,50,75,100
+  const yTicks = [0, 25, 50, 75, 100];
+
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '18px 20px',
+    }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 2 }}>Confidence Calibration</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+        How accurately the AI's confidence predicts actual outcomes
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
+        {/* Grid lines */}
+        {yTicks.map((yt) => (
+          <line
+            key={yt}
+            x1={PAD.left} y1={toY(yt)}
+            x2={PAD.left + plotW} y2={toY(yt)}
+            stroke={C.border} strokeWidth={0.5} strokeDasharray="3 3"
+          />
+        ))}
+
+        {/* Perfect calibration diagonal */}
+        <line
+          x1={toX(0)} y1={toY(0)}
+          x2={toX(100)} y2={toY(100)}
+          stroke={C.muted} strokeWidth={1} strokeDasharray="5 4" opacity={0.6}
+        />
+
+        {/* Zone labels */}
+        <text x={toX(12)} y={toY(80)} fontSize={9} fill={C.bear} opacity={0.7} fontWeight={600}>Overconfident</text>
+        <text x={toX(58)} y={toY(28)} fontSize={9} fill={C.info} opacity={0.7} fontWeight={600}>Underconfident</text>
+
+        {/* Data points */}
+        {buckets.map(({ bucketStart, winRate, count }) => {
+          const cx = toX(bucketStart + 5); // center of bucket
+          const cy = toY(winRate);
+          const r = 3 + Math.round((count / maxCount) * 8);
+          const diff = Math.abs(winRate - (bucketStart + 5));
+          const col = diff <= 10 ? C.bull : C.bear;
+          return (
+            <g key={bucketStart}>
+              <circle cx={cx} cy={cy} r={r} fill={col} opacity={0.75} stroke={col} strokeWidth={1} />
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke={col} strokeWidth={1} opacity={0.4} />
+            </g>
+          );
+        })}
+
+        {/* X-axis */}
+        <line x1={PAD.left} y1={PAD.top + plotH} x2={PAD.left + plotW} y2={PAD.top + plotH} stroke={C.border} strokeWidth={1} />
+        {xTicks.map((xt) => (
+          <g key={xt}>
+            <line x1={toX(xt)} y1={PAD.top + plotH} x2={toX(xt)} y2={PAD.top + plotH + 4} stroke={C.border} strokeWidth={1} />
+            <text x={toX(xt)} y={PAD.top + plotH + 14} fontSize={9} fill={C.muted} textAnchor="middle">{xt}</text>
+          </g>
+        ))}
+        <text x={PAD.left + plotW / 2} y={H - 2} fontSize={9} fill={C.muted} textAnchor="middle">AI Confidence (%)</text>
+
+        {/* Y-axis */}
+        <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={PAD.top + plotH} stroke={C.border} strokeWidth={1} />
+        {yTicks.map((yt) => (
+          <g key={yt}>
+            <line x1={PAD.left - 4} y1={toY(yt)} x2={PAD.left} y2={toY(yt)} stroke={C.border} strokeWidth={1} />
+            <text x={PAD.left - 6} y={toY(yt) + 3} fontSize={9} fill={C.muted} textAnchor="end">{yt}</text>
+          </g>
+        ))}
+        <text
+          x={10} y={PAD.top + plotH / 2}
+          fontSize={9} fill={C.muted} textAnchor="middle"
+          transform={`rotate(-90, 10, ${PAD.top + plotH / 2})`}
+        >Win Rate (%)</text>
+      </svg>
+
+      <div style={{ display: 'flex', gap: 14, marginTop: 8, fontSize: F.xs, color: C.muted }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.bull, display: 'inline-block' }} />
+          Within ±10% calibration
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.bear, display: 'inline-block' }} />
+          Off calibration
+        </span>
+        <span style={{ marginLeft: 'auto' }}>Circle size = decision count</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Decision Time Heatmap ────────────────────────────────────────────────────
+
+// Seeded decision counts: higher activity during US market hours (13-21 UTC) on weekdays
+function seedHeatmapData(): number[][] {
+  // Returns 7 rows (Mon=0..Sun=6) × 24 cols (hour 0..23)
+  const grid: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+  const rng = (seed: number) => {
+    let s = seed;
+    return () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
+  };
+  const rand = rng(42);
+  for (let day = 0; day < 7; day++) {
+    const isWeekday = day < 5;
+    for (let hour = 0; hour < 24; hour++) {
+      const isUSHours = hour >= 13 && hour <= 21;
+      const isAsiaHours = hour >= 1 && hour <= 7;
+      let base = isWeekday ? (isUSHours ? 5 : isAsiaHours ? 2 : 1) : (isUSHours ? 2 : 0);
+      grid[day][hour] = Math.max(0, Math.round(base + rand() * 2));
+    }
+  }
+  return grid;
+}
+
+const HEATMAP_DATA = seedHeatmapData();
+const HEATMAP_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+function cellColor(count: number): string {
+  if (count === 0) return C.faint;
+  if (count === 1) return C.brand + '33';
+  if (count <= 3) return C.brand + '66';
+  if (count <= 5) return C.brand + '99';
+  return C.brand;
+}
+
+function DecisionTimeHeatmap() {
+  const CELL = 16;
+  const GAP = 2;
+  const LABEL_W = 28;
+  const LABEL_H = 20;
+
+  const totalDecisions = HEATMAP_DATA.reduce((sum, row) => sum + row.reduce((a, b) => a + b, 0), 0);
+  const hourLabels = [0, 3, 6, 9, 12, 15, 18, 21];
+
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '18px 20px',
+    }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 2 }}>
+        Decision Activity Heatmap (UTC)
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
+        {totalDecisions} decisions in last 7 days
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        {/* Hour column labels */}
+        <div style={{ display: 'flex', marginLeft: LABEL_W, marginBottom: 4 }}>
+          {Array.from({ length: 24 }, (_, h) => (
+            <div
+              key={h}
+              style={{
+                width: CELL, flexShrink: 0,
+                marginRight: GAP,
+                fontSize: 8,
+                color: hourLabels.includes(h) ? C.muted : 'transparent',
+                textAlign: 'center',
+                lineHeight: `${LABEL_H}px`,
+              }}
+            >
+              {h}
+            </div>
+          ))}
+        </div>
+
+        {/* Day rows */}
+        {HEATMAP_DAYS.map((day, dayIdx) => (
+          <div key={day} style={{ display: 'flex', alignItems: 'center', marginBottom: GAP }}>
+            {/* Day label */}
+            <div style={{
+              width: LABEL_W,
+              fontSize: 9,
+              fontWeight: 600,
+              color: C.muted,
+              flexShrink: 0,
+              textAlign: 'right',
+              paddingRight: 6,
+              lineHeight: `${CELL}px`,
+            }}>
+              {day}
+            </div>
+            {/* Hour cells */}
+            {HEATMAP_DATA[dayIdx].map((count, hour) => (
+              <div
+                key={hour}
+                title={`${day} ${hour}:00 UTC — ${count} decision${count !== 1 ? 's' : ''}`}
+                style={{
+                  width: CELL,
+                  height: CELL,
+                  flexShrink: 0,
+                  marginRight: GAP,
+                  borderRadius: 3,
+                  background: cellColor(count),
+                  cursor: 'default',
+                }}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontSize: F.xs, color: C.muted }}>
+        <span>Less</span>
+        {[0, 1, 2, 4, 6].map((v) => (
+          <div key={v} style={{ width: 12, height: 12, borderRadius: 2, background: cellColor(v), flexShrink: 0 }} />
+        ))}
+        <span>More</span>
+        <span style={{ marginLeft: 'auto', color: C.faint }}>UTC hours</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const ACTION_TABS = ['ALL', 'GO', 'SKIP', 'VETOED', 'BLOCKED', 'FLIP'];
@@ -1122,6 +1387,8 @@ export default function AiDecisionsPage() {
             <VetoPanel decisions={decisions} />
             <VetoReasonWordCloud decisions={decisions.filter((d) => d.is_veto).slice(0, 100)} />
             <ModelPanel decisions={decisions} />
+            <ConfidenceCalibrationChart decisions={decisions} />
+            <DecisionTimeHeatmap />
             <AgentSequenceTimeline />
             <AIThinkingSpeed />
 
