@@ -42,6 +42,16 @@ type Tab = 'signals' | 'trades' | 'performance' | 'logs';
 
 import { resolveApiBase } from '../../src/api';
 
+function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+      <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
+      {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
+    </div>
+  );
+}
+
 const fmt = (v: any, digits = 2) => {
   const n = typeof v === 'number' ? v : Number(v);
   return Number.isFinite(n) ? n.toFixed(digits) : '—';
@@ -443,21 +453,21 @@ function StrategySignalHistory({ logs, card }: { logs: LogEntry[]; card: Strateg
       return { side, score: Number(score), market: String(market), ts: l.ts };
     });
 
-  // Deterministic placeholders if no real log-derived history
-  const placeholders: SignalHistoryEntry[] = (() => {
-    const base = Date.now();
-    const seed = (card?.id?.length ?? 5) * 7;
-    const entries: SignalHistoryEntry[] = [
-      { side: 'BUY', score: 72 + (seed % 15), market: card?.latestSignal?.market ?? 'BTC-USD', ts: new Date(base - 3600000).toISOString() },
-      { side: 'NEUTRAL', score: 48 + (seed % 10), market: card?.latestSignal?.market ?? 'BTC-USD', ts: new Date(base - 7200000).toISOString() },
-      { side: 'SELL', score: 61 + (seed % 12), market: card?.latestSignal?.market ?? 'BTC-USD', ts: new Date(base - 10800000).toISOString() },
-      { side: 'BUY', score: 55 + (seed % 20), market: card?.latestSignal?.market ?? 'BTC-USD', ts: new Date(base - 18000000).toISOString() },
-      { side: 'NEUTRAL', score: 42 + (seed % 8), market: card?.latestSignal?.market ?? 'BTC-USD', ts: new Date(base - 28800000).toISOString() },
-    ];
-    return entries;
-  })();
-
-  const entries = fromLogs.length > 0 ? fromLogs : placeholders;
+  if (fromLogs.length === 0) {
+    return (
+      <div style={{
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '16px 18px',
+      }}>
+        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>
+          Signal History
+        </div>
+        <AwaitingResults label="No signal history yet" sub="Signal history will appear once this strategy generates signals" />
+      </div>
+    );
+  }
 
   const dotColor = (side: SignalHistoryEntry['side']) => {
     if (side === 'BUY') return '#22c55e';
@@ -477,9 +487,6 @@ function StrategySignalHistory({ logs, card }: { logs: LogEntry[]; card: Strateg
     }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>
         Signal History
-        {fromLogs.length === 0 && (
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 400, marginLeft: 8 }}>(example)</span>
-        )}
       </div>
 
       {/* Vertical timeline */}
@@ -496,7 +503,7 @@ function StrategySignalHistory({ logs, card }: { logs: LogEntry[]; card: Strateg
         }} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {entries.map((entry, i) => (
+          {fromLogs.map((entry, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
               {/* Timeline dot */}
               <div style={{
@@ -828,9 +835,6 @@ function TradeStreakVisual({ trades }: { trades: TradeRecord[] }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
         <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>
           Trade Streak
-          {useFallback && (
-            <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 400, marginLeft: 8 }}>(example)</span>
-          )}
         </div>
         {/* Win-rate pill */}
         <span style={{
@@ -1040,9 +1044,6 @@ function WinRateByRegimeHeatmap({ trades }: { trades: TradeRecord[] }) {
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>
         Win Rate by Regime × Symbol
-        {useFallback && (
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 400, marginLeft: 8 }}>(example)</span>
-        )}
       </div>
 
       <div style={{ overflowX: 'auto' }}>
@@ -1234,9 +1235,6 @@ function SignalEntryDistribution({ trades }: { trades: TradeRecord[] }) {
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>
         Entry Signal Score Distribution
-        {useFallback && (
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 400, marginLeft: 8 }}>(example)</span>
-        )}
       </div>
 
       <svg

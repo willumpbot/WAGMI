@@ -10,6 +10,16 @@ function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
   return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
 }
 
+function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+      <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
+      {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
+    </div>
+  );
+}
+
 function linearRegression(points: { x: number; y: number }[]): { slope: number; intercept: number } {
   const n = points.length;
   if (n < 2) return { slope: 0, intercept: 0 };
@@ -548,8 +558,6 @@ function HourlyWinRate({ trades }: { trades: TradeRecord[] }) {
 // ─── Hour of Day Win Rate Heat Strip ─────────────────────────────────────────
 
 function HourOfDayWinRate({ trades }: { trades: TradeRecord[] }) {
-  // Group trades by UTC hour derived from entry_timestamp_ms if present at runtime,
-  // falling back to seeded pseudo-random values so the component always renders.
   type AnyRecord = TradeRecord & { entry_timestamp_ms?: number | null };
 
   const buckets: { wins: number; total: number }[] = Array.from({ length: 24 }, () => ({ wins: 0, total: 0 }));
@@ -564,16 +572,16 @@ function HourOfDayWinRate({ trades }: { trades: TradeRecord[] }) {
     if (t.outcome === 'WIN') buckets[hour].wins++;
   });
 
-  // Seeded fallback: deterministic pseudo-data so chart always renders
-  const displayBuckets = hasRealData
-    ? buckets
-    : Array.from({ length: 24 }, (_, h) => {
-        const seed = ((h * 7919 + 13) % 100);
-        const isGreen = seed > 50;
-        const total = 3 + (h % 5);
-        const wins = isGreen ? Math.ceil(total * (0.55 + (seed % 20) / 100)) : Math.floor(total * (0.25 + (seed % 20) / 100));
-        return { wins: Math.min(wins, total), total };
-      });
+  if (!hasRealData) {
+    return (
+      <div>
+        <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 6 }}>
+          Win Rate by Hour of Day (UTC)
+        </div>
+        <AwaitingResults label="Awaiting trade data" sub="Hour-of-day win rate will populate once the bot has closed trades with timestamp data" />
+      </div>
+    );
+  }
 
   const CELL_W = 26;
   const CELL_H = 44;
@@ -598,17 +606,11 @@ function HourOfDayWinRate({ trades }: { trades: TradeRecord[] }) {
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 6 }}>
         Win Rate by Hour of Day (UTC)
       </div>
-      {!hasRealData && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 8 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
       <svg
         viewBox={`0 0 ${totalW} ${totalH}`}
         style={{ width: '100%', height: 'auto', display: 'block' }}
       >
-        {displayBuckets.map((b, h) => {
+        {buckets.map((b, h) => {
           const x = h * (CELL_W + PAD);
           const fill = cellFill(b);
           const wr = b.total > 0 ? Math.round((b.wins / b.total) * 100) : null;
@@ -693,31 +695,23 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
       !isNaN(t.rr_achieved!)
   );
 
-  const hasRealData = plotTrades.length >= 3;
-
-  // Seeded fallback dots — 20 deterministic points
-  const seedDots: { conf: number; rr: number; win: boolean }[] = Array.from({ length: 20 }, (_, i) => {
-    const conf = ((i * 4973 + 37) % 101);
-    const rr = ((i * 3761 + 19) % 400) / 100 - 1; // -1 to +3
-    const win = rr > 0.8 ? (i % 3 !== 0) : (i % 4 === 0);
-    return { conf, rr, win };
-  });
+  if (plotTrades.length < 3) {
+    return <AwaitingResults label="Awaiting signal data" sub="Signal confidence vs R:R scatter will appear once there are at least 3 trades with confidence and R:R data" />;
+  }
 
   const W = 500, H = 200;
   const pad = { top: 24, right: 24, bottom: 44, left: 52 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top - pad.bottom;
 
-  const dots = hasRealData
-    ? plotTrades.map((t, i) => ({
-        conf: (t.confidence ?? 0) * 100,
-        rr: t.rr_achieved ?? 0,
-        win: t.outcome === 'WIN',
-        label: t.symbol,
-        size: (t as any).position_size != null ? Math.max(3, Math.min(9, 3 + ((t as any).position_size / 1000))) : 4,
-        isRecent: i >= plotTrades.length - 5,
-      }))
-    : seedDots.map((d, i) => ({ ...d, label: '', size: 4, isRecent: i >= seedDots.length - 5 }));
+  const dots = plotTrades.map((t, i) => ({
+    conf: (t.confidence ?? 0) * 100,
+    rr: t.rr_achieved ?? 0,
+    win: t.outcome === 'WIN',
+    label: t.symbol,
+    size: (t as any).position_size != null ? Math.max(3, Math.min(9, 3 + ((t as any).position_size / 1000))) : 4,
+    isRecent: i >= plotTrades.length - 5,
+  }));
 
   const allRR = dots.map((d) => d.rr);
   const minRR = Math.min(...allRR, -1.5);
@@ -732,12 +726,6 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
 
   return (
     <div style={{ position: 'relative' }}>
-      {!hasRealData && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 6 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
       <svg
         viewBox={`0 0 ${W} ${H}`}
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
@@ -1885,17 +1873,15 @@ function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
     } catch {/* skip */}
   });
 
-  // Seeded fallback
   if (!hasTimestamps) {
-    for (let i = 0; i < 40; i++) {
-      const hour = (i * 7 + 3) % 24;
-      const day = i % 7;
-      const win = ((i * 13 + 5) % 3) !== 0;
-      const pnl = 1 + (i % 10);
-      const jitterX = ((i * 7919 + 13) % 40) / 40 - 0.5;
-      const jitterY = ((i * 3761 + 7) % 40) / 40 - 0.5;
-      dots.push({ hour, day, win, pnl, jitterX, jitterY });
-    }
+    return (
+      <div>
+        <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 6 }}>
+          Trade Cluster Map — When Does Bot Win?
+        </div>
+        <AwaitingResults label="Awaiting trade data" sub="Trade cluster map will populate once the bot has closed trades with timestamp data" />
+      </div>
+    );
   }
 
   const cellW = plotW / 24;
@@ -1937,12 +1923,6 @@ function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 6 }}>
         Trade Cluster Map — When Does Bot Win?
       </div>
-      {!hasTimestamps && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 8 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
       <svg
         viewBox={`0 0 ${W} ${H}`}
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
@@ -2361,45 +2341,42 @@ function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
     return trades[idx - 1]?.outcome === 'LOSS';
   }
 
-  const rows: { label: string; real: number | null; seed: number }[] = [
+  if (!hasData) {
+    return <AwaitingResults label="Awaiting trade data" sub="Win probability by context will appear once there are at least 5 trades" />;
+  }
+
+  const rows: { label: string; pct: number | null }[] = [
     {
       label: 'P(win | regime=TREND)',
-      real: winRateFor((t) => (t.llm_regime ?? '').toLowerCase().includes('trend')),
-      seed: 0.84,
+      pct: winRateFor((t) => (t.llm_regime ?? '').toLowerCase().includes('trend')),
     },
     {
       label: 'P(win | regime=RANGE)',
-      real: winRateFor((t) => (t.llm_regime ?? '').toLowerCase().includes('range')),
-      seed: 0.63,
+      pct: winRateFor((t) => (t.llm_regime ?? '').toLowerCase().includes('range')),
     },
     {
       label: 'P(win | confidence ≥ 80%)',
-      real: winRateFor((t) => (t.llm_confidence ?? 0) >= 0.80),
-      seed: 0.88,
+      pct: winRateFor((t) => (t.llm_confidence ?? 0) >= 0.80),
     },
     {
       label: 'P(win | confidence < 70%)',
-      real: winRateFor((t) => (t.llm_confidence ?? 0) < 0.70 && t.llm_confidence != null),
-      seed: 0.51,
+      pct: winRateFor((t) => (t.llm_confidence ?? 0) < 0.70 && t.llm_confidence != null),
     },
     {
       label: 'P(win | first trade of day)',
-      real: winRateFor((_t, idx = trades.indexOf(_t)) => isFirstOfDay(idx)),
-      seed: 0.79,
+      pct: winRateFor((_t, idx = trades.indexOf(_t)) => isFirstOfDay(idx)),
     },
     {
       label: 'P(win | after a loss)',
-      real: winRateFor((_t, idx = trades.indexOf(_t)) => afterLoss(idx)),
-      seed: 0.61,
+      pct: winRateFor((_t, idx = trades.indexOf(_t)) => afterLoss(idx)),
     },
   ];
 
-  // Use real value if available, else seed
-  const resolved = rows.map((r) => ({
-    label: r.label,
-    pct: r.real != null ? r.real : r.seed,
-    isReal: r.real != null,
-  }));
+  const resolved = rows.filter((r) => r.pct != null) as { label: string; pct: number }[];
+
+  if (resolved.length === 0) {
+    return <AwaitingResults label="Awaiting signal data" sub="Not enough data per condition yet to compute conditional win rates" />;
+  }
 
   // Sort descending by probability
   const sorted = [...resolved].sort((a, b) => b.pct - a.pct);
@@ -2419,17 +2396,11 @@ function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
 
   return (
     <div>
-      {!hasData && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 8 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
       <svg
         viewBox={`0 0 ${totalW} ${totalH}`}
         style={{ width: '100%', height: 'auto', display: 'block' }}
       >
-        {sorted.map(({ label, pct, isReal }, i) => {
+        {sorted.map(({ label, pct }, i) => {
           const y = i * ROW_H + 4;
           const barW = pct * BAR_MAX_W;
           const color = barColor(pct);
@@ -2437,7 +2408,6 @@ function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
 
           return (
             <g key={label}>
-              {/* Row background on hover via title */}
               {/* Label */}
               <text
                 x={LABEL_W - 6}
@@ -2470,7 +2440,7 @@ function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
                 fillOpacity={0.8}
                 rx={3}
               >
-                <title>{`${label}: ${pctText}${isReal ? ' (real data)' : ' (seeded)'}`}</title>
+                <title>{`${label}: ${pctText}`}</title>
               </rect>
 
               {/* Percentage label */}
@@ -2484,17 +2454,6 @@ function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
               >
                 {pctText}
               </text>
-
-              {/* Real/seed indicator dot */}
-              {isReal && (
-                <circle
-                  cx={LABEL_W + barW - 5}
-                  cy={y + ROW_H / 2}
-                  r={2.5}
-                  fill="#fff"
-                  fillOpacity={0.6}
-                />
-              )}
             </g>
           );
         })}
@@ -2554,11 +2513,6 @@ function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <span style={{ width: 10, height: 10, background: C.bear, borderRadius: 2, display: 'inline-block' }} /> {'<'}50% (weak / avoid)
         </span>
-        {hasData && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.muted, display: 'inline-block' }} /> White dot = real data
-          </span>
-        )}
       </div>
     </div>
   );
@@ -2598,23 +2552,18 @@ function ExitTimingHeatmap({ trades }: { trades: TradeRecord[] }) {
   });
 
   // Seeded fallback — US hours (13-21) on weekdays get higher PnL
-  const displayGrid: { avg: number; count: number }[][] = hasReal
-    ? grid.map((row) => row.map((c) => ({ avg: c.count > 0 ? c.sum / c.count : NaN, count: c.count })))
-    : Array.from({ length: 7 }, (_, day) =>
-        Array.from({ length: 24 }, (_, hour) => {
-          const isWeekday = day < 5;
-          const isUsHours = hour >= 13 && hour <= 21;
-          const isAsiaHours = hour >= 1 && hour <= 8;
-          // seed a value deterministically
-          const seed = ((day * 31 + hour * 7) % 17);
-          let base = -30 + seed * 8; // range -30 to +106
-          if (isWeekday && isUsHours) base += 300 + (seed % 5) * 60;
-          else if (isWeekday && isAsiaHours) base += 80 + (seed % 4) * 40;
-          else if (!isWeekday) base -= 40 + (seed % 3) * 20;
-          const count = isWeekday ? 2 + (seed % 4) : seed % 3;
-          return { avg: count > 0 ? base : NaN, count };
-        })
-      );
+  if (!hasReal) {
+    return (
+      <div>
+        <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+          Exit Timing — Average P&amp;L by Hour &amp; Day
+        </div>
+        <AwaitingResults label="Awaiting trade data" sub="Exit timing heatmap will populate once the bot has closed trades with exit timestamp data" />
+      </div>
+    );
+  }
+
+  const displayGrid = grid.map((row) => row.map((c) => ({ avg: c.count > 0 ? c.sum / c.count : NaN, count: c.count })));
 
   // Find max absolute avg for intensity scaling
   const allAvgs = displayGrid.flat().map((c) => c.avg).filter((v) => !isNaN(v));
@@ -2669,12 +2618,6 @@ function ExitTimingHeatmap({ trades }: { trades: TradeRecord[] }) {
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Exit Timing — Average P&amp;L by Hour &amp; Day
       </div>
-      {!hasReal && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 6 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
       <svg
         viewBox={`0 0 ${W} ${H}`}
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
@@ -2806,15 +2749,7 @@ function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
     { label: '5-10×', min: 5, max: 10 },
   ];
 
-  // Seeded data showing diminishing returns at high leverage
-  const SEED_DATA = [
-    { wr: 0.82, avgWin: 180, avgLoss: 90 },
-    { wr: 0.79, avgWin: 320, avgLoss: 180 },
-    { wr: 0.74, avgWin: 520, avgLoss: 340 },
-    { wr: 0.65, avgWin: 820, avgLoss: 680 },
-  ];
-
-  // Attempt to compute real stats from trades
+  // Compute real stats from trades
   const realStats = TIERS.map(({ min, max }) => {
     const subset = trades.filter((t) => t.leverage != null && t.leverage >= min && t.leverage < max);
     if (subset.length < 3) return null;
@@ -2827,10 +2762,22 @@ function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
   });
 
   const hasReal = realStats.some((s) => s !== null);
+
+  if (!hasReal) {
+    return (
+      <div>
+        <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+          Performance by Leverage Tier
+        </div>
+        <AwaitingResults label="Awaiting trade data" sub="Performance by leverage tier will appear once there are at least 3 trades per tier" />
+      </div>
+    );
+  }
+
   const displayData = TIERS.map((tier, i) => ({
     ...tier,
-    ...(realStats[i] ?? SEED_DATA[i]),
-  }));
+    ...(realStats[i] ?? { wr: 0, avgWin: 0, avgLoss: 0 }),
+  })).filter((_, i) => realStats[i] !== null);
 
   // SVG dimensions
   const W = 460, H = 140;
@@ -2838,7 +2785,7 @@ function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
 
-  const TIER_COUNT = TIERS.length;
+  const TIER_COUNT = displayData.length;
   const tierSlotW = plotW / TIER_COUNT;
   const BAR_W = Math.floor(tierSlotW / 5);
   const BAR_GAP = Math.floor(BAR_W * 0.4);
@@ -2866,12 +2813,6 @@ function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Performance by Leverage Tier
       </div>
-      {!hasReal && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 4 }}>
-          <span style={{ fontSize: 12 }}>🔶</span>
-          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
-        </div>
-      )}
       <svg
         viewBox={`0 0 ${W} ${H}`}
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
@@ -3309,7 +3250,7 @@ export default function Forensics() {
         )}
       </div>
 
-      {/* Hour of Day Win Rate — entry_timestamp_ms based, with seeded fallback */}
+      {/* Hour of Day Win Rate — entry_timestamp_ms based */}
       <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Hour-of-Day Win Rate</h3>

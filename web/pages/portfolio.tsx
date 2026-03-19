@@ -10,6 +10,16 @@ function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
   return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
 }
 
+function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+      <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
+      {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
+    </div>
+  );
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type StrategiesResponse = Strategy[];
@@ -303,39 +313,16 @@ function AllocationDonut({ positions }: { positions: Array<{ symbol: string; val
 // ─── PnL Sparkline ────────────────────────────────────────────────────────────
 
 function PnlSparkline({ pnl, width = 80, height = 28 }: { pnl: number; width?: number; height?: number }) {
-  // Generate a realistic-looking P&L journey: start at 0, random walk to final pnl
-  const points: number[] = [0];
-  const steps = 12;
-  const seed = Math.abs(Math.round(pnl * 100));
-
-  for (let i = 1; i < steps; i++) {
-    const prev = points[i - 1];
-    const rand = ((seed * (i + 7) * 1234567) % 100) / 100 - 0.5;
-    const drift = pnl / steps;
-    points.push(prev + drift + rand * Math.abs(pnl) * 0.3);
-  }
-  points.push(pnl);
-
-  const minV = Math.min(...points, 0);
-  const maxV = Math.max(...points, 0);
-  const range = maxV - minV || 1;
-
-  const toY = (v: number) => height - ((v - minV) / range) * (height - 4) - 2;
-  const toX = (i: number) => (i / (points.length - 1)) * width;
-
-  const pathD = points.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`).join(' ');
-  const zeroY = toY(0);
-
+  // Only render a flat line at the current PnL value — no intermediate fake data
   const color = pnl >= 0 ? '#16a34a' : '#dc2626';
+  const midY = height / 2;
 
   return (
     <svg width={width} height={height} style={{ overflow: 'visible', display: 'block' }}>
       {/* Zero line */}
-      <line x1={0} y1={zeroY} x2={width} y2={zeroY} stroke={C.border} strokeWidth={0.5} strokeDasharray="2 2" />
-      {/* P&L path */}
-      <path d={pathD} fill="none" stroke={color} strokeWidth={1.5} />
-      {/* End dot */}
-      <circle cx={toX(points.length - 1)} cy={toY(pnl)} r={2.5} fill={color} />
+      <line x1={0} y1={midY} x2={width} y2={midY} stroke={C.border} strokeWidth={0.5} strokeDasharray="2 2" />
+      {/* End dot at midpoint */}
+      <circle cx={width} cy={midY} r={2.5} fill={color} />
     </svg>
   );
 }
@@ -461,26 +448,23 @@ function PortfolioHealthScore({ trades }: { trades: TradeRecord[] }) {
 // ─── Correlation Warning Heatmap ─────────────────────────────────────────────
 
 function CorrelationWarning({ symbols }: { symbols?: string[] }) {
-  const SYMBOLS = symbols && symbols.length >= 2 ? symbols.slice(0, 4) : ['BTC', 'SOL', 'HYPE', 'ETH'];
+  const hasPositions = symbols && symbols.length >= 2;
 
-  // Default correlation matrix (upper triangle filled, diagonal = self)
-  const defaultCorr: Record<string, Record<string, number>> = {
-    BTC:  { BTC: 1, SOL: 0.72, HYPE: 0.55, ETH: 0.85 },
-    SOL:  { BTC: 0.72, SOL: 1, HYPE: 0.62, ETH: 0.68 },
-    HYPE: { BTC: 0.55, SOL: 0.62, HYPE: 1, ETH: 0.50 },
-    ETH:  { BTC: 0.85, SOL: 0.68, HYPE: 0.50, ETH: 1 },
-  };
+  if (!hasPositions) {
+    return (
+      <div style={{ marginTop: 20, marginBottom: 20 }}>
+        <AwaitingResults label="Awaiting position data" sub="Correlation matrix will appear once the bot has open positions" />
+      </div>
+    );
+  }
 
-  const getCorr = (a: string, b: string): number | null => {
-    if (a === b) return null; // diagonal
-    return defaultCorr[a]?.[b] ?? defaultCorr[b]?.[a] ?? 0.5;
-  };
+  const SYMBOLS = symbols.slice(0, 4);
 
   const cellColor = (val: number | null): string => {
     if (val === null) return C.surface;
-    if (val < 0.3) return '#166534';  // dark green — low correlation
-    if (val < 0.6) return '#92400e';  // amber/yellow — medium
-    return '#7f1d1d';                 // deep red — high
+    if (val < 0.3) return '#166534';
+    if (val < 0.6) return '#92400e';
+    return '#7f1d1d';
   };
 
   const textColor = (val: number | null): string => {
@@ -489,19 +473,6 @@ function CorrelationWarning({ symbols }: { symbols?: string[] }) {
     if (val < 0.6) return '#fde68a';
     return '#fca5a5';
   };
-
-  // Find highest off-diagonal correlation for warning banner
-  let maxCorr = 0;
-  let maxPair: [string, string] = ['BTC', 'ETH'];
-  for (let i = 0; i < SYMBOLS.length; i++) {
-    for (let j = i + 1; j < SYMBOLS.length; j++) {
-      const v = getCorr(SYMBOLS[i], SYMBOLS[j]) ?? 0;
-      if (v > maxCorr) {
-        maxCorr = v;
-        maxPair = [SYMBOLS[i], SYMBOLS[j]];
-      }
-    }
-  }
 
   const CELL = 56;
   const LABEL_W = 44;
@@ -516,10 +487,9 @@ function CorrelationWarning({ symbols }: { symbols?: string[] }) {
         Pairwise correlation between open position symbols. High correlation means positions may not provide true diversification.
       </div>
 
-      {/* Heatmap grid */}
+      {/* Heatmap grid — no live correlation data yet, show placeholder cells */}
       <div style={{ overflowX: 'auto' }}>
         <svg width={gridW} height={gridH} style={{ display: 'block' }}>
-          {/* Column headers */}
           {SYMBOLS.map((sym, j) => (
             <text
               key={`col-${sym}`}
@@ -533,11 +503,8 @@ function CorrelationWarning({ symbols }: { symbols?: string[] }) {
               {sym}
             </text>
           ))}
-
-          {/* Row headers + cells */}
           {SYMBOLS.map((rowSym, i) => (
             <g key={`row-${rowSym}`}>
-              {/* Row label */}
               <text
                 x={LABEL_W - 6}
                 y={LABEL_W + i * (CELL + PAD) + CELL / 2 + PAD + 4}
@@ -548,59 +515,17 @@ function CorrelationWarning({ symbols }: { symbols?: string[] }) {
               >
                 {rowSym}
               </text>
-
-              {/* Cells */}
               {SYMBOLS.map((colSym, j) => {
-                const val = getCorr(rowSym, colSym);
                 const isDiag = rowSym === colSym;
-                const bg = cellColor(val);
                 const cx = LABEL_W + j * (CELL + PAD) + PAD;
                 const cy = LABEL_W + i * (CELL + PAD) + PAD;
-
                 return (
                   <g key={`cell-${rowSym}-${colSym}`}>
-                    <rect
-                      x={cx}
-                      y={cy}
-                      width={CELL}
-                      height={CELL}
-                      rx={6}
-                      fill={bg}
-                      opacity={isDiag ? 0.4 : 1}
-                    />
+                    <rect x={cx} y={cy} width={CELL} height={CELL} rx={6} fill={isDiag ? C.surface : C.surface} opacity={isDiag ? 0.4 : 1} />
                     {isDiag ? (
-                      <text
-                        x={cx + CELL / 2}
-                        y={cy + CELL / 2 + 5}
-                        textAnchor="middle"
-                        fontSize={16}
-                        fill={C.muted}
-                      >
-                        —
-                      </text>
+                      <text x={cx + CELL / 2} y={cy + CELL / 2 + 5} textAnchor="middle" fontSize={16} fill={C.muted}>—</text>
                     ) : (
-                      <>
-                        <text
-                          x={cx + CELL / 2}
-                          y={cy + CELL / 2 - 2}
-                          textAnchor="middle"
-                          fontSize={13}
-                          fontWeight={800}
-                          fill={textColor(val)}
-                        >
-                          {(val ?? 0).toFixed(2)}
-                        </text>
-                        <text
-                          x={cx + CELL / 2}
-                          y={cy + CELL / 2 + 13}
-                          textAnchor="middle"
-                          fontSize={8}
-                          fill={textColor(val)}
-                          opacity={0.75}
-                        >
-                          {(val ?? 0) >= 0.6 ? 'HIGH' : (val ?? 0) >= 0.3 ? 'MED' : 'LOW'}
-                        </text>
-                      </>
+                      <text x={cx + CELL / 2} y={cy + CELL / 2 + 4} textAnchor="middle" fontSize={9} fill={C.faint}>…</text>
                     )}
                   </g>
                 );
@@ -610,38 +535,9 @@ function CorrelationWarning({ symbols }: { symbols?: string[] }) {
         </svg>
       </div>
 
-      {/* Color legend */}
-      <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap' }}>
-        {[
-          { label: 'Low (<0.3)', bg: '#166534', text: '#86efac' },
-          { label: 'Medium (0.3–0.6)', bg: '#92400e', text: '#fde68a' },
-          { label: 'High (>0.6)', bg: '#7f1d1d', text: '#fca5a5' },
-        ].map(({ label, bg, text }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 14, height: 14, borderRadius: 3, background: bg }} />
-            <span style={{ fontSize: F.xs, color: C.muted }}>{label}</span>
-          </div>
-        ))}
+      <div style={{ marginTop: 10, fontSize: F.xs, color: C.muted }}>
+        Correlation data will populate as the bot accumulates trade history.
       </div>
-
-      {/* Warning banner for highest correlation */}
-      {maxCorr >= 0.6 && (
-        <div style={{
-          marginTop: 14,
-          padding: '10px 14px',
-          background: 'rgba(127,29,29,0.25)',
-          border: '1px solid rgba(220,38,38,0.4)',
-          borderRadius: R.md,
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 8,
-        }}>
-          <span style={{ fontSize: F.base, flexShrink: 0 }}>⚠</span>
-          <span style={{ fontSize: F.xs, color: '#fca5a5', lineHeight: 1.6 }}>
-            <strong>High correlation between {maxPair[0]} and {maxPair[1]} ({maxCorr.toFixed(2)})</strong> — these positions may not provide true diversification. A single market move could impact both simultaneously.
-          </span>
-        </div>
-      )}
     </div>
   );
 }
@@ -671,96 +567,10 @@ function arcPath(
 }
 
 function PortfolioSunburst() {
-  const cx = 160, cy = 160;
-  const R1_INNER = 55, R1_OUTER = 85;   // inner ring
-  const R2_INNER = 90, R2_OUTER = 130;  // outer ring
-  const GAP = 0.025; // radians gap between segments
-
-  // Inner ring: by strategy
-  const strategies = [
-    { label: 'regime_trend', pct: 45, color: C.brand },
-    { label: 'monte_carlo',  pct: 30, color: C.info },
-    { label: 'confidence',   pct: 15, color: C.bull },
-    { label: 'multi_tier',   pct: 10, color: C.warn },
-  ];
-
-  // Outer ring: by symbol
-  const symbols = [
-    { label: 'BTC',  pct: 40, color: '#f7931a' },
-    { label: 'SOL',  pct: 35, color: '#9945ff' },
-    { label: 'HYPE', pct: 15, color: C.bear },
-    { label: 'ETH',  pct: 10, color: '#627eea' },
-  ];
-
-  function buildArcs<T extends { pct: number; label: string; color: string }>(
-    items: T[], r1: number, r2: number,
-  ) {
-    let angle = -Math.PI / 2;
-    return items.map((item) => {
-      const sweep = (item.pct / 100) * 2 * Math.PI;
-      const startA = angle + GAP / 2;
-      const endA   = angle + sweep - GAP / 2;
-      angle += sweep;
-      return { ...item, path: arcPath(cx, cy, r1, r2, startA, endA) };
-    });
-  }
-
-  const innerArcs = buildArcs(strategies, R1_INNER, R1_OUTER);
-  const outerArcs = buildArcs(symbols,    R2_INNER, R2_OUTER);
-
   return (
     <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', flex: 1, minWidth: 300 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 16 }}>Allocation Sunburst</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-        {/* SVG Sunburst */}
-        <svg width={320} height={320} viewBox="0 0 320 320" style={{ flexShrink: 0, display: 'block' }}>
-          {innerArcs.map((arc) => (
-            <path key={arc.label} d={arc.path} fill={arc.color} opacity={0.85}
-              style={{ filter: `drop-shadow(0 0 3px ${arc.color}60)` }}>
-              <title>{arc.label}: {arc.pct}%</title>
-            </path>
-          ))}
-          {outerArcs.map((arc) => (
-            <path key={arc.label} d={arc.path} fill={arc.color} opacity={0.9}
-              style={{ filter: `drop-shadow(0 0 4px ${arc.color}70)` }}>
-              <title>{arc.label}: {arc.pct}%</title>
-            </path>
-          ))}
-          {/* Center text */}
-          <text x={cx} y={cy - 6} textAnchor="middle" fontSize={13} fontWeight={700} fill={C.textSub}>Portfolio</text>
-          <text x={cx} y={cy + 11} textAnchor="middle" fontSize={11} fill={C.muted}>4 Assets</text>
-        </svg>
-
-        {/* Legend — two columns */}
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-          {/* Symbols */}
-          <div>
-            <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Symbols</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {outerArcs.map((arc) => (
-                <div key={arc.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 2, background: arc.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: F.xs, color: C.text, fontWeight: 600, width: 34 }}>{arc.label}</span>
-                  <span style={{ fontSize: F.xs, color: C.muted }}>{arc.pct}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Strategies */}
-          <div>
-            <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Strategies</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {innerArcs.map((arc) => (
-                <div key={arc.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 2, background: arc.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: F.xs, color: C.text, fontWeight: 600, width: 80 }}>{arc.label}</span>
-                  <span style={{ fontSize: F.xs, color: C.muted }}>{arc.pct}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      <AwaitingResults label="No open positions" sub="Portfolio sunburst will appear once the bot has open positions" />
     </div>
   );
 }
@@ -768,66 +578,10 @@ function PortfolioSunburst() {
 // ─── Risk Budget Meter ────────────────────────────────────────────────────────
 
 function RiskBudgetMeter() {
-  const dailyLimit  = 3.0;
-  const usedToday   = 1.2;
-  const usedPct     = (usedToday / dailyLimit) * 100;
-  const remainPct   = 100 - usedPct;
-
-  const subBars = [
-    { label: 'Open position risk', used: 0.7,  limit: 1.5 },
-    { label: 'Signal risk',        used: 0.35, limit: 1.0 },
-    { label: 'Drawdown buffer',    used: 0.15, limit: 0.5 },
-  ];
-
-  const barColor = usedPct > 80 ? C.bear : usedPct > 55 ? C.warn : C.bull;
-
   return (
     <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', flex: 1, minWidth: 260 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 16 }}>Risk Budget Used</div>
-
-      {/* Main bar */}
-      <div style={{ marginBottom: 6 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span style={{ fontSize: F.xs, color: C.muted }}>Today</span>
-          <span style={{ fontSize: F.xs, fontWeight: 700, color: barColor }}>{usedToday.toFixed(1)}% / {dailyLimit.toFixed(1)}% daily limit</span>
-        </div>
-        <div style={{ height: 14, background: C.surface, borderRadius: R.pill, overflow: 'hidden', display: 'flex' }}>
-          <div style={{
-            width: `${usedPct}%`, height: '100%',
-            background: `linear-gradient(90deg, ${barColor}cc, ${barColor})`,
-            borderRadius: `${R.pill}px 0 0 ${R.pill}px`,
-            transition: 'width 0.4s',
-          }} />
-          <div style={{
-            width: `${remainPct}%`, height: '100%',
-            background: `${C.bull}33`,
-            borderRadius: `0 ${R.pill}px ${R.pill}px 0`,
-          }} />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-          <span style={{ fontSize: 10, color: barColor, fontWeight: 600 }}>{usedToday.toFixed(1)}% used</span>
-          <span style={{ fontSize: 10, color: C.bull, fontWeight: 600 }}>{(dailyLimit - usedToday).toFixed(1)}% remaining</span>
-        </div>
-      </div>
-
-      {/* Sub-bars */}
-      <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {subBars.map((sb) => {
-          const pct = Math.min(100, (sb.used / sb.limit) * 100);
-          const col = pct > 80 ? C.bear : pct > 55 ? C.warn : '#2563eb';
-          return (
-            <div key={sb.label}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: F.xs, color: C.muted }}>{sb.label}</span>
-                <span style={{ fontSize: F.xs, fontWeight: 600, color: col }}>{sb.used.toFixed(2)}% / {sb.limit.toFixed(1)}%</span>
-              </div>
-              <div style={{ height: 6, background: C.surface, borderRadius: R.pill, overflow: 'hidden' }}>
-                <div style={{ width: `${pct}%`, height: '100%', background: col, borderRadius: R.pill, opacity: 0.85, transition: 'width 0.4s' }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <AwaitingResults label="Awaiting risk data" sub="Risk budget data will populate once the bot is active" />
     </div>
   );
 }

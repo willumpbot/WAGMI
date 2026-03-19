@@ -26,99 +26,28 @@ type Strategy = {
 // ─── Regime-Strategy Compatibility Matrix ────────────────────────────────────
 
 function RegimeStrategyMatrix() {
-  const strategies = ['Regime Trend', 'Monte Carlo', 'Confidence Scorer', 'Multi-Tier'];
-  const regimes = ['Trend', 'Range', 'High Vol', 'Panic', 'Low Liq'];
-
-  // Score 0-100 for how well each strategy performs in each regime
-  // Based on strategy design: Regime Trend excels in trending, etc.
-  const scores: number[][] = [
-    [92, 20, 45, 10, 30],  // Regime Trend: excellent in trend, bad in range/panic
-    [60, 85, 70, 40, 55],  // Monte Carlo: zone-based, works in most
-    [75, 65, 55, 30, 50],  // Confidence Scorer: multi-factor, decent everywhere
-    [80, 50, 35, 15, 40],  // Multi-Tier: needs clear trend + alignment
-  ];
-
-  function cellColor(score: number): string {
-    if (score >= 80) return `rgba(22,163,74,${0.3 + (score - 80) * 0.014})`;
-    if (score >= 60) return `rgba(234,179,8,${0.2 + (score - 60) * 0.01})`;
-    if (score >= 40) return `rgba(148,163,184,0.15)`;
-    return `rgba(220,38,38,${0.2 + (40 - score) * 0.008})`;
-  }
-
-  function textColor(score: number): string {
-    if (score >= 75) return '#86efac';
-    if (score >= 55) return '#fde68a';
-    if (score >= 40) return C.muted;
-    return '#fca5a5';
-  }
-
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-        <div>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Strategy–Regime Compatibility</div>
-          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
-            How well each strategy performs in each market regime (based on design)
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 10, fontSize: 10, color: C.muted, flexShrink: 0 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 10, height: 10, background: 'rgba(22,163,74,0.6)', borderRadius: 2, display: 'inline-block' }} />Strong
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 10, height: 10, background: 'rgba(234,179,8,0.4)', borderRadius: 2, display: 'inline-block' }} />Moderate
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 10, height: 10, background: 'rgba(220,38,38,0.4)', borderRadius: 2, display: 'inline-block' }} />Weak
-          </span>
-        </div>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Strategy–Regime Compatibility</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>
+        How well each strategy performs in each market regime
       </div>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ borderCollapse: 'separate', borderSpacing: 3, width: '100%', minWidth: 420 }}>
-          <thead>
-            <tr>
-              <th style={{ padding: '4px 8px', textAlign: 'left', width: 120 }} />
-              {regimes.map(r => (
-                <th key={r} style={{ padding: '4px 8px', fontSize: F.xs, color: C.muted, fontWeight: 700, textAlign: 'center', minWidth: 64 }}>{r}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {strategies.map((strat, si) => (
-              <tr key={strat}>
-                <td style={{ padding: '4px 8px', fontSize: F.xs, color: C.textSub, fontWeight: 600, whiteSpace: 'nowrap' }}>{strat}</td>
-                {regimes.map((regime, ri) => {
-                  const score = scores[si][ri];
-                  return (
-                    <td key={regime} style={{ padding: '2px' }}>
-                      <div style={{
-                        background: cellColor(score),
-                        borderRadius: R.xs,
-                        padding: '7px 4px',
-                        textAlign: 'center',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: textColor(score),
-                      }}>
-                        {score}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div style={{ fontSize: F.xs, color: C.faint, marginTop: 10 }}>
-        The ensemble requires ≥2 strategies agreeing before placing any trade.
-        In Panic regime, all strategies reduce conviction — the bot typically skips or waits.
-      </div>
+      <AwaitingResults label="Awaiting performance data" sub="Strategy-regime compatibility will compute once the bot has trade history" />
     </div>
   );
 }
 
 import { resolveApiBase } from '../../src/api';
+
+function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+      <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
+      {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
+    </div>
+  );
+}
 
 function getHeartbeatTs(s: Strategy): string | null {
   return s.lastHeartbeat || s.last_seen || null;
@@ -382,53 +311,9 @@ function StrategyComparisonChart({ strategies }: { strategies: Strategy[] }) {
 // ─── LiveStatusTimeline ───────────────────────────────────────────────────────
 
 function LiveStatusTimeline({ strategies }: { strategies: Strategy[] }) {
-  // 24 hourly slots, rendered as a 6-column × 4-row grid
-  const SLOTS = 24;
-
-  // Build slot states deterministically using strategies as seed
-  // Slot 0 = oldest (23h ago), slot 23 = most recent (current hour)
-  const seed = strategies.length;
   const hasAnyActive = strategies.some(
     s => s.status === 'active' || s.lastHeartbeat || s.last_seen
   );
-
-  const slotStates: ('active' | 'error' | 'none')[] = Array.from({ length: SLOTS }, (_, i) => {
-    if (hasAnyActive) {
-      // Recent slots more likely to be active; use seed for determinism
-      const recency = i / (SLOTS - 1); // 0 = oldest, 1 = newest
-      const hash = ((seed * 37 + i * 13) % 100);
-      const errorHash = ((seed * 53 + i * 7 + 3) % 100);
-      if (recency > 0.85 && hash < 80) return 'active';
-      if (recency > 0.6 && hash < 65) return 'active';
-      if (recency > 0.3 && hash < 45) return 'active';
-      if (hash < 30) return 'active';
-      if (errorHash < 15) return 'error';
-      return 'none';
-    }
-    // No real data — fully deterministic placeholder
-    const hash = ((seed * 31 + i * 17) % 100);
-    if (hash < 55) return 'active';
-    if (hash < 65) return 'error';
-    return 'none';
-  });
-
-  const dotColor = (state: 'active' | 'error' | 'none') => {
-    if (state === 'active') return '#22c55e';
-    if (state === 'error') return '#ef4444';
-    return '#1e293b';
-  };
-
-  const dotBorder = (state: 'active' | 'error' | 'none') => {
-    if (state === 'active') return '#16a34a';
-    if (state === 'error') return '#b91c1c';
-    return '#334155';
-  };
-
-  const dotGlow = (state: 'active' | 'error' | 'none') => {
-    if (state === 'active') return '0 0 5px #22c55e88';
-    if (state === 'error') return '0 0 5px #ef444488';
-    return 'none';
-  };
 
   return (
     <div style={{
@@ -441,68 +326,13 @@ function LiveStatusTimeline({ strategies }: { strategies: Strategy[] }) {
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 12 }}>
         Activity Timeline (24h)
       </div>
-
-      {/* 4 rows × 6 columns grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(6, 1fr)',
-        gridTemplateRows: 'repeat(4, auto)',
-        gap: 8,
-        marginBottom: 12,
-      }}>
-        {slotStates.map((state, i) => {
-          const hoursAgo = SLOTS - 1 - i;
-          const title = hoursAgo === 0 ? 'Current hour' : `${hoursAgo}h ago`;
-          return (
-            <div
-              key={i}
-              title={`${title}: ${state}`}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 3,
-              }}
-            >
-              <div style={{
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                background: dotColor(state),
-                border: `1px solid ${dotBorder(state)}`,
-                boxShadow: dotGlow(state),
-              }} />
-              {/* Hour label on bottom row only (row 4, indices 18-23) */}
-              {i >= 18 && (
-                <span style={{ fontSize: 8, color: C.muted, fontFamily: 'monospace' }}>
-                  -{SLOTS - 1 - i}h
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-        {([
-          { state: 'active' as const, label: 'Active' },
-          { state: 'error' as const, label: 'Error' },
-          { state: 'none' as const, label: 'No data' },
-        ]).map(({ state, label }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: dotColor(state),
-              border: `1px solid ${dotBorder(state)}`,
-              flexShrink: 0,
-            }} />
-            <span style={{ fontSize: F.xs, color: C.muted }}>{label}</span>
-          </div>
-        ))}
-      </div>
+      {!hasAnyActive ? (
+        <AwaitingResults label="Awaiting activity data" sub="Timeline will populate as the bot runs" />
+      ) : (
+        <div style={{ color: C.muted, fontSize: F.sm, padding: '8px 0' }}>
+          Activity data available — timeline will display once hourly slots accumulate.
+        </div>
+      )}
     </div>
   );
 }
@@ -858,12 +688,25 @@ function StrategyPerformancePolarChart() {
   ];
   const N = axes.length;
 
-  const strategies = [
-    { name: 'Regime Trend', abbr: 'RGM', color: C.info, values: [82, 320, 90, 8, 85] },
-    { name: 'Monte Carlo', abbr: 'MCZ', color: C.brand, values: [75, 480, 70, 4, 78] },
-    { name: 'Conf. Scorer', abbr: 'CSC', color: C.bull, values: [70, 280, 60, 12, 72] },
-    { name: 'Multi-Tier', abbr: 'MTF', color: C.warn, values: [78, 350, 50, 10, 80] },
-  ];
+  const strategies: { name: string; abbr: string; color: string; values: number[] }[] = [];
+
+  if (strategies.length === 0) {
+    return (
+      <div style={{
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.xl,
+        padding: '20px 24px',
+        marginBottom: 28,
+        boxShadow: S.sm,
+      }}>
+        <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 16 }}>
+          Strategy Capability Profile
+        </div>
+        <AwaitingResults label="Awaiting performance data" sub="Polar chart will appear once strategies have trade history" />
+      </div>
+    );
+  }
 
   // Convert polar angle + radius to cartesian, starting from top (−90°)
   function polar(angleIdx: number, fraction: number): { x: number; y: number } {
@@ -1016,71 +859,6 @@ function StrategyPerformancePolarChart() {
 // ─── StrategyWeightHistory ────────────────────────────────────────────────────
 
 function StrategyWeightHistory() {
-  const VW = 520;
-  const VH = 120;
-  const MARGIN = { top: 12, right: 12, bottom: 32, left: 32 };
-
-  const chartW = VW - MARGIN.left - MARGIN.right;
-  const chartH = VH - MARGIN.top - MARGIN.bottom;
-
-  // 10 weight-update periods (index 0 = oldest, 9 = current)
-  const weightData: number[][] = [
-    [35, 30, 20, 15],
-    [36, 29, 20, 15],
-    [37, 28, 20, 15],
-    [38, 27, 21, 14],
-    [40, 26, 20, 14],
-    [40, 25, 21, 14],
-    [39, 26, 21, 14],
-    [39, 27, 20, 14],
-    [38, 28, 20, 14],
-    [38, 28, 20, 14], // current
-  ];
-
-  const PERIODS = weightData.length;
-  const strategies = [
-    { abbr: 'RGM', color: C.info },
-    { abbr: 'MCZ', color: C.brand },
-    { abbr: 'CSC', color: C.bull },
-    { abbr: 'MTF', color: C.warn },
-  ];
-
-  // Build stacked cumulative values per period
-  // stackedData[stratIdx][periodIdx] = cumulative % up to that strat
-  const cumData: number[][] = weightData.map(period => {
-    const cum: number[] = [];
-    let running = 0;
-    for (let s = 0; s < strategies.length; s++) {
-      running += period[s];
-      cum.push(running);
-    }
-    return cum;
-  });
-
-  // x position for a period index
-  const xAt = (i: number) => MARGIN.left + (i / (PERIODS - 1)) * chartW;
-
-  // y position for a percentage value (0-100 → bottom-to-top)
-  const yAt = (pct: number) => MARGIN.top + chartH * (1 - pct / 100);
-
-  // Build SVG polygon points for a stacked area band [stratIdx]
-  // Band from cumData[period][stratIdx-1] (bottom) to cumData[period][stratIdx] (top)
-  function bandPoints(stratIdx: number): string {
-    const topPts = weightData.map((_, pi) => `${xAt(pi)},${yAt(cumData[pi][stratIdx])}`);
-    const bottomPts = weightData.map((_, pi) => {
-      const bot = stratIdx === 0 ? 0 : cumData[pi][stratIdx - 1];
-      return `${xAt(pi)},${yAt(bot)}`;
-    }).reverse();
-    return [...topPts, ...bottomPts].join(' ');
-  }
-
-  // Build SVG polyline points for top edge of a band
-  function linePoints(stratIdx: number): string {
-    return weightData.map((_, pi) => `${xAt(pi)},${yAt(cumData[pi][stratIdx])}`).join(' ');
-  }
-
-  const currentWeights = weightData[PERIODS - 1];
-
   return (
     <div style={{
       background: C.surface,
@@ -1090,168 +868,18 @@ function StrategyWeightHistory() {
       marginBottom: 28,
       boxShadow: S.sm,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-        <div>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Strategy Weight Evolution</div>
-          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
-            Weights auto-adjust based on recent performance
-          </div>
-        </div>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Strategy Weight Evolution</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>
+        Weights auto-adjust based on recent performance
       </div>
-
-      <svg
-        viewBox={`0 0 ${VW} ${VH}`}
-        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
-        aria-label="Strategy weight evolution stacked area chart"
-      >
-        {/* Y-axis grid lines at 25, 50, 75, 100% */}
-        {[25, 50, 75, 100].map(pct => {
-          const y = yAt(pct);
-          return (
-            <g key={pct}>
-              <line
-                x1={MARGIN.left}
-                y1={y}
-                x2={VW - MARGIN.right}
-                y2={y}
-                stroke={C.border}
-                strokeWidth="1"
-                strokeDasharray="3 3"
-              />
-              <text
-                x={MARGIN.left - 4}
-                y={y + 3}
-                textAnchor="end"
-                fontSize="8"
-                fill={C.muted}
-                fontFamily="JetBrains Mono, monospace"
-              >
-                {pct}%
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Stacked area bands (bottom to top = MTF, CSC, MCZ, RGM) */}
-        {[3, 2, 1, 0].map(si => (
-          <polygon
-            key={si}
-            points={bandPoints(si)}
-            fill={strategies[si].color + '30'}
-            stroke="none"
-          />
-        ))}
-
-        {/* Top-edge strokes */}
-        {[3, 2, 1, 0].map(si => (
-          <polyline
-            key={si}
-            points={linePoints(si)}
-            fill="none"
-            stroke={strategies[si].color}
-            strokeWidth="1.5"
-            strokeOpacity={1}
-          />
-        ))}
-
-        {/* X-axis period labels */}
-        {weightData.map((_, pi) => (
-          <text
-            key={pi}
-            x={xAt(pi)}
-            y={VH - 4}
-            textAnchor="middle"
-            fontSize="8"
-            fill={pi === PERIODS - 1 ? C.textSub : C.muted}
-            fontFamily="JetBrains Mono, monospace"
-            fontWeight={pi === PERIODS - 1 ? '700' : '400'}
-          >
-            {pi === PERIODS - 1 ? 'Now' : `T-${PERIODS - 1 - pi}`}
-          </text>
-        ))}
-      </svg>
-
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 8 }}>
-        {strategies.map((s, si) => (
-          <div key={s.abbr} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{
-              width: 10,
-              height: 10,
-              background: s.color,
-              borderRadius: 2,
-              flexShrink: 0,
-            }} />
-            <span style={{ fontSize: F.xs, color: C.textSub, fontWeight: 600 }}>{s.abbr}</span>
-            <span style={{ fontSize: F.xs, color: C.muted }}>{currentWeights[si]}%</span>
-          </div>
-        ))}
-      </div>
+      <AwaitingResults label="Awaiting weight history" sub="Weight evolution will appear once the bot has run for a while" />
     </div>
   );
 }
 
 // ─── LiveSignalMatrix ─────────────────────────────────────────────────────────
 
-type SignalCell = { dir: 'BUY' | 'SELL' | 'WAIT'; conf?: number };
-
 function LiveSignalMatrix() {
-  const symbols = ['BTC', 'SOL', 'HYPE'];
-  const stratRows: { abbr: string; label: string }[] = [
-    { abbr: 'RGM', label: 'Regime Trend' },
-    { abbr: 'MCZ', label: 'Monte Carlo' },
-    { abbr: 'CSC', label: 'Confidence' },
-    { abbr: 'MTF', label: 'Multi-TF' },
-  ];
-
-  // Seeded signal data [stratIdx][symbolIdx]
-  const matrixData: SignalCell[][] = [
-    // RGM: BTC=BUY 87%, SOL=BUY 78%, HYPE=WAIT
-    [{ dir: 'BUY', conf: 87 }, { dir: 'BUY', conf: 78 }, { dir: 'WAIT' }],
-    // MCZ: BTC=BUY 74%, SOL=BUY 81%, HYPE=BUY 68%
-    [{ dir: 'BUY', conf: 74 }, { dir: 'BUY', conf: 81 }, { dir: 'BUY', conf: 68 }],
-    // CSC: BTC=BUY 82%, SOL=WAIT, HYPE=SELL 62%
-    [{ dir: 'BUY', conf: 82 }, { dir: 'WAIT' }, { dir: 'SELL', conf: 62 }],
-    // MTF: BTC=BUY 76%, SOL=BUY 72%, HYPE=WAIT
-    [{ dir: 'BUY', conf: 76 }, { dir: 'BUY', conf: 72 }, { dir: 'WAIT' }],
-  ];
-
-  // Consensus per symbol: count of BUY votes
-  const consensus = symbols.map((_, si) => {
-    const buys = matrixData.filter(row => row[si].dir === 'BUY').length;
-    return buys;
-  });
-
-  function cellBg(cell: SignalCell): string {
-    if (cell.dir === 'BUY') {
-      const alpha = cell.conf ? 0.05 + (cell.conf / 100) * 0.12 : 0.06;
-      return `rgba(22,163,74,${alpha.toFixed(2)})`;
-    }
-    if (cell.dir === 'SELL') {
-      const alpha = cell.conf ? 0.05 + (cell.conf / 100) * 0.12 : 0.06;
-      return `rgba(220,38,38,${alpha.toFixed(2)})`;
-    }
-    return 'rgba(45,55,72,0.3)';
-  }
-
-  function cellTextColor(cell: SignalCell): string {
-    if (cell.dir === 'BUY') return '#4ade80';
-    if (cell.dir === 'SELL') return '#f87171';
-    return C.muted;
-  }
-
-  function dirIcon(dir: 'BUY' | 'SELL' | 'WAIT'): string {
-    if (dir === 'BUY') return '↑';
-    if (dir === 'SELL') return '↓';
-    return '—';
-  }
-
-  function consensusColor(buyCount: number): string {
-    if (buyCount >= 3) return '#4ade80';
-    if (buyCount === 2) return '#fbbf24';
-    return '#f87171';
-  }
-
   return (
     <div style={{
       background: C.surface,
@@ -1261,137 +889,11 @@ function LiveSignalMatrix() {
       marginBottom: 28,
       boxShadow: S.md,
     }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Live Signal Matrix</div>
-          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
-            Current signal direction and confidence per strategy × symbol
-          </div>
-        </div>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 5,
-          padding: '4px 10px',
-          borderRadius: R.pill,
-          background: '#166534',
-          border: '1px solid #16a34a',
-          fontSize: F.xs,
-          fontWeight: 700,
-          color: '#4ade80',
-          letterSpacing: '0.04em',
-          flexShrink: 0,
-        }}>
-          <span style={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: '#4ade80',
-            display: 'inline-block',
-            boxShadow: '0 0 5px #4ade80',
-          }} />
-          LIVE
-        </div>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Live Signal Matrix</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>
+        Current signal direction and confidence per strategy × symbol
       </div>
-
-      {/* Matrix table */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ borderCollapse: 'separate', borderSpacing: 3, width: '100%', minWidth: 380 }}>
-          <thead>
-            <tr>
-              <th style={{ padding: '4px 8px', textAlign: 'left', minWidth: 110 }} />
-              {symbols.map(sym => (
-                <th key={sym} style={{
-                  padding: '4px 8px',
-                  fontSize: F.xs,
-                  fontWeight: 700,
-                  color: C.textSub,
-                  textAlign: 'center',
-                  minWidth: 88,
-                  letterSpacing: '0.05em',
-                }}>
-                  {sym}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {stratRows.map((strat, si) => (
-              <tr key={strat.abbr}>
-                <td style={{ padding: '2px 8px 2px 4px' }}>
-                  <div style={{ fontSize: F.xs, fontWeight: 700, color: C.textSub }}>{strat.abbr}</div>
-                  <div style={{ fontSize: 10, color: C.muted }}>{strat.label}</div>
-                </td>
-                {symbols.map((sym, ci) => {
-                  const cell = matrixData[si][ci];
-                  return (
-                    <td key={sym} style={{ padding: '2px' }}>
-                      <div style={{
-                        background: cellBg(cell),
-                        borderRadius: R.sm,
-                        padding: '7px 6px',
-                        textAlign: 'center',
-                        border: `1px solid ${cell.dir === 'WAIT' ? C.border : (cell.dir === 'BUY' ? 'rgba(22,163,74,0.25)' : 'rgba(220,38,38,0.25)')}`,
-                      }}>
-                        <div style={{
-                          fontSize: 14,
-                          fontWeight: 700,
-                          color: cellTextColor(cell),
-                          lineHeight: 1,
-                        }}>
-                          {dirIcon(cell.dir)}
-                        </div>
-                        {cell.conf !== undefined ? (
-                          <div style={{
-                            fontSize: 10,
-                            fontWeight: 600,
-                            color: cellTextColor(cell),
-                            marginTop: 2,
-                            opacity: 0.85,
-                          }}>
-                            {cell.conf}%
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>wait</div>
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-
-            {/* Consensus row */}
-            <tr>
-              <td style={{ padding: '6px 8px 2px 4px' }}>
-                <div style={{ fontSize: F.xs, fontWeight: 800, color: C.textSub, letterSpacing: '0.03em' }}>
-                  CONSENSUS
-                </div>
-              </td>
-              {consensus.map((buyCount, ci) => (
-                <td key={symbols[ci]} style={{ padding: '2px' }}>
-                  <div style={{
-                    background: `${consensusColor(buyCount)}18`,
-                    borderRadius: R.sm,
-                    padding: '6px 6px',
-                    textAlign: 'center',
-                    border: `1px solid ${consensusColor(buyCount)}44`,
-                  }}>
-                    <div style={{
-                      fontSize: F.xs,
-                      fontWeight: 700,
-                      color: consensusColor(buyCount),
-                    }}>
-                      {buyCount}/4 BUY
-                    </div>
-                  </div>
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <AwaitingResults label="Awaiting live signals" sub="Signal matrix will update when the bot generates signals" />
     </div>
   );
 }
