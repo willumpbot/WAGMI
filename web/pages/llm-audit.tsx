@@ -819,6 +819,224 @@ function DecisionRow({ d }: { d: LlmDecision }) {
   );
 }
 
+// ─── Confidence Histogram ─────────────────────────────────────────────────────
+
+function ConfidenceHistogram({ decisions }: { decisions: LlmDecision[] }) {
+  const BUCKET_COUNT = 10;
+  const counts = Array(BUCKET_COUNT).fill(0);
+
+  let confSum = 0;
+  let confCount = 0;
+
+  decisions.forEach((d) => {
+    const c = (d.confidence ?? 0) * 100; // convert 0–1 → 0–100
+    const idx = Math.min(Math.floor(c / 10), BUCKET_COUNT - 1);
+    counts[idx]++;
+    confSum += c;
+    confCount++;
+  });
+
+  const total = decisions.length;
+  const mean = confCount > 0 ? confSum / confCount : 0;
+  const maxCount = Math.max(1, ...counts);
+
+  // SVG dimensions
+  const W = 360;
+  const H = 120;
+  const padL = 28;
+  const padR = 10;
+  const padTop = 20;
+  const padBot = 28;
+  const chartW = W - padL - padR;
+  const chartH = H - padTop - padBot;
+  const barW = (chartW / BUCKET_COUNT) - 3;
+
+  // Threshold line at 75% (bucket index 7.5 → pixel)
+  const thresholdPx = padL + (75 / 100) * chartW;
+
+  const getBucketColor = (bucketIndex: number): string => {
+    const lo = bucketIndex * 10;
+    if (lo < 50) return C.bear + 'bb';
+    if (lo < 75) return C.warn + 'cc';
+    if (lo < 90) return C.brand + 'dd';
+    return C.bull + 'ee';
+  };
+
+  return (
+    <div>
+      <div style={{ fontWeight: 700, fontSize: F.sm, color: C.text, marginBottom: 2 }}>
+        Confidence Score Distribution
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 10 }}>
+        {total} decisions · mean {mean.toFixed(0)}%
+      </div>
+
+      {total === 0 ? (
+        <div style={{ color: C.faint, fontSize: F.xs, padding: '12px 0' }}>No decision data to display.</div>
+      ) : (
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', maxWidth: W, display: 'block', overflow: 'visible' }}>
+          {/* Y-axis baseline */}
+          <line x1={padL} y1={padTop + chartH} x2={W - padR} y2={padTop + chartH} stroke={C.border} strokeWidth={1} />
+
+          {/* Bars */}
+          {counts.map((count, i) => {
+            const barH = (count / maxCount) * chartH;
+            const x = padL + i * (chartW / BUCKET_COUNT) + 1.5;
+            const y = padTop + chartH - barH;
+            const isAboveThreshold = i * 10 >= 75;
+            return (
+              <g key={i}>
+                <rect
+                  x={x}
+                  y={barH > 0 ? y : padTop + chartH}
+                  width={barW}
+                  height={Math.max(barH, 0)}
+                  fill={getBucketColor(i)}
+                  rx={2}
+                >
+                  <title>{`${i * 10}–${i * 10 + 9}%: ${count} decision${count !== 1 ? 's' : ''}`}</title>
+                </rect>
+                {/* Count label at top of bar */}
+                {count === maxCount && count > 0 && (
+                  <text
+                    x={x + barW / 2}
+                    y={y - 4}
+                    textAnchor="middle"
+                    fontSize={8}
+                    fill={C.textSub}
+                    fontWeight={700}
+                  >
+                    {count}
+                  </text>
+                )}
+                {/* X-axis label */}
+                <text
+                  x={x + barW / 2}
+                  y={H - padBot + 12}
+                  textAnchor="middle"
+                  fontSize={8}
+                  fill={isAboveThreshold ? C.brand : C.faint}
+                >
+                  {i * 10}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Final x-axis label: 100 */}
+          <text
+            x={padL + chartW}
+            y={H - padBot + 12}
+            textAnchor="middle"
+            fontSize={8}
+            fill={C.faint}
+          >
+            100
+          </text>
+
+          {/* Threshold line at 75% */}
+          <line
+            x1={thresholdPx}
+            y1={padTop - 4}
+            x2={thresholdPx}
+            y2={padTop + chartH}
+            stroke={C.brand}
+            strokeWidth={1.5}
+            strokeDasharray="4 3"
+          />
+          {/* Threshold label */}
+          <text
+            x={thresholdPx + 4}
+            y={padTop + 7}
+            fontSize={8}
+            fill={C.brand}
+            fontWeight={700}
+          >
+            Bot threshold (75%)
+          </text>
+        </svg>
+      )}
+    </div>
+  );
+}
+
+// ─── Token Usage Bar ──────────────────────────────────────────────────────────
+
+function TokenUsageBar({ decisions }: { decisions: LlmDecision[] }) {
+  if (!decisions.length) return null;
+
+  const TOKENS: Record<string, number> = { haiku: 800, sonnet: 2000, opus: 4000 };
+  const COST_PER_M: Record<string, number> = { haiku: 0.25, sonnet: 3.0, opus: 15.0 };
+
+  const usage = { haiku: 0, sonnet: 0, opus: 0 };
+
+  decisions.forEach((d) => {
+    const m = (d.model || '').toLowerCase();
+    if (m.includes('haiku')) usage.haiku += TOKENS.haiku;
+    else if (m.includes('sonnet')) usage.sonnet += TOKENS.sonnet;
+    else if (m.includes('opus')) usage.opus += TOKENS.opus;
+    else usage.haiku += TOKENS.haiku; // default to haiku estimate
+  });
+
+  const totalTokens = usage.haiku + usage.sonnet + usage.opus;
+  const totalCost =
+    (usage.haiku / 1_000_000) * COST_PER_M.haiku +
+    (usage.sonnet / 1_000_000) * COST_PER_M.sonnet +
+    (usage.opus / 1_000_000) * COST_PER_M.opus;
+
+  const avgTokens = decisions.length > 0 ? totalTokens / decisions.length : 0;
+
+  const segments: Array<{ key: keyof typeof usage; label: string; color: string }> = [
+    { key: 'haiku', label: 'Haiku', color: C.warn },
+    { key: 'sonnet', label: 'Sonnet', color: C.info },
+    { key: 'opus', label: 'Opus', color: C.purple },
+  ];
+
+  return (
+    <div>
+      <div style={{ fontWeight: 700, fontSize: F.sm, color: C.text, marginBottom: 2 }}>
+        Estimated Token Usage
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 10 }}>
+        {decisions.length} decisions · ~{Math.round(avgTokens).toLocaleString()} tokens/decision
+      </div>
+
+      {/* Stacked bar */}
+      <div style={{ height: 18, borderRadius: R.pill, overflow: 'hidden', display: 'flex', marginBottom: 8 }}>
+        {segments.map(({ key, label, color }) => {
+          const pct = totalTokens > 0 ? (usage[key] / totalTokens) * 100 : 0;
+          return pct > 0 ? (
+            <div
+              key={key}
+              title={`${label}: ~${(usage[key] / 1000).toFixed(0)}K tokens ($${((usage[key] / 1_000_000) * COST_PER_M[key]).toFixed(4)})`}
+              style={{ width: `${pct}%`, background: color, opacity: 0.85, transition: 'width 0.4s' }}
+            />
+          ) : null;
+        })}
+      </div>
+
+      {/* Legend + cost */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+        {segments.map(({ key, label, color }) => {
+          const pct = totalTokens > 0 ? (usage[key] / totalTokens) * 100 : 0;
+          const cost = (usage[key] / 1_000_000) * COST_PER_M[key];
+          return (
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: color, display: 'inline-block', opacity: 0.85 }} />
+              <span style={{ fontSize: F.xs, fontWeight: 600, color }}>{label}</span>
+              <span style={{ fontSize: F.xs, color: C.muted }}>{pct.toFixed(0)}%</span>
+              <span style={{ fontSize: F.xs, color: C.faint }}>${cost.toFixed(4)}</span>
+            </div>
+          );
+        })}
+        <span style={{ marginLeft: 'auto', fontSize: F.xs, fontWeight: 700, color: C.textSub }}>
+          ~${totalCost.toFixed(4)} total
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function LlmAudit() {
@@ -945,6 +1163,9 @@ export default function LlmAudit() {
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
           <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.text }}>Model Routing</h2>
           <ModelRoutingChart decisions={decisions} />
+          <div style={{ marginTop: 20, paddingTop: 18, borderTop: `1px solid ${C.border}` }}>
+            <TokenUsageBar decisions={decisions} />
+          </div>
           <DecisionActivityMap decisions={decisions} />
         </div>
       )}
@@ -954,6 +1175,9 @@ export default function LlmAudit() {
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
           <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: C.text }}>Confidence Calibration</h2>
           <ConfCalibration decisions={decisions} />
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${C.border}` }}>
+            <ConfidenceHistogram decisions={decisions} />
+          </div>
         </div>
       )}
 
