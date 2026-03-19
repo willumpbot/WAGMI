@@ -875,7 +875,7 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
       </svg>
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, fontSize: 10, color: C.muted, marginTop: 6 }}>
+      <div style={{ display: 'flex', gap: 16, fontSize: 10, color: C.muted, marginTop: 6, flexWrap: 'wrap' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.bull, display: 'inline-block' }} /> WIN
         </span>
@@ -890,6 +890,12 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <span style={{ width: 2, height: 10, background: C.brand, display: 'inline-block', verticalAlign: 'middle' }} /> 75% conf
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.7)', display: 'inline-block' }} /> Last 5 trades
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 14, height: 14, borderRadius: 2, background: C.bull, opacity: 0.15, display: 'inline-block' }} /> Ideal zone
         </span>
       </div>
     </div>
