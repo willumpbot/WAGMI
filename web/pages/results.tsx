@@ -528,7 +528,7 @@ function ByStrategyBars({ byStrategy }: { byStrategy: Record<string, { trades: n
       {entries.map(([name, data]) => {
         const pct = (Math.abs(data.pnl) / maxAbsPnl) * 100;
         const isPos = data.pnl >= 0;
-        const wr = (data.win_rate * 100).toFixed(0);
+        const wr = ((data.win_rate ?? (data.trades > 0 ? data.wins / data.trades : 0)) * 100).toFixed(0);
         return (
           <div key={name}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: F.sm }}>
@@ -611,7 +611,7 @@ function BySymbolBars({ bySymbol }: { bySymbol: Record<string, { trades: number;
               <div style={{ fontWeight: 700, color: C.text }}>
                 {sym}
                 <span style={{ marginLeft: 8, fontSize: F.xs, color: C.muted, fontWeight: 400 }}>
-                  {data.trades} trades · {(data.win_rate * 100).toFixed(0)}% WR
+                  {data.trades} trades · {((data.win_rate ?? (data.trades > 0 ? data.wins / data.trades : 0)) * 100).toFixed(0)}% WR
                 </span>
               </div>
               <span style={{ fontWeight: 700, color: isPos ? C.bull : C.bear }}>{fmtUsd(data.pnl)}</span>
@@ -3011,8 +3011,10 @@ function MaxAdverseExcursion({ trades }: { trades: TradeRecord[] }) {
 
   // Axis ranges
   const maeMax = Math.max(...dots.map((d) => d.mae), 1) * 1.1;
-  const pnlMin = Math.min(...dots.map((d) => d.pnl)) * 1.15;
-  const pnlMax = Math.max(...dots.map((d) => d.pnl)) * 1.15;
+  const rawPnlMin = Math.min(...dots.map((d) => d.pnl));
+  const rawPnlMax = Math.max(...dots.map((d) => d.pnl));
+  const pnlMin = rawPnlMin < 0 ? rawPnlMin * 1.15 : rawPnlMin * 0.85;
+  const pnlMax = rawPnlMax > 0 ? rawPnlMax * 1.15 : rawPnlMax * 0.85;
   const pnlRange = pnlMax - pnlMin || 1;
 
   const toX = (mae: number) => pad.left + (mae / maeMax) * iW;

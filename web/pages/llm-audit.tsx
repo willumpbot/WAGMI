@@ -33,6 +33,14 @@ function timeAgo(isoOrTs: string | number | null | undefined): string {
   } catch { return ''; }
 }
 
+/** Format a cost value — show "<$0.01" for sub-cent amounts to avoid "$0.0000" */
+function fmtCost(cost: number): string {
+  if (cost <= 0) return '$0.00';
+  if (cost < 0.01) return '<$0.01';
+  if (cost < 1) return `$${cost.toFixed(3)}`;
+  return `$${cost.toFixed(2)}`;
+}
+
 // ─── Model Routing Chart ──────────────────────────────────────────────────────
 
 function ModelRoutingChart({ decisions }: { decisions: LlmDecision[] }) {
@@ -140,7 +148,7 @@ function ConfCalibration({ decisions }: { decisions: LlmDecision[] }) {
 
   const stats: BucketStats[] = buckets.map(({ min, max }) => {
     const members = decisions.filter((d) => {
-      const c = d.confidence ?? 0;
+      const c = Number.isFinite(d.confidence) ? d.confidence : 0;
       return c >= min && c < max;
     });
     const total = members.length;
@@ -739,7 +747,7 @@ function DecisionRow({ d }: { d: LlmDecision }) {
   const actionStyle = actionColors[(d.action || '').toLowerCase()] || actionColors.unknown;
   const modelTag = d.model?.includes('haiku') ? 'Haiku' : d.model?.includes('sonnet') ? 'Sonnet' : d.model?.includes('opus') ? 'Opus' : d.model || '';
   const modelColor = modelTag === 'Haiku' ? C.warn : modelTag === 'Sonnet' ? C.info : C.purple;
-  const confPct = Math.round((d.confidence ?? 0) * 100);
+  const confPct = Math.round(Math.min(100, Math.max(0, (Number.isFinite(d.confidence) ? d.confidence : 0) * 100)));
   const confColor = confPct >= 65 ? C.bull : confPct >= 42 ? C.warn : C.bear;
 
   return (
@@ -829,7 +837,7 @@ function ConfidenceHistogram({ decisions }: { decisions: LlmDecision[] }) {
   let confCount = 0;
 
   decisions.forEach((d) => {
-    const c = (d.confidence ?? 0) * 100; // convert 0–1 → 0–100
+    const c = Math.min(100, Math.max(0, (Number.isFinite(d.confidence) ? d.confidence : 0) * 100));
     const idx = Math.min(Math.floor(c / 10), BUCKET_COUNT - 1);
     counts[idx]++;
     confSum += c;
@@ -1025,12 +1033,12 @@ function TokenUsageBar({ decisions }: { decisions: LlmDecision[] }) {
               <span style={{ width: 8, height: 8, borderRadius: 2, background: color, display: 'inline-block', opacity: 0.85 }} />
               <span style={{ fontSize: F.xs, fontWeight: 600, color }}>{label}</span>
               <span style={{ fontSize: F.xs, color: C.muted }}>{pct.toFixed(0)}%</span>
-              <span style={{ fontSize: F.xs, color: C.faint }}>${cost.toFixed(4)}</span>
+              <span style={{ fontSize: F.xs, color: C.faint }}>{fmtCost(cost)}</span>
             </div>
           );
         })}
         <span style={{ marginLeft: 'auto', fontSize: F.xs, fontWeight: 700, color: C.textSub }}>
-          ~${totalCost.toFixed(4)} total
+          ~{fmtCost(totalCost)} total
         </span>
       </div>
     </div>
@@ -1674,7 +1682,7 @@ function ModelCostBreakdown({ decisions }: { decisions: LlmDecision[] }) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
                     <span style={{ fontSize: F.xs, color, fontWeight: 700 }}>{label}</span>
                     <span style={{ fontSize: F.xs, color: C.textSub, fontVariantNumeric: 'tabular-nums' }}>
-                      ${costs[key].toFixed(4)}
+                      {fmtCost(costs[key])}
                     </span>
                   </div>
                   <div style={{ height: 10, background: C.surfaceHover, borderRadius: R.pill, overflow: 'hidden' }}>
@@ -1701,7 +1709,7 @@ function ModelCostBreakdown({ decisions }: { decisions: LlmDecision[] }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
           <span style={{ fontSize: F.sm, color: C.muted }}>Total estimated cost:</span>
           <span style={{ fontSize: F.md, fontWeight: 800, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
-            ${totalCost.toFixed(4)} for {totalDecisions} decisions
+            {fmtCost(totalCost)} for {totalDecisions} decisions
           </span>
         </div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>

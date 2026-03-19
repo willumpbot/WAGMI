@@ -77,7 +77,7 @@ function getBiasStyle(bias: string): { color: string; bgColor: string } {
 }
 
 function ConfidenceBar({ value }: { value: number }) {
-  const pct = Math.round(value * 100);
+  const pct = Math.min(100, Math.max(0, Math.round(value * 100)));
   const color = pct >= 70 ? '#16a34a' : pct >= 45 ? '#eab308' : '#dc2626';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

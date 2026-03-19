@@ -94,9 +94,9 @@ function ConfRing({ value, size = 44 }: { value: number; size?: number }) {
 function SignalFunnel({ total, proceed, vetoed, skipped }: { total: number; proceed: number; vetoed: number; skipped: number }) {
   const stages = [
     { label: 'Analyzed by AI', value: total, pct: 100, color: C.brand, icon: '🔍', desc: 'Every market movement reviewed' },
-    { label: 'Signal Formed', value: proceed + vetoed + skipped, pct: total > 0 ? Math.round(((proceed + vetoed + skipped) / total) * 100) : 0, color: '#7c3aed', icon: '📊', desc: 'Pattern matched a strategy' },
-    { label: 'AI Approved', value: proceed + vetoed, pct: total > 0 ? Math.round(((proceed + vetoed) / total) * 100) : 0, color: '#2563eb', icon: '🤖', desc: 'Multi-agent review passed' },
-    { label: 'Gates Passed', value: proceed, pct: total > 0 ? Math.round((proceed / total) * 100) : 12, color: C.bull, icon: '✅', desc: 'All 6 risk gates cleared' },
+    { label: 'Signal Formed', value: proceed + vetoed + skipped, pct: total > 0 ? Math.min(100, Math.round(((proceed + vetoed + skipped) / total) * 100)) : 0, color: '#7c3aed', icon: '📊', desc: 'Pattern matched a strategy' },
+    { label: 'AI Approved', value: proceed + vetoed, pct: total > 0 ? Math.min(100, Math.round(((proceed + vetoed) / total) * 100)) : 0, color: '#2563eb', icon: '🤖', desc: 'Multi-agent review passed' },
+    { label: 'Gates Passed', value: proceed, pct: total > 0 ? Math.min(100, Math.round((proceed / total) * 100)) : 12, color: C.bull, icon: '✅', desc: 'All 6 risk gates cleared' },
   ];
 
   return (

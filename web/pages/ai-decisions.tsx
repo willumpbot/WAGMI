@@ -44,7 +44,9 @@ function modelBadge(model: string): { label: string; color: string } {
 }
 
 function confBar(conf: number, color: string) {
-  const pct = Math.round(conf * 100);
+  // Normalize: confidence may occasionally be stored as 0-100 instead of 0-1
+  const normalized = conf > 1 ? conf / 100 : conf;
+  const pct = Math.min(100, Math.max(0, Math.round(normalized * 100)));
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
       <div style={{ width: 60, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
@@ -97,7 +99,7 @@ function AgentPipelineFlow({ decision }: { decision: LlmDecision | null }) {
       label: isVeto ? 'VETO' : 'GO',
       active: hasDecision,
       color: isVeto ? C.bear : C.bull,
-      score: decision ? `${Math.round((decision.confidence ?? 0) * 100)}%` : null,
+      score: decision ? (() => { const c = decision.confidence ?? 0; const pct = c > 1 ? Math.round(c) : Math.round(c * 100); return `${Math.min(100, pct)}%`; })() : null,
     },
   ];
 

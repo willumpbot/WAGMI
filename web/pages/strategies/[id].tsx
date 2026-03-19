@@ -356,7 +356,7 @@ function SignalScoreGauge({ score }: { score: number }) {
         width={VW}
         height={VH}
         style={{ display: 'block', overflow: 'visible' }}
-        aria-label={`Signal score gauge: ${score}`}
+        aria-label={`Signal score gauge: ${safeScore}`}
       >
         {/* Background arc track */}
         <path
@@ -404,7 +404,7 @@ function SignalScoreGauge({ score }: { score: number }) {
           fill={scoreColor}
           fontFamily="Inter, sans-serif"
         >
-          {score}
+          {safeScore}
         </text>
 
         {/* Label */}
@@ -1407,10 +1407,10 @@ function PerformanceTab({ trades }: { trades: TradeRecord[] }) {
   const wins = trades.filter(t => t.outcome === 'WIN' || (t.pnl != null && t.pnl > 0));
   const losses = trades.filter(t => t.outcome !== 'WIN' && (t.pnl != null && t.pnl <= 0));
   const winRate = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
-  const totalPnl = trades.reduce((a, t) => a + ((t as any).pnl || 0), 0);
-  const avgWin = wins.length > 0 ? wins.reduce((a, t) => a + (t as any).pnl, 0) / wins.length : 0;
-  const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((a, t) => a + (t as any).pnl, 0) / losses.length) : 0;
-  const profitFactor = avgLoss > 0 ? (wins.reduce((a, t) => a + (t as any).pnl, 0)) / Math.abs(losses.reduce((a, t) => a + (t as any).pnl, 0)) : null;
+  const totalPnl = trades.reduce((a, t) => a + (t.pnl ?? 0), 0);
+  const avgWin = wins.length > 0 ? wins.reduce((a, t) => a + (t.pnl ?? 0), 0) / wins.length : 0;
+  const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((a, t) => a + (t.pnl ?? 0), 0) / losses.length) : 0;
+  const profitFactor = avgLoss > 0 ? wins.reduce((a, t) => a + (t.pnl ?? 0), 0) / Math.abs(losses.reduce((a, t) => a + (t.pnl ?? 0), 0)) : null;
 
   // Exit type counts
   const exitTypes: Record<string, number> = {};
@@ -1634,7 +1634,7 @@ export default function StrategyDetail() {
       })
       .catch(() => {})
       .finally(() => setTradesLoading(false));
-  }, [activeTab, apiBase, card, id]);
+  }, [activeTab, apiBase, card, id, trades.length]);
 
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: 'signals', label: 'Signals' },
@@ -1694,136 +1694,140 @@ export default function StrategyDetail() {
         </div>
       )}
 
-      {/* Page header */}
-      {!notFound && <div style={{
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        borderRadius: R.lg,
-        padding: '24px',
-        marginBottom: 24,
-        animation: 'fadeInUp 0.3s ease',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: '-0.02em' }}>
-              {card?.name || (id ? `Strategy ${id}` : 'Loading…')}
-            </h1>
-            <div style={{ marginTop: 6, fontSize: F.sm, color: C.muted }}>
-              ID: {id ?? '—'} · Last evaluated: {card?.lastEvaluated ? timeAgo(card.lastEvaluated) : '—'}
+      {/* Page header + tabs — only shown when strategy exists */}
+      {!notFound && (
+        <>
+          <div style={{
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: R.lg,
+            padding: '24px',
+            marginBottom: 24,
+            animation: 'fadeInUp 0.3s ease',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+              <div>
+                <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: '-0.02em' }}>
+                  {card?.name || (id ? `Strategy ${id}` : 'Loading…')}
+                </h1>
+                <div style={{ marginTop: 6, fontSize: F.sm, color: C.muted }}>
+                  ID: {id ?? '—'} · Last evaluated: {card?.lastEvaluated ? timeAgo(card.lastEvaluated) : '—'}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <span style={{
+                  padding: '5px 14px',
+                  borderRadius: 20,
+                  fontSize: F.xs,
+                  fontWeight: 700,
+                  background: online ? '#166534' : C.border,
+                  color: online ? '#bbf7d0' : C.muted,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                }}>
+                  <span style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: online ? '#4ade80' : C.muted,
+                    display: 'inline-block',
+                    boxShadow: online ? '0 0 6px #4ade80' : 'none',
+                  }} />
+                  {online ? 'LIVE' : 'OFFLINE'}
+                </span>
+                {pnl !== null && (
+                  <div style={{
+                    padding: '5px 14px',
+                    borderRadius: 20,
+                    fontSize: F.sm,
+                    fontWeight: 700,
+                    background: '#0f172a',
+                    border: `1px solid ${C.border}`,
+                    color: pnl >= 0 ? C.bull : C.bear,
+                  }}>
+                    {pnl >= 0 ? '+' : ''}{fmtUsd(pnl)} PnL
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <span style={{
-              padding: '5px 14px',
-              borderRadius: 20,
-              fontSize: F.xs,
-              fontWeight: 700,
-              background: online ? '#166534' : C.border,
-              color: online ? '#bbf7d0' : C.muted,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-            }}>
-              <span style={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: online ? '#4ade80' : C.muted,
-                display: 'inline-block',
-                boxShadow: online ? '0 0 6px #4ade80' : 'none',
-              }} />
-              {online ? 'LIVE' : 'OFFLINE'}
-            </span>
-            {pnl !== null && (
+
+            {/* Open position */}
+            {card?.open_position && (
               <div style={{
-                padding: '5px 14px',
-                borderRadius: 20,
+                marginTop: 16,
+                paddingTop: 16,
+                borderTop: `1px solid ${C.border}`,
+                display: 'flex',
+                gap: 24,
                 fontSize: F.sm,
-                fontWeight: 700,
-                background: '#0f172a',
-                border: `1px solid ${C.border}`,
-                color: pnl >= 0 ? C.bull : C.bear,
               }}>
-                {pnl >= 0 ? '+' : ''}{fmtUsd(pnl)} PnL
+                <span style={{ color: C.muted }}>Open Position:</span>
+                <span style={{ fontWeight: 600, color: card.open_position.side === 'LONG' ? C.bull : C.bear }}>
+                  {card.open_position.side ?? '—'}
+                </span>
+                <span style={{ color: C.text }}>{card.open_position.size ?? '—'} @ ${fmt(card.open_position.avg_entry, 2)}</span>
+                {card.open_position.unrealized_pnl !== undefined && (
+                  <span style={{ fontWeight: 600, color: (card.open_position.unrealized_pnl || 0) >= 0 ? C.bull : C.bear }}>
+                    Unrealized: {(card.open_position.unrealized_pnl || 0) >= 0 ? '+' : ''}{fmtUsd(card.open_position.unrealized_pnl || 0)}
+                  </span>
+                )}
               </div>
             )}
           </div>
-        </div>
 
-        {/* Open position */}
-        {card?.open_position && (
+          {/* Tab bar */}
           <div style={{
-            marginTop: 16,
-            paddingTop: 16,
-            borderTop: `1px solid ${C.border}`,
             display: 'flex',
-            gap: 24,
-            fontSize: F.sm,
+            gap: 0,
+            borderBottom: `1px solid ${C.border}`,
+            marginBottom: 24,
           }}>
-            <span style={{ color: C.muted }}>Open Position:</span>
-            <span style={{ fontWeight: 600, color: card.open_position.side === 'LONG' ? C.bull : C.bear }}>
-              {card.open_position.side}
-            </span>
-            <span style={{ color: C.text }}>{card.open_position.size} @ ${fmt(card.open_position.avg_entry, 2)}</span>
-            {card.open_position.unrealized_pnl !== undefined && (
-              <span style={{ fontWeight: 600, color: (card.open_position.unrealized_pnl || 0) >= 0 ? C.bull : C.bear }}>
-                Unrealized: {(card.open_position.unrealized_pnl || 0) >= 0 ? '+' : ''}{fmtUsd(card.open_position.unrealized_pnl || 0)}
-              </span>
-            )}
+            {tabs.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  borderBottom: activeTab === tab.key ? `2px solid ${C.brand}` : '2px solid transparent',
+                  background: 'transparent',
+                  color: activeTab === tab.key ? C.brand : C.muted,
+                  fontSize: F.sm,
+                  fontWeight: activeTab === tab.key ? 700 : 400,
+                  cursor: 'pointer',
+                  marginBottom: -1,
+                  transition: 'color 0.15s, border-color 0.15s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                {tab.label}
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span style={{
+                    padding: '1px 7px',
+                    borderRadius: 10,
+                    fontSize: 11,
+                    background: activeTab === tab.key ? C.brand : C.border,
+                    color: activeTab === tab.key ? '#fff' : C.muted,
+                  }}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
 
-      {/* Tab bar */}
-      <div style={{
-        display: 'flex',
-        gap: 0,
-        borderBottom: `1px solid ${C.border}`,
-        marginBottom: 24,
-      }}>
-        {tabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              padding: '10px 20px',
-              border: 'none',
-              borderBottom: activeTab === tab.key ? `2px solid ${C.brand}` : '2px solid transparent',
-              background: 'transparent',
-              color: activeTab === tab.key ? C.brand : C.muted,
-              fontSize: F.sm,
-              fontWeight: activeTab === tab.key ? 700 : 400,
-              cursor: 'pointer',
-              marginBottom: -1,
-              transition: 'color 0.15s, border-color 0.15s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            {tab.label}
-            {tab.count !== undefined && tab.count > 0 && (
-              <span style={{
-                padding: '1px 7px',
-                borderRadius: 10,
-                fontSize: 11,
-                background: activeTab === tab.key ? C.brand : C.border,
-                color: activeTab === tab.key ? '#fff' : C.muted,
-              }}>
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      <div style={{ animation: 'fadeInUp 0.25s ease' }}>
-        {activeTab === 'signals' && <SignalsTab card={card} logs={logs} />}
-        {activeTab === 'trades' && <TradesTab trades={trades} loading={tradesLoading} />}
-        {activeTab === 'performance' && <PerformanceTab trades={trades} />}
-        {activeTab === 'logs' && <LogsTab logs={logs} loading={logsLoading} error={logsError} />}
-      </div>
+          {/* Tab content */}
+          <div style={{ animation: 'fadeInUp 0.25s ease' }}>
+            {activeTab === 'signals' && <SignalsTab card={card} logs={logs} />}
+            {activeTab === 'trades' && <TradesTab trades={trades} loading={tradesLoading} />}
+            {activeTab === 'performance' && <PerformanceTab trades={trades} />}
+            {activeTab === 'logs' && <LogsTab logs={logs} loading={logsLoading} error={logsError} />}
+          </div>
+        </>
+      )}
     </div>
   );
 }

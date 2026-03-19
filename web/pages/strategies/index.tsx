@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { C, R, S, F, fmtUsd, timeAgo } from '../../src/theme';
+import { fmtPnlK } from '../../lib/fmt';
 
 type OpenPosition = {
   side?: string;
@@ -346,11 +347,7 @@ function StrategyComparisonChart({ strategies }: { strategies: Strategy[] }) {
             ? barY - 5
             : (pnl !== null ? barY + barH + 11 : barY - 5);
 
-          const valLabel = pnl !== null
-            ? (pnl >= 0 ? '+' : '') + (Math.abs(pnl) >= 1000
-                ? `$${(pnl / 1000).toFixed(1)}k`
-                : `$${pnl.toFixed(0)}`)
-            : '—';
+          const valLabel = pnl !== null ? fmtPnlK(pnl) : '—';
 
           return (
             <g key={s.id}>
@@ -644,7 +641,7 @@ function StrategyCard({ strategy, index }: { strategy: Strategy; index: number }
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 3 }}>Open Position</div>
             <div style={{ fontSize: F.sm, fontWeight: 600, color: openPos.side === 'LONG' ? C.bull : C.bear }}>
-              {openPos.side} · {openPos.size} @ {openPos.avg_entry?.toFixed(2)}
+              {openPos.side ?? '—'} · {openPos.size ?? '—'} @ {openPos.avg_entry?.toFixed(2) ?? '—'}
             </div>
             {unrPnl !== undefined && unrPnl !== null && (
               <div style={{

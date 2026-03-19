@@ -926,7 +926,7 @@ function PositionBubbleChart({ positions }: { positions: Strategy[] }) {
           const radius = MIN_R + (Math.abs(b.unrealPnl) / maxAbsPnl) * (MAX_R - MIN_R);
           const jitter = seededJitter(b.symbol) * (xStep * 0.4);
           const cx = PAD.l + (i + 1) * xStep + jitter;
-          const sizeClamp = Math.min(b.sizeUsd, MAX_SIZE_USD);
+          const sizeClamp = Math.min(Math.abs(b.sizeUsd), MAX_SIZE_USD);
           const cy = PAD.t + H - (sizeClamp / MAX_SIZE_USD) * H;
           const fillColor = b.side === 'LONG' ? C.bull : C.bear;
           const abbrev = b.symbol.length > 4 ? b.symbol.slice(0, 4) : b.symbol;
@@ -1615,7 +1615,7 @@ function PositionPnlWaterfall({ positions }: { positions: Strategy[] }) {
         const updatedAt = s.open_position?.updated_at;
         let duration = '';
         if (updatedAt) {
-          const diffMs = Date.now() - new Date(updatedAt).getTime();
+          const diffMs = Math.max(0, Date.now() - new Date(updatedAt).getTime());
           const diffH = diffMs / 3_600_000;
           duration = diffH < 1 ? `${Math.round(diffH * 60)}m` : `${diffH.toFixed(1)}h`;
         }

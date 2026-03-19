@@ -2,6 +2,7 @@ import React, { useEffect, useId, useState } from 'react';
 import Head from 'next/head';
 import Layout from '../components/Layout';
 import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
+import { fmtPnl, seededRand } from '../lib/fmt';
 import { apiFetch } from '../src/api';
 import type { ActivityFeedResponse, ActivityEvent, LlmMarketView, TradeHistoryResponse, TradeRecord } from '../src/types';
 
@@ -948,7 +949,7 @@ function TodayEquityMini() {
   const bottomY = paddingT + chartH;
   const fillPath =
     `M ${firstX},${bottomY} ` +
-    seedPoints.map((v, i) => `${i === 0 ? 'L' : 'L'} ${toSvgX(i)},${toSvgY(v)}`).join(' ') +
+    seedPoints.map((v, i) => `L ${toSvgX(i)},${toSvgY(v)}`).join(' ') +
     ` L ${lastX},${bottomY} Z`;
 
   const gainLabel = (isUp ? '+' : '') + fmtUsd(gain) + ' today';

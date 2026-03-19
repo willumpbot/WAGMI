@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { C, R, S, timeAgo } from '../src/theme';
+import { C, R, S } from '../src/theme';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard' },
@@ -17,29 +17,33 @@ const NAV_ITEMS = [
   { href: '/ai-decisions', label: 'Decision Theater' },
   { href: '/strategies', label: 'How It Trades' },
   { href: '/learn', label: 'Understand' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/about', label: 'About' },
 ];
 
-function resolveApiBase(): string {
-  const envVal =
-    (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
-    (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined);
-  if (envVal && envVal.trim().length > 0) return envVal;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://nunuirl-platform.onrender.com';
-    }
-  }
-  return 'http://localhost:8000';
-}
+// Resolve once at module level for the env-based portion; window check happens in useMemo.
+const ENV_API_BASE =
+  (process.env.NEXT_PUBLIC_API_URL as string | undefined)?.trim() ||
+  (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined)?.trim() ||
+  '';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [regime, setRegime] = useState<string | null>(null);
   const [botLive, setBotLive] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const apiBase = resolveApiBase();
+
+  // Resolved once on first render (window is available client-side only).
+  const apiBase = useMemo(() => {
+    if (ENV_API_BASE) return ENV_API_BASE;
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      if (host && host !== 'localhost' && host !== '127.0.0.1') {
+        return 'https://nunuirl-platform.onrender.com';
+      }
+    }
+    return 'http://localhost:8000';
+  }, []);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -75,6 +79,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+      {/* Skip-to-content for keyboard users */}
+      <a href="#main-content" className="skip-to-content">Skip to content</a>
+
       {/* ── Top nav ─────────────────────────────────── */}
       <nav
         style={{
@@ -217,7 +224,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 cursor: 'pointer',
               }}
               className="hamburger"
-              aria-label="Open menu"
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-nav"
             >
               {menuOpen ? '✕' : '☰'}
             </button>
@@ -227,6 +236,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Mobile dropdown */}
         {menuOpen && (
           <div
+            id="mobile-nav"
             style={{
               background: C.surface,
               borderTop: `1px solid ${C.border}`,
@@ -262,7 +272,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* ── Page content ────────────────────────────── */}
-      <main style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 20px 60px' }}>
+      <main id="main-content" style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 20px 60px' }}>
         {children}
       </main>
 
