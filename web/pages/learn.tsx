@@ -1916,6 +1916,14 @@ export default function Learn() {
         </InfoBox>
       </AccordionCard>
 
+      <AccordionCard title="How Does a Trade Actually Flow?" badge="Signal → Execution" badgeColor={C.bull}>
+        <p>Every signal travels through a deterministic pipeline before a single dollar is put at risk. Here&apos;s the full path from detection to execution — or rejection:</p>
+        <TradingFlowDiagram />
+        <InfoBox color={C.info}>
+          Gates run sequentially — a signal rejected at Gate 2 never reaches Gate 3. Every rejection is logged with the reason so you can audit exactly why a potential trade was blocked.
+        </InfoBox>
+      </AccordionCard>
+
       <AccordionCard title="Regime Types Explained" badge="Market States" defaultOpen={false}>
         <p>The Regime Agent classifies the market every evaluation cycle. This classification affects which strategies run and how aggressively the bot sizes up:</p>
         <RegimeTable />

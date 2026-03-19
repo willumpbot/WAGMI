@@ -51,6 +51,157 @@ const AGENTS: AgentSpec[] = [
   { name: 'Scout Agent', model: 'Claude Haiku', cost: '~$0.0001/call', role: 'Idle-time setup preparation', decides: 'What setups are forming? Pre-score upcoming opportunities before they trigger.', color: C.muted },
 ];
 
+// ─── Tech Stack Grid ──────────────────────────────────────────────────────────
+
+type TechItem = { abbr: string; name: string; desc: string; tag: string; tagColor: string; bg: string; abbrBg: string };
+
+const TECH_ITEMS: TechItem[] = [
+  // AI/LLM
+  { abbr: 'CL', name: 'Claude API (Anthropic)', desc: 'Decision making brain', tag: 'AI/LLM', tagColor: C.brand, bg: `${C.brand}09`, abbrBg: C.brand },
+  { abbr: 'MA', name: 'Multi-Agent Pipeline', desc: '7 specialist agents', tag: 'AI/LLM', tagColor: C.brand, bg: `${C.brand}09`, abbrBg: C.brand },
+  { abbr: 'CC', name: 'Confidence Calibration', desc: 'Self-improving accuracy', tag: 'AI/LLM', tagColor: C.brand, bg: `${C.brand}09`, abbrBg: C.brand },
+  // Trading
+  { abbr: 'HL', name: 'Hyperliquid DEX', desc: 'Perpetuals trading', tag: 'Trading', tagColor: C.bull, bg: `${C.bull}09`, abbrBg: C.bull },
+  { abbr: 'CX', name: 'CCXT', desc: 'Exchange connectivity', tag: 'Trading', tagColor: C.bull, bg: `${C.bull}09`, abbrBg: C.bull },
+  { abbr: 'PT', name: 'Paper Trading Mode', desc: 'Risk-free testing', tag: 'Trading', tagColor: C.bull, bg: `${C.bull}09`, abbrBg: C.bull },
+  // Data
+  { abbr: 'OC', name: 'OHLCV Pipeline', desc: 'Multi-timeframe data', tag: 'Data', tagColor: '#2563eb', bg: 'rgba(37,99,235,0.06)', abbrBg: '#2563eb' },
+  { abbr: 'MC', name: 'Monte Carlo Zones', desc: 'Support/resistance', tag: 'Data', tagColor: '#2563eb', bg: 'rgba(37,99,235,0.06)', abbrBg: '#2563eb' },
+  { abbr: 'EV', name: 'Ensemble Voting', desc: '4-strategy consensus', tag: 'Data', tagColor: '#2563eb', bg: 'rgba(37,99,235,0.06)', abbrBg: '#2563eb' },
+];
+
+function TechStackGrid() {
+  return (
+    <div style={{ marginBottom: 60 }}>
+      <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+        Powered By
+      </div>
+      <h2 style={{ margin: '0 0 8px', fontSize: F['2xl'], fontWeight: 800, color: C.text }}>The technology stack.</h2>
+      <p style={{ margin: '0 0 24px', fontSize: F.sm, color: C.muted, lineHeight: 1.6 }}>
+        Every layer purpose-built: AI agents for decisions, a DEX for execution, and a data pipeline that never sleeps.
+      </p>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 12,
+      }}>
+        {TECH_ITEMS.map((item) => (
+          <div key={item.name} style={{
+            background: item.bg,
+            border: `1px solid ${item.tagColor}25`,
+            borderRadius: R.lg,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}>
+            {/* Icon + Name row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                flexShrink: 0,
+                width: 36,
+                height: 36,
+                borderRadius: R.md,
+                background: item.abbrBg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: F.xs,
+                fontWeight: 800,
+                color: '#fff',
+                letterSpacing: 0.5,
+              }}>
+                {item.abbr}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>{item.name}</div>
+                <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2, lineHeight: 1.4 }}>{item.desc}</div>
+              </div>
+            </div>
+            {/* Tag */}
+            <div style={{ alignSelf: 'flex-start' }}>
+              <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: item.tagColor,
+                background: `${item.tagColor}18`,
+                padding: '2px 8px',
+                borderRadius: R.pill,
+                letterSpacing: 0.5,
+                textTransform: 'uppercase',
+              }}>
+                {item.tag}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Safety Stats ─────────────────────────────────────────────────────────────
+
+type SafetyStat = { value: string; label: string; desc: string; color: string };
+
+const SAFETY_STATS: SafetyStat[] = [
+  { value: '6', label: 'Safety Gates', desc: 'Every signal passes 6 validation checks before execution', color: C.brand },
+  { value: '$0', label: 'Real $ at Risk', desc: 'Paper trading mode — no real money involved', color: C.bull },
+  { value: 'SL', label: 'Automatic Stop Loss', desc: 'Every trade has a defined stop loss', color: C.warn },
+  { value: '⏸', label: 'Circuit Breakers', desc: 'Auto-halt after consecutive losses or daily drawdown', color: C.bear },
+];
+
+function SafetyStats() {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: 1,
+      background: C.border,
+      borderRadius: R.lg,
+      overflow: 'hidden',
+      marginBottom: 60,
+      border: `1px solid ${C.border}`,
+    }}>
+      {SAFETY_STATS.map((stat, i) => (
+        <div key={stat.label} style={{
+          background: C.card,
+          padding: '22px 18px',
+          textAlign: 'center',
+          borderRight: i < SAFETY_STATS.length - 1 ? `1px solid ${C.border}` : undefined,
+        }}>
+          <div style={{
+            fontSize: F['3xl'],
+            fontWeight: 900,
+            color: stat.color,
+            lineHeight: 1.1,
+            marginBottom: 6,
+            letterSpacing: -0.5,
+          }}>
+            {stat.value}
+          </div>
+          <div style={{
+            fontSize: F.sm,
+            fontWeight: 700,
+            color: C.text,
+            marginBottom: 6,
+            lineHeight: 1.3,
+          }}>
+            {stat.label}
+          </div>
+          <div style={{
+            fontSize: F.xs,
+            color: C.muted,
+            lineHeight: 1.5,
+          }}>
+            {stat.desc}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Strategy Card ────────────────────────────────────────────────────────────
 
 function StrategyCard({ name, desc, data, why }: { name: string; desc: string; data: string; why: string }) {
@@ -126,6 +277,9 @@ export default function AboutPage() {
             </div>
           ))}
         </div>
+
+        {/* ── Tech Stack Grid ── */}
+        <TechStackGrid />
 
         {/* ── Problem ── */}
         <Section eyebrow="Why We Built This" title="Most trading bots are black boxes.">
@@ -315,6 +469,9 @@ export default function AboutPage() {
               </div>
             </div>
           </div>
+
+          {/* ── Safety Stats Strip ── */}
+          <SafetyStats />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {AGENTS.map((a) => (

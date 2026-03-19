@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Layout from '../components/Layout';
 import { C, R, S, F, fmtUsd, fmtPct } from '../src/theme';
 import { apiFetch } from '../src/api';
-import type { TradeHistoryResponse, TradeRecord, EquityCurveResponse, EquityCurvePoint } from '../src/types';
+import type { TradeHistoryResponse, TradeRecord, EquityCurveResponse, EquityCurvePoint, BacktestResult } from '../src/types';
 
 // ─── Stats Calculation Helpers ────────────────────────────────────────────────
 
@@ -180,6 +180,90 @@ function RRHistogram({ data }: { data: { label: string; count: number }[] }) {
 }
 
 // ─── Monthly P&L Bar Chart ────────────────────────────────────────────────────
+
+// ─── Rolling Metrics Chart ────────────────────────────────────────────────────
+
+function RollingMetrics({ trades }: { trades: TradeRecord[] }) {
+  if (trades.length < 12) return null;
+
+  const WINDOW = 10;
+  const rollingWR: number[] = [];
+  const rollingPnL: number[] = [];
+
+  for (let i = WINDOW; i <= trades.length; i++) {
+    const slice = trades.slice(i - WINDOW, i);
+    const wins = slice.filter((t) => t.outcome === 'WIN').length;
+    rollingWR.push(wins / WINDOW);
+    rollingPnL.push(slice.reduce((s, t) => s + (t.pnl ?? 0), 0) / WINDOW);
+  }
+
+  const n = rollingWR.length;
+  const W = 640, H = 160;
+  const padT = 8, padB = 24, padL = 52, padR = 16;
+  const halfH = (H - padT - padB) / 2 - 6;
+  const iW = W - padL - padR;
+
+  const toX = (i: number) => padL + (i / Math.max(n - 1, 1)) * iW;
+
+  // Win rate section (top half)
+  const wrY = (v: number) => padT + halfH - v * halfH;
+  const wrPath = rollingWR.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${wrY(v).toFixed(1)}`).join(' ');
+
+  // PnL section (bottom half)
+  const pnlBase = padT + halfH * 2 + 12;
+  const maxAbsPnl = Math.max(...rollingPnL.map(Math.abs), 0.01);
+  const pnlY = (v: number) => pnlBase + halfH - ((v + maxAbsPnl) / (2 * maxAbsPnl)) * halfH;
+  const pnlPath = rollingPnL.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${pnlY(v).toFixed(1)}`).join(' ');
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Rolling 10-Trade Performance</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>How win rate and avg P&L evolve across each rolling window of 10 trades</div>
+
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+        {/* Win rate section label */}
+        <text x={padL - 6} y={padT + halfH / 2} textAnchor="end" fontSize={9} fill={C.muted} transform={`rotate(-90,${padL - 6},${padT + halfH / 2})`}>Win Rate</text>
+        <line x1={padL} y1={padT} x2={padL + iW} y2={padT} stroke={C.border} strokeWidth={0.5} />
+        {/* 50% reference */}
+        <line x1={padL} y1={wrY(0.5)} x2={padL + iW} y2={wrY(0.5)} stroke={C.muted} strokeWidth={0.5} strokeDasharray="4 3" />
+        <text x={padL - 4} y={wrY(0.5) + 3} textAnchor="end" fontSize={8} fill={C.muted}>50%</text>
+        <text x={padL - 4} y={wrY(1) + 3} textAnchor="end" fontSize={8} fill={C.muted}>100%</text>
+        {/* Win rate line */}
+        <path d={wrPath} fill="none" stroke="#2563eb" strokeWidth={2} strokeLinejoin="round" />
+
+        {/* Divider */}
+        <line x1={padL} y1={pnlBase} x2={padL + iW} y2={pnlBase} stroke={C.border} strokeWidth={1} />
+
+        {/* PnL section */}
+        <text x={padL - 6} y={pnlBase + halfH / 2} textAnchor="end" fontSize={9} fill={C.muted} transform={`rotate(-90,${padL - 6},${pnlBase + halfH / 2})`}>Avg P&L</text>
+        <line x1={padL} y1={pnlY(0)} x2={padL + iW} y2={pnlY(0)} stroke={C.muted} strokeWidth={0.5} strokeDasharray="4 3" />
+        {/* PnL colored segments */}
+        {rollingPnL.slice(0, -1).map((v, i) => {
+          const x1 = toX(i), y1 = pnlY(v);
+          const x2 = toX(i + 1), y2 = pnlY(rollingPnL[i + 1]);
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={v >= 0 ? C.bull : C.bear} strokeWidth={2} />;
+        })}
+
+        {/* X-axis */}
+        <line x1={padL} y1={padT + (H - padT - padB)} x2={padL + iW} y2={padT + (H - padT - padB)} stroke={C.border} strokeWidth={0.5} />
+        <text x={padL} y={H - 4} fontSize={8} fill={C.muted}>Trade {WINDOW}</text>
+        <text x={padL + iW} y={H - 4} textAnchor="end" fontSize={8} fill={C.muted}>Trade {trades.length}</text>
+      </svg>
+
+      <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 10, color: C.muted }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 16, height: 2, background: '#2563eb', display: 'inline-block' }} /> Rolling Win Rate
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, background: C.bull, borderRadius: 2, display: 'inline-block' }} /> Avg P&L (positive)
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 8, height: 8, background: C.bear, borderRadius: 2, display: 'inline-block' }} /> Avg P&L (negative)
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function MonthlyPnlChart({ trades }: { trades: TradeRecord[] }) {
   const periods = useMemo(() => {
@@ -804,6 +888,13 @@ export default function PerformancePage() {
                 <RollingWinRateChart data={rollingWR} width={860} height={130} />
               </div>
             </Section>
+
+            {/* ── Rolling Metrics (dual: WR + Avg P&L) ── */}
+            {trades.length >= 12 && (
+              <Section title="Rolling 10-Trade Metrics">
+                <RollingMetrics trades={trades} />
+              </Section>
+            )}
 
             {/* ── R:R Achieved Histogram ── */}
             <Section title="R:R Achieved Distribution">
