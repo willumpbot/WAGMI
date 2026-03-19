@@ -1137,8 +1137,26 @@ function freshnessColor(minutesAgo: number): { bg: string; border: string; dot: 
 
 function SignalFreshnessStrip({ signals }: { signals: Record<string, Signal> | null }) {
   const symbolList = signals && Object.keys(signals).length > 0
-    ? [...new Set([...FRESHNESS_SYMBOLS, ...Object.keys(signals)])]
-    : FRESHNESS_SYMBOLS;
+    ? Object.keys(signals)
+    : null;
+
+  if (!symbolList) {
+    return (
+      <div style={{
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '20px 24px',
+        marginBottom: 28,
+        textAlign: 'center',
+        color: C.muted,
+        fontSize: F.sm,
+      }}>
+        <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 8 }}>Signal Freshness</div>
+        <div>No signal data available yet.</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -2422,12 +2440,29 @@ function VolatilityRankingBars({ signals }: { signals: Record<string, Signal> | 
 // ─── Signal Age Distribution ──────────────────────────────────────────────────
 
 function SignalAgeDistribution({ signals }: { signals: Record<string, Signal> | null }) {
-  const DEFAULT_SYMBOLS = ['BTC', 'SOL', 'HYPE', 'ETH', 'AVAX', 'LINK'];
   const symbolList = signals && Object.keys(signals).length > 0
-    ? [...new Set([...DEFAULT_SYMBOLS, ...Object.keys(signals)])]
-    : DEFAULT_SYMBOLS;
+    ? Object.keys(signals)
+    : null;
 
-  // Get age in minutes for each symbol (use seededMinutesAgo as fallback)
+  if (!symbolList) {
+    return (
+      <div style={{
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '20px 24px',
+        marginBottom: 28,
+        textAlign: 'center',
+        color: C.muted,
+        fontSize: F.sm,
+      }}>
+        <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 8 }}>Signal Data Freshness</div>
+        <div>No signal data available yet.</div>
+      </div>
+    );
+  }
+
+  // Get age in minutes for each symbol (use seededMinutesAgo as fallback since Signal has no per-symbol timestamp)
   const entries = symbolList.map(sym => ({
     symbol: sym,
     age: seededMinutesAgo(sym),

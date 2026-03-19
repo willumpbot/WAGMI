@@ -2408,7 +2408,7 @@ function HowItWorksCollapsed() {
         style={{
           width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '12px 16px', background: C.info + '10', border: `1px solid ${C.info}30`,
-          borderRadius: open ? `${R.md}px ${R.md}px 0 0` : R.md,
+          borderRadius: open ? '10px 10px 0 0' : R.md,
           cursor: 'pointer', textAlign: 'left',
         }}
       >
@@ -2416,7 +2416,7 @@ function HowItWorksCollapsed() {
         <span style={{ color: C.muted, fontSize: 12, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
       </button>
       {open && (
-        <div style={{ padding: '14px 16px', background: C.info + '08', border: `1px solid ${C.info}30`, borderTop: 'none', borderRadius: `0 0 ${R.md}px ${R.md}px` }}>
+        <div style={{ padding: '14px 16px', background: C.info + '08', border: `1px solid ${C.info}30`, borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {steps.map((s) => (
               <div key={s.n} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
