@@ -514,7 +514,7 @@ function RegimeTransitionDiagram() {
   };
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
+    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Regime Transition Map — How Markets Evolve
       </div>
@@ -698,7 +698,7 @@ export default function AboutPage() {
             { value: '7', label: 'AI agents', color: C.brand },
             { value: '6', label: 'risk gates', color: C.bull },
           ].map(({ value, label, color }) => (
-            <div key={label} style={{
+            <div key={label} className="card-hover" style={{
               background: G.card,
               border: `1px solid ${color}30`,
               borderRadius: R.lg,
@@ -925,7 +925,7 @@ export default function AboutPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {AGENTS.map((a) => (
-              <div key={a.name} style={{ background: G.card, border: `1px solid ${a.color}30`, borderRadius: R.lg, padding: '16px 20px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div key={a.name} className="card-hover" style={{ background: G.card, border: `1px solid ${a.color}30`, borderRadius: R.lg, padding: '16px 20px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ flexShrink: 0, minWidth: 160 }}>
                   <div style={{ fontSize: F.sm, fontWeight: 800, color: a.color }}>{a.name}</div>
                   <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>Model: {a.model}</div>
@@ -975,7 +975,7 @@ export default function AboutPage() {
               { n: '4', text: 'No cherry-picked results — all trades included. All losses shown. One ledger.', href: null },
               { n: '5', text: 'Model costs are disclosed — we\'re not hiding that we use Claude to think.', href: null },
             ].map(({ n, text, href }) => (
-              <div key={n} style={{ display: 'flex', gap: 14, padding: '12px 16px', background: G.card, borderRadius: R.md, border: `1px solid ${C.border}`, alignItems: 'flex-start' }}>
+              <div key={n} className="card-hover" style={{ display: 'flex', gap: 14, padding: '12px 16px', background: G.card, borderRadius: R.md, border: `1px solid ${C.border}`, alignItems: 'flex-start' }}>
                 <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%', background: C.bull + '20', color: C.bull, fontWeight: 800, fontSize: F.xs, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n}</span>
                 <span style={{ fontSize: F.sm, color: C.textSub, lineHeight: 1.5 }}>
                   {text} {href && <Link href={href} style={{ color: C.brand, fontWeight: 600, textDecoration: 'none' }}>View →</Link>}
