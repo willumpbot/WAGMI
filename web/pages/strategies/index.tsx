@@ -22,6 +22,101 @@ type Strategy = {
   open_position?: OpenPosition | null;
 };
 
+// ─── Regime-Strategy Compatibility Matrix ────────────────────────────────────
+
+function RegimeStrategyMatrix() {
+  const strategies = ['Regime Trend', 'Monte Carlo', 'Confidence Scorer', 'Multi-Tier'];
+  const regimes = ['Trend', 'Range', 'High Vol', 'Panic', 'Low Liq'];
+
+  // Score 0-100 for how well each strategy performs in each regime
+  // Based on strategy design: Regime Trend excels in trending, etc.
+  const scores: number[][] = [
+    [92, 20, 45, 10, 30],  // Regime Trend: excellent in trend, bad in range/panic
+    [60, 85, 70, 40, 55],  // Monte Carlo: zone-based, works in most
+    [75, 65, 55, 30, 50],  // Confidence Scorer: multi-factor, decent everywhere
+    [80, 50, 35, 15, 40],  // Multi-Tier: needs clear trend + alignment
+  ];
+
+  function cellColor(score: number): string {
+    if (score >= 80) return `rgba(22,163,74,${0.3 + (score - 80) * 0.014})`;
+    if (score >= 60) return `rgba(234,179,8,${0.2 + (score - 60) * 0.01})`;
+    if (score >= 40) return `rgba(148,163,184,0.15)`;
+    return `rgba(220,38,38,${0.2 + (40 - score) * 0.008})`;
+  }
+
+  function textColor(score: number): string {
+    if (score >= 75) return '#86efac';
+    if (score >= 55) return '#fde68a';
+    if (score >= 40) return C.muted;
+    return '#fca5a5';
+  }
+
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Strategy–Regime Compatibility</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
+            How well each strategy performs in each market regime (based on design)
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, fontSize: 10, color: C.muted, flexShrink: 0 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 10, height: 10, background: 'rgba(22,163,74,0.6)', borderRadius: 2, display: 'inline-block' }} />Strong
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 10, height: 10, background: 'rgba(234,179,8,0.4)', borderRadius: 2, display: 'inline-block' }} />Moderate
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 10, height: 10, background: 'rgba(220,38,38,0.4)', borderRadius: 2, display: 'inline-block' }} />Weak
+          </span>
+        </div>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: 3, width: '100%', minWidth: 420 }}>
+          <thead>
+            <tr>
+              <th style={{ padding: '4px 8px', textAlign: 'left', width: 120 }} />
+              {regimes.map(r => (
+                <th key={r} style={{ padding: '4px 8px', fontSize: F.xs, color: C.muted, fontWeight: 700, textAlign: 'center', minWidth: 64 }}>{r}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {strategies.map((strat, si) => (
+              <tr key={strat}>
+                <td style={{ padding: '4px 8px', fontSize: F.xs, color: C.textSub, fontWeight: 600, whiteSpace: 'nowrap' }}>{strat}</td>
+                {regimes.map((_, ri) => {
+                  const score = scores[si][ri];
+                  return (
+                    <td key={ri} style={{ padding: '2px' }}>
+                      <div style={{
+                        background: cellColor(score),
+                        borderRadius: R.xs,
+                        padding: '7px 4px',
+                        textAlign: 'center',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: textColor(score),
+                      }}>
+                        {score}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ fontSize: F.xs, color: C.faint, marginTop: 10 }}>
+        The ensemble requires ≥2 strategies agreeing before placing any trade.
+        In Panic regime, all strategies reduce conviction — the bot typically skips or waits.
+      </div>
+    </div>
+  );
+}
+
 function resolveApiBase(): string {
   const envVal =
     (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
@@ -717,6 +812,9 @@ export default function StrategyList() {
           ))}
         </div>
       )}
+
+      {/* Regime-Strategy Compatibility Matrix */}
+      {!loading && <RegimeStrategyMatrix />}
 
       {/* Strategy PnL Comparison Chart — shown when strategies are loaded */}
       {!loading && strategies.length > 0 && (
