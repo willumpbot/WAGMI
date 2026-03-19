@@ -455,6 +455,101 @@ function VetoAnalysis({ decisions }: { decisions: LlmDecision[] }) {
   );
 }
 
+// ─── Action Rate Timeline ─────────────────────────────────────────────────────
+
+function ActionRateTimeline({ decisions }: { decisions: LlmDecision[] }) {
+  if (decisions.length < 6) return null;
+
+  // Group decisions into N time buckets and show GO/VETO/SKIP rate per bucket
+  const BUCKETS = 10;
+  const sorted = [...decisions].sort((a, b) => a.ts - b.ts);
+  const bucketSize = Math.ceil(sorted.length / BUCKETS);
+  const buckets: Array<{ go: number; veto: number; skip: number; total: number }> = [];
+
+  for (let i = 0; i < sorted.length; i += bucketSize) {
+    const slice = sorted.slice(i, i + bucketSize);
+    buckets.push({
+      go: slice.filter((d) => d.action === 'proceed' || d.action === 'go').length,
+      veto: slice.filter((d) => d.is_veto).length,
+      skip: slice.filter((d) => d.action === 'flat' || d.action === 'skip').length,
+      total: slice.length,
+    });
+  }
+
+  const W = 600, H = 120;
+  const pad = { t: 12, r: 12, b: 24, l: 32 };
+  const iW = W - pad.l - pad.r;
+  const iH = H - pad.t - pad.b;
+  const bW = (iW / buckets.length) - 2;
+
+  const maxH = Math.max(...buckets.map((b) => b.total), 1);
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Decision Action Rate Over Time</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>GO / VETO / SKIP distribution across chronological decision windows</div>
+        </div>
+        <div style={{ display: 'flex', gap: 12, fontSize: 10 }}>
+          {[['GO', C.bull], ['VETO', C.bear], ['SKIP', C.muted]].map(([label, color]) => (
+            <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 4, color: color as string }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: color as string, display: 'inline-block' }} />
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+        {/* Y grid */}
+        {[0, 0.5, 1].map((frac) => {
+          const y = pad.t + iH * (1 - frac);
+          const count = Math.round(frac * maxH);
+          return (
+            <g key={frac}>
+              <line x1={pad.l} y1={y} x2={pad.l + iW} y2={y} stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" />
+              <text x={pad.l - 4} y={y + 3} textAnchor="end" fontSize={8} fill={C.muted}>{count}</text>
+            </g>
+          );
+        })}
+
+        {/* Stacked bars */}
+        {buckets.map((b, i) => {
+          const x = pad.l + i * (iW / buckets.length) + 1;
+          const goH = (b.go / maxH) * iH;
+          const vetoH = (b.veto / maxH) * iH;
+          const skipH = (b.skip / maxH) * iH;
+          const baseY = pad.t + iH;
+
+          return (
+            <g key={i}>
+              {/* Skip (bottom) */}
+              {skipH > 0 && <rect x={x} y={baseY - skipH} width={bW} height={skipH} fill={C.muted} opacity={0.4} rx={1} />}
+              {/* Veto (middle) */}
+              {vetoH > 0 && <rect x={x} y={baseY - skipH - vetoH} width={bW} height={vetoH} fill={C.bear} opacity={0.8} rx={1} />}
+              {/* Go (top) */}
+              {goH > 0 && <rect x={x} y={baseY - skipH - vetoH - goH} width={bW} height={goH} fill={C.bull} opacity={0.85} rx={1} />}
+            </g>
+          );
+        })}
+
+        {/* X axis labels: first and last */}
+        {sorted.length > 0 && (
+          <>
+            <text x={pad.l} y={pad.t + iH + 14} fontSize={8} fill={C.muted} textAnchor="start">
+              {new Date(sorted[0].ts * 1000).toLocaleDateString()}
+            </text>
+            <text x={pad.l + iW} y={pad.t + iH + 14} fontSize={8} fill={C.muted} textAnchor="end">
+              {new Date(sorted[sorted.length - 1].ts * 1000).toLocaleDateString()}
+            </text>
+          </>
+        )}
+      </svg>
+    </div>
+  );
+}
+
 // ─── Decision Row ─────────────────────────────────────────────────────────────
 
 function DecisionRow({ d }: { d: LlmDecision }) {
@@ -690,6 +785,9 @@ export default function LlmAudit() {
           <ConfCalibration decisions={decisions} />
         </div>
       )}
+
+      {/* Action Rate Timeline */}
+      {decisions.length >= 6 && <ActionRateTimeline decisions={decisions} />}
 
       {/* Veto Analysis */}
       {decisions.some((d) => d.is_veto) && (
