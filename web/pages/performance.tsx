@@ -5,6 +5,12 @@ import { C, R, S, F, fmtUsd, fmtPct } from '../src/theme';
 import { apiFetch } from '../src/api';
 import type { TradeHistoryResponse, TradeRecord, EquityCurveResponse, EquityCurvePoint, BacktestResult } from '../src/types';
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
+  return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
+}
+
 // ─── EMA Helper ───────────────────────────────────────────────────────────────
 
 function calcEMA(data: number[], period: number): number[] {
@@ -1698,9 +1704,15 @@ function TradeQualityMatrix({ trades }: { trades: TradeRecord[] }) {
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Trade Quality by Duration × Exit Type
       </div>
-      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: trades.length === 0 ? 8 : 16 }}>
         Each cell shows trade count and win rate. Color intensity scales with count.
       </div>
+      {trades.length === 0 && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 16 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
+        </div>
+      )}
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: 4, width: '100%' }}>
@@ -1859,9 +1871,15 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Fee Impact Analysis</div>
-      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: trades.length === 0 ? 8 : 14 }}>
         Hyperliquid: 0.05% taker · 0.02% maker
       </div>
+      {trades.length === 0 && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 14 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
+        </div>
+      )}
 
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
         {/* Zero reference */}
@@ -1991,9 +2009,15 @@ function StreakAnalysisChart({ trades }: { trades: TradeRecord[] }) {
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Win/Loss Streak History</div>
-      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: trades.length === 0 ? 8 : 14 }}>
         Each bar = one consecutive run. Green = win streak, red = loss streak.
       </div>
+      {trades.length === 0 && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 14 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
+        </div>
+      )}
 
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
         {/* Chart title */}
@@ -2452,16 +2476,25 @@ export default function PerformancePage() {
   const [trades, setTrades] = useState<TradeRecord[]>([]);
   const [curve, setCurve] = useState<EquityCurvePoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      apiFetch<TradeHistoryResponse>('/v1/trades/history?limit=500'),
-      apiFetch<EquityCurveResponse>('/v1/trades/equity-curve?run=latest'),
-    ]).then(([tradeRes, curveRes]) => {
-      setTrades(tradeRes?.trades ?? []);
-      setCurve(curveRes?.points ?? []);
-      setLoading(false);
-    });
+    const load = async () => {
+      try {
+        const [tradeRes, curveRes] = await Promise.all([
+          apiFetch<TradeHistoryResponse>('/v1/trades/history?limit=500'),
+          apiFetch<EquityCurveResponse>('/v1/trades/equity-curve?run=latest'),
+        ]);
+        setTrades(tradeRes?.trades ?? []);
+        setCurve(curveRes?.points ?? []);
+        setFetchError(false);
+      } catch {
+        setFetchError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
 
   const dailyReturns = useMemo(() => dailyReturnsFromCurve(curve), [curve]);
@@ -2552,6 +2585,12 @@ export default function PerformancePage() {
             Institutional-grade metrics derived from {trades.length} trades and the live equity curve.
           </p>
         </div>
+
+        {fetchError && !loading && (
+          <div style={{ marginBottom: 20, padding: '12px 16px', background: '#3d1a1a', border: '1px solid #7f1d1d', borderRadius: 8, color: '#fca5a5', fontSize: 14 }}>
+            Failed to load performance data. The API may be offline — data shown may be stale or empty.
+          </div>
+        )}
 
         {loading ? (
           <div>

@@ -4147,15 +4147,17 @@ export default function CopyTrade() {
   const apiBase = resolveApiBase();
 
   useEffect(() => {
+    const ctrl = new AbortController();
     const fetcher = async () => {
       try {
         const [signalsRes, llmRes, activityRes, btRes] = await Promise.allSettled([
-          fetch(`${apiBase}/v1/signals`),
-          fetch(`${apiBase}/v1/llm/market-view`),
-          fetch(`${apiBase}/v1/activity/feed?limit=25`),
-          fetch(`${apiBase}/v1/backtest/results/latest`),
+          fetch(`${apiBase}/v1/signals`, { signal: ctrl.signal }),
+          fetch(`${apiBase}/v1/llm/market-view`, { signal: ctrl.signal }),
+          fetch(`${apiBase}/v1/activity/feed?limit=25`, { signal: ctrl.signal }),
+          fetch(`${apiBase}/v1/backtest/results/latest`, { signal: ctrl.signal }),
         ]);
 
+        if (ctrl.signal.aborted) return;
         if (signalsRes.status === 'fulfilled' && signalsRes.value.ok) {
           setData(await signalsRes.value.json());
         }
@@ -4170,14 +4172,14 @@ export default function CopyTrade() {
           setBacktest(await btRes.value.json());
         }
       } catch (e) {
-        console.error('Fetch error:', e);
+        if ((e as any)?.name !== 'AbortError') console.error('Fetch error:', e);
       }
-      setLoading(false);
+      if (!ctrl.signal.aborted) setLoading(false);
     };
 
     fetcher();
     const interval = setInterval(fetcher, 30000);
-    return () => clearInterval(interval);
+    return () => { ctrl.abort(); clearInterval(interval); };
   }, [apiBase]);
 
   const signals = data.signals || {};

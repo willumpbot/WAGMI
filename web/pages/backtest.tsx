@@ -1757,9 +1757,15 @@ function NewBacktestForm({ onJobStarted, apiBase }: { onJobStarted: (jobId: stri
 
 function JobProgress({ jobId, apiBase, onDone }: { jobId: string; apiBase: string; onDone: (resultId: string) => void }) {
   const [job, setJob] = useState<BacktestJob | null>(null);
+  const [pollError, setPollError] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Keep a stable ref to onDone so the effect deps never include the callback
+  // (parent passes an inline function, which would re-run the effect every render)
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
 
   useEffect(() => {
+    setPollError(false);
     const poll = async () => {
       try {
         const res = await fetch(`${apiBase}/v1/backtest/status/${jobId}`);
@@ -1768,16 +1774,21 @@ function JobProgress({ jobId, apiBase, onDone }: { jobId: string; apiBase: strin
           setJob(data);
           if (data.status === 'done' || data.status === 'error') {
             if (pollRef.current) clearInterval(pollRef.current);
-            if (data.status === 'done') onDone(data.result_id);
+            if (data.status === 'done') onDoneRef.current(data.result_id);
           }
+        } else {
+          // Non-2xx response (e.g. 404, 500): stop polling and surface the error
+          if (pollRef.current) clearInterval(pollRef.current);
+          setPollError(true);
         }
-      } catch { /* silent */ }
+      } catch { /* silent — network failure; keep polling */ }
     };
     poll();
     pollRef.current = setInterval(poll, 2500);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [jobId, apiBase, onDone]);
+  }, [jobId, apiBase]);
 
+  if (pollError) return <div style={{ padding: 16, color: C.bear, fontSize: F.sm }}>Failed to fetch job status — the server returned an error. Please refresh.</div>;
   if (!job) return <div style={{ padding: 16, color: C.muted, fontSize: F.sm }}>Starting backtest…</div>;
 
   const statusColors: Record<string, string> = {

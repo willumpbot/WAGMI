@@ -196,8 +196,8 @@ function TradeRow({ t }: { t: TradeRecord }) {
       <span style={{ fontWeight: 800, color: C.text, width: 52 }}>{t.symbol}</span>
       <span style={{ fontSize: F.xs, padding: '2px 6px', borderRadius: R.pill, background: t.side?.toUpperCase() === 'BUY' ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)', color: t.side?.toUpperCase() === 'BUY' ? C.bull : C.bear, fontWeight: 700 }}>{t.side?.toUpperCase()}</span>
       <span style={{ fontWeight: 600, color: pnlColor, marginLeft: 'auto' }}>{t.pnl != null ? fmtUsd(t.pnl) : '—'}</span>
-      <span style={{ fontSize: F.xs, color: C.muted, width: 60 }}>{t.close_reason || '—'}</span>
-      <span style={{ fontSize: F.xs, color: t.outcome === 'WIN' ? C.bull : C.bear, fontWeight: 700, width: 36 }}>{t.outcome}</span>
+      <span style={{ fontSize: F.xs, color: C.muted, maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.close_reason || '—'}</span>
+      <span style={{ fontSize: F.xs, color: t.outcome === 'WIN' ? C.bull : C.bear, fontWeight: 700, flexShrink: 0 }}>{t.outcome}</span>
     </div>
   );
 }
@@ -2050,20 +2050,25 @@ export default function TodayPage() {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    const fetch = async () => {
-      const [lv, act, tr] = await Promise.all([
-        apiFetch<LlmMarketView>('/v1/llm/market-view'),
-        apiFetch<ActivityFeedResponse>('/v1/activity/feed?limit=50'),
-        apiFetch<TradeHistoryResponse>('/v1/trades/history?limit=20'),
-      ]);
-      setLlmView(lv);
-      setActivity(act?.items ?? []);
-      setTrades(tr?.trades ?? []);
-      setLoading(false);
+    let cancelled = false;
+    const fetchData = async () => {
+      try {
+        const [lv, act, tr] = await Promise.all([
+          apiFetch<LlmMarketView>('/v1/llm/market-view'),
+          apiFetch<ActivityFeedResponse>('/v1/activity/feed?limit=50'),
+          apiFetch<TradeHistoryResponse>('/v1/trades/history?limit=20'),
+        ]);
+        if (cancelled) return;
+        setLlmView(lv);
+        setActivity(act?.items ?? []);
+        setTrades(tr?.trades ?? []);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
-    fetch();
-    const iv = setInterval(() => { fetch(); setNow(new Date()); }, 60_000);
-    return () => clearInterval(iv);
+    fetchData();
+    const iv = setInterval(() => { if (!cancelled) { fetchData(); setNow(new Date()); } }, 60_000);
+    return () => { cancelled = true; clearInterval(iv); };
   }, []);
 
   const regime = llmView?.regime || 'unknown';
@@ -2356,11 +2361,6 @@ export default function TodayPage() {
             <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Recent Trade Recap</h2>
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '4px 16px' }}>
               {recentTrades.map((t, i) => <TradeRow key={`${t.symbol}-${t.side}-${t.entry ?? i}-${i}`} t={t} />)}
-              {recentTrades.length === 0 && (
-                <div style={{ padding: '20px 0', color: C.muted, fontSize: F.sm, textAlign: 'center' }}>
-                  No trades in recent history. The bot is watching the market.
-                </div>
-              )}
             </div>
           </div>
         )}

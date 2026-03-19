@@ -1333,11 +1333,11 @@ function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal>
       {/* SVG Radar */}
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <svg
-          width={260}
+          width="100%"
           height={260}
           viewBox="0 0 260 260"
           aria-label={`${title} spider chart`}
-          style={{ display: 'block', overflow: 'visible' }}
+          style={{ display: 'block', overflow: 'visible', maxWidth: 260 }}
         >
           <defs>
             <filter id={`radar-glow-${symbol}`}>
@@ -2433,7 +2433,7 @@ function SignalAgeDistribution({ signals }: { signals: Record<string, Signal> | 
       {/* SVG Timeline */}
       <div style={{ overflowX: 'auto' }}>
         <svg
-          width={CHART_W}
+          width="100%"
           height={BASE_Y + entries.length * ROW_GAP + 20}
           viewBox={`0 0 ${CHART_W} ${BASE_Y + entries.length * ROW_GAP + 20}`}
           style={{ display: 'block', minWidth: 320 }}
@@ -3571,7 +3571,7 @@ export default function SignalsPage() {
       <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '8px 0 16px', letterSpacing: '-0.02em' }}>
         Decision Pipeline
       </h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20, marginBottom: 28 }}>
         {/* Gate funnel */}
         <SignalFunnel total={totalAnalyzed || 100} proceed={proceed} vetoed={vetoed} skipped={skipped} />
 

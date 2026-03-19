@@ -2582,6 +2582,7 @@ export default function Home() {
   const apiBase = resolveApiBase();
 
   useEffect(() => {
+    let cancelled = false;
     const fetchAll = async () => {
       try {
         const [sigRes, stratRes, btRes, actRes, llmRes] = await Promise.allSettled([
@@ -2592,6 +2593,7 @@ export default function Home() {
           fetch(`${apiBase}/v1/llm/market-view`),
         ]);
 
+        if (cancelled) return;
         if (sigRes.status === 'fulfilled' && sigRes.value.ok) {
           setSignalsData(await sigRes.value.json());
           setApiError(false);
@@ -2617,19 +2619,21 @@ export default function Home() {
           const trRes = await fetch(`${apiBase}/v1/trades/history?limit=20`);
           if (trRes.ok) {
             const d = await trRes.json();
-            setRecentTrades(d?.trades ?? []);
+            if (!cancelled) setRecentTrades(d?.trades ?? []);
           }
         } catch {/* silent */}
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       } catch {
-        setLoading(false);
-        setApiError(true);
+        if (!cancelled) {
+          setLoading(false);
+          setApiError(true);
+        }
       }
     };
 
     fetchAll();
     const iv = setInterval(fetchAll, 30000);
-    return () => clearInterval(iv);
+    return () => { cancelled = true; clearInterval(iv); };
   }, [apiBase]);
 
   const signals = signalsData.signals || {};

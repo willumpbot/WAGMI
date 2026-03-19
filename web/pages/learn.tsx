@@ -235,9 +235,9 @@ function PositionSizeCalc() {
   const [entry, setEntry] = useState(95000);
   const [stopLoss, setStopLoss] = useState(94200);
 
-  const safeAccountSize = accountSize > 0 ? accountSize : 0;
-  const safeEntry = entry > 0 ? entry : 0;
-  const safeStopLoss = stopLoss > 0 ? stopLoss : 0;
+  const safeAccountSize = isNaN(accountSize) || accountSize <= 0 ? 0 : accountSize;
+  const safeEntry = isNaN(entry) || entry <= 0 ? 0 : entry;
+  const safeStopLoss = isNaN(stopLoss) || stopLoss <= 0 ? 0 : stopLoss;
   const riskDollars = (safeAccountSize * riskPct) / 100;
   const stopDist = Math.abs(safeEntry - safeStopLoss);
   const stopDistPct = safeEntry > 0 ? (stopDist / safeEntry) * 100 : 0;
@@ -258,19 +258,19 @@ function PositionSizeCalc() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <div style={labelStyle}>Account Size ($)</div>
-            <input type="number" aria-label="Account size in dollars" style={inputStyle} value={accountSize} onChange={e => setAccountSize(+e.target.value)} min={100} />
+            <input type="number" aria-label="Account size in dollars" style={inputStyle} value={accountSize} onChange={e => { const v = parseFloat(e.target.value); setAccountSize(isNaN(v) ? 0 : Math.max(0, v)); }} min={100} />
           </div>
           <div>
             <div style={labelStyle}>Risk Per Trade (%)</div>
-            <input type="number" aria-label="Risk per trade percentage" style={inputStyle} value={riskPct} step={0.1} onChange={e => setRiskPct(+e.target.value)} min={0.1} max={10} />
+            <input type="number" aria-label="Risk per trade percentage" style={inputStyle} value={riskPct} step={0.1} onChange={e => { const v = parseFloat(e.target.value); setRiskPct(isNaN(v) ? 0 : Math.max(0, Math.min(100, v))); }} min={0.1} max={10} />
           </div>
           <div>
             <div style={labelStyle}>Entry Price ($)</div>
-            <input type="number" aria-label="Entry price in dollars" style={inputStyle} value={entry} onChange={e => setEntry(+e.target.value)} min={0.01} />
+            <input type="number" aria-label="Entry price in dollars" style={inputStyle} value={entry} onChange={e => { const v = parseFloat(e.target.value); setEntry(isNaN(v) ? 0 : Math.max(0, v)); }} min={0.01} />
           </div>
           <div>
             <div style={labelStyle}>Stop Loss Price ($)</div>
-            <input type="number" aria-label="Stop loss price in dollars" style={inputStyle} value={stopLoss} onChange={e => setStopLoss(+e.target.value)} min={0.01} />
+            <input type="number" aria-label="Stop loss price in dollars" style={inputStyle} value={stopLoss} onChange={e => { const v = parseFloat(e.target.value); setStopLoss(isNaN(v) ? 0 : Math.max(0, v)); }} min={0.01} />
           </div>
         </div>
         <div style={{ padding: '10px 14px', background: C.warn + '12', border: `1px solid ${C.warn}30`, borderRadius: R.sm, fontSize: F.xs, color: C.textSub }}>
@@ -311,14 +311,18 @@ function RRCalc() {
   const [tp1, setTp1] = useState(96400);
   const [tp2, setTp2] = useState(97800);
 
-  const risk = Math.abs(entry - sl);
-  const reward1 = Math.abs(tp1 - entry);
-  const reward2 = Math.abs(tp2 - entry);
+  const safeEntry = isNaN(entry) || entry <= 0 ? 0 : entry;
+  const safeSl = isNaN(sl) || sl <= 0 ? 0 : sl;
+  const safeTp1 = isNaN(tp1) || tp1 <= 0 ? 0 : tp1;
+  const safeTp2 = isNaN(tp2) || tp2 <= 0 ? 0 : tp2;
+  const risk = Math.abs(safeEntry - safeSl);
+  const reward1 = Math.abs(safeTp1 - safeEntry);
+  const reward2 = Math.abs(safeTp2 - safeEntry);
   const rr1 = risk > 0 ? reward1 / risk : 0;
   const rr2 = risk > 0 ? reward2 / risk : 0;
-  const slPct = entry > 0 ? (risk / entry) * 100 : 0;
-  const tp1Pct = entry > 0 ? (reward1 / entry) * 100 : 0;
-  const tp2Pct = entry > 0 ? (reward2 / entry) * 100 : 0;
+  const slPct = safeEntry > 0 ? (risk / safeEntry) * 100 : 0;
+  const tp1Pct = safeEntry > 0 ? (reward1 / safeEntry) * 100 : 0;
+  const tp2Pct = safeEntry > 0 ? (reward2 / safeEntry) * 100 : 0;
 
   const barMax = Math.max(reward2, risk) || 1;
 
@@ -333,19 +337,19 @@ function RRCalc() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div style={{ gridColumn: '1/-1' }}>
           <div style={labelStyle}>Entry Price ($)</div>
-          <input type="number" aria-label="Entry price" style={inputStyle} value={entry} onChange={e => setEntry(+e.target.value)} />
+          <input type="number" aria-label="Entry price" style={inputStyle} value={entry} onChange={e => { const v = parseFloat(e.target.value); setEntry(isNaN(v) ? 0 : Math.max(0, v)); }} />
         </div>
         <div>
           <div style={labelStyle}>Stop Loss ($)</div>
-          <input type="number" aria-label="Stop loss price" style={inputStyle} value={sl} onChange={e => setSl(+e.target.value)} />
+          <input type="number" aria-label="Stop loss price" style={inputStyle} value={sl} onChange={e => { const v = parseFloat(e.target.value); setSl(isNaN(v) ? 0 : Math.max(0, v)); }} />
         </div>
         <div>
           <div style={labelStyle}>TP1 ($)</div>
-          <input type="number" aria-label="Take profit 1 price" style={inputStyle} value={tp1} onChange={e => setTp1(+e.target.value)} />
+          <input type="number" aria-label="Take profit 1 price" style={inputStyle} value={tp1} onChange={e => { const v = parseFloat(e.target.value); setTp1(isNaN(v) ? 0 : Math.max(0, v)); }} />
         </div>
         <div style={{ gridColumn: '1/-1' }}>
           <div style={labelStyle}>TP2 (Final Target) ($)</div>
-          <input type="number" aria-label="Take profit 2 final target price" style={inputStyle} value={tp2} onChange={e => setTp2(+e.target.value)} />
+          <input type="number" aria-label="Take profit 2 final target price" style={inputStyle} value={tp2} onChange={e => { const v = parseFloat(e.target.value); setTp2(isNaN(v) ? 0 : Math.max(0, v)); }} />
         </div>
       </div>
 

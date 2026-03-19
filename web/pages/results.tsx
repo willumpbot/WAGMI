@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
 import type { BacktestResult, TradeRecord, TradeHistoryResponse, EquityCurvePoint } from '../src/types';
@@ -972,7 +972,7 @@ function TradeTable({ trades, loading }: { trades: TradeRecord[]; loading: boole
       )
     },
     { key: 'leverage', label: 'Lev', render: (t) => t.leverage != null ? `${t.leverage.toFixed(1)}×` : '—' },
-    { key: 'confidence', label: 'Conf', render: (t) => t.confidence != null ? `${t.confidence.toFixed(0)}%` : '—' },
+    { key: 'confidence', label: 'Conf', render: (t) => t.confidence != null ? `${(t.confidence * 100).toFixed(0)}%` : '—' },
     { key: 'duration_h', label: 'Duration', render: (t) => t.duration_h != null ? `${t.duration_h.toFixed(1)}h` : '—' },
     { key: 'close_reason', label: 'Exit' },
     {
@@ -1347,7 +1347,7 @@ function DailyPnlCalendar({ trades }: { trades: TradeRecord[] }) {
             <span>Profit days: <strong style={{ color: C.bull }}>{profitDays}</strong></span>
             <span>Loss days: <strong style={{ color: C.bear }}>{lossDays}</strong></span>
             {bestDay && <span>Best: <strong style={{ color: C.bull }}>{bestDay[0]} +${bestDay[1].pnl.toFixed(0)}</strong></span>}
-            {worstDay && <span>Worst: <strong style={{ color: C.bear }}>{worstDay[0]} ${worstDay[1].pnl.toFixed(0)}</strong></span>}
+            {worstDay && <span>Worst: <strong style={{ color: C.bear }}>{worstDay[0]} {worstDay[1].pnl >= 0 ? '+' : '-'}${Math.abs(worstDay[1].pnl).toFixed(0)}</strong></span>}
           </div>
         );
       })()}
@@ -1642,7 +1642,7 @@ function CumulativePnlMilestones({ trades }: { trades: TradeRecord[] }) {
       }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 18, flexWrap: 'wrap', gap: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: trades.length === 0 ? 8 : 18, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ fontSize: F.sm, color: C.textSub, fontWeight: 700 }}>
           Net PnL Progress
         </div>
@@ -1653,6 +1653,12 @@ function CumulativePnlMilestones({ trades }: { trades: TradeRecord[] }) {
           </span>
         </div>
       </div>
+      {trades.length === 0 && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginBottom: 18 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
+        </div>
+      )}
 
       {/* Track */}
       <div style={{ position: 'relative', height: 48, paddingTop: 8 }}>
@@ -1954,8 +1960,9 @@ function WeeklySymbolHeatmap({ trades }: { trades: TradeRecord[] }) {
         </table>
       </div>
       {!hasTrades && (
-        <div style={{ marginTop: 10, fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>
-          Showing seeded demo data — connect the bot to see live weekly breakdown.
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginTop: 10 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
     </div>
@@ -2206,8 +2213,9 @@ function DailyEquityWaterfall({ trades }: { trades: TradeRecord[] }) {
       </svg>
 
       {useSeed && (
-        <div style={{ marginTop: 8, fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>
-          Showing seeded demo data — connect the bot to see live daily waterfall.
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginTop: 8 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
     </div>
@@ -2447,8 +2455,9 @@ function ProfitAttributionChart({ trades, backtest }: {
       </svg>
 
       {trades.length < 5 && (
-        <div style={{ marginTop: 8, fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>
-          Showing seeded demo data — connect the bot to see live attribution.
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginTop: 8 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — connect bot to see live results</span>
         </div>
       )}
     </div>
@@ -2467,8 +2476,12 @@ function PnlDistributionHistogram({ trades }: { trades: TradeRecord[] }) {
   if (pnls.length < 2) {
     return (
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
-        <h2 style={{ margin: '0 0 8px', fontSize: F.lg, fontWeight: 700, color: C.text }}>P&amp;L Distribution</h2>
-        <div style={{ color: C.muted, fontSize: F.sm }}>Not enough trade data yet.</div>
+        <h2 style={{ margin: '0 0 12px', fontSize: F.lg, fontWeight: 700, color: C.text }}>P&amp;L Distribution</h2>
+        <div style={{ textAlign: 'center', padding: '28px 16px', color: C.textSub }}>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>📊</div>
+          <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 4 }}>Not enough trade data yet</div>
+          <div style={{ fontSize: F.sm, color: C.muted }}>P&L distribution appears once you have at least 2 closed trades.</div>
+        </div>
       </div>
     );
   }
@@ -3167,8 +3180,9 @@ function MaxAdverseExcursion({ trades }: { trades: TradeRecord[] }) {
       </svg>
 
       {useSeed && (
-        <div style={{ marginTop: 8, fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>
-          Showing seeded demo data — MAE field not available in trade records yet.
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', marginTop: 8 }}>
+          <span style={{ fontSize: 12 }}>🔶</span>
+          <span style={{ fontSize: F.xs, color: '#b45309', fontWeight: 600 }}>Demo data — MAE field not yet in trade records</span>
         </div>
       )}
     </div>
@@ -3185,14 +3199,17 @@ export default function Results() {
   const [loadingTrades, setLoadingTrades] = useState(true);
   const [copied, setCopied] = useState(false);
   const apiBase = resolveApiBase();
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    const ctrl = new AbortController();
     const load = async () => {
       const [btRes, eqRes, tradesRes] = await Promise.allSettled([
-        fetch(`${apiBase}/v1/backtest/results/latest`),
-        fetch(`${apiBase}/v1/trades/equity-curve?run=latest`),
-        fetch(`${apiBase}/v1/trades/history?limit=200`),
+        fetch(`${apiBase}/v1/backtest/results/latest`, { signal: ctrl.signal }),
+        fetch(`${apiBase}/v1/trades/equity-curve?run=latest`, { signal: ctrl.signal }),
+        fetch(`${apiBase}/v1/trades/history?limit=200`, { signal: ctrl.signal }),
       ]);
+      if (ctrl.signal.aborted) return;
       if (btRes.status === 'fulfilled' && btRes.value.ok) {
         setBacktest(await btRes.value.json());
       }
@@ -3207,8 +3224,15 @@ export default function Results() {
       }
       setLoadingTrades(false);
     };
-    load();
+    load().catch(() => {});
+    return () => ctrl.abort();
   }, [apiBase]);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    };
+  }, []);
 
   const r = backtest?.results;
   const cfg = backtest?.config;
@@ -3217,7 +3241,8 @@ export default function Results() {
     if (typeof window !== 'undefined') {
       navigator.clipboard.writeText(window.location.href).then(() => {
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+        copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
       });
     }
   };

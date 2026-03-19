@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo, useId } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useId } from 'react';
 import Link from 'next/link';
 import { C, R, F, S, fmtUsd, fmtPct } from '../src/theme';
 import type { TradeRecord, TradeHistoryResponse } from '../src/types';
@@ -233,7 +233,7 @@ function ConfScatterPlot({ trades }: { trades: TradeRecord[] }) {
           <div>Confidence: {Math.round((tooltip.trade.llm_confidence ?? 0) * 100)}%</div>
           <div>R/R achieved: {tooltip.trade.rr_achieved?.toFixed(2)}</div>
           <div>Strategy: {tooltip.trade.strategy}</div>
-          <div>P&L: {fmtUsd(tooltip.trade.pnl)}</div>
+          <div>P&L: {fmtUsd(tooltip.trade.pnl ?? 0)}</div>
         </div>
       )}
     </div>
@@ -3074,17 +3074,19 @@ export default function Forensics() {
   const [filterSymbol, setFilterSymbol] = useState('All');
 
   useEffect(() => {
+    const ctrl = new AbortController();
     const load = async () => {
       try {
-        const res = await fetch(`${apiBase}/v1/trades/history?limit=500`);
+        const res = await fetch(`${apiBase}/v1/trades/history?limit=500`, { signal: ctrl.signal });
         if (res.ok) {
           const d: TradeHistoryResponse = await res.json();
-          setTrades(d?.trades || []);
+          if (!ctrl.signal.aborted) setTrades(d?.trades || []);
         }
-      } catch {/* silent */}
-      setLoading(false);
+      } catch {/* silent (includes AbortError) */}
+      if (!ctrl.signal.aborted) setLoading(false);
     };
     load();
+    return () => ctrl.abort();
   }, [apiBase]);
 
   // Derive filter options

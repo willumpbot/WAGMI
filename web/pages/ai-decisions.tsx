@@ -1514,27 +1514,32 @@ export default function AiDecisionsPage() {
   const [newIds, setNewIds] = useState<Set<number>>(new Set());
   const prevCount = useRef(0);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-
-  const fetchDecisions = async () => {
-    const r = await apiFetch<LlmFeedResponse>('/v1/llm/feed?limit=200');
-    if (r?.items) {
-      const items = r.items;
-      if (items.length > prevCount.current) {
-        const fresh = new Set(items.slice(0, items.length - prevCount.current).map((d) => d.ts));
-        setNewIds(fresh);
-        setTimeout(() => setNewIds(new Set()), 3000);
-      }
-      prevCount.current = items.length;
-      setDecisions(items);
-      setLastUpdate(new Date());
-    }
-    setLoading(false);
-  };
+  const newIdsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    const fetchDecisions = async () => {
+      const r = await apiFetch<LlmFeedResponse>('/v1/llm/feed?limit=200');
+      if (r?.items) {
+        const items = r.items;
+        if (items.length > prevCount.current) {
+          const fresh = new Set(items.slice(0, items.length - prevCount.current).map((d) => d.ts));
+          setNewIds(fresh);
+          if (newIdsTimerRef.current) clearTimeout(newIdsTimerRef.current);
+          newIdsTimerRef.current = setTimeout(() => setNewIds(new Set()), 3000);
+        }
+        prevCount.current = items.length;
+        setDecisions(items);
+        setLastUpdate(new Date());
+      }
+      setLoading(false);
+    };
+
     fetchDecisions();
     const iv = setInterval(fetchDecisions, 30_000);
-    return () => clearInterval(iv);
+    return () => {
+      clearInterval(iv);
+      if (newIdsTimerRef.current) clearTimeout(newIdsTimerRef.current);
+    };
   }, []);
 
   // Available symbols
