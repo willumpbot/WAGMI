@@ -7,12 +7,6 @@ export function resolveApiBase(): string {
     (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
     (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined);
   if (envVal && envVal.trim().length > 0) return envVal;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://nunuirl-platform.onrender.com';
-    }
-  }
   return 'http://localhost:8000';
 }
 
