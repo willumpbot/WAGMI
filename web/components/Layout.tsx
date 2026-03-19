@@ -5,6 +5,7 @@ import { C, R, S, timeAgo } from '../src/theme';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard' },
+  { href: '/today', label: 'Morning Brief' },
   { href: '/signals', label: 'Live Signals' },
   { href: '/copy-trade', label: 'Trade This' },
   { href: '/portfolio', label: 'Portfolio' },
@@ -15,6 +16,8 @@ const NAV_ITEMS = [
   { href: '/llm-audit', label: 'AI Audit' },
   { href: '/strategies', label: 'How It Trades' },
   { href: '/learn', label: 'Understand' },
+  { href: '/about', label: 'About' },
+  { href: '/pricing', label: 'Pricing' },
 ];
 
 function resolveApiBase(): string {

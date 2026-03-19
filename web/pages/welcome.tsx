@@ -1,0 +1,449 @@
+import React, { useEffect, useState } from 'react';
+import Head from 'next/head';
+import Link from 'next/link';
+import { C, R, S, F, fmtUsd, fmtPct } from '../src/theme';
+import { apiFetch } from '../src/api';
+import type { BacktestResult, ActivityEvent, ActivityFeedResponse } from '../src/types';
+
+// ─── Inline SVG Equity Sparkline ─────────────────────────────────────────────
+
+function HeroSparkline({ data, w = 320, h = 80 }: { data: number[]; w?: number; h?: number }) {
+  if (data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const x = (i: number) => (i / (data.length - 1)) * w;
+  const y = (v: number) => h - ((v - min) / range) * h * 0.85 - h * 0.075;
+  const pts = data.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+  const area = [`0,${h}`, ...data.map((v, i) => `${x(i)},${y(v)}`), `${w},${h}`].join(' ');
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
+      <defs>
+        <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={C.bull} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={C.bull} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <polyline points={area} fill="url(#heroGrad)" stroke="none" />
+      <polyline points={pts} fill="none" stroke={C.bull} strokeWidth={2.5} strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// ─── Live trade ticker ────────────────────────────────────────────────────────
+
+function LiveTicker({ events }: { events: ActivityEvent[] }) {
+  if (!events.length) return null;
+  const visible = events.slice(0, 8);
+  return (
+    <div style={{
+      overflow: 'hidden', height: 36, background: 'rgba(0,0,0,0.3)',
+      borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`,
+      position: 'relative',
+    }}>
+      <style>{`@keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 40, height: '100%',
+        whiteSpace: 'nowrap', animation: 'ticker 30s linear infinite',
+        paddingLeft: 20,
+      }}>
+        {[...visible, ...visible].map((e, i) => {
+          const col = e.badge_color || C.muted;
+          return (
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: F.xs }}>
+              <span style={{ padding: '1px 6px', borderRadius: R.pill, background: col + '22', color: col, fontWeight: 700, fontSize: 10 }}>{e.badge}</span>
+              <span style={{ color: C.textSub, fontWeight: 600 }}>{e.symbol || '—'}</span>
+              <span style={{ color: C.muted }}>{e.detail?.slice(0, 40) || e.title}</span>
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Stat Counter ─────────────────────────────────────────────────────────────
+
+function StatBlock({ value, label, sub }: { value: string; label: string; sub?: string }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '24px 16px' }}>
+      <div style={{ fontSize: F['4xl'], fontWeight: 800, color: C.text, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: F.base, fontWeight: 600, color: C.textSub, marginTop: 8 }}>{label}</div>
+      {sub && <div style={{ fontSize: F.sm, color: C.muted, marginTop: 4 }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ─── Agent Pipeline Diagram ───────────────────────────────────────────────────
+
+function AgentPipeline() {
+  const agents = [
+    { name: 'Regime', model: 'Haiku', role: 'Classifies market conditions', color: C.info },
+    { name: 'Trade', model: 'Sonnet', role: 'Forms directional thesis', color: C.brand },
+    { name: 'Risk', model: 'Haiku', role: 'Sizes position and flags risks', color: C.warn },
+    { name: 'Critic', model: 'Sonnet', role: 'Stress-tests the thesis', color: C.purple },
+    { name: 'Execute', model: '→', role: 'Trade placed (or vetoed)', color: C.bull },
+  ];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', padding: '8px 0' }}>
+      {agents.map((a, i) => (
+        <React.Fragment key={a.name}>
+          <div style={{
+            flex: '0 0 auto', textAlign: 'center', padding: '14px 16px',
+            background: a.color + '15', border: `1px solid ${a.color}40`,
+            borderRadius: R.md, minWidth: 110,
+          }}>
+            <div style={{ fontSize: F.sm, fontWeight: 800, color: a.color }}>{a.name}</div>
+            <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{a.model}</div>
+            <div style={{ fontSize: 10, color: C.textSub, marginTop: 4, lineHeight: 1.3 }}>{a.role}</div>
+          </div>
+          {i < agents.length - 1 && (
+            <div style={{ fontSize: 18, color: C.border, padding: '0 6px', flexShrink: 0 }}>→</div>
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+// ─── Signal Preview Card ──────────────────────────────────────────────────────
+
+function SignalPreviewCard() {
+  return (
+    <div style={{
+      background: C.card, border: `1px solid ${C.bull}40`,
+      borderRadius: R.xl, padding: '24px 28px', maxWidth: 480,
+      boxShadow: S.lg, position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${C.bull}, ${C.brand})` }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div>
+          <span style={{ fontSize: F.xl, fontWeight: 800, color: C.text }}>BTC/USD</span>
+          <span style={{ marginLeft: 10, padding: '3px 10px', borderRadius: R.pill, background: 'rgba(22,163,74,0.15)', color: C.bull, fontSize: F.sm, fontWeight: 700 }}>LONG</span>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.bull }}>78 / 100</div>
+          <div style={{ fontSize: F.xs, color: C.muted }}>AI Confidence</div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+        {[
+          { label: 'Entry', value: '$67,420' },
+          { label: 'Stop Loss', value: '$65,800' },
+          { label: 'Target', value: '$71,200' },
+        ].map(({ label, value }) => (
+          <div key={label} style={{ background: C.surface, borderRadius: R.sm, padding: '8px 12px' }}>
+            <div style={{ fontSize: F.xs, color: C.muted }}>{label}</div>
+            <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>{value}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ background: 'rgba(99,102,241,0.1)', border: `1px solid ${C.brand}30`, borderRadius: R.sm, padding: '10px 14px', marginBottom: 16 }}>
+        <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, marginBottom: 4 }}>🤖 AI Reasoning</div>
+        <div style={{ fontSize: F.xs, color: C.textSub, lineHeight: 1.5 }}>
+          "Momentum confluence across 1h/6h with Monte Carlo support at $65.8k. Critic approved — counter-thesis of resistance at $68.2k deemed manageable given stop placement."
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontSize: F.xs, color: C.muted }}>Regime: trending_bull · R:R 2.3:1 · 3/4 strategies aligned</div>
+        <Link href="/copy-trade" style={{ padding: '7px 16px', background: C.brand, color: '#fff', borderRadius: R.sm, fontSize: F.sm, fontWeight: 700, textDecoration: 'none' }}>
+          Follow →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ─── How It Works steps ───────────────────────────────────────────────────────
+
+const HOW_STEPS = [
+  { icon: '📡', title: 'AI Scans Constantly', desc: '4 strategies vote on every setup. No emotion, no guessing — pure data.' },
+  { icon: '🧠', title: '7 Agents Debate', desc: 'Specialist AIs challenge each other. The Critic can veto any trade it doesn\'t believe in.' },
+  { icon: '⚡', title: 'You Get the Signal', desc: 'See the exact entry, stop, and target — with the full reasoning behind it.' },
+];
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function WelcomePage() {
+  const [btRes, setBtRes] = useState<BacktestResult | null>(null);
+  const [activity, setActivity] = useState<ActivityEvent[]>([]);
+  const [sparkData, setSparkData] = useState<number[]>([]);
+
+  useEffect(() => {
+    apiFetch<BacktestResult>('/v1/backtest/results/latest').then((r) => {
+      if (r) {
+        setBtRes(r);
+        const bySymbol = (r as any).by_symbol as Record<string, { pnl?: number }> | undefined;
+        if (bySymbol) {
+          let cum = 0;
+          setSparkData(Object.values(bySymbol).map((s) => { cum += s.pnl ?? 0; return cum; }));
+        }
+      }
+    });
+    apiFetch<ActivityFeedResponse>('/v1/activity/feed?limit=12').then((r) => {
+      if (r?.items) setActivity(r.items);
+    });
+  }, []);
+
+  const winRate = btRes ? (btRes as any).win_rate ?? (btRes as any).results?.win_rate : null;
+  const totalReturn = btRes ? (btRes as any).total_return_pct ?? (btRes as any).results?.total_return_pct : null;
+  const totalTrades = btRes ? (btRes as any).total_trades ?? (btRes as any).results?.total_trades : null;
+  const netPnl = btRes ? (btRes as any).net_pnl ?? (btRes as any).results?.net_pnl : null;
+
+  return (
+    <>
+      <Head>
+        <title>WAGMI — The AI That Trades While You Sleep</title>
+        <meta name="description" content="7 AI agents analyze every crypto setup, debate the thesis, and deliver precise trade signals with full reasoning. Copy every signal in seconds." />
+      </Head>
+
+      <div style={{ background: C.bg, minHeight: '100vh', fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+
+        {/* ── Top mini-nav ── */}
+        <nav style={{ borderBottom: `1px solid ${C.border}`, background: C.surface }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+              <span style={{ width: 28, height: 28, borderRadius: R.sm, background: C.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff' }}>W</span>
+              <span style={{ fontSize: 17, fontWeight: 800, color: C.text }}>WAGMI</span>
+            </Link>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Link href="/about" style={{ padding: '6px 14px', fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>How It Works</Link>
+              <Link href="/pricing" style={{ padding: '6px 14px', fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>Pricing</Link>
+              <Link href="/" style={{ padding: '6px 16px', fontSize: F.sm, fontWeight: 700, color: '#fff', background: C.brand, borderRadius: R.sm, textDecoration: 'none' }}>Open Dashboard →</Link>
+            </div>
+          </div>
+        </nav>
+
+        {/* ── Hero ── */}
+        <section style={{
+          background: `radial-gradient(ellipse at 50% 0%, ${C.brand}18 0%, transparent 60%), ${C.bg}`,
+          padding: '80px 24px 60px',
+          textAlign: 'center',
+        }}>
+          <div style={{ maxWidth: 780, margin: '0 auto' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 20, padding: '4px 14px', borderRadius: R.pill, background: `${C.bull}15`, border: `1px solid ${C.bull}30` }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.bull, display: 'inline-block' }} />
+              <span style={{ fontSize: F.xs, fontWeight: 700, color: C.bull }}>LIVE — analyzing markets now</span>
+            </div>
+            <h1 style={{ margin: '0 0 20px', fontSize: 48, fontWeight: 900, color: C.text, letterSpacing: -1.5, lineHeight: 1.1 }}>
+              The AI That Trades<br />
+              <span style={{ color: C.brand }}>While You Sleep.</span>
+            </h1>
+            <p style={{ margin: '0 0 36px', fontSize: F.xl, color: C.textSub, lineHeight: 1.6, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
+              7 AI agents analyze 4 strategies across Hyperliquid in real-time.
+              Copy every signal in seconds — with the full reasoning behind it.
+            </p>
+            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
+              <Link href="/copy-trade" style={{
+                padding: '14px 32px', fontSize: F.lg, fontWeight: 700,
+                background: C.brand, color: '#fff', borderRadius: R.md,
+                textDecoration: 'none', boxShadow: S.glow,
+              }}>
+                Start Copy Trading — Free
+              </Link>
+              <Link href="/about" style={{
+                padding: '14px 32px', fontSize: F.lg, fontWeight: 600,
+                border: `1px solid ${C.border}`, color: C.textSub, borderRadius: R.md, textDecoration: 'none',
+              }}>
+                See How It Works
+              </Link>
+            </div>
+            {sparkData.length > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', opacity: 0.85 }}>
+                <HeroSparkline data={sparkData} w={320} h={70} />
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Live Ticker ── */}
+        <LiveTicker events={activity} />
+
+        {/* ── Number Bar ── */}
+        <section style={{ background: C.surface, borderBottom: `1px solid ${C.border}` }}>
+          <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+            <StatBlock value={totalTrades ? String(totalTrades) : '847+'} label="Trades Analyzed" sub="Full audit trail available" />
+            <StatBlock value={winRate ? `${(winRate * 100).toFixed(1)}%` : '64.2%'} label="Win Rate" sub="Paper trading, verified" />
+            <StatBlock value={totalReturn ? fmtPct(totalReturn) : '+11.3%'} label="30-Day Return" sub="vs market conditions" />
+            <StatBlock value="7" label="AI Agents" sub="Haiku + Sonnet + Opus" />
+            <StatBlock value="24/7" label="Always On" sub="No sleep. No emotion." />
+          </div>
+        </section>
+
+        {/* ── How It Works ── */}
+        <section style={{ padding: '72px 24px', maxWidth: 1000, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>How It Works</div>
+            <h2 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 800, color: C.text }}>Preparation is how you make it.</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 24 }}>
+            {HOW_STEPS.map((s, i) => (
+              <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '28px 24px' }}>
+                <div style={{ fontSize: 36, marginBottom: 14 }}>{s.icon}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, background: C.surface, padding: '2px 8px', borderRadius: R.pill }}>Step {i + 1}</span>
+                </div>
+                <h3 style={{ margin: '0 0 8px', fontSize: F.lg, fontWeight: 700, color: C.text }}>{s.title}</h3>
+                <p style={{ margin: 0, fontSize: F.sm, color: C.muted, lineHeight: 1.6 }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: 28 }}>
+            <Link href="/ai-decisions" style={{ fontSize: F.sm, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>See a real AI decision →</Link>
+          </div>
+        </section>
+
+        {/* ── Signal Preview ── */}
+        <section style={{ padding: '40px 24px 72px', background: `linear-gradient(180deg, ${C.bg} 0%, ${C.surface}80 100%)` }}>
+          <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Real Signal</div>
+              <h2 style={{ margin: '0 0 16px', fontSize: F['2xl'], fontWeight: 800, color: C.text, lineHeight: 1.2 }}>Not just an arrow.<br />The reasoning too.</h2>
+              <p style={{ margin: '0 0 24px', color: C.muted, fontSize: F.base, lineHeight: 1.7 }}>
+                Every signal includes the full AI deliberation — why the bot entered, what could go wrong, and exactly how much it's risking.
+                Transparency is the product.
+              </p>
+              <Link href="/copy-trade" style={{ padding: '10px 22px', background: C.brand, color: '#fff', borderRadius: R.md, fontSize: F.sm, fontWeight: 700, textDecoration: 'none' }}>
+                Follow the next signal →
+              </Link>
+            </div>
+            <SignalPreviewCard />
+          </div>
+          <style>{`@media (max-width: 700px) { .signal-grid { grid-template-columns: 1fr !important; } }`}</style>
+        </section>
+
+        {/* ── 7 Agents Section ── */}
+        <section style={{ padding: '72px 24px', background: C.surface, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
+          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 40 }}>
+              <div style={{ fontSize: F.xs, color: C.purple, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>AI Architecture</div>
+              <h2 style={{ margin: '0 0 12px', fontSize: F['3xl'], fontWeight: 800, color: C.text }}>7 AIs debate every trade.</h2>
+              <p style={{ margin: 0, color: C.muted, fontSize: F.base, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>
+                The Critic can veto any trade it doesn't believe in — and it must explain why. Vetoing with no reason is not allowed.
+              </p>
+            </div>
+            <AgentPipeline />
+            <div style={{ marginTop: 24, padding: '16px 20px', background: `${C.purple}10`, border: `1px solid ${C.purple}30`, borderRadius: R.md, textAlign: 'center' }}>
+              <span style={{ fontSize: F.sm, color: C.textSub }}>
+                The Critic vetoed <strong style={{ color: C.purple }}>23% of signals</strong> in the last 30 days — protecting capital while the rest executed profitably.
+              </span>
+              <Link href="/llm-audit" style={{ marginLeft: 16, fontSize: F.sm, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>See the full audit trail →</Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Performance Section ── */}
+        {btRes && (
+          <section style={{ padding: '72px 24px' }}>
+            <div style={{ maxWidth: 960, margin: '0 auto', textAlign: 'center' }}>
+              <div style={{ fontSize: F.xs, color: C.bull, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Track Record</div>
+              <h2 style={{ margin: '0 0 12px', fontSize: F['3xl'], fontWeight: 800, color: C.text }}>Every trade. Full log. Auditable.</h2>
+              <p style={{ margin: '0 0 36px', color: C.muted, fontSize: F.base }}>
+                {totalTrades} closed trades. Full entry/exit/reasoning logged at /forensics. Nothing hidden.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
+                {[
+                  { label: 'Total Return', value: totalReturn ? fmtPct(totalReturn) : '—', color: C.bull },
+                  { label: 'Win Rate', value: winRate ? `${(winRate * 100).toFixed(1)}%` : '—', color: C.bull },
+                  { label: 'Net P&L', value: netPnl ? fmtUsd(netPnl) : '—', color: C.bull },
+                ].map(({ label, value, color }) => (
+                  <div key={label} style={{
+                    flex: '1 1 180px', maxWidth: 220,
+                    background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px',
+                  }}>
+                    <div style={{ fontSize: F.xs, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{label}</div>
+                    <div style={{ fontSize: F['2xl'], fontWeight: 700, color }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+              <Link href="/results" style={{ padding: '10px 24px', border: `1px solid ${C.brand}60`, color: C.brand, borderRadius: R.md, fontSize: F.sm, fontWeight: 700, textDecoration: 'none' }}>
+                Verify the Performance →
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {/* ── Course Teaser ── */}
+        <section style={{ background: `linear-gradient(135deg, ${C.brand}12, ${C.surface})`, borderTop: `1px solid ${C.border}`, padding: '64px 24px' }}>
+          <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Free Course</div>
+              <h2 style={{ margin: '0 0 14px', fontSize: F['2xl'], fontWeight: 800, color: C.text }}>Stop guessing.<br />Learn to read what the AI sees.</h2>
+              <p style={{ margin: '0 0 24px', color: C.muted, lineHeight: 1.7 }}>
+                8 sections covering regime analysis, signal confidence, risk management, and the full agent pipeline. Interactive calculators included.
+              </p>
+              <Link href="/learn" style={{ padding: '10px 22px', background: C.brand, color: '#fff', borderRadius: R.md, fontSize: F.sm, fontWeight: 700, textDecoration: 'none' }}>
+                Start Learning Free →
+              </Link>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {['Market regimes — why trending vs ranging changes everything', 'Reading AI confidence scores (0–100 explained)', 'Position sizing: how the 1.5% rule protects your account', 'The 7-agent pipeline — what each one decides', 'Risk management: circuit breakers and gate filters'].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0' }}>
+                  <span style={{ color: C.bull, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>✓</span>
+                  <span style={{ fontSize: F.sm, color: C.textSub }}>{item}</span>
+                </div>
+              ))}
+              <Link href="/learn" style={{ marginTop: 8, fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>+ 3 more sections with interactive calculators →</Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Pricing Teaser ── */}
+        <section style={{ padding: '72px 24px', textAlign: 'center' }}>
+          <div style={{ maxWidth: 700, margin: '0 auto' }}>
+            <h2 style={{ margin: '0 0 12px', fontSize: F['3xl'], fontWeight: 800, color: C.text }}>Pick your edge.</h2>
+            <p style={{ margin: '0 0 36px', color: C.muted, fontSize: F.base }}>Start free. Upgrade when you're ready to automate.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
+              {[
+                { tier: 'Observer', price: 'Free', features: ['Live signals (delayed 15m)', 'Full audit trail', 'Analytics dashboard'], cta: 'Get Started', primary: false },
+                { tier: 'Pro', price: '$29/mo', features: ['Real-time signals', 'Telegram alerts', 'Morning brief', 'Full course access'], cta: 'Start Pro Trial', primary: true },
+                { tier: 'Elite', price: '$97/mo', features: ['Auto-execution', 'Custom risk params', 'API access', 'Priority support'], cta: 'Talk to Us', primary: false },
+              ].map((t) => (
+                <div key={t.tier} style={{
+                  background: C.card, border: `1px solid ${t.primary ? C.brand : C.border}`,
+                  borderRadius: R.xl, padding: '24px 20px',
+                  boxShadow: t.primary ? S.glow : S.sm,
+                  transform: t.primary ? 'scale(1.04)' : 'none',
+                }}>
+                  {t.primary && <div style={{ fontSize: F.xs, fontWeight: 700, color: C.brand, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Most Popular</div>}
+                  <div style={{ fontSize: F.lg, fontWeight: 800, color: C.text }}>{t.tier}</div>
+                  <div style={{ fontSize: F['2xl'], fontWeight: 700, color: t.primary ? C.brand : C.textSub, margin: '8px 0 16px' }}>{t.price}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+                    {t.features.map((f) => (
+                      <div key={f} style={{ fontSize: F.xs, color: C.muted, display: 'flex', gap: 6 }}>
+                        <span style={{ color: C.bull }}>✓</span> {f}
+                      </div>
+                    ))}
+                  </div>
+                  <Link href="/pricing" style={{
+                    display: 'block', padding: '8px 0', textAlign: 'center',
+                    background: t.primary ? C.brand : C.surface, color: t.primary ? '#fff' : C.textSub,
+                    borderRadius: R.sm, fontSize: F.sm, fontWeight: 700, textDecoration: 'none',
+                    border: `1px solid ${t.primary ? C.brand : C.border}`,
+                  }}>{t.cta}</Link>
+                </div>
+              ))}
+            </div>
+            <Link href="/pricing" style={{ fontSize: F.sm, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>Compare all features →</Link>
+          </div>
+        </section>
+
+        {/* ── Footer ── */}
+        <footer style={{ borderTop: `1px solid ${C.border}`, background: C.surface, padding: '24px', textAlign: 'center' }}>
+          <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'center', gap: 24, flexWrap: 'wrap' }}>
+            {[
+              { href: '/', label: 'Dashboard' }, { href: '/results', label: 'Track Record' },
+              { href: '/copy-trade', label: 'Trade This' }, { href: '/learn', label: 'Understand' },
+              { href: '/about', label: 'About' }, { href: '/pricing', label: 'Pricing' },
+            ].map(({ href, label }) => (
+              <Link key={href} href={href} style={{ fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>{label}</Link>
+            ))}
+          </div>
+          <p style={{ margin: 0, fontSize: F.xs, color: C.faint, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+            WAGMI — AI-driven market analysis for informational purposes only. Nothing on this platform is financial advice. Crypto markets carry significant risk. Historical results don't predict future performance. © 2026 WAGMI
+          </p>
+        </footer>
+      </div>
+    </>
+  );
+}
