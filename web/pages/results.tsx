@@ -93,7 +93,8 @@ function EquityCurveChart({ points, width = 700, height = 200 }: { points: Equit
   let maxDd = 0;
   equities.forEach((e, i) => {
     if (e > runningMax) runningMax = e;
-    const dd = runningMax !== 0 ? (runningMax - e) / runningMax : 0;
+    if (!runningMax || runningMax === 0) return;
+    const dd = (runningMax - e) / runningMax;
     if (dd > maxDd) { maxDd = dd; maxDdIdx = i; }
   });
 
@@ -3337,7 +3338,7 @@ export default function Results() {
             ].map(({ label, value, color }) => (
               <div key={label}>
                 <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: F['2xl'], fontWeight: 800, color }}>{value}</div>
+                <div className="num" style={{ fontSize: F['2xl'], fontWeight: 800, color }}>{value}</div>
               </div>
             ))}
           </div>

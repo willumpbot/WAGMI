@@ -975,7 +975,7 @@ export default function AboutPage() {
               { n: '4', text: 'No cherry-picked results — all trades included. All losses shown. One ledger.', href: null },
               { n: '5', text: 'Model costs are disclosed — we\'re not hiding that we use Claude to think.', href: null },
             ].map(({ n, text, href }) => (
-              <div key={n} style={{ display: 'flex', gap: 14, padding: '12px 16px', background: C.card, borderRadius: R.md, border: `1px solid ${C.border}`, alignItems: 'flex-start' }}>
+              <div key={n} style={{ display: 'flex', gap: 14, padding: '12px 16px', background: G.card, borderRadius: R.md, border: `1px solid ${C.border}`, alignItems: 'flex-start' }}>
                 <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%', background: C.bull + '20', color: C.bull, fontWeight: 800, fontSize: F.xs, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n}</span>
                 <span style={{ fontSize: F.sm, color: C.textSub, lineHeight: 1.5 }}>
                   {text} {href && <Link href={href} style={{ color: C.brand, fontWeight: 600, textDecoration: 'none' }}>View →</Link>}

@@ -599,7 +599,7 @@ function BreakEvenCalculator() {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.xl,
         padding: '24px 28px',
@@ -785,7 +785,7 @@ function CostVsReturnChart() {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.xl,
         padding: '20px 24px 16px',

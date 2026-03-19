@@ -757,7 +757,7 @@ export default function WelcomePage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
               {/* Win Rate Ring */}
               <div style={{
-                background: C.card,
+                background: G.card,
                 border: `1px solid ${C.border}`,
                 borderRadius: R.xl,
                 padding: '36px 24px',
@@ -772,7 +772,7 @@ export default function WelcomePage() {
 
               {/* Confidence Bars */}
               <div style={{
-                background: C.card,
+                background: G.card,
                 border: `1px solid ${C.border}`,
                 borderRadius: R.xl,
                 padding: '32px 28px',
