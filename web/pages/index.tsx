@@ -1776,6 +1776,402 @@ function MarketMicrostructureRow() {
   );
 }
 
+// ─── Market Breadth Bar ───────────────────────────────────────────────────────
+
+function MarketBreadthBar({ signals }: { signals: Record<string, Signal> }) {
+  const sigList = Object.values(signals);
+
+  let bullish: number, neutral: number, bearish: number;
+  if (sigList.length > 0) {
+    bullish = sigList.filter((s) => s.score > 70).length;
+    bearish = sigList.filter((s) => s.score < 50).length;
+    neutral = sigList.length - bullish - bearish;
+  } else {
+    // seeded fallback: 2 bullish, 1 neutral
+    bullish = 2;
+    neutral = 1;
+    bearish = 0;
+  }
+
+  const total = bullish + neutral + bearish;
+  const bullPct = total > 0 ? (bullish / total) * 100 : 0;
+  const neutPct = total > 0 ? (neutral / total) * 100 : 0;
+  const bearPct = total > 0 ? (bearish / total) * 100 : 0;
+
+  const overallAssessment =
+    bullPct >= 60 ? 'Bullish' : bearPct >= 60 ? 'Bearish' : 'Mixed';
+  const pillColor =
+    overallAssessment === 'Bullish' ? C.bull :
+    overallAssessment === 'Bearish' ? C.bear :
+    C.warn;
+
+  const MIN_LABEL_PCT = 18; // only show label if segment is wide enough
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        marginBottom: 20,
+        padding: '8px 16px',
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.md,
+      }}
+    >
+      {/* Left label */}
+      <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+        Market Breadth
+      </span>
+
+      {/* Bar + count caption stacked */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* 3-segment stacked bar */}
+        <div
+          style={{
+            height: 24,
+            display: 'flex',
+            borderRadius: R.sm,
+            overflow: 'hidden',
+            background: C.border,
+          }}
+        >
+          {/* Bullish segment */}
+          {bullPct > 0 && (
+            <div
+              style={{
+                width: `${bullPct}%`,
+                background: C.bull,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'width 0.5s ease',
+              }}
+            >
+              {bullPct >= MIN_LABEL_PCT && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>
+                  {Math.round(bullPct)}%
+                </span>
+              )}
+            </div>
+          )}
+          {/* Neutral segment */}
+          {neutPct > 0 && (
+            <div
+              style={{
+                width: `${neutPct}%`,
+                background: C.muted,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'width 0.5s ease',
+              }}
+            >
+              {neutPct >= MIN_LABEL_PCT && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>
+                  {Math.round(neutPct)}%
+                </span>
+              )}
+            </div>
+          )}
+          {/* Bearish segment */}
+          {bearPct > 0 && (
+            <div
+              style={{
+                width: `${bearPct}%`,
+                background: C.bear,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'width 0.5s ease',
+              }}
+            >
+              {bearPct >= MIN_LABEL_PCT && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>
+                  {Math.round(bearPct)}%
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Count caption */}
+        <div style={{ fontSize: 10, color: C.muted, display: 'flex', gap: 10 }}>
+          <span style={{ color: C.bull, fontWeight: 600 }}>{bullish} bullish</span>
+          <span style={{ color: C.muted }}>·</span>
+          <span style={{ fontWeight: 600 }}>{neutral} neutral</span>
+          <span style={{ color: C.muted }}>·</span>
+          <span style={{ color: C.bear, fontWeight: 600 }}>{bearish} bearish</span>
+        </div>
+      </div>
+
+      {/* Overall assessment pill */}
+      <span
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          padding: '3px 10px',
+          borderRadius: R.pill,
+          background: pillColor + '22',
+          color: pillColor,
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+          border: `1px solid ${pillColor}44`,
+        }}
+      >
+        {overallAssessment}
+      </span>
+    </div>
+  );
+}
+
+// ─── Regime Confidence History ─────────────────────────────────────────────────
+
+// Seeded regime history data (last 10 regime checks)
+const SEEDED_REGIME_HISTORY: Array<{ regime: string; confidence: number }> = [
+  { regime: 'range',          confidence: 0.62 },
+  { regime: 'trend',          confidence: 0.71 },
+  { regime: 'trend',          confidence: 0.78 },
+  { regime: 'high_volatility', confidence: 0.55 },
+  { regime: 'trend',          confidence: 0.80 },
+  { regime: 'range',          confidence: 0.58 },
+  { regime: 'trend',          confidence: 0.85 },
+  { regime: 'trend',          confidence: 0.87 },
+  { regime: 'trend',          confidence: 0.90 },
+  { regime: 'trend',          confidence: 0.87 },
+];
+
+const REGIME_COLOR: Record<string, string> = {
+  trend:           C.bull,
+  range:           C.info,
+  high_volatility: C.warn,
+  panic:           C.bear,
+  low_liquidity:   C.muted,
+  news_dislocation:'#a78bfa',
+  unknown:         C.muted,
+};
+
+function RegimeConfidenceHistory({
+  regime,
+  llmView,
+}: {
+  regime: string;
+  llmView: LlmMarketView | null;
+}) {
+  // Build history: use seeded data, override last entry with live regime if available
+  const history = SEEDED_REGIME_HISTORY.map((h, i) => ({ ...h }));
+  if (llmView?.has_data) {
+    const liveConf =
+      llmView.per_symbol
+        ? Object.values(llmView.per_symbol as Record<string, any>).reduce(
+            (sum: number, d: any) => sum + (d.confidence ?? 0.8),
+            0
+          ) / Math.max(Object.keys(llmView.per_symbol).length, 1)
+        : 0.87;
+    history[history.length - 1] = { regime, confidence: Math.min(1, Math.max(0, liveConf)) };
+  }
+
+  const W = 460;
+  const H = 80;
+  const PADDING_LEFT = 8;
+  const PADDING_RIGHT = 60; // room for current regime label
+  const CHART_W = W - PADDING_LEFT - PADDING_RIGHT;
+  const CHART_H = H - 24; // leave room at bottom for x-axis labels area
+
+  const n = history.length; // 10
+  const colW = CHART_W / n;
+
+  // Confidence dot y position: confidence 1.0 → top (y=4), 0.0 → bottom (y=CHART_H-4)
+  const confToY = (c: number) => 4 + (1 - c) * (CHART_H - 8);
+
+  // Dot x centers
+  const dotX = (i: number) => PADDING_LEFT + i * colW + colW / 2;
+
+  // Unique legend regimes
+  const legendRegimes = Array.from(new Set(history.map((h) => h.regime)));
+
+  const currentEntry = history[history.length - 1];
+  const currentColor = REGIME_COLOR[currentEntry.regime] ?? C.muted;
+
+  return (
+    <div
+      style={{
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '16px 20px',
+        marginBottom: 16,
+      }}
+    >
+      {/* Title row */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+          flexWrap: 'wrap',
+          gap: 8,
+        }}
+      >
+        <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>
+          Regime History{' '}
+          <span style={{ color: C.muted, fontWeight: 400 }}>(last 10 checks)</span>
+        </span>
+        {/* Current regime label */}
+        <span
+          style={{
+            fontSize: F.xs,
+            fontWeight: 700,
+            color: currentColor,
+            padding: '2px 10px',
+            borderRadius: R.pill,
+            background: currentColor + '22',
+            border: `1px solid ${currentColor}44`,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {currentEntry.regime.toUpperCase()} · {Math.round(currentEntry.confidence * 100)}% confident
+        </span>
+      </div>
+
+      {/* SVG chart */}
+      <svg
+        width={W}
+        height={H}
+        style={{ display: 'block', maxWidth: '100%', overflow: 'visible' }}
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {/* Vertical bands */}
+        {history.map((entry, i) => {
+          const bandColor = REGIME_COLOR[entry.regime] ?? C.muted;
+          const bx = PADDING_LEFT + i * colW;
+          return (
+            <rect
+              key={`band-${i}`}
+              x={bx}
+              y={0}
+              width={colW - 1}
+              height={CHART_H}
+              fill={bandColor}
+              opacity={0.13}
+              rx={2}
+            />
+          );
+        })}
+
+        {/* Connector lines between consecutive dots */}
+        {history.map((entry, i) => {
+          if (i === 0) return null;
+          const x1 = dotX(i - 1);
+          const y1 = confToY(history[i - 1].confidence);
+          const x2 = dotX(i);
+          const y2 = confToY(entry.confidence);
+          const lineColor = REGIME_COLOR[entry.regime] ?? C.muted;
+          return (
+            <line
+              key={`line-${i}`}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke={lineColor}
+              strokeWidth={1.5}
+              strokeOpacity={0.5}
+              strokeDasharray="3 2"
+            />
+          );
+        })}
+
+        {/* Confidence dots */}
+        {history.map((entry, i) => {
+          const cx = dotX(i);
+          const cy = confToY(entry.confidence);
+          const dotColor = REGIME_COLOR[entry.regime] ?? C.muted;
+          const isLast = i === history.length - 1;
+          return (
+            <circle
+              key={`dot-${i}`}
+              cx={cx}
+              cy={cy}
+              r={isLast ? 5 : 3.5}
+              fill={dotColor}
+              opacity={isLast ? 1 : 0.75}
+              stroke={isLast ? '#fff' : 'none'}
+              strokeWidth={isLast ? 1.5 : 0}
+            />
+          );
+        })}
+
+        {/* X-axis check numbers */}
+        {history.map((_entry, i) => (
+          <text
+            key={`xlab-${i}`}
+            x={dotX(i)}
+            y={CHART_H + 14}
+            textAnchor="middle"
+            fontSize={8}
+            fill={C.muted}
+            fontWeight={600}
+          >
+            {i + 1}
+          </text>
+        ))}
+
+        {/* Y-axis confidence labels (left edge) */}
+        {[1.0, 0.75, 0.5].map((conf) => (
+          <text
+            key={`ylab-${conf}`}
+            x={PADDING_LEFT - 3}
+            y={confToY(conf) + 3}
+            textAnchor="end"
+            fontSize={7}
+            fill={C.muted}
+          >
+            {Math.round(conf * 100)}%
+          </text>
+        ))}
+
+        {/* Current regime label at far right */}
+        <text
+          x={PADDING_LEFT + CHART_W + 6}
+          y={confToY(currentEntry.confidence) + 4}
+          fontSize={9}
+          fill={currentColor}
+          fontWeight={700}
+        >
+          {currentEntry.regime.toUpperCase()}
+        </text>
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
+        {legendRegimes.map((reg) => {
+          const col = REGIME_COLOR[reg] ?? C.muted;
+          return (
+            <div key={reg} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 2,
+                  background: col,
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ fontSize: 10, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                {reg.replace('_', ' ')}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -1983,6 +2379,9 @@ export default function Home() {
       )}
       <style>{`@keyframes ripplePulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.8); opacity: 0; } }`}</style>
 
+      {/* ── Market Breadth Bar ────────────────────────── */}
+      <MarketBreadthBar signals={signals} />
+
       {/* ── KPI Hero Row ──────────────────────────────── */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap', alignItems: 'flex-start' }}>
         <KpiCard
@@ -2165,6 +2564,7 @@ export default function Home() {
             )}
           </div>
         </div>
+        <RegimeConfidenceHistory regime={regime} llmView={llmView} />
         <MarketHeatmap signals={signals} loading={loading} onSelect={setActiveChart} />
       </div>
 

@@ -2096,6 +2096,470 @@ function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
+// ─── Trade Replay Timeline ────────────────────────────────────────────────────
+
+function TradeReplayTimeline({ trades }: { trades: TradeRecord[] }) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
+  const validTrades = trades.filter((t) => t.pnl != null && !isNaN(t.pnl!));
+
+  if (validTrades.length < 2) {
+    return (
+      <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm, background: C.surfaceHover, borderRadius: R.md }}>
+        Need at least 2 trades with P&L data to show timeline.
+      </div>
+    );
+  }
+
+  const W = 560, H = 120;
+  const PAD_L = 12, PAD_R = 12, PAD_T = 28, PAD_B = 28;
+  const timelineW = W - PAD_L - PAD_R;
+  const timelineY = PAD_T + 46; // vertical baseline for segments
+  const segH_max = 32; // max segment height
+  const equityY = PAD_T + 8; // top area for equity polyline
+
+  // Compute running equity
+  let cumPnl = 0;
+  const equityValues: number[] = [0];
+  validTrades.forEach((t) => { cumPnl += t.pnl ?? 0; equityValues.push(cumPnl); });
+
+  const minEq = Math.min(...equityValues);
+  const maxEq = Math.max(...equityValues);
+  const eqRange = maxEq - minEq || 1;
+  const equityAreaH = 24;
+
+  const toEqY = (v: number) => equityY + equityAreaH - ((v - minEq) / eqRange) * equityAreaH;
+
+  // Build segments — each trade occupies a proportional slice of timeline width
+  // Use duration_h for width; fall back to equal width
+  const durations = validTrades.map((t) => Math.max(0.1, t.duration_h ?? 1));
+  const totalDur = durations.reduce((a, b) => a + b, 0) || validTrades.length;
+
+  let xCursor = PAD_L;
+  const segments = validTrades.map((t, i) => {
+    const segW = (durations[i] / totalDur) * timelineW;
+    const x = xCursor;
+    xCursor += segW;
+    const absPnl = Math.abs(t.pnl ?? 0);
+    const maxAbsPnl = Math.max(...validTrades.map((t2) => Math.abs(t2.pnl ?? 0)), 1);
+    const h = Math.max(4, (absPnl / maxAbsPnl) * segH_max);
+    const win = t.outcome === 'WIN';
+    return { x, w: segW, h, win, trade: t, idx: i };
+  });
+
+  // Tick marks every ~5 trades or every 20% of timeline
+  const tickCount = Math.min(5, validTrades.length);
+  const tickStep = Math.floor(validTrades.length / tickCount) || 1;
+  const ticks: { x: number; label: string }[] = [];
+  for (let i = 0; i < validTrades.length; i += tickStep) {
+    ticks.push({ x: segments[i].x, label: `#${i + 1}` });
+  }
+
+  // Equity polyline points
+  const eqPoints = equityValues.map((v, i) => {
+    const segX = i === 0 ? PAD_L : segments[i - 1].x + segments[i - 1].w;
+    return `${segX},${toEqY(v)}`;
+  }).join(' ');
+
+  // Hovered segment info
+  const hovered = hoveredIdx != null ? segments[hoveredIdx] : null;
+  const hoveredTrade = hovered?.trade ?? null;
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+        onMouseLeave={() => setHoveredIdx(null)}
+      >
+        <defs>
+          <clipPath id="tlClip">
+            <rect x={PAD_L} y={0} width={timelineW} height={H} />
+          </clipPath>
+        </defs>
+
+        {/* Equity polyline */}
+        {equityValues.length > 1 && (
+          <polyline
+            points={eqPoints}
+            fill="none"
+            stroke={C.brand}
+            strokeWidth={1.2}
+            strokeLinejoin="round"
+            clipPath="url(#tlClip)"
+          />
+        )}
+
+        {/* Equity zero line (dashed) */}
+        <line
+          x1={PAD_L} y1={toEqY(0)}
+          x2={PAD_L + timelineW} y2={toEqY(0)}
+          stroke={C.borderBright} strokeWidth={0.7} strokeDasharray="3 3"
+          clipPath="url(#tlClip)"
+        />
+
+        {/* Baseline */}
+        <line
+          x1={PAD_L} y1={timelineY}
+          x2={PAD_L + timelineW} y2={timelineY}
+          stroke={C.borderBright} strokeWidth={1}
+        />
+
+        {/* Trade segments */}
+        {segments.map(({ x, w, h, win, trade, idx }) => {
+          const isHovered = hoveredIdx === idx;
+          const segColor = win ? C.bull : C.bear;
+          const segY = timelineY - h;
+          const entryX = x + 1;
+          const exitX = x + w - 1;
+          const midX = x + w / 2;
+          // Entry triangle tip at bottom, pointing up for BUY, down for SELL
+          const isBuy = trade.side === 'BUY';
+          const triSize = 5;
+          // ▲ for BUY (pointing up), ▼ for SELL (pointing down)
+          const triPoints = isBuy
+            ? `${entryX},${timelineY + 8} ${entryX - triSize},${timelineY + 8 + triSize * 1.4} ${entryX + triSize},${timelineY + 8 + triSize * 1.4}`
+            : `${entryX},${timelineY + 8 + triSize * 1.4} ${entryX - triSize},${timelineY + 8} ${entryX + triSize},${timelineY + 8}`;
+          const triColor = isBuy ? C.bull : C.bear;
+
+          return (
+            <g key={idx}>
+              <rect
+                x={x + 0.5} y={segY}
+                width={Math.max(1, w - 1)} height={h}
+                fill={segColor}
+                fillOpacity={isHovered ? 0.9 : 0.6}
+                rx={1.5}
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setHoveredIdx(idx)}
+              >
+                <title>{`${trade.symbol} ${trade.side} · ${(trade.pnl ?? 0) >= 0 ? '+' : ''}$${(trade.pnl ?? 0).toFixed(2)} · ${trade.duration_h != null ? trade.duration_h.toFixed(1) + 'h' : '—'}`}</title>
+              </rect>
+
+              {/* Entry triangle */}
+              <polygon
+                points={triPoints}
+                fill={triColor}
+                fillOpacity={0.85}
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setHoveredIdx(idx)}
+              />
+
+              {/* Exit × mark */}
+              {w > 8 && (
+                <g>
+                  <line x1={exitX - 2.5} y1={timelineY + 5} x2={exitX + 2.5} y2={timelineY + 11} stroke={C.muted} strokeWidth={1.2} />
+                  <line x1={exitX + 2.5} y1={timelineY + 5} x2={exitX - 2.5} y2={timelineY + 11} stroke={C.muted} strokeWidth={1.2} />
+                </g>
+              )}
+
+              {/* PnL label for wide-enough segments */}
+              {w > 30 && (
+                <text
+                  x={midX} y={segY - 3}
+                  textAnchor="middle" fontSize={7} fill={segColor}
+                  fontFamily="Inter, system-ui" fontWeight={600}
+                >
+                  {(trade.pnl ?? 0) >= 0 ? '+' : ''}{(trade.pnl ?? 0).toFixed(0)}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Tick marks */}
+        {ticks.map(({ x, label }) => (
+          <g key={label}>
+            <line x1={x} y1={timelineY - 2} x2={x} y2={timelineY + 4} stroke={C.borderBright} strokeWidth={0.8} />
+            <text x={x} y={H - 4} textAnchor="middle" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">{label}</text>
+          </g>
+        ))}
+
+        {/* Equity label */}
+        <text x={PAD_L + 2} y={equityY - 2} fontSize={7} fill={C.brand} fontFamily="Inter, system-ui" fontWeight={600}>equity</text>
+      </svg>
+
+      {/* Hover tooltip */}
+      {hovered && hoveredTrade && (() => {
+        const tooltipX = Math.min(hovered.x + hovered.w / 2, W - 110);
+        return (
+          <div style={{
+            position: 'absolute',
+            left: `calc(${(tooltipX / W) * 100}% + 6px)`,
+            top: `${((timelineY - hovered.h - 10) / H) * 100}%`,
+            background: C.surface,
+            border: `1px solid ${C.borderBright}`,
+            borderRadius: R.md,
+            padding: '7px 11px',
+            fontSize: F.xs,
+            color: C.textSub,
+            pointerEvents: 'none',
+            zIndex: 10,
+            minWidth: 130,
+            boxShadow: S.md,
+          }}>
+            <div style={{ fontWeight: 700, color: hoveredTrade.outcome === 'WIN' ? C.bull : C.bear, marginBottom: 3 }}>
+              {hoveredTrade.symbol} {hoveredTrade.side} · {hoveredTrade.outcome}
+            </div>
+            <div>P&L: {(hoveredTrade.pnl ?? 0) >= 0 ? '+' : ''}${(hoveredTrade.pnl ?? 0).toFixed(2)}</div>
+            {hoveredTrade.duration_h != null && <div>Hold: {hoveredTrade.duration_h.toFixed(1)}h</div>}
+            {hoveredTrade.strategy && <div>Strategy: {hoveredTrade.strategy}</div>}
+            {hoveredTrade.llm_regime && <div>Regime: {hoveredTrade.llm_regime}</div>}
+          </div>
+        );
+      })()}
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, fontSize: 10, color: C.muted, marginTop: 6, flexWrap: 'wrap' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <svg width={10} height={10}><polygon points="5,0 0,10 10,10" fill={C.bull} /></svg> BUY entry
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <svg width={10} height={10}><polygon points="5,10 0,0 10,0" fill={C.bear} /></svg> SELL entry
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.bull, borderRadius: 2, display: 'inline-block' }} /> Win
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.bear, borderRadius: 2, display: 'inline-block' }} /> Loss
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 16, height: 2, background: C.brand, display: 'inline-block', verticalAlign: 'middle' }} /> Running equity
+        </span>
+        <span style={{ color: C.muted }}>Bar height ∝ |P&L| · Bar width ∝ hold duration</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Outcome Probability Bars ─────────────────────────────────────────────────
+
+function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
+  // Calculate real probabilities from trades when available
+  const hasData = trades.length >= 5;
+
+  function winRateFor(predicate: (t: TradeRecord) => boolean): number | null {
+    if (!hasData) return null;
+    const subset = trades.filter(predicate);
+    if (subset.length < 2) return null;
+    return subset.filter((t) => t.outcome === 'WIN').length / subset.length;
+  }
+
+  // Detect "first trade of day" by grouping sequential trades — use index parity as proxy if no timestamps
+  function isFirstOfDay(idx: number): boolean {
+    // Rough heuristic: index 0 or each trade that follows a >8h gap (duration_h of previous)
+    if (idx === 0) return true;
+    const prev = trades[idx - 1];
+    return (prev?.duration_h ?? 0) >= 8;
+  }
+
+  function afterLoss(idx: number): boolean {
+    if (idx === 0) return false;
+    return trades[idx - 1]?.outcome === 'LOSS';
+  }
+
+  const rows: { label: string; real: number | null; seed: number }[] = [
+    {
+      label: 'P(win | regime=TREND)',
+      real: winRateFor((t) => (t.llm_regime ?? '').toLowerCase().includes('trend')),
+      seed: 0.84,
+    },
+    {
+      label: 'P(win | regime=RANGE)',
+      real: winRateFor((t) => (t.llm_regime ?? '').toLowerCase().includes('range')),
+      seed: 0.63,
+    },
+    {
+      label: 'P(win | confidence ≥ 80%)',
+      real: winRateFor((t) => (t.llm_confidence ?? 0) >= 0.80),
+      seed: 0.88,
+    },
+    {
+      label: 'P(win | confidence < 70%)',
+      real: winRateFor((t) => (t.llm_confidence ?? 0) < 0.70 && t.llm_confidence != null),
+      seed: 0.51,
+    },
+    {
+      label: 'P(win | first trade of day)',
+      real: winRateFor((_t, idx = trades.indexOf(_t)) => isFirstOfDay(idx)),
+      seed: 0.79,
+    },
+    {
+      label: 'P(win | after a loss)',
+      real: winRateFor((_t, idx = trades.indexOf(_t)) => afterLoss(idx)),
+      seed: 0.61,
+    },
+  ];
+
+  // Use real value if available, else seed
+  const resolved = rows.map((r) => ({
+    label: r.label,
+    pct: r.real != null ? r.real : r.seed,
+    isReal: r.real != null,
+  }));
+
+  // Sort descending by probability
+  const sorted = [...resolved].sort((a, b) => b.pct - a.pct);
+
+  const BAR_MAX_W = 240;
+  const ROW_H = 28;
+  const LABEL_W = 200;
+  const PCT_W = 44;
+  const totalW = LABEL_W + BAR_MAX_W + PCT_W + 16;
+  const totalH = sorted.length * ROW_H + 8;
+
+  function barColor(pct: number): string {
+    if (pct >= 0.70) return C.bull;
+    if (pct >= 0.50) return C.warn;
+    return C.bear;
+  }
+
+  return (
+    <div>
+      {!hasData && (
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 8 }}>
+          Insufficient trade data — showing illustrative seeded values.
+        </div>
+      )}
+      <svg
+        viewBox={`0 0 ${totalW} ${totalH}`}
+        style={{ width: '100%', height: 'auto', display: 'block' }}
+      >
+        {sorted.map(({ label, pct, isReal }, i) => {
+          const y = i * ROW_H + 4;
+          const barW = pct * BAR_MAX_W;
+          const color = barColor(pct);
+          const pctText = `${Math.round(pct * 100)}%`;
+
+          return (
+            <g key={label}>
+              {/* Row background on hover via title */}
+              {/* Label */}
+              <text
+                x={LABEL_W - 6}
+                y={y + ROW_H / 2 + 4}
+                textAnchor="end"
+                fontSize={9}
+                fill={C.textSub}
+                fontFamily="Inter, system-ui"
+              >
+                {label}
+              </text>
+
+              {/* Bar track */}
+              <rect
+                x={LABEL_W}
+                y={y + 6}
+                width={BAR_MAX_W}
+                height={ROW_H - 12}
+                fill={C.surfaceHover}
+                rx={3}
+              />
+
+              {/* Bar fill */}
+              <rect
+                x={LABEL_W}
+                y={y + 6}
+                width={barW}
+                height={ROW_H - 12}
+                fill={color}
+                fillOpacity={0.8}
+                rx={3}
+              >
+                <title>{`${label}: ${pctText}${isReal ? ' (real data)' : ' (seeded)'}`}</title>
+              </rect>
+
+              {/* Percentage label */}
+              <text
+                x={LABEL_W + BAR_MAX_W + 8}
+                y={y + ROW_H / 2 + 4}
+                fontSize={10}
+                fontWeight={700}
+                fill={color}
+                fontFamily="Inter, system-ui"
+              >
+                {pctText}
+              </text>
+
+              {/* Real/seed indicator dot */}
+              {isReal && (
+                <circle
+                  cx={LABEL_W + barW - 5}
+                  cy={y + ROW_H / 2}
+                  r={2.5}
+                  fill="#fff"
+                  fillOpacity={0.6}
+                />
+              )}
+            </g>
+          );
+        })}
+
+        {/* 50% reference line */}
+        <line
+          x1={LABEL_W + BAR_MAX_W * 0.5}
+          y1={4}
+          x2={LABEL_W + BAR_MAX_W * 0.5}
+          y2={totalH - 4}
+          stroke={C.borderBright}
+          strokeWidth={0.8}
+          strokeDasharray="3 3"
+        />
+        <text
+          x={LABEL_W + BAR_MAX_W * 0.5}
+          y={totalH - 2}
+          textAnchor="middle"
+          fontSize={7}
+          fill={C.muted}
+          fontFamily="Inter, system-ui"
+        >
+          50%
+        </text>
+
+        {/* 70% reference line */}
+        <line
+          x1={LABEL_W + BAR_MAX_W * 0.7}
+          y1={4}
+          x2={LABEL_W + BAR_MAX_W * 0.7}
+          y2={totalH - 4}
+          stroke={C.bull}
+          strokeWidth={0.8}
+          strokeDasharray="3 3"
+          strokeOpacity={0.5}
+        />
+        <text
+          x={LABEL_W + BAR_MAX_W * 0.7}
+          y={totalH - 2}
+          textAnchor="middle"
+          fontSize={7}
+          fill={C.bull}
+          fontFamily="Inter, system-ui"
+        >
+          70%
+        </text>
+      </svg>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, fontSize: 10, color: C.muted, marginTop: 8, flexWrap: 'wrap' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.bull, borderRadius: 2, display: 'inline-block' }} /> {'>'}70% (strong edge)
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.warn, borderRadius: 2, display: 'inline-block' }} /> 50–70% (moderate)
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.bear, borderRadius: 2, display: 'inline-block' }} /> {'<'}50% (weak / avoid)
+        </span>
+        {hasData && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.muted, display: 'inline-block' }} /> White dot = real data
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function Forensics() {
@@ -2382,6 +2846,36 @@ export default function Forensics() {
       <TradeDurationHistogram trades={filtered} />
 
       <MultiSymbolPnlChart trades={filtered} />
+
+      {/* Trade Replay Timeline */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Trade Sequence Timeline</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
+            Each segment is one trade — width ∝ hold duration, height ∝ |P&L|. Running equity line above. Hover for detail.
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={120} />
+        ) : (
+          <TradeReplayTimeline trades={filtered} />
+        )}
+      </div>
+
+      {/* Win Probability by Context */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Win Probability by Context</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
+            Conditional win rates by regime, confidence level, and trade sequence. Shows where the bot has the strongest edge.
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={180} />
+        ) : (
+          <OutcomeProbabilityBars trades={filtered} />
+        )}
+      </div>
 
       {/* Filters */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20 }}>
