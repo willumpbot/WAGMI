@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Head from 'next/head';
 import { C, R, S, F, G, fmtUsd, fmtPct, timeAgo } from '../src/theme';
-import { seededRand as mkSeededRand } from '../lib/fmt';
 import { apiFetch } from '../src/api';
 import type { Strategy, TradeHistoryResponse, TradeRecord } from '../src/types';
 
@@ -853,20 +852,21 @@ function PositionBubbleChart({ positions }: { positions: Strategy[] }) {
   const MAX_R = 32;
   const MAX_SIZE_USD = 5000;
 
-  // Build bubble data: real or seeded fallback
   const hasPosData = positions.length > 0;
-  const bubbles: BubblePos[] = hasPosData
-    ? positions.map((s) => ({
-        symbol: s.id.replace(/USDT?$/i, '').toUpperCase(),
-        side: (s.open_position?.side?.toUpperCase() === 'SELL' || s.open_position?.side?.toUpperCase() === 'SHORT') ? 'SHORT' : 'LONG',
-        sizeUsd: s.open_position?.size ?? 0,
-        unrealPnl: s.open_position?.unrealized_pnl ?? 0,
-      }))
-    : [
-        { symbol: 'BTC', side: 'LONG',  sizeUsd: 2000, unrealPnl:  180 },
-        { symbol: 'SOL', side: 'LONG',  sizeUsd: 1500, unrealPnl:   95 },
-        { symbol: 'HYPE', side: 'SHORT', sizeUsd:  800, unrealPnl:  -45 },
-      ];
+  if (!hasPosData) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
+        <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>Position Risk Map</div>
+        No open positions
+      </div>
+    );
+  }
+  const bubbles: BubblePos[] = positions.map((s) => ({
+    symbol: s.id.replace(/USDT?$/i, '').toUpperCase(),
+    side: (s.open_position?.side?.toUpperCase() === 'SELL' || s.open_position?.side?.toUpperCase() === 'SHORT') ? 'SHORT' : 'LONG',
+    sizeUsd: s.open_position?.size ?? 0,
+    unrealPnl: s.open_position?.unrealized_pnl ?? 0,
+  }));
 
   const maxAbsPnl = Math.max(1, ...bubbles.map((b) => Math.abs(b.unrealPnl)));
 
@@ -1025,7 +1025,6 @@ function ThesisValidityBars({ positions }: { positions: Strategy[] }) {
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 2 }}>AI Thesis Validity</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
         How well each position's original thesis still holds
-        {!hasPosData && ' · seeded preview'}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1231,200 +1230,14 @@ function CorrelationNetwork() {
 // ─── Drawdown & Recovery Chart ────────────────────────────────────────────────
 
 function DrawdownRecoveryChart() {
-  const SVG_W = 460, SVG_H = 140;
-  const PAD = { t: 20, r: 20, b: 30, l: 52 };
-  const W = SVG_W - PAD.l - PAD.r;
-  const H = SVG_H - PAD.t - PAD.b;
-  const DAYS = 30;
-
-  // Seeded deterministic equity curve (delegates to lib/fmt)
-  function seededRand(seed: number): number { return mkSeededRand(seed)(); }
-
-  const equity: number[] = [10000];
-  for (let i = 1; i < DAYS; i++) {
-    const r = seededRand(i * 17 + 3);
-    const delta = (r - 0.46) * 200; // slight positive drift
-    equity.push(Math.max(8000, equity[i - 1] + delta));
-  }
-
-  // Running peak and drawdown depth
-  const peaks: number[] = [];
-  const drawdowns: number[] = []; // negative or zero
-  let runPeak = equity[0];
-  for (let i = 0; i < DAYS; i++) {
-    if (equity[i] > runPeak) runPeak = equity[i];
-    peaks.push(runPeak);
-    drawdowns.push(((equity[i] - runPeak) / runPeak) * 100); // <=0
-  }
-
-  const minEq = Math.min(...equity);
-  const maxEq = Math.max(...equity);
-  const eqRange = maxEq - minEq || 1;
-
-  const toX = (i: number) => PAD.l + (i / (DAYS - 1)) * W;
-  const toY = (v: number) => PAD.t + H - ((v - minEq) / eqRange) * H;
-
-  // Equity line path
-  const equityPath = equity
-    .map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`)
-    .join(' ');
-
-  // Area fill under equity line (for shading)
-  const equityArea =
-    equityPath +
-    ` L ${toX(DAYS - 1).toFixed(1)} ${(PAD.t + H).toFixed(1)}` +
-    ` L ${toX(0).toFixed(1)} ${(PAD.t + H).toFixed(1)} Z`;
-
-  // Drawdown shaded periods: find contiguous drawdown segments
-  type Segment = { start: number; end: number; depth: number };
-  const ddSegments: Segment[] = [];
-  let inDD = false;
-  let segStart = 0;
-  let segDepth = 0;
-  for (let i = 0; i < DAYS; i++) {
-    if (drawdowns[i] < -0.5) {
-      if (!inDD) { inDD = true; segStart = i; segDepth = drawdowns[i]; }
-      if (drawdowns[i] < segDepth) segDepth = drawdowns[i];
-    } else {
-      if (inDD) { ddSegments.push({ start: segStart, end: i - 1, depth: segDepth }); inDD = false; segDepth = 0; }
-    }
-  }
-  if (inDD) ddSegments.push({ start: segStart, end: DAYS - 1, depth: segDepth });
-
-  // Recovery arrows: mark days where equity reached a new all-time high after a drawdown
-  const recoveryDays: number[] = [];
-  let prevHighIdx = 0;
-  for (let i = 1; i < DAYS; i++) {
-    if (equity[i] > peaks[prevHighIdx] && drawdowns[i - 1] < -0.5) {
-      recoveryDays.push(i);
-      prevHighIdx = i;
-    } else if (equity[i] >= peaks[i - 1]) {
-      prevHighIdx = i;
-    }
-  }
-
-  // Metrics from seeded data
-  const longestDD = ddSegments.reduce((mx, s) => Math.max(mx, s.end - s.start + 1), 0);
-  const deepestDD = ddSegments.reduce((mn, s) => Math.min(mn, s.depth), 0);
-  // Max allowed drawdown reference line at -20%
-  const maxAllowedPct = 20;
-  const maxAllowedY = PAD.t + H - ((10000 * (1 - maxAllowedPct / 100) - minEq) / eqRange) * H;
-
-  // Y-axis ticks
-  const yTicks = [minEq, (minEq + maxEq) / 2, maxEq].map((v) => ({
-    v, y: toY(v),
-    label: v >= 10000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(0)}`,
-  }));
-
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginBottom: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
-        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Drawdown &amp; Recovery Analysis</div>
-        {/* Key metrics */}
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          {[
-            { label: 'Longest DD', value: `${longestDD} days`, color: C.warn },
-            { label: 'Deepest DD', value: `${deepestDD.toFixed(1)}%`, color: C.bear },
-            { label: 'Avg Recovery', value: '3.1 days', color: C.bull },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: F.xs, color: C.muted }}>{label}</div>
-              <div style={{ fontSize: F.sm, fontWeight: 700, color }}>{value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
-        Last 30 days · red shading = drawdown period · ↑ = recovery to new high · dashed = 20% max allowed DD
-      </div>
-
-      <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ display: 'block', overflow: 'visible' }}>
-        {/* Y-axis grid & labels */}
-        {yTicks.map(({ v, y, label }) => (
-          <g key={v}>
-            <line x1={PAD.l} y1={y} x2={PAD.l + W} y2={y}
-              stroke={C.border} strokeWidth={0.5} strokeDasharray="3 4" />
-            <text x={PAD.l - 5} y={y + 4} fill={C.muted} fontSize={8} textAnchor="end">{label}</text>
-          </g>
-        ))}
-
-        {/* Max allowed drawdown reference line */}
-        {maxAllowedY >= PAD.t && maxAllowedY <= PAD.t + H && (
-          <g>
-            <line
-              x1={PAD.l} y1={maxAllowedY} x2={PAD.l + W} y2={maxAllowedY}
-              stroke={C.bear} strokeWidth={1} strokeDasharray="5 4" strokeOpacity={0.6}
-            />
-            <text x={PAD.l + W - 2} y={maxAllowedY - 4}
-              fill={C.bear} fontSize={7} textAnchor="end" opacity={0.8}
-            >
-              -{maxAllowedPct}% limit
-            </text>
-          </g>
-        )}
-
-        {/* Drawdown shaded areas (red vertical bands behind equity line) */}
-        {ddSegments.map((seg, idx) => (
-          <rect
-            key={idx}
-            x={toX(seg.start)} y={PAD.t}
-            width={Math.max(2, toX(seg.end) - toX(seg.start))}
-            height={H}
-            fill={C.bear} fillOpacity={0.12}
-          />
-        ))}
-
-        {/* Equity area fill (subtle) */}
-        <path d={equityArea} fill={C.bull} fillOpacity={0.07} />
-
-        {/* Equity line */}
-        <path d={equityPath} fill="none" stroke={C.bull} strokeWidth={1.8} />
-
-        {/* Recovery arrows */}
-        {recoveryDays.map((day) => {
-          const ax = toX(day);
-          const ay = toY(equity[day]);
-          return (
-            <text key={day} x={ax} y={ay - 6}
-              textAnchor="middle" fontSize={10} fill={C.bull} fontWeight={800}
-            >
-              ↑
-            </text>
-          );
-        })}
-
-        {/* X-axis: day labels */}
-        {[0, 9, 19, 29].map((i) => (
-          <text key={i} x={toX(i)} y={SVG_H - 6}
-            fill={C.muted} fontSize={7} textAnchor="middle"
-          >
-            {i === 0 ? 'D-30' : i === 29 ? 'Today' : `D-${29 - i}`}
-          </text>
-        ))}
-
-        {/* Axis borders */}
-        <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + H} stroke={C.border} strokeWidth={1} />
-        <line x1={PAD.l} y1={PAD.t + H} x2={PAD.l + W} y2={PAD.t + H} stroke={C.border} strokeWidth={1} />
-      </svg>
-
-      {/* Drawdown segment legend */}
-      {ddSegments.length > 0 && (
-        <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-          {ddSegments.slice(0, 4).map((seg, idx) => (
-            <div key={idx} style={{
-              fontSize: F.xs, color: C.bearMid,
-              background: 'rgba(220,38,38,0.1)',
-              border: '1px solid rgba(220,38,38,0.25)',
-              borderRadius: R.sm, padding: '2px 8px',
-            }}>
-              DD #{idx + 1}: {seg.end - seg.start + 1}d · {seg.depth.toFixed(1)}%
-            </div>
-          ))}
-        </div>
-      )}
+    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
+      <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>Drawdown & Recovery</div>
+      No equity data yet — populates once the bot has trade history
     </div>
   );
 }
+
 
 // ─── Efficiency Frontier Chart ───────────────────────────────────────────────
 
@@ -1619,27 +1432,26 @@ function PositionPnlWaterfall({ positions }: { positions: Strategy[] }) {
 
   const hasPosData = positions.length > 0;
 
-  const rows: PnlRow[] = hasPosData
-    ? positions.map((s) => {
-        const pnl = s.open_position?.unrealized_pnl ?? 0;
-        const updatedAt = s.open_position?.updated_at;
-        let duration = '';
-        if (updatedAt) {
-          const diffMs = Math.max(0, Date.now() - new Date(updatedAt).getTime());
-          const diffH = diffMs / 3_600_000;
-          duration = diffH < 1 ? `${Math.round(diffH * 60)}m` : `${diffH.toFixed(1)}h`;
-        }
-        return {
-          symbol: s.id.replace(/USDT?$/i, '').toUpperCase(),
-          pnl,
-          duration,
-        };
-      })
-    : [
-        { symbol: 'BTC',  pnl:  182, duration: '3.2h' },
-        { symbol: 'SOL',  pnl:   94, duration: '1.7h' },
-        { symbol: 'HYPE', pnl:  -47, duration: '5.1h' },
-      ];
+  if (!hasPosData) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
+        <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>Position P&L Breakdown</div>
+        No open positions
+      </div>
+    );
+  }
+
+  const rows: PnlRow[] = positions.map((s) => {
+    const pnl = s.open_position?.unrealized_pnl ?? 0;
+    const updatedAt = s.open_position?.updated_at;
+    let duration = '';
+    if (updatedAt) {
+      const diffMs = Math.max(0, Date.now() - new Date(updatedAt).getTime());
+      const diffH = diffMs / 3_600_000;
+      duration = diffH < 1 ? `${Math.round(diffH * 60)}m` : `${diffH.toFixed(1)}h`;
+    }
+    return { symbol: s.id.replace(/USDT?$/i, '').toUpperCase(), pnl, duration };
+  });
 
   const totalPnl = rows.reduce((a, r) => a + r.pnl, 0);
   const maxAbs = Math.max(1, ...rows.map((r) => Math.abs(r.pnl)));

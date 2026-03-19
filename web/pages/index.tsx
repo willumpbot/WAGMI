@@ -1201,11 +1201,6 @@ function MarketMomentumStrip({
 
 // ─── Activity Calendar Heatmap ────────────────────────────────────────────────
 
-function seededRand(seed: number): number {
-  const x = Math.sin(seed + 1) * 10000;
-  return x - Math.floor(x);
-}
-
 function ActivityCalendarHeatmap() {
   const WEEKS = 8;
   const DAYS_PER_WEEK = 7;
@@ -1213,25 +1208,14 @@ function ActivityCalendarHeatmap() {
   const CELL = 14;
   const GAP = 2;
 
-  // Build 56 days of data, index 0 = oldest, 55 = today
+  // Build 56 days of empty data — populates as bot trades
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const days = Array.from({ length: TOTAL_DAYS }, (_, i) => {
     const d = new Date(today);
     d.setDate(today.getDate() - (TOTAL_DAYS - 1 - i));
-    const dow = d.getDay(); // 0=Sun,6=Sat
-    const isWeekend = dow === 0 || dow === 6;
-    const rand = seededRand(i * 7 + 3);
-    let level: number;
-    if (isWeekend) {
-      level = rand < 0.55 ? 0 : rand < 0.75 ? 1 : rand < 0.90 ? 2 : rand < 0.97 ? 3 : 4;
-    } else {
-      level = rand < 0.15 ? 0 : rand < 0.35 ? 1 : rand < 0.60 ? 2 : rand < 0.82 ? 3 : 4;
-    }
-    // Map level → approximate count (for tooltip)
-    const counts = [0, 1 + Math.floor(seededRand(i * 13 + 7) * 3), 4 + Math.floor(seededRand(i * 13 + 11) * 4), 8 + Math.floor(seededRand(i * 13 + 19) * 6), 14 + Math.floor(seededRand(i * 13 + 23) * 8)];
-    return { date: d, level, count: counts[level] };
+    return { date: d, level: 0, count: 0 };
   });
 
   // Total signals
@@ -1555,114 +1539,21 @@ function BotHealthIndicator() {
 
 type FundingEntry = { symbol: string; rate: number };
 
-const SEEDED_FUNDING: FundingEntry[] = [
-  { symbol: 'BTC',  rate:  0.000082 },
-  { symbol: 'SOL',  rate:  0.000031 },
-  { symbol: 'HYPE', rate: -0.000045 },
-];
 
 function FundingRateBar() {
   return (
-    <div
-      style={{
-        flex: '1 1 0',
-        background: G.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: R.lg,
-        padding: '12px 18px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-        minWidth: 0,
-      }}
-    >
-      {/* Title */}
-      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-        Funding Rates (8h)
-      </div>
-
-      {/* Pills row */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-        {SEEDED_FUNDING.map(({ symbol, rate }) => {
-          const isPositive = rate > 0.00005;
-          const isNegative = rate < -0.00005;
-          const pctStr = (rate * 100).toFixed(4) + '%';
-          const displayStr = (rate >= 0 ? '+' : '') + pctStr;
-
-          const pillBg = isPositive ? C.bear + '22' : isNegative ? C.bull + '22' : C.border;
-          const pillColor = isPositive ? C.bear : isNegative ? C.bull : C.muted;
-          const icon = isPositive ? '↑' : isNegative ? '↓' : '→';
-          const crowded = rate > 0.0001;
-
-          return (
-            <div
-              key={symbol}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-              title="Positive = longs pay shorts = market leaning long"
-            >
-              <span style={{ fontSize: F.xs, fontWeight: 700, color: C.textSub }}>{symbol}</span>
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: R.pill,
-                  background: pillBg,
-                  color: pillColor,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 3,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <span>{icon}</span>
-                <span>{displayStr}</span>
-              </span>
-              {crowded && (
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: '1px 6px',
-                    borderRadius: R.pill,
-                    background: C.warn + '33',
-                    color: C.warn,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  ⚠ Crowded
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+    <div style={{ flex: '1 1 0', background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '12px 18px', minWidth: 0 }}>
+      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>Funding Rates (8h)</div>
+      <div style={{ fontSize: F.sm, color: C.muted }}>No data — requires exchange connection</div>
     </div>
   );
 }
+
 
 // ─── Open Interest Gauge ──────────────────────────────────────────────────────
 
 type OiEntry = { symbol: string; series: number[]; changePct: number };
 
-// 7 seeded OI data points per symbol
-const SEEDED_OI: OiEntry[] = [
-  {
-    symbol: 'BTC',
-    series: [100, 103, 106, 109, 108, 111, 112],
-    changePct: 12,
-  },
-  {
-    symbol: 'SOL',
-    series: [100, 101, 100, 102, 101, 101, 100],
-    changePct: 0,
-  },
-  {
-    symbol: 'HYPE',
-    series: [100, 102, 104, 103, 105, 107, 108],
-    changePct: 8,
-  },
-];
 
 function OiSparkline({ series, color }: { series: number[]; color: string }) {
   const W = 40, H = 20;
@@ -1691,45 +1582,9 @@ function OiSparkline({ series, color }: { series: number[]; color: string }) {
 
 function OpenInterestGauge() {
   return (
-    <div
-      style={{
-        flex: '1 1 0',
-        background: G.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: R.lg,
-        padding: '12px 18px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-        minWidth: 0,
-      }}
-    >
-      {/* Title */}
-      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-        Open Interest
-      </div>
-
-      {/* 3-column layout */}
-      <div style={{ display: 'flex', gap: 16 }}>
-        {SEEDED_OI.map(({ symbol, series, changePct }) => {
-          const isRising = changePct > 2;
-          const isFalling = changePct < -2;
-          const color = isRising ? C.bull : isFalling ? C.bear : C.muted;
-          const trendArrow = isRising ? '↑' : isFalling ? '↓' : '→';
-          const changeLbl = (changePct >= 0 ? '+' : '') + changePct.toFixed(1) + '%';
-
-          return (
-            <div key={symbol} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ fontSize: F.xs, fontWeight: 700, color: C.textSub }}>{symbol}</span>
-                <span style={{ fontSize: 12, color, fontWeight: 700 }}>{trendArrow}</span>
-              </div>
-              <OiSparkline series={series} color={color} />
-              <span style={{ fontSize: 10, fontWeight: 700, color }}>{changeLbl}</span>
-            </div>
-          );
-        })}
-      </div>
+    <div style={{ flex: '1 1 0', background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '12px 18px', minWidth: 0 }}>
+      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>Open Interest</div>
+      <div style={{ fontSize: F.sm, color: C.muted }}>No data — requires exchange connection</div>
     </div>
   );
 }
@@ -1767,9 +1622,8 @@ function MarketBreadthBar({ signals }: { signals: Record<string, Signal> }) {
     bearish = sigList.filter((s) => s.score < 50).length;
     neutral = sigList.length - bullish - bearish;
   } else {
-    // seeded fallback: 2 bullish, 1 neutral
-    bullish = 2;
-    neutral = 1;
+    bullish = 0;
+    neutral = 0;
     bearish = 0;
   }
 
@@ -1908,20 +1762,6 @@ function MarketBreadthBar({ signals }: { signals: Record<string, Signal> }) {
 
 // ─── Regime Confidence History ─────────────────────────────────────────────────
 
-// Seeded regime history data (last 10 regime checks)
-const SEEDED_REGIME_HISTORY: Array<{ regime: string; confidence: number }> = [
-  { regime: 'range',          confidence: 0.62 },
-  { regime: 'trend',          confidence: 0.71 },
-  { regime: 'trend',          confidence: 0.78 },
-  { regime: 'high_volatility', confidence: 0.55 },
-  { regime: 'trend',          confidence: 0.80 },
-  { regime: 'range',          confidence: 0.58 },
-  { regime: 'trend',          confidence: 0.85 },
-  { regime: 'trend',          confidence: 0.87 },
-  { regime: 'trend',          confidence: 0.90 },
-  { regime: 'trend',          confidence: 0.87 },
-];
-
 const REGIME_COLOR: Record<string, string> = {
   trend:           C.bull,
   range:           C.info,
@@ -1939,18 +1779,21 @@ function RegimeConfidenceHistory({
   regime: string;
   llmView: LlmMarketView | null;
 }) {
-  // Build history: use seeded data, override last entry with live regime if available
-  const history = SEEDED_REGIME_HISTORY.map((h, i) => ({ ...h }));
-  if (llmView?.has_data) {
-    const liveConf =
-      llmView.per_symbol
-        ? Object.values(llmView.per_symbol as Record<string, any>).reduce(
-            (sum: number, d: any) => sum + (d.confidence ?? 0.8),
-            0
-          ) / Math.max(Object.keys(llmView.per_symbol).length, 1)
-        : 0.87;
-    history[history.length - 1] = { regime, confidence: Math.min(1, Math.max(0, liveConf)) };
+  // Only show real data — no seeded fallback
+  if (!llmView?.has_data) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', color: C.muted, fontSize: F.sm }}>
+        <div style={{ fontSize: F.xs, fontWeight: 700, color: C.textSub, marginBottom: 6 }}>Regime Confidence History</div>
+        No data — start the bot to populate
+      </div>
+    );
   }
+  const liveConf = llmView.per_symbol
+    ? Object.values(llmView.per_symbol as Record<string, any>).reduce(
+        (sum: number, d: any) => sum + (d.confidence ?? 0.8), 0
+      ) / Math.max(Object.keys(llmView.per_symbol).length, 1)
+    : 0.87;
+  const history = [{ regime, confidence: Math.min(1, Math.max(0, liveConf)) }];
 
   const W = 460;
   const H = 80;
@@ -2173,10 +2016,7 @@ function MarketSentimentGauge({
     regime.toLowerCase() === 'high_volatility' ? -5 :
     0;
 
-  // Funding rate sign: positive funding (longs paying) = crowd is long = slightly bearish signal
-  // BTC rate 0.000082 > 0 → negative sentiment contribution
-  const btcFundingPositive = SEEDED_FUNDING.find((f) => f.symbol === 'BTC')?.rate ?? 0;
-  const fundingDelta = btcFundingPositive > 0.0001 ? -5 : btcFundingPositive < -0.0001 ? 5 : 0;
+  const fundingDelta = 0; // funding data not yet available
 
   const score = Math.max(0, Math.min(100, Math.round(avgScore + regimeDelta + fundingDelta)));
 
@@ -2306,43 +2146,45 @@ function TopOpportunityCard({
   regime: string;
   loading: boolean;
 }) {
-  // Find highest-scoring signal, or use seeded BTC data
   const sigList = Object.entries(signals);
   const best = sigList.length > 0
     ? sigList.reduce((best, [sym, sig]) => sig.score > best[1].score ? [sym, sig] : best, sigList[0])
     : null;
 
-  const symbol = best ? best[0] : 'BTC';
-  const sig = best ? best[1] : null;
+  if (!loading && !best) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', color: C.muted, fontSize: F.sm }}>
+        <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>Top Opportunity</div>
+        No signals yet — start the bot to see opportunities
+      </div>
+    );
+  }
+
+  const symbol = best![0];
+  const sig = best![1];
 
   // Derived display values
-  const score = sig?.score ?? 82;
+  const score = sig.score;
   const scoreColor = score >= 70 ? C.bull : score >= 40 ? C.warn : C.bear;
 
   // Zone label
-  const zoneLabel = sig
-    ? (() => {
-        const p = sig.price;
-        const { deepAccum, accum, distrib, safeDistrib } = sig.zones;
-        if (p <= deepAccum) return 'Deep Accum';
-        if (p <= accum) return 'Accum';
-        if (p >= safeDistrib) return 'Distrib+';
-        if (p >= distrib) return 'Distrib';
-        return 'Neutral';
-      })()
-    : 'ACCUM';
+  const zoneLabel = (() => {
+    const p = sig.price;
+    const { deepAccum, accum, distrib, safeDistrib } = sig.zones;
+    if (p <= deepAccum) return 'Deep Accum';
+    if (p <= accum) return 'Accum';
+    if (p >= safeDistrib) return 'Distrib+';
+    if (p >= distrib) return 'Distrib';
+    return 'Neutral';
+  })();
 
-  // Side: derive from zone/score (buy zone = BUY, otherwise sell pressure)
-  const side: 'BUY' | 'SELL' = sig
-    ? (sig.sma20 >= sig.sma50 ? 'BUY' : 'SELL')
-    : 'BUY';
+  const side: 'BUY' | 'SELL' = sig.sma20 >= sig.sma50 ? 'BUY' : 'SELL';
 
   const sideColor = side === 'BUY' ? C.bull : C.bear;
   const sideLabel = side === 'BUY' ? 'LONG' : 'SHORT';
 
-  // Price levels — seeded for BTC fallback
-  const entryPrice = sig?.price ?? 98450;
-  const atr = sig?.atr14 ?? 1200;
+  const entryPrice = sig.price;
+  const atr = sig.atr14;
   const slPrice = side === 'BUY' ? entryPrice - atr * 1.5 : entryPrice + atr * 1.5;
   const tp1Price = side === 'BUY' ? entryPrice + atr * 2 : entryPrice - atr * 2;
   const tp2Price = side === 'BUY' ? entryPrice + atr * 3.6 : entryPrice - atr * 3.6;
@@ -2353,7 +2195,7 @@ function TopOpportunityCard({
   const rr = risk > 0 ? (reward / risk).toFixed(1) : '2.4';
 
   // Regime display
-  const displayRegime = regime !== 'Unknown' ? regime : 'TREND';
+  const displayRegime = regime !== 'Unknown' ? regime : '—';
 
   // Confidence ring SVG (60px)
   const ringSize = 60;

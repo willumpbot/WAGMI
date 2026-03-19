@@ -14,8 +14,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Live Trading',
     items: [
       { href: '/',           label: 'Dashboard',     desc: 'Bot overview & status' },
-      { href: '/today',      label: 'Morning Brief',  desc: "Today's setup & outlook" },
-      { href: '/signals',    label: 'Live Signals',   desc: 'Real-time signal feed' },
+{ href: '/signals',    label: 'Live Signals',   desc: 'Real-time signal feed' },
       { href: '/copy-trade', label: 'Trade This',     desc: 'Copy the bot\'s trades' },
     ],
   },

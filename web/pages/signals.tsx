@@ -1118,14 +1118,6 @@ function SignalStrengthTimeline({ signals }: { signals: Record<string, any> }) {
 
 // ─── Signal Freshness Strip ───────────────────────────────────────────────────
 
-// Seeded fallback: stable per-symbol offset so it looks realistic without real timestamps
-function seededMinutesAgo(symbol: string): number {
-  const seeds: Record<string, number> = {
-    BTC: 2, SOL: 7, HYPE: 4, ETH: 12, AVAX: 22, LINK: 34,
-  };
-  return seeds[symbol] ?? 8;
-}
-
 function freshnessColor(minutesAgo: number): { bg: string; border: string; dot: string; label: string } {
   if (minutesAgo < 5)   return { bg: 'rgba(22,163,74,0.12)',  border: 'rgba(22,163,74,0.35)',  dot: '#4ade80', label: 'fresh'  };
   if (minutesAgo < 15)  return { bg: 'rgba(217,119,6,0.10)',  border: 'rgba(217,119,6,0.30)',  dot: '#fbbf24', label: 'recent' };
@@ -1189,9 +1181,8 @@ function SignalFreshnessStrip({ signals }: { signals: Record<string, Signal> | n
       {/* Cells strip */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {symbolList.map(sym => {
-          const minsAgo = seededMinutesAgo(sym);
-          const { bg, border, dot, label } = freshnessColor(minsAgo);
-          const isStale = minsAgo >= 15;
+          const { bg, border, dot, label } = freshnessColor(999);
+          const isStale = false;
           return (
             <div key={sym} style={{
               background: bg,
@@ -1216,7 +1207,7 @@ function SignalFreshnessStrip({ signals }: { signals: Record<string, Signal> | n
                   boxShadow: `0 0 6px ${dot}`,
                 }} />
                 <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 600 }}>
-                  {minsAgo}m ago
+                  active
                 </span>
               </div>
               {/* Stale warning badge */}
@@ -1241,15 +1232,12 @@ function SignalFreshnessStrip({ signals }: { signals: Record<string, Signal> | n
 function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal> | null; symbol: string }) {
   const sig = signals?.[symbol] ?? null;
 
-  // Seeded fallback helper: value in ~60-90 range
-  function seeded(axisIndex: number): number {
-    return Math.sin(axisIndex * 7.3 + 42) * 25 + 65;
-  }
+  if (!sig) return null;
 
   // Derive the 6 axis values (0-100 scale)
   function rsiScore(): number {
-    const rsi = sig?.rsi;
-    if (rsi == null) return seeded(0);
+    const rsi = sig.rsi;
+    if (rsi == null) return 0;
     // Extreme RSI = strong signal (either direction)
     if (rsi < 30) return 90 + (30 - rsi);   // oversold → high score
     if (rsi > 70) return 90 + (rsi - 70);   // overbought → high score
@@ -1258,8 +1246,8 @@ function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal>
   }
 
   function atrRelevance(): number {
-    const atr = sig?.atr_pct;
-    if (atr == null) return seeded(1);
+    const atr = sig.atr_pct;
+    if (atr == null) return 0;
     // Sweet spot: 1-3% ATR is most relevant for entries
     if (atr < 0.3) return 20;
     if (atr < 1)   return 40 + atr * 20;
@@ -1268,24 +1256,20 @@ function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal>
   }
 
   function trendAlignment(): number {
-    const score = sig?.signal_score;
-    if (score == null) return seeded(2);
+    const score = sig.signal_score;
+    if (score == null) return 0;
     return Math.min(100, Math.max(0, score));
   }
 
   function volumeConfirmation(): number {
-    // Use vol_spike as a factor; otherwise seeded proxy
-    if (sig == null) return seeded(3);
-    const base = seeded(3);
-    if (sig.vol_spike === true)  return Math.min(100, base + 15);
-    if (sig.vol_spike === false) return Math.max(0, base - 10);
-    return base;
+    if (sig.vol_spike === true)  return 75;
+    if (sig.vol_spike === false) return 35;
+    return 50;
   }
 
   function zoneQuality(): number {
-    if (sig == null) return seeded(4);
     const { price, zones } = sig;
-    if (price == null || !zones) return seeded(4);
+    if (price == null || !zones) return 0;
     // Deep in accumulation or distribution zone → high score
     if (zones.accum != null && zones.accum > 0 && price < zones.accum) {
       const depth = ((zones.accum - price) / zones.accum) * 100;
@@ -1295,13 +1279,12 @@ function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal>
       const depth = ((price - zones.distrib) / zones.distrib) * 100;
       return Math.min(100, 65 + depth * 10);
     }
-    return seeded(4) * 0.6; // near neutral zone → lower score
+    return 30; // near neutral zone → lower score
   }
 
   function multiTfAgreement(): number {
-    if (sig == null) return seeded(5);
     const score = sig.signal_score;
-    if (score == null) return seeded(5);
+    if (score == null) return 0;
     // Proxy: higher signal score implies more TF agreement
     return Math.min(100, Math.max(0, score * 0.9 + 5));
   }
@@ -1547,13 +1530,6 @@ const STRATEGY_COLS = [
 
 type StrategyKey = typeof STRATEGY_COLS[number]['key'];
 
-// Seeded score proxy per symbol+strategy so the grid has stable non-random values
-// when no real per-strategy data is available.
-function seededStratScore(symbol: string, stratIdx: number): number {
-  const symSeeds: Record<string, number> = { BTC: 3, SOL: 7, HYPE: 5, ETH: 2, AVAX: 9, LINK: 11 };
-  const base = (symSeeds[symbol] ?? 6) + stratIdx * 13;
-  return ((base * 37 + 17) % 71) + 25; // 25–95 range
-}
 
 function voteFromScore(score: number): { label: string; arrow: string; bg: string; color: string; border: string } {
   if (score > 70) return {
@@ -1598,15 +1574,13 @@ function StrategyVoteGrid({ signals }: { signals: Record<string, Signal> | null 
 
   // Build per-symbol per-strategy scores.
   // We use signal_score as a shared anchor and offset by strategy index.
-  function getScore(symbol: string, stratIdx: number): number {
+  function getScore(symbol: string, stratIdx: number): number | null {
     const sig = signals?.[symbol];
     if (sig?.signal_score != null) {
-      // Offset the master score by a stable per-strategy delta so the four
-      // columns tell slightly different stories.
       const deltas = [-8, +6, -3, +5];
       return Math.min(100, Math.max(0, sig.signal_score + deltas[stratIdx]));
     }
-    return seededStratScore(symbol, stratIdx);
+    return null;
   }
 
   return (
@@ -1697,6 +1671,7 @@ function StrategyVoteGrid({ signals }: { signals: Record<string, Signal> | null 
           {symbols.map(sym => {
             const votes = STRATEGY_COLS.map((_, idx) => {
               const score = getScore(sym, idx);
+              if (score == null) return { score: null, label: '—', arrow: '—', bg: C.surface, color: C.muted, border: C.border };
               return { score, ...voteFromScore(score) };
             });
 
@@ -1807,17 +1782,6 @@ const TREND_SYMBOLS = [
   { key: 'HYPE', color: C.warn as string },   // warn
 ] as const;
 
-// Seeded per-tick score for a given symbol (produces a smooth-ish wandering line)
-function seededTrendScore(symbol: string, tick: number): number {
-  const symOffset: Record<string, number> = { BTC: 72, SOL: 65, HYPE: 58 };
-  const base = symOffset[symbol] ?? 60;
-  // A deterministic "walk" using sine/cosine combos so it looks organic
-  return Math.min(98, Math.max(10,
-    base
-    + Math.sin(tick * 0.7 + (symOffset[symbol] ?? 0) * 0.1) * 10
-    + Math.cos(tick * 1.3 + (symOffset[symbol] ?? 0) * 0.05) * 6
-  ));
-}
 
 function SignalQualityTrendChart({ signals }: { signals: Record<string, Signal> | null }) {
   const TICKS = 20;
@@ -1830,15 +1794,23 @@ function SignalQualityTrendChart({ signals }: { signals: Record<string, Signal> 
   const CHART_W = W - PAD_L - PAD_R;
   const CHART_H = H - PAD_T - PAD_B;
 
-  // Build tick arrays for each symbol
-  const seriesData = TREND_SYMBOLS.map(({ key, color }) => {
-    const realFinal = signals?.[key]?.signal_score ?? null;
-    const ticks = Array.from({ length: TICKS }, (_, i) => {
-      if (i === TICKS - 1 && realFinal != null) return realFinal;
-      return seededTrendScore(key, i);
-    });
-    return { key, color, ticks };
-  });
+  // Only show real data — only include symbols with actual signal scores
+  const seriesData = TREND_SYMBOLS
+    .map(({ key, color }) => {
+      const score = signals?.[key]?.signal_score ?? null;
+      if (score == null) return null;
+      return { key, color, ticks: [score] };
+    })
+    .filter((s): s is NonNullable<typeof s> => s !== null);
+
+  if (seriesData.length === 0) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
+        <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>Signal Quality Trend</div>
+        No signal data yet
+      </div>
+    );
+  }
 
   // Convert score (0-100) → SVG y coordinate
   function scoreToY(score: number): number {
@@ -2438,240 +2410,32 @@ function VolatilityRankingBars({ signals }: { signals: Record<string, Signal> | 
 // ─── Signal Age Distribution ──────────────────────────────────────────────────
 
 function SignalAgeDistribution({ signals }: { signals: Record<string, Signal> | null }) {
-  const symbolList = signals && Object.keys(signals).length > 0
-    ? Object.keys(signals)
-    : null;
+  const symbolList = signals && Object.keys(signals).length > 0 ? Object.keys(signals) : null;
 
   if (!symbolList) {
     return (
-      <div style={{
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        borderRadius: R.lg,
-        padding: '20px 24px',
-        marginBottom: 28,
-        textAlign: 'center',
-        color: C.muted,
-        fontSize: F.sm,
-      }}>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28, textAlign: 'center', color: C.muted, fontSize: F.sm }}>
         <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 8 }}>Signal Data Freshness</div>
         <div>No signal data available yet.</div>
       </div>
     );
   }
 
-  // Get age in minutes for each symbol (use seededMinutesAgo as fallback since Signal has no per-symbol timestamp)
-  const entries = symbolList.map(sym => ({
-    symbol: sym,
-    age: seededMinutesAgo(sym),
-  }));
-
-  // Color based on age bracket (matching the freshness strip thresholds)
-  function ageColor(age: number): { dot: string; label: string } {
-    if (age < 5)  return { dot: C.bull,  label: 'Fresh'   };
-    if (age < 15) return { dot: C.warn,  label: 'Aging'   };
-    if (age < 30) return { dot: C.bear,  label: 'Stale'   };
-    return             { dot: C.muted, label: 'Expired' };
-  }
-
-  const CHART_W = 520;
-  const PAD_L   = 16;
-  const PAD_R   = 16;
-  const TRACK_W = CHART_W - PAD_L - PAD_R;
-  const AXIS_Y  = 80; // y of the main axis line
-  const DOT_R   = 5;
-  const MAX_MIN  = 60; // x-axis spans 0–60 minutes
-
-  // Convert minutes → x position on the track
-  function minToX(m: number): number {
-    return PAD_L + Math.min(1, m / MAX_MIN) * TRACK_W;
-  }
-
-  // Reference lines at 5, 15, 30 minutes
-  const REF_LINES = [
-    { min: 5,  label: 'Fresh',   color: C.bull  },
-    { min: 15, label: 'Aging',   color: C.warn  },
-    { min: 30, label: 'Stale',   color: C.bear  },
-    { min: 60, label: 'Expired', color: C.muted },
-  ];
-
-  // Stagger rows so overlapping dots don't stack on the same y
-  const ROW_GAP = 20;
-  const BASE_Y  = AXIS_Y + 18;
-
   return (
-    <div style={{
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      borderRadius: R.lg,
-      padding: '20px 24px',
-      marginBottom: 28,
-    }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div>
-          <div style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>Signal Data Freshness</div>
-          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
-            Timeline view — how stale is each symbol's last evaluation?
-          </div>
-        </div>
-        {/* Legend */}
-        <div style={{ display: 'flex', gap: 12, fontSize: F.xs, color: C.muted, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          {[
-            { dot: C.bull,  label: '<5m Fresh'    },
-            { dot: C.warn,  label: '5–15m Aging'  },
-            { dot: C.bear,  label: '15–30m Stale' },
-            { dot: C.muted, label: '>30m Expired' },
-          ].map(({ dot, label }) => (
-            <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, display: 'inline-block', flexShrink: 0 }} />
-              {label}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* SVG Timeline */}
-      <div style={{ overflowX: 'auto' }}>
-        <svg
-          width="100%"
-          height={BASE_Y + entries.length * ROW_GAP + 20}
-          viewBox={`0 0 ${CHART_W} ${BASE_Y + entries.length * ROW_GAP + 20}`}
-          style={{ display: 'block', minWidth: 320 }}
-          aria-label="Signal age distribution timeline"
-        >
-          {/* Zone labels above axis */}
-          {REF_LINES.map((ref, i) => {
-            const x0 = i === 0 ? PAD_L : minToX(REF_LINES[i - 1].min);
-            const x1 = minToX(ref.min);
-            const midX = (x0 + x1) / 2;
-            return (
-              <text
-                key={ref.label}
-                x={midX}
-                y={14}
-                textAnchor="middle"
-                fontSize={9}
-                fontWeight="600"
-                fill={ref.color}
-                fontFamily="Inter, system-ui, sans-serif"
-                opacity={0.85}
-              >
-                {ref.label}
-              </text>
-            );
-          })}
-
-          {/* Zone background bands */}
-          {REF_LINES.map((ref, i) => {
-            const x0 = i === 0 ? PAD_L : minToX(REF_LINES[i - 1].min);
-            const x1 = minToX(ref.min);
-            return (
-              <rect
-                key={`zone-${i}`}
-                x={x0}
-                y={20}
-                width={x1 - x0}
-                height={AXIS_Y - 20 + entries.length * ROW_GAP + 18}
-                fill={ref.color}
-                opacity={0.04}
-              />
-            );
-          })}
-
-          {/* Vertical reference lines */}
-          {REF_LINES.map(ref => {
-            const x = minToX(ref.min);
-            return (
-              <line
-                key={`ref-${ref.min}`}
-                x1={x} y1={20}
-                x2={x} y2={AXIS_Y + entries.length * ROW_GAP + 8}
-                stroke={ref.color}
-                strokeWidth={1}
-                strokeDasharray="3 3"
-                opacity={0.4}
-              />
-            );
-          })}
-
-          {/* Axis minute labels */}
-          {[0, 5, 15, 30, 60].map(m => (
-            <text
-              key={`ax-${m}`}
-              x={minToX(m)}
-              y={AXIS_Y - 4}
-              textAnchor="middle"
-              fontSize={8}
-              fill={C.muted}
-              fontFamily="Inter, system-ui, sans-serif"
-            >
-              {m}m
-            </text>
-          ))}
-
-          {/* Axis baseline */}
-          <line
-            x1={PAD_L} y1={AXIS_Y}
-            x2={PAD_L + TRACK_W} y2={AXIS_Y}
-            stroke={C.border}
-            strokeWidth={1.5}
-          />
-
-          {/* Symbol dots + labels */}
-          {entries.map((entry, i) => {
-            const x   = minToX(entry.age);
-            const y   = BASE_Y + i * ROW_GAP;
-            const { dot } = ageColor(entry.age);
-            return (
-              <g key={entry.symbol}>
-                {/* Tick from axis down to dot */}
-                <line
-                  x1={x} y1={AXIS_Y}
-                  x2={x} y2={y - DOT_R - 2}
-                  stroke={dot}
-                  strokeWidth={1}
-                  opacity={0.35}
-                />
-                {/* Dot */}
-                <circle
-                  cx={x} cy={y}
-                  r={DOT_R}
-                  fill={dot}
-                  stroke={C.surface}
-                  strokeWidth={1.5}
-                  opacity={0.9}
-                />
-                {/* Symbol label to the right of dot */}
-                <text
-                  x={x + DOT_R + 4}
-                  y={y + 3.5}
-                  fontSize={9}
-                  fontWeight="700"
-                  fill={dot}
-                  fontFamily="Inter, system-ui, sans-serif"
-                >
-                  {entry.symbol}
-                </text>
-                {/* Age label to the left */}
-                <text
-                  x={x - DOT_R - 4}
-                  y={y + 3.5}
-                  textAnchor="end"
-                  fontSize={8}
-                  fill={C.muted}
-                  fontFamily="Inter, system-ui, sans-serif"
-                >
-                  {entry.age}m
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 28 }}>
+      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>Active Signals</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>Symbols with live signal data</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {symbolList.map(sym => (
+          <span key={sym} style={{ fontSize: F.xs, fontWeight: 700, padding: '3px 10px', borderRadius: R.pill, background: C.brand + '22', color: C.brand, border: `1px solid ${C.brand}44` }}>
+            {sym}
+          </span>
+        ))}
       </div>
     </div>
   );
 }
+
 
 // ─── Symbol Dominance Chart ───────────────────────────────────────────────────
 
@@ -3879,35 +3643,6 @@ export default function SignalsPage() {
         )}
       </div>
 
-      {/* ── Per-Symbol Mini Charts ───────────────────────────────────────── */}
-      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '32px 0 16px', letterSpacing: '-0.02em' }}>
-        Per-Symbol Mini Charts
-      </h2>
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ fontSize: 11, color: C.muted, marginBottom: 14 }}>
-          Inline 20-candle candlestick with SMA5 overlay — seeded deterministic view
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-          {['BTC', 'SOL', 'HYPE'].map(sym => (
-            <div key={sym} className="card-hover" style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              background: C.surface,
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              padding: '12px 16px',
-              flex: '0 0 auto',
-            }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 4 }}>{sym}</div>
-                <div style={{ fontSize: 10, color: C.muted }}>20 candles · SMA5</div>
-              </div>
-              <MiniCandlestickRow symbol={sym} />
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* ── 48-Hour Signal + Regime Timeline ─────────────────────────────── */}
       <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '32px 0 16px', letterSpacing: '-0.02em' }}>

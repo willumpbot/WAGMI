@@ -1037,179 +1037,33 @@ function TokenUsageBar({ decisions }: { decisions: LlmDecision[] }) {
 // ─── Agent Accuracy Matrix ────────────────────────────────────────────────────
 
 function AgentAccuracyMatrix({ decisions }: { decisions: LlmDecision[] }) {
-  type AgentDef = {
-    name: string;
-    color: string;
-    accuracy: number;
-    avgConf: number;
-    // seeded sparkline points (y values 0–100, 20 points)
-    spark: number[];
+  const agentNames = ['Regime', 'Trade', 'Risk', 'Critic', 'Learning'];
+  const agentColors: Record<string, string> = {
+    Regime: C.info, Trade: C.brand, Risk: C.warn, Critic: C.bear, Learning: C.bull,
   };
 
-  // Seeded PRNG (simple mulberry32)
-  function seedRand(seed: number) {
-    let s = seed >>> 0;
-    return () => {
-      s = (Math.imul(s ^ (s >>> 15), s | 1) ^ (Math.imul(s ^ (s >>> 7), s | 61) + (s ^ (s >>> 14)))) >>> 0;
-      return (s >>> 0) / 4294967296;
-    };
-  }
-
-  function makeSparkline(seed: number, trend: 'up' | 'down' | 'flat' | 'volatile'): number[] {
-    const rand = seedRand(seed);
-    const pts: number[] = [];
-    let v = 50 + (rand() - 0.5) * 20;
-    for (let i = 0; i < 20; i++) {
-      const noise = (rand() - 0.5) * (trend === 'volatile' ? 28 : 10);
-      const drift =
-        trend === 'up' ? 1.6 :
-        trend === 'down' ? -1.2 :
-        trend === 'flat' ? 0 : 0;
-      v = Math.max(10, Math.min(95, v + drift + noise));
-      pts.push(v);
-    }
-    return pts;
-  }
-
-  const agents: AgentDef[] = [
-    {
-      name: 'Regime',
-      color: C.info,
-      accuracy: 87,
-      avgConf: 82,
-      spark: makeSparkline(0x4a3f2e, 'up'),
-    },
-    {
-      name: 'Trade',
-      color: C.brand,
-      accuracy: 74,
-      avgConf: 71,
-      spark: makeSparkline(0x9b7c51, 'down'),
-    },
-    {
-      name: 'Risk',
-      color: C.warn,
-      accuracy: 91,
-      avgConf: 88,
-      spark: makeSparkline(0x3d5a9c, 'flat'),
-    },
-    {
-      name: 'Critic',
-      color: C.bear,
-      accuracy: 82,
-      avgConf: 76,
-      spark: makeSparkline(0xf1a23b, 'volatile'),
-    },
-    {
-      name: 'Learning',
-      color: C.bull,
-      accuracy: 78,
-      avgConf: 74,
-      spark: makeSparkline(0x2c8e44, 'up'),
-    },
-  ];
-
-  // Count decisions by agent name found in notes
   const agentCounts: Record<string, number> = {};
   decisions.forEach((d) => {
     const notes = (d.notes || '').toLowerCase();
-    agents.forEach((a) => {
-      if (notes.includes(a.name.toLowerCase())) {
-        agentCounts[a.name] = (agentCounts[a.name] || 0) + 1;
+    agentNames.forEach((name) => {
+      if (notes.includes(name.toLowerCase())) {
+        agentCounts[name] = (agentCounts[name] || 0) + 1;
       }
     });
   });
 
-  const SPARK_W = 80;
-  const SPARK_H = 20;
-
-  function sparkPoints(vals: number[]): string {
-    const xStep = SPARK_W / (vals.length - 1);
-    return vals
-      .map((v, i) => `${(i * xStep).toFixed(1)},${(SPARK_H - (v / 100) * SPARK_H).toFixed(1)}`)
-      .join(' ');
-  }
-
   return (
     <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '16px 18px', marginBottom: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 6 }}>
-        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Agent Accuracy Overview</div>
-        <span style={{ fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>Demo estimates — live calibration tracked in decisions</span>
-      </div>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 12 }}>Agent Activity</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {agents.map((agent) => {
-          const count = agentCounts[agent.name] || 0;
-          const accColor = agent.accuracy >= 85 ? C.bull : agent.accuracy >= 75 ? C.warn : C.bear;
-          const confColor = agent.avgConf >= 80 ? C.bull : agent.avgConf >= 65 ? C.warn : C.bear;
+        {agentNames.map((name) => {
+          const count = agentCounts[name] || 0;
+          const color = agentColors[name];
           return (
-            <div key={agent.name} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-              {/* Color dot + name */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, width: 70, flexShrink: 0 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: agent.color, flexShrink: 0, display: 'inline-block' }} />
-                <span style={{ fontSize: F.xs, fontWeight: 700, color: C.textSub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{agent.name}</span>
-              </div>
-
-              {/* Mini sparkline */}
-              <svg
-                width={SPARK_W}
-                height={SPARK_H}
-                viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
-                style={{ flexShrink: 0, overflow: 'visible' }}
-                aria-label={`${agent.name}: ${count} decisions in dataset`}
-              >
-                <polyline
-                  points={sparkPoints(agent.spark)}
-                  fill="none"
-                  stroke={agent.color}
-                  strokeWidth={1.5}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                  opacity={0.85}
-                />
-                {/* Last point dot */}
-                {(() => {
-                  const last = agent.spark[agent.spark.length - 1];
-                  const x = SPARK_W;
-                  const y = SPARK_H - (last / 100) * SPARK_H;
-                  return <circle cx={x} cy={y} r={2} fill={agent.color} />;
-                })()}
-              </svg>
-
-              {/* Accuracy pill */}
-              <span
-                title="Seeded accuracy estimate"
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '2px 6px',
-                  borderRadius: R.pill,
-                  background: accColor + '22',
-                  color: accColor,
-                  flexShrink: 0,
-                  minWidth: 34,
-                  textAlign: 'center',
-                }}
-              >
-                {agent.accuracy}%
-              </span>
-
-              {/* Avg conf pill */}
-              <span
-                title="Avg confidence (seeded)"
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  padding: '2px 6px',
-                  borderRadius: R.pill,
-                  background: C.surfaceHover,
-                  color: confColor,
-                  flexShrink: 0,
-                  minWidth: 34,
-                  textAlign: 'center',
-                }}
-              >
-                {agent.avgConf}%
-              </span>
+            <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />
+              <span style={{ fontSize: F.xs, fontWeight: 700, color: C.textSub, width: 65 }}>{name}</span>
+              <span style={{ fontSize: F.xs, color: C.muted }}>{count > 0 ? `${count} decisions` : 'No data yet'}</span>
             </div>
           );
         })}
@@ -1240,17 +1094,6 @@ function VetoFrequencyBars({ decisions }: { decisions: LlmDecision[] }) {
     confidence: C.brand,
   };
 
-  const FALLBACK_COUNTS: Record<string, number> = {
-    leverage: 12,
-    overbought: 9,
-    confidence: 8,
-    regime: 7,
-    drawdown: 6,
-    volatility: 5,
-    position: 4,
-    liquidity: 3,
-  };
-
   const vetoes = decisions.filter((d) => d.is_veto);
   const totalVetoes = vetoes.length;
 
@@ -1266,8 +1109,8 @@ function VetoFrequencyBars({ decisions }: { decisions: LlmDecision[] }) {
   });
 
   const hasRealData = Object.values(counts).some((v) => v > 0);
-  const displayCounts = hasRealData ? counts : FALLBACK_COUNTS;
-  const displayTotal = hasRealData ? totalVetoes : 23;
+  const displayCounts = counts;
+  const displayTotal = totalVetoes;
 
   const sorted = KEYWORDS
     .map(({ kw, group }) => ({ kw, group, count: displayCounts[kw] ?? 0 }))
@@ -1340,198 +1183,11 @@ function VetoFrequencyBars({ decisions }: { decisions: LlmDecision[] }) {
             {label}
           </span>
         ))}
-        {!hasRealData && (
-          <span style={{ marginLeft: 'auto', color: C.faint, fontStyle: 'italic' }}>seeded fallback data</span>
-        )}
       </div>
     </div>
   );
 }
 
-// ─── Decision Speedometer ─────────────────────────────────────────────────────
-
-function DecisionSpeedometer() {
-  // Seeded values — avg ~2,140ms, fastest 890ms, slowest 3,420ms
-  const avgMs = 2140;
-  const fastestMs = 890;
-  const slowestMs = 3420;
-
-  // Gauge constants
-  const W = 240;
-  const H = 150;
-  const cx = W / 2;
-  const cy = 118; // pivot lower so arc sits nicely
-  const r = 88;
-  const MIN_MS = 0;
-  const MAX_MS = 5000;
-
-  // Convert ms to angle: 0ms = 180° (left), 5000ms = 0° (right)
-  // Arc sweeps from -180° to 0° (bottom half of circle, flipped to be top-facing semicircle)
-  // We render a semicircle: start at 180deg left end → 0deg right end
-  const msToAngleDeg = (ms: number): number => {
-    const clamped = Math.max(MIN_MS, Math.min(MAX_MS, ms));
-    const frac = clamped / MAX_MS;
-    return 180 - frac * 180; // 180° → 0° (left → right)
-  };
-
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-
-  // Arc path helper (counterclockwise from start to end along a circle)
-  const arcPath = (startDeg: number, endDeg: number, radius: number, color: string) => {
-    const s = toRad(startDeg);
-    const e = toRad(endDeg);
-    const x1 = cx + radius * Math.cos(s);
-    const y1 = cy - radius * Math.sin(s);
-    const x2 = cx + radius * Math.cos(e);
-    const y2 = cy - radius * Math.sin(e);
-    const large = Math.abs(endDeg - startDeg) > 180 ? 1 : 0;
-    return `M ${x1} ${y1} A ${radius} ${radius} 0 ${large} 0 ${x2} ${y2}`;
-  };
-
-  // Zones (degrees: 180=left=0ms, 0=right=5000ms)
-  // 0–1000ms green: 180° → 144°
-  // 1000–2500ms yellow: 144° → 90°
-  // 2500–5000ms red: 90° → 0°
-  const zoneGreenStart = 180;
-  const zoneGreenEnd = msToAngleDeg(1000);   // 144°
-  const zoneYellowEnd = msToAngleDeg(2500);  // 90°
-  const zoneRedEnd = msToAngleDeg(MAX_MS);   // 0°
-
-  const TRACK_R = r;
-  const TRACK_W = 14;
-  const INNER_R = TRACK_R - TRACK_W;
-
-  // Zone thick arc paths — use stroke trick
-  const arcCenterPath = (startDeg: number, endDeg: number): string => {
-    const midR = TRACK_R - TRACK_W / 2;
-    const s = toRad(startDeg);
-    const e = toRad(endDeg);
-    const x1 = cx + midR * Math.cos(s);
-    const y1 = cy - midR * Math.sin(s);
-    const x2 = cx + midR * Math.cos(e);
-    const y2 = cy - midR * Math.sin(e);
-    const span = Math.abs(endDeg - startDeg);
-    const large = span > 180 ? 1 : 0;
-    return `M ${x1} ${y1} A ${midR} ${midR} 0 ${large} 0 ${x2} ${y2}`;
-  };
-
-  // Needle angle
-  const needleDeg = msToAngleDeg(avgMs); // ~141.48°
-  const needleRad = toRad(needleDeg);
-  const needleLen = INNER_R - 6;
-  const nx = cx + needleLen * Math.cos(needleRad);
-  const ny = cy - needleLen * Math.sin(needleRad);
-
-  // Tick marks at 0, 1000, 2500, 5000ms
-  const ticks: Array<{ ms: number; label: string }> = [
-    { ms: 0, label: '0' },
-    { ms: 1000, label: '1s' },
-    { ms: 2500, label: '2.5s' },
-    { ms: 5000, label: '5s' },
-  ];
-
-  return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '16px 18px', marginBottom: 20 }}>
-      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 8 }}>Decision Speed</div>
-
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        style={{ width: '100%', maxWidth: W, display: 'block', margin: '0 auto' }}
-        aria-label="AI decision speed speedometer"
-      >
-        {/* Background track */}
-        <path
-          d={arcCenterPath(180, 0)}
-          fill="none"
-          stroke={C.surfaceHover}
-          strokeWidth={TRACK_W}
-          strokeLinecap="butt"
-        />
-
-        {/* Green zone: 0–1000ms (180°→144°) */}
-        <path
-          d={arcCenterPath(zoneGreenStart, zoneGreenEnd)}
-          fill="none"
-          stroke={C.bull}
-          strokeWidth={TRACK_W}
-          strokeLinecap="butt"
-          opacity={0.85}
-        />
-
-        {/* Yellow zone: 1000–2500ms (144°→90°) */}
-        <path
-          d={arcCenterPath(zoneGreenEnd, zoneYellowEnd)}
-          fill="none"
-          stroke={C.warn}
-          strokeWidth={TRACK_W}
-          strokeLinecap="butt"
-          opacity={0.85}
-        />
-
-        {/* Red zone: 2500–5000ms (90°→0°) */}
-        <path
-          d={arcCenterPath(zoneYellowEnd, zoneRedEnd)}
-          fill="none"
-          stroke={C.bear}
-          strokeWidth={TRACK_W}
-          strokeLinecap="butt"
-          opacity={0.85}
-        />
-
-        {/* Tick marks */}
-        {ticks.map(({ ms, label }) => {
-          const deg = msToAngleDeg(ms);
-          const rad = toRad(deg);
-          const outerR = TRACK_R + 3;
-          const innerR = TRACK_R - TRACK_W - 4;
-          const tx1 = cx + outerR * Math.cos(rad);
-          const ty1 = cy - outerR * Math.sin(rad);
-          const tx2 = cx + innerR * Math.cos(rad);
-          const ty2 = cy - innerR * Math.sin(rad);
-          const lx = cx + (innerR - 10) * Math.cos(rad);
-          const ly = cy - (innerR - 10) * Math.sin(rad);
-          return (
-            <g key={ms}>
-              <line x1={tx1} y1={ty1} x2={tx2} y2={ty2} stroke={C.muted} strokeWidth={1.5} />
-              <text x={lx} y={ly + 3} textAnchor="middle" fontSize={7} fill={C.faint}>{label}</text>
-            </g>
-          );
-        })}
-
-        {/* Needle */}
-        <line
-          x1={cx}
-          y1={cy}
-          x2={nx}
-          y2={ny}
-          stroke={C.text}
-          strokeWidth={2.5}
-          strokeLinecap="round"
-        />
-        {/* Needle base circle */}
-        <circle cx={cx} cy={cy} r={6} fill={C.text} />
-        <circle cx={cx} cy={cy} r={3} fill={C.surfaceHover} />
-
-        {/* Center label: avg time */}
-        <text x={cx} y={cy - 22} textAnchor="middle" fontSize={22} fontWeight={800} fill={C.text}>
-          2.1s avg
-        </text>
-
-        {/* Zone labels */}
-        <text x={cx - r + 4} y={cy + 18} textAnchor="middle" fontSize={7} fill={C.bull} fontWeight={700}>Fast</text>
-        <text x={cx} y={cy + 18} textAnchor="middle" fontSize={7} fill={C.warn} fontWeight={700}>Normal</text>
-        <text x={cx + r - 4} y={cy + 18} textAnchor="middle" fontSize={7} fill={C.bear} fontWeight={700}>Slow</text>
-      </svg>
-
-      <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', marginTop: 4, lineHeight: 1.5 }}>
-        Last 10 calls: fastest{' '}
-        <span style={{ color: C.bull, fontWeight: 700 }}>{fastestMs}ms</span>
-        {' · '}slowest{' '}
-        <span style={{ color: C.bear, fontWeight: 700 }}>{slowestMs.toLocaleString()}ms</span>
-      </div>
-    </div>
-  );
-}
 
 // ─── Model Cost Breakdown ─────────────────────────────────────────────────────
 
@@ -1893,10 +1549,7 @@ export default function LlmAudit() {
 
         {/* Right sidebar */}
         <div style={{ width: 280, flexShrink: 0 }}>
-          {/* Decision Speedometer */}
-          <DecisionSpeedometer />
-
-          {/* Agent Accuracy Matrix */}
+          {/* Agent Activity */}
           {decisions.length > 0 && <AgentAccuracyMatrix decisions={decisions} />}
         </div>
       </div>

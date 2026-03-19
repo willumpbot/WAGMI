@@ -376,21 +376,9 @@ function BotVsBuyHold({ points, startEquity = 50000 }: { points: EquityCurvePoin
   const botEquities = points.map((p) => p.equity);
   const botReturn = startEquity > 0 ? (botEquities[botEquities.length - 1] - startEquity) / startEquity : 0;
 
-  // Simulate BTC buy-and-hold: assume BTC started at 60k and ended at 65k for a 30d period
-  // (approximation; real data would come from market data API)
-  // Use a typical BTC 30-day range as placeholder: -5% to +15% return
-  // We'll generate a BTC curve with random walk that ends at btcHoldReturn
-  const btcHoldReturn = Math.max(-0.1, Math.min(0.25, botReturn * 0.6 + (Math.sin(startEquity) * 0.05)));
   const n = points.length;
-  const btcPoints: number[] = [startEquity];
-  const rng = (seed: number) => ((seed * 9301 + 49297) % 233280) / 233280 - 0.5;
-  for (let i = 1; i < n; i++) {
-    const drift = (btcHoldReturn / n);
-    const noise = rng(i * startEquity) * Math.abs(btcHoldReturn) * 0.4;
-    btcPoints.push(Math.max(startEquity * 0.5, btcPoints[i - 1] * (1 + drift + noise)));
-  }
 
-  const allVals = [...botEquities, ...btcPoints];
+  const allVals = [...botEquities];
   const minV = Math.min(...allVals);
   const maxV = Math.max(...allVals);
   const rangeV = maxV - minV || 1;
@@ -399,12 +387,9 @@ function BotVsBuyHold({ points, startEquity = 50000 }: { points: EquityCurvePoin
   const toY = (v: number) => pad.t + iH - ((v - minV) / rangeV) * iH;
 
   const botPath = botEquities.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`).join(' ');
-  const btcPath = btcPoints.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(v).toFixed(1)}`).join(' ');
 
   const botColor = botEquities[n - 1] >= startEquity ? C.bull : C.bear;
-  const btcFinalReturn = startEquity > 0 ? (btcPoints[n - 1] - startEquity) / startEquity * 100 : 0;
   const botFinalReturn = botReturn * 100;
-  const outperformance = botFinalReturn - btcFinalReturn;
 
   const yTicks = [minV, (minV + maxV) / 2, maxV];
 
@@ -412,29 +397,15 @@ function BotVsBuyHold({ points, startEquity = 50000 }: { points: EquityCurvePoin
     <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Bot vs. Buy-and-Hold</h2>
+          <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Equity Curve</h2>
           <p style={{ margin: '4px 0 0', fontSize: F.xs, color: C.muted }}>
-            WAGMI strategy (green) vs. holding BTC for the same period (blue dashed)
+            WAGMI strategy cumulative equity
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 16, fontSize: F.xs }}>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ color: C.muted }}>WAGMI return</div>
-            <div style={{ fontWeight: 800, color: botFinalReturn >= 0 ? C.bull : C.bear, fontSize: F.md }}>
-              {botFinalReturn >= 0 ? '+' : ''}{isFinite(botFinalReturn) ? botFinalReturn.toFixed(2) : '0.00'}%
-            </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ color: C.muted }}>BTC buy-hold</div>
-            <div style={{ fontWeight: 800, color: btcFinalReturn >= 0 ? '#60a5fa' : C.bear, fontSize: F.md }}>
-              {btcFinalReturn >= 0 ? '+' : ''}{isFinite(btcFinalReturn) ? btcFinalReturn.toFixed(2) : '0.00'}%
-            </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ color: C.muted }}>Outperformance</div>
-            <div style={{ fontWeight: 800, color: outperformance >= 0 ? C.bull : C.bear, fontSize: F.md }}>
-              {outperformance >= 0 ? '+' : ''}{isFinite(outperformance) ? outperformance.toFixed(2) : '0.00'}pp
-            </div>
+        <div style={{ fontSize: F.xs, textAlign: 'right' }}>
+          <div style={{ color: C.muted }}>Total return</div>
+          <div style={{ fontWeight: 800, color: botFinalReturn >= 0 ? C.bull : C.bear, fontSize: F.md }}>
+            {botFinalReturn >= 0 ? '+' : ''}{isFinite(botFinalReturn) ? botFinalReturn.toFixed(2) : '0.00'}%
           </div>
         </div>
       </div>
@@ -470,22 +441,16 @@ function BotVsBuyHold({ points, startEquity = 50000 }: { points: EquityCurvePoin
           fill="url(#botGrad)"
         />
 
-        {/* BTC buy-hold line */}
-        <path d={btcPath} fill="none" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="6 3" opacity={0.7} />
-
         {/* Bot equity line */}
         <path d={botPath} fill="none" stroke={botColor} strokeWidth={2.5} strokeLinejoin="round" />
 
-        {/* End dots */}
+        {/* End dot */}
         <circle cx={toX(n - 1)} cy={toY(botEquities[n - 1])} r={4} fill={botColor}
           style={{ filter: `drop-shadow(0 0 4px ${botColor})` }} />
-        <circle cx={toX(n - 1)} cy={toY(btcPoints[n - 1])} r={3} fill="#3b82f6" />
 
-        {/* Labels */}
+        {/* Label */}
         <text x={pad.l + iW - 2} y={toY(botEquities[n - 1]) - 8}
           textAnchor="end" fontSize={9} fontWeight="700" fill={botColor}>WAGMI</text>
-        <text x={pad.l + iW - 2} y={toY(btcPoints[n - 1]) - 8}
-          textAnchor="end" fontSize={9} fill="#3b82f6">BTC hold</text>
 
         {/* X-axis dates */}
         {[0, Math.floor(n / 2), n - 1].map((i) => (
@@ -498,7 +463,7 @@ function BotVsBuyHold({ points, startEquity = 50000 }: { points: EquityCurvePoin
       </svg>
 
       <div style={{ fontSize: 10, color: C.muted, marginTop: 10, lineHeight: 1.5 }}>
-        BTC buy-and-hold simulated from trend data for comparison purposes. Past results do not guarantee future returns.
+        Past results do not guarantee future returns.
         {outperformance > 0 && (
           <strong style={{ color: C.bull }}> WAGMI outperformed BTC buy-hold by {isFinite(outperformance) ? outperformance.toFixed(1) : '0.0'} percentage points.</strong>
         )}
@@ -703,34 +668,24 @@ function ExitTypeTimeline({ trades }: { trades: TradeRecord[] }) {
   };
 
   const closedTrades = trades.filter((t) => t.close_reason);
-  if (closedTrades.length >= 3) {
-    closedTrades.forEach((t, i) => {
-      const reason = (t.close_reason ?? 'BACKTEST_END').toUpperCase();
-      const pct = exitPcts[reason] ?? (t.outcome === 'WIN' ? 2.0 : -1.5);
-      dots.push({
-        x: toX(i, closedTrades.length),
-        y: toY(pct),
-        color: exitColors[reason] ?? '#94a3b8',
-        label: reason,
-      });
-    });
-  } else {
-    // 12 deterministic placeholders
-    const placeholders: Array<{ reason: string; pct: number }> = [
-      { reason: 'TP1', pct: 2.2 }, { reason: 'SL', pct: -1.8 }, { reason: 'TP2', pct: 4.5 },
-      { reason: 'TP1', pct: 1.9 }, { reason: 'TRAILING_STOP', pct: 3.1 }, { reason: 'SL', pct: -2.1 },
-      { reason: 'TP1', pct: 2.4 }, { reason: 'TP2', pct: 5.0 }, { reason: 'TRAILING_STOP', pct: 2.7 },
-      { reason: 'SL', pct: -1.5 }, { reason: 'TP1', pct: 2.0 }, { reason: 'EARLY_EXIT', pct: 0.9 },
-    ];
-    placeholders.forEach((p, i) => {
-      dots.push({
-        x: toX(i, placeholders.length),
-        y: toY(p.pct),
-        color: exitColors[p.reason] ?? '#94a3b8',
-        label: p.reason,
-      });
-    });
+  if (closedTrades.length < 3) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
+        <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>Exit Type Analysis</div>
+        Not enough closed trades yet (need at least 3)
+      </div>
+    );
   }
+  closedTrades.forEach((t, i) => {
+    const reason = (t.close_reason ?? 'BACKTEST_END').toUpperCase();
+    const pct = exitPcts[reason] ?? (t.outcome === 'WIN' ? 2.0 : -1.5);
+    dots.push({
+      x: toX(i, closedTrades.length),
+      y: toY(pct),
+      color: exitColors[reason] ?? '#94a3b8',
+      label: reason,
+    });
+  });
 
   // Y axis ticks
   const yTicks = [-2.5, 0, 1.5, 3, 5, 6.5];
@@ -853,13 +808,15 @@ type SymbolData = { trades: number; wins: number; pnl: number; win_rate: number;
 function BySymbolAccordion({ bySymbol }: { bySymbol?: Record<string, SymbolData> }) {
   const [openSym, setOpenSym] = useState<string | null>(null);
 
-  const placeholder: Record<string, SymbolData> = {
-    'BTC/USDT': { trades: 18, wins: 11, pnl: 1240, win_rate: 0.61, avg_win: 320, avg_loss: -180 },
-    'SOL/USDT': { trades: 12, wins: 8, pnl: 680, win_rate: 0.67, avg_win: 210, avg_loss: -140 },
-    'HYPE/USDT': { trades: 7, wins: 3, pnl: -190, win_rate: 0.43, avg_win: 90, avg_loss: -155 },
-  };
-
-  const data = (bySymbol && Object.keys(bySymbol).length > 0) ? bySymbol : placeholder;
+  if (!bySymbol || Object.keys(bySymbol).length === 0) {
+    return (
+      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
+        <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>By Symbol</div>
+        No trade history yet
+      </div>
+    );
+  }
+  const data = bySymbol;
   const entries = Object.entries(data).sort((a, b) => b[1].pnl - a[1].pnl);
 
   return (

@@ -2418,9 +2418,6 @@ function BacktestSummaryScorecard({ result }: { result: BacktestResult }) {
 
 function BacktestCalendarView({ result }: { result?: BacktestResult | null }) {
   // Seeded pseudo-random: deterministic daily PnL fallback
-  // Use shared lib/fmt seededRand (stateless single-shot wrapper)
-  function seededRand(seed: number): number { return mkSeededRand(seed)(); }
-
   // Build 12 months × up to 31 days of daily PnL
   // If real trades exist, bucket them by day-of-year; else use seeded fallback
   const NUM_MONTHS = 12;
@@ -2484,10 +2481,8 @@ function BacktestCalendarView({ result }: { result?: BacktestResult | null }) {
         pnl = dailyPnl[key];
         hasTrade = true;
       } else {
-        // Seeded fallback: ~40% of days have trades
-        const rng = seededRand(mi * 100 + d);
-        hasTrade = rng > 0.6;
-        pnl = hasTrade ? (seededRand(mi * 100 + d + 50) - 0.42) * 1200 : 0;
+        hasTrade = false;
+        pnl = 0;
       }
 
       const cx = monthX + d * (CELL_W + CELL_GAP);
@@ -2570,36 +2565,24 @@ function StrategyAlphaChart({ result }: { result?: BacktestResult | null }) {
 
   const NUM_POINTS = 30;
 
-  // Seeded random for deterministic fallback curves (delegates to lib/fmt)
-  function seedRand(s: number): number { return mkSeededRand(s)(); }
 
-  // Build cumulative alpha lines per strategy
-  // If real trades exist, bucket pnl by strategy name; else use seeded patterns
+  if (!result?.trades || result.trades.length < NUM_POINTS) {
+    return (
+      <div style={{ marginBottom: 20 }}>
+        <h3 style={{ margin: '0 0 4px', fontSize: F.md, fontWeight: 700, color: C.text }}>Strategy Alpha Contribution</h3>
+        <div style={{ fontSize: F.xs, color: C.muted, padding: '20px 0' }}>No trade data — run a backtest to see strategy breakdown</div>
+      </div>
+    );
+  }
+
   const strategyLines: Array<{ name: string; color: string; short: string; points: number[] }> = STRATEGIES.map((strat, si) => {
-    // Try to extract from real trade data
-    let points: number[] = [];
-    if (result?.trades && result.trades.length >= NUM_POINTS) {
-      let cum = 0;
-      const step = Math.floor(result.trades.length / NUM_POINTS);
-      points = [0];
-      for (let i = 0; i < NUM_POINTS; i++) {
-        const t = result.trades[i * step];
-        // Distribute pnl across strategies with some variation
-        const stratShare = 0.15 + seedRand(si * 50 + i) * 0.35;
-        cum += ((t.pnl ?? 0) * stratShare);
-        points.push(cum);
-      }
-    } else {
-      // Seeded fallback: each strategy has a unique trend + noise pattern
-      let cum = 0;
-      points = [0];
-      const trend = (seedRand(si * 77 + 3) - 0.3) * 80; // some negative trends
-      for (let i = 0; i < NUM_POINTS; i++) {
-        const noise = (seedRand(si * 31 + i * 7) - 0.45) * 60;
-        const drift = trend / NUM_POINTS;
-        cum += drift + noise + Math.sin(i * 0.4 + si) * 20;
-        points.push(cum);
-      }
+    let cum = 0;
+    const step = Math.floor(result.trades!.length / NUM_POINTS);
+    const points = [0];
+    for (let i = 0; i < NUM_POINTS; i++) {
+      const t = result.trades![i * step];
+      cum += (t.pnl ?? 0) / STRATEGIES.length;
+      points.push(cum);
     }
     return { ...strat, points };
   });
@@ -2764,8 +2747,6 @@ function BacktestConfidenceIntervals({ result }: { result?: BacktestResult | nul
   const iH = H - pad.t - pad.b;
   const NUM_POINTS = 40;
 
-  // Seeded deterministic generator (delegates to lib/fmt)
-  function seedRand(s: number): number { return mkSeededRand(s)(); }
 
   // Build percentile paths from real trades or seeded fallback
   const startEquity = result?.config?.starting_equity ?? 50000;
@@ -2782,25 +2763,19 @@ function BacktestConfidenceIntervals({ result }: { result?: BacktestResult | nul
       const t = result.trades[i * step];
       const base = t.pnl ?? 0;
       cum50 += base;
-      cum10 += base * (0.4 + seedRand(i * 13) * 0.3);
-      cum90 += base * (1.2 + seedRand(i * 17) * 0.5);
+      cum10 += base * 0.5;  // pessimistic: half the real PnL
+      cum90 += base * 1.5;  // optimistic: 1.5x the real PnL
       p50.push(cum50);
       p10.push(cum10);
       p90.push(cum90);
     }
   } else {
-    // Seeded fallback: simulate 3 realistic equity curve paths
-    p50 = [startEquity]; p10 = [startEquity]; p90 = [startEquity];
-    let cum50 = startEquity, cum10 = startEquity, cum90 = startEquity;
-    for (let i = 0; i < NUM_POINTS; i++) {
-      const base = (seedRand(i * 7 + 1) - 0.38) * 800;
-      cum50 += base;
-      cum10 += base * (seedRand(i * 13 + 3) > 0.5 ? -0.4 : 0.2);
-      cum90 += base + seedRand(i * 11 + 5) * 600;
-      p50.push(cum50);
-      p10.push(cum10);
-      p90.push(cum90);
-    }
+    return (
+      <div style={{ marginBottom: 20 }}>
+        <h3 style={{ margin: '0 0 4px', fontSize: F.md, fontWeight: 700, color: C.text }}>Monte Carlo Fan</h3>
+        <div style={{ fontSize: F.xs, color: C.muted, padding: '20px 0' }}>No trade data — run a backtest to see probability fan</div>
+      </div>
+    );
   }
 
   // Y scale
