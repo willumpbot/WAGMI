@@ -1262,11 +1262,11 @@ function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal>
     const { price, zones } = sig;
     if (price == null || !zones) return seeded(4);
     // Deep in accumulation or distribution zone → high score
-    if (zones.accum != null && price < zones.accum) {
+    if (zones.accum != null && zones.accum > 0 && price < zones.accum) {
       const depth = ((zones.accum - price) / zones.accum) * 100;
       return Math.min(100, 65 + depth * 10);
     }
-    if (zones.distrib != null && price > zones.distrib) {
+    if (zones.distrib != null && zones.distrib > 0 && price > zones.distrib) {
       const depth = ((price - zones.distrib) / zones.distrib) * 100;
       return Math.min(100, 65 + depth * 10);
     }

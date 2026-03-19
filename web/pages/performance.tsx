@@ -2461,6 +2461,7 @@ export default function PerformancePage() {
     if (curve.length < 2) return null;
     const start = curve[0].equity;
     const end = curve[curve.length - 1].equity;
+    if (start === 0) return null;
     return ((end - start) / start) * 100;
   }, [curve]);
 
