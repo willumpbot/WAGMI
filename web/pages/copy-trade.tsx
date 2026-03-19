@@ -2490,6 +2490,306 @@ function EntryZoneVisual() {
   );
 }
 
+// ─── Multi-Timeframe Confluence ───────────────────────────────────────────────
+
+function MultiTimeframeConfluence() {
+  type TfCell = { trend: 'up' | 'down' | 'neutral'; strength: 'strong' | 'medium' | 'weak' };
+  type SymbolRow = { sym: string; cells: TfCell[]; confluenceLabel: string; confluenceColor: string; confluenceBg: string };
+
+  const TFS = ['5m', '1h', '6h', '1D'];
+
+  const rows: SymbolRow[] = [
+    {
+      sym: 'BTC',
+      cells: [
+        { trend: 'up', strength: 'strong' },
+        { trend: 'up', strength: 'medium' },
+        { trend: 'up', strength: 'weak' },
+        { trend: 'up', strength: 'medium' },
+      ],
+      confluenceLabel: 'Strong Confluence',
+      confluenceColor: C.bull,
+      confluenceBg: C.bullLight,
+    },
+    {
+      sym: 'SOL',
+      cells: [
+        { trend: 'up', strength: 'medium' },
+        { trend: 'up', strength: 'medium' },
+        { trend: 'neutral', strength: 'weak' },
+        { trend: 'up', strength: 'weak' },
+      ],
+      confluenceLabel: 'Moderate',
+      confluenceColor: C.warn,
+      confluenceBg: C.warnLight,
+    },
+    {
+      sym: 'HYPE',
+      cells: [
+        { trend: 'down', strength: 'weak' },
+        { trend: 'up', strength: 'medium' },
+        { trend: 'up', strength: 'strong' },
+        { trend: 'up', strength: 'medium' },
+      ],
+      confluenceLabel: 'Mixed',
+      confluenceColor: C.bear,
+      confluenceBg: C.bearLight,
+    },
+  ];
+
+  // Strength bar widths
+  const strengthWidth = (s: TfCell['strength']) => s === 'strong' ? '100%' : s === 'medium' ? '60%' : '30%';
+  const strengthColor = (t: TfCell['trend'], s: TfCell['strength']) => {
+    if (t === 'up') return s === 'strong' ? C.bull : s === 'medium' ? '#22c55e' : '#86efac';
+    if (t === 'down') return s === 'strong' ? C.bear : '#ef4444';
+    return C.muted;
+  };
+
+  const TfCell = ({ cell }: { cell: TfCell }) => {
+    if (cell.trend === 'neutral') {
+      return (
+        <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 18, fontWeight: 700, color: C.muted, lineHeight: 1 }}>—</span>
+            <span style={{ fontSize: 9, color: C.muted }}>neutral</span>
+          </div>
+        </td>
+      );
+    }
+    const arrowColor = strengthColor(cell.trend, cell.strength);
+    const barW = strengthWidth(cell.strength);
+    return (
+      <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: arrowColor, lineHeight: 1 }}>
+            {cell.trend === 'up' ? '▲' : '▼'}
+          </span>
+          <div style={{ width: 32, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ width: barW, height: '100%', background: arrowColor, borderRadius: 2, transition: 'width 0.3s' }} />
+          </div>
+          <span style={{ fontSize: 9, color: arrowColor, fontWeight: 600 }}>{cell.strength}</span>
+        </div>
+      </td>
+    );
+  };
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
+      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+        Multi-Timeframe Confluence
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+        Signal alignment across 4 timeframes per symbol. All timeframes agreeing = higher-probability setup.
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 360 }}>
+          <thead>
+            <tr>
+              <th style={{ padding: '6px 10px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>
+                Symbol
+              </th>
+              {TFS.map((tf) => (
+                <th key={tf} style={{ padding: '6px 8px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>
+                  {tf}
+                </th>
+              ))}
+              <th style={{ padding: '6px 10px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>
+                Score
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, ri) => (
+              <tr key={row.sym} style={{ borderBottom: ri < rows.length - 1 ? `1px solid ${C.border}` : 'none', background: ri % 2 === 0 ? 'transparent' : `${C.surface}50` }}>
+                <td style={{ padding: '10px 10px', fontWeight: 800, fontSize: F.md, color: C.text }}>{row.sym}</td>
+                {row.cells.map((cell, ci) => (
+                  <TfCell key={ci} cell={cell} />
+                ))}
+                <td style={{ padding: '10px 10px', textAlign: 'center' }}>
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '3px 10px',
+                    borderRadius: R.pill,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: row.confluenceColor,
+                    background: row.confluenceBg,
+                    border: `1px solid ${row.confluenceColor}44`,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {row.confluenceLabel}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ marginTop: 12, padding: '8px 12px', background: C.info + '12', border: `1px solid ${C.info}30`, borderRadius: R.sm, fontSize: F.xs, color: C.textSub, lineHeight: 1.6 }}>
+        <strong style={{ color: C.infoMid }}>Tip:</strong> Strong confluence = all timeframes agree = higher probability setup. Mixed signals = wait for alignment before entering.
+      </div>
+    </div>
+  );
+}
+
+// ─── Slippage Calculator ──────────────────────────────────────────────────────
+
+function SlippageCalculator() {
+  const [positionSize, setPositionSize] = useState('1000');
+
+  const size = Math.max(0, parseFloat(positionSize) || 0);
+  const marketImpactPct = 0.05;
+  const spreadPct = 0.02;
+  const totalCostPct = marketImpactPct + spreadPct;
+
+  const marketImpactDollar = (size * marketImpactPct) / 100;
+  const spreadDollar = (size * spreadPct) / 100;
+  const totalCostDollar = marketImpactDollar + spreadDollar;
+
+  // Expected fill = entry + half spread (taker crosses the spread)
+  const halfSpreadPct = spreadPct / 2;
+  const expectedFillDrift = (size * halfSpreadPct) / 100;  // dollar drift on entry
+  const breakEvenMovePct = totalCostPct;  // need this % move to cover costs
+
+  const inp: React.CSSProperties = {
+    padding: '7px 10px',
+    background: C.surfaceHover,
+    border: `1px solid ${C.border}`,
+    borderRadius: R.sm,
+    color: C.text,
+    fontSize: F.sm,
+    width: '100%',
+    outline: 'none',
+    fontVariantNumeric: 'tabular-nums',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+  };
+
+  const fmtDollar = (n: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
+  // Diagram: entry → expected fill → breakeven
+  // Represent relative positions as percentages (0–100 over a small range)
+  const diagramW = 360;
+  const diagramH = 44;
+  const PAD = 20;
+  const innerW = diagramW - PAD * 2;
+
+  // Entry at 0%, fill at halfSpreadPct (relative), breakeven at totalCostPct (relative)
+  // Scale so breakeven is at 80% of innerW
+  const scale = totalCostPct > 0 ? innerW * 0.8 / totalCostPct : 1;
+  const entryX = PAD;
+  const fillX = PAD + halfSpreadPct * scale;
+  const breakevenX = PAD + totalCostPct * scale;
+  const arrowY = 20;
+  const labelY = 38;
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
+      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+        Slippage Calculator
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+        Estimate your real execution cost on Hyperliquid before entering a trade.
+      </div>
+
+      {/* Inputs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10, marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, marginBottom: 4 }}>Position Size ($)</div>
+          <input
+            type="number"
+            value={positionSize}
+            min="0"
+            onChange={(e) => setPositionSize(e.target.value)}
+            style={inp}
+          />
+        </div>
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, marginBottom: 4 }}>Market Impact</div>
+          <div style={{ padding: '7px 10px', background: C.surfaceHover, border: `1px solid ${C.border}`, borderRadius: R.sm, color: C.muted, fontSize: F.sm, fontVariantNumeric: 'tabular-nums' }}>
+            0.05% (fixed)
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, marginBottom: 4 }}>Spread</div>
+          <div style={{ padding: '7px 10px', background: C.surfaceHover, border: `1px solid ${C.border}`, borderRadius: R.sm, color: C.muted, fontSize: F.sm, fontVariantNumeric: 'tabular-nums' }}>
+            0.02% (fixed)
+          </div>
+        </div>
+      </div>
+
+      {/* Results */}
+      {size > 0 && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10, marginBottom: 16 }}>
+            <div style={{ padding: '10px 14px', background: C.surfaceHover, border: `1px solid ${C.border}`, borderRadius: R.md }}>
+              <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 3 }}>Expected Fill</div>
+              <div style={{ fontSize: F.lg, fontWeight: 800, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+                {fmtDollar(size)}
+              </div>
+              <div style={{ fontSize: F.xs, color: C.muted }}>(±{fmtDollar(expectedFillDrift)} spread)</div>
+            </div>
+            <div style={{ padding: '10px 14px', background: C.surfaceHover, border: `1px solid ${C.border}`, borderRadius: R.md }}>
+              <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 3 }}>Total Costs</div>
+              <div style={{ fontSize: F.lg, fontWeight: 800, color: C.warn, fontVariantNumeric: 'tabular-nums' }}>
+                {fmtDollar(totalCostDollar)}
+              </div>
+              <div style={{ fontSize: F.xs, color: C.muted }}>{totalCostPct.toFixed(2)}% of position</div>
+            </div>
+            <div style={{ padding: '10px 14px', background: C.surfaceHover, border: `1px solid ${C.border}`, borderRadius: R.md }}>
+              <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 3 }}>Breakeven Move</div>
+              <div style={{ fontSize: F.lg, fontWeight: 800, color: C.info, fontVariantNumeric: 'tabular-nums' }}>
+                {breakEvenMovePct.toFixed(2)}%
+              </div>
+              <div style={{ fontSize: F.xs, color: C.muted }}>min move to profit</div>
+            </div>
+          </div>
+
+          {/* Small horizontal diagram */}
+          <div style={{ marginBottom: 12, overflowX: 'auto' }}>
+            <svg
+              viewBox={`0 0 ${diagramW} ${diagramH}`}
+              style={{ display: 'block', width: '100%', minWidth: 240, height: diagramH }}
+              aria-label="Entry to breakeven diagram"
+            >
+              {/* Base line */}
+              <line x1={entryX} y1={arrowY} x2={breakevenX + 12} y2={arrowY} stroke={C.border} strokeWidth={1.5} />
+
+              {/* Arrow tip */}
+              <polygon
+                points={`${breakevenX + 12},${arrowY - 5} ${breakevenX + 20},${arrowY} ${breakevenX + 12},${arrowY + 5}`}
+                fill={C.info}
+              />
+
+              {/* Entry point */}
+              <circle cx={entryX} cy={arrowY} r={5} fill={C.bull} />
+              <text x={entryX} y={labelY} textAnchor="middle" fontSize={8} fontWeight="700" fill={C.bull} fontFamily="inherit">Entry</text>
+
+              {/* Expected fill point */}
+              <circle cx={fillX} cy={arrowY} r={4} fill={C.warn} />
+              <line x1={fillX} y1={arrowY - 8} x2={fillX} y2={arrowY - 14} stroke={C.warn} strokeWidth={1} strokeDasharray="2 1" />
+              <text x={fillX} y={arrowY - 16} textAnchor="middle" fontSize={8} fontWeight="600" fill={C.warn} fontFamily="inherit">Fill +spread</text>
+
+              {/* Breakeven point */}
+              <circle cx={breakevenX} cy={arrowY} r={5} fill={C.info} />
+              <text x={breakevenX} y={labelY} textAnchor="middle" fontSize={8} fontWeight="700" fill={C.info} fontFamily="inherit">Breakeven</text>
+            </svg>
+          </div>
+        </>
+      )}
+
+      {/* Fee note */}
+      <div style={{ fontSize: F.xs, color: C.muted, lineHeight: 1.6, padding: '8px 12px', background: C.surfaceHover, borderRadius: R.sm }}>
+        <strong style={{ color: C.textSub }}>Hyperliquid fees:</strong> 0.05% maker / 0.05% taker. Add 0.02% estimated spread for market orders.
+        Total round-trip cost: <strong style={{ color: C.warn }}>~0.14%</strong> (entry + exit).
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function CopyTrade() {
@@ -2608,6 +2908,9 @@ export default function CopyTrade() {
           <SignalTimeline />
         </div>
       </div>
+
+      {/* Multi-Timeframe Confluence */}
+      <MultiTimeframeConfluence />
 
       {/* Signal Quality Matrix */}
       <TradeSetupQualityMatrix />

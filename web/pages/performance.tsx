@@ -1938,6 +1938,11 @@ export default function PerformancePage() {
                       color={winRate != null && winRate >= 50 ? C.bull : C.bear}
                     />
                   </div>
+
+                  {/* ── Profit Factor Gauge (5th KPI visual) ── */}
+                  <div style={{ marginTop: 16 }}>
+                    <ProfitFactorGauge trades={trades} />
+                  </div>
                   <div style={{ fontSize: F.xs, color: C.muted, marginTop: 8 }}>
                     Sharpe &gt; 1.0 = good · &gt; 2.0 = excellent · Calmar &gt; 1.0 = acceptable · &gt; 3.0 = strong
                   </div>
@@ -2004,6 +2009,11 @@ export default function PerformancePage() {
                 </div>
               </Section>
             )}
+
+            {/* ── Trade Quality Matrix ── */}
+            <Section title="Trade Quality Matrix">
+              <TradeQualityMatrix trades={trades} />
+            </Section>
 
             {/* ── Rolling Metrics (dual-panel: WR + Avg P&L) ── */}
             {trades.length >= 12 && (
