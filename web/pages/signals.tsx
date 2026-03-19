@@ -1207,6 +1207,306 @@ function SignalFreshnessStrip({ signals }: { signals: Record<string, Signal> | n
   );
 }
 
+// ─── Signal Radar Chart ───────────────────────────────────────────────────────
+
+function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal> | null; symbol: string }) {
+  const sig = signals?.[symbol] ?? null;
+
+  // Seeded fallback helper: value in ~60-90 range
+  function seeded(axisIndex: number): number {
+    return Math.sin(axisIndex * 7.3 + 42) * 25 + 65;
+  }
+
+  // Derive the 6 axis values (0-100 scale)
+  function rsiScore(): number {
+    const rsi = sig?.rsi;
+    if (rsi == null) return seeded(0);
+    // Extreme RSI = strong signal (either direction)
+    if (rsi < 30) return 90 + (30 - rsi);   // oversold → high score
+    if (rsi > 70) return 90 + (rsi - 70);   // overbought → high score
+    // Neutral zone: distance from 50 gives weak score
+    return Math.max(0, 60 - Math.abs(rsi - 50) * 2);
+  }
+
+  function atrRelevance(): number {
+    const atr = sig?.atr_pct;
+    if (atr == null) return seeded(1);
+    // Sweet spot: 1-3% ATR is most relevant for entries
+    if (atr < 0.3) return 20;
+    if (atr < 1)   return 40 + atr * 20;
+    if (atr < 3)   return Math.min(100, 60 + (atr - 1) * 15);
+    return Math.max(20, 90 - (atr - 3) * 15);
+  }
+
+  function trendAlignment(): number {
+    const score = sig?.signal_score;
+    if (score == null) return seeded(2);
+    return Math.min(100, Math.max(0, score));
+  }
+
+  function volumeConfirmation(): number {
+    // Use vol_spike as a factor; otherwise seeded proxy
+    if (sig == null) return seeded(3);
+    const base = seeded(3);
+    if (sig.vol_spike === true)  return Math.min(100, base + 15);
+    if (sig.vol_spike === false) return Math.max(0, base - 10);
+    return base;
+  }
+
+  function zoneQuality(): number {
+    if (sig == null) return seeded(4);
+    const { price, zones } = sig;
+    if (price == null || !zones) return seeded(4);
+    // Deep in accumulation or distribution zone → high score
+    if (zones.accum != null && price < zones.accum) {
+      const depth = ((zones.accum - price) / zones.accum) * 100;
+      return Math.min(100, 65 + depth * 10);
+    }
+    if (zones.distrib != null && price > zones.distrib) {
+      const depth = ((price - zones.distrib) / zones.distrib) * 100;
+      return Math.min(100, 65 + depth * 10);
+    }
+    return seeded(4) * 0.6; // near neutral zone → lower score
+  }
+
+  function multiTfAgreement(): number {
+    if (sig == null) return seeded(5);
+    const score = sig.signal_score;
+    if (score == null) return seeded(5);
+    // Proxy: higher signal score implies more TF agreement
+    return Math.min(100, Math.max(0, score * 0.9 + 5));
+  }
+
+  const AXES = [
+    { label: 'RSI Score',       value: Math.min(100, Math.max(0, rsiScore())) },
+    { label: 'ATR Relevance',   value: Math.min(100, Math.max(0, atrRelevance())) },
+    { label: 'Trend Alignment', value: Math.min(100, Math.max(0, trendAlignment())) },
+    { label: 'Vol Confirm',     value: Math.min(100, Math.max(0, volumeConfirmation())) },
+    { label: 'Zone Quality',    value: Math.min(100, Math.max(0, zoneQuality())) },
+    { label: 'Multi-TF Agree',  value: Math.min(100, Math.max(0, multiTfAgreement())) },
+  ];
+
+  const N = AXES.length;
+  const CX = 130;
+  const CY = 130;
+  const MAX_R = 90;
+  const RINGS = 5; // 20%, 40%, 60%, 80%, 100%
+
+  // Angle for each axis: start at top (-90°), equally spaced
+  function axisAngle(i: number): number {
+    return (i / N) * 2 * Math.PI - Math.PI / 2;
+  }
+
+  // Point on axis at a given fraction (0-1) of max radius
+  function axisPoint(i: number, frac: number): { x: number; y: number } {
+    const angle = axisAngle(i);
+    return {
+      x: CX + Math.cos(angle) * MAX_R * frac,
+      y: CY + Math.sin(angle) * MAX_R * frac,
+    };
+  }
+
+  // Build hexagon path at a given fraction of max radius
+  function hexPath(frac: number): string {
+    const pts = Array.from({ length: N }, (_, i) => axisPoint(i, frac));
+    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ') + ' Z';
+  }
+
+  // Build data polygon path
+  function dataPath(): string {
+    const pts = AXES.map((ax, i) => axisPoint(i, ax.value / 100));
+    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ') + ' Z';
+  }
+
+  const title = symbol ? `${symbol} Signal Radar` : 'Signal Radar';
+  const isFallback = sig == null;
+
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.lg,
+      padding: '20px 24px',
+      marginBottom: 28,
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>{title}</div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            6-dimension signal quality breakdown
+            {isFallback && <span style={{ marginLeft: 8, color: C.muted }}>(example data)</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* SVG Radar */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <svg
+          width={260}
+          height={260}
+          viewBox="0 0 260 260"
+          aria-label={`${title} spider chart`}
+          style={{ display: 'block', overflow: 'visible' }}
+        >
+          <defs>
+            <filter id="radar-glow">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
+
+          {/* Concentric hexagon grid rings */}
+          {Array.from({ length: RINGS }, (_, ri) => {
+            const frac = (ri + 1) / RINGS;
+            return (
+              <path
+                key={`ring-${ri}`}
+                d={hexPath(frac)}
+                fill="none"
+                stroke={C.border}
+                strokeWidth={ri === RINGS - 1 ? 1.5 : 1}
+                opacity={0.6}
+              />
+            );
+          })}
+
+          {/* Ring labels (20%, 40%…100%) */}
+          {Array.from({ length: RINGS }, (_, ri) => {
+            const frac = (ri + 1) / RINGS;
+            const pct = Math.round(frac * 100);
+            // Place label just right of the top-most point of each ring
+            const p = axisPoint(0, frac);
+            return (
+              <text
+                key={`ring-lbl-${ri}`}
+                x={p.x + 4}
+                y={p.y + 3}
+                fontSize={7}
+                fill={C.muted}
+                fontFamily="Inter, system-ui, sans-serif"
+                opacity={0.7}
+              >
+                {pct}
+              </text>
+            );
+          })}
+
+          {/* Axis lines from center to edge */}
+          {AXES.map((_, i) => {
+            const tip = axisPoint(i, 1);
+            return (
+              <line
+                key={`axis-${i}`}
+                x1={CX} y1={CY}
+                x2={tip.x.toFixed(2)} y2={tip.y.toFixed(2)}
+                stroke={C.border}
+                strokeWidth={1}
+                opacity={0.5}
+              />
+            );
+          })}
+
+          {/* Filled data polygon */}
+          <path
+            d={dataPath()}
+            fill={C.brand + '40'}
+            stroke={C.brand}
+            strokeWidth={2}
+            strokeLinejoin="round"
+            filter="url(#radar-glow)"
+          />
+
+          {/* Data point circles at each axis tip value */}
+          {AXES.map((ax, i) => {
+            const p = axisPoint(i, ax.value / 100);
+            return (
+              <circle
+                key={`dot-${i}`}
+                cx={p.x.toFixed(2)}
+                cy={p.y.toFixed(2)}
+                r={4}
+                fill={C.brand}
+                stroke={C.card}
+                strokeWidth={1.5}
+              />
+            );
+          })}
+
+          {/* Axis labels at tips */}
+          {AXES.map((ax, i) => {
+            const angle = axisAngle(i);
+            const LABEL_R = MAX_R + 16;
+            const lx = CX + Math.cos(angle) * LABEL_R;
+            const ly = CY + Math.sin(angle) * LABEL_R;
+            // Anchor: left side of chart → start, right → end, top/bottom → middle
+            let anchor = 'middle';
+            if (lx < CX - 10) anchor = 'end';
+            else if (lx > CX + 10) anchor = 'start';
+            return (
+              <text
+                key={`lbl-${i}`}
+                x={lx.toFixed(2)}
+                y={(ly + 4).toFixed(2)}
+                textAnchor={anchor as 'middle' | 'start' | 'end'}
+                fontSize={8.5}
+                fontWeight="600"
+                fill={C.textSub}
+                fontFamily="Inter, system-ui, sans-serif"
+              >
+                {ax.label}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Legend pills */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 8,
+        justifyContent: 'center',
+        marginTop: 16,
+        paddingTop: 14,
+        borderTop: `1px solid ${C.border}`,
+      }}>
+        {AXES.map((ax) => {
+          const v = Math.round(ax.value);
+          const pillColor = v >= 70 ? C.bull : v >= 45 ? C.warn : C.bear;
+          return (
+            <div
+              key={ax.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                borderRadius: R.pill,
+                padding: '4px 10px',
+                fontSize: F.xs,
+              }}
+            >
+              <span style={{ color: C.muted, fontWeight: 500 }}>{ax.label}</span>
+              <span style={{
+                fontWeight: 700,
+                color: pillColor,
+                background: pillColor + '22',
+                borderRadius: R.pill,
+                padding: '1px 6px',
+                fontSize: 10,
+              }}>
+                {v}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SignalsPage() {
