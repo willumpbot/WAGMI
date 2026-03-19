@@ -570,6 +570,335 @@ function MonthlyReturnHeatmap() {
   );
 }
 
+// ─── BreakEvenCalculator ──────────────────────────────────────────────────────
+
+const TIER_COSTS = [0, 29, 79] as const;
+const TIER_NAMES = ['Observer', 'Pro', 'Elite'] as const;
+const TIER_COLORS: [string, string, string] = [C.muted, C.brand, C.bull];
+
+function BreakEvenCalculator() {
+  const [accountSize, setAccountSize] = useState(5000);
+  const [tier, setTier] = useState<0 | 1 | 2>(1);
+
+  const monthlyCost = TIER_COSTS[tier];
+  const breakEvenReturnPct = monthlyCost > 0 ? (monthlyCost / accountSize) * 100 : 0;
+  // break-even trade count: assume 1.5% profit per winning trade, 77% win rate
+  // expected profit per trade = 1.5% * 0.77 - (1 - 0.77) * something
+  // Simplified: each trade nets 0.015 * accountSize on average (gross).
+  // We need: n * 0.015 * 0.77 * accountSize >= monthlyCost
+  const breakEvenTrades =
+    monthlyCost > 0
+      ? Math.ceil(monthlyCost / (accountSize * 0.015 * 0.77))
+      : 0;
+  const monthlyReturnGross = accountSize * 0.11;
+  const netProfit = monthlyReturnGross - monthlyCost;
+  const accentColor = TIER_COLORS[tier];
+
+  return (
+    <div
+      style={{
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.xl,
+        padding: '24px 28px',
+      }}
+    >
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>
+          Break-Even Calculator
+        </div>
+        <div style={{ fontSize: F.xs, color: C.muted }}>
+          How much do you need to earn to cover the subscription cost?
+        </div>
+      </div>
+
+      {/* Input row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
+        <label style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, flexShrink: 0 }}>Account:</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: F.sm, color: C.muted, fontWeight: 700 }}>$</span>
+          <input
+            type="number"
+            min={1000}
+            max={100000}
+            step={1000}
+            value={accountSize}
+            onChange={(e) => {
+              const v = Math.max(1000, Math.min(100000, Number(e.target.value)));
+              setAccountSize(v);
+            }}
+            style={{
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+              borderRadius: R.md,
+              color: C.text,
+              fontSize: F.base,
+              fontWeight: 700,
+              padding: '6px 10px',
+              width: 110,
+              outline: 'none',
+            }}
+          />
+        </div>
+
+        {/* Tier buttons */}
+        <div style={{ display: 'flex', gap: 6, marginLeft: 8, flexWrap: 'wrap' }}>
+          {([0, 1, 2] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTier(t)}
+              style={{
+                padding: '5px 14px',
+                borderRadius: R.pill,
+                border: `1px solid ${tier === t ? TIER_COLORS[t] : C.border}`,
+                background: tier === t ? `${TIER_COLORS[t]}20` : C.surface,
+                color: tier === t ? TIER_COLORS[t] : C.muted,
+                fontSize: F.xs,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {TIER_NAMES[t]}
+              {TIER_COSTS[t] > 0 ? `/$${TIER_COSTS[t]}` : '/Free'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Output box */}
+      <div
+        style={{
+          background: C.surface,
+          border: `1px solid ${accentColor}30`,
+          borderRadius: R.lg,
+          padding: '16px 20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 16,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>Monthly cost</div>
+          <div style={{ fontSize: F['2xl'], fontWeight: 800, color: accentColor }}>
+            ${monthlyCost}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>Break-even return</div>
+          <div style={{ fontSize: F['2xl'], fontWeight: 800, color: accentColor }}>
+            {monthlyCost > 0 ? `${breakEvenReturnPct.toFixed(2)}%` : '0.00%'}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>Break-even trades</div>
+          <div style={{ fontSize: F['2xl'], fontWeight: 800, color: accentColor }}>
+            {monthlyCost > 0 ? `~${breakEvenTrades}` : '—'}
+          </div>
+          {monthlyCost > 0 && (
+            <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>
+              at 1.5% avg · 77% win rate
+            </div>
+          )}
+        </div>
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>
+            At 11% monthly return
+          </div>
+          <div
+            style={{
+              fontSize: F['2xl'],
+              fontWeight: 800,
+              color: netProfit >= 0 ? C.bull : C.bear,
+            }}
+          >
+            {netProfit >= 0 ? '+' : ''}${netProfit.toFixed(0)}
+          </div>
+          <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>net profit</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CostVsReturnChart ─────────────────────────────────────────────────────────
+
+function CostVsReturnChart() {
+  const W = 480;
+  const H = 180;
+  const padL = 56;
+  const padR = 90; // room for end labels
+  const padT = 36; // room for title
+  const padB = 28;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const START = 5000;
+  const MONTHLY_RETURN = 0.11;
+  const MONTHS = 12;
+
+  // Performance multipliers per tier
+  const perfBonus = [1.0, 1.08, 1.15] as const;
+  const costs = [0, 29, 79] as const;
+
+  const buildEquity = (tierIdx: number): number[] =>
+    Array.from({ length: MONTHS + 1 }, (_, m) => {
+      if (m === 0) return START;
+      // compound return adjusted by performance bonus, minus monthly cost
+      let equity = START;
+      for (let i = 1; i <= m; i++) {
+        equity = equity * (1 + MONTHLY_RETURN * perfBonus[tierIdx]) - costs[tierIdx];
+      }
+      return equity;
+    });
+
+  const observerEquity = buildEquity(0);
+  const proEquity = buildEquity(1);
+  const eliteEquity = buildEquity(2);
+
+  const yMin = 5000;
+  const yMax = 20000;
+
+  const xScale = (m: number) => padL + (m / MONTHS) * chartW;
+  const yScale = (v: number) =>
+    padT + chartH - Math.max(0, Math.min(1, (v - yMin) / (yMax - yMin))) * chartH;
+
+  const pointsToPath = (data: number[]) =>
+    data
+      .map((v, i) => `${i === 0 ? 'M' : 'L'}${xScale(i).toFixed(1)},${yScale(v).toFixed(1)}`)
+      .join(' ');
+
+  const yTicks = [5000, 10000, 15000, 20000];
+  const fmtK = (v: number) => `$${(v / 1000).toFixed(0)}k`;
+
+  const obsFinal = observerEquity[MONTHS];
+  const proFinal = proEquity[MONTHS];
+  const eliteFinal = eliteEquity[MONTHS];
+
+  const lineColors: [string, string, string] = [C.muted, C.brand, C.bull];
+
+  const titleY = padT - 12;
+
+  return (
+    <div
+      style={{
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.xl,
+        padding: '20px 24px 16px',
+      }}
+    >
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+      >
+        {/* Title */}
+        <text
+          x={W / 2}
+          y={titleY}
+          textAnchor="middle"
+          fontSize={10}
+          fill={C.textSub}
+          fontWeight={700}
+        >
+          12-Month Growth Projection ($5,000 start, ~11% avg monthly)
+        </text>
+
+        {/* Y-axis grid + labels */}
+        {yTicks.map((tick) => (
+          <g key={tick}>
+            <line
+              x1={padL}
+              y1={yScale(tick)}
+              x2={W - padR}
+              y2={yScale(tick)}
+              stroke={tick === 5000 ? C.muted : C.border}
+              strokeWidth={tick === 5000 ? 1 : 0.8}
+              strokeDasharray={tick === 5000 ? '4 3' : undefined}
+            />
+            <text
+              x={padL - 6}
+              y={yScale(tick) + 4}
+              textAnchor="end"
+              fontSize={9}
+              fill={C.muted}
+            >
+              {fmtK(tick)}
+            </text>
+          </g>
+        ))}
+
+        {/* X-axis labels */}
+        {Array.from({ length: MONTHS }, (_, i) => i + 1).map((m) => (
+          <text
+            key={m}
+            x={xScale(m)}
+            y={padT + chartH + 16}
+            textAnchor="middle"
+            fontSize={9}
+            fill={C.muted}
+          >
+            {m}
+          </text>
+        ))}
+        {/* X-axis title */}
+        <text
+          x={padL + chartW / 2}
+          y={padT + chartH + 26}
+          textAnchor="middle"
+          fontSize={8}
+          fill={C.faint}
+        >
+          Month
+        </text>
+
+        {/* Lines */}
+        <path
+          d={pointsToPath(observerEquity)}
+          fill="none"
+          stroke={lineColors[0]}
+          strokeWidth={1.5}
+          strokeDasharray="5 4"
+        />
+        <path d={pointsToPath(proEquity)} fill="none" stroke={lineColors[1]} strokeWidth={2} />
+        <path d={pointsToPath(eliteEquity)} fill="none" stroke={lineColors[2]} strokeWidth={2} />
+
+        {/* End labels */}
+        {(
+          [
+            { equity: obsFinal, color: lineColors[0], label: 'Observer' },
+            { equity: proFinal, color: lineColors[1], label: 'Pro' },
+            { equity: eliteFinal, color: lineColors[2], label: 'Elite' },
+          ] as { equity: number; color: string; label: string }[]
+        ).map((item) => (
+          <g key={item.label}>
+            <text
+              x={W - padR + 6}
+              y={yScale(item.equity) + 4}
+              fontSize={9}
+              fill={item.color}
+              fontWeight={700}
+            >
+              {item.label}: ${Math.round(item.equity).toLocaleString()}
+            </text>
+          </g>
+        ))}
+      </svg>
+
+      <div
+        style={{
+          fontSize: 10,
+          color: C.faint,
+          marginTop: 6,
+          textAlign: 'center',
+          lineHeight: 1.5,
+        }}
+      >
+        Projected based on historical backtest performance. Not a guarantee.
+      </div>
+    </div>
+  );
+}
+
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 
 function PFAQ({ q, a }: { q: string; a: string }) {
@@ -688,6 +1017,15 @@ export default function PricingPage() {
         <div style={{ background: `${C.brand}10`, border: `1px solid ${C.brand}30`, borderRadius: R.xl, padding: '24px 28px', marginBottom: 48, textAlign: 'center' }}>
           <div style={{ fontSize: F.xl, fontWeight: 700, color: C.text, marginBottom: 8 }}>7-day money back guarantee</div>
           <div style={{ fontSize: F.sm, color: C.muted }}>Try Pro or Elite for 7 days. If it's not for you, we'll refund without questions.</div>
+        </div>
+
+        {/* ── Break-Even Calculator + Growth Projection ── */}
+        <div style={{ marginBottom: 52 }}>
+          <h2 style={{ margin: '0 0 16px', fontSize: F.xl, fontWeight: 700, color: C.text, textAlign: 'center' }}>Is it worth it for your account?</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+            <BreakEvenCalculator />
+            <CostVsReturnChart />
+          </div>
         </div>
 
         {/* ── Monthly Return Heatmap ── */}

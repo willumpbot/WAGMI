@@ -1516,6 +1516,7 @@ export default function SignalsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [pulseCount, setPulseCount] = useState(0);
+  const [selectedSymbol, setSelectedSymbol] = useState<string>('BTC');
   const apiBase = resolveApiBase();
   const mounted = useRef(true);
 
@@ -1664,6 +1665,9 @@ export default function SignalsPage() {
       {signalsData !== null && (
         <SignalScoreRanking signals={signalsData?.signals ?? {}} />
       )}
+
+      {/* ── Signal Radar Chart ───────────────────────────────────────────── */}
+      <SignalRadarChart signals={signalsData?.signals ?? null} symbol={selectedSymbol ?? 'BTC'} />
 
       {/* ── Market Heatmap ───────────────────────────────────────────────── */}
       <MarketHeatmapSection payload={signalsData} loading={loading} />
