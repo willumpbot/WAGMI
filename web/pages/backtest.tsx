@@ -2636,79 +2636,90 @@ function BacktestSummaryScorecard({ result }: { result: BacktestResult }) {
 // ─── Backtest Calendar View ───────────────────────────────────────────────────
 
 function BacktestCalendarView({ result }: { result?: BacktestResult | null }) {
-  // Seeded pseudo-random: deterministic daily PnL fallback
-  // Build 12 months × up to 31 days of daily PnL
-  // If real trades exist, bucket them by day-of-year; else use seeded fallback
-  const NUM_MONTHS = 12;
   const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const DAYS_IN_MONTH = [31,28,31,30,31,30,31,31,30,31,30,31];
 
-  // Build daily PnL map from trades if available
+  // Build daily PnL map from equity_curve (most accurate: daily equity delta)
   const dailyPnl: Record<string, number> = {};
-  if (result?.trade_timeline && result.trade_timeline.length > 0) {
-    const tradesLen = result.trade_timeline.length;
-    result.trade_timeline.forEach((t, i) => {
-      // Spread trades across the year deterministically
-      const dayOfYear = Math.floor((i / tradesLen) * 365);
-      const month = MONTH_NAMES[Math.floor(dayOfYear / 30.5)];
-      const day = (dayOfYear % 28) + 1;
-      const key = `${month}-${day}`;
-      dailyPnl[key] = (dailyPnl[key] ?? 0) + (t.pnl ?? 0);
-    });
+  const ec = result?.equity_curve;
+
+  if (ec && ec.length >= 2) {
+    // Group equity_curve by date, take first and last equity per date
+    const byDate: Record<string, { first: number; last: number }> = {};
+    for (const pt of ec) {
+      const date = pt.time?.slice(0, 10);
+      if (!date) continue;
+      if (!byDate[date]) byDate[date] = { first: pt.equity, last: pt.equity };
+      byDate[date].last = pt.equity;
+    }
+    const dates = Object.keys(byDate).sort();
+    for (let i = 0; i < dates.length; i++) {
+      const d = dates[i];
+      const prevEq = i === 0 ? byDate[d].first : byDate[dates[i - 1]].last;
+      dailyPnl[d] = byDate[d].last - prevEq;
+    }
   }
 
-  const CELL_W = 11;
-  const CELL_H = 11;
-  const CELL_GAP = 2;
-  const MONTH_LABEL_H = 14;
-  const MONTH_GAP = 6;
-  const MAX_DAYS_COLS = 31;
-  const MONTH_W = MAX_DAYS_COLS * (CELL_W + CELL_GAP);
-  const MONTH_H = MONTH_LABEL_H + CELL_H;
-  const MONTHS_PER_ROW = 4;
-  const ROW_COUNT = Math.ceil(NUM_MONTHS / MONTHS_PER_ROW);
+  // Determine date range from equity_curve or backtest config
+  const days = result?.config?.days ?? 30;
+  let dateRange: string[] = [];
 
-  const SVG_W = MONTHS_PER_ROW * (MONTH_W + MONTH_GAP) - MONTH_GAP + 8;
-  const SVG_H = ROW_COUNT * (MONTH_H + 20) + 16;
+  if (ec && ec.length >= 2) {
+    const allDates = [...new Set(ec.map(pt => pt.time?.slice(0, 10)).filter(Boolean) as string[])].sort();
+    dateRange = allDates;
+  } else {
+    // Fall back: generate last N days
+    const end = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(end);
+      d.setDate(d.getDate() - i);
+      dateRange.push(d.toISOString().slice(0, 10));
+    }
+  }
 
-  function pnlToColor(pnl: number, hasTrade: boolean): string {
-    if (!hasTrade) return '#1e293b';
+  if (dateRange.length === 0) {
+    return <div style={{ color: C.muted, fontSize: F.sm, padding: '20px 0' }}>No date data available</div>;
+  }
+
+  // Group dates by month
+  type MonthGroup = { label: string; days: Array<{ date: string; dayNum: number; pnl: number | null }> };
+  const months: MonthGroup[] = [];
+  let currentMonth = '';
+
+  for (const date of dateRange) {
+    const [, m, d] = date.split('-');
+    const monthKey = date.slice(0, 7); // YYYY-MM
+    const monthName = MONTH_NAMES[parseInt(m, 10) - 1];
+    const label = `${monthName} ${date.slice(0, 4)}`;
+
+    if (monthKey !== currentMonth) {
+      currentMonth = monthKey;
+      months.push({ label, days: [] });
+    }
+    const pnlVal = dailyPnl[date] ?? null;
+    months[months.length - 1].days.push({ date, dayNum: parseInt(d, 10), pnl: pnlVal });
+  }
+
+  function pnlToColor(pnl: number | null): string {
+    if (pnl === null) return '#1e293b';
     if (pnl > 500)  return '#166534';
-    if (pnl > 100)  return '#15803d';
+    if (pnl > 50)   return '#15803d';
     if (pnl > 0)    return '#22c55e';
     if (pnl === 0)  return '#374151';
-    if (pnl > -100) return '#ef4444';
+    if (pnl > -50)  return '#ef4444';
     if (pnl > -500) return '#b91c1c';
     return '#7f1d1d';
   }
 
-  const cells: Array<{ x: number; y: number; color: string; pnl: number; label: string }> = [];
+  const CELL = 14;
+  const GAP  = 3;
+  const LABEL_H = 16;
+  const ROW_H = LABEL_H + CELL + GAP + 6;
+  const MAX_DAYS = Math.max(...months.map(m => m.days.length));
+  const SVG_W = MAX_DAYS * (CELL + GAP) + 8;
+  const SVG_H = months.length * ROW_H + 8;
 
-  for (let mi = 0; mi < NUM_MONTHS; mi++) {
-    const row = Math.floor(mi / MONTHS_PER_ROW);
-    const col = mi % MONTHS_PER_ROW;
-    const monthX = col * (MONTH_W + MONTH_GAP) + 4;
-    const monthY = row * (MONTH_H + 20) + MONTH_LABEL_H;
-    const daysCount = DAYS_IN_MONTH[mi];
-
-    for (let d = 0; d < daysCount; d++) {
-      const key = `${MONTH_NAMES[mi]}-${d + 1}`;
-      let pnl: number;
-      let hasTrade: boolean;
-
-      if (dailyPnl[key] !== undefined) {
-        pnl = dailyPnl[key];
-        hasTrade = true;
-      } else {
-        hasTrade = false;
-        pnl = 0;
-      }
-
-      const cx = monthX + d * (CELL_W + CELL_GAP);
-      const cy = monthY;
-      cells.push({ x: cx, y: cy, color: pnlToColor(pnl, hasTrade), pnl, label: `${MONTH_NAMES[mi]} ${d + 1}` });
-    }
-  }
+  const profitDays = Object.values(dailyPnl).filter(v => v > 0).length;
+  const lossDays   = Object.values(dailyPnl).filter(v => v < 0).length;
 
   return (
     <div style={{ marginBottom: 20 }}>
@@ -2716,50 +2727,43 @@ function BacktestCalendarView({ result }: { result?: BacktestResult | null }) {
         Daily PnL Calendar
       </h3>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
-        GitHub-style contribution graph — green = profit day, red = loss day
+        {ec ? `${dateRange.length}-day backtest period — each cell = one trading day` : `${days}-day backtest · no equity curve data`}
       </div>
       <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
-        <svg
-          width="100%"
-          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-          style={{ display: 'block', minWidth: Math.min(SVG_W, 600) }}
-        >
-          {/* Month labels */}
-          {Array.from({ length: NUM_MONTHS }, (_, mi) => {
-            const row = Math.floor(mi / MONTHS_PER_ROW);
-            const col = mi % MONTHS_PER_ROW;
-            const lx = col * (MONTH_W + MONTH_GAP) + 4;
-            const ly = row * (MONTH_H + 20) + MONTH_LABEL_H - 3;
+        <svg width={SVG_W} height={SVG_H} style={{ display: 'block' }}>
+          {months.map((month, mi) => {
+            const gy = mi * ROW_H;
             return (
-              <text key={mi} x={lx} y={ly} fontSize={9} fontWeight={700} fill={C.muted}>
-                {MONTH_NAMES[mi]}
-              </text>
+              <g key={mi}>
+                <text x={4} y={gy + 11} fontSize={9} fontWeight={700} fill={C.muted}>{month.label}</text>
+                {month.days.map((day, di) => {
+                  const cx = 4 + di * (CELL + GAP);
+                  const cy = gy + LABEL_H;
+                  return (
+                    <rect key={di} x={cx} y={cy} width={CELL} height={CELL} rx={2}
+                      fill={pnlToColor(day.pnl)} opacity={0.92} />
+                  );
+                })}
+              </g>
             );
           })}
-
-          {/* Day cells */}
-          {cells.map((cell, i) => (
-            <rect
-              key={i}
-              x={cell.x}
-              y={cell.y}
-              width={CELL_W}
-              height={CELL_H}
-              rx={2}
-              fill={cell.color}
-              opacity={0.92}
-            />
-          ))}
         </svg>
 
         {/* Legend */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 10, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: F.xs, color: C.muted, marginRight: 4 }}>Less</span>
-          {['#1e293b', '#22c55e', '#15803d', '#166534', '#ef4444', '#b91c1c', '#7f1d1d'].map((col, i) => (
+          {['#22c55e', '#15803d', '#166534'].map((col, i) => (
             <div key={i} style={{ width: 11, height: 11, borderRadius: 2, background: col }} />
           ))}
-          <span style={{ fontSize: F.xs, color: C.muted, marginLeft: 4 }}>More</span>
-          <span style={{ fontSize: F.xs, color: C.muted, marginLeft: 8 }}>· Green = profit · Red = loss</span>
+          <span style={{ fontSize: F.xs, color: C.muted, marginRight: 8 }}>Profit</span>
+          {['#ef4444', '#b91c1c', '#7f1d1d'].map((col, i) => (
+            <div key={i} style={{ width: 11, height: 11, borderRadius: 2, background: col }} />
+          ))}
+          <span style={{ fontSize: F.xs, color: C.muted }}>Loss</span>
+          {Object.keys(dailyPnl).length > 0 && (
+            <span style={{ fontSize: F.xs, color: C.muted, marginLeft: 12 }}>
+              <strong style={{ color: C.bull }}>{profitDays}P</strong> / <strong style={{ color: C.bear }}>{lossDays}L</strong> days traded
+            </span>
+          )}
         </div>
       </div>
     </div>

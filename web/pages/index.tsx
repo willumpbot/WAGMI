@@ -528,9 +528,13 @@ function CandleChart({
     if (!chartReady || !candleSeriesRef.current) return;
     setStatus('loading');
 
-    fetch(`${apiBase}/v1/ohlcv?symbol=${symbol}&timeframe=${timeframe}&limit=300`)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
+    fetch(`${apiBase}/v1/ohlcv?symbol=${symbol}&timeframe=${timeframe}&limit=300`, { signal: controller.signal })
       .then((r) => r.json())
       .then((raw: any[]) => {
+        clearTimeout(timeoutId);
         if (!Array.isArray(raw) || raw.length === 0) { setStatus('error'); return; }
         const candles: Candle[] = raw.map((c) => ({ ...c, time: c.time as UTCTimestamp }));
         const sorted = [...candles].sort((a, b) => a.time - b.time);
@@ -543,7 +547,8 @@ function CandleChart({
         }
         setStatus('ok');
       })
-      .catch(() => setStatus('error'));
+      .catch(() => { clearTimeout(timeoutId); setStatus('error'); });
+    return () => { clearTimeout(timeoutId); controller.abort(); };
   }, [symbol, timeframe, apiBase, chartReady]);
 
   // Apply zone bands + signal price lines whenever they change
@@ -592,17 +597,28 @@ function CandleChart({
     })();
   }, [zones, signalLevels]);
 
+  // TradingView widget fallback when OHLCV API is unavailable
+  if (status === 'error') {
+    const TV_TF: Record<string, string> = { '15m': '15', '1h': '60', '4h': '240', '1d': 'D' };
+    const tvSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tv_${symbol}&symbol=${TV_SYMBOLS[symbol] ?? symbol}&interval=${TV_TF[timeframe] ?? '60'}&theme=dark&style=1&locale=en&hide_top_toolbar=0&hide_side_toolbar=0&allow_symbol_change=0&save_image=0&withdateranges=1`;
+    return (
+      <div style={{ width: '100%', height: 620, borderRadius: R.md, overflow: 'hidden', background: '#131722' }}>
+        <iframe
+          src={tvSrc}
+          style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+          allow="fullscreen"
+          title={`${symbol} Chart`}
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={{ position: 'relative' }}>
       <div ref={containerRef} style={{ width: '100%', height: 620, background: C.card, borderRadius: R.md }} />
       {status === 'loading' && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.card + 'cc', borderRadius: R.md, fontSize: F.sm, color: C.muted }}>
           Loading candles…
-        </div>
-      )}
-      {status === 'error' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.card + 'cc', borderRadius: R.md, fontSize: F.sm, color: C.muted }}>
-          Chart unavailable
         </div>
       )}
     </div>
