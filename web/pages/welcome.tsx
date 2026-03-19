@@ -703,7 +703,7 @@ export default function WelcomePage() {
             </div>
             <h1 style={{ margin: '0 0 20px', fontSize: 48, fontWeight: 900, color: C.text, letterSpacing: -1.5, lineHeight: 1.1 }}>
               The AI That Trades<br />
-              <span style={{ color: C.brand }}>While You Sleep.</span>
+              <span className="gradient-text">While You Sleep.</span>
             </h1>
             <p style={{ margin: '0 0 36px', fontSize: F.xl, color: C.textSub, lineHeight: 1.6, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
               7 AI agents analyze 4 strategies across Hyperliquid in real-time.

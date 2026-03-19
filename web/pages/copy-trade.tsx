@@ -4193,7 +4193,7 @@ export default function CopyTrade() {
     <div>
       {/* Page Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Copy Trade</h1>
+        <h1 style={{ fontSize: F['3xl'], fontWeight: 900, marginBottom: 8, color: C.text, letterSpacing: -0.5 }}>Copy <span className="gradient-text">Trade</span></h1>
         <p style={{ fontSize: 15, color: C.muted, margin: 0, maxWidth: 700 }}>
           See what the bot sees — including the AI brain — then decide for yourself. Each card shows signals,
           key price levels, the LLM&apos;s reasoning, and step-by-step trade instructions for Hyperliquid.

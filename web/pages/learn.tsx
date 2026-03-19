@@ -3482,8 +3482,8 @@ export default function Learn() {
         <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           Knowledge Base
         </div>
-        <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>
-          Understand the Edge
+        <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 900, color: C.text, letterSpacing: -0.5 }}>
+          Understand the <span className="gradient-text">Edge</span>
         </h1>
         <p style={{ margin: '6px 0 0', fontSize: F.sm, color: C.muted, maxWidth: 600 }}>
           Every signal explained. Every decision unpacked. The more you know, the better you'll trade.

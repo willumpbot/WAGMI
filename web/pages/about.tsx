@@ -683,7 +683,7 @@ export default function AboutPage() {
         {/* ── Hero ── */}
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
           <h1 style={{ margin: '0 0 14px', fontSize: F['3xl'], fontWeight: 900, color: C.text, letterSpacing: -0.5, lineHeight: 1.15 }}>
-            Built in public.<br />Every trade logged.<br />Every decision explained.
+            Built in public.<br /><span className="gradient-text">Every trade logged.</span><br />Every decision explained.
           </h1>
           <p style={{ margin: 0, fontSize: F.lg, color: C.muted, maxWidth: 520, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
             WAGMI doesn't have a black box. It has an audit trail.
