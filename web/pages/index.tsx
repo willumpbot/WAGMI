@@ -455,6 +455,7 @@ function CandleChart({
   const priceLinesRef = useRef<IPriceLine[]>([]);
   const roRef = useRef<ResizeObserver | null>(null);
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
+  const [chartReady, setChartReady] = useState(false);
 
   // Initialize chart once on mount (browser only)
   useEffect(() => {
@@ -498,6 +499,7 @@ function CandleChart({
         wickDownColor: C.bear,
       });
       candleSeriesRef.current = candleSeries;
+      setChartReady(true);
 
       // Auto-resize via ResizeObserver
       const ro = new ResizeObserver(() => {
@@ -520,9 +522,9 @@ function CandleChart({
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch + render candles when symbol/timeframe changes
+  // Fetch + render candles when symbol/timeframe changes (or chart becomes ready)
   useEffect(() => {
-    if (!candleSeriesRef.current) return;
+    if (!chartReady || !candleSeriesRef.current) return;
     setStatus('loading');
 
     fetch(`${apiBase}/v1/ohlcv?symbol=${symbol}&timeframe=${timeframe}&limit=300`)
@@ -541,7 +543,7 @@ function CandleChart({
         setStatus('ok');
       })
       .catch(() => setStatus('error'));
-  }, [symbol, timeframe, apiBase]);
+  }, [symbol, timeframe, apiBase, chartReady]);
 
   // Apply zone bands + signal price lines whenever they change
   useEffect(() => {
