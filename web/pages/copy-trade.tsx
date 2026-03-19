@@ -352,7 +352,7 @@ function ActivityFeed({ events }: { events: ActivityEvent[] }) {
             style={{
               padding: '12px 16px',
               borderBottom: i < events.length - 1 ? `1px solid ${C.border}` : 'none',
-              background: C.card,
+              background: G.card,
             }}
           >
             {/* Header row */}
@@ -454,7 +454,7 @@ function RiskCalculator({ entry, sl, symbol }: { entry: number; sl: number; symb
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -644,7 +644,7 @@ function CopyTradeCard({
       style={{
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
-        background: C.card,
+        background: G.card,
         marginBottom: 32,
         overflow: 'hidden',
       }}
@@ -1829,7 +1829,7 @@ function VolatilityRegimeBands() {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -2096,7 +2096,7 @@ function ConfidenceHistoryChart() {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -2333,7 +2333,7 @@ function EntryZoneVisual() {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -2891,7 +2891,7 @@ function OrderBookDepthChart() {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -3161,7 +3161,7 @@ function PositionSizingWorksheet() {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -3397,7 +3397,7 @@ function MiniCandleChart() {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -3736,7 +3736,7 @@ function StrategyConsensusGauge() {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -3996,7 +3996,7 @@ function CopyTradeChecklist() {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -4240,7 +4240,7 @@ export default function CopyTrade() {
         /* Loading skeleton */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }}>
           {['BTC', 'SOL', 'HYPE'].map((sym) => (
-            <div key={sym} style={{ border: `1px solid ${C.border}`, borderRadius: R.lg, background: C.card, overflow: 'hidden' }}>
+            <div key={sym} style={{ border: `1px solid ${C.border}`, borderRadius: R.lg, background: G.card, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, background: C.surfaceHover, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                   <div style={{ width: 64, height: 28, background: C.border, borderRadius: R.sm, animation: 'pulse 1.4s ease-in-out infinite' }} />
@@ -4289,7 +4289,7 @@ export default function CopyTrade() {
               style={{
                 border: `1px solid ${C.border}`,
                 borderRadius: R.lg,
-                background: C.card,
+                background: G.card,
                 padding: 32,
                 marginBottom: 32,
                 textAlign: 'center',

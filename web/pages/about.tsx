@@ -74,13 +74,13 @@ function FAQ({ q, a }: { q: string; a: React.ReactNode }) {
     <div style={{ border: `1px solid ${open ? C.borderBright : C.border}`, borderRadius: R.md, marginBottom: 8, overflow: 'hidden' }}>
       <button onClick={() => setOpen((v) => !v)} style={{
         width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '14px 18px', background: C.card, border: 'none', cursor: 'pointer', textAlign: 'left', gap: 12,
+        padding: '14px 18px', background: G.card, border: 'none', cursor: 'pointer', textAlign: 'left', gap: 12,
       }}>
         <span style={{ fontSize: F.sm, fontWeight: 600, color: C.text }}>{q}</span>
         <span style={{ color: C.muted, flexShrink: 0, fontSize: F.lg, transition: 'transform 0.15s', transform: open ? 'rotate(45deg)' : 'none' }}>+</span>
       </button>
       {open && (
-        <div style={{ padding: '0 18px 16px', fontSize: F.sm, color: C.textSub, lineHeight: 1.7, background: C.card, borderTop: `1px solid ${C.border}` }}>
+        <div style={{ padding: '0 18px 16px', fontSize: F.sm, color: C.textSub, lineHeight: 1.7, background: G.card, borderTop: `1px solid ${C.border}` }}>
           {a}
         </div>
       )}
@@ -227,7 +227,7 @@ function SafetyStats() {
     }}>
       {SAFETY_STATS.map((stat, i) => (
         <div key={stat.label} style={{
-          background: C.card,
+          background: G.card,
           padding: '22px 18px',
           textAlign: 'center',
           borderRight: i < SAFETY_STATS.length - 1 ? `1px solid ${C.border}` : undefined,
@@ -699,7 +699,7 @@ export default function AboutPage() {
             { value: '6', label: 'risk gates', color: C.bull },
           ].map(({ value, label, color }) => (
             <div key={label} style={{
-              background: C.card,
+              background: G.card,
               border: `1px solid ${color}30`,
               borderRadius: R.lg,
               padding: '20px 16px',
@@ -720,7 +720,7 @@ export default function AboutPage() {
             { href: '#risk',       label: 'Risk Management' },
             { href: '#contact',    label: 'Get Started' },
           ].map(({ href, label }) => (
-            <a key={href} href={href} style={{ padding: '6px 16px', borderRadius: R.pill, border: `1px solid ${C.border}`, fontSize: F.xs, fontWeight: 600, color: C.textSub, textDecoration: 'none', background: C.card }}>
+            <a key={href} href={href} style={{ padding: '6px 16px', borderRadius: R.pill, border: `1px solid ${C.border}`, fontSize: F.xs, fontWeight: 600, color: C.textSub, textDecoration: 'none', background: G.card }}>
               {label}
             </a>
           ))}

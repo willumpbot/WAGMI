@@ -105,7 +105,7 @@ function AgentPipelineFlow({ decision }: { decision: LlmDecision | null }) {
 
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '18px 24px',
@@ -235,7 +235,7 @@ function VetoReasonWordCloud({ decisions }: { decisions: LlmDecision[] }) {
 
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.purple}30`,
       borderRadius: R.lg,
       padding: '16px 18px',
@@ -334,7 +334,7 @@ function DecisionCard({ d, isNew }: { d: LlmDecision; isNew?: boolean }) {
 
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${d.is_veto ? C.purple + '50' : !d.allowed ? C.bear + '40' : C.border}`,
       borderLeft: `3px solid ${aCol}`,
       borderRadius: R.lg,
@@ -669,7 +669,7 @@ const MAX_MS = 2000;
 function AIThinkingSpeed() {
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '18px 20px',
@@ -791,7 +791,7 @@ const MAX_LATENCY_MS = Math.max(...TIMELINE_AGENTS.map((a) => a.latencyMs));
 function AgentSequenceTimeline() {
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '18px 16px 14px',
@@ -975,7 +975,7 @@ function ConfidenceCalibrationChart({ decisions }: { decisions: LlmDecision[] })
 
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '18px 20px',
@@ -1110,7 +1110,7 @@ function DecisionTimeHeatmap() {
 
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '18px 20px',
@@ -1258,7 +1258,7 @@ function MemoryEvolutionChart() {
 
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '14px 16px',
@@ -1404,7 +1404,7 @@ function AgentLatencyBreakdown() {
 
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '14px 16px',
@@ -1667,7 +1667,7 @@ export default function AiDecisionsPage() {
                 onChange={(e) => setSymbolFilter(e.target.value)}
                 style={{
                   padding: '6px 12px', borderRadius: R.sm, border: `1px solid ${C.border}`,
-                  background: C.card, color: C.text, fontSize: F.xs, cursor: 'pointer',
+                  background: G.card, color: C.text, fontSize: F.xs, cursor: 'pointer',
                 }}
               >
                 {symbols.map((s) => <option key={s} value={s}>{s === 'ALL' ? 'All symbols' : s}</option>)}

@@ -1812,7 +1812,7 @@ export default function LlmAudit() {
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} h={64} />)}
         </div>
       ) : !stats ? (
-        <div style={{ padding: '24px 20px', background: C.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted, fontSize: F.sm, marginBottom: 28 }}>
+        <div style={{ padding: '24px 20px', background: G.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted, fontSize: F.sm, marginBottom: 28 }}>
           No LLM decisions recorded yet. Start the bot with <code style={{ background: C.surfaceHover, padding: '1px 4px', borderRadius: R.xs, color: C.brand }}>LLM_MODE=1</code> to see AI decisions here.
         </div>
       ) : (

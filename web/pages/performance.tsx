@@ -2682,7 +2682,7 @@ export default function PerformancePage() {
             {/* KPI skeleton row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 36 }}>
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
+                <div key={i} style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
                   <Skeleton h={11} w="55%" />
                   <div style={{ marginTop: 10 }}><Skeleton h={32} w="75%" /></div>
                   <div style={{ marginTop: 8 }}><Skeleton h={10} w="60%" /></div>

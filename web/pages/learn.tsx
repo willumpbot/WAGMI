@@ -23,7 +23,7 @@ function AccordionCard({
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${open ? C.borderBright : C.border}`,
         borderRadius: R.lg,
         marginBottom: 12,
@@ -2127,7 +2127,7 @@ function GlossaryStats() {
           },
         ].map(stat => (
           <div key={stat.label} style={{
-            background: C.card,
+            background: G.card,
             border: `1px solid ${C.border}`,
             borderRadius: R.md,
             padding: '12px 16px',
@@ -2159,7 +2159,7 @@ function GlossaryStats() {
 
       {/* ── Tag cloud ── */}
       <div style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 18px',
@@ -3959,7 +3959,7 @@ export default function Learn() {
             width: '100%',
             maxWidth: 400,
             padding: '8px 14px',
-            background: C.card,
+            background: G.card,
             border: `1px solid ${C.border}`,
             borderRadius: R.md,
             color: C.text,
@@ -3999,7 +3999,7 @@ export default function Learn() {
         style={{
           marginTop: 40,
           padding: '28px 32px',
-          background: `linear-gradient(135deg, ${C.brand}18, ${C.card})`,
+          background: `linear-gradient(135deg, ${C.brand}18, ${G.card})`,
           border: `1px solid ${C.brand}40`,
           borderRadius: R.xl,
           display: 'flex',

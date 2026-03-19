@@ -40,7 +40,7 @@ function calcSMA(data: number[], period: number): (number | null)[] {
 function EquityCurveChart({ points, width = 700, height = 200 }: { points: EquityCurvePoint[]; width?: number; height?: number }) {
   if (!points || points.length < 2) {
     return (
-      <div style={{ width: '100%', height, background: C.card, borderRadius: R.md, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm }}>
+      <div style={{ width: '100%', height, background: G.card, borderRadius: R.md, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm }}>
         No equity curve data available
       </div>
     );
@@ -1571,7 +1571,7 @@ function PnlTickerBanner({ trades }: { trades: TradeRecord[] }) {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '6px 14px',
-          background: `linear-gradient(90deg, ${C.brand}22, ${C.card})`,
+          background: `linear-gradient(90deg, ${C.brand}22, ${G.card})`,
           border: `1px solid ${C.brand}44`,
           borderBottom: 'none',
           borderRadius: `${R.md}px ${R.md}px 0 0`,
@@ -1636,7 +1636,7 @@ function CumulativePnlMilestones({ trades }: { trades: TradeRecord[] }) {
   return (
     <div
       style={{
-        background: C.card,
+        background: G.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.xl,
         padding: '20px 24px',
@@ -3307,7 +3307,7 @@ export default function Results() {
       ) : r ? (
         <div
           style={{
-            background: `linear-gradient(135deg, ${C.bull}1a, ${C.card})`,
+            background: `linear-gradient(135deg, ${C.bull}1a, ${G.card})`,
             border: `1px solid ${C.bull}40`,
             borderRadius: R.xl,
             padding: '28px 32px',
@@ -3344,7 +3344,7 @@ export default function Results() {
           </div>
         </div>
       ) : (
-        <div style={{ marginBottom: 24, padding: 24, background: C.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted }}>
+        <div style={{ marginBottom: 24, padding: 24, background: G.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted }}>
           No backtest results found. Run a backtest first via the{' '}
           <Link href="/backtest" style={{ color: C.brand }}>Backtest Explorer</Link>.
         </div>

@@ -48,7 +48,7 @@ function RunCard({ run, selected, onClick }: { run: BacktestRunMeta; selected: b
     <div
       onClick={onClick}
       style={{
-        background: selected ? C.surfaceHover : C.card,
+        background: selected ? C.surfaceHover : G.card,
         border: `1px solid ${selected ? C.brand : C.border}`,
         borderRadius: R.md,
         padding: '12px 16px',
@@ -1717,7 +1717,7 @@ function NewBacktestForm({ onJobStarted, apiBase }: { onJobStarted: (jobId: stri
       ) : (
         <div
           style={{
-            background: C.card,
+            background: G.card,
             border: `1px solid ${C.brand}40`,
             borderRadius: R.lg,
             padding: '20px',
@@ -3114,7 +3114,7 @@ export default function Backtest() {
           {loadingRuns ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} h={72} style={{ marginBottom: 8 }} />)
           ) : runs.length === 0 ? (
-            <div style={{ padding: 16, background: C.card, borderRadius: R.md, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted, fontSize: F.sm }}>
+            <div style={{ padding: 16, background: G.card, borderRadius: R.md, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted, fontSize: F.sm }}>
               No runs yet. Run your first backtest above.
             </div>
           ) : (

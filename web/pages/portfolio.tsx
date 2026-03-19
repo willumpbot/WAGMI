@@ -1048,7 +1048,7 @@ function ThesisValidityBars({ positions }: { positions: Strategy[] }) {
               </span>
 
               {/* Validity bar */}
-              <div style={{ flex: 1, height: 8, background: C.card, borderRadius: R.pill, overflow: 'hidden', minWidth: 60 }}>
+              <div style={{ flex: 1, height: 8, background: G.card, borderRadius: R.pill, overflow: 'hidden', minWidth: 60 }}>
                 <div style={{
                   width: `${row.score}%`,
                   height: '100%',

@@ -909,11 +909,11 @@ function PFAQ({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ border: `1px solid ${C.border}`, borderRadius: R.md, marginBottom: 8 }}>
-      <button onClick={() => setOpen((v) => !v)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '13px 16px', background: C.card, border: 'none', cursor: 'pointer', textAlign: 'left', gap: 8 }}>
+      <button onClick={() => setOpen((v) => !v)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '13px 16px', background: G.card, border: 'none', cursor: 'pointer', textAlign: 'left', gap: 8 }}>
         <span style={{ fontSize: F.sm, fontWeight: 600, color: C.text }}>{q}</span>
         <span style={{ color: C.muted, flexShrink: 0, transition: 'transform 0.15s', transform: open ? 'rotate(45deg)' : 'none', display: 'inline-block' }}>+</span>
       </button>
-      {open && <div style={{ padding: '0 16px 14px', fontSize: F.sm, color: C.textSub, lineHeight: 1.7, background: C.card, borderTop: `1px solid ${C.border}` }}>{a}</div>}
+      {open && <div style={{ padding: '0 16px 14px', fontSize: F.sm, color: C.textSub, lineHeight: 1.7, background: G.card, borderTop: `1px solid ${C.border}` }}>{a}</div>}
     </div>
   );
 }

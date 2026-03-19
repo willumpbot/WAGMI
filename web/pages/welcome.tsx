@@ -474,7 +474,7 @@ function LearningPathVisual() {
           <div key={m.n} style={{ flex: 1, textAlign: 'center', position: 'relative', zIndex: 1, minWidth: 72 }}>
             <div style={{
               width: 48, height: 48, borderRadius: '50%',
-              background: C.card,
+              background: G.card,
               border: `2px solid ${m.color}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 8px',
@@ -544,7 +544,7 @@ function CellValue({ value, col }: { value: string; col: 'manual' | 'typical' | 
 function FeatureComparisonTable() {
   return (
     <div style={{
-      background: C.card,
+      background: G.card,
       border: `1px solid ${C.brand}40`,
       borderLeft: `4px solid ${C.brand}`,
       borderRadius: R.xl,

@@ -2457,7 +2457,7 @@ export default function TodayPage() {
 
         {/* ── CTA ── */}
         <div style={{
-          background: `linear-gradient(135deg, ${C.brand}15, ${C.card})`,
+          background: `linear-gradient(135deg, ${C.brand}15, ${G.card})`,
           border: `1px solid ${C.brand}40`, borderRadius: R.xl,
           padding: '22px 28px', marginBottom: 32,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
