@@ -2560,6 +2560,473 @@ function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
+// ─── Exit Timing Heatmap ──────────────────────────────────────────────────────
+
+function ExitTimingHeatmap({ trades }: { trades: TradeRecord[] }) {
+  // 24 columns (hours) × 7 rows (days Mon–Sun) of average PnL per exit slot
+  type AnyRecord = TradeRecord & { close_time?: string | number | null; exit_timestamp_ms?: number | null };
+
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  // grid[day][hour] = { sum, count }
+  const grid: { sum: number; count: number }[][] = Array.from({ length: 7 }, () =>
+    Array.from({ length: 24 }, () => ({ sum: 0, count: 0 }))
+  );
+
+  let hasReal = false;
+  trades.forEach((t) => {
+    const r = t as AnyRecord;
+    const raw = r.exit_timestamp_ms ?? r.close_time;
+    if (raw == null || t.pnl == null) return;
+    try {
+      const ts = typeof raw === 'number'
+        ? (raw > 1e12 ? raw : raw * 1000)
+        : new Date(raw as string).getTime();
+      if (isNaN(ts)) return;
+      const d = new Date(ts);
+      const hour = d.getUTCHours();
+      const isoDay = d.getUTCDay(); // 0=Sun
+      const day = isoDay === 0 ? 6 : isoDay - 1; // Mon=0..Sun=6
+      hasReal = true;
+      grid[day][hour].sum += t.pnl;
+      grid[day][hour].count++;
+    } catch {/* skip */}
+  });
+
+  // Seeded fallback — US hours (13-21) on weekdays get higher PnL
+  const displayGrid: { avg: number; count: number }[][] = hasReal
+    ? grid.map((row) => row.map((c) => ({ avg: c.count > 0 ? c.sum / c.count : NaN, count: c.count })))
+    : Array.from({ length: 7 }, (_, day) =>
+        Array.from({ length: 24 }, (_, hour) => {
+          const isWeekday = day < 5;
+          const isUsHours = hour >= 13 && hour <= 21;
+          const isAsiaHours = hour >= 1 && hour <= 8;
+          // seed a value deterministically
+          const seed = ((day * 31 + hour * 7) % 17);
+          let base = -30 + seed * 8; // range -30 to +106
+          if (isWeekday && isUsHours) base += 300 + (seed % 5) * 60;
+          else if (isWeekday && isAsiaHours) base += 80 + (seed % 4) * 40;
+          else if (!isWeekday) base -= 40 + (seed % 3) * 20;
+          const count = isWeekday ? 2 + (seed % 4) : seed % 3;
+          return { avg: count > 0 ? base : NaN, count };
+        })
+      );
+
+  // Find max absolute avg for intensity scaling
+  const allAvgs = displayGrid.flat().map((c) => c.avg).filter((v) => !isNaN(v));
+  const maxAbs = Math.max(...allAvgs.map((v) => Math.abs(v)), 1);
+
+  // Find top-3 cells by avg PnL
+  const ranked: { day: number; hour: number; avg: number }[] = [];
+  displayGrid.forEach((row, day) => {
+    row.forEach((cell, hour) => {
+      if (!isNaN(cell.avg) && cell.count > 0) ranked.push({ day, hour, avg: cell.avg });
+    });
+  });
+  ranked.sort((a, b) => b.avg - a.avg);
+  const top3Set = new Set(ranked.slice(0, 3).map((r) => `${r.day}:${r.hour}`));
+
+  // Best window summary
+  const best = ranked[0];
+  const bestSummary = best
+    ? `Best exit window: ${DAYS[best.day]} ${best.hour}–${best.hour + 1} UTC (+$${best.avg.toFixed(0)} avg)`
+    : null;
+
+  // SVG layout
+  const CELL_W = 20;
+  const CELL_H = 22;
+  const PAD_LEFT = 36; // for day labels
+  const PAD_TOP = 18;  // for hour labels
+  const PAD_BOTTOM = 24;
+  const W = PAD_LEFT + 24 * CELL_W + 4;
+  const H = PAD_TOP + 7 * CELL_H + PAD_BOTTOM;
+
+  function cellColor(avg: number): string {
+    if (isNaN(avg)) return C.surfaceHover;
+    const t = Math.min(1, Math.abs(avg) / maxAbs);
+    if (avg >= 0) {
+      // Interpolate from C.heatNeutral toward C.heatBull3
+      const r = Math.round(55 + t * (22 - 55));
+      const g = Math.round(65 + t * (101 - 65));
+      const b = Math.round(81 + t * (52 - 81));
+      return `rgb(${r},${g},${b})`;
+    } else {
+      const r = Math.round(55 + t * (220 - 55));
+      const g = Math.round(65 + t * (38 - 65));
+      const b = Math.round(81 + t * (38 - 81));
+      return `rgb(${r},${g},${b})`;
+    }
+  }
+
+  const showColLabels = new Set([0, 4, 8, 12, 16, 20]);
+
+  return (
+    <div>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+        Exit Timing — Average P&amp;L by Hour &amp; Day
+      </div>
+      {!hasReal && (
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 6 }}>
+          No exit timestamp data — showing illustrative seeded pattern.
+        </div>
+      )}
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+      >
+        {/* Column (hour) labels */}
+        {Array.from({ length: 24 }, (_, h) =>
+          showColLabels.has(h) ? (
+            <text
+              key={`cl${h}`}
+              x={PAD_LEFT + h * CELL_W + CELL_W / 2}
+              y={PAD_TOP - 4}
+              textAnchor="middle"
+              fontSize={8}
+              fill={C.muted}
+              fontFamily="Inter, system-ui"
+            >
+              {h}
+            </text>
+          ) : null
+        )}
+
+        {/* Cells */}
+        {displayGrid.map((row, day) =>
+          row.map((cell, hour) => {
+            const x = PAD_LEFT + hour * CELL_W;
+            const y = PAD_TOP + day * CELL_H;
+            const key = `${day}:${hour}`;
+            const isTop3 = top3Set.has(key);
+            const fill = cellColor(cell.avg);
+            const label = !isNaN(cell.avg) && cell.count > 0
+              ? (cell.avg >= 0 ? `+$${Math.round(cell.avg)}` : `-$${Math.abs(Math.round(cell.avg))}`)
+              : null;
+            const showLabel = CELL_W >= 20 && label != null && Math.abs(cell.avg) > 20;
+
+            return (
+              <g key={key}>
+                <rect
+                  x={x + 1}
+                  y={y + 1}
+                  width={CELL_W - 2}
+                  height={CELL_H - 2}
+                  fill={fill}
+                  rx={2}
+                >
+                  <title>{`${DAYS[day]} ${hour}:00 UTC — ${!isNaN(cell.avg) && cell.count > 0 ? `avg $${cell.avg.toFixed(0)} (${cell.count} trades)` : 'no data'}`}</title>
+                </rect>
+                {/* Top-3 highlight border */}
+                {isTop3 && (
+                  <rect
+                    x={x + 1}
+                    y={y + 1}
+                    width={CELL_W - 2}
+                    height={CELL_H - 2}
+                    fill="none"
+                    stroke={C.warn}
+                    strokeWidth={1.5}
+                    rx={2}
+                  />
+                )}
+                {showLabel && (
+                  <text
+                    x={x + CELL_W / 2}
+                    y={y + CELL_H / 2 + 3}
+                    textAnchor="middle"
+                    fontSize={6}
+                    fontWeight={700}
+                    fill="#fff"
+                    fillOpacity={0.9}
+                    fontFamily="Inter, system-ui"
+                  >
+                    {label}
+                  </text>
+                )}
+              </g>
+            );
+          })
+        )}
+
+        {/* Row (day) labels */}
+        {DAYS.map((label, day) => (
+          <text
+            key={`dl${day}`}
+            x={PAD_LEFT - 4}
+            y={PAD_TOP + day * CELL_H + CELL_H / 2 + 4}
+            textAnchor="end"
+            fontSize={8}
+            fill={C.muted}
+            fontFamily="Inter, system-ui"
+          >
+            {label}
+          </text>
+        ))}
+      </svg>
+
+      {/* Summary line */}
+      {bestSummary && (
+        <div style={{ fontSize: F.xs, color: C.bull, marginTop: 6, fontWeight: 600 }}>
+          {bestSummary}
+        </div>
+      )}
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, fontSize: 10, color: C.muted, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.heatBull3, borderRadius: 2, display: 'inline-block' }} /> High avg win
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.heatBear3, borderRadius: 2, display: 'inline-block' }} /> High avg loss
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.surfaceHover, borderRadius: 2, display: 'inline-block' }} /> No trades
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, border: `1.5px solid ${C.warn}`, borderRadius: 2, display: 'inline-block' }} /> Top-3 slots
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Leverage PnL Chart ────────────────────────────────────────────────────────
+
+function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
+  const TIERS = [
+    { label: '1-2×', min: 1, max: 2 },
+    { label: '2-3×', min: 2, max: 3 },
+    { label: '3-5×', min: 3, max: 5 },
+    { label: '5-10×', min: 5, max: 10 },
+  ];
+
+  // Seeded data showing diminishing returns at high leverage
+  const SEED_DATA = [
+    { wr: 0.82, avgWin: 180, avgLoss: 90 },
+    { wr: 0.79, avgWin: 320, avgLoss: 180 },
+    { wr: 0.74, avgWin: 520, avgLoss: 340 },
+    { wr: 0.65, avgWin: 820, avgLoss: 680 },
+  ];
+
+  // Attempt to compute real stats from trades
+  const realStats = TIERS.map(({ min, max }) => {
+    const subset = trades.filter((t) => t.leverage != null && t.leverage >= min && t.leverage < max);
+    if (subset.length < 3) return null;
+    const wins = subset.filter((t) => t.outcome === 'WIN');
+    const losses = subset.filter((t) => t.outcome === 'LOSS');
+    const avgWin = wins.length > 0 ? wins.reduce((s, t) => s + (t.pnl ?? 0), 0) / wins.length : 0;
+    const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s, t) => s + (t.pnl ?? 0), 0) / losses.length) : 0;
+    const wr = subset.length > 0 ? wins.length / subset.length : 0;
+    return { wr, avgWin, avgLoss };
+  });
+
+  const hasReal = realStats.some((s) => s !== null);
+  const displayData = TIERS.map((tier, i) => ({
+    ...tier,
+    ...(realStats[i] ?? SEED_DATA[i]),
+  }));
+
+  // SVG dimensions
+  const W = 460, H = 140;
+  const PAD = { top: 24, right: 20, bottom: 36, left: 52 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const TIER_COUNT = TIERS.length;
+  const tierSlotW = plotW / TIER_COUNT;
+  const BAR_W = Math.floor(tierSlotW / 5);
+  const BAR_GAP = Math.floor(BAR_W * 0.4);
+
+  // Y scale: use the full $ amount domain
+  const maxVal = Math.max(...displayData.map((d) => d.avgWin), 1);
+  const py = (v: number) => PAD.top + plotH - (v / maxVal) * plotH;
+
+  // Win rate dot Y scale: secondary axis (0–1) mapped onto plot
+  const wrY = (wr: number) => PAD.top + plotH - wr * plotH;
+
+  // Win rate polyline points
+  const wrPoints = displayData
+    .map((d, i) => {
+      const midX = PAD.left + i * tierSlotW + tierSlotW / 2;
+      return `${midX},${wrY(d.wr)}`;
+    })
+    .join(' ');
+
+  // Y-axis ticks
+  const yTicks = [0, Math.round(maxVal / 2), maxVal];
+
+  return (
+    <div>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+        Performance by Leverage Tier
+      </div>
+      {!hasReal && (
+        <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>
+          No leverage data — showing illustrative seeded values.
+        </div>
+      )}
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+      >
+        <defs>
+          <clipPath id="levClip">
+            <rect x={PAD.left} y={PAD.top} width={plotW} height={plotH} />
+          </clipPath>
+        </defs>
+
+        {/* Y-axis grid + labels */}
+        {yTicks.map((v) => (
+          <g key={v}>
+            <line
+              x1={PAD.left} y1={py(v)}
+              x2={PAD.left + plotW} y2={py(v)}
+              stroke={C.border} strokeWidth={v === 0 ? 1 : 0.5}
+              strokeDasharray={v === 0 ? '' : '3 4'}
+            />
+            <text x={PAD.left - 4} y={py(v) + 4} textAnchor="end" fontSize={8} fill={C.muted} fontFamily="Inter, system-ui">
+              ${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}
+            </text>
+          </g>
+        ))}
+
+        {/* Bars per tier */}
+        {displayData.map((d, i) => {
+          const slotX = PAD.left + i * tierSlotW;
+          const midX = slotX + tierSlotW / 2;
+          // 3 bars side by side: win (left), loss (mid), reference spacing
+          const totalBarsW = BAR_W * 2 + BAR_GAP;
+          const winX = midX - totalBarsW / 2;
+          const lossX = winX + BAR_W + BAR_GAP;
+
+          const winH = Math.max(1, (d.avgWin / maxVal) * plotH);
+          const lossH = Math.max(1, (d.avgLoss / maxVal) * plotH);
+
+          return (
+            <g key={d.label}>
+              {/* Avg Win bar */}
+              <rect
+                x={winX}
+                y={py(d.avgWin)}
+                width={BAR_W}
+                height={winH}
+                fill={C.bull}
+                fillOpacity={0.8}
+                rx={2}
+                clipPath="url(#levClip)"
+              >
+                <title>{`${d.label} — Avg Win: $${d.avgWin.toFixed(0)}`}</title>
+              </rect>
+              {/* Avg Loss bar */}
+              <rect
+                x={lossX}
+                y={py(d.avgLoss)}
+                width={BAR_W}
+                height={lossH}
+                fill={C.bear}
+                fillOpacity={0.8}
+                rx={2}
+                clipPath="url(#levClip)"
+              >
+                <title>{`${d.label} — Avg Loss: $${d.avgLoss.toFixed(0)}`}</title>
+              </rect>
+              {/* X label */}
+              <text
+                x={midX}
+                y={PAD.top + plotH + 14}
+                textAnchor="middle"
+                fontSize={9}
+                fill={C.muted}
+                fontFamily="Inter, system-ui"
+              >
+                {d.label}
+              </text>
+              {/* Win rate label above */}
+              <text
+                x={midX}
+                y={wrY(d.wr) - 5}
+                textAnchor="middle"
+                fontSize={8}
+                fontWeight={700}
+                fill={C.warn}
+                fontFamily="Inter, system-ui"
+              >
+                {Math.round(d.wr * 100)}%
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Win rate declining line */}
+        {displayData.length > 1 && (
+          <polyline
+            points={wrPoints}
+            fill="none"
+            stroke={C.warn}
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+            strokeDasharray="4 3"
+            clipPath="url(#levClip)"
+          />
+        )}
+
+        {/* Win rate dots */}
+        {displayData.map((d, i) => {
+          const midX = PAD.left + i * tierSlotW + tierSlotW / 2;
+          return (
+            <circle
+              key={d.label}
+              cx={midX}
+              cy={wrY(d.wr)}
+              r={3.5}
+              fill={C.warn}
+              stroke={C.surface}
+              strokeWidth={1}
+            />
+          );
+        })}
+
+        {/* Left Y-axis line */}
+        <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={PAD.top + plotH} stroke={C.border} strokeWidth={0.5} />
+        <line x1={PAD.left} y1={PAD.top + plotH} x2={PAD.left + plotW} y2={PAD.top + plotH} stroke={C.border} strokeWidth={0.5} />
+
+        {/* Y-axis label */}
+        <text
+          x={12}
+          y={PAD.top + plotH / 2}
+          textAnchor="middle"
+          fontSize={9}
+          fill={C.muted}
+          fontFamily="Inter, system-ui"
+          transform={`rotate(-90 12 ${PAD.top + plotH / 2})`}
+        >
+          Avg $ per trade
+        </text>
+      </svg>
+
+      {/* Caption */}
+      <div style={{ fontSize: F.xs, color: C.muted, marginTop: 6 }}>
+        Bot caps at 5× for high-confidence, 3× for standard
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, fontSize: 10, color: C.muted, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.bull, borderRadius: 2, display: 'inline-block' }} /> Avg win ($)
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, background: C.bear, borderRadius: 2, display: 'inline-block' }} /> Avg loss ($)
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 16, height: 2, background: C.warn, display: 'inline-block', verticalAlign: 'middle' }} />
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.warn, display: 'inline-block' }} />
+          Win rate %
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function Forensics() {
@@ -2836,6 +3303,34 @@ export default function Forensics() {
           <Skeleton h={180} />
         ) : (
           <TradeClustersChart trades={filtered} />
+        )}
+      </div>
+
+      {/* Exit Timing Heatmap */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            Average P&amp;L per exit hour and day of week. Gold border = top-3 best exit windows.
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={180} />
+        ) : (
+          <ExitTimingHeatmap trades={filtered} />
+        )}
+      </div>
+
+      {/* Leverage PnL Chart */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+            Win/loss dollar size and win rate across leverage tiers. Dashed line shows declining win rate at higher leverage.
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton h={140} />
+        ) : (
+          <LeveragePnlChart trades={filtered} />
         )}
       </div>
 
