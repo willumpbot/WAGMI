@@ -48,8 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'More',
     items: [
-      { href: '/pricing', label: 'Pricing', desc: 'Plans & access tiers' },
-      { href: '/about',   label: 'About',   desc: 'What is WAGMI?' },
+      { href: '/about', label: 'About', desc: 'What is WAGMI?' },
     ],
   },
 ];
