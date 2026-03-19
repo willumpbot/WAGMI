@@ -935,7 +935,7 @@ export default function PricingPage() {
 
         {/* ── Header ── */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <h1 style={{ margin: '0 0 12px', fontSize: F['3xl'], fontWeight: 900, color: C.text, letterSpacing: -0.5 }}>Pick your edge.</h1>
+          <h1 style={{ margin: '0 0 12px', fontSize: F['3xl'], fontWeight: 900, color: C.text, letterSpacing: -0.5 }}>Pick your <span className="gradient-text">edge.</span></h1>
           <p style={{ margin: '0 0 24px', fontSize: F.base, color: C.muted }}>Start free. Upgrade when you're ready to automate.</p>
 
           {/* Annual toggle */}
