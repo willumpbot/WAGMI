@@ -1762,6 +1762,463 @@ function CumulativePnlMilestones({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
+// ─── Weekly Symbol Heatmap ────────────────────────────────────────────────────
+
+function abbrevPnl(pnl: number): string {
+  const abs = Math.abs(pnl);
+  const sign = pnl >= 0 ? '+' : '-';
+  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}K`;
+  return `${sign}$${Math.round(abs)}`;
+}
+
+function WeeklySymbolHeatmap({ trades }: { trades: TradeRecord[] }) {
+  // Last 5 ISO weeks relative to today
+  const now = new Date();
+  // Get the Monday of the current week
+  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // Mon=0
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - dayOfWeek);
+  thisMonday.setHours(0, 0, 0, 0);
+
+  // Build week buckets: W5 = current week, W4 = last week, ...
+  const weekStarts: Date[] = [];
+  for (let i = 4; i >= 0; i--) {
+    const d = new Date(thisMonday);
+    d.setDate(thisMonday.getDate() - i * 7);
+    weekStarts.push(d);
+  }
+
+  // Seed fallback data when no real trades available
+  const SEED: Record<string, number[]> = {
+    'BTC':  [280, -95, 420, 167, 0],
+    'SOL':  [820, 445, -120, 890, 989],
+    'HYPE': [450, 230, 181, -85, 855],
+    'ETH':  [0, 0, 0, 0, 0],
+  };
+
+  // Build symbol × week matrix from real trades
+  const hasTrades = trades.length > 0;
+  const pnlMatrix: Record<string, number[]> = {};
+
+  if (hasTrades) {
+    const symbols = Array.from(new Set(trades.map((t) => t.symbol.replace('/USDT', '').replace('/USD', ''))));
+    symbols.forEach((sym) => { pnlMatrix[sym] = [0, 0, 0, 0, 0]; });
+
+    trades.forEach((t) => {
+      const ts = (t as any).close_time ?? (t as any).entry_time ?? (t as any).timestamp;
+      if (!ts || t.pnl == null) return;
+      const dt = new Date(ts);
+      if (isNaN(dt.getTime())) return;
+      const sym = t.symbol.replace('/USDT', '').replace('/USD', '');
+      if (!pnlMatrix[sym]) pnlMatrix[sym] = [0, 0, 0, 0, 0];
+      // Find which week bucket this trade falls into
+      for (let wi = 0; wi < weekStarts.length; wi++) {
+        const wStart = weekStarts[wi];
+        const wEnd = wi + 1 < weekStarts.length ? weekStarts[wi + 1] : new Date(8640000000000000);
+        if (dt >= wStart && dt < wEnd) {
+          pnlMatrix[sym][wi] += t.pnl!;
+          break;
+        }
+      }
+    });
+  } else {
+    Object.assign(pnlMatrix, SEED);
+  }
+
+  const symbols = Object.keys(pnlMatrix);
+  const weekLabels = ['W1', 'W2', 'W3', 'W4', 'W5'];
+
+  // Compute totals
+  const weekTotals = weekStarts.map((_, wi) =>
+    symbols.reduce((s, sym) => s + (pnlMatrix[sym]?.[wi] ?? 0), 0)
+  );
+  const symTotals: Record<string, number> = {};
+  symbols.forEach((sym) => { symTotals[sym] = (pnlMatrix[sym] ?? []).reduce((a, b) => a + b, 0); });
+
+  // Color range
+  const allVals = symbols.flatMap((sym) => pnlMatrix[sym] ?? []).filter((v) => v !== 0);
+  const maxWin = Math.max(...allVals.filter((v) => v > 0), 1);
+  const maxLoss = Math.max(...allVals.filter((v) => v < 0).map(Math.abs), 1);
+
+  function cellBg(pnl: number): string {
+    if (pnl === 0) return C.surfaceHover;
+    if (pnl > 0) {
+      const intensity = Math.min(pnl / maxWin, 1);
+      const r = Math.round(22 * (1 - intensity) + 22 * intensity);
+      const g = Math.round(163 * (1 - intensity) + 220 * intensity);
+      const b = Math.round(74 * (1 - intensity) + 38 * intensity);
+      // interpolate from dim green to bright green
+      return `rgba(${r},${g},${b},${0.18 + intensity * 0.65})`;
+    } else {
+      const intensity = Math.min(Math.abs(pnl) / maxLoss, 1);
+      return `rgba(220,38,38,${0.18 + intensity * 0.65})`;
+    }
+  }
+
+  const cellStyle = (pnl: number): React.CSSProperties => ({
+    background: cellBg(pnl),
+    border: `1px solid ${C.border}`,
+    borderRadius: R.xs,
+    padding: '8px 6px',
+    textAlign: 'center' as const,
+    fontSize: F.xs,
+    fontWeight: 700,
+    color: pnl > 0 ? C.bullMid : pnl < 0 ? C.bearMid : C.muted,
+    minWidth: 64,
+    transition: 'background 0.2s',
+  });
+
+  const headerCellStyle: React.CSSProperties = {
+    padding: '6px 8px',
+    fontSize: F.xs,
+    color: C.muted,
+    fontWeight: 600,
+    textAlign: 'center' as const,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.6,
+  };
+
+  const symCellStyle: React.CSSProperties = {
+    padding: '8px 10px 8px 0',
+    fontSize: F.sm,
+    fontWeight: 700,
+    color: C.brand,
+    textAlign: 'right' as const,
+    whiteSpace: 'nowrap' as const,
+  };
+
+  const totalRowStyle: React.CSSProperties = {
+    padding: '8px 6px',
+    textAlign: 'center' as const,
+    fontSize: F.xs,
+    fontWeight: 800,
+    borderTop: `1px solid ${C.borderBright}`,
+    borderRadius: R.xs,
+  };
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
+      <h3 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Weekly Performance by Symbol</h3>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: 3, minWidth: 420 }}>
+          <thead>
+            <tr>
+              <th style={{ ...headerCellStyle, textAlign: 'right' as const, paddingRight: 12 }} />
+              {weekLabels.map((w) => (
+                <th key={w} style={headerCellStyle}>{w}</th>
+              ))}
+              <th style={{ ...headerCellStyle, color: C.textSub }}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {symbols.map((sym) => (
+              <tr key={sym}>
+                <td style={symCellStyle}>{sym}</td>
+                {(pnlMatrix[sym] ?? [0,0,0,0,0]).map((pnl, wi) => (
+                  <td key={wi} style={{ padding: 2 }}>
+                    <div style={cellStyle(pnl)}>{abbrevPnl(pnl)}</div>
+                  </td>
+                ))}
+                <td style={{ padding: 2 }}>
+                  <div style={{
+                    ...cellStyle(symTotals[sym] ?? 0),
+                    background: C.surfaceHover,
+                    color: (symTotals[sym] ?? 0) >= 0 ? C.bull : C.bear,
+                    border: `1px solid ${C.borderBright}`,
+                  }}>
+                    {abbrevPnl(symTotals[sym] ?? 0)}
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {/* Total row */}
+            <tr>
+              <td style={{ ...symCellStyle, color: C.textSub, fontSize: F.xs, textTransform: 'uppercase' as const, letterSpacing: 0.6 }}>Total</td>
+              {weekTotals.map((total, wi) => (
+                <td key={wi} style={{ padding: 2 }}>
+                  <div style={{
+                    ...totalRowStyle,
+                    color: total >= 0 ? C.bull : C.bear,
+                    background: total >= 0 ? `${C.bull}22` : `${C.bear}22`,
+                  }}>
+                    {abbrevPnl(total)}
+                  </div>
+                </td>
+              ))}
+              <td style={{ padding: 2 }}>
+                <div style={{
+                  ...totalRowStyle,
+                  color: weekTotals.reduce((a, b) => a + b, 0) >= 0 ? C.bull : C.bear,
+                  background: weekTotals.reduce((a, b) => a + b, 0) >= 0 ? `${C.bull}33` : `${C.bear}33`,
+                }}>
+                  {abbrevPnl(weekTotals.reduce((a, b) => a + b, 0))}
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {!hasTrades && (
+        <div style={{ marginTop: 10, fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>
+          Showing seeded demo data — connect the bot to see live weekly breakdown.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Daily Equity Waterfall ───────────────────────────────────────────────────
+
+function DailyEquityWaterfall({ trades }: { trades: TradeRecord[] }) {
+  const W = 620, H = 160;
+  const pad = { top: 20, right: 16, bottom: 30, left: 56 };
+  const iW = W - pad.left - pad.right;
+  const iH = H - pad.top - pad.bottom;
+  const BAR_W = 22, BAR_GAP = 4;
+
+  // Seed ~20 days with ~70% positive days, total ~+$5.6K
+  const SEED_DAYS: number[] = [
+    320, -85, 210, 450, -120, 380, 195, -55, 510, 280,
+    -160, 420, 315, -90, 240, 560, 185, -75, 390, 430,
+  ];
+
+  // Build daily PnL from trades
+  let dailyPnls: number[] = [];
+
+  if (trades.length > 0) {
+    const dayMap: Record<string, number> = {};
+    trades.forEach((t) => {
+      const ts = (t as any).close_time ?? (t as any).entry_time ?? (t as any).timestamp;
+      if (!ts || t.pnl == null) return;
+      const dt = new Date(ts);
+      if (isNaN(dt.getTime())) return;
+      const key = dt.toISOString().slice(0, 10);
+      dayMap[key] = (dayMap[key] ?? 0) + t.pnl!;
+    });
+    const sortedKeys = Object.keys(dayMap).sort();
+    dailyPnls = sortedKeys.slice(-20).map((k) => dayMap[k]);
+  }
+
+  const useSeed = dailyPnls.length < 3;
+  if (useSeed) dailyPnls = SEED_DAYS;
+
+  // Limit to 20 days
+  const days = dailyPnls.slice(-20);
+  const n = days.length;
+
+  const maxAbs = Math.max(...days.map(Math.abs), 1);
+  // Y range: add 15% headroom
+  const yMax = maxAbs * 1.15;
+  const yMin = -yMax;
+  const yRange = yMax - yMin;
+
+  // Helpers
+  const toX = (i: number) => pad.left + i * (BAR_W + BAR_GAP);
+  const toY = (v: number) => pad.top + iH - ((v - yMin) / yRange) * iH;
+  const zeroY = toY(0);
+
+  // Cumulative line points (midtop of each bar)
+  let cumPnl = 0;
+  const cumPoints: Array<{ x: number; y: number }> = [];
+  days.forEach((d, i) => {
+    cumPnl += d;
+    const barMidX = toX(i) + BAR_W / 2;
+    cumPoints.push({ x: barMidX, y: toY(cumPnl) });
+  });
+
+  const cumPolyline = cumPoints.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  // Best and worst day indices
+  const bestIdx = days.indexOf(Math.max(...days));
+  const worstIdx = days.indexOf(Math.min(...days));
+
+  // Y axis ticks
+  const yTickCount = 4;
+  const yTicks: number[] = [];
+  for (let i = 0; i <= yTickCount; i++) {
+    yTicks.push(yMin + (yRange / yTickCount) * i);
+  }
+
+  // Ensure the chart area is wide enough; if bars extend past iW, we scale
+  const requiredW = n * (BAR_W + BAR_GAP) - BAR_GAP;
+  // We scale bar positions to fit if needed (usually fine with 20 bars)
+  const scaleX = requiredW > iW ? iW / requiredW : 1;
+  const toXS = (i: number) => pad.left + i * (BAR_W + BAR_GAP) * scaleX;
+  const scaledBarW = BAR_W * scaleX;
+
+  // Recompute cumline with scaling
+  let cumPnl2 = 0;
+  const cumPoints2: Array<{ x: number; y: number }> = [];
+  days.forEach((d, i) => {
+    cumPnl2 += d;
+    const barMidX = toXS(i) + scaledBarW / 2;
+    cumPoints2.push({ x: barMidX, y: toY(cumPnl2) });
+  });
+  const cumPolyline2 = cumPoints2.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  void cumPolyline; // suppress unused warning
+
+  const totalPnl = days.reduce((a, b) => a + b, 0);
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Daily P&amp;L Waterfall</h2>
+          <p style={{ margin: '4px 0 0', fontSize: F.xs, color: C.muted }}>
+            Each bar = daily net P&L · Line = cumulative P&L · Last {n} trading days
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 16, fontSize: F.xs }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ color: C.muted }}>Total P&amp;L</div>
+            <div style={{ fontWeight: 800, color: totalPnl >= 0 ? C.bull : C.bear, fontSize: F.md }}>
+              {abbrevPnl(totalPnl)}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ color: C.muted }}>Best day</div>
+            <div style={{ fontWeight: 700, color: C.bull }}>+${Math.max(...days).toFixed(0)}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ color: C.muted }}>Worst day</div>
+            <div style={{ fontWeight: 700, color: C.bear }}>-${Math.abs(Math.min(...days)).toFixed(0)}</div>
+          </div>
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }} preserveAspectRatio="xMinYMid meet">
+        <defs>
+          <linearGradient id="wfBullGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={C.bull} stopOpacity={0.9} />
+            <stop offset="100%" stopColor={C.bull} stopOpacity={0.45} />
+          </linearGradient>
+          <linearGradient id="wfBearGrad" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stopColor={C.bear} stopOpacity={0.9} />
+            <stop offset="100%" stopColor={C.bear} stopOpacity={0.45} />
+          </linearGradient>
+        </defs>
+
+        {/* Y grid lines */}
+        {yTicks.map((tick, i) => {
+          const y = toY(tick);
+          const isZero = Math.abs(tick) < yRange * 0.01;
+          return (
+            <g key={i}>
+              <line
+                x1={pad.left} y1={y} x2={pad.left + iW} y2={y}
+                stroke={isZero ? C.textSub : C.border}
+                strokeWidth={isZero ? 2 : 0.5}
+                strokeDasharray={isZero ? '' : '3 4'}
+                opacity={isZero ? 0.9 : 0.5}
+              />
+              <text x={pad.left - 5} y={y + 3.5} textAnchor="end" fontSize={9} fill={isZero ? C.textSub : C.muted} fontFamily="Inter, system-ui" fontWeight={isZero ? '700' : '400'}>
+                {tick >= 0 ? '' : '-'}${Math.abs(tick) >= 1000 ? `${(Math.abs(tick) / 1000).toFixed(1)}K` : Math.abs(Math.round(tick))}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Bars */}
+        {days.map((d, i) => {
+          const x = toXS(i);
+          const bw = scaledBarW;
+          const isPos = d >= 0;
+          const barH = Math.max((Math.abs(d) / yRange) * iH, 1);
+          const y = isPos ? zeroY - barH : zeroY;
+          const isBest = i === bestIdx;
+          const isWorst = i === worstIdx;
+          return (
+            <g key={i}>
+              <rect
+                x={x} y={y} width={bw} height={barH}
+                fill={isPos ? 'url(#wfBullGrad)' : 'url(#wfBearGrad)'}
+                rx={2}
+                opacity={isBest || isWorst ? 1 : 0.85}
+                stroke={isBest ? C.bull : isWorst ? C.bear : 'none'}
+                strokeWidth={isBest || isWorst ? 1.5 : 0}
+              >
+                <title>{`Day ${i + 1}: ${d >= 0 ? '+' : ''}$${d.toFixed(0)}`}</title>
+              </rect>
+              {/* Label for best/worst */}
+              {isBest && (
+                <text
+                  x={x + bw / 2} y={y - 4}
+                  textAnchor="middle" fontSize={9} fontWeight={700} fill={C.bull} fontFamily="Inter, system-ui"
+                >
+                  +${d.toFixed(0)}
+                </text>
+              )}
+              {isWorst && (
+                <text
+                  x={x + bw / 2} y={y + barH + 12}
+                  textAnchor="middle" fontSize={9} fontWeight={700} fill={C.bear} fontFamily="Inter, system-ui"
+                >
+                  -${Math.abs(d).toFixed(0)}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Cumulative PnL line */}
+        {cumPoints2.length >= 2 && (
+          <>
+            <polyline
+              fill="none"
+              stroke={totalPnl >= 0 ? C.info : C.warn}
+              strokeWidth={1.5}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              points={cumPolyline2}
+              opacity={0.85}
+            />
+            {/* End dot */}
+            <circle
+              cx={cumPoints2[cumPoints2.length - 1].x}
+              cy={cumPoints2[cumPoints2.length - 1].y}
+              r={3.5}
+              fill={totalPnl >= 0 ? C.info : C.warn}
+              stroke={C.card}
+              strokeWidth={1.5}
+            />
+          </>
+        )}
+
+        {/* X axis day labels (first, mid, last) */}
+        {[0, Math.floor(n / 2), n - 1].map((i) => (
+          <text
+            key={i}
+            x={toXS(i) + scaledBarW / 2}
+            y={H - 6}
+            textAnchor="middle"
+            fontSize={9}
+            fill={C.muted}
+            fontFamily="Inter, system-ui"
+          >
+            {`D${i + 1}`}
+          </text>
+        ))}
+
+        {/* Legend */}
+        <g>
+          <rect x={pad.left + iW - 110} y={pad.top + 2} width={110} height={36} fill={C.card} fillOpacity={0.85} rx={4} stroke={C.border} strokeWidth={0.5} />
+          <rect x={pad.left + iW - 104} y={pad.top + 10} width={10} height={10} fill="url(#wfBullGrad)" rx={1} />
+          <text x={pad.left + iW - 90} y={pad.top + 19} fontSize={9} fill={C.muted} fontFamily="Inter, system-ui">Daily gain</text>
+          <rect x={pad.left + iW - 104} y={pad.top + 24} width={10} height={10} fill="url(#wfBearGrad)" rx={1} />
+          <text x={pad.left + iW - 90} y={pad.top + 33} fontSize={9} fill={C.muted} fontFamily="Inter, system-ui">Daily loss</text>
+          <line x1={pad.left + iW - 104} y1={pad.top + 10} x2={pad.left + iW - 94} y2={pad.top + 10} stroke={totalPnl >= 0 ? C.info : C.warn} strokeWidth={1.5} />
+        </g>
+      </svg>
+
+      {useSeed && (
+        <div style={{ marginTop: 8, fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>
+          Showing seeded demo data — connect the bot to see live daily waterfall.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Results() {
@@ -1951,6 +2408,9 @@ export default function Results() {
         </div>
       </div>
 
+      {/* ── Weekly Symbol Heatmap ──────────────────────── */}
+      <WeeklySymbolHeatmap trades={trades} />
+
       {/* ── By-Symbol + Exit Type ──────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px' }}>
@@ -1985,6 +2445,9 @@ export default function Results() {
 
       {/* ── By-Symbol Accordion ───────────────────────── */}
       <BySymbolAccordion bySymbol={backtest?.by_symbol} />
+
+      {/* ── Daily Equity Waterfall ────────────────────── */}
+      <DailyEquityWaterfall trades={trades} />
 
       {/* ── Trade history table ───────────────────────── */}
       <div style={{ marginBottom: 28 }}>
