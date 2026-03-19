@@ -2172,6 +2172,413 @@ function RegimeConfidenceHistory({
   );
 }
 
+// ─── Market Sentiment Gauge ───────────────────────────────────────────────────
+
+function MarketSentimentGauge({
+  signals,
+  regime,
+}: {
+  signals: Record<string, Signal>;
+  regime: string;
+}) {
+  // Compute sentiment score from signals + regime + funding rate sign
+  const sigList = Object.values(signals);
+  const avgScore = sigList.length > 0
+    ? sigList.reduce((s, sig) => s + sig.score, 0) / sigList.length
+    : 65;
+
+  // Regime adjustment: trend = +10, panic = -20, range = 0, high_volatility = -5
+  const regimeDelta =
+    regime.toLowerCase() === 'trend' ? 10 :
+    regime.toLowerCase() === 'panic' ? -20 :
+    regime.toLowerCase() === 'high_volatility' ? -5 :
+    0;
+
+  // Funding rate sign: positive funding (longs paying) = crowd is long = slightly bearish signal
+  // BTC rate 0.000082 > 0 → negative sentiment contribution
+  const btcFundingPositive = SEEDED_FUNDING.find((f) => f.symbol === 'BTC')?.rate ?? 0;
+  const fundingDelta = btcFundingPositive > 0.0001 ? -5 : btcFundingPositive < -0.0001 ? 5 : 0;
+
+  const score = Math.max(0, Math.min(100, Math.round(avgScore + regimeDelta + fundingDelta)));
+
+  // Zones
+  const zones = [
+    { from: 0,  to: 20,  color: '#7f1d1d', label: 'Extreme Fear' },
+    { from: 20, to: 40,  color: '#dc2626', label: 'Fear' },
+    { from: 40, to: 60,  color: '#64748b', label: 'Neutral' },
+    { from: 60, to: 80,  color: '#22c55e', label: 'Greed' },
+    { from: 80, to: 100, color: '#15803d', label: 'Extreme Greed' },
+  ];
+
+  const currentZone = zones.find((z) => score >= z.from && score < z.to) ?? zones[zones.length - 1];
+  const zoneColor = currentZone.color;
+  const zoneLabel = currentZone.label;
+
+  // SVG geometry: 200×120, semi-circle centered at (100, 100), radius 76
+  const cx = 100, cy = 100, r = 76;
+
+  // score → angle: 0 = 180° (left end), 100 = 0° (right end)
+  const scoreToRad = (s: number) => Math.PI - (s / 100) * Math.PI;
+
+  // Arc path helper
+  const arcPath = (fromScore: number, toScore: number, radius: number) => {
+    const a1 = scoreToRad(fromScore);
+    const a2 = scoreToRad(toScore);
+    const x1 = cx + radius * Math.cos(a1);
+    const y1 = cy - radius * Math.sin(a1);
+    const x2 = cx + radius * Math.cos(a2);
+    const y2 = cy - radius * Math.sin(a2);
+    return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${radius} ${radius} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+  };
+
+  // Needle
+  const needleAngle = scoreToRad(score);
+  const needleLen = 60;
+  const needleTipX = cx + needleLen * Math.cos(needleAngle);
+  const needleTipY = cy - needleLen * Math.sin(needleAngle);
+  const perpAngle = needleAngle + Math.PI / 2;
+  const baseHalf = 4;
+  const b1x = (cx + baseHalf * Math.cos(perpAngle)).toFixed(2);
+  const b1y = (cy - baseHalf * Math.sin(perpAngle)).toFixed(2);
+  const b2x = (cx - baseHalf * Math.cos(perpAngle)).toFixed(2);
+  const b2y = (cy + baseHalf * Math.sin(perpAngle)).toFixed(2);
+
+  return (
+    <div
+      style={{
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '16px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        minWidth: 0,
+      }}
+    >
+      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, alignSelf: 'flex-start' }}>
+        Market Sentiment
+      </div>
+      <svg width={200} height={120} viewBox="0 0 200 120" style={{ display: 'block', overflow: 'visible' }}>
+        {/* Dark background arc */}
+        <path d={arcPath(0, 100, r)} fill="none" stroke={C.surface} strokeWidth={18} strokeLinecap="butt" />
+        {/* Coloured zone arcs */}
+        {zones.map((z) => (
+          <path
+            key={z.from}
+            d={arcPath(z.from, z.to, r)}
+            fill="none"
+            stroke={z.color}
+            strokeWidth={18}
+            strokeLinecap="butt"
+            opacity={0.85}
+          />
+        ))}
+        {/* Tick marks at zone boundaries */}
+        {[20, 40, 60, 80].map((t) => {
+          const ang = scoreToRad(t);
+          const inner = r - 12;
+          const outer = r + 4;
+          return (
+            <line
+              key={t}
+              x1={(cx + inner * Math.cos(ang)).toFixed(2)}
+              y1={(cy - inner * Math.sin(ang)).toFixed(2)}
+              x2={(cx + outer * Math.cos(ang)).toFixed(2)}
+              y2={(cy - outer * Math.sin(ang)).toFixed(2)}
+              stroke={C.border}
+              strokeWidth={1.5}
+            />
+          );
+        })}
+        {/* End labels */}
+        <text x={(cx + (r + 14) * Math.cos(Math.PI)).toFixed(2)} y={(cy - (r + 14) * Math.sin(Math.PI) + 4).toFixed(2)} textAnchor="middle" fontSize={8} fill={C.muted} fontWeight={600}>Fear</text>
+        <text x={(cx + (r + 14) * Math.cos(0)).toFixed(2)} y={(cy - (r + 14) * Math.sin(0) + 4).toFixed(2)} textAnchor="middle" fontSize={8} fill={C.muted} fontWeight={600}>Greed</text>
+        {/* Needle */}
+        <polygon
+          points={`${needleTipX.toFixed(2)},${needleTipY.toFixed(2)} ${b1x},${b1y} ${b2x},${b2y}`}
+          fill={zoneColor}
+          opacity={0.95}
+        />
+        {/* Pivot */}
+        <circle cx={cx} cy={cy} r={5} fill={C.border} />
+        <circle cx={cx} cy={cy} r={2.5} fill={zoneColor} />
+        {/* Score number */}
+        <text x={cx} y={cy - 16} textAnchor="middle" fontSize={24} fontWeight={800} fill={zoneColor}>
+          {score}
+        </text>
+      </svg>
+      {/* Zone label below arc */}
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: zoneColor, marginTop: -4, letterSpacing: 0.3 }}>
+        {zoneLabel}
+      </div>
+    </div>
+  );
+}
+
+// ─── Top Opportunity Card ─────────────────────────────────────────────────────
+
+function TopOpportunityCard({
+  signals,
+  regime,
+  loading,
+}: {
+  signals: Record<string, Signal>;
+  regime: string;
+  loading: boolean;
+}) {
+  // Find highest-scoring signal, or use seeded BTC data
+  const sigList = Object.entries(signals);
+  const best = sigList.length > 0
+    ? sigList.reduce((best, [sym, sig]) => sig.score > best[1].score ? [sym, sig] : best, sigList[0])
+    : null;
+
+  const symbol = best ? best[0] : 'BTC';
+  const sig = best ? best[1] : null;
+
+  // Derived display values
+  const score = sig?.score ?? 82;
+  const scoreColor = score >= 70 ? C.bull : score >= 40 ? C.warn : C.bear;
+
+  // Zone label
+  const zoneLabel = sig
+    ? (() => {
+        const p = sig.price;
+        const { deepAccum, accum, distrib, safeDistrib } = sig.zones;
+        if (p <= deepAccum) return 'Deep Accum';
+        if (p <= accum) return 'Accum';
+        if (p >= safeDistrib) return 'Distrib+';
+        if (p >= distrib) return 'Distrib';
+        return 'Neutral';
+      })()
+    : 'ACCUM';
+
+  // Side: derive from zone/score (buy zone = BUY, otherwise sell pressure)
+  const side: 'BUY' | 'SELL' = sig
+    ? (sig.sma20 >= sig.sma50 ? 'BUY' : 'SELL')
+    : 'BUY';
+
+  const sideColor = side === 'BUY' ? C.bull : C.bear;
+  const sideLabel = side === 'BUY' ? 'LONG' : 'SHORT';
+
+  // Price levels — seeded for BTC fallback
+  const entryPrice = sig?.price ?? 98450;
+  const atr = sig?.atr14 ?? 1200;
+  const slPrice = side === 'BUY' ? entryPrice - atr * 1.5 : entryPrice + atr * 1.5;
+  const tp1Price = side === 'BUY' ? entryPrice + atr * 2 : entryPrice - atr * 2;
+  const tp2Price = side === 'BUY' ? entryPrice + atr * 3.6 : entryPrice - atr * 3.6;
+
+  // R:R
+  const risk = Math.abs(entryPrice - slPrice);
+  const reward = Math.abs(tp2Price - entryPrice);
+  const rr = risk > 0 ? (reward / risk).toFixed(1) : '2.4';
+
+  // Regime display
+  const displayRegime = regime !== 'Unknown' ? regime : 'TREND';
+
+  // Confidence ring SVG (60px)
+  const ringSize = 60;
+  const ringRadius = 24;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringProgress = ringCircumference * (1 - score / 100);
+
+  if (loading) {
+    return (
+      <div style={{
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: R.lg,
+        padding: '20px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
+      }}>
+        <Skeleton h={18} w="40%" />
+        <Skeleton h={32} w="30%" />
+        <Skeleton h={60} />
+        <Skeleton h={40} />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        background: `linear-gradient(135deg, ${C.card} 0%, ${C.surfaceHover} 100%)`,
+        border: `1px solid ${C.brand}55`,
+        borderRadius: R.lg,
+        padding: '20px 24px',
+        boxShadow: `0 0 16px ${C.brand}40`,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+        minWidth: 0,
+      }}
+    >
+      {/* Header badge */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <span style={{
+          fontSize: F.xs,
+          fontWeight: 800,
+          padding: '3px 10px',
+          borderRadius: R.pill,
+          background: C.brand + '22',
+          color: C.brand,
+          border: `1px solid ${C.brand}44`,
+          letterSpacing: 0.5,
+          textTransform: 'uppercase',
+        }}>
+          🎯 Top Opportunity
+        </span>
+        <span style={{
+          fontSize: 10,
+          fontWeight: 700,
+          padding: '2px 8px',
+          borderRadius: R.pill,
+          background: sideColor + '22',
+          color: sideColor,
+          border: `1px solid ${sideColor}44`,
+          letterSpacing: 0.5,
+        }}>
+          {sideLabel}
+        </span>
+      </div>
+
+      {/* Symbol + regime + zone row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        {/* Left: symbol + metadata */}
+        <div>
+          <div style={{ fontSize: F['3xl'], fontWeight: 900, color: C.text, lineHeight: 1 }}>
+            {symbol}
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              padding: '2px 7px',
+              borderRadius: R.pill,
+              background: C.bull + '22',
+              color: C.bull,
+              textTransform: 'uppercase',
+              letterSpacing: 0.4,
+            }}>
+              {zoneLabel}
+            </span>
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              padding: '2px 7px',
+              borderRadius: R.pill,
+              background: C.info + '22',
+              color: C.info,
+              textTransform: 'uppercase',
+              letterSpacing: 0.4,
+            }}>
+              {displayRegime}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: confidence ring */}
+        <div style={{ position: 'relative', width: ringSize, height: ringSize, flexShrink: 0 }}>
+          <svg width={ringSize} height={ringSize} style={{ transform: 'rotate(-90deg)', display: 'block' }}>
+            {/* Track */}
+            <circle
+              cx={ringSize / 2}
+              cy={ringSize / 2}
+              r={ringRadius}
+              fill="none"
+              stroke={C.border}
+              strokeWidth={5}
+            />
+            {/* Progress */}
+            <circle
+              cx={ringSize / 2}
+              cy={ringSize / 2}
+              r={ringRadius}
+              fill="none"
+              stroke={scoreColor}
+              strokeWidth={5}
+              strokeDasharray={ringCircumference}
+              strokeDashoffset={ringProgress}
+              strokeLinecap="round"
+            />
+          </svg>
+          {/* Score label centered */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{score}%</span>
+            <span style={{ fontSize: 8, color: C.muted, lineHeight: 1, marginTop: 2 }}>conf</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Price grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '8px 16px',
+        background: C.surface,
+        borderRadius: R.md,
+        padding: '10px 14px',
+        border: `1px solid ${C.border}`,
+      }}>
+        {[
+          { label: 'Entry', value: fmtUsd(entryPrice, entryPrice > 100 ? 2 : 4), color: C.textSub },
+          { label: 'Stop Loss', value: fmtUsd(slPrice, slPrice > 100 ? 2 : 4), color: C.bear },
+          { label: 'TP1', value: fmtUsd(tp1Price, tp1Price > 100 ? 2 : 4), color: C.bull },
+          { label: 'TP2', value: fmtUsd(tp2Price, tp2Price > 100 ? 2 : 4), color: '#22c55e' },
+        ].map(({ label, value, color }) => (
+          <div key={label}>
+            <div style={{ fontSize: 10, color: C.muted, fontWeight: 600, marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.4 }}>{label}</div>
+            <div style={{ fontSize: F.sm, fontWeight: 700, color }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* R:R + CTA */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 600 }}>R:R</span>
+          <span style={{
+            fontSize: F.md,
+            fontWeight: 800,
+            color: C.bull,
+            background: C.bull + '18',
+            padding: '2px 8px',
+            borderRadius: R.sm,
+          }}>
+            1:{rr}
+          </span>
+        </div>
+        <a
+          href="/copy-trade"
+          style={{
+            fontSize: F.xs,
+            fontWeight: 700,
+            color: C.brand,
+            textDecoration: 'none',
+            padding: '5px 12px',
+            borderRadius: R.pill,
+            border: `1px solid ${C.brand}44`,
+            background: C.brand + '10',
+            whiteSpace: 'nowrap',
+            transition: 'background 0.15s',
+          }}
+        >
+          Follow this trade →
+        </a>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -2379,6 +2786,11 @@ export default function Home() {
       )}
       <style>{`@keyframes ripplePulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.8); opacity: 0; } }`}</style>
 
+      {/* ── Top Opportunity Card ──────────────────────── */}
+      <div style={{ marginBottom: 24 }}>
+        <TopOpportunityCard signals={signals} regime={regime} loading={loading} />
+      </div>
+
       {/* ── Market Breadth Bar ────────────────────────── */}
       <MarketBreadthBar signals={signals} />
 
@@ -2468,14 +2880,16 @@ export default function Home() {
       {/* ── Activity Calendar Heatmap ─────────────────── */}
       <ActivityCalendarHeatmap />
 
-      {/* ── Signal Health Gauge + Key Stats ──────────── */}
+      {/* ── Signal Health Gauge + Market Sentiment + Key Stats ──────── */}
       <div style={{ marginBottom: 28, marginTop: 24 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 20, alignItems: 'start' }}>
-          {/* Left: gauge */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr', gap: 20, alignItems: 'start' }}>
+          {/* Left: bot health gauge */}
           <SignalHealthGauge
             signals={signals}
             backtestWinRate={btRes?.win_rate}
           />
+          {/* Center: market sentiment gauge */}
+          <MarketSentimentGauge signals={signals} regime={regime} />
           {/* Right: key stats */}
           <div style={{
             background: C.card,

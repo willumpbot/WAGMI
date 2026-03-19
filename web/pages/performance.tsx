@@ -2099,6 +2099,338 @@ function StreakAnalysisChart({ trades }: { trades: TradeRecord[] }) {
   );
 }
 
+// ─── Alpha Decay Chart ────────────────────────────────────────────────────────
+
+function AlphaDecayChart() {
+  // Seeded rolling 5-trade window avg PnL data
+  // Start at ~+$320/trade, slight decline to ~+$280, then stabilize at ~+$310
+  const seedData: number[] = [
+    320, 315, 308, 298, 285, 281, 279, 283, 290, 298, 305, 308, 310, 311, 310,
+  ];
+
+  const W = 480;
+  const H = 120;
+  const pad = { t: 24, r: 20, b: 30, l: 56 };
+  const iW = W - pad.l - pad.r;
+  const iH = H - pad.t - pad.b;
+
+  const n = seedData.length;
+  const minVal = Math.min(0, ...seedData) - 20;
+  const maxVal = Math.max(...seedData) + 30;
+  const range = maxVal - minVal || 1;
+
+  const x = (i: number) => pad.l + (i / Math.max(n - 1, 1)) * iW;
+  const y = (v: number) => pad.t + iH - ((v - minVal) / range) * iH;
+  const y0 = y(0);
+
+  // Determine if trend is declining or stable/positive
+  const firstHalf = seedData.slice(0, Math.ceil(n / 2));
+  const secondHalf = seedData.slice(Math.floor(n / 2));
+  const avgFirst = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+  const avgSecond = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+  const isDeclining = avgSecond < avgFirst - 10;
+  const lineColor = isDeclining ? C.bear : C.bull;
+
+  // Linear regression for trend line
+  const sumX = seedData.reduce((s, _, i) => s + i, 0);
+  const sumY = seedData.reduce((s, v) => s + v, 0);
+  const sumXY = seedData.reduce((s, v, i) => s + i * v, 0);
+  const sumX2 = seedData.reduce((s, _, i) => s + i * i, 0);
+  const denom = n * sumX2 - sumX * sumX;
+  const slope = denom !== 0 ? (n * sumXY - sumX * sumY) / denom : 0;
+  const intercept = (sumY - slope * sumX) / n;
+  const trendStart = intercept;
+  const trendEnd = slope * (n - 1) + intercept;
+
+  const avgAll = sumY / n;
+  const lastVal = seedData[n - 1];
+  const trendLabel = isDeclining
+    ? `declining — avg $${avgAll.toFixed(0)}/trade`
+    : `+$${avgAll.toFixed(0)}/trade avg, stable over last ${n} windows`;
+
+  const linePts = seedData.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>
+        Alpha Persistence — Is the Edge Holding?
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
+        Rolling 5-trade window avg PnL per trade. Flat or rising = edge holding. Declining = strategy may need reoptimization.
+      </div>
+
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((t) => {
+          const val = minVal + t * range;
+          const yy = y(val);
+          if (yy < pad.t || yy > pad.t + iH) return null;
+          return (
+            <g key={t}>
+              <line x1={pad.l} y1={yy} x2={pad.l + iW} y2={yy} stroke={C.border} strokeWidth={0.5} />
+              <text x={pad.l - 4} y={yy + 4} fill={C.muted} fontSize={8} textAnchor="end">${val.toFixed(0)}</text>
+            </g>
+          );
+        })}
+
+        {/* $0 break-even reference line */}
+        {y0 >= pad.t && y0 <= pad.t + iH && (
+          <g>
+            <line x1={pad.l} y1={y0} x2={pad.l + iW} y2={y0} stroke={C.border} strokeWidth={1.5} strokeDasharray="5,3" />
+            <text x={pad.l - 4} y={y0 + 4} fill={C.muted} fontSize={9} textAnchor="end" fontWeight="600">$0</text>
+          </g>
+        )}
+
+        {/* Area fill under line */}
+        <polyline
+          points={[`${x(0)},${y0}`, linePts, `${x(n - 1)},${y0}`].join(' ')}
+          fill={lineColor + '18'}
+          stroke="none"
+        />
+
+        {/* Linear regression trend line */}
+        <line
+          x1={x(0)} y1={y(trendStart)}
+          x2={x(n - 1)} y2={y(trendEnd)}
+          stroke={C.brand} strokeWidth={1} opacity={0.65} strokeDasharray="4,3"
+        />
+
+        {/* Alpha line */}
+        <polyline
+          points={linePts}
+          fill="none"
+          stroke={lineColor}
+          strokeWidth={2.5}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+
+        {/* Data point dots */}
+        {seedData.map((v, i) => (
+          <circle key={i} cx={x(i)} cy={y(v)} r={3} fill={lineColor} stroke={C.card} strokeWidth={1} opacity={0.8} />
+        ))}
+
+        {/* Last value highlight */}
+        <circle cx={x(n - 1)} cy={y(lastVal)} r={5} fill={lineColor} stroke={C.card} strokeWidth={1.5} />
+        <text x={Math.min(x(n - 1) + 7, pad.l + iW - 40)} y={y(lastVal) - 7} fill={lineColor} fontSize={8} fontWeight="700">
+          ${lastVal.toFixed(0)}/trade
+        </text>
+
+        {/* Trend status label top-left */}
+        <text x={pad.l} y={pad.t - 8} fill={lineColor} fontSize={8.5} fontWeight="700">
+          {isDeclining ? 'Edge degrading' : 'Edge holding'}
+        </text>
+
+        {/* X-axis labels */}
+        {seedData.map((_, i) => (
+          (i === 0 || i === n - 1 || i % 3 === 0) && (
+            <text key={`xl-${i}`} x={x(i)} y={H - 4} fill={C.muted} fontSize={7} textAnchor="middle">
+              W{i + 1}
+            </text>
+          )
+        ))}
+
+        {/* X-axis label */}
+        <text x={pad.l + iW / 2} y={H - 4} fill={C.muted} fontSize={8} textAnchor="middle" opacity={0.6}>
+          Rolling 5-trade windows →
+        </text>
+
+        {/* Legend */}
+        <line x1={pad.l} y1={H - 10} x2={pad.l + 14} y2={H - 10} stroke={C.brand} strokeWidth={1} strokeDasharray="4,3" opacity={0.65} />
+        <text x={pad.l + 18} y={H - 6} fill={C.muted} fontSize={7}>Trend line</text>
+        <line x1={pad.l + 80} y1={H - 10} x2={pad.l + 94} y2={H - 10} stroke={lineColor} strokeWidth={2} />
+        <text x={pad.l + 98} y={H - 6} fill={C.muted} fontSize={7}>{isDeclining ? 'Declining alpha' : 'Positive alpha'}</text>
+      </svg>
+
+      <div style={{ fontSize: F.xs, color: C.muted, marginTop: 6 }}>
+        Trend: <span style={{ color: lineColor, fontWeight: 700 }}>{trendLabel}</span>
+        {' '}·{' '}
+        <span style={{ color: C.muted }}>Declining alpha = strategy may need reoptimization</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Performance Attribution Treemap ─────────────────────────────────────────
+
+function PerformanceAttributionTreemap() {
+  type Cell = { symbol: string; strategy: string; pnl: number };
+
+  const data: Cell[] = [
+    { symbol: 'BTC', strategy: 'RGM', pnl:  867 },
+    { symbol: 'BTC', strategy: 'MCZ', pnl:  420 },
+    { symbol: 'BTC', strategy: 'CSC', pnl:  210 },
+    { symbol: 'SOL', strategy: 'RGM', pnl: 1240 },
+    { symbol: 'SOL', strategy: 'MCZ', pnl:  890 },
+    { symbol: 'SOL', strategy: 'CSC', pnl:  580 },
+    { symbol: 'SOL', strategy: 'MTF', pnl:  414 },
+    { symbol: 'HYPE', strategy: 'RGM', pnl:  580 },
+    { symbol: 'HYPE', strategy: 'MCZ', pnl:  -80 },
+  ];
+
+  const symbols = ['BTC', 'SOL', 'HYPE'];
+
+  // Group by symbol
+  const bySymbol = symbols.map((sym) => {
+    const cells = data.filter((d) => d.symbol === sym);
+    const totalPnl = cells.reduce((s, c) => s + c.pnl, 0);
+    const absTotal = cells.reduce((s, c) => s + Math.abs(c.pnl), 0);
+    return { sym, cells, totalPnl, absTotal };
+  });
+
+  const grandAbsTotal = bySymbol.reduce((s, g) => s + g.absTotal, 0);
+
+  const W = 560;
+  const H = 200;
+  const pad = { t: 36, r: 8, b: 28, l: 8 };
+  const iW = W - pad.l - pad.r;
+  const iH = H - pad.t - pad.b;
+
+  // Symbol columns: width proportional to abs total PnL of each symbol
+  let curX = pad.l;
+  const symBoxes = bySymbol.map((g) => {
+    const boxW = (g.absTotal / grandAbsTotal) * iW;
+    const box = { x: curX, y: pad.t, w: boxW, h: iH, ...g };
+    curX += boxW + 2;
+    return box;
+  });
+
+  // Cell color based on PnL value
+  function cellColor(pnl: number): string {
+    if (pnl >= 800)  return 'rgba(22,163,74,0.85)';
+    if (pnl >= 400)  return 'rgba(22,163,74,0.65)';
+    if (pnl >= 100)  return 'rgba(22,163,74,0.42)';
+    if (pnl >= 0)    return 'rgba(22,163,74,0.22)';
+    if (pnl >= -100) return 'rgba(220,38,38,0.42)';
+    return 'rgba(220,38,38,0.70)';
+  }
+
+  function cellTextColor(pnl: number): string {
+    if (Math.abs(pnl) >= 300) return '#f1f5f9';
+    if (pnl >= 0) return '#dcfce7';
+    return '#fee2e2';
+  }
+
+  const totalPnl = data.reduce((s, d) => s + d.pnl, 0);
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+      <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>
+        Performance Attribution Treemap
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
+        Rectangle size ∝ |PnL|. Color intensity = positive (green) or negative (red) contribution. Total: <span style={{ color: C.bull, fontWeight: 700 }}>${totalPnl.toLocaleString()}</span>
+      </div>
+
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', overflow: 'visible' }}>
+        {/* Title */}
+        <text x={W / 2} y={14} fill={C.muted} fontSize={9} textAnchor="middle" fontWeight="600">
+          Symbol → Strategy breakdown
+        </text>
+
+        {symBoxes.map((sg) => {
+          // Sub-divide the symbol box vertically by strategy
+          const absSum = sg.cells.reduce((s, c) => s + Math.abs(c.pnl), 1);
+          let curCellY = sg.y + 1;
+
+          return (
+            <g key={sg.sym}>
+              {/* Symbol outer box */}
+              <rect
+                x={sg.x} y={sg.y}
+                width={sg.w - 2} height={sg.h}
+                fill="rgba(255,255,255,0.03)"
+                stroke={C.border}
+                strokeWidth={1.5}
+                rx={4}
+              />
+
+              {/* Symbol label */}
+              <text
+                x={sg.x + (sg.w - 2) / 2}
+                y={sg.y - 6}
+                fill={sg.totalPnl >= 0 ? C.bull : C.bear}
+                fontSize={9}
+                fontWeight="700"
+                textAnchor="middle"
+              >
+                {sg.sym} {sg.totalPnl >= 0 ? '+' : ''}{sg.totalPnl >= 0 ? `$${sg.totalPnl.toLocaleString()}` : `-$${Math.abs(sg.totalPnl).toLocaleString()}`}
+              </text>
+
+              {/* Strategy cells inside symbol box */}
+              {sg.cells.map((cell) => {
+                const cellH = (Math.abs(cell.pnl) / absSum) * (sg.h - 2);
+                const cellY = curCellY;
+                curCellY += cellH + 1;
+                const cx2 = sg.x + 1;
+                const cw = sg.w - 4;
+                const ch = Math.max(cellH - 1, 2);
+
+                return (
+                  <g key={`${cell.symbol}-${cell.strategy}`}>
+                    <rect
+                      x={cx2} y={cellY}
+                      width={cw} height={ch}
+                      fill={cellColor(cell.pnl)}
+                      rx={2}
+                    />
+                    {ch >= 18 && cw >= 32 && (
+                      <>
+                        <text
+                          x={cx2 + cw / 2}
+                          y={cellY + Math.min(ch / 2 - 3, 11)}
+                          fill={cellTextColor(cell.pnl)}
+                          fontSize={Math.min(8.5, cw / 6)}
+                          textAnchor="middle"
+                          fontWeight="700"
+                        >
+                          {cell.strategy}
+                        </text>
+                        <text
+                          x={cx2 + cw / 2}
+                          y={cellY + Math.min(ch / 2 + 8, ch - 4)}
+                          fill={cellTextColor(cell.pnl)}
+                          fontSize={Math.min(7.5, cw / 7)}
+                          textAnchor="middle"
+                        >
+                          {cell.pnl >= 0 ? '+' : ''}{cell.pnl >= 0 ? `$${cell.pnl}` : `-$${Math.abs(cell.pnl)}`}
+                        </text>
+                      </>
+                    )}
+                    {ch >= 10 && ch < 18 && cw >= 28 && (
+                      <text
+                        x={cx2 + cw / 2}
+                        y={cellY + ch / 2 + 3}
+                        fill={cellTextColor(cell.pnl)}
+                        fontSize={7}
+                        textAnchor="middle"
+                      >
+                        {cell.strategy} {cell.pnl >= 0 ? '+' : ''}${cell.pnl}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })}
+
+        {/* X-axis label */}
+        <text x={W / 2} y={H - 4} fill={C.muted} fontSize={8} textAnchor="middle">
+          BTC · SOL · HYPE — width proportional to |PnL| contribution
+        </text>
+
+        {/* Legend */}
+        <rect x={pad.l} y={H - 12} width={10} height={8} fill="rgba(22,163,74,0.65)" rx={1} />
+        <text x={pad.l + 14} y={H - 5} fill={C.muted} fontSize={7}>Positive PnL</text>
+        <rect x={pad.l + 86} y={H - 12} width={10} height={8} fill="rgba(220,38,38,0.60)" rx={1} />
+        <text x={pad.l + 100} y={H - 5} fill={C.muted} fontSize={7}>Negative PnL</text>
+        <text x={pad.l + 170} y={H - 5} fill={C.muted} fontSize={7}>Darker = larger absolute contribution</text>
+      </svg>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PerformancePage() {
@@ -2372,6 +2704,11 @@ export default function PerformancePage() {
               </Section>
             )}
 
+            {/* ── Alpha Decay Chart ── */}
+            <Section title="Alpha Decay Analysis">
+              <AlphaDecayChart />
+            </Section>
+
             {/* ── Rolling Win Rate ── */}
             <Section title="Rolling Win Rate (10-trade window)">
               <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto' }}>
@@ -2397,6 +2734,11 @@ export default function PerformancePage() {
                 </div>
               </Section>
             )}
+
+            {/* ── Performance Attribution Treemap ── */}
+            <Section title="Performance Attribution">
+              <PerformanceAttributionTreemap />
+            </Section>
 
             {/* ── Methodology Note ── */}
             <div style={{
