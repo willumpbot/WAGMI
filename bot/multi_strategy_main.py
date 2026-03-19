@@ -374,7 +374,7 @@ class MultiStrategyBot:
         if os.getenv("STRATEGY_REGIME_TREND_ENABLED", "true").lower() == "true":
             self.strategies.append(RegimeTrendStrategy(sym_configs, config.htf_hours))
         if os.getenv("STRATEGY_CONFIDENCE_SCORER_ENABLED", "true").lower() == "true":
-            self.strategies.append(ConfidenceScorerStrategy(sym_configs, data_dir="ml_data"))
+            self.strategies.append(ConfidenceScorerStrategy(sym_configs, data_dir="ml_data", backtest_mode=True))
         if os.getenv("STRATEGY_MULTI_TIER_QUALITY_ENABLED", "true").lower() == "true":
             self.strategies.append(MultiTierQualityStrategy(sym_configs))
         if os.getenv("STRATEGY_MONTE_CARLO_ENABLED", "false").lower() == "true":
@@ -2619,16 +2619,9 @@ class MultiStrategyBot:
                         if _sfit == "avoid":
                             _disabled.add(_sname)
 
-                    # Dynamic: also disable strategies with <35% WR over 10+ trades
-                    try:
-                        from llm.deep_memory import get_deep_memory
-                        _dm = get_deep_memory()
-                        _strat_wr = _dm.trade_dna.get_win_rate_by("strategy")
-                        for _sname, _swdata in _strat_wr.items():
-                            if _swdata.get("total", 0) >= 10 and _swdata.get("win_rate", 1.0) < 0.35:
-                                _disabled.add(_sname)
-                    except Exception:
-                        pass
+                    # Dynamic WR-based disabling skipped to match backtest behavior.
+                    # Will re-enable once sufficient paper trading data is collected.
+                    # Original: disable strategies with <35% WR over 10+ trades via deep_memory.
 
                     if _disabled:
                         self.ensemble.set_disabled_strategies(_disabled)
