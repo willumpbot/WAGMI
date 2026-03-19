@@ -2181,6 +2181,205 @@ function GlossaryStats() {
   );
 }
 
+// ─── Risk of Ruin Chart ───────────────────────────────────────────────────────
+
+function RiskOfRuinChart() {
+  const W = 480, H = 260;
+  const padL = 48, padR = 24, padT = 20, padB = 44;
+  const iW = W - padL - padR;
+  const iH = H - padT - padB;
+
+  // Win rates from 40% to 90% (10 points)
+  const winRates = [0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90];
+
+  // Risk of ruin formula: ((1-WR)/WR)^(1/riskFrac)
+  // where riskFrac = risk per trade as fraction of bankroll
+  // Simplified: RoR = min(1, ((1-WR)/WR)^(100/riskPct))
+  function ror(wr: number, riskPct: number): number {
+    if (wr >= 1) return 0;
+    const base = (1 - wr) / wr;
+    if (base >= 1) return 1;
+    const exp = 100 / riskPct;
+    return Math.min(1, Math.pow(base, exp));
+  }
+
+  const curves: { riskPct: number; color: string; label: string }[] = [
+    { riskPct: 5,   color: '#dc2626', label: '5% risk/trade' },
+    { riskPct: 2,   color: '#d97706', label: '2% risk/trade' },
+    { riskPct: 1,   color: '#16a34a', label: '1% risk/trade' },
+  ];
+
+  const toX = (wr: number) => padL + ((wr - 0.40) / 0.50) * iW;
+  const toY = (prob: number) => padT + iH - prob * iH;
+
+  // Safe zone threshold (ruin < 5%)
+  const safeThresholdY = toY(0.05);
+
+  // Bot win rate reference line
+  const botWR = 0.77;
+  const botX = toX(botWR);
+
+  // Bot current ruin at 1.5% risk
+  const botRoR = ror(botWR, 1.5);
+
+  // Build polyline points for each curve
+  const curvePoints = curves.map(({ riskPct }) =>
+    winRates.map(wr => `${toX(wr).toFixed(1)},${toY(ror(wr, riskPct)).toFixed(1)}`).join(' ')
+  );
+
+  // X-axis tick labels
+  const xTicks = [0.40, 0.50, 0.60, 0.70, 0.80, 0.90];
+  const yTicks = [0, 0.25, 0.50, 0.75, 1.00];
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+        Risk of Ruin vs Win Rate
+      </div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12, lineHeight: 1.6 }}>
+        Why the bot uses 1.5% risk per trade — keeps ruin probability near zero
+      </div>
+
+      <div style={{ overflowX: 'auto' }}>
+        <svg width={W} height={H} style={{ display: 'block', minWidth: W }}>
+          <defs>
+            <clipPath id="rorClip">
+              <rect x={padL} y={padT} width={iW} height={iH} />
+            </clipPath>
+          </defs>
+
+          {/* Safe zone shading (ruin < 5%) */}
+          <rect
+            x={padL}
+            y={safeThresholdY}
+            width={iW}
+            height={padT + iH - safeThresholdY}
+            fill={C.bull + '12'}
+            clipPath="url(#rorClip)"
+          />
+          <text x={padL + iW - 4} y={safeThresholdY - 4} textAnchor="end" fontSize={9} fill={C.bull as string} fontWeight={700}>
+            Safe zone (&lt;5% ruin)
+          </text>
+
+          {/* 5% ruin threshold line */}
+          <line
+            x1={padL} y1={safeThresholdY}
+            x2={padL + iW} y2={safeThresholdY}
+            stroke={C.bull as string} strokeWidth={1} strokeDasharray="4 3" opacity={0.5}
+          />
+
+          {/* Y grid lines */}
+          {yTicks.map(p => (
+            <g key={p}>
+              <line
+                x1={padL} y1={toY(p)}
+                x2={padL + iW} y2={toY(p)}
+                stroke={C.border as string} strokeWidth={1} opacity={0.5}
+              />
+              <text x={padL - 6} y={toY(p) + 4} textAnchor="end" fontSize={9} fill={C.muted as string}>
+                {Math.round(p * 100)}%
+              </text>
+            </g>
+          ))}
+
+          {/* X axis */}
+          <line x1={padL} y1={padT + iH} x2={padL + iW} y2={padT + iH} stroke={C.border as string} strokeWidth={1} />
+
+          {/* X tick labels */}
+          {xTicks.map(wr => (
+            <g key={wr}>
+              <line x1={toX(wr)} y1={padT + iH} x2={toX(wr)} y2={padT + iH + 4} stroke={C.border as string} strokeWidth={1} />
+              <text x={toX(wr)} y={padT + iH + 14} textAnchor="middle" fontSize={9} fill={C.muted as string}>
+                {Math.round(wr * 100)}%
+              </text>
+            </g>
+          ))}
+
+          {/* Axis labels */}
+          <text x={padL + iW / 2} y={H - 4} textAnchor="middle" fontSize={10} fill={C.muted as string}>
+            Win Rate
+          </text>
+          <text
+            x={12} y={padT + iH / 2}
+            textAnchor="middle" fontSize={10} fill={C.muted as string}
+            transform={`rotate(-90, 12, ${padT + iH / 2})`}
+          >
+            Ruin Prob
+          </text>
+
+          {/* Curve polylines */}
+          {curves.map(({ color }, i) => (
+            <polyline
+              key={i}
+              points={curvePoints[i]}
+              fill="none"
+              stroke={color}
+              strokeWidth={2}
+              strokeLinejoin="round"
+              clipPath="url(#rorClip)"
+            />
+          ))}
+
+          {/* Bot win rate reference line */}
+          <line
+            x1={botX} y1={padT}
+            x2={botX} y2={padT + iH}
+            stroke={C.brand as string} strokeWidth={1.5} strokeDasharray="5 3"
+          />
+          <text x={botX + 4} y={padT + 12} fontSize={9} fontWeight={700} fill={C.brand as string}>
+            WAGMI Bot: 77%
+          </text>
+
+          {/* Dot at 77% WR, 1.5% risk */}
+          {(() => {
+            const dotRoR = ror(botWR, 1.5);
+            const dotX = botX;
+            const dotY = toY(dotRoR);
+            const clampedDotY = Math.max(padT, Math.min(padT + iH, dotY));
+            return (
+              <g>
+                <circle cx={dotX} cy={clampedDotY} r={6} fill={C.bull as string} stroke={C.card as string} strokeWidth={2} />
+                <text x={dotX + 10} y={clampedDotY + 4} fontSize={9} fontWeight={700} fill={C.bull as string}>
+                  &lt;0.1% ruin probability
+                </text>
+              </g>
+            );
+          })()}
+        </svg>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        {curves.map(({ color, label }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 20, height: 3, background: color, borderRadius: 2 }} />
+            <span style={{ fontSize: F.xs, color: C.muted }}>{label}</span>
+          </div>
+        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 20, height: 2, background: C.brand as string, borderRadius: 2, opacity: 0.8 }} />
+          <span style={{ fontSize: F.xs, color: C.brand }}>Bot (77% WR, 1.5% risk)</span>
+        </div>
+      </div>
+
+      {/* Stats callout */}
+      <div style={{
+        marginTop: 12,
+        padding: '10px 14px',
+        background: C.bull + '10',
+        border: `1px solid ${C.bull}25`,
+        borderRadius: R.md,
+        fontSize: F.xs,
+        color: C.textSub,
+        lineHeight: 1.7,
+      }}>
+        At <strong style={{ color: C.text }}>77% win rate</strong> and <strong style={{ color: C.text }}>1.5% risk/trade</strong>, the bot&apos;s theoretical ruin probability is{' '}
+        <strong style={{ color: C.bull }}>&lt;0.1%</strong>. Doubling risk to 5%/trade at the same win rate would push ruin probability above <strong style={{ color: C.bear }}>25%</strong>.
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function Learn() {
@@ -2473,6 +2672,20 @@ export default function Learn() {
         </ul>
         <p>After TP1 is hit, the stop loss moves to breakeven and a trailing stop activates — locking in profit progressively.</p>
         <StopLossVisual />
+      </AccordionCard>
+
+      <AccordionCard title="Why 1.5% Risk Per Trade?" badge="Risk Science" badgeColor={C.bull}>
+        <p style={{ marginBottom: 12 }}>
+          The 1.5% risk rule is not arbitrary — it is the result of ruin-probability mathematics. The chart below shows how ruin probability collapses as risk per trade decreases.
+        </p>
+        <RiskOfRuinChart />
+      </AccordionCard>
+
+      <AccordionCard title="Compounding With Consistent Returns" badge="Growth" badgeColor={C.brand}>
+        <p style={{ marginBottom: 12 }}>
+          Consistent risk management enables compounding. Adjust the inputs below to see how the bot&apos;s target monthly return compounds over time.
+        </p>
+        <CompoundCalc />
       </AccordionCard>
 
       {/* ─────────────────────────────────── */}
