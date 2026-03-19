@@ -498,6 +498,146 @@ function LearningPathVisual() {
   );
 }
 
+// ─── Feature Comparison Table ─────────────────────────────────────────────────
+
+type ComparisonRow = {
+  feature: string;
+  manual: string;
+  typical: string;
+  wagmi: string;
+};
+
+const COMPARISON_ROWS: ComparisonRow[] = [
+  { feature: '24/7 Monitoring',  manual: '❌', typical: '✅',       wagmi: '✅'       },
+  { feature: 'AI Reasoning',     manual: '❌', typical: '❌',       wagmi: '✅'       },
+  { feature: 'Multi-Strategy',   manual: '❌', typical: '⚡ Partial', wagmi: '✅'     },
+  { feature: 'Risk Management',  manual: 'Manual', typical: 'Basic', wagmi: '🔒 Advanced' },
+  { feature: 'Circuit Breakers', manual: '❌', typical: 'Basic',    wagmi: '6-Stage' },
+  { feature: 'Backtesting',      manual: 'Manual', typical: '✅',   wagmi: '✅'       },
+  { feature: 'Transparent Logs', manual: '❌', typical: '❌',       wagmi: '✅'       },
+  { feature: 'Monte Carlo SL',   manual: '❌', typical: '❌',       wagmi: '✅'       },
+  { feature: 'Self-Learning',    manual: '❌', typical: '❌',       wagmi: '✅'       },
+  { feature: 'Veto Safety',      manual: '❌', typical: '❌',       wagmi: '✅'       },
+];
+
+function CellValue({ value, col }: { value: string; col: 'manual' | 'typical' | 'wagmi' }) {
+  const isCheck   = value === '✅';
+  const isCross   = value === '❌';
+  const isPartial = value.startsWith('⚡');
+  const isAdv     = value.startsWith('🔒');
+
+  let color = C.textSub;
+  if (isCheck)   color = C.bull;
+  if (isCross)   color = C.bear;
+  if (isPartial) color = C.warn;
+  if (isAdv)     color = C.brand;
+  if (col === 'wagmi' && !isCross) color = C.bull;
+  if (col === 'wagmi' && isAdv)    color = C.brand;
+
+  return (
+    <span style={{ fontSize: F.sm, fontWeight: 600, color }}>
+      {value}
+    </span>
+  );
+}
+
+function FeatureComparisonTable() {
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.brand}40`,
+      borderLeft: `4px solid ${C.brand}`,
+      borderRadius: R.xl,
+      overflow: 'hidden',
+      boxShadow: S.lg,
+    }}>
+      {/* Header row */}
+      <div style={{
+        display: 'flex',
+        background: C.surface,
+        borderBottom: `1px solid ${C.border}`,
+        padding: '0 0',
+      }}>
+        {/* Feature label column */}
+        <div style={{ flex: '1 1 0', padding: '14px 20px', fontSize: F.sm, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Feature
+        </div>
+        {/* Manual Trading */}
+        <div style={{ flex: '0 0 160px', padding: '14px 16px', textAlign: 'center', fontSize: F.sm, fontWeight: 700, color: C.muted }}>
+          Manual Trading
+        </div>
+        {/* Typical Bot */}
+        <div style={{ flex: '0 0 160px', padding: '14px 16px', textAlign: 'center', fontSize: F.sm, fontWeight: 700, color: C.textSub }}>
+          Typical Bot
+        </div>
+        {/* WAGMI — highlighted */}
+        <div style={{
+          flex: '0 0 180px',
+          padding: '14px 16px',
+          textAlign: 'center',
+          fontSize: F.sm,
+          fontWeight: 800,
+          color: C.brand,
+          background: C.brand + '15',
+          borderLeft: `1px solid ${C.brand}30`,
+        }}>
+          ⭐ WAGMI
+        </div>
+      </div>
+
+      {/* Data rows */}
+      {COMPARISON_ROWS.map((row, i) => (
+        <div
+          key={row.feature}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: i % 2 === 0 ? 'transparent' : C.surface + '60',
+            borderBottom: i < COMPARISON_ROWS.length - 1 ? `1px solid ${C.border}40` : 'none',
+          }}
+        >
+          {/* Feature name */}
+          <div style={{ flex: '1 1 0', padding: '13px 20px', fontSize: F.sm, fontWeight: 600, color: C.textSub }}>
+            {row.feature}
+          </div>
+          {/* Manual */}
+          <div style={{ flex: '0 0 160px', padding: '13px 16px', textAlign: 'center', opacity: 0.6 }}>
+            <CellValue value={row.manual} col="manual" />
+          </div>
+          {/* Typical Bot */}
+          <div style={{ flex: '0 0 160px', padding: '13px 16px', textAlign: 'center' }}>
+            <CellValue value={row.typical} col="typical" />
+          </div>
+          {/* WAGMI */}
+          <div style={{
+            flex: '0 0 180px',
+            padding: '13px 16px',
+            textAlign: 'center',
+            background: C.brand + '08',
+            borderLeft: `1px solid ${C.brand}20`,
+          }}>
+            <CellValue value={row.wagmi} col="wagmi" />
+          </div>
+        </div>
+      ))}
+
+      {/* Banner below table */}
+      <div style={{
+        padding: '16px 20px',
+        background: `linear-gradient(90deg, ${C.brand}20, ${C.brand}10)`,
+        borderTop: `1px solid ${C.brand}30`,
+        textAlign: 'center',
+        fontSize: F.sm,
+        fontWeight: 700,
+        color: C.brand,
+        letterSpacing: '0.02em',
+      }}>
+        WAGMI combines all three approaches — with AI oversight
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function WelcomePage() {
@@ -662,6 +802,20 @@ export default function WelcomePage() {
           </div>
           <div style={{ textAlign: 'center', marginTop: 28 }}>
             <Link href="/ai-decisions" style={{ fontSize: F.sm, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>See a real AI decision →</Link>
+          </div>
+        </section>
+
+        {/* ── Feature Comparison Table ── */}
+        <section style={{ padding: '0 24px 72px', background: C.bg }}>
+          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 36 }}>
+              <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Why WAGMI</div>
+              <h2 style={{ margin: '0 0 12px', fontSize: F['3xl'], fontWeight: 800, color: C.text }}>How does WAGMI compare?</h2>
+              <p style={{ margin: 0, color: C.muted, fontSize: F.base, maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
+                Manual trading, typical bots, and WAGMI — side by side.
+              </p>
+            </div>
+            <FeatureComparisonTable />
           </div>
         </section>
 

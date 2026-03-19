@@ -477,6 +477,214 @@ function IntradayActivityHeatmap({ activity }: { activity: ActivityEvent[] }) {
   );
 }
 
+// ─── Market Session Clock ─────────────────────────────────────────────────────
+
+function MarketSessionClock() {
+  const now = new Date();
+  const utcH = now.getUTCHours();
+  const utcM = now.getUTCMinutes();
+  const timeDecimal = utcH + utcM / 60; // e.g. 14.533...
+
+  const timeStr = `${String(utcH).padStart(2, '0')}:${String(utcM).padStart(2, '0')} UTC`;
+
+  // Sessions: [start, end] in UTC hours (end exclusive — e.g. Asia ends AT 8)
+  const sessions = [
+    { label: 'Asia',   emoji: '🌏', start: 0,  end: 8,  color: C.info,    colorHex: '#2563eb', shortRange: '00–08' },
+    { label: 'Europe', emoji: '🌍', start: 7,  end: 16, color: '#7c3aed', colorHex: '#7c3aed', shortRange: '07–16' },
+    { label: 'US',     emoji: '🌎', start: 13, end: 22, color: C.bull,    colorHex: '#16a34a', shortRange: '13–22' },
+  ];
+
+  // Which sessions are currently active?
+  const activeSessions = sessions.filter(s => timeDecimal >= s.start && timeDecimal < s.end);
+  const activeLabel = activeSessions.length > 0
+    ? activeSessions.map(s => `${s.emoji} ${s.label}`).join(' + ')
+    : '😴 Off-Hours';
+
+  // SVG geometry
+  const CX = 120, CY = 120, SIZE = 240;
+  const RADIUS_OUTER = 108; // arc outer radius
+  const RADIUS_INNER = 90;  // arc inner radius
+  const TICK_OUTER = 86;
+  const TICK_INNER_MAJOR = 80;
+  const TICK_INNER_MINOR = 83;
+  const HAND_LEN = 84;
+
+  // Convert a UTC hour (0–24) to an SVG angle: 0h = top (−90°), clockwise
+  function hourToAngle(h: number): number {
+    return (h / 24) * 360 - 90;
+  }
+
+  function polarXY(angleDeg: number, r: number): { x: number; y: number } {
+    const rad = (angleDeg * Math.PI) / 180;
+    return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) };
+  }
+
+  // Build an SVG arc path for a session band
+  function arcPath(startH: number, endH: number, rOuter: number, rInner: number): string {
+    const a1 = hourToAngle(startH);
+    const a2 = hourToAngle(endH);
+    const spanDeg = endH > startH ? ((endH - startH) / 24) * 360 : 0;
+    const largeArc = spanDeg > 180 ? 1 : 0;
+
+    const o1 = polarXY(a1, rOuter);
+    const o2 = polarXY(a2, rOuter);
+    const i2 = polarXY(a2, rInner);
+    const i1 = polarXY(a1, rInner);
+
+    return [
+      `M ${o1.x} ${o1.y}`,
+      `A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${o2.x} ${o2.y}`,
+      `L ${i2.x} ${i2.y}`,
+      `A ${rInner} ${rInner} 0 ${largeArc} 0 ${i1.x} ${i1.y}`,
+      'Z',
+    ].join(' ');
+  }
+
+  // Overlap segments (slightly brighter): Asia+EU overlap 7–8, EU+US overlap 13–16
+  const overlaps = [
+    { start: 7,  end: 8,  colors: [C.info, '#7c3aed'] },
+    { start: 13, end: 16, colors: ['#7c3aed', C.bull]  },
+  ];
+
+  // Clock hand for current time
+  const handAngle = hourToAngle(timeDecimal);
+  const handTip = polarXY(handAngle, HAND_LEN);
+  const handBase = polarXY(handAngle + 180, 10); // small tail
+
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: R.xl,
+      padding: '18px 20px',
+      position: 'relative',
+    }}>
+      {/* LIVE badge */}
+      <div style={{
+        position: 'absolute', top: 14, right: 14,
+        fontSize: 9, fontWeight: 800, color: C.bull,
+        background: `${C.bull}18`, border: `1px solid ${C.bull}50`,
+        borderRadius: R.pill, padding: '2px 7px', letterSpacing: '0.08em',
+        display: 'flex', alignItems: 'center', gap: 4,
+      }}>
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: C.bull, display: 'inline-block' }} />
+        LIVE
+      </div>
+
+      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 14 }}>
+        Market Session Clock
+      </div>
+
+      {/* SVG Clock */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ overflow: 'visible' }}>
+          {/* Clock face background */}
+          <circle cx={CX} cy={CY} r={RADIUS_OUTER + 4} fill={C.surface} stroke={C.border} strokeWidth={1.5} />
+
+          {/* Session arcs — base */}
+          {sessions.map(s => (
+            <path
+              key={s.label}
+              d={arcPath(s.start, s.end, RADIUS_OUTER, RADIUS_INNER)}
+              fill={s.colorHex}
+              fillOpacity={0.35}
+            />
+          ))}
+
+          {/* Overlap arcs — brighter */}
+          {overlaps.map((ov, i) => (
+            <path
+              key={i}
+              d={arcPath(ov.start, ov.end, RADIUS_OUTER + 2, RADIUS_INNER - 2)}
+              fill={ov.colors[0]}
+              fillOpacity={0.55}
+              strokeWidth={0}
+            />
+          ))}
+
+          {/* Hour tick marks (24 ticks) */}
+          {Array.from({ length: 24 }, (_, h) => {
+            const angle = hourToAngle(h);
+            const isMajor = h % 6 === 0;
+            const outer = polarXY(angle, TICK_OUTER);
+            const inner = polarXY(angle, isMajor ? TICK_INNER_MAJOR : TICK_INNER_MINOR);
+            return (
+              <line
+                key={h}
+                x1={outer.x} y1={outer.y}
+                x2={inner.x} y2={inner.y}
+                stroke={isMajor ? C.textSub : C.muted}
+                strokeWidth={isMajor ? 1.5 : 0.75}
+                strokeLinecap="round"
+              />
+            );
+          })}
+
+          {/* Hour labels at 0, 6, 12, 18 */}
+          {[0, 6, 12, 18].map(h => {
+            const labelAngle = hourToAngle(h);
+            const pos = polarXY(labelAngle, 72);
+            return (
+              <text
+                key={h}
+                x={pos.x} y={pos.y}
+                textAnchor="middle" dominantBaseline="middle"
+                fontSize={9} fontWeight={700}
+                fill={C.textSub}
+              >
+                {String(h).padStart(2, '0')}
+              </text>
+            );
+          })}
+
+          {/* Clock hand — red line from center to edge */}
+          <line
+            x1={handBase.x} y1={handBase.y}
+            x2={handTip.x} y2={handTip.y}
+            stroke="#ef4444"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            style={{ filter: 'drop-shadow(0 0 4px #ef4444)' }}
+          />
+
+          {/* Center pivot */}
+          <circle cx={CX} cy={CY} r={5} fill="#ef4444" style={{ filter: 'drop-shadow(0 0 3px #ef4444)' }} />
+          <circle cx={CX} cy={CY} r={2.5} fill={C.card} />
+
+          {/* Center time text */}
+          <text x={CX} y={CY - 8} textAnchor="middle" fontSize={14} fontWeight={800} fill={C.text}>
+            {timeStr}
+          </text>
+
+          {/* Active session label below center */}
+          <text x={CX} y={CY + 10} textAnchor="middle" fontSize={9} fill={C.muted}>
+            {activeLabel}
+          </text>
+        </svg>
+      </div>
+
+      {/* Session pill labels */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+        {sessions.map(s => {
+          const isActive = timeDecimal >= s.start && timeDecimal < s.end;
+          return (
+            <span key={s.label} style={{
+              fontSize: 10, fontWeight: isActive ? 700 : 500,
+              padding: '3px 10px', borderRadius: R.pill,
+              background: isActive ? s.colorHex + '28' : C.surface,
+              color: isActive ? s.colorHex : C.muted,
+              border: `1px solid ${isActive ? s.colorHex + '60' : C.border}`,
+              transition: 'all 0.2s',
+            }}>
+              {s.emoji} {s.label} {s.shortRange}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function TodayPage() {
@@ -570,6 +778,7 @@ export default function TodayPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
           <RegimeDial regime={regime} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <MarketSessionClock />
             <StreakBar trades={recentTrades} />
             {/* AI confidence overview */}
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 18px', flex: 1 }}>
