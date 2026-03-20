@@ -33,6 +33,13 @@ from execution.position_state import (
 from execution.precision import round_price, round_qty
 from execution.trade_profile import TradeProfile, ExitParams, MEDIUM, _BASE_PROFILES
 
+# Mechanical bot instrumentation (TIER 4)
+try:
+    from llm.mechanical_bot_instrumentation import get_mechanical_bot_instrumentation
+    _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE = True
+except ImportError:
+    _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE = False
+
 logger = logging.getLogger("bot.execution.positions")
 
 
@@ -301,6 +308,29 @@ class PositionManager:
         )
         self.trade_log.append(event)
 
+        # ── TIER 4: Mechanical Bot Instrumentation (Position Opening Hook) ──
+        # Record position opening with all context
+        if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE:
+            try:
+                instr = get_mechanical_bot_instrumentation()
+                instr.on_position_opened(
+                    symbol=symbol,
+                    side=side,
+                    entry_price=entry,
+                    qty=qty,
+                    sl=sl,
+                    tp1=tp1,
+                    tp2=tp2,
+                    leverage=leverage,
+                    confidence=confidence,
+                    strategy=strategy,
+                    entry_reasons=entry_reasons or {},
+                    notes=notes,
+                    setup_type=setup_type,
+                )
+            except Exception as e:
+                logger.debug(f"[{symbol}] Mechanical bot instrumentation error (position opening): {e}")
+
         entry_type = trade_profile.entry_type if trade_profile else "UNKNOWN"
         logger.info(
             f"[{symbol}] OPEN {side} @ {entry} qty={qty} "
@@ -562,6 +592,27 @@ class PositionManager:
         # TP1_HIT -> TRAILING
         pos._transition(TRAILING, "trailing activated")
 
+        # ── TIER 4: Mechanical Bot Instrumentation (State Change Hook: TP1_HIT) ──
+        if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE:
+            try:
+                instr = get_mechanical_bot_instrumentation()
+                instr.on_position_state_change(
+                    symbol=pos.symbol,
+                    from_state=TP1_HIT,
+                    to_state=TRAILING,
+                    trigger="TP1_HIT",
+                    price=price,
+                    context={
+                        'partial_close_qty': close_qty,
+                        'partial_close_pct': dynamic_close_pct,
+                        'realized_pnl': pnl,
+                        'new_sl': pos.sl,
+                        'remaining_qty': pos.qty,
+                    }
+                )
+            except Exception as e:
+                logger.debug(f"[{pos.symbol}] Mechanical bot instrumentation error (state change): {e}")
+
         logger.info(
             f"[{pos.symbol}] TP1 @ {price} | Closed {close_qty} ({dynamic_close_pct:.0%}) | "
             f"PnL={pnl:.2f} | SL->BE+={pos.sl} | Trailing ON"
@@ -725,6 +776,29 @@ class PositionManager:
 
         # State -> CLOSED
         pos._transition(CLOSED, f"{action} @ {price}")
+
+        # ── TIER 4: Mechanical Bot Instrumentation (Position Closing Hook) ──
+        if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE:
+            try:
+                instr = get_mechanical_bot_instrumentation()
+                instr.on_position_closed(
+                    symbol=pos.symbol,
+                    side=pos.side,
+                    exit_price=price,
+                    exit_action=action,  # "SL", "TP1", "TP2", "TRAILING", "EARLY_EXIT", etc.
+                    exit_qty=qty,
+                    entry_price=pos.entry,
+                    pnl=pos.realized_pnl,
+                    total_fees=pos.fees_paid,
+                    funding_costs=pos.funding_costs,
+                    outcome=pos.outcome,
+                    hold_duration_seconds=(pos.close_time - pos.open_time).total_seconds(),
+                    entry_reasons=pos.entry_reasons or {},
+                    notes=pos.notes,
+                    setup_type=pos.setup_type,
+                )
+            except Exception as e:
+                logger.debug(f"[{pos.symbol}] Mechanical bot instrumentation error (position closing): {e}")
 
         logger.info(
             f"[{pos.symbol}] {action} @ {price} | PnL={pnl:.2f} | "

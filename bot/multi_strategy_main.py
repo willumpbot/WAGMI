@@ -8,6 +8,7 @@ Usage:
     ENVIRONMENT=production python multi_strategy_main.py  # Live trading
 """
 
+import asyncio
 import logging
 import os
 import signal
@@ -86,6 +87,22 @@ from signals.llm_analyzer import analyze_signal, format_analysis_for_telegram
 
 # Growth intelligence — self-evolving meta-brain
 from llm.growth.orchestrator import get_growth_orchestrator
+
+# Mechanical bot instrumentation (TIER 4: observation-only hooks)
+try:
+    from llm.mechanical_bot_instrumentation import get_mechanical_bot_instrumentation
+    from llm.mechanical_bot_memory import get_mechanical_bot_memory
+    _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE = True
+except ImportError:
+    _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE = False
+
+# Bot perception system (TIER 5: unified API + instrumentation aggregation)
+try:
+    from llm.bot_perception_api import get_bot_perception_api_client
+    from llm.bot_perception_aggregator import get_bot_perception_aggregator
+    _BOT_PERCEPTION_SYSTEM_AVAILABLE = True
+except ImportError:
+    _BOT_PERCEPTION_SYSTEM_AVAILABLE = False
 
 # LLM exit engine — dynamic SL/TP management for open positions
 try:
@@ -740,6 +757,57 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"[PAPER-VALIDATOR] Not available: {e}")
 
+    def _start_perception_capture(self):
+        """Start async perception capture task (TIER 5) in background thread."""
+        if not _BOT_PERCEPTION_SYSTEM_AVAILABLE:
+            logger.debug("[INIT] Bot perception system not available, skipping")
+            return
+
+        def run_perception_loop():
+            """Run async perception capture in a dedicated thread."""
+            try:
+                async def capture_loop():
+                    """Async loop that continuously captures perception data."""
+                    api = get_bot_perception_api_client()
+                    agg = get_bot_perception_aggregator()
+
+                    while not self.stop_event.is_set():
+                        try:
+                            # Fetch complete perception snapshot from API
+                            perception_data = await api.fetch_complete_perception()
+
+                            if perception_data:
+                                # Capture unified perception combining API + mechanical bot data
+                                agg.capture_unified_perception(
+                                    system_summary=perception_data.get('summary', {}),
+                                    strategy_summaries=perception_data.get('strategies', {}),
+                                    llm_decision=perception_data.get('llm', {}).get('latest_decision'),
+                                    agent_brains=perception_data.get('agents', {}),
+                                    agent_debate=perception_data.get('debate'),
+                                    pipeline_health=perception_data.get('pipeline', {}),
+                                )
+
+                        except Exception as e:
+                            logger.debug(f"[PERCEPTION] Capture error: {e}")
+
+                        # Sleep before next capture (5-second interval)
+                        await asyncio.sleep(5)
+
+                # Create and run event loop
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(capture_loop())
+
+            except Exception as e:
+                logger.warning(f"[PERCEPTION] Thread error: {e}")
+            finally:
+                logger.debug("[PERCEPTION] Capture thread stopped")
+
+        # Start perception capture in background thread
+        perception_thread = threading.Thread(target=run_perception_loop, daemon=True, name="PerceptionCapture")
+        perception_thread.start()
+        logger.info("[INIT] Bot perception capture started (TIER 5)")
+
     def _run_health_check(self):
         """Startup symbol health check: validate precision, connectivity, leverage caps."""
         logger.info("=" * 60)
@@ -854,6 +922,9 @@ class MultiStrategyBot:
                 logger.info(f"[INIT] Web dashboard started on port {self.config.dashboard_port}")
             except Exception as e:
                 logger.warning(f"[INIT] Dashboard start failed: {e}")
+
+        # Start Bot Perception System (TIER 5: async perception capture)
+        self._start_perception_capture()
 
         # Start HTTP health endpoint (container/orchestrator readiness probes)
         try:
@@ -2706,6 +2777,44 @@ class MultiStrategyBot:
             pass
 
         signal_result = self.ensemble.evaluate(symbol, data)
+
+        # ── TIER 4: Mechanical Bot Instrumentation (Signal Generation Hook) ──
+        # Record signal generation with full market context for perception system
+        if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE and signal_result is not None:
+            try:
+                instr = get_mechanical_bot_instrumentation()
+
+                # Capture the signal with all market context
+                market_context = {
+                    'regime': signal_result.metadata.get("regime", "unknown"),
+                    'volatility': signal_result.metadata.get("volatility", 0.0),
+                    'alignment': signal_result.metadata.get("alignment", 0.0),
+                    'btc_correlation': signal_result.metadata.get("btc_correlation", 0.0),
+                    'num_strategies_agree': signal_result.metadata.get("num_agree", 1),
+                    'timestamp': time.time(),
+                }
+
+                # Record signal with all context
+                signal_id = instr.on_signal_generated(
+                    symbol=symbol,
+                    side=signal_result.side,
+                    confidence=signal_result.confidence,
+                    entry=signal_result.entry,
+                    sl=signal_result.sl,
+                    tp1=signal_result.tp1,
+                    tp2=signal_result.tp2,
+                    strategy_names=signal_result.metadata.get("strategy_names", []),
+                    num_strategies=signal_result.metadata.get("num_agree", 1),
+                    market_context=market_context
+                )
+
+                # Store signal_id in metadata for later reference (when position opens/closes)
+                if not hasattr(signal_result, 'metadata'):
+                    signal_result.metadata = {}
+                signal_result.metadata['mechanical_signal_id'] = signal_id
+
+            except Exception as e:
+                logger.debug(f"[{symbol}] Mechanical bot instrumentation error (signal generation): {e}")
 
         # ── TIER 1.2: Regime-Specific Confidence Floor (LLM-side improvement) ──
         # Apply regime-specific confidence floors to filter noisy signals in poor regimes.
