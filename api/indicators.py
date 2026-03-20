@@ -125,6 +125,7 @@ async def build_signals_snapshot(session, coins: dict, regime: str) -> dict:
         label = label_from_price(z, regime)
         score = score_state(z, regime)
         out[sym] = {
+            "symbol": sym,
             "label": label,
             "score": score,
             "market": sym,
