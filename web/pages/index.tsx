@@ -17,7 +17,7 @@ function resolveApiBase(): string {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://nunuirl-platform.onrender.com';
+      return 'https://wagmi-production-d376.up.railway.app';
     }
   }
   return 'http://localhost:8000';
@@ -651,7 +651,7 @@ function SignalPanel({
     high_volatility: '#fbbf24', low_liquidity: '#64748b',
     news_dislocation: '#7c3aed', unknown: C.muted, neutral: C.muted,
   };
-  const regimeKey = regime.toLowerCase().replace(' ', '_');
+  const regimeKey = (regime || 'unknown').toLowerCase().replace(' ', '_');
   const regimeColor = REGIME_COLOR[regimeKey] || C.muted;
 
   // Price ladder entries (sorted by price for visual)

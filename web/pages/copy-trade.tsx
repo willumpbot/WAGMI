@@ -112,7 +112,7 @@ function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
   }
 
   const biasStyle = getBiasStyle(view.overall_bias);
-  const symbols = Object.keys(view.per_symbol);
+  const symbols = Object.keys(view.per_symbol || {});
 
   return (
     <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px 20px', marginBottom: 24, color: C.text }}>
