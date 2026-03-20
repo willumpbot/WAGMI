@@ -400,22 +400,6 @@ class EnsembleStrategy:
                 )
                 effective_min_votes = degraded
 
-        # ── HYBRID VOTING: Allow single-strategy voting if confidence >= 75% ──
-        # This solves the 99.95% signal rejection bottleneck.
-        # High-confidence solo signals (75%+) are allowed through; lower confidence requires 2+ strategies.
-        high_conf_signals = [s for s in signals if s.confidence >= 75.0]
-        if high_conf_signals and effective_min_votes > 1:
-            # Check if we can use single-strategy voting for any high-confidence signal
-            solo_buy = [s for s in high_conf_signals if s.side == "BUY"]
-            solo_sell = [s for s in high_conf_signals if s.side == "SELL"]
-            if (solo_buy and not solo_sell) or (solo_sell and not solo_buy):
-                # Only one side has high confidence → allow single-strategy voting
-                logger.info(
-                    f"[{symbol}] Hybrid voting: found {len(high_conf_signals)} high-confidence signal(s), "
-                    f"lowering min_votes {effective_min_votes} → 1"
-                )
-                effective_min_votes = 1
-
         # Chop detector: graduated choppy market filter
         # Instead of binary kill, attach chop_score and let the confidence floor
         # handle rejection. This allows high-conviction setups through even in chop.
