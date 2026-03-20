@@ -2707,6 +2707,30 @@ class MultiStrategyBot:
 
         signal_result = self.ensemble.evaluate(symbol, data)
 
+        # ── TIER 1.2: Regime-Specific Confidence Floor (LLM-side improvement) ──
+        # Apply regime-specific confidence floors to filter noisy signals in poor regimes.
+        # This is a pure LLM improvement that doesn't modify the mechanical system.
+        # Can be disabled via env var REGIME_FLOOR_GATING=false
+        if signal_result is not None:
+            try:
+                _regime_gating_enabled = os.getenv("REGIME_FLOOR_GATING", "true").lower() == "true"
+                if _regime_gating_enabled:
+                    from llm.signal_gating import get_signal_gater
+                    regime = signal_result.metadata.get("regime", "unknown")
+                    gater = get_signal_gater()
+                    gating_result = gater.gate_signal(signal_result, regime)
+                    if not gating_result.approved:
+                        logger.info(
+                            f"[{symbol}] Signal rejected by regime floor: "
+                            f"confidence={gating_result.signal_confidence:.0f}% < "
+                            f"floor={gating_result.floor_applied:.0f}% "
+                            f"(regime={regime})"
+                        )
+                        signal_result = None  # Reject the signal
+            except Exception as e:
+                logger.debug(f"[{symbol}] Regime floor gating error: {e}")
+                # If gating fails, allow signal to proceed (fail-safe)
+
         # ── Soft-filter annotation: run annotated ensemble in parallel ──
         # When enabled, this captures filter assessments for LLM visibility
         # even when the signal passes hard filters normally.
