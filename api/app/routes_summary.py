@@ -211,15 +211,33 @@ async def get_strategy_summary():
     last_evaluated = state.get("lastEvaluated", datetime.now(timezone.utc).isoformat())
     status = state.get("status", "Active")
     
+    # Build open_position in the shape the frontend expects (null if FLAT)
+    pos_side = (position.get("side") or "FLAT").upper()
+    open_position = None
+    if pos_side not in ("FLAT", "", "NONE"):
+        open_position = {
+            "side": pos_side,
+            "size": position.get("qty", 0.0),
+            "avg_entry": position.get("avg_entry", 0.0),
+            "unrealized_pnl": position.get("upnl", 0.0),
+            "unrealized_pnl_pct": 0.0,
+            "updated_at": last_evaluated,
+        }
+
     return {
         "id": STRATEGY_ID,
         "name": "Swing Perp (16h)",
         "markets": ["BTC", "SOL", "HYPE"],
         "status": status,
+        "lastHeartbeat": last_evaluated,
+        "lastTradeAt": (last_trade or {}).get("ts") if last_trade else None,
+        "pnl_realized": (last_trade or {}).get("pnl") if last_trade else None,
+        "open_position": open_position,
+        # keep legacy fields for other consumers
         "lastEvaluated": last_evaluated,
         "latestSignal": latest_signal,
         "position": position,
-        "lastTrade": last_trade
+        "lastTrade": last_trade,
     }
 
 

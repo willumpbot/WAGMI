@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { resolveApiBase } from '../src/api';
 
 type Signal = {
   symbol: string;
@@ -25,18 +26,6 @@ type SignalsPayload = {
   signals?: Record<string, Signal>;
   errors?: string[];
 };
-
-function resolveApiBase(): string {
-  const envVal = (process.env.NEXT_PUBLIC_API_URL as string | undefined) || (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined);
-  if (envVal && envVal.trim().length > 0) return envVal;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://nunuirl-platform.onrender.com';
-    }
-  }
-  return 'http://localhost:8000';
-}
 
 export default function Signals() {
   const [data, setData] = useState<SignalsPayload>({});

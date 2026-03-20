@@ -1287,7 +1287,7 @@ class EnsembleStrategy:
             try:
                 ic_weight = self.ic_tracker.get_ic_weight(strategy_name)
                 if ic_weight < 1.0:
-                    logger.info(
+                    logger.debug(
                         f"[IC] {strategy_name} weight adjusted by IC: {w:.3f} * {ic_weight:.2f} = {w * ic_weight:.3f}"
                     )
                 w *= ic_weight

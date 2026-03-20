@@ -8606,10 +8606,30 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     break
 
         if not positions_raw:
+            # Try direct position manager attributes (e.g. self.pos_mgr in MultiStrategyBot)
+            for pm_attr in ("pos_mgr", "position_manager", "pm"):
+                pm = getattr(bot, pm_attr, None)
+                if pm is not None:
+                    for attr in ("get_open_positions", "open_positions", "positions", "get_positions"):
+                        obj = getattr(pm, attr, None)
+                        if obj is not None:
+                            if callable(obj):
+                                try:
+                                    positions_raw = obj()
+                                except Exception:
+                                    pass
+                            else:
+                                positions_raw = obj
+                            if positions_raw:
+                                break
+                if positions_raw:
+                    break
+
+        if not positions_raw:
             engine = getattr(bot, "engine", None) or getattr(bot, "trading_engine", None)
             if engine:
                 pm = getattr(engine, "position_manager", None) or engine
-                for attr in ("open_positions", "positions", "get_positions"):
+                for attr in ("get_open_positions", "open_positions", "positions", "get_positions"):
                     obj = getattr(pm, attr, None)
                     if obj is not None:
                         if callable(obj):
