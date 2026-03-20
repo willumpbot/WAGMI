@@ -888,11 +888,19 @@ export default function Home() {
   const [correlations, setCorrelations] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [sniperQueue, setSniperQueue] = useState<any[]>([]);
   const [sniperStats, setSniperStats] = useState<any>({pending:0,approved:0,rejected:0,executed:0,total:0});
   const [sniperAction, setSniperAction] = useState<Record<string, 'approving'|'rejecting'|null>>({});
   const apiBase = resolveApiBase();
   const hasGoodSignals = useRef(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // Compute correlation matrix from recent OHLCV (30 daily candles)
   useEffect(() => {
@@ -1045,21 +1053,23 @@ export default function Home() {
       )}
 
       {/* ── Page header ───────────────────────────────── */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'flex-end', justifyContent: 'space-between', flexDirection: isMobile ? 'column' : 'row', gap: 10 }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>
+            <h1 style={{ margin: 0, fontSize: isMobile ? F['2xl'] : F['3xl'], fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>
               Dashboard
             </h1>
-            <p style={{ margin: '4px 0 0', fontSize: F.sm, color: C.muted }}>
-              Live signals · AI analysis · Real-time market intelligence
-            </p>
+            {!isMobile && (
+              <p style={{ margin: '4px 0 0', fontSize: F.sm, color: C.muted }}>
+                Live signals · AI analysis · Real-time market intelligence
+              </p>
+            )}
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <Link href="/results" style={{ fontSize: F.sm, color: C.brand, fontWeight: 600, textDecoration: 'none', border: `1px solid ${C.brand}40`, padding: '6px 14px', borderRadius: R.md }}>
-              View Results →
+          <div style={{ display: 'flex', gap: 8, width: isMobile ? '100%' : 'auto' }}>
+            <Link href="/results" style={{ fontSize: F.sm, color: C.brand, fontWeight: 600, textDecoration: 'none', border: `1px solid ${C.brand}40`, padding: '7px 14px', borderRadius: R.md, flex: isMobile ? '1' : undefined, textAlign: 'center' }}>
+              Results →
             </Link>
-            <Link href="/copy-trade" style={{ fontSize: F.sm, color: '#fff', fontWeight: 600, textDecoration: 'none', background: C.brand, padding: '6px 14px', borderRadius: R.md }}>
+            <Link href="/copy-trade" style={{ fontSize: F.sm, color: '#fff', fontWeight: 600, textDecoration: 'none', background: C.brand, padding: '7px 14px', borderRadius: R.md, flex: isMobile ? '1' : undefined, textAlign: 'center' }}>
               Copy Trade →
             </Link>
           </div>
@@ -1079,22 +1089,24 @@ export default function Home() {
           gap: 0,
           flexWrap: 'wrap',
         }}>
-          {/* Live pulse */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 20, flexShrink: 0 }}>
-            <div style={{ position: 'relative', width: 10, height: 10 }}>
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: C.bull, opacity: 0.8 }} />
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: C.bull, animation: 'ripplePulse 2s ease-out infinite' }} />
-            </div>
-            <span style={{ fontSize: F.xs, fontWeight: 700, color: C.bull, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Always On
-            </span>
-          </div>
-
-          {/* Divider */}
-          <div style={{ width: 1, height: 28, background: C.border, marginRight: 20 }} />
+          {/* Live pulse — hidden on mobile to save space */}
+          {!isMobile && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 20, flexShrink: 0 }}>
+                <div style={{ position: 'relative', width: 10, height: 10 }}>
+                  <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: C.bull, opacity: 0.8 }} />
+                  <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: C.bull, animation: 'ripplePulse 2s ease-out infinite' }} />
+                </div>
+                <span style={{ fontSize: F.xs, fontWeight: 700, color: C.bull, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Always On
+                </span>
+              </div>
+              <div style={{ width: 1, height: 28, background: C.border, marginRight: 20 }} />
+            </>
+          )}
 
           {/* Regime */}
-          <div style={{ marginRight: 24 }}>
+          <div style={{ marginRight: isMobile ? 12 : 24 }}>
             <span style={{ fontSize: F.xs, color: C.muted }}>Regime </span>
             <span style={{
               fontSize: F.sm,
@@ -1110,10 +1122,10 @@ export default function Home() {
 
           {/* Decision counts */}
           {llmView.decision_counts && (
-            <div style={{ display: 'flex', gap: 16, marginRight: 24, fontSize: F.xs }}>
-              <span style={{ color: C.bull, fontWeight: 700 }}>✓ {llmView.decision_counts.proceed} trade</span>
-              <span style={{ color: C.muted }}>— {llmView.decision_counts.flat} skip</span>
-              <span style={{ color: '#a78bfa' }}>↔ {llmView.decision_counts.flip} flip</span>
+            <div style={{ display: 'flex', gap: isMobile ? 8 : 16, marginRight: isMobile ? 0 : 24, fontSize: F.xs }}>
+              <span style={{ color: C.bull, fontWeight: 700 }}>✓ {llmView.decision_counts.proceed}</span>
+              <span style={{ color: C.muted }}>— {llmView.decision_counts.flat}</span>
+              <span style={{ color: '#a78bfa' }}>↔ {llmView.decision_counts.flip}</span>
             </div>
           )}
 
@@ -1131,14 +1143,14 @@ export default function Home() {
             borderRadius: R.pill,
             flexShrink: 0,
           }}>
-            View Signal Feed →
+            {isMobile ? 'Signals →' : 'View Signal Feed →'}
           </Link>
         </div>
       )}
       <style>{`@keyframes ripplePulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.8); opacity: 0; } }`}</style>
 
       {/* ── KPI Hero Row ──────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 14, marginBottom: 28, flexWrap: 'wrap' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
         <KpiCard
           label="Total Return"
           value={btRes ? fmtPct(btRes.total_return_pct) : '—'}
@@ -1167,15 +1179,13 @@ export default function Home() {
           color={btRes && btRes.max_drawdown_pct < 15 ? C.warn : C.bear}
           loading={loading}
         />
-        <div
+        {!isMobile && <div
           className="fade-in"
           style={{
             background: C.card,
             border: `1px solid ${C.border}`,
             borderRadius: R.lg,
             padding: '20px 24px',
-            flex: '1 1 200px',
-            minWidth: 180,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -1194,7 +1204,7 @@ export default function Home() {
               </div>
             </>
           )}
-        </div>
+        </div>}
       </div>
 
       {/* ── Activity ticker ───────────────────────────── */}
@@ -1203,42 +1213,46 @@ export default function Home() {
       {/* ── Full-width Chart ──────────────────────────── */}
       <div style={{ marginBottom: 16 }}>
         {/* Controls row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-          <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Chart</h2>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: isMobile ? 8 : 0, flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible' }}>
+            {!isMobile && <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text, flexShrink: 0 }}>Chart</h2>}
 
-          <div style={{ display: 'flex', gap: 5, marginLeft: 6 }}>
-            {SYMBOLS.map((sym) => (
-              <button key={sym} onClick={() => setActiveChart(sym)} style={{
-                padding: '5px 14px', borderRadius: R.pill, cursor: 'pointer', transition: 'all 0.15s',
-                border: `1px solid ${activeChart === sym ? C.brand : C.border}`,
-                background: activeChart === sym ? C.brand : 'transparent',
-                color: activeChart === sym ? '#fff' : C.muted,
-                fontSize: F.sm, fontWeight: 600,
-              }}>
-                {sym}
-              </button>
-            ))}
-          </div>
+            <div style={{ display: 'flex', gap: 5, marginLeft: isMobile ? 0 : 6, flexShrink: 0 }}>
+              {SYMBOLS.map((sym) => (
+                <button key={sym} onClick={() => setActiveChart(sym)} style={{
+                  padding: isMobile ? '6px 12px' : '5px 14px', borderRadius: R.pill, cursor: 'pointer', transition: 'all 0.15s',
+                  border: `1px solid ${activeChart === sym ? C.brand : C.border}`,
+                  background: activeChart === sym ? C.brand : 'transparent',
+                  color: activeChart === sym ? '#fff' : C.muted,
+                  fontSize: F.sm, fontWeight: 600, flexShrink: 0,
+                }}>
+                  {sym}
+                </button>
+              ))}
+            </div>
 
-          <div style={{ width: 1, height: 20, background: C.border, margin: '0 4px' }} />
+            <div style={{ width: 1, height: 20, background: C.border, margin: '0 4px', flexShrink: 0 }} />
 
-          <div style={{ display: 'flex', gap: 4 }}>
-            {CHART_TIMEFRAMES.map((tf) => (
-              <button key={tf} onClick={() => setActiveTimeframe(tf)} style={{
-                padding: '4px 10px', borderRadius: R.sm, cursor: 'pointer', transition: 'all 0.15s',
-                border: `1px solid ${activeTimeframe === tf ? C.brand + '88' : C.border}`,
-                background: activeTimeframe === tf ? C.brand + '22' : 'transparent',
-                color: activeTimeframe === tf ? C.brand : C.muted,
-                fontSize: F.xs, fontWeight: 600,
-              }}>
-                {tf}
-              </button>
-            ))}
-          </div>
+            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+              {CHART_TIMEFRAMES.map((tf) => (
+                <button key={tf} onClick={() => setActiveTimeframe(tf)} style={{
+                  padding: '4px 10px', borderRadius: R.sm, cursor: 'pointer', transition: 'all 0.15s',
+                  border: `1px solid ${activeTimeframe === tf ? C.brand + '88' : C.border}`,
+                  background: activeTimeframe === tf ? C.brand + '22' : 'transparent',
+                  color: activeTimeframe === tf ? C.brand : C.muted,
+                  fontSize: F.xs, fontWeight: 600,
+                }}>
+                  {tf}
+                </button>
+              ))}
+            </div>
 
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, fontSize: F.xs, color: C.muted }}>
-            <span><span style={{ display: 'inline-block', width: 20, height: 2, background: '#22c55e', verticalAlign: 'middle', marginRight: 4 }} />Buy zones</span>
-            <span><span style={{ display: 'inline-block', width: 20, height: 2, background: '#ef4444', verticalAlign: 'middle', marginRight: 4 }} />Sell zones</span>
+            {!isMobile && (
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, fontSize: F.xs, color: C.muted }}>
+                <span><span style={{ display: 'inline-block', width: 20, height: 2, background: '#22c55e', verticalAlign: 'middle', marginRight: 4 }} />Buy zones</span>
+                <span><span style={{ display: 'inline-block', width: 20, height: 2, background: '#ef4444', verticalAlign: 'middle', marginRight: 4 }} />Sell zones</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1255,18 +1269,20 @@ export default function Home() {
       </div>
 
       {/* ── Below-chart 3-column panel ────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px 220px', gap: 14, marginBottom: 28, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 220px 220px', gap: 14, marginBottom: 28, alignItems: 'start' }}>
 
-        {/* LEFT — Tabbed heatmap section */}
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+        {/* LEFT — Tabbed heatmap section (order: 2 on mobile so AI stance shows first) */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden', order: isMobile ? 2 : 1 }}>
           {/* Tab strip */}
           <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, background: '#0f172a' }}>
             {(['market', 'scores', 'correlation', 'regime'] as const).map((tab) => {
-              const labels: Record<string, string> = { market: 'Market Signals', scores: 'Strategy Scores', correlation: 'Correlation', regime: 'Regime History' };
+              const labels: Record<string, string> = isMobile
+                ? { market: 'Signals', scores: 'Scores', correlation: 'Corr', regime: 'Regime' }
+                : { market: 'Market Signals', scores: 'Strategy Scores', correlation: 'Correlation', regime: 'Regime History' };
               return (
                 <button key={tab} onClick={() => setHeatTab(tab)} style={{
-                  flex: 1, padding: '10px 4px', background: 'none', border: 'none', cursor: 'pointer',
-                  fontSize: F.xs, fontWeight: 600, transition: 'all 0.15s',
+                  flex: 1, padding: isMobile ? '10px 2px' : '10px 4px', background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: isMobile ? 10 : F.xs, fontWeight: 600, transition: 'all 0.15s',
                   color: heatTab === tab ? C.brand : C.muted,
                   borderBottom: heatTab === tab ? `2px solid ${C.brand}` : '2px solid transparent',
                 }}>
@@ -1409,14 +1425,14 @@ export default function Home() {
           </div>
         </div>
 
-        {/* CENTER — Compact AI stance cards */}
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+        {/* CENTER — Compact AI stance cards (order: 1 on mobile — most useful info first) */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden', order: isMobile ? 1 : 2 }}>
           <div style={{ padding: '10px 14px', borderBottom: `1px solid ${C.border}`, background: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 14 }}>🤖</span>
             <span style={{ fontSize: F.xs, fontWeight: 700, color: C.text }}>AI Stance</span>
             <Link href="/signals" style={{ marginLeft: 'auto', fontSize: 10, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>Feed →</Link>
           </div>
-          <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ padding: '12px 14px', display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr', gap: 10 }}>
             {SYMBOLS.map((sym) => {
               const dec = llmView?.per_symbol?.[sym];
               const action = (dec?.action || 'skip').toLowerCase();
@@ -1453,7 +1469,7 @@ export default function Home() {
             })}
 
             {/* Global regime */}
-            <div style={{ marginTop: 4, padding: '8px 10px', background: C.brand + '15', borderRadius: R.sm, border: `1px solid ${C.brand}33` }}>
+            <div style={{ marginTop: 4, padding: '8px 10px', background: C.brand + '15', borderRadius: R.sm, border: `1px solid ${C.brand}33`, gridColumn: isMobile ? '1 / -1' : undefined }}>
               <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>MARKET REGIME</div>
               <div style={{ fontSize: F.sm, fontWeight: 800, color: C.brand }}>{regime.toUpperCase()}</div>
               {llmView?.decision_counts && (
@@ -1467,8 +1483,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* RIGHT — Signal levels for active chart */}
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+        {/* RIGHT — Signal levels for active chart (hidden on mobile, info is in heatmap) */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden', order: 3, display: isMobile ? 'none' : undefined }}>
           <div style={{ padding: '10px 14px', borderBottom: `1px solid ${C.border}`, background: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 14 }}>📍</span>
             <span style={{ fontSize: F.xs, fontWeight: 700, color: C.text }}>{activeChart} Signal</span>
