@@ -176,7 +176,8 @@ class MechanicalBotMemoryUnit:
         # Load existing data
         self._load_memory()
 
-    def record_signal(\n        self,
+    def record_signal(
+        self,
         signal_id: str,
         symbol: str,
         regime: str,

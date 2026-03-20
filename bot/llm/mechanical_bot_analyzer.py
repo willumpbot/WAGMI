@@ -14,7 +14,6 @@ import logging
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from collections import defaultdict
-import numpy as np
 
 from mechanical_bot_memory import get_mechanical_bot_memory, MechanicalBotSignal, MechanicalBotPattern
 

@@ -328,6 +328,14 @@ class MechanicalBotSynthesizer:
                 "diversification_value": idea.diversification_value,
             }
 
+            # Validate signal before returning
+            if not signal.is_valid:
+                logger.warning(
+                    f"Synthesized signal {idea.idea_id} failed validation: "
+                    f"entry={entry:.2f}, sl={sl:.2f}, tp1={tp1:.2f}"
+                )
+                return None
+
             return signal
 
         except Exception as e:

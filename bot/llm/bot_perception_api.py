@@ -24,8 +24,34 @@ from typing import Dict, List, Optional, Any, AsyncIterator
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 import time
+from functools import wraps
 
 logger = logging.getLogger("bot.llm.bot_perception_api")
+
+
+def retry_on_network_error(max_retries: int = 3, backoff_base: float = 2.0):
+    """Decorator for retrying on network errors with exponential backoff."""
+    def decorator(func):
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            last_error = None
+            for attempt in range(max_retries):
+                try:
+                    return await func(*args, **kwargs)
+                except (httpx.RequestError, httpx.TimeoutException) as e:
+                    last_error = e
+                    if attempt < max_retries - 1:
+                        wait_time = backoff_base ** attempt
+                        logger.warning(
+                            f"{func.__name__} failed (attempt {attempt + 1}/{max_retries}), "
+                            f"retrying in {wait_time}s: {e}"
+                        )
+                        await asyncio.sleep(wait_time)
+                    else:
+                        logger.error(f"{func.__name__} failed after {max_retries} attempts: {e}")
+            raise last_error
+        return async_wrapper
+    return decorator
 
 
 @dataclass
@@ -199,6 +225,7 @@ class BotPerceptionAPIClient:
         self.last_debate: Optional[AgentDebate] = None
         self.last_telemetry: Optional[PipelineTelemetry] = None
 
+    @retry_on_network_error(max_retries=3)
     async def fetch_summary(self) -> Optional[BotSummarySnapshot]:
         """Fetch complete bot summary."""
         try:
@@ -446,6 +473,7 @@ class BotPerceptionAPIClient:
             logger.error(f"Error fetching telemetry: {e}")
             return None
 
+    @retry_on_network_error(max_retries=3)
     async def fetch_complete_perception(self) -> Dict[str, Any]:
         """
         Fetch EVERYTHING in parallel.
