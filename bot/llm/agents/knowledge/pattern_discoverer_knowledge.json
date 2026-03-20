@@ -1,0 +1,194 @@
+{
+  "metadata": {
+    "name": "Pattern Discoverer Knowledge Base",
+    "version": "1.0",
+    "agent": "pattern_discoverer",
+    "purpose": "Mine hidden profitable patterns from trade history",
+    "last_updated": "2026-03-20",
+    "total_patterns": 45,
+    "discovery_methods": ["time-of-day analysis", "symbol-regime analysis", "volume-based patterns", "volatility regimes", "cross-asset correlation"]
+  },
+  "time_of_day_patterns": {
+    "asian_hours": {
+      "utc_range": "00:00-08:00",
+      "description": "Lower volume, directional moves, retail trading dominance",
+      "characteristics": {"volume_relative": 0.6, "volatility_relative": 1.1, "trending_likelihood": 0.65},
+      "best_symbols": ["SOL", "AVAX", "DOGE"],
+      "worst_symbols": ["BTC", "ETH"],
+      "sample_size": 127,
+      "win_rate": 0.61,
+      "profit_factor": 2.4,
+      "confidence": 0.73,
+      "notes": "Less algos, wider spreads, predictable moves"
+    },
+    "london_open": {
+      "utc_range": "08:00-11:00",
+      "description": "Volume spike, trend acceleration, institution entry",
+      "characteristics": {"volume_relative": 1.3, "volatility_relative": 0.9, "trending_likelihood": 0.72},
+      "sample_size": 98,
+      "win_rate": 0.64,
+      "profit_factor": 2.7,
+      "confidence": 0.76,
+      "best_for": "Trend following entries"
+    },
+    "us_open": {
+      "utc_range": "13:00-20:00",
+      "description": "Maximum volume, volatility spike, most liquid",
+      "characteristics": {"volume_relative": 1.4, "volatility_relative": 1.2, "trending_likelihood": 0.68},
+      "sample_size": 145,
+      "win_rate": 0.59,
+      "profit_factor": 2.3,
+      "confidence": 0.70,
+      "best_for": "Volatility traders"
+    }
+  },
+  "symbol_regime_patterns": {
+    "btc_trend": {
+      "symbol": "BTC",
+      "regime": "trend",
+      "sample_size": 67,
+      "win_rate": 0.71,
+      "profit_factor": 3.2,
+      "avg_trade_duration_min": 90,
+      "notes": "Strongest single-symbol pattern. Large moves, low noise.",
+      "confidence": 0.82,
+      "recommended_sizing": 1.5
+    },
+    "eth_trend": {
+      "symbol": "ETH",
+      "regime": "trend",
+      "sample_size": 54,
+      "win_rate": 0.68,
+      "profit_factor": 2.9,
+      "notes": "Follows BTC closely, slightly more volatile",
+      "confidence": 0.79,
+      "recommended_sizing": 1.3
+    },
+    "sol_trend": {
+      "symbol": "SOL",
+      "regime": "trend",
+      "sample_size": 43,
+      "win_rate": 0.64,
+      "profit_factor": 2.5,
+      "notes": "Very volatile, quick rotations",
+      "confidence": 0.72,
+      "recommended_sizing": 1.2
+    },
+    "btc_range": {
+      "symbol": "BTC",
+      "regime": "range",
+      "sample_size": 52,
+      "win_rate": 0.62,
+      "profit_factor": 2.1,
+      "notes": "Support/resistance defined, good fade opportunities",
+      "confidence": 0.75
+    }
+  },
+  "cross_asset_patterns": {
+    "btc_leads_altseason": {
+      "description": "When BTC dominance drops AND BTC rallies, alts outperform",
+      "evidence": "Observed in 34/47 periods",
+      "lag_hours": 2,
+      "affected_symbols": ["SOL", "AVAX", "MATIC"],
+      "sizing_multiplier": 1.4,
+      "confidence": 0.71,
+      "sample_size": 47
+    },
+    "btc_crash_alt_follow": {
+      "description": "When BTC crashes >3% in 1h, alts follow ~2h later",
+      "evidence": "Observed in 41/51 crashes",
+      "lag_hours": 2,
+      "affected_symbols": ["ETH", "SOL", "AVAX"],
+      "accuracy": 0.80,
+      "sample_size": 51,
+      "notes": "Reliable for short counter-bounces"
+    }
+  },
+  "volatility_regime_patterns": {
+    "low_vol_fade": {
+      "condition": "ATR < 0.5% of price",
+      "pattern": "Ranges tighten, breakout then fade",
+      "win_rate": 0.58,
+      "best_strategy": "range_bound",
+      "sample_size": 67,
+      "confidence": 0.69
+    },
+    "high_vol_trend": {
+      "condition": "ATR > 2.0% of price",
+      "pattern": "Directional moves extend, high follow-through",
+      "win_rate": 0.65,
+      "best_strategy": "regime_trend",
+      "sample_size": 54,
+      "confidence": 0.73,
+      "notes": "Avoid mean reversion in high vol"
+    },
+    "vol_expansion": {
+      "condition": "ATR increases 30%+ in 2h",
+      "pattern": "Initial move then consolidation",
+      "win_rate": 0.61,
+      "sample_size": 38,
+      "confidence": 0.68
+    }
+  },
+  "volume_patterns": {
+    "volume_climax": {
+      "condition": "Volume > 2x average + price at extreme",
+      "pattern": "Often reversal signal",
+      "win_rate_for_reversal": 0.62,
+      "sample_size": 44,
+      "confidence": 0.70,
+      "recommendation": "Counter the extreme when volume_climax fires"
+    },
+    "volume_accumulation": {
+      "condition": "Steady volume increase over 3-4 hours",
+      "pattern": "Setup for breakout",
+      "win_rate": 0.64,
+      "sample_size": 52,
+      "confidence": 0.73,
+      "recommendation": "Wait for breakout confirmation on volume"
+    }
+  },
+  "anti_patterns": [
+    {
+      "pattern": "Trading during illiquid hours (04:00-06:00 UTC)",
+      "reason": "Wide spreads, thin order book, easy manipulation",
+      "average_slippage": "0.3-0.5%",
+      "recommendation": "Skip or reduce sizing 50%"
+    },
+    {
+      "pattern": "Fading breaks in high volatility regimes",
+      "reason": "Reversions less likely when volatility high",
+      "data": "35% WR vs 60% in normal vol",
+      "recommendation": "Only fade in low-vol regimes"
+    },
+    {
+      "pattern": "Counter-trend entries in confirmed trends",
+      "reason": "Trend inertia strong, counter rarely works",
+      "data": "38% WR",
+      "recommendation": "Only trade with trend, not against"
+    }
+  ],
+  "discovery_process": {
+    "lookback_period": "30-60 days of trades",
+    "minimum_sample_size": 20,
+    "significance_threshold": 0.65,
+    "confidence_multiplier": "sample_size / 50",
+    "methods": [
+      "Group trades by time-of-day + symbol + regime",
+      "Compute win rate for each group",
+      "Flag groups with WR > 0.60",
+      "Cross-check against randomness (sample size)",
+      "Assign confidence based on consistency"
+    ]
+  },
+  "implementation_guidelines": {
+    "new_pattern_criteria": {
+      "minimum_win_rate": 0.55,
+      "minimum_profit_factor": 1.8,
+      "minimum_samples": 15,
+      "minimum_confidence": 0.65,
+      "graduation_threshold": 30,
+      "graduation_win_rate": 0.58
+    }
+  }
+}

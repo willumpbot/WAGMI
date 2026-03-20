@@ -1,0 +1,648 @@
+{
+  "metadata": {
+    "name": "Regime Tuner Knowledge Base",
+    "version": "1.0",
+    "agent": "regime_tuner",
+    "purpose": "Classify market regimes and optimize strategy parameters based on regime-specific conditions",
+    "last_updated": "2026-03-20",
+    "total_patterns": 54,
+    "expected_improvements": {
+      "parameter_optimization_uplift": "8-15%",
+      "regime_classification_accuracy": "78-85%",
+      "win_rate_consistency": "10-18%"
+    }
+  },
+  "regime_definitions": {
+    "trend": {
+      "regime_id": "trend",
+      "name": "Trending Market",
+      "description": "Clear directional bias with sustained momentum, higher highs/lows, consistent direction",
+      "duration_typical_hours": "4-48",
+      "frequency": "35-40% of time",
+      "characteristics": {
+        "price_structure": "Higher highs, higher lows (uptrend) OR lower highs, lower lows (downtrend)",
+        "moving_averages": "Price above/below rising/falling 50/100/200 MA",
+        "momentum": "Consistent positive/negative momentum oscillators",
+        "volume": "Increasing volume on directional bars, decreasing on retracements",
+        "atr": "ATR 20-40% above normal (expansion)",
+        "volatility": "Directional volatility, not mean-reverting"
+      },
+      "detection_signals": [
+        "ADX > 30 (strong trend)",
+        "Price > rising 200 MA (uptrend) or < falling 200 MA (downtrend)",
+        "Positive/negative momentum score from regime agent",
+        "Consecutive higher highs (uptrend) or lower lows (downtrend)",
+        "Volume profile skewed to directional side"
+      ],
+      "strategy_performance": {
+        "regime_trend": 0.75,
+        "monte_carlo_zones": 0.45,
+        "multi_tier_quality": 0.68,
+        "confidence_scorer": 0.65
+      },
+      "best_strategies": ["regime_trend", "multi_tier_quality", "momentum_following"],
+      "worst_strategies": ["mean_reversion", "monte_carlo_zones"],
+      "win_rate_typical": 0.58,
+      "profit_factor_typical": 1.85,
+      "mae_typical": "2-3%",
+      "parameter_adjustments": {
+        "stop_width_multiplier": 1.0,
+        "tp_ratio_multiplier": 1.3,
+        "position_size_multiplier": 1.2,
+        "leverage_max": 8,
+        "trailing_stop_enabled": true,
+        "time_exit_disabled": true
+      },
+      "entry_optimization": {
+        "pullback_entries_preferred": true,
+        "breakout_entries_effective": true,
+        "ma_bounce_entries": 0.72,
+        "confluence_requirement": "3+ signals minimum"
+      },
+      "exit_optimization": {
+        "best_exit_method": "trailing_stop",
+        "partial_tp_effectiveness": 0.80,
+        "support_resistance_effectiveness": 0.50,
+        "time_based_exit_effectiveness": 0.35
+      }
+    },
+    "range": {
+      "regime_id": "range",
+      "name": "Range-Bound Market",
+      "description": "Price oscillating between defined support/resistance with no clear directional bias",
+      "duration_typical_hours": "2-12",
+      "frequency": "30-35% of time",
+      "characteristics": {
+        "price_structure": "Approximate equal highs, equal lows; bounces between levels",
+        "moving_averages": "Flat or slowly drifting, price oscillates around MA",
+        "momentum": "Extreme levels on oscillators at support/resistance",
+        "volume": "Higher on retracements, lower on directional pushes",
+        "atr": "ATR 30-60% below normal (compression)",
+        "volatility": "Mean-reverting, not directional"
+      },
+      "detection_signals": [
+        "ADX < 20 (weak trend)",
+        "Bollinger Bands pinching (low volatility)",
+        "Price bounces between 2 levels consistently",
+        "Oscillators reaching extremes (RSI > 70 or < 30) then reversing",
+        "Volume drying up on breakout attempts"
+      ],
+      "strategy_performance": {
+        "regime_trend": 0.35,
+        "monte_carlo_zones": 0.68,
+        "multi_tier_quality": 0.62,
+        "confidence_scorer": 0.70
+      },
+      "best_strategies": ["mean_reversion", "monte_carlo_zones", "level_trading"],
+      "worst_strategies": ["momentum_following", "trend_following"],
+      "win_rate_typical": 0.62,
+      "profit_factor_typical": 1.95,
+      "mae_typical": "3-4%",
+      "parameter_adjustments": {
+        "stop_width_multiplier": 0.9,
+        "tp_ratio_multiplier": 0.8,
+        "position_size_multiplier": 1.0,
+        "leverage_max": 5,
+        "trailing_stop_enabled": false,
+        "time_exit_enabled": true
+      },
+      "entry_optimization": {
+        "extreme_oscillator_entries": 0.80,
+        "support_resistance_bounces": 0.78,
+        "ma_extreme_entries": 0.75,
+        "confluence_requirement": "2+ signals acceptable"
+      },
+      "exit_optimization": {
+        "best_exit_method": "fixed_take_profit",
+        "partial_tp_effectiveness": 0.65,
+        "support_resistance_effectiveness": 0.85,
+        "time_based_exit_effectiveness": 0.70
+      }
+    },
+    "panic": {
+      "regime_id": "panic",
+      "name": "Panic Market",
+      "description": "Rapid, violent directional move with extreme emotion, capitulation, or euphoria",
+      "duration_typical_hours": "0.5-4",
+      "frequency": "5-10% of time",
+      "characteristics": {
+        "price_structure": "Gap moves, wide ranges, little pullback during move",
+        "moving_averages": "Price often gaps past critical MAs",
+        "momentum": "Extreme momentum, disconnected from normal values",
+        "volume": "Extreme volume spikes, often growing",
+        "atr": "ATR 50-100%+ above normal (extreme expansion)",
+        "volatility": "One-directional panic, risk of reversal"
+      },
+      "detection_signals": [
+        "ATR > 2x normal ATR",
+        "Volume > 200% of normal",
+        "Large gap open (> 2% of price)",
+        "Momentum oscillators at extreme (RSI > 90 or < 10)",
+        "Regime agent's panic_probability > 80%"
+      ],
+      "strategy_performance": {
+        "regime_trend": 0.40,
+        "monte_carlo_zones": 0.50,
+        "multi_tier_quality": 0.52,
+        "confidence_scorer": 0.48
+      },
+      "best_strategies": ["fade_strategies", "reversal_strategies", "early_exit_focus"],
+      "worst_strategies": ["trend_following", "all_normal_strategies"],
+      "win_rate_typical": 0.52,
+      "profit_factor_typical": 1.50,
+      "mae_typical": "4-6%",
+      "parameter_adjustments": {
+        "stop_width_multiplier": 0.7,
+        "tp_ratio_multiplier": 0.6,
+        "position_size_multiplier": 0.4,
+        "leverage_max": 2,
+        "trailing_stop_enabled": false,
+        "early_exit_enabled": true
+      },
+      "entry_optimization": {
+        "trend_fade_entries": 0.65,
+        "exhaustion_entries": 0.70,
+        "reversal_signal_entries": 0.68,
+        "confluence_requirement": "4+ signals minimum (high bar)"
+      },
+      "exit_optimization": {
+        "best_exit_method": "early_exit_signal",
+        "quick_time_exits": 0.85,
+        "reversal_signal_exits": 0.80,
+        "trailing_stop_effectiveness": 0.35
+      }
+    },
+    "high_volatility": {
+      "regime_id": "high_volatility",
+      "name": "High Volatility Market",
+      "description": "Large unpredictable swings in any direction, choppy price action",
+      "duration_typical_hours": "1-8",
+      "frequency": "15-20% of time",
+      "characteristics": {
+        "price_structure": "Frequent direction changes, large wicks, conflicting signals",
+        "moving_averages": "Price whipsaw around MAs, weak structure",
+        "momentum": "Oscillators swing between extremes rapidly",
+        "volume": "Erratic volume, often without directional correlation",
+        "atr": "ATR 30-50% above normal (elevated but not extreme)",
+        "volatility": "Non-directional, mean-reverting to extreme values"
+      },
+      "detection_signals": [
+        "ATR > 75th percentile but not extreme",
+        "Bollinger Bands significantly widened",
+        "ADX < 20 despite large ATR (volatility without direction)",
+        "Oscillators ping-ponging between extremes",
+        "Previous 10 bars have no consistent direction"
+      ],
+      "strategy_performance": {
+        "regime_trend": 0.45,
+        "monte_carlo_zones": 0.55,
+        "multi_tier_quality": 0.58,
+        "confidence_scorer": 0.50
+      },
+      "best_strategies": ["breakout_strategies", "volatility_mean_reversion", "multi_timeframe"],
+      "worst_strategies": ["simple_trend_following"],
+      "win_rate_typical": 0.50,
+      "profit_factor_typical": 1.60,
+      "mae_typical": "5-7%",
+      "parameter_adjustments": {
+        "stop_width_multiplier": 1.2,
+        "tp_ratio_multiplier": 1.0,
+        "position_size_multiplier": 0.6,
+        "leverage_max": 3,
+        "trailing_stop_enabled": false,
+        "volatility_adapted_stops": true
+      },
+      "entry_optimization": {
+        "breakout_entries": 0.55,
+        "multiple_confirmation_entries": 0.72,
+        "extreme_oscillator_entries": 0.60,
+        "confluence_requirement": "4+ signals minimum"
+      },
+      "exit_optimization": {
+        "best_exit_method": "volatility_adjusted_exit",
+        "price_action_exits": 0.68,
+        "support_resistance_exits": 0.62,
+        "trailing_stop_effectiveness": 0.50
+      }
+    },
+    "low_liquidity": {
+      "regime_id": "low_liquidity",
+      "name": "Low Liquidity Market",
+      "description": "Thin order books, wide spreads, execution risk, potential trapped trades",
+      "duration_typical_hours": "1-24",
+      "frequency": "5-10% of time (typically specific symbols/times)",
+      "characteristics": {
+        "price_structure": "Any direction, but large bid-ask spreads affect pricing",
+        "moving_averages": "May be irrelevant due to spread noise",
+        "momentum": "Can be misleading due to spread-driven moves",
+        "volume": "Very low absolute volume",
+        "atr": "ATR may include spread effects",
+        "volatility": "Spread volatility dominant"
+      },
+      "detection_signals": [
+        "Bid-ask spread > 0.1% of mid-price",
+        "Volume < 50% of normal",
+        "Order book depth < $100k on each side",
+        "Price moves with single order executions",
+        "Time of day or symbol causing low volume"
+      ],
+      "strategy_performance": {
+        "regime_trend": 0.30,
+        "monte_carlo_zones": 0.40,
+        "multi_tier_quality": 0.45,
+        "confidence_scorer": 0.42
+      },
+      "best_strategies": ["execution_focus", "time_exit_early"],
+      "worst_strategies": ["all_strategies (generally avoid)"],
+      "win_rate_typical": 0.48,
+      "profit_factor_typical": 1.45,
+      "mae_typical": "6-8%",
+      "parameter_adjustments": {
+        "stop_width_multiplier": 1.5,
+        "tp_ratio_multiplier": 0.7,
+        "position_size_multiplier": 0.3,
+        "leverage_max": 1,
+        "avoid_trading": true,
+        "use_limit_orders": true
+      },
+      "entry_optimization": {
+        "best_entry_strategy": "SKIP - avoid low liquidity",
+        "if_must_trade": "Limit orders only, wider stops"
+      },
+      "exit_optimization": {
+        "best_exit_method": "exit_immediately",
+        "use_limit_orders": true,
+        "avoid_market_orders": true
+      }
+    },
+    "news_dislocation": {
+      "regime_id": "news_dislocation",
+      "name": "News/Event Dislocation",
+      "description": "Rapid repricing due to news/economic events, potential mean reversion or sustained directional move",
+      "duration_typical_hours": "0.5-4",
+      "frequency": "2-5% of time (specific events)",
+      "characteristics": {
+        "price_structure": "Gap open at event time, initial direction unclear",
+        "moving_averages": "Price may gap past or below MAs",
+        "momentum": "Initial overshoot possible, then stabilization",
+        "volume": "Spike on event time, may normalize after",
+        "atr": "Temporary spike, then returns to normal",
+        "volatility": "Very high initially, fades as event is priced in"
+      },
+      "detection_signals": [
+        "Known event time passed (FOMC, earnings, major news)",
+        "Gap > 1% at open/event time",
+        "Volume spike at specific time",
+        "Momentum initially extreme then stabilizing",
+        "News sentiment aligned with move"
+      ],
+      "strategy_performance": {
+        "regime_trend": 0.48,
+        "monte_carlo_zones": 0.55,
+        "multi_tier_quality": 0.60,
+        "confidence_scorer": 0.65
+      },
+      "best_strategies": ["event_fade", "mean_reversion", "time_exit"],
+      "worst_strategies": ["trend_following_initial_direction"],
+      "win_rate_typical": 0.55,
+      "profit_factor_typical": 1.70,
+      "mae_typical": "3-5%",
+      "parameter_adjustments": {
+        "stop_width_multiplier": 0.8,
+        "tp_ratio_multiplier": 0.9,
+        "position_size_multiplier": 0.7,
+        "leverage_max": 4,
+        "time_exit_mandatory": true,
+        "early_exit_enabled": true
+      },
+      "entry_optimization": {
+        "fade_entries": 0.72,
+        "mean_reversion_entries": 0.68,
+        "thesis_validation_critical": true,
+        "confluence_requirement": "3+ signals minimum"
+      },
+      "exit_optimization": {
+        "best_exit_method": "time_based_exit",
+        "exit_time_minutes": 30,
+        "reversal_signal_exits": 0.75,
+        "support_resistance_exits": 0.68
+      }
+    }
+  },
+  "regime_transition_patterns": {
+    "trend_to_range": {
+      "from_regime": "trend",
+      "to_regime": "range",
+      "description": "Trend exhaustion, momentum fading, price compressing",
+      "duration_typical_hours": 1,
+      "indicator_signals": [
+        "ADX crossing below 30",
+        "Decreasing volume on directional bars",
+        "Higher high/low not extending further",
+        "Momentum divergence (price higher, momentum lower)",
+        "Price approaching resistance/support"
+      ],
+      "behavior_during_transition": {
+        "strategy_confusion": "Trend strategies suddenly underperform",
+        "entry_difficulty": "Entries face quick reversals",
+        "whipsaw_risk": "Traders stopped out on both sides",
+        "liquidity_change": "Volume dries up on breakout attempts"
+      },
+      "preparation_steps": [
+        "Tighten stops on existing positions",
+        "Reduce position size for new entries",
+        "Avoid trend-following signals",
+        "Watch for range-support/resistance"
+      ]
+    },
+    "range_to_trend": {
+      "from_regime": "range",
+      "to_regime": "trend",
+      "description": "Breakout from range, momentum accelerating, new directional bias forming",
+      "duration_typical_hours": 0.5,
+      "indicator_signals": [
+        "ADX crossing above 20 and rising",
+        "Volume spike on breakout",
+        "Price breaking above range resistance (or below support)",
+        "Momentum starting to build",
+        "Bollinger Bands expanding"
+      ],
+      "behavior_during_transition": {
+        "breakout_energy": "Strong initial push, often extended",
+        "pullback_risk": "First pullback can be sharp",
+        "entry_opportunity": "Early breakout entries high probability",
+        "liquidity_burst": "Sudden volume increase"
+      },
+      "preparation_steps": [
+        "Watch for breakout signals",
+        "Position near range boundaries",
+        "Prepare larger position sizes",
+        "Set trailing stops for capturing moves"
+      ]
+    },
+    "normal_to_panic": {
+      "from_regime": "trend/range",
+      "to_regime": "panic",
+      "description": "Sudden capitulation, news shock, cascade liquidations",
+      "duration_typical_hours": 0.25,
+      "indicator_signals": [
+        "Sudden gap open > 2%",
+        "Volume spike 300%+",
+        "ATR spike 50%+",
+        "News catalyst (liquidation cascade, major economic surprise)",
+        "VIX or crypto equivalent spiking"
+      ],
+      "behavior_during_transition": {
+        "stop_loss_hunting": "Stops swept before reversal",
+        "execution_failure": "Market orders get poor fills",
+        "reversal_intensity": "Reversal can be as sharp as down move",
+        "opportunity_for_faders": "Fades work well"
+      },
+      "preparation_steps": [
+        "Exit positions immediately if signals align",
+        "Use limit orders if entering fades",
+        "Reduce leverage to minimal",
+        "Wait for stabilization before new entries"
+      ]
+    },
+    "high_vol_to_normal": {
+      "from_regime": "high_volatility",
+      "to_regime": "trend/range",
+      "description": "Volatility compression, price stabilizing, direction becoming clearer",
+      "duration_typical_hours": 1,
+      "indicator_signals": [
+        "ATR dropping below 75th percentile",
+        "Bollinger Bands compressing",
+        "ADX starting to form direction (rising trend)",
+        "Whipsaws reducing",
+        "Volume stabilizing"
+      ],
+      "behavior_during_transition": {
+        "opportunity_emergence": "Clearer signals from stabilization",
+        "confidence_recovery": "Traders returning to normal strategies",
+        "direction_revelation": "Direction becomes clear post-compression",
+        "momentum_building": "New momentum forms"
+      },
+      "preparation_steps": [
+        "Increase position sizes carefully",
+        "Return to normal stop widths",
+        "Use normal strategy mix",
+        "Prepare for either trend or range"
+      ]
+    }
+  },
+  "regime_duration_patterns": {
+    "trend_durations": {
+      "very_short": {"hours": "0.5-2", "frequency_percent": 15, "characteristics": "Spike moves, temporary pushes"},
+      "short": {"hours": "2-8", "frequency_percent": 35, "characteristics": "Intraday trends, common"},
+      "medium": {"hours": "8-24", "frequency_percent": 30, "characteristics": "Multi-hour trends, sustained"},
+      "long": {"hours": "24-72", "frequency_percent": 15, "characteristics": "Multi-day trends, strong"},
+      "very_long": {"hours": "72+", "frequency_percent": 5, "characteristics": "Major trends, rare"}
+    },
+    "range_durations": {
+      "very_short": {"hours": "0.5-1", "frequency_percent": 10, "characteristics": "Brief consolidation"},
+      "short": {"hours": "1-4", "frequency_percent": 40, "characteristics": "Common ranging periods"},
+      "medium": {"hours": "4-12", "frequency_percent": 35, "characteristics": "Typical range bounds"},
+      "long": {"hours": "12-24", "frequency_percent": 12, "characteristics": "Extended consolidation"},
+      "very_long": {"hours": "24+", "frequency_percent": 3, "characteristics": "Rare, usually before breakout"}
+    },
+    "panic_durations": {
+      "flash_panic": {"hours": "0.25-0.5", "frequency_percent": 40, "characteristics": "Quick reverse, stabilizes fast"},
+      "short_panic": {"hours": "0.5-2", "frequency_percent": 40, "characteristics": "Typical panic duration"},
+      "extended_panic": {"hours": "2-4", "frequency_percent": 15, "characteristics": "Sustained capitulation"},
+      "systemic_panic": {"hours": "4+", "frequency_percent": 5, "characteristics": "Major event driven"}
+    },
+    "holding_period_optimization": {
+      "trend": "4-24 hours (ride the full move)",
+      "range": "0.5-4 hours (capture bounce)",
+      "panic": "0.25-2 hours (exit before reversal)",
+      "high_volatility": "1-6 hours (quick exits)",
+      "low_liquidity": "0.25-1 hours (fast exits)",
+      "news_dislocation": "0.5-2 hours (fade into stability)"
+    }
+  },
+  "entry_exit_adjustments_by_regime": {
+    "trend_regime": {
+      "entry_optimization": {
+        "best_signals": "Pullback to MA, continuation breakouts",
+        "avoid_signals": "Counter-trend reversals",
+        "confluence_needed": 3,
+        "price_action_pattern": "Higher low pullback, resume higher high",
+        "volume_requirement": "Increasing volume on directional bars"
+      },
+      "exit_optimization": {
+        "best_method": "Trailing stop",
+        "stop_width_atr": 1.5,
+        "tp_ratio": 1.5,
+        "partial_exits": true,
+        "time_exit": "Disabled"
+      }
+    },
+    "range_regime": {
+      "entry_optimization": {
+        "best_signals": "Bounce from support/resistance",
+        "avoid_signals": "Breakout attempts (fade them)",
+        "confluence_needed": 2,
+        "price_action_pattern": "Extremes (RSI > 70 or < 30), reversals",
+        "volume_requirement": "Higher volume on reversals"
+      },
+      "exit_optimization": {
+        "best_method": "Fixed TP at opposite level",
+        "stop_width_atr": 1.0,
+        "tp_ratio": 1.0,
+        "partial_exits": false,
+        "time_exit": "Enabled, 2-4 hours"
+      }
+    },
+    "panic_regime": {
+      "entry_optimization": {
+        "best_signals": "Fade signals, reversal exhaustion",
+        "avoid_signals": "Trend following initial direction",
+        "confluence_needed": 4,
+        "price_action_pattern": "Exhaustion candles, divergences",
+        "volume_requirement": "Declining volume into move"
+      },
+      "exit_optimization": {
+        "best_method": "Early exit on reversal signal",
+        "stop_width_atr": 0.7,
+        "tp_ratio": 0.6,
+        "partial_exits": true,
+        "time_exit": "Mandatory, 5 minutes max"
+      }
+    },
+    "high_volatility_regime": {
+      "entry_optimization": {
+        "best_signals": "Breakouts with confirmation",
+        "avoid_signals": "Mean reversion (whipsaws)",
+        "confluence_needed": 4,
+        "price_action_pattern": "Confirmed breakouts, extremes with reversals",
+        "volume_requirement": "Multiple confirmations"
+      },
+      "exit_optimization": {
+        "best_method": "Volatility-adjusted stop",
+        "stop_width_atr": 1.5,
+        "tp_ratio": 1.0,
+        "partial_exits": true,
+        "time_exit": "4 hours"
+      }
+    },
+    "low_liquidity_regime": {
+      "entry_optimization": {
+        "best_signals": "None - avoid this regime",
+        "avoid_signals": "All signals",
+        "confluence_needed": "N/A",
+        "price_action_pattern": "N/A",
+        "volume_requirement": "Skip"
+      },
+      "exit_optimization": {
+        "best_method": "Limit order exit, immediate",
+        "stop_width_atr": 2.0,
+        "tp_ratio": 0.5,
+        "partial_exits": true,
+        "time_exit": "1 hour mandatory"
+      }
+    },
+    "news_dislocation_regime": {
+      "entry_optimization": {
+        "best_signals": "Fade signals 30min+ after event",
+        "avoid_signals": "Trend following the dislocation",
+        "confluence_needed": 3,
+        "price_action_pattern": "Overshoot, stabilization, reversal",
+        "volume_requirement": "Volume declining"
+      },
+      "exit_optimization": {
+        "best_method": "Time-based exit",
+        "stop_width_atr": 0.8,
+        "tp_ratio": 0.9,
+        "partial_exits": true,
+        "time_exit": "30 minutes mandatory"
+      }
+    }
+  },
+  "parameter_adjustment_guidelines": {
+    "stop_loss_adjustments": {
+      "conservative_regime": {"regime": "panic", "multiplier": 0.7, "purpose": "Tight stops for quick exits"},
+      "balanced_regime": {"regime": "range", "multiplier": 0.9, "purpose": "Normal stops for reversals"},
+      "aggressive_regime": {"regime": "trend", "multiplier": 1.3, "purpose": "Wider stops to capture moves"},
+      "volatile_regime": {"regime": "high_volatility", "multiplier": 1.5, "purpose": "Extra wide for whipsaw protection"},
+      "liquid_only_regime": {"regime": "low_liquidity", "multiplier": 2.0, "purpose": "Avoid this regime"}
+    },
+    "take_profit_adjustments": {
+      "conservative_regime": {"regime": "panic", "multiplier": 0.6, "rationale": "Small profits, quick exits"},
+      "balanced_regime": {"regime": "range", "multiplier": 0.8, "rationale": "Take bounces at resistance"},
+      "aggressive_regime": {"regime": "trend", "multiplier": 1.5, "rationale": "Ride extended moves"},
+      "volatile_regime": {"regime": "high_volatility", "multiplier": 1.0, "rationale": "Reduced targets, chase volume"},
+      "liquid_only_regime": {"regime": "low_liquidity", "multiplier": 0.5, "rationale": "Get out fast"}
+    },
+    "position_size_adjustments": {
+      "conservative_regime": {"regime": "panic", "multiplier": 0.4, "rationale": "Micro positions for volatility"},
+      "balanced_regime": {"regime": "range", "multiplier": 1.0, "rationale": "Normal sizing for consistency"},
+      "aggressive_regime": {"regime": "trend", "multiplier": 1.2, "rationale": "Larger positions for sustained moves"},
+      "volatile_regime": {"regime": "high_volatility", "multiplier": 0.6, "rationale": "Reduce position to manage whipsaws"},
+      "liquid_only_regime": {"regime": "low_liquidity", "multiplier": 0.2, "rationale": "Avoid"}
+    }
+  },
+  "regime_detection_confidence_scoring": {
+    "confidence_calculation": "Score each regime indicator (0-10), weight by importance, average for regime score",
+    "scoring_framework": {
+      "trend_indicators": {
+        "adr_above_30": {"weight": 0.25, "threshold": 30, "description": "Strength of trend"},
+        "ma_alignment": {"weight": 0.20, "threshold": 0.8, "description": "Price relative to MAs"},
+        "higher_highs_lows": {"weight": 0.20, "threshold": 3, "description": "# of consecutive HH/HL"},
+        "momentum_direction": {"weight": 0.15, "threshold": 0.7, "description": "Momentum score"},
+        "volume_confirmation": {"weight": 0.20, "threshold": 0.8, "description": "Volume aligned"}
+      },
+      "range_indicators": {
+        "adx_below_20": {"weight": 0.25, "threshold": 20, "description": "Weak trend"},
+        "bollinger_squeeze": {"weight": 0.20, "threshold": 0.3, "description": "Band width/height ratio"},
+        "price_oscillation": {"weight": 0.20, "threshold": 5, "description": "# bounces off levels"},
+        "oscillator_extremes": {"weight": 0.15, "threshold": 0.7, "description": "Reaching extremes"},
+        "breakout_failures": {"weight": 0.20, "threshold": 3, "description": "# failed breakouts"}
+      },
+      "panic_indicators": {
+        "atr_spike": {"weight": 0.25, "threshold": 2.0, "description": "ATR 2x+ normal"},
+        "volume_spike": {"weight": 0.25, "threshold": 3.0, "description": "Volume 3x+ normal"},
+        "momentum_extreme": {"weight": 0.20, "threshold": 0.95, "description": "RSI > 90 or < 10"},
+        "gap_move": {"weight": 0.20, "threshold": 0.02, "description": "Gap > 2%"},
+        "catalyst_present": {"weight": 0.10, "threshold": 1.0, "description": "News event detected"}
+      }
+    },
+    "confidence_thresholds": {
+      "confident_classification": {"threshold": 0.75, "action": "Use regime-specific parameters"},
+      "moderate_classification": {"threshold": 0.55, "action": "Use balanced/hybrid parameters"},
+      "uncertain_classification": {"threshold": 0.55, "action": "Default to conservative parameters"},
+      "no_clear_regime": {"threshold": 0.40, "action": "Skip or micro-trade"}
+    }
+  },
+  "regime_validation_rules": {
+    "rule_1": "Regime must be classified with >= 50% confidence before parameter adjustments applied",
+    "rule_2": "Regime classification must update at least every 15 minutes",
+    "rule_3": "ADX must be checked; ADX < 20 AND ADX > 30 cannot both be true",
+    "rule_4": "Panic regime requires >= 2 of: (ATR 2x+, Volume 3x+, Gap 2%+, Momentum extreme)",
+    "rule_5": "Regime transitions must be confirmed over 2+ candles before action",
+    "rule_6": "Range regime requires >= 3 level bounces to confirm (not just 1-2)",
+    "rule_7": "Trend regime requires >= 2 consecutive HH (uptrend) or LL (downtrend)",
+    "rule_8": "News dislocation requires confirmed event time + 30min minimum before fading",
+    "rule_9": "Low liquidity regime detection must override other signals (avoid trading)",
+    "rule_10": "Regime classification changes cannot trigger stops; only parameter adjustments"
+  },
+  "expected_improvements": {
+    "by_optimization": {
+      "regime_classification_accuracy": {
+        "baseline_accuracy": "65-70%",
+        "with_optimization": "78-85%",
+        "improvement": "13-15 percentage points"
+      },
+      "parameter_tuning_impact": {
+        "win_rate_improvement": "3-6%",
+        "profit_factor_improvement": "0.15-0.25",
+        "consistency_improvement": "12-18%"
+      },
+      "regime_specific_edge": {
+        "trend_regime_edge": "3-8% improvement",
+        "range_regime_edge": "4-10% improvement",
+        "panic_regime_survival": "Better loss management, 2-5% edge"
+      }
+    }
+  }
+}

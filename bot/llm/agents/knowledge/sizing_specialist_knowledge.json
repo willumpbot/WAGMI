@@ -1,0 +1,691 @@
+{
+  "metadata": {
+    "name": "Sizing Specialist Knowledge Base",
+    "version": "1.0",
+    "agent": "sizing_specialist",
+    "purpose": "Optimize position sizing, leverage allocation, and risk management across account sizes and market conditions",
+    "last_updated": "2026-03-20",
+    "total_patterns": 58,
+    "expected_improvements": {
+      "risk_adjusted_returns": "15-25%",
+      "drawdown_reduction": "20-30%",
+      "sharpe_ratio_improvement": "0.3-0.7"
+    }
+  },
+  "kelly_criterion_framework": {
+    "theory": {
+      "description": "Kelly Criterion: f* = (bp - q) / b, where f* is % of capital to risk, b is profit ratio, p is win rate, q is loss rate",
+      "formula": "f* = (bp - q) / b = (p * win_size - (1-p) * loss_size) / win_size",
+      "purpose": "Optimal sizing that maximizes long-term geometric growth",
+      "warning": "Full Kelly can create drawdowns of 10-15%; most use fractional Kelly (0.25-0.5)"
+    },
+    "fractional_kelly_options": {
+      "quarter_kelly": {
+        "fraction": 0.25,
+        "description": "Very conservative, smooth equity curve",
+        "typical_max_dd": "5-8%",
+        "growth_rate": "Slow but steady",
+        "use_case": "Large accounts, risk-averse traders"
+      },
+      "half_kelly": {
+        "fraction": 0.5,
+        "description": "Balanced aggression and drawdown",
+        "typical_max_dd": "10-15%",
+        "growth_rate": "Strong, sustainable",
+        "use_case": "Most professional traders, recommended default"
+      },
+      "three_quarter_kelly": {
+        "fraction": 0.75,
+        "description": "More aggressive than half",
+        "typical_max_dd": "15-22%",
+        "growth_rate": "Very strong but volatile",
+        "use_case": "Experienced traders with high win rates"
+      },
+      "full_kelly": {
+        "fraction": 1.0,
+        "description": "Maximal growth but very volatile",
+        "typical_max_dd": "20-30%+",
+        "growth_rate": "Explosive but risky",
+        "use_case": "Only if win rate > 60% and risk tolerance very high"
+      }
+    },
+    "kelly_examples": {
+      "example_1": {
+        "win_rate": 0.55,
+        "avg_win": "$150",
+        "avg_loss": "-$100",
+        "risk_reward_ratio": 1.5,
+        "calculations": {
+          "q": 0.45,
+          "p": 0.55,
+          "b": 1.5,
+          "full_kelly_fraction": "((0.55 * 1.5) - 0.45) / 1.5 = 0.2667",
+          "quarter_kelly": 0.0667,
+          "half_kelly": 0.1333,
+          "three_quarter_kelly": 0.2000,
+          "full_kelly": 0.2667
+        },
+        "position_sizing_interpretation": {
+          "quarter_kelly_percent": "Risk 0.67% of capital per trade",
+          "half_kelly_percent": "Risk 1.33% of capital per trade",
+          "three_quarter_kelly_percent": "Risk 2.00% of capital per trade",
+          "full_kelly_percent": "Risk 2.67% of capital per trade"
+        }
+      },
+      "example_2": {
+        "win_rate": 0.60,
+        "avg_win": "$200",
+        "avg_loss": "-$100",
+        "risk_reward_ratio": 2.0,
+        "calculations": {
+          "q": 0.40,
+          "p": 0.60,
+          "b": 2.0,
+          "full_kelly_fraction": "((0.60 * 2.0) - 0.40) / 2.0 = 0.40",
+          "quarter_kelly": 0.10,
+          "half_kelly": 0.20,
+          "three_quarter_kelly": 0.30,
+          "full_kelly": 0.40
+        },
+        "position_sizing_interpretation": {
+          "quarter_kelly_percent": "Risk 1% of capital per trade",
+          "half_kelly_percent": "Risk 2% of capital per trade",
+          "three_quarter_kelly_percent": "Risk 3% of capital per trade",
+          "full_kelly_percent": "Risk 4% of capital per trade"
+        }
+      },
+      "example_3": {
+        "win_rate": 0.65,
+        "avg_win": "$300",
+        "avg_loss": "-$100",
+        "risk_reward_ratio": 3.0,
+        "calculations": {
+          "q": 0.35,
+          "p": 0.65,
+          "b": 3.0,
+          "full_kelly_fraction": "((0.65 * 3.0) - 0.35) / 3.0 = 0.55",
+          "quarter_kelly": 0.1375,
+          "half_kelly": 0.275,
+          "three_quarter_kelly": 0.4125,
+          "full_kelly": 0.55
+        },
+        "position_sizing_interpretation": {
+          "quarter_kelly_percent": "Risk 1.375% of capital per trade",
+          "half_kelly_percent": "Risk 2.75% of capital per trade",
+          "three_quarter_kelly_percent": "Risk 4.125% of capital per trade",
+          "full_kelly_percent": "Risk 5.5% of capital per trade"
+        }
+      }
+    }
+  },
+  "regime_adaptive_sizing": {
+    "trend": {
+      "regime_id": "trend",
+      "win_rate_typical": 0.58,
+      "profit_factor_typical": 1.85,
+      "recommended_kelly_fraction": 0.4,
+      "recommended_risk_percent": 1.5,
+      "position_size_multiplier": 1.2,
+      "leverage_tier": "moderate",
+      "rationale": "Trends are sustained; higher conviction allows larger positions",
+      "margin_requirement_percent": 5,
+      "max_positions_concurrent": 4,
+      "trailing_stop_effectiveness": 0.80,
+      "typical_holding_period_hours": 4
+    },
+    "range": {
+      "regime_id": "range",
+      "win_rate_typical": 0.62,
+      "profit_factor_typical": 1.95,
+      "recommended_kelly_fraction": 0.45,
+      "recommended_risk_percent": 1.2,
+      "position_size_multiplier": 1.0,
+      "leverage_tier": "conservative",
+      "rationale": "High win rate but small average wins; size conservatively",
+      "margin_requirement_percent": 4,
+      "max_positions_concurrent": 5,
+      "trailing_stop_effectiveness": 0.55,
+      "typical_holding_period_hours": 1
+    },
+    "panic": {
+      "regime_id": "panic",
+      "win_rate_typical": 0.52,
+      "profit_factor_typical": 1.50,
+      "recommended_kelly_fraction": 0.15,
+      "recommended_risk_percent": 0.5,
+      "position_size_multiplier": 0.4,
+      "leverage_tier": "minimal",
+      "rationale": "Low win rate, high volatility; minimize exposure",
+      "margin_requirement_percent": 3,
+      "max_positions_concurrent": 1,
+      "trailing_stop_effectiveness": 0.35,
+      "typical_holding_period_hours": 0.25
+    },
+    "high_volatility": {
+      "regime_id": "high_volatility",
+      "win_rate_typical": 0.50,
+      "profit_factor_typical": 1.60,
+      "recommended_kelly_fraction": 0.20,
+      "recommended_risk_percent": 0.75,
+      "position_size_multiplier": 0.6,
+      "leverage_tier": "minimal_to_conservative",
+      "rationale": "Unpredictable direction; smaller positions, focus on survival",
+      "margin_requirement_percent": 4,
+      "max_positions_concurrent": 2,
+      "trailing_stop_effectiveness": 0.62,
+      "typical_holding_period_hours": 1
+    },
+    "low_liquidity": {
+      "regime_id": "low_liquidity",
+      "win_rate_typical": 0.48,
+      "profit_factor_typical": 1.45,
+      "recommended_kelly_fraction": 0.10,
+      "recommended_risk_percent": 0.4,
+      "position_size_multiplier": 0.3,
+      "leverage_tier": "minimal",
+      "rationale": "Execution risk high; micro-positions only",
+      "margin_requirement_percent": 3,
+      "max_positions_concurrent": 1,
+      "trailing_stop_effectiveness": 0.40,
+      "typical_holding_period_hours": 0.5
+    },
+    "news_dislocation": {
+      "regime_id": "news_dislocation",
+      "win_rate_typical": 0.55,
+      "profit_factor_typical": 1.70,
+      "recommended_kelly_fraction": 0.25,
+      "recommended_risk_percent": 0.8,
+      "position_size_multiplier": 0.7,
+      "leverage_tier": "conservative",
+      "rationale": "Event-based volatility; moderate exposure, quick exits",
+      "margin_requirement_percent": 4,
+      "max_positions_concurrent": 2,
+      "trailing_stop_effectiveness": 0.50,
+      "typical_holding_period_hours": 0.5
+    }
+  },
+  "position_size_by_confidence": {
+    "confidence_levels": {
+      "very_low": {
+        "confidence_range": "0-25%",
+        "position_multiplier": 0.2,
+        "risk_percent": 0.2,
+        "leverage_cap": 1.0,
+        "description": "Minimal edge signal, skip or micro position",
+        "example": "Single strategy signal, no confluence, low R:R"
+      },
+      "low": {
+        "confidence_range": "25-40%",
+        "position_multiplier": 0.4,
+        "risk_percent": 0.4,
+        "leverage_cap": 1.5,
+        "description": "Weak edge, defensive sizing",
+        "example": "Single positive signal, 2-3 positive indicators, R:R 1.0"
+      },
+      "moderate": {
+        "confidence_range": "40-60%",
+        "position_multiplier": 0.7,
+        "risk_percent": 0.8,
+        "leverage_cap": 3.0,
+        "description": "Reasonable edge, normal sizing",
+        "example": "Multiple confluent signals, 4-5 positive indicators, R:R 1.5"
+      },
+      "high": {
+        "confidence_range": "60-80%",
+        "position_multiplier": 1.0,
+        "risk_percent": 1.2,
+        "leverage_cap": 5.0,
+        "description": "Strong edge, full Kelly sizing",
+        "example": "All agents agree, 6+ confirmations, high R:R, clean setup"
+      },
+      "very_high": {
+        "confidence_range": "80-100%",
+        "position_multiplier": 1.3,
+        "risk_percent": 1.5,
+        "leverage_cap": 8.0,
+        "description": "Exceptional edge, aggressive sizing",
+        "example": "Perfect setup, regime alignment, all systems aligned, R:R 2.5+"
+      }
+    }
+  },
+  "account_size_specific_rules": {
+    "$500_account": {
+      "account_size": "$500",
+      "classification": "micro",
+      "max_risk_percent_per_trade": 0.25,
+      "max_risk_absolute": "$1.25",
+      "max_positions_concurrent": 1,
+      "leverage_max": 2,
+      "symbols_recommended": ["BTC", "ETH"],
+      "timeframes_recommended": ["1h", "4h"],
+      "trade_frequency": "1-2 per day",
+      "typical_position_size": "$250-500",
+      "notes": "Avoid leverage; focus on high-quality setups; slippage will kill you"
+    },
+    "$1000_account": {
+      "account_size": "$1000",
+      "classification": "small",
+      "max_risk_percent_per_trade": 0.5,
+      "max_risk_absolute": "$5.00",
+      "max_positions_concurrent": 1,
+      "leverage_max": 3,
+      "symbols_recommended": ["BTC", "ETH", "SOL"],
+      "timeframes_recommended": ["1h", "4h", "daily"],
+      "trade_frequency": "2-3 per day",
+      "typical_position_size": "$500-1000",
+      "notes": "Can use light leverage on best setups; still focus on quality over quantity"
+    },
+    "$5000_account": {
+      "account_size": "$5000",
+      "classification": "starter",
+      "max_risk_percent_per_trade": 1.0,
+      "max_risk_absolute": "$50",
+      "max_positions_concurrent": 2,
+      "leverage_max": 5,
+      "symbols_recommended": ["BTC", "ETH", "SOL", "selective_alts"],
+      "timeframes_recommended": ["15m", "1h", "4h", "daily"],
+      "trade_frequency": "3-5 per day",
+      "typical_position_size": "$1000-3000",
+      "notes": "Leverage becomes a viable tool; diversify signals; build track record"
+    },
+    "$10000_account": {
+      "account_size": "$10000",
+      "classification": "standard",
+      "max_risk_percent_per_trade": 1.5,
+      "max_risk_absolute": "$150",
+      "max_positions_concurrent": 3,
+      "leverage_max": 8,
+      "symbols_recommended": ["BTC", "ETH", "SOL", "broader_alts"],
+      "timeframes_recommended": ["5m", "15m", "1h", "4h", "daily"],
+      "trade_frequency": "5-8 per day",
+      "typical_position_size": "$2000-5000",
+      "notes": "Multi-position management required; leverage needs careful monitoring"
+    },
+    "$25000_account": {
+      "account_size": "$25000",
+      "classification": "professional",
+      "max_risk_percent_per_trade": 2.0,
+      "max_risk_absolute": "$500",
+      "max_positions_concurrent": 4,
+      "leverage_max": 10,
+      "symbols_recommended": ["All major", "selective_minor"],
+      "timeframes_recommended": ["all"],
+      "trade_frequency": "8-12 per day",
+      "typical_position_size": "$5000-15000",
+      "notes": "Full strategy suite viable; risk management critical; monitor concentration"
+    },
+    "$50000_plus_account": {
+      "account_size": "$50000+",
+      "classification": "institutional",
+      "max_risk_percent_per_trade": 2.5,
+      "max_risk_absolute": "$1250+",
+      "max_positions_concurrent": 5,
+      "leverage_max": 15,
+      "symbols_recommended": ["All"],
+      "timeframes_recommended": ["all"],
+      "trade_frequency": "12+ per day",
+      "typical_position_size": "$10000+",
+      "notes": "Advanced strategies viable; focus on consistency and risk-adjusted returns"
+    }
+  },
+  "drawdown_impact_analysis": {
+    "theory": "Drawdown recovery requires exponentially larger gains; 50% DD needs 100% gain to recover",
+    "recovery_mathematics": {
+      "10_percent_dd": {
+        "drawdown_percent": 10,
+        "required_recovery_gain": 11.1,
+        "trades_to_recover_estimate": 10
+      },
+      "20_percent_dd": {
+        "drawdown_percent": 20,
+        "required_recovery_gain": 25.0,
+        "trades_to_recover_estimate": 25
+      },
+      "30_percent_dd": {
+        "drawdown_percent": 30,
+        "required_recovery_gain": 42.9,
+        "trades_to_recover_estimate": 45
+      },
+      "40_percent_dd": {
+        "drawdown_percent": 40,
+        "required_recovery_gain": 66.7,
+        "trades_to_recover_estimate": 75
+      },
+      "50_percent_dd": {
+        "drawdown_percent": 50,
+        "required_recovery_gain": 100.0,
+        "trades_to_recover_estimate": 120
+      }
+    },
+    "sizing_impact_on_dd": {
+      "conservative_sizing": {
+        "risk_per_trade": 0.5,
+        "typical_max_dd": "5-8%",
+        "recovery_trades": 8,
+        "equity_recovery_days": 5
+      },
+      "moderate_sizing": {
+        "risk_per_trade": 1.0,
+        "typical_max_dd": "12-18%",
+        "recovery_trades": 25,
+        "equity_recovery_days": 15
+      },
+      "aggressive_sizing": {
+        "risk_per_trade": 2.0,
+        "typical_max_dd": "25-35%",
+        "recovery_trades": 60,
+        "equity_recovery_days": 40
+      }
+    },
+    "drawdown_prevention_strategies": [
+      {
+        "strategy": "Daily loss limits",
+        "description": "Stop trading after 2% daily loss",
+        "dd_reduction_percent": 20
+      },
+      {
+        "strategy": "Consecutive loss limits",
+        "description": "Stop after 3 consecutive losses",
+        "dd_reduction_percent": 15
+      },
+      {
+        "strategy": "Regime-adaptive sizing",
+        "description": "Reduce size in low-confidence regimes",
+        "dd_reduction_percent": 18
+      },
+      {
+        "strategy": "Multi-timeframe confluence",
+        "description": "Require 4+ confluent signals",
+        "dd_reduction_percent": 25
+      },
+      {
+        "strategy": "Risk-reward thresholds",
+        "description": "Require R:R >= 1.5",
+        "dd_reduction_percent": 12
+      }
+    ]
+  },
+  "leverage_tier_selection": {
+    "tier_1_minimal": {
+      "leverage": 1.0,
+      "margin_requirement": "100%",
+      "recommended_for": "Very low confidence, new traders, panic markets",
+      "max_account_risk_percent": 0.5,
+      "typical_dd_max": "3-5%",
+      "confidence_min": "< 40%",
+      "rationale": "No margin; capital preservation priority",
+      "examples": "Single indicator signal, conflicting signals, panic regime"
+    },
+    "tier_2_conservative": {
+      "leverage": 2.0,
+      "margin_requirement": "50%",
+      "recommended_for": "Low confidence, range trading, new setups",
+      "max_account_risk_percent": 1.0,
+      "typical_dd_max": "8-12%",
+      "confidence_min": "40-50%",
+      "rationale": "Light leverage for normal edge",
+      "examples": "2-3 confluent signals, moderate regime, R:R 1.0-1.5"
+    },
+    "tier_3_moderate": {
+      "leverage": 5.0,
+      "margin_requirement": "20%",
+      "recommended_for": "Moderate confidence, balanced regimes, proven signals",
+      "max_account_risk_percent": 1.5,
+      "typical_dd_max": "15-22%",
+      "confidence_min": "50-65%",
+      "rationale": "Standard leverage for decent edge",
+      "examples": "4-5 confluent signals, trend regime, R:R 1.5-2.0"
+    },
+    "tier_4_aggressive": {
+      "leverage": 8.0,
+      "margin_requirement": "12.5%",
+      "recommended_for": "High confidence, strong setups, experienced traders",
+      "max_account_risk_percent": 2.0,
+      "typical_dd_max": "22-30%",
+      "confidence_min": "65-80%",
+      "rationale": "Significant leverage for strong edge",
+      "examples": "6+ confluent signals, clear regime, R:R 2.0+"
+    },
+    "tier_5_extreme": {
+      "leverage": 15.0,
+      "margin_requirement": "6.7%",
+      "recommended_for": "Very high confidence, perfect setups, only top 5% of trades",
+      "max_account_risk_percent": 2.5,
+      "typical_dd_max": "30-40%+",
+      "confidence_min": "80-95%",
+      "rationale": "Maximum leverage for exceptional opportunities",
+      "examples": "All agents agree, perfect confluence, regime-aligned, R:R 3.0+"
+    }
+  },
+  "multi_position_correlation_rules": {
+    "theory": "Multiple positions can amplify losses if correlated; diversification reduces this",
+    "correlation_matrix": {
+      "btc_eth": 0.85,
+      "btc_sol": 0.75,
+      "btc_alts": 0.70,
+      "eth_sol": 0.80,
+      "eth_alts": 0.68,
+      "sol_alts": 0.72
+    },
+    "position_allocation_rules": {
+      "single_position": {
+        "max_positions": 1,
+        "risk_allocation": "100%",
+        "correlation_risk": "Low",
+        "recommended_for": "Micro accounts, low-confidence trades"
+      },
+      "dual_position": {
+        "max_positions": 2,
+        "risk_allocation": "60% / 40%",
+        "correlation_adjustment": "Reduce 2nd position by 20% due to correlation",
+        "recommended_for": "Small accounts, same regime trades"
+      },
+      "triple_position": {
+        "max_positions": 3,
+        "risk_allocation": "50% / 30% / 20%",
+        "correlation_adjustment": "Reduce positions 2-3 by 25-30%",
+        "diversification_rule": "At least 2 different timeframes"
+      },
+      "quad_position": {
+        "max_positions": 4,
+        "risk_allocation": "40% / 30% / 20% / 10%",
+        "correlation_adjustment": "Reduce positions 2-4 by 30-40%",
+        "diversification_rule": "At least 3 different timeframes, 2+ symbols"
+      },
+      "five_plus_position": {
+        "max_positions": 5,
+        "risk_allocation": "30% / 25% / 20% / 15% / 10%",
+        "correlation_adjustment": "Reduce positions 2-5 by 35-50%",
+        "diversification_rule": "All different timeframes, 3+ symbols, different regimes"
+      }
+    },
+    "correlation_risk_mitigation": [
+      {
+        "technique": "Timeframe diversification",
+        "description": "Take positions on different timeframes (5m scalp + 1h swing)",
+        "correlation_reduction": "15-20%"
+      },
+      {
+        "technique": "Symbol diversification",
+        "description": "Trade different symbols (BTC long + SOL short = hedge)",
+        "correlation_reduction": "25-35%"
+      },
+      {
+        "technique": "Direction diversification",
+        "description": "Take both long and short positions (hedged exposure)",
+        "correlation_reduction": "40-50%"
+      },
+      {
+        "technique": "Strategy diversification",
+        "description": "Use different strategies (trend + mean reversion)",
+        "correlation_reduction": "20-25%"
+      }
+    ],
+    "position_loss_correlation_scenarios": {
+      "highly_correlated_1": {
+        "scenario": "3 BTC longs on 5m, 1h, and 4h timeframes in strong trend",
+        "correlation_percent": 85,
+        "position_sizes_naive": [500, 500, 500],
+        "position_sizes_adjusted": [500, 350, 200],
+        "risk_reduction": "35%"
+      },
+      "correlated_2": {
+        "scenario": "BTC long + ETH long in panic regime",
+        "correlation_percent": 90,
+        "position_sizes_naive": [1000, 1000],
+        "position_sizes_adjusted": [1000, 600],
+        "risk_reduction": "30%"
+      },
+      "uncorrelated_3": {
+        "scenario": "BTC long + SOL short with opposite signals",
+        "correlation_percent": -0.3,
+        "position_sizes_naive": [1000, 1000],
+        "position_sizes_adjusted": [1000, 1100],
+        "risk_reduction": "-10% (actually add due to hedge benefit)"
+      }
+    }
+  },
+  "risk_parameters_by_confidence_level": {
+    "high_conviction_setup": {
+      "confidence": "85%+",
+      "conditions": [
+        "All agents agree (Regime + Trade + Risk + Critic)",
+        "6+ independent confirmations",
+        "Clean price action entry setup",
+        "R:R >= 2.0",
+        "Regime-aligned"
+      ],
+      "position_sizing": {
+        "kelly_fraction": 0.8,
+        "risk_percent": 1.5,
+        "leverage": 8,
+        "account_percent": 3.0
+      },
+      "risk_management": {
+        "stop_loss_multiplier": 1.0,
+        "trailing_stop_enabled": true,
+        "partial_tp_enabled": true,
+        "max_hold_time_hours": 8
+      }
+    },
+    "good_setup": {
+      "confidence": "65-85%",
+      "conditions": [
+        "3-4 agents agree",
+        "4-5 independent confirmations",
+        "Decent price action",
+        "R:R 1.5-2.0",
+        "Compatible with regime"
+      ],
+      "position_sizing": {
+        "kelly_fraction": 0.5,
+        "risk_percent": 1.0,
+        "leverage": 5,
+        "account_percent": 2.0
+      },
+      "risk_management": {
+        "stop_loss_multiplier": 1.1,
+        "trailing_stop_enabled": true,
+        "partial_tp_enabled": true,
+        "max_hold_time_hours": 6
+      }
+    },
+    "moderate_setup": {
+      "confidence": "50-65%",
+      "conditions": [
+        "2-3 agents somewhat agree",
+        "2-3 confirmations",
+        "Acceptable price action",
+        "R:R 1.0-1.5",
+        "Neutral regime"
+      ],
+      "position_sizing": {
+        "kelly_fraction": 0.3,
+        "risk_percent": 0.75,
+        "leverage": 3,
+        "account_percent": 1.5
+      },
+      "risk_management": {
+        "stop_loss_multiplier": 1.2,
+        "trailing_stop_enabled": false,
+        "partial_tp_enabled": true,
+        "max_hold_time_hours": 4
+      }
+    },
+    "weak_setup": {
+      "confidence": "35-50%",
+      "conditions": [
+        "Single agent agreement or divided",
+        "1-2 confirmations",
+        "Marginal price action",
+        "R:R < 1.0 or not calculable",
+        "Conflicting with regime"
+      ],
+      "position_sizing": {
+        "kelly_fraction": 0.15,
+        "risk_percent": 0.4,
+        "leverage": 1.5,
+        "account_percent": 0.8
+      },
+      "risk_management": {
+        "stop_loss_multiplier": 1.3,
+        "trailing_stop_enabled": false,
+        "partial_tp_enabled": false,
+        "max_hold_time_hours": 2
+      }
+    },
+    "poor_setup": {
+      "confidence": "< 35%",
+      "conditions": [
+        "No consensus",
+        "0-1 confirmations",
+        "Poor price action",
+        "R:R indeterminate",
+        "Against regime"
+      ],
+      "position_sizing": {
+        "kelly_fraction": 0.0,
+        "risk_percent": 0.0,
+        "leverage": 0,
+        "account_percent": 0.0
+      },
+      "risk_management": {
+        "action": "SKIP"
+      }
+    }
+  },
+  "sizing_validation_rules": {
+    "rule_1": "Position size must not exceed max_risk_percent of current account",
+    "rule_2": "Leverage must be available; don't exceed exchange limits",
+    "rule_3": "Stop loss distance must be >= 0.3% of entry (prevent infinite leverage)",
+    "rule_4": "Sum of all open position risks must not exceed 2x max_risk_percent",
+    "rule_5": "Confidence level must be >= 35% to trade",
+    "rule_6": "R:R ratio must be calculable and >= 0.8 (exceptions for hedge positions)",
+    "rule_7": "Account free margin must be > 2x position margin requirement",
+    "rule_8": "Liquidation price must be > 5% away from entry (safety buffer)",
+    "rule_9": "All positions must have correlation adjustment applied",
+    "rule_10": "Position size changes must be logged with rationale"
+  },
+  "expected_improvements": {
+    "by_optimization": {
+      "kelly_criterion_optimization": {
+        "risk_adjusted_return_improvement": "15-20%",
+        "sharpe_ratio_improvement": "0.3-0.5",
+        "max_drawdown_reduction": "20-25%"
+      },
+      "regime_adaptive_sizing": {
+        "win_rate_improvement": "2-4%",
+        "consistency_improvement": "15-20%",
+        "drawdown_smoothing": "12-18%"
+      },
+      "leverage_optimization": {
+        "profit_factor_improvement": "0.15-0.30",
+        "risk_adjusted_improvement": "20-30%"
+      },
+      "correlation_management": {
+        "simultaneous_loss_reduction": "25-35%",
+        "portfolio_stability_improvement": "18-25%"
+      }
+    }
+  }
+}

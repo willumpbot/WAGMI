@@ -1,0 +1,229 @@
+{
+  "metadata": {
+    "name": "Multi-Signal Comparator Knowledge Base",
+    "version": "1.0",
+    "agent": "multi_signal_comparator",
+    "purpose": "Evaluate when single-signal trades outperform ensemble",
+    "last_updated": "2026-03-20",
+    "total_comparisons": 48
+  },
+  "comparison_scenarios": {
+    "both_agree": {
+      "description": "Single signal fires AND ensemble agrees",
+      "frequency": "high confidence setups",
+      "win_rate": 0.82,
+      "profit_factor": 3.1,
+      "sample_size": 127,
+      "confidence": 0.78,
+      "recommendation": "MAXIMUM SIZING - highest conviction",
+      "sizing_multiplier": 1.5,
+      "notes": "Single + ensemble agreement = gold standard"
+    },
+    "single_only": {
+      "description": "Single signal fires, ensemble is neutral/unsure",
+      "frequency": "high conviction single setup",
+      "win_rate": 0.63,
+      "profit_factor": 2.4,
+      "sample_size": 94,
+      "confidence": 0.71,
+      "recommendation": "NORMAL SIZING",
+      "sizing_multiplier": 1.0,
+      "notes": "Single signal still reliable without ensemble"
+    },
+    "single_vs_ensemble_conflict": {
+      "description": "Single says BUY, ensemble says SELL (direct conflict)",
+      "frequency": "moderate",
+      "single_wins": 0.48,
+      "ensemble_wins": 0.72,
+      "sample_size": 67,
+      "confidence": 0.74,
+      "recommendation": "SKIP or size down 50%",
+      "action": "Trust ensemble over single in conflicts",
+      "notes": "Ensemble consensus more reliable than single in disagreement"
+    },
+    "single_vs_ensemble_weak_ensemble": {
+      "description": "Single confident, ensemble barely voting yes",
+      "frequency": "moderate",
+      "single_wins": 0.71,
+      "ensemble_wins": 0.54,
+      "sample_size": 48,
+      "confidence": 0.68,
+      "recommendation": "TRUST SINGLE - proceed with normal sizing",
+      "notes": "When single is strong but ensemble weak, single more reliable"
+    },
+    "ensemble_only": {
+      "description": "Ensemble votes yes, single strategy silent",
+      "frequency": "moderate",
+      "win_rate": 0.56,
+      "profit_factor": 2.0,
+      "sample_size": 73,
+      "confidence": 0.69,
+      "recommendation": "REDUCED SIZING - less conviction",
+      "sizing_multiplier": 0.7,
+      "notes": "Committee without specialist opinion = lower quality"
+    }
+  },
+  "confidence_thresholds": {
+    "very_high_confidence": {
+      "single_signal_confidence": 0.80,
+      "action": "PROCEED - even if ensemble disagrees",
+      "sizing": 1.5,
+      "win_rate_expectation": 0.70,
+      "notes": "Single signal >80% confidence is reliably correct"
+    },
+    "high_confidence": {
+      "single_signal_confidence": 0.70,
+      "action": "PROCEED if ensemble neutral, SKIP if ensemble opposes",
+      "sizing": 1.0,
+      "win_rate_expectation": 0.63,
+      "notes": "Context-dependent"
+    },
+    "medium_confidence": {
+      "single_signal_confidence": 0.60,
+      "action": "Requires ensemble agreement to proceed",
+      "sizing": 0.8,
+      "win_rate_expectation": 0.58,
+      "notes": "Need additional confirmation"
+    },
+    "low_confidence": {
+      "single_signal_confidence": 0.50,
+      "action": "SKIP unless strong ensemble support",
+      "sizing": 0.5,
+      "win_rate_expectation": 0.48
+    }
+  },
+  "conflict_resolution_logic": {
+    "high_single_high_ensemble": {
+      "scenario": "Single >70% confidence, ensemble votes yes",
+      "outcome_win_rate": 0.82,
+      "action": "STRONG BUY",
+      "sizing": 1.5,
+      "hold_time": "Let it run - high probability"
+    },
+    "high_single_low_ensemble": {
+      "scenario": "Single >75% confidence, ensemble neutral/weak",
+      "outcome_win_rate": 0.71,
+      "action": "BUY - trust single",
+      "sizing": 1.2,
+      "hold_time": "Medium (more caution)"
+    },
+    "high_single_opposite_ensemble": {
+      "scenario": "Single >75% confidence, ensemble votes opposite",
+      "outcome_win_rate_single": 0.68,
+      "outcome_win_rate_ensemble": 0.75,
+      "action": "SKIP - trust ensemble",
+      "notes": "Ensemble consensus has edge over single even at high confidence"
+    },
+    "low_single_high_ensemble": {
+      "scenario": "Single <60% confidence, ensemble >70%",
+      "outcome_win_rate": 0.64,
+      "action": "BUY - trust ensemble",
+      "sizing": 0.9,
+      "notes": "Ensemble carries the decision"
+    },
+    "low_single_opposite_ensemble": {
+      "scenario": "Single <60%, ensemble opposite direction",
+      "outcome_win_rate": 0.41,
+      "action": "SKIP - high error rate",
+      "notes": "Double negative = poor quality setup"
+    }
+  },
+  "calibration_curves": {
+    "single_signal_accuracy_by_confidence": [
+      {"confidence_range": "0.50-0.60", "actual_win_rate": 0.48, "calibration": "overconfident"},
+      {"confidence_range": "0.60-0.70", "actual_win_rate": 0.62, "calibration": "well-calibrated"},
+      {"confidence_range": "0.70-0.80", "actual_win_rate": 0.69, "calibration": "underconfident"},
+      {"confidence_range": "0.80-0.90", "actual_win_rate": 0.78, "calibration": "underconfident"},
+      {"confidence_range": "0.90-1.00", "actual_win_rate": 0.85, "calibration": "well-calibrated"}
+    ],
+    "notes": "Single signal confidence needs slight adjustment upward at 0.60-0.80 range"
+  },
+  "ensemble_reliability": {
+    "ensemble_consensus_quality": {
+      "agreements": "3+ strategies vote same direction",
+      "win_rate": 0.75,
+      "confidence": "Very High",
+      "sizing_recommendation": 1.0
+    },
+    "ensemble_majority": {
+      "agreements": "2 strategies vote same direction",
+      "win_rate": 0.62,
+      "confidence": "Medium",
+      "sizing_recommendation": 0.8
+    },
+    "ensemble_split": {
+      "agreements": "Strategies disagree",
+      "win_rate": 0.51,
+      "confidence": "Low",
+      "sizing_recommendation": 0.5
+    }
+  },
+  "decision_rules": [
+    {
+      "rule": "IF single_confidence > 0.75 AND ensemble_absent THEN proceed at 1.0x sizing",
+      "accuracy": 0.71,
+      "sample_size": 48
+    },
+    {
+      "rule": "IF single_confidence > 0.75 AND ensemble_agrees THEN proceed at 1.5x sizing",
+      "accuracy": 0.82,
+      "sample_size": 127
+    },
+    {
+      "rule": "IF single_confidence > 0.75 AND ensemble_opposes THEN skip",
+      "accuracy": 0.75,
+      "sample_size": 36
+    },
+    {
+      "rule": "IF single_confidence < 0.65 AND ensemble_neutral THEN skip",
+      "accuracy": 0.68,
+      "sample_size": 54
+    },
+    {
+      "rule": "IF both_agree THEN size_up_25pct",
+      "accuracy": 0.82,
+      "sample_size": 127
+    }
+  ],
+  "when_to_trust_single": [
+    "Single signal confidence > 75%",
+    "Pattern has >30 sample size",
+    "Win rate consistently >60%",
+    "Profit factor > 2.0",
+    "Time-of-day advantage (aligned with market hours)"
+  ],
+  "when_to_trust_ensemble": [
+    "Ensemble has 3+ agreement (strong consensus)",
+    "Single signal confidence < 65%",
+    "Single and ensemble conflict on high-conviction setup",
+    "Portfolio already has similar exposure",
+    "Market regime uncertain"
+  ],
+  "historical_accuracy": {
+    "single_signal_only": {
+      "win_rate": 0.63,
+      "trades": 94,
+      "confidence": 0.71
+    },
+    "ensemble_only": {
+      "win_rate": 0.56,
+      "trades": 73,
+      "confidence": 0.69
+    },
+    "both_agree": {
+      "win_rate": 0.82,
+      "trades": 127,
+      "confidence": 0.78
+    },
+    "single_wins_conflict": {
+      "win_rate": 0.48,
+      "trades": 35,
+      "confidence": 0.65
+    },
+    "ensemble_wins_conflict": {
+      "win_rate": 0.72,
+      "trades": 32,
+      "confidence": 0.74
+    }
+  }
+}
