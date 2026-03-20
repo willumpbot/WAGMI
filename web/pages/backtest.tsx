@@ -1136,9 +1136,27 @@ function ParameterSensitivityChart({ result }: { result?: BacktestResult | null 
   const pad = { t: 28, r: 16, b: 16, l: 16 };
   const iW = W - pad.l - pad.r;
 
-  // Use actual backtest return as the baseline; fall back to placeholder
+  // Use actual backtest return as the baseline; hide chart when no real data
   const actualRet = result?.results?.total_return_pct ?? null;
-  const BASE_RETURN = actualRet ?? 11.34;
+
+  if (actualRet === null) {
+    return (
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <h3 style={{ margin: 0, fontSize: F.md, fontWeight: 700, color: C.text }}>
+            Parameter Sensitivity — How Return Changes
+          </h3>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+          <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
+          <div style={{ fontSize: F.sm, fontWeight: 700, color: C.muted }}>Awaiting backtest results</div>
+          <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>Run a backtest to see parameter sensitivity analysis anchored to real return data.</div>
+        </div>
+      </div>
+    );
+  }
+
+  const BASE_RETURN = actualRet;
 
   // Relative offsets from the current parameter setting — illustrative shapes only
   // The current bar will use the real BASE_RETURN; others are scaled proportionally

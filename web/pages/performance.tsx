@@ -1193,10 +1193,10 @@ function RatioGaugePanel({
   }, [dailyRets]);
 
   const calmarVal = useMemo(() => {
-    const totalReturn = backtest?.results?.total_return_pct ?? 11.34;
-    const maxDD = backtest?.results?.max_drawdown_pct ?? 10.2;
-    const v = calcCalmar(totalReturn, maxDD);
-    return v ?? 1.11;
+    const totalReturn = backtest?.results?.total_return_pct ?? null;
+    const maxDD = backtest?.results?.max_drawdown_pct ?? null;
+    if (totalReturn === null || maxDD === null) return null;
+    return calcCalmar(totalReturn, maxDD) ?? null;
   }, [backtest]);
 
   // Suppress unused warning — trades prop reserved for future per-trade ratio breakdown
@@ -1394,12 +1394,20 @@ function RatioGaugePanel({
           label="Sortino"
           quality={qualityLabel(sortinoVal, 1.5, 2.5)}
         />
-        <GaugeDial
-          value={calmarVal}
-          max={3}
-          label="Calmar"
-          quality={qualityLabel(calmarVal, 1.0, 2.0)}
-        />
+        {calmarVal !== null ? (
+          <GaugeDial
+            value={calmarVal}
+            max={3}
+            label="Calmar"
+            quality={qualityLabel(calmarVal, 1.0, 2.0)}
+          />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 120 }}>
+            <div style={{ fontSize: 36, fontWeight: 800, color: C.muted }}>—</div>
+            <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Calmar</div>
+            <div style={{ fontSize: F.xs, color: C.muted }}>Awaiting backtest data</div>
+          </div>
+        )}
       </div>
     </div>
   );

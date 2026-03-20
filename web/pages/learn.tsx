@@ -1433,7 +1433,7 @@ const GLOSSARY = [
   { term: 'Equity Curve', def: 'A chart showing account equity over time. A smooth upward-sloping curve with small drawdowns is the goal. The bot\'s backtest results page shows the equity curve for all tested periods.' },
   { term: 'Max Drawdown', def: 'The largest peak-to-trough decline in equity during a trading period. A strategy with a 30% max drawdown would have caused an account to fall 30% from its peak before recovering. Lower is better.' },
   { term: 'Calmar Ratio', def: 'Annual return divided by maximum drawdown. A ratio above 1.0 means the strategy earns more annually than its worst drawdown. Higher is better.' },
-  { term: 'Win Rate', def: 'The percentage of trades that are profitable. A strategy can be profitable with a win rate below 50% if the average win is much larger than the average loss. The bot currently targets win rates above 60%.' },
+  { term: 'Win Rate', def: 'The percentage of trades that are profitable. A strategy can be profitable with a win rate below 50% if the average win is much larger than the average loss. See the live track record at /forensics for the bot\'s actual win rate.' },
   { term: 'Expectancy', def: 'The average profit per trade, accounting for both win rate and average win/loss size. Formula: (WinRate × AvgWin) − (LossRate × AvgLoss). Positive expectancy means the system is profitable over many trades.' },
 ];
 
@@ -2393,9 +2393,9 @@ function RiskOfRuinChart() {
 // ─── Expected Value Calculator ────────────────────────────────────────────────
 
 function ExpectedValueCalc() {
-  const [winRate, setWinRate] = useState(0.77);
-  const [avgWin, setAvgWin] = useState(420);
-  const [avgLoss, setAvgLoss] = useState(180);
+  const [winRate, setWinRate] = useState(0.60);
+  const [avgWin, setAvgWin] = useState(300);
+  const [avgLoss, setAvgLoss] = useState(150);
 
   const ev = winRate * avgWin - (1 - winRate) * avgLoss;
   const isPositive = ev >= 0;
@@ -2542,10 +2542,10 @@ function ExpectedValueCalc() {
 
 function KellyFormulaDiagram() {
   // Kelly: f* = (bp - q) / b
-  // b = odds (avg win / avg loss = 420/180 ≈ 2.33)
-  // p = win rate = 0.77, q = 0.23
-  const b = 2.33;
-  const p = 0.77;
+  // b = odds (avg win / avg loss = 300/150 = 2.0) — illustrative example
+  // p = win rate = 0.60, q = 0.40 — illustrative example
+  const b = 2.0;
+  const p = 0.60;
   const q = 1 - p;
   const fullKelly = (b * p - q) / b; // ≈ 0.67
   const halfKelly = fullKelly / 2;
@@ -3817,7 +3817,7 @@ export default function Learn() {
         </p>
         <ExpectedValueCalc />
         <div style={{ marginTop: 16, padding: '10px 14px', background: C.info + '10', border: `1px solid ${C.info}25`, borderRadius: R.sm, fontSize: F.xs, color: C.textSub, lineHeight: 1.7 }}>
-          <strong>WAGMI Bot defaults:</strong> 77% win rate, $420 avg win, $180 avg loss → EV ≈ +${((0.77 * 420) - (0.23 * 180)).toFixed(0)} per trade. At 20 trades/month that compounds quickly.
+          Adjust the inputs to match your own trading results. Positive EV means you make money over enough trades — the exact numbers depend on your actual outcomes.
         </div>
       </AccordionCard>
 

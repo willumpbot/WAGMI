@@ -1148,29 +1148,32 @@ function SignalEntryDistribution({ trades }: { trades: TradeRecord[] }) {
 
   const CONFIDENCE_THRESHOLD = 65;
 
-  // Seeded fallback: normal distribution centered ~77
-  const FALLBACK_COUNTS = [0, 1, 2, 5, 9, 14, 20, 24, 16, 9];
-  const FALLBACK_WINS   = [0, 0, 1, 2, 4,  7, 13, 19, 14, 8];
-
-  const useFallback = trades.length === 0;
+  if (trades.length === 0) {
+    return (
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
+        <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>
+          Entry Signal Score Distribution
+        </div>
+        <AwaitingResults label="No trade history yet" sub="Distribution will populate once real trades are recorded." />
+      </div>
+    );
+  }
 
   const counts: number[] = Array(BUCKETS).fill(0);
   const winCounts: number[] = Array(BUCKETS).fill(0);
 
-  if (!useFallback) {
-    for (const t of trades) {
-      const score = t.confidence != null ? t.confidence : null;
-      if (score == null) continue;
-      // confidence is 0–100 (already a percentage in TradeRecord, but could be 0–1)
-      const normalized = score > 1 ? score : score * 100;
-      const bucket = Math.min(BUCKETS - 1, Math.floor(normalized / 10));
-      counts[bucket]++;
-      if (t.outcome === 'WIN' || (t.pnl != null && t.pnl > 0)) winCounts[bucket]++;
-    }
+  for (const t of trades) {
+    const score = t.confidence != null ? t.confidence : null;
+    if (score == null) continue;
+    // confidence is 0–100 (already a percentage in TradeRecord, but could be 0–1)
+    const normalized = score > 1 ? score : score * 100;
+    const bucket = Math.min(BUCKETS - 1, Math.floor(normalized / 10));
+    counts[bucket]++;
+    if (t.outcome === 'WIN' || (t.pnl != null && t.pnl > 0)) winCounts[bucket]++;
   }
 
-  const displayCounts = useFallback ? FALLBACK_COUNTS : counts;
-  const displayWins   = useFallback ? FALLBACK_WINS   : winCounts;
+  const displayCounts = counts;
+  const displayWins   = winCounts;
 
   const maxCount = Math.max(...displayCounts, 1);
 
