@@ -1,19 +1,12 @@
 """
-Unified Context Module: The shared reality layer for all agent reasoning.
+DEPRECATED: This module has been merged into shared_context.py.
 
-Instead of each agent re-explaining concepts, all agents reference a SINGLE
-consolidated knowledge base. This reduces token bloat and ensures consistency.
+All data (REGIME_DEFINITIONS, STRATEGY_THEORY, SETUP_TYPES, FUNDING_IMPACT,
+MARKET_AXIOMS, CONFIDENCE_SCALE) now lives in shared_context.py which is the
+SINGLE source of truth imported by the coordinator.
 
-All agents are injected with:
-1. Regime vocabulary + definitions
-2. Strategy theory + trust levels
-3. Recent validated patterns
-4. Deep memory excerpts
-5. Agent calibration (accuracy per regime)
-6. Portfolio state
-7. Execution context
-
-This is the "operating system" the agents all think within.
+This file is kept for reference only. Do NOT import from here.
+Use: from llm.agents.shared_context import (REGIME_METADATA, SETUP_TYPES, ...)
 """
 
 import json

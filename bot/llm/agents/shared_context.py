@@ -6,9 +6,14 @@ Every agent in the multi-agent pipeline shares:
   2. Market axioms — hard rules that every agent must respect
   3. Regime-action mapping — what actions are acceptable in each regime
   4. Knowledge base — shared lessons that apply to ALL agents
+  5. Setup types — high-edge patterns with historical performance
+  6. Funding impact table — cost reference for hold decisions
 
 This module builds a compact shared context block that gets prepended to every
 agent's input, ensuring they all reason from the same foundation.
+
+NOTE: This is the SINGLE source of truth for shared context. All agents import
+from here. unified_context.py is deprecated — its data has been merged here.
 """
 
 import json
@@ -29,6 +34,37 @@ REGIME_VOCABULARY = {
     "low_liquidity": "Dead market, volume <0.3x avg, wide wicks, off-hours",
     "news_dislocation": "External catalyst >3% in <30min, no prior setup, OI unchanged",
     "unknown": "Conflicting signals, insufficient data",
+}
+
+# Extended regime metadata with historical performance (from unified_context.py merge)
+REGIME_METADATA = {
+    "trend": {"avg_win_rate": 0.68, "avg_duration_h": (6, 18), "edge": "Highest profitability regime"},
+    "range": {"avg_win_rate": 0.52, "avg_duration_h": (4, 12), "edge": "Mean reversion only"},
+    "panic": {"avg_win_rate": 0.45, "avg_duration_h": (1, 4), "edge": "High variance, catches create reversals"},
+    "high_volatility": {"avg_win_rate": 0.48, "avg_duration_h": (2, 8), "edge": "Tight SL, better entry timing"},
+    "low_liquidity": {"avg_win_rate": 0.22, "avg_duration_h": (0, 0), "edge": "NO EDGE — always skip"},
+    "news_dislocation": {"avg_win_rate": 0.40, "avg_duration_h": (0.5, 2), "edge": "Unpredictable — wait"},
+    "unknown": {"avg_win_rate": 0.33, "avg_duration_h": (0, 0), "edge": "NO EDGE — always skip"},
+}
+
+# High-edge setup types with historical performance
+SETUP_TYPES = {
+    "trend_at_zone": {"confidence_boost": 0.15, "historical_wr": 0.72, "sample_size": 45},
+    "zone_validated": {"confidence_boost": 0.10, "historical_wr": 0.68, "sample_size": 32},
+    "convergent_confluence": {"confidence_boost": 0.12, "historical_wr": 0.70, "sample_size": 52},
+    "timeframe_confirmed": {"confidence_boost": 0.08, "historical_wr": 0.65, "sample_size": 28},
+    "lead_lag_catch": {"confidence_boost": 0.09, "historical_wr": 0.63, "sample_size": 35},
+    "post_cascade_reversal": {"confidence_boost": 0.14, "historical_wr": 0.71, "sample_size": 22},
+    "solo_high_conviction": {"confidence_boost": 0.0, "historical_wr": 0.52, "sample_size": 18},
+}
+
+# Funding impact reference (8h rate → impact assessment)
+FUNDING_IMPACT = {
+    "0-0.01": "Negligible",
+    "0.01-0.03": "Slight — 4h+ holds, favor quick exits",
+    "0.03-0.05": "Moderate — reduce size 20%, prefer SCALP",
+    "0.05-0.08": "High — reduce size 40%, require 2%+ move to justify",
+    "0.08+": "Critical — skip unless edge > 3%, or trade opposite side",
 }
 
 ACTION_VOCABULARY = {
@@ -613,3 +649,46 @@ def reset_pipeline_scratchpad() -> PipelineScratchpad:
     global _pipeline_scratchpad
     _pipeline_scratchpad = PipelineScratchpad()
     return _pipeline_scratchpad
+
+
+# ── Setup Type Helpers ──────────────────────────────────────────
+
+def get_setup_confidence_boost(setup_type: str) -> float:
+    """Get confidence boost for a recognized setup type.
+
+    Returns 0.0 for unknown setup types.
+    """
+    st = SETUP_TYPES.get(setup_type)
+    return st["confidence_boost"] if st else 0.0
+
+
+def get_setup_historical_wr(setup_type: str) -> Optional[float]:
+    """Get historical win rate for a setup type, or None if unknown."""
+    st = SETUP_TYPES.get(setup_type)
+    return st["historical_wr"] if st else None
+
+
+def get_regime_metadata(regime: str) -> Dict[str, Any]:
+    """Get extended metadata for a regime (win rate, duration, edge)."""
+    return REGIME_METADATA.get(regime, {})
+
+
+def get_funding_impact_level(rate_8h: float) -> str:
+    """Classify funding rate impact.
+
+    Args:
+        rate_8h: 8-hour funding rate as decimal (e.g., 0.03 = 3%)
+
+    Returns: Impact level string
+    """
+    abs_rate = abs(rate_8h)
+    if abs_rate >= 0.08:
+        return FUNDING_IMPACT["0.08+"]
+    elif abs_rate >= 0.05:
+        return FUNDING_IMPACT["0.05-0.08"]
+    elif abs_rate >= 0.03:
+        return FUNDING_IMPACT["0.03-0.05"]
+    elif abs_rate >= 0.01:
+        return FUNDING_IMPACT["0.01-0.03"]
+    else:
+        return FUNDING_IMPACT["0-0.01"]

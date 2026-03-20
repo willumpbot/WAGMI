@@ -49,6 +49,22 @@ from llm.agents.consistency_checker import (
 from llm.client import call_llm
 from llm.decision_types import LLMDecision, StrategyWeights
 
+# Pipeline extensions: quant engine, agent brains, debate, telemetry
+# These are optional — gracefully degrade if modules not yet built
+try:
+    from llm.agents.pipeline_extensions import (
+        get_brain_context_for_agent,
+        record_agent_decision,
+        run_debate_if_warranted,
+        apply_debate_to_confidence,
+        log_pipeline_telemetry,
+        format_quant_for_prompt,
+        compute_quant_context,
+    )
+    _EXTENSIONS_AVAILABLE = True
+except ImportError:
+    _EXTENSIONS_AVAILABLE = False
+
 logger = logging.getLogger("bot.llm.agents.coordinator")
 
 
@@ -319,6 +335,42 @@ class AgentCoordinator:
                         latency_ms=trade_out.latency_ms,
                     )
 
+        # ── Agent Brain: Record decisions for learning ────────
+        if _EXTENSIONS_AVAILABLE:
+            try:
+                _regime = regime_out.data.get("rg", "unknown") if regime_out.ok else "unknown"
+                record_agent_decision("regime", regime_out.data, regime=_regime)
+                record_agent_decision("trade", trade_out.data, regime=_regime)
+                if risk_out and risk_out.ok:
+                    record_agent_decision("risk", risk_out.data, regime=_regime)
+                if critic_out and critic_out.ok:
+                    record_agent_decision("critic", critic_out.data, regime=_regime)
+            except Exception as e:
+                logger.debug(f"[MULTI-AGENT] Brain recording error: {e}")
+
+        # ── Debate: synthesize diverse agent viewpoints ───────
+        debate_outcome = None
+        if _EXTENSIONS_AVAILABLE:
+            try:
+                _agent_data = {
+                    "regime": regime_out.data if regime_out.ok else {},
+                    "trade": trade_out.data if trade_out.ok else {},
+                    "critic": critic_out.data if critic_out and critic_out.ok else {},
+                }
+                _sym = ""
+                _markets = snapshot_data.get("m", []) if snapshot_data else []
+                if _markets and isinstance(_markets[0], dict):
+                    _sym = _markets[0].get("s", _markets[0].get("sym", ""))
+                debate_outcome = run_debate_if_warranted(
+                    _agent_data,
+                    regime=regime_out.data.get("rg", "unknown") if regime_out.ok else "unknown",
+                    symbol=_sym,
+                )
+                if debate_outcome:
+                    scratchpad.write("debate", "outcome", debate_outcome)
+            except Exception as e:
+                logger.debug(f"[MULTI-AGENT] Debate error: {e}")
+
         # ── Confidence Consensus & Consistency Scaling ─────────
         # Gap 1: Compound conviction across agents
         # Gap 7: Consistency score scales confidence
@@ -328,6 +380,10 @@ class AgentCoordinator:
         if consensus_conf is not None:
             # Write to scratchpad for audit trail
             scratchpad.write("system", "consensus_confidence", round(consensus_conf, 3))
+
+        # Apply debate adjustment to consensus confidence
+        if _EXTENSIONS_AVAILABLE and debate_outcome and consensus_conf is not None:
+            consensus_conf = apply_debate_to_confidence(consensus_conf, debate_outcome)
 
         # ── Merge into LLMDecision ──────────────────────────────
         decision = self._merge_outputs(
@@ -435,6 +491,16 @@ class AgentCoordinator:
                     )
         except Exception as e:
             logger.info(f"[MULTI-AGENT] Brain wiring error: {e}")
+
+        # ── Pipeline Telemetry ─────────────────────────────────
+        if _EXTENSIONS_AVAILABLE:
+            try:
+                log_pipeline_telemetry(
+                    pipeline_results, elapsed_ms,
+                    decision.action, decision.confidence,
+                )
+            except Exception:
+                pass
 
         # Store pipeline results for external consumers (backtest logging, etc.)
         self.last_pipeline_results = pipeline_results
@@ -1028,10 +1094,21 @@ class AgentCoordinator:
             except Exception:
                 pass
 
-        # Prepend protocol, calibration, and context to the agent's system prompt
+        # Agent brain context injection (beliefs, performance, calibration)
+        brain_prefix = ""
+        if _EXTENSIONS_AVAILABLE:
+            try:
+                current_regime = scratchpad.read_by_key("regime") or ""
+                brain_prefix = get_brain_context_for_agent(role.value, regime=current_regime)
+            except Exception:
+                pass
+
+        # Prepend protocol, calibration, brain, and context to the agent's system prompt
         enhanced_prompt = prompt
         if calibration_prefix:
             enhanced_prompt = f"CALIBRATION: {calibration_prefix}\n\n{enhanced_prompt}"
+        if brain_prefix:
+            enhanced_prompt = f"BRAIN: {brain_prefix}\n\n{enhanced_prompt}"
         if protocol_prefix:
             enhanced_prompt = f"{protocol_prefix}\n\n{enhanced_prompt}"
         if shared_context:

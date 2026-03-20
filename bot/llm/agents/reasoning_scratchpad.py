@@ -1,18 +1,14 @@
 """
-Reasoning Scratchpad: Shared workspace for inter-agent communication.
+DEPRECATED: Use PipelineScratchpad from shared_context.py instead.
 
-Instead of agents working in isolation, they share a "scratchpad" where each
-agent writes a summary of their thinking. Downstream agents READ this before
-deciding, creating a unified reasoning chain.
+The coordinator uses PipelineScratchpad (in shared_context.py) for inter-agent
+communication. This ReasoningScratchpad was created separately but never wired
+into the coordinator. Its richer data structures (ScratchpadEntry with
+key_findings, red_flags, recommendations) are useful concepts that should be
+migrated into PipelineScratchpad if needed.
 
-Example flow:
-1. Regime Agent evaluates → writes "regime=trend, momentum=strengthening"
-2. Quant Agent evaluates → writes "EV=+0.24, kelly=0.12, quality=high"
-3. Trade Agent reads both → forms thesis with full context
-4. Risk Agent reads regime + trade → sizes position
-5. Critic Agent reads all three → reviews for consistency
-
-This creates COHERENCE — agents think together, not separately.
+For now, all new code should use:
+    from llm.agents.shared_context import get_pipeline_scratchpad
 """
 
 import json

@@ -1297,6 +1297,13 @@ export default function AiDecisionsPage() {
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link href="/agent-intelligence" style={{
+              fontSize: F.xs, color: C.brand, fontWeight: 700, textDecoration: 'none',
+              padding: '4px 10px', borderRadius: R.pill,
+              background: `${C.brand}12`, border: `1px solid ${C.brand}30`,
+            }}>
+              Agent Brains →
+            </Link>
             {lastUpdate && <span style={{ fontSize: F.xs, color: C.muted }}>Updated {timeAgo(lastUpdate.toISOString())}</span>}
             <div style={{
               display: 'flex', alignItems: 'center', gap: 5,
