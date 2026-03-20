@@ -1,88 +1,17 @@
-# WAGMI Week 1 Master Plan — Mechanical Stability & Regime Filter Audit
+# WAGMI Week 1 Master Plan — Mechanical Stability
 
-**Objective:** Establish mechanical confidence in the trading system. Lock in behavior parity between backtest and paper trading. Stabilize website. Baseline performance metrics.
+**Objective:** Establish mechanical confidence in the trading system. Stabilize website. Baseline performance metrics.
 
 **Timeline:** 7 days (this week)
-**Scope:** Bug fixes, regime filter audit, mechanical testing, data collection
+**Scope:** Bug fixes, mechanical testing, data collection
 **Next Week:** LLM activation (phased per original Master Plan)
 **Week 3:** Full capital deployment
-
----
-
-## CRITICAL: REGIME FILTER BEHAVIOR PARITY
-
-### The Issue
-Your paper trading log shows:
-```
-[HYPE] Regime filter: disabled {'regime_trend'} in range regime
-```
-
-This is controlled by the `STRATEGY_REGIME_FIT` table in `bot/llm/agents/shared_context.py`, which marks `regime_trend = "avoid"` in range markets.
-
-**Problem:** If your backtests DO NOT have this filter applied the same way, your paper results won't match backtest expectations.
-
-### What We Found
-- **Backtest Code** (`bot/backtest/engine.py:688-716`): Always applies regime filter. No condition. regime_trend gets disabled in range markets.
-- **Paper Trading Code** (`bot/multi_strategy_main.py:2651-2675`): Applies regime filter IF `self.config.enable_regime_strategy_filter = True`
-- **Config Default** (`bot/trading_config.py:270`): `ENABLE_REGIME_STRATEGY_FILTER=True` (enabled by default)
-
-### The Real Discrepancy
-**Possibility 1 (Most Likely):** Your .env file or local config explicitly set `ENABLE_REGIME_STRATEGY_FILTER=false` for testing, but backtest has no such control — it always applies the filter.
-
-**Possibility 2:** You backtested before the regime filter was added to backtest code.
-
-### This Week: Action Items
-
-**FIRST THING:** Audit your backtest vs paper config
-```bash
-# In /home/user/WAGMI/.env, check if this exists:
-ENABLE_REGIME_STRATEGY_FILTER=false   # ← If this exists, this is the problem
-
-# Check backtest code to confirm it ignores this flag:
-grep -n "enable_regime_strategy_filter" bot/backtest/engine.py
-# Should return: NOTHING (backtest always applies filter)
-```
-
-**Decision Tree:**
-
-```
-Is ENABLE_REGIME_STRATEGY_FILTER in your .env?
-│
-├─ NO → Good! Both backtest and paper use defaults (both TRUE)
-│       Config is aligned. Proceed with rest of plan.
-│
-└─ YES, set to FALSE → BAD! This is the mismatch.
-    ACTION REQUIRED:
-
-    Option A (Recommended):
-      1. Remove ENABLE_REGIME_STRATEGY_FILTER=false from .env
-      2. Set it to TRUE (match backtest behavior)
-      3. Re-run paper trading fresh
-      4. Accept that regime_trend gets disabled in ranges
-         (this is correct — regime_trend performs poorly in ranges)
-
-    Option B (If you hate the filter):
-      1. Go to bot/backtest/engine.py lines 688-716
-      2. Comment out the regime filter logic
-      3. Re-run backtest to get new baseline
-      4. THEN run paper trading to match new baseline
-      5. ⚠️  WARNING: Disabling this filter will likely HURT win rate
-         regime_trend is a trend-following strategy, it sucks in ranges.
-```
-
-**Confidence:** This is likely THE issue. Once aligned, paper trading should match backtest behavior.
 
 ---
 
 ## WEEK 1 CHECKLIST
 
 ### Phase 0: Critical Pre-Flight (Day 1, ~30 min)
-
-- [ ] **Regime Filter Audit**
-  - [ ] Check `.env` for `ENABLE_REGIME_STRATEGY_FILTER` flag
-  - [ ] Confirm setting (true or false)
-  - [ ] Decision: keep aligned or explicitly change
-  - [ ] Document your choice in this plan
 
 - [ ] **Bug Fixes (3 bugs, ~30 min total)**
   1. **Bug 1: Trades not showing on website**
@@ -110,7 +39,6 @@ Is ENABLE_REGIME_STRATEGY_FILTER in your .env?
 - [ ] **Prep**
   - [ ] Start fresh: clear any stale position state
   - [ ] Verify `LLM_MODE=0` in `.env` (off)
-  - [ ] Verify `ENABLE_REGIME_STRATEGY_FILTER={your choice}` is set
   - [ ] Confirm all 3 bugs are fixed
 
 - [ ] **Run Paper Trading (3 days)**
@@ -158,7 +86,6 @@ Is ENABLE_REGIME_STRATEGY_FILTER in your .env?
     - What's the rejection rate?
   - [ ] Regime breakdown
     - Which regimes did we trade in? (trend, range, panic, etc.)
-    - Did regime_trend get disabled during range periods? (expected: yes, if filter enabled)
     - Performance per regime (win rate by regime)
   - [ ] Strategy performance
     - Which strategies had best WR?
@@ -173,7 +100,6 @@ Is ENABLE_REGIME_STRATEGY_FILTER in your .env?
     | Profit Factor | X.Xx | Y.Yy | ✓/✗ |
     | Max Drawdown % | X% | Y% | ✓/✗ |
     | Trades/Week | N | N | ✓/✗ |
-    | Regime Filter Active | Yes/No | Yes/No | ✓/✗ |
   - If "Match?" is ✗, document the discrepancy for next week's debugging
 
 - [ ] **System Health Audit**
@@ -217,7 +143,6 @@ Is ENABLE_REGIME_STRATEGY_FILTER in your .env?
   - [ ] ✓ No crashes in 3+ days of paper trading
   - [ ] ✓ Baseline performance metrics captured
   - [ ] ✓ Backtest/paper parity confirmed (or discrepancies documented)
-  - [ ] ✓ Regime filter behavior understood and intentional
   - [ ] ✓ Veto mode infrastructure ready
 
 - [ ] **Sign-Off**
@@ -262,37 +187,6 @@ See original Master Plan bugs (copy-trade crash, signal persistence).
 
 ---
 
-## REGIME FILTER DECISION TABLE
-
-| Decision | Action | Impact |
-|----------|--------|--------|
-| **Keep filter TRUE** (default) | Leave as is. regime_trend disables in ranges. | Paper matches backtest. Correct behavior — regime_trend is terrible in ranges. |
-| **Set filter FALSE** | Change .env: `ENABLE_REGIME_STRATEGY_FILTER=false` | More trades. But paper won't match backtest unless you also disable in backtest code. ⚠️  This is a mismatch problem. |
-| **Disable in backtest too** | Edit `bot/backtest/engine.py:688-716`, comment out filter. | Both run without filter. Need new backtest baseline. Likely worse performance. |
-
-**Recommendation:** Keep filter TRUE (default). regime_trend honestly does perform worse in ranges. The filter is correct.
-
----
-
-## CONFIG VERIFICATION COMMANDS
-
-```bash
-# Check current .env settings
-grep -i "ENABLE_REGIME_STRATEGY_FILTER\|LLM_MODE" /home/user/WAGMI/.env
-
-# Verify defaults in code
-grep -n "enable_regime_strategy_filter" /home/user/WAGMI/bot/trading_config.py
-
-# Check backtest behavior
-grep -n "enable_regime_strategy_filter" /home/user/WAGMI/bot/backtest/engine.py
-# Should return NOTHING (backtest always applies filter)
-
-# Check paper trading behavior
-grep -n "enable_regime_strategy_filter" /home/user/WAGMI/bot/multi_strategy_main.py
-# Should return line 2651 (paper trading checks config flag)
-```
-
----
 
 ## FILES TOUCHED THIS WEEK
 
@@ -302,7 +196,6 @@ grep -n "enable_regime_strategy_filter" /home/user/WAGMI/bot/multi_strategy_main
 | `web/pages/copy-trade.tsx:771,823` | Add null guards | Bug fix: crash on undefined symbol |
 | `bot/run.py` or startup | Add API key check | Pre-flight validation |
 | `bot/data/llm/veto_outcomes.jsonl` | Create file (new) | Track veto outcomes for next week |
-| `.env` | Verify/set `ENABLE_REGIME_STRATEGY_FILTER` | Align config between backtest & paper |
 | `.env` | Ensure `LLM_MODE=0` | Keep LLM off this week |
 | `bot/multi_strategy_main.py` | Review lines 2748-2759 | Understand veto wiring |
 
@@ -315,7 +208,6 @@ grep -n "enable_regime_strategy_filter" /home/user/WAGMI/bot/multi_strategy_main
 - [ ] Website displays all trades
 - [ ] No crashes or hangs in 3+ days
 - [ ] Backtest/paper behavior parity confirmed OR discrepancies documented
-- [ ] Regime filter setting intentional (not accidental)
 
 **NICE TO HAVE:**
 - [ ] Win rate baseline established (any %, just a number)
@@ -355,19 +247,17 @@ Once Week 1 is done and we have mechanical confidence:
 
 - **Backtest baseline:** `bot/backtest_60d_equity_curve.csv` or similar
 - **Paper trades:** `bot/trades_10d.csv`
-- **Regime filter logic:** `bot/llm/agents/shared_context.py` (STRATEGY_REGIME_FIT table)
-- **Main trading loop:** `bot/multi_strategy_main.py` (2651-2675 regime filter, 2748-2759 veto)
+- **Main trading loop:** `bot/multi_strategy_main.py` (2748-2759 veto)
 - **Backtest engine:** `bot/backtest/engine.py` (688-716 regime filter)
 
 ---
 
 ## QUESTIONS TO ANSWER BY END OF WEEK 1
 
-1. **Regime Filter:** Is it intentional that regime_trend disables in range markets? YES/NO
-2. **Performance Parity:** Does paper trading match backtest win rate? YES/NO / UNKNOWN
-3. **Trade Volume:** Are we getting 10+ trades per week? YES/NO
-4. **System Stability:** Zero crashes in 3+ days? YES/NO
-5. **Ready for LLM?** Is mechanical system stable enough to layer LLMs on top? YES/NO
+1. **Performance Parity:** Does paper trading match backtest win rate? YES/NO / UNKNOWN
+2. **Trade Volume:** Are we getting 10+ trades per week? YES/NO
+3. **System Stability:** Zero crashes in 3+ days? YES/NO
+4. **Ready for LLM?** Is mechanical system stable enough to layer LLMs on top? YES/NO
 
 ---
 
