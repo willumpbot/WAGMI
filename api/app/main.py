@@ -102,6 +102,7 @@ from .routes_llm import router as llm_router
 from .routes_activity import router as activity_router
 from .routes_trades import router as trades_router
 from .routes_backtest import router as backtest_router
+from .routes_sniper import router as sniper_router
 app.include_router(summary_router)  # Must come first for /v1/strategies/swing-perp-16h
 app.include_router(ingest_router)
 app.include_router(read_router)
@@ -111,6 +112,7 @@ app.include_router(llm_router)
 app.include_router(activity_router)
 app.include_router(trades_router)
 app.include_router(backtest_router)
+app.include_router(sniper_router)
 
 if __name__ == "__main__":
     import uvicorn

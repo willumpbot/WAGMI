@@ -63,6 +63,10 @@ class EnsembleStrategy:
         self._disabled_strategies: set = set()  # Strategy names to skip
         self._regime_profitability: Dict[str, Dict] = {}  # Push 3: regime WR data
         self._last_signals: Dict[str, Dict[str, Signal]] = {}  # symbol -> {strategy -> Signal}
+        # Sniper hook: optional callback for single-strategy ensemble rejections.
+        # Set by multi_strategy_main when LLM_SNIPER_ENABLED=true.
+        # Signature: (signal: Signal, symbol: str) -> None (non-blocking)
+        self._sniper_callback = None
         # Hysteresis: EMA-smoothed chop scores prevent floor oscillation on noise
         self._smoothed_chop: Dict[str, float] = {}  # symbol -> smoothed chop_score
         self._chop_ema_alpha: float = 0.3  # Smoothing factor (higher = more reactive)
@@ -1137,6 +1141,16 @@ class EnsembleStrategy:
                     self._missed_trade_tracker.record_ensemble_rejection(
                         symbol=symbol, signals=signals, reason="insufficient_votes"
                     )
+                # Sniper hook: route single-strategy signals to LLM for evaluation.
+                # Runs in background thread — never blocks the scan loop.
+                # Only fires when exactly 1 strategy voted (lone signal).
+                if self._sniper_callback is not None:
+                    _lone = buy_signals or sell_signals
+                    if _lone:
+                        try:
+                            self._sniper_callback(_lone[0], symbol)
+                        except Exception as _se:
+                            logger.debug(f"[{symbol}] Sniper callback error: {_se}")
                 return None
 
         # Block known-losing combos (backtest-validated toxic combinations).

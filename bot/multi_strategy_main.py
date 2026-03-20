@@ -450,6 +450,21 @@ class MultiStrategyBot:
         }
         self.ensemble.set_symbol_volatility_profiles(vol_profiles)
 
+        # ── LLM Sniper Engine (optional, additive — never touches existing trades) ──
+        # Intercepts single-strategy ensemble rejections and queues LLM proposals.
+        # Activated only when LLM_SNIPER_ENABLED=true. Off by default.
+        try:
+            import os as _os
+            if _os.getenv("LLM_SNIPER_ENABLED", "").lower() in ("1", "true", "yes"):
+                from llm.sniper import LLMSniperEngine
+                _sniper = LLMSniperEngine(max_leverage=config.max_leverage)
+                self.ensemble._sniper_callback = _sniper.evaluate_candidate
+                logger.info("[INIT] LLM Sniper Engine enabled — queuing rejected 1-vote signals for LLM review")
+            else:
+                logger.debug("[INIT] LLM Sniper disabled (LLM_SNIPER_ENABLED not set)")
+        except Exception as _se:
+            logger.warning(f"[INIT] LLM Sniper Engine init failed (non-fatal): {_se}")
+
         # Execution
         self.risk_mgr = RiskManager(
             starting_equity=config.starting_equity,

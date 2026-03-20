@@ -747,6 +747,125 @@ def get_performance_history(days: int = 30) -> List[Dict]:
         return []
 
 
+# ─── Sniper Queue ─────────────────────────────────────────────────
+
+def insert_sniper_proposal(data: Dict[str, Any]) -> bool:
+    """Insert a new sniper proposal into the queue. Returns True on success."""
+    conn = None
+    try:
+        conn = get_connection()
+        conn.execute(
+            """INSERT INTO sniper_queue
+               (id, symbol, side, entry, sl, tp1, tp2, atr, leverage, confidence,
+                strategy_source, llm_regime, llm_reasoning, size_fraction, status, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                data["id"], data["symbol"], data["side"],
+                data["entry"], data["sl"], data["tp1"], data["tp2"],
+                data.get("atr", 0.0), data.get("leverage", 5.0),
+                data["confidence"], data["strategy_source"],
+                data.get("llm_regime", "unknown"),
+                data.get("llm_reasoning", ""),
+                data.get("size_fraction", 0.5),
+                data.get("status", "pending"),
+                data["created_at"],
+            ),
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to insert sniper proposal: {e}")
+        if conn:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
+def list_sniper_queue(status: str = "pending", limit: int = 50) -> List[Dict]:
+    """List sniper proposals by status, most recent first."""
+    try:
+        conn = get_connection()
+        rows = conn.execute(
+            "SELECT * FROM sniper_queue WHERE status = ? ORDER BY created_at DESC LIMIT ?",
+            (status, limit),
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        logger.warning(f"Failed to list sniper queue: {e}")
+        return []
+
+
+def get_sniper_proposal(proposal_id: str) -> Optional[Dict]:
+    """Get a single sniper proposal by ID."""
+    try:
+        conn = get_connection()
+        row = conn.execute(
+            "SELECT * FROM sniper_queue WHERE id = ?", (proposal_id,)
+        ).fetchone()
+        conn.close()
+        return dict(row) if row else None
+    except Exception:
+        return None
+
+
+def update_sniper_status(
+    proposal_id: str,
+    status: str,
+    reviewed_at: Optional[str] = None,
+    executed_as_trade_id: Optional[str] = None,
+) -> bool:
+    """Update the status of a sniper proposal. Returns True on success."""
+    conn = None
+    try:
+        conn = get_connection()
+        conn.execute(
+            """UPDATE sniper_queue
+               SET status = ?, reviewed_at = ?, executed_as_trade_id = ?
+               WHERE id = ?""",
+            (status, reviewed_at, executed_as_trade_id, proposal_id),
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to update sniper status: {e}")
+        if conn:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_sniper_stats() -> Dict[str, Any]:
+    """Summary stats for the sniper queue dashboard widget."""
+    try:
+        conn = get_connection()
+        rows = conn.execute(
+            """SELECT status, COUNT(*) as cnt
+               FROM sniper_queue GROUP BY status"""
+        ).fetchall()
+        conn.close()
+        counts = {r["status"]: r["cnt"] for r in rows}
+        return {
+            "pending": counts.get("pending", 0),
+            "approved": counts.get("approved", 0),
+            "rejected": counts.get("rejected", 0),
+            "executed": counts.get("executed", 0),
+            "total": sum(counts.values()),
+        }
+    except Exception:
+        return {"pending": 0, "approved": 0, "rejected": 0, "executed": 0, "total": 0}
+
+
 # ─── Dashboard queries ────────────────────────────────────────────
 
 def get_dashboard_data() -> Dict[str, Any]:

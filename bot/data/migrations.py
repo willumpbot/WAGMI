@@ -36,6 +36,31 @@ MigrationStep = Union[str, Callable[[sqlite3.Connection], None]]
 
 MIGRATIONS: List[Tuple[int, str, MigrationStep]] = [
     (1, "baseline — migration system initialized", "SELECT 1"),
+    (2, "add sniper_queue table for LLM sniper proposals", """
+        CREATE TABLE IF NOT EXISTS sniper_queue (
+            id TEXT PRIMARY KEY,
+            symbol TEXT NOT NULL,
+            side TEXT NOT NULL,
+            entry REAL NOT NULL,
+            sl REAL NOT NULL,
+            tp1 REAL NOT NULL,
+            tp2 REAL NOT NULL,
+            atr REAL DEFAULT 0.0,
+            leverage REAL DEFAULT 5.0,
+            confidence REAL NOT NULL,
+            strategy_source TEXT NOT NULL,
+            llm_regime TEXT DEFAULT 'unknown',
+            llm_reasoning TEXT DEFAULT '',
+            size_fraction REAL DEFAULT 0.5,
+            status TEXT DEFAULT 'pending',
+            created_at TEXT NOT NULL,
+            reviewed_at TEXT,
+            executed_as_trade_id TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_sniper_status ON sniper_queue(status);
+        CREATE INDEX IF NOT EXISTS idx_sniper_symbol ON sniper_queue(symbol);
+        CREATE INDEX IF NOT EXISTS idx_sniper_created ON sniper_queue(created_at);
+    """),
 ]
 
 
