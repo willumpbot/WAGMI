@@ -44,6 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'More',
     items: [
+      { href: '/masterclass', label: "Nunu's Masterclass", desc: 'Complete trading course' },
       { href: '/learn',  label: 'Understand', desc: 'Learn how it all works' },
       { href: '/about',  label: 'About',      desc: 'What is WAGMI?' },
     ],
