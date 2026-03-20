@@ -2,33 +2,49 @@ import asyncio
 import pandas as pd
 import numpy as np
 import aiohttp
-from config import RISK_K, VS_CURRENCY
+from config import RISK_K
 
-API = "https://api.coingecko.com/api/v3/coins/{id}/market_chart"
-_INTER_REQUEST_DELAY = 15  # seconds between CoinGecko fetches (free tier: ~5 req/min)
+# Binance public klines API — no key required, generous rate limits
+BINANCE_API = "https://api.binance.com/api/v3/klines"
+
+# Last fetch error per symbol, surfaced via /v1/debug
+fetch_errors: dict = {}
 
 
-async def fetch_df(session, coin_id: str, days: int = 60, _retries: int = 2):
-    params = {"vs_currency": VS_CURRENCY, "days": days}
+async def fetch_df(session, symbol: str, days: int = 60, _retries: int = 2):
+    """Fetch daily OHLCV from Binance. symbol = e.g. 'BTCUSDT'."""
+    params = {"symbol": symbol, "interval": "1d", "limit": days + 1}
     for attempt in range(_retries + 1):
         try:
-            async with session.get(API.format(id=coin_id), params=params, timeout=20) as r:
+            async with session.get(BINANCE_API, params=params) as r:
                 if r.status == 429:
-                    retry_after = int(r.headers.get("Retry-After", 30))
+                    retry_after = int(r.headers.get("Retry-After", 10))
+                    fetch_errors[symbol] = f"429 rate limited, retrying after {retry_after}s"
                     await asyncio.sleep(retry_after)
                     continue
                 if r.status != 200:
+                    body = await r.text()
+                    fetch_errors[symbol] = f"HTTP {r.status}: {body[:200]}"
                     return None
                 js = await r.json()
-                if "prices" not in js or "total_volumes" not in js:
+                if not js or not isinstance(js, list):
+                    fetch_errors[symbol] = f"unexpected response: {str(js)[:200]}"
                     return None
-                df = pd.DataFrame(js["prices"], columns=["ts", "close"])
-                df["volume"] = [v[1] for v in js["total_volumes"]]
+                # Binance kline: [open_time, open, high, low, close, volume, ...]
+                df = pd.DataFrame(js, columns=[
+                    "ts", "open", "high", "low", "close", "volume",
+                    "close_time", "quote_vol", "trades",
+                    "taker_base", "taker_quote", "ignore",
+                ])
                 df["ts"] = pd.to_datetime(df["ts"], unit="ms")
-                return df
-        except Exception:
+                df["close"] = df["close"].astype(float)
+                df["volume"] = df["quote_vol"].astype(float)  # USD volume
+                fetch_errors.pop(symbol, None)
+                return df[["ts", "close", "volume"]]
+        except Exception as exc:
+            fetch_errors[symbol] = f"exception attempt {attempt}: {exc}"
             if attempt < _retries:
-                await asyncio.sleep(10)
+                await asyncio.sleep(5)
     return None
 
 
@@ -122,24 +138,15 @@ def _regime_from_indicators(di) -> str:
 
 
 async def compute_regime(session) -> str:
-    df = await fetch_df(session, "bitcoin", days=60)
+    df = await fetch_df(session, "BTCUSDT", days=60)
     return _regime_from_indicators(compute_indicators(df))
 
 
 async def build_signals_snapshot(session, coins: dict, regime: str, _btc_df=None) -> dict:
     """Fetch and compute signals for all coins. Pass _btc_df to reuse an already-fetched BTC df."""
     out = {}
-    # If BTC was pre-fetched externally, treat it as a prior request so we delay before SOL
-    need_delay = _btc_df is not None
     for sym, info in coins.items():
-        # Reuse pre-fetched BTC data to avoid a duplicate request
-        if sym == "BTC" and _btc_df is not None:
-            df = _btc_df
-        else:
-            if need_delay:
-                await asyncio.sleep(_INTER_REQUEST_DELAY)
-            df = await fetch_df(session, info["id"], days=60)
-            need_delay = True  # every subsequent fetch needs a delay
+        df = _btc_df if (sym == "BTC" and _btc_df is not None) else await fetch_df(session, info["id"], days=60)
         di = compute_indicators(df)
         if di is None:
             continue

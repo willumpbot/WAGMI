@@ -1,9 +1,9 @@
 import os
 
 COINS = {
-    "BTC": {"id": "bitcoin", "risk": "low"},
-    "SOL": {"id": "solana", "risk": "medium"},
-    "HYPE": {"id": "hyperliquid", "risk": "high"},
+    "BTC": {"id": "BTCUSDT", "risk": "low"},
+    "SOL": {"id": "SOLUSDT", "risk": "medium"},
+    "HYPE": {"id": "HYPEUSDT", "risk": "high"},
 }
 
 VS_CURRENCY = "usd"

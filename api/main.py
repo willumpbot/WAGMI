@@ -7,7 +7,7 @@ import aiohttp
 import asyncio
 from datetime import datetime, timezone
 from config import COINS, CACHE_TTL_SEC, DISABLE_SIGNALS, API_ORIGINS
-from indicators import build_signals_snapshot, fetch_df, _regime_from_indicators, compute_indicators
+from indicators import build_signals_snapshot, fetch_df, _regime_from_indicators, compute_indicators, fetch_errors
 
 app = FastAPI(title="MICO Signals")
 
@@ -122,6 +122,18 @@ async def summary():
 @app.get("/healthz")
 async def healthz():
     return {"status": "ok", "cache_age": int(time.time() - cache.ts) if cache.ts else None}
+
+
+@app.get("/v1/debug")
+async def debug():
+    return {
+        "cache_ts": cache.ts,
+        "cache_age_sec": int(time.time() - cache.ts) if cache.ts else None,
+        "cache_status": cache.status,
+        "cache_errors": cache.errors,
+        "coins_loaded": list((cache.data or {}).keys()),
+        "fetch_errors": fetch_errors,
+    }
 
 
 def _get_signals_from_cache() -> tuple:
