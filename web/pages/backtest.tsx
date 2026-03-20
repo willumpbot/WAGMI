@@ -551,7 +551,7 @@ export default function Backtest() {
             Saved Runs ({runs.length})
           </div>
           {loadingRuns ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} h={72} style={{ marginBottom: 8 }} />)
+            Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ marginBottom: 8 }}><Skeleton h={72} /></div>)
           ) : runs.length === 0 ? (
             <div style={{ padding: 16, background: C.card, borderRadius: R.md, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted, fontSize: F.sm }}>
               No runs yet. Run your first backtest above.
