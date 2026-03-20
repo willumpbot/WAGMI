@@ -5,9 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 import time
 import aiohttp
 import asyncio
+import json
+import os
 from datetime import datetime, timezone
 from config import COINS, CACHE_TTL_SEC, DISABLE_SIGNALS, API_ORIGINS
 from indicators import build_signals_snapshot, fetch_df, _regime_from_indicators, compute_indicators, fetch_errors
+
+CACHE_FILE = "/tmp/signals_cache.json"
 
 app = FastAPI(title="MICO Signals")
 
@@ -31,6 +35,26 @@ class Cache:
 cache = Cache()
 
 
+def _save_cache():
+    try:
+        with open(CACHE_FILE, "w") as f:
+            json.dump({"ts": cache.ts, "data": cache.data, "regime": cache.regime}, f)
+    except Exception:
+        pass
+
+
+def _load_cache():
+    try:
+        if os.path.exists(CACHE_FILE):
+            with open(CACHE_FILE) as f:
+                saved = json.load(f)
+            cache.ts = saved.get("ts", 0)
+            cache.data = saved.get("data")
+            cache.regime = saved.get("regime", "Neutral")
+    except Exception:
+        pass
+
+
 async def refresh_signals_task():
     """Background task that refreshes signals every 60 seconds and appends to history."""
     await asyncio.sleep(5)  # initial delay
@@ -38,7 +62,7 @@ async def refresh_signals_task():
         try:
             if not DISABLE_SIGNALS:
                 # Fetch BTC once, derive regime from it, then reuse df in snapshot
-                btc_df = await fetch_df(app.state.session, "bitcoin", days=60)
+                btc_df = await fetch_df(app.state.session, "BTCUSDT", days=60)
                 regime = _regime_from_indicators(compute_indicators(btc_df))
                 signals = await build_signals_snapshot(app.state.session, COINS, regime, _btc_df=btc_df)
                 now = int(time.time())
@@ -48,6 +72,7 @@ async def refresh_signals_task():
                     cache.regime = regime
                     cache.status = "ok"
                     cache.errors = 0
+                    _save_cache()
                 
                 # Append to history for each market
                 iso_ts = datetime.fromtimestamp(now, tz=timezone.utc).isoformat()
@@ -81,13 +106,13 @@ async def refresh_signals_task():
             cache.errors += 1
             cache.status = "degraded"
         
-        await asyncio.sleep(180)  # refresh every 3 minutes (fetch cycle takes ~35s)
+        await asyncio.sleep(600)  # refresh every 10 minutes
 
 
 @app.on_event("startup")
 async def startup():
+    _load_cache()  # warm cache instantly from last saved data
     app.state.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20))
-    # Start background refresh task
     asyncio.create_task(refresh_signals_task())
 
 
