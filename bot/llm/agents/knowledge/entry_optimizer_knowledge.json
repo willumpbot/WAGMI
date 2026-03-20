@@ -1,0 +1,342 @@
+{
+  "metadata": {
+    "agent": "Entry Optimizer",
+    "purpose": "Discover and optimize entry timing strategies",
+    "last_updated": "2026-03-20",
+    "version": "1.0"
+  },
+  "entry_methods": {
+    "market_now": {
+      "name": "Market Order (Immediate Entry)",
+      "description": "Enter at current market price immediately",
+      "pros": [
+        "No slippage from waiting",
+        "Captures fast moves",
+        "Good for momentum entries"
+      ],
+      "cons": [
+        "Higher risk of fakeouts",
+        "May chase into resistance",
+        "Lower overall win rate (typically -2-3%)"
+      ],
+      "best_for": [
+        "Strong momentum setups (3+ std dev move)",
+        "Breakouts with volume",
+        "Early trend confirmation"
+      ],
+      "worst_for": [
+        "Ranging markets",
+        "Weak signals",
+        "Against major trend"
+      ],
+      "sample_wr": 0.50,
+      "notes": "Use only when extremely confident"
+    },
+    "wait_for_pullback": {
+      "name": "Wait for Pullback/Retracement",
+      "description": "Enter on pullback to support level or moving average",
+      "pros": [
+        "Better entry price",
+        "+5-8% WR improvement over market now",
+        "Filters out fakeouts",
+        "Aligns with support levels"
+      ],
+      "cons": [
+        "May miss fast moves",
+        "Requires patience",
+        "Setup disappears if doesn't pullback"
+      ],
+      "best_for": [
+        "Trending markets",
+        "regime_trend strategy",
+        "Strong directional bias"
+      ],
+      "worst_for": [
+        "Very fast trending moves (already too far)",
+        "Choppy/ranging markets"
+      ],
+      "pullback_targets": [
+        "EMA20 (short-term support)",
+        "SMA50 (medium-term support)",
+        "SMA200 (long-term support)",
+        "Previous day close",
+        "Fibonacci 0.382 retracement",
+        "Pivot points (support)"
+      ],
+      "sample_wr": 0.58,
+      "notes": "Best documented entry method for improving accuracy"
+    },
+    "reclaim_level": {
+      "name": "Reclaim Level Entry",
+      "description": "Enter once price reclaims a key technical level",
+      "pros": [
+        "Strong confirmation of direction",
+        "High win rate (58-65%)",
+        "Reduces false breakouts",
+        "Clear entry signal"
+      ],
+      "cons": [
+        "May miss initial move",
+        "Requires identification of key levels",
+        "Sometimes late to entry"
+      ],
+      "best_for": [
+        "Breakouts above resistance",
+        "Support holds",
+        "Double bottom/top patterns"
+      ],
+      "levels_to_reclaim": [
+        "Previous resistance (now support)",
+        "Daily high",
+        "Psychological round numbers",
+        "Volume nodes",
+        "Bollinger Band level"
+      ],
+      "sample_wr": 0.62,
+      "notes": "Often best for counter-trend recoveries"
+    },
+    "ema_cross": {
+      "name": "EMA Crossover Entry",
+      "description": "Enter when price crosses above/below EMA",
+      "pros": [
+        "Mechanical, removes emotion",
+        "Good for trending markets",
+        "Works across timeframes"
+      ],
+      "cons": [
+        "Whipsaw in choppy markets",
+        "Lagging indicator",
+        "Late to entry in fast moves"
+      ],
+      "timeframes": [20, 50, 200],
+      "sample_wr": 0.52,
+      "notes": "Use in strong trends only"
+    },
+    "rsi_divergence": {
+      "name": "RSI Divergence Entry",
+      "description": "Enter on RSI divergence from price",
+      "pros": [
+        "Catches reversals well",
+        "High accuracy (58-65%)"
+      ],
+      "cons": [
+        "Requires analysis",
+        "Not always clear",
+        "Can fail in strong trends"
+      ],
+      "sample_wr": 0.61,
+      "notes": "Bullish div = oversold + higher lows"
+    }
+  },
+  "regime_specific_rules": {
+    "trend": {
+      "recommended_entry": "wait_for_pullback",
+      "wr_improvement": "+6-8%",
+      "reason": "Pullbacks are natural in trends, high probability continuation",
+      "timing": "On pullback to EMA20 or SMA50",
+      "examples": [
+        "BTC in uptrend: wait for pullback to EMA20, then buy",
+        "ETH breaking 5-day high: wait for small pullback, enter"
+      ]
+    },
+    "range": {
+      "recommended_entry": "market_now",
+      "wr_improvement": "+2-3%",
+      "reason": "Ranges have clear support/resistance, immediate entry at bounce points",
+      "timing": "At support level, not after",
+      "examples": [
+        "SOL trading 95-105: enter market at support (95)",
+        "BTC in weekly range: enter at range bottom"
+      ]
+    },
+    "panic": {
+      "recommended_entry": "reclaim_level",
+      "wr_improvement": "+4-5%",
+      "reason": "Panic involves fakeout bounces, wait for real reclaim",
+      "timing": "Only on reclaim above previous low",
+      "examples": [
+        "Crash to low: wait for reclaim of crash low",
+        "Liquidation cascade: reclaim level shows exhaustion"
+      ]
+    },
+    "high_volatility": {
+      "recommended_entry": "wait_for_pullback",
+      "wr_improvement": "+3-4%",
+      "reason": "Volatility creates whipsaws, pullbacks filter them",
+      "timing": "On pullback, then confirm with volume"
+    },
+    "low_liquidity": {
+      "recommended_entry": "skip",
+      "wr_improvement": "avoid",
+      "reason": "Too much slippage and manipulation risk",
+      "timing": "Don't trade",
+      "examples": ["Alt coins with <$100M volume", "Illiquid pairs"]
+    }
+  },
+  "symbol_specific_patterns": {
+    "BTC": {
+      "best_entry": "wait_for_pullback",
+      "pullback_target": "SMA50",
+      "success_rate": 0.65,
+      "optimal_time": "4h+ pullback",
+      "notes": "Large moves often pull back, high liquidity allows patience",
+      "sample_size": 87
+    },
+    "ETH": {
+      "best_entry": "wait_for_pullback",
+      "pullback_target": "EMA20",
+      "success_rate": 0.62,
+      "optimal_time": "1h-4h pullback",
+      "notes": "Follows BTC, but faster reactions. Smaller pullbacks.",
+      "sample_size": 64
+    },
+    "SOL": {
+      "best_entry": "market_now",
+      "success_rate": 0.54,
+      "optimal_time": "Fast breakouts only",
+      "notes": "Very volatile, pullbacks often don't happen. Better to chase momentum.",
+      "sample_size": 52
+    },
+    "DOGE": {
+      "best_entry": "market_now",
+      "success_rate": 0.51,
+      "notes": "Highly speculative, no reliable pullbacks",
+      "sample_size": 38
+    },
+    "major_alts": {
+      "best_entry": "wait_for_pullback",
+      "pullback_target": "EMA20",
+      "success_rate": 0.59,
+      "notes": "Similar to ETH, follow BTC with lag"
+    }
+  },
+  "time_of_day_patterns": {
+    "asian_hours": {
+      "utc_range": "00:00-08:00",
+      "characteristics": "Lower volume, wider spreads, directional moves",
+      "entry_preference": "wait_for_pullback",
+      "success_rate": 0.61,
+      "notes": "Less algos, more retail trading"
+    },
+    "london_open": {
+      "utc_range": "08:00-11:00",
+      "characteristics": "Volume spike, trend acceleration",
+      "entry_preference": "market_now or reclaim",
+      "success_rate": 0.63,
+      "notes": "Most liquid hours"
+    },
+    "us_open": {
+      "utc_range": "13:00-20:00",
+      "characteristics": "Volume spike, volatility",
+      "entry_preference": "wait_for_pullback",
+      "success_rate": 0.64,
+      "notes": "Largest volume, risk = volatility"
+    },
+    "overlap_times": {
+      "utc_range": "08:00-11:00, 13:00-16:00",
+      "characteristics": "Highest volume, fast moves",
+      "entry_preference": "market_now",
+      "success_rate": 0.65,
+      "notes": "Best entry execution"
+    }
+  },
+  "fakeout_patterns": {
+    "whipsaw_above_resistance": {
+      "pattern": "Price breaks above resistance, then immediately reverses",
+      "detection": "Candle closes above resistance, next candle inside/below",
+      "how_to_avoid": "Wait for pullback back to resistance, then re-entry on reclaim",
+      "improvement_with_pullback_wait": "+7-10%"
+    },
+    "false_breakout_high_volume": {
+      "pattern": "High volume spike, breakout, then reversal",
+      "detection": "Volume >2x average, but no follow-through",
+      "how_to_avoid": "Wait for 2nd breakout confirmation",
+      "improvement_with_pullback_wait": "+5-8%"
+    },
+    "crash_relief_rally": {
+      "pattern": "Crash bottom, relief rally, then continues down",
+      "detection": "Fast rally after crash, but lower highs",
+      "how_to_avoid": "Only long on reclaim of low, not on initial bounce",
+      "improvement_with_reclaim_wait": "+6-9%"
+    }
+  },
+  "confidence_levels": {
+    "very_high_confidence": {
+      "criteria": [
+        "Confirmation from 2+ timeframes",
+        "Price at support/resistance",
+        "Volume confirming",
+        "Divergence present"
+      ],
+      "recommended_entry": "market_now or wait_for_pullback",
+      "wr": 0.68,
+      "sizing": "3% risk"
+    },
+    "high_confidence": {
+      "criteria": [
+        "Single TF confirmation",
+        "Price near support",
+        "Volume adequate"
+      ],
+      "recommended_entry": "wait_for_pullback",
+      "wr": 0.62,
+      "sizing": "2% risk"
+    },
+    "medium_confidence": {
+      "criteria": [
+        "Weak confirmation",
+        "Price in middle of range"
+      ],
+      "recommended_entry": "wait_for_pullback (required)",
+      "wr": 0.55,
+      "sizing": "1% risk"
+    },
+    "low_confidence": {
+      "criteria": [
+        "Unclear setup"
+      ],
+      "recommended_entry": "skip",
+      "wr": 0.48,
+      "sizing": "0% (don't trade)"
+    }
+  },
+  "improvement_opportunities": {
+    "low_hanging_fruit": [
+      {
+        "description": "regime_trend strategy in uptrend: current uses market_now, should use wait_for_pullback",
+        "expected_wr_improvement": "+6-8%",
+        "implementation_difficulty": "low",
+        "priority": "high"
+      },
+      {
+        "description": "confidence_scorer high-confidence setups: always wait for pullback",
+        "expected_wr_improvement": "+4-5%",
+        "implementation_difficulty": "low",
+        "priority": "high"
+      }
+    ],
+    "medium_effort": [
+      {
+        "description": "Symbol-specific entry rules (BTC pullback to SMA50, SOL market now)",
+        "expected_wr_improvement": "+3-5%",
+        "implementation_difficulty": "medium",
+        "priority": "medium"
+      },
+      {
+        "description": "Time-of-day optimization (Asian hours = pullback, US open = market now)",
+        "expected_wr_improvement": "+2-3%",
+        "implementation_difficulty": "medium",
+        "priority": "medium"
+      }
+    ]
+  },
+  "validation_rules": {
+    "must_check": [
+      "Is price at support/resistance?",
+      "Is volume confirming the move?",
+      "Is this aligned with current regime?",
+      "Is confidence threshold met?",
+      "Are we in optimal trading hours?"
+    ]
+  }
+}

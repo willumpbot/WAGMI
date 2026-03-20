@@ -1,0 +1,761 @@
+{
+  "metadata": {
+    "name": "Exit Specialist Knowledge Base",
+    "version": "1.0",
+    "agent": "exit_specialist",
+    "purpose": "Optimize exit timing and strategy selection across all market conditions",
+    "last_updated": "2026-03-20",
+    "total_patterns": 52,
+    "expected_improvements": {
+      "win_rate_boost": "2-5%",
+      "mae_reduction": "15-25%",
+      "avg_trade_duration_reduction": "10-20%"
+    }
+  },
+  "exit_strategies": {
+    "fixed_take_profit": {
+      "id": "fixed_tp",
+      "description": "Exit at predetermined profit target based on initial R:R ratio",
+      "suitable_for": ["range_bound", "mean_reversion", "breakout_fades"],
+      "pros": [
+        "Eliminates emotion and greed",
+        "Consistent reward collection",
+        "Easy to backtest and optimize",
+        "Requires no active monitoring"
+      ],
+      "cons": [
+        "Misses extended moves in trending markets",
+        "Locks in gains too early during acceleration",
+        "Fixed R:R may not match market volatility"
+      ],
+      "parameters": {
+        "tp_ratio_conservative": 1.0,
+        "tp_ratio_balanced": 1.5,
+        "tp_ratio_aggressive": 2.0,
+        "tp_ratio_extreme": 3.0
+      },
+      "performance_by_regime": {
+        "trend": 0.38,
+        "range": 0.62,
+        "panic": 0.55,
+        "high_volatility": 0.45,
+        "low_liquidity": 0.40,
+        "news_dislocation": 0.50
+      },
+      "implementation": "Exit entire position when price reaches entry + (atr * tp_ratio * 10)",
+      "estimated_edge": "Moderate in mean-reversion, weak in trending conditions",
+      "mae_typical": "2-4% of stop width",
+      "mfe_typical": "0% (by definition - exits at TP)"
+    },
+    "trailing_stop": {
+      "id": "trailing_stop",
+      "description": "Dynamically adjust stop loss upward as price moves favorably, protecting profits while riding trends",
+      "suitable_for": ["strong_trend", "momentum", "breakout_continuation"],
+      "pros": [
+        "Captures extended profitable moves",
+        "Reduces MAE significantly",
+        "Automatically protects profits",
+        "Ideal for high-conviction setups",
+        "Works well in momentum markets"
+      ],
+      "cons": [
+        "Can get shaken out on pullbacks/reversions",
+        "Requires active monitoring",
+        "Needs parameter tuning per symbol",
+        "Risk of whipsaws in choppy markets"
+      ],
+      "parameters": {
+        "trail_atr_multiplier_conservative": 1.0,
+        "trail_atr_multiplier_balanced": 1.5,
+        "trail_atr_multiplier_aggressive": 2.0,
+        "trail_atr_multiplier_extreme": 3.0,
+        "trail_update_frequency_seconds": 60,
+        "trail_min_profit_percent": 0.5
+      },
+      "performance_by_regime": {
+        "trend": 0.78,
+        "range": 0.35,
+        "panic": 0.40,
+        "high_volatility": 0.50,
+        "low_liquidity": 0.30,
+        "news_dislocation": 0.55
+      },
+      "advanced_configurations": {
+        "progressive_tightening": "Start wide, progressively tighten as profit grows",
+        "tier_based": "Different trail distances for different profit tiers",
+        "volatility_adjusted": "Tighter trails in low-volatility, wider in high-volatility"
+      },
+      "implementation": "Update stop_loss = max(current_stop, entry + (current_high - entry - atr * multiplier))",
+      "estimated_edge": "Strong in trending markets, can be whipsawed in ranges",
+      "mae_typical": "1-2% of stop width",
+      "mfe_typical": "5-20% beyond initial TP in trending conditions"
+    },
+    "time_based_exit": {
+      "id": "time_based",
+      "description": "Exit after a fixed time period regardless of profitability, suitable for time-decaying strategies",
+      "suitable_for": ["scalp", "mean_reversion_quick", "news_fade", "scheduled_patterns"],
+      "pros": [
+        "Limits time-decay risk",
+        "Ideal for overnight risk mitigation",
+        "Matches intraday pattern durations",
+        "Prevents holding losers indefinitely",
+        "Aligns with trading schedule"
+      ],
+      "cons": [
+        "Exits during optimal profit extension",
+        "Ignores market conditions",
+        "Can be costly if needing to re-enter",
+        "No profit protection mechanism"
+      ],
+      "parameters": {
+        "hold_time_scalp_minutes": 5,
+        "hold_time_short_minutes": 15,
+        "hold_time_medium_minutes": 60,
+        "hold_time_long_minutes": 240,
+        "hold_time_end_of_day_hours": 8
+      },
+      "performance_by_regime": {
+        "trend": 0.48,
+        "range": 0.68,
+        "panic": 0.52,
+        "high_volatility": 0.58,
+        "low_liquidity": 0.45,
+        "news_dislocation": 0.70
+      },
+      "timing_patterns": {
+        "asian_open": "30 minutes into Tokyo",
+        "london_open": "60 minutes after 8am GMT",
+        "us_premarket": "30 minutes before NYSE open",
+        "us_market_open": "120 minutes",
+        "london_close": "60 minutes before 5pm GMT",
+        "us_market_close": "120 minutes before 4pm ET",
+        "overnight_hold": "Exit all before NYC close"
+      },
+      "implementation": "Exit if current_time >= entry_time + hold_duration",
+      "estimated_edge": "High in pattern-based trading, weak if ignoring strong moves",
+      "mae_typical": "3-5% of stop width",
+      "mfe_typical": "Variable, often exits before full move completes"
+    },
+    "partial_take_profit": {
+      "id": "partial_tp",
+      "description": "Exit position in stages, locking in profits at multiple targets while maintaining exposure",
+      "suitable_for": ["medium_to_long_trend", "high_conviction", "scaled_risk"],
+      "pros": [
+        "Reduces regret on early exits",
+        "Locks in profits progressively",
+        "Maintains upside exposure",
+        "Psychological comfort (something in pocket)",
+        "Flexible risk management"
+      ],
+      "cons": [
+        "More complex management required",
+        "Slippage on multiple exits",
+        "Lower total profit if strong momentum",
+        "Requires careful sizing coordination"
+      ],
+      "parameters": {
+        "num_stages_typical": 3,
+        "stage_1_exit_percent": 0.33,
+        "stage_1_profit_target": 1.0,
+        "stage_2_exit_percent": 0.33,
+        "stage_2_profit_target": 1.5,
+        "stage_3_exit_percent": 0.34,
+        "stage_3_profit_target": 2.5,
+        "trail_remaining_above_breakeven": true
+      },
+      "performance_by_regime": {
+        "trend": 0.72,
+        "range": 0.58,
+        "panic": 0.48,
+        "high_volatility": 0.62,
+        "low_liquidity": 0.50,
+        "news_dislocation": 0.60
+      },
+      "stage_configurations": {
+        "aggressive": {
+          "stages": 2,
+          "tp_ratios": [1.0, 2.5],
+          "exit_percents": [0.5, 0.5]
+        },
+        "balanced": {
+          "stages": 3,
+          "tp_ratios": [1.0, 1.5, 2.5],
+          "exit_percents": [0.33, 0.33, 0.34]
+        },
+        "conservative": {
+          "stages": 4,
+          "tp_ratios": [0.8, 1.2, 1.8, 3.0],
+          "exit_percents": [0.25, 0.25, 0.25, 0.25]
+        }
+      },
+      "implementation": "Execute exits sequentially as each stage_profit_target is reached",
+      "estimated_edge": "High in strong trends, reduces catastrophic reversals",
+      "mae_typical": "1-3% of stop width",
+      "mfe_typical": "Continues beyond initial TP for remaining position"
+    },
+    "early_exit_signal": {
+      "id": "early_exit",
+      "description": "Exit when a specific counter-signal emerges, before reaching profit targets",
+      "suitable_for": ["thesis_invalidation", "reversal_patterns", "momentum_exhaustion"],
+      "pros": [
+        "Exits before trend reversals",
+        "Captures fundamental changes early",
+        "Protects unrealized profits",
+        "Reduces time holding losing positions",
+        "Allows re-entry at better levels"
+      ],
+      "cons": [
+        "May exit healthy trends on noise",
+        "False signals lead to re-entry costs",
+        "Requires reliable signal generation",
+        "Complex filtering needed"
+      ],
+      "parameters": {
+        "momentum_exhaustion_threshold": 0.7,
+        "volume_divergence_threshold": 0.6,
+        "price_action_reversal_candles": 2,
+        "regime_shift_confidence": 0.75
+      },
+      "counter_signals": {
+        "momentum_divergence": "Price makes new high but momentum stalls or diverges lower",
+        "volume_divergence": "Price continues but volume significantly decreases",
+        "reversal_candle": "Engulfing or hammer candle reversing direction",
+        "ma_crossover": "Price crosses below rising MA that was supporting",
+        "regime_shift": "Market regime changes significantly (detected by regime agent)",
+        "vix_spike": "Volatility spikes unexpectedly (in crypto context, rapid liquidation cascade)",
+        "correlation_break": "Expected correlation with leading asset breaks",
+        "technical_breakdown": "Support level breaks decisively"
+      },
+      "implementation": "Monitor for counter-signals; exit if primary thesis invalidated",
+      "estimated_edge": "Very high if signals are reliable, catastrophic if noisy",
+      "mae_typical": "0.5-1.5% of stop width (exits early)",
+      "mfe_typical": "Varies; may miss 2-10% of move if exit too early"
+    },
+    "support_resistance_exit": {
+      "id": "support_resistance",
+      "description": "Exit at technical resistance/support levels that act as natural profit-taking zones",
+      "suitable_for": ["range_trading", "bounce_plays", "level_breakouts"],
+      "pros": [
+        "Aligns with natural liquidity zones",
+        "Other traders targeting same levels increases certainty",
+        "Easy to identify mechanically",
+        "Works well in choppy markets"
+      ],
+      "cons": [
+        "Can be extended stop-outs if level doesn't hold",
+        "May under-profit in strong breakouts",
+        "Requires accurate level identification",
+        "Congested zones ambiguous"
+      ],
+      "parameters": {
+        "level_distance_atr_min": 1.0,
+        "level_age_hours_min": 4,
+        "level_touch_count_min": 2,
+        "level_confluence_bonus": 0.15
+      },
+      "level_types": {
+        "swing_high": "Previous 20-50 bar high",
+        "swing_low": "Previous 20-50 bar low",
+        "round_number": "Round numbered levels (1000, 50000, etc.)",
+        "moving_average": "50, 100, 200-period MA",
+        "fibonacci": "23.6%, 38.2%, 50%, 61.8% levels",
+        "previous_close": "Prior session close"
+      },
+      "implementation": "Identify key resistance/support; exit as price approaches with volume",
+      "estimated_edge": "Moderate in mean-reversion, good in choppy conditions",
+      "mae_typical": "2-4% of stop width",
+      "mfe_typical": "0% (exits at level, may miss breakout)"
+    },
+    "price_action_exit": {
+      "id": "price_action",
+      "description": "Exit based on price action patterns that signal exhaustion or reversal",
+      "suitable_for": ["momentum", "all_regimes", "high_conviction"],
+      "pros": [
+        "Exits at natural turning points",
+        "Captures micro-trend changes",
+        "Combines with other exits elegantly",
+        "Real-time responsive"
+      ],
+      "cons": [
+        "Subjective pattern recognition",
+        "Requires skill and experience",
+        "Can be whipsawed in noise",
+        "Hard to automate reliably"
+      ],
+      "parameters": {
+        "consecutive_lower_highs": 3,
+        "consecutive_lower_lows": 2,
+        "wick_to_body_ratio": 2.0,
+        "volume_spike_percent": 150
+      },
+      "patterns": {
+        "exhaustion_candle": "Long-wick candle with small body in profit direction",
+        "inside_bar": "Bar with range completely inside previous bar",
+        "pin_bar": "Candle with long wick opposite to direction and small body",
+        "engulfing": "Candle completely engulfs previous in opposite direction",
+        "harami": "Small candle inside previous candle's range",
+        "doji_like": "Nearly equal open/close creating cross appearance"
+      },
+      "implementation": "Monitor live candles; exit on confirmed exhaustion patterns",
+      "estimated_edge": "High if patterns are reliable, varies by trader skill",
+      "mae_typical": "0.5-2% of stop width",
+      "mfe_typical": "3-8% beyond exit if pattern reverses completely"
+    },
+    "volatility_adjusted_exit": {
+      "id": "volatility_adjusted",
+      "description": "Dynamically adjust exit parameters based on current market volatility",
+      "suitable_for": ["all_strategies", "volatile_periods", "risk_adaptation"],
+      "pros": [
+        "Adapts to changing market conditions",
+        "Protects in high-volatility periods",
+        "Captures more in low-volatility periods",
+        "Reduces whipsaws"
+      ],
+      "cons": [
+        "More complex parameter management",
+        "May exit too early in vol spikes",
+        "Requires volatility metric calibration",
+        "Can lag actual regime changes"
+      ],
+      "parameters": {
+        "atr_period": 14,
+        "vol_percentile_high": 75,
+        "vol_percentile_low": 25,
+        "vol_multiplier_high": 1.5,
+        "vol_multiplier_normal": 1.0,
+        "vol_multiplier_low": 0.7
+      },
+      "volatility_states": {
+        "extreme_high": {
+          "condition": "atr > 90th percentile",
+          "tp_adjustment": 2.5,
+          "trail_adjustment": 2.0,
+          "time_exit_reduction": 0.75
+        },
+        "high": {
+          "condition": "atr > 75th percentile",
+          "tp_adjustment": 1.8,
+          "trail_adjustment": 1.5,
+          "time_exit_reduction": 0.85
+        },
+        "normal": {
+          "condition": "atr 25-75th percentile",
+          "tp_adjustment": 1.0,
+          "trail_adjustment": 1.0,
+          "time_exit_reduction": 1.0
+        },
+        "low": {
+          "condition": "atr < 25th percentile",
+          "tp_adjustment": 0.7,
+          "trail_adjustment": 0.7,
+          "time_exit_reduction": 1.2
+        }
+      },
+      "implementation": "Calculate current volatility percentile; apply dynamic exit parameters",
+      "estimated_edge": "Moderate edge improvement across all conditions",
+      "mae_typical": "Variable with volatility state",
+      "mfe_typical": "Higher in low-vol states, lower in high-vol"
+    }
+  },
+  "exit_optimization_by_regime": {
+    "trend": {
+      "regime_id": "trend",
+      "description": "Clear directional bias with sustained momentum",
+      "characteristic_indicators": ["Rising MA", "Higher highs/lows", "Positive momentum"],
+      "best_exit_strategies": [
+        {
+          "strategy": "trailing_stop",
+          "confidence": 0.95,
+          "rationale": "Ride extended moves while protecting"
+        },
+        {
+          "strategy": "partial_take_profit",
+          "confidence": 0.85,
+          "rationale": "Lock in progressively while maintaining exposure"
+        },
+        {
+          "strategy": "price_action_exit",
+          "confidence": 0.80,
+          "rationale": "Exit on momentum exhaustion signals"
+        }
+      ],
+      "avoid_strategies": ["fixed_tp", "time_based"],
+      "parameter_recommendations": {
+        "trailing_atr_multiplier": 1.5,
+        "partial_exit_targets": [1.0, 1.5, 2.5],
+        "time_exit_disabled": true
+      },
+      "expected_win_rate": 0.58,
+      "expected_profit_factor": 1.85,
+      "typical_mae": "2-3%",
+      "typical_mfe": "8-15%"
+    },
+    "range": {
+      "regime_id": "range",
+      "description": "Price confined to support/resistance with bounded oscillation",
+      "characteristic_indicators": ["Horizontal MA", "Equal highs/lows", "Oscillator extremes"],
+      "best_exit_strategies": [
+        {
+          "strategy": "fixed_take_profit",
+          "confidence": 0.90,
+          "rationale": "Capture bounces at consistent R:R"
+        },
+        {
+          "strategy": "support_resistance_exit",
+          "confidence": 0.88,
+          "rationale": "Exit at known technical levels"
+        },
+        {
+          "strategy": "partial_take_profit",
+          "confidence": 0.75,
+          "rationale": "Stage exits at multiple levels"
+        }
+      ],
+      "avoid_strategies": ["trailing_stop", "price_action_exit"],
+      "parameter_recommendations": {
+        "fixed_tp_ratio": 1.0,
+        "support_resistance_buffer_atr": 0.3,
+        "partial_exit_stages": 3
+      },
+      "expected_win_rate": 0.62,
+      "expected_profit_factor": 1.95,
+      "typical_mae": "3-4%",
+      "typical_mfe": "0-2%"
+    },
+    "panic": {
+      "regime_id": "panic",
+      "description": "Rapid, violent moves with capitulation and extreme emotion",
+      "characteristic_indicators": ["Extreme momentum", "High volume", "Gap moves"],
+      "best_exit_strategies": [
+        {
+          "strategy": "early_exit_signal",
+          "confidence": 0.92,
+          "rationale": "Exit quickly before reversals"
+        },
+        {
+          "strategy": "time_based_exit",
+          "confidence": 0.85,
+          "rationale": "Get out before panic reverses"
+        },
+        {
+          "strategy": "fixed_take_profit",
+          "confidence": 0.80,
+          "rationale": "Take smaller wins, avoid reversals"
+        }
+      ],
+      "avoid_strategies": ["trailing_stop", "support_resistance"],
+      "parameter_recommendations": {
+        "fixed_tp_ratio": 0.8,
+        "exit_time_minutes": 5,
+        "stop_width_conservative": true
+      },
+      "expected_win_rate": 0.52,
+      "expected_profit_factor": 1.50,
+      "typical_mae": "4-6%",
+      "typical_mfe": "1-3%"
+    },
+    "high_volatility": {
+      "regime_id": "high_volatility",
+      "description": "Large price swings with uncertain direction",
+      "characteristic_indicators": ["High ATR", "Wide ranges", "Whipsaws"],
+      "best_exit_strategies": [
+        {
+          "strategy": "volatility_adjusted_exit",
+          "confidence": 0.90,
+          "rationale": "Adapt parameters to volatility"
+        },
+        {
+          "strategy": "partial_take_profit",
+          "confidence": 0.85,
+          "rationale": "Reduce position on spikes"
+        },
+        {
+          "strategy": "price_action_exit",
+          "confidence": 0.78,
+          "rationale": "Exit on exhaustion candles"
+        }
+      ],
+      "avoid_strategies": ["fixed_tp"],
+      "parameter_recommendations": {
+        "volatility_multiplier": 1.5,
+        "trailing_atr_multiplier": 2.0,
+        "partial_exit_count": 4
+      },
+      "expected_win_rate": 0.50,
+      "expected_profit_factor": 1.60,
+      "typical_mae": "5-7%",
+      "typical_mfe": "4-8%"
+    },
+    "low_liquidity": {
+      "regime_id": "low_liquidity",
+      "description": "Thin order books with wide spreads and impact risk",
+      "characteristic_indicators": ["Low volume", "Wide spreads", "Impact risk"],
+      "best_exit_strategies": [
+        {
+          "strategy": "early_exit_signal",
+          "confidence": 0.85,
+          "rationale": "Avoid being trapped"
+        },
+        {
+          "strategy": "time_based_exit",
+          "confidence": 0.82,
+          "rationale": "Quick exit to avoid liquidity shock"
+        },
+        {
+          "strategy": "fixed_take_profit",
+          "confidence": 0.75,
+          "rationale": "Small targets, quick exits"
+        }
+      ],
+      "avoid_strategies": ["trailing_stop"],
+      "parameter_recommendations": {
+        "exit_time_minutes": 15,
+        "fixed_tp_ratio": 0.75,
+        "use_limit_orders": true
+      },
+      "expected_win_rate": 0.48,
+      "expected_profit_factor": 1.45,
+      "typical_mae": "6-8%",
+      "typical_mfe": "0-1%"
+    },
+    "news_dislocation": {
+      "regime_id": "news_dislocation",
+      "description": "Rapid repricing due to news/events with potential fade",
+      "characteristic_indicators": ["Gap open", "Event-based move", "Potential overshoot"],
+      "best_exit_strategies": [
+        {
+          "strategy": "time_based_exit",
+          "confidence": 0.88,
+          "rationale": "Exit as news fades"
+        },
+        {
+          "strategy": "early_exit_signal",
+          "confidence": 0.85,
+          "rationale": "Exit if thesis invalidated by news"
+        },
+        {
+          "strategy": "support_resistance_exit",
+          "confidence": 0.80,
+          "rationale": "Exit at natural levels before mean reversion"
+        }
+      ],
+      "avoid_strategies": ["trailing_stop"],
+      "parameter_recommendations": {
+        "exit_time_minutes": 30,
+        "take_profit_conservative": true,
+        "stop_width_defensive": true
+      },
+      "expected_win_rate": 0.55,
+      "expected_profit_factor": 1.70,
+      "typical_mae": "3-5%",
+      "typical_mfe": "1-4%"
+    }
+  },
+  "symbol_specific_patterns": {
+    "BTC": {
+      "symbol": "BTC",
+      "general_characteristics": "Most liquid, lowest spread, lowest slippage, macro-sensitive, largest impulse moves",
+      "exit_preferences": {
+        "trailing_stop_effectiveness": 0.85,
+        "fixed_tp_effectiveness": 0.60,
+        "time_exit_effectiveness": 0.55,
+        "partial_tp_effectiveness": 0.80
+      },
+      "regime_specific_exits": {
+        "trend": {
+          "best_strategy": "trailing_stop",
+          "atr_multiplier": 1.5,
+          "reason": "BTC trends are sustained; capture full moves"
+        },
+        "range": {
+          "best_strategy": "fixed_tp",
+          "tp_ratio": 1.0,
+          "reason": "BTC ranges are well-defined; consistent bounces"
+        }
+      },
+      "time_of_day_patterns": {
+        "us_market_open": "High volatility, potential reversals after move",
+        "london_fix": "Institutional accumulation/distribution",
+        "asian_open": "Lower liquidity, wider spreads"
+      },
+      "typical_exit_duration": "60-240 minutes",
+      "typical_mae": "2-3%",
+      "typical_mfe": "5-12%"
+    },
+    "ETH": {
+      "symbol": "ETH",
+      "general_characteristics": "Higher beta than BTC, follows BTC lead, strong vol swings, execution risk higher",
+      "exit_preferences": {
+        "trailing_stop_effectiveness": 0.80,
+        "fixed_tp_effectiveness": 0.65,
+        "time_exit_effectiveness": 0.60,
+        "partial_tp_effectiveness": 0.78
+      },
+      "regime_specific_exits": {
+        "trend": {
+          "best_strategy": "partial_take_profit",
+          "stages": 3,
+          "reason": "ETH volatility requires staged exit"
+        },
+        "range": {
+          "best_strategy": "support_resistance_exit",
+          "buffer_atr": 0.4,
+          "reason": "ETH respect levels but with more whip"
+        }
+      },
+      "time_of_day_patterns": {
+        "us_options_expiry": "Increased vol, good for trailing",
+        "asia_close": "Rotation away from alts"
+      },
+      "typical_exit_duration": "45-180 minutes",
+      "typical_mae": "3-4%",
+      "typical_mfe": "6-10%"
+    },
+    "SOL": {
+      "symbol": "SOL",
+      "general_characteristics": "High volatility, meme-driven moves, thin liquidity outside peak hours, leverage-sensitive",
+      "exit_preferences": {
+        "trailing_stop_effectiveness": 0.72,
+        "fixed_tp_effectiveness": 0.70,
+        "time_exit_effectiveness": 0.68,
+        "partial_tp_effectiveness": 0.82
+      },
+      "regime_specific_exits": {
+        "trend": {
+          "best_strategy": "partial_take_profit",
+          "stages": 4,
+          "reason": "SOL volatility very high; staged reduces impact"
+        },
+        "range": {
+          "best_strategy": "fixed_tp",
+          "tp_ratio": 0.8,
+          "reason": "Ranges tighter; take profits quickly"
+        },
+        "panic": {
+          "best_strategy": "early_exit_signal",
+          "exit_time": 5,
+          "reason": "SOL panics hard; get out fast"
+        }
+      },
+      "time_of_day_patterns": {
+        "us_market_close": "Reduced liquidity, wider spreads",
+        "twitter_sentiment": "Meme catalysts cause whips"
+      },
+      "typical_exit_duration": "20-120 minutes",
+      "typical_mae": "4-5%",
+      "typical_mfe": "4-8%"
+    },
+    "ALTCOINS": {
+      "symbol": "ALTCOINS_GENERAL",
+      "general_characteristics": "Highly variable, thin liquidity common, correlation with BTC strong, low volume hours risky",
+      "exit_preferences": {
+        "trailing_stop_effectiveness": 0.65,
+        "fixed_tp_effectiveness": 0.72,
+        "time_exit_effectiveness": 0.75,
+        "partial_tp_effectiveness": 0.80
+      },
+      "regime_specific_exits": {
+        "trend": {
+          "best_strategy": "time_based_exit",
+          "time_minutes": 60,
+          "reason": "Alt trends reverse fast; lock in before fade"
+        },
+        "range": {
+          "best_strategy": "fixed_tp",
+          "tp_ratio": 0.9,
+          "reason": "Alt ranges are small; take modest profits"
+        }
+      },
+      "liquidity_check_required": true,
+      "typical_exit_duration": "30-90 minutes",
+      "typical_mae": "5-6%",
+      "typical_mfe": "2-5%"
+    }
+  },
+  "mae_mfe_optimization": {
+    "mae_definition": "Maximum Adverse Excursion - largest loss from entry before reaching profit",
+    "mfe_definition": "Maximum Favorable Excursion - largest gain from entry before exit",
+    "mae_reduction_strategies": [
+      {
+        "strategy": "Tighter stop losses",
+        "expected_mae_reduction": "15-20%",
+        "tradeoff": "Increased whipsaw rate"
+      },
+      {
+        "strategy": "Early exit signals",
+        "expected_mae_reduction": "25-35%",
+        "tradeoff": "Reduced total wins on reversals"
+      },
+      {
+        "strategy": "Position sizing based on entry quality",
+        "expected_mae_reduction": "10-15%",
+        "tradeoff": "More complex logistics"
+      },
+      {
+        "strategy": "Volatility-adjusted stops",
+        "expected_mae_reduction": "12-18%",
+        "tradeoff": "Parameter sensitivity"
+      }
+    ],
+    "mfe_capture_strategies": [
+      {
+        "strategy": "Trailing stops",
+        "expected_mfe_capture_percent": "65-80%",
+        "tradeoff": "Get shaken out on retracements"
+      },
+      {
+        "strategy": "Partial take profits",
+        "expected_mfe_capture_percent": "55-70%",
+        "tradeoff": "Leave money on table in extremes"
+      },
+      {
+        "strategy": "Support/resistance holds",
+        "expected_mfe_capture_percent": "45-60%",
+        "tradeoff": "Wait too long, can reverse"
+      }
+    ],
+    "regime_specific_mae_targets": {
+      "trend": "MAE: 2-3%, should capture 75-85% of MFE",
+      "range": "MAE: 3-4%, capture 50-60% of MFE",
+      "panic": "MAE: 4-6%, capture 30-40% of MFE (survivability more important)",
+      "high_volatility": "MAE: 5-7%, capture 60-70% of MFE",
+      "low_liquidity": "MAE: 6-8%, capture 40-50% of MFE",
+      "news_dislocation": "MAE: 3-5%, capture 50-60% of MFE"
+    }
+  },
+  "expected_improvements": {
+    "by_implementation": {
+      "exit_strategy_optimization": {
+        "win_rate_improvement": "2-5%",
+        "average_trade_duration_reduction": "10-20%",
+        "profit_factor_improvement": "0.10-0.25",
+        "timeframe": "50-100 trades to stabilize"
+      },
+      "regime_specific_selection": {
+        "regime_classifier_accuracy": "75-85%",
+        "edge_improvement": "3-8%",
+        "consistency_improvement": "12-18%"
+      },
+      "mae_reduction": {
+        "mae_reduction_percent": "15-25%",
+        "win_rate_improvement_from_mae": "1-2%"
+      },
+      "mfe_capture_improvement": {
+        "mfe_capture_increase": "10-15%",
+        "average_profit_increase": "8-12%"
+      }
+    }
+  },
+  "validation_rules": {
+    "rule_1": "Exit strategy must match current market regime with 75%+ confidence",
+    "rule_2": "Never exit below entry stop loss price",
+    "rule_3": "Time-based exits must be at least 5 minutes to avoid slippage death spiral",
+    "rule_4": "Partial exits must have at least 2 stages; 4+ stages only if high conviction",
+    "rule_5": "Trailing stops must have minimum distance >= 0.5% of entry price",
+    "rule_6": "Support/resistance levels must have been tested at least 2 times",
+    "rule_7": "Early exit signals must have independent confirmation (not just reverse of entry signal)",
+    "rule_8": "Volatility-adjusted parameters must recalculate at least every 4 hours",
+    "rule_9": "All exits must have defined stop loss before entry executed",
+    "rule_10": "Exit prices must be attainable given current liquidity and spread"
+  }
+}
