@@ -632,7 +632,7 @@ function SignalPanel({
     high_volatility: '#fbbf24', low_liquidity: '#64748b',
     news_dislocation: '#7c3aed', unknown: C.muted, neutral: C.muted,
   };
-  const regimeKey = regime.toLowerCase().replace(' ', '_');
+  const regimeKey = (regime || 'unknown').toLowerCase().replace(' ', '_');
   const regimeColor = REGIME_COLOR[regimeKey] || C.muted;
 
   // Price ladder entries (sorted by price for visual)
