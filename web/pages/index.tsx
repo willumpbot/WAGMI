@@ -441,12 +441,14 @@ function CandleChart({
   zones,
   signalLevels,
   timeframe,
+  height = 620,
 }: {
   symbol: string;
   apiBase: string;
   zones?: Signal['zones'] | null;
   signalLevels?: { entry?: number; sl?: number; tp1?: number; tp2?: number; side?: string } | null;
   timeframe: Timeframe;
+  height?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -602,7 +604,7 @@ function CandleChart({
     const TV_TF: Record<string, string> = { '15m': '15', '1h': '60', '4h': '240', '1d': 'D' };
     const tvSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tv_${symbol}&symbol=${TV_SYMBOLS[symbol] ?? symbol}&interval=${TV_TF[timeframe] ?? '60'}&theme=dark&style=1&locale=en&hide_top_toolbar=0&hide_side_toolbar=0&allow_symbol_change=0&save_image=0&withdateranges=1`;
     return (
-      <div style={{ width: '100%', height: 620, borderRadius: R.md, overflow: 'hidden', background: '#131722' }}>
+      <div style={{ width: '100%', height, borderRadius: R.md, overflow: 'hidden', background: '#131722' }}>
         <iframe
           src={tvSrc}
           style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
@@ -615,7 +617,7 @@ function CandleChart({
 
   return (
     <div style={{ position: 'relative' }}>
-      <div ref={containerRef} style={{ width: '100%', height: 620, background: C.card, borderRadius: R.md }} />
+      <div ref={containerRef} style={{ width: '100%', height, background: C.card, borderRadius: R.md }} />
       {status === 'loading' && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.card + 'cc', borderRadius: R.md, fontSize: F.sm, color: C.muted }}>
           Loading candles…
@@ -896,7 +898,7 @@ export default function Home() {
   const hasGoodSignals = useRef(false);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
+    const check = () => setIsMobile(window.innerWidth < 900);
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
@@ -1264,6 +1266,7 @@ export default function Home() {
             zones={signals[activeChart]?.zones ?? null}
             signalLevels={null}
             timeframe={activeTimeframe}
+            height={isMobile ? 300 : 620}
           />
         </div>
       </div>
