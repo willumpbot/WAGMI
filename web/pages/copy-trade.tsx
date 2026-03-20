@@ -820,7 +820,7 @@ function VisualPriceRuler({
   zones: { deepAccum: number; accum: number; distrib: number; safeDistrib: number };
   symbol: string;
 }) {
-  const gradSuffix = symbol.replace(/[^a-zA-Z0-9]/g, '');
+  const gradSuffix = (symbol || '').replace(/[^a-zA-Z0-9]/g, '');
   const W = 600;
   const H = 80;
   const BAR_Y = 44;
@@ -2482,7 +2482,13 @@ export default function CopyTrade() {
 
   const signals = data.signals || {};
   const symbolOrder = ['BTC', 'SOL', 'HYPE'];
-  const orderedSignals = symbolOrder.map((sym) => signals[sym]).filter(Boolean);
+  const orderedSignals = symbolOrder
+    .map((sym) => {
+      const s = signals[sym];
+      if (!s) return null;
+      return { ...s, symbol: s.symbol ?? sym };
+    })
+    .filter(Boolean);
   const llmMode = llmView?.per_symbol
     ? Object.values(llmView.per_symbol)[0]?.mode || null
     : null;
