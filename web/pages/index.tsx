@@ -892,6 +892,7 @@ export default function Home() {
   const [sniperStats, setSniperStats] = useState<any>({pending:0,approved:0,rejected:0,executed:0,total:0});
   const [sniperAction, setSniperAction] = useState<Record<string, 'approving'|'rejecting'|null>>({});
   const apiBase = resolveApiBase();
+  const hasGoodSignals = useRef(false);
 
   // Compute correlation matrix from recent OHLCV (30 daily candles)
   useEffect(() => {
@@ -950,6 +951,7 @@ export default function Home() {
           const newSig = await sigRes.value.json();
           if (newSig?.signals && Object.keys(newSig.signals).length > 0) {
             setSignalsData(newSig);
+            hasGoodSignals.current = true;
           }
           setApiError(false);
         } else {
@@ -976,9 +978,9 @@ export default function Home() {
         if (sniperStatsRes.status === 'fulfilled' && sniperStatsRes.value.ok) {
           setSniperStats(await sniperStatsRes.value.json());
         }
-        setLoading(false);
+        if (hasGoodSignals.current) setLoading(false);
       } catch {
-        setLoading(false);
+        if (hasGoodSignals.current) setLoading(false);
         setApiError(true);
       }
     };
