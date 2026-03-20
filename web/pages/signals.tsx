@@ -2951,23 +2951,190 @@ function SignalTimelineWithRegime({ events }: { events: any[] }) {
 
 // ─── MarketStructureGrid ──────────────────────────────────────────────────────
 
-function MarketStructureGrid() {
+type OhlcvCandle = { time: number; open: number; high: number; low: number; close: number; volume: number };
+type TrendDir = 'bull' | 'bear' | 'neutral';
+
+function _sma(closes: number[], period: number): number | null {
+  if (closes.length < period) return null;
+  return closes.slice(-period).reduce((a, b) => a + b, 0) / period;
+}
+function _approxRSI(closes: number[], period = 14): number {
+  if (closes.length < period + 1) return 50;
+  let g = 0, l = 0;
+  for (let i = closes.length - period; i < closes.length; i++) {
+    const d = closes[i] - closes[i - 1];
+    if (d > 0) g += d; else l -= d;
+  }
+  const ag = g / period, al = l / period;
+  if (al === 0) return 100;
+  return 100 - 100 / (1 + ag / al);
+}
+function _approxATRpct(candles: OhlcvCandle[], period = 14): number {
+  if (candles.length < period + 1) return 1;
+  let sum = 0;
+  for (let i = candles.length - period; i < candles.length; i++) {
+    const tr = Math.max(
+      candles[i].high - candles[i].low,
+      Math.abs(candles[i].high - candles[i - 1].close),
+      Math.abs(candles[i].low - candles[i - 1].close),
+    );
+    sum += tr;
+  }
+  return (sum / period / candles[candles.length - 1].close) * 100;
+}
+function _cellFromCandles(candles: OhlcvCandle[], tf: '5m' | '1h' | '6h' | '1d'): { trend: TrendDir; regime: 'T' | 'R' | 'HV' } {
+  if (candles.length < 20) return { trend: 'neutral', regime: 'R' };
+  const closes = candles.map(c => c.close);
+  let trend: TrendDir;
+  if (tf === '5m') {
+    if (closes.length < 6) { trend = 'neutral'; }
+    else {
+      const r = closes.slice(-3).reduce((a, b) => a + b, 0) / 3;
+      const p = closes.slice(-6, -3).reduce((a, b) => a + b, 0) / 3;
+      const d = (r - p) / p;
+      trend = d > 0.002 ? 'bull' : d < -0.002 ? 'bear' : 'neutral';
+    }
+  } else if (tf === '1h') {
+    const s10 = _sma(closes, 10) ?? closes[closes.length - 1];
+    const s20 = _sma(closes, 20) ?? closes[closes.length - 1];
+    const d = (s10 - s20) / s20;
+    trend = d > 0.003 ? 'bull' : d < -0.003 ? 'bear' : 'neutral';
+  } else if (tf === '6h') {
+    if (closes.length < 12) { trend = 'neutral'; }
+    else {
+      const r = closes.slice(-6).reduce((a, b) => a + b, 0) / 6;
+      const p = closes.slice(-12, -6).reduce((a, b) => a + b, 0) / 6;
+      const d = (r - p) / p;
+      trend = d > 0.003 ? 'bull' : d < -0.003 ? 'bear' : 'neutral';
+    }
+  } else {
+    if (closes.length < 48) { trend = 'neutral'; }
+    else {
+      const r = closes.slice(-24).reduce((a, b) => a + b, 0) / 24;
+      const p = closes.slice(-48, -24).reduce((a, b) => a + b, 0) / 24;
+      const d = (r - p) / p;
+      trend = d > 0.005 ? 'bull' : d < -0.005 ? 'bear' : 'neutral';
+    }
+  }
+  const rsi = _approxRSI(closes);
+  const atrPct = _approxATRpct(candles);
+  let regime: 'T' | 'R' | 'HV';
+  if (atrPct > 2.5) regime = 'HV';
+  else if ((rsi > 60 || rsi < 40) && trend !== 'neutral') regime = 'T';
+  else regime = 'R';
+  return { trend, regime };
+}
+
+const MSG_CELL_BG: Record<TrendDir, string> = {
+  bull: 'rgba(22,163,74,0.15)', bear: 'rgba(220,38,38,0.15)', neutral: 'rgba(71,85,105,0.20)',
+};
+const MSG_CELL_BORDER: Record<TrendDir, string> = {
+  bull: 'rgba(22,163,74,0.35)', bear: 'rgba(220,38,38,0.35)', neutral: 'rgba(71,85,105,0.35)',
+};
+const MSG_TREND_ARROW: Record<TrendDir, string> = { bull: '↑', bear: '↓', neutral: '→' };
+const MSG_TREND_COLOR: Record<TrendDir, string> = { bull: '#4ade80', bear: '#f87171', neutral: C.muted };
+const MSG_REGIME_COLOR: Record<string, string> = { T: C.bull, R: '#475569', HV: C.warn };
+
+function MarketStructureGrid({ apiBase }: { apiBase: string }) {
+  const SYMBOLS = ['BTC', 'SOL', 'HYPE'] as const;
+  const TFS = ['5m', '1h', '6h', '1d'] as const;
+  const [candles, setCandles] = useState<Record<string, OhlcvCandle[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [activeCol, setActiveCol] = useState<number | null>(null);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    Promise.all(
+      SYMBOLS.map(sym =>
+        fetch(`${apiBase}/v1/ohlcv?symbol=${sym}&timeframe=1h&limit=200`, { signal: ctrl.signal })
+          .then(r => r.ok ? r.json() : [])
+          .then((d: OhlcvCandle[]) => [sym, d] as const)
+          .catch(() => [sym, []] as const),
+      ),
+    ).then(results => {
+      if (ctrl.signal.aborted) return;
+      setCandles(Object.fromEntries(results));
+      setLoading(false);
+    });
+    return () => ctrl.abort();
+  }, [apiBase]);
+
   return (
-    <div style={{
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      borderRadius: 8,
-      padding: '16px 20px',
-      marginBottom: 28,
-    }}>
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>Market Structure Grid</div>
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
-          Trend direction and regime per symbol/timeframe
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '16px 20px', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>Market Structure Grid</div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
+            Trend direction per symbol × timeframe — computed from live OHLCV data
+            {loading && <span style={{ marginLeft: 8, opacity: 0.6 }}>Loading…</span>}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, fontSize: 10, color: C.muted, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {(['T', 'R', 'HV'] as const).map(badge => (
+            <span key={badge} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ padding: '1px 5px', borderRadius: 4, background: MSG_REGIME_COLOR[badge] + '22', border: `1px solid ${MSG_REGIME_COLOR[badge]}44`, color: MSG_REGIME_COLOR[badge], fontWeight: 700, fontSize: 10 }}>
+                {badge}
+              </span>
+              ={badge === 'T' ? 'Trend' : badge === 'R' ? 'Range' : 'High Vol'}
+            </span>
+          ))}
         </div>
       </div>
-      <div style={{ padding: '24px 0', textAlign: 'center', color: C.muted, fontSize: 13 }}>
-        ⏳ Per-symbol, per-timeframe regime data is not yet exposed by the bot API. This section will populate once that endpoint is available.
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: 4, minWidth: 320 }}>
+          <thead>
+            <tr>
+              <th style={{ width: 40, padding: '4px 6px' }} />
+              {SYMBOLS.map((sym, colIdx) => (
+                <th
+                  key={sym}
+                  onClick={() => setActiveCol(activeCol === colIdx ? null : colIdx)}
+                  style={{ padding: '6px 10px', fontSize: 12, fontWeight: 800, color: activeCol === colIdx ? C.brand : C.text, textAlign: 'center', cursor: 'pointer', background: activeCol === colIdx ? C.brand + '18' : 'transparent', borderRadius: 4, letterSpacing: '0.05em', textTransform: 'uppercase', userSelect: 'none' }}
+                >
+                  {sym}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {TFS.map(tf => (
+              <tr key={tf}>
+                <td style={{ padding: '4px 6px', fontSize: 10, fontWeight: 700, color: C.muted, textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                  {tf}
+                </td>
+                {SYMBOLS.map((sym, colIdx) => {
+                  const c = candles[sym];
+                  const isHighlighted = activeCol === colIdx;
+                  if (loading || !c || c.length < 20) {
+                    return (
+                      <td key={sym} style={{ padding: 3 }}>
+                        <div style={{ width: 72, height: 52, background: 'rgba(71,85,105,0.10)', border: `1.5px solid ${C.border}`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 16, color: C.muted, opacity: 0.4 }}>—</span>
+                        </div>
+                      </td>
+                    );
+                  }
+                  const cell = _cellFromCandles(c, tf as any);
+                  const trendColor = MSG_TREND_COLOR[cell.trend];
+                  const rCol = MSG_REGIME_COLOR[cell.regime];
+                  return (
+                    <td key={sym} onClick={() => setActiveCol(activeCol === colIdx ? null : colIdx)} style={{ padding: 3, cursor: 'pointer' }}>
+                      <div style={{ width: 72, height: 52, background: MSG_CELL_BG[cell.trend], border: `1.5px solid ${isHighlighted ? C.brand : MSG_CELL_BORDER[cell.trend]}`, borderRadius: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'border-color 0.15s', boxShadow: isHighlighted ? `0 0 0 1px ${C.brand}44` : 'none' }}>
+                        <span style={{ fontSize: 18, lineHeight: 1, color: trendColor, fontWeight: 700 }}>{MSG_TREND_ARROW[cell.trend]}</span>
+                        <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 5px', borderRadius: 3, background: rCol + '22', border: `1px solid ${rCol}44`, color: rCol, letterSpacing: '0.04em' }}>
+                          {cell.regime}
+                        </span>
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ marginTop: 8, fontSize: 10, color: C.faint }}>
+        Trends computed from 1h OHLCV via SMA comparison. 5m/6h/1d are proxied from hourly candles. Regime: T=Trend, R=Range, HV=High Volatility (ATR-based).
       </div>
     </div>
   );
@@ -3371,7 +3538,7 @@ export default function SignalsPage() {
       <SignalTimelineWithRegime events={events} />
 
       {/* ── Market Structure Grid ─────────────────────────────────────────── */}
-      <MarketStructureGrid />
+      <MarketStructureGrid apiBase={apiBase} />
 
       {/* ── Educational note ─────────────────────────────────────────────── */}
       <div style={{

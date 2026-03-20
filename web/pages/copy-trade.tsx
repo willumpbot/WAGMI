@@ -1483,14 +1483,162 @@ function StandaloneRiskCalc({ defaultEntry, defaultSl }: { defaultEntry?: number
 
 // ─── Multi-Timeframe Confluence ───────────────────────────────────────────────
 
-function MultiTimeframeConfluence() {
+type _OhlcvCandle = { time: number; open: number; high: number; low: number; close: number; volume: number };
+type _TrendDir = 'up' | 'down' | 'neutral';
+type _Strength = 'strong' | 'medium' | 'weak';
+
+function _mtfSMA(closes: number[], period: number): number | null {
+  if (closes.length < period) return null;
+  return closes.slice(-period).reduce((a, b) => a + b, 0) / period;
+}
+function _mtfTrend(candles: _OhlcvCandle[], tf: '5m' | '1h' | '6h' | '1D'): { trend: _TrendDir; strength: _Strength } {
+  const closes = candles.map(c => c.close);
+  let diff = 0;
+  if (tf === '5m') {
+    if (closes.length < 6) return { trend: 'neutral', strength: 'weak' };
+    const r = closes.slice(-3).reduce((a, b) => a + b, 0) / 3;
+    const p = closes.slice(-6, -3).reduce((a, b) => a + b, 0) / 3;
+    diff = (r - p) / p;
+  } else if (tf === '1h') {
+    const s10 = _mtfSMA(closes, 10) ?? closes[closes.length - 1];
+    const s20 = _mtfSMA(closes, 20) ?? closes[closes.length - 1];
+    diff = (s10 - s20) / s20;
+  } else if (tf === '6h') {
+    if (closes.length < 12) return { trend: 'neutral', strength: 'weak' };
+    const r = closes.slice(-6).reduce((a, b) => a + b, 0) / 6;
+    const p = closes.slice(-12, -6).reduce((a, b) => a + b, 0) / 6;
+    diff = (r - p) / p;
+  } else {
+    if (closes.length < 48) return { trend: 'neutral', strength: 'weak' };
+    const r = closes.slice(-24).reduce((a, b) => a + b, 0) / 24;
+    const p = closes.slice(-48, -24).reduce((a, b) => a + b, 0) / 24;
+    diff = (r - p) / p;
+  }
+  const abs = Math.abs(diff);
+  const strength: _Strength = abs > 0.01 ? 'strong' : abs > 0.004 ? 'medium' : 'weak';
+  const trend: _TrendDir = diff > 0.002 ? 'up' : diff < -0.002 ? 'down' : 'neutral';
+  return { trend, strength };
+}
+
+function MultiTimeframeConfluence({ apiBase, activityEvents }: { apiBase: string; activityEvents: ActivityEvent[] }) {
+  const SYMBOLS = ['BTC', 'SOL', 'HYPE'] as const;
+  const TFS = ['5m', '1h', '6h', '1D'] as const;
+  const [candles, setCandles] = useState<Record<string, _OhlcvCandle[]>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    Promise.all(
+      SYMBOLS.map(sym =>
+        fetch(`${apiBase}/v1/ohlcv?symbol=${sym}&timeframe=1h&limit=200`, { signal: ctrl.signal })
+          .then(r => r.ok ? r.json() : [])
+          .then((d: _OhlcvCandle[]) => [sym, d] as const)
+          .catch(() => [sym, []] as const),
+      ),
+    ).then(results => {
+      if (ctrl.signal.aborted) return;
+      setCandles(Object.fromEntries(results));
+      setLoading(false);
+    });
+    return () => ctrl.abort();
+  }, [apiBase]);
+
+  // LLM enrichment: last signal event per symbol from activity feed
+  function lastLlmSignal(sym: string) {
+    const ev = activityEvents.find(e =>
+      e.symbol === sym && (e.event_type === 'llm_would_trade' || e.event_type === 'llm_veto'),
+    );
+    if (!ev) return null;
+    const side = ((ev as any).data?.side || 'BUY').toUpperCase() === 'SELL' ? 'SELL' : 'BUY';
+    const conf = (ev as any).data?.confidence ? Math.round((ev as any).data.confidence) : null;
+    return { ago: ev.ts_iso ? new Date(ev.ts_iso).toLocaleTimeString() : '—', side, conf };
+  }
+
+  const strengthColor = (trend: _TrendDir, strength: _Strength): string => {
+    if (trend === 'up') return strength === 'strong' ? '#16a34a' : strength === 'medium' ? '#22c55e' : '#86efac';
+    if (trend === 'down') return strength === 'strong' ? '#dc2626' : '#ef4444';
+    return C.muted;
+  };
+  const strengthWidth = (s: _Strength) => s === 'strong' ? '100%' : s === 'medium' ? '60%' : '30%';
+  const arrowChar = (t: _TrendDir) => t === 'up' ? '▲' : t === 'down' ? '▼' : '—';
+
   return (
     <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
-      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>
-        Multi-Timeframe Confluence
+      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>Multi-Timeframe Confluence</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
+        Trend alignment across 4 timeframes per symbol — derived from live OHLCV data.
+        {loading && <span style={{ marginLeft: 8, opacity: 0.6 }}>Loading…</span>}
+        {activityEvents.length > 0 && <span style={{ marginLeft: 8, color: C.brand }}>+ LLM signal context</span>}
       </div>
-      <div style={{ padding: '24px 0', textAlign: 'center', color: C.muted, fontSize: 13 }}>
-        ⏳ Multi-timeframe alignment data will appear once the bot has run signal evaluations across multiple timeframe cycles.
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 360 }}>
+          <thead>
+            <tr>
+              <th style={{ padding: '6px 10px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>Symbol</th>
+              {TFS.map(tf => (
+                <th key={tf} style={{ padding: '6px 8px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>{tf}</th>
+              ))}
+              <th style={{ padding: '6px 10px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SYMBOLS.map((sym, ri) => {
+              const c = candles[sym] || [];
+              const cells = TFS.map(tf => c.length >= 20 ? _mtfTrend(c, tf as any) : { trend: 'neutral' as _TrendDir, strength: 'weak' as _Strength });
+              const upCount = cells.filter(x => x.trend === 'up').length;
+              const downCount = cells.filter(x => x.trend === 'down').length;
+              const confluenceLabel = upCount >= 3 ? 'Strong Bull' : downCount >= 3 ? 'Strong Bear' : upCount === 2 ? 'Moderate Bull' : downCount === 2 ? 'Moderate Bear' : 'Mixed';
+              const confluenceColor = upCount >= 3 ? C.bull : downCount >= 3 ? C.bear : C.warn;
+              const llmSig = lastLlmSignal(sym);
+              return (
+                <tr key={sym} style={{ borderBottom: ri < SYMBOLS.length - 1 ? `1px solid ${C.border}` : 'none', background: ri % 2 === 0 ? 'transparent' : `${C.surface}50` }}>
+                  <td style={{ padding: '10px 10px', minWidth: 120 }}>
+                    <div style={{ fontWeight: 700, color: C.text, fontSize: F.sm }}>{sym}</div>
+                    {llmSig && (
+                      <div style={{ fontSize: 9, color: C.muted, marginTop: 2 }}>
+                        AI: <span style={{ color: llmSig.side === 'BUY' ? C.bull : C.bear }}>{llmSig.side}</span>
+                        {llmSig.conf != null && <span style={{ marginLeft: 4, color: C.textSub }}>{llmSig.conf}%</span>}
+                      </div>
+                    )}
+                  </td>
+                  {cells.map((cell, ci) => {
+                    if (loading || c.length < 20) {
+                      return <td key={ci} style={{ padding: '10px 8px', textAlign: 'center', color: C.muted }}>—</td>;
+                    }
+                    if (cell.trend === 'neutral') {
+                      return (
+                        <td key={ci} style={{ padding: '10px 8px', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: C.muted }}>—</span>
+                            <span style={{ fontSize: 9, color: C.muted }}>neutral</span>
+                          </div>
+                        </td>
+                      );
+                    }
+                    const col = strengthColor(cell.trend, cell.strength);
+                    return (
+                      <td key={ci} style={{ padding: '10px 8px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: col }}>{arrowChar(cell.trend)}</span>
+                          <div style={{ width: 32, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ width: strengthWidth(cell.strength), height: '100%', background: col, borderRadius: 2 }} />
+                          </div>
+                          <span style={{ fontSize: 9, color: col, fontWeight: 600 }}>{cell.strength}</span>
+                        </div>
+                      </td>
+                    );
+                  })}
+                  <td style={{ padding: '10px 10px', textAlign: 'center' }}>
+                    <span style={{ fontSize: F.xs, fontWeight: 700, color: confluenceColor }}>{confluenceLabel}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ marginTop: 10, fontSize: F.xs, color: C.muted }}>
+        Tip: Strong confluence = all timeframes agree = higher probability setup. 5m/6h/1d proxied from 1h candles.
       </div>
     </div>
   );
@@ -2069,7 +2217,7 @@ export default function CopyTrade() {
       <StrategyConsensusGauge signals={signals} />
 
       {/* Multi-Timeframe Confluence */}
-      <MultiTimeframeConfluence />
+      <MultiTimeframeConfluence apiBase={apiBase} activityEvents={activityEvents} />
 
       {/* Signal Quality Matrix */}
       <TradeSetupQualityMatrix />
