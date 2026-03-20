@@ -990,17 +990,6 @@ function WinRateByRegimeHeatmap({ trades }: { trades: TradeRecord[] }) {
 
   const SYMBOLS = ['BTC', 'SOL', 'HYPE'] as const;
 
-  // Seeded fallback matrix (rows = regimes, cols = symbols)
-  const FALLBACK: Record<string, Record<string, number>> = {
-    trend:           { BTC: 82, SOL: 78, HYPE: 71 },
-    range:           { BTC: 55, SOL: 61, HYPE: 48 },
-    high_volatility: { BTC: 43, SOL: 52, HYPE: 38 },
-    panic:           { BTC: 30, SOL: 25, HYPE: 33 },
-    low_liquidity:   { BTC: 60, SOL: 55, HYPE: 58 },
-  };
-
-  const useFallback = trades.length === 0;
-
   // Build matrix from real trades
   type Cell = { wins: number; total: number };
   const matrix: Record<string, Record<string, Cell>> = {};
@@ -1011,16 +1000,14 @@ function WinRateByRegimeHeatmap({ trades }: { trades: TradeRecord[] }) {
     }
   }
 
-  if (!useFallback) {
-    for (const t of trades) {
-      const regime = ((t as any).regime || t.llm_regime || '').toLowerCase();
-      const sym = (t.symbol || '').toUpperCase().replace(/-.*$/, ''); // strip -USD etc.
-      if (!REGIMES.find(r => r.key === regime)) continue;
-      if (!SYMBOLS.includes(sym as typeof SYMBOLS[number])) continue;
-      const cell = matrix[regime][sym];
-      cell.total++;
-      if (t.outcome === 'WIN' || (t.pnl != null && t.pnl > 0)) cell.wins++;
-    }
+  for (const t of trades) {
+    const regime = ((t as any).regime || t.llm_regime || '').toLowerCase();
+    const sym = (t.symbol || '').toUpperCase().replace(/-.*$/, ''); // strip -USD etc.
+    if (!REGIMES.find(r => r.key === regime)) continue;
+    if (!SYMBOLS.includes(sym as typeof SYMBOLS[number])) continue;
+    const cell = matrix[regime][sym];
+    cell.total++;
+    if (t.outcome === 'WIN' || (t.pnl != null && t.pnl > 0)) cell.wins++;
   }
 
   const cellBg = (pct: number): string => {
@@ -1078,12 +1065,8 @@ function WinRateByRegimeHeatmap({ trades }: { trades: TradeRecord[] }) {
 
                 {SYMBOLS.map(sym => {
                   let pct: number | null = null;
-                  if (useFallback) {
-                    pct = FALLBACK[regime.key][sym];
-                  } else {
-                    const cell = matrix[regime.key][sym];
-                    pct = cell.total > 0 ? (cell.wins / cell.total) * 100 : null;
-                  }
+                  const cell = matrix[regime.key][sym];
+                  pct = cell.total > 0 ? (cell.wins / cell.total) * 100 : null;
 
                   const bg = pct !== null ? cellBg(pct) : C.faint;
                   const fg = pct !== null ? cellFg(pct) : C.muted;

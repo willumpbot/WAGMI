@@ -1389,150 +1389,11 @@ function HowToTrade({
 // ─── Trade Setup Quality Matrix ──────────────────────────────────────────────
 
 function TradeSetupQualityMatrix() {
-  const regimes = [
-    { key: 'trend', label: 'Trend' },
-    { key: 'range', label: 'Range' },
-    { key: 'high_volatility', label: 'High Vol' },
-    { key: 'panic', label: 'Panic' },
-  ];
-  const zones = [
-    { key: 'deep_accum', label: 'Deep Accum' },
-    { key: 'accum', label: 'Accum' },
-    { key: 'neutral', label: 'Neutral' },
-    { key: 'distrib', label: 'Distrib' },
-    { key: 'safe_distrib', label: 'Safe Distrib' },
-  ];
-
-  // Realistic quality scores: how well each regime × zone combo performs
-  // Trend + cheap zones = excellent; Panic + distribution = terrible; etc.
-  const scores: Record<string, Record<string, number>> = {
-    trend:           { deep_accum: 92, accum: 84, neutral: 55, distrib: 28, safe_distrib: 14 },
-    range:           { deep_accum: 78, accum: 70, neutral: 62, distrib: 45, safe_distrib: 38 },
-    high_volatility: { deep_accum: 60, accum: 52, neutral: 35, distrib: 22, safe_distrib: 10 },
-    panic:           { deep_accum: 45, accum: 38, neutral: 20, distrib: 12, safe_distrib: 5  },
-  };
-
-  const cellColor = (score: number): string => {
-    if (score > 75) return C.bull;
-    if (score >= 50) return C.warn;
-    return C.bear;
-  };
-
-  const CELL_W = 80;
-  const CELL_H = 36;
-  const ROW_LABEL_W = 72;
-  const COL_LABEL_H = 32;
-  const PAD = 3;
-
-  const svgW = ROW_LABEL_W + zones.length * (CELL_W + PAD) + PAD;
-  const svgH = COL_LABEL_H + regimes.length * (CELL_H + PAD) + PAD;
-
   return (
     <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
       <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Quality Matrix</div>
-      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
-        Expected signal quality (0–100) by market <strong style={{ color: C.textSub }}>regime</strong> (rows) ×{' '}
-        price <strong style={{ color: C.textSub }}>zone</strong> (columns). Green = high-quality setup, yellow = marginal, red = avoid.
-      </div>
-
-      <div style={{ overflowX: 'auto' }}>
-        <svg
-          viewBox={`0 0 ${svgW} ${svgH}`}
-          style={{ display: 'block', width: '100%', minWidth: 360, height: 'auto' }}
-          aria-label="Trade setup quality heatmap"
-        >
-          {/* Column headers */}
-          {zones.map((z, ci) => {
-            const cx = ROW_LABEL_W + PAD + ci * (CELL_W + PAD) + CELL_W / 2;
-            return (
-              <text
-                key={z.key}
-                x={cx}
-                y={COL_LABEL_H - 6}
-                textAnchor="middle"
-                fontSize={9}
-                fontWeight="600"
-                fill={C.muted}
-                fontFamily="inherit"
-              >
-                {z.label}
-              </text>
-            );
-          })}
-
-          {/* Row headers + cells */}
-          {regimes.map((reg, ri) => {
-            const cellY = COL_LABEL_H + PAD + ri * (CELL_H + PAD);
-            const midY = cellY + CELL_H / 2;
-            return (
-              <g key={reg.key}>
-                {/* Row label */}
-                <text
-                  x={ROW_LABEL_W - 6}
-                  y={midY + 4}
-                  textAnchor="end"
-                  fontSize={9}
-                  fontWeight="600"
-                  fill={C.textSub}
-                  fontFamily="inherit"
-                >
-                  {reg.label}
-                </text>
-
-                {/* Cells */}
-                {zones.map((z, ci) => {
-                  const score = scores[reg.key]?.[z.key] ?? 50;
-                  const color = cellColor(score);
-                  const cellX = ROW_LABEL_W + PAD + ci * (CELL_W + PAD);
-                  const opacity = 0.18 + (score / 100) * 0.55;
-
-                  return (
-                    <g key={z.key}>
-                      <rect
-                        x={cellX}
-                        y={cellY}
-                        width={CELL_W}
-                        height={CELL_H}
-                        rx={4}
-                        fill={color}
-                        fillOpacity={opacity}
-                        stroke={color}
-                        strokeOpacity={0.3}
-                        strokeWidth={1}
-                      />
-                      <text
-                        x={cellX + CELL_W / 2}
-                        y={midY + 1}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fontSize={11}
-                        fontWeight="700"
-                        fill={color}
-                        fontFamily="inherit"
-                      >
-                        {score}
-                      </text>
-                    </g>
-                  );
-                })}
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
-        {[
-          { color: C.bull, label: '> 75 — Strong setup' },
-          { color: C.warn, label: '50–75 — Marginal' },
-          { color: C.bear, label: '< 50 — Avoid' },
-        ].map(({ color, label }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: F.xs, color: C.muted }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: color, display: 'inline-block', opacity: 0.8 }} />
-            <span>{label}</span>
-          </div>
-        ))}
+      <div style={{ padding: '24px 0', textAlign: 'center', color: C.muted, fontSize: 13 }}>
+        ⏳ Signal quality data will populate from real trade outcomes as the bot closes positions.
       </div>
     </div>
   );
@@ -1622,179 +1483,153 @@ function StandaloneRiskCalc({ defaultEntry, defaultSl }: { defaultEntry?: number
 
 // ─── Multi-Timeframe Confluence ───────────────────────────────────────────────
 
-function MultiTimeframeConfluence() {
-  type TfCell = { trend: 'up' | 'down' | 'neutral'; strength: 'strong' | 'medium' | 'weak' };
-  type LastSignalMeta = { ago: string; side: 'BUY' | 'SELL'; conf: number };
-  type SymbolRow = {
-    sym: string;
-    cells: TfCell[];
-    confluenceLabel: string;
-    confluenceColor: string;
-    confluenceBg: string;
-    lastTrade: 'buy' | 'sell';
-    lastSignal: LastSignalMeta;
-  };
+type _OhlcvCandle = { time: number; open: number; high: number; low: number; close: number; volume: number };
+type _TrendDir = 'up' | 'down' | 'neutral';
+type _Strength = 'strong' | 'medium' | 'weak';
 
-  const TFS = ['5m', '1h', '6h', '1D'];
+function _mtfSMA(closes: number[], period: number): number | null {
+  if (closes.length < period) return null;
+  return closes.slice(-period).reduce((a, b) => a + b, 0) / period;
+}
+function _mtfTrend(candles: _OhlcvCandle[], tf: '5m' | '1h' | '6h' | '1D'): { trend: _TrendDir; strength: _Strength } {
+  const closes = candles.map(c => c.close);
+  let diff = 0;
+  if (tf === '5m') {
+    if (closes.length < 6) return { trend: 'neutral', strength: 'weak' };
+    const r = closes.slice(-3).reduce((a, b) => a + b, 0) / 3;
+    const p = closes.slice(-6, -3).reduce((a, b) => a + b, 0) / 3;
+    diff = (r - p) / p;
+  } else if (tf === '1h') {
+    const s10 = _mtfSMA(closes, 10) ?? closes[closes.length - 1];
+    const s20 = _mtfSMA(closes, 20) ?? closes[closes.length - 1];
+    diff = (s10 - s20) / s20;
+  } else if (tf === '6h') {
+    if (closes.length < 12) return { trend: 'neutral', strength: 'weak' };
+    const r = closes.slice(-6).reduce((a, b) => a + b, 0) / 6;
+    const p = closes.slice(-12, -6).reduce((a, b) => a + b, 0) / 6;
+    diff = (r - p) / p;
+  } else {
+    if (closes.length < 48) return { trend: 'neutral', strength: 'weak' };
+    const r = closes.slice(-24).reduce((a, b) => a + b, 0) / 24;
+    const p = closes.slice(-48, -24).reduce((a, b) => a + b, 0) / 24;
+    diff = (r - p) / p;
+  }
+  const abs = Math.abs(diff);
+  const strength: _Strength = abs > 0.01 ? 'strong' : abs > 0.004 ? 'medium' : 'weak';
+  const trend: _TrendDir = diff > 0.002 ? 'up' : diff < -0.002 ? 'down' : 'neutral';
+  return { trend, strength };
+}
 
-  const rows: SymbolRow[] = [
-    {
-      sym: 'BTC',
-      cells: [
-        { trend: 'up', strength: 'strong' },
-        { trend: 'up', strength: 'medium' },
-        { trend: 'up', strength: 'weak' },
-        { trend: 'up', strength: 'medium' },
-      ],
-      confluenceLabel: 'Strong Confluence',
-      confluenceColor: C.bull,
-      confluenceBg: C.bullLight,
-      lastTrade: 'buy',
-      lastSignal: { ago: '2h ago', side: 'BUY', conf: 78 },
-    },
-    {
-      sym: 'SOL',
-      cells: [
-        { trend: 'up', strength: 'medium' },
-        { trend: 'up', strength: 'medium' },
-        { trend: 'neutral', strength: 'weak' },
-        { trend: 'up', strength: 'weak' },
-      ],
-      confluenceLabel: 'Moderate',
-      confluenceColor: C.warn,
-      confluenceBg: C.warnLight,
-      lastTrade: 'buy',
-      lastSignal: { ago: '45m ago', side: 'BUY', conf: 62 },
-    },
-    {
-      sym: 'HYPE',
-      cells: [
-        { trend: 'down', strength: 'weak' },
-        { trend: 'up', strength: 'medium' },
-        { trend: 'up', strength: 'strong' },
-        { trend: 'up', strength: 'medium' },
-      ],
-      confluenceLabel: 'Mixed',
-      confluenceColor: C.bear,
-      confluenceBg: C.bearLight,
-      lastTrade: 'sell',
-      lastSignal: { ago: '5h ago', side: 'SELL', conf: 55 },
-    },
-  ];
+function MultiTimeframeConfluence({ apiBase, activityEvents }: { apiBase: string; activityEvents: ActivityEvent[] }) {
+  const SYMBOLS = ['BTC', 'SOL', 'HYPE'] as const;
+  const TFS = ['5m', '1h', '6h', '1D'] as const;
+  const [candles, setCandles] = useState<Record<string, _OhlcvCandle[]>>({});
+  const [loading, setLoading] = useState(true);
 
-  // Strength bar widths
-  const strengthWidth = (s: TfCell['strength']) => s === 'strong' ? '100%' : s === 'medium' ? '60%' : '30%';
-  const strengthColor = (t: TfCell['trend'], s: TfCell['strength']) => {
-    if (t === 'up') return s === 'strong' ? C.bull : s === 'medium' ? '#22c55e' : '#86efac';
-    if (t === 'down') return s === 'strong' ? C.bear : '#ef4444';
+  useEffect(() => {
+    const ctrl = new AbortController();
+    Promise.all(
+      SYMBOLS.map(sym =>
+        fetch(`${apiBase}/v1/ohlcv?symbol=${sym}&timeframe=1h&limit=200`, { signal: ctrl.signal })
+          .then(r => r.ok ? r.json() : [])
+          .then((d: _OhlcvCandle[]) => [sym, d] as const)
+          .catch(() => [sym, []] as const),
+      ),
+    ).then(results => {
+      if (ctrl.signal.aborted) return;
+      setCandles(Object.fromEntries(results));
+      setLoading(false);
+    });
+    return () => ctrl.abort();
+  }, [apiBase]);
+
+  // LLM enrichment: last signal event per symbol from activity feed
+  function lastLlmSignal(sym: string) {
+    const ev = activityEvents.find(e =>
+      e.symbol === sym && (e.event_type === 'llm_would_trade' || e.event_type === 'llm_veto'),
+    );
+    if (!ev) return null;
+    const side = ((ev as any).data?.side || 'BUY').toUpperCase() === 'SELL' ? 'SELL' : 'BUY';
+    const conf = (ev as any).data?.confidence ? Math.round((ev as any).data.confidence) : null;
+    return { ago: ev.ts_iso ? new Date(ev.ts_iso).toLocaleTimeString() : '—', side, conf };
+  }
+
+  const strengthColor = (trend: _TrendDir, strength: _Strength): string => {
+    if (trend === 'up') return strength === 'strong' ? '#16a34a' : strength === 'medium' ? '#22c55e' : '#86efac';
+    if (trend === 'down') return strength === 'strong' ? '#dc2626' : '#ef4444';
     return C.muted;
   };
-
-  const TfCellView = ({ cell }: { cell: TfCell }) => {
-    if (cell.trend === 'neutral') {
-      return (
-        <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <span style={{ fontSize: 18, fontWeight: 700, color: C.muted, lineHeight: 1 }}>—</span>
-            <span style={{ fontSize: 9, color: C.muted }}>neutral</span>
-          </div>
-        </td>
-      );
-    }
-    const arrowColor = strengthColor(cell.trend, cell.strength);
-    const barW = strengthWidth(cell.strength);
-    return (
-      <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-          <span style={{ fontSize: 18, fontWeight: 700, color: arrowColor, lineHeight: 1 }}>
-            {cell.trend === 'up' ? '▲' : '▼'}
-          </span>
-          <div style={{ width: 32, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{ width: barW, height: '100%', background: arrowColor, borderRadius: 2, transition: 'width 0.3s' }} />
-          </div>
-          <span style={{ fontSize: 9, color: arrowColor, fontWeight: 600 }}>{cell.strength}</span>
-        </div>
-      </td>
-    );
-  };
+  const strengthWidth = (s: _Strength) => s === 'strong' ? '100%' : s === 'medium' ? '60%' : '30%';
+  const arrowChar = (t: _TrendDir) => t === 'up' ? '▲' : t === 'down' ? '▼' : '—';
 
   return (
     <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
-      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>
-        Multi-Timeframe Confluence
+      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>Multi-Timeframe Confluence</div>
+      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
+        Trend alignment across 4 timeframes per symbol — derived from live OHLCV data.
+        {loading && <span style={{ marginLeft: 8, opacity: 0.6 }}>Loading…</span>}
+        {activityEvents.length > 0 && <span style={{ marginLeft: 8, color: C.brand }}>+ LLM signal context</span>}
       </div>
-      <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
-        Signal alignment across 4 timeframes per symbol. All timeframes agreeing = higher-probability setup.
-      </div>
-
       <div style={{ overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 360 }}>
           <thead>
             <tr>
-              <th style={{ padding: '6px 10px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>
-                Symbol
-              </th>
-              {TFS.map((tf) => (
-                <th key={tf} style={{ padding: '6px 8px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>
-                  {tf}
-                </th>
+              <th style={{ padding: '6px 10px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>Symbol</th>
+              {TFS.map(tf => (
+                <th key={tf} style={{ padding: '6px 8px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>{tf}</th>
               ))}
-              <th style={{ padding: '6px 10px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>
-                Score
-              </th>
+              <th style={{ padding: '6px 10px', textAlign: 'center', fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: `1px solid ${C.border}` }}>Score</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, ri) => {
-              const tradeTriColor = row.lastTrade === 'buy' ? C.bull : C.bear;
-              const sigSideColor  = row.lastSignal.side === 'BUY' ? C.bull : C.bear;
-              const confColor     = row.lastSignal.conf >= 70 ? C.bull : row.lastSignal.conf >= 50 ? C.warn : C.bear;
+            {SYMBOLS.map((sym, ri) => {
+              const c = candles[sym] || [];
+              const cells = TFS.map(tf => c.length >= 20 ? _mtfTrend(c, tf as any) : { trend: 'neutral' as _TrendDir, strength: 'weak' as _Strength });
+              const upCount = cells.filter(x => x.trend === 'up').length;
+              const downCount = cells.filter(x => x.trend === 'down').length;
+              const confluenceLabel = upCount >= 3 ? 'Strong Bull' : downCount >= 3 ? 'Strong Bear' : upCount === 2 ? 'Moderate Bull' : downCount === 2 ? 'Moderate Bear' : 'Mixed';
+              const confluenceColor = upCount >= 3 ? C.bull : downCount >= 3 ? C.bear : C.warn;
+              const llmSig = lastLlmSignal(sym);
               return (
-                <tr key={row.sym} style={{ borderBottom: ri < rows.length - 1 ? `1px solid ${C.border}` : 'none', background: ri % 2 === 0 ? 'transparent' : `${C.surface}50` }}>
-                  {/* Symbol cell — direction triangle + last signal metadata */}
+                <tr key={sym} style={{ borderBottom: ri < SYMBOLS.length - 1 ? `1px solid ${C.border}` : 'none', background: ri % 2 === 0 ? 'transparent' : `${C.surface}50` }}>
                   <td style={{ padding: '10px 10px', minWidth: 120 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      {/* Direction triangle */}
-                      <span
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 900,
-                          color: tradeTriColor,
-                          lineHeight: 1,
-                          filter: `drop-shadow(0 0 3px ${tradeTriColor}66)`,
-                        }}
-                        title={`Last trade: ${row.lastTrade.toUpperCase()}`}
-                      >
-                        {row.lastTrade === 'buy' ? '▲' : '▼'}
-                      </span>
-                      <span style={{ fontWeight: 800, fontSize: F.md, color: C.text }}>{row.sym}</span>
-                    </div>
-                    {/* Last Signal metadata */}
-                    <div style={{ fontSize: 9, color: C.muted, lineHeight: 1.5 }}>
-                      Last Signal: <span style={{ color: C.textSub }}>{row.lastSignal.ago}</span>
-                      {' · '}
-                      <span style={{ fontWeight: 700, color: sigSideColor }}>{row.lastSignal.side}</span>
-                      {' · '}
-                      Conf: <span style={{ fontWeight: 700, color: confColor }}>{row.lastSignal.conf}%</span>
-                    </div>
+                    <div style={{ fontWeight: 700, color: C.text, fontSize: F.sm }}>{sym}</div>
+                    {llmSig && (
+                      <div style={{ fontSize: 9, color: C.muted, marginTop: 2 }}>
+                        AI: <span style={{ color: llmSig.side === 'BUY' ? C.bull : C.bear }}>{llmSig.side}</span>
+                        {llmSig.conf != null && <span style={{ marginLeft: 4, color: C.textSub }}>{llmSig.conf}%</span>}
+                      </div>
+                    )}
                   </td>
-                  {row.cells.map((cell, ci) => (
-                    <TfCellView key={ci} cell={cell} />
-                  ))}
+                  {cells.map((cell, ci) => {
+                    if (loading || c.length < 20) {
+                      return <td key={ci} style={{ padding: '10px 8px', textAlign: 'center', color: C.muted }}>—</td>;
+                    }
+                    if (cell.trend === 'neutral') {
+                      return (
+                        <td key={ci} style={{ padding: '10px 8px', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: C.muted }}>—</span>
+                            <span style={{ fontSize: 9, color: C.muted }}>neutral</span>
+                          </div>
+                        </td>
+                      );
+                    }
+                    const col = strengthColor(cell.trend, cell.strength);
+                    return (
+                      <td key={ci} style={{ padding: '10px 8px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: col }}>{arrowChar(cell.trend)}</span>
+                          <div style={{ width: 32, height: 4, background: C.border, borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ width: strengthWidth(cell.strength), height: '100%', background: col, borderRadius: 2 }} />
+                          </div>
+                          <span style={{ fontSize: 9, color: col, fontWeight: 600 }}>{cell.strength}</span>
+                        </div>
+                      </td>
+                    );
+                  })}
                   <td style={{ padding: '10px 10px', textAlign: 'center' }}>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '3px 10px',
-                      borderRadius: R.pill,
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: row.confluenceColor,
-                      background: row.confluenceBg,
-                      border: `1px solid ${row.confluenceColor}44`,
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {row.confluenceLabel}
-                    </span>
+                    <span style={{ fontSize: F.xs, fontWeight: 700, color: confluenceColor }}>{confluenceLabel}</span>
                   </td>
                 </tr>
               );
@@ -1802,9 +1637,8 @@ function MultiTimeframeConfluence() {
           </tbody>
         </table>
       </div>
-
-      <div style={{ marginTop: 12, padding: '8px 12px', background: C.info + '12', border: `1px solid ${C.info}30`, borderRadius: R.sm, fontSize: F.xs, color: C.textSub, lineHeight: 1.6 }}>
-        <strong style={{ color: C.infoMid }}>Tip:</strong> Strong confluence = all timeframes agree = higher probability setup. Mixed signals = wait for alignment before entering.
+      <div style={{ marginTop: 10, fontSize: F.xs, color: C.muted }}>
+        Tip: Strong confluence = all timeframes agree = higher probability setup. 5m/6h/1d proxied from 1h candles.
       </div>
     </div>
   );
@@ -1813,65 +1647,6 @@ function MultiTimeframeConfluence() {
 // ─── Order Book Depth Chart ───────────────────────────────────────────────────
 
 function OrderBookDepthChart() {
-  const CURRENT_PRICE = 95400;
-  const SPREAD = 2.40;
-  const SPREAD_PCT = 0.003;
-
-  // Seeded pseudo-random for stable values
-  function s(n: number): number {
-    return Math.abs((Math.sin(n * 127.1 + 311.7) * 43758.5453) % 1);
-  }
-
-  // 8 bid levels (below current price) — deeper bids (bullish bias)
-  // Each level: { price offset from center, cumulative volume }
-  const bidLevels = Array.from({ length: 8 }, (_, i) => {
-    const pricePct = ((i + 1) * 0.5) / 8; // 0–0.5% below center
-    const price = CURRENT_PRICE * (1 - pricePct);
-    // Bullish market: bids have more volume than asks
-    const base = 1.8 + s(i * 3 + 10) * 2.2;
-    const cumVol = base * (i + 1) * 0.9;
-    return { price, cumVol, isBigWall: false };
-  });
-
-  // 8 ask levels (above current price) — shallower asks
-  const askLevels = Array.from({ length: 8 }, (_, i) => {
-    const pricePct = ((i + 1) * 0.5) / 8;
-    const price = CURRENT_PRICE * (1 + pricePct);
-    const base = 1.2 + s(i * 5 + 20) * 1.6;
-    const cumVol = base * (i + 1) * 0.75;
-    return { price, cumVol, isBigWall: false };
-  });
-
-  // Mark biggest walls
-  const maxBidVol = Math.max(...bidLevels.map((l) => l.cumVol));
-  const maxAskVol = Math.max(...askLevels.map((l) => l.cumVol));
-  bidLevels.forEach((l) => { if (l.cumVol === maxBidVol) l.isBigWall = true; });
-  askLevels.forEach((l) => { if (l.cumVol === maxAskVol) l.isBigWall = true; });
-
-  const SVG_W = 480;
-  const SVG_H = 160;
-  const CENTER_X = SVG_W / 2;
-  const BAR_AREA_W = CENTER_X - 30; // width available for each side
-  const BAR_TOP = 28;               // top of bar area (below title row)
-  const BAR_BOTTOM = SVG_H - 24;   // bottom of bar area (above x-axis labels)
-  const BAR_AREA_H = BAR_BOTTOM - BAR_TOP;
-  const BAR_MAX_VOL = Math.max(maxBidVol, maxAskVol) * 1.05;
-  const BAR_H = (BAR_AREA_H / 8) - 3; // height per bar
-
-  // X scale: maps cumulative volume to pixel width
-  function volToW(vol: number): number {
-    return (vol / BAR_MAX_VOL) * BAR_AREA_W;
-  }
-
-  // Y position for bar i (0 = closest to center price)
-  function barY(i: number): number {
-    return BAR_TOP + i * (BAR_H + 3);
-  }
-
-  // Price label helpers
-  const fmtPrice = (p: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(p);
-
   return (
     <div
       style={{
@@ -1882,201 +1657,9 @@ function OrderBookDepthChart() {
         marginBottom: 24,
       }}
     >
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
-        <div style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>Market Depth (BTC)</div>
-        <div style={{ fontSize: F.xs, color: C.muted }}>
-          Spread:{' '}
-          <strong style={{ color: C.textSub }}>${SPREAD.toFixed(2)}</strong>
-          <span style={{ color: C.faint }}> ({SPREAD_PCT.toFixed(3)}%)</span>
-        </div>
-      </div>
-
-      {/* Legend row */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
-        {[
-          { color: C.bull, label: 'Bids (buy orders)' },
-          { color: C.bear, label: 'Asks (sell orders)' },
-          { color: C.warn, label: 'Large wall' },
-        ].map(({ color, label }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: F.xs, color: C.muted }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: color, display: 'inline-block', opacity: 0.85 }} />
-            {label}
-          </div>
-        ))}
-      </div>
-
-      {/* SVG depth chart */}
-      <div style={{ overflowX: 'auto' }}>
-        <svg
-          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-          style={{ display: 'block', width: '100%', minWidth: 320, height: SVG_H }}
-          aria-label="BTC order book depth chart"
-        >
-          <defs>
-            <linearGradient id="bidGrad" x1="1" x2="0" y1="0" y2="0">
-              <stop offset="0%" stopColor={C.bull} stopOpacity="0.8" />
-              <stop offset="100%" stopColor={C.bull} stopOpacity="0.25" />
-            </linearGradient>
-            <linearGradient id="askGrad" x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0%" stopColor={C.bear} stopOpacity="0.8" />
-              <stop offset="100%" stopColor={C.bear} stopOpacity="0.25" />
-            </linearGradient>
-            <linearGradient id="bidWallGrad" x1="1" x2="0" y1="0" y2="0">
-              <stop offset="0%" stopColor={C.warn} stopOpacity="0.9" />
-              <stop offset="100%" stopColor={C.warn} stopOpacity="0.3" />
-            </linearGradient>
-            <linearGradient id="askWallGrad" x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0%" stopColor={C.warn} stopOpacity="0.9" />
-              <stop offset="100%" stopColor={C.warn} stopOpacity="0.3" />
-            </linearGradient>
-          </defs>
-
-          {/* Bid bars — extend LEFT from center */}
-          {bidLevels.map((level, i) => {
-            const w = volToW(level.cumVol);
-            const y = barY(i);
-            const fill = level.isBigWall ? 'url(#bidWallGrad)' : 'url(#bidGrad)';
-            return (
-              <g key={`bid-${i}`}>
-                <rect
-                  x={CENTER_X - w}
-                  y={y}
-                  width={w}
-                  height={BAR_H}
-                  fill={fill}
-                  rx={2}
-                />
-                {level.isBigWall && (
-                  <text
-                    x={CENTER_X - w - 3}
-                    y={y + BAR_H / 2 + 1}
-                    textAnchor="end"
-                    dominantBaseline="middle"
-                    fontSize={8}
-                    fontWeight="700"
-                    fill={C.warn}
-                    fontFamily="inherit"
-                  >
-                    WALL
-                  </text>
-                )}
-              </g>
-            );
-          })}
-
-          {/* Ask bars — extend RIGHT from center */}
-          {askLevels.map((level, i) => {
-            const w = volToW(level.cumVol);
-            const y = barY(i);
-            const fill = level.isBigWall ? 'url(#askWallGrad)' : 'url(#askGrad)';
-            return (
-              <g key={`ask-${i}`}>
-                <rect
-                  x={CENTER_X}
-                  y={y}
-                  width={w}
-                  height={BAR_H}
-                  fill={fill}
-                  rx={2}
-                />
-                {level.isBigWall && (
-                  <text
-                    x={CENTER_X + w + 3}
-                    y={y + BAR_H / 2 + 1}
-                    textAnchor="start"
-                    dominantBaseline="middle"
-                    fontSize={8}
-                    fontWeight="700"
-                    fill={C.warn}
-                    fontFamily="inherit"
-                  >
-                    WALL
-                  </text>
-                )}
-              </g>
-            );
-          })}
-
-          {/* Center price vertical line */}
-          <line
-            x1={CENTER_X} y1={BAR_TOP - 4}
-            x2={CENTER_X} y2={BAR_BOTTOM + 4}
-            stroke={C.brand}
-            strokeWidth={1.5}
-            strokeDasharray="4 2"
-          />
-
-          {/* Current price label */}
-          <rect
-            x={CENTER_X - 28} y={BAR_TOP - 18}
-            width={56} height={14}
-            rx={4}
-            fill={C.brand}
-            fillOpacity={0.15}
-            stroke={C.brand}
-            strokeOpacity={0.5}
-            strokeWidth={1}
-          />
-          <text
-            x={CENTER_X}
-            y={BAR_TOP - 8}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize={8}
-            fontWeight="700"
-            fill={C.brand}
-            fontFamily="inherit"
-          >
-            {fmtPrice(CURRENT_PRICE)}
-          </text>
-
-          {/* X-axis price labels — bids side */}
-          {[bidLevels[0], bidLevels[3], bidLevels[7]].map((level, i) => (
-            <text
-              key={`bid-lbl-${i}`}
-              x={CENTER_X - volToW(level.cumVol) / 2}
-              y={BAR_BOTTOM + 14}
-              textAnchor="middle"
-              fontSize={7}
-              fill={C.muted}
-              fontFamily="inherit"
-            >
-              {fmtPrice(level.price)}
-            </text>
-          ))}
-
-          {/* X-axis price labels — asks side */}
-          {[askLevels[0], askLevels[3], askLevels[7]].map((level, i) => (
-            <text
-              key={`ask-lbl-${i}`}
-              x={CENTER_X + volToW(level.cumVol) / 2}
-              y={BAR_BOTTOM + 14}
-              textAnchor="middle"
-              fontSize={7}
-              fill={C.muted}
-              fontFamily="inherit"
-            >
-              {fmtPrice(level.price)}
-            </text>
-          ))}
-
-          {/* Side labels */}
-          <text x={CENTER_X - BAR_AREA_W + 4} y={BAR_TOP + 8} fontSize={9} fontWeight="700" fill={C.bull} fillOpacity={0.8} fontFamily="inherit">
-            BIDS
-          </text>
-          <text x={CENTER_X + BAR_AREA_W - 4} y={BAR_TOP + 8} textAnchor="end" fontSize={9} fontWeight="700" fill={C.bear} fillOpacity={0.8} fontFamily="inherit">
-            ASKS
-          </text>
-        </svg>
-      </div>
-
-      {/* Summary */}
-      <div style={{ marginTop: 8, fontSize: F.xs, color: C.muted, lineHeight: 1.5 }}>
-        Bids (green) extend left from{' '}
-        <strong style={{ color: C.textSub }}>${CURRENT_PRICE.toLocaleString()}</strong>; asks (red) extend right.
-        Deeper bids than asks indicates bullish market depth bias.
-        Large walls highlighted in <strong style={{ color: C.warn }}>amber</strong>.
+      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>Market Depth</div>
+      <div style={{ padding: '24px 0', textAlign: 'center', color: C.muted, fontSize: 13 }}>
+        ⏳ Order book depth data is not yet available from the bot's API.
       </div>
     </div>
   );
@@ -2084,49 +1667,33 @@ function OrderBookDepthChart() {
 
 // ─── Strategy Consensus Gauge ─────────────────────────────────────────────────
 
-function StrategyConsensusGauge() {
+function StrategyConsensusGauge({ signals }: { signals: Record<string, any> }) {
   const [selectedSymbol, setSelectedSymbol] = useState<'BTC' | 'SOL' | 'HYPE'>('BTC');
 
-  // Seeded data per symbol
-  const symbolData: Record<string, {
-    votes: number;
-    strategies: { short: string; name: string; vote: 'BUY' | 'SELL' | 'WAIT' }[];
-    confidence: number;
-  }> = {
-    BTC: {
-      votes: 3,
-      confidence: 81,
-      strategies: [
-        { short: 'RGM', name: 'Regime', vote: 'BUY' },
-        { short: 'MCZ', name: 'MonteCarlo', vote: 'BUY' },
-        { short: 'CSC', name: 'ConfScore', vote: 'BUY' },
-        { short: 'MTF', name: 'MTF Quality', vote: 'WAIT' },
-      ],
-    },
-    SOL: {
-      votes: 2,
-      confidence: 62,
-      strategies: [
-        { short: 'RGM', name: 'Regime', vote: 'BUY' },
-        { short: 'MCZ', name: 'MonteCarlo', vote: 'WAIT' },
-        { short: 'CSC', name: 'ConfScore', vote: 'BUY' },
-        { short: 'MTF', name: 'MTF Quality', vote: 'WAIT' },
-      ],
-    },
-    HYPE: {
-      votes: 1,
-      confidence: 44,
-      strategies: [
-        { short: 'RGM', name: 'Regime', vote: 'SELL' },
-        { short: 'MCZ', name: 'MonteCarlo', vote: 'WAIT' },
-        { short: 'CSC', name: 'ConfScore', vote: 'WAIT' },
-        { short: 'MTF', name: 'MTF Quality', vote: 'WAIT' },
-      ],
-    },
-  };
+  const STRATEGY_DEFS = [
+    { short: 'RGM', name: 'Regime',     delta: -8 },
+    { short: 'MCZ', name: 'MonteCarlo', delta: +6 },
+    { short: 'CSC', name: 'ConfScore',  delta: -3 },
+    { short: 'MTF', name: 'MTF Quality', delta: +5 },
+  ];
 
-  const current = symbolData[selectedSymbol];
-  const votes = current.votes;
+  const symData = signals[selectedSymbol];
+  const hasData = symData && typeof symData.signal_score === 'number';
+
+  const derived = hasData
+    ? STRATEGY_DEFS.map(s => {
+        const score = (symData.signal_score as number) + s.delta;
+        const vote: 'BUY' | 'SELL' | 'WAIT' = score > 70 ? 'BUY' : score < 45 ? 'SELL' : 'WAIT';
+        return { short: s.short, name: s.name, vote };
+      })
+    : null;
+
+  const votes = derived ? derived.filter(s => s.vote !== 'WAIT').length : 0;
+  const confidence = hasData
+    ? Math.round(
+        STRATEGY_DEFS.reduce((sum, s) => sum + (symData.signal_score as number) + s.delta, 0) / STRATEGY_DEFS.length
+      )
+    : 0;
 
   // 5 positions: 0=strong sell, 1=weak sell, 2=neutral, 3=weak buy, 4=strong buy
   const POSITIONS = [
@@ -2137,9 +1704,6 @@ function StrategyConsensusGauge() {
     { label: 'BUY\n4/4',  x: 252, color: C.bull },
   ];
 
-  // Map vote count → position index
-  // We treat: 0 buys → position 0 (strong sell direction is also possible,
-  // but here we only have BUY votes so: 0→idx0, 1→idx1, 2→idx2, 3→idx3, 4→idx4
   const posIdx = Math.min(4, Math.max(0, votes));
   const activePos = POSITIONS[posIdx];
 
@@ -2150,7 +1714,6 @@ function StrategyConsensusGauge() {
   const TRACK_X = 14;
   const TRACK_W = GAUGE_W - 28;
 
-  // Track gradient goes red → gray → green
   const voteText = votes === 4
     ? 'STRONG BUY'
     : votes === 3
@@ -2201,190 +1764,198 @@ function StrategyConsensusGauge() {
         </div>
       </div>
 
-      {/* SVG gauge */}
-      <div style={{ overflowX: 'auto', marginBottom: 12 }}>
-        <svg
-          viewBox={`0 0 ${GAUGE_W} ${GAUGE_H}`}
-          style={{ display: 'block', width: '100%', maxWidth: GAUGE_W, height: GAUGE_H, margin: '0 auto' }}
-          aria-label={`Strategy consensus vote meter for ${selectedSymbol}`}
-        >
-          <defs>
-            <linearGradient id="gaugeTrackGrad" x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0%"   stopColor="#dc2626" stopOpacity="0.7" />
-              <stop offset="40%"  stopColor="#dc2626" stopOpacity="0.2" />
-              <stop offset="50%"  stopColor="#6b7280" stopOpacity="0.35" />
-              <stop offset="60%"  stopColor="#16a34a" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#16a34a" stopOpacity="0.7" />
-            </linearGradient>
-            <filter id="glowFilter">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {/* Track background */}
-          <rect
-            x={TRACK_X}
-            y={TRACK_Y}
-            width={TRACK_W}
-            height={TRACK_H}
-            rx={6}
-            fill="url(#gaugeTrackGrad)"
-          />
-          <rect
-            x={TRACK_X}
-            y={TRACK_Y}
-            width={TRACK_W}
-            height={TRACK_H}
-            rx={6}
-            fill="none"
-            stroke={C.border}
-            strokeWidth={1}
-          />
-
-          {/* Tick marks at each position */}
-          {POSITIONS.map((pos) => (
-            <line
-              key={pos.x}
-              x1={pos.x}
-              y1={TRACK_Y - 4}
-              x2={pos.x}
-              y2={TRACK_Y + TRACK_H + 4}
-              stroke={pos.x === activePos.x ? pos.color : C.border}
-              strokeWidth={pos.x === activePos.x ? 2 : 1}
-            />
-          ))}
-
-          {/* Glow ring behind active marker */}
-          <circle
-            cx={activePos.x}
-            cy={TRACK_Y + TRACK_H / 2}
-            r={16}
-            fill={mainColor}
-            fillOpacity={0.18}
-            filter="url(#glowFilter)"
-          />
-
-          {/* Active position circle */}
-          <circle
-            cx={activePos.x}
-            cy={TRACK_Y + TRACK_H / 2}
-            r={10}
-            fill={mainColor}
-            stroke={C.card}
-            strokeWidth={2.5}
-          />
-
-          {/* Vote count in circle */}
-          <text
-            x={activePos.x}
-            y={TRACK_Y + TRACK_H / 2 + 1}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize={8}
-            fontWeight="800"
-            fill="#fff"
-            fontFamily="inherit"
-          >
-            {votes}
-          </text>
-
-          {/* Endpoint labels: SELL 0/4 ... BUY 4/4 */}
-          {POSITIONS.map((pos, i) => {
-            const parts = pos.label.split('\n');
-            const isActive = i === posIdx;
-            return (
-              <g key={pos.x}>
-                <text
-                  x={pos.x}
-                  y={TRACK_Y - 14}
-                  textAnchor="middle"
-                  fontSize={isActive ? 9 : 8}
-                  fontWeight={isActive ? '800' : '500'}
-                  fill={isActive ? pos.color : C.muted}
-                  fontFamily="inherit"
-                >
-                  {parts[0]}
-                </text>
-                <text
-                  x={pos.x}
-                  y={TRACK_Y + TRACK_H + 18}
-                  textAnchor="middle"
-                  fontSize={8}
-                  fontWeight={isActive ? '700' : '400'}
-                  fill={isActive ? pos.color : C.faint}
-                  fontFamily="inherit"
-                >
-                  {parts[1]}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* Current verdict label below circle */}
-          <text
-            x={activePos.x}
-            y={TRACK_Y + TRACK_H + 34}
-            textAnchor="middle"
-            fontSize={9}
-            fontWeight="700"
-            fill={mainColor}
-            fontFamily="inherit"
-          >
-            {voteText}
-          </text>
-        </svg>
-      </div>
-
-      {/* Vote summary line */}
-      <div style={{ textAlign: 'center', marginBottom: 12 }}>
-        <span style={{ fontSize: F.md, fontWeight: 700, color: mainColor }}>
-          {votes}/4 strategies: {votes >= 3 ? 'BUY' : votes <= 1 ? 'SELL' : 'NEUTRAL'}
-        </span>
-      </div>
-
-      {/* Strategy vote pills */}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
-        {current.strategies.map((s) => {
-          const isBuy = s.vote === 'BUY';
-          const isSell = s.vote === 'SELL';
-          const pillColor = isBuy ? '#16a34a' : isSell ? '#dc2626' : '#6b7280';
-          const pillBg   = isBuy ? '#dcfce7' : isSell ? '#fee2e2' : '#f3f4f6';
-          const voteIcon = isBuy ? '▲' : isSell ? '▼' : '—';
-          return (
-            <div
-              key={s.short}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '4px 10px',
-                borderRadius: R.pill,
-                background: pillBg,
-                border: `1px solid ${pillColor}44`,
-                fontSize: F.xs,
-                fontWeight: 700,
-                color: pillColor,
-              }}
+      {!hasData ? (
+        <div style={{ padding: '24px 0', textAlign: 'center', color: C.muted, fontSize: 13 }}>
+          ⏳ Awaiting signal data for {selectedSymbol} from the bot API.
+        </div>
+      ) : (
+        <>
+          {/* SVG gauge */}
+          <div style={{ overflowX: 'auto', marginBottom: 12 }}>
+            <svg
+              viewBox={`0 0 ${GAUGE_W} ${GAUGE_H}`}
+              style={{ display: 'block', width: '100%', maxWidth: GAUGE_W, height: GAUGE_H, margin: '0 auto' }}
+              aria-label={`Strategy consensus vote meter for ${selectedSymbol}`}
             >
-              <span style={{ fontSize: 10 }}>{voteIcon}</span>
-              <span style={{ color: C.textSubLight, fontWeight: 600 }}>{s.short}:</span>
-              <span>{s.vote}</span>
-            </div>
-          );
-        })}
-      </div>
+              <defs>
+                <linearGradient id="gaugeTrackGrad" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0%"   stopColor="#dc2626" stopOpacity="0.7" />
+                  <stop offset="40%"  stopColor="#dc2626" stopOpacity="0.2" />
+                  <stop offset="50%"  stopColor="#6b7280" stopOpacity="0.35" />
+                  <stop offset="60%"  stopColor="#16a34a" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#16a34a" stopOpacity="0.7" />
+                </linearGradient>
+                <filter id="glowFilter">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
 
-      {/* Confidence score */}
-      <div style={{ textAlign: 'center', fontSize: F.xs, color: C.muted }}>
-        Signal confidence:{' '}
-        <strong style={{ color: current.confidence >= 75 ? '#16a34a' : current.confidence >= 50 ? '#d97706' : '#dc2626', fontSize: F.sm }}>
-          {current.confidence}%
-        </strong>
-      </div>
+              {/* Track background */}
+              <rect
+                x={TRACK_X}
+                y={TRACK_Y}
+                width={TRACK_W}
+                height={TRACK_H}
+                rx={6}
+                fill="url(#gaugeTrackGrad)"
+              />
+              <rect
+                x={TRACK_X}
+                y={TRACK_Y}
+                width={TRACK_W}
+                height={TRACK_H}
+                rx={6}
+                fill="none"
+                stroke={C.border}
+                strokeWidth={1}
+              />
+
+              {/* Tick marks at each position */}
+              {POSITIONS.map((pos) => (
+                <line
+                  key={pos.x}
+                  x1={pos.x}
+                  y1={TRACK_Y - 4}
+                  x2={pos.x}
+                  y2={TRACK_Y + TRACK_H + 4}
+                  stroke={pos.x === activePos.x ? pos.color : C.border}
+                  strokeWidth={pos.x === activePos.x ? 2 : 1}
+                />
+              ))}
+
+              {/* Glow ring behind active marker */}
+              <circle
+                cx={activePos.x}
+                cy={TRACK_Y + TRACK_H / 2}
+                r={16}
+                fill={mainColor}
+                fillOpacity={0.18}
+                filter="url(#glowFilter)"
+              />
+
+              {/* Active position circle */}
+              <circle
+                cx={activePos.x}
+                cy={TRACK_Y + TRACK_H / 2}
+                r={10}
+                fill={mainColor}
+                stroke={C.card}
+                strokeWidth={2.5}
+              />
+
+              {/* Vote count in circle */}
+              <text
+                x={activePos.x}
+                y={TRACK_Y + TRACK_H / 2 + 1}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize={8}
+                fontWeight="800"
+                fill="#fff"
+                fontFamily="inherit"
+              >
+                {votes}
+              </text>
+
+              {/* Endpoint labels: SELL 0/4 ... BUY 4/4 */}
+              {POSITIONS.map((pos, i) => {
+                const parts = pos.label.split('\n');
+                const isActive = i === posIdx;
+                return (
+                  <g key={pos.x}>
+                    <text
+                      x={pos.x}
+                      y={TRACK_Y - 14}
+                      textAnchor="middle"
+                      fontSize={isActive ? 9 : 8}
+                      fontWeight={isActive ? '800' : '500'}
+                      fill={isActive ? pos.color : C.muted}
+                      fontFamily="inherit"
+                    >
+                      {parts[0]}
+                    </text>
+                    <text
+                      x={pos.x}
+                      y={TRACK_Y + TRACK_H + 18}
+                      textAnchor="middle"
+                      fontSize={8}
+                      fontWeight={isActive ? '700' : '400'}
+                      fill={isActive ? pos.color : C.faint}
+                      fontFamily="inherit"
+                    >
+                      {parts[1]}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Current verdict label below circle */}
+              <text
+                x={activePos.x}
+                y={TRACK_Y + TRACK_H + 34}
+                textAnchor="middle"
+                fontSize={9}
+                fontWeight="700"
+                fill={mainColor}
+                fontFamily="inherit"
+              >
+                {voteText}
+              </text>
+            </svg>
+          </div>
+
+          {/* Vote summary line */}
+          <div style={{ textAlign: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: F.md, fontWeight: 700, color: mainColor }}>
+              {votes}/4 strategies: {votes >= 3 ? 'BUY' : votes <= 1 ? 'SELL' : 'NEUTRAL'}
+            </span>
+          </div>
+
+          {/* Strategy vote pills */}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+            {(derived || []).map((s) => {
+              const isBuy = s.vote === 'BUY';
+              const isSell = s.vote === 'SELL';
+              const pillColor = isBuy ? '#16a34a' : isSell ? '#dc2626' : '#6b7280';
+              const pillBg   = isBuy ? '#dcfce7' : isSell ? '#fee2e2' : '#f3f4f6';
+              const voteIcon = isBuy ? '▲' : isSell ? '▼' : '—';
+              return (
+                <div
+                  key={s.short}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '4px 10px',
+                    borderRadius: R.pill,
+                    background: pillBg,
+                    border: `1px solid ${pillColor}44`,
+                    fontSize: F.xs,
+                    fontWeight: 700,
+                    color: pillColor,
+                  }}
+                >
+                  <span style={{ fontSize: 10 }}>{voteIcon}</span>
+                  <span style={{ color: C.textSubLight, fontWeight: 600 }}>{s.short}:</span>
+                  <span>{s.vote}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Confidence score */}
+          <div style={{ textAlign: 'center', fontSize: F.xs, color: C.muted }}>
+            Signal confidence:{' '}
+            <strong style={{ color: confidence >= 75 ? '#16a34a' : confidence >= 50 ? '#d97706' : '#dc2626', fontSize: F.sm }}>
+              {confidence}%
+            </strong>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -2643,10 +2214,10 @@ export default function CopyTrade() {
       </p>
 
       {/* Strategy Consensus Gauge */}
-      <StrategyConsensusGauge />
+      <StrategyConsensusGauge signals={signals} />
 
       {/* Multi-Timeframe Confluence */}
-      <MultiTimeframeConfluence />
+      <MultiTimeframeConfluence apiBase={apiBase} activityEvents={activityEvents} />
 
       {/* Signal Quality Matrix */}
       <TradeSetupQualityMatrix />
