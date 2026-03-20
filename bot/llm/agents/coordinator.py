@@ -74,6 +74,21 @@ try:
 except ImportError:
     _PHASE_4_AGENTS_AVAILABLE = False
 
+# Phase 4A agents (Core Trading System)
+# These are optional Phase 4A agents
+try:
+    from llm.agents.phase_4a_trading_agents import (
+        build_position_sizer,
+        build_entry_optimizer,
+        build_exit_advisor,
+        build_risk_guard,
+        build_agent_router,
+        build_consensus_builder,
+    )
+    _PHASE_4A_AGENTS_AVAILABLE = True
+except ImportError:
+    _PHASE_4A_AGENTS_AVAILABLE = False
+
 # Pipeline extensions: quant engine, agent brains, debate, telemetry
 # These are optional — gracefully degrade if modules not yet built
 try:
@@ -964,6 +979,204 @@ class AgentCoordinator:
             return None
         return build_conviction(
             self, regime_out, trade_out, quant_out, critic_out, forecaster_out, model_for_trigger
+        )
+
+    # ── Phase 4A Core Trading Agents ─────────────────────────────
+
+    def get_position_size(
+        self,
+        capital: float,
+        edge_confidence: float,
+        kelly_fraction: Optional[float] = None,
+        regime: str = "unknown",
+        risk_per_trade: float = 1.0,
+        leverage: float = 1.5,
+        atr: float = 0.0,
+        stop_distance: float = 0.0,
+        consecutive_losses: int = 0,
+        model_for_trigger: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Run Position Sizer Agent to calculate exact position size in USD.
+
+        Returns:
+            Position sizing dict with position_size_usd, leverage_applied, etc or None on failure.
+        """
+        if not _PHASE_4A_AGENTS_AVAILABLE:
+            return None
+        return build_position_sizer(
+            self,
+            capital=capital,
+            edge_confidence=edge_confidence,
+            kelly_fraction=kelly_fraction,
+            regime=regime,
+            risk_per_trade=risk_per_trade,
+            leverage=leverage,
+            atr=atr,
+            stop_distance=stop_distance,
+            consecutive_losses=consecutive_losses,
+            model_for_trigger=model_for_trigger,
+        )
+
+    def get_entry_method(
+        self,
+        signal_confidence: float,
+        current_price: float,
+        entry_price_from_signal: float,
+        regime: str = "unknown",
+        recent_momentum: str = "flat",
+        order_book: Optional[Dict] = None,
+        position_size_usd: float = 0.0,
+        model_for_trigger: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Run Entry Optimizer Agent to determine entry method and timing.
+
+        Returns:
+            Entry optimization dict with entry_method, entry_price, urgency, etc or None on failure.
+        """
+        if not _PHASE_4A_AGENTS_AVAILABLE:
+            return None
+        return build_entry_optimizer(
+            self,
+            signal_confidence=signal_confidence,
+            current_price=current_price,
+            entry_price_from_signal=entry_price_from_signal,
+            regime=regime,
+            recent_momentum=recent_momentum,
+            order_book=order_book,
+            position_size_usd=position_size_usd,
+            model_for_trigger=model_for_trigger,
+        )
+
+    def get_exit_recommendation(
+        self,
+        position_id: str,
+        symbol: str,
+        side: str,
+        entry_price: float,
+        current_price: float,
+        pnl_usd: float,
+        thesis: str = "",
+        regime: str = "unknown",
+        original_regime: str = "unknown",
+        time_held_seconds: int = 0,
+        funding_paid: float = 0.0,
+        volume_trend: str = "stable",
+        model_for_trigger: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Run Exit Advisor Agent to recommend exit actions for open positions.
+
+        Returns:
+            Exit recommendation dict with action, thesis_still_valid, etc or None on failure.
+        """
+        if not _PHASE_4A_AGENTS_AVAILABLE:
+            return None
+        return build_exit_advisor(
+            self,
+            position_id=position_id,
+            symbol=symbol,
+            side=side,
+            entry_price=entry_price,
+            current_price=current_price,
+            pnl_usd=pnl_usd,
+            thesis=thesis,
+            regime=regime,
+            original_regime=original_regime,
+            time_held_seconds=time_held_seconds,
+            funding_paid=funding_paid,
+            volume_trend=volume_trend,
+            model_for_trigger=model_for_trigger,
+        )
+
+    def get_risk_check(
+        self,
+        proposed_trade: Dict[str, Any],
+        portfolio_leverage: float,
+        circuit_breaker_active: bool = False,
+        daily_loss_pct: float = 0.0,
+        consecutive_losses: int = 0,
+        open_positions: Optional[list] = None,
+        max_single_position_pct: float = 3.0,
+        max_portfolio_leverage: float = 8.0,
+        correlation_to_open: float = 0.0,
+        model_for_trigger: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Run Risk Guard Agent to check safety gates and prevent catastrophic losses.
+
+        Returns:
+            Risk check dict with approved, risk_flags, max_size_allowed, etc or None on failure.
+        """
+        if not _PHASE_4A_AGENTS_AVAILABLE:
+            return None
+        return build_risk_guard(
+            self,
+            proposed_trade=proposed_trade,
+            portfolio_leverage=portfolio_leverage,
+            circuit_breaker_active=circuit_breaker_active,
+            daily_loss_pct=daily_loss_pct,
+            consecutive_losses=consecutive_losses,
+            open_positions=open_positions,
+            max_single_position_pct=max_single_position_pct,
+            max_portfolio_leverage=max_portfolio_leverage,
+            correlation_to_open=correlation_to_open,
+            model_for_trigger=model_for_trigger,
+        )
+
+    def get_routing_decision(
+        self,
+        signal: Dict[str, Any],
+        market_state: Dict[str, Any],
+        portfolio_state: Dict[str, Any],
+        system_state: Optional[Dict[str, Any]] = None,
+        model_for_trigger: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Run Agent Router to determine which agents to call and how.
+
+        Returns:
+            Routing dict with route, agents_to_call, agent_configs, etc or None on failure.
+        """
+        if not _PHASE_4A_AGENTS_AVAILABLE:
+            return None
+        return build_agent_router(
+            self,
+            signal=signal,
+            market_state=market_state,
+            portfolio_state=portfolio_state,
+            system_state=system_state,
+            model_for_trigger=model_for_trigger,
+        )
+
+    def get_final_decision(
+        self,
+        position_sizer_output: Dict[str, Any],
+        entry_optimizer_output: Dict[str, Any],
+        risk_guard_output: Dict[str, Any],
+        exit_advisor_output: Dict[str, Any],
+        original_signal: Dict[str, Any],
+        route: str = "normal_pipeline",
+        model_for_trigger: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Run Consensus Builder Agent to merge all specialist outputs into final trade decision.
+
+        Returns:
+            Final decision dict with final_decision (execute|skip), trade parameters, etc or None on failure.
+        """
+        if not _PHASE_4A_AGENTS_AVAILABLE:
+            return None
+        return build_consensus_builder(
+            self,
+            position_sizer_output=position_sizer_output,
+            entry_optimizer_output=entry_optimizer_output,
+            risk_guard_output=risk_guard_output,
+            exit_advisor_output=exit_advisor_output,
+            original_signal=original_signal,
+            route=route,
+            model_for_trigger=model_for_trigger,
         )
 
     def _build_overseer_input(self) -> str:

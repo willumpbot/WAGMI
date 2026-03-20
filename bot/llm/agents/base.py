@@ -34,6 +34,13 @@ class AgentRole(str, Enum):
     SCALPER = "scalper"        # Micro-scalping on 1m/5m candles (very frequent)
     CONVICTION = "conviction"  # Ultra-high confidence trade authorization (rare)
     MICRO_TREND = "micro_trend" # Micro-trend detection for scalper context (frequent)
+    # ── Phase 4A Core Trading Agents ─────────────────────────────
+    POSITION_SIZER = "position_sizer"      # Exact position sizing in USD
+    ENTRY_OPTIMIZER = "entry_optimizer"    # Entry timing and method optimization
+    EXIT_ADVISOR = "exit_advisor"          # Exit recommendations for open positions
+    RISK_GUARD = "risk_guard"              # Risk gate and position override checks
+    AGENT_ROUTER = "agent_router"          # Orchestration router (decides which agents to call)
+    CONSENSUS_BUILDER = "consensus_builder" # Final decision merger (execute or skip)
 
 
 @dataclass
@@ -162,6 +169,43 @@ DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
         role=AgentRole.MICRO_TREND,
         max_tokens=768,   # Fast, simple output
         timeout_s=3.0,    # CRITICAL: Must respond in <3 seconds
+        required=False,
+    ),
+    # ── Phase 4A Core Trading Agents ─────────────────────────────
+    AgentRole.POSITION_SIZER: AgentConfig(
+        role=AgentRole.POSITION_SIZER,
+        max_tokens=1024,
+        timeout_s=5.0,
+        required=False,
+    ),
+    AgentRole.ENTRY_OPTIMIZER: AgentConfig(
+        role=AgentRole.ENTRY_OPTIMIZER,
+        max_tokens=768,
+        timeout_s=4.0,    # Fast for entry timing decisions
+        required=False,
+    ),
+    AgentRole.EXIT_ADVISOR: AgentConfig(
+        role=AgentRole.EXIT_ADVISOR,
+        max_tokens=1024,
+        timeout_s=5.0,
+        required=False,
+    ),
+    AgentRole.RISK_GUARD: AgentConfig(
+        role=AgentRole.RISK_GUARD,
+        max_tokens=768,
+        timeout_s=4.0,    # Safety gates must respond fast
+        required=False,
+    ),
+    AgentRole.AGENT_ROUTER: AgentConfig(
+        role=AgentRole.AGENT_ROUTER,
+        max_tokens=1024,
+        timeout_s=5.0,
+        required=False,
+    ),
+    AgentRole.CONSENSUS_BUILDER: AgentConfig(
+        role=AgentRole.CONSENSUS_BUILDER,
+        max_tokens=1536,  # Needs to synthesize all agent outputs
+        timeout_s=10.0,
         required=False,
     ),
 }
