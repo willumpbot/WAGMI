@@ -111,6 +111,53 @@ def _log_audit(entry: dict):
         logger.warning(f"[LLM-AUDIT] Failed to write: {e}")
 
 
+# ── LLM Availability Tracking ────────────────────────────────────
+
+class _LLMAvailability:
+    """Track LLM system availability for operational visibility."""
+    def __init__(self):
+        self.available: bool = True
+        self.last_error: Optional[str] = None
+        self.last_error_time: Optional[datetime] = None
+        self.total_calls: int = 0
+        self.total_errors: int = 0
+        self.consecutive_failures: int = 0
+
+    def record_success(self):
+        self.available = True
+        self.consecutive_failures = 0
+        self.total_calls += 1
+
+    def record_failure(self, error: str):
+        self.available = False
+        self.last_error = error
+        self.last_error_time = datetime.now(timezone.utc)
+        self.total_errors += 1
+        self.total_calls += 1
+        self.consecutive_failures += 1
+        if self.consecutive_failures >= 3:
+            logger.critical(
+                f"[LLM-AVAILABILITY] SYSTEM DEGRADED: {self.consecutive_failures} "
+                f"consecutive failures — trading on mechanical signals only"
+            )
+
+    def get_status(self) -> dict:
+        return {
+            "available": self.available,
+            "consecutive_failures": self.consecutive_failures,
+            "error_rate": self.total_errors / max(self.total_calls, 1),
+            "last_error": self.last_error,
+            "last_error_time": self.last_error_time.isoformat() if self.last_error_time else None,
+        }
+
+_llm_availability = _LLMAvailability()
+
+
+def get_llm_availability() -> dict:
+    """Get current LLM availability status for monitoring."""
+    return _llm_availability.get_status()
+
+
 # ── Cached decision ──────────────────────────────────────────────
 
 _cached_decision: Optional[LLMDecision] = None
@@ -348,6 +395,7 @@ def get_trading_decision(
                 _multi_agent_active = False
         except Exception as ma_err:
             logger.warning(f"[LLM-ENGINE] Multi-agent failed: {ma_err}, falling back to monolithic")
+            _llm_availability.record_failure(f"multi-agent: {ma_err}")
             _multi_agent_active = False
 
     # Step 4: Call Claude (with smart model routing if usage tiers are configured)
@@ -759,6 +807,7 @@ def get_trading_decision(
             regime=decision.regime,
         )
 
+        _llm_availability.record_success()
         logger.info(
             f"[LLM-ENGINE] Decision: {decision.action} "
             f"conf={decision.confidence:.2f} regime={decision.regime} "

@@ -174,7 +174,26 @@ class CircuitBreaker:
                 )
 
     def _check_breakers(self, equity: float, sim_time: Optional[datetime] = None):
-        """Check if any circuit breaker should trigger."""
+        """Check if any circuit breaker should trigger.
+
+        FAIL-SAFE: If any exception occurs during checks, assume breakers
+        are tripped (deny trading) rather than silently allowing it.
+        """
+        try:
+            self._check_breakers_inner(equity, sim_time=sim_time)
+        except Exception as e:
+            # FAIL-SAFE: On any error, trip the breaker to prevent trading
+            logger.error(
+                f"CIRCUIT BREAKER EXCEPTION — tripping as fail-safe: {e}"
+            )
+            self._trip(f"Exception in breaker check (fail-safe): {e}", sim_time=sim_time)
+            _log_safety_event("cb_exception_failsafe", str(e), {
+                "equity": equity,
+                "tripped_reason": "exception_failsafe",
+            })
+
+    def _check_breakers_inner(self, equity: float, sim_time: Optional[datetime] = None):
+        """Inner breaker checks. Exceptions caught by _check_breakers."""
         if self._session_halted:
             return  # Session permanently halted — no recovery via cooldown
 

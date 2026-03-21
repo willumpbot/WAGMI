@@ -247,6 +247,49 @@ def init_db():
     logger.info(f"Database initialized: {DB_PATH}")
 
 
+# ─── Health checks ────────────────────────────────────────────────
+
+
+def check_database_health() -> Tuple[bool, Optional[str]]:
+    """Check database health with a write+read round-trip.
+
+    Returns:
+        (healthy: bool, error: Optional[str])
+    """
+    conn = None
+    try:
+        conn = get_connection()
+        # Verify we can write
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS _health_check (id INTEGER PRIMARY KEY, ts TEXT)"
+        )
+        conn.execute(
+            "INSERT OR REPLACE INTO _health_check (id, ts) VALUES (1, ?)",
+            (datetime.now(timezone.utc).isoformat(),)
+        )
+        conn.commit()
+
+        # Verify we can read back
+        row = conn.execute("SELECT ts FROM _health_check WHERE id = 1").fetchone()
+        if row is None:
+            return False, "Write succeeded but read returned None"
+
+        return True, None
+
+    except sqlite3.DatabaseError as e:
+        logger.error(f"Database health check FAILED: {e}")
+        return False, str(e)
+    except Exception as e:
+        logger.error(f"Database health check exception: {e}")
+        return False, str(e)
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
 # ─── Write helpers ────────────────────────────────────────────────
 
 def log_signal(symbol: str, strategy: str, side: str, confidence: float,
