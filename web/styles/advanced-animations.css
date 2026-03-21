@@ -1,0 +1,644 @@
+/**
+ * Advanced Animations Library
+ * Real-time elements, complex interactions, sophisticated micro-animations
+ * Built on foundation from premium-animations.css
+ */
+
+/* ─── REAL-TIME COUNTERS ───────────────────────────────────────────────────── */
+
+@keyframes digitFlip {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) rotateX(90deg);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotateX(0);
+  }
+}
+
+@keyframes numberScroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes countPulse {
+  0% {
+    color: rgba(241, 245, 249, 1);
+    text-shadow: 0 0 8px rgba(99, 102, 241, 0);
+  }
+  50% {
+    color: rgba(241, 245, 249, 1);
+    text-shadow: 0 0 16px rgba(99, 102, 241, 0.6);
+  }
+  100% {
+    color: rgba(241, 245, 249, 1);
+    text-shadow: 0 0 8px rgba(99, 102, 241, 0);
+  }
+}
+
+/* ─── STATUS INDICATORS ────────────────────────────────────────────────────── */
+
+@keyframes statusPulsing {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+}
+
+@keyframes statusWarn {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+  }
+}
+
+@keyframes statusError {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes breatheLight {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* ─── CHART ANIMATIONS ────────────────────────────────────────────────────── */
+
+@keyframes lineDrawSmooth {
+  from {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes barGrow {
+  from {
+    height: 0;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    height: 100%;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes barWave {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes fillGradient {
+  from {
+    fill-opacity: 0;
+    filter: blur(2px);
+  }
+  to {
+    fill-opacity: 0.3;
+    filter: blur(0);
+  }
+}
+
+@keyframes candleWick {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: 100%;
+    opacity: 1;
+  }
+}
+
+/* ─── LOADING STATES ───────────────────────────────────────────────────────── */
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes spinSoftSmooth {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseScale {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes dotsLoading {
+  0%, 20% {
+    content: '.';
+  }
+  40% {
+    content: '..';
+  }
+  60% {
+    content: '...';
+  }
+  80%, 100% {
+    content: '';
+  }
+}
+
+@keyframes skipWave {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+/* ─── TOOLTIP ANIMATIONS ───────────────────────────────────────────────────── */
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes tooltipFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8) translateY(4px);
+  }
+}
+
+/* ─── MODAL & PANEL ANIMATIONS ────────────────────────────────────────────── */
+
+@keyframes modalOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalClose {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+}
+
+@keyframes panelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes panelSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes backdropBlur {
+  from {
+    backdrop-filter: blur(0);
+    -webkit-backdrop-filter: blur(0);
+  }
+  to {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* ─── INTERACTIVE MICRO-INTERACTIONS ───────────────────────────────────────── */
+
+@keyframes buttonPressDown {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0.96);
+  }
+}
+
+@keyframes buttonPressUp {
+  from {
+    transform: scale(0.96);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes buttonGlowPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.3), 0 0 20px rgba(99, 102, 241, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 0 32px rgba(99, 102, 241, 0.2);
+  }
+}
+
+@keyframes inputBorderGlowIn {
+  from {
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+  to {
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), inset 0 0 8px rgba(99, 102, 241, 0.1);
+  }
+}
+
+@keyframes inputBorderGlowOut {
+  from {
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), inset 0 0 8px rgba(99, 102, 241, 0.1);
+  }
+  to {
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+@keyframes checkboxCheck {
+  0% {
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
+  }
+  100% {
+    stroke-dasharray: 20;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ─── PAGE TRANSITION ANIMATIONS ───────────────────────────────────────────── */
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pageExit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes routeTransition {
+  from {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ─── ERROR & SUCCESS ANIMATIONS ───────────────────────────────────────────── */
+
+@keyframes errorShakeIntense {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-8px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(8px);
+  }
+}
+
+@keyframes successCheckmark {
+  0% {
+    stroke-dasharray: 50;
+    stroke-dashoffset: 50;
+  }
+  100% {
+    stroke-dasharray: 50;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes successGlow {
+  from {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  to {
+    box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
+  }
+}
+
+/* ─── ADVANCED HOVER EFFECTS ───────────────────────────────────────────────── */
+
+@keyframes cardHoverGlow {
+  0% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35), 0 0 20px rgba(99, 102, 241, 0.25);
+  }
+  100% {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35), 0 0 20px rgba(99, 102, 241, 0.25);
+  }
+}
+
+@keyframes linkUnderlineGrow {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* ─── EXPANSION ANIMATIONS ────────────────────────────────────────────────── */
+
+@keyframes expandDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+  to {
+    max-height: 1000px;
+    opacity: 1;
+    overflow: visible;
+  }
+}
+
+@keyframes expandRight {
+  from {
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+  to {
+    width: 100%;
+    opacity: 1;
+    overflow: visible;
+  }
+}
+
+/* ─── UTILITY CLASSES ──────────────────────────────────────────────────────── */
+
+.animate-digit-flip {
+  animation: digitFlip 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-count-pulse {
+  animation: countPulse 2s ease-in-out;
+}
+
+.animate-status-live {
+  animation: statusPulsing 2s ease-in-out infinite;
+}
+
+.animate-status-warn {
+  animation: statusWarn 2s ease-in-out infinite;
+}
+
+.animate-status-error {
+  animation: statusError 2s ease-in-out infinite;
+}
+
+.animate-breathe-light {
+  animation: breatheLight 3s ease-in-out infinite;
+}
+
+.animate-line-draw {
+  animation: lineDrawSmooth 1.2s ease-out forwards;
+}
+
+.animate-bar-grow {
+  animation: barGrow 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-bar-wave {
+  animation: barWave 2s ease-in-out infinite;
+}
+
+.animate-skeleton-shimmer {
+  animation: skeletonShimmer 2s infinite;
+}
+
+.animate-spin-smooth {
+  animation: spinSoftSmooth 3s linear infinite;
+}
+
+.animate-pulse-scale {
+  animation: pulseScale 2s ease-in-out infinite;
+}
+
+.animate-tooltip-in {
+  animation: tooltipFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-tooltip-out {
+  animation: tooltipFadeOut 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-modal-open {
+  animation: modalOpen 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-modal-close {
+  animation: modalClose 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-panel-slide-in {
+  animation: panelSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-button-press {
+  animation: buttonPressDown 0.2s ease-out;
+}
+
+.animate-button-glow {
+  animation: buttonGlowPulse 2s ease-in-out;
+}
+
+.animate-input-glow-in {
+  animation: inputBorderGlowIn 0.3s ease-out forwards;
+}
+
+.animate-error-shake {
+  animation: errorShakeIntense 0.5s ease-in-out;
+}
+
+.animate-success-check {
+  animation: successCheckmark 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-success-glow {
+  animation: successGlow 1s ease-out;
+}
+
+.animate-page-enter {
+  animation: pageEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-page-exit {
+  animation: pageExit 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-expand-down {
+  animation: expandDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-expand-right {
+  animation: expandRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ─── STAGGER DELAYS FOR SEQUENTIAL ANIMATIONS ────────────────────────────── */
+
+.stagger-item-1 { animation-delay: 0.05s; }
+.stagger-item-2 { animation-delay: 0.1s; }
+.stagger-item-3 { animation-delay: 0.15s; }
+.stagger-item-4 { animation-delay: 0.2s; }
+.stagger-item-5 { animation-delay: 0.25s; }
+.stagger-item-6 { animation-delay: 0.3s; }
+.stagger-item-7 { animation-delay: 0.35s; }
+.stagger-item-8 { animation-delay: 0.4s; }
+.stagger-item-9 { animation-delay: 0.45s; }
+.stagger-item-10 { animation-delay: 0.5s; }
+
+/* ─── ANIMATION DURATION VARIANTS ──────────────────────────────────────────── */
+
+.duration-fast { animation-duration: 0.2s !important; }
+.duration-base { animation-duration: 0.4s !important; }
+.duration-slow { animation-duration: 0.8s !important; }
+.duration-slower { animation-duration: 1.2s !important; }
+.duration-slowest { animation-duration: 1.6s !important; }
+
+/* ─── ANIMATION TIMING FUNCTIONS ───────────────────────────────────────────── */
+
+.timing-spring { animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1); }
+.timing-ease-out { animation-timing-function: ease-out; }
+.timing-ease-in-out { animation-timing-function: ease-in-out; }
+.timing-linear { animation-timing-function: linear; }
+
+/* ─── ACCESSIBILITY ────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── RESPONSIVE ANIMATION OPTIMIZATION ────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .animate-bar-wave,
+  .animate-status-live,
+  .animate-status-warn,
+  .animate-status-error,
+  .animate-spin-smooth {
+    animation-duration: 0.5s;
+  }
+}

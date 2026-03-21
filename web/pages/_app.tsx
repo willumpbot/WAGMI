@@ -6,8 +6,10 @@ import Layout from '../components/Layout';
 import { useAuth } from '../src/useAuth';
 import '../styles/animations.css';
 import '../styles/premium-animations.css';
+import '../styles/advanced-animations.css';
 import '../styles/glassmorphism.css';
 import '../styles/data-visualization.css';
+import '../styles/micro-interactions.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
