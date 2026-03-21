@@ -6,16 +6,15 @@
 
 ## Start Here
 
-### For Everyone
-- **[README](./README.md)** — Overview and quick links
-- **[AI System Architecture](./AI-SYSTEM-ARCHITECTURE.md)** ⭐ — Complete explanation of 9-agent pipeline + 6-agent swarm
-- **[System Overview](./system-overview.md)** — Philosophy and core concepts
+### ⭐ Start Here (Pick One)
+- **[AI System Architecture](./AI-SYSTEM-ARCHITECTURE.md)** — Complete technical guide (9-agent + 6-agent)
+- **[AI Pages Guide](./AI-PAGES-GUIDE.md)** — How to use the three dashboards
+- **[System Overview](./system-overview.md)** — Philosophy and concepts
 
-### For Dashboard Users
-- **[AI Pages Guide](./AI-PAGES-GUIDE.md)** — How to read the three AI dashboards:
-  - `/ai-decisions` — Real-time decision transparency
-  - `/agent-intelligence` — Agent performance and accuracy
-  - `/llm-audit` — Cost tracking and model routing
+### Supporting Documentation
+- **[README](./README.md)** — Overview and quick links
+- **[AUTONOMY.md](./AUTONOMY.md)** — LLM autonomy levels (0-5)
+- **[Runbook](./runbook.md)** — Operations guide
 
 ---
 
@@ -23,30 +22,30 @@
 
 ### 👨‍💼 Traders (Want to understand decisions)
 1. Read: [AI Pages Guide](./AI-PAGES-GUIDE.md)
-2. Check: [/ai-decisions](/ai-decisions) page daily
-3. Monitor: [/agent-intelligence](/agent-intelligence) weekly
+2. Check: `/ai-decisions` page daily
+3. Monitor: `/agent-intelligence` weekly
 4. Use skill: `/paper-status` for health check
 
 ### 👨‍💻 Developers (Want to modify agents)
 1. Read: [AI System Architecture](./AI-SYSTEM-ARCHITECTURE.md)
-2. Read: `bot/llm/agents/coordinator.py` comments
-3. Read: `bot/llm/agents/prompts.py` for agent prompts
-4. Study: `bot/tests/test_multi_agent.py` for examples
-5. Use skill: `/agent-debug [symbol]` to trace decisions
+2. Study: `bot/llm/agents/coordinator.py` (orchestration)
+3. Study: `bot/llm/agents/prompts.py` (all agent prompts)
+4. Example: `bot/tests/test_multi_agent.py`
+5. Debug: Use `/agent-debug [symbol]` skill
 
 ### 🔧 Operators (Want to deploy and monitor)
-1. Read: [Quick Start](./quick-start.md)
-2. Read: [Deployment Guide](./deployment.md) (if exists)
-3. Run: `cd bot && python run.py paper`
+1. Read: [Runbook](./runbook.md) — Operations guide
+2. Read: [AI System Architecture](./AI-SYSTEM-ARCHITECTURE.md) — Configuration section
+3. Run: `cd bot && python run.py paper` to start
 4. Monitor: Web dashboard at http://localhost:3000
-5. Use skill: `/health-check [quick|deep]`
+5. Health: Use `/health-check [quick|deep]` skill
 
 ### 📊 Analysts (Want to optimize performance)
-1. Read: [AI Pages Guide](./AI-PAGES-GUIDE.md) — especially Agent Intelligence section
-2. Check: [Agent Intelligence](/agent-intelligence) weekly
-3. Analyze: Accuracy by regime on each agent
+1. Read: [AI Pages Guide](./AI-PAGES-GUIDE.md) — Agent Intelligence section
+2. Check: `/agent-intelligence` weekly
+3. Analyze: Per-agent accuracy by regime
 4. Use skill: `/growth-report` for learning summary
-5. Use skill: `/edge-finder` to find profitable setups
+5. Use skill: `/veto-review [period]` for decision analysis
 
 ---
 
@@ -76,44 +75,41 @@
 - **[AUTONOMY.md](./AUTONOMY.md)** — LLM autonomy levels and safety invariants
 - **[Execution-Safety Rules](./../.claude/rules/execution-safety.md)** — Risk gating and circuit breakers
 
-### Specialized Topics
-- **[Agents](./agents/)** — Per-agent documentation (if exists)
-- **[Performance](./performance.md)** — Expected results and ROI
-- **[Architecture](./architecture.md)** — Detailed system design (if exists)
+### Reference
+- **[AUTONOMY.md](./AUTONOMY.md)** — LLM autonomy levels and safety rules
+- **[Runbook](./runbook.md)** — Operations procedures
+- **[LEARNINGS.md](./LEARNINGS.md)** — Learning outcomes and discoveries
 
 ---
 
 ## Quick Navigation by Topic
 
-### Understanding AI Decisions
-- Start: [AI Pages Guide - AI Decisions Section](./AI-PAGES-GUIDE.md#page-1-ai-decisions-the-decision-theater)
-- Deep: [AI System Architecture - Pipeline Flow](./AI-SYSTEM-ARCHITECTURE.md#pipeline-flow)
-- Code: `bot/llm/agents/coordinator.py`
+### Common Tasks
+
+**Understand why a trade happened**
+- Read: [AI Pages Guide](./AI-PAGES-GUIDE.md) (Page 1: AI Decisions)
+- Check: `/ai-decisions` page for that symbol
 - Debug: Use `/agent-debug [symbol]` skill
 
-### Agent Performance
-- Start: [AI Pages Guide - Agent Intelligence Section](./AI-PAGES-GUIDE.md#page-2-agent-intelligence-the-agent-brain-dashboard)
-- Deep: [AI System Architecture - The 9 Core Agents](./AI-SYSTEM-ARCHITECTURE.md#the-9-core-agents-explained)
-- Monitor: [/agent-intelligence](/agent-intelligence) page
+**Improve agent accuracy**
+- Read: [AI Pages Guide](./AI-PAGES-GUIDE.md) (Page 2: Agent Intelligence)
+- Check: `/agent-intelligence` page for accuracy by regime
 - Optimize: Use `/prompt-calibrate [agent]` skill
 
-### Cost Optimization
-- Start: [AI Pages Guide - LLM Audit Section](./AI-PAGES-GUIDE.md#page-3-llm-audit-cost--model-routing)
-- Deep: [AI System Architecture - LLM Usage Tiers](./AI-SYSTEM-ARCHITECTURE.md#llm-usage-tiers--model-routing)
-- Monitor: [/llm-audit](/llm-audit) page
+**Reduce LLM costs**
+- Read: [AI Pages Guide](./AI-PAGES-GUIDE.md) (Page 3: LLM Audit)
+- Check: `/llm-audit` page for routing matrix
 - Optimize: Use `/cost-audit [period]` skill
 
-### Finding and Fixing Bugs
-- See decision anomalies: Check [/ai-decisions](/ai-decisions) for patterns
-- Check agent accuracy: [/agent-intelligence](/agent-intelligence) by regime
-- Trace full pipeline: Use `/agent-debug` skill
-- Deep dive: `bot/llm/agents/consistency_checker.py`
+**Fix system issues**
+- Check: `/health-check` skill for diagnostics
+- Trace: Use `/agent-debug` skill for full pipeline
+- Review: Check `bot/llm/agents/consistency_checker.py` logic
 
-### Configuration & Customization
-- Autonomy levels: [AUTONOMY.md](./AUTONOMY.md)
-- Environment vars: [AI System Architecture - Configuration](./AI-SYSTEM-ARCHITECTURE.md#environment-configuration)
-- LLM tiers: `bot/llm/usage_tiers.py`
-- Agent prompts: `bot/llm/agents/prompts.py`
+**Configure the system**
+- Autonomy: See [AUTONOMY.md](./AUTONOMY.md)
+- Models: See [AI System Architecture - Configuration](./AI-SYSTEM-ARCHITECTURE.md#environment-configuration)
+- Prompts: Edit `bot/llm/agents/prompts.py`
 
 ---
 
@@ -180,16 +176,16 @@ api/app/
 
 ## Configuration Checklist
 
-Before deploying to production:
+Before deploying:
 
 - [ ] `.env` file configured with `ANTHROPIC_API_KEY`
 - [ ] `LLM_MULTI_AGENT=true` enabled
-- [ ] `LLM_MODE` set to desired autonomy level (0-5)
-- [ ] `LLM_USAGE_TIER` set to CONSERVATIVE/RECOMMENDED/AGGRESSIVE
-- [ ] `ENVIRONMENT=paper` for paper trading, `production` for live
-- [ ] All agent environment variables optional (will use defaults)
+- [ ] `LLM_MODE` set to autonomy level (0-5)
+- [ ] `LLM_USAGE_TIER` set (CONSERVATIVE/RECOMMENDED/AGGRESSIVE)
+- [ ] `ENVIRONMENT=paper` for paper trading
+- [ ] Agent environment variables optional (will use defaults)
 
-See: [AI System Architecture - Environment Configuration](./AI-SYSTEM-ARCHITECTURE.md#environment-configuration)
+See: [AI System Architecture](./AI-SYSTEM-ARCHITECTURE.md) for configuration details
 
 ---
 

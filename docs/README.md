@@ -160,16 +160,11 @@ After 4 weeks with solid performance:
 **I want to understand the system:**
 → Start with [System Overview](./system-overview.md)
 
-**I want to deploy it:**
-→ Jump to [Quick Start](./quick-start.md)
+**I want to use the dashboards:**
+→ Jump to [AI Pages Guide](./AI-PAGES-GUIDE.md)
 
-**I want to understand agents:**
-→ Read [Agent Specialization](./agents/)
-
-**I want to optimize costs:**
-→ See [Cost Tracking](./performance/cost-tracking.md)
-
-**I want to see metrics:**
+**I want the full technical architecture:**
+→ Read [AI System Architecture](./AI-SYSTEM-ARCHITECTURE.md)
 → Check [Performance Dashboard](./performance/dashboard.md)
 
 ---

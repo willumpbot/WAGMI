@@ -425,8 +425,8 @@ Visit web dashboard: **[LLM Audit](/llm-audit)** page
 
 ## Next Steps
 
-- [Read: Autonomy & Safety](./AUTONOMY.md)
-- [Read: Strategy Design](./strategies.md)
-- [Deploy: Paper Trading](../web/pages/deploy-paper.md)
-- [Monitor: Health Check](../web/pages/health-check.md)
+- **[Read: Autonomy & Safety](./AUTONOMY.md)** — Autonomy levels 0-5 and safety invariants
+- **Check the dashboards**: Visit `/ai-decisions`, `/agent-intelligence`, `/llm-audit`
+- **Read the guides**: [AI Pages Guide](./AI-PAGES-GUIDE.md) for dashboard help
+- **Monitor with skills**: Use `/paper-status`, `/health-check`, `/agent-debug`
 
