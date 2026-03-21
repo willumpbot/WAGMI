@@ -1,6 +1,12 @@
+/**
+ * /portfolio — Active Positions & Real-Time Exposure
+ *
+ * Professional portfolio management dashboard.
+ * Real-time position tracking, P&L analysis, risk visualization.
+ */
 import React, { useEffect, useState, useMemo } from 'react';
 import Head from 'next/head';
-import { C, R, S, F, G, fmtUsd, fmtPct, timeAgo } from '../src/theme';
+import { C, R, S, F, G, DARK, fmtUsd, fmtPct, timeAgo } from '../src/theme';
 import { apiFetch } from '../src/api';
 import type { Strategy, TradeHistoryResponse, TradeRecord } from '../src/types';
 
