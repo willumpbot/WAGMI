@@ -35,40 +35,74 @@ cd bot
 ### 1.2 Build a Paper Trading Analysis Script
 **New file**: `bot/scripts/paper_analysis.py`
 
-This script consolidates paper trading data into a single actionable report:
+This script consolidates paper trading data into a single actionable report. It uses existing APIs rather than parsing raw files:
 
-1. **Trade statistics** — Read `bot/data/trades.csv` + `bot/data/trade_ledger.csv`:
-   - Total trades, win rate, profit factor, Sharpe, max drawdown
-   - Per-symbol breakdown (BTC, ETH, SOL, HYPE, etc.)
-   - Per-regime breakdown (trend, range, panic, high_vol)
-   - Per-strategy breakdown (which of the 11 strategies contributed)
+```python
+# Paper Analysis Script — uses existing analysis APIs
+import sys; sys.path.insert(0, 'bot')
 
-2. **Agent accuracy audit** — Read `bot/data/llm/decisions.jsonl`:
-   - Regime Agent: Did regime classification match actual price action?
-   - Trade Agent: Did go/skip decisions correlate with profitable outcomes?
-   - Critic Agent: Veto accuracy (saved PnL vs. missed PnL from vetoed trades)
-   - Exit Agent: Did exit recommendations improve vs. mechanical trailing stops?
-   - Confidence calibration: Plot predicted confidence vs. actual win rate
+# 1. TRADE STATISTICS (TradeLedger has built-in analysis)
+from feedback.trade_ledger import TradeLedger
+ledger = TradeLedger("bot/data")
+trades = ledger.get_trades(lookback_days=30)
+by_regime = ledger.get_regime_breakdown(lookback_days=30)    # WR per regime
+by_agreement = ledger.get_agreement_breakdown(lookback_days=30)  # WR by consensus level
 
-3. **Counterfactual analysis** — Read counterfactual log:
-   - How many skipped trades would have been winners?
-   - Which gate rejects the most profitable signals? (too conservative?)
-   - Net counterfactual PnL (are we leaving money on the table?)
+# 2. AGENT ACCURACY (ThesisTracker has calibration built-in)
+from llm.thesis_tracker import ThesisTracker
+thesis = ThesisTracker("bot/data/llm")
+stats = thesis.get_accuracy_stats(lookback_days=30)
+# Returns: overall_accuracy, by_regime, by_symbol, by_setup_type, calibration
 
-4. **Ensemble performance** — From `bot/data/strategy_weights.py` + trade data:
-   - MIN_VOTES impact: Compare 2-agree vs. 3-agree signal quality
-   - VETO_RATIO impact: Would different ratios improve/degrade?
-   - Strategy correlation: Which strategies agree/disagree most?
+# 3. CONFIDENCE CALIBRATION (per-bin accuracy)
+from llm.confidence_calibrator import ConfidenceCalibrator
+calibrator = ConfidenceCalibrator("bot/data/llm")
+summary = calibrator.get_calibration_summary()
+# Returns: total_observations, bins (50-60, 60-70, etc → actual_wr), overall_bias
 
-**Key files to read**:
-- `bot/data/trades.csv` — Trade outcomes
-- `bot/data/trade_ledger.csv` — Attribution ledger (regime, factors, Kelly)
-- `bot/data/llm/decisions.jsonl` — All LLM decisions (append-only)
-- `bot/llm/thesis_tracker.py` — Has `get_accuracy_report()` method
-- `bot/llm/confidence_calibrator.py` — Has calibration curve data
-- `bot/llm/counterfactual_learner.py` — Tracked skipped trades
-- `bot/feedback/evolution_tracker.py` — Has `generate_report()` method
-- `bot/data/strategy_weights.py` — Rolling strategy weights
+# 4. COUNTERFACTUAL ANALYSIS (what we left on the table)
+from llm.counterfactual_learner import CounterfactualLearner
+cf = CounterfactualLearner("bot/data/llm")
+missed = cf.get_missed_opportunity_stats(lookback_days=14)
+# Returns: total_skips, would_win, would_lose, win_rate_of_skips,
+#           total_hypothetical_pnl, by_skip_reason, problem_filters
+
+# 5. EVOLUTION REPORT (comprehensive edge attribution)
+from feedback.evolution_tracker import EvolutionTracker
+evo = EvolutionTracker("bot/data")
+report = evo.generate_report()
+# report.edge_by_regime, edge_by_strategy, edge_by_symbol, trigger_roi
+print(evo.format_report(report))
+
+# 6. STRATEGY WEIGHTS (current rolling weights)
+from data.strategy_weights import StrategyWeightManager
+weights = StrategyWeightManager("ml_data/strategy_weights.json")
+all_weights = weights.get_all_weights()        # Laplace-smoothed
+rolling = weights.get_rolling_weights(window=10)  # Recent performance
+
+# 7. SIGNAL REJECTIONS (which gates block what)
+from data.db import get_rejection_summary
+rejections = get_rejection_summary(hours=24*7)  # 7-day breakdown
+# Returns: {gate_name → {count, high_conf_count}}
+
+# 8. DEEP MEMORY SUMMARY
+from llm.deep_memory import DeepMemoryManager
+dm = DeepMemoryManager("bot/data/llm/deep_memory")
+full_report = dm.get_full_report()  # All stats, fingerprints, patterns
+```
+
+**What each analysis produces (decision outputs)**:
+
+| Analysis | Key Output | Decision It Drives |
+|----------|-----------|-------------------|
+| Trade stats by regime | WR per regime (trend/range/panic) | Regime risk multiplier tuning (§2.4) |
+| Trade stats by agreement | WR at 2-agree vs 3-agree | MIN_VOTES decision (§2.4) |
+| Thesis accuracy | Confidence bins → actual WR | Calibration curve update (§2.2) |
+| Counterfactual `problem_filters` | Gates blocking >50% would-be-winners | Loosen those specific gates |
+| Evolution `trigger_roi` | Cost vs PnL saved per LLM trigger | Disable low-ROI triggers, upgrade high-ROI ones |
+| Strategy rolling weights | Per-strategy recent performance | Lock weights or disable losers (§2.3) |
+| Signal rejections | Gate rejection counts | Identify if pipeline is too tight/loose |
+| Deep memory fingerprints | Strategy × regime × symbol win rates | Knowledge base seeding (§3.4) |
 
 ### 1.3 Run Go-Live Gates
 ```bash
@@ -119,31 +153,63 @@ Based on Day 1 analysis, tune agent prompts in `bot/llm/agents/prompts.py`:
 
 ### 2.2 Confidence Calibration Update
 **File**: `bot/llm/confidence_calibrator.py`
+**Data**: `bot/data/llm/calibration_curve.json` + `calibration_observations.jsonl`
 
-Using paper trading data:
-1. Build calibration curve: predicted confidence buckets (50-60, 60-70, 70-80, 80-90, 90-100) vs actual win rates
-2. If 80% confidence trades only win 55% of the time → apply deflation factor
-3. Update per-agent calibration in the calibrator's state
-4. Use `/confidence-calibrate system` to verify
+The calibrator already rebuilds automatically every 10 observations. What we need to verify:
+
+1. **Check the curve** — `calibrator.get_calibration_summary()` returns per-bin data:
+   - Each bin (50-60, 60-70, 70-80, 80-90, 90-100) shows `claimed_mid` vs `actual_win_rate`
+   - The `adjustment` field shows how much each bin is deflated/inflated
+   - `overall_bias` tells us if the system is systematically over/underconfident
+
+2. **Validate minimum samples** — Each bin needs ≥5 observations (`MIN_SAMPLES_PER_BIN=5`) before calibration is applied. With few days of paper data, some bins may be empty.
+
+3. **Check calibration strength** — `CALIBRATION_STRENGTH=0.7` controls blending (0=ignore calibration, 1=fully trust it). With limited data, consider lowering to 0.5.
+
+4. **Max adjustment cap** — `MAX_ADJUSTMENT_PCT=15.0` prevents wild swings. Verify this is appropriate.
+
+**Action**: Run `/confidence-calibrate system`. If bins with ≥5 samples show >10% gap between claimed and actual, the calibrator is working correctly — let it auto-correct. If bins have <5 samples, note which confidence ranges need more data during live trading.
 
 ### 2.3 Strategy Weight Finalization
-**File**: `bot/data/strategy_weights.py`
+**File**: `ml_data/strategy_weights.json`
+**Source**: `bot/data/strategy_weights.py` (class: `StrategyWeightManager`)
 
-From paper trading performance data:
-1. Calculate per-strategy win rate, profit factor, and Sharpe **by regime**
-2. Lock final weights:
-   - Strategies with PF > 1.5 in their target regime → weight 1.2-1.5x
-   - Strategies with PF 1.0-1.5 → weight 1.0x (neutral)
-   - Strategies with PF < 1.0 → weight 0.5x or disable
-3. Apply via `bot/trading_config.py` strategy weight overrides
+**How weights work currently**:
+- Formula: `(wins + 1) / (trials + 2)` (Laplace smoothing)
+- Rolling weights: base × (rolling_WR / 0.5), floored at 0.2
+- Hard mute: weight → 0.20 if recent_WR < 30% AND long_term < 35% AND 15+ trades
+- Recovery boost: 1.5× if last 5 trades are all wins
+- Daily decay: exponential smoothing (alpha=0.9) downweights old data
 
-**Critical strategies to evaluate**:
-- `regime_trend` — Expected strong in trend regimes
-- `confidence_scorer` — Core strategy, should work across regimes
-- `oi_delta`, `funding_rate` — Newer strategies, may need weight reduction
-- `liquidation_cascade` — High-impact but rare signals
-- `lead_lag` — Currently disabled ($-1,100 PnL track record), keep disabled unless paper data reverses this
-- `multi_tier_quality` — Currently disabled (toxic combo with confidence_scorer)
+**Analysis approach**:
+```python
+from data.strategy_weights import StrategyWeightManager
+weights = StrategyWeightManager("ml_data/strategy_weights.json")
+
+# Compare static vs rolling weights
+static = weights.get_all_weights()     # Laplace-smoothed (stable)
+rolling = weights.get_rolling_weights(window=10)  # Recent performance (volatile)
+
+# Check for strategies that should be muted
+report = weights.get_report()  # {strategy → {wins, trials, weight}}
+```
+
+**Decision framework by strategy**:
+| Strategy | Expected Edge | Paper Result → Action |
+|----------|--------------|----------------------|
+| `regime_trend` | Strong in trend | If PF >1.5 in trend → boost to 1.3x |
+| `confidence_scorer` | Core, all regimes | If WR >50% → keep at 1.0x |
+| `oi_delta` | Newer, unproven | If WR <40% after 10+ trades → weight 0.5x |
+| `funding_rate` | Newer, unproven | Same as oi_delta |
+| `bollinger_squeeze` | Newer | Evaluate independently |
+| `vmc_cipher` | Newer | Evaluate independently |
+| `liquidation_cascade` | Rare signals | If fired <3 times → can't evaluate, keep 1.0x |
+| `probability_engine` | Newer | Evaluate independently |
+| `lead_lag` | **Disabled** ($-1,100) | Keep disabled unless paper data reverses with 15+ profitable trades |
+| `multi_tier_quality` | **Disabled** (toxic combo) | Keep disabled unless tested in isolation |
+| `monte_carlo_zones` | Gated by env | Evaluate if enabled |
+
+**Locking weights for live**: Rather than hardcoding, consider running `weights.apply_decay()` one final time and then NOT running decay during the first week of live (to preserve paper-validated weights). Re-enable decay after Week 1 when live data starts building.
 
 ### 2.4 Ensemble Parameter Finalization
 **File**: `bot/trading_config.py`
@@ -165,12 +231,24 @@ Decisions to make based on paper data:
 
 ### 2.5 Hypothesis Graduation
 **File**: `bot/llm/growth/hypothesis_tracker.py`
+**Data**: `bot/data/llm/growth/hypotheses.json` (max 200 active)
+
+The hypothesis system has a well-defined graduation lifecycle:
+- **Stages**: `proposed` → `testing` → `validated`/`invalidated` → `codified`
+- **Auto-graduation criteria** (`is_ready_for_graduation`):
+  - Standard: ≥10 evidence entries AND (evidence_ratio ≥0.7 OR ≤0.3)
+  - Fast-track: 7-9 evidence entries AND (evidence_ratio ≥0.85 OR ≤0.15)
+- **Graduation targets**: validated → becomes `principle` or `rule`; invalidated → becomes `anti_pattern`
 
 Use `/knowledge-distill hypotheses` to:
-1. List all hypotheses with >70% supporting evidence
-2. Graduate validated hypotheses to codified rules in knowledge base
-3. Example: "SOL breakouts fail in high_vol regime" → add as anti-pattern to Trade Agent prompt
-4. Prune disproven hypotheses (<30% evidence)
+1. Run `hypothesis_tracker.check_graduation()` — returns all hypotheses ready to graduate
+2. Validated hypotheses (ratio ≥0.7) → add as `principle` or `rule` to knowledge base
+3. Invalidated hypotheses (ratio ≤0.3) → add as `anti_pattern` to knowledge base
+4. Example: "SOL breakouts fail in high_vol" with 14/20 supporting → `anti_pattern` in Trade Agent prompt
+
+**With limited paper data**: Many hypotheses may still be in `proposed` or early `testing` stage with <10 evidence entries. That's fine — they'll continue accumulating evidence during live trading. Don't force-graduate hypotheses with insufficient data.
+
+**What to prune**: Hypotheses in `proposed` stage with 0 evidence after 7+ days — they're stale. Remove via direct edit of `hypotheses.json`.
 
 ### 2.6 Autonomy Level Decision
 **File**: `bot/llm/autonomy_router.py`
@@ -228,38 +306,141 @@ cp bot/data/trade_ledger.csv bot/data/paper_snapshots/$(date +%Y%m%d)/
 cp -r bot/data/feedback/ bot/data/paper_snapshots/$(date +%Y%m%d)/
 ```
 
-### 3.2 Deep Memory Curation
-**File**: `bot/llm/deep_memory.py`
+### 3.2 Deep Memory Curation (File-by-File)
+**Directory**: `bot/data/llm/deep_memory/`
 
-1. **Keep**: Trade DNA entries with clear lessons (win patterns, loss patterns)
-2. **Prune**: Low-confidence entries, duplicates, entries from first few days (learning noise)
-3. **Summarize**: Compress 500 individual trade entries into pattern summaries:
-   - "BTC trend entries with 3+ strategy agreement: 72% WR, avg +1.2% PnL"
-   - "SOL range entries: 38% WR, avoid unless confidence >85%"
-4. Use `/memory-optimize prune` to clean up
+| File | Action | Reasoning |
+|------|--------|-----------|
+| `trade_dna.json` | **KEEP ALL** (max 500 trades) | Core learning data. Auto-compresses older trades to archive. Every entry has full context: entry/exit, regime, strategies, LLM reasoning, lessons, quality score. |
+| `trade_dna_archive.json` | **KEEP** | Compressed summaries of trades beyond 500. Has 30-day TTL on archive entries. |
+| `strategy_fingerprints.json` | **KEEP ALL** | Per-strategy breakdowns by regime/symbol/side. Contains `confidence_vs_actual` arrays (max 200) for calibration. This is the highest-value migration data. |
+| `pattern_library.json` | **PRUNE** to patterns with WIN outcome | Max 1000 entries. Remove patterns with LOSS outcome and low context. Keep winning patterns for LLM prompt injection. |
+| `regime_history.json` | **KEEP recent 50** transitions | Max 500. Recent transitions are relevant; old ones from paper warmup aren't. |
+| `insight_journal.json` | **PRUNE** to confidence ≥0.6 AND validated=true | Max 500 entries. Use `get_validated()` and `get_high_confidence(min_confidence=0.6)` to filter. Categories: strategy_insight, symbol_insight, regime_insight, timing_insight, risk_insight. |
+
+**Access methods for curation**:
+```python
+from llm.deep_memory import DeepMemoryManager
+dm = DeepMemoryManager("bot/data/llm/deep_memory")
+
+# Get summary before pruning
+report = dm.get_full_report()
+
+# Get best trades for review
+snipers = dm.trade_dna.get_sniper_trades(limit=20)
+failures = dm.trade_dna.get_failures(limit=20)
+
+# Get validated insights only
+validated = dm.insight_journal.get_validated(limit=100)
+
+# Build knowledge summary for review
+summary = dm.build_llm_knowledge_summary(max_tokens=2000)
+```
 
 ### 3.3 Short-Term Memory Reset
-**File**: `bot/llm/memory_store.py`
+**File**: `bot/data/llm/llm_memory.json`
+**Format**: `{last_updated: timestamp, notes: [{text, ts, symbol, regime}]}`
 
-- Keep the most valuable recent notes (top-10 by relevance)
-- Clear noise/stale notes
-- Add "transition note": summary of paper trading learnings to seed live context
+- **Capacity**: 100 notes, 7-day TTL, max 200 chars per note
+- **Quality gate**: Notes must be >20 chars, contain structure (not just "went up")
+- **Action**: Clear all notes (`memory_store.clear_memory()`) and inject 3-5 transition notes:
+  ```python
+  from llm.memory_store import MemoryStore
+  mem = MemoryStore("bot/data/llm")
+  mem.clear_memory()
+
+  # Inject paper trading summary notes (examples — use actual data)
+  mem.apply_memory_update(
+      "Paper→live transition: SOL trend WR 68%, range WR 41%; "
+      "3-agree signals PF 4.05; regime_trend strongest strategy",
+      symbol="", regime=""
+  )
+  mem.apply_memory_update(
+      "Calibration: 80% confidence trades actually win 62% — "
+      "deflation applied; veto rate 18%, saved $X net positive",
+      symbol="", regime=""
+  )
+  ```
+  The 7-day TTL means these notes naturally expire as live data replaces them.
 
 ### 3.4 Knowledge Base Update
-**File**: `bot/data/llm/teaching/knowledge_base.json`
+**File**: `bot/data/llm/teaching/knowledge_base.json` (~42 KB)
+**Types**: `axiom` | `principle` | `hypothesis` | `observation` | `anti_pattern` | `sniper_profile` | `rule`
 
-Inject validated paper trading insights:
-- Per-symbol behavioral patterns
-- Per-regime strategy preferences
-- Key anti-patterns (what to avoid)
-- Calibration adjustments
+Use the knowledge base API to inject validated paper findings:
+```python
+from llm.self_teaching import LearningCycleEngine
+engine = LearningCycleEngine("bot/data/llm/teaching")
+kb = engine.knowledge_base
+
+# Add validated paper trading principles
+kb.add(
+    knowledge_type="principle",
+    content="3-agree signals have 4x profit factor vs 2-agree",
+    confidence=0.85,
+    category="strategy",
+    tags=["ensemble", "agreement", "consensus"],
+    source="paper_trading",
+    evidence="Paper trading: 3-agree PF=4.05, 2-agree PF=1.2"
+)
+
+# Add anti-patterns from paper losses
+kb.add(
+    knowledge_type="anti_pattern",
+    content="SOL range entries with <80% confidence lose 60% of the time",
+    confidence=0.75,
+    category="symbol",
+    tags=["SOL", "range", "confidence"],
+    source="paper_trading",
+    evidence="Paper: 12/20 SOL range trades lost, avg confidence 72%"
+)
+
+# Add sniper profiles from best trades
+kb.add(
+    knowledge_type="sniper_profile",
+    content="HYPE trend breakout with funding <0.01% and 3+ agree: 85% WR",
+    confidence=0.80,
+    category="symbol",
+    tags=["HYPE", "trend", "breakout", "sniper"],
+    source="paper_trading",
+    evidence="Paper: 6/7 HYPE breakouts in these conditions = WIN"
+)
+```
+
+**Reliability threshold**: Knowledge entries are `is_reliable()` when `validation_count >= 3` AND `confidence >= 0.6`. Paper entries start with validation_count=0 — they'll be validated/invalidated as live trades occur.
 
 ### 3.5 Curriculum State Check
-**File**: `bot/llm/self_teaching.py`
+**File**: `bot/data/llm/teaching/curriculum_state.json`
+**Levels**: 1=Pattern Recognition → 2=Causal Analysis → 3=Predictive Modeling → 4=Sniper Replication → 5=Strategy Synthesis
 
-- Check current curriculum level (likely Level 1 or 2 after paper)
-- If Level 1 complete (100+ trades analyzed, 50%+ hypothesis accuracy): advance to Level 2
-- Use `/curriculum-advance evaluate` to assess
+Check current state:
+```python
+from llm.self_teaching import LearningCycleEngine
+engine = LearningCycleEngine("bot/data/llm/teaching")
+state = engine._load_curriculum()
+print(f"Level: {state.current_level}, Trades analyzed: {state.trades_analyzed}")
+print(f"Hypotheses: {state.hypotheses_total} (validated: {state.hypotheses_validated})")
+print(f"Hours at level: {state.hours_at_level:.1f}")
+```
+
+**Decision**:
+- If still Level 1 with <50 trades analyzed → **keep at Level 1** (not enough data to advance)
+- If Level 1 with 50+ trades and 50%+ hypothesis validation rate → advance to Level 2 via `/curriculum-advance evaluate`
+- **Do NOT reset curriculum** — preserve the `trades_analyzed`, `hypotheses_*`, and `predictions_*` counters. These represent real learning progress from paper trading.
+
+### 3.6 Recommendation Engine Cleanup
+**File**: `bot/data/llm/growth/recommendations.json` (max 500)
+
+- **Clear all PENDING** recommendations — they were generated in paper context
+- **Keep APPLIED + VALIDATED** — these are proven suggestions
+- **Keep INVALIDATED** — to avoid re-proposing failed ideas
+- **Clear EXPIRED** — no longer relevant
+```python
+from llm.growth.recommendation_engine import RecommendationEngine
+recs = RecommendationEngine("bot/data/llm/growth")
+stats = recs.get_stats()  # by_status breakdown
+# Manually prune: keep applied/validated/invalidated, clear pending/expired
+```
 
 ---
 
@@ -419,13 +600,28 @@ python cli.py --mode gate   # All 5 go-live gates must pass
 |------|-----|---------|
 | **NEW**: `bot/scripts/paper_analysis.py` | 1 | Paper trading analysis consolidation script |
 | `bot/llm/agents/prompts.py` | 2 | Agent prompt tuning based on accuracy data |
-| `bot/llm/confidence_calibrator.py` | 2 | Updated calibration curves from paper data |
-| `bot/data/strategy_weights.py` | 2 | Lock strategy weights from paper performance |
-| `bot/data/llm/deep_memory/` | 3 | Curated memory (pruned + summarized) |
-| `bot/data/llm/llm_memory.json` | 3 | Reset with transition summary note |
-| `bot/data/llm/teaching/knowledge_base.json` | 3 | Graduated hypotheses → codified rules |
+| `bot/data/llm/calibration_curve.json` | 2 | Verify/adjust calibration strength and bins |
+| `ml_data/strategy_weights.json` | 2 | Final decay, lock weights for live Week 1 |
+| `bot/data/llm/deep_memory/pattern_library.json` | 3 | Prune to winning patterns only |
+| `bot/data/llm/deep_memory/regime_history.json` | 3 | Keep recent 50 transitions |
+| `bot/data/llm/deep_memory/insight_journal.json` | 3 | Prune to confidence ≥0.6 + validated |
+| `bot/data/llm/llm_memory.json` | 3 | Clear and inject 3-5 transition summary notes |
+| `bot/data/llm/teaching/knowledge_base.json` | 3 | Add principles, anti-patterns, sniper profiles from paper |
+| `bot/data/llm/growth/recommendations.json` | 3 | Clear pending/expired, keep applied/validated |
+| `bot/data/llm/growth/hypotheses.json` | 3 | Prune stale proposed, graduate ready ones |
 | `bot/trading_config.py` (LIVE_PROFILE_OVERRIDES) | 4 | Conservative live profile: 5x lev, 1% risk, 2 positions |
 | `.env` | 4 | ENVIRONMENT=production, HL credentials, circuit breakers, LLM_MODE=2, alerts |
+
+**Files to KEEP UNCHANGED** (carry over from paper):
+| File | Reasoning |
+|------|-----------|
+| `bot/data/llm/deep_memory/trade_dna.json` | Core learning — all 500 trades preserved |
+| `bot/data/llm/deep_memory/trade_dna_archive.json` | Compressed historical summaries |
+| `bot/data/llm/deep_memory/strategy_fingerprints.json` | Highest-value migration data — per-strategy calibration |
+| `bot/data/llm/teaching/curriculum_state.json` | Preserve learning progress counters |
+| `bot/data/llm/calibration_observations.jsonl` | Raw observations for rebuilding curves |
+| `bot/data/llm/thesis_history.jsonl` | Prediction accuracy history |
+| `bot/data/llm/counterfactual_log.jsonl` | Skipped trade tracking |
 
 **Files NOT to modify** (already correct for live):
 - `bot/execution/risk.py` — Circuit breakers are env-driven, no code changes needed
