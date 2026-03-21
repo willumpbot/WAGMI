@@ -96,7 +96,7 @@ function timeAgo(isoOrTs: string | number | null): string {
 function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
   if (!view) {
     return (
-      <div className="card-hover" style={{ ...Glass.card, borderRadius: 10, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: C.muted }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: 10, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: C.muted }}>
         LLM Brain View loading...
       </div>
     );
@@ -325,7 +325,7 @@ function TradingViewChart({ symbol }: { symbol: string }) {
 function ActivityFeed({ events }: { events: ActivityEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="card-hover" style={{ ...Glass.card, borderRadius: R.md, padding: '16px 20px', marginBottom: 24 }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.md, padding: '16px 20px', marginBottom: 24 }}>
         <div style={{ fontSize: F.sm, fontWeight: 600, color: C.text, marginBottom: 6 }}>Bot Activity</div>
         <div style={{ fontSize: F.sm, color: C.muted }}>
           No activity yet. Start the bot with <code style={{ background: C.surfaceHover, padding: '1px 4px', borderRadius: R.xs, color: C.brand }}>LLM_MODE=1</code> to see live decisions here.
@@ -455,7 +455,7 @@ function RiskCalculator({ entry, sl, symbol }: { entry: number; sl: number; symb
 
   return (
     <div
-      className="card-hover"
+      className="glass-card card-hover glass-noise"
       style={{
         ...Glass.card,
         border: `1px solid ${C.border}`,
@@ -644,7 +644,7 @@ function CopyTradeCard({
 
   return (
     <div
-      className="card-hover"
+      className="glass-card card-hover glass-noise"
       style={{
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
@@ -1430,7 +1430,7 @@ function TradeSetupQualityMatrix() {
   const svgH = COL_LABEL_H + regimes.length * (CELL_H + PAD) + PAD;
 
   return (
-    <div className="card-hover" style={{ ...Glass.card, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
       <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Quality Matrix</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
         Expected signal quality (0–100) by market <strong style={{ color: C.textSub }}>regime</strong> (rows) ×{' '}
@@ -1569,7 +1569,7 @@ function StandaloneRiskCalc({ defaultEntry, defaultSl }: { defaultEntry?: number
   };
 
   return (
-    <div className="card-hover" style={{ ...Glass.card, borderRadius: R.lg, marginBottom: 24, overflow: 'hidden' }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.lg, marginBottom: 24, overflow: 'hidden' }}>
       <button
         onClick={() => setShow(v => !v)}
         style={{
@@ -1721,7 +1721,7 @@ function MultiTimeframeConfluence() {
   };
 
   return (
-    <div className="card-hover" style={{ ...Glass.card, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
       <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Multi-Timeframe Confluence
       </div>

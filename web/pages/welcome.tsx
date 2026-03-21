@@ -112,7 +112,7 @@ function AgentPipeline() {
 
 function SignalPreviewCard() {
   return (
-    <div className="card-hover" style={{
+    <div className="glass-card card-hover glass-noise" style={{
       ...Glass.card, border: `1px solid ${C.bull}40`,
       borderRadius: R.xl, padding: '24px 28px', maxWidth: 480,
       boxShadow: S.lg, position: 'relative', overflow: 'hidden',
@@ -545,7 +545,7 @@ function CellValue({ value, col }: { value: string; col: 'manual' | 'typical' | 
 
 function FeatureComparisonTable() {
   return (
-    <div className="card-hover" style={{
+    <div className="glass-card card-hover glass-noise" style={{
       ...Glass.card,
       border: `1px solid ${C.brand}40`,
       borderLeft: `4px solid ${C.brand}`,
@@ -758,7 +758,7 @@ export default function WelcomePage() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
               {/* Win Rate Ring */}
-              <div className="card-hover" style={{
+              <div className="glass-card card-hover glass-noise" style={{
                 ...Glass.card,
                 border: `1px solid ${C.border}`,
                 borderRadius: R.xl,
@@ -776,7 +776,7 @@ export default function WelcomePage() {
               </div>
 
               {/* Confidence Bars */}
-              <div className="card-hover" style={{
+              <div className="glass-card card-hover glass-noise" style={{
                 ...Glass.card,
                 border: `1px solid ${C.border}`,
                 borderRadius: R.xl,
@@ -796,7 +796,7 @@ export default function WelcomePage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 24 }}>
             {HOW_STEPS.map((s, i) => (
-              <div key={s.title} className="card-hover" style={{ ...Glass.card, borderRadius: R.xl, padding: '28px 24px' }}>
+              <div key={s.title} className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.xl, padding: '28px 24px' }}>
                 <div style={{ fontSize: 36, marginBottom: 14 }}>{s.icon}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                   <span style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, background: C.surface, padding: '2px 8px', borderRadius: R.pill }}>Step {i + 1}</span>
@@ -890,7 +890,7 @@ export default function WelcomePage() {
                   { label: 'Win Rate', value: winRate ? `${(winRate * 100).toFixed(1)}%` : '—', color: C.bull },
                   { label: 'Net P&L', value: netPnl ? fmtUsd(netPnl) : '—', color: C.bull },
                 ].map(({ label, value, color }) => (
-                  <div key={label} className="card-hover" style={{
+                  <div key={label} className="glass-card card-hover glass-noise" style={{
                     flex: '1 1 180px', maxWidth: 220,
                     ...Glass.card, borderRadius: R.lg, padding: '20px 24px',
                   }}>
@@ -943,7 +943,7 @@ export default function WelcomePage() {
                 { tier: 'Pro', price: '$29/mo', features: ['Real-time signals', 'Telegram alerts', 'Morning brief', 'Full course access'], cta: 'Start Pro Trial', primary: true },
                 { tier: 'Elite', price: '$97/mo', features: ['Auto-execution', 'Custom risk params', 'API access', 'Priority support'], cta: 'Talk to Us', primary: false },
               ].map((t) => (
-                <div key={t.tier} className="card-hover" style={{
+                <div key={t.tier} className="glass-card card-hover glass-noise" style={{
                   ...Glass.card, border: `1px solid ${t.primary ? C.brand : C.border}`,
                   borderRadius: R.xl, padding: '24px 20px',
                   boxShadow: t.primary ? S.glow : S.sm,

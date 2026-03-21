@@ -282,7 +282,7 @@ function RollingMetrics({ trades }: { trades: TradeRecord[] }) {
   const pnlPath = rollingPnL.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${pnlY(v).toFixed(1)}`).join(' ');
 
   return (
-    <div className="card-hover" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Rolling 10-Trade Performance</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>How win rate and avg P&L evolve across each rolling window of 10 trades</div>
 
@@ -1479,7 +1479,7 @@ function ProfitFactorGauge({ trades }: { trades: TradeRecord[] }) {
     : 'Insufficient trade data';
 
   return (
-    <div className="card-hover" style={{
+    <div className="glass-card card-hover glass-noise" style={{
       ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
       padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 6,
       boxShadow: S.sm, alignItems: 'center',
@@ -1689,7 +1689,7 @@ function TradeQualityMatrix({ trades }: { trades: TradeRecord[] }) {
   };
 
   return (
-    <div className="card-hover" style={{
+    <div className="glass-card card-hover glass-noise" style={{
       ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
       padding: '20px 24px', boxShadow: S.sm,
     }}>
@@ -1822,7 +1822,7 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
 
   if (!grossPnlSeries.length) {
     return (
-      <div className="card-hover" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Fee Impact Analysis</div>
         <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>Hyperliquid: 0.05% taker · 0.02% maker</div>
         <AwaitingResults label="Awaiting trade data" sub="Fee drag chart will appear once the bot has closed trades" />
@@ -1859,7 +1859,7 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
   const zeroY = y(0);
 
   return (
-    <div className="card-hover" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Fee Impact Analysis</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: trades.length === 0 ? 8 : 14 }}>
         Hyperliquid: 0.05% taker · 0.02% maker
@@ -1978,7 +1978,7 @@ function StreakAnalysisChart({ trades }: { trades: TradeRecord[] }) {
     : [0, Math.round(maxLen / 4), Math.round(maxLen / 2), Math.round((maxLen * 3) / 4), maxLen];
 
   return (
-    <div className="card-hover" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Win/Loss Streak History</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
         Each bar = one consecutive run. Green = win streak, red = loss streak.
@@ -2118,7 +2118,7 @@ function AlphaDecayChart({ trades }: { trades: TradeRecord[] }) {
 
   if (realData.length < 3) {
     return (
-      <div className="card-hover" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Alpha Persistence — Is the Edge Holding?</div>
         <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>Rolling 5-trade window avg PnL. Flat or rising = edge holding. Declining = needs reoptimization.</div>
         <AwaitingResults label="Need at least 7 trades" sub={`${trades.length} closed so far — chart appears at 7+`} />
@@ -2171,7 +2171,7 @@ function AlphaDecayChart({ trades }: { trades: TradeRecord[] }) {
   const linePts = seedData.map((v, i) => `${x(i)},${y(v)}`).join(' ');
 
   return (
-    <div className="card-hover" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>
         Alpha Persistence — Is the Edge Holding?
       </div>
@@ -2279,7 +2279,7 @@ function PerformanceAttributionTreemap({ trades }: { trades: TradeRecord[] }) {
   // Build real data from trades (symbol × strategy)
   if (trades.length < 3) {
     return (
-      <div className="card-hover" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Performance Attribution Treemap</div>
         <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>Rectangle size ∝ |PnL|. Color = positive (green) or negative (red).</div>
         <AwaitingResults label="Awaiting results" sub="Treemap will appear once the bot has at least 3 closed trades" />
@@ -2345,7 +2345,7 @@ function PerformanceAttributionTreemap({ trades }: { trades: TradeRecord[] }) {
   const totalPnl = data.reduce((s, d) => s + d.pnl, 0);
 
   return (
-    <div className="card-hover" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>
         Performance Attribution Treemap
       </div>
