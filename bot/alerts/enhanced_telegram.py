@@ -62,7 +62,7 @@ def format_signal_telegram(
     """Format a trading signal as an actionable Telegram message."""
 
     # Direction emoji
-    dir_emoji = "LONG" if side == "BUY" else "SHORT"
+    dir_emoji = "LONG" if side in ("BUY", "LONG") else "SHORT"
 
     # Confidence tier
     if confidence >= 80 and num_agree >= 3:
