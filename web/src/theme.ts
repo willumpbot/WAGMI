@@ -1,7 +1,10 @@
 /**
  * WAGMI Design System — shared tokens for all pages.
- * Import C (colours), R (radii), S (shadows), F (font sizes).
+ * Import C (colours), R (radii), S (shadows), F (font sizes),
+ * A (animations), DARK (dark mode palette), COMPONENTS (component styles).
  */
+
+// ─── COLOR SYSTEM ─────────────────────────────────────────────────────────
 
 export const C = {
   // Brand
@@ -63,7 +66,32 @@ export const C = {
   brandMuted: 'rgba(99,102,241,.12)',
   warnMuted: 'rgba(234,179,8,.12)',
   infoMuted: 'rgba(37,99,235,.12)',
+
+  // Agent role colors
+  agentRegime: '#f59e0b',
+  agentTrade: '#3b82f6',
+  agentRisk: '#ef4444',
+  agentCritic: '#a78bfa',
+  agentLearning: '#10b981',
+  agentExit: '#ec4899',
+  agentScout: '#06b6d4',
+  agentQuant: '#06b6d4',
+  agentOverseer: '#8b5cf6',
 };
+
+// ─── DARK MODE PALETTE ────────────────────────────────────────────────────
+
+export const DARK = {
+  bg: '#0f0f1e',
+  surface: '#1a1a2e',
+  card: '#252541',
+  border: '#3a3a52',
+  text: '#e8e8f0',
+  textSub: '#a8a8b8',
+  muted: '#707080',
+};
+
+// ─── BORDER RADIUS ────────────────────────────────────────────────────────
 
 export const R = {
   xs: 4,
@@ -74,12 +102,19 @@ export const R = {
   pill: 999,
 } as const;
 
+// ─── SHADOWS ──────────────────────────────────────────────────────────────
+
 export const S = {
   sm: '0 1px 3px rgba(0,0,0,.25)',
   md: '0 4px 12px rgba(0,0,0,.3)',
   lg: '0 8px 28px rgba(0,0,0,.4)',
   glow: '0 0 20px rgba(99,102,241,.25)',
+  glowSuccess: '0 0 20px rgba(16,179,81,.2)',
+  glowDanger: '0 0 20px rgba(220,38,38,.2)',
+  lift: '0 12px 24px rgba(0,0,0,.35)',
 } as const;
+
+// ─── FONT SIZES ───────────────────────────────────────────────────────────
 
 export const F = {
   xs: 11,
@@ -93,10 +128,42 @@ export const F = {
   '4xl': 36,
 } as const;
 
-/** Transition shorthand */
+// ─── ANIMATIONS ───────────────────────────────────────────────────────────
+
+export const A = {
+  // Fade animations
+  fadeIn: 'all 0.4s ease-in',
+  fadeOut: 'all 0.3s ease-out',
+
+  // Movement animations
+  slideInUp: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+  slideInDown: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+  slideInLeft: 'transform 0.4s ease-out',
+  slideInRight: 'transform 0.4s ease-out',
+
+  // Scale & lift
+  scaleIn: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+  lift: 'transform 0.3s ease, box-shadow 0.3s ease',
+
+  // Pulse & glow
+  pulse: 'opacity 0.6s infinite',
+  glow: 'box-shadow 0.3s ease',
+  shimmer: 'background-position 2s infinite',
+
+  // Interactions
+  hover: 'all 0.2s ease',
+  active: 'transform 0.1s ease',
+
+  // Count animation (duration for JS)
+  countUp: 'duration 0.8s ease-out',
+} as const;
+
+// ─── TRANSITION SHORTHAND ─────────────────────────────────────────────────
+
 export const T = 'transition: all 0.18s ease;';
 
-/** Gradient tokens */
+// ─── GRADIENTS ────────────────────────────────────────────────────────────
+
 export const G = {
   brand: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
   brandSubtle: 'linear-gradient(135deg, rgba(99,102,241,.12) 0%, rgba(168,85,247,.08) 100%)',
@@ -106,6 +173,74 @@ export const G = {
   hero: 'linear-gradient(135deg, #0a0f1e 0%, #0d1529 50%, #0f172a 100%)',
   card: 'linear-gradient(145deg, #1a2236 0%, #151e30 100%)',
 } as const;
+
+// ─── COMPONENT STYLES ─────────────────────────────────────────────────────
+
+export const COMPONENTS = {
+  // Card hover state
+  cardHover: {
+    background: C.surfaceHover,
+    boxShadow: S.lift,
+    transform: 'translateY(-2px)',
+    transition: A.lift,
+  },
+
+  // Button base
+  buttonBase: {
+    padding: '10px 16px',
+    fontSize: F.sm,
+    fontWeight: 600,
+    borderRadius: R.md,
+    border: 'none',
+    cursor: 'pointer',
+    transition: A.hover,
+  },
+
+  // Button primary
+  buttonPrimary: {
+    background: C.brand,
+    color: '#fff',
+    boxShadow: S.md,
+  },
+
+  // Button secondary
+  buttonSecondary: {
+    background: C.surface,
+    color: C.text,
+    border: `1px solid ${C.border}`,
+  },
+
+  // Badge
+  badge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '4px 10px',
+    borderRadius: R.pill,
+    fontSize: F.xs,
+    fontWeight: 600,
+    transition: A.hover,
+  },
+
+  // Progress bar
+  progressBar: {
+    height: 6,
+    borderRadius: R.pill,
+    background: C.border,
+    overflow: 'hidden',
+  },
+
+  // Stat block
+  statBlock: {
+    padding: '20px 24px',
+    background: C.card,
+    border: `1px solid ${C.border}`,
+    borderRadius: R.lg,
+    transition: A.lift,
+  },
+} as const;
+
+// ─── UTILITY FUNCTIONS ────────────────────────────────────────────────────
 
 /** Format a number as USD */
 export function fmtUsd(n: number | null | undefined, decimals = 2): string {
@@ -149,3 +284,35 @@ export function timeAgo(isoOrTs: string | number | null | undefined): string {
     return '';
   }
 }
+
+/** Get agent role color by name */
+export function agentColor(role: string): string {
+  const roleMap: Record<string, string> = {
+    regime: C.agentRegime,
+    trade: C.agentTrade,
+    risk: C.agentRisk,
+    critic: C.agentCritic,
+    learning: C.agentLearning,
+    exit: C.agentExit,
+    scout: C.agentScout,
+    quant: C.agentQuant,
+    overseer: C.agentOverseer,
+  };
+  return roleMap[role.toLowerCase()] || C.muted;
+}
+
+/** Get decision color (proceed/skip/flip/veto) */
+export function decisionColor(action: string): string {
+  const actionMap: Record<string, string> = {
+    proceed: C.bull,
+    go: C.bull,
+    skip: C.muted,
+    flat: C.muted,
+    flip: C.warn,
+    reverse: C.warn,
+    veto: C.purple,
+    blocked: C.bear,
+  };
+  return actionMap[action.toLowerCase()] || C.muted;
+}
+
