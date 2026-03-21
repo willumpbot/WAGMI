@@ -2,9 +2,12 @@
 
 ## Overview
 
-WAGMI is an **autonomous AI trading system** with a 6-agent specialized brain that continuously discovers and exploits profitable trading edges.
+WAGMI is an **autonomous AI trading system** powered by **two complementary agent systems**:
 
-**Key Innovation**: Single-signal trades (highest conviction) are systematically optimized by parallel AI agents, improving win rates 3-8% within 4 weeks.
+1. **9-Agent Core Pipeline** — Real-time trading decisions (Regime → Trade → Risk → Critic → Learning/Exit/Scout + Overseer/Quant)
+2. **6-Agent Swarm Optimizer** — Daily offline optimization of single-signal trades (Entry Optimizer, Exit Specialist, Sizing Specialist, etc.)
+
+**Key Innovation**: Real-time AI reasoning pipeline makes informed trading decisions while daily swarm optimizer discovers improvements, improving win rates 3-8% within 4 weeks.
 
 **Status**: Phase 2 (Live Deployment Ready)
 
@@ -12,10 +15,11 @@ WAGMI is an **autonomous AI trading system** with a 6-agent specialized brain th
 
 ## Quick Links
 
-- **[System Overview](./system-overview.md)** - What is WAGMI?
+- **[AI System Architecture](./AI-SYSTEM-ARCHITECTURE.md)** ⭐ START HERE — Complete guide to 9-agent pipeline + 6-agent swarm
+- **[AI Pages Guide](./AI-PAGES-GUIDE.md)** — How to read the three dashboard pages (/ai-decisions, /agent-intelligence, /llm-audit)
+- **[System Overview](./system-overview.md)** - WAGMI philosophy and core concepts
 - **[Quick Start](./quick-start.md)** - Deploy to paper trading in 5 minutes
 - **[Architecture](./architecture.md)** - System design and components
-- **[Agents](./agents/)** - 6-agent specialization system
 - **[Performance](./performance.md)** - Expected results and ROI
 
 ---
@@ -62,20 +66,38 @@ WAGMI Trading Bot
 
 ---
 
-## The 6-Agent Specialized Brain
+## The Two Agent Systems
 
-Each agent is an expert in its domain:
+### System 1: 9-Agent Core Pipeline (Real-Time)
+Makes trading decisions every time a signal fires:
+
+| Agent | Domain | Model | Speed |
+|-------|--------|-------|-------|
+| **Regime Agent** | Market classification | Haiku | Fast |
+| **Trade Agent** | Direction decision | Sonnet | Fast |
+| **Risk Agent** | Position sizing | Haiku | Fast |
+| **Critic Agent** | Veto authority | Sonnet | Fast |
+| **Learning Agent** | Extract lessons | Haiku | Post-trade |
+| **Exit Agent** | Monitor open positions | Haiku | Hourly |
+| **Scout Agent** | Idle-time preparation | Haiku | Idle |
+| **Overseer Agent** | System health | Sonnet | Daily |
+| **Quant Agent** | Statistical analysis | Sonnet | Pre-trade |
+
+**Cost per trade**: ~$0.007 (Regime + Trade + Risk + Critic pipeline)
+
+### System 2: 6-Agent Swarm (Offline Optimization)
+Analyzes trades daily to find improvements:
 
 | Agent | Focus | Impact | Cost |
 |-------|-------|--------|------|
-| **Entry Optimizer** | Entry timing (market now vs pullback) | +2-8% WR | Sonnet |
-| **Exit Specialist** | TP/SL placement & exit strategy | +5-15% PF | Sonnet |
-| **Sizing Specialist** | Kelly Criterion & position sizing | +8-20% Sharpe | Haiku |
-| **Regime Tuner** | Regime-specific parameter optimization | +3-10% WR | Sonnet |
-| **Pattern Discoverer** | Mining hidden profitable patterns | +2-3 new/month | Sonnet |
-| **Multi-Signal Comparator** | Single vs ensemble trade-offs | +2-5% on high-conviction | Haiku |
+| **Entry Optimizer** | Entry timing optimization | +2-8% WR | Sonnet |
+| **Exit Specialist** | Exit strategy improvement | +5-15% PF | Sonnet |
+| **Sizing Specialist** | Position sizing tuning | +8-20% Sharpe | Haiku |
+| **Regime Tuner** | Regime-specific optimization | +3-10% WR | Sonnet |
+| **Pattern Discoverer** | Hidden edge discovery | +2-3 new/month | Sonnet |
+| **Multi-Signal Comparator** | Single vs ensemble analysis | +2-5% improvement | Haiku |
 
-**Total daily cost**: ~$0.03 per optimization cycle
+**Cost per optimization cycle**: ~$0.03 (runs daily at 00:00 UTC)
 
 ---
 

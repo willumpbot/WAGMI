@@ -1,3 +1,13 @@
+/**
+ * /llm-audit — LLM Cost & Model Routing Audit
+ *
+ * Tracks LLM spending and optimizes model routing (Haiku/Sonnet/Opus).
+ * Shows cost per decision type, trigger×model matrix, and historical trends.
+ * Use this to understand where money is spent and find savings.
+ *
+ * Dashboard pages: /ai-decisions, /agent-intelligence, /llm-audit
+ * Full guide: docs/AI-PAGES-GUIDE.md
+ */
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';

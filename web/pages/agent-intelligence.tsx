@@ -1,8 +1,24 @@
 /**
  * /agent-intelligence — The Agent Brain Dashboard
  *
- * Shows per-agent performance, beliefs, calibration curves,
- * debate outcomes, and team-level analytics.
+ * Shows per-agent performance across 9 specialist agents:
+ * Regime, Trade, Risk, Critic, Learning, Exit, Scout, Overseer, Quant.
+ *
+ * Key metrics:
+ * - Accuracy by regime: How well does each agent perform in different markets?
+ * - Calibration curves: How well does the agent predict its own accuracy?
+ * - Team calibration: Is the whole system well-calibrated?
+ * - Recent debates: When agents strongly disagreed on decisions
+ * - Recent decisions: Last 5 decisions per agent with outcomes
+ *
+ * Use this to:
+ * - Find which agents are struggling (low accuracy)
+ * - Identify regime-specific weaknesses
+ * - Understand when agents disagree
+ * - Track learning progress over time
+ *
+ * Full guide: docs/AI-PAGES-GUIDE.md#page-2-agent-intelligence
+ * System architecture: docs/AI-SYSTEM-ARCHITECTURE.md
  */
 import React, { useEffect, useState, useMemo } from 'react';
 import Head from 'next/head';

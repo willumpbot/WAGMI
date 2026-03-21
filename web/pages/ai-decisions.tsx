@@ -2,8 +2,17 @@
  * /ai-decisions — The Decision Theater
  *
  * The flagship differentiator: real-time transparent AI reasoning stream.
- * Shows every LLM decision with the full agent chain, veto analysis,
- * and Critic accuracy grading. No competitor shows this.
+ * Shows every LLM decision with the full 9-agent pipeline (Regime→Trade→Risk→Critic),
+ * veto analysis, and confidence grading. Explains why the bot traded (or didn't).
+ *
+ * What to look for:
+ * - Agent Pipeline Flow: Did all agents run? Are they confident?
+ * - Recent Decisions feed: Why did the bot decide YES/NO/VETO?
+ * - Veto Reason Keywords: What causes most rejections?
+ * - Model Routing: Which models (Haiku/Sonnet/Opus) were used?
+ *
+ * Full guide: docs/AI-PAGES-GUIDE.md#page-1-ai-decisions
+ * System architecture: docs/AI-SYSTEM-ARCHITECTURE.md
  */
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import Head from 'next/head';

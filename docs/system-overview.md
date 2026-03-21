@@ -13,21 +13,71 @@ Most traders optimize manually. Most LLM systems ask "should I trade?" but don't
 
 ---
 
-## The Solution: Autonomous Brain Team
+## The Solution: Multi-Agent Autonomous Brain
 
-WAGMI is a **team of 6 specialized AI brains** that work together to:
+WAGMI is a **two-tier multi-agent AI system** that works together to:
 
+### Real-Time Tier (9 Agents)
+1. **Classify** market regime and directional bias
+2. **Form** trading theses with confluence scoring
+3. **Size** positions using Kelly Criterion
+4. **Veto** overconfident or risky decisions (Critic Agent)
+5. **Execute** or skip trades with full transparency
+
+### Optimization Tier (6 Agents)
 1. **Discover** what makes trades profitable
-2. **Test** improvements automatically
+2. **Test** improvements automatically (daily)
 3. **Apply** proven optimizations to live trading
 4. **Learn** from outcomes continuously
 5. **Scale** profitably as accuracy improves
 
-Think of it as hiring 6 expert traders who work 24/7, analyze your trades daily, and tell you exactly how to improve.
+Think of it as hiring 15 expert traders (9 on real-time decisions, 6 on overnight optimization) who work 24/7, make informed decisions, and tell you exactly how to improve.
 
 ---
 
-## Core Concept: Single-Signal Optimization
+**🎯 Want the full technical breakdown?** → Read **[AI System Architecture](./AI-SYSTEM-ARCHITECTURE.md)** for complete details on all 9+6 agents.
+
+---
+
+## Core Concept: Two-Tier Decision Making
+
+The 9-agent pipeline makes **real-time trading decisions** with full reasoning transparency. The 6-agent swarm then **discovers improvements overnight** by analyzing what actually works.
+
+### Real-Time Pipeline
+
+When a signal fires, the 9-agent pipeline decides in ~2 seconds:
+
+```
+Signal → Regime Classification → Trade Thesis → Risk Sizing → Critic Veto → Execute/Skip
+  ↓          ↓                      ↓             ↓              ↓
+Haiku      Forms opinion      Uses KellyCriterion   Final      Log decision
+         on market state       + portfolio risk    authority
+```
+
+All reasoning is logged and visible on the **[/ai-decisions page](/ai-decisions)**.
+
+### Offline Optimization
+
+After 7 days of trading, the 6-agent swarm wakes up:
+
+```
+Analyze: All single-signal trades from past week
+  ↓
+6 Agents think in parallel:
+  - "Entry timing could be better" → +6% win rate
+  - "Exits aren't optimal" → +12% profit factor
+  - "Position sizing too conservative" → +3% Sharpe
+  ↓
+Recommend top 3 improvements
+  ↓
+Apply best recommendations to live config
+  ↓
+Measure actual results over next week
+```
+
+---
+
+## Single-Signal Optimization Focus
 
 Most trading systems use **ensemble voting**:
 - Strategy A says: BUY

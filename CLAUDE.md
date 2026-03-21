@@ -1,7 +1,9 @@
 # CLAUDE.md — Project Guide for AI Assistants
 
 ## Project Overview
-**nunuIRL Trading Bot** — Autonomous crypto trading bot for Hyperliquid with LLM-powered decision making (Claude API), multi-strategy ensemble, multi-agent specialist system, and Telegram/Discord monitoring.
+**WAGMI Trading Bot** — Autonomous crypto trading bot for Hyperliquid with LLM-powered decision making (Claude API), multi-strategy ensemble, **9-agent specialist system** for real-time decisions, **6-agent swarm optimizer** for continuous improvement, and Telegram/Discord monitoring.
+
+📚 **Start here**: [AI System Architecture](./docs/AI-SYSTEM-ARCHITECTURE.md) explains both agent systems with full details.
 
 ## Architecture (key directories)
 ```
@@ -12,9 +14,10 @@ bot/                    # Main bot code (run from here: cd bot && python run.py 
   ├── strategies/       # 4 trading strategies + ensemble voting (weighted_veto mode)
   ├── llm/              # Claude AI meta-brain (50+ files)
   │   ├── decision_engine.py  # Monolithic LLM pipeline (snapshot → prompt → parse)
-  │   ├── agents/             # Multi-agent specialist system (5 agents)
-  │   │   ├── coordinator.py  # Agent pipeline orchestration
-  │   │   ├── prompts.py      # 5 specialist prompts (regime/trade/risk/critic/learning)
+  │   ├── agents/             # Multi-agent specialist system (9 core agents + 6 swarm optimizer)
+  │   │   ├── coordinator.py  # Core 9-agent pipeline orchestration (Regime→Trade→Risk→Critic→Learning/Exit/Scout/Overseer/Quant)
+  │   │   ├── prompts.py      # All agent system prompts (regime/trade/risk/critic/learning/exit/scout/overseer/quant)
+  │   │   ├── swarm_master.py # 6-agent offline optimizer (Entry Optimizer, Exit Specialist, Sizing Specialist, etc.)
   │   │   ├── base.py         # Agent types, configs, defaults
   │   │   ├── shared_context.py    # Shared reasoning framework
   │   │   ├── thought_protocol.py  # Structured OBSERVE→RECALL→REASON→DECIDE→JUSTIFY
