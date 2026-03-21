@@ -2,7 +2,9 @@
 
 import React, { useState, useId } from 'react';
 import Link from 'next/link';
-import { C, R, S, F, G } from '../src/theme';
+import { motion } from 'framer-motion';
+import { C, R, S, F, G, Glass, SP } from '../src/theme';
+import { staggerContainer, fadeUp } from '../src/animations';
 
 // ─── Accordion Card ───────────────────────────────────────────────────────────
 
@@ -22,9 +24,9 @@ function AccordionCard({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div
-      className="card-hover"
+      className="glass-card card-hover glass-noise"
       style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${open ? C.borderBright : C.border}`,
         borderRadius: R.lg,
         marginBottom: 12,
@@ -2128,7 +2130,7 @@ function GlossaryStats() {
           },
         ].map(stat => (
           <div key={stat.label} style={{
-            background: G.card,
+            ...Glass.card,
             border: `1px solid ${C.border}`,
             borderRadius: R.md,
             padding: '12px 16px',
@@ -2159,8 +2161,8 @@ function GlossaryStats() {
       </div>
 
       {/* ── Tag cloud ── */}
-      <div className="card-hover" style={{
-        background: G.card,
+      <div className="glass-card card-hover glass-noise" style={{
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 18px',
@@ -3487,9 +3489,12 @@ export default function Learn() {
   ];
 
   return (
-    <div>
+    <div className="bg-aurora" style={{ position: 'relative' }}>
+      <div className="floating-orb orb-brand" style={{ position: 'fixed', top: '10%', left: '5%' }} />
+      <div className="floating-orb orb-cyan" style={{ position: 'fixed', bottom: '15%', right: '10%' }} />
+
       {/* ── Header ───────────────────────────────────── */}
-      <div style={{ marginBottom: 28 }}>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
         <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           Knowledge Base
         </div>
@@ -3499,21 +3504,24 @@ export default function Learn() {
         <p style={{ margin: '6px 0 0', fontSize: F.sm, color: C.muted, maxWidth: 600 }}>
           Every signal explained. Every decision unpacked. The more you know, the better you&apos;ll trade.
         </p>
-      </div>
+      </motion.div>
 
       {/* ── Two-column layout: sidebar + content ─────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 40, alignItems: 'start' }} className="learn-layout">
 
         {/* ── Sticky sidebar ───────────────────────────── */}
         <aside
+          className="learn-sidebar glass-card glass-noise"
           style={{
+            ...Glass.card,
             position: 'sticky',
             top: 68,
             maxHeight: 'calc(100vh - 90px)',
             overflowY: 'auto',
             paddingBottom: 20,
+            borderRadius: R.lg,
+            padding: SP[4],
           }}
-          className="learn-sidebar"
         >
           <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 14, paddingLeft: 10 }}>
             Contents
@@ -3850,14 +3858,14 @@ export default function Learn() {
         <h2 style={{ margin: '0 0 16px', fontSize: F.xl, fontWeight: 700, color: C.text }}>How a Trade Flows</h2>
       </div>
 
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 12 }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 24px', marginBottom: 12 }}>
         <p style={{ margin: '0 0 20px', fontSize: F.sm, color: C.textSub }}>
           A signal must pass through 6 sequential gates before becoming a trade. If it fails any gate, it&apos;s rejected and logged.
         </p>
         <GateFlowDiagram />
       </div>
 
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 12 }}>After the Trade Opens</div>
         <div style={{ display: 'flex', gap: 0, overflowX: 'auto' }}>
           {[
@@ -3994,7 +4002,7 @@ export default function Learn() {
             width: '100%',
             maxWidth: 400,
             padding: '8px 14px',
-            background: G.card,
+            ...Glass.card,
             border: `1px solid ${C.border}`,
             borderRadius: R.md,
             color: C.text,
@@ -4007,7 +4015,7 @@ export default function Learn() {
       {/* ── Glossary Stats + Tag Cloud ── */}
       <GlossaryStats />
 
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.lg, overflow: 'hidden' }}>
         {filteredGlossary.length === 0 ? (
           <div style={{ padding: 24, textAlign: 'center', color: C.muted, fontSize: F.sm }}>No terms matching "{glossarySearch}"</div>
         ) : (

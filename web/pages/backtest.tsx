@@ -1,14 +1,19 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useId } from 'react';
-import { C, R, S, F, G, fmtUsd, fmtPct } from '../src/theme';
+import { motion } from 'framer-motion';
+import { C, R, S, F, G, Glass, SP, M, fmtUsd, fmtPct } from '../src/theme';
+import { fadeUp, staggerContainer, staggerContainerSlow } from '../src/animations';
 import { seededRand as mkSeededRand } from '../lib/fmt';
 import type { BacktestResult, BacktestRunMeta, BacktestJob } from '../src/types';
 import { resolveApiBase } from '../src/api';
-
-function Skeleton({ h = 16, w = '100%', style }: { h?: number; w?: string | number; style?: React.CSSProperties }) {
-  return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm, ...style }} />;
-}
+import { Skeleton } from '../components/ui/Skeleton';
+import { Card } from '../components/ui/Card';
+import { StatCard } from '../components/ui/StatCard';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { Grid } from '../components/ui/Stack';
+import { Badge } from '../components/ui/Badge';
+import { EmptyState } from '../components/ui/EmptyState';
 
 // ─── Equity Sparkline ─────────────────────────────────────────────────────────
 
@@ -45,16 +50,17 @@ function RunCard({ run, selected, onClick }: { run: BacktestRunMeta; selected: b
   const isPos = (run.total_return_pct ?? 0) >= 0;
 
   return (
-    <div
+    <motion.div
+      variants={fadeUp}
       onClick={onClick}
       style={{
-        background: selected ? C.surfaceHover : G.card,
-        border: `1px solid ${selected ? C.brand : C.border}`,
+        ...Glass.card,
+        border: `1px solid ${selected ? C.brand : 'rgba(255,255,255,0.06)'}`,
         borderRadius: R.md,
         padding: '12px 16px',
         cursor: 'pointer',
         transition: 'all 0.15s',
-        boxShadow: selected ? S.glow : 'none',
+        boxShadow: selected ? S.glow : S.glass,
         display: 'flex',
         alignItems: 'center',
         gap: 12,
@@ -82,7 +88,7 @@ function RunCard({ run, selected, onClick }: { run: BacktestRunMeta; selected: b
           <div style={{ fontSize: F.xs, color: C.muted }}>{(run.win_rate * 100).toFixed(0)}% WR</div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1013,7 +1019,7 @@ function MonteCarloForecast({ result }: { result: BacktestResult }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Based on current win rate &amp; avg win/loss — for illustration only
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg
           width="100%"
           viewBox={`0 0 ${W} ${H}`}
@@ -1147,7 +1153,7 @@ function ParameterSensitivityChart({ result }: { result?: BacktestResult | null 
             Parameter Sensitivity — How Return Changes
           </h3>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
           <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.muted }}>Awaiting backtest results</div>
           <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>Run a backtest to see parameter sensitivity analysis anchored to real return data.</div>
@@ -1212,7 +1218,7 @@ function ParameterSensitivityChart({ result }: { result?: BacktestResult | null 
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Shows relative direction of sensitivity — bars are anchored to actual return ({BASE_RETURN >= 0 ? '+' : ''}{BASE_RETURN.toFixed(1)}%) but offsets are illustrative shapes. Re-run backtest with different params for real sensitivity data.
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: W }}>
           {/* Title axis */}
           <text x={pad.l + LABEL_W} y={pad.t - 10} fontSize={8} fill={C.muted} fontWeight={600}>Return %</text>
@@ -1431,7 +1437,7 @@ function WalkForwardChart({ result }: { result?: BacktestResult | null }) {
           ? `Equity curve split into ${NUM_SEGS} equal time windows — shows whether returns are consistent across different periods`
           : 'Run a backtest to see real period-by-period return consistency'}
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: W }}>
           {/* Y-axis gridlines + labels */}
           {yTicks.map((tick) => (
@@ -1515,26 +1521,21 @@ function RunDetail({ result }: { result: BacktestResult }) {
       </div>
 
       {/* KPI grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, marginBottom: 20 }}>
-        {kpis.map(({ label, value, color }) => (
-          <div key={label} style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.md, padding: '12px 14px' }}>
-            <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>{label}</div>
-            <div style={{ fontSize: F.lg, fontWeight: 800, color }}>{value}</div>
-          </div>
-        ))}
-      </div>
+      <motion.div variants={staggerContainer} initial="hidden" animate="show">
+        <Grid minChildWidth={150} gap={3} style={{ marginBottom: 20 }}>
+          {kpis.map(({ label, value, color }) => (
+            <motion.div key={label} variants={fadeUp}>
+              <StatCard label={label} value={value} color={color} />
+            </motion.div>
+          ))}
+        </Grid>
+      </motion.div>
 
       {/* ── § Summary Scorecard ─────────────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-            Summary Scorecard
-          </span>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+        <SectionHeader label="Summary Scorecard" />
         <BacktestSummaryScorecard result={result} />
-      </div>
+      </motion.div>
 
       {/* ── § Equity Curve + RSI Subplot ────────────── */}
       {(result.trade_timeline ?? []).length > 1 && (() => {
@@ -1543,106 +1544,60 @@ function RunDetail({ result }: { result: BacktestResult }) {
         const equityValues: number[] = [eq];
         (result.trade_timeline ?? []).forEach((t) => { eq += t.pnl ?? 0; equityValues.push(eq); });
         return (
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <div style={{ flex: 1, height: 1, background: C.border }} />
-              <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                Equity Curve · Bollinger Bands · Trade Markers
-              </span>
-              <div style={{ flex: 1, height: 1, background: C.border }} />
-            </div>
-            <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
-              <EquityCurveChart trades={result.trade_timeline} startEquity={startEq} />
-              <RSISubplot values={equityValues} width={580} height={60} />
-            </div>
+          <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+            <SectionHeader label="Equity Curve · Bollinger Bands · Trade Markers" />
+            <Card glass>
+              <div style={{ padding: SP[4], overflowX: 'auto' }}>
+                <EquityCurveChart trades={result.trade_timeline} startEquity={startEq} />
+                <RSISubplot values={equityValues} width={580} height={60} />
+              </div>
+            </Card>
             <div style={{ fontSize: 10, color: C.muted, marginTop: 6 }}>
               Red shading = drawdown zones · BB bands = 20-period Bollinger (SMA±2σ) · RSI(14) subplot below · Trade markers: green dot = win, red dot = loss
             </div>
-          </div>
+          </motion.div>
         );
       })()}
 
       {/* ── § Confidence Intervals ──────────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-            Outcome Confidence Intervals
-          </span>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+        <SectionHeader label="Outcome Confidence Intervals" />
         <BacktestConfidenceIntervals result={result} />
-      </div>
+      </motion.div>
 
       {/* ── § Monte Carlo Forecast ──────────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-            Monte Carlo Forecast
-          </span>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+        <SectionHeader label="Monte Carlo Forecast" />
         <MonteCarloForecast result={result} />
-      </div>
+      </motion.div>
 
       {/* ── § Walk-Forward Validation ───────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-            Walk-Forward Validation
-          </span>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+        <SectionHeader label="Walk-Forward Validation" />
         <WalkForwardChart result={result} />
-      </div>
+      </motion.div>
 
       {/* ── § Parameter Sensitivity ─────────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-            Parameter Sensitivity
-          </span>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+        <SectionHeader label="Parameter Sensitivity" />
         <ParameterSensitivityChart result={result} />
-      </div>
+      </motion.div>
 
       {/* ── § Calendar View ─────────────────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-            Daily PnL Calendar
-          </span>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+        <SectionHeader label="Daily PnL Calendar" />
         <BacktestCalendarView result={result} />
-      </div>
+      </motion.div>
 
       {/* ── § Strategy Alpha Breakdown ──────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-            Strategy Alpha Breakdown
-          </span>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+        <SectionHeader label="Strategy Alpha Breakdown" />
         <StrategyAlphaChart result={result} />
-      </div>
+      </motion.div>
 
       {/* ── § Symbol Rotation + Exit Types ─────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-            Symbol Rotation &amp; Exit Types
-          </span>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+        <SectionHeader label="Symbol Rotation & Exit Types" />
         <SymbolRotationChart result={result} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, marginTop: 16, alignItems: 'start' }}>
           {result.by_symbol && Object.keys(result.by_symbol).length > 0 && (
@@ -1659,19 +1614,13 @@ function RunDetail({ result }: { result: BacktestResult }) {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* ── § Trade Log ─────────────────────────────── */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-          <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-            Trade Log · Best · Worst · Missed Signals
-          </span>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+        <SectionHeader label="Trade Log · Best · Worst · Missed Signals" />
         <TradeLog result={result} />
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -1728,7 +1677,7 @@ function TradeLog({ result }: { result: BacktestResult }) {
       {/* Best & Worst highlights */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Best trades */}
-        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+        <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.bull, marginBottom: 10 }}>🏆 Best Trades</div>
           {bestTrades.map((t, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: i < bestTrades.length - 1 ? `1px solid ${C.border}` : 'none' }}>
@@ -1753,7 +1702,7 @@ function TradeLog({ result }: { result: BacktestResult }) {
         </div>
 
         {/* Worst trades */}
-        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+        <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.bear, marginBottom: 10 }}>💀 Worst Trades</div>
           {worstTrades.map((t, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: i < worstTrades.length - 1 ? `1px solid ${C.border}` : 'none' }}>
@@ -1780,7 +1729,7 @@ function TradeLog({ result }: { result: BacktestResult }) {
 
       {/* Missed signals */}
       {sigFunnel && (
-        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+        <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.warn, marginBottom: 12 }}>⚠️ Signal Funnel — Why Trades Were Skipped</div>
 
           {/* Funnel flow */}
@@ -1831,7 +1780,7 @@ function TradeLog({ result }: { result: BacktestResult }) {
       )}
 
       {/* Full trade table */}
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>All Trades ({trades.length})</span>
           <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
@@ -1953,9 +1902,9 @@ function NewBacktestForm({ onJobStarted, apiBase }: { onJobStarted: (jobId: stri
         </button>
       ) : (
         <div
-          className="card-hover"
+          className="card-hover glass-noise"
           style={{
-            background: G.card,
+            ...Glass.crystal,
             border: `1px solid ${C.brand}40`,
             borderRadius: R.lg,
             padding: '20px',
@@ -2116,7 +2065,7 @@ function JobProgress({ jobId, apiBase, onDone }: { jobId: string; apiBase: strin
   const currentStep = steps.indexOf(job.status);
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 16 }}>
+    <div className="card-hover glass-noise" style={{ ...Glass.crystal, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>
           Backtest Running — {job.symbols}
@@ -2255,7 +2204,7 @@ function SymbolRotationChart({ result }: { result: BacktestResult }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>
         {SYMBOLS.map((s) => `${s}: ${symCounts[s]}`).join(' · ')} trades
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '12px 16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '12px 16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ display: 'block', minWidth: SVG_W }}>
 
           {/* Track backgrounds */}
@@ -2528,7 +2477,7 @@ function BacktestSummaryScorecard({ result }: { result: BacktestResult }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Letter grades for key performance metrics — weighted overall score
       </div>
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px' }}>
+      <div className="card-hover glass-noise" style={{ ...Glass.crystal, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px' }}>
 
         {/* Metric grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
@@ -2747,7 +2696,7 @@ function BacktestCalendarView({ result }: { result?: BacktestResult | null }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         {ec ? `${dateRange.length}-day backtest period — each cell = one trading day` : `${days}-day backtest · no equity curve data`}
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg width={SVG_W} height={SVG_H} style={{ display: 'block' }}>
           {months.map((month, mi) => {
             const gy = mi * ROW_H;
@@ -2870,7 +2819,7 @@ function StrategyAlphaChart({ result }: { result?: BacktestResult | null }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Cumulative alpha generated by each strategy over time
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg
           width="100%"
           viewBox={`0 0 ${W} ${H}`}
@@ -3096,7 +3045,7 @@ function BacktestConfidenceIntervals({ result }: { result?: BacktestResult | nul
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         10th / 50th / 90th percentile trade outcome bands with actual equity curve
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg
           width="100%"
           viewBox={`0 0 ${W} ${H}`}
@@ -3296,9 +3245,9 @@ export default function Backtest() {
   };
 
   return (
-    <div>
+    <motion.div className="bg-aurora" style={{ position: 'relative' }} variants={staggerContainerSlow} initial="hidden" animate="show">
       {/* ── Header ───────────────────────────────────── */}
-      <div style={{ marginBottom: 24 }}>
+      <motion.div variants={fadeUp} style={{ marginBottom: 24 }}>
         <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           Strategy Testing
         </div>
@@ -3308,7 +3257,7 @@ export default function Backtest() {
         <p style={{ margin: '6px 0 0', fontSize: F.sm, color: C.muted }}>
           Browse all backtest runs or test new symbol/timeframe combinations. Existing results are never modified.
         </p>
-      </div>
+      </motion.div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 24, alignItems: 'start' }}>
         {/* ── Left: run list + form ─────────────── */}
@@ -3322,29 +3271,16 @@ export default function Backtest() {
           <NewBacktestForm apiBase={apiBase} onJobStarted={setActiveJobId} />
 
           {/* Run list header */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            marginBottom: 10, marginTop: 4,
-          }}>
-            <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7 }}>
-              Saved Runs
-            </div>
-            <div style={{
-              fontSize: F.xs, fontWeight: 700, color: C.brand,
-              background: C.brand + '18', borderRadius: R.pill,
-              padding: '2px 8px',
-            }}>
-              {runs.length}
-            </div>
-          </div>
+          <SectionHeader
+            label="Saved Runs"
+            action={<Badge variant="brand">{runs.length}</Badge>}
+          />
           {loadingRuns ? (
-            Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ marginBottom: 8 }}><Skeleton h={72} /></div>)
+            Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ marginBottom: 8 }}><Skeleton variant="card" h={72} /></div>)
           ) : runs.length === 0 ? (
-            <div style={{ padding: 16, background: G.card, borderRadius: R.md, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted, fontSize: F.sm }}>
-              No runs yet. Run your first backtest above.
-            </div>
+            <EmptyState icon="🧪" title="No runs yet" subtitle="Run your first backtest above to see results here." />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '60vh', overflowY: 'auto', paddingRight: 2 }}>
+            <motion.div variants={staggerContainerSlow} initial="hidden" animate="show" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '60vh', overflowY: 'auto', paddingRight: 2 }}>
               {runs.map((run) => (
                 <RunCard
                   key={run.id}
@@ -3353,7 +3289,7 @@ export default function Backtest() {
                   onClick={() => setSelectedId(run.id)}
                 />
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
 
@@ -3361,10 +3297,9 @@ export default function Backtest() {
         <div>
           {/* Compare dropdown */}
           {runs.length >= 2 && selectedResult && (
-            <div className="card-hover" style={{
-              marginBottom: 20, padding: '12px 16px',
-              background: G.card, border: `1px solid ${C.border}`,
-              borderRadius: R.lg, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+            <Card glass style={{
+              marginBottom: 20, padding: `${SP[3]}px ${SP[4]}px`,
+              display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
             }}>
               <span style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 Compare run:
@@ -3397,7 +3332,7 @@ export default function Backtest() {
                   Clear
                 </button>
               )}
-            </div>
+            </Card>
           )}
 
           {/* Comparison radar + delta table */}
@@ -3421,29 +3356,27 @@ export default function Backtest() {
           {/* Detail panels (side by side if comparing) */}
           <div style={{ display: 'grid', gridTemplateColumns: compareResult ? '1fr 1fr' : '1fr', gap: 16 }}>
             {/* Selected run */}
-            <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px' }}>
+            <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px` }}>
               {loadingDetail ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <Skeleton h={24} w="60%" />
+                  <Skeleton w="60%" h={24} />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                    {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} h={60} />)}
+                    {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} variant="card" h={60} />)}
                   </div>
                 </div>
               ) : selectedResult ? (
                 <RunDetail result={selectedResult} />
               ) : (
-                <div style={{ padding: 32, textAlign: 'center', color: C.muted, fontSize: F.sm }}>
-                  Select a run from the left to view details.
-                </div>
+                <EmptyState icon="📊" title="Select a run" subtitle="Select a run from the left to view details." />
               )}
-            </div>
+            </Card>
 
             {/* Compare run */}
             {compareResult && (
-              <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.brand}40`, borderRadius: R.lg, padding: '20px 24px' }}>
+              <Card glass hover accent={C.brand} style={{ padding: `${SP[5]}px ${SP[6]}px` }}>
                 <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 12 }}>Comparison</div>
                 <RunDetail result={compareResult} />
-              </div>
+              </Card>
             )}
           </div>
         </div>
@@ -3455,6 +3388,6 @@ export default function Backtest() {
           div[style*="300px 1fr"] { grid-template-columns: 1fr !important; }
         }
       ` }} />
-    </div>
+    </motion.div>
   );
 }

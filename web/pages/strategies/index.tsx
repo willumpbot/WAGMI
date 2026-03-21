@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { C, R, S, F, G, fmtUsd, timeAgo } from '../../src/theme';
+import { motion } from 'framer-motion';
+import { C, R, S, F, G, Glass, SP, fmtUsd, timeAgo } from '../../src/theme';
+import { staggerContainer, orchestratedContainer, fadeUp, hoverGlow, magneticHover } from '../../src/animations';
 import { fmtPnlK } from '../../lib/fmt';
 
 type OpenPosition = {
@@ -27,7 +29,7 @@ type Strategy = {
 
 function RegimeStrategyMatrix() {
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.crystal, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Strategy–Regime Compatibility</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>
         How well each strategy performs in each market regime
@@ -41,7 +43,7 @@ import { resolveApiBase } from '../../src/api';
 
 function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, ...Glass.card, borderRadius: R.lg, color: C.muted }}>
       <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
       {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
@@ -173,11 +175,10 @@ function StrategyComparisonChart({ strategies }: { strategies: Strategy[] }) {
 
   return (
     <div style={{
-      background: C.surface,
-      border: `1px solid ${C.border}`,
+      ...Glass.card,
       borderRadius: R.lg,
       padding: '16px 18px 12px',
-      boxShadow: S.sm,
+      boxShadow: S.ambient,
     }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>
         Strategy PnL Comparison

@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { motion } from 'framer-motion';
 import type { LlmDecision, LlmMarketView, ActivityEvent, BacktestResult } from '../src/types';
-import { C, R, F, G, fmtUsd as themeFmtUsd } from '../src/theme';
+import { C, R, F, G, S, Glass, SP, fmtUsd as themeFmtUsd } from '../src/theme';
+import { staggerContainer, fadeUp, hoverGlow } from '../src/animations';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -94,7 +96,7 @@ function timeAgo(isoOrTs: string | number | null): string {
 function LlmBrainBanner({ view }: { view: LlmMarketView | null }) {
   if (!view) {
     return (
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: C.muted }}>
+      <div className="card-hover glass-noise" style={{ ...Glass.crystal, borderRadius: 10, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: C.muted }}>
         LLM Brain View loading...
       </div>
     );
@@ -323,7 +325,7 @@ function TradingViewChart({ symbol }: { symbol: string }) {
 function ActivityFeed({ events }: { events: ActivityEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.md, padding: '16px 20px', marginBottom: 24 }}>
+      <div className="card-hover glass-noise" style={{ ...Glass.crystal, borderRadius: R.md, padding: '16px 20px', marginBottom: 24 }}>
         <div style={{ fontSize: F.sm, fontWeight: 600, color: C.text, marginBottom: 6 }}>Bot Activity</div>
         <div style={{ fontSize: F.sm, color: C.muted }}>
           No activity yet. Start the bot with <code style={{ background: C.surfaceHover, padding: '1px 4px', borderRadius: R.xs, color: C.brand }}>LLM_MODE=1</code> to see live decisions here.
@@ -352,7 +354,7 @@ function ActivityFeed({ events }: { events: ActivityEvent[] }) {
             style={{
               padding: '12px 16px',
               borderBottom: i < events.length - 1 ? `1px solid ${C.border}` : 'none',
-              background: G.card,
+              ...Glass.card,
             }}
           >
             {/* Header row */}
@@ -453,9 +455,9 @@ function RiskCalculator({ entry, sl, symbol }: { entry: number; sl: number; symb
 
   return (
     <div
-      className="card-hover"
+      className="card-hover glass-noise"
       style={{
-        background: G.card,
+        ...Glass.crystal,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -642,11 +644,11 @@ function CopyTradeCard({
 
   return (
     <div
-      className="card-hover"
+      className="card-hover glass-noise"
       style={{
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
-        background: G.card,
+        ...Glass.crystal,
         marginBottom: 32,
         overflow: 'hidden',
       }}
@@ -1428,7 +1430,7 @@ function TradeSetupQualityMatrix() {
   const svgH = COL_LABEL_H + regimes.length * (CELL_H + PAD) + PAD;
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
+    <div className="card-hover glass-noise" style={{ ...Glass.crystal, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
       <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Quality Matrix</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
         Expected signal quality (0–100) by market <strong style={{ color: C.textSub }}>regime</strong> (rows) ×{' '}
@@ -1567,7 +1569,7 @@ function StandaloneRiskCalc({ defaultEntry, defaultSl }: { defaultEntry?: number
   };
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, marginBottom: 24, overflow: 'hidden' }}>
+    <div className="card-hover glass-noise" style={{ ...Glass.crystal, borderRadius: R.lg, marginBottom: 24, overflow: 'hidden' }}>
       <button
         onClick={() => setShow(v => !v)}
         style={{
@@ -1719,7 +1721,7 @@ function MultiTimeframeConfluence() {
   };
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
+    <div className="card-hover glass-noise" style={{ ...Glass.crystal, borderRadius: R.lg, padding: '16px 20px', marginBottom: 24 }}>
       <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Multi-Timeframe Confluence
       </div>
@@ -1875,7 +1877,7 @@ function OrderBookDepthChart() {
   return (
     <div
       style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -2166,7 +2168,7 @@ function StrategyConsensusGauge() {
   return (
     <div
       style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 20px',
@@ -2497,7 +2499,9 @@ export default function CopyTrade() {
     : null;
 
   return (
-    <div>
+    <div className="bg-aurora" style={{ position: 'relative' }}>
+      <div className="floating-orb orb-brand" style={{ position: 'fixed', top: '8%', right: '12%' }} />
+      <div className="floating-orb orb-cyan" style={{ position: 'fixed', bottom: '15%', left: '8%' }} />
       {/* Page Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: F['3xl'], fontWeight: 900, marginBottom: 8, color: C.text, letterSpacing: -0.5 }}>Copy <span className="gradient-text">Trade</span></h1>
@@ -2547,7 +2551,7 @@ export default function CopyTrade() {
         /* Loading skeleton */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 32 }}>
           {['BTC', 'SOL', 'HYPE'].map((sym) => (
-            <div key={sym} style={{ border: `1px solid ${C.border}`, borderRadius: R.lg, background: G.card, overflow: 'hidden' }}>
+            <div key={sym} style={{ border: `1px solid ${C.border}`, borderRadius: R.lg, ...Glass.card, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, background: C.surfaceHover, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                   <div style={{ width: 64, height: 28, background: C.border, borderRadius: R.sm, animation: 'pulse 1.4s ease-in-out infinite' }} />
@@ -2570,7 +2574,7 @@ export default function CopyTrade() {
           ))}
         </div>
       ) : orderedSignals.length === 0 ? (
-        <div style={{ padding: '48px 40px', textAlign: 'center', background: G.card, border: `2px dashed ${C.border}`, borderRadius: R.xl, marginBottom: 32 }}>
+        <div style={{ padding: '48px 40px', textAlign: 'center', ...Glass.card, border: `2px dashed ${C.border}`, borderRadius: R.xl, marginBottom: 32 }}>
           <div style={{ width: 48, height: 48, borderRadius: '50%', background: C.brandMuted, border: `1px solid ${C.brand}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 22 }}>📡</div>
           <div style={{ fontSize: F.xl, fontWeight: 800, color: C.text, marginBottom: 8 }}>Waiting for first scan</div>
           <div style={{ color: C.muted, fontSize: F.sm, marginBottom: 20 }}>The bot analyzes every 15 minutes. First result arrives within 60 seconds of starting.</div>
@@ -2600,7 +2604,7 @@ export default function CopyTrade() {
               style={{
                 border: `1px solid ${C.border}`,
                 borderRadius: R.lg,
-                background: G.card,
+                ...Glass.card,
                 padding: 32,
                 marginBottom: 32,
                 textAlign: 'center',

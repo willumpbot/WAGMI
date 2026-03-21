@@ -1,24 +1,20 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useMemo, useId } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { C, G, R, F, S, fmtUsd, fmtPct } from '../src/theme';
+import { C, G, R, F, S, Glass, SP, M, fmtUsd, fmtPct } from '../src/theme';
+import { fadeUp, staggerContainer, staggerContainerSlow } from '../src/animations';
+import { GeometricBG } from '../components/ui/GeometricBG';
 import type { TradeRecord, TradeHistoryResponse } from '../src/types';
 import { resolveApiBase } from '../src/api';
-
-function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
-  return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
-}
-
-function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
-      <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
-      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
-      {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
-    </div>
-  );
-}
+import { Skeleton } from '../components/ui/Skeleton';
+import { Card } from '../components/ui/Card';
+import { StatCard } from '../components/ui/StatCard';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { Badge } from '../components/ui/Badge';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Grid } from '../components/ui/Stack';
 
 function linearRegression(points: { x: number; y: number }[]): { slope: number; intercept: number } {
   const n = points.length;
@@ -578,7 +574,7 @@ function HourOfDayWinRate({ trades }: { trades: TradeRecord[] }) {
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 6 }}>
           Win Rate by Hour of Day (UTC)
         </div>
-        <AwaitingResults label="Awaiting trade data" sub="Hour-of-day win rate will populate once the bot has closed trades with timestamp data" />
+        <EmptyState icon="⏳" title="Awaiting trade data" subtitle="Hour-of-day win rate will populate once the bot has closed trades with timestamp data" />
       </div>
     );
   }
@@ -696,7 +692,7 @@ function RiskRewardScatter({ trades }: { trades: TradeRecord[] }) {
   );
 
   if (plotTrades.length < 3) {
-    return <AwaitingResults label="Awaiting signal data" sub="Signal confidence vs R:R scatter will appear once there are at least 3 trades with confidence and R:R data" />;
+    return <EmptyState icon="⏳" title="Awaiting signal data" subtitle="Signal confidence vs R:R scatter will appear once there are at least 3 trades with confidence and R:R data" />;
   }
 
   const W = 500, H = 200;
@@ -929,7 +925,7 @@ function RegimePerformanceMatrix({ trades }: { trades: TradeRecord[] }) {
   const activeRegimes = REGIMES.filter((r) => stats[r].total > 0);
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+    <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ ...Glass.crystal, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Performance by Regime</div>
         <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>How the bot performs in each market regime — hover cells for detail</div>
@@ -1006,7 +1002,7 @@ function RegimePerformanceMatrix({ trades }: { trades: TradeRecord[] }) {
           </tbody>
         </table>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1076,7 +1072,7 @@ function TradeDurationHistogram({ trades }: { trades: TradeRecord[] }) {
   }, 0);
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+    <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ ...Glass.crystal, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Trade Duration Distribution</div>
         <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>How long trades are held — stacked by win (green) / loss (red)</div>
@@ -1196,7 +1192,7 @@ function TradeDurationHistogram({ trades }: { trades: TradeRecord[] }) {
           <span style={{ fontSize: 11, color: C.warn }}>★</span> Best win rate bucket
         </span>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1255,7 +1251,7 @@ function MultiSymbolPnlChart({ trades }: { trades: TradeRecord[] }) {
   const yTicks = [minY, 0, maxY / 2, maxY].filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+    <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ ...Glass.crystal, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <div>
           <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Cumulative P&L by Symbol</div>
@@ -1329,7 +1325,7 @@ function MultiSymbolPnlChart({ trades }: { trades: TradeRecord[] }) {
         {/* X axis label */}
         <text x={pad.l + iW / 2} y={H - 4} textAnchor="middle" fontSize={8} fill={C.muted}>Trade sequence →</text>
       </svg>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1349,10 +1345,12 @@ function TradeCard({ trade }: { trade: TradeRecord }) {
   };
 
   return (
-    <div
-      className="card-hover fade-in"
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      animate="show"
       style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${win ? C.bull + '30' : C.bear + '20'}`,
         borderLeft: `3px solid ${win ? C.bull : C.bear}`,
         borderRadius: R.md,
@@ -1371,25 +1369,13 @@ function TradeCard({ trade }: { trade: TradeRecord }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 }}>
           <span style={{ fontSize: F.sm, fontWeight: 800, color: C.text, minWidth: 40 }}>{trade.symbol}</span>
-          <span style={{
-            fontSize: F.xs, fontWeight: 700, padding: '1px 7px', borderRadius: R.pill,
-            background: trade.side === 'BUY' ? C.bull + '18' : C.bear + '18',
-            color: trade.side === 'BUY' ? C.bullMid : C.bearMid,
-          }}>{trade.side}</span>
+          <Badge variant={trade.side === 'BUY' ? 'bull' : 'bear'}>{trade.side}</Badge>
           <span className="num" style={{ fontSize: F.sm, fontWeight: 700, color: win ? C.bull : C.bear, minWidth: 72 }}>
             {fmtUsd(trade.pnl)}
           </span>
-          <span style={{
-            fontSize: F.xs, fontWeight: 700, padding: '1px 7px', borderRadius: R.pill,
-            background: win ? C.bull + '18' : C.bear + '18',
-            color: win ? C.bullMid : C.bearMid,
-          }}>{trade.outcome}</span>
+          <Badge variant={win ? 'bull' : 'bear'}>{trade.outcome}</Badge>
           {trade.close_reason && (
-            <span style={{
-              fontSize: F.xs, fontWeight: 700, padding: '1px 7px', borderRadius: R.pill,
-              background: (closeColor[trade.close_reason] || C.muted) + '18',
-              color: closeColor[trade.close_reason] || C.muted,
-            }}>{trade.close_reason}</span>
+            <Badge variant={trade.close_reason === 'SL' ? 'bear' : trade.close_reason.startsWith('TP') ? 'bull' : 'info'}>{trade.close_reason}</Badge>
           )}
           {trade.duration_h != null && (
             <span style={{ fontSize: F.xs, color: C.muted }}>{trade.duration_h.toFixed(1)}h</span>
@@ -1453,7 +1439,7 @@ function TradeCard({ trade }: { trade: TradeRecord }) {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -1550,7 +1536,7 @@ function SignalQualityFunnel({ trades }: { trades: TradeRecord[] }) {
   }
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+    <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ ...Glass.crystal, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Signal Quality Funnel</h2>
         <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -1676,7 +1662,7 @@ function SignalQualityFunnel({ trades }: { trades: TradeRecord[] }) {
           </g>
         </svg>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1879,7 +1865,7 @@ function TradeClustersChart({ trades }: { trades: TradeRecord[] }) {
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 6 }}>
           Trade Cluster Map — When Does Bot Win?
         </div>
-        <AwaitingResults label="Awaiting trade data" sub="Trade cluster map will populate once the bot has closed trades with timestamp data" />
+        <EmptyState icon="⏳" title="Awaiting trade data" subtitle="Trade cluster map will populate once the bot has closed trades with timestamp data" />
       </div>
     );
   }
@@ -2342,7 +2328,7 @@ function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
   }
 
   if (!hasData) {
-    return <AwaitingResults label="Awaiting trade data" sub="Win probability by context will appear once there are at least 5 trades" />;
+    return <EmptyState icon="⏳" title="Awaiting trade data" subtitle="Win probability by context will appear once there are at least 5 trades" />;
   }
 
   const rows: { label: string; pct: number | null }[] = [
@@ -2375,7 +2361,7 @@ function OutcomeProbabilityBars({ trades }: { trades: TradeRecord[] }) {
   const resolved = rows.filter((r) => r.pct != null) as { label: string; pct: number }[];
 
   if (resolved.length === 0) {
-    return <AwaitingResults label="Awaiting signal data" sub="Not enough data per condition yet to compute conditional win rates" />;
+    return <EmptyState icon="⏳" title="Awaiting signal data" subtitle="Not enough data per condition yet to compute conditional win rates" />;
   }
 
   // Sort descending by probability
@@ -2558,7 +2544,7 @@ function ExitTimingHeatmap({ trades }: { trades: TradeRecord[] }) {
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
           Exit Timing — Average P&amp;L by Hour &amp; Day
         </div>
-        <AwaitingResults label="Awaiting trade data" sub="Exit timing heatmap will populate once the bot has closed trades with exit timestamp data" />
+        <EmptyState icon="⏳" title="Awaiting trade data" subtitle="Exit timing heatmap will populate once the bot has closed trades with exit timestamp data" />
       </div>
     );
   }
@@ -2769,7 +2755,7 @@ function LeveragePnlChart({ trades }: { trades: TradeRecord[] }) {
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
           Performance by Leverage Tier
         </div>
-        <AwaitingResults label="Awaiting trade data" sub="Performance by leverage tier will appear once there are at least 3 trades per tier" />
+        <EmptyState icon="⏳" title="Awaiting trade data" subtitle="Performance by leverage tier will appear once there are at least 3 trades per tier" />
       </div>
     );
   }
@@ -3090,9 +3076,11 @@ export default function Forensics() {
   }, [filtered]);
 
   return (
-    <div>
+    <motion.div className="bg-aurora" style={{ position: 'relative' }} variants={staggerContainerSlow} initial="hidden" animate="show">
+      <GeometricBG variant="diamond" opacity={0.02} />
+      <div className="floating-orb orb-cyan" style={{ position: 'fixed', top: '15%', right: '10%' }} />
       {/* Header */}
-      <div className="fade-in" style={{ marginBottom: 28 }}>
+      <motion.div variants={fadeUp} style={{ marginBottom: 28 }}>
         <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
           Deep Analysis
         </div>
@@ -3102,128 +3090,127 @@ export default function Forensics() {
         <p style={{ margin: '6px 0 0', fontSize: F.sm, color: C.muted, maxWidth: 680 }}>
           Cross-tabulate every trade — filter by regime, strategy, LLM action, and outcome. See where the bot&apos;s edge actually comes from.
         </p>
-      </div>
+      </motion.div>
 
       {/* Stat Bar */}
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 28 }}>
-          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} h={72} />)}
-        </div>
+        <Grid minChildWidth={180} gap={3} style={{ marginBottom: 28 }}>
+          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} variant="card" h={72} />)}
+        </Grid>
       ) : stats ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 28 }}>
-          {[
-            {
-              label: 'Avg R/R (Wins)',
-              value: stats.avgRR > 0 ? `${stats.avgRR.toFixed(2)}:1` : '—',
-              sub: 'Average reward on winning trades',
-              color: stats.avgRR >= 1.5 ? C.bull : C.warn,
-            },
-            {
-              label: 'High Conf Accuracy',
-              value: stats.confAccuracy != null ? `${(stats.confAccuracy * 100).toFixed(0)}%` : '—',
-              sub: `${stats.highConfTrades} trades ≥65% confidence`,
-              color: stats.confAccuracy != null && stats.confAccuracy >= 0.65 ? C.bull : C.warn,
-            },
-            {
-              label: 'Win Hold Duration',
-              value: `${stats.avgWinDur.toFixed(1)}h`,
-              sub: `vs ${stats.avgLossDur.toFixed(1)}h for losses`,
-              color: C.text,
-            },
-            {
-              label: 'Fee Drag',
-              value: stats.feeDrag > 0 ? `${stats.feeDrag.toFixed(1)}%` : '—',
-              sub: 'Fees as % of gross profit',
-              color: stats.feeDrag > 15 ? C.bear : stats.feeDrag > 8 ? C.warn : C.bull,
-            },
-            {
-              label: 'Best Regime',
-              value: stats.bestRegime ? `${(stats.bestRegime[1].wins / stats.bestRegime[1].total * 100).toFixed(0)}%` : '—',
-              sub: stats.bestRegime ? `${stats.bestRegime[0]} (${stats.bestRegime[1].total} trades)` : 'Not enough data',
-              color: C.bull,
-            },
-            {
-              label: 'LLM Accuracy',
-              value: stats.llmAccuracy != null ? `${(stats.llmAccuracy * 100).toFixed(0)}%` : '—',
-              sub: 'Win rate when LLM says Proceed',
-              color: stats.llmAccuracy != null && stats.llmAccuracy >= 0.65 ? C.bull : C.warn,
-            },
-          ].map(({ label, value, sub, color }) => (
-            <div key={label} className="card-hover" style={{ padding: '14px 16px', background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, boxShadow: '0 1px 3px rgba(0,0,0,.2)', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: color ?? C.brand, borderRadius: `${R.lg}px ${R.lg}px 0 0` }} />
-              <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 4 }}>{label}</div>
-              <div className="num" style={{ fontSize: 22, fontWeight: 800, color, marginBottom: 2 }}>{value}</div>
-              <div style={{ fontSize: 10, color: C.faint }}>{sub}</div>
-            </div>
-          ))}
-        </div>
+        <motion.div variants={staggerContainer} initial="hidden" animate="show">
+          <Grid minChildWidth={180} gap={3} style={{ marginBottom: 28 }}>
+            {[
+              {
+                label: 'Avg R/R (Wins)',
+                value: stats.avgRR > 0 ? `${stats.avgRR.toFixed(2)}:1` : '—',
+                sub: 'Average reward on winning trades',
+                color: stats.avgRR >= 1.5 ? C.bull : C.warn,
+              },
+              {
+                label: 'High Conf Accuracy',
+                value: stats.confAccuracy != null ? `${(stats.confAccuracy * 100).toFixed(0)}%` : '—',
+                sub: `${stats.highConfTrades} trades ≥65% confidence`,
+                color: stats.confAccuracy != null && stats.confAccuracy >= 0.65 ? C.bull : C.warn,
+              },
+              {
+                label: 'Win Hold Duration',
+                value: `${stats.avgWinDur.toFixed(1)}h`,
+                sub: `vs ${stats.avgLossDur.toFixed(1)}h for losses`,
+                color: C.text,
+              },
+              {
+                label: 'Fee Drag',
+                value: stats.feeDrag > 0 ? `${stats.feeDrag.toFixed(1)}%` : '—',
+                sub: 'Fees as % of gross profit',
+                color: stats.feeDrag > 15 ? C.bear : stats.feeDrag > 8 ? C.warn : C.bull,
+              },
+              {
+                label: 'Best Regime',
+                value: stats.bestRegime ? `${(stats.bestRegime[1].wins / stats.bestRegime[1].total * 100).toFixed(0)}%` : '—',
+                sub: stats.bestRegime ? `${stats.bestRegime[0]} (${stats.bestRegime[1].total} trades)` : 'Not enough data',
+                color: C.bull,
+              },
+              {
+                label: 'LLM Accuracy',
+                value: stats.llmAccuracy != null ? `${(stats.llmAccuracy * 100).toFixed(0)}%` : '—',
+                sub: 'Win rate when LLM says Proceed',
+                color: stats.llmAccuracy != null && stats.llmAccuracy >= 0.65 ? C.bull : C.warn,
+              },
+            ].map(({ label, value, sub, color }) => (
+              <motion.div key={label} variants={fadeUp}>
+                <StatCard label={label} value={value} sub={sub} color={color} />
+              </motion.div>
+            ))}
+          </Grid>
+        </motion.div>
       ) : !loading ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: C.textSub, marginBottom: 28 }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🔬</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: C.text, marginBottom: 8 }}>No trade data to analyze</div>
-          <div style={{ fontSize: F.sm, color: C.muted, marginBottom: 16 }}>Start paper trading to see forensic stats here.</div>
-          <a href="/results" style={{ fontSize: F.sm, padding: '8px 16px', borderRadius: R.md, background: C.brand, color: '#fff', fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
-            View Results →
-          </a>
+        <div style={{ marginBottom: 28 }}>
+          <EmptyState
+            icon="🔬"
+            title="No trade data to analyze"
+            subtitle="Start paper trading to see forensic stats here."
+            action={{ label: 'View Results →', onClick: () => { window.location.href = '/results'; } }}
+          />
         </div>
       ) : null}
 
       {/* ════════════════════════════════════════════════
           SECTION: Summary
           ════════════════════════════════════════════════ */}
-      <h2 className="section-label" style={{ marginTop: 0, marginBottom: 16 }}>
-        Summary
-      </h2>
+      <SectionHeader label="Summary" />
 
       {/* Signal Quality Funnel */}
       {!loading && <SignalQualityFunnel trades={filtered} />}
 
       {/* Confidence vs R/R Scatter */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Confidence vs R/R Achieved</h3>
-            <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
-              Does higher LLM confidence actually predict better outcomes? Green = WIN, Red = LOSS. Dashed line = regression.
+      <motion.div variants={fadeUp}>
+        <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Confidence vs R/R Achieved</h3>
+              <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+                Does higher LLM confidence actually predict better outcomes? Green = WIN, Red = LOSS. Dashed line = regression.
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 12, fontSize: F.xs }}>
+              <span><Badge variant="bull">WIN</Badge></span>
+              <span><Badge variant="bear">LOSS</Badge></span>
+              <span><Badge variant="brand">Trend</Badge></span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 12, fontSize: F.xs }}>
-            <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: C.bull, marginRight: 4 }} />WIN</span>
-            <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: C.bear, marginRight: 4 }} />LOSS</span>
-            <span><span style={{ display: 'inline-block', width: 16, height: 2, background: C.brand, marginRight: 4, verticalAlign: 'middle' }} />Trend</span>
-          </div>
-        </div>
-        {loading ? (
-          <Skeleton h={280} />
-        ) : (
-          <ConfScatterPlot trades={filtered} />
-        )}
-      </div>
+          {loading ? (
+            <Skeleton variant="chart" h={280} />
+          ) : (
+            <ConfScatterPlot trades={filtered} />
+          )}
+        </Card>
+      </motion.div>
 
       {/* Trade Waterfall */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
-        <div style={{ marginBottom: 14 }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Cumulative P&L Journey</h3>
-          <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
-            Each bar shows one trade&apos;s impact on running P&L. Green = profit, Red = loss. Final value shown at right.
+      <motion.div variants={fadeUp}>
+        <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
+          <div style={{ marginBottom: 14 }}>
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Cumulative P&L Journey</h3>
+            <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
+              Each bar shows one trade&apos;s impact on running P&L. Green = profit, Red = loss. Final value shown at right.
+            </div>
           </div>
-        </div>
-        {loading ? (
-          <Skeleton h={160} />
-        ) : (
-          <TradeWaterfall trades={filtered} />
-        )}
-      </div>
+          {loading ? (
+            <Skeleton variant="chart" h={160} />
+          ) : (
+            <TradeWaterfall trades={filtered} />
+          )}
+        </Card>
+      </motion.div>
 
       {/* ════════════════════════════════════════════════
           SECTION: Time Analysis
           ════════════════════════════════════════════════ */}
-      <h2 className="section-label" style={{ marginTop: 48, marginBottom: 16 }}>
-        Time Analysis
-      </h2>
+      <div style={{ marginTop: 48 }}><SectionHeader label="Time Analysis" /></div>
 
       {/* Hourly Win Rate */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Win Rate by Hour (UTC)</h3>
@@ -3244,14 +3231,14 @@ export default function Forensics() {
           </div>
         </div>
         {loading ? (
-          <Skeleton h={54} />
+          <Skeleton variant="chart" h={54} />
         ) : (
           <HourlyWinRate trades={filtered} />
         )}
-      </div>
+      </Card>
 
       {/* Hour of Day Win Rate — entry_timestamp_ms based */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Hour-of-Day Win Rate</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3259,14 +3246,14 @@ export default function Forensics() {
           </div>
         </div>
         {loading ? (
-          <Skeleton h={74} />
+          <Skeleton variant="chart" h={74} />
         ) : (
           <HourOfDayWinRate trades={filtered} />
         )}
-      </div>
+      </Card>
 
       {/* Trade Clusters Chart */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Trade Clusters</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3274,14 +3261,14 @@ export default function Forensics() {
           </div>
         </div>
         {loading ? (
-          <Skeleton h={180} />
+          <Skeleton variant="chart" h={180} />
         ) : (
           <TradeClustersChart trades={filtered} />
         )}
-      </div>
+      </Card>
 
       {/* Exit Timing Heatmap */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Exit Timing Heatmap</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3289,21 +3276,19 @@ export default function Forensics() {
           </div>
         </div>
         {loading ? (
-          <Skeleton h={180} />
+          <Skeleton variant="chart" h={180} />
         ) : (
           <ExitTimingHeatmap trades={filtered} />
         )}
-      </div>
+      </Card>
 
       {/* ════════════════════════════════════════════════
           SECTION: Setup Analysis
           ════════════════════════════════════════════════ */}
-      <h2 className="section-label" style={{ marginTop: 48, marginBottom: 16 }}>
-        Setup Analysis
-      </h2>
+      <div style={{ marginTop: 48 }}><SectionHeader label="Setup Analysis" /></div>
 
       {/* Risk:Reward Scatter */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Signal Confidence vs R:R Achieved</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3311,11 +3296,11 @@ export default function Forensics() {
           </div>
         </div>
         {loading ? (
-          <Skeleton h={200} />
+          <Skeleton variant="chart" h={200} />
         ) : (
           <RiskRewardScatter trades={filtered} />
         )}
-      </div>
+      </Card>
 
       {/* ── Trade Duration Histogram ── */}
       <TradeDurationHistogram trades={filtered} />
@@ -3326,12 +3311,10 @@ export default function Forensics() {
       {/* ════════════════════════════════════════════════
           SECTION: Sequence Analysis
           ════════════════════════════════════════════════ */}
-      <h2 className="section-label" style={{ marginTop: 48, marginBottom: 16 }}>
-        Sequence Analysis
-      </h2>
+      <div style={{ marginTop: 48 }}><SectionHeader label="Sequence Analysis" /></div>
 
       {/* Rolling Sharpe Chart */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>Rolling Sharpe Ratio</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3339,14 +3322,14 @@ export default function Forensics() {
           </div>
         </div>
         {loading ? (
-          <Skeleton h={100} />
+          <Skeleton variant="chart" h={100} />
         ) : (
           <RollingSharpeChart trades={filtered} />
         )}
-      </div>
+      </Card>
 
       {/* Trade Replay Timeline */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Trade Sequence Timeline</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
@@ -3354,23 +3337,21 @@ export default function Forensics() {
           </div>
         </div>
         {loading ? (
-          <Skeleton h={120} />
+          <Skeleton variant="chart" h={120} />
         ) : (
           <TradeReplayTimeline trades={filtered} />
         )}
-      </div>
+      </Card>
 
       <MultiSymbolPnlChart trades={filtered} />
 
       {/* ════════════════════════════════════════════════
           SECTION: Outcome Probability
           ════════════════════════════════════════════════ */}
-      <h2 className="section-label" style={{ marginTop: 48, marginBottom: 16 }}>
-        Outcome Probability
-      </h2>
+      <div style={{ marginTop: 48 }}><SectionHeader label="Outcome Probability" /></div>
 
       {/* Win Probability by Context */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Win Probability by Context</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
@@ -3378,14 +3359,14 @@ export default function Forensics() {
           </div>
         </div>
         {loading ? (
-          <Skeleton h={180} />
+          <Skeleton variant="chart" h={180} />
         ) : (
           <OutcomeProbabilityBars trades={filtered} />
         )}
-      </div>
+      </Card>
 
       {/* Leverage PnL Chart */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>P&L by Leverage Tier</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 3 }}>
@@ -3393,14 +3374,14 @@ export default function Forensics() {
           </div>
         </div>
         {loading ? (
-          <Skeleton h={140} />
+          <Skeleton variant="chart" h={140} />
         ) : (
           <LeveragePnlChart trades={filtered} />
         )}
-      </div>
+      </Card>
 
       {/* Trade Autopsy Card */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Worst Trade Autopsy</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
@@ -3408,10 +3389,10 @@ export default function Forensics() {
           </div>
         </div>
         <TradeAutopsyCard />
-      </div>
+      </Card>
 
       {/* Signal Decay Chart */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Signal Confidence Decay</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
@@ -3419,10 +3400,10 @@ export default function Forensics() {
           </div>
         </div>
         <SignalDecayChart />
-      </div>
+      </Card>
 
       {/* Exposure Risk Matrix */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 24 }}>
+      <Card glass hover style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: 24 }}>
         <div style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: F.base, fontWeight: 700, color: C.text }}>Exposure Risk Matrix</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
@@ -3430,17 +3411,15 @@ export default function Forensics() {
           </div>
         </div>
         <ExposureRiskMatrix />
-      </div>
+      </Card>
 
       {/* ════════════════════════════════════════════════
           SECTION: Raw Trade Cards
           ════════════════════════════════════════════════ */}
-      <h2 className="section-label" style={{ marginTop: 48, marginBottom: 16 }}>
-        Raw Trade Cards
-      </h2>
+      <div style={{ marginTop: 48 }}><SectionHeader label="Raw Trade Cards" /></div>
 
       {/* Filters */}
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20 }}>
+      <Card glass style={{ padding: `${SP[4]}px ${SP[5]}px`, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Filter Trades</div>
           {(filterOutcome !== 'All' || filterRegime !== 'All' || filterAction !== 'All' || filterStrategy !== 'All' || filterSymbol !== 'All') && (
@@ -3459,7 +3438,7 @@ export default function Forensics() {
           <PillFilter label="LLM Action" options={actions} value={filterAction} onChange={setFilterAction} />
           <PillFilter label="Strategy" options={strategies} value={filterStrategy} onChange={setFilterStrategy} />
         </div>
-      </div>
+      </Card>
 
       {/* Trade list */}
       <div>
@@ -3471,26 +3450,18 @@ export default function Forensics() {
         </div>
 
         {loading ? (
-          Array.from({ length: 5 }).map((_, i) => <div key={i} style={{ marginBottom: 8 }}><Skeleton h={44} /></div>)
+          Array.from({ length: 5 }).map((_, i) => <div key={i} style={{ marginBottom: 8 }}><Skeleton variant="card" h={44} /></div>)
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '48px 24px', background: G.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center' }}>
-            <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
-            <div style={{ fontSize: F.base, fontWeight: 600, color: C.text, marginBottom: 6 }}>
-              {trades.length === 0 ? 'No trade history yet' : 'No trades match the current filters'}
-            </div>
-            <div style={{ fontSize: F.sm, color: C.muted, marginBottom: trades.length === 0 ? 16 : 0 }}>
-              {trades.length === 0
-                ? 'Start paper trading to see forensic analysis here.'
-                : 'Try adjusting the filters above to broaden your search.'}
-            </div>
-            {trades.length === 0 && (
-              <a href="/results" style={{ fontSize: F.sm, padding: '8px 16px', borderRadius: R.md, background: C.brand, color: '#fff', fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
-                View Results →
-              </a>
-            )}
-          </div>
+          <EmptyState
+            icon="🔍"
+            title={trades.length === 0 ? 'No trade history yet' : 'No trades match the current filters'}
+            subtitle={trades.length === 0 ? 'Start paper trading to see forensic analysis here.' : 'Try adjusting the filters above to broaden your search.'}
+            {...(trades.length === 0 ? { action: { label: 'View Results →', onClick: () => { window.location.href = '/results'; } } } : {})}
+          />
         ) : (
-          filtered.map((t, i) => <TradeCard key={i} trade={t} />)
+          <motion.div variants={staggerContainerSlow} initial="hidden" animate="show">
+            {filtered.map((t, i) => <TradeCard key={i} trade={t} />)}
+          </motion.div>
         )}
       </div>
 
@@ -3503,6 +3474,6 @@ export default function Forensics() {
           LLM Audit →
         </Link>
       </div>
-    </div>
+    </motion.div>
   );
 }

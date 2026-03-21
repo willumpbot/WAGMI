@@ -1,23 +1,23 @@
 import React, { useEffect, useState, useMemo, useId } from 'react';
 import Head from 'next/head';
-import { C, G, R, S, F, fmtUsd, fmtPct } from '../src/theme';
+import { motion } from 'framer-motion';
+import { C, G, R, S, F, SP, Glass, fmtUsd, fmtPct } from '../src/theme';
+import { fadeUp, staggerContainer, staggerContainerSlow, cinematicReveal, orchestratedContainer, magneticHover } from '../src/animations';
+import { Card, StatCard, SectionHeader, Skeleton as SharedSkeleton, EmptyState, Grid } from '../components/ui';
+import { GeometricBG } from '../components/ui/GeometricBG';
+import { GlowOrb } from '../components/ui/GlowOrb';
+import { DataConstellation } from '../components/ui/DataConstellation';
 import { apiFetch } from '../src/api';
 import type { TradeHistoryResponse, TradeRecord, EquityCurveResponse, EquityCurvePoint, BacktestResult } from '../src/types';
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
-  return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
+  return <SharedSkeleton h={h} w={typeof w === 'number' ? `${w}px` : w} />;
 }
 
 function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
-      <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
-      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
-      {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
-    </div>
-  );
+  return <EmptyState icon="&#9203;" title={label} subtitle={sub} />;
 }
 
 // ─── EMA Helper ───────────────────────────────────────────────────────────────
@@ -132,27 +132,16 @@ function rrHistogram(trades: TradeRecord[]): { label: string; count: number }[] 
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function KpiCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
-  return (
-    <div className="card-hover" style={{
-      background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
-      padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 6,
-      boxShadow: S.sm, position: 'relative', overflow: 'hidden',
-    }}>
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: color ?? C.brand, borderRadius: `${R.lg}px ${R.lg}px 0 0` }} />
-      <div style={{ fontSize: F.sm, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div className="num" style={{ fontSize: F['2xl'], fontWeight: 700, color: color ?? C.text }}>{value}</div>
-      {sub && <div style={{ fontSize: F.xs, color: C.muted }}>{sub}</div>}
-    </div>
-  );
+function KpiCard({ label, value, sub, color, crystal = false }: { label: string; value: string; sub?: string; color?: string; crystal?: boolean }) {
+  return <StatCard label={label} value={value} sub={sub} color={color} crystal={crystal} />;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="fade-in" style={{ marginBottom: 32 }}>
-      <h2 className="section-label" style={{ margin: '0 0 16px' }}>{title}</h2>
+    <motion.div variants={fadeUp} initial="hidden" animate="show" style={{ marginBottom: 32 }}>
+      <SectionHeader label={title} />
       {children}
-    </div>
+    </motion.div>
   );
 }
 
@@ -296,7 +285,7 @@ function RollingMetrics({ trades }: { trades: TradeRecord[] }) {
   const pnlPath = rollingPnL.map((v, i) => `${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${pnlY(v).toFixed(1)}`).join(' ');
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Rolling 10-Trade Performance</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>How win rate and avg P&L evolve across each rolling window of 10 trades</div>
 
@@ -1347,7 +1336,7 @@ function RatioGaugePanel({
   return (
     <div
       style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.xl,
         padding: '20px 24px',
@@ -1493,8 +1482,8 @@ function ProfitFactorGauge({ trades }: { trades: TradeRecord[] }) {
     : 'Insufficient trade data';
 
   return (
-    <div className="card-hover" style={{
-      background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
+    <div className="glass-card card-hover glass-noise" style={{
+      ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
       padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 6,
       boxShadow: S.sm, alignItems: 'center',
     }}>
@@ -1703,8 +1692,8 @@ function TradeQualityMatrix({ trades }: { trades: TradeRecord[] }) {
   };
 
   return (
-    <div className="card-hover" style={{
-      background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
+    <div className="glass-card card-hover glass-noise" style={{
+      ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
       padding: '20px 24px', boxShadow: S.sm,
     }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>
@@ -1836,7 +1825,7 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
 
   if (!grossPnlSeries.length) {
     return (
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Fee Impact Analysis</div>
         <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>Hyperliquid: 0.05% taker · 0.02% maker</div>
         <AwaitingResults label="Awaiting trade data" sub="Fee drag chart will appear once the bot has closed trades" />
@@ -1873,7 +1862,7 @@ function FeeDragAnalysis({ trades }: { trades: TradeRecord[] }) {
   const zeroY = y(0);
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Fee Impact Analysis</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: trades.length === 0 ? 8 : 14 }}>
         Hyperliquid: 0.05% taker · 0.02% maker
@@ -1992,7 +1981,7 @@ function StreakAnalysisChart({ trades }: { trades: TradeRecord[] }) {
     : [0, Math.round(maxLen / 4), Math.round(maxLen / 2), Math.round((maxLen * 3) / 4), maxLen];
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Win/Loss Streak History</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>
         Each bar = one consecutive run. Green = win streak, red = loss streak.
@@ -2132,7 +2121,7 @@ function AlphaDecayChart({ trades }: { trades: TradeRecord[] }) {
 
   if (realData.length < 3) {
     return (
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Alpha Persistence — Is the Edge Holding?</div>
         <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>Rolling 5-trade window avg PnL. Flat or rising = edge holding. Declining = needs reoptimization.</div>
         <AwaitingResults label="Need at least 7 trades" sub={`${trades.length} closed so far — chart appears at 7+`} />
@@ -2185,7 +2174,7 @@ function AlphaDecayChart({ trades }: { trades: TradeRecord[] }) {
   const linePts = seedData.map((v, i) => `${x(i)},${y(v)}`).join(' ');
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>
         Alpha Persistence — Is the Edge Holding?
       </div>
@@ -2293,7 +2282,7 @@ function PerformanceAttributionTreemap({ trades }: { trades: TradeRecord[] }) {
   // Build real data from trades (symbol × strategy)
   if (trades.length < 3) {
     return (
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+      <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
         <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>Performance Attribution Treemap</div>
         <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>Rectangle size ∝ |PnL|. Color = positive (green) or negative (red).</div>
         <AwaitingResults label="Awaiting results" sub="Treemap will appear once the bot has at least 3 closed trades" />
@@ -2359,7 +2348,7 @@ function PerformanceAttributionTreemap({ trades }: { trades: TradeRecord[] }) {
   const totalPnl = data.reduce((s, d) => s + d.pnl, 0);
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', boxShadow: S.sm, marginBottom: 20 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 2 }}>
         Performance Attribution Treemap
       </div>
@@ -2684,7 +2673,12 @@ export default function PerformancePage() {
         <meta name="description" content="Institutional-grade performance metrics: Sharpe, Sortino, Calmar ratios, monthly PnL heatmap, rolling win rate." />
       </Head>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px', position: 'relative' }}>
+        <GeometricBG variant="diamond" opacity={0.025} />
+        <DataConstellation opacity={0.05} pointCount={20} />
+        <GlowOrb color="rgba(99,102,241,0.1)" size={350} top="5%" left="15%" duration={20} />
+        <GlowOrb color="rgba(6,182,212,0.06)" size={280} bottom="15%" right="10%" duration={24} delay={-6} />
+
         {/* Header */}
         <div className="fade-in" style={{ marginBottom: 32 }}>
           <h1 style={{ margin: 0, fontSize: F['3xl'], fontWeight: 800, color: C.text }}>
@@ -2717,7 +2711,7 @@ export default function PerformancePage() {
             {/* KPI skeleton row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
+                <div key={i} style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
                   <Skeleton h={11} w="55%" />
                   <div style={{ marginTop: 10 }}><Skeleton h={32} w="75%" /></div>
                   <div style={{ marginTop: 8 }}><Skeleton h={10} w="60%" /></div>
@@ -2740,18 +2734,20 @@ export default function PerformancePage() {
             ══════════════════════════════════════════════════════════════ */}
             <Section title="Equity & Returns">
               {/* Must-have KPI cards: Total Return, Max Drawdown, Sharpe, Win Rate */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
+              <motion.div variants={orchestratedContainer} initial="hidden" animate="show" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
                 <KpiCard
                   label="Total Return"
                   value={totalReturnPct != null ? fmtPct(totalReturnPct) : '—'}
                   sub="Equity curve, live"
                   color={totalReturnPct != null && totalReturnPct >= 0 ? C.bull : C.bear}
+                  crystal
                 />
                 <KpiCard
                   label="Max Drawdown"
                   value={maxDrawdownPct != null ? fmtPct(maxDrawdownPct) : '—'}
                   sub="Worst peak-to-trough"
                   color={C.bear}
+                  crystal
                 />
                 <KpiCard
                   label="Sharpe Ratio"
@@ -2765,21 +2761,21 @@ export default function PerformancePage() {
                   sub={`${wins}W / ${losses}L`}
                   color={winRate != null && winRate >= 50 ? C.bull : C.bear}
                 />
-              </div>
+              </motion.div>
 
               {/* Equity curve with EMA overlays */}
               {filteredCurve.length > 1 && (
-                <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto', marginBottom: 16 }}>
+                <Card glass style={{ padding: SP[5], overflowX: 'auto', marginBottom: SP[4] }}>
                   <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                     Equity Curve with EMA-9 / EMA-21
                   </div>
                   <EquityChart points={filteredCurve} trades={filteredTrades} width={860} height={200} />
-                </div>
+                </Card>
               )}
 
               {/* Monthly PnL bars */}
               {filteredTrades.length >= 5 && (
-                <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto' }}>
+                <Card glass style={{ padding: SP[5], overflowX: 'auto' }}>
                   <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                     P&L by Period (every 5 trades)
                   </div>
@@ -2787,7 +2783,7 @@ export default function PerformancePage() {
                   <div style={{ fontSize: F.xs, color: C.muted, marginTop: 10 }}>
                     Green = net positive period, red = net negative. Dashed line = cumulative PnL.
                   </div>
-                </div>
+                </Card>
               )}
             </Section>
 
@@ -2822,10 +2818,7 @@ export default function PerformancePage() {
                 <div style={{ flex: '0 0 auto' }}>
                   <ProfitFactorGauge trades={filteredTrades} />
                 </div>
-                <div className="card-hover" style={{
-                  flex: '0 0 260px', background: G.card, border: `1px solid ${C.border}`,
-                  borderRadius: R.lg, padding: '16px 8px', boxShadow: S.sm,
-                }}>
+                <Card glass style={{ flex: '0 0 260px', padding: `${SP[4]}px ${SP[2]}px` }}>
                   <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', marginBottom: 8 }}>
                     Performance Radar
                   </div>
@@ -2839,7 +2832,7 @@ export default function PerformancePage() {
                   <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', marginTop: 6 }}>
                     Dashed pentagon = 0.7× target
                   </div>
-                </div>
+                </Card>
               </div>
               <div style={{ fontSize: F.xs, color: C.muted, marginTop: 10 }}>
                 Sharpe &gt; 1.0 = good · &gt; 2.0 = excellent · Calmar &gt; 1.0 = acceptable · &gt; 3.0 = strong
@@ -2852,15 +2845,12 @@ export default function PerformancePage() {
             ══════════════════════════════════════════════════════════════ */}
             <Section title="Drawdown Analysis">
               {filteredCurve.length > 1 && (
-                <div className="card-hover" style={{
-                  background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
-                  padding: '16px 20px', overflowX: 'auto', marginBottom: 16,
-                }}>
+                <Card glass style={{ padding: `${SP[4]}px ${SP[5]}px`, overflowX: 'auto', marginBottom: SP[4] }}>
                   <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
                     Drawdown Depth Timeline
                   </div>
                   <DrawdownTimeline points={filteredCurve} />
-                </div>
+                </Card>
               )}
 
               <StreakAnalysisChart trades={filteredTrades} />
@@ -2873,7 +2863,7 @@ export default function PerformancePage() {
             <Section title="Benchmarks">
               {/* ── Benchmark Comparison ── */}
               {filteredTrades.length > 0 && (
-              <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 20, overflowX: 'auto' }}>
+              <Card glass style={{ padding: `${SP[4]}px ${SP[5]}px`, marginBottom: SP[5], overflowX: 'auto' }}>
                 <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                   Performance vs. Benchmarks
                 </div>
@@ -2881,7 +2871,7 @@ export default function PerformancePage() {
                 <div style={{ fontSize: F.xs, color: C.muted, marginTop: 8 }}>
                   Horizontal bars show bot metrics vs. excellence thresholds. Green = above benchmark, red = below. Values shown: bot / target.
                 </div>
-              </div>
+              </Card>
             )}
 
               {/* ── Fee Drag Analysis ── */}
@@ -2904,12 +2894,12 @@ export default function PerformancePage() {
               </div>
 
               {/* Rolling win rate chart */}
-              <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, overflowX: 'auto', marginBottom: 16 }}>
+              <Card glass style={{ padding: SP[5], overflowX: 'auto', marginBottom: SP[4] }}>
                 <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                   Rolling Win Rate (10-trade window)
                 </div>
                 <RollingWinRateChart data={rollingWR} width={860} height={130} />
-              </div>
+              </Card>
 
               {/* Trade Quality Matrix */}
               <div style={{ marginBottom: 16 }}>
@@ -2925,7 +2915,7 @@ export default function PerformancePage() {
               )}
 
               {/* R:R Histogram */}
-              <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, marginBottom: 16 }}>
+              <Card glass style={{ padding: SP[5], marginBottom: SP[4] }}>
                 <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                   R:R Achieved Distribution
                 </div>
@@ -2933,7 +2923,7 @@ export default function PerformancePage() {
                 <div style={{ fontSize: F.xs, color: C.muted, marginTop: 12 }}>
                   Distribution of actual risk-reward ratios at close. A strong system clusters in the 1–3 bucket.
                 </div>
-              </div>
+              </Card>
             </Section>
 
             {/* ══════════════════════════════════════════════════════════════
@@ -2943,12 +2933,12 @@ export default function PerformancePage() {
             <Section title="Attribution">
               {/* By Strategy bars */}
               {Object.keys(byStrategy).length > 0 && (
-                <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, marginBottom: 16 }}>
+                <Card glass style={{ padding: SP[5], marginBottom: SP[4] }}>
                   <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
                     PnL by Strategy
                   </div>
                   <StrategyBars data={byStrategy} />
-                </div>
+                </Card>
               )}
 
               {/* Performance Attribution Treemap */}
@@ -2956,14 +2946,11 @@ export default function PerformancePage() {
             </Section>
 
             {/* ── Methodology Note ── */}
-            <div style={{
-              background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg,
-              padding: '16px 20px', fontSize: F.sm, color: C.muted, lineHeight: 1.6,
-            }}>
+            <Card glass style={{ padding: `${SP[4]}px ${SP[5]}px`, fontSize: F.sm, color: C.muted, lineHeight: 1.6 }}>
               <strong style={{ color: C.textSub }}>Methodology:</strong> Sharpe and Sortino are annualised using daily equity curve returns with a 0% risk-free rate.
               Calmar = total return % ÷ max drawdown %. All metrics are derived from live paper-trading data and should be interpreted accordingly.
               Past performance does not guarantee future results.
-            </div>
+            </Card>
           </>
         )}
       </div>

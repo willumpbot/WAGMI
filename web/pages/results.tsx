@@ -2,7 +2,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { C, R, S, F, G, fmtUsd, fmtPct, timeAgo } from '../src/theme';
+import { motion } from 'framer-motion';
+import { C, R, S, F, G, Glass, SP, fmtUsd, fmtPct, timeAgo } from '../src/theme';
+import { staggerContainer, fadeUp, hoverGlow, orchestratedContainer } from '../src/animations';
 import type { BacktestResult, TradeRecord, TradeHistoryResponse, EquityCurvePoint } from '../src/types';
 import { resolveApiBase } from '../src/api';
 
@@ -14,11 +16,14 @@ function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
 
 function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+    <motion.div
+      variants={fadeUp} initial="hidden" animate="show"
+      style={{ ...Glass.crystal, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, borderRadius: R.lg, color: C.muted }}
+    >
       <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
       {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
-    </div>
+    </motion.div>
   );
 }
 
@@ -28,12 +33,12 @@ function KpiBlock({ label, value, sub, color, big }: {
   label: string; value: string; sub?: string; color?: string; big?: boolean;
 }) {
   return (
-    <div className="card-hover" style={{ padding: big ? '24px 28px' : '18px 20px', background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, position: 'relative', overflow: 'hidden' }}>
-      {color && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: color, opacity: 0.5 }} />}
-      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{label}</div>
-      <div className="num" style={{ fontSize: big ? F['3xl'] : F['2xl'], fontWeight: 800, color: color || C.text, lineHeight: 1.1, marginBottom: sub ? 4 : 0 }}>{value}</div>
+    <motion.div variants={fadeUp} className="glass-noise" style={{ ...Glass.crystal, padding: big ? '24px 28px' : '18px 20px', borderRadius: R.lg, position: 'relative', overflow: 'hidden', boxShadow: color === C.bull ? S.bullGlow : color === C.bear ? S.bearGlow : S.glass }} {...hoverGlow}>
+      {color && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: color, opacity: 0.6 }} />}
+      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{label}</div>
+      <div className="num" style={{ fontSize: big ? F['3xl'] : F['2xl'], fontWeight: 800, color: color || C.text, lineHeight: 1.1, marginBottom: sub ? 4 : 0, fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>
       {sub && <div style={{ fontSize: F.xs, color: C.muted }}>{sub}</div>}
-    </div>
+    </motion.div>
   );
 }
 
@@ -57,7 +62,7 @@ function calcSMA(data: number[], period: number): (number | null)[] {
 function EquityCurveChart({ points, width = 700, height = 200 }: { points: EquityCurvePoint[]; width?: number; height?: number }) {
   if (!points || points.length < 2) {
     return (
-      <div style={{ width: '100%', height, background: G.card, borderRadius: R.md, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm }}>
+      <div style={{ width: '100%', height, ...Glass.card, borderRadius: R.md, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm }}>
         No equity curve data available
       </div>
     );
@@ -411,7 +416,7 @@ function BotVsBuyHold({ points, startEquity = 50000 }: { points: EquityCurvePoin
   const yTicks = [minV, (minV + maxV) / 2, maxV];
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Equity Curve</h2>
@@ -684,7 +689,7 @@ function ExitTypeTimeline({ trades }: { trades: TradeRecord[] }) {
   const closedTrades = trades.filter((t) => t.close_reason);
   if (closedTrades.length < 3) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
+      <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
         <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>Exit Type Analysis</div>
         Not enough closed trades yet (need at least 3)
       </div>
@@ -705,7 +710,7 @@ function ExitTypeTimeline({ trades }: { trades: TradeRecord[] }) {
   const yTicks = [-2.5, 0, 1.5, 3, 5, 6.5];
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Exit Type Timeline</h2>
@@ -824,7 +829,7 @@ function BySymbolAccordion({ bySymbol }: { bySymbol?: Record<string, SymbolData>
 
   if (!bySymbol || Object.keys(bySymbol).length === 0) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
+      <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
         <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>By Symbol</div>
         No trade history yet
       </div>
@@ -834,7 +839,7 @@ function BySymbolAccordion({ bySymbol }: { bySymbol?: Record<string, SymbolData>
   const entries = Object.entries(data).sort((a, b) => b[1].pnl - a[1].pnl);
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>By Symbol — Detailed Breakdown</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {entries.map(([sym, d]) => {
@@ -896,7 +901,7 @@ function BySymbolAccordion({ bySymbol }: { bySymbol?: Record<string, SymbolData>
                       ...(d.avg_win != null ? [{ label: 'Avg Win', value: fmtUsd(d.avg_win), color: C.bull }] : []),
                       ...(d.avg_loss != null ? [{ label: 'Avg Loss', value: fmtUsd(d.avg_loss), color: C.bear }] : []),
                     ].map(({ label, value, color }) => (
-                      <div key={label} style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.md, padding: '10px 12px' }}>
+                      <div key={label} style={{ ...Glass.card, borderRadius: R.md, padding: '10px 12px' }}>
                         <div style={{ fontSize: 9, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>{label}</div>
                         <div style={{ fontSize: F.md, fontWeight: 800, color }}>{value}</div>
                       </div>
@@ -1092,7 +1097,7 @@ function WinLossHistogram({ trades }: { trades: TradeRecord[] }) {
   const yTicks = [0, Math.ceil(maxCount / 4), Math.ceil(maxCount / 2), Math.ceil((3 * maxCount) / 4), maxCount];
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Trade P&amp;L Distribution</h2>
@@ -1245,7 +1250,7 @@ function DailyPnlCalendar({ trades }: { trades: TradeRecord[] }) {
   const DAYS_SHORT = ['S','M','T','W','T','F','S'];
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Daily P&L Calendar</h2>
@@ -1374,7 +1379,7 @@ function TimeOfDayHeatmap({ trades }: { trades: TradeRecord[] }) {
   }
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Win Rate by Day & Time (UTC)</h2>
@@ -1484,7 +1489,7 @@ function PnlTickerBanner({ trades }: { trades: TradeRecord[] }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', background: `linear-gradient(90deg, ${C.brand}22, ${G.card})`, border: `1px solid ${C.brand}44`, borderBottom: 'none', borderRadius: `${R.md}px ${R.md}px 0 0` }}>
           <span style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>● LIVE TRADE RESULTS</span>
         </div>
-        <div style={{ padding: '18px 20px', background: G.card, border: `1px solid ${C.brand}44`, borderTop: 'none', borderRadius: `0 0 ${R.md}px ${R.md}px` }}>
+        <div style={{ padding: '18px 20px', ...Glass.card, border: `1px solid ${C.brand}44`, borderTop: 'none', borderRadius: `0 0 ${R.md}px ${R.md}px` }}>
           <AwaitingResults label="Awaiting first closed trade" sub="Trades will appear here once the bot closes its first position" />
         </div>
       </div>
@@ -1605,7 +1610,7 @@ function CumulativePnlMilestones({ trades }: { trades: TradeRecord[] }) {
   return (
     <div
       style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.xl,
         padding: '20px 24px',
@@ -1788,7 +1793,7 @@ function WeeklySymbolHeatmap({ trades }: { trades: TradeRecord[] }) {
 
   if (symbols.length === 0) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
         <h3 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Weekly Performance by Symbol</h3>
         <AwaitingResults label="Awaiting results" sub="Weekly breakdown will appear once the bot has closed trades with timestamps" />
       </div>
@@ -1866,7 +1871,7 @@ function WeeklySymbolHeatmap({ trades }: { trades: TradeRecord[] }) {
   };
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 20 }}>
       <h3 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Weekly Performance by Symbol</h3>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: 3, minWidth: 420 }}>
@@ -1959,7 +1964,7 @@ function DailyEquityWaterfall({ trades }: { trades: TradeRecord[] }) {
 
   if (dailyPnls.length < 3) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
         <h2 style={{ margin: '0 0 14px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Daily P&amp;L Waterfall</h2>
         <AwaitingResults label="Awaiting trade data" sub="Waterfall will populate once the bot has at least 3 closed trading days" />
       </div>
@@ -2024,7 +2029,7 @@ function DailyEquityWaterfall({ trades }: { trades: TradeRecord[] }) {
   const totalPnl = days.reduce((a, b) => a + b, 0);
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Daily P&amp;L Waterfall</h2>
@@ -2191,7 +2196,7 @@ function ProfitAttributionChart({ trades, backtest }: {
 
   if (trades.length < 3) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
         <h2 style={{ margin: '0 0 4px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Profit Attribution Breakdown</h2>
         <p style={{ margin: '0 0 14px', fontSize: F.xs, color: C.muted }}>What drove the total return — by strategy, symbol, and exit type</p>
         <AwaitingResults label="Awaiting results" sub="Attribution will populate once the bot has at least 3 closed trades" />
@@ -2329,7 +2334,7 @@ function ProfitAttributionChart({ trades, backtest }: {
   }
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Profit Attribution Breakdown</h2>
@@ -2414,7 +2419,7 @@ function PnlDistributionHistogram({ trades }: { trades: TradeRecord[] }) {
   const pnls = trades.map((t) => t.pnl ?? 0).filter((v) => isFinite(v));
   if (pnls.length < 2) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
         <h2 style={{ margin: '0 0 12px', fontSize: F.lg, fontWeight: 700, color: C.text }}>P&amp;L Distribution</h2>
         <div style={{ textAlign: 'center', padding: '28px 16px', color: C.textSub }}>
           <div style={{ fontSize: 36, marginBottom: 8 }}>📊</div>
@@ -2509,7 +2514,7 @@ function PnlDistributionHistogram({ trades }: { trades: TradeRecord[] }) {
     (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(0);
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>P&amp;L Distribution</h2>
@@ -2659,7 +2664,7 @@ function ConsecutiveTradePnlChart({ trades }: { trades: TradeRecord[] }) {
   const validTrades = trades.filter((t) => t.pnl != null);
   if (validTrades.length < 2) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
         <h2 style={{ margin: '0 0 8px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Trade Sequence P&amp;L</h2>
         <div style={{ color: C.muted, fontSize: F.sm }}>Not enough trade data yet.</div>
       </div>
@@ -2736,7 +2741,7 @@ function ConsecutiveTradePnlChart({ trades }: { trades: TradeRecord[] }) {
   const cumTicks = [cumMin, (cumMin + cumMax) / 2, cumMax];
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Trade Sequence P&amp;L</h2>
@@ -2932,7 +2937,7 @@ function MaxAdverseExcursion({ trades }: { trades: TradeRecord[] }) {
 
   if (dots.length < 5) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
         <h2 style={{ margin: '0 0 4px', fontSize: F.lg, fontWeight: 700, color: C.text }}>Max Adverse Excursion Analysis</h2>
         <p style={{ margin: '0 0 14px', fontSize: F.xs, color: C.muted }}>How far each trade went against you before resolving</p>
         <AwaitingResults label="Awaiting MAE data" sub="MAE data will appear once trades include max_adverse_excursion field (needs at least 5 trades)" />
@@ -2976,7 +2981,7 @@ function MaxAdverseExcursion({ trades }: { trades: TradeRecord[] }) {
   const midX = pad.left + iW / 2;
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: F.lg, fontWeight: 700, color: C.text }}>Max Adverse Excursion Analysis</h2>
@@ -3113,7 +3118,7 @@ function LastLostTrade({ trades }: { trades: TradeRecord[] }) {
   const lostTrades = trades.filter((t) => t.outcome?.toUpperCase() === 'LOSS');
   if (!lostTrades.length) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}>
+      <div style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Last Lost Trade</span>
           <span style={{ fontSize: F.xs, color: C.muted }}>None yet</span>
@@ -3129,7 +3134,7 @@ function LastLostTrade({ trades }: { trades: TradeRecord[] }) {
   const pnlPct = trade.entry && trade.exit ? ((trade.exit - trade.entry) / trade.entry) * 100 : 0;
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.bear}40`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, border: `1px solid ${C.bear}40`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
         <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Last Lost Trade</span>
         <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: R.pill, background: C.bear + '22', color: C.bear, fontSize: F.xs, fontWeight: 700 }}>
@@ -3178,7 +3183,7 @@ function LastLostTrade({ trades }: { trades: TradeRecord[] }) {
 
 function ActiveTrades() {
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
         <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Active Positions</span>
         <span className="live-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: C.bull, display: 'inline-block' }} />
@@ -3258,7 +3263,10 @@ export default function Results() {
   };
 
   return (
-    <div>
+    <div className="bg-aurora" style={{ position: 'relative' }}>
+      {/* Floating orbs for depth */}
+      <div className="floating-orb orb-brand" style={{ position: 'fixed', top: '15%', right: '10%' }} />
+      <div className="floating-orb orb-purple" style={{ position: 'fixed', bottom: '20%', left: '5%' }} />
       {/* ── Header ───────────────────────────────────── */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
@@ -3352,7 +3360,7 @@ export default function Results() {
           </div>
         </div>
       ) : (
-        <div style={{ marginBottom: 24, padding: 24, background: G.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted }}>
+        <div style={{ marginBottom: 24, padding: 24, ...Glass.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted }}>
           No backtest results found. Run a backtest first via the{' '}
           <Link href="/backtest" style={{ color: C.brand }}>Backtest Explorer</Link>.
         </div>
@@ -3382,7 +3390,7 @@ export default function Results() {
 
       {/* ── Equity Curve + Drawdown ──────────────────── */}
       <div
-        style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}
+        style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}
       >
         <h3 style={{ margin: '0 0 16px', fontSize: F.md, fontWeight: 700, color: C.text }}>Equity Curve</h3>
         <EquityCurveChart points={equityCurve} height={200} />
@@ -3445,7 +3453,7 @@ export default function Results() {
 
       {/* ── By-Strategy + Regime Win Rate ──────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
-        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px' }}>
+        <div style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 24px' }}>
           <h3 style={{ margin: '0 0 16px', fontSize: F.md, fontWeight: 700, color: C.text }}>By Strategy</h3>
           {backtest?.by_strategy && Object.keys(backtest.by_strategy).length > 0 ? (
             <ByStrategyBars byStrategy={backtest.by_strategy} />
@@ -3457,7 +3465,7 @@ export default function Results() {
             </div>
           )}
         </div>
-        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px' }}>
+        <div style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 24px' }}>
           <h3 style={{ margin: '0 0 4px', fontSize: F.md, fontWeight: 700, color: C.text }}>Win Rate by Regime</h3>
           <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14 }}>Computed from live trade history</div>
           <RegimeWinRate trades={trades} />
@@ -3469,7 +3477,7 @@ export default function Results() {
 
       {/* ── By-Symbol + Exit Type ──────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
-        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px' }}>
+        <div style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 24px' }}>
           <h3 style={{ margin: '0 0 16px', fontSize: F.md, fontWeight: 700, color: C.text }}>By Symbol</h3>
           {backtest?.by_symbol ? (
             <BySymbolBars bySymbol={backtest.by_symbol} />
@@ -3482,7 +3490,7 @@ export default function Results() {
           )}
         </div>
 
-        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 24px' }}>
+        <div style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 24px' }}>
           <h3 style={{ margin: '0 0 16px', fontSize: F.md, fontWeight: 700, color: C.text }}>Exit Types</h3>
           {r?.by_action ? (
             <ExitDonut byAction={r.by_action} />

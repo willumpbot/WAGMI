@@ -23,8 +23,22 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { C, R, S, F, G, timeAgo } from '../src/theme';
+import { motion } from 'framer-motion';
+import { C, R, S, F, G, SP, Glass, timeAgo } from '../src/theme';
+import { fadeUp, staggerContainer, staggerContainerSlow, hoverLift, hoverGlow, cinematicReveal, orchestratedContainer, magneticHover, etherealFloat } from '../src/animations';
 import { apiFetch } from '../src/api';
+
+import { NeuralNetwork } from '../components/ui/NeuralNetwork';
+import { ConfidenceRing } from '../components/ui/ConfidenceRing';
+import { GeometricBG } from '../components/ui/GeometricBG';
+import { GlowOrb } from '../components/ui/GlowOrb';
+
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Grid, Row, Stack } from '../components/ui/Stack';
+import { Skeleton } from '../components/ui/Skeleton';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -85,10 +99,10 @@ function roleColor(role: string): string {
 
 function roleIcon(role: string): string {
   const map: Record<string, string> = {
-    regime: '🌊', trade: '🎯', risk: '🛡️', critic: '⚖️',
-    learning: '🧠', exit: '🚪', scout: '🔭', quant: '📊', overseer: '👁️',
+    regime: '\u{1F30A}', trade: '\u{1F3AF}', risk: '\u{1F6E1}\uFE0F', critic: '\u2696\uFE0F',
+    learning: '\u{1F9E0}', exit: '\u{1F6AA}', scout: '\u{1F52D}', quant: '\u{1F4CA}', overseer: '\u{1F441}\uFE0F',
   };
-  return map[role] || '🤖';
+  return map[role] || '\u{1F916}';
 }
 
 function pctBar(value: number, color: string, width = 80) {
@@ -103,83 +117,55 @@ function pctBar(value: number, color: string, width = 80) {
   );
 }
 
-function Card({ children, title, style }: { children: React.ReactNode; title?: string; style?: React.CSSProperties }) {
-  return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 16, ...style }}>
-      {title && <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 12 }}>{title}</div>}
-      {children}
-    </div>
-  );
-}
-
-function Pill({ label, color }: { label: string; color: string }) {
-  return (
-    <span style={{
-      fontSize: F.xs, fontWeight: 700, color,
-      background: `${color}20`, padding: '2px 8px', borderRadius: R.pill,
-      border: `1px solid ${color}40`,
-    }}>
-      {label}
-    </span>
-  );
-}
-
 // ─── Agent Card Component ────────────────────────────────────────────────────
 
-function AgentCard({ agent, onClick }: { agent: AgentOverview; onClick: () => void }) {
+function AgentCard({ agent, onClick, delay }: { agent: AgentOverview; onClick: () => void; delay: number }) {
   const color = roleColor(agent.role);
   const icon = roleIcon(agent.role);
 
   return (
-    <div
-      onClick={onClick}
-      style={{
-        background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg,
-        padding: 16, cursor: 'pointer', transition: 'all 0.15s',
-        borderLeft: `3px solid ${color}`,
-      }}
-      onMouseEnter={(e) => { (e.target as HTMLElement).style.borderColor = color; }}
-      onMouseLeave={(e) => { (e.target as HTMLElement).style.borderColor = C.border; }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>{icon}</span>
-          <span style={{ fontSize: F.sm, fontWeight: 700, color, textTransform: 'capitalize' }}>
-            {agent.role} Agent
-          </span>
-        </div>
-        {agent.has_brain ? (
-          <Pill label="ACTIVE" color={C.bull} />
-        ) : (
-          <Pill label="NO BRAIN" color={C.muted} />
-        )}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <div>
-          <div style={{ fontSize: F.xs, color: C.muted }}>Decisions</div>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>{agent.total_decisions}</div>
-        </div>
-        <div>
-          <div style={{ fontSize: F.xs, color: C.muted }}>Accuracy</div>
-          {agent.accuracy !== null ? (
-            pctBar(agent.accuracy, agent.accuracy >= 0.6 ? C.bull : agent.accuracy >= 0.5 ? C.warn : C.bear)
+    <Card variant="crystal" hover="magnetic" refraction delay={delay} accent={color} style={{ padding: SP[4], cursor: 'pointer' }}>
+      <div onClick={onClick}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>{icon}</span>
+            <span style={{ fontSize: F.sm, fontWeight: 700, color, textTransform: 'capitalize' }}>
+              {agent.role} Agent
+            </span>
+          </div>
+          {agent.has_brain ? (
+            <Badge variant="bull" pulse>ACTIVE</Badge>
           ) : (
-            <div style={{ fontSize: F.sm, color: C.muted }}>---</div>
+            <Badge variant="muted">NO BRAIN</Badge>
           )}
         </div>
-        <div>
-          <div style={{ fontSize: F.xs, color: C.muted }}>Beliefs</div>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>{agent.belief_count}</div>
-        </div>
-        <div>
-          <div style={{ fontSize: F.xs, color: C.muted }}>Status</div>
-          <div style={{ fontSize: F.sm, color: agent.has_brain ? C.bull : C.muted }}>
-            {agent.has_brain ? 'Learning' : 'Awaiting Data'}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div>
+            <div style={{ fontSize: F.xs, color: C.muted }}>Decisions</div>
+            <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>{agent.total_decisions}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: F.xs, color: C.muted }}>Accuracy</div>
+            {agent.accuracy !== null ? (
+              <ConfidenceRing value={Math.round(agent.accuracy * 100)} size={64} label="accuracy" />
+            ) : (
+              <div style={{ fontSize: F.sm, color: C.muted }}>---</div>
+            )}
+          </div>
+          <div>
+            <div style={{ fontSize: F.xs, color: C.muted }}>Beliefs</div>
+            <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>{agent.belief_count}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: F.xs, color: C.muted }}>Status</div>
+            <div style={{ fontSize: F.sm, color: agent.has_brain ? C.bull : C.muted }}>
+              {agent.has_brain ? 'Learning' : 'Awaiting Data'}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -218,17 +204,19 @@ function CalibrationChart({ data }: { data: Record<string, CalibrationBucket> })
 
 // ─── Debate Card ─────────────────────────────────────────────────────────────
 
-function DebateCard({ debate }: { debate: DebateEntry }) {
+function DebateCardComponent({ debate, delay }: { debate: DebateEntry; delay: number }) {
   const dirColor = debate.consensus_direction === 'bullish' ? C.bull
     : debate.consensus_direction === 'bearish' ? C.bear : C.muted;
   const agreementColor = debate.agreement_score >= 0.7 ? C.bull
     : debate.agreement_score >= 0.5 ? C.warn : C.bear;
+  const dirVariant = debate.consensus_direction === 'bullish' ? 'bull' as const
+    : debate.consensus_direction === 'bearish' ? 'bear' as const : 'muted' as const;
 
   return (
-    <Card>
+    <Card glass delay={delay} style={{ padding: SP[4] }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Pill label={debate.consensus_direction.toUpperCase()} color={dirColor} />
+          <Badge variant={dirVariant}>{debate.consensus_direction.toUpperCase()}</Badge>
           <span style={{ fontSize: F.xs, color: C.muted }}>
             Conf: {Math.round(debate.consensus_confidence * 100)}%
           </span>
@@ -311,10 +299,25 @@ export default function AgentIntelligence() {
   return (
     <>
       <Head><title>Agent Intelligence | WAGMI</title></Head>
-      <div style={{ background: C.bg, minHeight: '100vh', padding: '24px 16px', maxWidth: 1200, margin: '0 auto' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        style={{ background: C.bg, minHeight: '100vh', padding: '24px 16px', maxWidth: 1200, margin: '0 auto', position: 'relative', overflow: 'hidden' }}
+      >
+
+        {/* Neural cathedral atmosphere */}
+        <GeometricBG variant="circuit" opacity={0.03} />
+        <GlowOrb color="rgba(99,102,241,0.1)" size={350} top="-5%" right="20%" duration={20} />
+        <GlowOrb color="rgba(168,85,247,0.07)" size={280} bottom="10%" left="10%" duration={25} delay={-8} />
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}
+        >
           <div>
             <h1 style={{ fontSize: F.xl, fontWeight: 800, color: C.text, margin: 0 }}>
               Agent Intelligence
@@ -324,16 +327,30 @@ export default function AgentIntelligence() {
             </p>
           </div>
           <Link href="/ai-decisions" style={{ fontSize: F.sm, color: C.brand, textDecoration: 'none' }}>
-            Decision Feed →
+            Decision Feed &rarr;
           </Link>
-        </div>
+        </motion.div>
+
+        {/* Agent Neural Network Visualization */}
+        <motion.div variants={cinematicReveal} initial="hidden" animate="show" style={{ marginBottom: 32 }}>
+          <Card variant="crystal" refraction>
+            <div style={{ padding: '24px 20px 16px' }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>Agent Neural Network</div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 16 }}>9 specialist agents orchestrated in real-time</div>
+              <NeuralNetwork height={320} agentData={
+                agents.length > 0 ? Object.fromEntries(agents.map(a => [a.role, { accuracy: a.accuracy, total_decisions: a.total_decisions }])) : undefined
+              } />
+            </div>
+          </Card>
+        </motion.div>
 
         {/* Team Calibration Summary */}
         {teamCal && Object.keys(teamCal).length > 0 && (
-          <Card title="Team Calibration Overview" style={{ marginBottom: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+          <Card glass delay={0.1} style={{ padding: SP[4], marginBottom: SP[4] }}>
+            <SectionHeader label="Team Calibration Overview" />
+            <Grid minChildWidth={140} gap={2}>
               {Object.entries(teamCal).map(([role, data]) => (
-                <div key={role} style={{ padding: 8, background: C.surface, borderRadius: R.md }}>
+                <div key={role} style={{ padding: 8, ...Glass.card, borderRadius: R.md }}>
                   <div style={{ fontSize: F.xs, color: roleColor(role), fontWeight: 700, textTransform: 'capitalize' }}>
                     {roleIcon(role)} {role}
                   </div>
@@ -345,124 +362,169 @@ export default function AgentIntelligence() {
                   </div>
                 </div>
               ))}
-            </div>
+            </Grid>
           </Card>
         )}
 
         {/* Agent Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-          gap: 12, marginBottom: 24,
-        }}>
+        <SectionHeader label="Agent Overview" />
+        <motion.div
+          variants={orchestratedContainer}
+          initial="hidden"
+          animate="show"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+            gap: 12, marginBottom: 24,
+          }}
+        >
           {loading ? (
-            <Card><div style={{ color: C.muted, fontSize: F.sm }}>Loading agent data...</div></Card>
-          ) : agents.length === 0 ? (
-            <Card>
-              <div style={{ color: C.muted, fontSize: F.sm, textAlign: 'center', padding: 24 }}>
-                No agent data yet. Enable LLM_MULTI_AGENT=true and run trades.
-              </div>
+            <Card glass style={{ padding: SP[4] }}>
+              <Stack gap={2}>
+                <Skeleton w="60%" h={14} />
+                <Skeleton w="100%" h={60} />
+              </Stack>
             </Card>
-          ) : (
-            agents.map(agent => (
-              <AgentCard
-                key={agent.role}
-                agent={agent}
-                onClick={() => setSelectedAgent(agent.role === selectedAgent ? null : agent.role)}
+          ) : agents.length === 0 ? (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <EmptyState
+                icon="\u{1F916}"
+                title="No agent data yet"
+                subtitle="Enable LLM_MULTI_AGENT=true and run trades."
               />
+            </div>
+          ) : (
+            agents.map((agent, i) => (
+              <motion.div key={agent.role} variants={fadeUp}>
+                <AgentCard
+                  agent={agent}
+                  delay={i * 0.06}
+                  onClick={() => setSelectedAgent(agent.role === selectedAgent ? null : agent.role)}
+                />
+              </motion.div>
             ))
           )}
-        </div>
+        </motion.div>
 
         {/* Agent Detail Panel */}
         {selectedAgent && agentPerf && (
-          <Card title={`${roleIcon(selectedAgent)} ${selectedAgent.toUpperCase()} Agent — Detailed Performance`} style={{ marginBottom: 24 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card glass accent={roleColor(selectedAgent)} style={{ padding: SP[5], marginBottom: 24 }}>
+              <SectionHeader label={`${roleIcon(selectedAgent)} ${selectedAgent.toUpperCase()} Agent — Detailed Performance`} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
-              {/* Regime Breakdown */}
-              <div>
-                <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 8 }}>
-                  Accuracy by Regime
-                </div>
-                {agentPerf.by_regime && Object.keys(agentPerf.by_regime).length > 0 ? (
-                  Object.entries(agentPerf.by_regime).map(([regime, data]) => (
-                    <div key={regime} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <span style={{ fontSize: F.xs, color: C.textSub, textTransform: 'capitalize' }}>{regime}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {pctBar(data.accuracy, data.accuracy >= 0.6 ? C.bull : C.warn, 50)}
-                        <span style={{ fontSize: 10, color: C.muted }}>n={data.total}</span>
+                {/* Regime Breakdown */}
+                <div>
+                  <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 8 }}>
+                    Accuracy by Regime
+                  </div>
+                  {agentPerf.by_regime && Object.keys(agentPerf.by_regime).length > 0 ? (
+                    Object.entries(agentPerf.by_regime).map(([regime, data]) => (
+                      <div key={regime} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontSize: F.xs, color: C.textSub, textTransform: 'capitalize' }}>{regime}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {pctBar(data.accuracy, data.accuracy >= 0.6 ? C.bull : C.warn, 50)}
+                          <span style={{ fontSize: 10, color: C.muted }}>n={data.total}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ fontSize: F.xs, color: C.muted }}>No regime-specific data yet.</div>
-                )}
+                    ))
+                  ) : (
+                    <div style={{ fontSize: F.xs, color: C.muted }}>No regime-specific data yet.</div>
+                  )}
+                </div>
+
+                {/* Calibration Curve */}
+                <div>
+                  <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 8 }}>
+                    Calibration Curve
+                  </div>
+                  {calibration ? (
+                    <CalibrationChart data={calibration} />
+                  ) : (
+                    <div style={{ fontSize: F.xs, color: C.muted }}>Need 5+ decisions for calibration.</div>
+                  )}
+                </div>
               </div>
 
-              {/* Calibration Curve */}
-              <div>
-                <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 8 }}>
-                  Calibration Curve
+              {/* Recent Decisions */}
+              {agentPerf.recent_decisions && agentPerf.recent_decisions.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 8 }}>
+                    Recent Decisions
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {agentPerf.recent_decisions.slice(0, 5).map((d: any, i: number) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          padding: '4px 8px', ...Glass.card, borderRadius: R.sm, fontSize: F.xs,
+                        }}
+                      >
+                        <span style={{ color: C.textSub }}>{d.regime || '\u2014'}</span>
+                        <Badge variant={d.was_correct ? 'bull' : 'bear'}>
+                          {d.was_correct ? 'CORRECT' : 'WRONG'}
+                        </Badge>
+                        <span style={{ color: C.muted }}>{d.confidence ? `${Math.round(d.confidence * 100)}%` : '\u2014'}</span>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
-                {calibration ? (
-                  <CalibrationChart data={calibration} />
-                ) : (
-                  <div style={{ fontSize: F.xs, color: C.muted }}>Need 5+ decisions for calibration.</div>
-                )}
-              </div>
-            </div>
-
-            {/* Recent Decisions */}
-            {agentPerf.recent_decisions && agentPerf.recent_decisions.length > 0 && (
-              <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub, marginBottom: 8 }}>
-                  Recent Decisions
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {agentPerf.recent_decisions.slice(0, 5).map((d: any, i: number) => (
-                    <div key={i} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '4px 8px', background: C.surface, borderRadius: R.sm, fontSize: F.xs,
-                    }}>
-                      <span style={{ color: C.textSub }}>{d.regime || '—'}</span>
-                      <span style={{ color: d.was_correct ? C.bull : C.bear }}>
-                        {d.was_correct ? 'CORRECT' : 'WRONG'}
-                      </span>
-                      <span style={{ color: C.muted }}>{d.confidence ? `${Math.round(d.confidence * 100)}%` : '—'}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Card>
+              )}
+            </Card>
+          </motion.div>
         )}
 
         {/* Debate History */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 12 }}>
-            Recent Debates
-          </div>
+          <SectionHeader label="Recent Debates" />
           {debates.length === 0 ? (
-            <Card>
-              <div style={{ color: C.muted, fontSize: F.sm, textAlign: 'center', padding: 16 }}>
-                No debates yet. Debates trigger when agents disagree on direction.
-              </div>
-            </Card>
+            <EmptyState
+              icon="\u2696\uFE0F"
+              title="No debates yet"
+              subtitle="Debates trigger when agents disagree on direction."
+            />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {debates.map((debate, i) => <DebateCard key={i} debate={debate} />)}
-            </div>
+            <motion.div
+              variants={orchestratedContainer}
+              initial="hidden"
+              animate="show"
+              style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            >
+              {debates.map((debate, i) => (
+                <motion.div key={i} variants={fadeUp}>
+                  <DebateCardComponent debate={debate} delay={i * 0.04} />
+                </motion.div>
+              ))}
+            </motion.div>
           )}
         </div>
 
         {/* Footer nav */}
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', padding: '16px 0' }}>
-          <Link href="/" style={{ fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>Home</Link>
-          <Link href="/ai-decisions" style={{ fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>Decisions</Link>
-          <Link href="/forensics" style={{ fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>Forensics</Link>
-          <Link href="/performance" style={{ fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>Performance</Link>
-        </div>
-      </div>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+          transition={{ delay: 0.4 }}
+          style={{ display: 'flex', gap: 12, justifyContent: 'center', padding: '16px 0' }}
+        >
+          {[
+            { href: '/', label: 'Home' },
+            { href: '/ai-decisions', label: 'Decisions' },
+            { href: '/forensics', label: 'Forensics' },
+            { href: '/performance', label: 'Performance' },
+          ].map(({ href, label }) => (
+            <Link key={href} href={href} style={{ fontSize: F.sm, color: C.muted, textDecoration: 'none' }}>{label}</Link>
+          ))}
+        </motion.div>
+      </motion.div>
     </>
   );
 }

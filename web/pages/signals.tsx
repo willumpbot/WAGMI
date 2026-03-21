@@ -1,6 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { C, G, R, S, F, fmtUsd, timeAgo } from '../src/theme';
+import { motion } from 'framer-motion';
+import { C, G, R, S, F, SP, Glass, fmtUsd, timeAgo } from '../src/theme';
+import { fadeUp, staggerContainer, staggerContainerSlow, cinematicReveal, orchestratedContainer, magneticHover } from '../src/animations';
+import { Card, StatCard, Badge, SectionHeader, EmptyState, Grid } from '../components/ui';
+import { GlowOrb } from '../components/ui/GlowOrb';
+import { GeometricBG } from '../components/ui/GeometricBG';
+import { DataConstellation } from '../components/ui/DataConstellation';
 import type { ActivityEvent, LlmMarketView } from '../src/types';
 
 // ─── Signal / Heatmap types ───────────────────────────────────────────────────
@@ -86,12 +92,7 @@ function SignalFunnel({ total, proceed, vetoed, skipped }: { total: number; proc
   ];
 
   return (
-    <div style={{
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      borderRadius: R.lg,
-      padding: '20px 24px',
-    }}>
+    <Card glass style={{ padding: `${SP[5]}px ${SP[6]}px` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>Signal Filtering Funnel</div>
         <span style={{ fontSize: F.xs, color: C.muted }}>How signals are refined</span>
@@ -138,9 +139,9 @@ function SignalFunnel({ total, proceed, vetoed, skipped }: { total: number; proc
       }}>
         <span style={{ color: '#fca5a5' }}>✗ Vetoed: {vetoed}</span>
         <span style={{ color: '#94a3b8' }}>⟳ Skipped: {skipped}</span>
-        <span style={{ color: '#86efac' }}>✓ Would Trade: {proceed}</span>
+        <span style={{ color: '#86efac' }}>Would Trade: {proceed}</span>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -157,44 +158,28 @@ function SymbolStanceCard({ symbol, decision }: { symbol: string; decision: any 
   const statusColor = isVeto ? C.bear : isWould ? C.bull : C.muted;
   const statusLabel = isVeto ? 'VETOED' : isWould ? 'WATCHING' : action.toUpperCase();
 
+  const badgeVariant = isVeto ? 'bear' as const : isWould ? 'bull' as const : 'muted' as const;
+
   return (
-    <div style={{
-      background: C.surface,
-      border: `1px solid ${C.border}`,
-      borderRadius: R.lg,
-      padding: '16px 18px',
-      flex: '1 1 200px',
-      minWidth: 180,
-    }}>
+    <Card glass style={{ padding: `${SP[4]}px ${SP[5]}px`, flex: '1 1 200px', minWidth: 180 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: F.lg, fontWeight: 800, color: C.text }}>{symbol}</div>
           <div style={{ fontSize: F.xs, color: REGIME_COLOR[regime] || C.muted, marginTop: 2 }}>
-            {REGIME_EMOJI[regime] || '❓'} {regime}
+            {REGIME_EMOJI[regime] || ''} {regime}
           </div>
         </div>
         <ConfRing value={conf} size={44} />
       </div>
-      <div style={{
-        display: 'inline-flex',
-        padding: '3px 10px',
-        borderRadius: R.pill,
-        background: statusColor + '22',
-        border: `1px solid ${statusColor}44`,
-        fontSize: F.xs,
-        fontWeight: 700,
-        color: statusColor,
-        letterSpacing: '0.05em',
-        marginBottom: 8,
-      }}>
-        {statusLabel}
+      <div style={{ marginBottom: 8 }}>
+        <Badge variant={badgeVariant}>{statusLabel}</Badge>
       </div>
       {decision.notes && (
         <div style={{ fontSize: F.xs, color: C.muted, lineHeight: 1.5 }}>
           {String(decision.notes).slice(0, 80)}{String(decision.notes).length > 80 ? '…' : ''}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -210,15 +195,17 @@ function SignalCard({ event, index }: { event: ActivityEvent; index: number }) {
   const isMissedWin = type === 'signal_blocked_miss';
 
   return (
-    <div
-      className="card-hover"
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      animate="show"
+      transition={{ delay: Math.min(index, 10) * 0.03 }}
       style={{
+        ...Glass.card,
         background: cfg.bg,
-        border: `1px solid ${cfg.border}44`,
         borderLeft: `3px solid ${cfg.border}`,
         borderRadius: R.md,
         overflow: 'hidden',
-        animation: `fadeInUp 0.3s ease ${Math.min(index, 10) * 0.03}s both`,
       }}
     >
       {/* Main row */}
@@ -239,19 +226,11 @@ function SignalCard({ event, index }: { event: ActivityEvent; index: number }) {
         {/* Symbol + badge */}
         <div>
           <div style={{ fontSize: F.md, fontWeight: 800, color: C.text }}>{event.symbol || '—'}</div>
-          <span style={{
-            display: 'inline-block',
-            marginTop: 2,
-            padding: '1px 6px',
-            borderRadius: 4,
-            fontSize: 9,
-            fontWeight: 700,
-            background: cfg.border + '33',
-            color: cfg.textColor,
-            letterSpacing: '0.05em',
-          }}>
-            {cfg.label}
-          </span>
+          <div style={{ marginTop: 2 }}>
+            <Badge variant={type === 'llm_would_trade' ? 'bull' : type === 'llm_veto' ? 'bear' : type === 'signal_blocked_miss' ? 'bull' : type === 'llm_flip' ? 'warn' : type === 'llm_regime' ? 'info' : 'muted'}>
+              {cfg.label}
+            </Badge>
+          </div>
         </div>
 
         {/* Title + scalp insight */}
@@ -320,7 +299,7 @@ function SignalCard({ event, index }: { event: ActivityEvent; index: number }) {
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -385,7 +364,7 @@ function MarketHeatmap({ signals, loading }: { signals: Record<string, Signal> |
   if (loading) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '20px 24px',
@@ -472,7 +451,7 @@ function MarketHeatmap({ signals, loading }: { signals: Record<string, Signal> |
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -647,7 +626,7 @@ function SignalScoreRanking({ signals }: { signals: Record<string, Signal> }) {
   if (!hasRealSignals) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '40px 24px',
@@ -724,7 +703,7 @@ function SignalScoreRanking({ signals }: { signals: Record<string, Signal> }) {
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -965,7 +944,7 @@ function CorrelationMatrix({ signals }: { signals: Record<string, any> }) {
   }
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Signal Score Correlation</div>
@@ -1041,7 +1020,7 @@ function SignalStrengthTimeline({ signals }: { signals: Record<string, any> }) {
   if (!entries.length) return null;
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Strength Comparison</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>Current signal score across tracked assets — higher is a stronger buy setup</div>
 
@@ -1335,7 +1314,7 @@ function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal>
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -1557,7 +1536,7 @@ function StrategyVoteGrid({ signals }: { signals: Record<string, Signal> | null 
   if (!signals || symbols.length === 0) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '40px 24px',
@@ -1585,7 +1564,7 @@ function StrategyVoteGrid({ signals }: { signals: Record<string, Signal> | null 
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -1805,7 +1784,7 @@ function SignalQualityTrendChart({ signals }: { signals: Record<string, Signal> 
 
   if (seriesData.length === 0) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
         <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>Signal Quality Trend</div>
         No signal data yet
       </div>
@@ -1833,7 +1812,7 @@ function SignalQualityTrendChart({ signals }: { signals: Record<string, Signal> 
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -2038,7 +2017,7 @@ function MomentumIndicatorPanel({ signals }: { signals: Record<string, Signal> |
   if (!symbols) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '20px 24px',
@@ -2091,7 +2070,7 @@ function MomentumIndicatorPanel({ signals }: { signals: Record<string, Signal> |
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -2257,7 +2236,7 @@ function VolatilityRankingBars({ signals }: { signals: Record<string, Signal> | 
   if (!hasData) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '20px 24px',
@@ -2282,7 +2261,7 @@ function VolatilityRankingBars({ signals }: { signals: Record<string, Signal> | 
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -2443,7 +2422,7 @@ function SymbolDominanceChart({ signals }: { signals: Record<string, Signal> | n
   if (!signals || Object.keys(signals).length === 0) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '40px 24px',
@@ -2552,7 +2531,7 @@ function SymbolDominanceChart({ signals }: { signals: Record<string, Signal> | n
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -3344,7 +3323,11 @@ export default function SignalsPage() {
   const SYMBOLS = ['BTC', 'SOL', 'HYPE'];
 
   return (
-    <main style={{ padding: '32px 24px', maxWidth: 1140, margin: '0 auto', fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <main className="bg-aurora" style={{ padding: '32px 24px', maxWidth: 1140, margin: '0 auto', fontFamily: "'Inter', system-ui, sans-serif", position: 'relative' }}>
+      <GeometricBG variant="diamond" opacity={0.02} />
+      <DataConstellation opacity={0.04} pointCount={18} />
+      <GlowOrb color="rgba(99,102,241,0.08)" size={320} top="8%" right="12%" duration={22} />
+      <GlowOrb color="rgba(6,182,212,0.06)" size={260} bottom="20%" left="8%" duration={26} delay={-5} />
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -3387,65 +3370,23 @@ export default function SignalsPage() {
           ))}
         </div>
       )}
-      {!loading && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 28 }} className="fade-in-1">
-        {[
-          {
-            label: 'Decisions Made',
-            value: totalAnalyzed.toLocaleString(),
-            sub: 'recent AI reviews',
-            color: C.brand,
-            icon: '🧠',
-          },
-          {
-            label: 'Would Trade',
-            value: proceed.toString(),
-            sub: `${totalAnalyzed > 0 ? Math.round((proceed / totalAnalyzed) * 100) : 0}% approval rate`,
-            color: C.bull,
-            icon: '✅',
-          },
-          {
-            label: 'AI Vetoed',
-            value: vetoed.toString(),
-            sub: 'Critic stopped them',
-            color: C.bear,
-            icon: '🛑',
-          },
-          {
-            label: '⭐ Missed Wins',
-            value: missedWins.toString(),
-            sub: 'Gate-blocked but profitable',
-            color: '#34d399',
-            icon: '💡',
-          },
-          {
-            label: 'Regime',
-            value: `${REGIME_EMOJI[regime.toLowerCase()] || ''} ${regime}`.trim(),
-            sub: `bias: ${marketView?.overall_bias || '—'}`,
-            color: regimeColor,
-            icon: '🌐',
-          },
-        ].map(stat => (
-          <div key={stat.label} style={{
-            background: C.surface,
-            border: `1px solid ${C.border}`,
-            borderRadius: R.lg,
-            padding: '16px 18px',
-            animation: 'fadeInUp 0.4s ease both',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{stat.label}</span>
-              <span style={{ fontSize: 16 }}>{stat.icon}</span>
-            </div>
-            <div style={{ fontSize: F['2xl'], fontWeight: 800, color: stat.color, marginBottom: 4 }}>{stat.value}</div>
-            <div style={{ fontSize: F.xs, color: C.muted }}>{stat.sub}</div>
-          </div>
-        ))}
-      </div>}
+      {!loading && (
+        <motion.div
+          variants={orchestratedContainer}
+          initial="hidden"
+          animate="show"
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 28 }}
+        >
+          <StatCard label="Decisions Made" value={totalAnalyzed.toLocaleString()} sub="recent AI reviews" color={C.brand} crystal />
+          <StatCard label="Would Trade" value={proceed.toString()} sub={`${totalAnalyzed > 0 ? Math.round((proceed / totalAnalyzed) * 100) : 0}% approval rate`} color={C.bull} crystal />
+          <StatCard label="AI Vetoed" value={vetoed.toString()} sub="Critic stopped them" color={C.bear} />
+          <StatCard label="Missed Wins" value={missedWins.toString()} sub="Gate-blocked but profitable" color="#34d399" />
+          <StatCard label="Regime" value={`${REGIME_EMOJI[regime.toLowerCase()] || ''} ${regime}`.trim()} sub={`bias: ${marketView?.overall_bias || '—'}`} color={regimeColor} />
+        </motion.div>
+      )}
 
       {/* ── Signal Analysis ──────────────────────────────────────────────── */}
-      <h2 className="fade-in-2" style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '0 0 16px', letterSpacing: '-0.02em' }}>
-        Signal Analysis
-      </h2>
+      <SectionHeader label="Signal Analysis" />
 
       {loading && (
         <div className="skeleton" style={{ height: 200, borderRadius: R.lg, marginBottom: 28 }} />
@@ -3499,24 +3440,18 @@ export default function SignalsPage() {
       <SignalRadarChart signals={signalsData?.signals ?? null} symbol={selectedSymbol ?? 'BTC'} />
 
       {/* ── Market Heatmap ───────────────────────────────────────────────── */}
-      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '32px 0 16px', letterSpacing: '-0.02em' }}>
-        Market Heatmap
-      </h2>
+      <div style={{ marginTop: 32 }}><SectionHeader label="Market Heatmap" /></div>
       <MarketHeatmapSection payload={signalsData} loading={loading} />
 
       {/* ── Signal Quality ───────────────────────────────────────────────── */}
-      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '32px 0 16px', letterSpacing: '-0.02em' }}>
-        Signal Quality
-      </h2>
+      <div style={{ marginTop: 32 }}><SectionHeader label="Signal Quality" /></div>
       <SignalFreshnessStrip signals={signalsData?.signals ?? null} />
       <SignalAgeDistribution signals={signalsData?.signals ?? null} />
       <StrategyVoteGrid signals={signalsData?.signals ?? null} />
       <SignalQualityTrendChart signals={signalsData?.signals ?? null} />
 
       {/* ── Market Structure ─────────────────────────────────────────────── */}
-      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '32px 0 16px', letterSpacing: '-0.02em' }}>
-        Market Structure
-      </h2>
+      <div style={{ marginTop: 32 }}><SectionHeader label="Market Structure" /></div>
       <SymbolDominanceChart signals={signalsData?.signals ?? null} />
 
       {signalsData && Object.keys(signalsData.signals).length > 0 && (
@@ -3530,9 +3465,7 @@ export default function SignalsPage() {
       <VolatilityRankingBars signals={signalsData?.signals ?? null} />
 
       {/* ── Decision Pipeline ────────────────────────────────────────────── */}
-      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '32px 0 16px', letterSpacing: '-0.02em' }}>
-        Decision Pipeline
-      </h2>
+      <div style={{ marginTop: 32 }}><SectionHeader label="Decision Pipeline" /></div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20, marginBottom: 28 }}>
         {/* Gate funnel */}
         <SignalFunnel total={totalAnalyzed || 100} proceed={proceed} vetoed={vetoed} skipped={skipped} />
@@ -3551,9 +3484,7 @@ export default function SignalsPage() {
       </div>
 
       {/* ── Signal Timeline ──────────────────────────────────────────────── */}
-      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '32px 0 16px', letterSpacing: '-0.02em' }}>
-        Signal Timeline
-      </h2>
+      <div style={{ marginTop: 32 }}><SectionHeader label="Signal Timeline" /></div>
       <div>
         {/* Header + filter tabs */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
@@ -3623,7 +3554,12 @@ export default function SignalsPage() {
         )}
 
         {!loading && filteredEvents.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <motion.div
+            variants={staggerContainerSlow}
+            initial="hidden"
+            animate="show"
+            style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
+          >
             {visibleEvents.map((event, i) => (
               <SignalCard key={`${event.ts}-${i}`} event={event} index={i} />
             ))}
@@ -3646,27 +3582,22 @@ export default function SignalsPage() {
                 Load More ({filteredEvents.length - visibleEventCount} remaining)
               </button>
             )}
-          </div>
+          </motion.div>
         )}
       </div>
 
 
       {/* ── 48-Hour Signal + Regime Timeline ─────────────────────────────── */}
-      <h2 style={{ fontSize: F.lg, fontWeight: 800, color: C.text, margin: '32px 0 16px', letterSpacing: '-0.02em' }}>
-        48-Hour Overview
-      </h2>
+      <div style={{ marginTop: 32 }}><SectionHeader label="48-Hour Overview" /></div>
       <SignalTimelineWithRegime />
 
       {/* ── Market Structure Grid ─────────────────────────────────────────── */}
       <MarketStructureGrid />
 
       {/* ── Educational note ─────────────────────────────────────────────── */}
-      <div style={{
+      <Card glass style={{
         marginTop: 32,
-        padding: '20px 24px',
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        borderRadius: R.lg,
+        padding: `${SP[5]}px ${SP[6]}px`,
         display: 'grid',
         gridTemplateColumns: '1fr 1fr 1fr',
         gap: 20,
@@ -3694,7 +3625,7 @@ export default function SignalsPage() {
             <div style={{ fontSize: F.xs, color: C.muted, lineHeight: 1.6 }}>{item.body}</div>
           </div>
         ))}
-      </div>
+      </Card>
 
       {/* ── CTA ─────────────────────────────────────────────────────────── */}
       <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>

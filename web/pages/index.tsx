@@ -3,25 +3,16 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { C, R, S, F, fmtUsd, fmtPct, timeAgo } from '../src/theme';
+import { motion } from 'framer-motion';
+import { C, R, S, F, G, Glass, SP, fmtUsd, fmtPct, timeAgo } from '../src/theme';
+import { staggerContainer, fadeUp, hoverGlow, cinematicReveal, orchestratedContainer, magneticHover } from '../src/animations';
+import { GlowOrb } from '../components/ui/GlowOrb';
+import { ParticleField } from '../components/ui/ParticleField';
+import { GeometricBG } from '../components/ui/GeometricBG';
+import { Waveform } from '../components/ui/Waveform';
 import type { BacktestResult, ActivityEvent, LlmMarketView } from '../src/types';
 import type { IChartApi, ISeriesApi, IPriceLine, UTCTimestamp } from 'lightweight-charts';
-
-// ─── API helper ───────────────────────────────────────────────────────────────
-
-function resolveApiBase(): string {
-  const envVal =
-    (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
-    (process.env.NEXT_PUBLIC_API_BASE_URL as string | undefined);
-  if (envVal && envVal.trim().length > 0) return envVal;
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://wagmi-production-d376.up.railway.app';
-    }
-  }
-  return 'http://localhost:8000';
-}
+import { resolveApiBase } from '../src/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +61,21 @@ function Skeleton({ w, h, style = {} }: { w?: string | number; h?: string | numb
   );
 }
 
+// ─── Glass wrapper for sections ──────────────────────────────────────────────
+function GlassSection({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      animate="show"
+      className="refraction-edge"
+      style={{ ...Glass.crystal, borderRadius: R.lg, padding: SP[5], ...style }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 
 function KpiCard({
@@ -85,20 +91,25 @@ function KpiCard({
   color?: string;
   loading?: boolean;
 }) {
+  const glowShadow = color === C.bull ? S.bullGlow : color === C.bear ? S.bearGlow : S.ambient;
   return (
-    <div
-      className="fade-in"
+    <motion.div
+      variants={fadeUp}
+      className="refraction-edge"
       style={{
-        background: C.card,
-        border: `1px solid ${C.border}`,
+        ...Glass.crystal,
         borderRadius: R.lg,
         padding: '20px 24px',
-        boxShadow: S.sm,
+        boxShadow: glowShadow,
         flex: '1 1 180px',
         minWidth: 160,
+        position: 'relative',
+        overflow: 'hidden',
       }}
+      {...magneticHover}
     >
-      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
+      {color && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: color, opacity: 0.7 }} />}
+      <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
         {label}
       </div>
       {loading ? (
@@ -108,13 +119,22 @@ function KpiCard({
         </>
       ) : (
         <>
-          <div style={{ fontSize: F['2xl'], fontWeight: 800, color: color || C.text, lineHeight: 1.2, marginBottom: 4 }}>
+          <div style={{
+            fontSize: F['2xl'],
+            fontWeight: 800,
+            color: color || C.text,
+            lineHeight: 1.2,
+            marginBottom: 4,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontVariantNumeric: 'tabular-nums',
+            textShadow: color ? `0 0 16px ${color}33` : undefined,
+          }}>
             {value}
           </div>
           <div style={{ fontSize: F.xs, color: C.muted }}>{sub}</div>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -1027,7 +1047,15 @@ export default function Home() {
     : [];
 
   return (
-    <div>
+    <div className="bg-aurora vignette" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Atmospheric background layers */}
+      <GeometricBG variant="hexagon" opacity={0.03} />
+      <GlowOrb color="rgba(99,102,241,0.12)" size={400} top="-10%" left="10%" duration={18} />
+      <GlowOrb color="rgba(168,85,247,0.08)" size={350} top="30%" right="-5%" duration={22} delay={-5} />
+      <GlowOrb color="rgba(6,182,212,0.06)" size={300} bottom="10%" left="40%" duration={20} delay={-10} />
+      <ParticleField count={25} />
+      <Waveform opacity={0.08} height={60} />
+
       {/* ── API offline banner ─────────────────────────── */}
       {apiError && !loading && (
         <div
@@ -1058,7 +1086,7 @@ export default function Home() {
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'flex-end', justifyContent: 'space-between', flexDirection: isMobile ? 'column' : 'row', gap: 10 }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: isMobile ? F['2xl'] : F['3xl'], fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>
+            <h1 className="gradient-text" style={{ margin: 0, fontSize: isMobile ? F['2xl'] : F['3xl'], fontWeight: 800, letterSpacing: -0.5 }}>
               Dashboard
             </h1>
             {!isMobile && (
@@ -1080,17 +1108,22 @@ export default function Home() {
 
       {/* ── Always Watching Intelligence Bar ──────────── */}
       {llmView && (
-        <div style={{
-          background: 'linear-gradient(90deg, #0f172a 0%, #1e293b 100%)',
-          border: `1px solid ${C.border}`,
-          borderRadius: R.lg,
-          padding: '14px 20px',
-          marginBottom: 24,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0,
-          flexWrap: 'wrap',
-        }}>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+          className="glass-card breathe-glow"
+          style={{
+            ...Glass.card,
+            borderRadius: R.lg,
+            padding: '14px 20px',
+            marginBottom: 24,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0,
+            flexWrap: 'wrap',
+          }}
+        >
           {/* Live pulse — hidden on mobile to save space */}
           {!isMobile && (
             <>
@@ -1147,12 +1180,17 @@ export default function Home() {
           }}>
             {isMobile ? 'Signals →' : 'View Signal Feed →'}
           </Link>
-        </div>
+        </motion.div>
       )}
       <style>{`@keyframes ripplePulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.8); opacity: 0; } }`}</style>
 
       {/* ── KPI Hero Row ──────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+      <motion.div
+        variants={orchestratedContainer}
+        initial="hidden"
+        animate="show"
+        style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}
+      >
         <KpiCard
           label="Total Return"
           value={btRes ? fmtPct(btRes.total_return_pct) : '—'}
@@ -1181,16 +1219,18 @@ export default function Home() {
           color={btRes && btRes.max_drawdown_pct < 15 ? C.warn : C.bear}
           loading={loading}
         />
-        {!isMobile && <div
-          className="fade-in"
+        {!isMobile && <motion.div
+          variants={fadeUp}
+          className="glass-card glass-noise"
           style={{
-            background: C.card,
-            border: `1px solid ${C.border}`,
+            ...Glass.card,
             borderRadius: R.lg,
             padding: '20px 24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
+            position: 'relative',
+            overflow: 'hidden',
           }}
         >
           <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>
@@ -1206,14 +1246,14 @@ export default function Home() {
               </div>
             </>
           )}
-        </div>}
-      </div>
+        </motion.div>}
+      </motion.div>
 
       {/* ── Activity ticker ───────────────────────────── */}
       <ActivityTicker events={activity} />
 
       {/* ── Full-width Chart ──────────────────────────── */}
-      <div style={{ marginBottom: 16 }}>
+      <div className="fade-in" style={{ marginBottom: 16 }}>
         {/* Controls row */}
         <div style={{ marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: isMobile ? 8 : 0, flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible' }}>
@@ -1259,7 +1299,7 @@ export default function Home() {
         </div>
 
         {/* Full-width chart */}
-        <div style={{ border: `1px solid ${C.border}`, borderRadius: R.md, overflow: 'hidden', background: C.card }}>
+        <div className="glow-border glass-card" style={{ ...Glass.card, borderRadius: R.md, overflow: 'hidden' }}>
           <CandleChart
             symbol={activeChart}
             apiBase={apiBase}
@@ -1272,10 +1312,10 @@ export default function Home() {
       </div>
 
       {/* ── Below-chart 3-column panel ────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 220px 220px', gap: 14, marginBottom: 28, alignItems: 'start' }}>
+      <div className="stagger-reveal" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 220px 220px', gap: 14, marginBottom: 28, alignItems: 'start' }}>
 
         {/* LEFT — Tabbed heatmap section (order: 2 on mobile so AI stance shows first) */}
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden', order: isMobile ? 2 : 1 }}>
+        <div className="glass-card" style={{ ...Glass.card, borderRadius: R.lg, overflow: 'hidden', order: isMobile ? 2 : 1 }}>
           {/* Tab strip */}
           <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, background: '#0f172a' }}>
             {(['market', 'scores', 'correlation', 'regime'] as const).map((tab) => {

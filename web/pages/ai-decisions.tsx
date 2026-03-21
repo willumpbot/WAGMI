@@ -17,20 +17,19 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { C, R, S, F, G, timeAgo } from '../src/theme';
+import { motion } from 'framer-motion';
+import { C, R, S, F, G, SP, Glass, timeAgo } from '../src/theme';
+import { fadeUp, staggerContainer, staggerContainerSlow, orchestratedContainer } from '../src/animations';
+import { Card, StatCard, Badge, SectionHeader, EmptyState, Grid } from '../components/ui';
+import { GeometricBG } from '../components/ui/GeometricBG';
+import { GlowOrb } from '../components/ui/GlowOrb';
 import { apiFetch } from '../src/api';
 import type { LlmDecision, LlmFeedResponse } from '../src/types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function AwaitingResults({ label = 'Awaiting results', sub }: { label?: string; sub?: string }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
-      <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
-      <div style={{ fontSize: F.sm, fontWeight: 700, color: C.textSub }}>{label}</div>
-      {sub && <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>{sub}</div>}
-    </div>
-  );
+  return <EmptyState icon="&#9203;" title={label} subtitle={sub} />;
 }
 
 function actionColor(d: LlmDecision): string {
@@ -122,16 +121,8 @@ function AgentPipelineFlow({ decision }: { decision: LlmDecision | null }) {
   ];
 
   return (
-    <div className="card-hover" style={{
-      background: G.card,
-      border: `1px solid ${C.border}`,
-      borderRadius: R.lg,
-      padding: '18px 24px',
-      marginBottom: 24,
-    }}>
-      <div style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
-        Live Agent Pipeline
-      </div>
+    <Card glass accent={C.brand} style={{ padding: `${SP[5]}px ${SP[6]}px`, marginBottom: SP[6] }}>
+      <SectionHeader label="Live Agent Pipeline" />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, overflowX: 'auto', paddingBottom: 4 }}>
         {NODES.map((node, i) => (
           <React.Fragment key={node.key}>
@@ -210,7 +201,7 @@ function AgentPipelineFlow({ decision }: { decision: LlmDecision | null }) {
           Waiting for first decision…
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -252,15 +243,9 @@ function VetoReasonWordCloud({ decisions }: { decisions: LlmDecision[] }) {
   }
 
   return (
-    <div className="card-hover" style={{
-      background: G.card,
-      border: `1px solid ${C.purple}30`,
-      borderRadius: R.lg,
-      padding: '16px 18px',
-      marginTop: 16,
-    }}>
+    <Card glass accent={C.purple} style={{ padding: `${SP[4]}px ${SP[5]}px`, marginTop: SP[4] }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 14 }}>☁</span> Veto Reason Keywords
+        Veto Reason Keywords
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {tags.map(([word, count]) => {
@@ -287,7 +272,7 @@ function VetoReasonWordCloud({ decisions }: { decisions: LlmDecision[] }) {
         Extracted from {decisions.length} veto decision{decisions.length !== 1 ? 's' : ''}. Size = frequency.{' '}
         <span style={{ color: C.bear }}>Red</span> = risk-related, <span style={{ color: C.warn }}>amber</span> = regime-related.
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -350,17 +335,22 @@ function DecisionCard({ d, isNew }: { d: LlmDecision; isNew?: boolean }) {
   const conf = d.confidence ?? 0;
   const steps = useMemo(() => parseAgentSteps(d.notes), [d.notes]);
 
+  const badgeVariant = d.is_veto ? 'warn' as const : !d.allowed ? 'bear' as const : (aLabel === 'GO' ? 'bull' as const : aLabel === 'FLIP' ? 'warn' as const : 'muted' as const);
+
   return (
-    <div style={{
-      background: G.card,
-      border: `1px solid ${d.is_veto ? C.purple + '50' : !d.allowed ? C.bear + '40' : C.border}`,
-      borderLeft: `3px solid ${aCol}`,
-      borderRadius: R.lg,
-      marginBottom: 10,
-      overflow: 'hidden',
-      animation: isNew ? 'fadeInDown 0.3s ease' : 'none',
-      boxShadow: d.is_veto ? `0 0 12px ${C.purple}20` : 'none',
-    }}>
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      animate="show"
+      style={{
+        ...Glass.card,
+        borderLeft: `3px solid ${aCol}`,
+        borderRadius: R.lg,
+        marginBottom: 10,
+        overflow: 'hidden',
+        boxShadow: d.is_veto ? `0 0 12px ${C.purple}20` : S.md,
+      }}
+    >
       {/* ── Header row ── */}
       <div
         onClick={() => setExpanded((v) => !v)}
@@ -370,11 +360,7 @@ function DecisionCard({ d, isNew }: { d: LlmDecision; isNew?: boolean }) {
         }}
       >
         {/* Action badge */}
-        <span style={{
-          padding: '2px 9px', borderRadius: R.pill,
-          background: aCol + '18', color: aCol,
-          fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', flexShrink: 0,
-        }}>{aLabel}</span>
+        <Badge variant={badgeVariant}>{aLabel}</Badge>
 
         {/* Symbol */}
         <span style={{ fontWeight: 800, color: C.text, fontSize: F.sm }}>{d.symbol || '—'}</span>
@@ -456,7 +442,7 @@ function DecisionCard({ d, isNew }: { d: LlmDecision; isNew?: boolean }) {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -477,9 +463,9 @@ function VetoPanel({ decisions }: { decisions: LlmDecision[] }) {
   const maxReasonCount = Math.max(1, ...reasonEntries.map((e) => e[1]));
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.purple}30`, borderRadius: R.lg, padding: '18px 20px' }}>
+    <Card glass accent={C.purple} style={{ padding: `${SP[5]}px ${SP[5]}px` }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 16 }}>🚫</span> Critic Veto Analysis
+        Critic Veto Analysis
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
         <div style={{ background: C.surface, borderRadius: R.sm, padding: '10px 12px' }}>
@@ -508,7 +494,7 @@ function VetoPanel({ decisions }: { decisions: LlmDecision[] }) {
       <div style={{ marginTop: 12, fontSize: F.xs, color: C.muted, lineHeight: 1.5 }}>
         The Critic Agent must provide a counter-thesis to exercise a veto — vague objections are rejected. This prevents over-conservative filtering.
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -524,7 +510,7 @@ function ModelPanel({ decisions }: { decisions: LlmDecision[] }) {
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px' }}>
+    <Card glass style={{ padding: `${SP[5]}px ${SP[5]}px` }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 14 }}>Model Routing</div>
       {entries.map(([model, count]) => {
         const mb = modelBadge(model);
@@ -541,7 +527,7 @@ function ModelPanel({ decisions }: { decisions: LlmDecision[] }) {
       <div style={{ marginTop: 10, fontSize: F.xs, color: C.muted, lineHeight: 1.5 }}>
         Haiku handles regime + risk (fast, cheap). Sonnet handles trade thesis + critique (high-accuracy). Total cost: ~$0.007/decision.
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -562,7 +548,7 @@ function ConfidenceTrendSparkline({ decisions }: { decisions: LlmDecision[] }) {
   const avgConf = vals.reduce((a, b) => a + b, 0) / vals.length;
   const avgY = y(avgConf);
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+    <Card glass style={{ padding: `${SP[4]}px ${SP[4]}px` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Confidence Trend</span>
         <span style={{ fontSize: F.xs, fontWeight: 700, color: avgConf >= 65 ? C.bull : avgConf >= 45 ? C.warn : C.bear }}>
@@ -599,7 +585,7 @@ function ConfidenceTrendSparkline({ decisions }: { decisions: LlmDecision[] }) {
         <span>{last30.length} decisions</span>
         <span>max: {Math.round(max)}%</span>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -647,7 +633,7 @@ function DecisionMixDonut({ decisions }: { decisions: LlmDecision[] }) {
 
   let cumulative = 0;
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+    <Card glass style={{ padding: `${SP[4]}px ${SP[4]}px` }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>Decision Mix</div>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <svg width={120} height={120} viewBox="0 0 120 120" style={{ flexShrink: 0 }}>
@@ -671,7 +657,7 @@ function DecisionMixDonut({ decisions }: { decisions: LlmDecision[] }) {
           ))}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -686,12 +672,7 @@ const MAX_MS = 2000;
 
 function AIThinkingSpeed() {
   return (
-    <div className="card-hover" style={{
-      background: G.card,
-      border: `1px solid ${C.border}`,
-      borderRadius: R.lg,
-      padding: '18px 20px',
-    }}>
+    <Card glass style={{ padding: `${SP[5]}px ${SP[5]}px` }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>AI Thinking Speed</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
         Speed vs thoroughness — the bot selects the right model for each decision type
@@ -750,7 +731,7 @@ function AIThinkingSpeed() {
       }}>
         Typical latency values. Actual response time varies with API load and prompt length.
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -808,16 +789,8 @@ const MAX_LATENCY_MS = Math.max(...TIMELINE_AGENTS.map((a) => a.latencyMs));
 
 function AgentSequenceTimeline() {
   return (
-    <div className="card-hover" style={{
-      background: G.card,
-      border: `1px solid ${C.border}`,
-      borderRadius: R.lg,
-      padding: '18px 16px 14px',
-    }}>
-      {/* Header */}
-      <div style={{ fontSize: F.xs, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
-        Agent Pipeline Sequence
-      </div>
+    <Card glass style={{ padding: `${SP[5]}px ${SP[4]}px ${SP[4]}px` }}>
+      <SectionHeader label="Agent Pipeline Sequence" />
 
       {/* Horizontal node row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', overflowX: 'auto', paddingBottom: 4 }}>
@@ -937,7 +910,7 @@ function AgentSequenceTimeline() {
       <div style={{ marginTop: 10, fontSize: 9, color: C.faint, lineHeight: 1.5 }}>
         Latency bars are proportional to max agent time (~900ms Critic). Total pipeline: ~2.1s typical.
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -982,12 +955,7 @@ function ConfidenceCalibrationChart({ decisions }: { decisions: LlmDecision[] })
   const yTicks = [0, 25, 50, 75, 100];
 
   return (
-    <div className="card-hover" style={{
-      background: G.card,
-      border: `1px solid ${C.border}`,
-      borderRadius: R.lg,
-      padding: '18px 20px',
-    }}>
+    <Card glass style={{ padding: `${SP[5]}px ${SP[5]}px` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2, flexWrap: 'wrap', gap: 6 }}>
         <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Confidence Calibration</div>
       </div>
@@ -1068,7 +1036,7 @@ function ConfidenceCalibrationChart({ decisions }: { decisions: LlmDecision[] })
         </span>
         <span style={{ marginLeft: 'auto' }}>Circle size = decision count</span>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -1112,12 +1080,7 @@ function DecisionTimeHeatmap({ decisions }: { decisions: LlmDecision[] }) {
   const hourLabels = [0, 3, 6, 9, 12, 15, 18, 21];
 
   return (
-    <div className="card-hover" style={{
-      background: G.card,
-      border: `1px solid ${C.border}`,
-      borderRadius: R.lg,
-      padding: '18px 20px',
-    }}>
+    <Card glass style={{ padding: `${SP[5]}px ${SP[5]}px` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2, flexWrap: 'wrap', gap: 6 }}>
         <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Decision Activity Heatmap (UTC)</div>
       </div>
@@ -1190,7 +1153,7 @@ function DecisionTimeHeatmap({ decisions }: { decisions: LlmDecision[] }) {
         <span>More</span>
         <span style={{ marginLeft: 'auto', color: C.faint }}>UTC hours</span>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -1290,7 +1253,9 @@ export default function AiDecisionsPage() {
         @keyframes pipelineDot { 0% { left: 0; opacity: 1; } 80% { left: 36px; opacity: 1; } 100% { left: 40px; opacity: 0; } }
       `}</style>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
+        <GeometricBG variant="circuit" opacity={0.02} />
+        <GlowOrb color="rgba(99,102,241,0.08)" size={500} top="10%" right="5%" blur={120} />
 
         {/* ── Header ── */}
         <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
@@ -1329,24 +1294,19 @@ export default function AiDecisionsPage() {
         <AgentPipelineFlow decision={decisions[0] ?? null} />
 
         {/* ── KPI Strip ── */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-          {[
-            { label: 'Total Decisions', value: String(stats.total), color: C.text },
-            { label: 'GO Signals', value: String(stats.goes), color: C.bull },
-            { label: 'Vetoed', value: String(stats.vetoes), color: C.purple },
-            { label: 'Gate Blocked', value: String(stats.blocked), color: C.bear },
-            { label: 'Avg Confidence', value: `${Math.round(stats.avgConf * 100)}%`, color: C.brand },
-            { label: 'Models Used', value: String(stats.models), color: C.info },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{
-              flex: '1 1 130px', background: G.card, border: `1px solid ${C.border}`,
-              borderRadius: R.md, padding: '12px 16px', boxShadow: S.sm,
-            }}>
-              <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 3 }}>{label}</div>
-              <div style={{ fontSize: F.xl, fontWeight: 700, color }}>{value}</div>
-            </div>
-          ))}
-        </div>
+        <motion.div
+          variants={orchestratedContainer}
+          initial="hidden"
+          animate="show"
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}
+        >
+          <StatCard label="Total Decisions" value={String(stats.total)} color={C.text} />
+          <StatCard label="GO Signals" value={String(stats.goes)} color={C.bull} />
+          <StatCard label="Vetoed" value={String(stats.vetoes)} color={C.purple} />
+          <StatCard label="Gate Blocked" value={String(stats.blocked)} color={C.bear} />
+          <StatCard label="Avg Confidence" value={`${Math.round(stats.avgConf * 100)}%`} color={C.brand} />
+          <StatCard label="Models Used" value={String(stats.models)} color={C.info} />
+        </motion.div>
 
         {/* ── Main Layout: feed + sidebar ── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 20, alignItems: 'start' }}>
@@ -1378,7 +1338,7 @@ export default function AiDecisionsPage() {
                 onChange={(e) => setSymbolFilter(e.target.value)}
                 style={{
                   padding: '6px 12px', borderRadius: R.sm, border: `1px solid ${C.border}`,
-                  background: G.card, color: C.text, fontSize: F.xs, cursor: 'pointer',
+                  ...Glass.card, color: C.text, fontSize: F.xs, cursor: 'pointer',
                 }}
               >
                 {symbols.map((s) => <option key={s} value={s}>{s === 'ALL' ? 'All symbols' : s}</option>)}
@@ -1406,7 +1366,7 @@ export default function AiDecisionsPage() {
               <div style={{ color: C.muted, padding: 32, textAlign: 'center', fontSize: F.base }}>Loading decisions…</div>
             ) : filtered.length === 0 ? (
               <div style={{
-                background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl,
+                ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl,
                 padding: 40, textAlign: 'center',
               }}>
                 <div style={{ fontSize: 32, marginBottom: 10 }}>🤖</div>
@@ -1441,7 +1401,7 @@ export default function AiDecisionsPage() {
             <MemoryEvolutionChart />
 
             {/* "What makes this unique" callout */}
-            <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
+            <Card glass style={{ padding: `${SP[4]}px ${SP[5]}px` }}>
               <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>Why this matters</div>
               {[
                 { icon: '🔍', text: 'Every decision has a reason — no black box' },
@@ -1456,10 +1416,10 @@ export default function AiDecisionsPage() {
               <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
                 <Link href="/about#agents" style={{ fontSize: F.xs, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>About the agent architecture →</Link>
               </div>
-            </div>
+            </Card>
 
             {/* Deep dive links */}
-            <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 18px' }}>
+            <Card glass style={{ padding: `${SP[4]}px ${SP[5]}px` }}>
               <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 10 }}>Explore further</div>
               {[
                 { href: '/forensics', label: 'Trade Forensics', desc: 'Pair decisions with trade outcomes' },
@@ -1472,7 +1432,7 @@ export default function AiDecisionsPage() {
                   <span style={{ fontSize: F.xs, color: C.muted }}>{desc}</span>
                 </Link>
               ))}
-            </div>
+            </Card>
           </div>
         </div>
       </div>

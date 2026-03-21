@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { C, R, S, F, G } from '../src/theme';
+import { motion } from 'framer-motion';
+import { C, R, S, F, G, Glass, SP } from '../src/theme';
+import { Card } from '../components/ui';
+import { staggerContainer, fadeUp, hoverGlow, cinematicReveal, orchestratedContainer } from '../src/animations';
+import { GeometricBG } from '../components/ui/GeometricBG';
+import { GlowOrb } from '../components/ui/GlowOrb';
+import { SignalWaterfall } from '../components/ui/SignalWaterfall';
+import { NeuralNetwork } from '../components/ui/NeuralNetwork';
 
 // ─── Gate Funnel Diagram ──────────────────────────────────────────────────────
 
@@ -19,7 +26,7 @@ function GateFunnelChart() {
   ];
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px', marginTop: 20 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.lg, padding: '18px 20px', marginTop: 20 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Funnel — How Signals Become Trades</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>Every signal must pass all 6 gates plus an AI review before reaching the exchange. Only the strongest setups survive.</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -64,13 +71,13 @@ function FAQ({ q, a }: { q: string; a: React.ReactNode }) {
     <div style={{ border: `1px solid ${open ? C.borderBright : C.border}`, borderRadius: R.md, marginBottom: 8, overflow: 'hidden' }}>
       <button onClick={() => setOpen((v) => !v)} style={{
         width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '14px 18px', background: G.card, border: 'none', cursor: 'pointer', textAlign: 'left', gap: 12,
+        padding: '14px 18px', ...Glass.card, border: 'none', cursor: 'pointer', textAlign: 'left', gap: 12,
       }}>
         <span style={{ fontSize: F.sm, fontWeight: 600, color: C.text }}>{q}</span>
         <span style={{ color: C.muted, flexShrink: 0, fontSize: F.lg, transition: 'transform 0.15s', transform: open ? 'rotate(45deg)' : 'none' }}>+</span>
       </button>
       {open && (
-        <div style={{ padding: '0 18px 16px', fontSize: F.sm, color: C.textSub, lineHeight: 1.7, background: G.card, borderTop: `1px solid ${C.border}` }}>
+        <div style={{ padding: '0 18px 16px', fontSize: F.sm, color: C.textSub, lineHeight: 1.7, ...Glass.card, borderTop: `1px solid ${C.border}` }}>
           {a}
         </div>
       )}
@@ -217,7 +224,7 @@ function SafetyStats() {
     }}>
       {SAFETY_STATS.map((stat, i) => (
         <div key={stat.label} style={{
-          background: G.card,
+          ...Glass.card,
           padding: '22px 18px',
           textAlign: 'center',
           borderRight: i < SAFETY_STATS.length - 1 ? `1px solid ${C.border}` : undefined,
@@ -258,7 +265,7 @@ function SafetyStats() {
 
 function StrategyCard({ name, desc, data, why }: { name: string; desc: string; data: string; why: string }) {
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px' }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 22px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
         <span style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>{name}</span>
         <span style={{ fontSize: F.xs, padding: '2px 8px', borderRadius: R.pill, background: 'rgba(22,163,74,0.12)', color: C.bull, fontWeight: 700 }}>● LIVE</span>
@@ -305,7 +312,7 @@ function TransparencyScoreCard() {
   const svgH = dimensions.length * (ROW_H + GAP) + 40; // rows + legend space
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>Transparency Comparison</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>How open are trading bots about their inner workings? Scored 0–100.</div>
 
@@ -504,7 +511,7 @@ function RegimeTransitionDiagram() {
   };
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
+    <div className="glass-card card-hover glass-noise" style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Regime Transition Map — How Markets Evolve
       </div>
@@ -668,7 +675,10 @@ export default function AboutPage() {
         <meta name="description" content="WAGMI doesn't have a black box. It has an audit trail. Learn about the 4 strategies, 7 AI agents, and the risk management system that protects your capital." />
       </Head>
 
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: '32px 20px' }}>
+      <div className="bg-aurora" style={{ maxWidth: 860, margin: '0 auto', padding: '32px 20px', position: 'relative' }}>
+        <GeometricBG variant="diamond" opacity={0.03} />
+        <GlowOrb color="rgba(99,102,241,0.1)" size={350} top="5%" right="10%" duration={22} />
+        <GlowOrb color="rgba(168,85,247,0.07)" size={300} bottom="20%" left="15%" duration={26} delay={-8} />
 
         {/* ── Hero ── */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -688,8 +698,8 @@ export default function AboutPage() {
             { value: '7', label: 'AI agents', color: C.brand },
             { value: '6', label: 'risk gates', color: C.bull },
           ].map(({ value, label, color }) => (
-            <div key={label} className="card-hover" style={{
-              background: G.card,
+            <div key={label} className="glass-card card-hover glass-noise" style={{
+              ...Glass.card,
               border: `1px solid ${color}30`,
               borderRadius: R.lg,
               padding: '20px 16px',
@@ -910,12 +920,21 @@ export default function AboutPage() {
             </div>
           </div>
 
+          {/* ── Neural Network Architecture ── */}
+          <Card variant="crystal" refraction>
+            <div style={{ padding: '20px' }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 }}>Agent Pipeline Architecture</div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 16 }}>9 specialist agents with real-time data flow</div>
+              <NeuralNetwork height={280} />
+            </div>
+          </Card>
+
           {/* ── Safety Stats Strip ── */}
           <SafetyStats />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {AGENTS.map((a) => (
-              <div key={a.name} className="card-hover" style={{ background: G.card, border: `1px solid ${a.color}30`, borderRadius: R.lg, padding: '16px 20px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div key={a.name} className="glass-card card-hover glass-noise" style={{ ...Glass.card, border: `1px solid ${a.color}30`, borderRadius: R.lg, padding: '16px 20px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ flexShrink: 0, minWidth: 160 }}>
                   <div style={{ fontSize: F.sm, fontWeight: 800, color: a.color }}>{a.name}</div>
                   <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>Model: {a.model}</div>
@@ -950,6 +969,7 @@ export default function AboutPage() {
             <GateStep n={6} title="Position Sizing" desc="Final size = 1.5% of current equity ÷ stop distance. Never more than 1.5% of capital at risk on any single trade." />
           </div>
           <GateFunnelChart />
+          <SignalWaterfall />
           <div style={{ background: `${C.bull}08`, border: `1px solid ${C.bull}25`, borderRadius: R.lg, padding: '14px 18px', fontSize: F.sm, color: C.textSub, marginTop: 20 }}>
             <strong style={{ color: C.bull }}>The result:</strong> Even in the worst realistic scenario — all open positions hit their stops simultaneously — you lose at most 4.5% of capital in one session. The daily loss circuit breaker triggers long before that.
           </div>
@@ -965,7 +985,7 @@ export default function AboutPage() {
               { n: '4', text: 'No cherry-picked results — all trades included. All losses shown. One ledger.', href: null },
               { n: '5', text: 'Model costs are disclosed — we\'re not hiding that we use Claude to think.', href: null },
             ].map(({ n, text, href }) => (
-              <div key={n} className="card-hover" style={{ display: 'flex', gap: 14, padding: '12px 16px', background: G.card, borderRadius: R.md, border: `1px solid ${C.border}`, alignItems: 'flex-start' }}>
+              <div key={n} className="glass-card card-hover glass-noise" style={{ display: 'flex', gap: 14, padding: '12px 16px', ...Glass.card, borderRadius: R.md, border: `1px solid ${C.border}`, alignItems: 'flex-start' }}>
                 <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%', background: C.bull + '20', color: C.bull, fontWeight: 800, fontSize: F.xs, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n}</span>
                 <span style={{ fontSize: F.sm, color: C.textSub, lineHeight: 1.5 }}>
                   {text} {href && <Link href={href} style={{ color: C.brand, fontWeight: 600, textDecoration: 'none' }}>View →</Link>}
