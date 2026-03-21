@@ -5,6 +5,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import Layout from '../components/Layout';
 import { useAuth } from '../src/useAuth';
 import '../styles/animations.css';
+import '../styles/premium-animations.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
