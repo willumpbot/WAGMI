@@ -1112,9 +1112,9 @@ export default function Home() {
           variants={fadeUp}
           initial="hidden"
           animate="show"
-          className="glass-card breathe-glow"
+          className="breathe-glow"
           style={{
-            ...Glass.card,
+            ...Glass.crystal,
             borderRadius: R.lg,
             padding: '14px 20px',
             marginBottom: 24,
@@ -1221,9 +1221,9 @@ export default function Home() {
         />
         {!isMobile && <motion.div
           variants={fadeUp}
-          className="glass-card glass-noise"
+          className="glass-noise"
           style={{
-            ...Glass.card,
+            ...Glass.crystal,
             borderRadius: R.lg,
             padding: '20px 24px',
             display: 'flex',
@@ -1299,7 +1299,7 @@ export default function Home() {
         </div>
 
         {/* Full-width chart */}
-        <div className="glow-border glass-card" style={{ ...Glass.card, borderRadius: R.md, overflow: 'hidden' }}>
+        <div className="glow-border" style={{ ...Glass.crystal, borderRadius: R.md, overflow: 'hidden' }}>
           <CandleChart
             symbol={activeChart}
             apiBase={apiBase}
@@ -1315,7 +1315,7 @@ export default function Home() {
       <div className="stagger-reveal" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 220px 220px', gap: 14, marginBottom: 28, alignItems: 'start' }}>
 
         {/* LEFT — Tabbed heatmap section (order: 2 on mobile so AI stance shows first) */}
-        <div className="glass-card" style={{ ...Glass.card, borderRadius: R.lg, overflow: 'hidden', order: isMobile ? 2 : 1 }}>
+        <div style={{ ...Glass.crystal, borderRadius: R.lg, overflow: 'hidden', order: isMobile ? 2 : 1 }}>
           {/* Tab strip */}
           <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, background: '#0f172a' }}>
             {(['market', 'scores', 'correlation', 'regime'] as const).map((tab) => {
