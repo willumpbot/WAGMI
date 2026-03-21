@@ -1,0 +1,402 @@
+/**
+ * Data Visualization Styles
+ * Professional chart backgrounds, gradients, and visual patterns
+ */
+
+/* ─── CHART GRADIENTS ──────────────────────────────────────────────────────── */
+
+.chart-gradient-brand {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+}
+
+.chart-gradient-bull {
+  background: linear-gradient(180deg, rgba(22, 163, 74, 0.1) 0%, transparent 100%);
+}
+
+.chart-gradient-bear {
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.1) 0%, transparent 100%);
+}
+
+.chart-gradient-warn {
+  background: linear-gradient(180deg, rgba(217, 119, 6, 0.1) 0%, transparent 100%);
+}
+
+/* ─── CHART LINES & STROKES ───────────────────────────────────────────────── */
+
+.chart-line-brand {
+  stroke: url(#gradientBrand);
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-line-bull {
+  stroke: url(#gradientBull);
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-line-bear {
+  stroke: url(#gradientBear);
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ─── CHART AREAS ──────────────────────────────────────────────────────────── */
+
+.chart-area {
+  fill: url(#gradientArea);
+  opacity: 0.3;
+}
+
+.chart-area:hover {
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+/* ─── GRID LINES ───────────────────────────────────────────────────────────── */
+
+.chart-grid-line {
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 1;
+  stroke-dasharray: 2, 4;
+}
+
+.chart-grid-line-major {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+/* ─── AXIS LABELS ──────────────────────────────────────────────────────────── */
+
+.chart-axis-label {
+  font-size: 11px;
+  fill: #64748b;
+  font-weight: 500;
+}
+
+.chart-axis-label-major {
+  font-size: 12px;
+  fill: #a8a8b8;
+  font-weight: 600;
+}
+
+/* ─── TOOLTIPS ─────────────────────────────────────────────────────────────── */
+
+.chart-tooltip {
+  background: rgba(26, 34, 54, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+  color: #f1f5f9;
+  pointer-events: none;
+  animation: slideInUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chart-tooltip-label {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.chart-tooltip-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+/* ─── LEGEND ───────────────────────────────────────────────────────────────── */
+
+.chart-legend {
+  display: flex;
+  gap: 20px;
+  padding: 16px;
+  background: rgba(26, 34, 54, 0.5);
+  border-radius: 10px;
+  margin-top: 16px;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.chart-legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* ─── PERCENTAGE DISPLAYS ──────────────────────────────────────────────────── */
+
+.stat-percentage-bull {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.stat-percentage-bear {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.stat-percentage-neutral {
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* ─── SPARKLINES ───────────────────────────────────────────────────────────── */
+
+.sparkline {
+  height: 20px;
+  margin: 4px 0;
+}
+
+.sparkline-line {
+  stroke: url(#sparklineGradient);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ─── HEATMAPS ─────────────────────────────────────────────────────────────── */
+
+.heatmap-cell {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.heatmap-cell:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+}
+
+.heatmap-cell-bull-3 {
+  background: #166534;
+}
+
+.heatmap-cell-bull-2 {
+  background: #15803d;
+}
+
+.heatmap-cell-bull-1 {
+  background: #22c55e;
+}
+
+.heatmap-cell-neutral {
+  background: #374151;
+}
+
+.heatmap-cell-bear-1 {
+  background: #ef4444;
+}
+
+.heatmap-cell-bear-2 {
+  background: #b91c1c;
+}
+
+.heatmap-cell-bear-3 {
+  background: #7f1d1d;
+}
+
+/* ─── PROGRESS INDICATORS ──────────────────────────────────────────────────── */
+
+.progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+}
+
+.progress-bar-fill-bull {
+  background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
+  box-shadow: 0 0 12px rgba(22, 163, 74, 0.3);
+}
+
+.progress-bar-fill-bear {
+  background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.3);
+}
+
+/* ─── BADGE ENHANCEMENTS ───────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.badge-bull {
+  background: rgba(22, 163, 74, 0.12);
+  color: #22c55e;
+  border: 1px solid rgba(22, 163, 74, 0.2);
+}
+
+.badge-bull:hover {
+  background: rgba(22, 163, 74, 0.2);
+  box-shadow: 0 0 12px rgba(22, 163, 74, 0.2);
+}
+
+.badge-bear {
+  background: rgba(220, 38, 38, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.badge-bear:hover {
+  background: rgba(220, 38, 38, 0.2);
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.2);
+}
+
+.badge-brand {
+  background: rgba(99, 102, 241, 0.12);
+  color: #a78bfa;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.badge-brand:hover {
+  background: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+}
+
+/* ─── STATE INDICATORS ─────────────────────────────────────────────────────── */
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.status-dot-live {
+  background: #22c55e;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-dot-pending {
+  background: #f59e0b;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.status-dot-error {
+  background: #ef4444;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* ─── COMPARISONS ──────────────────────────────────────────────────────────── */
+
+.comparison-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.comparison-card {
+  padding: 16px;
+  background: rgba(26, 34, 54, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.comparison-card:hover {
+  background: rgba(26, 34, 54, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+.comparison-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.comparison-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+}
+
+.comparison-delta {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.comparison-delta-positive {
+  color: #22c55e;
+}
+
+.comparison-delta-negative {
+  color: #ef4444;
+}
+
+/* ─── TABLE ENHANCEMENTS ───────────────────────────────────────────────────── */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table-header {
+  background: rgba(26, 34, 54, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.data-table-header-cell {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-table-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.2s ease;
+}
+
+.data-table-row:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.data-table-cell {
+  padding: 12px 16px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.data-table-cell-numeric {
+  text-align: right;
+  font-family: 'Monaco', monospace;
+}

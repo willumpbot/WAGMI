@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { C, R, F, G, S, DARK, fmtUsd, fmtPct, A } from '../src/theme';
+import { C, R, F, G, S, DARK, fmtUsd, fmtPct, A, BORDERS, OVERLAYS, COMPONENTS } from '../src/theme';
 import { useAuth } from '../src/useAuth';
 
 interface StatCard {
@@ -209,8 +209,9 @@ export default function HomePage() {
                   style={{
                     padding: '24px',
                     background: `rgba(26, 34, 54, 0.6)`,
-                    backdropFilter: 'blur(10px)',
-                    border: `1px solid rgba(255, 255, 255, 0.08)`,
+                    backdropFilter: OVERLAYS.glass,
+                    WebkitBackdropFilter: OVERLAYS.glass,
+                    border: BORDERS.subtle,
                     borderRadius: `${R.lg}px`,
                     transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     cursor: 'pointer',
@@ -283,13 +284,14 @@ export default function HomePage() {
                     gap: '8px',
                     padding: '20px 16px',
                     background: `rgba(26, 34, 54, 0.5)`,
-                    border: `1px solid rgba(255, 255, 255, 0.08)`,
+                    border: BORDERS.subtle,
                     borderRadius: `${R.md}px`,
                     textDecoration: 'none',
                     color: 'inherit',
                     transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     cursor: 'pointer',
-                    backdropFilter: 'blur(10px)',
+                    backdropFilter: OVERLAYS.glassLight,
+                    WebkitBackdropFilter: OVERLAYS.glassLight,
                     animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.25 + idx * 0.05}s both`,
                   }}
                   onMouseEnter={(e) => {
@@ -319,10 +321,11 @@ export default function HomePage() {
           style={{
             padding: '24px',
             background: `rgba(26, 34, 54, 0.6)`,
-            border: `1px solid rgba(255, 255, 255, 0.08)`,
+            border: BORDERS.subtle,
             borderRadius: `${R.lg}px`,
             textAlign: 'center',
-            backdropFilter: 'blur(10px)',
+            backdropFilter: OVERLAYS.glass,
+            WebkitBackdropFilter: OVERLAYS.glass,
             animation: `slideInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both`,
           }}
         >
