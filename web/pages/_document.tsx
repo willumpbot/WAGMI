@@ -608,6 +608,20 @@ export default function Document() {
             50%      { box-shadow: 0 0 35px rgba(99,102,241,0.12), inset 0 1px 0 rgba(255,255,255,0.06); }
           }
           .breathe-slow { animation: breatheSlow 4s ease-in-out infinite; }
+
+          /* ── Heatmap Cell Breathing (for hot cells) ──────── */
+          @keyframes heatPulse {
+            0%, 100% { filter: brightness(1); }
+            50%      { filter: brightness(1.2); }
+          }
+          .heat-pulse { animation: heatPulse 3s ease-in-out infinite; }
+
+          /* ── Equity Curve Glow Trace Pulse ──────────────── */
+          @keyframes traceGlow {
+            0%, 100% { opacity: 0.15; }
+            50%      { opacity: 0.35; }
+          }
+          .equity-glow-trace { animation: traceGlow 2s ease-in-out infinite; }
         `}</style>
       </Head>
       <body>

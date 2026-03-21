@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useId } from 'react';
 import { motion } from 'framer-motion';
 import { C, R, F, G, fmtUsd } from '../../src/theme';
 import { pathDraw, staggerContainer, fadeUp } from '../../src/animations';
@@ -154,7 +154,11 @@ export function EquityCurve({ points, width = 700, height = 200, showSMA = true 
 
   const legendX = pad.left + 8;
   const legendY = pad.top + 4;
-  const gradId = `eqGrad-${Math.random().toString(36).slice(2, 8)}`;
+  const uniqueId = useId();
+  const gradId = `eqGrad-${uniqueId}`;
+  const glowId = `eqGlow-${uniqueId}`;
+  const trailGradId = `eqTrail-${uniqueId}`;
+  const mainColor = isPositive ? C.bull : C.bear;
 
   return (
     <motion.svg
@@ -167,10 +171,39 @@ export function EquityCurve({ points, width = 700, height = 200, showSMA = true 
     >
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={isPositive ? C.bull : C.bear} stopOpacity={0.25} />
-          <stop offset="100%" stopColor={isPositive ? C.bull : C.bear} stopOpacity={0} />
+          <stop offset="0%" stopColor={mainColor} stopOpacity={0.25} />
+          <stop offset="100%" stopColor={mainColor} stopOpacity={0} />
+        </linearGradient>
+        {/* Glow filter for the trailing particle */}
+        <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        {/* Animated glow trail gradient along the line */}
+        <linearGradient id={trailGradId} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor={mainColor} stopOpacity={0} />
+          <stop offset="85%" stopColor={mainColor} stopOpacity={0} />
+          <stop offset="95%" stopColor={mainColor} stopOpacity={0.8} />
+          <stop offset="100%" stopColor="#fff" stopOpacity={1} />
         </linearGradient>
       </defs>
+
+      {/* Ambient glow line underneath the main line */}
+      <motion.path
+        d={equityD}
+        fill="none"
+        stroke={mainColor}
+        strokeWidth={8}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        opacity={0.12}
+        style={{ filter: `blur(6px)` }}
+        variants={pathDraw}
+      />
 
       {/* Grid lines */}
       {yLabels.map(({ y }, i) => (
@@ -219,11 +252,21 @@ export function EquityCurve({ points, width = 700, height = 200, showSMA = true 
         />
       )}
 
-      {/* Equity line */}
+      {/* Equity line — glow trail version */}
       <motion.path
         d={equityD}
         fill="none"
-        stroke={isPositive ? C.bull : C.bear}
+        stroke={`url(#${trailGradId})`}
+        strokeWidth={3}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        variants={pathDraw}
+      />
+      {/* Equity line — main solid */}
+      <motion.path
+        d={equityD}
+        fill="none"
+        stroke={mainColor}
         strokeWidth={2.5}
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -256,15 +299,36 @@ export function EquityCurve({ points, width = 700, height = 200, showSMA = true 
       {/* Start dot */}
       <circle cx={px(0)} cy={py(equities[0])} r={4} fill={C.muted} />
 
+      {/* Current value dot — outer pulse ring */}
+      <motion.circle
+        cx={px(lastIdx)}
+        cy={py(lastEquity)}
+        r={10}
+        fill="none"
+        stroke={mainColor}
+        strokeWidth={1.5}
+        initial={{ opacity: 0.6, r: 6 }}
+        animate={{ opacity: [0.6, 0, 0.6], r: [6, 16, 6] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      {/* Current value dot — glow halo */}
+      <circle
+        cx={px(lastIdx)}
+        cy={py(lastEquity)}
+        r={12}
+        fill={mainColor}
+        opacity={0.15}
+        style={{ filter: 'blur(6px)' }}
+      />
       {/* Current value dot */}
       <circle
         cx={px(lastIdx)}
         cy={py(lastEquity)}
         r={6}
-        fill={isPositive ? C.bull : C.bear}
+        fill={mainColor}
         stroke={C.card}
         strokeWidth={2}
-        style={{ filter: `drop-shadow(0 0 4px ${isPositive ? C.bull : C.bear})` }}
+        filter={`url(#${glowId})`}
       />
       <text
         x={px(lastIdx) - 8}

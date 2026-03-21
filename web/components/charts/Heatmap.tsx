@@ -1,9 +1,22 @@
 'use client';
 
-import React from 'react';
+import React, { useId } from 'react';
 import { motion } from 'framer-motion';
 import { C, R, F } from '../../src/theme';
 import { cellFade, staggerContainer } from '../../src/animations';
+
+/** Enhanced cell animation: scale up with a brief intensity burst, then settle */
+const cellPulse: import('framer-motion').Variants = {
+  hidden: { opacity: 0, scale: 0.7 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      duration: 0.4,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    },
+  },
+};
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,26 +113,40 @@ export function Heatmap({
               {cols.map((col, ci) => {
                 const val = lookup.get(`${row}__${col}`);
                 const hasValue = val !== undefined;
+                const intensity = hasValue ? Math.abs(val) : 0;
+                // Hot cells (|value| > 0.5) get a subtle breathing glow
+                const isHot = intensity > 0.5;
+                const cellColor = hasValue ? colorScale(val) : C.surface;
 
                 return (
                   <td key={col} style={{ padding: 1 }}>
                     <motion.div
-                      variants={cellFade}
-                      transition={{ delay: (ri * cols.length + ci) * 0.02 }}
+                      variants={cellPulse}
+                      transition={{ delay: (ri * cols.length + ci) * 0.025 }}
                       title={`${row} / ${col}: ${hasValue ? val.toFixed(2) : 'N/A'}`}
                       style={{
                         width: cellSize,
                         height: 30,
                         borderRadius: 4,
-                        background: hasValue ? colorScale(val) : C.surface,
-                        border: `1px solid ${C.border}`,
+                        background: cellColor,
+                        border: `1px solid ${hasValue ? 'rgba(255,255,255,0.08)' : C.border}`,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: 9,
                         fontWeight: 700,
                         color: hasValue ? '#fff' : C.muted,
+                        boxShadow: isHot
+                          ? `0 0 ${8 + intensity * 10}px ${cellColor}40, inset 0 1px 0 rgba(255,255,255,0.1)`
+                          : 'none',
+                        transition: 'box-shadow 0.3s ease, background 0.3s ease',
                       }}
+                      whileHover={hasValue ? {
+                        scale: 1.15,
+                        boxShadow: `0 0 20px ${cellColor}60, inset 0 1px 0 rgba(255,255,255,0.15)`,
+                        zIndex: 10,
+                        transition: { duration: 0.2 },
+                      } : undefined}
                     >
                       {hasValue ? val.toFixed(1) : '\u2014'}
                     </motion.div>

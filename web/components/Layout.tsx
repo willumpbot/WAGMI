@@ -48,7 +48,29 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", position: 'relative', overflow: 'hidden' }}>
+      {/* ── Global Animated Nebula Background ──────── */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      >
+        {/* Primary gradient mesh — breathing nebula */}
+        <div className="nebula-mesh" style={{ position: 'absolute', inset: 0 }} />
+        {/* Fine dot grid for texture/grain */}
+        <div className="nebula-grid" style={{ position: 'absolute', inset: 0, opacity: 0.4 }} />
+        {/* Subtle vignette for focus */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.35) 100%)',
+        }} />
+      </div>
+
       {/* Skip-to-content */}
       <a href="#main-content" className="skip-to-content">Skip to content</a>
 
@@ -64,6 +86,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           display: 'flex',
           flexDirection: 'column',
           paddingTop: isMobile ? 52 : 0,
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         <main id="main-content" role="main" style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 20px 60px', width: '100%', flex: 1 }}>
@@ -92,8 +116,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </footer>
       </div>
 
-      {/* Global styles for live-dot animation */}
+      {/* Global styles */}
       <style>{`
+        /* ── Nebula Background Animation ──────────────── */
+        @keyframes nebulaDrift {
+          0%   { background-position: 0% 50%, 100% 0%, 50% 100%, 30% 70%; }
+          25%  { background-position: 100% 30%, 0% 80%, 70% 20%, 60% 40%; }
+          50%  { background-position: 50% 100%, 80% 20%, 20% 60%, 90% 10%; }
+          75%  { background-position: 20% 60%, 60% 100%, 90% 40%, 10% 80%; }
+          100% { background-position: 0% 50%, 100% 0%, 50% 100%, 30% 70%; }
+        }
+        .nebula-mesh {
+          background:
+            radial-gradient(ellipse 80% 60% at 20% 40%, rgba(99,102,241,0.07) 0%, transparent 70%),
+            radial-gradient(ellipse 60% 80% at 80% 20%, rgba(168,85,247,0.05) 0%, transparent 70%),
+            radial-gradient(ellipse 70% 50% at 50% 85%, rgba(6,182,212,0.04) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 70% at 70% 60%, rgba(236,72,153,0.025) 0%, transparent 70%);
+          background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%;
+          animation: nebulaDrift 35s ease-in-out infinite;
+        }
+        .nebula-grid {
+          background-image:
+            radial-gradient(circle, rgba(99,102,241,0.12) 1px, transparent 1px);
+          background-size: 32px 32px;
+        }
+
         @keyframes livePulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
