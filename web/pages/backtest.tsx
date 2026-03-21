@@ -3245,7 +3245,8 @@ export default function Backtest() {
   };
 
   return (
-    <motion.div variants={staggerContainerSlow} initial="hidden" animate="show">
+    <motion.div className="bg-aurora" style={{ position: 'relative' }} variants={staggerContainerSlow} initial="hidden" animate="show">
+      <div className="floating-orb orb-brand" style={{ position: 'fixed', top: '12%', left: '8%' }} />
       {/* ── Header ───────────────────────────────────── */}
       <motion.div variants={fadeUp} style={{ marginBottom: 24 }}>
         <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>

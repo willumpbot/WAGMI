@@ -3320,7 +3320,7 @@ export default function SignalsPage() {
   const SYMBOLS = ['BTC', 'SOL', 'HYPE'];
 
   return (
-    <main style={{ padding: '32px 24px', maxWidth: 1140, margin: '0 auto', fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <main className="bg-aurora" style={{ padding: '32px 24px', maxWidth: 1140, margin: '0 auto', fontFamily: "'Inter', system-ui, sans-serif", position: 'relative' }}>
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }

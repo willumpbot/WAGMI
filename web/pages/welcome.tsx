@@ -675,7 +675,10 @@ export default function WelcomePage() {
         <meta name="description" content="7 AI agents analyze every crypto setup, debate the thesis, and deliver precise trade signals with full reasoning. Copy every signal in seconds." />
       </Head>
 
-      <div style={{ background: C.bg, minHeight: '100vh', fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+      <div className="bg-aurora" style={{ minHeight: '100vh', fontFamily: "'Inter', system-ui, -apple-system, sans-serif", position: 'relative', overflow: 'hidden' }}>
+        <div className="floating-orb orb-brand" style={{ position: 'fixed', top: '5%', left: '15%' }} />
+        <div className="floating-orb orb-purple" style={{ position: 'fixed', top: '40%', right: '8%' }} />
+        <div className="floating-orb orb-cyan" style={{ position: 'fixed', bottom: '10%', left: '30%' }} />
 
         {/* ── Top mini-nav ── */}
         <nav style={{ borderBottom: `1px solid ${C.border}`, background: C.surface }}>

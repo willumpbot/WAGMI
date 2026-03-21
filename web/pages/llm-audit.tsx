@@ -1460,7 +1460,8 @@ export default function LlmAudit() {
   );
 
   return (
-    <div>
+    <div className="bg-aurora" style={{ position: 'relative' }}>
+      <div className="floating-orb orb-purple" style={{ position: 'fixed', top: '20%', left: '5%' }} />
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>

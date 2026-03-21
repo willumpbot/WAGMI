@@ -2499,7 +2499,9 @@ export default function CopyTrade() {
     : null;
 
   return (
-    <div>
+    <div className="bg-aurora" style={{ position: 'relative' }}>
+      <div className="floating-orb orb-brand" style={{ position: 'fixed', top: '8%', right: '12%' }} />
+      <div className="floating-orb orb-cyan" style={{ position: 'fixed', bottom: '15%', left: '8%' }} />
       {/* Page Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: F['3xl'], fontWeight: 900, marginBottom: 8, color: C.text, letterSpacing: -0.5 }}>Copy <span className="gradient-text">Trade</span></h1>

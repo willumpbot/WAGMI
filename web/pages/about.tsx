@@ -670,7 +670,9 @@ export default function AboutPage() {
         <meta name="description" content="WAGMI doesn't have a black box. It has an audit trail. Learn about the 4 strategies, 7 AI agents, and the risk management system that protects your capital." />
       </Head>
 
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: '32px 20px' }}>
+      <div className="bg-aurora" style={{ maxWidth: 860, margin: '0 auto', padding: '32px 20px', position: 'relative' }}>
+        <div className="floating-orb orb-brand" style={{ position: 'fixed', top: '10%', right: '15%' }} />
+        <div className="floating-orb orb-purple" style={{ position: 'fixed', bottom: '20%', left: '10%' }} />
 
         {/* ── Hero ── */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>

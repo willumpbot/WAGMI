@@ -3075,7 +3075,8 @@ export default function Forensics() {
   }, [filtered]);
 
   return (
-    <motion.div variants={staggerContainerSlow} initial="hidden" animate="show">
+    <motion.div className="bg-aurora" style={{ position: 'relative' }} variants={staggerContainerSlow} initial="hidden" animate="show">
+      <div className="floating-orb orb-cyan" style={{ position: 'fixed', top: '15%', right: '10%' }} />
       {/* Header */}
       <motion.div variants={fadeUp} style={{ marginBottom: 28 }}>
         <div style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
