@@ -25,7 +25,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { C, R, S, F, G, SP, Glass, timeAgo } from '../src/theme';
-import { fadeUp, staggerContainer, staggerContainerSlow, hoverLift, hoverGlow, cinematicReveal, orchestratedContainer, magneticHover, etherealFloat } from '../src/animations';
+import { fadeUp, staggerContainer, staggerContainerSlow, hoverGlow, cinematicReveal, orchestratedContainer, magneticHover } from '../src/animations';
 import { apiFetch } from '../src/api';
 
 import { NeuralNetwork } from '../components/ui/NeuralNetwork';

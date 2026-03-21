@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { LlmDecision, LlmMarketView, ActivityEvent, BacktestResult } from '../src/types';
 import { C, R, F, G, S, Glass, SP, fmtUsd as themeFmtUsd } from '../src/theme';
-import { staggerContainer, fadeUp, hoverGlow } from '../src/animations';
+import { staggerContainer, fadeUp } from '../src/animations';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -2475,7 +2475,7 @@ export default function CopyTrade() {
           setBacktest(await btRes.value.json());
         }
       } catch (e) {
-        if ((e as any)?.name !== 'AbortError') console.error('Fetch error:', e);
+        if ((e as any)?.name !== 'AbortError') { /* error handled silently */ }
       }
       if (!ctrl.signal.aborted) setLoading(false);
     };

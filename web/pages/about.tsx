@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { C, R, S, F, G, Glass, SP } from '../src/theme';
 import { Card } from '../components/ui';
-import { staggerContainer, fadeUp, hoverGlow, cinematicReveal, orchestratedContainer } from '../src/animations';
+import { staggerContainer, fadeUp, orchestratedContainer } from '../src/animations';
 import { GeometricBG } from '../components/ui/GeometricBG';
 import { GlowOrb } from '../components/ui/GlowOrb';
 import { SignalWaterfall } from '../components/ui/SignalWaterfall';
