@@ -361,7 +361,7 @@ function MarketHeatmap({ signals, loading }: { signals: Record<string, Signal> |
   if (loading) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '20px 24px',
@@ -448,7 +448,7 @@ function MarketHeatmap({ signals, loading }: { signals: Record<string, Signal> |
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -623,7 +623,7 @@ function SignalScoreRanking({ signals }: { signals: Record<string, Signal> }) {
   if (!hasRealSignals) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '40px 24px',
@@ -700,7 +700,7 @@ function SignalScoreRanking({ signals }: { signals: Record<string, Signal> }) {
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -941,7 +941,7 @@ function CorrelationMatrix({ signals }: { signals: Record<string, any> }) {
   }
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>Signal Score Correlation</div>
@@ -1017,7 +1017,7 @@ function SignalStrengthTimeline({ signals }: { signals: Record<string, any> }) {
   if (!entries.length) return null;
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ fontSize: F.base, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Strength Comparison</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>Current signal score across tracked assets — higher is a stronger buy setup</div>
 
@@ -1311,7 +1311,7 @@ function SignalRadarChart({ signals, symbol }: { signals: Record<string, Signal>
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -1533,7 +1533,7 @@ function StrategyVoteGrid({ signals }: { signals: Record<string, Signal> | null 
   if (!signals || symbols.length === 0) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '40px 24px',
@@ -1561,7 +1561,7 @@ function StrategyVoteGrid({ signals }: { signals: Record<string, Signal> | null 
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -1781,7 +1781,7 @@ function SignalQualityTrendChart({ signals }: { signals: Record<string, Signal> 
 
   if (seriesData.length === 0) {
     return (
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl, padding: '20px 24px', marginBottom: 28, color: C.muted, fontSize: F.sm }}>
         <div style={{ fontWeight: 700, color: C.textSub, marginBottom: 6 }}>Signal Quality Trend</div>
         No signal data yet
       </div>
@@ -1809,7 +1809,7 @@ function SignalQualityTrendChart({ signals }: { signals: Record<string, Signal> 
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -2014,7 +2014,7 @@ function MomentumIndicatorPanel({ signals }: { signals: Record<string, Signal> |
   if (!symbols) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '20px 24px',
@@ -2067,7 +2067,7 @@ function MomentumIndicatorPanel({ signals }: { signals: Record<string, Signal> |
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -2233,7 +2233,7 @@ function VolatilityRankingBars({ signals }: { signals: Record<string, Signal> | 
   if (!hasData) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '20px 24px',
@@ -2258,7 +2258,7 @@ function VolatilityRankingBars({ signals }: { signals: Record<string, Signal> | 
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',
@@ -2419,7 +2419,7 @@ function SymbolDominanceChart({ signals }: { signals: Record<string, Signal> | n
   if (!signals || Object.keys(signals).length === 0) {
     return (
       <div style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '40px 24px',
@@ -2528,7 +2528,7 @@ function SymbolDominanceChart({ signals }: { signals: Record<string, Signal> | n
 
   return (
     <div style={{
-      background: G.card,
+      ...Glass.card,
       border: `1px solid ${C.border}`,
       borderRadius: R.lg,
       padding: '20px 24px',

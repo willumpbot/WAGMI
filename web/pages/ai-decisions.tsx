@@ -1334,7 +1334,7 @@ export default function AiDecisionsPage() {
                 onChange={(e) => setSymbolFilter(e.target.value)}
                 style={{
                   padding: '6px 12px', borderRadius: R.sm, border: `1px solid ${C.border}`,
-                  background: G.card, color: C.text, fontSize: F.xs, cursor: 'pointer',
+                  ...Glass.card, color: C.text, fontSize: F.xs, cursor: 'pointer',
                 }}
               >
                 {symbols.map((s) => <option key={s} value={s}>{s === 'ALL' ? 'All symbols' : s}</option>)}
@@ -1362,7 +1362,7 @@ export default function AiDecisionsPage() {
               <div style={{ color: C.muted, padding: 32, textAlign: 'center', fontSize: F.base }}>Loading decisions…</div>
             ) : filtered.length === 0 ? (
               <div style={{
-                background: G.card, border: `1px solid ${C.border}`, borderRadius: R.xl,
+                ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.xl,
                 padding: 40, textAlign: 'center',
               }}>
                 <div style={{ fontSize: 32, marginBottom: 10 }}>🤖</div>

@@ -63,7 +63,7 @@ function calcSMA(data: number[], period: number): (number | null)[] {
 function EquityCurveChart({ points, width = 700, height = 200 }: { points: EquityCurvePoint[]; width?: number; height?: number }) {
   if (!points || points.length < 2) {
     return (
-      <div style={{ width: '100%', height, background: G.card, borderRadius: R.md, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm }}>
+      <div style={{ width: '100%', height, ...Glass.card, borderRadius: R.md, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: F.sm }}>
         No equity curve data available
       </div>
     );
@@ -1490,7 +1490,7 @@ function PnlTickerBanner({ trades }: { trades: TradeRecord[] }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', background: `linear-gradient(90deg, ${C.brand}22, ${G.card})`, border: `1px solid ${C.brand}44`, borderBottom: 'none', borderRadius: `${R.md}px ${R.md}px 0 0` }}>
           <span style={{ fontSize: F.xs, color: C.brand, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>● LIVE TRADE RESULTS</span>
         </div>
-        <div style={{ padding: '18px 20px', background: G.card, border: `1px solid ${C.brand}44`, borderTop: 'none', borderRadius: `0 0 ${R.md}px ${R.md}px` }}>
+        <div style={{ padding: '18px 20px', ...Glass.card, border: `1px solid ${C.brand}44`, borderTop: 'none', borderRadius: `0 0 ${R.md}px ${R.md}px` }}>
           <AwaitingResults label="Awaiting first closed trade" sub="Trades will appear here once the bot closes its first position" />
         </div>
       </div>
@@ -1611,7 +1611,7 @@ function CumulativePnlMilestones({ trades }: { trades: TradeRecord[] }) {
   return (
     <div
       style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.xl,
         padding: '20px 24px',
@@ -3135,7 +3135,7 @@ function LastLostTrade({ trades }: { trades: TradeRecord[] }) {
   const pnlPct = trade.entry && trade.exit ? ((trade.exit - trade.entry) / trade.entry) * 100 : 0;
 
   return (
-    <div style={{ background: G.card, border: `1px solid ${C.bear}40`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}>
+    <div style={{ ...Glass.card, border: `1px solid ${C.bear}40`, borderRadius: R.lg, padding: '20px 24px', marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
         <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>Last Lost Trade</span>
         <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: R.pill, background: C.bear + '22', color: C.bear, fontSize: F.xs, fontWeight: 700 }}>
@@ -3361,7 +3361,7 @@ export default function Results() {
           </div>
         </div>
       ) : (
-        <div style={{ marginBottom: 24, padding: 24, background: G.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted }}>
+        <div style={{ marginBottom: 24, padding: 24, ...Glass.card, borderRadius: R.lg, border: `1px solid ${C.border}`, textAlign: 'center', color: C.muted }}>
           No backtest results found. Run a backtest first via the{' '}
           <Link href="/backtest" style={{ color: C.brand }}>Backtest Explorer</Link>.
         </div>

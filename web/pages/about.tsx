@@ -21,7 +21,7 @@ function GateFunnelChart() {
   ];
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '18px 20px', marginTop: 20 }}>
+    <div className="card-hover" style={{ ...Glass.card, borderRadius: R.lg, padding: '18px 20px', marginTop: 20 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>Signal Funnel — How Signals Become Trades</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>Every signal must pass all 6 gates plus an AI review before reaching the exchange. Only the strongest setups survive.</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -66,13 +66,13 @@ function FAQ({ q, a }: { q: string; a: React.ReactNode }) {
     <div style={{ border: `1px solid ${open ? C.borderBright : C.border}`, borderRadius: R.md, marginBottom: 8, overflow: 'hidden' }}>
       <button onClick={() => setOpen((v) => !v)} style={{
         width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '14px 18px', background: G.card, border: 'none', cursor: 'pointer', textAlign: 'left', gap: 12,
+        padding: '14px 18px', ...Glass.card, border: 'none', cursor: 'pointer', textAlign: 'left', gap: 12,
       }}>
         <span style={{ fontSize: F.sm, fontWeight: 600, color: C.text }}>{q}</span>
         <span style={{ color: C.muted, flexShrink: 0, fontSize: F.lg, transition: 'transform 0.15s', transform: open ? 'rotate(45deg)' : 'none' }}>+</span>
       </button>
       {open && (
-        <div style={{ padding: '0 18px 16px', fontSize: F.sm, color: C.textSub, lineHeight: 1.7, background: G.card, borderTop: `1px solid ${C.border}` }}>
+        <div style={{ padding: '0 18px 16px', fontSize: F.sm, color: C.textSub, lineHeight: 1.7, ...Glass.card, borderTop: `1px solid ${C.border}` }}>
           {a}
         </div>
       )}
@@ -219,7 +219,7 @@ function SafetyStats() {
     }}>
       {SAFETY_STATS.map((stat, i) => (
         <div key={stat.label} style={{
-          background: G.card,
+          ...Glass.card,
           padding: '22px 18px',
           textAlign: 'center',
           borderRight: i < SAFETY_STATS.length - 1 ? `1px solid ${C.border}` : undefined,
@@ -260,7 +260,7 @@ function SafetyStats() {
 
 function StrategyCard({ name, desc, data, why }: { name: string; desc: string; data: string; why: string }) {
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px' }}>
+    <div className="card-hover" style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 22px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
         <span style={{ fontSize: F.base, fontWeight: 700, color: C.text }}>{name}</span>
         <span style={{ fontSize: F.xs, padding: '2px 8px', borderRadius: R.pill, background: 'rgba(22,163,74,0.12)', color: C.bull, fontWeight: 700 }}>● LIVE</span>
@@ -307,7 +307,7 @@ function TransparencyScoreCard() {
   const svgH = dimensions.length * (ROW_H + GAP) + 40; // rows + legend space
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
+    <div className="card-hover" style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>Transparency Comparison</div>
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 16 }}>How open are trading bots about their inner workings? Scored 0–100.</div>
 
@@ -506,7 +506,7 @@ function RegimeTransitionDiagram() {
   };
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
+    <div className="card-hover" style={{ ...Glass.card, borderRadius: R.lg, padding: '20px 22px', marginTop: 24 }}>
       <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text, marginBottom: 4 }}>
         Regime Transition Map — How Markets Evolve
       </div>
@@ -691,7 +691,7 @@ export default function AboutPage() {
             { value: '6', label: 'risk gates', color: C.bull },
           ].map(({ value, label, color }) => (
             <div key={label} className="card-hover" style={{
-              background: G.card,
+              ...Glass.card,
               border: `1px solid ${color}30`,
               borderRadius: R.lg,
               padding: '20px 16px',
@@ -917,7 +917,7 @@ export default function AboutPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {AGENTS.map((a) => (
-              <div key={a.name} className="card-hover" style={{ background: G.card, border: `1px solid ${a.color}30`, borderRadius: R.lg, padding: '16px 20px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div key={a.name} className="card-hover" style={{ ...Glass.card, border: `1px solid ${a.color}30`, borderRadius: R.lg, padding: '16px 20px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ flexShrink: 0, minWidth: 160 }}>
                   <div style={{ fontSize: F.sm, fontWeight: 800, color: a.color }}>{a.name}</div>
                   <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>Model: {a.model}</div>
@@ -967,7 +967,7 @@ export default function AboutPage() {
               { n: '4', text: 'No cherry-picked results — all trades included. All losses shown. One ledger.', href: null },
               { n: '5', text: 'Model costs are disclosed — we\'re not hiding that we use Claude to think.', href: null },
             ].map(({ n, text, href }) => (
-              <div key={n} className="card-hover" style={{ display: 'flex', gap: 14, padding: '12px 16px', background: G.card, borderRadius: R.md, border: `1px solid ${C.border}`, alignItems: 'flex-start' }}>
+              <div key={n} className="card-hover" style={{ display: 'flex', gap: 14, padding: '12px 16px', ...Glass.card, borderRadius: R.md, border: `1px solid ${C.border}`, alignItems: 'flex-start' }}>
                 <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%', background: C.bull + '20', color: C.bull, fontWeight: 800, fontSize: F.xs, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{n}</span>
                 <span style={{ fontSize: F.sm, color: C.textSub, lineHeight: 1.5 }}>
                   {text} {href && <Link href={href} style={{ color: C.brand, fontWeight: 600, textDecoration: 'none' }}>View →</Link>}

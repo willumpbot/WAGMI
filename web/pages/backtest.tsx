@@ -1019,7 +1019,7 @@ function MonteCarloForecast({ result }: { result: BacktestResult }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Based on current win rate &amp; avg win/loss — for illustration only
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg
           width="100%"
           viewBox={`0 0 ${W} ${H}`}
@@ -1153,7 +1153,7 @@ function ParameterSensitivityChart({ result }: { result?: BacktestResult | null 
             Parameter Sensitivity — How Return Changes
           </h3>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', gap: 8, ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, color: C.muted }}>
           <div style={{ fontSize: 22, opacity: 0.4 }}>⏳</div>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.muted }}>Awaiting backtest results</div>
           <div style={{ fontSize: F.xs, color: C.muted, textAlign: 'center', maxWidth: 320 }}>Run a backtest to see parameter sensitivity analysis anchored to real return data.</div>
@@ -1218,7 +1218,7 @@ function ParameterSensitivityChart({ result }: { result?: BacktestResult | null 
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Shows relative direction of sensitivity — bars are anchored to actual return ({BASE_RETURN >= 0 ? '+' : ''}{BASE_RETURN.toFixed(1)}%) but offsets are illustrative shapes. Re-run backtest with different params for real sensitivity data.
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: W }}>
           {/* Title axis */}
           <text x={pad.l + LABEL_W} y={pad.t - 10} fontSize={8} fill={C.muted} fontWeight={600}>Return %</text>
@@ -1437,7 +1437,7 @@ function WalkForwardChart({ result }: { result?: BacktestResult | null }) {
           ? `Equity curve split into ${NUM_SEGS} equal time windows — shows whether returns are consistent across different periods`
           : 'Run a backtest to see real period-by-period return consistency'}
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', minWidth: W }}>
           {/* Y-axis gridlines + labels */}
           {yTicks.map((tick) => (
@@ -1677,7 +1677,7 @@ function TradeLog({ result }: { result: BacktestResult }) {
       {/* Best & Worst highlights */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Best trades */}
-        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+        <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.bull, marginBottom: 10 }}>🏆 Best Trades</div>
           {bestTrades.map((t, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: i < bestTrades.length - 1 ? `1px solid ${C.border}` : 'none' }}>
@@ -1702,7 +1702,7 @@ function TradeLog({ result }: { result: BacktestResult }) {
         </div>
 
         {/* Worst trades */}
-        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+        <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.bear, marginBottom: 10 }}>💀 Worst Trades</div>
           {worstTrades.map((t, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '8px 0', borderBottom: i < worstTrades.length - 1 ? `1px solid ${C.border}` : 'none' }}>
@@ -1729,7 +1729,7 @@ function TradeLog({ result }: { result: BacktestResult }) {
 
       {/* Missed signals */}
       {sigFunnel && (
-        <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
+        <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '14px 16px' }}>
           <div style={{ fontSize: F.sm, fontWeight: 700, color: C.warn, marginBottom: 12 }}>⚠️ Signal Funnel — Why Trades Were Skipped</div>
 
           {/* Funnel flow */}
@@ -1780,7 +1780,7 @@ function TradeLog({ result }: { result: BacktestResult }) {
       )}
 
       {/* Full trade table */}
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, overflow: 'hidden' }}>
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>All Trades ({trades.length})</span>
           <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
@@ -1904,7 +1904,7 @@ function NewBacktestForm({ onJobStarted, apiBase }: { onJobStarted: (jobId: stri
         <div
           className="card-hover"
           style={{
-            background: G.card,
+            ...Glass.card,
             border: `1px solid ${C.brand}40`,
             borderRadius: R.lg,
             padding: '20px',
@@ -2065,7 +2065,7 @@ function JobProgress({ jobId, apiBase, onDone }: { jobId: string; apiBase: strin
   const currentStep = steps.indexOf(job.status);
 
   return (
-    <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 16 }}>
+    <div className="card-hover" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div style={{ fontSize: F.sm, fontWeight: 700, color: C.text }}>
           Backtest Running — {job.symbols}
@@ -2204,7 +2204,7 @@ function SymbolRotationChart({ result }: { result: BacktestResult }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 4 }}>
         {SYMBOLS.map((s) => `${s}: ${symCounts[s]}`).join(' · ')} trades
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '12px 16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '12px 16px', overflowX: 'auto' }}>
         <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ display: 'block', minWidth: SVG_W }}>
 
           {/* Track backgrounds */}
@@ -2477,7 +2477,7 @@ function BacktestSummaryScorecard({ result }: { result: BacktestResult }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Letter grades for key performance metrics — weighted overall score
       </div>
-      <div className="card-hover" style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px' }}>
+      <div className="card-hover" style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px 20px' }}>
 
         {/* Metric grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
@@ -2696,7 +2696,7 @@ function BacktestCalendarView({ result }: { result?: BacktestResult | null }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         {ec ? `${dateRange.length}-day backtest period — each cell = one trading day` : `${days}-day backtest · no equity curve data`}
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg width={SVG_W} height={SVG_H} style={{ display: 'block' }}>
           {months.map((month, mi) => {
             const gy = mi * ROW_H;
@@ -2819,7 +2819,7 @@ function StrategyAlphaChart({ result }: { result?: BacktestResult | null }) {
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         Cumulative alpha generated by each strategy over time
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg
           width="100%"
           viewBox={`0 0 ${W} ${H}`}
@@ -3045,7 +3045,7 @@ function BacktestConfidenceIntervals({ result }: { result?: BacktestResult | nul
       <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 12 }}>
         10th / 50th / 90th percentile trade outcome bands with actual equity curve
       </div>
-      <div style={{ background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
+      <div style={{ ...Glass.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: '16px', overflowX: 'auto' }}>
         <svg
           width="100%"
           viewBox={`0 0 ${W} ${H}`}

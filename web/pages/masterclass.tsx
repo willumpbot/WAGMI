@@ -13,11 +13,11 @@ type CoursePage =
   | 'resources' | 'alerts' | 'dictionary' | 'faq' | 'video-library' | 'videos';
 
 // ── Shared Components ──
-const card = { background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, marginBottom: 16 };
+const card = { ...Glass.card, borderRadius: R.lg, padding: 20, marginBottom: 16 };
 const grid3 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16, marginBottom: 24 } as const;
 const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 16, marginBottom: 24 } as const;
 const grid4 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 12, marginBottom: 24 } as const;
-const cardStyle: React.CSSProperties = { background: G.card, border: `1px solid ${C.border}`, borderRadius: R.lg, padding: 20, marginBottom: 16 };
+const cardStyle: React.CSSProperties = { ...Glass.card, borderRadius: R.lg, padding: 20, marginBottom: 16 };
 const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 12px', borderRadius: R.sm, border: `1px solid ${C.border}`, background: C.surface, color: C.text, fontSize: F.sm, outline: 'none' };
 const btnStyle: React.CSSProperties = { padding: '10px 20px', borderRadius: R.md, border: 'none', background: C.brand, color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: F.sm };
 const metricRow = { display: 'flex', flexWrap: 'wrap' as const, gap: 12, marginBottom: 24 };

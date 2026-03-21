@@ -26,7 +26,7 @@ function AccordionCard({
     <div
       className="card-hover"
       style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${open ? C.borderBright : C.border}`,
         borderRadius: R.lg,
         marginBottom: 12,
@@ -2130,7 +2130,7 @@ function GlossaryStats() {
           },
         ].map(stat => (
           <div key={stat.label} style={{
-            background: G.card,
+            ...Glass.card,
             border: `1px solid ${C.border}`,
             borderRadius: R.md,
             padding: '12px 16px',
@@ -2162,7 +2162,7 @@ function GlossaryStats() {
 
       {/* ── Tag cloud ── */}
       <div className="card-hover" style={{
-        background: G.card,
+        ...Glass.card,
         border: `1px solid ${C.border}`,
         borderRadius: R.lg,
         padding: '16px 18px',
@@ -4002,7 +4002,7 @@ export default function Learn() {
             width: '100%',
             maxWidth: 400,
             padding: '8px 14px',
-            background: G.card,
+            ...Glass.card,
             border: `1px solid ${C.border}`,
             borderRadius: R.md,
             color: C.text,
