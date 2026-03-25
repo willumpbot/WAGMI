@@ -76,10 +76,13 @@ class SniperSignal:
     ev_per_dollar: float
     signal_context: str
 
+    # Dip-buy detection
+    is_dip_buy: bool = False    # True if signal is a dip-buy setup (higher conviction)
+
     # Metadata
-    timestamp: str
-    daily_target_pct: float     # How much of daily target this covers
-    hold_target_hours: str      # Suggested hold time
+    timestamp: str = ""
+    daily_target_pct: float = 0.0     # How much of daily target this covers
+    hold_target_hours: str = ""       # Suggested hold time
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -181,6 +184,24 @@ class ManualSniperFilter:
         # Guard against NaN chop — treat as unknown (pass through)
         if chop is None or (isinstance(chop, float) and math.isnan(chop)):
             chop = 0.0
+        # CONDITIONAL BLOCK: setups with negative EV UNLESS specific conditions met
+        # Data shows these are losers overall but may have profitable subsets
+        # HYPE SELL: 0-7% WR at ALL confidence levels — truly toxic, hard block
+        if setup_key == "HYPE_SELL":
+            return None
+
+        # BTC BUY: 15% WR overall, BUT 70-80% confidence band shows 69% WR in backtest
+        # Allow through only in that narrow band for discovery/paper validation
+        if setup_key == "BTC_BUY":
+            if not (70 <= confidence <= 80 and num_agree >= 2):
+                return None  # Block outside the profitable band
+
+        # SOL BUY: 15% WR overall, BUT 70-75% band shows 64% WR in backtest
+        # Allow through only in that narrow band for discovery
+        if setup_key == "SOL_BUY":
+            if not (70 <= confidence <= 75 and num_agree >= 2):
+                return None  # Block outside the profitable band
+
         positive_ev_setups = {
             "HYPE_BUY": {"grade": "A+", "max_chop": 0.4},   # 85% WR, chop<0.3 is purest
             "SOL_SELL": {"grade": "B+", "max_chop": 0.5},    # 59% WR
@@ -193,9 +214,8 @@ class ManualSniperFilter:
                 # BTC SHORT only at >=90% conf — 67% WR, PF 1.98
                 # NEVER below 90%: 70-80% conf is a death trap (PF 0.31-0.79)
                 "BTC_SELL": {"grade": "B+", "max_chop": 0.5, "min_confidence": 90},
-                # BTC LONG only at 70-80% conf — 69% WR, PF 1.85
-                # HARD CAP at 80%: above 85% it fails badly
-                "BTC_BUY": {"grade": "B+", "max_chop": 0.5, "min_confidence": 70, "max_confidence": 80},
+                # NOTE: BTC_BUY removed — counterfactuals show 15% WR (toxic).
+                # BTC_BUY is in the toxic_setups block above. Do NOT add here.
             })
 
         setup = positive_ev_setups.get(setup_key)
@@ -263,6 +283,20 @@ class ManualSniperFilter:
 
         # ── Classify tier ──
         tier = self._classify_tier(confidence, num_agree, signal.symbol, regime_lower, signal.side)
+
+        # ── Dip-buy detection ──
+        # Data shows HYPE BUY during moderate dips (2-5% from recent high) has 88.5% WR
+        # vs 85% baseline. Detect dip conditions from signal metadata.
+        # Only boost tier for proven setups — unproven setups shouldn't get free upgrades.
+        is_dip_buy = False
+        if signal.side == "BUY":
+            is_dip_buy = self._detect_dip_buy(signal, meta, regime_lower, chop)
+            if is_dip_buy and setup is not None:
+                # Only boost proven setups (HYPE BUY, etc.)
+                if tier == "STANDARD":
+                    tier = "PREMIUM"  # Boost: dip-buy upgrades STANDARD → PREMIUM
+                elif tier == "PREMIUM":
+                    tier = "SNIPER"   # Boost: dip-buy upgrades PREMIUM → SNIPER
 
         # ── In aggressive mode, skip STANDARD tier entirely ──
         if self.config.mode == "aggressive" and tier == "STANDARD":
@@ -368,6 +402,7 @@ class ManualSniperFilter:
             regime=regime,
             ev_per_dollar=ev_per_dollar,
             signal_context=getattr(signal, 'signal_context', '') or '',
+            is_dip_buy=is_dip_buy,
             timestamp=datetime.now(timezone.utc).isoformat(),
             daily_target_pct=round(daily_target_pct, 1),
             hold_target_hours=hold_target,
@@ -378,8 +413,9 @@ class ManualSniperFilter:
         self._last_alert_ts[signal.symbol] = now
         self._log_signal(sniper)
 
+        dip_tag = " [DIP-BUY]" if is_dip_buy else ""
         logger.info(
-            f"[SNIPER] {tier} | {signal.symbol} {signal.side} | "
+            f"[SNIPER] {tier}{dip_tag} | {signal.symbol} {signal.side} | "
             f"conf={confidence:.0f}% agree={num_agree} lev={leverage:.0f}x | "
             f"acct=${acct_equity:.0f} risk=${risk_amount:.2f} win=+${pnl_scalp:.2f} | "
             f"growth={growth_pct:.1f}%"
@@ -412,8 +448,6 @@ class ManualSniperFilter:
         if self.config.expanded_setups:
             if symbol == "BTC" and side == "SELL" and confidence >= 90 and num_agree >= 3:
                 return "PREMIUM"  # BTC SHORT >=90% — 67% WR, PF 1.98
-            if symbol == "BTC" and side == "BUY" and 70 <= confidence <= 80 and num_agree >= 3:
-                return "PREMIUM"  # BTC LONG 70-80% — 69% WR, PF 1.85
 
         # Everything else: confidence-based (discovery mode)
         if (confidence >= 85 and num_agree >= 3) or \
@@ -471,6 +505,39 @@ class ManualSniperFilter:
     def _get_leverage(self, tier: str, confidence: float, num_agree: int) -> float:
         """Fallback: fixed leverage from tier + confidence (used if stop width unknown)."""
         return self._get_dynamic_leverage(tier, confidence, num_agree, 0.02)
+
+    def _detect_dip_buy(self, signal, meta: Dict, regime_lower: str, chop: float) -> bool:
+        """
+        Detect if this BUY signal is a dip-buy setup.
+
+        Dip-buy conditions (any of):
+        1. Regime suggests consolidation/range/pullback (price likely off highs)
+        2. Chop score is low (<0.2) — clean, trending dip rather than messy chop
+        3. Signal metadata explicitly indicates a dip (dip_depth_pct, dip_detected)
+        4. Price is significantly below recent high (from metadata)
+
+        From research: HYPE BUY during moderate dips (2-5%) has 88.5% WR vs 85% baseline.
+        """
+        # Check explicit dip detector metadata (from DipDetector integration)
+        if meta.get("dip_detected") is True:
+            return True
+        dip_depth = meta.get("dip_depth_pct", 0)
+        if isinstance(dip_depth, (int, float)) and dip_depth >= 2.0:
+            return True
+
+        # Regime-based inference: consolidation/range suggests price pulled back
+        dip_regimes = {"consolidation", "range", "pullback", "mean_reversion"}
+        if regime_lower in dip_regimes:
+            # Low chop confirms clean entry (not messy sideways)
+            if chop < 0.3:
+                return True
+
+        # Check price_vs_high metadata if available
+        price_vs_high = meta.get("price_vs_high_pct", 0)
+        if isinstance(price_vs_high, (int, float)) and price_vs_high <= -2.0:
+            return True
+
+        return False
 
     def _get_risk_pct(self, tier: str) -> float:
         """Map tier → risk percentage of account."""

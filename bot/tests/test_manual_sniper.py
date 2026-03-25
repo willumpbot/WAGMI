@@ -300,33 +300,35 @@ class TestManualSniperFilter:
         assert filt.evaluate(sig) is not None
         assert filt.evaluate(sig) is None  # Same signal, blocked by dedup
 
-    def test_dedup_allows_different_side(self):
+    def test_dedup_allows_different_symbol(self):
+        """Different symbols pass independently."""
         filt = self._make_filter(dedup_window_s=600, min_alert_gap_s=0, max_daily_signals=10)
-        sig_buy = self._make_signal(confidence=87.0, metadata={
+        sig_hype = self._make_signal(confidence=87.0, metadata={
             "num_agree": 3, "strategies_agree": ["a", "b", "c"], "regime": "trend",
         })
-        sig_sell = self._make_signal(side="SELL", confidence=87.0,
-                                      entry=40.0, sl=41.0, tp1=38.0, tp2=36.0,
-                                      metadata={
+        sig_sol = self._make_signal(symbol="SOL", side="SELL", confidence=87.0,
+                                     entry=90.0, sl=92.0, tp1=86.0, tp2=82.0,
+                                     metadata={
             "num_agree": 3, "strategies_agree": ["a", "b", "c"], "regime": "trend",
         })
-        assert filt.evaluate(sig_buy) is not None
-        assert filt.evaluate(sig_sell) is not None  # Different side, allowed
+        assert filt.evaluate(sig_hype) is not None
+        assert filt.evaluate(sig_sol) is not None  # Different symbol, allowed
 
     # ── Daily limit ──
 
     def test_daily_signal_limit(self):
         filt = self._make_filter(max_daily_signals=2, dedup_window_s=0, min_alert_gap_s=0)
-        sig1 = self._make_signal(symbol="HYPE", confidence=87.0, metadata={
+        # Use proven setups only (HYPE BUY, SOL SELL, and a high-conf discovery)
+        sig1 = self._make_signal(symbol="HYPE", side="BUY", confidence=87.0, metadata={
             "num_agree": 3, "strategies_agree": ["a", "b", "c"], "regime": "trend",
         })
-        sig2 = self._make_signal(symbol="BTC", confidence=87.0,
-                                  entry=97000, sl=96000, tp1=99000, tp2=101000,
+        sig2 = self._make_signal(symbol="SOL", side="SELL", confidence=87.0,
+                                  entry=90, sl=92, tp1=86, tp2=82,
                                   metadata={
             "num_agree": 3, "strategies_agree": ["a", "b", "c"], "regime": "trend",
         })
-        sig3 = self._make_signal(symbol="SOL", confidence=87.0,
-                                  entry=150, sl=146, tp1=158, tp2=165,
+        sig3 = self._make_signal(symbol="DOGE", side="BUY", confidence=92.0,
+                                  entry=0.15, sl=0.14, tp1=0.17, tp2=0.19,
                                   metadata={
             "num_agree": 3, "strategies_agree": ["a", "b", "c"], "regime": "trend",
         })
@@ -337,10 +339,11 @@ class TestManualSniperFilter:
     # ── SELL signals ──
 
     def test_sell_tp_direction(self):
+        """SOL SELL (proven edge) has TPs below entry."""
         filt = self._make_filter()
         sig = self._make_signal(
-            side="SELL", confidence=87.0,
-            entry=40.0, sl=41.0, tp1=38.0, tp2=36.0,
+            symbol="SOL", side="SELL", confidence=87.0,
+            entry=90.0, sl=92.0, tp1=86.0, tp2=82.0,
             metadata={"num_agree": 3, "strategies_agree": ["a", "b", "c"], "regime": "trend"},
         )
         result = filt.evaluate(sig)
@@ -522,3 +525,139 @@ class TestAggressiveAccountMath:
         assert result is not None
         assert result.rr_scalp >= 1.0
         assert result.rr_swing >= result.rr_scalp
+
+
+class TestDipBuyDetection:
+    """Test dip-buy signal detection and tier boosting."""
+
+    def _make_filter(self, **overrides):
+        from manual.sniper_filter import ManualSniperFilter
+        from manual.config import ManualSniperConfig
+        config = ManualSniperConfig()
+        for k, v in overrides.items():
+            setattr(config, k, v)
+        f = ManualSniperFilter(config)
+        f._running_equity = overrides.get('equity', 100.0)
+        return f
+
+    def _make_signal(self, **overrides) -> MockSignal:
+        defaults = {
+            "symbol": "HYPE",
+            "side": "BUY",
+            "confidence": 82.0,
+            "entry": 40.0,
+            "sl": 39.0,
+            "tp1": 42.0,
+            "tp2": 44.0,
+            "atr": 1.5,
+            "metadata": {
+                "num_agree": 3,
+                "strategies_agree": ["regime_trend", "monte_carlo_zones", "confidence_scorer"],
+                "regime": "consolidation",
+                "ev_per_dollar": 0.15,
+                "chop_score": 0.1,
+            },
+        }
+        defaults.update(overrides)
+        return MockSignal(**defaults)
+
+    def test_dip_buy_detected_via_regime_low_chop(self):
+        """HYPE BUY in consolidation with low chop = dip-buy."""
+        filt = self._make_filter()
+        sig = self._make_signal(metadata={
+            "num_agree": 3, "strategies_agree": ["a", "b", "c"],
+            "regime": "consolidation", "chop_score": 0.1,
+        })
+        result = filt.evaluate(sig)
+        assert result is not None
+        assert result.is_dip_buy is True
+
+    def test_dip_buy_detected_via_explicit_metadata(self):
+        """Explicit dip_detected=True in metadata triggers dip-buy."""
+        filt = self._make_filter()
+        sig = self._make_signal(metadata={
+            "num_agree": 3, "strategies_agree": ["a", "b", "c"],
+            "regime": "trend", "dip_detected": True,
+        })
+        result = filt.evaluate(sig)
+        assert result is not None
+        assert result.is_dip_buy is True
+
+    def test_dip_buy_detected_via_dip_depth(self):
+        """dip_depth_pct >= 2.0 triggers dip-buy."""
+        filt = self._make_filter()
+        sig = self._make_signal(metadata={
+            "num_agree": 3, "strategies_agree": ["a", "b", "c"],
+            "regime": "trend", "dip_depth_pct": 3.5,
+        })
+        result = filt.evaluate(sig)
+        assert result is not None
+        assert result.is_dip_buy is True
+
+    def test_dip_buy_detected_via_price_vs_high(self):
+        """price_vs_high_pct <= -2.0 triggers dip-buy."""
+        filt = self._make_filter()
+        sig = self._make_signal(metadata={
+            "num_agree": 3, "strategies_agree": ["a", "b", "c"],
+            "regime": "trend", "price_vs_high_pct": -4.0,
+        })
+        result = filt.evaluate(sig)
+        assert result is not None
+        assert result.is_dip_buy is True
+
+    def test_no_dip_buy_in_trending_high_chop(self):
+        """Trending regime with moderate chop should NOT be dip-buy."""
+        filt = self._make_filter()
+        # chop=0.35 passes HYPE BUY max_chop=0.4 but is high enough to not trigger dip-buy
+        sig = self._make_signal(metadata={
+            "num_agree": 3, "strategies_agree": ["a", "b", "c"],
+            "regime": "trend", "chop_score": 0.35,
+        })
+        result = filt.evaluate(sig)
+        assert result is not None
+        assert result.is_dip_buy is False
+
+    def test_no_dip_buy_on_sell_signals(self):
+        """SELL signals should never be marked as dip-buy."""
+        filt = self._make_filter()
+        sig = self._make_signal(
+            symbol="SOL", side="SELL", confidence=87.0,
+            entry=90.0, sl=92.0, tp1=86.0, tp2=82.0,
+            metadata={
+                "num_agree": 3, "strategies_agree": ["a", "b", "c"],
+                "regime": "consolidation", "chop_score": 0.1,
+            },
+        )
+        result = filt.evaluate(sig)
+        assert result is not None
+        assert result.is_dip_buy is False
+
+    def test_dip_buy_boosts_proven_premium_to_sniper(self):
+        """Dip-buy on a proven PREMIUM setup should boost to SNIPER."""
+        filt = self._make_filter()
+        # HYPE BUY with low confidence (would normally be PREMIUM)
+        sig = self._make_signal(confidence=60.0, metadata={
+            "num_agree": 1, "strategies_agree": ["a"],
+            "regime": "consolidation", "chop_score": 0.1,
+        })
+        result = filt.evaluate(sig)
+        assert result is not None
+        assert result.is_dip_buy is True
+        assert result.tier == "SNIPER"  # Boosted from PREMIUM
+
+    def test_dip_buy_does_not_boost_unproven_setups(self):
+        """Unproven setups should NOT get tier boost from dip-buy."""
+        filt = self._make_filter(mode="standard")
+        sig = self._make_signal(
+            symbol="DOGE", side="BUY", confidence=87.0,
+            entry=0.15, sl=0.14, tp1=0.17, tp2=0.19,
+            metadata={
+                "num_agree": 3, "strategies_agree": ["a", "b", "c"],
+                "regime": "consolidation", "chop_score": 0.1,
+            },
+        )
+        result = filt.evaluate(sig)
+        assert result is not None
+        # Dip-buy detected but no tier boost (unproven setup)
+        assert result.is_dip_buy is True
+        assert result.tier == "SNIPER"  # Already SNIPER from confidence/agree, not from boost

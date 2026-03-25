@@ -770,34 +770,20 @@ class TestExpandedSetups:
         # Since it matches the setup key, it gets the min_confidence=90 check
         assert result is None
 
-    def test_btc_long_moderate_conf_passes_when_enabled(self):
-        """BTC LONG at 75% conf should pass (70-80 band)."""
+    def test_btc_buy_always_blocked_as_toxic(self):
+        """BTC BUY is in toxic_setups (15% WR) — blocked regardless of expanded_setups."""
         filt = _make_filter(expanded_setups=True, mode="standard",
                            dedup_window_s=0, min_alert_gap_s=0)
         sig = _make_signal(
-            symbol="BTC", side="BUY", confidence=75.0,
+            symbol="BTC", side="BUY", confidence=92.0,
             entry=70000, sl=69000, tp1=72000, tp2=74000,
             metadata={"num_agree": 3, "strategies_agree": ["a", "b", "c"], "regime": "trend"},
         )
         result = filt.evaluate(sig)
-        assert result is not None
-        assert result.tier == "PREMIUM"
+        assert result is None  # Toxic: 15% WR in counterfactuals
 
-    def test_btc_long_high_conf_rejected_when_enabled(self):
-        """BTC LONG at 87% conf should be REJECTED (above 80% cap)."""
-        filt = _make_filter(expanded_setups=True, mode="standard",
-                           dedup_window_s=0, min_alert_gap_s=0)
-        sig = _make_signal(
-            symbol="BTC", side="BUY", confidence=87.0,
-            entry=70000, sl=69000, tp1=72000, tp2=74000,
-            metadata={"num_agree": 3, "strategies_agree": ["a", "b", "c"], "regime": "trend"},
-        )
-        result = filt.evaluate(sig)
-        # Above 80% cap — this is where BTC LONG fails
-        assert result is None
-
-    def test_btc_not_affected_when_disabled(self):
-        """With expanded_setups=False, BTC uses standard confidence gates."""
+    def test_btc_buy_also_blocked_when_disabled(self):
+        """BTC BUY is toxic even without expanded_setups."""
         filt = _make_filter(expanded_setups=False, mode="standard",
                            dedup_window_s=0, min_alert_gap_s=0)
         sig = _make_signal(
@@ -806,9 +792,7 @@ class TestExpandedSetups:
             metadata={"num_agree": 3, "strategies_agree": ["a", "b", "c"], "regime": "trend"},
         )
         result = filt.evaluate(sig)
-        # Standard discovery mode: 87% conf + 3 agree = SNIPER
-        assert result is not None
-        assert result.tier == "SNIPER"
+        assert result is None  # Toxic regardless of mode
 
 
 class TestFullPipeline:

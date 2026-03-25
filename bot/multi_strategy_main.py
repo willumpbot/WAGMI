@@ -44,6 +44,7 @@ from strategies.vmc_cipher import VMCCipherStrategy
 from strategies.lead_lag import LeadLagStrategy
 from strategies.liquidation_cascade import LiquidationCascadeStrategy
 from strategies.probability_engine import ProbabilityEngineStrategy
+from strategies.mean_reversion import MeanReversionStrategy
 from strategies.ensemble import EnsembleStrategy
 from execution.position_manager import PositionManager
 from execution.leverage import LeverageManager
@@ -426,6 +427,8 @@ class MultiStrategyBot:
                 self.strategies.append(CVDSignalStrategy(sym_configs))
             except Exception as e:
                 logger.warning(f"[INIT] CVD signal strategy unavailable: {e}")
+        if os.getenv("STRATEGY_MEAN_REVERSION_ENABLED", "true").lower() == "true":
+            self.strategies.append(MeanReversionStrategy(sym_configs))
 
         enabled_names = [s.name for s in self.strategies]
         logger.info(f"[INIT] Active strategies: {enabled_names}")
@@ -2071,10 +2074,16 @@ class MultiStrategyBot:
                 _fc_pos = self.pos_mgr.positions.get(symbol)
                 if _fc_pos:
                     _close_side = "SELL" if _fc_pos.side == "LONG" else "BUY"
-                    self.order_executor.close_position(
+                    _liq_close = self.order_executor.close_position(
                         symbol, _close_side, _fc_pos.qty, current_price, "LIQUIDATION_PROXIMITY"
                     )
-                self.pos_mgr.force_close(symbol, current_price, "LIQUIDATION_PROXIMITY")
+                    if _liq_close and getattr(_liq_close, "filled", False):
+                        self.pos_mgr.force_close(symbol, current_price, "LIQUIDATION_PROXIMITY")
+                    else:
+                        logger.critical(
+                            f"[{trace_id}][{symbol}] LIQUIDATION CLOSE FAILED — position still open on exchange. "
+                            f"Reconciliation will handle. Result: {_liq_close}"
+                        )
             elif _liq_dist < 0.03:
                 # < 3% from liquidation — tighten SL
                 _new_sl = current_price * (0.995 if _liq_pos.side == "LONG" else 1.005)
@@ -2140,10 +2149,12 @@ class MultiStrategyBot:
                     reason=event.action,
                 )
                 if not close_result.filled:
-                    logger.warning(
-                        f"[{trace_id}][{symbol}] Close order FAILED for {event.action}: "
-                        f"{close_result.error}"
+                    logger.critical(
+                        f"[{trace_id}][{symbol}] CLOSE ORDER FAILED for {event.action} — "
+                        f"position still open on exchange. Skipping state update. "
+                        f"Reconciliation will handle. Error: {close_result.error}"
                     )
+                    continue  # Skip P&L update — position is still open on exchange
 
             self.risk_mgr.update_equity(event.pnl - event.fee)
 
@@ -5188,11 +5199,17 @@ class MultiStrategyBot:
                                             _exit_pos = self.pos_mgr.positions.get(symbol)
                                             if _exit_pos and _exit_pos.qty > 0:
                                                 _ex_side = "SELL" if _exit_pos.side == "LONG" else "BUY"
-                                                self.order_executor.close_position(
+                                                _llm_close = self.order_executor.close_position(
                                                     symbol, _ex_side, _exit_pos.qty, current_price,
                                                     reason="LLM_EXIT_AGENT"
                                                 )
-                                            self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_AGENT")
+                                                if _llm_close and getattr(_llm_close, "filled", False):
+                                                    self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_AGENT")
+                                                else:
+                                                    logger.critical(
+                                                        f"[{symbol}] LLM EXIT CLOSE FAILED — position still open. "
+                                                        f"Reconciliation will handle."
+                                                    )
                                         elif action_name == "partial":
                                             partial_pct = result.get("partial_pct", 0.5)
                                             close_qty = pos.qty * partial_pct
@@ -5357,11 +5374,17 @@ class MultiStrategyBot:
                             _exit_pos2 = self.pos_mgr.positions.get(symbol)
                             if _exit_pos2 and _exit_pos2.qty > 0:
                                 _ex_side2 = "SELL" if _exit_pos2.side == "LONG" else "BUY"
-                                self.order_executor.close_position(
+                                _eng_close = self.order_executor.close_position(
                                     symbol, _ex_side2, _exit_pos2.qty, current_price,
                                     reason="LLM_EXIT_ENGINE"
                                 )
-                            self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_ENGINE")
+                                if _eng_close and getattr(_eng_close, "filled", False):
+                                    self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_ENGINE")
+                                else:
+                                    logger.critical(
+                                        f"[{symbol}] EXIT ENGINE CLOSE FAILED — position still open. "
+                                        f"Reconciliation will handle."
+                                    )
                         elif action == "partial":
                             # Partial close: reduce qty, log the partial
                             partial_pct = result.get("partial_pct", 0.5)

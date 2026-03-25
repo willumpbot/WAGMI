@@ -39,6 +39,22 @@
       "evidence_count": 13,
       "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
       "timestamp": 1774441776.49708
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 75% vs 'afternoon' at 40% (spread: 35%)",
+      "confidence": 0.55,
+      "evidence_count": 9,
+      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during afternoon by 5-10%.",
+      "timestamp": 1774458397.3132286
+    },
+    {
+      "category": "bias",
+      "description": "Size bias detected: larger positions (>1.5x) have 50% WR vs 62% for smaller positions. Avg PnL: $-0.06 vs $-0.16",
+      "confidence": 0.6666666666666667,
+      "evidence_count": 16,
+      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
+      "timestamp": 1774458397.3132286
     }
   ]
 }
