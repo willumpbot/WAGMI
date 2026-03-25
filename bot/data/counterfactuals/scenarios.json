@@ -1,115 +1,27 @@
 {
   "version": 1,
-  "updated_at": 1774137786.2613394,
+  "updated_at": 1774448258.1193507,
   "scenarios": [
     {
-      "id": "cf_1773994254_4447bb7e",
-      "timestamp": 1773994254.6037235,
-      "symbol": "SOL",
+      "id": "cf_1774448258_526b33fe",
+      "timestamp": 1774448258.1193373,
+      "symbol": "HYPE",
       "scenario_type": "exit_timing",
       "actual_action": "SL",
       "counterfactual_action": "exit_at_tp1",
-      "actual_pnl": -4.679613328791402,
-      "counterfactual_pnl": 1.4594115203700138,
-      "delta": 6.139024849161416,
-      "resolved": true,
-      "metadata": {
-        "side": "short",
-        "entry_price": 89.077,
-        "actual_exit_price": 90.415,
-        "tp1_price": 87.777,
-        "tp2_price": 86.331,
-        "actual_pnl_raw": -4.168459164887516,
-        "pnl_at_tp1_pct": 1.4594,
-        "pnl_at_tp2_pct": 3.0827
-      }
-    },
-    {
-      "id": "cf_1774042431_2579725f",
-      "timestamp": 1774042431.1604574,
-      "symbol": "SOL",
-      "scenario_type": "exit_timing",
-      "actual_action": "SL",
-      "counterfactual_action": "exit_at_tp1",
-      "actual_pnl": -5.606345280031895,
-      "counterfactual_pnl": 2.0142554247304565,
-      "delta": 7.620600704762351,
-      "resolved": true,
-      "metadata": {
-        "side": "short",
-        "entry_price": 88.668,
-        "actual_exit_price": 89.8145,
-        "tp1_price": 86.882,
-        "tp2_price": 84.744,
-        "actual_pnl_raw": -4.971034232898681,
-        "pnl_at_tp1_pct": 2.0143,
-        "pnl_at_tp2_pct": 4.4255
-      }
-    },
-    {
-      "id": "cf_1774106321_d49365e8",
-      "timestamp": 1774106321.2772527,
-      "symbol": "SOL",
-      "scenario_type": "exit_timing",
-      "actual_action": "SL",
-      "counterfactual_action": "exit_at_tp1",
-      "actual_pnl": -2.180609743334522,
-      "counterfactual_pnl": 2.0289052549975013,
-      "delta": 4.209514998332024,
+      "actual_pnl": -25.72446082357362,
+      "counterfactual_pnl": 1.334477170908396,
+      "delta": 27.058937994482015,
       "resolved": true,
       "metadata": {
         "side": "long",
-        "entry_price": 90.295,
-        "actual_exit_price": 89.3815,
-        "tp1_price": 92.127,
-        "tp2_price": 95.166,
-        "actual_pnl_raw": -1.9689815677439066,
-        "pnl_at_tp1_pct": 2.0289,
-        "pnl_at_tp2_pct": 5.3945
-      }
-    },
-    {
-      "id": "cf_1774136930_57932127",
-      "timestamp": 1774136930.5055,
-      "symbol": "SOL",
-      "scenario_type": "exit_timing",
-      "actual_action": "SL",
-      "counterfactual_action": "exit_at_tp1",
-      "actual_pnl": -2.5509907525744326,
-      "counterfactual_pnl": 1.219945385520507,
-      "delta": 3.7709361380949398,
-      "resolved": true,
-      "metadata": {
-        "side": "long",
-        "entry_price": 90.086,
-        "actual_exit_price": 89.0465,
-        "tp1_price": 91.185,
-        "tp2_price": 93.016,
-        "actual_pnl_raw": -2.2980855293642035,
-        "pnl_at_tp1_pct": 1.2199,
-        "pnl_at_tp2_pct": 3.2524
-      }
-    },
-    {
-      "id": "cf_1774137786_76d34295",
-      "timestamp": 1774137786.2613149,
-      "symbol": "BTC",
-      "scenario_type": "exit_timing",
-      "actual_action": "TP2",
-      "counterfactual_action": "exit_at_tp1",
-      "actual_pnl": 0.006074986539032571,
-      "counterfactual_pnl": 0.914403672990003,
-      "delta": 0.9083286864509704,
-      "resolved": true,
-      "metadata": {
-        "side": "short",
-        "entry_price": 70242.5,
-        "actual_exit_price": 68308.5,
-        "tp1_price": 69600.2,
-        "tp2_price": 68518.1,
-        "actual_pnl_raw": 4.267222419679954,
-        "pnl_at_tp1_pct": 0.9144,
-        "pnl_at_tp2_pct": 2.4549
+        "entry_price": 40.9149,
+        "actual_exit_price": 40.5675,
+        "tp1_price": 41.4609,
+        "tp2_price": 42.2617,
+        "actual_pnl_raw": -10.525137421504324,
+        "pnl_at_tp1_pct": 1.3345,
+        "pnl_at_tp2_pct": 3.2917
       }
     }
   ]

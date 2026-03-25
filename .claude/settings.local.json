@@ -3,7 +3,13 @@
     "allow": [
       "Bash(python run.py backtest --symbols BTC,SOL,HYPE --days 30 --equity 10000 --csv data/baseline_30d.csv --output data/baseline_30d.json)",
       "Bash(python run.py backtest --symbols BTC,SOL,HYPE --days 30 --equity 10000 --csv data/optimized_30d.csv --output data/optimized_30d.json)",
-      "Bash(python -c)"
+      "Bash(python -c)",
+      "Bash(python run.py paper --help)",
+      "Bash(python -c \"import sys; sys.path.insert\\(0, ''''.''''\\); from multi_strategy_main import MultiStrategyBot\")",
+      "Bash(python -c \"from llm.autonomy import get_llm_mode; print\\(f''LLM Mode: {get_llm_mode\\(\\)}''\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(python -m py_compile multi_strategy_main.py trading_config.py)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }
