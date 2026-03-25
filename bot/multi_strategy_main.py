@@ -505,6 +505,14 @@ class MultiStrategyBot:
                     )
                 except Exception:
                     pass
+                # Signal value tracker: quantifies every signal's real-world outcome
+                self._signal_tracker = None
+                try:
+                    from manual.signal_tracker import SignalValueTracker
+                    self._signal_tracker = SignalValueTracker()
+                    logger.info("[INIT] Signal Value Tracker enabled")
+                except Exception as _svt_err:
+                    logger.debug(f"[INIT] Signal tracker not available: {_svt_err}")
                 # Auto-execute: optionally route sniper signals to the order executor
                 self._sniper_auto_execute = os.getenv(
                     "SNIPER_AUTO_EXECUTE", "false"
@@ -519,6 +527,8 @@ class MultiStrategyBot:
             logger.debug(f"[INIT] Manual Sniper System not available: {_ms_err}")
         if not hasattr(self, "_sniper_auto_execute"):
             self._sniper_auto_execute = False
+        if not hasattr(self, "_signal_tracker"):
+            self._signal_tracker = None
 
         # Execution
         self.risk_mgr = RiskManager(
@@ -1222,6 +1232,14 @@ class MultiStrategyBot:
                     self._execute_pending_fill(filled, trace_id)
             except Exception as e:
                 logger.warning(f"[{trace_id}] Pending order check error: {e}")
+
+        # Signal Value Tracker: update all tracked signals with current prices
+        if hasattr(self, '_signal_tracker') and self._signal_tracker is not None:
+            if hasattr(self, '_last_prices') and self._last_prices:
+                try:
+                    self._signal_tracker.update_prices(self._last_prices)
+                except Exception:
+                    pass
 
         # Sniper Simulator: check sim positions against live prices
         if self._sniper_simulator is not None and hasattr(self, '_last_prices') and self._last_prices:
@@ -3088,6 +3106,12 @@ class MultiStrategyBot:
                                 )
                         except Exception as _sim_err:
                             logger.warning(f"[SIM] Error on signal: {_sim_err}")
+                    # ── Signal Value Tracker: record every signal for outcome measurement ──
+                    if hasattr(self, '_signal_tracker') and self._signal_tracker is not None:
+                        try:
+                            self._signal_tracker.record_signal(_sniper_sig)
+                        except Exception:
+                            pass
                     # ── Sniper Auto-Execute: route qualifying signals to order executor ──
                     if self._sniper_auto_execute and _sniper_sig.tier in ("SNIPER", "PREMIUM"):
                         try:
