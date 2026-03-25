@@ -209,6 +209,16 @@ class TelegramCommandBot:
             "/edge": lambda: self._cmd_edge(args),
             "/signal": lambda: self._cmd_submit_signal(args),
             "/thesis": self._cmd_thesis,
+            "/sniper": self._cmd_sniper,
+            "/sim": self._cmd_sim,
+            "/trade": lambda: self._cmd_trade(args),
+            "/exit": lambda: self._cmd_exit(args),
+            "/journal": self._cmd_journal,
+            "/equity": self._cmd_equity,
+            "/perf": self._cmd_perf,
+            "/optimize": self._cmd_optimize,
+            "/manage": lambda: self._cmd_manage(args),
+            "/health": self._cmd_health,
             "/help": self._cmd_help,
         }
         handler = handlers.get(command)
@@ -461,6 +471,88 @@ class TelegramCommandBot:
         candidates = CandidateLogger.load_candidates()
         return format_copy_trades_telegram(candidates)
 
+    def _cmd_health(self) -> str:
+        """Run sniper system health check."""
+        try:
+            from manual.health_check import run_health_check
+            health = run_health_check(quick=True)
+            return health.format_telegram()
+        except Exception as e:
+            return f"Health check error: {e}"
+
+    def _cmd_sniper(self) -> str:
+        """Show manual sniper signal summary and recent signals."""
+        try:
+            if self.bot and hasattr(self.bot, '_manual_sniper') and self.bot._manual_sniper:
+                from manual.alerts import format_daily_summary
+                summary = self.bot._manual_sniper.get_daily_summary()
+                return format_daily_summary(summary)
+            return "Manual Sniper System not active. Set MANUAL_SNIPER_ENABLED=true"
+        except Exception as e:
+            return f"Sniper status error: {e}"
+
+    def _cmd_sim(self) -> str:
+        """Show sniper simulator status — virtual $100 account tracking."""
+        try:
+            status = None
+            if self.bot and hasattr(self.bot, '_sniper_simulator') and self.bot._sniper_simulator:
+                status = self.bot._sniper_simulator.get_status()
+            else:
+                # Fallback: read from disk
+                import json as _json
+                status_path = os.path.join("data", "manual", "sim_status.json")
+                if os.path.exists(status_path):
+                    with open(status_path, "r") as f:
+                        status = _json.load(f)
+
+            if not status:
+                return "Sniper Simulator not active. Enable MANUAL_SNIPER_ENABLED=true"
+
+            equity = status.get("current_equity", 100)
+            starting = status.get("starting_equity", 100)
+            growth = status.get("growth_pct", 0)
+            total = status.get("total_trades", 0)
+            wr = status.get("win_rate", 0)
+            pf = status.get("profit_factor", 0)
+            daily = status.get("daily_pnl", 0)
+            weekly = status.get("weekly_pnl", 0)
+            days = status.get("days_elapsed", 1)
+            streak = status.get("current_streak", 0)
+            dd = status.get("max_drawdown", 0)
+            open_pos = status.get("open_positions", [])
+
+            streak_str = f"+{streak}W" if streak > 0 else f"{streak}L" if streak < 0 else "0"
+
+            lines = [
+                f"*Sniper Simulator*",
+                f"${starting:.0f} -> ${equity:.2f} ({growth:+.1f}%) | {days}d",
+                f"",
+                f"*Stats:* {total} trades | WR {wr:.0f}% | PF {pf:.1f}",
+                f"*Streak:* {streak_str} | Max DD: {dd:.1f}%",
+                f"*Today:* ${daily:+.2f} | Week: ${weekly:+.2f}",
+            ]
+
+            if open_pos:
+                lines.append(f"\n*Open ({len(open_pos)}):*")
+                for p in open_pos[:5]:
+                    sym = p.get("symbol", "?")
+                    side = p.get("side", "?")
+                    entry = p.get("entry", 0)
+                    lines.append(f"  {sym} {side} @ ${entry:.2f}")
+
+            # Per-symbol breakdown
+            by_sym = status.get("by_symbol", {})
+            if by_sym:
+                lines.append(f"\n*By Symbol:*")
+                for sym, s in sorted(by_sym.items(), key=lambda x: x[1].get("pnl", 0), reverse=True):
+                    lines.append(
+                        f"  {sym}: {s['trades']}t WR={s['wr']:.0f}% P&L=${s['pnl']:+.2f}"
+                    )
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Sim status error: {e}"
+
     def _cmd_telemetry(self) -> str:
         from data.fetchers.telemetry import Telemetry
         return Telemetry.format_telegram()
@@ -709,6 +801,17 @@ class TelegramCommandBot:
             "/signals - Recent ingested signals\n"
             "/analyze <text> - Analyze a signal with LLM\n"
             "/accuracy - Signal analysis accuracy\n\n"
+            "*Manual Trading:*\n"
+            "/trade SYM SIDE PRICE LEVx QTY - Log trade entry\n"
+            "/exit SYM PRICE [REASON] - Log trade exit\n"
+            "/journal - Recent trades and stats\n"
+            "/equity - Account growth & compounding\n"
+            "/perf - Performance vs signals\n"
+            "/sniper - Sniper signal summary\n"
+            "/sim - Sniper simulator ($100 virtual account)\n"
+            "/health - System health check\n"
+            "/optimize - Signal quality & parameter tuning\n"
+            "/manage SYM ENTRY - Position management advice\n\n"
             "*System:*\n"
             "/health - System health check\n"
             "/ml - ML learner stats\n"
@@ -1030,6 +1133,340 @@ class TelegramCommandBot:
             return "\n".join(lines)
         except Exception as e:
             return f"RL system: {e}"
+
+    # ── Manual Trade Journal Commands ─────────────
+
+    def _cmd_trade(self, args: str) -> str:
+        """Log a manual trade entry.
+
+        Usage: /trade HYPE BUY 40.50 25x 10
+               /trade SYMBOL SIDE PRICE LEVERAGEx QTY
+        """
+        if not args or not args.strip():
+            return (
+                "*Manual Trade Entry*\n\n"
+                "Usage: /trade SYMBOL SIDE PRICE LEVERAGEx QTY\n"
+                "Example: /trade HYPE BUY 40.50 25x 10\n"
+                "Example: /trade SOL SELL 145.20 20x 5\n\n"
+                "SIDE: BUY/SELL or LONG/SHORT\n"
+                "QTY: asset quantity (number of coins)"
+            )
+
+        try:
+            parts = args.strip().split()
+            if len(parts) < 5:
+                return "Need: SYMBOL SIDE PRICE LEVERAGEx QTY\nExample: /trade HYPE BUY 40.50 25x 10"
+
+            symbol = parts[0].upper()
+            side = parts[1].upper()
+            entry_price = float(parts[2])
+
+            # Parse leverage (accept "25x" or "25")
+            lev_str = parts[3].lower().rstrip("x")
+            leverage = float(lev_str)
+
+            qty = float(parts[4])
+
+            if leverage <= 0 or leverage > 100:
+                return f"Invalid leverage: {leverage}. Must be 1-100."
+            if entry_price <= 0:
+                return f"Invalid price: {entry_price}"
+            if qty <= 0:
+                return f"Invalid qty: {qty}"
+
+            from manual.trade_journal import get_trade_journal
+            journal = get_trade_journal()
+            entry = journal.log_entry(
+                symbol=symbol,
+                side=side,
+                entry_price=entry_price,
+                leverage=leverage,
+                qty=qty,
+            )
+
+            position_value = entry_price * qty
+            margin = position_value / leverage
+
+            return (
+                f"*Trade Logged*\n\n"
+                f"ID: `{entry.trade_id}`\n"
+                f"{symbol} {side} @ ${entry_price:,.4f}\n"
+                f"Leverage: {leverage:.0f}x\n"
+                f"Qty: {qty}\n"
+                f"Position: ${position_value:,.2f}\n"
+                f"Margin: ${margin:,.2f}\n\n"
+                f"Equity: ${journal.current_equity:,.2f}\n"
+                f"Use /exit {symbol} PRICE REASON to close"
+            )
+        except ValueError as e:
+            return f"Parse error: {e}\nUsage: /trade SYMBOL SIDE PRICE LEVx QTY"
+        except Exception as e:
+            return f"Trade entry error: {e}"
+
+    def _cmd_exit(self, args: str) -> str:
+        """Log a trade exit.
+
+        Usage: /exit HYPE 42.00 TP
+               /exit SYMBOL PRICE [REASON]
+        """
+        if not args or not args.strip():
+            return (
+                "*Manual Trade Exit*\n\n"
+                "Usage: /exit SYMBOL PRICE [REASON]\n"
+                "Example: /exit HYPE 42.00 TP\n"
+                "Example: /exit SOL 138.50 SL\n"
+                "Example: /exit MJ-A1B2C3D4 42.00 MANUAL\n\n"
+                "REASON: TP, SL, MANUAL, BREAKEVEN (default: MANUAL)"
+            )
+
+        try:
+            parts = args.strip().split()
+            if len(parts) < 2:
+                return "Need at least: SYMBOL PRICE\nExample: /exit HYPE 42.00 TP"
+
+            trade_id_or_symbol = parts[0].upper()
+            exit_price = float(parts[1])
+            reason = parts[2].upper() if len(parts) > 2 else "MANUAL"
+
+            from manual.trade_journal import get_trade_journal
+            journal = get_trade_journal()
+            trade = journal.log_exit(
+                trade_id_or_symbol=trade_id_or_symbol,
+                exit_price=exit_price,
+                reason=reason,
+            )
+
+            if not trade:
+                open_trades = journal.get_open_trades()
+                if open_trades:
+                    syms = ", ".join(t.symbol for t in open_trades)
+                    return f"No open trade for '{trade_id_or_symbol}'\nOpen trades: {syms}"
+                return f"No open trade for '{trade_id_or_symbol}'. No open trades."
+
+            pnl = trade.pnl or 0
+            pnl_pct = trade.pnl_pct or 0
+            emoji = "+" if pnl >= 0 else ""
+
+            return (
+                f"*Trade Closed*\n\n"
+                f"ID: `{trade.trade_id}`\n"
+                f"{trade.symbol} {trade.side} — {reason}\n"
+                f"Entry: ${trade.entry_price:,.4f}\n"
+                f"Exit: ${exit_price:,.4f}\n"
+                f"PnL: ${pnl:+,.2f} ({pnl_pct:+.1f}% on margin)\n"
+                f"Hold: {trade.hold_time_hours:.1f}h\n\n"
+                f"Equity: ${journal.current_equity:,.2f}"
+            )
+        except ValueError as e:
+            return f"Parse error: {e}\nUsage: /exit SYMBOL PRICE [REASON]"
+        except Exception as e:
+            return f"Trade exit error: {e}"
+
+    def _cmd_journal(self) -> str:
+        """Show recent trades and stats."""
+        try:
+            from manual.trade_journal import get_trade_journal
+            journal = get_trade_journal()
+            stats = journal.get_stats()
+            recent = journal.get_recent_trades(5)
+            open_trades = journal.get_open_trades()
+
+            lines = [
+                "=" * 28,
+                "  TRADE JOURNAL",
+                "=" * 28,
+            ]
+
+            # Open positions
+            if open_trades:
+                lines.append(f"\n*Open Positions ({len(open_trades)}):*")
+                for t in open_trades:
+                    lines.append(
+                        f"  `{t.trade_id}` {t.symbol} {t.side} "
+                        f"@ ${t.entry_price:,.4f} {t.leverage:.0f}x"
+                    )
+
+            # Stats
+            if stats["total_trades"] > 0:
+                lines.extend([
+                    f"\n*Stats ({stats['total_trades']} trades):*",
+                    f"  WR: {stats['win_rate']:.0%} ({stats.get('wins', 0)}W/{stats.get('losses', 0)}L)",
+                    f"  PF: {stats['profit_factor']:.2f}" if stats['profit_factor'] != float('inf') else f"  PF: INF",
+                    f"  PnL: ${stats['total_pnl']:+,.2f}",
+                    f"  Best: ${stats['best_trade']:+,.2f}",
+                    f"  Worst: ${stats['worst_trade']:+,.2f}",
+                    f"  Avg hold: {stats['avg_hold_hours']:.1f}h",
+                ])
+
+            # Recent closed trades
+            closed_recent = [t for t in recent if t.status == "CLOSED"]
+            if closed_recent:
+                lines.append(f"\n*Recent Trades:*")
+                for t in closed_recent[-5:]:
+                    pnl = t.pnl or 0
+                    lines.append(
+                        f"  {t.symbol} {t.side} ${pnl:+,.2f} "
+                        f"({t.exit_reason or '?'}) {t.hold_time_hours:.1f}h"
+                    )
+
+            lines.extend([
+                f"\n*Equity: ${journal.current_equity:,.2f}*",
+                "=" * 28,
+            ])
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Journal error: {e}"
+
+    def _cmd_equity(self) -> str:
+        """Show account growth and compounding progress."""
+        try:
+            from manual.trade_journal import get_trade_journal
+            journal = get_trade_journal()
+            report = journal.get_compounding_report()
+            stats = journal.get_stats()
+
+            progress = report["progress_pct"]
+            bar_len = 20
+            filled = int(progress / 100 * bar_len)
+            bar = "█" * filled + "░" * (bar_len - filled)
+
+            lines = [
+                "=" * 30,
+                "  EQUITY & COMPOUNDING",
+                "=" * 30,
+                "",
+                f"Starting:  ${report['starting_equity']:,.2f}",
+                f"Current:   ${report['current_equity']:,.2f}",
+                f"Return:    ${report['total_return']:+,.2f} ({report['total_return_pct']:+.1f}%)",
+                "",
+                f"Days Trading: {report['days_elapsed']:.1f}",
+                f"Trades/Day:   {report['trades_per_day']:.1f}",
+                f"Daily Growth: {report['daily_compound_rate_pct']:+.2f}%/day",
+                "",
+                f"Target: $1,000",
+                f"[{bar}] {progress:.1f}%",
+            ]
+
+            if report["days_to_target"] is not None:
+                if report["days_to_target"] == 0:
+                    lines.append("TARGET REACHED!")
+                else:
+                    lines.append(f"ETA: {report['days_to_target']:.0f} days ({report['projected_target_date']})")
+
+            # Projections
+            proj = report["projections"]
+            if proj:
+                lines.append(f"\n*Projections (at current rate):*")
+                for period, value in proj.items():
+                    lines.append(f"  {period}: ${value:,.2f}")
+
+            # Streaks
+            if stats["total_trades"] > 0:
+                lines.extend([
+                    "",
+                    f"Win Streak: {stats.get('longest_win_streak', 0)}",
+                    f"Loss Streak: {stats.get('longest_loss_streak', 0)}",
+                    f"Return: {stats['total_return_pct']:+.1f}%",
+                ])
+
+            lines.append("=" * 30)
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Equity report error: {e}"
+
+    def _cmd_perf(self) -> str:
+        """Show performance analysis vs signals."""
+        try:
+            from manual.performance import PerformanceAnalyzer
+            analyzer = PerformanceAnalyzer()
+            return analyzer.format_performance_report()
+        except Exception as e:
+            return f"Performance error: {e}"
+
+    def _cmd_optimize(self) -> str:
+        """Sniper optimizer — signal quality, leverage efficiency, recommendations."""
+        try:
+            from manual.optimizer import SniperOptimizer
+            opt = SniperOptimizer()
+            return opt.format_telegram_summary()
+        except Exception as e:
+            return f"Optimizer error: {e}"
+
+    def _cmd_manage(self, args: str) -> str:
+        """Position management advice: /manage HYPE 40.50 [SELL] [15x] [PREMIUM]"""
+        try:
+            from datetime import datetime, timezone, timedelta
+            from manual.position_rules import format_position_update
+            from manual.config import ManualSniperConfig
+
+            parts = args.strip().split()
+            if len(parts) < 2:
+                return (
+                    "Usage: /manage SYMBOL ENTRY_PRICE [SIDE] [LEVx] [TIER]\n"
+                    "Example: /manage HYPE 25.50\n"
+                    "Example: /manage HYPE 25.50 BUY 25x SNIPER"
+                )
+
+            symbol = parts[0].upper()
+            entry = float(parts[1])
+
+            # Optional args
+            side = "BUY"
+            leverage = 25.0
+            tier = "SNIPER"
+            for p in parts[2:]:
+                pu = p.upper()
+                if pu in ("BUY", "SELL"):
+                    side = pu
+                elif pu.endswith("X") and pu[:-1].replace(".", "").isdigit():
+                    leverage = float(pu[:-1])
+                elif pu in ("SNIPER", "PREMIUM", "STANDARD"):
+                    tier = pu
+
+            # Derive SL/TP from entry using standard 2% stop width
+            stop_pct = 0.02
+            risk = entry * stop_pct
+            if side == "BUY":
+                sl = entry - risk
+                tp_scalp = entry + risk * 1.5
+                tp_swing = entry + risk * 3.0
+            else:
+                sl = entry + risk
+                tp_scalp = entry - risk * 1.5
+                tp_swing = entry - risk * 3.0
+
+            config = ManualSniperConfig()
+            equity = config.equity
+
+            # Get current price from exchange if available
+            current_price = entry  # default to entry
+            if self.bot:
+                try:
+                    ticker = self.bot.exchange.fetch_ticker(f"{symbol}/USDC:USDC")
+                    current_price = ticker.get("last", entry)
+                except Exception:
+                    try:
+                        ticker = self.bot.exchange.fetch_ticker(f"{symbol}/USDT:USDT")
+                        current_price = ticker.get("last", entry)
+                    except Exception:
+                        pass
+
+            # Assume entered recently (15 min ago as default)
+            entry_time = datetime.now(timezone.utc) - timedelta(minutes=15)
+
+            msg = format_position_update(
+                symbol=symbol, side=side, entry=entry,
+                current_price=current_price, leverage=leverage,
+                tier=tier, equity=equity, sl=sl,
+                tp_scalp=tp_scalp, tp_swing=tp_swing,
+                entry_time=entry_time,
+            )
+            return msg
+        except ValueError:
+            return "Invalid price. Usage: /manage HYPE 25.50"
+        except Exception as e:
+            return f"Manage error: {e}"
 
     def _cmd_pause(self) -> str:
         self._paused = True

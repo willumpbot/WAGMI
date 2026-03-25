@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import type { LlmDecision, LlmMarketView, ActivityEvent, BacktestResult } from '../src/types';
-import { C, R, F, G, fmtUsd as themeFmtUsd } from '../src/theme';
+import { C, R, F, G, Glass, fmtUsd as themeFmtUsd } from '../src/theme';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -2005,6 +2005,532 @@ function HowItWorksCollapsed() {
   );
 }
 
+// ─── Sniper Tier Colors ──────────────────────────────────────────────────────
+
+const TIER_STYLES: Record<string, { bg: string; text: string; border: string; glow: string; label: string }> = {
+  SNIPER: { bg: 'linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(239,68,68,0.12) 100%)', text: '#f59e0b', border: '#f59e0b', glow: '0 0 20px rgba(245,158,11,0.25)', label: 'SNIPER' },
+  PREMIUM: { bg: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(168,85,247,0.12) 100%)', text: '#a855f7', border: '#7c3aed', glow: '0 0 20px rgba(124,58,237,0.2)', label: 'PREMIUM' },
+  STANDARD: { bg: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(37,99,235,0.1) 100%)', text: '#818cf8', border: '#6366f1', glow: '0 0 16px rgba(99,102,241,0.15)', label: 'STANDARD' },
+};
+
+// ─── Account Tracker Card ────────────────────────────────────────────────────
+
+function AccountTracker({ journalData }: { journalData: any }) {
+  const stats = journalData?.stats || {
+    starting_equity: 100,
+    current_equity: 100,
+    total_trades: 0,
+    wins: 0,
+    losses: 0,
+    win_rate: 0,
+    total_pnl: 0,
+    daily_pnl: 0,
+    streak: 0,
+    best_trade: 0,
+    worst_trade: 0,
+  };
+  const curve = journalData?.equity_curve || [];
+  const growthPct = stats.starting_equity > 0
+    ? ((stats.current_equity - stats.starting_equity) / stats.starting_equity * 100)
+    : 0;
+  const isUp = stats.current_equity >= stats.starting_equity;
+
+  // Mini equity curve SVG
+  const svgW = 280;
+  const svgH = 60;
+  const points = curve.length > 1 ? curve : [{ equity: 100 }, { equity: 100 }];
+  const eqMin = Math.min(...points.map((p: any) => p.equity)) * 0.98;
+  const eqMax = Math.max(...points.map((p: any) => p.equity)) * 1.02;
+  const eqRange = eqMax - eqMin || 1;
+  const pathD = points
+    .map((p: any, i: number) => {
+      const x = (i / (points.length - 1)) * svgW;
+      const y = svgH - ((p.equity - eqMin) / eqRange) * svgH;
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+  const fillD = pathD + ` L${svgW},${svgH} L0,${svgH} Z`;
+
+  return (
+    <div style={{
+      ...Glass.crystal,
+      borderRadius: R.lg,
+      padding: '20px 24px',
+      borderColor: isUp ? C.bull + '33' : C.bear + '33',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <div style={{
+          width: 8, height: 8, borderRadius: '50%',
+          background: isUp ? C.bull : C.bear,
+          boxShadow: `0 0 8px ${isUp ? C.bull : C.bear}`,
+          animation: 'pulse 2s ease-in-out infinite',
+        }} />
+        <span style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>$100 Account Tracker</span>
+        <span style={{
+          marginLeft: 'auto', fontSize: F.xs, fontWeight: 700, padding: '2px 8px',
+          borderRadius: R.pill, color: isUp ? C.bull : C.bear,
+          background: isUp ? C.bull + '18' : C.bear + '18',
+        }}>
+          {growthPct >= 0 ? '+' : ''}{growthPct.toFixed(1)}%
+        </span>
+      </div>
+
+      {/* Equity row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 2 }}>Starting</div>
+          <div style={{ fontSize: F.xl, fontWeight: 800, color: C.textSub, fontVariantNumeric: 'tabular-nums' }}>
+            ${stats.starting_equity.toFixed(0)}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 2 }}>Current</div>
+          <div style={{ fontSize: F['2xl'], fontWeight: 900, color: isUp ? C.bull : C.bear, fontVariantNumeric: 'tabular-nums' }}>
+            ${stats.current_equity.toFixed(2)}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: F.xs, color: C.muted, marginBottom: 2 }}>Today P&L</div>
+          <div style={{
+            fontSize: F.xl, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
+            color: stats.daily_pnl >= 0 ? C.bull : C.bear,
+          }}>
+            {stats.daily_pnl >= 0 ? '+' : ''}${stats.daily_pnl.toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      {/* Mini equity curve */}
+      <div style={{ background: C.surface, borderRadius: R.md, padding: '8px 10px', marginBottom: 14 }}>
+        <svg width="100%" height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={isUp ? C.bull : C.bear} stopOpacity="0.3" />
+              <stop offset="100%" stopColor={isUp ? C.bull : C.bear} stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+          <path d={fillD} fill="url(#eqFill)" />
+          <path d={pathD} fill="none" stroke={isUp ? C.bull : C.bear} strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 8 }}>
+        {[
+          { label: 'Trades', value: `${stats.total_trades}`, color: C.text },
+          { label: 'Win Rate', value: `${stats.win_rate.toFixed(0)}%`, color: stats.win_rate >= 50 ? C.bull : C.bear },
+          { label: 'W/L', value: `${stats.wins}/${stats.losses}`, color: C.textSub },
+          { label: 'Streak', value: `${stats.streak > 0 ? '+' : ''}${stats.streak}`, color: stats.streak > 0 ? C.bull : stats.streak < 0 ? C.bear : C.muted },
+          { label: 'Best', value: `+$${stats.best_trade.toFixed(0)}`, color: C.bull },
+          { label: 'Worst', value: `$${stats.worst_trade.toFixed(0)}`, color: C.bear },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{ textAlign: 'center', padding: '6px 4px', background: C.surface, borderRadius: R.sm }}>
+            <div style={{ fontSize: 10, color: C.muted, textTransform: 'uppercase', marginBottom: 2 }}>{label}</div>
+            <div style={{ fontSize: F.sm, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Compounding Calculator ──────────────────────────────────────────────────
+
+function CompoundingCalculator() {
+  const [equity, setEquity] = useState(100);
+  const [riskPct, setRiskPct] = useState(5);
+  const [tradesPerDay, setTradesPerDay] = useState(2);
+
+  const inp: React.CSSProperties = {
+    padding: '7px 10px', background: C.surfaceHover, border: `1px solid ${C.border}`,
+    borderRadius: R.sm, color: C.text, fontSize: F.sm, width: '100%', outline: 'none',
+    fontVariantNumeric: 'tabular-nums',
+  };
+
+  // Project growth at different win rates
+  const scenarios = [
+    { wr: 50, label: '50% WR', color: C.muted },
+    { wr: 55, label: '55% WR', color: C.warn },
+    { wr: 60, label: '60% WR', color: '#eab308' },
+    { wr: 65, label: '65% WR', color: C.bull },
+    { wr: 70, label: '70% WR', color: '#10b981' },
+  ];
+
+  const days = [7, 14, 30, 60, 90];
+  const avgRR = 2.0; // average R:R for calculations
+
+  function projectEquity(startEq: number, winRate: number, rPct: number, tpd: number, numDays: number): number {
+    let eq = startEq;
+    const totalTrades = tpd * numDays;
+    for (let i = 0; i < totalTrades; i++) {
+      const risk = eq * (rPct / 100);
+      const isWin = (i % 100) < winRate; // deterministic for display
+      if (isWin) {
+        eq += risk * avgRR;
+      } else {
+        eq -= risk;
+      }
+      if (eq <= 0) return 0;
+    }
+    return eq;
+  }
+
+  return (
+    <div style={{
+      ...Glass.card,
+      borderRadius: R.lg,
+      padding: '20px 24px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <span style={{ fontSize: F.md, fontWeight: 700, color: C.text }}>Compounding Projections</span>
+        <span style={{ fontSize: F.xs, color: C.muted, fontStyle: 'italic' }}>at 2:1 R:R</span>
+      </div>
+
+      {/* Inputs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 10, color: C.muted, textTransform: 'uppercase', marginBottom: 3 }}>Starting $</div>
+          <input type="number" style={inp} value={equity} onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setEquity(v); }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: C.muted, textTransform: 'uppercase', marginBottom: 3 }}>Risk %/trade</div>
+          <input type="number" style={inp} value={riskPct} step={0.5} min={1} max={20} onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setRiskPct(v); }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: C.muted, textTransform: 'uppercase', marginBottom: 3 }}>Trades/day</div>
+          <input type="number" style={inp} value={tradesPerDay} step={1} min={1} max={10} onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v > 0) setTradesPerDay(v); }} />
+        </div>
+      </div>
+
+      {/* Projection table */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: F.xs }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: `1px solid ${C.border}`, color: C.muted, fontWeight: 600 }}>Win Rate</th>
+              {days.map(d => (
+                <th key={d} style={{ textAlign: 'right', padding: '6px 8px', borderBottom: `1px solid ${C.border}`, color: C.muted, fontWeight: 600 }}>{d}d</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {scenarios.map(sc => (
+              <tr key={sc.wr}>
+                <td style={{ padding: '6px 8px', borderBottom: `1px solid ${C.border}22`, fontWeight: 700, color: sc.color }}>{sc.label}</td>
+                {days.map(d => {
+                  const projected = projectEquity(equity, sc.wr, riskPct, tradesPerDay, d);
+                  const mult = equity > 0 ? projected / equity : 0;
+                  return (
+                    <td key={d} style={{
+                      textAlign: 'right', padding: '6px 8px',
+                      borderBottom: `1px solid ${C.border}22`,
+                      fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+                      color: projected > equity ? C.bull : projected < equity ? C.bear : C.text,
+                    }}>
+                      ${projected.toFixed(0)}
+                      <div style={{ fontSize: 9, color: C.muted, fontWeight: 400 }}>{mult.toFixed(1)}x</div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ fontSize: 10, color: C.faint, marginTop: 10, fontStyle: 'italic' }}>
+        Projections assume compounding reinvestment and consistent risk %. Actual results will vary.
+      </div>
+    </div>
+  );
+}
+
+// ─── Sniper HQ (Main Section) ────────────────────────────────────────────────
+
+function SniperHQ({ sniperData, journalData }: { sniperData: any; journalData: any }) {
+  if (!sniperData?.enabled) return null;
+
+  const signals = (sniperData.signals || []).slice(-6).reverse();
+  const summary = sniperData.summary || {};
+  const tierSummary = summary.by_tier || {};
+
+  return (
+    <div style={{ marginBottom: 32 }}>
+      {/* Section header with fire accent */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        margin: '0 0 20px', paddingBottom: 14,
+        borderBottom: `2px solid ${C.amber}44`,
+        flexWrap: 'wrap', gap: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: R.md,
+            background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 20, boxShadow: '0 0 20px rgba(245,158,11,0.3)',
+          }}>
+            <span role="img" aria-label="crosshair">&#127919;</span>
+          </div>
+          <div>
+            <h2 style={{ fontSize: F['2xl'], fontWeight: 900, color: C.text, margin: 0, letterSpacing: '-0.02em' }}>
+              Manual Sniper <span style={{ color: C.amber }}>HQ</span>
+            </h2>
+            <div style={{ fontSize: F.xs, color: C.muted, marginTop: 2 }}>
+              High-conviction signals for aggressive manual execution
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {summary.daily_target && (
+            <span style={{
+              padding: '4px 12px', borderRadius: R.pill, fontSize: F.xs, fontWeight: 700,
+              background: 'linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(239,68,68,0.1) 100%)',
+              color: C.amber, border: `1px solid ${C.amber}33`,
+            }}>
+              Target: ${summary.daily_target}/day
+            </span>
+          )}
+          <span style={{
+            padding: '4px 12px', borderRadius: R.pill, fontSize: F.xs, fontWeight: 700,
+            background: C.surface, color: C.textSub, border: `1px solid ${C.border}`,
+          }}>
+            {summary.signals_sent || 0}/{summary.max_signals || 10} signals today
+          </span>
+        </div>
+      </div>
+
+      {/* Summary stats bar */}
+      {summary.account_equity && (
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: 10, marginBottom: 20,
+        }}>
+          {[
+            { label: 'Account', value: `$${Number(summary.account_equity).toFixed(0)}`, color: C.text },
+            { label: 'Scalp Potential', value: `+$${Number(summary.total_potential_scalp || 0).toFixed(0)}`, color: C.bull },
+            { label: 'Swing Potential', value: `+$${Number(summary.total_potential_swing || 0).toFixed(0)}`, color: '#eab308' },
+            { label: 'Total Risk', value: `-$${Number(summary.total_risk || 0).toFixed(0)}`, color: C.bear },
+            { label: 'Target Coverage', value: `${Number(summary.target_coverage_scalp_pct || 0).toFixed(0)}%`, color: (summary.target_coverage_scalp_pct || 0) >= 100 ? C.bull : C.warn },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{
+              padding: '10px 14px', background: C.surface, border: `1px solid ${C.border}`,
+              borderRadius: R.md, textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 10, color: C.muted, textTransform: 'uppercase', marginBottom: 3 }}>{label}</div>
+              <div style={{ fontSize: F.md, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tier breakdown pills */}
+      {Object.keys(tierSummary).length > 0 && (
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+          {Object.entries(tierSummary).map(([tier, count]) => {
+            const ts = TIER_STYLES[tier] || TIER_STYLES.STANDARD;
+            return (
+              <div key={tier} style={{
+                padding: '6px 14px', borderRadius: R.pill,
+                background: ts.bg, border: `1px solid ${ts.border}44`,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: ts.text }} />
+                <span style={{ fontSize: F.xs, fontWeight: 700, color: ts.text }}>{tier}</span>
+                <span style={{ fontSize: F.xs, color: ts.text + 'aa' }}>{String(count)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Two-column layout: Account Tracker + Compounding on left, signals on right (stacks on mobile) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(0, 2fr)', gap: 20, marginBottom: 20 }}>
+        {/* Left: Account + Compounding */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <AccountTracker journalData={journalData} />
+          <CompoundingCalculator />
+        </div>
+
+        {/* Right: Signal Cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {signals.length === 0 ? (
+            <div style={{
+              ...Glass.card,
+              borderRadius: R.lg,
+              padding: 40, textAlign: 'center',
+              border: `1px dashed ${C.border}`,
+            }}>
+              <div style={{ fontSize: 32, marginBottom: 10, opacity: 0.5 }}>&#128269;</div>
+              <div style={{ fontWeight: 700, color: C.text, marginBottom: 6, fontSize: F.md }}>Scanning for sniper entries...</div>
+              <div style={{ fontSize: F.sm, color: C.muted, maxWidth: 400, margin: '0 auto' }}>
+                High-conviction signals (72%+ confidence, 2+ strategies agreeing) will appear here with exact entries, stops, and targets for manual execution at 10-25x leverage.
+              </div>
+            </div>
+          ) : (
+            signals.map((sig: any, i: number) => {
+              const tier = sig.tier || 'STANDARD';
+              const ts = TIER_STYLES[tier] || TIER_STYLES.STANDARD;
+              const isLong = sig.side === 'BUY';
+              const dirColor = isLong ? C.bull : '#dc2626';
+              const stopPct = sig.entry > 0 ? (Math.abs(sig.entry - sig.sl) / sig.entry * 100) : 0;
+              const isSniper = tier === 'SNIPER';
+
+              return (
+                <div key={i} style={{
+                  background: ts.bg,
+                  border: `1px solid ${ts.border}44`,
+                  borderLeft: `4px solid ${ts.border}`,
+                  borderRadius: R.lg,
+                  padding: '16px 20px',
+                  position: 'relative',
+                  boxShadow: isSniper ? ts.glow : undefined,
+                  animation: isSniper && i === 0 ? 'sniperPulse 2s ease-in-out infinite' : undefined,
+                }}>
+                  {/* "NEW" badge for most recent SNIPER signal */}
+                  {isSniper && i === 0 && (
+                    <div style={{
+                      position: 'absolute', top: -8, right: 16,
+                      padding: '2px 10px', borderRadius: R.pill,
+                      background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+                      color: '#fff', fontSize: 10, fontWeight: 800,
+                      letterSpacing: 1, boxShadow: '0 2px 8px rgba(245,158,11,0.4)',
+                    }}>
+                      NEW
+                    </div>
+                  )}
+
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{
+                        padding: '3px 10px', borderRadius: R.sm,
+                        background: ts.border + '22', color: ts.text,
+                        fontWeight: 800, fontSize: F.xs, letterSpacing: 0.8,
+                        textShadow: isSniper ? `0 0 8px ${ts.text}44` : undefined,
+                      }}>
+                        {tier}
+                      </span>
+                      <span style={{ fontWeight: 900, fontSize: F.xl, color: C.text }}>{sig.symbol}</span>
+                      <span style={{
+                        padding: '3px 12px', borderRadius: R.sm,
+                        background: dirColor + '18', color: dirColor,
+                        fontWeight: 800, fontSize: F.sm,
+                      }}>
+                        {isLong ? 'LONG' : 'SHORT'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{
+                        padding: '3px 10px', borderRadius: R.pill,
+                        background: C.surface, color: C.textSub,
+                        fontWeight: 700, fontSize: F.xs,
+                      }}>
+                        {sig.leverage}x
+                      </span>
+                      <span style={{ fontSize: F.md, fontWeight: 800, color: ts.text }}>{sig.confidence?.toFixed(0)}%</span>
+                    </div>
+                  </div>
+
+                  {/* Levels grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, marginBottom: 12 }}>
+                    <div style={{ background: C.surface + 'aa', borderRadius: R.sm, padding: '8px 10px' }}>
+                      <div style={{ fontSize: 9, color: C.muted, textTransform: 'uppercase', marginBottom: 2, letterSpacing: 0.5 }}>Entry</div>
+                      <div style={{ fontSize: F.md, fontWeight: 700, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+                        ${Number(sig.entry).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                      </div>
+                    </div>
+                    <div style={{ background: 'rgba(220,38,38,0.08)', borderRadius: R.sm, padding: '8px 10px' }}>
+                      <div style={{ fontSize: 9, color: '#ef4444', textTransform: 'uppercase', marginBottom: 2, letterSpacing: 0.5 }}>Stop ({stopPct.toFixed(1)}%)</div>
+                      <div style={{ fontSize: F.md, fontWeight: 700, color: '#ef4444', fontVariantNumeric: 'tabular-nums' }}>
+                        ${Number(sig.sl).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                      </div>
+                    </div>
+                    <div style={{ background: 'rgba(22,163,74,0.08)', borderRadius: R.sm, padding: '8px 10px' }}>
+                      <div style={{ fontSize: 9, color: C.bull, textTransform: 'uppercase', marginBottom: 2, letterSpacing: 0.5 }}>Scalp TP</div>
+                      <div style={{ fontSize: F.md, fontWeight: 700, color: C.bull, fontVariantNumeric: 'tabular-nums' }}>
+                        ${Number(sig.tp_scalp).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                      </div>
+                    </div>
+                    <div style={{ background: 'rgba(234,179,8,0.08)', borderRadius: R.sm, padding: '8px 10px' }}>
+                      <div style={{ fontSize: 9, color: '#eab308', textTransform: 'uppercase', marginBottom: 2, letterSpacing: 0.5 }}>Swing TP</div>
+                      <div style={{ fontSize: F.md, fontWeight: 700, color: '#eab308', fontVariantNumeric: 'tabular-nums' }}>
+                        ${Number(sig.tp_swing).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* P&L + sizing row */}
+                  <div style={{ display: 'flex', gap: 14, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ fontSize: F.xs }}>
+                      <span style={{ color: C.muted }}>Risk: </span>
+                      <span style={{ color: '#ef4444', fontWeight: 700 }}>-${sig.loss_amount?.toFixed(0)}</span>
+                    </div>
+                    <div style={{ fontSize: F.xs }}>
+                      <span style={{ color: C.muted }}>Scalp: </span>
+                      <span style={{ color: C.bull, fontWeight: 700 }}>+${sig.pnl_scalp?.toFixed(0)}</span>
+                    </div>
+                    <div style={{ fontSize: F.xs }}>
+                      <span style={{ color: C.muted }}>Swing: </span>
+                      <span style={{ color: '#eab308', fontWeight: 700 }}>+${sig.pnl_swing?.toFixed(0)}</span>
+                    </div>
+                    <div style={{ fontSize: F.xs }}>
+                      <span style={{ color: C.muted }}>R:R </span>
+                      <span style={{ color: C.text, fontWeight: 700 }}>{sig.rr_scalp?.toFixed(1)}x / {sig.rr_swing?.toFixed(1)}x</span>
+                    </div>
+                    <div style={{ fontSize: F.xs }}>
+                      <span style={{ color: C.muted }}>Size: </span>
+                      <span style={{ color: C.text, fontWeight: 700 }}>${sig.position_size_usd?.toLocaleString()}</span>
+                    </div>
+                    {sig.account_after_win && (
+                      <div style={{ fontSize: F.xs, marginLeft: 'auto' }}>
+                        <span style={{ color: C.muted }}>After win: </span>
+                        <span style={{ color: C.bull, fontWeight: 700 }}>${Number(sig.account_after_win).toFixed(0)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Execute button + footer */}
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    flexWrap: 'wrap', gap: 8, borderTop: `1px solid ${C.border}44`, paddingTop: 10,
+                  }}>
+                    <div style={{ fontSize: 10, color: C.muted }}>
+                      {(sig.strategies || []).join(', ')} · {sig.regime} · {sig.num_agree} agree
+                    </div>
+                    <a
+                      href={`https://app.hyperliquid.xyz/trade/${sig.symbol || 'BTC'}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '6px 18px', borderRadius: R.md,
+                        background: isSniper
+                          ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
+                          : tier === 'PREMIUM'
+                          ? 'linear-gradient(135deg, #7c3aed, #a855f7)'
+                          : C.brand,
+                        color: '#fff', fontSize: F.xs, fontWeight: 800,
+                        textDecoration: 'none', letterSpacing: 0.5,
+                        boxShadow: isSniper ? '0 2px 12px rgba(245,158,11,0.3)' : undefined,
+                        transition: 'transform 0.15s, box-shadow 0.15s',
+                      }}
+                      onMouseEnter={e => { (e.target as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                      onMouseLeave={e => { (e.target as HTMLElement).style.transform = 'none'; }}
+                    >
+                      Execute on Hyperliquid &#8599;
+                    </a>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function CopyTrade() {
@@ -2012,6 +2538,8 @@ export default function CopyTrade() {
   const [llmView, setLlmView] = useState<LlmMarketView | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [backtest, setBacktest] = useState<BacktestResult | null>(null);
+  const [sniperData, setSniperData] = useState<any>(null);
+  const [journalData, setJournalData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const apiBase = resolveApiBase();
 
@@ -2019,11 +2547,13 @@ export default function CopyTrade() {
     const ctrl = new AbortController();
     const fetcher = async () => {
       try {
-        const [signalsRes, llmRes, activityRes, btRes] = await Promise.allSettled([
+        const [signalsRes, llmRes, activityRes, btRes, sniperRes, journalRes] = await Promise.allSettled([
           fetch(`${apiBase}/v1/signals`, { signal: ctrl.signal }),
           fetch(`${apiBase}/v1/llm/market-view`, { signal: ctrl.signal }),
           fetch(`${apiBase}/v1/activity/feed?limit=25`, { signal: ctrl.signal }),
           fetch(`${apiBase}/v1/backtest/results/latest`, { signal: ctrl.signal }),
+          fetch(`${apiBase}/api/sniper`, { signal: ctrl.signal }),
+          fetch(`${apiBase}/api/sniper/journal`, { signal: ctrl.signal }),
         ]);
 
         if (ctrl.signal.aborted) return;
@@ -2039,6 +2569,12 @@ export default function CopyTrade() {
         }
         if (btRes.status === 'fulfilled' && btRes.value.ok) {
           setBacktest(await btRes.value.json());
+        }
+        if (sniperRes.status === 'fulfilled' && sniperRes.value.ok) {
+          setSniperData(await sniperRes.value.json());
+        }
+        if (journalRes.status === 'fulfilled' && journalRes.value.ok) {
+          setJournalData(await journalRes.value.json());
         }
       } catch (e) {
         if ((e as any)?.name !== 'AbortError') console.error('Fetch error:', e);
@@ -2079,6 +2615,21 @@ export default function CopyTrade() {
 
       {/* LLM Brain Banner */}
       <LlmBrainBanner view={llmView} />
+
+      {/* Sniper HQ animation styles */}
+      <style>{`
+        @keyframes sniperPulse {
+          0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.2), 0 0 0 0 rgba(245,158,11,0.15); }
+          50% { box-shadow: 0 0 28px rgba(245,158,11,0.35), 0 0 0 4px rgba(245,158,11,0.08); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
+
+      {/* ── SNIPER HQ (Primary Section) ───────────────────────────────────── */}
+      <SniperHQ sniperData={sniperData} journalData={journalData} />
 
       {/* ── Section 1: Live Signals ───────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '32px 0 0', borderBottom: `1px solid ${C.border}`, paddingBottom: 12, flexWrap: 'wrap', gap: 12 }}>

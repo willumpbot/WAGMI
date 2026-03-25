@@ -7686,6 +7686,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             "/api/insights":     self._serve_insights,
             "/api/correlation":  self._serve_correlation,
             "/api/ml":           self._serve_ml,
+            "/api/sniper":       self._serve_sniper,
+            "/api/sniper/journal": self._serve_sniper_journal,
+            "/api/sniper/sim":   self._serve_sniper_sim,
         }
         handler = routes.get(path)
         if handler:
@@ -8578,6 +8581,160 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_json(ml_data)
         except Exception as exc:
             logger.exception("Error serving /api/ml")
+            self._send_json({"error": str(exc)}, status=500)
+
+    # ── /api/sniper — Manual sniper signal system ───────────────────────
+    def _serve_sniper(self):
+        try:
+            bot = DashboardHandler.bot_instance
+            data = {"enabled": False, "signals": [], "summary": {}}
+
+            if bot and hasattr(bot, '_manual_sniper') and bot._manual_sniper:
+                data["enabled"] = True
+                summary = bot._manual_sniper.get_daily_summary()
+                data["summary"] = summary
+                data["signals"] = summary.get("signals", [])
+            else:
+                # Try reading from log file as fallback
+                log_path = os.path.join("data", "manual", "sniper_signals.jsonl")
+                if os.path.exists(log_path):
+                    data["enabled"] = True
+                    signals = []
+                    try:
+                        import json as _json
+                        with open(log_path, "r") as f:
+                            for line in f:
+                                line = line.strip()
+                                if line:
+                                    signals.append(_json.loads(line))
+                        # Last 20 signals
+                        data["signals"] = signals[-20:]
+                    except Exception:
+                        pass
+
+            self._send_json(data)
+        except Exception as exc:
+            logger.exception("Error serving /api/sniper")
+            self._send_json({"error": str(exc)}, status=500)
+
+    # ── /api/sniper/journal — Manual trade journal for account tracking ──
+    def _serve_sniper_journal(self):
+        try:
+            journal_path = os.path.join("data", "manual", "trade_journal.jsonl")
+            data = {
+                "open_trades": [],
+                "closed_trades": [],
+                "equity_curve": [],
+                "stats": {
+                    "starting_equity": 100.0,
+                    "current_equity": 100.0,
+                    "total_trades": 0,
+                    "wins": 0,
+                    "losses": 0,
+                    "win_rate": 0.0,
+                    "total_pnl": 0.0,
+                    "best_trade": 0.0,
+                    "worst_trade": 0.0,
+                    "avg_win": 0.0,
+                    "avg_loss": 0.0,
+                    "daily_pnl": 0.0,
+                    "streak": 0,
+                },
+            }
+
+            if os.path.exists(journal_path):
+                entries = []
+                try:
+                    with open(journal_path, "r") as f:
+                        for line in f:
+                            line = line.strip()
+                            if line:
+                                entries.append(json.loads(line))
+                except Exception:
+                    pass
+
+                open_trades = [e for e in entries if e.get("status") == "open"]
+                closed_trades = [e for e in entries if e.get("status") == "closed"]
+                data["open_trades"] = open_trades[-20:]
+                data["closed_trades"] = closed_trades[-50:]
+
+                # Build equity curve from closed trades
+                equity = 100.0
+                curve = [{"equity": equity, "trade": 0, "ts": None}]
+                wins = 0
+                losses = 0
+                total_pnl = 0.0
+                best = 0.0
+                worst = 0.0
+                daily_pnl = 0.0
+                streak = 0
+                today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+                for i, t in enumerate(closed_trades):
+                    pnl = float(t.get("pnl", 0))
+                    equity += pnl
+                    total_pnl += pnl
+                    curve.append({
+                        "equity": round(equity, 2),
+                        "trade": i + 1,
+                        "ts": t.get("close_ts"),
+                    })
+                    if pnl > 0:
+                        wins += 1
+                        streak = max(0, streak) + 1
+                    elif pnl < 0:
+                        losses += 1
+                        streak = min(0, streak) - 1
+                    best = max(best, pnl)
+                    worst = min(worst, pnl)
+                    close_date = (t.get("close_ts") or "")[:10]
+                    if close_date == today:
+                        daily_pnl += pnl
+
+                total = wins + losses
+                data["equity_curve"] = curve
+                data["stats"] = {
+                    "starting_equity": 100.0,
+                    "current_equity": round(equity, 2),
+                    "total_trades": total,
+                    "wins": wins,
+                    "losses": losses,
+                    "win_rate": round(wins / total * 100, 1) if total > 0 else 0.0,
+                    "total_pnl": round(total_pnl, 2),
+                    "best_trade": round(best, 2),
+                    "worst_trade": round(worst, 2),
+                    "avg_win": round(total_pnl / wins, 2) if wins > 0 else 0.0,
+                    "avg_loss": round(total_pnl / losses, 2) if losses > 0 else 0.0,
+                    "daily_pnl": round(daily_pnl, 2),
+                    "streak": streak,
+                }
+
+            self._send_json(data)
+        except Exception as exc:
+            logger.exception("Error serving /api/sniper/journal")
+            self._send_json({"error": str(exc)}, status=500)
+
+    # ── /api/sniper/sim — Sniper live simulation status ───────────────
+    def _serve_sniper_sim(self):
+        try:
+            bot = DashboardHandler.bot_instance
+            data = {"enabled": False, "status": {}}
+
+            # Try live simulator on bot instance first
+            if bot and hasattr(bot, '_sniper_simulator') and bot._sniper_simulator:
+                data["enabled"] = True
+                data["status"] = bot._sniper_simulator.get_status()
+            else:
+                # Fallback: read from disk
+                status_path = os.path.join("data", "manual", "sim_status.json")
+                if os.path.exists(status_path):
+                    with open(status_path, "r") as f:
+                        data["enabled"] = True
+                        data["status"] = json.load(f)
+
+            self._send_json(data)
+        except Exception as exc:
+            logger.exception("Error serving /api/sniper/sim")
             self._send_json({"error": str(exc)}, status=500)
 
     # ═══════════════════════════════════════════════════════════════════
