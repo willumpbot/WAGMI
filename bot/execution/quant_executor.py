@@ -62,21 +62,32 @@ class QuantExecutor:
         from execution.portfolio_risk_budget import PortfolioRiskBudget
         from execution.entry_optimizer import EntryOptimizer
         from execution.exit_optimizer import ExitOptimizer
+        from execution.monte_carlo_ruin import is_size_safe
+        from execution.cross_asset_signals import CrossAssetAmplifier
 
         self.sizer = SizingOptimizer()
         self.layers = PositionLayerManager()
         self.budget = PortfolioRiskBudget()
         self.entry_opt = EntryOptimizer()
         self.exit_opt = ExitOptimizer()
+        self.ruin_check = is_size_safe
+        self.cross_asset = CrossAssetAmplifier()
 
         logger.info(
             f"[QUANT-EXEC] Initialized: equity=${equity:.2f}, "
-            f"modules=[sizer, layers, budget, entry, exit]"
+            f"modules=[sizer, layers, budget, entry, exit, ruin_check, cross_asset]"
         )
 
     def update_equity(self, equity: float) -> None:
         """Update equity for all components."""
         self.equity = equity
+
+    def update_prices(self, prices: Dict[str, float], timestamp: Optional[float] = None) -> None:
+        """Feed price data to cross-asset amplifier."""
+        import time as _time
+        ts = timestamp or _time.time()
+        for symbol, price in prices.items():
+            self.cross_asset.update_price(symbol, price, ts)
 
     def evaluate_signal(
         self,
@@ -141,6 +152,30 @@ class QuantExecutor:
         # Apply layer's Kelly fraction multiplier
         adjusted_risk = sizing.risk_amount * layer_result.config.kelly_fraction_mult
         adjusted_size = sizing.position_size_usd * layer_result.config.kelly_fraction_mult
+
+        # ── Step 2b: Monte Carlo Ruin Check ──
+        risk_pct_for_ruin = adjusted_risk / self.equity if self.equity > 0 else 0
+        ruin_safe, ruin_info = self.ruin_check(
+            sizing.setup_wr, sizing.setup_payoff, risk_pct_for_ruin
+        )
+        if not ruin_safe:
+            # Downsize to safe level
+            adjusted_risk *= 0.5
+            adjusted_size *= 0.5
+            logger.info(
+                f"[QUANT-EXEC] Ruin check failed ({ruin_info.get('ruin_probability', 0):.1%} ruin). "
+                f"Halving position size."
+            )
+
+        # ── Step 2c: Cross-Asset Amplification ──
+        amp_signal = self.cross_asset.check_amplification(symbol, side)
+        if amp_signal:
+            # Leader confirms direction — boost confidence for entry decision
+            confidence = min(confidence + amp_signal.confidence_boost, 99.0)
+            logger.debug(
+                f"[QUANT-EXEC] Cross-asset boost: {amp_signal.leader} "
+                f"{amp_signal.leader_move_pct:+.1f}% → {symbol} +{amp_signal.confidence_boost:.0f} conf"
+            )
 
         # ── Step 3: Portfolio Budget Check ──
         can_budget, budget_reason = self.budget.can_allocate(
