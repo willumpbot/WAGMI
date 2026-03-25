@@ -238,6 +238,11 @@ class SniperSimulator:
         Called every scan cycle. Checks all open sim positions against
         current market prices. Returns list of trades closed this cycle.
         """
+        # Always save status periodically (even with no position changes)
+        # This ensures the dashboard always has fresh data
+        if self._open_positions:
+            self._save_status()
+
         if not self._open_positions:
             return []
 
