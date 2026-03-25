@@ -84,10 +84,12 @@ class QuantExecutor:
 
     def update_prices(self, prices: Dict[str, float], timestamp: Optional[float] = None) -> None:
         """Feed price data to cross-asset amplifier."""
+        from datetime import datetime, timezone
         import time as _time
-        ts = timestamp or _time.time()
+        ts_float = timestamp or _time.time()
+        ts_dt = datetime.fromtimestamp(ts_float, tz=timezone.utc)
         for symbol, price in prices.items():
-            self.cross_asset.update_price(symbol, price, ts)
+            self.cross_asset.update_price(symbol, price, ts_dt)
 
     def evaluate_signal(
         self,
