@@ -2964,6 +2964,45 @@ class MultiStrategyBot:
 
         signal_result = self.ensemble.evaluate(symbol, data)
 
+        # ── EARLY: Sniper Signal Evaluation (before regime gating can null the signal) ──
+        # The sniper filter has its own gates and should see ALL ensemble signals,
+        # not just those that pass the bot's confidence floor.
+        if signal_result is not None and self._manual_sniper is not None:
+            try:
+                _sniper_sig = self._manual_sniper.evaluate(
+                    signal_result, equity=self.risk_mgr.equity
+                )
+                if _sniper_sig is not None:
+                    if self._manual_alerter is not None:
+                        self._manual_alerter.send_sniper_alert(
+                            _sniper_sig, equity=self.risk_mgr.equity
+                        )
+                    if self._sniper_simulator is not None:
+                        try:
+                            _sim_pos = self._sniper_simulator.on_signal(_sniper_sig)
+                            if _sim_pos:
+                                logger.info(
+                                    f"[SIM] Opened {_sim_pos.trade_id} {_sim_pos.symbol} "
+                                    f"{_sim_pos.side} @ ${_sim_pos.entry:.2f} "
+                                    f"size=${_sim_pos.position_size_usd:.2f}"
+                                )
+                        except Exception as _sim_err:
+                            logger.warning(f"[SIM] Error on signal: {_sim_err}")
+                    # Signal Value Tracker
+                    if hasattr(self, '_signal_tracker') and self._signal_tracker is not None:
+                        try:
+                            self._signal_tracker.record_signal(_sniper_sig)
+                        except Exception:
+                            pass
+                    # Sniper Auto-Execute
+                    if self._sniper_auto_execute and _sniper_sig.tier in ("SNIPER", "PREMIUM"):
+                        try:
+                            self._execute_sniper_signal(_sniper_sig, symbol, current_price)
+                        except Exception as _sae_err:
+                            logger.error(f"[SNIPER-EXEC] Error executing {symbol}: {_sae_err}")
+            except Exception:
+                pass
+
         # ── TIER 4: Mechanical Bot Instrumentation (Signal Generation Hook) ──
         # Record signal generation with full market context for perception system
         if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE and signal_result is not None:
@@ -3084,42 +3123,7 @@ class MultiStrategyBot:
                 return  # same signal, skip silently
         self._last_signal[symbol] = (signal_result.side, now)
 
-        # ── Manual Sniper Signal Evaluation ──
-        if self._manual_sniper is not None:
-            try:
-                _sniper_sig = self._manual_sniper.evaluate(
-                    signal_result, equity=self.risk_mgr.equity
-                )
-                if _sniper_sig is not None:
-                    if self._manual_alerter is not None:
-                        self._manual_alerter.send_sniper_alert(
-                            _sniper_sig, equity=self.risk_mgr.equity
-                        )
-                    if self._sniper_simulator is not None:
-                        try:
-                            _sim_pos = self._sniper_simulator.on_signal(_sniper_sig)
-                            if _sim_pos:
-                                logger.info(
-                                    f"[SIM] Opened {_sim_pos.trade_id} {_sim_pos.symbol} "
-                                    f"{_sim_pos.side} @ ${_sim_pos.entry:.2f} "
-                                    f"size=${_sim_pos.position_size_usd:.2f}"
-                                )
-                        except Exception as _sim_err:
-                            logger.warning(f"[SIM] Error on signal: {_sim_err}")
-                    # ── Signal Value Tracker: record every signal for outcome measurement ──
-                    if hasattr(self, '_signal_tracker') and self._signal_tracker is not None:
-                        try:
-                            self._signal_tracker.record_signal(_sniper_sig)
-                        except Exception:
-                            pass
-                    # ── Sniper Auto-Execute: route qualifying signals to order executor ──
-                    if self._sniper_auto_execute and _sniper_sig.tier in ("SNIPER", "PREMIUM"):
-                        try:
-                            self._execute_sniper_signal(_sniper_sig, symbol, current_price)
-                        except Exception as _sae_err:
-                            logger.error(f"[SNIPER-EXEC] Error executing {symbol}: {_sae_err}")
-            except Exception:
-                pass
+        # (Sniper evaluation moved earlier — before regime gating — to see all signals)
 
         # LLM triggers: detect meaningful decision boundaries
         num_agree = signal_result.metadata.get("num_agree", 1)
