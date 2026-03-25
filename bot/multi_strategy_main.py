@@ -1070,6 +1070,21 @@ class MultiStrategyBot:
 
     def _handle_signal(self, signum, frame):
         logger.info(f"Received signal {signum}, stopping...")
+        # Cancel all pending orders before shutdown to prevent unmanaged fills
+        try:
+            pending = self.pending_orders.get_pending()
+            if pending:
+                logger.info(f"[SHUTDOWN] Cancelling {len(pending)} pending orders...")
+                self.pending_orders.cancel_all(reason="shutdown")
+                # In live mode, also cancel on exchange
+                if self.order_executor.mode == "live" and self.order_executor.exchange:
+                    try:
+                        self.order_executor.exchange.cancel_all_orders()
+                        logger.info("[SHUTDOWN] Exchange orders cancelled")
+                    except Exception as e:
+                        logger.error(f"[SHUTDOWN] Failed to cancel exchange orders: {e}")
+        except Exception as e:
+            logger.error(f"[SHUTDOWN] Error cancelling pending orders: {e}")
         self.stop_event.set()
 
     def _adaptive_scan_interval(self) -> float:
