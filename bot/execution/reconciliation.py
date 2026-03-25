@@ -32,6 +32,61 @@ from execution.precision import round_price, round_qty
 logger = logging.getLogger("bot.execution.reconciliation")
 
 
+def _restore_sl_tp_from_trades(symbol: str, side: str, entry: float):
+    """Try to restore original SL/TP from the most recent OPEN trade in trades.csv.
+
+    Returns (sl, tp1, tp2, atr) if found, or (None, None, None, None) if not.
+    """
+    import csv
+    import os
+
+    trades_path = os.path.join("data", "trades.csv")
+    if not os.path.exists(trades_path):
+        return None, None, None, None
+
+    try:
+        # Read CSV and find the most recent OPEN action for this symbol+side
+        best_row = None
+        with open(trades_path, "r", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if (row.get("symbol") == symbol
+                        and row.get("action") == "OPEN"
+                        and row.get("side") == side):
+                    best_row = row  # Keep overwriting — last match = most recent
+
+        if best_row is None:
+            return None, None, None, None
+
+        # Extract SL/TP from metadata (stored as JSON in metadata column)
+        import json
+        meta = {}
+        raw_meta = best_row.get("metadata", "")
+        if raw_meta:
+            try:
+                meta = json.loads(raw_meta)
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        sl = meta.get("sl") or best_row.get("sl")
+        tp1 = meta.get("tp1") or best_row.get("tp1")
+        tp2 = meta.get("tp2") or best_row.get("tp2")
+        atr = meta.get("atr")
+
+        # Validate we got usable values
+        if sl is not None and tp1 is not None:
+            sl = float(sl)
+            tp1 = float(tp1)
+            tp2 = float(tp2) if tp2 is not None else tp1 * 2 - entry
+            atr = float(atr) if atr is not None else abs(entry - sl) / 1.5
+            return sl, tp1, tp2, atr
+
+    except Exception as e:
+        logger.debug(f"[RECONCILE] Could not restore SL/TP from trades.csv: {e}")
+
+    return None, None, None, None
+
+
 # Reverse map: CCXT pair -> our symbol name
 # Hyperliquid uses "BTC/USDC:USDC" format for perpetuals
 _PAIR_TO_SYMBOL = {
@@ -178,22 +233,34 @@ def _reconcile_one(
     unrealized = float(raw.get("unrealizedPnl", 0) or 0)
     qty = round_qty(symbol, contracts)
 
-    # Estimate ATR from price (rough: 2% of price for majors, 4% for memes)
-    from trading_config import DEFAULT_SYMBOLS
-    sym_cfg = DEFAULT_SYMBOLS.get(symbol)
-    tier = sym_cfg.risk_tier if sym_cfg else "medium"
-    atr_pct = {"low": 0.015, "medium": 0.025, "high": 0.04}.get(tier, 0.025)
-    estimated_atr = entry * atr_pct
+    # Try to restore original SL/TP from trades.csv (better than estimating)
+    sl, tp1, tp2, estimated_atr = _restore_sl_tp_from_trades(symbol, side, entry)
+    if sl is None:
+        # Fallback: estimate ATR from price (rough: 2% of price for majors, 4% for memes)
+        from trading_config import DEFAULT_SYMBOLS
+        sym_cfg = DEFAULT_SYMBOLS.get(symbol)
+        tier = sym_cfg.risk_tier if sym_cfg else "medium"
+        atr_pct = {"low": 0.015, "medium": 0.025, "high": 0.04}.get(tier, 0.025)
+        estimated_atr = entry * atr_pct
 
-    # Set conservative SL/TP based on estimated ATR
-    if side == "LONG":
-        sl = round_price(symbol, entry - estimated_atr * 2.0)
-        tp1 = round_price(symbol, entry + estimated_atr * 1.5)
-        tp2 = round_price(symbol, entry + estimated_atr * 3.0)
+        # Set conservative SL/TP based on estimated ATR
+        if side == "LONG":
+            sl = round_price(symbol, entry - estimated_atr * 2.0)
+            tp1 = round_price(symbol, entry + estimated_atr * 1.5)
+            tp2 = round_price(symbol, entry + estimated_atr * 3.0)
+        else:
+            sl = round_price(symbol, entry + estimated_atr * 2.0)
+            tp1 = round_price(symbol, entry - estimated_atr * 1.5)
+            tp2 = round_price(symbol, entry - estimated_atr * 3.0)
+        logger.warning(
+            f"[RECONCILE] {symbol} using estimated SL/TP (no trade data found): "
+            f"sl={sl:.4f} tp1={tp1:.4f} tp2={tp2:.4f}"
+        )
     else:
-        sl = round_price(symbol, entry + estimated_atr * 2.0)
-        tp1 = round_price(symbol, entry - estimated_atr * 1.5)
-        tp2 = round_price(symbol, entry - estimated_atr * 3.0)
+        logger.info(
+            f"[RECONCILE] {symbol} restored original SL/TP from trades.csv: "
+            f"sl={sl:.4f} tp1={tp1:.4f} tp2={tp2:.4f}"
+        )
 
     # Check if position is in profit (may have passed TP1 already)
     current_price = last_prices.get(symbol, entry)
