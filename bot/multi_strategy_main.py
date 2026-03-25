@@ -1046,6 +1046,23 @@ class MultiStrategyBot:
 
             self._tick += 1
 
+            # Check for graceful restart request (written by other terminals/tools)
+            if self._tick % 5 == 0:  # Check every 5th tick (~2-3 min)
+                _restart_file = os.path.join("data", ".restart_requested")
+                if os.path.exists(_restart_file):
+                    try:
+                        with open(_restart_file, "r") as _rf:
+                            _reason = _rf.read().strip()[:200]
+                        os.remove(_restart_file)
+                        logger.info(f"[RESTART] Graceful restart requested: {_reason}")
+                        if self.alerts:
+                            self.alerts.send_trade_alert(
+                                f"BOT RESTARTING: {_reason}"
+                            )
+                        self.stop_event.set()
+                    except Exception as _re:
+                        logger.error(f"[RESTART] Error processing restart file: {_re}")
+
             # Periodic paper trading summary (every 60 ticks ≈ 6 hours)
             if self._tick % 60 == 0:
                 try:
