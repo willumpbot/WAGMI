@@ -45,6 +45,10 @@ STRATEGY_ENTRY_TYPE = {
     "multi_tier_quality": MEDIUM,  # Uses 1h/6h data — multi-TF quality signals
     "monte_carlo_zones": MEDIUM,
     "confidence_scorer": MEDIUM,
+    "mean_reversion": MEDIUM,  # BB bounce in consolidation — 4-12h hold, tight TP at the mean
+    "probability_engine": MEDIUM,  # Monte Carlo simulation — PF=9.57 alpha engine
+    "bollinger_squeeze": MEDIUM,  # Squeeze breakouts
+    "vmc_cipher": TREND,  # VMC momentum cipher
     # Future strategies:
     # "microstructure": SCALP,
     # "fast_ml": SCALP,
@@ -56,6 +60,10 @@ STRATEGY_INTENT = {
     "multi_tier_quality": "multi-timeframe signal quality, medium horizon",
     "monte_carlo_zones": "zone-based, medium horizon",
     "confidence_scorer": "ADX/MACD/squeeze momentum, medium horizon",
+    "mean_reversion": "BB bounce mean-reversion in consolidation, tight TP at 20 SMA",
+    "probability_engine": "Monte Carlo simulation, positive-EV trades only (PF=9.57)",
+    "bollinger_squeeze": "Bollinger Band squeeze breakout detection",
+    "vmc_cipher": "VMC momentum cipher, trend-following",
 }
 
 

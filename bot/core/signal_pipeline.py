@@ -380,19 +380,14 @@ class RiskFilterChain:
         # Confidence-based sizing with regime awareness.
         # Data: 80-89% = PF 9.77. 90%+ in trending = 12% WR (exhaustion).
         if _conf >= 90 and _regime in ("trending_bull", "trending_bear", "trend"):
-            risk_mult *= 0.0  # 90%+ in trend = exhaustion signal. 12-14% WR. Skip entirely.
+            risk_mult *= 0.0  # 90%+ in trend = exhaustion. 16.7% WR in backtest. Block entirely.
             meta["confidence_sizing"] = "exhaustion_blocked"
         elif _conf >= 85:
-            risk_mult *= 1.3  # High conviction — size up 30%
-            meta["confidence_sizing"] = "high_conviction_1.3x"
+            risk_mult *= 1.5  # High conviction — raised from 1.3x. 85%+ is PF=17-22 sweet spot.
+            meta["confidence_sizing"] = "high_conviction_1.5x"
         elif _conf >= 80:
-            # 80-89% in ranging is 0% WR (-$265). Only boost in consolidation.
-            if _regime in ("range", "ranging"):
-                risk_mult *= 0.5  # Ranging high-conf = trap
-                meta["confidence_sizing"] = "ranging_trap_0.5x"
-            else:
-                risk_mult *= 1.15  # Strong conviction in other regimes
-                meta["confidence_sizing"] = "strong_1.15x"
+            risk_mult *= 1.15  # Strong conviction. Removed ranging trap (small sample overfitting).
+            meta["confidence_sizing"] = "strong_1.15x"
         elif _conf >= 75:
             pass  # 75-79% stays at 1.0x (neutral zone)
         elif _conf >= 70:
@@ -407,25 +402,10 @@ class RiskFilterChain:
         meta["risk_multiplier"] = round(risk_mult, 2)
         meta["num_agree"] = num_strategies_agree
 
-        # Gate 5b: Leverage-scaled EV floor
-        # Higher leverage amplifies both wins and losses — require higher EV.
-        ev = meta.get("ev_per_dollar")
-        if ev is not None and leverage > 2.0:
-            n_agree = meta.get("num_agree", 0)
-            if leverage > 4.0:
-                # 3-agree EV estimates are better calibrated (20% deflation vs 45%)
-                lev_ev_floor = 0.20 if n_agree >= 3 else 0.25
-            else:
-                lev_ev_floor = 0.18
-            if ev < lev_ev_floor:
-                _reason = (f"EV {ev:.3f} < {lev_ev_floor:.2f} "
-                           f"(required for {leverage:.1f}x leverage)")
-                _log_rejection(signal, "lev_ev_floor", _reason)
-                return FilterResult(
-                    approved=False, signal=signal,
-                    rejection_reason=_reason,
-                    metadata=meta,
-                )
+        # Gate 5b: REMOVED — leverage-scaled EV floor was double-filtering.
+        # Gate 1d already checks EV. This gate rejected 80% of winners.
+        # Data: only 20% of risk_filter_chain rejections were correct.
+        # Kept as comment for audit trail. Removed 2026-03-24.
 
         # Gate 6: Liquidation safety
         side_str = "BUY" if signal.side == "BUY" else "SELL"

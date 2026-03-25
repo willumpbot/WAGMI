@@ -472,6 +472,19 @@ class MissedTradeTracker:
         for m in misses:
             by_regime[m.regime] += 1
 
+        # By strategy (which single strategy was firing when rejected)
+        # This reveals which strategies have untapped solo edge
+        by_strategy = defaultdict(lambda: {"total": 0, "won": 0, "lost": 0, "alpha_pct": 0.0})
+        for m in misses:
+            if m.rejection_category == "insufficient_votes" and m.strategies_agreeing:
+                for strat in m.strategies_agreeing:
+                    by_strategy[strat]["total"] += 1
+                    if m.would_have_won is True:
+                        by_strategy[strat]["won"] += 1
+                        by_strategy[strat]["alpha_pct"] += m.missed_pnl_estimate
+                    elif m.would_have_won is False:
+                        by_strategy[strat]["lost"] += 1
+
         # Overall stats
         with_outcome = [m for m in misses if m.would_have_won is not None]
         total_missed_alpha = sum(m.missed_pnl_estimate for m in misses if m.would_have_won)
@@ -492,6 +505,9 @@ class MissedTradeTracker:
             "by_category": category_summary,
             "by_symbol": dict(by_symbol),
             "by_regime": dict(by_regime),
+            "by_strategy_solo": {k: dict(v) for k, v in sorted(
+                by_strategy.items(), key=lambda x: -x[1]["alpha_pct"]
+            )},
             "top_missed_opportunities": top_missed,
         }
 

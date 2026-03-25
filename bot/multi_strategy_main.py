@@ -482,6 +482,34 @@ class MultiStrategyBot:
         except Exception as _se:
             logger.warning(f"[INIT] LLM Sniper Engine init failed (non-fatal): {_se}")
 
+        # ── Manual Sniper Signal System (reads signals only, never touches trading) ──
+        # Also runs standalone via: python -m manual.runner
+        self._manual_sniper = None
+        self._manual_alerter = None
+        self._sniper_simulator = None
+        try:
+            from manual.sniper_filter import ManualSniperFilter
+            from manual.alerts import ManualSniperAlerter
+            from manual.config import ManualSniperConfig
+            _ms_config = ManualSniperConfig()
+            if _ms_config.enabled:
+                self._manual_sniper = ManualSniperFilter(_ms_config)
+                self._manual_alerter = ManualSniperAlerter(_ms_config)
+                try:
+                    from manual.simulator import SniperSimulator
+                    self._sniper_simulator = SniperSimulator(
+                        starting_equity=_ms_config.equity
+                    )
+                except Exception:
+                    pass
+                logger.info(
+                    f"[INIT] Manual Sniper System enabled — "
+                    f"target=${_ms_config.daily_target}/day "
+                    f"max_lev={_ms_config.max_leverage}x"
+                )
+        except Exception as _ms_err:
+            logger.debug(f"[INIT] Manual Sniper System not available: {_ms_err}")
+
         # Execution
         self.risk_mgr = RiskManager(
             starting_equity=config.starting_equity,
@@ -622,6 +650,36 @@ class MultiStrategyBot:
             except Exception as mt_e:
                 logger.debug(f"[INIT] MissedTradeTracker unavailable: {mt_e}")
                 self._missed_trade_tracker = None
+            # Wire rejection outcome tracker for adaptive EV calibration
+            try:
+                from feedback.rejection_tracker import RejectionOutcomeTracker
+                self._rejection_tracker = RejectionOutcomeTracker(data_dir="data")
+                self.ensemble._rejection_outcome_tracker = self._rejection_tracker
+                logger.info("[INIT] RejectionOutcomeTracker wired into ensemble EV gate")
+            except Exception as rt_e:
+                logger.debug(f"[INIT] RejectionOutcomeTracker unavailable: {rt_e}")
+                self._rejection_tracker = None
+            # Wire EV calibrator for adaptive threshold adjustment
+            try:
+                from feedback.ev_calibrator import EVCalibrator
+                self._ev_calibrator = EVCalibrator(data_dir="data")
+                self.ensemble._ev_calibrator = self._ev_calibrator
+                # Connect rejection tracker -> EV calibrator feedback loop
+                if self._rejection_tracker is not None:
+                    self._rejection_tracker._outcome_callback = self._ev_calibrator.ingest_outcome
+                logger.info("[INIT] EVCalibrator wired into ensemble EV gate")
+            except Exception as ev_e:
+                logger.debug(f"[INIT] EVCalibrator unavailable: {ev_e}")
+                self._ev_calibrator = None
+            # Wire cross-asset correlation boost into ensemble
+            try:
+                from feedback.correlation_boost import CrossAssetCorrelationBoost
+                self._correlation_boost = CrossAssetCorrelationBoost(symbols=list(DEFAULT_SYMBOLS.keys()))
+                self.ensemble._correlation_boost = self._correlation_boost
+                logger.info("[INIT] CrossAssetCorrelationBoost wired into ensemble win_prob")
+            except Exception as cb_e:
+                logger.debug(f"[INIT] CrossAssetCorrelationBoost unavailable: {cb_e}")
+                self._correlation_boost = None
             # Wire IC tracker into ensemble so inverted/decaying factors get downweighted in voting
             if self.ic_tracker:
                 self.ensemble.ic_tracker = self.ic_tracker
@@ -1122,6 +1180,13 @@ class MultiStrategyBot:
                     self._execute_pending_fill(filled, trace_id)
             except Exception as e:
                 logger.warning(f"[{trace_id}] Pending order check error: {e}")
+
+        # Sniper Simulator: check sim positions against live prices
+        if self._sniper_simulator is not None and hasattr(self, '_last_prices') and self._last_prices:
+            try:
+                self._sniper_simulator.check_positions(self._last_prices)
+            except Exception:
+                pass
 
         # ── Trade rotation evaluation ──
         # Check if any open position should be rotated into a better signal
@@ -1812,6 +1877,17 @@ class MultiStrategyBot:
             if _oi is not None:
                 _meta["open_interest"] = _oi
 
+        # Inject BTC 1h data for lead_lag strategy on non-BTC symbols
+        if symbol != "BTC":
+            try:
+                _btc_sym = DEFAULT_SYMBOLS.get("BTC")
+                if _btc_sym:
+                    _btc_data = self.fetcher.fetch_multi_timeframe("BTC", _btc_sym.coingecko_id, ["1h"])
+                    if "1h" in _btc_data and not _btc_data["1h"].empty:
+                        data["_btc_1h"] = _btc_data["1h"]
+            except Exception:
+                pass  # lead_lag will gracefully return None
+
         # Stale data guard: reject signals if candle data is too old.
         # After restarts or API hiccups, strategies may fire on stale candles.
         # Check the most granular timeframe (5m or 1h) — if its last candle
@@ -1861,12 +1937,34 @@ class MultiStrategyBot:
                 return
         self._last_prices[symbol] = current_price
 
+        # Feed correlation boost with price data
+        if hasattr(self, '_correlation_boost') and self._correlation_boost is not None:
+            try:
+                self._correlation_boost.update_price(symbol, current_price)
+            except Exception:
+                pass
         # Feed correlation gate with price data
         if self.correlation_gate:
             try:
                 self.correlation_gate.update_prices(symbol, current_price, time.time())
             except Exception:
                 pass
+
+        # Update counterfactual learner with current price for resolution
+        try:
+            from llm.brain_wiring import update_counterfactuals_with_price
+            # Use 1h candle OHLC if available, otherwise approximate from latest price
+            _1h = data.get("1h") if data else None
+            if _1h is not None and not _1h.empty:
+                _last = _1h.iloc[-1]
+                update_counterfactuals_with_price(
+                    symbol, float(_last.get("high", current_price)),
+                    float(_last.get("low", current_price)), current_price
+                )
+            else:
+                update_counterfactuals_with_price(symbol, current_price, current_price, current_price)
+        except Exception:
+            pass  # Non-critical: counterfactual learning is best-effort
 
         # Cross-symbol pattern tracking: record price for lead-lag detection
         if self.cross_symbol_tracker:
@@ -2898,6 +2996,25 @@ class MultiStrategyBot:
                 return  # same signal, skip silently
         self._last_signal[symbol] = (signal_result.side, now)
 
+        # ── Manual Sniper Signal Evaluation (read-only, never touches trades) ──
+        if self._manual_sniper is not None:
+            try:
+                _sniper_sig = self._manual_sniper.evaluate(
+                    signal_result, equity=self.risk_mgr.equity
+                )
+                if _sniper_sig is not None:
+                    if self._manual_alerter is not None:
+                        self._manual_alerter.send_sniper_alert(
+                            _sniper_sig, equity=self.risk_mgr.equity
+                        )
+                    if self._sniper_simulator is not None:
+                        try:
+                            self._sniper_simulator.on_signal(_sniper_sig)
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
         # LLM triggers: detect meaningful decision boundaries
         num_agree = signal_result.metadata.get("num_agree", 1)
 
@@ -3266,6 +3383,30 @@ class MultiStrategyBot:
                           confidence=signal_result.confidence)
             logger.info(f"[{trace_id}][{symbol}] Rejected: SL distance {sl_distance:.4f} < 0.5*ATR")
             return
+
+        # Higher-timeframe trend gate (alpha research 2026-03-24):
+        # LONGs against 6h bearish trend have 34% WR. SHORTs against 6h bullish = same.
+        # Penalize counter-HTF signals with reduced position size.
+        try:
+            _6h_df = data.get("6h")
+            if _6h_df is not None and len(_6h_df) >= 20:
+                _6h_c = float(_6h_df["close"].iloc[-1])
+                _6h_ema = float(_6h_df["close"].ewm(span=20).mean().iloc[-1])
+                _htf_bear = _6h_c < _6h_ema
+                _htf_bull = _6h_c > _6h_ema
+                signal_result.metadata["htf_6h_trend"] = "bear" if _htf_bear else "bull"
+                if signal_result.side == "BUY" and _htf_bear:
+                    _rm = signal_result.metadata.get("risk_mult_override", 1.0)
+                    signal_result.metadata["risk_mult_override"] = min(_rm, 0.4)
+                    signal_result.metadata["htf_penalty"] = "long_vs_6h_bear"
+                    logger.info(f"[{trace_id}][{symbol}] HTF gate: LONG against 6h bear → 0.4x size")
+                elif signal_result.side == "SELL" and _htf_bull:
+                    _rm = signal_result.metadata.get("risk_mult_override", 1.0)
+                    signal_result.metadata["risk_mult_override"] = min(_rm, 0.4)
+                    signal_result.metadata["htf_penalty"] = "short_vs_6h_bull"
+                    logger.info(f"[{trace_id}][{symbol}] HTF gate: SHORT against 6h bull → 0.4x size")
+        except Exception:
+            pass  # HTF gate is best-effort, don't break signal processing
 
         # Run signal through RiskFilterChain for EV filter, liquidation safety,
         # and correlation guard. These gates don't exist in the inline checks above.
@@ -6233,6 +6374,19 @@ class MultiStrategyBot:
 
     def _send_heartbeat(self):
         """Send periodic status heartbeat."""
+        # Measure rejection outcomes with current prices
+        if hasattr(self, '_rejection_tracker') and self._rejection_tracker is not None:
+            try:
+                _prices = {sym: self._last_prices.get(sym, 0) for sym in self.symbols}
+                _completed = self._rejection_tracker.measure_outcomes(_prices)
+                if _completed:
+                    _stats = self._rejection_tracker.get_stats_summary()
+                    logger.info(
+                        f"[REJECTION-TRACKER] {len(_completed)} outcomes measured. "
+                        f"Marginal miss rate: {self._rejection_tracker.get_miss_rate('marginal_neg'):.0%}"
+                    )
+            except Exception as e:
+                logger.debug(f"[REJECTION-TRACKER] Measurement error: {e}")
         fetcher_stats = self.fetcher.get_stats()
         ml_snap_filled = 0
         if self.ml:

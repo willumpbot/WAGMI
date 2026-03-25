@@ -554,7 +554,13 @@ DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
     "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=_env_float("BTC_RISK_OVERRIDE", 0.004), volatility_profile="low"),
     # BTC risk slightly below global 0.5% since BTC ATR stops are proportionally tighter
     "SOL": SymbolOverrides(max_leverage=20.0, volatility_profile="medium"),
-    "HYPE": SymbolOverrides(max_leverage=20.0, volatility_profile="high"),
+    "HYPE": SymbolOverrides(
+        max_leverage=20.0,
+        volatility_profile="high",
+        atr_mult_sl=2.0,   # Wide stops: HYPE has 2x BTC vol. 2.2x blocked all trades (R:R too low). 2.0x = compromise.
+                            # Need to survive the first 6h of mean-reversion volatility.
+        atr_mult_tp1=1.0,  # Tight TP1: take profit at the mean quickly. HYPE mean-reverts fast.
+    ),
 }
 
 
@@ -599,9 +605,9 @@ REGIME_SL_TP_SCALARS = {
 REGIME_RISK_MULTIPLIERS = {
     "trending_bull":    0.12,   # 16.7% WR in 90d. Keep minimal exposure for learning, near-skip.
     "trending_bear":    0.15,   # Worst regime. Minimal exposure, not zero — allows learning.
-    "trend":            0.7,    # generic trend, moderate caution
+    "trend":            0.85,   # generic trend — raised from 0.7 (2026-03-24, paper trading showed sizing too small)
     "consolidation":    1.0,    # best regime: 47% WR, +$4k PnL — full size
-    "range":            0.6,    # 50% WR but losses > wins. Moderate reduction.
+    "range":            0.75,   # raised from 0.6 — 50% WR with proper sizing should be profitable
     "high_volatility":  0.3,    # 0% WR in recent data. Near-skip.
     "panic":            0.2,    # extreme conditions — minimal exposure
     "low_liquidity":    0.3,    # 0% WR in live trades — near-skip
@@ -616,8 +622,9 @@ REGIME_RISK_MULTIPLIERS = {
 # HYPE: PF=0.0, 0% WR over 90d — minimal until more data
 SYMBOL_RISK_MULTIPLIERS = {
     "BTC":  1.0,   # proven edge — full size
-    "SOL":  0.5,   # marginal edge — half size
-    "HYPE": 0.25,  # Negative EV (-$6/trade) at 33% WR. Minimal exposure until edge proven.
+    "SOL":  0.5,   # raised from 0.35 — needs paper trading data. Still cautious.
+    "HYPE": 0.5,   # raised from 0.25 — was causing MIN_QTY rejections (qty < 1.0 HYPE min).
+                   # Paper trading showed HYPE SELL signals were correct but couldn't execute.
 }
 
 def get_symbol_risk_mult(symbol: str) -> float:

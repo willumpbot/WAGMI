@@ -69,6 +69,9 @@ class Position:
     original_qty: float = 0.0
     original_sl: float = 0.0
 
+    # Timestamp tracking
+    opened_at: Optional[Any] = None  # datetime when position opened
+
     # Entry reasons: WHY we opened this position (for EV analysis)
     entry_reasons: Dict[str, Any] = field(default_factory=dict)
 
@@ -453,22 +456,41 @@ class PositionManager:
             events.append(event)
             return events
 
-        # 1a. Time stop: close positions that haven't hit TP1 after max hold hours.
-        # 61.9% of trades exit at SL, most drift for hours then bleed out.
-        # Avg hold: 15.5h. An 8h time stop converts slow bleeders into controlled exits.
-        # Does NOT affect positions that hit TP1 — those trail profitably (100% WR).
+        # 1a. Smart time stop: assess position health before closing.
+        # Original logic: hard 8h cutoff. Problem: closes profitable trades approaching TP1.
+        # New logic: check macro position health. Healthy positions get extensions (up to 12h max).
+        # Sick positions (losing momentum, wrong direction) close at base time stop.
         if pos.state == OPEN:
             _now = sim_now or datetime.now(timezone.utc)
             hold_hours = (_now - pos.open_time).total_seconds() / 3600
             time_stop_hours = getattr(self, '_time_stop_hours', 8)
+
             if hold_hours >= time_stop_hours:
-                logger.info(
-                    f"[{symbol}] TIME STOP: held {hold_hours:.1f}h >= {time_stop_hours}h "
-                    f"without hitting TP1 — closing at market"
-                )
-                event = self._close_position(pos, current_price, "TIME_STOP")
-                events.append(event)
-                return events
+                # Assess position health before closing
+                _health = self._assess_position_health(pos, current_price, df_5m)
+                _max_extension = 4.0  # Maximum 4h extension (8h -> 12h absolute max)
+                _extension = _health.get("extension_hours", 0)
+                _extended_stop = time_stop_hours + min(_extension, _max_extension)
+
+                if hold_hours >= _extended_stop:
+                    _reason = _health.get("reason", "time_expired")
+                    logger.info(
+                        f"[{symbol}] TIME STOP: held {hold_hours:.1f}h >= {_extended_stop:.1f}h "
+                        f"(base={time_stop_hours}h + ext={min(_extension, _max_extension):.1f}h) "
+                        f"reason={_reason} health={_health.get('score', 0):.0f}%"
+                    )
+                    event = self._close_position(pos, current_price, "TIME_STOP")
+                    events.append(event)
+                    return events
+                else:
+                    # Position is healthy — log extension and continue
+                    if not hasattr(pos, '_extension_logged'):
+                        logger.info(
+                            f"[{symbol}] TIME STOP EXTENDED: {hold_hours:.1f}h held, "
+                            f"extending to {_extended_stop:.1f}h (health={_health.get('score', 0):.0f}% "
+                            f"tp1_progress={_health.get('tp1_progress', 0):.0f}%)"
+                        )
+                        pos._extension_logged = True
 
         # 1b. Early exit: cut position if momentum accelerating toward SL
         # Only in OPEN state (after TP1, breakeven SL protects us)
@@ -497,6 +519,145 @@ class PositionManager:
             events.append(event)
 
         return events
+
+    def _assess_position_health(self, pos, current_price: float, df_5m=None) -> dict:
+        """Assess macro health of a position to decide whether to extend time stop.
+
+        Returns dict with:
+            score: 0-100 health score (higher = healthier)
+            extension_hours: recommended extension (0 = close now, up to 4h)
+            reason: human-readable explanation
+            tp1_progress: % of distance from entry to TP1 covered
+
+        Health factors (each 0-25 points, total 0-100):
+            1. TP1 progress — how close to TP1 vs SL (approaching TP1 = healthy)
+            2. Profit direction — is position profitable? (in profit = healthy)
+            3. Momentum — are recent candles moving in our direction? (tailwind = healthy)
+            4. MFE retention — current price vs peak price (holding gains = healthy)
+        """
+        is_long = pos.side == "LONG"
+        entry = pos.entry
+        sl = pos.original_sl
+        tp1 = pos.tp1
+
+        # Calculate distances
+        entry_to_tp1 = abs(tp1 - entry)
+        entry_to_sl = abs(entry - sl)
+        total_range = entry_to_tp1 + entry_to_sl
+
+        if total_range == 0:
+            return {"score": 0, "extension_hours": 0, "reason": "zero_range", "tp1_progress": 0}
+
+        # Factor 1: TP1 progress (0-25 points)
+        # How much of the entry->TP1 distance have we covered?
+        if is_long:
+            tp1_progress = max(0, (current_price - entry) / entry_to_tp1) if entry_to_tp1 > 0 else 0
+        else:
+            tp1_progress = max(0, (entry - current_price) / entry_to_tp1) if entry_to_tp1 > 0 else 0
+        tp1_progress_pct = min(tp1_progress * 100, 100)
+        tp1_score = min(25, tp1_progress * 25)  # 100% progress = 25 points
+
+        # Factor 2: Profit direction (0-25 points)
+        if is_long:
+            pnl_pct = (current_price - entry) / entry * 100
+        else:
+            pnl_pct = (entry - current_price) / entry * 100
+        if pnl_pct > 2.0:
+            profit_score = 25  # Strongly profitable
+        elif pnl_pct > 1.0:
+            profit_score = 20
+        elif pnl_pct > 0:
+            profit_score = 15  # In profit
+        elif pnl_pct > -1.0:
+            profit_score = 5   # Small loss
+        else:
+            profit_score = 0   # Losing
+
+        # Factor 3: Momentum (0-25 points) — uses 5m data if available
+        momentum_score = 12  # Default neutral if no data
+        if df_5m is not None and len(df_5m) >= 10:
+            try:
+                c = df_5m["close"].astype(float)
+                last5 = c.iloc[-5:].values
+                # Are we making higher lows (LONG) or lower highs (SHORT)?
+                if is_long:
+                    trending_up = last5[-1] > last5[0]  # Net positive over 25min
+                    ema5 = float(c.ewm(span=5, adjust=False).mean().iloc[-1])
+                    ema13 = float(c.ewm(span=13, adjust=False).mean().iloc[-1])
+                    ema_bullish = ema5 > ema13
+                else:
+                    trending_up = last5[-1] < last5[0]
+                    ema5 = float(c.ewm(span=5, adjust=False).mean().iloc[-1])
+                    ema13 = float(c.ewm(span=13, adjust=False).mean().iloc[-1])
+                    ema_bullish = ema5 < ema13
+
+                if trending_up and ema_bullish:
+                    momentum_score = 25  # Strong tailwind
+                elif trending_up or ema_bullish:
+                    momentum_score = 18  # Partial tailwind
+                else:
+                    momentum_score = 5   # Headwind
+            except Exception:
+                momentum_score = 12
+
+        # Factor 4: MFE retention (0-25 points) — holding gains vs giving them back
+        if is_long:
+            peak = pos.highest_price
+            mfe = (peak - entry) / entry * 100 if entry > 0 else 0
+            current_gain = (current_price - entry) / entry * 100
+        else:
+            peak = pos.lowest_price
+            mfe = (entry - peak) / entry * 100 if entry > 0 else 0
+            current_gain = (entry - current_price) / entry * 100
+
+        if mfe > 0:
+            retention = current_gain / mfe if mfe > 0 else 0  # What % of peak gain we still have
+        else:
+            retention = 0
+
+        if retention > 0.8:
+            mfe_score = 25  # Holding 80%+ of peak gains
+        elif retention > 0.5:
+            mfe_score = 18  # Holding 50%+ of gains
+        elif retention > 0.2:
+            mfe_score = 10  # Gave back a lot but still positive
+        else:
+            mfe_score = 0   # Lost most/all gains
+
+        # Total health score
+        total_score = tp1_score + profit_score + momentum_score + mfe_score
+
+        # Determine extension based on score
+        if total_score >= 75:
+            extension = 4.0  # Very healthy — extend maximum (8h -> 12h)
+            reason = "very_healthy"
+        elif total_score >= 60:
+            extension = 3.0  # Healthy — extend 3h (8h -> 11h)
+            reason = "healthy"
+        elif total_score >= 45:
+            extension = 1.5  # Mixed — small extension (8h -> 9.5h)
+            reason = "mixed"
+        elif total_score >= 30:
+            extension = 0.5  # Weak — tiny extension (8h -> 8.5h)
+            reason = "weak"
+        else:
+            extension = 0.0  # Unhealthy — close at base time stop
+            reason = "unhealthy"
+
+        logger.debug(
+            f"[{pos.symbol}] Position health: score={total_score:.0f}/100 "
+            f"(tp1={tp1_score:.0f} profit={profit_score:.0f} momentum={momentum_score:.0f} "
+            f"mfe={mfe_score:.0f}) ext={extension:.1f}h tp1_progress={tp1_progress_pct:.0f}%"
+        )
+
+        return {
+            "score": total_score,
+            "extension_hours": extension,
+            "reason": reason,
+            "tp1_progress": tp1_progress_pct,
+            "pnl_pct": pnl_pct,
+            "retention": retention,
+        }
 
     # Regime-adaptive early exit thresholds:
     # High-vol/range: cut losers earlier (price reverses fast)

@@ -13,6 +13,7 @@ import json
 import logging
 import sys
 import os
+import time as _time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any, Optional
@@ -44,6 +45,7 @@ from strategies.funding_rate import FundingRateStrategy
 from strategies.oi_delta import OIDeltaStrategy
 from strategies.lead_lag import LeadLagStrategy
 from strategies.liquidation_cascade import LiquidationCascadeStrategy
+from strategies.mean_reversion import MeanReversionStrategy
 
 logger = logging.getLogger("bot.backtest")
 
@@ -243,6 +245,29 @@ class BacktestEngine:
             if hasattr(ov, 'volatility_profile') and ov.volatility_profile
         }
         ensemble.set_symbol_volatility_profiles(vol_profiles)
+
+        # Wire adaptive learning system into ensemble for backtest
+        # These components learn from rejection outcomes and adjust thresholds
+        self._bt_rejection_tracker = None
+        self._bt_ev_calibrator = None
+        self._bt_correlation_boost = None
+        try:
+            from feedback.rejection_tracker import RejectionOutcomeTracker
+            from feedback.ev_calibrator import EVCalibrator
+            from feedback.correlation_boost import CrossAssetCorrelationBoost
+            self._bt_rejection_tracker = RejectionOutcomeTracker(data_dir="data")
+            self._bt_ev_calibrator = EVCalibrator(
+                rejection_tracker=self._bt_rejection_tracker,
+                data_dir="data",
+            )
+            self._bt_correlation_boost = CrossAssetCorrelationBoost(symbols=symbols)
+            # Wire into ensemble
+            ensemble._rejection_outcome_tracker = self._bt_rejection_tracker
+            ensemble._ev_calibrator = self._bt_ev_calibrator
+            ensemble._correlation_boost = self._bt_correlation_boost
+            logger.info("Adaptive system wired into backtest: rejection_tracker + ev_calibrator + correlation_boost")
+        except Exception as e:
+            logger.debug(f"Adaptive system not available for backtest: {e}")
 
         # Fetch historical data for all symbols
         all_data = {}
@@ -456,6 +481,8 @@ class BacktestEngine:
             all_strats["oi_delta"] = OIDeltaStrategy(sym_configs)
         if os.getenv("STRATEGY_LIQUIDATION_CASCADE_ENABLED", "true").lower() == "true":
             all_strats["liquidation_cascade"] = LiquidationCascadeStrategy(sym_configs)
+        if os.getenv("STRATEGY_MEAN_REVERSION_ENABLED", "true").lower() == "true":
+            all_strats["mean_reversion"] = MeanReversionStrategy(sym_configs)
 
         if strategy_names:
             return [s for name, s in all_strats.items() if name in strategy_names]
@@ -555,6 +582,11 @@ class BacktestEngine:
             current_price = float(df_1h["close"].iloc[i])
             candle_high = float(df_1h["high"].iloc[i])
             candle_low = float(df_1h["low"].iloc[i])
+
+            # Feed price to correlation boost for cross-asset momentum detection
+            if self._bt_correlation_boost is not None:
+                sim_ts = df_1h["time"].iloc[i].timestamp() if hasattr(df_1h["time"].iloc[i], "timestamp") else _time.time()
+                self._bt_correlation_boost.update_price(symbol, current_price, sim_ts)
 
             # Parse simulation timestamp for circuit breaker time awareness
             sim_time = pd.Timestamp(df_1h["time"].iloc[i])
@@ -767,6 +799,11 @@ class BacktestEngine:
                             break
                     _fit = STRATEGY_REGIME_FIT.get(_bt_regime, {})
                     _disabled = {s for s, f in _fit.items() if f == "avoid"}
+                    _disabled.discard("mean_reversion")  # Self-gated: has internal ADX check
+                    # HYPE: disable regime_trend (PF=0.09 — trend-following on mean-reverting asset)
+                    _bsym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
+                    if _bsym == "HYPE":
+                        _disabled.add("regime_trend")
                     ensemble.set_disabled_strategies(_disabled)
                     # Set regime for regime-aware min_votes
                     ensemble.set_regime(symbol, _bt_regime)
@@ -816,6 +853,29 @@ class BacktestEngine:
                     signal.metadata["adx"] = round(_bt_adx, 1)
                     signal.metadata["bt_regime_raw"] = _bt_regime
 
+                    # Higher-timeframe trend gate (alpha research 2026-03-24):
+                    # 1h=bull + 6h=bear + D=bear → LONGs have -0.274% fwd, 34% win rate.
+                    # These are bear market rallies that trap LONG entries.
+                    # Rule: penalize LONGs when 6h trend is bearish.
+                    _w6h = windowed.get("6h")
+                    if _w6h is not None and len(_w6h) >= 20:
+                        _6h_close = float(_w6h["close"].iloc[-1])
+                        _6h_ema20 = float(_w6h["close"].ewm(span=20).mean().iloc[-1])
+                        _htf_bearish = _6h_close < _6h_ema20
+                        _htf_bullish = _6h_close > _6h_ema20
+                        signal.metadata["htf_6h_trend"] = "bear" if _htf_bearish else "bull"
+
+                        if signal.side == "BUY" and _htf_bearish:
+                            # LONG against 6h downtrend: reduce size (34% win rate in data)
+                            _cur = signal.metadata.get("risk_mult_override", 1.0)
+                            signal.metadata["risk_mult_override"] = min(_cur, 0.4)
+                            signal.metadata["htf_penalty"] = "long_vs_6h_bear"
+                        elif signal.side == "SELL" and _htf_bullish:
+                            # SHORT against 6h uptrend: also penalize
+                            _cur = signal.metadata.get("risk_mult_override", 1.0)
+                            signal.metadata["risk_mult_override"] = min(_cur, 0.4)
+                            signal.metadata["htf_penalty"] = "short_vs_6h_bull"
+
                     # NOTE: per-strategy regime filtering already handled above
                     # (lines ~688-716) via STRATEGY_REGIME_FIT table before the
                     # ensemble runs. Blocking all signals here by raw ADX is more
@@ -840,16 +900,73 @@ class BacktestEngine:
                         _setup = "strong_confluence"
                     elif _sig_regime in ("consolidation", "range") and len(_strat_set) >= 2:
                         _setup = "mean_reversion"
+                    elif _sig_regime in ("consolidation", "range") and len(_strat_set) == 1:
+                        # Solo signal in consolidation/range — treat as mean_reversion at reduced size
+                        # (alpha research: 20 solo confidence_scorer in consolidation were misclassified as "standard")
+                        _setup = "mean_reversion"
+                        signal.metadata.setdefault("risk_mult_override", 0.5)
                     elif _sig_regime in ("trending_bull", "trending_bear", "trend"):
                         _setup = "trend_follow"
                     elif signal.metadata.get("solo_proven") or signal.metadata.get("symbol_regime_solo"):
                         _setup = "solo_conviction"
                     else:
                         _setup = "standard"
-                        # Standard (unclassified) trades have -$795 PnL, 44% WR in 90d.
+                        # Standard (unclassified) trades have -$180 PnL, -$4.74/trade in 90d.
                         # Reduce size to limit damage from unproven setups.
-                        signal.metadata.setdefault("risk_mult_override", 0.6)
+                        signal.metadata.setdefault("risk_mult_override", 0.5)
                     signal.metadata["setup_type"] = _setup
+
+                    # Hour-of-day filter (alpha research 2026-03-24):
+                    # European session 08-16 UTC = -$261/90d, 32% WR
+                    # Worst: 10-11 UTC (10-12% WR, -$230 combined)
+                    # Best: 18:00 UTC (55% WR, +$224)
+                    # Soft filter: reduce size during bad hours, boost during best.
+                    _entry_hour = sim_dt.hour if sim_dt else 12
+                    if 10 <= _entry_hour <= 11:
+                        # Toxic hours: 10-12% WR. Reduce to 25% size.
+                        signal.metadata.setdefault("risk_mult_override",
+                            min(signal.metadata.get("risk_mult_override", 1.0), 0.25))
+                        signal.metadata["hour_filter"] = "toxic_reduce"
+                    elif 8 <= _entry_hour <= 16 and _entry_hour not in (12, 15):
+                        # European session (ex 12:00 and 15:00 which are OK): reduce to 50%
+                        _current_rm = signal.metadata.get("risk_mult_override", 1.0)
+                        signal.metadata.setdefault("risk_mult_override",
+                            min(_current_rm, 0.5))
+                        signal.metadata["hour_filter"] = "europe_reduce"
+
+                    # Sniper profile: boost/penalize based on winner DNA match
+                    # (alpha research 2026-03-24, reverse-engineered from top 20% trades)
+                    # Winner DNA: BTC + consolidation + PE + 18UTC + 2agree + 80%conf
+                    # Loser DNA: HYPE + 10-11UTC + CS solo
+                    _sniper_score = 0
+                    _base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
+                    _n_agree_sniper = signal.metadata.get("num_agree", 1)
+                    if _base_sym == "BTC":
+                        _sniper_score += 2
+                    elif _base_sym == "HYPE":
+                        _sniper_score -= 2
+                    if _sig_regime == "consolidation" and _n_agree_sniper >= 2:
+                        _sniper_score += 2
+                    if "probability_engine" in _strat_set:
+                        _sniper_score += 3  # PE in ALL top trades (PF=6.13)
+                    if signal.confidence >= 80:
+                        _sniper_score += 1
+                    if _entry_hour == 18:
+                        _sniper_score += 2  # Best hour
+                    # Apply sniper sizing
+                    if _sniper_score >= 5:
+                        _cur_rm = signal.metadata.get("risk_mult_override", 1.0)
+                        signal.metadata["risk_mult_override"] = min(_cur_rm * 1.3, 1.3)
+                        signal.metadata["sniper_match"] = "strong"
+                    elif _sniper_score <= -1:
+                        signal.metadata.setdefault("risk_mult_override",
+                            min(signal.metadata.get("risk_mult_override", 1.0), 0.4))
+                        signal.metadata["sniper_match"] = "loser_pattern"
+                    signal.metadata["sniper_score"] = _sniper_score
+
+                    # NOTE: Vol regime sizing tested (low=+$214, med=-$146) but reverted.
+                    # Compounding with hour/sniper/HTF filters creates over-restriction.
+                    # Finding documented in ALPHA_RESEARCH.md Section 21 for future use.
 
                     # Create candidate for dual-world tracking
                     candidate = self._create_candidate(signal, sim_dt)
@@ -1106,6 +1223,11 @@ class BacktestEngine:
                             break
                     _fit = STRATEGY_REGIME_FIT.get(_bt_regime, {})
                     _disabled = {s for s, f in _fit.items() if f == "avoid"}
+                    _disabled.discard("mean_reversion")  # Self-gated: has internal ADX check
+                    # HYPE: disable regime_trend (PF=0.09 — trend-following on mean-reverting asset)
+                    _bsym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
+                    if _bsym == "HYPE":
+                        _disabled.add("regime_trend")
                     ensemble.set_disabled_strategies(_disabled)
                     # Set regime for regime-aware min_votes
                     ensemble.set_regime(symbol, _bt_regime)
@@ -1466,6 +1588,23 @@ class BacktestEngine:
                     self._dynamic_floor_adj = self._adaptive_floor.current_floor - self.config.ensemble_confidence_floor
                 except Exception:
                     pass  # Adaptive floor is best-effort
+
+            # Feed EV calibrator with trade outcome (for adaptive threshold)
+            if self._bt_ev_calibrator is not None:
+                try:
+                    self._bt_ev_calibrator.record_override_outcome(outcome == "WIN")
+                    self._bt_ev_calibrator.update()
+                except Exception:
+                    pass
+
+            # Measure rejection outcomes with current prices for adaptive learning
+            if self._bt_rejection_tracker is not None:
+                try:
+                    self._bt_rejection_tracker.measure_outcomes(
+                        {event.symbol: current_price}
+                    )
+                except Exception:
+                    pass
 
             # Feed strategy weight manager with trade outcome
             if self._weight_mgr and event.strategy:
@@ -3369,6 +3508,21 @@ def print_report(report: Dict):
             for m in top_missed[:5]:
                 print(f"    {m['symbol']:6s} {m['side']:4s} conf={m['confidence']:.0f}% "
                       f"missed {m['missed_pnl_pct']:+.2f}% — {m['reason'][:50]}")
+
+    # ── SOLO STRATEGY MISSED ALPHA ──
+    by_strat_solo = missed.get("by_strategy_solo", {})
+    if by_strat_solo:
+        print(f"\n  Solo Strategy Missed Trades (insufficient_votes):")
+        print(f"  {'Strategy':<25s} {'Missed':>6s} {'Won':>4s} {'Lost':>5s} {'WR%':>5s} {'Alpha%':>8s}")
+        print(f"  {'─'*25} {'─'*6} {'─'*4} {'─'*5} {'─'*5} {'─'*8}")
+        for strat, data in by_strat_solo.items():
+            t = data.get("total", 0)
+            w = data.get("won", 0)
+            l = data.get("lost", 0)
+            wr = w / max(w + l, 1) * 100
+            alpha = data.get("alpha_pct", 0)
+            marker = " <-- EDGE" if wr > 45 and w > 5 else ""
+            print(f"  {strat:<25s} {t:>6d} {w:>4d} {l:>5d} {wr:>4.0f}% {alpha:>+7.1f}%{marker}")
 
     # ── GATE EFFECTIVENESS ──
     gate_eff = report.get("gate_effectiveness", {})
