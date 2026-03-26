@@ -157,6 +157,11 @@ class SniperSimulator:
         Called when a SniperSignal passes all filters.
         Opens a simulated position at the signal's entry price.
         """
+        logger.info(
+            f"[SIM] on_signal called: {sniper_signal.symbol} {sniper_signal.side} "
+            f"@ ${sniper_signal.entry:.2f} lev={sniper_signal.leverage:.1f}x "
+            f"(open={len(self._open_positions)})"
+        )
         # Circuit breaker: stop trading if equity too low
         if self._equity <= self._starting_equity * 0.10:
             logger.warning(
