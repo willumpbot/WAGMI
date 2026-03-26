@@ -1259,6 +1259,16 @@ class EnsembleStrategy:
                             self._sniper_callback(_lone[0], symbol)
                         except Exception as _se:
                             logger.debug(f"[{symbol}] Sniper callback error: {_se}")
+                # Manual sniper hook: route solo signals for tracking/sim
+                # The manual sniper has its own proven-setup gates (HYPE BUY, SOL SELL)
+                # and can profitably trade signals the ensemble rejects for low consensus
+                if hasattr(self, '_manual_sniper_callback') and self._manual_sniper_callback is not None:
+                    _lone = buy_signals or sell_signals
+                    if _lone:
+                        try:
+                            self._manual_sniper_callback(_lone[0])
+                        except Exception:
+                            pass
                 return None
 
         # Redundant strategy clusters: strategies using the same core indicators

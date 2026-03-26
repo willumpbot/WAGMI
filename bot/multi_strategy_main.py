@@ -457,6 +457,10 @@ class MultiStrategyBot:
             confidence_floor=config.ensemble_confidence_floor,
             ranging_confidence_floor=config.ranging_confidence_floor,
         )
+        # Wire manual sniper callback: receives solo signals that the ensemble
+        # rejects for insufficient consensus. The sniper has its own proven-setup
+        # gates and can profitably trade signals the bot sits out on.
+        self.ensemble._manual_sniper_callback = self._on_solo_signal_for_sniper
 
         # Apply quant system config disables (kill toxic strategies)
         self.ensemble.apply_config_disables(config)
@@ -3000,8 +3004,8 @@ class MultiStrategyBot:
                             self._execute_sniper_signal(_sniper_sig, symbol, current_price)
                         except Exception as _sae_err:
                             logger.error(f"[SNIPER-EXEC] Error executing {symbol}: {_sae_err}")
-            except Exception:
-                pass
+            except Exception as _sniper_err:
+                logger.warning(f"[SNIPER-EARLY] Error evaluating {symbol}: {_sniper_err}")
 
         # ── TIER 4: Mechanical Bot Instrumentation (Signal Generation Hook) ──
         # Record signal generation with full market context for perception system
@@ -5132,6 +5136,50 @@ class MultiStrategyBot:
         if not hasattr(self, '_reentry_cache'):
             self._reentry_cache = {}
         self._reentry_cache[symbol] = (cleared, time.time())
+
+    def _on_solo_signal_for_sniper(self, signal) -> None:
+        """Callback from ensemble: receives 1-agree signals rejected for low consensus.
+
+        The sniper filter has its own gates (proven setup, chop, dip) and can
+        profitably trade signals the ensemble sits out on.
+        """
+        if self._manual_sniper is None:
+            return
+        try:
+            symbol = signal.symbol
+            current_price = self._last_prices.get(symbol, signal.entry)
+            _sniper_sig = self._manual_sniper.evaluate(
+                signal, equity=self.risk_mgr.equity
+            )
+            if _sniper_sig is not None:
+                if self._manual_alerter is not None:
+                    self._manual_alerter.send_sniper_alert(
+                        _sniper_sig, equity=self.risk_mgr.equity
+                    )
+                if self._sniper_simulator is not None:
+                    try:
+                        _sim_pos = self._sniper_simulator.on_signal(_sniper_sig)
+                        if _sim_pos:
+                            logger.info(
+                                f"[SIM] Opened {_sim_pos.trade_id} {_sim_pos.symbol} "
+                                f"{_sim_pos.side} @ ${_sim_pos.entry:.2f} "
+                                f"size=${_sim_pos.position_size_usd:.2f} "
+                                f"(from solo signal)"
+                            )
+                    except Exception as _sim_err:
+                        logger.warning(f"[SIM] Error on solo signal: {_sim_err}")
+                if hasattr(self, '_signal_tracker') and self._signal_tracker is not None:
+                    try:
+                        self._signal_tracker.record_signal(_sniper_sig)
+                    except Exception:
+                        pass
+                if self._sniper_auto_execute and _sniper_sig.tier in ("SNIPER", "PREMIUM"):
+                    try:
+                        self._execute_sniper_signal(_sniper_sig, symbol, current_price)
+                    except Exception as _sae_err:
+                        logger.error(f"[SNIPER-EXEC] Solo signal error: {_sae_err}")
+        except Exception as e:
+            logger.debug(f"[SNIPER-SOLO] Error: {e}")
 
     def _execute_sniper_signal(self, sniper_sig, symbol: str, current_price: float):
         """Execute a qualifying sniper signal through the order executor.
