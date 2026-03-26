@@ -5152,6 +5152,11 @@ class MultiStrategyBot:
                 signal, equity=self.risk_mgr.equity
             )
             if _sniper_sig is not None:
+                logger.info(
+                    f"[SNIPER-SOLO] {symbol} {_sniper_sig.side} tier={_sniper_sig.tier} "
+                    f"conf={_sniper_sig.confidence:.0f}% lev={_sniper_sig.leverage:.1f}x "
+                    f"sim={'YES' if self._sniper_simulator else 'NO'}"
+                )
                 if self._manual_alerter is not None:
                     self._manual_alerter.send_sniper_alert(
                         _sniper_sig, equity=self.risk_mgr.equity
@@ -5161,10 +5166,15 @@ class MultiStrategyBot:
                         _sim_pos = self._sniper_simulator.on_signal(_sniper_sig)
                         if _sim_pos:
                             logger.info(
-                                f"[SIM] Opened {_sim_pos.trade_id} {_sim_pos.symbol} "
+                                f"[SIM] OPENED {_sim_pos.trade_id} {_sim_pos.symbol} "
                                 f"{_sim_pos.side} @ ${_sim_pos.entry:.2f} "
                                 f"size=${_sim_pos.position_size_usd:.2f} "
                                 f"(from solo signal)"
+                            )
+                        else:
+                            logger.debug(
+                                f"[SIM] Rejected {symbol} {_sniper_sig.side} "
+                                f"(dedup or circuit breaker)"
                             )
                     except Exception as _sim_err:
                         logger.warning(f"[SIM] Error on solo signal: {_sim_err}")
@@ -5262,6 +5272,32 @@ class MultiStrategyBot:
                     "auto_executed": True,
                 },
             )
+
+            # Place exchange-side SL/TP for crash protection
+            close_side = "SELL" if side == "BUY" else "BUY"
+            try:
+                sl_result = self.order_executor.place_stop_loss(
+                    symbol=symbol, side=close_side,
+                    qty=fill_qty, trigger_price=sniper_sig.sl,
+                )
+                if sl_result.success:
+                    logger.info(f"[SNIPER-EXEC] SL order placed @ ${sniper_sig.sl:.2f}")
+                else:
+                    logger.warning(f"[SNIPER-EXEC] SL order FAILED: {sl_result.error}")
+            except Exception as _sl_err:
+                logger.warning(f"[SNIPER-EXEC] SL order error: {_sl_err}")
+
+            try:
+                tp_result = self.order_executor.place_take_profit(
+                    symbol=symbol, side=close_side,
+                    qty=fill_qty, trigger_price=sniper_sig.tp_scalp,
+                )
+                if tp_result.success:
+                    logger.info(f"[SNIPER-EXEC] TP order placed @ ${sniper_sig.tp_scalp:.2f}")
+                else:
+                    logger.warning(f"[SNIPER-EXEC] TP order FAILED: {tp_result.error}")
+            except Exception as _tp_err:
+                logger.warning(f"[SNIPER-EXEC] TP order error: {_tp_err}")
 
             # Track in ops guard
             if hasattr(self, 'ops_guard') and self.ops_guard is not None:
