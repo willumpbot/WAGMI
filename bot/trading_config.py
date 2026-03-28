@@ -161,6 +161,13 @@ class TradingConfig:
     telegram_token: str = field(default_factory=lambda: _env("TELEGRAM_TOKEN", ""))
     telegram_chat_id: str = field(default_factory=lambda: _env("TELEGRAM_CHAT_ID", ""))
 
+    # X/Twitter (social automation — standalone, does not affect trading)
+    x_api_key: str = field(default_factory=lambda: _env("X_API_KEY", ""))
+    x_api_secret: str = field(default_factory=lambda: _env("X_API_SECRET", ""))
+    x_access_token: str = field(default_factory=lambda: _env("X_ACCESS_TOKEN", ""))
+    x_access_secret: str = field(default_factory=lambda: _env("X_ACCESS_SECRET", ""))
+    x_bearer_token: str = field(default_factory=lambda: _env("X_BEARER_TOKEN", ""))
+
     # Trade rotation
     enable_rotation: bool = field(
         default_factory=lambda: _env_bool("ENABLE_ROTATION", True)
