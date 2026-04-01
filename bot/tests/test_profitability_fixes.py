@@ -618,13 +618,17 @@ class TestKellySizing:
         assert d.risk_multiplier >= 1.2, f"risk_mult should be >=1.2, got {d.risk_multiplier}"
 
     def test_3agree_full_kelly(self):
-        """Full Kelly: 3-agree at 72% = 7.8 * 1.2 = 9.36x leverage."""
+        """Vol-scaled leverage: 3-agree gets base_lev * 1.2 (agreement boost)."""
         from execution.leverage import LeverageManager
         mgr = LeverageManager()
+        # No symbol = default 15x * 1.2 = 18x
         d = mgr.decide(72, 3, 4)
-        assert d.leverage >= 7.0, f"3-agree at 72% should get >=7x full Kelly, got {d.leverage}"
-        assert d.leverage <= 12.0, f"3-agree at 72% should be <=12x (capped), got {d.leverage}"
-        assert d.risk_multiplier >= 0.8, f"risk_mult should be meaningful, got {d.risk_multiplier}"
+        assert d.leverage >= 10.0, f"3-agree should get >=10x, got {d.leverage}"
+        assert d.leverage <= 25.0, f"Should be <= exchange max 25x, got {d.leverage}"
+        # With symbol: BTC = 25x * 1.2 = 30 -> capped at 25
+        d_btc = mgr.decide(72, 3, 4, symbol="BTC")
+        assert d_btc.leverage >= 15.0, f"BTC 3-agree should get >=15x, got {d_btc.leverage}"
+        assert d_btc.risk_multiplier >= 0.8, f"rm should be meaningful, got {d_btc.risk_multiplier}"
 
     def test_risk_multiplier_stays_within_cap(self):
         """risk_multiplier should never exceed the max_risk_multiplier cap (2.0)."""

@@ -91,6 +91,7 @@ class LeverageManager:
         current_extreme_count: int = 0,
         recent_win_rate: float = -1.0,
         baseline_win_rate: float = 0.45,
+        symbol: str = "",
     ) -> LeverageDecision:
         """
         Decide leverage and risk_multiplier based on confidence + consensus.
@@ -106,21 +107,34 @@ class LeverageManager:
         if confidence < 20:
             return LeverageDecision(0.0, "none", "none", f"Confidence {confidence:.0f}% too low", 0.0)
 
-        # Full Kelly leverage from comprehensive edge study (500h, 2026-03-27):
-        #   WR=51.7%, W/L ratio=1.50 -> Full Kelly=7.8x, Half Kelly=3.9x
-        #   Half Kelly (3.9x) = optimal growth + low ruin risk
-        #   Full Kelly (7.8x) = max growth but higher ruin
-        #   Edge breaks above 10x — never exceed this.
-        FULL_KELLY_LEV = 7.8
+        # ── VOLATILITY-SCALED LEVERAGE ──────────────────────────────
+        # Leverage is set so TP (1R) is reachable in ~1.5 hours based on
+        # the asset's hourly volatility. More volatile = less leverage needed.
+        # Risk stays constant ($25 at 2.5%) — leverage just compresses time.
+        #
+        # BTC moves 0.30%/h -> needs ~27x for 1.5h TP
+        # SOL moves 0.40%/h -> needs ~21x for 1.5h TP
+        # HYPE moves 0.56%/h -> needs ~15x for 1.5h TP
+        # ETH moves 0.38%/h -> needs ~22x for 1.5h TP
+        #
+        # Fallback for unknown symbols: 15x
+        _VOL_SCALED_LEV = {
+            "BTC": 25.0,   # Tight SL 0.45%, TP in ~1.5h
+            "ETH": 22.0,   # SL 0.52%, TP in ~1.5h
+            "SOL": 20.0,   # SL 0.60%, TP in ~1.5h
+            "HYPE": 15.0,  # SL 0.84%, TP in ~1.5h
+        }
+        _sym_clean = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").split("/")[0]
+        FULL_KELLY_LEV = _VOL_SCALED_LEV.get(_sym_clean, 15.0)
         _agree_mult = {1: 0.80, 2: 1.0, 3: 1.20}.get(
             min(num_strategies_agree, 3), 1.0
         )
 
-        # Leverage caps — raised for full Kelly approach
+        # Leverage caps — allow vol-scaled leverage through
         tier_cap = {
-            "low": min(15.0, self.max_leverage),    # BTC/ETH: up to 15x
-            "medium": min(12.0, self.max_leverage),  # SOL: up to 12x
-            "high": min(10.0, self.max_leverage),    # HYPE: up to 10x
+            "low": min(25.0, self.max_leverage),    # BTC/ETH
+            "medium": min(20.0, self.max_leverage),  # SOL
+            "high": min(15.0, self.max_leverage),    # HYPE
         }
         cap = tier_cap.get(risk_tier, self.max_leverage)
 

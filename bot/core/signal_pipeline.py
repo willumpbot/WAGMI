@@ -450,6 +450,7 @@ class RiskFilterChain:
             total_strategies=total_strategies,
             risk_tier=risk_tier,
             current_extreme_count=current_extreme_count,
+            symbol=signal.symbol,
         )
 
         if lev_decision.leverage <= 0:
@@ -919,6 +920,7 @@ class RiskFilterChain:
             total_strategies=total_strategies,
             risk_tier=risk_tier,
             current_extreme_count=current_extreme_count,
+            symbol=signal.symbol,
         )
 
         if lev_decision.leverage <= 0:
