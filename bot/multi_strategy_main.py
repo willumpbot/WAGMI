@@ -5320,13 +5320,15 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         live_sl_dist = abs(actual_entry - adj_sl)
         snapshot_sl_dist = abs(snapshot_entry - (adj_sl - entry_shift))
         if snapshot_sl_dist > 0 and live_sl_dist > 0:
-            # Scale qty to maintain the same dollar risk
-            qty = qty * (snapshot_sl_dist / live_sl_dist)
+            sl_ratio = snapshot_sl_dist / live_sl_dist
+            # Only adjust if the change is significant (>5% wider)
+            if sl_ratio < 0.95:
+                qty = qty * sl_ratio
             min_q = get_min_qty(symbol)
             if qty < min_q:
-                log_rejection(symbol, "BELOW_MIN_QTY_LIVE", confidence=signal_result.confidence)
-                logger.info(f"[{trace_id}][{symbol}] Rejected: live-adjusted qty {qty} < min {min_q}")
-                return
+                # Don't reject — bump to min qty (aggressive mode)
+                qty = min_q
+                logger.info(f"[{trace_id}][{symbol}] Live SL wider: qty bumped to min {min_q}")
 
         if slippage_pct > 0.1:
             logger.info(
