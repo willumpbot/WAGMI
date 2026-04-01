@@ -230,8 +230,10 @@ class TradingConfig:
         default_factory=lambda: _env_int("MAX_HOLD_HOURS", 48)
     )
     time_stop_hours: int = field(
-        default_factory=lambda: _env_int("TIME_STOP_HOURS", 12)
-    )  # Close positions that haven't hit TP1 after this many hours.
+        default_factory=lambda: _env_int("TIME_STOP_HOURS", 2)
+    )  # Scalp approach: if TP1 not hit in 2h, close and re-enter.
+    # Best trade was 36min. Losers sat for 6-10h bleeding.
+    # Data: hold >2h = diminishing WR. Take profit or cut and re-enter.
     # Was 8h. Data: 12h time stop is optimal (+4.5R net). Gives winners more room
     # to develop while still cutting slow bleeders before they drift to SL.
     hold_limit_action: str = field(
@@ -412,10 +414,10 @@ class TradingConfig:
     )  # Lowered from 1.5→1.2: EV gate (min_signal_ev) already handles profitability.
     # 1.5 was blocking valid risk/reward setups. Fee-drag filter handles quality.
     min_stop_width_pct: float = field(
-        default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.010)
-    )  # Raised to 1.0%: wick noise model shows BTC p95 MAE = 1.11%, SOL = 1.45%
-    # At 0.3% SL with any leverage, you're trading noise not signal.
-    # Min 1.0% ensures SL survives at least 75% of normal 1h price action.
+        default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.004)
+    )  # 0.4% minimum — allows scalp-style tight stops at high leverage.
+    # At 10x with 0.5% SL: $25 risk, 5% DD on margin, exits in 5-15min.
+    # The 1.0% floor was blocking all high-leverage scalps.
     # Minimum expected value per dollar risked. EV = (win_prob × R:R) - (1-win_prob).
     # Filters trades where the probability × payoff doesn't justify the risk.
     # Raised from 0.10 to 0.15: at 45% WR, trades need 15%+ edge per $1

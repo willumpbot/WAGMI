@@ -610,26 +610,26 @@ class TestKellySizing:
         assert d3.leverage >= d2.leverage, "3-agree should get >= leverage than 2-agree"
 
     def test_3agree_tier5_scales_kelly(self):
-        """At 89%, 3-agree should get noise-aware leverage with high rm."""
+        """At 89%, 3-agree should get scalp-Kelly leverage with high rm."""
         from execution.leverage import LeverageManager
         mgr = LeverageManager()
         d = mgr.decide(89, 3, 4)
-        assert d.leverage >= 3.0, f"3-agree at 89% should get >=3x, got {d.leverage}"
-        assert d.leverage <= 8.0, f"3-agree at 89% should be <=8x (noise cap), got {d.leverage}"
+        assert d.leverage >= 5.0, f"3-agree at 89% should get >=5x, got {d.leverage}"
+        assert d.leverage <= 15.0, f"should be <=15x cap, got {d.leverage}"
         assert d.risk_multiplier >= 1.2, f"risk_mult should be >=1.2, got {d.risk_multiplier}"
 
-    def test_3agree_noise_aware(self):
-        """Noise-aware leverage: base * agreement_mult, capped by noise."""
+    def test_3agree_scalp_kelly(self):
+        """Scalp-Kelly: base * agreement_mult, capped per tier."""
         from execution.leverage import LeverageManager
         mgr = LeverageManager()
-        # Default (no symbol) = 4.0 base * 1.2 = 4.8x
+        # Default (no symbol) = 7.0 base * 1.2 = 8.4x
         d = mgr.decide(72, 3, 4)
-        assert d.leverage >= 3.0, f"3-agree should get >=3x, got {d.leverage}"
-        assert d.leverage <= 8.0, f"Should be <= noise cap 8x, got {d.leverage}"
-        # BTC = 5.0 base * 1.2 = 6.0x
+        assert d.leverage >= 5.0, f"3-agree should get >=5x, got {d.leverage}"
+        assert d.leverage <= 15.0, f"Should be <= cap 15x, got {d.leverage}"
+        # BTC = 10.0 base * 1.2 = 12.0x
         d_btc = mgr.decide(72, 3, 4, symbol="BTC")
-        assert d_btc.leverage >= 4.0, f"BTC 3-agree should get >=4x, got {d_btc.leverage}"
-        assert d_btc.leverage <= 8.0, f"BTC should be <=8x (noise cap), got {d_btc.leverage}"
+        assert d_btc.leverage >= 8.0, f"BTC 3-agree should get >=8x, got {d_btc.leverage}"
+        assert d_btc.leverage <= 15.0, f"BTC should be <=15x cap, got {d_btc.leverage}"
 
     def test_risk_multiplier_stays_within_cap(self):
         """risk_multiplier should never exceed the max_risk_multiplier cap (2.0)."""

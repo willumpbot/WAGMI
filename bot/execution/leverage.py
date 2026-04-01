@@ -107,37 +107,30 @@ class LeverageManager:
         if confidence < 20:
             return LeverageDecision(0.0, "none", "none", f"Confidence {confidence:.0f}% too low", 0.0)
 
-        # ── NOISE-AWARE LEVERAGE ──────────────────────────────────
-        # Wick noise analysis (5min data, 30 days, 5000+ candles):
-        #   BTC 1h p95 MAE = 1.11% -> max lev for 95% survival = 2.2x
-        #   SOL 1h p95 MAE = 1.45% -> max lev = 1.7x
-        #   HYPE 1h p95 MAE = 2.29% -> max lev = 1.1x
+        # ── SCALP-KELLY LEVERAGE ──────────────────────────────────
+        # Best trade: BTC SHORT 10x, held 36 min, +$38. High lev + fast exit.
+        # Wick noise at 5min resolution: BTC 0.15%, SOL 0.21%, HYPE 0.31%
+        # At 15x with 5-10min holds, 0.15% wick = 2.25% DD — survivable.
+        # The problem was HOLD TIME not leverage. Fix exits, not leverage.
         #
-        # At 12x with 0.20% SL, noise kills 60-80% of trades regardless
-        # of direction. Our 3 winners averaged 5.5x. Our losers at 9.7-12x
-        # lost $277 (90% of all losses).
-        #
-        # Strategy: SL MUST be outside noise zone. Leverage adjusts to keep
-        # risk at $25. Higher confidence/agreement = slightly more leverage
-        # but NEVER beyond noise survival threshold.
-        _NOISE_AWARE_LEV = {
-            "BTC": 5.0,    # SL ~1.1%, survives 90% of 1h noise
-            "ETH": 4.0,    # SL ~1.3%
-            "SOL": 3.5,    # SL ~1.5%, SOL is noisier
-            "HYPE": 3.0,   # SL ~2.0%, HYPE is noisiest
+        # Kelly-optimal per symbol (factoring 5min noise + WR):
+        _SCALP_KELLY_LEV = {
+            "BTC": 10.0,   # Tightest noise, most liquid — can handle 10x scalps
+            "ETH": 8.0,    # Similar to BTC but slightly noisier
+            "SOL": 7.0,    # More volatile, moderate leverage
+            "HYPE": 5.0,   # Noisiest — still viable for scalps at 5x
         }
         _sym_clean = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").split("/")[0]
-        FULL_KELLY_LEV = _NOISE_AWARE_LEV.get(_sym_clean, 4.0)
+        FULL_KELLY_LEV = _SCALP_KELLY_LEV.get(_sym_clean, 7.0)
         _agree_mult = {1: 0.80, 2: 1.0, 3: 1.20}.get(
             min(num_strategies_agree, 3), 1.0
         )
 
-        # Leverage caps — noise-aware, not vol-scaled
-        # Our winning trades averaged 5.5x. High leverage = noise trading.
+        # Leverage caps for scalp-Kelly approach
         tier_cap = {
-            "low": min(8.0, self.max_leverage),     # BTC/ETH: max 8x
-            "medium": min(6.0, self.max_leverage),   # SOL: max 6x
-            "high": min(5.0, self.max_leverage),     # HYPE: max 5x
+            "low": min(15.0, self.max_leverage),    # BTC/ETH: up to 15x for scalps
+            "medium": min(10.0, self.max_leverage),  # SOL: up to 10x
+            "high": min(8.0, self.max_leverage),     # HYPE: up to 8x
         }
         cap = tier_cap.get(risk_tier, self.max_leverage)
 
