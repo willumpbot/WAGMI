@@ -800,8 +800,15 @@ SYMBOL_RISK_MULTIPLIERS = {
 # SOL LONG winners hit TP1 instantly (0h); losers bleed for weeks. Structural issue.
 # Reducing SOL LONG to 0.35x preserves the signal for data collection but limits damage.
 SYMBOL_SIDE_RISK_MULTIPLIERS: Dict[tuple, float] = {
-    ("SOL", "BUY"):  0.35,  # SOL LONG has negative edge: 46% WR, -$93/trade avg. Reduce to 0.35x.
-    ("SOL", "SELL"): 1.0,   # SOL SHORT is strong: 62% WR, +$181/trade avg. Full size.
+    # Data-driven from 7,911 signal analysis (2026-04-01):
+    ("SOL", "BUY"):  0.25,  # 24.4% WR, -4.4% avg — near-toxic, minimal size for data
+    ("SOL", "SELL"): 1.3,   # 85.5% WR at 1h! Best edge in the system. Size UP.
+    ("BTC", "BUY"):  0.50,  # Marginal — 37% WR at 1h but regime-dependent
+    ("BTC", "SELL"): 1.2,   # 48.5-60.6% WR, real trades 100% WR. Strong.
+    ("ETH", "BUY"):  0.85,  # 51.4% WR at 4h — slight edge but only with consensus
+    ("ETH", "SELL"): 0.30,  # 32.7% WR — toxic, keep for data only
+    ("HYPE", "BUY"): 0.70,  # 54.9% WR at 1h but WEAKENING. Trend-only.
+    ("HYPE", "SELL"):1.2,   # 85.2% WR in rejection data — newly discovered edge
 }
 
 # Per-symbol lead-lag configuration: empirical lag times and correlations.
@@ -830,6 +837,24 @@ LEAD_LAG_SYMBOL_CONFIG = {
         "boost_cap": 5.0,             # Low cap: weak correlation
     },
 }
+
+
+# Optimal TP/SL and time stops per setup (from 7,911 signal MFE/MAE analysis, 2026-04-01).
+# These override default ATR-based TPs when a setup-specific profile is available.
+# TP is % of entry price, SL is % of entry price, time_stop is hours.
+SETUP_OPTIMAL_EXITS: Dict[str, Dict[str, float]] = {
+    "SOL_SELL": {"tp_pct": 1.5, "sl_pct": 1.0, "time_stop_h": 4, "edge": "tier1"},
+    "BTC_SELL": {"tp_pct": 1.0, "sl_pct": 1.5, "time_stop_h": 2, "edge": "tier1"},
+    "ETH_BUY":  {"tp_pct": 0.5, "sl_pct": 0.7, "time_stop_h": 4, "edge": "tier2"},
+    "HYPE_BUY": {"tp_pct": 2.0, "sl_pct": 1.5, "time_stop_h": 6, "edge": "tier2"},
+    "HYPE_SELL":{"tp_pct": 1.5, "sl_pct": 1.0, "time_stop_h": 4, "edge": "tier1"},
+}
+
+
+def get_setup_exit(symbol: str, side: str) -> dict:
+    """Return optimal exit profile for a setup. Empty dict if not configured."""
+    key = f"{symbol}_{side}"
+    return SETUP_OPTIMAL_EXITS.get(key, {})
 
 
 def get_lead_lag_config(symbol: str) -> dict:
