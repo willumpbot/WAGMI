@@ -617,16 +617,14 @@ class TestKellySizing:
         assert d.leverage >= 5.0, f"3-agree at 89% should get >=5x Kelly, got {d.leverage}"
         assert d.risk_multiplier >= 1.2, f"risk_mult should be >=1.2, got {d.risk_multiplier}"
 
-    def test_3agree_tier3_baseline(self):
-        """At Tier 3 (70-74%), 3-agree should get 2/3-Kelly leverage with full Kelly sizing.
-        Full Kelly=7.8x from edge study. 2/3 Kelly * 1.2 (3-agree) ~ 6.3x.
-        """
+    def test_3agree_full_kelly(self):
+        """Full Kelly: 3-agree at 72% = 7.8 * 1.2 = 9.36x leverage."""
         from execution.leverage import LeverageManager
         mgr = LeverageManager()
         d = mgr.decide(72, 3, 4)
-        assert d.leverage >= 4.0, f"3-agree at 72% should get >=4x (2/3-Kelly), got {d.leverage}"
-        assert d.leverage <= 8.0, f"3-agree at 72% should be <=8x, got {d.leverage}"
-        assert d.risk_multiplier >= 0.7, f"risk_mult should scale size, got {d.risk_multiplier}"
+        assert d.leverage >= 7.0, f"3-agree at 72% should get >=7x full Kelly, got {d.leverage}"
+        assert d.leverage <= 12.0, f"3-agree at 72% should be <=12x (capped), got {d.leverage}"
+        assert d.risk_multiplier >= 0.8, f"risk_mult should be meaningful, got {d.risk_multiplier}"
 
     def test_risk_multiplier_stays_within_cap(self):
         """risk_multiplier should never exceed the max_risk_multiplier cap (2.0)."""
