@@ -170,6 +170,7 @@ class TestLiveMode:
         }
         ex.set_leverage.return_value = {}
         ex.fetch_balance.return_value = {"USDC": {"free": 1000.0, "total": 1200.0}}
+        ex.fetch_ticker.return_value = {"last": 50000.0}  # Realistic BTC price for sanity checks
         return ex
 
     def test_live_mode_requires_exchange(self):
@@ -272,6 +273,7 @@ class TestSlippage:
             "fee": {"cost": 0.0},
         }
         ex.set_leverage.return_value = {}
+        ex.fetch_ticker.return_value = {"last": 50000.0}
 
         executor = OrderExecutor(exchange=ex, mode="live", max_slippage_pct=1.5)
         result = executor.open_position("BTC", "BUY", qty=0.001, price=50000.0, leverage=1)

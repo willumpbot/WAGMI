@@ -117,6 +117,55 @@ class OpsGuard:
         with self._lock:
             return sum(1 for t in self._trade_times if t > cutoff)
 
+    # ── Duplicate Position Guard ──────────────────────────────
+
+    def check_duplicate_position(
+        self,
+        symbol: str,
+        side: str,
+        open_positions: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Check if opening this position would create a duplicate.
+
+        Args:
+            symbol: Trading pair symbol
+            side: "BUY"/"SELL" or "LONG"/"SHORT"
+            open_positions: Dict of currently open positions (symbol -> position object)
+
+        Returns:
+            {"allowed": bool, "reason": str, "existing": optional position details}
+        """
+        if not open_positions:
+            return {"allowed": True, "reason": "OK"}
+
+        existing = open_positions.get(symbol)
+        if existing is not None:
+            ex_side = getattr(existing, "side", "unknown")
+            ex_entry = getattr(existing, "entry", 0.0)
+            ex_qty = getattr(existing, "qty", 0.0)
+            ex_leverage = getattr(existing, "leverage", 1.0)
+            ex_state = getattr(existing, "state", "unknown")
+            logger.warning(
+                f"[OPS] DUPLICATE BLOCKED: {symbol} already has open {ex_side} position "
+                f"(entry={ex_entry}, qty={ex_qty}, leverage={ex_leverage}x, state={ex_state}). "
+                f"Attempted new {side} entry."
+            )
+            return {
+                "allowed": False,
+                "reason": (
+                    f"Duplicate position: {symbol} already has {ex_side} position "
+                    f"(entry={ex_entry}, leverage={ex_leverage}x)"
+                ),
+                "existing": {
+                    "side": ex_side,
+                    "entry": ex_entry,
+                    "qty": ex_qty,
+                    "leverage": ex_leverage,
+                },
+            }
+
+        return {"allowed": True, "reason": "OK"}
+
     # ── Pre-Execution Check ─────────────────────────────────
 
     def can_execute(

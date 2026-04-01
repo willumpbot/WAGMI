@@ -41,7 +41,7 @@ class RegimeStats:
         self.loss_count = 0
         self.total_pnl = 0.0
         self.avg_hold_hours = 0.0
-        self.confidence_floor = 65.0  # Default per-regime floor
+        self.confidence_floor = 50.0  # Lowered for aggressive data collection
         self.risk_multiplier = 1.0
         self.strategy_weights: Dict[str, float] = {}
         self.last_updated: Optional[str] = None

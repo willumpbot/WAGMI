@@ -34,6 +34,7 @@ from llm.agents.base import (
     DEFAULT_AGENT_CONFIGS,
 )
 from llm.agents.prompts import AGENT_PROMPTS
+from llm.agents.prompt_enricher import enrich_prompt
 from llm.agents.shared_context import (
     build_shared_context_block,
     get_pipeline_scratchpad,
@@ -562,6 +563,42 @@ class AgentCoordinator:
                 )
             except Exception:
                 pass
+
+        # ── Performance Tracker: record pipeline run for agent scoring ──
+        try:
+            import uuid as _uuid
+            from llm.agents.performance_tracker import get_performance_tracker
+            _tracker = get_performance_tracker()
+            _sym = ""
+            _markets = snapshot_data.get("m", []) if snapshot_data else []
+            if _markets and isinstance(_markets[0], dict):
+                _sym = _markets[0].get("s", _markets[0].get("sym", ""))
+            _side = ""
+            if trade_out.ok:
+                _side = trade_out.data.get("side", trade_out.data.get("s", ""))
+            _pipeline_id = str(_uuid.uuid4())[:12]
+            _tracker.record_pipeline_run(
+                pipeline_id=_pipeline_id,
+                symbol=_sym,
+                side=_side,
+                agent_outputs=pipeline_results,
+            )
+            # Record veto counterfactual if critic vetoed
+            if decision.action in ("flat", "skip") and critic_out and critic_out.ok:
+                _critic_verdict = critic_out.data.get("verdict", critic_out.data.get("v", ""))
+                if _critic_verdict in ("veto", "reject"):
+                    _entry = 0.0
+                    if _markets and isinstance(_markets[0], dict):
+                        _entry = _markets[0].get("price", _markets[0].get("p", 0.0))
+                    _tracker.record_veto(
+                        pipeline_id=_pipeline_id,
+                        symbol=_sym,
+                        side=_side,
+                        entry_price=_entry,
+                        critic_output=critic_out,
+                    )
+        except Exception as e:
+            logger.debug(f"[MULTI-AGENT] Performance tracker record error: {e}")
 
         # Store pipeline results for external consumers (backtest logging, etc.)
         self.last_pipeline_results = pipeline_results
@@ -1439,6 +1476,12 @@ class AgentCoordinator:
         if not prompt:
             return AgentOutput(role=role, data={}, error="no_prompt")
 
+        # Enrich prompt with latest quant intelligence from deep memory
+        try:
+            prompt = enrich_prompt(role.value, prompt)
+        except Exception as e:
+            logger.debug(f"[COORD] Prompt enrichment failed for {role.value}: {e}")
+
         # Inject thought protocol and shared context into the prompt
         protocol_prefix = build_protocol_prefix(role.value)
         scratchpad = get_pipeline_scratchpad()
@@ -1516,6 +1559,11 @@ class AgentCoordinator:
             pass
 
         if raw_text is None:
+            api_error = usage.get("error", "unknown")
+            logger.warning(
+                f"[MULTI-AGENT] {role.value} agent API call FAILED: {api_error} "
+                f"(model={model}, latency={usage.get('latency_ms', 0)}ms)"
+            )
             return AgentOutput(
                 role=role,
                 data={},
@@ -1523,12 +1571,17 @@ class AgentCoordinator:
                 input_tokens=usage.get("input_tokens", 0),
                 output_tokens=usage.get("output_tokens", 0),
                 latency_ms=usage.get("latency_ms", 0),
-                error=f"api_error: {usage.get('error', 'unknown')}",
+                error=f"api_error: {api_error}",
             )
 
         # Parse JSON response
         parsed = _parse_agent_json(raw_text)
         if parsed is None:
+            logger.warning(
+                f"[MULTI-AGENT] {role.value} agent returned unparseable response "
+                f"(model={model}, {len(raw_text)} chars). "
+                f"First 200 chars: {raw_text[:200]}"
+            )
             return AgentOutput(
                 role=role,
                 data={},

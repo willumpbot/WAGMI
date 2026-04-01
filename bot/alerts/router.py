@@ -111,8 +111,12 @@ class AlertRouter:
         except Exception as exc:
             logger.warning("[ALERT] Failed to save alert state: %s", exc)
 
-    def send_signal(self, signal: Signal, leverage: float = 1.0, tier: str = ""):
-        """Route a signal to appropriate channels."""
+    def send_signal(self, signal: Signal, leverage: float = 1.0, tier: str = "", wallet_tag: str = ""):
+        """Route a signal to appropriate channels.
+
+        Args:
+            wallet_tag: Optional prefix like "[A]" or "[B]" for dual wallet mode.
+        """
         if not tier:
             if signal.confidence >= self.priority_conf_threshold:
                 tier = "PRIORITY"
@@ -149,33 +153,43 @@ class AlertRouter:
 
         # Format message
         msg = self._format_signal(signal, leverage, tier)
+        if wallet_tag:
+            msg = f"[{wallet_tag}] {msg}"
 
         # Route (set timestamps AFTER successful send)
+        # Telegram gets the ENHANCED signal only (sent separately in multi_strategy_main)
+        # This raw format goes to Discord only to keep Telegram clean
         if tier == "PRIORITY":
             self._send_discord(msg, priority=True)
             self._send_discord(msg, priority=False)
-            self._send_telegram(msg)
-            ls["prio_ts"] = now  # Set after send, not before
+            ls["prio_ts"] = now
         elif tier == "REGULAR":
             self._send_discord(msg, priority=False)
-            if signal.confidence >= self.telegram_conf_threshold:
-                self._send_telegram(msg)
-            ls["reg_ts"] = now  # Set after send, not before
+            ls["reg_ts"] = now
         else:  # MANUAL
             self._send_discord(msg, priority=False)
 
         ls["fingerprint"] = fp
         self._save_state()
 
-    def send_trade_event(self, event_type: str, symbol: str, details: str):
-        """Send a trade event notification (open, close, TP, SL, etc.)."""
-        msg = f"[TRADE] {event_type} | {symbol}\n{details}"
+    def send_trade_event(self, event_type: str, symbol: str, details: str, wallet_tag: str = ""):
+        """Send a trade event notification (open, close, TP, SL, etc.).
+
+        Telegram gets: opens, all closes (TP, SL, trailing, early exit, emergency).
+        Discord gets everything.
+        """
+        prefix = f"[{wallet_tag}] " if wallet_tag else ""
+        msg = f"{prefix}[TRADE] {event_type} | {symbol}\n{details}"
         self._send_discord(msg)
-        if event_type in ("OPEN", "TP2", "SL", "TRAILING_STOP"):
+        # Send to Telegram for all trade opens and closes (the stuff that matters)
+        tg_events = ("OPEN", "TP1", "TP2", "SL", "TRAILING_STOP", "TRAILING_WIN",
+                      "EARLY_EXIT", "EMERGENCY", "LIQUIDATION_AVOID", "HOLD_LIMIT",
+                      "ROTATE_PROFIT", "ROTATE_LOSS", "FUNDING_AVOIDANCE")
+        if event_type in tg_events:
             self._send_telegram(msg)
 
     def send_heartbeat(self, status: Dict[str, Any]):
-        """Send periodic heartbeat with bot status."""
+        """Send periodic heartbeat with bot status. Goes to both Discord and Telegram."""
         equity = status.get("equity", 0)
         positions = status.get("open_positions", 0)
         daily_pnl = status.get("daily_pnl", 0)
@@ -187,10 +201,19 @@ class AlertRouter:
             f"Daily PnL: ${daily_pnl:+,.2f} | ML Samples: {ml_samples}"
         )
         self._send_discord(msg)
+        self._send_telegram(msg)
 
     def send_market_update(self, msg: str):
-        """Send periodic market status update (even without signals)."""
+        """Send periodic market status update. Goes to both Discord and Telegram."""
         self._send_discord(msg)
+        self._send_telegram(msg)
+
+    def send_market_intel(self, intel: str):
+        """Send market intelligence to help manual traders during quiet periods."""
+        self._send_telegram(intel)
+
+    def send_telegram_important(self, msg: str):
+        """Send to Telegram only for truly important updates (daily report, circuit breaker)."""
         self._send_telegram(msg)
 
     def send_startup(self, symbols: list, strategies: int, leverage_max: float):

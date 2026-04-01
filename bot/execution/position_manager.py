@@ -45,6 +45,15 @@ except ImportError:
 logger = logging.getLogger("bot.execution.positions")
 
 
+def _get_tel():
+    """Lazy import to avoid circular dependency."""
+    try:
+        from core.structured_logging import get_trade_event_logger
+        return get_trade_event_logger()
+    except Exception:
+        return None
+
+
 @dataclass
 class Position:
     """Represents a trading position with full lifecycle state tracking."""
@@ -97,6 +106,9 @@ class Position:
 
     # Outcome classification (set on close)
     outcome: str = ""  # CLEAN_WIN, CLEAN_LOSS, TP1_ONLY, TP1_THEN_SL, etc.
+
+    # Wallet attribution (dual-wallet system)
+    wallet_id: str = ""      # "A", "B", or "" (single-wallet mode)
 
     # LLM context: thesis and setup type for exit intelligence
     notes: str = ""          # LLM decision notes (THESIS:..., OUTLOOK:..., etc.)
@@ -183,12 +195,14 @@ class PositionManager:
         taker_fee_bps: int = 4,
         enable_trailing: bool = True,
         trailing_atr_mult: float = 1.5,
+        time_stop_hours: int = 12,
     ):
         self.positions: Dict[str, Position] = {}
         self.trade_log: List[TradeEvent] = []
         self.taker_fee_bps = taker_fee_bps
         self.enable_trailing = enable_trailing
         self.trailing_atr_mult = trailing_atr_mult
+        self._time_stop_hours = time_stop_hours
         # Position backup directory for crash recovery
         self._backup_dir = Path("data") / "position_backups"
         self._backup_dir.mkdir(parents=True, exist_ok=True)
@@ -284,6 +298,11 @@ class PositionManager:
         if cost > 0:
             pos.funding_costs += cost
 
+    def has_open_position(self, symbol: str) -> bool:
+        """Check if there is an open (non-CLOSED) position for this symbol."""
+        existing = self.positions.get(symbol)
+        return existing is not None and existing.state != CLOSED
+
     def open_position(
         self,
         symbol: str,
@@ -304,11 +323,20 @@ class PositionManager:
         notes: str = "",
         setup_type: str = "",
     ) -> Optional[Position]:
-        """Open a new position. Enforces one position per symbol."""
+        """Open a new position. Enforces one position per symbol.
+
+        Returns None if a position already exists for this symbol (any direction).
+        This is the last line of defense against duplicate position opens.
+        """
         # Don't open if already have a position in this symbol
         existing = self.positions.get(symbol)
         if existing and existing.state != CLOSED:
-            logger.debug(f"[{symbol}] Already have position in state {existing.state}, skipping")
+            logger.warning(
+                f"[{symbol}] DUPLICATE BLOCKED in PositionManager: "
+                f"already have {existing.side} position in state {existing.state} "
+                f"(entry={existing.entry}, qty={existing.qty}, leverage={existing.leverage}x). "
+                f"Attempted new {side} entry at {entry} with {leverage}x leverage."
+            )
             return None
 
         # Apply precision rounding
@@ -416,6 +444,29 @@ class PositionManager:
             f"type={entry_type}"
         )
 
+        # Log TRADE_OPENED event
+        try:
+            tel = _get_tel()
+            if tel is not None:
+                tel.log(
+                    "TRADE_OPENED",
+                    symbol,
+                    side=side,
+                    entry=entry,
+                    sl=sl,
+                    tp1=tp1,
+                    tp2=tp2,
+                    leverage=leverage,
+                    position_size=qty,
+                    strategy=strategy,
+                    confidence=confidence,
+                    atr=atr,
+                    regime=(entry_reasons or {}).get("regime", ""),
+                    entry_type=entry_type,
+                )
+        except Exception:
+            pass
+
         return pos
 
     def update_price(
@@ -463,7 +514,7 @@ class PositionManager:
         if pos.state == OPEN:
             _now = sim_now or datetime.now(timezone.utc)
             hold_hours = (_now - pos.open_time).total_seconds() / 3600
-            time_stop_hours = getattr(self, '_time_stop_hours', 8)
+            time_stop_hours = getattr(self, '_time_stop_hours', 12)
 
             if hold_hours >= time_stop_hours:
                 # Assess position health before closing
@@ -517,6 +568,32 @@ class PositionManager:
         if tp2_hit and pos.state != CLOSED:
             event = self._close_position(pos, current_price, "TP2")
             events.append(event)
+
+        # Log POSITION_UPDATE periodically (every ~60 ticks) when position is still open
+        if pos.state != CLOSED and not events:
+            _update_counter = getattr(pos, '_tel_update_counter', 0) + 1
+            pos._tel_update_counter = _update_counter
+            if _update_counter % 60 == 0:
+                try:
+                    tel = _get_tel()
+                    if tel is not None:
+                        if is_long:
+                            _unrealized = (current_price - pos.entry) * pos.qty * pos.leverage
+                        else:
+                            _unrealized = (pos.entry - current_price) * pos.qty * pos.leverage
+                        tel.log(
+                            "POSITION_UPDATE",
+                            symbol,
+                            side=pos.side,
+                            current_price=current_price,
+                            unrealized_pnl=round(_unrealized, 2),
+                            trailing_stop=pos.sl,
+                            entry_price=pos.entry,
+                            state=pos.state,
+                            strategy=pos.strategy,
+                        )
+                except Exception:
+                    pass
 
         return events
 
@@ -884,6 +961,27 @@ class PositionManager:
             },
         )
         self.trade_log.append(event)
+
+        # Log TP_HIT event
+        try:
+            tel = _get_tel()
+            if tel is not None:
+                _hold_s = (datetime.now(timezone.utc) - pos.open_time).total_seconds()
+                tel.log(
+                    "TP_HIT",
+                    pos.symbol,
+                    side=pos.side,
+                    exit_price=price,
+                    entry_price=pos.entry,
+                    pnl=pnl,
+                    hold_time=_hold_s,
+                    partial_close_pct=dynamic_close_pct,
+                    remaining_qty=pos.qty,
+                    strategy=pos.strategy,
+                )
+        except Exception:
+            pass
+
         return event
 
     def _update_trailing_stop(self, pos: Position, current_price: float):
@@ -1085,6 +1183,36 @@ class PositionManager:
             },
         )
         self.trade_log.append(event)
+
+        # Log structured trade event (SL_HIT, TP_HIT, or TRADE_CLOSED)
+        try:
+            tel = _get_tel()
+            if tel is not None:
+                _hold_s = (pos.close_time - pos.open_time).total_seconds()
+                # Map action to event type
+                if action in ("SL", "TRAILING_STOP"):
+                    _event_type = "SL_HIT"
+                elif action in ("TP2", "TP1_FULL"):
+                    _event_type = "TP_HIT"
+                else:
+                    _event_type = "TRADE_CLOSED"
+                tel.log(
+                    _event_type,
+                    pos.symbol,
+                    side=pos.side,
+                    exit_price=price,
+                    entry_price=pos.entry,
+                    pnl=pos.realized_pnl,
+                    hold_time=_hold_s,
+                    exit_reason=action,
+                    leverage=pos.leverage,
+                    strategy=pos.strategy,
+                    outcome=pos.outcome,
+                    confidence=pos.confidence,
+                    regime=(pos.entry_reasons or {}).get("regime", ""),
+                )
+        except Exception:
+            pass
 
         # Remove backup after successful close
         self._remove_backup(pos.symbol)

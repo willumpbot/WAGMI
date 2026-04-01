@@ -54,6 +54,7 @@ from ml.learner import SignalLearner, TradeOutcome, MarketSnapshot
 from alerts.router import AlertRouter
 from alerts.telegram_bot import TelegramCommandBot
 from execution.trade_profile import classify_trade, apply_profile_to_signal
+from execution.dynamic_tp import optimize_tp_sl as dynamic_tp_optimize
 from execution.precision import validate_fill_price, get_min_qty, get_max_leverage, get_all_symbol_specs
 
 # LLM meta-brain
@@ -73,7 +74,13 @@ from execution.reconciliation import (
     restore_circuit_breaker_state,
     periodic_reconciliation_check,
 )
-from execution.time_sizing import get_time_multiplier
+from execution.auto_recovery import (
+    startup_recovery,
+    save_position_state,
+    save_heartbeat,
+    should_skip_stale_signals,
+)
+from execution.time_sizing import get_time_multiplier, get_full_time_multiplier
 from execution.ops_guard import OpsGuard
 from execution.rotation_manager import RotationManager, RotationConfig
 from data.fetchers.telemetry import Telemetry
@@ -163,6 +170,9 @@ from alerts.enhanced_telegram import (
     format_signal_telegram, format_trade_event_telegram,
     format_heartbeat_telegram, format_daily_report_telegram,
 )
+
+# Telegram alert bridge: critical event notifications via TradeEventLogger callbacks
+from alerts.telegram_alert_bridge import TelegramAlertBridge
 
 # Global Brain + Portfolio Brain: cross-market reasoning for LLM
 from llm.global_brain import build_global_context, apply_global_bias
@@ -338,6 +348,11 @@ def _fmt_price(price: float) -> str:
 # Setup structured logging with rotating file handler
 from core.structured_logging import setup_logging, log_trade_event, log_metric
 
+# Extracted mixin modules (refactored from this file)
+from core.analytics import AnalyticsMixin
+from core.llm_integration import LLMIntegrationMixin
+from core.position_wiring import PositionWiringMixin
+
 _is_production = os.getenv("ENVIRONMENT", "paper").lower() == "production"
 setup_logging(
     json_mode=_is_production,
@@ -347,7 +362,7 @@ setup_logging(
 logger = logging.getLogger("bot.main")
 
 
-class MultiStrategyBot:
+class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin):
     """
     The main bot that orchestrates everything.
 
@@ -534,6 +549,29 @@ class MultiStrategyBot:
         if not hasattr(self, "_signal_tracker"):
             self._signal_tracker = None
 
+        # ── Anticipatory Entry Engine (precision limit-order style entries) ──
+        self._anticipation_engine = None
+        _anticipatory_enabled = os.getenv("ANTICIPATORY_ENTRIES_ENABLED", "true").lower() == "true"
+        if _anticipatory_enabled and self._manual_sniper is not None:
+            try:
+                from manual.anticipatory_entries import get_anticipation_engine
+                self._anticipation_engine = get_anticipation_engine()
+                logger.info("[INIT] Anticipatory Entry Engine enabled (precision entries)")
+            except Exception as _ae_err:
+                logger.debug(f"[INIT] Anticipatory Engine not available: {_ae_err}")
+
+        # ── Quant Brain Pre-Filter (zero-cost, rule-based signal gating) ──
+        self._quant_brain = None
+        self._quant_brain_enabled = os.getenv("QUANT_BRAIN_ENABLED", "true").lower() == "true"
+        if self._quant_brain_enabled:
+            try:
+                from llm.quant_brain import get_quant_brain
+                self._quant_brain = get_quant_brain()
+                logger.info("[INIT] Quant Brain pre-filter enabled (zero API cost)")
+            except Exception as _qb_err:
+                logger.warning(f"[INIT] Quant Brain init failed (non-fatal): {_qb_err}")
+                self._quant_brain = None
+
         # Execution
         self.risk_mgr = RiskManager(
             starting_equity=config.starting_equity,
@@ -549,6 +587,7 @@ class MultiStrategyBot:
             taker_fee_bps=config.taker_fee_bps,
             enable_trailing=config.enable_trailing_stop,
             trailing_atr_mult=config.trailing_stop_atr_mult,
+            time_stop_hours=config.time_stop_hours,
         )
         self.leverage_mgr = LeverageManager(
             enable_leverage=config.enable_leverage,
@@ -584,6 +623,18 @@ class MultiStrategyBot:
             telegram_token=config.telegram_token,
             telegram_chat_id=config.telegram_chat_id,
         )
+
+        # Telegram alert bridge: hooks into TradeEventLogger for critical alerts
+        self.telegram_bridge = TelegramAlertBridge(
+            telegram_token=config.telegram_token,
+            telegram_chat_id=config.telegram_chat_id,
+        )
+        try:
+            from core.structured_logging import get_trade_event_logger
+            tel = get_trade_event_logger()
+            tel.add_callback(self.telegram_bridge.on_trade_event)
+        except Exception as e:
+            logger.debug(f"Telegram alert bridge callback registration skipped: {e}")
 
         # Trade logging (paper trading validation)
         self.trade_logger = TradeLogger(log_dir="paper_trades") if not config.auto_trade else None
@@ -708,6 +759,18 @@ class MultiStrategyBot:
             if self.ic_tracker:
                 self.ensemble.ic_tracker = self.ic_tracker
                 logger.info("[INIT] IC tracker wired into ensemble voting — inverted factors will be auto-downweighted")
+            # Wire regime-aware strategy weighting into ensemble
+            try:
+                if config.regime_strategy_weighting_enabled:
+                    from data.regime_strategy_weighter import RegimeStrategyWeighter
+                    self._regime_strategy_weighter = RegimeStrategyWeighter(data_dir="data/regime_strategy_weights")
+                    self.ensemble.set_regime_strategy_weighter(self._regime_strategy_weighter)
+                    logger.info("[INIT] RegimeStrategyWeighter wired — strategy weights adjust per regime")
+                else:
+                    self._regime_strategy_weighter = None
+            except Exception as rsw_e:
+                logger.debug(f"[INIT] RegimeStrategyWeighter unavailable: {rsw_e}")
+                self._regime_strategy_weighter = None
             logger.info("[INIT] Quant system loaded: IC tracker, Kelly engine, trade ledger, shadow ledger, correlation gate, daily report")
         except Exception as e:
             logger.warning(f"[INIT] Quant system partially unavailable: {e}")
@@ -746,6 +809,19 @@ class MultiStrategyBot:
 
         # Veto tracking is handled by growth orchestrator (growth/veto_feedback.py)
 
+        # Confidence calibration: bootstrap from backtest data if no curve exists yet
+        try:
+            from llm.confidence_calibrator import ConfidenceCalibrator
+            self._confidence_calibrator = ConfidenceCalibrator(data_dir="data/llm")
+            if not self._confidence_calibrator._curve:
+                self._confidence_calibrator.bootstrap_from_backtest("data/backtest_trades_30d.csv")
+                logger.info("[INIT] Confidence calibrator bootstrapped from backtest data")
+            else:
+                logger.info("[INIT] Confidence calibrator loaded existing calibration curve")
+        except Exception as cc_err:
+            logger.debug(f"[INIT] Confidence calibrator unavailable: {cc_err}")
+            self._confidence_calibrator = None
+
         # Phase D+E+F: new subsystems
         self.regime_detector = RegimeTransitionDetector()
         self.health_monitor = HealthMonitor()
@@ -762,6 +838,28 @@ class MultiStrategyBot:
 
         # Cross-symbol pattern tracker: detects lead-lag relationships
         self.cross_symbol_tracker = CrossSymbolTracker() if _CROSS_SYMBOL_AVAILABLE else None
+
+        # Cross-asset lead-lag monitor: BTC leads SOL/ETH
+        self._cross_asset_monitor = None
+        try:
+            from execution.cross_asset_alert import CrossAssetLeadLagMonitor, LeadLagBoostEngine
+            self._cross_asset_monitor = CrossAssetLeadLagMonitor()
+            logger.info("[INIT] Cross-asset lead-lag monitor enabled (BTC→SOL/ETH)")
+            # LeadLagBoostEngine: real-time confidence boost for follower signals
+            if getattr(self.config, 'enable_lead_lag_boost', False):
+                self._lead_lag_engine = LeadLagBoostEngine(
+                    btc_move_threshold=getattr(self.config, 'lead_lag_btc_move_threshold', 0.3),
+                    max_boost=getattr(self.config, 'lead_lag_max_boost', 12.0),
+                    min_correlation=getattr(self.config, 'lead_lag_min_correlation', 0.60),
+                    correlation_decay=getattr(self.config, 'lead_lag_correlation_decay', 0.98),
+                )
+                self.ensemble.set_lead_lag_engine(self._lead_lag_engine)
+                logger.info("[INIT] Lead-lag boost engine enabled (BTC→SOL/ETH confidence boost)")
+            else:
+                self._lead_lag_engine = None
+        except Exception as _ca_err:
+            logger.debug(f"[INIT] Cross-asset monitor not available: {_ca_err}")
+            self._lead_lag_engine = None
 
         # Track 1h price changes for cross-market divergence detection
         self._price_changes_1h: Dict[str, float] = {}
@@ -838,6 +936,102 @@ class MultiStrategyBot:
                 logger.info("[PAPER-VALIDATOR] Hourly checkpoint monitoring enabled")
             except Exception as e:
                 logger.debug(f"[PAPER-VALIDATOR] Not available: {e}")
+
+        # ── Dual Wallet System ──
+        self._dual_wallet_enabled = config.dual_wallet_enabled
+        self._wallet_a = None
+        self._wallet_b = None
+        self._wallet_dispatcher = None
+        self._account_guardian = None
+
+        if self._dual_wallet_enabled:
+            try:
+                from wallet.profile import wallet_a_default, wallet_b_default
+                from wallet.context import WalletContext
+                from wallet.dispatcher import WalletDispatcher
+                from wallet.guardian import AccountGuardian
+                from wallet.pnl_tracker import WalletPnLTracker
+
+                profile_a = wallet_a_default()
+                profile_b = wallet_b_default()
+
+                # Each wallet gets its own execution components
+                wallet_equity_a = config.starting_equity * config.wallet_a_equity_pct
+                wallet_equity_b = config.starting_equity * config.wallet_b_equity_pct
+
+                self._wallet_a = WalletContext(profile=profile_a)
+                self._wallet_a.pos_mgr = PositionManager(
+                    taker_fee_bps=config.taker_fee_bps,
+                    enable_trailing=config.enable_trailing_stop,
+                    trailing_atr_mult=config.trailing_stop_atr_mult,
+                    time_stop_hours=config.time_stop_hours,
+                )
+                self._wallet_a.risk_mgr = RiskManager(
+                    starting_equity=wallet_equity_a,
+                    risk_per_trade=profile_a.risk_per_trade,
+                    max_open_positions=profile_a.max_open_positions,
+                    circuit_breaker=CircuitBreaker(
+                        daily_loss_limit_pct=profile_a.cb_daily_loss_pct,
+                        max_consecutive_losses=profile_a.cb_max_consecutive_losses,
+                        cooldown_minutes=config.circuit_breaker_cooldown_min,
+                    ),
+                )
+                self._wallet_a.circuit_breaker = self._wallet_a.risk_mgr.circuit_breaker
+                self._wallet_a.leverage_mgr = LeverageManager(
+                    enable_leverage=config.enable_leverage,
+                    max_leverage=profile_a.max_leverage,
+                )
+                self._wallet_a.pnl_tracker = WalletPnLTracker(
+                    "A", wallet_equity_a, data_dir="data",
+                )
+                self._wallet_a.initialize()
+
+                self._wallet_b = WalletContext(profile=profile_b)
+                self._wallet_b.pos_mgr = PositionManager(
+                    taker_fee_bps=config.taker_fee_bps,
+                    enable_trailing=config.enable_trailing_stop,
+                    trailing_atr_mult=config.trailing_stop_atr_mult,
+                    time_stop_hours=config.time_stop_hours,
+                )
+                self._wallet_b.risk_mgr = RiskManager(
+                    starting_equity=wallet_equity_b,
+                    risk_per_trade=profile_b.risk_per_trade,
+                    max_open_positions=profile_b.max_open_positions,
+                    circuit_breaker=CircuitBreaker(
+                        daily_loss_limit_pct=profile_b.cb_daily_loss_pct,
+                        max_consecutive_losses=profile_b.cb_max_consecutive_losses,
+                        cooldown_minutes=config.circuit_breaker_cooldown_min,
+                    ),
+                )
+                self._wallet_b.circuit_breaker = self._wallet_b.risk_mgr.circuit_breaker
+                self._wallet_b.leverage_mgr = LeverageManager(
+                    enable_leverage=config.enable_leverage,
+                    max_leverage=profile_b.max_leverage,
+                )
+                self._wallet_b.pnl_tracker = WalletPnLTracker(
+                    "B", wallet_equity_b, data_dir="data",
+                )
+                self._wallet_b.initialize()
+
+                self._account_guardian = AccountGuardian()
+                self._wallet_dispatcher = WalletDispatcher(
+                    self._wallet_a, self._wallet_b, self._account_guardian,
+                )
+
+                logger.info(
+                    f"[INIT] Dual Wallet System enabled: "
+                    f"A ({profile_a.name}: {profile_a.max_leverage}x, "
+                    f"${wallet_equity_a:.2f}) + "
+                    f"B ({profile_b.name}: {profile_b.max_leverage}x, "
+                    f"${wallet_equity_b:.2f})"
+                )
+            except Exception as dw_err:
+                logger.warning(f"[INIT] Dual wallet init failed, falling back to single: {dw_err}")
+                self._dual_wallet_enabled = False
+                self._wallet_a = None
+                self._wallet_b = None
+                self._wallet_dispatcher = None
+                self._account_guardian = None
 
     def _start_perception_capture(self):
         """Start async perception capture task (TIER 5) in background thread."""
@@ -930,27 +1124,52 @@ class MultiStrategyBot:
         logger.info("=" * 60)
 
     def _reconcile_exchange_positions(self):
-        """Restore open positions from Hyperliquid on startup."""
-        logger.info("=" * 60)
-        logger.info("POSITION RECONCILIATION")
-        logger.info("=" * 60)
+        """Full auto-recovery: load persisted state, reconcile with exchange."""
         try:
-            count = reconcile_positions(
+            recovery_result = startup_recovery(
                 pos_mgr=self.pos_mgr,
                 exchanges=self.fetcher._exchanges,
                 last_prices=self._last_prices,
                 risk_mgr=self.risk_mgr,
             )
-            if count > 0:
-                logger.info(f"Reconciled {count} open positions from Hyperliquid")
+            self._skip_stale_signals = recovery_result.get("skip_stale_signals", False)
+            total = (
+                recovery_result.get("positions_loaded_from_disk", 0)
+                + recovery_result.get("positions_reconciled_from_exchange", 0)
+            )
+            if total > 0:
+                downtime_s = recovery_result.get("downtime_seconds", 0)
+                phantoms = recovery_result.get("phantoms_closed", [])
                 self.alerts.send_market_update(
-                    f"[STARTUP] Reconciled {count} open position(s) from Hyperliquid"
+                    f"[STARTUP] Auto-recovery: {total} position(s) restored "
+                    f"(downtime: {downtime_s:.0f}s, "
+                    f"phantoms: {len(phantoms)})"
                 )
-            else:
-                logger.info("No open positions to reconcile")
+                # Enhanced Telegram restart alert
+                try:
+                    self.telegram_bridge.send_bot_restart(
+                        downtime_seconds=downtime_s,
+                        positions_reconciled=total,
+                        phantoms_closed=len(phantoms),
+                    )
+                except Exception:
+                    pass
         except Exception as e:
-            logger.warning(f"Position reconciliation failed: {e}")
-        logger.info("=" * 60)
+            logger.warning(f"Auto-recovery failed, falling back to basic reconciliation: {e}")
+            # Fallback to original reconciliation
+            try:
+                count = reconcile_positions(
+                    pos_mgr=self.pos_mgr,
+                    exchanges=self.fetcher._exchanges,
+                    last_prices=self._last_prices,
+                    risk_mgr=self.risk_mgr,
+                )
+                if count > 0:
+                    self.alerts.send_market_update(
+                        f"[STARTUP] Reconciled {count} open position(s) from Hyperliquid"
+                    )
+            except Exception as e2:
+                logger.warning(f"Position reconciliation also failed: {e2}")
 
     def run(self):
         """Main run loop."""
@@ -1051,12 +1270,67 @@ class MultiStrategyBot:
         signal.signal(signal.SIGINT, self._handle_signal)
         signal.signal(signal.SIGTERM, self._handle_signal)
 
+        _consecutive_failures = 0
+        _MAX_CONSECUTIVE_FAILURES = 3
+
         while not self.stop_event.is_set():
             try:
                 self._tick_once()
+                _consecutive_failures = 0  # Reset on success
             except Exception as e:
-                logger.error(f"Error in main loop: {e}", exc_info=True)
+                _consecutive_failures += 1
+                logger.error(
+                    f"Error in main loop (failure {_consecutive_failures}/{_MAX_CONSECUTIVE_FAILURES}): {e}",
+                    exc_info=True,
+                )
                 self.watchdog.record_error()
+
+                # Save heartbeat with error status so external watchdog sees it
+                try:
+                    import json as _json
+                    _hb_path = os.path.join("data", "heartbeat.json")
+                    os.makedirs("data", exist_ok=True)
+                    _hb_data = {
+                        "last_alive": datetime.now(timezone.utc).isoformat(),
+                        "pid": os.getpid(),
+                        "status": "error",
+                        "error": str(e)[:200],
+                        "consecutive_failures": _consecutive_failures,
+                    }
+                    with open(_hb_path, "w") as _hbf:
+                        _json.dump(_hb_data, _hbf)
+                except Exception:
+                    pass
+
+                # After N consecutive tick failures, trigger graceful shutdown
+                if _consecutive_failures >= _MAX_CONSECUTIVE_FAILURES:
+                    logger.critical(
+                        f"FATAL: {_MAX_CONSECUTIVE_FAILURES} consecutive tick failures. "
+                        f"Initiating graceful shutdown to prevent crash loop."
+                    )
+                    log_health_event(
+                        "FATAL_SHUTDOWN", "CRITICAL",
+                        f"{_MAX_CONSECUTIVE_FAILURES} consecutive tick failures: {e}"
+                    )
+                    # Save position state before shutdown
+                    try:
+                        save_position_state(self.pos_mgr)
+                        logger.info("[SHUTDOWN] Position state saved")
+                    except Exception as _pe:
+                        logger.error(f"[SHUTDOWN] Failed to save position state: {_pe}")
+                    # Alert via Telegram
+                    if self.alerts:
+                        try:
+                            self.alerts.send_trade_event(
+                                "EMERGENCY", "ALL",
+                                f"Bot shutting down: {_MAX_CONSECUTIVE_FAILURES} consecutive failures.\n"
+                                f"Last error: {str(e)[:200]}\n"
+                                f"Open positions: {self.pos_mgr.get_open_count()}"
+                            )
+                        except Exception:
+                            pass
+                    self.stop_event.set()
+                    break
 
             self._tick += 1
 
@@ -1259,6 +1533,95 @@ class MultiStrategyBot:
                     )
             except Exception as _sim_err:
                 logger.warning(f"[SIM] Error checking positions: {_sim_err}")
+
+        # ── Anticipatory Entry Engine: scan for setups + check pending triggers ──
+        if self._anticipation_engine is not None and hasattr(self, '_last_prices') and self._last_prices:
+            try:
+                # 1. Scan all symbols for new anticipatory setups
+                _default_syms = getattr(self, '_default_symbols', None)
+                if _default_syms is None:
+                    from trading_config import DEFAULT_SYMBOLS as _default_syms
+                for _ant_sym in self.config.symbols:
+                    _ant_cfg = _default_syms.get(_ant_sym) if _default_syms else None
+                    if _ant_cfg:
+                        _ant_1h = None
+                        _ant_5m = None
+                        try:
+                            _ant_1h = self.fetcher.fetch_ohlcv(_ant_sym, _ant_cfg.coingecko_id, "1h")
+                        except Exception:
+                            pass
+                        try:
+                            _ant_5m = self.fetcher.fetch_ohlcv(_ant_sym, _ant_cfg.coingecko_id, "5m")
+                        except Exception:
+                            pass
+                        if _ant_1h is not None and not _ant_1h.empty:
+                            self._anticipation_engine.scan_for_setups(_ant_sym, _ant_1h, _ant_5m)
+
+                # 2. Build indicators dict for trigger checking
+                _ant_indicators = {}
+                for _ant_sym in self.config.symbols:
+                    _ant_cfg = _default_syms.get(_ant_sym) if _default_syms else None
+                    if _ant_cfg:
+                        try:
+                            _ant_df = self.fetcher.fetch_ohlcv(_ant_sym, _ant_cfg.coingecko_id, "1h")
+                            if _ant_df is not None and not _ant_df.empty:
+                                from manual.anticipatory_entries import _compute_indicators
+                                _ant_indicators[_ant_sym] = _compute_indicators(_ant_df)
+                        except Exception:
+                            pass
+
+                # 3. Check pending entries for triggers
+                _ant_triggered = self._anticipation_engine.check_pending_entries(
+                    self._last_prices, _ant_indicators
+                )
+                for _ant_entry in _ant_triggered:
+                    try:
+                        _ant_price = self._last_prices.get(_ant_entry.symbol, _ant_entry.target_price)
+                        _ant_vol_ratio = _ant_indicators.get(_ant_entry.symbol, {}).get("vol_ratio", 0.0)
+                        _ant_signal = self._anticipation_engine.pending_to_signal(_ant_entry, _ant_price, vol_ratio=_ant_vol_ratio)
+                        if _ant_signal and _ant_signal.is_valid:
+                            # Route through sniper filter
+                            _ant_sniper = self._manual_sniper.evaluate(_ant_signal)
+                            if _ant_sniper is not None:
+                                logger.info(
+                                    f"[ANTICIPATE-EXEC] {_ant_entry.symbol} {_ant_entry.side} "
+                                    f"{_ant_entry.setup_type} @ ${_ant_price:.2f} "
+                                    f"R:R={_ant_entry.rr_ratio:.1f} lev={_ant_entry.leverage:.0f}x"
+                                )
+                                if self._sniper_simulator is not None:
+                                    _sim_pos = self._sniper_simulator.on_signal(_ant_sniper)
+                                    if _sim_pos:
+                                        logger.info(
+                                            f"[SIM] Anticipatory opened {_sim_pos.trade_id} "
+                                            f"{_sim_pos.symbol} {_sim_pos.side} "
+                                            f"R:R={_ant_entry.rr_ratio:.1f}"
+                                        )
+                                # Auto-execute if enabled
+                                if self._sniper_auto_execute and _ant_sniper.tier in ("SNIPER", "PREMIUM"):
+                                    try:
+                                        self._execute_sniper_signal(_ant_sniper, _ant_entry.symbol, _ant_price)
+                                    except Exception as _sae_err:
+                                        logger.error(f"[ANTICIPATE-EXEC] Error executing: {_sae_err}")
+                            else:
+                                logger.debug(
+                                    f"[ANTICIPATE] {_ant_entry.symbol} {_ant_entry.side} "
+                                    f"triggered but rejected by sniper filter"
+                                )
+                    except Exception as _ant_inner:
+                        logger.warning(f"[ANTICIPATE] Error processing triggered entry: {_ant_inner}")
+
+                # Log status periodically (every 10 ticks)
+                if self._tick % 10 == 0:
+                    _ant_status = self._anticipation_engine.get_status()
+                    if _ant_status["active_pending"] > 0:
+                        logger.info(
+                            f"[ANTICIPATE] Status: {_ant_status['active_pending']} pending, "
+                            f"{_ant_status['total_triggered']} triggered, "
+                            f"{_ant_status['total_expired']} expired, "
+                            f"trigger_rate={_ant_status['trigger_rate']:.0f}%"
+                        )
+            except Exception as _ant_err:
+                logger.debug(f"[ANTICIPATE] Engine error (non-fatal): {_ant_err}")
 
         # ── Trade rotation evaluation ──
         # Check if any open position should be rotated into a better signal
@@ -1481,6 +1844,10 @@ class MultiStrategyBot:
         if self._tick % 15 == 0 and self._tick % 60 != 0:
             self._send_market_update(trace_id)
 
+        # Quant brain market intel to Telegram every 30 ticks (~30 min)
+        if self._tick % 30 == 0 and self._tick > 0:
+            self._send_quant_intel()
+
         # Evolution tracker: daily strategy evolution report (~1440 ticks at 60s = 24h)
         if self._tick % 1440 == 0 and self._tick > 0:
             try:
@@ -1502,6 +1869,7 @@ class MultiStrategyBot:
                             by_strategy=_dr_ds.get("by_strategy"),
                         )
                         self.alerts.send_market_update(_dr_msg)
+                        self.alerts.send_telegram_important(_dr_msg)
                     except Exception:
                         # Fallback to simple
                         summary = (
@@ -1511,6 +1879,30 @@ class MultiStrategyBot:
                             f"Net PnL: ${report.net_pnl:+.2f}"
                         )
                         self.alerts.send_market_update(summary)
+                        self.alerts.send_telegram_important(summary)
+
+                    # Enhanced bridge daily summary with best/worst trade
+                    try:
+                        _wins = _dr_ds.get("wins", 0) if isinstance(_dr_ds, dict) else 0
+                        _best = None
+                        _worst = None
+                        _by_sym = _dr_ds.get("by_symbol", {}) if isinstance(_dr_ds, dict) else {}
+                        if _by_sym:
+                            _sorted_syms = sorted(_by_sym.items(), key=lambda x: x[1].get("pnl", 0), reverse=True)
+                            if _sorted_syms:
+                                _best = {"symbol": _sorted_syms[0][0], "pnl": _sorted_syms[0][1].get("pnl", 0)}
+                            if len(_sorted_syms) > 1:
+                                _worst = {"symbol": _sorted_syms[-1][0], "pnl": _sorted_syms[-1][1].get("pnl", 0)}
+                        self.telegram_bridge.send_daily_summary(
+                            total_trades=report.total_trades,
+                            wins=_wins,
+                            net_pnl=report.net_pnl,
+                            best_trade=_best,
+                            worst_trade=_worst,
+                            active_positions=len(self.pos_mgr.get_open_positions()),
+                        )
+                    except Exception:
+                        pass
 
                     # Aggregate daily performance into SQLite
                     update_daily_performance(_dr_date)
@@ -1852,6 +2244,19 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"[{trace_id}] A/B test evaluation error: {e}")
 
+        # ── Heartbeat + position state persistence ──
+        # Save heartbeat every tick for downtime detection on restart
+        try:
+            save_heartbeat()
+        except Exception:
+            pass
+        # Save position state every 5 ticks for crash recovery
+        if self._tick % 5 == 0:
+            try:
+                save_position_state(self.pos_mgr)
+            except Exception:
+                pass
+
         # ── Circuit breaker state persistence ──
         # Save CB state every 10 ticks so it survives restarts during drawdowns
         if self._tick % 10 == 0:
@@ -2008,6 +2413,38 @@ class MultiStrategyBot:
                 logger.warning(f"[{symbol}] PRICE REJECTED: {err}")
                 return
         self._last_prices[symbol] = current_price
+
+        # Feed cross-asset lead-lag monitor with BTC prices
+        if self._cross_asset_monitor is not None and symbol == "BTC":
+            try:
+                sol_price = self._last_prices.get("SOL", 0)
+                eth_price = self._last_prices.get("ETH", 0)
+                _ca_result = self._cross_asset_monitor.check_btc_lead(
+                    [current_price], sol_price, eth_price
+                )
+                if _ca_result.get("alert"):
+                    _ca_msg = (
+                        f"BTC LEAD-LAG ALERT: BTC moved {_ca_result['btc_move_pct']:+.2f}% | "
+                        f"Expected SOL {_ca_result['expected_sol_move']:+.2f}%, "
+                        f"ETH {_ca_result['expected_eth_move']:+.2f}% | "
+                        f"Bias: {_ca_result['recommended_side']}"
+                    )
+                    logger.info(f"[CROSS-ASSET] {_ca_msg}")
+                    if self.alerts:
+                        self.alerts.send_market_intel(f"🔗 {_ca_msg}")
+            except Exception as _ca_err:
+                logger.debug(f"Cross-asset check error: {_ca_err}")
+
+        # Feed lead-lag boost engine with price data (BTC + followers)
+        if hasattr(self, '_lead_lag_engine') and self._lead_lag_engine is not None:
+            try:
+                base = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "")
+                if base == "BTC":
+                    self._lead_lag_engine.update_btc_price(current_price)
+                else:
+                    self._lead_lag_engine.update_follower_price(base, current_price)
+            except Exception:
+                pass
 
         # Feed correlation boost with price data
         if hasattr(self, '_correlation_boost') and self._correlation_boost is not None:
@@ -2205,6 +2642,47 @@ class MultiStrategyBot:
         if _fr:
             self.pos_mgr.accrue_funding(symbol, _fr)
 
+        # MFE-aware exit intelligence: check if we should take profit or cut early
+        if symbol in open_pos:
+            _mfe_pos = open_pos[symbol]
+            try:
+                from execution.mfe_exit import get_exit_recommendation
+                _hold_h = (time.time() - _mfe_pos.open_time.timestamp()) / 3600 if _mfe_pos.open_time else 0
+                _vol_ratio = data.get("1h", pd.DataFrame()).get("volume", pd.Series()).iloc[-1] / data.get("1h", pd.DataFrame()).get("volume", pd.Series()).rolling(20).mean().iloc[-1] if "1h" in data and len(data.get("1h", pd.DataFrame())) > 20 else 1.0
+                _mfe_rec = get_exit_recommendation(
+                    symbol=symbol,
+                    entry=_mfe_pos.entry,
+                    current_price=current_price,
+                    side=_mfe_pos.side,
+                    leverage=_mfe_pos.leverage,
+                    hold_hours=_hold_h,
+                    volume_ratio=_vol_ratio,
+                )
+                if _mfe_rec.action == "TAKE_PROFIT":
+                    logger.info(f"[{symbol}] MFE EXIT: TAKE_PROFIT — {_mfe_rec.reason}")
+                    self.pos_mgr.force_close(symbol, current_price, "MFE_TAKE_PROFIT")
+                    close_side = "SELL" if _mfe_pos.side == "LONG" else "BUY"
+                    self.order_executor.close_position(symbol, close_side, _mfe_pos.qty, current_price, "MFE_TAKE_PROFIT")
+                elif _mfe_rec.action == "EXIT_NOW":
+                    logger.info(f"[{symbol}] MFE EXIT: EXIT_NOW — {_mfe_rec.reason}")
+                    self.pos_mgr.force_close(symbol, current_price, "MFE_EXIT_NOW")
+                    close_side = "SELL" if _mfe_pos.side == "LONG" else "BUY"
+                    self.order_executor.close_position(symbol, close_side, _mfe_pos.qty, current_price, "MFE_EXIT_NOW")
+                elif _mfe_rec.action == "TIGHTEN_STOP":
+                    # Move SL closer to lock in gains
+                    if _mfe_pos.side == "LONG":
+                        _new_sl = current_price * 0.997  # 0.3% trailing
+                        if _new_sl > _mfe_pos.sl:
+                            _mfe_pos.sl = _new_sl
+                            logger.info(f"[{symbol}] MFE: Tightened SL to ${_new_sl:.2f} — {_mfe_rec.reason}")
+                    else:
+                        _new_sl = current_price * 1.003
+                        if _new_sl < _mfe_pos.sl:
+                            _mfe_pos.sl = _new_sl
+                            logger.info(f"[{symbol}] MFE: Tightened SL to ${_new_sl:.2f} — {_mfe_rec.reason}")
+            except Exception as _mfe_err:
+                logger.debug(f"[{symbol}] MFE exit check error: {_mfe_err}")
+
         # Update existing positions (pass 5m data for early exit momentum detection)
         df_5m = data.get("5m")
         events = self.pos_mgr.update_price(symbol, current_price, df_5m=df_5m)
@@ -2268,6 +2746,13 @@ class MultiStrategyBot:
                     win=total_pnl > 0,
                 )
 
+                # Record outcome for Quant Brain chase prevention
+                if self._quant_brain is not None:
+                    try:
+                        self._quant_brain.record_outcome(symbol, total_pnl > 0)
+                    except Exception:
+                        pass
+
             # Log trade event (paper trading compatibility)
             if self.trade_logger:
                 hold_time = event.metadata.get("hold_time_s", 0)
@@ -2284,6 +2769,12 @@ class MultiStrategyBot:
                     _et_fb = pos.trade_profile.entry_type
                     _pd_fb = pos.trade_profile.primary_driver
                     _rg_fb = pos.trade_profile.regime
+                # Record outcome for regime-aware strategy weighting auto-tuning
+                if getattr(self, '_regime_strategy_weighter', None) is not None and _rg_fb and event.strategy:
+                    try:
+                        self._regime_strategy_weighter.record_outcome(_rg_fb, event.strategy, total_pnl > 0)
+                    except Exception:
+                        pass
                 # Extract LLM decision data from position's entry_reasons
                 _llm_action = pos.entry_reasons.get("llm_action", "") if pos and pos.entry_reasons else ""
                 _llm_conf = pos.entry_reasons.get("llm_confidence", 0.0) if pos and pos.entry_reasons else 0.0
@@ -2760,6 +3251,14 @@ class MultiStrategyBot:
             _total_pnl_alert = pos.realized_pnl if pos else event.pnl
             _hold_time_alert = event.metadata.get("hold_time_s", 0)
             try:
+                _ds = self.risk_mgr.daily_summary() if hasattr(self.risk_mgr, 'daily_summary') else {}
+                # Extract trade quality data for diagnosis
+                _entry_reasons = {}
+                if pos and hasattr(pos, 'entry_reasons'):
+                    try:
+                        _entry_reasons = json.loads(pos.entry_reasons) if isinstance(pos.entry_reasons, str) else (pos.entry_reasons or {})
+                    except (json.JSONDecodeError, TypeError):
+                        _entry_reasons = {}
                 _enhanced_msg = format_trade_event_telegram(
                     action=event.action,
                     symbol=symbol,
@@ -2771,6 +3270,18 @@ class MultiStrategyBot:
                     hold_time_s=_hold_time_alert,
                     strategy=event.strategy or "",
                     equity=self.risk_mgr.equity,
+                    daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl if hasattr(self.risk_mgr, 'circuit_breaker') else 0,
+                    daily_trades=_ds.get("total_trades", 0) if isinstance(_ds, dict) else 0,
+                    daily_wins=_ds.get("wins", 0) if isinstance(_ds, dict) else 0,
+                    entry_price=pos.entry if pos else 0,
+                    original_sl=pos.original_sl if pos and hasattr(pos, 'original_sl') else 0,
+                    confidence=pos.confidence if pos else 0,
+                    num_agree=_entry_reasons.get("num_agree", 0),
+                    ev_per_dollar=_entry_reasons.get("ev_per_dollar", 0),
+                    regime=_entry_reasons.get("regime", ""),
+                    tp1_hit="TP1" in (pos.state_path_str if pos and hasattr(pos, 'state_path_str') else ""),
+                    tp1_price=pos.tp1 if pos and hasattr(pos, 'tp1') else 0,
+                    max_favorable_pct=pos.max_favorable_pct if pos and hasattr(pos, 'max_favorable_pct') else 0,
                 )
                 self.alerts.send_trade_event(event.action, symbol, _enhanced_msg)
             except Exception:
@@ -2787,6 +3298,17 @@ class MultiStrategyBot:
             if not self.risk_mgr.circuit_breaker.is_trading_allowed():
                 reason = self.risk_mgr.circuit_breaker.trip_reason
                 self.alerts.send_circuit_breaker(reason)
+                # Enhanced Telegram alert with full CB details
+                try:
+                    cb = self.risk_mgr.circuit_breaker
+                    self.telegram_bridge.send_circuit_breaker(
+                        reason=reason,
+                        daily_pnl=cb.daily_pnl,
+                        consecutive_losses=cb.consecutive_losses,
+                        cooldown_minutes=cb.cooldown_minutes,
+                    )
+                except Exception:
+                    pass
 
         # Check leverage liquidation risk on open positions
         open_pos = self.pos_mgr.get_open_positions()
@@ -2794,7 +3316,8 @@ class MultiStrategyBot:
             pos = open_pos[symbol]
             if pos.leverage > 1.0:
                 liq_check = self.leverage_mgr.check_liquidation_risk(
-                    pos.entry, current_price, pos.side, pos.leverage
+                    pos.entry, current_price, pos.side, pos.leverage,
+                    safety_buffer=0.03,  # 3% — match the other liq check, not 15% default
                 )
                 if liq_check["at_risk"]:
                     logger.warning(f"[{symbol}] LIQUIDATION RISK: {liq_check}")
@@ -2973,8 +3496,32 @@ class MultiStrategyBot:
         # The sniper has its own proven-setup gates and can trade what the bot sits out on.
         if self._manual_sniper is not None:
             _raw_sigs = getattr(self.ensemble, '_last_raw_signals', {}).get(symbol, [])
+            # Inject funding rate into raw signal metadata for quant brain + sniper.
+            # Funding is a structural edge signal that most retail ignores.
+            _fr_for_sniper = self._last_funding_rates.get(symbol)
             for _raw_sig in _raw_sigs:
+                if _fr_for_sniper is not None:
+                    _sig_meta = getattr(_raw_sig, 'metadata', None)
+                    if _sig_meta is None:
+                        _raw_sig.metadata = {}
+                        _sig_meta = _raw_sig.metadata
+                    if isinstance(_sig_meta, dict):
+                        _sig_meta["funding_rate"] = _fr_for_sniper
                 try:
+                    # Quant Brain pre-filter for sniper signals
+                    if self._quant_brain is not None:
+                        try:
+                            _qb_sniper = self._quant_brain.evaluate_signal(_raw_sig)
+                            if _qb_sniper.action in ("veto", "skip"):
+                                logger.debug(
+                                    f"[SNIPER-QB] {_raw_sig.symbol} {_raw_sig.side} "
+                                    f"blocked by QuantBrain: {_qb_sniper.action} — "
+                                    f"{_qb_sniper.reasoning}"
+                                )
+                                continue  # Skip this raw signal for sniper
+                        except Exception:
+                            pass  # Fail-open: let sniper evaluate if QB errors
+
                     _sniper_sig = self._manual_sniper.evaluate(_raw_sig, equity=self.risk_mgr.equity)
                     if _sniper_sig is not None:
                         if self._sniper_simulator is not None:
@@ -3006,40 +3553,118 @@ class MultiStrategyBot:
 
         # Also evaluate the consensus signal if it exists
         if signal_result is not None and self._manual_sniper is not None:
-            try:
-                _sniper_sig = self._manual_sniper.evaluate(
-                    signal_result, equity=self.risk_mgr.equity
-                )
-                if _sniper_sig is not None:
-                    if self._manual_alerter is not None:
-                        self._manual_alerter.send_sniper_alert(
-                            _sniper_sig, equity=self.risk_mgr.equity
+            # Quant Brain pre-filter for consensus sniper signal
+            _qb_consensus_pass = True
+            if self._quant_brain is not None:
+                try:
+                    _qb_consensus = self._quant_brain.evaluate_signal(signal_result)
+                    if _qb_consensus.action in ("veto", "skip"):
+                        logger.debug(
+                            f"[SNIPER-QB] {signal_result.symbol} consensus "
+                            f"blocked by QuantBrain: {_qb_consensus.action}"
                         )
-                    if self._sniper_simulator is not None:
+                        _qb_consensus_pass = False
+                except Exception:
+                    pass  # Fail-open
+
+            if _qb_consensus_pass:
+                try:
+                    _sniper_sig = self._manual_sniper.evaluate(
+                        signal_result, equity=self.risk_mgr.equity
+                    )
+                    if _sniper_sig is not None:
+                        if self._manual_alerter is not None:
+                            self._manual_alerter.send_sniper_alert(
+                                _sniper_sig, equity=self.risk_mgr.equity
+                            )
+                        if self._sniper_simulator is not None:
+                            try:
+                                _sim_pos = self._sniper_simulator.on_signal(_sniper_sig)
+                                if _sim_pos:
+                                    logger.info(
+                                        f"[SIM] Opened {_sim_pos.trade_id} {_sim_pos.symbol} "
+                                        f"{_sim_pos.side} @ ${_sim_pos.entry:.2f} "
+                                        f"size=${_sim_pos.position_size_usd:.2f}"
+                                    )
+                            except Exception as _sim_err:
+                                logger.warning(f"[SIM] Error on signal: {_sim_err}")
+                        # Signal Value Tracker
+                        if hasattr(self, '_signal_tracker') and self._signal_tracker is not None:
+                            try:
+                                self._signal_tracker.record_signal(_sniper_sig)
+                            except Exception:
+                                pass
+                        # Sniper Auto-Execute
+                        if self._sniper_auto_execute and _sniper_sig.tier in ("SNIPER", "PREMIUM"):
+                            try:
+                                self._execute_sniper_signal(_sniper_sig, symbol, current_price)
+                            except Exception as _sae_err:
+                                logger.error(f"[SNIPER-EXEC] Error executing {symbol}: {_sae_err}")
+                except Exception as _sniper_err:
+                    logger.warning(f"[SNIPER-EARLY] Error evaluating {symbol}: {_sniper_err}")
+
+        # ── TIER 3b: Quant Brain Signal Generation ──
+        # The quant brain doesn't just filter — it FINDS opportunities using
+        # research-validated setups (mean reversion, divergence, squeeze breakout)
+        # that individual strategies may miss. Feeds directly to sniper/sim.
+        if self._quant_brain is not None and self._manual_sniper is not None:
+            try:
+                _default_syms = getattr(self, '_default_symbols', None)
+                if _default_syms is None:
+                    from config import DEFAULT_SYMBOLS as _default_syms
+                for _qb_sym in self.config.symbols:
+                    _qb_data = {}
+                    _qb_cfg = _default_syms.get(_qb_sym) if _default_syms else None
+                    if _qb_cfg:
+                        for _qb_tf in ["1h", "6h"]:
+                            try:
+                                _qb_df = self.fetcher.fetch_ohlcv(_qb_sym, _qb_cfg.coingecko_id, _qb_tf)
+                                if _qb_df is not None and not _qb_df.empty:
+                                    _qb_data[_qb_tf] = _qb_df
+                            except Exception:
+                                pass
+                    if not _qb_data:
+                        continue
+                    _qb_signals = self._quant_brain.generate_signals(_qb_sym, _qb_data)
+                    for _qb_sig_dict in _qb_signals:
                         try:
-                            _sim_pos = self._sniper_simulator.on_signal(_sniper_sig)
-                            if _sim_pos:
+                            from strategies.base import Signal
+                            _qb_signal = Signal(
+                                strategy=f"quant_brain_{_qb_sig_dict['type']}",
+                                symbol=_qb_sig_dict["symbol"],
+                                side=_qb_sig_dict["side"],
+                                confidence=_qb_sig_dict["confidence"],
+                                entry=_qb_sig_dict["entry"],
+                                sl=_qb_sig_dict["sl"],
+                                tp1=_qb_sig_dict["tp1"],
+                                tp2=_qb_sig_dict.get("tp2", _qb_sig_dict["tp1"]),
+                                atr=_qb_sig_dict.get("atr", 0),
+                                metadata={
+                                    "num_agree": 1,
+                                    "strategies_agree": [f"quant_brain_{_qb_sig_dict['type']}"],
+                                    "regime": "quant_brain",
+                                    "quant_brain_generated": True,
+                                    "reasoning": _qb_sig_dict.get("reasoning", ""),
+                                },
+                            )
+                            _qb_sniper = self._manual_sniper.evaluate(_qb_signal)
+                            if _qb_sniper is not None:
                                 logger.info(
-                                    f"[SIM] Opened {_sim_pos.trade_id} {_sim_pos.symbol} "
-                                    f"{_sim_pos.side} @ ${_sim_pos.entry:.2f} "
-                                    f"size=${_sim_pos.position_size_usd:.2f}"
+                                    f"[QUANT-BRAIN-GEN] {_qb_sig_dict['symbol']} {_qb_sig_dict['side']} "
+                                    f"{_qb_sig_dict['type']} conf={_qb_sig_dict['confidence']}% "
+                                    f"lev={_qb_sig_dict.get('leverage_suggestion', '?')}x"
                                 )
-                        except Exception as _sim_err:
-                            logger.warning(f"[SIM] Error on signal: {_sim_err}")
-                    # Signal Value Tracker
-                    if hasattr(self, '_signal_tracker') and self._signal_tracker is not None:
-                        try:
-                            self._signal_tracker.record_signal(_sniper_sig)
-                        except Exception:
-                            pass
-                    # Sniper Auto-Execute
-                    if self._sniper_auto_execute and _sniper_sig.tier in ("SNIPER", "PREMIUM"):
-                        try:
-                            self._execute_sniper_signal(_sniper_sig, symbol, current_price)
-                        except Exception as _sae_err:
-                            logger.error(f"[SNIPER-EXEC] Error executing {symbol}: {_sae_err}")
-            except Exception as _sniper_err:
-                logger.warning(f"[SNIPER-EARLY] Error evaluating {symbol}: {_sniper_err}")
+                                if self._sniper_simulator is not None:
+                                    _sim_pos = self._sniper_simulator.on_signal(_qb_sniper)
+                                    if _sim_pos:
+                                        logger.info(
+                                            f"[SIM] Quant brain opened {_sim_pos.trade_id} "
+                                            f"{_sim_pos.symbol} {_sim_pos.side}"
+                                        )
+                        except Exception as _qb_inner:
+                            logger.debug(f"[QUANT-BRAIN-GEN] Error: {_qb_inner}")
+            except Exception as _qb_err:
+                logger.debug(f"[QUANT-BRAIN-GEN] Scan error: {_qb_err}")
 
         # ── TIER 4: Mechanical Bot Instrumentation (Signal Generation Hook) ──
         # Record signal generation with full market context for perception system
@@ -3093,12 +3718,12 @@ class MultiStrategyBot:
                     gating_result = gater.gate_signal(signal_result, regime)
                     if not gating_result.approved:
                         logger.info(
-                            f"[{symbol}] Signal rejected by regime floor: "
+                            f"[{symbol}] Regime floor would reject (bypassed): "
                             f"confidence={gating_result.signal_confidence:.0f}% < "
                             f"floor={gating_result.floor_applied:.0f}% "
                             f"(regime={regime})"
                         )
-                        signal_result = None  # Reject the signal
+                        # Aggressive mode: don't reject, let it through
             except Exception as e:
                 logger.debug(f"[{symbol}] Regime floor gating error: {e}")
                 # If gating fails, allow signal to proceed (fail-safe)
@@ -3144,6 +3769,77 @@ class MultiStrategyBot:
                 if signal_result:
                     last_snap.ensemble_direction = signal_result.side
                     last_snap.ensemble_confidence = signal_result.confidence
+
+        if signal_result is None:
+            return
+
+        # ── QUANT BRAIN PRE-FILTER (zero-cost, runs before all expensive gates) ──
+        if self._quant_brain is not None:
+            try:
+                # Build market_data from available data
+                _qb_market = {}
+                _1h = data.get("1h")
+                if _1h is not None and not _1h.empty and len(_1h) > 20:
+                    _qb_market["rsi"] = float(_1h["close"].diff().apply(
+                        lambda x: max(x, 0)).rolling(14).mean().iloc[-1] / max(
+                        _1h["close"].diff().abs().rolling(14).mean().iloc[-1], 1e-9) * 100
+                    ) if len(_1h) > 14 else None
+                    _qb_market["ema20"] = float(_1h["close"].ewm(span=20).mean().iloc[-1])
+                    _qb_market["ema50"] = float(_1h["close"].ewm(span=50).mean().iloc[-1]) if len(_1h) > 50 else None
+                    _qb_market["volume_ratio"] = float(
+                        _1h["volume"].iloc[-1] / max(_1h["volume"].rolling(20).mean().iloc[-1], 1e-9)
+                    ) if "volume" in _1h.columns else None
+
+                _qb_decision = self._quant_brain.evaluate_signal(signal_result, _qb_market)
+
+                if _qb_decision.action == "veto":
+                    logger.info(
+                        f"[{trace_id}][{symbol}] QuantBrain VETO: {_qb_decision.reasoning}"
+                    )
+                    log_rejection(symbol, "quant_brain_veto",
+                                  confidence=signal_result.confidence,
+                                  reason=_qb_decision.reasoning)
+                    if self._missed_trade_tracker is not None:
+                        try:
+                            self._missed_trade_tracker.record_rejection(
+                                signal=signal_result,
+                                reason=f"quant_brain_veto: {_qb_decision.reasoning}",
+                                gate="quant_brain",
+                            )
+                        except Exception:
+                            pass
+                    signal_result = None
+                elif _qb_decision.action == "skip":
+                    logger.info(
+                        f"[{trace_id}][{symbol}] QuantBrain SKIP: {_qb_decision.reasoning}"
+                    )
+                    log_rejection(symbol, "quant_brain_skip",
+                                  confidence=signal_result.confidence,
+                                  reason=_qb_decision.reasoning)
+                    signal_result = None
+                elif _qb_decision.action == "go":
+                    # Apply confidence adjustment from quant brain
+                    if _qb_decision.confidence_adj and _qb_decision.confidence_adj != 1.0:
+                        _original_conf = signal_result.confidence
+                        signal_result.confidence = max(1.0, min(100.0,
+                            signal_result.confidence * _qb_decision.confidence_adj
+                        ))
+                        logger.debug(
+                            f"[{trace_id}][{symbol}] QuantBrain conf adj: "
+                            f"{_original_conf:.0f} -> {signal_result.confidence:.0f} "
+                            f"(x{_qb_decision.confidence_adj:.2f})"
+                        )
+                    # Store quant brain metadata for downstream use
+                    if hasattr(signal_result, 'metadata') and signal_result.metadata is not None:
+                        signal_result.metadata["quant_brain"] = {
+                            "regime": _qb_decision.regime,
+                            "sizing_tier": _qb_decision.sizing.tier,
+                            "risk_mult": _qb_decision.sizing.risk_multiplier,
+                            "reasoning": _qb_decision.reasoning,
+                        }
+            except Exception as _qb_err:
+                logger.debug(f"[{trace_id}][{symbol}] QuantBrain error (non-fatal): {_qb_err}")
+                # Fail-open: if quant brain errors, let signal proceed
 
         if signal_result is None:
             return
@@ -3453,8 +4149,8 @@ class MultiStrategyBot:
                         logger.debug(f"Signal override feedback error: {e}")
 
                 if not _override_ok:
-                    logger.info(f"[{trace_id}][{symbol}] Feedback floor: {fb_reason}")
-                    return
+                    logger.info(f"[{trace_id}][{symbol}] Feedback floor bypassed (aggressive): {fb_reason}")
+                    # Aggressive mode: don't return, let it through
         except Exception as e:
             logger.warning(f"[{trace_id}][{symbol}] Feedback loop error (proceeding): {e}")
 
@@ -3577,9 +4273,8 @@ class MultiStrategyBot:
                 portfolio_risk_engine=self.portfolio_risk if hasattr(self, 'portfolio_risk') else None,
             )
             if not _chain_result.approved:
-                log_rejection(symbol, "risk_filter_chain",
-                              confidence=signal_result.confidence,
-                              reason=_chain_result.rejection_reason)
+                log_rejection(symbol, f"risk_filter_chain: {_chain_result.rejection_reason}",
+                              confidence=signal_result.confidence)
                 logger.info(
                     f"[{trace_id}][{symbol}] RiskFilterChain rejected: "
                     f"{_chain_result.rejection_reason}"
@@ -3958,13 +4653,24 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"Portfolio risk limit error: {e}")
 
-        # Time-aware sizing: reduce during weekends / low-liquidity hours
-        time_mult = get_time_multiplier()
-        if time_mult < 1.0:
-            qty = qty * time_mult
-            logger.info(
-                f"[{trace_id}][{symbol}] Time sizing: qty * {time_mult:.2f} = {qty:.6f}"
+        # Time-aware sizing: adjust based on hour-of-day + day-of-week + directional bias
+        if getattr(self.config, "enable_time_sizing", True):
+            _time_info = get_full_time_multiplier(
+                side=side,
+                allow_boost=getattr(self.config, "time_sizing_allow_boost", True),
+                max_boost=getattr(self.config, "time_sizing_max_boost", 1.4),
+                directional_boost=getattr(self.config, "time_sizing_directional_boost", 1.15),
+                directional_penalty=getattr(self.config, "time_sizing_directional_penalty", 0.85),
             )
+            time_mult = _time_info["multiplier"]
+            if time_mult != 1.0:
+                qty = qty * time_mult
+                _reasons = ", ".join(_time_info["reasons"]) if _time_info["reasons"] else ""
+                logger.info(
+                    f"[{trace_id}][{symbol}] Time sizing: qty * {time_mult:.3f} "
+                    f"(session={_time_info['session']}, bias={_time_info['bias']}, "
+                    f"{_reasons}) = {qty:.6f}"
+                )
 
         # Liquidity guard sizing (applied after all other multipliers)
         if _liq_size_mult < 1.0:
@@ -3974,12 +4680,11 @@ class MultiStrategyBot:
                 f"qty * {_liq_size_mult:.2f} = {qty:.6f}"
             )
 
-        # Enforce minimum order size
+        # Enforce minimum order size — bump up to min instead of rejecting
         min_q = get_min_qty(symbol)
         if qty < min_q:
-            log_rejection(symbol, "BELOW_MIN_QTY", confidence=signal_result.confidence)
-            logger.info(f"[{trace_id}][{symbol}] Rejected: qty {qty} < min {min_q}")
-            return
+            logger.info(f"[{trace_id}][{symbol}] Qty {qty:.6f} < min {min_q} — bumping to min (aggressive mode)")
+            qty = min_q
 
         # ── Trade Classification Layer ──
         # Classify trade -> TradeProfile (drives exits, TP1%, trailing)
@@ -4031,6 +4736,46 @@ class MultiStrategyBot:
         adj_tp1 = adjusted["tp1"]
         adj_tp2 = adjusted["tp2"]
         tp1_pct = adjusted["tp1_close_pct"]
+
+        # ── Dynamic TP/SL optimization (MFE-based) ──
+        # Adjusts TP1/SL using per-symbol MFE data + regime/volume/time/ATR
+        if getattr(self.config, 'dynamic_tp_enabled', True):
+            try:
+                _vol_ratio = signal_result.metadata.get("volume_ratio", 1.0)
+                _regime = trade_prof.regime if trade_prof else "unknown"
+                # Compute ATR 75th percentile from 1h data if available
+                _atr_p75 = 0.0
+                _df_atr = data.get("1h") if data else None
+                if _df_atr is not None and hasattr(_df_atr, 'empty') and not _df_atr.empty and len(_df_atr) >= 20:
+                    try:
+                        import numpy as np
+                        _atr_col = _df_atr.get("atr")
+                        if _atr_col is not None:
+                            _atr_p75 = float(np.percentile(_atr_col.dropna().tail(100), 75))
+                    except Exception:
+                        pass
+
+                dtp_result = dynamic_tp_optimize(
+                    symbol=symbol,
+                    side=signal_result.side,
+                    entry=signal_result.entry,
+                    current_tp1=adj_tp1,
+                    current_sl=adj_sl,
+                    regime=_regime,
+                    volume_ratio=_vol_ratio,
+                    atr=signal_result.atr,
+                    atr_p75=_atr_p75,
+                )
+                if dtp_result.enabled:
+                    adj_tp1 = dtp_result.tp1
+                    adj_sl = dtp_result.sl
+                    logger.info(
+                        f"[{trace_id}][{symbol}] DynamicTP applied: "
+                        f"TP1={_fmt_price(adj_tp1)} SL={_fmt_price(adj_sl)} "
+                        f"({', '.join(dtp_result.adjustments[-1:])})"
+                    )
+            except Exception as e:
+                logger.warning(f"[{trace_id}][{symbol}] DynamicTP error (using profile levels): {e}")
 
         # Build entry reasons: WHY this trade was entered (for EV analysis)
         # LLM decision info will be populated later when candidate is built
@@ -4498,6 +5243,41 @@ class MultiStrategyBot:
             if adj_tp2 >= actual_entry:
                 adj_tp2 = actual_entry - signal_result.atr * 2.0 if signal_result.atr > 0 else actual_entry * 0.98
 
+        # MFE-based TP scaling — data-driven from 500+ candle analysis.
+        # Median 2h MFE by asset (how far price typically moves in our favor):
+        #   BTC: 0.38%, SOL: 0.51%, ETH: 0.44%, HYPE: 0.78%
+        # TP1 = median 2h MFE (reachable 50% of time)
+        # TP2 = p75 4h MFE (reachable 25% of time, bigger win)
+        # SL uses p75 2h MAE (only hit 25% of time)
+        _MFE_TP1 = {"BTC": 0.0038, "SOL": 0.0051, "ETH": 0.0044, "HYPE": 0.0078}
+        _MFE_TP2 = {"BTC": 0.0099, "SOL": 0.0134, "ETH": 0.0132, "HYPE": 0.0189}
+        _eff_lev = lev_decision.leverage if lev_decision.leverage > 0 else 1.0
+        if _eff_lev > 5.0 and symbol in _MFE_TP1:
+            _sl_dist = abs(actual_entry - adj_sl)
+            _mfe_tp1_dist = actual_entry * _MFE_TP1[symbol]
+            _mfe_tp2_dist = actual_entry * _MFE_TP2[symbol]
+            # Use the tighter of: MFE-based or leverage-compressed ATR-based
+            _atr_tp1_dist = abs(actual_entry - adj_tp1)
+            _atr_tp2_dist = abs(actual_entry - adj_tp2)
+            _new_tp1_dist = min(_mfe_tp1_dist, _atr_tp1_dist)
+            _new_tp2_dist = min(_mfe_tp2_dist, _atr_tp2_dist)
+            # Enforce minimum R:R of 1.0 vs SL
+            if _sl_dist > 0:
+                _new_tp1_dist = max(_new_tp1_dist, _sl_dist * 1.0)
+                _new_tp2_dist = max(_new_tp2_dist, _sl_dist * 2.0)
+            if side == "LONG":
+                adj_tp1 = actual_entry + _new_tp1_dist
+                adj_tp2 = actual_entry + _new_tp2_dist
+            else:
+                adj_tp1 = actual_entry - _new_tp1_dist
+                adj_tp2 = actual_entry - _new_tp2_dist
+            _rr = _new_tp1_dist / _sl_dist if _sl_dist > 0 else 0
+            logger.info(
+                f"[{symbol}] MFE-based TP for {_eff_lev:.0f}x: "
+                f"TP1 {_atr_tp1_dist:.2f}->{_new_tp1_dist:.2f} ({_new_tp1_dist/actual_entry*100:.2f}%) "
+                f"TP2 {_atr_tp2_dist:.2f}->{_new_tp2_dist:.2f} R:R={_rr:.1f}:1"
+            )
+
         # Recalculate qty with live entry price (stop distance may have changed)
         live_sl_dist = abs(actual_entry - adj_sl)
         snapshot_sl_dist = abs(snapshot_entry - (adj_sl - entry_shift))
@@ -4552,6 +5332,27 @@ class MultiStrategyBot:
                 _setup_type = _st[:30]
             except Exception:
                 pass
+
+        # Final duplicate position guard — last line of defense before order submission.
+        # Checks both position manager state AND ops guard to prevent the
+        # 9-BTC-SHORT-in-one-day bug where multiple code paths could open duplicates.
+        if self.pos_mgr.has_open_position(symbol):
+            logger.warning(
+                f"[{trace_id}][{symbol}] DUPLICATE BLOCKED at execution gate: "
+                f"position already exists. Aborting order."
+            )
+            return
+        _dup_check = self.ops_guard.check_duplicate_position(
+            symbol=symbol,
+            side=side,
+            open_positions=self.pos_mgr.get_open_positions(),
+        )
+        if not _dup_check["allowed"]:
+            logger.warning(
+                f"[{trace_id}][{symbol}] DUPLICATE BLOCKED by OpsGuard: "
+                f"{_dup_check['reason']}"
+            )
+            return
 
         # Submit order to exchange (paper=simulated, live=real)
         order_result = self.order_executor.open_position(
@@ -4655,6 +5456,10 @@ class MultiStrategyBot:
                 win_rate_symbol=_sym_wr,
                 win_rate_strategy=_strat_wr,
                 total_trades_symbol=_sym_trades,
+                ev_per_dollar=entry_reasons.get("ev_per_dollar", 0),
+                fee_drag_pct=entry_reasons.get("fee_drag_pct", 0),
+                setup_type=entry_reasons.get("primary_driver", ""),
+                solo_trade=signal_result.metadata.get("solo_trade", False),
             )
             # Send enhanced to Telegram, normal to Discord
             if self.alerts.telegram_token and self.alerts.telegram_chat_id:
@@ -4710,2489 +5515,23 @@ class MultiStrategyBot:
             except Exception as e:
                 logger.debug(f"Copy classifier error: {e}")
 
-    # ── Pending Limit Order Fills ─────────────────────────────────
 
-    def _execute_pending_fill(self, order, trace_id: str = ""):
-        """Execute a filled pending order by opening a position."""
-        from execution.precision import get_min_qty
 
-        symbol = order.symbol
-        side = order.side
 
-        # Check we can still open (circuit breaker, max positions, etc.)
-        if not self.risk_mgr.can_open_position(
-            symbol, side, self.pos_mgr.get_open_count(),
-            self.pos_mgr.get_open_positions(),
-        ):
-            logger.info(f"[{trace_id}][{symbol}] Pending fill blocked by risk manager")
-            return
 
-        # Already have a position in this symbol?
-        if symbol in self.pos_mgr.get_open_positions():
-            logger.info(f"[{trace_id}][{symbol}] Pending fill skipped — already in position")
-            return
 
-        qty = order.qty
-        min_q = get_min_qty(symbol)
-        if qty < min_q:
-            logger.info(f"[{trace_id}][{symbol}] Pending fill qty {qty} < min {min_q}")
-            return
 
-        # Determine TP1 close percentage from trade profile
-        tp1_pct = 0.7
-        if order.trade_profile:
-            exit_params = getattr(order.trade_profile, 'exit_params', None)
-            if exit_params:
-                tp1_pct = getattr(exit_params, 'tp1_close_pct', 0.7)
 
-        self.pos_mgr.open_position(
-            symbol=symbol,
-            side=side,
-            entry=order.entry_price,
-            qty=qty,
-            sl=order.sl,
-            tp1=order.tp1,
-            tp2=order.tp2,
-            atr=order.atr,
-            leverage=order.leverage,
-            mode="leverage" if order.leverage > 1 else "spot",
-            strategy=order.strategy,
-            confidence=order.confidence,
-            tp1_close_pct=tp1_pct,
-            entry_reasons=order.entry_reasons,
-            trade_profile=order.trade_profile,
-            notes=getattr(order, 'notes', ''),
-            setup_type=getattr(order, 'setup_type', ''),
-        )
 
-        log_trade(
-            symbol=symbol,
-            action="OPEN",
-            side=side,
-            price=order.entry_price,
-            qty=qty,
-            leverage=order.leverage,
-            strategy=order.strategy,
-            metadata={
-                "confidence": order.confidence,
-                "order_type": "limit",
-                "pending_wait_s": round(order.age_s, 1),
-                "order_id": order.order_id,
-            }
-        )
 
-        Telemetry.inc("total_trades")
-        Telemetry.inc("limit_order_fills")
-        self.ops_guard.record_trade()
 
-        # Clear the slippage cooldown since we successfully filled
-        self._slippage_reject_cooldown.pop(symbol, None)
 
-        logger.info(
-            f"[{trace_id}][{symbol}] LIMIT FILL: {side} @ {order.entry_price:.6f} "
-            f"qty={qty:.4f} lev={order.leverage:.1f}x conf={order.confidence:.0f}% "
-            f"(waited {order.age_s:.0f}s)"
-        )
 
-        self.alerts.send_market_update(
-            f"[LIMIT FILL] {side} {symbol} @ {order.entry_price:.6f}\n"
-            f"Qty: {qty:.4f} | Lev: {order.leverage:.1f}x | Conf: {order.confidence:.0f}%\n"
-            f"Waited {order.age_s:.0f}s for entry level"
-        )
 
-    # ── Trade Rotation ─────────────────────────────────────────────
 
-    def _evaluate_rotations(self, trace_id: str = ""):
-        """
-        Evaluate whether any open position should be rotated into a better signal.
 
-        Called once per tick after all symbols have been processed. Uses the
-        candidate signals collected during symbol processing.
-        """
-        open_pos = self.pos_mgr.get_open_positions()
-        if not open_pos:
-            return
 
-        # Build position dicts compatible with rotation manager
-        positions_dict = {}
-        for sym, pos in open_pos.items():
-            positions_dict[sym] = {
-                "symbol": sym,
-                "side": pos.side,
-                "entry": pos.entry,
-                "sl": pos.sl,
-                "tp1": pos.tp1,
-                "tp2": pos.tp2,
-                "qty": pos.qty,
-                "status": "open",
-                "open_time": pos.open_time.isoformat() if pos.open_time else None,
-            }
 
-        # Filter candidates: exclude symbols that already have open positions
-        # (can't rotate INTO a symbol we already hold)
-        candidates = [
-            c for c in self._tick_candidates
-            if c["symbol"] not in open_pos
-        ]
-
-        if not candidates:
-            return
-
-        # Get current prices
-        current_prices = {sym: self._last_prices[sym]
-                          for sym in positions_dict if sym in self._last_prices}
-
-        actions = self.rotation_mgr.evaluate_rotations(
-            positions_dict, candidates, current_prices
-        )
-
-        for action in actions:
-            self._execute_rotation(action, trace_id)
-
-    def _execute_rotation(self, action, trace_id: str = ""):
-        """Execute a rotation: close the old position, open the new one."""
-        close_symbol = action.close_symbol
-        new_signal = action.open_signal
-        new_symbol = new_signal["symbol"]
-
-        logger.info(
-            f"[{trace_id}] ROTATION: {close_symbol} -> {new_symbol} | "
-            f"reason={action.close_reason} | "
-            f"current_pnl={action.current_unrealized_pct:+.2f}% | "
-            f"old_rr={action.old_rr_ratio:.2f} -> new_rr={action.new_rr_ratio:.2f} "
-            f"({action.rr_improvement:.2f}x improvement) | "
-            f"new_conf={action.confidence_new:.0f}%"
-        )
-
-        # 1. Close the old position (exchange order + internal state)
-        close_price = self._last_prices.get(close_symbol)
-        if close_price is None:
-            logger.warning(f"[{trace_id}] Rotation aborted: no price for {close_symbol}")
-            return
-
-        # Submit exchange close order BEFORE updating internal state
-        _rot_pos = self.pos_mgr.positions.get(close_symbol)
-        if _rot_pos and _rot_pos.qty > 0:
-            _rot_close_side = "SELL" if _rot_pos.side == "LONG" else "BUY"
-            _rot_close_result = self.order_executor.close_position(
-                close_symbol, _rot_close_side, _rot_pos.qty, close_price,
-                reason=action.close_reason
-            )
-            if not (_rot_close_result and getattr(_rot_close_result, "filled", False)):
-                logger.critical(
-                    f"[{trace_id}] Rotation close FAILED for {close_symbol} — "
-                    f"position still open. Aborting rotation. "
-                    f"Reconciliation will handle. Result: {_rot_close_result}"
-                )
-                return
-        close_event = self.pos_mgr.force_close(
-            close_symbol, close_price, action.close_reason
-        )
-        if close_event is None:
-            logger.warning(f"[{trace_id}] Rotation aborted: could not close {close_symbol}")
-            return
-
-        # Process the close event (equity, logging, ML, etc.)
-        self.risk_mgr.update_equity(close_event.pnl - close_event.fee)
-        log_trade(
-            symbol=close_event.symbol,
-            action=close_event.action,
-            side=close_event.side,
-            price=close_event.price,
-            qty=close_event.qty,
-            pnl=close_event.pnl,
-            fee=close_event.fee,
-            leverage=close_event.leverage,
-            strategy=close_event.strategy,
-            metadata={
-                **close_event.metadata,
-                "rotation_to": new_symbol,
-                "rotation_reason": action.close_reason,
-                "rotation_rr_improvement": action.rr_improvement,
-            }
-        )
-
-        # Record cooldown for the closed symbol
-        self._symbol_cooldown[close_symbol] = time.time()
-        pos = self.pos_mgr.positions.get(close_symbol)
-        if pos:
-            self._last_close_win[close_symbol] = pos.realized_pnl > 0
-            self._last_close_side[close_symbol] = pos.side
-
-        # Send alert
-        self.alerts.send_trade_event(
-            action.close_reason, close_symbol,
-            f"ROTATION: {close_symbol} -> {new_symbol}\n"
-            f"PnL: ${close_event.pnl:+.2f} | R/R improvement: {action.rr_improvement:.1f}x\n"
-            f"New signal confidence: {action.confidence_new:.0f}%"
-        )
-
-        # 2. Record the rotation
-        self.rotation_mgr.record_rotation(action)
-        Telemetry.inc("rotations")
-
-        # 3. The new position will be opened on the next tick when
-        # the signal is re-evaluated (don't double-open here since
-        # the signal may have already been opened in _process_symbol)
-        logger.info(
-            f"[{trace_id}] Rotation complete: closed {close_symbol}, "
-            f"{new_symbol} signal available for entry next tick"
-        )
-
-    # ── LLM Exit Intelligence ─────────────────────────────────────
-
-    def _prioritize_symbols(self, symbols_dict):
-        """Order symbols by evaluation priority for the current tick.
-
-        Priority scoring (higher = evaluated first):
-        - +10: Has open position (need to monitor)
-        - +8:  Is a lead-lag follower with active signal (about to move)
-        - +5:  High recent price change (>2% in 1h, volatile = actionable)
-        - +3:  In favorable regime (trend or high_volatility)
-        - +0:  Default (evaluated last)
-
-        Returns list of (symbol, config) tuples sorted by priority (descending).
-        """
-        scored = []
-        open_positions = self.pos_mgr.get_open_positions()
-
-        # Get lead-lag follower symbols
-        lead_lag_followers = set()
-        if self.cross_symbol_tracker:
-            try:
-                for sig in self.cross_symbol_tracker.get_active_signals():
-                    if sig.get("confidence", 0) >= 0.3:
-                        lead_lag_followers.add(sig["follower"])
-            except Exception:
-                pass
-
-        for symbol, cfg in symbols_dict.items():
-            priority = 0
-
-            # Open position → high priority (monitoring)
-            if symbol in open_positions:
-                priority += 10
-
-            # Lead-lag follower → expected to move soon
-            if symbol in lead_lag_followers:
-                priority += 8
-
-            # High volatility → more likely to produce signals
-            change_1h = abs(self._price_changes_1h.get(symbol, 0.0))
-            if change_1h >= 2.0:
-                priority += 5
-            elif change_1h >= 1.0:
-                priority += 2
-
-            # Favorable regime (use tick cache to avoid redundant API calls)
-            regime = self._tick_regime_cache.get(symbol, "unknown")
-            if regime in ("trend", "high_volatility"):
-                priority += 3
-
-            scored.append((priority, symbol, cfg))
-
-        # Sort descending by priority, stable sort preserves original order for ties
-        scored.sort(key=lambda x: -x[0])
-        return [(sym, cfg) for _, sym, cfg in scored]
-
-    def _run_scout_preparation(self, trace_id: str):
-        """Run the Scout Agent during idle time for trade preparation.
-
-        Gathers cross-market data and runs the Scout Agent (Haiku) to:
-        - Build a watchlist of symbols approaching key levels
-        - Pre-form directional theses for likely setups
-        - Forecast regime transitions
-        - Surface lead-lag opportunities
-        - Calculate risk budget and correlation warnings
-
-        Findings are written to the pipeline scratchpad for downstream
-        agents to consume when a signal fires.
-        """
-        try:
-            from llm.agents.coordinator import get_coordinator, is_multi_agent_enabled
-            if not is_multi_agent_enabled():
-                return
-            coordinator = get_coordinator()
-        except Exception:
-            return
-
-        # Build scout context: all symbols, prices, regimes, positions, lead-lag
-        scout_data = {"symbols": {}}
-
-        for symbol in DEFAULT_SYMBOLS:
-            sym_data = {}
-            # Current price and recent change
-            price = self._last_prices.get(symbol)
-            if price:
-                sym_data["price"] = round(price, 4)
-                change_1h = self._price_changes_1h.get(symbol, 0.0)
-                sym_data["change_1h_pct"] = round(change_1h, 2)
-
-            # Current regime (use tick cache)
-            sym_data["regime"] = self._tick_regime_cache.get(symbol, "unknown")
-
-            # Funding rate
-            funding = self._last_funding_rates.get(symbol, 0.0)
-            if funding:
-                sym_data["funding_rate"] = round(funding, 6)
-
-            scout_data["symbols"][symbol] = sym_data
-
-        # Open positions summary
-        open_pos = self.pos_mgr.get_open_positions()
-        if open_pos:
-            scout_data["open_positions"] = {}
-            for sym, pos in open_pos.items():
-                price = self._last_prices.get(sym, pos.entry)
-                is_long = pos.side == "LONG"
-                upnl_pct = ((price - pos.entry) / pos.entry * 100) if is_long else ((pos.entry - price) / pos.entry * 100)
-                scout_data["open_positions"][sym] = {
-                    "side": pos.side,
-                    "entry": pos.entry,
-                    "unrealized_pct": round(upnl_pct, 2),
-                }
-
-        # Lead-lag signals
-        if hasattr(self, 'cross_symbol_tracker') and self.cross_symbol_tracker:
-            try:
-                lead_lag = self.cross_symbol_tracker.get_active_signals()
-                if lead_lag:
-                    scout_data["lead_lag_signals"] = lead_lag[:5]
-            except Exception:
-                pass
-
-        # Portfolio correlation risk
-        if hasattr(self, 'portfolio_risk') and self.portfolio_risk and open_pos:
-            try:
-                positions_map = {sym: pos.side.lower() for sym, pos in open_pos.items()}
-                corr_matrix = self.portfolio_risk.compute_correlation_matrix()
-                if corr_matrix:
-                    cluster_risk = corr_matrix.get_cluster_risk(positions_map)
-                    scout_data["portfolio_cluster_risk"] = round(cluster_risk, 3)
-            except Exception:
-                pass
-
-        # Risk budget
-        equity = self.risk_mgr.equity
-        open_count = self.pos_mgr.get_open_count()
-        max_positions = self.risk_mgr.max_open_positions
-        scout_data["risk_budget"] = {
-            "equity": round(equity, 2),
-            "open_positions": open_count,
-            "max_positions": max_positions,
-            "slots_available": max(0, max_positions - open_count),
-            "risk_per_trade": self.risk_mgr.risk_per_trade,
-        }
-
-        # Enrich Scout with deep memory pattern data
-        if _DEEP_MEMORY_AVAILABLE:
-            try:
-                from llm.deep_memory import get_deep_memory
-                dm = get_deep_memory()
-                strategy_eff = dm.trade_dna.get_strategy_effectiveness()
-                if strategy_eff:
-                    # Compact: top 5 setups by sample size
-                    top_setups = sorted(strategy_eff.items(), key=lambda x: x[1].get("total", 0), reverse=True)[:5]
-                    scout_data["pattern_library"] = {
-                        k: {"wr": round(v.get("win_rate", 0.5), 2), "n": v.get("total", 0)}
-                        for k, v in top_setups
-                    }
-            except Exception:
-                pass
-
-        # Run scout and cache results for Trade Agent to consume
-        result = coordinator.run_scout(scout_data)
-        if result:
-            self._last_scout_result = result
-            self._last_scout_ts = time.time()
-            logger.info(f"[{trace_id}][SCOUT] Preparation complete: "
-                        f"{len(result.get('watchlist', []))} watchlist items")
-
-    def _check_llm_reentry_clearance(self, symbol: str) -> bool:
-        """Check if LLM/Scout data supports re-entering this symbol.
-
-        Uses cached Scout Agent data (no API call) to assess whether
-        market structure supports a new entry after a recent close.
-        Falls back to a lightweight Haiku call if Scout data is stale.
-
-        Returns:
-            True if cleared to evaluate signals, False if LLM says wait.
-        """
-        # Check cached re-entry decisions (5 min cache per symbol)
-        cache = getattr(self, '_reentry_cache', {})
-        cached = cache.get(symbol)
-        if cached and (time.time() - cached[1]) < 300:
-            return cached[0]
-
-        # Check Scout Agent data (free — no API call)
-        scout = getattr(self, '_last_scout_result', None)
-        scout_ts = getattr(self, '_last_scout_ts', 0)
-
-        if scout and (time.time() - scout_ts) < 600:
-            watchlist = scout.get("watchlist", [])
-            for item in watchlist:
-                if item.get("symbol") == symbol and item.get("priority") == "high":
-                    # Scout flagged this symbol as high priority — clear to re-enter
-                    logger.info(f"[{symbol}] LLM re-entry cleared: Scout HIGH priority "
-                                f"({item.get('setup_forming', 'unknown')})")
-                    self._cache_reentry(symbol, True)
-                    return True
-
-            # Scout ran but didn't flag this symbol as high priority
-            # Check if regime forecast suggests waiting
-            forecast = scout.get("regime_forecast", {})
-            if forecast.get("direction") == "transitioning":
-                logger.info(f"[{symbol}] LLM re-entry blocked: regime transitioning")
-                self._cache_reentry(symbol, False)
-                return False
-
-        # No Scout data or Scout is stale — use lightweight heuristic
-        # Check last trade outcome: after a loss on the same side, require
-        # the signal to be on the opposite side (handled downstream in ensemble)
-        # For now, allow re-entry — the ensemble + LLM pipeline will filter
-        last_side = self._last_close_side.get(symbol)
-        was_win = self._last_close_win.get(symbol, False)
-
-        if was_win:
-            # Won last trade — structure likely favorable, clear to re-enter
-            self._cache_reentry(symbol, True)
-            return True
-
-        # Lost last trade — allow re-entry but log it. The multi-agent
-        # pipeline (Trade Agent + Critic) will assess structure quality.
-        logger.debug(f"[{symbol}] Post-loss re-entry: allowing signal evaluation "
-                     f"(last side={last_side}, LLM pipeline will gate)")
-        self._cache_reentry(symbol, True)
-        return True
-
-    def _cache_reentry(self, symbol: str, cleared: bool):
-        """Cache a re-entry decision for 5 minutes."""
-        if not hasattr(self, '_reentry_cache'):
-            self._reentry_cache = {}
-        self._reentry_cache[symbol] = (cleared, time.time())
-
-    def _on_solo_signal_for_sniper(self, signal) -> None:
-        """Callback from ensemble: receives 1-agree signals rejected for low consensus.
-
-        The sniper filter has its own gates (proven setup, chop, dip) and can
-        profitably trade signals the ensemble sits out on.
-        """
-        if self._manual_sniper is None:
-            return
-        try:
-            symbol = signal.symbol
-            current_price = self._last_prices.get(symbol, signal.entry)
-            _sniper_sig = self._manual_sniper.evaluate(
-                signal, equity=self.risk_mgr.equity
-            )
-            if _sniper_sig is not None:
-                logger.info(
-                    f"[SNIPER-SOLO] {symbol} {_sniper_sig.side} tier={_sniper_sig.tier} "
-                    f"conf={_sniper_sig.confidence:.0f}% lev={_sniper_sig.leverage:.1f}x "
-                    f"sim={'YES' if self._sniper_simulator else 'NO'}"
-                )
-                if self._manual_alerter is not None:
-                    self._manual_alerter.send_sniper_alert(
-                        _sniper_sig, equity=self.risk_mgr.equity
-                    )
-                if self._sniper_simulator is not None:
-                    try:
-                        _sim_pos = self._sniper_simulator.on_signal(_sniper_sig)
-                        if _sim_pos:
-                            logger.info(
-                                f"[SIM] OPENED {_sim_pos.trade_id} {_sim_pos.symbol} "
-                                f"{_sim_pos.side} @ ${_sim_pos.entry:.2f} "
-                                f"size=${_sim_pos.position_size_usd:.2f} "
-                                f"(from solo signal)"
-                            )
-                        else:
-                            logger.debug(
-                                f"[SIM] Rejected {symbol} {_sniper_sig.side} "
-                                f"(dedup or circuit breaker)"
-                            )
-                    except Exception as _sim_err:
-                        logger.warning(f"[SIM] Error on solo signal: {_sim_err}")
-                if hasattr(self, '_signal_tracker') and self._signal_tracker is not None:
-                    try:
-                        self._signal_tracker.record_signal(_sniper_sig)
-                    except Exception:
-                        pass
-                if self._sniper_auto_execute and _sniper_sig.tier in ("SNIPER", "PREMIUM"):
-                    try:
-                        self._execute_sniper_signal(_sniper_sig, symbol, current_price)
-                    except Exception as _sae_err:
-                        logger.error(f"[SNIPER-EXEC] Solo signal error: {_sae_err}")
-        except Exception as e:
-            logger.debug(f"[SNIPER-SOLO] Error: {e}")
-
-    def _execute_sniper_signal(self, sniper_sig, symbol: str, current_price: float):
-        """Execute a qualifying sniper signal through the order executor.
-
-        Safety gates (checked in order):
-        1. Circuit breaker must not be tripped
-        2. No existing position on this symbol
-        3. Max open positions not exceeded
-        4. Ops guard rate limits respected
-        """
-        # Gate 1: Circuit breaker
-        if not self.risk_mgr.is_trading_allowed():
-            logger.info(f"[SNIPER-EXEC] {symbol} blocked: circuit breaker tripped")
-            return
-
-        # Gate 2: No existing position
-        if symbol in self.pos_mgr.positions:
-            pos = self.pos_mgr.positions[symbol]
-            if pos.state not in ("CLOSED",):
-                logger.debug(f"[SNIPER-EXEC] {symbol} blocked: position already open")
-                return
-
-        # Gate 3: Max positions
-        open_count = sum(
-            1 for p in self.pos_mgr.positions.values()
-            if p.state not in ("CLOSED",)
-        )
-        if open_count >= self.config.max_open_positions:
-            logger.info(f"[SNIPER-EXEC] {symbol} blocked: max positions ({open_count})")
-            return
-
-        # Gate 4: Ops guard
-        if hasattr(self, 'ops_guard') and self.ops_guard is not None:
-            if not self.ops_guard.can_trade():
-                logger.info(f"[SNIPER-EXEC] {symbol} blocked: ops guard rate limit")
-                return
-
-        # Execute the trade
-        side = sniper_sig.side  # "BUY" or "SELL"
-        qty = sniper_sig.qty
-        leverage = sniper_sig.leverage
-
-        logger.info(
-            f"[SNIPER-EXEC] Executing {symbol} {side} | "
-            f"tier={sniper_sig.tier} conf={sniper_sig.confidence:.0f}% "
-            f"lev={leverage:.0f}x qty={qty:.6f} "
-            f"entry=${current_price:.2f} sl=${sniper_sig.sl:.2f} "
-            f"tp_scalp=${sniper_sig.tp_scalp:.2f}"
-        )
-
-        order_result = self.order_executor.open_position(
-            symbol=symbol,
-            side=side,
-            qty=qty,
-            price=current_price,
-            leverage=leverage,
-            reason=f"SNIPER_{sniper_sig.tier}",
-        )
-
-        if order_result and getattr(order_result, "filled", False):
-            # Register position with position manager
-            fill_price = getattr(order_result, "fill_price", current_price)
-            fill_qty = getattr(order_result, "fill_qty", qty)
-
-            self.pos_mgr.open_position(
-                symbol=symbol,
-                side="LONG" if side == "BUY" else "SHORT",
-                entry=fill_price,
-                qty=fill_qty,
-                sl=sniper_sig.sl,
-                tp1=sniper_sig.tp_scalp,
-                tp2=sniper_sig.tp_swing,
-                leverage=leverage,
-                strategy=f"sniper_{sniper_sig.tier.lower()}",
-                metadata={
-                    "sniper_tier": sniper_sig.tier,
-                    "sniper_confidence": sniper_sig.confidence,
-                    "sniper_quality_grade": sniper_sig.quality_grade,
-                    "is_dip_buy": sniper_sig.is_dip_buy,
-                    "auto_executed": True,
-                },
-            )
-
-            # Place exchange-side SL/TP for crash protection
-            close_side = "SELL" if side == "BUY" else "BUY"
-            try:
-                sl_result = self.order_executor.place_stop_loss(
-                    symbol=symbol, side=close_side,
-                    qty=fill_qty, trigger_price=sniper_sig.sl,
-                )
-                if sl_result.success:
-                    logger.info(f"[SNIPER-EXEC] SL order placed @ ${sniper_sig.sl:.2f}")
-                else:
-                    logger.warning(f"[SNIPER-EXEC] SL order FAILED: {sl_result.error}")
-            except Exception as _sl_err:
-                logger.warning(f"[SNIPER-EXEC] SL order error: {_sl_err}")
-
-            try:
-                tp_result = self.order_executor.place_take_profit(
-                    symbol=symbol, side=close_side,
-                    qty=fill_qty, trigger_price=sniper_sig.tp_scalp,
-                )
-                if tp_result.success:
-                    logger.info(f"[SNIPER-EXEC] TP order placed @ ${sniper_sig.tp_scalp:.2f}")
-                else:
-                    logger.warning(f"[SNIPER-EXEC] TP order FAILED: {tp_result.error}")
-            except Exception as _tp_err:
-                logger.warning(f"[SNIPER-EXEC] TP order error: {_tp_err}")
-
-            # Track in ops guard
-            if hasattr(self, 'ops_guard') and self.ops_guard is not None:
-                self.ops_guard.record_trade(symbol)
-
-            logger.info(
-                f"[SNIPER-EXEC] FILLED {symbol} {side} @ ${fill_price:.2f} "
-                f"qty={fill_qty:.6f} lev={leverage:.0f}x | "
-                f"SL=${sniper_sig.sl:.2f} TP1=${sniper_sig.tp_scalp:.2f} "
-                f"TP2=${sniper_sig.tp_swing:.2f}"
-            )
-
-            if self.alerts:
-                self.alerts.send_trade_alert(
-                    f"SNIPER {sniper_sig.tier} EXECUTED: {symbol} {side} "
-                    f"@ ${fill_price:.2f} | {leverage:.0f}x | "
-                    f"conf={sniper_sig.confidence:.0f}% "
-                    f"grade={sniper_sig.quality_grade}"
-                )
-        else:
-            logger.error(
-                f"[SNIPER-EXEC] FAILED to fill {symbol} {side}: "
-                f"{getattr(order_result, 'error', 'unknown')}"
-            )
-
-    def _check_llm_exit_suggestions(self):
-        """Evaluate open positions for dynamic SL/TP adjustments using the exit engine.
-
-        Uses heuristic rules informed by deep memory data (strategy win rates,
-        regime-specific patterns) to decide when to tighten stops on losing patterns
-        and widen TPs on confirmed winning patterns.
-
-        Called every 5th tick from _tick_once() to avoid excessive computation.
-        """
-        if not self.exit_engine:
-            return
-
-        open_positions = self.pos_mgr.get_open_positions()
-        if not open_positions:
-            return
-
-        now = datetime.now(timezone.utc)
-
-        # Deep memory: fetch strategy effectiveness for pattern-aware decisions
-        deep_mem = None
-        strategy_effectiveness = {}
-        if _DEEP_MEMORY_AVAILABLE:
-            try:
-                deep_mem = get_deep_memory()
-                strategy_effectiveness = deep_mem.trade_dna.get_strategy_effectiveness()
-            except Exception:
-                pass  # Non-critical — fall back to heuristics without memory
-
-        for symbol, pos in open_positions.items():
-            try:
-                # Respect per-symbol cooldown built into the exit engine
-                if not self.exit_engine.should_evaluate(symbol):
-                    continue
-
-                current_price = self._last_prices.get(symbol)
-                if current_price is None or current_price <= 0:
-                    continue
-
-                # ── Build exit context ──
-                is_long = pos.side == "LONG"
-                if is_long:
-                    unrealized_pnl = (current_price - pos.entry) * pos.qty * pos.leverage
-                    unrealized_pct = (current_price - pos.entry) / pos.entry
-                else:
-                    unrealized_pnl = (pos.entry - current_price) * pos.qty * pos.leverage
-                    unrealized_pct = (pos.entry - current_price) / pos.entry
-
-                # Time in position
-                hold_seconds = (now - pos.open_time).total_seconds()
-                hold_minutes = hold_seconds / 60.0
-
-                # Current regime (use tick cache)
-                regime = self._tick_regime_cache.get(symbol, "unknown")
-
-                # Funding rate
-                funding_rate = self._last_funding_rates.get(symbol, 0.0)
-
-                # ── Qualification gate: skip positions that don't warrant review ──
-                # Position must meet at least one criterion:
-                should_review = False
-
-                # 1. Position open > 30 minutes
-                if hold_minutes > 30:
-                    should_review = True
-
-                # 2. Losing position open > 15 minutes
-                if unrealized_pnl < 0 and hold_minutes > 15:
-                    should_review = True
-
-                # 3. Regime has shifted to an adverse state
-                if regime in ("panic", "crash", "extreme_fear"):
-                    should_review = True
-
-                if not should_review:
-                    continue
-
-                # ── LLM Exit Intelligence Agent (when multi-agent enabled) ──
-                # Replaces heuristic rules with thesis-aware LLM reasoning
-                if os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
-                    try:
-                        from llm.agents.coordinator import get_coordinator, is_multi_agent_enabled
-                        if is_multi_agent_enabled():
-                            coordinator = get_coordinator()
-                            pos_data = {
-                                "symbol": symbol,
-                                "side": pos.side,
-                                "entry": pos.entry,
-                                "current_price": current_price,
-                                "sl": pos.sl,
-                                "original_sl": getattr(pos, 'original_sl', pos.sl),
-                                "tp1": pos.tp1,
-                                "tp2": pos.tp2,
-                                "state": pos.state,
-                                "unrealized_pnl": round(unrealized_pnl, 2),
-                                "unrealized_pct": round(unrealized_pct * 100, 2),
-                                "hold_minutes": round(hold_minutes, 1),
-                                "leverage": getattr(pos, 'leverage', 1),
-                                "regime": regime,
-                                "funding_rate": funding_rate,
-                                "strategy": getattr(pos, 'strategy', ''),
-                                "entry_type": getattr(pos, 'entry_type', ''),
-                            }
-                            # Pull thesis from position notes if available
-                            notes = getattr(pos, 'notes', '') or ''
-                            if 'THESIS:' in notes:
-                                thesis_start = notes.index('THESIS:') + 7
-                                thesis_end = notes.index('|', thesis_start) if '|' in notes[thesis_start:] else len(notes)
-                                pos_data["original_thesis"] = notes[thesis_start:thesis_start + thesis_end].strip()[:100]
-                            if 'setup=' in notes:
-                                setup_start = notes.index('setup=') + 6
-                                setup_end = notes.index(' ', setup_start) if ' ' in notes[setup_start:] else len(notes)
-                                pos_data["setup_type"] = notes[setup_start:setup_start + setup_end].strip()
-
-                            snapshot = getattr(self, '_last_snapshot_data', None)
-                            exit_rec = coordinator.get_exit_intelligence(
-                                pos_data, market_data=snapshot
-                            )
-
-                            if exit_rec and exit_rec.get("action", "hold") != "hold":
-                                exit_action = exit_rec["action"]
-                                urgency = exit_rec.get("urgency", "medium")
-
-                                # Convert LLM exit recommendation to ExitDecision
-                                if exit_action == "tighten_sl" and exit_rec.get("new_sl"):
-                                    decision = ExitDecision(
-                                        symbol=symbol,
-                                        exit_action="tighten_sl",
-                                        exit_confidence=0.80 if urgency in ("high", "critical") else 0.65,
-                                        new_sl=exit_rec["new_sl"],
-                                        reason=f"[LLM-EXIT] {exit_rec.get('reason', '')[:120]}",
-                                    )
-                                elif exit_action == "widen_tp" and exit_rec.get("new_tp"):
-                                    decision = ExitDecision(
-                                        symbol=symbol,
-                                        exit_action="widen_tp",
-                                        exit_confidence=0.70,
-                                        new_tp=exit_rec["new_tp"],
-                                        reason=f"[LLM-EXIT] {exit_rec.get('reason', '')[:120]}",
-                                    )
-                                elif exit_action == "partial_close":
-                                    decision = ExitDecision(
-                                        symbol=symbol,
-                                        exit_action="partial",
-                                        exit_confidence=0.75 if urgency in ("high", "critical") else 0.60,
-                                        partial_pct=exit_rec.get("partial_pct", 0.5),
-                                        reason=f"[LLM-EXIT] {exit_rec.get('reason', '')[:120]}",
-                                    )
-                                elif exit_action == "full_close":
-                                    decision = ExitDecision(
-                                        symbol=symbol,
-                                        exit_action="close",
-                                        exit_confidence=0.85 if urgency == "critical" else 0.75,
-                                        reason=f"[LLM-EXIT] {exit_rec.get('reason', '')[:120]}",
-                                    )
-
-                                if decision is not None:
-                                    # Skip heuristic rules — LLM made the call
-                                    result = self.exit_engine.apply_exit_decision(
-                                        decision=decision,
-                                        position=pos,
-                                        current_price=current_price,
-                                    )
-                                    if result["applied"]:
-                                        action_name = result["action"]
-                                        logger.info(
-                                            f"[EXIT-INTEL-LLM] {symbol} {action_name}: "
-                                            f"{result['details']} (urgency={urgency})"
-                                        )
-                                        if action_name == "close":
-                                            _exit_pos = self.pos_mgr.positions.get(symbol)
-                                            if _exit_pos and _exit_pos.qty > 0:
-                                                _ex_side = "SELL" if _exit_pos.side == "LONG" else "BUY"
-                                                _llm_close = self.order_executor.close_position(
-                                                    symbol, _ex_side, _exit_pos.qty, current_price,
-                                                    reason="LLM_EXIT_AGENT"
-                                                )
-                                                if _llm_close and getattr(_llm_close, "filled", False):
-                                                    self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_AGENT")
-                                                else:
-                                                    logger.critical(
-                                                        f"[{symbol}] LLM EXIT CLOSE FAILED — position still open. "
-                                                        f"Reconciliation will handle."
-                                                    )
-                                        elif action_name == "partial":
-                                            partial_pct = result.get("partial_pct", 0.5)
-                                            close_qty = pos.qty * partial_pct
-                                            if close_qty > 0:
-                                                _part_side = "SELL" if pos.side == "LONG" else "BUY"
-                                                _part_close = self.order_executor.close_position(
-                                                    symbol, _part_side, close_qty, current_price,
-                                                    reason="LLM_EXIT_PARTIAL"
-                                                )
-                                                if _part_close and getattr(_part_close, "filled", False):
-                                                    pos.qty -= close_qty
-                                                    logger.info(
-                                                        f"[EXIT-INTEL-LLM] {symbol} partial: "
-                                                        f"closed {close_qty:.6f}, remaining {pos.qty:.6f}"
-                                                    )
-                                                else:
-                                                    logger.critical(
-                                                        f"[{symbol}] LLM PARTIAL CLOSE FAILED — "
-                                                        f"keeping full position. Reconciliation will handle."
-                                                    )
-                                    self.exit_engine.mark_evaluated(symbol)
-                                    continue  # Skip heuristic rules below
-                    except Exception as e:
-                        logger.debug(f"[EXIT-INTEL-LLM] Error for {symbol}: {e}")
-
-                # ── Deep memory pattern lookup ──
-                # Check if the strategy combo that opened this trade is historically
-                # profitable or a known loser, so we can be more/less aggressive
-                strategy_key = pos.strategy  # e.g. "RegimeTrend,MonteCarlo"
-                strategy_wr = 0.5  # default neutral
-                strategy_sample_size = 0
-                if strategy_effectiveness and strategy_key in strategy_effectiveness:
-                    se = strategy_effectiveness[strategy_key]
-                    strategy_wr = se.get("win_rate", 0.5)
-                    strategy_sample_size = se.get("total", 0)
-
-                # Also check symbol-specific history from deep memory
-                symbol_wr = 0.5
-                if deep_mem:
-                    try:
-                        symbol_trades = deep_mem.trade_dna.get_by_symbol(symbol, limit=20)
-                        if len(symbol_trades) >= 5:
-                            wins = sum(1 for t in symbol_trades if t.get("outcome") == "WIN")
-                            symbol_wr = wins / len(symbol_trades)
-                    except Exception:
-                        pass
-
-                # ── Heuristic exit decision rules ──
-                # These rules use regime, PnL, funding, and deep memory patterns
-                # to make fast, cost-free decisions (no LLM API call per position)
-                decision = None
-                risk_distance = abs(pos.entry - pos.original_sl) if pos.original_sl else 0
-                equity = self.risk_mgr.equity if self.risk_mgr.equity > 0 else 1.0
-                loss_pct_of_equity = abs(unrealized_pnl) / equity if unrealized_pnl < 0 else 0
-
-                # Rule 1: Panic/crash regime + LONG position → tighten SL aggressively
-                if regime in ("panic", "crash", "extreme_fear") and is_long:
-                    # Move SL to halfway between current SL and current price
-                    new_sl = (pos.sl + current_price) / 2.0
-                    if new_sl > pos.sl:  # Only tighten (move up for longs)
-                        confidence = 0.75 if regime == "panic" else 0.85
-                        decision = ExitDecision(
-                            symbol=symbol,
-                            exit_action="tighten_sl",
-                            exit_confidence=confidence,
-                            new_sl=new_sl,
-                            reason=f"Regime={regime}, protecting capital on LONG "
-                                   f"(strategy WR={strategy_wr:.0%} in this combo)",
-                        )
-
-                # Rule 2: Unrealized loss > 2% of equity → tighten SL
-                elif loss_pct_of_equity > 0.02:
-                    # Tighten to 60% of remaining distance
-                    if is_long:
-                        new_sl = pos.sl + (current_price - pos.sl) * 0.4
-                    else:
-                        new_sl = pos.sl - (pos.sl - current_price) * 0.4
-                    # Only if it actually tightens
-                    tightens = (is_long and new_sl > pos.sl) or (not is_long and new_sl < pos.sl)
-                    if tightens:
-                        # Lower confidence if strategy has a good track record (give it room)
-                        conf = 0.65 if strategy_wr < 0.5 or strategy_sample_size < 5 else 0.55
-                        decision = ExitDecision(
-                            symbol=symbol,
-                            exit_action="tighten_sl",
-                            exit_confidence=conf,
-                            new_sl=new_sl,
-                            reason=f"Unrealized loss {loss_pct_of_equity:.1%} of equity "
-                                   f"(strat WR={strategy_wr:.0%}, n={strategy_sample_size})",
-                        )
-
-                # Rule 3: Big winner → partial close or widen TP based on pattern strength
-                elif risk_distance > 0 and unrealized_pnl > 0:
-                    gain_vs_risk = abs(unrealized_pct * pos.entry) / risk_distance
-                    if gain_vs_risk >= 3.0 and pos.state not in ("TP1_HIT", "TRAILING"):
-                        # On confirmed winning patterns, widen TP instead of partial close
-                        if strategy_wr >= 0.6 and strategy_sample_size >= 10:
-                            # Strong pattern → let it ride, widen TP2
-                            if is_long:
-                                new_tp = current_price + risk_distance * 2.0
-                                if new_tp > pos.tp2:
-                                    decision = ExitDecision(
-                                        symbol=symbol,
-                                        exit_action="widen_tp",
-                                        exit_confidence=0.70,
-                                        new_tp=new_tp,
-                                        reason=f"Confirmed winning pattern "
-                                               f"(strat WR={strategy_wr:.0%}, n={strategy_sample_size}), "
-                                               f"gain={gain_vs_risk:.1f}x risk — letting winner run",
-                                    )
-                            else:
-                                new_tp = current_price - risk_distance * 2.0
-                                if new_tp < pos.tp2:
-                                    decision = ExitDecision(
-                                        symbol=symbol,
-                                        exit_action="widen_tp",
-                                        exit_confidence=0.70,
-                                        new_tp=new_tp,
-                                        reason=f"Confirmed winning pattern "
-                                               f"(strat WR={strategy_wr:.0%}, n={strategy_sample_size}), "
-                                               f"gain={gain_vs_risk:.1f}x risk — letting winner run",
-                                    )
-                        else:
-                            # Unproven or weak pattern → lock in partial profit
-                            decision = ExitDecision(
-                                symbol=symbol,
-                                exit_action="partial",
-                                exit_confidence=0.65,
-                                partial_pct=0.5,
-                                reason=f"Gain={gain_vs_risk:.1f}x risk, "
-                                       f"pattern unproven (strat WR={strategy_wr:.0%}, "
-                                       f"n={strategy_sample_size}) — locking 50%",
-                            )
-
-                # Rule 4: Adverse funding rate > 0.05% → tighten SL
-                elif abs(funding_rate) > 0.0005:
-                    funding_is_adverse = (is_long and funding_rate > 0) or \
-                                         (not is_long and funding_rate < 0)
-                    if funding_is_adverse and hold_minutes > 30:
-                        # Tighten SL modestly (20% closer to price)
-                        if is_long:
-                            new_sl = pos.sl + (current_price - pos.sl) * 0.2
-                        else:
-                            new_sl = pos.sl - (pos.sl - current_price) * 0.2
-                        tightens = (is_long and new_sl > pos.sl) or (not is_long and new_sl < pos.sl)
-                        if tightens:
-                            decision = ExitDecision(
-                                symbol=symbol,
-                                exit_action="tighten_sl",
-                                exit_confidence=0.55,
-                                new_sl=new_sl,
-                                reason=f"Adverse funding rate {funding_rate:.5f} "
-                                       f"(hold={hold_minutes:.0f}min, "
-                                       f"symbol WR={symbol_wr:.0%})",
-                            )
-
-                # ── Apply decision via exit engine ──
-                if decision is not None:
-                    result = self.exit_engine.apply_exit_decision(
-                        decision=decision,
-                        position=pos,
-                        current_price=current_price,
-                    )
-
-                    if result["applied"]:
-                        action = result["action"]
-                        logger.info(
-                            f"[EXIT-INTEL] {symbol} {action}: {result['details']} "
-                            f"(regime={regime}, hold={hold_minutes:.0f}min)"
-                        )
-
-                        # Handle close/partial actions that need exchange execution
-                        if action == "close":
-                            _exit_pos2 = self.pos_mgr.positions.get(symbol)
-                            if _exit_pos2 and _exit_pos2.qty > 0:
-                                _ex_side2 = "SELL" if _exit_pos2.side == "LONG" else "BUY"
-                                _eng_close = self.order_executor.close_position(
-                                    symbol, _ex_side2, _exit_pos2.qty, current_price,
-                                    reason="LLM_EXIT_ENGINE"
-                                )
-                                if _eng_close and getattr(_eng_close, "filled", False):
-                                    self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_ENGINE")
-                                else:
-                                    logger.critical(
-                                        f"[{symbol}] EXIT ENGINE CLOSE FAILED — position still open. "
-                                        f"Reconciliation will handle."
-                                    )
-                        elif action == "partial":
-                            # Partial close: submit exchange order, then update internal state
-                            partial_pct = result.get("partial_pct", 0.5)
-                            close_qty = pos.qty * partial_pct
-                            if close_qty > 0:
-                                _part_side2 = "SELL" if pos.side == "LONG" else "BUY"
-                                _part_close2 = self.order_executor.close_position(
-                                    symbol, _part_side2, close_qty, current_price,
-                                    reason="EXIT_ENGINE_PARTIAL"
-                                )
-                                if _part_close2 and getattr(_part_close2, "filled", False):
-                                    pos.qty -= close_qty
-                                    logger.info(
-                                        f"[EXIT-INTEL] {symbol} partial close: "
-                                        f"closed {close_qty:.6f}, remaining {pos.qty:.6f}"
-                                    )
-                                else:
-                                    logger.critical(
-                                        f"[{symbol}] EXIT ENGINE PARTIAL CLOSE FAILED — "
-                                        f"keeping full position. Reconciliation will handle."
-                                    )
-                    else:
-                        logger.debug(
-                            f"[EXIT-INTEL] {symbol} decision not applied: "
-                            f"{result.get('details', 'unknown')}"
-                        )
-                else:
-                    # No action needed — mark as evaluated to respect cooldown
-                    self.exit_engine.mark_evaluated(symbol)
-
-            except Exception as e:
-                logger.warning(f"[EXIT-INTEL] Error evaluating {symbol}: {e}")
-
-    # ── Position Aging Alerts ─────────────────────────────────────
-
-    def _check_position_aging(self):
-        """Alert on positions held too long — funding costs eat profits.
-        Also enforces max hold time limits (tighten SL or force close)."""
-        open_pos = self.pos_mgr.get_open_positions()
-        now = time.time()
-        max_hold = self.config.max_hold_hours
-        hold_action = self.config.hold_limit_action
-
-        for sym, pos in open_pos.items():
-            if not hasattr(pos, 'open_time') or pos.open_time is None:
-                continue
-            # Calculate age
-            if isinstance(pos.open_time, datetime):
-                age_hours = (now - pos.open_time.timestamp()) / 3600
-            else:
-                age_hours = (now - pos.open_time) / 3600
-
-            # Hold limit enforcement
-            price = self._last_prices.get(sym, pos.entry)
-            event = self.pos_mgr.check_hold_limits(sym, price, max_hold, hold_action)
-            if event:
-                logger.warning(f"[HOLD_LIMIT] {sym} force-closed after {age_hours:.0f}h")
-                if self.alerts:
-                    try:
-                        self.alerts.send_trade_event(
-                            "HOLD_LIMIT", sym,
-                            f"Force closed after {age_hours:.0f}h (max {max_hold}h)\nPnL: ${event.pnl:.2f}"
-                        )
-                    except Exception:
-                        pass
-                continue  # Position is now closed
-
-            # Alert thresholds
-            funding_rate = self._last_funding_rates.get(sym, 0.0)
-            is_paying = (pos.side == "LONG" and funding_rate > 0) or \
-                        (pos.side == "SHORT" and funding_rate < 0)
-
-            # Calculate estimated funding cost since entry
-            notional = pos.qty * price * pos.leverage
-            periods_since_entry = age_hours / 8  # 8h funding periods
-            est_funding_paid = abs(funding_rate) * periods_since_entry * notional if is_paying else 0
-            est_funding_pct = est_funding_paid / self.risk_mgr.equity * 100 if self.risk_mgr.equity > 0 else 0
-
-            # Alert conditions
-            if age_hours > 24 and is_paying and est_funding_pct > 0.1:
-                logger.warning(
-                    f"[AGING] {sym} {pos.side} open {age_hours:.0f}h, "
-                    f"estimated funding paid: {est_funding_pct:.2f}% of equity"
-                )
-                if self.alerts and age_hours > 48:
-                    try:
-                        self.alerts.send_market_update(
-                            f"[POSITION AGING] {sym} {pos.side}\n"
-                            f"Open: {age_hours:.0f}h\n"
-                            f"Funding paid: ~{est_funding_pct:.2f}% of equity\n"
-                            f"Current PnL: ${pos.realized_pnl:.2f}"
-                        )
-                    except Exception:
-                        pass
-
-    # ── LLM Meta-Brain Integration ────────────────────────────────
-
-    def _llm_veto_check(self, candidate: TradeCandidate, trace_id: str = ""):
-        """Synchronous LLM check before opening a trade (VETO_ONLY+ mode).
-
-        Returns DecisionResult if LLM says "flat" (veto), None if "proceed".
-        If LLM fails (API error, timeout), defaults to proceed (no veto).
-        """
-        logger.info(
-            f"[{trace_id}][{candidate.symbol}] LLM veto check: "
-            f"{candidate.side} {candidate.entry_type} "
-            f"conf={candidate.ensemble_confidence:.0f}%"
-        )
-
-        markets, global_ctx, risk_ctx, positions = self._build_llm_context()
-        if not markets:
-            return None  # No data -> no veto
-
-        trigger_ctx = (
-            f"PRE_TRADE veto check: {candidate.side} {candidate.symbol} "
-            f"@ {_fmt_price(candidate.entry)} "
-            f"type={candidate.entry_type} conf={candidate.ensemble_confidence:.0f}% "
-            f"regime={candidate.regime} rr1={candidate.risk_reward_tp1:.2f} "
-            f"strategies={candidate.strategies_agree}"
-        )
-
-        result = get_trading_decision(
-            markets=markets,
-            global_context=global_ctx,
-            risk_context=risk_ctx,
-            active_positions=positions,
-            mode=self.llm_mode,
-            use_compact_prompt=True,  # Save tokens on veto checks
-            trigger_reason="pre_trade_veto",
-            trigger_context=trigger_ctx,
-            event_triggered=True,  # Bypass periodic throttle
-        )
-
-        # Log API usage
-        if result.usage and result.usage.get("input_tokens", 0) > 0:
-            from llm.client import get_usage_stats
-            stats = get_usage_stats()
-            logger.info(
-                f"[LLM-VETO] tokens={result.usage.get('input_tokens', 0)}in/"
-                f"{result.usage.get('output_tokens', 0)}out "
-                f"est=${stats['estimated_cost_usd']:.4f}"
-            )
-
-        if result.decision is None:
-            # API error or validation failure -> default to proceed
-            logger.info(
-                f"[{trace_id}][{candidate.symbol}] LLM veto: "
-                f"no decision ({result.reason}), defaulting to proceed"
-            )
-            return None
-
-        if result.decision.action == "flat":
-            # LLM says skip this trade
-            return result
-
-        # LLM says proceed (or was downgraded from flip)
-        candidate.llm_action = result.decision.action
-        candidate.llm_confidence = result.decision.confidence
-        candidate.llm_regime = result.decision.regime
-        candidate.llm_size_mult = result.decision.size_multiplier
-        candidate.llm_entry_adj = result.decision.entry_adjustment
-        candidate.llm_notes = result.decision.notes
-        candidate.llm_memory_update = result.decision.memory_update
-        return None
-
-    def _build_llm_context(self):
-        """Build MarketSnapshot + GlobalContext + RiskContext from current bot state.
-
-        Uses cached fetcher data (still hot from _tick_once processing).
-        Called once per tick, not per symbol.
-        """
-        markets = []
-        btc_price = 0.0
-        btc_1h = 0.0
-        btc_24h = 0.0
-        eth_price = 0.0
-        # ETH isn't in DEFAULT_SYMBOLS but we need its price for ETH/BTC ratio context
-        try:
-            eth_price = self.fetcher.latest_price("ETH", "ethereum") or 0.0
-        except Exception:
-            pass
-
-        for symbol, sym_cfg in DEFAULT_SYMBOLS.items():
-            price = self._last_prices.get(symbol)
-            if not price or price <= 0:
-                continue
-
-            # Track BTC/ETH for global context
-            if symbol == "BTC":
-                btc_price = price
-            elif symbol == "ETH":
-                eth_price = price
-
-            # Get cached data (fetcher cache is still warm)
-            data = self.fetcher.fetch_multi_timeframe(
-                symbol, sym_cfg.coingecko_id, self._needed_tfs
-            )
-
-            # Compute market context from 1h data
-            pchange_1h = 0.0
-            pchange_24h = 0.0
-            vol_ratio = 1.0
-            volatility = 0.0
-
-            df_1h = data.get("1h")
-            if df_1h is not None and not df_1h.empty and len(df_1h) > 2:
-                try:
-                    pchange_1h = (price - float(df_1h["close"].iloc[-2])) / float(df_1h["close"].iloc[-2]) * 100
-                    if len(df_1h) > 24:
-                        pchange_24h = (price - float(df_1h["close"].iloc[-24])) / float(df_1h["close"].iloc[-24]) * 100
-                    avg_vol = float(df_1h["volume"].tail(20).mean())
-                    if avg_vol > 0:
-                        vol_ratio = float(df_1h["volume"].iloc[-1]) / avg_vol
-                    if len(df_1h) > 14:
-                        prev_c = df_1h["close"].shift(1)
-                        tr = pd.concat([
-                            df_1h["high"] - df_1h["low"],
-                            (df_1h["high"] - prev_c).abs(),
-                            (df_1h["low"] - prev_c).abs(),
-                        ], axis=1).max(axis=1)
-                        atr14 = float(tr.rolling(14, min_periods=1).mean().iloc[-1])
-                        volatility = atr14 / price * 100
-                except Exception:
-                    pass
-
-                if symbol == "BTC":
-                    btc_1h = pchange_1h
-                    btc_24h = pchange_24h
-
-            # Get strategy signals from ensemble (uses cached evaluations)
-            signals = []
-            try:
-                statuses = self.ensemble.get_all_status(symbol, data)
-                for s in statuses:
-                    strat_name = s.get("strategy", "unknown")
-                    # Determine side from strategy output
-                    action = s.get("action", s.get("side", "neutral"))
-                    if action in ("BUY", "buy"):
-                        side = "long"
-                    elif action in ("SELL", "sell"):
-                        side = "short"
-                    else:
-                        side = "neutral"
-
-                    # Extract confidence-like metric
-                    conf = s.get("confidence", 0)
-                    if conf == 0:
-                        # Try to infer from other fields
-                        align_l = s.get("align_long", 0)
-                        align_s = s.get("align_short", 0)
-                        best_align = max(align_l, align_s)
-                        if best_align > 0:
-                            # align values are 0-4 criteria counts, normalize to 0-1
-                            conf = best_align / 4.0
-                        elif side != "neutral":
-                            # Strategy has definitive action but no confidence — assign moderate default
-                            conf = 0.5
-
-                    regime_score = s.get("regime_score", s.get("align_long", 0))
-                    if isinstance(regime_score, (int, float)) and regime_score > 1:
-                        # align values are 0-4 criteria counts, normalize to 0-1
-                        regime_score = regime_score / 4.0
-
-                    # Extract signal_context from cached strategy signal
-                    sig_meta = {}
-                    try:
-                        last_sig = self.ensemble.get_last_signal(symbol, strat_name)
-                        if last_sig and last_sig.signal_context:
-                            sig_meta["ctx"] = last_sig.signal_context
-                    except Exception:
-                        pass
-
-                    signals.append(LLMStrategySignal(
-                        symbol=symbol,
-                        strategy=strat_name,
-                        side=side,
-                        confidence=min(conf, 1.0),
-                        regime_score=min(regime_score, 1.0) if isinstance(regime_score, (int, float)) else 0.0,
-                        meta=sig_meta,
-                    ))
-            except Exception:
-                pass
-
-            markets.append(LLMMarketSnapshot(
-                symbol=symbol,
-                price=price,
-                price_change_1h_pct=pchange_1h,
-                price_change_24h_pct=pchange_24h,
-                volume_ratio=vol_ratio,
-                volatility=volatility,
-                signals=signals,
-            ))
-
-        # Global Brain: build cross-market context for LLM reasoning
-        try:
-            _gb_ctx = build_global_context(
-                btc_price=btc_price,
-                btc_1h_change=btc_1h,
-                btc_24h_change=btc_24h,
-                eth_price=eth_price,
-                last_prices=self._last_prices,
-                funding_rates=self._last_funding_rates,
-            )
-            self._global_bias = _gb_ctx.get("classified_bias", "neutral")
-            self._global_bias_adjustment = apply_global_bias(
-                self._global_bias,
-                max_positions=self.config.max_open_positions,
-            )
-        except Exception as e:
-            _gb_ctx = {}
-            logger.debug(f"Global brain context error: {e}")
-
-        # Global context (enriched with telemetry for LLM learning)
-        eth_btc = eth_price / btc_price if btc_price > 0 else 0.0
-        telem_snap = Telemetry.snapshot()
-        global_ctx = LLMGlobalContext(
-            timestamp=int(time.time() * 1000),
-            btc_price=btc_price,
-            btc_change_1h_pct=btc_1h,
-            btc_change_24h_pct=btc_24h,
-            eth_btc_ratio=eth_btc,
-            total_open_positions=self.pos_mgr.get_open_count(),
-            daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,
-            equity=self.risk_mgr.equity,
-            circuit_breaker_active=self.risk_mgr.circuit_breaker.tripped,
-        )
-        # Attach telemetry so the LLM can learn from execution quality
-        cb = self.risk_mgr.circuit_breaker
-        # Build recent outcomes string (e.g., "WWLLL") from feedback quality scorer
-        _recent_out_str = ""
-        if self.feedback.quality.overall_recent:
-            _recent_out_str = "".join(
-                "W" if r else "L" for r in self.feedback.quality.overall_recent[-5:]
-            )
-        # Daily win rate from feedback
-        _daily_wr = None
-        if len(self.feedback.quality.overall_recent) >= 3:
-            _daily_wr = sum(self.feedback.quality.overall_recent) / len(self.feedback.quality.overall_recent)
-
-        global_ctx.extra = {
-            "win_rate": telem_snap.get("win_rate", 0),
-            "total_trades": telem_snap.get("total_trades", 0),
-            "avg_slippage": telem_snap.get("avg_slippage", 0),
-            "avg_snapshot_age": telem_snap.get("avg_snapshot_age", 0),
-            "stale_signals": telem_snap.get("stale_signals", 0),
-            "circuit_breaker_triggers": telem_snap.get("circuit_breaker_triggers", 0),
-            "throttle_blocks": telem_snap.get("throttle_blocks", 0),
-            "ops_guard_status": self.ops_guard.format_status(),
-            # Loss streak context for LLM awareness
-            "consecutive_losses": cb.consecutive_losses,
-            "recent_outcomes": _recent_out_str,
-            "daily_win_rate": _daily_wr,
-            # Portfolio correlation risk for LLM sizing adjustment
-            "correlation_risk": self._compute_portfolio_correlation().get("risk_level", "low"),
-            # Portfolio leverage for risk awareness
-            "portfolio_leverage": self._compute_portfolio_leverage(),
-            # Estimated daily funding cost (% of equity)
-            "estimated_daily_funding_cost": self._compute_estimated_daily_funding(),
-            # D5: Session performance for LLM context
-            "session_performance": self.feedback.quality.get_session_performance(),
-            # E2: Active regime transitions
-            "regime_transitions": self.regime_detector.get_transition_summary(),
-            # Global Brain: market-wide bias classification
-            "global_bias": self._global_bias,
-            "sector_activity": _gb_ctx.get("sectors_active", {}),
-            "net_funding": _gb_ctx.get("net_funding", 0.0),
-        }
-
-        # ML Intelligence: inject model predictions into LLM context
-        # so agents can see direction probability, win probability, and strategy weights
-        if self.ml:
-            try:
-                ml_ctx = {}
-                # Model training status
-                ml_ctx["phase"] = "mature" if len(self.ml.outcomes) >= 50 else ("learning" if len(self.ml.outcomes) >= self.ml.min_samples else "cold_start")
-                ml_ctx["trades_trained"] = len(self.ml.outcomes)
-
-                # Direction prediction (1h) — the 78% accurate model
-                dir_prob = self.ml.predict_direction(
-                    price_change_1h_pct=global_ctx.btc_change_1h_pct,
-                    price_change_24h_pct=global_ctx.btc_change_24h_pct,
-                )
-                if dir_prob is not None:
-                    ml_ctx["direction_prob"] = round(dir_prob, 3)
-
-                # Strategy win rates (ML-observed, rolling 20 trades)
-                strat_wrs = {}
-                for strat_name in ("regime_trend", "monte_carlo_zones", "multi_tier_quality", "confidence_scorer"):
-                    wr = self.ml.get_strategy_win_rate(strat_name)
-                    if wr is not None:
-                        strat_wrs[strat_name] = round(wr, 2)
-                if strat_wrs:
-                    ml_ctx["strategy_win_rates"] = strat_wrs
-
-                # ML-recommended strategy weights
-                ml_weights = self.ml.get_strategy_weights()
-                if ml_weights:
-                    ml_ctx["strategy_weights"] = {k: round(v, 2) for k, v in ml_weights.items()}
-
-                # Snapshot model stats
-                if self.ml.snapshot_weights is not None:
-                    filled = sum(1 for s in self.ml.snapshots if s.future_return_1h is not None)
-                    ml_ctx["snapshot_model_samples"] = filled
-
-                global_ctx.extra["ml_intelligence"] = ml_ctx
-            except Exception as e:
-                logger.debug(f"ML intelligence injection error: {e}")
-
-        # Cross-symbol pattern signals: inject lead-lag relationships for LLM
-        if self.cross_symbol_tracker:
-            try:
-                _cs_signals = self.cross_symbol_tracker.get_active_signals()
-                if _cs_signals:
-                    global_ctx.extra["cross_symbol_signals"] = _cs_signals[:5]  # Cap at 5
-                _cs_patterns = self.cross_symbol_tracker.get_pattern_summary()
-                if _cs_patterns:
-                    global_ctx.extra["cross_symbol_patterns"] = _cs_patterns
-            except Exception as e:
-                logger.debug(f"Cross-symbol pattern injection error: {e}")
-
-        # Inject Scout Agent preparation findings into LLM context
-        # Scout results persist across ticks (refreshed every 10 ticks)
-        scout = getattr(self, '_last_scout_result', None)
-        scout_ts = getattr(self, '_last_scout_ts', 0)
-        if scout and (time.time() - scout_ts) < 600:  # Fresh within 10 min
-            scout_compact = {}
-            wl = scout.get("watchlist", [])
-            if wl:
-                scout_compact["watchlist"] = [
-                    {"sym": w.get("symbol"), "pri": w.get("priority"),
-                     "setup": w.get("setup_forming"), "dir": w.get("direction"),
-                     "thesis": w.get("pre_thesis", "")[:80]}
-                    for w in wl[:5]
-                ]
-            rf = scout.get("regime_forecast")
-            if rf:
-                scout_compact["regime_forecast"] = rf
-            ll = scout.get("lead_lag_alerts", [])
-            if ll:
-                scout_compact["lead_lag"] = ll[:3]
-            cw = scout.get("correlation_warning")
-            if cw:
-                scout_compact["corr_warning"] = cw
-            global_ctx.extra["scout_preparation"] = scout_compact
-
-        # Inject deep memory edge map: which setups and strategies have proven edge
-        try:
-            from llm.deep_memory import get_deep_memory
-            _dm = get_deep_memory()
-            # Setup type win rates (most actionable for Trade Agent)
-            _setup_wr = _dm.trade_dna.get_win_rate_by("setup_type")
-            if _setup_wr:
-                edge_map = {}
-                for stype, stats in _setup_wr.items():
-                    if stats["total"] >= 5:  # Only include statistically meaningful
-                        wr = stats["wins"] / stats["total"] if stats["total"] else 0
-                        edge_map[stype] = {
-                            "wr": round(wr * 100),
-                            "n": stats["total"],
-                            "pnl": round(stats["pnl"], 2),
-                        }
-                if edge_map:
-                    global_ctx.extra["setup_edge_map"] = edge_map
-            # Strategy win rates by regime (helps Trade Agent weigh signals)
-            _strat_wr = _dm.trade_dna.get_win_rate_by("strategy")
-            if _strat_wr:
-                strat_perf = {}
-                for strat, stats in _strat_wr.items():
-                    if stats["total"] >= 3:
-                        wr = stats["wins"] / stats["total"] if stats["total"] else 0
-                        strat_perf[strat] = {"wr": round(wr * 100), "n": stats["total"]}
-                if strat_perf:
-                    global_ctx.extra["strategy_performance"] = strat_perf
-            # Confluence win rates by agreement count (how many strategies agreed)
-            _combo_wr = _dm.trade_dna.get_strategy_effectiveness()
-            if _combo_wr:
-                confl_wr = {}
-                for combo_key, stats in _combo_wr.items():
-                    if combo_key == "unknown" or stats["total"] < 3:
-                        continue
-                    n_strats = len(combo_key.split(",")) if combo_key else 0
-                    level = str(n_strats)
-                    if level not in confl_wr:
-                        confl_wr[level] = {"wins": 0, "total": 0, "pnl": 0.0}
-                    confl_wr[level]["wins"] += stats["wins"]
-                    confl_wr[level]["total"] += stats["total"]
-                    confl_wr[level]["pnl"] += stats["pnl"]
-                for level, agg in confl_wr.items():
-                    wr = agg["wins"] / agg["total"] if agg["total"] else 0
-                    confl_wr[level] = {
-                        "wr": round(wr * 100),
-                        "n": agg["total"],
-                        "pnl": round(agg["pnl"], 2),
-                    }
-                if confl_wr:
-                    global_ctx.extra["confluence_wr"] = confl_wr
-        except Exception as e:
-            logger.debug(f"Deep memory edge map injection error: {e}")
-
-        # Strategy Signal Digest: full visibility into what ALL strategies are reading
-        # This gives the LLM brain access to every strategy's output — not just passing ones
-        try:
-            all_digests = self.ensemble.get_all_signal_digests()
-            if all_digests:
-                # Compact for token efficiency: only include symbols with signals
-                compact_digests = {}
-                for sym, digest in all_digests.items():
-                    if digest and digest.get("n_strategies", 0) > 0:
-                        compact_digests[sym] = {
-                            "n": digest["n_strategies"],
-                            "side": digest["consensus"]["dominant_side"],
-                            "agree": digest["consensus"]["agreement"],
-                            "dissent": digest["consensus"]["dissent"],
-                            "avg_conf": digest["consensus"]["avg_confidence"],
-                            "pass_votes": digest["consensus"]["would_pass_votes"],
-                            "readings": [
-                                {
-                                    "s": r["strategy"][:15],
-                                    "sd": r["side"][0],  # B or S
-                                    "c": r["confidence"],
-                                    "w": r["weight"],
-                                }
-                                for r in digest.get("readings", [])
-                            ],
-                        }
-                        if digest.get("chop_score", 0) > 0.3:
-                            compact_digests[sym]["chop"] = digest["chop_score"]
-                        # Include rejection reason so LLM knows why signals were blocked
-                        rej = digest.get("last_rejection")
-                        if rej:
-                            compact_digests[sym]["rejected"] = {
-                                "reason": rej["reason"],
-                                "conf": rej["confidence"],
-                                "side": rej["side"][0],  # B or S
-                            }
-                if compact_digests:
-                    global_ctx.extra["signal_digest"] = compact_digests
-        except Exception as e:
-            logger.debug(f"Signal digest injection error: {e}")
-
-        # Risk context
-        risk_ctx = LLMRiskContext(
-            daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,
-            max_daily_loss=self.risk_mgr.equity * self.config.circuit_breaker_daily_loss_pct,
-            equity=self.risk_mgr.equity,
-            max_leverage=self.config.max_leverage,
-            current_leverage=self._compute_portfolio_leverage(),
-            volatility=max((m.volatility for m in markets), default=0.0),
-            max_volatility=15.0,  # 15% ATR/price = extreme
-            open_positions=self.pos_mgr.get_open_count(),
-            max_positions=self.config.max_open_positions,
-            circuit_breaker_active=self.risk_mgr.circuit_breaker.tripped,
-            consecutive_losses=self.risk_mgr.circuit_breaker.consecutive_losses,
-        )
-
-        # Active positions
-        active_positions = []
-        open_pos = self.pos_mgr.get_open_positions()
-        for sym, pos in open_pos.items():
-            p = self._last_prices.get(sym, 0)
-            if pos.side == "LONG":
-                unrealized = (p - pos.entry) * pos.qty * pos.leverage if p else 0
-            else:
-                unrealized = (pos.entry - p) * pos.qty * pos.leverage if p else 0
-            active_positions.append({
-                "symbol": sym,
-                "side": pos.side,
-                "entry": pos.entry,
-                "leverage": pos.leverage,
-                "unrealized_pnl": round(unrealized, 2),
-                "funding_rate": self._last_funding_rates.get(sym, 0.0),
-            })
-
-        # Portfolio Brain: cross-symbol portfolio reasoning for LLM
-        try:
-            _portfolio_snap = build_portfolio_snapshot(
-                pos_mgr=self.pos_mgr,
-                last_prices=self._last_prices,
-                equity=self.risk_mgr.equity,
-            )
-            global_ctx.extra["portfolio_snapshot"] = _portfolio_snap
-        except Exception as e:
-            logger.debug(f"Portfolio brain snapshot error: {e}")
-
-        # Self-Tuning Risk: inject current profile for LLM awareness
-        try:
-            _risk_profile = get_risk_profile_params()
-            global_ctx.extra["risk_profile"] = _risk_profile.get("description", "normal")
-            global_ctx.extra["dynamic_leverage_cap"] = get_dynamic_leverage_cap(
-                self.config.max_leverage
-            )
-        except Exception as e:
-            logger.debug(f"Risk profile context error: {e}")
-
-        # Survival Pressure: inject accountability context into LLM prompt
-        if _SURVIVAL_PRESSURE_AVAILABLE:
-            try:
-                global_ctx.extra["survival_status"] = get_survival_context_for_llm()
-            except Exception as e:
-                logger.debug(f"Survival context injection error: {e}")
-
-        # Wave 3: Portfolio Risk Engine — inject vol forecasts and risk budget
-        if self.portfolio_risk:
-            try:
-                _pr_budget = self.portfolio_risk.compute_risk_budget(
-                    equity=self.risk_mgr.equity,
-                    open_positions={s: {"side": p.side, "entry": p.entry,
-                                       "qty": p.qty, "leverage": p.leverage}
-                                   for s, p in self.pos_mgr.get_open_positions().items()},
-                )
-                global_ctx.extra["portfolio_risk_budget"] = {
-                    "utilization": round(_pr_budget.utilization, 2),
-                    "remaining_pct": round(_pr_budget.remaining_budget, 2),
-                    "concentration_warning": _pr_budget.concentration_warning,
-                }
-            except Exception as e:
-                logger.debug(f"Portfolio risk context error: {e}")
-
-        # Wave 4: Meta-Learning — inject active insights for LLM awareness
-        if self.meta_engine:
-            try:
-                _meta_insights = self.meta_engine.get_active_ideas()
-                if _meta_insights:
-                    global_ctx.extra["meta_learning_ideas"] = [
-                        {"name": i.name, "trigger": i.trigger_condition, "status": i.status}
-                        for i in _meta_insights[:3]
-                    ]
-            except Exception as e:
-                logger.debug(f"Meta-learning context error: {e}")
-
-        # Wave 4: Counterfactual — inject veto accuracy for LLM calibration
-        if self.counterfactual:
-            try:
-                _cf_stats = self.counterfactual.get_summary_stats()
-                if _cf_stats:
-                    global_ctx.extra["counterfactual_stats"] = _cf_stats
-            except Exception as e:
-                logger.debug(f"Counterfactual context error: {e}")
-
-        # LLM Self-Performance: inject rolling accuracy stats for self-calibration
-        if _SELF_PERF_AVAILABLE:
-            try:
-                _sp_stats = get_llm_self_stats()
-                if _sp_stats:
-                    global_ctx.extra["llm_self_performance"] = _sp_stats
-            except Exception as e:
-                logger.debug(f"Self-performance stats injection error: {e}")
-
-        # Learning Mode: inject current phase for LLM awareness
-        if _LEARNING_MODE_AVAILABLE:
-            try:
-                if is_learning_mode_active():
-                    _lm_phase = get_current_phase()
-                    global_ctx.extra["learning_mode"] = {
-                        "active": True,
-                        "phase": _lm_phase.name,
-                        "description": (
-                            "ABSORB: Observing only, cannot veto" if _lm_phase == LearningPhase.ABSORB
-                            else "APPRENTICE: Learning, limited influence" if _lm_phase == LearningPhase.APPRENTICE
-                            else "ACTIVE: Full autonomy earned"
-                        ),
-                    }
-                else:
-                    global_ctx.extra["learning_mode"] = {"active": False, "phase": "GRADUATED"}
-            except Exception as e:
-                logger.debug(f"Learning mode context injection error: {e}")
-
-        # Adaptive Risk: inject current risk multiplier for LLM sizing awareness
-        if self.adaptive_risk:
-            try:
-                _ar_status = self.adaptive_risk.get_status()
-                global_ctx.extra["adaptive_risk"] = {
-                    "recent_streak": _ar_status.get("recent_streak", ""),
-                    "recent_wr": round(_ar_status.get("recent_wr", 0), 2),
-                }
-            except Exception as e:
-                logger.debug(f"Adaptive risk context injection error: {e}")
-
-        # ── Soft-filter annotations: inject into LLM context ──
-        if getattr(self.config, 'enable_soft_filters', False) or getattr(self.config, 'soft_filter_log_only', False):
-            if hasattr(self, '_pending_annotations') and self._pending_annotations:
-                try:
-                    # Build compact filter assessment for each annotated signal
-                    filter_assessments = []
-                    near_misses = []
-                    for sym, ann_sig in self._pending_annotations.items():
-                        compact = ann_sig.to_compact_dict()
-                        compact["sym"] = sym
-                        if ann_sig.passed_all:
-                            filter_assessments.append(compact)
-                        elif not ann_sig.hard_rejected:
-                            near_misses.append(compact)
-
-                    if filter_assessments:
-                        global_ctx.extra["filter_annotations"] = filter_assessments
-                    if near_misses and getattr(self.config, 'soft_filter_near_miss', True):
-                        global_ctx.extra["near_miss_signals"] = near_misses[:5]  # Cap at 5
-
-                    # Clear pending annotations for next tick
-                    self._pending_annotations = {}
-                except Exception as e:
-                    logger.debug(f"Filter annotation injection error: {e}")
-
-        return markets, global_ctx, risk_ctx, active_positions
-
-    def _run_llm_metabrain(self, trace_id: str = ""):
-        """Run the LLM meta-brain via hybrid trigger system.
-
-        Called when at least one trigger has fired. The trigger accumulator
-        determines the highest-priority trigger and combines context from
-        all pending events.
-
-        In ADVISORY mode: call LLM, log decision, send to alerts, no influence.
-        """
-        # Get the best trigger, combined context, and all reason labels
-        trigger_type, trigger_ctx, all_reasons = self._llm_triggers.get_best()
-        trigger_label = TRIGGER_LABELS.get(trigger_type, "unknown") if trigger_type else "periodic"
-        is_event = trigger_type is not None and trigger_type != LLMTrigger.PERIODIC
-
-        logger.info(
-            f"[{trace_id}][LLM] Trigger: {trigger_label} "
-            f"reasons=[{', '.join(all_reasons)}] "
-            f"(events: {self._llm_triggers.event_summary})"
-        )
-
-        # F3: Graceful degradation — skip LLM if API is degraded
-        if self.degradation.should_skip_llm():
-            logger.info(
-                f"[{trace_id}][LLM] Skipping — LLM API degraded (ensemble-only mode)"
-            )
-            return
-
-        markets, global_ctx, risk_ctx, positions = self._build_llm_context()
-
-        if not markets:
-            return
-
-        result = get_trading_decision(
-            markets=markets,
-            global_context=global_ctx,
-            risk_context=risk_ctx,
-            active_positions=positions,
-            mode=self.llm_mode,
-            trigger_reason=trigger_label,
-            trigger_context=trigger_ctx,
-            event_triggered=is_event,
-        )
-
-        # F3: Track LLM API health for graceful degradation
-        if result.reason and result.reason.startswith("api_error"):
-            self.degradation.record_llm_error()
-        else:
-            self.degradation.record_llm_success()
-
-        # Mark the trigger as called (for cooldown tracking)
-        if trigger_type:
-            self._llm_triggers.mark_called(trigger_type)
-
-        # Log result
-        if result.source == "none" and result.reason in ("throttled_no_cache", "off"):
-            return  # Silent skip
-
-        if result.source == "cache":
-            return  # Already logged when cached
-
-        if result.decision:
-            d = result.decision
-            logger.info(
-                f"[{trace_id}][LLM] {d.action.upper()} conf={d.confidence:.2f} "
-                f"regime={d.regime} size_mult={d.size_multiplier:.2f} "
-                f"trigger={trigger_label} | {d.notes}"
-            )
-
-            # Feed LLM regime classification back to system-wide regime detector
-            # This closes the loop: LLM Regime Agent → system cache → strategy filters
-            if d.regime and d.regime != "unknown":
-                try:
-                    for sym in DEFAULT_SYMBOLS:
-                        self.regime_detector.update(sym, d.regime)
-                        self._tick_regime_cache[sym] = d.regime
-                except Exception:
-                    pass
-
-            # In ADVISORY/VETO_ONLY mode: send to alerts for visibility
-            if self.llm_mode in (LLMMode.ADVISORY, LLMMode.VETO_ONLY):
-                reasons_str = ", ".join(all_reasons) if all_reasons else trigger_label
-                orig_str = ""
-                if result.original_action and result.original_action != d.action:
-                    orig_str = f"\nOriginal: {result.original_action} (downgraded)"
-                self.alerts.send_market_update(
-                    f"[LLM META-BRAIN] {d.action.upper()} "
-                    f"conf={d.confidence:.0%} regime={d.regime}\n"
-                    f"Size mult: {d.size_multiplier:.2f}x\n"
-                    f"Trigger: {trigger_label}\n"
-                    f"All reasons: {reasons_str}"
-                    f"{orig_str}\n"
-                    f"{d.notes}"
-                )
-        elif result.reason:
-            logger.info(f"[{trace_id}][LLM] No decision: {result.reason}")
-
-        # Log API usage periodically
-        if result.usage and result.usage.get("input_tokens", 0) > 0:
-            from llm.client import get_usage_stats
-            stats = get_usage_stats()
-            logger.info(
-                f"[LLM-COST] calls={stats['total_calls']} "
-                f"tokens={stats['total_input_tokens']}in/{stats['total_output_tokens']}out "
-                f"est=${stats['estimated_cost_usd']:.4f}"
-            )
-
-    def _compute_portfolio_leverage(self) -> float:
-        """Compute total portfolio leverage as a fraction of equity.
-
-        Formula: sum(abs(qty) * price * leverage) / equity
-        E.g., 3 positions at 5x each with $1000 notional each = 15000 / equity.
-        """
-        open_pos = self.pos_mgr.get_open_positions()
-        if not open_pos:
-            return 0.0
-        equity = self.risk_mgr.equity
-        if equity <= 0:
-            return 0.0
-        total_notional = 0.0
-        for sym, pos in open_pos.items():
-            price = self._last_prices.get(sym, pos.entry)
-            total_notional += abs(pos.qty) * price * pos.leverage
-        return round(total_notional / equity, 2)
-
-    def _compute_estimated_daily_funding(self) -> float:
-        """Compute estimated daily funding cost as % of equity.
-
-        Funding on Hyperliquid is paid 3x/day (every 8 hours).
-        Cost = sum(abs(funding_rate) * 3 * leverage * position_value / equity) * 100
-        Only counts positions paying funding (long+positive or short+negative rate).
-        """
-        open_pos = self.pos_mgr.get_open_positions()
-        if not open_pos:
-            return 0.0
-        equity = self.risk_mgr.equity
-        if equity <= 0:
-            return 0.0
-        total_daily_cost_pct = 0.0
-        for sym, pos in open_pos.items():
-            fr = self._last_funding_rates.get(sym, 0.0)
-            if fr == 0:
-                continue
-            price = self._last_prices.get(sym, pos.entry)
-            pos_value = abs(pos.qty) * price
-            # Check if position is paying or receiving funding
-            side_lower = pos.side.lower()
-            is_paying = (
-                (side_lower in ("long", "buy") and fr > 0) or
-                (side_lower in ("short", "sell") and fr < 0)
-            )
-            if is_paying:
-                # 3 payments per day, scaled by leverage
-                daily_cost = abs(fr) * 3 * pos.leverage * pos_value / equity * 100
-                total_daily_cost_pct += daily_cost
-        return round(total_daily_cost_pct, 4)
-
-    def _record_trade_dna(self, symbol: str, pos, event):
-        """Record full trade DNA to deep memory after a position closes.
-
-        Populates the deep memory system with complete trade anatomy
-        so the LLM can learn from every trade: what worked, what failed,
-        and which strategy/regime/symbol combos are most profitable.
-        """
-        if not _DEEP_MEMORY_AVAILABLE:
-            return
-        try:
-            dm = get_deep_memory()
-
-            # Determine outcome
-            total_pnl = pos.realized_pnl if pos else event.pnl
-            if total_pnl > 0:
-                outcome = "WIN"
-            elif total_pnl < -0.01:
-                outcome = "LOSS"
-            else:
-                outcome = "BREAKEVEN"
-
-            # Extract trade profile data
-            _regime = ""
-            _entry_type = ""
-            if pos.trade_profile:
-                _regime = pos.trade_profile.regime or ""
-                _entry_type = pos.trade_profile.entry_type or ""
-
-            # Extract LLM decision context from entry_reasons
-            _er = pos.entry_reasons or {}
-            _llm_action = _er.get("llm_action", "")
-            _llm_conf = _er.get("llm_confidence", 0.0)
-            _llm_reasoning = _er.get("llm_reasoning", "")
-            _strategies_agreed = _er.get("strategies_agreed", [])
-            if not _strategies_agreed and pos.strategy:
-                _strategies_agreed = [pos.strategy]
-
-            # Hold time
-            hold_time_s = 0.0
-            if pos.open_time:
-                hold_time_s = (datetime.now(timezone.utc) - pos.open_time).total_seconds()
-
-            # BTC trend context
-            btc_price = self._last_prices.get("BTC", 0)
-            btc_1h_change = self._price_changes_1h.get("BTC", 0)
-            if btc_1h_change > 0.5:
-                btc_trend = "bullish"
-            elif btc_1h_change < -0.5:
-                btc_trend = "bearish"
-            else:
-                btc_trend = "neutral"
-
-            # Volume ratio and funding rate
-            _vol_ratio = 0.0
-            _funding_rate = self._last_funding_rates.get(symbol, 0.0)
-
-            # ATR at entry (stored on position)
-            _atr = pos.atr if pos.atr else 0.0
-
-            # Generate trade ID
-            trade_id = f"{symbol}_{pos.side}_{int(pos.open_time.timestamp())}"
-
-            dm.record_full_trade(
-                trade_id=trade_id,
-                symbol=symbol,
-                side=pos.side,
-                entry_price=pos.entry,
-                exit_price=event.price,
-                sl=pos.original_sl,
-                tp1=pos.tp1,
-                tp2=pos.tp2,
-                confidence=pos.confidence,
-                leverage=pos.leverage,
-                regime=_regime,
-                strategies_agreed=_strategies_agreed,
-                outcome=outcome,
-                pnl=total_pnl,
-                hold_time_s=hold_time_s,
-                exit_reason=event.action,
-                llm_action=_llm_action,
-                llm_confidence=_llm_conf,
-                llm_reasoning=_llm_reasoning,
-                entry_type=_entry_type,
-                btc_trend=btc_trend,
-                volume_ratio=_vol_ratio,
-                funding_rate=_funding_rate,
-                atr=_atr,
-            )
-
-            # Record regime transition if regime changed during trade
-            if _regime:
-                current_regime = ""
-                try:
-                    current_regime = self.regime_detector.get_transition_summary()
-                    if isinstance(current_regime, dict):
-                        current_regime = current_regime.get("current", "")
-                    elif isinstance(current_regime, list) and current_regime:
-                        current_regime = str(current_regime[0])
-                    else:
-                        current_regime = str(current_regime) if current_regime else ""
-                except Exception:
-                    pass
-                if current_regime and current_regime != _regime:
-                    dm.regimes.record_transition(
-                        from_regime=_regime,
-                        to_regime=current_regime,
-                        symbol=symbol,
-                        trigger=f"trade_close_{event.action}",
-                        context={"pnl": total_pnl, "hold_time_s": hold_time_s},
-                    )
-
-            logger.info(
-                f"[DEEP-MEM] Recorded trade DNA: {symbol} {pos.side} "
-                f"{outcome} PnL=${total_pnl:+.2f}"
-            )
-
-        except Exception as e:
-            logger.debug(f"[DEEP-MEM] Failed to record trade DNA: {e}")
-
-    def _compute_portfolio_correlation(self) -> Dict[str, Any]:
-        """Compute directional correlation risk across open positions.
-
-        Returns risk assessment: low/medium/high based on same-direction
-        exposure in correlated assets (BTC/ETH/SOL etc.).
-        """
-        open_pos = self.pos_mgr.get_open_positions()
-        if len(open_pos) < 2:
-            return {"avg_correlation": 0.0, "net_delta": 0, "risk_level": "low"}
-
-        longs = [(s, p) for s, p in open_pos.items() if p.side == "LONG"]
-        shorts = [(s, p) for s, p in open_pos.items() if p.side == "SHORT"]
-        net_delta = len(longs) - len(shorts)
-
-        HIGH_CORR_PAIRS = {
-            frozenset({"BTC", "ETH"}): 0.85,
-            frozenset({"SOL", "ETH"}): 0.70,
-            frozenset({"BTC", "SOL"}): 0.65,
-            frozenset({"AVAX", "SOL"}): 0.55,
-            frozenset({"LINK", "ETH"}): 0.55,
-        }
-
-        # Check correlation among same-direction positions
-        same_dir = [s for s, _ in longs] if len(longs) >= len(shorts) else [s for s, _ in shorts]
-        max_corr = 0.0
-        for i, s1 in enumerate(same_dir):
-            for s2 in same_dir[i + 1:]:
-                pair = frozenset({s1.split("/")[0], s2.split("/")[0]})
-                corr = HIGH_CORR_PAIRS.get(pair, 0.3)
-                max_corr = max(max_corr, corr)
-
-        risk_level = "high" if max_corr > 0.7 or abs(net_delta) >= 3 else (
-            "medium" if max_corr > 0.5 or abs(net_delta) >= 2 else "low"
-        )
-
-        return {
-            "avg_correlation": round(max_corr, 2),
-            "net_delta": net_delta,
-            "same_dir_count": max(len(longs), len(shorts)),
-            "risk_level": risk_level,
-        }
-
-    def _send_heartbeat(self):
-        """Send periodic status heartbeat."""
-        # Measure rejection outcomes with current prices
-        if hasattr(self, '_rejection_tracker') and self._rejection_tracker is not None:
-            try:
-                _prices = {sym: self._last_prices.get(sym, 0) for sym in self.symbols}
-                _completed = self._rejection_tracker.measure_outcomes(_prices)
-                if _completed:
-                    _stats = self._rejection_tracker.get_stats_summary()
-                    logger.info(
-                        f"[REJECTION-TRACKER] {len(_completed)} outcomes measured. "
-                        f"Marginal miss rate: {self._rejection_tracker.get_miss_rate('marginal_neg'):.0%}"
-                    )
-            except Exception as e:
-                logger.debug(f"[REJECTION-TRACKER] Measurement error: {e}")
-        fetcher_stats = self.fetcher.get_stats()
-        ml_snap_filled = 0
-        if self.ml:
-            ml_snap_filled = sum(1 for s in self.ml.snapshots if s.future_return_1h is not None)
-        status = {
-            "equity": self.risk_mgr.equity,
-            "open_positions": self.pos_mgr.get_open_count(),
-            "daily_pnl": self.risk_mgr.circuit_breaker.daily_pnl,
-            "ml_samples": len(self.ml.outcomes) if self.ml else 0,
-            "ml_snapshots": len(self.ml.snapshots) if self.ml else 0,
-            "ml_snap_trained": ml_snap_filled,
-            "ml_direction_model": self.ml.snapshot_weights is not None if self.ml else False,
-            "circuit_breaker": self.risk_mgr.circuit_breaker.get_status(),
-        }
-
-        # Log equity snapshot to database
-        log_equity(
-            equity=self.risk_mgr.equity,
-            open_positions=self.pos_mgr.get_open_count(),
-            daily_pnl=self.risk_mgr.circuit_breaker.daily_pnl,
-            unrealized_pnl=self.pos_mgr.get_total_unrealized_pnl({
-                sym: self.fetcher.latest_price(sym, DEFAULT_SYMBOLS[sym].coingecko_id) or 0
-                for sym in DEFAULT_SYMBOLS.keys()
-            })
-        )
-
-        # Daily strategy weight recompute from trades DB
-        self.weight_mgr.recompute_from_db()
-
-        # ML stats logging (data/ml/ml_stats.jsonl)
-        ml_conf_trade = 0.0
-        ml_conf_snapshot = 0.0
-        ml_conf_fast = 0.0
-        if self.ml:
-            ml_conf_trade = self.ml.predict_win_probability(70, 0, False, False, 1.5) if self.ml.weights is not None and len(self.ml.weights) > 0 else 0.0
-            ml_conf_snapshot = 1.0 if self.ml.snapshot_weights is not None else 0.0
-            ml_conf_fast = 1.0 if self.ml.fast_weights is not None else 0.0
-        log_ml_stats(
-            ml_samples_total=status["ml_samples"],
-            ml_conf_trade=ml_conf_trade,
-            ml_conf_snapshot=ml_conf_snapshot,
-            ml_conf_fast=ml_conf_fast,
-            equity=status["equity"],
-            open_positions=status["open_positions"],
-        )
-
-        # Risk rejection counts for heartbeat
-        rejections = get_rejection_counts()
-
-        # Rolling performance from learning hooks
-        perf = get_performance()
-
-        # Veto resolution is handled by growth.tick() via check_unresolved()
-
-        # Operator channel: detect and report operational anomalies
-        try:
-            perf_stats = get_performance_stats()
-            correlation_info = self._compute_portfolio_correlation()
-            cost_stats = get_cost_tracker().get_stats()
-
-            op_context = {
-                "consecutive_losses": self.risk_mgr.circuit_breaker.consecutive_losses,
-                "llm_accuracy": perf_stats.get("accuracy", 0.5),
-                "llm_decisions_count": perf_stats.get("total_decisions", 0),
-                "budget_used_pct": cost_stats.get("budget_used_pct", 0),
-                "correlation_risk": correlation_info.get("risk_level", "low"),
-                "hours_since_last_trade": 0,  # populated below
-                "signals_generated": len(get_daily_summary().get("by_strategy", {})),
-                "estimated_daily_funding_cost": self._compute_estimated_daily_funding(),
-                "flip_success_rate": perf_stats.get("flip_success_rate", 0.5),
-                "flip_count": perf_stats.get("flip_count", 0),
-                "calibration": perf_stats.get("calibration", 0.0),
-                "veto_accuracy": perf_stats.get("veto_accuracy", 0.5),
-                "veto_count": 0,  # populated from growth veto_feedback via get_performance_stats()
-                "streak": perf_stats.get("streak", ""),
-            }
-            self.operator_channel.check_and_report(op_context)
-        except Exception as e:
-            logger.debug(f"[HEARTBEAT] Operator channel check failed: {e}")
-
-        # Survival Pressure: include survival score in heartbeat
-        if _SURVIVAL_PRESSURE_AVAILABLE:
-            try:
-                _surv_report = get_survival_report()
-                status["survival_score"] = _surv_report.get("survival_score", 50)
-                status["survival_trend"] = _surv_report.get("improvement_trend", "neutral")
-                status["net_pnl_after_funding"] = _surv_report.get("net_pnl_after_funding", 0)
-            except Exception:
-                pass
-
-        # Learning Mode: include phase in heartbeat
-        if _LEARNING_MODE_AVAILABLE:
-            try:
-                _lm_report = get_learning_report()
-                status["learning_phase"] = _lm_report.get("phase", "UNKNOWN")
-                status["learning_graduated"] = _lm_report.get("graduated", False)
-            except Exception:
-                pass
-
-        self.alerts.send_heartbeat(status)
-
-        # Enhanced Telegram heartbeat with actionable format
-        try:
-            _hb_ds = get_daily_summary()
-            _hb_msg = format_heartbeat_telegram(
-                equity=status["equity"],
-                open_positions=status["open_positions"],
-                daily_pnl=status.get("daily_pnl", 0),
-                daily_trades=_hb_ds.get("total_trades", 0),
-                daily_wins=_hb_ds.get("wins", 0),
-                llm_mode=self.llm_mode.name,
-                health_status="OK" if self.watchdog.get_status().get("stalled") is False else "STALLED",
-            )
-            # Only send enhanced heartbeat to Telegram (Discord gets normal one)
-            if self.alerts.telegram_token and self.alerts.telegram_chat_id:
-                self.alerts._send_telegram(_hb_msg)
-        except Exception:
-            pass
-
-        # Update daily performance aggregation in SQLite
-        try:
-            update_daily_performance()
-        except Exception:
-            pass
-
-        # Wave 3: Portfolio Risk — rebalance suggestions in heartbeat
-        if self.portfolio_risk and self.pos_mgr.get_open_count() >= 2:
-            try:
-                _rebal = self.portfolio_risk.get_rebalance_suggestions(
-                    open_positions={s: {"side": p.side, "entry": p.entry,
-                                       "qty": p.qty, "leverage": p.leverage}
-                                   for s, p in self.pos_mgr.get_open_positions().items()},
-                    equity=self.risk_mgr.equity,
-                )
-                if _rebal:
-                    _rebal_str = "; ".join(
-                        f"{r.get('symbol')}: {r.get('action')} ({r.get('reason', '')})"
-                        for r in _rebal[:3]
-                    )
-                    logger.info(f"[REBALANCE] Suggestions: {_rebal_str}")
-                    status["rebalance_suggestions"] = _rebal_str
-            except Exception as e:
-                logger.debug(f"Rebalance suggestion error: {e}")
-
-        # Wave 4: Counterfactual — include veto accuracy in heartbeat
-        if self.counterfactual:
-            try:
-                _cf_acc = self.counterfactual.get_veto_accuracy()
-                if _cf_acc.get("total_resolved", 0) > 0:
-                    status["veto_accuracy_cf"] = round(_cf_acc.get("accuracy", 0), 2)
-                    status["veto_net_value"] = round(_cf_acc.get("net_veto_value", 0), 2)
-            except Exception:
-                pass
-
-        strat_weights = self.weight_mgr.get_all_weights()
-        weights_str = " ".join(f"{k}={v:.2f}" for k, v in strat_weights.items()) if strat_weights else "none"
-        rej_str = " ".join(f"{k}={v}" for k, v in rejections.items()) if rejections else "none"
-        wr20 = perf.get("win_rate_20", 0)
-
-        _surv_str = ""
-        if "survival_score" in status:
-            _surv_str = f"survival={status['survival_score']:.0f}/{status['survival_trend']} "
-        _learn_str = ""
-        if "learning_phase" in status:
-            _learn_str = f"learn={status['learning_phase']} "
-
-        logger.info(
-            f"[HEARTBEAT] equity=${status['equity']:,.2f} "
-            f"positions={status['open_positions']} "
-            f"daily_pnl=${status['daily_pnl']:+,.2f} "
-            f"WR20={wr20:.0%} "
-            f"{_surv_str}"
-            f"{_learn_str}"
-            f"ml_trades={status['ml_samples']} "
-            f"ml_snaps={status['ml_snapshots']}({status['ml_snap_trained']}filled) "
-            f"direction_model={'YES' if status['ml_direction_model'] else 'no'} "
-            f"strat_weights=[{weights_str}] "
-            f"rejections=[{rej_str}] "
-            f"pending_orders={len(self.pending_orders.get_pending())} "
-            f"api={fetcher_stats['total_requests']} "
-            f"cache={fetcher_stats['cache_hits']}"
-        )
-
-    def _handle_ingested_signal(self, signal: IngestedSignal):
-        """Handle an incoming signal from the Telegram signal ingestion pipeline.
-
-        Runs LLM analysis, sends the thought process to Telegram, and
-        optionally routes TAKE signals into the trading pipeline.
-        """
-        logger.info(
-            f"[SIGNAL-PIPE] Received: {signal.symbol} {signal.side} "
-            f"entry={signal.entry_price} sl={signal.stop_loss} tp1={signal.take_profit_1} "
-            f"quality={signal.parse_quality:.0%}"
-        )
-
-        # Skip low-quality parses
-        if signal.parse_quality < 0.6:
-            logger.info(f"[SIGNAL-PIPE] Skipping low-quality parse ({signal.parse_quality:.0%})")
-            return
-
-        # Get knowledge context for the LLM
-        knowledge_context = ""
-        try:
-            from llm.knowledge_seed import get_course_summary_for_prompt
-            from llm.self_teaching import get_teaching_engine
-            engine = get_teaching_engine()
-            knowledge_context = (
-                get_course_summary_for_prompt(signal.symbol, "") + "\n" +
-                engine.get_knowledge_for_prompt(signal.symbol, "")
-            )
-        except Exception as e:
-            logger.debug(f"[SIGNAL-PIPE] Knowledge context error: {e}")
-
-        # Get roadmap state for curriculum level
-        curriculum_level = 1
-        learning_phase = "ABSORB"
-        try:
-            from llm.knowledge_roadmap import get_roadmap_state, PHASE_CONFIGS
-            state = get_roadmap_state()
-            config = PHASE_CONFIGS.get(state.current_phase, {})
-            curriculum_level = config.get("curriculum_level", 1)
-            learning_phase = config.get("learning_phase", "ABSORB")
-        except Exception:
-            pass
-
-        # Get market data for context
-        market_data = {}
-        sym_cfg = DEFAULT_SYMBOLS.get(signal.symbol)
-        if sym_cfg:
-            try:
-                price = self.fetcher.latest_price(signal.symbol, sym_cfg.coingecko_id)
-                if price:
-                    market_data["current_price"] = price
-                    market_data["signal_vs_market_pct"] = (
-                        (signal.entry_price - price) / price * 100
-                    ) if signal.entry_price > 0 else 0
-            except Exception:
-                pass
-
-        # Run LLM analysis
-        from dataclasses import asdict
-        analysis = analyze_signal(
-            signal_data=asdict(signal),
-            market_data=market_data,
-            knowledge_context=knowledge_context,
-            curriculum_level=curriculum_level,
-            learning_phase=learning_phase,
-        )
-
-        if analysis:
-            # Send the digestible thought process to Telegram
-            telegram_msg = format_analysis_for_telegram(analysis)
-            self.alerts.send_market_update(telegram_msg)
-
-            logger.info(
-                f"[SIGNAL-PIPE] Analysis complete: {signal.symbol} {signal.side} -> "
-                f"{analysis.verdict} (conf={analysis.verdict_confidence:.0%})"
-            )
-
-            # Update the ingested signal with analysis results
-            signal.llm_analyzed = True
-            signal.llm_verdict = analysis.verdict
-            signal.llm_reasoning = analysis.verdict_reasoning
-            signal.llm_confidence = analysis.verdict_confidence
-            signal.llm_analysis_id = analysis.analysis_id
-
-            # Log updated signal
-            from signals.telegram_ingest import log_ingested_signal
-            log_ingested_signal(signal)
-
-            # Route high-confidence TAKE verdicts into trading pipeline
-            if (analysis.verdict == "TAKE"
-                    and analysis.verdict_confidence >= 0.75
-                    and signal.entry_price > 0
-                    and signal.stop_loss > 0
-                    and signal.take_profit_1 > 0):
-                logger.info(
-                    f"[SIGNAL-PIPE] TAKE verdict for {signal.symbol} "
-                    f"(conf={analysis.verdict_confidence:.0%}) — logging as external signal"
-                )
-                # Log to signals DB so it appears in analytics
-                log_signal(
-                    symbol=signal.symbol,
-                    strategy="external_telegram",
-                    side=signal.side,
-                    confidence=analysis.verdict_confidence * 100,
-                    entry=signal.entry_price,
-                    sl=signal.stop_loss,
-                    tp1=signal.take_profit_1,
-                    tp2=signal.take_profit_2 if signal.take_profit_2 else 0,
-                    atr=0,
-                    leverage=1.0,
-                    traded=False,
-                    metadata={
-                        "source": "telegram_ingest",
-                        "llm_verdict": analysis.verdict,
-                        "llm_confidence": analysis.verdict_confidence,
-                        "analysis_id": analysis.analysis_id,
-                        "original_source": signal.source_channel,
-                    }
-                )
-        else:
-            logger.warning(f"[SIGNAL-PIPE] LLM analysis failed for {signal.symbol}")
-            self.alerts.send_market_update(
-                f"[SIGNAL] {signal.symbol} {signal.side} "
-                f"entry={signal.entry_price} sl={signal.stop_loss} tp1={signal.take_profit_1}\n"
-                f"(LLM analysis unavailable)"
-            )
-
-    def _send_market_update(self, trace_id: str = ""):
-        """Send periodic market assessment even when no signals fire.
-        Helps testers stay informed and feeds data for ML improvement."""
-        lines = [f"[MARKET UPDATE] {datetime.now(timezone.utc).strftime('%H:%M UTC')}"]
-
-        for symbol, sym_cfg in DEFAULT_SYMBOLS.items():
-            try:
-                data = self.fetcher.fetch_multi_timeframe(symbol, sym_cfg.coingecko_id, self._needed_tfs)
-                price = self.fetcher.latest_price(symbol, sym_cfg.coingecko_id)
-                if price is None:
-                    continue
-
-                # Get all strategy assessments
-                statuses = self.ensemble.get_all_status(symbol, data)
-
-                # Volume ratio for chop detection
-                vol_str = ""
-                df_1h = data.get("1h")
-                if df_1h is not None and not df_1h.empty and len(df_1h) >= 20:
-                    avg_v = float(df_1h["volume"].tail(20).mean())
-                    cur_v = float(df_1h["volume"].iloc[-1])
-                    if avg_v > 0:
-                        vr = cur_v / avg_v
-                        vol_str = f" vol={vr:.1f}x" + (" [LOW]" if vr < 0.4 else "")
-
-                # Build compact summary
-                assessments = []
-                for s in statuses:
-                    strat = s.get("strategy", "?")
-                    if strat == "regime_trend":
-                        align_l = s.get("align_long", 0)
-                        align_s = s.get("align_short", 0)
-                        cross = s.get("cross", "none")
-                        assessments.append(f"RT: L{align_l}/S{align_s} cross={cross}")
-                    elif strat == "monte_carlo_zones":
-                        action = s.get("action", "?")
-                        mc = s.get("mc_prediction", {})
-                        up = mc.get("up_prob", 0) if mc else 0
-                        assessments.append(f"MC: {action} up={up:.0%}")
-                    elif strat == "confidence_scorer":
-                        action = s.get("action", "?")
-                        assessments.append(f"CS: {action}")
-                    elif strat == "multi_tier_quality":
-                        side = s.get("side", "?")
-                        regime = s.get("regime_score", 0)
-                        assessments.append(f"MT: {side} regime={regime}")
-
-                assessment_str = " | ".join(assessments)
-
-                # Check if any open position
-                open_pos = self.pos_mgr.get_open_positions()
-                pos_str = ""
-                if symbol in open_pos:
-                    pos = open_pos[symbol]
-                    pnl = (price - pos.entry) * pos.qty if pos.side == "LONG" else (pos.entry - price) * pos.qty
-                    pos_str = f" [OPEN {pos.side} {pos.leverage:.0f}x PnL=${pnl:+,.0f}]"
-
-                lines.append(f"  {symbol} ${_fmt_price(price)}{vol_str}{pos_str}")
-                lines.append(f"    {assessment_str}")
-
-            except Exception as e:
-                lines.append(f"  {symbol}: error ({e})")
-
-        msg = "\n".join(lines)
-        self.alerts.send_market_update(msg)
-        logger.info(msg.replace("\n", " | "))
-
-
-    def _log_periodic_summary(self, final: bool = False):
-        """Log periodic paper trading summary (every ~6 hours + on shutdown).
-
-        Computes win rate, PnL, per-symbol breakdown using TradeLogger data.
-        """
-        label = "FINAL SESSION SUMMARY" if final else "PERIODIC SUMMARY"
-        lines = [f"[{label}] tick={self._tick}"]
-
-        # Open positions snapshot
-        open_pos = self.pos_mgr.get_open_positions()
-        lines.append(f"  Open positions: {len(open_pos)}")
-        for sym, pos in open_pos.items():
-            price = self._last_prices.get(sym)
-            if price and pos.qty > 0:
-                if pos.side == "LONG":
-                    upnl = (price - pos.entry) * pos.qty * pos.leverage
-                else:
-                    upnl = (pos.entry - price) * pos.qty * pos.leverage
-                lines.append(f"    {sym} {pos.side} {pos.leverage:.0f}x uPnL=${upnl:+,.2f}")
-
-        # Circuit breaker state
-        cb = self.risk_mgr.circuit_breaker
-        lines.append(f"  Equity: ${self.risk_mgr.equity:,.2f} | Daily PnL: ${cb.daily_pnl:+,.2f} | Consec losses: {cb.consecutive_losses}")
-        if cb.tripped:
-            lines.append("  ** CIRCUIT BREAKER TRIPPED **")
-
-        # Use TradeLogger report if available
-        if self.trade_logger:
-            report = self.trade_logger.generate_report()
-            if "error" not in report:
-                s = report["summary"]
-                p = report["pnl"]
-                lines.append(f"  Closed trades: {s['total_closed_trades']} | WR: {s['win_rate_pct']:.1f}% | Net PnL: ${p['net_pnl']:+.2f}")
-                lines.append(f"  Avg win: ${p['avg_win']:+.2f} | Avg loss: ${p['avg_loss']:+.2f} | PF: {p['profit_factor']:.2f}x")
-
-                # Per-symbol breakdown
-                if report.get("by_symbol"):
-                    sym_parts = []
-                    for sym, st in report["by_symbol"].items():
-                        sym_parts.append(f"{sym}:{st['trades']}t/{st['win_rate']:.0f}%/${st['pnl']:+.0f}")
-                    lines.append(f"  By symbol: {' | '.join(sym_parts)}")
-            else:
-                lines.append(f"  Trades: {report['error']}")
-
-        msg = "\n".join(lines)
-        logger.info(msg.replace("\n", " | "))
-
-        # Also send via alerts so it reaches Telegram/Discord
-        try:
-            self.alerts.send_market_update(msg)
-        except Exception:
-            pass
 
 
 def main():

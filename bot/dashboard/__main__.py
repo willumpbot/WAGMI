@@ -39,7 +39,7 @@ port = int(os.getenv("DASHBOARD_PORT", "8080"))
 srv = DashboardServer(port=port)
 srv.start()
 
-print(f"NunuIRL Dashboard running at http://localhost:{port}")
+print(f"WAGMI Dashboard running at http://localhost:{port}")
 print("Press Ctrl+C to stop.\n")
 
 try:

@@ -1,5 +1,5 @@
 """
-Lightweight web dashboard for the NunuIRL trading bot.
+Lightweight web dashboard for the WAGMI trading bot.
 
 Uses Python's built-in http.server (zero external dependencies).
 Serves a single-page HTML dashboard with auto-refreshing data via
@@ -56,7 +56,7 @@ _START_TIME = time.time()
 DASHBOARD_HTML = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
-<title>NunuIRL Trading Intelligence</title>
+<title>WAGMI Trading Intelligence</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.jsdelivr.net/npm/chart.js" onerror="window._chartJsFailed=true"></script>
@@ -146,11 +146,11 @@ a:hover { text-decoration: underline; }
   background: var(--card); border: 1px solid var(--border);
 }
 
-/* ── Status Dots ── */
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
+/* ── Status Dots (with glow animation) ── */
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; transition: background 0.3s ease, box-shadow 0.3s ease; }
 .dot-green { background: var(--green); box-shadow: 0 0 8px var(--green); }
 .dot-yellow { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
-.dot-red { background: var(--red); box-shadow: 0 0 8px var(--red); }
+.dot-red { background: var(--red); box-shadow: 0 0 8px var(--red); animation: danger-pulse 1.5s ease-in-out infinite; }
 
 /* ── Tab Navigation ── */
 .tab-nav {
@@ -180,7 +180,7 @@ a:hover { text-decoration: underline; }
 
 .tab-btn .tab-icon { margin-right: 6px; font-size: 14px; }
 
-.tab-content { display: none; padding: 20px 24px; animation: fadeIn 0.25s ease; }
+.tab-content { display: none; padding: 20px 24px; animation: fadeIn 0.35s ease; }
 .tab-content.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -191,10 +191,10 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius);
   padding: 18px 20px;
   position: relative;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
 }
 
-.card:hover { border-color: var(--border-bright); }
+.card:hover { border-color: var(--border-bright); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
 
 .card h3 {
   font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
@@ -203,8 +203,8 @@ a:hover { text-decoration: underline; }
 }
 
 .card-hero {
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--card) 0%, rgba(15,15,30,0.95) 100%);
+  border: 1px solid var(--border-bright);
   border-radius: var(--radius);
   padding: 20px;
   box-shadow: var(--shadow-glow-green);
@@ -238,7 +238,8 @@ table { width: 100%; border-collapse: collapse; }
 th { text-align: left; padding: 10px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 700; white-space: nowrap; }
 td { padding: 9px 12px; border-bottom: 1px solid rgba(26,26,53,0.5); font-size: 12px; white-space: nowrap; }
 tr:hover td { background: rgba(255,255,255,0.015); }
-.scroll-y { max-height: 420px; overflow-y: auto; }
+.scroll-y { max-height: 420px; overflow-y: auto; position: relative; }
+.scroll-y::after { content: ''; position: sticky; bottom: 0; left: 0; right: 0; height: 24px; background: linear-gradient(transparent, var(--card)); pointer-events: none; display: block; }
 
 /* ── Pills / Badges ── */
 .pill { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
@@ -415,9 +416,10 @@ tr:hover td { background: rgba(255,255,255,0.015); }
 .danger-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--red); margin-left: 6px; animation: danger-pulse 1.2s ease-in-out infinite; }
 
 /* ── Empty States ── */
-.empty { color: var(--muted); padding: 24px; text-align: center; font-size: 12px; }
-.empty-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.5; }
-.empty-msg { margin-top: 4px; font-size: 11px; }
+.empty { color: var(--muted); padding: 28px; text-align: center; font-size: 12px; }
+.empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.4; }
+.empty-msg { margin-top: 6px; font-size: 11px; color: var(--muted); }
+.empty-cta { margin-top: 10px; font-size: 11px; color: var(--blue); opacity: 0.8; }
 
 /* ── Section Titles ── */
 .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 24px 0 12px 0; display: flex; align-items: center; gap: 8px; }
@@ -681,8 +683,24 @@ tr.pos-row:hover { background:var(--card-hover); }
 
 /* ── Responsive ── */
 @media(max-width:1400px) { .grid-5 { grid-template-columns: repeat(3,1fr); } .grid-4 { grid-template-columns: repeat(2,1fr); } }
-@media(max-width:1000px) { .grid-5 { grid-template-columns: repeat(2,1fr); } .grid-3,.grid-2 { grid-template-columns: 1fr; } .heatmap-grid { grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); } .tab-btn { padding: 10px 14px; font-size: 11px; } .toast-container { right:10px; left:10px; } .kb-hint { display:none; } }
-@media(max-width:600px) { .grid-5,.grid-4 { grid-template-columns: 1fr; } .heatmap-grid { grid-template-columns: 1fr; } .top-bar { padding: 0 12px; } .tab-content { padding: 14px 12px; } .top-bar .equity-ticker { display: none; } .quick-stats { gap:6px; } .quick-stat { padding:4px 10px; font-size:10px; } }
+@media(max-width:1000px) {
+  .grid-5 { grid-template-columns: repeat(2,1fr); } .grid-3,.grid-2 { grid-template-columns: 1fr; }
+  .heatmap-grid { grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); }
+  .tab-btn { padding: 10px 14px; font-size: 11px; } .toast-container { right:10px; left:10px; } .kb-hint { display:none; }
+  .course-layout { flex-direction:column; } .course-sidebar { width:100%; min-width:100%; max-height:200px; border-right:none; border-bottom:1px solid var(--border); }
+  .course-main { max-width:100%; }
+  table { font-size:11px; } th,td { padding:7px 8px; }
+}
+@media(max-width:600px) {
+  .grid-5,.grid-4 { grid-template-columns: 1fr; } .heatmap-grid { grid-template-columns: 1fr; }
+  .top-bar { padding: 0 12px; height:46px; } .tab-content { padding: 14px 12px; }
+  .top-bar .equity-ticker { display: none; } .top-bar .status-strip { gap:10px; }
+  .quick-stats { gap:6px; flex-wrap:wrap; } .quick-stat { padding:4px 10px; font-size:10px; }
+  .metric { font-size:22px; } .card { padding:14px 16px; }
+  .tab-nav { padding:0 8px; } .tab-btn { padding:8px 10px; font-size:10px; }
+  .funnel-label { width:80px; font-size:10px; } .funnel-count { font-size:11px; }
+  .cb-label { width:100px; font-size:10px; }
+}
 </style>
 </head>
 <body>
@@ -690,7 +708,7 @@ tr.pos-row:hover { background:var(--card-hover); }
 
 <!-- ═══ Top Bar ═══ -->
 <div class="top-bar">
-  <div class="brand">NunuIRL <span>Trading Intelligence</span></div>
+  <div class="brand">WAGMI <span>Trading Intelligence</span></div>
   <div class="status-strip">
     <span class="equity-ticker" id="top-equity">$--</span>
     <span><span class="dot dot-green" id="health-dot"></span><span id="health-label">Connecting...</span></span>
@@ -735,14 +753,14 @@ tr.pos-row:hover { background:var(--card-hover); }
       <div class="metric-sub" id="kpi-wl">0W / 0L</div>
     </div>
     <div class="card">
-      <h3>Open Positions <button class="info-btn" onclick="showEdu('open_positions')">?</button></h3>
-      <div class="metric cyan" id="kpi-open-positions">0</div>
-      <div class="metric-sub" id="kpi-open-positions-sub">--</div>
+      <h3>Sharpe Ratio <button class="info-btn" onclick="showEdu('sharpe_ratio')">?</button></h3>
+      <div class="metric cyan" id="kpi-sharpe">--</div>
+      <div class="metric-sub" id="kpi-sharpe-sub">annualized risk-adjusted return</div>
     </div>
     <div class="card">
-      <h3>Unrealized PnL <button class="info-btn" onclick="showEdu('unrealized_pnl')">?</button></h3>
-      <div class="metric" id="kpi-unrealized-pnl">$0.00</div>
-      <div class="metric-sub" id="kpi-unrealized-pnl-sub">across all positions</div>
+      <h3>Max Drawdown <button class="info-btn" onclick="showEdu('max_drawdown')">?</button></h3>
+      <div class="metric" id="kpi-max-dd">--</div>
+      <div class="metric-sub" id="kpi-max-dd-sub">worst peak-to-trough decline</div>
     </div>
   </div>
 
@@ -753,6 +771,7 @@ tr.pos-row:hover { background:var(--card-hover); }
     <div class="quick-stat"><span class="quick-stat-label">Worst Trade:</span><span class="quick-stat-value" id="qs-worst-trade">--</span></div>
     <div class="quick-stat"><span class="quick-stat-label">Avg Hold:</span><span class="quick-stat-value" id="qs-avg-hold">--</span></div>
     <div class="quick-stat"><span class="quick-stat-label">Profit Factor:</span><span class="quick-stat-value" id="qs-profit-factor">--</span></div>
+    <div class="quick-stat"><span class="quick-stat-label">Open Positions:</span><span class="quick-stat-value cyan" id="qs-open-positions">0</span></div>
     <div class="quick-stat"><span class="quick-stat-label">Signals Today:</span><span class="quick-stat-value" id="qs-signals-today">--</span></div>
   </div>
 
@@ -1171,7 +1190,7 @@ tr.pos-row:hover { background:var(--card-hover); }
     <!-- Sidebar Navigation -->
     <div class="course-sidebar" id="course-sidebar">
       <div style="padding:8px 16px 12px;border-bottom:1px solid var(--border);margin-bottom:8px;">
-        <div style="font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Nunu's Masterclass</div>
+        <div style="font-size:14px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">WAGMI Trading Academy</div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px;">Master the art of trading</div>
         <div class="progress-wrap" style="margin:8px 0 0;">
           <div class="progress-bar-outer" style="height:5px;">
@@ -1261,7 +1280,7 @@ tr.pos-row:hover { background:var(--card-hover); }
 
 <!-- ═══ Footer ═══ -->
 <div style="padding:0 24px;">
-  <div class="footer">NunuIRL Trading Bot &mdash; Dashboard v4.2 &mdash; Positions 10s | Data 30s | Charts on demand &mdash; Press <span class="kb-key" style="font-size:9px;">?</span> for shortcuts</div>
+  <div class="footer">WAGMI Trading Intelligence &mdash; Dashboard v4.2 &mdash; Positions 10s | Data 30s | Charts on demand &mdash; Press <span class="kb-key" style="font-size:9px;">?</span> for shortcuts</div>
 </div>
 
 </div>
@@ -1617,8 +1636,7 @@ function renderPositions(positions) {
   if(!tbody) return;
   if(!positions || positions.length === 0) {
     tbody.innerHTML = '<tr><td colspan="11" class="empty"><div class="empty-icon">\ud83d\udd0d</div>No open positions<div class="empty-msg">The bot is scanning for opportunities...</div></td></tr>';
-    document.getElementById('kpi-open-positions').textContent = '0';
-    const uEl = document.getElementById('kpi-unrealized-pnl'); uEl.textContent = '\u00240.00'; uEl.className = 'metric';
+    var opEl = document.getElementById('qs-open-positions'); if(opEl) opEl.textContent = '0';
     return;
   }
   let totalPnl = 0;
@@ -1651,8 +1669,9 @@ function renderPositions(positions) {
   }).join('');
   html += '<tr style="border-top:2px solid var(--border);"><td colspan="5" style="text-align:right;font-weight:700;color:var(--muted);">Total Unrealized</td><td class="'+(totalPnl>=0?'pnl-pos':'pnl-neg')+'" style="font-size:14px;">'+fmt$(totalPnl)+'</td><td colspan="5"></td></tr>';
   tbody.innerHTML = html;
-  document.getElementById('kpi-open-positions').textContent = positions.length;
-  const uEl = document.getElementById('kpi-unrealized-pnl'); uEl.textContent = fmt$(totalPnl); uEl.className = 'metric ' + pnlClass(totalPnl);
+  var opEl = document.getElementById('qs-open-positions'); if(opEl) { opEl.textContent = positions.length; opEl.style.color = positions.length > 0 ? 'var(--cyan)' : 'var(--muted)'; }
+  var koEl = document.getElementById('kpi-open-positions'); if(koEl) koEl.textContent = positions.length;
+  var uEl = document.getElementById('kpi-unrealized-pnl'); if(uEl) { uEl.textContent = fmt$(totalPnl); uEl.className = 'metric ' + pnlClass(totalPnl); }
 }
 
 function renderHeatmap(marketData) {
@@ -1989,7 +2008,62 @@ async function loadAll() {
       document.getElementById('kpi-equity').textContent = '\u0024'+equity.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
       document.getElementById('top-equity').textContent = '\u0024'+equity.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
       document.getElementById('top-equity').style.color = pnlColor(equity > 0 ? 1 : 0);
-      if(eq.length>=2) { const prevEq=eq[0].equity||equity; const change=equity-prevEq; const changePct=prevEq>0?((change/prevEq)*100).toFixed(2):'0.00'; const el=document.getElementById('kpi-equity-change'); el.textContent=fmt$(change)+' ('+changePct+'% 30d)'; el.style.color=pnlColor(change); }
+      // Find a baseline that excludes large equity refills (jumps > 50% in one tick)
+      let baseIdx = 0;
+      for(let bi=eq.length-2; bi>=0; bi--) {
+        const cur=eq[bi+1].equity||0, prev=eq[bi].equity||0;
+        if(prev>0 && Math.abs(cur-prev)/prev > 0.5) { baseIdx=bi+1; break; }
+      }
+      if(eq.length>=2) {
+        const prevEq=eq[baseIdx].equity||equity;
+        const change=equity-prevEq;
+        const changePct=prevEq>0?((change/prevEq)*100).toFixed(2):'0.00';
+        const el=document.getElementById('kpi-equity-change');
+        el.textContent=fmt$(change)+' ('+changePct+'% since tracking)';
+        el.style.color=pnlColor(change);
+      }
+
+      // Calculate Sharpe Ratio and Max Drawdown from equity curve
+      // Use baseIdx to skip any large equity refills
+      if(eq.length >= 3) {
+        // Filter equity curve starting after any large refills
+        const eqFiltered = baseIdx > 0 ? eq.slice(baseIdx) : eq;
+        // Daily returns from equity snapshots (sample every ~24h worth of points)
+        const step = Math.max(1, Math.floor(eqFiltered.length / Math.min(eqFiltered.length, 90)));
+        const sampled = []; for(let si=0; si<eqFiltered.length; si+=step) sampled.push(eqFiltered[si]);
+        if(sampled[sampled.length-1] !== eqFiltered[eqFiltered.length-1]) sampled.push(eqFiltered[eqFiltered.length-1]);
+        const dailyReturns = [];
+        for(let di=1; di<sampled.length; di++) {
+          const prev = sampled[di-1].equity || 1;
+          const curr = sampled[di].equity || prev;
+          if(prev > 0) {
+            const ret = (curr - prev) / prev;
+            // Skip returns > 50% as they indicate equity refills, not trading returns
+            if(Math.abs(ret) < 0.5) dailyReturns.push(ret);
+          }
+        }
+        if(dailyReturns.length >= 2) {
+          const meanRet = dailyReturns.reduce((a,v) => a+v, 0) / dailyReturns.length;
+          const variance = dailyReturns.reduce((a,v) => a + Math.pow(v - meanRet, 2), 0) / (dailyReturns.length - 1);
+          const stdDev = Math.sqrt(variance);
+          const sharpe = stdDev > 0 ? (meanRet / stdDev) * Math.sqrt(365) : 0;
+          const sharpeEl = document.getElementById('kpi-sharpe');
+          sharpeEl.textContent = sharpe.toFixed(2);
+          sharpeEl.className = 'metric ' + (sharpe >= 1.0 ? 'green' : (sharpe >= 0 ? 'yellow' : 'red'));
+          document.getElementById('kpi-sharpe-sub').textContent = sharpe >= 2 ? 'excellent' : (sharpe >= 1 ? 'good' : (sharpe >= 0 ? 'needs improvement' : 'negative'));
+        }
+        // Max drawdown (only from filtered curve)
+        let peak = 0; let maxDD = 0;
+        for(let mi=0; mi<eqFiltered.length; mi++) {
+          const eqVal = eqFiltered[mi].equity || 0;
+          if(eqVal > peak) peak = eqVal;
+          if(peak > 0) { const dd = (peak - eqVal) / peak; if(dd > maxDD) maxDD = dd; }
+        }
+        const ddEl = document.getElementById('kpi-max-dd');
+        ddEl.textContent = (maxDD * 100).toFixed(1) + '%';
+        ddEl.className = 'metric ' + (maxDD <= 0.05 ? 'green' : (maxDD <= 0.15 ? 'yellow' : 'red'));
+        document.getElementById('kpi-max-dd-sub').textContent = maxDD <= 0.05 ? 'very low risk' : (maxDD <= 0.1 ? 'moderate drawdown' : (maxDD <= 0.2 ? 'elevated drawdown' : 'high drawdown'));
+      }
 
       const pnl = ds.net_pnl || 0;
       const pnlEl = document.getElementById('kpi-pnl'); pnlEl.textContent = fmt$(pnl); pnlEl.className = 'metric ' + pnlClass(pnl);
@@ -2074,7 +2148,9 @@ async function loadAll() {
   } catch(err) {
     console.error('Dashboard load error:', err);
     document.getElementById('health-dot').className = 'dot dot-red';
-    document.getElementById('health-label').textContent = err.name === 'AbortError' ? 'Timeout' : 'Connection error';
+    var errMsg = err.name === 'AbortError' ? 'Timeout' : 'Connection error';
+    document.getElementById('health-label').textContent = errMsg;
+    showToast('Connection Issue', errMsg + ' — retrying in 30s', 'warning', 5000);
   }
 }
 
@@ -2736,8 +2812,8 @@ function renderDashboard() {
   }
 
   return '<div class="course-page-header">' +
-    '<h1>Welcome to Nunu\'s Masterclass</h1>' +
-    '<p class="subtitle">Master the art of trading with our comprehensive program</p>' +
+    '<h1>WAGMI Trading Academy</h1>' +
+    '<p class="subtitle">Comprehensive trading education and strategy mastery</p>' +
   '</div>' +
 
   '<div class="card" style="margin-bottom:24px;">' +
@@ -2842,7 +2918,7 @@ function renderStartHere() {
 
   return '<div class="course-page-header">' +
     '<h1>Start Your Trading Journey</h1>' +
-    '<p class="subtitle">Welcome to Nunu\'s Masterclass!</p>' +
+    '<p class="subtitle">Welcome to WAGMI Trading Academy!</p>' +
   '</div>' +
 
   '<div class="info-box tip">' +
@@ -4781,7 +4857,7 @@ function updateReadinessMetrics() {
 
 // ── Strategies ──
 // ============================================
-// Nunu's Trading Masterclass - Part 4
+// WAGMI Trading Academy - Part 4
 // Strategy Pages: Trendline, MFI+MACD, Macro
 // ============================================
 
@@ -5735,7 +5811,7 @@ function renderStratMacro() {
 
 // ── Bull Market, Backtesting, Resources, Alerts ──
 // ============================================
-// Nunu's Trading Masterclass - Part 5
+// WAGMI Trading Academy - Part 5
 // Bull Market, Backtesting, Resources, Alerts
 // ============================================
 
@@ -7042,6 +7118,18 @@ function updateQuickStats(trades, pipeline) {
     pfEl.style.color = parseFloat(pf) >= 1.5 ? 'var(--green)' : (parseFloat(pf) >= 1 ? 'var(--yellow)' : 'var(--red)');
   }
 
+  // Avg hold time
+  const holdTimes = trades.map(t => {
+    let meta = t.metadata;
+    if(typeof meta === 'string') { try { meta = JSON.parse(meta); } catch { meta = {}; } }
+    return (meta && meta.hold_time_s) ? meta.hold_time_s : null;
+  }).filter(h => h !== null && h > 0);
+  if(holdTimes.length > 0) {
+    const avgHold = holdTimes.reduce((a,b) => a+b, 0) / holdTimes.length;
+    const holdEl = document.getElementById('qs-avg-hold');
+    if(holdEl) { holdEl.textContent = fmtDuration(avgHold); holdEl.style.color = 'var(--text)'; }
+  }
+
   // Signals today
   if(pipeline) {
     const sigEl = document.getElementById('qs-signals-today');
@@ -7646,6 +7734,285 @@ setTimeout(() => showToast('Dashboard Ready', 'Press ? for keyboard shortcuts', 
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# Metrics Engine — computes execution metrics from trade_events.jsonl
+# ═══════════════════════════════════════════════════════════════════════════
+
+_metrics_cache: Dict[str, Any] = {}
+_metrics_cache_ts: float = 0.0
+_METRICS_CACHE_TTL: float = 30.0  # seconds
+
+
+def _read_trade_events(hours: float = 24.0) -> List[dict]:
+    """Read trade events from the JSONL file within the time window."""
+    events_path = os.path.join(_BOT_DIR, "data", "trade_events.jsonl")
+    if not os.path.exists(events_path):
+        return []
+
+    cutoff = datetime.now(timezone.utc) - __import__("datetime").timedelta(hours=hours)
+    results = []
+    try:
+        with open(events_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    evt = json.loads(line)
+                    ts_str = evt.get("timestamp", "")
+                    if ts_str:
+                        try:
+                            evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                            if evt_dt >= cutoff:
+                                results.append(evt)
+                        except (ValueError, TypeError):
+                            pass
+                except json.JSONDecodeError:
+                    pass
+    except Exception:
+        pass
+    return results
+
+
+def _compute_metrics(handler) -> dict:
+    """Compute real-time metrics with 30-second caching."""
+    global _metrics_cache, _metrics_cache_ts
+
+    now = time.time()
+    if now - _metrics_cache_ts < _METRICS_CACHE_TTL and _metrics_cache:
+        return _metrics_cache
+
+    from datetime import timedelta
+
+    now_utc = datetime.now(timezone.utc)
+    cutoff_1h = now_utc - timedelta(hours=1)
+    cutoff_24h = now_utc - timedelta(hours=24)
+
+    events_24h = _read_trade_events(hours=24.0)
+
+    # Classify events by time window and type
+    signals_1h = 0
+    signals_24h = 0
+    trades_opened_1h = 0
+    trades_opened_24h = 0
+    wins_24h = 0
+    losses_24h = 0
+    total_pnl_24h = 0.0
+    position_sizes = []
+
+    # Strategy performance tracking
+    strategy_perf: Dict[str, Dict[str, Any]] = {}
+    # Symbol performance tracking
+    symbol_perf: Dict[str, Dict[str, Any]] = {}
+
+    for evt in events_24h:
+        event_type = evt.get("event", "")
+        ts_str = evt.get("timestamp", "")
+        try:
+            evt_dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            continue
+
+        is_1h = evt_dt >= cutoff_1h
+
+        if event_type == "SIGNAL_GENERATED":
+            signals_24h += 1
+            if is_1h:
+                signals_1h += 1
+
+        elif event_type == "TRADE_OPENED":
+            trades_opened_24h += 1
+            if is_1h:
+                trades_opened_1h += 1
+            # Track position size
+            entry = evt.get("entry", 0)
+            leverage = evt.get("leverage", 1)
+            if entry and leverage:
+                try:
+                    position_sizes.append(float(entry) * float(leverage))
+                except (ValueError, TypeError):
+                    pass
+
+        elif event_type == "TRADE_CLOSED":
+            pnl = evt.get("pnl", 0)
+            try:
+                pnl = float(pnl)
+            except (ValueError, TypeError):
+                pnl = 0.0
+            total_pnl_24h += pnl
+            if pnl > 0:
+                wins_24h += 1
+            elif pnl < 0:
+                losses_24h += 1
+
+            # Strategy breakdown
+            strategy = evt.get("strategy", "unknown")
+            if strategy not in strategy_perf:
+                strategy_perf[strategy] = {"trades": 0, "wins": 0, "pnl": 0.0}
+            strategy_perf[strategy]["trades"] += 1
+            if pnl > 0:
+                strategy_perf[strategy]["wins"] += 1
+            strategy_perf[strategy]["pnl"] += pnl
+
+            # Symbol breakdown
+            symbol = evt.get("symbol", "UNKNOWN")
+            if symbol not in symbol_perf:
+                symbol_perf[symbol] = {"trades": 0, "wins": 0, "pnl": 0.0}
+            symbol_perf[symbol]["trades"] += 1
+            if pnl > 0:
+                symbol_perf[symbol]["wins"] += 1
+            symbol_perf[symbol]["pnl"] += pnl
+
+    # Compute derived metrics
+    total_closed_24h = wins_24h + losses_24h
+    win_rate_24h = wins_24h / total_closed_24h if total_closed_24h > 0 else 0.0
+    conversion_rate_1h = trades_opened_1h / signals_1h if signals_1h > 0 else 0.0
+    conversion_rate_24h = trades_opened_24h / signals_24h if signals_24h > 0 else 0.0
+    avg_position_size = sum(position_sizes) / len(position_sizes) if position_sizes else 0.0
+
+    # Active positions and drawdown from bot instance
+    active_positions = 0
+    current_drawdown_pct = 0.0
+    bot = DashboardHandler.bot_instance
+    if bot is not None:
+        pos_list = handler._get_positions_list() if handler else []
+        active_positions = len(pos_list)
+        # Try to get drawdown from risk manager
+        rm = getattr(bot, "risk_manager", None)
+        if rm is None:
+            engine = getattr(bot, "engine", None) or getattr(bot, "trading_engine", None)
+            if engine:
+                rm = getattr(engine, "risk_manager", None)
+        if rm is not None:
+            cb = getattr(rm, "circuit_breaker", None)
+            if cb and hasattr(cb, "get_status"):
+                try:
+                    cb_status = cb.get_status()
+                    equity = getattr(rm, "equity", 0)
+                    peak = cb_status.get("peak_equity", 0)
+                    if peak > 0:
+                        current_drawdown_pct = round(((peak - equity) / peak) * -100, 2)
+                except Exception:
+                    pass
+
+    # Rejection breakdown from order executor
+    rejection_breakdown: Dict[str, int] = {}
+    if bot is not None:
+        executor = getattr(bot, "executor", None) or getattr(bot, "order_executor", None)
+        if executor is None:
+            engine = getattr(bot, "engine", None) or getattr(bot, "trading_engine", None)
+            if engine:
+                executor = getattr(engine, "executor", None) or getattr(engine, "order_executor", None)
+        if executor and hasattr(executor, "get_rejection_stats"):
+            try:
+                rejection_breakdown = executor.get_rejection_stats()
+            except Exception:
+                pass
+
+    # Also count SIGNAL_FILTERED events as rejections by reason
+    for evt in events_24h:
+        if evt.get("event") == "SIGNAL_FILTERED":
+            reason = evt.get("reason", "unknown")
+            rejection_breakdown[reason] = rejection_breakdown.get(reason, 0) + 1
+
+    # Format strategy performance with win rates
+    strategy_out = {}
+    for strat, data in strategy_perf.items():
+        t = data["trades"]
+        strategy_out[strat] = {
+            "trades": t,
+            "win_rate": round(data["wins"] / t, 2) if t > 0 else 0.0,
+            "pnl": round(data["pnl"], 2),
+        }
+
+    # Format top symbols with win rates
+    top_symbols = {}
+    for sym, data in symbol_perf.items():
+        t = data["trades"]
+        top_symbols[sym] = {
+            "trades": t,
+            "win_rate": round(data["wins"] / t, 2) if t > 0 else 0.0,
+            "pnl": round(data["pnl"], 2),
+        }
+
+    result = {
+        "signals_1h": signals_1h,
+        "signals_24h": signals_24h,
+        "trades_opened_1h": trades_opened_1h,
+        "trades_opened_24h": trades_opened_24h,
+        "conversion_rate_1h": round(conversion_rate_1h, 3),
+        "conversion_rate_24h": round(conversion_rate_24h, 3),
+        "win_rate_24h": round(win_rate_24h, 2),
+        "total_pnl_24h": round(total_pnl_24h, 2),
+        "avg_position_size": round(avg_position_size, 2),
+        "active_positions": active_positions,
+        "current_drawdown_pct": current_drawdown_pct,
+        "rejection_breakdown": rejection_breakdown,
+        "strategy_performance": strategy_out,
+        "top_symbols": top_symbols,
+    }
+
+    _metrics_cache = result
+    _metrics_cache_ts = now
+    return result
+
+
+def _get_recent_signals(limit: int = 50) -> List[dict]:
+    """Return the last N signals with their approval/rejection status."""
+    events = _read_trade_events(hours=24.0)
+
+    # Collect signals and their outcomes
+    signals = []
+    # Build a set of opened trade symbols+timestamps for matching
+    opened_trades: set = set()
+    for evt in events:
+        if evt.get("event") == "TRADE_OPENED":
+            key = (evt.get("symbol", ""), evt.get("side", ""), evt.get("strategy", ""))
+            opened_trades.add(key)
+
+    for evt in events:
+        event_type = evt.get("event", "")
+        if event_type == "SIGNAL_GENERATED":
+            key = (evt.get("symbol", ""), evt.get("side", ""), evt.get("strategy", ""))
+            signals.append({
+                "timestamp": evt.get("timestamp"),
+                "symbol": evt.get("symbol"),
+                "side": evt.get("side"),
+                "strategy": evt.get("strategy"),
+                "confidence": evt.get("confidence"),
+                "entry": evt.get("entry"),
+                "sl": evt.get("sl"),
+                "tp1": evt.get("tp1"),
+                "regime": evt.get("regime"),
+                "status": "approved",
+                "reason": None,
+            })
+        elif event_type == "SIGNAL_FILTERED":
+            signals.append({
+                "timestamp": evt.get("timestamp"),
+                "symbol": evt.get("symbol"),
+                "side": evt.get("side"),
+                "strategy": evt.get("strategy"),
+                "confidence": evt.get("confidence"),
+                "entry": evt.get("entry"),
+                "sl": evt.get("sl"),
+                "tp1": evt.get("tp1"),
+                "regime": evt.get("regime"),
+                "status": "rejected",
+                "reason": evt.get("reason", "unknown"),
+            })
+
+    # Return the most recent N signals
+    return signals[-limit:]
+
+
+def clear_metrics_cache():
+    """Reset the metrics cache (useful for testing)."""
+    global _metrics_cache, _metrics_cache_ts
+    _metrics_cache = {}
+    _metrics_cache_ts = 0.0
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # HTTP Handler
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -7666,6 +8033,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             "/api/equity":       self._serve_equity_data,
             "/api/positions":    self._serve_positions,
             "/api/health":       self._serve_health,
+            "/health":           self._serve_health_check,
             "/api/market":       self._serve_market,
             "/api/rejections":   self._serve_rejections,
             "/api/copytrade":    self._serve_copytrade,
@@ -7689,6 +8057,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             "/api/sniper":       self._serve_sniper,
             "/api/sniper/journal": self._serve_sniper_journal,
             "/api/sniper/sim":   self._serve_sniper_sim,
+            "/api/metrics":      self._serve_metrics,
+            "/api/signals/recent": self._serve_signals_recent,
         }
         handler = routes.get(path)
         if handler:
@@ -7786,6 +8156,145 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except Exception as exc:
             logger.exception("Error serving /api/health")
             self._send_json({"error": str(exc)}, status=500)
+
+    # ── /health — Production health check endpoint ───────────────────────
+    def _serve_health_check(self):
+        """Production health check: HTTP 200 if healthy, 503 if degraded.
+
+        Returns structured JSON with bot vitals for monitoring systems.
+        Degraded conditions: stale data >5min, no ticks in 2min, error rate >10/hr.
+        """
+        try:
+            import psutil
+            mem_mb = psutil.Process().memory_info().rss / (1024 * 1024)
+        except Exception:
+            try:
+                import resource
+                mem_mb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+            except Exception:
+                mem_mb = None
+
+        now = time.time()
+        uptime_s = now - _START_TIME
+        started_at = datetime.fromtimestamp(_START_TIME, tz=timezone.utc).isoformat()
+        environment = os.getenv("ENVIRONMENT", "paper")
+        degraded_reasons: list = []
+
+        # ── Active positions & PnL ──
+        positions = self._get_positions_list()
+        active_positions = len(positions)
+        open_pnl = sum(p.get("unrealized_pnl", 0) or 0 for p in positions)
+
+        # ── Daily PnL from DB ──
+        daily_pnl = 0.0
+        try:
+            from data.db import get_dashboard_data
+            dash = get_dashboard_data()
+            daily_pnl = dash.get("daily_pnl", 0.0) or 0.0
+        except Exception:
+            pass
+
+        # ── Last tick / heartbeat ──
+        last_tick_ts = None
+        tick_age_s = None
+        try:
+            from data.db import get_health_events
+            events = get_health_events(1)  # last 1 hour
+            heartbeats = [
+                e for e in events
+                if e.get("event_type", "").upper() in ("HEARTBEAT", "LOOP_TICK", "CYCLE")
+            ]
+            if heartbeats:
+                last_tick_ts = heartbeats[0].get("timestamp")
+                if last_tick_ts:
+                    try:
+                        hb_dt = datetime.fromisoformat(str(last_tick_ts).replace("Z", "+00:00"))
+                        tick_age_s = now - hb_dt.timestamp()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # ── Error count (last 1h) ──
+        error_count_1h = 0
+        try:
+            from data.db import get_health_events
+            events_1h = get_health_events(1)
+            error_count_1h = sum(
+                1 for e in events_1h
+                if e.get("severity") in ("ALERT", "ERROR")
+            )
+        except Exception:
+            pass
+
+        # ── Exchange connection status ──
+        exchange_ok = False
+        bot = DashboardHandler.bot_instance
+        if bot is not None:
+            for attr in ("exchange", "ccxt_exchange", "client"):
+                ex = getattr(bot, attr, None)
+                if ex is not None:
+                    exchange_ok = True
+                    break
+            if not exchange_ok:
+                engine = getattr(bot, "engine", None) or getattr(bot, "trading_engine", None)
+                if engine:
+                    for attr in ("exchange", "ccxt_exchange", "client"):
+                        if getattr(engine, attr, None) is not None:
+                            exchange_ok = True
+                            break
+        else:
+            exchange_ok = None  # bot not attached — unknown
+
+        # ── LLM API status ──
+        llm_ok = False
+        llm_mode = os.getenv("LLM_MODE", "0")
+        if llm_mode in ("0", "OFF"):
+            llm_ok = None  # disabled
+        else:
+            api_key = os.getenv("ANTHROPIC_API_KEY", "")
+            llm_ok = bool(api_key and len(api_key) > 10)
+
+        # ── Degradation checks ──
+        if tick_age_s is not None and tick_age_s > 300:
+            degraded_reasons.append(f"stale_data: last tick {tick_age_s:.0f}s ago (>5min)")
+        if tick_age_s is not None and tick_age_s > 120:
+            degraded_reasons.append(f"no_recent_ticks: {tick_age_s:.0f}s since last tick (>2min)")
+        elif tick_age_s is None and bot is not None:
+            degraded_reasons.append("no_heartbeat: no tick data found")
+        if error_count_1h > 10:
+            degraded_reasons.append(f"high_error_rate: {error_count_1h} errors in last hour (>10)")
+
+        is_healthy = len(degraded_reasons) == 0
+        status_code = 200 if is_healthy else 503
+
+        # ── Version info ──
+        version = "4.2.0"
+        try:
+            from importlib.metadata import version as pkg_version
+            version = pkg_version("wagmi-bot")
+        except Exception:
+            pass
+
+        payload = {
+            "status": "healthy" if is_healthy else "degraded",
+            "version": version,
+            "environment": environment,
+            "uptime_seconds": round(uptime_s, 1),
+            "started_at": started_at,
+            "last_tick_timestamp": last_tick_ts,
+            "tick_age_seconds": round(tick_age_s, 1) if tick_age_s is not None else None,
+            "active_positions": active_positions,
+            "open_pnl": round(open_pnl, 4),
+            "daily_pnl": round(daily_pnl, 4),
+            "error_count_1h": error_count_1h,
+            "memory_mb": round(mem_mb, 1) if mem_mb is not None else None,
+            "exchange_connected": exchange_ok,
+            "llm_api_ok": llm_ok,
+            "degraded_reasons": degraded_reasons if degraded_reasons else None,
+        }
+
+        self._send_json(payload, status=status_code)
 
     # ── /api/market (heatmap data) ─────────────────────────────────────
     def _serve_market(self):
@@ -8596,7 +9105,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 data["signals"] = summary.get("signals", [])
             else:
                 # Try reading from log file as fallback
-                log_path = os.path.join("data", "manual", "sniper_signals.jsonl")
+                log_path = os.path.join(_BOT_DIR, "data", "manual", "sniper_signals.jsonl")
                 if os.path.exists(log_path):
                     data["enabled"] = True
                     signals = []
@@ -8620,7 +9129,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
     # ── /api/sniper/journal — Manual trade journal for account tracking ──
     def _serve_sniper_journal(self):
         try:
-            journal_path = os.path.join("data", "manual", "trade_journal.jsonl")
+            journal_path = os.path.join(_BOT_DIR, "data", "manual", "trade_journal.jsonl")
             data = {
                 "open_trades": [],
                 "closed_trades": [],
@@ -8726,7 +9235,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 data["status"] = bot._sniper_simulator.get_status()
             else:
                 # Fallback: read from disk
-                status_path = os.path.join("data", "manual", "sim_status.json")
+                status_path = os.path.join(_BOT_DIR, "data", "manual", "sim_status.json")
                 if os.path.exists(status_path):
                     with open(status_path, "r") as f:
                         data["enabled"] = True
@@ -8735,6 +9244,22 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_json(data)
         except Exception as exc:
             logger.exception("Error serving /api/sniper/sim")
+            self._send_json({"error": str(exc)}, status=500)
+
+    # ── /api/metrics — Real-time execution metrics ────────────────────
+    def _serve_metrics(self):
+        try:
+            self._send_json(_compute_metrics(self))
+        except Exception as exc:
+            logger.exception("Error serving /api/metrics")
+            self._send_json({"error": str(exc)}, status=500)
+
+    # ── /api/signals/recent — Last 50 signals with status ────────────
+    def _serve_signals_recent(self):
+        try:
+            self._send_json(_get_recent_signals())
+        except Exception as exc:
+            logger.exception("Error serving /api/signals/recent")
             self._send_json({"error": str(exc)}, status=500)
 
     # ═══════════════════════════════════════════════════════════════════
@@ -9092,7 +9617,7 @@ if __name__ == "__main__":
     srv = DashboardServer(port=port)
     srv.start()
 
-    print(f"NunuIRL Dashboard running at http://localhost:{port}")
+    print(f"WAGMI Dashboard running at http://localhost:{port}")
     print("Press Ctrl+C to stop.\n")
 
     try:

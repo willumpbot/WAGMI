@@ -1,5 +1,5 @@
 """
-Lightweight web dashboard for the NunuIRL trading bot.
+Lightweight web dashboard for the WAGMI trading bot.
 
 No Flask/Django dependency -- uses Python's built-in http.server.
 Start via DashboardServer().start() or run server.py directly.

@@ -8,7 +8,7 @@ market data — never places real trades.
 Simulated positions are opened at signal entry price and monitored each
 scan cycle. Closes happen when:
   1. Price hits tp_scalp (primary target — conservative, take the quick win)
-  2. Price hits sl (stop loss)
+  2. Price hits sl (stop loss) — dynamic: moves to break-even at +0.5%, trails at half gain after +1.0%
   3. 12 hours elapse without hitting either level (time stop — close at market)
 """
 
@@ -35,8 +35,29 @@ STARTING_EQUITY = 100.0
 # The correct rule: if trade survives 5+ bars, HOLD — it's a slow winner.
 EARLY_TIME_STOP_HOURS = 999.0   # Effectively disabled
 EARLY_TIME_STOP_S = EARLY_TIME_STOP_HOURS * 3600
-TIME_STOP_HOURS = 24.0          # Extended from 12h — slow winners need time
+TIME_STOP_HOURS = 12.0          # 12h optimal per edge study (+4.5R net vs +2.4R at 24h)
 TIME_STOP_S = TIME_STOP_HOURS * 3600
+# Micro-sniper: aggressive 3h time stop (configurable via env)
+MICRO_SNIPER_TIME_STOP_HOURS = float(os.getenv("MICRO_SNIPER_TIME_STOP_H", "3.0"))
+MICRO_SNIPER_TIME_STOP_S = MICRO_SNIPER_TIME_STOP_HOURS * 3600
+
+# ── Dynamic SL: break-even and trailing stop ──────────────────────────
+# Tuned from 48h backtest: 0.5% BE was too tight for 1h swings, cut 4/6 winners at BE.
+# 1.0% BE / 1.5% trail / 0.8% trail distance captures real profits on 1h timeframe.
+BREAKEVEN_TRIGGER_PCT = 0.010   # +1.0% from entry → move SL to entry price
+TRAIL_START_PCT = 0.015         # +1.5% from entry → start trailing
+TRAIL_FACTOR = 0.55             # trail SL at ~55% of unrealized gain (0.8% distance on avg)
+
+# ── Tiered R-multiple exits ──────────────────────────────────────────
+# Research: full exit at TP1 → -16.33% PnL, 40% WR, Kelly=-31.8%
+#           tiered 33/33/34  → +1.27% PnL, 77% WR, Kelly=+6.0%
+TIERED_EXITS_ENABLED = os.getenv("TIERED_EXITS_ENABLED", "true").lower() in ("true", "1", "yes")
+TRANCHE_1_R = 0.5    # Close 33% at +0.5R
+TRANCHE_2_R = 1.0    # Close 33% at +1.0R
+TRANCHE_3_R = 2.0    # Close remaining 34% at +2.0R
+TRANCHE_1_SIZE = 0.33
+TRANCHE_2_SIZE = 0.33
+TRANCHE_3_SIZE = 0.34  # remaining
 
 
 @dataclass
@@ -63,6 +84,15 @@ class SimPosition:
     confidence: float
     num_agree: int
     regime: str
+    current_sl: float = 0.0     # dynamic SL (break-even / trailing); 0 = use original sl
+    # Tiered exit tracking
+    remaining_size: float = 1.0        # fraction remaining (1.0 → 0.67 → 0.34 → 0.0)
+    tranches_closed: int = 0           # 0, 1, 2, or 3
+    tranche_pnl: list = field(default_factory=list)  # PnL from each closed tranche
+
+    def effective_sl(self) -> float:
+        """Return the active stop loss — dynamic if set, otherwise original."""
+        return self.current_sl if self.current_sl != 0.0 else self.sl
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -96,6 +126,10 @@ class SimTrade:
     confidence: float
     num_agree: int
     regime: str
+    # Tiered exit fields
+    num_tranches_hit: int = 0
+    max_r_achieved: float = 0.0
+    tranche_details: list = field(default_factory=list)  # [{r, size_pct, pnl_usd}, ...]
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -117,6 +151,15 @@ class SniperSimulator:
         self._open_positions: List[SimPosition] = []
         self._closed_trades: List[SimTrade] = []
         self._trade_counter = 0
+
+        # Post-trade learning system
+        self._trade_learner = None
+        try:
+            from manual.trade_learner import TradeLearner
+            self._trade_learner = TradeLearner()
+            logger.info("[SIM] Trade learner attached")
+        except Exception as e:
+            logger.warning(f"[SIM] Trade learner not available: {e}")
 
         # Stats
         self._wins = 0
@@ -238,10 +281,101 @@ class SniperSimulator:
         self._save_status()
         return pos
 
+    @staticmethod
+    def _calc_r_multiple(pos: SimPosition, price: float) -> float:
+        """Calculate current R-multiple: (unrealized gain) / (risk per unit)."""
+        if pos.entry <= 0:
+            return 0.0
+        risk_per_unit = abs(pos.entry - pos.sl)
+        if risk_per_unit <= 0:
+            return 0.0
+        if pos.side == "BUY":
+            return (price - pos.entry) / risk_per_unit
+        else:
+            return (pos.entry - price) / risk_per_unit
+
+    def _process_tiered_exits(self, pos: SimPosition, price: float) -> bool:
+        """
+        Check and execute tiered R-multiple exits on a position.
+
+        Returns True if the position was fully closed (tranche 3 hit),
+        False if position remains open (possibly with partial closes).
+        """
+        if not TIERED_EXITS_ENABLED:
+            return False
+        if pos.tranches_closed >= 3:
+            return False  # already fully exited via tranches
+
+        r_mult = self._calc_r_multiple(pos, price)
+
+        # Tranche 1: close 33% at +0.5R, move SL to break-even
+        if r_mult >= TRANCHE_1_R and pos.tranches_closed == 0:
+            tranche_size = TRANCHE_1_SIZE
+            tranche_pnl = self._book_tranche(pos, price, tranche_size, 1)
+            pos.tranches_closed = 1
+            pos.remaining_size -= tranche_size
+            pos.tranche_pnl.append(round(tranche_pnl, 4))
+            # Move SL to break-even
+            pos.current_sl = pos.entry
+            logger.info(
+                f"[SIM] TRANCHE 1 | {pos.trade_id} {pos.symbol} | "
+                f"+{r_mult:.2f}R | closed {tranche_size:.0%} | "
+                f"pnl=${tranche_pnl:+.2f} | SL→BE | remaining={pos.remaining_size:.0%}"
+            )
+
+        # Tranche 2: close 33% at +1.0R, keep trailing
+        if r_mult >= TRANCHE_2_R and pos.tranches_closed == 1:
+            tranche_size = TRANCHE_2_SIZE
+            tranche_pnl = self._book_tranche(pos, price, tranche_size, 2)
+            pos.tranches_closed = 2
+            pos.remaining_size -= tranche_size
+            pos.tranche_pnl.append(round(tranche_pnl, 4))
+            logger.info(
+                f"[SIM] TRANCHE 2 | {pos.trade_id} {pos.symbol} | "
+                f"+{r_mult:.2f}R | closed {tranche_size:.0%} | "
+                f"pnl=${tranche_pnl:+.2f} | trailing | remaining={pos.remaining_size:.0%}"
+            )
+
+        # Tranche 3: close remaining 34% at +2.0R — position fully closed
+        if r_mult >= TRANCHE_3_R and pos.tranches_closed == 2:
+            tranche_size = pos.remaining_size  # should be ~0.34
+            tranche_pnl = self._book_tranche(pos, price, tranche_size, 3)
+            pos.tranches_closed = 3
+            pos.remaining_size = 0.0
+            pos.tranche_pnl.append(round(tranche_pnl, 4))
+            logger.info(
+                f"[SIM] TRANCHE 3 | {pos.trade_id} {pos.symbol} | "
+                f"+{r_mult:.2f}R | closed remaining | "
+                f"pnl=${tranche_pnl:+.2f} | FULLY CLOSED"
+            )
+            return True  # fully closed
+
+        return False
+
+    def _book_tranche(
+        self, pos: SimPosition, price: float, tranche_size: float, tranche_num: int
+    ) -> float:
+        """
+        Book PnL for a partial tranche close. Updates equity immediately.
+        Returns the USD PnL for this tranche.
+        """
+        if pos.side == "BUY":
+            price_change_pct = (price - pos.entry) / pos.entry
+        else:
+            price_change_pct = (pos.entry - price) / pos.entry
+
+        # Tranche PnL = fraction of original position size * price change
+        tranche_pnl = pos.position_size_usd * tranche_size * price_change_pct
+        self._equity += tranche_pnl
+        return tranche_pnl
+
     def check_positions(self, current_prices: Dict[str, float]) -> List[SimTrade]:
         """
         Called every scan cycle. Checks all open sim positions against
         current market prices. Returns list of trades closed this cycle.
+
+        With TIERED_EXITS_ENABLED, positions close in 3 tranches at
+        +0.5R (33%), +1.0R (33%), +2.0R (34%). SL closes all remaining.
         """
         # Always save status periodically (even with no position changes)
         # This ensures the dashboard always has fresh data
@@ -264,31 +398,48 @@ class SniperSimulator:
             exit_reason = None
             exit_price = price
 
-            # Check time stops (3h early exit for stale positions, 12h hard stop)
+            # ── Tiered R-multiple exits (before SL/TP checks) ──
+            if TIERED_EXITS_ENABLED:
+                fully_closed = self._process_tiered_exits(pos, price)
+                if fully_closed:
+                    # All 3 tranches hit — close the position record
+                    trade = self._close_position_tiered(pos, price, "tiered_3R", now)
+                    closed_this_cycle.append(trade)
+                    continue
+
+            # Check time stops — micro-sniper uses aggressive 3h stop
             elapsed_s = now - pos.opened_at
-            if elapsed_s >= TIME_STOP_S:
-                exit_reason = "time_stop"
+            pos_time_stop_s = MICRO_SNIPER_TIME_STOP_S if pos.tier == "MICRO_SNIPER" else TIME_STOP_S
+            pos_early_stop_s = MICRO_SNIPER_TIME_STOP_S if pos.tier == "MICRO_SNIPER" else EARLY_TIME_STOP_S
+
+            if elapsed_s >= pos_time_stop_s:
+                exit_reason = "time_stop_micro" if pos.tier == "MICRO_SNIPER" else "time_stop"
                 exit_price = price
-            elif elapsed_s >= EARLY_TIME_STOP_S:
+            elif elapsed_s >= pos_early_stop_s:
                 # 3h time-stop: fast-resolving trades (1-3 bars) have 91% WR,
                 # medium-hold trades (4-8 bars) have 0% WR.
                 # If it hasn't hit TP or SL in 3h, it's going nowhere.
                 exit_reason = "time_stop_3h"
                 exit_price = price
 
-            # Check SL / TP
+            # ── Dynamic SL: break-even + trailing stop ──
             if exit_reason is None:
+                self._update_dynamic_sl(pos, price)
+
+            # Check SL / TP (using dynamic SL if set)
+            if exit_reason is None:
+                active_sl = pos.effective_sl()
                 if pos.side == "BUY":
-                    if price <= pos.sl:
-                        exit_reason = "sl"
-                        exit_price = pos.sl
+                    if price <= active_sl:
+                        exit_reason = "sl_dynamic" if pos.current_sl != 0.0 else "sl"
+                        exit_price = active_sl
                     elif price >= pos.tp_scalp:
                         exit_reason = "tp_scalp"
                         exit_price = pos.tp_scalp
                 else:  # SELL
-                    if price >= pos.sl:
-                        exit_reason = "sl"
-                        exit_price = pos.sl
+                    if price >= active_sl:
+                        exit_reason = "sl_dynamic" if pos.current_sl != 0.0 else "sl"
+                        exit_price = active_sl
                     elif price <= pos.tp_scalp:
                         exit_reason = "tp_scalp"
                         exit_price = pos.tp_scalp
@@ -364,32 +515,165 @@ class SniperSimulator:
 
     # ── Internal ───────────────────────────────────────────────────────
 
+    @staticmethod
+    def _update_dynamic_sl(pos: SimPosition, price: float) -> None:
+        """
+        Move SL dynamically based on unrealized gain:
+        - At +0.5% from entry: move SL to entry (break-even)
+        - At +1.0% from entry: trail SL at half the gain
+
+        The SL ratchet only moves in the position's favor — never backward.
+        """
+        if pos.entry <= 0:
+            return
+
+        if pos.side == "BUY":
+            gain_pct = (price - pos.entry) / pos.entry
+        else:
+            gain_pct = (pos.entry - price) / pos.entry
+
+        if gain_pct < BREAKEVEN_TRIGGER_PCT:
+            return  # not enough gain yet
+
+        if gain_pct >= TRAIL_START_PCT:
+            # Trail SL at half the current gain
+            trail_offset = pos.entry * gain_pct * TRAIL_FACTOR
+            if pos.side == "BUY":
+                new_sl = pos.entry + trail_offset
+            else:
+                new_sl = pos.entry - trail_offset
+        else:
+            # Break-even: move SL to entry price
+            new_sl = pos.entry
+
+        # Ratchet: only move SL in the position's favor
+        if pos.side == "BUY":
+            if new_sl > pos.effective_sl():
+                pos.current_sl = round(new_sl, 6)
+        else:
+            if pos.current_sl == 0.0 or new_sl < pos.effective_sl():
+                pos.current_sl = round(new_sl, 6)
+
+    def _close_position_tiered(
+        self, pos: SimPosition, exit_price: float, exit_reason: str, now: float
+    ) -> SimTrade:
+        """
+        Close a position where all 3 tranches have been filled.
+        PnL was already booked incrementally by _book_tranche — just record the trade.
+        """
+        total_pnl = sum(pos.tranche_pnl)
+        max_r = self._calc_r_multiple(pos, exit_price)
+        pnl_pct = (total_pnl / pos.equity_at_open * 100) if pos.equity_at_open > 0 else 0
+        hold_time_s = now - pos.opened_at
+        hold_time_hours = hold_time_s / 3600
+
+        tranche_details = []
+        r_levels = [TRANCHE_1_R, TRANCHE_2_R, TRANCHE_3_R]
+        size_levels = [TRANCHE_1_SIZE, TRANCHE_2_SIZE, TRANCHE_3_SIZE]
+        for i, t_pnl in enumerate(pos.tranche_pnl):
+            tranche_details.append({
+                "tranche": i + 1,
+                "r_target": r_levels[i] if i < len(r_levels) else 0,
+                "size_pct": size_levels[i] if i < len(size_levels) else 0,
+                "pnl_usd": round(t_pnl, 2),
+            })
+
+        trade = SimTrade(
+            trade_id=pos.trade_id,
+            symbol=pos.symbol,
+            side=pos.side,
+            tier=pos.tier,
+            entry=pos.entry,
+            exit_price=round(exit_price, 6),
+            sl=pos.sl,
+            tp_scalp=pos.tp_scalp,
+            leverage=pos.leverage,
+            position_size_usd=pos.position_size_usd,
+            qty=pos.qty,
+            risk_amount=pos.risk_amount,
+            equity_at_open=pos.equity_at_open,
+            equity_at_close=round(self._equity, 2),
+            pnl_usd=round(total_pnl, 2),
+            pnl_pct=round(pnl_pct, 1),
+            result="WIN",  # all 3 tranches hit = always a win
+            exit_reason=exit_reason,
+            hold_time_s=round(hold_time_s, 1),
+            hold_time_hours=round(hold_time_hours, 2),
+            opened_at=pos.opened_at_iso,
+            closed_at=datetime.now(timezone.utc).isoformat(),
+            confidence=pos.confidence,
+            num_agree=pos.num_agree,
+            regime=pos.regime,
+            num_tranches_hit=pos.tranches_closed,
+            max_r_achieved=round(max_r, 2),
+            tranche_details=tranche_details,
+        )
+
+        return self._record_trade(pos, trade, total_pnl)
+
     def _close_position(
         self, pos: SimPosition, exit_price: float, exit_reason: str, now: float
     ) -> SimTrade:
-        """Close a simulated position and update all stats."""
-        # Calculate P&L
+        """Close a simulated position and update all stats.
+
+        When tiered exits are active, only the remaining size portion is
+        closed here (tranches already booked their own PnL). The total
+        trade PnL includes all tranche PnLs plus this final close.
+        """
+        # Calculate P&L for the remaining portion
         if pos.side == "BUY":
             price_change_pct = (exit_price - pos.entry) / pos.entry
         else:
             price_change_pct = (pos.entry - exit_price) / pos.entry
 
-        pnl_usd = pos.position_size_usd * price_change_pct
-        pnl_pct = (pnl_usd / pos.equity_at_open * 100) if pos.equity_at_open > 0 else 0
+        # Only close the remaining size (1.0 if no tranches, less if tranches taken)
+        remaining_pnl = pos.position_size_usd * pos.remaining_size * price_change_pct
+
+        # Total PnL = already-booked tranche PnL + remaining portion PnL
+        tranche_pnl_sum = sum(pos.tranche_pnl) if pos.tranche_pnl else 0.0
+        total_pnl = tranche_pnl_sum + remaining_pnl
+
+        pnl_pct = (total_pnl / pos.equity_at_open * 100) if pos.equity_at_open > 0 else 0
         hold_time_s = now - pos.opened_at
         hold_time_hours = hold_time_s / 3600
 
-        # Determine result
+        # Max R achieved (current price may be negative R on SL hit)
+        max_r = self._calc_r_multiple(pos, exit_price)
+
+        # Determine result based on TOTAL pnl (tranches + remaining)
         if exit_reason == "tp_scalp":
             result = "WIN"
         elif exit_reason == "sl":
-            result = "LOSS"
+            result = "WIN" if total_pnl > 0 else "LOSS"
+        elif exit_reason == "sl_dynamic":
+            result = "WIN" if total_pnl > 0 else "LOSS"
         else:  # time_stop or time_stop_3h
-            result = "WIN" if pnl_usd > 0 else "LOSS"
+            result = "WIN" if total_pnl > 0 else "LOSS"
 
-        # Update equity
-        self._equity += pnl_usd
+        # Update equity — only for the remaining portion (tranches already booked)
+        self._equity += remaining_pnl
         equity_at_close = self._equity
+
+        # Build tranche details for the trade log
+        tranche_details = []
+        r_levels = [TRANCHE_1_R, TRANCHE_2_R, TRANCHE_3_R]
+        size_levels = [TRANCHE_1_SIZE, TRANCHE_2_SIZE, TRANCHE_3_SIZE]
+        for i, t_pnl in enumerate(pos.tranche_pnl):
+            tranche_details.append({
+                "tranche": i + 1,
+                "r_target": r_levels[i] if i < len(r_levels) else 0,
+                "size_pct": size_levels[i] if i < len(size_levels) else 0,
+                "pnl_usd": round(t_pnl, 2),
+            })
+        # Add the final close as a tranche detail
+        if pos.tranches_closed > 0:
+            tranche_details.append({
+                "tranche": "final",
+                "r_at_close": round(max_r, 2),
+                "size_pct": round(pos.remaining_size, 2),
+                "pnl_usd": round(remaining_pnl, 2),
+                "exit_reason": exit_reason,
+            })
 
         trade = SimTrade(
             trade_id=pos.trade_id,
@@ -406,7 +690,7 @@ class SniperSimulator:
             risk_amount=pos.risk_amount,
             equity_at_open=pos.equity_at_open,
             equity_at_close=round(equity_at_close, 2),
-            pnl_usd=round(pnl_usd, 2),
+            pnl_usd=round(total_pnl, 2),
             pnl_pct=round(pnl_pct, 1),
             result=result,
             exit_reason=exit_reason,
@@ -417,32 +701,47 @@ class SniperSimulator:
             confidence=pos.confidence,
             num_agree=pos.num_agree,
             regime=pos.regime,
+            num_tranches_hit=pos.tranches_closed,
+            max_r_achieved=round(max_r, 2),
+            tranche_details=tranche_details,
         )
+
+        return self._record_trade(pos, trade, total_pnl)
+
+    def _record_trade(
+        self, pos: SimPosition, trade: SimTrade, total_pnl: float
+    ) -> SimTrade:
+        """Common bookkeeping after closing a trade (stats, logging, learning)."""
+        result = trade.result
+        exit_reason = trade.exit_reason
 
         self._closed_trades.append(trade)
 
         # ── Update stats ──
         if result == "WIN":
             self._wins += 1
-            self._gross_profit += pnl_usd
+            self._gross_profit += total_pnl
             self._current_streak = max(0, self._current_streak) + 1
         else:
             self._losses += 1
-            self._gross_loss += pnl_usd  # pnl_usd is negative
+            self._gross_loss += total_pnl  # total_pnl is negative
             self._current_streak = min(0, self._current_streak) - 1
 
-        if pnl_usd > self._best_trade_pnl:
-            self._best_trade_pnl = pnl_usd
-        if pnl_usd < self._worst_trade_pnl:
-            self._worst_trade_pnl = pnl_usd
+        if total_pnl > self._best_trade_pnl:
+            self._best_trade_pnl = total_pnl
+        if total_pnl < self._worst_trade_pnl:
+            self._worst_trade_pnl = total_pnl
 
         # Track time-stop stats separately
         if exit_reason == "time_stop_3h":
             self._early_time_stop_count += 1
-            self._early_time_stop_pnl += pnl_usd
+            self._early_time_stop_pnl += total_pnl
+        elif exit_reason == "time_stop_micro":
+            self._early_time_stop_count += 1
+            self._early_time_stop_pnl += total_pnl
         elif exit_reason == "time_stop":
             self._time_stop_count += 1
-            self._time_stop_pnl += pnl_usd
+            self._time_stop_pnl += total_pnl
 
         # Drawdown tracking
         if self._equity > self._max_equity:
@@ -459,7 +758,7 @@ class SniperSimulator:
 
         # Daily P&L
         today_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        self._daily_pnl[today_key] = self._daily_pnl.get(today_key, 0.0) + pnl_usd
+        self._daily_pnl[today_key] = self._daily_pnl.get(today_key, 0.0) + total_pnl
 
         # By-symbol stats
         sym_stats = self._by_symbol.setdefault(pos.symbol, {
@@ -470,7 +769,7 @@ class SniperSimulator:
             sym_stats["wins"] += 1
         else:
             sym_stats["losses"] += 1
-        sym_stats["pnl"] = round(sym_stats["pnl"] + pnl_usd, 2)
+        sym_stats["pnl"] = round(sym_stats["pnl"] + total_pnl, 2)
         sym_stats["wr"] = round(sym_stats["wins"] / sym_stats["trades"] * 100, 1)
 
         # By-tier stats
@@ -482,16 +781,27 @@ class SniperSimulator:
             tier_stats["wins"] += 1
         else:
             tier_stats["losses"] += 1
-        tier_stats["pnl"] = round(tier_stats["pnl"] + pnl_usd, 2)
+        tier_stats["pnl"] = round(tier_stats["pnl"] + total_pnl, 2)
         tier_stats["wr"] = round(tier_stats["wins"] / tier_stats["trades"] * 100, 1)
 
         # Log trade
         self._log_trade(trade)
 
+        # Post-trade learning: analyze and adapt immediately
+        if self._trade_learner is not None:
+            try:
+                self._trade_learner.on_trade_close(trade)
+            except Exception as e:
+                logger.warning(f"[SIM] Trade learner error: {e}")
+
+        tranches_info = ""
+        if trade.num_tranches_hit > 0:
+            tranches_info = f" | tranches={trade.num_tranches_hit} maxR={trade.max_r_achieved:.1f}"
+
         logger.info(
             f"[SIM] CLOSED {trade.trade_id} | {trade.symbol} {trade.side} | "
             f"{trade.exit_reason} @ ${trade.exit_price:.4f} | "
-            f"P&L=${trade.pnl_usd:+.2f} ({trade.pnl_pct:+.1f}%) | "
+            f"P&L=${trade.pnl_usd:+.2f} ({trade.pnl_pct:+.1f}%){tranches_info} | "
             f"hold={trade.hold_time_hours:.1f}h | "
             f"equity=${self._equity:.2f}"
         )

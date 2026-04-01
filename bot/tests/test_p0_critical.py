@@ -409,9 +409,9 @@ class TestRiskFilterChainGates:
     # ── Gate 5: Leverage decision ──
 
     def test_gate5_rejects_low_confidence(self):
-        """Gate 5: Confidence < 60% → leverage=0 → rejected."""
+        """Gate 5: Confidence < 20% → leverage=0 → rejected. (Aggressive mode: lowered from 60%)"""
         chain, _, _ = self._make_chain()
-        sig = self._make_signal(confidence=50.0)
+        sig = self._make_signal(confidence=15.0)
         result = chain.evaluate(sig, equity=10000, num_strategies_agree=2, total_strategies=4)
         assert not result.approved
         assert "Leverage denied" in result.rejection_reason or "too low" in result.rejection_reason.lower()

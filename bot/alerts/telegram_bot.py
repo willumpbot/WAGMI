@@ -219,6 +219,8 @@ class TelegramCommandBot:
             "/optimize": self._cmd_optimize,
             "/manage": lambda: self._cmd_manage(args),
             "/health": self._cmd_health,
+            "/tracker": self._cmd_tracker,
+            "/intel": self._cmd_intel,
             "/help": self._cmd_help,
         }
         handler = handlers.get(command)
@@ -775,6 +777,16 @@ class TelegramCommandBot:
             f"TAKE accuracy: {acc['take_accuracy']:.0%} ({acc['take_total']} signals)\n"
             f"SKIP accuracy: {acc['skip_accuracy']:.0%} ({acc['skip_total']} signals)"
         )
+
+    def _cmd_intel(self) -> str:
+        """Trigger quant brain market intel immediately."""
+        if self.bot is None:
+            return "Bot not connected"
+        try:
+            self.bot._send_quant_intel()
+            return "Market intel sent."
+        except Exception as e:
+            return f"Intel error: {e}"
 
     def _cmd_help(self) -> str:
         return (
@@ -1383,6 +1395,15 @@ class TelegramCommandBot:
             return analyzer.format_performance_report()
         except Exception as e:
             return f"Performance error: {e}"
+
+    def _cmd_tracker(self) -> str:
+        """Daily P&L tracker for the $100 sniper account."""
+        try:
+            from manual.daily_tracker import DailyTracker, format_daily_dashboard
+            tracker = DailyTracker()
+            return format_daily_dashboard(tracker)
+        except Exception as e:
+            return f"Tracker error: {e}"
 
     def _cmd_optimize(self) -> str:
         """Sniper optimizer — signal quality, leverage efficiency, recommendations."""

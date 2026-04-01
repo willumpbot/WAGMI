@@ -94,6 +94,7 @@ class BacktestEngine:
             taker_fee_bps=self.config.taker_fee_bps,
             enable_trailing=self.config.enable_trailing_stop,
             trailing_atr_mult=self.config.trailing_stop_atr_mult,
+            time_stop_hours=getattr(self.config, 'time_stop_hours', 12),
         )
         self.leverage_mgr = LeverageManager(
             enable_leverage=self.config.enable_leverage,
@@ -109,14 +110,27 @@ class BacktestEngine:
         except Exception:
             pass
 
-        # Circuit breaker settings: default to LIVE settings for realistic backtests.
-        # Use --relaxed-cb (or env vars) to widen for analysis/learning mode.
+        # Circuit breaker settings for backtesting.
+        # Default: moderately relaxed vs live (25% DD vs 15%, 30% session vs 20%).
+        # Rationale: live CB with cooldown resets works well for real-time trading
+        # but in backtest mode, the tight 15% DD limit trips after 2-3 correlated
+        # losses across multiple symbols, blocking 80%+ of remaining signals and
+        # hiding the true strategy edge. The 25% limit still provides safety
+        # while allowing enough trades for statistical significance.
+        # Use --relaxed-cb for even wider limits (analysis/learning mode).
+        _bt_dd = float(os.getenv("BACKTEST_CB_MAX_DRAWDOWN_PCT", "0.25"))
+        _bt_session = float(os.getenv("BACKTEST_CB_MAX_SESSION_DD_PCT", "0.30"))
+        self.risk_mgr.circuit_breaker.max_drawdown_pct = _bt_dd
+        self.risk_mgr.circuit_breaker.max_session_drawdown_pct = _bt_session
         if self._relaxed_cb:
             self.risk_mgr.circuit_breaker.daily_loss_limit_pct = float(
                 os.getenv("BACKTEST_CB_DAILY_LOSS_PCT", "0.15")
             )
             self.risk_mgr.circuit_breaker.max_drawdown_pct = float(
-                os.getenv("BACKTEST_CB_MAX_DRAWDOWN_PCT", "0.30")
+                os.getenv("BACKTEST_CB_MAX_DRAWDOWN_PCT", "0.40")
+            )
+            self.risk_mgr.circuit_breaker.max_session_drawdown_pct = float(
+                os.getenv("BACKTEST_CB_MAX_SESSION_DD_PCT", "0.50")
             )
             bt_consec = int(os.getenv("BACKTEST_CB_MAX_CONSEC", "0"))
             if bt_consec > 0:
@@ -916,17 +930,22 @@ class BacktestEngine:
                         signal.metadata.setdefault("risk_mult_override", 0.5)
                     signal.metadata["setup_type"] = _setup
 
-                    # Hour-of-day filter (alpha research 2026-03-24):
-                    # European session 08-16 UTC = -$261/90d, 32% WR
-                    # Worst: 10-11 UTC (10-12% WR, -$230 combined)
-                    # Best: 18:00 UTC (55% WR, +$224)
-                    # Soft filter: reduce size during bad hours, boost during best.
+                    # Hour-of-day filter (alpha research 2026-03-24, updated 2026-03-30):
+                    # Uses time_sizing.py session multipliers for consistency.
+                    # DEAD hours (03-06, 09-10, 17): 0.5x via RiskFilterChain.
+                    # Additional backtest-specific penalties for worst hours:
                     _entry_hour = sim_dt.hour if sim_dt else 12
                     if 10 <= _entry_hour <= 11:
                         # Toxic hours: 10-12% WR. Reduce to 25% size.
                         signal.metadata.setdefault("risk_mult_override",
                             min(signal.metadata.get("risk_mult_override", 1.0), 0.25))
                         signal.metadata["hour_filter"] = "toxic_reduce"
+                    elif _entry_hour == 17:
+                        # Hour 17 = DEAD: -$1,930 over 5 trades, 0% WR.
+                        # RiskFilterChain applies 0.5x via time_sizing; backtest also caps here.
+                        _current_rm = signal.metadata.get("risk_mult_override", 1.0)
+                        signal.metadata["risk_mult_override"] = min(_current_rm, 0.35)
+                        signal.metadata["hour_filter"] = "dead_hour_17"
                     elif 8 <= _entry_hour <= 16 and _entry_hour not in (12, 15):
                         # European session (ex 12:00 and 15:00 which are OK): reduce to 50%
                         _current_rm = signal.metadata.get("risk_mult_override", 1.0)

@@ -73,6 +73,8 @@ class ManualSniperConfig:
     leverage_tier_4: float = field(default_factory=lambda: _env_float("MANUAL_LEV_T4", 25.0))  # SNIPER
     leverage_tier_5: float = field(default_factory=lambda: _env_float("MANUAL_LEV_T5", 25.0))  # MAX (90%+ conf)
     max_leverage: float = field(default_factory=lambda: _env_float("MANUAL_MAX_LEVERAGE", 25.0))
+    # Hard cap for sniper_premium trades — one 9.7x trade wiped 26 wins
+    max_sniper_leverage: float = field(default_factory=lambda: _env_float("MANUAL_MAX_SNIPER_LEVERAGE", 5.0))
 
     # ── Risk per trade (% of equity) ──
     # Aggressive on $100: we NEED to size up on best signals to compound
@@ -106,13 +108,14 @@ class ManualSniperConfig:
 
     # ── Dedup / rate limiting ──
     # Cooldown between alerts for same symbol+side (prevent spam)
-    min_alert_gap_s: int = field(default_factory=lambda: _env_int("MANUAL_ALERT_GAP_S", 300))
-    # Only send truly distinct signals (dedup by symbol+side+confidence_band)
-    dedup_window_s: int = field(default_factory=lambda: _env_int("MANUAL_DEDUP_WINDOW_S", 600))
+    min_alert_gap_s: int = field(default_factory=lambda: _env_int("MANUAL_ALERT_GAP_S", 1800))
+    # Only send truly distinct signals (dedup by symbol+side+price_bucket)
+    # 30min = max 2 alerts/hour per setup. Price must change meaningfully to re-alert.
+    dedup_window_s: int = field(default_factory=lambda: _env_int("MANUAL_DEDUP_WINDOW_S", 1800))
 
     # ── Daily tracking ──
     # Aggressive mode: only 3-5 best signals per day. Quality over quantity.
-    max_daily_signals: int = field(default_factory=lambda: _env_int("MANUAL_MAX_DAILY_SIGNALS", 5))
+    max_daily_signals: int = field(default_factory=lambda: _env_int("MANUAL_MAX_DAILY_SIGNALS", 10))
 
     # ── Account growth tracking ──
     # Track running equity to adjust sizing as account grows
@@ -122,3 +125,30 @@ class ManualSniperConfig:
     # Enable research-identified setups (BTC SHORT >=90, BTC LONG 70-80) for paper validation
     # Set MANUAL_EXPANDED_SETUPS=true to enable
     expanded_setups: bool = field(default_factory=lambda: _env_bool("MANUAL_EXPANDED_SETUPS", False))
+
+    # ── Micro-Sniper (asymmetric lottery tickets) ──
+    # Small position, high leverage, tight SL, quick TP.
+    # The math: 1% risk at 20x with 1% SL = full equity notional.
+    # 2% move = 2% account growth. SL hit = 1% loss. R:R = 2:1.
+    # At 58%+ WR that's +EV. At 85% WR (HYPE BUY) it's a money printer.
+    # Set MICRO_SNIPER_ENABLED=true to enable.
+    micro_sniper_enabled: bool = field(default_factory=lambda: _env_bool("MICRO_SNIPER_ENABLED", False))
+    micro_sniper_risk_pct: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_RISK_PCT", 0.01))  # 1% equity risk
+    micro_sniper_max_risk_pct: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_MAX_RISK_PCT", 0.02))  # 2% cap
+    micro_sniper_min_leverage: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_MIN_LEV", 15.0))
+    micro_sniper_max_leverage: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_MAX_LEV", 25.0))
+    micro_sniper_min_confidence: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_MIN_CONF", 85.0))
+    micro_sniper_min_agree: int = field(default_factory=lambda: _env_int("MICRO_SNIPER_MIN_AGREE", 3))
+    micro_sniper_max_stop_pct: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_MAX_STOP", 0.012))  # 1.2% max SL
+    micro_sniper_min_stop_pct: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_MIN_STOP", 0.005))  # 0.5% min SL
+    micro_sniper_tp_multiplier: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_TP_MULT", 2.0))  # TP = 2x stop
+    micro_sniper_time_stop_hours: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_TIME_STOP_H", 3.0))
+    micro_sniper_max_daily: int = field(default_factory=lambda: _env_int("MICRO_SNIPER_MAX_DAILY", 1))
+    # Mean-reversion mode: 4+ red candles trigger (alternative qualification path)
+    micro_sniper_mean_reversion: bool = field(default_factory=lambda: _env_bool("MICRO_SNIPER_MEAN_REV", True))
+    micro_sniper_min_red_candles: int = field(default_factory=lambda: _env_int("MICRO_SNIPER_MIN_RED_CANDLES", 4))
+    # RSI sweet spot for micro-sniper (tighter than normal)
+    micro_sniper_rsi_min: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_RSI_MIN", 35.0))
+    micro_sniper_rsi_max: float = field(default_factory=lambda: _env_float("MICRO_SNIPER_RSI_MAX", 65.0))
+    # Prime hours only (18-06 UTC where PF=2.47)
+    micro_sniper_prime_hours_only: bool = field(default_factory=lambda: _env_bool("MICRO_SNIPER_PRIME_HOURS", True))

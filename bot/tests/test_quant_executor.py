@@ -130,9 +130,9 @@ class TestRuinCheck:
             confidence=82.0, num_agree=3, regime="consolidation",
             stop_width_pct=0.025, is_dip_buy=True,
         )
-        # Should not be halved by ruin check (HYPE BUY has 71% WR prior)
+        # Should not be halved by ruin check (HYPE BUY WR prior now 52%, was 71%)
         if decision.execute:
-            assert decision.risk_amount > 5.0  # Not halved to tiny
+            assert decision.risk_amount > 3.0  # Not halved to tiny (lower bound reduced for edge decay)
 
 
 class TestCrossAsset:

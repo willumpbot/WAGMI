@@ -315,33 +315,49 @@ def test_reconciliation():
 # ── PHASE C: Final Integration ──────────────────────────────────────
 
 def test_time_sizing():
-    """Test weekend and session-aware multipliers."""
-    from execution.time_sizing import get_time_multiplier, is_weekend
+    """Test data-driven time-of-day and day-of-week multipliers."""
+    from execution.time_sizing import get_time_multiplier, get_time_sizing_info, is_weekend
 
-    # Monday 12pm UTC -> 0.8 (below-average hour, moderate reduction)
+    # Monday 12pm UTC -> 1.15 (Mon) * 1.0 (GOOD hour) = 1.15
     mon = datetime(2025, 1, 6, 12, 0, tzinfo=timezone.utc)
-    assert get_time_multiplier(mon) == 0.8
+    assert abs(get_time_multiplier(mon) - 1.15) < 0.001
 
-    # Monday 15pm UTC -> 1.0 (US afternoon, normal)
+    # Monday 15pm UTC -> 1.15 (Mon) * 1.2 (PRIME hour) = 1.38
     mon_3pm = datetime(2025, 1, 6, 15, 0, tzinfo=timezone.utc)
-    assert get_time_multiplier(mon_3pm) == 1.0
+    assert abs(get_time_multiplier(mon_3pm) - 1.38) < 0.001
 
-    # Saturday 3am UTC -> 0.5 * 1.15 = 0.575 (weekend * asia_prime)
+    # Saturday 3am UTC -> 0.8 (Sat) * 0.5 (DEAD hour) = 0.4
     sat = datetime(2025, 1, 4, 3, 0, tzinfo=timezone.utc)
     m = get_time_multiplier(sat)
-    assert abs(m - 0.575) < 0.001
+    assert abs(m - 0.4) < 0.001
 
-    # Sunday 15pm UTC -> 0.5 (weekend, hour 15 = 1.0 session)
+    # Sunday 15pm UTC -> 0.8 (Sun) * 1.2 (PRIME hour) = 0.96
     sun = datetime(2025, 1, 5, 15, 0, tzinfo=timezone.utc)
-    assert get_time_multiplier(sun) == 0.5
+    assert abs(get_time_multiplier(sun) - 0.96) < 0.001
 
-    # Tuesday 0am UTC -> 0.5 (midnight danger zone)
+    # Tuesday 0am UTC -> 1.0 (Tue) * 1.2 (PRIME hour) = 1.2
     tue_midnight = datetime(2025, 1, 7, 0, 0, tzinfo=timezone.utc)
-    assert get_time_multiplier(tue_midnight) == 0.5
+    assert abs(get_time_multiplier(tue_midnight) - 1.2) < 0.001
 
-    # Tuesday 5am UTC -> 1.15 (asia prime, best session)
-    tue_asia = datetime(2025, 1, 7, 5, 0, tzinfo=timezone.utc)
-    assert abs(get_time_multiplier(tue_asia) - 1.15) < 0.001
+    # Tuesday 5am UTC -> 1.0 (Tue) * 0.5 (DEAD hour) = 0.5
+    tue_dead = datetime(2025, 1, 7, 5, 0, tzinfo=timezone.utc)
+    assert abs(get_time_multiplier(tue_dead) - 0.5) < 0.001
+
+    # Thursday 10am UTC -> 0.85 (Thu) * 0.5 (DEAD hour) = 0.425
+    thu_dead = datetime(2025, 1, 9, 10, 0, tzinfo=timezone.utc)
+    assert abs(get_time_multiplier(thu_dead) - 0.425) < 0.001
+
+    # Directional bias: 18:00 UTC = long
+    info_18 = get_time_sizing_info(datetime(2025, 1, 6, 18, 0, tzinfo=timezone.utc))
+    assert info_18["bias"] == "long"
+
+    # Directional bias: 13:00-15:00 UTC = short
+    info_14 = get_time_sizing_info(datetime(2025, 1, 6, 14, 0, tzinfo=timezone.utc))
+    assert info_14["bias"] == "short"
+
+    # Directional bias: 12:00 UTC = neutral
+    info_12 = get_time_sizing_info(datetime(2025, 1, 6, 12, 0, tzinfo=timezone.utc))
+    assert info_12["bias"] == "neutral"
 
     print("  [PASS] Time sizing")
 

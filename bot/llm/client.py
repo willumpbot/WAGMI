@@ -136,13 +136,57 @@ def call_llm(
         except Exception as e:
             _total_failures += 1
             wait = 2 ** attempt
-            logger.warning(
-                f"[LLM] Call failed (attempt {attempt + 1}/{max_retries + 1}): {e}"
-            )
+
+            # Classify error type for better diagnostics
+            err_type = type(e).__name__
+            err_msg = str(e)
+            error_category = "unknown"
+            try:
+                import anthropic
+                if isinstance(e, anthropic.AuthenticationError):
+                    error_category = "auth"
+                    logger.error(
+                        f"[LLM] AUTHENTICATION FAILED: Check ANTHROPIC_API_KEY is valid. {err_msg}"
+                    )
+                elif isinstance(e, anthropic.RateLimitError):
+                    error_category = "rate_limit"
+                    wait = max(wait, 10)  # Back off more on rate limits
+                    logger.warning(
+                        f"[LLM] Rate limited (attempt {attempt + 1}/{max_retries + 1}), "
+                        f"backing off {wait}s"
+                    )
+                elif isinstance(e, anthropic.APITimeoutError):
+                    error_category = "timeout"
+                    logger.warning(
+                        f"[LLM] Timeout after {timeout}s (attempt {attempt + 1}/{max_retries + 1})"
+                    )
+                elif isinstance(e, anthropic.NotFoundError):
+                    error_category = "model_access"
+                    logger.error(
+                        f"[LLM] Model not found or no access: {model}. {err_msg}"
+                    )
+                elif isinstance(e, anthropic.APIStatusError):
+                    error_category = f"api_status_{getattr(e, 'status_code', 'unknown')}"
+                    logger.warning(
+                        f"[LLM] API error {getattr(e, 'status_code', '?')} "
+                        f"(attempt {attempt + 1}/{max_retries + 1}): {err_msg}"
+                    )
+                else:
+                    logger.warning(
+                        f"[LLM] Call failed ({err_type}, attempt {attempt + 1}/{max_retries + 1}): {err_msg}"
+                    )
+            except ImportError:
+                logger.warning(
+                    f"[LLM] Call failed ({err_type}, attempt {attempt + 1}/{max_retries + 1}): {err_msg}"
+                )
+
             if attempt < max_retries:
                 time.sleep(wait)
 
-    usage["error"] = "max_retries_exceeded"
+    usage["error"] = f"max_retries_exceeded:{error_category}"
+    logger.warning(
+        f"[LLM] All {max_retries + 1} attempts failed (last error: {error_category})"
+    )
     return None, usage
 
 

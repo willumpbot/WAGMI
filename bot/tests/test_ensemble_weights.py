@@ -59,12 +59,12 @@ def make_signal(strategy: str, side: str, confidence: float) -> Signal:
 
 class TestStrategyWeightManager:
     def test_laplace_smoothing_default(self):
-        """Unknown strategy gets (0+1)/(0+2) = 0.5 prior."""
+        """Unknown strategy gets conservative 0.30 prior (untested != trusted)."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             path = f.name
         try:
             mgr = StrategyWeightManager(path=path)
-            assert mgr.get_weight("unknown_strat") == pytest.approx(0.5)
+            assert mgr.get_weight("unknown_strat") == pytest.approx(0.3)
         finally:
             os.unlink(path)
 
@@ -442,6 +442,15 @@ class TestWeightedVeto:
                 mgr.record_outcome("mt", win=True)
             for _ in range(1):
                 mgr.record_outcome("mt", win=False)
+            # Seed BUY strategies so they have meaningful weights (not zero-trial default)
+            for _ in range(6):
+                mgr.record_outcome("mc", win=True)
+            for _ in range(4):
+                mgr.record_outcome("mc", win=False)
+            for _ in range(6):
+                mgr.record_outcome("cs", win=True)
+            for _ in range(4):
+                mgr.record_outcome("cs", win=False)
 
             strategies = [
                 DummyStrategy("mc"),

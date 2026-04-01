@@ -142,3 +142,196 @@ def get_adaptive_risk() -> AdaptiveRiskManager:
     if _instance is None:
         _instance = AdaptiveRiskManager()
     return _instance
+
+
+# ─── Adaptive Sizer (Anti-Martingale) ──────────────────────────────────
+# Proven quant technique: size UP when hot, size DOWN when cold.
+# Data insight: larger positions show 64-73% WR vs 42-45% for smaller ones.
+# Per-symbol heat tracking with floor/ceiling protection.
+
+_ADAPTIVE_SIZER_STATE_PATH = os.path.join("data", "feedback", "adaptive_sizer_state.json")
+
+
+class AdaptiveSizer:
+    """Anti-martingale position sizing: size up when winning, down when losing.
+
+    Tracks per-symbol trade outcomes in a rolling window and computes a
+    'heat' score from -1.0 (ice cold) to +1.0 (on fire). The heat score
+    maps linearly to a sizing multiplier between min_floor and max_boost.
+
+    Usage:
+        sizer = AdaptiveSizer(window=20, max_boost=1.5, min_floor=0.5)
+        sizer.record_outcome("BTC", won=True)
+        mult = sizer.get_sizing_multiplier("BTC")  # e.g. 1.25x
+    """
+
+    def __init__(
+        self,
+        window: int = 20,
+        max_boost: float = 1.5,
+        min_floor: float = 0.5,
+    ):
+        self.window = max(window, 3)  # minimum 3 to be meaningful
+        self.max_boost = max_boost
+        self.min_floor = min_floor
+        # Per-symbol outcome history: {symbol: [True/False, ...]}
+        self._outcomes: Dict[str, list] = {}
+        self._load_state()
+
+    def record_outcome(self, symbol: str, won: bool) -> None:
+        """Record a trade outcome for a symbol.
+
+        Args:
+            symbol: Trading symbol (e.g. 'BTC', 'HYPE/USDC:USDC')
+            won: Whether the trade was profitable
+        """
+        base = self._normalize_symbol(symbol)
+        if base not in self._outcomes:
+            self._outcomes[base] = []
+        self._outcomes[base].append(won)
+        # Keep rolling window
+        if len(self._outcomes[base]) > self.window:
+            self._outcomes[base] = self._outcomes[base][-self.window:]
+        self._save_state()
+
+    def get_heat(self, symbol: str) -> float:
+        """Compute heat score for a symbol: -1.0 (cold) to +1.0 (hot).
+
+        Heat formula:
+          1. Base heat from recent WR: maps 40%-60% WR to -1..+1 linearly
+          2. Streak bonus: consecutive wins/losses accelerate heat
+          3. Clamped to [-1.0, +1.0]
+        """
+        base = self._normalize_symbol(symbol)
+        outcomes = self._outcomes.get(base, [])
+
+        if len(outcomes) < 3:
+            return 0.0  # Not enough data — neutral
+
+        # Recent win rate
+        wins = sum(outcomes)
+        total = len(outcomes)
+        wr = wins / total
+
+        # Base heat: linear map from WR to heat
+        # WR 0.60 → heat +1.0, WR 0.40 → heat -1.0, WR 0.50 → heat 0.0
+        base_heat = (wr - 0.50) / 0.10  # 10% WR = 1.0 heat unit
+
+        # Streak bonus: consecutive wins/losses at tail accelerate heat
+        streak = self._get_streak(outcomes)
+        # Each consecutive win/loss adds 0.15 heat (up to ±0.6 from streak)
+        streak_bonus = streak * 0.15
+        streak_bonus = max(-0.6, min(0.6, streak_bonus))
+
+        # Combine: 70% WR-based + 30% streak-based
+        heat = base_heat * 0.7 + streak_bonus * 0.3 + streak_bonus * 0.7
+
+        # Clamp
+        return max(-1.0, min(1.0, heat))
+
+    def get_sizing_multiplier(self, symbol: str) -> float:
+        """Get the sizing multiplier for a symbol based on heat.
+
+        Returns:
+            float between min_floor and max_boost:
+              heat +1.0 → max_boost (e.g. 1.5x)
+              heat  0.0 → 1.0x (neutral)
+              heat -1.0 → min_floor (e.g. 0.5x)
+        """
+        heat = self.get_heat(symbol)
+
+        # Linear interpolation
+        if heat >= 0:
+            # 0.0 → 1.0x, +1.0 → max_boost
+            mult = 1.0 + heat * (self.max_boost - 1.0)
+        else:
+            # 0.0 → 1.0x, -1.0 → min_floor
+            mult = 1.0 + heat * (1.0 - self.min_floor)
+
+        # Safety clamps
+        mult = max(self.min_floor, min(self.max_boost, mult))
+        return round(mult, 3)
+
+    def get_status(self) -> Dict:
+        """Get status of all tracked symbols for monitoring."""
+        status = {}
+        for sym, outcomes in self._outcomes.items():
+            total = len(outcomes)
+            wins = sum(outcomes) if outcomes else 0
+            status[sym] = {
+                "trades": total,
+                "wr": round(wins / total, 3) if total > 0 else 0,
+                "heat": round(self.get_heat(sym), 3),
+                "multiplier": self.get_sizing_multiplier(sym),
+                "streak": self._get_streak(outcomes),
+                "recent": "".join("W" if w else "L" for w in outcomes[-10:]),
+            }
+        return status
+
+    @staticmethod
+    def _get_streak(outcomes: list) -> int:
+        """Get current streak from tail of outcomes. Positive=wins, negative=losses."""
+        if not outcomes:
+            return 0
+        streak = 0
+        last = outcomes[-1]
+        for o in reversed(outcomes):
+            if o == last:
+                streak += 1
+            else:
+                break
+        return streak if last else -streak
+
+    @staticmethod
+    def _normalize_symbol(symbol: str) -> str:
+        """Normalize symbol to base form (e.g. 'BTC/USDC:USDC' -> 'BTC')."""
+        return symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "")
+
+    def _save_state(self):
+        """Persist state to disk."""
+        try:
+            os.makedirs(os.path.dirname(_ADAPTIVE_SIZER_STATE_PATH), exist_ok=True)
+            state = {"outcomes": self._outcomes, "window": self.window}
+            with open(_ADAPTIVE_SIZER_STATE_PATH, "w") as f:
+                json.dump(state, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to save adaptive sizer state: {e}")
+
+    def _load_state(self):
+        """Restore persisted state."""
+        if not os.path.exists(_ADAPTIVE_SIZER_STATE_PATH):
+            return
+        try:
+            with open(_ADAPTIVE_SIZER_STATE_PATH) as f:
+                state = json.load(f)
+            raw = state.get("outcomes", {})
+            # Trim to current window size
+            for sym, outs in raw.items():
+                self._outcomes[sym] = outs[-self.window:]
+            if self._outcomes:
+                logger.info(
+                    f"[ADAPTIVE_SIZER] Restored state: {len(self._outcomes)} symbols tracked"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to load adaptive sizer state: {e}")
+
+
+# Singleton for AdaptiveSizer
+_sizer_instance: Optional[AdaptiveSizer] = None
+
+
+def get_adaptive_sizer(config=None) -> AdaptiveSizer:
+    """Get or create the singleton AdaptiveSizer, configured from TradingConfig."""
+    global _sizer_instance
+    if _sizer_instance is None:
+        window = 20
+        max_boost = 1.5
+        min_floor = 0.5
+        if config is not None:
+            window = getattr(config, "adaptive_sizing_window", 20)
+            max_boost = getattr(config, "adaptive_sizing_max_boost", 1.5)
+            min_floor = getattr(config, "adaptive_sizing_min_floor", 0.5)
+        _sizer_instance = AdaptiveSizer(
+            window=window, max_boost=max_boost, min_floor=min_floor,
+        )
+    return _sizer_instance

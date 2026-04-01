@@ -293,18 +293,73 @@ def run_health_check(quick: bool = False) -> HealthStatus:
     return health
 
 
+def get_rejection_summary() -> Dict[str, Any]:
+    """Analyze rejection patterns from sniper_rejections.jsonl."""
+    rejection_path = os.path.join(_DATA_DIR, "sniper_rejections.jsonl")
+    if not os.path.exists(rejection_path):
+        return {"total": 0, "by_reason": {}, "by_symbol": {}}
+
+    from collections import Counter, defaultdict
+    reasons = Counter()
+    by_symbol = defaultdict(int)
+
+    try:
+        with open(rejection_path) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    d = json.loads(line)
+                    reason = d.get("reason", "unknown")
+                    # Normalize variable reasons
+                    for prefix in ("low_confidence_", "chop_too_high_", "low_rr_",
+                                   "setup_high_conf_", "setup_low_conf_", "weak_regime_",
+                                   "low_consensus_", "near_high_", "already_dipped_"):
+                        if reason.startswith(prefix):
+                            reason = prefix.rstrip("_")
+                            break
+                    reasons[reason] += 1
+                    by_symbol[d.get("symbol", "?")] += 1
+                except (json.JSONDecodeError, TypeError):
+                    continue
+    except Exception:
+        pass
+
+    return {
+        "total": sum(reasons.values()),
+        "by_reason": dict(reasons.most_common(10)),
+        "by_symbol": dict(Counter(by_symbol).most_common(10)),
+    }
+
+
 def main():
     """CLI entry point."""
     import argparse
     parser = argparse.ArgumentParser(description="Sniper System Health Check")
     parser.add_argument("--quick", action="store_true", help="Quick check only")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
+    parser.add_argument("--rejections", action="store_true", help="Show rejection analysis")
     args = parser.parse_args()
 
     # Ensure bot/ is on path
     bot_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if bot_dir not in sys.path:
         sys.path.insert(0, bot_dir)
+
+    if args.rejections:
+        summary = get_rejection_summary()
+        print(f"\nRejection Analysis ({summary['total']} total)")
+        print("-" * 40)
+        if summary["by_reason"]:
+            print("By reason:")
+            for reason, count in summary["by_reason"].items():
+                print(f"  {count:4d}  {reason}")
+        if summary["by_symbol"]:
+            print("\nBy symbol:")
+            for sym, count in summary["by_symbol"].items():
+                print(f"  {sym}: {count}")
+        return
 
     health = run_health_check(quick=args.quick)
 

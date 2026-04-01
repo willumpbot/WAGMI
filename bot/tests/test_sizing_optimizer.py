@@ -14,12 +14,12 @@ class TestKellyFraction:
     """Test Kelly criterion calculations."""
 
     def test_kelly_with_prior_hype_buy(self):
-        """HYPE BUY prior: 71% WR, 1.5:1 payoff → positive Kelly."""
+        """HYPE BUY prior: 52% WR, 1.34:1 payoff → positive Kelly (edge weakening)."""
         opt = SizingOptimizer()
         kelly, wr, payoff = opt.kelly_fraction("HYPE_BUY")
-        assert kelly > 0.2  # Should be ~0.28 (strong edge)
-        assert wr == 0.71
-        assert payoff == 1.5
+        assert kelly > 0.10  # Positive edge but weaker than before
+        assert wr == 0.52
+        assert payoff == 1.34
 
     def test_kelly_with_prior_hype_sell(self):
         """HYPE SELL prior: 7% WR → near-zero Kelly."""
@@ -49,8 +49,8 @@ class TestKellyFraction:
             opt.record_outcome("HYPE_BUY", True, 4.0)
 
         kelly, wr, payoff = opt.kelly_fraction("HYPE_BUY")
-        # Should be between prior (71%) and data (100%)
-        assert 0.71 < wr < 1.0
+        # Should be between prior (52%) and data (100%)
+        assert 0.52 < wr < 1.0
 
     def test_kelly_capped_at_half(self):
         """Kelly should never exceed the cap (default 50%)."""
@@ -194,7 +194,7 @@ class TestGetOptimalSize:
         assert sizing.position_size_usd > 0
         assert sizing.margin_required <= 100.0 * 0.95
         assert sizing.compound_tier == "bootstrap"
-        assert sizing.setup_wr == 0.71  # HYPE BUY prior
+        assert sizing.setup_wr == 0.52  # HYPE BUY prior (updated: edge weakening)
 
     def test_margin_never_exceeds_equity(self):
         opt = SizingOptimizer()

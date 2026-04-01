@@ -137,6 +137,149 @@ def log_trade_event(
     logger.info(f"[{event}] {symbol}", extra=extra)
 
 
+class TradeEventLogger:
+    """Logs trade lifecycle events as structured JSON to an append-only JSONL file.
+
+    Events: SIGNAL_GENERATED, SIGNAL_FILTERED, TRADE_OPENED, TP_HIT, SL_HIT,
+            TRADE_CLOSED, POSITION_UPDATE
+
+    Each event includes: timestamp, event, symbol, and relevant trade fields.
+
+    Usage:
+        tel = TradeEventLogger()
+        tel.log("SIGNAL_GENERATED", "BTC", side="BUY", strategy="regime_trend",
+                confidence=85.5, entry=65000.0, regime="trend")
+        tel.log("TRADE_CLOSED", "BTC", side="BUY", entry=65000.0, exit=66000.0,
+                pnl=150.0, duration_s=3600)
+    """
+
+    VALID_EVENTS = frozenset({
+        "SIGNAL_GENERATED",
+        "SIGNAL_FILTERED",
+        "TRADE_OPENED",
+        "TP_HIT",
+        "SL_HIT",
+        "TRADE_CLOSED",
+        "POSITION_UPDATE",
+    })
+
+    def __init__(self, file_path: Optional[str] = None):
+        if file_path is None:
+            data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+            os.makedirs(data_dir, exist_ok=True)
+            file_path = os.path.join(data_dir, "trade_events.jsonl")
+        self._file_path = file_path
+        self._logger = logging.getLogger("bot.trade_events")
+        self._lock = __import__("threading").Lock()
+        self._callbacks = []  # List of callables: fn(record_dict) -> None
+
+    def add_callback(self, callback) -> None:
+        """Register a callback that is invoked after every event is logged.
+
+        The callback receives the event dict. Exceptions in callbacks
+        are caught so they never affect the core logging path.
+        """
+        self._callbacks.append(callback)
+
+    @property
+    def file_path(self) -> str:
+        return self._file_path
+
+    def log(self, event: str, symbol: str, **kwargs) -> dict:
+        """Log a trade lifecycle event.
+
+        Args:
+            event: One of VALID_EVENTS (validated but not enforced for extensibility).
+            symbol: Trading pair symbol (e.g. "BTC", "SOL").
+            **kwargs: Optional trade fields — side, strategy, confidence, entry, exit,
+                      sl, tp1, tp2, pnl, regime, duration_s, reason, leverage, atr.
+
+        Returns:
+            The event dict that was written.
+        """
+        if event not in self.VALID_EVENTS:
+            self._logger.warning("Unknown trade event type: %s", event)
+
+        record = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "event": event,
+            "symbol": symbol,
+        }
+
+        # Standard optional fields
+        for field in ("side", "strategy", "confidence", "entry", "exit",
+                      "sl", "tp1", "tp2", "pnl", "regime", "duration_s",
+                      "reason", "leverage", "atr"):
+            if field in kwargs:
+                record[field] = kwargs[field]
+
+        # Any extra fields
+        for k, v in kwargs.items():
+            if k not in record:
+                record[k] = v
+
+        # Write to JSONL (append-only, thread-safe)
+        try:
+            with self._lock:
+                with open(self._file_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(record, default=str) + "\n")
+        except Exception as exc:
+            self._logger.error("Failed to write trade event: %s", exc)
+
+        # Also emit via standard logging
+        self._logger.info(
+            "[%s] %s", event, symbol,
+            extra={"structured": record},
+        )
+
+        # Invoke registered callbacks (e.g. Telegram alert bridge)
+        for cb in self._callbacks:
+            try:
+                cb(record)
+            except Exception as cb_exc:
+                self._logger.debug("Trade event callback error: %s", cb_exc)
+
+        return record
+
+    def read_events(self, limit: int = 100) -> list:
+        """Read the most recent events from the JSONL file.
+
+        Args:
+            limit: Maximum number of events to return (most recent first).
+
+        Returns:
+            List of event dicts, most recent first.
+        """
+        events = []
+        try:
+            if not os.path.exists(self._file_path):
+                return events
+            with open(self._file_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            for line in reversed(lines[-limit:]):
+                line = line.strip()
+                if line:
+                    try:
+                        events.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        pass
+        except Exception as exc:
+            self._logger.error("Failed to read trade events: %s", exc)
+        return events
+
+
+# Module-level singleton
+_trade_event_logger: Optional["TradeEventLogger"] = None
+
+
+def get_trade_event_logger(file_path: Optional[str] = None) -> TradeEventLogger:
+    """Get or create the singleton TradeEventLogger instance."""
+    global _trade_event_logger
+    if _trade_event_logger is None:
+        _trade_event_logger = TradeEventLogger(file_path=file_path)
+    return _trade_event_logger
+
+
 def log_metric(
     logger: logging.Logger,
     metric: str,

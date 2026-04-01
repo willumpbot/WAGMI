@@ -553,7 +553,7 @@ class TestConfidenceCalibrator:
     def test_get_summary(self):
         summary = self.calibrator.get_calibration_summary()
         assert "total_observations" in summary
-        assert "bins" in summary
+        assert "scopes" in summary
 
 
 # --------------- Counterfactual Learner ---------------
@@ -584,8 +584,8 @@ class TestCounterfactualLearner:
         self.learner.update_with_price("SOL", high=153.0, low=142.0, close=152.0)
 
         assert len(self.learner._pending) == 0
-        assert len(self.learner._resolved) == 1
-        resolved = self.learner._resolved[0]
+        assert len(self.learner._resolved_recent) == 1
+        resolved = self.learner._resolved_recent[0]
         assert resolved.would_hit_tp1
         assert resolved.would_hit_tp2
         assert resolved.hypothetical_pnl_pct > 0
@@ -600,7 +600,7 @@ class TestCounterfactualLearner:
         self.learner.update_with_price("SOL", high=143.0, low=138.0, close=138.5)
 
         assert len(self.learner._pending) == 0
-        resolved = self.learner._resolved[0]
+        resolved = self.learner._resolved_recent[0]
         assert resolved.would_hit_sl
         assert resolved.hypothetical_pnl_pct < 0
 
@@ -615,7 +615,7 @@ class TestCounterfactualLearner:
 
         # Resolve half as winners, half as losers
         for sym_rec in list(self.learner._pending.values()):
-            if len(self.learner._resolved) % 2 == 0:
+            if len(self.learner._resolved_recent) % 2 == 0:
                 self.learner.update_with_price("SOL", high=112.0, low=99.0, close=111.0)
             else:
                 self.learner.update_with_price("SOL", high=101.0, low=94.0, close=94.5)

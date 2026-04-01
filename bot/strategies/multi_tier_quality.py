@@ -85,6 +85,19 @@ class MultiTierQualityStrategy(BaseStrategy):
         dx = ((plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, 1e-9)) * 100
         return float(dx.rolling(period, min_periods=1).mean().iloc[-1])
 
+    def _compute_rsi(self, df: pd.DataFrame, period: int = 14) -> float:
+        """Compute RSI(14). Returns 0-100 or None if insufficient data."""
+        if len(df) < period + 1:
+            return None
+        close = df["close"].astype(float)
+        delta = close.diff()
+        gain = delta.where(delta > 0, 0.0).rolling(period, min_periods=period).mean()
+        loss = (-delta.where(delta < 0, 0.0)).rolling(period, min_periods=period).mean()
+        rs = gain / loss.replace(0, 1e-9)
+        rsi = 100 - (100 / (1 + rs))
+        val = rsi.iloc[-1]
+        return float(val) if not pd.isna(val) else None
+
     def _ema_side_slope(self, df: pd.DataFrame) -> tuple:
         """Get EMA50 side (above/below) and slope (up/down)."""
         if df is None or "EMA50" not in df.columns or len(df) < 5:
@@ -230,11 +243,24 @@ class MultiTierQualityStrategy(BaseStrategy):
             if _avg_atr > 0 and _cur_atr < _avg_atr * _squeeze_ratio:
                 return None  # Volatility squeeze — skip
 
+        # RSI momentum filter: block signals in exhaustion zones.
+        # Data shows RSI 35-65 is the sweet spot for HYPE_BUY (62-64% WR).
+        # RSI <25 = oversold panic (50% WR, not better than coin flip).
+        # RSI >75 = overbought (reversal risk too high for fresh entries).
+        _rsi = self._compute_rsi(df_1h)
+
         # Determine side from 1h EMA crossover
         side_1h = self._one_hour_side(df_1h)
         if side_1h == "na":
             return None
         side = "BUY" if side_1h == "above" else "SELL"
+
+        # RSI gate: reject extreme exhaustion zones
+        if _rsi is not None:
+            if side == "BUY" and _rsi > 78:
+                return None  # Overbought — don't chase
+            if side == "SELL" and _rsi < 22:
+                return None  # Oversold — don't short into panic
 
         entry = float(df_1h["close"].iloc[-1])
         if pd.isna(entry):
@@ -289,6 +315,13 @@ class MultiTierQualityStrategy(BaseStrategy):
         # Confidence
         conf = self._compute_confidence(regime, ema1h_side, side, vwap_align, stop_width, atr_val)
         conf = min(100, max(0, conf + self._ema_slope_bonus(df_1h, side)))
+
+        # RSI confidence adjustment: sweet spot boost, edge zone penalty
+        if _rsi is not None:
+            if 35 <= _rsi <= 65:
+                conf = min(100, conf + 5)  # Sweet spot: +5 confidence
+            elif _rsi < 30 or _rsi > 70:
+                conf = max(0, conf - 5)    # Edge zone: -5 confidence
 
         # Determine tier
         if conf >= 75:
@@ -354,6 +387,7 @@ class MultiTierQualityStrategy(BaseStrategy):
                 "stop_width": stop_width,
                 "swing_used": swing is not None,
                 "adx": round(adx_val, 1),
+                "rsi": round(_rsi, 1) if _rsi is not None else None,
                 # Regime classification for system-wide regime detector
                 "regime": (
                     "trend" if abs(regime) >= 2 else

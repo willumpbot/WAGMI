@@ -46,7 +46,9 @@ def _confidence_bar(conf: float) -> str:
 
 def _tier_header(tier: str) -> str:
     """Tier-specific header."""
-    if tier == "SNIPER":
+    if tier == "MICRO_SNIPER":
+        return "\U0001f52b MICRO-SNIPER — LOTTERY TICKET"
+    elif tier == "SNIPER":
         return "\U0001f3af SNIPER — MAX CONVICTION"
     elif tier == "PREMIUM":
         return "\u26a1 PREMIUM SETUP"
@@ -104,6 +106,13 @@ def format_sniper_alert(sniper: SniperSignal, equity: float = 100) -> str:
     lines.append(f"")
     lines.append(f"Regime: {sniper.regime} | Hold: {sniper.hold_target_hours}")
 
+    if sniper.tier == "MICRO_SNIPER":
+        lines.append(f"\U0001f52b MICRO-SNIPER: {sniper.risk_pct*100:.0f}% risk, {sniper.leverage:.0f}x lev, 3h time-stop")
+        lines.append(f"   Asymmetric: risk ${sniper.loss_amount:.2f} to make ${sniper.pnl_scalp:.2f}")
+
+    if getattr(sniper, 'is_dip_buy', False):
+        lines.append(f"\U0001f4c9 DIP-BUY setup — higher conviction (88.5% WR)")
+
     if sniper.signal_context:
         lines.append(f"Why: {sniper.signal_context[:120]}")
 
@@ -145,7 +154,7 @@ def format_daily_summary(summary: Dict[str, Any]) -> str:
         lines.append(f"")
         for tier, count in tiers.items():
             if count > 0:
-                emoji = {"SNIPER": "\U0001f3af", "PREMIUM": "\u26a1", "STANDARD": "\U0001f4ca"}.get(tier, "")
+                emoji = {"MICRO_SNIPER": "\U0001f52b", "SNIPER": "\U0001f3af", "PREMIUM": "\u26a1", "STANDARD": "\U0001f4ca"}.get(tier, "")
                 lines.append(f"  {emoji} {tier}: {count}")
 
     lines.append(f"\u2550" * 32)
@@ -153,17 +162,41 @@ def format_daily_summary(summary: Dict[str, Any]) -> str:
 
 
 class ManualSniperAlerter:
-    """Sends manual sniper signals via Telegram."""
+    """Sends manual sniper signals via Telegram with dedup."""
+
+    # Alert cooldown per setup (symbol+side+price_bucket).
+    # Same setup won't fire again within this window.
+    ALERT_COOLDOWN_S = 1800  # 30 minutes between alerts for the same setup
 
     def __init__(self, config: Optional[ManualSniperConfig] = None):
         self.config = config or ManualSniperConfig()
+        self._last_alert: Dict[str, float] = {}  # setup_key -> unix timestamp
+
+    def _alert_key(self, sniper: SniperSignal) -> str:
+        """Create dedup key from signal. Groups by symbol+side+price bucket."""
+        # Round entry to 1% bucket so slight price changes don't spam
+        bucket = round(sniper.entry * 100) if sniper.entry < 1 else round(sniper.entry, 1)
+        return f"{sniper.symbol}_{sniper.side}_{bucket}"
 
     def send_sniper_alert(self, sniper: SniperSignal, equity: float = 100) -> bool:
-        """Send a sniper signal alert to Telegram."""
+        """Send a sniper signal alert to Telegram (with dedup)."""
         if not self.config.telegram_token or not self.config.telegram_chat_id:
             logger.warning("[SNIPER-ALERT] No Telegram credentials configured")
             return False
 
+        # Dedup: skip if same setup alerted recently
+        key = self._alert_key(sniper)
+        now = time.time()
+        last = self._last_alert.get(key, 0)
+        if now - last < self.ALERT_COOLDOWN_S:
+            mins_ago = (now - last) / 60
+            logger.debug(
+                f"[SNIPER-ALERT] Skipping {key} — last alert {mins_ago:.0f}m ago "
+                f"(cooldown {self.ALERT_COOLDOWN_S // 60}m)"
+            )
+            return False
+
+        self._last_alert[key] = now
         msg = format_sniper_alert(sniper, equity)
         return self._send_telegram(msg)
 

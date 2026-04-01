@@ -27,6 +27,7 @@ import os
 import time
 from collections import deque
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 
 from llm.client import call_llm, get_usage_stats
@@ -114,40 +115,77 @@ def _log_audit(entry: dict):
 # ── LLM Availability Tracking ────────────────────────────────────
 
 class _LLMAvailability:
-    """Track LLM system availability for operational visibility."""
+    """Track LLM system availability with auto-recovery.
+
+    After 3 consecutive failures, logs CRITICAL and marks degraded.
+    Auto-recovers after RECOVERY_SECONDS (30 min) so the bot retries
+    instead of staying permanently disabled.
+    """
+    RECOVERY_SECONDS = 1800  # 30 minutes
+
     def __init__(self):
         self.available: bool = True
         self.last_error: Optional[str] = None
-        self.last_error_time: Optional[datetime] = None
+        self.last_error_time: Optional[float] = None  # monotonic time
+        self.last_error_utc: Optional[datetime] = None
         self.total_calls: int = 0
         self.total_errors: int = 0
         self.consecutive_failures: int = 0
 
     def record_success(self):
+        if not self.available:
+            logger.info(
+                f"[LLM-AVAILABILITY] RECOVERED after {self.consecutive_failures} "
+                f"consecutive failures — LLM pipeline back online"
+            )
         self.available = True
         self.consecutive_failures = 0
         self.total_calls += 1
 
     def record_failure(self, error: str):
-        self.available = False
         self.last_error = error
-        self.last_error_time = datetime.now(timezone.utc)
+        self.last_error_time = time.monotonic()
+        self.last_error_utc = datetime.now(timezone.utc)
         self.total_errors += 1
         self.total_calls += 1
         self.consecutive_failures += 1
         if self.consecutive_failures >= 3:
+            self.available = False
             logger.critical(
                 f"[LLM-AVAILABILITY] SYSTEM DEGRADED: {self.consecutive_failures} "
-                f"consecutive failures — trading on mechanical signals only"
+                f"consecutive failures — trading on mechanical signals only. "
+                f"Will auto-retry in {self.RECOVERY_SECONDS // 60} minutes. "
+                f"Last error: {error}"
             )
+        else:
+            logger.warning(
+                f"[LLM-AVAILABILITY] Failure {self.consecutive_failures}/3: {error}"
+            )
+
+    def is_available(self) -> bool:
+        """Check if LLM is available, with auto-recovery after timeout."""
+        if self.available:
+            return True
+        # Auto-recover after RECOVERY_SECONDS
+        if self.last_error_time is not None:
+            elapsed = time.monotonic() - self.last_error_time
+            if elapsed >= self.RECOVERY_SECONDS:
+                logger.info(
+                    f"[LLM-AVAILABILITY] Auto-recovery triggered after "
+                    f"{elapsed / 60:.0f} minutes — retrying LLM pipeline"
+                )
+                self.available = True
+                self.consecutive_failures = 0
+                return True
+        return False
 
     def get_status(self) -> dict:
         return {
-            "available": self.available,
+            "available": self.is_available(),
             "consecutive_failures": self.consecutive_failures,
             "error_rate": self.total_errors / max(self.total_calls, 1),
             "last_error": self.last_error,
-            "last_error_time": self.last_error_time.isoformat() if self.last_error_time else None,
+            "last_error_time": self.last_error_utc.isoformat() if self.last_error_utc else None,
         }
 
 _llm_availability = _LLMAvailability()
@@ -391,11 +429,17 @@ def get_trading_decision(
                 val_err = None
                 _ensemble_enabled = False  # Don't also run ensemble
             else:
-                logger.warning("[LLM-ENGINE] Multi-agent pipeline returned None, falling back to monolithic")
+                logger.warning(
+                    "[LLM-ENGINE] Multi-agent pipeline returned None "
+                    "(all required agents may have failed) — falling back to monolithic"
+                )
                 _multi_agent_active = False
         except Exception as ma_err:
-            logger.warning(f"[LLM-ENGINE] Multi-agent failed: {ma_err}, falling back to monolithic")
-            _llm_availability.record_failure(f"multi-agent: {ma_err}")
+            logger.warning(
+                f"[LLM-ENGINE] Multi-agent pipeline exception: {type(ma_err).__name__}: {ma_err} "
+                f"— falling back to mechanical trading (no crash)"
+            )
+            _llm_availability.record_failure(f"multi-agent: {type(ma_err).__name__}: {ma_err}")
             _multi_agent_active = False
 
     # Step 4: Call Claude (with smart model routing if usage tiers are configured)

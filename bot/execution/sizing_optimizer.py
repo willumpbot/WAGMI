@@ -107,11 +107,13 @@ class OptimalSizing:
 
 _DEFAULT_PRIORS: Dict[str, Tuple[float, float]] = {
     # (win_rate, payoff_ratio)
-    "HYPE_BUY": (0.71, 1.5),    # Strong prior from counterfactual data
-    "SOL_SELL": (0.59, 1.5),    # Moderate prior
-    "BTC_SELL": (0.67, 1.5),    # At 90%+ confidence only
-    "BTC_BUY": (0.50, 1.5),    # Neutral — needs data
-    "SOL_BUY": (0.50, 1.5),    # Neutral — needs data
+    # Updated 2026-03-25: edge study shows HYPE_BUY WR declining (64%→40% over 418 trades).
+    # Overall 51.7% WR, PF 1.34. Prior set conservatively at current overall rate.
+    "HYPE_BUY": (0.52, 1.34),   # Edge WEAKENING: 418 trades, last third 40% WR. Was 0.71.
+    "SOL_SELL": (0.48, 1.0),    # PF < 1.0 across most configs. Marginal at best. Was 0.59.
+    "BTC_SELL": (0.55, 1.5),    # Only marginal at 90%+ confidence.
+    "BTC_BUY": (0.56, 1.4),    # 56% WR, PF 1.40 over 30 days. Not yet proven live.
+    "SOL_BUY": (0.45, 1.5),    # No validated edge. Discovery only.
     "HYPE_SELL": (0.07, 1.5),  # Toxic — should never trade
 }
 
@@ -331,9 +333,9 @@ class SizingOptimizer:
         if stats.streak <= -2:
             # Losing streak — pull back
             kelly_used *= 0.6
-        elif stats.streak >= 3:
-            # Win streak — allow slight increase
-            kelly_used *= 1.15
+        # Win streak bonus REMOVED: edge study shows autocorrelation=0.090 (near random).
+        # Signal clustering is marginal — after WIN: 55.2% WR, after LOSS: 46.2%.
+        # Sizing should stay constant per Kelly, not chase streaks.
 
         # Step 5: Position count adjustment
         if open_positions >= tier.max_positions:

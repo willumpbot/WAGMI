@@ -19,11 +19,15 @@ This data feeds back to:
 2. Parameter tuner: loosening gates that block too many winners
 3. Confidence calibration: adjusting filters that are miscalibrated
 
-Storage: bot/data/llm/counterfactual_log.jsonl
+Storage:
+- Pending (unresolved): bot/data/llm/counterfactual_pending.jsonl
+- Resolved: bot/data/llm/counterfactual_resolved.jsonl
+- Legacy (read-only): bot/data/llm/counterfactual_log.jsonl
 """
 
 import json
 import logging
+import os
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -122,6 +126,12 @@ class CounterfactualLearner:
     """
     Tracks skipped trades and computes what would have happened.
 
+    Architecture:
+    - Pending records stored in counterfactual_pending.jsonl (small, rewritten on compact)
+    - Resolved records appended to counterfactual_resolved.jsonl (append-only)
+    - Recent resolved records kept in memory for stats (last N days only)
+    - Periodic compaction prevents file bloat
+
     Provides aggregate stats:
     - How many skipped trades would have been winners?
     - Which skip reasons produce the most missed winners?
@@ -133,48 +143,203 @@ class CounterfactualLearner:
     MAX_TRACKING_BARS = 48  # 48h max for 1h candles
 
     # Max pending counterfactuals to track simultaneously
-    MAX_PENDING = 200
+    MAX_PENDING = 2000
+
+    # How many days of resolved records to keep in memory for stats
+    RESOLVED_MEMORY_DAYS = 14
+
+    # Compact pending file every N resolutions
+    COMPACT_EVERY = 100
 
     def __init__(self, data_dir: str = "data/llm"):
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.log_file = self.data_dir / "counterfactual_log.jsonl"
+
+        # New split files
+        self.pending_file = self.data_dir / "counterfactual_pending.jsonl"
+        self.resolved_file = self.data_dir / "counterfactual_resolved.jsonl"
+
+        # Legacy file (read-only for migration)
+        self.legacy_file = self.data_dir / "counterfactual_log.jsonl"
 
         self._pending: Dict[str, CounterfactualRecord] = {}
-        self._resolved: List[CounterfactualRecord] = []
+        self._resolved_recent: List[CounterfactualRecord] = []  # Only recent N days
+        self._resolved_count: int = 0  # Total count including on-disk
+        self._resolutions_since_compact: int = 0
+
+        # Track last price update per symbol to avoid double-counting ticks
+        # as "bars". We only increment bars_to_resolve when the high/low
+        # actually changes (new candle data, not same tick repeated).
+        self._last_price_update: Dict[str, tuple] = {}  # symbol -> (high, low)
+
         self._load()
 
     def _load(self):
-        """Load counterfactual history."""
-        if not self.log_file.exists():
-            return
+        """Load pending records and recent resolved records.
+
+        Strategy:
+        1. If new pending file exists, load from it (fast, small)
+        2. If not, migrate from legacy file (one-time, loads only pending)
+        3. Load recent resolved records for stats (last N days only)
+        """
+        loaded_pending = False
+
+        # 1. Try new pending file first
+        if self.pending_file.exists():
+            try:
+                with open(self.pending_file, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            d = json.loads(line)
+                            rec = CounterfactualRecord.from_dict(d)
+                            if not rec.resolved:
+                                self._pending[rec.record_id] = rec
+                        except (json.JSONDecodeError, KeyError):
+                            continue
+                loaded_pending = True
+                logger.info(f"Loaded {len(self._pending)} pending counterfactuals from pending file")
+            except Exception as e:
+                logger.warning(f"Failed to load pending file: {e}")
+
+        # 2. If no pending file, migrate from legacy
+        if not loaded_pending and self.legacy_file.exists():
+            self._migrate_from_legacy()
+
+        # 3. Load recent resolved for stats
+        self._load_recent_resolved()
+
+    def _migrate_from_legacy(self):
+        """One-time migration from legacy counterfactual_log.jsonl.
+
+        Only loads the LAST occurrence of each record_id (deduplication)
+        and only keeps pending (unresolved) records.
+        """
+        logger.info("Migrating from legacy counterfactual_log.jsonl...")
+        seen_ids: Dict[str, Dict] = {}  # record_id -> latest dict
+        line_count = 0
+
         try:
-            with open(self.log_file, "r") as f:
+            with open(self.legacy_file, "r") as f:
                 for line in f:
+                    line_count += 1
                     line = line.strip()
                     if not line:
                         continue
                     try:
                         d = json.loads(line)
-                        rec = CounterfactualRecord.from_dict(d)
-                        if rec.resolved:
-                            self._resolved.append(rec)
-                        else:
-                            self._pending[rec.record_id] = rec
+                        rid = d.get("record_id", "")
+                        if rid:
+                            seen_ids[rid] = d  # Keep latest version
                     except (json.JSONDecodeError, KeyError):
                         continue
-            logger.info(f"Loaded {len(self._resolved)} resolved + "
-                        f"{len(self._pending)} pending counterfactuals")
-        except Exception as e:
-            logger.warning(f"Failed to load counterfactual log: {e}")
 
-    def _save_record(self, record: CounterfactualRecord):
-        """Append a record to the log file."""
+            # Split into pending and resolved
+            pending_records = []
+            resolved_records = []
+            for rid, d in seen_ids.items():
+                if d.get("resolved"):
+                    resolved_records.append(d)
+                else:
+                    pending_records.append(d)
+                    try:
+                        rec = CounterfactualRecord.from_dict(d)
+                        self._pending[rec.record_id] = rec
+                    except (KeyError, TypeError):
+                        continue
+
+            # Write deduplicated pending file
+            with open(self.pending_file, "w") as f:
+                for d in pending_records:
+                    f.write(json.dumps(d) + "\n")
+
+            # Write deduplicated resolved file
+            with open(self.resolved_file, "w") as f:
+                for d in resolved_records:
+                    f.write(json.dumps(d) + "\n")
+
+            logger.info(
+                f"Migration complete: {line_count} lines -> "
+                f"{len(seen_ids)} unique records "
+                f"({len(pending_records)} pending, {len(resolved_records)} resolved)"
+            )
+
+            # Rename legacy file so migration doesn't repeat
+            backup = self.legacy_file.with_suffix(".jsonl.bak")
+            try:
+                if backup.exists():
+                    backup.unlink()
+                self.legacy_file.rename(backup)
+                logger.info(f"Legacy file renamed to {backup.name}")
+            except Exception as e:
+                logger.warning(f"Could not rename legacy file: {e}")
+
+        except Exception as e:
+            logger.warning(f"Legacy migration failed: {e}")
+
+    def _load_recent_resolved(self):
+        """Load resolved records from the last N days for in-memory stats."""
+        if not self.resolved_file.exists():
+            return
+
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=self.RESOLVED_MEMORY_DAYS)).isoformat()
+        total = 0
+
         try:
-            with open(self.log_file, "a") as f:
+            with open(self.resolved_file, "r") as f:
+                for line in f:
+                    total += 1
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        d = json.loads(line)
+                        created = d.get("created_at", "")
+                        if created >= cutoff:
+                            rec = CounterfactualRecord.from_dict(d)
+                            self._resolved_recent.append(rec)
+                    except (json.JSONDecodeError, KeyError):
+                        continue
+
+            self._resolved_count = total
+            logger.info(
+                f"Loaded {len(self._resolved_recent)} recent resolved "
+                f"(of {total} total) counterfactuals"
+            )
+        except Exception as e:
+            logger.warning(f"Failed to load resolved counterfactuals: {e}")
+
+    def _save_pending_record(self, record: CounterfactualRecord):
+        """Append a NEW pending record to the pending file."""
+        try:
+            with open(self.pending_file, "a") as f:
                 f.write(json.dumps(record.to_dict()) + "\n")
         except Exception as e:
-            logger.error(f"Failed to save counterfactual record: {e}")
+            logger.error(f"Failed to save pending counterfactual: {e}")
+
+    def _save_resolved_record(self, record: CounterfactualRecord):
+        """Append a resolved record to the resolved file."""
+        try:
+            with open(self.resolved_file, "a") as f:
+                f.write(json.dumps(record.to_dict()) + "\n")
+        except Exception as e:
+            logger.error(f"Failed to save resolved counterfactual: {e}")
+
+    def _compact_pending_file(self):
+        """Rewrite pending file with only current pending records.
+
+        Called periodically to remove records that have been resolved.
+        """
+        try:
+            with open(self.pending_file, "w") as f:
+                for rec in self._pending.values():
+                    f.write(json.dumps(rec.to_dict()) + "\n")
+            self._resolutions_since_compact = 0
+            logger.debug(f"Compacted pending file: {len(self._pending)} records")
+        except Exception as e:
+            logger.warning(f"Pending file compaction failed: {e}")
 
     def record_skip(self, symbol: str, side: str, entry_price: float,
                      sl: float, tp1: float, tp2: float, confidence: float,
@@ -188,7 +353,9 @@ class CounterfactualLearner:
             old.resolved = True
             old.resolved_at = datetime.now(timezone.utc).isoformat()
             old.hypothetical_pnl_pct = 0.0
-            self._resolved.append(old)
+            self._resolved_recent.append(old)
+            self._save_resolved_record(old)
+            self._resolved_count += 1
 
         rec = CounterfactualRecord(
             symbol=symbol, side=side, entry_price=entry_price,
@@ -197,21 +364,32 @@ class CounterfactualLearner:
             regime=regime, metadata=metadata,
         )
         self._pending[rec.record_id] = rec
-        self._save_record(rec)
+        self._save_pending_record(rec)
         return rec.record_id
 
     def update_with_price(self, symbol: str, high: float, low: float, close: float):
         """
         Update all pending counterfactuals for a symbol with new price data.
-        Call this on each new candle.
+
+        Called on every scan tick (~15-45s), but bars_to_resolve only increments
+        when the OHLC data actually changes (i.e., a new candle arrived).
+        This prevents the 48-bar timeout from triggering in 48 ticks (~20 min)
+        instead of the intended 48 hours.
         """
+        # Detect new candle: high/low changed from last update
+        last = self._last_price_update.get(symbol)
+        is_new_candle = (last is None or last != (high, low))
+        self._last_price_update[symbol] = (high, low)
+
         to_resolve = []
 
         for record_id, rec in self._pending.items():
             if rec.symbol != symbol:
                 continue
 
-            rec.bars_to_resolve += 1
+            # Only count as a new bar if candle data actually changed
+            if is_new_candle:
+                rec.bars_to_resolve += 1
 
             # Track max favorable/adverse excursion
             if rec.side == "BUY":
@@ -269,13 +447,25 @@ class CounterfactualLearner:
         # Move resolved records
         for rid in to_resolve:
             rec = self._pending.pop(rid)
-            self._resolved.append(rec)
-            self._save_record(rec)  # Save updated record
+            self._resolved_recent.append(rec)
+            self._resolved_count += 1
+            self._save_resolved_record(rec)
+
+        # Periodic compaction of pending file
+        if to_resolve:
+            self._resolutions_since_compact += len(to_resolve)
+            if self._resolutions_since_compact >= self.COMPACT_EVERY:
+                self._compact_pending_file()
+
+        # Prune old resolved records from memory
+        if len(self._resolved_recent) > 10000:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=self.RESOLVED_MEMORY_DAYS)).isoformat()
+            self._resolved_recent = [r for r in self._resolved_recent if r.created_at >= cutoff]
 
     def get_missed_opportunity_stats(self, lookback_days: int = 14) -> Dict[str, Any]:
         """Compute statistics on missed trading opportunities."""
         cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).isoformat()
-        recent = [r for r in self._resolved if r.created_at >= cutoff]
+        recent = [r for r in self._resolved_recent if r.created_at >= cutoff]
 
         if not recent:
             return {"total_skips": 0, "sufficient_data": False}
@@ -319,7 +509,160 @@ class CounterfactualLearner:
             "by_skip_reason": by_reason,
             "problem_filters": problem_filters,
             "pending_count": len(self._pending),
+            "total_resolved": self._resolved_count,
         }
+
+    def get_filter_tuning_recommendations(self) -> Dict[str, Any]:
+        """Generate actionable filter tuning recommendations from counterfactual data.
+
+        Returns a dict with:
+        - filters_too_tight: filters blocking >50% would-be winners (should loosen)
+        - filters_effective: filters correctly blocking >60% losers (keep)
+        - confidence_curve: win rate by confidence bucket for optimal floor calibration
+        - symbol_side_edge: which symbol+side combos have edge even when filtered
+        """
+        stats = self.get_missed_opportunity_stats(lookback_days=7)
+        if not stats.get("sufficient_data"):
+            return {"sufficient_data": False}
+
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        recent = [r for r in self._resolved_recent if r.created_at >= cutoff]
+
+        if len(recent) < 20:
+            return {"sufficient_data": False, "reason": f"Only {len(recent)} resolved records"}
+
+        # 1. Filter effectiveness
+        filters_too_tight = {}
+        filters_effective = {}
+        for reason, data in stats.get("by_skip_reason", {}).items():
+            if data["total"] < 5:
+                continue
+            accuracy = data["skip_accuracy"]
+            if accuracy < 0.5:
+                filters_too_tight[reason] = {
+                    "count": data["total"],
+                    "would_win_pct": round((1 - accuracy) * 100, 1),
+                    "avg_missed_pnl": round(data["avg_pnl"], 3),
+                    "action": "LOOSEN" if accuracy < 0.4 else "REVIEW",
+                }
+            elif accuracy >= 0.6:
+                filters_effective[reason] = {
+                    "count": data["total"],
+                    "correct_rejection_pct": round(accuracy * 100, 1),
+                    "action": "KEEP",
+                }
+
+        # 2. Confidence curve: win rate by bucket
+        conf_buckets: Dict[str, Dict] = {}
+        for r in recent:
+            conf = r.confidence
+            if conf < 50:
+                bucket = "<50"
+            elif conf < 55:
+                bucket = "50-55"
+            elif conf < 60:
+                bucket = "55-60"
+            elif conf < 63:
+                bucket = "60-63"
+            elif conf < 65:
+                bucket = "63-65"
+            elif conf < 68:
+                bucket = "65-68"
+            elif conf < 72:
+                bucket = "68-72"
+            else:
+                bucket = "72+"
+
+            if bucket not in conf_buckets:
+                conf_buckets[bucket] = {"total": 0, "wins": 0, "pnl_sum": 0.0}
+            conf_buckets[bucket]["total"] += 1
+            if (r.hypothetical_pnl_pct or 0) > 0:
+                conf_buckets[bucket]["wins"] += 1
+            conf_buckets[bucket]["pnl_sum"] += (r.hypothetical_pnl_pct or 0)
+
+        confidence_curve = {}
+        for bucket, data in conf_buckets.items():
+            if data["total"] >= 3:
+                confidence_curve[bucket] = {
+                    "count": data["total"],
+                    "win_rate": round(data["wins"] / data["total"] * 100, 1),
+                    "avg_pnl": round(data["pnl_sum"] / data["total"], 3),
+                }
+
+        # 3. Symbol + side edge
+        sym_side: Dict[str, Dict] = {}
+        for r in recent:
+            key = f"{r.symbol}_{r.side}"
+            if key not in sym_side:
+                sym_side[key] = {"total": 0, "wins": 0, "pnl_sum": 0.0}
+            sym_side[key]["total"] += 1
+            if (r.hypothetical_pnl_pct or 0) > 0:
+                sym_side[key]["wins"] += 1
+            sym_side[key]["pnl_sum"] += (r.hypothetical_pnl_pct or 0)
+
+        symbol_side_edge = {}
+        for key, data in sym_side.items():
+            if data["total"] >= 5:
+                wr = data["wins"] / data["total"]
+                symbol_side_edge[key] = {
+                    "count": data["total"],
+                    "win_rate": round(wr * 100, 1),
+                    "avg_pnl": round(data["pnl_sum"] / data["total"], 3),
+                    "has_edge": wr > 0.5 and data["pnl_sum"] > 0,
+                }
+
+        return {
+            "sufficient_data": True,
+            "total_resolved_7d": len(recent),
+            "overall_skip_wr": round(stats.get("win_rate_of_skips", 0) * 100, 1),
+            "filters_too_tight": filters_too_tight,
+            "filters_effective": filters_effective,
+            "confidence_curve": confidence_curve,
+            "symbol_side_edge": symbol_side_edge,
+            "recommendation_summary": self._build_recommendation_summary(
+                filters_too_tight, filters_effective, confidence_curve, symbol_side_edge
+            ),
+        }
+
+    def _build_recommendation_summary(self, too_tight, effective, conf_curve, sym_edge) -> str:
+        """Build a human-readable recommendation summary."""
+        lines = []
+
+        if too_tight:
+            lines.append("FILTERS TO LOOSEN (blocking too many winners):")
+            for filt, data in sorted(too_tight.items(), key=lambda x: -x[1]["count"]):
+                lines.append(
+                    f"  - {filt}: {data['count']} blocked, "
+                    f"{data['would_win_pct']:.0f}% would have won "
+                    f"(avg PnL={data['avg_missed_pnl']:+.3f}%) -> {data['action']}"
+                )
+
+        if effective:
+            lines.append("EFFECTIVE FILTERS (correctly blocking losers):")
+            for filt, data in sorted(effective.items(), key=lambda x: -x[1]["count"]):
+                lines.append(
+                    f"  - {filt}: {data['count']} blocked, "
+                    f"{data['correct_rejection_pct']:.0f}% correctly rejected -> KEEP"
+                )
+
+        # Find optimal confidence floor from curve
+        if conf_curve:
+            positive_buckets = {k: v for k, v in conf_curve.items() if v["avg_pnl"] > 0}
+            if positive_buckets:
+                lowest_profitable = min(positive_buckets.keys())
+                lines.append(f"OPTIMAL CONFIDENCE FLOOR: signals above {lowest_profitable} have positive avg PnL")
+
+        # Symbol-side edges
+        edge_setups = {k: v for k, v in sym_edge.items() if v.get("has_edge")}
+        if edge_setups:
+            lines.append("SETUPS WITH EDGE (even when filtered):")
+            for setup, data in sorted(edge_setups.items(), key=lambda x: -x[1]["win_rate"]):
+                lines.append(
+                    f"  - {setup}: WR={data['win_rate']:.0f}% "
+                    f"avg_PnL={data['avg_pnl']:+.3f}% ({data['count']} samples)"
+                )
+
+        return "\n".join(lines) if lines else "Insufficient data for recommendations"
 
     def get_prompt_context(self, lookback_days: int = 7) -> str:
         """Generate context for agent prompts about missed opportunities."""
@@ -332,6 +675,7 @@ class CounterfactualLearner:
                      f"{stats['would_lose']} would have lost")
         lines.append(f"  Skip accuracy: {(1-stats['win_rate_of_skips'])*100:.0f}% correctly skipped")
         lines.append(f"  Hypothetical PnL left on table: {stats['total_hypothetical_pnl']:+.2f}%")
+        lines.append(f"  Pending resolution: {stats['pending_count']} | Total resolved: {stats['total_resolved']}")
 
         if stats.get("problem_filters"):
             lines.append("  FILTERS BLOCKING TOO MANY WINNERS:")
@@ -341,3 +685,19 @@ class CounterfactualLearner:
                              f"(avg PnL={data['avg_pnl']:+.2f}%)")
 
         return "\n".join(lines)
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get current counterfactual learner status for health checks."""
+        return {
+            "pending": len(self._pending),
+            "resolved_in_memory": len(self._resolved_recent),
+            "total_resolved": self._resolved_count,
+            "max_pending": self.MAX_PENDING,
+            "pending_by_symbol": self._count_by_symbol(self._pending),
+        }
+
+    def _count_by_symbol(self, records: Dict[str, CounterfactualRecord]) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for rec in records.values():
+            counts[rec.symbol] = counts.get(rec.symbol, 0) + 1
+        return counts
