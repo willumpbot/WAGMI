@@ -508,14 +508,15 @@ class TradingConfig:
 
     # ── Cooldowns & Time Intervals ──
     loss_cooldown_s: int = field(
-        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 60)
-    )  # Was 300 (5min): quant approach = quick re-entry. Small size makes revenge trading less risky.
+        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 900)
+    )  # 15min: 60s was causing machine-gun re-entry (8 SOL shorts in 10hrs = -$103).
+    # At 60s cooldown, bot re-enters same thesis before market structure changes.
     win_cooldown_s: int = field(
-        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 60)
-    )  # Was 180 (3min): faster re-entry to capitalize on momentum after wins.
+        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 300)
+    )  # 5min: winners need less cooldown but still avoid immediate re-entry into exhausted move.
     signal_dedup_window_s: int = field(
-        default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 120)
-    )  # Was 600 (10min): 2min dedup allows faster signal capture across strategies.
+        default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 600)
+    )  # 10min: 2min dedup was letting duplicate signals through (3 HYPE entries in 16min at same price).
 
     # ── Timeframe Trend Weights ──
     tf_weight_5m: float = field(
@@ -715,10 +716,10 @@ class SymbolOverrides:
 # risk_per_trade overrides let memecoins risk slightly less than large caps
 # volatility_profile tunes chop detection + strategy sensitivity per asset
 DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
-    # BTC: Full Kelly sizing. Previous 0.004 risk_per_trade (73% haircut) crushed
-    # positions to $35 on a $1k account. BTC SHORT is our best edge (100% WR, +$92).
-    # The -$2,120 backtest loss was at 25x leverage — not relevant at Kelly levels.
-    "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=_env_float("BTC_RISK_OVERRIDE", 0.015), volatility_profile="low",
+    # BTC: Our best live edge — SHORT is 100% WR, +$92 on 2 trades.
+    # Was 1.5% risk (too conservative). Bumping to 5% to actually capture the edge.
+    # Still well below half Kelly. BTC has lowest vol = safest to size up on.
+    "BTC": SymbolOverrides(max_leverage=10.0, risk_per_trade=_env_float("BTC_RISK_OVERRIDE", 0.05), volatility_profile="low",
                            mfe_tp1_pct=0.38, mfe_sl_pct=0.72),
     "ETH": SymbolOverrides(max_leverage=20.0, volatility_profile="low",
                            mfe_tp1_pct=0.44, mfe_sl_pct=0.90),
@@ -808,7 +809,7 @@ SYMBOL_RISK_MULTIPLIERS = {
 SYMBOL_SIDE_RISK_MULTIPLIERS: Dict[tuple, float] = {
     # Data-driven from 7,911 signal analysis (2026-04-01):
     ("SOL", "BUY"):  0.25,  # 24.4% WR, -4.4% avg — near-toxic, minimal size for data
-    ("SOL", "SELL"): 1.3,   # 85.5% WR at 1h! Best edge in the system. Size UP.
+    ("SOL", "SELL"): 0.80,  # Backtest said 85.5% WR but LIVE is 32% WR, -$114 across 19 trades. Size DOWN until live confirms.
     ("BTC", "BUY"):  0.50,  # Marginal — 37% WR at 1h but regime-dependent
     ("BTC", "SELL"): 1.2,   # 48.5-60.6% WR, real trades 100% WR. Strong.
     ("ETH", "BUY"):  0.85,  # 51.4% WR at 4h — slight edge but only with consensus

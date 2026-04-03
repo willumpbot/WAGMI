@@ -572,6 +572,15 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 logger.warning(f"[INIT] Quant Brain init failed (non-fatal): {_qb_err}")
                 self._quant_brain = None
 
+        # Reflection Engine: post-trade analysis with coded observations
+        self._reflection_engine = None
+        try:
+            from llm.reflection_engine import ReflectionEngine
+            self._reflection_engine = ReflectionEngine()
+            logger.info("[INIT] Reflection Engine enabled (post-trade analysis)")
+        except Exception as _re_err:
+            logger.debug(f"[INIT] Reflection engine not available: {_re_err}")
+
         # Execution
         self.risk_mgr = RiskManager(
             starting_equity=config.starting_equity,
@@ -654,6 +663,11 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # Track last close result per symbol for anti-round-tripping
         self._last_close_win: Dict[str, bool] = {}  # symbol -> was_win
         self._last_close_side: Dict[str, str] = {}  # symbol -> "LONG"/"SHORT"
+
+        # Per-symbol daily loss tracking: stop trading a symbol after -$30/day
+        self._symbol_daily_pnl: Dict[str, float] = {}  # symbol -> cumulative PnL today
+        self._symbol_daily_pnl_date: str = ""  # YYYY-MM-DD of last reset
+        self._symbol_daily_loss_limit = float(os.getenv("SYMBOL_DAILY_LOSS_LIMIT", "-30"))
 
         # Signal dedup: prevent spam from repeated same-side evaluations
         self._last_signal: Dict[str, tuple] = {}  # symbol -> (side, timestamp)
@@ -2414,6 +2428,13 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 return
         self._last_prices[symbol] = current_price
 
+        # Update reflection engine price tracking (move exhaustion)
+        if self._reflection_engine is not None:
+            try:
+                self._reflection_engine.on_price_update(symbol, current_price)
+            except Exception:
+                pass
+
         # Feed cross-asset lead-lag monitor with BTC prices
         if self._cross_asset_monitor is not None and symbol == "BTC":
             try:
@@ -2948,6 +2969,33 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 except Exception as e:
                     logger.debug(f"Post-trade learner error: {e}")
 
+                # Reflection Engine: post-trade analysis with coded observations
+                try:
+                    if hasattr(self, '_reflection_engine') and self._reflection_engine is not None:
+                        _refl = self._reflection_engine.on_close(
+                            symbol=symbol,
+                            side=event.side,
+                            entry_price=pos.entry if pos else 0,
+                            exit_price=event.metadata.get("exit_price", 0),
+                            pnl=total_pnl,
+                            hold_time_s=event.metadata.get("hold_time_s", 0),
+                            leverage=pos.leverage if pos else 1,
+                            confidence=pos.confidence if pos else 0,
+                            regime=_rg_fb,
+                            exit_action=event.action,
+                            sl_price=pos.original_sl if pos else 0,
+                            tp1_price=pos.tp1 if pos else 0,
+                            peak_price=pos.highest_price if pos else 0,
+                            lowest_price=pos.lowest_price if pos else 0,
+                            win_prob=pos.entry_reasons.get("win_prob", 0) if pos and hasattr(pos, 'entry_reasons') else 0,
+                            ev=pos.entry_reasons.get("ev_per_dollar", 0) if pos and hasattr(pos, 'entry_reasons') else 0,
+                            rr=pos.entry_reasons.get("rr_tp1", 0) if pos and hasattr(pos, 'entry_reasons') else 0,
+                            entry_reasons=pos.entry_reasons if pos and hasattr(pos, 'entry_reasons') else {},
+                            atr=getattr(pos, 'atr', 0) or 0,
+                        )
+                except Exception as e:
+                    logger.debug(f"Reflection engine error: {e}")
+
                 # Trade Autopsy: generate periodic structured analysis every 5 trades
                 try:
                     from llm.trade_autopsy import should_run_autopsy, generate_autopsy
@@ -3162,6 +3210,15 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             if event.action in _FULL_CLOSE:
                 self._symbol_cooldown[symbol] = time.time()
                 pos = self.pos_mgr.positions.get(symbol)
+                # Per-symbol daily PnL tracking
+                if pos:
+                    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                    if self._symbol_daily_pnl_date != today:
+                        self._symbol_daily_pnl = {}
+                        self._symbol_daily_pnl_date = today
+                    self._symbol_daily_pnl[symbol] = self._symbol_daily_pnl.get(symbol, 0) + pos.realized_pnl
+                    if self._symbol_daily_pnl[symbol] <= self._symbol_daily_loss_limit:
+                        logger.warning(f"[{symbol}] DAILY LOSS LIMIT HIT: ${self._symbol_daily_pnl[symbol]:.2f} — pausing {symbol} for today")
                 # Anti-round-trip: track win/loss and side for cooldown logic
                 if pos:
                     self._last_close_win[symbol] = pos.realized_pnl > 0
@@ -3364,6 +3421,14 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # open positions that might want to rotate into this symbol.
         if has_position and not self.rotation_mgr:
             return  # No rotation, nothing to do
+
+        # Per-symbol daily loss limit: stop trading a symbol that's bleeding
+        if not has_position:
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            if self._symbol_daily_pnl_date == today:
+                sym_pnl = self._symbol_daily_pnl.get(symbol, 0)
+                if sym_pnl <= self._symbol_daily_loss_limit:
+                    return  # Symbol hit daily loss limit
 
         # Per-symbol re-entry gating: minimal safety floor + LLM structure check
         # (skip for rotation candidate collection — cooldown is for fresh entries)
@@ -4698,6 +4763,36 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 f"qty * {_liq_size_mult:.2f} = {qty:.6f}"
             )
 
+        # ── Reflection Engine: entry quality sizing adjustment ──
+        # WEAK entries (re-entry chasing, exhausted moves) get reduced size.
+        # Doesn't block — just sizes down proportionally to quality.
+        if self._reflection_engine is not None:
+            try:
+                _refl_score = self._reflection_engine.get_entry_quality_score(
+                    symbol=symbol, side=side,
+                    entry_price=signal_result.entry,
+                    confidence=signal_result.confidence,
+                    regime=self._tick_regime_cache.get(symbol, "unknown"),
+                    atr=signal_result.atr,
+                    win_prob=entry_reasons.get("win_prob", 0),
+                )
+                _quality = _refl_score["quality_score"]
+                _advisory = _refl_score["advisory"]
+                if _quality < 50:
+                    logger.info(
+                        f"[{trace_id}][{symbol}] REFLECT: WEAK entry SKIPPED (score={_quality}) "
+                        f"codes=[{','.join(_refl_score['codes'])}]"
+                    )
+                    return
+                elif _quality < 80:
+                    qty = qty * 0.75
+                    logger.info(
+                        f"[{trace_id}][{symbol}] REFLECT: CAUTION entry (score={_quality}) "
+                        f"codes=[{','.join(_refl_score['codes'])}] — qty * 0.75"
+                    )
+            except Exception as e:
+                logger.debug(f"Reflection sizing error: {e}")
+
         # ── QTY FLOOR: prevent multiplicative chain from crushing to dust ──
         # The chain above (correlation, sector, portfolio, time, liquidity) can
         # multiply qty down to near-zero. Floor at 50% of original calculated qty
@@ -5357,10 +5452,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 "rr1": rr1,
             })
 
-        # Telemetry: record trade and slippage
-        Telemetry.inc("total_trades")
+        # Telemetry: record slippage (trade count deferred until order confirms)
         Telemetry.record("slippages", slippage_pct)
-        self.ops_guard.record_trade()
 
         # Open position with LIVE price as entry
         # Extract LLM thesis and setup type for Exit Agent thesis continuity
@@ -5408,6 +5501,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             )
             return
 
+        # Record trade for rate limiting AFTER order confirms (not before)
+        Telemetry.inc("total_trades")
+        self.ops_guard.record_trade()
+
         # Use actual fill price and qty from exchange
         actual_entry = order_result.fill_price if order_result.fill_price > 0 else actual_entry
         qty = order_result.fill_qty if order_result.fill_qty > 0 else qty
@@ -5447,6 +5544,22 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             notes=_llm_notes[:200],
             setup_type=_setup_type,
         )
+
+        # Reflection Engine: analyze entry quality
+        try:
+            if self._reflection_engine is not None:
+                _entry_analysis = self._reflection_engine.on_entry(
+                    symbol=symbol,
+                    side=side,
+                    entry_price=actual_entry,
+                    confidence=signal_result.confidence,
+                    regime=self._tick_regime_cache.get(symbol, "unknown"),
+                    atr=signal_result.atr,
+                    win_prob=entry_reasons.get("win_prob", 0),
+                    ev=entry_reasons.get("ev_per_dollar", 0),
+                )
+        except Exception as e:
+            logger.debug(f"Reflection entry analysis error: {e}")
 
         # Log trade open to database (with live price)
         log_trade(
