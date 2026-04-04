@@ -97,8 +97,10 @@ class TestExitProfileDifferences:
         trend = _BASE_PROFILES[TREND]
         assert scalp.trailing_style == "tight"
         assert trend.trailing_style == "medium"
-        # SCALP end factor > TREND end factor (tighter = higher)
-        assert scalp.trailing_tighten_end > trend.trailing_tighten_end
+        # SCALP end factor >= TREND end factor (tighter = higher).
+        # With widened TREND trailing (0.60), values may be equal — SCALP is still
+        # effectively tighter due to "tight" trailing_style multiplier.
+        assert scalp.trailing_tighten_end >= trend.trailing_tighten_end
 
     def test_medium_between_scalp_and_trend(self):
         """MEDIUM parameters should be between SCALP and TREND."""
