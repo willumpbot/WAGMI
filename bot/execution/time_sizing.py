@@ -1,15 +1,24 @@
 """
 Time-aware position sizing multipliers.
 
-Data-driven session sizing from 500-candle / 20-day analysis (updated 2026-03-29):
-- PRIME hours (UTC): 00, 11, 13, 14, 15, 22 — highest volatility & directional moves
-- GOOD hours: 12, 16, 18, 20, 23
-- QUIET hours: 01, 02, 07, 08, 19, 21
-- DEAD hours: 03, 04, 05, 06, 09, 10, 17
+Data-driven session sizing from 2000-candle / 7-day 5m analysis (updated 2026-04-03):
+Cross-asset composite scoring (BTC/ETH/SOL/HYPE) using range * directional consistency.
 
-Directional biases:
-- 18:00 UTC: long bias (80% WR)
-- 13:00-15:00 UTC: short bias (US open)
+- PRIME hours (UTC): 01, 13, 14, 15, 17, 22 — highest composite scores
+- GOOD hours: 00, 02, 08, 12, 16
+- QUIET hours: 03, 05, 09, 11, 19, 23
+- DEAD hours: 04, 06, 07, 10, 18, 20, 21
+
+Kill zones:
+- PRIMARY: H14-H17 UTC (US session) — 4 of top 6 composite scores
+- SECONDARY: H00-H02 UTC (Asia open) — elevated vol
+- COUNTER-TREND: H08-H09 UTC (London open) — short-biased
+
+Directional biases (from 336-sample cross-asset WR):
+- 08-09 UTC: short bias (56-58% SHORT WR, London open selloff)
+- 17 UTC: strong short bias (58-68% SHORT WR, US afternoon fade)
+- 22 UTC: short bias (52-57% SHORT WR, confirmed by our winning trades)
+- 14-15 UTC: long bias (54-60% LONG WR — was incorrectly marked SHORT)
 
 Day-of-week:
 - Monday best (1.15x), Thursday worst (0.85x), weekends reduced (0.8x)
@@ -40,34 +49,35 @@ WEEKEND_SIZE_MULTIPLIER = float(os.getenv("WEEKEND_SIZE_MULTIPLIER", "0.8"))
 # PRIME=1.2, GOOD=1.0, QUIET=0.7, DEAD=0.5
 
 _SESSION_MULTIPLIERS = {
-    # PRIME hours — confirmed by fresh 7d data (2026-04-01)
-    0:  1.2,   # Asia open, +0.17% avg BTC
-    11: 1.3,   # Confirmed: ALL symbols green, 71-86% WR
-    13: 1.2,
-    14: 1.0,   # Fresh data shows -0.2% avg — downgraded from PRIME
-    15: 1.2,
-    20: 1.3,   # Fresh data: best hour for BTC/SOL (+0.28-0.32%)
-    22: 1.2,
-    # GOOD hours — normal opportunity
-    12: 1.0,
-    16: 1.0,
-    18: 1.0,
-    23: 1.0,
-    # QUIET hours — reduced opportunity
-    1:  0.7,
-    2:  0.7,
-    7:  0.7,
-    8:  0.7,
-    19: 0.7,
-    21: 0.7,
-    # DEAD hours — minimal opportunity
-    3:  0.5,
-    4:  0.5,
-    5:  0.5,
-    6:  0.5,
-    9:  0.3,  # Fresh data (7d, 2026-04-01): 14% WR across all symbols
-    10: 0.3,  # Fresh data: 14-29% WR across all symbols
-    17: 0.15, # Fresh data: 0% WR across ALL 4 symbols! Near-hard block.
+    # PRIME hours — top 6 composite scores (range * directional consistency)
+    # Updated 2026-04-03 from 2000-candle 5m cross-asset analysis (BTC/ETH/SOL/HYPE)
+    1:  1.2,   # Asia vol spike, highest range (0.31%), composite=0.164
+    13: 1.2,   # US open anticipation, high volume, composite=0.147
+    14: 1.2,   # US open, highest range (0.33%), LONG bias 54-60%, composite=0.191
+    15: 1.2,   # US session, high range + 12% directional edge, composite=0.166
+    17: 1.2,   # SHORT ONLY — highest composite (0.212), 61% bear cross-asset
+    22: 1.2,   # Late session, confirmed by data + our winning trades, composite=0.145
+    # GOOD hours — composite 0.12-0.14
+    0:  1.0,   # Asia open, decent range, less directional than H01
+    2:  1.0,   # Post-Asia vol, composite=0.133
+    8:  1.0,   # London open, 12.5% SHORT edge, composite=0.123
+    12: 1.0,   # Pre-US buildup, composite=0.134
+    16: 1.0,   # US session continuation, composite=0.134
+    # QUIET hours — composite 0.09-0.12
+    3:  0.7,   # Asia mid-session, vol dropping
+    5:  0.7,   # Pre-London, some vol
+    9:  0.7,   # London morning, directional but low range
+    11: 0.7,   # Downgraded from 1.3x — low range (0.19%), composite=0.107
+    19: 0.7,   # US afternoon decline
+    23: 0.7,   # Pre-midnight, modest pickup
+    # DEAD hours — composite < 0.10
+    4:  0.5,   # Lowest vol window globally
+    6:  0.5,   # Pre-London dead zone
+    7:  0.5,   # False London open, no real vol spike
+    10: 0.5,   # London mid-morning, lowest range (0.17%)
+    18: 0.5,   # US afternoon lull, zero directional edge
+    20: 0.5,   # Downgraded from 1.3x — lowest composite (0.088), lost every trade
+    21: 0.5,   # Pre-Asia quiet
 }
 
 # ── Day-of-week multipliers ──────────────────────────────────────────
@@ -83,16 +93,19 @@ _DAY_MULTIPLIERS = {
 }
 
 # ── Directional bias by hour ─────────────────────────────────────────
-# Based on historical win-rate skew at specific hours.
+# Based on 7-day 5m cross-asset WR analysis (2026-04-03, N=336 per hour).
+# Only hours with >= 55% directional WR across multiple assets.
 _HOUR_BIAS = {
-    13: "short",
-    14: "short",
-    15: "short",
-    18: "long",    # 80% WR on longs
+    8:  "short",   # 52-58% SHORT WR (BTC 58%, SOL 57%, HYPE 55%)
+    9:  "short",   # 52-58% SHORT WR (BTC 56%, SOL 58%, HYPE 56%)
+    14: "long",    # 53-57% LONG WR — was incorrectly SHORT! (ETH 54%, SOL 56%, BTC 57%)
+    15: "long",    # 53-60% LONG WR (ETH 60%, SOL 54%, HYPE 57%)
+    17: "short",   # 58-68% SHORT WR — strongest edge (HYPE 68%, SOL 61%, BTC/ETH 58%)
+    22: "short",   # 52-57% SHORT WR (SOL 57%, ETH 56%, BTC 52%)
 }
 
 # Low-liquidity hours (QUIET + DEAD) for external checks
-_LOW_LIQ_HOURS = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 19, 21}
+_LOW_LIQ_HOURS = {3, 4, 5, 6, 7, 9, 10, 11, 18, 19, 20, 21, 23}
 
 
 def get_time_multiplier(now: datetime = None) -> float:

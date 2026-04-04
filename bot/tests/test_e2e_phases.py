@@ -326,34 +326,34 @@ def test_time_sizing():
     mon_3pm = datetime(2025, 1, 6, 15, 0, tzinfo=timezone.utc)
     assert abs(get_time_multiplier(mon_3pm) - 1.38) < 0.001
 
-    # Saturday 3am UTC -> 0.8 (Sat) * 0.5 (DEAD hour) = 0.4
+    # Saturday 3am UTC -> 0.8 (Sat) * 0.7 (QUIET hour) = 0.56
     sat = datetime(2025, 1, 4, 3, 0, tzinfo=timezone.utc)
     m = get_time_multiplier(sat)
-    assert abs(m - 0.4) < 0.001
+    assert abs(m - 0.56) < 0.001
 
     # Sunday 15pm UTC -> 0.8 (Sun) * 1.2 (PRIME hour) = 0.96
     sun = datetime(2025, 1, 5, 15, 0, tzinfo=timezone.utc)
     assert abs(get_time_multiplier(sun) - 0.96) < 0.001
 
-    # Tuesday 0am UTC -> 1.0 (Tue) * 1.2 (PRIME hour) = 1.2
+    # Tuesday 0am UTC -> 1.0 (Tue) * 1.0 (GOOD hour) = 1.0
     tue_midnight = datetime(2025, 1, 7, 0, 0, tzinfo=timezone.utc)
-    assert abs(get_time_multiplier(tue_midnight) - 1.2) < 0.001
+    assert abs(get_time_multiplier(tue_midnight) - 1.0) < 0.001
 
-    # Tuesday 5am UTC -> 1.0 (Tue) * 0.5 (DEAD hour) = 0.5
+    # Tuesday 5am UTC -> 1.0 (Tue) * 0.7 (QUIET hour) = 0.7
     tue_dead = datetime(2025, 1, 7, 5, 0, tzinfo=timezone.utc)
-    assert abs(get_time_multiplier(tue_dead) - 0.5) < 0.001
+    assert abs(get_time_multiplier(tue_dead) - 0.7) < 0.001
 
-    # Thursday 10am UTC -> 0.85 (Thu) * 0.3 (DEAD hour, freshly reduced) = 0.255
+    # Thursday 10am UTC -> 0.85 (Thu) * 0.5 (DEAD hour) = 0.425
     thu_dead = datetime(2025, 1, 9, 10, 0, tzinfo=timezone.utc)
-    assert abs(get_time_multiplier(thu_dead) - 0.255) < 0.001
+    assert abs(get_time_multiplier(thu_dead) - 0.425) < 0.001
 
-    # Directional bias: 18:00 UTC = long
+    # Directional bias: 18:00 UTC = neutral (no longer in _HOUR_BIAS)
     info_18 = get_time_sizing_info(datetime(2025, 1, 6, 18, 0, tzinfo=timezone.utc))
-    assert info_18["bias"] == "long"
+    assert info_18["bias"] == "neutral"
 
-    # Directional bias: 13:00-15:00 UTC = short
+    # Directional bias: 14:00 UTC = long (data-driven update)
     info_14 = get_time_sizing_info(datetime(2025, 1, 6, 14, 0, tzinfo=timezone.utc))
-    assert info_14["bias"] == "short"
+    assert info_14["bias"] == "long"
 
     # Directional bias: 12:00 UTC = neutral
     info_12 = get_time_sizing_info(datetime(2025, 1, 6, 12, 0, tzinfo=timezone.utc))

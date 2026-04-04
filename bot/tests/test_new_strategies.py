@@ -66,7 +66,7 @@ class TestFundingRateStrategy:
 
     def test_neutral_funding_returns_none(self):
         df = make_ohlcv()
-        data = {"1h": df, "_funding_rate": 0.00005}  # 0.005% = neutral
+        data = {"1h": df, "_funding_rate": 0.00001}  # 0.001% = neutral (below hourly HIGH threshold)
         assert self.strategy.evaluate("TEST", data) is None
 
     def test_positive_extreme_funding_generates_sell(self):

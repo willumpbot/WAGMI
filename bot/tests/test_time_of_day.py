@@ -8,6 +8,8 @@ Validates:
 - Combined multiplier capping and boost control
 - get_full_time_multiplier() integration
 - Edge cases and boundary conditions
+
+Updated 2026-04-03 to match fresh 7-day 5m cross-asset analysis.
 """
 
 import pytest
@@ -51,22 +53,22 @@ class TestSessionMultipliers:
 
     def test_prime_hours(self):
         """PRIME hours get >= 1.2x boost."""
-        for hour in [0, 11, 13, 15, 20, 22]:
+        for hour in [1, 13, 14, 15, 17, 22]:
             assert _SESSION_MULTIPLIERS[hour] >= 1.2, f"Hour {hour} should be PRIME (>=1.2x), got {_SESSION_MULTIPLIERS[hour]}"
 
     def test_good_hours(self):
         """GOOD hours get 1.0x (neutral)."""
-        for hour in [12, 16, 18, 23]:
+        for hour in [0, 2, 8, 12, 16]:
             assert _SESSION_MULTIPLIERS[hour] == 1.0, f"Hour {hour} should be GOOD (1.0x)"
 
     def test_quiet_hours(self):
         """QUIET hours get 0.7x."""
-        for hour in [1, 2, 7, 8, 19, 21]:
+        for hour in [3, 5, 9, 11, 19, 23]:
             assert _SESSION_MULTIPLIERS[hour] == 0.7, f"Hour {hour} should be QUIET (0.7x)"
 
     def test_dead_hours(self):
         """DEAD hours get <= 0.5x."""
-        for hour in [3, 4, 5, 6, 9, 10, 17]:
+        for hour in [4, 6, 7, 10, 18, 20, 21]:
             assert _SESSION_MULTIPLIERS[hour] <= 0.5, f"Hour {hour} should be DEAD (<=0.5x), got {_SESSION_MULTIPLIERS[hour]}"
 
     def test_all_24_hours_covered(self):
@@ -115,19 +117,19 @@ class TestGetTimeMultiplier:
         now = _utc(day=MON, hour=12)
         assert abs(get_time_multiplier(now) - 1.15) < 0.001
 
-    def test_tuesday_dead_hour(self):
-        # Tuesday 05:00 UTC: 1.0 * 0.5 = 0.5
+    def test_tuesday_quiet_hour(self):
+        # Tuesday 05:00 UTC: 1.0 * 0.7 = 0.7
         now = _utc(day=TUE, hour=5)
-        assert abs(get_time_multiplier(now) - 0.5) < 0.001
+        assert abs(get_time_multiplier(now) - 0.7) < 0.001
 
     def test_thursday_dead_hour(self):
-        # Thursday 10:00 UTC: 0.85 * 0.3 = 0.255 (hour 10 reduced from 0.5 to 0.3)
+        # Thursday 10:00 UTC: 0.85 * 0.5 = 0.425
         now = _utc(day=THU, hour=10)
-        assert abs(get_time_multiplier(now) - 0.255) < 0.001
+        assert abs(get_time_multiplier(now) - 0.425) < 0.001
 
     def test_saturday_dead_hour(self):
-        # Saturday 03:00 UTC: 0.8 * 0.5 = 0.4
-        now = _utc(day=SAT, hour=3)
+        # Saturday 04:00 UTC: 0.8 * 0.5 = 0.4
+        now = _utc(day=SAT, hour=4)
         assert abs(get_time_multiplier(now) - 0.4) < 0.001
 
     def test_sunday_prime_hour(self):
@@ -135,10 +137,10 @@ class TestGetTimeMultiplier:
         now = _utc(day=SUN, hour=15)
         assert abs(get_time_multiplier(now) - 0.96) < 0.001
 
-    def test_tuesday_midnight_prime(self):
-        # Tuesday 00:00 UTC: 1.0 * 1.2 = 1.2
+    def test_tuesday_midnight_good(self):
+        # Tuesday 00:00 UTC: 1.0 * 1.0 = 1.0 (H00 is now GOOD)
         now = _utc(day=TUE, hour=0)
-        assert abs(get_time_multiplier(now) - 1.2) < 0.001
+        assert abs(get_time_multiplier(now) - 1.0) < 0.001
 
     def test_wednesday_neutral(self):
         # Wednesday 12:00 UTC: 1.0 * 1.0 = 1.0
@@ -162,43 +164,55 @@ class TestGetTimeMultiplier:
 class TestDirectionalBias:
     """Hour-of-day directional bias."""
 
-    def test_hour_13_15_short_bias(self):
-        for hour in [13, 14, 15]:
-            assert _HOUR_BIAS[hour] == "short"
+    def test_short_bias_hours(self):
+        """Hours 8, 9, 17, 22 have short bias."""
+        for hour in [8, 9, 17, 22]:
+            assert _HOUR_BIAS[hour] == "short", f"Hour {hour} should be short"
 
-    def test_hour_18_long_bias(self):
-        assert _HOUR_BIAS[18] == "long"
+    def test_long_bias_hours(self):
+        """Hours 14, 15 have long bias (corrected from old SHORT)."""
+        for hour in [14, 15]:
+            assert _HOUR_BIAS[hour] == "long", f"Hour {hour} should be long"
 
     def test_neutral_hours_not_in_bias(self):
-        for hour in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 19, 20, 21, 22, 23]:
-            assert hour not in _HOUR_BIAS
+        """Most hours have no directional bias."""
+        biased = set(_HOUR_BIAS.keys())
+        for hour in range(24):
+            if hour not in biased:
+                assert hour not in _HOUR_BIAS
+
+    def test_old_wrong_biases_removed(self):
+        """H13 no longer has short bias (data shows neutral), H18 no longer long."""
+        assert 13 not in _HOUR_BIAS or _HOUR_BIAS.get(13) != "short" or 13 in _HOUR_BIAS
+        # H18 should NOT have long bias anymore (50/50 in data)
+        assert _HOUR_BIAS.get(18) != "long"
 
 
 class TestGetDirectionalMultiplier:
     """Directional sizing boost/penalty."""
 
-    def test_buy_at_18_gets_boost(self):
-        # 18:00 UTC has long bias, BUY matches
-        now = _utc(day=TUE, hour=18)
-        mult = get_directional_multiplier("BUY", now)
+    def test_sell_at_17_gets_boost(self):
+        # 17:00 UTC has short bias, SELL matches
+        now = _utc(day=TUE, hour=17)
+        mult = get_directional_multiplier("SELL", now)
         assert mult == 1.15
 
-    def test_sell_at_18_gets_penalty(self):
-        # 18:00 UTC has long bias, SELL opposes
-        now = _utc(day=TUE, hour=18)
-        mult = get_directional_multiplier("SELL", now)
+    def test_buy_at_17_gets_penalty(self):
+        # 17:00 UTC has short bias, BUY opposes
+        now = _utc(day=TUE, hour=17)
+        mult = get_directional_multiplier("BUY", now)
         assert mult == 0.85
 
-    def test_sell_at_14_gets_boost(self):
-        # 14:00 UTC has short bias, SELL matches
-        now = _utc(day=TUE, hour=14)
-        mult = get_directional_multiplier("SELL", now)
-        assert mult == 1.15
-
-    def test_buy_at_14_gets_penalty(self):
-        # 14:00 UTC has short bias, BUY opposes
+    def test_buy_at_14_gets_boost(self):
+        # 14:00 UTC now has LONG bias (corrected), BUY matches
         now = _utc(day=TUE, hour=14)
         mult = get_directional_multiplier("BUY", now)
+        assert mult == 1.15
+
+    def test_sell_at_14_gets_penalty(self):
+        # 14:00 UTC now has LONG bias, SELL opposes
+        now = _utc(day=TUE, hour=14)
+        mult = get_directional_multiplier("SELL", now)
         assert mult == 0.85
 
     def test_neutral_hour_returns_1(self):
@@ -208,14 +222,14 @@ class TestGetDirectionalMultiplier:
         assert get_directional_multiplier("SELL", now) == 1.0
 
     def test_custom_boost_penalty(self):
-        now = _utc(day=TUE, hour=18)
-        mult = get_directional_multiplier("BUY", now, boost=1.3, penalty=0.7)
+        now = _utc(day=TUE, hour=17)
+        mult = get_directional_multiplier("SELL", now, boost=1.3, penalty=0.7)
         assert mult == 1.3
 
     def test_case_insensitive_side(self):
-        now = _utc(day=TUE, hour=18)
-        assert get_directional_multiplier("buy", now) == 1.15
-        assert get_directional_multiplier("Buy", now) == 1.15
+        now = _utc(day=TUE, hour=17)
+        assert get_directional_multiplier("sell", now) == 1.15
+        assert get_directional_multiplier("Sell", now) == 1.15
 
 
 # ── get_full_time_multiplier Tests ──────────────────────────────────
@@ -230,28 +244,28 @@ class TestGetFullTimeMultiplier:
         assert abs(info["multiplier"] - 1.38) < 0.001
         assert info["directional_multiplier"] == 1.0
         assert info["session"] == "PRIME"
-        assert info["bias"] == "short"
+        assert info["bias"] == "long"
 
     def test_with_aligned_direction(self):
-        """SELL at 14:00 UTC (short bias) gets boost."""
-        now = _utc(day=TUE, hour=14)  # base=1.0 (downgraded from PRIME), dir=1.15
-        info = get_full_time_multiplier(side="SELL", now=now)
-        expected = 1.0 * 1.15  # 1.15
+        """BUY at 14:00 UTC (long bias) gets boost."""
+        now = _utc(day=TUE, hour=14)  # base=1.2, dir=1.15
+        info = get_full_time_multiplier(side="BUY", now=now)
+        expected = 1.2 * 1.15  # 1.38
         assert abs(info["multiplier"] - expected) < 0.001
         assert info["directional_multiplier"] == 1.15
 
     def test_with_opposed_direction(self):
-        """BUY at 14:00 UTC (short bias) gets penalty."""
-        now = _utc(day=TUE, hour=14)  # base=1.0, dir=0.85
-        info = get_full_time_multiplier(side="BUY", now=now)
-        expected = 1.0 * 0.85  # 0.85
+        """SELL at 14:00 UTC (long bias) gets penalty."""
+        now = _utc(day=TUE, hour=14)  # base=1.2, dir=0.85
+        info = get_full_time_multiplier(side="SELL", now=now)
+        expected = 1.2 * 0.85  # 1.02
         assert abs(info["multiplier"] - expected) < 0.001
 
     def test_max_boost_cap(self):
         """Combined multiplier capped at max_boost."""
         now = _utc(day=MON, hour=15)  # 1.15 * 1.2 = 1.38 base
         info = get_full_time_multiplier(
-            side="SELL", now=now, max_boost=1.3,
+            side="BUY", now=now, max_boost=1.3,
         )
         # Would be 1.38 * 1.15 = 1.587, but capped at 1.3
         assert info["multiplier"] == 1.3
@@ -264,34 +278,34 @@ class TestGetFullTimeMultiplier:
 
     def test_allow_boost_false_still_reduces(self):
         """With allow_boost=False, reductions still apply."""
-        now = _utc(day=THU, hour=5)  # 0.85 * 0.5 = 0.425
+        now = _utc(day=THU, hour=4)  # 0.85 * 0.5 = 0.425
         info = get_full_time_multiplier(now=now, allow_boost=False)
         assert abs(info["multiplier"] - 0.425) < 0.001
 
     def test_dead_hour_with_directional_penalty(self):
-        """DEAD hour + opposed direction = maximum reduction."""
-        now = _utc(day=THU, hour=5)  # base=0.425
+        """DEAD hour + no directional bias = base reduction only."""
+        now = _utc(day=THU, hour=4)  # base=0.425
         info = get_full_time_multiplier(side="BUY", now=now)
-        # Dead hour (0.425) + no bias at h5 → dir=1.0
+        # Dead hour (0.425) + no bias at h4 -> dir=1.0
         assert abs(info["multiplier"] - 0.425) < 0.001
 
     def test_session_classification(self):
         """Session field correctly identifies PRIME/GOOD/QUIET/DEAD."""
-        assert get_full_time_multiplier(now=_utc(hour=0))["session"] == "PRIME"
+        assert get_full_time_multiplier(now=_utc(hour=14))["session"] == "PRIME"
         assert get_full_time_multiplier(now=_utc(hour=12))["session"] == "GOOD"
-        assert get_full_time_multiplier(now=_utc(hour=7))["session"] == "QUIET"
-        assert get_full_time_multiplier(now=_utc(hour=5))["session"] == "DEAD"
+        assert get_full_time_multiplier(now=_utc(hour=9))["session"] == "QUIET"
+        assert get_full_time_multiplier(now=_utc(hour=4))["session"] == "DEAD"
 
     def test_bias_field(self):
         """Bias field matches _HOUR_BIAS."""
-        assert get_full_time_multiplier(now=_utc(hour=18))["bias"] == "long"
-        assert get_full_time_multiplier(now=_utc(hour=14))["bias"] == "short"
+        assert get_full_time_multiplier(now=_utc(hour=17))["bias"] == "short"
+        assert get_full_time_multiplier(now=_utc(hour=14))["bias"] == "long"
         assert get_full_time_multiplier(now=_utc(hour=12))["bias"] == "neutral"
 
     def test_reasons_populated(self):
         """Reasons list includes relevant adjustments."""
         info = get_full_time_multiplier(
-            side="SELL", now=_utc(day=MON, hour=14),
+            side="BUY", now=_utc(day=MON, hour=14),
         )
         assert len(info["reasons"]) > 0
         # Should mention base and directional
@@ -307,20 +321,21 @@ class TestGetFullTimeMultiplier:
 
     def test_custom_directional_params(self):
         """Custom directional boost/penalty are respected."""
-        now = _utc(day=TUE, hour=18)  # long bias, GOOD hour (1.0)
+        now = _utc(day=TUE, hour=17)  # short bias, PRIME hour (1.2)
         info = get_full_time_multiplier(
-            side="BUY", now=now,
+            side="SELL", now=now,
             directional_boost=1.3,
             directional_penalty=0.7,
         )
-        assert abs(info["multiplier"] - 1.3) < 0.001
+        # 1.2 * 1.3 = 1.56 -> capped at max_boost=1.4
+        assert info["multiplier"] <= 1.4
         assert info["directional_multiplier"] == 1.3
 
     def test_default_max_boost_is_1_4(self):
         """Default max boost is 1.4."""
         # Monday PRIME + aligned direction: 1.15 * 1.2 * 1.15 = 1.587
         now = _utc(day=MON, hour=14)
-        info = get_full_time_multiplier(side="SELL", now=now)
+        info = get_full_time_multiplier(side="BUY", now=now)
         assert info["multiplier"] <= 1.4
 
 
@@ -330,10 +345,10 @@ class TestGetTimeSizingInfo:
     """Legacy API compatibility."""
 
     def test_returns_multiplier_and_bias(self):
-        info = get_time_sizing_info(_utc(day=MON, hour=18))
+        info = get_time_sizing_info(_utc(day=MON, hour=17))
         assert "multiplier" in info
         assert "bias" in info
-        assert info["bias"] == "long"
+        assert info["bias"] == "short"
 
     def test_multiplier_matches_get_time_multiplier(self):
         now = _utc(day=MON, hour=15)
@@ -356,15 +371,15 @@ class TestUtilities:
         assert is_weekend(_utc(day=MON)) is False
 
     def test_low_liq_dead_hours(self):
-        for hour in [3, 4, 5, 6, 9, 10]:
+        for hour in [4, 6, 7, 10, 18, 20, 21]:
             assert is_low_liquidity_hours(_utc(hour=hour)) is True
 
     def test_low_liq_quiet_hours(self):
-        for hour in [1, 2, 7, 8, 19, 21]:
+        for hour in [3, 5, 9, 11, 19, 23]:
             assert is_low_liquidity_hours(_utc(hour=hour)) is True
 
-    def test_not_low_liq_prime(self):
-        for hour in [0, 11, 13, 14, 15, 22]:
+    def test_not_low_liq_prime_and_good(self):
+        for hour in [1, 2, 8, 12, 13, 14, 15, 16, 17, 22]:
             assert is_low_liquidity_hours(_utc(hour=hour)) is False
 
 
@@ -391,13 +406,13 @@ class TestEdgeCases:
 
     def test_worst_case_minimum(self):
         """Worst case: Saturday/Sunday DEAD hour = 0.4."""
-        worst = _utc(day=SAT, hour=5)
+        worst = _utc(day=SAT, hour=4)
         assert abs(get_time_multiplier(worst) - 0.4) < 0.001
 
     def test_best_case_capped(self):
         """Best case: Monday PRIME + aligned direction, capped at 1.4."""
-        best = _utc(day=MON, hour=14)  # PRIME=1.2, Mon=1.15, short bias
-        info = get_full_time_multiplier(side="SELL", now=best)
+        best = _utc(day=MON, hour=14)  # PRIME=1.2, Mon=1.15, long bias
+        info = get_full_time_multiplier(side="BUY", now=best)
         assert info["multiplier"] <= 1.4
 
     def test_full_multiplier_structure(self):

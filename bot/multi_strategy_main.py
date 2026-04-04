@@ -424,9 +424,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             self.strategies.append(OIDeltaStrategy(sym_configs))
         if os.getenv("STRATEGY_BOLLINGER_SQUEEZE_ENABLED", "true").lower() == "true":
             self.strategies.append(BollingerSqueezeStrategy(sym_configs))
-        if os.getenv("STRATEGY_VMC_CIPHER_ENABLED", "true").lower() == "true":
+        if os.getenv("STRATEGY_VMC_CIPHER_ENABLED", "false").lower() == "true":
             self.strategies.append(VMCCipherStrategy(sym_configs))
-        if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "true").lower() == "true":
+        if os.getenv("STRATEGY_LEAD_LAG_ENABLED", "false").lower() == "true":
             self.strategies.append(LeadLagStrategy(sym_configs))
         if os.getenv("STRATEGY_LIQUIDATION_CASCADE_ENABLED", "true").lower() == "true":
             self.strategies.append(LiquidationCascadeStrategy(sym_configs))
@@ -617,6 +617,20 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             # Live mode without exchange credentials — fall back to paper
             logger.warning("[INIT] No exchange credentials for live mode, falling back to paper executor")
             self.order_executor = create_executor(fetcher=self.fetcher, mode="paper")
+
+        # Entry optimizer: limit-order-first for better fills (saves ~3 bps per entry)
+        try:
+            from execution.entry_optimizer import EntryOptimizer
+            _limit_timeout = float(os.getenv("ENTRY_LIMIT_TIMEOUT_S", "10"))
+            self.entry_optimizer = EntryOptimizer(
+                use_limit_orders=os.getenv("ENTRY_USE_LIMIT_ORDERS", "true").lower() in ("1", "true", "yes"),
+                use_burst_detection=False,  # Burst detection adds latency, disable for now
+                limit_timeout_s=_limit_timeout,
+            )
+            logger.info(f"[INIT] Entry optimizer enabled (limit timeout={_limit_timeout}s)")
+        except Exception as _eo_err:
+            logger.debug(f"[INIT] Entry optimizer not available: {_eo_err}")
+            self.entry_optimizer = None
 
         # ML
         self.ml = SignalLearner(
@@ -5330,6 +5344,19 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 f"-> {qty:.6f} (notional ${_pre_floor_notional:.2f} -> ${qty * signal_result.entry:.2f})"
             )
 
+        # ── Hard cap: no single position > 15x equity in notional ──
+        _MAX_SINGLE_POSITION_LEVERAGE = 15.0
+        _single_notional = qty * signal_result.entry * lev_decision.leverage
+        _equity = self.risk_mgr.equity or 1.0
+        if _single_notional > _MAX_SINGLE_POSITION_LEVERAGE * _equity:
+            _capped_notional = _MAX_SINGLE_POSITION_LEVERAGE * _equity
+            qty = _capped_notional / (signal_result.entry * lev_decision.leverage)
+            logger.warning(
+                f"[{trace_id}][{symbol}] HARD NOTIONAL CAP: "
+                f"${_single_notional:.0f} > 15x equity (${_equity:.0f}), "
+                f"capped to ${_capped_notional:.0f}, qty={qty:.6f}"
+            )
+
         # ── Push 1: Portfolio notional cap ──
         # Prevent aggregate over-leverage across all positions
         _new_notional = qty * signal_result.entry * lev_decision.leverage
@@ -5519,13 +5546,47 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             return
 
         # Submit order to exchange (paper=simulated, live=real)
+        # Try limit order first for better fills (saves ~3 bps: 0.045% taker → 0.015% maker)
+        _order_type = "market"
+        _limit_price = actual_entry
+        if self.entry_optimizer is not None:
+            try:
+                _num_agree = len(entry_reasons.get("strategies_agree", []))
+                _entry_decision = self.entry_optimizer.evaluate_entry(
+                    symbol=symbol, side=side, entry_price=actual_entry,
+                    confidence=confidence, num_agree=_num_agree,
+                )
+                if _entry_decision.action == "LIMIT" and _entry_decision.limit_price:
+                    _order_type = "limit"
+                    _limit_price = _entry_decision.limit_price
+                    logger.info(
+                        f"[{trace_id}][{symbol}] Entry optimizer: LIMIT @ ${_limit_price:.4f} "
+                        f"({_entry_decision.improvement_pct:.2f}% improvement) — {_entry_decision.rationale}"
+                    )
+            except Exception as _eo_err:
+                logger.debug(f"[{trace_id}][{symbol}] Entry optimizer error: {_eo_err}")
+
         order_result = self.order_executor.open_position(
             symbol=symbol,
             side=side,
             qty=qty,
-            price=actual_entry,
+            price=_limit_price,
             leverage=int(lev_decision.leverage),
+            order_type=_order_type,
         )
+
+        # If limit order didn't fill, fall back to market
+        if _order_type == "limit" and not order_result.filled:
+            logger.info(f"[{trace_id}][{symbol}] Limit order did not fill, falling back to market")
+            order_result = self.order_executor.open_position(
+                symbol=symbol,
+                side=side,
+                qty=qty,
+                price=actual_entry,
+                leverage=int(lev_decision.leverage),
+                order_type="market",
+            )
+
         if not order_result.filled:
             logger.warning(
                 f"[{trace_id}][{symbol}] Order FAILED: {order_result.error}"

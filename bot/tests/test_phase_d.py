@@ -96,7 +96,7 @@ class TestFundingTimer:
         from execution.funding_timer import minutes_until_next_funding
         t = datetime(2026, 3, 1, 22, 0, tzinfo=timezone.utc)  # 22:00 UTC
         result = minutes_until_next_funding(t)
-        assert result == 120  # Next funding at 00:00 = 120 min away
+        assert result == 60  # Next funding at 23:00 = 60 min away (hourly funding)
 
     def test_should_close_marginal_long_before_funding(self):
         from execution.funding_timer import should_close_before_funding

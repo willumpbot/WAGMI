@@ -62,9 +62,9 @@ class FundingRateStrategy(BaseStrategy):
     """
 
     # Funding thresholds (8h rate, annualized ~100%+ when >0.03%)
-    FUNDING_EXTREME_THRESHOLD = 0.0003  # 0.03% per 8h = extreme
-    FUNDING_HIGH_THRESHOLD = 0.0002     # 0.02% per 8h = elevated
-    FUNDING_NEUTRAL_BAND = 0.0001       # ±0.01% = normal, no signal
+    FUNDING_EXTREME_THRESHOLD = 0.0000375  # 0.00375% per 1h = extreme (Hyperliquid pays hourly)
+    FUNDING_HIGH_THRESHOLD = 0.000025     # 0.0025% per 1h = elevated (Hyperliquid pays hourly)
+    FUNDING_NEUTRAL_BAND = 0.0000125    # ±0.00125% per 1h = normal, no signal (Hyperliquid hourly)
 
     # Trend guard: don't fade funding if strong trend agrees with funding direction
     ADX_TREND_OVERRIDE = 30.0  # ADX above this = strong trend, skip counter-trade

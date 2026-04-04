@@ -1249,7 +1249,7 @@ class EnsembleStrategy:
         # Solo analysis (from per-symbol missed trade data):
         # vmc_cipher: 82% solo WR, bollinger_squeeze: 78% solo WR (paper trading validated)
         # confidence_scorer: solo ONLY on HYPE (PF=2.65). Bad on BTC (PF=0.0) and SOL (PF=0.23).
-        _PROVEN_SOLO_STRATEGIES = {"probability_engine", "bollinger_squeeze", "vmc_cipher", "monte_carlo_zones"}  # mean_reversion removed: zero validated trades, no proven solo edge
+        _PROVEN_SOLO_STRATEGIES = {"probability_engine", "bollinger_squeeze", "monte_carlo_zones"}  # vmc_cipher removed: 5% WR (1/20), dead weight. mean_reversion removed: zero validated trades.
         _HYPE_SOLO_STRATEGIES = {"confidence_scorer"}  # Solo edge only on HYPE
         _SOLO_CONF_THRESHOLD = 75.0  # Raised: 62 let through too many losers. Only high-conviction solos.
         # Symbol+regime combos where solo signals have validated edge

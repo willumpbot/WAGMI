@@ -118,8 +118,8 @@ class TradingConfig:
         default_factory=lambda: _env_bool("ENABLE_TRAILING_STOP", True)
     )
     trailing_stop_atr_mult: float = field(
-        default_factory=lambda: _env_float("TRAILING_STOP_ATR_MULT", 1.5)
-    )
+        default_factory=lambda: _env_float("TRAILING_STOP_ATR_MULT", 2.0)
+    )  # Widened from 1.5→2.0: tighter trailing was causing premature exits on winners
 
     # Strategy ensemble
     ensemble_mode: str = field(
@@ -142,6 +142,9 @@ class TradingConfig:
     strategy_multi_tier_quality_enabled: bool = field(
         default_factory=lambda: _env_bool("STRATEGY_MULTI_TIER_QUALITY_ENABLED", False)
     )  # PF 0.82, -$1,223 net, 10-consecutive-loss streak, common factor in every toxic combo
+    strategy_vmc_cipher_enabled: bool = field(
+        default_factory=lambda: _env_bool("STRATEGY_VMC_CIPHER_ENABLED", False)
+    )  # 5% WR (1/20 recent), dead weight — disabled by audit 2026-04-03
 
     # ── BTC-Specific Risk Overrides ──
     btc_atr_multiplier: float = field(
@@ -508,14 +511,11 @@ class TradingConfig:
 
     # ── Cooldowns & Time Intervals ──
     loss_cooldown_s: int = field(
-        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 900)
-    )  # 15min: 60s was causing machine-gun re-entry (8 SOL shorts in 10hrs = -$103).
-    # At 60s cooldown, bot re-enters same thesis before market structure changes.
+        default_factory=lambda: _env_int("LOSS_COOLDOWN_S", 300)
+    )  # 5min: 15min was over-corrected.
     win_cooldown_s: int = field(
-        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 1800)
-    )  # 30min: data shows after every big win we bleed it back immediately.
-    # Win +$54 -> next 5 trades: -$106. Win +$38 -> next 5: -$158.
-    # Take the profit, chill, let the market reset before re-entering.
+        default_factory=lambda: _env_int("WIN_COOLDOWN_S", 600)
+    )  # 10min: 30min was over-corrected.
     signal_dedup_window_s: int = field(
         default_factory=lambda: _env_int("SIGNAL_DEDUP_WINDOW_S", 600)
     )  # 10min: 2min dedup was letting duplicate signals through (3 HYPE entries in 16min at same price).
@@ -811,13 +811,13 @@ SYMBOL_RISK_MULTIPLIERS = {
 SYMBOL_SIDE_RISK_MULTIPLIERS: Dict[tuple, float] = {
     # LIVE DATA (33 trades, 2026-04-03): ALL longs = 0% WR (0/7). Market is bearish.
     # Block longs until macro trend flips. Shorts are the only proven edge.
-    ("SOL", "BUY"):  0.0,   # BLOCKED: 0/0 live wins. Bear market = don't buy.
+    ("SOL", "BUY"):  0.50,  # Restored: shorts-only was recency bias. Modest size until data confirms.
     ("SOL", "SELL"): 0.90,  # Live: 6W/13L but winners are huge (+$129, +$99). Keep with cooldown protection.
-    ("BTC", "BUY"):  0.0,   # BLOCKED: 0/1 live wins (-$6). Bear market = don't buy.
+    ("BTC", "BUY"):  0.50,  # Restored: shorts-only was recency bias. Modest size until data confirms.
     ("BTC", "SELL"): 1.3,   # BEST EDGE: 2/2 live wins, +$92. Full conviction.
-    ("ETH", "BUY"):  0.0,   # BLOCKED: 0/3 live wins (-$5.28). Bear market = don't buy.
+    ("ETH", "BUY"):  0.50,  # Restored: shorts-only was recency bias. Modest size until data confirms.
     ("ETH", "SELL"): 0.50,  # No live wins but SHORT is the only direction that works. Small size, collect data.
-    ("HYPE", "BUY"): 0.0,   # BLOCKED: 0/3 live wins (-$19.16). Bear market = don't buy.
+    ("HYPE", "BUY"): 0.50,  # Restored: shorts-only was recency bias. Modest size until data confirms.
     ("HYPE", "SELL"):1.2,   # 1/4 live but SHORT is the right direction. Keep at size.
 }
 

@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 logger = logging.getLogger("bot.execution.funding_timer")
 
 # Funding payment hours (UTC)
-_FUNDING_HOURS = (0, 8, 16)
+_FUNDING_HOURS = tuple(range(24))  # Hyperliquid pays funding every hour
 
 
 def minutes_until_next_funding(now: datetime = None) -> int:

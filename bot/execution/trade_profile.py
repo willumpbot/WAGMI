@@ -133,9 +133,9 @@ _BASE_PROFILES: Dict[str, ExitParams] = {
         # Widened SL from 0.50 to 0.55 ATR — 42% WR suggests noise whipsaws.
         # TP1% 0.65→0.50: let more capital ride winners. With 1.15:1 payoff ratio,
         # early exit kills the edge — keeping 50% in play improves payoff ratio.
-        # trail_end raised 0.30→0.45: was over-tightening to 0.45 ATR at TP2 progress,
-        # causing premature trailing stops on normal pullbacks.
-        "trailing": "medium", "trail_start": 0.60, "trail_end": 0.45,
+        # trail_start/end widened 0.60→0.80/0.45→0.65: effective trailing distance
+        # stays ~1.2-1.6 ATR instead of 0.9-0.675 ATR. Stops premature trailing exits.
+        "trailing": "medium", "trail_start": 0.80, "trail_end": 0.65,
         # floor_progress 0.35→0.15: SOL gave back $22 of $51 peak because floor
         # hadn't kicked in at 25% progress. Start locking early.
         # floor_start 0.25→0.40: lock 40% of peak immediately, scale to 70%.
@@ -146,8 +146,8 @@ _BASE_PROFILES: Dict[str, ExitParams] = {
         # Tightened SL from 0.85 to 0.60 ATR — with 20% WR, losers must die fast.
         # TP1% 0.60→0.40: trending setups should let winners run. Only close 40%
         # at TP1, keep 60% riding the trend toward TP2 with trailing stop.
-        # trail_end raised 0.30→0.45: trends need room for pullbacks.
-        "trailing": "medium", "trail_start": 0.55, "trail_end": 0.45,
+        # trail_start/end widened 0.55→0.75/0.45→0.60: trends need room for pullbacks.
+        "trailing": "medium", "trail_start": 0.75, "trail_end": 0.60,
         # Trend floor: start locking at 20% progress, lock 35% initially scaling to 65%
         "floor_progress": 0.20, "floor_start": 0.35, "floor_max": 0.65,
     }),

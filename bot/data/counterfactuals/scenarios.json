@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1775236759.1200151,
+  "updated_at": 1775283590.5808778,
   "scenarios": [
     {
       "id": "cf_1774470140_6aa484a8",
@@ -594,6 +594,28 @@
         "actual_pnl_raw": -0.0062018813647607895,
         "pnl_at_tp1_pct": 1.2006,
         "pnl_at_tp2_pct": 2.3924
+      }
+    },
+    {
+      "id": "cf_1775283590_fb7db0cc",
+      "timestamp": 1775283590.5808494,
+      "symbol": "SOL",
+      "scenario_type": "exit_timing",
+      "actual_action": "SL",
+      "counterfactual_action": "exit_at_tp1",
+      "actual_pnl": -22.037577521317754,
+      "counterfactual_pnl": 0.5254224596260969,
+      "delta": 22.56299998094385,
+      "resolved": true,
+      "metadata": {
+        "side": "short",
+        "entry_price": 80.126,
+        "actual_exit_price": 80.2665,
+        "tp1_price": 79.705,
+        "tp2_price": 79.052,
+        "actual_pnl_raw": -17.657829364731064,
+        "pnl_at_tp1_pct": 0.5254,
+        "pnl_at_tp2_pct": 1.3404
       }
     }
   ]
