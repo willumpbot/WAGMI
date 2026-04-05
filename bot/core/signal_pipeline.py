@@ -1249,3 +1249,161 @@ class RiskFilterChain:
             risk_multiplier=risk_mult,
             position_qty=qty,
         )
+
+
+class SafetyFilterChain:
+    """Safety-only gates that run BEFORE the LLM pipeline.
+
+    Used in LLM_FIRST_MODE: after these pass, the signal goes directly
+    to the multi-agent LLM pipeline which handles ALL quality/sizing
+    decisions. This replaces the 47 mechanical gates in RiskFilterChain.
+
+    Safety gates (never bypassed):
+      1. Signal structural validity (is_valid)
+      2. Circuit breaker (daily loss, consecutive losses)
+      3. Max open positions
+      4. Duplicate position guard
+      5. Liquidation safety (worst-case leverage check)
+    """
+
+    def __init__(self, risk_mgr, leverage_mgr, config):
+        self.risk_mgr = risk_mgr
+        self.leverage_mgr = leverage_mgr
+        self.config = config
+
+    @staticmethod
+    def _log_signal_filtered(signal: Signal, gate: str, reason: str):
+        """Log a SIGNAL_FILTERED event to the TradeEventLogger."""
+        try:
+            tel = _get_tel()
+            if tel is None:
+                return
+            tel.log(
+                "SIGNAL_FILTERED",
+                signal.symbol,
+                side=signal.side,
+                strategy=getattr(signal, "strategy", ""),
+                confidence=signal.confidence,
+                entry=signal.entry,
+                sl=getattr(signal, "sl", 0.0),
+                reason=f"[safety:{gate}] {reason}",
+                regime=(signal.metadata or {}).get("regime", ""),
+            )
+        except Exception:
+            pass
+
+    def evaluate(
+        self,
+        signal: Signal,
+        equity: float,
+        current_open_count: int = 0,
+        open_positions: Optional[Dict[str, Any]] = None,
+        cb_conf_override_pct: float = 0.92,
+    ) -> FilterResult:
+        """Run a signal through safety-only gates.
+
+        Returns FilterResult with approved=True if the signal is structurally
+        safe for the LLM to evaluate. No quality or sizing decisions are made.
+        The LLM pipeline handles confidence, R:R, EV, fees, sizing, leverage.
+        """
+        meta = {}
+
+        # ── Gate 1: Signal structural validity ──
+        if not signal.is_valid:
+            _reason = (
+                f"Invalid signal: stop_width_pct={signal.stop_width_pct:.4f}, "
+                f"rr={signal.risk_reward_tp1:.2f}"
+            )
+            _log_rejection(signal, "safety_validity", _reason)
+            self._log_signal_filtered(signal, "validity", _reason)
+            return FilterResult(
+                approved=False, signal=signal, rejection_reason=_reason,
+                metadata=meta,
+            )
+
+        # ── Gate 2: Circuit breaker ──
+        if not self.risk_mgr.is_trading_allowed(
+            confidence=signal.confidence,
+            cb_conf_override_pct=cb_conf_override_pct,
+        ):
+            _reason = "Circuit breaker active"
+            _log_rejection(signal, "safety_circuit_breaker", _reason)
+            self._log_signal_filtered(signal, "circuit_breaker", _reason)
+            return FilterResult(
+                approved=False, signal=signal, rejection_reason=_reason,
+                metadata=meta,
+            )
+
+        # ── Gate 3: Max open positions ──
+        max_pos = self.config.max_open_positions
+        if current_open_count >= max_pos:
+            _reason = f"Max positions ({max_pos}) reached"
+            _log_rejection(signal, "safety_max_positions", _reason)
+            self._log_signal_filtered(signal, "max_positions", _reason)
+            return FilterResult(
+                approved=False, signal=signal, rejection_reason=_reason,
+                metadata=meta,
+            )
+
+        # ── Gate 4: Duplicate position guard ──
+        if open_positions and signal.symbol in open_positions:
+            _existing = open_positions[signal.symbol]
+            _ex_side = getattr(_existing, 'side', 'unknown')
+            _ex_entry = getattr(_existing, 'entry', 0.0)
+            _reason = (
+                f"Duplicate position: {signal.symbol} already has open "
+                f"{_ex_side} (entry={_ex_entry})"
+            )
+            _log_rejection(signal, "safety_duplicate", _reason)
+            self._log_signal_filtered(signal, "duplicate_position", _reason)
+            return FilterResult(
+                approved=False, signal=signal, rejection_reason=_reason,
+                metadata=meta,
+            )
+
+        # ── Gate 5: Liquidation safety (worst-case check) ──
+        # Use max_leverage as ceiling — the LLM will pick actual leverage.
+        # This just ensures the signal's stop loss isn't beyond liquidation
+        # even at maximum possible leverage.
+        max_lev = getattr(self.config, "max_leverage", 25.0)
+        side_str = "BUY" if signal.side == "BUY" else "SELL"
+        notional_est = equity * max_lev * 0.5
+        liq_check = self.leverage_mgr.validate_stop_vs_liquidation(
+            entry=signal.entry,
+            stop_loss=signal.sl,
+            side=side_str,
+            leverage=max_lev,
+            notional_usd=notional_est,
+        )
+        if not liq_check["safe"]:
+            _reason = (
+                f"SL ({signal.sl}) beyond liquidation "
+                f"({liq_check['liquidation_price']:.2f}) at max leverage {max_lev}x"
+            )
+            _log_rejection(signal, "safety_liquidation", _reason)
+            self._log_signal_filtered(signal, "liquidation", _reason)
+            return FilterResult(
+                approved=False, signal=signal, rejection_reason=_reason,
+                metadata=meta,
+            )
+        meta["liq_gap_pct"] = round(liq_check.get("gap_pct", 0), 4)
+
+        # ── PASS: Signal is structurally safe ──
+        # Attach useful metadata for the LLM pipeline to consume.
+        meta["stop_width_pct"] = round(signal.stop_width_pct, 6)
+        meta["rr_tp1"] = round(signal.risk_reward_tp1, 2)
+        meta["rr_tp2"] = round(signal.risk_reward_tp2, 2)
+        meta["equity"] = equity
+        meta["open_positions_count"] = current_open_count
+
+        logger.info(
+            f"[{signal.symbol}] SAFETY PASS: {signal.side} "
+            f"conf={signal.confidence:.0f}% rr={signal.risk_reward_tp1:.2f} "
+            f"→ forwarding to LLM pipeline"
+        )
+
+        return FilterResult(
+            approved=True,
+            signal=signal,
+            metadata=meta,
+        )

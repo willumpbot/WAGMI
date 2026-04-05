@@ -705,6 +705,220 @@ class EnsembleStrategy:
 
         return result
 
+    def evaluate_raw(
+        self, symbol: str, data: Dict[str, pd.DataFrame]
+    ) -> Optional[Signal]:
+        """Generate ensemble signal WITHOUT quality filters for LLM-first mode.
+
+        Returns the raw consensus signal with metadata (chop_score, trend
+        alignment, quality_score, win_prob, ev, etc.) attached as context
+        for the LLM pipeline — but NOT used as hard gates.
+
+        The only reason this returns None is if no strategies produce signals
+        or if there's insufficient vote consensus. Quality filtering is
+        delegated entirely to the LLM agents.
+        """
+        # Dynamic weight refresh
+        self._refresh_dynamic_weights()
+        self._current_eval_symbol = symbol
+
+        # Get regime-allowed strategies for this symbol
+        regime_allowed = self._get_regime_allowed_strategies(symbol)
+
+        signals: List[Signal] = []
+        shadow_signals: List[Signal] = []
+        self._last_raw_signals: Dict[str, List[Signal]] = getattr(self, '_last_raw_signals', {})
+        active_count = 0
+        error_count = 0
+
+        for strategy in self.strategies:
+            if strategy.name in self._disabled_strategies:
+                try:
+                    sig = strategy.evaluate(symbol, data)
+                    if sig is not None:
+                        shadow_signals.append(deepcopy(sig))
+                        if self._shadow_ledger:
+                            try:
+                                self._shadow_ledger.record_shadow_signal(
+                                    factor=sig.strategy,
+                                    symbol=symbol,
+                                    side=sig.side,
+                                    confidence=sig.confidence,
+                                    entry_price=sig.entry,
+                                )
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+                continue
+
+            if regime_allowed is not None and strategy.name not in regime_allowed:
+                continue
+            active_count += 1
+            try:
+                sig = strategy.evaluate(symbol, data)
+                if sig is not None:
+                    signals.append(sig)
+            except Exception as e:
+                error_count += 1
+                logger.warning(f"[{symbol}] {strategy.name} error: {e}")
+
+        # Telemetry
+        try:
+            from core.pipeline_telemetry import get_telemetry as _get_pt
+            _pt = _get_pt()
+            for _s in self.strategies:
+                if _s.name in self._disabled_strategies:
+                    continue
+                _sig_match = next((x for x in signals if x.strategy == _s.name), None)
+                _pt.record_strategy(symbol, _s.name, _sig_match is not None, _sig_match.confidence if _sig_match else 0, _sig_match.side if _sig_match else "")
+        except Exception:
+            pass
+
+        # Per-strategy signal map
+        _fired = [s.strategy for s in signals]
+        _strat_names = [s.name for s in self.strategies if s.name not in self._disabled_strategies]
+        _silent = [n for n in _strat_names if n not in _fired and (regime_allowed is None or n in regime_allowed)]
+        if signals:
+            logger.info(f"[{symbol}] RAW strategy map: fired={_fired} silent={_silent} ({len(signals)}/{active_count})")
+
+        self._last_raw_signals[symbol] = [deepcopy(s) for s in signals]
+        signals = [deepcopy(s) for s in signals]
+        self._last_signals[symbol] = {s.strategy: deepcopy(s) for s in signals}
+
+        if not signals:
+            return None
+
+        # ── Voting / consensus (keep — we still need direction agreement) ──
+        effective_min_votes = self._get_effective_min_votes(symbol)
+        if error_count > 0 and active_count > 0:
+            degraded = max(2, min(effective_min_votes, active_count - error_count))
+            if degraded != effective_min_votes:
+                effective_min_votes = degraded
+
+        # Chop detection: attach score as metadata (DON'T filter)
+        if self.chop_detector:
+            is_chop, chop_score, chop_detail = self.chop_detector.is_choppy(symbol, data)
+            for sig in signals:
+                sig.metadata["chop_score"] = round(chop_score, 3)
+
+        if self.mode == "voting":
+            result = self._voting(symbol, signals, effective_min_votes)
+        elif self.mode == "weighted_veto":
+            result = self._weighted_veto(symbol, signals, effective_min_votes)
+        elif self.mode == "weighted":
+            result = self._weighted(symbol, signals)
+        elif self.mode == "best":
+            result = self._best(symbol, signals)
+        else:
+            result = self._voting(symbol, signals, effective_min_votes)
+
+        if result is None:
+            return None
+
+        # ── Attach metadata WITHOUT filtering ──
+        # These are context for the LLM, not gates.
+
+        # Chop score (smoothed)
+        raw_chop = result.metadata.get("chop_score", 0)
+        prev = self._smoothed_chop.get(symbol, raw_chop)
+        chop_score = self._chop_ema_alpha * raw_chop + (1 - self._chop_ema_alpha) * prev
+        self._smoothed_chop[symbol] = chop_score
+        result.metadata["chop_score_smoothed"] = round(chop_score, 3)
+
+        # Effective confidence floor (what the mechanical system would use)
+        effective_floor = self.confidence_floor
+        if chop_score > 0.35:
+            if chop_score >= 0.65:
+                chop_intensity = min(1.0, (chop_score - 0.65) / 0.20)
+                effective_floor = self.ranging_confidence_floor + chop_intensity * (75.0 - self.ranging_confidence_floor)
+            else:
+                chop_intensity = (chop_score - 0.35) / 0.30
+                effective_floor = self.confidence_floor + chop_intensity * (self.ranging_confidence_floor - self.confidence_floor)
+        result.metadata["mechanical_confidence_floor"] = round(effective_floor, 1)
+        result.metadata["would_pass_confidence_floor"] = result.confidence >= effective_floor
+
+        # 4h regime alignment info
+        agreement_level = result.metadata.get("num_agree", 1) if result.metadata else 1
+        regime_aligned = self._check_timeframe_alignment(symbol, agreement_level)
+        result.metadata["regime_4h_aligned"] = regime_aligned
+        result.metadata["regime_1h"] = self._current_regime.get(symbol, "unknown")
+        result.metadata["regime_4h"] = self._current_regime_4h.get(symbol, "unknown")
+
+        # Quality score (attach but don't filter)
+        if self._quality_scorer is not None:
+            try:
+                from feedback.signal_quality import QualityFeatures
+                features = QualityFeatures(
+                    confidence=result.confidence,
+                    num_strategies_agree=result.metadata.get("num_agree", 1),
+                    total_strategies=len(self.strategies),
+                    symbol=symbol,
+                    side=result.side,
+                )
+                _adj, _mult, _breakdown = self._quality_scorer.adjust_confidence(
+                    result.confidence, features
+                )
+                result.metadata["quality_multiplier"] = round(max(0.5, min(1.3, _mult)), 3)
+                result.metadata["quality_breakdown"] = _breakdown
+            except Exception:
+                pass
+
+        # Graduated rules check (attach as advisory, don't veto)
+        try:
+            from llm.graduated_rules import get_graduated_rules_engine
+            _gre = get_graduated_rules_engine()
+            _regime = result.metadata.get("regime", "")
+            _setup = result.metadata.get("entry_type", "")
+            _n_agree = result.metadata.get("num_agree", 1)
+            _vetoed, _adj_conf, _rule_summary = _gre.evaluate_signal(
+                symbol=symbol, regime=_regime, side=result.side,
+                strategy=result.strategy or "", setup_type=_setup,
+                num_agree=_n_agree, confidence=result.confidence,
+            )
+            result.metadata["graduated_rules_advisory"] = {
+                "would_veto": _vetoed,
+                "adjusted_confidence": round(_adj_conf, 1),
+                "summary": _rule_summary,
+            }
+        except Exception:
+            pass
+
+        # Trend alignment info (compute but don't filter)
+        result.metadata["raw_confidence"] = result.confidence
+        result.metadata["signal_source"] = "evaluate_raw"
+
+        # Log SIGNAL_GENERATED
+        try:
+            tel = _get_tel()
+            if tel is not None:
+                tel.log(
+                    "SIGNAL_GENERATED",
+                    result.symbol,
+                    side=result.side,
+                    strategy=result.strategy or "",
+                    confidence=result.confidence,
+                    entry=result.entry,
+                    sl=result.sl,
+                    tp1=result.tp1,
+                    tp2=getattr(result, "tp2", 0.0),
+                    atr=getattr(result, "atr", 0.0),
+                    regime=(result.metadata or {}).get("regime", ""),
+                    num_agree=(result.metadata or {}).get("num_agree", 1),
+                    strategies_agree=(result.metadata or {}).get("strategies_agree", []),
+                )
+        except Exception:
+            pass
+
+        logger.info(
+            f"[{symbol}] RAW SIGNAL: {result.side} conf={result.confidence:.0f}% "
+            f"rr={result.risk_reward_tp1:.2f} chop={chop_score:.2f} "
+            f"floor_pass={result.metadata.get('would_pass_confidence_floor')} "
+            f"→ forwarding to LLM"
+        )
+
+        return result
+
     def evaluate_with_annotations(
         self, symbol: str, data: Dict[str, pd.DataFrame]
     ) -> Optional[AnnotatedSignal]:

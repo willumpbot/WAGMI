@@ -4007,6 +4007,40 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         if signal_result is None:
             return
 
+        # ══════════════════════════════════════════════════════════════════
+        # ── LLM-FIRST MODE: bypass 47 mechanical gates, let LLM decide ──
+        # ══════════════════════════════════════════════════════════════════
+        _llm_first = getattr(self.config, 'llm_first_mode', False)
+        _llm_dual_track = getattr(self.config, 'llm_first_dual_track', False)
+
+        if _llm_first and self.llm_mode >= LLMMode.SIZING:
+            try:
+                self._process_symbol_llm_first(
+                    symbol, sym_cfg, signal_result, data, open_pos,
+                    current_price, trace_id,
+                )
+            except Exception as e:
+                logger.error(
+                    f"[{trace_id}][{symbol}] LLM-FIRST pipeline error: {e} "
+                    f"— falling back to mechanical path"
+                )
+                # Fall through to mechanical path on failure
+            else:
+                return  # LLM-first handled it (or skipped it)
+
+        # Dual-track: run LLM-first path in background for comparison logging
+        # but still execute through the mechanical path below.
+        if _llm_dual_track and self.llm_mode >= LLMMode.SIZING:
+            try:
+                # Get raw signal for LLM pipeline
+                _raw_sig = self.ensemble.evaluate_raw(symbol, data)
+                if _raw_sig is not None:
+                    self._log_dual_track_llm_decision(
+                        symbol, _raw_sig, data, open_pos, current_price, trace_id,
+                    )
+            except Exception as e:
+                logger.debug(f"[{trace_id}][{symbol}] Dual-track LLM error: {e}")
+
         # ── QUANT BRAIN PRE-FILTER (zero-cost, runs before all expensive gates) ──
         if self._quant_brain is not None:
             try:
@@ -6006,7 +6040,437 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             except Exception as e:
                 logger.debug(f"Copy classifier error: {e}")
 
+    # ══════════════════════════════════════════════════════════════════
+    # ── LLM-FIRST ARCHITECTURE: Signal → Safety → LLM → Execute ──
+    # ══════════════════════════════════════════════════════════════════
 
+    def _process_symbol_llm_first(
+        self,
+        symbol: str,
+        sym_cfg,
+        signal_result,  # From ensemble.evaluate() (already passed quality gates)
+        data: dict,
+        open_pos: dict,
+        current_price: float,
+        trace_id: str = "",
+    ):
+        """LLM-first entry path: bypasses 47 mechanical gates.
+
+        Flow:
+          1. Get raw signal (with metadata, no quality filtering)
+          2. SafetyFilterChain (5 hard gates only)
+          3. LLM agent pipeline (quality + sizing + thesis)
+          4. Post-LLM safety caps (notional, portfolio, OpsGuard)
+          5. Live price + execution
+
+        Falls through (returns) on any rejection. Raises on unexpected errors
+        so the caller can fall back to the mechanical path.
+        """
+        # ── Step 1: Get raw signal for LLM ──
+        # The signal_result from evaluate() already passed quality gates.
+        # We want the RAW signal with metadata but no quality filtering.
+        raw_signal = self.ensemble.evaluate_raw(symbol, data)
+        if raw_signal is None:
+            logger.info(
+                f"[{trace_id}][{symbol}] LLM-FIRST: no raw signal "
+                f"(no strategy consensus)"
+            )
+            return
+
+        # ── Step 2: Safety gates only ──
+        from core.signal_pipeline import SafetyFilterChain
+        safety = SafetyFilterChain(
+            self.risk_mgr, self.leverage_mgr, self.config
+        )
+        safety_result = safety.evaluate(
+            signal=raw_signal,
+            equity=self.risk_mgr.equity,
+            current_open_count=len(open_pos),
+            open_positions=open_pos,
+        )
+        if not safety_result.approved:
+            logger.info(
+                f"[{trace_id}][{symbol}] LLM-FIRST safety reject: "
+                f"{safety_result.rejection_reason}"
+            )
+            return
+
+        # ── Step 3: Build context and run LLM agent pipeline ──
+        from llm.agents.coordinator import get_coordinator, is_multi_agent_enabled
+        if not is_multi_agent_enabled():
+            raise RuntimeError("LLM_FIRST_MODE requires LLM_MULTI_AGENT=true")
+
+        coordinator = get_coordinator()
+
+        # Build signal context (everything the LLM needs to decide)
+        signal_ctx = {
+            "symbol": raw_signal.symbol,
+            "side": raw_signal.side,
+            "confidence": raw_signal.confidence,
+            "entry": raw_signal.entry,
+            "sl": raw_signal.sl,
+            "tp1": raw_signal.tp1,
+            "tp2": raw_signal.tp2,
+            "atr": raw_signal.atr,
+            "strategy": raw_signal.strategy or "",
+            "num_agree": (raw_signal.metadata or {}).get("num_agree", 1),
+            "strategies_agree": (raw_signal.metadata or {}).get("strategies_agree", []),
+            "chop_score": (raw_signal.metadata or {}).get("chop_score", 0),
+            "chop_score_smoothed": (raw_signal.metadata or {}).get("chop_score_smoothed", 0),
+            "win_prob": (raw_signal.metadata or {}).get("win_prob"),
+            "ev_per_dollar": (raw_signal.metadata or {}).get("ev_per_dollar"),
+            "rr_tp1": round(raw_signal.risk_reward_tp1, 2),
+            "rr_tp2": round(raw_signal.risk_reward_tp2, 2),
+            "stop_width_pct": round(raw_signal.stop_width_pct, 6),
+            "quality_multiplier": (raw_signal.metadata or {}).get("quality_multiplier"),
+            "regime_1h": (raw_signal.metadata or {}).get("regime_1h", "unknown"),
+            "regime_4h": (raw_signal.metadata or {}).get("regime_4h", "unknown"),
+            "regime_4h_aligned": (raw_signal.metadata or {}).get("regime_4h_aligned", True),
+            "mechanical_confidence_floor": (raw_signal.metadata or {}).get("mechanical_confidence_floor"),
+            "would_pass_confidence_floor": (raw_signal.metadata or {}).get("would_pass_confidence_floor"),
+            "graduated_rules_advisory": (raw_signal.metadata or {}).get("graduated_rules_advisory"),
+        }
+
+        # Market context
+        market_ctx = {
+            "funding_rate": self._last_funding_rates.get(symbol),
+            "volume_ratio": (raw_signal.metadata or {}).get("volume_ratio", 1.0),
+            "time_utc_hour": __import__("datetime").datetime.now(
+                __import__("datetime").timezone.utc
+            ).hour,
+            "btc_trend": self._price_changes_1h.get("BTC", 0.0) if hasattr(self, '_price_changes_1h') else 0.0,
+            "signal_age": time.time() - (raw_signal.metadata or {}).get("generated_at", time.time()),
+            "ohlcv_1h": data.get("1h"),
+            "ohlcv_5m": data.get("5m"),
+        }
+
+        # Portfolio context
+        portfolio_ctx = {
+            "equity": self.risk_mgr.equity,
+            "open_positions": {s: {"side": p.side, "entry": p.entry, "qty": p.qty,
+                                   "leverage": p.leverage}
+                              for s, p in open_pos.items()},
+            "open_positions_count": len(open_pos),
+            "daily_pnl": getattr(self.risk_mgr, 'daily_pnl', 0.0),
+            "circuit_breaker_proximity": getattr(
+                self.risk_mgr, 'circuit_breaker_proximity', 1.0
+            ),
+        }
+
+        # Get model routing from trigger system
+        model_for_trigger = None
+        try:
+            from llm.usage_tiers import get_model_for_trigger
+            model_for_trigger = get_model_for_trigger("PRE_TRADE")
+        except Exception:
+            pass
+
+        from llm.decision_types import EntryDecision
+        entry_decision = coordinator.get_entry_decision(
+            signal_context=signal_ctx,
+            market_context=market_ctx,
+            portfolio_context=portfolio_ctx,
+            model_for_trigger=model_for_trigger,
+        )
+
+        if entry_decision.action == "skip":
+            logger.info(
+                f"[{trace_id}][{symbol}] LLM-FIRST SKIP: "
+                f"{entry_decision.thesis[:100]}"
+            )
+            # Record for counterfactual tracking
+            if self.counterfactual:
+                try:
+                    self.counterfactual.record_veto(
+                        symbol=symbol,
+                        side=raw_signal.side,
+                        entry_price=raw_signal.entry,
+                        sl_price=raw_signal.sl,
+                        tp1_price=raw_signal.tp1,
+                        tp2_price=raw_signal.tp2,
+                        confidence=raw_signal.confidence,
+                        reason=f"LLM_FIRST: {entry_decision.thesis[:100]}",
+                    )
+                except Exception:
+                    pass
+            return
+
+        # ── Step 4: Post-LLM safety caps ──
+        leverage = max(1.0, min(
+            entry_decision.leverage,
+            getattr(self.config, 'max_leverage', 25.0),
+        ))
+        qty = entry_decision.position_qty
+        side = raw_signal.side
+
+        # Hard notional cap (15x equity)
+        _MAX_NOTIONAL_MULT = 15.0
+        _equity = self.risk_mgr.equity or 1.0
+        _notional = qty * raw_signal.entry * leverage
+        if _notional > _MAX_NOTIONAL_MULT * _equity:
+            _capped = _MAX_NOTIONAL_MULT * _equity
+            qty = _capped / (raw_signal.entry * leverage)
+            logger.warning(
+                f"[{trace_id}][{symbol}] LLM-FIRST notional cap: "
+                f"${_notional:.0f} → ${_capped:.0f}"
+            )
+
+        # Portfolio notional cap
+        _new_notional = qty * raw_signal.entry * leverage
+        if not self.pos_mgr.check_portfolio_notional_cap(
+            new_notional=_new_notional,
+            equity=_equity,
+            max_portfolio_leverage=self.config.max_portfolio_leverage,
+        ):
+            logger.info(
+                f"[{trace_id}][{symbol}] LLM-FIRST portfolio cap reject"
+            )
+            return
+
+        # OpsGuard
+        total_exposure = sum(
+            p.qty * p.entry * p.leverage
+            for p in self.pos_mgr.get_open_positions().values()
+        )
+        ops_check = self.ops_guard.can_execute(
+            position_size_usd=_new_notional,
+            equity=_equity,
+            total_exposure_usd=total_exposure,
+        )
+        if not ops_check["allowed"]:
+            logger.warning(
+                f"[{trace_id}][{symbol}] LLM-FIRST OpsGuard: "
+                f"{ops_check['reason']}"
+            )
+            return
+
+        # Min qty / min notional floor
+        _MIN_NOTIONAL = 10.0
+        if qty * raw_signal.entry < _MIN_NOTIONAL * 1.15:
+            qty = max(qty, (_MIN_NOTIONAL * 1.15) / raw_signal.entry)
+        _min_q = get_min_qty(symbol)
+        if qty < _min_q:
+            qty = _min_q
+
+        # ── Step 5: Live price refresh + execution ──
+        snapshot_entry = raw_signal.entry
+        live_entry = self.fetcher.fetch_live_price(symbol)
+        if live_entry is None:
+            live_entry = current_price
+
+        slippage_pct = abs(live_entry - snapshot_entry) / snapshot_entry * 100 if snapshot_entry > 0 else 0
+        max_slippage = float(os.getenv("MAX_ENTRY_SLIPPAGE_PCT", "1.5"))
+        if slippage_pct > max_slippage:
+            logger.warning(
+                f"[{trace_id}][{symbol}] LLM-FIRST slippage reject: "
+                f"{slippage_pct:.2f}% > {max_slippage}%"
+            )
+            return
+
+        actual_entry = live_entry
+        entry_shift = actual_entry - snapshot_entry
+        adj_sl = raw_signal.sl + entry_shift
+        adj_tp1 = raw_signal.tp1 + entry_shift
+        adj_tp2 = raw_signal.tp2 + entry_shift
+
+        # Safety: ensure SL/TP are on the correct side
+        if side == "BUY" or side == "LONG":
+            side = "LONG"
+            if adj_sl >= actual_entry:
+                adj_sl = actual_entry - raw_signal.atr * 1.5 if raw_signal.atr > 0 else actual_entry * 0.98
+            if adj_tp1 <= actual_entry:
+                adj_tp1 = actual_entry + raw_signal.atr * 1.0 if raw_signal.atr > 0 else actual_entry * 1.01
+        else:
+            side = "SHORT"
+            if adj_sl <= actual_entry:
+                adj_sl = actual_entry + raw_signal.atr * 1.5 if raw_signal.atr > 0 else actual_entry * 1.02
+            if adj_tp1 >= actual_entry:
+                adj_tp1 = actual_entry - raw_signal.atr * 1.0 if raw_signal.atr > 0 else actual_entry * 0.99
+
+        # Round qty for exchange
+        qty = round_qty(symbol, qty)
+
+        # Final qty check
+        if qty <= 0:
+            logger.warning(
+                f"[{trace_id}][{symbol}] LLM-FIRST qty=0 after rounding"
+            )
+            return
+
+        logger.info(
+            f"[{trace_id}][{symbol}] LLM-FIRST TRADE: {side} "
+            f"qty={qty:.6f} @ ${actual_entry:.4f} "
+            f"lev={leverage:.1f}x SL=${adj_sl:.4f} TP1=${adj_tp1:.4f} "
+            f"regime={entry_decision.regime} "
+            f"thesis={entry_decision.thesis[:60]}"
+        )
+
+        # Build entry reasons for position manager
+        entry_reasons = {
+            "llm_first": True,
+            "confidence": raw_signal.confidence,
+            "strategies_agree": signal_ctx.get("strategies_agree", []),
+            "num_agree": signal_ctx.get("num_agree", 1),
+            "regime": entry_decision.regime,
+            "thesis": entry_decision.thesis[:200],
+            "sizing_rationale": entry_decision.sizing_rationale[:200],
+            "risk_flags": entry_decision.risk_flags,
+            "debate_summary": entry_decision.debate_summary[:200],
+            "llm_confidence": entry_decision.confidence,
+            "llm_action": "go",
+            "llm_agreed": True,
+        }
+
+        # ── Execute trade ──
+        from execution.position_manager import TradeProfile
+        trade_prof = TradeProfile(
+            entry_type="LLM_FIRST",
+            primary_driver=raw_signal.strategy or "ensemble",
+            regime=entry_decision.regime,
+        )
+
+        # Build fake LeverageDecision for compatibility
+        from execution.leverage import LeverageDecision
+        lev_decision = LeverageDecision(
+            leverage=leverage,
+            mode="llm_first",
+            tier="llm",
+            reason=f"LLM Risk Agent: {entry_decision.sizing_rationale[:80]}",
+            risk_multiplier=entry_decision.size_multiplier,
+        )
+
+        # OpsGuard duplicate check
+        _dup_check = self.ops_guard.check_duplicate_position(
+            symbol=symbol,
+            side=side,
+            open_positions=self.pos_mgr.get_open_positions(),
+        )
+        if not _dup_check["allowed"]:
+            logger.warning(
+                f"[{trace_id}][{symbol}] LLM-FIRST duplicate blocked"
+            )
+            return
+
+        # Submit order
+        self.pos_mgr.open_position(
+            symbol=symbol,
+            side=side,
+            entry=actual_entry,
+            sl=adj_sl,
+            tp1=adj_tp1,
+            tp2=adj_tp2,
+            qty=qty,
+            leverage=leverage,
+            atr=raw_signal.atr,
+            entry_reasons=entry_reasons,
+            trade_profile=trade_prof,
+            notes=f"LLM-FIRST: {entry_decision.thesis[:200]}",
+        )
+
+        # Log trade
+        log_trade(
+            symbol=symbol,
+            action="OPEN",
+            side=side,
+            price=actual_entry,
+            qty=qty,
+            leverage=leverage,
+            strategy=raw_signal.strategy,
+            metadata={
+                "confidence": raw_signal.confidence,
+                "llm_first": True,
+                "llm_regime": entry_decision.regime,
+                "llm_thesis": entry_decision.thesis[:100],
+                "llm_leverage": leverage,
+                "llm_risk_pct": entry_decision.risk_pct,
+            }
+        )
+
+        # Send alert
+        self.alerts.send_market_update(
+            f"*LLM-FIRST TRADE*\n"
+            f"{symbol} {side} @ ${actual_entry:.4f}\n"
+            f"Confidence: {raw_signal.confidence:.0f}%\n"
+            f"Leverage: {leverage:.1f}x | Qty: {qty:.6f}\n"
+            f"R:R: {signal_ctx.get('rr_tp1', 0):.2f}\n"
+            f"Regime: {entry_decision.regime}\n"
+            f"Thesis: {entry_decision.thesis[:100]}"
+        )
+
+    def _log_dual_track_llm_decision(
+        self,
+        symbol: str,
+        raw_signal,
+        data: dict,
+        open_pos: dict,
+        current_price: float,
+        trace_id: str = "",
+    ):
+        """Dual-track: log what LLM-first would have decided (no execution).
+
+        Used for validation before switching to LLM-first mode.
+        Runs the full LLM pipeline and logs divergence from mechanical path.
+        """
+        try:
+            from core.signal_pipeline import SafetyFilterChain
+            safety = SafetyFilterChain(
+                self.risk_mgr, self.leverage_mgr, self.config
+            )
+            safety_result = safety.evaluate(
+                signal=raw_signal,
+                equity=self.risk_mgr.equity,
+                current_open_count=len(open_pos),
+                open_positions=open_pos,
+            )
+            if not safety_result.approved:
+                logger.info(
+                    f"[DUAL-TRACK][{symbol}] LLM-first would reject: "
+                    f"safety={safety_result.rejection_reason}"
+                )
+                return
+
+            from llm.agents.coordinator import get_coordinator, is_multi_agent_enabled
+            if not is_multi_agent_enabled():
+                return
+
+            coordinator = get_coordinator()
+
+            signal_ctx = {
+                "symbol": raw_signal.symbol,
+                "side": raw_signal.side,
+                "confidence": raw_signal.confidence,
+                "entry": raw_signal.entry,
+                "sl": raw_signal.sl,
+                "tp1": raw_signal.tp1,
+                "tp2": raw_signal.tp2,
+                "atr": raw_signal.atr,
+                "strategy": raw_signal.strategy or "",
+            }
+            market_ctx = {
+                "ohlcv_1h": data.get("1h"),
+                "ohlcv_5m": data.get("5m"),
+            }
+            portfolio_ctx = {
+                "equity": self.risk_mgr.equity,
+                "open_positions": {s: {"side": p.side, "entry": p.entry}
+                                  for s, p in open_pos.items()},
+                "open_positions_count": len(open_pos),
+            }
+
+            entry_decision = coordinator.get_entry_decision(
+                signal_context=signal_ctx,
+                market_context=market_ctx,
+                portfolio_context=portfolio_ctx,
+            )
+
+            logger.info(
+                f"[DUAL-TRACK][{symbol}] LLM-first would: "
+                f"{entry_decision.action} lev={entry_decision.leverage:.1f}x "
+                f"conf={entry_decision.confidence:.2f} "
+                f"thesis={entry_decision.thesis[:60]}"
+            )
+        except Exception as e:
+            logger.debug(f"[DUAL-TRACK][{symbol}] Error: {e}")
 
 
 

@@ -48,7 +48,7 @@ from llm.agents.consistency_checker import (
     get_consistency_tracker,
 )
 from llm.client import call_llm
-from llm.decision_types import LLMDecision, StrategyWeights
+from llm.decision_types import LLMDecision, StrategyWeights, EntryDecision
 
 # External data collectors (funding/OI, liquidation, shadow MR)
 try:
@@ -1093,6 +1093,273 @@ class AgentCoordinator:
         self.last_pipeline_results = pipeline_results
 
         return decision
+
+    def get_entry_decision(
+        self,
+        signal_context: Dict[str, Any],
+        market_context: Dict[str, Any],
+        portfolio_context: Dict[str, Any],
+        model_for_trigger: Optional[str] = None,
+    ) -> EntryDecision:
+        """LLM-first entry pipeline: full quality + sizing decisions.
+
+        This replaces _llm_veto_check and 47 mechanical gates. The LLM
+        receives the raw signal with all context and decides:
+        1. Should we trade? (go/skip)
+        2. How much? (leverage, risk_pct, qty)
+        3. Why? (thesis, regime, debate summary)
+
+        Args:
+            signal_context: Raw signal data + metadata from evaluate_raw().
+                Keys: symbol, side, confidence, entry, sl, tp1, tp2, atr,
+                      strategy, num_agree, chop_score, win_prob, ev_per_dollar,
+                      fee_drag_pct, rr_tp1, stop_width_pct, etc.
+            market_context: Market data for LLM enrichment.
+                Keys: funding_rate, volume_ratio, time_utc_hour, btc_trend,
+                      signal_age, ohlcv_1h, ohlcv_5m, etc.
+            portfolio_context: Current portfolio state.
+                Keys: equity, open_positions, correlation_matrix,
+                      daily_pnl, circuit_breaker_proximity, etc.
+            model_for_trigger: Optional model override.
+
+        Returns:
+            EntryDecision with action, leverage, qty, regime, thesis.
+            On pipeline failure, returns EntryDecision.skip().
+        """
+        start = time.monotonic()
+
+        # ── Build a snapshot_data dict compatible with existing pipeline ──
+        # The existing _build_*_input methods expect snapshot_data format.
+        # We translate signal_context + market/portfolio into that format.
+        snapshot_data = self._build_entry_snapshot(
+            signal_context, market_context, portfolio_context
+        )
+
+        # ── Run the standard agent pipeline ──
+        # Reuse get_trading_decision which handles all enrichment, agents,
+        # debate, consistency, learning integration, etc.
+        decision = self.get_trading_decision(
+            snapshot_data=snapshot_data,
+            trigger_reason="llm_first_entry",
+            model_for_trigger=model_for_trigger,
+        )
+
+        elapsed_ms = int((time.monotonic() - start) * 1000)
+
+        if decision is None:
+            logger.warning("[LLM-FIRST] Pipeline returned None — skipping trade")
+            return EntryDecision.skip("LLM pipeline failure")
+
+        # ── Extract sizing from agent outputs ──
+        # Risk Agent output contains leverage and sizing recommendations.
+        risk_out = self.last_pipeline_results.get(AgentRole.RISK)
+        trade_out = self.last_pipeline_results.get(AgentRole.TRADE)
+        critic_out = self.last_pipeline_results.get(AgentRole.CRITIC)
+
+        # Parse leverage from Risk Agent
+        leverage = 1.0
+        risk_pct = 0.0
+        sizing_rationale = ""
+        risk_flags = []
+
+        if risk_out and risk_out.ok:
+            rd = risk_out.data
+            leverage = float(rd.get("leverage", rd.get("lev", rd.get("l", 1.0))))
+            risk_pct = float(rd.get("risk_pct", rd.get("rp", rd.get("position_size_pct",
+                             rd.get("sz_pct", 0.0)))))
+            sizing_rationale = rd.get("sizing_rationale", rd.get("rationale",
+                               rd.get("n", "")))
+            risk_flags = rd.get("risk_flags", rd.get("flags", []))
+            if isinstance(risk_flags, str):
+                risk_flags = [risk_flags]
+
+        # Use size_multiplier from LLMDecision as fallback sizing signal
+        size_mult = decision.size_multiplier if decision else 1.0
+
+        # Compute position qty from risk_pct + equity + leverage
+        equity = portfolio_context.get("equity", 0)
+        entry_price = signal_context.get("entry", 0)
+        sl_price = signal_context.get("sl", 0)
+
+        position_qty = 0.0
+        if equity > 0 and entry_price > 0 and sl_price > 0:
+            stop_width = abs(entry_price - sl_price)
+            if stop_width > 0:
+                # risk_pct is fraction of equity to risk
+                # If Risk Agent didn't return risk_pct, derive from size_multiplier
+                if risk_pct <= 0:
+                    # Default to config risk_per_trade * size_multiplier
+                    risk_pct = 0.10 * size_mult  # 10% base risk
+                risk_dollars = equity * risk_pct
+                position_qty = risk_dollars / stop_width
+
+        # ── Parse thesis and debate from agents ──
+        thesis = ""
+        debate_summary = ""
+
+        if trade_out and trade_out.ok:
+            td = trade_out.data
+            thesis = td.get("thesis", td.get("n", ""))
+
+        if critic_out and critic_out.ok:
+            cd = critic_out.data
+            counter = cd.get("counter_thesis", cd.get("ct", ""))
+            verdict = cd.get("verdict", cd.get("v", ""))
+            if counter:
+                debate_summary = f"Bull: {thesis[:100]}. Bear: {counter[:100]}. Verdict: {verdict}"
+
+        # Map LLMDecision action → EntryDecision action
+        action = "skip"
+        if decision.action in ("proceed", "go"):
+            action = "go"
+        elif decision.action == "flip":
+            action = "go"  # flip handled at caller level
+
+        entry_decision = EntryDecision(
+            action=action,
+            leverage=max(1.0, leverage),
+            risk_pct=risk_pct,
+            position_qty=position_qty,
+            regime=decision.regime,
+            thesis=thesis[:300],
+            confidence=decision.confidence,
+            sizing_rationale=sizing_rationale[:200],
+            risk_flags=risk_flags[:5],
+            debate_summary=debate_summary[:300],
+            size_multiplier=size_mult,
+            notes=decision.notes[:500] if decision.notes else "",
+            memory_update=decision.memory_update,
+        )
+
+        logger.info(
+            f"[LLM-FIRST] Entry decision: {action} lev={leverage:.1f}x "
+            f"risk={risk_pct:.1%} qty={position_qty:.4f} "
+            f"regime={decision.regime} conf={decision.confidence:.2f} "
+            f"({elapsed_ms}ms)"
+        )
+
+        return entry_decision
+
+    def _build_entry_snapshot(
+        self,
+        signal_ctx: Dict[str, Any],
+        market_ctx: Dict[str, Any],
+        portfolio_ctx: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Translate LLM-first context into snapshot_data format.
+
+        The existing agent pipeline expects data in a specific snapshot format
+        with keys like 'm' (markets), 'g' (global), 'pos' (positions), etc.
+        This bridges the raw signal context into that format.
+        """
+        symbol = signal_ctx.get("symbol", "")
+        side = signal_ctx.get("side", "")
+        entry = signal_ctx.get("entry", 0)
+        sl = signal_ctx.get("sl", 0)
+        tp1 = signal_ctx.get("tp1", 0)
+        tp2 = signal_ctx.get("tp2", 0)
+        confidence = signal_ctx.get("confidence", 0)
+        atr = signal_ctx.get("atr", 0)
+
+        # Build market data in snapshot format
+        market_entry = {
+            "s": symbol,
+            "sym": symbol,
+            "p": entry,
+            "price": entry,
+            "sg": [{
+                "sym": symbol,
+                "s": symbol,
+                "side": side,
+                "sd": side,
+                "e": entry,
+                "entry": entry,
+                "sl": sl,
+                "tp1": tp1,
+                "tp2": tp2,
+                "c": confidence / 100 if confidence > 1 else confidence,
+                "confidence": confidence,
+                "atr": atr,
+                "strategy": signal_ctx.get("strategy", ""),
+            }],
+            "sigs": [{
+                "sym": symbol,
+                "side": side,
+                "entry": entry,
+                "sl": sl,
+                "tp1": tp1,
+                "tp2": tp2,
+                "confidence": confidence,
+                "strategy": signal_ctx.get("strategy", ""),
+            }],
+        }
+
+        # Global context
+        equity = portfolio_ctx.get("equity", 0)
+        global_ctx = {
+            "equity": equity,
+            "eq": equity,
+            "daily_pnl": portfolio_ctx.get("daily_pnl", 0),
+            "open_count": portfolio_ctx.get("open_positions_count", 0),
+        }
+
+        # Positions
+        positions = portfolio_ctx.get("open_positions", {})
+
+        # Build snapshot
+        snapshot = {
+            "m": [market_entry],
+            "g": global_ctx,
+            "pos": positions,
+            "signals": market_entry["sigs"],
+            # Pass through raw context for enrichment modules
+            "_llm_first_signal": signal_ctx,
+            "_llm_first_market": market_ctx,
+            "_llm_first_portfolio": portfolio_ctx,
+        }
+
+        # Pass through OHLCV data for technicals enrichment
+        ohlcv_1h = market_ctx.get("ohlcv_1h")
+        ohlcv_5m = market_ctx.get("ohlcv_5m")
+        if ohlcv_1h is not None:
+            snapshot["ohlcv_1h"] = ohlcv_1h
+            snapshot["ohlcv_by_symbol_1h"] = {symbol: ohlcv_1h}
+        if ohlcv_5m is not None:
+            snapshot["ohlcv_5m"] = ohlcv_5m
+            snapshot["ohlcv_by_symbol_5m"] = {symbol: ohlcv_5m}
+
+        # Signal metadata for agents (what mechanical gates used to check)
+        signal_meta = {
+            "chop_score": signal_ctx.get("chop_score", 0),
+            "chop_score_smoothed": signal_ctx.get("chop_score_smoothed", 0),
+            "win_prob": signal_ctx.get("win_prob"),
+            "ev_per_dollar": signal_ctx.get("ev_per_dollar"),
+            "fee_drag_pct": signal_ctx.get("fee_drag_pct"),
+            "rr_tp1": signal_ctx.get("rr_tp1", 0),
+            "rr_tp2": signal_ctx.get("rr_tp2", 0),
+            "stop_width_pct": signal_ctx.get("stop_width_pct", 0),
+            "num_agree": signal_ctx.get("num_agree", 1),
+            "strategies_agree": signal_ctx.get("strategies_agree", []),
+            "quality_multiplier": signal_ctx.get("quality_multiplier"),
+            "regime_1h": signal_ctx.get("regime_1h", "unknown"),
+            "regime_4h": signal_ctx.get("regime_4h", "unknown"),
+            "regime_4h_aligned": signal_ctx.get("regime_4h_aligned", True),
+            "mechanical_confidence_floor": signal_ctx.get("mechanical_confidence_floor"),
+            "would_pass_confidence_floor": signal_ctx.get("would_pass_confidence_floor"),
+            "graduated_rules_advisory": signal_ctx.get("graduated_rules_advisory"),
+            # Market context
+            "funding_rate": market_ctx.get("funding_rate"),
+            "volume_ratio": market_ctx.get("volume_ratio", 1.0),
+            "time_utc_hour": market_ctx.get("time_utc_hour"),
+            "btc_trend": market_ctx.get("btc_trend", 0),
+            "signal_age_s": market_ctx.get("signal_age", 0),
+            # Portfolio context
+            "portfolio_correlation": portfolio_ctx.get("correlation_matrix"),
+            "circuit_breaker_proximity": portfolio_ctx.get("circuit_breaker_proximity"),
+        }
+        snapshot["signal_metadata"] = signal_meta
+
+        return snapshot
 
     def get_post_trade_lesson(
         self,

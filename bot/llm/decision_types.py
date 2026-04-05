@@ -196,6 +196,55 @@ class LLMDecision:
         )
 
 
+@dataclass
+class EntryDecision:
+    """LLM-first entry decision — replaces 47 mechanical gates.
+
+    Returned by AgentCoordinator.get_entry_decision() when LLM_FIRST_MODE
+    is active. Contains everything needed for trade execution: action,
+    sizing, leverage, regime classification, and reasoning.
+    """
+    action: str                  # "go" or "skip"
+    leverage: float = 1.0        # LLM-decided leverage (bounded by post-LLM caps)
+    risk_pct: float = 0.0        # % of equity to risk (0.0-1.0)
+    position_qty: float = 0.0    # Computed qty from risk_pct + leverage
+    regime: str = "unknown"      # Regime classification
+    thesis: str = ""             # Trade thesis (why go/skip)
+    confidence: float = 0.0      # 0.0-1.0 consensus confidence
+    sizing_rationale: str = ""   # Why this size
+    risk_flags: List[str] = field(default_factory=list)
+    debate_summary: str = ""     # Bull vs bear synthesis
+    stop_adjustment: Optional[float] = None   # LLM-suggested SL adjustment
+    tp1_adjustment: Optional[float] = None    # LLM-suggested TP1 adjustment
+    size_multiplier: float = 1.0              # For compatibility with LLMDecision consumers
+    notes: str = ""              # Combined agent notes
+    memory_update: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "action": self.action,
+            "leverage": self.leverage,
+            "risk_pct": self.risk_pct,
+            "position_qty": self.position_qty,
+            "regime": self.regime,
+            "thesis": self.thesis,
+            "confidence": self.confidence,
+            "sizing_rationale": self.sizing_rationale,
+            "risk_flags": self.risk_flags,
+            "debate_summary": self.debate_summary,
+            "stop_adjustment": self.stop_adjustment,
+            "tp1_adjustment": self.tp1_adjustment,
+            "size_multiplier": self.size_multiplier,
+            "notes": self.notes,
+            "memory_update": self.memory_update,
+        }
+
+    @classmethod
+    def skip(cls, reason: str) -> "EntryDecision":
+        """Factory for a skip decision."""
+        return cls(action="skip", thesis=reason, notes=reason)
+
+
 # ── Snapshot types (what the LLM receives) ───────────────────────
 
 @dataclass

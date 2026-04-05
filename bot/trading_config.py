@@ -597,6 +597,22 @@ class TradingConfig:
         default_factory=lambda: _env_bool("SOFT_FILTER_LEARNING", True)
     )  # Enable filter accuracy feedback loop
 
+    # ── LLM-First Architecture ──
+    # When enabled, signals pass through SafetyFilterChain (5 gates) then go
+    # directly to the LLM multi-agent pipeline. The LLM handles ALL quality
+    # and sizing decisions, replacing 47 mechanical gates.
+    # Requires: LLM_MODE >= 3 (SIZING) and LLM_MULTI_AGENT=true.
+    # When disabled or LLM unavailable: falls back to legacy RiskFilterChain.
+    llm_first_mode: bool = field(
+        default_factory=lambda: _env_bool("LLM_FIRST_MODE", False)
+    )
+    # Dual-track mode: run BOTH paths and log divergence for validation.
+    # Does not change trade execution — uses legacy path but logs what
+    # LLM-first would have done differently.
+    llm_first_dual_track: bool = field(
+        default_factory=lambda: _env_bool("LLM_FIRST_DUAL_TRACK", False)
+    )
+
     # ── Quant Rules (proven statistical edges hardcoded into pipeline) ──
     # Each rule is individually toggleable. Applied BEFORE the risk multiplier chain
     # as confidence boosts, so they compound with existing sizing logic.
