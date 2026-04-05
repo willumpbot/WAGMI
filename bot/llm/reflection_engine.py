@@ -719,6 +719,59 @@ class ReflectionEngine:
         except Exception as e:
             logger.warning(f"[REFLECT] Summary save failed: {e}")
 
+    def get_summary_for_agents(self, symbols: List[str] = None) -> Optional[str]:
+        """Get compact reflection summary for LLM agent context.
+
+        Returns a string like:
+        'REFLECTION: SOL exhaustion=72%(HIGH) reentry#2 | BTC exhaustion=30%(LOW) CLEAN'
+        Or None if no data.
+        """
+        try:
+            parts = []
+
+            # Get exhaustion data for tracked symbols
+            tracked = symbols or list(self.exhaustion_detector._daily_high.keys())
+            for sym in tracked[:5]:  # Cap at 5 symbols
+                high = self.exhaustion_detector._daily_high.get(sym, 0)
+                low = self.exhaustion_detector._daily_low.get(sym, 0)
+                if high <= 0 or low <= 0:
+                    continue
+                range_pct = self.exhaustion_detector.get_daily_range_pct(sym)
+                level = "HIGH" if range_pct > 4.0 else "MED" if range_pct > 2.0 else "LOW"
+
+                # Re-entry sequences
+                seq_info = ""
+                for side in ["BUY", "SELL"]:
+                    seq = self.reentry_tracker.get_sequence_stats(sym, side)
+                    count = seq.get("entry_count", 0)
+                    if count > 1:
+                        cum = seq.get("cumulative_pnl", 0)
+                        seq_info += f" reentry#{count}({side[:1]})=${cum:+.1f}"
+
+                parts.append(f"{sym} range={range_pct:.1f}%({level}){seq_info}")
+
+            # Recent session quality
+            if self._session_reflections:
+                recent = self._session_reflections[-10:]
+                wins = sum(1 for r in recent if r.pnl > 0)
+                losses = len(recent) - wins
+                codes = []
+                for r in recent:
+                    codes.extend(r.codes)
+                # Most frequent warning codes
+                if codes:
+                    from collections import Counter
+                    top_codes = Counter(codes).most_common(3)
+                    code_str = " ".join(f"{c}={n}" for c, n in top_codes)
+                    parts.append(f"last{len(recent)}: {wins}W/{losses}L codes=[{code_str}]")
+
+            if not parts:
+                return None
+            return "REFLECTION: " + " | ".join(parts)
+        except Exception as e:
+            logger.debug(f"Reflection summary failed: {e}")
+            return None
+
     def get_entry_quality_score(self, symbol: str, side: str,
                                 entry_price: float, confidence: float,
                                 regime: str, atr: float = 0,

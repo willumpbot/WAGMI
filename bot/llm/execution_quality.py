@@ -338,3 +338,74 @@ def get_execution_quality_tracker() -> ExecutionQualityTracker:
     if _global_tracker is None:
         _global_tracker = ExecutionQualityTracker()
     return _global_tracker
+
+
+def get_execution_quality_summary() -> Optional[str]:
+    """Get compact execution quality summary for LLM agent context.
+
+    Returns a one-line string like:
+    'EXEC: avg_slip=0.023% median=0.015% | WR=65% | 42 fills | slippage_ate_profit=2'
+    Or None if no data.
+    """
+    try:
+        tracker = get_execution_quality_tracker()
+        if not tracker.recent_trades:
+            # Fallback: try reading execution_analytics.csv
+            csv_path = os.path.join("data", "execution_analytics.csv")
+            if os.path.exists(csv_path):
+                return _summarize_csv(csv_path)
+            return None
+
+        tracker._update_stats()
+        stats = tracker.stats
+        n = stats["total_trades"]
+        if n == 0:
+            return None
+
+        wins = stats["profitable_trades"]
+        wr = wins / max(n, 1)
+        avg_slip = stats["avg_slippage_entry_pct"]
+        avg_exit_slip = stats["avg_slippage_exit_pct"]
+        ate_profit = stats["slippage_ate_profit_count"]
+        avg_pnl = stats["avg_actual_pnl"]
+
+        # Median entry slippage
+        slippages = sorted(t.slippage_entry_pct for t in tracker.recent_trades[-100:])
+        median_slip = slippages[len(slippages) // 2] if slippages else 0
+
+        return (
+            f"EXEC: avg_slip={avg_slip:.3f}% median={median_slip:.3f}% "
+            f"exit_slip={avg_exit_slip:.3f}% | WR={wr:.0%} avg_pnl=${avg_pnl:+.2f} | "
+            f"{n} fills | slippage_ate_profit={ate_profit}"
+        )
+    except Exception as e:
+        logger.debug(f"Execution quality summary failed: {e}")
+        return None
+
+
+def _summarize_csv(csv_path: str) -> Optional[str]:
+    """Summarize execution_analytics.csv as fallback."""
+    try:
+        import csv as csv_mod
+        slippages = []
+        with open(csv_path, "r") as f:
+            reader = csv_mod.DictReader(f)
+            for row in reader:
+                slip = row.get("slippage_bps") or row.get("slippage_pct") or row.get("slippage")
+                if slip:
+                    try:
+                        slippages.append(float(slip))
+                    except (ValueError, TypeError):
+                        pass
+        if not slippages:
+            return None
+        avg = sum(slippages) / len(slippages)
+        slippages.sort()
+        median = slippages[len(slippages) // 2]
+        worst = max(slippages)
+        return (
+            f"EXEC: avg_slip={avg:.1f}bps median={median:.1f}bps "
+            f"worst={worst:.1f}bps | {len(slippages)} fills"
+        )
+    except Exception:
+        return None

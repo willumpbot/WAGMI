@@ -152,6 +152,27 @@ try:
 except ImportError:
     _BACKGROUND_THINKER_AVAILABLE = False
 
+# GAP 1: Execution quality / slippage tracking
+try:
+    from llm.execution_quality import get_execution_quality_summary
+    _HAS_EXEC_QUALITY = True
+except ImportError:
+    _HAS_EXEC_QUALITY = False
+
+# GAP 2: Reflection engine (move exhaustion, re-entry tracking, trade quality)
+try:
+    from llm.reflection_engine import ReflectionEngine
+    _HAS_REFLECTION = True
+except ImportError:
+    _HAS_REFLECTION = False
+
+# GAP 3: ML/RL predictions (direction model, win probability)
+try:
+    from ml.learner import SignalLearner
+    _HAS_ML_LEARNER = True
+except ImportError:
+    _HAS_ML_LEARNER = False
+
 # Pre-trade simulator (scenario analysis before Trade Agent)
 try:
     from llm.agents.pre_trade_simulator import PreTradeSimulator
@@ -387,6 +408,56 @@ class AgentCoordinator:
                     enriched_parts.append(journal_text)
             except Exception as e:
                 logger.debug("[MULTI-AGENT] Background thinker enrichment failed: %s", e)
+
+        # GAP 1: Execution quality / slippage metrics
+        if _HAS_EXEC_QUALITY:
+            try:
+                eq_summary = get_execution_quality_summary()
+                if eq_summary:
+                    enriched_parts.append(eq_summary)
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Execution quality enrichment failed: %s", e)
+
+        # GAP 2: Reflection engine (move exhaustion, re-entry patterns, trade quality)
+        if _HAS_REFLECTION:
+            try:
+                if not hasattr(self, '_reflection_engine') or self._reflection_engine is None:
+                    self._reflection_engine = ReflectionEngine()
+                refl_summary = self._reflection_engine.get_summary_for_agents()
+                if refl_summary:
+                    enriched_parts.append(refl_summary)
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Reflection engine enrichment failed: %s", e)
+
+        # GAP 3: ML/RL predictions (direction probability, strategy win rates)
+        try:
+            _ml_data = snapshot_data.get("g", {}).get("ml", {})
+            if _ml_data:
+                ml_parts = []
+                # Direction model prediction
+                if "direction_prob" in _ml_data:
+                    dp = _ml_data["direction_prob"]
+                    direction = "LONG" if dp > 0.5 else "SHORT"
+                    ml_parts.append(f"dir_prob={dp:.2f}({direction})")
+                # Strategy win rates from ML
+                if "strategy_win_rates" in _ml_data:
+                    wr_str = " ".join(
+                        f"{k}={v:.0%}" for k, v in _ml_data["strategy_win_rates"].items()
+                    )
+                    ml_parts.append(f"strat_WR=[{wr_str}]")
+                # Strategy weight recommendations
+                if "strategy_weights" in _ml_data:
+                    sw_str = " ".join(
+                        f"{k}={v:.2f}" for k, v in _ml_data["strategy_weights"].items()
+                    )
+                    ml_parts.append(f"ML_weights=[{sw_str}]")
+                # Snapshot model sample count
+                if "snapshot_model_samples" in _ml_data:
+                    ml_parts.append(f"snap_samples={_ml_data['snapshot_model_samples']}")
+                if ml_parts:
+                    enriched_parts.append("ML: " + " | ".join(ml_parts))
+        except Exception as e:
+            logger.debug("[MULTI-AGENT] ML predictions enrichment failed: %s", e)
 
         # Network learning: inject accumulated lessons from past trades
         try:
