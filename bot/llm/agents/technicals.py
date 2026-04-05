@@ -408,11 +408,11 @@ def _fmt_price(val: float) -> str:
         return f"${val:.4f}"
 
 
-def format_technicals_for_agent(technicals: Dict[str, Any], symbol: str = "") -> str:
+def format_technicals_for_agent(technicals: Dict[str, Any], symbol: str = "", timeframe: str = "1h") -> str:
     """Format technicals as compact text for agent context (~100 tokens).
 
     Example output:
-    TECH BTC: RSI=47 ADX=64(STRONG_TREND) MACD=+42(bull) BB=inside(w=1.2%)
+    TECH BTC 1h: RSI=47 ADX=64(STRONG_TREND) MACD=+42(bull) BB=inside(w=1.2%)
     ATR=315(0.47%) EMA9>EMA20>EMA50(bull_aligned) MFI=52 VWAP=$66.8k(below)
     """
     if not technicals:
@@ -422,7 +422,7 @@ def format_technicals_for_agent(technicals: Dict[str, Any], symbol: str = "") ->
 
     # Header
     label = symbol.replace("/USDT:USDT", "").replace("/USDT", "").replace("USDT", "") if symbol else ""
-    header = f"TECH {label}:" if label else "TECH:"
+    header = f"TECH {label} {timeframe}:" if label else f"TECH {timeframe}:"
     parts.append(header)
 
     # RSI

@@ -262,7 +262,13 @@ class AgentCoordinator:
         # Technical indicators (needs ohlcv_1h in snapshot)
         if _TECHNICALS_AVAILABLE:
             try:
-                _ohlcv = snapshot_data.get("ohlcv_1h")
+                # Prefer per-symbol OHLCV matching the enrichment symbol
+                _ohlcv = None
+                _ohlcv_all = snapshot_data.get("ohlcv_by_symbol_1h", {})
+                if _enrich_symbol and _ohlcv_all.get(_enrich_symbol):
+                    _ohlcv = _ohlcv_all[_enrich_symbol]
+                if not _ohlcv:
+                    _ohlcv = snapshot_data.get("ohlcv_1h")
                 if _ohlcv:
                     techs = compute_all_technicals(_ohlcv)
                     if techs:
@@ -271,6 +277,25 @@ class AgentCoordinator:
                             enriched_parts.append(tech_text)
             except Exception as e:
                 logger.debug("[MULTI-AGENT] Technicals enrichment failed: %s", e)
+
+            # 5m micro-structure technicals (shorter-term signals)
+            try:
+                _ohlcv_5m = None
+                _ohlcv_5m_all = snapshot_data.get("ohlcv_by_symbol_5m", {})
+                if _enrich_symbol and _ohlcv_5m_all.get(_enrich_symbol):
+                    _ohlcv_5m = _ohlcv_5m_all[_enrich_symbol]
+                if not _ohlcv_5m:
+                    _ohlcv_5m = snapshot_data.get("ohlcv_5m")
+                if _ohlcv_5m:
+                    techs_5m = compute_all_technicals(_ohlcv_5m)
+                    if techs_5m:
+                        tech_text_5m = format_technicals_for_agent(
+                            techs_5m, _enrich_symbol, timeframe="5m"
+                        )
+                        if tech_text_5m:
+                            enriched_parts.append(tech_text_5m)
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] 5m technicals enrichment failed: %s", e)
 
         # External data (funding, OI, liquidation) — formatted text
         if _EXTERNAL_DATA_AVAILABLE:
