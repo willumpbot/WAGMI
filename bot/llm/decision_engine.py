@@ -389,6 +389,36 @@ def get_trading_decision(
 
             # The snapshot_json is compact JSON — parse to dict for agents
             snapshot_data = json.loads(snapshot_json)
+
+            # Inject OHLCV data for technical indicator computation.
+            # OHLCV is NOT in snapshot_json (would bloat monolithic prompt)
+            # but the coordinator's technicals.py needs it for RSI, MACD, etc.
+            if global_context and global_context.extra:
+                _ohlcv_1h_all = global_context.extra.get("ohlcv_by_symbol_1h")
+                if _ohlcv_1h_all:
+                    snapshot_data["ohlcv_by_symbol_1h"] = _ohlcv_1h_all
+                    # Set primary symbol's data for backward compatibility
+                    _primary = ""
+                    _markets = snapshot_data.get("m", [])
+                    if _markets:
+                        _primary = _markets[0].get("s", "")
+                    if _primary and _primary in _ohlcv_1h_all:
+                        snapshot_data["ohlcv_1h"] = _ohlcv_1h_all[_primary]
+                    elif _ohlcv_1h_all:
+                        snapshot_data["ohlcv_1h"] = next(iter(_ohlcv_1h_all.values()))
+
+                _ohlcv_5m_all = global_context.extra.get("ohlcv_by_symbol_5m")
+                if _ohlcv_5m_all:
+                    snapshot_data["ohlcv_by_symbol_5m"] = _ohlcv_5m_all
+                    _primary = ""
+                    _markets = snapshot_data.get("m", [])
+                    if _markets:
+                        _primary = _markets[0].get("s", "")
+                    if _primary and _primary in _ohlcv_5m_all:
+                        snapshot_data["ohlcv_5m"] = _ohlcv_5m_all[_primary]
+                    elif _ohlcv_5m_all:
+                        snapshot_data["ohlcv_5m"] = next(iter(_ohlcv_5m_all.values()))
+
             decision = coordinator.get_trading_decision(
                 snapshot_data=snapshot_data,
                 trigger_reason=trigger_reason,

@@ -654,40 +654,6 @@ def _to_compact_dict(snapshot: LLMInputSnapshot) -> dict:
         if funding_notes:
             result["funding_alert"] = " | ".join(funding_notes)
 
-    # ── OHLCV data pass-through for technical indicator computation ──
-    # The coordinator's technicals.py computes RSI, MACD, ADX, BB, etc.
-    # from raw OHLCV. We pass per-symbol data so the coordinator can pick
-    # the right symbol's candles. Also set ohlcv_1h to the primary market's
-    # data for backward compatibility.
-    if g and g.extra:
-        _ohlcv_1h_all = g.extra.get("ohlcv_by_symbol_1h")
-        if _ohlcv_1h_all:
-            result["ohlcv_by_symbol_1h"] = _ohlcv_1h_all
-            # Set top-level ohlcv_1h to the first market's data (primary symbol)
-            _primary_sym = ""
-            if result.get("m"):
-                _primary_sym = result["m"][0].get("s", "")
-            if _primary_sym and _primary_sym in _ohlcv_1h_all:
-                result["ohlcv_1h"] = _ohlcv_1h_all[_primary_sym]
-            else:
-                # Fallback: use first available symbol's data
-                _first_key = next(iter(_ohlcv_1h_all), None)
-                if _first_key:
-                    result["ohlcv_1h"] = _ohlcv_1h_all[_first_key]
-
-        _ohlcv_5m_all = g.extra.get("ohlcv_by_symbol_5m")
-        if _ohlcv_5m_all:
-            result["ohlcv_by_symbol_5m"] = _ohlcv_5m_all
-            _primary_sym = ""
-            if result.get("m"):
-                _primary_sym = result["m"][0].get("s", "")
-            if _primary_sym and _primary_sym in _ohlcv_5m_all:
-                result["ohlcv_5m"] = _ohlcv_5m_all[_primary_sym]
-            else:
-                _first_key = next(iter(_ohlcv_5m_all), None)
-                if _first_key:
-                    result["ohlcv_5m"] = _ohlcv_5m_all[_first_key]
-
     return result
 
 
