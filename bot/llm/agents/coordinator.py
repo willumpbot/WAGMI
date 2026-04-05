@@ -346,9 +346,8 @@ class AgentCoordinator:
                 _net_summary = _perf_tracker.format_network_summary()
                 if _net_summary:
                     enriched_parts.append(_net_summary)
-                # Store tracker reference in snapshot for per-agent injection later
-                # Note: stored as non-serializable ref — consumers must handle gracefully
-                snapshot_data["_perf_tracker"] = _perf_tracker
+                # Store tracker reference on self (not in snapshot_data which gets JSON-serialized)
+                self._perf_tracker_ref = _perf_tracker
                 snapshot_data["_perf_tracker_summary"] = _net_summary or ""
             except Exception as e:
                 logger.debug("[MULTI-AGENT] Agent performance enrichment failed: %s", e)
@@ -2049,7 +2048,7 @@ class AgentCoordinator:
             quant_data["enriched"] = snapshot["enriched_context"]
 
         # Per-agent self-performance stats for the Quant Agent
-        _pt = snapshot.get("_perf_tracker")
+        _pt = getattr(self, '_perf_tracker_ref', None)
         if _pt:
             try:
                 _self_perf_text = _pt.format_for_agent("quant")
@@ -2154,7 +2153,7 @@ class AgentCoordinator:
             regime_data["enriched"] = snapshot["enriched_context"]
 
         # Per-agent self-performance stats for the Regime Agent
-        _pt = snapshot.get("_perf_tracker")
+        _pt = getattr(self, '_perf_tracker_ref', None)
         if _pt:
             try:
                 _self_perf_text = _pt.format_for_agent("regime")
@@ -2311,7 +2310,7 @@ class AgentCoordinator:
             trade_data["enriched"] = trade_data.pop("enriched_context")
 
         # Per-agent self-performance stats for the Trade Agent
-        _pt = snapshot.get("_perf_tracker")
+        _pt = getattr(self, '_perf_tracker_ref', None)
         if _pt:
             try:
                 _self_perf_text = _pt.format_for_agent("trade")
@@ -2427,7 +2426,7 @@ class AgentCoordinator:
             risk_data["enriched"] = snapshot["enriched_context"]
 
         # Per-agent self-performance stats for the Risk Agent
-        _pt = snapshot.get("_perf_tracker")
+        _pt = getattr(self, '_perf_tracker_ref', None)
         if _pt:
             try:
                 _self_perf_text = _pt.format_for_agent("risk")
@@ -2516,7 +2515,7 @@ class AgentCoordinator:
             critic_data["enriched"] = snapshot["enriched_context"]
 
         # Per-agent self-performance stats for the Critic Agent
-        _pt = snapshot.get("_perf_tracker")
+        _pt = getattr(self, '_perf_tracker_ref', None)
         if _pt:
             try:
                 _self_perf_text = _pt.format_for_agent("critic")

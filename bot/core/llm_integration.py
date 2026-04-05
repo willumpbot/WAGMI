@@ -168,6 +168,9 @@ class LLMIntegrationMixin:
         btc_1h = 0.0
         btc_24h = 0.0
         eth_price = 0.0
+        # Collect OHLCV data per-symbol for LLM technical analysis
+        _ohlcv_by_symbol_1h = {}
+        _ohlcv_by_symbol_5m = {}
         # ETH isn't in DEFAULT_SYMBOLS but we need its price for ETH/BTC ratio context
         try:
             eth_price = self.fetcher.latest_price("ETH", "ethereum") or 0.0
@@ -220,6 +223,46 @@ class LLMIntegrationMixin:
                 if symbol == "BTC":
                     btc_1h = pchange_1h
                     btc_24h = pchange_24h
+
+            # Extract OHLCV candles for LLM technical analysis
+            # Last 50 candles of 1h data → list of [timestamp, open, high, low, close, volume]
+            try:
+                if df_1h is not None and not df_1h.empty and len(df_1h) >= 30:
+                    _ohlcv_rows = []
+                    for _idx, _row in df_1h.tail(50).iterrows():
+                        _ts = int(_idx.timestamp() * 1000) if hasattr(_idx, 'timestamp') else 0
+                        _ohlcv_rows.append([
+                            _ts,
+                            float(_row.get('open', 0)),
+                            float(_row.get('high', 0)),
+                            float(_row.get('low', 0)),
+                            float(_row.get('close', 0)),
+                            float(_row.get('volume', 0)),
+                        ])
+                    if _ohlcv_rows:
+                        _ohlcv_by_symbol_1h[symbol] = _ohlcv_rows
+            except Exception:
+                pass  # Non-critical: technicals enrichment is best-effort
+
+            # 5m data for micro-structure (last 50 candles)
+            try:
+                df_5m = data.get("5m")
+                if df_5m is not None and not df_5m.empty and len(df_5m) >= 30:
+                    _ohlcv_5m_rows = []
+                    for _idx, _row in df_5m.tail(50).iterrows():
+                        _ts = int(_idx.timestamp() * 1000) if hasattr(_idx, 'timestamp') else 0
+                        _ohlcv_5m_rows.append([
+                            _ts,
+                            float(_row.get('open', 0)),
+                            float(_row.get('high', 0)),
+                            float(_row.get('low', 0)),
+                            float(_row.get('close', 0)),
+                            float(_row.get('volume', 0)),
+                        ])
+                    if _ohlcv_5m_rows:
+                        _ohlcv_by_symbol_5m[symbol] = _ohlcv_5m_rows
+            except Exception:
+                pass  # Non-critical
 
             # Get strategy signals from ensemble (uses cached evaluations)
             signals = []
@@ -359,6 +402,12 @@ class LLMIntegrationMixin:
             "sector_activity": _gb_ctx.get("sectors_active", {}),
             "net_funding": _gb_ctx.get("net_funding", 0.0),
         }
+
+        # Inject OHLCV data for LLM technical indicator computation
+        if _ohlcv_by_symbol_1h:
+            global_ctx.extra["ohlcv_by_symbol_1h"] = _ohlcv_by_symbol_1h
+        if _ohlcv_by_symbol_5m:
+            global_ctx.extra["ohlcv_by_symbol_5m"] = _ohlcv_by_symbol_5m
 
         # ML Intelligence: inject model predictions into LLM context
         # so agents can see direction probability, win probability, and strategy weights

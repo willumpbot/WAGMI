@@ -399,24 +399,25 @@ class ActiveLearningEngine:
                 "rollback_info": f"Set {regime} regime sizing multiplier back to 1.0",
             }
 
-        # Pattern: Symbol consistently losing
+        # Pattern: Symbol consistently losing (only if the weakness is about this symbol)
         for cause in root_causes:
             if "_consistent_loser" in cause:
                 sym = cause.replace("_consistent_loser", "")
-                return {
-                    "weakness": weakness,
-                    "hypothesis": f"Add cooldown for {sym}: skip next signal after a loss",
-                    "expected_improvement": f"Reduce {sym} loss streaks",
-                    "test_method": f"Next {MIN_TRADES_FOR_VALIDATION} {sym} trades: compare WR",
-                    "risk": "Miss recovery trades",
-                    "confidence": 0.5,
-                    "priority": "medium",
-                    "priority_score": 6,
-                    "change_type": "prompt_addition",
-                    "parameter": {"target": "trade_agent", "symbol": sym,
-                                  "rule": f"After a {sym} loss, require higher confluence (3+ agree) for re-entry"},
-                    "rollback_info": f"Remove {sym} cooldown rule from trade agent",
-                }
+                if sym.lower() in w:
+                    return {
+                        "weakness": weakness,
+                        "hypothesis": f"Add cooldown for {sym}: skip next signal after a loss",
+                        "expected_improvement": f"Reduce {sym} loss streaks",
+                        "test_method": f"Next {MIN_TRADES_FOR_VALIDATION} {sym} trades: compare WR",
+                        "risk": "Miss recovery trades",
+                        "confidence": 0.5,
+                        "priority": "medium",
+                        "priority_score": 6,
+                        "change_type": "prompt_addition",
+                        "parameter": {"target": "trade_agent", "symbol": sym,
+                                      "rule": f"After a {sym} loss, require higher confluence (3+ agree) for re-entry"},
+                        "rollback_info": f"Remove {sym} cooldown rule from trade agent",
+                    }
 
         # Pattern: Directional weakness
         if "trades:" in w and "wr" in w:
