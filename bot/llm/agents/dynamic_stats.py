@@ -119,7 +119,7 @@ def get_current_edge_map(max_trades: int = 100) -> str:
         gross_wins = sum(t["pnl"] for t in group if t["pnl"] > 0)
         gross_losses = abs(sum(t["pnl"] for t in group if t["pnl"] < 0))
         pf = (gross_wins / gross_losses) if gross_losses > 0 else float("inf") if gross_wins > 0 else 0
-        pf_str = f"PF {pf:.2f}" if pf < 100 else "PF ∞"
+        pf_str = f"PF {pf:.2f}" if pf < 100 else "PF INF"
 
         label = _wr_label(wr, n)
         lines.append(

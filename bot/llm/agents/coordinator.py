@@ -670,17 +670,39 @@ class AgentCoordinator:
                 risk_out = None  # Degrade gracefully
 
         # ── Step 4: Critic Agent (optional) ─────────────────────
+        # High-stakes trades get structured debate (Critic R1 without
+        # confidence to prevent anchoring + Trade rebuttal round).
+        # Non-high-stakes trades use the cheaper simple Critic call.
         critic_out = None
+        _structured_debate_result = None
         if self.configs.get(AgentRole.CRITIC, AgentConfig(role=AgentRole.CRITIC)).enabled:
-            critic_input = self._build_critic_input(
-                snapshot_data, regime_out, trade_out, risk_out
-            )
-            critic_out = self._call_agent(
-                AgentRole.CRITIC, critic_input, model_for_trigger
-            )
+            _high_stakes = self._is_high_stakes_trade(trade_out, risk_out, snapshot_data)
+
+            if _high_stakes:
+                # ── Structured Debate (2-round, de-anchored) ──────
+                logger.info("[MULTI-AGENT] High-stakes trade detected — running structured debate")
+                try:
+                    critic_out, _structured_debate_result = self._run_structured_debate(
+                        trade_out, regime_out, risk_out, snapshot_data, model_for_trigger
+                    )
+                except Exception as e:
+                    logger.warning("[DEBATE] Structured debate failed: %s — falling back to simple critic", e)
+                    critic_out = None
+                    _structured_debate_result = None
+
+            if critic_out is None:
+                # ── Simple Critic (non-high-stakes or debate fallback) ──
+                critic_input = self._build_critic_input(
+                    snapshot_data, regime_out, trade_out, risk_out
+                )
+                critic_out = self._call_agent(
+                    AgentRole.CRITIC, critic_input, model_for_trigger
+                )
+
             pipeline_results[AgentRole.CRITIC] = critic_out
             if not critic_out.ok:
                 critic_out = None
+                _structured_debate_result = None  # Debate result invalid without critic
                 # ── Mechanical Critic Fallback ──────────────────────
                 # Critic API failed but trade wants to proceed — apply
                 # fast mechanical checks so trades don't run unchecked.
@@ -780,7 +802,9 @@ class AgentCoordinator:
             # - Above 0.40: leave alone (may have positive EV with good R:R)
             # NOTE: Thresholds relaxed from 0.35/0.50 to 0.20/0.40 — previous
             # values killed 88% of signals as quant_noise, far too aggressive.
-            if sq.get("is_noise"):
+            # Support both old is_noise (bool) and new noise_probability (float)
+            _noise_prob = sq.get("noise_probability", 1.0 if sq.get("is_noise") else 0.0)
+            if _noise_prob > 0.6:
                 trade_conf = float(trade_out.data.get("c", 0))
                 noise_reason = sq.get("reason", "statistical noise")
                 if trade_conf < 0.20:
@@ -837,9 +861,23 @@ class AgentCoordinator:
                 logger.debug(f"[MULTI-AGENT] Brain recording error: {e}")
 
         # ── Debate: synthesize diverse agent viewpoints ───────
+        # Structured debate (from Step 4) takes top priority, then
+        # legacy interactive debate, then post-hoc debate scoring.
         debate_outcome = None
         interactive_debate_outcome = None
-        if _EXTENSIONS_AVAILABLE:
+
+        # If structured debate already ran in Step 4, use its result
+        if _structured_debate_result and _structured_debate_result.get("debate_occurred"):
+            interactive_debate_outcome = _structured_debate_result
+            scratchpad.write("debate", "structured_debate", _structured_debate_result)
+            logger.info(
+                "[DEBATE] Using structured debate result: winner=%s adj=%+.1f%%",
+                _structured_debate_result.get("winner", "?"),
+                _structured_debate_result.get("confidence_adjustment", 0) * 100,
+            )
+
+        # Otherwise fall back to legacy debate pipeline
+        if not interactive_debate_outcome and _EXTENSIONS_AVAILABLE:
             try:
                 _agent_data = {
                     "regime": regime_out.data if regime_out.ok else {},
@@ -851,7 +889,7 @@ class AgentCoordinator:
                 if _markets and isinstance(_markets[0], dict):
                     _sym = _markets[0].get("s", _markets[0].get("sym", ""))
 
-                # Try interactive debate first (2-round, real LLM calls)
+                # Try interactive debate (env-gated, 2-round, real LLM calls)
                 if trade_out.ok and critic_out and critic_out.ok:
                     _risk_data = risk_out.data if risk_out and risk_out.ok else {}
                     interactive_debate_outcome = run_interactive_debate_if_enabled(
@@ -2826,12 +2864,27 @@ class AgentCoordinator:
 
         r1_prompt = CRITIC_ROUND1_PROMPT.format(**r1_input)
 
+        # Build a full critic context (for downstream compatibility) but
+        # strip confidence fields so the Critic evaluates on merit alone.
+        _critic_context = self._build_critic_input(
+            snapshot_data, regime_out, trade_out, risk_out
+        )
+        # Remove confidence from the context JSON to prevent anchoring
+        try:
+            _ctx = json.loads(_critic_context)
+            td_in_ctx = _ctx.get("trade_decision", {})
+            td_in_ctx.pop("c", None)
+            td_in_ctx.pop("confidence", None)
+            _critic_context = json.dumps(_ctx, separators=(",", ":"))
+        except Exception:
+            pass
+
         config = self.configs.get(AgentRole.CRITIC, AgentConfig(role=AgentRole.CRITIC))
         model = config.model_override or model_for_trigger or _get_default_model(AgentRole.CRITIC)
 
         raw_r1, usage_r1 = call_llm(
             system_prompt=r1_prompt,
-            snapshot_json="{}",
+            snapshot_json=_critic_context,
             model=model,
             max_tokens=config.max_tokens or 512,
             max_retries=1,

@@ -1,9 +1,11 @@
 """
-Specialist prompts for each agent role — upgraded with full quant alpha knowledge.
+Specialist prompts for each agent role.
 
-Each prompt encodes validated trading edge data from counterfactual analysis,
-backtest results, MFE/MAE studies, and live trade outcomes. Every number in
-these prompts is backed by empirical evidence, not guesswork.
+Prompts encode timeless PRINCIPLES (what to do with data) but NOT hardcoded numbers.
+Live stats (WR, PF, regime performance, calibration) are injected dynamically at
+runtime via dynamic_stats.py into the enriched context. Agents reference
+CURRENT EDGES, REGIME PERFORMANCE, STRATEGY PERFORMANCE, CALIBRATION, and
+KELLY FRACTIONS sections in their enriched data for live numbers.
 
 Core agents (9): Regime, Trade, Risk, Learning, Critic, Exit, Scout, Overseer, Quant
 Phase 3 strategic agents: Portfolio, Forecaster, Hypothesis, Correlator
@@ -216,6 +218,12 @@ Do NOT try to compensate for downstream filters — they have been removed.
 3. Hard caps: sz never below 0.3 (minimum meaningful), never above 2.0
 4. Portfolio budget: if this trade would push total exposure above 5x equity → reduce sz
 
+## SIZING TIERS (clear, non-overlapping)
+sz=0.3-0.5: Low conviction (2-agree, non-trending, or recovering from losses)
+sz=0.6-0.8: Standard conviction (2-agree in trending regime, moderate EV)
+sz=0.9-1.2: High conviction (3+ agree, trending regime, strong EV, thesis validated)
+sz=1.3-2.0: Maximum conviction (3+ agree, everything aligned, RARE -- maybe 1-2 per week)
+
 ## STRATEGY WEIGHT ABBREVIATIONS
 rt=regime_trend, cs=confidence_scorer, mq=multi_tier_quality,
 bs=bollinger_squeeze, pe=probability_engine, mr=mean_reversion,
@@ -243,7 +251,7 @@ vm=vmc_cipher, mc=monte_carlo_zones
 
 ## KELLY FROM QUANT AGENT
 - kelly<0.05: override=skip. 0.05-0.15: sz 0.5-0.8x. 0.15-0.30: sz 1.0x. 0.30-0.50: sz 1.2-1.5x. >0.50: verify then 1.5-2.0x.
-- quant.signal_quality.is_noise=true: override=skip.
+- quant.signal_quality.noise_probability>0.6: override=skip.
 - quant.risk_profile.fat_tail_risk="high": reduce sz 30%.
 
 ## STRATEGY WEIGHTS BY REGIME
@@ -742,13 +750,13 @@ OUTPUT (JSON only):
 ## CORE PRINCIPLE: VETO = COUNTER-PREDICTION
 A veto is NOT "I'm scared." A veto is a counter-thesis with evidence. If you can't form a stronger counter-thesis, APPROVE.
 
-## QUANT ALPHA — WHAT TO CATCH
-- HYPE SELL at any confidence: ALWAYS challenge (0-7% WR validated).
-- SOL BUY at RSI<20: challenge (death trap, 0% up at 6h for RSI<10).
-- BTC BUY at oversold: challenge (negative returns at all horizons when RSI<20).
-- Solo signal (<2 agree) at <80% confidence: challenge (2x worse WR than 3-agree).
-- R:R < 1.5: challenge (the biggest historical alpha leak was bad R:R geometry).
-- 6h timeframe misaligned: challenge (10% WR vs 33% when aligned).
+## WHAT TO CATCH (check CURRENT EDGES in enriched data for live WR by setup)
+- Check the setup's CURRENT WR in enriched data. If WR is TOXIC (<10% with 10+ trades), ALWAYS challenge.
+- SOL BUY at RSI<20: challenge (extreme oversold often continues down, not bounce).
+- BTC BUY at oversold: challenge (oversold BTC historically has negative returns).
+- Solo signal (<2 agree) at <80% confidence: challenge (much worse WR than multi-agree).
+- R:R < 1.5: challenge (bad R:R geometry is a major alpha leak).
+- 6h timeframe misaligned: challenge (alignment is the single most reliable filter).
 
 ## CHALLENGE POLICY
 You may challenge ANY trade, including A+ setups. If a trade is truly strong, it will survive your challenge. Your job is to stress-test, not rubber-stamp.
@@ -757,15 +765,14 @@ You may challenge ANY trade, including A+ setups. If a trade is truly strong, it
 1. **Thesis quality**: Evidence-based or hand-wavy?
 2. **Regime match**: Action matches regime? Buying in panic needs extreme evidence.
 3. **Confluence quality**: Convergent (different methodologies) or redundant?
-4. **Known edge**: Check g.edge for setup WR. wr>60% n>20 = proven. wr<45% = flag.
-5. **calibration**: Check self_perf.cal. Overconfident = reduce. Underconfident = allow.
+4. **Known edge**: Check g.edge and CURRENT EDGES for live setup WR. wr>60% n>20 = proven. wr<45% = flag.
+5. **calibration**: Check self_perf.cal and CALIBRATION section in enriched data. Overconfident = reduce.
 6. **Risk flags**: Did Trade ignore Risk Agent concerns?
 7. **Memory**: Does this setup have losing history?
 
 ## COUNTERFACTUAL AWARENESS
-- 44.5% of skipped trades would have been profitable. We're slightly over-filtering.
-- Ensemble deflation: HYPE BUY floor deflation = 0.85 (89% empirical WR).
-- multi_tier_quality muting created 40h no-signal feedback loop. Be cautious of over-blocking.
+- Historically, a significant fraction of skipped trades would have been profitable. Check self_perf for current veto accuracy.
+- Strategy muting can create no-signal feedback loops. Be cautious of over-blocking.
 
 ## VETO CALIBRATION (self_perf.vacc)
 - vacc<0.50: YOUR VETOES LOSE MONEY. Require 4+ red flags to challenge. Approve by default.
@@ -776,13 +783,10 @@ You may challenge ANY trade, including A+ setups. If a trade is truly strong, it
 ## RED FLAGS (count these)
 regime mismatch, BTC divergence, hist_WR<45%, funding>0.04%, MFI divergence, solo strategy, ML direction_prob contradicts (>0.3 gap), 6h timeframe misaligned, R:R<1.5
 
-## LIVE RESEARCH FINDINGS (Apr 2026):
-# Research finding (Apr 2026): Veto cost analysis
-- 44.5% of historically skipped trades were profitable. You are MORE LIKELY to cost money by vetoing than by approving. Default to APPROVE unless you have a specific, evidence-based counter-thesis. Every veto has an opportunity cost.
-# Research finding (Apr 2026): EV gate false rejects
-- The EV gate blocks signals with 35% win probability. But 35% WR with 3:1 payoff is POSITIVE EV (+0.40 per dollar risked). Don't reject based on WR alone — ALWAYS check the R:R. A low-WR trade with high payoff can be our best trade.
-# Research finding (Apr 2026): Veto accountability
-- Your veto accuracy needs to be tracked via self_perf.vacc. If your vetoes are losing money (blocking winners more than blocking losers), reduce veto frequency. Check vacc FIRST before deciding to challenge.
+## PRINCIPLES (timeless):
+- Default to APPROVE unless you have a specific, evidence-based counter-thesis. Every veto has an opportunity cost.
+- Low WR with high payoff can still be POSITIVE EV. Always check R:R, not WR alone. 35% WR at 3:1 payoff is profitable.
+- Track your veto accuracy via self_perf.vacc. If your vetoes lose money, reduce veto frequency. Check vacc FIRST.
 
 ## DO NOT
 - DO NOT veto without a specific counter-thesis with cited evidence.
@@ -863,15 +867,11 @@ Entry price and current PnL are IRRELEVANT. Only question: "If I had NO position
 - YES -> HOLD. Positive forward EV.
 - NO -> CLOSE or PARTIAL, regardless of up or down.
 
-## LIVE RESEARCH FINDINGS (Apr 2026):
-# Research finding (Apr 2026): MFE capture deficit
-- Winners captured only 65% of available MFE (Maximum Favorable Excursion). The trailing stop is too tight — we're leaving 35% of profit on the table. Recommend HOLDING longer when thesis is valid. Prefer action="hold" over "tighten_sl" when trade is winning.
-# Research finding (Apr 2026): Specific MFE miss example
-- One trade captured only 19% of a $280 move. If MFE > 1% and thesis intact, do NOT tighten the stop. Let the winner run. Only tighten if thesis is actually invalidated, not just because profit exists.
-# Research finding (Apr 2026): Post-TP1 trailing is counterproductive
-- After TP1 hit, the position transitions to trailing. The tighten curve reduces trail distance as price progresses. This is counterproductive for trending moves — recommend keeping trail WIDE (at least 2x ATR) after TP1 rather than progressive tightening.
-# Research finding (Apr 2026): Dynamic time stop
-- Time stop at 8h was too long for dead capital. But 2h is too short for real moves to develop. Recommend dynamic: exit if NO PROGRESS (price within 0.3% of entry) after 4h, but HOLD if making progress (price moved >0.5% favorably). Note this in reason field.
+## PRINCIPLES (timeless):
+- Winners often capture only a fraction of available MFE. Prefer action="hold" over "tighten_sl" when trade is winning and thesis is intact. Let winners run.
+- If MFE > 1% and thesis intact, do NOT tighten the stop just because profit exists. Only tighten if thesis is actually invalidated.
+- After TP1 hit, keep trail WIDE (at least 2x ATR) rather than progressive tightening. Tight trailing is counterproductive in trends.
+- Dynamic time stop: exit if NO PROGRESS (price within 0.3% of entry) after 4h, but HOLD if making progress (price moved >0.5% favorably). Note this in reason field.
 
 ## HARD RULES
 - NEVER widen SL. Only tighten.
@@ -894,13 +894,13 @@ OUTPUT (JSON only):
 {"watchlist": [{"symbol": "SOL", "priority": "high|medium|low", "setup_forming": "trend_at_zone|...", "pre_thesis": "1-line thesis", "direction": "long|short", "key_level": 24.50, "distance_pct": 1.2, "conditions_needed": "..."}], "regime_forecast": {"direction": "strengthening|stable|weakening|transitioning", "from_regime": "trend", "to_regime": null, "confidence": 0.65, "evidence": "..."}, "lead_lag_alerts": [{"leader": "BTC", "follower": "SOL", "expected_move": -3.2, "time_window_min": 45, "action": "prepare short SOL if signal fires"}], "correlation_warning": null, "risk_budget": {"available_pct": 0.45, "can_size_new_trade": true, "recommended_max_size_pct": 0.015}, "preparation_notes": "summary of what to watch next 30 min"}
 ```
 
-## QUANT ALPHA — WHAT TO WATCH
-- **HYPE BUY is the primary edge**. Always be watching for HYPE setups. Prioritize HIGH.
-- **BTC vol compression + HYPE relative strength** = pre-position for HYPE long.
-- **SOL extreme oversold** = continuation SHORT, not bounce buy. SOL RSI<10 is a death trap for longs.
-- **Cross-asset divergence**: HYPE holding while BTC dumps = bullish HYPE setup (85% up at 6h).
+## WHAT TO WATCH (check CURRENT EDGES in enriched data for live top setups)
+- Check CURRENT EDGES for which symbol+side combos currently have the strongest WR. Prioritize watching those.
+- **BTC vol compression + alt relative strength** = pre-position for breakout.
+- **SOL extreme oversold** = continuation SHORT, not bounce buy. Extreme oversold often continues down.
+- **Cross-asset divergence**: alt holding while BTC dumps = relative strength signal.
 - **Funding rates**: extreme (>0.05%/8h) = mean reversion opportunity. Flag counter-funding trades.
-- **Prime hours**: 18-06 UTC = PF 2.47. Flag upcoming prime windows.
+- **Prime hours**: 18-06 UTC historically outperforms. Flag upcoming prime windows.
 
 ## WATCHLIST PRIORITY
 - HIGH: within 1% of key level + favorable regime + lead-lag active + HYPE BUY setup
@@ -942,32 +942,29 @@ OUTPUT (JSON only):
 }
 ```
 
-## QUANT ALPHA — SYSTEM-LEVEL TRUTHS
-- System has been at low WR on live trades. Biggest risk: taking low-quality (60% conf, 1-agree) and calling it "sniper quality."
+## SYSTEM-LEVEL AWARENESS (check CURRENT EDGES, STRATEGY PERFORMANCE, CALIBRATION in enriched data)
+- Check CURRENT EDGES for live WR by symbol+side. Flag setups with decaying WR.
+- Check STRATEGY PERFORMANCE for which strategies are HOT/COLD/MUTED. Recommend disabling TOXIC strategies.
 - Quality floor: min 75% confidence, min 2-agree for any trade in aggressive mode.
 - The quant brain pre-filters before LLM calls — trust its vetoes.
-- Strategy weight auto-adapt but can over-mute (killed all signals for 40h). Watch for this.
-- 44.5% of vetoed trades were profitable — we over-filter slightly.
-- confidence_scorer strongest (0.36), regime_trend (0.32), vmc_cipher dead (0.04).
+- Strategy weight auto-adapt but can over-mute (kill all signals). Watch for feedback loops.
+- Check CALIBRATION for calibration drift. If system is overconfident, recommend adjustment.
 
 ## YOUR SUPERPOWERS
-1. **Cross-trade patterns**: You see last 20-50 trades. "SOL longs 25% WR over 15 trades — STOP."
-2. **Systematic drift**: WR dropped 62%->48%? Calibration drifted +0.12? Funding eating 30% gross PnL?
-3. **Agent quality**: Trade accuracy 58% but Critic vacc 42% = Critic HURTING profit.
-4. **Opportunity cost**: 40% signals vetoed with vacc=55% winners = leaving money on table.
+1. **Cross-trade patterns**: You see last 20-50 trades. Use CURRENT EDGES to spot setup-level decay.
+2. **Systematic drift**: Compare current WR to strategy performance. Detect calibration drift in CALIBRATION section.
+3. **Agent quality**: Trade accuracy vs Critic vacc — is the Critic helping or hurting?
+4. **Opportunity cost**: High veto rate + low vacc = leaving money on table.
 
 ## RECOMMENDATION RULES
 - Max 5 per analysis. auto_safe=true only for non-PnL-affecting changes.
 - Always include rationale with quantified impact when possible.
 - CRITICAL: actively losing now. HIGH: significant if fixed. MEDIUM: moderate. LOW: nice-to-have.
 
-## LIVE RESEARCH FINDINGS (Apr 2026):
-# Research finding (Apr 2026): Frozen parameter tuner
-- The parameter tuner is FROZEN at trust=0.2, calibration_offset=-15. This cannot self-correct — it's a deadlock. Recommend resetting calibration_offset to 0 if it's causing systematic signal rejection. Flag as priority=critical if signal pass rate drops below 5%.
-# Research finding (Apr 2026): Signal pass rate too low
-- Signal pass rate is currently 1.3%. This is too low to collect data for learning. If pass rate drops below 5%, recommend loosening gates (raise this as priority=critical recommendation). The system needs TRADES to learn from.
-# Research finding (Apr 2026): Dead weight strategies
-- 3 strategies are dead weight: vmc_cipher (5% WR, weight 0.04), sniper_premium (0% WR recent), regime_trend (20% WR, 182 signals/day spam). Recommend disabling these in strategy_adjustments.disable to reduce noise and save compute.
+## PRINCIPLES (timeless):
+- If parameter tuner is frozen (trust near 0, large calibration offset), recommend reset. Deadlocked tuners cannot self-correct.
+- If signal pass rate drops below 5%, recommend loosening gates (priority=critical). The system needs TRADES to learn from.
+- Check STRATEGY PERFORMANCE for dead-weight strategies (near-zero WR, minimal weight). Recommend disabling them to reduce noise.
 
 ## DO NOT
 - NEVER execute trades or modify positions. Only recommend.
@@ -996,31 +993,39 @@ OUTPUT (JSON only):
 }
 ```
 
-## VALIDATED CONDITIONALS — USE THESE
-- HYPE BUY + RSI 35-50 + 3-agree + trend regime: conditional WR ~71%, PF 1.95
-- HYPE BUY + 18-06 UTC: PF 2.47 vs 1.29 during 06-18
-- HYPE SELL at ANY condition: WR 0-7%. is_noise=true, confidence_adjustment=-1.0
-- SOL RSI<10: 0% up at 6h, avg -4.73% at 24h. is_noise=true for BUY.
-- BTC RSI<20: negative returns all horizons. is_noise=true for BUY.
-- BTC RSI<20 + HYPE alpha>0.5%: 100% WR at 3-6h (small n, powerful combo signal).
-- 3+ red 1h candles: 79% bounce in 6h, +1.17% avg.
-- 3-agree: 2x WR of 2-agree. Apply +15% conditional boost for 3-agree.
-- 1h+6h aligned: 33% WR. Misaligned: 10%.
-- BTC >0.5% hourly move: 73% HYPE direction accuracy. >0.8%: 77%.
+## CONDITIONAL EDGE CALCULATION (compute, don't look up)
+1. Base WR from enriched data (current rolling WR for this symbol+side)
+2. Regime adjustment: trending WR / overall WR (multiply)
+3. Confluence boost: 3+ agree -> 1.3x. 2 agree -> 1.0x. Solo -> 0.7x
+4. Time adjustment: prime hours (18-06 UTC) -> 1.15x. Dead hours (06-18 UTC) -> 0.85x
+5. Result = conditional WR for Kelly and EV calculation
+
+If the enriched data shows WR has decayed >15pp from the historical edge map,
+flag signal_quality as "decaying_edge" and reduce EV accordingly.
+
+## HARD VETOES (check CURRENT EDGES for live data; these are structural)
+- Check CURRENT EDGES for any setup marked TOXIC. Set noise_probability=1.0, confidence_adjustment=-1.0.
+- SOL RSI<10 BUY: noise_probability=0.95 (extreme oversold continues down, not bounces)
+- BTC RSI<20 BUY: noise_probability=0.90 (oversold BTC has negative returns structurally)
+- BTC RSI<20 + HYPE alpha>0.5%: exception — cross-asset combo signal (small n, powerful)
+
+## NOISE PROBABILITY SCALE
+0.0 = pristine signal, 0.3 = minor concerns, 0.6 = likely noise, 0.9 = almost certainly noise
 
 ## EV CALCULATION
 EV = (WR x avg_win) - ((1-WR) x avg_loss) - costs
 - Costs = funding * hold_time * leverage + entry/exit fees (0.07% round-trip)
-- If EV < 0 after costs: is_noise=true regardless of how good it looks.
+- If EV < 0 after costs: noise_probability=0.9 regardless of how good it looks.
 
 ## KELLY CRITERION
 kelly = (conditional_wr x avg_win_ratio - (1-conditional_wr)) / avg_win_ratio
 - Output HALF Kelly. kelly<0.05: skip. 0.05-0.15: small. 0.15-0.30: standard. 0.30-0.50: size up. >0.50: verify inputs.
 - Half Kelly at 58% WR / 1.5 R:R = optimal 5x leverage.
 
-## NOISE DETECTION
-Red flags: solo strategy, volume below avg, strategy poor in regime, contradicts BTC, tiny price move.
-Green flags: convergent confluence, volume confirms, WR>60% n>15, BTC aligned, regime conf>0.80.
+## NOISE DETECTION (probabilistic, not binary)
+Increase noise_probability by +0.15 for each: solo strategy, volume below avg, strategy poor in regime, contradicts BTC, tiny price move.
+Decrease noise_probability by -0.15 for each: convergent confluence, volume confirms, WR>60% n>15, BTC aligned, regime conf>0.80.
+Floor at 0.0, cap at 1.0.
 
 ## FAT TAILS
 Crypto = Student-t df=3-5. "3-sigma" events happen 5-10x more than Gaussian predicts. In panic/high_vol: fat_tail_risk="high", double max_adverse estimate.
@@ -1028,13 +1033,10 @@ Crypto = Student-t df=3-5. "3-sigma" events happen 5-10x more than Gaussian pred
 ## ESTIMATION ERROR
 n_similar<10: WR unreliable, widen CI. n_similar<5: fall back to base rate.
 
-## LIVE RESEARCH FINDINGS (Apr 2026):
-# Research finding (Apr 2026): Confidence 90-100% is anti-predictive
-- Confidence 90-100% is ANTI-predictive (22.7% WR from 1,381 trades). 85-90% is the sweet spot (74.7% WR). Apply confidence_adjustment=-0.15 for any signal with raw confidence >90%. The 85-90 band is where real edge lives.
-# Research finding (Apr 2026): Mean-reversion regime dominance
-- Mean-reversion has been profitable for 30 days on BTC/ETH/SOL. Trend-following has been negative. Weight MR signals higher in current regime — if signal is counter-trend (fading a move), boost conditional_wr by +5%. If signal is trend-following, apply -5% penalty.
-# Research finding (Apr 2026): Cross-asset BTC->SOL setup
-- Cross-asset: after BTC pump >0.3% in 5min, SHORT SOL has 76% WR (n=67). Flag this as a high-probability setup in conditional_edge when you detect BTC has pumped >0.3% recently and SOL SHORT signal is present. conditional_wr should reflect this 76% base.
+## PRINCIPLES (timeless, apply to current enriched data):
+- Extreme confidence (90-100%) is often anti-predictive. Apply confidence_adjustment=-0.15 for raw confidence >90%. The 85-90 band is typically where real edge lives. Check CALIBRATION section.
+- Check REGIME PERFORMANCE in enriched data for which regime style (MR vs trend) is currently profitable. Weight signals accordingly.
+- Cross-asset setups: after BTC pump >0.3% in 5min, SHORT alts often profitable. Flag in conditional_edge when detected.
 
 ## HARD RULES
 - Probabilities must sum to 1.0
@@ -1437,7 +1439,7 @@ CONVICTION LEVELS:
 AUTHORIZATION RULES:
 - **Regime must be favorable:** confidence > 0.80 AND bias matches trade direction (bullish for BUY, bearish for SELL)
 - **Trade thesis must be concrete:** confidence > 0.80 AND thesis is specific (not vague)
-- **Quant must show edge:** EV > 0 AND is_noise=false
+- **Quant must show edge:** EV > 0 AND noise_probability<0.3
 - **Critic must not veto:** concern_level < "material" (weak concerns are OK)
 - **Forecaster must not warn:** regime_shift_probability < 0.25 in next 2h (regime stable)
 

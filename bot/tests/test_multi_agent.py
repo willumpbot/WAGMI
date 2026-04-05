@@ -213,6 +213,10 @@ class TestCoordinatorMerging:
 
     def test_merge_with_strategy_weights_from_risk(self):
         from llm.agents.base import AgentRole
+        # Reset scratchpad to prevent leakage from prior tests
+        from llm.agents.shared_context import reset_pipeline_scratchpad
+        reset_pipeline_scratchpad()
+
         coord = self._make_coordinator()
 
         regime_out = self._make_output(AgentRole.REGIME, {"rg": "trend", "conf": 0.9,
@@ -287,7 +291,7 @@ class TestCoordinatorPipeline:
              "probability": {"up_4h": 0.65, "down_4h": 0.20, "sideways_4h": 0.15},
              "risk_profile": {"fat_tail_risk": "low", "max_adverse_move_pct": 1.8, "funding_drag_pct": 0.1},
              "kelly_fraction": 0.25,
-             "signal_quality": {"is_noise": False, "confidence_adjustment": 0, "reason": "solid edge"},
+             "signal_quality": {"noise_probability": 0.0, "confidence_adjustment": 0, "reason": "solid edge"},
              "n": "convergent setup with volume confirmation"},
             # Trade Agent
             {"a": "go", "c": 0.78, "n": "trend aligns", "mu": "BTC leads", "ea": None},
@@ -343,7 +347,7 @@ class TestCoordinatorPipeline:
                 if call_idx[0] == 2:
                     # Quant Agent
                     return json.dumps({"ev": {"direction": "neutral", "magnitude": 0.5, "confidence": 0.4},
-                                       "signal_quality": {"is_noise": False, "confidence_adjustment": 0},
+                                       "signal_quality": {"noise_probability": 0.1, "confidence_adjustment": 0},
                                        "kelly_fraction": 0.05, "n": "weak"}), {"input_tokens": 50}
                 return json.dumps({"a": "skip", "c": 0.3, "n": "weak range"}), {"input_tokens": 50}
             # Risk + Critic fail

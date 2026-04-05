@@ -219,7 +219,7 @@ def _build_conviction_input(
     conviction_input = {
         "regime_analysis": regime_out.data if regime_out.ok else {"confidence": 0.0},
         "trade_decision": trade_out.data if trade_out.ok else {"confidence": 0.0},
-        "quant_analysis": quant_out.data if (quant_out and quant_out.ok) else {"ev": 0.0, "signal_quality": {"is_noise": True}},
+        "quant_analysis": quant_out.data if (quant_out and quant_out.ok) else {"ev": 0.0, "signal_quality": {"noise_probability": 1.0}},
         "critic_analysis": critic_out.data if (critic_out and critic_out.ok) else {"concern_level": "high"},
         "forecaster_analysis": forecaster_out.data if (forecaster_out and forecaster_out.ok) else {"transition_probability": 1.0},
     }
@@ -227,7 +227,9 @@ def _build_conviction_input(
     # Compute alignment score (quick estimation)
     regime_conf = conviction_input["regime_analysis"].get("confidence", 0.0)
     trade_conf = conviction_input["trade_decision"].get("confidence", 0.0)
-    quant_quality = 1.0 if not conviction_input["quant_analysis"].get("signal_quality", {}).get("is_noise", True) else 0.0
+    _sq = conviction_input["quant_analysis"].get("signal_quality", {})
+    _np = _sq.get("noise_probability", 1.0 if _sq.get("is_noise", True) else 0.0)
+    quant_quality = max(0.0, 1.0 - _np)
     critic_concern_map = {"none": 1.0, "low": 0.8, "medium": 0.5, "high": 0.0}
     critic_score = critic_concern_map.get(
         str(conviction_input["critic_analysis"].get("concern_level", "high")).lower(), 0.0
