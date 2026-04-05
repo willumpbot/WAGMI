@@ -122,39 +122,34 @@ def _build_profile(prefix: str, defaults: dict) -> ExitParams:
 
 _BASE_PROFILES: Dict[str, ExitParams] = {
     SCALP: _build_profile("SCALP", {
-        "tp1_atr": 0.5, "tp2_atr": 1.0, "sl_atr": 0.4, "tp1_pct": 0.90,
+        "tp1_atr": 0.8, "tp2_atr": 1.5, "sl_atr": 0.8, "tp1_pct": 0.85,
+        # SL 0.40→0.80 ATR: 0.40 was noise-level for crypto. Even scalps need
+        # room for 1h wicks. TP1 widened 0.5→0.8 to match.
         "trailing": "tight", "trail_start": 0.80, "trail_end": 0.60,
-        # trail_end raised 0.50→0.60: at TP2 progress, trailing was only 0.45 ATR
-        # (style_mult * tighten_end compounding). 0.60 gives 0.54 ATR = room for noise.
         "floor_progress": 0.2, "floor_start": 0.40, "floor_max": 0.75,
     }),
     MEDIUM: _build_profile("MEDIUM", {
-        "tp1_atr": 1.0, "tp2_atr": 2.0, "sl_atr": 0.55, "tp1_pct": 0.50,
-        # Widened SL from 0.50 to 0.55 ATR — 42% WR suggests noise whipsaws.
-        # TP1% 0.65→0.50: let more capital ride winners. With 1.15:1 payoff ratio,
-        # early exit kills the edge — keeping 50% in play improves payoff ratio.
-        # trail_start/end widened 0.60→0.80/0.45→0.65: effective trailing distance
-        # stays ~1.2-1.6 ATR instead of 0.9-0.675 ATR. Stops premature trailing exits.
+        "tp1_atr": 1.5, "tp2_atr": 3.0, "sl_atr": 1.2, "tp1_pct": 0.50,
+        # SL 0.55→1.2 ATR: 34/42 live trades hit SL (81% loss rate). The 0.55x
+        # ATR stop was inside normal 1h price noise. 1.2x ATR gives stops at
+        # ~1.5-3.0% from entry depending on symbol — outside noise.
+        # TP widened proportionally: TP1 1.0→1.5, TP2 2.0→3.0 to maintain R:R.
+        # The winning BTC SHORT trades had 2.7% stop distance — that's the target.
         "trailing": "medium", "trail_start": 0.80, "trail_end": 0.65,
-        # floor_progress 0.35→0.15: SOL gave back $22 of $51 peak because floor
-        # hadn't kicked in at 25% progress. Start locking early.
-        # floor_start 0.25→0.40: lock 40% of peak immediately, scale to 70%.
         "floor_progress": 0.15, "floor_start": 0.40, "floor_max": 0.70,
     }),
     TREND: _build_profile("TREND", {
-        "tp1_atr": 1.2, "tp2_atr": 2.5, "sl_atr": 0.60, "tp1_pct": 0.40,
-        # Tightened SL from 0.85 to 0.60 ATR — with 20% WR, losers must die fast.
-        # TP1% 0.60→0.40: trending setups should let winners run. Only close 40%
-        # at TP1, keep 60% riding the trend toward TP2 with trailing stop.
-        # trail_start/end widened 0.55→0.75/0.45→0.60: trends need room for pullbacks.
+        "tp1_atr": 1.8, "tp2_atr": 3.5, "sl_atr": 1.4, "tp1_pct": 0.40,
+        # SL 0.60→1.4 ATR: trends need room for pullbacks. Previous 0.60 was
+        # getting stopped on normal retracements. The 2 winning BTC SHORTs both
+        # had wide stops and used trailing — let trends develop.
         "trailing": "medium", "trail_start": 0.75, "trail_end": 0.60,
-        # Trend floor: start locking at 20% progress, lock 35% initially scaling to 65%
         "floor_progress": 0.20, "floor_start": 0.35, "floor_max": 0.65,
     }),
     REGIME: _build_profile("REGIME", {
-        "tp1_atr": 1.2, "tp2_atr": 2.5, "sl_atr": 0.55, "tp1_pct": 0.55,
-        # Tightened SL from 0.80 to 0.55 ATR
-        # trail_end raised 0.30→0.45: same over-tightening fix
+        "tp1_atr": 1.5, "tp2_atr": 3.0, "sl_atr": 1.2, "tp1_pct": 0.55,
+        # SL 0.55→1.2 ATR: same fix as MEDIUM. Regime trades need wider stops
+        # to survive regime transition noise.
         "trailing": "medium", "trail_start": 0.60, "trail_end": 0.45,
         "floor_progress": 0.3, "floor_start": 0.30, "floor_max": 0.60,
     }),
