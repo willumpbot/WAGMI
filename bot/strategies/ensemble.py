@@ -1484,7 +1484,7 @@ class EnsembleStrategy:
         # confidence_scorer: solo ONLY on HYPE (PF=2.65). Bad on BTC (PF=0.0) and SOL (PF=0.23).
         _PROVEN_SOLO_STRATEGIES = {"probability_engine", "bollinger_squeeze", "monte_carlo_zones"}  # vmc_cipher removed: 5% WR (1/20), dead weight. mean_reversion removed: zero validated trades.
         _HYPE_SOLO_STRATEGIES = {"confidence_scorer"}  # Solo edge only on HYPE
-        _SOLO_CONF_THRESHOLD = 75.0  # Raised: 62 let through too many losers. Only high-conviction solos.
+        _SOLO_CONF_THRESHOLD = 95.0  # Effectively disabled. Live data: 0% WR on all solo trades (4 trades, 4 losses). Need 2+ agree.
         # Symbol+regime combos where solo signals have validated edge
         # Only allow solo trades in trending regimes with high confidence
         # Ranging regime solo trades have been consistent losers (-$7 net from trade data)
