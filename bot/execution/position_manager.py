@@ -347,7 +347,8 @@ class PositionManager:
         # Winners can re-enter immediately — the thesis was right, re-entry is valid
         last_close = self._last_close_time.get(symbol)
         if last_close is not None and not self._last_close_won.get(symbol, True):
-            elapsed = (datetime.now(timezone.utc) - last_close).total_seconds() / 60.0
+            _now = getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
+            elapsed = (_now - last_close).total_seconds() / 60.0
             if elapsed < self._reentry_cooldown_minutes:
                 logger.warning(
                     f"[{symbol}] COOLDOWN BLOCKED: only {elapsed:.0f}m since last LOSS "
@@ -1171,7 +1172,8 @@ class PositionManager:
         # Deduct accumulated funding costs at final close
         pos.realized_pnl += (pnl - fee - pos.funding_costs)
         pos.qty = 0
-        pos.close_time = datetime.now(timezone.utc)
+        # Use simulated time in backtest mode, real time in live
+        pos.close_time = getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
 
         # Classify outcome before closing state
         pos.outcome = self._classify_outcome(pos, action)

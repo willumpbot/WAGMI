@@ -1482,9 +1482,19 @@ class EnsembleStrategy:
         # Solo analysis (from per-symbol missed trade data):
         # vmc_cipher: 82% solo WR, bollinger_squeeze: 78% solo WR (paper trading validated)
         # confidence_scorer: solo ONLY on HYPE (PF=2.65). Bad on BTC (PF=0.0) and SOL (PF=0.23).
-        _PROVEN_SOLO_STRATEGIES = {"probability_engine", "bollinger_squeeze", "monte_carlo_zones"}  # vmc_cipher removed: 5% WR (1/20), dead weight. mean_reversion removed: zero validated trades.
-        _HYPE_SOLO_STRATEGIES = {"confidence_scorer"}  # Solo edge only on HYPE
-        _SOLO_CONF_THRESHOLD = 95.0  # Effectively disabled. Live data: 0% WR on all solo trades (4 trades, 4 losses). Need 2+ agree.
+        # 60-day backtest solo WR (missed trades analysis, n>15 each):
+        #   mean_reversion:     77% WR on 47 signals — STRONG EDGE
+        #   monte_carlo_zones:  67% WR on 18 signals — EDGE
+        #   probability_engine: 57% WR on 207 signals — EDGE (large sample)
+        #   regime_trend:       47% WR on 150 signals — MARGINAL (not included)
+        #   confidence_scorer:  49% WR on 2051 signals — COINFLIP (not included)
+        #   bollinger_squeeze:  37% WR on 461 signals — NEGATIVE (not included)
+        _PROVEN_SOLO_STRATEGIES = {"probability_engine", "monte_carlo_zones", "mean_reversion"}
+        _HYPE_SOLO_STRATEGIES = set()  # Disabled: confidence_scorer solo is coinflip (49% WR)
+        # 60-day backtest: solo signals peak at 57-67% confidence. 70% threshold
+        # blocks nearly all solo signals. 60% captures the bulk of the edge.
+        # mean_reversion at 60%+ = 77% WR, probability_engine at 60%+ = 57% WR.
+        _SOLO_CONF_THRESHOLD = 60.0
         # Symbol+regime combos where solo signals have validated edge
         # Only allow solo trades in trending regimes with high confidence
         # Ranging regime solo trades have been consistent losers (-$7 net from trade data)
