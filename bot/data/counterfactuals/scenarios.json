@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1775314811.8257205,
+  "updated_at": 1775344018.3190212,
   "scenarios": [
     {
       "id": "cf_1774470140_6aa484a8",
@@ -660,6 +660,94 @@
         "actual_pnl_raw": -0.36688387319209853,
         "pnl_at_tp1_pct": 0.8237,
         "pnl_at_tp2_pct": 1.6586
+      }
+    },
+    {
+      "id": "cf_1775321692_3833b0f8",
+      "timestamp": 1775321692.5087938,
+      "symbol": "SOL",
+      "scenario_type": "exit_timing",
+      "actual_action": "SL",
+      "counterfactual_action": "exit_at_tp1",
+      "actual_pnl": 0.34685142276041253,
+      "counterfactual_pnl": 0.9404660256648114,
+      "delta": 0.5936146029043989,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 80.811,
+        "actual_exit_price": 81.0235,
+        "tp1_price": 81.571,
+        "tp2_price": 82.322,
+        "actual_pnl_raw": 0.280294103246917,
+        "pnl_at_tp1_pct": 0.9405,
+        "pnl_at_tp2_pct": 1.8698
+      }
+    },
+    {
+      "id": "cf_1775322004_844410fd",
+      "timestamp": 1775322004.3125563,
+      "symbol": "HYPE",
+      "scenario_type": "exit_timing",
+      "actual_action": "SL",
+      "counterfactual_action": "exit_at_tp1",
+      "actual_pnl": -1.3471474930520009,
+      "counterfactual_pnl": 1.2885158730820174,
+      "delta": 2.6356633661340183,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 35.9949,
+        "actual_exit_price": 35.9165,
+        "tp1_price": 36.4587,
+        "tp2_price": 36.9188,
+        "actual_pnl_raw": -0.48490439297657467,
+        "pnl_at_tp1_pct": 1.2885,
+        "pnl_at_tp2_pct": 2.5668
+      }
+    },
+    {
+      "id": "cf_1775333180_0e8813e8",
+      "timestamp": 1775333180.4763923,
+      "symbol": "ETH",
+      "scenario_type": "exit_timing",
+      "actual_action": "SL",
+      "counterfactual_action": "exit_at_tp1",
+      "actual_pnl": 0.004684273933224307,
+      "counterfactual_pnl": 0.7617048976458964,
+      "delta": 0.7570206237126721,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 2058.54,
+        "actual_exit_price": 2059.85,
+        "tp1_price": 2074.22,
+        "tp2_price": 2089.68,
+        "actual_pnl_raw": 0.09642765262499564,
+        "pnl_at_tp1_pct": 0.7617,
+        "pnl_at_tp2_pct": 1.5127
+      }
+    },
+    {
+      "id": "cf_1775344018_ab7cc55c",
+      "timestamp": 1775344018.3190062,
+      "symbol": "HYPE",
+      "scenario_type": "exit_timing",
+      "actual_action": "TRAILING_STOP",
+      "counterfactual_action": "exit_at_tp1",
+      "actual_pnl": 5.295755564802822,
+      "counterfactual_pnl": 1.093323029280365,
+      "delta": -4.2024325355224565,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 35.9729,
+        "actual_exit_price": 36.3135,
+        "tp1_price": 36.3662,
+        "tp2_price": 36.7565,
+        "actual_pnl_raw": 1.9050368535709548,
+        "pnl_at_tp1_pct": 1.0933,
+        "pnl_at_tp2_pct": 2.1783
       }
     }
   ]

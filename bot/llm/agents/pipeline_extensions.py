@@ -353,32 +353,24 @@ def run_interactive_debate_if_enabled(
     trade_agent_output: Dict[str, Any],
     critic_agent_output: Optional[Dict[str, Any]],
     market_context: Dict[str, Any],
+    risk_assessment: Optional[Dict[str, Any]] = None,
+    position_size_pct: float = 0.0,
 ) -> Optional[Dict[str, Any]]:
-    """Run interactive 2-round Trade-Critic debate if enabled.
+    """Run real 2-round Trade-Critic debate if enabled and warranted.
 
-    This is an enhancement over post-hoc debate synthesis:
-    - Round 1: Critic sees Trade thesis WITHOUT confidence (prevents anchoring)
-    - Round 2: Trade Agent rebuts Critic's objections
-    - Resolution: Score-based (FREE-MAD) rather than vote-based
+    Uses DebateProtocol for actual LLM calls (Trade rebuttal + Critic final).
+    Falls back to simulated scoring if LLM calls fail.
 
     Args:
         trade_agent_output: Trade Agent's decision output
         critic_agent_output: Critic Agent's response (already generated in main pipeline)
         market_context: Market data for context
+        risk_assessment: Risk Agent's output (for trigger evaluation)
+        position_size_pct: Estimated position size as % of equity
 
     Returns:
-        Debate resolution dict or None if debate not run
+        Debate resolution dict or None if debate not triggered/run
     """
-    try:
-        from llm.agents.interactive_debate import (
-            InteractiveDebater,
-            ThesisProposal,
-            CounterThesis,
-        )
-    except ImportError:
-        logger.debug("[PIPELINE_EXT] interactive_debate module not available yet")
-        return None
-
     # Check if interactive debate is enabled
     if not os.getenv("LLM_INTERACTIVE_DEBATE", "false").lower() in ("1", "true", "yes"):
         return None
@@ -387,71 +379,54 @@ def run_interactive_debate_if_enabled(
         return None
 
     try:
-        debater = InteractiveDebater()
+        from llm.agents.debate_protocol import DebateProtocol
 
-        # Round 1: Extract Trade Agent's proposal
-        proposal = debater.round1_extract_proposal(trade_agent_output)
+        protocol = DebateProtocol()
 
-        # Round 2: Extract Critic's counter-thesis
-        counter_thesis = debater.round1_extract_counter_thesis(critic_agent_output)
+        # Check if debate is warranted based on trigger criteria
+        if not protocol.should_debate(
+            trade_decision=trade_agent_output,
+            risk_assessment=risk_assessment or {},
+            critic_response=critic_agent_output,
+            position_size_pct=position_size_pct,
+        ):
+            logger.debug("[PIPELINE_EXT] Debate not triggered (below thresholds)")
+            return None
 
-        # For now, we don't have the actual Round 2 rebuttal LLM call yet.
-        # In a full implementation, we would:
-        # 1. Call Trade Agent again with Round 2 input
-        # 2. Extract the rebuttal
-        # 3. Score and resolve
-
-        # For MVP, we score based on what we have:
-        # - Trade Agent's original proposal
-        # - Critic's counter-thesis and objections
-
-        # Estimate a rebuttal based on Trade Agent's confidence drop
-        original_conf = proposal.confidence
-        adjusted_conf = critic_agent_output.get("adjusted_confidence", original_conf)
-
-        # If confidence dropped significantly, assume Trade Agent conceded
-        if adjusted_conf < original_conf - 0.1:
-            maintains_thesis = False
-            concessions = [obj.get("reason", "")[:50] for obj in counter_thesis.objections[:2]]
-        else:
-            maintains_thesis = True
-            concessions = []
-
-        from llm.agents.interactive_debate import Rebuttal
-        simulated_rebuttal = Rebuttal(
-            action=trade_agent_output.get("a", "skip"),
-            adjusted_confidence=float(adjusted_conf),
-            rebuttal_points=[],
-            concessions=concessions,
-            maintains_thesis=maintains_thesis,
+        # Run real 2-round debate with LLM calls
+        result = protocol.run_debate(
+            trade_decision=trade_agent_output,
+            critic_response=critic_agent_output,
+            snapshot_data=market_context,
         )
 
-        # Score the debate
-        resolution = debater.score_debate(proposal, counter_thesis, simulated_rebuttal)
-
-        logger.info(
-            f"[INTERACTIVE_DEBATE] winner={resolution.debate_winner} "
-            f"trade_score={resolution.trade_score:.2f} "
-            f"critic_score={resolution.critic_score:.2f} "
-            f"final_action={resolution.final_action} "
-            f"final_conf={resolution.final_confidence:.2f}"
-        )
+        if result.get("debate_occurred"):
+            logger.info(
+                f"[DEBATE_PROTOCOL] winner={result['winner']} "
+                f"adj={result['confidence_adjustment']:+d}% "
+                f"final_conf={result['final_confidence']:.2f} "
+                f"tokens={result.get('cost_tokens', 0)}"
+            )
 
         return {
             "debate_type": "interactive",
-            "final_action": resolution.final_action,
-            "final_confidence": resolution.final_confidence,
-            "winner": resolution.debate_winner,
-            "trade_score": resolution.trade_score,
-            "critic_score": resolution.critic_score,
-            "key_turning_points": resolution.key_turning_points,
-            "risk_flags": resolution.risk_flags,
-            "recommendation": resolution.recommendation,
-            "rounds_used": resolution.rounds_used,
+            "final_action": result.get("winner", "draw"),
+            "final_confidence": result.get("final_confidence", 0.5),
+            "winner": result.get("winner", "draw"),
+            "confidence_adjustment": result.get("confidence_adjustment", 0),
+            "key_turning_points": result.get("key_turning_points", []),
+            "risk_flags": result.get("risk_flags", []),
+            "recommendation": result.get("recommendation", "proceed"),
+            "rounds_used": result.get("rounds", 0),
+            "debate_occurred": result.get("debate_occurred", False),
+            "reasoning": result.get("reasoning", ""),
         }
 
+    except ImportError:
+        logger.debug("[PIPELINE_EXT] debate_protocol module not available")
+        return None
     except Exception as e:
-        logger.debug(f"[PIPELINE_EXT] interactive_debate error: {e}")
+        logger.debug(f"[PIPELINE_EXT] debate_protocol error: {e}")
         return None
 
 

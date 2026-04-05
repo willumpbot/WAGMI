@@ -72,6 +72,13 @@ def process_agent_lesson(
     if thesis_correct is not None:
         _record_agent_calibration(trade_data, thesis_correct)
 
+    # 7. Feed into network learning loop (routes lessons to other agents)
+    try:
+        from llm.agents.network_learning import get_network_learning
+        get_network_learning().process_lesson(lesson_data, trade_data)
+    except Exception as e:
+        logger.debug(f"[AGENT-LEARN] Network learning feed error: {e}")
+
 
 def process_agent_decision_for_learning(
     decision_notes: str,

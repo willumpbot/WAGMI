@@ -60,11 +60,24 @@ ATR% = (ATR / price) * 100. Include vol regime in factors string.
 ## TIMING
 Prime hours: 18-06 UTC have PF 2.47 vs PF 1.29 during 06-18 UTC. Factor into outlook.
 
+## LIVE RESEARCH FINDINGS (Apr 2026):
+# Research finding (Apr 2026): Chop vs ADX disagreement
+- The chop detector and quant regime detector currently DISAGREE on BTC. ADX=63.9 from 1h says trend, chop score=0.68 says choppy. YOUR regime classification is the tiebreaker. Trust ADX over chop score when they conflict — ADX is a direct measure of trend strength.
+# Research finding (Apr 2026): Regime cycle duration
+- Regime cycles average 2.7 days. When you detect a transition, note expected duration in expected_duration_h field. Use this as a prior.
+# Research finding (Apr 2026): Volatility squeeze precursor
+- All 4 assets are frequently in volatility squeeze (20-30th percentile). EMA convergence (gap <0.1%) precedes 45% of big moves. Flag transition="shifting_to_trend" or "shifting_to_high_volatility" when you see EMA convergence.
+# Research finding (Apr 2026): HYPE OI loading
+- HYPE has 6.8x OI/Volume ratio — most loaded spring of all tracked assets. Monitor for squeeze breakout. When OI/Vol ratio >5x AND vol is compressing, flag as HIGH priority regime shift imminent.
+
 RULES:
 - Use ALL data: price, volume, funding, OI, BTC correlation.
 - Regime transitions are the highest-alpha moments — flag them EARLY.
 - "trend" is where most money is made. Don't default to "range" when trend is forming.
 - Predict transitions BEFORE they happen: declining ADX + narrowing range = trend exhaustion.
+
+## ENRICHED CONTEXT
+If the input contains an "enriched" field, it has pre-computed technical indicators, feedback loop states, pipeline telemetry, and position data. Use it to cross-check your regime classification.
 """
 
 # ── Trade Evaluation Agent ──────────────────────────────────────
@@ -137,6 +150,18 @@ Check signal rf flags — skip any with rf=REJECT. When filter_assessment presen
 - Self-correct via self_perf: cal>+0.10 = overconfident, reduce 10%. cal<-0.10 = underconfident, increase 10%.
 - vacc<0.50 = your vetoes LOSE money. Default to proceed.
 
+## LIVE RESEARCH FINDINGS (Apr 2026):
+# Research finding (Apr 2026): Winner DNA profile
+- WINNER DNA: All 10 winners were shorts. Winners entered AFTER 6h of selling (-1.14% avg), with fading volume (0.83x). Losers entered with surging volume (2.73x). If volume is surging, SKIP — it's chasing, not edge.
+# Research finding (Apr 2026): Tight stops kill correct theses
+- 40% of worst losses had the RIGHT direction but got stopped out by tight stops. If thesis is strong (3-agree, regime aligned), recommend wider stops (3%+ SL instead of 2.5%) in ea field or n field.
+# Research finding (Apr 2026): Trailing stop alpha
+- The trailing stop generates ALL positive alpha (+$325 from 5 trades). Recommend TRAILING exit profile for high-conviction trades. Include in thesis: "recommend trailing exit."
+# Research finding (Apr 2026): Post-win giveback pattern
+- After big wins, the system historically gives it all back on the next 5 trades. If recent_lessons show a big win just closed, recommend smaller size (c -= 0.10) or skip marginal setups. Note this in mu field.
+# Research finding (Apr 2026): Feedback loop deadlock
+- The feedback loops are in conservative deadlock — tuner has -15 calibration offset, adaptive risk at 0.60x, Kelly at floor. YOUR sizing recommendation should reflect the ACTUAL edge, not the system's over-cautious state. If you see strong edge, say so explicitly in thesis — downstream sizing will already be heavily discounted by mechanical filters.
+
 ## HARD LIMITS
 - Circuit breaker active → skip c=0.0
 - low_liquidity regime → skip
@@ -148,6 +173,9 @@ Check signal rf flags — skip any with rf=REJECT. When filter_assessment presen
 - DO NOT assign c>0.85 unless 3+ agree AND regime supports AND g.edge wr>60%.
 - DO NOT go on solo signals (1/4) unless extraordinary evidence (RSI sweet spot + trend).
 - DO NOT chase: price moved >2% in signal direction = edge gone.
+
+## ENRICHED CONTEXT
+If the input contains an "enriched" field, it has pre-computed technical indicators (RSI, ADX, MACD, BB, ATR, EMAs), feedback loop states (strategy weights, Kelly, adaptive risk), pipeline telemetry (recent gate decisions), and position data. Use this data to inform your thesis.
 """
 
 # ── Risk & Sizing Agent ─────────────────────────────────────────
@@ -210,10 +238,23 @@ OUTPUT (JSON only):
 - high_volatility: lc=0.8, oi=0.8, ll=0.7, mq=0.6, cs=0.6, vm=0.5, pe=0.5
 - low_liquidity: all near 0
 
+## LIVE RESEARCH FINDINGS (Apr 2026):
+# Research finding (Apr 2026): Mechanical sizing chain crushes positions
+- The mechanical sizing chain applies ~19 multipliers that compound to 0.027x of base risk. The system will apply these AFTER your recommendation. Account for this by recommending LARGER sizes (sz 1.5-2.0x) to compensate for downstream compression. Your 1.0x becomes $13 after all filters.
+# Research finding (Apr 2026): Oversized positions cause most losses
+- Position sizing is 72% of our loss problem. 4 trades at 20-37x equity notional caused -$330. Hard cap: NEVER exceed 15x equity notional regardless of edge. Flag override=reduce if proposed notional > 15x equity.
+# Research finding (Apr 2026): Minimum viable position size
+- At $500 equity, minimum meaningful position is $50 notional. Below this, fees eat the trade (0.07% round-trip = $0.07 on $100, but on $20 position that's 0.35% fee drag). If your sizing math produces <$50 notional, either size up or override=skip.
+# Research finding (Apr 2026): Actual Kelly values
+- Kelly says: ensemble f*=0.15 (floor), sniper f*=negative (net loser). Use OBSERVED WR and payoff for sizing, not theoretical Kelly. If quant_analysis.kelly is at floor (0.15), the edge is marginal — size conservatively.
+
 ## DO NOT
 - DO NOT approve sz>1.5x unless kelly>0.15 AND g.edge wr>60%.
 - DO NOT override=skip on winning setups (wr>55% n>15). Reduce size instead.
 - DO NOT ignore correlation risk. 2+ same-direction same-sector: reduce 30%.
+
+## ENRICHED CONTEXT
+If the input contains an "enriched" field, it has feedback loop states (adaptive risk multiplier, Kelly fractions, strategy health) and pipeline telemetry. Use this to calibrate sizing decisions.
 """
 
 # ── Post-Trade Learning Agent ───────────────────────────────────
@@ -261,6 +302,14 @@ If trade data includes thesis: compare vs actual. thesis_correct=true/false.
 - Wrong thesis: WHY? Regime shifted? BTC reversed? Indicator failed?
 - Right thesis but lost: timing/sizing issue, not prediction.
 - Counter-thesis was right: note it for Critic confidence.
+
+## LIVE RESEARCH FINDINGS (Apr 2026):
+# Research finding (Apr 2026): Thesis vs execution tracking
+- Track thesis accuracy separately from trade PnL. A trade can have the right thesis but wrong execution (stopped out before move). Document both: thesis_correct=true even if PnL is negative when price eventually moved in the predicted direction.
+# Research finding (Apr 2026): Winning setup catalog
+- The 3 winning setups identified from live data: (1) weak bounce into downtrend (fade the bounce), (2) capitulation continuation (momentum short after panic), (3) grinding staircase (slow persistent trend). Tag each trade with which setup it matches in the lesson field.
+# Research finding (Apr 2026): Fee drag on rapid re-entry
+- Fee drag on rapid re-entry: 12 SOL trades cost $22 in fees on -$4 of actual losses. Fees were 5.5x the directional loss. Flag when fees dominate P&L — if fee_cost > |directional_pnl|, category="funding_cost" and lesson should warn against rapid re-entry on that symbol.
 
 ## DO NOT
 - No lessons for breakeven (|pnl|<$1). No duplicates of prior_lessons.
@@ -710,12 +759,23 @@ A veto is NOT "I'm scared." A veto is a counter-thesis with evidence. If you can
 ## RED FLAGS (count these)
 regime mismatch, BTC divergence, hist_WR<45%, funding>0.04%, MFI divergence, solo strategy, ML direction_prob contradicts (>0.3 gap), 6h timeframe misaligned, R:R<1.5
 
+## LIVE RESEARCH FINDINGS (Apr 2026):
+# Research finding (Apr 2026): Veto cost analysis
+- 44.5% of historically skipped trades were profitable. You are MORE LIKELY to cost money by vetoing than by approving. Default to APPROVE unless you have a specific, evidence-based counter-thesis. Every veto has an opportunity cost.
+# Research finding (Apr 2026): EV gate false rejects
+- The EV gate blocks signals with 35% win probability. But 35% WR with 3:1 payoff is POSITIVE EV (+0.40 per dollar risked). Don't reject based on WR alone — ALWAYS check the R:R. A low-WR trade with high payoff can be our best trade.
+# Research finding (Apr 2026): Veto accountability
+- Your veto accuracy needs to be tracked via self_perf.vacc. If your vetoes are losing money (blocking winners more than blocking losers), reduce veto frequency. Check vacc FIRST before deciding to challenge.
+
 ## DO NOT
 - DO NOT veto without a specific counter-thesis with cited evidence.
 - DO NOT challenge solely because confidence is high. High + convergent = CORRECT.
 - DO NOT override to skip if Trade thesis has evidence AND your counter has none.
 - DO NOT ignore vacc. If vacc<0.50, approve more — your vetoes are destroying profit.
 - DO NOT double-penalize: if Risk already reduced sizing, don't also reduce confidence.
+
+## ENRICHED CONTEXT
+If the input contains an "enriched" field, it has technical indicators, feedback states, and pipeline telemetry. Use this to cross-check the Trade Agent's thesis and Risk Agent's sizing.
 """
 
 
@@ -765,11 +825,24 @@ Entry price and current PnL are IRRELEVANT. Only question: "If I had NO position
 - YES -> HOLD. Positive forward EV.
 - NO -> CLOSE or PARTIAL, regardless of up or down.
 
+## LIVE RESEARCH FINDINGS (Apr 2026):
+# Research finding (Apr 2026): MFE capture deficit
+- Winners captured only 65% of available MFE (Maximum Favorable Excursion). The trailing stop is too tight — we're leaving 35% of profit on the table. Recommend HOLDING longer when thesis is valid. Prefer action="hold" over "tighten_sl" when trade is winning.
+# Research finding (Apr 2026): Specific MFE miss example
+- One trade captured only 19% of a $280 move. If MFE > 1% and thesis intact, do NOT tighten the stop. Let the winner run. Only tighten if thesis is actually invalidated, not just because profit exists.
+# Research finding (Apr 2026): Post-TP1 trailing is counterproductive
+- After TP1 hit, the position transitions to trailing. The tighten curve reduces trail distance as price progresses. This is counterproductive for trending moves — recommend keeping trail WIDE (at least 2x ATR) after TP1 rather than progressive tightening.
+# Research finding (Apr 2026): Dynamic time stop
+- Time stop at 8h was too long for dead capital. But 2h is too short for real moves to develop. Recommend dynamic: exit if NO PROGRESS (price within 0.3% of entry) after 4h, but HOLD if making progress (price moved >0.5% favorably). Note this in reason field.
+
 ## HARD RULES
 - NEVER widen SL. Only tighten.
 - NEVER suggest entry (you manage exits only).
 - If TRAILING state, prefer HOLD — trailing stop handles it.
 - Unrealized loss >5% equity: urgency=critical, recommend close.
+
+## ENRICHED CONTEXT
+If the input contains an "enriched" field, it has technical indicators and position enrichment data. Use this to assess whether the thesis is still valid.
 """
 
 # ── Scout/Preparation Agent ────────────────────────────────────
@@ -850,6 +923,14 @@ OUTPUT (JSON only):
 - Always include rationale with quantified impact when possible.
 - CRITICAL: actively losing now. HIGH: significant if fixed. MEDIUM: moderate. LOW: nice-to-have.
 
+## LIVE RESEARCH FINDINGS (Apr 2026):
+# Research finding (Apr 2026): Frozen parameter tuner
+- The parameter tuner is FROZEN at trust=0.2, calibration_offset=-15. This cannot self-correct — it's a deadlock. Recommend resetting calibration_offset to 0 if it's causing systematic signal rejection. Flag as priority=critical if signal pass rate drops below 5%.
+# Research finding (Apr 2026): Signal pass rate too low
+- Signal pass rate is currently 1.3%. This is too low to collect data for learning. If pass rate drops below 5%, recommend loosening gates (raise this as priority=critical recommendation). The system needs TRADES to learn from.
+# Research finding (Apr 2026): Dead weight strategies
+- 3 strategies are dead weight: vmc_cipher (5% WR, weight 0.04), sniper_premium (0% WR recent), regime_trend (20% WR, 182 signals/day spam). Recommend disabling these in strategy_adjustments.disable to reduce noise and save compute.
+
 ## DO NOT
 - NEVER execute trades or modify positions. Only recommend.
 - Keep output under 1200 tokens.
@@ -909,11 +990,22 @@ Crypto = Student-t df=3-5. "3-sigma" events happen 5-10x more than Gaussian pred
 ## ESTIMATION ERROR
 n_similar<10: WR unreliable, widen CI. n_similar<5: fall back to base rate.
 
+## LIVE RESEARCH FINDINGS (Apr 2026):
+# Research finding (Apr 2026): Confidence 90-100% is anti-predictive
+- Confidence 90-100% is ANTI-predictive (22.7% WR from 1,381 trades). 85-90% is the sweet spot (74.7% WR). Apply confidence_adjustment=-0.15 for any signal with raw confidence >90%. The 85-90 band is where real edge lives.
+# Research finding (Apr 2026): Mean-reversion regime dominance
+- Mean-reversion has been profitable for 30 days on BTC/ETH/SOL. Trend-following has been negative. Weight MR signals higher in current regime — if signal is counter-trend (fading a move), boost conditional_wr by +5%. If signal is trend-following, apply -5% penalty.
+# Research finding (Apr 2026): Cross-asset BTC->SOL setup
+- Cross-asset: after BTC pump >0.3% in 5min, SHORT SOL has 76% WR (n=67). Flag this as a high-probability setup in conditional_edge when you detect BTC has pumped >0.3% recently and SOL SHORT signal is present. conditional_wr should reflect this 76% base.
+
 ## HARD RULES
 - Probabilities must sum to 1.0
 - If insufficient data: say so, don't fabricate
 - Keep under 600 tokens
 - kelly_fraction = already half-Kelly
+
+## ENRICHED CONTEXT
+If the input contains an "enriched" field, it has pre-computed technical indicators (RSI, ADX, MACD, BB, ATR, EMAs), feedback loop states, and pipeline telemetry. Use these exact numbers for your statistical analysis rather than estimating from raw candles.
 """
 
 # ── Re-entry Timing Check ─────────────────────────────────────

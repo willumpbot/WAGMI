@@ -232,6 +232,12 @@ class RiskFilterChain:
         Returns FilterResult with approved=True if signal passes all checks.
         """
         meta = {}
+        # Pipeline telemetry: capture every gate decision and multiplier
+        try:
+            from core.pipeline_telemetry import get_telemetry as _get_pt
+            _pt = _get_pt()
+        except Exception:
+            _pt = None
 
         # ── Quant Rules: apply proven statistical edges ──
         # Boost confidence and risk_mult BEFORE the filter chain so all
@@ -256,6 +262,7 @@ class RiskFilterChain:
         if not signal.is_valid:
             _reason = (f"Invalid signal: stop_width_pct={signal.stop_width_pct:.4f}, "
                        f"rr={signal.risk_reward_tp1:.2f}")
+            if _pt: _pt.record_gate(signal.symbol, "validity", False, signal.stop_width_pct, 0.003, _reason)
             _log_rejection(signal, "validity", _reason)
             self._log_signal_filtered(signal, "validity", _reason)
             return FilterResult(approved=False, signal=signal, rejection_reason=_reason)
@@ -263,9 +270,11 @@ class RiskFilterChain:
         min_rr = getattr(self.config, "min_signal_rr", 1.0)
         if signal.risk_reward_tp1 < min_rr:
             _reason = f"R:R {signal.risk_reward_tp1:.2f} < min {min_rr:.1f}"
+            if _pt: _pt.record_gate(signal.symbol, "rr_floor", False, signal.risk_reward_tp1, min_rr, _reason)
             _log_rejection(signal, "rr_floor", _reason)
             self._log_signal_filtered(signal, "rr_floor", _reason)
             return FilterResult(approved=False, signal=signal, rejection_reason=_reason)
+        if _pt: _pt.record_gate(signal.symbol, "validity", True, signal.risk_reward_tp1, min_rr)
         meta["rr_tp1"] = round(signal.risk_reward_tp1, 2)
         meta["rr_tp2"] = round(signal.risk_reward_tp2, 2)
 
@@ -294,6 +303,7 @@ class RiskFilterChain:
             if fee_drag_pct > max_fee_drag:
                 _reason = (f"Fee drag {fee_drag_pct:.0%} > {max_fee_drag:.0%} "
                            f"(fees={round_trip_fee_pct:.4f}, stop={stop_pct:.4f})")
+                if _pt: _pt.record_gate(signal.symbol, "fee_drag", False, fee_drag_pct, max_fee_drag, _reason)
                 _log_rejection(signal, "fee_drag", _reason)
                 self._log_signal_filtered(signal, "fee_drag", _reason)
                 return FilterResult(
@@ -312,6 +322,7 @@ class RiskFilterChain:
             min_ev = max(min_ev, 0.14)  # Medium-tight: moderate bump, not double-filtering with fee-drag
         if ev is not None and ev < min_ev:
             _reason = f"EV {ev:.3f} < min {min_ev:.2f} (low expected value)"
+            if _pt: _pt.record_gate(signal.symbol, "ev_floor", False, ev, min_ev, _reason)
             _log_rejection(signal, "ev_floor", _reason)
             self._log_signal_filtered(signal, "ev_floor", _reason)
             return FilterResult(
@@ -336,6 +347,7 @@ class RiskFilterChain:
             if _slippage_pct_of_stop > max_slippage_pct_of_stop:
                 _reason = (f"Slippage impact {_slippage_pct_of_stop:.0%} of stop width > "
                           f"{max_slippage_pct_of_stop:.0%} (regime={_sig_regime}, stop={stop_pct:.4f})")
+                if _pt: _pt.record_gate(signal.symbol, "slippage", False, _slippage_pct_of_stop, max_slippage_pct_of_stop, _reason)
                 _log_rejection(signal, "slippage", _reason)
                 self._log_signal_filtered(signal, "slippage", _reason)
                 return FilterResult(
@@ -352,6 +364,7 @@ class RiskFilterChain:
             _min_wp = getattr(self.config, "min_signal_win_prob", 0.43)
             if _win_prob < _min_wp:
                 _reason = f"Win probability {_win_prob:.1%} < min {_min_wp:.1%} (insufficient edge)"
+                if _pt: _pt.record_gate(signal.symbol, "win_prob_floor", False, _win_prob, _min_wp, _reason)
                 _log_rejection(signal, "win_prob_floor", _reason)
                 self._log_signal_filtered(signal, "win_prob_floor", _reason)
                 return FilterResult(
@@ -365,6 +378,7 @@ class RiskFilterChain:
             confidence=signal.confidence,
             cb_conf_override_pct=cb_conf_override_pct,
         ):
+            if _pt: _pt.record_gate(signal.symbol, "circuit_breaker", False, signal.confidence, cb_conf_override_pct * 100, "Circuit breaker active")
             _log_rejection(signal, "circuit_breaker", "Circuit breaker active")
             self._log_signal_filtered(signal, "circuit_breaker", "Circuit breaker active")
             return FilterResult(
@@ -375,6 +389,7 @@ class RiskFilterChain:
         # Gate 3: Max open positions
         if current_open_count >= self.config.max_open_positions:
             _reason = f"Max positions ({self.config.max_open_positions}) reached"
+            if _pt: _pt.record_gate(signal.symbol, "max_positions", False, current_open_count, self.config.max_open_positions, _reason)
             _log_rejection(signal, "max_positions", _reason)
             self._log_signal_filtered(signal, "max_positions", _reason)
             return FilterResult(
@@ -393,6 +408,7 @@ class RiskFilterChain:
                 f"Duplicate position: {signal.symbol} already has open {_ex_side} position "
                 f"(entry={_ex_entry}, leverage={_ex_leverage}x)"
             )
+            if _pt: _pt.record_gate(signal.symbol, "duplicate_position", False, 1, 0, _reason)
             logger.warning(
                 f"[{signal.symbol}] DUPLICATE BLOCKED in pipeline: {_reason}"
             )
@@ -447,6 +463,7 @@ class RiskFilterChain:
                         else:
                             _reason = (f"Correlation cluster risk {cluster_risk:.2f} >= 0.85 "
                                        f"(too many correlated positions in same direction)")
+                            if _pt: _pt.record_gate(signal.symbol, "correlation", False, cluster_risk, 0.85, _reason)
                             _log_rejection(signal, "correlation", _reason)
                             self._log_signal_filtered(signal, "correlation", _reason)
                             return FilterResult(
@@ -476,6 +493,7 @@ class RiskFilterChain:
 
         if lev_decision.leverage <= 0:
             _reason = f"Leverage denied: {lev_decision.reason}"
+            if _pt: _pt.record_gate(signal.symbol, "leverage", False, 0, 1, _reason)
             _log_rejection(signal, "leverage", _reason)
             self._log_signal_filtered(signal, "leverage", _reason)
             return FilterResult(
@@ -492,6 +510,7 @@ class RiskFilterChain:
         LEVERAGE_FULL_SIZE = 2.5  # full position size at 2.5x+; graduated 1.0x→2.5x
         if lev_decision.leverage < min_leverage_gate:
             _reason = f"Below leverage gate: {lev_decision.leverage:.1f}x < {min_leverage_gate:.1f}x minimum"
+            if _pt: _pt.record_gate(signal.symbol, "leverage_gate", False, lev_decision.leverage, min_leverage_gate, _reason)
             _log_rejection(signal, "leverage_gate", _reason)
             self._log_signal_filtered(signal, "leverage_gate", _reason)
             return FilterResult(
@@ -514,10 +533,13 @@ class RiskFilterChain:
             logger.info(f"[{signal.symbol}] Leverage gate graduated: {lev_decision.leverage:.1f}x → "
                         f"size scalar {lev_scalar:.2f} (rm={lev_decision.risk_multiplier:.2f})")
 
+        if _pt: _pt.record_gate(signal.symbol, "leverage", True, lev_decision.leverage, min_leverage_gate)
+
         # CB override constraints: if CB tripped, cap leverage
         override_constraints = self.risk_mgr.get_override_constraints(signal.confidence)
         leverage = min(lev_decision.leverage, override_constraints["max_leverage"])
         risk_mult = lev_decision.risk_multiplier * override_constraints["size_multiplier"]
+        if _pt: _pt.record_multiplier(signal.symbol, "base_risk_mult", risk_mult, "leverage_mgr+cb_override")
 
         # Stop-width-dependent leverage cap: prevent liquidation on tight stops.
         # Kelly sizing already controls risk-per-trade — this is a liquidation
@@ -539,6 +561,7 @@ class RiskFilterChain:
         corr_reduction = meta.get("correlation_size_reduction", 1.0)
         if corr_reduction < 1.0:
             risk_mult *= corr_reduction
+            if _pt: _pt.record_multiplier(signal.symbol, "correlation_reduction", corr_reduction, "corr_guard")
 
         # Apply regime-based risk sizing: bet bigger where edge is proven
         try:
@@ -557,6 +580,7 @@ class RiskFilterChain:
             if _regime_rm != 1.0:
                 risk_mult *= _regime_rm
                 meta["regime_risk_mult"] = _regime_rm
+                if _pt: _pt.record_multiplier(signal.symbol, "regime_risk", _regime_rm, f"regime={_regime}")
             # Warn when a trade passes in the worst regime
             if _regime == "trending_bear":
                 logger.warning(
@@ -574,6 +598,7 @@ class RiskFilterChain:
             if _sym_rm != 1.0:
                 risk_mult *= _sym_rm
                 meta["symbol_risk_mult"] = _sym_rm
+                if _pt: _pt.record_multiplier(signal.symbol, "symbol_risk", _sym_rm, "symbol_edge")
         except ImportError:
             pass
 
@@ -585,6 +610,7 @@ class RiskFilterChain:
             if _side_rm != 1.0:
                 risk_mult *= _side_rm
                 meta["symbol_side_risk_mult"] = _side_rm
+                if _pt: _pt.record_multiplier(signal.symbol, "symbol_side_risk", _side_rm, f"{signal.symbol}_{signal.side}")
                 logger.info(
                     f"[{signal.symbol}] Symbol+side risk mult: {signal.side} → {_side_rm:.2f}x"
                 )
@@ -601,6 +627,7 @@ class RiskFilterChain:
                 if _adaptive_mult != 1.0:
                     risk_mult *= _adaptive_mult
                     meta["adaptive_sizing_mult"] = _adaptive_mult
+                    if _pt: _pt.record_multiplier(signal.symbol, "adaptive_sizing", _adaptive_mult, "anti_martingale")
                     meta["adaptive_sizing_heat"] = round(
                         _sizer.get_heat(signal.symbol), 3
                     )
@@ -658,6 +685,7 @@ class RiskFilterChain:
                 meta["time_sizing_mult"] = round(_time_mult, 3)
                 meta["time_sizing_session"] = _time_info["session"]
                 meta["time_sizing_reasons"] = _time_info["reasons"]
+                if _pt: _pt.record_multiplier(signal.symbol, "time_sizing", _time_mult, _time_info.get("session", ""))
         except Exception as e:
             logger.debug(f"[TIME_SIZING] Error: {e}")
 
@@ -689,10 +717,13 @@ class RiskFilterChain:
             pass  # Below 75%: no penalty. Leverage tier already handles this.
             meta["confidence_sizing"] = "neutral_1.0x"
 
+        if _pt and meta.get("confidence_sizing"): _pt.record_multiplier(signal.symbol, "confidence_sizing", {"exhaustion_0.7x": 0.7, "high_conviction_1.5x": 1.5, "strong_1.2x": 1.2, "good_1.1x": 1.1, "neutral_1.0x": 1.0}.get(meta["confidence_sizing"], 1.0), meta["confidence_sizing"])
+
         # Apply quant conviction risk multiplier (Rule 4: size up on proven setups)
         if quant["risk_mult_boost"] != 1.0:
             risk_mult *= quant["risk_mult_boost"]
             meta["quant_risk_mult_boost"] = quant["risk_mult_boost"]
+            if _pt: _pt.record_multiplier(signal.symbol, "quant_conviction", quant["risk_mult_boost"], "proven_setup")
 
         # Floor: prevent multiplicative chain from crushing risk_mult to near-zero.
         # Full Kelly approach: floor at 0.50 so every trade risks at least half
@@ -721,6 +752,7 @@ class RiskFilterChain:
         )
         if not liq_check["safe"]:
             _reason = f"SL ({signal.sl}) beyond liquidation ({liq_check['liquidation_price']:.2f})"
+            if _pt: _pt.record_gate(signal.symbol, "liquidation", False, signal.sl, liq_check.get("liquidation_price", 0), _reason)
             _log_rejection(signal, "liquidation", _reason)
             self._log_signal_filtered(signal, "liquidation", _reason)
             return FilterResult(
@@ -739,12 +771,15 @@ class RiskFilterChain:
         )
         if qty <= 0:
             _reason = "Position size zero (stop width too narrow or equity too low)"
+            if _pt: _pt.record_gate(signal.symbol, "sizing", False, qty, 0, _reason)
             _log_rejection(signal, "sizing", _reason)
             self._log_signal_filtered(signal, "sizing", _reason)
             return FilterResult(
                 approved=False, signal=signal,
                 rejection_reason=_reason,
             )
+
+        if _pt: _pt.record_gate(signal.symbol, "all_gates", True, qty, 0, f"lev={leverage:.1f}x rm={risk_mult:.2f}")
 
         return FilterResult(
             approved=True,

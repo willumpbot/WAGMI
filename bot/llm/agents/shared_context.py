@@ -597,6 +597,55 @@ class SharedLessons:
         self._lessons = strong + others[:max(0, remaining_slots)]
 
 
+# ── System Architecture (mental model for all agents) ───────────
+
+SYSTEM_OVERVIEW = (
+    "Signal flow: 10 strategies evaluate independently → ensemble votes (weighted_veto, needs 2+ agree) "
+    "→ 79-component gate pipeline filters (validity, circuit breaker, position limits, leverage, liquidation, sizing) "
+    "→ LLM agents judge quality at Level 5 autonomy → position manager executes (IDLE→OPEN→TP1_HIT→TRAILING→CLOSED) "
+    "→ trailing stop manages exit → Learning Agent extracts lessons → feedback loops tune parameters. "
+    "Currently: gates kill 91% of signals, sizing chain applies 19 multipliers reducing to ~2.7% of intended risk, "
+    "trailing stop captures only 65% of MFE. Your judgment is the primary quality filter."
+)
+
+AGENT_ROLES = {
+    "regime": "What market regime are we in? Classifies regime + directional outlook. Trade/Risk/Critic all depend on this classification.",
+    "trade": "Should we take this trade? Forms directional thesis, decides go/skip/flip with confluence scoring. Risk/Critic depend on the thesis.",
+    "risk": "How big should this position be? Sizes the trade and flags portfolio-level risks. Critic reviews this sizing.",
+    "critic": "Is the thesis wrong? Stress-tests the trade thesis — must provide a counter-thesis to veto. Final gate before execution.",
+    "learning": "What did we learn from this closed trade? Extracts lessons and tracks thesis accuracy. Feeds back to all agents via shared lessons.",
+    "exit": "Should we hold, adjust, or close this open position? Reassesses thesis validity against live price action. Directly triggers exits.",
+    "scout": "What should we watch for next? Builds watchlists and pre-formed theses during idle time. Primes the Trade Agent.",
+    "overseer": "Is the system healthy? Monitors agent consistency, feedback loop state, and portfolio-level risk across all positions.",
+    "quant": "What do the numbers say? Validates statistical edge, computes expected value, and checks if the math supports the thesis.",
+}
+
+KNOWN_ISSUES = [
+    "Gate pipeline: 79 components compound to kill 91% of signals — most rejections are structural, not quality-based",
+    "Feedback deadlock: tuner frozen, adaptive risk at 0.60x — feedback loops are in conservative mode",
+    "Trailing stop captures only 65% of MFE — significant alpha left on the table",
+    "Sizing chain: 19 multipliers compound to ~2.7% of intended risk — recommend 1.5-2x your intended size to compensate",
+]
+
+DATA_SOURCES = {
+    "market.technicals": "RSI/ADX/MACD/BB computed from 1h candles",
+    "market.funding": "Hourly funding rates from Hyperliquid",
+    "market.oi": "Open interest levels and OI/volume ratio",
+    "market.liquidation": "Estimated liquidation cluster prices",
+    "signals.pipeline": "Every gate's pass/fail decision on the current signal",
+    "system.feedback": "Current state of all 6 feedback loops (tuner, adaptive risk, etc.)",
+    "positions.*": "Full state machine for open positions (state, PnL, MFE, trailing stop)",
+}
+
+DECISION_FRAMEWORK = (
+    "At Level 5 autonomy, YOUR decisions ARE the trading decisions. "
+    "Mechanical gates still enforce structural safety (SL width, notional cap, circuit breaker). "
+    "Quality judgment (is this trade worth taking?) is YOUR responsibility. "
+    "Sizing (how big?) is YOUR responsibility. "
+    "The downstream multiplier chain will STILL reduce your size — compensate by recommending 1.5-2x your intended size."
+)
+
+
 # ── Context Builder ──────────────────────────────────────────────
 
 def build_shared_context_block(
@@ -621,6 +670,14 @@ def build_shared_context_block(
     Returns a compact string to minimize token usage.
     """
     parts = []
+
+    # System architecture (compact mental model)
+    role_desc = AGENT_ROLES.get(agent_role, "")
+    parts.append(f"SYSTEM: {SYSTEM_OVERVIEW}")
+    if role_desc:
+        parts.append(f"YOUR_ROLE({agent_role}): {role_desc}")
+    parts.append(f"DECISION: {DECISION_FRAMEWORK}")
+    parts.append("KNOWN_ISSUES: " + " | ".join(KNOWN_ISSUES))
 
     # Market axioms (compact) — include quant rules (items 10-16) alongside core rules
     if include_axioms:

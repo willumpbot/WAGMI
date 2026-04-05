@@ -50,6 +50,16 @@ from llm.agents.consistency_checker import (
 from llm.client import call_llm
 from llm.decision_types import LLMDecision, StrategyWeights
 
+# External data collectors (funding/OI, liquidation, shadow MR)
+try:
+    from llm.agents.external_data import (
+        get_external_data_for_snapshot,
+        format_for_agent as format_external_data,
+    )
+    _EXTERNAL_DATA_AVAILABLE = True
+except ImportError:
+    _EXTERNAL_DATA_AVAILABLE = False
+
 # Strategic agents (Portfolio, Forecaster, Hypothesis, Correlator)
 # These are optional Phase 3 agents
 try:
@@ -89,6 +99,44 @@ try:
     _PHASE_4A_AGENTS_AVAILABLE = True
 except ImportError:
     _PHASE_4A_AGENTS_AVAILABLE = False
+
+# Technical indicators for agent context
+try:
+    from llm.agents.technicals import compute_all_technicals, format_technicals_for_agent
+    _TECHNICALS_AVAILABLE = True
+except ImportError:
+    _TECHNICALS_AVAILABLE = False
+
+# Feedback loop states for agent awareness
+try:
+    from llm.agents.feedback_state import format_feedback_for_agent
+    _FEEDBACK_STATE_AVAILABLE = True
+except ImportError:
+    _FEEDBACK_STATE_AVAILABLE = False
+
+# Position enrichment for richer position context
+try:
+    from llm.agents.position_enrichment import format_positions_for_agent
+    _POSITION_ENRICHMENT_AVAILABLE = True
+except ImportError:
+    _POSITION_ENRICHMENT_AVAILABLE = False
+
+# Portfolio-level intelligence (exposure, correlation, risk budget)
+try:
+    from llm.agents.portfolio_intelligence import (
+        compute_portfolio_state,
+        format_portfolio_for_agent,
+    )
+    _PORTFOLIO_INTEL_AVAILABLE = True
+except ImportError:
+    _PORTFOLIO_INTEL_AVAILABLE = False
+
+# Pipeline telemetry (recent gate decisions)
+try:
+    from core.pipeline_telemetry import get_telemetry
+    _TELEMETRY_AVAILABLE = True
+except ImportError:
+    _TELEMETRY_AVAILABLE = False
 
 # Pipeline extensions: quant engine, agent brains, debate, telemetry
 # These are optional — gracefully degrade if modules not yet built
@@ -166,6 +214,141 @@ class AgentCoordinator:
         # Reset per-pipeline shared state
         scratchpad = reset_pipeline_scratchpad()
         shared_lessons = get_shared_lessons()
+
+        # ── Inject external data (funding/OI, liq levels, shadow MR) ──
+        if _EXTERNAL_DATA_AVAILABLE:
+            try:
+                ext = get_external_data_for_snapshot()
+                if ext:
+                    snapshot_data.update(ext)
+                    logger.info("[MULTI-AGENT] External data injected: %s",
+                                ", ".join(ext.keys()))
+            except Exception as e:
+                logger.warning("[MULTI-AGENT] External data injection failed: %s", e)
+
+        # ── Build enriched context for all agents ──────────────
+        enriched_parts = []
+
+        # Extract symbol from snapshot for context
+        _enrich_symbol = ""
+        _markets = snapshot_data.get("m", [])
+        if _markets and isinstance(_markets, list) and _markets:
+            _enrich_symbol = _markets[0].get("s", _markets[0].get("sym", ""))
+
+        # Technical indicators (needs ohlcv_1h in snapshot)
+        if _TECHNICALS_AVAILABLE:
+            try:
+                _ohlcv = snapshot_data.get("ohlcv_1h")
+                if _ohlcv:
+                    techs = compute_all_technicals(_ohlcv)
+                    if techs:
+                        tech_text = format_technicals_for_agent(techs, _enrich_symbol)
+                        if tech_text:
+                            enriched_parts.append(tech_text)
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Technicals enrichment failed: %s", e)
+
+        # External data (funding, OI, liquidation) — formatted text
+        if _EXTERNAL_DATA_AVAILABLE:
+            try:
+                ext_text = format_external_data(["BTC", "ETH", "SOL", "HYPE"])
+                if ext_text:
+                    enriched_parts.append(ext_text)
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] External data text enrichment failed: %s", e)
+
+        # Feedback loop states (strategy weights, Kelly, adaptive risk, tuner)
+        if _FEEDBACK_STATE_AVAILABLE:
+            try:
+                fb_text = format_feedback_for_agent()
+                if fb_text:
+                    enriched_parts.append(fb_text)
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Feedback state enrichment failed: %s", e)
+
+        # Pipeline telemetry (recent gate decisions)
+        if _TELEMETRY_AVAILABLE:
+            try:
+                tel_text = get_telemetry().format_for_llm(
+                    symbol=_enrich_symbol, last_n=5
+                )
+                if tel_text:
+                    enriched_parts.append(f"PIPELINE:\n{tel_text}")
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Telemetry enrichment failed: %s", e)
+
+        # Position enrichment (rich position state for agents)
+        if _POSITION_ENRICHMENT_AVAILABLE:
+            try:
+                _positions = snapshot_data.get("pos", {})
+                _prices = {}
+                for _mk in _markets:
+                    _mk_sym = _mk.get("s", _mk.get("sym", ""))
+                    _mk_price = _mk.get("p", _mk.get("price", 0))
+                    if _mk_sym and _mk_price:
+                        _prices[_mk_sym] = _mk_price
+                if _positions:
+                    pos_text = format_positions_for_agent(_positions, _prices)
+                    if pos_text:
+                        enriched_parts.append(pos_text)
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Position enrichment failed: %s", e)
+
+        # Portfolio-level intelligence (exposure, correlation, risk budget)
+        if _PORTFOLIO_INTEL_AVAILABLE:
+            try:
+                _positions = snapshot_data.get("pos", {})
+                _prices = {}
+                for _mk in _markets:
+                    _mk_sym = _mk.get("s", _mk.get("sym", ""))
+                    _mk_price = _mk.get("p", _mk.get("price", 0))
+                    if _mk_sym and _mk_price:
+                        _prices[_mk_sym] = _mk_price
+                _equity = float(snapshot_data.get("g", {}).get("equity",
+                                snapshot_data.get("g", {}).get("eq", 0)))
+                if _equity > 0:
+                    _port_state = compute_portfolio_state(_positions, _prices, _equity)
+                    snapshot_data["_portfolio_state"] = _port_state
+                    _port_text = format_portfolio_for_agent(_port_state)
+                    if _port_text:
+                        enriched_parts.append(_port_text)
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Portfolio intelligence failed: %s", e)
+
+        # Network learning: inject accumulated lessons from past trades
+        try:
+            from llm.agents.network_learning import get_network_learning
+            _nl = get_network_learning()
+            # Inject per-agent lessons into snapshot for downstream builders
+            _nl_trade = _nl.get_prompt_injection("trade")
+            _nl_risk = _nl.get_prompt_injection("risk")
+            _nl_regime = _nl.get_regime_intelligence()
+            _nl_critic = _nl.get_prompt_injection("critic")
+            if _nl_trade:
+                snapshot_data["network_lessons_trade"] = _nl_trade
+            if _nl_risk:
+                snapshot_data["network_lessons_risk"] = _nl_risk
+                snapshot_data["risk_constraints"] = _nl.get_risk_constraints()
+            if _nl_regime:
+                enriched_parts.append(_nl_regime)
+            if _nl_critic:
+                snapshot_data["network_lessons_critic"] = _nl_critic
+            # Calibration adjustment for Quant Agent
+            _cal_adj = _nl.get_calibration_adjustment()
+            if _cal_adj != 0:
+                snapshot_data["network_calibration_adj"] = round(_cal_adj, 4)
+            # Edge decay alerts for Overseer
+            _decaying = _nl.get_decaying_edges()
+            if _decaying:
+                snapshot_data["edge_decay_alerts"] = _decaying
+        except Exception as e:
+            logger.debug("[MULTI-AGENT] Network learning injection failed: %s", e)
+
+        enriched_context = "\n\n".join(enriched_parts) if enriched_parts else ""
+        if enriched_context:
+            snapshot_data["enriched_context"] = enriched_context
+            logger.info("[MULTI-AGENT] Enriched context: %d chars from %d sources",
+                        len(enriched_context), len(enriched_parts))
 
         # ── Step 1: Regime Agent ────────────────────────────────
         regime_input = self._build_regime_input(snapshot_data)
@@ -377,6 +560,23 @@ class AgentCoordinator:
                         latency_ms=trade_out.latency_ms,
                     )
 
+        # ── Network Learning: apply calibration adjustment ────
+        _net_cal = snapshot_data.get("network_calibration_adj", 0) if snapshot_data else 0
+        if _net_cal and isinstance(_net_cal, (int, float)) and abs(_net_cal) >= 0.02:
+            td = trade_out.data
+            old_c = float(td.get("c", td.get("confidence", 0.0)))
+            new_c = max(0.0, min(1.0, old_c + _net_cal))
+            trade_out = AgentOutput(
+                role=AgentRole.TRADE,
+                data={**td, "c": new_c,
+                      "n": (td.get("n", "") + f" | NET_CAL: {_net_cal:+.2f}")},
+                raw_text=trade_out.raw_text,
+                model_used=trade_out.model_used,
+                input_tokens=trade_out.input_tokens,
+                output_tokens=trade_out.output_tokens,
+                latency_ms=trade_out.latency_ms,
+            )
+
         # ── Agent Brain: Record decisions for learning ────────
         if _EXTENSIONS_AVAILABLE:
             try:
@@ -405,12 +605,17 @@ class AgentCoordinator:
                 if _markets and isinstance(_markets[0], dict):
                     _sym = _markets[0].get("s", _markets[0].get("sym", ""))
 
-                # Try interactive debate first (2-round, more sophisticated)
+                # Try interactive debate first (2-round, real LLM calls)
                 if trade_out.ok and critic_out and critic_out.ok:
+                    _risk_data = risk_out.data if risk_out and risk_out.ok else {}
                     interactive_debate_outcome = run_interactive_debate_if_enabled(
                         trade_agent_output=trade_out.data,
                         critic_agent_output=critic_out.data,
                         market_context=snapshot_data or {},
+                        risk_assessment=_risk_data,
+                        position_size_pct=float(_risk_data.get(
+                            "position_size_pct", _risk_data.get("sz_pct", 0)
+                        )),
                     )
                     if interactive_debate_outcome:
                         scratchpad.write("debate", "interactive_outcome", interactive_debate_outcome)
@@ -740,6 +945,10 @@ class AgentCoordinator:
                 exit_data["exit_history"] = summary[:300]
         except Exception:
             pass
+
+        # Enriched context from market_data if available
+        if market_data and market_data.get("enriched_context"):
+            exit_data["enriched"] = market_data["enriched_context"]
 
         return json.dumps(exit_data, separators=(",", ":"))
 
@@ -1407,6 +1616,15 @@ class AgentCoordinator:
         except Exception as e:
             logger.info(f"[OVERSEER] Brain upgrade injection error: {e}")
 
+        # 11. Network learning summary (edge decay, calibration drift, constraints)
+        try:
+            from llm.agents.network_learning import get_network_learning
+            nl_summary = get_network_learning().format_for_overseer()
+            if nl_summary:
+                state["network_learning"] = nl_summary[:400]
+        except Exception:
+            pass
+
         return json.dumps(state, separators=(",", ":"), default=str)
 
     def get_stats(self) -> Dict[str, Any]:
@@ -1720,6 +1938,10 @@ class AgentCoordinator:
         except Exception:
             pass
 
+        # Enriched context from technicals, feedback, telemetry, positions
+        if snapshot.get("enriched_context"):
+            quant_data["enriched"] = snapshot["enriched_context"]
+
         return json.dumps(quant_data, separators=(",", ":"))
 
     def _compute_regime_fallback(self, snapshot: dict) -> str:
@@ -1804,6 +2026,16 @@ class AgentCoordinator:
             regime_section = _extract_section(dm, "REGIME", 300)
             if regime_section:
                 regime_data["regime_history"] = regime_section
+        # External data: funding/OI + liquidation (critical for regime classification)
+        if "ext_funding" in snapshot:
+            regime_data["ext_funding"] = snapshot["ext_funding"]
+        if "ext_liq" in snapshot:
+            regime_data["ext_liq"] = snapshot["ext_liq"]
+        if "ext_summary" in snapshot:
+            regime_data["ext_data"] = snapshot["ext_summary"]
+        # Enriched context from technicals, feedback, telemetry, positions
+        if snapshot.get("enriched_context"):
+            regime_data["enriched"] = snapshot["enriched_context"]
         return json.dumps(regime_data, separators=(",", ":"))
 
     def _build_trade_input(self, snapshot: dict, regime_out: AgentOutput, quant_out: Optional[AgentOutput] = None) -> str:
@@ -1853,6 +2085,17 @@ class AgentCoordinator:
         _ensure_field(trade_data, "port_lev", snapshot)
         _ensure_field(trade_data, "funding_cost_pct", snapshot)
         _ensure_field(trade_data, "funding_alert", snapshot)
+        # External collector data: funding/OI, liq levels, shadow MR
+        _ensure_field(trade_data, "ext_funding", snapshot)
+        _ensure_field(trade_data, "ext_liq", snapshot)
+        _ensure_field(trade_data, "ext_mr", snapshot)
+        _ensure_field(trade_data, "ext_summary", snapshot)
+
+        # Network learning: inject accumulated lessons for Trade Agent
+        if "network_lessons_trade" in snapshot:
+            trade_data["network_lessons"] = snapshot["network_lessons_trade"]
+        if "network_calibration_adj" in snapshot:
+            trade_data["calibration_adj"] = snapshot["network_calibration_adj"]
 
         # Inject filter annotations so Trade Agent sees what filters measured
         if "filt" in snapshot:
@@ -1936,6 +2179,10 @@ class AgentCoordinator:
         except Exception:
             pass
 
+        # Enriched context (already in trade_data via dict(snapshot), rename key)
+        if "enriched_context" in trade_data:
+            trade_data["enriched"] = trade_data.pop("enriched_context")
+
         return json.dumps(trade_data, separators=(",", ":"))
 
     def _build_risk_input(
@@ -1962,6 +2209,9 @@ class AgentCoordinator:
                      "funding_alert", "session_perf"):
             if key in snapshot:
                 risk_data[key] = snapshot[key]
+        # Portfolio-level intelligence (computed earlier in pipeline)
+        if "_portfolio_state" in snapshot:
+            risk_data["portfolio"] = snapshot["_portfolio_state"]
         # Filter annotations for risk-aware sizing (fd, ev, cr matter for sizing)
         if "filt" in snapshot:
             risk_data["filter_assessment"] = snapshot["filt"]
@@ -2021,6 +2271,20 @@ class AgentCoordinator:
         except Exception as e:
             logger.info(f"[MULTI-AGENT] Brain risk context error: {e}")
 
+        # External data: liq levels critical for risk sizing
+        _ensure_field(risk_data, "ext_liq", snapshot)
+        _ensure_field(risk_data, "ext_funding", snapshot)
+
+        # Network learning: inject risk constraints and lessons
+        if "network_lessons_risk" in snapshot:
+            risk_data["network_lessons"] = snapshot["network_lessons_risk"]
+        if "risk_constraints" in snapshot:
+            risk_data["hard_constraints"] = snapshot["risk_constraints"]
+
+        # Enriched context from technicals, feedback, telemetry, positions
+        if snapshot.get("enriched_context"):
+            risk_data["enriched"] = snapshot["enriched_context"]
+
         return json.dumps(risk_data, separators=(",", ":"))
 
     def _build_critic_input(
@@ -2074,6 +2338,10 @@ class AgentCoordinator:
         # Memory notes for pattern checking
         _ensure_field(critic_data, "mem", snapshot, max_len=400)
 
+        # External data: compact summary for critic cross-check
+        _ensure_field(critic_data, "ext_summary", snapshot)
+        _ensure_field(critic_data, "ext_liq", snapshot)
+
         # Gap 4+5: Inject calibration data for the critic
         try:
             from llm.agents.calibration_ledger import get_calibration_ledger
@@ -2083,6 +2351,14 @@ class AgentCoordinator:
                 critic_data["agent_cal"] = cal_data
         except Exception:
             pass
+
+        # Network learning: inject past lessons for better veto decisions
+        if "network_lessons_critic" in snapshot:
+            critic_data["network_lessons"] = snapshot["network_lessons_critic"]
+
+        # Enriched context from technicals, feedback, telemetry, positions
+        if snapshot.get("enriched_context"):
+            critic_data["enriched"] = snapshot["enriched_context"]
 
         return json.dumps(critic_data, separators=(",", ":"))
 

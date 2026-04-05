@@ -449,6 +449,156 @@
       "source": "quant_edge_study_2026_03_25",
       "validated": true,
       "validation_count": 0
+    },
+    {
+      "ts": 1775338628.1558795,
+      "category": "risk_insight",
+      "insight": "Position sizing is 72% of all losses. 4 trades at 20-37x equity = -$330 of -$470 total. Hard notional cap at 15x equity prevents catastrophic sizing. At 5x cap, same 35 trades go from -$52 to +$62.",
+      "confidence": 0.95,
+      "evidence": "Complete system audit: 35 live trades analyzed, 4 catastrophic outliers identified. Arithmetic proof on actual PnL.",
+      "source": "system_audit_2026_04_03",
+      "validated": true,
+      "validation_count": 35
+    },
+    {
+      "ts": 1775338629.1558795,
+      "category": "execution_insight",
+      "insight": "Trailing stop generates ALL positive alpha: +$325 from 5 trades. Everything else combined: -$399. Current trail captures only 65% of MFE (one trade captured only 19%). Wider trail (2.0%) with higher activation = more capture. But 82% of trailing profit came from 2 outlier trades -- magnitude is overfit, direction is right.",
+      "confidence": 0.9,
+      "evidence": "5 trailing wins vs all other trade types. MFE analysis on each. 2 outliers dominate.",
+      "source": "system_audit_2026_04_03",
+      "validated": true,
+      "validation_count": 5
+    },
+    {
+      "ts": 1775338630.1558795,
+      "category": "meta_insight",
+      "insight": "Pipeline has 79 components: 47 gates + 32 multipliers. 91% of signals die before becoming trades. Biggest killer: duplicate position (63.6% of rejections -- structural, not analytical). Chop detector kills 48% of remaining signals. 72% of killed signals leave NO audit trail. Many gates are redundant (e.g., 4 duplicate checks, 3 correlation guards, 3 R:R checks).",
+      "confidence": 0.95,
+      "evidence": "Complete gate audit: every gate, filter, and multiplier cataloged with file:line references. 18 REDUNDANT_WITH pairs identified.",
+      "source": "gate_audit_2026_04_03",
+      "validated": true,
+      "validation_count": 79
+    },
+    {
+      "ts": 1775338631.1558795,
+      "category": "risk_insight",
+      "insight": "Feedback systems are in deadlock: confidence calibrator frozen at -15 offset, adaptive risk stuck at 0.60x floor, Kelly at minimum. Combined multiplicative effect: positions are 1.1% of full Kelly. The system learned to be over-cautious from early oversized losses, but those were fixed by hard cap -- feedback has not reset.",
+      "confidence": 0.9,
+      "evidence": "Feedback state inspection: cal offset -15, adaptive 0.60, Kelly floor. Product = ~0.011 of intended size.",
+      "source": "system_audit_2026_04_03",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1775338632.1558795,
+      "category": "regime_insight",
+      "insight": "CORRECTED: Mean-reversion dominates is WRONG. Hurst exponent = 0.64-0.70 for all assets = TRENDING. But trends are 12-24h scale, not multi-day. Mean-reversion works at daily scale. Match strategy to timescale: trend-follow at 12-24h, mean-revert at daily+.",
+      "confidence": 0.85,
+      "evidence": "Hurst exponent calculation on 500 1h candles for BTC/ETH/SOL/HYPE. All show H>0.5 (trending).",
+      "source": "quant_research_2026_04_03",
+      "validated": true,
+      "validation_count": 4
+    },
+    {
+      "ts": 1775338633.1558795,
+      "category": "strategy_insight",
+      "insight": "CORRECTED: Shorts are the only edge is WRONG for 30d window. Longs outperformed on SOL (3/5 weeks) and HYPE (3/5 weeks). Shorts-only was recency bias from last 5-day selloff. Both directions have edge when entry quality is high.",
+      "confidence": 0.85,
+      "evidence": "5-week rolling window analysis. Long vs short PnL by symbol by week.",
+      "source": "quant_research_2026_04_03",
+      "validated": true,
+      "validation_count": 6
+    },
+    {
+      "ts": 1775338634.1558795,
+      "category": "strategy_insight",
+      "insight": "CORRECTED: Volume fading = winners is SPURIOUS. When controlling for symbol, RISING volume predicts winners on BTC/ETH/SOL. The original finding was a confound from symbol mix.",
+      "confidence": 0.8,
+      "evidence": "Volume analysis controlled by symbol. Fading volume correlated with HYPE-specific moves, not general pattern.",
+      "source": "quant_research_2026_04_03",
+      "validated": true,
+      "validation_count": 4
+    },
+    {
+      "ts": 1775338635.1558795,
+      "category": "strategy_insight",
+      "insight": "Three strategies are dead weight and should be disabled or heavily down-weighted: vmc_cipher (5% WR on 20 trades), sniper_premium (0% WR on 20 trades), regime_trend (20% WR, spams 182 signals/day). Only confidence_scorer (50% WR, Kelly 0.28), probability_engine (45% WR), and bollinger_squeeze (40% WR, Kelly 0.18) show real signal.",
+      "confidence": 0.9,
+      "evidence": "20+ trade sample per strategy from live and paper trading. Kelly fractions computed from actual outcomes.",
+      "source": "system_audit_2026_04_03",
+      "validated": true,
+      "validation_count": 60
+    },
+    {
+      "ts": 1775338636.1558795,
+      "category": "execution_insight",
+      "insight": "40% of worst losses had the RIGHT direction. 2 of 5 worst losses had MFE of +2.5-2.9% but got stopped at -4.1% spike. Both were same SOL move on Apr 1. Lost $130, would have made $540 with wider stops ($670 swing). Tight stops at high leverage = the real killer.",
+      "confidence": 0.95,
+      "evidence": "MFE/MAE analysis on 5 worst losses. 2 had MFE > |SL|. Both SOL SHORT on Apr 1.",
+      "source": "system_audit_2026_04_03",
+      "validated": true,
+      "validation_count": 5
+    },
+    {
+      "ts": 1775338637.1558795,
+      "category": "correlation_insight",
+      "insight": "No cross-asset lead-lag at 5min -- BTC and alts move in same bar. But fading BTC pumps on SOL = 76% WR (n=67, p=0.067). Asymmetry: fading pumps works, fading dumps does not. Order book imbalance is NOT predictive (50% accuracy = coin flip). ETH is anti-predictive (25%) suggesting spoofing.",
+      "confidence": 0.85,
+      "evidence": "5-min cross-asset correlation study + order book imbalance analysis. 67 BTC-pump fade events.",
+      "source": "system_audit_2026_04_03",
+      "validated": false,
+      "validation_count": 67
+    },
+    {
+      "ts": 1775338638.1558795,
+      "category": "timing_insight",
+      "insight": "Time-of-day multipliers were INVERTED. H17 UTC (best short hour, 58-68% WR) was blocked at 0.15x. H20 (worst hour) was boosted to 1.3x. Kill zones: H14-17 UTC (US session), H00-02 (Asia). Monday is best day. Weekends have lower vol and mean-revert. Now fixed to data-driven values.",
+      "confidence": 0.95,
+      "evidence": "7-day 5-min analysis of win rates by hour. Every hour mapped to actual outcomes.",
+      "source": "system_audit_2026_04_03",
+      "validated": true,
+      "validation_count": 168
+    },
+    {
+      "ts": 1775338639.1558795,
+      "category": "strategy_insight",
+      "insight": "Funding rate strategy was DEAD CODE the entire time. Thresholds assumed 8h payments but Hyperliquid pays hourly. Strategy never fired for any major asset. Fix: divide thresholds by 8. Timer should check 24x/day not 3x/day. Free edge left on table.",
+      "confidence": 0.95,
+      "evidence": "Code audit: funding thresholds 8-10x too high for Hyperliquid hourly funding. Zero fires in production.",
+      "source": "system_audit_2026_04_03",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1775338640.1558795,
+      "category": "meta_insight",
+      "insight": "Realistic targets for $500 account: 3-8% monthly return, Sharpe 1.0-1.5, PF 1.5-2.0, WR 55-65% trend / 65-80% MR. Max 2-3 trades/day to manage fee drag. Goal: compound to $2-5k where strategies become more capital-efficient. Trade less, trade bigger with Kelly sizing.",
+      "confidence": 0.9,
+      "evidence": "Academic/industry research benchmarks. Monte Carlo simulations on $500 starting equity.",
+      "source": "system_audit_2026_04_03",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1775354832.895633,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1775354988.6371677,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
     }
   ]
 }

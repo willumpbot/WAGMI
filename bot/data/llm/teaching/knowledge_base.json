@@ -1872,7 +1872,7 @@
       "knowledge_type": "observation",
       "content": "Overconfidence detected: 3 high-conf trades lost",
       "confidence": 0.6,
-      "evidence_count": 60,
+      "evidence_count": 67,
       "supporting": [
         "3 losses at >80% confidence",
         "3 losses at >80% confidence",
@@ -1897,7 +1897,7 @@
       ],
       "contradicting": [],
       "created_at": 1775068868.9056735,
-      "last_validated": 1775320894.329821,
+      "last_validated": 1775353512.9685857,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "calibration",
@@ -2319,11 +2319,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in  regime (35% WR)",
       "confidence": 0.65,
-      "evidence_count": 0,
+      "evidence_count": 2,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775196446.9134781,
-      "last_validated": 1775196446.9134781,
+      "last_validated": 1775353512.9530005,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -2354,11 +2354,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in  regime (32% WR)",
       "confidence": 0.6818181818181819,
-      "evidence_count": 12,
+      "evidence_count": 17,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775239161.5941954,
-      "last_validated": 1775280513.9497995,
+      "last_validated": 1775341200.0263777,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -2372,11 +2372,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 40% win rate (50 trades)",
       "confidence": 1.5,
-      "evidence_count": 12,
+      "evidence_count": 14,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775239161.6006577,
-      "last_validated": 1775280513.9572248,
+      "last_validated": 1775353512.9770014,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -2407,11 +2407,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 38% win rate (50 trades)",
       "confidence": 1.5,
-      "evidence_count": 8,
+      "evidence_count": 10,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775283945.5070643,
-      "last_validated": 1775312916.1841545,
+      "last_validated": 1775341200.0613801,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -2442,11 +2442,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in ranging regime (0% WR)",
       "confidence": 0.7,
-      "evidence_count": 1,
+      "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775316404.660655,
-      "last_validated": 1775320894.325639,
+      "last_validated": 1775331589.2893388,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -2460,11 +2460,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 36% win rate (50 trades)",
       "confidence": 1.5,
-      "evidence_count": 1,
+      "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775316404.667724,
-      "last_validated": 1775320894.3353531,
+      "last_validated": 1775331589.2993243,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -2472,6 +2472,323 @@
         "agree_1"
       ],
       "source": "pattern_recognition"
+    },
+    {
+      "knowledge_type": "observation",
+      "content": "System struggles in ranging regime (20% WR)",
+      "confidence": 0.7,
+      "evidence_count": 3,
+      "supporting": [],
+      "contradicting": [],
+      "created_at": 1775335021.143559,
+      "last_validated": 1775353512.9601355,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime",
+      "tags": [
+        "ranging",
+        "unfavorable"
+      ],
+      "source": "pattern_recognition"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "HARD CAP: Never allow position notional > 15x account equity. 4 trades at 20-37x equity caused 72% of all losses (-$330).",
+      "confidence": 0.95,
+      "evidence_count": 35,
+      "supporting": [
+        "4 catastrophic trades at 20-37x = -$330",
+        "Same trades at 5x cap = +$62"
+      ],
+      "contradicting": [],
+      "created_at": 1775338648.1558795,
+      "last_validated": 1775338648.1558795,
+      "validation_count": 35,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "sizing",
+        "leverage",
+        "critical"
+      ],
+      "source": "system_audit_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "Trailing stops generate all positive alpha. Widen trail to 2.0%, raise activation threshold. Current 0.7-0.9% effective trail captures only 65% of MFE.",
+      "confidence": 0.9,
+      "evidence_count": 5,
+      "supporting": [
+        "+$325 from 5 trailing wins",
+        "One winner captured only 19% of MFE"
+      ],
+      "contradicting": [
+        "82% of trailing profit from 2 outlier trades"
+      ],
+      "created_at": 1775338649.1558795,
+      "last_validated": 1775338649.1558795,
+      "validation_count": 5,
+      "invalidation_count": 0,
+      "category": "execution",
+      "tags": [
+        "trailing_stop",
+        "exit",
+        "alpha"
+      ],
+      "source": "system_audit_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "H17 UTC is PRIME for shorts (58-68% WR). H20 UTC is DEAD (worst hour). Monday is best day. Weekends mean-revert with lower vol.",
+      "confidence": 0.95,
+      "evidence_count": 168,
+      "supporting": [
+        "7-day 5-min win rate analysis by hour",
+        "H17 was wrongly blocked at 0.15x"
+      ],
+      "contradicting": [],
+      "created_at": 1775338650.1558795,
+      "last_validated": 1775338650.1558795,
+      "validation_count": 168,
+      "invalidation_count": 0,
+      "category": "timing",
+      "tags": [
+        "time_of_day",
+        "short",
+        "session"
+      ],
+      "source": "system_audit_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "Disable or heavily down-weight: vmc_cipher (5% WR), sniper_premium (0% WR), regime_trend (20% WR, 182 sig/day spam). Weight UP: confidence_scorer (50% WR, Kelly 0.28), probability_engine (45% WR), bollinger_squeeze (40% WR).",
+      "confidence": 0.9,
+      "evidence_count": 60,
+      "supporting": [
+        "20+ trades per strategy",
+        "Kelly fractions from actual outcomes"
+      ],
+      "contradicting": [],
+      "created_at": 1775338651.1558795,
+      "last_validated": 1775338651.1558795,
+      "validation_count": 60,
+      "invalidation_count": 0,
+      "category": "strategy",
+      "tags": [
+        "strategy_weight",
+        "dead_weight",
+        "signal_quality"
+      ],
+      "source": "system_audit_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "No cross-asset lead-lag at 5min resolution -- all assets move simultaneously. But fading BTC pumps on SOL = 76% WR (n=67). Asymmetry: fade pumps works, fade dumps does not.",
+      "confidence": 0.85,
+      "evidence_count": 67,
+      "supporting": [
+        "67 BTC-pump fade events at 76% WR",
+        "Monte Carlo 99th percentile"
+      ],
+      "contradicting": [
+        "p=0.067, marginally significant"
+      ],
+      "created_at": 1775338652.1558795,
+      "last_validated": 1775338652.1558795,
+      "validation_count": 67,
+      "invalidation_count": 0,
+      "category": "correlation",
+      "tags": [
+        "cross_asset",
+        "btc",
+        "sol",
+        "fade"
+      ],
+      "source": "quant_research_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "Hurst exponent = 0.64-0.70 for all assets = TRENDING at 12-24h timescale. Mean-reversion at daily+. Match strategy to timescale: trend-follow 12-24h, mean-revert daily.",
+      "confidence": 0.85,
+      "evidence_count": 4,
+      "supporting": [
+        "Hurst calculation on 500 1h candles per asset",
+        "All 4 assets show H>0.5"
+      ],
+      "contradicting": [
+        "Only tested on recent 30-day window"
+      ],
+      "created_at": 1775338653.1558795,
+      "last_validated": 1775338653.1558795,
+      "validation_count": 4,
+      "invalidation_count": 0,
+      "category": "regime",
+      "tags": [
+        "hurst",
+        "trending",
+        "mean_reversion",
+        "timescale"
+      ],
+      "source": "quant_research_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "Pipeline has 79 components (47 gates + 32 multipliers). 18 redundant pairs identified. Biggest killer: duplicate position (63.6% of rejections). Chop detector kills 48% of remaining. Simplification = more trades = more data = faster learning.",
+      "confidence": 0.95,
+      "evidence_count": 79,
+      "supporting": [
+        "Complete gate audit with file:line references",
+        "91% of signals die"
+      ],
+      "contradicting": [],
+      "created_at": 1775338654.1558795,
+      "last_validated": 1775338654.1558795,
+      "validation_count": 79,
+      "invalidation_count": 0,
+      "category": "execution",
+      "tags": [
+        "pipeline",
+        "gates",
+        "simplification",
+        "redundancy"
+      ],
+      "source": "gate_audit_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "40% of worst losses had RIGHT direction but got stopped out. Tight stops at high leverage = real killer. 2 SOL trades lost $130 but would have made $540 with wider stops. Wider stops + lower leverage > tight stops + high leverage.",
+      "confidence": 0.9,
+      "evidence_count": 5,
+      "supporting": [
+        "MFE/MAE analysis: 2/5 worst losses had MFE > |SL|",
+        "$670 swing from stop width alone"
+      ],
+      "contradicting": [],
+      "created_at": 1775338655.1558795,
+      "last_validated": 1775338655.1558795,
+      "validation_count": 5,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "stop_loss",
+        "leverage",
+        "mfe",
+        "direction"
+      ],
+      "source": "system_audit_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "Feedback systems deadlocked: cal offset -15, adaptive risk 0.60x, Kelly floor. Combined = 1.1% of full Kelly. Reset feedback state when root cause (oversizing) is fixed.",
+      "confidence": 0.9,
+      "evidence_count": 1,
+      "supporting": [
+        "Feedback state inspection shows all at floor/ceiling"
+      ],
+      "contradicting": [],
+      "created_at": 1775338656.1558795,
+      "last_validated": 1775338656.1558795,
+      "validation_count": 1,
+      "invalidation_count": 0,
+      "category": "risk",
+      "tags": [
+        "feedback",
+        "deadlock",
+        "calibration",
+        "adaptive"
+      ],
+      "source": "system_audit_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "Execution costs: slippage 2.4 bps (fine), taker fees 4.5 bps (high). 100% market orders. Limit order system exists but not wired in. Would save 39% on fees. At 5+ trades/day = 21%/month fee drag on $500.",
+      "confidence": 0.95,
+      "evidence_count": 35,
+      "supporting": [
+        "All 35 live trades analyzed for execution costs"
+      ],
+      "contradicting": [],
+      "created_at": 1775338657.1558795,
+      "last_validated": 1775338657.1558795,
+      "validation_count": 35,
+      "invalidation_count": 0,
+      "category": "execution",
+      "tags": [
+        "fees",
+        "slippage",
+        "limit_orders",
+        "cost"
+      ],
+      "source": "system_audit_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "HYPE vol regime edge: best = High Vol P50-P75 (PF=3.51, 73.9% WR). Worst = Extreme >P90 (PF=0.65). SOL best = Normal P25-P50 (PF=1.75). BTC best = Very High P75-P90 (PF=3.13). Each asset has different optimal vol regime.",
+      "confidence": 0.85,
+      "evidence_count": 278,
+      "supporting": [
+        "500 1h candles per asset bucketed by ATR percentile"
+      ],
+      "contradicting": [],
+      "created_at": 1775338658.1558795,
+      "last_validated": 1775338658.1558795,
+      "validation_count": 278,
+      "invalidation_count": 0,
+      "category": "regime",
+      "tags": [
+        "volatility",
+        "regime",
+        "hype",
+        "sol",
+        "btc",
+        "atr"
+      ],
+      "source": "quant_research_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "SOL RSI<10 is a DEATH TRAP: 0% up-rate at 6h (n=6), avg -4.73% at 24h. SOL RSI<20 = -1.52% at 12h, 7% WR. SOL extreme oversold is a CONTINUATION signal, not reversal. NEVER buy SOL at RSI<20.",
+      "confidence": 0.9,
+      "evidence_count": 34,
+      "supporting": [
+        "6 events RSI<10, 28 events RSI<20, all negative forward returns"
+      ],
+      "contradicting": [],
+      "created_at": 1775338659.1558795,
+      "last_validated": 1775338659.1558795,
+      "validation_count": 34,
+      "invalidation_count": 0,
+      "category": "strategy",
+      "tags": [
+        "sol",
+        "rsi",
+        "oversold",
+        "trap",
+        "continuation"
+      ],
+      "source": "quant_research_validated"
+    },
+    {
+      "knowledge_type": "rule",
+      "content": "12h time stop is optimal (+4.5R net). 3h too early (-0R), 24h diminishing returns (+2.4R). Most winners resolve in 6-12 bars. Losers hit SL within 1-2 bars. If trade survives 5+ bars, very likely a slow winner -- HOLD.",
+      "confidence": 0.85,
+      "evidence_count": 28,
+      "supporting": [
+        "Time stop sweep: 8 settings (3h-48h) on 28 entries",
+        "Bar-by-bar resolution on 49 trades"
+      ],
+      "contradicting": [],
+      "created_at": 1775338660.1558795,
+      "last_validated": 1775338660.1558795,
+      "validation_count": 77,
+      "invalidation_count": 0,
+      "category": "execution",
+      "tags": [
+        "time_stop",
+        "hold_duration",
+        "exit"
+      ],
+      "source": "quant_research_validated"
     }
   ]
 }

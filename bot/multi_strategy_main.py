@@ -3586,6 +3586,13 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         except Exception:
             pass
 
+        # Pipeline telemetry: start tracking this signal's journey
+        try:
+            from core.pipeline_telemetry import get_telemetry as _get_pt
+            _get_pt().start_journey(symbol, "pending")
+        except Exception:
+            pass
+
         signal_result = self.ensemble.evaluate(symbol, data)
 
         # ── EARLY: Sniper Signal Evaluation (before regime gating can null the signal) ──
@@ -4431,6 +4438,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     except Exception as ann_e:
                         logger.debug(f"[{symbol}] Annotated chain error: {ann_e}")
 
+                try: _get_pt().finish_journey(symbol, traded=False)
+                except Exception: pass
                 return
         except Exception as e:
             logger.warning(f"[{trace_id}][{symbol}] RiskFilterChain error: {e} — rejecting signal for safety")
@@ -5636,6 +5645,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             notes=_llm_notes[:200],
             setup_type=_setup_type,
         )
+
+        # Pipeline telemetry: record successful trade
+        try: _get_pt().finish_journey(symbol, traded=True, qty=qty, notional=qty * actual_entry, leverage=lev_decision.leverage)
+        except Exception: pass
 
         # Reflection Engine: analyze entry quality
         try:

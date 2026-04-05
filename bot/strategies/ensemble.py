@@ -404,6 +404,18 @@ class EnsembleStrategy:
                 error_count += 1
                 logger.warning(f"[{symbol}] {strategy.name} error: {e}")
 
+        # Telemetry: record which strategies fired/silent for this symbol
+        try:
+            from core.pipeline_telemetry import get_telemetry as _get_pt
+            _pt = _get_pt()
+            for _s in self.strategies:
+                if _s.name in self._disabled_strategies:
+                    continue
+                _sig_match = next((x for x in signals if x.strategy == _s.name), None)
+                _pt.record_strategy(symbol, _s.name, _sig_match is not None, _sig_match.confidence if _sig_match else 0, _sig_match.side if _sig_match else "")
+        except Exception:
+            pass
+
         # Per-strategy signal map for overwatch analysis
         _fired = [s.strategy for s in signals]
         _strat_names = [s.name for s in self.strategies if s.name not in self._disabled_strategies]
@@ -681,6 +693,13 @@ class EnsembleStrategy:
                     num_agree=(result.metadata or {}).get("num_agree", 1),
                     strategies_agree=(result.metadata or {}).get("strategies_agree", []),
                 )
+        except Exception:
+            pass
+
+        # Telemetry: record ensemble consensus result
+        try:
+            from core.pipeline_telemetry import get_telemetry as _get_pt
+            _get_pt().record_ensemble(symbol, {"confidence": result.confidence, "side": result.side, "num_agree": (result.metadata or {}).get("num_agree", 1), "strategies": (result.metadata or {}).get("strategies_agree", [])})
         except Exception:
             pass
 
