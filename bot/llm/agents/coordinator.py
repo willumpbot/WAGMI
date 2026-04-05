@@ -2790,6 +2790,34 @@ class AgentCoordinator:
         if "_simulation" in snapshot:
             trade_data["simulation"] = snapshot["_simulation"]
 
+        # LLM-first signal metadata: in LLM_FIRST_MODE, Trade Agent
+        # evaluates quality that mechanical gates used to handle.
+        if "signal_metadata" in snapshot:
+            sm = snapshot["signal_metadata"]
+            trade_data["signal_quality_data"] = {
+                "chop_score": sm.get("chop_score"),
+                "chop_score_smoothed": sm.get("chop_score_smoothed"),
+                "win_prob": sm.get("win_prob"),
+                "ev_per_dollar": sm.get("ev_per_dollar"),
+                "fee_drag_pct": sm.get("fee_drag_pct"),
+                "rr_tp1": sm.get("rr_tp1"),
+                "rr_tp2": sm.get("rr_tp2"),
+                "stop_width_pct": sm.get("stop_width_pct"),
+                "num_agree": sm.get("num_agree"),
+                "strategies_agree": sm.get("strategies_agree"),
+                "regime_4h_aligned": sm.get("regime_4h_aligned"),
+                "regime_1h": sm.get("regime_1h"),
+                "regime_4h": sm.get("regime_4h"),
+                "mechanical_floor": sm.get("mechanical_confidence_floor"),
+                "would_pass_floor": sm.get("would_pass_confidence_floor"),
+                "funding_rate": sm.get("funding_rate"),
+                "volume_ratio": sm.get("volume_ratio"),
+                "time_utc_hour": sm.get("time_utc_hour"),
+                "btc_trend": sm.get("btc_trend"),
+            }
+            if sm.get("graduated_rules_advisory"):
+                trade_data["graduated_rules_advisory"] = sm["graduated_rules_advisory"]
+
         return json.dumps(trade_data, separators=(",", ":"))
 
     def _build_risk_input(
@@ -2915,6 +2943,31 @@ class AgentCoordinator:
         # Pre-trade simulation for risk-aware sizing
         if "_simulation" in snapshot:
             risk_data["simulation"] = snapshot["_simulation"]
+
+        # LLM-first signal metadata: data that mechanical gates used to check.
+        # In LLM_FIRST_MODE, Risk Agent is responsible for evaluating these.
+        if "signal_metadata" in snapshot:
+            sm = snapshot["signal_metadata"]
+            risk_data["signal_quality"] = {
+                "chop_score": sm.get("chop_score"),
+                "win_prob": sm.get("win_prob"),
+                "ev_per_dollar": sm.get("ev_per_dollar"),
+                "fee_drag_pct": sm.get("fee_drag_pct"),
+                "rr_tp1": sm.get("rr_tp1"),
+                "rr_tp2": sm.get("rr_tp2"),
+                "stop_width_pct": sm.get("stop_width_pct"),
+                "num_agree": sm.get("num_agree"),
+                "regime_4h_aligned": sm.get("regime_4h_aligned"),
+                "mechanical_floor": sm.get("mechanical_confidence_floor"),
+                "would_pass_floor": sm.get("would_pass_confidence_floor"),
+                "funding_rate": sm.get("funding_rate"),
+                "volume_ratio": sm.get("volume_ratio"),
+                "time_utc_hour": sm.get("time_utc_hour"),
+                "btc_trend": sm.get("btc_trend"),
+            }
+            # Graduated rules advisory (what mechanical system would do)
+            if sm.get("graduated_rules_advisory"):
+                risk_data["graduated_rules_advisory"] = sm["graduated_rules_advisory"]
 
         return json.dumps(risk_data, separators=(",", ":"))
 
