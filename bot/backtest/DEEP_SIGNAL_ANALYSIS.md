@@ -129,3 +129,59 @@ Based on ALL findings:
 12. **HYPE_BUY_CS**: Always skip (38% WR)
 13. **After consecutive losses**: Skip next signal (33% WR)
 14. **confidence_scorer solo**: Skip (47% WR, negative EV)
+
+## 7. BB WINNERS vs LOSERS — What's Different?
+
+| Attribute | Winners (n=219) | Losers (n=166) | Diff |
+|-----------|----------------|----------------|------|
+| Confidence | 72.4 | 72.6 | **-0.3 (identical)** |
+| R:R | 1.21 | 1.21 | **0.00 (identical)** |
+| Stop % | 1.68% | 1.90% | **-0.22 (tighter wins!)** |
+| ATR | 102 | 87 | **+15 (higher vol wins!)** |
+
+**Confidence and R:R don't differentiate winners from losers.**
+What matters: ATR (higher = better) and stop width (tighter = better).
+
+### BB by Regime
+| Regime | n | WR |
+|--------|---|-----|
+| **high_volatility** | 166 | **62%** |
+| range | 31 | 58% |
+| trend | 188 | 52% |
+
+BB works best in high_volatility — squeeze → expansion is its mechanism.
+
+## 8. CROSS-SYMBOL CORRELATION
+
+When BTC signal WINS:
+- ETH also wins: **60%** (strong follower)
+- SOL also wins: **55%** (moderate follower)
+- HYPE also wins: **29%** (uncorrelated)
+
+When BTC signal LOSES:
+- ETH also wins: **19%** (drags down too)
+- SOL also wins: **19%** (drags down too)
+- HYPE also wins: **22%** (still uncorrelated)
+
+**BTC is the leader. When BTC wins, ETH+SOL follow 55-60% of the time.**
+When BTC loses, everything loses. HYPE is independent.
+
+## 9. VOLATILITY BAND EDGE
+
+Best vol bucket per symbol:
+- **BTC**: med_vol (55% WR). Extreme vol loses (46%).
+- **ETH**: med_vol (59% WR). Low vol loses (46%).
+- **SOL**: extreme_vol (58% WR), high_vol (56%). Opposite of BTC!
+- **HYPE**: low_vol (51%). Extreme vol DESTROYS (33% WR).
+
+**HYPE at extreme vol = guaranteed loss (33% WR). Never trade HYPE when vol spikes.**
+
+## 10. PRICE POSITION EDGE
+
+Best entry patterns:
+- **BTC SELL above avg (selling rips)**: 71% WR (n=17) ← STRONGEST EDGE
+- **ETH SELL (both positions)**: 56-60% WR
+- **SOL BUY above avg (buying breakouts)**: 56% WR
+- **HYPE BUY below avg (buying dips)**: 31% WR ← WORST PATTERN
+
+**Never buy HYPE dips (31% WR). BTC sells work best at rips (71%).**
