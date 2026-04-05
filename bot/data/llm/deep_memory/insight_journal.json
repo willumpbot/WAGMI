@@ -959,6 +959,26 @@
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0
+    },
+    {
+      "ts": 1775362172.5963235,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1775362341.7843103,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
     }
   ]
 }
