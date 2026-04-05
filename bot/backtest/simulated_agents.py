@@ -351,13 +351,22 @@ def sim_risk_agent(signal, decision: SimDecision, equity: float) -> SimDecision:
 
     sz = 1.0
 
-    # Consensus sizing
-    if num_agree >= 3:
-        sz = 1.3  # High conviction
+    # Consensus sizing — INVERTED from traditional wisdom!
+    # Data: Solo BB (62% WR) > 2-agree+BB (52% WR) > 2-agree_noBB (45% WR)
+    # BB works BEST alone. Adding other strategies dilutes its edge.
+    strategies_agree = meta.get("strategies_agree", [])
+    has_bb = "bollinger_squeeze" in strategies_agree
+
+    if has_bb and num_agree == 1:
+        sz = 1.3  # Solo BB is the BEST pattern (62% WR)
+    elif has_bb and num_agree >= 2:
+        sz = 1.0  # BB + confirmation: still good but diluted
+    elif num_agree >= 3:
+        sz = 0.8  # 3-agree without BB: decent but not BB-quality
     elif num_agree >= 2:
-        sz = 1.0  # Standard
+        sz = 0.6  # 2-agree without BB: marginal
     elif num_agree == 1:
-        sz = 0.5  # Solo — half size
+        sz = 0.3  # Solo non-BB: near coinflip
 
     # Regime adjustment
     regime_mult = {
@@ -458,6 +467,10 @@ def sim_critic_agent(signal, decision: SimDecision, df_1h=None) -> SimDecision:
 
 # ─── Full Pipeline ──────────────────────────────────────────────
 
+# Track last signal outcome per symbol for sequential momentum
+_last_signal_won: dict = {}
+
+
 def run_simulated_pipeline(
     signal,
     equity: float = 500.0,
@@ -480,6 +493,18 @@ def run_simulated_pipeline(
 
     # Step 4: Critic review
     decision = sim_critic_agent(signal, decision, df_1h)
+
+    # Step 5: Sequential momentum adjustment
+    # Data: After WIN → 69% WR next signal. After LOSS → 33% WR.
+    # This is a 35-point spread — massive edge.
+    symbol = signal.symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
+    last_won = _last_signal_won.get(symbol)
+    if last_won is True:
+        decision.size_mult = round(decision.size_mult * 1.2, 2)  # Size up after win
+        decision.boost_reasons.append("after-win momentum (69% WR)")
+    elif last_won is False:
+        decision.size_mult = round(decision.size_mult * 0.5, 2)  # Half size after loss
+        decision.skip_reasons.append("after-loss caution (33% WR)")
 
     return decision
 
@@ -507,3 +532,14 @@ _SIM_AGENTS_ENABLED = _env_bool("SIM_AGENTS_ENABLED", False)
 
 def is_sim_agents_enabled() -> bool:
     return _SIM_AGENTS_ENABLED
+
+
+def record_signal_outcome(symbol: str, won: bool):
+    """Record whether a signal's trade was profitable, for sequential momentum."""
+    sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
+    _last_signal_won[sym] = won
+
+
+def reset_signal_state():
+    """Reset sequential state (call at start of backtest)."""
+    _last_signal_won.clear()
