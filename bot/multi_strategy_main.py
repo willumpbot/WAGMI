@@ -581,6 +581,34 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         except Exception as _re_err:
             logger.debug(f"[INIT] Reflection engine not available: {_re_err}")
 
+        # Background Thinker: periodic rule-based analysis between signals (no LLM calls)
+        self._background_thinker = None
+        try:
+            from llm.agents.background_thinker import BackgroundThinker
+            self._background_thinker = BackgroundThinker(interval_seconds=300)
+            logger.info("[INIT] Background thinker enabled (5min cycles)")
+        except ImportError:
+            logger.debug("[INIT] Background thinker not available")
+
+        # Pre-Trade Simulator: scenario-based imagination before each entry (no LLM calls)
+        self._pre_trade_sim = None
+        self._last_simulation: Dict[str, Any] = {}
+        try:
+            from llm.agents.pre_trade_simulator import PreTradeSimulator
+            self._pre_trade_sim = PreTradeSimulator()
+            logger.info("[INIT] Pre-trade simulator enabled")
+        except ImportError:
+            logger.debug("[INIT] Pre-trade simulator not available")
+
+        # Agent Performance Tracker: per-agent decision quality measurement
+        self._agent_perf = None
+        try:
+            from llm.agents.agent_performance import get_tracker
+            self._agent_perf = get_tracker()
+            logger.info("[INIT] Agent performance tracker enabled")
+        except ImportError:
+            logger.debug("[INIT] Agent performance tracker not available")
+
         # Execution
         self.risk_mgr = RiskManager(
             starting_equity=config.starting_equity,
@@ -1491,6 +1519,35 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 self._tick_regime_cache[sym] = self.regime_detector.get_regime(sym)
             except Exception:
                 self._tick_regime_cache[sym] = "unknown"
+
+        # ── BACKGROUND THINKER: periodic rule-based analysis (no LLM calls) ──
+        if self._background_thinker and self._background_thinker.should_think():
+            try:
+                _bt_market_data = {}
+                for _bt_sym in DEFAULT_SYMBOLS:
+                    _bt_price = self._last_prices.get(_bt_sym)
+                    if _bt_price:
+                        _bt_market_data[_bt_sym] = {
+                            "price": _bt_price,
+                            "regime": self._tick_regime_cache.get(_bt_sym, "unknown"),
+                            "funding_rate": self._last_funding_rates.get(_bt_sym),
+                            "oi": self._last_open_interest.get(_bt_sym),
+                        }
+                _bt_observations = self._background_thinker.think(
+                    market_data=_bt_market_data,
+                    positions=self.pos_mgr.get_open_positions(),
+                    recent_trades=get_recent_trades(10),
+                    feedback_state=None,
+                )
+                if _bt_observations:
+                    _bt_total = sum(
+                        len(_bt_observations.get(k, []))
+                        for k in ("market_changes", "position_reviews", "opportunities", "patterns")
+                    )
+                    if _bt_total > 0:
+                        logger.info(f"[{trace_id}][BACKGROUND] Thought cycle #{_bt_observations.get('cycle', 0)}: {_bt_total} observations")
+            except Exception as _bt_err:
+                logger.debug(f"[{trace_id}] Background thinker error: {_bt_err}")
 
         # ── PARALLEL PREFETCH: fetch all symbols' data concurrently ──
         # This front-loads all exchange I/O so _process_symbol hits cache.
@@ -3317,6 +3374,21 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         _candidate.outcome = pos.outcome
                         self._candidate_logger.log_candidate(_candidate)
 
+                    # Agent Performance Tracker: record trade outcome for per-agent evaluation
+                    if self._agent_perf:
+                        try:
+                            self._agent_perf.record_outcome(
+                                symbol=symbol,
+                                pnl=pos.realized_pnl,
+                                entry_time=pos.open_time.isoformat() if hasattr(pos, 'open_time') and pos.open_time else "",
+                                exit_time=datetime.now(timezone.utc).isoformat(),
+                                mfe_pct=pos.max_favorable_pct if hasattr(pos, 'max_favorable_pct') else 0,
+                                mae_pct=pos.max_adverse_pct if hasattr(pos, 'max_adverse_pct') else 0,
+                                side=pos.side,
+                            )
+                        except Exception as _ap_err:
+                            logger.debug(f"Agent perf outcome error: {_ap_err}")
+
             # Send enhanced trade event alert
             pos = self.pos_mgr.positions.get(symbol)
             _total_pnl_alert = pos.realized_pnl if pos else event.pnl
@@ -5120,6 +5192,23 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 candidate.leverage_used = lev_decision.leverage
                 self._candidate_logger.log_candidate(candidate)
 
+                # Agent Performance: record critic veto decision
+                if self._agent_perf:
+                    try:
+                        self._agent_perf.record_decision(
+                            agent_name="critic",
+                            symbol=symbol,
+                            action="veto",
+                            confidence=veto_result.decision.confidence if veto_result.decision else 0.5,
+                            context={
+                                "regime": veto_result.decision.regime if veto_result.decision else "",
+                                "side": side,
+                                "veto_reason": (candidate.llm_notes or "")[:100],
+                            },
+                        )
+                    except Exception:
+                        pass
+
                 log_rejection(symbol, "LLM_VETO",
                               confidence=signal_result.confidence)
                 logger.info(
@@ -5219,6 +5308,23 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     regime=signal_result.metadata.get("regime", ""),
                     strategies=signal_result.metadata.get("strategies_agree", [signal_result.strategy]),
                     num_agree=num_agree,
+                )
+            except Exception:
+                pass
+
+        # Agent Performance: record trade approval decision
+        if self._agent_perf:
+            try:
+                self._agent_perf.record_decision(
+                    agent_name="trade",
+                    symbol=symbol,
+                    action="proceed",
+                    confidence=signal_result.confidence / 100.0,
+                    context={
+                        "regime": self._tick_regime_cache.get(symbol, "unknown"),
+                        "side": side,
+                        "sizing_pct": lev_decision.leverage,
+                    },
                 )
             except Exception:
                 pass
@@ -5532,6 +5638,42 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 _setup_type = _st[:30]
             except Exception:
                 pass
+
+        # ── PRE-TRADE SIMULATOR: scenario-based imagination before entry ──
+        if self._pre_trade_sim:
+            try:
+                _sim_result = self._pre_trade_sim.simulate(
+                    symbol=symbol,
+                    side=signal_result.side,
+                    entry=actual_entry,
+                    sl=adj_sl,
+                    tp1=adj_tp1,
+                    leverage=lev_decision.leverage,
+                    current_portfolio=self.pos_mgr.get_open_positions(),
+                    market_data={
+                        "prices": self._last_prices,
+                        "atr": signal_result.atr,
+                        "equity": self.risk_mgr.equity,
+                        "is_weekend": datetime.now(timezone.utc).weekday() >= 5,
+                    },
+                )
+                logger.info(
+                    f"[{trace_id}][{symbol}] PRE-TRADE SIM: "
+                    f"EV=${_sim_result.get('expected_value', 0):.2f} "
+                    f"max_loss=${_sim_result.get('max_loss', 0):.2f} "
+                    f"rec={_sim_result.get('recommendation', '?')}"
+                )
+                # Store for LLM context enrichment (agents can read this)
+                self._last_simulation[symbol] = _sim_result
+                # Add sim summary to entry reasons for post-trade analysis
+                entry_reasons["pre_trade_sim"] = {
+                    "ev": _sim_result.get("expected_value", 0),
+                    "max_loss": _sim_result.get("max_loss", 0),
+                    "recommendation": _sim_result.get("recommendation", ""),
+                    "correlation_risk": _sim_result.get("portfolio_impact", {}).get("correlation_risk", ""),
+                }
+            except Exception as _sim_err:
+                logger.debug(f"[{trace_id}][{symbol}] Pre-trade sim error: {_sim_err}")
 
         # Final duplicate position guard — last line of defense before order submission.
         # Checks both position manager state AND ops guard to prevent the

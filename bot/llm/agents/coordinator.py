@@ -138,6 +138,27 @@ try:
 except ImportError:
     _TELEMETRY_AVAILABLE = False
 
+# Agent self-performance tracker (per-agent accuracy, calibration, veto stats)
+try:
+    from llm.agents.agent_performance import get_tracker as get_perf_tracker
+    _AGENT_PERF_AVAILABLE = True
+except ImportError:
+    _AGENT_PERF_AVAILABLE = False
+
+# Background thinker journal (market observations, position reviews, patterns)
+try:
+    from llm.agents.background_thinker import BackgroundThinker
+    _BACKGROUND_THINKER_AVAILABLE = True
+except ImportError:
+    _BACKGROUND_THINKER_AVAILABLE = False
+
+# Pre-trade simulator (scenario analysis before Trade Agent)
+try:
+    from llm.agents.pre_trade_simulator import PreTradeSimulator
+    _SIMULATOR_AVAILABLE = True
+except ImportError:
+    _SIMULATOR_AVAILABLE = False
+
 # Pipeline extensions: quant engine, agent brains, debate, telemetry
 # These are optional — gracefully degrade if modules not yet built
 try:
@@ -189,6 +210,9 @@ class AgentCoordinator:
         self.last_pipeline_results: Dict[AgentRole, AgentOutput] = {}
         self.last_exit_output: Optional[AgentOutput] = None
         self.last_consistency_score: Optional[float] = None
+        # Lazy-initialized enrichment modules
+        self._background_thinker: Optional[Any] = None
+        self._pre_trade_simulator: Optional[Any] = None
 
     # ── Public API ──────────────────────────────────────────────
 
@@ -315,6 +339,31 @@ class AgentCoordinator:
             except Exception as e:
                 logger.debug("[MULTI-AGENT] Portfolio intelligence failed: %s", e)
 
+        # Agent self-performance: network-wide health summary for all agents
+        if _AGENT_PERF_AVAILABLE:
+            try:
+                _perf_tracker = get_perf_tracker()
+                _net_summary = _perf_tracker.format_network_summary()
+                if _net_summary:
+                    enriched_parts.append(_net_summary)
+                # Store tracker reference in snapshot for per-agent injection later
+                # Note: stored as non-serializable ref — consumers must handle gracefully
+                snapshot_data["_perf_tracker"] = _perf_tracker
+                snapshot_data["_perf_tracker_summary"] = _net_summary or ""
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Agent performance enrichment failed: %s", e)
+
+        # Background thinker journal (market observations, patterns, opportunities)
+        if _BACKGROUND_THINKER_AVAILABLE:
+            try:
+                if self._background_thinker is None:
+                    self._background_thinker = BackgroundThinker()
+                journal_text = self._background_thinker.get_journal_for_agents(last_n=5)
+                if journal_text:
+                    enriched_parts.append(journal_text)
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Background thinker enrichment failed: %s", e)
+
         # Network learning: inject accumulated lessons from past trades
         try:
             from llm.agents.network_learning import get_network_learning
@@ -416,6 +465,54 @@ class AgentCoordinator:
                     scratchpad.write("quant", "risk_profile", quant_out.data["risk_profile"])
             else:
                 quant_out = None  # Degrade gracefully
+
+        # ── Step 1.75: Pre-Trade Simulator (scenario analysis) ──
+        if _SIMULATOR_AVAILABLE:
+            try:
+                if self._pre_trade_simulator is None:
+                    self._pre_trade_simulator = PreTradeSimulator()
+                # Extract signal data from snapshot to simulate
+                _sim_signals = snapshot_data.get("signals", [])
+                if not _sim_signals and _markets:
+                    # Try extracting from market data
+                    for _mk in (_markets if isinstance(_markets, list) else []):
+                        _sigs = _mk.get("sg", _mk.get("sigs", []))
+                        if _sigs:
+                            _sim_signals = _sigs
+                            break
+                if _sim_signals and isinstance(_sim_signals, list) and _sim_signals:
+                    _sig = _sim_signals[0] if isinstance(_sim_signals[0], dict) else {}
+                    _sim_side = _sig.get("side", _sig.get("sd", ""))
+                    _sim_entry = float(_sig.get("entry", _sig.get("e", 0)))
+                    _sim_sl = float(_sig.get("sl", 0))
+                    _sim_tp1 = float(_sig.get("tp1", 0))
+                    _sim_lev = float(_sig.get("leverage", _sig.get("lev", 5)))
+                    if _sim_side and _sim_entry > 0 and _sim_sl > 0 and _sim_tp1 > 0:
+                        _sim_portfolio = snapshot_data.get("pos", {})
+                        _sim_market = dict(snapshot_data.get("g", {}))
+                        _sim_market["equity"] = float(
+                            snapshot_data.get("g", {}).get("equity",
+                            snapshot_data.get("g", {}).get("eq", 1000))
+                        )
+                        _sim_result = self._pre_trade_simulator.simulate(
+                            symbol=_enrich_symbol or _sig.get("sym", _sig.get("s", "")),
+                            side=_sim_side,
+                            entry=_sim_entry,
+                            sl=_sim_sl,
+                            tp1=_sim_tp1,
+                            leverage=_sim_lev,
+                            current_portfolio=_sim_portfolio,
+                            market_data=_sim_market,
+                        )
+                        if _sim_result:
+                            _sim_text = self._pre_trade_simulator.format_for_agent(_sim_result)
+                            if _sim_text:
+                                snapshot_data["_simulation"] = _sim_text
+                                logger.info("[MULTI-AGENT] Pre-trade simulation: EV=$%.2f rec=%s",
+                                            _sim_result.get("expected_value", 0),
+                                            _sim_result.get("recommendation", "?"))
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Pre-trade simulation failed: %s", e)
 
         # ── Step 2: Trade Agent ─────────────────────────────────
         trade_input = self._build_trade_input(snapshot_data, regime_out, quant_out)
@@ -1625,6 +1722,15 @@ class AgentCoordinator:
         except Exception:
             pass
 
+        # 12. Agent self-performance network summary (accuracy, calibration per agent)
+        if _AGENT_PERF_AVAILABLE:
+            try:
+                _net_health = get_perf_tracker().format_network_summary()
+                if _net_health:
+                    state["agent_network_health"] = _net_health[:500]
+            except Exception:
+                pass
+
         return json.dumps(state, separators=(",", ":"), default=str)
 
     def get_stats(self) -> Dict[str, Any]:
@@ -1942,6 +2048,16 @@ class AgentCoordinator:
         if snapshot.get("enriched_context"):
             quant_data["enriched"] = snapshot["enriched_context"]
 
+        # Per-agent self-performance stats for the Quant Agent
+        _pt = snapshot.get("_perf_tracker")
+        if _pt:
+            try:
+                _self_perf_text = _pt.format_for_agent("quant")
+                if _self_perf_text:
+                    quant_data["self_performance"] = _self_perf_text
+            except Exception:
+                pass
+
         return json.dumps(quant_data, separators=(",", ":"))
 
     def _compute_regime_fallback(self, snapshot: dict) -> str:
@@ -2036,6 +2152,17 @@ class AgentCoordinator:
         # Enriched context from technicals, feedback, telemetry, positions
         if snapshot.get("enriched_context"):
             regime_data["enriched"] = snapshot["enriched_context"]
+
+        # Per-agent self-performance stats for the Regime Agent
+        _pt = snapshot.get("_perf_tracker")
+        if _pt:
+            try:
+                _self_perf_text = _pt.format_for_agent("regime")
+                if _self_perf_text:
+                    regime_data["self_performance"] = _self_perf_text
+            except Exception:
+                pass
+
         return json.dumps(regime_data, separators=(",", ":"))
 
     def _build_trade_input(self, snapshot: dict, regime_out: AgentOutput, quant_out: Optional[AgentOutput] = None) -> str:
@@ -2183,6 +2310,20 @@ class AgentCoordinator:
         if "enriched_context" in trade_data:
             trade_data["enriched"] = trade_data.pop("enriched_context")
 
+        # Per-agent self-performance stats for the Trade Agent
+        _pt = snapshot.get("_perf_tracker")
+        if _pt:
+            try:
+                _self_perf_text = _pt.format_for_agent("trade")
+                if _self_perf_text:
+                    trade_data["self_performance"] = _self_perf_text
+            except Exception:
+                pass
+
+        # Pre-trade simulation results (scenario analysis)
+        if "_simulation" in snapshot:
+            trade_data["simulation"] = snapshot["_simulation"]
+
         return json.dumps(trade_data, separators=(",", ":"))
 
     def _build_risk_input(
@@ -2285,6 +2426,20 @@ class AgentCoordinator:
         if snapshot.get("enriched_context"):
             risk_data["enriched"] = snapshot["enriched_context"]
 
+        # Per-agent self-performance stats for the Risk Agent
+        _pt = snapshot.get("_perf_tracker")
+        if _pt:
+            try:
+                _self_perf_text = _pt.format_for_agent("risk")
+                if _self_perf_text:
+                    risk_data["self_performance"] = _self_perf_text
+            except Exception:
+                pass
+
+        # Pre-trade simulation for risk-aware sizing
+        if "_simulation" in snapshot:
+            risk_data["simulation"] = snapshot["_simulation"]
+
         return json.dumps(risk_data, separators=(",", ":"))
 
     def _build_critic_input(
@@ -2359,6 +2514,20 @@ class AgentCoordinator:
         # Enriched context from technicals, feedback, telemetry, positions
         if snapshot.get("enriched_context"):
             critic_data["enriched"] = snapshot["enriched_context"]
+
+        # Per-agent self-performance stats for the Critic Agent
+        _pt = snapshot.get("_perf_tracker")
+        if _pt:
+            try:
+                _self_perf_text = _pt.format_for_agent("critic")
+                if _self_perf_text:
+                    critic_data["self_performance"] = _self_perf_text
+            except Exception:
+                pass
+
+        # Pre-trade simulation for stress-testing the thesis
+        if "_simulation" in snapshot:
+            critic_data["simulation"] = snapshot["_simulation"]
 
         return json.dumps(critic_data, separators=(",", ":"))
 
