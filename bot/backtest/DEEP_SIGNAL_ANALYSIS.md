@@ -234,3 +234,37 @@ The 2.0+ R:R signals have worse outcomes because wider TPs rarely get hit.
 **This confirms: our TP levels should be TIGHTER, not wider.**
 The mechanical system with 1.5-3.0 ATR TPs is overshooting.
 MFE data says median move is 0.46-0.90% — set TP1 there.
+
+## 15. COMPLETE 2,172-SIGNAL ANALYSIS (all 9 strategies)
+
+### multi_tier_quality (762 new signals): NEUTRAL
+- 48.9% WR at 4h, -0.06%/trade — slight loser
+- Best: BTC_SELL_MTQ (50.4% WR) — barely positive
+- Worst: HYPE_BUY_MTQ (31.2% WR) — terrible
+
+### MTQ AS BB CONFIRMATION: DESTROYS BB EDGE
+| Pattern | n | WR | Avg Move |
+|---------|---|-----|----------|
+| **BB solo (no MTQ, no CS)** | 179 | **67.6%** | **+0.35%** |
+| BB + CS (no MTQ) | 115 | 57.4% | +0.19% |
+| MTQ solo (no BB) | 668 | 50.7% | -0.03% |
+| **BB + MTQ** | 91 | **35.2%** | **-0.28%** |
+
+**CRITICAL: When BB and MTQ agree, performance CRASHES to 35%.** MTQ agreement
+is a CONTRA-indicator for BB. If both fire, the setup is likely noise, not signal.
+
+### MOMENTUM COMPOUNDS (2-streak data)
+| Condition | BTC | ETH | SOL | HYPE |
+|-----------|-----|-----|-----|------|
+| After 2 WINS | **74%** | **76%** | **77%** | **75%** |
+| After 2 LOSSES | 28% | 33% | 28% | 29% |
+
+The spread after 2-streaks (75% vs 29%) is even larger than 1-streaks (67% vs 34%).
+
+### BEST STRATEGY × REGIME COMBOS
+| Combo | n | WR | Avg Move |
+|-------|---|-----|----------|
+| **BB + high_volatility** | 166 | **62%** | **+0.35%** |
+| BB + range | 31 | 58% | +0.15% |
+| CS + unknown | 92 | 61% | +0.03% |
+| **regime_trend + high_vol** | 22 | **27%** | **-0.46% (WORST)** |
