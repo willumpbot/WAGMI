@@ -1254,6 +1254,23 @@ class PositionManager:
         except Exception:
             pass
 
+        # Neuroplasticity: strengthen/weaken setup edges, detect surprises
+        try:
+            from llm.neuroplasticity import run_neuroplasticity_cycle
+            _er = pos.entry_reasons or {}
+            run_neuroplasticity_cycle({
+                "symbol": pos.symbol,
+                "side": "BUY" if pos.side == "LONG" else "SELL",
+                "strategy": _er.get("primary_driver", ""),
+                "strategies_agree": _er.get("strategies_agree", []),
+                "pnl": pos.realized_pnl,
+                "entry": pos.entry,
+                "regime": _er.get("regime", "unknown"),
+                "outcome": pos.outcome,
+            })
+        except Exception:
+            pass
+
         # ── TIER 4: Mechanical Bot Instrumentation (Position Closing Hook) ──
         if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE:
             try:

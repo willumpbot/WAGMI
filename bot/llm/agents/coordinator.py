@@ -527,6 +527,19 @@ class AgentCoordinator:
         except Exception as e:
             logger.debug("[MULTI-AGENT] Self-teaching knowledge injection failed: %s", e)
 
+        # Neuroplasticity: setup edge strengths, decay alerts, surprises
+        try:
+            from llm.neuroplasticity import get_neuro_context_for_agents
+            _neuro = get_neuro_context_for_agents(
+                symbol=_enrich_symbol,
+                side="",  # All sides
+            )
+            if _neuro:
+                enriched_parts.append(f"NEURO:\n{_neuro}")
+                snapshot_data["_enr_neuro"] = _neuro
+        except Exception as e:
+            logger.debug("[MULTI-AGENT] Neuroplasticity context failed: %s", e)
+
         enriched_context = "\n\n".join(enriched_parts) if enriched_parts else ""
         if enriched_context:
             snapshot_data["enriched_context"] = enriched_context

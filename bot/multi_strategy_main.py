@@ -1296,6 +1296,22 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         except Exception as e:
             logger.debug(f"CB state restore skipped: {e}")
 
+        # Auto-seed LLM memory if empty (first run or fresh install)
+        try:
+            import json as _json
+            _mem_path = os.path.join("data", "llm", "llm_memory.json")
+            _needs_seed = True
+            if os.path.exists(_mem_path):
+                with open(_mem_path) as _f:
+                    _mem = _json.load(_f)
+                _needs_seed = len(_mem.get("notes", [])) < 5
+            if _needs_seed:
+                from llm.memory_seeder import seed_memory
+                seed_memory()
+                logger.info("[INIT] LLM memory auto-seeded with 18 findings")
+        except Exception as e:
+            logger.debug(f"[INIT] Memory seed skipped: {e}")
+
         if self.config.auto_trade:
             logger.warning("AUTO-TRADING ENABLED - REAL MONEY MODE")
             logger.warning("Starting in 5 seconds... Press CTRL+C to abort")
@@ -5150,6 +5166,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "ev_per_dollar": signal_result.metadata.get("ev_per_dollar", ""),
             "win_prob_deflated": signal_result.metadata.get("win_prob", ""),
             "fee_drag_pct": signal_result.metadata.get("fee_drag_pct", ""),
+            # Setup key for neuroplasticity + setup-specific exits
+            "setup_key": self._compute_setup_key(signal_result, trade_prof),
         }
 
         # Track portfolio correlation risk for LLM learning feedback
@@ -6063,6 +6081,24 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     entry_reasons["copy_score"] = _copy_result.score
             except Exception as e:
                 logger.debug(f"Copy classifier error: {e}")
+
+    def _compute_setup_key(self, signal_result, trade_prof) -> str:
+        """Compute setup key for neuroplasticity tracking and setup-specific exits."""
+        meta = signal_result.metadata or {}
+        strats = meta.get("strategies_agree", [signal_result.strategy])
+        sym = signal_result.symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").split("/")[0]
+        side = signal_result.side
+        has_bb = "bollinger_squeeze" in strats
+        has_mtq = "multi_tier_quality" in strats
+        if has_bb and has_mtq:
+            return f"{sym}_{side}_BB+MTQ"
+        elif has_bb:
+            return f"{sym}_{side}_BB"
+        elif len(strats) >= 2:
+            return f"{sym}_{side}_{len(strats)}-agree"
+        elif strats:
+            return f"{sym}_{side}_{strats[0]}"
+        return f"{sym}_{side}_unknown"
 
     # ══════════════════════════════════════════════════════════════════
     # ── LLM-FIRST ARCHITECTURE: Signal → Safety → LLM → Execute ──
