@@ -1796,6 +1796,21 @@ class EnsembleStrategy:
                 f"penalty -{penalty:.1f} from {opp_names}"
             )
 
+        # ── BB+MTQ Contra-Indicator (from 2,172-signal analysis) ──
+        # When BB and MTQ agree: 35% WR (WORSE than either alone).
+        # MTQ confirmation is noise that dilutes BB's edge.
+        if merged and merged.metadata:
+            _strats = set(merged.metadata.get("strategies_agree", []))
+            if "bollinger_squeeze" in _strats and "multi_tier_quality" in _strats:
+                merged.metadata["bb_mtq_contra"] = True
+                merged.metadata["risk_mult_override"] = min(
+                    merged.metadata.get("risk_mult_override", 1.0), 0.5
+                )
+                logger.info(
+                    f"[{symbol}] BB+MTQ CONTRA: both agree = 35% WR. "
+                    f"Reducing size to 0.5x"
+                )
+
         return merged
 
     def _weighted(self, symbol: str, signals: List[Signal]) -> Optional[Signal]:

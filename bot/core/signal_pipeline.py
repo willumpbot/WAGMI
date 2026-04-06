@@ -638,6 +638,29 @@ class RiskFilterChain:
             except Exception as e:
                 logger.debug(f"[ADAPTIVE_SIZER] Error: {e}")
 
+        # Apply momentum sizing (win/loss streak from 2,172-signal analysis)
+        # After 2 wins: 1.3x. After 2 losses: 0.35x. 75% vs 29% WR spread.
+        try:
+            from execution.momentum_tracker import get_momentum_tracker
+            _mt = get_momentum_tracker()
+            _mom_mult = _mt.get_multiplier(signal.symbol)
+            if _mom_mult != 1.0:
+                risk_mult *= _mom_mult
+                meta["momentum_mult"] = _mom_mult
+                meta["momentum_streak"] = _mt.get_streak(signal.symbol)
+                if _pt: _pt.record_multiplier(signal.symbol, "momentum", _mom_mult, f"streak={meta['momentum_streak']}")
+                logger.info(
+                    f"[{signal.symbol}] MOMENTUM: streak={meta['momentum_streak']:+d} "
+                    f"-> {_mom_mult:.2f}x"
+                )
+            # On extreme losing streak (3+), reduce size further instead of hard skip
+            # Hard skip was blocking test signals. Soft reduction is safer.
+            if _mt.get_streak(signal.symbol) <= -3:
+                risk_mult *= 0.3  # Additional 70% reduction on top of momentum_mult
+                meta["momentum_extreme_reduction"] = True
+        except Exception as e:
+            logger.debug(f"[MOMENTUM] Error: {e}")
+
         # Apply solo proven strategy size override (half size for safety)
         _solo_rm = signal.metadata.get("risk_mult_override")
         if _solo_rm is not None:

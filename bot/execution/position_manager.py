@@ -607,6 +607,43 @@ class PositionManager:
                         )
                         pos._extension_logged = True
 
+        # 1a2. Data-driven 1h assessment (from 2,172-signal analysis):
+        # If position is losing at 1h mark, 67% chance it stays losing.
+        # Exception: BB signals recover 56% of the time — hold BB losers to 4h.
+        if pos.state == OPEN:
+            _now_1h = sim_now or getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
+            _hold_h = (_now_1h - pos.open_time).total_seconds() / 3600
+            if 0.9 <= _hold_h <= 1.5:  # ~1h mark (window to avoid checking every tick)
+                _pnl_pct = (current_price - pos.entry) / pos.entry if is_long else (pos.entry - current_price) / pos.entry
+                if _pnl_pct < -0.001:  # Losing at 1h (>0.1% adverse)
+                    _is_bb = "bollinger_squeeze" in (pos.entry_reasons or {}).get("strategies_agree", []) or \
+                             (pos.entry_reasons or {}).get("primary_driver") == "bollinger_squeeze"
+                    if not _is_bb:
+                        # Non-BB loser at 1h: 67% stays losing, only 45% recover.
+                        # Tighten SL to reduce max loss.
+                        _tight_sl = pos.entry  # Tighten to breakeven
+                        if is_long and _tight_sl < pos.sl:
+                            pass  # SL already tighter than breakeven
+                        elif is_long:
+                            pos.sl = _tight_sl
+                            logger.info(
+                                f"[{symbol}] 1H ASSESSMENT: non-BB losing ({_pnl_pct:.2%}), "
+                                f"tightening SL to breakeven (67% chance stays losing)"
+                            )
+                        elif not is_long and _tight_sl > pos.sl:
+                            pass
+                        elif not is_long:
+                            pos.sl = _tight_sl
+                            logger.info(
+                                f"[{symbol}] 1H ASSESSMENT: non-BB losing ({_pnl_pct:.2%}), "
+                                f"tightening SL to breakeven (67% chance stays losing)"
+                            )
+                    else:
+                        logger.debug(
+                            f"[{symbol}] 1H ASSESSMENT: BB losing ({_pnl_pct:.2%}), "
+                            f"holding (56% recovery rate for BB)"
+                        )
+
         # 1b. Early exit: cut position if momentum accelerating toward SL
         # Only in OPEN state (after TP1, breakeven SL protects us)
         if pos.state == OPEN and df_5m is not None:
@@ -1183,6 +1220,13 @@ class PositionManager:
         # Record close time and win/loss for cooldown enforcement
         self._last_close_time[pos.symbol] = pos.close_time
         self._last_close_won[pos.symbol] = pos.realized_pnl > 0
+
+        # Record outcome for momentum tracker (win/loss streak sizing)
+        try:
+            from execution.momentum_tracker import get_momentum_tracker
+            get_momentum_tracker().record_outcome(pos.symbol, pos.realized_pnl > 0)
+        except Exception:
+            pass
 
         # ── TIER 4: Mechanical Bot Instrumentation (Position Closing Hook) ──
         if _MECHANICAL_BOT_INSTRUMENTATION_AVAILABLE:
