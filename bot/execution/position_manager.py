@@ -203,6 +203,17 @@ class PositionManager:
         self.enable_trailing = enable_trailing
         self.trailing_atr_mult = trailing_atr_mult
         self._time_stop_hours = time_stop_hours
+        # Setup-specific time stops from 2,172-signal analysis
+        # Each setup has an optimal hold window where WR peaks.
+        self._setup_time_stops = {
+            "BTC_BUY_BB": 8,     # 4-8h optimal, 69% WR at 4h
+            "BTC_SELL_BB": 8,    # peaks at 8h (63% WR), 12h drops to 54%
+            "ETH_SELL_BB": 8,    # 4-8h optimal, 70% WR at 4h
+            "ETH_BUY_BB": 8,    # 8h optimal (64% WR)
+            "SOL_BUY_BB": 6,    # peaks at 4h (67%), decays fast
+            "SOL_SELL_BB": 8,    # 8h reasonable
+            "HYPE_BUY_BB": 6,   # shorter hold for volatile asset
+        }
         # Post-close cooldown: prevent tilt re-entry after losses only
         self._last_close_time: Dict[str, datetime] = {}  # symbol -> close time
         self._last_close_won: Dict[str, bool] = {}  # symbol -> was it a win?
@@ -578,7 +589,22 @@ class PositionManager:
         if pos.state == OPEN:
             _now = sim_now or getattr(self, '_sim_now', None) or datetime.now(timezone.utc)
             hold_hours = (_now - pos.open_time).total_seconds() / 3600
-            time_stop_hours = getattr(self, '_time_stop_hours', 12)
+
+            # Setup-specific time stop from 2,172-signal analysis
+            _er = pos.entry_reasons or {}
+            _strats = _er.get("strategies_agree", [])
+            _driver = _er.get("primary_driver", "")
+            _is_bb = "bollinger_squeeze" in _strats or _driver == "bollinger_squeeze"
+            _base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").split("/")[0]
+            _side_label = "BUY" if is_long else "SELL"
+            _setup_key = f"{_base_sym}_{_side_label}_BB" if _is_bb else None
+
+            if _setup_key and hasattr(self, '_setup_time_stops'):
+                time_stop_hours = self._setup_time_stops.get(
+                    _setup_key, getattr(self, '_time_stop_hours', 12)
+                )
+            else:
+                time_stop_hours = getattr(self, '_time_stop_hours', 12)
 
             if hold_hours >= time_stop_hours:
                 # Assess position health before closing
