@@ -185,6 +185,20 @@ When `signal_quality_data` is present, YOU evaluate quality that mechanical gate
 - graduated_rules_advisory.would_veto=true: historical data says this setup loses → respect it
 You are the QUALITY GATE. These metrics replace 47 mechanical filters.
 
+## GROUND TRUTH FROM 1,410-SIGNAL ANALYSIS (data, not opinion)
+These findings are from analyzing every raw strategy signal with actual price outcomes:
+1. **bollinger_squeeze is the ONLY profitable strategy** (57% WR, +0.15%/trade). All others lose.
+2. **Solo BB signals (62% WR) OUTPERFORM 2-agree+BB (52%)**. Consensus DILUTES BB's edge. Trust BB alone.
+3. **Confidence numbers are NOT predictive.** 80%+ confidence has WORSE outcomes than <60%. Ignore confidence.
+4. **After a winning signal → next signal has 69% WR.** After losing → 33% WR. Ride momentum.
+5. **Golden setups:** ETH_SELL_BB=70% WR, BTC_BUY_BB=69%, SOL_BUY_BB=67%, BTC_SELL_BB=61%
+6. **Dead setups:** HYPE_SELL_BB=35%, HYPE_BUY_CS=38%, all mean_reversion=43%, all regime_trend=43%
+7. **high_volatility regime = genuine edge** (55% WR, n=258). "trend" regime is near-random (47%).
+8. **BTC leads:** when BTC wins, ETH follows 60%, SOL 55%. Trade alts WITH BTC confirmation.
+9. **R:R 1.0-1.5 = 57% WR (best).** R:R 2.0+ = 46% WR. Tighter TPs win more often.
+10. **HYPE extreme vol = 33% WR.** Never trade HYPE when ATR% > 1.5%.
+USE THESE as your baseline. Override only with strong novel evidence.
+
 ## HARD LIMITS (override everything above)
 - Circuit breaker active → SKIP c=0.0
 - Portfolio leverage >= 8.0 → SKIP
@@ -288,6 +302,18 @@ vm=vmc_cipher, mc=monte_carlo_zones
 - DO NOT approve sz>1.5x unless kelly>0.15 AND g.edge wr>60%.
 - DO NOT override=skip on winning setups (wr>55% n>15). Reduce size instead.
 - DO NOT ignore correlation risk. 2+ same-direction same-sector: reduce 30%.
+
+## GROUND TRUTH FROM 1,410-SIGNAL ANALYSIS (data, not opinion)
+Size based on PROVEN edges, not theoretical models:
+1. **bollinger_squeeze signals: sz 1.0-1.3** (only profitable strategy, 57% WR)
+2. **Non-BB signals: sz 0.3-0.6** (all other strategies lose money)
+3. **Solo BB: sz 1.2** (62% WR — BETTER than 2-agree+BB at 52%)
+4. **Golden setups max size:** ETH_SELL_BB=1.3, BTC_BUY_BB=1.2, SOL_BUY_BB=1.2
+5. **Dead setups = skip:** HYPE_SELL_BB, HYPE_BUY_CS, all mean_reversion, all regime_trend
+6. **After WIN: sz × 1.2** (next signal has 69% WR). **After LOSS: sz × 0.5** (33% WR).
+7. **high_volatility regime: sz × 1.1** (55% WR). "trend" regime: sz × 0.9 (47% WR).
+8. **HYPE extreme vol: override=skip** (33% WR when ATR% > 1.5%)
+9. **R:R 1.0-1.5 = best outcomes.** Don't chase wide R:R — tighter TPs get hit.
 
 ## SIGNAL QUALITY DATA (LLM-first mode)
 When `signal_quality` is present in your input, YOU are the quality gate:

@@ -1482,14 +1482,15 @@ class EnsembleStrategy:
         # Solo analysis (from per-symbol missed trade data):
         # vmc_cipher: 82% solo WR, bollinger_squeeze: 78% solo WR (paper trading validated)
         # confidence_scorer: solo ONLY on HYPE (PF=2.65). Bad on BTC (PF=0.0) and SOL (PF=0.23).
-        # 60-day backtest solo WR (missed trades analysis, n>15 each):
-        #   mean_reversion:     77% WR on 47 signals — STRONG EDGE
-        #   monte_carlo_zones:  67% WR on 18 signals — EDGE
-        #   probability_engine: 57% WR on 207 signals — EDGE (large sample)
-        #   regime_trend:       47% WR on 150 signals — MARGINAL (not included)
-        #   confidence_scorer:  49% WR on 2051 signals — COINFLIP (not included)
-        #   bollinger_squeeze:  37% WR on 461 signals — NEGATIVE (not included)
-        _PROVEN_SOLO_STRATEGIES = {"probability_engine", "monte_carlo_zones", "mean_reversion"}
+        # 1,410-signal analysis (raw strategy output with price outcome tracking):
+        #   bollinger_squeeze: 57% WR, +0.15%/trade — ONLY PROFITABLE STRATEGY
+        #   Solo BB: 62% WR, +0.28%/trade — BEST single pattern in entire system
+        #   probability_engine: 53% WR — breakeven
+        #   confidence_scorer: 47% WR — slight loser (60% of all signal volume)
+        #   regime_trend: 43% WR — losing
+        #   mean_reversion: 43% WR — losing
+        # Solo BB outperforms 2-agree+BB (62% vs 52% WR). Consensus DILUTES BB edge.
+        _PROVEN_SOLO_STRATEGIES = {"bollinger_squeeze", "probability_engine"}
         _HYPE_SOLO_STRATEGIES = set()  # Disabled: confidence_scorer solo is coinflip (49% WR)
         # 60-day backtest: solo signals peak at 57-67% confidence. 70% threshold
         # blocks nearly all solo signals. 60% captures the bulk of the edge.
@@ -1510,17 +1511,31 @@ class EnsembleStrategy:
             lone_signals = buy_signals or sell_signals
             _allowed = False
 
-            # Path 1: Proven strategy solo (any symbol)
+            # Path 1: Proven strategy solo — BB solo is the BEST pattern (62% WR)
             if (lone_signals and len(lone_signals) == 1
                     and lone_signals[0].strategy in _PROVEN_SOLO_STRATEGIES
                     and lone_signals[0].confidence >= _SOLO_CONF_THRESHOLD):
-                lone_signals[0].metadata["solo_proven"] = True
-                lone_signals[0].metadata["risk_mult_override"] = 0.5
-                logger.info(
-                    f"[{symbol}] Proven solo trade: {lone_signals[0].strategy} "
-                    f"conf={lone_signals[0].confidence:.0f}% (0.35x size)"
-                )
-                _allowed = True
+                _sig = lone_signals[0]
+                _base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
+                _setup_key = f"{_base_sym}_{_sig.side}"
+
+                # Golden setups from 1,410-signal analysis (higher size)
+                _GOLDEN = {"ETH_SELL": 0.8, "BTC_BUY": 0.7, "SOL_BUY": 0.7,
+                           "BTC_SELL": 0.7, "ETH_BUY": 0.6}
+                # Dead setup — always skip even for BB
+                if _base_sym == "HYPE" and _sig.side == "SELL" and _sig.strategy == "bollinger_squeeze":
+                    logger.info(f"[{symbol}] DEAD SETUP: HYPE_SELL_BB (35% WR) — skipping")
+                else:
+                    _rm = _GOLDEN.get(_setup_key, 0.5)
+                    _sig.metadata["solo_proven"] = True
+                    _sig.metadata["risk_mult_override"] = _rm
+                    _is_golden = _setup_key in _GOLDEN
+                    logger.info(
+                        f"[{symbol}] {'GOLDEN' if _is_golden else 'Proven'} solo: "
+                        f"{_sig.strategy} {_setup_key} conf={_sig.confidence:.0f}% "
+                        f"({_rm}x size)"
+                    )
+                    _allowed = True
 
             # Path 1b: HYPE-specific solo strategies (confidence_scorer PF=2.65 on HYPE only)
             if (not _allowed and lone_signals and len(lone_signals) == 1
