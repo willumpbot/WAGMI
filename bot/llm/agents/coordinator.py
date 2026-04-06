@@ -3094,19 +3094,38 @@ class AgentCoordinator:
         if "_simulation" in snapshot:
             critic_data["simulation"] = snapshot["_simulation"]
 
+        # Global context for Critic (fixes prompt-data mismatch where prompt
+        # references g.cf, g.edge, g.ml but they weren't in the input)
+        if "g" in snapshot:
+            critic_data["g"] = snapshot["g"]
+        # Add edge/WR data from dynamic stats if available
+        if "_enr_dynamic_stats" in snapshot:
+            critic_data.setdefault("g", {})["edge_stats"] = snapshot["_enr_dynamic_stats"]
+
         # LLM-first signal quality data for comprehensive review
         if "signal_metadata" in snapshot:
             sm = snapshot["signal_metadata"]
+            strategies_agree = sm.get("strategies_agree", [])
             critic_data["signal_quality"] = {
                 "chop_score": sm.get("chop_score"),
                 "win_prob": sm.get("win_prob"),
                 "ev_per_dollar": sm.get("ev_per_dollar"),
                 "fee_drag_pct": sm.get("fee_drag_pct"),
                 "rr_tp1": sm.get("rr_tp1"),
+                "rr_tp2": sm.get("rr_tp2"),
                 "stop_width_pct": sm.get("stop_width_pct"),
                 "num_agree": sm.get("num_agree"),
                 "regime_4h_aligned": sm.get("regime_4h_aligned"),
                 "would_pass_floor": sm.get("would_pass_confidence_floor"),
+                "strategies_agree": strategies_agree,
+                "bb_involved": "bollinger_squeeze" in (strategies_agree or []),
+                "regime_1h": sm.get("regime_1h"),
+                "regime_4h": sm.get("regime_4h"),
+                "funding_rate": sm.get("funding_rate"),
+                "volume_ratio": sm.get("volume_ratio"),
+                "time_utc_hour": sm.get("time_utc_hour"),
+                "btc_trend": sm.get("btc_trend"),
+                "mechanical_floor": sm.get("mechanical_floor"),
             }
 
         return json.dumps(critic_data, separators=(",", ":"))
