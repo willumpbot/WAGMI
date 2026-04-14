@@ -113,13 +113,13 @@ DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     ),
     AgentRole.SCOUT: AgentConfig(
         role=AgentRole.SCOUT,
-        max_tokens=500,   # JSON: watchlist (1-3 items). Was 1536, overkill.
+        max_tokens=700,   # JSON: watchlist (1-3 items). 500 caused truncation.
         timeout_s=30.0,
         required=False,
     ),
     AgentRole.OVERSEER: AgentConfig(
         role=AgentRole.OVERSEER,
-        max_tokens=600,   # JSON: system health + recommendations.
+        max_tokens=800,   # JSON: system health + recommendations. 600 caused truncation.
         timeout_s=40.0,
         required=False,
     ),

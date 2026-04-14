@@ -3520,7 +3520,6 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             drawdown_pct=_ad_dd,
                         )
                         if _new_mode is not None:
-                            from llm.autonomy import LLMMode
                             self.llm_mode = LLMMode(_new_mode)
                             logger.warning(f"[AUTO-DEMOTION] LLM mode changed to {self.llm_mode.name}")
                     except Exception as _ad_err:
