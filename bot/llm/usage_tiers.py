@@ -39,7 +39,7 @@ MODEL_OPUS = "claude-opus-4-20250115"
 
 # Pricing per 1M tokens (input, output)
 MODEL_PRICING = {
-    MODEL_HAIKU: (1.0, 5.0),
+    MODEL_HAIKU: (0.80, 4.0),
     MODEL_SONNET: (3.0, 15.0),
     MODEL_OPUS: (15.0, 75.0),
 }

@@ -331,6 +331,10 @@ class AgentCoordinator:
             except Exception as e:
                 logger.debug("[MULTI-AGENT] 5m technicals enrichment failed: %s", e)
 
+        # Strip raw OHLCV arrays after technicals computed — saves ~1800 tokens per call
+        for _ohlcv_key in ["ohlcv_1h", "ohlcv_5m", "ohlcv_by_symbol_1h", "ohlcv_by_symbol_5m"]:
+            snapshot_data.pop(_ohlcv_key, None)
+
         # External data (funding, OI, liquidation) — formatted text
         if _EXTERNAL_DATA_AVAILABLE:
             try:
@@ -858,8 +862,8 @@ class AgentCoordinator:
                         (_fb_bias == "bullish" and _fb_side == "SELL")
                         or (_fb_bias == "bearish" and _fb_side == "BUY")
                     )
-                    if _fb_conf < 0.55:
-                        logger.warning("[CRITIC-FALLBACK] Conf %.2f < 0.55 without Critic — skip", _fb_conf)
+                    if _fb_conf < 0.40:
+                        logger.warning("[CRITIC-FALLBACK] Conf %.2f < 0.40 without Critic — skip", _fb_conf)
                         trade_out = AgentOutput(role=AgentRole.TRADE, data={
                             "a": "skip", "c": _fb_conf, "side": _fb_side,
                             "n": f"critic_fallback: low conf ({_fb_conf:.2f}) without review",
@@ -2675,12 +2679,7 @@ class AgentCoordinator:
         self._total_input_tokens += in_tok
         self._total_output_tokens += out_tok
 
-        # Feed cost tracker so daily budget enforcement stays accurate
-        try:
-            from llm.cost_tracker import get_cost_tracker
-            get_cost_tracker().record_call(in_tok, out_tok, model)
-        except Exception:
-            pass
+        # Cost tracking handled by client.py — do NOT double-count here
 
         if raw_text is None:
             api_error = usage.get("error", "unknown")
@@ -3636,15 +3635,7 @@ class AgentCoordinator:
             timeout=20,
         )
 
-        try:
-            from llm.cost_tracker import get_cost_tracker
-            get_cost_tracker().record_call(
-                usage_r1.get("input_tokens", 0),
-                usage_r1.get("output_tokens", 0),
-                model,
-            )
-        except Exception:
-            pass
+        # Cost tracking handled by client.py — do NOT double-count here
 
         critic_r1_data = None
         if raw_r1:
@@ -3712,15 +3703,7 @@ class AgentCoordinator:
             timeout=20,
         )
 
-        try:
-            from llm.cost_tracker import get_cost_tracker
-            get_cost_tracker().record_call(
-                usage_r2.get("input_tokens", 0),
-                usage_r2.get("output_tokens", 0),
-                trade_model,
-            )
-        except Exception:
-            pass
+        # Cost tracking handled by client.py — do NOT double-count here
 
         rebuttal_data = None
         if raw_r2:

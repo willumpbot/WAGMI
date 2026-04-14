@@ -123,10 +123,19 @@ class ExitEngine:
                 if decision.new_tp >= position.entry and decision.exit_confidence < 0.7:
                     return False, "TP above entry requires confidence >= 0.7"
 
-        # Rule 3: Early close requires confidence >= 0.60
+        # Rule 3: Early close confidence threshold
+        # Profitable positions need MUCH higher bar to close — let trailing stop handle exits.
+        # Only close a winner if thesis is truly dead (regime shift, not normal pullback).
         if decision.exit_action == "close":
-            if decision.exit_confidence < 0.60:
-                return False, f"Close requires confidence >= 0.60 (got {decision.exit_confidence:.2f})"
+            is_profitable = (current_price > position.entry) if is_long else (current_price < position.entry)
+            if is_profitable:
+                # Winning trade: require 0.90 confidence to override trailing stop
+                if decision.exit_confidence < 0.90:
+                    return False, f"Closing WINNER requires confidence >= 0.90 (got {decision.exit_confidence:.2f}). Let trailing stop handle it."
+            else:
+                # Losing trade: normal threshold
+                if decision.exit_confidence < 0.60:
+                    return False, f"Close requires confidence >= 0.60 (got {decision.exit_confidence:.2f})"
 
         # Rule 4: Partial close requires sufficient remaining qty
         if decision.exit_action == "partial":

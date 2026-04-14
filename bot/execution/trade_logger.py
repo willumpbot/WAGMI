@@ -56,6 +56,10 @@ class TradeLog:
     fee: float
     leverage: float
     hold_time_s: int
+    mfe: float = 0.0       # Max favorable excursion ($ from entry)
+    mae: float = 0.0       # Max adverse excursion ($ from entry)
+    mfe_pct: float = 0.0   # MFE as % of entry price
+    mae_pct: float = 0.0   # MAE as % of entry price
 
 
 class TradeLogger:
@@ -124,6 +128,7 @@ class TradeLogger:
         hold_time_s: int = 0,
     ):
         """Log a trade action (open, close, TP hit, SL hit)."""
+        _meta = event.metadata or {}
         log = TradeLog(
             timestamp=datetime.now(timezone.utc).isoformat(),
             symbol=event.symbol,
@@ -135,6 +140,10 @@ class TradeLogger:
             fee=event.fee,
             leverage=event.leverage,
             hold_time_s=hold_time_s,
+            mfe=_meta.get("mfe", 0.0),
+            mae=_meta.get("mae", 0.0),
+            mfe_pct=_meta.get("mfe_pct", 0.0),
+            mae_pct=_meta.get("mae_pct", 0.0),
         )
         self.trades.append(log)
         self._append_to_csv(self.trades_file, asdict(log))

@@ -1335,6 +1335,13 @@ class PositionManager:
                 "tp1": pos.tp1,
                 "tp2": pos.tp2,
                 "confidence": pos.confidence,
+                # MFE/MAE tracking — critical for exit optimization
+                "mfe": round(pos.mfe, 6),
+                "mae": round(pos.mae, 6),
+                "mfe_pct": round(pos.mfe / pos.entry * 100, 4) if pos.entry else 0,
+                "mae_pct": round(pos.mae / pos.entry * 100, 4) if pos.entry else 0,
+                "highest_price": pos.highest_price,
+                "lowest_price": pos.lowest_price,
             },
         )
         self.trade_log.append(event)

@@ -73,6 +73,10 @@ class TelegramCommandBot:
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._paused = False
+        self._quiet_mode = False     # Only circuit breakers + daily summary
+        self._digest_mode = False    # Batch updates every 30-60 min
+        self._digest_buffer = []     # Buffered messages for digest mode
+        self._last_digest_ts = 0.0   # Last digest flush timestamp
 
         if not token:
             logger.info("Telegram bot: no token configured, commands disabled")
@@ -221,6 +225,14 @@ class TelegramCommandBot:
             "/health": self._cmd_health,
             "/tracker": self._cmd_tracker,
             "/intel": self._cmd_intel,
+            "/ask": lambda: self._cmd_ask(args),
+            "/snapshot": self._cmd_snapshot,
+            "/costs": self._cmd_costs,
+            "/copilot": lambda: self._cmd_copilot_trade(args),
+            "/quiet": self._cmd_quiet,
+            "/loud": self._cmd_loud,
+            "/digest": self._cmd_digest,
+            "/live": self._cmd_live,
             "/help": self._cmd_help,
         }
         handler = handlers.get(command)
@@ -790,54 +802,32 @@ class TelegramCommandBot:
 
     def _cmd_help(self) -> str:
         return (
-            "*nunuIRL Bot Commands*\n\n"
+            "*WAGMI Bot Commands*\n\n"
+            "*Quick Access:*\n"
+            "/snapshot - One-screen status\n"
+            "/ask <question> - Ask the AI brain\n"
+            "/copilot <idea> - AI trade plan\n"
+            "/costs - LLM spend today\n\n"
             "*Trading:*\n"
             "/status - Equity, positions, PnL\n"
             "/positions - Open position details\n"
             "/close <SYM> - Force close position\n"
             "/closeall - Close all positions\n"
-            "/pause - Pause trading\n"
-            "/resume - Resume trading\n\n"
-            "*LLM & Learning:*\n"
-            "/llm - LLM meta-brain status\n"
-            "/mode <0-5> - View/change LLM mode\n"
-            "/roadmap - Knowledge roadmap status & gates\n"
-            "/promote - Advance to next roadmap phase\n"
-            "/demote <phase> - Demote to lower phase\n"
-            "/curriculum - Curriculum level & stats\n"
-            "/knowledge - Browse knowledge base\n"
-            "/progression - Mode promotion readiness\n"
-            "/survival - Survival pressure score & trend\n"
-            "/learn - Learning mode phase & progress\n\n"
-            "*Signals:*\n"
-            "/signals - Recent ingested signals\n"
-            "/analyze <text> - Analyze a signal with LLM\n"
-            "/accuracy - Signal analysis accuracy\n\n"
-            "*Manual Trading:*\n"
-            "/trade SYM SIDE PRICE LEVx QTY - Log trade entry\n"
-            "/exit SYM PRICE [REASON] - Log trade exit\n"
-            "/journal - Recent trades and stats\n"
-            "/equity - Account growth & compounding\n"
-            "/perf - Performance vs signals\n"
-            "/sniper - Sniper signal summary\n"
-            "/sim - Sniper simulator ($100 virtual account)\n"
-            "/health - System health check\n"
-            "/optimize - Signal quality & parameter tuning\n"
-            "/manage SYM ENTRY - Position management advice\n\n"
+            "/pause / /resume - Trading control\n\n"
+            "*Intelligence:*\n"
+            "/llm - Brain status\n"
+            "/mode <0-5> - LLM mode\n"
+            "/performance - Win rate metrics\n"
+            "/growth - Learning dashboard\n"
+            "/intel - Market intel\n"
+            "/edge <setup> - Edge analysis\n\n"
+            "*Notifications:*\n"
+            "/quiet / /loud - Minimal vs full alerts\n"
+            "/digest / /live - Batched vs real-time\n\n"
             "*System:*\n"
-            "/health - System health check\n"
-            "/ml - ML learner stats\n"
-            "/performance - Win rate and metrics\n"
-            "/uplift - LLM uplift analytics\n"
-            "/copytrades - Human copy-tradable signals\n"
-            "/telemetry - Execution quality metrics\n"
-            "/proposals - Strategy discovery proposals\n"
-            "/growth - Growth intelligence dashboard\n"
-            "/risk - Self-tuning risk engine status\n"
-            "/rl - RL system status (buffer + policy)\n"
-            "/kill [reason] - Emergency kill switch\n"
-            "/unkill - Deactivate kill switch\n"
-            "/ops - Ops guard status"
+            "/health - System health\n"
+            "/kill / /unkill - Emergency controls\n"
+            "/ops - Safety guard status"
         )
 
     def _cmd_growth(self) -> str:
@@ -1496,3 +1486,216 @@ class TelegramCommandBot:
     def _cmd_resume(self) -> str:
         self._paused = False
         return "Trading RESUMED."
+
+    # ── New Copilot Commands (Blueprint Phase 2) ─────────────────
+
+    def _cmd_ask(self, args: str) -> str:
+        """Ask the AI brain a question. It has full market context."""
+        question = args.strip()
+        if not question:
+            return "Usage: /ask <question>\nExample: /ask What do you think about BTC right now?"
+        try:
+            from llm.client import call_llm
+            # Build lean context
+            ctx_parts = [f"Question from trader: {question}"]
+            if self.bot:
+                eq = self.bot.risk_mgr.equity
+                daily = self.bot.risk_mgr.circuit_breaker.daily_pnl
+                n_pos = self.bot.pos_mgr.get_open_count()
+                ctx_parts.append(f"Account: ${eq:,.2f} equity, ${daily:+,.2f} daily PnL, {n_pos} open positions")
+                # Add open position details
+                open_pos = self.bot.pos_mgr.get_open_positions()
+                if open_pos:
+                    pos_lines = []
+                    for sym, pos in open_pos.items():
+                        pos_lines.append(f"{sym} {pos.side} {pos.leverage:.0f}x entry={pos.entry} sl={pos.sl}")
+                    ctx_parts.append("Open positions: " + "; ".join(pos_lines))
+                # Add recent prices
+                prices = {}
+                for sym in ["BTC", "ETH", "SOL", "HYPE"]:
+                    p = self.bot._last_prices.get(sym)
+                    if p:
+                        prices[sym] = p
+                if prices:
+                    ctx_parts.append("Prices: " + ", ".join(f"{s}=${p:,.2f}" for s, p in prices.items()))
+
+            system_prompt = (
+                "You are the WAGMI quant brain. Answer the trader's question concisely "
+                "using the market context provided. Be direct and actionable. "
+                "If they ask about a trade idea, give entry/SL/TP levels. "
+                "Keep response under 200 words."
+            )
+            result, usage = call_llm(
+                system_prompt=system_prompt,
+                snapshot_json="\n".join(ctx_parts),
+                model="claude-haiku-4-5-20251001",
+                max_tokens=400,
+                timeout=20.0,
+            )
+            if result:
+                cost = (usage.get("input_tokens", 0) * 0.80 + usage.get("output_tokens", 0) * 4.0) / 1_000_000
+                return f"*Brain says:*\n{result}\n\n_Cost: ${cost:.4f}_"
+            return f"Brain unavailable: {usage.get('error', 'unknown')}"
+        except Exception as e:
+            return f"Ask error: {e}"
+
+    def _cmd_snapshot(self) -> str:
+        """Quick snapshot: equity, positions, PnL, API budget, bot status."""
+        if not self.bot:
+            return "Bot not connected"
+        try:
+            eq = self.bot.risk_mgr.equity
+            daily = self.bot.risk_mgr.circuit_breaker.daily_pnl
+            n_pos = self.bot.pos_mgr.get_open_count()
+            paused = "PAUSED" if self._paused else "ACTIVE"
+            mode = getattr(self.bot, 'llm_mode', 0)
+
+            # LLM budget
+            budget_line = ""
+            try:
+                from llm.cost_tracker import get_cost_tracker
+                ct = get_cost_tracker()
+                pct = ct.get_budget_used_pct()
+                spent = pct * float(os.environ.get("LLM_DAILY_BUDGET_USD", "5"))
+                cap = float(os.environ.get("LLM_DAILY_BUDGET_USD", "5"))
+                budget_line = f"API: ${spent:.2f}/${cap:.2f} ({pct:.0%})"
+            except Exception:
+                budget_line = "API: N/A"
+
+            # Open positions summary
+            pos_lines = []
+            open_pos = self.bot.pos_mgr.get_open_positions()
+            total_unreal = 0.0
+            for sym, pos in open_pos.items():
+                price = self.bot._last_prices.get(sym, pos.entry)
+                if pos.side == "LONG":
+                    unreal = (price - pos.entry) * pos.qty * pos.leverage
+                else:
+                    unreal = (pos.entry - price) * pos.qty * pos.leverage
+                total_unreal += unreal
+                pos_lines.append(f"  {sym} {pos.side} {pos.leverage:.0f}x {unreal:+.2f}")
+
+            msg = (
+                f"*WAGMI Snapshot*\n"
+                f"Status: {paused} | Mode: {mode}\n"
+                f"Equity: ${eq:,.2f} | Daily: ${daily:+,.2f}\n"
+                f"Positions: {n_pos} | Unrealized: ${total_unreal:+,.2f}\n"
+                f"{budget_line}\n"
+                f"Tick: {self.bot._tick}"
+            )
+            if pos_lines:
+                msg += "\n\n*Open:*\n" + "\n".join(pos_lines)
+            return msg
+        except Exception as e:
+            return f"Snapshot error: {e}"
+
+    def _cmd_costs(self) -> str:
+        """LLM API cost tracking: today's spend, budget, calls by model."""
+        try:
+            from llm.cost_tracker import get_cost_tracker
+            ct = get_cost_tracker()
+            pct = ct.get_budget_used_pct()
+            cap = float(os.environ.get("LLM_DAILY_BUDGET_USD", "5"))
+            spent = pct * cap
+
+            # Get call counts from client stats
+            from llm.client import get_usage_stats
+            stats = get_usage_stats()
+
+            return (
+                f"*LLM Costs Today*\n"
+                f"Spent: ${spent:.3f} / ${cap:.2f} ({pct:.0%})\n"
+                f"Calls: {stats.get('total_calls', 0)} ({stats.get('total_failures', 0)} failed)\n"
+                f"Tokens: {stats.get('total_input_tokens', 0):,} in / {stats.get('total_output_tokens', 0):,} out\n"
+                f"Estimated cost: ${stats.get('estimated_cost_usd', 0):.4f}\n\n"
+                f"_Budget resets at midnight UTC_"
+            )
+        except Exception as e:
+            return f"Cost tracking error: {e}"
+
+    def _cmd_copilot_trade(self, args: str) -> str:
+        """AI-powered trade copilot. Describe what you want, get a full play."""
+        idea = args.strip()
+        if not idea:
+            return (
+                "Usage: /copilot <trade idea>\n"
+                "Examples:\n"
+                "  /copilot I want to short BTC 20x\n"
+                "  /copilot ETH looks bullish, what's the play?\n"
+                "  /copilot Is SOL a good short here?"
+            )
+        try:
+            from llm.client import call_llm
+            # Build rich context
+            ctx_parts = [f"Trader's idea: {idea}"]
+            if self.bot:
+                eq = self.bot.risk_mgr.equity
+                ctx_parts.append(f"Account equity: ${eq:,.2f}")
+                # Current prices
+                prices = {}
+                for sym in ["BTC", "ETH", "SOL", "HYPE"]:
+                    p = self.bot._last_prices.get(sym)
+                    if p:
+                        prices[sym] = p
+                if prices:
+                    ctx_parts.append("Current prices: " + ", ".join(f"{s}=${p:,.2f}" for s, p in prices.items()))
+                # Open positions
+                open_pos = self.bot.pos_mgr.get_open_positions()
+                if open_pos:
+                    pos_lines = [f"{sym} {pos.side} {pos.leverage:.0f}x" for sym, pos in open_pos.items()]
+                    ctx_parts.append("Already open: " + ", ".join(pos_lines))
+
+            system_prompt = (
+                "You are the WAGMI quant brain copilot. The trader described a trade idea. "
+                "Deliver the FULL PLAY:\n"
+                "1. Entry: market or limit + price level\n"
+                "2. Stop Loss: price + reasoning\n"
+                "3. Take Profit 1 & 2: prices + R:R ratios\n"
+                "4. Recommended leverage (data says 1.5-3x = optimal, 6x+ loses money)\n"
+                "5. Thesis: 1-2 sentences\n"
+                "6. Risk assessment: what could go wrong\n"
+                "7. Confidence: 0-100%\n\n"
+                "GROUND TRUTH: ETH=47% WR (best), HYPE=24% (worst). "
+                "Trending regime=56% WR, ranging=19%. "
+                "Low leverage (1.5-3x)=+$6.59 avg, high (6-15x)=-$6.33.\n"
+                "Be direct. Use numbers. Keep under 250 words."
+            )
+            result, usage = call_llm(
+                system_prompt=system_prompt,
+                snapshot_json="\n".join(ctx_parts),
+                model="claude-haiku-4-5-20251001",
+                max_tokens=500,
+                timeout=25.0,
+            )
+            if result:
+                cost = (usage.get("input_tokens", 0) * 0.80 + usage.get("output_tokens", 0) * 4.0) / 1_000_000
+                return f"*Trade Copilot:*\n\n{result}\n\n_Cost: ${cost:.4f} | To execute, use /close or manual entry_"
+            return f"Copilot unavailable: {usage.get('error', 'unknown')}"
+        except Exception as e:
+            return f"Copilot error: {e}"
+
+    def _cmd_quiet(self) -> str:
+        """Enable quiet mode: only circuit breakers + daily summary."""
+        self._quiet_mode = True
+        return "Quiet mode ON. You'll only see circuit breakers and daily summaries.\n/loud to restore."
+
+    def _cmd_loud(self) -> str:
+        """Disable quiet mode: all notifications."""
+        self._quiet_mode = False
+        return "Loud mode ON. All notifications restored."
+
+    def _cmd_digest(self) -> str:
+        """Enable digest mode: batch updates every 30 min."""
+        self._digest_mode = True
+        self._digest_buffer = []
+        return "Digest mode ON. Updates batched every 30 min.\n/live to restore real-time."
+
+    def _cmd_live(self) -> str:
+        """Disable digest mode: real-time notifications."""
+        self._digest_mode = False
+        # Flush any buffered messages
+        if self._digest_buffer:
+            flushed = len(self._digest_buffer)
+            self._digest_buffer = []
+            return f"Live mode ON. Flushed {flushed} buffered messages."
+        return "Live mode ON. Real-time notifications restored."

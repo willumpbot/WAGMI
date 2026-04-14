@@ -77,80 +77,80 @@ class AgentConfig:
 DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     AgentRole.REGIME: AgentConfig(
         role=AgentRole.REGIME,
-        max_tokens=2048,
+        max_tokens=512,   # JSON output: regime + bias + confidence. 512 is plenty.
         timeout_s=30.0,
         required=True,
     ),
     AgentRole.TRADE: AgentConfig(
         role=AgentRole.TRADE,
-        max_tokens=3072,
-        timeout_s=60.0,  # p95 latency is 42s, 45s was cutting it close
+        max_tokens=800,   # JSON: action + thesis + sizing. Was 3072, caused truncation.
+        timeout_s=60.0,
         required=True,
     ),
     AgentRole.RISK: AgentConfig(
         role=AgentRole.RISK,
-        max_tokens=2048,
-        timeout_s=20.0,
+        max_tokens=512,   # JSON: size_mult + flags. Lean output.
+        timeout_s=40.0,
         required=False,
     ),
     AgentRole.LEARNING: AgentConfig(
         role=AgentRole.LEARNING,
-        max_tokens=2048,
-        timeout_s=20.0,
+        max_tokens=600,   # JSON: lessons + patterns. Post-trade only.
+        timeout_s=30.0,
         required=False,
     ),
     AgentRole.CRITIC: AgentConfig(
         role=AgentRole.CRITIC,
-        max_tokens=3072,
-        timeout_s=60.0,  # p95 latency is 42s, match Trade agent
+        max_tokens=800,   # JSON: verdict + counter-thesis. Was 3072, caused truncation.
+        timeout_s=60.0,
         required=False,
     ),
     AgentRole.EXIT: AgentConfig(
         role=AgentRole.EXIT,
-        max_tokens=1024,
-        timeout_s=25.0,  # Raised from 10s: 68 timeouts in session, Haiku needs 15-25s in production
+        max_tokens=400,   # JSON: action + reasoning. Simplest output.
+        timeout_s=25.0,
         required=False,
     ),
     AgentRole.SCOUT: AgentConfig(
         role=AgentRole.SCOUT,
-        max_tokens=1536,  # Was 768, caused JSON truncation
-        timeout_s=30.0,  # Raised from 10s: 108 timeouts in session, worst performer, needs room
+        max_tokens=500,   # JSON: watchlist (1-3 items). Was 1536, overkill.
+        timeout_s=30.0,
         required=False,
     ),
     AgentRole.OVERSEER: AgentConfig(
         role=AgentRole.OVERSEER,
-        max_tokens=2048,
-        timeout_s=40.0,  # Raised from 30s: has largest input context (system-wide state)
+        max_tokens=600,   # JSON: system health + recommendations.
+        timeout_s=40.0,
         required=False,
     ),
     AgentRole.QUANT: AgentConfig(
         role=AgentRole.QUANT,
-        max_tokens=1536,
-        timeout_s=25.0,  # Raised from 15s: 42 timeouts in session, runs stats on large context
+        max_tokens=512,   # JSON: EV + Kelly + stats. Numbers, not prose.
+        timeout_s=25.0,
         required=False,
     ),
     # ── Phase 3 Strategic Agents ────────────────────────────────
     AgentRole.PORTFOLIO: AgentConfig(
         role=AgentRole.PORTFOLIO,
-        max_tokens=2048,
+        max_tokens=600,   # JSON: portfolio risk summary.
         timeout_s=20.0,
         required=False,
     ),
     AgentRole.FORECASTER: AgentConfig(
         role=AgentRole.FORECASTER,
-        max_tokens=1536,
+        max_tokens=500,   # JSON: regime forecast + probabilities.
         timeout_s=15.0,
         required=False,
     ),
     AgentRole.HYPOTHESIS: AgentConfig(
         role=AgentRole.HYPOTHESIS,
-        max_tokens=2048,
+        max_tokens=600,   # JSON: hypothesis + evidence.
         timeout_s=20.0,
         required=False,
     ),
     AgentRole.CORRELATOR: AgentConfig(
         role=AgentRole.CORRELATOR,
-        max_tokens=1536,
+        max_tokens=500,   # JSON: correlation matrix + alerts.
         timeout_s=15.0,
         required=False,
     ),
@@ -163,7 +163,7 @@ DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     ),
     AgentRole.CONVICTION: AgentConfig(
         role=AgentRole.CONVICTION,
-        max_tokens=1536,  # Detailed reasoning on alignment
+        max_tokens=600,   # JSON: conviction score + reasoning.
         timeout_s=10.0,
         required=False,
     ),
@@ -206,7 +206,7 @@ DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     ),
     AgentRole.CONSENSUS_BUILDER: AgentConfig(
         role=AgentRole.CONSENSUS_BUILDER,
-        max_tokens=1536,  # Needs to synthesize all agent outputs
+        max_tokens=800,   # Synthesizes all agent outputs into final decision
         timeout_s=10.0,
         required=False,
     ),

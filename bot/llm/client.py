@@ -215,8 +215,8 @@ def get_usage_stats() -> dict:
         "total_calls": _total_calls,
         "total_failures": _total_failures,
         "estimated_cost_usd": round(
-            _total_input_tokens * 3.0 / 1_000_000
-            + _total_output_tokens * 15.0 / 1_000_000,
+            _total_input_tokens * 0.80 / 1_000_000
+            + _total_output_tokens * 4.0 / 1_000_000,
             4,
-        ),
+        ),  # Uses Haiku pricing since most calls are Haiku
     }

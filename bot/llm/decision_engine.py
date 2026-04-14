@@ -433,17 +433,7 @@ def get_trading_decision(
                     f"[LLM-ENGINE] Multi-agent pipeline: action={decision.action} "
                     f"conf={decision.confidence:.2f} regime={decision.regime}"
                 )
-                # Record API cost
-                if _HAS_COST_TRACKER:
-                    try:
-                        cost_tracker = get_cost_tracker()
-                        cost_tracker.record_call(
-                            input_tokens=usage.get("total_input_tokens", 0),
-                            output_tokens=usage.get("total_output_tokens", 0),
-                            model="multi-agent",
-                        )
-                    except Exception:
-                        pass
+                # Cost tracking handled by client.py — do NOT double-count here
 
                 _log_audit({
                     "ts": time.time(),
@@ -538,16 +528,7 @@ def get_trading_decision(
                     # Track cost
                     _ensemble_total_usage["input_tokens"] += _p_usage.get("input_tokens", 0)
                     _ensemble_total_usage["output_tokens"] += _p_usage.get("output_tokens", 0)
-                    if _HAS_COST_TRACKER and _p_usage:
-                        try:
-                            cost_tracker = get_cost_tracker()
-                            cost_tracker.record_call(
-                                input_tokens=_p_usage.get("input_tokens", 0),
-                                output_tokens=_p_usage.get("output_tokens", 0),
-                                model=_pmodel,
-                            )
-                        except Exception:
-                            pass
+                    # Cost tracking handled by client.py — do NOT double-count here
 
                     if _p_raw:
                         _p_decision, _p_err = validate_and_parse(_p_raw)
@@ -597,17 +578,7 @@ def get_trading_decision(
         # Single-model path (default)
         raw_text, usage = call_llm(**call_kwargs)
 
-        # Record API call cost
-        if _HAS_COST_TRACKER and usage:
-            try:
-                cost_tracker = get_cost_tracker()
-                cost_tracker.record_call(
-                    input_tokens=usage.get("input_tokens", 0),
-                    output_tokens=usage.get("output_tokens", 0),
-                    model=call_kwargs.get("model", "unknown"),
-                )
-            except Exception as ce:
-                logger.debug(f"[LLM-ENGINE] Cost recording failed: {ce}")
+        # Cost tracking handled by client.py — do NOT double-count here
 
         if raw_text is None:
             _log_audit({

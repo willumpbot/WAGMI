@@ -3470,6 +3470,53 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         except Exception as _co_err:
                             logger.debug(f"Cost optimizer outcome error: {_co_err}")
 
+                    # Auto-demotion check: monitor brain health after each close
+                    try:
+                        from llm.auto_demotion import get_auto_demotion
+                        _ad = get_auto_demotion()
+                        # Gather recent trades for WR calculation
+                        _ad_trades = []
+                        try:
+                            import csv as _ad_csv
+                            _tc_path = os.path.join("data", "trades.csv")
+                            if os.path.exists(_tc_path):
+                                with open(_tc_path) as _tf:
+                                    _reader = _ad_csv.DictReader(_tf)
+                                    for _row in _reader:
+                                        try:
+                                            _ad_trades.append({"pnl": float(_row.get("pnl", 0))})
+                                        except (ValueError, TypeError):
+                                            pass
+                                _ad_trades = _ad_trades[-30:]  # Last 30 trades
+                        except Exception:
+                            pass
+                        # Get cost info
+                        _ad_cost = 0.0
+                        try:
+                            from llm.cost_tracker import get_cost_tracker
+                            _ct = get_cost_tracker()
+                            _ad_cost = _ct.get_budget_used_pct() * float(os.environ.get("LLM_DAILY_BUDGET_USD", "5"))
+                        except Exception:
+                            pass
+                        # Get drawdown
+                        _ad_dd = 0.0
+                        try:
+                            _peak = max(self.risk_mgr.equity, self.config.starting_equity)
+                            _ad_dd = 1.0 - (self.risk_mgr.equity / _peak) if _peak > 0 else 0
+                        except Exception:
+                            pass
+                        _new_mode = _ad.check_after_trade(
+                            recent_trades=_ad_trades,
+                            daily_cost_usd=_ad_cost,
+                            drawdown_pct=_ad_dd,
+                        )
+                        if _new_mode is not None:
+                            from llm.autonomy import LLMMode
+                            self.llm_mode = LLMMode(_new_mode)
+                            logger.warning(f"[AUTO-DEMOTION] LLM mode changed to {self.llm_mode.name}")
+                    except Exception as _ad_err:
+                        logger.debug(f"Auto-demotion check error: {_ad_err}")
+
                     # Active Learning: run a learning cycle after trade close if due
                     if self._active_learning and self._active_learning.should_run():
                         try:
@@ -4089,9 +4136,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
         # Cost gate: skip LLM entirely for low-confidence signals (not worth the cost)
         _sig_conf = signal_result.confidence if hasattr(signal_result, 'confidence') else 0
-        if _sig_conf < 65:
+        if _sig_conf < 60:
             logger.info(
-                f"[{trace_id}][{symbol}] LLM SKIP: confidence {_sig_conf:.0f}% < 65% threshold"
+                f"[{trace_id}][{symbol}] LLM SKIP: confidence {_sig_conf:.0f}% < 60% threshold"
             )
             # Fall through to mechanical path (no LLM cost incurred)
             _llm_first = False
@@ -5426,9 +5473,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
         # Cost gate: skip LLM veto for low-confidence signals (not worth the cost)
         _veto_conf = signal_result.confidence if hasattr(signal_result, 'confidence') else 0
-        if llm_has_veto(self.llm_mode) and _veto_conf < 65:
+        if llm_has_veto(self.llm_mode) and _veto_conf < 60:
             logger.info(
-                f"[{trace_id}][{symbol}] LLM SKIP: confidence {_veto_conf:.0f}% < 65% threshold"
+                f"[{trace_id}][{symbol}] LLM SKIP: confidence {_veto_conf:.0f}% < 60% threshold"
             )
         elif llm_has_veto(self.llm_mode):
             veto_result = self._llm_veto_check(candidate, trace_id)
