@@ -1887,12 +1887,21 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 logger.warning(f"[{trace_id}] Exit intelligence error: {e}")
 
         # Scout Agent: idle-time preparation and forecasting
-        # Runs every 10th tick (~5 min at 30s intervals) to prepare for upcoming trades
-        if self._tick % 10 == 0 and os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
+        # Runs every 120th tick (~2 hours at 60s intervals) to minimize cost
+        # Blueprint: scout should run every 2-4 hours, not per-signal
+        if self._tick % 120 == 0 and os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
             try:
                 self._run_scout_preparation(trace_id)
             except Exception as e:
                 logger.debug(f"[{trace_id}] Scout preparation error: {e}")
+
+        # Daily summary: send once per day at ~8:00 UTC (every 1440 ticks = 24h at 60s)
+        # Also triggers if the bot just started and hasn't sent one today
+        if self._tick % 1440 == 720:  # ~12 hours into the day
+            try:
+                self._send_daily_summary()
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Daily summary error: {e}")
 
         # Position aging alerts: flag positions held too long with adverse funding
         # Runs every 10th tick (~10 min at 60s intervals)
@@ -6797,6 +6806,58 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
 
 
+
+
+    def _send_daily_summary(self):
+        """Send daily summary via Telegram alert bridge."""
+        try:
+            from alerts.telegram_alert_bridge import get_telegram_alert_bridge
+            bridge = get_telegram_alert_bridge()
+            if not bridge.enabled:
+                return
+
+            # Gather today's stats
+            total_trades = 0
+            wins = 0
+            net_pnl = 0.0
+            best_trade = None
+            worst_trade = None
+
+            for event in self.pos_mgr.trade_log:
+                if hasattr(event, 'pnl'):
+                    total_trades += 1
+                    net_pnl += event.pnl
+                    if event.pnl > 0:
+                        wins += 1
+                    if best_trade is None or event.pnl > best_trade.get("pnl", 0):
+                        best_trade = {"symbol": event.symbol, "pnl": event.pnl}
+                    if worst_trade is None or event.pnl < worst_trade.get("pnl", 0):
+                        worst_trade = {"symbol": event.symbol, "pnl": event.pnl}
+
+            # LLM cost info
+            llm_cost = 0.0
+            llm_budget = float(os.environ.get("LLM_DAILY_BUDGET_USD", "5"))
+            try:
+                from llm.cost_tracker import get_cost_tracker
+                ct = get_cost_tracker()
+                llm_cost = ct.get_budget_used_pct() * llm_budget
+            except Exception:
+                pass
+
+            bridge.send_daily_summary(
+                total_trades=total_trades,
+                wins=wins,
+                net_pnl=net_pnl,
+                best_trade=best_trade,
+                worst_trade=worst_trade,
+                active_positions=self.pos_mgr.get_open_count(),
+                equity=self.risk_mgr.equity,
+                llm_cost=llm_cost,
+                llm_budget=llm_budget,
+            )
+            logger.info(f"[DAILY-SUMMARY] Sent: {total_trades} trades, ${net_pnl:+.2f} PnL")
+        except Exception as e:
+            logger.debug(f"Daily summary send error: {e}")
 
 
 def main():
