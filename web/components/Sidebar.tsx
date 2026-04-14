@@ -3,169 +3,180 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { C, R, S, G, Glass, Z, SP } from '../src/theme';
+import { C, Z } from '../src/theme';
 import { resolveApiBase } from '../src/api';
 
-// ── SVG Icons ────────────────────────────────────────────────────────────────
+// ── SVG Icons ─────────────────────────────────────────────────────────────────
 
-const IconLightning = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+const IconGrid = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+    <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
   </svg>
 );
 
-const IconPortfolio = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <path d="M3 15h18" />
-    <path d="M8 3v18" />
-    <path d="M16 3v18" />
-    <path d="M3 9h18" />
+const IconBarChart = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" /><line x1="2" y1="20" x2="22" y2="20" />
   </svg>
 );
 
-const IconAnalysis = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" />
-    <path d="M21 21l-4.35-4.35" />
-    <path d="M11 8v6" />
-    <path d="M8 11h6" />
+const IconSearch = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 );
 
-const IconBrain = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.8-3.5 6L12 18l-3.5-3C6.3 13.8 5 11.5 5 9a7 7 0 0 1 7-7z" />
-    <circle cx="12" cy="9" r="2" />
-    <path d="M12 18v4" />
-    <path d="M8 22h8" />
+const IconCpu = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+    <rect x="9" y="9" width="6" height="6" />
+    <line x1="9" y1="1" x2="9" y2="4" /><line x1="15" y1="1" x2="15" y2="4" />
+    <line x1="9" y1="20" x2="9" y2="23" /><line x1="15" y1="20" x2="15" y2="23" />
+    <line x1="20" y1="9" x2="23" y2="9" /><line x1="20" y1="14" x2="23" y2="14" />
+    <line x1="1" y1="9" x2="4" y2="9" /><line x1="1" y1="14" x2="4" y2="14" />
   </svg>
 );
 
+const IconZap = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </svg>
+);
+
+const IconBook = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+  </svg>
+);
+
+const IconMenu = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
+
+const IconX = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
 
 const IconChevronLeft = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 18l-6-6 6-6" />
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6" />
   </svg>
 );
 
 const IconChevronRight = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 18l6-6-6-6" />
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6" />
   </svg>
 );
 
-const IconChevronDown = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 9l6 6 6-6" />
-  </svg>
-);
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-// ── Types ────────────────────────────────────────────────────────────────────
-
-type NavItem = { href: string; label: string; desc: string };
+type NavItem = { href: string; label: string; icon?: React.FC };
 type NavGroup = {
   label: string;
   icon: React.FC;
   items: NavItem[];
 };
 
-// ── Nav Structure ────────────────────────────────────────────────────────────
+// ── Nav Structure ─────────────────────────────────────────────────────────────
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Live Trading',
-    icon: IconLightning,
+    label: 'Trading',
+    icon: IconZap,
     items: [
-      { href: '/', label: 'Dashboard', desc: 'Bot overview & status' },
-      { href: '/signals', label: 'Live Signals', desc: 'Real-time signal feed' },
-      { href: '/copy-trade', label: 'Trade This', desc: "Copy the bot's trades" },
+      { href: '/dashboard', label: 'Dashboard' },
+      { href: '/signals', label: 'Live Signals' },
+      { href: '/copy-trade', label: 'Copy Trade' },
     ],
   },
   {
-    label: 'Portfolio',
-    icon: IconPortfolio,
+    label: 'Performance',
+    icon: IconBarChart,
     items: [
-      { href: '/portfolio', label: 'Portfolio', desc: 'Open positions & equity' },
-      { href: '/results', label: 'Track Record', desc: 'Closed trade history' },
-      { href: '/performance', label: 'Performance', desc: 'PnL & metrics over time' },
+      { href: '/portfolio', label: 'Portfolio' },
+      { href: '/results', label: 'Track Record' },
+      { href: '/performance', label: 'Performance' },
     ],
   },
   {
     label: 'Analysis',
-    icon: IconAnalysis,
+    icon: IconSearch,
     items: [
-      { href: '/backtest', label: 'Backtest', desc: 'Strategy simulation' },
-      { href: '/forensics', label: 'Forensics', desc: 'Deep-dive trade autopsy' },
+      { href: '/backtest', label: 'Backtest' },
+      { href: '/forensics', label: 'Forensics' },
     ],
   },
   {
     label: 'AI Brain',
-    icon: IconBrain,
+    icon: IconCpu,
     items: [
-      { href: '/llm-audit', label: 'AI Audit', desc: 'LLM usage logs & cost' },
-      { href: '/ai-decisions', label: 'Decision Theater', desc: 'Watch the AI reason' },
-      { href: '/agent-intelligence', label: 'Agent Intel', desc: 'Agent performance' },
-      { href: '/strategies', label: 'How It Trades', desc: 'Strategy logic explainer' },
+      { href: '/llm-audit', label: 'AI Audit' },
+      { href: '/ai-decisions', label: 'Decisions' },
+      { href: '/agent-intelligence', label: 'Agents' },
+      { href: '/strategies', label: 'Strategies' },
+    ],
+  },
+  {
+    label: 'Learn',
+    icon: IconBook,
+    items: [
+      { href: '/learn', label: 'Course' },
+      { href: '/masterclass', label: 'Masterclass' },
     ],
   },
 ];
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const COLLAPSED_WIDTH = 64;
-const EXPANDED_WIDTH = 240;
+const COLLAPSED_WIDTH = 56;
+const EXPANDED_WIDTH = 220;
 const STORAGE_KEY = 'wagmi-sidebar-collapsed';
 const MOBILE_BREAKPOINT = 1024;
 
-// ── Regime Colors ────────────────────────────────────────────────────────────
-
-const regimeColors: Record<string, { bg: string; border: string; text: string; dot: string }> = {
-  trend:           { bg: 'rgba(22,101,52,.25)',  border: 'rgba(74,222,128,.2)',  text: '#4ade80', dot: '#16a34a' },
-  range:           { bg: 'rgba(30,58,95,.25)',   border: 'rgba(147,197,253,.2)', text: '#93c5fd', dot: '#2563eb' },
-  panic:           { bg: 'rgba(127,29,29,.25)',  border: 'rgba(252,165,165,.2)', text: '#fca5a5', dot: '#dc2626' },
-  high_volatility: { bg: 'rgba(120,53,15,.25)',  border: 'rgba(251,191,36,.2)',  text: '#fbbf24', dot: '#d97706' },
-  low_liquidity:   { bg: 'rgba(55,65,81,.2)',    border: 'rgba(156,163,175,.15)', text: '#9ca3af', dot: '#6b7280' },
+const REGIME_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
+  trend: { bg: 'rgba(0,204,136,0.12)', text: '#00cc88', dot: '#00cc88' },
+  range: { bg: 'rgba(68,136,255,0.12)', text: '#4488ff', dot: '#4488ff' },
+  panic: { bg: 'rgba(255,68,102,0.12)', text: '#ff4466', dot: '#ff4466' },
+  high_volatility: { bg: 'rgba(255,170,0,0.12)', text: '#ffaa00', dot: '#ffaa00' },
+  low_liquidity: { bg: 'rgba(107,107,123,0.12)', text: '#a0a0b8', dot: '#6b6b7b' },
 };
 
-// ── Component ────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Sidebar(): JSX.Element {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
-  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Trading']));
   const [regime, setRegime] = useState<string | null>(null);
   const [botLive, setBotLive] = useState(false);
-
   const apiBase = resolveApiBase();
 
   // Load persisted collapsed state
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored !== null) {
-        setCollapsed(stored === 'true');
-      }
+      if (stored !== null) setCollapsed(stored === 'true');
     } catch { /* noop */ }
   }, []);
 
-  // Persist collapsed state
   const toggleCollapsed = useCallback(() => {
     setCollapsed((prev) => {
       const next = !prev;
       try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* noop */ }
-      // Dispatch storage event so Layout can react
       window.dispatchEvent(new Event('sidebar-toggle'));
       return next;
     });
   }, []);
 
-  // Responsive check
+  // Responsive
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     check();
@@ -173,12 +184,9 @@ export default function Sidebar(): JSX.Element {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Close mobile drawer on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [router.pathname]);
+  useEffect(() => { setMobileOpen(false); }, [router.pathname]);
 
-  // Fetch regime + live status
+  // Fetch bot status
   useEffect(() => {
     const fetchStatus = async () => {
       try {
@@ -186,36 +194,17 @@ export default function Sidebar(): JSX.Element {
         if (res?.ok) {
           const data = await res.json();
           setRegime(data?.regime || null);
-          const updatedAt = data?.updatedAt;
-          if (updatedAt) {
-            const age = (Date.now() - new Date(updatedAt).getTime()) / 1000;
+          if (data?.updatedAt) {
+            const age = (Date.now() - new Date(data.updatedAt).getTime()) / 1000;
             setBotLive(age < 180);
           }
         }
       } catch { /* silent */ }
     };
     fetchStatus();
-    const iv = setInterval(fetchStatus, 30000);
+    const iv = setInterval(fetchStatus, 30_000);
     return () => clearInterval(iv);
   }, [apiBase]);
-
-  // Auto-expand the group that contains the active route
-  useEffect(() => {
-    const activeGroup = NAV_GROUPS.find((g) =>
-      g.items.some((item) =>
-        item.href === '/' ? router.pathname === '/' : router.pathname.startsWith(item.href)
-      )
-    );
-    if (activeGroup) {
-      setExpandedGroups((prev) => new Set(prev).add(activeGroup.label));
-    }
-  }, [router.pathname]);
-
-  const isItemActive = (href: string) =>
-    href === '/' ? router.pathname === '/' : router.pathname.startsWith(href);
-
-  const isGroupActive = (group: NavGroup) =>
-    group.items.some((item) => isItemActive(item.href));
 
   const toggleGroup = (label: string) => {
     setExpandedGroups((prev) => {
@@ -226,565 +215,376 @@ export default function Sidebar(): JSX.Element {
     });
   };
 
-  const rc = regime
-    ? regimeColors[regime.toLowerCase()] || { bg: 'rgba(30,41,59,.3)', border: 'rgba(100,116,139,.2)', text: '#94a3b8', dot: '#64748b' }
-    : null;
-
-  const sidebarWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
-
-  // Expose current width for Layout to read
-  useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', `${isMobile ? 0 : sidebarWidth}px`);
-  }, [sidebarWidth, isMobile]);
-
-  const openHover = (label: string) => {
-    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-    setHoveredGroup(label);
+  const isActive = (href: string) => {
+    if (href === '/dashboard') return router.pathname === '/dashboard' || router.pathname === '/';
+    return router.pathname === href || router.pathname.startsWith(href + '/');
   };
 
-  const closeHover = () => {
-    hoverTimeout.current = setTimeout(() => setHoveredGroup(null), 150);
-  };
+  const regimeStyle = regime && REGIME_COLORS[regime] ? REGIME_COLORS[regime] : null;
 
-  const keepHover = () => {
-    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-  };
-
-  // ── Render helpers ─────────────────────────────────────────────────────────
-
-  const renderNavItem = (item: NavItem, showDesc: boolean) => {
-    const active = isItemActive(item.href);
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        onClick={() => { if (isMobile) setMobileOpen(false); }}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '8px 12px',
-          borderRadius: R.md,
-          textDecoration: 'none',
-          background: active ? G.brandSubtle : 'transparent',
-          borderLeft: '3px solid transparent',
-          marginBottom: 2,
-          position: 'relative',
-          transition: 'background 0.15s ease',
-        }}
-        className="sidebar-nav-item"
-      >
-        {active && (
-          <div style={{
-            position: 'absolute',
-            left: 0,
-            top: '15%',
-            bottom: '15%',
-            width: 2,
-            borderRadius: 1,
-            background: C.brand,
-            boxShadow: '0 0 8px rgba(99,102,241,0.3)',
-          }} />
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: 13,
-            fontWeight: active ? 700 : 500,
-            color: active ? C.text : C.textSub,
-            lineHeight: 1.3,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}>
-            {item.label}
-          </div>
-          {showDesc && item.desc && (
-            <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.3, marginTop: 1 }}>
-              {item.desc}
-            </div>
-          )}
-        </div>
-      </Link>
-    );
-  };
-
-  const renderSidebarContent = (isExpanded: boolean) => (
-    <>
-      {/* Logo */}
-      <div style={{ padding: isExpanded ? '16px 16px 12px' : '16px 0 12px', display: 'flex', alignItems: 'center', justifyContent: isExpanded ? 'flex-start' : 'center', gap: 10, flexShrink: 0 }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <span style={{
-            width: 32,
-            height: 32,
-            borderRadius: R.md,
-            background: G.brand,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 14,
-            fontWeight: 900,
-            color: '#fff',
-            boxShadow: `${S.glow}, 0 2px 8px rgba(99,102,241,.4)`,
-            flexShrink: 0,
-            letterSpacing: -0.5,
-          }}>
-            W
-          </span>
-          {isExpanded && (
-            <motion.span
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -8 }}
-              transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1] as const }}
-              style={{ fontSize: 16, fontWeight: 800, color: C.text, letterSpacing: -0.5 }}
-            >
-              WAGMI
-            </motion.span>
-          )}
-        </Link>
-      </div>
-
-      {/* Nav groups */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: isExpanded ? '0 8px' : '0 4px' }}>
-        {NAV_GROUPS.map((group) => {
-          const GroupIcon = group.icon;
-          const groupActive = isGroupActive(group);
-          const groupExpanded = expandedGroups.has(group.label);
-
-          if (!isExpanded) {
-            // Collapsed: icon rail with floating panel on hover
-            return (
-              <div
-                key={group.label}
-                style={{ position: 'relative', marginBottom: 4 }}
-                onMouseEnter={() => openHover(group.label)}
-                onMouseLeave={closeHover}
-              >
-                {NAV_GROUPS.indexOf(group) > 0 && (
-                  <div style={{
-                    height: 1,
-                    margin: '4px 8px 8px',
-                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)',
-                  }} />
-                )}
-                <div
-                  style={{
-                    position: 'relative',
-                    width: 48,
-                    height: 44,
-                    margin: '0 auto',
-                    borderRadius: R.md,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: groupActive ? C.brand : C.muted,
-                    background: groupActive ? C.brandGlow : 'transparent',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    borderLeft: '3px solid transparent',
-                  }}
-                  className="sidebar-icon-btn"
-                >
-                  {groupActive && (
-                    <div style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: '20%',
-                      bottom: '20%',
-                      width: 2,
-                      borderRadius: 1,
-                      background: C.brand,
-                      boxShadow: '0 0 8px rgba(99,102,241,0.3)',
-                    }} />
-                  )}
-                  <GroupIcon />
-                </div>
-
-                {/* Floating panel */}
-                <AnimatePresence>
-                  {hoveredGroup === group.label && (
-                    <motion.div
-                      initial={{ opacity: 0, x: -8, scale: 0.95 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      exit={{ opacity: 0, x: -8, scale: 0.95 }}
-                      transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1] as const }}
-                      onMouseEnter={keepHover}
-                      onMouseLeave={closeHover}
-                      style={{
-                        position: 'absolute',
-                        left: COLLAPSED_WIDTH - 8,
-                        top: 0,
-                        minWidth: 200,
-                        ...Glass.elevated,
-                        borderRadius: R.lg,
-                        padding: 6,
-                        zIndex: Z.tooltip,
-                      }}
-                    >
-                      <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, padding: '6px 12px 4px', }}>
-                        {group.label}
-                      </div>
-                      {group.items.map((item) => renderNavItem(item, true))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          }
-
-          // Expanded: collapsible groups
-          return (
-            <div key={group.label} style={{ marginBottom: 4, position: 'relative' }}>
-              {/* Gradient section divider */}
-              {NAV_GROUPS.indexOf(group) > 0 && (
-                <div style={{
-                  height: 1,
-                  margin: '4px 12px 8px',
-                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 20%, rgba(255,255,255,0.06) 80%, transparent)',
-                }} />
-              )}
-              <button
-                onClick={() => toggleGroup(group.label)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '8px 12px',
-                  borderRadius: R.md,
-                  border: 'none',
-                  background: groupActive ? C.brandGlow : 'transparent',
-                  color: groupActive ? C.text : C.muted,
-                  cursor: 'pointer',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.8,
-                  transition: 'all 0.15s ease',
-                }}
-                className="sidebar-group-btn"
-              >
-                <span style={{ color: groupActive ? C.brand : C.muted, display: 'flex', flexShrink: 0 }}>
-                  <GroupIcon />
-                </span>
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1] as const }}
-                  style={{ flex: 1, textAlign: 'left' }}
-                >
-                  {group.label}
-                </motion.span>
-                <motion.span
-                  animate={{ rotate: groupExpanded ? 180 : 0 }}
-                  transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1] as const }}
-                  style={{ display: 'flex', opacity: 0.5 }}
-                >
-                  <IconChevronDown />
-                </motion.span>
-              </button>
-
-              <AnimatePresence initial={false}>
-                {groupExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-                    style={{ overflow: 'hidden', paddingLeft: 8 }}
-                  >
-                    {group.items.map((item) => renderNavItem(item, true))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Bottom section: regime + live + toggle */}
-      <div style={{ flexShrink: 0, padding: isExpanded ? '8px 12px 12px' : '8px 4px 12px', position: 'relative' }}>
-        {/* Gradient divider */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 1,
-          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 20%, rgba(255,255,255,0.06) 80%, transparent)',
-        }} />
-        {/* Regime badge */}
-        {rc && regime && (
-          <div style={{ display: 'flex', justifyContent: isExpanded ? 'flex-start' : 'center', marginBottom: 8, padding: isExpanded ? '0 4px' : 0 }}>
-            <span style={{
-              fontSize: isExpanded ? 10.5 : 0,
-              fontWeight: 700,
-              padding: isExpanded ? '3px 10px' : '4px',
-              borderRadius: R.pill,
-              background: rc.bg,
-              color: rc.text,
-              border: `1px solid ${rc.border}`,
-              boxShadow: `0 0 12px ${rc.dot}25`,
-              letterSpacing: 0.8,
-              textTransform: 'uppercase',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 5,
-              minWidth: isExpanded ? undefined : 32,
-              minHeight: isExpanded ? undefined : 24,
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: rc.dot, flexShrink: 0 }} />
-              {isExpanded && regime.replace('_', ' ')}
-            </span>
-          </div>
-        )}
-
-        {/* Live indicator */}
-        <div style={{ display: 'flex', justifyContent: isExpanded ? 'flex-start' : 'center', marginBottom: 8, padding: isExpanded ? '0 4px' : 0 }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            padding: isExpanded ? '3px 10px' : '4px',
-            borderRadius: R.pill,
-            background: botLive ? 'rgba(22,163,74,.1)' : 'rgba(100,116,139,.1)',
-            border: `1px solid ${botLive ? 'rgba(22,163,74,.2)' : 'rgba(100,116,139,.15)'}`,
-            minWidth: isExpanded ? undefined : 32,
-            minHeight: isExpanded ? undefined : 24,
-            justifyContent: 'center',
-          }}>
-            <span
-              className={botLive ? 'live-dot' : ''}
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: botLive ? '#4ade80' : C.muted,
-                flexShrink: 0,
-              }}
-            />
-            {isExpanded && (
-              <span style={{ fontSize: 10.5, color: botLive ? '#4ade80' : C.muted, fontWeight: 700, letterSpacing: 0.6 }}>
-                {botLive ? 'LIVE' : 'OFFLINE'}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Collapse toggle */}
-        {!isMobile && (
-          <button
-            onClick={toggleCollapsed}
-            style={{
-              width: '100%',
-              height: 36,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              borderRadius: R.md,
-              border: `1px solid ${C.border}`,
-              background: C.surfaceHover,
-              color: C.muted,
-              cursor: 'pointer',
-              fontSize: 12,
-              transition: 'all 0.15s ease',
-            }}
-            className="sidebar-toggle-btn"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <IconChevronRight /> : (
-              <>
-                <IconChevronLeft />
-                <span>Collapse</span>
-              </>
-            )}
-          </button>
-        )}
-      </div>
-    </>
-  );
-
-  // ── Mobile overlay ─────────────────────────────────────────────────────────
+  // ── Mobile hamburger ──────────────────────────────────────────────────────
 
   if (isMobile) {
     return (
       <>
-        {/* Mobile top bar */}
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 52,
-          zIndex: Z.sidebar,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          ...Glass.nav,
-          borderBottom: `1px solid ${C.border}`,
-        }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-            <span style={{
-              width: 28,
-              height: 28,
-              borderRadius: R.md,
-              background: G.brand,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 13,
-              fontWeight: 900,
-              color: '#fff',
-              boxShadow: `${S.glow}, 0 2px 8px rgba(99,102,241,.4)`,
-              flexShrink: 0,
-            }}>
-              W
-            </span>
-            <span style={{ fontSize: 15, fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>WAGMI</span>
-          </Link>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {/* Live indicator in mobile bar */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              padding: '3px 8px',
-              borderRadius: R.pill,
-              background: botLive ? 'rgba(22,163,74,.1)' : 'rgba(100,116,139,.1)',
-              border: `1px solid ${botLive ? 'rgba(22,163,74,.2)' : 'rgba(100,116,139,.15)'}`,
-            }}>
-              <span className={botLive ? 'live-dot' : ''} style={{ width: 5, height: 5, borderRadius: '50%', background: botLive ? '#4ade80' : C.muted }} />
-              <span style={{ fontSize: 10, color: botLive ? '#4ade80' : C.muted, fontWeight: 700 }}>{botLive ? 'LIVE' : 'OFF'}</span>
-            </div>
-
-            <button
-              onClick={() => setMobileOpen((v) => !v)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: C.text,
-                fontSize: 22,
-                padding: '4px 6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-            >
-              {mobileOpen ? '\u2715' : '\u2630'}
-            </button>
+        {/* Top bar */}
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 52,
+            background: C.surface,
+            borderBottom: `1px solid ${C.border}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 16px',
+            zIndex: Z.sidebar,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 22, height: 22, borderRadius: 4, border: `1px solid ${C.brand}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: C.brand, fontFamily: 'JetBrains Mono, monospace' }}>C</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>CrazyOnSol</span>
           </div>
+          <button
+            onClick={() => setMobileOpen((v) => !v)}
+            style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 7px', color: C.textSub, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+          >
+            {mobileOpen ? <IconX /> : <IconMenu />}
+          </button>
         </div>
 
         {/* Mobile drawer overlay */}
-        <AnimatePresence>
-          {mobileOpen && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1] as const }}
-                onClick={() => setMobileOpen(false)}
-                style={{
-                  position: 'fixed',
-                  inset: 0,
-                  background: 'rgba(0,0,0,0.6)',
-                  zIndex: Z.sidebar + 1,
-                }}
-              />
-              {/* Drawer */}
-              <motion.aside
-                initial={{ x: '-100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '-100%' }}
-                transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  bottom: 0,
-                  width: '100%',
-                  maxWidth: 320,
-                  zIndex: Z.sidebar + 2,
-                  ...Glass.nav,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflowY: 'auto',
-                }}
-              >
-                {renderSidebarContent(true)}
-              </motion.aside>
-            </>
-          )}
-        </AnimatePresence>
+        {mobileOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: Z.sidebar - 1,
+              background: 'rgba(5,5,8,0.85)',
+            }}
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+
+        {/* Mobile drawer */}
+        <div
+          style={{
+            position: 'fixed',
+            top: 52,
+            left: 0,
+            bottom: 0,
+            width: 240,
+            background: C.surface,
+            borderRight: `1px solid ${C.border}`,
+            zIndex: Z.sidebar,
+            overflowY: 'auto',
+            transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+            transition: 'transform 0.2s ease',
+            padding: '16px 0',
+          }}
+        >
+          <SidebarContent
+            collapsed={false}
+            groups={NAV_GROUPS}
+            expandedGroups={expandedGroups}
+            onToggleGroup={toggleGroup}
+            isActive={isActive}
+            botLive={botLive}
+            regime={regime}
+            regimeStyle={regimeStyle}
+          />
+        </div>
       </>
     );
   }
 
-  // ── Desktop sidebar ────────────────────────────────────────────────────────
+  // ── Desktop sidebar ───────────────────────────────────────────────────────
+
+  const width = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
 
   return (
-    <>
-      <motion.aside
-        animate={{ width: sidebarWidth }}
-        transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        width,
+        background: C.surface,
+        borderRight: `1px solid ${C.border}`,
+        zIndex: Z.sidebar,
+        transition: 'width 0.2s cubic-bezier(0.25, 0.1, 0.25, 1)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Logo */}
+      <div
         style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          height: '100vh',
-          zIndex: Z.sidebar,
-          ...Glass.nav,
-          borderRight: `1px solid ${C.border}`,
+          height: 52,
           display: 'flex',
-          flexDirection: 'column',
-          overflow: 'visible',
+          alignItems: 'center',
+          padding: collapsed ? '0 16px' : '0 16px',
+          borderBottom: `1px solid ${C.border}`,
+          flexShrink: 0,
+          gap: 10,
+          overflow: 'hidden',
         }}
       >
-        {/* Noise texture overlay */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0.03,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundSize: '128px 128px',
-          pointerEvents: 'none',
-          borderRadius: 'inherit',
-        }} />
+        <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 4, border: `1px solid ${C.brand}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: C.brand, fontFamily: 'JetBrains Mono, monospace' }}>C</div>
+        {!collapsed && (
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden' }}>CrazyOnSol</span>
+        )}
+        <div style={{ flex: 1 }} />
+        {!collapsed && (
+          <button
+            onClick={toggleCollapsed}
+            style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', borderRadius: 4, flexShrink: 0 }}
+            title="Collapse sidebar"
+          >
+            <IconChevronLeft />
+          </button>
+        )}
+      </div>
 
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-          {renderSidebarContent(!collapsed)}
+      {/* Nav content */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 0' }}>
+        <SidebarContent
+          collapsed={collapsed}
+          groups={NAV_GROUPS}
+          expandedGroups={expandedGroups}
+          onToggleGroup={toggleGroup}
+          isActive={isActive}
+          botLive={botLive}
+          regime={regime}
+          regimeStyle={regimeStyle}
+        />
+      </div>
+
+      {/* Bottom: live status + expand toggle */}
+      <div
+        style={{
+          borderTop: `1px solid ${C.border}`,
+          padding: '10px 8px',
+          flexShrink: 0,
+        }}
+      >
+        {/* Live status */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 8px',
+            borderRadius: 6,
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            className={botLive ? 'live-dot' : undefined}
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              background: botLive ? C.bull : C.faint,
+              flexShrink: 0,
+            }}
+          />
+          {!collapsed && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: botLive ? C.bull : C.muted, whiteSpace: 'nowrap' }}>
+              {botLive ? 'LIVE' : 'OFFLINE'}
+            </span>
+          )}
+          {!collapsed && regime && regimeStyle && (
+            <span
+              style={{
+                marginLeft: 'auto',
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '2px 7px',
+                borderRadius: 999,
+                background: regimeStyle.bg,
+                color: regimeStyle.text,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {regime.replace(/_/g, ' ').toUpperCase()}
+            </span>
+          )}
         </div>
-      </motion.aside>
 
-      {/* Hover styles */}
-      <style>{`
-        .sidebar-nav-item:hover {
-          background: rgba(255,255,255,0.05) !important;
-          text-shadow: 0 0 8px rgba(99,102,241,0.2);
-        }
-        .sidebar-icon-btn:hover {
-          background: rgba(255,255,255,0.04) !important;
-          color: ${C.text} !important;
-          text-shadow: 0 0 8px rgba(99,102,241,0.3);
-        }
-        .sidebar-group-btn:hover {
-          background: rgba(255,255,255,0.04) !important;
-          color: ${C.text} !important;
-          text-shadow: 0 0 8px rgba(99,102,241,0.3);
-        }
-        .sidebar-toggle-btn:hover {
-          background: ${C.border} !important;
-          color: ${C.text} !important;
-        }
-      `}</style>
-    </>
+        {/* Expand button when collapsed */}
+        {collapsed && (
+          <button
+            onClick={toggleCollapsed}
+            style={{
+              width: '100%',
+              padding: '6px 0',
+              background: 'none',
+              border: 'none',
+              color: C.muted,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 6,
+            }}
+            title="Expand sidebar"
+          >
+            <IconChevronRight />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── SidebarContent ────────────────────────────────────────────────────────────
+
+function SidebarContent({
+  collapsed,
+  groups,
+  expandedGroups,
+  onToggleGroup,
+  isActive,
+  botLive,
+  regime,
+  regimeStyle,
+}: {
+  collapsed: boolean;
+  groups: NavGroup[];
+  expandedGroups: Set<string>;
+  onToggleGroup: (label: string) => void;
+  isActive: (href: string) => boolean;
+  botLive: boolean;
+  regime: string | null;
+  regimeStyle: { bg: string; text: string; dot: string } | null;
+}) {
+  if (collapsed) {
+    // Collapsed: show group icon buttons (clicking first item in group)
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '4px 8px' }}>
+        {groups.map((group) => {
+          const firstHref = group.items[0]?.href;
+          const active = group.items.some((i) => isActive(i.href));
+          return (
+            <Link
+              key={group.label}
+              href={firstHref || '/dashboard'}
+              title={group.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                color: active ? C.brand : C.muted,
+                background: active ? 'rgba(0,204,136,0.08)' : 'transparent',
+                border: active ? '1px solid rgba(0,204,136,0.15)' : '1px solid transparent',
+                transition: 'all 0.15s ease',
+                textDecoration: 'none',
+                margin: '0 auto',
+              }}
+            >
+              <group.icon />
+            </Link>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {groups.map((group) => {
+        const isExpanded = expandedGroups.has(group.label);
+        const hasActive = group.items.some((i) => isActive(i.href));
+
+        return (
+          <div key={group.label} style={{ marginBottom: 2 }}>
+            {/* Group header */}
+            <button
+              onClick={() => onToggleGroup(group.label)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '6px 16px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                color: hasActive ? C.textSub : C.muted,
+              }}
+            >
+              <span style={{ color: hasActive ? C.brand : 'inherit', flexShrink: 0 }}>
+                <group.icon />
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', flex: 1 }}>
+                {group.label}
+              </span>
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease', flexShrink: 0 }}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {/* Group items */}
+            {isExpanded && (
+              <div style={{ paddingBottom: 4 }}>
+                {group.items.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      style={{
+                        display: 'block',
+                        padding: '7px 16px 7px 40px',
+                        fontSize: 13,
+                        fontWeight: active ? 600 : 400,
+                        color: active ? C.text : C.muted,
+                        background: active ? 'rgba(0,204,136,0.06)' : 'transparent',
+                        borderLeft: active ? `2px solid ${C.brand}` : '2px solid transparent',
+                        textDecoration: 'none',
+                        transition: 'all 0.12s ease',
+                        letterSpacing: -0.1,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!active) {
+                          (e.currentTarget as HTMLAnchorElement).style.color = C.textSub;
+                          (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.02)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!active) {
+                          (e.currentTarget as HTMLAnchorElement).style.color = C.muted;
+                          (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
+                        }
+                      }}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }

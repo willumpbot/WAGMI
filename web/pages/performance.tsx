@@ -1465,7 +1465,7 @@ function ProfitFactorGauge({ trades }: { trades: TradeRecord[] }) {
   const needleB2   = polarToXY(needleAngleDeg - 90, 4);
 
   // Determine needle / value color based on zone
-  let needleColor = C.bear;
+  let needleColor: string = C.bear;
   if (profitFactor >= 2.5) needleColor = C.bull;
   else if (profitFactor >= 1.5) needleColor = C.warnMid;
   else if (profitFactor >= 1.0) needleColor = '#ea580c';

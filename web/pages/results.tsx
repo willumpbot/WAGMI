@@ -33,7 +33,7 @@ function KpiBlock({ label, value, sub, color, big }: {
   label: string; value: string; sub?: string; color?: string; big?: boolean;
 }) {
   return (
-    <motion.div variants={fadeUp} className="glass-noise" style={{ ...Glass.crystal, padding: big ? '24px 28px' : '18px 20px', borderRadius: R.lg, position: 'relative', overflow: 'hidden', boxShadow: color === C.bull ? S.bullGlow : color === C.bear ? S.bearGlow : S.glass }} {...hoverGlow}>
+    <motion.div variants={fadeUp} className="glass-noise" style={{ ...Glass.crystal, padding: big ? '24px 28px' : '18px 20px', borderRadius: R.lg, position: 'relative', overflow: 'hidden', boxShadow: color === C.bull ? S.bullGlow : color === C.bear ? S.bearGlow : S.card }} {...hoverGlow}>
       {color && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: color, opacity: 0.6 }} />}
       <div style={{ fontSize: F.xs, color: C.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{label}</div>
       <div className="num" style={{ fontSize: big ? F['3xl'] : F['2xl'], fontWeight: 800, color: color || C.text, lineHeight: 1.1, marginBottom: sub ? 4 : 0, fontFamily: "'JetBrains Mono', monospace" }}>{value}</div>

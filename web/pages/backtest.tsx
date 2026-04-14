@@ -60,7 +60,7 @@ function RunCard({ run, selected, onClick }: { run: BacktestRunMeta; selected: b
         padding: '12px 16px',
         cursor: 'pointer',
         transition: 'all 0.15s',
-        boxShadow: selected ? S.glow : S.glass,
+        boxShadow: selected ? S.glow : S.card,
         display: 'flex',
         alignItems: 'center',
         gap: 12,
