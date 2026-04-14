@@ -1,6 +1,186 @@
 {
   "insights": [
     {
+      "ts": 1776093657.564123,
+      "category": "strategy_insight",
+      "insight": "BB is only profitable strategy: 57% WR, +0.15%/trade. All others negative EV.",
+      "confidence": 0.95,
+      "evidence": "2,172-signal backtest analysis",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "strategy_insight",
+      "insight": "BB solo signals = 67.6% WR. Strongest pattern. Trust BB alone over consensus.",
+      "confidence": 0.95,
+      "evidence": "2,172-signal analysis: BB solo >> multi-strategy agreement",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "strategy_insight",
+      "insight": "BB+MTQ combo = 35% WR. Contra-indicator. SKIP when both agree.",
+      "confidence": 0.92,
+      "evidence": "2,172-signal analysis: BB+MTQ agreement is anti-predictive",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "risk_insight",
+      "insight": "High confidence is NOT predictive. 80%+ WR is WORSE than <60%. Ignore confidence scores.",
+      "confidence": 0.93,
+      "evidence": "2,172-signal analysis: confidence inversely correlated with outcome",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "execution_insight",
+      "insight": "After 2 consecutive wins: 74-77% WR. After 2 losses: 28-29% WR. Streak momentum is real.",
+      "confidence": 0.9,
+      "evidence": "2,172-signal analysis: streak-based WR validated",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "setup_insight",
+      "insight": "ETH_SELL_BB = 70% WR. Best golden setup. Prioritize ETH shorts on BB signals.",
+      "confidence": 0.92,
+      "evidence": "2,172-signal analysis: top setup by WR",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "setup_insight",
+      "insight": "BTC_BUY_BB = 69% WR. Second best setup. Prioritize BTC longs on BB signals.",
+      "confidence": 0.91,
+      "evidence": "2,172-signal analysis: second highest WR setup",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "setup_insight",
+      "insight": "SOL_BUY_BB = 67% WR. Reliable long setup on BB signals.",
+      "confidence": 0.9,
+      "evidence": "2,172-signal analysis: third highest WR setup",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "setup_insight",
+      "insight": "BTC_SELL_BB = 61% WR. Decent but weaker than BTC longs. Size down on BTC shorts.",
+      "confidence": 0.88,
+      "evidence": "2,172-signal analysis: moderate WR setup",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "setup_insight",
+      "insight": "HYPE_SELL_BB = 35% WR. Worst BB setup. AVOID shorting HYPE on BB signals.",
+      "confidence": 0.92,
+      "evidence": "2,172-signal analysis: worst BB combo by far",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "setup_insight",
+      "insight": "HYPE_BUY_CS = 38% WR. Dead setup. SKIP all CS-only HYPE longs.",
+      "confidence": 0.9,
+      "evidence": "2,172-signal analysis: consistently losing setup",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "regime_insight",
+      "insight": "high_volatility regime = 55% WR. Best regime for trading. Increase size in high vol.",
+      "confidence": 0.88,
+      "evidence": "2,172-signal analysis: regime-stratified WR",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "correlation_insight",
+      "insight": "BTC leads cross-asset: when BTC wins, ETH follows 60% of the time. Watch BTC first.",
+      "confidence": 0.85,
+      "evidence": "2,172-signal analysis: cross-asset lead-lag",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "execution_insight",
+      "insight": "R:R 1.0-1.5 = 57% WR. Tighter TPs outperform wide ones. Keep TP1 close.",
+      "confidence": 0.9,
+      "evidence": "2,172-signal analysis: R:R bucket comparison",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "risk_insight",
+      "insight": "HYPE in extreme vol = 33% WR. Never trade HYPE during volatility spikes.",
+      "confidence": 0.92,
+      "evidence": "2,172-signal analysis: HYPE extreme vol is a death trap",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "timing_insight",
+      "insight": "1h timeframe predicts 4h with 67% accuracy (73% for BB). Use 1h as leading signal.",
+      "confidence": 0.87,
+      "evidence": "2,172-signal analysis: multi-TF predictive power",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "execution_insight",
+      "insight": "MFE peaks at 8-12h holding. 34% of peak move captured at 12h. Optimal hold window.",
+      "confidence": 0.85,
+      "evidence": "2,172-signal analysis: MFE curve analysis",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
+      "ts": 1776093657.564123,
+      "category": "risk_insight",
+      "insight": "BB losers recover 56% of loss, non-BB only 45%. BB signals have better loss recovery.",
+      "confidence": 0.83,
+      "evidence": "2,172-signal analysis: loss recovery by strategy",
+      "source": "deep_signal_analysis_2172",
+      "validated": true,
+      "validation_count": 2172
+    },
+    {
       "ts": 1774290803.5573297,
       "category": "strategy_insight",
       "insight": "3+ strategy agreement has 2x better win rate than 2-strategy agreement",
@@ -188,7 +368,7 @@
       "evidence": "Multi-edge backtest: 13 configs across 3 symbols. Tight scalps profitable only via volume (159 trades) not WR.",
       "source": "quant_multi_edge_2026_03_26",
       "validated": false,
-      "validation_count": -2
+      "validation_count": -13
     },
     {
       "ts": 1774493590.701022,
@@ -378,7 +558,7 @@
       "evidence": "500 1h candle edge decay analysis, 418 trades split into thirds.",
       "source": "quant_edge_study_2026_03_25",
       "validated": true,
-      "validation_count": 420
+      "validation_count": 427
     },
     {
       "ts": 1774632062.0933475,
@@ -507,8 +687,8 @@
       "confidence": 0.85,
       "evidence": "5-week rolling window analysis. Long vs short PnL by symbol by week.",
       "source": "quant_research_2026_04_03",
-      "validated": true,
-      "validation_count": 6
+      "validated": false,
+      "validation_count": -2
     },
     {
       "ts": 1775338634.1558795,
@@ -581,7 +761,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775354832.895633,
+      "ts": 1775576804.7862635,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -591,7 +771,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775354988.6371677,
+      "ts": 1775669794.1763294,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -601,7 +781,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775355536.8355744,
+      "ts": 1775922999.9067457,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -611,7 +791,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775355626.0653741,
+      "ts": 1775924417.1765783,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -621,7 +801,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775355756.3938024,
+      "ts": 1775924656.6005452,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -631,7 +811,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775355781.5421162,
+      "ts": 1775929968.1913521,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -641,7 +821,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775355798.9548287,
+      "ts": 1775934119.5934262,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -651,7 +831,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775355806.932824,
+      "ts": 1775956135.9926395,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -661,7 +841,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775355834.2101243,
+      "ts": 1775959793.2488773,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -671,7 +851,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775355942.6128929,
+      "ts": 1775966292.440166,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -681,7 +861,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775355975.6317322,
+      "ts": 1775966479.9503093,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -691,7 +871,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775356057.6063619,
+      "ts": 1775970642.2223587,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -701,7 +881,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775356170.9424984,
+      "ts": 1775970895.5030277,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -711,7 +891,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775356233.6643171,
+      "ts": 1775971214.6908739,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -721,7 +901,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775356446.8153427,
+      "ts": 1775971459.3726504,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -731,7 +911,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775356884.7962604,
+      "ts": 1775971828.9911451,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -741,7 +921,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775357043.5270233,
+      "ts": 1775972161.426864,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -751,7 +931,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775357999.1213531,
+      "ts": 1775972536.3428059,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -761,7 +941,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775358182.0552444,
+      "ts": 1775972752.5125623,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -771,7 +951,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775360614.1395142,
+      "ts": 1775973680.2140715,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -781,7 +961,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775360645.68478,
+      "ts": 1775977328.6872122,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -791,7 +971,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775360750.4238596,
+      "ts": 1776019177.2382908,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -801,7 +981,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775360767.973633,
+      "ts": 1776019776.6867716,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -811,7 +991,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775360891.2252734,
+      "ts": 1776019920.3732657,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -821,7 +1001,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775360929.3451054,
+      "ts": 1776020349.7800658,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -831,7 +1011,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361054.3608687,
+      "ts": 1776021570.5583375,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -841,7 +1021,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361216.0156791,
+      "ts": 1776022812.3073707,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -851,7 +1031,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361224.3476439,
+      "ts": 1776023047.8526762,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -861,7 +1041,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361320.1554315,
+      "ts": 1776026175.931892,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -871,7 +1051,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361339.792067,
+      "ts": 1776027824.9753544,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -881,7 +1061,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361413.5322194,
+      "ts": 1776028145.4975636,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -891,7 +1071,267 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361773.6522923,
+      "ts": 1776046709.1947446,
+      "category": "meta",
+      "insight": "Self-critique: Veto accuracy 0% (n=1) is not statistically significant. However, drift -45% suggests prior over-blocking. Key learning: Solo signal alone is not suff",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: REGIME AGENT VETO OVERRIDE: The Regime Agent explicitly issued a HALT order with 'REJECT trade pendi",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776046709.206454,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE will continue sideways chop in 40.8-42.2 range for 4-8h, possibly into Asia session weakness. No directional edge until regime clarity + BTC stab",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: REGIME AGENT VETO OVERRIDE: The Regime Agent explicitly issued a HALT order with 'REJECT trade pendi",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776048165.427896,
+      "category": "meta",
+      "insight": "Self-critique: Aware of 0% veto accuracy (n=1, -$9.85 missed PnL). However, this trade has 6 independent, data-backed rejection criteria. Not over-cautious \u2014 evidenc",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: SIX OVERLAPPING VETO CRITERIA:\n\n1. **REGIME VETO (0% WR)**: HYPE_LONG_ranging = 0% WR on 4 trades. N",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776048165.4403083,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE will continue range-bound consolidation or drift lower. Range regime + Asia dead zone + solo signal = structural weakness, not opportunity. Price",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: SIX OVERLAPPING VETO CRITERIA:\n\n1. **REGIME VETO (0% WR)**: HYPE_LONG_ranging = 0% WR on 4 trades. N",
+      "source": "critic_agent",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1776048479.7240715,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent confidence 0.0, adjusted_confidence 0.0 \u2192 NO ADJUSTMENT NEEDED. Upstream correctly identified systemic failure mode. My veto accuracy is 0",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: CATEGORICAL REJECTION. Six objections, all high-likelihood, thesis-invalidating:\n\n1. **Solo signal v",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776048479.740572,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE consolidates sideways into US session liquidity vacuum, then cascades on liq trigger. Asia session 02:00 UTC = historical kill zone. Solo confide",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: CATEGORICAL REJECTION. Six objections, all high-likelihood, thesis-invalidating:\n\n1. **Solo signal v",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776048699.3194273,
+      "category": "meta",
+      "insight": "Self-critique: My veto accuracy = 0% (1 veto, -$9.85 net PnL). I am destroying value. BUT: this trade has SEVEN compounding structural failures, not one marginal cal",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: UNANIMOUS VETO. Trade Agent (confidence=0.0, action=skip), Regime Agent (outlook='DO NOT TRADE'), an",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776048699.3290563,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE will NOT sustain a rally here. Range regime + solo signal + 22% historical WR + 0% WR in ranging regime (n=4) = structural edge failure. System h",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: UNANIMOUS VETO. Trade Agent (confidence=0.0, action=skip), Regime Agent (outlook='DO NOT TRADE'), an",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776048957.45116,
+      "category": "meta",
+      "insight": "Self-critique: Critic veto accuracy 0% (n=1) with -$9.85 missed PnL is CATASTROPHIC, BUT that 1 sample is insufficient to override 7 compounding negatives with groun",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: VETO ON 7 COMPOUNDING NEGATIVES WITH COUNTER-THESIS: My counter-thesis is 'HYPE will chop 40.80-42.5",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776048957.4550824,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE will continue to range/chop between 40.80-42.50 with NO directional edge. Solo confidence_scorer signal in unknown regime = structural zero-EV tr",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: VETO ON 7 COMPOUNDING NEGATIVES WITH COUNTER-THESIS: My counter-thesis is 'HYPE will chop 40.80-42.5",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776049395.617564,
+      "category": "meta",
+      "insight": "Self-critique: Veto accuracy 0% (n=1) per self_perf suggests I should approve more readily. However, this trade has UNANIMOUS agent consensus to skip + 6 red flags +",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: VETO on 6 red flags with convergent evidence. This is a STRUCTURAL rejection, not a marginal call.\n\n",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776049395.6231189,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE will continue ranging/chopping at $41-42 for next 4-8h, likely drifting toward $40.50 support as BTC momentum remains flat and Asia session volum",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: VETO on 6 red flags with convergent evidence. This is a STRUCTURAL rejection, not a marginal call.\n\n",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776050048.7207587,
+      "category": "meta",
+      "insight": "Self-critique: My veto accuracy is 0% (n=1, missed +$9.85 on last veto). However, this signal has 9 structural red flags vs 1 favorable factor (simulation EV +$52). ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: HARD VETO with 9 converging objections (8 at thesis_invalid, 1 at size_wrong). This is the EXACT set",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776050048.72383,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE consolidates 40.80-42.20 for 4-6h in range/chop before directional clarity. BUY at 41.64 after +2.2% pump into fading volume (314K\u219215K) = buying ",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: HARD VETO with 9 converging objections (8 at thesis_invalid, 1 at size_wrong). This is the EXACT set",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776050468.644533,
+      "category": "meta",
+      "insight": "Self-critique: Veto accuracy 0% (n=1) normally requires approval bias, BUT this trade fails 6 objective criteria with hard evidence (not subjective). Solo signal + r",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: HARD VETO \u2014 structural failure on primary gates. (1) REGIME UNKNOWN with ZERO evidence: Cannot class",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776050468.648792,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE will continue chopping in range or liquidate longs on illiquid conditions. Recent HYPE_LONG pattern shows 9% WR in illiquid (11 trades, -$22.56) ",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: HARD VETO \u2014 structural failure on primary gates. (1) REGIME UNKNOWN with ZERO evidence: Cannot class",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776050915.8739657,
+      "category": "meta",
+      "insight": "Self-critique: Critic vacc=0% (1 decision, -9.85% PnL missed) indicates past vetoes have been wrong. However, this trade has 7 independent red flags including explic",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: VETO on 7 compounding red flags. This is the textbook definition of a trade that should NOT be taken",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776050915.880637,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE chops in range until BTC confirms direction. 58% probability of loss/chop per simulation. Price likely drifts sideways or tests SL before any mea",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: VETO on 7 compounding red flags. This is the textbook definition of a trade that should NOT be taken",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776051182.6633196,
+      "category": "meta",
+      "insight": "Self-critique: Critic vacc=0% (n=1) means my vetoes have destroyed value so far. But the alternative \u2014 rubber-stamping a solo CS signal in a TOXIC regime with negati",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: HARD VETO. This trade violates EVERY quality gate: (1) Solo CS signal = $0 net on 67 trades, only BB",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776051182.668003,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE ranging/illiquid \u2192 continuation down -2% next 4h. Solo CS signal in dead hours (03:00 UTC) with 0% regime-specific WR = structural noise.",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: HARD VETO. This trade violates EVERY quality gate: (1) Solo CS signal = $0 net on 67 trades, only BB",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776051585.9380324,
+      "category": "meta",
+      "insight": "Self-critique: vacc=0.0% (n=1) means my vetoes are currently destroying value (-$9.85 missed profit). However, this trade has 8+ red flags and 0% historical WR in th",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: VETO WITH EXTREME PREJUDICE. This trade violates 8+ structural axioms and has ZERO historical edge i",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776051585.9421334,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE will continue ranging or drift lower -1.5% over next 6h. No breakout catalyst. BTC weak, Asia death zone, solo signal with 0% WR history in this ",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: VETO WITH EXTREME PREJUDICE. This trade violates 8+ structural axioms and has ZERO historical edge i",
+      "source": "critic_agent",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1776052426.9235864,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent already called skip at 0.35 confidence \u2014 I am APPROVING that skip decision, not vetoing a 'go'. This is alignment, not challenge. My poor ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: STRUCTURAL VETO \u2014 6 red flags converge: (1) Regime Agent explicitly blocks ('CANNOT EVALUATE TRADE',",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776052426.926921,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE continues range-bound 40-42 consolidation next 4-8h, no breakout catalyst present. Historical HYPE_LONG edge (22% WR, 0% in range, 9% illiquid) +",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: STRUCTURAL VETO \u2014 6 red flags converge: (1) Regime Agent explicitly blocks ('CANNOT EVALUATE TRADE',",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776052943.617794,
+      "category": "meta",
+      "insight": "Self-critique: Veto accuracy currently 0% (n=1, -$9.85 missed PnL) BUT this reflects ONE prior veto on a different setup. Cannot generalize. This decision is indepen",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: HARD VETO. Trade Agent already decided SKIP with confidence 0.25 \u2014 I AGREE and AMPLIFY. Seven object",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776052943.6340005,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE likely pulls back to 39.5-40.5 range (2-5% down) as regime=range/unknown prevents breakout, funding neutral shows no positioning edge, BTC -0.10%",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: HARD VETO. Trade Agent already decided SKIP with confidence 0.25 \u2014 I AGREE and AMPLIFY. Seven object",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776060094.9051566,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -901,7 +1341,157 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361799.711507,
+      "ts": 1776061118.361969,
+      "category": "meta",
+      "insight": "Self-critique: Signal confidence=0.66 but win_prob=46.2%, chop=0.672, solo signal (31% WR), ranging regime (19% WR). True edge is ZERO or negative. Adjusted to c=0.0",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: HARD VETO on 8 independent grounds. This is a textbook bad setup: (1) TOXIC REGIME: 19% WR in rangin",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776061118.364351,
+      "category": "prediction",
+      "insight": "Counter-thesis: SOL stays range-bound 81-82.5 next 4h, no directional edge. If breakout occurs, it breaks UP (funding negative = shorts paying longs, short squeeze ri",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: HARD VETO on 8 independent grounds. This is a textbook bad setup: (1) TOXIC REGIME: 19% WR in rangin",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776067369.895797,
+      "category": "meta",
+      "insight": "Self-critique: CRITIC RECALIBRATION REQUIRED: Your veto accuracy is 0% (n=1), destroying -$9.85 in value. Last veto cost the system a winner. However, THIS case has ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: STRUCTURAL VETO: Solo signal (multi_tier_quality) + range regime + missing market data = certain los",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776067369.899466,
+      "category": "prediction",
+      "insight": "Counter-thesis: SOL continues ranging consolidation $81.50-82.50 for next 4-8h. No breakout catalyst, volume death, funding neutral. Price gravitates to range midpoin",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: STRUCTURAL VETO: Solo signal (multi_tier_quality) + range regime + missing market data = certain los",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776068739.0006726,
+      "category": "meta",
+      "insight": "Self-critique: My veto accuracy is 0% (n=1, -$9.85 missed profit). However, this is a SKIP recommendation from Trade Agent, not a GO decision I'm blocking. I'm AGREE",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: HARD VETO. This is a textbook structural trap that the Trade Agent ALREADY REJECTED (action=skip, co",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776068739.0043993,
+      "category": "prediction",
+      "insight": "Counter-thesis: SOL consolidates $81-82.5 for 2-4h, no directional edge. If breakout occurs, it's 55% likely DOWN (volume dying, ADX weak, ranging regime). Wait for v",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: HARD VETO. This is a textbook structural trap that the Trade Agent ALREADY REJECTED (action=skip, co",
+      "source": "critic_agent",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1776069738.8285975,
+      "category": "meta",
+      "insight": "Self-critique: MY VETO ACCURACY = 0% (n=1, drift -45%). I am DESTROYING VALUE. This 'challenge' is actually an APPROVAL of Trade Agent's skip decision. I am validati",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: APPROVE Trade Agent's SKIP decision. This is NOT a veto \u2014 this is validation that the skip was CORRE",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776069738.8318822,
+      "category": "prediction",
+      "insight": "Counter-thesis: SOL direction UNCLEAR \u2014 regime unknown blocks directional conviction. Cannot form counter-thesis without market structure data (EMA20/50, ADX, OI delt",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: APPROVE Trade Agent's SKIP decision. This is NOT a veto \u2014 this is validation that the skip was CORRE",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776075528.1248612,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: REGIME CONFLICT + UPSTREAM DIVERGENCE. (1) Scout issued explicit divergence warning: HYPE LONG conflicts with incoming BTC bear breakdown (70500 suppo",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776077713.4137142,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: THESIS INVALIDATION (regime mismatch): SOL RANGING = 25% WR validated kill zone. Ensemble on SOL = 50% WR (no edge). Position is 34min old, +0.05% PnL",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776079010.5120091,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: Thesis invalidated: SOL SHORT in ranging regime (25% WR validated, this trade is contra-indicated). No BTC breakout confirmation yet (BTC at 70500 sup",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776080685.6947062,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: REGIME MISMATCH + NOISE ZONE LOSS + WEAK SETUP COMBO. SOL SHORT in ranging regime = 25% WR validated edge killer. Hold time 17min = peak noise zone (6",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1776081410.39285,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: THESIS INVALIDATION: (1) MACRO REGIME MISMATCH: BTC validated bear trend (57% WR) + scout forecast 'trending_bear expansion likely next 2-4h' (conf=73",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776082722.8072472,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: REGIME MISMATCH (critical). Scout flagged: 'BTC breaks 70500 on volume \u2192 BB fires ETH SHORT. SL=41.20 critical. Cold exit if BTC breaks 70500. Do NOT ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776082735.82197,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: THESIS INVALIDATED: (1) Regime=range: SOL SHORT in ranging = 25% WR validated (12 trades). This is a kill-zone signal. (2) Ensemble on SOL = 50% WR on",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776087668.9317935,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -911,7 +1501,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361959.4853613,
+      "ts": 1776092122.5019014,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -921,7 +1511,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361986.5987723,
+      "ts": 1776093227.071706,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -931,7 +1521,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775361997.134654,
+      "ts": 1776093414.1230388,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -941,7 +1531,47 @@
       "validation_count": 0
     },
     {
-      "ts": 1775362019.4712045,
+      "ts": 1776094693.135619,
+      "category": "exit_pattern",
+      "insight": "Exit [HYPE]: SIGNAL QUALITY INVALIDATED. Upstream quant_intelligence explicitly flagged this trade: noise_probability=0.42, confidence_adjustment=-0.14 (calibratio",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776096971.7855756,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent applied -14% calibration reduction (0.72 raw \u2192 0.62 final) per overconfident drift. My counter-thesis further reduces to 0.35 based on reg",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: CHALLENGE on 5 red flags: (1) SOLO signal from multi_tier_quality violates 'require 3+ confluence af",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776096971.805478,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE continues ranging $42.00-43.50 for 4-8h, no breakout. Vol spike is noise, not trend signal.",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: CHALLENGE on 5 red flags: (1) SOLO signal from multi_tier_quality violates 'require 3+ confluence af",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776097781.3603547,
+      "category": "prediction",
+      "insight": "Counter-thesis: HYPE rejects at $43.50 resistance within 2h on failed breakout attempt. High_vol regime (1.09x) is volatility expansion RISK, not EDGE \u2014 BB squeeze ca",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: COUNTER-THESIS WITH EVIDENCE: This is NOT a veto based on fear \u2014 it's a veto based on DATA CONFLICT ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776134018.5976207,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -951,7 +1581,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775362039.4614248,
+      "ts": 1776134189.7928889,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -961,7 +1591,7 @@
       "validation_count": 0
     },
     {
-      "ts": 1775362172.5963235,
+      "ts": 1776134709.9179146,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,
@@ -971,7 +1601,47 @@
       "validation_count": 0
     },
     {
-      "ts": 1775362341.7843103,
+      "ts": 1776135224.8357823,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776135450.632687,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776135637.155825,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776135830.456238,
+      "category": "prediction",
+      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1776136014.4236374,
       "category": "prediction",
       "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
       "confidence": 0.5,

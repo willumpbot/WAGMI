@@ -143,6 +143,23 @@
       "test_results": {},
       "created_at": 1775095188.192538,
       "updated_at": 1775095188.192538
+    },
+    {
+      "id": "idea_98fac4ad",
+      "name": "Side balance enforcement",
+      "description": "Add a side-balance penalty: if >65% of recent trades are one side, apply a -5% confidence adjustment to additional same-side trades.",
+      "trigger_condition": "When recent side imbalance exceeds 65%",
+      "parameters": {
+        "imbalance_threshold": 0.65,
+        "confidence_penalty": -5,
+        "lookback_trades": 20
+      },
+      "expected_edge": "Reduce directional bias that leads to concentrated losses",
+      "source_pattern": "Side bias: 80% of trades are LONG but LONG WR is 38% vs 60% for the other side",
+      "status": "proposed",
+      "test_results": {},
+      "created_at": 1775791924.9347408,
+      "updated_at": 1775791924.9347408
     }
   ]
 }

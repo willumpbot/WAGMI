@@ -3,36 +3,16 @@
     true,
     false,
     false,
-    false,
-    true,
-    false,
-    false,
-    false,
-    true,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    true,
-    false,
-    true,
     true
   ],
   "regime_wr": {
-    "trending": {
+    "illiquid": {
       "wins": 1,
       "total": 2
     },
-    "illiquid": {
+    "trending": {
       "wins": 1,
       "total": 1
-    },
-    "ranging": {
-      "wins": 1,
-      "total": 5
     }
   }
 }
