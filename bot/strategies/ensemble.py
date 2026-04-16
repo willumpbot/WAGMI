@@ -219,8 +219,17 @@ class EnsembleStrategy:
     }
 
     def _get_effective_min_votes(self, symbol: str) -> int:
-        """Get min_votes — using configured value for aggressive data collection."""
-        return self.min_votes  # Use configured MIN_VOTES_REQUIRED (currently 1)
+        """Get min_votes for this symbol.
+
+        Per-symbol overrides (data/symbol_strategy_profile.py) win over the
+        global default. HYPE uses min_votes=1 because only confidence_scorer
+        fires reliably on it (see forensic 2026-04-14).
+        """
+        try:
+            from data.symbol_strategy_profile import get_min_votes_for_symbol
+            return get_min_votes_for_symbol(symbol, default=self.min_votes)
+        except Exception:
+            return self.min_votes
 
     def set_symbol_volatility_profiles(self, profiles: Dict[str, str]):
         """Set volatility profiles for symbols (e.g., {"HYPE": "high", "BTC": "low"}).
@@ -363,6 +372,12 @@ class EnsembleStrategy:
 
         # Get regime-allowed strategies for this symbol
         regime_allowed = self._get_regime_allowed_strategies(symbol)
+        # Per-symbol strategy profile (drops dead-weight strategies per symbol)
+        try:
+            from data.symbol_strategy_profile import get_active_strategies_for_symbol
+            symbol_active = get_active_strategies_for_symbol(symbol)
+        except Exception:
+            symbol_active = None
 
         signals: List[Signal] = []
         shadow_signals: List[Signal] = []  # Disabled strategy signals for IC tracking
@@ -477,16 +492,29 @@ class EnsembleStrategy:
                 )
             return None
 
+        # LLM-first mode: the EV gate inside _merge_signals becomes advisory.
+        # Without this, consensus signals like BTC funding_rate BUY get
+        # EV-blocked in evaluate() and never reach the LLM (the rescue path
+        # only fires when evaluate returns None, which it does — but for a
+        # DIFFERENT reason than solo min_votes). Setting llm_first_raw=True
+        # here keeps consensus signals alive so they can reach LLM-first.
+        _llm_first_active = False
+        try:
+            import os as _os
+            _llm_first_active = _os.environ.get("LLM_FIRST_MODE", "false").lower() == "true"
+        except Exception:
+            pass
+
         if self.mode == "voting":
-            result = self._voting(symbol, signals, effective_min_votes)
+            result = self._voting(symbol, signals, effective_min_votes, llm_first_raw=_llm_first_active)
         elif self.mode == "weighted_veto":
-            result = self._weighted_veto(symbol, signals, effective_min_votes)
+            result = self._weighted_veto(symbol, signals, effective_min_votes, llm_first_raw=_llm_first_active)
         elif self.mode == "weighted":
             result = self._weighted(symbol, signals)
         elif self.mode == "best":
             result = self._best(symbol, signals)
         else:
-            result = self._voting(symbol, signals, effective_min_votes)
+            result = self._voting(symbol, signals, effective_min_votes, llm_first_raw=_llm_first_active)
 
         if result is None:
             return None
@@ -725,6 +753,13 @@ class EnsembleStrategy:
 
         # Get regime-allowed strategies for this symbol
         regime_allowed = self._get_regime_allowed_strategies(symbol)
+        # Get per-symbol active strategy set (drops dead-weight strategies).
+        # Returns None if no override for this symbol (legacy: all active).
+        try:
+            from data.symbol_strategy_profile import get_active_strategies_for_symbol
+            symbol_active = get_active_strategies_for_symbol(symbol)
+        except Exception:
+            symbol_active = None
 
         signals: List[Signal] = []
         shadow_signals: List[Signal] = []
@@ -754,6 +789,11 @@ class EnsembleStrategy:
                 continue
 
             if regime_allowed is not None and strategy.name not in regime_allowed:
+                continue
+            # Per-symbol strategy profile: skip strategies with no empirical edge
+            # on this symbol (e.g., regime_trend on SOL = 0% WR). Data lives in
+            # bot/data/symbol_strategy_profile.py.
+            if symbol_active is not None and strategy.name not in symbol_active:
                 continue
             active_count += 1
             try:
@@ -811,15 +851,15 @@ class EnsembleStrategy:
         _llm_first_min = 1
 
         if self.mode == "voting":
-            result = self._voting(symbol, signals, _llm_first_min)
+            result = self._voting(symbol, signals, _llm_first_min, llm_first_raw=True)
         elif self.mode == "weighted_veto":
-            result = self._weighted_veto(symbol, signals, _llm_first_min)
+            result = self._weighted_veto(symbol, signals, _llm_first_min, llm_first_raw=True)
         elif self.mode == "weighted":
             result = self._weighted(symbol, signals)
         elif self.mode == "best":
             result = self._best(symbol, signals)
         else:
-            result = self._voting(symbol, signals, _llm_first_min)
+            result = self._voting(symbol, signals, _llm_first_min, llm_first_raw=True)
 
         if result is None:
             return None
@@ -1417,10 +1457,16 @@ class EnsembleStrategy:
         )
 
     def _voting(self, symbol: str, signals: List[Signal],
-                effective_min_votes: int = 0) -> Optional[Signal]:
+                effective_min_votes: int = 0,
+                llm_first_raw: bool = False) -> Optional[Signal]:
         """Require min_votes strategies to agree on direction.
         Opposition veto: if any strategy actively votes the opposite side,
-        require min_votes + len(opposition) to override."""
+        require min_votes + len(opposition) to override.
+
+        llm_first_raw: when True, the negative-EV hard block inside
+        _merge_signals() becomes advisory. The flag is threaded through to
+        _merge_signals.
+        """
         min_v = effective_min_votes or self.min_votes
         buy_signals = [s for s in signals if s.side == "BUY"]
         sell_signals = [s for s in signals if s.side == "SELL"]
@@ -1456,7 +1502,7 @@ class EnsembleStrategy:
                 )
                 return None
 
-        merged = self._merge_signals(symbol, chosen)
+        merged = self._merge_signals(symbol, chosen, llm_first_raw=llm_first_raw)
         if merged is None:
             return None
 
@@ -1474,11 +1520,16 @@ class EnsembleStrategy:
         return merged
 
     def _weighted_veto(self, symbol: str, signals: List[Signal],
-                       effective_min_votes: int = 0) -> Optional[Signal]:
+                       effective_min_votes: int = 0,
+                       llm_first_raw: bool = False) -> Optional[Signal]:
         """Weight-aware voting with graduated veto.
         Uses strategy accuracy weights * confidence to determine direction.
         Requires chosen side to have veto_ratio times the opposition's strength.
-        Minimum min_votes strategies must agree on the same side for a trade."""
+        Minimum min_votes strategies must agree on the same side for a trade.
+
+        llm_first_raw: threaded through to _merge_signals, where it turns the
+        negative-EV hard block into an advisory attachment.
+        """
         min_v = effective_min_votes or self.min_votes
         buy_signals = [s for s in signals if s.side == "BUY"]
         sell_signals = [s for s in signals if s.side == "SELL"]
@@ -1740,7 +1791,7 @@ class EnsembleStrategy:
                 f"— size reduced to {_size_penalty:.0%} (not blocked)"
             )
 
-        merged = self._merge_signals(symbol, chosen)
+        merged = self._merge_signals(symbol, chosen, llm_first_raw=llm_first_raw)
         if merged is None:
             return None
 
@@ -1898,7 +1949,8 @@ class EnsembleStrategy:
         """Compute sum of weight * confidence for a list of signals."""
         return sum(self._get_strategy_weight(s.strategy) * s.confidence for s in signals)
 
-    def _merge_signals(self, symbol: str, signals: List[Signal]) -> Signal:
+    def _merge_signals(self, symbol: str, signals: List[Signal],
+                        llm_first_raw: bool = False) -> Signal:
         """Merge multiple agreeing signals into one consensus signal.
         Uses strategy accuracy weights for weighted-average confidence."""
         side = signals[0].side
@@ -2160,25 +2212,67 @@ class EnsembleStrategy:
             _regime_ev, _DEFAULT_DEFLATION.get(_indep_key, 0.65)
         )
 
-        # Setup-specific deflation floor: empirically validated setups should not be
-        # deflated below their proven win rate. HYPE BUY has 89% WR across 201
-        # counterfactual tests — deflating below that throws away proven alpha.
+        # Setup-specific edges from shadow ledger analysis (2026-04-15).
+        # Finding 11 rewrite: the old `_PROVEN_SETUP_FLOOR` collapsed the
+        # strategy dimension (symbol, side) → deflation. Reality: the same
+        # (symbol, side) has opposite edges depending on which strategy
+        # generated it. Example: SOL SELL via multi_tier_quality = 72% WR,
+        # SOL SELL via regime_trend = 0% WR on 149 samples. Treating them
+        # the same is a category error.
+        #
+        # Rebuilt from bot/data/shadow_ledger.csv (3,802 resolved entries) on
+        # 2026-04-15. Cutoff: n >= 40 samples for KEEP/BLOCK, 20 for NEUTRAL.
+        # Table format: (symbol, side, strategy) -> deflation floor.
         _base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
-        _PROVEN_SETUP_FLOOR = {
-            # (symbol, side): minimum deflation factor (= proven_WR / typical_raw_conf)
-            # Prevents win_prob from being crushed below proven levels
-            ("HYPE", "BUY"): 0.85,   # 89% WR on 201 shadow signals
-            ("BTC", "SELL"): 0.70,    # +$55 live, 38% WR, trending_bear golden setup
-            ("ETH", "BUY"): 0.80,     # 100% WR on 135 shadow signals from regime_trend
-            ("SOL", "SELL"): 0.70,    # +$40 live, 72% WR on 68 shadow signals (BB/MTQ)
+        _SHADOW_EDGES = {
+            # KEEP — strong positive edges (high WR + positive avg return)
+            ("ETH", "BUY", "regime_trend"):          0.90,  # 100% WR on 135 samples
+            ("HYPE", "BUY", "bollinger_squeeze"):    0.80,  # 61.2% WR on 196 samples
+            ("SOL", "SELL", "multi_tier_quality"):   0.80,  # 72.1% WR on 68 samples
+            ("SOL", "SELL", "bollinger_squeeze"):    0.80,  # 72.1% WR on 68 samples
+            # NEUTRAL — marginal but positive (keep as soft floor)
+            ("BTC", "BUY", "regime_trend"):          0.65,  # 55.1% WR on 78 samples
+            ("HYPE", "BUY", "regime_trend"):         0.72,  # 80.0% WR on 40 samples
         }
-        _setup_floor = _PROVEN_SETUP_FLOOR.get((_base_sym, side))
-        if _setup_floor is not None and _deflation < _setup_floor:
+        # BLOCK — statistically significant money losers. These are setups
+        # the bot should explicitly deflate toward zero, effectively killing
+        # the signal unless multiple OTHER strategies also agree.
+        _SHADOW_BLOCKS = {
+            ("SOL", "SELL", "regime_trend"),        # 0% WR on 149 samples (catastrophic)
+            ("SOL", "BUY", "regime_trend"),         # 75% WR trap: wins small, loses big (-0.48 sum)
+            ("HYPE", "BUY", "multi_tier_quality"),  # 36.8% WR on 95 samples
+            ("ETH", "SELL", "regime_trend"),        # 23.1% WR on 65 samples
+        }
+
+        # Walk every agreeing strategy: find the best floor AND any block.
+        _agreeing_strats = [s.strategy for s in signals]
+        _best_floor = None
+        _blocking_combos = []
+        for _strat in _agreeing_strats:
+            _key = (_base_sym, side, _strat)
+            if _key in _SHADOW_BLOCKS:
+                _blocking_combos.append(_strat)
+                continue
+            _edge = _SHADOW_EDGES.get(_key)
+            if _edge is not None and (_best_floor is None or _edge > _best_floor):
+                _best_floor = _edge
+
+        if _blocking_combos and len(_agreeing_strats) <= 2:
+            # Majority of agreeing strategies are known money losers.
+            # Hard-deflate to 0.35 — signal must have overwhelming override to trade.
+            _old_defl = _deflation
+            _deflation = min(_deflation, 0.35)
             logger.info(
-                f"[{symbol}] Proven setup floor: {_base_sym} {side} deflation "
-                f"{_deflation:.2f} -> {_setup_floor:.2f} (89% empirical WR)"
+                f"[{symbol}] Shadow BLOCK: {_base_sym} {side} via "
+                f"{_blocking_combos} — deflation {_old_defl:.2f} -> {_deflation:.2f} "
+                f"(shadow-ledger-verified money loser)"
             )
-            _deflation = _setup_floor
+        elif _best_floor is not None and _deflation < _best_floor:
+            logger.info(
+                f"[{symbol}] Shadow edge floor: {_base_sym} {side} via "
+                f"{_agreeing_strats} — deflation {_deflation:.2f} -> {_best_floor:.2f}"
+            )
+            _deflation = _best_floor
 
         win_prob = raw_win_prob * _deflation
         # Cross-asset correlation boost: when multiple symbols move in signal direction
@@ -2223,7 +2317,10 @@ class EnsembleStrategy:
         # Defense-in-depth: reject negative-EV signals at ensemble level.
         # The signal pipeline also checks EV, but this prevents wasted computation
         # on signals that are mathematically unprofitable.
-        if ev_per_dollar < 0:
+        #
+        # LLM-first raw path: EV is attached as metadata for the LLM to reason
+        # about, but NOT used as a hard gate. The LLM is the final filter.
+        if ev_per_dollar < 0 and not llm_first_raw:
             logger.info(
                 f"[ENSEMBLE] {symbol} {side} rejected: negative EV ({ev_per_dollar:.4f}) "
                 f"R:R={rr_tp1:.2f} fee_drag={fee_drag:.3f} win_prob={win_prob:.2f}"

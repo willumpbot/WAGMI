@@ -240,7 +240,7 @@ def run_research_cycle(
             raw_text, usage = call_llm(
                 system_prompt=prompt,
                 snapshot_json="{}",
-                model="haiku",
+                model="claude-haiku-4-5-20251001",
                 max_tokens=2000,
             )
         except Exception as e:

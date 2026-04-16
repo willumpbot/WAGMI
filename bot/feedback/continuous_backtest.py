@@ -302,20 +302,27 @@ class ContinuousBacktester:
                     for o in window_outcomes
                 ]
                 wf_results = run_rolling_walk_forward(wf_trades)
-                wf_ratio = avg_wf_ratio(wf_results) if wf_results else 0.0
-                self._last_wf_ratio = wf_ratio
-
-                if wf_ratio < 0.3:
-                    logger.critical(
-                        f"[BACKTEST] Walk-forward ratio CRITICAL: {wf_ratio:.3f} — "
-                        f"possible overfitting detected"
-                    )
-                elif wf_ratio < 0.5:
-                    logger.warning(
-                        f"[BACKTEST] Walk-forward ratio degraded: {wf_ratio:.3f}"
+                # Don't fire CRITICAL on empty walk-forward results — that's a
+                # cold-start false positive (empty list defaults to 0.0 and
+                # trips the < 0.3 threshold). Only alert when we have real data.
+                if not wf_results:
+                    logger.debug(
+                        "[BACKTEST] Walk-forward skipped — insufficient completed cycles"
                     )
                 else:
-                    logger.info(f"[BACKTEST] Walk-forward ratio: {wf_ratio:.3f}")
+                    wf_ratio = avg_wf_ratio(wf_results)
+                    self._last_wf_ratio = wf_ratio
+                    if wf_ratio < 0.3:
+                        logger.critical(
+                            f"[BACKTEST] Walk-forward ratio CRITICAL: {wf_ratio:.3f} — "
+                            f"possible overfitting detected"
+                        )
+                    elif wf_ratio < 0.5:
+                        logger.warning(
+                            f"[BACKTEST] Walk-forward ratio degraded: {wf_ratio:.3f}"
+                        )
+                    else:
+                        logger.info(f"[BACKTEST] Walk-forward ratio: {wf_ratio:.3f}")
             except Exception as e:
                 logger.debug(f"[BACKTEST] Walk-forward check error: {e}")
 

@@ -417,31 +417,38 @@ class ConfidenceScorerStrategy(BaseStrategy):
             if htf_aligned:
                 confidence += 5
 
-        # Classify signal strength
-        if confidence >= 75:
-            action = "STRONG_BUY" if di_bullish else "STRONG_SELL"
-        elif confidence >= 55:
-            action = "BUY" if di_bullish else "SELL"
-        else:
-            return None  # Not enough momentum factors agree
-
-        # Historical accuracy adjustment (key differentiator)
-        hist_conf = self._get_historical_confidence(symbol, action)
+        # Historical accuracy adjustment FIRST so it shapes the tier decision.
+        # Forensic 2026-04-14: stated confidence 55-75% was firing with actual
+        # WR 30-50%, a 15-25 point calibration gap. Reordering means a bad
+        # historical track record reduces the signal to below the raised
+        # threshold and the signal never fires.
+        # Pre-adjustment action label just to look up historical confidence;
+        # STRONG vs non-STRONG is set after the adjustment.
+        _pre_action = "BUY" if di_bullish else "SELL"
+        hist_conf = self._get_historical_confidence(symbol, _pre_action)
         if hist_conf is not None:
             adjustment = (hist_conf - 0.5) * 20  # -10 to +10
             confidence += adjustment
             logger.info(
-                f"[{symbol}] {action} hist WR={hist_conf:.0%}, "
-                f"adj={adjustment:+.1f}, final={confidence:.1f}"
+                f"[{symbol}] {_pre_action} hist WR={hist_conf:.0%}, "
+                f"adj={adjustment:+.1f}, pre-threshold={confidence:.1f}"
             )
-
         confidence = max(0, min(100, confidence))
+
+        # Classify signal strength with RECALIBRATED thresholds.
+        # Forensic data: observed WR at 55-75% confidence was 30-50%. The
+        # hardcoded thresholds were overconfident by ~15 points. Raised from
+        # 55→65 (floor) and 75→85 (strong) to filter the worst-calibrated
+        # signals at the source, before they flood downstream gates or LLM.
+        if confidence >= 85:
+            action = "STRONG_BUY" if di_bullish else "STRONG_SELL"
+        elif confidence >= 65:
+            action = "BUY" if di_bullish else "SELL"
+        else:
+            return None  # Below recalibrated floor
 
         # Log signal
         self._log_signal(symbol, action, entry)
-
-        if confidence < 55:
-            return None
 
         # Stop/TP placement: regime-conditional ATR multipliers
         try:

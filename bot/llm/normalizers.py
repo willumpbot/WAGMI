@@ -15,6 +15,7 @@ from llm.decision_types import (
     StrategyWeights,
     Regime,
 )
+from llm.regime_canonical import canonicalize_regime
 
 logger = logging.getLogger("bot.llm.normalizers")
 
@@ -144,9 +145,9 @@ def normalize_llm_output(raw_dict: Dict[str, Any]) -> Dict[str, Any]:
     else:
         normalized["size_multiplier"] = 1.0
 
-    # Normalize regime: ensure valid or fallback to unknown
+    # Normalize regime: map legacy/alt vocab to canonical, then validate
     if "regime" in normalized:
-        regime = str(normalized["regime"]).strip().lower()
+        regime = canonicalize_regime(normalized["regime"]) or "unknown"
         valid_regimes = {r.value for r in Regime}
         if regime not in valid_regimes:
             logger.warning(f"[LLM-NORM] Invalid regime {regime!r}, using 'unknown'")

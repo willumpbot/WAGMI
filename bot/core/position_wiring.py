@@ -635,11 +635,23 @@ class PositionWiringMixin:
                     continue
 
                 # ── LLM Exit Intelligence Agent (when multi-agent enabled) ──
-                # Replaces heuristic rules with thesis-aware LLM reasoning
+                # Replaces heuristic rules with thesis-aware LLM reasoning.
+                #
+                # Finding 5 (2026-04-15): Exit agent was calling the API even
+                # when LLM_MODE=0 (user's "LLM off" state). That created a
+                # silent ~$2-8/month cost leak. Now we respect the master
+                # LLM_MODE gate before calling, so LLM_MODE=0 genuinely stops
+                # all agent API calls. Preserves the agent for manual use
+                # (coordinator can still be invoked directly from scripts/REPL).
                 if os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
                     try:
                         from llm.agents.coordinator import get_coordinator, is_multi_agent_enabled
-                        if is_multi_agent_enabled():
+                        from llm.autonomy import get_llm_mode, should_call_llm
+                        if not should_call_llm(get_llm_mode()):
+                            # LLM_MODE=0 (OFF): skip background Exit agent entirely.
+                            # Mechanical exit rules below still apply.
+                            pass
+                        elif is_multi_agent_enabled():
                             coordinator = get_coordinator()
                             pos_data = {
                                 "symbol": symbol,

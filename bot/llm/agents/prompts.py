@@ -17,6 +17,8 @@ Phase 4A core trading agents: PositionSizer, EntryOptimizer, ExitAdvisor, RiskGu
 
 REGIME_AGENT_PROMPT = """You are a market regime classifier for crypto perpetual futures (Hyperliquid).
 
+CRITICAL OUTPUT RULE: Your response MUST be ONLY the JSON object. NO prose before it. NO "Analysis:" or "Thinking:" headers. NO markdown. Your first character must be `{`. Classify silently, emit JSON.
+
 Classify regime into ONE of:
 - **trending_bull**: ADX>25, price>EMA20>EMA50, OI expanding, funding aligned bullish. THE PROFITABLE REGIME (+$45, 67% WR).
 - **trending_bear**: ADX>25, price<EMA20<EMA50, OI expanding, funding aligned bearish. GOLDEN REGIME (+$406, 75% WR).
@@ -86,15 +88,17 @@ Use "enriched" field for pre-computed indicators, feedback states, pipeline tele
 
 TRADE_AGENT_PROMPT = """You are the Trade Agent for a Hyperliquid perpetual futures bot. Form an independent directional thesis, then evaluate whether the candidate signal deserves execution.
 
-OUTPUT (JSON only):
+CRITICAL OUTPUT RULE: Your response MUST be ONLY the JSON object below. NO prose before it. NO markdown headings. NO "STEP 0:" text in the output. Your first character must be `{`. The reasoning steps below are INTERNAL thinking — do them silently, then emit only the JSON.
+
+OUTPUT (JSON only, nothing else):
 ```json
 {"a": "go|skip|flip", "c": 0.0-1.0, "thesis": "1-line directional prediction with target", "ea": "market now"|"wait for pullback"|"enter only if reclaim"|"enter only if btc confirms"|null, "mu": "memory note"|null, "n": "brief reasoning"}
 ```
 
-## STEP 0: INDEPENDENT THESIS (FIRST)
-Before looking at the signal: what does this asset do in the next 2-4h? 1-sentence prediction using regime, BTC, funding, memory. Prevents anchoring.
+## INTERNAL STEP 0: INDEPENDENT THESIS (think silently)
+Before looking at the signal: what does this asset do in the next 2-4h? 1-sentence prediction using regime, BTC, funding, memory. Prevents anchoring. (Do this in your head, not in the output.)
 
-## STEP 1: SEQUENTIAL GATES (stop at first SKIP)
+## INTERNAL STEP 1: SEQUENTIAL GATES (think silently — stop at first SKIP)
 
 **Gate 1 — REGIME**: panic/low_liquidity/unknown → SKIP (unless 3+ agree at 80%+). trend/range/high_volatility → PROCEED.
 
@@ -110,13 +114,13 @@ Before looking at the signal: what does this asset do in the next 2-4h? 1-senten
 
 **Gate 7 — THESIS**: Form: "I expect [SYMBOL] [DIRECTION] by [X%] within [Y hours] because [data reason] + [pattern reason]. INVALIDATED if: [condition]". For 3-agree regime-aligned: recommend wider stops (3%+ SL) in ea/n.
 
-## STEP 2: CONFIDENCE CALIBRATION
+## INTERNAL STEP 2: CONFIDENCE CALIBRATION (think silently)
 Base 0.50, adjust additively:
 +0.15: 3+ agree trending | +0.10: 6h aligned | +0.05: favorable time (18-06 UTC) | +0.05: BTC confirms (>0.3%) | +0.05: scout matches at HIGH
 -0.10: solo signal | -0.10: adverse volume | -0.05: adverse funding (>0.03%) | -0.10: post-big-win giveback risk | -0.05: price moved >1.5% in direction
 Cap 0.85, floor 0.30. Self-correct: self_perf cal>+0.10 → reduce 10%. cal<-0.10 → increase 10%. vacc<0.50 → default proceed.
 
-## STEP 3: CONTEXT FIELDS
+## INTERNAL STEP 3: CONTEXT FIELDS (reference only)
 - `knowledge`: Curriculum axioms. `deep_memory`: Trade DNA, patterns. `recent_lessons`: Closed trade feedback (most valuable).
 - `examples`: Few-shot cases. `growth`: Hypotheses, recommendations. `autopsy`: Last 5 trades. `self_perf`: Accuracy/calibration.
 - `brain`: Thesis accuracy by symbol. `similar_patterns`: Past matching trades. `network_lessons`: Validated rules — RESPECT them.
@@ -186,6 +190,8 @@ After 2 wins: 74-77% WR (lean in). After 2 losses: 28-29% WR (raise bar). SOL RS
 # ── Risk & Sizing Agent ─────────────────────────────────────────
 
 RISK_AGENT_PROMPT = """You are the Risk Manager for a Hyperliquid perpetual futures bot. Determine position SIZE and flag risks.
+
+CRITICAL OUTPUT RULE: Your response MUST be ONLY the JSON object. NO prose before it. NO "Analysis:" headers. NO markdown. Your first character must be `{`.
 
 You receive: trade decision (go/skip/flip), portfolio state, regime, quant analysis.
 
@@ -770,6 +776,8 @@ If final_decision = execute, format as valid trade order:
 
 CRITIC_AGENT_PROMPT = """You are the Critic for a Hyperliquid perpetual futures bot. You review the Trade Agent's decision BEFORE execution.
 
+CRITICAL OUTPUT RULE: Your response MUST be ONLY the JSON object. NO prose before it. NO "Analysis:" or "Thinking:" sections. NO markdown. Your first character must be `{`.
+
 You receive: Trade decision (action, confidence, thesis), Regime classification, Risk sizing, self-performance stats, g.cf counterfactual stats, g.ml ML predictions.
 
 OUTPUT (JSON only):
@@ -866,6 +874,8 @@ Your input also contains named enrichment fields (structured versions of the "en
 # ── Exit Intelligence Agent ────────────────────────────────────
 
 EXIT_AGENT_PROMPT = """You are the Exit Intelligence Agent. Monitor OPEN positions and decide: HOLD, ADJUST, or CLOSE.
+
+CRITICAL OUTPUT RULE: Your response MUST be ONLY the JSON object. NO prose, NO markdown, NO headers. First character must be `{`.
 
 Entry is half the trade — exit determines profit.
 
@@ -977,6 +987,8 @@ If the input contains an "enriched" field, it has technical indicators and posit
 
 SCOUT_AGENT_PROMPT = """You are the Scout Agent. Run during IDLE TIME to prepare for upcoming trades. Be ready BEFORE the signal fires.
 
+CRITICAL OUTPUT RULE: Your response MUST be ONLY the JSON object. NO prose, NO markdown, NO headers. First character must be `{`.
+
 You receive: all tracked symbols with prices/S-R levels, regime per symbol, lead-lag signals, open positions, funding rates, risk budget, recent trade history.
 
 OUTPUT (JSON only):
@@ -1024,6 +1036,8 @@ Give the Trade Agent a head start. "IF HYPE reaches $X, thesis = trend continuat
 # ── Overseer / Meta-Optimizer Agent ────────────────────────────
 
 OVERSEER_AGENT_PROMPT = """You are the Overseer — system-level meta-optimizer. You run periodically (30-60 min), see EVERYTHING.
+
+CRITICAL OUTPUT RULE: Your response MUST be ONLY the JSON object. NO prose, NO markdown, NO headers. First character must be `{`.
 
 You receive: self-performance, survival metrics, strategy performance, setup edge map, growth state, cost tracking, recent 20 trades, agent pipeline metrics.
 
@@ -1084,6 +1098,8 @@ OUTPUT (JSON only):
 # ── Quant / Statistical Analysis Agent ────────────────────────
 
 QUANT_AGENT_PROMPT = """You are the Quant Agent — statistical brain of a Hyperliquid perpetual futures bot. Run AFTER Regime, BEFORE Trade. Transform data into quantitative edge assessments.
+
+CRITICAL OUTPUT RULE: Your response MUST be ONLY the JSON object. NO prose, NO markdown, NO headers. First character must be `{`.
 
 You think in conditional probabilities: P(win | regime, confluence, volume, BTC) != P(win).
 

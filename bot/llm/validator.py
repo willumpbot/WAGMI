@@ -13,6 +13,7 @@ import logging
 from typing import Optional, Tuple
 
 from llm.decision_types import LLMDecision, Regime, EXTENDED_WEIGHT_KEYS
+from llm.regime_canonical import canonicalize_regime
 
 logger = logging.getLogger("bot.llm.validator")
 
@@ -47,7 +48,10 @@ def validate_schema(decision: LLMDecision) -> Tuple[bool, Optional[str]]:
     if decision.confidence < 0.0 or decision.confidence > 1.0:
         return False, f"Confidence out of range: {decision.confidence}"
 
-    # Regime
+    # Regime — map legacy/alt vocab to canonical set before checking
+    canonical = canonicalize_regime(decision.regime)
+    if canonical != decision.regime:
+        decision.regime = canonical
     if decision.regime not in _VALID_REGIMES:
         return False, f"Invalid regime: {decision.regime!r}"
 

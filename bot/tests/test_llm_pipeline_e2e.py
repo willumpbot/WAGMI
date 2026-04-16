@@ -230,8 +230,11 @@ def _make_mock_call_llm(capture_inputs=None, critic_response=None):
     If critic_response is provided, it overrides the default critic response.
     """
     def mock_call_llm(system_prompt, snapshot_json, model="", max_tokens=4096,
-                      max_retries=2, timeout=30.0):
-        role_hint = _identify_agent_role(system_prompt)
+                      max_retries=2, timeout=30.0, cacheable_prefix=None):
+        # When coordinator passes cacheable_prefix (stable agent prompt), use
+        # THAT for role identification. The `system_prompt` in that call is
+        # the dynamic prefix (calibration/brain/protocol).
+        role_hint = _identify_agent_role(cacheable_prefix or system_prompt)
 
         if role_hint == "critic" and critic_response is not None:
             response = critic_response
@@ -443,9 +446,11 @@ class TestLLMPipelineE2E:
         call_count = [0]
 
         def flaky_llm(system_prompt, snapshot_json, model="", max_tokens=4096,
-                      max_retries=2, timeout=30.0):
+                      max_retries=2, timeout=30.0, cacheable_prefix=None):
             call_count[0] += 1
-            role = _identify_agent_role(system_prompt)
+            # Use cacheable_prefix for role identification when present
+            # (coordinator's new two-block caching structure)
+            role = _identify_agent_role(cacheable_prefix or system_prompt)
 
             # Risk and Critic agents return garbage (simulating failure)
             if role == "risk":
@@ -455,7 +460,8 @@ class TestLLMPipelineE2E:
 
             # Regime, Quant, Trade work normally
             return _make_mock_call_llm()(system_prompt, snapshot_json, model,
-                                        max_tokens, max_retries, timeout)
+                                        max_tokens, max_retries, timeout,
+                                        cacheable_prefix=cacheable_prefix)
 
         mock_llm.side_effect = flaky_llm
         coord = _build_coordinator()
@@ -489,7 +495,7 @@ class TestLLMPipelineE2E:
         """If Regime Agent (required) fails, pipeline should return None."""
 
         def always_fail(system_prompt, snapshot_json, model="", max_tokens=4096,
-                        max_retries=2, timeout=30.0):
+                        max_retries=2, timeout=30.0, cacheable_prefix=None):
             return None, {"input_tokens": 0, "output_tokens": 0, "latency_ms": 0,
                           "error": "api_error"}
 
@@ -773,12 +779,13 @@ class TestLLMPipelineE2E:
         })
 
         def unknown_regime_llm(system_prompt, snapshot_json, model="", max_tokens=4096,
-                               max_retries=2, timeout=30.0):
-            role = _identify_agent_role(system_prompt)
+                               max_retries=2, timeout=30.0, cacheable_prefix=None):
+            role = _identify_agent_role(cacheable_prefix or system_prompt)
             if role == "regime":
                 return unknown_regime, {"input_tokens": 300, "output_tokens": 100, "latency_ms": 100}
             return _make_mock_call_llm()(system_prompt, snapshot_json, model,
-                                        max_tokens, max_retries, timeout)
+                                        max_tokens, max_retries, timeout,
+                                        cacheable_prefix=cacheable_prefix)
 
         mock_llm.side_effect = unknown_regime_llm
         coord = _build_coordinator()

@@ -76,7 +76,10 @@ class SignalTracker:
             compact_meta = {}
             for k in ("fee_drag_pct", "ev_per_dollar", "cluster_risk",
                        "leverage", "leverage_tier", "chop_score_smoothed",
-                       "effective_confidence_floor", "rr_tp1"):
+                       "effective_confidence_floor", "rr_tp1",
+                       # LLM-first pipeline markers (2026-04-14)
+                       "pipeline", "stage", "llm_confidence", "llm_regime",
+                       "thesis", "regime_wr", "regime_n"):
                 if k in filter_metadata:
                     compact_meta[k] = filter_metadata[k]
             if compact_meta:

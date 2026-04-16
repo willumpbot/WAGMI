@@ -312,8 +312,12 @@ class TestSectorExposure:
     def test_l1_cap_triggers(self):
         from execution.sector_exposure import SectorExposure
         se = SectorExposure(total_equity=50000)
-        # L1 cap = 60% of 50k = 30k. Already have 28k in L1s.
-        positions = [("BTC", 15000), ("SOL", 13000)]
+        # Finding 17 (2026-04-15): l1 cap was raised from 0.60 to 1.50 to
+        # accommodate full-Kelly sizing (8% risk × 5x leverage = 40% notional
+        # per position). Test now sizes positions to match the new cap: with
+        # 150% cap on 50k equity = 75k headroom, we need 73k in positions to
+        # leave only 2k headroom like the original intent.
+        positions = [("BTC", 40000), ("SOL", 33000)]  # 73k total l1 exposure
         result = se.check_new_position("ETH", 5000, positions)
         # Should reduce or block — only 2k headroom out of 5k requested
         assert result.size_multiplier < 1.0
@@ -321,10 +325,12 @@ class TestSectorExposure:
     def test_meme_cap_blocks(self):
         from execution.sector_exposure import SectorExposure
         se = SectorExposure(total_equity=50000)
-        # Meme cap = 20% of 50k = 10k
-        positions = [("DOGE", 5000), ("PEPE", 4500)]
+        # Finding 17 (2026-04-15): meme cap raised from 0.20 to 0.40. Bumped
+        # test positions to match: new cap = 40% of 50k = 20k. Existing 19k
+        # in memes leaves 1k headroom against a 3k request.
+        positions = [("DOGE", 10000), ("PEPE", 9000)]
         result = se.check_new_position("WIF", 3000, positions)
-        # Should reduce (only 500 headroom out of 3k)
+        # Should reduce (only 1k headroom out of 3k)
         assert result.size_multiplier < 1.0
 
     def test_unknown_symbol_allowed(self):

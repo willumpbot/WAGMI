@@ -375,6 +375,7 @@ def get_trading_decision(
         and is_multi_agent_enabled()
         and trigger_reason not in ("periodic update", "PERIODIC")  # Don't burn budget on heartbeats
     )
+    _multi_agent_was_attempted = _multi_agent_active  # preserved across failure flip below
     if _multi_agent_active:
         try:
             coordinator = get_agent_coordinator()
@@ -575,7 +576,14 @@ def get_trading_decision(
                 _ensemble_enabled = False
 
     if not _ensemble_enabled and not _multi_agent_active:
-        # Single-model path (default)
+        # Single-model path. If we got here because multi-agent ALREADY failed
+        # (_multi_agent_was_attempted is True but active was flipped off),
+        # apply aggressive timeouts so we fail fast instead of burning 90s
+        # (3×30s) hanging on the API — that's what tripped the degradation
+        # manager last night (2026-04-14 v7 session, 14:37-14:38).
+        if _multi_agent_was_attempted:
+            call_kwargs.setdefault("timeout", 10.0)
+            call_kwargs.setdefault("max_retries", 1)
         raw_text, usage = call_llm(**call_kwargs)
 
         # Cost tracking handled by client.py — do NOT double-count here

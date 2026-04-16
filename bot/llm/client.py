@@ -56,6 +56,7 @@ def call_llm(
     max_tokens: int = 4096,
     max_retries: int = 2,
     timeout: float = 30.0,
+    cacheable_prefix: Optional[str] = None,
 ) -> Tuple[Optional[str], dict]:
     """Send a snapshot to Claude and get back raw text.
 
@@ -85,16 +86,35 @@ def call_llm(
             start = time.monotonic()
             _total_calls += 1
 
-            # Use Anthropic prompt caching for system prompts.
-            # System prompts are reused across calls — caching saves ~90% on
-            # input tokens after the first call with the same prompt.
-            system_content = [
-                {
-                    "type": "text",
-                    "text": system_prompt,
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ]
+            # Anthropic prompt caching. The STABLE portion of the system
+            # prompt is cached; the DYNAMIC portion (if any) is a second
+            # block without cache_control. Two-block structure is required
+            # when the prompt has per-call changing content (e.g., the
+            # coordinator prepends calibration/brain/protocol prefixes).
+            #
+            # If cacheable_prefix is provided: (cacheable_prefix, system_prompt)
+            # are two blocks, with cache on the first. Otherwise: single
+            # block with cache_control on system_prompt.
+            if cacheable_prefix:
+                system_content = [
+                    {
+                        "type": "text",
+                        "text": cacheable_prefix,
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                    },
+                ]
+            else:
+                system_content = [
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ]
 
             response = client.messages.create(
                 model=model,
@@ -136,15 +156,24 @@ def call_llm(
                 "cache_create_tokens": cache_create,
             }
 
-            # Track cost for EVERY call — prevents undercounting
+            # Track cost for EVERY call, with cache stats for accurate billing
             try:
                 from llm.cost_tracker import get_cost_tracker
-                get_cost_tracker().record_call(in_tok, out_tok, model)
+                get_cost_tracker().record_call(
+                    in_tok, out_tok, model,
+                    cache_read_tokens=cache_read,
+                    cache_create_tokens=cache_create,
+                )
             except Exception:
                 pass
 
+            _cache_tag = ""
+            if cache_read > 0:
+                _cache_tag = f" cache_read={cache_read}"
+            elif cache_create > 0:
+                _cache_tag = f" cache_write={cache_create}"
             logger.info(
-                f"[LLM] Call OK: {in_tok} in / {out_tok} out / {elapsed_ms}ms "
+                f"[LLM] Call OK: {in_tok} in / {out_tok} out / {elapsed_ms}ms{_cache_tag} "
                 f"(cumulative: {_total_input_tokens} in / {_total_output_tokens} out / {_total_calls} calls)"
             )
 

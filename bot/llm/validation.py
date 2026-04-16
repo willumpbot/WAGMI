@@ -19,6 +19,7 @@ from llm.decision_types import (
     Regime,
     EXTENDED_WEIGHT_KEYS,
 )
+from llm.regime_canonical import canonicalize_regime
 
 logger = logging.getLogger("bot.llm.validation")
 
@@ -141,8 +142,10 @@ def is_valid_decision(dec: dict) -> Tuple[bool, Optional[str]]:
     if conf < 0.0 or conf > 1.0:
         return False, f"Confidence out of range: {conf} (must be 0.0-1.0)"
 
-    # regime
-    regime = dec.get("regime")
+    # regime — map legacy/alt vocab to canonical set before checking
+    regime = canonicalize_regime(dec.get("regime"))
+    if regime != dec.get("regime"):
+        dec["regime"] = regime
     if regime not in _VALID_REGIMES:
         return False, f"Invalid regime: {regime!r} (must be one of {_VALID_REGIMES})"
 

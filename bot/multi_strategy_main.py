@@ -3834,25 +3834,59 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # LLM can evaluate. This lets the LLM take trades mechanical blocks.
         signal_result = self.ensemble.evaluate(symbol, data)  # Always run mechanical first
 
-        # If mechanical returned None (solo signal blocked), check if this is a
-        # proven solo setup the LLM should evaluate
+        # If mechanical returned None (solo signal or sub-consensus), route to
+        # the LLM-first pathway when LLM_FIRST_MODE is active.
+        #
+        # In legacy mode (LLM_FIRST_MODE=false), only a hardcoded whitelist of
+        # proven-solo setups bypass the consensus gate. In LLM-first mode, we
+        # let the LLM see every ≥60% solo signal — the cost gate at line 4147
+        # and the 10-min cooldown at line 4164 still protect the API budget.
+        # Hard safety (circuit breakers, position limits, liquidation, notional
+        # cap) still applies downstream via SafetyFilterChain + post-LLM caps.
         if signal_result is None and self.llm_mode >= LLMMode.SIZING:
             _raw = self.ensemble.evaluate_raw(symbol, data)
             if _raw is not None:
                 _base = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
-                _PROVEN_SOLOS = {
-                    ("BTC", "SELL"),   # +$55 live, trending_bear golden
-                    ("ETH", "BUY"),    # 100% WR on 135 shadow signals
-                    ("SOL", "SELL"),   # +$44 live, 72% shadow WR via BB/MTQ
-                }
-                if (_base, _raw.side) in _PROVEN_SOLOS and _raw.confidence >= 65:
-                    # Route to LLM for evaluation — it decides, not us
-                    signal_result = _raw
-                    signal_result.metadata["llm_solo_evaluation"] = True
-                    logger.info(
-                        f"[{symbol}] PROVEN SOLO → LLM: {_base} {_raw.side} "
-                        f"conf={_raw.confidence:.0f}% (proven edge, LLM decides)"
-                    )
+                _llm_first_active = getattr(self.config, 'llm_first_mode', False)
+                if _llm_first_active:
+                    # LLM-FIRST: all ≥60% solo signals go to the LLM. The LLM
+                    # is the filter, not the consensus gate. Log only when the
+                    # dispatch is actually novel (not suppressed by cooldown)
+                    # to prevent log spam.
+                    if _raw.confidence >= 60:
+                        signal_result = _raw
+                        if signal_result.metadata is None:
+                            signal_result.metadata = {}
+                        signal_result.metadata["llm_solo_evaluation"] = True
+                        signal_result.metadata["bypassed_consensus"] = True
+                        # Only log the first occurrence per cooldown window.
+                        # Matches the LLM-first cooldown key at line ~4164.
+                        _spam_key = f"{_base}_{_raw.side}"
+                        if not hasattr(self, '_llm_first_solo_log_ts'):
+                            self._llm_first_solo_log_ts = {}
+                        _last_log = self._llm_first_solo_log_ts.get(_spam_key, 0)
+                        if time.time() - _last_log >= 600:  # match cooldown
+                            logger.info(
+                                f"[{symbol}] LLM-FIRST solo → LLM: {_base} {_raw.side} "
+                                f"conf={_raw.confidence:.0f}% num_agree=1 (LLM decides)"
+                            )
+                            self._llm_first_solo_log_ts[_spam_key] = time.time()
+                else:
+                    # Legacy: hardcoded whitelist of proven-edge solos only.
+                    _PROVEN_SOLOS = {
+                        ("BTC", "SELL"),   # +$55 live, trending_bear golden
+                        ("ETH", "BUY"),    # 100% WR on 135 shadow signals
+                        ("SOL", "SELL"),   # +$44 live, 72% shadow WR via BB/MTQ
+                    }
+                    if (_base, _raw.side) in _PROVEN_SOLOS and _raw.confidence >= 65:
+                        signal_result = _raw
+                        if signal_result.metadata is None:
+                            signal_result.metadata = {}
+                        signal_result.metadata["llm_solo_evaluation"] = True
+                        logger.info(
+                            f"[{symbol}] PROVEN SOLO → LLM: {_base} {_raw.side} "
+                            f"conf={_raw.confidence:.0f}% (proven edge, LLM decides)"
+                        )
 
         # ── EARLY: Sniper Signal Evaluation (before regime gating can null the signal) ──
         # Route ALL raw strategy signals to sniper, even if ensemble rejected them.
@@ -5596,11 +5630,29 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 else:
                     return
             else:
-                # LLM approved (or API failed -> default proceed)
-                candidate.llm_action = "proceed"
+                # Finding 18 (2026-04-15): distinguish real LLM approval from
+                # fail-open fallbacks. Previously this unconditionally stamped
+                # `llm_action="proceed"` on every non-veto path including LLM
+                # failures, hiding true LLM state in the metadata. Now we only
+                # mark "proceed" when the LLM actually returned an approval;
+                # anything else is tagged "no_llm" so analytics can distinguish
+                # "LLM said go" from "LLM was skipped/failed".
                 if veto_result is None:
-                    # _llm_veto_check returns None for proceed
-                    pass
+                    # _llm_veto_check returned None for two reasons:
+                    #   1. LLM wasn't consulted (throttled, disabled, below cost gate)
+                    #   2. LLM was called and approved (candidate.llm_* already set)
+                    # Preserve any value _llm_veto_check wrote; otherwise tag no_llm.
+                    if not candidate.llm_action:
+                        candidate.llm_action = "no_llm"
+                else:
+                    # veto_result is a DecisionResult object (LLM was called)
+                    _dec = getattr(veto_result, 'decision', None)
+                    if _dec is not None and getattr(_dec, 'action', None) == "proceed":
+                        candidate.llm_action = "proceed"
+                        candidate.llm_confidence = _dec.confidence
+                        candidate.llm_notes = _dec.notes
+                    else:
+                        candidate.llm_action = "no_llm"
 
         # Learning Mode: record signal observation
         if _LEARNING_MODE_AVAILABLE and is_learning_mode_active():
@@ -6310,6 +6362,44 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
     # ── LLM-FIRST ARCHITECTURE: Signal → Safety → LLM → Execute ──
     # ══════════════════════════════════════════════════════════════════
 
+    def _track_llm_first_outcome(
+        self,
+        raw_signal,
+        symbol: str,
+        passed: bool,
+        hard_rejected: bool,
+        reason: str,
+        stage: str,
+        metadata: dict = None,
+    ):
+        """Record an LLM-first path outcome to signal_outcomes.jsonl.
+
+        The LLM-first path doesn't flow through the mechanical annotation
+        pipeline that populates signal_tracker, so without this call every
+        LLM-first decision is invisible to downstream analytics.
+        """
+        try:
+            from core.signal_tracker import get_signal_tracker
+            tracker = get_signal_tracker()
+            meta = metadata or {}
+            meta["pipeline"] = "llm_first"
+            meta["stage"] = stage
+            tracker.record_signal(
+                symbol=symbol,
+                side=raw_signal.side or "",
+                confidence=raw_signal.confidence or 0,
+                strategy=raw_signal.strategy or "",
+                passed=passed,
+                hard_rejected=hard_rejected,
+                hard_rejection_reason=reason,
+                annotations=[{"gate": stage, "severity": "ok" if passed else "rej", "value": 0, "threshold": 0}],
+                filter_metadata=meta,
+                num_strategies_agree=(raw_signal.metadata or {}).get("num_agree", 1),
+                regime=(raw_signal.metadata or {}).get("regime", "") or "",
+            )
+        except Exception:
+            pass  # Never crash the bot on tracking errors
+
     def _process_symbol_llm_first(
         self,
         symbol: str,
@@ -6427,13 +6517,37 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         }
 
         # Enrich signal context with edge data and behavioral patterns
-        # so the LLM can make truly informed decisions
+        # so the LLM can make truly informed decisions.
+        #
+        # Loads TWO kinds of edge data:
+        #   1. Global backtest verdict (CONFIRMED_EDGE / MARGINAL / NEGATIVE_EV_BLOCKED)
+        #   2. Regime-specific live performance (HYPE_BUY_illiquid = 9% WR TOXIC etc.)
+        #
+        # is_toxic=True when regime-specific WR < 10% with n >= 10. This flag is
+        # read downstream by SafetyFilterChain and the agent snapshot.
         try:
             from llm.deep_memory import get_deep_memory
             _dm = get_deep_memory()
             _bt = _dm.strategy_fps.get_all().get("_quant_backtest_2026_03_26", {})
-            _setup_key = f"{symbol.replace('/USDC:USDC','').replace('/USDT:USDT','')}_{'BUY' if raw_signal.side == 'BUY' else 'SELL'}"
+            _base_sym = symbol.replace('/USDC:USDC','').replace('/USDT:USDT','')
+            _side = 'BUY' if raw_signal.side == 'BUY' else 'SELL'
+            _setup_key = f"{_base_sym}_{_side}"
             _setup = _bt.get(_setup_key, {})
+
+            # Regime-specific live performance (from ensemble.by_symbol_regime bucket)
+            _regime = (raw_signal.metadata or {}).get("regime_1h") or \
+                      (raw_signal.metadata or {}).get("regime", "unknown")
+            _regime_bucket = _dm.strategy_fps.get_all().get("ensemble", {}).get(
+                "by_symbol_regime", {}
+            )
+            _regime_key = f"{_base_sym}_{_side}_{_regime}"
+            _regime_setup = _regime_bucket.get(_regime_key, {}) if isinstance(_regime_bucket, dict) else {}
+            _reg_n = int(_regime_setup.get("total", 0) or 0)
+            _reg_wins = int(_regime_setup.get("wins", 0) or 0)
+            _reg_wr = (_reg_wins / _reg_n * 100.0) if _reg_n > 0 else None
+            # TOXIC threshold: WR < 10% AND n >= 10 (statistically meaningful)
+            _is_toxic = bool(_reg_wr is not None and _reg_wr < 10.0 and _reg_n >= 10)
+
             if _setup and _setup.get("total", 0) > 0:
                 signal_ctx["edge_data"] = {
                     "setup_key": _setup_key,
@@ -6442,9 +6556,50 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     "n": _setup.get("total", 0),
                     "verdict": _setup.get("verdict", ""),
                     "best_hours": _setup.get("best_hours_utc", ""),
+                    # Regime-specific live verdict
+                    "regime": _regime,
+                    "regime_wr": _reg_wr,
+                    "regime_n": _reg_n,
+                    "is_toxic": _is_toxic,
                 }
-        except Exception:
-            pass
+            # Hard TOXIC block: if regime-specific live WR < 10% with n >= 10,
+            # do not call the LLM. This fixes the enforcement gap where
+            # HYPE_BUY_illiquid=9% WR TOXIC was loaded but never blocked.
+            # Defense-in-depth: LLM agents also see is_toxic via the snapshot
+            # built in coordinator._build_entry_snapshot, so even if this
+            # short-circuit is bypassed, the prompts have the data.
+            if _is_toxic:
+                _toxic_reason = f"TOXIC_SETUP: {_regime_key} WR={_reg_wr:.1f}% n={_reg_n}"
+                logger.warning(
+                    f"[{trace_id}][{symbol}] LLM-FIRST TOXIC BLOCK: "
+                    f"{_regime_key} WR={_reg_wr:.1f}% n={_reg_n} — "
+                    f"hard-blocked before LLM call"
+                )
+                # Record counterfactual for learning
+                if self.counterfactual:
+                    try:
+                        self.counterfactual.record_veto(
+                            symbol=symbol,
+                            side=raw_signal.side,
+                            entry_price=raw_signal.entry,
+                            sl_price=raw_signal.sl,
+                            tp1_price=raw_signal.tp1,
+                            tp2_price=raw_signal.tp2,
+                            confidence=raw_signal.confidence,
+                            reason=_toxic_reason,
+                        )
+                    except Exception:
+                        pass
+                # Track rejection in signal_outcomes.jsonl
+                self._track_llm_first_outcome(
+                    raw_signal, symbol,
+                    passed=False, hard_rejected=True,
+                    reason=_toxic_reason, stage="toxic_block",
+                    metadata={"regime_wr": _reg_wr, "regime_n": _reg_n, "regime": _regime},
+                )
+                return
+        except Exception as e:
+            logger.debug(f"[{trace_id}][{symbol}] edge_data load failed: {e}")
 
         # Add reflection/exhaustion context if available
         try:
@@ -6499,6 +6654,18 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     )
                 except Exception:
                     pass
+            # Track rejection in signal_outcomes.jsonl
+            self._track_llm_first_outcome(
+                raw_signal, symbol,
+                passed=False, hard_rejected=False,
+                reason=f"LLM veto: {_thesis}",
+                stage="llm_skip",
+                metadata={
+                    "llm_confidence": entry_decision.confidence,
+                    "llm_regime": entry_decision.regime,
+                    "thesis": _thesis,
+                },
+            )
             return
 
         # ── Step 4: Post-LLM safety caps ──
@@ -6621,6 +6788,22 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             f"qty={qty:.6f} @ ${actual_entry:.4f} "
             f"lev={leverage:.1f}x SL=${adj_sl:.4f} TP1=${adj_tp1:.4f} "
             f"regime={_regime} thesis={_thesis[:60]}"
+        )
+
+        # Track successful LLM-first execution
+        self._track_llm_first_outcome(
+            raw_signal, symbol,
+            passed=True, hard_rejected=False,
+            reason="LLM approved",
+            stage="llm_execute",
+            metadata={
+                "llm_confidence": entry_decision.confidence,
+                "llm_regime": _regime,
+                "leverage": leverage,
+                "qty": qty,
+                "entry": actual_entry,
+                "thesis": _thesis[:100],
+            },
         )
 
         # Build entry reasons for position manager

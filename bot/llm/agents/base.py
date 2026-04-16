@@ -77,19 +77,19 @@ class AgentConfig:
 DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     AgentRole.REGIME: AgentConfig(
         role=AgentRole.REGIME,
-        max_tokens=512,   # JSON output: regime + bias + confidence. 512 is plenty.
+        max_tokens=1200,  # JSON: regime + outlook + factors + transition + regime_momentum. Forensic 2026-04-14: 26 truncations at 512 caused 4 pipeline aborts + degradation cascade.
         timeout_s=30.0,
         required=True,
     ),
     AgentRole.TRADE: AgentConfig(
         role=AgentRole.TRADE,
-        max_tokens=800,   # JSON: action + thesis + sizing. Was 3072, caused truncation.
+        max_tokens=2500,  # Sonnet produces verbose reasoning. 1400 truncated at 9691-in/1400-out on enriched LLM-first context. 2500 matches Scout/Overseer working cap.
         timeout_s=60.0,
         required=True,
     ),
     AgentRole.RISK: AgentConfig(
         role=AgentRole.RISK,
-        max_tokens=512,   # JSON: size_mult + flags. Lean output.
+        max_tokens=1000,  # JSON: sz + leverage + risk_pct + sw dict + risks array + override + sizing_rationale. 512 truncated on LLM-first.
         timeout_s=40.0,
         required=False,
     ),
@@ -101,7 +101,7 @@ DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     ),
     AgentRole.CRITIC: AgentConfig(
         role=AgentRole.CRITIC,
-        max_tokens=800,   # JSON: verdict + counter-thesis. Was 3072, caused truncation.
+        max_tokens=1500,  # JSON: verdict + counter_thesis + objections array + adjusted_confidence + reason. Sonnet tends to be verbose.
         timeout_s=60.0,
         required=False,
     ),
@@ -113,19 +113,19 @@ DEFAULT_AGENT_CONFIGS: Dict[AgentRole, AgentConfig] = {
     ),
     AgentRole.SCOUT: AgentConfig(
         role=AgentRole.SCOUT,
-        max_tokens=700,   # JSON: watchlist (1-3 items). 500 caused truncation.
+        max_tokens=2500,  # JSON: watchlist + regime_forecast + lead_lag + risk_budget. 500/700/1200 all truncated; matched Overseer's working cap.
         timeout_s=30.0,
         required=False,
     ),
     AgentRole.OVERSEER: AgentConfig(
         role=AgentRole.OVERSEER,
-        max_tokens=800,   # JSON: system health + recommendations. 600 caused truncation.
+        max_tokens=2500,  # JSON: 5 recs × 7 fields + theses + adjustments + agent_feedback. 600/800/1500 all truncated.
         timeout_s=40.0,
         required=False,
     ),
     AgentRole.QUANT: AgentConfig(
         role=AgentRole.QUANT,
-        max_tokens=512,   # JSON: EV + Kelly + stats. Numbers, not prose.
+        max_tokens=1500,  # Rich schema (ev, conditional_edge, probability, risk_profile, kelly, signal_quality, reasoning). 512 and 1000 both truncated on LLM-first enriched input.
         timeout_s=25.0,
         required=False,
     ),

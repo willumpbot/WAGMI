@@ -65,11 +65,16 @@ class TestAgentBaseTypes:
 
     def test_agent_config_max_tokens(self):
         from llm.agents.base import DEFAULT_AGENT_CONFIGS, AgentRole
-        # Regime agent should have smaller token budget than Trade
-        assert DEFAULT_AGENT_CONFIGS[AgentRole.REGIME].max_tokens <= DEFAULT_AGENT_CONFIGS[AgentRole.TRADE].max_tokens
-        # All core agents right-sized (400-1000) to prevent JSON truncation
-        assert DEFAULT_AGENT_CONFIGS[AgentRole.TRADE].max_tokens <= 1024
-        assert DEFAULT_AGENT_CONFIGS[AgentRole.REGIME].max_tokens <= 1024
+        # Core agents must be sized to hold their full JSON schema without
+        # truncation. Forensic evidence (2026-04-14) showed Regime@512 and
+        # Trade@800 both truncated on rich enriched-context calls, and Trade
+        # @1400 also truncated on LLM-first 9691-input calls. Caps below are
+        # real-world minimums, not theoretical lower bounds.
+        assert DEFAULT_AGENT_CONFIGS[AgentRole.REGIME].max_tokens >= 800
+        assert DEFAULT_AGENT_CONFIGS[AgentRole.TRADE].max_tokens >= 800
+        # Upper bound prevents runaway outputs (cost protection).
+        assert DEFAULT_AGENT_CONFIGS[AgentRole.REGIME].max_tokens <= 3000
+        assert DEFAULT_AGENT_CONFIGS[AgentRole.TRADE].max_tokens <= 3000
 
 
 # ---------------------------------------------------------------------------

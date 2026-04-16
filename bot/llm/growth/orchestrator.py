@@ -453,8 +453,13 @@ class GrowthOrchestrator:
         if (now - self._last_overseer_time) >= 1800:  # 30 minutes
             try:
                 from llm.agents.coordinator import is_multi_agent_enabled, get_coordinator
+                from llm.autonomy import get_llm_mode, should_call_llm
                 overseer_enabled = os.environ.get("AGENT_OVERSEER_ENABLED", "true").lower()
-                if is_multi_agent_enabled() and overseer_enabled not in ("0", "false", "no"):
+                # Finding 5 (2026-04-15): Overseer was running even with
+                # LLM_MODE=0. Add the master gate so "LLM off" really means off.
+                if (should_call_llm(get_llm_mode())
+                        and is_multi_agent_enabled()
+                        and overseer_enabled not in ("0", "false", "no")):
                     coordinator = get_coordinator()
                     result = coordinator.run_overseer()
                     if result:

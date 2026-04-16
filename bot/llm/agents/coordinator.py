@@ -1294,6 +1294,20 @@ class AgentCoordinator:
         elapsed_ms = int((time.monotonic() - start) * 1000)
 
         if decision is None:
+            # Detect budget exhaustion as a specific, expected case so the
+            # log distinguishes it from real pipeline bugs. Budget exhaustion
+            # is self-healing at 00:00 UTC when cost_tracker resets.
+            try:
+                from llm.cost_tracker import get_cost_tracker
+                _budget_pct = get_cost_tracker().get_budget_used_pct()
+                if _budget_pct >= 1.0:
+                    logger.info(
+                        f"[LLM-FIRST] Pipeline skipped — daily budget exhausted "
+                        f"({_budget_pct:.0%}). Resumes at 00:00 UTC."
+                    )
+                    return EntryDecision.skip("budget exhausted (resumes 00:00 UTC)")
+            except Exception:
+                pass
             logger.warning("[LLM-FIRST] Pipeline returned None — skipping trade")
             return EntryDecision.skip("LLM pipeline failure")
 
@@ -1467,13 +1481,18 @@ class AgentCoordinator:
             }],
         }
 
-        # Global context
+        # Global context — surface edge_data in `setup_mfe` and `historical_edge`
+        # so agent input builders can reach it via `_g.get("setup_mfe")`. Without
+        # this the prompts say they check TOXIC setups but receive no data.
         equity = portfolio_ctx.get("equity", 0)
+        _edge_data = signal_ctx.get("edge_data", {}) or {}
         global_ctx = {
             "equity": equity,
             "eq": equity,
             "daily_pnl": portfolio_ctx.get("daily_pnl", 0),
             "open_count": portfolio_ctx.get("open_positions_count", 0),
+            "setup_mfe": _edge_data,
+            "historical_edge": _edge_data,
         }
 
         # Positions
@@ -1529,6 +1548,12 @@ class AgentCoordinator:
             # Portfolio context
             "portfolio_correlation": portfolio_ctx.get("correlation_matrix"),
             "circuit_breaker_proximity": portfolio_ctx.get("circuit_breaker_proximity"),
+            # Historical edge — surface TOXIC/verdict/WR so agents can block bad setups
+            "historical_edge": _edge_data,
+            "is_toxic": bool(_edge_data.get("is_toxic", False)),
+            "regime_wr": _edge_data.get("regime_wr"),
+            "regime_n": _edge_data.get("regime_n"),
+            "setup_verdict": _edge_data.get("verdict", ""),
         }
         snapshot["signal_metadata"] = signal_meta
 
@@ -1937,6 +1962,21 @@ class AgentCoordinator:
 
         # Build comprehensive system state for the Overseer
         overseer_input = self._build_overseer_input()
+
+        # Cold-start guard: if the state dict is near-empty (fresh bot, no
+        # accumulated self-performance / survival / deep memory data), the
+        # Overseer will hallucinate filler to fill its rich JSON schema and
+        # truncate. Forensic 2026-04-14 showed a 599-input / 2500-output
+        # truncated garbage call. Skip instead of burning budget on nothing.
+        MIN_OVERSEER_INPUT_CHARS = 1500
+        if len(overseer_input) < MIN_OVERSEER_INPUT_CHARS:
+            logger.info(
+                f"[MULTI-AGENT] Overseer skipped: input too thin "
+                f"({len(overseer_input)} chars < {MIN_OVERSEER_INPUT_CHARS} min). "
+                f"Warm up with trade history before running."
+            )
+            return None
+
         out = self._call_agent(AgentRole.OVERSEER, overseer_input, model_for_trigger)
 
         if not out.ok:
@@ -2651,27 +2691,46 @@ class AgentCoordinator:
             except Exception:
                 pass
 
-        # Prepend protocol, calibration, brain, and context to the agent's system prompt
-        enhanced_prompt = prompt
+        # Build the dynamic prefix separately from the stable agent prompt so
+        # Anthropic prompt caching can hit on repeated calls. The stable
+        # agent prompt (`prompt`) is passed as `cacheable_prefix` — it's
+        # bytewise identical across calls to the same agent. The dynamic
+        # content (calibration, brain, protocol, shared_context) is in the
+        # second non-cached block via `system_prompt`.
+        dynamic_parts = []
         if calibration_prefix:
-            enhanced_prompt = f"CALIBRATION: {calibration_prefix}\n\n{enhanced_prompt}"
+            dynamic_parts.append(f"CALIBRATION: {calibration_prefix}")
         if brain_prefix:
-            enhanced_prompt = f"BRAIN: {brain_prefix}\n\n{enhanced_prompt}"
+            dynamic_parts.append(f"BRAIN: {brain_prefix}")
         if protocol_prefix:
-            enhanced_prompt = f"{protocol_prefix}\n\n{enhanced_prompt}"
+            dynamic_parts.append(protocol_prefix)
         if shared_context:
-            enhanced_prompt = f"{enhanced_prompt}\n\nSHARED CONTEXT: {shared_context}"
+            dynamic_parts.append(f"SHARED CONTEXT: {shared_context}")
+        dynamic_prefix = "\n\n".join(dynamic_parts) if dynamic_parts else ""
 
         model = config.model_override or fallback_model or _get_default_model(role)
 
-        raw_text, usage = call_llm(
-            system_prompt=enhanced_prompt,
-            snapshot_json=input_json,
-            model=model,
-            max_tokens=config.max_tokens,
-            max_retries=1,  # Agents get 1 retry (speed > reliability)
-            timeout=config.timeout_s,
-        )
+        # If there's dynamic content, split into two blocks; otherwise cache
+        # the whole agent prompt in a single block.
+        if dynamic_prefix:
+            raw_text, usage = call_llm(
+                system_prompt=dynamic_prefix,  # non-cached dynamic content
+                snapshot_json=input_json,
+                model=model,
+                max_tokens=config.max_tokens,
+                max_retries=1,
+                timeout=config.timeout_s,
+                cacheable_prefix=prompt,  # stable agent prompt, cached
+            )
+        else:
+            raw_text, usage = call_llm(
+                system_prompt=prompt,
+                snapshot_json=input_json,
+                model=model,
+                max_tokens=config.max_tokens,
+                max_retries=1,
+                timeout=config.timeout_s,
+            )
 
         self._call_count += 1
         in_tok = usage.get("input_tokens", 0)

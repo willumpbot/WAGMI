@@ -106,7 +106,7 @@ The day_summary should be a 1-sentence theme for the day.
 
         try:
             response = llm.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-5-20250929",
                 max_tokens=4000,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],

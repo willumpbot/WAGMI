@@ -114,7 +114,7 @@ class ContentEngine:
 
         try:
             response = client.messages.create(
-                model="claude-sonnet-4-20250514",  # Sonnet for quality content
+                model="claude-sonnet-4-5-20250929",  # Sonnet for quality content
                 max_tokens=1500,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
@@ -155,7 +155,7 @@ Example: ["Hook tweet here", "Second point...", "Third point...", "CTA tweet"]
 
         try:
             response = client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-5-20250929",
                 max_tokens=2000,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],

@@ -1215,7 +1215,9 @@ class PositionManager:
         elif action == "SL":
             if tp1_was_hit:
                 return "TP1_THEN_SL"
-            return "CLEAN_LOSS"
+            # Trailing SL can move above entry on strong moves without TP1_HIT
+            # having fired. A closed-at-profit SL trigger is a win, not a loss.
+            return "CLEAN_WIN" if win else "CLEAN_LOSS"
         elif tp1_was_hit and not win:
             return "TP1_ONLY"
         else:

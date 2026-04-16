@@ -29,12 +29,14 @@ logger = logging.getLogger("bot.llm.cost_tracker")
 _COST_DIR = os.path.join("data", "llm")
 _COST_PATH = os.path.join(_COST_DIR, "cost_tracker.json")
 
-# Model pricing per 1M tokens (input, output) — must match usage_tiers.py
+# Model pricing per 1M tokens — must match usage_tiers.py
+# Tuple order: (uncached_input, output, cache_write_5m, cache_read)
+# Anthropic prompt caching multipliers: write=1.25x uncached, read=0.10x uncached.
 _MODEL_PRICING = {
     # Actual Anthropic pricing as of 2026-04
-    "claude-haiku-4-5-20251001": (0.80, 4.0),
-    "claude-sonnet-4-5-20250929": (3.0, 15.0),
-    "claude-opus-4-20250115": (15.0, 75.0),
+    "claude-haiku-4-5-20251001": (0.80, 4.0, 1.00, 0.08),
+    "claude-sonnet-4-5-20250929": (3.0, 15.0, 3.75, 0.30),
+    "claude-opus-4-20250115": (15.0, 75.0, 18.75, 1.50),
 }
 
 # Model IDs for downgrade chain
@@ -75,26 +77,39 @@ class CostTracker:
         input_tokens: int,
         output_tokens: int,
         model: str,
+        cache_read_tokens: int = 0,
+        cache_create_tokens: int = 0,
     ):
         """Record an API call and its cost.
 
         Args:
-            input_tokens: Number of input tokens used
-            output_tokens: Number of output tokens used
+            input_tokens: Uncached input tokens (Anthropic API semantics:
+                this does NOT include cache_read or cache_create)
+            output_tokens: Output tokens generated
             model: Model ID used for the call
+            cache_read_tokens: Tokens served from prompt cache (0.10x price)
+            cache_create_tokens: Tokens written to prompt cache (1.25x price)
         """
         self._maybe_reset_daily()
 
-        # Calculate cost
-        pricing = _MODEL_PRICING.get(model, (3.0, 15.0))  # Default to Sonnet pricing
-        input_cost = (input_tokens / 1_000_000) * pricing[0]
+        # Pricing: (uncached_in, out, cache_write, cache_read)
+        pricing = _MODEL_PRICING.get(model, (3.0, 15.0, 3.75, 0.30))
+        uncached_in_cost = (input_tokens / 1_000_000) * pricing[0]
         output_cost = (output_tokens / 1_000_000) * pricing[1]
-        total_cost = input_cost + output_cost
+        cache_write_cost = (cache_create_tokens / 1_000_000) * pricing[2]
+        cache_read_cost = (cache_read_tokens / 1_000_000) * pricing[3]
+        total_cost = uncached_in_cost + output_cost + cache_write_cost + cache_read_cost
 
         self._today_spend += total_cost
         self._calls_today += 1
         self._calls_by_model[model] = self._calls_by_model.get(model, 0) + 1
         self._spend_by_model[model] = self._spend_by_model.get(model, 0.0) + total_cost
+        # Track cache hit/write stats for visibility
+        if cache_read_tokens > 0:
+            self._cache_read_tokens_today = getattr(self, "_cache_read_tokens_today", 0) + cache_read_tokens
+            self._cache_hits_today = getattr(self, "_cache_hits_today", 0) + 1
+        if cache_create_tokens > 0:
+            self._cache_create_tokens_today = getattr(self, "_cache_create_tokens_today", 0) + cache_create_tokens
 
         # Save every 5 calls
         if self._calls_today % 5 == 0:
@@ -171,8 +186,10 @@ class CostTracker:
         return preferred_model
 
     def get_stats(self) -> Dict[str, Any]:
-        """Get current cost tracking stats."""
+        """Get current cost tracking stats, including cache hit rate."""
         self._maybe_reset_daily()
+        cache_hits = getattr(self, "_cache_hits_today", 0)
+        cache_hit_rate = (cache_hits / self._calls_today) if self._calls_today > 0 else 0.0
         return {
             "today_spend": round(self._today_spend, 4),
             "budget": self.daily_budget,
@@ -184,6 +201,9 @@ class CostTracker:
             "spend_by_model": {
                 k: round(v, 4) for k, v in self._spend_by_model.items()
             },
+            "cache_hit_rate": round(cache_hit_rate, 3),
+            "cache_read_tokens": getattr(self, "_cache_read_tokens_today", 0),
+            "cache_create_tokens": getattr(self, "_cache_create_tokens_today", 0),
             "date": self._today_date,
         }
 
@@ -210,7 +230,7 @@ class CostTracker:
             self._today_date = today
 
     def _save_state(self):
-        """Persist state to disk."""
+        """Persist state to disk, including prompt-cache metrics."""
         os.makedirs(_COST_DIR, exist_ok=True)
         try:
             state = {
@@ -220,6 +240,11 @@ class CostTracker:
                 "calls_by_model": self._calls_by_model,
                 "spend_by_model": self._spend_by_model,
                 "budget": self.daily_budget,
+                # Prompt caching metrics — persisted so cache hit rate can
+                # be tracked across restarts.
+                "cache_read_tokens": getattr(self, "_cache_read_tokens_today", 0),
+                "cache_create_tokens": getattr(self, "_cache_create_tokens_today", 0),
+                "cache_hits": getattr(self, "_cache_hits_today", 0),
             }
             with open(_COST_PATH, "w") as f:
                 json.dump(state, f, indent=2)
@@ -227,7 +252,7 @@ class CostTracker:
             logger.warning(f"[COST] Failed to save state: {e}")
 
     def _load_state(self):
-        """Load state from disk."""
+        """Load state from disk, including prompt-cache metrics."""
         if not os.path.exists(_COST_PATH):
             return
         try:
@@ -241,9 +266,16 @@ class CostTracker:
                 self._calls_today = state.get("calls", 0)
                 self._calls_by_model = state.get("calls_by_model", {})
                 self._spend_by_model = state.get("spend_by_model", {})
+                # Cache metrics (backward-compatible: older state files lack these)
+                self._cache_read_tokens_today = state.get("cache_read_tokens", 0)
+                self._cache_create_tokens_today = state.get("cache_create_tokens", 0)
+                self._cache_hits_today = state.get("cache_hits", 0)
+                _cache_tag = ""
+                if self._cache_hits_today > 0:
+                    _cache_tag = f", cache_hits={self._cache_hits_today}"
                 logger.info(
                     f"[COST] Resumed: ${self._today_spend:.2f} "
-                    f"across {self._calls_today} calls today"
+                    f"across {self._calls_today} calls today{_cache_tag}"
                 )
         except Exception as e:
             logger.warning(f"[COST] Failed to load state: {e}")

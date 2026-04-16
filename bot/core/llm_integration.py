@@ -143,11 +143,49 @@ class LLMIntegrationMixin:
             )
 
         if result.decision is None:
-            # Fail-closed on API errors: skip trade rather than trade blind
-            if result.reason and "api_error" in str(result.reason):
+            # Fail-closed categories: LLM-ran-but-unparseable or API failure.
+            # These mean we cannot trust the LLM went through its safety checks.
+            # Throttled/not-triggered are user config, not failures — proceed.
+            reason_str = str(result.reason or "")
+            # Finding 18 (2026-04-15): Expanded fail-closed markers so real API
+            # failures actually trip the fail-closed branch. Previous list used
+            # substring matches like "api_error" which did NOT match
+            # "api_status_400" (credit balance errors). Now we match on status
+            # codes and concrete error shapes directly.
+            fail_closed_markers = (
+                "api_error",
+                "api_status_",        # matches api_status_400/403/429/500/503
+                "api_status",         # defensive, same concept
+                "status_400",
+                "status_401",
+                "status_402",
+                "status_403",
+                "status_429",         # rate limit
+                "status_500",
+                "status_502",
+                "status_503",
+                "credit",             # "credit balance is too low"
+                "insufficient",
+                "quota",
+                "rate_limit",
+                "rate limit",
+                "connection_error",
+                "connection error",
+                "network",
+                "validation_error",
+                "sanitization_error",
+                "sanitization_exception",
+                "parse_error",
+                "schema_error",
+                "max_retries_exceeded",
+                "timeout",
+            )
+            is_fail_closed = any(m in reason_str for m in fail_closed_markers)
+
+            if is_fail_closed:
                 logger.warning(
                     f"[{trace_id}][{candidate.symbol}] LLM veto: "
-                    f"API error ({result.reason}), SKIPPING trade (fail-closed)"
+                    f"{reason_str}, SKIPPING trade (fail-closed)"
                 )
                 from llm.decision_types import LLMDecision
                 flat_decision = LLMDecision(
@@ -155,20 +193,21 @@ class LLMIntegrationMixin:
                     confidence=0.0,
                     regime="unknown",
                     size_mult=0.0,
-                    reasoning=f"fail-closed: {result.reason}",
+                    reasoning=f"fail-closed: {reason_str}",
                     raw_response="",
                 )
                 from llm.decision_engine import DecisionResult
                 return DecisionResult(
                     decision=flat_decision,
-                    reason="fail_closed_api_error",
+                    reason=f"fail_closed:{reason_str}",
                     source="safety",
                     is_veto=True,
                 )
-            # Non-API failures (throttle, parse) still default to proceed
+            # Throttled / not-triggered / missing: legitimate LLM-not-consulted,
+            # proceed with bot's own decision.
             logger.info(
                 f"[{trace_id}][{candidate.symbol}] LLM veto: "
-                f"no decision ({result.reason}), defaulting to proceed"
+                f"no decision ({reason_str}), proceeding (non-failure reason)"
             )
             return None
 
@@ -927,6 +966,11 @@ class LLMIntegrationMixin:
         """
         try:
             from llm.agents.coordinator import get_coordinator, is_multi_agent_enabled
+            from llm.autonomy import get_llm_mode, should_call_llm
+            # Finding 5 (2026-04-15): Scout agent was running when LLM_MODE=0,
+            # silently burning credits. Respect the master gate.
+            if not should_call_llm(get_llm_mode()):
+                return
             if not is_multi_agent_enabled():
                 return
             coordinator = get_coordinator()

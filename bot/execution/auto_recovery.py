@@ -298,6 +298,22 @@ def wait_for_exchange(
         logger.warning("[RECOVERY] No Hyperliquid exchange configured")
         return False
 
+    # Paper mode: skip the fetch_positions probe. Hyperliquid's fetch_positions
+    # requires a wallet address (DEX, not API-key auth). Paper mode has no
+    # real wallet and no on-exchange positions to reconcile. Use fetch_ticker
+    # as a cheap reachability probe instead.
+    if os.environ.get("ENVIRONMENT", "").lower() == "paper":
+        try:
+            exchange.fetch_ticker("BTC/USDC:USDC")
+            logger.info("[RECOVERY] Exchange reachable (paper mode, ticker probe)")
+            return True
+        except Exception as e:
+            logger.warning(
+                f"[RECOVERY] Exchange ticker probe failed in paper mode: {e}. "
+                f"Continuing with persisted state only."
+            )
+            return False
+
     for attempt in range(1, max_retries + 1):
         try:
             exchange.fetch_positions()
@@ -398,8 +414,10 @@ def startup_recovery(
         result["errors"].append(f"reconciliation_failed: {e}")
 
     # Step 5: Detect phantoms (we think open, exchange says closed)
+    # Paper mode: no real positions on exchange, skip phantom detection entirely.
     exchange = exchanges.get("hyperliquid")
-    if exchange:
+    _is_paper = os.environ.get("ENVIRONMENT", "").lower() == "paper"
+    if exchange and not _is_paper:
         try:
             from execution.reconciliation import _PAIR_TO_SYMBOL
             raw_positions = exchange.fetch_positions()

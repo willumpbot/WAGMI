@@ -47,20 +47,24 @@ SYMBOL_SECTORS: Dict[str, List[str]] = {
 
 # Maximum notional exposure per sector as fraction of total portfolio equity.
 SECTOR_CAPS: Dict[str, float] = {
-    "crypto_beta":    0.80,  # max 80% in general crypto-correlated assets
-    "l1":             0.60,  # max 60% in L1 chains
-    "l2":             0.30,  # max 30% in L2s
-    "smart_contract": 0.50,  # max 50% in smart contract platforms
-    "perp_dex":       0.25,  # max 25% in perp DEX tokens
-    "store_of_value": 0.50,  # BTC-like assets
-    "meme":           0.20,  # max 20% in meme coins
-    "defi":           0.40,  # max 40% in DeFi
-    "defi_infra":     0.30,  # max 30% in DeFi infrastructure
-    "oracle":         0.20,  # max 20% in oracle tokens
-    "lending":        0.20,  # max 20% in lending protocols
-    "dex":            0.25,  # max 25% in DEX tokens
-    "bridge":         0.15,  # max 15% in bridge tokens
-    "modular":        0.20,  # max 20% in modular blockchain
+    # Caps scaled for full-Kelly sizing (8% risk × 5x leverage = 40% notional per position).
+    # Previous caps assumed ~1% risk per trade and made the bot effectively single-position
+    # when running Kelly sizing. Finding 17 (2026-04-15) from the autonomous session documents
+    # the mismatch in detail. Raising l1 and crypto_beta allows 2-4 concurrent L1 positions.
+    "crypto_beta":    1.60,  # max 160% in general crypto-correlated assets (4 positions @ 40%)
+    "l1":             1.50,  # max 150% in L1 chains (3 positions @ 50% with headroom)
+    "l2":             0.60,  # max 60% in L2s (was 30 — same 2x bump)
+    "smart_contract": 1.00,  # max 100% in smart contract platforms (was 50)
+    "perp_dex":       0.50,  # max 50% in perp DEX tokens (was 25)
+    "store_of_value": 1.00,  # BTC-like assets (was 50)
+    "meme":           0.40,  # max 40% in meme coins (was 20)
+    "defi":           0.80,  # max 80% in DeFi (was 40)
+    "defi_infra":     0.60,  # max 60% in DeFi infrastructure (was 30)
+    "oracle":         0.40,  # max 40% in oracle tokens (was 20)
+    "lending":        0.40,  # max 40% in lending protocols (was 20)
+    "dex":            0.50,  # max 50% in DEX tokens (was 25)
+    "bridge":         0.30,  # max 30% in bridge tokens (was 15)
+    "modular":        0.40,  # max 40% in modular blockchain (was 20)
 }
 
 
@@ -154,11 +158,17 @@ class SectorExposure:
                     limiting_exposure = current / self.total_equity
                     limiting_cap = cap
 
-        if tightest_multiplier < 0.1:
-            # Less than 10% of requested size — effectively blocked
+        # Dust-floor: reject tiny partial positions instead of opening them.
+        # Previous threshold was 0.10 which allowed 12% "dust" positions that
+        # occupied a slot, paid full fees, but contributed negligible PnL either
+        # way. Finding 17 sub-finding: with full-Kelly sizing, anything under
+        # 30% of target is not worth the fees and slot occupation.
+        if tightest_multiplier < 0.3:
+            # Less than 30% of requested size — effectively blocked (dust)
             logger.info(
                 f"[SECTOR] {symbol} BLOCKED — {limiting_sector} at "
-                f"{limiting_exposure:.1%} (cap {limiting_cap:.0%})"
+                f"{limiting_exposure:.1%} (cap {limiting_cap:.0%}), "
+                f"size would be reduced to {tightest_multiplier:.0%} (below dust floor)"
             )
             return SectorExposureResult(
                 allowed=False, limiting_sector=limiting_sector,
