@@ -195,6 +195,110 @@ class SniperSimulator:
 
     # ── Public API ─────────────────────────────────────────────────────
 
+    def inject_manual_trade(
+        self,
+        symbol: str,
+        side: str,
+        entry_price: float,
+        leverage: float,
+        qty: float,
+        sl: Optional[float] = None,
+        tp_scalp: Optional[float] = None,
+        tp_swing: Optional[float] = None,
+        tier: str = "MANUAL",
+        notes: str = "",
+    ) -> Optional[SimPosition]:
+        """Inject a hypothetical trade into the simulator.
+
+        Lets the user (via `/siminject` Telegram command) test trade
+        ideas in the sim without requiring a real sniper signal. Supports
+        the user's 7-20x manual exploration zone. 2026-04-16 addition.
+
+        If sl/tp are omitted, defaults compute from 1% / 2% of entry
+        (adjusted for side direction).
+
+        The sim equity is INDEPENDENT from the bot's live equity.
+        """
+        symbol = symbol.upper().strip()
+        side = side.upper().strip()
+        if side == "LONG":
+            side = "BUY"
+        elif side == "SHORT":
+            side = "SELL"
+        if side not in ("BUY", "SELL"):
+            logger.warning(f"[SIM-INJECT] Invalid side: {side}")
+            return None
+
+        # Default SL/TP if not given
+        if sl is None:
+            sl = entry_price * (0.99 if side == "BUY" else 1.01)
+        if tp_scalp is None:
+            tp_scalp = entry_price * (1.02 if side == "BUY" else 0.98)
+        if tp_swing is None:
+            tp_swing = entry_price * (1.04 if side == "BUY" else 0.96)
+
+        # Avoid duplicate positions
+        for pos in self._open_positions:
+            if pos.symbol == symbol and pos.side == side:
+                logger.warning(
+                    f"[SIM-INJECT] Already have {side} on {symbol} in sim, skipping"
+                )
+                return None
+
+        self._trade_counter += 1
+        trade_id = f"MANINJ-{self._trade_counter:04d}"
+        now = time.time()
+
+        # Compute sizing based on passed qty (user-explicit)
+        position_size_usd = qty * entry_price
+        margin_required = position_size_usd / leverage if leverage > 0 else position_size_usd
+
+        # Cap margin at 95% of sim equity to prevent blowup
+        if margin_required > self._equity * 0.95:
+            scale = (self._equity * 0.95) / margin_required
+            position_size_usd *= scale
+            qty *= scale
+            margin_required *= scale
+            logger.info(f"[SIM-INJECT] Scaled down to fit 95% equity cap")
+
+        # Compute risk/reward
+        stop_width_pct = abs(entry_price - sl) / entry_price if entry_price > 0 else 0.01
+        risk_amount = position_size_usd * stop_width_pct
+        scalp_move_pct = abs(tp_scalp - entry_price) / entry_price if entry_price > 0 else 0
+        pnl_scalp = position_size_usd * scalp_move_pct
+
+        pos = SimPosition(
+            trade_id=trade_id,
+            symbol=symbol,
+            side=side,
+            tier=tier,
+            entry=entry_price,
+            sl=sl,
+            tp_scalp=tp_scalp,
+            tp_swing=tp_swing,
+            leverage=leverage,
+            risk_pct=risk_amount / max(self._equity, 1),
+            position_size_usd=round(position_size_usd, 2),
+            qty=round(qty, 6),
+            risk_amount=round(risk_amount, 2),
+            equity_at_open=round(self._equity, 2),
+            opened_at=datetime.now(timezone.utc).isoformat(),
+            time_opened=now,
+            confidence=0.0,  # User-injected, no bot confidence
+            num_agree=0,
+            regime="manual_injection",
+            signal_context=f"[MANUAL INJECTION] {notes}" if notes else "[MANUAL INJECTION]",
+        )
+
+        self._open_positions.append(pos)
+        logger.info(
+            f"[SIM-INJECT] Opened {trade_id} | {symbol} {side} @ ${entry_price:.4g} "
+            f"{leverage:.1f}x qty={qty:.4f} SL=${sl:.4g} TP1=${tp_scalp:.4g} "
+            f"sim_equity=${self._equity:.2f}"
+        )
+        self._save_status()
+        return pos
+
     def on_signal(self, sniper_signal) -> Optional[SimPosition]:
         """
         Called when a SniperSignal passes all filters.

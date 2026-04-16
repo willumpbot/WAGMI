@@ -1955,6 +1955,33 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             except Exception as e:
                 logger.debug(f"[{trace_id}] Daily summary error: {e}")
 
+        # Morning briefing (2026-04-16): wall-clock-based, sends the /briefing
+        # multi-window snapshot to Telegram at 08:00 UTC daily regardless of
+        # tick count drift. User asked: "I want the briefing on my phone first
+        # thing in the morning without typing anything."
+        try:
+            from datetime import datetime as _dt, timezone as _tz
+            _now_utc = _dt.now(_tz.utc)
+            _last_morning = getattr(self, "_last_morning_briefing_date", None)
+            _today_str = _now_utc.strftime("%Y-%m-%d")
+            # Fire once between 08:00 and 08:59 UTC, at most one per day
+            if (_now_utc.hour == 8
+                    and _last_morning != _today_str
+                    and hasattr(self, "alerts") and self.alerts
+                    and getattr(self.alerts, "telegram_token", None)
+                    and getattr(self.alerts, "telegram_chat_id", None)):
+                try:
+                    # Build the briefing inline (use the same logic as /briefing
+                    # command but without requiring a telegram_bot instance).
+                    _briefing_msg = self._build_morning_briefing_message()
+                    self.alerts._send_telegram(_briefing_msg)
+                    self._last_morning_briefing_date = _today_str
+                    logger.info(f"[MORNING-BRIEFING] Sent for {_today_str}")
+                except Exception as _mb_err:
+                    logger.debug(f"[MORNING-BRIEFING] Send error: {_mb_err}")
+        except Exception:
+            pass
+
         # Position aging alerts: flag positions held too long with adverse funding
         # Runs every 10th tick (~10 min at 60s intervals)
         if self._tick % 10 == 0:
@@ -7127,6 +7154,95 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
 
 
+
+    def _build_morning_briefing_message(self) -> str:
+        """Build the morning briefing message for 08:00 UTC auto-send.
+
+        Phone-first, scannable, multi-window PnL so the user sees the
+        true state without needing to type /briefing. 2026-04-16 addition.
+        """
+        from datetime import datetime, timezone, timedelta
+        import csv
+
+        now = datetime.now(timezone.utc)
+        cutoff_24h = now - timedelta(hours=24)
+        cutoff_7d = now - timedelta(days=7)
+        today_str = now.strftime("%Y-%m-%d")
+
+        trades_today = []
+        trades_24h = []
+        trades_7d = []
+
+        try:
+            with open("data/trades.csv", "r", encoding="utf-8") as f:
+                r = csv.reader(f)
+                next(r, None)
+                for row in r:
+                    try:
+                        ts = row[0]
+                        pnl = float(row[10])
+                        tdt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                        if tdt.tzinfo is None:
+                            tdt = tdt.replace(tzinfo=timezone.utc)
+                        if ts.startswith(today_str):
+                            trades_today.append(pnl)
+                        if tdt >= cutoff_24h:
+                            trades_24h.append(pnl)
+                        if tdt >= cutoff_7d:
+                            trades_7d.append(pnl)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+
+        def _winline(label, trades):
+            if not trades:
+                return f"  *{label}*: no trades"
+            n = len(trades)
+            wins = sum(1 for p in trades if p > 0)
+            net = sum(trades)
+            emoji = "📈" if net > 0 else ("📉" if net < 0 else "➡️")
+            return f"  {emoji} *{label}*: {n} trades, {wins}W/{n-wins}L, net ${net:+.2f}"
+
+        lines = [
+            "☀️ *Good morning — WAGMI Briefing*",
+            f"_{now.strftime('%Y-%m-%d %H:%M UTC')}_",
+            "",
+            f"💰 *Equity*: ${self.risk_mgr.equity:,.2f}",
+            _winline("Today (since UTC 00:00)", trades_today),
+            _winline("Last 24h rolling", trades_24h),
+            _winline("Last 7d rolling", trades_7d),
+            "",
+        ]
+
+        # Open positions
+        try:
+            open_pos = [p for p in self.pos_mgr.positions.values() if p.qty > 0]
+            lines.append(f"💼 *Open*: {len(open_pos)} position{'s' if len(open_pos) != 1 else ''}")
+            for p in open_pos[:5]:
+                side_emoji = "🟢" if p.side == "LONG" else "🔴"
+                lines.append(f"  {side_emoji} {p.symbol} {p.side} @ ${p.entry:.4g} ({p.state})")
+            if not open_pos:
+                lines.append("  (flat — scanning)")
+        except Exception:
+            pass
+
+        # Recent WATCH alerts
+        try:
+            from alerts.premium_filter import _last_watch_alert, _WATCH_ALERT_COOLDOWN_S
+            import time as _t
+            now_ts = _t.time()
+            recent = [k for k, t in _last_watch_alert.items() if (now_ts - t) < _WATCH_ALERT_COOLDOWN_S]
+            if recent:
+                lines.append("")
+                lines.append(f"🔔 *Watching* ({len(recent)} setups forming)")
+        except Exception:
+            pass
+
+        lines.append("")
+        lines.append("*Quick actions:*")
+        lines.append("/briefing • /positions • /watch • /edges • /ask <q>")
+        return "\n".join(lines)
 
     def _send_daily_summary(self):
         """Send daily summary via Telegram alert bridge."""

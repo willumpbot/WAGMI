@@ -73,8 +73,20 @@ class ManualSniperConfig:
     leverage_tier_4: float = field(default_factory=lambda: _env_float("MANUAL_LEV_T4", 25.0))  # SNIPER
     leverage_tier_5: float = field(default_factory=lambda: _env_float("MANUAL_LEV_T5", 25.0))  # MAX (90%+ conf)
     max_leverage: float = field(default_factory=lambda: _env_float("MANUAL_MAX_LEVERAGE", 25.0))
-    # Hard cap for sniper_premium trades — one 9.7x trade wiped 26 wins
-    max_sniper_leverage: float = field(default_factory=lambda: _env_float("MANUAL_MAX_SNIPER_LEVERAGE", 5.0))
+    # TWO caps — separate because they serve different purposes (2026-04-16 split):
+    #
+    # `max_sniper_leverage` — ceiling on what the sniper filter EMITS as
+    #   signals. Applies to both sim and Telegram-alert flows. User wants
+    #   to explore 7-20x manually, so this is the user's exploration
+    #   ceiling. Raised from 5.0 to 20.0 so sim/alerts cover the target
+    #   range instead of being clamped below 7x.
+    #
+    # `max_auto_exec_leverage` — ceiling ONLY when SNIPER_AUTO_EXECUTE=true.
+    #   This is the safety cap that matters for unsupervised real-money
+    #   trades (the original "one 9.7x trade wiped 26 wins" concern).
+    #   Stays at 5.0.
+    max_sniper_leverage: float = field(default_factory=lambda: _env_float("MANUAL_MAX_SNIPER_LEVERAGE", 20.0))
+    max_auto_exec_leverage: float = field(default_factory=lambda: _env_float("MANUAL_MAX_AUTO_EXEC_LEVERAGE", 5.0))
 
     # ── Risk per trade (% of equity) ──
     # Aggressive on $100: we NEED to size up on best signals to compound

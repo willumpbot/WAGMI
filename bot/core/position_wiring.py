@@ -433,6 +433,25 @@ class PositionWiringMixin:
             risk_tier="medium",
         )
         leverage = _kelly_decision.leverage
+        # Auto-exec safety cap (2026-04-16): the sniper emits up to 20x now
+        # for manual exploration, but auto-executed trades get clamped to
+        # the tighter auto-exec cap (default 5x). This is the "can never
+        # unsupervised-blow-up like the -$147 SOL SHORT at 9.7x" safety.
+        try:
+            from manual.config import ManualSniperConfig as _MSC
+            _auto_exec_cap = getattr(
+                _MSC(), "max_auto_exec_leverage", 5.0
+            )
+            if leverage > _auto_exec_cap:
+                logger.info(
+                    f"[SNIPER-EXEC] {symbol} leverage clamped "
+                    f"{leverage:.1f}x -> {_auto_exec_cap:.1f}x (auto-exec cap)"
+                )
+                leverage = _auto_exec_cap
+        except Exception as _cap_err:
+            # On any error, fall back to hard 5x cap (defense in depth)
+            logger.warning(f"[SNIPER-EXEC] auto-exec cap load failed: {_cap_err}; using 5x fallback")
+            leverage = min(leverage, 5.0)
         # Recalculate qty with Kelly leverage and Full Kelly risk
         _stop_dist = abs(current_price - sniper_sig.sl)
         if _stop_dist > 0:

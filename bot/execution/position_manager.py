@@ -535,8 +535,19 @@ class PositionManager:
         if current_price < pos.lowest_price:
             pos.lowest_price = current_price
 
-        # 0a. PROFIT LOCK: move SL to breakeven once we're up 0.3R+
+        # 0a. PROFIT LOCK: move SL toward breakeven once we're up enough.
         # Never ride a winner back to a loser. We can always re-enter.
+        #
+        # Finding 22 trail audit (2026-04-16): old 0.3R trigger was firing
+        # on market noise — at ~0.3% profit on a 1% stop, within normal
+        # intraday wiggle. 58 historical trades closed within ±0.5% of
+        # entry with no TP1 hit = -$47.77 of noise losses from this.
+        #
+        # New profile-aware thresholds (SCALP keeps tight, MEDIUM/TREND
+        # get patience):
+        #   SCALP:  0.3R -> BE, 0.6R -> lock 0.3R  (as before)
+        #   MEDIUM: 0.6R -> BE, 1.0R -> lock 0.3R
+        #   TREND:  0.8R -> BE, 1.2R -> lock 0.4R
         if pos.state == OPEN:
             sl_dist = abs(pos.entry - pos.original_sl)
             if sl_dist > 0:
@@ -545,34 +556,54 @@ class PositionManager:
                 else:
                     unrealized_r = (pos.entry - current_price) / sl_dist
 
-                # At 0.3R profit: move SL to breakeven (entry price)
-                if unrealized_r >= 0.3:
+                # Determine profile-aware thresholds
+                _entry_type = ""
+                _prof = getattr(pos, "trade_profile", None)
+                if _prof is not None:
+                    _entry_type = getattr(_prof, "entry_type", "") or ""
+                if _entry_type == "SCALP":
+                    _be_trigger, _lock_trigger, _lock_frac = 0.3, 0.6, 0.3
+                elif _entry_type == "TREND":
+                    _be_trigger, _lock_trigger, _lock_frac = 0.8, 1.2, 0.4
+                else:  # MEDIUM default (and unknown)
+                    _be_trigger, _lock_trigger, _lock_frac = 0.6, 1.0, 0.3
+
+                # Breakeven trigger
+                if unrealized_r >= _be_trigger:
                     be_sl = pos.entry
                     if is_long and pos.sl < be_sl:
                         pos.sl = be_sl
                         logger.info(
-                            f"[{symbol}] PROFIT LOCK: {unrealized_r:.2f}R profit -> "
+                            f"[{symbol}] PROFIT LOCK ({_entry_type or 'MEDIUM'}): "
+                            f"{unrealized_r:.2f}R >= {_be_trigger:.1f}R trigger -> "
                             f"SL moved to breakeven {be_sl}"
                         )
                     elif not is_long and pos.sl > be_sl:
                         pos.sl = be_sl
                         logger.info(
-                            f"[{symbol}] PROFIT LOCK: {unrealized_r:.2f}R profit -> "
+                            f"[{symbol}] PROFIT LOCK ({_entry_type or 'MEDIUM'}): "
+                            f"{unrealized_r:.2f}R >= {_be_trigger:.1f}R trigger -> "
                             f"SL moved to breakeven {be_sl}"
                         )
 
-                # At 0.6R profit: lock in 0.3R (SL at entry + 0.3 * sl_dist)
-                if unrealized_r >= 0.6:
+                # Lock-in trigger (above breakeven)
+                if unrealized_r >= _lock_trigger:
                     if is_long:
-                        lock_sl = pos.entry + sl_dist * 0.3
+                        lock_sl = pos.entry + sl_dist * _lock_frac
                         if pos.sl < lock_sl:
                             pos.sl = lock_sl
-                            logger.info(f"[{symbol}] PROFIT LOCK 0.3R: SL -> {lock_sl}")
+                            logger.info(
+                                f"[{symbol}] PROFIT LOCK {_lock_frac:.1f}R "
+                                f"({_entry_type or 'MEDIUM'}): SL -> {lock_sl}"
+                            )
                     else:
-                        lock_sl = pos.entry - sl_dist * 0.3
+                        lock_sl = pos.entry - sl_dist * _lock_frac
                         if pos.sl > lock_sl:
                             pos.sl = lock_sl
-                            logger.info(f"[{symbol}] PROFIT LOCK 0.3R: SL -> {lock_sl}")
+                            logger.info(
+                                f"[{symbol}] PROFIT LOCK {_lock_frac:.1f}R "
+                                f"({_entry_type or 'MEDIUM'}): SL -> {lock_sl}"
+                            )
 
         # 0b. Check stop loss — on flash crashes, SL must fire before early exit
         sl_hit = (current_price <= pos.sl) if is_long else (current_price >= pos.sl)

@@ -239,6 +239,8 @@ class TelegramCommandBot:
             "/alerts": self._cmd_alerts,
             "/briefing": self._cmd_briefing,
             "/edges": self._cmd_edges,
+            "/siminject": lambda: self._cmd_siminject(args),
+            "/simstatus": self._cmd_simstatus,
         }
         handler = handlers.get(command)
         if handler:
@@ -804,6 +806,115 @@ class TelegramCommandBot:
             return "Market intel sent."
         except Exception as e:
             return f"Intel error: {e}"
+
+    def _cmd_siminject(self, args: str) -> str:
+        """Inject a hypothetical trade into the sim for manual exploration.
+
+        Usage: /siminject SYMBOL SIDE PRICE LEVx QTY [SL] [TP]
+        Example: /siminject SOL SELL 87.50 15x 0.3 89.20 84.50
+
+        The sim equity is SEPARATE from the bot's live equity. This lets
+        you test high-leverage ideas (your 7-20x zone) without touching
+        real positions. 2026-04-16 addition.
+        """
+        try:
+            parts = args.strip().split()
+            if len(parts) < 5:
+                return (
+                    "Usage: `/siminject SYMBOL SIDE PRICE LEVx QTY [SL] [TP]`\n"
+                    "Examples:\n"
+                    "  `/siminject SOL SELL 87.50 15x 0.3`\n"
+                    "  `/siminject HYPE BUY 44.5 10x 2.0 43.90 46.0`\n\n"
+                    "SL/TP optional — defaults to 1%/2% of entry.\n"
+                    "Sim equity is independent from bot equity."
+                )
+            symbol = parts[0].upper()
+            side = parts[1].upper()
+            if side not in ("BUY", "SELL", "LONG", "SHORT"):
+                return f"Invalid side: {side}. Use BUY/SELL or LONG/SHORT."
+            entry_price = float(parts[2])
+            lev_str = parts[3].lower().rstrip("x")
+            leverage = float(lev_str)
+            qty = float(parts[4])
+            sl = float(parts[5]) if len(parts) > 5 else None
+            tp = float(parts[6]) if len(parts) > 6 else None
+
+            # Grab the simulator from the bot
+            sim = getattr(self.bot, "_manual_sim", None) or getattr(self.bot, "_manual_simulator", None)
+            if sim is None:
+                return (
+                    "Simulator not available.\n"
+                    "Enable with `MANUAL_SIMULATOR_ENABLED=true` in .env and restart."
+                )
+
+            pos = sim.inject_manual_trade(
+                symbol=symbol, side=side,
+                entry_price=entry_price, leverage=leverage, qty=qty,
+                sl=sl, tp_scalp=tp, tp_swing=None,
+                tier="MANUAL_INJECTION",
+                notes=f"User injected via /siminject",
+            )
+            if pos is None:
+                return f"⚠️ Could not inject — see logs (duplicate position or invalid input?)"
+
+            eff_side = "LONG" if pos.side == "BUY" else "SHORT"
+            dir_emoji = "🟢" if pos.side == "BUY" else "🔴"
+            stop_pct = abs(pos.entry - pos.sl) / pos.entry * 100
+            tp_pct = abs(pos.tp_scalp - pos.entry) / pos.entry * 100
+            risk_dollar = pos.risk_amount
+
+            return (
+                f"🧪 *SIM INJECTION* {dir_emoji} {eff_side} {pos.symbol}\n"
+                f"Entry: ${pos.entry:.4g}  Lev: {pos.leverage:.1f}x  Qty: {pos.qty:.4f}\n"
+                f"SL: ${pos.sl:.4g} ({stop_pct:.2f}% away)\n"
+                f"TP1: ${pos.tp_scalp:.4g} ({tp_pct:.2f}% away)\n"
+                f"Risk if SL: ${risk_dollar:.2f}\n"
+                f"Notional: ${pos.position_size_usd:,.2f}\n"
+                f"Trade ID: `{pos.trade_id}`\n\n"
+                f"Sim equity (independent from bot): ${sim._equity:,.2f}\n"
+                f"Use `/simstatus` to see all sim positions + PnL."
+            )
+        except ValueError as ve:
+            return f"Parse error: {ve}\nUsage: `/siminject SYMBOL SIDE PRICE LEVx QTY [SL] [TP]`"
+        except Exception as e:
+            return f"Injection failed: {e}"
+
+    def _cmd_simstatus(self) -> str:
+        """Show the manual simulator's current state (positions, equity, stats)."""
+        try:
+            sim = getattr(self.bot, "_manual_sim", None) or getattr(self.bot, "_manual_simulator", None)
+            if sim is None:
+                return "Simulator not available."
+            s = sim.get_status()
+            equity = s.get("equity", 0)
+            starting = s.get("starting_equity", 100)
+            pct = ((equity / starting) - 1) * 100 if starting > 0 else 0
+            open_count = len(s.get("open_positions", []))
+            closed_count = s.get("total_closed", 0)
+            wr = s.get("win_rate_pct", 0)
+            pf = s.get("profit_factor", 0)
+            lines = [
+                "🧪 *SIM STATUS*",
+                f"Equity: ${equity:,.2f}  (started ${starting:,.2f}, {pct:+.1f}%)",
+                f"Open: {open_count}  |  Closed: {closed_count}",
+                f"WR: {wr:.1f}%  |  PF: {pf:.2f}",
+                "",
+            ]
+            if open_count > 0:
+                lines.append("*Open positions*:")
+                for p in s.get("open_positions", [])[:10]:
+                    side = p.get("side", "?")
+                    side_emoji = "🟢" if side in ("BUY", "LONG") else "🔴"
+                    lines.append(
+                        f"  {side_emoji} {p.get('symbol','?')} {side} @ "
+                        f"${p.get('entry',0):.4g}  {p.get('leverage',0):.1f}x  "
+                        f"(${p.get('position_size_usd',0):,.0f} notional)"
+                    )
+            lines.append("")
+            lines.append("Use `/siminject` to add a new hypothetical trade.")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Sim status error: {e}"
 
     def _cmd_watch(self) -> str:
         """Show current anticipatory watchlist and WATCH-alert queue.
