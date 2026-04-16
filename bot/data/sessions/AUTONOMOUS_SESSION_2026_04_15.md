@@ -1541,6 +1541,66 @@ The `/trade` command and `/close` command are already wired in `telegram_bot.py`
 
 ---
 
+## Phase 4 v2 — Overnight audit + fixes (2026-04-16 ~04:30 UTC)
+
+User explicitly authorized autonomous work: "build everything you can overnight, visually appealing, intuitive, connects straight to you." Plus follow-up: "run parallel audits to look for holes and OPPORTUNITIES, we are here with the ability to push an amazing frontend, we are the alpha quant."
+
+Launched 3 parallel Explore agents to audit (1) premium filter holes, (2) frontend/UI opportunities, (3) half-built systems. Findings drove v2 fixes committed in `845a5dd`.
+
+### Critical bugs the audits caught in the Phase 4 code (all fixed)
+
+**Bug A — Regime alias gap.** `premium_filter.py:_ADVERSE_REGIMES` keyed on "illiquid" but there are two regime classifiers in the codebase: `trade_profile` outputs "illiquid" (OK for this path) while `quant_regime.py` outputs "low_liquidity". Added `_REGIME_ALIASES` normalization + `_normalize_regime()` helper. The HYPE BUY block now also catches "low_liquidity" as the same condition. Also added "ranging" to the block set because Finding 7 documented 14.3% WR for HYPE BUY in ranging.
+
+**Bug B — Stale shadow data.** Shadow ledger grew since the initial Finding 11 table was built. `BTC_BUY_regime_trend` was recorded as 55.1% WR on 78 samples but the ledger now shows 68.5% WR on 111 samples. Upgraded BTC from "standard" to "premium" grade. The filter will now EXECUTE BTC_BUY_regime_trend signals at confidence >= 75% + 2+ strategies agreeing, instead of requiring the higher 82% / 3+ bar.
+
+**Bug C — Anticipatory WATCH alert spam risk.** Audit pointed out that the anticipatory engine can re-stage the same setup on consecutive scan cycles. Without dedup, the user would get 5-10 WATCH alerts for the same symbol in an hour. Added `_WATCH_ALERT_COOLDOWN_S = 1800` (30 min per `(symbol, side, strategy)` key) + `is_watch_deduped()` / `mark_watch_sent()` helpers. The anticipatory hook at `multi_strategy_main.py:1711` now checks dedup before dispatching.
+
+### Finding 2 fix — tuner calibration_offset cap tightened
+
+The audit highlighted that Finding 2 was still unaddressed. Fixed:
+
+- `parameter_tuner.py:179`: cap from ±15 to **±3**. The old ±15 cap let the offset drift to -9.28 during losing streaks, creating a feedback deadlock. Tighter cap prevents the offset from single-handedly starving the ensemble.
+- `data/feedback/tuner_state.json`: reset `calibration_offset` from `-8.97` to `-3.0` so the fix takes effect on next restart without waiting for gradual correction.
+
+This is one of the "quick wins" from the audit. Expected impact: +$30-50/month from unfrozen signal flow.
+
+### New Telegram commands (user experience)
+
+Added 4 new commands to `telegram_bot.py`:
+
+- **`/briefing`** — one-screen morning overview (equity, positions, today's closed trades, active watchlist). Per user's ask: "visually appealing, easy to use, intuitive." Designed for first-thing-morning phone check — answers "how are we doing?" in ~20 lines.
+- **`/watch`** — current anticipatory pre-stages + recent WATCH alerts fired in the last 30 min. Answers "what's the bot watching right now?"
+- **`/alerts`** — premium filter system status + expected volume. Teaches the user how the filter works.
+- **`/edges`** — dumps the full `_SHADOW_EDGES` and `_SHADOW_BLOCKS` table with WR/N/grade for each. The user sees exactly which setups the filter will promote vs block.
+
+### What the audits surfaced but I didn't fix tonight
+
+Listed for next session's prioritization (not built overnight due to time):
+
+| Opportunity | Effort | Expected impact |
+|---|---|---|
+| Sniper re-enable w/ verified 5x cap + per-trade loss ceiling | 2 hr | +$328/34-trade alpha restored |
+| Lead-lag engine → WATCH alerts (BTC moves → SOL/ETH pre-stage) | 1-2 hr | +$15-40/week |
+| Counterfactual learner → tuner feedback consumer | 2-3 hr | +$20-60/month filter calibration |
+| Reflection engine consumer (RE codes → tuner proposals) | 1-2 hr | +$15-30/month |
+| Neuroplasticity scheduled call (detect setup edge decay) | 1-2 hr | +$20-40/month early warning |
+| Strategy discovery auto-research + validation loop | 4-5 hr | Variable +$50-200/month new edge detection |
+| Telegram inline buttons (one-tap /trade execution) | 4 hr | Friction elimination |
+| Dashboard `/api/ask-claude-context` + modal | 6 hr | Claude integration via dashboard |
+| Morning briefing dashboard page | 8 hr | Mobile-native overview |
+
+These are the "alpha quant checklist" items. The system has the data infrastructure but lacks the orchestration — the next architectural move is a monthly optimization cycle that pulls all data sources, retrains a unified model of "what works where," and proposes ONE coherent parameter change at a time (A/B tested on 50 trades before deployment).
+
+### Test + build verification
+
+- 17/17 premium filter tests passing after v2 changes
+- 2,926/2,928 full suite passing (2 pre-existing alert router state isolation failures, unrelated to this session)
+- 3 commits tonight: `c4ad18f` (Phase 1 cleanup + session doc), `4d2a328` (Phase 4 premium alerts), `845a5dd` (v2 fixes)
+- Bot restarted twice, both times all open positions auto-recovered via state_snapshot (1.3-1.6 min downtime each, well within tolerance)
+- After v2 restart, Shadow BLOCK lines firing live on HYPE MTQ signals — filter confirmed active in production
+
+---
+
 ## Open Loops / Deeper Dives Not Yet Done
 
 - Why BTC generates zero `SIGNAL_GENERATED` events despite BB Squeeze firing SELL frequently. Confirmed it's directional conflict (BB Squeeze SELL vs confidence_scorer BUY), but haven't mapped *why* this disagreement is permanent on BTC and not other symbols.
