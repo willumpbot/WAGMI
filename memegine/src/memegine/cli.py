@@ -10,7 +10,18 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 
-from . import copy_writer, prompt_engine, reference_lib, shot_list, style_codex
+from . import (
+    archive,
+    copy_writer,
+    linter,
+    pipeline as pipeline_mod,
+    prompt_engine,
+    reference_lib,
+    reverse_engineer,
+    shot_list,
+    style_codex,
+    variants as variants_mod,
+)
 from .config import settings
 
 app = typer.Typer(
@@ -50,7 +61,71 @@ def make_prompt(
     ref_tags = [t.strip() for t in tags.split(",")] if tags else None
     ref_notes = reference_lib.reference_notes_for_prompt(tags=ref_tags) if ref_tags else ""
     system, user = prompt_engine.assemble_offline_prompt(intent, format, reference_notes=ref_notes)
+    archive.save(kind="prompt", intent=intent, system=system, user=user, format_=format)
     _print_prompt(system, user, f"Prompt brief — format: {format}")
+
+
+@app.command("pipeline")
+def run_pipeline(
+    intent: str = typer.Argument(..., help="Rough operator intent for the piece."),
+    kind: str = typer.Option(..., "--kind", "-k", help="image | video"),
+    format: Optional[str] = typer.Option(None, "--format", "-f", help="Required for kind=image."),
+    no_copy: bool = typer.Option(False, "--no-copy", help="Skip the X caption brief."),
+) -> None:
+    """One command, one folder, every brief for a whole piece.
+
+    For kind=image: produces prompt brief + copy brief.
+    For kind=video: produces shot-list brief + copy brief (the shot-list already
+    contains per-shot still + motion prompts).
+    """
+    settings.ensure_dirs()
+    bundle = pipeline_mod.build(
+        intent,
+        kind=kind,
+        format_slug=format,
+        include_copy=not no_copy,
+    )
+    console.print(Panel.fit(f"[bold green]Bundle {bundle.id}[/]  kind={bundle.kind}", border_style="green"))
+    console.print(f"folder: [cyan]{bundle.folder}[/]")
+    for name in bundle.briefs:
+        console.print(f"  - {name} brief -> [dim]{name in bundle.briefs}[/]")
+    console.print("\nOpen each `.md` in order and paste into Claude Code.")
+
+
+@app.command("variants")
+def make_variants(
+    winner_prompt: str = typer.Argument(..., help="The winning prompt string to vary."),
+    n: int = typer.Option(6, "-n", help="How many variants to produce."),
+) -> None:
+    """Assemble a brief that asks Claude to vary a winning prompt along taxonomy axes."""
+    settings.ensure_dirs()
+    vb = variants_mod.build_variant_brief(winner_prompt, n_variants=n)
+    archive.save(kind="variants", intent=winner_prompt, system=vb.system, user=vb.user, extra={"n": n})
+    _print_prompt(vb.system, vb.user, f"Variants brief — n={n}")
+
+
+@app.command("reverse")
+def reverse_brief(
+    image: Path = typer.Argument(..., help="Path to an image you want the 'look' of."),
+    context: str = typer.Option("", "--context", "-c", help="Optional operator note about what you liked."),
+) -> None:
+    """Generate a brief that asks Claude to analyze an image and produce a recreate-the-look prompt."""
+    settings.ensure_dirs()
+    system, user = reverse_engineer.build_reverse_brief(image, context=context)
+    archive.save(kind="reverse", intent=str(image), system=system, user=user, extra={"context": context})
+    _print_prompt(system, user, f"Reverse brief — {image.name}")
+
+
+@app.command("lint")
+def lint_prompt(
+    prompt: str = typer.Argument(..., help="The prompt string to lint (paste in quotes)."),
+    motion: bool = typer.Option(False, "--motion", help="Lint as a motion prompt (requires camera move)."),
+) -> None:
+    """Run the prompt linter. Fails with non-zero exit on banned words."""
+    result = linter.lint(prompt, kind="motion" if motion else "image")
+    console.print(result.as_text())
+    if not result.ok:
+        raise typer.Exit(code=1)
 
 
 @app.command("shots")
@@ -60,6 +135,7 @@ def make_shots(
     """Assemble a shot-list brief for short video pieces."""
     settings.ensure_dirs()
     system, user = shot_list.assemble_offline_shot_list_prompt(intent)
+    archive.save(kind="shots", intent=intent, system=system, user=user)
     _print_prompt(system, user, "Shot list brief")
 
 
@@ -71,7 +147,53 @@ def make_copy(
     """Assemble a caption-writer brief for the finished piece."""
     settings.ensure_dirs()
     system, user = copy_writer.assemble_offline_copy_prompt(concept, kind)
+    archive.save(kind="copy", intent=concept, system=system, user=user)
     _print_prompt(system, user, "X caption brief")
+
+
+history_app = typer.Typer(help="Browse the brief archive.")
+app.add_typer(history_app, name="history")
+
+
+@history_app.command("recent")
+def history_recent(n: int = typer.Option(10, "-n")) -> None:
+    """Show the N most recent briefs."""
+    rows = archive.read_recent(n)
+    if not rows:
+        console.print("[dim]no briefs yet[/]")
+        return
+    for r in rows:
+        fmt = r.get("format") or "-"
+        console.print(
+            f"[bold]{r['id']}[/] {r['created_at'][:19]}  kind={r['kind']:<8} fmt={fmt:<24} intent={r['intent'][:70]}"
+        )
+
+
+@history_app.command("show")
+def history_show(brief_id: str = typer.Argument(..., help="Brief id (prefix)")) -> None:
+    """Print a single archived brief by id."""
+    rec = archive.find(brief_id)
+    if rec is None:
+        # also try prefix match
+        for candidate in archive.read_recent(200):
+            if candidate["id"].startswith(brief_id):
+                rec = candidate
+                break
+    if rec is None:
+        console.print(f"[red]not found:[/] {brief_id}")
+        raise typer.Exit(code=1)
+    console.print(Panel.fit(f"[bold]{rec['id']}[/] {rec['created_at']}", border_style="cyan"))
+    console.print(f"kind: {rec['kind']}  format: {rec.get('format') or '-'}")
+    console.print(f"intent: {rec['intent']}")
+    console.print(Panel(rec["system"], title="SYSTEM", border_style="magenta"))
+    console.print(Panel(rec["user"], title="USER", border_style="green"))
+
+
+@history_app.command("search")
+def history_search(text: str = typer.Argument(..., help="Substring to search in intent/user body.")) -> None:
+    """Search archived briefs by substring."""
+    for r in archive.search(text):
+        console.print(f"[bold]{r['id']}[/] {r['created_at'][:19]}  {r['intent'][:90]}")
 
 
 codex_app = typer.Typer(help="Read and update the style codex.")
