@@ -9,6 +9,7 @@ from .config import settings
 
 
 FORMATS_PATH = settings.data_dir / "formats" / "library.yaml"
+PLAYBOOKS_DIR = settings.data_dir / "playbooks"
 
 
 @dataclass
@@ -50,6 +51,28 @@ def load_codex(path: Path = settings.codex_path) -> str:
     if not path.exists():
         return ""
     return path.read_text()
+
+
+def load_playbook(name: str, playbooks_dir: Path = PLAYBOOKS_DIR) -> str:
+    """Load a named playbook (e.g. 'grok-imagine-patterns', 'meme-typography')."""
+    path = playbooks_dir / f"{name}.md"
+    if not path.exists():
+        return ""
+    return path.read_text()
+
+
+def load_relevant_playbooks(format_kind: str, playbooks_dir: Path = PLAYBOOKS_DIR) -> str:
+    """Load playbooks relevant to the format kind (image/video) and concatenate."""
+    names = ["grok-imagine-patterns"]
+    if format_kind == "video":
+        names.append("video-img2vid-patterns")
+    names += ["meme-typography"]
+    out_parts = []
+    for n in names:
+        txt = load_playbook(n, playbooks_dir)
+        if txt:
+            out_parts.append(f"### Playbook: {n}\n\n{txt}")
+    return "\n\n---\n\n".join(out_parts)
 
 
 SYSTEM_PROMPT_TEMPLATE = """You are the Director — a prompt engineer and creative
@@ -126,6 +149,7 @@ def build_user_message(
     format_: Format,
     codex: str,
     reference_notes: str = "",
+    playbooks: str = "",
 ) -> str:
     lines = [
         "## Operator intent",
@@ -153,10 +177,13 @@ def build_user_message(
     lines.append(codex.strip() or "(empty — first pieces will seed this)")
     if reference_notes:
         lines += ["", "## Reference notes", reference_notes.strip()]
+    if playbooks:
+        lines += ["", "## Craft playbooks (cite these rules; do not restate)", playbooks]
     lines += [
         "",
         "## Your task",
         "Produce the JSON brief described in the system prompt. One brief, ready to paste.",
+        "Your prompt MUST pass the linter: no banned words; name lens/film-stock; name lighting; state time-of-day; state composition.",
     ]
     return "\n".join(lines)
 
@@ -167,6 +194,8 @@ def assemble_offline_prompt(
     codex_path: Path = settings.codex_path,
     formats_path: Path = FORMATS_PATH,
     reference_notes: str = "",
+    include_playbooks: bool = True,
+    playbooks_dir: Path = PLAYBOOKS_DIR,
 ) -> tuple[str, str]:
     """Return (system_prompt, user_message) ready to paste into Claude Code or Claude.ai.
 
@@ -180,5 +209,6 @@ def assemble_offline_prompt(
         available = ", ".join(f.slug for f in formats)
         raise ValueError(f"Unknown format '{format_slug}'. Available: {available}")
     codex = load_codex(codex_path)
-    user = build_user_message(intent, match, codex, reference_notes)
+    playbooks = load_relevant_playbooks(match.kind, playbooks_dir) if include_playbooks else ""
+    user = build_user_message(intent, match, codex, reference_notes, playbooks=playbooks)
     return SYSTEM_PROMPT_TEMPLATE, user
