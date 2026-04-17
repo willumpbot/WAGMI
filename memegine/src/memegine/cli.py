@@ -13,6 +13,9 @@ from rich.syntax import Syntax
 from . import (
     archive,
     copy_writer,
+    editor,
+    grading,
+    image_ops,
     linter,
     pipeline as pipeline_mod,
     prompt_engine,
@@ -228,6 +231,131 @@ def codex_flop(
     """Append to the kill list."""
     style_codex.log_flop(what, why)
     console.print(f"[yellow]Logged flop to[/] {settings.codex_path}")
+
+
+edit_app = typer.Typer(help="FFmpeg-backed video editing (no CapCut).")
+app.add_typer(edit_app, name="edit")
+
+
+@edit_app.command("aspect")
+def edit_aspect(
+    src: Path = typer.Argument(..., exists=True, readable=True),
+    dst: Path = typer.Argument(...),
+    ratio: str = typer.Option("9:16", "--ratio", "-r", help="9:16, 1:1, 16:9, 4:5"),
+    fit: str = typer.Option("cover", "--fit", help="cover (crop) | contain (pad)"),
+) -> None:
+    """Reframe a clip or still to a target aspect ratio."""
+    if src.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}:
+        out = image_ops.to_aspect(src, ratio, dst, fit=fit)  # type: ignore[arg-type]
+    else:
+        out = editor.to_aspect(src, ratio, dst, fit=fit)  # type: ignore[arg-type]
+    console.print(f"[green]wrote[/] {out}")
+
+
+@edit_app.command("kenburns")
+def edit_kenburns(
+    image: Path = typer.Argument(..., exists=True, readable=True),
+    dst: Path = typer.Argument(...),
+    duration: float = typer.Option(4.0, "--duration", "-d"),
+    ratio: str = typer.Option("9:16", "--ratio", "-r"),
+    zoom_start: float = typer.Option(1.0),
+    zoom_end: float = typer.Option(1.15),
+) -> None:
+    """Turn a still into a Ken Burns video."""
+    out = editor.ken_burns(image, dst, duration=duration, ratio=ratio, zoom_start=zoom_start, zoom_end=zoom_end)  # type: ignore[arg-type]
+    console.print(f"[green]wrote[/] {out}")
+
+
+@edit_app.command("concat")
+def edit_concat(
+    dst: Path = typer.Argument(...),
+    clips: list[Path] = typer.Argument(..., help="Clips in order"),
+) -> None:
+    """Stitch clips with hard cuts."""
+    out = editor.concat(clips, dst)
+    console.print(f"[green]wrote[/] {out}")
+
+
+@edit_app.command("caption")
+def edit_caption(
+    src: Path = typer.Argument(..., exists=True, readable=True),
+    dst: Path = typer.Argument(...),
+    text: str = typer.Argument(...),
+    position: str = typer.Option("bottom", "--pos", help="top | bottom | center"),
+    size: int = typer.Option(0, "--size", help="Font size. 0 = auto from image width."),
+) -> None:
+    """Burn a caption onto a still or video."""
+    if src.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}:
+        fs = size or None
+        out = image_ops.caption(src, dst, text, position=position, font_size=fs)  # type: ignore[arg-type]
+    else:
+        fs = size or 64
+        out = editor.drawtext(src, dst, text, position=position, font_size=fs)  # type: ignore[arg-type]
+    console.print(f"[green]wrote[/] {out}")
+
+
+@edit_app.command("grade")
+def edit_grade(
+    src: Path = typer.Argument(..., exists=True, readable=True),
+    dst: Path = typer.Argument(...),
+    preset: str = typer.Option(..., "--preset", "-p", help="e.g. portra_400, cinestill_800t"),
+) -> None:
+    """Apply a color-grading preset."""
+    out = grading.apply_preset(src, dst, preset)
+    console.print(f"[green]wrote[/] {out}")
+
+
+@edit_app.command("presets")
+def edit_presets() -> None:
+    """List available grading presets."""
+    for p in grading.list_presets():
+        console.print(f"  {p}")
+
+
+@edit_app.command("speed")
+def edit_speed(
+    src: Path = typer.Argument(..., exists=True, readable=True),
+    dst: Path = typer.Argument(...),
+    factor: float = typer.Argument(..., help="e.g. 2.0 = 2x speed, 0.5 = half"),
+) -> None:
+    """Speed ramp a clip (keeps audio pitch-corrected)."""
+    out = editor.speed(src, dst, factor)
+    console.print(f"[green]wrote[/] {out}")
+
+
+@edit_app.command("audio")
+def edit_audio(
+    src: Path = typer.Argument(..., exists=True, readable=True),
+    audio: Path = typer.Argument(..., exists=True, readable=True),
+    dst: Path = typer.Argument(...),
+    mode: str = typer.Option("mix", "--mode", help="mix | replace"),
+    volume: float = typer.Option(1.0, "--volume"),
+) -> None:
+    """Attach an audio track (mix with existing, or replace)."""
+    out = editor.add_audio(src, audio, dst, mode=mode, volume=volume)  # type: ignore[arg-type]
+    console.print(f"[green]wrote[/] {out}")
+
+
+@edit_app.command("grid")
+def edit_grid(
+    dst: Path = typer.Argument(...),
+    images: list[Path] = typer.Argument(..., help="Images to grid together"),
+    cols: int = typer.Option(2, "--cols"),
+) -> None:
+    """Pack images into a grid (for Grok variant sheets)."""
+    out = image_ops.grid(images, dst, cols=cols)
+    console.print(f"[green]wrote[/] {out}")
+
+
+@edit_app.command("two-panel")
+def edit_two_panel(
+    top: Path = typer.Argument(..., exists=True, readable=True),
+    bottom: Path = typer.Argument(..., exists=True, readable=True),
+    dst: Path = typer.Argument(...),
+) -> None:
+    """Stack two images into a meme two-panel layout (4:5)."""
+    out = image_ops.two_panel(top, bottom, dst)
+    console.print(f"[green]wrote[/] {out}")
 
 
 refs_app = typer.Typer(help="Manage the reference library.")
