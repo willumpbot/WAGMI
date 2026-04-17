@@ -1,0 +1,111 @@
+formats:
+  - slug: photoreal_portrait
+    kind: image
+    description: |
+      Single-subject photoreal portrait. Treated like a real photograph: named
+      lens, named film stock, named lighting setup, named location. Never says
+      "cinematic".
+    prompt_scaffold: |
+      {subject}, shot on {camera_and_lens}, {film_stock_or_sensor_look},
+      {lighting_setup}, {location_and_time_of_day}, {wardrobe_and_props},
+      {composition_rule}, {mood_keywords}, photoreal, no CGI, sharp focus on eyes.
+    good_models: [aurora, flux_pro_via_grok, nano_banana]
+    slot_hints:
+      camera_and_lens: [
+        "Canon EOS R5 with 85mm f/1.2",
+        "Leica Q3 with 28mm f/1.7",
+        "Sony A7IV with 35mm f/1.4 GM",
+        "Hasselblad X2D with 90mm",
+      ]
+      film_stock_or_sensor_look: [
+        "Kodak Portra 400 look",
+        "Fuji 400H pastels",
+        "Cinestill 800T tungsten halation",
+        "digital medium format, clean",
+      ]
+      lighting_setup: [
+        "hard directional window light, shadow side dominant",
+        "single softbox 45 degrees camera-right",
+        "ambient overcast, no direct sun",
+        "practical neon, mixed tungsten + daylight",
+      ]
+      composition_rule: [
+        "rule of thirds, subject left",
+        "centered medium close-up",
+        "leading lines to subject",
+        "negative space right half",
+      ]
+
+  - slug: meme_two_panel
+    kind: image
+    description: |
+      Classic two-panel reaction meme. Panel one = setup. Panel two = payoff.
+      Text rendered IN the image (Ideogram territory via Grok).
+    prompt_scaffold: |
+      Two-panel meme image, stacked vertically, equal panels.
+      Top panel: {setup_scene}. Caption overlay top: "{setup_text}".
+      Bottom panel: {payoff_scene}. Caption overlay bottom: "{payoff_text}".
+      Impact-style white text with black stroke, dead-center each panel.
+    good_models: [ideogram_via_grok, aurora]
+    slot_hints:
+      setup_text: ["< 6 words", "the problem / expectation"]
+      payoff_text: ["< 6 words", "the reversal / punchline"]
+
+  - slug: drake_yes_no
+    kind: image
+    description: |
+      Drake preference meme. Top half = rejected. Bottom half = preferred.
+      Needs Drake image (reference) or generated equivalent.
+    prompt_scaffold: |
+      Drake meme template, two vertical panels, right side text.
+      Top: Drake rejecting pose, right-side caption "{rejected_text}".
+      Bottom: Drake approving pose, right-side caption "{preferred_text}".
+      Clean white background, bold sans-serif caption, 1:1 square.
+    good_models: [ideogram_via_grok]
+
+  - slug: photoreal_scene_motion
+    kind: video
+    description: |
+      Short (3-6 sec) photoreal video built from one hero still + one camera move.
+      Pipeline: generate photoreal still first, then img2vid with one named move.
+    prompt_scaffold_still: |
+      {subject_and_scene}, shot on {camera_and_lens}, {film_stock_or_sensor_look},
+      {lighting_setup}, {location_and_time_of_day}, {composition_rule},
+      photoreal, no CGI.
+    prompt_scaffold_motion: |
+      Camera move: {camera_move}. Duration: {duration_sec}s.
+      Subject motion: {subject_motion}. Lighting stays consistent.
+      No cuts, no zoom bloom, no style drift.
+    good_models_still: [aurora, flux_pro_via_grok]
+    good_models_motion: [grok_imagine_video, kling_img2vid]
+    slot_hints:
+      camera_move: [
+        "slow push-in, 8mm total travel",
+        "static lockoff with subject motion only",
+        "rack focus from foreground to subject",
+        "slow orbit, 15 degrees",
+        "Ken Burns zoom on still, 5% over 4s",
+      ]
+      duration_sec: [3, 4, 5, 6]
+
+  - slug: lore_drop
+    kind: image
+    description: |
+      Cryptic single image + one-line ominous caption that expands a project's
+      universe. No explanation, no hashtags. Image does 80% of the work.
+    prompt_scaffold: |
+      {cryptic_scene}, {lighting_setup}, {film_stock_or_sensor_look},
+      {composition_rule}, single frame, no text overlay.
+    good_models: [aurora, flux_pro_via_grok]
+
+  - slug: cope_chart
+    kind: image
+    description: |
+      Fake chart / absurd analysis screenshot. Dumb conclusions stated with
+      authority. Text rendering is the whole game.
+    prompt_scaffold: |
+      Screenshot of a {chart_context} with title "{chart_title}".
+      Y-axis labeled "{y_label}", x-axis labeled "{x_label}".
+      One line dramatically {trend_direction}. Annotation: "{annotation}".
+      Bloomberg-terminal styling, serif headings, monospace data.
+    good_models: [ideogram_via_grok]
