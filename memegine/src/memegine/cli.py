@@ -569,16 +569,24 @@ def refs_add(
     winner: bool = typer.Option(
         False, "--winner", help="Mark as a winner + auto-extract patterns into the codex."
     ),
+    auto_variants: bool = typer.Option(
+        False, "--auto-variants",
+        help="For winners: also enqueue N variant intents as topics.",
+    ),
+    n_variants: int = typer.Option(3, "--n-variants", help="How many variants to enqueue."),
 ) -> None:
     tag_list = [t.strip() for t in tags.split(",")] if tags else []
     entry = reference_lib.add(
-        image, tags=tag_list, source=source, prompt=prompt, notes=notes, winner=winner
+        image, tags=tag_list, source=source, prompt=prompt, notes=notes,
+        winner=winner, auto_variants=auto_variants, n_variants=n_variants,
     )
     console.print(f"[green]Added ref[/] {entry.id} → {entry.filename}")
     if winner and prompt:
         patterns = auto_codex.extract(prompt)
         if not patterns.is_empty():
             console.print(f"[cyan]extracted patterns:[/] {patterns.as_codex_line()}")
+    if auto_variants and winner and prompt:
+        console.print(f"[cyan]auto-enqueued[/] {n_variants} variant topics")
 
 
 @refs_app.command("search")
@@ -1463,6 +1471,17 @@ def serve_cmd(
     except Exception as exc:
         console.print(f"[red]serve failed: {exc}[/]")
         raise typer.Exit(code=1)
+
+
+@app.command("fix-prompt")
+def fix_prompt_cmd(
+    prompt: str = typer.Argument(..., help="Prompt to improve."),
+    motion: bool = typer.Option(False, "--motion"),
+) -> None:
+    """Insert fragments to plug missing craft categories; show score delta."""
+    from . import prompt_fixer
+    result = prompt_fixer.fix(prompt, kind="motion" if motion else "image")
+    print(result.as_text())
 
 
 if __name__ == "__main__":

@@ -143,6 +143,17 @@ Post on X
 - **`serve`** — start the Telegram bot AND the scheduler in a single
   process, with graceful SIGINT shutdown. One command, one tmux pane,
   one tail. CLI: `memegine serve`.
+- **`morning_brief`** scheduler action — composes a daily intelligence
+  drop (dashboard + last 48h journal + top perf formats + top queued
+  topics) and delivers it via telegram/discord at a fixed time. Add
+  with `memegine schedule add morning --hour 7 --action morning_brief`.
+- **`prompt_fixer`** — auto-inserts fragments to plug missing craft
+  categories in a weak prompt and reports the score delta. CLI:
+  `memegine fix-prompt "<prompt>"`. Bot: `/fix_prompt`.
+- **`refs add --winner --auto-variants`** — post-winner compounding
+  shortcut: when a winner is logged, automatically enqueue N axis-
+  varied re-shoot intents as topics so the next session builds on
+  what just worked.
 - **`archive`** — every brief saved to `data/logs/briefs-YYYY-MM-DD.jsonl`;
   `memegine history` surfaces them
 - **`pipeline`** — one command, one folder, every brief for a whole piece
@@ -381,6 +392,33 @@ memegine batch "a theme" -n 4 --by-perf
 # → picks formats ranked by performance.by_format() instead of the
 #   default curated rotation. Falls back to default rotation when there
 #   isn't enough engagement history yet.
+```
+
+### Morning brief (scheduled daily intelligence drop)
+```bash
+# schedule a 7am morning brief, pushed via the telegram chat
+export MEMEGINE_TELEGRAM_CHAT_ID=12345678
+memegine schedule add morning-brief --hour 7 --action morning_brief
+memegine schedule run --telegram
+# → every morning at 7am: dashboard + last 48h journal + top perf + top topics
+```
+
+### Prompt auto-formatter (fix weak prompts)
+```bash
+memegine fix-prompt "a trader in a kitchen"
+# → inserts LENS.35mm_1_4, LIGHTING.harsh_window, TIME_OF_DAY.dusk,
+#   COMPOSITION.thirds_left, NEGATIVE.photoreal_defaults
+#   score: 20/100 → 82/100
+```
+
+### Post-winner auto-variants (compound the winning loop)
+```bash
+memegine refs add winner.png \
+  --winner --prompt "trader at 3am, 35mm, Cinestill 800T" \
+  --notes "the quiet-dread one" \
+  --auto-variants --n-variants 3
+# → enqueues 3 re-shoot topics (varied TIME_OF_DAY, LENS, FILM_STOCK)
+#   so next session inherits the winning thread
 ```
 
 ### Sessions, journal, and "next moves" dashboard

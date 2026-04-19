@@ -194,6 +194,7 @@ HELP_TEXT = """Memegine bot — brief delivery
 /session_end            close current session
 /x_prepare <post_id>    X post pre-flight (lint + clipboard block)
 /codex_audit            duplicates / contradictions in the codex
+/fix_prompt <prompt>    auto-insert fragments to plug missing craft
 /status                 queue + counts
 /reverse [context]      reverse-brief the next photo you send
 Photo upload (no command) → added to the reference library.
@@ -490,6 +491,17 @@ def _build_handlers(cfg: BotConfig):
         audit = codex_audit_mod.audit()
         await _reply_long(update, audit.as_text())
 
+    async def fix_prompt_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
+        if not await guard(update):
+            return
+        prompt = " ".join(context.args or []).strip()
+        if not prompt:
+            await update.message.reply_text("usage: /fix_prompt <prompt>")
+            return
+        from . import prompt_fixer
+        result = prompt_fixer.fix(prompt)
+        await _reply_long(update, result.as_text())
+
     async def formats_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
         if not await guard(update):
             return
@@ -724,6 +736,7 @@ def _build_handlers(cfg: BotConfig):
         "session_end": session_end_cmd,
         "x_prepare": x_prepare_cmd,
         "codex_audit": codex_audit_cmd,
+        "fix_prompt": fix_prompt_cmd,
         "status": status_cmd,
         "reverse": reverse_cmd,
         "_photo": photo_handler,

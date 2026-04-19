@@ -54,6 +54,8 @@ def add(
     prompt: str = "",
     notes: str = "",
     winner: bool = False,
+    auto_variants: bool = False,
+    n_variants: int = 0,
 ) -> ReferenceEntry:
     """Copy an image into the reference library and record it in the index.
 
@@ -62,6 +64,11 @@ def add(
     craft tokens (lens, film, lighting, time, composition, camera move)
     into the 'Compounded Patterns' section. This is the main compounding
     loop: every winner tagged as such makes the next brief sharper.
+
+    auto_variants: if True, also enqueue N variant intents as topics so
+    the next session inherits the winning thread (e.g., same character,
+    same setup, varied time-of-day / lens). Requires winner=True + a
+    non-empty prompt. Uses `n_variants` or defaults to 3.
     """
     image_path = Path(image_path)
     if not image_path.exists():
@@ -96,7 +103,38 @@ def add(
         from . import auto_codex
         auto_codex.record_winner(prompt, notes or "(marked winner)", tags=tag_list)
 
+    if auto_variants and winner and prompt.strip():
+        _enqueue_winner_variants(prompt, ref_id=ref_id, n=n_variants or 3)
+
     return entry
+
+
+def _enqueue_winner_variants(prompt: str, *, ref_id: str, n: int = 3) -> list[str]:
+    """Enqueue N axis-varied re-shoot intents derived from a winning prompt.
+
+    We don't actually run a variant brief here — we just seed the topic
+    queue with short follow-up intents that reference the winner so the
+    next session can build on it. Each enqueued topic gets the tag
+    `variant_of:<ref_id>` for traceability.
+    """
+    from . import topics
+    axes = ["TIME_OF_DAY", "LENS", "FILM_STOCK", "LIGHTING", "MOOD"]
+    # Pick the first N axes deterministically.
+    picks = axes[: max(1, min(n, len(axes)))]
+    enqueued: list[str] = []
+    for axis in picks:
+        intent = (
+            f"re-shoot of winner {ref_id[:8]} — vary only the {axis} axis. "
+            f"Seed prompt: \"{prompt[:200]}\""
+        )
+        t = topics.add(
+            intent,
+            tags=[f"variant_of:{ref_id}", "auto_variant", axis.lower()],
+            priority=3,
+            source="winner_auto_variants",
+        )
+        enqueued.append(t.id)
+    return enqueued
 
 
 def search(tags: list[str] | None = None, text: str = "") -> list[dict]:

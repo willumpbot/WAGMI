@@ -238,9 +238,55 @@ def run_weekly_distill(job: dict, *, deliver: Callable[[dict, JobResult], None] 
     return result
 
 
+def run_morning_brief(job: dict, *, deliver: Callable[[dict, JobResult], None] | None = None) -> JobResult:
+    """Compose a morning intelligence drop: dashboard + recent trends +
+    top queued topics + last perf leader. Designed to be delivered at a
+    fixed time each morning so the operator wakes up with a plan.
+    """
+    from . import journal, next_action, performance, topics
+    dash = next_action.compute()
+
+    recent_journal = journal.collect(days=2, limit=15)
+    top_perf = performance.by_format()[:3]
+    top_topics = topics.list_queued(limit=5)
+
+    body_lines = [dash.as_text(), "", "=== last 48h journal ==="]
+    if recent_journal:
+        for e in recent_journal[:10]:
+            body_lines.append("  " + e.as_line())
+    else:
+        body_lines.append("  (no journal entries)")
+
+    if top_perf:
+        body_lines.append("")
+        body_lines.append("=== top 3 formats by engagement ===")
+        for slug, n, avg in top_perf:
+            body_lines.append(f"  {slug:<28} n={n:<3}  avg={avg:.1f}")
+
+    if top_topics:
+        body_lines.append("")
+        body_lines.append("=== next up (top 5 topics) ===")
+        for t in top_topics:
+            body_lines.append(
+                f"  p={t.get('priority', 3)}  {t.get('text', '')[:70]}"
+            )
+
+    note = "\n".join(body_lines)
+    result = JobResult(
+        job_id=job.get("id", "?"),
+        fired_at=dt.datetime.utcnow().isoformat() + "Z",
+        action="morning_brief",
+        note=note,
+    )
+    if deliver:
+        deliver(job, result)
+    return result
+
+
 ACTIONS: dict[str, Callable[..., JobResult]] = {
     "daily_batch": run_daily_batch,
     "weekly_distill": run_weekly_distill,
+    "morning_brief": run_morning_brief,
 }
 
 
