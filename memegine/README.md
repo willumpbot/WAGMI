@@ -154,6 +154,15 @@ Post on X
   shortcut: when a winner is logged, automatically enqueue N axis-
   varied re-shoot intents as topics so the next session builds on
   what just worked.
+- **`like_winner`** — "do it again, a little different." Takes a new
+  intent, extracts the craft tokens (lens / film / lighting / time /
+  composition) from the most recent winner's prompt, and composes a
+  ready-to-paste Grok prompt that inherits the same look. CLI:
+  `memegine like-winner "a CEO on a rooftop"`. Bot: `/like_winner`.
+- **`style_codex.init_template`** — seeds a blank codex with every
+  expected section (North Star, Voice & Tone, Visual DNA, Proven
+  Patterns, Compounded Patterns, Core Patterns, Weekly Distill, Kill
+  List, Voice Notes). CLI: `memegine codex init`.
 - **`archive`** — every brief saved to `data/logs/briefs-YYYY-MM-DD.jsonl`;
   `memegine history` surfaces them
 - **`pipeline`** — one command, one folder, every brief for a whole piece
@@ -401,6 +410,21 @@ export MEMEGINE_TELEGRAM_CHAT_ID=12345678
 memegine schedule add morning-brief --hour 7 --action morning_brief
 memegine schedule run --telegram
 # → every morning at 7am: dashboard + last 48h journal + top perf + top topics
+```
+
+### Like-winner (clone your last winner's craft)
+```bash
+memegine like-winner "a CEO on a rooftop"
+# → inherits lens + film + lighting + time + composition from the
+#   last `--winner` ref, appends photoreal negatives, returns a
+#   full prompt + score + grade.
+```
+
+### Codex init (seed a fresh style codex)
+```bash
+memegine codex init
+# → writes the default section template to data/codex/style.md.
+#   `memegine codex init --force` overwrites an existing codex.
 ```
 
 ### Prompt auto-formatter (fix weak prompts)

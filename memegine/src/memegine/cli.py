@@ -1484,5 +1484,32 @@ def fix_prompt_cmd(
     print(result.as_text())
 
 
+@app.command("like-winner")
+def like_winner_cmd(
+    intent: str = typer.Argument(..., help="New subject / intent to shoot."),
+) -> None:
+    """Build a prompt that inherits the last winner's craft for a new subject."""
+    from . import like_winner
+    try:
+        result = like_winner.build(intent)
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        raise typer.Exit(code=1)
+    print(result.as_text())
+
+
+@codex_app.command("init")
+def codex_init_cmd(
+    force: bool = typer.Option(False, "--force", help="Overwrite existing codex."),
+) -> None:
+    """Seed a fresh style codex with sensible default sections."""
+    try:
+        path = style_codex.init_template(force=force)
+    except FileExistsError as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(code=1)
+    console.print(f"[green]codex seeded[/] → {path}")
+
+
 if __name__ == "__main__":
     app()

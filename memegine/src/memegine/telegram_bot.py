@@ -195,6 +195,7 @@ HELP_TEXT = """Memegine bot — brief delivery
 /x_prepare <post_id>    X post pre-flight (lint + clipboard block)
 /codex_audit            duplicates / contradictions in the codex
 /fix_prompt <prompt>    auto-insert fragments to plug missing craft
+/like_winner <intent>   clone last winner's craft for a new subject
 /status                 queue + counts
 /reverse [context]      reverse-brief the next photo you send
 Photo upload (no command) → added to the reference library.
@@ -502,6 +503,21 @@ def _build_handlers(cfg: BotConfig):
         result = prompt_fixer.fix(prompt)
         await _reply_long(update, result.as_text())
 
+    async def like_winner_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
+        if not await guard(update):
+            return
+        intent = " ".join(context.args or []).strip()
+        if not intent:
+            await update.message.reply_text("usage: /like_winner <new intent>")
+            return
+        from . import like_winner
+        try:
+            result = like_winner.build(intent)
+        except ValueError as exc:
+            await update.message.reply_text(str(exc))
+            return
+        await _reply_long(update, result.as_text())
+
     async def formats_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
         if not await guard(update):
             return
@@ -737,6 +753,7 @@ def _build_handlers(cfg: BotConfig):
         "x_prepare": x_prepare_cmd,
         "codex_audit": codex_audit_cmd,
         "fix_prompt": fix_prompt_cmd,
+        "like_winner": like_winner_cmd,
         "status": status_cmd,
         "reverse": reverse_cmd,
         "_photo": photo_handler,
