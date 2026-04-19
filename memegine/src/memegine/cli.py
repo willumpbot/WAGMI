@@ -1581,6 +1581,13 @@ def cheatsheet_cmd() -> None:
     print(cheatsheet.render())
 
 
+@app.command("guide")
+def guide_cmd() -> None:
+    """Print the where-to-start flow for a new operator."""
+    from . import guide
+    print(guide.render())
+
+
 # ---------------------------------------------------------------------------
 # Corpus — bulk ingest a folder of confirmed-good editor work.
 # ---------------------------------------------------------------------------

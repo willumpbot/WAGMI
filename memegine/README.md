@@ -8,6 +8,16 @@ and the FFmpeg-based editing so you never open CapCut.
 
 **Stack: free. Claude Code + Grok (via X Premium). Nothing else.**
 
+> **New here?** Run `memegine guide` for the 7-step getting-started flow.
+> Or read [GETTING_STARTED.md](./GETTING_STARTED.md), [COOKBOOK.md](./COOKBOOK.md),
+> and [MOBILE.md](./MOBILE.md).
+>
+> **Want a quick list of what's actually there?** 500+ tests, 30+ formats,
+> 200+ craft fragments, corpus bootstrap from any Dropbox/Drive folder,
+> Telegram bot, Claude-powered brainstorm/morning-brief/weekly-report,
+> sessions + journal + dashboard + perf tracking + consistency checker +
+> contact sheet + lookbook. Full inventory below.
+
 ---
 
 ## The iron triangle

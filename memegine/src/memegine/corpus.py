@@ -119,6 +119,7 @@ def ingest(
     frames_per_video: int = 5,
     tag_prefix: str | None = None,
     source: str = "corpus",
+    generate_thumbs: bool = True,
 ) -> IngestResult:
     """Walk `folder`, import every image and video frame into refs.
 
@@ -126,6 +127,8 @@ def ingest(
     video processing.
     tag_prefix: if set, prepended to every ref's tag list (useful for
     marking "imported on 2026-04-19" or similar).
+    generate_thumbs: if True (default), generate 256px thumbnails for
+    every ref after ingest so the library is immediately phone-ready.
     """
     folder = Path(folder)
     result = IngestResult(folder=str(folder))
@@ -198,5 +201,12 @@ def ingest(
                             pass
         except Exception as exc:
             result.errors.append(f"{media.name}: {type(exc).__name__}: {exc}")
+
+    if generate_thumbs and (result.images_imported or result.video_frames_imported):
+        try:
+            from . import thumbnails
+            thumbnails.generate_all()
+        except Exception as exc:
+            result.errors.append(f"thumbnails: {type(exc).__name__}: {exc}")
 
     return result
