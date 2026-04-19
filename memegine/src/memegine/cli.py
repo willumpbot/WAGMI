@@ -1958,6 +1958,88 @@ def refs_normalize_tags_cmd(
     print(report.as_text())
 
 
+@refs_app.command("rename-tag")
+def refs_rename_tag_cmd(
+    from_tag: str = typer.Argument(...),
+    to_tag: str = typer.Argument(...),
+    apply_changes: bool = typer.Option(False, "--apply"),
+) -> None:
+    """Bulk rename `from_tag` → `to_tag` across every ref."""
+    from . import bulk_retag
+    result = bulk_retag.rename(from_tag, to_tag, dry_run=not apply_changes)
+    print(result.as_text())
+
+
+@refs_app.command("remove-tag")
+def refs_remove_tag_cmd(
+    tag: str = typer.Argument(...),
+    apply_changes: bool = typer.Option(False, "--apply"),
+) -> None:
+    """Bulk remove a tag from every ref."""
+    from . import bulk_retag
+    result = bulk_retag.remove(tag, dry_run=not apply_changes)
+    print(result.as_text())
+
+
+@refs_app.command("add-tag")
+def refs_add_tag_cmd(
+    selector: str = typer.Argument(..., help="Refs with THIS tag get..."),
+    new_tag: str = typer.Argument(..., help="...THIS tag added."),
+    apply_changes: bool = typer.Option(False, "--apply"),
+) -> None:
+    """Bulk-add `new_tag` to every ref already tagged `selector`."""
+    from . import bulk_retag
+    result = bulk_retag.add_where(selector, new_tag, dry_run=not apply_changes)
+    print(result.as_text())
+
+
+@refs_app.command("revise")
+def refs_revise_cmd(
+    child_id: str = typer.Argument(..., help="Newer ref."),
+    parent_id: str = typer.Argument(..., help="The ref this one revises."),
+) -> None:
+    """Mark a ref as a revision of another (iteration tracking)."""
+    from . import revisions
+    try:
+        ok = revisions.link(child_id, parent_id)
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(code=1)
+    if not ok:
+        console.print("[red]parent or child not found[/]")
+        raise typer.Exit(code=1)
+    console.print(f"[green]{child_id}[/] now revises [green]{parent_id}[/]")
+
+
+@refs_app.command("lineage")
+def refs_lineage_cmd(
+    ref_id: str = typer.Argument(...),
+) -> None:
+    """Show a ref's revision chain (ancestors + descendants)."""
+    from . import revisions
+    print(revisions.lineage_text(ref_id))
+
+
+@app.command("weekly-report")
+def weekly_report_cmd(
+    days: int = typer.Option(7, "-d"),
+    out: Optional[Path] = typer.Option(None, "--out", "-o"),
+    model: Optional[str] = typer.Option(None, "--model"),
+) -> None:
+    """Claude-powered weekly synthesis (needs ANTHROPIC_API_KEY)."""
+    from . import weekly_report
+    result = weekly_report.generate(days=days, model=model)
+    if result.error:
+        console.print(f"[red]{result.error}[/]")
+        raise typer.Exit(code=1)
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(result.markdown, encoding="utf-8")
+        console.print(f"[green]wrote[/] {out}")
+    else:
+        print(result.markdown)
+
+
 project_app = typer.Typer(help="Archive / restore the full memegine state.")
 app.add_typer(project_app, name="project")
 
