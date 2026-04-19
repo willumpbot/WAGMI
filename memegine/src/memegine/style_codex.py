@@ -40,7 +40,7 @@ def append_entry(
         if existing and not existing.endswith("\n"):
             existing += "\n"
         new = existing + f"\n{header}\n{entry}\n"
-        path.write_text(new)
+        path.write_text(new, encoding="utf-8")
         return
 
     insert_at = len(lines)
@@ -49,7 +49,10 @@ def append_entry(
             insert_at = i
             break
     lines.insert(insert_at, entry)
-    path.write_text("\n".join(lines) + ("\n" if not existing.endswith("\n") else ""))
+    path.write_text(
+        "\n".join(lines) + ("\n" if not existing.endswith("\n") else ""),
+        encoding="utf-8",
+    )
 
 
 def log_winner(prompt: str, why: str, path: Path | None = None) -> None:

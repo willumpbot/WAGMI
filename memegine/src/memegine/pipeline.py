@@ -46,7 +46,7 @@ def _write_brief_file(folder: Path, name: str, system: str, user: str) -> Path:
         + user
         + "\n```\n"
     )
-    target.write_text(content)
+    target.write_text(content, encoding="utf-8")
     return target
 
 
@@ -109,7 +109,8 @@ def build(
         "4. Paste prompts into Grok Imagine / Nano Banana / Aurora to generate.\n"
         "5. When a piece lands, run:\n"
         "   - `memegine refs add <image> --tags ... --notes ...`\n"
-        "   - `memegine codex winner '<prompt>' 'why'`\n"
+        "   - `memegine codex winner '<prompt>' 'why'`\n",
+        encoding="utf-8",
     )
 
     bundle = PipelineBundle(
@@ -121,5 +122,49 @@ def build(
         briefs=briefs,
         folder=str(folder),
     )
-    (folder / "bundle.json").write_text(json.dumps(asdict(bundle), indent=2))
+    (folder / "bundle.json").write_text(json.dumps(asdict(bundle), indent=2), encoding="utf-8")
+    return bundle
+
+
+def build_from_topic(
+    topic_id: str,
+    *,
+    kind_override: str | None = None,
+    format_override: str | None = None,
+    outputs_dir: Path | None = None,
+) -> PipelineBundle:
+    """Build a pipeline bundle for a specific queued topic and mark it used.
+
+    The topic's recorded kind / format_hint wins unless explicitly overridden.
+    If neither the topic nor overrides specify format, format_suggest picks one.
+
+    Raises KeyError if the topic id doesn't exist in the queue.
+    """
+    from . import format_suggest, topics as topics_mod
+    all_topics = topics_mod._load()
+    topic = next((t for t in all_topics if t.get("id") == topic_id), None)
+    if topic is None:
+        raise KeyError(f"topic not found: {topic_id}")
+
+    intent = topic.get("text", "").strip()
+    if not intent:
+        raise ValueError(f"topic {topic_id} has no text")
+
+    t_kind = topic.get("kind")
+    if kind_override:
+        kind = kind_override
+    elif t_kind and t_kind != "any":
+        kind = t_kind
+    else:
+        kind = format_suggest.infer_kind(intent)
+
+    if kind == "image":
+        slug = format_override or topic.get("format_hint") or format_suggest.best(intent, kind="image")
+    else:
+        slug = None
+
+    bundle = build(
+        intent, kind=kind, format_slug=slug, outputs_dir=outputs_dir,
+    )
+    topics_mod.mark_used(topic_id, bundle_id=bundle.id)
     return bundle

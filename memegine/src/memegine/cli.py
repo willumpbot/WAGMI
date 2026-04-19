@@ -14,8 +14,11 @@ from . import (
     archive,
     audio as audio_mod,
     auto_codex,
+    batch as batch_mod,
+    caption_linter,
     copy_writer,
     deep_linter,
+    discord_webhook,
     editor,
     export as export_mod,
     format_suggest,
@@ -30,6 +33,7 @@ from . import (
     reverse_engineer,
     scheduler,
     shot_list,
+    stats as stats_mod,
     style_codex,
     topics,
     transitions as transitions_mod,
@@ -928,6 +932,114 @@ def bot_config_check() -> None:
         f"allowlist: {sorted(cfg.allowed_user_ids) or 'EMPTY (bot will refuse to start)'}\n"
         f"scheduler_chat: {cfg.chat_id_for_scheduler or 'not set'}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Batch — N briefs across varied formats for one theme.
+# ---------------------------------------------------------------------------
+
+
+@app.command("batch")
+def batch_cmd(
+    theme: str = typer.Argument(..., help="The piece theme."),
+    n: int = typer.Option(4, "-n", help="How many briefs to generate."),
+    formats: Optional[str] = typer.Option(
+        None, "--formats", help="Comma-separated format slugs (overrides default rotation)."
+    ),
+) -> None:
+    """Generate N briefs for one theme across different visual registers."""
+    slugs = [f.strip() for f in formats.split(",")] if formats else None
+    result = batch_mod.build(theme, n=n, formats=slugs)
+    console.print(f"[green]batch {result.id}[/] → {result.folder}")
+    for i, item in enumerate(result.items, 1):
+        console.print(f"  {i:02d}. {item.format_slug}  → {Path(item.brief_path).name}")
+
+
+# ---------------------------------------------------------------------------
+# Caption lint — validates X captions.
+# ---------------------------------------------------------------------------
+
+
+@app.command("caption-lint")
+def caption_lint_cmd(
+    caption: str = typer.Argument(..., help="Caption text to validate."),
+) -> None:
+    """Validate an X caption (no emojis, no hashtags, no banned phrases)."""
+    result = caption_linter.lint(caption)
+    console.print(result.as_text())
+    if not result.ok:
+        raise typer.Exit(code=1)
+
+
+# ---------------------------------------------------------------------------
+# Stats — daily / weekly activity report.
+# ---------------------------------------------------------------------------
+
+
+@app.command("stats")
+def stats_cmd(
+    window: str = typer.Argument("daily", help="daily | weekly | all"),
+) -> None:
+    """Print a memegine activity report for the given window."""
+    report = stats_mod.compute(window=window)
+    console.print(report.as_text())
+
+
+# ---------------------------------------------------------------------------
+# Discord webhook test.
+# ---------------------------------------------------------------------------
+
+
+@app.command("discord-test")
+def discord_test_cmd(
+    message: str = typer.Argument("memegine discord webhook test", help="Message to send."),
+) -> None:
+    """Send a test message to the configured Discord webhook."""
+    cfg = discord_webhook.DiscordConfig.from_env()
+    if not cfg.webhook_url:
+        console.print("[red]MEMEGINE_DISCORD_WEBHOOK_URL is not set[/]")
+        raise typer.Exit(code=1)
+    status = discord_webhook.send(message, cfg=cfg)
+    console.print(f"[{'green' if status < 400 else 'red'}]status {status}[/]")
+
+
+# ---------------------------------------------------------------------------
+# Pipeline build-from-topic — convenience for turning a queued topic into a bundle.
+# ---------------------------------------------------------------------------
+
+
+@app.command("from-topic")
+def from_topic_cmd(
+    topic_id: str = typer.Argument(..., help="Topic id from `memegine topics list`."),
+    kind: Optional[str] = typer.Option(None, "--kind", help="image | video — overrides topic's kind."),
+    format: Optional[str] = typer.Option(None, "--format", help="Override format slug."),
+) -> None:
+    """Build a pipeline bundle for a specific queued topic and mark it used."""
+    bundle = pipeline_mod.build_from_topic(
+        topic_id, kind_override=kind, format_override=format
+    )
+    console.print(f"[green]bundle {bundle.id}[/]  kind={bundle.kind}  → {bundle.folder}")
+
+
+# ---------------------------------------------------------------------------
+# Codex graduate — promote frequent patterns to Core Patterns.
+# ---------------------------------------------------------------------------
+
+
+@codex_app.command("graduate")
+def codex_graduate_cmd(
+    threshold: int = typer.Option(5, "--threshold", help="Minimum occurrences to promote."),
+    n_briefs: int = typer.Option(500, "--n", help="Recent briefs to scan."),
+) -> None:
+    """Promote patterns seen >= threshold times into the 'Core Patterns' codex section."""
+    recent = archive.read_recent(n=n_briefs)
+    prompts = [r.get("user", "") for r in recent]
+    promoted = auto_codex.graduate_patterns(prompts, promotion_threshold=threshold)
+    if not promoted:
+        console.print("[yellow]no patterns crossed the threshold[/]")
+        return
+    for cat, items in promoted.items():
+        console.print(f"{cat}: " + ", ".join(f"{v}×{c}" for v, c in items[:5]))
 
 
 if __name__ == "__main__":

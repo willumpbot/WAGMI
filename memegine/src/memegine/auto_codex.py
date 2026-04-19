@@ -185,3 +185,38 @@ def distill_to_codex(prompts: list[str], *, min_frequency: int = 2) -> dict[str,
     if body_parts:
         style_codex.append_entry("Weekly Distill", "; ".join(body_parts))
     return dist
+
+
+def graduate_patterns(
+    prompts: list[str],
+    *,
+    promotion_threshold: int = 5,
+) -> dict[str, list[tuple[str, int]]]:
+    """Promote patterns that appear N+ times to the 'Core Patterns' section.
+
+    This is the compounding endgame: once a specific lens / film / lighting
+    setup has been used and worked across 5+ winners, it's canon. It
+    belongs at the top of every future brief — not buried in a weekly
+    distill.
+
+    Writes exactly one line per category (the cleaner the codex stays, the
+    better the next brief). Returns the promoted entries so a caller can
+    report what graduated this run.
+    """
+    dist = distill(prompts, min_frequency=promotion_threshold)
+    promoted: dict[str, list[tuple[str, int]]] = {
+        k: v for k, v in dist.items() if v
+    }
+    if not promoted:
+        return {}
+
+    lines: list[str] = []
+    for cat, kept in promoted.items():
+        top_list = ", ".join(f"{v}" for v, _ in kept[:5])
+        lines.append(f"{cat}: {top_list}")
+    style_codex.append_entry(
+        "Core Patterns",
+        "promoted at threshold=" + str(promotion_threshold) + " — "
+        + "; ".join(lines),
+    )
+    return promoted

@@ -13,6 +13,16 @@ from .config import settings
 INDEX_PATH = settings.references_dir / "index.json"
 
 
+def _index_path() -> Path:
+    """Resolve the current index path from settings at call-time.
+
+    This indirection lets tests monkeypatch `settings.references_dir` and
+    have _load_index / _save_index pick it up without also patching
+    module-level INDEX_PATH.
+    """
+    return settings.references_dir / "index.json"
+
+
 @dataclass
 class ReferenceEntry:
     id: str
@@ -24,15 +34,17 @@ class ReferenceEntry:
     notes: str = ""   # why it's a keeper
 
 
-def _load_index(path: Path = INDEX_PATH) -> list[dict]:
+def _load_index(path: Path | None = None) -> list[dict]:
+    path = path or _index_path()
     if not path.exists():
         return []
-    return json.loads(path.read_text())
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _save_index(entries: list[dict], path: Path = INDEX_PATH) -> None:
+def _save_index(entries: list[dict], path: Path | None = None) -> None:
+    path = path or _index_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(entries, indent=2))
+    path.write_text(json.dumps(entries, indent=2), encoding="utf-8")
 
 
 def add(

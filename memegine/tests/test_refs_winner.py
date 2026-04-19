@@ -34,7 +34,7 @@ def test_add_without_winner_flag_does_not_add_tag(isolated_refs, image_file, tmp
     )
     assert "winner" not in entry.tags
     # No codex entry written.
-    assert not codex_path.exists() or "Proven Prompt Patterns" not in codex_path.read_text()
+    assert not codex_path.exists() or "Proven Prompt Patterns" not in codex_path.read_text(encoding="utf-8")
 
 
 def test_add_with_winner_flag_tags_and_logs(isolated_refs, image_file, tmp_path, monkeypatch):
@@ -51,7 +51,7 @@ def test_add_with_winner_flag_tags_and_logs(isolated_refs, image_file, tmp_path,
     )
     assert "winner" in entry.tags
     # Codex was written:
-    text = codex_path.read_text()
+    text = codex_path.read_text(encoding="utf-8")
     assert "Proven Prompt Patterns" in text
     assert "Compounded Patterns" in text
 
@@ -66,7 +66,7 @@ def test_add_winner_without_prompt_does_not_log_codex(isolated_refs, image_file,
     )
     # winner tag still added, but no codex side-effect since no prompt.
     assert "winner" in entry.tags
-    assert not codex_path.exists() or "Proven Prompt Patterns" not in codex_path.read_text()
+    assert not codex_path.exists() or "Proven Prompt Patterns" not in codex_path.read_text(encoding="utf-8")
 
 
 def test_winner_dedupes_tag(isolated_refs, image_file, tmp_path, monkeypatch):

@@ -87,6 +87,17 @@ Post on X
 - **`executor`** — optional Claude API path. If `ANTHROPIC_API_KEY` is
   set, run the brief through Claude and return the finished Grok prompt
   directly instead of a paste-able SYSTEM+USER block.
+- **`batch`** — N briefs across varied formats for one theme. `/batch 4
+  "<theme>"` produces four angles in one pass so you can pick the one
+  that lands.
+- **`caption_linter`** — X caption validator: no emojis, no hashtags, no
+  banned phrases (gm/wagmi/lfg/engagement-bait), length <= 280. Wired
+  into post export so every post-ready bundle gets a lint report.
+- **`discord_webhook`** — fire-and-forget Discord webhook delivery via
+  stdlib urllib. No persistent bot. Scheduler can POST results here the
+  same way it pushes to Telegram.
+- **`stats`** — daily / weekly / all-time activity report across
+  briefs + refs + codex + topics + posts.
 - **`archive`** — every brief saved to `data/logs/briefs-YYYY-MM-DD.jsonl`;
   `memegine history` surfaces them
 - **`pipeline`** — one command, one folder, every brief for a whole piece
@@ -212,6 +223,46 @@ memegine grade-idea "trader at 3am, cope face, 12% drawdown"
 export ANTHROPIC_API_KEY=sk-...
 memegine execute "trader at 3am" --format photoreal_portrait
 # → prints finished Grok-ready prompt + variants + captions directly
+```
+
+### Batch (N briefs, one theme)
+```bash
+memegine batch "the ETF flow number nobody reads" -n 4
+# → data/outputs/<date>_batch_<slug>_<id>/01-photoreal_portrait.md,
+#    02-meme_two_panel.md, 03-reaction_shot_meme.md, 04-lore_drop.md
+```
+
+### Caption lint
+```bash
+memegine caption-lint "it's 3am and no one is home"
+# → PASS, score 100/100
+memegine caption-lint "🚀 gm wagmi #crypto"
+# → FAIL, 4 errors
+```
+
+### Activity report
+```bash
+memegine stats daily
+memegine stats weekly
+memegine stats all
+```
+
+### Discord webhook (scheduler delivery alternative to Telegram)
+```bash
+export MEMEGINE_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+memegine discord-test "webhook is live"
+```
+
+### Topic → bundle convenience
+```bash
+memegine from-topic <topic_id>       # builds a pipeline bundle, marks topic used
+```
+
+### Codex graduation (promote frequent patterns)
+```bash
+memegine codex graduate --threshold 5 --n 500
+# → scans recent briefs, promotes lens/film/lighting seen >= 5 times
+#   to 'Core Patterns' section at the top of the codex
 ```
 
 ### Post-ready export

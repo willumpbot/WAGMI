@@ -39,7 +39,7 @@ def test_record_winner_writes_codex(tmp_path, monkeypatch):
         "landed because of film grain",
     )
     assert not patterns.is_empty()
-    text = codex_path.read_text()
+    text = codex_path.read_text(encoding="utf-8")
     assert "Proven Prompt Patterns" in text
     assert "Compounded Patterns" in text
     assert "35mm" in text

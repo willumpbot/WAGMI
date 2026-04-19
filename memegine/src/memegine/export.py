@@ -65,10 +65,15 @@ def build(
     source_bundle_id: str | None = None,
     source_ref_id: str | None = None,
     posts_dir: Path | None = None,
+    strict_caption: bool = False,
 ) -> PostBundle:
     """Assemble a post-ready folder. Copies media in (never moves).
 
     media_path must exist and be readable.
+
+    strict_caption: when True, raises ValueError if the caption fails the
+    caption linter. When False (default), lint result is written to
+    caption_lint.txt but the bundle still builds — operator's call.
     """
     media_path = Path(media_path)
     if not media_path.exists():
@@ -88,8 +93,17 @@ def build(
     final_path = folder / f"final{final_ext}"
     shutil.copy2(media_path, final_path)
 
+    from . import caption_linter
+    lint_result = caption_linter.lint(caption)
+    if strict_caption and not lint_result.ok:
+        raise ValueError(
+            "caption fails lint (strict_caption=True): "
+            + "; ".join(lint_result.errors)
+        )
+
     (folder / "caption.txt").write_text(caption.strip() + "\n", encoding="utf-8")
     (folder / "alt_text.txt").write_text(alt_text.strip() + "\n", encoding="utf-8")
+    (folder / "caption_lint.txt").write_text(lint_result.as_text() + "\n", encoding="utf-8")
     if reply_hook.strip():
         (folder / "reply_hook.txt").write_text(reply_hook.strip() + "\n", encoding="utf-8")
 
@@ -124,7 +138,9 @@ def build(
         "source_bundle_id": source_bundle_id,
         "source_ref_id": source_ref_id,
     }
-    (folder / "meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False))
+    (folder / "meta.json").write_text(
+        json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
     return PostBundle(
         id=pid,
