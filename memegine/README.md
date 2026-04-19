@@ -121,6 +121,14 @@ Post on X
   Summarizes queue, last winner, top-performing format, and produces a
   ranked list of concrete next moves tailored to the current state.
   CLI: `memegine next`.
+- **`x_post`** — final pre-flight before posting to X: loads a post
+  bundle, runs the caption linter, produces a clipboard-ready block
+  with media path + caption + alt text + reply hook. No API, no paid
+  tier. Free-first. CLI: `memegine x prepare <post_id>`.
+- **`codex_audit`** — detects duplicate codex bullets, contradiction
+  candidates (entries that 'use X' and 'avoid X' at once), and heavy
+  sections that are candidates for `codex distill` / `codex graduate`.
+  CLI: `memegine codex audit`. Bot: `/codex_audit`.
 - **`archive`** — every brief saved to `data/logs/briefs-YYYY-MM-DD.jsonl`;
   `memegine history` surfaces them
 - **`pipeline`** — one command, one folder, every brief for a whole piece
@@ -308,6 +316,28 @@ memegine fragments validate "LENS.35mm_1_4 FILM.unknown_stock"
 ```bash
 memegine variants-last -n 6
 # → uses the prompt from your most recent ref tagged `winner`
+```
+
+### X posting (dry-run, no API)
+```bash
+memegine x prepare <post_bundle_id>
+# → caption lint + media check + clipboard-ready block of every field
+#   you need to copy into X on your phone, plus a manual posting checklist
+```
+
+### Codex audit (keep the style memory clean)
+```bash
+memegine codex audit
+# → reports duplicate entries, contradictions (e.g. "use X" AND "avoid X"),
+#   and heavy sections that should be distilled/graduated
+```
+
+### Performance-weighted batch
+```bash
+memegine batch "a theme" -n 4 --by-perf
+# → picks formats ranked by performance.by_format() instead of the
+#   default curated rotation. Falls back to default rotation when there
+#   isn't enough engagement history yet.
 ```
 
 ### Sessions, journal, and "next moves" dashboard

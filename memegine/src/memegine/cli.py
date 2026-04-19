@@ -16,6 +16,7 @@ from . import (
     auto_codex,
     batch as batch_mod,
     caption_linter,
+    codex_audit,
     copy_writer,
     deep_linter,
     discord_webhook,
@@ -44,6 +45,7 @@ from . import (
     topics,
     transitions as transitions_mod,
     variants as variants_mod,
+    x_post,
 )
 from .config import settings
 
@@ -952,10 +954,14 @@ def batch_cmd(
     formats: Optional[str] = typer.Option(
         None, "--formats", help="Comma-separated format slugs (overrides default rotation)."
     ),
+    by_perf: bool = typer.Option(
+        False, "--by-perf",
+        help="Rank formats by recorded engagement (requires performance history).",
+    ),
 ) -> None:
     """Generate N briefs for one theme across different visual registers."""
     slugs = [f.strip() for f in formats.split(",")] if formats else None
-    result = batch_mod.build(theme, n=n, formats=slugs)
+    result = batch_mod.build(theme, n=n, formats=slugs, by_performance=by_perf)
     console.print(f"[green]batch {result.id}[/] → {result.folder}")
     for i, item in enumerate(result.items, 1):
         console.print(f"  {i:02d}. {item.format_slug}  → {Path(item.brief_path).name}")
@@ -1294,6 +1300,41 @@ def next_cmd() -> None:
     dash = next_action.compute()
     # Plain print — avoids Rich's cp1252 issues on Windows consoles.
     print(dash.as_text())
+
+
+# ---------------------------------------------------------------------------
+# X posting prepare (dry-run).
+# ---------------------------------------------------------------------------
+
+x_app = typer.Typer(help="Pre-flight for posting to X (no API needed).")
+app.add_typer(x_app, name="x")
+
+
+@x_app.command("prepare")
+def x_prepare(
+    post_bundle_id: str = typer.Argument(..., help="Post bundle id from `memegine post list`."),
+) -> None:
+    """Lint + format a post bundle for posting to X."""
+    try:
+        plan = x_post.prepare(post_bundle_id)
+    except FileNotFoundError as exc:
+        print(f"[red]{exc}[/]")
+        raise typer.Exit(code=1)
+    print(plan.checklist_text())
+    print()
+    print(plan.clipboard_block())
+
+
+# ---------------------------------------------------------------------------
+# Codex audit.
+# ---------------------------------------------------------------------------
+
+
+@codex_app.command("audit")
+def codex_audit_cmd() -> None:
+    """Detect duplicate bullets, contradiction hints, heavy sections."""
+    audit = codex_audit.audit()
+    print(audit.as_text())
 
 
 if __name__ == "__main__":

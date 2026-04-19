@@ -74,17 +74,47 @@ def _pick_rotation(n: int, formats_available: set[str]) -> list[str]:
     return picks[:n]
 
 
+def _pick_by_performance(
+    n: int, formats_available: set[str], *, min_posts: int = 2,
+) -> list[str]:
+    """Pick N formats weighted by recorded engagement.
+
+    Order: formats with >= min_posts logged, sorted by avg engagement desc.
+    Then fill with DEFAULT_ROTATION for any remaining slots (so a fresh
+    account with no perf data still gets a sensible batch).
+    """
+    from . import performance
+    ranked = [
+        (slug, n_posts, avg) for slug, n_posts, avg in performance.by_format()
+        if slug in formats_available and n_posts >= min_posts
+    ]
+    picks = [slug for slug, _, _ in ranked]
+    # Fall back to default rotation for remaining slots.
+    for slug in DEFAULT_ROTATION:
+        if slug in formats_available and slug not in picks:
+            picks.append(slug)
+        if len(picks) >= n:
+            break
+    return picks[:n]
+
+
 def build(
     theme: str,
     *,
     n: int,
     formats: list[str] | None = None,
     outputs_dir: Path | None = None,
+    by_performance: bool = False,
 ) -> BatchResult:
     """Produce N briefs for a single theme across varied formats.
 
     formats: optional explicit list of format slugs. If None, uses a
     curated rotation that covers different visual registers.
+
+    by_performance: if True and no explicit formats given, rank formats
+    by recorded engagement (performance.by_format()) and use those first.
+    Requires at least 2 logged posts per format; falls back to default
+    rotation otherwise.
     """
     if n < 1:
         raise ValueError("n must be >= 1")
@@ -93,7 +123,10 @@ def build(
     # Filter requested formats to image-kind only (video requires shot lists).
     requested = [f for f in (formats or []) if f in image_formats]
     if not requested:
-        requested = _pick_rotation(n, image_formats)
+        if by_performance:
+            requested = _pick_by_performance(n, image_formats)
+        else:
+            requested = _pick_rotation(n, image_formats)
 
     base = Path(outputs_dir) if outputs_dir else settings.outputs_dir
     base.mkdir(parents=True, exist_ok=True)

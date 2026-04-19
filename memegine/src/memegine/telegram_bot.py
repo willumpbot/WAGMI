@@ -192,6 +192,8 @@ HELP_TEXT = """Memegine bot — brief delivery
 /next                   one-screen "what should I make?" dashboard
 /session_start [name]   mark start of a working block
 /session_end            close current session
+/x_prepare <post_id>    X post pre-flight (lint + clipboard block)
+/codex_audit            duplicates / contradictions in the codex
 /status                 queue + counts
 /reverse [context]      reverse-brief the next photo you send
 Photo upload (no command) → added to the reference library.
@@ -209,6 +211,7 @@ def _build_handlers(cfg: BotConfig):
         auto_codex,
         batch as batch_mod,
         caption_linter,
+        codex_audit as codex_audit_mod,
         copy_writer,
         deep_linter,
         doctor as doctor_mod,
@@ -229,6 +232,7 @@ def _build_handlers(cfg: BotConfig):
         style_codex,
         topics as topics_mod,
         variants as variants_mod,
+        x_post as x_post_mod,
     )
 
     async def guard(update: "Update") -> bool:
@@ -465,6 +469,27 @@ def _build_handlers(cfg: BotConfig):
             return
         await update.message.reply_text(f"ended session {event.session_id}")
 
+    async def x_prepare_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
+        if not await guard(update):
+            return
+        args = context.args or []
+        if not args:
+            await update.message.reply_text("usage: /x_prepare <post_bundle_id>")
+            return
+        try:
+            plan = x_post_mod.prepare(args[0])
+        except FileNotFoundError as exc:
+            await update.message.reply_text(str(exc))
+            return
+        await _reply_long(update, plan.checklist_text())
+        await _reply_long(update, plan.clipboard_block())
+
+    async def codex_audit_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
+        if not await guard(update):
+            return
+        audit = codex_audit_mod.audit()
+        await _reply_long(update, audit.as_text())
+
     async def formats_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
         if not await guard(update):
             return
@@ -697,6 +722,8 @@ def _build_handlers(cfg: BotConfig):
         "next": next_cmd,
         "session_start": session_start_cmd,
         "session_end": session_end_cmd,
+        "x_prepare": x_prepare_cmd,
+        "codex_audit": codex_audit_cmd,
         "status": status_cmd,
         "reverse": reverse_cmd,
         "_photo": photo_handler,
