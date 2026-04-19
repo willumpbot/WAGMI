@@ -230,9 +230,10 @@ def codex_show() -> None:
     """Print the current style codex."""
     text = style_codex.read()
     if not text:
-        console.print("[dim]Codex is empty. It lives at: " + str(settings.codex_path) + "[/]")
+        print(f"Codex is empty. It lives at: {settings.codex_path}")
         return
-    console.print(Syntax(text, "markdown", theme="monokai", word_wrap=True))
+    # Plain print — rich's Syntax breaks on Windows cp1252 consoles.
+    print(text)
 
 
 @codex_app.command("winner")
