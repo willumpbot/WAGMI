@@ -1735,6 +1735,53 @@ def lookbook_cmd(
     console.print(f"[green]wrote[/] {path}")
 
 
+@app.command("contact-sheet")
+def contact_sheet_cmd(
+    destination: Optional[Path] = typer.Option(
+        None, "--out", "-o",
+        help="Output JPEG. Default: data/lookbooks/contact-sheet-YYYY-MM-DD.jpg",
+    ),
+    cols: int = typer.Option(4, "--cols"),
+    cell_size: int = typer.Option(256, "--cell-size"),
+    max_refs: int = typer.Option(40, "--max"),
+    all_refs: bool = typer.Option(False, "--all"),
+) -> None:
+    """Pack winner thumbnails into one grid JPEG for phone review."""
+    from . import contact_sheet
+    try:
+        result = contact_sheet.generate(
+            destination=destination, cols=cols, cell_size=cell_size,
+            max_refs=max_refs, winners_only=not all_refs,
+        )
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(code=1)
+    console.print(
+        f"[green]wrote[/] {result.destination}  "
+        f"({result.n_refs} refs, {result.cols}x{result.rows})"
+    )
+
+
+@refs_app.command("dedup")
+def refs_dedup_cmd(
+    threshold: int = typer.Option(10, "--threshold",
+                                    help="Hamming distance threshold for pHash."),
+) -> None:
+    """Flag near-duplicate refs (byte-identical + perceptual)."""
+    from . import dedup
+    groups = dedup.find_duplicates(perceptual_threshold=threshold)
+    print(dedup.summary_text(groups))
+
+
+@app.command("consistency")
+def consistency_cmd(
+    prompt: str = typer.Argument(..., help="Prompt to check."),
+) -> None:
+    """Score a prompt's alignment with codex Core Patterns (0-100)."""
+    from . import consistency
+    print(consistency.check(prompt).as_text())
+
+
 @app.command("quick")
 def quick_cmd(
     intent: str = typer.Argument(..., help="Rough intent."),
