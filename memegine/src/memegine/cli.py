@@ -1646,6 +1646,37 @@ def corpus_stats_cmd() -> None:
     print(corpus_distill.stats_text())
 
 
+@corpus_app.command("export")
+def corpus_export_cmd(
+    destination: Path = typer.Argument(..., help="CSV output path."),
+) -> None:
+    """Export all refs + extracted_patterns to CSV for external review."""
+    from . import corpus_export
+    n = corpus_export.export(destination)
+    console.print(f"[green]wrote {n} rows → {destination}[/]")
+
+
+@corpus_app.command("compare")
+def corpus_compare_cmd(
+    tag_a: str = typer.Argument(..., help="First tag, e.g. 'editor:alice'"),
+    tag_b: str = typer.Argument(..., help="Second tag, e.g. 'editor:bob'"),
+) -> None:
+    """Compare two tag-groups side-by-side to see how craft differs."""
+    from . import corpus_export
+    print(corpus_export.compare_text(tag_a, tag_b))
+
+
+@refs_app.command("thumbs")
+def refs_thumbs_cmd(
+    max_width: int = typer.Option(256, "--max-width"),
+    force: bool = typer.Option(False, "--force", help="Regenerate even if up-to-date."),
+) -> None:
+    """Generate 256px thumbnails for every ref (phone browsing)."""
+    from . import thumbnails
+    result = thumbnails.generate_all(max_width=max_width, force=force)
+    print(thumbnails.summary_text(result))
+
+
 @app.command("quick")
 def quick_cmd(
     intent: str = typer.Argument(..., help="Rough intent."),
