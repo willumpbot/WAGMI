@@ -9,54 +9,122 @@
 # Category is uppercase; name is lowercase_snake_case.
 
 LENS:
-  35mm_1_4: "35mm f/1.4 prime, shallow depth of field"
-  50mm_1_8: "50mm f/1.8 prime, natural perspective"
-  85mm_1_2: "85mm f/1.2, compressed perspective, bokeh wall behind subject"
+  # Prime lenses by focal length
   24mm_2_8: "24mm f/2.8 wide, slight distortion at edges, deep scene"
+  28mm_1_8: "28mm f/1.8 street lens, environmental context retained"
+  35mm_1_4: "35mm f/1.4 prime, shallow depth of field, natural perspective"
+  50mm_1_8: "50mm f/1.8 prime, natural perspective, subject isolation"
+  50mm_1_2: "50mm f/1.2, razor-thin DOF, dreamlike subject separation"
+  85mm_1_2: "85mm f/1.2, compressed perspective, bokeh wall behind subject"
+  85mm_1_8: "85mm f/1.8 portrait lens, smooth background fall-off"
+  100mm_macro: "100mm macro, tack-sharp details, shallow DOF on small subjects"
+  135mm_2: "135mm f/2, heavy compression, portraits feel monumentalized"
+  200mm_2_8: "200mm f/2.8 tele, massive compression, distant subject feels pulled in"
+  # Zooms
+  24_70_2_8: "24-70mm f/2.8 zoom, general reportage workhorse"
+  70_200_2_8: "70-200mm f/2.8 zoom, candid distance + compression"
+  # Specialty / vintage
   anamorphic_1_8: "anamorphic 1.8x squeeze, horizontal lens flares, oval bokeh"
-  macro_100mm: "100mm macro, tack-sharp details, shallow DOF"
+  anamorphic_2x: "anamorphic 2x squeeze, pronounced oval bokeh, streak flares"
+  helios_44: "Helios 44-2 58mm f/2, swirly bokeh, Soviet-glass character"
+  petzval: "Petzval lens, swirly background bokeh, center-sharp vignette"
+  tilt_shift: "tilt-shift lens, selective plane of focus, miniature effect"
+  fisheye_8mm: "8mm fisheye, 180-degree curve distortion, novelty POV"
 
 FILM:
+  # Color negatives
+  portra_160: "Kodak Portra 160, soft skin tones, muted greens, low grain"
   portra_400: "Kodak Portra 400 look, creamy skin tones, pastel greens"
+  portra_800: "Kodak Portra 800, grainier warmth, good in low light"
+  fuji_400h: "Fuji 400H, cool pastel palette, clean highlights, pale greens"
+  fuji_pro_160ns: "Fuji Pro 160NS, subdued tones, natural skin, low contrast"
+  ektar_100: "Kodak Ektar 100, saturated colors, sharp grain, high contrast"
+  # Tungsten-balanced
   cinestill_800t: "Cinestill 800T tungsten halation, red bleed around highlights"
-  fuji_400h: "Fuji 400H, cool pastel palette, clean highlights"
-  tri_x: "Tri-X 400 B&W, pushed one stop, coarse grain"
+  cinestill_50d: "Cinestill 50D daylight, fine grain, clean palette"
+  # Slide / reversal
   ektachrome: "Ektachrome slide film, high-saturation cyans and reds"
+  velvia_50: "Velvia 50, ultra-saturated landscape palette, crushed blacks"
+  provia_100f: "Provia 100F slide, neutral palette, balanced saturation"
+  # Black & white
+  tri_x: "Tri-X 400 B&W, pushed one stop, coarse grain"
+  hp5: "Ilford HP5 Plus 400 B&W, flexible tonal range, medium grain"
+  delta_3200: "Ilford Delta 3200, huge grain, low-light graininess as style"
+  acros_100: "Fuji Acros 100, ultra-fine grain, long exposure friendly"
+  # Cinema
+  kodak_vision3_500t: "Kodak Vision3 500T motion-picture stock, filmic roll-off"
+  # Instant
+  polaroid_600: "Polaroid 600, muted palette, characteristic border, slight haze"
+  instax_mini: "Fuji Instax Mini, soft pastels, low contrast, pocket-frame"
+  # Degraded / lo-fi
   vhs: "VHS tape look, tracking artifacts, chromatic aberration, low contrast"
-  super_8: "Super 8 film, soft vignette, slight gate flicker"
+  super_8: "Super 8 film, soft vignette, slight gate flicker, warm cast"
+  super_16: "Super 16mm film, grain-forward, filmic highlights"
   kodachrome: "Kodachrome, deep blacks, cinematic color separation"
+  # Digital looks
+  alexa_lf: "ARRI Alexa LF digital, clean highlights, filmic skin tones"
+  red_komodo: "RED Komodo 6K, crisp detail, filmic with resolve color"
 
 LIGHTING:
+  # Natural
   harsh_window: "hard directional window light from camera-right, shadow side dominant"
-  single_softbox_45: "single softbox 45 degrees camera-right, 4:1 ratio, wrap-around fall-off"
+  soft_window: "soft north-facing window light, wrap-around fill, even tone"
   overcast_ambient: "soft overcast daylight, no direct sun, even illumination"
-  practical_neon: "practical neon signs in frame, mixed tungsten + daylight, colored spill"
+  golden_hour: "warm low-angle golden hour sun, long rim light from behind"
+  blue_hour: "blue hour dusk, ambient cobalt sky + practical warm windows"
   firelight: "warm firelight from below, flickering shadows on upper face"
+  candlelight: "candlelight from below, orange warmth, soft fall-off"
+  moonlight: "cold moonlight through window, subject in silhouette"
+  # Studio setups
+  single_softbox_45: "single softbox 45 degrees camera-right, 4:1 ratio, wrap-around fall-off"
+  butterfly: "butterfly lighting, single key centered high, symmetric under-chin shadow"
+  rembrandt: "Rembrandt lighting, key camera-right 45 degrees, triangle-shaped cheek light"
+  split_lighting: "split lighting, key 90 degrees camera-right, half-face in deep shadow"
+  rim_backlight: "rim backlight, subject separated from dark background by hair-light edge"
+  clamshell: "clamshell, key above + fill below, tight crop, beauty-glow"
+  # Practicals
+  practical_neon: "practical neon signs in frame, mixed tungsten + daylight, colored spill"
   monitor_glow: "cold monitor glow, blue-cyan cast, high contrast on subject face"
   phone_glow: "phone screen glow underlighting from below, subject looking down"
   sodium_vapor: "sodium vapor street lights, amber color cast, deep shadow pools"
   single_bare_bulb: "single bare bulb overhead, hard rim, deep shadows under eyes"
-  candlelight: "candlelight from below, orange warmth, soft fall-off"
-  golden_hour: "warm low-angle golden hour sun, long rim light from behind"
-  blue_hour: "blue hour dusk, ambient cobalt sky + practical warm windows"
+  fluorescent_overhead: "cold fluorescent overhead, green cast, institutional feel"
+  projector_light: "subject lit only by projector beam, particles in the light shaft"
+  lightning_flash: "momentary lightning flash exterior, subject frozen in cold blue"
+  edge_flashlight: "single flashlight raking across subject, deep dropoff elsewhere"
+  headlights_through_window: "car headlights sweeping past exterior window, brief warm wash"
 
 TIME_OF_DAY:
-  3am: "3am, deep night, sodium-lamp amber + phone glow cold cyan"
   dawn: "pre-dawn cold gray, subject in silhouette against window"
+  sunrise: "rose-gold sunrise low-angle, long shadows, warm backlight"
+  morning_soft: "mid-morning soft overcast, even light, calm"
+  noon_flat: "overcast noon, no shadows, flat everywhere"
+  noon_harsh: "clear noon sun, harsh overhead, deep nose shadow"
+  afternoon_warm: "late afternoon warm light, low angle beginning"
   golden_hour: "late afternoon golden hour, horizontal rim light"
   dusk: "dusk, sky fading to cobalt, practicals turning on"
-  overcast_noon: "overcast noon, no shadows, flat everywhere"
+  blue_hour: "blue hour after sunset, cobalt sky, warm windows"
+  night_early: "early night, streetlights dominant, ambient sky gone"
+  3am: "3am, deep night, sodium-lamp amber + phone glow cold cyan"
+  4am: "4am, near-empty world, cold blue pre-dawn hinting"
   midnight: "midnight, only practicals lit, exterior darkness beyond frame"
 
 COMPOSITION:
   thirds_left: "rule of thirds, subject on left third, negative space right half"
+  thirds_right: "rule of thirds, subject on right third, negative space left half"
   centered_medium: "centered medium close-up, eye-level, shoulder width frame"
+  centered_tight: "centered tight close-up, eye-level, eyes on upper third"
   low_angle_hero: "low angle slight up-tilt, subject dominant against sky or ceiling"
+  high_angle_observer: "high angle slight down-tilt, subject small in frame"
   dutch_tilt: "dutch tilt 12 degrees, subject upright in frame, world skewed"
   over_shoulder: "over-shoulder rear 3/4, subject back-lit, target object in frame"
   wide_lockoff: "wide lock-off, subject small in frame, environment is 70% of image"
   tight_hands: "tight crop on hands and object, face out of frame"
   symmetry_axial: "perfectly symmetrical frame, subject center, mirrored elements flanking"
+  leading_lines: "strong leading lines converging on subject, depth emphasis"
+  negative_space_sky: "massive negative space upward (sky/ceiling), subject low-third"
+  reflection_split: "subject + reflection in window or water, composition split"
+  frame_within_frame: "subject framed by doorway / window / archway, depth layers"
 
 MOOD:
   quiet_dread: "quiet dread, subject not moving, stillness is the emotion"
@@ -66,6 +134,12 @@ MOOD:
   absurd_calm: "absurd calm, deadpan, as if the scene is normal when it obviously isn't"
   reverent: "reverent stillness, slight tilt of head, looking at something beyond frame"
   exhausted: "exhausted, weight on elbows, eyes unfocused"
+  unhinged_joy: "unhinged joy, mouth open mid-laugh, eyes slightly too wide"
+  dissociated: "dissociated, staring past the camera, unfocused middle distance"
+  contempt: "contempt, single raised brow, mouth corner down"
+  giddy_panic: "giddy panic, laughing at bad news, fingers at temples"
+  monk_stillness: "monk stillness, subject present but unmoving, zero urgency"
+  obsessive_focus: "obsessive focus, subject locked on task, no awareness of room"
 
 SUBJECT:
   crypto_trader: "a 30s crypto trader in a black hoodie at a laptop, tired posture"
@@ -73,6 +147,13 @@ SUBJECT:
   founder_rooftop: "a founder on a rooftop at dusk, city lights behind, hands in pockets"
   anon_character: "an anonymous hooded figure from behind, face obscured, laptop illuminated"
   market_anon_avatar: "Market-anon, a recurring mask-like avatar in a leather jacket, keep eyes/jawline consistent across pieces"
+  quant_analyst: "a quant analyst in thin glasses, desk covered in printouts, pen in hand"
+  tired_pm: "a tired product manager in a button-up with the top button undone, glasses pushed up"
+  crypto_bro_new: "a first-cycle crypto bro, too-loud Hawaiian shirt, overconfidence"
+  crypto_bro_old: "a 2017-cycle veteran, grown out beard, worn hoodie, tired eyes"
+  shiller: "a shiller in too-bright clothes gesturing at a whiteboard, mouth open mid-pitch"
+  npc_crowd: "a crowd of identical flat-color NPC faces, all mid-sentence"
+  wojak_basic: "a basic wojak character, flat-color, MS-Paint linework, expressive face"
 
 LOCATION:
   kitchen_3am: "a kitchen at 3am, single bulb overhead, empty glass on counter"
@@ -81,16 +162,101 @@ LOCATION:
   parking_garage: "underground parking garage, concrete columns, flickering tubes, no cars"
   motel_room: "roadside motel room, single bed, cathode TV glow, heavy curtain"
   dive_bar: "dive bar at closing, neon beer sign, wiped counter, one glass left"
+  hotel_hallway: "hotel corridor with patterned carpet, identical doors vanishing to point"
+  convenience_store: "fluorescent-lit convenience store aisle at night, shelf-tall subject"
+  trading_floor: "empty trading floor after hours, abandoned headsets, amber screens"
+  suburb_lawn_predawn: "suburban front lawn pre-dawn, sprinkler ticking, morning paper"
+  highway_shoulder: "interstate shoulder at night, truck headlights passing, long grass"
+  office_after_hours: "empty open-plan office, rows of dark monitors, one light still on"
+  diner_booth_late: "diner booth at 2am, chrome edging, fluorescent ceiling panel"
+  bodega_counter: "late-night bodega counter, cigarette display behind, register chime"
+  train_window_interior: "night train interior, empty seats, amber window frames passing"
+  server_room: "server room, cool blue LED glow, steady hum implied, cable trays"
+  bathroom_flourescent: "public bathroom, cold fluorescent, mirror, one tap running"
+  attic_storage: "attic storage, single pull-cord bulb, boxes stacked, dust in beam"
 
 NEGATIVE:
   photoreal_defaults: "no extra fingers, no warped text, no logo watermarks, no lens flares unless specified, no CGI look"
   text_rendering: "no garbled text, no misspelled signage, no AI-hand artifacts on text"
   character_consistency: "no face drift from prior pieces, keep eyes/jawline consistent"
+  no_cliche: "no generic crypto imagery, no gold coins, no moon rockets, no laser eyes"
+  no_slop: "no AI-generated-looking sheen, no overly-smooth skin, no symmetrical blur"
+  realism_enforcement: "no fake depth-of-field, no uniform grain, retain natural skin texture"
 
 CAMERA_MOVE:
   slow_push: "slow push-in, 8mm total travel over the duration, ease-in-out"
+  slow_pull: "slow pull-out, 8mm total travel, revealing surrounding context"
   rack_focus_fg_to_subject: "rack focus from foreground element (about 2ft from lens) to subject face"
+  rack_focus_subject_to_bg: "rack focus from subject face to background object"
   orbit_15: "slow orbit 15 degrees to camera left, subject held in center frame"
   lockoff_subject_motion: "static lockoff, subject performs all motion; camera does nothing"
   ken_burns_zoom: "Ken Burns zoom 3% over the duration, no pan"
+  ken_burns_pan: "Ken Burns pan across the still, no zoom"
   whip_left_to_next: "whip pan left at the cut, carries to next shot"
+  handheld_float: "subtle handheld float, no intentional shake, feels present"
+  crash_zoom: "crash zoom in, one-shot punch, lands on subject eyes"
+  steadicam_follow: "steadicam follow behind subject walking, shoulder-level frame"
+
+# --- new categories below ---
+
+COLOR_PALETTE:
+  teal_orange: "teal shadows + orange skin tones, filmic contrast"
+  neon_and_tungsten: "cool neon spill + warm tungsten practicals mixed in frame"
+  bleached_pastel: "bleached pastels, low saturation, washed-out sun"
+  deep_emerald: "deep emeralds, forest greens, near-black shadows"
+  sodium_amber: "sodium amber dominant, cyan highlights as accent"
+  monochrome_blue: "cold monochrome blue palette, single warm accent source"
+  monochrome_warm: "warm monochrome, amber-through-red, cool highlights killed"
+  neutral_documentary: "neutral documentary palette, no color grading"
+  crushed_blacks: "crushed blacks, highlights intact, high-contrast S-curve"
+  faded_kodak: "faded Kodak look, lifted blacks, slight green cast in shadows"
+
+WEATHER:
+  rain_on_window: "rain on a window, droplets, subject behind glass"
+  heavy_rain_street: "heavy rain on wet asphalt, subject walking, umbrella light catching"
+  light_mist: "light mist, softens mid-ground, subject's breath visible"
+  fog_rolled_in: "dense fog rolled in, visibility 30 feet, subject emerging"
+  snow_falling: "snow falling slowly, subject mid-frame, footsteps in frame"
+  snow_aftermath: "snow aftermath, clean untouched surface, first footprints"
+  humid_haze: "humid summer haze, heat distortion in distance"
+  thunderstorm_pending: "pre-thunderstorm stillness, sky darkened, leaves turned"
+  clear_cold: "clear cold day, breath visible, sharp long shadows"
+  windy_gusts: "visible wind, hair/clothing in motion, loose objects drifting"
+
+AUDIO:
+  silence: "silence, no music, no ambient, just the subject's breath"
+  music_only: "music underscore only, no dialogue, no ambient"
+  ambient_room: "room tone only — refrigerator hum, distant street, no music"
+  voice_memo: "single take voice-memo-style voiceover, low-fi, no production"
+  punch_in_sfx_only: "sound design only, no music, single impact sfx on cut"
+  radio_bleed: "distant radio or TV bleeding through wall, specific era detectable"
+
+TYPOGRAPHY:
+  impact_meme: "Impact-style white text with black stroke, dead-center horizontal"
+  impact_bottom: "Impact-style white text with black stroke, bottom third"
+  serif_pullquote: "large serif pull-quote, left-aligned, editorial magazine feel"
+  monospace_terminal: "monospace type, amber or green, terminal-accurate"
+  broadsheet_serif: "broadsheet serif headline, sans-serif body, balanced hierarchy"
+  handwritten_sharpie: "handwritten Sharpie lettering, imperfect, human hand"
+  lower_third_chyron: "broadcast-style lower-third chyron, white serif on red band"
+
+ASPECT_RATIO:
+  9_16_vertical: "aspect ratio 9:16 vertical, phone-native composition"
+  1_1_square: "aspect ratio 1:1 square, feed-native framing"
+  4_5_portrait: "aspect ratio 4:5 portrait, IG-native, more generous vertical"
+  16_9_landscape: "aspect ratio 16:9 landscape, cinematic horizontal"
+  2_35_scope: "aspect ratio 2.35:1 anamorphic scope, letterboxed"
+  4_3_archival: "aspect ratio 4:3 archival, documentary frame"
+  3_2_photo: "aspect ratio 3:2 still-photo, traditional 35mm frame"
+
+POSTPROCESS:
+  heavy_grain: "heavy film grain overlay, organic, varying"
+  subtle_grain: "subtle grain, barely visible, texture not noise"
+  halation_red: "red halation around highlights, tungsten-film feel"
+  crushed_shadows: "shadows crushed to near-black, midtones pushed up"
+  filmic_roll_off: "filmic highlight roll-off, no digital clipping"
+  soft_diffusion: "soft diffusion filter, pro-mist look, bloomed highlights"
+  cross_process: "cross-processed look, shifted greens/yellows, punchy contrast"
+  faded_bypass: "bleach-bypass, desaturated with preserved contrast"
+  vhs_artifacting: "VHS artifacting, horizontal tracking lines, chroma smear"
+  no_sharpening: "no digital sharpening, natural lens-native detail"
