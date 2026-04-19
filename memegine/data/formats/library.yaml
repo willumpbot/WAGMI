@@ -343,3 +343,227 @@ formats:
         "stacked products on shelf",
       ]
       offer_text: ["< 8 words, all-caps, dollar amount"]
+
+  - slug: screenshot_dm
+    kind: image
+    description: |
+      Fake DM thread screenshot — two people, short exchange, the
+      punchline is in the last message. Ideogram territory. Works when
+      the joke depends on a specific voice.
+    prompt_scaffold: |
+      Screenshot of a direct-message thread between two people, {platform_look}
+      (e.g. iMessage, Telegram, Twitter DMs). Sender avatar left, subject
+      avatar right. Messages stacked chronologically.
+      Message 1 (other person): "{setup_message}".
+      Message 2 (you): "{response_message}".
+      Message 3 (other person): "{payoff_message}".
+      Realistic timestamps, realistic read receipts, pixel-accurate UI chrome,
+      no watermarks.
+    good_models: [ideogram_via_grok]
+    slot_hints:
+      platform_look: ["iMessage bubbles", "Telegram", "Twitter/X DM", "WhatsApp"]
+      setup_message: ["the unsuspecting question, < 15 words"]
+      response_message: ["the absurd take, < 15 words"]
+      payoff_message: ["one word or emoji reaction OR a devastating follow-up"]
+
+  - slug: polaroid_stack
+    kind: image
+    description: |
+      Stack of 3-5 Polaroids, fanned out, one on top showing the hero
+      image. Handwritten date on the white border. Low-fi, nostalgic.
+    prompt_scaffold: |
+      Top-down flat-lay of {n} Polaroids fanned on {surface}, top Polaroid
+      visible showing {hero_scene}. Handwritten date on the white border
+      reading "{date_text}" in blue ballpoint. Remaining Polaroids partially
+      hidden, showing only edges. Natural diffused daylight, 3:2 aspect.
+      Polaroid color signature: Polaroid 600 palette, slight magenta shift.
+      No digital watermarks, no filter edges visible.
+    good_models: [aurora, flux_pro_via_grok]
+    slot_hints:
+      n: [3, 4, 5]
+      surface: ["weathered oak table", "white linen", "concrete slab", "car dashboard"]
+      date_text: ["MM/DD/YY format, imperfect handwriting"]
+
+  - slug: movie_still_quote
+    kind: image
+    description: |
+      Cinema frame as if lifted from a 70s-90s film. Subtitle burned in at
+      the bottom. Lo-fi grain. The subtitle IS the punchline.
+    prompt_scaffold: |
+      Cinematic film still, aspect 2.35:1 anamorphic letterbox, {subject_scene},
+      shot on {film_stock} (e.g. Kodak Vision3 500T), {lighting_setup},
+      grain-forward, slight gate weave implied. White subtitle text at
+      bottom center reading "{subtitle_line}". Subtitle typography:
+      condensed sans-serif with subtle drop shadow. No director credit,
+      no title card, no timestamp.
+    good_models: [ideogram_via_grok, aurora]
+    slot_hints:
+      subtitle_line: ["one sentence, ≤ 15 words, feels like dialogue"]
+      film_stock: ["Kodak Vision3 500T", "Fuji 8592", "Kodak 5219", "VHS tape"]
+
+  - slug: breaking_news_banner
+    kind: image
+    description: |
+      TV-news broadcast still with an absurd chyron. "BREAKING:" banner
+      top, ticker scroll bottom, serious-looking anchor or field reporter
+      in frame (or a photoreal scene). Deadpan broadcast tone.
+    prompt_scaffold: |
+      TV news broadcast still frame, aspect 16:9, {main_image} filling the
+      frame. Red "BREAKING NEWS" banner across the top with white serif
+      type reading "{breaking_text}". Lower-third chyron in white on red
+      reading "{chyron_subhead}". Thin ticker at bottom reading
+      "{ticker_text}". Network logo bug in bottom-right corner (generic,
+      no real network). Broadcast color, no ASPE fidelity, slight scanline
+      feel.
+    good_models: [ideogram_via_grok]
+    slot_hints:
+      main_image: ["photoreal scene matching the story", "field reporter mid-frame"]
+      breaking_text: ["ALL-CAPS, ≤ 10 words, news register"]
+      ticker_text: ["20-40 words of absurd one-liners separated by • marks"]
+
+  - slug: document_scan
+    kind: image
+    description: |
+      Scan or photograph of a fake official document. Letterhead, serial
+      number, stamps, signature. The absurdity is in the bureaucratic
+      specificity.
+    prompt_scaffold: |
+      Photograph or scan of a {doc_type} (e.g. legal letter, bank
+      statement, medical form, lease rider), {paper_style} paper,
+      letterhead at top reading "{letterhead_text}", body text reading
+      "{body_text}" in serif, signature line at bottom with hand-signature
+      of "{signed_name}", official-looking stamp in {stamp_color} reading
+      "{stamp_text}". Slight angle, slight shadow of the phone taking
+      the photo, no watermarks.
+    good_models: [ideogram_via_grok]
+    slot_hints:
+      doc_type: ["legal notice", "HR memo", "bank statement", "lease rider", "medical form"]
+      paper_style: ["cream 24lb", "generic white bond", "yellow carbonless"]
+      stamp_color: ["red", "blue", "purple"]
+
+  - slug: tombstone_meme
+    kind: image
+    description: |
+      Dramatic "in memoriam" style image for a joke subject. Tombstone in
+      a graveyard, carved text is the punchline, weather is dramatic.
+    prompt_scaffold: |
+      A gravestone in {graveyard_setting}, subject: the gravestone is the
+      focus of the frame. Carved inscription in the stone reading
+      "{inscription}". Carved dates below: "{dates}". {lighting_setup}
+      (e.g. overcast, rain, single shaft of sun). Weathered stone, moss,
+      slight tilt. Serif carved lettering. Composition: rule of thirds,
+      stone on left third, negative space right half. Photoreal, no CGI.
+    good_models: [aurora, flux_pro_via_grok]
+    slot_hints:
+      graveyard_setting: ["overcast rural graveyard", "foggy cemetery morning", "abandoned churchyard"]
+      inscription: ["≤ 10 words, devastating"]
+      dates: ["e.g. 'BULL MARKET / 2020 — 2022'"]
+
+  - slug: whiteboard_diagram
+    kind: image
+    description: |
+      Hand-drawn diagram on a whiteboard — arrows, boxes, percentages,
+      absurd labels. Feels like a takeoff of a "galaxy-brain explainer"
+      photo you'd see on X. Photo of the whiteboard, not a clean render.
+    prompt_scaffold: |
+      Photograph of a {whiteboard_size} whiteboard in {whiteboard_setting},
+      hand-drawn diagram in dry-erase marker. Central concept boxed, arrows
+      pointing out to labeled nodes. Labels include "{label_1}", "{label_2}",
+      "{label_3}", arrows marked with "{arrow_note}". Some handwriting is
+      clean, some is rushed. Occasional smudge. Side of the frame shows
+      {reality_anchor} (e.g. a coffee cup, a stack of reports, a chair
+      edge). {lighting_setup}.
+    good_models: [ideogram_via_grok, aurora]
+    slot_hints:
+      whiteboard_size: ["large wall-mounted", "portable easel", "office mid-size"]
+      whiteboard_setting: ["office conference room", "home studio", "apartment wall"]
+      label_1: ["a step in the pipeline, ≤ 5 words"]
+      label_2: ["a step, ≤ 5 words"]
+      label_3: ["the absurd conclusion, ≤ 5 words"]
+      reality_anchor: ["coffee cup", "chair edge", "stack of reports", "laptop corner"]
+
+  - slug: podcast_clip_still
+    kind: image
+    description: |
+      Still frame from a podcast clip — talking head in 3/4 framing, big
+      burned-in subtitle at the bottom. The subtitle IS the take. For
+      "guy said what?" reactive content.
+    prompt_scaffold: |
+      Static still frame from a podcast video, 3/4 framing of {character},
+      wearing headphones, {wardrobe}, mid-sentence expression, {lens_and_film}
+      (e.g. 50mm f/1.8), {lighting_setup} (e.g. soft key camera-right, warm
+      practicals). Subtitle burned in at bottom center in large condensed
+      sans-serif, white with black stroke, reading: "{subtitle_text}".
+      Behind subject: {background} (e.g. acoustic panel wall, bookshelf,
+      neon "ON AIR" sign). 16:9 aspect.
+    good_models: [ideogram_via_grok, aurora]
+    slot_hints:
+      character: ["a tired founder", "a smug VC", "a bearded analyst"]
+      wardrobe: ["black crew neck", "untucked button-up", "cheap suit"]
+      subtitle_text: ["one sentence, ≤ 15 words"]
+      background: ["acoustic panels", "bookshelf with books angled toward camera", "gradient LED wall"]
+
+  - slug: magazine_cover
+    kind: image
+    description: |
+      Fake magazine cover. Big hero image, huge cover title, cover
+      lines. The cover title is usually the joke; cover lines pepper the
+      absurdity across the layout.
+    prompt_scaffold: |
+      Magazine cover layout, aspect 3:4, hero photograph filling the
+      frame showing {hero_scene}, masthead at top reading "{publication_name}"
+      in {masthead_style}, main cover title in huge type reading
+      "{cover_title}", cover lines running along the edges: "{cover_line_1}",
+      "{cover_line_2}", "{cover_line_3}". Issue date and number small in
+      corner: "{issue_line}". Barcode small at bottom. Professional
+      magazine typography.
+    good_models: [ideogram_via_grok, aurora]
+    slot_hints:
+      publication_name: ["WIRED", "GQ", "TIME", "FORBES", "VICE", "invented one"]
+      masthead_style: ["large italic serif", "bold sans", "letterpressed classic"]
+      cover_title: ["the main punchline, ≤ 8 words"]
+      cover_line_1: ["short inline teaser, ≤ 10 words"]
+      cover_line_2: ["short inline teaser, ≤ 10 words"]
+      cover_line_3: ["short inline teaser, ≤ 10 words"]
+      issue_line: ["Vol. X, Issue Y  MONTH YEAR"]
+
+  - slug: receipt_photo
+    kind: image
+    description: |
+      Photograph of a printed receipt. Itemized lines, absurd purchases.
+      The joke is in the line items, usually ending with the total and
+      tip.
+    prompt_scaffold: |
+      Photograph of a printed thermal-paper receipt from {merchant_type}
+      (e.g. 7-Eleven, bodega, gas station), slightly crumpled, on
+      {surface_under_receipt}. Merchant name at top reading
+      "{merchant_name}", address line below, date/time, itemized lines:
+      "{item_1}", "{item_2}", "{item_3}", "{item_4}". Subtotal,
+      tax, total. One line stands out: "{punchline_line}". Phone camera
+      angle, slight shadow, natural daylight. Thermal-paper fade at edges.
+    good_models: [ideogram_via_grok]
+    slot_hints:
+      merchant_type: ["7-Eleven style convenience store", "dive bar", "hotel mini-bar", "airline purchase"]
+      merchant_name: ["made up, plausible"]
+      surface_under_receipt: ["laminate diner table", "hotel duvet", "car passenger seat"]
+
+  - slug: billboard_roadside
+    kind: image
+    description: |
+      A roadside billboard carrying an absurd message, seen from a moving
+      car or a highway shoulder. Plate reads as a real ad — bureau
+      typography, brand-style, photoreal.
+    prompt_scaffold: |
+      Roadside billboard photographed from {vantage}, large dominant ad
+      taking most of the frame, message reading "{headline}" in bold sans,
+      supporting subcopy "{subcopy}" smaller below, brand logo in corner:
+      "{brand}". Surrounding: {surrounding} (e.g. telephone poles,
+      interstate lights, parking lot). {time_of_day}, {lighting_setup},
+      slight motion blur if from car, aspect 16:9.
+    good_models: [ideogram_via_grok, aurora]
+    slot_hints:
+      vantage: ["moving-car POV", "highway shoulder", "pedestrian crosswalk"]
+      headline: ["≤ 6 words, bold sans"]
+      subcopy: ["one short line of body copy"]
+      brand: ["made-up but plausible brand"]
+      surrounding: ["interstate shoulder", "strip mall parking lot", "rural county road"]

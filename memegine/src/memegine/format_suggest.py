@@ -101,6 +101,50 @@ FORMAT_TRIGGERS: dict[str, list[str]] = {
         "infomercial", "vhs ad", "commercial still", "800 number",
         "call now", "19.99", "tv commercial", "rec room ad",
     ],
+    "screenshot_dm": [
+        "dm thread", "dms", "text thread", "imessage", "telegram dm",
+        "text messages", "message exchange", "chat screenshot",
+    ],
+    "polaroid_stack": [
+        "polaroid", "polaroids", "stack of photos", "instant camera",
+        "handwritten date", "photo stack",
+    ],
+    "movie_still_quote": [
+        "movie still", "film still", "cinema frame", "subtitle quote",
+        "letterboxed", "anamorphic still",
+    ],
+    "breaking_news_banner": [
+        "breaking news", "news banner", "broadcast still", "news chyron",
+        "breaking:", "field reporter",
+    ],
+    "document_scan": [
+        "document", "legal notice", "memo", "bank statement",
+        "medical form", "lease", "official document", "fake document",
+    ],
+    "tombstone_meme": [
+        "tombstone", "graveyard", "rip", "in memoriam", "gravestone",
+        "epitaph",
+    ],
+    "whiteboard_diagram": [
+        "whiteboard", "diagram", "galaxy brain", "explainer diagram",
+        "big brain chart", "arrows and boxes",
+    ],
+    "podcast_clip_still": [
+        "podcast clip", "podcast still", "talking head", "podcast subtitle",
+        "guy said", "clip said",
+    ],
+    "magazine_cover": [
+        "magazine cover", "cover story", "gq cover", "time cover",
+        "wired cover", "masthead",
+    ],
+    "receipt_photo": [
+        "receipt", "itemized", "thermal paper", "bodega receipt",
+        "line items",
+    ],
+    "billboard_roadside": [
+        "billboard", "roadside billboard", "highway billboard", "big ad",
+        "outdoor advertising",
+    ],
 }
 
 # Strong intent cues for the "kind" (image vs video) when operator hasn't said.
