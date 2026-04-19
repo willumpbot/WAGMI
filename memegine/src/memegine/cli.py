@@ -1810,6 +1810,88 @@ def inspire_cmd(
         raise typer.Exit(code=1)
 
 
+@refs_app.command("similar")
+def refs_similar_cmd(
+    ref_id: str = typer.Argument(..., help="Ref id to find similars for."),
+    limit: int = typer.Option(10, "-n"),
+) -> None:
+    """Find the N visually-closest refs by perceptual hash."""
+    from . import refs_similar
+    print(refs_similar.find_similar_text(ref_id, limit=limit))
+
+
+campaigns_app = typer.Typer(help="Group pieces into named campaigns.")
+app.add_typer(campaigns_app, name="campaign")
+
+
+@campaigns_app.command("create")
+def campaigns_create_cmd(
+    name: str = typer.Argument(..., help="Campaign name."),
+    description: str = typer.Option("", "--desc"),
+    tags: Optional[str] = typer.Option(None, "--tags"),
+) -> None:
+    from . import campaigns
+    tag_list = [t.strip() for t in tags.split(",")] if tags else None
+    c = campaigns.create(name, description=description, tags=tag_list)
+    console.print(f"[green]created[/] {c.id}  {c.name}")
+
+
+@campaigns_app.command("list")
+def campaigns_list_cmd(
+    status: Optional[str] = typer.Option(None, "--status"),
+) -> None:
+    from . import campaigns
+    if status:
+        for e in campaigns.list_all(status=status):
+            console.print(f"{e['id']}  {e['name']}")
+    else:
+        print(campaigns.summary_text())
+
+
+@campaigns_app.command("add-ref")
+def campaigns_add_ref_cmd(
+    campaign_id: str = typer.Argument(...),
+    ref_id: str = typer.Argument(...),
+) -> None:
+    from . import campaigns
+    if campaigns.add_ref(campaign_id, ref_id):
+        console.print(f"[green]added ref {ref_id}[/] to {campaign_id}")
+    else:
+        console.print("[red]campaign not found or ref already in[/]")
+        raise typer.Exit(code=1)
+
+
+@campaigns_app.command("add-topic")
+def campaigns_add_topic_cmd(
+    campaign_id: str = typer.Argument(...),
+    topic_id: str = typer.Argument(...),
+) -> None:
+    from . import campaigns
+    if campaigns.add_topic(campaign_id, topic_id):
+        console.print(f"[green]added topic {topic_id}[/] to {campaign_id}")
+    else:
+        console.print("[red]campaign not found or topic already in[/]")
+        raise typer.Exit(code=1)
+
+
+@campaigns_app.command("status")
+def campaigns_status_cmd(
+    campaign_id: str = typer.Argument(...),
+    status: str = typer.Argument(..., help="active | paused | closed"),
+) -> None:
+    from . import campaigns
+    try:
+        ok = campaigns.set_status(campaign_id, status)
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(code=1)
+    if ok:
+        console.print(f"[green]campaign {campaign_id} → {status}[/]")
+    else:
+        console.print("[red]not found[/]")
+        raise typer.Exit(code=1)
+
+
 project_app = typer.Typer(help="Archive / restore the full memegine state.")
 app.add_typer(project_app, name="project")
 

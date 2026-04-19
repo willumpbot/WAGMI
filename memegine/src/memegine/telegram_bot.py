@@ -208,6 +208,8 @@ HELP_TEXT = """Memegine bot — brief delivery
 /brief_claude           Claude-powered 3-intent briefer (API key)
 /contact_sheet          grid image of winners, sent inline
 /preflight <prompt>     one-gate lint + score + consistency
+/inspire <intent>       next photo → inherit its craft for a new intent
+Photo with caption "inspire: <intent>" → same, one-shot.
 /status                 queue + counts
 /reverse [context]      reverse-brief the next photo you send
 Photo upload (no command) → added to the reference library.
@@ -859,18 +861,52 @@ def _build_handlers(cfg: BotConfig):
                 system, user = reverse_engineer.build_reverse_brief(tmp_path, context=context_note)
                 archive.save(kind="reverse", intent=f"photo:{tmp_path.name}", system=system, user=user)
                 await _reply_long(update, f"## SYSTEM\n{system}\n\n## USER\n{user}")
+            elif sess.pending_photo_action == "inspire":
+                intent = sess.pending_context or ""
+                sess.pending_photo_action = ""
+                sess.pending_context = ""
+                if not intent:
+                    await update.message.reply_text("no intent — send `/inspire <intent>` first, then the photo")
+                    return
+                from . import inspire
+                result = inspire.run(tmp_path, intent)
+                await _reply_long(update, result.as_text())
             else:
-                # Default: add to refs. Caption is used as notes if provided.
-                note = (update.message.caption or "").strip()
-                entry = reference_lib.add(
-                    tmp_path, tags=["telegram"], source="telegram", notes=note
-                )
-                await update.message.reply_text(f"added ref {entry.id} → {entry.filename}")
+                # Default: add to refs. Caption, if present, is used as notes
+                # AND checked for "inspire: ..." prefix for a one-shot inspire.
+                caption = (update.message.caption or "").strip()
+                if caption.lower().startswith("inspire:"):
+                    intent = caption.split(":", 1)[1].strip()
+                    from . import inspire
+                    result = inspire.run(tmp_path, intent)
+                    await _reply_long(update, result.as_text())
+                else:
+                    entry = reference_lib.add(
+                        tmp_path, tags=["telegram"], source="telegram", notes=caption
+                    )
+                    await update.message.reply_text(f"added ref {entry.id} → {entry.filename}")
         finally:
             try:
                 tmp_path.unlink(missing_ok=True)
             except Exception:
                 pass
+
+    async def inspire_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
+        if not await guard(update):
+            return
+        intent = " ".join(context.args or []).strip()
+        if not intent:
+            await update.message.reply_text(
+                "usage: /inspire <intent>  — then send the inspiration photo next"
+            )
+            return
+        uid = update.effective_user.id
+        sess = _session(uid)
+        sess.pending_photo_action = "inspire"
+        sess.pending_context = intent
+        await update.message.reply_text(
+            f"ok — send the inspiration photo next. intent: {intent[:80]}"
+        )
 
     return {
         "help": help_cmd,
@@ -919,6 +955,7 @@ def _build_handlers(cfg: BotConfig):
         "brief_claude": morning_brief_claude_cmd,
         "contact_sheet": contact_sheet_cmd,
         "preflight": preflight_cmd,
+        "inspire": inspire_cmd,
         "status": status_cmd,
         "reverse": reverse_cmd,
         "_photo": photo_handler,
