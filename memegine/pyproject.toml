@@ -30,6 +30,7 @@ dev = [
 
 [project.scripts]
 memegine = "memegine.cli:app"
+mem = "memegine.cli:app"
 
 [build-system]
 requires = ["setuptools>=61.0"]

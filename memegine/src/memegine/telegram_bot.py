@@ -201,6 +201,8 @@ HELP_TEXT = """Memegine bot — brief delivery
 /last                   last brief/winner/post/session in one view
 /search <query>         search across briefs/refs/posts/codex/topics
 /format_health          classify formats by performance
+/quick <intent>         grade + queue an idea (phone capture)
+/cheatsheet             top 20 commands
 /status                 queue + counts
 /reverse [context]      reverse-brief the next photo you send
 Photo upload (no command) → added to the reference library.
@@ -565,6 +567,31 @@ def _build_handlers(cfg: BotConfig):
         from . import format_health
         await _reply_long(update, format_health.evaluate().as_text())
 
+    async def quick_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
+        if not await guard(update):
+            return
+        intent = " ".join(context.args or []).strip()
+        if not intent:
+            await update.message.reply_text("usage: /quick <intent>")
+            return
+        g = idea_grader.grade(intent)
+        if g.letter in ("D", "F"):
+            tips = "\n".join(f"- {s}" for s in g.suggestions[:3])
+            await update.message.reply_text(
+                f"grade: {g.letter}  score: {g.score}/100\n\ntighten before queuing:\n{tips}"
+            )
+            return
+        t = topics_mod.add(intent, priority=3, source="telegram_quick")
+        await update.message.reply_text(
+            f"grade: {g.letter}  score: {g.score}/100\nqueued {t.id}"
+        )
+
+    async def cheatsheet_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
+        if not await guard(update):
+            return
+        from . import cheatsheet
+        await _reply_long(update, cheatsheet.render())
+
     async def formats_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
         if not await guard(update):
             return
@@ -805,6 +832,8 @@ def _build_handlers(cfg: BotConfig):
         "last": last_cmd,
         "search": search_cmd,
         "format_health": format_health_cmd,
+        "quick": quick_cmd,
+        "cheatsheet": cheatsheet_cmd,
         "status": status_cmd,
         "reverse": reverse_cmd,
         "_photo": photo_handler,

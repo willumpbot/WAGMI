@@ -1574,6 +1574,47 @@ def self_test_cmd() -> None:
         raise typer.Exit(code=1)
 
 
+@app.command("cheatsheet")
+def cheatsheet_cmd() -> None:
+    """Print the 20 commands you actually use 90% of the time."""
+    from . import cheatsheet
+    print(cheatsheet.render())
+
+
+@app.command("quick")
+def quick_cmd(
+    intent: str = typer.Argument(..., help="Rough intent."),
+    priority: int = typer.Option(3, "-p", "--priority", help="1-5."),
+    pipeline: bool = typer.Option(False, "--pipeline",
+                                  help="If grade >= C, also build a pipeline bundle."),
+) -> None:
+    """Capture + grade (+ optional pipeline) an idea in one command.
+
+    Phone-optimized: type `memegine quick "..."` and it:
+    1. Grades the idea
+    2. Queues it if grade is C or better (otherwise advises tightening)
+    3. Optionally builds a pipeline bundle for A/B ideas (--pipeline)
+    """
+    from . import idea_grader
+    g = idea_grader.grade(intent)
+    print(f"grade: {g.letter}  score: {g.score}/100")
+    if g.letter in ("D", "F"):
+        print()
+        print("tighten before queuing:")
+        for s in g.suggestions[:3]:
+            print(f"  - {s}")
+        raise typer.Exit(code=1)
+    t = topics.add(intent, priority=priority, source="quick")
+    print(f"queued: {t.id} (p={t.priority})")
+    if pipeline and g.letter in ("A", "B"):
+        from . import format_suggest
+        kind = format_suggest.infer_kind(intent)
+        slug = format_suggest.best(intent, kind=kind)
+        bundle = pipeline_mod.build(intent, kind=kind, format_slug=slug if kind == "image" else None)
+        print(f"bundle: {bundle.id}  ({kind} / {slug or '-'})")
+        print(f"folder: {bundle.folder}")
+
+
 @app.command("env")
 def env_cmd() -> None:
     """Print relevant memegine env vars (secrets masked)."""
