@@ -203,6 +203,9 @@ HELP_TEXT = """Memegine bot — brief delivery
 /format_health          classify formats by performance
 /quick <intent>         grade + queue an idea (phone capture)
 /cheatsheet             top 20 commands
+/find <keywords>        craft-aware search across refs
+/corpus_stats           what memegine learned from the corpus
+/brief_claude           Claude-powered 3-intent briefer (API key)
 /status                 queue + counts
 /reverse [context]      reverse-brief the next photo you send
 Photo upload (no command) → added to the reference library.
@@ -592,6 +595,29 @@ def _build_handlers(cfg: BotConfig):
         from . import cheatsheet
         await _reply_long(update, cheatsheet.render())
 
+    async def corpus_find_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
+        if not await guard(update):
+            return
+        query = " ".join(context.args or []).strip()
+        if not query:
+            await update.message.reply_text("usage: /find <keywords>")
+            return
+        from . import corpus_find
+        await _reply_long(update, corpus_find.find_text(query, limit=10))
+
+    async def corpus_stats_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
+        if not await guard(update):
+            return
+        from . import corpus_distill
+        await _reply_long(update, corpus_distill.stats_text())
+
+    async def morning_brief_claude_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
+        if not await guard(update):
+            return
+        from . import morning_briefer
+        result = morning_briefer.generate()
+        await _reply_long(update, result.as_text())
+
     async def formats_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:
         if not await guard(update):
             return
@@ -834,6 +860,9 @@ def _build_handlers(cfg: BotConfig):
         "format_health": format_health_cmd,
         "quick": quick_cmd,
         "cheatsheet": cheatsheet_cmd,
+        "find": corpus_find_cmd,
+        "corpus_stats": corpus_stats_cmd,
+        "brief_claude": morning_brief_claude_cmd,
         "status": status_cmd,
         "reverse": reverse_cmd,
         "_photo": photo_handler,

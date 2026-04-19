@@ -1703,6 +1703,38 @@ def corpus_video_insights_cmd(
     print(insights.as_text())
 
 
+@app.command("morning-brief")
+def morning_brief_cmd(
+    model: Optional[str] = typer.Option(None, "--model"),
+) -> None:
+    """Claude-powered 3-intent morning briefer (needs ANTHROPIC_API_KEY)."""
+    from . import morning_briefer
+    result = morning_briefer.generate(model=model)
+    print(result.as_text())
+    if result.error:
+        raise typer.Exit(code=1)
+
+
+@app.command("lookbook")
+def lookbook_cmd(
+    destination: Optional[Path] = typer.Option(
+        None, "--out", "-o",
+        help="Output path. Default: data/lookbooks/lookbook-YYYY-MM-DD.md",
+    ),
+    all_refs: bool = typer.Option(False, "--all",
+                                   help="Include non-winner refs too."),
+    max_entries: int = typer.Option(100, "--max"),
+) -> None:
+    """Generate a Markdown summary of top winners for human review."""
+    from . import lookbook
+    path = lookbook.write(
+        destination,
+        winners_only=not all_refs,
+        max_entries=max_entries,
+    )
+    console.print(f"[green]wrote[/] {path}")
+
+
 @app.command("quick")
 def quick_cmd(
     intent: str = typer.Argument(..., help="Rough intent."),
