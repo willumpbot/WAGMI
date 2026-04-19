@@ -28,6 +28,7 @@ import yaml
 
 from . import pipeline as pipeline_mod
 from . import topics as topics_mod
+from ._time import now_iso as _now_iso
 from .config import settings
 
 
@@ -98,7 +99,7 @@ def add(
         n_topics=n_topics,
         kind=kind,
         delivery=delivery,
-        created_at=dt.datetime.utcnow().isoformat() + "Z",
+        created_at=_now_iso(),
     )
     jobs = _load()
     jobs.append(asdict(job))
@@ -159,7 +160,7 @@ def _should_fire(job: dict, now: dt.datetime) -> bool:
 
 def _mark_fired(job_id: str) -> None:
     jobs = _load()
-    now = dt.datetime.utcnow().isoformat() + "Z"
+    now = _now_iso()
     for j in jobs:
         if j.get("id") == job_id:
             j["last_fire_at"] = now
@@ -186,7 +187,7 @@ def run_daily_batch(job: dict, *, deliver: Callable[[dict, JobResult], None] | N
     picked = topics_mod.pop(n=n, mark_used=True)
     result = JobResult(
         job_id=job.get("id", "?"),
-        fired_at=dt.datetime.utcnow().isoformat() + "Z",
+        fired_at=_now_iso(),
         action=job.get("action", "daily_batch"),
     )
     if not picked:
@@ -229,7 +230,7 @@ def run_weekly_distill(job: dict, *, deliver: Callable[[dict, JobResult], None] 
     dist = auto_codex.distill_to_codex(prompts, min_frequency=2)
     result = JobResult(
         job_id=job.get("id", "?"),
-        fired_at=dt.datetime.utcnow().isoformat() + "Z",
+        fired_at=_now_iso(),
         action="weekly_distill",
         note="categories: " + ", ".join(f"{k}={len(v)}" for k, v in dist.items()),
     )
@@ -274,7 +275,7 @@ def run_morning_brief(job: dict, *, deliver: Callable[[dict, JobResult], None] |
     note = "\n".join(body_lines)
     result = JobResult(
         job_id=job.get("id", "?"),
-        fired_at=dt.datetime.utcnow().isoformat() + "Z",
+        fired_at=_now_iso(),
         action="morning_brief",
         note=note,
     )

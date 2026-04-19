@@ -1529,6 +1529,70 @@ def format_health_cmd() -> None:
     print(report.as_text())
 
 
+@app.command("env")
+def env_cmd() -> None:
+    """Print relevant memegine env vars (secrets masked)."""
+    import os as _os
+    vars_to_show = [
+        "ANTHROPIC_API_KEY",
+        "MEMEGINE_TELEGRAM_BOT_TOKEN",
+        "MEMEGINE_TELEGRAM_ALLOWED_USER_IDS",
+        "MEMEGINE_TELEGRAM_CHAT_ID",
+        "MEMEGINE_DISCORD_WEBHOOK_URL",
+        "MEMEGINE_DISCORD_USERNAME",
+    ]
+    for k in vars_to_show:
+        v = _os.environ.get(k, "")
+        if not v:
+            display = "(unset)"
+        elif "TOKEN" in k or "KEY" in k or "WEBHOOK" in k:
+            display = f"{v[:6]}...{v[-4:]}" if len(v) > 10 else "(set)"
+        else:
+            display = v
+        print(f"  {k:<40} {display}")
+
+
+flow_app = typer.Typer(help="Workflow shortcuts — multi-step convenience commands.")
+app.add_typer(flow_app, name="flow")
+
+
+@flow_app.command("morning")
+def flow_morning(
+    name: Optional[str] = typer.Option(None, "--name", help="Session name."),
+) -> None:
+    """Morning flow: open a session + show next-moves dashboard + last activity."""
+    from . import last as last_mod, next_action, session as session_mod
+    session_name = name or "morning"
+    event = session_mod.start(name=session_name)
+    console.print(f"[green]session started[/] {event.session_id}  {session_name}")
+    print(next_action.compute().as_text())
+    print()
+    print(last_mod.compute().as_text())
+
+
+@flow_app.command("evening")
+def flow_evening(
+    distill: bool = typer.Option(
+        True, "--distill/--no-distill", help="Also run codex distill.",
+    ),
+) -> None:
+    """Evening flow: close session, optionally distill codex, print daily stats."""
+    from . import archive, auto_codex, session as session_mod, stats as stats_mod
+    event = session_mod.end()
+    if event:
+        console.print(f"[green]session ended[/] {event.session_id}")
+    else:
+        console.print("[dim]no session was open[/]")
+    if distill:
+        recent = archive.read_recent(n=200)
+        prompts = [r.get("user", "") for r in recent]
+        dist = auto_codex.distill_to_codex(prompts, min_frequency=2)
+        nonempty = [k for k, v in dist.items() if v]
+        console.print(f"distilled: {', '.join(nonempty) or '(no recurring patterns yet)'}")
+    report = stats_mod.compute(window="daily")
+    print(report.as_text())
+
+
 @codex_app.command("init")
 def codex_init_cmd(
     force: bool = typer.Option(False, "--force", help="Overwrite existing codex."),

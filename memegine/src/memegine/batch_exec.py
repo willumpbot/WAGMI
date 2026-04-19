@@ -16,6 +16,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from . import batch as batch_mod, deep_linter, executor, prompt_engine
+from ._time import now_iso as _now_iso
 
 
 @dataclass
@@ -106,7 +107,7 @@ def execute(
         batch_id=batch_result.id,
         theme=batch_result.theme,
         folder=str(folder),
-        executed_at=dt.datetime.utcnow().isoformat() + "Z",
+        executed_at=_now_iso(),
         items=items,
     )
     (folder / "execution.json").write_text(

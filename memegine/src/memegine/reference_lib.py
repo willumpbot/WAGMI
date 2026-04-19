@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from ._time import now_iso as _now_iso
 from .config import settings
 
 
@@ -87,7 +88,7 @@ def add(
     entry = ReferenceEntry(
         id=ref_id,
         filename=dest.name,
-        added_at=datetime.utcnow().isoformat() + "Z",
+        added_at=_now_iso(),
         tags=tag_list,
         source=source,
         prompt=prompt,

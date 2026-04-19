@@ -21,6 +21,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from ._time import now_iso as _now_iso
 from .config import settings
 
 
@@ -82,7 +83,7 @@ def start(name: str = "", notes: str = "") -> SessionEvent:
         id=uuid.uuid4().hex[:8],
         session_id=session_id,
         kind="start",
-        at=dt.datetime.utcnow().isoformat() + "Z",
+        at=_now_iso(),
         name=name,
         notes=notes,
     )
@@ -99,7 +100,7 @@ def end(notes: str = "") -> SessionEvent | None:
         id=uuid.uuid4().hex[:8],
         session_id=open_s["session_id"],
         kind="end",
-        at=dt.datetime.utcnow().isoformat() + "Z",
+        at=_now_iso(),
         name=open_s.get("name", ""),
         notes=notes,
     )
@@ -153,6 +154,6 @@ def session_window(session_id: str) -> tuple[str, str] | None:
     """Return (started_at, ended_at or 'now'-ish) for a session."""
     for s in list_sessions():
         if s["session_id"].startswith(session_id):
-            ended = s["ended_at"] or dt.datetime.utcnow().isoformat() + "Z"
+            ended = s["ended_at"] or _now_iso()
             return s["started_at"], ended
     return None

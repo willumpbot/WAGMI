@@ -49,6 +49,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from ._time import now_iso as _now_iso
 from .config import settings
 
 
@@ -689,7 +690,7 @@ def _build_handlers(cfg: BotConfig):
         await update.message.reply_text(
             f"topics: total={st['total']} queued={st['queued']} used={st['used']}\n"
             f"last brief: {last}\n"
-            f"time: {dt.datetime.utcnow().isoformat()}Z"
+            f"time: {_now_iso()}"
         )
 
     async def reverse_cmd(update: "Update", context: "ContextTypes.DEFAULT_TYPE") -> None:

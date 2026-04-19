@@ -17,6 +17,7 @@ from typing import Iterable
 
 import yaml
 
+from ._time import now_iso as _now_iso
 from .config import settings
 
 
@@ -77,7 +78,7 @@ def add(
     tid = uuid.uuid4().hex[:8]
     topic = Topic(
         id=tid,
-        created_at=dt.datetime.utcnow().isoformat() + "Z",
+        created_at=_now_iso(),
         text=text.strip(),
         tags=[t.strip() for t in (tags or []) if t.strip()],
         kind=kind,
@@ -122,7 +123,7 @@ def pop(
     picked = queued[:n]
     if mark_used and picked:
         ids = {p["id"] for p in picked}
-        now = dt.datetime.utcnow().isoformat() + "Z"
+        now = _now_iso()
         for t in topics:
             if t.get("id") in ids:
                 t["status"] = "used"
@@ -134,7 +135,7 @@ def pop(
 def mark_used(topic_id: str, bundle_id: str | None = None, path: Path | None = None) -> bool:
     topics = _load(path)
     hit = False
-    now = dt.datetime.utcnow().isoformat() + "Z"
+    now = _now_iso()
     for t in topics:
         if t.get("id") == topic_id:
             t["status"] = "used"

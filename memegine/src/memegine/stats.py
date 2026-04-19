@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import export as export_mod, reference_lib, style_codex, topics
+from ._time import now_naive_utc as _now_naive_utc
 from .config import settings
 
 
@@ -144,7 +145,7 @@ def compute(
     now: dt.datetime | None = None,
     logs_dir: Path | None = None,
 ) -> ActivityReport:
-    now = now or dt.datetime.utcnow()
+    now = now or _now_naive_utc()
     start, end = _window_bounds(window, now)
     base = Path(logs_dir) if logs_dir else settings.logs_dir
 

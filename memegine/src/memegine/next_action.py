@@ -21,6 +21,7 @@ from . import (
     style_codex,
     topics,
 )
+from ._time import now_iso as _now_iso
 
 
 @dataclass
@@ -70,7 +71,7 @@ class Dashboard:
 
 
 def compute() -> Dashboard:
-    now_iso = dt.datetime.utcnow().isoformat() + "Z"
+    now_iso = _now_iso()
 
     # Session.
     sess = session_mod.current()

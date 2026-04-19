@@ -174,6 +174,10 @@ Post on X
   candidate-for-deprecation based on average engagement vs. the median
   across formats. Flags under-performers once they have ≥ 5 posts of
   data. CLI: `memegine format-health`.
+- **`flow morning` / `flow evening`** — convenience bundles. `morning`
+  opens a session + prints the `next` dashboard + prints last activity.
+  `evening` closes the session, runs codex distill, prints daily stats.
+- **`env`** — prints every memegine env var with secrets masked.
 - **`archive`** — every brief saved to `data/logs/briefs-YYYY-MM-DD.jsonl`;
   `memegine history` surfaces them
 - **`pipeline`** — one command, one folder, every brief for a whole piece
@@ -428,6 +432,16 @@ memegine schedule run --telegram
 memegine last                           # last brief/winner/post/session
 memegine search "3am kitchen"           # find across all stores
 memegine format-health                  # which formats are performing?
+memegine env                            # config check (secrets masked)
+```
+
+### Workflow shortcuts
+```bash
+memegine flow morning --name "afternoon-hero"
+# opens a session + prints the dashboard + shows last activity
+
+memegine flow evening
+# closes session + distills codex + prints daily stats
 ```
 
 ### Like-winner (clone your last winner's craft)

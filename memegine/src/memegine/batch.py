@@ -18,6 +18,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from . import archive, pipeline as pipeline_mod, prompt_engine
+from ._time import now_iso as _now_iso
 from .config import settings
 
 
@@ -159,7 +160,7 @@ def build(
 
     result = BatchResult(
         id=bid,
-        created_at=dt.datetime.utcnow().isoformat() + "Z",
+        created_at=_now_iso(),
         theme=theme,
         folder=str(folder),
         items=items,

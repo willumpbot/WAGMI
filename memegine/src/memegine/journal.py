@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import archive, export as export_mod, reference_lib, session as session_mod
+from ._time import now_naive_utc as _now_naive_utc
 from .config import settings
 
 
@@ -45,7 +46,7 @@ def collect(days: int | None = None, limit: int | None = None) -> list[JournalEn
     days: if given, only include entries within the last N days.
     limit: if given, return at most that many entries.
     """
-    now = dt.datetime.utcnow()
+    now = _now_naive_utc()
     cutoff = now - dt.timedelta(days=days) if days else None
     out: list[JournalEntry] = []
 

@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ._time import now_iso as _now_iso
 from .config import settings
 
 
@@ -59,7 +60,7 @@ def save(
     path = _log_path_for_today(base)
     brief = ArchivedBrief(
         id=uuid.uuid4().hex[:12],
-        created_at=dt.datetime.utcnow().isoformat() + "Z",
+        created_at=_now_iso(),
         kind=kind,
         format=format_,
         intent=intent.strip(),

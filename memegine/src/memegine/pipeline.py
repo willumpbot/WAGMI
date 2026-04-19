@@ -13,6 +13,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from . import archive, copy_writer, prompt_engine, shot_list
+from ._time import now_iso as _now_iso
 from .config import settings
 
 
@@ -99,7 +100,7 @@ def build(
     readme.write_text(
         f"# Pipeline bundle — {intent}\n\n"
         f"- id: `{bid}`\n"
-        f"- created: {dt.datetime.utcnow().isoformat()}Z\n"
+        f"- created: {_now_iso()}\n"
         f"- kind: {kind}\n"
         f"- format: {format_slug or '(n/a)'}\n\n"
         "## Workflow\n\n"
@@ -115,7 +116,7 @@ def build(
 
     bundle = PipelineBundle(
         id=bid,
-        created_at=dt.datetime.utcnow().isoformat() + "Z",
+        created_at=_now_iso(),
         intent=intent,
         kind=kind,
         format_slug=format_slug,

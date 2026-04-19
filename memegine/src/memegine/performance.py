@@ -27,6 +27,7 @@ from pathlib import Path
 from statistics import mean
 from typing import Iterable
 
+from ._time import now_iso as _now_iso
 from .config import settings
 
 
@@ -88,7 +89,7 @@ def log(
     """
     entry = PostPerformance(
         id=uuid.uuid4().hex[:10],
-        recorded_at=dt.datetime.utcnow().isoformat() + "Z",
+        recorded_at=_now_iso(),
         post_bundle_id=post_bundle_id,
         post_url=post_url,
         format_slug=format_slug,

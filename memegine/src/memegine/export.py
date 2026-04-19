@@ -28,6 +28,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from ._time import now_iso as _now_iso
 from .config import settings
 
 
@@ -129,7 +130,7 @@ def build(
 
     meta = {
         "id": pid,
-        "created_at": dt.datetime.utcnow().isoformat() + "Z",
+        "created_at": _now_iso(),
         "media": final_path.name,
         "caption": caption,
         "alt_text": alt_text,
