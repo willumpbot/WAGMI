@@ -63,7 +63,13 @@ def load_playbook(name: str, playbooks_dir: Path = PLAYBOOKS_DIR) -> str:
 
 def load_relevant_playbooks(format_kind: str, playbooks_dir: Path = PLAYBOOKS_DIR) -> str:
     """Load playbooks relevant to the format kind (image/video) and concatenate."""
-    names = ["grok-imagine-patterns"]
+    names = [
+        "grok-imagine-patterns",
+        "portrait-photography-craft",
+        "color-grading-by-mood",
+        "low-light-and-night",
+        "crypto-visual-language",
+    ]
     if format_kind == "video":
         names.append("video-img2vid-patterns")
         names.append("music-edit-patterns")
