@@ -2494,6 +2494,29 @@ def batch_cmd(
     print(result.as_text())
 
 
+@app.command("console")
+def console_cmd(
+    port: int = typer.Option(8080, "--port", "-p"),
+    host: str = typer.Option("127.0.0.1", "--host"),
+    no_browser: bool = typer.Option(False, "--no-browser"),
+) -> None:
+    """Launch the ops console — your TweetDeck-style web UI.
+
+    Serves the dashboard at http://localhost:8080/ and opens your browser.
+    The dashboard shows: watchlist, live feed, per-tweet action buttons
+    (grab library ref / generate brief / generate video brief / copy URL),
+    and a brand switcher.
+
+    Requires: `pip install 'memegine[console]'` (FastAPI + uvicorn).
+    """
+    try:
+        from . import server
+        server.run(host=host, port=port, open_browser=not no_browser)
+    except RuntimeError as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(code=1)
+
+
 @app.command("reply-for")
 def reply_for_cmd(
     url_or_id: str = typer.Argument(..., help="Tweet URL or ID to reply to."),
