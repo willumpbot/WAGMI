@@ -2494,6 +2494,100 @@ def batch_cmd(
     print(result.as_text())
 
 
+watch_app = typer.Typer(
+    help="Watchlist poller: auto-scrape watched X accounts and push "
+         "new tweets to your Telegram as cards with inline buttons."
+)
+app.add_typer(watch_app, name="watch")
+
+
+@watch_app.command("login")
+def watch_login_cmd() -> None:
+    """One-time X login. Opens a real Chromium window; you sign in
+    manually, then press Enter to save the session.
+
+    Requires: `pip install 'memegine[watch]' && python -m playwright install chromium`
+    """
+    try:
+        from . import x_playwright
+    except ImportError as exc:
+        print(f"import failed: {exc}")
+        raise typer.Exit(code=1)
+    try:
+        path = x_playwright.login()
+    except x_playwright.PlaywrightNotInstalled as exc:
+        print(str(exc))
+        raise typer.Exit(code=1)
+    print(f"✅ session saved to {path}")
+
+
+@watch_app.command("status")
+def watch_status_cmd() -> None:
+    """Report session + watchlist readiness."""
+    from . import ops_db, x_playwright
+    print(f"project:       {settings.project}")
+    print(f"X session:     {'✅ present' if x_playwright.session_exists() else '❌ run `memegine watch login`'}")
+    entries = ops_db.watchlist_list()
+    print(f"watchlist:     {len(entries)} handle(s) for this project")
+    for e in entries:
+        print(f"  @{e.handle}")
+
+
+@watch_app.command("once")
+def watch_once_cmd(
+    no_push: bool = typer.Option(
+        False, "--no-push", help="Skip pushing new tweets to Telegram.",
+    ),
+) -> None:
+    """Run one polling cycle over the watchlist."""
+    from . import telegram_bot, x_watcher
+    tg_cfg = None
+    if not no_push:
+        try:
+            tg_cfg = telegram_bot.BotConfig.from_env()
+        except Exception:
+            tg_cfg = None
+    cfg = x_watcher.WatcherConfig(
+        push_to_telegram=not no_push,
+        tg_cfg=tg_cfg,
+    )
+    result = x_watcher.run_once(cfg)
+    print(result.as_text())
+
+
+@watch_app.command("start")
+def watch_start_cmd(
+    interval: int = typer.Option(180, "--interval", "-i",
+                                  help="Seconds between full cycles (default 180)."),
+    no_push: bool = typer.Option(False, "--no-push"),
+    iterations: Optional[int] = typer.Option(
+        None, "--iterations",
+        help="Max cycles before stopping (default: run forever).",
+    ),
+) -> None:
+    """Start the blocking poll loop. Ctrl-C to stop."""
+    from . import telegram_bot, x_watcher
+    tg_cfg = None
+    if not no_push:
+        try:
+            tg_cfg = telegram_bot.BotConfig.from_env()
+        except Exception as exc:
+            print(f"warn: telegram push disabled — {exc}")
+    cfg = x_watcher.WatcherConfig(
+        interval_seconds=interval,
+        push_to_telegram=not no_push and tg_cfg is not None,
+        tg_cfg=tg_cfg,
+    )
+    print(
+        f"watch loop starting — interval={interval}s, "
+        f"push_to_telegram={cfg.push_to_telegram}"
+    )
+    try:
+        x_watcher.run_loop(cfg, iterations=iterations)
+    except KeyboardInterrupt:
+        print("\nstopped.")
+
+
 @app.command("console")
 def console_cmd(
     port: int = typer.Option(8080, "--port", "-p"),
