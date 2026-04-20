@@ -1677,6 +1677,67 @@ def corpus_distill_cmd(
     print(report.as_text())
 
 
+@corpus_app.command("seed")
+def corpus_seed_cmd(
+    folder: Path = typer.Argument(..., exists=True, readable=True,
+                                   help="Folder of reference images/videos for the ACTIVE project."),
+    frames_per_video: int = typer.Option(5, "--frames"),
+    use_api: bool = typer.Option(
+        False, "--use-api",
+        help="If set and ANTHROPIC_API_KEY is present, also run `corpus reverse` "
+             "+ `corpus distill` automatically. Otherwise just ingest.",
+    ),
+) -> None:
+    """One-shot corpus seeding for a new brand (e.g. Spong / Kilroy).
+
+    Chains: `ingest` → optional `reverse` → optional `distill`, all
+    scoped to the active project. Without --use-api this just ingests
+    and prints the next-step instructions for the local-vision path.
+    """
+    from . import corpus
+    result = corpus.ingest(folder, frames_per_video=frames_per_video)
+    print(result.as_text())
+    print()
+    print(f"project: {settings.project}")
+    print(f"refs now at: {settings.references_dir}")
+    print()
+    if use_api:
+        import os
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            print("--use-api given but ANTHROPIC_API_KEY is unset — falling back to ingest-only.")
+            return
+        from . import corpus_reverse, corpus_distill
+        results = corpus_reverse.reverse_all(only_new=True)
+        print(corpus_reverse.summary(results))
+        print()
+        report = corpus_distill.distill()
+        print(report.as_text())
+        return
+
+    print("Next steps (local / no API):")
+    print("  1. Open each ref image in this Claude Code session.")
+    print("  2. Claude extracts craft patterns per frame (no API call).")
+    print("  3. Save patterns as patterns.json; run:")
+    print("       memegine corpus apply patterns.json")
+    print("  4. Then:  memegine corpus distill")
+    print("  5. Edit brand.yaml to absorb the distilled signature moves.")
+
+
+@corpus_app.command("apply")
+def corpus_apply_cmd(
+    patterns_file: Path = typer.Argument(..., exists=True, readable=True,
+                                          help="JSON of {ref_id: extracted_patterns} pairs."),
+) -> None:
+    """Apply locally-extracted patterns (corpus_reverse_local) into refs.
+
+    Frames for the same source video receive the same patterns via
+    sibling propagation — see `corpus_reverse_local.apply_many`.
+    """
+    from . import corpus_reverse_local
+    n = corpus_reverse_local.load_from_file(patterns_file)
+    print(f"applied patterns to {n} refs")
+
+
 @corpus_app.command("stats")
 def corpus_stats_cmd() -> None:
     """Show what memegine has learned from the ingested corpus."""
