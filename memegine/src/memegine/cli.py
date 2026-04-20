@@ -2450,6 +2450,77 @@ def flow_video_cmd(
     print(result.as_text())
 
 
+@app.command("post")
+def post_cmd(
+    intent: str = typer.Argument(..., help="Rough intent, in quotes."),
+    format: Optional[str] = typer.Option(
+        None, "--format", "-f",
+        help="Format slug. Default: active brand's reply-square.",
+    ),
+    no_browser: bool = typer.Option(
+        False, "--no-browser", help="Don't auto-open Grok.",
+    ),
+) -> None:
+    """One-command image brief for reply-guy / raid-lead cadence.
+
+    Writes a brand-appropriate image brief, copies it to the clipboard,
+    opens Grok Imagine. No watch step — you paste, generate, download,
+    post. ~10 seconds end-to-end.
+    """
+    from . import flow_post
+    result = flow_post.post(
+        intent, format_slug=format, open_browser=not no_browser,
+    )
+    print(result.as_text())
+
+
+@app.command("batch")
+def batch_cmd(
+    n: int = typer.Argument(10, help="Number of briefs to pre-generate."),
+    priority: Optional[int] = typer.Option(
+        None, "--priority", "-p",
+        help="Only include topics at this priority level (1=top, 5=low).",
+    ),
+) -> None:
+    """Pre-generate N briefs from the active project's topic queue.
+
+    All briefs concatenated into your clipboard as a numbered sequence
+    so you can paste → Grok → next → paste → Grok without stopping.
+    Topics are NOT marked used — call `memegine topics mark-used <id>`
+    after you actually post.
+    """
+    from . import flow_post
+    result = flow_post.batch(n, only_priority=priority)
+    print(result.as_text())
+
+
+@app.command("raid")
+def raid_cmd(
+    theme: str = typer.Argument(..., help="One-line raid theme, in quotes."),
+    formats: Optional[str] = typer.Option(
+        None, "--formats",
+        help="Comma-separated format slugs. Default: brand-appropriate raid pack.",
+    ),
+) -> None:
+    """Generate a coordinated raid pack — one theme across N formats.
+
+    Default pack per brand:
+      motion: reply_square + film_still_serif + vertical_letterbox +
+              archival_press_celebrity + collage_6panel_bw
+      kilroy: reply_square + cinema_still + vhs_rip + tabloid_cover +
+              polaroid_stack + tags_news_photo
+      spong:  reply_square + solo_scene + quiznos_ad_parody + duet_trio
+
+    All briefs riff on the SAME theme but in different formats, so the
+    raid reads as a coordinated drop. Clipboard gets the full sequence
+    numbered 1..N.
+    """
+    from . import flow_post
+    fmt_list = [s.strip() for s in formats.split(",")] if formats else None
+    result = flow_post.raid(theme, formats=fmt_list)
+    print(result.as_text())
+
+
 @flow_app.command("evening")
 def flow_evening(
     distill: bool = typer.Option(

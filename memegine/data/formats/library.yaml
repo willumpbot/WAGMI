@@ -848,6 +848,152 @@ formats:
         "a phone face-down next to the keyboard",
       ]
 
+  # -------- Reply-shaped formats (for high-volume X replies) --------
+  # 1:1 square, punchier contrast, readable as a standalone reply
+  # without the quoted tweet as context. Fast to generate, high
+  # signal-per-pixel. Brand signature is bigger/louder than in the
+  # gallery-tier formats.
+
+  - slug: kilroy_reply_square
+    kind: image
+    description: |
+      A 1:1 square Kilroy piece optimized for X replies. The chalk
+      Kilroy tag is bigger and more prominent than in gallery formats
+      (still corner-placed, but ~20-25% of frame area instead of
+      ~10%). Base photo is sharper, higher contrast, reads from a
+      small reply-thumbnail. Brand craft is maintained (named lens /
+      film stock) but simpler — one subject, one light.
+    prompt_scaffold: |
+      A 1:1 square photograph: {subject}, shot on {named_lens},
+      {named_film_stock}, {named_lighting}, high-contrast framing
+      that reads from a thumbnail. In the {placement} (~20-25% of
+      the frame area), a bold chalk Kilroy peek figure: bald head,
+      long nose, four fingers gripping the edge, pure white chalk
+      on dark surface OR pure black sharpie on light surface, drawn
+      with one continuous line. Directly below in block caps:
+      "KILROY WAS HERE". The tag should be legible from a reply-
+      thumbnail — bigger than a hero piece's signature. Base photo
+      is sharper / higher-contrast than a gallery Kilroy piece.
+      Negatives: no Kilroy centered, no Kilroy in color, no washed-
+      out low-contrast base photo, no clean digital smoothness.
+    good_models: [aurora, flux_pro_via_grok, ideogram_via_grok]
+    slot_hints:
+      subject: [
+        "a trader at a Bloomberg terminal, high contrast",
+        "a single monitor showing a liquidation feed",
+        "an anonymous figure at an ATM at 3am",
+        "a subway ad-board reflecting a red candle chart",
+        "a printed tabloid open to a finance page on a table",
+      ]
+      named_lens: [
+        "Leica M10 with 50mm Summicron",
+        "Canon 5D Mark III with 35mm f/1.4",
+        "Hasselblad 500CM with 80mm Zeiss Planar",
+      ]
+      named_film_stock: [
+        "Kodak Tri-X 400", "Ilford HP5+ at ISO 1600", "Fuji Acros 100",
+      ]
+      named_lighting: [
+        "single-source tungsten, deep shadow", "hard press-flash",
+        "ambient overcast", "practical neon + tungsten mix",
+      ]
+      placement: [
+        "lower-right corner", "upper-left on a wall", "bottom-left on a desk surface",
+        "on a document edge visible in frame",
+      ]
+
+  - slug: motion_reply_square
+    kind: image
+    description: |
+      A 1:1 square $MOTION reply piece. Serif brand treatment is
+      prominent (centered title card), craft discipline maintained,
+      but the composition reads from a thumbnail — one clear
+      subject, one clear brand mark. For rapid X-reply deployment.
+    prompt_scaffold: |
+      A 1:1 square cinematic still: {subject}, shot on {named_lens},
+      {named_film_stock}, {named_lighting}, 1:1 square framing with
+      the subject centered or rule-of-thirds left. Centered across
+      the middle third, a serif title card reading "$MOTION" —
+      Trajan / Didot / Bodoni, white fill, all-caps, letter-spacing
+      wide, treated like a film-poster title (not a web overlay).
+      Visible 35mm film grain, halation on highlights, crushed-black
+      grade if B&W. High-contrast enough to read from a reply-
+      thumbnail.
+      Negatives: no "cinematic" as a word, no clean digital look, no
+      stock-photo lighting, no Impact-font overlay, no emojis.
+    good_models: [aurora, flux_pro_via_grok, ideogram_via_grok]
+    slot_hints:
+      subject: [
+        "a young archival press-flash celebrity (Trump 1987, Tupac backstage, a boxer pre-fight)",
+        "a vacuum-sealed cartel cash brick top-down, shrink-wrap glare",
+        "a lion apex-predator close-up, golden hour savanna light",
+        "a hypercar over a nebula / galactic starfield",
+        "a cinema film-still frame (War Dogs, Scarface, American Psycho)",
+      ]
+      named_lens: [
+        "Arri Alexa Mini with 50mm anamorphic",
+        "Leica Q3 with 28mm f/1.7",
+        "Nikon F with 85mm f/1.4 on Tri-X",
+        "Hasselblad 500CM with 80mm Zeiss",
+      ]
+      named_film_stock: [
+        "Kodak Tri-X 400 pushed one stop",
+        "Kodak 5219 500T color negative",
+        "Ilford HP5+ at ISO 1600",
+        "Fuji Acros 100 cold-developed",
+      ]
+      named_lighting: [
+        "single-source tungsten 3200K at 3:1 ratio",
+        "archival press-flash with halation",
+        "golden-hour natural savanna light",
+        "practical neon + tungsten mix at night",
+      ]
+
+  - slug: spong_reply_square
+    kind: image
+    description: |
+      A 1:1 square $SPONG reply piece. Single spongmonkey, spong'd
+      eyes front-and-center, big sincere caption in hand-scrawl
+      lowercase at the bottom. Reads from a reply-thumbnail because
+      the eyes alone carry the brand. Keeps the 2003 jpeg aesthetic.
+    prompt_scaffold: |
+      A 1:1 square cursed 2003-Flash-animation style still: a single
+      spongmonkey centered in the frame — a blurry photo-cutout of a
+      real monkey head with {fur_color} fur, HUGE white googly eyes
+      nearly touching each other with tiny black pinpoint pupils,
+      open singing mouth showing cream buck teeth and red gums —
+      attached to a crude MSPaint-style illustrated body wearing
+      {outfit}, placed in a flat-illustrated {scene}. Yellowed beige
+      background with visible jpeg compression. Hand-scrawled
+      lowercase caption at the bottom: "{caption}". 2003 rathergood
+      aesthetic — deliberately low-res, crude linework, no vector
+      polish. Reads from a reply-thumbnail because the eyes and mouth
+      carry the whole brand.
+      Negatives: no 4K, no clean rendering, no modern typography, no
+      smirk (always sincere).
+    good_models: [ideogram_via_grok, aurora]
+    slot_hints:
+      fur_color: [
+        "normal peach-brown", "pink", "neon green", "rainbow", "blue",
+      ]
+      outfit: [
+        "Napoleon coat", "Wall Street suit", "astronaut helmet",
+        "samurai armor", "cowboy hat", "hip-hop chains", "black tie",
+      ]
+      scene: [
+        "the Moon surface, Earth in the background",
+        "the Oval Office with the Resolute desk",
+        "a Lambo interior",
+        "deep space with a purple nebula",
+        "a yacht deck at sunset",
+      ]
+      caption: [
+        "we like the moon.",
+        "we like the bag.",
+        "we love the subs.",
+        "we are on the moon now.",
+      ]
+
   # -------- Kilroy motion-tier formats --------
   # These bring $MOTION's craft discipline (named lens/stock, letterbox
   # 9:16, serif title card, grain) into Kilroy pieces. See

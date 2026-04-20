@@ -215,6 +215,19 @@ FORMAT_TRIGGERS: dict[str, list[str]] = {
         "kilroy polaroid", "kilroy sx-70", "kilroy sx70",
         "kilroy instant photo", "polaroid kilroy", "kilroy on polaroid",
     ],
+    # Reply-shaped squares (1:1, reply-guy volume)
+    "kilroy_reply_square": [
+        "kilroy reply", "kilroy quick", "kilroy square", "reply image kilroy",
+        "thumbnail kilroy", "quote tweet kilroy", "qt bait kilroy",
+    ],
+    "motion_reply_square": [
+        "motion reply", "motion quick", "motion square", "reply image motion",
+        "thumbnail motion", "quote tweet motion", "$motion reply",
+    ],
+    "spong_reply_square": [
+        "spong reply", "spong quick", "spong square", "spongmonkey reply",
+        "thumbnail spong", "quote tweet spong", "$spong reply",
+    ],
     # Spong (spongmonkeys lineage)
     "spong_solo_scene": [
         "spong", "spongmonkey", "spongmonkeys", "we like the moon",

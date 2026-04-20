@@ -1,113 +1,167 @@
 # Kilroy starter topic queue — 15 motion-tier pieces ready to brief.
-# Each topic is a historical or market moment that Kilroy "witnessed."
-# Priority 1 = rip this first, 5 = deprioritize.
-#
-# Run: `memegine topics show` to see queue.
-#      `memegine from-topic <id>` to generate brief.
-#      Or batch with wave 37's `memegine batch N` (coming next).
-
 topics:
-  - id: kil-001
-    text: "Kilroy tags the Mt. Gox server room, 2014 — hacked-exchange aesthetic, fluorescent lighting, a monitor showing the btc/jpy pair"
-    priority: 1
-    source: "seed"
-    tags: ["crypto-history", "cinema_still"]
-    suggested_format: "kilroy_cinema_still_tag"
-
-  - id: kil-002
-    text: "Kilroy in the background of a CNBC 'Fast Money' 1994-style broadcast, ticker crawl red across the bottom"
-    priority: 1
-    source: "seed"
-    tags: ["broadcast", "vhs_rip"]
-    suggested_format: "kilroy_vhs_rip_tag"
-
-  - id: kil-003
-    text: "Kilroy on a 2004 Vanity Fair cover about 'The Men Who Broke Wall Street'"
-    priority: 1
-    source: "seed"
-    tags: ["tabloid", "finance"]
-    suggested_format: "kilroy_tabloid_cover_tag"
-
-  - id: kil-004
-    text: "Kilroy drawn on the border of an SX-70 polaroid showing an empty trading desk at 3am, monitors still on"
-    priority: 1
-    source: "seed"
-    tags: ["polaroid", "3am"]
-    suggested_format: "kilroy_polaroid_stack_tag"
-
-  - id: kil-005
-    text: "Kilroy in the lower-right of a Heat (1995) bank-lobby-style film still — Kodak 5219, tungsten-3200K lobby light"
-    priority: 1
-    source: "seed"
-    tags: ["cinema_still", "heat_aesthetic"]
-    suggested_format: "kilroy_cinema_still_tag"
-
-  - id: kil-006
-    text: "Kilroy on the bezel of a Bloomberg terminal during the Lehman 2008 collapse, deep night, warm tungsten desk lamp"
-    priority: 2
-    source: "seed"
-    tags: ["2008", "lehman", "terminal"]
-    suggested_format: "kilroy_tags_crypto_moment"
-
-  - id: kil-007
-    text: "Kilroy on a 1999 Wired cover about 'The Man Who Will Own The Internet'"
-    priority: 2
-    source: "seed"
-    tags: ["wired", "dot-com"]
-    suggested_format: "kilroy_tabloid_cover_tag"
-
-  - id: kil-008
-    text: "Kilroy on the stall door in a Collateral (2004) LAX airport bathroom — night, fluorescent, slight flicker"
-    priority: 2
-    source: "seed"
-    tags: ["collateral", "airport"]
-    suggested_format: "kilroy_cinema_still_tag"
-
-  - id: kil-009
-    text: "Kilroy on a 1987 CNBC Black Monday broadcast stand-up, reporter outside the NYSE, red ticker"
-    priority: 2
-    source: "seed"
-    tags: ["black-monday", "1987"]
-    suggested_format: "kilroy_vhs_rip_tag"
-
-  - id: kil-010
-    text: "Kilroy on a Polaroid of a cartel-style cash-brick pile, overhead warm tungsten, hand-lettered caption"
-    priority: 2
-    source: "seed"
-    tags: ["cash", "polaroid"]
-    suggested_format: "kilroy_polaroid_stack_tag"
-
-  - id: kil-011
-    text: "Kilroy tagging The Dark Knight (2008) Gotham bank vault frame, Tri-X pushed, chalk on a vault door"
-    priority: 3
-    source: "seed"
-    tags: ["dark-knight", "vault"]
-    suggested_format: "kilroy_cinema_still_tag"
-
-  - id: kil-012
-    text: "Kilroy on a 1992 New York Post cover: 'WHO KILLED THE MARKET?' — red bar headline, halftone hero"
-    priority: 3
-    source: "seed"
-    tags: ["tabloid", "new-york-post"]
-    suggested_format: "kilroy_tabloid_cover_tag"
-
-  - id: kil-013
-    text: "Kilroy on the mic cube of a 1991 local-news reporter standing outside the SEC building"
-    priority: 3
-    source: "seed"
-    tags: ["broadcast", "sec"]
-    suggested_format: "kilroy_vhs_rip_tag"
-
-  - id: kil-014
-    text: "Kilroy on a Blade Runner 2049 (2017) orange-dust Vegas frame — chalk on a crumbling concrete wall"
-    priority: 3
-    source: "seed"
-    tags: ["blade-runner", "2049"]
-    suggested_format: "kilroy_cinema_still_tag"
-
-  - id: kil-015
-    text: "Kilroy on a Polaroid of an empty office at night, monitors still on showing red candles, overhead tungsten"
-    priority: 3
-    source: "seed"
-    tags: ["office", "polaroid", "3am"]
-    suggested_format: "kilroy_polaroid_stack_tag"
+- id: kil-001
+  text: Kilroy tags the Mt. Gox server room, 2014 — hacked-exchange aesthetic, fluorescent
+    lighting, a monitor showing the btc/jpy pair
+  priority: 1
+  source: seed
+  tags:
+  - crypto-history
+  - cinema_still
+  format_hint: kilroy_cinema_still_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-002
+  text: Kilroy in the background of a CNBC 'Fast Money' 1994-style broadcast, ticker
+    crawl red across the bottom
+  priority: 1
+  source: seed
+  tags:
+  - broadcast
+  - vhs_rip
+  format_hint: kilroy_vhs_rip_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-003
+  text: Kilroy on a 2004 Vanity Fair cover about 'The Men Who Broke Wall Street'
+  priority: 1
+  source: seed
+  tags:
+  - tabloid
+  - finance
+  format_hint: kilroy_tabloid_cover_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-004
+  text: Kilroy drawn on the border of an SX-70 polaroid showing an empty trading desk
+    at 3am, monitors still on
+  priority: 1
+  source: seed
+  tags:
+  - polaroid
+  - 3am
+  format_hint: kilroy_polaroid_stack_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-005
+  text: Kilroy in the lower-right of a Heat (1995) bank-lobby-style film still — Kodak
+    5219, tungsten-3200K lobby light
+  priority: 1
+  source: seed
+  tags:
+  - cinema_still
+  - heat_aesthetic
+  format_hint: kilroy_cinema_still_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-006
+  text: Kilroy on the bezel of a Bloomberg terminal during the Lehman 2008 collapse,
+    deep night, warm tungsten desk lamp
+  priority: 2
+  source: seed
+  tags:
+  - '2008'
+  - lehman
+  - terminal
+  format_hint: kilroy_tags_crypto_moment
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-007
+  text: Kilroy on a 1999 Wired cover about 'The Man Who Will Own The Internet'
+  priority: 2
+  source: seed
+  tags:
+  - wired
+  - dot-com
+  format_hint: kilroy_tabloid_cover_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-008
+  text: Kilroy on the stall door in a Collateral (2004) LAX airport bathroom — night,
+    fluorescent, slight flicker
+  priority: 2
+  source: seed
+  tags:
+  - collateral
+  - airport
+  format_hint: kilroy_cinema_still_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-009
+  text: Kilroy on a 1987 CNBC Black Monday broadcast stand-up, reporter outside the
+    NYSE, red ticker
+  priority: 2
+  source: seed
+  tags:
+  - black-monday
+  - '1987'
+  format_hint: kilroy_vhs_rip_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-010
+  text: Kilroy on a Polaroid of a cartel-style cash-brick pile, overhead warm tungsten,
+    hand-lettered caption
+  priority: 2
+  source: seed
+  tags:
+  - cash
+  - polaroid
+  format_hint: kilroy_polaroid_stack_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-011
+  text: Kilroy tagging The Dark Knight (2008) Gotham bank vault frame, Tri-X pushed,
+    chalk on a vault door
+  priority: 3
+  source: seed
+  tags:
+  - dark-knight
+  - vault
+  format_hint: kilroy_cinema_still_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-012
+  text: 'Kilroy on a 1992 New York Post cover: ''WHO KILLED THE MARKET?'' — red bar
+    headline, halftone hero'
+  priority: 3
+  source: seed
+  tags:
+  - tabloid
+  - new-york-post
+  format_hint: kilroy_tabloid_cover_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-013
+  text: Kilroy on the mic cube of a 1991 local-news reporter standing outside the
+    SEC building
+  priority: 3
+  source: seed
+  tags:
+  - broadcast
+  - sec
+  format_hint: kilroy_vhs_rip_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-014
+  text: Kilroy on a Blade Runner 2049 (2017) orange-dust Vegas frame — chalk on a
+    crumbling concrete wall
+  priority: 3
+  source: seed
+  tags:
+  - blade-runner
+  - '2049'
+  format_hint: kilroy_cinema_still_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
+- id: kil-015
+  text: Kilroy on a Polaroid of an empty office at night, monitors still on showing
+    red candles, overhead tungsten
+  priority: 3
+  source: seed
+  tags:
+  - office
+  - polaroid
+  - 3am
+  format_hint: kilroy_polaroid_stack_tag
+  status: queued
+  created_at: '2026-04-20T00:00:00'
