@@ -2394,6 +2394,62 @@ def flow_morning(
     print(last_mod.compute().as_text())
 
 
+@flow_app.command("video")
+def flow_video_cmd(
+    intent: str = typer.Argument(..., help="Rough intent, in quotes."),
+    format: Optional[str] = typer.Option(
+        None, "--format", "-f",
+        help="Video format slug. Run `memegine formats` to list. Default: auto-suggest.",
+    ),
+    timeout: int = typer.Option(
+        600, "--timeout",
+        help="Max seconds to wait for the Grok output to land in the inbox.",
+    ),
+    no_wait: bool = typer.Option(
+        False, "--no-wait",
+        help="Just write the brief + hand-off. Don't poll the inbox.",
+    ),
+    no_browser: bool = typer.Option(
+        False, "--no-browser", help="Don't auto-open Grok in the browser.",
+    ),
+    grade: Optional[str] = typer.Option(
+        None, "--grade",
+        help="Override the brand-default grade preset (e.g. tri_x_bw, teal_orange).",
+    ),
+    caption: Optional[str] = typer.Option(
+        None, "--caption",
+        help="Override the auto-generated caption. Default = brand tagline.",
+    ),
+) -> None:
+    """Full-circle video pipeline for the active brand.
+
+    Chains: write brief → clipboard + browser → watch inbox for Grok output
+    → auto-edit (4 variants across 9:16 / 1:1 / 4:5 + brand grade) →
+    build post bundle + lint caption.
+
+    Step-by-step:
+      1. Writes the video brief for the active project's brand.
+      2. Copies the full prompt to your clipboard + opens Grok Imagine.
+      3. Watches data/projects/<brand>/generated/ for your download.
+      4. When a video lands, runs aspect crop + grade chain.
+      5. Bundles the primary variant into a post with caption + alt text.
+
+    Drop the Grok-generated video into the printed inbox path and the
+    rest happens automatically.
+    """
+    from . import flow_video
+    result = flow_video.run(
+        intent,
+        format_slug=format,
+        timeout_seconds=timeout,
+        open_browser=not no_browser,
+        grade_preset=grade,
+        caption=caption,
+        auto_wait=not no_wait,
+    )
+    print(result.as_text())
+
+
 @flow_app.command("evening")
 def flow_evening(
     distill: bool = typer.Option(
