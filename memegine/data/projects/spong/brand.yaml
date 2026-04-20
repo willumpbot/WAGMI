@@ -1,21 +1,55 @@
-name: "Spong"
-tagline: ""  # TODO: operator supplies slogan
-voice: ""    # TODO: set after ingesting the @ghostmemes / memedepot.com/d/spong corpus
+name: "$SPONG"
+tagline: "we like the moon."
+voice: >
+  high-pitched, sincere, oblivious. the spongmonkeys genuinely love
+  the thing they are singing about — never ironic, never winking.
+  the humor comes from the mismatch between their absolute sincerity
+  and the cursed low-fi cutout bodies + googly eyes. never explain.
+aliases: ["spong", "$SPONG", "spongmonkeys", "spongmonkey", "quiznos monkeys"]
 
-# Spong brand is not yet reverse-engineered. The Director should treat
-# this plate as SKELETON ONLY until the operator runs:
-#   memegine project use spong
-#   memegine corpus ingest <spong references>
-#   memegine corpus reverse-local
-# ...which will populate signature_moves, typography_registers, palette
-# from the real corpus the same way motion was seeded.
+# Canonical lineage. Cite when relevant:
+# - Joel Veitch, rathergood.com
+# - "We Like The Moon" — Jan 24, 2003 (original Flash video)
+# - Quiznos "We Love The Subs" TV campaign — 2004 Super Bowl era
+# - "spong" (from b3ta forum) = the act of adding huge staring
+#   googly eyes with tiny pupils to any image — the defining move
+# - Token: $SPONG on Solana, contract
+#   A1zvkas7XaGYaV9ztokfN11VwaiNGHkhqGCi4AYwpump
+#   supply 1B, tax 0/0, LP burned ("immaculate")
+# - Socials: @SpongmonkeyMoon (X), @SpongMonkeys (TikTok), spongmonkeys.fun
 
-aliases: ["spong", "$SPONG", "ghostmemes"]
+palette:
+  - "MSPaint-era peach brown fur"
+  - "cream-white buck teeth"
+  - "blood-red gums"
+  - "yellowed photograph background"
+  - "early-2000s Flash banner jpeg compression green"
+  - "Quiznos commercial broadcast-TV reds and yellows"
 
-palette: []             # TODO — auto-derive from reference corpus
-signature_moves: []     # TODO — auto-derive from reference corpus
-typography_registers: []  # TODO
-subject_archetypes: []  # TODO
+signature_moves:
+  - "a crude photo-cutout monkey/rodent head, slightly blurry, layered over a different flat illustrated body"
+  - "HUGE bulging googly eyes — whites of the eye nearly touching, tiny pinpoint pupils (this IS 'spong')"
+  - "open singing mouth showing buck teeth and red gums, caught mid-note"
+  - "multiple spongmonkeys floating in a low-fi illustrated scene, singing in unison"
+  - "hand-scrawled song-lyric captions in the image, Comic Sans or childlike handwriting"
+  - "MSPaint speech bubbles with the sincere-lyric text"
+  - "2003-era jpeg artifacts and compression pushed deliberately (the vibe requires the badness)"
+  - "fur-color variants (pink, neon green, rainbow) for trait/personality differentiation"
+  - "outfit overlay: Napoleon / Wall Street / astronaut / samurai / cowboy on the crude body"
+
+typography_registers:
+  - "hand-drawn marker caption in all-lowercase, centered — primary"
+  - "childlike Comic Sans song-lyric overlay"
+  - "MSPaint speech bubbles with jagged outlines"
+  - "early-2000s Flash-banner chromatic gradient text for celebrations (drop-shadow red/yellow)"
+  - "Quiznos-style broadcast lower-third when parodying ad-copy beats"
+
+subject_archetypes:
+  - "the singing spongmonkey (solo, mid-song, eyes to camera)"
+  - "the duet / trio (two or three spongmonkeys in a shared crude scene)"
+  - "the spongmonkey at a major moment (moon landing, oval office, red carpet, lambo, yacht)"
+  - "the spongmonkey dressed up (Napoleon, astronaut, samurai, cowboy) — cursed because the body/head mismatch remains"
+  - "the spongmonkey in an art-style mashup (Renaissance, Vaporwave, Cyberpunk) — traits from spongmonkeys.fun"
 
 banned_words:
   - "cinematic"
@@ -24,10 +58,22 @@ banned_words:
   - "4k"
   - "8k"
   - "ultra-realistic"
+  - "photorealistic"
+  - "beautiful"
+  - "award-winning"
+  # and any word that would clean up the inherent lo-fi cursedness
 
 kill_list:
-  - "spongebob parody imagery unless the corpus explicitly uses it"
-  - "any reference that imitates another ghostmemes creator's signature"
+  - "high-resolution crisp rendering — the vibe REQUIRES jpeg compression / low-res cutouts"
+  - "a clean, professional illustration — wrong era, wrong register"
+  - "making the spongmonkey cute or marketable — the point is cursed sincerity"
+  - "AI-smooth skin on the head cutout — it must read as a bad photo-cutout"
+  - "ironic / winking captions — the spongmonkey is SINCERE, never self-aware"
+  - "modern typography (sleek sans) — this is 2003 Flash aesthetics"
+  - "correcting the 'wrong' proportions — the eyes SHOULD be comically too-large"
 
 co_signers:
-  - "@ghostmemes"
+  - "@SpongmonkeyMoon"
+  - "@SpongMonkeys"
+  - "Joel Veitch (lineage credit)"
+  - "rathergood.com (lineage credit)"

@@ -194,6 +194,20 @@ FORMAT_TRIGGERS: dict[str, list[str]] = {
         "wheat paste", "wheat-paste", "street poster", "poster on wall",
         "peeling poster", "missing person poster", "kilroy poster",
     ],
+    # Spong (spongmonkeys lineage)
+    "spong_solo_scene": [
+        "spong", "spongmonkey", "spongmonkeys", "we like the moon",
+        "rathergood", "joel veitch", "googly eyes", "cursed 2003",
+        "cursed meme", "flash animation still",
+    ],
+    "spong_quiznos_ad_parody": [
+        "quiznos", "we love the subs", "super bowl 2004", "cursed ad",
+        "broadcast tv parody", "cursed commercial", "quiznos parody",
+    ],
+    "spong_duet_trio": [
+        "spong duet", "spong trio", "multiple spongmonkeys",
+        "spongmonkeys in unison", "chorus of spong",
+    ],
 }
 
 # Strong intent cues for the "kind" (image vs video) when operator hasn't said.

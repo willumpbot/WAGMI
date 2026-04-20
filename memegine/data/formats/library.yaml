@@ -848,6 +848,137 @@ formats:
         "a phone face-down next to the keyboard",
       ]
 
+  # -------- Spong formats (Spongmonkeys lineage) --------
+
+  - slug: spong_solo_scene
+    kind: image
+    description: |
+      PRIMARY Spong format. A single spongmonkey (photo-cutout monkey
+      head with HUGE googly eyes and open singing mouth, crude
+      MSPaint illustrated body) placed in one of the canonical
+      scenes (Oval Office / Moon / Yacht / Lambo / Red Carpet /
+      Tokyo Night / Beach / Space). Sincere hand-scrawled caption.
+      2003 jpeg aesthetic — NOT 4K, NOT clean.
+    prompt_scaffold: |
+      A cursed 2003-Flash-animation still: a single spongmonkey — a
+      blurry photo-cutout of a real monkey head with {fur_color}
+      fur, HUGE white googly eyes nearly touching each other with
+      tiny black pinpoint pupils, open singing mouth showing cream
+      buck teeth and red gums — attached to a crude MSPaint-style
+      illustrated body wearing {outfit}, standing in a flat-
+      illustrated {scene}. Background: yellowed beige with visible
+      jpeg compression artifacts, chroma halos, slight yellowing.
+      Hand-scrawled lowercase caption centered at the bottom:
+      "{caption}". 2003 rathergood.com aesthetic — deliberately low
+      resolution, crude linework, no vector polish.
+      Negatives: no 4K, no photorealism, no clean vectors, no modern
+      typography, no smooth gradient shading, no smirking expression.
+    good_models: [ideogram_via_grok, aurora, flux_pro_via_grok]
+    slot_hints:
+      fur_color: ["normal peach-brown", "black", "white", "pink", "neon green", "red", "blue", "purple", "rainbow"]
+      outfit: [
+        "Napoleon coat and bicorn hat",
+        "pinstripe Wall Street suit",
+        "astronaut suit with helmet",
+        "samurai armor",
+        "cowboy hat and vest",
+        "wizard robe and pointy hat",
+        "hip-hop puffer with gold chain",
+        "black tie tuxedo",
+        "knight armor",
+        "pirate shirt and eye patch",
+      ]
+      scene: [
+        "the Oval Office with the Resolute desk",
+        "the surface of the Moon, Earth in the background",
+        "the deck of a luxury yacht at sunset",
+        "inside a Lamborghini, looking out the driver window",
+        "a Hollywood red carpet with flashbulbs",
+        "Tokyo at night with Shibuya crossing neon",
+        "a tropical beach with coconut trees",
+        "deep space with a purple nebula",
+      ]
+      caption: [
+        "we like the moon.",
+        "we love the subs.",
+        "we like the yacht.",
+        "we like the bag.",
+        "we are on the moon now.",
+      ]
+
+  - slug: spong_quiznos_ad_parody
+    kind: image
+    description: |
+      Direct callback to the 2004 Quiznos Super Bowl commercial:
+      480p broadcast TV still, a spongmonkey singing to camera with
+      broadcast lower-third lyrics in yellow-and-red Quiznos branding.
+      Absolute sincerity — the character does not know it's selling
+      anything.
+    prompt_scaffold: |
+      A 2004 broadcast-TV commercial still, deliberately captured off
+      cable at 480p interlaced with slight chroma bleed and tape
+      artifacts. Centered: a spongmonkey (blurry photo-cutout monkey
+      head, HUGE spong'd googly eyes with tiny pupils, open singing
+      mouth with buck teeth), attached to a crude MSPaint illustrated
+      body. Scene: {ad_scene}, rendered in yellow-and-red Quiznos-
+      brand palette. A broadcast lower-third banner in chunky block
+      sans displays the lyric: "we love the {product}, 'cuz they are
+      good to us." No irony on the character's face — the spongmonkey
+      genuinely loves {product}.
+      Negatives: no modern ad polish, no 4K sharpness, no smirk, no
+      knowing glance to camera.
+    good_models: [ideogram_via_grok, aurora]
+    slot_hints:
+      ad_scene: [
+        "a Quiznos sandwich counter, yellow-and-red signage",
+        "a cartoon kitchen with crude MSPaint pans and stove",
+        "a stage with Quiznos-logo curtains",
+        "floating over a giant toasted sub",
+      ]
+      product: [
+        "subs", "bag", "moon", "token", "chain", "gains",
+      ]
+
+  - slug: spong_duet_trio
+    kind: image
+    description: |
+      Two or three spongmonkeys side-by-side in the same cursed
+      scene, different fur colors, all mid-song with identical
+      spong'd eyes and open mouths. The unison is the joke.
+    prompt_scaffold: |
+      A rathergood-era cursed scene: {count} spongmonkeys arranged
+      side-by-side, each with a blurry photo-cutout monkey head,
+      HUGE white googly eyes nearly touching with tiny pupils, open
+      singing mouths showing buck teeth. Fur colors (left to right):
+      {fur_colors}. All wearing crude MSPaint illustrated bodies,
+      standing in {scene}. Background: 2003 Flash-banner aesthetic,
+      jpeg compression artifacts, yellowed tint. Caption in childlike
+      Comic Sans at the bottom reading the chorus line: "{chorus}".
+      They are singing in unison. Sincere, never winking.
+      Negatives: no clean rendering, no vector illustration, no
+      modern text, no self-aware expressions.
+    good_models: [ideogram_via_grok, aurora]
+    slot_hints:
+      count: ["two", "three"]
+      fur_colors: [
+        "normal peach-brown and pink",
+        "pink and neon green and rainbow",
+        "black and white and rainbow",
+        "normal and red and blue",
+      ]
+      scene: [
+        "a flat MSPaint illustrated moon surface",
+        "a crude illustrated Oval Office",
+        "a flat illustrated yacht deck",
+        "a flat illustrated Lambo interior",
+      ]
+      chorus: [
+        "we like the moon!",
+        "we love the subs!",
+        "we are on the moon now!",
+        "we like the bag!",
+      ]
+
   - slug: kilroy_wheat_paste_poster
     kind: image
     description: |

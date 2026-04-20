@@ -1,0 +1,59 @@
+# Spong-specific fragments. Reference with SPONG.* in any prompt.
+
+SPONG:
+  spong_eyes: >
+    HUGE bulging white googly eyes pasted on top of the face, the
+    eye whites nearly touching each other, tiny black pinpoint
+    pupils — this is the defining "spong" move (b3ta term for
+    adding oversized staring eyes with tiny pupils)
+
+  monkey_head_cutout: >
+    a photo-cutout of a real monkey or rodent head: slightly blurry,
+    desaturated peach-brown fur, visible matte edges around the cut,
+    obviously pasted on top of the rest of the scene — the edges
+    should NOT blend cleanly
+
+  singing_mouth: >
+    open singing mouth caught mid-note, cream-colored buck teeth
+    visible, red/pink gums, the character is genuinely performing
+    a song — never smirking, never self-aware
+
+  rathergood_illustration: >
+    crude MSPaint-era flat illustrated body, peach-brown fur strokes,
+    simple geometric limbs, visible brush lines, rathergood.com 2003
+    Flash-animation style — no vector polish, no shading
+
+  quiznos_broadcast_still: >
+    2004 Quiznos commercial broadcast TV still: 480p interlaced, red
+    and yellow branded palette, slight broadcast-tape color bleed,
+    lower-third ad-copy in block sans — looks genuinely captured off
+    cable television, NOT a modern ad
+
+  we_like_the_moon: >
+    lyric caption rendered in hand-drawn lowercase marker, centered
+    at the bottom of the frame: "we like the moon." — the canonical
+    song line. may be modified to "we like the X" for other subjects
+
+  jpeg_2003_compression: >
+    push deliberate jpeg compression artifacts: blocky 8x8 macroblocks
+    in smooth gradients, slight chroma subsampling halos, yellowed
+    beige background tint — the image should read as a 2003 email
+    forward, not a 2026 render
+
+  outfit_overlay: >
+    one canonical Spong outfit overlaid on the illustrated body:
+    Napoleon coat / Wall Street suit / astronaut suit / samurai armor
+    / cowboy fit / wizard robe / pirate fit / Top Gun jacket / hip-hop
+    chains-and-puffer / knight armor / superhero cape / black tie
+
+  canonical_scene: >
+    one canonical Spong scene: the Oval Office, deep space, the Moon
+    surface, a red carpet, Tokyo at night, a beach, a yacht deck,
+    the interior of a Lamborghini. Rendered flat-illustrated (not
+    photoreal) in 2003 MSPaint style
+
+  duet_trio_arrangement: >
+    two or three spongmonkeys arranged side-by-side in the same
+    crude scene, different fur colors (normal / pink / neon-green /
+    rainbow), all with spong_eyes and singing_mouth simultaneously
+    — the trio is singing in unison
