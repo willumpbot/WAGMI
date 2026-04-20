@@ -2494,6 +2494,72 @@ def batch_cmd(
     print(result.as_text())
 
 
+@app.command("reply-for")
+def reply_for_cmd(
+    url_or_id: str = typer.Argument(..., help="Tweet URL or ID to reply to."),
+    no_browser: bool = typer.Option(False, "--no-browser"),
+    no_generate: bool = typer.Option(
+        False, "--no-generate",
+        help="Skip brief generation — just show the tweet + top matches.",
+    ),
+) -> None:
+    """Given an X tweet URL, suggest matching library refs + generate a reply brief.
+
+    Uses the free syndication endpoint (no API key). The reply's content
+    gets tied to the target tweet's topic so the generated art stays
+    relevant to the post being replied to.
+    """
+    from . import reply_for
+    result = reply_for.plan(
+        url_or_id,
+        generate_brief=not no_generate,
+        open_browser=not no_browser,
+    )
+    if result is None:
+        print(
+            f"ERROR: could not fetch tweet {url_or_id!r}.\n"
+            "  - Check the URL is public and not age-restricted.\n"
+            "  - Or pass the raw ID: `memegine reply-for 1234567890`."
+        )
+        raise typer.Exit(code=1)
+    print(result.as_text())
+
+
+tweets_app = typer.Typer(
+    help="Tweet fetcher: pull tweets by URL via the free syndication "
+         "endpoint, cache them to data/projects/<brand>/feed/tweets.jsonl."
+)
+app.add_typer(tweets_app, name="tweets")
+
+
+@tweets_app.command("show")
+def tweets_show_cmd(
+    limit: int = typer.Option(20, "-n", "--limit"),
+) -> None:
+    """List recently cached tweets for the active project."""
+    from . import x_fetch
+    cache = x_fetch.recent(limit=limit)
+    if not cache:
+        print("(no cached tweets yet — use `memegine reply-for <url>` to fetch one)")
+        return
+    for t in cache:
+        print(t.as_short())
+
+
+@tweets_app.command("fetch")
+def tweets_fetch_cmd(
+    url_or_id: str = typer.Argument(..., help="Tweet URL or numeric ID."),
+) -> None:
+    """Fetch and cache a tweet without doing the reply planning."""
+    from . import x_fetch
+    t = x_fetch.fetch(url_or_id, use_cache=False)
+    if t is None:
+        print(f"ERROR: could not fetch {url_or_id!r}")
+        raise typer.Exit(code=1)
+    print(t.as_short())
+    print(f"  cached at {x_fetch._cache_path()}")
+
+
 @app.command("raid")
 def raid_cmd(
     theme: str = typer.Argument(..., help="One-line raid theme, in quotes."),
