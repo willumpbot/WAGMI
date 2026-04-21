@@ -275,6 +275,7 @@ def _build_ops_handlers(cfg):
         n = 5
         brand = settings.project
         want_video = False
+        filter_tags: list[str] = []
         for tok in args:
             if tok.isdigit():
                 n = max(1, min(20, int(tok)))
@@ -282,6 +283,9 @@ def _build_ops_handlers(cfg):
                 brand = tok.lower()
             elif tok.lower() in ("video", "videos", "v"):
                 want_video = True
+            else:
+                # any other token → tag filter
+                filter_tags.append(tok.lower())
         n = min(n, 10)
         if brand != settings.project:
             try:
@@ -316,11 +320,45 @@ def _build_ops_handlers(cfg):
                          f"data/projects/{brand}/videos/",
                 )
                 return
-            await context.bot.send_message(
-                chat_id=chat_id,
-                text=f"🎬 {brand} videos — sending {min(n, len(vids))} of {len(vids)} total (newest first):",
-            )
-            # Send oldest→newest so the latest appears at the bottom of the chat
+
+            # If filter_tags specified, cross-reference videos to refs by
+            # matching video stem ↔ ref source field
+            if filter_tags:
+                all_refs = _rl.search()
+                filter_set = {t.lower() for t in filter_tags}
+                # source like "video:01a92a41..." contains the hash stem
+                matching_stems: set[str] = set()
+                for e in all_refs:
+                    e_tags = {t.lower() for t in (e.get("tags") or [])}
+                    if not (filter_set & e_tags):
+                        continue
+                    src = str(e.get("source") or "")
+                    # Extract hash from source
+                    for part in src.replace(":", " ").replace("/", " ").split():
+                        stem = part.split(".")[0]
+                        if len(stem) >= 16:
+                            matching_stems.add(stem)
+                filtered = [
+                    v for v in vids
+                    if any(stem in v.stem for stem in matching_stems)
+                ]
+                if filtered:
+                    vids = filtered
+                    header = (
+                        f"🎬 {brand} videos — filter: {','.join(filter_tags)} — "
+                        f"{min(n, len(vids))} of {len(vids)} matches"
+                    )
+                else:
+                    await context.bot.send_message(
+                        chat_id=chat_id,
+                        text=f"🎬 no videos matched tags {filter_tags} — "
+                             f"showing recent instead",
+                    )
+                    header = f"🎬 {brand} — {min(n, len(vids))} recent videos"
+            else:
+                header = f"🎬 {brand} videos — {min(n, len(vids))} of {len(vids)} total"
+
+            await context.bot.send_message(chat_id=chat_id, text=header)
             for v in vids[-n:]:
                 try:
                     with open(v, "rb") as fh:
@@ -335,21 +373,41 @@ def _build_ops_handlers(cfg):
                     )
             return
 
-        entries = _rl.recent(n)
+        # Filter by tags if specified
+        all_entries = _rl.search()
+        if filter_tags:
+            filter_set = {t.lower() for t in filter_tags}
+            entries = [
+                e for e in all_entries
+                if filter_set & {t.lower() for t in (e.get("tags") or [])}
+            ]
+            # Dedupe by source video so we don't send 5 frames of same video
+            seen = set()
+            dedup = []
+            for e in entries:
+                src = e.get("source") or e.get("id")
+                if src in seen:
+                    continue
+                seen.add(src)
+                dedup.append(e)
+            entries = dedup[:n]
+            header = (
+                f"📂 {brand} library — filter: {','.join(filter_tags)} — "
+                f"{len(entries)} of {len(dedup)} unique matches"
+            )
+        else:
+            entries = _rl.recent(n)
+            header = f"📂 {brand} library — {n} most recent of {len(all_entries)} total"
         if not entries:
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=(
-                    f"📂 {brand} library is empty.\n"
-                    f"Drop content at data/projects/{brand}/references/ "
-                    f"then run `memegine corpus ingest <folder>`."
+                    f"📂 {brand}{' tag=' + ','.join(filter_tags) if filter_tags else ''}: "
+                    f"no matches. try /gallery {brand} without filter."
                 ),
             )
             return
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text=f"📂 {brand} library — {n} most recent of {len(_rl.search())} total:",
-        )
+        await context.bot.send_message(chat_id=chat_id, text=header)
         for e in entries[:n]:
             # The ref-lib index stores `filename`, not full `path`.
             # Compute path from references_dir + filename.

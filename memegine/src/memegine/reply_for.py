@@ -35,6 +35,55 @@ from .config import settings
 from .flow_post import BRAND_DEFAULT_REPLY_FORMAT, GROK_IMAGINE_URL
 
 
+# Crypto-twitter topic expansion: tweet keyword → additional tags to
+# look up. Makes generic tweets match themed motion/spong/kilroy refs.
+TOPIC_EXPANSIONS: dict[str, list[str]] = {
+    # Emotional states
+    "cope":      ["cope", "trader", "night", "3am"],
+    "dump":      ["cope", "trader", "night", "red"],
+    "rug":       ["cope", "trader", "night", "aftermath"],
+    "liquidated": ["cope", "trader", "night"],
+    "rekt":      ["cope", "trader"],
+    # Excitement / flex
+    "pump":      ["wealth", "flex", "cash", "wildlife", "apex"],
+    "moon":      ["wealth", "flex", "cash", "cosmic"],
+    "mooning":   ["wealth", "flex", "cash", "cosmic"],
+    "printed":   ["wealth", "flex", "cash"],
+    "rich":      ["wealth", "flex", "cash"],
+    "wagmi":     ["wealth", "flex", "prestige"],
+    # Aggression / power
+    "apex":      ["apex", "predator", "wildlife"],
+    "king":      ["apex", "predator", "wildlife"],
+    "alpha":     ["apex", "predator", "prestige"],
+    "dominance": ["apex", "predator"],
+    "kill":      ["apex", "predator", "wildlife"],
+    # Market
+    "ath":       ["wealth", "flex", "cosmic"],
+    "pumping":   ["wealth", "flex"],
+    "candles":   ["trader", "night"],
+    "chart":     ["trader"],
+    "trading":   ["trader"],
+    "long":      ["trader"],
+    "short":     ["trader"],
+    # Subjects
+    "whale":     ["wealth", "cash", "flex"],
+    "degen":     ["trader", "night"],
+    "ape":       ["trader", "flex"],
+    "bag":       ["wealth", "cash", "bag"],
+    "stack":     ["wealth", "cash"],
+    "bricks":    ["cash", "wealth", "cartel"],
+    "cash":      ["cash", "wealth", "money"],
+    # Crypto ecosystem
+    "pump.fun":  ["trader", "degen"],
+    "fomo":      ["trader", "cope"],
+    "sol":       ["trader"],
+    "eth":       ["trader"],
+    "btc":       ["trader", "wealth"],
+    "bonk":      ["degen", "trader"],
+    "wif":       ["degen", "trader"],
+}
+
+
 # Words that ARE topic hints. Anything matching a library tag or a
 # format trigger qualifies.
 _STOPWORDS = {
@@ -53,7 +102,12 @@ _TOKEN_RE = re.compile(r"[a-z0-9$#@]+")
 
 def _keywords(text: str) -> list[str]:
     """Crude but effective topic extractor: lowercase, tokenize, drop
-    stopwords, dedupe. Keeps $TICKERS, #hashtags, @handles as-is."""
+    stopwords, dedupe, expand via TOPIC_EXPANSIONS.
+
+    For each keyword found in the tweet that appears in TOPIC_EXPANSIONS,
+    add its related tags to the keyword list. So tweet "eth dumping"
+    expands to ['eth', 'dumping', 'trader', 'cope', 'night', 'red'].
+    """
     low = text.lower()
     raw = _TOKEN_RE.findall(low)
     out: list[str] = []
@@ -67,6 +121,11 @@ def _keywords(text: str) -> list[str]:
             continue
         seen.add(w)
         out.append(w)
+        # Expand to related tags
+        for expansion in TOPIC_EXPANSIONS.get(w, []):
+            if expansion not in seen:
+                seen.add(expansion)
+                out.append(expansion)
     return out
 
 
@@ -142,31 +201,49 @@ class ReplyPlan:
 def _score_refs(tweet: x_fetch.TweetData, keywords: list[str]) -> list[ReplyMatch]:
     """Rank library refs by keyword overlap with the tweet.
 
-    Scoring: +2 per matching tag, +1 per matching word in prompt/notes,
-    +3 bonus if the ref is already marked `winner` (it's proven).
+    Scoring (keyword-heavy because motion's auto-ingest tags are
+    filename hashes, not semantic — we lean on prompt + notes):
+      +2 per matching tag (excluding hash-like tags)
+      +1 per matching word in prompt (the content description)
+      +1 per matching word in notes
+      +3 bonus if marked `winner`
+      +1 bonus for each ticker match ($ETH, $BTC, etc.)
     """
     out: list[ReplyMatch] = []
     key_set = set(keywords)
+    symbols = {s.lower() for s in tweet.symbols}
     try:
         entries = reference_lib.search()
     except (FileNotFoundError, OSError):
         return []
     for e in entries:
-        tags = {str(t).lower() for t in e.get("tags", [])}
+        # Filter out hash-ID tags (32+ hex chars) — those are auto-tags
+        # from corpus ingest and don't represent semantic content.
+        raw_tags = [str(t).lower() for t in e.get("tags", [])]
+        semantic_tags = {
+            t for t in raw_tags
+            if len(t) < 24 and not all(c in "0123456789abcdef" for c in t)
+        }
         score = 0
         hits: list[str] = []
-        tag_hits = tags & key_set
+        tag_hits = semantic_tags & key_set
         score += 2 * len(tag_hits)
         hits.extend(sorted(tag_hits))
-        blob = " ".join([
-            str(e.get("prompt", "")),
-            str(e.get("notes", "")),
-        ]).lower()
+        prompt_blob = str(e.get("prompt", "")).lower()
+        notes_blob = str(e.get("notes", "")).lower()
         for k in key_set:
-            if k in blob and k not in tag_hits:
+            if k in prompt_blob and k not in tag_hits:
                 score += 1
                 hits.append(k)
-        if "winner" in tags:
+            elif k in notes_blob and k not in tag_hits and k not in hits:
+                score += 1
+                hits.append(k)
+        # Ticker bonus
+        for sym in symbols:
+            if sym in prompt_blob or sym in notes_blob:
+                score += 1
+                hits.append(f"${sym}")
+        if "winner" in raw_tags:
             score += 3
             hits.append("winner")
         if score == 0:
