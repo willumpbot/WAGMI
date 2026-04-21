@@ -264,23 +264,32 @@ def _draw_text(draw, text_box, text, color):
     x0, y0, x1, y1 = text_box
     band_w = x1 - x0
     band_h = y1 - y0
-    # Target: text spans ~88% of band width (small padding)
-    target_w = int(band_w * 0.92)
+    # Target: text spans ~86% of band width (leaves padding for jitter)
+    target_w = int(band_w * 0.86)
 
-    # Binary-search-ish shrink: start big, shrink until it fits
+    def _measure_drawn(font, size):
+        """Measure total drawn width exactly as the per-character loop
+        below will render it — so shrinking actually guarantees fit."""
+        w = 0
+        for ch in text:
+            if ch == " ":
+                w += int(size * 0.42)
+                continue
+            cbbox = draw.textbbox((0, 0), ch, font=font)
+            w += (cbbox[2] - cbbox[0]) + max(1, int(size * 0.03))
+        return w
+
     font_size = max(10, int(band_h * 0.95))
     font = _load_hand_font(font_size)
-    bbox = draw.textbbox((0, 0), text, font=font)
-    text_w = bbox[2] - bbox[0]
-    # Shrink if too wide
+    text_w = _measure_drawn(font, font_size)
     attempts = 0
-    while text_w > target_w and font_size > 10 and attempts < 20:
-        font_size = int(font_size * 0.9)
+    while text_w > target_w and font_size > 6 and attempts < 30:
+        font_size = max(6, int(font_size * 0.88))
         font = _load_hand_font(font_size)
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_w = bbox[2] - bbox[0]
+        text_w = _measure_drawn(font, font_size)
         attempts += 1
 
+    bbox = draw.textbbox((0, 0), text, font=font)
     text_h = bbox[3] - bbox[1]
     start_x = x0 + (band_w - text_w) // 2
     start_y = y0 + max(0, (band_h - text_h) // 2)

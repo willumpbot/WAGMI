@@ -443,81 +443,94 @@ def _build_ops_handlers(cfg):
         ops_db.action_log(tweet_id=t["id"], kind=kind, slug_or_ref_id=slug)
 
     async def _send_kilroy_pfp_action(update, context, t):
-        """Composite a Kilroy peek over the tweet author's pfp — legend
-        reads '@<handle> WAS HERE' instead of 'KILROY WAS HERE'.
-        Output sent as photo to TG chat. No AI, no cost."""
+        """Turn the author's pfp INTO a Kilroy-was-here peek pose.
+
+        This is NOT a small overlay — it's an image-to-image transform:
+        the subject's face becomes the peeking character, with just
+        eyes + hair showing above a wall, hands gripping the wall,
+        '[handle] was here' caption below.
+
+        Works like Spongify: we send the pfp + a Grok-ready prompt so
+        the operator pastes both into Grok Imagine, which renders the
+        transformation. Free (uses X Premium's Grok access).
+        """
         chat_id = update.effective_chat.id
         handle = t["handle"]
         await context.bot.send_message(
-            chat_id=chat_id, text=f"🖼 kilroy'ing @{handle}'s pfp…",
+            chat_id=chat_id, text=f"🖼 building kilroy-ify prompt for @{handle}…",
         )
-        # Find pfp URL (cached in ops_db or x_fetch JSONL)
-        pfp_url = (
-            (t.get("author_profile_image_url") or "").strip()
-        )
+        pfp_url = (t.get("author_profile_image_url") or "").strip()
         if not pfp_url:
-            # Fall back to spongify's resolver which checks multiple caches
             from . import spongify as _sp
             pfp_url = _sp._profile_pic_url(handle) or ""
         if not pfp_url:
             await context.bot.send_message(
                 chat_id=chat_id,
-                text="❌ no profile pic cached for this handle yet. Paste a recent tweet from them first.",
+                text="❌ no pfp cached — paste a tweet from them first.",
             )
             return
-        # Download pfp
-        import urllib.request
+
+        prompt = f"""Using the attached reference image of @{handle}, transform it into a \
+Kilroy-was-here peek pose:
+
+- KEEP the subject's face, hair, eyes, skin tone, and stylistic \
+treatment EXACTLY as in the reference. Do not change their identity.
+- CROP to show ONLY the top third of the face: the eyes, eyebrows, \
+forehead, and hair. Everything from the nose down should be hidden \
+behind a wall.
+- ADD two hands at the bottom of the frame with fingers gripping \
+the top of a wall. CRITICAL: the hands must match the subject's \
+own art style (anime → anime hands, pepe/cracked-texture → same \
+texture hands, cartoon → cartoon, photoreal → photoreal). Do NOT \
+render generic default-cartoon hands that clash with the subject.
+- BACKGROUND: simple — either plain pale color (light pink / cream / \
+gray), or the subject's original background but heavily blurred. \
+Keep the focus on the subject's face + the hands + the caption.
+- CAPTION: hand-lettered marker-style text BELOW the wall line \
+reading exactly: "{handle.lower()} was here"
+- OUTPUT: 1:1 square aspect.
+- STYLE: clean cartoon outline + subject's original art style. NO \
+photoreal rendering, NO AI-smooth skin, NO extra characters.
+
+Reference the classic "Kilroy was here" WWII peek-over-wall meme for \
+pose and composition, but the face/character stays as the original \
+subject."""
+
+        import io, urllib.request
+        # Download the pfp for attachment
         try:
-            with urllib.request.urlopen(
-                urllib.request.Request(
-                    pfp_url,
-                    headers={"User-Agent": "Mozilla/5.0 (memegine)"},
-                ),
-                timeout=15,
-            ) as r:
-                base_bytes = r.read()
+            req = urllib.request.Request(pfp_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=15) as r:
+                pfp_bytes = r.read()
         except Exception as exc:
             await context.bot.send_message(
                 chat_id=chat_id, text=f"❌ pfp download failed: {exc}",
             )
             return
-        # Composite Kilroy with the author's handle as the legend
-        from . import kilroy_compositor
-        try:
-            result = kilroy_compositor.kilroy_onto(
-                base_bytes,
-                position="bottom-right",
-                size_pct=0.28,                    # bigger on a small pfp
-                text=f"@{handle.upper()} WAS HERE",
-            )
-        except Exception as exc:
-            await context.bot.send_message(
-                chat_id=chat_id, text=f"❌ composite failed: {exc}",
-            )
-            return
 
-        # Send as photo to TG via multipart
-        import urllib.request as _urlreq
         from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         kb = InlineKeyboardMarkup([[
-            InlineKeyboardButton("🔗 open tweet", url=t["url"]),
+            InlineKeyboardButton("🌐 Grok", url=GROK_URL),
+            InlineKeyboardButton("🔗 tweet", url=t["url"]),
             InlineKeyboardButton("🔁 reroll", callback_data=f"t:a:kilroy:kpfp:{t['id']}"),
         ]])
-        # Use bot.send_photo with bytes
-        import io
         await context.bot.send_photo(
-            chat_id=chat_id,
-            photo=io.BytesIO(result.image_bytes),
+            chat_id=chat_id, photo=io.BytesIO(pfp_bytes),
             caption=(
-                f"@{handle} was here — {result.mode} kilroy overlay, "
-                f"{result.overlay_pct}% of frame. Save this and reply to the tweet with it."
+                f"@{handle} profile pic — upload this to Grok Imagine + "
+                f"paste the prompt below. Output: their face peeking "
+                f"over a wall with '{handle.lower()} was here' caption."
             ),
             reply_markup=kb,
         )
+        # The prompt as code-block for easy copy
+        await context.bot.send_message(
+            chat_id=chat_id, text=f"```\n{prompt}\n```",
+            parse_mode="Markdown",
+        )
         ops_db.action_log(
-            tweet_id=t["id"], kind="kilroy_pfp",
+            tweet_id=t["id"], kind="kilroy_pfp_transform",
             slug_or_ref_id=handle,
-            note=f"{result.mode} @{result.overlay_pct}%",
         )
 
     async def _send_spongify_action(update, context, t):
