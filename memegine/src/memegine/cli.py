@@ -2660,6 +2660,31 @@ def console_cmd(
         raise typer.Exit(code=1)
 
 
+@app.command("spongify")
+def spongify_cmd(
+    handles: list[str] = typer.Argument(..., help="X handles (space-separated, with or without @)."),
+) -> None:
+    """Spongify one or more X profile pictures in bulk.
+
+    For each handle: grab their profile pic, download it, write a
+    per-handle Grok Imagine prompt. Operator uploads pic + pastes
+    prompt into Grok to render the spongified version.
+
+    Great for raid packs — `memegine spongify @a @b @c @d @e` builds
+    the whole pack in one shot with rotating fur colors and lyrics.
+
+    Requires: `memegine watch login` (session cookie needed for
+    profile picture scraping).
+    """
+    from . import spongify
+    try:
+        batch = spongify.spongify_handles(handles)
+    except RuntimeError as exc:
+        print(str(exc))
+        raise typer.Exit(code=1)
+    print(batch.as_text())
+
+
 @app.command("reply-for")
 def reply_for_cmd(
     url_or_id: str = typer.Argument(..., help="Tweet URL or ID to reply to."),

@@ -34,22 +34,31 @@ from .config import settings
 GROK_URL = "https://grok.com/imagine"
 
 # Short button labels optimize for narrow mobile rows.
-ACTIONS = [
+# Two rows to keep each row at 3-4 buttons — comfortable on mobile.
+ACTIONS_ROW1 = [
     ("refs", "📎 Refs"),
     ("brief", "✍ Brief"),
     ("video", "🎬 Video"),
-    ("raid", "🎯 Raid"),
 ]
+ACTIONS_ROW2 = [
+    ("raid", "🎯 Raid"),
+    ("spong", "🟢 Spongify"),
+]
+ACTIONS = ACTIONS_ROW1 + ACTIONS_ROW2
 
 
 def _keyboard_for_tweet(tweet_id: str):
-    """Build the 4-button inline keyboard for a tweet card."""
+    """Build the inline keyboard for a tweet card (2 rows)."""
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-    row = [
+    row1 = [
         InlineKeyboardButton(label, callback_data=f"t:{act}:{tweet_id}")
-        for act, label in ACTIONS
+        for act, label in ACTIONS_ROW1
     ]
-    return InlineKeyboardMarkup([row])
+    row2 = [
+        InlineKeyboardButton(label, callback_data=f"t:{act}:{tweet_id}")
+        for act, label in ACTIONS_ROW2
+    ]
+    return InlineKeyboardMarkup([row1, row2])
 
 
 def _format_tweet_caption(t: dict, *, max_chars: int = 900) -> str:
@@ -260,6 +269,8 @@ def _build_ops_handlers(cfg):
             await _send_brief_action(update, context, t, kind="video")
         elif action == "raid":
             await _send_raid_action(update, context, t)
+        elif action == "spong":
+            await _send_spongify_action(update, context, t)
 
     async def _send_refs_action(update, context, t):
         plan = reply_for_mod.plan(t["url"], generate_brief=False, open_browser=False)
@@ -340,6 +351,62 @@ def _build_ops_handlers(cfg):
             )
         ops_db.action_log(tweet_id=t["id"], kind=kind,
                           slug_or_ref_id=bundle.format_slug or slug)
+
+    async def _send_spongify_action(update, context, t):
+        chat_id = update.effective_chat.id
+        handle = t["handle"]
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=f"🟢 spongifying @{handle} …",
+        )
+        try:
+            from . import spongify
+            batch = spongify.spongify_handles([handle])
+        except RuntimeError as exc:
+            await context.bot.send_message(chat_id=chat_id, text=f"error: {exc}")
+            return
+        except Exception as exc:
+            await context.bot.send_message(
+                chat_id=chat_id, text=f"error: {type(exc).__name__}: {exc}",
+            )
+            return
+        if not batch.targets:
+            reason = batch.failures[0][1] if batch.failures else "no pfp available"
+            await context.bot.send_message(
+                chat_id=chat_id, text=f"❌ spongify failed: {reason}",
+            )
+            return
+        target = batch.targets[0]
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+        kb = InlineKeyboardMarkup([[
+            InlineKeyboardButton("🌐 open Grok", url=GROK_URL),
+            InlineKeyboardButton("🔗 open tweet", url=t["url"]),
+        ]])
+        # Send the downloaded profile pic so the operator can forward
+        # it straight into Grok Imagine's image input.
+        try:
+            with open(target.local_pfp_path, "rb") as fh:
+                await context.bot.send_photo(
+                    chat_id=chat_id, photo=fh,
+                    caption=(
+                        f"@{handle} profile pic\n"
+                        f"↓ upload this to Grok Imagine + paste the prompt below"
+                    ),
+                    reply_markup=kb,
+                )
+        except OSError as exc:
+            await context.bot.send_message(chat_id=chat_id, text=f"pfp read error: {exc}")
+            return
+        # Send the prompt as a code block for easy copy on mobile.
+        for chunk in _chunks(target.prompt, size=3800):
+            await context.bot.send_message(
+                chat_id=chat_id, text=f"```\n{chunk}\n```",
+                parse_mode="Markdown",
+            )
+        ops_db.action_log(
+            tweet_id=t["id"], kind="spongify", slug_or_ref_id=handle,
+            note=str(target.local_pfp_path),
+        )
 
     async def _send_raid_action(update, context, t):
         chat_id = update.effective_chat.id

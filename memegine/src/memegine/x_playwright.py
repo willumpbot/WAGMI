@@ -220,6 +220,58 @@ def search_handles(query: str, *, limit: int = 50) -> list[str]:
     return asyncio.run(search_handles_async(query, limit=limit))
 
 
+async def profile_picture_url_async(
+    handle: str,
+    *,
+    headless: bool = True,
+    timeout_ms: int = DEFAULT_TIMEOUT_MS,
+) -> Optional[str]:
+    """Return the full-size profile picture URL for @handle, or None."""
+    _require_playwright()
+    from playwright.async_api import async_playwright
+    if not SESSION_PATH.exists():
+        raise RuntimeError(
+            f"no saved X session at {SESSION_PATH} — run `memegine watch login`"
+        )
+    handle = handle.lstrip("@").strip().lower()
+    if not handle:
+        return None
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=headless)
+        ctx = await browser.new_context(storage_state=str(SESSION_PATH))
+        page = await ctx.new_page()
+        try:
+            await page.goto(
+                f"{BASE_URL}/{handle}",
+                wait_until="domcontentloaded",
+                timeout=timeout_ms,
+            )
+            try:
+                await page.wait_for_selector(
+                    'img[src*="profile_images"]',
+                    timeout=timeout_ms, state="attached",
+                )
+            except Exception:
+                return None
+            src = await page.eval_on_selector(
+                'img[src*="profile_images"]',
+                "e => e.getAttribute('src')",
+            )
+            if not src:
+                return None
+            # X serves profile_images at _normal (48px), _bigger (73px), _200x200,
+            # _400x400, or no suffix (original). Upscale to _400x400.
+            import re as _re
+            return _re.sub(r"_(normal|bigger|\d+x\d+)\.", "_400x400.", src)
+        finally:
+            await browser.close()
+
+
+def profile_picture_url(handle: str) -> Optional[str]:
+    """Sync wrapper for profile_picture_url_async."""
+    return asyncio.run(profile_picture_url_async(handle))
+
+
 async def handle_info_async(
     handle: str,
     *,
