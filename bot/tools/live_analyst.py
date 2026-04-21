@@ -632,6 +632,11 @@ def write_thesis(symbol: str, levels: Dict[str, Any], committee: Dict[str, Any])
         "committee": committee,
     }
     (out / "thesis.json").write_text(json.dumps(thesis, indent=2, default=str))
+    try:
+        from tools.thesis_tracker import log_thesis
+        log_thesis(thesis)
+    except Exception:
+        pass
     return out
 
 
