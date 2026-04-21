@@ -123,6 +123,14 @@ def apply_quant_rules(
             meta["morning_edge_hour"] = now.hour
             meta["morning_edge_boost"] = boost
 
+    # SHIP-2026-04-19: hour_bucket_4 feature (IC=+0.178, p=0.035 per FEATURE_CANDIDATES).
+    # 00-05 UTC: 18% WR, -$103 across 33 trades (asia deadzone)
+    # 06-11 UTC: covered by morning edge above
+    # 12-17 UTC: neutral baseline
+    # 18-23 UTC: 39% WR, +$220 (US-session)
+    # Log the bucket for all signals so downstream calibration + IC re-studies have it.
+    meta["hour_bucket_4"] = now.hour // 6  # 0, 1, 2, 3
+
     # ── Rule 2: BTC SHORT Edge (67% WR, strongest setup) ──
     if getattr(config, "quant_btc_short_edge_enabled", True):
         if base_symbol == "BTC" and signal.side == "SELL":
@@ -372,6 +380,28 @@ class RiskFilterChain:
                     rejection_reason=_reason,
                     metadata=meta,
                 )
+
+        # Gate 1.5: Committee thesis alignment (flag-gated via COMMITTEE_GATE_ENABLED)
+        # Blocks signals that conflict with the live quant analyst committee verdict.
+        # No-op if thesis is missing/stale (fail-open to preserve trade throughput).
+        try:
+            from llm.committee_reader import is_enabled as _comm_enabled, committee_veto_reason as _comm_veto
+            if _comm_enabled():
+                _side_str = signal.side if isinstance(signal.side, str) else signal.side.value
+                _veto = _comm_veto(signal.symbol, _side_str, max_age_s=900)
+                if _veto:
+                    if _pt: _pt.record_gate(signal.symbol, "committee_thesis", False, 0, 0, _veto[:120])
+                    _log_rejection(signal, "committee_thesis", _veto[:120])
+                    self._log_signal_filtered(signal, "committee_thesis", _veto[:120])
+                    return FilterResult(approved=False, signal=signal, rejection_reason=_veto[:200])
+                else:
+                    # Apply size multiplier from committee
+                    from llm.committee_reader import committee_size_multiplier as _comm_size
+                    _mult = _comm_size(signal.symbol, max_age_s=900)
+                    if _mult != 1.0:
+                        meta["committee_size_mult"] = _mult
+        except Exception:
+            pass  # committee reader failure must never block trading
 
         # Gate 2: Circuit breaker
         if not self.risk_mgr.is_trading_allowed(
