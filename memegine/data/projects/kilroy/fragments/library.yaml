@@ -116,3 +116,20 @@ KILROY:
     overhead lighting, one photo on top shows the scene with the
     characteristic SX-70 soft-focus + warm color cast, white polaroid
     border visible, slight bend at corners from age
+
+  background_integrated: >
+    Kilroy tag drawn INTO the scene, not overlaid on top — visible on
+    an in-frame surface (brick wall behind the subject, helmet over a
+    shoulder, whiteboard through an open door, trading monitor's
+    external casing, chalkboard across the room), sized at 6-10% of
+    frame area, lit by the scene's own light source (not a flat
+    sticker), sharing the background's perspective and shading. The
+    subject/action is in the foreground; Kilroy is the detail the
+    viewer discovers on second look
+
+  scene_perspective_match: >
+    Kilroy rendered with perspective matching the surface he's drawn
+    on: if the wall recedes into depth, the tag skews with it; if the
+    helmet tilts, the tag tilts; if there's ambient color cast on the
+    surface (tungsten warm, fluorescent green, etc.), the chalk/marker
+    picks up that cast slightly — reads as lit-in-scene, not pasted

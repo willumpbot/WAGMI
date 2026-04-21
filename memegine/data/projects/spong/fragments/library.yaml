@@ -52,6 +52,31 @@ SPONG:
     the interior of a Lamborghini. Rendered flat-illustrated (not
     photoreal) in 2003 MSPaint style
 
+  face_swap_treatment: >
+    the subject's HEAD is replaced by a spongmonkey — a blurry
+    photo-cutout monkey head with huge googly eyes and open singing
+    mouth, sized to match the original head, matte-edged (obvious
+    cutout), slightly off-center so it reads as pasted on top of the
+    otherwise photo-real body and scene. 2003 Joel Veitch /
+    rathergood-era jpeg compression on the head layer only — rest
+    of the photo stays sharp. The gap between 'real photograph' and
+    'cursed monkey head' is the joke
+
+  object_swap_treatment: >
+    where a specific object would sit in the frame (cash brick /
+    hypercar / monitor / museum artifact / sandwich / etc.), there is
+    instead a spongmonkey scaled to that object's size and placement.
+    The rest of the scene stays photo-real. Only the replaced object
+    carries the cursed 2003 jpeg aesthetic — everything else is
+    sharp. Mismatched rendering styles IS the comedy
+
+  real_photo_base: >
+    the base image reads as a real photograph — documentary /
+    press-flash / archival portrait / film still — with period-
+    accurate lighting, visible grain, named-lens depth-of-field.
+    The spong element (face or object) is the ONLY cursed part. If
+    the whole frame reads illustrated, the joke dies
+
   duet_trio_arrangement: >
     two or three spongmonkeys arranged side-by-side in the same
     crude scene, different fur colors (normal / pink / neon-green /

@@ -1189,6 +1189,190 @@ formats:
         "a subway platform at 2am, a single anonymous figure",
       ]
 
+  # -------- Kilroy background-integrated --------
+  # Kilroy as scene detail — not a corner sticker, but visibly drawn
+  # on an in-frame surface in the background (a brick wall deep behind
+  # the subject, on a helmet over a shoulder, on a chart display, on
+  # a whiteboard). The viewer notices the scene first, then clocks the
+  # tag on second look. Highest-craft Kilroy format.
+
+  - slug: kilroy_background_graffiti
+    kind: image
+    description: |
+      Kilroy drawn INTO the scene — a chalk / sharpie / paint tag
+      visible on a wall / helmet / whiteboard / chart / sign in the
+      background of a fully staged scene. Not a corner sticker layered
+      on after the fact — actually there in the environment, lit by
+      the scene's own lighting. Motion-tier craft discipline on the
+      base photo; Kilroy is a ~6-10% detail.
+    prompt_scaffold: |
+      A {scene_setup}, shot on {named_lens}, {named_film_stock},
+      {named_lighting}, period-accurate props and wardrobe. In the
+      {bg_surface}, a {tag_medium} Kilroy peek figure — bald head,
+      long drooping nose, four fingers gripping the edge, drawn with
+      one continuous line, ~6-10% of frame area — lit by the scene's
+      own light (not a flat overlay). Directly below, hand-lettered
+      block caps in the same medium: "KILROY WAS HERE".
+      The tag reads as drawn ON the in-scene surface, shares its
+      perspective and shading. The subject / main action happens in
+      the foreground; Kilroy is a background detail the viewer
+      discovers on second look.
+      Negatives: no corner-overlay look, no flat sticker placement,
+      no AI-smooth faces, no Kilroy centered or foregrounded.
+    good_models: [aurora, flux_pro_via_grok, ideogram_via_grok]
+    slot_hints:
+      scene_setup: [
+        "a trader at a Bloomberg terminal at 3am, cope face, warm tungsten desk lamp",
+        "a crypto conference hallway, blurred figures walking past, aftermath of a keynote",
+        "a subway platform at 2am, a single anonymous figure waiting",
+        "an empty trading desk at dawn, monitors still on with red candles",
+        "a pressroom mid-scrum outside a courthouse, bankers leaving with boxes",
+      ]
+      bg_surface: [
+        "brick wall deep in the background behind the subject",
+        "side of a concrete pillar two-thirds of the way back",
+        "chalkboard menu on a diner wall across the room",
+        "helmet resting on a shelf in the background",
+        "whiteboard in an office visible through an open door",
+        "side of a trading monitor's external casing",
+        "panel of a subway car's interior wall",
+      ]
+      tag_medium: [
+        "white chalk", "black sharpie", "stencil spray-paint (white)",
+        "marker on a post-it stuck to",
+      ]
+      named_lens: [
+        "35mm Cooke S4 prime f/2",
+        "Leica M10 with 35mm Summilux",
+        "Arri Alexa Mini with 50mm anamorphic",
+      ]
+      named_film_stock: [
+        "Kodak Tri-X 400 pushed one stop",
+        "Ilford HP5+ at ISO 1600",
+        "Kodak 5219 500T color negative",
+      ]
+      named_lighting: [
+        "single-source tungsten 3200K at 3:1 ratio",
+        "ambient overcast through office blinds",
+        "practical neon + tungsten mix",
+        "press-flash halation drop-off",
+      ]
+
+  # -------- Spong face-swap (the "spongify" move) --------
+  # Take a real photo (news, celebrity, cartel still, anonymous crowd)
+  # and replace the subject's HEAD with a Spongmonkey: photo-cutout
+  # monkey head + HUGE googly eyes + open singing mouth. The body /
+  # wardrobe / scene stays photo-real. This is EXACTLY what Joel Veitch
+  # did at rathergood.com in 2003 — it's the brand's canonical move.
+
+  - slug: spong_face_swap_portrait
+    kind: image
+    description: |
+      A photo of someone with their HEAD replaced by a Spongmonkey —
+      blurry photo-cutout monkey head with HUGE googly eyes and open
+      singing mouth — while the body, wardrobe, and scene remain
+      photo-real. The gap between 'real photo' and 'cursed monkey head'
+      IS the joke. Most canonical Spong move.
+    prompt_scaffold: |
+      A {source_photo_type}: {subject_context}, real photograph
+      aesthetic, {scene_details}. The person's HEAD is replaced by a
+      spongmonkey — a blurry photo-cutout of a real monkey head with
+      {fur_color} fur, HUGE white googly eyes nearly touching each
+      other with tiny black pinpoint pupils, open singing mouth
+      showing cream buck teeth and red gums — sized to match the
+      original head, matte-edged (obvious cutout), slightly off-center
+      so it looks pasted not painted. The body, wardrobe, and entire
+      rest of the scene stay photo-real; only the head is replaced.
+      2003 Joel Veitch / rathergood-era jpeg compression on the
+      monkey head cutout, while the background stays sharper. Caption
+      at the bottom, hand-scrawled lowercase: "{lyric}".
+      Negatives: no fully-illustrated body (body MUST stay real), no
+      clean head-blend (it MUST look pasted), no modern typography,
+      no smirking spongmonkey (always sincere open-mouth singing).
+    good_models: [ideogram_via_grok, aurora, flux_pro_via_grok]
+    slot_hints:
+      source_photo_type: [
+        "1987 press-flash archival portrait",
+        "a 2008 courthouse walk-out photo",
+        "a magazine cover shot",
+        "a Wall Street Journal staff photo",
+        "a cartel-era Polaroid",
+        "a Casino (1995) film still",
+        "a 2024 crypto conference stage photo",
+      ]
+      subject_context: [
+        "a Wall Street banker in a pinstripe suit at a press conference",
+        "a 1987 archival celebrity on a red carpet",
+        "a cartel accountant at a table of cash bricks",
+        "a CEO testifying at a congressional hearing",
+        "a crypto founder on stage at a conference",
+        "a 1990s politician at a podium",
+      ]
+      scene_details: [
+        "flashbulb press-room halation, black tie crowd in background",
+        "marble courthouse steps, reporters with mics",
+        "warm tungsten 3200K room with bill-counter machines visible",
+        "fluorescent congressional hearing chamber",
+        "conference-blue stage lighting with logo backdrop",
+      ]
+      fur_color: [
+        "normal peach-brown", "pink", "neon green", "rainbow",
+        "black", "blue", "purple",
+      ]
+      lyric: [
+        "we like the moon.", "we like the bag.",
+        "we love the subs.", "we are here now.",
+      ]
+
+  - slug: spong_object_swap
+    kind: image
+    description: |
+      Instead of swapping a face, replace a THING in the scene with a
+      spongmonkey. The Quiznos rats infamously sat on top of floating
+      sub sandwiches — this format extends that to any object. Cartel
+      cash brick → spong. Hypercar → spong. Trading monitor → spong.
+    prompt_scaffold: |
+      A photograph of {scene}, real photography aesthetic, {scene_details}.
+      Where {replaced_object} would normally sit in the frame, there
+      is instead a spongmonkey: a blurry photo-cutout monkey head
+      with {fur_color} fur, HUGE googly eyes, open singing mouth,
+      attached to a crude MSPaint illustrated body at the scale of
+      {replaced_object}. The rest of the scene stays photo-real; only
+      the replaced object is the cursed spongmonkey. Hand-scrawled
+      lowercase caption at the bottom: "{lyric}". 2003 jpeg
+      compression on the spongmonkey element only — background stays
+      sharp. The mismatch in visual styles IS the joke.
+      Negatives: no clean integrated look (must read as pasted), no
+      modern typography, no smirking expression.
+    good_models: [ideogram_via_grok, aurora]
+    slot_hints:
+      scene: [
+        "a cartel stash room with stacks of vacuum-sealed cash bricks",
+        "a Bugatti Chiron product-shot against a nebula",
+        "a trading desk with three monitors showing red candles",
+        "a Quiznos sandwich-counter stage",
+        "a museum display case under single-source lighting",
+      ]
+      scene_details: [
+        "overhead warm tungsten, slight dust in the air",
+        "deep-space cosmic dust backdrop",
+        "warm desk lamp, mechanical keyboard in frame",
+        "yellow-and-red Quiznos broadcast palette",
+        "pin-lit glass case with cream museum labels",
+      ]
+      replaced_object: [
+        "a vacuum-sealed cash brick", "the hypercar",
+        "the center monitor", "a toasted sub sandwich",
+        "the museum artifact under the spotlight",
+      ]
+      fur_color: [
+        "normal peach-brown", "pink", "neon green", "rainbow",
+      ]
+      lyric: [
+        "we like the brick.", "we like the car.",
+        "we love the chart.", "we love the subs.",
+      ]
+
   # -------- Spong formats (Spongmonkeys lineage) --------
 
   - slug: spong_solo_scene

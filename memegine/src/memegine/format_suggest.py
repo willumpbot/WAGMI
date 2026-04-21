@@ -215,6 +215,21 @@ FORMAT_TRIGGERS: dict[str, list[str]] = {
         "kilroy polaroid", "kilroy sx-70", "kilroy sx70",
         "kilroy instant photo", "polaroid kilroy", "kilroy on polaroid",
     ],
+    "kilroy_background_graffiti": [
+        "kilroy background", "kilroy in background", "kilroy on the wall",
+        "kilroy integrated", "kilroy scene", "kilroy on a wall behind",
+        "kilroy detail", "kilroy in the scene", "kilroy graffiti in",
+    ],
+    "spong_face_swap_portrait": [
+        "spongify", "spong face", "spongify face", "spong head",
+        "spongmonkey head", "replace face with spong", "face swap spong",
+        "spongify the person", "spong instead of face", "head swap spong",
+    ],
+    "spong_object_swap": [
+        "spongify object", "spong instead of", "replace with spong",
+        "spong the brick", "spong the car", "spongify the",
+        "spongify thing", "spong swap object",
+    ],
     # Reply-shaped squares (1:1, reply-guy volume)
     "kilroy_reply_square": [
         "kilroy reply", "kilroy quick", "kilroy square", "reply image kilroy",
