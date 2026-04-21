@@ -1278,15 +1278,20 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         _llm_dual = getattr(self.config, 'llm_first_dual_track', False)
         if _llm_first:
             _multi = os.getenv("LLM_MULTI_AGENT", "false").lower() == "true"
-            _has_key = bool(os.getenv("ANTHROPIC_API_KEY", ""))
+            # Accept CLI routing (USE_CLI_LLM=true) as equivalent to having an API key
+            _has_llm = (
+                bool(os.getenv("ANTHROPIC_API_KEY", ""))
+                or os.getenv("USE_CLI_LLM", "").lower() in ("1", "true", "yes")
+            )
             _mode_ok = self.llm_mode >= LLMMode.SIZING
-            if _multi and _mode_ok and _has_key:
-                logger.info(f"  LLM-FIRST: ACTIVE — brain before gates (9 agents)")
+            if _multi and _mode_ok and _has_llm:
+                _llm_src = "CLI" if os.getenv("USE_CLI_LLM", "").lower() in ("1", "true", "yes") else "API"
+                logger.info(f"  LLM-FIRST: ACTIVE — brain before gates (9 agents, {_llm_src})")
             else:
                 _reasons = []
                 if not _multi: _reasons.append("LLM_MULTI_AGENT=false")
                 if not _mode_ok: _reasons.append(f"LLM_MODE={self.llm_mode.value} < SIZING(3)")
-                if not _has_key: _reasons.append("no ANTHROPIC_API_KEY")
+                if not _has_llm: _reasons.append("no ANTHROPIC_API_KEY or USE_CLI_LLM")
                 logger.warning(
                     f"  LLM-FIRST: DISABLED — prerequisites not met: "
                     f"{', '.join(_reasons)}. Falling back to mechanical path."
