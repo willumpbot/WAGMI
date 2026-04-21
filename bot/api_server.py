@@ -1643,6 +1643,82 @@ def thesis_for(symbol: str):
         return {"error": str(e)}
 
 
+@app.post("/v1/thesis/{symbol}/thread")
+def thesis_thread(symbol: str):
+    """Generate a Twitter/X thread from the current thesis using Claude CLI."""
+    from fastapi.responses import JSONResponse
+    sym = symbol.upper()
+    path = THESIS_ROOT / symbol.lower() / "thesis.json"
+    if not path.exists():
+        return JSONResponse({"error": f"no thesis for {sym}"}, status_code=404)
+    try:
+        thesis = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+    c = thesis.get("committee", {})
+    regime = c.get("regime", {})
+    trade = c.get("trade", {})
+    critic = c.get("critic", {})
+    risk = c.get("risk", {})
+    price = thesis.get("price", 0)
+    updated = thesis.get("updated_at", "")
+
+    prompt = f"""Write a 5-tweet X/Twitter thread about this live quant analysis.
+
+SYMBOL: {sym} @ ${price:,.2f}
+REGIME: {regime.get('regime_label','?')} ({regime.get('confidence',0)}% confidence) bias={regime.get('bias','?')}
+TRADE: action={trade.get('action','?')} conf={trade.get('confidence',0)}%
+  Entry: ${trade.get('entry_low',0):,.0f}-${trade.get('entry_high',0):,.0f}
+  Stop: ${trade.get('stop',0):,.0f}  T1: ${trade.get('target1',0):,.0f}  R:R={trade.get('rr_t1',0):.2f}
+CRITIC: vote={critic.get('vote','?')}
+RISK: size={risk.get('size_multiplier','?')}x leverage={risk.get('leverage','?')}x
+
+Regime narrative: {regime.get('narrative','')[:200]}
+Trade narrative: {trade.get('narrative','')[:200]}
+Critic narrative: {critic.get('narrative','')[:150]}
+
+Instructions:
+- Tweet 1: Hook — current {sym} price + regime label + one-line thesis
+- Tweet 2: The trade setup (entry/stop/target/R:R) in plain numbers
+- Tweet 3: What the Critic agent said (the main risk)
+- Tweet 4: Sizing/risk from the Risk agent + conviction count
+- Tweet 5: The bigger picture — what this means for crypto market right now
+- Start each tweet with a number (1/5, 2/5, etc.)
+- No hashtag spam. Max 2 hashtags total across all 5 tweets.
+- Sound like a quant, not a shill. Cite the methodology (Bonferroni-cleared factors, committee of 4 agents).
+- Keep each tweet under 280 characters.
+"""
+
+    try:
+        sys.path.insert(0, str(BOT_ROOT))
+        from llm.claude_cli_client import call_agent, available as cli_available
+        if not cli_available():
+            return {"error": "Claude CLI not available"}
+        resp = call_agent(prompt, system_prompt="You are a quant trader writing a Twitter thread. Be precise and credible.", model="sonnet", max_budget_usd=0.10, timeout=90)
+        if not resp.ok:
+            return {"error": resp.error}
+        tweets = []
+        for line in resp.text.strip().split("\n"):
+            line = line.strip()
+            if line and (line[0].isdigit() or line.startswith("**")):
+                tweets.append(line.lstrip("*").strip())
+        return {"symbol": sym, "thread": tweets, "raw": resp.text, "cost_usd": resp.cost_usd}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/v1/thesis/accuracy")
+def thesis_accuracy():
+    """Return thesis tracker accuracy summary."""
+    try:
+        sys.path.insert(0, str(BOT_ROOT))
+        from tools.thesis_tracker import summary as _summary
+        return _summary()
+    except Exception as e:
+        return {"error": str(e)}
+
+
 if __name__ == "__main__":
     print(f"WAGMI Dashboard API starting on http://localhost:8000")
     print(f"Data dir: {DATA}")
