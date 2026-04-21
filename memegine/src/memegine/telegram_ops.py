@@ -122,7 +122,11 @@ def _build_ops_handlers(cfg):
     """
 
     async def guard(update) -> bool:
-        """Mirror telegram_bot._is_allowed — allowlist check."""
+        """Mirror telegram_bot._is_allowed — user OR chat allowlist."""
+        chat = update.effective_chat
+        allowed_chat_ids = getattr(cfg, "allowed_chat_ids", set()) or set()
+        if chat is not None and chat.id in allowed_chat_ids:
+            return True
         user = update.effective_user
         if user is None:
             return False

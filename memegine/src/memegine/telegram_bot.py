@@ -56,20 +56,38 @@ from .config import settings
 # ---- config ----------------------------------------------------------------
 
 
+def _parse_int_set(raw: str) -> set[int]:
+    """Parse 'a,b,-c,d' into a set of ints (accepts negative for group IDs)."""
+    out: set[int] = set()
+    for x in (raw or "").split(","):
+        x = x.strip()
+        if not x:
+            continue
+        if x.startswith("-") and x[1:].isdigit():
+            out.add(int(x))
+        elif x.isdigit():
+            out.add(int(x))
+    return out
+
+
 @dataclass
 class BotConfig:
     token: str
     allowed_user_ids: set[int]
-    chat_id_for_scheduler: Optional[int] = None  # default chat for scheduled deliveries
+    allowed_chat_ids: set[int] = field(default_factory=set)  # group IDs (negative)
+    chat_id_for_scheduler: Optional[int] = None              # default push target
 
     @classmethod
     def from_env(cls) -> "BotConfig":
         token = os.environ.get("MEMEGINE_TELEGRAM_BOT_TOKEN", "").strip()
-        raw = os.environ.get("MEMEGINE_TELEGRAM_ALLOWED_USER_IDS", "")
-        ids = {int(x) for x in raw.split(",") if x.strip().isdigit()}
-        chat = os.environ.get("MEMEGINE_TELEGRAM_CHAT_ID", "").strip()
-        chat_id = int(chat) if chat.isdigit() or (chat.startswith("-") and chat[1:].isdigit()) else None
-        return cls(token=token, allowed_user_ids=ids, chat_id_for_scheduler=chat_id)
+        ids = _parse_int_set(os.environ.get("MEMEGINE_TELEGRAM_ALLOWED_USER_IDS", ""))
+        chats = _parse_int_set(os.environ.get("MEMEGINE_TELEGRAM_ALLOWED_CHAT_IDS", ""))
+        push = os.environ.get("MEMEGINE_TELEGRAM_CHAT_ID", "").strip()
+        push_id = int(push) if push.lstrip("-").isdigit() else None
+        return cls(
+            token=token, allowed_user_ids=ids,
+            allowed_chat_ids=chats, chat_id_for_scheduler=push_id,
+        )
 
 
 class BotConfigError(RuntimeError):
@@ -150,11 +168,19 @@ def _parse_prompt_with_format(argstring: str) -> tuple[str, Optional[str]]:
 
 
 def _is_allowed(update, cfg: BotConfig) -> bool:
+    """Auth check.
+
+    Pass if EITHER:
+      - update's user ID is in cfg.allowed_user_ids, OR
+      - update's chat ID is in cfg.allowed_chat_ids (group-mode raid room)
+    """
+    chat = update.effective_chat
+    if chat is not None and chat.id in cfg.allowed_chat_ids:
+        return True
     user = update.effective_user
     if user is None:
         return False
     if not cfg.allowed_user_ids:
-        # We refuse at startup if allowlist is empty, but double-check here.
         return False
     return int(user.id) in cfg.allowed_user_ids
 
@@ -968,9 +994,11 @@ def build_application(cfg: BotConfig):
 
     if not cfg.token:
         raise BotConfigError("missing MEMEGINE_TELEGRAM_BOT_TOKEN")
-    if not cfg.allowed_user_ids:
+    if not cfg.allowed_user_ids and not cfg.allowed_chat_ids:
         raise BotConfigError(
-            "MEMEGINE_TELEGRAM_ALLOWED_USER_IDS is empty — refusing to run an open bot"
+            "both MEMEGINE_TELEGRAM_ALLOWED_USER_IDS and "
+            "MEMEGINE_TELEGRAM_ALLOWED_CHAT_IDS are empty — refusing to run an open bot. "
+            "Set at least one."
         )
 
     app = Application.builder().token(cfg.token).build()
