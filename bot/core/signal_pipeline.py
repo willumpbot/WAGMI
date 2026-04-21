@@ -697,6 +697,12 @@ class RiskFilterChain:
             risk_mult *= _solo_rm
             meta["solo_risk_mult"] = _solo_rm
 
+        # Apply committee size multiplier (from live_analyst thesis, flag-gated)
+        _comm_mult = meta.get("committee_size_mult")
+        if _comm_mult is not None and _comm_mult != 1.0:
+            risk_mult *= _comm_mult
+            if _pt: _pt.record_multiplier(signal.symbol, "committee_size_mult", _comm_mult, "committee_reader")
+
         # ── Confidence Calibration ──
         # Apply calibration BEFORE confidence-based sizing so sizing uses
         # calibrated (realistic) confidence, not raw (overconfident) values.
