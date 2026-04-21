@@ -81,6 +81,73 @@ TOPIC_EXPANSIONS: dict[str, list[str]] = {
     "btc":       ["trader", "wealth"],
     "bonk":      ["degen", "trader"],
     "wif":       ["degen", "trader"],
+    # Food / sustenance (matches spong quiznos / sub imagery)
+    "sandwich":  ["food", "sub-sandwich", "eating", "quiznos"],
+    "sub":       ["food", "sub-sandwich", "quiznos"],
+    "quiznos":   ["quiznos", "sub-sandwich", "food"],
+    "eat":       ["food", "eating"],
+    "ate":       ["food", "eating"],
+    "hungry":    ["food", "eating"],
+    "burger":    ["food", "eating"],
+    "pizza":     ["food", "eating"],
+    "coffee":    ["coffee-mug", "gm"],
+    "breakfast": ["coffee-mug", "gm", "food"],
+    # Political / celebrity
+    "trump":     ["political", "politician", "president", "white-house"],
+    "biden":     ["political", "politician", "president"],
+    "president": ["political", "politician", "white-house"],
+    "potus":     ["political", "president", "white-house"],
+    "election":  ["political", "politician"],
+    "vote":      ["political"],
+    # Horror / cursed / closeup
+    "scary":     ["horror", "cursed", "cursed-closeup"],
+    "nightmare": ["horror", "cursed"],
+    "creepy":    ["horror", "cursed"],
+    "cursed":    ["cursed", "horror"],
+    "closeup":   ["closeup", "extreme-closeup"],
+    # Sports
+    "sports":    ["sports", "arena"],
+    "basketball":["sports", "arena"],
+    "football":  ["sports", "arena"],
+    # Media
+    "tv":        ["tv-screen", "news"],
+    "news":      ["news", "newsroom", "news-anchor"],
+    "broadcast": ["news", "newsroom"],
+    "podcast":   ["podcast", "microphone"],
+    # Luxury / lifestyle
+    "mansion":   ["mansion", "luxury", "wealth"],
+    "yacht":     ["yacht", "luxury", "wealth"],
+    "lambo":     ["lamborghini", "car", "luxury"],
+    "private":   ["private-jet", "luxury"],
+    "tropical":  ["tropical", "luxury", "palm-tree"],
+    # Gaming / retro
+    "gta":       ["retro-game", "pixelart", "videogame"],
+    "game":      ["retro-game", "videogame"],
+    # People composition
+    "solo":      ["solo", "portrait"],
+    "alone":     ["solo", "portrait"],
+    "group":     ["crowd", "pair"],
+    "together":  ["pair", "crowd"],
+    # Typography / text-heavy
+    "quote":     ["has-text", "textpost"],
+    "saying":    ["has-text"],
+    "caption":   ["has-text"],
+    # Spong specific (canonical character poses)
+    "eyes":      ["spong-eyes", "face"],
+    "headphones":["headphones", "music"],
+    "hat":       ["bowler-hat", "hoodie", "hat"],
+    "bowler":    ["bowler-hat"],
+    "hoodie":    ["hoodie"],
+    "suit":      ["suit", "politician"],
+    "astronaut": ["astronaut", "space", "moon"],
+    "space":     ["space", "cosmic", "moon"],
+    "cosmic":    ["cosmic", "space"],
+    # Additional crypto-twitter cope
+    "dead":      ["cope", "horror"],
+    "dying":     ["cope", "horror"],
+    "pain":      ["cope"],
+    "loss":      ["cope"],
+    "lost":      ["cope"],
 }
 
 
