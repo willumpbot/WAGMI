@@ -34,7 +34,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
     <>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>CrazyOnSol — AI-Powered Perpetual Trading</title>
+        <title>WAGMI — AI-Powered Perpetual Trading</title>
         <meta name="description" content="AI-powered perpetual trading on Hyperliquid. Multi-strategy signals, 9-agent AI brain, real-time performance." />
       </Head>
       <ErrorBoundary>

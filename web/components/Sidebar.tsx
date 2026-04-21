@@ -118,6 +118,8 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'AI Brain',
     icon: IconCpu,
     items: [
+      { href: '/reasoning', label: 'Agent Reasoning' },
+      { href: '/counterfactuals', label: 'Counterfactuals' },
       { href: '/llm-audit', label: 'AI Audit' },
       { href: '/ai-decisions', label: 'Decisions' },
       { href: '/agent-intelligence', label: 'Agents' },
@@ -245,8 +247,8 @@ export default function Sidebar(): JSX.Element {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 22, height: 22, borderRadius: 4, border: `1px solid ${C.brand}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: C.brand, fontFamily: 'JetBrains Mono, monospace' }}>C</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>CrazyOnSol</span>
+            <span style={{ width: 22, height: 22, borderRadius: 4, border: `1px solid ${C.brand}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: C.brand, fontFamily: 'JetBrains Mono, monospace' }}>W</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>WAGMI</span>
           </div>
           <button
             onClick={() => setMobileOpen((v) => !v)}
@@ -335,9 +337,9 @@ export default function Sidebar(): JSX.Element {
           overflow: 'hidden',
         }}
       >
-        <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 4, border: `1px solid ${C.brand}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: C.brand, fontFamily: 'JetBrains Mono, monospace' }}>C</div>
+        <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 4, border: `1px solid ${C.brand}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: C.brand, fontFamily: 'JetBrains Mono, monospace' }}>W</div>
         {!collapsed && (
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden' }}>CrazyOnSol</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden' }}>WAGMI</span>
         )}
         <div style={{ flex: 1 }} />
         {!collapsed && (

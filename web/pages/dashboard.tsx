@@ -1,29 +1,143 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { C, fmtUsd, fmtPct, timeAgo } from '../src/theme';
-import { apiFetch } from '../src/api';
+import { useApi } from '../hooks/useApi';
+import { Skeleton } from '../components/ui/Skeleton';
+import { StatusDot } from '../components/ui/StatusDot';
+import PositionCard, { PositionItem as PositionCardItem } from '../components/PositionCard';
+import SniperAlerts from '../components/SniperAlerts';
+import SignalFunnel from '../components/SignalFunnel';
+import DecisionTrail, { TradeBrief } from '../components/DecisionTrail';
+import AgentHealthStrip from '../components/AgentHealthStrip';
+import AnimatedNumber from '../components/AnimatedNumber';
+import LiveActivityTape from '../components/LiveActivityTape';
+import MarketPulse from '../components/MarketPulse';
+import MetricSparkline from '../components/MetricSparkline';
+import ScanningEmptyState from '../components/ScanningEmptyState';
 import type {
-  TradeHistoryResponse,
   TradeRecord,
-  EquityCurveResponse,
   EquityCurvePoint,
   LlmMarketView,
   Strategy,
 } from '../src/types';
 
+// Lightweight signal payload for live price ingestion
+type SignalsApiLite = {
+  signals?: Record<string, { price?: number | null }>;
+  last_updated?: string | null;
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type TimeRange = '7D' | '30D' | '90D' | 'ALL';
 
-type DashStats = {
-  equity: number | null;
-  dailyPnl: number | null;
-  winRate: number | null;
-  openPositions: number;
-  totalTrades: number;
-  totalPnl: number | null;
+/** Summary response from /v1/summary */
+type SummaryResponse = {
+  equity: number;
+  peak_equity: number;
+  total_trades: number;
+  win_rate: number;
+  total_pnl: number;
+  open_positions: number;
+  today_pnl: number;
+  today_trades: number;
 };
+
+/** Raw trade shape from /v1/trades/history (api_server.py) */
+type RawTrade = {
+  id?: string;
+  timestamp?: string;
+  symbol: string;
+  side: string;
+  entry?: number;
+  exit?: number;
+  pnl: number;
+  outcome: string;
+  confidence?: number;
+  leverage?: number;
+  strategy?: string;
+  regime?: string;
+  state_path?: string;
+  entry_type?: string;
+  fees?: number;
+};
+
+type TradeHistoryApiResponse = {
+  trades: RawTrade[];
+  total: number;
+  wins?: number;
+  losses?: number;
+  win_rate?: number;
+  total_pnl?: number;
+};
+
+type EquityCurveApiResponse = {
+  points: Array<{ ts: string; equity: number; pnl?: number; symbol?: string; drawdown_pct?: number }>;
+};
+
+type PositionItem = {
+  symbol: string;
+  side: string;
+  entry: number;
+  sl: number;
+  tp1: number;
+  tp2: number;
+  state: string;
+  leverage: number;
+  qty: number;
+  realized_pnl: number;
+  open_time: string;
+};
+
+type PositionsApiResponse = {
+  positions: PositionItem[];
+  count: number;
+};
+
+// ─── Normalizers ──────────────────────────────────────────────────────────────
+
+function normalizeTrade(t: RawTrade): TradeRecord {
+  const pnl = t.pnl ?? 0;
+  return {
+    symbol: t.symbol ?? '',
+    side: t.side ?? '',
+    strategy: t.strategy ?? 'ensemble',
+    close_reason: t.state_path ?? '',
+    entry: t.entry ?? null,
+    exit: t.exit ?? null,
+    sl: null,
+    tp1: null,
+    tp2: null,
+    pnl,
+    fee: t.fees ?? null,
+    leverage: t.leverage ?? null,
+    confidence: t.confidence ?? null,
+    rr_achieved: null,
+    duration_h: null,
+    outcome: t.outcome || (pnl > 0 ? 'WIN' : 'LOSS'),
+    llm_action: null,
+    llm_regime: t.regime ?? null,
+    llm_confidence: null,
+  };
+}
+
+function normalizeEquityPoints(
+  raw: EquityCurveApiResponse | undefined,
+): EquityCurvePoint[] {
+  if (!raw?.points || raw.points.length === 0) return [];
+  // Compute rolling drawdown_pct if absent
+  let peak = raw.points[0]?.equity ?? 0;
+  return raw.points.map((p) => {
+    if (p.equity > peak) peak = p.equity;
+    const dd = peak > 0 ? ((peak - p.equity) / peak) * 100 : 0;
+    return {
+      ts: p.ts,
+      equity: p.equity,
+      drawdown_pct: p.drawdown_pct ?? dd,
+    };
+  });
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -60,18 +174,29 @@ function calcMaxDD(pts: EquityCurvePoint[]): number {
 function MetricCard({
   label,
   value,
+  numericValue,
+  formatter,
   sub,
   color,
+  loading,
   icon,
+  sparklineValues,
+  sparklineColor,
 }: {
   label: string;
-  value: string;
+  value?: string;
+  numericValue?: number | null;
+  formatter?: (n: number) => string;
   sub?: string;
   color?: string;
+  loading?: boolean;
   icon?: React.ReactNode;
+  sparklineValues?: number[];
+  sparklineColor?: string;
 }) {
   return (
     <div
+      className="metric-card"
       style={{
         flex: '1 1 160px',
         padding: '18px 20px',
@@ -79,6 +204,7 @@ function MetricCard({
         border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: 12,
         minWidth: 140,
+        transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
@@ -87,20 +213,31 @@ function MetricCard({
         </div>
         {icon && <div style={{ color: C.muted }}>{icon}</div>}
       </div>
-      <div
-        style={{
-          fontSize: 24,
-          fontWeight: 800,
-          color: color || C.text,
-          fontFamily: 'JetBrains Mono, monospace',
-          letterSpacing: -0.5,
-          lineHeight: 1.15,
-        }}
-      >
-        {value}
-      </div>
-      {sub && (
+      {loading ? (
+        <Skeleton w={110} h={28} />
+      ) : (
+        <div
+          style={{
+            fontSize: 24,
+            fontWeight: 800,
+            color: color || C.text,
+            fontFamily: 'JetBrains Mono, monospace',
+            letterSpacing: -0.5,
+            lineHeight: 1.15,
+          }}
+        >
+          {numericValue != null && formatter
+            ? <AnimatedNumber value={numericValue} format={formatter} duration={700} />
+            : (value ?? '—')}
+        </div>
+      )}
+      {sub && !loading && (
         <div style={{ fontSize: 11, color: C.muted, marginTop: 4, fontWeight: 500 }}>{sub}</div>
+      )}
+      {sparklineValues && sparklineValues.length > 1 && !loading && (
+        <div style={{ marginTop: 8, opacity: 0.85 }}>
+          <MetricSparkline values={sparklineValues} color={sparklineColor} height={22} />
+        </div>
       )}
     </div>
   );
@@ -135,9 +272,6 @@ function EquityChart({ points }: { points: EquityCurvePoint[] }) {
   const isPositive = values[values.length - 1] >= values[0];
   const lineColor = isPositive ? C.bull : C.bear;
 
-  // Y axis labels
-  const yLabels = [max, (max + min) / 2, min];
-
   return (
     <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
       <defs>
@@ -159,78 +293,20 @@ function EquityChart({ points }: { points: EquityCurvePoint[] }) {
   );
 }
 
-// ─── Open Position Row ────────────────────────────────────────────────────────
-
-function PositionRow({ strategy }: { strategy: Strategy }) {
-  const pos = strategy.open_position;
-  if (!pos) return null;
-  const upnl = pos.unrealized_pnl ?? 0;
-  const isLong = pos.side?.toUpperCase() === 'BUY' || pos.side?.toUpperCase() === 'LONG';
-
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '100px 60px 80px 90px 90px 80px',
-        gap: 8,
-        padding: '10px 16px',
-        borderBottom: '1px solid rgba(255,255,255,0.03)',
-        alignItems: 'center',
-      }}
-    >
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: 'JetBrains Mono, monospace' }}>
-        {strategy.id}
-      </div>
-      <div>
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            padding: '2px 7px',
-            borderRadius: 999,
-            background: isLong ? C.bullLight : C.bearLight,
-            color: isLong ? C.bull : C.bear,
-          }}
-        >
-          {pos.side?.toUpperCase()}
-        </span>
-      </div>
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: 'JetBrains Mono, monospace' }}>
-        {pos.size != null ? pos.size.toFixed(4) : '—'}
-      </div>
-      <div style={{ fontSize: 12, color: C.textSub, fontFamily: 'JetBrains Mono, monospace' }}>
-        {pos.avg_entry != null ? fmtUsd(pos.avg_entry) : '—'}
-      </div>
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 700,
-          color: upnl >= 0 ? C.bull : C.bear,
-          fontFamily: 'JetBrains Mono, monospace',
-        }}
-      >
-        {fmtUsd(upnl)}
-      </div>
-      <div
-        style={{
-          fontSize: 12,
-          color: C.muted,
-          fontFamily: 'JetBrains Mono, monospace',
-        }}
-      >
-        {pos.unrealized_pnl_pct != null ? fmtPct(pos.unrealized_pnl_pct) : '—'}
-      </div>
-    </div>
-  );
-}
-
 // ─── Trade Row ────────────────────────────────────────────────────────────────
 
-function TradeRow({ trade }: { trade: TradeRecord }) {
+function TradeRow({ trade, onClick }: { trade: TradeRecord; onClick?: () => void }) {
   const isWin = trade.outcome === 'WIN' || (trade.pnl ?? 0) > 0;
 
   return (
     <div
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) onClick();
+      }}
+      title={onClick ? 'View decision trail' : undefined}
       style={{
         display: 'grid',
         gridTemplateColumns: '80px 56px 110px 80px 70px 60px',
@@ -238,6 +314,14 @@ function TradeRow({ trade }: { trade: TradeRecord }) {
         padding: '9px 16px',
         borderBottom: '1px solid rgba(255,255,255,0.03)',
         alignItems: 'center',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'background 0.12s ease',
+      }}
+      onMouseEnter={(e) => {
+        if (onClick) (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,204,136,0.04)';
+      }}
+      onMouseLeave={(e) => {
+        if (onClick) (e.currentTarget as HTMLDivElement).style.background = 'transparent';
       }}
     >
       <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: 'JetBrains Mono, monospace' }}>
@@ -258,55 +342,8 @@ function TradeRow({ trade }: { trade: TradeRecord }) {
         {trade.outcome}
       </div>
       <div style={{ fontSize: 11, color: C.muted, textAlign: 'right', fontFamily: 'JetBrains Mono, monospace' }}>
-        {trade.duration_h != null ? `${trade.duration_h.toFixed(1)}h` : '—'}
+        {trade.leverage != null ? `${trade.leverage.toFixed(1)}x` : '—'}
       </div>
-    </div>
-  );
-}
-
-// ─── Strategy Card ────────────────────────────────────────────────────────────
-
-function StrategyCard({ s }: { s: Strategy }) {
-  const pnl = s.pnl_realized ?? 0;
-  const hasPos = !!s.open_position;
-
-  return (
-    <div
-      style={{
-        padding: '16px',
-        background: '#0d0d14',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{s.name || s.id}</span>
-        {hasPos && (
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              padding: '2px 7px',
-              borderRadius: 999,
-              background: C.bullLight,
-              color: C.bull,
-            }}
-          >
-            OPEN
-          </span>
-        )}
-      </div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: pnl >= 0 ? C.bull : C.bear, fontFamily: 'JetBrains Mono, monospace', letterSpacing: -0.5 }}>
-        {fmtUsd(pnl)}
-      </div>
-      {s.lastHeartbeat && (
-        <div style={{ fontSize: 11, color: C.muted }}>
-          Last active: {timeAgo(s.lastHeartbeat)}
-        </div>
-      )}
     </div>
   );
 }
@@ -315,68 +352,58 @@ function StrategyCard({ s }: { s: Strategy }) {
 
 export default function DashboardPage() {
   const [range, setRange] = useState<TimeRange>('30D');
-  const [allPoints, setAllPoints] = useState<EquityCurvePoint[]>([]);
-  const [trades, setTrades] = useState<TradeRecord[]>([]);
-  const [strategies, setStrategies] = useState<Strategy[]>([]);
-  const [marketView, setMarketView] = useState<LlmMarketView | null>(null);
-  const [stats, setStats] = useState<DashStats>({
-    equity: null, dailyPnl: null, winRate: null, openPositions: 0, totalTrades: 0, totalPnl: null,
-  });
-  const [loading, setLoading] = useState(true);
+  const [trailTrade, setTrailTrade] = useState<TradeBrief | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      const [tradeRes, equityRes, stratRes, marketRes] = await Promise.all([
-        apiFetch<TradeHistoryResponse>('/v1/trades/history?limit=20'),
-        apiFetch<EquityCurveResponse>('/v1/trades/equity-curve?run=latest'),
-        apiFetch<Strategy[]>('/v1/strategies'),
-        apiFetch<LlmMarketView>('/v1/llm/market-view'),
-      ]);
+  const openTrail = (t: TradeRecord) => {
+    const raw = t as unknown as { id?: string; timestamp?: string };
+    setTrailTrade({
+      id: raw.id || raw.timestamp || '',
+      timestamp: raw.timestamp || '',
+      symbol: t.symbol,
+      side: t.side,
+      entry: t.entry ?? 0,
+      exit: t.exit ?? 0,
+      pnl: t.pnl ?? 0,
+      leverage: t.leverage ?? undefined,
+      strategy: t.strategy,
+    });
+  };
 
-      if (equityRes?.points) setAllPoints(equityRes.points);
-      if (tradeRes?.trades) setTrades(tradeRes.trades);
-      if (marketRes) setMarketView(marketRes);
+  // SWR-powered live data — positions 10s, summary 15s, trades 30s
+  const { data: summary, error: summaryErr, isLoading: summaryLoading } =
+    useApi<SummaryResponse>('/v1/summary', { refreshInterval: 15_000 });
+  const { data: positionsData, error: positionsErr } =
+    useApi<PositionsApiResponse>('/v1/positions', { refreshInterval: 10_000 });
+  const { data: tradesData, error: tradesErr, isLoading: tradesLoading } =
+    useApi<TradeHistoryApiResponse>('/v1/trades/history?limit=50', { refreshInterval: 30_000 });
+  const { data: equityData, isLoading: equityLoading } =
+    useApi<EquityCurveApiResponse>('/v1/trades/equity-curve', { refreshInterval: 30_000 });
+  const { data: marketView } =
+    useApi<LlmMarketView>('/v1/llm/market-view', { refreshInterval: 60_000 });
+  const { data: strategiesData } =
+    useApi<{ strategies: Strategy[] }>('/v1/strategies', { refreshInterval: 60_000 });
+  // Live per-symbol prices (feeds into PositionCard)
+  const { data: liveSignals } =
+    useApi<SignalsApiLite>('/v1/signals', { refreshInterval: 20_000 });
+  const priceUpdatedAt = liveSignals?.last_updated ? new Date(liveSignals.last_updated).getTime() : null;
 
-      const strats = Array.isArray(stratRes) ? stratRes : [];
-      setStrategies(strats);
+  const apiDown = Boolean(summaryErr && positionsErr && tradesErr);
 
-      // Compute stats
-      const pts = equityRes?.points ?? [];
-      const ts = tradeRes?.trades ?? [];
-      const openPos = strats.filter((s) => s.open_position).length;
-
-      let dailyPnl: number | null = null;
-      if (pts.length > 1) {
-        const now = pts[pts.length - 1].equity;
-        const cutoff = Date.now() - 86400 * 1000;
-        const yesterdayPt = [...pts].reverse().find((p) => new Date(p.ts).getTime() <= cutoff);
-        if (yesterdayPt) dailyPnl = now - yesterdayPt.equity;
-      }
-
-      const wins = ts.filter((t) => t.outcome === 'WIN' || (t.pnl ?? 0) > 0);
-      const totalPnl = ts.reduce((a, b) => a + (b.pnl ?? 0), 0);
-      const winRate = ts.length > 0 ? (wins.length / ts.length) * 100 : null;
-
-      setStats({
-        equity: pts[pts.length - 1]?.equity ?? null,
-        dailyPnl,
-        winRate,
-        openPositions: openPos,
-        totalTrades: ts.length,
-        totalPnl,
-      });
-      setLoading(false);
-    }
-
-    load();
-    const iv = setInterval(load, 30_000);
-    return () => clearInterval(iv);
-  }, []);
+  const trades: TradeRecord[] = (tradesData?.trades ?? []).map(normalizeTrade);
+  const allPoints = normalizeEquityPoints(equityData);
+  const positions = positionsData?.positions ?? [];
+  const strategies = strategiesData?.strategies ?? [];
 
   const visiblePoints = filterByRange(allPoints, range);
-  const openPositionStrategies = strategies.filter((s) => s.open_position);
   const sharpe = calcSharpe(allPoints);
   const maxDD = allPoints.length > 1 ? calcMaxDD(allPoints) : null;
+
+  // Prefer summary numbers when available
+  const equity = summary?.equity ?? allPoints[allPoints.length - 1]?.equity ?? null;
+  const todayPnl = summary?.today_pnl ?? null;
+  const winRate = summary?.win_rate ?? null;
+  const totalTrades = summary?.total_trades ?? trades.length;
+  const openPositionsCount = summary?.open_positions ?? positions.length;
 
   const regimeLookup: Record<string, { bg: string; text: string }> = {
     trend: { bg: 'rgba(0,204,136,0.12)', text: '#00cc88' },
@@ -390,7 +417,7 @@ export default function DashboardPage() {
   return (
     <>
       <Head>
-        <title>Dashboard — CrazyOnSol</title>
+        <title>Dashboard — WAGMI</title>
       </Head>
 
       <div style={{ paddingBottom: 60 }}>
@@ -410,17 +437,19 @@ export default function DashboardPage() {
               Dashboard
             </h1>
             <p style={{ fontSize: 13, color: C.muted, margin: '4px 0 0' }}>
-              Live trading overview · updates every 30s
+              Live trading overview · positions 10s · summary 15s · trades 30s
             </p>
           </div>
 
           {/* Status pills */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {/* Live dot */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', background: 'rgba(0,204,136,0.08)', border: '1px solid rgba(0,204,136,0.15)', borderRadius: 999 }}>
-              <div className="live-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: C.bull }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.bull }}>LIVE</span>
-            </div>
+            {apiDown ? (
+              <StatusDot kind="error" label="API OFFLINE" />
+            ) : summary ? (
+              <StatusDot kind="live" label="LIVE" />
+            ) : (
+              <StatusDot kind="stale" label="CONNECTING" />
+            )}
             {/* Regime */}
             {marketView?.regime && regimeStyle && (
               <div style={{ padding: '5px 10px', background: regimeStyle.bg, border: `1px solid ${regimeStyle.text}30`, borderRadius: 999 }}>
@@ -430,53 +459,86 @@ export default function DashboardPage() {
               </div>
             )}
             {/* Open positions */}
-            {stats.openPositions > 0 && (
+            {openPositionsCount > 0 && (
               <div style={{ padding: '5px 10px', background: 'rgba(68,136,255,0.08)', border: '1px solid rgba(68,136,255,0.2)', borderRadius: 999 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: C.info }}>
-                  {stats.openPositions} OPEN
+                  {openPositionsCount} OPEN
                 </span>
               </div>
             )}
           </div>
         </div>
 
+        {/* ── Live Activity Tape ───────────────────────────────── */}
+        <div style={{ margin: '0 -24px 24px' }}>
+          <LiveActivityTape />
+        </div>
+
+        {/* ── Market Pulse ─────────────────────────────────────── */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1.4, fontFamily: 'JetBrains Mono, monospace', marginBottom: 10 }}>
+            Market Pulse
+          </div>
+          <MarketPulse />
+        </div>
+
         {/* ── Metric Cards ───────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }} className="stagger-reveal">
           <MetricCard
             label="Portfolio Value"
-            value={loading ? '—' : fmtUsd(stats.equity)}
+            numericValue={equity}
+            formatter={(n) => fmtUsd(n)}
             sub="Current equity"
             color={C.text}
+            loading={summaryLoading && equity == null}
+            sparklineValues={visiblePoints.slice(-30).map((p) => p.equity)}
           />
           <MetricCard
-            label="24h P&L"
-            value={loading || stats.dailyPnl == null ? '—' : fmtUsd(stats.dailyPnl)}
-            sub="vs yesterday"
-            color={stats.dailyPnl == null ? C.text : stats.dailyPnl >= 0 ? C.bull : C.bear}
+            label="Today's P&L"
+            numericValue={todayPnl}
+            formatter={(n) => fmtUsd(n)}
+            sub={summary?.today_trades != null ? `${summary.today_trades} trades today` : 'vs open'}
+            color={todayPnl == null ? C.text : todayPnl >= 0 ? C.bull : C.bear}
+            loading={summaryLoading && todayPnl == null}
+          />
+          <MetricCard
+            label="Total P&L"
+            numericValue={summary?.total_pnl ?? null}
+            formatter={(n) => fmtUsd(n)}
+            sub={`${totalTrades} trades`}
+            color={summary?.total_pnl == null ? C.text : summary.total_pnl >= 0 ? C.bull : C.bear}
+            loading={summaryLoading}
+            sparklineValues={visiblePoints.length > 1 ? visiblePoints.slice(-30).map((p) => p.equity - visiblePoints[0].equity) : []}
           />
           <MetricCard
             label="Win Rate"
-            value={loading || stats.winRate == null ? '—' : fmtPct(stats.winRate)}
-            sub={`${stats.totalTrades} trades`}
-            color={stats.winRate == null ? C.text : stats.winRate >= 55 ? C.bull : stats.winRate >= 45 ? C.warn : C.bear}
+            numericValue={winRate}
+            formatter={(n) => fmtPct(n)}
+            sub={`${totalTrades} trades`}
+            color={winRate == null ? C.text : winRate >= 55 ? C.bull : winRate >= 45 ? C.warn : C.bear}
+            loading={summaryLoading && winRate == null}
           />
           <MetricCard
             label="Open Positions"
-            value={loading ? '—' : String(stats.openPositions)}
-            sub="Active strategies"
-            color={stats.openPositions > 0 ? C.info : C.muted}
+            value={String(openPositionsCount)}
+            sub="Live on exchange"
+            color={openPositionsCount > 0 ? C.info : C.muted}
           />
           <MetricCard
             label="Sharpe"
-            value={loading || sharpe == null ? '—' : sharpe.toFixed(2)}
+            numericValue={sharpe}
+            formatter={(n) => n.toFixed(2)}
             sub="Annualized"
             color={sharpe == null ? C.text : sharpe >= 1.5 ? C.bull : sharpe >= 0.5 ? C.warn : C.bear}
+            loading={equityLoading && sharpe == null}
           />
           <MetricCard
             label="Max Drawdown"
-            value={loading || maxDD == null ? '—' : `-${maxDD.toFixed(1)}%`}
+            numericValue={maxDD}
+            formatter={(n) => `-${n.toFixed(1)}%`}
             sub="From peak"
             color={maxDD == null ? C.text : maxDD <= 10 ? C.bull : maxDD <= 20 ? C.warn : C.bear}
+            loading={equityLoading && maxDD == null}
           />
         </div>
 
@@ -530,51 +592,62 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ height: 200, padding: '12px 16px 8px' }}>
-            {loading ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: C.muted, fontSize: 13 }}>Loading...</div>
+            {equityLoading && visiblePoints.length === 0 ? (
+              <Skeleton variant="chart" h={176} />
             ) : (
               <EquityChart points={visiblePoints} />
             )}
           </div>
         </div>
 
-        {/* ── Open Positions + AI Brain ──────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.6fr) minmax(0,1fr)', gap: 16, marginBottom: 24 }}>
-
-          {/* Open Positions */}
-          <div
-            style={{
-              background: '#0d0d14',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 12,
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>Open Positions</div>
-              <Link href="/portfolio" style={{ fontSize: 12, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>
-                Full view →
-              </Link>
-            </div>
-
-            {openPositionStrategies.length === 0 ? (
-              <div style={{ padding: '24px 20px', color: C.muted, fontSize: 13, textAlign: 'center' }}>
-                No open positions
-              </div>
-            ) : (
-              <>
-                {/* Table header */}
-                <div style={{ display: 'grid', gridTemplateColumns: '100px 60px 80px 90px 90px 80px', gap: 8, padding: '8px 16px' }}>
-                  {['Symbol', 'Side', 'Size', 'Entry', 'Unr. P&L', 'P&L %'].map((h) => (
-                    <div key={h} style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.8 }}>{h}</div>
-                  ))}
-                </div>
-                {openPositionStrategies.map((s) => (
-                  <PositionRow key={s.id} strategy={s} />
-                ))}
-              </>
-            )}
+        {/* ── Open Positions ──────────────────────────────────── */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: 0 }}>Open Positions</h2>
+            <Link href="/portfolio" style={{ fontSize: 12, color: C.brand, fontWeight: 600, textDecoration: 'none' }}>
+              Full view →
+            </Link>
           </div>
+
+          {positions.length === 0 ? (
+            <div
+              style={{
+                padding: '20px',
+                background: 'rgba(13,13,20,0.7)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: 12,
+              }}
+            >
+              <ScanningEmptyState
+                label={positionsErr ? 'Unable to load positions' : 'No open positions'}
+                sub={positionsErr ? 'Retrying in background' : 'Bot is scanning — new entries appear here when agents agree'}
+              />
+            </div>
+          ) : (
+            <div
+              className="stagger-reveal"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}
+            >
+              {positions.map((p) => {
+                const livePx = liveSignals?.signals?.[p.symbol]?.price ?? null;
+                return (
+                  <PositionCard
+                    key={p.symbol}
+                    position={p as PositionCardItem}
+                    livePrice={livePx}
+                    priceUpdatedAt={priceUpdatedAt}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Sniper Alerts + AI Brain ───────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 24 }}>
+          <SniperAlerts limit={10} />
 
           {/* AI Brain */}
           <div
@@ -593,10 +666,14 @@ export default function DashboardPage() {
             </div>
 
             <div style={{ padding: '16px 20px' }}>
-              {loading || !marketView ? (
+              {!marketView ? (
                 <div style={{ color: C.muted, fontSize: 13 }}>Loading...</div>
               ) : !marketView.has_data ? (
-                <div style={{ color: C.muted, fontSize: 13 }}>No brain data yet.</div>
+                <div style={{ color: C.muted, fontSize: 13 }}>
+                  {typeof marketView.summary === 'string' && marketView.summary
+                    ? marketView.summary
+                    : 'No brain data yet.'}
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {/* Regime + Bias row */}
@@ -661,6 +738,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* ── Signal Funnel ──────────────────────────────────── */}
+        <div style={{ marginBottom: 24 }}>
+          <SignalFunnel hours={24} />
+        </div>
+
         {/* ── Recent Trades ──────────────────────────────────── */}
         <div
           style={{
@@ -678,20 +760,39 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {/* Header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '80px 56px 110px 80px 70px 60px', gap: 8, padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-            {['Symbol', 'Side', 'Strategy', 'P&L', 'Result', 'Hold'].map((h) => (
-              <div key={h} style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.8 }}>{h}</div>
-            ))}
-          </div>
+          {/* Inner scroll wrapper for narrow viewports — keeps the grid neat on mobile */}
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ minWidth: 504 }}>
+              {/* Header */}
+              <div style={{ display: 'grid', gridTemplateColumns: '80px 56px 110px 80px 70px 60px', gap: 8, padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                {['Symbol', 'Side', 'Strategy', 'P&L', 'Result', 'Lev'].map((h) => (
+                  <div key={h} style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.8 }}>{h}</div>
+                ))}
+              </div>
 
-          {loading ? (
-            <div style={{ padding: '20px 16px', color: C.muted, fontSize: 13 }}>Loading trades...</div>
-          ) : trades.length === 0 ? (
-            <div style={{ padding: '24px 16px', color: C.muted, fontSize: 13, textAlign: 'center' }}>No trade history yet</div>
-          ) : (
-            trades.slice(0, 10).map((t, i) => <TradeRow key={i} trade={t} />)
-          )}
+              {tradesLoading && trades.length === 0 ? (
+                <div style={{ padding: '16px' }}>
+                  <Skeleton h={14} />
+                  <div style={{ height: 8 }} />
+                  <Skeleton h={14} />
+                  <div style={{ height: 8 }} />
+                  <Skeleton h={14} />
+                </div>
+              ) : tradesErr ? (
+                <div style={{ padding: '24px 16px', color: C.bear, fontSize: 13, textAlign: 'center' }}>
+                  Unable to load trade history
+                </div>
+              ) : trades.length === 0 ? (
+                <div style={{ padding: '20px 16px' }}>
+                  <ScanningEmptyState label="No trade history yet" sub="Fills will appear as the bot executes" />
+                </div>
+              ) : (
+                trades.slice(-10).reverse().map((t, i) => (
+                  <TradeRow key={i} trade={t} onClick={() => openTrail(t)} />
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
         {/* ── Strategy Cards ─────────────────────────────────── */}
@@ -703,14 +804,60 @@ export default function DashboardPage() {
                 View all →
               </Link>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
               {strategies.map((s) => (
-                <StrategyCard key={s.id} s={s} />
+                <div
+                  key={s.id}
+                  style={{
+                    padding: '14px 16px',
+                    background: '#0d0d14',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: 10,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{s.name || s.id}</div>
+                  {(s as unknown as { description?: string }).description && (
+                    <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>
+                      {(s as unknown as { description?: string }).description}
+                    </div>
+                  )}
+                  {(s as unknown as { status?: string }).status && (
+                    <div style={{ fontSize: 10, color: C.bull, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                      {(s as unknown as { status?: string }).status}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
         )}
+
+        {/* Agent Health strip — shows which of the 9 specialist agents are live */}
+        <div style={{ marginTop: 24 }}>
+          <AgentHealthStrip />
+        </div>
+
+        {/* Keep timeAgo import used for type-compat even if unused visually */}
+        <span style={{ display: 'none' }}>{timeAgo(null)}</span>
       </div>
+
+      {/* Decision trail slide-over */}
+      <DecisionTrail
+        trade={trailTrade}
+        open={trailTrade !== null}
+        onClose={() => setTrailTrade(null)}
+      />
+
+      <style jsx>{`
+        .metric-card:hover {
+          transform: translateY(-2px);
+          border-color: rgba(255, 255, 255, 0.12) !important;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 204, 136, 0.08);
+        }
+      `}</style>
     </>
   );
 }

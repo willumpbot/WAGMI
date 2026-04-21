@@ -36,6 +36,7 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Grid, Row, Stack } from '../components/ui/Stack';
 import { Skeleton } from '../components/ui/Skeleton';
+import AgentBrainGraphic from '../components/AgentBrainGraphic';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -323,6 +324,24 @@ export default function AgentIntelligence() {
             Decision Feed &rarr;
           </Link>
         </motion.div>
+
+        {/* Brain topology — visual anchor */}
+        <Card glass delay={0.05} style={{ padding: SP[4], marginBottom: SP[4] }}>
+          <SectionHeader label="Brain Topology" />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
+            <AgentBrainGraphic width={700} height={280} />
+          </div>
+          <div style={{
+            fontSize: 11,
+            color: C.muted,
+            textAlign: 'center',
+            marginTop: 8,
+            fontFamily: 'JetBrains Mono, monospace',
+            letterSpacing: 0.5,
+          }}>
+            CLASSIFY → DECIDE → LEARN & MONITOR
+          </div>
+        </Card>
 
 
         {/* Team Calibration Summary */}

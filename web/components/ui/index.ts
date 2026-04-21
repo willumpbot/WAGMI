@@ -29,3 +29,6 @@ export { Stack, Row, Grid } from './Stack';
 export type { StackProps, RowProps, GridProps } from './Stack';
 
 export { ConfidenceRing } from './ConfidenceRing';
+
+export { StatusDot } from './StatusDot';
+export type { StatusDotProps, StatusKind } from './StatusDot';

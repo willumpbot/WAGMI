@@ -1,11 +1,55 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { C, fmtUsd, fmtPct } from '../src/theme';
-import { apiFetch } from '../src/api';
-import type { TradeHistoryResponse, TradeRecord, EquityCurveResponse, LlmMarketView } from '../src/types';
+import { useApi } from '../hooks/useApi';
+import type { TradeRecord, LlmMarketView } from '../src/types';
+import AnimatedNumber from '../components/AnimatedNumber';
+import AgentBrainGraphic from '../components/AgentBrainGraphic';
+import LiveActivityTape from '../components/LiveActivityTape';
+import Shimmer from '../components/Shimmer';
+import Icon from '../components/Icon';
+import MarketPulse from '../components/MarketPulse';
+import MetricSparkline from '../components/MetricSparkline';
+import ReasoningTeaser from '../components/ReasoningTeaser';
+import ProofStrip from '../components/ProofStrip';
+import SystemStatus from '../components/SystemStatus';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+type SummaryApiResponse = {
+  equity: number;
+  peak_equity: number;
+  total_trades: number;
+  win_rate: number;
+  total_pnl: number;
+  open_positions: number;
+  today_pnl: number;
+  today_trades: number;
+};
+
+type RawTrade = {
+  timestamp?: string;
+  symbol: string;
+  side: string;
+  entry?: number;
+  exit?: number;
+  pnl: number;
+  outcome: string;
+  confidence?: number;
+  leverage?: number;
+  strategy?: string;
+  regime?: string;
+};
+
+type TradeHistoryApiResponse = {
+  trades: RawTrade[];
+  total: number;
+};
+
+type EquityCurveApiResponse = {
+  points: Array<{ ts: string; equity: number; pnl?: number }>;
+};
 
 type SummaryStats = {
   totalPnl: number | null;
@@ -13,6 +57,9 @@ type SummaryStats = {
   sharpe: number | null;
   maxDrawdown: number | null;
   totalTrades: number;
+  equity: number | null;
+  dailyPnl: number | null;
+  openPositions: number;
 };
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -20,16 +67,27 @@ type SummaryStats = {
 function StatCard({
   label,
   value,
+  numericValue,
+  formatter,
   color,
   sub,
+  loading,
+  sparklineValues,
+  sparklineColor,
 }: {
   label: string;
-  value: string;
+  value?: string;
+  numericValue?: number | null;
+  formatter?: (n: number) => string;
   color?: string;
   sub?: string;
+  loading?: boolean;
+  sparklineValues?: number[];
+  sparklineColor?: string;
 }) {
   return (
     <div
+      className="stat-card"
       style={{
         flex: '1 1 160px',
         padding: '20px 24px',
@@ -37,6 +95,9 @@ function StatCard({
         border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: 12,
         minWidth: 140,
+        transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
       <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
@@ -50,12 +111,28 @@ function StatCard({
           fontFamily: 'JetBrains Mono, monospace',
           letterSpacing: -0.5,
           lineHeight: 1.1,
+          minHeight: 28,
         }}
       >
-        {value}
+        {loading ? (
+          <Shimmer width={96} height={24} radius={4} />
+        ) : numericValue != null && formatter ? (
+          <AnimatedNumber value={numericValue} format={formatter} duration={800} />
+        ) : (
+          value ?? '—'
+        )}
       </div>
-      {sub && (
+      {sub && !loading && (
         <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{sub}</div>
+      )}
+      {sparklineValues && sparklineValues.length > 1 && !loading && (
+        <div style={{ marginTop: 10, opacity: 0.85 }}>
+          <MetricSparkline
+            values={sparklineValues}
+            color={sparklineColor}
+            height={22}
+          />
+        </div>
       )}
     </div>
   );
@@ -165,17 +242,19 @@ function TradeRow({ trade, index }: { trade: TradeRecord; index: number }) {
 // ─── Feature Card ─────────────────────────────────────────────────────────────
 
 function FeatureCard({
-  icon,
+  iconName,
+  iconColor,
   title,
   desc,
 }: {
-  icon: string;
+  iconName: 'brain' | 'chart' | 'shield' | 'telegram';
+  iconColor: string;
   title: string;
   desc: string;
 }) {
   return (
     <div
-      className="card-hover"
+      className="card-hover feature-card"
       style={{
         padding: '24px',
         background: '#0d0d14',
@@ -183,9 +262,25 @@ function FeatureCard({
         borderRadius: 12,
         flex: '1 1 220px',
         minWidth: 200,
+        transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
       }}
     >
-      <div style={{ fontSize: 24, marginBottom: 14 }}>{icon}</div>
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 10,
+          background: `${iconColor}15`,
+          border: `1px solid ${iconColor}30`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: iconColor,
+          marginBottom: 14,
+        }}
+      >
+        <Icon name={iconName} size={20} strokeWidth={1.8} />
+      </div>
       <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 8 }}>{title}</div>
       <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.7 }}>{desc}</div>
     </div>
@@ -194,67 +289,97 @@ function FeatureCard({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function normalizeTrade(t: RawTrade): TradeRecord {
+  const pnl = t.pnl ?? 0;
+  return {
+    symbol: t.symbol ?? '',
+    side: t.side ?? '',
+    strategy: t.strategy ?? 'ensemble',
+    close_reason: '',
+    entry: t.entry ?? null,
+    exit: t.exit ?? null,
+    sl: null,
+    tp1: null,
+    tp2: null,
+    pnl,
+    fee: null,
+    leverage: t.leverage ?? null,
+    confidence: t.confidence ?? null,
+    rr_achieved: null,
+    duration_h: null,
+    outcome: t.outcome || (pnl > 0 ? 'WIN' : 'LOSS'),
+    llm_action: null,
+    llm_regime: t.regime ?? null,
+    llm_confidence: null,
+  };
+}
+
 export default function LandingPage() {
-  const [stats, setStats] = useState<SummaryStats>({ totalPnl: null, winRate: null, sharpe: null, maxDrawdown: null, totalTrades: 0 });
-  const [equityPoints, setEquityPoints] = useState<Array<{ equity: number; ts: string }>>([]);
-  const [trades, setTrades] = useState<TradeRecord[]>([]);
-  const [marketView, setMarketView] = useState<LlmMarketView | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: summary } =
+    useApi<SummaryApiResponse>('/v1/summary', { refreshInterval: 15_000 });
+  const { data: tradesData, isLoading: tradesLoading } =
+    useApi<TradeHistoryApiResponse>('/v1/trades/history?limit=50', { refreshInterval: 30_000 });
+  const { data: equityData } =
+    useApi<EquityCurveApiResponse>('/v1/trades/equity-curve', { refreshInterval: 30_000 });
+  const { data: marketView } =
+    useApi<LlmMarketView>('/v1/llm/market-view', { refreshInterval: 60_000 });
 
-  useEffect(() => {
-    async function load() {
-      const [tradeRes, equityRes, marketRes] = await Promise.all([
-        apiFetch<TradeHistoryResponse>('/v1/trades/history?limit=50'),
-        apiFetch<EquityCurveResponse>('/v1/trades/equity-curve?run=latest'),
-        apiFetch<LlmMarketView>('/v1/llm/market-view'),
-      ]);
+  const loading = tradesLoading && !tradesData;
 
-      // Compute stats from trades
-      if (tradeRes?.trades && tradeRes.trades.length > 0) {
-        const ts = tradeRes.trades;
-        const wins = ts.filter((t) => t.outcome === 'WIN' || (t.pnl ?? 0) > 0);
-        const totalPnl = ts.reduce((a, b) => a + (b.pnl ?? 0), 0);
-        const winRate = (wins.length / ts.length) * 100;
+  const trades: TradeRecord[] = ((tradesData?.trades ?? []).map(normalizeTrade)).slice(-6).reverse();
+  const equityPoints = equityData?.points ?? [];
 
-        // Sharpe from equity curve
-        let sharpe: number | null = null;
-        if (equityRes?.points && equityRes.points.length > 5) {
-          const pts = equityRes.points;
-          const returns = pts.slice(1).map((p, i) => (p.equity - pts[i].equity) / pts[i].equity);
-          const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
-          const variance = returns.reduce((a, b) => a + (b - mean) ** 2, 0) / returns.length;
-          const std = Math.sqrt(variance);
-          if (std > 0) sharpe = (mean / std) * Math.sqrt(365);
-        }
-
-        // Max drawdown from equity curve
-        let maxDrawdown: number | null = null;
-        if (equityRes?.points) {
-          const pts = equityRes.points;
-          let peak = pts[0]?.equity ?? 0;
-          let maxDD = 0;
-          for (const p of pts) {
-            if (p.equity > peak) peak = p.equity;
-            const dd = peak > 0 ? ((peak - p.equity) / peak) * 100 : 0;
-            if (dd > maxDD) maxDD = dd;
-          }
-          maxDrawdown = maxDD;
-        }
-
-        setStats({ totalPnl, winRate, sharpe, maxDrawdown, totalTrades: ts.length });
-        setTrades(ts.slice(0, 6));
-      }
-
-      if (equityRes?.points) setEquityPoints(equityRes.points);
-      if (marketRes) setMarketView(marketRes);
-      setLoading(false);
+  // Compute Sharpe + MaxDD from equity curve
+  let sharpe: number | null = null;
+  let maxDrawdown: number | null = null;
+  if (equityPoints.length > 5) {
+    const returns = equityPoints.slice(1).map((p, i) => (p.equity - equityPoints[i].equity) / (equityPoints[i].equity || 1));
+    const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const variance = returns.reduce((a, b) => a + (b - mean) ** 2, 0) / returns.length;
+    const std = Math.sqrt(variance);
+    if (std > 0) sharpe = (mean / std) * Math.sqrt(365);
+  }
+  if (equityPoints.length > 1) {
+    let peak = equityPoints[0].equity;
+    let maxDD = 0;
+    for (const p of equityPoints) {
+      if (p.equity > peak) peak = p.equity;
+      const dd = peak > 0 ? ((peak - p.equity) / peak) * 100 : 0;
+      if (dd > maxDD) maxDD = dd;
     }
+    maxDrawdown = maxDD;
+  }
 
-    load();
-    const iv = setInterval(load, 30_000);
-    return () => clearInterval(iv);
-  }, []);
+  const stats: SummaryStats = {
+    totalPnl: summary?.total_pnl ?? null,
+    winRate: summary?.win_rate ?? null,
+    sharpe,
+    maxDrawdown,
+    totalTrades: summary?.total_trades ?? tradesData?.total ?? 0,
+    equity: summary?.equity ?? null,
+    dailyPnl: summary?.today_pnl ?? null,
+    openPositions: summary?.open_positions ?? 0,
+  };
+
+  // Sparkline source data — derived from equity points (equity) + cumulative PnL (totalPnl) + rolling WR
+  const equitySpark = equityPoints.slice(-30).map((p) => p.equity);
+  const pnlSpark = (() => {
+    if (equityPoints.length < 2) return [];
+    const first = equityPoints[0].equity;
+    return equityPoints.slice(-30).map((p) => p.equity - first);
+  })();
+  const rollingWR = (() => {
+    if (!tradesData?.trades) return [];
+    const tr = tradesData.trades.slice(-50);
+    const out: number[] = [];
+    const window = 10;
+    for (let i = window; i <= tr.length; i++) {
+      const chunk = tr.slice(i - window, i);
+      const w = chunk.filter((t) => (t.pnl ?? 0) > 0).length;
+      out.push((w / chunk.length) * 100);
+    }
+    return out;
+  })();
 
   const biasColor = marketView?.overall_bias === 'bullish' ? C.bull
     : marketView?.overall_bias === 'bearish' ? C.bear
@@ -263,11 +388,21 @@ export default function LandingPage() {
   return (
     <>
       <Head>
-        <title>CrazyOnSol — AI-Powered Perpetual Trading</title>
+        <title>WAGMI — AI-Powered Perpetual Trading</title>
         <meta name="description" content="A quant engine that trades BTC, ETH, SOL, and HYPE on Hyperliquid perpetual futures." />
       </Head>
 
-      <div style={{ background: C.bg, minHeight: '100vh', color: C.text, fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div style={{
+        background: `
+          radial-gradient(ellipse 800px 500px at 15% 8%, rgba(0,204,136,0.05) 0%, transparent 60%),
+          radial-gradient(ellipse 700px 400px at 85% 22%, rgba(68,136,255,0.03) 0%, transparent 60%),
+          radial-gradient(ellipse 600px 400px at 50% 85%, rgba(170,102,255,0.03) 0%, transparent 60%),
+          #050508
+        `,
+        minHeight: '100vh',
+        color: C.text,
+        fontFamily: "'Inter', system-ui, sans-serif",
+      }}>
 
         {/* ── Sticky Nav ─────────────────────────────────────────────────── */}
         <nav
@@ -303,7 +438,7 @@ export default function LandingPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 13,
+                  fontSize: 11,
                   fontWeight: 800,
                   color: C.brand,
                   fontFamily: 'JetBrains Mono, monospace',
@@ -311,10 +446,10 @@ export default function LandingPage() {
                   flexShrink: 0,
                 }}
               >
-                C
+                W
               </div>
               <span style={{ fontSize: 15, fontWeight: 700, color: C.text, letterSpacing: -0.3 }}>
-                CrazyOnSol
+                WAGMI
               </span>
             </Link>
 
@@ -326,17 +461,17 @@ export default function LandingPage() {
                   <Link
                     key={label}
                     href={href}
+                    className="nav-link"
                     style={{
-                      padding: '6px 12px',
+                      padding: '6px 4px',
+                      margin: '0 8px',
                       fontSize: 13,
                       fontWeight: 500,
                       color: C.muted,
-                      borderRadius: 6,
                       textDecoration: 'none',
+                      position: 'relative',
                       transition: 'color 0.15s ease',
                     }}
-                    onMouseEnter={(e) => ((e.target as HTMLAnchorElement).style.color = C.text)}
-                    onMouseLeave={(e) => ((e.target as HTMLAnchorElement).style.color = C.muted)}
                   >
                     {label}
                   </Link>
@@ -382,15 +517,23 @@ export default function LandingPage() {
           </div>
         </nav>
 
+        {/* ── Live Activity Tape ─────────────────────────────────────────── */}
+        <LiveActivityTape />
+
         {/* ── Hero ───────────────────────────────────────────────────────── */}
         <section
           style={{
             maxWidth: 1200,
             margin: '0 auto',
-            padding: '80px 24px 60px',
+            padding: '72px 24px 48px',
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
+            gap: 48,
+            alignItems: 'center',
           }}
+          className="hero-grid"
         >
-          <div style={{ maxWidth: 680 }}>
+          <div>
             {/* Live badge */}
             <div
               style={{
@@ -482,33 +625,122 @@ export default function LandingPage() {
               </Link>
             </div>
           </div>
+
+          {/* Hero right column — AgentBrainGraphic */}
+          <div className="hero-graphic" style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{
+              padding: '20px',
+              background: 'rgba(13,13,20,0.4)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 16,
+              width: '100%',
+              maxWidth: 560,
+              position: 'relative',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: C.muted,
+                textTransform: 'uppercase',
+                letterSpacing: 1.5,
+                marginBottom: 4,
+                fontFamily: 'JetBrains Mono, monospace',
+              }}>
+                The Brain
+              </div>
+              <div style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: C.text,
+                marginBottom: 16,
+              }}>
+                9 specialist agents deliberate every trade.
+              </div>
+              <AgentBrainGraphic width={620} height={260} />
+              <div style={{
+                marginTop: 12,
+                display: 'flex',
+                gap: 12,
+                flexWrap: 'wrap',
+                fontSize: 10,
+                fontFamily: 'JetBrains Mono, monospace',
+                color: C.muted,
+                letterSpacing: 0.5,
+              }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.info }} /> HAIKU
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.brand }} /> SONNET
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.purple }} /> OPUS
+                </span>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* ── Stats Row ──────────────────────────────────────────────────── */}
         <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <StatCard
+              label="Equity"
+              numericValue={stats.equity}
+              formatter={(n) => fmtUsd(n)}
+              color={C.text}
+              sub="Live portfolio"
+              loading={loading || stats.equity == null}
+              sparklineValues={equitySpark}
+            />
+            <StatCard
+              label="Today's P&L"
+              numericValue={stats.dailyPnl}
+              formatter={(n) => fmtUsd(n)}
+              color={stats.dailyPnl == null ? C.text : stats.dailyPnl >= 0 ? C.bull : C.bear}
+              sub="Since UTC midnight"
+              loading={loading || stats.dailyPnl == null}
+            />
+            <StatCard
               label="Total P&L"
-              value={loading ? '—' : fmtUsd(stats.totalPnl)}
+              numericValue={stats.totalPnl}
+              formatter={(n) => fmtUsd(n)}
               color={(stats.totalPnl ?? 0) >= 0 ? C.bull : C.bear}
               sub={`${stats.totalTrades} trades`}
+              loading={loading}
+              sparklineValues={pnlSpark}
             />
             <StatCard
               label="Win Rate"
-              value={loading ? '—' : fmtPct(stats.winRate)}
+              numericValue={stats.winRate}
+              formatter={(n) => fmtPct(n)}
               color={(stats.winRate ?? 0) >= 50 ? C.bull : C.bear}
+              loading={loading}
+              sparklineValues={rollingWR}
+              sparklineColor={C.info}
             />
             <StatCard
-              label="Sharpe Ratio"
-              value={loading || stats.sharpe == null ? '—' : stats.sharpe.toFixed(2)}
-              color={C.info}
-            />
-            <StatCard
-              label="Max Drawdown"
-              value={loading || stats.maxDrawdown == null ? '—' : `-${stats.maxDrawdown.toFixed(1)}%`}
-              color={C.bear}
+              label="Open Positions"
+              value={loading ? '—' : String(stats.openPositions)}
+              color={stats.openPositions > 0 ? C.info : C.muted}
+              sub="On exchange"
+              loading={loading}
             />
           </div>
+        </section>
+
+        {/* ── Market Pulse ───────────────────────────────────────────────── */}
+        <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 32px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1.4, fontFamily: 'JetBrains Mono, monospace' }}>
+              Market Pulse
+            </div>
+            <div style={{ fontSize: 11, color: C.muted }}>
+              Updates every 20s
+            </div>
+          </div>
+          <MarketPulse />
         </section>
 
         {/* ── Equity Curve ───────────────────────────────────────────────── */}
@@ -729,6 +961,45 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ── Latest Reasoning ───────────────────────────────────────────── */}
+        <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 56px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: '0 0 4px', letterSpacing: -0.5 }}>
+                Latest Reasoning
+              </h2>
+              <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
+                What the 9-agent brain is actually thinking, right now.
+              </p>
+            </div>
+            <Link href="/reasoning" style={{ fontSize: 13, color: C.brand, textDecoration: 'none', fontWeight: 600, flexShrink: 0 }}>
+              Full feed →
+            </Link>
+          </div>
+          <ReasoningTeaser />
+        </section>
+
+        {/* ── Proof Strip — live lifetime metrics ───────────────────────── */}
+        <section style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px' }}>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: C.muted,
+              textTransform: 'uppercase',
+              letterSpacing: 1.4,
+              fontFamily: 'JetBrains Mono, monospace',
+              marginBottom: 6,
+            }}>
+              By the numbers
+            </div>
+            <div style={{ fontSize: 13, color: C.textSub, margin: 0 }}>
+              Not a mockup. Every metric streams from the live bot.
+            </div>
+          </div>
+          <ProofStrip />
+        </section>
+
         {/* ── How It Works ───────────────────────────────────────────────── */}
         <section
           style={{
@@ -834,22 +1105,26 @@ export default function LandingPage() {
 
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <FeatureCard
-              icon="🧠"
+              iconName="brain"
+              iconColor={C.brand}
               title="9-Agent AI Brain"
               desc="Every trade decision passes through a deliberation pipeline of specialist AI agents — regime analysis, thesis formation, risk assessment, critic review, and learning from outcomes."
             />
             <FeatureCard
-              icon="📊"
+              iconName="chart"
+              iconColor={C.info}
               title="Multi-Strategy Ensemble"
               desc="Four independent strategies vote on every signal. Weighted-veto mode requires consensus with minimum agreement thresholds to block low-conviction trades."
             />
             <FeatureCard
-              icon="🛡️"
+              iconName="shield"
+              iconColor={C.warn}
               title="Risk-First Design"
               desc="Six-stage signal gate, circuit breakers, Kelly-based position sizing, progressive trailing stops, and daily drawdown caps. Risk management is non-negotiable."
             />
             <FeatureCard
-              icon="📱"
+              iconName="telegram"
+              iconColor={C.purple}
               title="Telegram Copilot"
               desc="Real-time trade alerts, AI brain summaries, and position updates delivered to Telegram. Full transparency on every decision the bot makes."
             />
@@ -876,8 +1151,8 @@ export default function LandingPage() {
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <div style={{ width: 22, height: 22, borderRadius: 4, border: `1px solid ${C.brand}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: C.brand, fontFamily: 'JetBrains Mono, monospace', background: C.brandMuted }}>C</div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>CrazyOnSol</span>
+                <div style={{ width: 22, height: 22, borderRadius: 4, border: `1px solid ${C.brand}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: C.brand, fontFamily: 'JetBrains Mono, monospace', background: C.brandMuted }}>W</div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>WAGMI</span>
               </div>
               <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.7, maxWidth: 380, margin: 0 }}>
                 AI-driven market analysis for informational purposes only. Not financial advice.
@@ -926,20 +1201,80 @@ export default function LandingPage() {
               margin: '20px auto 0',
               paddingTop: 20,
               borderTop: '1px solid rgba(255,255,255,0.04)',
-              fontSize: 11,
-              color: C.faint,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 16,
+              flexWrap: 'wrap',
             }}
           >
-            &copy; 2026 CrazyOnSol · crazyonsol.online
+            <SystemStatus />
+            <div style={{ fontSize: 11, color: C.faint }}>
+              &copy; 2026 WAGMI · wagmi.trading
+            </div>
           </div>
         </footer>
 
         <style>{`
+          @media (max-width: 960px) {
+            .hero-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
+            .hero-graphic { order: 2; }
+          }
           @media (max-width: 768px) {
             .desktop-nav { display: none !important; }
           }
           @media (max-width: 640px) {
             section { padding-left: 16px !important; padding-right: 16px !important; }
+          }
+          @media (max-width: 380px) {
+            section { padding-left: 14px !important; padding-right: 14px !important; }
+            h1 { font-size: 34px !important; }
+          }
+          .nav-link {
+            position: relative;
+          }
+          .nav-link::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -4px;
+            height: 1.5px;
+            background: ${C.brand};
+            transform: scaleX(0);
+            transform-origin: left center;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          .nav-link:hover {
+            color: ${C.text} !important;
+          }
+          .nav-link:hover::after {
+            transform: scaleX(1);
+          }
+          .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.12) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,204,136,0.08);
+          }
+          .feature-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255,255,255,0.14) !important;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.5);
+          }
+          .live-dot {
+            box-shadow: 0 0 12px rgba(0,204,136,0.6);
+            animation: live-pulse 2s ease-in-out infinite;
+          }
+          @keyframes live-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+          }
+          @keyframes hero-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+          }
+          .hero-graphic > div {
+            animation: hero-float 6s ease-in-out infinite;
           }
         `}</style>
       </div>

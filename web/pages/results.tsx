@@ -7,6 +7,7 @@ import { C, R, S, F, G, Glass, SP, fmtUsd, fmtPct, timeAgo } from '../src/theme'
 import { staggerContainer, fadeUp, hoverGlow, orchestratedContainer } from '../src/animations';
 import type { BacktestResult, TradeRecord, TradeHistoryResponse, EquityCurvePoint } from '../src/types';
 import { resolveApiBase } from '../src/api';
+import DecisionTrail, { TradeBrief } from '../components/DecisionTrail';
 
 function Skeleton({ h = 16, w = '100%' }: { h?: number; w?: string | number }) {
   return <div className="skeleton" style={{ height: h, width: w, borderRadius: R.sm }} />;
@@ -919,7 +920,7 @@ function BySymbolAccordion({ bySymbol }: { bySymbol?: Record<string, SymbolData>
 
 // ─── Trade Table ──────────────────────────────────────────────────────────────
 
-function TradeTable({ trades, loading }: { trades: TradeRecord[]; loading: boolean }) {
+function TradeTable({ trades, loading, onRowClick }: { trades: TradeRecord[]; loading: boolean; onRowClick?: (t: TradeRecord) => void }) {
   const [sortCol, setSortCol] = useState<keyof TradeRecord>('pnl');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
@@ -1018,12 +1019,23 @@ function TradeTable({ trades, loading }: { trades: TradeRecord[]; loading: boole
             sorted.map((trade, i) => (
               <tr
                 key={i}
+                onClick={onRowClick ? () => onRowClick(trade) : undefined}
+                title={onRowClick ? 'View decision trail' : undefined}
                 style={{
                   background: trade.outcome === 'WIN'
                     ? C.bull + '08'
                     : trade.outcome === 'LOSS' ? C.bear + '08' : 'transparent',
                   borderTop: `1px solid ${C.border}`,
                   transition: 'background 0.15s',
+                  cursor: onRowClick ? 'pointer' : 'default',
+                }}
+                onMouseEnter={(e) => {
+                  if (onRowClick) (e.currentTarget as HTMLTableRowElement).style.background = 'rgba(0,204,136,0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  if (onRowClick) (e.currentTarget as HTMLTableRowElement).style.background = trade.outcome === 'WIN'
+                    ? C.bull + '08'
+                    : trade.outcome === 'LOSS' ? C.bear + '08' : 'transparent';
                 }}
               >
                 {cols.map((col) => (
@@ -3204,6 +3216,7 @@ export default function Results() {
   const [loadingBt, setLoadingBt] = useState(true);
   const [loadingTrades, setLoadingTrades] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [trailTrade, setTrailTrade] = useState<TradeBrief | null>(null);
   const apiBase = resolveApiBase();
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -3529,7 +3542,29 @@ export default function Results() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <span style={{ fontSize: F.xs, color: C.muted }}>{trades.length} trades · click column headers to sort</span>
         </div>
-        <TradeTable trades={trades} loading={loadingTrades} />
+        <TradeTable
+          trades={trades}
+          loading={loadingTrades}
+          onRowClick={(t) => {
+            const raw = t as unknown as { id?: string; timestamp?: string };
+            setTrailTrade({
+              id: raw.id || raw.timestamp || '',
+              timestamp: raw.timestamp || '',
+              symbol: t.symbol,
+              side: t.side,
+              entry: t.entry ?? 0,
+              exit: t.exit ?? 0,
+              pnl: t.pnl ?? 0,
+              leverage: t.leverage ?? undefined,
+              strategy: t.strategy,
+            });
+          }}
+        />
+        <DecisionTrail
+          trade={trailTrade}
+          open={trailTrade !== null}
+          onClose={() => setTrailTrade(null)}
+        />
       </div>
 
       {/* ── Disclaimer ───────────────────────────────── */}

@@ -5,6 +5,7 @@ import { C, G, R, S, F, SP, Glass, fmtUsd, fmtPct } from '../src/theme';
 import { fadeUp, staggerContainer, staggerContainerSlow, cinematicReveal, orchestratedContainer, magneticHover } from '../src/animations';
 import { Card, StatCard, SectionHeader, Skeleton as SharedSkeleton, EmptyState, Grid } from '../components/ui';
 import { apiFetch } from '../src/api';
+import PerformanceHeatmap from '../components/charts/PerformanceHeatmap';
 import type { TradeHistoryResponse, TradeRecord, EquityCurveResponse, EquityCurvePoint, BacktestResult } from '../src/types';
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -2921,7 +2922,7 @@ export default function PerformancePage() {
 
             {/* ══════════════════════════════════════════════════════════════
                 SECTION 6 — ATTRIBUTION
-                PnL by strategy, performance attribution treemap
+                PnL by strategy, performance attribution treemap, hour-of-day heatmap
             ══════════════════════════════════════════════════════════════ */}
             <Section title="Attribution">
               {/* By Strategy bars */}
@@ -2933,6 +2934,13 @@ export default function PerformancePage() {
                   <StrategyBars data={byStrategy} />
                 </Card>
               )}
+
+              {/* Symbol × hour-of-day WR heatmap */}
+              <div style={{ marginBottom: SP[4] }}>
+                <PerformanceHeatmap
+                  trades={filteredTrades as unknown as Array<{ symbol?: string; timestamp?: string; pnl?: number | null; outcome?: string }>}
+                />
+              </div>
 
               {/* Performance Attribution Treemap */}
               <PerformanceAttributionTreemap trades={filteredTrades} />

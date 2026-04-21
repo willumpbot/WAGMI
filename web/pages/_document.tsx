@@ -12,18 +12,18 @@ export default function Document() {
           rel="stylesheet"
         />
         {/* Favicon — green accent */}
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23050508'/><rect width='32' height='32' rx='6' fill='none' stroke='%2300cc88' stroke-width='2'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='%2300cc88' font-size='16' font-family='system-ui' font-weight='bold'>C</text></svg>" />
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23050508'/><rect width='32' height='32' rx='6' fill='none' stroke='%2300cc88' stroke-width='2'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='%2300cc88' font-size='12' font-family='system-ui' font-weight='bold'>W</text></svg>" />
         {/* Primary meta */}
-        <meta name="description" content="CrazyOnSol — AI-powered perpetual trading bot on Hyperliquid. Multi-strategy signals filtered through a 9-agent AI brain." />
+        <meta name="description" content="WAGMI — AI-powered perpetual trading bot on Hyperliquid. Multi-strategy signals filtered through a 9-agent AI brain." />
         {/* Open Graph */}
-        <meta property="og:title" content="CrazyOnSol — AI-Powered Perpetual Trading" />
+        <meta property="og:title" content="WAGMI — AI-Powered Perpetual Trading" />
         <meta property="og:description" content="AI-powered perpetual trading on Hyperliquid. Multi-strategy signals, 9-agent AI brain, real-time performance." />
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="CrazyOnSol" />
-        <meta property="og:url" content="https://crazyonsol.online" />
+        <meta property="og:site_name" content="WAGMI" />
+        <meta property="og:url" content="https://wagmi.trading" />
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CrazyOnSol — AI-Powered Perpetual Trading" />
+        <meta name="twitter:title" content="WAGMI — AI-Powered Perpetual Trading" />
         <meta name="twitter:description" content="AI-powered perpetual trading on Hyperliquid. Multi-strategy signals, 9-agent AI brain." />
         {/* Theme */}
         <meta name="theme-color" content="#050508" />

@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * CrazyOnSol Design System — shared tokens.
+ * WAGMI Design System — shared tokens.
  * True black base, green accent (#00cc88), clean card surfaces.
  */
 

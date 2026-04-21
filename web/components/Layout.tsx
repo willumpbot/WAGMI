@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { C, R } from '../src/theme';
+import { C, R, Z } from '../src/theme';
 import Sidebar from './Sidebar';
+import EquityTicker from './EquityTicker';
 
 const COLLAPSED_WIDTH = 64;
 const EXPANDED_WIDTH = 240;
@@ -70,15 +71,38 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           paddingTop: isMobile ? 52 : 0,
         }}
       >
+        {/* Sticky top header — persistent live equity ticker across every page */}
+        <header
+          style={{
+            position: 'sticky',
+            top: isMobile ? 52 : 0,
+            zIndex: Z.sidebar - 10,
+            padding: isMobile ? '8px 12px' : '12px 20px',
+            background: 'linear-gradient(180deg, rgba(5,5,8,0.85) 0%, rgba(5,5,8,0.55) 100%)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderBottom: `1px solid ${C.border}`,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+          }}
+        >
+          <div style={{ maxWidth: 1280, margin: '0', display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+            <EquityTicker compact={isMobile} />
+          </div>
+        </header>
+
         <main
           id="main-content"
           role="main"
+          className="wagmi-main"
           style={{
             maxWidth: 1280,
             margin: '0 auto',
-            padding: '28px 20px 60px',
+            padding: isMobile ? '16px 12px 48px' : '24px 20px 60px',
             width: '100%',
             flex: 1,
+            overflowX: 'hidden',
           }}
         >
           {children}
@@ -119,7 +143,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   fontFamily: 'JetBrains Mono, monospace',
                 }}
               >
-                C
+                W
               </span>
               <span
                 style={{
@@ -129,7 +153,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   letterSpacing: -0.3,
                 }}
               >
-                CrazyOnSol
+                WAGMI
               </span>
             </div>
             <p
@@ -147,7 +171,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               results don&apos;t predict future performance.
             </p>
             <p style={{ margin: 0, fontSize: 10, color: C.faint }}>
-              &copy; 2026 CrazyOnSol
+              &copy; 2026 WAGMI
             </p>
           </div>
         </footer>
