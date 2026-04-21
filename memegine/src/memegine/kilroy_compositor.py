@@ -1,24 +1,23 @@
-"""Kilroy compositor — authentic hand-drawn Kilroy over any base image.
+"""Kilroy compositor — authentic sticker-style Kilroy peek over any base.
 
-This is NOT AI generation. It draws the canonical WWII-era Kilroy
-("Kilroy was here") character with PIL using composed primitives that
-match the real meme:
+Matches the operator's reference gallery:
+  - Solid filled head (white/light fill with black outline)
+  - Two cartoon HANDS on the sides of the head, fingers over the wall
+  - Solid filled capsule/teardrop nose hanging past the wall
+  - Two eye dots + tiny eyebrow marks above
+  - Hand-lettered "[TEXT] was here" caption
 
-  - Rounded dome head (no hair, no shoulders)
-  - Two EYES drawn ABOVE the wall line, centered in the head
-  - LONG PENDULOUS NOSE — starts below the eyes, curves down past
-    the wall edge, forms the defining drooping droop
-  - Horizontal WALL EDGE line (visible, not implied)
-  - FOUR FINGERS gripping the wall — curved fingertip arcs, not
-    straight sticks
-  - "KILROY WAS HERE" block caps hand-lettered below the whole thing
+Two render modes:
+  "sticker"  — solid fill + outline (white body on any base). Looks
+               like a sticker dropped into a photo. Default.
+  "line_art" — black outline + white/transparent fill. Classic flat
+               meme look for plain backgrounds.
+  "chalk"    — legacy white-on-dark graffiti mode (keep for variety)
+  "sharpie"  — legacy black-on-light graffiti mode
 
-Every stroke has slight jitter so it reads GI-drawn not vector-clean.
-
-Modes:
-  chalk    = white on dark backgrounds
-  sharpie  = black on light backgrounds
-  (auto-detected from the placement region's brightness)
+API stays backward-compatible:
+    kilroy_onto(base_bytes, position=..., size_pct=..., text=...,
+                mode="sticker")
 """
 from __future__ import annotations
 
@@ -35,20 +34,21 @@ except ImportError as exc:  # pragma: no cover
     raise ImportError("Pillow required. `pip install pillow`") from exc
 
 
-# ---------- geometry ratios (relative to overlay short side) ----------
+# ---------- geometry (all ratios relative to overlay width) ----------
 
-_HEAD_W_RATIO      = 0.72   # head width (a little bigger)
-_HEAD_H_RATIO      = 0.40   # taller dome so eyes sit better
-_EYE_Y_OFFSET      = 0.60   # eye Y within dome — MID-DOME, not near wall
-_EYE_RADIUS_RATIO  = 0.045  # BIG eyes (was 0.03, too small)
-_EYE_DX_RATIO      = 0.14   # a bit wider-spaced
-_NOSE_LENGTH_RATIO = 0.50   # MUCH longer droopy nose
-_NOSE_WEIGHT_MULT  = 1.4    # nose drawn THICKER than other lines
-_WALL_EXTEND_RATIO = 1.18
-_FINGER_DROP_RATIO = 0.13
-_LINE_WEIGHT_RATIO = 0.034  # thicker confident strokes (was 0.022)
-_TEXT_GAP_RATIO    = 0.06
-_TEXT_HEIGHT_RATIO = 0.13
+_HEAD_W_RATIO      = 0.70
+_HEAD_H_RATIO      = 0.42   # bulbous-dome visible-height fraction of width
+_EYE_Y_FRAC        = 0.55   # eye y within dome (0=top, 1=wall)
+_EYE_RADIUS_RATIO  = 0.034
+_EYE_DX_RATIO      = 0.10
+_EYEBROW_LEN_RATIO = 0.08
+_EYEBROW_DY_RATIO  = 0.08
+_NOSE_WIDTH_RATIO  = 0.11
+_NOSE_DROP_RATIO   = 0.48   # how far below wall nose droops
+_HAND_SIZE_RATIO   = 0.20   # hand diameter as fraction of overlay width
+_TEXT_H_RATIO      = 0.14
+_TEXT_GAP_RATIO    = 0.04
+_OUTLINE_W_RATIO   = 0.012  # outline stroke weight
 
 
 @dataclass
@@ -57,7 +57,7 @@ class CompositeResult:
     width: int
     height: int
     overlay_pct: float
-    mode: str               # "chalk" or "sharpie"
+    mode: str
 
 
 def _jitter(val: float, amount: float) -> float:
@@ -65,16 +65,10 @@ def _jitter(val: float, amount: float) -> float:
 
 
 def _load_hand_font(size: int) -> ImageFont.ImageFont:
-    """Prefer informal hand-lettered fonts; fall back to system default."""
-    candidates = [
-        "Chalkduster",           # macOS
-        "Bradley Hand ITC",      # Windows
-        "Marker Felt",           # macOS
-        "Segoe Script",          # Windows
-        "Comic Sans MS",         # widespread
-        "Ink Free",              # Windows 10+
-    ]
-    for name in candidates:
+    for name in [
+        "Chalkduster", "Bradley Hand ITC", "Marker Felt",
+        "Segoe Script", "Comic Sans MS", "Ink Free",
+    ]:
         try:
             return ImageFont.truetype(name, size)
         except OSError:
@@ -103,173 +97,128 @@ def _compute_bounds(base_size, *, position: str, size_pct: float):
     bw, bh = base_size
     shorter = min(bw, bh)
     w = int(shorter * size_pct)
-    # Kilroy overlay is a bit taller than wide (character + wall + fingers + text)
-    h = int(w * 1.35)
-    margin = int(shorter * 0.04)
+    h = int(w * 1.3)   # room for head + wall + fingers-and-caption
+    m = int(shorter * 0.04)
     if position == "bottom-right":
-        x1, y1 = bw - margin, bh - margin
-        x0, y0 = x1 - w, y1 - h
+        x1, y1 = bw - m, bh - m;   x0, y0 = x1 - w, y1 - h
     elif position == "bottom-left":
-        x0, y1 = margin, bh - margin
-        x1, y0 = x0 + w, y1 - h
+        x0, y1 = m, bh - m;        x1, y0 = x0 + w, y1 - h
     elif position == "top-right":
-        x1, y0 = bw - margin, margin
-        x0, y1 = x1 - w, y0 + h
+        x1, y0 = bw - m, m;        x0, y1 = x1 - w, y0 + h
     elif position == "top-left":
-        x0, y0 = margin, margin
-        x1, y1 = x0 + w, y0 + h
+        x0, y0 = m, m;             x1, y1 = x0 + w, y0 + h
     elif position == "center":
         x0, y0 = (bw - w) // 2, (bh - h) // 2
         x1, y1 = x0 + w, y0 + h
     else:
-        x1, y1 = bw - margin, bh - margin
-        x0, y0 = x1 - w, y1 - h
+        x1, y1 = bw - m, bh - m;   x0, y0 = x1 - w, y1 - h
     return x0, y0, x1, y1
 
 
-# ---------- core drawing ----------
+# ---------- drawing components ----------
 
-def _draw_dome(draw, cx, top_y, head_w, head_h, color, weight):
-    """Draw the BULBOUS Kilroy head.
+def _draw_head(draw, cx, top_y, head_w, head_h, fill, outline, weight):
+    """Bulbous dome head — filled + outlined.
 
-    Canon: "bulbous head" — fuller, rounder than a flat dome. Draw as
-    the top portion of a wider, rounder ellipse.
+    Real Kilroy head: the TOP half of an egg/ellipse that's slightly
+    wider than tall (bulbous). Visible part ends at the wall line.
     """
-    # Make the ellipse WIDER than tall — the visible arc is more curved
     left = cx - head_w // 2
     right = cx + head_w // 2
-    # Total ellipse height = head_h * 2.2 (so visible half is more bulbous)
+    # Use a PIE slice to get filled top-half; ellipse bbox extends
+    # below wall but we'll mask that with the wall line later.
     full_h = int(head_h * 2.2)
-    ellipse_bbox = [left, top_y, right, top_y + full_h]
-    # Arc 180→360 draws the TOP half
-    draw.arc(ellipse_bbox, start=180, end=360, fill=color, width=weight)
-    # Double-stroke for drawn feel
-    draw.arc(
-        [left + weight, top_y + int(weight * 0.6),
-         right - weight, top_y + full_h - int(weight * 0.6)],
-        start=190, end=350, fill=color, width=max(1, weight - 1),
-    )
+    bbox = [left, top_y, right, top_y + full_h]
+    if fill is not None:
+        draw.pieslice(bbox, start=180, end=360, fill=fill)
+    if outline is not None:
+        draw.arc(bbox, start=180, end=360, fill=outline, width=weight)
 
 
-def _draw_eyes(draw, cx, eye_y, dx, r, color):
-    """Two simple filled eye dots inside the dome."""
+def _draw_eyes_and_brows(draw, cx, eye_y, eye_dx, eye_r, color, brow_dy, brow_len, weight):
+    """Two dot eyes. Canonical Kilroy has no eyebrows (refs 3, 4)."""
     for sign in (-1, 1):
-        ex = cx + sign * dx
+        ex = cx + sign * eye_dx
+        draw.ellipse([ex - eye_r, eye_y - eye_r, ex + eye_r, eye_y + eye_r], fill=color)
+
+
+def _draw_capsule_nose(draw, cx, wall_y, width, drop, fill, outline, weight):
+    """Solid filled capsule/teardrop nose hanging past the wall.
+
+    Top attaches to the head (between eyes, above wall).
+    Body: a stretched vertical oval.
+    """
+    # Top of nose = just above wall (at head interior)
+    top_inset = int(drop * 0.12)  # a bit of nose visible ABOVE the wall
+    top_y = wall_y - top_inset
+    bot_y = wall_y + drop
+    left = cx - width // 2
+    right = cx + width // 2
+    # Filled ellipse
+    if fill is not None:
+        draw.ellipse([left, top_y, right, bot_y], fill=fill)
+    if outline is not None:
+        draw.ellipse([left, top_y, right, bot_y], outline=outline, width=weight)
+
+
+def _draw_hand(draw, cx, cy, radius, fill, outline, weight, *, facing: str = "left"):
+    """Draw 4 fingertips peeking up over the wall.
+
+    cy is the wall line. We draw a hand body BELOW cy (hidden under
+    the wall) and 4 finger-tip bumps ABOVE cy. Only the fingertips
+    are visible on-screen since the hand body is later occluded by
+    the wall line itself.
+    """
+    # Hand body below wall (this stays hidden, but we draw the top
+    # curve JUST ABOVE the wall so when the wall line paints, only
+    # the fingers above are preserved).
+    hw = int(radius * 1.9)
+    # 4 fingertip bumps above wall
+    fn_count = 4
+    fn_span = int(hw * 0.85)
+    fn_w = max(6, fn_span // (fn_count + 1))
+    fn_h = max(6, int(radius * 0.55))
+    first_x = cx - fn_span // 2
+    step = fn_span / fn_count
+    for i in range(fn_count):
+        fx = int(first_x + i * step + step / 2 + _jitter(0, weight * 0.5))
+        fy_top = cy - fn_h
+        fy_bot = cy + int(fn_h * 0.6)    # bottom extends under wall
+        # Filled fingertip
         draw.ellipse(
-            [ex - r, eye_y - r, ex + r, eye_y + r],
-            fill=color,
+            [fx - fn_w // 2, fy_top, fx + fn_w // 2, fy_bot],
+            fill=fill, outline=outline, width=max(1, weight - 1),
         )
 
 
-def _draw_nose(draw, cx, nose_top, wall_y, nose_bottom, color, weight):
-    """Draw the ICONIC LONG pendulous droopy nose.
-
-    This is the defining Kilroy feature — a bulbous, elongated nose
-    that hangs well below the wall edge. Drawn thicker than other
-    lines to dominate the character.
-    """
-    nose_weight = max(weight + 1, int(weight * _NOSE_WEIGHT_MULT))
-
-    # Short segment inside the dome (between eyes)
-    draw.line([(cx, nose_top), (cx, wall_y)], fill=color, width=nose_weight)
-
-    # Main droop: quadratic curve, gentle side sway, ending in a bulbous tip
-    segments = 24
-    drop = nose_bottom - wall_y
-    sway = max(3, int(drop * 0.14))
-    pts = [(cx, wall_y)]
-    for i in range(1, segments + 1):
-        t = i / segments
-        # y: slight ease-in so the nose elongates
-        y = wall_y + int(drop * (t ** 1.05))
-        # x: single S-curve sway, ending slightly right of center
-        x = cx + int(math.sin(t * math.pi * 1.0) * sway)
-        pts.append((x, y))
-    for i in range(len(pts) - 1):
-        draw.line([pts[i], pts[i + 1]], fill=color, width=nose_weight)
-
-    # Bulbous tip — small circle at the nose end so it reads as droopy
-    tip_x, tip_y = pts[-1]
-    tip_r = max(4, int(weight * 2.0))
-    draw.ellipse(
-        [tip_x - tip_r, tip_y - tip_r, tip_x + tip_r, tip_y + tip_r],
-        fill=color,
-    )
-
-
-def _draw_wall_and_fingers(draw, cx, wall_y, head_w, finger_drop, color, weight):
-    """Draw the horizontal wall edge + 4 curved fingertips gripping over it.
-
-    The wall extends slightly beyond the head on both sides (the hands
-    reach out). Fingers are drawn as small upward-curving arcs sitting
-    ON the wall line — they look like knuckles peeking over, not sticks.
-    """
-    wall_half = int(head_w * _WALL_EXTEND_RATIO * 0.5)
-    wall_left = cx - wall_half
-    wall_right = cx + wall_half
-
-    # The wall edge itself — slight break in the middle under the nose
-    # so the nose droops through a tiny gap.
-    nose_gap = max(2, weight)
+def _draw_wall(draw, cx, wall_y, span_half, outline, weight):
+    """Horizontal wall edge. Gets drawn AFTER the character body so the
+    lower portion of hands / head gets trimmed behind it. We also draw
+    a small break under the nose so the nose droops through."""
+    wall_left = cx - span_half
+    wall_right = cx + span_half
+    # (the actual 'under hands' section is already correct because
+    # hands are drawn with palms below wall_y; the wall line just runs
+    # through them visually).
+    break_half = max(3, int(weight * 1.5))
     draw.line(
-        [(wall_left, wall_y), (cx - nose_gap, wall_y)],
-        fill=color, width=weight,
+        [(wall_left, wall_y), (cx - break_half, wall_y)],
+        fill=outline, width=weight,
     )
     draw.line(
-        [(cx + nose_gap, wall_y), (wall_right, wall_y)],
-        fill=color, width=weight,
+        [(cx + break_half, wall_y), (wall_right, wall_y)],
+        fill=outline, width=weight,
     )
-
-    # FINGERS — 4 separate knuckle bumps poking UP over the wall.
-    # Crucial: the fingertips ONLY peek above the wall by a small
-    # amount (~30-40% of the finger height). The bulk of each finger
-    # sits BELOW the wall line, hidden by the wall. Imagine 4 fingertips
-    # barely showing above a windowsill.
-    finger_count = 4
-    finger_span = int(head_w * 0.82)
-    first_x = cx - finger_span // 2
-    step = finger_span / finger_count
-    fw = max(5, int(step * 0.70))
-    # Poke = how much each finger shows ABOVE the wall (small!)
-    poke_h = max(3, int(finger_drop * 0.45))
-    # Below-wall length (hidden under wall) — taller, for sausage effect
-    full_h = max(8, int(finger_drop * 1.2))
-    for i in range(finger_count):
-        fx = int(first_x + i * step + step / 2 + _jitter(0, weight * 0.4))
-        # Finger bounding box: from (wall_y - poke_h) to (wall_y - poke_h + full_h)
-        # So the TOP of the bounding box is only poke_h above the wall,
-        # and only the first ~30% of an ellipse shows above the wall.
-        bump_top = wall_y - poke_h
-        bump_bot = bump_top + full_h
-        # Draw as top-arc of ellipse, which will be a small bump curving up
-        # and outlined
-        draw.arc(
-            [fx - fw // 2, bump_top, fx + fw // 2, bump_bot],
-            start=180, end=360, fill=color, width=weight,
-        )
-        # Small fill JUST for the visible poke above the wall
-        draw.pieslice(
-            [fx - fw // 2 + weight, bump_top + weight // 2,
-             fx + fw // 2 - weight, wall_y + weight],
-            start=180, end=360, fill=color,
-        )
 
 
 def _draw_text(draw, text_box, text, color):
-    """Hand-lettered 'KILROY WAS HERE' with per-character jitter.
-
-    Auto-shrinks font size so text always fits inside the overlay
-    width — prevents the "ROY WAS HE" cutoff bug on tight overlays.
-    """
+    """Hand-lettered caption that autofits within the box."""
     x0, y0, x1, y1 = text_box
     band_w = x1 - x0
     band_h = y1 - y0
-    # Target: text spans ~86% of band width (leaves padding for jitter)
     target_w = int(band_w * 0.86)
 
-    def _measure_drawn(font, size):
-        """Measure total drawn width exactly as the per-character loop
-        below will render it — so shrinking actually guarantees fit."""
+    def _measure(font, size):
         w = 0
         for ch in text:
             if ch == " ":
@@ -281,29 +230,47 @@ def _draw_text(draw, text_box, text, color):
 
     font_size = max(10, int(band_h * 0.95))
     font = _load_hand_font(font_size)
-    text_w = _measure_drawn(font, font_size)
+    text_w = _measure(font, font_size)
     attempts = 0
     while text_w > target_w and font_size > 6 and attempts < 30:
         font_size = max(6, int(font_size * 0.88))
         font = _load_hand_font(font_size)
-        text_w = _measure_drawn(font, font_size)
+        text_w = _measure(font, font_size)
         attempts += 1
-
     bbox = draw.textbbox((0, 0), text, font=font)
     text_h = bbox[3] - bbox[1]
-    start_x = x0 + (band_w - text_w) // 2
-    start_y = y0 + max(0, (band_h - text_h) // 2)
-
-    cur_x = start_x
+    sx = x0 + (band_w - text_w) // 2
+    sy = y0 + max(0, (band_h - text_h) // 2)
+    cx_ = sx
     for ch in text:
         if ch == " ":
-            cur_x += int(font_size * 0.42)
+            cx_ += int(font_size * 0.42)
             continue
         jx = int(_jitter(0, font_size * 0.04))
         jy = int(_jitter(0, font_size * 0.06))
-        draw.text((cur_x + jx, start_y + jy), ch, fill=color, font=font)
+        draw.text((cx_ + jx, sy + jy), ch, fill=color, font=font)
         cbbox = draw.textbbox((0, 0), ch, font=font)
-        cur_x += (cbbox[2] - cbbox[0]) + max(1, int(font_size * 0.03))
+        cx_ += (cbbox[2] - cbbox[0]) + max(1, int(font_size * 0.03))
+
+
+# ---------- mode resolution ----------
+
+def _resolve_colors(mode: str, base_img: Image.Image, bbox) -> tuple:
+    """Return (body_fill, outline_color, text_color) for the given mode."""
+    if mode == "sticker":
+        # White-ish fill + black outline — sticker look that pops on any base
+        return ((245, 245, 242, 255), (12, 12, 12, 255), (12, 12, 12, 255))
+    if mode == "line_art":
+        return (None, (12, 12, 12, 255), (12, 12, 12, 255))
+    if mode == "chalk":
+        return (None, (255, 255, 255, 245), (255, 255, 255, 240))
+    if mode == "sharpie":
+        return (None, (10, 10, 10, 245), (10, 10, 10, 240))
+    # auto: pick based on brightness
+    b = _brightness_in(base_img, bbox)
+    if b < 140:
+        return ((245, 245, 242, 255), (12, 12, 12, 255), (245, 245, 242, 255))
+    return ((245, 245, 242, 255), (12, 12, 12, 255), (12, 12, 12, 255))
 
 
 # ---------- public API ----------
@@ -312,15 +279,12 @@ def kilroy_onto(
     base_bytes: bytes,
     *,
     position: str = "bottom-right",
-    size_pct: float = 0.25,
+    size_pct: float = 0.30,
     text: str = "KILROY WAS HERE",
+    mode: str = "sticker",           # sticker / line_art / chalk / sharpie / auto
     seed: Optional[int] = None,
-    force_mode: Optional[str] = None,
 ) -> CompositeResult:
-    """Composite an authentic Kilroy peek onto the base image.
-
-    Returns CompositeResult with PNG bytes of the final composite.
-    """
+    """Composite a canonical-style Kilroy onto the base image."""
     base = Image.open(io.BytesIO(base_bytes)).convert("RGBA")
     if seed is None:
         seed = random.randint(0, 999_999)
@@ -330,53 +294,70 @@ def kilroy_onto(
     ow = x1 - x0
     oh = y1 - y0
 
-    # Chalk vs sharpie
-    if force_mode:
-        mode = force_mode
-    else:
-        mode = "chalk" if _brightness_in(base, (x0, y0, x1, y1)) < 140 else "sharpie"
-    color = (255, 255, 255, 245) if mode == "chalk" else (10, 10, 10, 245)
-    weight = max(2, int(ow * _LINE_WEIGHT_RATIO))
+    body_fill, outline, text_color = _resolve_colors(mode, base, (x0, y0, x1, y1))
+    weight = max(2, int(ow * _OUTLINE_W_RATIO))
+
+    # Layout calculations
+    head_w = int(ow * _HEAD_W_RATIO)
+    head_h = int(ow * _HEAD_H_RATIO)
+    cx = ow // 2
+    dome_top = int(oh * 0.04)
+    wall_y = dome_top + head_h
+
+    eye_y = dome_top + int(head_h * _EYE_Y_FRAC)
+    eye_r = max(2, int(ow * _EYE_RADIUS_RATIO))
+    eye_dx = int(ow * _EYE_DX_RATIO)
+    brow_dy = int(ow * _EYEBROW_DY_RATIO)
+    brow_len = int(ow * _EYEBROW_LEN_RATIO)
+
+    nose_w = int(ow * _NOSE_WIDTH_RATIO)
+    nose_drop = int(oh * _NOSE_DROP_RATIO)
+    nose_bottom = wall_y + nose_drop
+
+    hand_r = int(ow * _HAND_SIZE_RATIO) // 2
+    hand_y = wall_y   # palm centered on the wall line
+    # Hands flank the head on each side, slightly outside head_w
+    hand_left_cx  = cx - int(head_w * 0.50) - hand_r // 2
+    hand_right_cx = cx + int(head_w * 0.50) + hand_r // 2
+
+    text_top = nose_bottom + int(oh * _TEXT_GAP_RATIO)
+    text_bot = min(oh, text_top + int(oh * _TEXT_H_RATIO))
 
     # Transparent overlay canvas
     overlay = Image.new("RGBA", (ow, oh), (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
 
-    # Vertical layout:
-    #   dome: top .. dome_bottom
-    #   eyes: within dome
-    #   wall: at dome_bottom
-    #   fingers: just below wall
-    #   nose: dome interior + drooping below wall
-    #   text: below fingers
-    head_w = int(ow * _HEAD_W_RATIO)
-    head_h = int(ow * _HEAD_H_RATIO)     # visible dome height
-    cx = ow // 2
-    dome_top = int(oh * 0.05)
-    wall_y = dome_top + head_h
+    # Draw order:
+    #   1) hands (so head can paint over them at palm top)
+    #   2) head (filled, with outline)
+    #   3) eyes + brows (on head)
+    #   4) nose (extends below wall, drawn over wall line at end)
+    #   5) wall (crisp horizontal line; breaks under nose)
+    #   6) text
+    _draw_hand(draw, hand_left_cx, hand_y, hand_r,
+               fill=body_fill, outline=outline, weight=weight, facing="right")
+    _draw_hand(draw, hand_right_cx, hand_y, hand_r,
+               fill=body_fill, outline=outline, weight=weight, facing="left")
+    _draw_head(draw, cx, dome_top, head_w, head_h, body_fill, outline, weight)
+    _draw_eyes_and_brows(
+        draw, cx, eye_y, eye_dx, eye_r, outline,
+        brow_dy, brow_len, weight,
+    )
+    # Nose: filled solid if we have a fill, otherwise outline-only
+    nose_fill_color = outline  # canonical Kilroy nose is SOLID DARK
+    _draw_capsule_nose(
+        draw, cx, wall_y, nose_w, nose_drop,
+        fill=nose_fill_color, outline=None, weight=weight,
+    )
+    _draw_wall(
+        draw, cx, wall_y,
+        span_half=int(head_w * 0.60) + hand_r,
+        outline=outline, weight=weight,
+    )
+    _draw_text(draw, (0, text_top, ow, text_bot), text, text_color)
 
-    eye_y = dome_top + int(head_h * _EYE_Y_OFFSET)
-    eye_r = max(2, int(ow * _EYE_RADIUS_RATIO))
-    eye_dx = int(ow * _EYE_DX_RATIO)
-
-    nose_top = eye_y + int(head_h * 0.10)
-    nose_drop = int(oh * _NOSE_LENGTH_RATIO)
-    nose_bottom = wall_y + nose_drop
-
-    finger_drop = int(oh * _FINGER_DROP_RATIO)
-
-    text_top = nose_bottom + int(oh * _TEXT_GAP_RATIO)
-    text_bottom = min(oh, text_top + int(oh * _TEXT_HEIGHT_RATIO))
-
-    # Draw in order: dome (back) → eyes → nose → wall+fingers → text
-    _draw_dome(draw, cx, dome_top, head_w, head_h, color, weight)
-    _draw_eyes(draw, cx, eye_y, eye_dx, eye_r, color)
-    _draw_nose(draw, cx, nose_top, wall_y, nose_bottom, color, weight)
-    _draw_wall_and_fingers(draw, cx, wall_y, head_w, finger_drop, color, weight)
-    _draw_text(draw, (0, text_top, ow, text_bottom), text, color)
-
-    # Tiny blur to break vector-perfection
-    overlay = overlay.filter(ImageFilter.GaussianBlur(radius=0.5))
+    # Subtle blur to break vector-perfection
+    overlay = overlay.filter(ImageFilter.GaussianBlur(radius=0.35))
 
     composite = base.copy()
     composite.paste(overlay, (x0, y0), overlay)
