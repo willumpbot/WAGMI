@@ -1340,6 +1340,38 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         self.watchdog.start()
         log_health_event("BOT_START", "INFO", f"Bot started: {len(DEFAULT_SYMBOLS)} symbols, LLM={self.llm_mode.name}")
 
+        # Auto-start live_analyst as background subprocess when committee gate is enabled
+        # Writes thesis files to web/public/thesis/{symbol}/ that committee_reader.py reads
+        if os.getenv("COMMITTEE_GATE_ENABLED", "").lower() in ("1", "true", "yes"):
+            try:
+                import subprocess, sys
+                _analyst_script = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), "tools", "live_analyst.py"
+                )
+                if os.path.exists(_analyst_script):
+                    _pid_file = os.path.join("data", "live_analyst.pid")
+                    _already_running = False
+                    if os.path.exists(_pid_file):
+                        try:
+                            _pid = int(open(_pid_file).read().strip())
+                            os.kill(_pid, 0)  # raises if dead
+                            _already_running = True
+                        except Exception:
+                            pass
+                    if not _already_running:
+                        _proc = subprocess.Popen(
+                            [sys.executable, _analyst_script, "--loop", "--interval", "600"],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
+                        )
+                        with open(_pid_file, 'w') as _pf:
+                            _pf.write(str(_proc.pid))
+                        logger.info(f"[INIT] live_analyst started (pid={_proc.pid}, committee gate active)")
+                    else:
+                        logger.info(f"[INIT] live_analyst already running (committee gate active)")
+            except Exception as _ae:
+                logger.debug(f"[INIT] live_analyst auto-start: {_ae}")
+
         # Start web dashboard (background HTTP server)
         if self.dashboard:
             try:
