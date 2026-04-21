@@ -199,9 +199,10 @@ CRITIC_PROMPT_SYSTEM = (
 )
 
 RISK_PROMPT_SYSTEM = (
-    "You are the WAGMI Risk Agent. Given thesis + equity + positions, propose "
-    "sizing (size_multiplier 0-2x, leverage 1-10x, max loss %). Cite risk flags. "
-    "Under 150 words."
+    "You are the WAGMI Risk Agent. Given a trade thesis and conviction data, "
+    "propose position sizing in 2-3 sentences of plain prose. No markdown tables, "
+    "no bullet lists, no headers. Format: 'Size [N]x at [N]x leverage. "
+    "[reason]. Max loss [N]% of equity. Watch for [risk flag].'"
 )
 
 
