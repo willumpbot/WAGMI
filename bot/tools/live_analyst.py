@@ -375,16 +375,59 @@ def _live_factor_status(symbol: str, levels: Dict[str, Any]) -> str:
     )
 
 
+def _similar_setups_block(symbol: str, regime_label: str, n: int = 4) -> str:
+    """Pull recent trades from deep memory matching symbol+regime for in-context history."""
+    try:
+        from llm.deep_memory import get_deep_memory
+        dm = get_deep_memory()
+        trades = dm.trade_dna.get_by_symbol(symbol)
+        if not trades:
+            return ""
+        # Filter to same or similar regime; take most recent N
+        matching = [t for t in trades if
+                    isinstance(t, dict) and
+                    regime_label.lower() in (t.get("regime") or "").lower()]
+        if not matching:
+            matching = trades  # fallback: all trades for this symbol
+        recent = sorted(matching, key=lambda x: x.get("timestamp", 0), reverse=True)[:n]
+        if not recent:
+            return ""
+        lines = ["\nHISTORICAL SIMILAR SETUPS (deep memory, same symbol):"]
+        for t in recent:
+            side = t.get("side", "?")
+            entry = t.get("entry_price", 0)
+            exit_ = t.get("exit_price", 0)
+            pnl = t.get("pnl", 0)
+            outcome = t.get("outcome", "?")
+            reg = t.get("regime", "?")
+            hold = t.get("hold_time_s", 0)
+            hold_h = hold / 3600 if hold else 0
+            pnl_pct = (exit_ - entry) / entry * 100 if entry and exit_ and side == "LONG" else \
+                      (entry - exit_) / entry * 100 if entry and exit_ else 0
+            lines.append(
+                f"  {side} @${entry:,.0f} -> ${exit_:,.0f} ({pnl_pct:+.1f}%) "
+                f"pnl=${pnl:+.2f} outcome={outcome} regime={reg} hold={hold_h:.1f}h"
+            )
+        return "\n".join(lines) + "\n"
+    except Exception:
+        return ""
+
+
 def build_knowledge_block(symbol: str, levels: Optional[Dict[str, Any]] = None) -> str:
     """Compose the KB prompt for a specific symbol, including:
     - static structural truths + historical base rates + reasoning rules
     - graduated rules matching this symbol
     - LIVE factor status (Bonferroni alignment right now)
+    - similar past setups from deep memory (most recent 4 trades)
     """
     out = _KB_STATIC
     if levels:
         out += _live_factor_status(symbol, levels)
     out += _graduated_rules_for(symbol)
+    # Inject similar-setup history for grounding LLM in actual past trades
+    if levels:
+        regime_label = _derive_regime_fields(levels).get("regime_label", "")
+        out += _similar_setups_block(symbol, regime_label)
     return out
 
 
