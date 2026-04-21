@@ -88,6 +88,31 @@ def format_sniper_alert(sniper: SniperSignal, equity: float = 100) -> str:
         f"Swing TP: {_fmt_price(sniper.tp_swing)}  ({sniper.rr_swing:.1f}R)",
     ])
 
+    # ── LIQUIDATION (shown for leverage >= 10x — critical safety info at high lev) ──
+    if sniper.leverage >= 10.0:
+        try:
+            from execution.leverage import LeverageManager
+            lm = LeverageManager()
+            liq = lm.liquidation_price(
+                sniper.entry, sniper.side, sniper.leverage,
+                notional_usd=sniper.position_size_usd,
+            )
+            if liq is not None and liq > 0:
+                if sniper.side in ("BUY", "LONG"):
+                    liq_pct = (sniper.entry - liq) / sniper.entry * 100
+                    sl_to_liq = (sniper.sl - liq) / sniper.entry * 100
+                else:
+                    liq_pct = (liq - sniper.entry) / sniper.entry * 100
+                    sl_to_liq = (liq - sniper.sl) / sniper.entry * 100
+                liq_label = f"Liq:      {_fmt_price(liq)}  (-{liq_pct:.1f}%)"
+                # Flag if SL is dangerously close to liquidation
+                if sl_to_liq < 0.5:
+                    liq_label += "  \u26a0 SL near liq"
+                lines.append(liq_label)
+                lines.append(f"SL buffer to liq: {sl_to_liq:+.2f}%")
+        except Exception as e:
+            logger.debug(f"[SNIPER-ALERT] liq calc failed: {e}")
+
     # ── SIZING: How much ──
     lines.extend([
         f"",

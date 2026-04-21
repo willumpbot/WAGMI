@@ -909,12 +909,13 @@ class TestMicroSniper:
         assert 0.70 <= result.risk_amount <= 1.10  # Approximately $0.87
 
     def test_micro_sniper_leverage_range(self):
-        """Micro-sniper leverage capped at max_sniper_leverage (5x)."""
+        """Micro-sniper leverage sits in its own high-lev band (15-25x)."""
         filt = self._make_filter()
         sig = self._make_elite_signal()
         result = filt.evaluate(sig)
         assert result is not None
-        assert result.leverage <= 5.0
+        # After 2026-04-16 leverage split: max_sniper_leverage = 20, micro band 15-25
+        assert 15.0 <= result.leverage <= 25.0
 
     def test_micro_sniper_position_size_math(self):
         """Position size = risk_amount / stop_width_pct."""

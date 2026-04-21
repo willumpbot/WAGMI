@@ -17,14 +17,78 @@ Does not modify state. Safe while bot is live.
 """
 
 import argparse
+import csv
 import json
 import os
 import sys
 import time
 from collections import Counter, defaultdict
+from datetime import datetime, timezone
 
 
 _LOG_PATH = os.path.join("data", "logs", "signal_outcomes.jsonl")
+_RISK_REJECTIONS_PATH = os.path.join("data", "logs", "risk_rejections.csv")
+
+
+def _read_risk_rejections(path: str, cutoff_ts: float, symbol_filter: str | None):
+    """Read risk_rejections.csv; return Counter of reasons and list of rows in window."""
+    if not os.path.exists(path):
+        return Counter(), Counter(), 0
+    by_symbol = Counter()
+    by_reason = Counter()
+    total = 0
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            for row in csv.DictReader(f):
+                ts_str = row.get("timestamp", "")
+                if not ts_str:
+                    continue
+                try:
+                    ts = datetime.fromisoformat(
+                        ts_str.replace("Z", "+00:00")
+                    ).timestamp()
+                except Exception:
+                    continue
+                if ts < cutoff_ts:
+                    continue
+                sym = row.get("symbol", "")
+                if symbol_filter and sym != symbol_filter:
+                    continue
+                total += 1
+                by_symbol[sym] += 1
+                # Normalize reason: strip common prefix, group by semantic category
+                reason = row.get("reason", "")
+                if not reason:
+                    category = "unknown"
+                else:
+                    # Strip "risk_filter_chain: " wrapper to get to the real cause
+                    body = reason
+                    if ":" in body:
+                        body = body.split(":", 1)[1].strip()
+                    # Map common phrases to short categories
+                    low = body.lower()
+                    if "duplicate position" in low:
+                        category = "duplicate_position"
+                    elif "ev " in low[:4] or "< min" in low and "expected value" in low:
+                        category = "negative_EV"
+                    elif "circuit breaker" in low or "cb " in low:
+                        category = "circuit_breaker"
+                    elif "stop" in low and ("too tight" in low or "near zero" in low):
+                        category = "stop_too_tight"
+                    elif "leverage" in low and ("cap" in low or "exceed" in low):
+                        category = "leverage_cap"
+                    elif "sector" in low and ("exposure" in low or "cap" in low):
+                        category = "sector_cap"
+                    elif "liquidation" in low:
+                        category = "liquidation_risk"
+                    elif "position limit" in low or "max_open_positions" in low:
+                        category = "position_limit"
+                    else:
+                        category = body[:60]
+                by_reason[category] += 1
+    except Exception as e:
+        print(f"WARN: reading {path} failed: {e}", file=sys.stderr)
+    return by_symbol, by_reason, total
 
 
 def _parse_args():
@@ -34,6 +98,8 @@ def _parse_args():
     p.add_argument("--symbol", type=str, default=None,
                    help="Filter to one symbol (e.g., HYPE)")
     p.add_argument("--log-path", type=str, default=_LOG_PATH)
+    p.add_argument("--risk-path", type=str, default=_RISK_REJECTIONS_PATH,
+                   help="Path to risk_rejections.csv (pre-pipeline rejects)")
     return p.parse_args()
 
 
@@ -156,6 +222,21 @@ def main():
         print()
     else:
         print("  LLM-FIRST: no tracked decisions yet in window")
+        print()
+
+    # Pre-pipeline risk_filter_chain rejects — signals that never made it to the ensemble log
+    rej_by_sym, rej_by_reason, rej_total = _read_risk_rejections(
+        args.risk_path, cutoff_ts, args.symbol
+    )
+    if rej_total > 0:
+        print(f"  RISK-FILTER REJECTS (pre-pipeline, last {args.hours:.1f}h): {rej_total:,}")
+        print("    BY SYMBOL:")
+        for sym, count in rej_by_sym.most_common():
+            print(f"      {sym:6s}: {count:5d}")
+        print("    BY CATEGORY:")
+        for cat, count in rej_by_reason.most_common(10):
+            pct = count / rej_total * 100
+            print(f"      {count:5d} ({pct:4.1f}%)  {cat}")
         print()
 
     print("=" * 60)
