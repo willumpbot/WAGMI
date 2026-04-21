@@ -317,10 +317,12 @@ def _build_ops_handlers(cfg):
             await context.bot.send_message(chat_id=chat_id, text=caption)
 
     async def _send_brief_action(update, context, t, *, kind: str):
-        from . import pipeline as pipeline_mod, prompt_engine
+        """Emit a Grok-Imagine-ready visual prompt (~100-200 words),
+        not the long meta-brief. Paste straight into Grok."""
+        from . import grok_prompts
         intent = (
             f"reply art tied to tweet by @{t['handle']}: "
-            f"\"{(t['text'] or '')[:200]}\""
+            f"\"{(t['text'] or '')[:180]}\""
         )
         if kind == "image":
             slug = flow_post._pick_format(intent, kind="image")
@@ -329,32 +331,29 @@ def _build_ops_handlers(cfg):
             slug = format_suggest.best(intent, kind="video")
         chat_id = update.effective_chat.id
         try:
-            bundle = pipeline_mod.build(intent, kind=kind, format_slug=slug)
-            system, user = prompt_engine.assemble_offline_prompt(intent, slug)
+            prompt_text = grok_prompts.build(slug, target_tweet=t)
         except ValueError as exc:
             await context.bot.send_message(chat_id=chat_id, text=f"error: {exc}")
             return
-        full = f"{system}\n\n---\n\n{user}"
-        # Chunk the brief because TG max is 4096 chars/message.
         header = (
-            f"📝 {'video' if kind == 'video' else 'image'} brief · "
-            f"*{bundle.format_slug or slug}*\n"
-            f"👉 Grok: {GROK_URL}"
+            f"📝 *{slug}* ({'video' if kind == 'video' else 'image'})\n"
+            f"Paste into Grok Imagine — tap code block to copy."
         )
         from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         kb = InlineKeyboardMarkup([[
-            InlineKeyboardButton("🌐 open Grok", url=GROK_URL),
-            InlineKeyboardButton("🔗 open tweet", url=t["url"]),
+            InlineKeyboardButton("🌐 Grok", url=GROK_URL),
+            InlineKeyboardButton("🔗 tweet", url=t["url"]),
+            InlineKeyboardButton("🔄 reroll", callback_data=f"t:{kind}:{t['id']}"),
         ]])
-        await context.bot.send_message(chat_id=chat_id, text=header, reply_markup=kb)
-        # Long-send the brief as a code block so it's easy to copy.
-        for chunk in _chunks(full, size=3800):
-            await context.bot.send_message(
-                chat_id=chat_id, text=f"```\n{chunk}\n```",
-                parse_mode="Markdown",
-            )
-        ops_db.action_log(tweet_id=t["id"], kind=kind,
-                          slug_or_ref_id=bundle.format_slug or slug)
+        await context.bot.send_message(
+            chat_id=chat_id, text=header,
+            reply_markup=kb, parse_mode="Markdown",
+        )
+        await context.bot.send_message(
+            chat_id=chat_id, text=f"```\n{prompt_text}\n```",
+            parse_mode="Markdown",
+        )
+        ops_db.action_log(tweet_id=t["id"], kind=kind, slug_or_ref_id=slug)
 
     async def _send_spongify_action(update, context, t):
         chat_id = update.effective_chat.id

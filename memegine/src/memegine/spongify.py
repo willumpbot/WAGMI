@@ -30,8 +30,43 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from . import x_playwright
+from . import x_fetch, x_playwright
 from .config import settings
+
+
+def _profile_pic_url(handle: str) -> Optional[str]:
+    """Get a user's profile picture URL using the FREE syndication path.
+
+    Strategy:
+      1. Find any cached tweet by this handle in ops_db / x_fetch cache
+         — if present, read author_profile_image_url.
+      2. If not cached, fetch a known-recent tweet by this handle
+         (requires at least one URL they've been seen on), OR use the
+         Playwright fallback if available.
+
+    For the common case where we saw this handle via a card (operator
+    pasted a URL → card → ops_db has the tweet → pfp is already there),
+    this is instant and zero-cost.
+    """
+    # Try ops_db first — every tweet we've cached has the author's pfp.
+    try:
+        from . import ops_db
+        tweets = ops_db.tweets_recent(limit=10, handle=handle.lstrip("@").lower())
+        for t in tweets:
+            pfp = t.get("author_profile_image_url") or ""
+            if pfp:
+                return pfp
+    except Exception:
+        pass
+    # Try x_fetch cache
+    for td in x_fetch.recent(limit=100):
+        if td.author_handle == handle.lstrip("@").lower() and td.author_profile_image_url:
+            return td.author_profile_image_url
+    # Final fallback: Playwright (may fail if no session)
+    try:
+        return x_playwright.profile_picture_url(handle)
+    except Exception:
+        return None
 
 
 # Prompt template applied to every spongify target. Slot-substituted
@@ -158,16 +193,9 @@ def spongify_handles(
         handle = raw.lstrip("@").strip().lower()
         if not handle:
             continue
-        try:
-            pfp_url = x_playwright.profile_picture_url(handle)
-        except RuntimeError as exc:
-            batch.failures.append((handle, f"no session: {exc}"))
-            continue
-        except Exception as exc:
-            batch.failures.append((handle, f"{type(exc).__name__}: {exc}"))
-            continue
+        pfp_url = _profile_pic_url(handle)
         if not pfp_url:
-            batch.failures.append((handle, "no profile picture found"))
+            batch.failures.append((handle, "no profile picture found (no cached tweet for this handle)"))
             continue
 
         # Determine extension from URL.

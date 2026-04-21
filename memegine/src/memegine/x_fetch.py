@@ -64,6 +64,7 @@ class TweetData:
     symbols: list[str] = field(default_factory=list)   # $TICKER-style
     urls: list[str] = field(default_factory=list)
     media_urls: list[str] = field(default_factory=list)
+    author_profile_image_url: str = ""
     lang: str = "en"
     fetched_at: str = ""
 
@@ -88,6 +89,7 @@ class TweetData:
             "symbols": self.symbols,
             "urls": self.urls,
             "media_urls": self.media_urls,
+            "author_profile_image_url": self.author_profile_image_url,
             "lang": self.lang,
             "fetched_at": self.fetched_at,
         }
@@ -154,6 +156,10 @@ def _parse_response(raw: dict, tweet_id: str) -> Optional[TweetData]:
     user = raw.get("user") or {}
     author_handle = str(user.get("screen_name", "")).strip().lstrip("@")
     author_name = str(user.get("name", "")).strip()
+    # Upgrade _normal (48px) → _400x400 for higher-res profile pic.
+    pfp = str(user.get("profile_image_url_https") or "").strip()
+    if pfp:
+        pfp = re.sub(r"_normal\.", "_400x400.", pfp)
     text = str(raw.get("text", "")).strip()
     created_at = _normalize_timestamp(raw.get("created_at", ""))
     entities = raw.get("entities") or {}
@@ -189,6 +195,7 @@ def _parse_response(raw: dict, tweet_id: str) -> Optional[TweetData]:
         symbols=symbols,
         urls=urls,
         media_urls=media_urls,
+        author_profile_image_url=pfp,
         lang=str(raw.get("lang", "en") or "en"),
         fetched_at=dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
     )
@@ -278,6 +285,7 @@ def _read_from_cache(tweet_id: str) -> Optional[TweetData]:
                         symbols=obj.get("symbols", []),
                         urls=obj.get("urls", []),
                         media_urls=obj.get("media_urls", []),
+                        author_profile_image_url=obj.get("author_profile_image_url", ""),
                         lang=obj.get("lang", "en"),
                         fetched_at=obj.get("fetched_at", ""),
                     )
