@@ -303,49 +303,76 @@ def _graduated_rules_for(symbol: str) -> str:
         return ""
 
 
-def _live_factor_status(symbol: str, levels: Dict[str, Any]) -> str:
-    """Evaluate Bonferroni-cleared factors against current market data.
-    This turns static KB knowledge into live factor alignment status."""
+def compute_live_factors(symbol: str, levels: Dict[str, Any]) -> Dict[str, Any]:
+    """Compute Bonferroni-cleared factor alignment from current market data.
+    Returns a structured dict (for storage + API). The string prompt form is
+    built from this same dict by _live_factor_status_prompt."""
     if not levels:
+        return {}
+    h4 = levels.get("h4", {}) or {}
+    h1 = levels.get("h1", {}) or {}
+
+    h4_rsi = h4.get("rsi14", 50)
+    h4_ema20 = h4.get("ema20", 0)
+    price = levels.get("price", 0)
+
+    if h4_rsi > 55 and price > h4_ema20:
+        btc_4h_direction = "bullish"
+    elif h4_rsi < 45 and price < h4_ema20:
+        btc_4h_direction = "bearish"
+    else:
+        btc_4h_direction = "neutral"
+
+    h1_atr = h1.get("atr14", 0)
+    h1_range = h1.get("hi20", 0) - h1.get("lo20", 0)
+    chop_est = round(h1_atr / max(h1_range, 1e-9), 2) if h1_range else 0.0
+    chop_ok = chop_est < 0.6
+
+    h1_rsi = h1.get("rsi14", 50)
+    rsi_aligned = (h1_rsi > 50) == (h4_rsi > 50)
+    rsi_bullish_stack = rsi_aligned and h1_rsi > 50
+
+    count = 0
+    if btc_4h_direction == "bullish":
+        count += 1
+    if chop_ok:
+        count += 1
+    if rsi_bullish_stack:
+        count += 1
+    # Fourth factor: daily trend up (we already have this as structural)
+    if levels.get("daily", {}).get("trend") == "UP":
+        count += 1
+
+    # Historical WR for conviction count (from Conviction Stacking study)
+    wr_by_count = {0: 0, 1: 20, 2: 38, 3: 50, 4: 61}
+    return {
+        "btc_4h_direction": btc_4h_direction,           # bullish/bearish/neutral
+        "btc_4h_aligned_long": btc_4h_direction == "bullish",
+        "chop_score": chop_est,
+        "chop_ok": chop_ok,
+        "rsi_aligned": rsi_aligned,
+        "rsi_bullish_stack": rsi_bullish_stack,
+        "daily_trend_up": levels.get("daily", {}).get("trend") == "UP",
+        "conviction_count": count,
+        "conviction_max": 4,
+        "conviction_wr_est": wr_by_count.get(count, 50),
+    }
+
+
+def _live_factor_status(symbol: str, levels: Dict[str, Any]) -> str:
+    """Format the live factor status as a prompt block."""
+    f = compute_live_factors(symbol, levels)
+    if not f:
         return ""
-    lines = ["\nLIVE FACTOR STATUS (Bonferroni-cleared, evaluated right now):"]
-    try:
-        h4 = levels.get("h4", {})
-        d = levels.get("daily", {})
-        h1 = levels.get("h1", {})
-
-        # btc_4h_return_signed: is 4h direction bullish or bearish?
-        h4_rsi = h4.get("rsi14", 50)
-        h4_ema20 = h4.get("ema20", 0)
-        h4_direction = "bullish" if h4_rsi > 55 and levels.get("price", 0) > h4_ema20 else \
-                       ("bearish" if h4_rsi < 45 and levels.get("price", 0) < h4_ema20 else "neutral")
-        lines.append(f"  btc_4h_return_signed: {h4_direction}   (for long entries: bullish=aligned)")
-
-        # chop_score_proxy: inverse of trend strength, approximated by 1h ATR vs range
-        h1_atr = h1.get("atr14", 0)
-        h1_range = h1.get("hi20", 0) - h1.get("lo20", 0)
-        chop_est = round(h1_atr / max(h1_range, 1e-9), 2) if h1_range else 0
-        chop_ok = chop_est < 0.6
-        lines.append(f"  chop_score_proxy:    {chop_est:.2f}    ({'OK (< 0.60)' if chop_ok else 'HIGH (avoid)'})")
-
-        # rsi_div_1h_6h_aligned: approximate with h1 vs h4 RSI sign
-        h1_rsi = h1.get("rsi14", 50)
-        rsi_aligned = (h1_rsi > 50) == (h4_rsi > 50)
-        lines.append(f"  rsi_div_aligned:     {'YES' if rsi_aligned else 'NO'} (1h vs 4h RSI regime match)")
-
-        # conviction_count: count how many signals align (3 if all above align)
-        count = 0
-        if h4_direction == "bullish":
-            count += 1
-        if chop_ok:
-            count += 1
-        if rsi_aligned and h1_rsi > 50:
-            count += 1
-        lines.append(f"  conviction_count:    {count}/4 aligned signals "
-                     f"(KB: 0=0%WR 1=20% 2=38% 4=61%PF4.12)")
-    except Exception:
-        pass
-    return "\n".join(lines)
+    return (
+        "\nLIVE FACTOR STATUS (Bonferroni-cleared, evaluated right now):\n"
+        f"  btc_4h_return_signed: {f['btc_4h_direction']}   (for long entries: bullish=aligned)\n"
+        f"  chop_score_proxy:    {f['chop_score']:.2f}    "
+        f"({'OK (< 0.60)' if f['chop_ok'] else 'HIGH (avoid)'})\n"
+        f"  rsi_div_aligned:     {'YES' if f['rsi_aligned'] else 'NO'} (1h vs 4h RSI regime match)\n"
+        f"  conviction_count:    {f['conviction_count']}/{f['conviction_max']} aligned signals "
+        f"(hist WR {f['conviction_wr_est']}%; KB: 0=0%WR 1=20% 2=38% 4=61%PF4.12)"
+    )
 
 
 def build_knowledge_block(symbol: str, levels: Optional[Dict[str, Any]] = None) -> str:
@@ -601,6 +628,7 @@ def write_thesis(symbol: str, levels: Dict[str, Any], committee: Dict[str, Any])
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "price": levels.get("price"),
         "levels": levels,
+        "factors": compute_live_factors(symbol, levels),
         "committee": committee,
     }
     (out / "thesis.json").write_text(json.dumps(thesis, indent=2, default=str))

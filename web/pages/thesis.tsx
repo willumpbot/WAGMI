@@ -47,11 +47,25 @@ type CommitteeAgent = {
   vol_ratio_1h?: number;
 };
 
+type FactorStatus = {
+  btc_4h_direction?: string;
+  btc_4h_aligned_long?: boolean;
+  chop_score?: number;
+  chop_ok?: boolean;
+  rsi_aligned?: boolean;
+  rsi_bullish_stack?: boolean;
+  daily_trend_up?: boolean;
+  conviction_count?: number;
+  conviction_max?: number;
+  conviction_wr_est?: number;
+};
+
 type ThesisFull = {
   symbol: string;
   updated_at?: string;
   price?: number;
   levels?: Record<string, unknown>;
+  factors?: FactorStatus;
   committee?: {
     regime?: CommitteeAgent;
     trade?: CommitteeAgent;
@@ -187,6 +201,51 @@ function SymbolDetail({ symbol }: { symbol: string }) {
         </Link>
       </div>
 
+      {/* Live Factor Status — Bonferroni-cleared alignment right now */}
+      {data.factors && (
+        <div style={{
+          background: '#161b22', border: '1px solid #30363d', borderRadius: 12,
+          padding: 16, marginBottom: 16,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#ffc107', marginBottom: 10 }}>
+            ⚡ LIVE FACTOR STATUS · Bonferroni-cleared alignment
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+            <FactorChip
+              label="BTC 4h direction"
+              value={data.factors.btc_4h_direction || '?'}
+              ok={data.factors.btc_4h_aligned_long}
+              sub="IC +0.519 universal"
+            />
+            <FactorChip
+              label="Chop score"
+              value={data.factors.chop_score?.toString() || '—'}
+              ok={data.factors.chop_ok}
+              sub="< 0.60 = tradable"
+            />
+            <FactorChip
+              label="RSI 1h/4h aligned"
+              value={data.factors.rsi_aligned ? 'YES' : 'NO'}
+              ok={data.factors.rsi_aligned}
+              sub="IC +0.456"
+            />
+            <FactorChip
+              label="Daily trend UP"
+              value={data.factors.daily_trend_up ? 'YES' : 'NO'}
+              ok={data.factors.daily_trend_up}
+              sub="structural"
+            />
+            <FactorChip
+              label="CONVICTION"
+              value={`${data.factors.conviction_count ?? 0}/${data.factors.conviction_max ?? 4}`}
+              ok={(data.factors.conviction_count ?? 0) >= 2}
+              sub={`hist ${data.factors.conviction_wr_est ?? '?'}% WR`}
+              emphasis
+            />
+          </div>
+        </div>
+      )}
+
       {/* Committee tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 24 }}>
         <AgentCard title="🌡 Regime" color={regimeColor(regime?.regime_label)} a={regime} fields={[
@@ -229,6 +288,38 @@ function SymbolDetail({ symbol }: { symbol: string }) {
     </div>
   );
 }
+
+function FactorChip({ label, value, ok, sub, emphasis }: {
+  label: string;
+  value: string;
+  ok?: boolean;
+  sub?: string;
+  emphasis?: boolean;
+}) {
+  const color = ok === true ? '#26a69a' : ok === false ? '#ef5350' : '#ffc107';
+  return (
+    <div style={{
+      background: '#0d1117',
+      border: `1px solid ${color}44`,
+      borderRadius: 8,
+      padding: '10px 12px',
+    }}>
+      <div style={{ fontSize: 10, color: '#8b949e', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: emphasis ? 22 : 16, fontWeight: 700, color,
+        marginTop: 2, fontFamily: 'monospace',
+      }}>
+        {value}
+      </div>
+      {sub && (
+        <div style={{ fontSize: 10, color: '#6e7681', marginTop: 2 }}>{sub}</div>
+      )}
+    </div>
+  );
+}
+
 
 function AgentCard({ title, color, a, fields }: {
   title: string;
