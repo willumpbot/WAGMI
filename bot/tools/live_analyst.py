@@ -205,19 +205,69 @@ RISK_PROMPT_SYSTEM = (
 )
 
 
-# Project knowledge (Bonferroni-cleared findings from our 5,787-trade research)
-_KB_STATIC = """
-WAGMI KNOWLEDGE BASE (apply these when reasoning):
-- Reversal probability by R-multiple: 0.5R=25%, 1.0R=15.6%, 1.5R=6.7%, 2R=20%, 5R=32%
-- Confidence calibration: 65-70% WR 37.7% (+$24.7k), 85-90% WR 74.7% (+$68.8k SWEET SPOT),
-  90-100% WR 22.7% (-$18.4k OVERCONFIDENCE TRAP)
-- Bonferroni-cleared alphas: btc_4h_return_signed IC +0.519, rsi_div_1h_6h_aligned +0.456,
-  chop_score_proxy IC -0.384, conviction_count trend z=3.615
-- Time buckets UTC: 00-03=24%WR, 04-07=15%WR DEAD, 08-11=43%, 12-15=36%, 16-19=29%, 20-23=55%BEST
-- State-machine: 80% of trades die IDLE->OPEN->CLOSED; 28/28 that reached TRAILING WIN
-- Conviction stacking: 0=0%WR, 1=20%, 2=38%, 4=61% WR PF 4.12 (super-additive)
-- Stop-hunting: 52% of SL-hits in 30-min window are hunts; 1.5x ATR buffer saves 35% of losses
+# Project knowledge, split by epistemic strength.
+# STRUCTURAL = physics of price action + statistical invariants — trust heavily.
+# HISTORICAL = backward-looking base rates — trust directionally, expect drift.
+# LIVE = real-time predictive model outputs — trust when fresh, verify when stale.
+
+_KB_STRUCTURAL = """
+STRUCTURAL TRUTHS (physics of markets + Bonferroni-cleared statistical invariants):
+- Reversal probability by R-multiple (n=121, Bonferroni-cleared):
+    0.5R -> 25% reversal, 1.0R -> 15.6%, 1.5R -> 6.7%, 2R -> 20%, 5R -> 32%
+    => the zone where reversal drops below 10% is 1.5R. Don't BE earlier.
+- State-machine invariant: 80% of trades die IDLE->OPEN->CLOSED (never reach TRAILING).
+    Of the 20% that DO reach TRAILING, historical WR is 100%. Structural edge is
+    getting trades to TRAILING, not picking winners.
+- Bonferroni-cleared alpha ICs (survived strictest multi-comparison correction):
+    btc_4h_return_signed  IC +0.519  (universal across 8 symbol*side cells)
+    rsi_div_1h_6h_aligned IC +0.456
+    chop_score_proxy      IC -0.384  (inverse: high chop = low edge)
+    conviction_count      z-score 3.615 (p=0.0003)
+- Conviction stacking super-additivity (n=145, Cochran-Armitage p=0.0003):
+    0 aligned=0%WR  1=20%  2=38%  4=61% WR, PF 4.12 at 4-aligned.
+    Each additional aligned signal contributes > its marginal.
+- Stop-hunting structural fact: 52% of SL-hits within 30-min window are hunts
+    (price returns to original direction). 1.5x ATR beyond the obvious stop
+    level saves 35% of losses.
+- Overconfidence curve: model outputs >= 95% confidence HISTORICALLY lose
+    money (n=1,381, -$18.4k). This is a model-calibration truth, not a
+    trading rule. Treat extreme confidence as suspicious.
 """
+
+_KB_HISTORICAL = """
+HISTORICAL STATISTICS (base rates — may drift, use as context not commandment):
+- Confidence bin WR table (n=5,787 trades):
+    65-70 bin: WR 37.7% (+$24,782 cumulative)  <- positive despite low WR (good R:R)
+    70-75:    20.6% (+$10,199)                  <- unusual: low WR, positive PnL
+    85-90:    74.7% (+$68,874)                  <- HIGHEST WR
+    90-100:   22.7% (-$18,364)                  <- OVERCONFIDENCE TRAP
+- Time-of-day WR (4 symbols, Apr 2026):
+    UTC 00-03: 24%   04-07: 15% (DEAD)   08-11: 43%
+    UTC 12-15: 36%   16-19: 29%          20-23: 55% (BEST)
+  NOTE: These are period-specific. Current market may differ.
+  Use as prior, not gospel.
+"""
+
+_KB_REASONING_RULES = """
+HOW TO REASON (our edge framework):
+1. Start from STRUCTURAL truths (reversal curve, state-machine, Bonferroni ICs).
+2. Layer in LIVE predictive model outputs when present.
+3. Cross-check against HISTORICAL base rates but weight them less.
+4. The real edge is STRUCTURAL (letting winners reach TRAILING) + ALPHA STACK
+   (Bonferroni-cleared signals aligned) rather than chasing high-WR buckets.
+5. Overconfidence is the enemy. Favor conviction-count >= 2 with structural
+   confluence over any single high-WR cell.
+6. When in doubt: wait for conviction to stack (4-aligned = 61% WR PF 4.12) or
+   skip entirely. No-trade is often the best trade.
+"""
+
+
+def _kb_static() -> str:
+    return f"{_KB_STRUCTURAL}\n{_KB_HISTORICAL}\n{_KB_REASONING_RULES}"
+
+
+# Back-compat alias
+_KB_STATIC = _kb_static()
 
 
 def _graduated_rules_for(symbol: str) -> str:
@@ -253,9 +303,62 @@ def _graduated_rules_for(symbol: str) -> str:
         return ""
 
 
-def build_knowledge_block(symbol: str) -> str:
-    """Compose the KB prompt for a specific symbol, including graduated rules."""
-    return _KB_STATIC + _graduated_rules_for(symbol)
+def _live_factor_status(symbol: str, levels: Dict[str, Any]) -> str:
+    """Evaluate Bonferroni-cleared factors against current market data.
+    This turns static KB knowledge into live factor alignment status."""
+    if not levels:
+        return ""
+    lines = ["\nLIVE FACTOR STATUS (Bonferroni-cleared, evaluated right now):"]
+    try:
+        h4 = levels.get("h4", {})
+        d = levels.get("daily", {})
+        h1 = levels.get("h1", {})
+
+        # btc_4h_return_signed: is 4h direction bullish or bearish?
+        h4_rsi = h4.get("rsi14", 50)
+        h4_ema20 = h4.get("ema20", 0)
+        h4_direction = "bullish" if h4_rsi > 55 and levels.get("price", 0) > h4_ema20 else \
+                       ("bearish" if h4_rsi < 45 and levels.get("price", 0) < h4_ema20 else "neutral")
+        lines.append(f"  btc_4h_return_signed: {h4_direction}   (for long entries: bullish=aligned)")
+
+        # chop_score_proxy: inverse of trend strength, approximated by 1h ATR vs range
+        h1_atr = h1.get("atr14", 0)
+        h1_range = h1.get("hi20", 0) - h1.get("lo20", 0)
+        chop_est = round(h1_atr / max(h1_range, 1e-9), 2) if h1_range else 0
+        chop_ok = chop_est < 0.6
+        lines.append(f"  chop_score_proxy:    {chop_est:.2f}    ({'OK (< 0.60)' if chop_ok else 'HIGH (avoid)'})")
+
+        # rsi_div_1h_6h_aligned: approximate with h1 vs h4 RSI sign
+        h1_rsi = h1.get("rsi14", 50)
+        rsi_aligned = (h1_rsi > 50) == (h4_rsi > 50)
+        lines.append(f"  rsi_div_aligned:     {'YES' if rsi_aligned else 'NO'} (1h vs 4h RSI regime match)")
+
+        # conviction_count: count how many signals align (3 if all above align)
+        count = 0
+        if h4_direction == "bullish":
+            count += 1
+        if chop_ok:
+            count += 1
+        if rsi_aligned and h1_rsi > 50:
+            count += 1
+        lines.append(f"  conviction_count:    {count}/4 aligned signals "
+                     f"(KB: 0=0%WR 1=20% 2=38% 4=61%PF4.12)")
+    except Exception:
+        pass
+    return "\n".join(lines)
+
+
+def build_knowledge_block(symbol: str, levels: Optional[Dict[str, Any]] = None) -> str:
+    """Compose the KB prompt for a specific symbol, including:
+    - static structural truths + historical base rates + reasoning rules
+    - graduated rules matching this symbol
+    - LIVE factor status (Bonferroni alignment right now)
+    """
+    out = _KB_STATIC
+    if levels:
+        out += _live_factor_status(symbol, levels)
+    out += _graduated_rules_for(symbol)
+    return out
 
 
 # Back-compat: some call sites expect KNOWLEDGE_BLOCK constant
@@ -268,7 +371,7 @@ def agent_regime(summary: str, levels: Dict[str, Any], skip: bool) -> Dict[str, 
     fields = _derive_regime_fields(levels)
     if skip or not cli_available():
         return {"ok": True, "agent": "regime", "narrative": _heuristic_regime_prose(levels), **fields}
-    kb = build_knowledge_block(levels.get("symbol", ""))
+    kb = build_knowledge_block(levels.get("symbol", ""), levels)
     prompt = (
         f"{kb}\n\n"
         f"Market snapshot:\n{summary}\n\n"
@@ -285,7 +388,7 @@ def agent_trade(summary: str, levels: Dict[str, Any], regime_out: Dict[str, Any]
     fields = _derive_trade_fields(levels, regime_out)
     if skip or not cli_available():
         return {"ok": True, "agent": "trade", "narrative": _heuristic_trade_prose(levels, regime_out), **fields}
-    kb = build_knowledge_block(levels.get("symbol", ""))
+    kb = build_knowledge_block(levels.get("symbol", ""), levels)
     prompt = (
         f"{kb}\n\n"
         f"Regime verdict: {regime_out.get('regime_label','?')} bias={regime_out.get('bias','?')}\n\n"
@@ -304,7 +407,7 @@ def agent_critic(summary: str, levels: Dict[str, Any], trade_out: Dict[str, Any]
     fields = _derive_critic_fields(levels, trade_out)
     if skip or not cli_available():
         return {"ok": True, "agent": "critic", "narrative": _heuristic_critic_prose(levels, trade_out), **fields}
-    kb = build_knowledge_block(levels.get("symbol", ""))
+    kb = build_knowledge_block(levels.get("symbol", ""), levels)
     prompt = (
         f"{kb}\n\n"
         f"Trade thesis action={trade_out.get('action','?')}: {trade_out.get('narrative','')[:250]}\n\n"
