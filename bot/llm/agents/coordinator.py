@@ -50,6 +50,105 @@ from llm.agents.consistency_checker import (
 from llm.client import call_llm
 from llm.decision_types import LLMDecision, StrategyWeights, EntryDecision
 
+# ── CLI LLM routing ──────────────────────────────────────────────────────────
+# When USE_CLI_LLM=true (or no API key available), route all agent calls
+# through the Claude Code CLI subprocess instead of the Anthropic API.
+# This lets the full 9-agent system run on a Max subscription at $0/call.
+
+def _should_use_cli() -> bool:
+    import os
+    # Never use CLI routing in test runs — mocks target call_llm, not the CLI path
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        return False
+    if os.getenv("USE_CLI_LLM", "").lower() in ("1", "true", "yes", "on"):
+        return True
+    # Auto-detect: use CLI when no API key is set
+    if not os.getenv("ANTHROPIC_API_KEY", "").startswith("sk-"):
+        try:
+            from llm.claude_cli_client import available as _cli_avail
+            return _cli_avail()
+        except Exception:
+            pass
+    return False
+
+
+_MODEL_ALIAS = {
+    # Map Anthropic API model IDs to Claude CLI aliases
+    "claude-haiku-4-5-20251001": "haiku",
+    "claude-haiku-4-5": "haiku",
+    "claude-haiku-3-5-20241022": "haiku",
+    "claude-haiku": "haiku",
+    "claude-sonnet-4-5-20250929": "sonnet",
+    "claude-sonnet-4-6": "sonnet",
+    "claude-sonnet-4-5": "sonnet",
+    "claude-sonnet-3-7-20250219": "sonnet",
+    "claude-sonnet": "sonnet",
+    "claude-opus-4-7": "opus",
+    "claude-opus-4-6": "opus",
+    "claude-opus-3-5-20241022": "opus",
+    "claude-opus": "opus",
+}
+
+_CLI_JSON_SUFFIX = (
+    "\n\nCRITICAL: Your ENTIRE response must be a single JSON object. "
+    "No markdown, no prose before or after. Start with { and end with }."
+)
+
+
+def _call_llm_via_cli(
+    system_prompt: str,
+    snapshot_json: str,
+    model: str = "sonnet",
+    max_tokens: int = 1500,
+    timeout: int = 90,
+    cacheable_prefix: str = "",
+) -> tuple:
+    """Adapter: routes a coordinator agent call through Claude CLI.
+    Returns (raw_text, usage_dict) — same interface as call_llm()."""
+    from llm.claude_cli_client import call_agent as _cli_call
+    # Translate API model name to CLI alias
+    cli_model = _MODEL_ALIAS.get(model, "sonnet")
+    # Combine stable agent prompt + dynamic system content
+    # Add JSON enforcement suffix to both parts
+    full_system = "\n\n".join(filter(None, [cacheable_prefix, system_prompt]))
+    full_system = full_system + _CLI_JSON_SUFFIX
+    # Prepend a hard JSON-only constraint to the user prompt.
+    # This appears right before the model must respond — harder to ignore than system-prompt rules.
+    json_guard = "OUTPUT RAW JSON ONLY — no prose, no markdown, no explanation. Start {, end }.\n\nDATA:\n"
+    # Windows CLI limit: cap user prompt to 3500 chars to avoid "command line too long" error.
+    # The snapshot_json can be 6000+ chars with enriched context — truncate gracefully.
+    _MAX_USER_PROMPT = 3500
+    truncated_snapshot = snapshot_json if len(snapshot_json) <= _MAX_USER_PROMPT else (
+        snapshot_json[:_MAX_USER_PROMPT] + '... [truncated for CLI routing]'
+    )
+    resp = _cli_call(
+        user_prompt=json_guard + truncated_snapshot,
+        system_prompt=full_system,
+        model=cli_model,
+        max_budget_usd=0.10,
+        timeout=max(timeout, 90),
+        allow_tools=False,
+    )
+    if not resp.ok:
+        return None, {"error": resp.error, "latency_ms": int(resp.latency_s * 1000),
+                      "input_tokens": 0, "output_tokens": 0}
+    # Use the tolerant extractor from claude_cli_client as an additional fallback
+    if resp.text and not resp.text.strip().startswith("{"):
+        from llm.claude_cli_client import _extract_json as _cli_extract
+        extracted = _cli_extract(resp.text)
+        if extracted:
+            import json as _json
+            return _json.dumps(extracted), {
+                "latency_ms": int(resp.latency_s * 1000), "input_tokens": 0,
+                "output_tokens": 0, "cost_usd": resp.cost_usd,
+            }
+    return resp.text, {
+        "latency_ms": int(resp.latency_s * 1000),
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": resp.cost_usd,
+    }
+
 # External data collectors (funding/OI, liquidation, shadow MR)
 try:
     from llm.agents.external_data import (
@@ -1580,6 +1679,18 @@ class AgentCoordinator:
                 f"{out.data.get('lesson', '')[:80]}"
             )
 
+            try:
+                from llm.agents.performance_tracker import get_performance_tracker
+                import uuid as _uuid
+                get_performance_tracker().record_pipeline_run(
+                    pipeline_id=f"learning_{str(_uuid.uuid4())[:8]}",
+                    symbol=trade_data.get("symbol", ""),
+                    side=trade_data.get("side", ""),
+                    agent_outputs={AgentRole.LEARNING: out},
+                )
+            except Exception:
+                pass
+
             # ── Brain Wiring: close thesis + record regime trade ──
             try:
                 from llm.brain_wiring import close_thesis, record_regime_trade
@@ -1802,6 +1913,18 @@ class AgentCoordinator:
         out = self._call_agent(AgentRole.EXIT, exit_input, model_for_trigger)
         self.last_exit_output = out
 
+        try:
+            from llm.agents.performance_tracker import get_performance_tracker
+            import uuid as _uuid
+            get_performance_tracker().record_pipeline_run(
+                pipeline_id=f"exit_{str(_uuid.uuid4())[:8]}",
+                symbol=position_data.get("symbol", ""),
+                side=position_data.get("side", ""),
+                agent_outputs={AgentRole.EXIT: out},
+            )
+        except Exception:
+            pass
+
         if out.ok:
             action = out.data.get("action", "hold")
             urgency = out.data.get("urgency", "low")
@@ -1931,6 +2054,19 @@ class AgentCoordinator:
                 f"regime_forecast={regime_forecast.get('direction', '?') if regime_forecast else 'none'}, "
                 f"lead_lag={len(lead_lag)} alerts"
             )
+
+            try:
+                from llm.agents.performance_tracker import get_performance_tracker
+                import uuid as _uuid
+                get_performance_tracker().record_pipeline_run(
+                    pipeline_id=f"scout_{str(_uuid.uuid4())[:8]}",
+                    symbol="GLOBAL",
+                    side="",
+                    agent_outputs={AgentRole.SCOUT: out},
+                )
+            except Exception:
+                pass
+
             return out.data
         return None
 
@@ -1978,6 +2114,20 @@ class AgentCoordinator:
             return None
 
         out = self._call_agent(AgentRole.OVERSEER, overseer_input, model_for_trigger)
+
+        # SHIP-2026-04-19: log Overseer calls so agent_performance.jsonl is no longer silent.
+        # Completes the 4-dead-agent revival started 2026-04-17 (Learning/Exit/Scout already done).
+        try:
+            from llm.agents.performance_tracker import get_performance_tracker
+            import uuid as _uuid
+            get_performance_tracker().record_pipeline_run(
+                pipeline_id=f"overseer_{str(_uuid.uuid4())[:8]}",
+                symbol="GLOBAL",
+                side="",
+                agent_outputs={AgentRole.OVERSEER: out},
+            )
+        except Exception:
+            pass
 
         if not out.ok:
             logger.warning("[MULTI-AGENT] Overseer call failed")
@@ -2710,17 +2860,26 @@ class AgentCoordinator:
 
         model = config.model_override or fallback_model or _get_default_model(role)
 
-        # If there's dynamic content, split into two blocks; otherwise cache
-        # the whole agent prompt in a single block.
-        if dynamic_prefix:
+        # Route through CLI (subscription) or Anthropic API depending on config.
+        if _should_use_cli():
+            raw_text, usage = _call_llm_via_cli(
+                system_prompt=dynamic_prefix or "",
+                snapshot_json=input_json,
+                model=model,
+                max_tokens=config.max_tokens,
+                timeout=config.timeout_s,
+                cacheable_prefix=prompt,
+            )
+            logger.debug(f"[COORD-CLI] {role.value} latency={usage.get('latency_ms',0)}ms")
+        elif dynamic_prefix:
             raw_text, usage = call_llm(
-                system_prompt=dynamic_prefix,  # non-cached dynamic content
+                system_prompt=dynamic_prefix,
                 snapshot_json=input_json,
                 model=model,
                 max_tokens=config.max_tokens,
                 max_retries=1,
                 timeout=config.timeout_s,
-                cacheable_prefix=prompt,  # stable agent prompt, cached
+                cacheable_prefix=prompt,
             )
         else:
             raw_text, usage = call_llm(

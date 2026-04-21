@@ -84,17 +84,21 @@ def call_agent(
     if CLAUDE_BIN is None:
         return CliResponse(ok=False, error="claude CLI not found in PATH")
 
-    # Pass prompt via STDIN (not argv) — Claude Code's CLI interprets argv prompts
-    # as agentic tasks; stdin prompts are treated as pure input to a single-shot call,
-    # which produces far cleaner narrative output.
+    # Build cmd — keep it short. Windows has an 8191-char argv limit; agent system
+    # prompts can be 7000+ chars, so we embed the system prompt in stdin instead
+    # of passing it via --append-system-prompt.
     cmd = [CLAUDE_BIN, "--print",
            "--output-format", "json",
            "--model", model,
            "--max-budget-usd", str(max_budget_usd),
            "--no-session-persistence"]
 
+    # Embed system prompt in stdin (avoids Windows 8191-char cmd-line limit)
     if system_prompt:
-        cmd.extend(["--append-system-prompt", system_prompt])
+        combined_input = f"<system>\n{system_prompt}\n</system>\n\n{user_prompt}"
+    else:
+        combined_input = user_prompt
+
     if json_schema:
         cmd.extend(["--json-schema", json.dumps(json_schema)])
     if not allow_tools:
@@ -103,7 +107,7 @@ def call_agent(
     start = time.time()
     try:
         result = subprocess.run(
-            cmd, input=user_prompt, capture_output=True, text=True,
+            cmd, input=combined_input, capture_output=True, text=True,
             timeout=timeout, cwd=cwd, encoding="utf-8", errors="replace",
         )
         latency = time.time() - start
