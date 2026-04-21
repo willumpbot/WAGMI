@@ -1947,6 +1947,25 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             except Exception as e:
                 logger.debug(f"[{trace_id}] Scout preparation error: {e}")
 
+        # Exit Agent: periodic thesis-validity check on all open positions
+        # Runs every 5 ticks (~5 min). Advisory — logs urgency but doesn't force close.
+        if (self._tick % 5 == 0
+                and os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes")
+                and os.getenv("AGENT_EXIT_ENABLED", "true").lower() in ("1", "true", "yes")):
+            try:
+                self._run_exit_agent_checks(trace_id)
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Exit agent periodic check error: {e}")
+
+        # Overseer Agent: system-level portfolio review every 60 ticks (~1 hour)
+        if (self._tick % 60 == 0
+                and os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes")
+                and os.getenv("AGENT_OVERSEER_ENABLED", "true").lower() in ("1", "true", "yes")):
+            try:
+                self._run_overseer_review(trace_id)
+            except Exception as e:
+                logger.debug(f"[{trace_id}] Overseer review error: {e}")
+
         # Daily summary: send once per day at ~8:00 UTC (every 1440 ticks = 24h at 60s)
         # Also triggers if the bot just started and hasn't sent one today
         if self._tick % 1440 == 720:  # ~12 hours into the day
@@ -3254,6 +3273,32 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     })
                 except Exception as e:
                     logger.debug(f"Learning integrator trade close error: {e}")
+
+                # Multi-Agent Learning: run LLM Learning Agent on each closed trade
+                # Previously only ran in backtest — now wired to live loop
+                if os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
+                    try:
+                        from llm.agents.coordinator import get_coordinator
+                        _ma_lesson = get_coordinator().get_post_trade_lesson({
+                            "symbol": symbol,
+                            "side": event.side,
+                            "outcome": "WIN" if total_pnl > 0 else "LOSS",
+                            "pnl": total_pnl,
+                            "pnl_pct": (total_pnl / self.risk_mgr.equity * 100) if self.risk_mgr.equity > 0 else 0,
+                            "confidence": pos.confidence if pos else 0,
+                            "regime": _rg_fb,
+                            "strategy": event.strategy,
+                            "hold_time_s": event.metadata.get("hold_time_s", 0),
+                            "exit_action": event.action,
+                            "leverage": event.leverage,
+                            "entry_type": _et_fb,
+                        })
+                        if _ma_lesson and isinstance(_ma_lesson, dict):
+                            _lesson_txt = _ma_lesson.get("lesson", "") or _ma_lesson.get("insight", "")
+                            if _lesson_txt:
+                                logger.info(f"[LEARNING-AGENT] {symbol}: {str(_lesson_txt)[:100]}")
+                    except Exception as e:
+                        logger.debug(f"Multi-agent learning error: {e}")
 
                 # RL buffer: record transition for offline learning
                 try:

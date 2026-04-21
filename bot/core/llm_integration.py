@@ -1131,3 +1131,99 @@ class LLMIntegrationMixin:
         if not hasattr(self, '_reentry_cache'):
             self._reentry_cache = {}
         self._reentry_cache[symbol] = (cleared, time.time())
+
+    def _run_exit_agent_checks(self, trace_id: str):
+        """Run Exit Intelligence Agent on all open positions (advisory).
+
+        Called every 5 ticks (~5 min). Logs urgency warnings but does not force
+        close — mechanical SL/TP still governs execution. The Exit Agent assesses
+        whether the original trade thesis is still valid given current market state.
+        """
+        from llm.autonomy import get_llm_mode, should_call_llm
+        if not should_call_llm(get_llm_mode()):
+            return
+        try:
+            from llm.agents.coordinator import get_coordinator, is_multi_agent_enabled
+        except Exception:
+            return
+        if not is_multi_agent_enabled():
+            return
+
+        coordinator = get_coordinator()
+        for symbol, pos in list(self.pos_mgr.positions.items()):
+            if pos.state in ("OPEN", "TP1_HIT", "TRAILING"):
+                try:
+                    from datetime import datetime, timezone
+                    _hold_s = (datetime.now(timezone.utc) - pos.open_time).total_seconds() \
+                        if hasattr(pos, 'open_time') else 0
+                    _price = self._last_prices.get(symbol, 0)
+                    _upnl = 0.0
+                    if _price and pos.entry and pos.qty:
+                        if pos.side == "LONG":
+                            _upnl = (_price - pos.entry) * pos.qty * pos.leverage
+                        else:
+                            _upnl = (pos.entry - _price) * pos.qty * pos.leverage
+
+                    pos_data = {
+                        "symbol": symbol,
+                        "side": pos.side,
+                        "entry": pos.entry,
+                        "current_price": _price,
+                        "sl": pos.sl,
+                        "tp1": pos.tp1,
+                        "tp2": getattr(pos, 'tp2', None),
+                        "unrealized_pnl": round(_upnl, 2),
+                        "hold_time_s": round(_hold_s),
+                        "state": pos.state,
+                        "leverage": pos.leverage,
+                        "confidence": pos.confidence,
+                    }
+                    market_data = {
+                        "regime": self._tick_regime_cache.get(symbol, "unknown"),
+                        "btc_price": self._last_prices.get("BTC", 0),
+                    }
+                    result = coordinator.get_exit_intelligence(pos_data, market_data)
+                    if result and isinstance(result, dict):
+                        action = result.get("action", "hold")
+                        urgency = result.get("urgency", "low")
+                        if urgency in ("high", "critical") or action in ("full_close", "close"):
+                            logger.warning(
+                                f"[EXIT-AGENT] {symbol} urgency={urgency} action={action} "
+                                f"— {str(result.get('reason', ''))[:80]}"
+                            )
+                        else:
+                            logger.debug(
+                                f"[EXIT-AGENT] {symbol} action={action} "
+                                f"thesis_valid={result.get('thesis_still_valid', '?')}"
+                            )
+                except Exception as e:
+                    logger.debug(f"[EXIT-AGENT] {symbol} error: {e}")
+
+    def _run_overseer_review(self, trace_id: str):
+        """Run Overseer Agent for periodic system-level portfolio review (~1 hour).
+
+        Advisory: logs recommendations but does not directly modify bot state.
+        """
+        from llm.autonomy import get_llm_mode, should_call_llm
+        if not should_call_llm(get_llm_mode()):
+            return
+        try:
+            from llm.agents.coordinator import get_coordinator, is_multi_agent_enabled
+        except Exception:
+            return
+        if not is_multi_agent_enabled():
+            return
+
+        coordinator = get_coordinator()
+        if not hasattr(coordinator, 'run_overseer'):
+            return
+        try:
+            result = coordinator.run_overseer()
+            if result and isinstance(result, dict):
+                recs = result.get("recommendations", [])
+                if recs:
+                    logger.info(f"[OVERSEER] Portfolio review: {len(recs)} recommendations")
+                    for r in recs[:3]:
+                        logger.info(f"[OVERSEER]   — {str(r)[:100]}")
+        except Exception as e:
+            logger.debug(f"[OVERSEER] Review error: {e}")
