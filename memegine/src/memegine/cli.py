@@ -2481,16 +2481,23 @@ def batch_cmd(
         None, "--priority", "-p",
         help="Only include topics at this priority level (1=top, 5=low).",
     ),
+    kind: str = typer.Option(
+        "image", "--kind",
+        help="'image' (default) or 'video' — forces every brief to that kind.",
+    ),
 ) -> None:
     """Pre-generate N briefs from the active project's topic queue.
 
     All briefs concatenated into your clipboard as a numbered sequence
     so you can paste → Grok → next → paste → Grok without stopping.
+
+    For a video stockpile: `memegine batch 15 --kind video`
+
     Topics are NOT marked used — call `memegine topics mark-used <id>`
     after you actually post.
     """
     from . import flow_post
-    result = flow_post.batch(n, only_priority=priority)
+    result = flow_post.batch(n, only_priority=priority, kind=kind)
     print(result.as_text())
 
 

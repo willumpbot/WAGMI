@@ -100,12 +100,24 @@ def _pick_format(intent: str, kind: str = "image") -> str:
     return suggested
 
 
-def _assemble_full_prompt(intent: str, format_slug: str) -> tuple[str, str, Path]:
+def _assemble_full_prompt(
+    intent: str, format_slug: str, *, kind: str = "image",
+) -> tuple[str, str, Path]:
     """Build the pipeline bundle + return (system+user prompt, slug, folder)."""
-    bundle = pipeline_mod.build(intent, kind="image", format_slug=format_slug)
+    bundle = pipeline_mod.build(intent, kind=kind, format_slug=format_slug)
     system, user = prompt_engine.assemble_offline_prompt(intent, format_slug)
     full = f"{system}\n\n---\n\n{user}"
     return full, bundle.format_slug or format_slug, bundle.folder
+
+
+def _pick_video_format(intent: str) -> str:
+    """Return the best VIDEO format slug for an intent."""
+    ranked = format_suggest.suggest(intent, top_n=3, kind="video")
+    if ranked and ranked[0].reasons and ranked[0].reasons != ["default"]:
+        return ranked[0].slug
+    # Brand-aware video default: kenburns on a still is the simplest,
+    # most reliable video format and fits every brand.
+    return "video_kenburns_still"
 
 
 def post(
@@ -149,12 +161,17 @@ def batch(
     *,
     only_priority: Optional[int] = None,
     copy_clipboard: bool = True,
+    kind: str = "image",
 ) -> BatchResult:
     """Generate N briefs from the active project's topic queue.
 
     Drains the top N queued topics (priority-sorted), writes a brief
     for each, and concatenates all briefs into one clipboard payload
     numbered 1..N so the operator can paste → Grok → next → paste.
+
+    kind="video" forces every brief to use a video format (bypasses
+    each topic's stored format_hint if it's an image format). Useful
+    for pre-generating a video stockpile from existing topics.
 
     Does NOT mark topics as used — that happens when the operator
     actually posts via `memegine topics mark-used <id>`.
@@ -170,14 +187,18 @@ def batch(
     sections: list[str] = []
     for i, t in enumerate(picked, 1):
         intent = t.get("text", "").strip()
-        hint = t.get("format_hint") or None
-        slug = hint or _pick_format(intent)
+        if kind == "video":
+            # Override: always use a video format regardless of topic's hint.
+            slug = _pick_video_format(intent)
+        else:
+            hint = t.get("format_hint") or None
+            slug = hint or _pick_format(intent)
         try:
-            full, resolved_slug, folder = _assemble_full_prompt(intent, slug)
+            full, resolved_slug, folder = _assemble_full_prompt(intent, slug, kind=kind)
         except ValueError:
-            # Unknown format hint — fall back to keyword pick.
-            slug = _pick_format(intent)
-            full, resolved_slug, folder = _assemble_full_prompt(intent, slug)
+            # Unknown format slug — fall back to keyword pick.
+            slug = _pick_video_format(intent) if kind == "video" else _pick_format(intent)
+            full, resolved_slug, folder = _assemble_full_prompt(intent, slug, kind=kind)
         briefs.append((intent, resolved_slug, folder))
         header = (
             f"\n\n{'=' * 70}\n"

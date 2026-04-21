@@ -49,12 +49,20 @@ def _require_playwright():
         )
 
 
-async def login_async() -> Path:
-    """Open a headed Chromium, wait for manual login, save storage state.
+async def login_async(
+    *,
+    wait_timeout_sec: int = 600,
+    poll_sec: float = 2.0,
+) -> Path:
+    """Open a headed Chromium, auto-detect successful login, save state.
 
-    Blocks (from Playwright's perspective) on a 120s grace window; the
-    operator signs in manually, then presses Enter in the terminal to
-    persist state. Returns the path where state was written.
+    No terminal interaction required: polls the open browser for a
+    logged-in signal (home timeline visible OR URL redirected to /home
+    OR account-menu element present). Saves storage_state when any
+    signal fires. Times out after wait_timeout_sec.
+
+    Works whether called in foreground or background — the signal
+    source is purely the browser, not stdin.
     """
     _require_playwright()
     from playwright.async_api import async_playwright
@@ -67,17 +75,46 @@ async def login_async() -> Path:
         await page.goto(f"{BASE_URL}/login", wait_until="domcontentloaded")
         print(
             "\n"
-            "=========================================================\n"
+            "========================================================\n"
             " Browser opened. Log into X in that window.\n"
-            " When you're fully logged in and can see your timeline,\n"
-            " come back here and press Enter to save the session.\n"
-            "=========================================================\n"
+            " Memegine polls for login completion automatically —\n"
+            " no terminal input needed. The window will close itself\n"
+            f" and the session saved to {SESSION_PATH}\n"
+            "========================================================\n",
+            flush=True,
         )
-        # Read Enter from stdin without blocking the asyncio loop.
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, input)
+
+        deadline = asyncio.get_event_loop().time() + wait_timeout_sec
+        logged_in = False
+        while asyncio.get_event_loop().time() < deadline:
+            # Several independent signals; any one means we're in.
+            try:
+                url = page.url or ""
+                if "/home" in url and "/i/flow" not in url:
+                    logged_in = True
+                # Account-menu button appears once logged in.
+                has_side_nav = await page.locator(
+                    'a[data-testid="AppTabBar_Home_Link"], [data-testid="SideNav_AccountSwitcher_Button"]'
+                ).count()
+                if has_side_nav > 0:
+                    logged_in = True
+            except Exception:
+                pass
+            if logged_in:
+                # Give the browser a beat to finish setting cookies.
+                await asyncio.sleep(1.5)
+                break
+            await asyncio.sleep(poll_sec)
+
+        if not logged_in:
+            await browser.close()
+            raise RuntimeError(
+                f"login not detected within {wait_timeout_sec}s — "
+                "try again: `memegine watch login`"
+            )
         await context.storage_state(path=str(SESSION_PATH))
         await browser.close()
+        print(f"✅ session saved to {SESSION_PATH}", flush=True)
     return SESSION_PATH
 
 
