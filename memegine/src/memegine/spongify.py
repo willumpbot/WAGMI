@@ -99,43 +99,44 @@ def _profile_pic_url(handle: str) -> Optional[str]:
         return None
 
 
-# Prompt template — references real spong library examples for style guidance.
+# Prompt template — morph face into spong character while keeping body intact.
 SPONGIFY_PROMPT = """\
-Using the attached reference photo of @{handle}, produce a SPONGIFIED
-portrait matching the Joel Veitch / rathergood.com 2003 aesthetic:
+Using the attached reference photo of @{handle}, morph their FACE into
+a spongmonkey character. Keep BODY, clothing, pose, background EXACTLY
+as-is. The face itself transforms — not swapped out, but morphed.
 
-SUBJECT: Replace ONLY the head with a blurry photo-cutout monkey head.
-Keep BODY, clothing, pose, and background EXACTLY as-is (photo-real).
+FACE TRANSFORMATION:
+- Start with their actual face structure/symmetry
+- Stretch/warp eyes to HUGE, round, bug-eyed (looking straight at camera)
+- Eyes are {fur_color}-tinted or have {fur_color} blur around them
+- Mouth stretches into exaggerated open singing expression
+- Cheeks and jawline soften/puff like a cartoon character
+- Add {fur_color} fuzzy texture over their face (like fur/hair growth)
+- Keep their eyes/mouth/expression recognizable as THEIR transformation
+  into this creature — not a head replacement
 
-MONKEY HEAD DESIGN (very specific):
-- Real monkey head photo-cutout (not illustration)
-- {fur_color} fur (match reference style)
-- HUGE white googly eyes (nearly touching, looking straight at camera)
-- Tiny black pinpoint pupils (not round/normal pupils)
-- OPEN SINGING mouth (never closed, never smiling) — shows cream
-  buck teeth, pink gums, like it's mid-screech
-- Eyes and mouth intentionally grotesque/uncanny — this IS the joke
+STYLE: Joel Veitch 2003 rathergood.com crude aesthetic
+- Looks like someone used bad Photoshop + MS Paint
+- Visible pixelation, JPEG artifacts, color glitches
+- Not smooth/polished — deliberately janky and amateurish
+- Weird lighting/color fringing from cheap 2003 tools
+- Matte edges where edits happened (obvious pasting visible)
 
-TECHNICAL STYLE (critical):
-- Head layer shows deliberate 2003 JPEG macroblocks, color fringes,
-  visible noise (not clean modern AI)
-- Matte cutout edges (obviously pasted/glued, NOT smoothly blended)
-- Body stays 100% photo-real — no cartoon shading, no filters
-- No attempt to "fix" the wrong proportions — oversized eyes are
-  INTENTIONAL and should stay comically wrong
+BODY & SETTING: Stay 100% photo-real
+- Their original clothing, pose, environment untouched
+- Only the FACE is morphed — no cartoon shading on body
+- No filters, no stylization below the neck
 
-COMPOSITION:
-- Square 1:1 aspect ratio (Twitter reply size)
-- Scale monkey head to match original head placement
-- Hand-scrawled lowercase caption bottom: "{lyric}" (marker/Comic Sans,
-  childlike, no perfection)
+CAPTION:
+- Bottom of image (marker/childlike handwriting): "{lyric}"
+- Lowercase, imperfect, like a kid wrote it
 
-The humor comes from the gap between a real person and a cursed
-2003 monkey head. SINCERITY, not irony or camp.
+TONE: The joke is them mid-transformation into this creature.
+Sincere, not ironic. Creepy-funny, not pretty.
 
-DO NOT: blend smoothly, use modern AI smoothness, create symmetrical
-perfect features, fix eye proportions, make monkey smile, add anything
-fancy. Look crude and cheap — that's the authentic style.
+DO NOT: make it cute, blend smoothly, smooth/polish the face, give them
+a nice expression, smooth out the morphing artifacts, make it look
+professional or modern.
 """
 
 
