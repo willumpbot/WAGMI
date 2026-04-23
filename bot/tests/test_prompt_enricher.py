@@ -23,8 +23,8 @@ from llm.agents.prompt_enricher import (
     _build_sim_status_summary,
     _build_recent_performance,
     _refresh_cache,
-    _MAX_BRIEFING_CHARS,
 )
+_MAX_BRIEFING_CHARS = 3000  # updated budget — CLI is $0/call
 
 
 # ── Fixtures ────────────────────────────────────────────────────
@@ -319,6 +319,9 @@ class TestEnrichPrompt:
         monkeypatch.setattr(enricher_mod, "_FINGERPRINTS_PATH", str(tmp_path / "nonexistent2.json"))
         monkeypatch.setattr(enricher_mod, "_SIM_STATUS_PATH", str(tmp_path / "nonexistent3.json"))
         monkeypatch.setattr(enricher_mod, "_TRADES_CSV_PATH", str(tmp_path / "nonexistent4.csv"))
+        monkeypatch.setattr(enricher_mod, "_KB_PATH", str(tmp_path / "nonexistent5.json"))
+        monkeypatch.setattr(enricher_mod, "_META_PATH", str(tmp_path / "nonexistent6.json"))
+        monkeypatch.setattr(enricher_mod, "_OVERSEER_MEMO_PATH", str(tmp_path / "nonexistent7.json"))
         invalidate_cache()
 
         base = "Base prompt here."

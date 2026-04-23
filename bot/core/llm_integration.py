@@ -1186,11 +1186,24 @@ class LLMIntegrationMixin:
                     if result and isinstance(result, dict):
                         action = result.get("action", "hold")
                         urgency = result.get("urgency", "low")
+                        reason = str(result.get("reason", "") or "")[:120]
                         if urgency in ("high", "critical") or action in ("full_close", "close"):
                             logger.warning(
-                                f"[EXIT-AGENT] {symbol} urgency={urgency} action={action} "
-                                f"— {str(result.get('reason', ''))[:80]}"
+                                f"[EXIT-AGENT] {symbol} urgency={urgency} action={action} — {reason}"
                             )
+                            # Give Exit Agent actual teeth: force-close when it says to
+                            if action in ("full_close", "close") and urgency in ("high", "critical"):
+                                try:
+                                    _pm = getattr(self, 'pos_mgr', None) or getattr(self, 'position_manager', None)
+                                    _price = (_last_prices if hasattr(self, '_last_prices') else {}).get(symbol, 0)
+                                    if _pm and _price > 0 and hasattr(_pm, 'force_close'):
+                                        _pm.force_close(symbol, _price, f"LLM_EXIT_{urgency.upper()}")
+                                        logger.warning(
+                                            f"[EXIT-AGENT] {symbol} FORCE-CLOSED by LLM "
+                                            f"(urgency={urgency}): {reason[:60]}"
+                                        )
+                                except Exception as _ex:
+                                    logger.debug(f"[EXIT-AGENT] force_close error for {symbol}: {_ex}")
                         else:
                             logger.debug(
                                 f"[EXIT-AGENT] {symbol} action={action} "
@@ -1225,5 +1238,32 @@ class LLMIntegrationMixin:
                     logger.info(f"[OVERSEER] Portfolio review: {len(recs)} recommendations")
                     for r in recs[:3]:
                         logger.info(f"[OVERSEER]   — {str(r)[:100]}")
+
+                # Persist memo so prompt_enricher can inject into downstream agents.
+                # Without this, Overseer shouts into the void — scratchpad is cleared
+                # at the start of each get_trading_decision() call.
+                try:
+                    import json as _json
+                    import os as _os
+                    _memo = {
+                        "timestamp": __import__("time").time(),
+                        "recommendations": [str(r)[:200] for r in recs[:5]],
+                        "health": str(result.get("health", result.get("system_health", "")) or "")[:200],
+                        "strategy_adjustments": str(result.get("strategy_adjustments", "") or "")[:200],
+                        "diagnosis": str(result.get("diagnosis", "") or "")[:200],
+                    }
+                    _memo_path = _os.path.join("data", "llm", "overseer_memo.json")
+                    _os.makedirs(_os.path.dirname(_memo_path), exist_ok=True)
+                    with open(_memo_path, "w") as _f:
+                        _json.dump(_memo, _f)
+                    # Invalidate enricher cache so agents see the fresh memo immediately
+                    try:
+                        from llm.agents.prompt_enricher import invalidate_cache as _inv
+                        _inv()
+                    except Exception:
+                        pass
+                    logger.info(f"[OVERSEER] Memo written ({len(recs)} recs) — agents will see on next call")
+                except Exception as _me:
+                    logger.debug(f"[OVERSEER] Memo write error: {_me}")
         except Exception as e:
             logger.debug(f"[OVERSEER] Review error: {e}")

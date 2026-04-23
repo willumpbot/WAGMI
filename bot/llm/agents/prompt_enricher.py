@@ -6,11 +6,14 @@ Reads from:
   - strategy_fingerprints.json — per-setup WR data
   - sim_status.json — current sim equity and open positions
   - trades.csv — recent trade outcomes
+  - teaching/knowledge_base.json — graduated rules (written never read until now)
+  - meta_learning/insights.json — cross-trade pattern analysis
+  - overseer_memo.json — latest Overseer recommendations (written by run_overseer)
 
 Each agent gets a tailored "QUANT INTELLIGENCE BRIEFING" appended to its prompt,
-plus a "RECENT PERFORMANCE" section with last 10 trade outcomes.
+plus validated rules, meta-patterns, overseer memo, and recent performance.
 
-Results are cached for 1 hour to avoid re-reading files every LLM call.
+Results are cached for 30 min to balance freshness vs disk I/O.
 """
 
 import csv
@@ -29,9 +32,12 @@ _INSIGHT_PATH = os.path.join(_DEEP_MEMORY_DIR, "insight_journal.json")
 _FINGERPRINTS_PATH = os.path.join(_DEEP_MEMORY_DIR, "strategy_fingerprints.json")
 _SIM_STATUS_PATH = os.path.join(_DATA_DIR, "manual", "sim_status.json")
 _TRADES_CSV_PATH = os.path.join(_DATA_DIR, "trades.csv")
+_KB_PATH = os.path.join(_DATA_DIR, "llm", "teaching", "knowledge_base.json")
+_META_PATH = os.path.join(_DATA_DIR, "meta_learning", "insights.json")
+_OVERSEER_MEMO_PATH = os.path.join(_DATA_DIR, "llm", "overseer_memo.json")
 
 # ── Cache ───────────────────────────────────────────────────────
-_CACHE_TTL_S = 3600  # 1 hour
+_CACHE_TTL_S = 1800  # 30 min — balance freshness vs I/O
 _cache: Dict[str, Any] = {}
 _cache_ts: float = 0.0
 
@@ -127,11 +133,22 @@ def _refresh_cache() -> None:
     sim_status = _load_json_safe(_SIM_STATUS_PATH, {})
     recent_trades = _load_recent_trades(_TRADES_CSV_PATH, max_trades=10)
 
+    kb_data = _load_json_safe(_KB_PATH, {"entries": []})
+    kb_entries = kb_data.get("entries", [])
+
+    meta_data = _load_json_safe(_META_PATH, {"insights": []})
+    meta_insights = meta_data.get("insights", [])
+
+    overseer_memo = _load_json_safe(_OVERSEER_MEMO_PATH, {})
+
     _cache = {
         "insights": insights,
         "fingerprints": fingerprints,
         "sim_status": sim_status,
         "recent_trades": recent_trades,
+        "kb_entries": kb_entries,
+        "meta_insights": meta_insights,
+        "overseer_memo": overseer_memo,
     }
     _cache_ts = now
 
@@ -315,6 +332,132 @@ def _build_recent_performance() -> str:
     return "\n".join(lines)
 
 
+_KB_CATEGORY_MAP: Dict[str, List[str]] = {
+    "regime": ["general", "regime", "correlation"],
+    "trade": ["general", "strategy", "execution", "timing"],
+    "risk": ["general", "risk", "execution"],
+    "critic": ["general", "strategy", "risk"],
+    "exit": ["general", "execution", "risk", "timing"],
+    "scout": ["general", "strategy", "regime"],
+    "overseer": ["general", "strategy", "risk", "regime"],
+    "quant": ["general", "strategy", "execution", "risk"],
+    "learning": ["general", "strategy", "risk"],
+}
+
+
+def _build_knowledge_base_rules(agent_role: str) -> str:
+    """Inject validated rules from knowledge_base.json into agent prompt.
+
+    Filters to high-confidence entries with evidence (evidence_count > 0 OR
+    source == 'seed' with confidence >= 0.9) relevant to the agent's role.
+    Returns empty string if no entries available.
+    """
+    entries = _cache.get("kb_entries", [])
+    if not entries:
+        return ""
+
+    relevant_cats = _KB_CATEGORY_MAP.get(agent_role, ["general"])
+    relevant = [
+        e for e in entries
+        if e.get("category", "general") in relevant_cats
+        and (
+            e.get("evidence_count", 0) > 0
+            or (e.get("source") == "seed" and e.get("confidence", 0) >= 0.9)
+        )
+        and e.get("confidence", 0) >= 0.7
+    ]
+    if not relevant:
+        return ""
+
+    # Sort: most evidence first, then confidence
+    relevant.sort(
+        key=lambda e: (e.get("evidence_count", 0), e.get("confidence", 0)),
+        reverse=True,
+    )
+    top = relevant[:5]
+
+    lines = ["=== VALIDATED TRADING RULES ==="]
+    for e in top:
+        conf = e.get("confidence", 0)
+        n = e.get("evidence_count", 0)
+        text = str(e.get("content", e.get("rule", "")) or "")[:180]
+        lines.append(f"  • [conf={conf:.0%} n={n}] {text}")
+
+    return "\n".join(lines)
+
+
+def _build_meta_patterns() -> str:
+    """Surface top cross-trade patterns from meta_learning/insights.json.
+
+    Filters to high-confidence, evidence-backed entries. Returns empty if none.
+    """
+    meta = _cache.get("meta_insights", [])
+    if not meta:
+        return ""
+
+    qualified = [
+        m for m in meta
+        if m.get("confidence", 0) >= 0.60
+        and m.get("evidence_count", 0) >= 3
+    ]
+    if not qualified:
+        return ""
+
+    qualified.sort(key=lambda m: (m.get("confidence", 0), m.get("evidence_count", 0)), reverse=True)
+    top = qualified[:3]
+
+    lines = ["=== META-LEARNING PATTERNS ==="]
+    for m in top:
+        conf = m.get("confidence", 0)
+        n = m.get("evidence_count", 0)
+        desc = str(m.get("description", m.get("insight", "")) or "")[:160]
+        suggestion = str(m.get("actionable_suggestion", "") or "")[:80]
+        line = f"  • [conf={conf:.0%} n={n}] {desc}"
+        if suggestion:
+            line += f" → {suggestion}"
+        lines.append(line)
+
+    return "\n".join(lines)
+
+
+def _build_overseer_memo(agent_role: str) -> str:
+    """Inject latest Overseer recommendations into downstream agent prompts.
+
+    Overseer runs ~hourly and writes to overseer_memo.json. Trade/Risk/Critic/Exit
+    agents read this so system-level insights from the last portfolio review
+    persist between pipeline runs (scratchpad is cleared each run; this isn't).
+    """
+    memo = _cache.get("overseer_memo", {})
+    if not memo:
+        return ""
+
+    # Only inject for decision-making agents, not regime/scout/learning
+    if agent_role not in ("trade", "risk", "critic", "exit", "quant"):
+        return ""
+
+    recs = memo.get("recommendations", [])
+    health = memo.get("health", "")
+    strategy_adj = memo.get("strategy_adjustments", "")
+    ts = memo.get("timestamp", 0)
+
+    # Only use if memo is less than 2 hours old
+    if ts and (time.time() - ts) > 7200:
+        return ""
+
+    lines = ["=== OVERSEER PORTFOLIO MEMO ==="]
+    if health:
+        lines.append(f"  Health: {str(health)[:100]}")
+    if strategy_adj:
+        lines.append(f"  Strategy: {str(strategy_adj)[:120]}")
+    for r in recs[:3]:
+        lines.append(f"  Rec: {str(r)[:120]}")
+
+    if len(lines) <= 1:
+        return ""
+
+    return "\n".join(lines)
+
+
 def enrich_prompt(agent_role: str, base_prompt: str) -> str:
     """Enrich an agent's base prompt with the latest quant intelligence.
 
@@ -336,23 +479,38 @@ def enrich_prompt(agent_role: str, base_prompt: str) -> str:
 
     sections = []
 
-    # 1. Quant intelligence briefing
+    # 1. Quant intelligence briefing (insight_journal — validated live findings)
     briefing = _build_quant_briefing(agent_role)
     if briefing:
         sections.append(briefing)
 
-    # 2. Setup edge data (fingerprints)
+    # 2. Validated trading rules (knowledge_base — graduated axioms + live evidence)
+    kb_rules = _build_knowledge_base_rules(agent_role)
+    if kb_rules:
+        sections.append(kb_rules)
+
+    # 3. Meta-learning patterns (cross-trade statistical patterns)
+    meta = _build_meta_patterns()
+    if meta:
+        sections.append(meta)
+
+    # 4. Overseer portfolio memo (system-level recommendations, persists between runs)
+    overseer = _build_overseer_memo(agent_role)
+    if overseer:
+        sections.append(overseer)
+
+    # 5. Setup edge data (fingerprints)
     fingerprint_summary = _build_fingerprint_summary(agent_role)
     if fingerprint_summary:
         sections.append(fingerprint_summary)
 
-    # 3. Sim status (for trade-facing agents)
+    # 6. Sim status (for trade-facing agents)
     if agent_role in ("trade", "risk", "critic", "exit", "overseer"):
         sim_summary = _build_sim_status_summary()
         if sim_summary:
             sections.append(sim_summary)
 
-    # 4. Recent performance (for decision-making agents)
+    # 7. Recent performance (for decision-making agents)
     if agent_role in ("trade", "risk", "critic", "exit", "learning", "overseer"):
         perf = _build_recent_performance()
         if perf:
@@ -361,10 +519,10 @@ def enrich_prompt(agent_role: str, base_prompt: str) -> str:
     if not sections:
         return base_prompt
 
-    # Join all sections and enforce token budget
+    # Join all sections and enforce token budget (raised to 3000 chars — CLI is $0/call)
     enrichment = "\n\n".join(sections)
-    if len(enrichment) > _MAX_BRIEFING_CHARS:
-        enrichment = enrichment[:_MAX_BRIEFING_CHARS - 3] + "..."
+    if len(enrichment) > 3000:
+        enrichment = enrichment[:2997] + "..."
 
     return f"{base_prompt}\n\n{enrichment}"
 
@@ -400,6 +558,10 @@ def get_enrichment_stats() -> Dict[str, Any]:
         if ins.get("validated"):
             validated += 1
 
+    kb_entries = _cache.get("kb_entries", [])
+    meta_insights = _cache.get("meta_insights", [])
+    overseer_memo = _cache.get("overseer_memo", {})
+
     return {
         "total_insights": len(insights),
         "validated_insights": validated,
@@ -407,5 +569,8 @@ def get_enrichment_stats() -> Dict[str, Any]:
         "recent_trades_loaded": len(trades),
         "fingerprints_setups": list(fps.keys()),
         "sim_equity": sim.get("current_equity"),
+        "kb_entries": len(kb_entries),
+        "meta_insights": len(meta_insights),
+        "overseer_memo_age_s": round(time.time() - overseer_memo.get("timestamp", time.time())),
         "cache_age_s": round(get_cache_age_seconds(), 0),
     }
