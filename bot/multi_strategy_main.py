@@ -3319,19 +3319,26 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 if os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
                     try:
                         from llm.agents.coordinator import get_coordinator
+                        _llm_notes_close = (pos.entry_reasons or {}).get("llm_notes", "") if pos else ""
+                        _exit_price_close = event.metadata.get("exit_price", 0.0)
+                        _hold_h = event.metadata.get("hold_time_s", 0) / 3600.0
                         _ma_lesson = get_coordinator().get_post_trade_lesson({
                             "symbol": symbol,
                             "side": event.side,
                             "outcome": "WIN" if total_pnl > 0 else "LOSS",
                             "pnl": total_pnl,
                             "pnl_pct": (total_pnl / self.risk_mgr.equity * 100) if self.risk_mgr.equity > 0 else 0,
+                            "pnl_pct_signed": (total_pnl / self.risk_mgr.equity * 100) if self.risk_mgr.equity > 0 else 0,
                             "confidence": pos.confidence if pos else 0,
                             "regime": _rg_fb,
                             "strategy": event.strategy,
                             "hold_time_s": event.metadata.get("hold_time_s", 0),
+                            "hold_hours": _hold_h,
                             "exit_action": event.action,
+                            "exit_price": _exit_price_close,
                             "leverage": event.leverage,
                             "entry_type": _et_fb,
+                            "notes": _llm_notes_close,  # carries thesis_id= for close_thesis()
                         })
                         if _ma_lesson and isinstance(_ma_lesson, dict):
                             _lesson_txt = _ma_lesson.get("lesson", "") or _ma_lesson.get("insight", "")

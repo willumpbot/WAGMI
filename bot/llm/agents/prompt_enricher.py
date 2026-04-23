@@ -39,6 +39,7 @@ _OVERSEER_MEMO_PATH = os.path.join(_DATA_DIR, "llm", "overseer_memo.json")
 _ADAPTIVE_RISK_PATH = os.path.join(_DATA_DIR, "feedback", "adaptive_risk_state.json")
 _CIRCUIT_BREAKER_PATH = os.path.join(_DATA_DIR, "circuit_breaker_state.json")
 _PERFORMANCE_PATH = os.path.join(_DATA_DIR, "analysis", "performance.json")
+_COUNTERFACTUAL_PATH = os.path.join(_DATA_DIR, "counterfactuals", "scenarios.json")
 
 # ── Cache ───────────────────────────────────────────────────────
 _CACHE_TTL_S = 1800  # 30 min — balance freshness vs I/O
@@ -147,6 +148,7 @@ def _refresh_cache() -> None:
     adaptive_risk = _load_json_safe(_ADAPTIVE_RISK_PATH, {})
     circuit_breaker = _load_json_safe(_CIRCUIT_BREAKER_PATH, {})
     performance = _load_json_safe(_PERFORMANCE_PATH, {})
+    counterfactuals = _load_json_safe(_COUNTERFACTUAL_PATH, {"scenarios": []})
 
     _cache = {
         "insights": insights,
@@ -159,6 +161,7 @@ def _refresh_cache() -> None:
         "adaptive_risk": adaptive_risk,
         "circuit_breaker": circuit_breaker,
         "performance": performance,
+        "counterfactuals": counterfactuals.get("scenarios", []),
     }
     _cache_ts = now
 
@@ -468,6 +471,50 @@ def _build_overseer_memo(agent_role: str) -> str:
     return "\n".join(lines)
 
 
+def _build_counterfactual_exit_patterns() -> str:
+    """Summarize what better exit timing would have earned — feeds Exit Agent.
+
+    Groups resolved counterfactuals by scenario_type and computes avg delta
+    (counterfactual_pnl - actual_pnl). A positive avg_delta for "exit_at_tp1"
+    means taking TP1 earlier would have been better on average.
+
+    Only injects patterns with n>=5 and avg_delta > $1 to avoid noise.
+    """
+    scenarios = _cache.get("counterfactuals", [])
+    if not scenarios:
+        return ""
+
+    resolved = [s for s in scenarios if s.get("resolved", False)]
+    if len(resolved) < 5:
+        return ""
+
+    from collections import defaultdict
+    by_type: dict = defaultdict(list)
+    for s in resolved[-100:]:  # last 100 resolved
+        stype = s.get("scenario_type", "unknown")
+        delta = float(s.get("delta", 0))
+        sym = s.get("symbol", "")
+        by_type[stype].append({"delta": delta, "sym": sym})
+
+    lines = []
+    for stype, items in by_type.items():
+        if len(items) < 5:
+            continue
+        avg_delta = sum(i["delta"] for i in items) / len(items)
+        if abs(avg_delta) < 1.0:
+            continue
+        direction = "BETTER" if avg_delta > 0 else "WORSE"
+        lines.append(
+            f"  {stype}: n={len(items)} avg_delta=${avg_delta:+.2f} "
+            f"({direction} than actual exit)"
+        )
+
+    if not lines:
+        return ""
+
+    return "=== COUNTERFACTUAL EXIT PATTERNS ===\n" + "\n".join(lines)
+
+
 def _build_system_health_context() -> str:
     """Inject circuit breaker state + rolling performance for all decision agents.
 
@@ -585,7 +632,8 @@ def enrich_prompt(agent_role: str, base_prompt: str) -> str:
       6. SIM STATUS — current sim equity and performance
       7. RECENT PERFORMANCE — last 10 trade outcomes from trades.csv
       8. REAL-TIME RISK STATE — hot/cold streak + live regime WR
-      9. SYSTEM HEALTH — circuit breaker state, rolling WR, avg R:R
+      9. COUNTERFACTUAL EXIT PATTERNS — what better timing would have earned
+      10. SYSTEM HEALTH — circuit breaker state, rolling WR, avg R:R
 
     Args:
         agent_role: Agent role string (e.g., "regime", "trade", "risk")
@@ -642,7 +690,13 @@ def enrich_prompt(agent_role: str, base_prompt: str) -> str:
         if adaptive:
             sections.append(adaptive)
 
-    # 9. System health — CB state, rolling WR, R:R (injected into ALL decision agents)
+    # 9. Counterfactual exit patterns (Exit Agent only — what exit timing cost/saved)
+    if agent_role in ("exit", "trade", "overseer"):
+        cf_patterns = _build_counterfactual_exit_patterns()
+        if cf_patterns:
+            sections.append(cf_patterns)
+
+    # 10. System health — CB state, rolling WR, R:R (injected into ALL decision agents)
     system_health = _build_system_health_context()
     if system_health:
         sections.append(system_health)
