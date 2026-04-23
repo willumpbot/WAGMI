@@ -101,7 +101,7 @@ def _load_json_safe(path: str, default: Any = None) -> Any:
     if not os.path.exists(path):
         return default if default is not None else {}
     try:
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
             return json.load(f)
     except (json.JSONDecodeError, IOError, OSError) as e:
         logger.debug(f"[ENRICHER] Failed to load {path}: {e}")
@@ -198,13 +198,18 @@ def _select_insights_for_agent(
         if ins.get("category", "") in relevant_categories
     ]
 
-    # Sort: validated first, then by confidence desc, then by validation_count desc, then recency
+    # Sort: validated first, then confidence bucket (rounded to 0.1 so 0.88 ties with 0.90),
+    # then recency (newer > older — live trades beat historical backtest within same tier),
+    # then capped vc (cap=100 so live n=164 competes equally with backtest n=2172).
+    _now = time.time()
+
     def sort_key(ins: Dict[str, Any]) -> Tuple:
+        conf_bucket = round(ins.get("confidence", 0) / 0.1) * 0.1  # e.g. 0.88 → 0.9, 0.72 → 0.7
         return (
             1 if ins.get("validated", False) else 0,
-            ins.get("confidence", 0),
-            ins.get("validation_count", 0),
-            ins.get("ts", 0),
+            conf_bucket,
+            ins.get("ts", 0) / (_now or 1),              # recency: newer ranks higher within tier
+            min(ins.get("validation_count", 0), 100),
         )
 
     relevant.sort(key=sort_key, reverse=True)

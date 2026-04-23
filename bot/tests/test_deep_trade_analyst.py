@@ -91,17 +91,17 @@ class TestFormatStats:
         assert "TOTAL TRADES: 10" in text
         assert "BY REGIME" in text
 
-    def test_stars_for_profitable_cells(self):
+    def test_plus_for_profitable_cells(self):
         stats = _compute_statistics(SAMPLE_TRADES)
         text = _format_stats_for_prompt(stats)
-        # BTC.SHORT has avg_pnl > 1, should get ★
-        assert "★" in text
+        # BTC.SHORT has avg_pnl > 1, should get +
+        assert "+ BTC.SHORT" in text or "+ trending" in text
 
-    def test_cross_marks_for_losing_cells(self):
+    def test_minus_for_losing_cells(self):
         stats = _compute_statistics(SAMPLE_TRADES)
         text = _format_stats_for_prompt(stats)
-        # SOL.LONG has avg_pnl < -1, should get ✗
-        assert "✗" in text
+        # SOL.LONG has avg_pnl < -1, should get -
+        assert "- SOL.LONG" in text or "- ranging" in text
 
 
 class TestMilestoneCheck:

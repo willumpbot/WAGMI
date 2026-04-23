@@ -188,7 +188,7 @@ def _format_stats_for_prompt(stats: Dict[str, Any]) -> str:
         lines.append(f"--- {header} ---")
         sorted_cells = sorted(cell_data.items(), key=lambda x: x[1].get("avg_pnl", 0), reverse=True)
         for name, s in sorted_cells:
-            flag = "★" if s.get("avg_pnl", 0) > 1 else ("✗" if s.get("avg_pnl", 0) < -1 else " ")
+            flag = "+" if s.get("avg_pnl", 0) > 1 else ("-" if s.get("avg_pnl", 0) < -1 else " ")
             lines.append(f"  {flag} {name}: n={s['n']} WR={s['wr']:.0%} avg=${s['avg_pnl']:.2f} total=${s['total_pnl']:.1f}")
         lines.append("")
 
@@ -236,7 +236,7 @@ CRITICAL: Be a hard-nosed quant. Only report what the data actually shows. If a 
 def _load_existing_insights_summary() -> str:
     """Compact summary of existing insight_journal entries."""
     try:
-        with open(_INSIGHT_JOURNAL_PATH, "r") as f:
+        with open(_INSIGHT_JOURNAL_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
         insights = data.get("insights", [])
         if not insights:
@@ -253,7 +253,7 @@ def _write_insights_to_journal(new_insights: List[Dict]) -> int:
     """Append new insights to insight_journal.json. Returns count added."""
     try:
         if os.path.exists(_INSIGHT_JOURNAL_PATH):
-            with open(_INSIGHT_JOURNAL_PATH, "r") as f:
+            with open(_INSIGHT_JOURNAL_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
         else:
             data = {"insights": []}
@@ -281,8 +281,8 @@ def _write_insights_to_journal(new_insights: List[Dict]) -> int:
             logger.info(f"[DEEP-ANALYST] New insight: {text[:80]}")
 
         if added:
-            with open(_INSIGHT_JOURNAL_PATH, "w") as f:
-                json.dump(data, f, indent=2, default=str)
+            with open(_INSIGHT_JOURNAL_PATH, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False, default=str)
             try:
                 from llm.agents.prompt_enricher import invalidate_cache
                 invalidate_cache()
