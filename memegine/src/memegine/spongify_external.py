@@ -109,7 +109,7 @@ async def spongify_via_web(
                     if verbose:
                         print(f"[spongify] Button click also failed: {e2}")
 
-            # Wait for result image to appear (processing takes time)
+            # Wait for result image to appear (might be in canvas or img)
             if verbose:
                 print("[spongify] Waiting for generation...")
 
@@ -119,32 +119,47 @@ async def spongify_via_web(
 
             while time.time() - start_time < timeout_sec:
                 try:
-                    # Look for any img with a real src (data URI or URL)
+                    # Method 1: Look for img with data URI (most common)
                     imgs = await page.locator("img").all()
-
                     for img in imgs:
                         try:
                             src = await img.get_attribute("src")
-                            # Look for data URIs (generated images) or substantial URLs
-                            if src and len(src) > 500:
-                                if src.startswith("data:image"):
-                                    result_src = src
-                                    break
+                            if src and len(src) > 500 and src.startswith("data:image"):
+                                result_src = src
+                                break
                         except Exception:
                             pass
 
                     if result_src:
                         if verbose:
-                            print("[spongify] Found output image!")
+                            print("[spongify] Found output image in img tag!")
                         break
+
+                    # Method 2: Look for canvas element and convert to data URI
+                    canvases = await page.locator("canvas").all()
+                    if canvases and not result_src:
+                        try:
+                            # Try to convert canvas to data URL
+                            canvas_data = await page.evaluate(
+                                "canvas => canvas.toDataURL('image/png')",
+                                canvases[0].element_handle()
+                            )
+                            if canvas_data and len(canvas_data) > 500:
+                                result_src = canvas_data
+                                if verbose:
+                                    print("[spongify] Found output in canvas!")
+                                break
+                        except Exception as e:
+                            if verbose and check_count % 10 == 0:
+                                print(f"[spongify] Canvas check: {e}")
 
                     check_count += 1
                     if verbose and check_count % 6 == 0:  # Every 6 seconds
-                        print(f"[spongify] Still waiting... {int(time.time() - start_time)}s")
+                        print(f"[spongify] Waiting... {int(time.time() - start_time)}s")
 
                 except Exception as e:
                     if verbose:
-                        print(f"[spongify] Error checking: {e}")
+                        print(f"[spongify] Check error: {e}")
 
                 await asyncio.sleep(1)
 

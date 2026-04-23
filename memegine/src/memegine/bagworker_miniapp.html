@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Bagworker Raids</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e27;
+            color: #fff;
+            padding: 8px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #1a1f3a;
+            margin-bottom: 16px;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .rank {
+            color: #ffd700;
+            font-weight: 700;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #1a1f3a;
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover {
+            color: #aaa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .post {
+            background: #1a1f3a;
+            border: 1px solid #2a2f4a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .post-text {
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            color: #e0e0e0;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+
+        .btn-secondary {
+            background: #2a2f4a;
+            color: #667eea;
+            border: 1px solid #667eea;
+        }
+
+        .btn-secondary:active {
+            background: #667eea;
+            color: white;
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #1a1f3a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .leaderboard-entry.top1 {
+            border-left-color: #ffd700;
+        }
+
+        .leaderboard-entry.top2 {
+            border-left-color: #c0c0c0;
+        }
+
+        .leaderboard-entry.top3 {
+            border-left-color: #cd7f32;
+        }
+
+        .lb-rank {
+            font-weight: 700;
+            color: #667eea;
+            min-width: 30px;
+        }
+
+        .lb-rank.top1 {
+            color: #ffd700;
+        }
+
+        .lb-name {
+            flex: 1;
+            margin: 0 12px;
+        }
+
+        .lb-points {
+            text-align: right;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .stat-box {
+            background: #1a1f3a;
+            border: 1px solid #2a2f4a;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 32px 16px;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 16px;
+            color: #888;
+        }
+
+        .error {
+            background: #3a1a1a;
+            border: 1px solid #5a2a2a;
+            color: #ff6b6b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>🎯 Raids</h1>
+            </div>
+            <div class="user-info">
+                <div>
+                    <div style="font-size: 12px; color: #888;">Points</div>
+                    <div id="userPoints" style="font-size: 18px; font-weight: 700;">0</div>
+                </div>
+                <div class="badge">
+                    <span id="userRank" class="rank">#1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('raids')">🔥 Raids</button>
+            <button class="tab" onclick="switchTab('stats')">📊 Stats</button>
+            <button class="tab" onclick="switchTab('leaderboard')">🏆 Top 10</button>
+        </div>
+
+        <!-- Raids Tab -->
+        <div id="raids" class="tab-content active">
+            <div id="postsContainer"></div>
+        </div>
+
+        <!-- Stats Tab -->
+        <div id="stats" class="tab-content">
+            <div class="stats-grid" id="statsGrid"></div>
+            <div id="statsDetail" style="background: #1a1f3a; border: 1px solid #2a2f4a; border-radius: 8px; padding: 16px;"></div>
+        </div>
+
+        <!-- Leaderboard Tab -->
+        <div id="leaderboard" class="tab-content">
+            <div id="leaderboardContainer"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@twa-dev/sdk@latest/dist/index.umd.js"></script>
+    <script>
+        // Configuration
+        const API_URL = window.location.origin; // Same domain as Mini App
+
+        // TG WebApp integration
+        const tg = window.Telegram?.WebApp;
+        let currentUser = null;
+
+        // Initialize TG WebApp
+        if (tg) {
+            tg.ready();
+            const initData = tg.initDataUnsafe;
+
+            if (initData?.user) {
+                const user = initData.user;
+                authUser({
+                    tg_id: user.id,
+                    username: user.username || `user_${user.id}`,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                });
+            }
+        } else {
+            // Fallback for testing
+            console.log("TG WebApp not detected, using test mode");
+            authUser({
+                tg_id: 123456789,
+                username: "test_user",
+                first_name: "Test",
+                last_name: "User",
+            });
+        }
+
+        // API Calls
+        async function authUser(userData) {
+            try {
+                const res = await fetch(`${API_URL}/auth`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(userData),
+                });
+                const data = await res.json();
+                currentUser = data;
+                updateUserDisplay();
+                loadPosts();
+                loadLeaderboard();
+            } catch (e) {
+                console.error("Auth failed:", e);
+                document.body.innerHTML += `<div class="error">Failed to connect to server</div>`;
+            }
+        }
+
+        async function loadPosts() {
+            try {
+                const res = await fetch(`${API_URL}/posts`);
+                const posts = await res.json();
+
+                const html = posts.length
+                    ? posts.map(
+                        (post) => `
+                    <div class="post">
+                        <div class="post-text">${escapeHtml(post.text)}</div>
+                        <div class="post-actions">
+                            <button class="btn btn-primary" onclick="engage('${post.post_id}', 'retweet')">
+                                🔄 Retweet (+5)
+                            </button>
+                            <button class="btn btn-secondary" onclick="engage('${post.post_id}', 'like')">
+                                ❤️ Like (+2)
+                            </button>
+                            <button class="btn btn-secondary" onclick="engage('${post.post_id}', 'reply')">
+                                💬 Reply (+10)
+                            </button>
+                        </div>
+                    </div>
+                `
+                    )
+                    .join("")
+                    : '<div class="empty">No raids available</div>';
+
+                document.getElementById("postsContainer").innerHTML = html;
+            } catch (e) {
+                console.error("Load posts failed:", e);
+            }
+        }
+
+        async function engage(postId, actionType) {
+            try {
+                const res = await fetch(`${API_URL}/engage`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        post_id: postId,
+                        user_tg_id: currentUser.tg_id,
+                        action_type: actionType,
+                    }),
+                });
+                const data = await res.json();
+
+                // Update local user data
+                currentUser.points = data.user_points;
+                currentUser.rank = data.user_rank;
+                updateUserDisplay();
+
+                // Show feedback
+                alert(`+${data.points_earned} points! Total: ${data.user_points}`);
+
+                // Reload
+                loadPosts();
+                loadLeaderboard();
+            } catch (e) {
+                console.error("Engage failed:", e);
+                alert("Failed to record engagement");
+            }
+        }
+
+        async function loadLeaderboard() {
+            try {
+                const res = await fetch(`${API_URL}/leaderboard?limit=20`);
+                const entries = await res.json();
+
+                const html = entries
+                    .map(
+                        (entry, i) => `
+                    <div class="leaderboard-entry ${i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : ""}">
+                        <div class="lb-rank ${i < 3 ? "top" + (i + 1) : ""}">#${entry.rank}</div>
+                        <div class="lb-name">${escapeHtml(entry.username)}</div>
+                        <div class="lb-points">${entry.points}</div>
+                    </div>
+                `
+                    )
+                    .join("");
+
+                document.getElementById("leaderboardContainer").innerHTML = html;
+            } catch (e) {
+                console.error("Load leaderboard failed:", e);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_URL}/user/${currentUser.tg_id}`);
+                const stats = await res.json();
+
+                document.getElementById("statsGrid").innerHTML = `
+                    <div class="stat-box">
+                        <div class="stat-label">Total Points</div>
+                        <div class="stat-value">${stats.points}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Retweets</div>
+                        <div class="stat-value">${stats.retweets}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Likes</div>
+                        <div class="stat-value">${stats.likes}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Rank</div>
+                        <div class="stat-value">#${stats.rank}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Replies</div>
+                        <div class="stat-value">${stats.replies}</div>
+                    </div>
+                `;
+
+                document.getElementById("statsDetail").innerHTML = `
+                    <h3>${escapeHtml(stats.username)}</h3>
+                    <p style="font-size: 12px; color: #888; margin-top: 8px;">
+                        You're doing great! Keep raiding to climb the leaderboard.
+                    </p>
+                `;
+            } catch (e) {
+                console.error("Load stats failed:", e);
+            }
+        }
+
+        function updateUserDisplay() {
+            document.getElementById("userPoints").textContent = currentUser?.points || 0;
+            document.getElementById("userRank").textContent = `#${currentUser?.rank || 1}`;
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
+            document.querySelectorAll(".tab").forEach((el) => el.classList.remove("active"));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add("active");
+            event.target.classList.add("active");
+
+            // Load stats if stats tab
+            if (tabName === "stats") {
+                loadStats();
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;",
+            };
+            return text.replace(/[&<>"']/g, (m) => map[m]);
+        }
+
+        // Refresh data periodically
+        setInterval(() => {
+            if (document.getElementById("raids").classList.contains("active")) {
+                loadPosts();
+            }
+            loadLeaderboard();
+        }, 10000); // Refresh every 10 seconds
+    </script>
+</body>
+</html>
