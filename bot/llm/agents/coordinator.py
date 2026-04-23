@@ -334,6 +334,12 @@ class AgentCoordinator:
         # Structure: {symbol: {"result": AgentOutput, "timestamp": time.time()}}
         self._regime_cache: Dict[str, Dict[str, Any]] = {}
         self._regime_cache_ttl: float = 30 * 60  # 30 minutes
+        # Scout thesis cache: pre-formed theses from idle-time Scout runs
+        # Structure: {SYMBOL: {"watchlist_item": {...}, "timestamp": time.time()}}
+        # get_entry_decision() injects this into the snapshot so agents start
+        # with Scout's pre-formed view instead of building from scratch.
+        self._scout_thesis_cache: Dict[str, Dict[str, Any]] = {}
+        self._scout_cache_ttl: float = 20 * 60  # 20 minutes
 
     # ── Public API ──────────────────────────────────────────────
 
@@ -1606,6 +1612,26 @@ class AgentCoordinator:
             "_llm_first_portfolio": portfolio_ctx,
         }
 
+        # Inject pre-formed Scout thesis if fresh (< 20 min old)
+        _sym_key = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").upper()
+        _scout_entry = self._scout_thesis_cache.get(_sym_key)
+        if _scout_entry and (time.time() - _scout_entry.get("timestamp", 0)) < self._scout_cache_ttl:
+            snapshot["_scout_pre_formed"] = _scout_entry
+            # Surface the Scout watchlist item directly to the signal_metadata
+            # so Trade/Risk agents see Scout's pre-formed view in their input JSON
+            _wl_item = _scout_entry.get("watchlist_item", {})
+            if _wl_item:
+                snapshot.setdefault("signal_metadata", {}).update({
+                    "scout_pre_bias": _wl_item.get("bias", ""),
+                    "scout_setup_type": _wl_item.get("setup_type", ""),
+                    "scout_conviction": _wl_item.get("conviction", 0),
+                    "scout_thesis": str(_wl_item.get("thesis", ""))[:200],
+                    "scout_key_levels": _wl_item.get("key_levels", []),
+                    "scout_regime_forecast": _scout_entry.get("regime_forecast", {}),
+                })
+                logger.debug(f"[COORDINATOR] Injected Scout pre-formed thesis for {_sym_key}: "
+                             f"bias={_wl_item.get('bias')} conviction={_wl_item.get('conviction')}")
+
         # Pass through OHLCV data for technicals enrichment
         ohlcv_1h = market_ctx.get("ohlcv_1h")
         ohlcv_5m = market_ctx.get("ohlcv_5m")
@@ -2035,6 +2061,18 @@ class AgentCoordinator:
                 high_priority = [w for w in watchlist if w.get("priority") == "high"]
                 if high_priority:
                     scratchpad.write("scout", "high_priority_setups", high_priority)
+                # Cache pre-formed theses per symbol so get_entry_decision()
+                # can inject Scout's view without re-running the full pipeline
+                _now = time.time()
+                for _item in watchlist:
+                    _sym = str(_item.get("symbol", "")).upper()
+                    if _sym:
+                        self._scout_thesis_cache[_sym] = {
+                            "watchlist_item": _item,
+                            "timestamp": _now,
+                            "regime_forecast": out.data.get("regime_forecast"),
+                            "risk_budget": out.data.get("risk_budget"),
+                        }
 
             regime_forecast = out.data.get("regime_forecast")
             if regime_forecast:
@@ -2194,6 +2232,17 @@ class AgentCoordinator:
                     )
             except Exception as e:
                 logger.debug(f"[OVERSEER] Failed to feed theses: {e}")
+
+        # Trigger self-analyst: let the bot analyze its own trades and write new KB rules.
+        # Rate-limited internally (max 3/day, min 8h between runs) so this is safe to call
+        # on every overseer cycle.
+        try:
+            from llm.self_analyst import run_analysis as _self_analyse
+            import threading as _threading
+            _t = _threading.Thread(target=_self_analyse, daemon=True, name="self_analyst")
+            _t.start()
+        except Exception as _se:
+            logger.debug(f"[OVERSEER] Self-analyst launch error: {_se}")
 
         logger.info(
             f"[MULTI-AGENT] Overseer: health={health}, "
@@ -4301,6 +4350,45 @@ class AgentCoordinator:
         # Default memory note from thesis if Trade Agent didn't provide mu
         if not memory_update and trade_thesis and action in ("go", "proceed"):
             memory_update = trade_thesis[:100]
+
+        # ── Graduated Rules: apply empirically-validated executable rules ──
+        # These rules graduated from hypothesis_tracker via 10+ evidence events.
+        # They can VETO, BOOST, or PENALIZE confidence based on regime/symbol/side.
+        if action not in ("flat", "skip") and snapshot_data:
+            try:
+                from llm.graduated_rules import get_graduated_rules_engine
+                _sym = ""
+                _side = ""
+                _strat = ""
+                _n_agree = 0
+                # Extract from snapshot_data
+                for _mk in snapshot_data.get("m", []):
+                    for _sg in _mk.get("sg", _mk.get("sigs", [])):
+                        if not _sym:
+                            _sym = str(_sg.get("sym", _sg.get("s", "")))
+                        if not _side:
+                            _side = str(_sg.get("side", _sg.get("sd", "")))
+                        if not _strat:
+                            _strat = str(_sg.get("strategy", ""))
+                        if not _n_agree:
+                            _n_agree = int(snapshot_data.get("g", {}).get("n_agree", 0))
+                _vetoed, _adj_conf, _grad_notes = get_graduated_rules_engine().evaluate_signal(
+                    symbol=_sym, regime=regime, side=_side,
+                    strategy=_strat, num_agree=_n_agree,
+                    confidence=confidence * 100 if confidence <= 1.0 else confidence,
+                )
+                if _vetoed:
+                    action = "flat"
+                    notes += f" | GRAD_VETO: {_grad_notes[:80]}"
+                    logger.info(f"[GRAD-RULES] Signal vetoed for {_sym}/{_side}: {_grad_notes[:60]}")
+                elif _grad_notes:
+                    # Scale adjusted confidence back to [0,1] if needed
+                    _new_conf = _adj_conf / 100.0 if _adj_conf > 1.0 else _adj_conf
+                    if abs(_new_conf - confidence) > 0.01:
+                        notes += f" | GRAD: {_grad_notes[:60]} conf {confidence:.2f}→{_new_conf:.2f}"
+                        confidence = _new_conf
+            except Exception as _ge:
+                logger.debug(f"[GRAD-RULES] Eval error: {_ge}")
 
         return LLMDecision(
             action=action,

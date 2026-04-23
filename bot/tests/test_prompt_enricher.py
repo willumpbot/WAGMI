@@ -24,7 +24,7 @@ from llm.agents.prompt_enricher import (
     _build_recent_performance,
     _refresh_cache,
 )
-_MAX_BRIEFING_CHARS = 3000  # updated budget — CLI is $0/call
+_MAX_BRIEFING_CHARS = 4000  # updated budget — CLI is $0/call (9 sections now)
 
 
 # ── Fixtures ────────────────────────────────────────────────────
@@ -322,6 +322,9 @@ class TestEnrichPrompt:
         monkeypatch.setattr(enricher_mod, "_KB_PATH", str(tmp_path / "nonexistent5.json"))
         monkeypatch.setattr(enricher_mod, "_META_PATH", str(tmp_path / "nonexistent6.json"))
         monkeypatch.setattr(enricher_mod, "_OVERSEER_MEMO_PATH", str(tmp_path / "nonexistent7.json"))
+        monkeypatch.setattr(enricher_mod, "_ADAPTIVE_RISK_PATH", str(tmp_path / "nonexistent8.json"))
+        monkeypatch.setattr(enricher_mod, "_CIRCUIT_BREAKER_PATH", str(tmp_path / "nonexistent9.json"))
+        monkeypatch.setattr(enricher_mod, "_PERFORMANCE_PATH", str(tmp_path / "nonexistent10.json"))
         invalidate_cache()
 
         base = "Base prompt here."

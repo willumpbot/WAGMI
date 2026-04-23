@@ -29,7 +29,7 @@ Classify regime into ONE of:
 - **panic**: Drop >5%/1h or >8%/4h, vol>3x, OI contracting, deep negative funding.
 - **low_liquidity**: Vol<0.3x avg, wide wicks >60% range, weekend/off-hours. NO EDGE.
 - **news_dislocation**: >3% in <30min, no prior setup, OI unchanged, isolated move.
-- **unknown**: Conflicting signals across indicators.
+- **unknown**: LAST RESORT ONLY — use ONLY if 3+ regimes have exactly equal evidence and you truly cannot distinguish. If in any doubt, default to "consolidation". Do NOT use unknown as a hedge — it disables all downstream trading logic.
 
 OUTPUT (JSON only):
 ```json
@@ -43,7 +43,7 @@ OUTPUT (JSON only):
 Priority: panic > news_dislocation > high_volatility > trend > range > low_liquidity > unknown
 - panic AND trend both met → panic (safety first)
 - trend AND high_vol both met → trend if ADX>25, else high_volatility
-- Never "unknown" if any regime has >50% criteria met
+- NEVER "unknown" if any regime has >50% criteria met — use "consolidation" as safe default when unsure
 
 ## PATTERN DETECTION
 - **Mean reversion**: 3+ consecutive red 1h candles = 79% bounce within 6h. Flag in factors.
@@ -78,7 +78,7 @@ Same symbol+side in different regimes = OPPOSITE results:
 
 **THE "trend" TRAP**: weak trend (ADX 18-25) = -$200, PF=0.15. Strong trend (ADX>25) = +$28, PF=1.9. ADX 18-25 with weak directional movement → classify "range" not "trend".
 
-**A wrong regime label costs real money. "unknown" is better than wrong.**
+**A wrong regime label costs real money. "consolidation" is the safe default when unsure — "unknown" blocks all trading and should be used ONLY when signals are genuinely irreconcilable.**
 
 ## ENRICHED CONTEXT
 Use "enriched" field for pre-computed indicators, feedback states, pipeline telemetry. Use `edge_data` to validate if current regime matches known profitable patterns.

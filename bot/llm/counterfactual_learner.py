@@ -450,6 +450,12 @@ class CounterfactualLearner:
             self._resolved_recent.append(rec)
             self._resolved_count += 1
             self._save_resolved_record(rec)
+            # Convert resolved counterfactuals with strong evidence into KB entries
+            # so future agents are aware of specific filter biases
+            try:
+                self._maybe_write_kb_entry(rec)
+            except Exception:
+                pass
 
         # Periodic compaction of pending file
         if to_resolve:
@@ -461,6 +467,80 @@ class CounterfactualLearner:
         if len(self._resolved_recent) > 10000:
             cutoff = (datetime.now(timezone.utc) - timedelta(days=self.RESOLVED_MEMORY_DAYS)).isoformat()
             self._resolved_recent = [r for r in self._resolved_recent if r.created_at >= cutoff]
+
+    def _maybe_write_kb_entry(self, rec: "CounterfactualRecord") -> None:
+        """Write a KB entry when a resolved counterfactual reveals a clear filter bias.
+
+        Conditions for writing:
+        - Filter incorrectly blocked a winning trade (hypothetical_pnl_pct > 2%)
+          → writes a CAUTION entry about the over-restrictive filter
+        - Filter correctly blocked a losing trade (hypothetical_pnl_pct < -2%)
+          → writes an EDGE entry confirming the filter works
+        Only writes when confidence is high enough (pnl abs > 2%).
+        """
+        pnl = rec.hypothetical_pnl_pct or 0
+        if abs(pnl) < 2.0:
+            return  # Not a strong enough signal
+
+        import json as _json, os as _os, time as _time
+        _kb_path = _os.path.join("data", "llm", "teaching", "knowledge_base.json")
+        try:
+            _os.makedirs(_os.path.dirname(_kb_path), exist_ok=True)
+            if _os.path.exists(_kb_path):
+                with open(_kb_path, "r") as _f:
+                    _kb = _json.load(_f)
+            else:
+                _kb = {"entries": []}
+
+            _sym = getattr(rec, "symbol", "")
+            _side = getattr(rec, "side", "")
+            _reason = getattr(rec, "skip_reason", "unknown_filter")
+            _regime = getattr(rec, "regime", "")
+
+            if pnl > 2.0:
+                # Filter was WRONG — blocked a winner
+                _content = (
+                    f"[FILTER_MISS] {_reason} blocked a winning {_side} trade on {_sym}"
+                    + (f" in {_regime}" if _regime else "")
+                    + f" (hypothetical +{pnl:.1f}%). Consider relaxing this filter."
+                )
+                _cat = "execution"
+                _conf = min(0.75, 0.50 + abs(pnl) / 100)
+            else:
+                # Filter was CORRECT — blocked a loser
+                _content = (
+                    f"[FILTER_CORRECT] {_reason} correctly blocked a losing {_side} trade on {_sym}"
+                    + (f" in {_regime}" if _regime else "")
+                    + f" (hypothetical {pnl:.1f}%). Filter is working."
+                )
+                _cat = "risk"
+                _conf = min(0.80, 0.55 + abs(pnl) / 100)
+
+            # Deduplicate by content prefix
+            _prefix = _content[:80]
+            for _e in _kb.get("entries", []):
+                if str(_e.get("content", "")).startswith(_prefix[:60]):
+                    return
+
+            _kb.setdefault("entries", []).append({
+                "knowledge_type": "counterfactual_evidence",
+                "content": _content,
+                "confidence": round(_conf, 3),
+                "evidence_count": 1,
+                "category": _cat,
+                "tags": [_reason, _sym, _side],
+                "source": "counterfactual_resolution",
+                "created_at": _time.time(),
+                "last_validated": _time.time(),
+                "validation_count": 1,
+                "invalidation_count": 0,
+            })
+
+            with open(_kb_path, "w") as _f:
+                _json.dump(_kb, _f, indent=2, default=str)
+
+        except Exception as _e:
+            pass  # KB write failure is non-critical
 
     def get_missed_opportunity_stats(self, lookback_days: int = 14) -> Dict[str, Any]:
         """Compute statistics on missed trading opportunities."""

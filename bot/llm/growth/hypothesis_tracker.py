@@ -377,6 +377,14 @@ class HypothesisTracker:
                         f"[HYPO] GRADUATED (validated): {h.statement[:60]} "
                         f"-> {h.graduated_to} ({h.supporting_count}:{h.contradicting_count})"
                     )
+                # Wire validated hypothesis → GraduatedRules engine → KB
+                try:
+                    from llm.graduated_rules import get_graduated_rules_engine
+                    _rule = get_graduated_rules_engine().graduate_hypothesis(h)
+                    if _rule:
+                        logger.info(f"[HYPO→RULE] Created executable rule: {_rule.action} (id={_rule.rule_id})")
+                except Exception as _ge:
+                    logger.debug(f"[HYPO→RULE] Graduation error: {_ge}")
             elif h.evidence_ratio <= 0.3:
                 # Invalidated
                 h.stage = "invalidated"
@@ -393,6 +401,14 @@ class HypothesisTracker:
                         f"[HYPO] INVALIDATED: {h.statement[:60]} "
                         f"({h.supporting_count}:{h.contradicting_count})"
                     )
+                # Wire anti-pattern → GraduatedRules as a PENALIZE rule
+                try:
+                    from llm.graduated_rules import get_graduated_rules_engine
+                    _rule = get_graduated_rules_engine().graduate_hypothesis(h)
+                    if _rule:
+                        logger.info(f"[HYPO→RULE] Anti-pattern rule: {_rule.action} (id={_rule.rule_id})")
+                except Exception as _ge:
+                    logger.debug(f"[HYPO→RULE] Anti-pattern graduation error: {_ge}")
 
             h.last_updated = time.time()
 

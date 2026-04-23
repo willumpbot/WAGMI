@@ -9,6 +9,7 @@ Reads from:
   - teaching/knowledge_base.json — graduated rules (written never read until now)
   - meta_learning/insights.json — cross-trade pattern analysis
   - overseer_memo.json — latest Overseer recommendations (written by run_overseer)
+  - feedback/adaptive_risk_state.json — real-time streak + regime WR
 
 Each agent gets a tailored "QUANT INTELLIGENCE BRIEFING" appended to its prompt,
 plus validated rules, meta-patterns, overseer memo, and recent performance.
@@ -35,6 +36,9 @@ _TRADES_CSV_PATH = os.path.join(_DATA_DIR, "trades.csv")
 _KB_PATH = os.path.join(_DATA_DIR, "llm", "teaching", "knowledge_base.json")
 _META_PATH = os.path.join(_DATA_DIR, "meta_learning", "insights.json")
 _OVERSEER_MEMO_PATH = os.path.join(_DATA_DIR, "llm", "overseer_memo.json")
+_ADAPTIVE_RISK_PATH = os.path.join(_DATA_DIR, "feedback", "adaptive_risk_state.json")
+_CIRCUIT_BREAKER_PATH = os.path.join(_DATA_DIR, "circuit_breaker_state.json")
+_PERFORMANCE_PATH = os.path.join(_DATA_DIR, "analysis", "performance.json")
 
 # ── Cache ───────────────────────────────────────────────────────
 _CACHE_TTL_S = 1800  # 30 min — balance freshness vs I/O
@@ -140,6 +144,9 @@ def _refresh_cache() -> None:
     meta_insights = meta_data.get("insights", [])
 
     overseer_memo = _load_json_safe(_OVERSEER_MEMO_PATH, {})
+    adaptive_risk = _load_json_safe(_ADAPTIVE_RISK_PATH, {})
+    circuit_breaker = _load_json_safe(_CIRCUIT_BREAKER_PATH, {})
+    performance = _load_json_safe(_PERFORMANCE_PATH, {})
 
     _cache = {
         "insights": insights,
@@ -149,6 +156,9 @@ def _refresh_cache() -> None:
         "kb_entries": kb_entries,
         "meta_insights": meta_insights,
         "overseer_memo": overseer_memo,
+        "adaptive_risk": adaptive_risk,
+        "circuit_breaker": circuit_breaker,
+        "performance": performance,
     }
     _cache_ts = now
 
@@ -458,14 +468,124 @@ def _build_overseer_memo(agent_role: str) -> str:
     return "\n".join(lines)
 
 
+def _build_system_health_context() -> str:
+    """Inject circuit breaker state + rolling performance for all decision agents.
+
+    Critical: if the CB is tripped or close, agents must know to be defensive.
+    Rolling WR (last 20/50 trades) + avg R:R gives agents live performance context.
+    """
+    lines = []
+
+    # Circuit breaker state
+    cb = _cache.get("circuit_breaker", {})
+    if cb:
+        tripped = cb.get("tripped", False)
+        daily_pnl = cb.get("daily_pnl", 0)
+        consec = cb.get("consecutive_losses", 0)
+        peak = cb.get("peak_equity", 0)
+        reason = cb.get("trip_reason", "")
+
+        if tripped:
+            lines.append(f"  ⚠ CB TRIPPED: {reason} (daily_pnl=${daily_pnl:.1f})")
+        else:
+            # Warn if approaching limits
+            if consec >= 3:
+                lines.append(f"  ⚠ CB WARNING: {consec} consecutive losses")
+            elif daily_pnl < 0 and peak > 0:
+                dd_pct = abs(daily_pnl) / peak * 100
+                if dd_pct > 4:
+                    lines.append(f"  CB PROXIMITY: daily DD={dd_pct:.1f}% (limit=8%) — be defensive")
+
+    # Rolling performance stats
+    perf = _cache.get("performance", {})
+    if perf:
+        wr20 = perf.get("win_rate_20")
+        wr50 = perf.get("win_rate_50")
+        avg_rr = perf.get("avg_rr")
+        total = perf.get("total_trades", 0)
+        parts = []
+        if wr20 is not None:
+            parts.append(f"WR_20={wr20:.0%}")
+        if wr50 is not None:
+            parts.append(f"WR_50={wr50:.0%}")
+        if avg_rr is not None:
+            parts.append(f"avg_RR={avg_rr:.2f}")
+        if total:
+            parts.append(f"n={total}")
+        if parts:
+            lines.append(f"  System: {' | '.join(parts)}")
+
+    if not lines:
+        return ""
+
+    return "=== SYSTEM HEALTH ===\n" + "\n".join(lines)
+
+
+def _build_adaptive_risk_context() -> str:
+    """Inject hot/cold streak + live regime WR from adaptive_risk_state.json.
+
+    This is the single most actionable real-time signal: consecutive losses
+    mean the system is in a bad regime and should reduce risk. Consecutive wins
+    mean the edge is alive. Regime WR shows which regimes are currently paying.
+    """
+    ar = _cache.get("adaptive_risk", {})
+    if not ar:
+        return ""
+
+    lines = []
+
+    # Recent streak
+    outcomes = ar.get("recent_outcomes", [])
+    if outcomes:
+        recent = outcomes[-10:]  # last 10
+        wins = sum(1 for o in recent if o)
+        total = len(recent)
+        streak = 0
+        last = outcomes[-1] if outcomes else None
+        for o in reversed(outcomes):
+            if o == last:
+                streak += 1
+            else:
+                break
+
+        streak_desc = f"{'WIN' if last else 'LOSS'} streak={streak}"
+        lines.append(f"  Recent: {wins}/{total} WR={wins/total:.0%} | {streak_desc}")
+        if streak >= 3 and not last:
+            lines.append(f"  ⚠ COLD STREAK: {streak} consecutive losses — reduce sizing")
+        elif streak >= 3 and last:
+            lines.append(f"  ✓ HOT STREAK: {streak} consecutive wins — edge alive")
+
+    # Live regime WR
+    regime_wr = ar.get("regime_wr", {})
+    if regime_wr:
+        rlines = []
+        for rg, stats in regime_wr.items():
+            w = stats.get("wins", 0)
+            t = stats.get("total", 0)
+            if t >= 3:
+                rlines.append(f"{rg}: {w}/{t}={w/t:.0%}")
+        if rlines:
+            lines.append(f"  Live regime WR: {' | '.join(rlines)}")
+
+    if not lines:
+        return ""
+
+    return "=== REAL-TIME RISK STATE ===\n" + "\n".join(lines)
+
+
 def enrich_prompt(agent_role: str, base_prompt: str) -> str:
     """Enrich an agent's base prompt with the latest quant intelligence.
 
     Appends:
       1. QUANT INTELLIGENCE BRIEFING — top 5 relevant insights by confidence
-      2. SETUP EDGE DATA — per-setup WR from strategy_fingerprints
-      3. SIM STATUS — current sim equity and performance
-      4. RECENT PERFORMANCE — last 10 trade outcomes from trades.csv
+      2. VALIDATED TRADING RULES — graduated rules from knowledge_base
+      3. META-LEARNING PATTERNS — cross-trade statistical patterns
+      4. OVERSEER PORTFOLIO MEMO — latest system-level recommendations
+      5. SETUP EDGE DATA — per-setup WR from strategy_fingerprints
+      6. SIM STATUS — current sim equity and performance
+      7. RECENT PERFORMANCE — last 10 trade outcomes from trades.csv
+      8. REAL-TIME RISK STATE — hot/cold streak + live regime WR
+      9. SYSTEM HEALTH — circuit breaker state, rolling WR, avg R:R
 
     Args:
         agent_role: Agent role string (e.g., "regime", "trade", "risk")
@@ -516,13 +636,24 @@ def enrich_prompt(agent_role: str, base_prompt: str) -> str:
         if perf:
             sections.append(perf)
 
+    # 8. Adaptive risk state (hot/cold streak + live regime WR)
+    if agent_role in ("trade", "risk", "critic", "regime", "overseer"):
+        adaptive = _build_adaptive_risk_context()
+        if adaptive:
+            sections.append(adaptive)
+
+    # 9. System health — CB state, rolling WR, R:R (injected into ALL decision agents)
+    system_health = _build_system_health_context()
+    if system_health:
+        sections.append(system_health)
+
     if not sections:
         return base_prompt
 
-    # Join all sections and enforce token budget (raised to 3000 chars — CLI is $0/call)
+    # Join all sections and enforce token budget (raised to 4000 chars — CLI is $0/call)
     enrichment = "\n\n".join(sections)
-    if len(enrichment) > 3000:
-        enrichment = enrichment[:2997] + "..."
+    if len(enrichment) > 4000:
+        enrichment = enrichment[:3997] + "..."
 
     return f"{base_prompt}\n\n{enrichment}"
 

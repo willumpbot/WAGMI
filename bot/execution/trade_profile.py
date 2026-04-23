@@ -269,13 +269,20 @@ def _determine_regime(signal_metadata: Dict[str, Any]) -> str:
 
 
 def _determine_volatility_band(atr: float, price: float) -> str:
-    """Classify volatility from ATR/price ratio."""
+    """Classify volatility from ATR/price ratio.
+
+    Crypto-calibrated thresholds (prior thresholds <1.5%/3.0% put BTC into
+    'low' at typical 0.7-1.4% ATR/price — fixed to match actual market regimes):
+      low    < 0.5%  — near-dead market, very tight range
+      medium   0.5-2.0% — normal crypto volatility
+      high   > 2.0%  — elevated, trend-worthy or news-driven
+    """
     if price <= 0 or atr <= 0:
         return "medium"
     vol_pct = (atr / price) * 100
-    if vol_pct < 1.5:
+    if vol_pct < 0.5:
         return "low"
-    elif vol_pct > 3.0:
+    elif vol_pct > 2.0:
         return "high"
     return "medium"
 

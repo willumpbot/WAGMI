@@ -162,7 +162,7 @@ class TestClassificationLogic:
         profile = classify_trade(
             {"strategies_agree": ["regime_trend"], "individual_confidences": {"regime_trend": 80},
              "strategy_weights": {"regime_trend": 0.7}},
-            confidence=80, atr=1.0, entry=100.0, side="BUY",  # 1% ATR = low vol
+            confidence=80, atr=0.3, entry=100.0, side="BUY",  # 0.3% ATR = low vol (crypto: <0.5%)
         )
         assert profile.volatility_band == "low"
 

@@ -110,7 +110,49 @@ class GraduatedRulesEngine:
         self._rules.append(rule)
         self._save()
         logger.info(f"[GRAD-RULES] Graduated: {rule.action} when {conditions}")
+        # Persist into knowledge_base.json so prompt_enricher injects into agent prompts
+        self._write_to_knowledge_base(rule, hypothesis)
         return rule
+
+    def _write_to_knowledge_base(self, rule: "GraduatedRule", hypothesis: Any) -> None:
+        """Persist a graduated rule into knowledge_base.json for agent prompt injection."""
+        _kb_path = os.path.join("data", "llm", "teaching", "knowledge_base.json")
+        try:
+            os.makedirs(os.path.dirname(_kb_path), exist_ok=True)
+            if os.path.exists(_kb_path):
+                with open(_kb_path, "r") as _f:
+                    _kb = json.load(_f)
+            else:
+                _kb = {"entries": []}
+            # Deduplicate by hypothesis statement
+            for _e in _kb.get("entries", []):
+                if _e.get("content", "").endswith(hypothesis.statement):
+                    return
+            _conds = rule.conditions
+            _cat = "regime" if _conds.get("regime") else "symbol" if _conds.get("symbol") else "strategy"
+            _prefix = {"veto": "AVOID", "boost": "EDGE", "penalize": "CAUTION", "size_adjust": "SIZE"}.get(rule.action, "RULE")
+            _kb.setdefault("entries", []).append({
+                "knowledge_type": "graduated_rule",
+                "content": f"[{_prefix}] {hypothesis.statement}",
+                "confidence": round(rule.confidence, 3),
+                "evidence_count": rule.total_evidence,
+                "evidence_ratio": round(rule.evidence_ratio, 3),
+                "category": _cat,
+                "tags": list(_conds.keys()),
+                "source": "hypothesis_graduation",
+                "rule_id": rule.rule_id,
+                "action": rule.action,
+                "conditions": _conds,
+                "created_at": rule.created_at,
+                "last_validated": rule.created_at,
+                "validation_count": rule.total_evidence,
+                "invalidation_count": 0,
+            })
+            with open(_kb_path, "w") as _f:
+                json.dump(_kb, _f, indent=2, default=str)
+            logger.info(f"[GRAD-RULES→KB] [{_prefix}] {hypothesis.statement[:60]}")
+        except Exception as _e:
+            logger.debug(f"[GRAD-RULES→KB] Write error: {_e}")
 
     def _parse_hypothesis(self, hypothesis) -> tuple:
         stmt = hypothesis.statement.lower()

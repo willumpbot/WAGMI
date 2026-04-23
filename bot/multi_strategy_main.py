@@ -1975,18 +1975,21 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             except Exception as e:
                 logger.warning(f"[{trace_id}] Exit intelligence error: {e}")
 
-        # Scout Agent: idle-time preparation and forecasting
-        # Runs every 120th tick (~2 hours at 60s intervals) to minimize cost
-        # Blueprint: scout should run every 2-4 hours, not per-signal
-        if self._tick % 120 == 0 and os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
+        # Scout Agent: idle-time preparation and watchlist formation
+        # CLI = $0/call: drop from 120-tick (~2h) to 15-tick (~15 min) cadence
+        if self._tick % 15 == 0 and os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes"):
             try:
                 self._run_scout_preparation(trace_id)
             except Exception as e:
                 logger.debug(f"[{trace_id}] Scout preparation error: {e}")
 
-        # Exit Agent: periodic thesis-validity check on all open positions
-        # Runs every 5 ticks (~5 min). Advisory — logs urgency but doesn't force close.
-        if (self._tick % 5 == 0
+        # Exit Agent: thesis-validity check on ALL open positions
+        # CLI = $0/call: run every 2 ticks (~2 min) and only if positions are open
+        _has_open_positions = bool(getattr(self, 'pos_mgr', None) and
+                                   hasattr(self.pos_mgr, 'positions') and
+                                   any(p.state not in ("CLOSED",) for p in self.pos_mgr.positions.values()))
+        if (_has_open_positions
+                and self._tick % 2 == 0
                 and os.getenv("LLM_MULTI_AGENT", "").lower() in ("1", "true", "yes")
                 and os.getenv("AGENT_EXIT_ENABLED", "true").lower() in ("1", "true", "yes")):
             try:
