@@ -48,8 +48,19 @@ class GraduatedRule:
         c = self.conditions
         if c.get("symbol") and symbol.upper() != c["symbol"].upper():
             return False
-        if c.get("regime") and regime.lower() != c["regime"].lower():
-            return False
+        if c.get("regime"):
+            # Canonicalize both sides for comparison — "trending_bull", "trending_bear",
+            # "trending", "trend" all compare equal to a rule condition of "trending" or "trend"
+            try:
+                from llm.regime_canonical import canonicalize_regime
+                _rule_rg = canonicalize_regime(c["regime"].lower())
+                _in_rg = canonicalize_regime(regime.lower())
+                # Also allow direct match on pre-canonicalization form
+                if _rule_rg != _in_rg and c["regime"].lower() != regime.lower():
+                    return False
+            except Exception:
+                if regime.lower() != c["regime"].lower():
+                    return False
         if c.get("side") and side.upper() != c["side"].upper():
             return False
         if c.get("strategy") and strategy != c["strategy"]:
