@@ -213,7 +213,7 @@ import re
 import json
 from typing import Optional
 import httpx
-from .gallery import save as gallery_save, search_by_vibe
+from .raid_tracker import log_raider_action, get_raider_stats, get_leaderboard
 
 
 SCAM_PATTERNS = [
@@ -535,78 +535,49 @@ def run() -> None:  # pragma: no cover — requires network + credentials
                     vibe = raid_data.get('vibe_line', '?')
                     gallery = raid_data.get('gallery_items', [])
 
-                    # Send vibe message
-                    vibe_msg = f"{vibe}\n\n💾 Saved {len(gallery)} matching images"
-                    await context.bot.send_message(update.effective_chat.id, vibe_msg)
+                    # Build engagement buttons
+                    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-                    # Send gallery images if any
-                    if gallery:
-                        for item in gallery[:4]:
-                            file_path = settings.data_dir / "gallery" / item.filename
-                            if file_path.exists():
-                                try:
-                                    with open(file_path, 'rb') as f:
-                                        await context.bot.send_photo(update.effective_chat.id, f)
-                                except Exception:
-                                    pass  # Skip if send fails
+                    if raid_data.get('tweet_id'):
+                        tweet_id = raid_data['tweet_id']
+                        buttons = [
+                            [
+                                InlineKeyboardButton("❤️ Like", url=f"https://twitter.com/intent/favorite?tweet_id={tweet_id}"),
+                                InlineKeyboardButton("🔁 Retweet", url=f"https://twitter.com/intent/retweet?tweet_id={tweet_id}"),
+                                InlineKeyboardButton("💬 Reply", url=f"https://twitter.com/intent/tweet?in_reply_to={tweet_id}"),
+                            ]
+                        ]
+                        keyboard = InlineKeyboardMarkup(buttons)
+
+                        # Send vibe with buttons
+                        vibe_msg = f"{vibe}\n\nClick below to engage:"
+                        await context.bot.send_message(
+                            update.effective_chat.id,
+                            vibe_msg,
+                            reply_markup=keyboard
+                        )
+
+                        # Log that we posted a raid
+                        username = message.from_user.username or f"user_{message.from_user.id}"
+                        log_raider_action(
+                            message.from_user.id,
+                            username,
+                            "raid_posted",
+                            raid_data.get('tweet_url', '')
+                        )
+                    else:
+                        vibe_msg = f"{vibe}\n\n(Could not parse tweet ID)"
+                        await context.bot.send_message(update.effective_chat.id, vibe_msg)
             except Exception as e:
                 pass  # Silent on error
             return
 
-    async def media_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle photo/video uploads to gallery."""
-        if not update.effective_message or not update.effective_chat:
-            return
-
-        # Only handle the raid group
-        if settings.raid_group_id and update.effective_chat.id != settings.raid_group_id:
-            return
-
-        try:
-            message = update.effective_message
-            user_id = message.from_user.id if message.from_user else None
-            filename = ""
-            file_obj = None
-
-            # Handle photos
-            if message.photo:
-                photo = message.photo[-1]  # Get highest resolution
-                file_obj = await context.bot.get_file(photo.file_id)
-                filename = f"photo_{file_obj.file_unique_id}.jpg"
-            # Handle videos
-            elif message.video:
-                video = message.video
-                file_obj = await context.bot.get_file(video.file_id)
-                filename = f"video_{file_obj.file_unique_id}.mp4"
-
-            if file_obj and filename:
-                # Download file
-                file_bytes = await file_obj.download_as_bytearray()
-
-                # Save to gallery
-                item = gallery_save(
-                    bytes(file_bytes),
-                    filename,
-                    tags=["user-upload"],
-                    energy=3,
-                    uploader_id=user_id,
-                )
-                # Silent - no reply
-        except Exception:
-            pass  # Silent on error
-
     if settings.raid_group_id:
-        # Add group handlers only if raid group is configured
+        # Add group handler for Twitter link detection
         application.add_handler(
             MessageHandler(
                 filters.Chat(settings.raid_group_id) & ~filters.COMMAND,
                 group_message_handler
-            )
-        )
-        application.add_handler(
-            MessageHandler(
-                filters.Chat(settings.raid_group_id) & (filters.PHOTO | filters.VIDEO),
-                media_handler
             )
         )
 
