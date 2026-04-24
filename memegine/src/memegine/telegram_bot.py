@@ -214,7 +214,6 @@ import json
 from typing import Optional
 import httpx
 from .gallery import save as gallery_save, search_by_vibe
-from .claude_client import call_claude
 
 
 SCAM_PATTERNS = [
@@ -241,15 +240,15 @@ TWITTER_LINK_RE = re.compile(
 WARN_STATE: dict[int, int] = {}  # user_id -> warn_count
 
 
-async def analyze_twitter_for_raid(tweet_url: str) -> Optional[dict]:
+def analyze_twitter_for_raid(tweet_url: str) -> Optional[dict]:
     """Fetch tweet content and analyze vibe with Claude."""
     try:
-        # Fetch oEmbed
-        async with httpx.AsyncClient() as client:
-            oembed_url = f"https://publish.twitter.com/oembed?url={tweet_url}&maxwidth=550&omit_script=true"
-            resp = await client.get(oembed_url, timeout=5.0)
-            resp.raise_for_status()
-            oembed_data = resp.json()
+        # Fetch oEmbed (sync version)
+        import requests
+        oembed_url = f"https://publish.twitter.com/oembed?url={tweet_url}&maxwidth=550&omit_script=true"
+        resp = requests.get(oembed_url, timeout=5)
+        resp.raise_for_status()
+        oembed_data = resp.json()
 
         tweet_html = oembed_data.get('html', '')
         # Extract text from blockquote (rough: strip HTML tags)
@@ -260,21 +259,25 @@ async def analyze_twitter_for_raid(tweet_url: str) -> Optional[dict]:
         tweet_id = match.group(1) if match else None
 
         # Claude vibe analysis (Haiku tier, cheap)
-        prompt = f"""Tag this tweet for a crypto raid group. Return JSON: {{"vibe_line": str, "tags": list[str]}}
+        from .config import settings
+        from .claude_client import ClaudeClient
+
+        try:
+            client = ClaudeClient()
+            vibe_json = client.complete_json(
+                system="You are a social media engagement analyst for crypto communities. Return ONLY JSON.",
+                user=f"""Tag this tweet for a crypto raid group. Return JSON: {{"vibe_line": str, "tags": list[str]}}
 vibe_line is 1 emoji + 4 words max.
 tags are 3-6 from: hype, bullish, bearish, meme, pepe, wojak, degen, moon, wagmi, ngmi, based, chaos, chill, alpha, fud, energy_high, energy_low
 
-Tweet: {tweet_text[:200]}"""
+Tweet: {tweet_text[:200]}""",
+                model=settings.vibe_model,
+                temperature=0.7,
+            )
+        except Exception:
+            # Fallback if API key not set
+            vibe_json = {'vibe_line': '?', 'tags': []}
 
-        from .config import settings
-        vibe_resp = await call_claude(
-            system="You are a social media engagement analyst for crypto communities.",
-            messages=[{"role": "user", "content": prompt}],
-            model=settings.vibe_model,
-            temperature=0.7,
-        )
-
-        vibe_json = json.loads(vibe_resp)
         vibe_line = vibe_json.get('vibe_line', '?')
         tags = vibe_json.get('tags', [])
 
@@ -527,7 +530,7 @@ def run() -> None:  # pragma: no cover — requires network + credentials
                 await message.pin(disable_notification=True)
 
                 # Analyze tweet
-                raid_data = await analyze_twitter_for_raid(twitter_url)
+                raid_data = analyze_twitter_for_raid(twitter_url)
                 if raid_data:
                     vibe = raid_data.get('vibe_line', '?')
                     gallery = raid_data.get('gallery_items', [])
