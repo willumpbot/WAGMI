@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0",
+  "last_updated": "2026-04-24T00:00:00Z",
+  "rules": [
+    {
+      "rule_id": "F2_calibration_offset_cap",
+      "source": "AUTONOMOUS_SESSION_2026_04_15 Finding 2",
+      "description": "Calibration offset capped at ±3 points (was ±15, drifted to -9.28)",
+      "problem": "Tuner calibration_offset drove to -9.28, cancelling quality boosts and blocking all signals",
+      "fix_applied": "parameter_tuner.py: cap at ±3 with gradual_move, load-time correction if < -3",
+      "status": "APPLIED",
+      "confidence": 92,
+      "gate_percentage": 100,
+      "baseline_wr": 0.337,
+      "treatment_wr": null,
+      "applied_date": "2026-04-15",
+      "verified": true
+    },
+    {
+      "rule_id": "F5_llm_mode_guard",
+      "source": "AUTONOMOUS_SESSION_2026_04_15 Finding 5",
+      "description": "Scout/Overseer/Exit agents now respect LLM_MODE=0 gate",
+      "problem": "Scout/Overseer/Exit called LLM APIs when LLM_MODE=0, causing 50 rejections in 70 min",
+      "fix_applied": "position_wiring.py:660, llm_integration.py:969,1142,1220 — should_call_llm() guard added",
+      "status": "APPLIED",
+      "confidence": 95,
+      "gate_percentage": 100,
+      "applied_date": "2026-04-15",
+      "verified": true
+    },
+    {
+      "rule_id": "F11_proven_setup_3tuple",
+      "source": "AUTONOMOUS_SESSION_2026_04_15 Finding 11",
+      "description": "Proven-setup table rebuilt as (symbol, side, strategy) 3-tuple",
+      "problem": "Table collapsed (symbol,side) dimensions, treating SOL_SELL differently per strategy as same",
+      "fix_applied": "ensemble.py:2293 — comment confirms Finding 11 rewrite; 3-tuple format implemented",
+      "status": "APPLIED",
+      "confidence": 85,
+      "gate_percentage": 100,
+      "applied_date": "2026-04-15",
+      "verified": true
+    },
+    {
+      "rule_id": "F16_clean_win_label",
+      "source": "AUTONOMOUS_SESSION_2026_04_15 Finding 16",
+      "description": "Trailing-SL exits now correctly labeled CLEAN_WIN vs CLEAN_LOSS",
+      "problem": "position_manager.py:1215 returned CLEAN_LOSS for profitable trailed-SL exits",
+      "fix_applied": "position_manager.py:1296 — 'CLEAN_WIN if win else CLEAN_LOSS'",
+      "status": "APPLIED",
+      "confidence": 98,
+      "gate_percentage": 100,
+      "applied_date": "2026-04-15",
+      "verified": true
+    },
+    {
+      "rule_id": "F17_l1_sector_cap",
+      "source": "AUTONOMOUS_SESSION_2026_04_15 Finding 17",
+      "description": "L1 sector cap raised from 0.60 to 1.50 to allow multi-position portfolio",
+      "problem": "60% l1 cap with 40% notional per position left room for only 1-2 positions despite 8 slots",
+      "fix_applied": "sector_exposure.py:55 — l1: 1.50",
+      "status": "APPLIED",
+      "confidence": 88,
+      "gate_percentage": 100,
+      "applied_date": "2026-04-15",
+      "verified": true
+    },
+    {
+      "rule_id": "TOD_morning_edge",
+      "source": "meta_learning/insights — 2026-04-24 synthesis",
+      "description": "Morning session (06:00-12:00 UTC) consistently wins 75-80% across all strategy types",
+      "problem": "Non-morning sessions (afternoon/evening/night) win only 33% — strong time-of-day filter needed",
+      "fix_applied": "PENDING — edge detected but no code change applied yet",
+      "status": "PROPOSED",
+      "confidence": 82,
+      "gate_percentage": 20,
+      "baseline_wr": 0.35,
+      "treatment_wr": null,
+      "sample_count": 35,
+      "applied_date": null,
+      "action": "Boost confidence floor by +5 points for morning-window signals; reduce by -10 for night/afternoon"
+    },
+    {
+      "rule_id": "ILLIQUID_regime_block",
+      "source": "adaptive_risk_state — 2026-04-24 forensics",
+      "description": "Illiquid regime wins only 28% WR on 57 trades — systematic noise-stop problem",
+      "problem": "57 illiquid-regime trades at 28% WR = structurally losing setup; stops hit in noise",
+      "fix_applied": "PENDING — pattern verified but no code change applied",
+      "status": "PROPOSED",
+      "confidence": 78,
+      "gate_percentage": 20,
+      "baseline_wr": 0.28,
+      "sample_count": 57,
+      "action": "Add illiquid regime to veto list OR widen stops 30% OR reduce position size 50% in illiquid"
+    }
+  ],
+  "pending_user_decision": [
+    {
+      "rule_id": "F1_sniper_reenable",
+      "source": "AUTONOMOUS_SESSION_2026_04_15 Finding 1",
+      "description": "Re-enable SNIPER_AUTO_EXECUTE with verified 5x leverage cap + $50 per-trade loss ceiling",
+      "rationale": "Sniper path carried +$328 of last-100 net +$252; ensemble alone is structurally negative EV",
+      "blockers": ["Verify 5x cap actually binds at OrderExecutor (9.7x bypass in -$147 blowup)", "Add per-trade loss ceiling before re-enable"],
+      "status": "REQUIRES_USER_APPROVAL",
+      "confidence": 91
+    }
+  ]
+}
