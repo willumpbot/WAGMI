@@ -94,6 +94,9 @@ from feedback.signal_quality import QualityFeatures, SignalQualityScorer
 from feedback.parameter_tuner import ParameterTuner
 from feedback.continuous_backtest import ContinuousBacktester
 
+# Perpetual learning systems (Master Engine + 5 subsystems)
+from learning import get_master_engine
+
 # Signal ingestion pipeline
 from signals.telegram_ingest import TelegramSignalMonitor, IngestedSignal
 from signals.llm_analyzer import analyze_signal, format_analysis_for_telegram
@@ -1990,6 +1993,13 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             self.feedback.tick()
         except Exception as e:
             logger.warning(f"[{trace_id}] Feedback loop tick error: {e}")
+
+        # Perpetual learning engine: auto-fix, execution forensics, live injection, etc.
+        try:
+            master_engine = get_master_engine()
+            master_engine.tick(trade_count=len(self.trade_ledger.all_trades()) if hasattr(self, 'trade_ledger') else 0)
+        except Exception as e:
+            logger.debug(f"[{trace_id}] Master learning engine tick error: {e}")
 
         # Growth intelligence: periodic learning cycles, hypothesis graduation,
         # veto resolution, auto-safe proposal application, report generation
