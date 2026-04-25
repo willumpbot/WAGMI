@@ -1,6 +1,6 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-04-25T15:30:00.000000+00:00",
+    "last_updated": "2026-04-25T16:45:00.000000+00:00",
     "rules": [
         {
             "rule_id": "F2_calibration_offset_cap",
@@ -616,6 +616,96 @@
             "ab_cohort_start": "2026-04-25T15:30:00Z",
             "min_sample_to_graduate": 30,
             "expected_impact": "Filtering 123/965 (13%) of trades that are net -$2321 removes -$18.87/signal avg"
+        },
+        {
+            "rule_id": "HIGH_CONF_SHORT_edge",
+            "source": "PERPETUAL_IMPROVEMENT_RUN_2026_04_25",
+            "description": "90%+ confidence SHORT trades are the primary profit driver. Amplify this edge.",
+            "problem": "90%+ confidence SHORT trades account for $2942 of total $905 PnL (325%). 9.4% of trades carry all profitability. BTC_SHORT@90%+: 67.4% WR $4425. SOL_SHORT@90%+: 71.4% WR $548.",
+            "fix_applied": "A/B gate: boost SHORT position size 1.5x when confidence >= 90%. Monitor for 20% of qualifying trades.",
+            "status": "A/B_ACTIVE",
+            "confidence": 82,
+            "gate_percentage": 20,
+            "baseline_wr": 0.592,
+            "treatment_wr": null,
+            "applied_date": "2026-04-25",
+            "verified": false,
+            "notes": "HYPE_SHORT@90%+ excluded from boost (42% WR, -$1135 \u2014 separate block rule HYPE_SHORT_block_high_conf)"
+        },
+        {
+            "rule_id": "BTC_NOISE_SL_widen",
+            "source": "PERPETUAL_IMPROVEMENT_RUN_2026_04_25",
+            "description": "BTC stop widths are too tight \u2014 66.4% of BTC SL hits are noise stops (<0.5% width).",
+            "problem": "71 of 107 BTC SL hits triggered on moves < 0.5%. At 2x avg leverage this means trading against own noise floor. BTC overall WR 56.6% but $431 PnL on 267 trades = thin edge being destroyed by noise.",
+            "fix_applied": "A/B gate: reject BTC signals where abs(entry-sl)/entry < 0.007 (0.7%). 20% of BTC signals tested.",
+            "status": "A/B_ACTIVE",
+            "confidence": 78,
+            "gate_percentage": 20,
+            "baseline_wr": 0.566,
+            "treatment_wr": null,
+            "applied_date": "2026-04-25",
+            "verified": false,
+            "notes": "SOL noise SL rate is 29.6% (107 SLs, 32 noise) - less severe, not gating yet. HYPE 5.2% - not an issue."
+        },
+        {
+            "rule_id": "HYPE_SHORT_block_high_conf",
+            "source": "PERPETUAL_IMPROVEMENT_RUN_2026_04_25",
+            "description": "HYPE SHORT at 90%+ confidence is paradoxically worse \u2014 42% WR, -$1135. High conf is miscalibrated here.",
+            "problem": "HYPE_SHORT@90%+: 42.3% WR on 26 trades, -$1135 PnL. HYPE_SHORT overall is 54.4% WR but high-confidence filter selects the bad ones. Likely confidence calibration error specific to HYPE SHORT overconfidence scenarios.",
+            "fix_applied": "A/B gate: block HYPE SHORT signals when confidence >= 90%. 20% of HYPE SHORT signals tested.",
+            "status": "A/B_ACTIVE",
+            "confidence": 80,
+            "gate_percentage": 20,
+            "baseline_wr": 0.544,
+            "treatment_wr": null,
+            "applied_date": "2026-04-25",
+            "verified": false,
+            "notes": "Counter-intuitive finding: high confidence HYPE SHORT underperforms. Could indicate regime mismatch or data artifact \u2014 A/B at 20% is appropriate caution."
+        },
+        {
+            "rule_id": "CONF_60_70_all_block",
+            "source": "PERPETUAL_IMPROVEMENT_RUN_2026_04_25",
+            "description": "60-70% confidence bin is net-negative after 123 trades. This segment destroys PnL.",
+            "problem": "60-70% confidence: 46.3% WR, -$2320.54 PnL on 123 trades. At 46% WR with typical 1.5-2:1 R:R this should break even but doesn't. Net drag of ~$19/trade on average. Remove this tier or raise floor to 70%.",
+            "fix_applied": "A/B gate: raise effective confidence floor to 70% for 50% of signals (confidence_floor soft-block). Parallel tracking of blocked vs passed signals.",
+            "status": "A/B_ACTIVE",
+            "confidence": 85,
+            "gate_percentage": 50,
+            "baseline_wr": 0.463,
+            "treatment_wr": null,
+            "applied_date": "2026-04-25",
+            "verified": false,
+            "notes": "If existing CONF_60_70_floor_raise rule is already active, this is a reinforcing confirmation. Check interaction. Overlapping rule risk: CONF_60_70_floor_raise already A/B at 20% (baseline 0.463 matches)."
+        },
+        {
+            "rule_id": "SOL_SHORT_priority_boost",
+            "source": "PERPETUAL_IMPROVEMENT_RUN_2026_04_25",
+            "description": "SOL_SHORT is the highest-WR combo in the dataset. Amplify with appropriate sizing.",
+            "problem": "SOL_SHORT: 63.7% WR on 179 trades, $5807 PnL \u2014 the single highest-PnL combo. At 90%+ confidence: 71.4% WR. Yet SOL_LONG is only 53.3% WR. Directional asymmetry confirmed: SOL is a strong SHORT candidate.",
+            "fix_applied": "A/B gate: boost SOL SHORT position size 1.3x when confidence >= 80%. 20% of SOL SHORT trades tested.",
+            "status": "A/B_ACTIVE",
+            "confidence": 76,
+            "gate_percentage": 20,
+            "baseline_wr": 0.637,
+            "treatment_wr": null,
+            "applied_date": "2026-04-25",
+            "verified": false,
+            "notes": "Consistent with SOL_SHORT_edge_promote rule already in rules (conf=90%, gate=20%). This extends to conf>=80 threshold and adds sizing boost specifically. Check for overlap/conflict with existing rule."
+        },
+        {
+            "rule_id": "F1_sniper_pending_safety_review",
+            "source": "PERPETUAL_IMPROVEMENT_RUN_2026_04_25",
+            "description": "SNIPER_AUTO_EXECUTE=false blocks +$328/34-trade alpha path. Pending safety verification before re-enable.",
+            "problem": "Per AUTONOMOUS_SESSION_2026_04_15 Finding 1+14: 34 sniper/anticipatory trades = +$328 vs -$76 from all other strategies. Bot turned off after -$147 blowup (9.7x leverage bypassed 5.0 cap). Cannot auto-apply \u2014 requires manual safety check of leverage cap enforcement.",
+            "fix_applied": "BLOCKED: requires human review. Tracked here to prevent duplicate analysis.",
+            "status": "PENDING_HUMAN_REVIEW",
+            "confidence": 90,
+            "gate_percentage": 0,
+            "baseline_wr": null,
+            "treatment_wr": null,
+            "applied_date": "2026-04-25",
+            "verified": false,
+            "notes": "Action: verify max_sniper_leverage=5.0 cap is enforced at OrderExecutor level. Add per-trade-loss ceiling ($50 or 10% equity). Then re-enable. DO NOT auto-apply."
         }
     ],
     "pending_user_decision": [
@@ -631,5 +721,6 @@
             "status": "REQUIRES_USER_APPROVAL",
             "confidence": 91
         }
-    ]
+    ],
+    "last_improvement_run": "2026-04-25T16:45:00.000000+00:00"
 }
