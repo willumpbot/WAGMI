@@ -722,5 +722,51 @@
             "confidence": 91
         }
     ],
-    "last_improvement_run": "2026-04-25T16:45:00.000000+00:00"
+    "last_improvement_run": "2026-04-25T17:45:00.000000+00:00"
+},
+"new_proposals_2026_04_25_hourly": [
+    {
+        "rule_id": "AB_RESULT_TRACKER",
+        "source": "PERPETUAL_IMPROVEMENT_HOURLY_2026_04_25",
+        "description": "SYSTEM GAP: 20 of 34 A/B active rules have treatment_wr=null — A/B feedback loop is open, not closing. Implement cohort-tagging in live trades and auto-compute treatment_wr per rule.",
+        "problem": "Without treatment_wr data, no A/B rule can graduate. 34 active gates are generating exposure but producing no learning signal. Rules like INSTANT_SL_stop_buffer (50% gate, 370 SL hits context) and BB_solo_signal_boost (50% gate, 95% conf) are blind to their own outcomes.",
+        "proposed_fix": "Tag each live trade with active A/B cohort membership. After close, read trade outcome and update treatment_wr for matching rule in graduated_rules.json. Implement in feedback/loop.py post-trade hook.",
+        "confidence": 100,
+        "gate_percentage": 100,
+        "status": "PROPOSED",
+        "applied_date": "2026-04-25",
+        "priority": "CRITICAL"
+    },
+    {
+        "rule_id": "CONF_70_HARD_FLOOR",
+        "source": "PERPETUAL_IMPROVEMENT_HOURLY_2026_04_25",
+        "description": "Graduate overlapping 60-70% conf rules into single hard floor: raise effective confidence minimum to 70% system-wide.",
+        "problem": "Two overlapping A/B rules (CONF_60_70_floor_raise at 20%, CONF_60_70_all_block at 50%) both target the same problem: 46.3% WR bin, -$2321 on 123 trades. Having two rules creates unpredictable interaction. Merge into single graduated rule at 30% gate.",
+        "proposed_fix": "Suspend CONF_60_70_floor_raise and CONF_60_70_all_block. Replace with single CONF_70_HARD_FLOOR at 30% gate: reject all signals where confidence < 70 after quality adjustment. Track treatment_wr vs baseline 0.463.",
+        "confidence": 87,
+        "gate_percentage": 30,
+        "status": "PROPOSED",
+        "applied_date": "2026-04-25",
+        "baseline_wr": 0.463,
+        "treatment_wr": null,
+        "min_sample_to_graduate": 50,
+        "expected_impact": "Remove -$2321 drag on 123 trades (12.7% of volume). Net positive if even 20% of filtered signals are avoided.",
+        "priority": "HIGH"
+    },
+    {
+        "rule_id": "SOL_SHORT_GATE_ESCALATE",
+        "source": "PERPETUAL_IMPROVEMENT_HOURLY_2026_04_25",
+        "description": "Escalate SOL_SHORT_edge_promote from 20% gate to 50%: confirmed 63.7% WR, +$5807 PnL on 179 trades.",
+        "problem": "SOL_SHORT is the #1 profit driver in the 965-trade dataset. SOL_SHORT_edge_promote A/B rule at 20% gate since 2026-04-25 — confidence 90%, sample 179 >= min_sample 30. Meets graduation criteria. Escalate gate.",
+        "proposed_fix": "Update SOL_SHORT_edge_promote gate_percentage from 20 to 50. Maintain +5pt confidence and 1.1x size boost in treatment cohort.",
+        "confidence": 90,
+        "gate_percentage": 50,
+        "status": "PROPOSED",
+        "applied_date": "2026-04-25",
+        "baseline_wr": 0.637,
+        "treatment_wr": null,
+        "priority": "HIGH",
+        "expected_impact": "Increasing gate from 20% to 50% amplifies the best-performing setup; if treatment_wr >= 63.7%, escalate to 100%."
+    }
+]
 }
