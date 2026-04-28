@@ -452,6 +452,20 @@ class RiskFilterChain:
         except Exception:
             pass  # committee reader failure must never block trading
 
+        # Gate 1.6: PHASE 7 DATA-DRIVEN VETO: ETH_SHORT historical leak
+        # CRITICAL FINDING: ETH_SHORT loses $83.98/trade (26 trades, -$2,183 total).
+        # This is the #1 priority loss. Reject all ETH_SHORT until profitability proven.
+        # Data source: PHASE7_DEEP_ANALYSIS on 205-trade historical dataset.
+        _sig_symbol = signal.symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").replace("/USD", "")
+        _sig_side = signal.side if isinstance(signal.side, str) else signal.side.value
+        if _sig_symbol == "ETH" and _sig_side.upper() == "SELL":
+            _reason = "ETH_SHORT: Historical data shows -$83.98/trade loss (-$2,183 total, n=26). Disabled until profitable."
+            if _pt: _pt.record_gate(signal.symbol, "phase7_eth_short_leak", False, 0, 0, _reason)
+            _log_rejection(signal, "phase7_eth_short_leak", _reason)
+            self._log_signal_filtered(signal, "phase7_eth_short_leak", _reason)
+            self._track_pipeline_rejection(signal, f"[phase7_eth_short_leak] {_reason}")
+            return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
+
         # Gate 2: Circuit breaker
         if not self.risk_mgr.is_trading_allowed(
             confidence=signal.confidence,
