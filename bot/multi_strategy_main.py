@@ -501,6 +501,14 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # Wire signal quality scoring to ensemble (applies learned context confidence multipliers)
         self.ensemble._signal_quality_scorer = self.signal_quality
 
+        # Phase 2: Enable relaxed voting mode if configured
+        if getattr(config, "ensemble_relaxed_voting_enabled", False):
+            self.ensemble.set_relaxed_voting(
+                enabled=True,
+                min_votes=getattr(config, "ensemble_relaxed_min_votes", 2),
+                veto_ratio=getattr(config, "ensemble_relaxed_veto_ratio", 1.0),
+            )
+
         # Wire manual sniper callback: receives solo signals that the ensemble
         # rejects for insufficient consensus. The sniper has its own proven-setup
         # gates and can profitably trade signals the bot sits out on.

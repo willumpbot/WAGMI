@@ -638,6 +638,516 @@
       "category": "trade_outcome",
       "tags": [],
       "source": "consolidation"
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_66 blocked a winning BUY trade on BTC in consolidation (hypothetical +3.6%). Consider relaxing this filter.",
+      "confidence": 0.536,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_66",
+        "BTC",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394130.705348,
+      "last_validated": 1777394130.7053497,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_CORRECT] trend_adj_floor_66 correctly blocked a losing SELL trade on BTC in trend (hypothetical -2.5%). Filter is working.",
+      "confidence": 0.575,
+      "evidence_count": 1,
+      "category": "risk",
+      "tags": [
+        "trend_adj_floor_66",
+        "BTC",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394130.7329388,
+      "last_validated": 1777394130.7329392,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_66 blocked a winning SELL trade on BTC in trend (hypothetical +2.6%). Consider relaxing this filter.",
+      "confidence": 0.526,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_66",
+        "BTC",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394130.7756495,
+      "last_validated": 1777394130.77565,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_66 blocked a winning SELL trade on BTC in range (hypothetical +4.8%). Consider relaxing this filter.",
+      "confidence": 0.548,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_66",
+        "BTC",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394130.8110344,
+      "last_validated": 1777394130.8110352,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_CORRECT] confidence_floor_66 correctly blocked a losing SELL trade on BTC in consolidation (hypothetical -2.8%). Filter is working.",
+      "confidence": 0.578,
+      "evidence_count": 1,
+      "category": "risk",
+      "tags": [
+        "confidence_floor_66",
+        "BTC",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394130.8690934,
+      "last_validated": 1777394130.8690944,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_66 blocked a winning BUY trade on BTC in range (hypothetical +6.5%). Consider relaxing this filter.",
+      "confidence": 0.565,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_66",
+        "BTC",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394130.883457,
+      "last_validated": 1777394130.8834572,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_67 blocked a winning SELL trade on BTC in range (hypothetical +4.6%). Consider relaxing this filter.",
+      "confidence": 0.546,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_67",
+        "BTC",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394131.875263,
+      "last_validated": 1777394131.8752635,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_68 blocked a winning SELL trade on BTC in range (hypothetical +4.3%). Consider relaxing this filter.",
+      "confidence": 0.543,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_68",
+        "BTC",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394131.8859277,
+      "last_validated": 1777394131.8859284,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_69 blocked a winning SELL trade on BTC in range (hypothetical +4.2%). Consider relaxing this filter.",
+      "confidence": 0.542,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_69",
+        "BTC",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394131.8984466,
+      "last_validated": 1777394131.8984473,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_70 blocked a winning SELL trade on BTC in trend (hypothetical +4.0%). Consider relaxing this filter.",
+      "confidence": 0.54,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_70",
+        "BTC",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394131.9083273,
+      "last_validated": 1777394131.9083276,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_72 blocked a winning SELL trade on ETH in trend (hypothetical +2.9%). Consider relaxing this filter.",
+      "confidence": 0.529,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_72",
+        "ETH",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394143.8247387,
+      "last_validated": 1777394143.824739,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_67 blocked a winning SELL trade on ETH in range (hypothetical +5.1%). Consider relaxing this filter.",
+      "confidence": 0.551,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_67",
+        "ETH",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394143.836085,
+      "last_validated": 1777394143.836086,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_CORRECT] trend_adj_floor_67 correctly blocked a losing BUY trade on ETH in trend (hypothetical -3.5%). Filter is working.",
+      "confidence": 0.585,
+      "evidence_count": 1,
+      "category": "risk",
+      "tags": [
+        "trend_adj_floor_67",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394143.8564456,
+      "last_validated": 1777394143.8564465,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_CORRECT] trend_adj_floor_68 correctly blocked a losing BUY trade on ETH in trend (hypothetical -3.0%). Filter is working.",
+      "confidence": 0.58,
+      "evidence_count": 1,
+      "category": "risk",
+      "tags": [
+        "trend_adj_floor_68",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394143.8713212,
+      "last_validated": 1777394143.8713222,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_67 blocked a winning BUY trade on ETH in range (hypothetical +5.8%). Consider relaxing this filter.",
+      "confidence": 0.558,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_67",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394143.9489374,
+      "last_validated": 1777394143.948938,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_70 blocked a winning BUY trade on ETH in range (hypothetical +2.3%). Consider relaxing this filter.",
+      "confidence": 0.523,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_70",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394143.9577687,
+      "last_validated": 1777394143.9577692,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_71 blocked a winning BUY trade on ETH in range (hypothetical +2.3%). Consider relaxing this filter.",
+      "confidence": 0.523,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_71",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394143.9674869,
+      "last_validated": 1777394143.9674876,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_68 blocked a winning BUY trade on ETH in consolidation (hypothetical +3.0%). Consider relaxing this filter.",
+      "confidence": 0.53,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_68",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394144.0328183,
+      "last_validated": 1777394144.0328188,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_69 blocked a winning BUY trade on ETH in consolidation (hypothetical +3.0%). Consider relaxing this filter.",
+      "confidence": 0.53,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_69",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394144.0428019,
+      "last_validated": 1777394144.0428023,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_70 blocked a winning BUY trade on ETH in consolidation (hypothetical +2.9%). Consider relaxing this filter.",
+      "confidence": 0.529,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_70",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394144.054578,
+      "last_validated": 1777394144.0545788,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_71 blocked a winning BUY trade on ETH in consolidation (hypothetical +2.8%). Consider relaxing this filter.",
+      "confidence": 0.528,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_71",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394144.0668716,
+      "last_validated": 1777394144.066872,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_72 blocked a winning BUY trade on ETH in consolidation (hypothetical +2.8%). Consider relaxing this filter.",
+      "confidence": 0.528,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_72",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394144.079044,
+      "last_validated": 1777394144.0790448,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] trend_adj_floor_73 blocked a winning BUY trade on ETH in consolidation (hypothetical +2.1%). Consider relaxing this filter.",
+      "confidence": 0.521,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "trend_adj_floor_73",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394144.091072,
+      "last_validated": 1777394144.0910726,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_74 blocked a winning SELL trade on ETH in range (hypothetical +2.7%). Consider relaxing this filter.",
+      "confidence": 0.527,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_74",
+        "ETH",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394145.4480166,
+      "last_validated": 1777394145.4480176,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_70 blocked a winning SELL trade on ETH in range (hypothetical +2.2%). Consider relaxing this filter.",
+      "confidence": 0.522,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_70",
+        "ETH",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394145.4619832,
+      "last_validated": 1777394145.4619842,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_CORRECT] trend_adj_floor_70 correctly blocked a losing BUY trade on ETH in trend (hypothetical -3.5%). Filter is working.",
+      "confidence": 0.585,
+      "evidence_count": 1,
+      "category": "risk",
+      "tags": [
+        "trend_adj_floor_70",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394145.5202959,
+      "last_validated": 1777394145.520297,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_CORRECT] trend_adj_floor_71 correctly blocked a losing BUY trade on ETH in trend (hypothetical -3.2%). Filter is working.",
+      "confidence": 0.582,
+      "evidence_count": 1,
+      "category": "risk",
+      "tags": [
+        "trend_adj_floor_71",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394145.5382264,
+      "last_validated": 1777394145.538227,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_CORRECT] trend_adj_floor_72 correctly blocked a losing BUY trade on ETH in trend (hypothetical -2.7%). Filter is working.",
+      "confidence": 0.577,
+      "evidence_count": 1,
+      "category": "risk",
+      "tags": [
+        "trend_adj_floor_72",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394145.5516098,
+      "last_validated": 1777394145.5516107,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_68 blocked a winning SELL trade on ETH in range (hypothetical +4.8%). Consider relaxing this filter.",
+      "confidence": 0.548,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_68",
+        "ETH",
+        "SELL"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394145.5975235,
+      "last_validated": 1777394145.5975244,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_CORRECT] confidence_floor_72 correctly blocked a losing BUY trade on ETH in range (hypothetical -3.1%). Filter is working.",
+      "confidence": 0.581,
+      "evidence_count": 1,
+      "category": "risk",
+      "tags": [
+        "confidence_floor_72",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777394145.7604206,
+      "last_validated": 1777394145.7604215,
+      "validation_count": 1,
+      "invalidation_count": 0
     }
   ]
 }

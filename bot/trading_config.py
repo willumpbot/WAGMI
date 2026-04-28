@@ -154,8 +154,8 @@ class TradingConfig:
         default_factory=lambda: _env_bool("STRATEGY_VMC_CIPHER_ENABLED", True)
     )  # RE-ENABLED: Comprehensive discovery mode
 
-    # ── Monte Carlo Gate (Phase 1 Optimization) ──
-    # PHASE 1: Enable Monte Carlo signals conditionally based on regime + confidence + drawdown.
+    # ── Phase 1: Monte Carlo Gate (Optimize Hidden Alpha) ──
+    # Enable Monte Carlo signals conditionally based on regime + confidence + drawdown.
     # From AUDIT_FINDINGS_AND_ACTIONS.md: 2,448 signals, 57% WR, ~$600 PnL/cycle if enabled
     # with conditions: regime=[ranging,consolidation], confidence >= 65%, drawdown < 3%
     monte_carlo_enabled: bool = field(
@@ -167,6 +167,20 @@ class TradingConfig:
     monte_carlo_max_drawdown_pct: float = field(
         default_factory=lambda: _env_float("MONTE_CARLO_MAX_DRAWDOWN_PCT", 3.0)
     )
+
+    # ── Phase 2: Relax Ensemble Gate (Increase Trade Volume) ──
+    # From AUDIT_FINDINGS_AND_ACTIONS.md: Ensemble kills 10,974 signals with 47% accuracy.
+    # Phase 2: Allow 2+ agreement (vs stricter veto_ratio thresholds).
+    # Expected: +4,000 signals/cycle, 45-50% WR, +$1,500-2,000 PnL/cycle improvement
+    ensemble_relaxed_voting_enabled: bool = field(
+        default_factory=lambda: _env_bool("ENSEMBLE_RELAXED_VOTING_ENABLED", False)
+    )
+    ensemble_relaxed_min_votes: int = field(
+        default_factory=lambda: _env_int("ENSEMBLE_RELAXED_MIN_VOTES", 2)
+    )
+    ensemble_relaxed_veto_ratio: float = field(
+        default_factory=lambda: _env_float("ENSEMBLE_RELAXED_VETO_RATIO", 1.0)
+    )  # Relaxed from 1.2 → 1.0: allow 2-agree even if opposition is same strength
 
     # ── Multi-Agent System (W4) ──
     # Enable/disable individual agents in the 9-agent specialist pipeline
