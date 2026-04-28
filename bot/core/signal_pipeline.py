@@ -479,6 +479,63 @@ class RiskFilterChain:
                 rejection_reason="Circuit breaker active"
             )
 
+        # ── PHASE A.5 MECHANICAL GATES ──────────────────────────────────
+        # Gate 2a: Regime-based gating (skip unprofitable market conditions)
+        # Phase A discovery: ranging (0% WR, -$1,234), consolidation (0% WR, -$1,073) are loss makers
+        if getattr(self.config, "enable_regime_gating", True):
+            regime = (signal.metadata or {}).get("regime", "unknown")
+
+            # Skip ranging regimes (0% WR, -$1,234 loss)
+            if getattr(self.config, "gate_ranging_regimes", True) and regime in ("range", "ranging"):
+                _reason = f"Regime gate: ranging regimes skip (0% WR, -$1,234 loss over 100d)"
+                if _pt: _pt.record_gate(signal.symbol, "regime_ranging", False, 0, 0, _reason)
+                _log_rejection(signal, "regime_ranging", _reason)
+                self._log_signal_filtered(signal, "regime_ranging", _reason)
+                return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
+
+            # Skip consolidation regimes (0% WR, -$1,073 loss)
+            if getattr(self.config, "gate_consolidation_regimes", True) and regime == "consolidation":
+                _reason = f"Regime gate: consolidation regimes skip (0% WR, -$1,073 loss over 100d)"
+                if _pt: _pt.record_gate(signal.symbol, "regime_consolidation", False, 0, 0, _reason)
+                _log_rejection(signal, "regime_consolidation", _reason)
+                self._log_signal_filtered(signal, "regime_consolidation", _reason)
+                return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
+
+            # Skip unknown regimes (unclassified = risky)
+            if getattr(self.config, "gate_unknown_regimes", True) and regime == "unknown":
+                _reason = f"Regime gate: unknown regimes skip (unclassified market state)"
+                if _pt: _pt.record_gate(signal.symbol, "regime_unknown", False, 0, 0, _reason)
+                _log_rejection(signal, "regime_unknown", _reason)
+                self._log_signal_filtered(signal, "regime_unknown", _reason)
+                return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
+
+        # Gate 2b: Setup type gating (skip unprofitable setup types)
+        # Phase A discovery: mean_reversion setup type = 0% WR, -$1,272 loss
+        if getattr(self.config, "enable_setup_type_gating", True):
+            setup_type = (signal.metadata or {}).get("setup_type", "unknown")
+
+            if getattr(self.config, "gate_mean_reversion_setups", True) and setup_type == "mean_reversion":
+                _reason = f"Setup type gate: mean_reversion skipped (0% WR, -$1,272 loss over 100d)"
+                if _pt: _pt.record_gate(signal.symbol, "setup_mean_reversion", False, 0, 0, _reason)
+                _log_rejection(signal, "setup_mean_reversion", _reason)
+                self._log_signal_filtered(signal, "setup_mean_reversion", _reason)
+                return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
+
+        # Gate 2c: Time-of-day gating (skip hours with negative average PnL)
+        # Phase A discovery: 07:00 UTC (-$438), 10:00 UTC (-$435) are losing hours
+        if getattr(self.config, "enable_time_of_day_gating", True):
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            skip_hours_str = getattr(self.config, "skip_hours", "7,10")
+            skip_hours = [int(h.strip()) for h in skip_hours_str.split(",") if h.strip().isdigit()]
+
+            if now.hour in skip_hours:
+                _reason = f"Time-of-day gate: {now.hour:02d}:00 UTC skipped (negative PnL hour)"
+                if _pt: _pt.record_gate(signal.symbol, "time_of_day", False, now.hour, 0, _reason)
+                _log_rejection(signal, "time_of_day", _reason)
+                self._log_signal_filtered(signal, "time_of_day", _reason)
+                return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
+
         # Gate 3: Max open positions
         if current_open_count >= self.config.max_open_positions:
             _reason = f"Max positions ({self.config.max_open_positions}) reached"

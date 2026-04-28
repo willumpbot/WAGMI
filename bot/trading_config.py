@@ -773,6 +773,41 @@ class TradingConfig:
         default_factory=lambda: _env_int("HEALTH_STALL_TIMEOUT_S", 600)
     )
 
+    # ── PHASE A.5: MECHANICAL GATING ──────────────────────────────────
+    # Data-driven gating discovered in Phase A empirical testing (100d backtest)
+    # Skip unprofitable regimes, setup types, and hours to improve PnL.
+    # Expected improvement: +$5,293 (from -$1,282 to +$4,011)
+
+    # Regime-based gating: skip ranging and consolidation markets (0% WR)
+    enable_regime_gating: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_REGIME_GATING", True)
+    )
+    gate_ranging_regimes: bool = field(
+        default_factory=lambda: _env_bool("GATE_RANGING_REGIMES", True)
+    )  # Skip ranging (0% WR, -$1,234 loss)
+    gate_consolidation_regimes: bool = field(
+        default_factory=lambda: _env_bool("GATE_CONSOLIDATION_REGIMES", True)
+    )  # Skip consolidation (0% WR, -$1,073 loss)
+    gate_unknown_regimes: bool = field(
+        default_factory=lambda: _env_bool("GATE_UNKNOWN_REGIMES", True)
+    )  # Skip unclassified regimes
+
+    # Setup type gating: skip mean_reversion (0% WR)
+    enable_setup_type_gating: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_SETUP_TYPE_GATING", True)
+    )
+    gate_mean_reversion_setups: bool = field(
+        default_factory=lambda: _env_bool("GATE_MEAN_REVERSION_SETUPS", True)
+    )  # Skip mean_reversion setup type (0% WR, -$1,272 loss)
+
+    # Time-of-day gating: skip losing hours
+    enable_time_of_day_gating: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_TIME_OF_DAY_GATING", True)
+    )
+    skip_hours: str = field(
+        default_factory=lambda: _env("SKIP_HOURS", "7,10")
+    )  # Skip 07:00 UTC (-$438), 10:00 UTC (-$435)
+
     @property
     def is_paper(self) -> bool:
         return self.environment != "production"
