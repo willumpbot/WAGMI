@@ -369,6 +369,44 @@ def get_trading_decision(
     except Exception:
         pass
 
+    # Step 3.2: Inject KB context into snapshot (empirical knowledge base)
+    # Includes: global parameters + symbol-specific + regime-specific overrides + auditing
+    _kb_injection_audit = {}
+    try:
+        from llm.kb_context_injector import get_kb_injector
+        from llm.kb_regime_injector import KBRegimeInjector
+        from llm.kb_consistency_auditor import get_kb_auditor, audit_kb_injection
+
+        kb_injector = get_kb_injector()
+        auditor = get_kb_auditor()
+        snap_data = json.loads(snapshot_json)
+
+        # Extract symbol from snapshot
+        symbol = snap_data.get("symbol", "UNKNOWN")
+        regime = snap_data.get("regime", "unknown")
+
+        # Step 3.2a: Base KB context injection
+        snap_data = kb_injector.inject_into_context(snap_data, symbol=symbol)
+        _kb_injection_audit["global_injected"] = True
+
+        # Step 3.2b: Regime-specific override
+        kb_context = snap_data.get("knowledge_base", {})
+        kb_context = KBRegimeInjector.inject_regime_params(snap_data, kb_context)
+        snap_data["knowledge_base"] = kb_context
+        _kb_injection_audit["regime_override"] = regime
+        _kb_injection_audit["regime_confidence_threshold"] = kb_context.get("confidence_threshold")
+
+        # Step 3.2c: Audit KB injection for consistency
+        injection_passed = audit_kb_injection(snap_data, kb_context, symbol, regime)
+        _kb_injection_audit["audit_passed"] = injection_passed
+        if not injection_passed:
+            logger.warning(f"[KB-AUDIT] KB injection failed consistency check for {symbol} in {regime}")
+
+        snapshot_json = json.dumps(snap_data, separators=(",", ":"), default=str)
+    except Exception as e:
+        logger.debug(f"[KB-INJECT] Partial failure: {e}")
+        _kb_injection_audit["error"] = str(e)
+
     # Step 3.5: Multi-Agent path (if enabled, replaces monolithic LLM call)
     _multi_agent_active = (
         _HAS_MULTI_AGENT
@@ -427,6 +465,38 @@ def get_trading_decision(
             )
 
             if decision is not None:
+                # Step 3.6: KB Validation Gate — validate decision against empirical KB
+                # Also audit agent-KB alignment
+                try:
+                    from llm.kb_validation_gate import validate_agent_output
+                    from llm.kb_consistency_auditor import get_kb_auditor
+
+                    kb_valid, kb_reason = validate_agent_output(
+                        agent_name="trade",
+                        decision={"a": decision.action, "c": decision.confidence},
+                        snapshot=snapshot_data
+                    )
+
+                    # Audit agent KB alignment
+                    auditor = get_kb_auditor()
+                    kb_context = snapshot_data.get("knowledge_base", {})
+                    alignment_audit = auditor.audit_agent_kb_alignment(
+                        agent_name="trade",
+                        agent_decision={"a": decision.action, "c": decision.confidence},
+                        kb_context=kb_context,
+                        snapshot_data=snapshot_data
+                    )
+                    auditor.log_audit(alignment_audit)
+
+                    if kb_valid:
+                        logger.debug(f"[KB-GATE] Trade decision validated: {kb_reason}")
+                    else:
+                        logger.warning(f"[KB-GATE] Trade decision flagged: {kb_reason}")
+                        # Log KB mismatch for analysis, but still allow execution
+                        # (agents may have valid reasons to diverge from KB)
+                except Exception as e:
+                    logger.debug(f"[KB-GATE] Validation skipped: {e}")
+
                 usage = coordinator.get_stats()
                 # Jump to Step 5.5 (mode constraints + gating)
                 # by setting markers so the monolithic path is skipped

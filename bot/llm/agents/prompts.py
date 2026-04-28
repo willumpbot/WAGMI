@@ -95,6 +95,15 @@ OUTPUT (JSON only, nothing else):
 {"a": "go|skip|flip", "c": 0.0-1.0, "thesis": "1-line directional prediction with target", "ea": "market now"|"wait for pullback"|"enter only if reclaim"|"enter only if btc confirms"|null, "mu": "memory note"|null, "n": "brief reasoning"}
 ```
 
+## KNOWLEDGE BASE v1: SETUP SCORING (Empirical from 205 Trades)
+**Key Rules**:
+- **Confidence >= 60** (winners avg 61.9 vs losers 53.6): PROCEED. <50: reduce or skip.
+- **Regime matters most**: trending 50% WR (GOOD) | unknown 31.4% (OK) | illiquid 19.8% (BAD) | ranging 12.5% (WORST)
+- **Time of day critical**: us_evening 46.2% WR (GOOD) | europe_afternoon 33.3% (OK) | asia_early 10.3% (AVOID)
+- **Symbol-regime combos**: ETH_trending 71.4% (TAKE) | BTC_trending 66.7% (TAKE) | SOL_illiquid 47.4% (TAKE) | BTC_illiquid 14.3% (SKIP)
+- **Multi-strategy confluence helps**: 2+ agree = +30.8% WR baseline. 3+ = exponentially better.
+**Action**: Use setup_score from context if available. Score >= 65 = PROCEED. <65 = skip unless thesis exceptional.
+
 ## INTERNAL STEP 0: INDEPENDENT THESIS (think silently)
 Before looking at the signal: what does this asset do in the next 2-4h? 1-sentence prediction using regime, BTC, funding, memory. Prevents anchoring. (Do this in your head, not in the output.)
 
@@ -119,6 +128,16 @@ Base 0.50, adjust additively:
 +0.15: 3+ agree trending | +0.10: 6h aligned | +0.05: favorable time (18-06 UTC) | +0.05: BTC confirms (>0.3%) | +0.05: scout matches at HIGH
 -0.10: solo signal | -0.10: adverse volume | -0.05: adverse funding (>0.03%) | -0.10: post-big-win giveback risk | -0.05: price moved >1.5% in direction
 Cap 0.85, floor 0.30. Self-correct: self_perf cal>+0.10 → reduce 10%. cal<-0.10 → increase 10%. vacc<0.50 → default proceed.
+
+## INTERNAL STEP 2.5: KB PARAMETER ALIGNMENT (ACTIVE VALIDATION)
+**CRITICAL: Check your decision against empirical KB parameters (from current KB context if present):**
+- KB confidence_threshold: typically 45 (normalized to 0-1 as 0.45). Your confidence should align with action:
+  - If your c >= 0.45 AND action='go' → ALIGNED (empirically correct)
+  - If your c < 0.45 AND action='skip' → ALIGNED (conservative)
+  - If misaligned → explicitly justify WHY your decision diverges from KB (exceptional thesis, regime override, etc.)
+- KB expected_go_wr: 50% (agents correctly calling GO ~50% of the time empirically)
+- KB expected_skip_wr: 22.1% (SKIPs have lower WR, more conservative)
+**Output instruction**: If diverging from KB expectations, add to "n" field: "DIVERGES from KB because [reason]. Thesis is strong enough to override."
 
 ## INTERNAL STEP 3: CONTEXT FIELDS (reference only)
 - `knowledge`: Curriculum axioms. `deep_memory`: Trade DNA, patterns. `recent_lessons`: Closed trade feedback (most valuable).
@@ -199,6 +218,14 @@ OUTPUT (JSON only):
 ```json
 {"sz": 0.0-2.0, "leverage": 1.0-20.0, "risk_pct": 0.01-0.15, "sw": {"rt":0-1,"cs":0-1,"mq":0-1,"fr":0-1,"oi":0-1,"bs":0-1,"vm":0-1,"ll":0-1,"lc":0-1,"pe":0-1,"mc":0-1}, "risks": ["list of risk flags"], "override": null|"reduce"|"skip", "sizing_rationale": "brief explanation"}
 ```
+
+## KNOWLEDGE BASE v1: POSITION SIZING (Empirical from 205 Trades)
+**Base Leverage**: 5.9x (winner average). Adjust via multipliers:
+- **Regime multiplier**: trending 1.2x (safer) | unknown 1.0x (neutral) | illiquid 0.7x (reduce) | ranging 0.6x (reduce more)
+- **Confidence multiplier**: high (60+) 1.2x | medium (50-60) 1.0x | low (<50) 0.7x
+- **Time of day**: asia_early apply 0.7x (only 10.3% WR) | us_evening keep 1.0-1.2x (46.2% WR)
+**Action**: final_leverage = 5.9 * regime_mult * confidence_mult * time_mult. Clamp 2-10x. Rule: sz never below 0.3, never above 2.0.
+**Golden sizing**: 2-agree trending = sz 0.9-1.2. 3+ agree = sz 1.3-2.0. Solo = sz 0.3-0.5.
 
 ## LEVERAGE FIELD (required in LLM-first mode)
 - leverage: the ACTUAL leverage multiplier (1x-20x). You decide this.
@@ -885,6 +912,15 @@ OUTPUT (JSON only):
 ```json
 {"action": "hold|tighten_sl|widen_tp|partial_close|full_close", "new_sl": null, "new_tp": null, "partial_pct": null, "thesis_still_valid": true|false, "updated_thesis": null, "urgency": "low|medium|high|critical", "reason": "brief evidence-based justification"}
 ```
+
+## KNOWLEDGE BASE v1: EXIT MANAGEMENT BY REGIME (Empirical from 205 Trades)
+**Regime-Specific Exit Strategies**:
+- **Trending (50% WR)**: Use TRAILING. Let winners run 1-2x R. Hold through noise (0-2h volatility is normal). At TP1 hit, trail progressively.
+- **Illiquid (19.8% WR)**: CLOSE at TP1 QUICKLY. Don't trail. Tight SL 1-2x ATR. Take 0.5-1x R and exit. Illiquid kills trailing.
+- **Ranging (12.5% WR)**: Use tight SL, exit fast. Target 0.3-0.5x R scalps only. 67% best approach is avoid.
+- **Unknown (31.4% WR)**: Balanced. TP1 primary, TRAILING secondary. Standard SL 1.5x ATR, 1x R target.
+**Key insight**: 87% of early SL hits (<2h) in illiquid/ranging/unknown regimes. In trending, early stops = microstructure noise, not regime failure.
+**Action**: If regime==trending AND hold<2h AND losing: HOLD (you're in noise). If regime==illiquid/ranging AND hold>30min AND losing: CLOSE (regime is eating the trade).
 
 ## QUANT ALPHA — EXIT TIMING
 ## EXIT FRAMEWORK (one path, not three)
