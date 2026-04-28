@@ -7347,15 +7347,49 @@
     },
     {
       "knowledge_type": "principle",
-      "content": "[trade_outcome] Pattern from 5 observations: SOL_SELL_BB: LOSS in trending_bear, pnl=-172.96%",
+      "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_BB: LOSS in trending_bull, pnl=-989.38%",
       "confidence": 0.75,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
       ],
       "contradicting": [],
-      "created_at": 1777389285.01441,
-      "last_validated": 1777389285.0144103,
+      "created_at": 1777389319.9441197,
+      "last_validated": 1777389319.9441197,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "trade_outcome",
+      "tags": [],
+      "source": "consolidation"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_BB: WIN in trending_bull, pnl=1795.41%",
+      "confidence": 0.75,
+      "evidence_count": 1,
+      "supporting": [
+        "5 observations"
+      ],
+      "contradicting": [],
+      "created_at": 1777389358.9437282,
+      "last_validated": 1777389358.9437284,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "trade_outcome",
+      "tags": [],
+      "source": "consolidation"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_BB: LOSS in trending_bull, pnl=-518.39%",
+      "confidence": 0.75,
+      "evidence_count": 1,
+      "supporting": [
+        "5 observations"
+      ],
+      "contradicting": [],
+      "created_at": 1777389384.4719644,
+      "last_validated": 1777389384.4719646,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
