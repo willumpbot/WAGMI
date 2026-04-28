@@ -1494,6 +1494,73 @@ class AgentCoordinator:
         # Store pipeline results for external consumers (backtest logging, etc.)
         self.last_pipeline_results = pipeline_results
 
+        # ── Week 5: Canary Substrate Deployment Gate ────────────
+        # Apply safe deployment gating before final decision
+        try:
+            from llm.agents.canary_substrate import CanarySubstrate, DeploymentPhase
+            canary = CanarySubstrate()
+
+            # Get current deployment phase
+            current_phase = canary.current_phase
+            signal_influence = canary.signal_influence_pct
+
+            # Apply phase-specific routing
+            if current_phase == DeploymentPhase.SHADOW:
+                # Shadow mode: Log but don't execute
+                if decision.action in ("go", "proceed"):
+                    logger.info(
+                        "[CANARY] Shadow mode: trade would execute (%s %s, conf=%.2f, "
+                        "regime=%s), logging only",
+                        decision.regime, decision.action,
+                        decision.confidence, decision.regime
+                    )
+                    canary.run_agent_shadow_mode(
+                        agent_name="coordinator",
+                        symbol=snapshot_data.get("m", [{}])[0].get("s", "UNKNOWN"),
+                        market_data=snapshot_data.get("m", []),
+                        agent_func=lambda *args: {"action": decision.action, "confidence": decision.confidence}
+                    )
+                    # Skip the trade but preserve the decision for analysis
+                    decision = LLMDecision(
+                        action="skip",
+                        confidence=decision.confidence,
+                        regime=decision.regime,
+                        notes=f"{decision.notes or ''} | canary_shadow_mode",
+                        strategy_weights=decision.strategy_weights,
+                        memory_update=decision.memory_update,
+                    )
+
+            elif current_phase == DeploymentPhase.CANARY:
+                # Canary phase: Probabilistically route signals
+                routing = canary.get_signal_routing_decision(
+                    phase=current_phase,
+                    signal_count=1  # Single signal
+                )
+                if routing != "allow":
+                    logger.info("[CANARY] Canary phase routing: %s (influence=%.1f%%)",
+                               routing, signal_influence)
+                    decision = LLMDecision(
+                        action="skip",
+                        confidence=decision.confidence,
+                        regime=decision.regime,
+                        notes=f"{decision.notes or ''} | canary_routing={routing}",
+                        strategy_weights=decision.strategy_weights,
+                        memory_update=decision.memory_update,
+                    )
+
+            elif current_phase == DeploymentPhase.RAMP:
+                # Ramp phase: Check readiness to advance
+                if decision.action in ("go", "proceed"):
+                    logger.debug("[CANARY] Ramp phase signal: ready for further evaluation")
+
+            # Log deployment state for observability
+            status = canary.get_deployment_status()
+            logger.debug("[CANARY] Deployment state: phase=%s, influence=%.1f%%, status=%s",
+                        current_phase, signal_influence, status.get("current_phase"))
+
+        except Exception as e:
+            logger.debug("[MULTI-AGENT] Canary substrate gate failed: %s", e)
+
         return decision
 
     def get_entry_decision(
