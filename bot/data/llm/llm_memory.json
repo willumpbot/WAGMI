@@ -1,111 +1,111 @@
 {
-  "last_updated": 1777345129,
+  "last_updated": 1777395678,
   "notes": [
     {
       "text": "BB is only profitable strategy: 57% WR, +0.15%/trade. All others negative EV.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "MARKET",
       "regime": ""
     },
     {
       "text": "BB solo signals = 67.6% WR. Strongest pattern. Trust BB alone over consensus.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "MARKET",
       "regime": ""
     },
     {
       "text": "BB+MTQ combo = 35% WR. Contra-indicator. SKIP when both agree.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "MARKET",
       "regime": ""
     },
     {
       "text": "High confidence is NOT predictive. 80%+ WR is WORSE than <60%. Ignore confidence scores.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "MARKET",
       "regime": ""
     },
     {
       "text": "After 2 consecutive wins: 74-77% WR. After 2 losses: 28-29% WR. Streak momentum is real.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "MARKET",
       "regime": ""
     },
     {
       "text": "ETH_SELL_BB = 70% WR. Best golden setup. Prioritize ETH shorts on BB signals.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "ETH",
       "regime": ""
     },
     {
       "text": "BTC_BUY_BB = 69% WR. Second best setup. Prioritize BTC longs on BB signals.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "BTC",
       "regime": ""
     },
     {
       "text": "SOL_BUY_BB = 67% WR. Reliable long setup on BB signals.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "SOL",
       "regime": ""
     },
     {
       "text": "BTC_SELL_BB = 61% WR. Decent but weaker than BTC longs. Size down on BTC shorts.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "BTC",
       "regime": ""
     },
     {
       "text": "HYPE_SELL_BB = 35% WR. Worst BB setup. AVOID shorting HYPE on BB signals.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "HYPE",
       "regime": ""
     },
     {
       "text": "HYPE_BUY_CS = 38% WR. Dead setup. SKIP all CS-only HYPE longs.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "HYPE",
       "regime": ""
     },
     {
       "text": "high_volatility regime = 55% WR. Best regime for trading. Increase size in high vol.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "MARKET",
       "regime": "high_volatility"
     },
     {
       "text": "BTC leads cross-asset: when BTC wins, ETH follows 60% of the time. Watch BTC first.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "BTC",
       "regime": ""
     },
     {
       "text": "R:R 1.0-1.5 = 57% WR. Tighter TPs outperform wide ones. Keep TP1 close.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "MARKET",
       "regime": ""
     },
     {
       "text": "HYPE in extreme vol = 33% WR. Never trade HYPE during volatility spikes.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "HYPE",
       "regime": "high_volatility"
     },
     {
       "text": "1h timeframe predicts 4h with 67% accuracy (73% for BB). Use 1h as leading signal.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "MARKET",
       "regime": ""
     },
     {
       "text": "MFE peaks at 8-12h holding. 34% of peak move captured at 12h. Optimal hold window.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "MARKET",
       "regime": ""
     },
     {
       "text": "BB losers recover 56% of loss, non-BB only 45%. BB signals have better loss recovery.",
-      "ts": 1777345129.1731446,
+      "ts": 1777395678.2690344,
       "symbol": "MARKET",
       "regime": ""
     }
