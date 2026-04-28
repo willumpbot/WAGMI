@@ -126,7 +126,11 @@ class LLMBackend(ABC):
 
 
 class CliBackend(LLMBackend):
-    """Claude CLI backend (Subscription, $0/call, local)."""
+    """Claude CLI backend (Subscription, $0/call, local).
+
+    Routes calls through bot/llm/claude_cli_client.py for $0/call access
+    to Claude via the local Max subscription. No API key required.
+    """
 
     def __init__(self):
         super().__init__("cli", "claude-sonnet-4-6")
