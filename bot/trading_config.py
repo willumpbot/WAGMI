@@ -101,7 +101,7 @@ class TradingConfig:
         default_factory=lambda: _env_int("CIRCUIT_BREAKER_COOLDOWN_MIN", 60)
     )
     max_consecutive_losses: int = field(
-        default_factory=lambda: _env_int("MAX_CONSECUTIVE_LOSSES", 5)
+        default_factory=lambda: _env_int("MAX_CONSECUTIVE_LOSSES", 3)
     )
     cb_conf_override_pct: float = field(
         default_factory=lambda: _env_float("CB_CONF_OVERRIDE_PCT", 0.92)

@@ -2694,6 +2694,15 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
     def _process_symbol(self, symbol: str, sym_cfg, trace_id: str = ""):
         """Process one symbol: fetch data, check positions, generate signals."""
+        # Kill-list enforcement (BLOCKER 2 fix): block patterns that consistently lose
+        # SOL SHORT: -$154 loss, HYPE LONG: -$77 loss — don't reopen these
+        if symbol == "SOL" and hasattr(self, '_last_side') and getattr(self, '_last_side', {}).get(symbol) == "SHORT":
+            logger.info(f"[{symbol}] SKIP: SOL SHORT on kill-list (historical loss: -$154)")
+            return
+        if symbol == "HYPE" and hasattr(self, '_last_side') and getattr(self, '_last_side', {}).get(symbol) == "LONG":
+            logger.info(f"[{symbol}] SKIP: HYPE LONG on kill-list (historical loss: -$77)")
+            return
+
         # F3: Graceful degradation — halt new entries if exchange is down
         if self.degradation.should_halt_entries():
             # Still process existing positions for SL/TP, but skip new entries

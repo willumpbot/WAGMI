@@ -3202,20 +3202,25 @@ class AgentCoordinator:
         drops = sum(1 for m in (markets if isinstance(markets, list) else [])
                      if float(m.get("pct_24h", m.get("chg24h", 0)) or 0) < -5)
 
+        # Determine directional bias for trend/consolidation classification
+        avg_direction = sum(float(m.get("pct_24h", m.get("chg24h", 0)) or 0)
+                           for m in (markets if isinstance(markets, list) else []))
+        has_upside = avg_direction >= 0
+
         # Panic: multiple symbols dropping >5%
         if drops >= 2:
             return "panic"
         # High volatility: extreme moves
         if max_move > 8 or avg_move > 5:
             return "high_volatility"
-        # Trend: clear directional move with decent volume
+        # Trend: clear directional move with decent volume (canonical names for downstream)
         if avg_move > 2.5 or (avg_move > 1.5 and len(vol_signals) >= 1):
-            return "trend"
+            return "trending_bull" if has_upside else "trending_bear"
         # Range: very tight moves
         if avg_move < 1.0:
             return "range"
-        # Default: consolidation
-        return "consolidation"
+        # Default: consolidation maps to range (canonical)
+        return "range"
 
     def _build_regime_input(self, snapshot: dict) -> str:
         """Build regime agent input: markets + global + regime history.
