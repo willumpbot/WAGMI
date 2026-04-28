@@ -1688,3 +1688,194 @@ AGENT_PROMPTS = {
     "agent_router": AGENT_ROUTER_AGENT_PROMPT,
     "consensus_builder": CONSENSUS_BUILDER_AGENT_PROMPT,
 }
+
+
+# ── Deep Memory Context Injection (W3-F) ────────────────────────────────────
+
+def inject_learning_memory_context(regime: str, symbol: str, n_agree: int, confidence: float) -> str:
+    """Inject deep memory context into Learning Agent prompt.
+
+    Args:
+        regime: Current market regime
+        symbol: Trading symbol
+        n_agree: Number of strategies agreeing
+        confidence: Entry confidence (0-100 scale)
+
+    Returns:
+        Formatted context string for prompt injection
+    """
+    try:
+        from llm.learning.deep_memory_query import DeepMemoryQuery
+    except ImportError:
+        return ""
+
+    query = DeepMemoryQuery()
+
+    # Get pattern performance
+    pattern = query.query_similar_patterns(regime=regime, n_agree=n_agree, confidence=int(confidence))
+
+    # Get regime context
+    regime_context = query.inject_regime_context(regime)
+
+    # Get symbol intelligence
+    symbol_intel = query.get_symbol_intelligence(symbol)
+
+    context_lines = [
+        "\n## DEEP MEMORY CONTEXT (Live Historical Data)",
+        f"\nSetup Type: {regime}+{n_agree}-agree+{int(confidence/10)*10}conf",
+        f"Historical WR: {pattern.get('win_rate', 0.0):.1%} ({pattern.get('sample_size', 0)} trades)",
+        f"Avg R-Multiple: {pattern.get('avg_r_multiple', 0.0):.2f}x",
+        f"Regime Performance:\n{regime_context}",
+        f"\n{symbol} Intelligence:",
+        f"  - Symbol WR: {symbol_intel.get('win_rate', 0.0):.1%}",
+        f"  - Regime Preference: {symbol_intel.get('regime_preference', {})}",
+        f"  - Vol Adjustment: {symbol_intel.get('vol_adjustment_factor', 1.0):.2f}x",
+    ]
+
+    if pattern.get('risk_flags'):
+        context_lines.append(f"  - Risk Flags: {', '.join(pattern['risk_flags'])}")
+
+    if symbol_intel.get('avoid_patterns'):
+        context_lines.append(f"  - Avoid Patterns: {', '.join(symbol_intel['avoid_patterns'][:3])}")
+
+    return "\n".join(context_lines)
+
+
+def inject_trade_memory_context(regime: str, symbol: str) -> str:
+    """Inject deep memory context into Trade Agent prompt.
+
+    Enables Trade Agent to reference historical performance for similar setups
+    and regime-specific edge information.
+
+    Args:
+        regime: Current market regime
+        symbol: Trading symbol
+
+    Returns:
+        Formatted context string for prompt injection
+    """
+    try:
+        from llm.learning.deep_memory_query import DeepMemoryQuery
+    except ImportError:
+        return ""
+
+    query = DeepMemoryQuery()
+    regime_context = query.inject_regime_context(regime)
+
+    context_lines = [
+        "\n## DEEP MEMORY EDGE DATA (Regime & Symbol Intelligence)",
+        f"\nCurrent Regime: {regime}",
+        f"{regime_context}",
+        f"\n{symbol} Edge Profile:",
+    ]
+
+    symbol_intel = query.get_symbol_intelligence(symbol)
+    if symbol_intel.get('regime_preference'):
+        best_regime = max(symbol_intel['regime_preference'].items(), key=lambda x: x[1])
+        worst_regime = min(symbol_intel['regime_preference'].items(), key=lambda x: x[1])
+        context_lines.append(f"  - Best in {best_regime[0]}: {best_regime[1]:.1%}")
+        context_lines.append(f"  - Worst in {worst_regime[0]}: {worst_regime[1]:.1%}")
+
+    context_lines.append(f"  - Vol Adjustment: {symbol_intel.get('vol_adjustment_factor', 1.0):.2f}x")
+
+    return "\n".join(context_lines)
+
+
+def inject_exit_memory_context(regime: str, symbol: str, side: str) -> str:
+    """Inject deep memory context into Exit Agent prompt.
+
+    Enables Exit Agent to understand historical hold times, exit patterns,
+    and regime-specific exit profiles for similar setups.
+
+    Args:
+        regime: Current market regime
+        symbol: Trading symbol
+        side: Trade side (BUY or SELL)
+
+    Returns:
+        Formatted context string for prompt injection
+    """
+    try:
+        from llm.learning.deep_memory_query import DeepMemoryQuery
+    except ImportError:
+        return ""
+
+    query = DeepMemoryQuery()
+
+    context_lines = [
+        "\n## DEEP MEMORY EXIT CONTEXT (Historical Hold Times & Patterns)",
+        f"\nSetup: {symbol} {side} in {regime}",
+    ]
+
+    # Get symbol-specific insights
+    symbol_intel = query.get_symbol_intelligence(symbol)
+    if symbol_intel.get('regime_preference'):
+        regime_wr = symbol_intel['regime_preference'].get(regime, 0.0)
+        context_lines.append(f"Historical WR in {regime}: {regime_wr:.1%}")
+
+        if regime_wr < 0.35:
+            context_lines.append("  ⚠️ Poor regime match — consider early exit")
+        elif regime_wr > 0.70:
+            context_lines.append("  ✓ Strong regime match — can hold longer")
+
+    # Regime-specific exit guidance
+    regime_context = query.inject_regime_context(regime)
+    if regime in ["ranging", "consolidation"]:
+        context_lines.append("  → In ranging: hold <1h, exit at resistance/support")
+    elif regime in ["trending_bull", "trending_bear"]:
+        context_lines.append("  → In trending: hold 2-4h, trail stops up the trend")
+
+    return "\n".join(context_lines)
+
+
+def inject_risk_memory_context(regime: str, symbol: str, n_agree: int) -> str:
+    """Inject deep memory context into Risk Agent prompt.
+
+    Enables Risk Agent to size positions based on historical pattern reliability
+    and regime-specific risk profiles.
+
+    Args:
+        regime: Current market regime
+        symbol: Trading symbol
+        n_agree: Number of strategies agreeing
+
+    Returns:
+        Formatted context string for prompt injection
+    """
+    try:
+        from llm.learning.deep_memory_query import DeepMemoryQuery
+    except ImportError:
+        return ""
+
+    query = DeepMemoryQuery()
+
+    # Find patterns with this setup
+    pattern = query.query_similar_patterns(regime=regime, n_agree=n_agree, confidence=50)
+
+    context_lines = [
+        "\n## DEEP MEMORY RISK CONTEXT (Pattern Reliability & Sizing Guide)",
+        f"\nSetup: {regime}+{n_agree}-agree",
+        f"Historical Reliability: {pattern.get('win_rate', 0.0):.1%} WR ({pattern.get('sample_size', 0)} samples)",
+    ]
+
+    # Risk rating based on historical performance
+    wr = pattern.get('win_rate', 0.0)
+    if wr > 0.65:
+        context_lines.append("Risk Rating: LOW — High-confidence setup, normal sizing OK")
+        sizing_suggestion = "1.0x normal size"
+    elif wr > 0.50:
+        context_lines.append("Risk Rating: MODERATE — Use 75-90% normal sizing")
+        sizing_suggestion = "0.8x normal size"
+    elif wr > 0.35:
+        context_lines.append("Risk Rating: ELEVATED — Use 50-75% normal sizing")
+        sizing_suggestion = "0.6x normal size"
+    else:
+        context_lines.append("Risk Rating: HIGH — Use 25-50% normal sizing or skip")
+        sizing_suggestion = "0.4x normal size or skip"
+
+    context_lines.append(f"Suggested Position Size: {sizing_suggestion}")
+
+    if pattern.get('risk_flags'):
+        context_lines.append(f"Risk Alerts: {', '.join(pattern['risk_flags'])}")
+
+    return "\n".join(context_lines)

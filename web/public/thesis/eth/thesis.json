@@ -1,11 +1,11 @@
 {
   "symbol": "ETH",
-  "updated_at": "2026-04-28T04:00:43.275136+00:00",
-  "price": 2289.25,
+  "updated_at": "2026-04-28T04:49:27.937456+00:00",
+  "price": 2289.35,
   "levels": {
     "symbol": "ETH",
-    "ts": "2026-04-28T04:00:31.222386+00:00",
-    "price": 2289.25,
+    "ts": "2026-04-28T04:49:16.656053+00:00",
+    "price": 2289.35,
     "daily": {
       "ema20": 2291.522337279871,
       "ema50": 2259.464731176882,
@@ -20,28 +20,28 @@
       "ema20": 2316.883558249629,
       "ema50": 2324.397119140309,
       "rsi14": 44.591029023746735,
-      "atr14": 30.735714285714298,
+      "atr14": 31.514285714285734,
       "hi20": 2403.4,
       "lo20": 2262.2
     },
     "h1": {
-      "ema20": 2301.5826807801823,
-      "ema50": 2315.196260708692,
-      "rsi14": 37.837837837837874,
-      "atr14": 13.79285714285717,
+      "ema20": 2301.592204589706,
+      "ema50": 2315.2001822773195,
+      "rsi14": 37.87575150300602,
+      "atr14": 14.564285714285754,
       "hi20": 2328.4,
       "lo20": 2262.2,
-      "vol_ratio": 0.4104483884659084
+      "vol_ratio": 0.6168112070885451
     },
     "m5": {
-      "rsi14": 54.78723404255387,
-      "atr14": 2.292857142857104
+      "rsi14": 56.62650602409685,
+      "atr14": 2.86428571428574
     }
   },
   "factors": {
     "btc_4h_direction": "bearish",
     "btc_4h_aligned_long": false,
-    "chop_score": 0.21,
+    "chop_score": 0.22,
     "chop_ok": true,
     "rsi_aligned": true,
     "rsi_bullish_stack": false,
@@ -54,7 +54,7 @@
     "regime": {
       "ok": false,
       "agent": "regime",
-      "narrative": "Daily trend UP with slope +2.08%/10d and RSI 47. Price -0.10% vs daily EMA20 ($2,292). ATR 3.58% \u2014 healthy momentum.",
+      "narrative": "Daily trend UP with slope +2.08%/10d and RSI 47. Price -0.09% vs daily EMA20 ($2,292). ATR 3.58% \u2014 healthy momentum.",
       "latency_s": 0,
       "regime_label": "trending_bull",
       "confidence": 70,
@@ -63,7 +63,7 @@
       "daily_slope_pct": 2.08,
       "daily_rsi": 47.0,
       "h1_rsi": 38.0,
-      "vol_ratio_1h": 0.41
+      "vol_ratio_1h": 0.62
     },
     "trade": {
       "ok": false,
@@ -72,24 +72,22 @@
       "latency_s": 0,
       "action": "go_long",
       "confidence": 65,
-      "entry_low": 2284.67,
-      "entry_high": 2293.83,
-      "stop": 2258.06,
+      "entry_low": 2284.77,
+      "entry_high": 2293.93,
+      "stop": 2257.83,
       "target1": 2328.4,
       "target2": 2462.5,
-      "rr_t1": 1.26,
-      "rr_t2": 5.56,
+      "rr_t1": 1.24,
+      "rr_t2": 5.49,
       "invalidation": 2259.46
     },
     "critic": {
       "ok": false,
       "agent": "critic",
-      "narrative": "Primary risks: thin_volume. Size down if any conviction factor missing.",
+      "narrative": "Primary risks: none major. Size down if any conviction factor missing.",
       "latency_s": 0,
       "vote": "pass",
-      "risk_flags": [
-        "thin_volume"
-      ]
+      "risk_flags": []
     },
     "risk": {
       "ok": false,

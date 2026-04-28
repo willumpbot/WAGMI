@@ -369,3 +369,104 @@ class ThesisTracker:
     def get_pending_theses(self) -> List[Dict[str, Any]]:
         """Get all open/pending theses for monitoring."""
         return [r.to_dict() for r in self._pending.values()]
+
+    def detect_overconfident_bins(self, lookback_days: int = 30,
+                                   threshold: float = 0.15) -> Dict[str, Dict]:
+        """Detect confidence bins where predicted > actual by threshold.
+
+        Args:
+            lookback_days: How far back to analyze
+            threshold: Accuracy gap threshold (0.15 = 15% gap)
+
+        Returns:
+            Dict mapping confidence_bin → {predicted, actual, gap, sample_size}
+            Example: {"80-90": {"predicted": 0.85, "actual": 0.42, "gap": 0.43, "count": 7}}
+        """
+        cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+        closed = [r for r in self._history
+                   if r.outcome and r.outcome != "pending"
+                   and r.closed_at and r.closed_at >= cutoff.isoformat()]
+
+        calibration = self._compute_calibration(closed)
+
+        overconfident = {}
+        for bucket, data in calibration.items():
+            if data["accuracy"] is None or data["total"] < 3:
+                continue
+
+            expected_mid = (
+                int(bucket.split("-")[0]) + int(bucket.split("-")[1])
+            ) / 200
+            gap = expected_mid - data["accuracy"]
+
+            if gap > threshold:
+                overconfident[bucket] = {
+                    "predicted": expected_mid,
+                    "actual": data["accuracy"],
+                    "gap": gap,
+                    "sample_size": data["total"],
+                }
+
+        return overconfident
+
+    def get_regime_comparison(self, lookback_days: int = 30) -> Dict[str, Any]:
+        """Compare performance across regimes.
+
+        Returns:
+            Dict with per-regime stats including best/worst regimes
+        """
+        stats = self.get_accuracy_stats(lookback_days=lookback_days)
+
+        if not stats.get("sufficient_data"):
+            return {"error": "Insufficient data"}
+
+        by_regime = stats.get("by_regime", {})
+
+        # Sort by accuracy
+        sorted_regimes = sorted(
+            by_regime.items(),
+            key=lambda x: x[1]["accuracy"],
+            reverse=True,
+        )
+
+        return {
+            "lookback_days": lookback_days,
+            "by_regime": by_regime,
+            "best_regime": sorted_regimes[0][0] if sorted_regimes else None,
+            "worst_regime": sorted_regimes[-1][0] if sorted_regimes else None,
+            "regime_comparison": [
+                {"regime": r, "accuracy": v["accuracy"], "count": v["total"]}
+                for r, v in sorted_regimes
+            ],
+        }
+
+    def get_symbol_comparison(self, lookback_days: int = 30) -> Dict[str, Any]:
+        """Compare performance across symbols.
+
+        Returns:
+            Dict with per-symbol stats including best/worst symbols
+        """
+        stats = self.get_accuracy_stats(lookback_days=lookback_days)
+
+        if not stats.get("sufficient_data"):
+            return {"error": "Insufficient data"}
+
+        by_symbol = stats.get("by_symbol", {})
+
+        # Sort by accuracy
+        sorted_symbols = sorted(
+            by_symbol.items(),
+            key=lambda x: x[1]["accuracy"],
+            reverse=True,
+        )
+
+        return {
+            "lookback_days": lookback_days,
+            "by_symbol": by_symbol,
+            "best_symbol": sorted_symbols[0][0] if sorted_symbols else None,
+            "worst_symbol": sorted_symbols[-1][0] if sorted_symbols else None,
+            "symbol_comparison": [
+                {"symbol": s, "accuracy": v["accuracy"], "count": v["total"]}
+                for s, v in sorted_symbols
+            ],
+        }

@@ -1,47 +1,47 @@
 {
   "symbol": "BTC",
-  "updated_at": "2026-04-28T03:59:54.039985+00:00",
-  "price": 76764.5,
+  "updated_at": "2026-04-28T04:48:36.761501+00:00",
+  "price": 76872.5,
   "levels": {
     "symbol": "BTC",
-    "ts": "2026-04-28T03:59:41.772123+00:00",
-    "price": 76764.5,
+    "ts": "2026-04-28T04:48:25.474956+00:00",
+    "price": 76872.5,
     "daily": {
-      "ema20": 75418.50491583724,
-      "ema50": 74236.59265052323,
-      "slope_pct": 4.012868354192248,
-      "rsi14": 59.1492281303602,
+      "ema20": 75428.69539202772,
+      "ema50": 74243.49587632969,
+      "slope_pct": 4.0269224733987885,
+      "rsi14": 59.58667403925905,
       "atr14": 2144.0,
       "hi60d": 79434.0,
       "lo60d": 62983.0,
       "trend": "UP"
     },
     "h4": {
-      "ema20": 77552.00898912484,
-      "ema50": 77119.32187889595,
-      "rsi14": 45.739046701974004,
-      "atr14": 777.5714285714286,
+      "ema20": 77487.97289439918,
+      "ema50": 77125.09997111447,
+      "rsi14": 44.11862160371107,
+      "atr14": 772.0714285714286,
       "hi20": 79434.0,
       "lo20": 76363.0
     },
     "h1": {
-      "ema20": 77224.39477852761,
-      "ema50": 77538.33754139322,
-      "rsi14": 33.8466803559206,
-      "atr14": 418.7857142857143,
+      "ema20": 77191.54085428275,
+      "ema50": 77518.30838108211,
+      "rsi14": 34.98817966903073,
+      "atr14": 395.7857142857143,
       "hi20": 78222.0,
       "lo20": 76363.0,
-      "vol_ratio": 0.9718970803639675
+      "vol_ratio": 1.0620219774611193
     },
     "m5": {
-      "rsi14": 59.61871750433276,
-      "atr14": 80.07142857142857
+      "rsi14": 58.46153846153846,
+      "atr14": 78.21428571428571
     }
   },
   "factors": {
-    "btc_4h_direction": "neutral",
+    "btc_4h_direction": "bearish",
     "btc_4h_aligned_long": false,
-    "chop_score": 0.23,
+    "chop_score": 0.21,
     "chop_ok": true,
     "rsi_aligned": true,
     "rsi_bullish_stack": false,
@@ -54,32 +54,32 @@
     "regime": {
       "ok": false,
       "agent": "regime",
-      "narrative": "Daily trend UP with slope +4.01%/10d and RSI 59. Price +1.78% vs daily EMA20 ($75,419). ATR 2.79% \u2014 healthy momentum.",
+      "narrative": "Daily trend UP with slope +4.03%/10d and RSI 60. Price +1.91% vs daily EMA20 ($75,429). ATR 2.79% \u2014 healthy momentum.",
       "latency_s": 0,
       "regime_label": "trending_bull",
       "confidence": 70,
       "bias": "bullish",
       "vol_band": "medium",
-      "daily_slope_pct": 4.01,
-      "daily_rsi": 59.0,
-      "h1_rsi": 34.0,
-      "vol_ratio_1h": 0.97
+      "daily_slope_pct": 4.03,
+      "daily_rsi": 60.0,
+      "h1_rsi": 35.0,
+      "vol_ratio_1h": 1.06
     },
     "trade": {
       "ok": false,
       "agent": "trade",
-      "narrative": "Bullish bias intact. Long entry near $77,224 (1h EMA20) with stop below $76,363 (1h support). Target $78,222 then $79,434.",
+      "narrative": "Bullish bias intact. Long entry near $77,192 (1h EMA20) with stop below $76,363 (1h support). Target $78,222 then $79,434.",
       "latency_s": 0,
       "action": "go_long",
       "confidence": 65,
-      "entry_low": 76610.97,
-      "entry_high": 76918.03,
-      "stop": 76237.36,
+      "entry_low": 76718.76,
+      "entry_high": 77026.24,
+      "stop": 76244.26,
       "target1": 78222.0,
       "target2": 79434.0,
-      "rr_t1": 2.76,
-      "rr_t2": 5.06,
-      "invalidation": 74236.59
+      "rr_t1": 2.15,
+      "rr_t2": 4.08,
+      "invalidation": 74243.5
     },
     "critic": {
       "ok": false,
