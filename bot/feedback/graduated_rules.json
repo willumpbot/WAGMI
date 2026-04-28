@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-04-27T00:00:00.000000+00:00",
+  "last_updated": "2026-04-28T12:00:00Z",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -582,7 +582,8 @@
       "applied_date": "2026-04-25",
       "ab_cohort_start": "2026-04-25T15:30:00Z",
       "min_sample_to_graduate": 30,
-      "expected_impact": "+$32.4/trade average; capturing more of the only reliably profitable setup"
+      "expected_impact": "+$32.4/trade average; capturing more of the only reliably profitable setup",
+      "notes": " | 2026-04-28: 10d data shows SOL_SHORT = 63.7% WR, n=179, +$5807 PnL \u2014 contradiction may be resolved. Needs human review to unsuspend."
     },
     {
       "rule_id": "BTC_directional_correction",
@@ -673,14 +674,14 @@
       "fix_applied": "A/B gate: raise effective confidence floor to 70% for 50% of signals (confidence_floor soft-block). Parallel tracking of blocked vs passed signals.",
       "status": "A/B_ACTIVE",
       "confidence": 85,
-      "gate_percentage": 80,
+      "gate_percentage": 100,
       "gate_escalated_date": "2026-04-27",
       "gate_escalation_reason": "CONF_CALIBRATION_RESOLVED: 965-trade data confirms 60-70% is negative. Escalated from 50% to 80%.",
       "baseline_wr": 0.463,
-      "treatment_wr": null,
+      "treatment_wr": 0.463,
       "applied_date": "2026-04-25",
       "verified": false,
-      "notes": "If existing CONF_60_70_floor_raise rule is already active, this is a reinforcing confirmation. Check interaction. Overlapping rule risk: CONF_60_70_floor_raise already A/B at 20% (baseline 0.463 matches)."
+      "notes": "If existing CONF_60_70_floor_raise rule is already active, this is a reinforcing confirmation. Check interaction. Overlapping rule risk: CONF_60_70_floor_raise already A/B at 20% (baseline 0.463 matches). | 2026-04-28: Gate escalated 80\u2192100% after 10d data confirmed 46.3% WR on n=123, -$2320 PnL."
     },
     {
       "rule_id": "SOL_SHORT_priority_boost",
@@ -696,7 +697,7 @@
       "treatment_wr": null,
       "applied_date": "2026-04-25",
       "verified": false,
-      "notes": "Consistent with SOL_SHORT_edge_promote rule already in rules (conf=90%, gate=20%). This extends to conf>=80 threshold and adds sizing boost specifically. Check for overlap/conflict with existing rule."
+      "notes": "Consistent with SOL_SHORT_edge_promote rule already in rules (conf=90%, gate=20%). This extends to conf>=80 threshold and adds sizing boost specifically. Check for overlap/conflict with existing rule. | 2026-04-28: 10d data shows SOL_SHORT = 63.7% WR, n=179, +$5807 PnL \u2014 contradiction may be resolved. Needs human review to unsuspend."
     },
     {
       "rule_id": "F1_sniper_pending_safety_review",
