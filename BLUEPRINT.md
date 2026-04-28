@@ -67,6 +67,12 @@
 6. **§24.11** — canary mode for first restart (BTC-only, observation only)
 7. **§34** — apply silent-fallback fix-loud discipline (~2 weeks, prevents next 67 bugs)
 
+### Want more detail than this distillation?
+
+The full unsummarized output from every audit agent (~720KB across 19 reports) lives in [`docs/audits/`](docs/audits/README.md). Each report contains the original task prompt + the agent's complete reasoning, code samples, and findings — far more verbose than what I distilled here.
+
+Map of which agent report backs which section: see [`docs/audits/README.md`](docs/audits/README.md#map-to-blueprintmd-sections).
+
 ---
 
 ## 1. Executive Summary
