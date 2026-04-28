@@ -190,7 +190,7 @@
     {
       "knowledge_type": "principle",
       "content": "Support becomes resistance once broken, and resistance becomes support once reclaimed. Always check these flips before entering.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -209,7 +209,7 @@
     {
       "knowledge_type": "principle",
       "content": "The trend is determined by higher highs and higher lows (uptrend) or lower highs and lower lows (downtrend). A break of structure signals potential reversal.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -246,7 +246,7 @@
     {
       "knowledge_type": "principle",
       "content": "Large buy walls can be fake (spoofing). Don't rely on order book depth alone. Actual fills (volume on candles) are more reliable than standing orders.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -264,7 +264,7 @@
     {
       "knowledge_type": "principle",
       "content": "Market makers profit from the spread. In low liquidity, spreads widen and slippage increases. Avoid market orders in thin markets - use limits.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -283,7 +283,7 @@
     {
       "knowledge_type": "principle",
       "content": "RSI above 70 is overbought, below 30 is oversold. BUT in a strong trend, RSI can stay overbought for extended periods. Don't short RSI 80 in a bull trend.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -302,7 +302,7 @@
     {
       "knowledge_type": "principle",
       "content": "MACD crossover (signal line cross) confirms momentum shifts. MACD histogram divergence from price is a strong reversal signal.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -321,7 +321,7 @@
     {
       "knowledge_type": "principle",
       "content": "EMA 20 and EMA 50 crossovers (golden cross / death cross) are lagging but reliable. Price above both EMAs = bullish structure. Below both = bearish.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -340,7 +340,7 @@
     {
       "knowledge_type": "principle",
       "content": "ATR (Average True Range) measures volatility. When ATR is high, use wider stops. When ATR is low, tighter stops work. Always scale stops to ATR, not fixed percentages.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -359,7 +359,7 @@
     {
       "knowledge_type": "principle",
       "content": "VWAP (Volume Weighted Average Price) is institutional. Price above VWAP = buyers in control. Below = sellers. VWAP acts as dynamic support/resistance.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -378,7 +378,7 @@
     {
       "knowledge_type": "principle",
       "content": "Higher timeframe structure always wins. A 1h buy signal against a daily downtrend will likely fail. Always check the 4h and daily trend before trading lower timeframes.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -397,7 +397,7 @@
     {
       "knowledge_type": "principle",
       "content": "Breakouts from tight ranges (Bollinger Band squeeze, low ATR) produce the strongest moves. The longer the compression, the bigger the expansion.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -416,7 +416,7 @@
     {
       "knowledge_type": "observation",
       "content": "Failed breakouts (price breaks above resistance then immediately returns below) are one of the strongest reversal signals. Trade the failure, not the breakout.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -435,7 +435,7 @@
     {
       "knowledge_type": "principle",
       "content": "Divergence between price and RSI/MACD is a leading indicator. Bullish divergence: price makes lower low, RSI makes higher low = potential bottom.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -508,7 +508,7 @@
     {
       "knowledge_type": "principle",
       "content": "Take partial profits at TP1 (40-50% of position). This locks in gains and lets the rest ride risk-free. Emotion cannot affect a position that's already in profit.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -527,7 +527,7 @@
     {
       "knowledge_type": "principle",
       "content": "After TP1 is hit, move stop loss to breakeven. Now the trade is risk-free. The remaining position either hits TP2 for bonus profit or gets stopped at breakeven.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -563,7 +563,7 @@
     {
       "knowledge_type": "principle",
       "content": "Leverage amplifies BOTH gains and losses. 10x leverage means a 10% move against you wipes out the position. Only use high leverage (5x+) with tight stops and high confidence.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -638,7 +638,7 @@
     {
       "knowledge_type": "principle",
       "content": "Liquidation cascades create the biggest moves. When OI drops rapidly + price drops rapidly, it's a liquidation cascade. These create overshoots and snap-back rallies.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -657,7 +657,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC dominance drives alt behavior. When BTC dominance rises, alts bleed. When BTC dominance falls, alts pump. Never long alts when BTC is dumping - they fall 2-3x harder.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -676,7 +676,7 @@
     {
       "knowledge_type": "principle",
       "content": "Crypto is 24/7 but not equally liquid. Asian session (00:00-08:00 UTC) and European open (07:00-09:00 UTC) are high activity. US close to Asian open (21:00-00:00 UTC) is thin.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -695,7 +695,7 @@
     {
       "knowledge_type": "observation",
       "content": "Weekend markets are thinner, more manipulable, and produce more false signals. Reduce position size on weekends. Best signals come Tuesday-Thursday.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -714,7 +714,7 @@
     {
       "knowledge_type": "principle",
       "content": "Meme coins (DOGE, PEPE, FARTCOIN) have higher volatility and thinner books. They move 2-5x faster than BTC. Use wider stops, lower leverage, and expect bigger swings.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -773,7 +773,7 @@
     {
       "knowledge_type": "principle",
       "content": "Funding cost scales with leverage. 0.01% funding on 10x = 0.3%/day cost. On a trade expecting 2% move over 3 days, funding eats 0.9% \u2014 nearly half your profit. Always factor funding into R:R math.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -792,7 +792,7 @@
     {
       "knowledge_type": "principle",
       "content": "When funding is extreme (>0.05%), the crowded side usually gets liquidated. This is both a reversal signal AND a cost signal. Trading against extreme funding is often free money \u2014 you get paid to hold AND profit from the reversal.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -811,7 +811,7 @@
     {
       "knowledge_type": "principle",
       "content": "In high funding environments, prefer shorter hold times. A 2-hour scalp avoids the 8-hour funding payment entirely. Adjust your entry refinement: 'market now' for quick scalps, avoid 'scale in' which extends hold time.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -830,7 +830,7 @@
     {
       "knowledge_type": "principle",
       "content": "A good trading signal must have: clear entry, defined stop loss, at least one take profit target, and a reason (why NOW, not just why this direction).",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -848,7 +848,7 @@
     {
       "knowledge_type": "principle",
       "content": "Signal timing matters as much as direction. A correct direction with wrong timing gets stopped out before the move happens. Check if the signal is early, on time, or late.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -884,7 +884,7 @@
     {
       "knowledge_type": "principle",
       "content": "Multiple timeframe confirmation increases signal quality. A buy signal on 1h that aligns with 4h uptrend and daily support = high quality. A buy signal on 1h against daily downtrend = low quality.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -903,7 +903,7 @@
     {
       "knowledge_type": "principle",
       "content": "Strategy agreement is the strongest predictor of trade success. When 3+ independent strategies agree on direction, the probability of success increases significantly.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -922,7 +922,7 @@
     {
       "knowledge_type": "observation",
       "content": "Signals with vague entry zones ('buy around 95k-97k') are weaker than precise entries ('buy at 96,200 on the retest'). Precision = conviction from the signal source.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -940,7 +940,7 @@
     {
       "knowledge_type": "principle",
       "content": "Check the signal's risk-reward BEFORE taking it. If the stop is 3% away and the target is 2% away, the R:R is 0.67:1 - that's a bad trade even if the direction is right.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -958,7 +958,7 @@
     {
       "knowledge_type": "principle",
       "content": "Read charts from left to right. Start with the daily, then 4h, then 1h. The higher timeframe sets the bias, the lower timeframe finds the entry.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -977,7 +977,7 @@
     {
       "knowledge_type": "principle",
       "content": "Key levels come from: previous day high/low, weekly open, monthly open, significant swing points, round numbers (90k, 95k, 100k). These are where orders cluster.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -996,7 +996,7 @@
     {
       "knowledge_type": "principle",
       "content": "Candlestick wicks show rejection. A long lower wick on a daily candle means buyers stepped in hard. A long upper wick means sellers rejected the price. Pay attention to wick length relative to body.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1015,7 +1015,7 @@
     {
       "knowledge_type": "principle",
       "content": "Volume profile shows where most trading occurred. High Volume Nodes (HVN) act as magnets. Low Volume Nodes (LVN) get passed through quickly. Price spends time at HVN and gaps through LVN.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1034,7 +1034,7 @@
     {
       "knowledge_type": "principle",
       "content": "When evaluating a signal's entry/SL/TP: map the levels onto the chart structure. Is the entry at support/resistance? Is the SL below the last swing low? Is the TP at a logical target?",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1053,7 +1053,7 @@
     {
       "knowledge_type": "principle",
       "content": "Consolidation (low ATR, tight range) followed by expansion (volume + breakout) is the highest-probability setup. The entry is on the breakout retest, not the initial break.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1109,7 +1109,7 @@
     {
       "knowledge_type": "principle",
       "content": "The best trade is often NO trade. If the setup isn't clear, if the regime is uncertain, if cross-market is conflicting - staying flat IS a position. Cash has zero drawdown.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1128,7 +1128,7 @@
     {
       "knowledge_type": "principle",
       "content": "Confirmation bias makes you see what you want to see. If you're already long, you'll interpret neutral data as bullish. Always consider the counter-argument before confirming a bias.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1146,7 +1146,7 @@
     {
       "knowledge_type": "principle",
       "content": "Size down after a losing streak, size up after a winning streak. This is counterintuitive but mathematically optimal - winning streaks compound, losing streaks preserve capital.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1184,7 +1184,7 @@
     {
       "knowledge_type": "principle",
       "content": "RegimeTrend alignment scored 0-4: (1) WaveTrend cross direction, (2) MFI above/below 50, (3) 6h MACD+MFI bullish, (4) 16h MACD+MFI bullish. Needs 3/4 minimum. 4/4 = highest conviction. Confidence = align \u00d7 25.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1203,7 +1203,7 @@
     {
       "knowledge_type": "principle",
       "content": "RegimeTrend excels in trending markets (strong regime). Fails in ranges where WaveTrend produces false crosses. MFI < 40 in a bullish regime = divergence warning. Momentum entries (recent cross, not this-bar) are slightly lower conviction but catch trends early.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1241,7 +1241,7 @@
     {
       "knowledge_type": "principle",
       "content": "MonteCarlo is a mean-reversion strategy. It buys when price is in buy zone AND MC simulation shows >60% up probability. RSI14 < 30 confirms oversold. It answers: 'Is price statistically extreme AND likely to revert?'",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1260,7 +1260,7 @@
     {
       "knowledge_type": "principle",
       "content": "MonteCarlo excels in range-bound markets where price oscillates around SMA20. Fails in trends where price blows through zones without reverting. News dislocations make the historical distribution unreliable. Trust it most when RSI confirms extremes.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1298,7 +1298,7 @@
     {
       "knowledge_type": "principle",
       "content": "ConfidenceScorer is the most adaptive strategy. Trust grows with sample size \u2014 20+ similar trades = statistically meaningful. Best used to arbitrate when other strategies disagree. Cold start problem: unreliable with < 10 trades. Lags regime shifts because it learns from past, not present.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1337,7 +1337,7 @@
     {
       "knowledge_type": "principle",
       "content": "MultiTierQuality excels for scalps (5-30min holds). When EMA + VWAP + 1h all align = high conviction. Noisy in ranges where EMA crossovers whipsaw. MANUAL tier = low conviction, should not drive decisions. Strongest when combined with regime_trend macro direction.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1357,7 +1357,7 @@
     {
       "knowledge_type": "principle",
       "content": "When regime_trend and multi_tier_quality agree on direction, the signal has both macro (6h/16h regime) and micro (5m entry) confirmation \u2014 highest quality setup. regime_trend provides the 'why' (regime supports), multi_tier provides the 'when' (exact entry bar).",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1376,7 +1376,7 @@
     {
       "knowledge_type": "principle",
       "content": "monte_carlo acts as a contrarian check on regime_trend. If regime_trend says BUY but monte_carlo says price is in SELL zone, the trade may be chasing. If both agree (regime bullish + price in buy zone), the setup is strong from both trend and mean-reversion perspectives.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1395,7 +1395,7 @@
     {
       "knowledge_type": "principle",
       "content": "confidence_scorer with hist_WR > 60% for a setup type = validated statistical edge. Weight this signal up. hist_WR < 40% = historically losing setup. This should override other strategies' raw confidence scores.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1433,7 +1433,7 @@
     {
       "knowledge_type": "principle",
       "content": "When evaluating signal ctx (context), read the indicator values, not just the direction. 'WT cross-up, 4/4 align' is vastly different from 'WT cross-up, 2/4 align (momentum)'. The ctx tells you HOW strong the signal's own internal confirmation is.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1470,7 +1470,7 @@
     {
       "knowledge_type": "principle",
       "content": "Convergent confluence is the strongest predictor: when trend-following (regime_trend) AND mean-reversion (monte_carlo) agree on direction, price is BOTH trending AND at a statistical edge. This is the highest-probability setup \u2014 size up aggressively.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1489,7 +1489,7 @@
     {
       "knowledge_type": "principle",
       "content": "Conflicting strategies are INFORMATIVE, not noise. regime_trend BUY + monte_carlo SELL zone = price is trending but overextended. Prediction: short-term pullback within the trend. Action: wait for pullback to MC buy zone, then enter with trend.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1508,7 +1508,7 @@
     {
       "knowledge_type": "principle",
       "content": "RSI divergence + WT divergence = strongest reversal predictor. If price makes new high but RSI and WaveTrend don't, the move is exhausting. Predict reversal. If MFI also dropping (MFI<40 in bull): double confirmation of exhaustion.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1527,7 +1527,7 @@
     {
       "knowledge_type": "principle",
       "content": "MC probability >70% with RSI extreme (<25 or >75) = high-probability mean-reversion. Predict a return to SMA20 within 12h. The further price deviates from SMA20 in sigmas, the stronger the reversion pull. 2+ sigma = strong, 3+ sigma = very strong.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1546,7 +1546,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC leads, alts follow with 10-30min lag. If BTC breaks structure (new 4h high/low), predict alts will follow within 30min. Use BTC's move to front-run alt entries \u2014 this is the single most reliable cross-market predictor.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1565,7 +1565,7 @@
     {
       "knowledge_type": "principle",
       "content": "Veto is a prediction opportunity. When you veto a trade, you're predicting the OPPOSITE will happen. Track your veto accuracy \u2014 if vetoed trades would have won (vacc < 0.50), your predictions are inverted. Consider flipping your thesis when vacc is poor.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1584,7 +1584,7 @@
     {
       "knowledge_type": "principle",
       "content": "RegimeTrend confidence = align \u00d7 25: 75% means 3/4 criteria met (cross + MFI + one HTF). 100% means 4/4 = all timeframes confirming. Momentum entries (-5% penalty) are slightly weaker but catch trends earlier. Read ctx for which criteria are missing.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1603,7 +1603,7 @@
     {
       "knowledge_type": "principle",
       "content": "MonteCarlo confidence = zone depth + MC probability + RSI confirmation. DEEP_BUY with MC>70%up and RSI<30 \u2192 maximum conviction (~85%). Regular BUY with MC~55% \u2192 moderate conviction (~65%). The MC probability is forward-looking \u2014 it tells you the statistical odds, not just current position.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1622,7 +1622,7 @@
     {
       "knowledge_type": "principle",
       "content": "ConfidenceScorer adjusts base zone confidence by historical win rate. If hist_WR=70% for BUY signals on this symbol, confidence gets boosted. If hist_WR=35%, confidence gets crushed. hist_WR=n/a means cold start \u2014 treat as 50% baseline, don't discount or boost.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1641,7 +1641,7 @@
     {
       "knowledge_type": "principle",
       "content": "MultiTier confidence maps to tiers: PRIORITY (75%+) = all alignments (EMA cross + VWAP + 1h). REGULAR (65-74%) = 2/3 aligned. MANUAL (<65%) = weak, should not drive decisions alone. VWAP opposition is a strong negative \u2014 price fighting VWAP rarely sustains.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1679,7 +1679,7 @@
     {
       "knowledge_type": "principle",
       "content": "Trend regime is where 70%+ of all profit is made. Be aggressive entering trend trades, patient exiting them. Range regime: most trades are small winners or small losers \u2014 reduce frequency, tighten targets. Panic: stay flat. The regime determines your playbook, not individual signals.",
-      "confidence": 0.632,
+      "confidence": 0.596,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1698,7 +1698,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 47% win rate (30 trades)",
-      "confidence": 1.055,
+      "confidence": 1.037,
       "evidence_count": 17,
       "supporting": [],
       "contradicting": [],
@@ -7315,13 +7315,14 @@
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_SELL_BB: LOSS in trending_bear, pnl=-99.74%",
       "confidence": 0.75,
-      "evidence_count": 1,
+      "evidence_count": 2,
       "supporting": [
+        "5 observations",
         "5 observations"
       ],
       "contradicting": [],
       "created_at": 1777389161.0279546,
-      "last_validated": 1777389161.027955,
+      "last_validated": 1777389307.7252142,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
@@ -7347,15 +7348,16 @@
     },
     {
       "knowledge_type": "principle",
-      "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_BB: LOSS in trending_bull, pnl=-989.38%",
+      "content": "[trade_outcome] Pattern from 5 observations: SOL_SELL_BB: LOSS in trending_bear, pnl=-172.96%",
       "confidence": 0.75,
-      "evidence_count": 1,
+      "evidence_count": 2,
       "supporting": [
+        "5 observations",
         "5 observations"
       ],
       "contradicting": [],
-      "created_at": 1777389319.9441197,
-      "last_validated": 1777389319.9441197,
+      "created_at": 1777389285.01441,
+      "last_validated": 1777389363.4692237,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
@@ -7364,15 +7366,15 @@
     },
     {
       "knowledge_type": "principle",
-      "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_BB: WIN in trending_bull, pnl=1795.41%",
+      "content": "[trade_outcome] Pattern from 5 observations: SOL_SELL_BB: LOSS in trending_bear, pnl=-117.49%",
       "confidence": 0.75,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
       ],
       "contradicting": [],
-      "created_at": 1777389358.9437282,
-      "last_validated": 1777389358.9437284,
+      "created_at": 1777389329.0550346,
+      "last_validated": 1777389329.0550349,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
@@ -7381,15 +7383,15 @@
     },
     {
       "knowledge_type": "principle",
-      "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_BB: LOSS in trending_bull, pnl=-518.39%",
+      "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_BB: LOSS in trending_bull, pnl=-134.16%",
       "confidence": 0.75,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
       ],
       "contradicting": [],
-      "created_at": 1777389384.4719644,
-      "last_validated": 1777389384.4719646,
+      "created_at": 1777389435.6596112,
+      "last_validated": 1777389435.6596115,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
