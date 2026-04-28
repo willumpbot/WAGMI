@@ -1267,6 +1267,41 @@ class AgentCoordinator:
                 entry_adjustment=decision.entry_adjustment,
             )
 
+        # ── Week 4: Agent Health Monitoring ────────────────────
+        # Track agent performance: accuracy, calibration, latency, cost
+        try:
+            from llm.agents.agent_health_monitor import AgentHealthMonitor
+            health_monitor = AgentHealthMonitor()
+
+            # Compute health metrics for each agent that executed
+            for role, agent_out in pipeline_results.items():
+                if agent_out and agent_out.ok:
+                    health_monitor.compute_agent_health(
+                        role=role,
+                        predicted_accuracy=float(agent_out.data.get("c", agent_out.data.get("confidence", 0.5))),
+                        # Actual accuracy will be computed from closed trades in background
+                        latency_ms=agent_out.latency_ms or 0,
+                        cost_usd=agent_out.cost_usd() if hasattr(agent_out, 'cost_usd') else 0.0,
+                        model_used=agent_out.model_used or "unknown",
+                    )
+
+            # Get aggregated health summary for decision context
+            health_summary = health_monitor.get_health_summary()
+            if health_summary:
+                snapshot_data["_agent_health"] = health_summary
+                # Alert if any agents are degraded/unhealthy
+                if health_summary.get("degraded_agents") or health_summary.get("unhealthy_agents"):
+                    logger.warning(
+                        "[HEALTH] Agent issues: degraded=%s, unhealthy=%s",
+                        health_summary.get("degraded_agents", []),
+                        health_summary.get("unhealthy_agents", [])
+                    )
+
+            logger.debug("[HEALTH] Agents monitored: %d total, health=%s",
+                        len(pipeline_results), health_summary.get("overall_status", "unknown") if health_summary else "N/A")
+        except Exception as e:
+            logger.debug("[MULTI-AGENT] Agent health monitoring failed: %s", e)
+
         # ── Feed decision pipeline into learning systems ────────
         try:
             from llm.agents.learning_integration import process_agent_decision_for_learning
