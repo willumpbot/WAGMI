@@ -1,45 +1,45 @@
 {
   "symbol": "BTC",
-  "updated_at": "2026-04-28T05:10:22.474960+00:00",
-  "price": 76938.5,
+  "updated_at": "2026-04-28T05:29:22.310627+00:00",
+  "price": 77068.5,
   "levels": {
     "symbol": "BTC",
-    "ts": "2026-04-28T05:10:08.759420+00:00",
-    "price": 76938.5,
+    "ts": "2026-04-28T05:29:11.468278+00:00",
+    "price": 77068.5,
     "daily": {
-      "ema20": 75436.79063012295,
-      "ema50": 74248.97974729743,
-      "slope_pct": 4.038086960618938,
-      "rsi14": 59.93881665855525,
+      "ema20": 75450.60015393248,
+      "ema50": 74258.33458600711,
+      "slope_pct": 4.057132262347437,
+      "rsi14": 60.54923444303976,
       "atr14": 2144.0,
       "hi60d": 79434.0,
       "lo60d": 62983.0,
       "trend": "UP"
     },
     "h4": {
-      "ema20": 77496.06813249442,
-      "ema50": 77128.43330444781,
-      "rsi14": 44.8946250612645,
-      "atr14": 780.5714285714286,
+      "ema20": 77504.63956106585,
+      "ema50": 77131.96271621251,
+      "rsi14": 45.693125100627924,
+      "atr14": 787.0,
       "hi20": 79434.0,
       "lo20": 76363.0
     },
     "h1": {
-      "ema20": 77167.12491992106,
-      "ema50": 77491.97628722616,
-      "rsi14": 54.68292682926829,
-      "atr14": 316.92857142857144,
+      "ema20": 77180.17253896868,
+      "ema50": 77497.34883624577,
+      "rsi14": 57.52171925011431,
+      "atr14": 323.35714285714283,
       "hi20": 78222.0,
       "lo20": 76363.0,
-      "vol_ratio": 0.6632138095629049
+      "vol_ratio": 0.7740319843156143
     },
     "m5": {
-      "rsi14": 63.73134328358209,
-      "atr14": 83.07142857142857
+      "rsi14": 75.85644371941272,
+      "atr14": 82.0
     }
   },
   "factors": {
-    "btc_4h_direction": "bearish",
+    "btc_4h_direction": "neutral",
     "btc_4h_aligned_long": false,
     "chop_score": 0.17,
     "chop_ok": true,
@@ -54,37 +54,37 @@
     "regime": {
       "ok": false,
       "agent": "regime",
-      "narrative": "Daily trend UP with slope +4.04%/10d and RSI 60. Price +1.99% vs daily EMA20 ($75,437). ATR 2.79% \u2014 healthy momentum.",
+      "narrative": "Daily trend UP with slope +4.06%/10d and RSI 61. Price +2.14% vs daily EMA20 ($75,451). ATR 2.78% \u2014 healthy momentum.",
       "latency_s": 0,
       "regime_label": "trending_bull",
       "confidence": 70,
       "bias": "bullish",
       "vol_band": "medium",
-      "daily_slope_pct": 4.04,
-      "daily_rsi": 60.0,
-      "h1_rsi": 55.0,
-      "vol_ratio_1h": 0.66
+      "daily_slope_pct": 4.06,
+      "daily_rsi": 61.0,
+      "h1_rsi": 58.0,
+      "vol_ratio_1h": 0.77
     },
     "trade": {
       "ok": false,
       "agent": "trade",
-      "narrative": "Bullish bias intact. Long entry near $77,167 (1h EMA20) with stop below $76,363 (1h support). Target $78,222 then $79,434.",
+      "narrative": "Bullish structure but 5m RSI 76 overbought. Wait for pullback to $77,180 (1h EMA20), stop at $76,363.",
       "latency_s": 0,
-      "action": "go_long",
-      "confidence": 65,
-      "entry_low": 76784.62,
-      "entry_high": 77092.38,
-      "stop": 76267.92,
+      "action": "wait",
+      "confidence": 55,
+      "entry_low": 77025.81,
+      "entry_high": 77334.53,
+      "stop": 76265.99,
       "target1": 78222.0,
       "target2": 79434.0,
-      "rr_t1": 1.91,
-      "rr_t2": 3.72,
-      "invalidation": 74248.98
+      "rr_t1": 1.14,
+      "rr_t2": 2.47,
+      "invalidation": 74258.33
     },
     "critic": {
       "ok": false,
       "agent": "critic",
-      "narrative": "Primary risks: none major. Size down if any conviction factor missing.",
+      "narrative": "Pass \u2014 no trade proposed. Waiting is the right call when confluence is absent.",
       "latency_s": 0,
       "vote": "pass",
       "risk_flags": []
@@ -92,12 +92,14 @@
     "risk": {
       "ok": false,
       "agent": "risk",
-      "narrative": "Size 0.5x at 3x leverage. Conviction=1/4 . Max loss 2.0% of equity. Flags: none.",
+      "narrative": "Size 0.0x at 1x leverage. Conviction=1/4 . Max loss 0.0% of equity. Flags: no_trade.",
       "latency_s": 0,
-      "size_multiplier": 0.5,
-      "leverage": 3,
-      "max_loss_pct": 2.0,
-      "risk_flags": []
+      "size_multiplier": 0.0,
+      "leverage": 1,
+      "max_loss_pct": 0.0,
+      "risk_flags": [
+        "no_trade"
+      ]
     },
     "mode": "cli"
   }
