@@ -226,8 +226,8 @@ class TradingConfig:
 
     # BTC-Specific Risk Overrides ──
     btc_atr_multiplier: float = field(
-        default_factory=lambda: _env_float("BTC_ATR_MULTIPLIER", 1.75)
-    )  # Widen from default 1.0-1.25: BTC capped 33/54 trades (61%), payoff ratio 0.76:1
+        default_factory=lambda: _env_float("BTC_ATR_MULTIPLIER", 0.875)
+    )  # PHASE2.1 FIX: Reduced from 1.75 → 0.875 (50% reduction). Root cause analysis shows BTC trades losing $3,484 despite 66% WR due to unfavorable R:R (losses 1.84x larger than wins). Widening stop loss reduces risk per trade. Expected improvement: ~$2,200 loss reduction. Previous setting (1.75): BTC capped 33/54 trades (61%), payoff ratio 0.76:1
 
     # ML
     enable_ml: bool = field(default_factory=lambda: _env_bool("ENABLE_ML", True))
