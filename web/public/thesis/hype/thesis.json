@@ -1,47 +1,47 @@
 {
   "symbol": "HYPE",
-  "updated_at": "2026-04-28T04:59:14.211500+00:00",
-  "price": 41.1805,
+  "updated_at": "2026-04-28T05:04:52.841388+00:00",
+  "price": 41.2985,
   "levels": {
     "symbol": "HYPE",
-    "ts": "2026-04-28T04:59:03.140400+00:00",
-    "price": 41.1805,
+    "ts": "2026-04-28T05:04:41.628050+00:00",
+    "price": 41.2985,
     "daily": {
-      "ema20": 41.199937694894146,
-      "ema50": 40.56638603900709,
-      "slope_pct": 0.4195341572921116,
-      "rsi14": 40.08766014834795,
+      "ema20": 41.21127102822748,
+      "ema50": 40.574063458361934,
+      "slope_pct": 0.44715769551711354,
+      "rsi14": 40.49382716049384,
       "atr14": 1.889571428571428,
       "hi60d": 45.763,
       "lo60d": 26.062,
       "trend": "UP"
     },
     "h4": {
-      "ema20": 41.61688048189438,
-      "ema50": 41.69790554324356,
-      "rsi14": 46.856141716955406,
-      "atr14": 0.6812142857142872,
+      "ema20": 41.628118577132476,
+      "ema50": 41.70253299422395,
+      "rsi14": 48.04947668886775,
+      "atr14": 0.6824285714285726,
       "hi20": 43.568,
       "lo20": 40.794
     },
     "h1": {
-      "ema20": 41.62063393122168,
-      "ema50": 41.73185918689547,
-      "rsi14": 23.29240214888729,
-      "atr14": 0.358428571428573,
+      "ema20": 41.58974732020115,
+      "ema50": 41.71595282619633,
+      "rsi14": 39.15857605177999,
+      "atr14": 0.2986428571428585,
       "hi20": 42.93,
       "lo20": 40.794,
-      "vol_ratio": 0.9601442769296866
+      "vol_ratio": 0.534975854039108
     },
     "m5": {
-      "rsi14": 55.57432432432454,
-      "atr14": 0.0750714285714287
+      "rsi14": 62.98882681564244,
+      "atr14": 0.07485714285714248
     }
   },
   "factors": {
     "btc_4h_direction": "neutral",
     "btc_4h_aligned_long": false,
-    "chop_score": 0.17,
+    "chop_score": 0.14,
     "chop_ok": true,
     "rsi_aligned": true,
     "rsi_bullish_stack": false,
@@ -54,16 +54,16 @@
     "regime": {
       "ok": false,
       "agent": "regime",
-      "narrative": "Daily trend UP with slope +0.42%/10d and RSI 40. Price -0.05% vs daily EMA20 ($41). ATR 4.59% \u2014 healthy momentum.",
+      "narrative": "Daily trend UP with slope +0.45%/10d and RSI 40. Price +0.21% vs daily EMA20 ($41). ATR 4.58% \u2014 healthy momentum.",
       "latency_s": 0,
       "regime_label": "unknown",
       "confidence": 40,
       "bias": "neutral",
       "vol_band": "medium",
-      "daily_slope_pct": 0.42,
+      "daily_slope_pct": 0.45,
       "daily_rsi": 40.0,
-      "h1_rsi": 23.0,
-      "vol_ratio_1h": 0.96
+      "h1_rsi": 39.0,
+      "vol_ratio_1h": 0.53
     },
     "trade": {
       "ok": false,
@@ -72,13 +72,13 @@
       "latency_s": 0,
       "action": "wait",
       "confidence": 40,
-      "entry_low": 41.06,
-      "entry_high": 41.3,
-      "stop": 40.69,
+      "entry_low": 41.17,
+      "entry_high": 41.42,
+      "stop": 40.7,
       "target1": 42.93,
       "target2": 45.76,
-      "rr_t1": 3.54,
-      "rr_t2": 9.28,
+      "rr_t1": 2.75,
+      "rr_t2": 7.51,
       "invalidation": 40.57
     },
     "critic": {
@@ -87,9 +87,7 @@
       "narrative": "Pass \u2014 no trade proposed. Waiting is the right call when confluence is absent.",
       "latency_s": 0,
       "vote": "pass",
-      "risk_flags": [
-        "rsi1h_oversold"
-      ]
+      "risk_flags": []
     },
     "risk": {
       "ok": false,

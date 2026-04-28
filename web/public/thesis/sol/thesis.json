@@ -1,47 +1,47 @@
 {
   "symbol": "SOL",
-  "updated_at": "2026-04-28T04:58:25.359013+00:00",
-  "price": 84.0275,
+  "updated_at": "2026-04-28T05:04:04.711478+00:00",
+  "price": 84.0845,
   "levels": {
     "symbol": "SOL",
-    "ts": "2026-04-28T04:58:14.329090+00:00",
-    "price": 84.0275,
+    "ts": "2026-04-28T05:03:54.264978+00:00",
+    "price": 84.0845,
     "daily": {
-      "ema20": 85.33544000054866,
-      "ema50": 85.26510038033301,
-      "slope_pct": 0.5824584401255248,
-      "rsi14": 50.9219031471866,
+      "ema20": 85.34134476245342,
+      "ema50": 85.26910038033301,
+      "slope_pct": 0.5894182152070202,
+      "rsi14": 51.08972995960025,
       "atr14": 3.033642857142856,
       "hi60d": 97.638,
       "lo60d": 76.683,
       "trend": "UP"
     },
     "h4": {
-      "ema20": 85.44745049718368,
-      "ema50": 85.8069057680859,
-      "rsi14": 35.497295047856866,
+      "ema20": 85.45297430670749,
+      "ema50": 85.80918027788982,
+      "rsi14": 35.78520486645222,
       "atr14": 1.036285714285714,
       "hi20": 88.055,
       "lo20": 83.608
     },
     "h1": {
-      "ema20": 84.70031282970778,
-      "ema50": 85.36122716330811,
-      "rsi14": 32.719589495925206,
-      "atr14": 0.5075000000000013,
+      "ema20": 84.64169420607139,
+      "ema50": 85.30561504668631,
+      "rsi14": 49.33045356371477,
+      "atr14": 0.398928571428573,
       "hi20": 85.793,
       "lo20": 83.608,
-      "vol_ratio": 0.9813650742228447
+      "vol_ratio": 0.4655926919881919
     },
     "m5": {
-      "rsi14": 46.44295302013443,
-      "atr14": 0.10285714285714473
+      "rsi14": 49.17197452229266,
+      "atr14": 0.10428571428571587
     }
   },
   "factors": {
     "btc_4h_direction": "bearish",
     "btc_4h_aligned_long": false,
-    "chop_score": 0.23,
+    "chop_score": 0.18,
     "chop_ok": true,
     "rsi_aligned": true,
     "rsi_bullish_stack": false,
@@ -54,16 +54,16 @@
     "regime": {
       "ok": false,
       "agent": "regime",
-      "narrative": "Daily trend UP with slope +0.58%/10d and RSI 51. Price -1.53% vs daily EMA20 ($85). ATR 3.61% \u2014 healthy momentum.",
+      "narrative": "Daily trend UP with slope +0.59%/10d and RSI 51. Price -1.47% vs daily EMA20 ($85). ATR 3.61% \u2014 healthy momentum.",
       "latency_s": 0,
       "regime_label": "trending_bull",
       "confidence": 70,
       "bias": "bullish",
       "vol_band": "medium",
-      "daily_slope_pct": 0.58,
+      "daily_slope_pct": 0.59,
       "daily_rsi": 51.0,
-      "h1_rsi": 33.0,
-      "vol_ratio_1h": 0.98
+      "h1_rsi": 49.0,
+      "vol_ratio_1h": 0.47
     },
     "trade": {
       "ok": false,
@@ -72,22 +72,24 @@
       "latency_s": 0,
       "action": "go_long",
       "confidence": 65,
-      "entry_low": 83.86,
-      "entry_high": 84.2,
-      "stop": 83.46,
+      "entry_low": 83.92,
+      "entry_high": 84.25,
+      "stop": 83.49,
       "target1": 85.79,
       "target2": 97.64,
-      "rr_t1": 3.09,
-      "rr_t2": 23.8,
+      "rr_t1": 2.87,
+      "rr_t2": 22.73,
       "invalidation": 85.27
     },
     "critic": {
       "ok": false,
       "agent": "critic",
-      "narrative": "Primary risks: none major. Size down if any conviction factor missing.",
+      "narrative": "Primary risks: thin_volume. Size down if any conviction factor missing.",
       "latency_s": 0,
       "vote": "pass",
-      "risk_flags": []
+      "risk_flags": [
+        "thin_volume"
+      ]
     },
     "risk": {
       "ok": false,
