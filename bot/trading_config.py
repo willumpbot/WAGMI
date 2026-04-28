@@ -129,9 +129,9 @@ class TradingConfig:
         default_factory=lambda: _env("ENSEMBLE_MODE", "weighted_veto")
     )  # "voting", "weighted_veto", "weighted", "best"
     min_votes_required: int = field(
-        default_factory=lambda: _env_int("MIN_VOTES_REQUIRED", 2)
-    )  # Was 3: with 4 active strategies, 3=near-unanimous. 2-agree is realistic consensus.
-    # Quant approach: more trades at smaller size. EV gates handle quality filtering.
+        default_factory=lambda: _env_int("MIN_VOTES_REQUIRED", 1)
+    )  # Phase A discovery: 1_agree outperforms 2_agree by +$2,096. Accept solo signals.
+    # 2-agree consensus killed profitability: bollinger_squeeze solo = profitable, paired = losing
     veto_ratio: float = field(
         default_factory=lambda: _env_float("VETO_RATIO", 1.2)
     )  # Lowered from 1.5→1.2: with min_votes=3 and only 4 active strategies,

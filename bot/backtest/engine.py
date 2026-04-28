@@ -822,6 +822,13 @@ class BacktestEngine:
                     _bsym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
                     if _bsym == "HYPE":
                         _disabled.add("regime_trend")
+                    # Merge with config-based disabled strategies (Phase A.5: disable multi_tier_quality)
+                    if not self.config.strategy_multi_tier_quality_enabled:
+                        _disabled.add("multi_tier_quality")
+                    if not self.config.strategy_lead_lag_enabled:
+                        _disabled.add("lead_lag")
+                    if not self.config.strategy_vmc_cipher_enabled:
+                        _disabled.add("vmc_cipher")
                     ensemble.set_disabled_strategies(_disabled)
                     # Set regime for regime-aware min_votes
                     ensemble.set_regime(symbol, _bt_regime)
@@ -1253,6 +1260,13 @@ class BacktestEngine:
                     _bsym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
                     if _bsym == "HYPE":
                         _disabled.add("regime_trend")
+                    # Merge with config-based disabled strategies (Phase A.5: disable multi_tier_quality)
+                    if not self.config.strategy_multi_tier_quality_enabled:
+                        _disabled.add("multi_tier_quality")
+                    if not self.config.strategy_lead_lag_enabled:
+                        _disabled.add("lead_lag")
+                    if not self.config.strategy_vmc_cipher_enabled:
+                        _disabled.add("vmc_cipher")
                     ensemble.set_disabled_strategies(_disabled)
                     # Set regime for regime-aware min_votes
                     ensemble.set_regime(symbol, _bt_regime)
