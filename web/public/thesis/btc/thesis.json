@@ -1,41 +1,41 @@
 {
   "symbol": "BTC",
-  "updated_at": "2026-04-28T05:02:28.771161+00:00",
-  "price": 76891.5,
+  "updated_at": "2026-04-28T05:10:22.474960+00:00",
+  "price": 76938.5,
   "levels": {
     "symbol": "BTC",
-    "ts": "2026-04-28T05:02:12.519201+00:00",
-    "price": 76891.5,
+    "ts": "2026-04-28T05:10:08.759420+00:00",
+    "price": 76938.5,
     "daily": {
-      "ema20": 75430.50491583724,
-      "ema50": 74244.7216827813,
-      "slope_pct": 4.029418064659767,
-      "rsi14": 59.66502872171085,
+      "ema20": 75436.79063012295,
+      "ema50": 74248.97974729743,
+      "slope_pct": 4.038086960618938,
+      "rsi14": 59.93881665855525,
       "atr14": 2144.0,
       "hi60d": 79434.0,
       "lo60d": 62983.0,
       "trend": "UP"
     },
     "h4": {
-      "ema20": 77489.87765630394,
-      "ema50": 77125.88428483997,
-      "rsi14": 44.303170409511225,
-      "atr14": 772.0714285714286,
+      "ema20": 77496.06813249442,
+      "ema50": 77128.43330444781,
+      "rsi14": 44.8946250612645,
+      "atr14": 780.5714285714286,
       "hi20": 79434.0,
       "lo20": 76363.0
     },
     "h1": {
-      "ema20": 77160.93444373058,
-      "ema50": 77489.42726761832,
-      "rsi14": 53.19899244332494,
-      "atr14": 308.42857142857144,
+      "ema20": 77167.12491992106,
+      "ema50": 77491.97628722616,
+      "rsi14": 54.68292682926829,
+      "atr14": 316.92857142857144,
       "hi20": 78222.0,
       "lo20": 76363.0,
-      "vol_ratio": 0.5942875920079062
+      "vol_ratio": 0.6632138095629049
     },
     "m5": {
-      "rsi14": 60.487804878048784,
-      "atr14": 76.35714285714286
+      "rsi14": 63.73134328358209,
+      "atr14": 83.07142857142857
     }
   },
   "factors": {
@@ -54,32 +54,32 @@
     "regime": {
       "ok": false,
       "agent": "regime",
-      "narrative": "Daily trend UP with slope +4.03%/10d and RSI 60. Price +1.94% vs daily EMA20 ($75,431). ATR 2.79% \u2014 healthy momentum.",
+      "narrative": "Daily trend UP with slope +4.04%/10d and RSI 60. Price +1.99% vs daily EMA20 ($75,437). ATR 2.79% \u2014 healthy momentum.",
       "latency_s": 0,
       "regime_label": "trending_bull",
       "confidence": 70,
       "bias": "bullish",
       "vol_band": "medium",
-      "daily_slope_pct": 4.03,
+      "daily_slope_pct": 4.04,
       "daily_rsi": 60.0,
-      "h1_rsi": 53.0,
-      "vol_ratio_1h": 0.59
+      "h1_rsi": 55.0,
+      "vol_ratio_1h": 0.66
     },
     "trade": {
       "ok": false,
       "agent": "trade",
-      "narrative": "Bullish bias intact. Long entry near $77,161 (1h EMA20) with stop below $76,363 (1h support). Target $78,222 then $79,434.",
+      "narrative": "Bullish bias intact. Long entry near $77,167 (1h EMA20) with stop below $76,363 (1h support). Target $78,222 then $79,434.",
       "latency_s": 0,
       "action": "go_long",
       "confidence": 65,
-      "entry_low": 76737.72,
-      "entry_high": 77045.28,
-      "stop": 76270.47,
+      "entry_low": 76784.62,
+      "entry_high": 77092.38,
+      "stop": 76267.92,
       "target1": 78222.0,
       "target2": 79434.0,
-      "rr_t1": 2.14,
-      "rr_t2": 4.09,
-      "invalidation": 74244.72
+      "rr_t1": 1.91,
+      "rr_t2": 3.72,
+      "invalidation": 74248.98
     },
     "critic": {
       "ok": false,

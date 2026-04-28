@@ -1,41 +1,41 @@
 {
   "symbol": "ETH",
-  "updated_at": "2026-04-28T05:03:17.046470+00:00",
-  "price": 2288.95,
+  "updated_at": "2026-04-28T05:11:10.367445+00:00",
+  "price": 2289.25,
   "levels": {
     "symbol": "ETH",
-    "ts": "2026-04-28T05:03:06.120541+00:00",
-    "price": 2288.95,
+    "ts": "2026-04-28T05:10:59.505341+00:00",
+    "price": 2289.25,
     "daily": {
-      "ema20": 2291.484242041776,
-      "ema50": 2259.4389247252693,
-      "slope_pct": 2.0749293019880355,
-      "rsi14": 47.24096177131983,
+      "ema20": 2291.4937658512995,
+      "ema50": 2259.4453763381725,
+      "slope_pct": 2.0753535432575054,
+      "rsi14": 47.24913494809687,
       "atr14": 81.9857142857143,
       "hi60d": 2462.5,
       "lo60d": 1835.0,
       "trend": "UP"
     },
     "h4": {
-      "ema20": 2316.845463011534,
-      "ema50": 2324.381432865799,
-      "rsi14": 44.52389913436208,
+      "ema20": 2316.8549868210575,
+      "ema50": 2324.3853544344265,
+      "rsi14": 44.54066265060242,
       "atr14": 31.514285714285734,
       "hi20": 2403.4,
       "lo20": 2262.2
     },
     "h1": {
-      "ema20": 2300.220214998091,
-      "ema50": 2313.9706211952425,
-      "rsi14": 62.34177215189879,
-      "atr14": 11.000000000000032,
+      "ema20": 2300.2297388076145,
+      "ema50": 2313.97454276387,
+      "rsi14": 62.40126382306477,
+      "atr14": 11.250000000000032,
       "hi20": 2328.4,
       "lo20": 2262.2,
-      "vol_ratio": 0.3041843312840906
+      "vol_ratio": 0.3230197082869646
     },
     "m5": {
-      "rsi14": 52.5490196078435,
-      "atr14": 2.7928571428571365
+      "rsi14": 53.35968379446698,
+      "atr14": 2.900000000000026
     }
   },
   "factors": {
@@ -54,16 +54,16 @@
     "regime": {
       "ok": false,
       "agent": "regime",
-      "narrative": "Daily trend UP with slope +2.07%/10d and RSI 47. Price -0.11% vs daily EMA20 ($2,291). ATR 3.58% \u2014 healthy momentum.",
+      "narrative": "Daily trend UP with slope +2.08%/10d and RSI 47. Price -0.10% vs daily EMA20 ($2,291). ATR 3.58% \u2014 healthy momentum.",
       "latency_s": 0,
       "regime_label": "trending_bull",
       "confidence": 70,
       "bias": "bullish",
       "vol_band": "medium",
-      "daily_slope_pct": 2.07,
+      "daily_slope_pct": 2.08,
       "daily_rsi": 47.0,
       "h1_rsi": 62.0,
-      "vol_ratio_1h": 0.3
+      "vol_ratio_1h": 0.32
     },
     "trade": {
       "ok": false,
@@ -72,14 +72,14 @@
       "latency_s": 0,
       "action": "go_long",
       "confidence": 65,
-      "entry_low": 2284.37,
-      "entry_high": 2293.53,
-      "stop": 2258.9,
+      "entry_low": 2284.67,
+      "entry_high": 2293.83,
+      "stop": 2258.82,
       "target1": 2328.4,
       "target2": 2462.5,
-      "rr_t1": 1.31,
-      "rr_t2": 5.78,
-      "invalidation": 2259.44
+      "rr_t1": 1.29,
+      "rr_t2": 5.69,
+      "invalidation": 2259.45
     },
     "critic": {
       "ok": false,

@@ -149,7 +149,82 @@ class TradingConfig:
         default_factory=lambda: _env_bool("STRATEGY_VMC_CIPHER_ENABLED", False)
     )  # 5% WR (1/20 recent), dead weight — disabled by audit 2026-04-03
 
-    # ── BTC-Specific Risk Overrides ──
+    # ── Multi-Agent System (W4) ──
+    # Enable/disable individual agents in the 9-agent specialist pipeline
+    agent_regime_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_REGIME_ENABLED", True)
+    )  # Regime classification (Haiku)
+    agent_trade_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_TRADE_ENABLED", True)
+    )  # Trade decision + thesis (Sonnet)
+    agent_risk_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_RISK_ENABLED", True)
+    )  # Position sizing + risk (Haiku)
+    agent_critic_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_CRITIC_ENABLED", True)
+    )  # Stress-testing + veto (Sonnet)
+    agent_learning_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_LEARNING_ENABLED", True)
+    )  # Lesson extraction (Haiku)
+    agent_exit_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_EXIT_ENABLED", True)
+    )  # Position exit reassessment (Haiku)
+    agent_scout_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_SCOUT_ENABLED", False)
+    )  # Idle-time preparation (Haiku)
+    agent_overseer_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_OVERSEER_ENABLED", False)
+    )  # Cross-agent monitoring (Haiku)
+    agent_quant_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_QUANT_ENABLED", False)
+    )  # Quant analysis (Haiku)
+
+    # New specialist agents for learning loop (W4-ABC)
+    agent_opportunist_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_OPPORTUNIST_ENABLED", False)
+    )  # Pattern discovery + auto-register (Opportunist)
+    agent_adversary_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_ADVERSARY_ENABLED", False)
+    )  # Stress-testing proposals (Adversary)
+    agent_swarm_enabled: bool = field(
+        default_factory=lambda: _env_bool("AGENT_SWARM_ENABLED", False)
+    )  # Meta-learning tuning (Swarm Optimizer)
+
+    # Agent cost thresholds (min confidence required for agent to run)
+    agent_regime_min_confidence: float = field(
+        default_factory=lambda: _env_float("AGENT_REGIME_MIN_CONFIDENCE", 0.0)
+    )  # Run regime agent always
+    agent_trade_min_confidence: float = field(
+        default_factory=lambda: _env_float("AGENT_TRADE_MIN_CONFIDENCE", 0.0)
+    )  # Run trade agent always
+    agent_risk_min_confidence: float = field(
+        default_factory=lambda: _env_float("AGENT_RISK_MIN_CONFIDENCE", 0.0)
+    )  # Run risk agent always
+    agent_critic_min_confidence: float = field(
+        default_factory=lambda: _env_float("AGENT_CRITIC_MIN_CONFIDENCE", 50.0)
+    )  # Run critic agent for trades with >=50% confidence
+    agent_exit_min_confidence: float = field(
+        default_factory=lambda: _env_float("AGENT_EXIT_MIN_CONFIDENCE", 0.0)
+    )  # Run exit agent always (on open positions)
+
+    # Per-agent model overrides (use specific model instead of tier routing)
+    agent_regime_model: str = field(
+        default_factory=lambda: _env("AGENT_REGIME_MODEL", "")
+    )  # e.g., "haiku" or "sonnet"
+    agent_trade_model: str = field(
+        default_factory=lambda: _env("AGENT_TRADE_MODEL", "")
+    )
+    agent_risk_model: str = field(
+        default_factory=lambda: _env("AGENT_RISK_MODEL", "")
+    )
+    agent_critic_model: str = field(
+        default_factory=lambda: _env("AGENT_CRITIC_MODEL", "")
+    )
+    agent_exit_model: str = field(
+        default_factory=lambda: _env("AGENT_EXIT_MODEL", "")
+    )
+
+    # BTC-Specific Risk Overrides ──
     btc_atr_multiplier: float = field(
         default_factory=lambda: _env_float("BTC_ATR_MULTIPLIER", 1.75)
     )  # Widen from default 1.0-1.25: BTC capped 33/54 trades (61%), payoff ratio 0.76:1
