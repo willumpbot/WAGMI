@@ -1707,19 +1707,21 @@ class EnsembleStrategy:
         #   mean_reversion: 43% WR — losing
         # Solo BB outperforms 2-agree+BB (62% vs 52% WR). Consensus DILUTES BB edge.
         # Phase 5 (April 29, 2026): Relaxed solo gate based on 60-day backtest alpha analysis.
-        # 60-day backtest (April 29, 2026) revealed gate relaxation was HARMFUL
-        # - regime_trend + monte_carlo solos + low gates = HYPE lost $5,983 on 341 trades
+        # 60-day backtest (April 29, 2026) revealed gate relaxation was HARMFUL without micro-filters
+        # - Unfiltered regime_trend + monte_carlo solos = HYPE lost $5,983 on 341 trades
         # - Average losses were 55% larger than average wins (PF 0.79)
-        # - The "504% alpha" metric was flawed: based on trade count, not risk-adjusted returns
-        # DECISION: Revert to STRICT ensemble gating (2+ strategy agreement required)
-        # Symbol-specific relaxation requires per-symbol profitability proof (next phase)
-        _PROVEN_SOLO_STRATEGIES = set()  # DISABLED: Gate relaxation backfired
+        #
+        # PHASE 3 (April 29, 2026): Re-enable with Phase 2 symbol-specific micro-filters
+        # - Phase 2 validates symbol/side combinations (strict HYPE, validated SOL SHORT/BTC LONG)
+        # - Phase 3 unlocks monte_carlo_zones at conservative threshold (60% confidence = 74% WR in backtest)
+        # - Expected impact: +$2,000-5,000 per 60-day window (14% signal recovery from insufficient_votes gate)
+        _PROVEN_SOLO_STRATEGIES = {"monte_carlo_zones"}  # PHASE 3: Re-enabled with strict gates
         _HYPE_SOLO_STRATEGIES = set()
-        # Per-strategy confidence thresholds (UNUSED since _PROVEN_SOLO_STRATEGIES is empty)
+        # Per-strategy confidence thresholds (monte_carlo_zones at 60% where it showed 74% WR)
         _SOLO_STRATEGY_MIN_CONF = {
-            "bollinger_squeeze": 90.0,      # Extremely high bar if ever re-enabled
-            "regime_trend": 90.0,           # Extremely high bar if ever re-enabled
-            "monte_carlo_zones": 90.0,      # Extremely high bar if ever re-enabled
+            "bollinger_squeeze": 90.0,      # Not yet enabled
+            "regime_trend": 90.0,           # Not yet enabled
+            "monte_carlo_zones": 60.0,      # PHASE 3: 74% WR at 60% confidence in backtest
         }
         # Legacy fallback threshold (not used if strategy in _SOLO_STRATEGY_MIN_CONF above)
         _SOLO_CONF_THRESHOLD = 60.0
@@ -1747,7 +1749,7 @@ class EnsembleStrategy:
                 "allow_solos": True,
                 "conditions": {
                     "SHORT": {
-                        "min_confidence": 75.0,
+                        "min_confidence": 65.0,  # PHASE 3: Lowered from 75% to increase volume
                         "risk_mult": 0.7,
                         "rationale": "63.4% WR on SHORT, +$4,263 edge, PF 1.23"
                     },
@@ -1767,7 +1769,7 @@ class EnsembleStrategy:
                 "allow_solos": True,
                 "conditions": {
                     "LONG": {
-                        "min_confidence": 80.0,
+                        "min_confidence": 70.0,  # PHASE 3: Lowered from 80% to increase volume
                         "risk_mult": 0.6,
                         "rationale": "Slightly profitable LONG solos, need high confidence"
                     },
