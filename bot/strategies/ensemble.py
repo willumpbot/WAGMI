@@ -1706,11 +1706,22 @@ class EnsembleStrategy:
         #   regime_trend: 43% WR — losing
         #   mean_reversion: 43% WR — losing
         # Solo BB outperforms 2-agree+BB (62% vs 52% WR). Consensus DILUTES BB edge.
-        _PROVEN_SOLO_STRATEGIES = {"bollinger_squeeze"}  # ONLY BB: 57% live WR, 64% shadow. probability_engine REMOVED: 0% primary WR
-        _HYPE_SOLO_STRATEGIES = set()  # Disabled: confidence_scorer solo is coinflip (49% WR)
-        # 60-day backtest: solo signals peak at 57-67% confidence. 70% threshold
-        # blocks nearly all solo signals. 60% captures the bulk of the edge.
-        # mean_reversion at 60%+ = 77% WR, probability_engine at 60%+ = 57% WR.
+        # Phase 5 (April 29, 2026): Relaxed solo gate based on 60-day backtest alpha analysis.
+        # 60-day backtest (April 29, 2026) revealed gate relaxation was HARMFUL
+        # - regime_trend + monte_carlo solos + low gates = HYPE lost $5,983 on 341 trades
+        # - Average losses were 55% larger than average wins (PF 0.79)
+        # - The "504% alpha" metric was flawed: based on trade count, not risk-adjusted returns
+        # DECISION: Revert to STRICT ensemble gating (2+ strategy agreement required)
+        # Symbol-specific relaxation requires per-symbol profitability proof (next phase)
+        _PROVEN_SOLO_STRATEGIES = set()  # DISABLED: Gate relaxation backfired
+        _HYPE_SOLO_STRATEGIES = set()
+        # Per-strategy confidence thresholds (UNUSED since _PROVEN_SOLO_STRATEGIES is empty)
+        _SOLO_STRATEGY_MIN_CONF = {
+            "bollinger_squeeze": 90.0,      # Extremely high bar if ever re-enabled
+            "regime_trend": 90.0,           # Extremely high bar if ever re-enabled
+            "monte_carlo_zones": 90.0,      # Extremely high bar if ever re-enabled
+        }
+        # Legacy fallback threshold (not used if strategy in _SOLO_STRATEGY_MIN_CONF above)
         _SOLO_CONF_THRESHOLD = 60.0
         # Symbol+regime combos where solo signals have validated edge
         # Only allow solo trades in trending regimes with high confidence
@@ -1726,31 +1737,46 @@ class EnsembleStrategy:
             lone_signals = buy_signals or sell_signals
             _allowed = False
 
-            # Path 1: Proven strategy solo — BB solo is the BEST pattern (62% WR)
+            # Path 1: Proven strategy solo — BB/regime_trend/MC zones with validated alpha
             if (lone_signals and len(lone_signals) == 1
-                    and lone_signals[0].strategy in _PROVEN_SOLO_STRATEGIES
-                    and lone_signals[0].confidence >= _SOLO_CONF_THRESHOLD):
-                _sig = lone_signals[0]
-                _base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
-                _setup_key = f"{_base_sym}_{_sig.side}"
+                    and lone_signals[0].strategy in _PROVEN_SOLO_STRATEGIES):
+                # Use strategy-specific confidence threshold (e.g., regime_trend requires 75%)
+                _strat = lone_signals[0].strategy
+                _min_conf = _SOLO_STRATEGY_MIN_CONF.get(_strat, _SOLO_CONF_THRESHOLD)
+                if lone_signals[0].confidence >= _min_conf:
+                    _sig = lone_signals[0]
+                    _base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
+                    _setup_key = f"{_base_sym}_{_sig.side}"
 
-                # Golden setups from 1,410-signal analysis (higher size)
-                _GOLDEN = {"ETH_SELL": 0.8, "BTC_BUY": 0.7, "SOL_BUY": 0.7,
-                           "BTC_SELL": 0.7, "ETH_BUY": 0.6}
-                # Dead setup — always skip even for BB
-                if _base_sym == "HYPE" and _sig.side == "SELL" and _sig.strategy == "bollinger_squeeze":
-                    logger.info(f"[{symbol}] DEAD SETUP: HYPE_SELL_BB (35% WR) — skipping")
-                else:
-                    _rm = _GOLDEN.get(_setup_key, 0.5)
-                    _sig.metadata["solo_proven"] = True
-                    _sig.metadata["risk_mult_override"] = _rm
-                    _is_golden = _setup_key in _GOLDEN
-                    logger.info(
-                        f"[{symbol}] {'GOLDEN' if _is_golden else 'Proven'} solo: "
-                        f"{_sig.strategy} {_setup_key} conf={_sig.confidence:.0f}% "
-                        f"({_rm}x size)"
-                    )
-                    _allowed = True
+                    # Golden setups from 1,410-signal analysis (higher size)
+                    _GOLDEN = {"ETH_SELL": 0.8, "BTC_BUY": 0.7, "SOL_BUY": 0.7,
+                               "BTC_SELL": 0.7, "ETH_BUY": 0.6}
+                    # Dead setup — always skip even for BB
+                    if _base_sym == "HYPE" and _sig.side == "SELL" and _sig.strategy == "bollinger_squeeze":
+                        logger.info(f"[{symbol}] DEAD SETUP: HYPE_SELL_BB (35% WR) — skipping")
+                    else:
+                        # Strategy-specific sizing: high-conviction strategies get reduced size
+                        _SOLO_SIZE_MAP = {
+                            "bollinger_squeeze": 0.5,       # Baseline: 57% live WR
+                            "regime_trend": 0.4,            # Conservative: 39% WR but +504% alpha
+                            "monte_carlo_zones": 0.6,       # Moderate: 65% WR is reliable
+                        }
+                        _rm = _GOLDEN.get(_setup_key, _SOLO_SIZE_MAP.get(_strat, 0.5))
+                        _sig.metadata["solo_proven"] = True
+                        _sig.metadata["risk_mult_override"] = _rm
+                        _is_golden = _setup_key in _GOLDEN
+                        _alpha_display = {
+                            "regime_trend": "+504%",
+                            "monte_carlo_zones": "+150%",
+                            "bollinger_squeeze": "+9%"
+                        }.get(_strat, "")
+                        _strat_display = f"{_strat}" + (f" ({_alpha_display} alpha)" if _alpha_display else "")
+                        logger.info(
+                            f"[{symbol}] {'GOLDEN' if _is_golden else 'Proven'} solo: "
+                            f"{_strat_display} {_setup_key} conf={_sig.confidence:.0f}% "
+                            f"({_rm}x size)"
+                        )
+                        _allowed = True
 
             # Path 1b: HYPE-specific solo strategies (confidence_scorer PF=2.65 on HYPE only)
             if (not _allowed and lone_signals and len(lone_signals) == 1
