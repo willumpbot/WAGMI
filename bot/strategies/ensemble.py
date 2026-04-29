@@ -66,8 +66,8 @@ class EnsembleStrategy:
         weight_manager=None,
         veto_ratio: float = 1.2,  # Lowered from 1.5: fee-drag + EV gates handle quality
         chop_detector=None,
-        confidence_floor: float = 69.0,  # Data: sweet spot between filtering noise and capturing edge
-        ranging_confidence_floor: float = 68.0,  # Synced with TradingConfig: allows clear breakouts while filtering noise
+        confidence_floor: float = 20.0,  # PHASE 3: Lowered from 69% to unlock signal volume (historical 75% WR at threshold 45)
+        ranging_confidence_floor: float = 20.0,  # Synced: allows all regimes through to risk/EV gates for filtering
         ic_tracker=None,
     ):
         self.strategies = strategies

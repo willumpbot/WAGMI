@@ -7166,6 +7166,23 @@
         "favorable"
       ],
       "source": "pattern_recognition"
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] test_reason blocked a winning BUY trade on BTC (hypothetical +3.1%). Consider relaxing this filter.",
+      "confidence": 0.531,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "test_reason",
+        "BTC",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1777475608.2636871,
+      "last_validated": 1777475608.2636874,
+      "validation_count": 1,
+      "invalidation_count": 0
     }
   ]
 }
