@@ -160,21 +160,21 @@ def main():
         sys.exit(1)
 
     log_path = logs[0]
-    print(f"\n📊 Analyzing backtest: {log_path.name}")
+    print(f"\nAnalyzing backtest: {log_path.name}")
     print("=" * 80)
 
     # Parse results
     metrics = parse_backtest_log(log_path)
 
     if metrics["num_trades"] == 0:
-        print("⏳ Backtest still running or not completed. Checking again...")
+        print("Backtest still running or not completed. Checking again...")
         sys.exit(0)
 
     # Generate recommendation
     rec = generate_deployment_recommendation(metrics)
 
     # Print results
-    print(f"\n📈 BACKTEST RESULTS (90-day window, BTC/ETH/SOL)")
+    print(f"\nBACKTEST RESULTS (90-day window, BTC/ETH/SOL)")
     print(f"   Trades: {metrics['num_trades']}")
     print(f"   Win Rate: {metrics['win_rate']:.1f}%")
     print(f"   Gross PnL: ${metrics['pnl_gross']:.2f}")
@@ -183,12 +183,12 @@ def main():
     print(f"   Profit Factor: {metrics['profit_factor']:.2f}x")
     print(f"   Sharpe Ratio: {metrics['sharpe']:.2f}")
 
-    print(f"\n🎯 DEPLOYMENT RECOMMENDATION")
+    print(f"\nDEPLOYMENT RECOMMENDATION")
     print(f"   Option: {rec['option']}")
     print(f"   Confidence: {rec['confidence']}%")
     print(f"   Rationale: {rec['rationale']}")
 
-    print(f"\n📋 NEXT STEPS")
+    print(f"\nNEXT STEPS")
     for i, step in enumerate(rec['next_steps'], 1):
         print(f"   {i}. {step}")
 
@@ -202,7 +202,7 @@ def main():
             "log_file": str(log_path)
         }, f, indent=2)
 
-    print(f"\n✅ Results saved to: {results_file.name}")
+    print(f"\nResults saved to: {results_file.name}")
     print("=" * 80 + "\n")
 
 if __name__ == "__main__":

@@ -827,6 +827,19 @@ class TradingConfig:
     gate_mean_reversion_setups: bool = field(
         default_factory=lambda: _env_bool("GATE_MEAN_REVERSION_SETUPS", True)
     )  # Skip mean_reversion setup type (0% WR, -$1,272 loss)
+    gate_trend_follow_setups: bool = field(
+        default_factory=lambda: _env_bool("GATE_TREND_FOLLOW_SETUPS", False)
+    )  # Skip trend_follow setup type (56% WR) — Layer 2 professional gate
+
+    # Regime-based gating: skip high_volatility (50% WR)
+    gate_high_volatility_regimes: bool = field(
+        default_factory=lambda: _env_bool("GATE_HIGH_VOLATILITY_REGIMES", False)
+    )  # Skip high_volatility regimes (50% WR) — Layer 1 professional gate
+
+    # Confidence distribution gating: skip 70-79% band (44.4% WR killer zone)
+    enable_confidence_distribution_gating: bool = field(
+        default_factory=lambda: _env_bool("ENABLE_CONFIDENCE_DISTRIBUTION_GATING", False)
+    )  # Reject 70-79% confidence band (44.4% WR) — Layer 3 professional gate
 
     # Time-of-day gating: skip losing hours
     enable_time_of_day_gating: bool = field(

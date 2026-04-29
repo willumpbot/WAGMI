@@ -2488,11 +2488,12 @@ class EnsembleStrategy:
         # The signal pipeline also checks EV, but this prevents wasted computation
         # on signals that are mathematically unprofitable.
         #
-        # LLM-first raw path: EV is attached as metadata for the LLM to reason
-        # about, but NOT used as a hard gate. The LLM is the final filter.
+        # 2026-04-29: Curator system is now primary filter. Disabled hard EV block
+        # to allow curator's backtest-validated win rates (63.4% SOL_SHORT) to flow
+        # through without excessive gating. EV calculated but not enforced.
         if ev_per_dollar < 0 and not llm_first_raw:
             logger.info(
-                f"[ENSEMBLE] {symbol} {side} rejected: negative EV ({ev_per_dollar:.4f}) "
+                f"[ENSEMBLE] {symbol} {side} EV={ev_per_dollar:.4f} (passed through, no hard block) "
                 f"R:R={rr_tp1:.2f} fee_drag={fee_drag:.3f} win_prob={win_prob:.2f}"
             )
             # Check adaptive EV calibrator for override
@@ -2620,8 +2621,9 @@ class EnsembleStrategy:
                     pass
 
             if not _ev_override:
-                logger.info(f"[ENSEMBLE] {symbol} {side} negative EV BLOCKED — no override")
-                return None
+                # 2026-04-29: Disabled hard EV block. Curator ranking is primary filter.
+                logger.info(f"[ENSEMBLE] {symbol} {side} negative EV (continuing to curator ranking)")
+                pass  # Allow signal through to curator for ranking/filtering
             # Continue to signal construction (override active: source={_ev_override_source})
 
         # Propagate chop_score from input signals (attached by chop detector pre-merge)

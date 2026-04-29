@@ -1,41 +1,41 @@
 {
   "symbol": "HYPE",
-  "updated_at": "2026-04-28T12:00:18.257439+00:00",
-  "price": 40.1255,
+  "updated_at": "2026-04-28T22:56:06.082854+00:00",
+  "price": 39.9625,
   "levels": {
     "symbol": "HYPE",
-    "ts": "2026-04-28T12:00:07.601288+00:00",
-    "price": 40.1255,
+    "ts": "2026-04-28T22:55:54.646002+00:00",
+    "price": 39.9625,
     "daily": {
-      "ema20": 41.09927102822748,
-      "ema50": 40.49819249062,
-      "slope_pct": 0.17417214129355144,
-      "rsi14": 36.8082965714728,
-      "atr14": 1.9691428571428564,
+      "ema20": 41.08469959965605,
+      "ema50": 40.48832152287806,
+      "slope_pct": 0.1386561635756893,
+      "rsi14": 36.3775432155423,
+      "atr14": 1.9906428571428567,
       "hi60d": 45.763,
       "lo60d": 26.062,
       "trend": "FLAT"
     },
     "h4": {
-      "ema20": 41.42313025148331,
-      "ema50": 41.59993978802604,
-      "rsi14": 39.740441950192874,
-      "atr14": 0.7957857142857152,
+      "ema20": 41.03942672288681,
+      "ema50": 41.379765898946474,
+      "rsi14": 38.750201320663535,
+      "atr14": 0.8388571428571444,
       "hi20": 43.568,
-      "lo20": 39.68
+      "lo20": 39.379
     },
     "h1": {
-      "ema20": 40.984929000780625,
-      "ema50": 41.405119428738935,
-      "rsi14": 30.932335516058686,
-      "atr14": 0.42600000000000143,
-      "hi20": 41.834,
-      "lo20": 39.68,
-      "vol_ratio": 1.4401145911513042
+      "ema20": 40.261775156319764,
+      "ema50": 40.870114269229504,
+      "rsi14": 38.018628281117614,
+      "atr14": 0.39642857142857174,
+      "hi20": 41.358,
+      "lo20": 39.379,
+      "vol_ratio": 0.41027221227342925
     },
     "m5": {
-      "rsi14": 60.215053763440615,
-      "atr14": 0.144285714285714
+      "rsi14": 56.672760511883155,
+      "atr14": 0.059857142857143435
     }
   },
   "factors": {
@@ -54,32 +54,32 @@
     "regime": {
       "ok": false,
       "agent": "regime",
-      "narrative": "Daily trend FLAT with slope +0.17%/10d and RSI 37. Price -2.37% vs daily EMA20 ($41). ATR 4.91% \u2014 healthy momentum.",
+      "narrative": "Daily trend FLAT with slope +0.14%/10d and RSI 36. Price -2.73% vs daily EMA20 ($41). ATR 4.98% \u2014 healthy momentum.",
       "latency_s": 0,
       "regime_label": "range",
       "confidence": 60,
       "bias": "neutral",
       "vol_band": "medium",
-      "daily_slope_pct": 0.17,
-      "daily_rsi": 37.0,
-      "h1_rsi": 31.0,
-      "vol_ratio_1h": 1.44
+      "daily_slope_pct": 0.14,
+      "daily_rsi": 36.0,
+      "h1_rsi": 38.0,
+      "vol_ratio_1h": 0.41
     },
     "trade": {
       "ok": false,
       "agent": "trade",
-      "narrative": "Range/unclear regime. No directional edge. Wait for breakout of $40-$42.",
+      "narrative": "Range/unclear regime. No directional edge. Wait for breakout of $39-$41.",
       "latency_s": 0,
       "action": "wait",
       "confidence": 40,
-      "entry_low": 40.01,
-      "entry_high": 40.25,
-      "stop": 39.55,
-      "target1": 41.83,
+      "entry_low": 39.84,
+      "entry_high": 40.08,
+      "stop": 39.26,
+      "target1": 41.36,
       "target2": 45.76,
-      "rr_t1": 2.98,
-      "rr_t2": 9.83,
-      "invalidation": 40.5
+      "rr_t1": 1.99,
+      "rr_t2": 8.26,
+      "invalidation": 40.49
     },
     "critic": {
       "ok": false,
@@ -87,7 +87,9 @@
       "narrative": "Pass \u2014 no trade proposed. Waiting is the right call when confluence is absent.",
       "latency_s": 0,
       "vote": "pass",
-      "risk_flags": []
+      "risk_flags": [
+        "thin_volume"
+      ]
     },
     "risk": {
       "ok": false,

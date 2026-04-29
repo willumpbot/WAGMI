@@ -183,15 +183,14 @@ class QuantBrainDecision:
 
 # Setup-specific win probability priors (from counterfactual analysis)
 _SETUP_WIN_PROBS: Dict[str, float] = {
-    "HYPE_BUY": 0.52,    # Edge WEAKENING: 64%→40% over 500h. Current rolling WR ~40-52%.
-                          # Best at High Vol (ATR% 1.40-1.69%): PF=3.51, WR=73.9%.
-                          # NEGATIVE EV at Extreme Vol (ATR%>1.90%): PF=0.65. Gate this.
-    "SOL_SELL": 0.55,     # Edge STRENGTHENING (+33pp, 35%->68% WR over 500h study).
-                          # Best at Normal Vol (ATR% 0.80-0.98%): PF=1.75, WR=61.5%.
-    "BTC_SELL": 0.55,     # Confirmed negative EV overall. Only marginal at 90%+ confidence.
-    "BTC_BUY": 0.56,      # 56% WR, PF 1.40 over 30 days. Not yet proven in live.
-    "SOL_BUY": 0.45,      # No validated edge. Discovery only.
-    "HYPE_SELL": 0.35,    # Historical 7% but collecting fresh data
+    # Updated 2026-04-29: Wired curator's 60-day backtest-validated win rates
+    # Source: BACKTEST_ANALYSIS_60D_20260428 (802 trades, real Hyperliquid data)
+    "SOL_SELL": 0.634,    # 63.4% WR, +$4,608 P&L — profit engine (161 trades)
+    "SOL_BUY": 0.50,      # 50% WR, -$1,313 P&L — weak (94 trades)
+    "HYPE_BUY": 0.591,    # 59.1% WR, +$248 P&L — marginal but positive (127 trades)
+    "HYPE_SELL": 0.528,   # 52.8% WR, -$5,592 P&L — bad R:R despite >50% WR (214 trades)
+    "BTC_BUY": 0.577,     # 57.7% WR, -$20 P&L — weak but decent (71 trades)
+    "BTC_SELL": 0.481,    # 48.1% WR, -$217 P&L — weak (135 trades)
 }
 
 _DEFAULT_WIN_PROB = 0.45
@@ -648,79 +647,80 @@ class QuantBrain:
                 wp = wp / 100.0  # convert from percentage
             base_wp = min(base_wp, wp) if wp > 0 else base_wp
 
-        # ── RSI adjustment ──
+        # ── RSI adjustment (DISABLED 2026-04-29 for data collection) ──
+        # Curator ranking is primary filter. RSI adjustments too aggressive (-8 to -12pp),
+        # blocking valid signals. Will re-enable after 30+ execution outcomes collected.
         rsi_adj = 0.0
         rsi_note = ""
-        if rsi is not None and isinstance(rsi, (int, float)) and not math.isnan(rsi):
-            if 35 <= rsi <= 65:
-                rsi_adj = 0.03  # Sweet spot: +3% WP
-                rsi_note = f"RSI {rsi:.0f} in sweet spot (35-65)"
-            elif 30 <= rsi < 35:
-                if regime.regime == "mean_reversion_opportunity":
-                    rsi_adj = 0.02  # Bounce setup
-                    rsi_note = f"RSI {rsi:.0f} + mean reversion = bounce setup"
-                else:
-                    rsi_adj = -0.03  # Oversold but no reversal signal
-                    rsi_note = f"RSI {rsi:.0f} oversold without reversal signal"
-            elif rsi < 30:
-                rsi_adj = -0.08  # Deep oversold = panic zone
-                rsi_note = f"RSI {rsi:.0f} panic zone"
-            elif 65 < rsi <= 75:
-                rsi_adj = -0.02  # Getting stretched
-                rsi_note = f"RSI {rsi:.0f} extended"
-            else:  # > 75
-                rsi_adj = -0.10  # Overbought
-                rsi_note = f"RSI {rsi:.0f} overbought"
+        # if rsi is not None and isinstance(rsi, (int, float)) and not math.isnan(rsi):
+        #     if 35 <= rsi <= 65:
+        #         rsi_adj = 0.03  # Sweet spot: +3% WP
+        #         rsi_note = f"RSI {rsi:.0f} in sweet spot (35-65)"
+        #     elif 30 <= rsi < 35:
+        #         if regime.regime == "mean_reversion_opportunity":
+        #             rsi_adj = 0.02  # Bounce setup
+        #             rsi_note = f"RSI {rsi:.0f} + mean reversion = bounce setup"
+        #         else:
+        #             rsi_adj = -0.03  # Oversold but no reversal signal
+        #             rsi_note = f"RSI {rsi:.0f} oversold without reversal signal"
+        #     elif rsi < 30:
+        #         rsi_adj = -0.08  # Deep oversold = panic zone
+        #         rsi_note = f"RSI {rsi:.0f} panic zone"
+        #     elif 65 < rsi <= 75:
+        #         rsi_adj = -0.02  # Getting stretched
+        #         rsi_note = f"RSI {rsi:.0f} extended"
+        #     else:  # > 75
+        #         rsi_adj = -0.10  # Overbought
+        #         rsi_note = f"RSI {rsi:.0f} overbought"
 
-        # ── Volatility regime adjustment (from comprehensive edge study) ──
+        # ── Volatility regime adjustment (DISABLED 2026-04-29 for data collection) ──
         # ATR% determines vol regime. Each setup has an optimal vol band.
-        # HYPE BUY: High Vol (ATR% 1.40-1.69%) = PF 3.51. Extreme (>1.90%) = PF 0.65.
-        # SOL SELL: Normal Vol (ATR% 0.80-0.98%) = PF 1.75. High+ Vol = PF <0.72.
-        # BTC BUY: Very High Vol (ATR% 0.92-1.03%) = PF 3.13.
+        # DISABLED: Vol adjustments (-8 to -12pp) too aggressive, blocking valid trades.
+        # Curator ranking is primary filter. Will re-enable after 30+ execution outcomes.
         vol_adj = 0.0
         vol_note = ""
         atr = merged.get("atr")
         atr_pct = None
-        if atr is not None and signal.entry > 0:
-            try:
-                atr_pct = (float(atr) / signal.entry) * 100.0
-            except (ValueError, TypeError):
-                pass
-
-        if atr_pct is not None:
-            if setup_key == "HYPE_BUY":
-                if 1.40 <= atr_pct <= 1.69:
-                    vol_adj = 0.08   # Optimal vol: PF 3.51, WR 73.9%
-                    vol_note = f"HYPE optimal vol (ATR%={atr_pct:.2f}%)"
-                elif 1.15 <= atr_pct < 1.40:
-                    vol_adj = 0.0    # Low vol: PF 1.22, neutral
-                    vol_note = f"HYPE low vol (ATR%={atr_pct:.2f}%)"
-                elif 1.69 < atr_pct <= 1.90:
-                    vol_adj = -0.03  # Very high: PF 1.03, marginal
-                    vol_note = f"HYPE very high vol (ATR%={atr_pct:.2f}%)"
-                elif atr_pct > 1.90:
-                    vol_adj = -0.12  # Extreme vol: PF 0.65, NEGATIVE EV
-                    vol_note = f"HYPE EXTREME vol (ATR%={atr_pct:.2f}%) — negative EV!"
-            elif setup_key == "SOL_SELL":
-                if 0.80 <= atr_pct <= 0.98:
-                    vol_adj = 0.06   # Optimal: PF 1.75, WR 61.5%
-                    vol_note = f"SOL optimal vol (ATR%={atr_pct:.2f}%)"
-                elif atr_pct < 0.80:
-                    vol_adj = 0.03   # Low vol: PF 1.56, decent
-                    vol_note = f"SOL low vol (ATR%={atr_pct:.2f}%)"
-                elif atr_pct > 1.20:
-                    vol_adj = -0.10  # High+ vol: PF <0.72, negative EV
-                    vol_note = f"SOL high vol (ATR%={atr_pct:.2f}%) — negative EV!"
-                else:
-                    vol_adj = -0.04  # Transition zone
-                    vol_note = f"SOL elevated vol (ATR%={atr_pct:.2f}%)"
-            elif setup_key == "BTC_BUY":
-                if 0.92 <= atr_pct <= 1.03:
-                    vol_adj = 0.08   # Very high vol: PF 3.13, WR 66.2%
-                    vol_note = f"BTC optimal vol (ATR%={atr_pct:.2f}%)"
-                elif atr_pct < 0.77:
-                    vol_adj = -0.08  # Low/normal vol: PF <0.80
-                    vol_note = f"BTC low vol (ATR%={atr_pct:.2f}%) — negative EV"
+        # if atr is not None and signal.entry > 0:
+        #     try:
+        #         atr_pct = (float(atr) / signal.entry) * 100.0
+        #     except (ValueError, TypeError):
+        #         pass
+        #
+        # if atr_pct is not None:
+        #     if setup_key == "HYPE_BUY":
+        #         if 1.40 <= atr_pct <= 1.69:
+        #             vol_adj = 0.08   # Optimal vol: PF 3.51, WR 73.9%
+        #             vol_note = f"HYPE optimal vol (ATR%={atr_pct:.2f}%)"
+        #         elif 1.15 <= atr_pct < 1.40:
+        #             vol_adj = 0.0    # Low vol: PF 1.22, neutral
+        #             vol_note = f"HYPE low vol (ATR%={atr_pct:.2f}%)"
+        #         elif 1.69 < atr_pct <= 1.90:
+        #             vol_adj = -0.03  # Very high: PF 1.03, marginal
+        #             vol_note = f"HYPE very high vol (ATR%={atr_pct:.2f}%)"
+        #         elif atr_pct > 1.90:
+        #             vol_adj = -0.12  # Extreme vol: PF 0.65, NEGATIVE EV
+        #             vol_note = f"HYPE EXTREME vol (ATR%={atr_pct:.2f}%) — negative EV!"
+        #     elif setup_key == "SOL_SELL":
+        #         if 0.80 <= atr_pct <= 0.98:
+        #             vol_adj = 0.06   # Optimal: PF 1.75, WR 61.5%
+        #             vol_note = f"SOL optimal vol (ATR%={atr_pct:.2f}%)"
+        #         elif atr_pct < 0.80:
+        #             vol_adj = 0.03   # Low vol: PF 1.56, decent
+        #             vol_note = f"SOL low vol (ATR%={atr_pct:.2f}%)"
+        #         elif atr_pct > 1.20:
+        #             vol_adj = -0.10  # High+ vol: PF <0.72, negative EV
+        #             vol_note = f"SOL high vol (ATR%={atr_pct:.2f}%) — negative EV!"
+        #         else:
+        #             vol_adj = -0.04  # Transition zone
+        #             vol_note = f"SOL elevated vol (ATR%={atr_pct:.2f}%)"
+        #     elif setup_key == "BTC_BUY":
+        #         if 0.92 <= atr_pct <= 1.03:
+        #             vol_adj = 0.08   # Very high vol: PF 3.13, WR 66.2%
+        #             vol_note = f"BTC optimal vol (ATR%={atr_pct:.2f}%)"
+        #         elif atr_pct < 0.77:
+        #             vol_adj = -0.08  # Low/normal vol: PF <0.80
+        #             vol_note = f"BTC low vol (ATR%={atr_pct:.2f}%) — negative EV"
 
         # ── Bearish market haircut ──
         # When the regime is bearish (price < EMA20 < EMA50), BUY signals get

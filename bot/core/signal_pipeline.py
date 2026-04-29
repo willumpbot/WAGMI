@@ -501,6 +501,15 @@ class RiskFilterChain:
                 self._log_signal_filtered(signal, "regime_consolidation", _reason)
                 return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
 
+            # Skip high_volatility regimes (50% WR, unprofitable in raw backtest)
+            # Layer 1 professional gate: high_volatility has lower WR than trending_bear/consolidation
+            if getattr(self.config, "gate_high_volatility_regimes", False) and regime == "high_volatility":
+                _reason = f"Regime gate: high_volatility regimes skip (50% WR, poor profit factor)"
+                if _pt: _pt.record_gate(signal.symbol, "regime_high_volatility", False, 0, 0, _reason)
+                _log_rejection(signal, "regime_high_volatility", _reason)
+                self._log_signal_filtered(signal, "regime_high_volatility", _reason)
+                return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
+
             # Skip unknown regimes (unclassified = risky)
             if getattr(self.config, "gate_unknown_regimes", True) and regime == "unknown":
                 _reason = f"Regime gate: unknown regimes skip (unclassified market state)"
@@ -510,7 +519,7 @@ class RiskFilterChain:
                 return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
 
         # Gate 2b: Setup type gating (skip unprofitable setup types)
-        # Phase A discovery: mean_reversion setup type = 0% WR, -$1,272 loss
+        # Layer 2 professional gate: setup type filtering (mean_reversion, trend_follow)
         if getattr(self.config, "enable_setup_type_gating", True):
             setup_type = (signal.metadata or {}).get("setup_type", "unknown")
 
@@ -521,7 +530,27 @@ class RiskFilterChain:
                 self._log_signal_filtered(signal, "setup_mean_reversion", _reason)
                 return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
 
-        # Gate 2c: Time-of-day gating (skip hours with negative average PnL)
+            # Layer 2b: trend_follow setup type gate (56% WR, lower than standard/unknown)
+            if getattr(self.config, "gate_trend_follow_setups", False) and setup_type == "trend_follow":
+                _reason = f"Setup type gate: trend_follow skipped (56% WR, lower than standard/unknown)"
+                if _pt: _pt.record_gate(signal.symbol, "setup_trend_follow", False, 0, 0, _reason)
+                _log_rejection(signal, "setup_trend_follow", _reason)
+                self._log_signal_filtered(signal, "setup_trend_follow", _reason)
+                return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
+
+        # Gate 2c: Confidence distribution gating (Layer 3 of professional gate stack)
+        # Critical finding: 70-79% confidence band has 44.4% WR (worst band)
+        # Accept: <60%, 60-69%, 80-100%. Reject: 70-79% (the "killer zone")
+        if getattr(self.config, "enable_confidence_distribution_gating", False):
+            conf = signal.confidence
+            if 70.0 <= conf < 80.0:
+                _reason = f"Confidence distribution gate: 70-79% band rejected (44.4% WR killer zone, confidence={conf:.1f}%)"
+                if _pt: _pt.record_gate(signal.symbol, "confidence_70_79_band", False, conf, 0, _reason)
+                _log_rejection(signal, "confidence_distribution", _reason)
+                self._log_signal_filtered(signal, "confidence_distribution", _reason)
+                return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
+
+        # Gate 2d: Time-of-day gating (skip hours with negative average PnL)
         # Phase A discovery: 07:00 UTC (-$438), 10:00 UTC (-$435) are losing hours
         if getattr(self.config, "enable_time_of_day_gating", True):
             from datetime import datetime, timezone
