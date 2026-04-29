@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-04-29T18:11:59.609910Z",
+  "last_updated": "2026-04-29T19:18:13.874877+00:00",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -423,7 +423,7 @@
       "fix_applied": "A/B gate at 20% \u2014 20% of LONG signals restored to no-penalty treatment to measure impact; SIDE_BIAS_LONG_filter gate reduced from full to 20%",
       "status": "A/B_ACTIVE",
       "confidence": 85,
-      "gate_percentage": 20,
+      "gate_percentage": 50,
       "baseline_wr": 0.571,
       "treatment_wr": null,
       "sample_count": 352,
@@ -431,7 +431,9 @@
       "ab_cohort_start": "2026-04-24T00:00:00Z",
       "min_sample_to_graduate": 50,
       "action": "ensemble.py: remove -8pt LONG penalty for 20% cohort; track WR vs control. If LONG_no_penalty >= LONG_with_penalty, fully revert rule.",
-      "contradiction": "Rule claimed LONG WR=29-32%; live 10d shows LONG WR=57.1%. Reconcile data source before full suspension."
+      "contradiction": "Rule claimed LONG WR=29-32%; live 10d shows LONG WR=57.1%. Reconcile data source before full suspension.",
+      "gate_escalated_at": "2026-04-29T19:18:13.874877+00:00",
+      "gate_escalated_reason": "conf=85%, n=352>=min=50: escalating 20%\u219250%"
     },
     {
       "rule_id": "BTC_STOP_EXPANSION",
@@ -681,7 +683,8 @@
       "treatment_wr": 0.463,
       "applied_date": "2026-04-25",
       "verified": false,
-      "notes": "If existing CONF_60_70_floor_raise rule is already active, this is a reinforcing confirmation. Check interaction. Overlapping rule risk: CONF_60_70_floor_raise already A/B at 20% (baseline 0.463 matches). | 2026-04-28: Gate escalated 80\u2192100% after 10d data confirmed 46.3% WR on n=123, -$2320 PnL."
+      "notes": "If existing CONF_60_70_floor_raise rule is already active, this is a reinforcing confirmation. Check interaction. Overlapping rule risk: CONF_60_70_floor_raise already A/B at 20% (baseline 0.463 matches). | 2026-04-28: Gate escalated 80\u2192100% after 10d data confirmed 46.3% WR on n=123, -$2320 PnL.",
+      "review_note": "treatment_wr == baseline_wr (0.463) \u2014 rule has no effect. Reviewed 2026-04-29T19:18:13.874877+00:00."
     },
     {
       "rule_id": "SOL_SHORT_priority_boost",
@@ -778,6 +781,23 @@
       "min_sample_to_graduate": 10,
       "expected_impact": "Reduces risk of early post-restart blowup by halving size during the 'cold re-entry' period; cost is slightly reduced gains on early wins, benefit is significantly reduced loss when first signals are still poor quality.",
       "supersedes": null
+    },
+    {
+      "rule_id": "BTC_LONG_reduce",
+      "source": "perpetual_improvement_engine \u2014 2026-04-29 analysis",
+      "description": "BTC_LONG = 18% WR on 17 live trades. Structural loser across all regimes.",
+      "problem": "BTC_LONG pattern: 17 trades at 18% WR, net -$0.08 but EV negative. No explicit filter exists.",
+      "fix_applied": "A/B gate at 20% \u2014 BTC LONG signals get -15pt confidence penalty; require conf>75% to pass",
+      "action": "ensemble.py / signal_pipeline.py: detect BTC BUY signals; apply -15 confidence penalty; minimum conf threshold 75%",
+      "status": "A/B_ACTIVE",
+      "confidence": 85,
+      "gate_percentage": 20,
+      "baseline_wr": 0.18,
+      "treatment_wr": null,
+      "sample_count": 17,
+      "applied_date": "2026-04-29",
+      "ab_cohort_start": "2026-04-29T19:18:13.874877+00:00",
+      "min_sample_to_graduate": 20
     }
   ],
   "rules_added_2026_04_26_1545_hourly": [
