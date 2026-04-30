@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { C, F, R } from '../src/theme';
 import { resolveApiBase } from '../src/api';
 
@@ -100,8 +101,9 @@ export default function BotStatusPill({ compact = false }: { compact?: boolean }
     : 'No decisions logged yet';
 
   return (
-    <span
-      title={tooltip}
+    <Link
+      href="/status"
+      title={tooltip + ' — click for full status'}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -115,6 +117,15 @@ export default function BotStatusPill({ compact = false }: { compact?: boolean }
         color: c.dot,
         fontFamily: 'JetBrains Mono, monospace',
         letterSpacing: 0.04,
+        textDecoration: 'none',
+        cursor: 'pointer',
+        transition: 'border-color 120ms ease-out',
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLAnchorElement).style.borderColor = c.dot + '88';
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLAnchorElement).style.borderColor = C.border;
       }}
     >
       <span
@@ -127,7 +138,7 @@ export default function BotStatusPill({ compact = false }: { compact?: boolean }
         }}
       />
       {c.label}
-    </span>
+    </Link>
   );
 }
 
