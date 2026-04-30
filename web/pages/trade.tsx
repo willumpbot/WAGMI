@@ -30,6 +30,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import { C, F, R } from '../src/theme';
 import { resolveApiBase } from '../src/api';
+import Tooltip from '../components/Tooltip';
+import EdgeBadge, { classifyEdge } from '../components/trade/EdgeBadge';
+import CohortStrip from '../components/trade/CohortStrip';
+import { useEdgeStats } from '../components/trade/useEdgeStats';
 
 const SYMBOLS = ['BTC', 'ETH', 'SOL', 'HYPE'];
 
@@ -66,6 +70,7 @@ export default function TradePage() {
     null,
   );
   const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'bot'>('bot');
+  const edgeStats = useEdgeStats();
 
   // Fetch on mount + every 15s.
   useEffect(() => {
@@ -117,6 +122,9 @@ export default function TradePage() {
       {/* ── §7.3 Calibration strip ──────────────────────────────────── */}
       <CalibrationStrip marketView={marketView} />
 
+      {/* ── §7.5 Time-of-day cohort strip — surfaces hour-of-day edge ── */}
+      <CohortStrip stats={edgeStats} />
+
       {/* ── 3-column main grid ──────────────────────────────────────── */}
       <div
         style={{
@@ -131,6 +139,7 @@ export default function TradePage() {
           signals={signals}
           selected={selectedSymbol}
           onSelect={setSelectedSymbol}
+          edgeStats={edgeStats}
         />
         <ChartCenter
           symbol={selectedSymbol}
@@ -138,11 +147,13 @@ export default function TradePage() {
           setActiveTab={setActiveTab}
           positions={positions}
           currentSignal={currentSignal}
+          edgeStats={edgeStats}
         />
         <OrderRail
           symbol={selectedSymbol}
           currentSignal={currentSignal}
           currentPosition={currentPosition}
+          edgeStats={edgeStats}
         />
       </div>
     </>
@@ -210,10 +221,12 @@ function MarketRail({
   signals,
   selected,
   onSelect,
+  edgeStats,
 }: {
   signals: SignalsApi | null;
   selected: string;
   onSelect: (s: string) => void;
+  edgeStats: ReturnType<typeof useEdgeStats>;
 }) {
   return (
     <aside
@@ -235,9 +248,12 @@ function MarketRail({
           textTransform: 'uppercase',
           letterSpacing: 0.05,
           fontWeight: 600,
+          display: 'flex',
+          justifyContent: 'space-between',
         }}
       >
-        Markets
+        <span>Markets</span>
+        <span style={{ color: C.faint, fontWeight: 500 }}>WAGMI edge</span>
       </div>
       {SYMBOLS.map((sym) => {
         const sig = signals?.signals?.[sym];
@@ -249,12 +265,23 @@ function MarketRail({
             : sig?.side === 'SELL' || sig?.side === 'SHORT'
             ? C.bear
             : C.muted;
+
+        // Best (symbol, side) by historical PnL → drives the edge badge shown.
+        const longSide = edgeStats.bySymbolSide[`${sym}_LONG`];
+        const shortSide = edgeStats.bySymbolSide[`${sym}_SHORT`];
+        const long = longSide
+          ? classifyEdge(longSide.winRate, longSide.trades, longSide.pnl)
+          : 'unknown';
+        const short = shortSide
+          ? classifyEdge(shortSide.winRate, shortSide.trades, shortSide.pnl)
+          : 'unknown';
+
         return (
           <button
             key={sym}
             onClick={() => onSelect(sym)}
             style={{
-              padding: '10px 12px',
+              padding: '8px 10px',
               border: 'none',
               borderBottom: `1px solid ${C.border}`,
               borderLeft: `2px solid ${isActive ? C.brand : 'transparent'}`,
@@ -262,23 +289,57 @@ function MarketRail({
               color: C.text,
               cursor: 'pointer',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              fontSize: F.sm,
+              flexDirection: 'column',
+              gap: 4,
               fontFamily: 'JetBrains Mono, monospace',
               transition: 'background 120ms ease-out',
               textAlign: 'left',
             }}
           >
-            <span style={{ fontWeight: 600, color: C.text }}>{sym}</span>
-            <span style={{ color: sideTone, fontSize: F.xs }}>
-              {price != null ? formatPrice(price) : '—'}
-            </span>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: F.sm,
+              }}
+            >
+              <span style={{ fontWeight: 600, color: C.text }}>{sym}</span>
+              <span style={{ color: sideTone, fontSize: F.xs }}>
+                {price != null ? formatPrice(price) : '—'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <span title={`Long: ${formatStat(longSide)}`} style={{ flex: 1 }}>
+                <span style={{ color: C.muted, fontSize: 9, marginRight: 3 }}>L</span>
+                <EdgeBadge verdict={long} size="xs" />
+              </span>
+              <span title={`Short: ${formatStat(shortSide)}`} style={{ flex: 1 }}>
+                <span style={{ color: C.muted, fontSize: 9, marginRight: 3 }}>S</span>
+                <EdgeBadge verdict={short} size="xs" />
+              </span>
+            </div>
           </button>
         );
       })}
+      <div
+        style={{
+          padding: '6px 10px',
+          fontSize: 9,
+          color: C.faint,
+          fontFamily: 'JetBrains Mono, monospace',
+          borderTop: `1px solid ${C.border}`,
+        }}
+      >
+        edge from last {edgeStats.totalTrades} trades
+      </div>
     </aside>
   );
+}
+
+function formatStat(s: { trades: number; winRate: number; pnl: number } | undefined): string {
+  if (!s) return 'no data';
+  return `n=${s.trades} · WR ${(s.winRate * 100).toFixed(0)}% · ${s.pnl >= 0 ? '+' : ''}$${s.pnl.toFixed(0)}`;
 }
 
 // ── Chart center column ─────────────────────────────────────────────────────
@@ -289,12 +350,14 @@ function ChartCenter({
   setActiveTab,
   positions,
   currentSignal,
+  edgeStats,
 }: {
   symbol: string;
   activeTab: 'positions' | 'orders' | 'bot';
   setActiveTab: (t: 'positions' | 'orders' | 'bot') => void;
   positions: Position[];
   currentSignal: SignalSnap | undefined;
+  edgeStats: ReturnType<typeof useEdgeStats>;
 }) {
   return (
     <section
@@ -386,7 +449,9 @@ function ChartCenter({
 
       {/* Tab content */}
       <div style={{ padding: 14, minHeight: 120 }}>
-        {activeTab === 'bot' && <BotSignalTab signal={currentSignal} symbol={symbol} />}
+        {activeTab === 'bot' && (
+          <BotSignalTab signal={currentSignal} symbol={symbol} edgeStats={edgeStats} />
+        )}
         {activeTab === 'positions' && (
           <PositionsTab positions={positions.filter((p) => p.symbol === symbol)} />
         )}
@@ -398,20 +463,37 @@ function ChartCenter({
   );
 }
 
-function BotSignalTab({ signal, symbol }: { signal: SignalSnap | undefined; symbol: string }) {
+function BotSignalTab({
+  signal,
+  symbol,
+  edgeStats,
+}: {
+  signal: SignalSnap | undefined;
+  symbol: string;
+  edgeStats: ReturnType<typeof useEdgeStats>;
+}) {
+  // Surface symbol-side edge so operator can sanity-check any signal.
+  const longSide = edgeStats.bySymbolSide[`${symbol}_LONG`];
+  const shortSide = edgeStats.bySymbolSide[`${symbol}_SHORT`];
+
   if (!signal || !signal.action || signal.action.toLowerCase() === 'flat') {
     return (
-      <div style={{ color: C.muted, fontSize: F.sm }}>
-        WAGMI has no active signal on {symbol} right now.
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ color: C.muted, fontSize: F.sm }}>
+          WAGMI has no active signal on {symbol} right now.
+        </div>
+        <SymbolEdgeReadout symbol={symbol} longSide={longSide} shortSide={shortSide} />
+        <NoSignalHints symbol={symbol} />
       </div>
     );
   }
+
   const isLong = signal.side === 'BUY' || signal.side === 'LONG';
   const sideTone = isLong ? C.bull : C.bear;
   const conf = signal.confidence != null ? Math.round(signal.confidence * 100) : null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div
         style={{
           display: 'flex',
@@ -424,10 +506,14 @@ function BotSignalTab({ signal, symbol }: { signal: SignalSnap | undefined; symb
           {isLong ? 'LONG' : 'SHORT'}
         </span>
         {conf != null && (
-          <span style={{ fontSize: F.sm, color: C.text }}>{conf}% conviction</span>
+          <span style={{ fontSize: F.sm, color: C.text }}>
+            <Tooltip dict="conviction">{conf}% conviction</Tooltip>
+          </span>
         )}
         {signal.regime && (
-          <span style={{ fontSize: F.xs, color: C.muted }}>regime: {signal.regime}</span>
+          <span style={{ fontSize: F.xs, color: C.muted }}>
+            <Tooltip dict="regime">regime</Tooltip>: {signal.regime}
+          </span>
         )}
       </div>
       {signal.reasoning && (
@@ -435,6 +521,118 @@ function BotSignalTab({ signal, symbol }: { signal: SignalSnap | undefined; symb
           {signal.reasoning}
         </p>
       )}
+      <SymbolEdgeReadout symbol={symbol} longSide={longSide} shortSide={shortSide} />
+    </div>
+  );
+}
+
+function SymbolEdgeReadout({
+  symbol,
+  longSide,
+  shortSide,
+}: {
+  symbol: string;
+  longSide: { trades: number; winRate: number; pnl: number } | undefined;
+  shortSide: { trades: number; winRate: number; pnl: number } | undefined;
+}) {
+  const fmtRow = (label: string, s: typeof longSide) => {
+    if (!s || s.trades === 0) {
+      return (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: F.xs,
+            color: C.muted,
+            fontFamily: 'JetBrains Mono, monospace',
+          }}
+        >
+          <span>{label}</span>
+          <span>no data</span>
+        </div>
+      );
+    }
+    const wrTone = s.winRate >= 0.55 ? C.bull : s.winRate >= 0.42 ? C.warn : C.bear;
+    const pnlTone = s.pnl >= 0 ? C.bull : C.bear;
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: F.xs,
+          fontFamily: 'JetBrains Mono, monospace',
+        }}
+      >
+        <span style={{ color: C.muted }}>{label}</span>
+        <span>
+          <span style={{ color: C.text }}>n={s.trades}</span>
+          <span style={{ color: C.faint, margin: '0 6px' }}>·</span>
+          <span style={{ color: wrTone }}>WR {(s.winRate * 100).toFixed(0)}%</span>
+          <span style={{ color: C.faint, margin: '0 6px' }}>·</span>
+          <span style={{ color: pnlTone }}>
+            {s.pnl >= 0 ? '+' : ''}${s.pnl.toFixed(0)}
+          </span>
+        </span>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      style={{
+        padding: 10,
+        background: '#050508',
+        border: `1px solid ${C.border}`,
+        borderRadius: R.sm,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 4,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          color: C.muted,
+          textTransform: 'uppercase',
+          letterSpacing: 0.05,
+          marginBottom: 2,
+          fontWeight: 600,
+        }}
+      >
+        Historical edge — {symbol}
+      </div>
+      {fmtRow('LONG', longSide)}
+      {fmtRow('SHORT', shortSide)}
+    </div>
+  );
+}
+
+function NoSignalHints({ symbol }: { symbol: string }) {
+  // Hint the operator at why no signal might be active.
+  // Real data wires once a /v1/signals/blocked-reasons endpoint exists; for now
+  // we show a generic explainer so users understand the absence isn't a bug.
+  return (
+    <div
+      style={{
+        padding: 10,
+        background: '#050508',
+        border: `1px solid ${C.border}`,
+        borderLeft: `3px solid ${C.muted}`,
+        borderRadius: R.sm,
+        fontSize: F.xs,
+        color: C.textSub,
+        lineHeight: 1.5,
+      }}
+    >
+      <div style={{ color: C.muted, marginBottom: 4, fontWeight: 600 }}>Why no signal?</div>
+      Possible reasons WAGMI is silent on <strong>{symbol}</strong>:
+      <ul style={{ margin: '4px 0 0', paddingLeft: 18, color: C.muted }}>
+        <li>No strategies meet the confidence floor</li>
+        <li>Current regime classified as ranging or illiquid (filters active)</li>
+        <li>Active hard-block rule for this (symbol, side) pair</li>
+        <li>Bot is in cooldown after a loss streak</li>
+      </ul>
     </div>
   );
 }
@@ -479,10 +677,12 @@ function OrderRail({
   symbol,
   currentSignal,
   currentPosition,
+  edgeStats: _edgeStats,
 }: {
   symbol: string;
   currentSignal: SignalSnap | undefined;
   currentPosition: Position | undefined;
+  edgeStats: ReturnType<typeof useEdgeStats>;
 }) {
   const [orderType, setOrderType] = useState<'market' | 'limit' | 'trigger'>('market');
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
