@@ -22,6 +22,7 @@ import MechanicalColumn from '../components/live/MechanicalColumn';
 import AgenticColumn from '../components/live/AgenticColumn';
 import SynthesisColumn from '../components/live/SynthesisColumn';
 import AskAgentsPanel from '../components/live/AskAgentsPanel';
+import ScoreboardRow from '../components/live/ScoreboardRow';
 
 const SYMBOLS = ['BTC', 'ETH', 'SOL', 'HYPE'];
 type Mode = 'live' | 'replay';
@@ -49,34 +50,45 @@ export default function LivePage() {
         setReplayTimestamp={setReplayTimestamp}
       />
 
-      {/* Triple-panel grid. In all-symbols scoreboard mode this becomes a wider grid. */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
-          gap: 12,
-          marginTop: 12,
-          minHeight: 480,
-        }}
-      >
-        <MechanicalColumn
-          symbol={symbol}
-          mode={mode}
-          replayTimestamp={mode === 'replay' ? replayTimestamp : undefined}
+      {allSymbolsMode ? (
+        <Scoreboard
+          symbols={SYMBOLS}
+          onFocus={(s) => {
+            setAllSymbolsMode(false);
+            setSymbol(s);
+          }}
         />
-        <AgenticColumn
-          symbol={symbol}
-          mode={mode}
-          replayTimestamp={mode === 'replay' ? replayTimestamp : undefined}
-        />
-        <SynthesisColumn
-          symbol={symbol}
-          mode={mode}
-          replayTimestamp={mode === 'replay' ? replayTimestamp : undefined}
-        />
-      </div>
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: 12,
+            marginTop: 12,
+            minHeight: 480,
+          }}
+        >
+          <MechanicalColumn
+            symbol={symbol}
+            mode={mode}
+            replayTimestamp={mode === 'replay' ? replayTimestamp : undefined}
+          />
+          <AgenticColumn
+            symbol={symbol}
+            mode={mode}
+            replayTimestamp={mode === 'replay' ? replayTimestamp : undefined}
+          />
+          <SynthesisColumn
+            symbol={symbol}
+            mode={mode}
+            replayTimestamp={mode === 'replay' ? replayTimestamp : undefined}
+          />
+        </div>
+      )}
 
-      <AskAgentsPanel symbol={symbol} mode={mode} replayTimestamp={replayTimestamp} />
+      {!allSymbolsMode && (
+        <AskAgentsPanel symbol={symbol} mode={mode} replayTimestamp={replayTimestamp} />
+      )}
     </>
   );
 }
@@ -218,10 +230,10 @@ function PageHeader({
               marginLeft: 'auto',
               fontSize: F.xs,
               color: C.muted,
-              fontStyle: 'italic',
+              fontFamily: 'JetBrains Mono, monospace',
             }}
           >
-            Scoreboard view (all symbols) wires in Phase 4g
+            scoreboard — click row to focus
           </span>
         )}
       </div>
@@ -242,4 +254,53 @@ function modeBtnStyle(active: boolean, accent: string): React.CSSProperties {
     cursor: 'pointer',
     transition: 'all 120ms ease-out',
   };
+}
+
+// ── Scoreboard view (all symbols) ───────────────────────────────────────────
+
+function Scoreboard({
+  symbols,
+  onFocus,
+}: {
+  symbols: string[];
+  onFocus: (s: string) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+      {/* Column legend */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '90px 1fr 1fr 1fr',
+          gap: 0,
+          padding: '0 14px',
+          fontSize: 9,
+          color: C.muted,
+          textTransform: 'uppercase',
+          letterSpacing: 0.06,
+          fontWeight: 600,
+        }}
+      >
+        <span>symbol</span>
+        <span style={{ paddingLeft: 12, color: C.info }}>mechanical</span>
+        <span style={{ paddingLeft: 12, color: C.purple }}>agentic</span>
+        <span style={{ paddingLeft: 12, color: C.brand }}>synthesis</span>
+      </div>
+      {symbols.map((s) => (
+        <ScoreboardRow key={s} symbol={s} onFocus={onFocus} />
+      ))}
+      <div
+        style={{
+          padding: '8px 14px',
+          fontSize: F.xs,
+          color: C.muted,
+          fontStyle: 'italic',
+          textAlign: 'center',
+        }}
+      >
+        Click any row to focus that symbol and open the full triple-panel +
+        Q&amp;A.
+      </div>
+    </div>
+  );
 }

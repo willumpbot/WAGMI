@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 try:
-    from fastapi import FastAPI, Query
+    from fastapi import FastAPI, Query, Request
     from fastapi.middleware.cors import CORSMiddleware
     import uvicorn
 except ImportError:
@@ -1767,6 +1767,31 @@ _ASK_AGENT_SYSTEMS = {
 
 _ASK_VALID_AGENTS = set(_ASK_AGENT_SYSTEMS.keys())
 
+# Simple per-client rate limit for /v1/agents/ask: token bucket. Not auth-aware
+# yet — keys on client IP. Defaults: 5 questions / minute, 20 / hour. Burnable
+# via env if running multi-user. In-memory only — resets on restart.
+_ASK_RATE_BUCKET: dict[str, dict[str, float]] = {}
+
+def _ask_rate_check(client_id: str) -> Optional[str]:
+    """Returns None if allowed, else an error string explaining the limit."""
+    now = time.time()
+    bucket = _ASK_RATE_BUCKET.setdefault(client_id, {"min_window": now, "min_count": 0, "hr_window": now, "hr_count": 0})
+    # Per-minute window
+    if now - bucket["min_window"] >= 60:
+        bucket["min_window"] = now
+        bucket["min_count"] = 0
+    if bucket["min_count"] >= 5:
+        return f"rate limit: 5 questions/minute (try in {int(60 - (now - bucket['min_window']))}s)"
+    # Per-hour window
+    if now - bucket["hr_window"] >= 3600:
+        bucket["hr_window"] = now
+        bucket["hr_count"] = 0
+    if bucket["hr_count"] >= 20:
+        return f"rate limit: 20 questions/hour (try in {int((3600 - (now - bucket['hr_window'])) / 60)}min)"
+    bucket["min_count"] += 1
+    bucket["hr_count"] += 1
+    return None
+
 
 def _build_ask_context_block(context: dict) -> str:
     """Render the context dict into a compact, agent-friendly prose block."""
@@ -1827,7 +1852,7 @@ def _enrich_ask_context(context: dict) -> dict:
 
 
 @app.post("/v1/agents/ask")
-def ask_agents(payload: dict):
+def ask_agents(payload: dict, request: Request):
     """Ad-hoc Q&A endpoint for the /live co-pilot's Ask-the-Agents panel.
 
     Body:
@@ -1864,6 +1889,16 @@ def ask_agents(payload: dict):
         return JSONResponse(
             {"error": "question exceeds 600 chars"}, status_code=400
         )
+
+    # Rate limit per client IP (5/min, 20/hr). Replace with auth-aware quotas
+    # once the auth layer lands.
+    client_id = (
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        or (request.client.host if request.client else "unknown")
+    )
+    rate_err = _ask_rate_check(client_id)
+    if rate_err:
+        return JSONResponse({"error": rate_err}, status_code=429)
 
     try:
         sys.path.insert(0, str(BOT_ROOT))
