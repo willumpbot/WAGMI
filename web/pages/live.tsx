@@ -50,6 +50,45 @@ export default function LivePage() {
         setReplayTimestamp={setReplayTimestamp}
       />
 
+      {mode === 'replay' && replayTimestamp && (
+        <div
+          style={{
+            marginTop: 6,
+            padding: '8px 12px',
+            background: C.warn + '12',
+            border: `1px solid ${C.warn}55`,
+            borderRadius: R.sm,
+            fontSize: F.xs,
+            color: C.textSub,
+            fontFamily: 'JetBrains Mono, monospace',
+          }}
+        >
+          <span style={{ color: C.warn, fontWeight: 700 }}>⟲ REPLAY MODE</span>
+          <span style={{ marginLeft: 8 }}>
+            showing state as of {new Date(replayTimestamp).toLocaleString()} —
+            historical positions and signal snapshots not yet rehydrated; only
+            decision-time data is shown.
+          </span>
+        </div>
+      )}
+
+      {mode === 'replay' && !replayTimestamp && (
+        <div
+          style={{
+            marginTop: 6,
+            padding: '8px 12px',
+            background: '#0a0a0f',
+            border: `1px solid ${C.border}`,
+            borderRadius: R.sm,
+            fontSize: F.xs,
+            color: C.textSub,
+            fontFamily: 'JetBrains Mono, monospace',
+          }}
+        >
+          Pick a date/time in the picker above to replay the bot&apos;s state.
+        </div>
+      )}
+
       {allSymbolsMode ? (
         <Scoreboard
           symbols={SYMBOLS}

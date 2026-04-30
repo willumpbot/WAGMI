@@ -191,6 +191,74 @@ def llm_feed(limit: int = Query(200)):
     return {"decisions": decisions, "count": len(decisions)}
 
 
+@app.get("/v1/decisions/at")
+def decisions_at(
+    ts: str = Query(..., description="ISO 8601 timestamp, e.g. 2026-04-29T18:00:00"),
+    symbol: Optional[str] = Query(None, description="filter to one symbol; omit for all"),
+):
+    """Replay-mode helper for /live: return the most recent decision per symbol
+    at-or-before the given timestamp. Used by MechanicalColumn / AgenticColumn
+    when mode=replay so the columns show state-as-of-that-moment.
+
+    For each symbol (or just one if specified), walks decisions.jsonl backward
+    from `ts` and picks the latest match. Also returns a coarse "snapshot" of
+    derived state (regime, side hint) so the frontend can rehydrate without
+    extra round-trips.
+    """
+    from fastapi.responses import JSONResponse
+    try:
+        target_ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        if target_ts.tzinfo is None:
+            target_ts = target_ts.replace(tzinfo=timezone.utc)
+    except Exception as e:
+        return JSONResponse({"error": f"bad ts: {e}"}, status_code=400)
+
+    target_epoch = target_ts.timestamp()
+    sym_filter = (symbol or "").upper().strip() or None
+
+    # Read full decisions log; this is bounded by file size (typically <50MB).
+    # If perf becomes an issue, switch to a tail-then-bsearch approach.
+    decisions = _read_jsonl(DATA / "llm" / "decisions.jsonl", limit=0)
+    latest_per_symbol: dict[str, dict] = {}
+
+    for d in decisions:
+        sym = (d.get("symbol") or "").upper()
+        if not sym:
+            continue
+        if sym_filter and sym != sym_filter:
+            continue
+        d_ts = d.get("timestamp") or d.get("ts")
+        if not d_ts:
+            continue
+        try:
+            d_epoch = datetime.fromisoformat(str(d_ts).replace("Z", "+00:00")).timestamp()
+        except Exception:
+            try:
+                d_epoch = float(d_ts)
+            except Exception:
+                continue
+        if d_epoch > target_epoch:
+            continue
+        prev = latest_per_symbol.get(sym)
+        if prev is None or d_epoch > prev.get("_epoch", 0):
+            d2 = dict(d)
+            d2["_epoch"] = d_epoch
+            latest_per_symbol[sym] = d2
+
+    # Strip the helper field
+    out = []
+    for sym, d in latest_per_symbol.items():
+        d.pop("_epoch", None)
+        out.append(d)
+
+    return {
+        "as_of": target_ts.isoformat(),
+        "decisions": out,
+        "count": len(out),
+        "symbol_filter": sym_filter,
+    }
+
+
 # ─── Open Positions ──────────────────────────────────────────────────────────
 
 @app.get("/v1/positions")

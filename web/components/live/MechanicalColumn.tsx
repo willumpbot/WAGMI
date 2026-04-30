@@ -35,11 +35,36 @@ export default function MechanicalColumn({
   const edge = useEdgeStats();
 
   useEffect(() => {
-    if (mode !== 'live') return; // replay wires later
     let cancelled = false;
     const apiBase = resolveApiBase();
     const load = async () => {
       try {
+        if (mode === 'replay' && replayTimestamp) {
+          // No live signals snapshot store yet; derive from the decision-at
+          // endpoint so mechanical column at least shows the regime + direction
+          // recorded at decision time. When /v1/signals/at lands later, this
+          // upgrades automatically.
+          const url = `${apiBase}/v1/decisions/at?ts=${encodeURIComponent(replayTimestamp)}&symbol=${symbol}`;
+          const r = await fetch(url, { cache: 'no-store' });
+          if (!r.ok) return;
+          const j = await r.json();
+          if (cancelled) return;
+          const dec = (j.decisions || []).find(
+            (d: { symbol?: string }) => (d.symbol || '').toUpperCase() === symbol,
+          );
+          setSig(
+            dec
+              ? {
+                  regime: dec.regime,
+                  side: dec.side,
+                  action: dec.action,
+                  confidence: dec.confidence,
+                  price: null,
+                }
+              : null,
+          );
+          return;
+        }
         const r = await fetch(`${apiBase}/v1/signals`, { cache: 'no-store' });
         if (!r.ok) return;
         const j = await r.json();
@@ -49,12 +74,17 @@ export default function MechanicalColumn({
       }
     };
     load();
-    const id = setInterval(load, 15_000);
+    if (mode !== 'replay') {
+      const id = setInterval(load, 15_000);
+      return () => {
+        cancelled = true;
+        clearInterval(id);
+      };
+    }
     return () => {
       cancelled = true;
-      clearInterval(id);
     };
-  }, [symbol, mode]);
+  }, [symbol, mode, replayTimestamp]);
 
   // Compute "no-LLM" verdict from confluence signals.
   const isLong = sig?.side === 'LONG' || sig?.side === 'BUY';

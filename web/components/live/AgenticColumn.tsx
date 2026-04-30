@@ -62,27 +62,46 @@ export default function AgenticColumn({
   const [decision, setDecision] = useState<LlmDecision | null>(null);
 
   useEffect(() => {
-    if (mode !== 'live') return;
     let cancelled = false;
     const apiBase = resolveApiBase();
     const load = async () => {
       try {
-        const r = await fetch(`${apiBase}/v1/llm/feed?limit=50`, { cache: 'no-store' });
-        if (!r.ok) return;
-        const j: LlmFeedResponse = await r.json();
-        const latest = (j.decisions || []).find((d) => (d.symbol || '').toUpperCase() === symbol);
-        if (!cancelled) setDecision(latest || null);
+        if (mode === 'replay' && replayTimestamp) {
+          // Use /v1/decisions/at for state-as-of-that-moment
+          const url = `${apiBase}/v1/decisions/at?ts=${encodeURIComponent(replayTimestamp)}&symbol=${symbol}`;
+          const r = await fetch(url, { cache: 'no-store' });
+          if (!r.ok) return;
+          const j = await r.json();
+          if (!cancelled) {
+            const dec = (j.decisions || []).find(
+              (d: LlmDecision) => (d.symbol || '').toUpperCase() === symbol,
+            );
+            setDecision(dec || null);
+          }
+        } else {
+          const r = await fetch(`${apiBase}/v1/llm/feed?limit=50`, { cache: 'no-store' });
+          if (!r.ok) return;
+          const j: LlmFeedResponse = await r.json();
+          const latest = (j.decisions || []).find((d) => (d.symbol || '').toUpperCase() === symbol);
+          if (!cancelled) setDecision(latest || null);
+        }
       } catch {
         /* silent */
       }
     };
     load();
-    const id = setInterval(load, 20_000);
+    // Replay is a one-shot fetch (no polling); live polls every 20s
+    if (mode !== 'replay') {
+      const id = setInterval(load, 20_000);
+      return () => {
+        cancelled = true;
+        clearInterval(id);
+      };
+    }
     return () => {
       cancelled = true;
-      clearInterval(id);
     };
-  }, [symbol, mode]);
+  }, [symbol, mode, replayTimestamp]);
 
   // Derive verdict
   const verdictLabel = decision?.is_veto

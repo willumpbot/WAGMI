@@ -54,11 +54,41 @@ export default function SynthesisColumn({
   const [bankroll, setBankroll] = useState<number>(5000); // operator-adjustable
 
   useEffect(() => {
-    if (mode !== 'live') return;
     let cancelled = false;
     const apiBase = resolveApiBase();
     const load = async () => {
       try {
+        if (mode === 'replay' && replayTimestamp) {
+          // In replay, the agentic side comes from /v1/decisions/at;
+          // mechanical and position default to null (we don't have a
+          // historical signals/positions store yet — when we do, this
+          // wires identically to /v1/signals/at and /v1/positions/at).
+          const url = `${apiBase}/v1/decisions/at?ts=${encodeURIComponent(replayTimestamp)}&symbol=${symbol}`;
+          const r = await fetch(url, { cache: 'no-store' });
+          if (!r.ok) return;
+          const j = await r.json();
+          if (cancelled) return;
+          const dec = (j.decisions || []).find(
+            (d: LlmDecision) => (d.symbol || '').toUpperCase() === symbol,
+          );
+          setLlm(dec || null);
+          // Derive a synthetic mechanical "sig" from the decision's regime/conf
+          // so the synthesis still has something to combine.
+          if (dec) {
+            setSig({
+              regime: dec.regime,
+              side: dec.side,
+              action: dec.action,
+              confidence: dec.confidence,
+            });
+          } else {
+            setSig(null);
+          }
+          // Position rehydration not yet supported in replay — show no position.
+          setPosition(null);
+          return;
+        }
+
         const [sigRes, llmRes, posRes] = await Promise.all([
           fetch(`${apiBase}/v1/signals`, { cache: 'no-store' }),
           fetch(`${apiBase}/v1/llm/feed?limit=50`, { cache: 'no-store' }),
@@ -82,12 +112,17 @@ export default function SynthesisColumn({
       }
     };
     load();
-    const id = setInterval(load, 15_000);
+    if (mode !== 'replay') {
+      const id = setInterval(load, 15_000);
+      return () => {
+        cancelled = true;
+        clearInterval(id);
+      };
+    }
     return () => {
       cancelled = true;
-      clearInterval(id);
     };
-  }, [symbol, mode]);
+  }, [symbol, mode, replayTimestamp]);
 
   const synthesis = useMemo(() => synthesize(sig, llm), [sig, llm]);
 
