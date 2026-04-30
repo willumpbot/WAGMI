@@ -1719,6 +1719,217 @@ def thesis_accuracy():
         return {"error": str(e)}
 
 
+# ─── Ask-the-Agents (Q&A for /live co-pilot) ────────────────────────────────
+
+# Per-agent system prompts for ad-hoc Q&A. These are simplified versions of
+# the full trading agent prompts — they keep each agent's "voice" and concerns
+# but expect prose responses suitable for an interactive chat.
+_ASK_AGENT_SYSTEMS = {
+    "trade": (
+        "You are the Trade Agent for the WAGMI bot — an action-oriented "
+        "directional thinker. You answer questions about trade setups: entry "
+        "timing, side, conviction, and reasoning. Be direct, use specific "
+        "price levels when possible, and cite the data the operator gave you. "
+        "Keep responses under 4 short paragraphs. No JSON, no markdown — "
+        "just plain conversational prose."
+    ),
+    "critic": (
+        "You are the Critic Agent for the WAGMI bot — the structured-pessimist. "
+        "Your job is to surface counter-theses and risks: what could go wrong, "
+        "what's missing, what might invalidate the thesis. Always provide a "
+        "concrete counter-thesis, not just hedging language. Cite the data the "
+        "operator gave you. Keep responses under 4 short paragraphs. No JSON, "
+        "no markdown — just plain conversational prose."
+    ),
+    "risk": (
+        "You are the Risk Agent for the WAGMI bot. You answer questions about "
+        "position sizing, leverage, drawdown, and portfolio risk. Be specific "
+        "with numbers when the operator gives bankroll/equity context. "
+        "Use percent-of-equity framings. Keep responses under 4 short paragraphs. "
+        "No JSON, no markdown — just plain conversational prose."
+    ),
+    "regime": (
+        "You are the Regime Agent for the WAGMI bot. You answer questions about "
+        "the market state: is it trending, ranging, panic, illiquid? What "
+        "regime transitions look like. What strategies fit each regime. "
+        "Keep responses under 4 short paragraphs. No JSON, no markdown — "
+        "just plain conversational prose."
+    ),
+    "all": (
+        "You are the WAGMI multi-agent system answering an operator question "
+        "with one synthesized response. Combine perspectives from the Trade "
+        "Agent (directional thinker), Critic (counter-thesis specialist), "
+        "Risk Agent (sizing), and Regime Agent (market state). Lead with the "
+        "most important angle for the question asked. Cite data the operator "
+        "gave you. Keep response under 5 short paragraphs. No JSON, no markdown."
+    ),
+}
+
+_ASK_VALID_AGENTS = set(_ASK_AGENT_SYSTEMS.keys())
+
+
+def _build_ask_context_block(context: dict) -> str:
+    """Render the context dict into a compact, agent-friendly prose block."""
+    if not context:
+        return ""
+    lines = []
+    sym = context.get("symbol")
+    if sym:
+        lines.append(f"Symbol: {sym}")
+    if context.get("side"):
+        lines.append(f"Position side: {context['side']}")
+    if context.get("entry") is not None:
+        lines.append(f"Entry: {context['entry']}")
+    if context.get("current_price") is not None:
+        lines.append(f"Current price: {context['current_price']}")
+    if context.get("regime"):
+        lines.append(f"Regime: {context['regime']}")
+    if context.get("mode") == "replay" and context.get("replay_timestamp"):
+        lines.append(
+            f"(Note: replay mode — context is as of {context['replay_timestamp']})"
+        )
+    if not lines:
+        return ""
+    return "Operator context:\n" + "\n".join(f"  • {ln}" for ln in lines)
+
+
+def _enrich_ask_context(context: dict) -> dict:
+    """Merge runtime context (current price, signals, position) into the
+    user-supplied context block. Anything the operator already provided wins.
+    """
+    sym = (context.get("symbol") or "").upper()
+    enriched = dict(context)
+    if not sym:
+        return enriched
+    # Pull current signal (best-effort)
+    try:
+        signals_path = DATA / "signals.json"
+        if signals_path.exists():
+            sig_blob = _read_json(signals_path) or {}
+            sig = (sig_blob.get("signals") or {}).get(sym) or {}
+            enriched.setdefault("regime", sig.get("regime"))
+            enriched.setdefault("current_price", sig.get("price"))
+    except Exception:
+        pass
+    # Pull current position (best-effort)
+    try:
+        pstate = DATA / "position_state.json"
+        if pstate.exists():
+            pblob = _read_json(pstate) or {}
+            for sym_key, pos in (pblob.get("positions") or {}).items():
+                if (sym_key or "").upper() == sym:
+                    enriched.setdefault("side", pos.get("side"))
+                    enriched.setdefault("entry", pos.get("entry"))
+                    break
+    except Exception:
+        pass
+    return enriched
+
+
+@app.post("/v1/agents/ask")
+def ask_agents(payload: dict):
+    """Ad-hoc Q&A endpoint for the /live co-pilot's Ask-the-Agents panel.
+
+    Body:
+      {
+        "agent":   "trade" | "risk" | "critic" | "regime" | "all",
+        "question": "user question",
+        "context":  { "symbol": "BTC", "side": "LONG", "entry": 60000, ... }
+      }
+
+    Returns:
+      { "responses": [ { "agent": str, "text": str, "model": str, "cost_usd": float } ],
+        "elapsed_ms": int }
+
+    Cost guardrails:
+      - Default model: Sonnet
+      - Max budget per call: $0.05 (CLI enforces)
+      - Output truncated to ~400 tokens via the prompt itself
+      - Question text capped at 600 chars (rejects longer)
+    """
+    from fastapi.responses import JSONResponse
+
+    target = (payload.get("agent") or "all").lower().strip()
+    question = (payload.get("question") or "").strip()
+    context = payload.get("context") or {}
+
+    if target not in _ASK_VALID_AGENTS:
+        return JSONResponse(
+            {"error": f"unknown agent '{target}'", "valid": sorted(_ASK_VALID_AGENTS)},
+            status_code=400,
+        )
+    if not question:
+        return JSONResponse({"error": "question is required"}, status_code=400)
+    if len(question) > 600:
+        return JSONResponse(
+            {"error": "question exceeds 600 chars"}, status_code=400
+        )
+
+    try:
+        sys.path.insert(0, str(BOT_ROOT))
+        from llm.claude_cli_client import call_agent, available as cli_available
+    except Exception as e:
+        return JSONResponse(
+            {"error": f"LLM client unavailable: {e}"}, status_code=503
+        )
+
+    if not cli_available():
+        return JSONResponse(
+            {"error": "Claude CLI not available on this host"}, status_code=503
+        )
+
+    enriched = _enrich_ask_context(context)
+    context_block = _build_ask_context_block(enriched)
+    user_prompt = f"{context_block}\n\nOperator's question:\n{question}".strip()
+
+    # When target is "all", we still make ONE call (synthesized response) to
+    # control cost. Frontend can render it as one bubble.
+    targets = [target]
+
+    start = time.time()
+    responses = []
+    total_cost = 0.0
+    for agent_name in targets:
+        system = _ASK_AGENT_SYSTEMS[agent_name]
+        try:
+            resp = call_agent(
+                user_prompt=user_prompt,
+                system_prompt=system,
+                model="sonnet",
+                max_budget_usd=0.05,
+                timeout=60,
+                allow_tools=False,
+            )
+            if resp.ok:
+                responses.append({
+                    "agent": agent_name,
+                    "text": (resp.text or "").strip(),
+                    "model": resp.model or "sonnet",
+                    "cost_usd": float(resp.cost_usd or 0.0),
+                })
+                total_cost += float(resp.cost_usd or 0.0)
+            else:
+                responses.append({
+                    "agent": agent_name,
+                    "text": f"[error: {resp.error or 'unknown'}]",
+                    "model": resp.model or "sonnet",
+                    "cost_usd": 0.0,
+                })
+        except Exception as e:
+            responses.append({
+                "agent": agent_name,
+                "text": f"[exception: {e}]",
+                "model": "sonnet",
+                "cost_usd": 0.0,
+            })
+
+    return {
+        "responses": responses,
+        "elapsed_ms": int((time.time() - start) * 1000),
+        "total_cost_usd": round(total_cost, 6),
+    }
+
+
 if __name__ == "__main__":
     print(f"WAGMI Dashboard API starting on http://localhost:8000")
     print(f"Data dir: {DATA}")
