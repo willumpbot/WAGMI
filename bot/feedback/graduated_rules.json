@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-04-29T19:18:13.874877+00:00",
+  "last_updated": "2026-04-30T00:00:00Z",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -846,6 +846,76 @@
       "proposed_date": "2026-04-29",
       "min_sample_to_graduate": 25,
       "action": "Multiply SL distance 1.3x and reduce size 30% in illiquid regime"
+    },
+    {
+      "rule_id": "HIGH_CONF_CALIBRATION_DRIFT",
+      "source": "perpetual_improvement_run_2026-04-30 \u2014 confidence bin analysis (965 trades)",
+      "description": "ALL confidence bins are systematically overconfident by 15-34 points vs realized WR. 90%+ conf = 56% WR (34pt gap); 80-90% = 60% WR (25pt gap). Existing rules target 60-70% bin but ignore upper-bin inflation.",
+      "problem": "High-conf signals (80%+) are overconfident by 25-34 points. HIGH_CONF_SHORT_edge promotes 90%+ shorts based on WR data, but the confidence number itself is unreliable \u2014 sizing and filter decisions are trusting inflated confidence scores across ALL bins. confidence_scorer.py likely has systematic inflation.",
+      "fix_applied": "AUDIT_ONLY: flag for human review of confidence_scorer.py. No auto-gate yet \u2014 systematic deflation needs careful calibration to avoid breaking existing rules that depend on confidence thresholds.",
+      "action": "Audit bot/strategies/confidence_scorer.py for inflation sources. Consider adding a global calibration factor (multiply raw confidence by 0.80) or building a per-bin realized-WR lookup table.",
+      "status": "PENDING_HUMAN_REVIEW",
+      "confidence": 88,
+      "gate_percentage": 0,
+      "baseline_wr": null,
+      "treatment_wr": null,
+      "applied_date": "2026-04-30",
+      "verified": true,
+      "calibration_data": {
+        "bin_60_70": {
+          "avg_conf": 68.6,
+          "realized_wr": 46.3,
+          "gap_pts": 22.3,
+          "n": 123
+        },
+        "bin_70_80": {
+          "avg_conf": 74.6,
+          "realized_wr": 58.6,
+          "gap_pts": 16.0,
+          "n": 633
+        },
+        "bin_80_90": {
+          "avg_conf": 86.0,
+          "realized_wr": 60.2,
+          "gap_pts": 25.8,
+          "n": 118
+        },
+        "bin_90plus": {
+          "avg_conf": 90.1,
+          "realized_wr": 56.0,
+          "gap_pts": 34.1,
+          "n": 91
+        }
+      },
+      "notes": "Existing CONF_60_70_all_block addresses the worst bin but leaves 80-90% and 90%+ untouched. Those bins drive biggest sizing decisions. HYPE_SHORT_block_high_conf is a symptom of this wider calibration problem."
+    },
+    {
+      "rule_id": "BTC_CONCENTRATION_MONITOR",
+      "source": "perpetual_improvement_run_2026-04-30 \u2014 symbol distribution analysis (965 trades)",
+      "description": "Last 200 of 965 trades are 100% BTC. Symbol concentration: SOL_SHORT (best edge, +$5807, 64% WR) and HYPE trades have disappeared from recent signals.",
+      "problem": "Recent trading period is BTC-only. SOL_SHORT (the bot's highest-PnL combo) suspended at SOL_SHORT_full_block (100% gate). If that block is overly aggressive based on 30-trade live sample vs 179-trade backtest, the bot may be blocking its primary alpha source. Net result: BTC-only operation missing SOL edge.",
+      "fix_applied": "MONITORING_ONLY: log symbol concentration each run. If last 200 trades are >80% single-symbol, alert for review.",
+      "action": "Human review: evaluate SOL_SHORT_full_block suspension (30 live trades at 33% WR vs 179 backtest at 64% WR). If live data window is stale, unsuspend with 0.5x sizing cap as test.",
+      "status": "PENDING_HUMAN_REVIEW",
+      "confidence": 82,
+      "gate_percentage": 0,
+      "baseline_wr": null,
+      "treatment_wr": null,
+      "applied_date": "2026-04-30",
+      "verified": true,
+      "symbol_distribution": {
+        "last_200": {
+          "BTC": 200,
+          "SOL": 0,
+          "HYPE": 0
+        },
+        "full_965": {
+          "HYPE": 397,
+          "SOL": 301,
+          "BTC": 267
+        }
+      },
+      "notes": "SOL_SHORT_full_block and SOL_SHORT_edge_promote both have suspension notes saying '2026-04-28: 10d data shows SOL_SHORT = 63.7% WR, n=179, +$5807 PnL \u2014 contradiction may be resolved. Needs human review to unsuspend.' This is that review trigger."
     }
   ],
   "rules_added_2026_04_26_1545_hourly": [
