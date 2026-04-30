@@ -15,7 +15,7 @@
  * Subsequent commits fill in each column then the Q&A panel.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { C, F, R } from '../src/theme';
 import MechanicalColumn from '../components/live/MechanicalColumn';
@@ -32,6 +32,26 @@ export default function LivePage() {
   const [allSymbolsMode, setAllSymbolsMode] = useState<boolean>(false);
   const [mode, setMode] = useState<Mode>('live');
   const [replayTimestamp, setReplayTimestamp] = useState<string>('');
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  // Triple-panel grid stacks on narrow screens to keep each column readable.
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 1024);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Read ?symbol=BTC from URL on mount (used by deep-links from /status etc.)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const s = (params.get('symbol') || '').toUpperCase();
+    if (s && SYMBOLS.includes(s)) {
+      setSymbol(s);
+      setAllSymbolsMode(false);
+    }
+  }, []);
 
   return (
     <>
@@ -101,7 +121,7 @@ export default function LivePage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
             gap: 12,
             marginTop: 12,
             minHeight: 480,
