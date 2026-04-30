@@ -53,9 +53,10 @@ const NAV_ITEMS: NavItem[] = [
     activeMatch: (p) => p.startsWith('/leaderboard'),
   },
   {
-    label: 'Bot',
-    href: '/ai-decisions',
+    label: 'Co-Pilot',
+    href: '/live',
     activeMatch: (p) =>
+      p.startsWith('/live') ||
       p.startsWith('/ai-decisions') ||
       p.startsWith('/bot') ||
       p.startsWith('/agent-intelligence') ||
