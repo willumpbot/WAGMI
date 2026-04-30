@@ -332,4 +332,88 @@ Full audit on actual phone. Trade page collapses to single column on mobile (cha
 
 **Lowest-risk start:** Phase 0 (confirm via screenshots) — pure conversation, no commits.
 
+---
+
+## §7 — Beyond a Clone: where WAGMI improves the standard perp DEX
+
+User direction (2026-04-29): "take the standard perp DEX and improve it greatly."
+
+The HL-style chrome (top nav, layout grids, color rules) is for *familiarity*. What makes WAGMI different lives in the **data layer** — the unique bot-aware capabilities woven into otherwise-standard pages. None of these break HL convention; all of them sit naturally inside it.
+
+### 7.1 — Bot Opinion in the order rail
+
+On `/trade` right rail, just below the buy/sell buttons, a one-line panel:
+
+```
+WAGMI signal: ALIGNED — long with 72% conviction (Trade Agent)  [expand ▾]
+```
+
+Variants: `ALIGNED`, `DISAGREES`, `NEUTRAL`, `NO SIGNAL`. Click expand → mini agent pipeline: regime, conviction, top 2 reasons. Closes back into the line. Doesn't intrude on the trader's flow.
+
+**Why nothing else has this:** other dashboards either *are* the bot (you only see what it does, can't override) or they're agnostic (orderbook + chart, no opinion). WAGMI shows you the bot's view *while you trade*, so you can choose to follow or override with full context.
+
+### 7.2 — Counterfactual diff on closed positions
+
+Every row in `/portfolio/history` gets a 4th column: "Best Exit Counterfactual." Shows realized P&L next to the counterfactual P&L if the trade had exited at TP1, trailed differently, or hit an alternate stop. Color-codes regret in muted amber.
+
+**Why this matters:** the §7.1 audit found +$477 of left-on-table P&L across 134 closed trades. That insight should never live in a JSON file — it should be staring at the operator every time they review history.
+
+### 7.3 — Live agent calibration strip on /trade
+
+Above the chart, a thin (~24px) strip:
+
+```
+Regime: TRENDING (78%) · last 10 calls 6/10 correct  ·  Trade Agent confidence calibration: 0.91
+```
+
+Auto-updates every 30s. If a calibration value drops below threshold, the strip turns amber → red. Operators can immediately see whether the bot's lens on the market is currently trustworthy.
+
+### 7.4 — Rule transparency on signals
+
+When a signal *would* have fired but was filtered, surface it. On `/trade`'s "Bot Signal" tab:
+
+```
+SOL LONG suggested by 3 strategies (multi_tier_quality 80%, bollinger_squeeze 72%, regime_trend 65%)
+  ✗ Blocked: HYPE_LONG_hard_block rule (n=35 historical, 23% WR, -$77 net)
+  ✗ Blocked: Confidence floor (current floor: 80, signal score: 78)
+  → No trade taken.
+```
+
+This is operator-trust gold. The bot isn't a black box; every rejection has a reason and a citation.
+
+### 7.5 — Hover-to-learn tooltips
+
+Every domain term (funding rate, IM, MM, ADL, TWAP, R:R, MFE/MAE, calibration, regime, drawdown) has a 1-2 sentence tooltip on hover. New users learn by using; veterans have a reference always-on.
+
+This eliminates the "do I send my friend to the docs page" problem — the docs are *in the trade page*.
+
+### 7.6 — Connect-Your-Bot (future)
+
+When WAGMI is stable + paper-validated + has a real edge documented, the project becomes shippable as a fork. Users running their own bot connect this UI to their own data via:
+
+- A read token issued by their bot's `bot/api_server.py`
+- Frontend stores it in localStorage
+- Switching between "WAGMI's official bot" and "My bot" via a dropdown in the top nav (right side)
+- Same UI, their data
+
+This is what "wire the trading bot in for users" means in practice. Defer until Phase 8+.
+
+### 7.7 — Operator-only diagnostics (gated)
+
+Some pages — `/bot/agents`, `/bot/strategies` (deep), full backtest internals — are too inside-baseball for new users. Gate them behind an "Advanced Mode" toggle in settings. Default off. Lets the UI feel approachable for newcomers without hiding power-user features.
+
+### 7.8 — Single page, multiple bots later
+
+If the WAGMI fleet ever runs >1 bot (e.g., one paper, one live, or different strategy tunings), `/portfolio` and `/bot` get a bot-selector in the top of the page. Different bots, same UI. Cheap multi-tenant.
+
+---
+
+## What this means for the rollout
+
+Phases 1–2 (theme + top nav) are *neutral* — they make the app look like HL.
+Phases 3+ are where WAGMI's "improvement" is built. The /trade page (Phase 3) reserves slots for §7.1 (bot opinion in order rail), §7.3 (calibration strip), §7.5 (tooltips). The /portfolio page (Phase 4) reserves §7.2. The /bot/* section (Phase 5) hosts §7.4.
+
+**The order:** ship the HL-shaped chrome first so the app feels familiar; layer in the WAGMI superpowers progressively. Operators learn the chrome, then discover the depth. Newcomers don't get scared off by complexity on first visit.
+
+
 
