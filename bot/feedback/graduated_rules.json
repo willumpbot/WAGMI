@@ -1,6 +1,6 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-04-30T00:00:00Z",
+    "last_updated": "2026-04-30T17:06:23Z",
     "rules": [
         {
             "rule_id": "F2_calibration_offset_cap",
@@ -352,7 +352,9 @@
             "gate_percentage": 100,
             "applied_date": "2026-04-24",
             "urgency": "HIGH",
-            "expected_impact": "Restoring best-performing cohort (90%+ WR +$32.33 avg) to appropriate model saves foregone PnL on every high-conf trade"
+            "expected_impact": "Restoring best-performing cohort (90%+ WR +$32.33 avg) to appropriate model saves foregone PnL on every high-conf trade",
+            "last_reviewed": "2026-04-30T17:06:23.211012Z",
+            "review_note": "perpetual_improvement_2026-04-30: still SUSPENDED_PENDING_REVERT. Code revert in usage_tiers.py required. HIGH priority."
         },
         {
             "rule_id": "BTC_BUY_BB_golden",
@@ -552,7 +554,7 @@
             "action": "agents/coordinator.py or exit agent prompt: when regime==trending, set min_hold_hours=3 in Exit Agent context; ignore close signals before 3h except hard SL hit",
             "status": "A/B_ACTIVE",
             "confidence": 88,
-            "gate_percentage": 20,
+            "gate_percentage": 50,
             "baseline_wr": 0.52,
             "treatment_wr": null,
             "sample_count": 164,
@@ -560,7 +562,9 @@
             "ab_cohort_start": "2026-04-25T00:00:00Z",
             "min_sample_to_graduate": 25,
             "expected_impact": "Preventing early exits in trending regime should push trending WR from 52% toward the 4h+ cohort WR of 50-73% by letting winners run",
-            "evidence": "164 live trades: trending early losses=8/61 (13%); loss median hold=1.5h, win median hold=3.3h; 12h+ cohort=73% WR"
+            "evidence": "164 live trades: trending early losses=8/61 (13%); loss median hold=1.5h, win median hold=3.3h; 12h+ cohort=73% WR",
+            "last_escalated": "2026-04-30T17:06:23.210952Z",
+            "escalation_reason": "perpetual_improvement_2026-04-30: exit timing analysis confirms 81% of exits suboptimal. SOL exits 71% suboptimal (+$246 missed). Win median hold=3.3h vs loss 1.5h. Escalate 20%\u219250%."
         },
         {
             "rule_id": "NOISE_REGIME_FAST_EXIT",
