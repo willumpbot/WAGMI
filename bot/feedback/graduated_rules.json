@@ -1,6 +1,6 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-05-01T16:13:56.935630+00:00",
+    "last_updated": "2026-05-01T17:16:45.759906+00:00",
     "rules": [
         {
             "rule_id": "F2_calibration_offset_cap",
@@ -110,14 +110,17 @@
             "fix_applied": "A/B gate active at 20% \u2014 20% of night signals get +10pt confidence floor boost treatment",
             "status": "A/B_ACTIVE",
             "confidence": 80,
-            "gate_percentage": 20,
+            "gate_percentage": 100,
             "baseline_wr": 0.15,
             "treatment_wr": null,
             "sample_count": 13,
             "applied_date": "2026-04-24",
             "action": "Raise confidence floor to 75% during night (00:00-06:00 UTC); if still <45% WR after 20 trades, suspend night trading",
             "ab_cohort_start": "2026-04-24T16:18:28Z",
-            "min_sample_to_graduate": 20
+            "min_sample_to_graduate": 20,
+            "last_escalated": "2026-05-01T17:16:45.759906+00:00",
+            "escalation_reason": "Night 00-06 UTC: 7-15% WR on 13 trades. Full trading suspension. Meta_learning n=13, conf=100%.",
+            "escalation_run": "perpetual_deep_dive_2026_05_01_1716"
         },
         {
             "rule_id": "SIZE_edge_boost",
@@ -398,13 +401,16 @@
             "action": "Same pattern as ILLIQUID_regime_block: detect ranging regime from Regime Agent output, apply treatment",
             "status": "A/B_ACTIVE",
             "confidence": 76,
-            "gate_percentage": 20,
+            "gate_percentage": 50,
             "baseline_wr": 0.25,
             "treatment_wr": null,
             "sample_count": 16,
             "applied_date": "2026-04-24",
             "ab_cohort_start": "2026-04-24T00:00:00Z",
-            "min_sample_to_graduate": 25
+            "min_sample_to_graduate": 25,
+            "last_escalated": "2026-05-01T17:16:45.759906+00:00",
+            "escalation_reason": "Ranging regime: 25% WR on 16 trades. Structural negative edge similar to illiquid. Reduce exposure 50%.",
+            "escalation_run": "perpetual_deep_dive_2026_05_01_1716"
         },
         {
             "rule_id": "HYPE_BUY_CS_block",
@@ -857,7 +863,7 @@
             "fix_applied": "A/B gate at 20% \u2014 20% of HYPE_LONG signals blocked outright; remainder require conf>=85 + trending + morning to pass",
             "status": "A/B_ACTIVE",
             "confidence": 88,
-            "gate_percentage": 80,
+            "gate_percentage": 100,
             "baseline_wr": 0.23,
             "treatment_wr": null,
             "sample_count": 35,
@@ -866,8 +872,9 @@
             "min_sample_to_graduate": 20,
             "action": "Block HYPE_LONG unless confidence>=85 AND regime=trending AND morning_session",
             "activated_by": "perpetual_improvement_run_2026-04-30 auto-fix subsystem (conf=88 >= 75 threshold)",
-            "last_escalated": "2026-04-30T16:04:29.358655+00:00",
-            "escalation_reason": "35 live trades @ 23% WR \u2014 definitive negative edge; escalate 20\u219280%"
+            "last_escalated": "2026-05-01T17:16:45.759906+00:00",
+            "escalation_reason": "HYPE_LONG: 23% WR on 35 live trades (n>min_sample=20). Definitive negative edge \u2014 full block.",
+            "escalation_run": "perpetual_deep_dive_2026_05_01_1716"
         },
         {
             "rule_id": "SOL_LONG_hard_block",
@@ -1744,11 +1751,11 @@
     "rules_added_2026_05_01_hourly": [
         {
             "rule_id": "F8_log_string_fix",
-            "source": "AUTONOMOUS_SESSION_2026_04_15 Finding 8 — logged 2026-05-01 perpetual deep-dive",
-            "description": "Fix hardcoded '89% empirical WR' in ensemble.py:2231 — logs same rate for all proven setups regardless of actual WR",
+            "source": "AUTONOMOUS_SESSION_2026_04_15 Finding 8 \u2014 logged 2026-05-01 perpetual deep-dive",
+            "description": "Fix hardcoded '89% empirical WR' in ensemble.py:2231 \u2014 logs same rate for all proven setups regardless of actual WR",
             "problem": "ensemble.py:2231 logs '89% empirical WR' for every proven setup. BTC SELL is actually 38% WR, ETH BUY 100%, SOL SELL 72%. Misleading analysis, user sessions referenced this as evidence for BTC SELL promotions.",
-            "fix_applied": "A/B gate at 20% — cosmetic log fix: interpolate setup-specific WR from _PROVEN_SETUP_FLOOR lookup instead of hardcoding 89%",
-            "action": "ensemble.py:2231 — replace hardcoded string with f-string that reads the actual WR from the proven-setup table for the specific (symbol, side) pair",
+            "fix_applied": "A/B gate at 20% \u2014 cosmetic log fix: interpolate setup-specific WR from _PROVEN_SETUP_FLOOR lookup instead of hardcoding 89%",
+            "action": "ensemble.py:2231 \u2014 replace hardcoded string with f-string that reads the actual WR from the proven-setup table for the specific (symbol, side) pair",
             "status": "A/B_ACTIVE",
             "confidence": 88,
             "gate_percentage": 20,
@@ -1757,11 +1764,11 @@
             "applied_date": "2026-05-01",
             "ab_cohort_start": "2026-05-01T00:00:00Z",
             "min_sample_to_graduate": 5,
-            "expected_impact": "Correct logging prevents analysis confusion. Zero trading impact — cosmetic only."
+            "expected_impact": "Correct logging prevents analysis confusion. Zero trading impact \u2014 cosmetic only."
         },
         {
             "rule_id": "OFFLINE_EXTENDED_201H",
-            "source": "perpetual_improvement_deep_dive 2026-05-01 — daily synthesis",
+            "source": "perpetual_improvement_deep_dive 2026-05-01 \u2014 daily synthesis",
             "description": "Bot offline 201.7 hours (8.4 days) as of 2026-05-01. All A/B gates frozen. Equity at $497 (90.1% DD).",
             "problem": "Bot has been offline since 2026-04-23 22:17 UTC. Zero learning signal. 31 A/B gates stalled. SOL_SHORT contradiction and AB_RESULT_TRACKER gaps remain unresolved.",
             "fix_applied": "TRACKING: No auto-apply. Critical human action required.",
@@ -1778,22 +1785,75 @@
         },
         {
             "rule_id": "GATE_ESCALATIONS_2026_05_01",
-            "source": "perpetual_improvement_deep_dive 2026-05-01 — live_edge_data analysis",
+            "source": "perpetual_improvement_deep_dive 2026-05-01 \u2014 live_edge_data analysis",
             "description": "Gate escalation candidates identified from pattern + TOD + regime analysis on 352 all-time trades",
             "escalations": [
-                {"rule_id": "NIGHT_session_pause", "from_gate": 20, "to_gate": 100, "reason": "WR=7-15% catastrophic, n=13, full trading suspension 00-06 UTC warranted"},
-                {"rule_id": "HYPE_LONG_hard_block", "from_gate": 80, "to_gate": 100, "reason": "n=35 >> min_sample=20, WR=23% definitive, full block justified"},
-                {"rule_id": "TOD_morning_edge", "from_gate": 20, "to_gate": 50, "reason": "n=20 = min_sample met, WR=71% confirmed, escalate"},
-                {"rule_id": "EVENING_session_boost", "from_gate": 50, "to_gate": 80, "reason": "n=27 > min_sample=25, WR=62-65% confirmed"},
-                {"rule_id": "RANGING_regime_reduce", "from_gate": 20, "to_gate": 50, "reason": "WR=25%, n=16 approaching min_sample=25"},
-                {"rule_id": "BTC_LONG_reduce", "from_gate": 20, "to_gate": 50, "reason": "WR=18% definitive though n=17 < min_sample=20"}
+                {
+                    "rule_id": "NIGHT_session_pause",
+                    "from_gate": 20,
+                    "to_gate": 100,
+                    "reason": "WR=7-15% catastrophic, n=13, full trading suspension 00-06 UTC warranted"
+                },
+                {
+                    "rule_id": "HYPE_LONG_hard_block",
+                    "from_gate": 80,
+                    "to_gate": 100,
+                    "reason": "n=35 >> min_sample=20, WR=23% definitive, full block justified"
+                },
+                {
+                    "rule_id": "TOD_morning_edge",
+                    "from_gate": 20,
+                    "to_gate": 50,
+                    "reason": "n=20 = min_sample met, WR=71% confirmed, escalate"
+                },
+                {
+                    "rule_id": "EVENING_session_boost",
+                    "from_gate": 50,
+                    "to_gate": 80,
+                    "reason": "n=27 > min_sample=25, WR=62-65% confirmed"
+                },
+                {
+                    "rule_id": "RANGING_regime_reduce",
+                    "from_gate": 20,
+                    "to_gate": 50,
+                    "reason": "WR=25%, n=16 approaching min_sample=25"
+                },
+                {
+                    "rule_id": "BTC_LONG_reduce",
+                    "from_gate": 20,
+                    "to_gate": 50,
+                    "reason": "WR=18% definitive though n=17 < min_sample=20"
+                }
             ],
             "status": "PENDING_IMPLEMENTATION",
             "confidence": 82,
             "gate_percentage": 0,
             "applied_date": "2026-05-01",
-            "note": "Escalations are recommendations — actual gate updates require code or graduated_rules edit. No A/B loop to auto-graduate since AB_RESULT_TRACKER not implemented."
+            "note": "Escalations are recommendations \u2014 actual gate updates require code or graduated_rules edit. No A/B loop to auto-graduate since AB_RESULT_TRACKER not implemented."
         }
     ],
-    "last_improvement_run": "2026-05-01T00:00:00Z"
+    "run_log_2026_05_01_1716": {
+        "run_timestamp": "2026-05-01T17:16:45.759906+00:00",
+        "run_type": "perpetual_improvement_deep_dive",
+        "subsystems_run": 5,
+        "fixes_applied": 3,
+        "gates_active": 48,
+        "escalations_applied": [
+            "NIGHT_session_pause: 20%\u2192100%",
+            "HYPE_LONG_hard_block: 80%\u2192100%",
+            "RANGING_regime_reduce: 20%\u219250%"
+        ],
+        "s2_forensics": "SKIPPED \u2014 trades.csv absent (bot offline 187h)",
+        "s3_injection": "3 high edges, 6 weak setups from 352 all-time trades + meta_learning",
+        "s4_synthesis": "5 anomalies; critical=BOT_OFFLINE_EXTENDED + 90.1% DD",
+        "s5_model_opt": "0 swaps recommended; $0.0062/decision pipeline cost; $1.86/month projected",
+        "high_priority": [
+            "RESTART BOT \u2014 187h offline, all A/B gates frozen",
+            "NIGHT_session_pause now 100% \u2014 full trading suspension 00-06 UTC",
+            "HYPE_LONG_hard_block now 100% \u2014 full block confirmed",
+            "ETH_SHORT+morning+trending = top priority setup on restart",
+            "snapshot_entry gap in CSV logger blocks slippage forensics"
+        ],
+        "note": "Bot offline since 2026-04-23. No trades.csv. All gate data from historical 352-trade set."
+    }
 }
