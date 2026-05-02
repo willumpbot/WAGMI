@@ -1,6 +1,6 @@
 {
     "schema_version": "1.0",
-    "last_updated": "2026-05-01T18:42:15.000000+00:00",
+    "last_updated": "2026-05-02T18:03:00.000000+00:00",
     "rules": [
         {
             "rule_id": "F2_calibration_offset_cap",
@@ -1176,6 +1176,45 @@
             "sample_count": 91,
             "applied_date": "2026-05-02",
             "note": "Source is 10d simulation data \u2014 needs live validation before escalation"
+        },
+        {
+            "rule_id": "STRATEGY_WEIGHT_REBALANCE",
+            "source": "meta_learning/ideas.json idea_e5ebabb4 + meta_learning/insights strategy_concentration (conf=0.80)",
+            "description": "Periodic ensemble weight rebalancing: reduce dominant strategy weight 15%, redistribute to others every 24h",
+            "problem": "Ensemble accounts for 62-94% of all trades across 6+ consecutive meta_learning readings. Strategy concentration creates fragility and single-point-of-failure risk.",
+            "fix_applied": "A/B gate at 20% \u2014 20% of strategy weight decisions trigger 15% reduction of dominant strategy weight with redistribution to underrepresented strategies",
+            "action": "bot/data/strategy_weights.py: on daily rebalance trigger, detect strategy with >60% trade share; reduce weight by 15%; redistribute proportionally to others",
+            "status": "A/B_ACTIVE",
+            "confidence": 80,
+            "gate_percentage": 20,
+            "baseline_wr": 0.45,
+            "treatment_wr": null,
+            "sample_count": 50,
+            "applied_date": "2026-05-02",
+            "ab_cohort_start": "2026-05-02T18:03:00Z",
+            "min_sample_to_graduate": 30,
+            "activated_by": "perpetual_deep_dive_2026_05_02_1803 auto-fix subsystem (conf=80 >= 75 threshold)",
+            "expected_impact": "Reduce fragility from single-strategy dominance; improve diversification and resilience to individual strategy degradation"
+        },
+        {
+            "rule_id": "BTC_SELL_BB_moderate_golden",
+            "source": "deep_memory/insight_journal \u2014 BTC_SELL_BB = 61% WR, n=2172 signals",
+            "description": "BTC SELL + BB = 61% WR (vs overall BTC SHORT 53.8%). Exempt from BTC_directional_correction -5pt SHORT penalty; add +5pt confidence boost.",
+            "problem": "BTC_directional_correction penalises ALL BTC shorts -5pt, but BB-specific BTC shorts outperform generic BTC shorts by 7.2 WR pts (61% vs 53.8%). Net: a 61% WR setup receives an unwarranted -5pt treatment that a generic SHORT should receive.",
+            "fix_applied": "A/B gate at 20% \u2014 BTC SELL + BB signals: exempt from BTC_directional_correction -5pt penalty AND receive +5pt confidence boost",
+            "action": "ensemble.py or signal_pipeline.py: if signal.symbol=='BTC' and signal.side=='SELL' and strategy_includes 'confidence_scorer'(BB), bypass BTC_directional_correction penalty and add +5pt",
+            "status": "A/B_ACTIVE",
+            "confidence": 88,
+            "gate_percentage": 20,
+            "baseline_wr": 0.61,
+            "treatment_wr": null,
+            "sample_count": 2172,
+            "applied_date": "2026-05-02",
+            "ab_cohort_start": "2026-05-02T18:03:00Z",
+            "min_sample_to_graduate": 20,
+            "activated_by": "perpetual_deep_dive_2026_05_02_1803 auto-fix subsystem (conf=88 >= 75 threshold)",
+            "conflict_note": "Conflicts with BTC_directional_correction (BTC SHORT -5pt). This rule creates an explicit whitelist exception for the BB-strategy subset.",
+            "expected_impact": "Recover net +10pt confidence treatment on a known 61% WR setup; prevents the penalty from filtering or undersizing a positive-edge BB+BTC-SHORT signal"
         }
     ],
     "rules_added_2026_04_26_1545_hourly": [
@@ -1262,7 +1301,7 @@
             "confidence": 91
         }
     ],
-    "last_improvement_run": "2026-05-01T00:00:00Z",
+    "last_improvement_run": "2026-05-02T18:03:00.000000+00:00",
     "new_proposals_2026_04_25_hourly": [
         {
             "rule_id": "AB_RESULT_TRACKER",
