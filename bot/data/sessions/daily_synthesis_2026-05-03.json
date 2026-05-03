@@ -1,0 +1,53 @@
+{
+  "date": "2026-05-03",
+  "generated_at": "2026-05-03T19:09:26.987527+00:00",
+  "bot_status": "OFFLINE",
+  "offline_duration_hours": 235.0,
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "equity": 497.0523,
+  "peak_equity": 508.0609,
+  "dd_from_peak_pct": 2.17,
+  "dd_from_start_pct": 90.06,
+  "recent_20_wr": 0.35,
+  "historical_core_wr": 0.376,
+  "trailing_loss_streak": 4,
+  "anomalies": [
+    {
+      "type": "CONSECUTIVE_LOSSES",
+      "severity": "CRITICAL",
+      "value": 4,
+      "threshold": 5,
+      "finding": "4 consecutive losses \u2014 circuit breaker likely engaged",
+      "recommendation": "Soft-start protocol: first 5 trades at 50% size until 2 wins achieved"
+    },
+    {
+      "type": "BOT_OFFLINE",
+      "severity": "CRITICAL",
+      "value": "9.8 days",
+      "finding": "Bot offline since 2026-04-23 22:17 UTC \u2014 0 trades in 9.8 days",
+      "recommendation": "Restart bot with soft-start protocol; verify circuit breaker state before live trading"
+    }
+  ],
+  "circuit_breaker_state": "ENGAGED (4 consecutive losses detected)",
+  "tomorrows_focus": {
+    "priority_symbols": [
+      "ETH",
+      "BTC"
+    ],
+    "priority_regimes": [
+      "trending"
+    ],
+    "avoid_symbols": [
+      "SOL",
+      "HYPE"
+    ],
+    "avoid_regimes": [
+      "illiquid",
+      "ranging"
+    ],
+    "priority_time_window": "06:00-12:00 UTC (morning session, 71-75% WR confirmed)",
+    "restart_protocol": "Soft-start: max 3x leverage, 50% position size for first 5 trades"
+  },
+  "report_generated": true
+}

@@ -1,0 +1,133 @@
+{
+  "last_run": "2026-05-03T19:10:03.681781+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_03_1910",
+  "subsystems": {
+    "auto_fix": {
+      "status": "COMPLETE",
+      "fixes_applied": 5,
+      "gates_active": 50,
+      "graduation_ready_null_treatment": 32,
+      "critical_gap": "32 rules graduation-ready but treatment_wr=null (A/B outcome tracking broken)"
+    },
+    "execution_forensics": {
+      "status": "PARTIAL \u2014 no live data",
+      "avg_slippage": "UNKNOWN (no live trades)",
+      "noise_stop_problem": "71.9% of illiquid-regime stops hit in noise (57 historical trades)",
+      "win_median_hold_h": 3.3,
+      "loss_median_hold_h": 1.5,
+      "data_gap": "Bot offline 9.8 days \u2014 restart required for live forensics"
+    },
+    "live_injection": {
+      "status": "COMPLETE \u2014 historical data",
+      "high_edges_found": 1,
+      "high_edges": [
+        {
+          "setup": "ETH_SHORT",
+          "wr": 0.8,
+          "trades": 5,
+          "pnl_total": 0.94
+        }
+      ],
+      "weak_setups_found": 3,
+      "weak_setups": [
+        {
+          "setup": "HYPE_LONG",
+          "wr": 0.23,
+          "trades": 35,
+          "pnl_total": -77.26
+        },
+        {
+          "setup": "SOL_LONG",
+          "wr": 0.24,
+          "trades": 34,
+          "pnl_total": -21.89
+        },
+        {
+          "setup": "BTC_LONG",
+          "wr": 0.18,
+          "trades": 17,
+          "pnl_total": -0.08
+        }
+      ],
+      "regime_edges": {
+        "trending": {
+          "wr": 0.519,
+          "verdict": "VIABLE"
+        },
+        "illiquid": {
+          "wr": 0.281,
+          "verdict": "LOSING"
+        },
+        "ranging": {
+          "wr": 0.25,
+          "verdict": "LOSING"
+        }
+      }
+    },
+    "daily_synthesis": {
+      "status": "COMPLETE",
+      "anomalies_found": 2,
+      "report_generated": true,
+      "bot_offline_hours": 235.2,
+      "trailing_loss_streak": 4,
+      "equity": 497.05,
+      "dd_from_start_pct": 90.06
+    },
+    "model_optimization": {
+      "status": "SKIPPED \u2014 no cost_tracker.json",
+      "swaps_recommended": 0,
+      "potential_savings": "$0.00",
+      "note": "Re-evaluate after 50 live trades"
+    }
+  },
+  "high_priority_findings": [
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "CRITICAL",
+      "finding": "Bot offline 9.8 days (since 2026-04-23 22:17 UTC). Zero live data collection. All A/B tests frozen.",
+      "action": "RESTART BOT with soft-start protocol: 50% sizing, max 3x leverage for first 5 trades"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "CRITICAL",
+      "finding": "32 A/B rules have met sample thresholds but treatment_wr=null for ALL. A/B outcome tracking is not writing results back. Rules cannot auto-graduate.",
+      "action": "Diagnose A/B result tracking mechanism; wire trade outcomes to graduated_rules.json treatment_wr field"
+    },
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "HIGH",
+      "finding": "4 consecutive losses on last active session + circuit breaker engaged. Restart will require manual override or cool-off.",
+      "action": "Apply RESTART_SOFT_START_4LOSS rule: gate first 5 trades at 50% size until 2 wins"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "5 PENDING_HUMAN_REVIEW items blocking progress: [F1_sniper, LLM_REGIME_CAPTURE_GAP (99%), BTC_TOTAL_CONCENTRATION (99%), HIGH_CONF_CALIBRATION_DRIFT (88%), BTC_CONCENTRATION_MONITOR (82%)]",
+      "action": "Schedule human review session \u2014 especially LLM_REGIME_CAPTURE_GAP (conf=99%) and F1_sniper (highest profit lever)"
+    },
+    {
+      "subsystem": "live_injection",
+      "severity": "HIGH",
+      "finding": "Only ETH_SHORT qualifies as high edge (80% WR, 5 trades). All other patterns below 60%. System lacks breadth \u2014 over-reliant on single setup.",
+      "action": "Focus bot on ETH_SHORT + BTC_SHORT in trending regime + morning window. Block HYPE_LONG/SOL_LONG/SOL_SHORT (already at gate=100% but verify execution)"
+    },
+    {
+      "subsystem": "execution_forensics",
+      "severity": "HIGH",
+      "finding": "71.9% of illiquid-regime stops hit within noise band (1.5h median hold). Minimum-hold guard for trending regime would filter structural noise exits.",
+      "action": "Verify TRENDING_EARLY_HOLD_GUARD (gate=80%, n=164) is actively applied. Consider graduating to APPLIED given definitive evidence."
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "MEDIUM",
+      "finding": "5 gate escalations applied this run: HYPE_SHORT_hard_block, BTC_STOP_EXPANSION, SOL_HIGH_CONF_premium, BTC_HIGH_CONF_90plus, HYPE_LOW_CONF_block_v2 all promoted from 20% to 80% gate (conf \u226580%, samples at threshold).",
+      "action": "Monitor these 5 rules on bot restart for treatment_wr measurement"
+    }
+  ],
+  "next_run_focus": [
+    "Collect fresh trade data (bot restart required)",
+    "Measure slippage on first 20 live trades",
+    "Begin filling treatment_wr fields for top-10 priority A/B rules",
+    "Verify HYPE_LONG_hard_block and SOL_LONG_hard_block active at gate=100%"
+  ]
+}

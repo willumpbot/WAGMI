@@ -1,0 +1,80 @@
+{
+  "last_run": "2026-05-03T19:08:18.776113+00:00",
+  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md",
+  "fixes_applied_this_run": 5,
+  "gates_active": 50,
+  "full_gate_rules": 7,
+  "graduation_ready_null_treatment": 32,
+  "critical_gap": "treatment_wr is NULL for all 32 graduation-ready rules \u2014 A/B result tracking not writing back outcomes. No live trades since 2026-04-23 (9.8 day outage).",
+  "escalations_this_run": [
+    {
+      "rule_id": "HYPE_sizing_reduce",
+      "action": "GATE_ESCALATION",
+      "from_gate": 50,
+      "to_gate": 80,
+      "confidence": 80,
+      "sample_count": 397,
+      "description": "Escalate HYPE_sizing_reduce gate 50%\u219280%: 397 samples at conf=80%",
+      "reason": "Sample threshold met, confidence >=80%; insufficient gate coverage to collect treatment data",
+      "applied_ts": "2026-05-03T19:08:18.776113+00:00"
+    },
+    {
+      "rule_id": "SOL_HIGH_CONF_premium",
+      "action": "GATE_ESCALATION",
+      "from_gate": 20,
+      "to_gate": 80,
+      "confidence": 82,
+      "sample_count": 34,
+      "description": "Escalate SOL_HIGH_CONF_premium gate 20%\u219280%: 34 samples at conf=82%",
+      "reason": "Sample threshold met, confidence >=80%; insufficient gate coverage to collect treatment data",
+      "applied_ts": "2026-05-03T19:08:18.776113+00:00"
+    },
+    {
+      "rule_id": "BTC_HIGH_CONF_90plus",
+      "action": "GATE_ESCALATION",
+      "from_gate": 20,
+      "to_gate": 80,
+      "confidence": 80,
+      "sample_count": 47,
+      "description": "Escalate BTC_HIGH_CONF_90plus gate 20%\u219280%: 47 samples at conf=80%",
+      "reason": "Sample threshold met, confidence >=80%; insufficient gate coverage to collect treatment data",
+      "applied_ts": "2026-05-03T19:08:18.776113+00:00"
+    },
+    {
+      "rule_id": "HYPE_SHORT_hard_block",
+      "action": "GATE_ESCALATION",
+      "from_gate": 20,
+      "to_gate": 80,
+      "confidence": 87,
+      "sample_count": 239,
+      "description": "Escalate HYPE_SHORT_hard_block gate 20%\u219280%: 239 samples at conf=87%",
+      "reason": "Sample threshold met, confidence >=80%; insufficient gate coverage to collect treatment data",
+      "applied_ts": "2026-05-03T19:08:18.776113+00:00"
+    },
+    {
+      "rule_id": "SOL_SHORT_suspension_reversal_probe",
+      "action": "GATE_ESCALATION",
+      "from_gate": 20,
+      "to_gate": 80,
+      "confidence": 84,
+      "sample_count": 179,
+      "description": "Escalate SOL_SHORT_suspension_reversal_probe gate 20%\u219280%: 179 samples at conf=84%",
+      "reason": "Sample threshold met, confidence >=80%; insufficient gate coverage to collect treatment data",
+      "applied_ts": "2026-05-03T19:08:18.776113+00:00"
+    }
+  ],
+  "pending_human_review": [
+    "F1_sniper_pending_safety_review",
+    "HIGH_CONF_CALIBRATION_DRIFT",
+    "BTC_CONCENTRATION_MONITOR",
+    "LLM_REGIME_CAPTURE_GAP",
+    "BTC_TOTAL_CONCENTRATION"
+  ],
+  "top_priority_actions": [
+    "RESTART BOT \u2014 9.8-day outage blocking all A/B data collection",
+    "Wire A/B result tracking \u2014 32 rules have null treatment_wr (outcomes not recorded)",
+    "Human review: F1_sniper_pending_safety_review (highest profit lever)",
+    "Human review: LLM_REGIME_CAPTURE_GAP (conf=99%) \u2014 capture regime in trade metadata",
+    "Human review: BTC_TOTAL_CONCENTRATION (conf=99%) \u2014 risk concentration monitor"
+  ]
+}
