@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-05-02T19:30:00.000000+00:00",
+  "last_updated": "2026-05-03T16:29:21.227745+00:00",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -1233,6 +1233,75 @@
       "min_sample_to_graduate": 20,
       "expected_impact": "39.5% WR = -$65.83/trade avg on HYPE_60-70. Blocking would eliminate worst loss bucket.",
       "promoted_date": "2026-05-02T19:30:00.000000+00:00"
+    },
+    {
+      "rule_id": "HYPE_SHORT_hard_block",
+      "source": "master_engine_run_2026-05-03 \u2014 subsystem1+subsystem3",
+      "description": "HYPE SHORT confirmed negative EV: -$16.65/trade on 239 live trades (WR=54.4%, avg_win=$105, avg_loss=-$162)",
+      "problem": "HYPE SHORT has structurally bad R:R (0.65x) and negative EV despite >50% WR. Avg loss 54% larger than avg win.",
+      "fix_applied": "A/B gate active at 20% \u2014 route 20% of HYPE SHORT signals to skip; track treatment vs baseline",
+      "status": "A/B_ACTIVE",
+      "confidence": 87,
+      "gate_percentage": 20,
+      "baseline_wr": 0.544,
+      "baseline_ev_per_trade": -16.65,
+      "treatment_wr": null,
+      "sample_count": 239,
+      "applied_date": "2026-05-03",
+      "action": "Block HYPE SHORT entirely (matching HYPE_LONG_hard_block). HYPE is net -$5013 on 397 trades.",
+      "ab_cohort_start": "2026-05-03T16:29:21.227691+00:00",
+      "min_sample_to_graduate": 40,
+      "last_run": "2026-05-03T16:29:21.227735+00:00"
+    },
+    {
+      "rule_id": "SOL_SHORT_suspension_reversal_probe",
+      "source": "master_engine_run_2026-05-03 \u2014 subsystem3",
+      "description": "SOL_SHORT shows 63.7% WR on 179 live trades. SOL_SHORT_edge_promote was SUSPENDED_LIVE_CONTRADICTION \u2014 re-examine",
+      "problem": "SOL_SHORT_edge_promote suspended but live 179-trade WR=63.7% is a clear high-edge. Suspension may be stale.",
+      "fix_applied": "Probe A/B gate at 20% \u2014 route 20% of SOL SHORT signals with +3pt confidence boost",
+      "status": "A/B_ACTIVE",
+      "confidence": 84,
+      "gate_percentage": 20,
+      "baseline_wr": 0.637,
+      "treatment_wr": null,
+      "sample_count": 179,
+      "applied_date": "2026-05-03",
+      "action": "If treatment WR >= 63% on 30+ samples, re-activate SOL_SHORT_edge_promote",
+      "ab_cohort_start": "2026-05-03T16:29:21.227739+00:00",
+      "min_sample_to_graduate": 30,
+      "note": "Previous suspension was SOL_SHORT_edge_promote \u2014 check what caused contradiction"
+    },
+    {
+      "rule_id": "LLM_REGIME_CAPTURE_GAP",
+      "source": "master_engine_run_2026-05-03 \u2014 subsystem3+subsystem4",
+      "description": "llm_regime column is EMPTY in all 965 trades \u2014 regime-based A/B rules cannot be measured",
+      "problem": "17 regime-based A/B rules (ILLIQUID_regime_block, TOD_morning_edge, etc.) have no treatment_wr because the regime field is never written to trades.csv",
+      "fix_applied": "PENDING_HUMAN_REVIEW \u2014 need to wire llm_regime capture at trade-close time",
+      "status": "PENDING_HUMAN_REVIEW",
+      "confidence": 99,
+      "gate_percentage": 0,
+      "baseline_wr": null,
+      "treatment_wr": null,
+      "applied_date": "2026-05-03",
+      "action": "Wire regime from LLM decision into TradeRecord at close. File: data/trade_log.py or execution/position_manager.py",
+      "severity": "HIGH",
+      "impact": "Without this, all regime-based A/B tests are blind. 17+ rules cannot graduate."
+    },
+    {
+      "rule_id": "BTC_TOTAL_CONCENTRATION",
+      "source": "master_engine_run_2026-05-03 \u2014 subsystem4",
+      "description": "Last 200 trades = 100% BTC. Symbol concentration has reached maximum \u2014 SOL/HYPE not firing",
+      "problem": "Portfolio has collapsed to single-asset trading. Sector caps should prevent this but BTC is taking all slots.",
+      "fix_applied": "PENDING_HUMAN_REVIEW \u2014 investigate why SOL/HYPE signals stopped generating",
+      "status": "PENDING_HUMAN_REVIEW",
+      "confidence": 99,
+      "gate_percentage": 0,
+      "baseline_wr": null,
+      "treatment_wr": null,
+      "applied_date": "2026-05-03",
+      "action": "Check if HYPE_LONG_hard_block + SOL_LONG_hard_block + SOL_SHORT_full_block are together eliminating all non-BTC signals",
+      "severity": "CRITICAL",
+      "impact": "SOL SHORT edge (63.7% WR) is being missed if SOL_SHORT_full_block at gate=100% is blocking it"
     }
   ],
   "rules_added_2026_04_26_1545_hourly": [
