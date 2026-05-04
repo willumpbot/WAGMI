@@ -42,7 +42,7 @@ class GraduatedRule:
         return self.times_correct / self.times_applied if self.times_applied > 0 else 0.5
 
     def matches(self, symbol="", regime="", side="", strategy="",
-                setup_type="", num_agree=0) -> bool:
+                setup_type="", num_agree=0, confidence=0.0) -> bool:
         if not self.active:
             return False
         c = self.conditions
@@ -68,6 +68,10 @@ class GraduatedRule:
         if c.get("setup_type") and setup_type != c["setup_type"]:
             return False
         if c.get("min_agree") and num_agree < c["min_agree"]:
+            return False
+        if "confidence_min" in c and confidence < c["confidence_min"]:
+            return False
+        if "confidence_max" in c and confidence > c["confidence_max"]:
             return False
         return True
 
@@ -226,7 +230,8 @@ class GraduatedRulesEngine:
 
         for rule in self._rules:
             if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side,
-                                                    strategy=strategy, setup_type=setup_type, num_agree=num_agree):
+                                                    strategy=strategy, setup_type=setup_type,
+                                                    num_agree=num_agree, confidence=confidence):
                 continue
             rule.times_applied += 1
             rule.last_applied = time.time()

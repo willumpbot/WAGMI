@@ -13,8 +13,8 @@
       "evidence_ratio": 0.77,
       "total_evidence": 35,
       "created_at": 1777914279.580894,
-      "last_applied": 1777914287.5998454,
-      "times_applied": 1,
+      "last_applied": 1777919250.8790777,
+      "times_applied": 2,
       "times_correct": 0,
       "active": true
     },
@@ -48,8 +48,28 @@
       "evidence_ratio": 0.72,
       "total_evidence": 57,
       "created_at": 1777914279.580894,
-      "last_applied": 1777914287.60102,
-      "times_applied": 1,
+      "last_applied": 1777919250.8793986,
+      "times_applied": 2,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "btc_short_conf70_80_block_v1",
+      "hypothesis_statement": "BTC SHORT at 70-79% confidence is the worst loss bucket (orphan rule analysis, conf=90%). Veto this specific bin.",
+      "action": "veto",
+      "conditions": {
+        "symbol": "BTC",
+        "side": "SELL",
+        "confidence_min": 70.0,
+        "confidence_max": 79.9
+      },
+      "adjustment": 0.0,
+      "confidence": 0.9,
+      "evidence_ratio": 0.9,
+      "total_evidence": 20,
+      "created_at": 1777919234.0,
+      "last_applied": 1777919302.745375,
+      "times_applied": 3,
       "times_correct": 0,
       "active": true
     }

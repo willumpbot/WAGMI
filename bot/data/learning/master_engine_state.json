@@ -1,59 +1,93 @@
 {
-  "last_run": "2026-05-04T17:02:18+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_04_1702",
+  "last_run": "2026-05-04T18:24:31+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_04_1824",
   "subsystems": {
     "auto_fix": {
       "status": "COMPLETE",
-      "fixes_applied": 1,
-      "gates_active": 62,
-      "total_applied_all_time": 12,
+      "fixes_applied": 2,
+      "gates_active": 63,
+      "total_applied_all_time": 14,
       "fixes_this_run": [
-        "GRADUATED_RULES_FILE_CREATED: bot/data/llm/graduated_rules.json created with 3 critical runtime rules (HYPE BUY veto, SOL BUY veto, ILLIQUID penalize -15). HYPE_RULE_NOT_WIRED RESOLVED."
+        "CONFIDENCE_RANGE_ENGINE_EXTENDED: GraduatedRule.matches() now accepts confidence param + checks confidence_min/confidence_max conditions. evaluate_signal() passes confidence to matches(). 5/5 boundary tests pass.",
+        "BTC_SHORT_CONF70_80_BLOCK: btc_short_conf70_80_block_v1 added to data/llm/graduated_rules.json. Conf=90%, 20 evidence. Vetos BTC SELL at 70-79.9% confidence at Gate 1g."
       ],
-      "audit_findings": {
-        "HYPE_RULE_NOT_WIRED": {
+      "corrections_this_run": [
+        "AB_TRACKING_BROKEN (CRITICAL anomaly from daily_synthesis_2026-05-03) IS FALSE. evaluate_active_fixes() in bot/learning/auto_fix_pipeline.py is FULLY IMPLEMENTED (lines 106-243). The code splits trades by ab_gate_hash, computes treatment/control WR, auto-reverts on -3pp delta, promotes on +2pp delta, writes back to graduated_rules.json. The 'TODO stub' finding was incorrect."
+      ],
+      "audit_findings_this_run": {
+        "CONFIDENCE_RANGE_SUPPORT_GAP": {
           "status": "RESOLVED",
-          "root_cause": "data/llm/graduated_rules.json was missing. GraduatedRulesEngine._ensure_loaded() skipped file (does not exist), loaded 0 rules. Gate 1g in signal_pipeline.py wrapped in try/except \u2192 silent no-op. ALL 59 A/B_ACTIVE tracking rules had zero execution enforcement.",
-          "fix": "Created data/llm/graduated_rules.json with 3 evidence-backed rules. Engine now loads and applies them on every signal.",
-          "impact": "HYPE BUY (-7 historical) and SOL BUY (-1 historical) now hard-blocked at Gate 1g. Illiquid regime confidence reduced by 15 points (below 60% floor for most signals)."
+          "root_cause": "GraduatedRule.matches() had no confidence_min/confidence_max condition support. BTC_SHORT_CONF70_80_BLOCK and similar confidence-bin rules could not be enforced at runtime even if added to graduated_rules.json.",
+          "fix": "Added confidence param to matches(), added confidence_min/max condition checks. Two-line extension, fully backward compatible.",
+          "impact": "BTC SHORT at 70-79.9% confidence now vetoed at Gate 1g. This was the worst loss bucket per orphan rule analysis (conf=90%)."
+        },
+        "AB_TRACKING_BROKEN": {
+          "status": "FALSE_ALARM_CORRECTED",
+          "previous_finding": "daily_synthesis_2026-05-03 flagged evaluate_active_fixes() as TODO stub",
+          "reality": "Function is fully implemented. Reads graduated_rules.json A/B_ACTIVE rules, splits trades by ab_gate_hash, computes treatment_wr vs control_wr, auto-reverts at -3pp, promotes at +2pp. Awaiting live trade data to run — not a code bug."
         }
+      },
+      "night_session_block": {
+        "status": "DEFERRED_ENGINE_EXTENSION_NEEDED",
+        "finding": "NIGHT_SESSION_ESCALATE (conf=88%, 19% WR on 27 trades, -$136.83) cannot be added to data/llm/graduated_rules.json yet. The engine and signal_pipeline.py don't pass hour_utc to evaluate_signal(). Requires: (1) add hour_utc_min/hour_utc_max to matches(), (2) pass datetime.utcnow().hour in signal_pipeline Gate 1g call.",
+        "priority": "HIGH — implement next run if bot still offline, or before restart"
       }
     },
     "execution_forensics": {
-      "status": "SKIP \u2014 no trades.csv (bot offline 258h)",
+      "status": "SKIP — no trades.csv (bot offline 270h)",
       "avg_slippage": "UNKNOWN (bot offline)",
-      "noise_stop_problem": "71.9% illiquid-regime stops hit in noise (57 historical \u2014 unchanged)",
-      "slippage_gap": "RESOLVED in prior run \u2014 snapshot_entry added to trade_ledger.py schema",
-      "partial_fills": "UNKNOWN \u2014 fill_status column still missing from trade_ledger",
-      "next_action": "Restart bot to generate live slippage data"
+      "noise_stop_problem": "71.9% illiquid-regime stops hit in noise (57 historical — unchanged)",
+      "structural_gaps": [
+        "SLIPPAGE_TRACKING_GAP: no snapshot_entry column in trade_ledger schema",
+        "PARTIAL_FILL_GAP: no fill_status column"
+      ],
+      "unchanged_from_last_run": true
     },
     "live_injection": {
-      "status": "SKIP \u2014 no new trade data (bot offline 258h)",
+      "status": "SKIP — no new trade data (bot offline 270h)",
       "data_currency": "Historical (last updated 2026-05-03T20:12:47)",
       "high_edges_found": 1,
       "weak_setups_found": 3,
       "top_edge": "ETH_SHORT+trending = ~80% WR (5 live trades)",
-      "top_killer": "HYPE_LONG 23% WR -7.26 | SOL_LONG 24% WR -1.89",
-      "unchanged_from_last_run": true,
-      "note": "Top killers now runtime-blocked via graduated_rules.json (this run fix)"
+      "top_killers_now_blocked": "HYPE_LONG (23% WR, -$77.26) and SOL_LONG (24% WR, -$21.89) — hard-blocked via graduated_rules.json",
+      "new_block_added_this_run": "BTC_SHORT at 70-79.9% confidence — worst loss bucket now blocked",
+      "unchanged_from_last_run": true
     },
     "daily_synthesis": {
-      "status": "PARTIAL \u2014 no new trades today",
+      "status": "PARTIAL — no new trades today",
       "report_generated": false,
       "anomalies_found": 2,
       "anomalies": [
-        "CONSECUTIVE_LOSSES (4 trailing \u2014 circuit breaker at threshold)",
-        "BOT_OFFLINE (258h \u2014 10.75 days offline)"
+        {
+          "type": "CONSECUTIVE_LOSSES",
+          "severity": "CRITICAL",
+          "value": 4,
+          "threshold": 5,
+          "finding": "4 consecutive losses — 1 away from circuit breaker",
+          "recommendation": "Soft-start: 50% size, max 3x leverage for first 5 trades until 2 wins"
+        },
+        {
+          "type": "BOT_OFFLINE",
+          "severity": "CRITICAL",
+          "value": "11.25 days",
+          "finding": "Bot offline since 2026-04-23 22:17 UTC — 0 trades in 11.25 days",
+          "recommendation": "Restart with soft-start protocol"
+        }
+      ],
+      "false_alarm_corrections": [
+        "AB_TRACKING_BROKEN: was CRITICAL, is now FALSE — evaluate_active_fixes() is implemented"
       ],
       "new_today": [
-        "GRADUATED_RULES_WIRING_GAP resolved \u2014 3 rules now active at runtime"
+        "GraduatedRulesEngine.matches() extended with confidence_min/confidence_max support",
+        "BTC_SHORT_CONF70_80_BLOCK added as 4th runtime rule in data/llm/graduated_rules.json",
+        "btc_short_conf70_80_block_v1 verified: 5/5 boundary tests pass"
       ],
-      "bot_status": "OFFLINE \u2014 restart required before trades flow"
+      "bot_status": "OFFLINE — restart required"
     },
     "model_optimization": {
-      "status": "SKIP \u2014 no cost_tracker.json",
+      "status": "SKIP — no cost_tracker.json",
       "swaps_recommended": 0,
-      "potential_savings": "/bin/bash.00",
+      "potential_savings": "$0.00",
       "note": "cost_tracker.json generated after first API calls post-restart"
     }
   },
@@ -61,57 +95,72 @@
     {
       "subsystem": "auto_fix",
       "severity": "RESOLVED_THIS_RUN",
-      "finding": "HYPE_RULE_NOT_WIRED: data/llm/graduated_rules.json was MISSING. GraduatedRulesEngine loaded 0 rules silently. All 59 A/B tracking rules had no execution enforcement. Gate 1g was a no-op.",
-      "action": "DONE. Created graduated_rules.json with 3 critical rules (HYPE BUY veto, SOL BUY veto, illiquid -15). Verified with evaluate_signal() test. Historical PnL protected: HYPE_LONG (-7) + SOL_LONG (-1) now blocked.",
-      "estimated_impact": "+.46/trade avg saved by blocking two -EV setups (69 total trades at -9.15 net PnL)"
+      "finding": "CONFIDENCE_RANGE_SUPPORT_GAP: GraduatedRulesEngine could not enforce confidence-bin rules. BTC_SHORT worst-loss bucket was unblocked.",
+      "action": "DONE. Engine extended + btc_short_conf70_80_block_v1 active. 5/5 boundary tests pass.",
+      "estimated_impact": "Eliminates BTC SHORT 70-79% trades — historically the worst loss bucket per orphan rule analysis (conf=90%)"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "CORRECTION",
+      "finding": "AB_TRACKING_BROKEN was a false CRITICAL alarm. evaluate_active_fixes() is fully implemented in bot/learning/auto_fix_pipeline.py:106-243.",
+      "action": "CORRECTED in state files. No code action needed. Awaiting live trades to run."
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot offline 258h (10.75 days). 4 trailing consecutive losses. Circuit breaker 1 loss from threshold. 59 A/B rules frozen waiting for live data.",
-      "action": "PENDING_USER_ACTION: Bot restart required. Use RESTART_SOFT_START_4LOSS protocol: 50% sizing, max 3x leverage for first 5 trades until 2 wins achieved.",
+      "finding": "Bot offline 270h (11.25 days). 4 trailing consecutive losses. Circuit breaker 1 loss from threshold. 63 A/B rules frozen waiting for live data.",
+      "action": "PENDING_USER_ACTION: Bot restart required. Use RESTART_SOFT_START_4LOSS protocol: 50% sizing, max 3x leverage for first 5 trades until 2 wins.",
       "pre_restart_checklist": [
         "1. Verify RESTART_SOFT_START_4LOSS is active in signal_pipeline.py",
-        "2. Verify graduated_rules.json rules fire in rejection_tracker on first HYPE BUY or SOL BUY signal",
-        "3. Monitor regime classifier output \u2014 confirm trending vs illiquid correctly identified",
-        "4. Check that AB_RESULT_TRACKER (evaluate_active_fixes) runs after each 20-trade batch"
+        "2. Verify btc_short_conf70_80_block_v1 fires in rejection_tracker on BTC SELL 70-79% signals",
+        "3. Verify hype_long_veto_v1 and sol_long_veto_v1 still fire",
+        "4. Monitor regime classifier output — confirm trending vs illiquid correctly identified",
+        "5. Check that evaluate_active_fixes() runs after each 20-trade batch"
       ]
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "8 PENDING_HUMAN_REVIEW items outstanding, including F1_sniper (highest $ lever: restored alpha +28 if re-enabled safely), RULE_CONFLICT_SOL_SHORT, and RULE_CONFLICT_LONG_BIAS.",
-      "action": "PENDING_HUMAN_DECISION: Sniper re-enable requires end-to-end leverage cap verification."
+      "finding": "NIGHT_SESSION_ESCALATE (conf=88%, 19% WR on 27 trades, -$136.83) still not blocked at runtime. Engine needs hour_utc_min/max support in matches() + signal_pipeline hour_utc passthrough.",
+      "action": "PENDING_IMPLEMENTATION: Add to GraduatedRulesEngine and signal_pipeline.py. Small 2-file change."
     },
     {
-      "subsystem": "live_injection",
-      "severity": "MEDIUM",
-      "finding": "EXIT_PROACTIVE_CLOSE_PRIORITY (conf=93%) still TRACKED_PENDING_IMPLEMENTATION. 93.3% SL hits potentially preventable (,140 recoverable on 134-trade sample). No code wiring yet.",
-      "action": "Implement exit agent prompt addition: close if hold_time < 2h AND distance_to_sl < 30% in non-trending regimes."
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "EXIT_PROACTIVE_CLOSE_PRIORITY (conf=93%) still TRACKED_PENDING_IMPLEMENTATION. 93.3% SL hits potentially preventable ($1,140 recoverable on 134-trade sample).",
+      "action": "PENDING_CODE_WIRING: Add exit agent prompt addition: close if hold_time < 2h AND distance_to_sl < 30% in non-trending regimes."
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "PENDING_HUMAN_REVIEW",
+      "finding": "8 items still pending human decision: F1_sniper (highest $ lever: +$328 restored alpha), RULE_CONFLICT_SOL_SHORT, RULE_CONFLICT_LONG_BIAS, LLM_REGIME_CAPTURE_GAP (conf=99%), BTC_TOTAL_CONCENTRATION (conf=99%), HIGH_CONF_CALIBRATION_DRIFT, BTC_CONCENTRATION_MONITOR, BOT_INACTIVE_ALERT.",
+      "action": "PENDING_HUMAN_DECISION"
     }
   ],
   "run_delta_from_prior": {
     "new_this_run": [
-      "HYPE_RULE_NOT_WIRED confirmed CRITICAL and RESOLVED \u2014 graduated_rules.json created",
-      "GraduatedRulesEngine now loads 3 active rules (was 0 since file was missing)",
-      "HYPE BUY + SOL BUY are now hard-blocked at signal pipeline Gate 1g",
-      "Illiquid regime confidence now -15 at Gate 1g (drops most signals below 60% floor)",
-      "Total applied rules: 11 \u2192 12"
+      "GraduatedRule.matches() extended with confidence_min/confidence_max — 5/5 boundary tests pass",
+      "btc_short_conf70_80_block_v1 added to data/llm/graduated_rules.json (4th runtime rule)",
+      "AB_TRACKING_BROKEN false alarm corrected — evaluate_active_fixes() is implemented",
+      "Total runtime rules: 3 → 4",
+      "Total applied all time: 12 → 14"
     ],
     "still_outstanding": [
-      "Bot offline \u2014 restart required (user action)",
-      "59 A/B rules awaiting live trade data",
-      "RULE_CONFLICT_SOL_SHORT \u2014 awaiting human decision",
-      "F1_sniper \u2014 awaiting human safety review",
-      "EXIT_PROACTIVE_CLOSE_PRIORITY \u2014 code implementation needed",
-      "fill_status column still missing from trade_ledger (partial fill tracking)"
+      "Bot offline — restart required (user action)",
+      "63 A/B rules awaiting live trade data",
+      "NIGHT_SESSION_BLOCK — needs hour_utc support in engine (2-file change)",
+      "EXIT_PROACTIVE_CLOSE_PRIORITY — code wiring needed in exit agent prompt",
+      "RULE_CONFLICT_SOL_SHORT — awaiting human decision",
+      "F1_sniper — awaiting human safety review",
+      "fill_status column missing from trade_ledger",
+      "snapshot_entry column missing (slippage tracking)"
     ]
   },
   "next_run_focus": [
-    "If bot restarted: verify HYPE/SOL BUY vetoes fire in rejection_tracker.json",
-    "If bot restarted: first 20 trades per group trigger evaluate_active_fixes()",
-    "EXIT_PROACTIVE_CLOSE_PRIORITY: implement in agents/prompts.py EXIT_PROMPT",
-    "RULE_CONFLICT_LONG_BIAS: recommend user decision to suspend LONG filter",
+    "If bot still offline: implement hour_utc_min/max in GraduatedRulesEngine + add NIGHT_SESSION_BLOCK rule",
+    "If bot still offline: implement EXIT_PROACTIVE_CLOSE_PRIORITY in agents/prompts.py EXIT_PROMPT",
+    "If bot restarted: verify all 4 graduated rules fire in rejection_tracker.json on first signals",
+    "If bot restarted: first 20 trades per A/B cohort trigger evaluate_active_fixes()",
     "EOD run: full daily synthesis at >= 22:00 UTC if bot has trades"
   ]
 }

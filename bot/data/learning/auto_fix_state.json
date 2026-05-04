@@ -1,8 +1,8 @@
 {
-  "last_run": "2026-05-04T17:02:18+00:00",
-  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_04_1702",
-  "fixes_applied_this_run": 1,
-  "gates_active": 62,
+  "last_run": "2026-05-04T18:24:31+00:00",
+  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_04_1824",
+  "fixes_applied_this_run": 2,
+  "gates_active": 63,
   "applied_this_run": [
     {
       "rule_id": "GRADUATED_RULES_FILE_CREATED",
@@ -36,7 +36,7 @@
   ],
   "ab_rules_awaiting_live_data": 59,
   "ab_rules_with_measurement": 1,
-  "total_applied_all_time": 12,
+  "total_applied_all_time": 14,
   "runtime_rules_now_active": 3,
   "next_run_priority": "Bot restart required. On restart: verify HYPE BUY/SOL BUY veto fires in rejection_tracker.json within first 10 signals."
 }
