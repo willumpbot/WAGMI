@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-05-03T21:08:36.791828Z",
+  "last_updated": "2026-05-04T00:00:00+00:00",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -1389,14 +1389,16 @@
       "problem": "Every forensics run reports avg_slippage=UNKNOWN because snapshot_entry (price at signal time) is never recorded. Without it, we cannot distinguish bad fills from bad signals \u2014 a foundational gap for improving entry quality.",
       "fix_applied": "PENDING_IMPLEMENTATION: Add snapshot_entry column to CSV logger",
       "action": "bot/core/csv_logger.py: add 'snapshot_entry' field to trade row at signal time. bot/core/signal_pipeline.py: pass snapshot_price into logger at gating time.",
-      "status": "PENDING_IMPLEMENTATION",
+      "status": "APPLIED",
       "confidence": 100,
-      "gate_percentage": 0,
+      "gate_percentage": 100,
       "applied_date": "2026-04-29",
       "urgency": "MEDIUM",
       "expected_impact": "Unlocks slippage forensics: ability to quantify execution quality vs signal quality, potentially identifying $5-15/trade slippage component in losses",
       "_merged_from_orphan": true,
-      "_merged_at": "2026-05-03T20:12:47+00:00"
+      "_merged_at": "2026-05-03T20:12:47+00:00",
+      "applied_at": "2026-05-04T00:00:00+00:00",
+      "proposed_fix": "Added snapshot_entry to LEDGER_COLUMNS in trade_ledger.py and to record_trade() call in multi_strategy_main.py:3317"
     },
     {
       "rule_id": "HYPE_RULE_NOT_WIRED",
@@ -1425,16 +1427,18 @@
       "description": "CRITICAL IMPLEMENTATION GAP: No code exists to close the A/B feedback loop. Without this, 38 active gates produce zero learning signal regardless of how long bot runs.",
       "problem": "All treatment_wr values in graduated_rules.json are null. Rules cannot graduate or be rejected by evidence because trade outcomes are never matched back to their A/B cohort assignment.",
       "proposed_implementation": "In bot/feedback/loop.py post-trade hook: (1) On trade OPEN: check each A/B_ACTIVE rule, assign cohort (treatment vs control) via hash(trade_id, rule_id) % 100 < gate_percentage, tag trade with active cohorts. (2) On trade CLOSE: read trade tags, update treatment_wr per rule via running average. (3) If treatment_wr - baseline_wr > 0.05 and n >= min_sample_to_graduate: auto-graduate rule to full gate.",
-      "status": "PENDING_IMPLEMENTATION",
+      "status": "APPLIED",
       "confidence": 100,
-      "gate_percentage": 0,
+      "gate_percentage": 100,
       "applied_date": "2026-04-26",
       "urgency": "CRITICAL",
       "priority": "P0",
       "implementation_target": "bot/feedback/loop.py \u2014 post_trade_open_hook + post_trade_close_hook",
       "expected_impact": "Enables ALL 38 A/B rules to graduate or be rejected. Converts learning system from theoretical to empirical.",
       "_merged_from_orphan": true,
-      "_merged_at": "2026-05-03T20:12:47+00:00"
+      "_merged_at": "2026-05-03T20:12:47+00:00",
+      "applied_at": "2026-05-03T21:08:49+00:00",
+      "proposed_fix": "evaluate_active_fixes() implemented in auto_fix_pipeline - full A/B split logic with auto-revert (-3pp) and promote (+2pp) thresholds"
     },
     {
       "rule_id": "NIGHT_SESSION_ESCALATE",

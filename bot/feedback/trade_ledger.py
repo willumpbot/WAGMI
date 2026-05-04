@@ -41,6 +41,7 @@ LEDGER_COLUMNS = [
     "hold_hours",
     "exit_type",
     "entry_price",
+    "snapshot_entry",
     "exit_price",
     "gross_pnl",
     "fees",

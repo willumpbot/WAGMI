@@ -1,27 +1,27 @@
 {
-  "last_run": "2026-05-03T20:12:47+00:00",
-  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_03",
-  "fixes_applied_this_run": 12,
-  "gates_active": 54,
-  "orphans_merged_this_run": [
-    "EXIT_PROACTIVE_CLOSE_PRIORITY",
-    "BTC_SHORT_CONF70_80_BLOCK",
-    "SLIPPAGE_TRACKING_GAP",
-    "HYPE_RULE_NOT_WIRED",
-    "AB_RESULT_TRACKER_CODE",
-    "NIGHT_SESSION_ESCALATE",
-    "CONF_70_HARD_FLOOR",
-    "SOL_STOP_MIN_0.9PCT"
+  "last_run": "2026-05-04T00:00:00+00:00",
+  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_04",
+  "fixes_applied_this_run": 2,
+  "gates_active": 59,
+  "applied_this_run": [
+    {
+      "rule_id": "SLIPPAGE_TRACKING_GAP",
+      "description": "Added snapshot_entry to LEDGER_COLUMNS in trade_ledger.py and to record_trade() call in multi_strategy_main.py:3317. Slippage now measurable from next bot restart.",
+      "confidence": 100,
+      "gate_percentage": 100,
+      "files_changed": [
+        "bot/feedback/trade_ledger.py",
+        "bot/multi_strategy_main.py"
+      ]
+    },
+    {
+      "rule_id": "AB_RESULT_TRACKER_CODE",
+      "description": "evaluate_active_fixes() was implemented in prior run (2026-05-03). Status updated to APPLIED. Will auto-evaluate once 20+ trades per A/B group arrive.",
+      "confidence": 100,
+      "gate_percentage": 100,
+      "files_changed": []
+    }
   ],
-  "new_rules_this_run": [
-    "RULE_CONFLICT_SOL_SHORT",
-    "RULE_CONFLICT_LONG_BIAS",
-    "ORPHAN_MERGE_AUDIT_2026_05_03"
-  ],
-  "gate_escalations_this_run": [
-    "RESTART_SOFT_START_4LOSS: 20%\u219280%"
-  ],
-  "critical_gap": "evaluate_active_fixes() is a TODO stub \u2014 treatment_wr never written for any A/B rule",
   "pending_human_review": [
     "F1_sniper_pending_safety_review",
     "HIGH_CONF_CALIBRATION_DRIFT",
@@ -29,6 +29,11 @@
     "LLM_REGIME_CAPTURE_GAP",
     "BTC_TOTAL_CONCENTRATION",
     "RULE_CONFLICT_SOL_SHORT",
-    "RULE_CONFLICT_LONG_BIAS"
-  ]
+    "RULE_CONFLICT_LONG_BIAS",
+    "BOT_INACTIVE_ALERT"
+  ],
+  "ab_rules_awaiting_live_data": 59,
+  "ab_rules_with_measurement": 1,
+  "total_applied_all_time": 11,
+  "next_run_priority": "Bot restart prerequisite \u2014 all remaining A/B tests frozen. evaluate_active_fixes() will run on first 20+ trades."
 }
