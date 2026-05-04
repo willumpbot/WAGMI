@@ -1796,23 +1796,16 @@ class EnsembleStrategy:
         # Block known-losing combos (backtest-validated toxic combinations).
         # Only block when 3+ strategies agree and the toxic pair is a subset —
         # if the toxic pair are the ONLY voters, blocking guarantees zero trades.
-        # EXCEPTION: HYPE BUY is an empirically validated A+ setup (89% WR, 201 tests).
-        # Toxic combos that were measured on aggregate data may not apply to HYPE BUY.
+        # NOTE: HYPE BUY exemption removed (F8, 2026-05-04): counterfactual 89% WR
+        # was contradicted by 35 live trades showing 23% WR, -$77.26. HYPE BUY is
+        # now vetoed at Gate 1g (graduated_rules.json: hype_long_veto_v1).
         _LOSING_COMBOS = {
             # CS+MTQ REMOVED from global blacklist: +$55 on BTC/ETH (60% WR, best combo).
             # Original PF 0.08 was from HYPE data only. LLM can judge per-trade.
             frozenset({"regime_trend", "vmc_cipher"}),                          # PF 0.39, 29% WR — consistently losing
             frozenset({"probability_engine", "regime_trend"}),                  # PF 0.0, 0% WR in multiple runs
         }
-        # Proven setups exempt from losing combo blocks — their empirical WR
-        # overrides aggregate PF data measured across all symbols/sides.
         _base_sym_lc = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
-        _buy_side = any(s.side == "BUY" for s in buy_signals) if buy_signals else False
-        _PROVEN_SETUP_EXEMPT = {
-            # HYPE BUY: 89% WR (178/201 counterfactual tests) — do not block
-            ("HYPE", "BUY"),
-        }
-        _is_proven_setup = (_base_sym_lc, "BUY") in _PROVEN_SETUP_EXEMPT and _buy_side
         for side_signals in [buy_signals, sell_signals]:
             if len(side_signals) >= 2:
                 signal_names = frozenset(s.strategy for s in side_signals)
@@ -1822,13 +1815,6 @@ class EnsembleStrategy:
                     # EV gate which will properly evaluate. Blocking exact-match pairs
                     # guarantees zero trades in consolidation where only 2 strategies fire.
                     if blocked.issubset(signal_names) and signal_names != blocked:
-                        # Skip blocking for proven setups
-                        if _is_proven_setup and side_signals[0].side == "BUY":
-                            logger.info(
-                                f"[{symbol}] Proven setup override: {_base_sym_lc} BUY "
-                                f"bypasses losing combo {sorted(blocked)} (89% empirical WR)"
-                            )
-                            continue
                         logger.info(
                             f"[{symbol}] Blocked losing combo {sorted(blocked)} "
                             f"in {sorted(signal_names)}"

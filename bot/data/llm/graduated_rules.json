@@ -13,8 +13,117 @@
       "evidence_ratio": 0.75,
       "total_evidence": 15,
       "created_at": 1777922205.1402397,
-      "last_applied": 0.0,
-      "times_applied": 0,
+      "last_applied": 1777926052.3788192,
+      "times_applied": 1,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "hype_long_veto_v1",
+      "hypothesis_statement": "HYPE BUY is a net-negative setup: 23% WR on 35 live trades, -$77.26 total loss",
+      "action": "veto",
+      "conditions": {
+        "symbol": "HYPE",
+        "side": "BUY"
+      },
+      "adjustment": 0.0,
+      "confidence": 0.88,
+      "evidence_ratio": 0.23,
+      "total_evidence": 35,
+      "created_at": 1746382701.0,
+      "last_applied": 1777926052.3763394,
+      "times_applied": 1,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "sol_long_veto_v1",
+      "hypothesis_statement": "SOL BUY is a net-negative setup: 24% WR on 34 live trades, -$21.89 total loss",
+      "action": "veto",
+      "conditions": {
+        "symbol": "SOL",
+        "side": "BUY"
+      },
+      "adjustment": 0.0,
+      "confidence": 0.85,
+      "evidence_ratio": 0.24,
+      "total_evidence": 34,
+      "created_at": 1746382701.0,
+      "last_applied": 1777926052.377478,
+      "times_applied": 1,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "night_session_block_v1",
+      "hypothesis_statement": "Night session 00:00-06:00 UTC yields only 19% WR on 27 live trades, -$136.83 total loss",
+      "action": "veto",
+      "conditions": {
+        "hour_utc_min": 0,
+        "hour_utc_max": 6
+      },
+      "adjustment": 0.0,
+      "confidence": 0.88,
+      "evidence_ratio": 0.19,
+      "total_evidence": 27,
+      "created_at": 1746382701.0,
+      "last_applied": 1777926052.3780913,
+      "times_applied": 3,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "illiquid_regime_penalize_v1",
+      "hypothesis_statement": "Illiquid regime yields only 28% WR on 57 trades with 71.9% noise-stop rate",
+      "action": "penalize",
+      "conditions": {
+        "regime": "illiquid"
+      },
+      "adjustment": -15.0,
+      "confidence": 0.78,
+      "evidence_ratio": 0.28,
+      "total_evidence": 57,
+      "created_at": 1746382701.0,
+      "last_applied": 1777926052.3784072,
+      "times_applied": 1,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "hype_short_veto_v1",
+      "hypothesis_statement": "HYPE SELL is net-negative EV: -$16.65 per trade on 239 live trades",
+      "action": "veto",
+      "conditions": {
+        "symbol": "HYPE",
+        "side": "SELL"
+      },
+      "adjustment": 0.0,
+      "confidence": 0.87,
+      "evidence_ratio": 0.0,
+      "total_evidence": 239,
+      "created_at": 1746382701.0,
+      "last_applied": 1777926052.3792222,
+      "times_applied": 1,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "btc_short_conf70_80_penalize_v1",
+      "hypothesis_statement": "BTC SELL at 70-79% confidence is the single largest loss bucket across all setups",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "BTC",
+        "side": "SELL",
+        "confidence_min": 70.0,
+        "confidence_max": 80.0
+      },
+      "adjustment": -20.0,
+      "confidence": 0.9,
+      "evidence_ratio": 0.0,
+      "total_evidence": 40,
+      "created_at": 1746382701.0,
+      "last_applied": 1777926052.3788273,
+      "times_applied": 1,
       "times_correct": 0,
       "active": true
     }

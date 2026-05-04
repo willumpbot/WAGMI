@@ -1,29 +1,23 @@
 {
-  "last_run": "2026-05-04T19:18:21.452169+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_04_1918",
+  "last_run": "2026-05-04T20:31:00+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_04_2031",
   "subsystems": {
     "auto_fix": {
       "status": "COMPLETE",
-      "fixes_applied": 3,
-      "gates_active": 5,
-      "total_applied_all_time": 17,
+      "fixes_applied": 2,
+      "gates_active": 7,
+      "total_applied_all_time": 19,
       "fixes_this_run": [
-        "NIGHT_SESSION_BLOCK: night_session_block_v1 added to graduated_rules.json. Vetoes ALL signals 00:00-06:00 UTC. 19% WR on 27 live trades (-$136.83). 11/11 boundary tests pass.",
-        "HOUR_UTC_ENGINE_EXTENSION: GraduatedRule.matches() now accepts hour_utc param + checks hour_utc_min/hour_utc_max conditions.",
-        "EXIT_PROACTIVE_CLOSE_PRIORITY: EXIT_AGENT_PROMPT updated with PROACTIVE SL PREVENTION section. Instructs agent to close proactively when hold<2h + dist_to_sl<30% + non-trending regime."
+        "RUNTIME_RULES_SYNC_v2: Discovered prior runs only wrote to feedback/graduated_rules.json audit log — never to data/llm/graduated_rules.json runtime file. Engine was loading 1 rule. Added 6 missing vetoes/penalties: hype_long_veto_v1, sol_long_veto_v1, night_session_block_v1, illiquid_regime_penalize_v1, hype_short_veto_v1, btc_short_conf70_80_penalize_v1. All 7 verified via evaluate_signal().",
+        "F8_LOG_STRING_FIX: Removed _PROVEN_SETUP_EXEMPT from ensemble.py. HYPE BUY 89% counterfactual WR was contradicted by 35 live trades (23% WR, -$77.26). Cleaned orphaned proven-setup override block. Syntax verified."
       ],
-      "files_changed": [
-        "bot/llm/graduated_rules.py (matches() + evaluate_signal() extended)",
-        "bot/core/signal_pipeline.py (Gate 1g: hour_utc passthrough)",
-        "bot/data/llm/graduated_rules.json (night_session_block_v1 added as rule #5)",
-        "bot/llm/agents/prompts.py (EXIT_AGENT_PROMPT proactive close section)"
-      ],
-      "test_results": "11/11 boundary tests pass (night session block all correct). 22/22 GraduatedRulesEngine unit tests pass. 66/66 graduated_risk tests pass."
+      "verification": "GraduatedRulesEngine: 7 loaded, 7 active. HYPE BUY->VETO, SOL BUY->VETO, night 3am->VETO, illiquid -15 conf, BTC SELL 74%->-12 net, ETH SELL trend 78%->pass, HYPE SELL->VETO. ast.parse(ensemble.py) OK.",
+      "gap_discovered": "State files (auto_fix_state.json, master_engine_state.json) in prior runs listed rules as 'APPLIED' when they were only written to feedback/ audit log, not the runtime data/llm/ file. Runtime engine had 1 rule while state said 5. Fixed."
     },
     "execution_forensics": {
-      "status": "SKIP - no trades.csv (bot offline 516h now)",
+      "status": "SKIP - no trades.csv (bot offline 262h)",
       "avg_slippage": "UNKNOWN (bot offline)",
-      "noise_stop_problem": "71.9% illiquid-regime stops hit in noise (57 historical \u2014 unchanged)",
+      "noise_stop_problem": "71.9% illiquid-regime stops hit in noise (57 historical — unchanged)",
       "structural_gaps": [
         "SLIPPAGE_TRACKING_GAP: no snapshot_entry column in trade_ledger schema",
         "PARTIAL_FILL_GAP: no fill_status column"
@@ -33,40 +27,29 @@
     "live_injection": {
       "status": "CACHED - no new trades (bot offline)",
       "data_as_of": "2026-05-03T20:12:47+00:00",
+      "hours_stale": 24,
       "high_edges_found": 1,
       "weak_setups_found": 3,
       "top_edge": "ETH_SHORT+trending+morning = ~80%+ WR (5 live trades)",
-      "top_killers_blocked": [
-        "HYPE_LONG (23% WR)",
-        "SOL_LONG (24% WR)",
-        "BTC_SHORT_conf70_80"
+      "blocked_setups": [
+        "HYPE_LONG (23% WR) — now VETOED at Gate 1g",
+        "SOL_LONG (24% WR) — now VETOED at Gate 1g",
+        "HYPE_SHORT (-$16.65/trade) — now VETOED at Gate 1g",
+        "night_session_00_06UTC (19% WR) — now VETOED at Gate 1g"
       ],
-      "new_block_this_run": "night_session_00_06UTC: all signals (19% WR, 27 trades, -$136.83)"
+      "new_this_run": "4 of the 6 runtime vetoes added this run correspond to live injection weak setups. Injection now has enforcement teeth."
     },
     "daily_synthesis": {
       "status": "COMPLETE",
       "report_generated": true,
       "report_file": "data/sessions/daily_synthesis_2026-05-04.json",
-      "anomalies_found": 4,
+      "anomalies_found": 5,
       "anomalies": [
-        {
-          "type": "BOT_OFFLINE",
-          "severity": "CRITICAL",
-          "hours": 509.2
-        },
-        {
-          "type": "TRAILING_LOSS_STREAK",
-          "severity": "HIGH",
-          "value": 4
-        },
-        {
-          "type": "NIGHT_SESSION_BLOCK_IMPLEMENTED",
-          "severity": "INFO"
-        },
-        {
-          "type": "EXIT_PROACTIVE_CLOSE_WIRED",
-          "severity": "INFO"
-        }
+        {"type": "BOT_OFFLINE", "severity": "CRITICAL", "value": "10.9 days"},
+        {"type": "CONSECUTIVE_LOSSES", "severity": "CRITICAL", "value": 4},
+        {"type": "GRADUATED_RULES_GAP_DISCOVERED", "severity": "HIGH", "status": "RESOLVED_THIS_RUN"},
+        {"type": "STALE_WR_CLAIM_FIXED", "severity": "MEDIUM", "status": "RESOLVED_THIS_RUN"},
+        {"type": "AB_TRACKING_BROKEN", "severity": "CRITICAL", "value": "0/59 rules measured"}
       ]
     },
     "model_optimization": {
@@ -78,62 +61,64 @@
   "high_priority_findings": [
     {
       "subsystem": "auto_fix",
-      "severity": "RESOLVED_THIS_RUN",
-      "finding": "NIGHT_SESSION_BLOCK: 00:00-06:00 UTC signals now blocked at Gate 1g. 19% WR on 27 live trades (-$136.83) \u2014 worst time window fully blocked.",
-      "action": "DONE. night_session_block_v1 active. 11/11 tests pass.",
-      "estimated_impact": "Eliminates -$136.83 / 27-trade loss cluster. At historical 3 trades/night: ~$15/night saved."
+      "severity": "CRITICAL_RESOLVED",
+      "finding": "RUNTIME RULES GAP: data/llm/graduated_rules.json had 1 rule (BTC trend boost) while state files claimed 5+ rules applied. All prior-run HYPE/SOL vetoes, night session block, illiquid penalty were SILENT NO-OPS. Engine was effectively unprotected.",
+      "action": "DONE. 6 missing rules written to runtime file, all verified firing correctly. Total runtime rules: 1 -> 7.",
+      "estimated_impact": "On bot restart: HYPE BUY/SELL vetoed, SOL BUY vetoed, night session blocked (eliminates -$136.83 loss cluster), illiquid -15 conf, BTC SHORT 70-79% -20 conf. Eliminates bot's worst 4 loss clusters collectively."
     },
     {
       "subsystem": "auto_fix",
-      "severity": "RESOLVED_THIS_RUN",
-      "finding": "EXIT_PROACTIVE_CLOSE_PRIORITY: Exit agent now explicitly instructed to close proactively when hold<2h + dist_to_sl<30% in non-trending regimes.",
-      "action": "DONE. EXIT_AGENT_PROMPT updated. Active on next bot restart.",
-      "estimated_impact": "Up to 93.3% of SL hits preventable (~$1,140 on 134-trade sample). Conservative: expect 20-30% reduction in SL losses."
+      "severity": "HIGH_RESOLVED",
+      "finding": "F8: ensemble.py _PROVEN_SETUP_EXEMPT exempted HYPE BUY from losing combo blocks based on 89% counterfactual WR. Live data: 23% WR, -$77.26. Misleading logs said '89% empirical WR' every session.",
+      "action": "DONE. _PROVEN_SETUP_EXEMPT removed. HYPE BUY vetoed upstream at Gate 1g before reaching ensemble.",
+      "estimated_impact": "Removes false exemption that bypassed regime_trend+vmc_cipher combo block for HYPE BUY."
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot offline 509h (21+ days since 2026-04-23). 4 trailing consecutive losses. Circuit breaker engaged. 5 graduated rules now ready.",
-      "action": "PENDING_USER_ACTION: Restart bot with SOFT_START_4LOSS protocol.",
+      "finding": "Bot offline 10.9 days (262h). 7 graduated rules verified and ready. AB_TRACKING_BROKEN: 59 rules with null treatment_wr will never graduate without implementing evaluate_active_fixes().",
+      "action": "PENDING_USER_ACTION: Restart bot with soft-start protocol.",
       "pre_restart_checklist": [
-        "1. Verify night_session_block_v1 fires (test signal at hour 02 UTC)",
-        "2. Verify all 5 graduated rules load in Engine on startup",
-        "3. Confirm SOFT_START: 50% size, max 3x leverage for first 5 trades",
-        "4. Monitor rejection_tracker.json for new veto categories",
-        "5. First 20 trades trigger evaluate_active_fixes() check"
+        "1. python -c 'from llm.graduated_rules import get_graduated_rules_engine; e=get_graduated_rules_engine(); print(e.get_stats())' — confirm 7 active rules",
+        "2. Start: python run.py paper (soft-start auto-triggers at 4 trailing losses)",
+        "3. Within first 10 signals, check rejection_tracker.json for night/HYPE/SOL vetoes",
+        "4. Implement AB_RESULT_TRACKER_CODE in feedback/loop.py — 59 rules frozen without it"
       ]
     },
     {
       "subsystem": "auto_fix",
       "severity": "PENDING_HUMAN_REVIEW",
-      "finding": "8 items still pending human decision: F1_sniper (highest $ lever: +$328 restored alpha), RULE_CONFLICT_SOL_SHORT, RULE_CONFLICT_LONG_BIAS, LLM_REGIME_CAPTURE_GAP, BTC_TOTAL_CONCENTRATION, HIGH_CONF_CALIBRATION_DRIFT, BTC_CONCENTRATION_MONITOR, BOT_INACTIVE_ALERT.",
+      "finding": "8 items still pending human decision: F1_sniper (+$328 restored alpha), RULE_CONFLICT_SOL_SHORT, RULE_CONFLICT_LONG_BIAS, LLM_REGIME_CAPTURE_GAP, BTC_TOTAL_CONCENTRATION, HIGH_CONF_CALIBRATION_DRIFT, BTC_CONCENTRATION_MONITOR, BOT_INACTIVE_ALERT.",
       "action": "PENDING_HUMAN_DECISION"
     }
   ],
   "run_delta_from_prior": {
     "new_this_run": [
-      "night_session_block_v1 added to graduated_rules.json (5th runtime rule)",
-      "GraduatedRule.matches() extended with hour_utc_min/hour_utc_max \u2014 11/11 boundary tests pass",
-      "GraduatedRulesEngine.evaluate_signal() extended with hour_utc param wired to signal_pipeline Gate 1g",
-      "EXIT_AGENT_PROMPT: PROACTIVE SL PREVENTION section added (93.3% SL prevention potential)",
-      "Total runtime rules: 4 \u2192 5",
-      "Total applied all time: 14 \u2192 17",
-      "daily_synthesis_2026-05-04.json generated"
+      "hype_long_veto_v1 added to data/llm/graduated_rules.json (VERIFIED: HYPE BUY->VETO)",
+      "sol_long_veto_v1 added (VERIFIED: SOL BUY->VETO)",
+      "night_session_block_v1 added (VERIFIED: 3am UTC ETH->VETO)",
+      "illiquid_regime_penalize_v1 added (VERIFIED: illiquid 72%->57%)",
+      "hype_short_veto_v1 added (VERIFIED: HYPE SELL->VETO)",
+      "btc_short_conf70_80_penalize_v1 added (VERIFIED: BTC SELL 74%->54% after boost)",
+      "_PROVEN_SETUP_EXEMPT removed from ensemble.py (F8, syntax OK)",
+      "daily_synthesis_2026-05-04.json generated (5 anomalies, 2 resolved)",
+      "Total runtime rules: 1 -> 7",
+      "Total applied all time: 17 -> 19"
     ],
     "still_outstanding": [
-      "Bot offline \u2014 restart required (user action)",
-      "63 A/B rules awaiting live trade data",
-      "F1_sniper \u2014 awaiting human safety review (highest $ lever)",
-      "RULE_CONFLICT_SOL_SHORT \u2014 awaiting human decision",
+      "Bot offline — restart required (user action)",
+      "59 A/B rules awaiting live trade data",
+      "F1_sniper — awaiting human safety review (highest $ lever)",
+      "AB_RESULT_TRACKER_CODE — evaluate_active_fixes() is TODO stub",
       "fill_status column missing from trade_ledger",
       "snapshot_entry column missing (slippage tracking)"
     ]
   },
   "next_run_focus": [
-    "If bot still offline: check F1_sniper safety requirements (cap verification at execution time)",
-    "If bot still offline: audit calibration_offset deadlock (Finding 2: cap at \u00b13 in parameter_tuner.py)",
-    "If bot restarted: verify all 5 graduated rules fire in rejection_tracker.json within first 10 signals",
-    "If bot restarted: first 20 trades per A/B cohort trigger evaluate_active_fixes()",
-    "Check proven-setup table fix (Finding 11): SOL_SELL_regime_trend 0% WR \u2014 rebuild as 3-tuple"
+    "If bot still offline: no new actions available (no trade data to analyze)",
+    "If bot restarted: verify all 7 graduated rules fire in rejection_tracker.json within first 10 signals",
+    "If bot restarted: first 20 trades trigger evaluate_active_fixes() check",
+    "Implement AB_RESULT_TRACKER_CODE (feedback/loop.py) — 59 rules frozen without it",
+    "Resolve RULE_CONFLICT_SOL_SHORT — two contradictory SOL SHORT rules in graduated_rules.json"
   ]
 }
