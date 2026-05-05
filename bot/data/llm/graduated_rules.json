@@ -126,6 +126,27 @@
       "times_applied": 1,
       "times_correct": 0,
       "active": true
+    },
+    {
+      "rule_id": "conf_floor_70_v1",
+      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes.",
+      "action": "penalize",
+      "conditions": {
+        "confidence_min": 60.0,
+        "confidence_max": 70.0
+      },
+      "adjustment": -20.0,
+      "confidence": 0.87,
+      "evidence_ratio": 0.463,
+      "total_evidence": 123,
+      "created_at": 1746547200.0,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "_source": "CONF_70_HARD_FLOOR (A/B conf=87%, 123 trades confirmed, escalated 30%->50% gate on 2026-05-02). Promoted to runtime 2026-05-05. Supersedes CONF_60_70_floor_raise + CONF_60_70_all_block.",
+      "_gate_percentage": 20,
+      "_ab_cohort_start": "2026-05-05T00:00:00Z"
     }
   ]
 }

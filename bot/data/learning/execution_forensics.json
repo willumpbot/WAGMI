@@ -1,7 +1,7 @@
 {
-  "last_run": "2026-05-03T20:12:47+00:00",
+  "last_run": "2026-05-05T18:16:13.524576+00:00",
   "data_available": false,
-  "data_gap_reason": "trades.csv empty (headers only) \u2014 bot offline since 2026-04-23 22:17 UTC (10.0 days now)",
+  "data_gap_reason": "trades.csv empty (headers only) \u2014 bot offline 284.0h (11.8 days)",
   "avg_slippage": "UNKNOWN \u2014 no live trade data",
   "noise_stop_problem": "71.9% of illiquid-regime stops hit in noise (historical: 57 trades)",
   "regime_analysis": {
@@ -43,5 +43,12 @@
       "confidence": 90
     }
   ],
-  "action_required": "Restart bot + add snapshot_entry column to trade logging for slippage measurement"
+  "action_required": "Restart bot + add snapshot_entry column to trade logging for slippage measurement",
+  "unchanged_from_last_run": true,
+  "new_finding_this_run": {
+    "type": "FALSE_FINDING_CORRECTION",
+    "finding": "evaluate_active_fixes() IS implemented at bot/learning/auto_fix_pipeline.py:106. Daily synthesis 2026-05-03 incorrectly flagged this as a TODO stub. Verified: full A/B split logic present, wired via FeedbackLoop.auto_fix=AutoFixPipeline.",
+    "impact": "60 A/B rules can graduate on next bot restart + 20 trades. No code fix needed.",
+    "severity": "RESOLVED"
+  }
 }

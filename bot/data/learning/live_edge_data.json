@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-05-03T20:12:47+00:00",
+  "last_run": "2026-05-05T18:16:13.524576+00:00",
   "data_source": "Historical accumulated (352 resolved trades) + orphan rule analysis \u2014 no live trades since 2026-04-23",
   "note": "Edge data is historical. Restart bot to refresh.",
   "high_edges": [
@@ -84,9 +84,12 @@
     "time_filter": "Prefer 06:00-12:00 UTC (morning edge confirmed 71-75% WR)",
     "new_block_conf_range": "BTC_SHORT at 70-79% confidence \u2014 avoid or reduce to 50% size",
     "night_session_block": "00:00-06:00 UTC fully blocked (19% WR, 27 trades, -$136.83)",
-    "early_close_priority": "Exit agent should proactively close before SL in 93% of cases"
+    "early_close_priority": "Exit agent should proactively close before SL in 93% of cases",
+    "new_conf_filter": "conf_floor_70_v1 active in runtime: 60-70% conf signals penalized -20pts. Effective minimum bar is now ~70%+ for any signal to pass."
   },
   "high_edges_found": 1,
   "weak_setups_found": 3,
-  "new_insights_found": 3
+  "new_insights_found": 3,
+  "hours_stale": 46.0,
+  "new_this_run": "No new edges (bot offline 11.8d). conf_floor_70 promotion reinforces HIGH_CONF edge: remaining signals after floor raise expected to have higher avg WR."
 }

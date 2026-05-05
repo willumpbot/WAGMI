@@ -1,30 +1,20 @@
 {
-  "last_run": "2026-05-04T20:31:00+00:00",
+  "last_run": "2026-05-05T18:15:55.654013+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_04_2031",
-  "fixes_applied_this_run": 2,
-  "gates_active": 7,
+  "fixes_applied_this_run": 1,
+  "gates_active": 8,
   "applied_this_run": [
     {
-      "rule_id": "RUNTIME_RULES_SYNC_v2",
-      "description": "CRITICAL FIX: Prior runs claimed to add 6 rules to data/llm/graduated_rules.json but file only had 1 rule (BTC trend boost). Wrote 6 missing high-confidence vetoes/penalties: hype_long_veto_v1 (HYPE BUY, 88%), sol_long_veto_v1 (SOL BUY, 85%), night_session_block_v1 (00-06 UTC, 88%), illiquid_regime_penalize_v1 (-15 conf, 78%), hype_short_veto_v1 (HYPE SELL, 87%), btc_short_conf70_80_penalize_v1 (BTC SELL 70-79% conf, 90%). Total runtime rules: 1 -> 7.",
-      "confidence": 99,
-      "gate_percentage": 100,
+      "rule_id": "CONF_FLOOR_70_RUNTIME",
+      "description": "Promoted CONF_70_HARD_FLOOR to runtime graduated_rules.json. Penalizes all 60-70% confidence signals by -20 points. Evidence: 123 trades at 46.3% WR, -$2321 PnL \u2014 worst confidence bin across all symbols/regimes. Supersedes overlapping CONF_60_70_floor_raise + CONF_60_70_all_block A/B rules.",
+      "confidence": 87,
+      "gate_percentage": 20,
       "files_changed": [
         "bot/data/llm/graduated_rules.json"
       ],
       "verified": true,
-      "verification": "GraduatedRulesEngine loaded 7 rules, 7 active. Tests: HYPE BUY->VETO, SOL BUY->VETO, night 3am->VETO, illiquid -15 conf, BTC SELL 74% -> -12 net, ETH SELL trend 78% -> pass, HYPE SELL->VETO. All 7 correct."
-    },
-    {
-      "rule_id": "F8_LOG_STRING_FIX",
-      "description": "Removed HYPE BUY from _PROVEN_SETUP_EXEMPT in ensemble.py. The 89% WR counterfactual claim was contradicted by 35 live trades showing 23% WR, -$77.26. HYPE BUY is now vetoed at Gate 1g (graduated_rules.json: hype_long_veto_v1). Cleaned up orphaned proven-setup override block. ensemble.py syntax verified clean.",
-      "confidence": 88,
-      "gate_percentage": 100,
-      "files_changed": [
-        "bot/strategies/ensemble.py (lines 1796-1826)"
-      ],
-      "verified": true,
-      "verification": "ast.parse(ensemble.py) OK. HYPE BUY is now correctly blocked at Gate 1g before reaching ensemble, making _PROVEN_SETUP_EXEMPT dead code. Removed cleanly."
+      "verification": "8 rules in data/llm/graduated_rules.json. conf_floor_70_v1 added: penalize -20 for confidence_min=60 confidence_max=70.",
+      "applied_at": "2026-05-05T18:15:55.654013+00:00"
     }
   ],
   "audit_resolution": {
@@ -53,8 +43,15 @@
   ],
   "ab_rules_awaiting_live_data": 59,
   "ab_rules_with_measurement": 0,
-  "total_applied_all_time": 19,
-  "runtime_rules_now_active": 7,
+  "total_applied_all_time": 20,
+  "runtime_rules_now_active": 8,
   "gap_discovered_this_run": "Prior runs wrote 'applied' claims to feedback/graduated_rules.json audit log but never wrote to data/llm/graduated_rules.json runtime file. State files were aspirational, not actual. Fixed this run.",
-  "next_run_priority": "Bot restart required. On restart: verify all 7 graduated rules fire in rejection_tracker.json within first 10 signals. Then monitor night_session_block_v1 (expected: veto all 00-06 UTC signals)."
+  "next_run_priority": "Bot restart required. On restart: verify all 7 graduated rules fire in rejection_tracker.json within first 10 signals. Then monitor night_session_block_v1 (expected: veto all 00-06 UTC signals).",
+  "corrections_this_run": [
+    {
+      "corrects": "daily_synthesis_2026-05-03.json anomaly: 'evaluate_active_fixes() is TODO'",
+      "actual_status": "IMPLEMENTED \u2014 evaluate_active_fixes() exists at bot/learning/auto_fix_pipeline.py:106. Full A/B split logic with revert/promote thresholds. Wired via FeedbackLoop.auto_fix (AutoFixPipeline). The May 3 synthesis was wrong.",
+      "impact": "No code change needed. 60 A/B rules WILL graduate once bot restarts and generates 20+ trades."
+    }
+  ]
 }
