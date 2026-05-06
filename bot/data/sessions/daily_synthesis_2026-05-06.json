@@ -1,0 +1,121 @@
+{
+  "date": "2026-05-06",
+  "generated_at": "2026-05-06T19:11:19Z",
+  "generation_note": "Written by perpetual_deep_dive run at 19:11 UTC. Prior run at 18:07 UTC claimed this file was generated but it did not exist — FALSE_REPORT_GAP corrected this run.",
+  "bot_status": "OFFLINE",
+  "offline_duration_hours": 308.9,
+  "offline_since": "2026-04-23T22:17:00Z",
+  "offline_days": 12.9,
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "equity": 497.05,
+  "peak_equity": 508.06,
+  "dd_from_peak_pct": 2.17,
+  "dd_from_start_pct": 90.06,
+  "recent_20_wr": 0.35,
+  "historical_core_wr": 0.376,
+  "trailing_loss_streak": 4,
+  "runtime_rules_active": 8,
+  "ab_rules_frozen": 60,
+  "anomalies": [
+    {
+      "type": "BOT_OFFLINE",
+      "severity": "CRITICAL",
+      "value": "12.9 days (308.9h)",
+      "finding": "Bot offline since 2026-04-23 22:17 UTC — 0 trades in 12.9 days. All 60 A/B rules frozen. 8 runtime rules unevaluated.",
+      "recommendation": "Restart bot immediately: cd bot && python run.py paper. Apply soft-start protocol."
+    },
+    {
+      "type": "FALSE_REPORT_GAP",
+      "severity": "HIGH",
+      "value": "daily_synthesis_2026-05-06.json",
+      "finding": "Prior run at 18:07 UTC wrote master_engine_state.json with report_generated=true and report_path pointing to this file, but the file did not exist. State file claimed completion of an unexecuted write operation.",
+      "recommendation": "Audit all prior master_engine_state.json 'report_generated' claims. This run corrects the gap by actually writing the file.",
+      "root_cause": "Prior run wrote synthesis data into master_engine_state.json daily_synthesis section but failed to open/write the standalone synthesis JSON file. State tracking and actual writes were desynchronized."
+    },
+    {
+      "type": "CONSECUTIVE_LOSSES",
+      "severity": "HIGH",
+      "value": 4,
+      "threshold": 5,
+      "finding": "4 consecutive losses at time of going offline — circuit breaker threshold is 5. System at risk of triggering breaker on first trade.",
+      "recommendation": "Soft-start protocol: first 5 trades at 50% size, max 3x leverage, until 2 wins achieved."
+    },
+    {
+      "type": "RULE_OUTCOME_FEEDBACK_GAP",
+      "severity": "MEDIUM",
+      "value": "7/8 rules, 0 correct outcomes logged",
+      "finding": "All 8 runtime rules in data/llm/graduated_rules.json have times_correct=0. Cannot distinguish 'no closed trades yet' from 'callback not wired'. If times_correct stays 0 after bot restarts and closes trades, rules engine has no accuracy signal and cannot self-calibrate.",
+      "recommendation": "After restart: monitor graduated_rules.json after first closed trade. Expect times_correct to increment. If not, the outcome callback is missing."
+    },
+    {
+      "type": "AB_RULES_AWAITING_DATA",
+      "severity": "MEDIUM",
+      "value": 60,
+      "finding": "60 A/B rules in feedback/graduated_rules.json frozen with no treatment_wr data. All evaluations stalled since bot went offline.",
+      "recommendation": "On restart, evaluate_active_fixes() at FeedbackLoop.auto_fix should begin measuring treatment vs control WR. Verify at trade #20."
+    },
+    {
+      "type": "LLM_REGIME_CAPTURE_GAP",
+      "severity": "HIGH",
+      "value": "llm_regime column empty in 965 trades",
+      "finding": "All regime-based A/B rules are unmeasurable because llm_regime is never written to trades.csv. 12 regime-based AB rules have treatment_wr=null and cannot graduate.",
+      "recommendation": "PENDING_HUMAN_REVIEW: Wire llm_regime from agent Regime output into trade_log write path."
+    }
+  ],
+  "anomaly_count": 6,
+  "circuit_breaker_state": "NEAR_THRESHOLD (4/5 consecutive losses, soft-start required)",
+  "graduated_rules_status": {
+    "total_active": 8,
+    "rules": [
+      {"id": "hype_long_veto_v1", "times_applied": 1, "times_correct": 0},
+      {"id": "hype_short_veto_v1", "times_applied": 1, "times_correct": 0},
+      {"id": "sol_long_veto_v1", "times_applied": 1, "times_correct": 0},
+      {"id": "night_session_block_v1", "times_applied": 3, "times_correct": 0},
+      {"id": "illiquid_regime_penalize_v1", "times_applied": 1, "times_correct": 0},
+      {"id": "btc_short_conf70_80_penalize_v1", "times_applied": 1, "times_correct": 0},
+      {"id": "conf_floor_70_v1", "times_applied": 0, "times_correct": 0},
+      {"id": "rule_1777922205_0", "times_applied": 1, "times_correct": 0}
+    ],
+    "outcome_feedback_status": "UNVERIFIED — all times_correct=0"
+  },
+  "tomorrows_focus": {
+    "priority_symbols": ["ETH", "BTC"],
+    "priority_regimes": ["trending"],
+    "avoid_symbols": ["SOL", "HYPE"],
+    "avoid_regimes": ["illiquid", "ranging"],
+    "priority_time_window": "06:00-12:00 UTC (morning session, 71-75% WR confirmed)",
+    "restart_protocol": "Soft-start: max 3x leverage, 50% position size for first 5 trades until 2 consecutive wins",
+    "critical_verify": [
+      "Confirm night_session_block_v1 vetoes all 00-06 UTC signals",
+      "Confirm hype_long_veto_v1 and hype_short_veto_v1 fire on HYPE signals",
+      "Confirm sol_long_veto_v1 fires on SOL BUY signals",
+      "Monitor times_correct in graduated_rules.json after first closed trade",
+      "Watch evaluate_active_fixes() at trade #20 — should report evaluated>=1"
+    ]
+  },
+  "pending_human_decisions": [
+    {
+      "item": "RULE_CONFLICT_SOL_SHORT",
+      "description": "sol_short_regime_trend_block makes reversal probe ungatherable. Cannot auto-resolve.",
+      "confidence": 92
+    },
+    {
+      "item": "RULE_CONFLICT_LONG_BIAS",
+      "description": "SIDE_BIAS_LONG_filter and SIDE_BIAS_LONG_SUSPENSION cancel each other at 80% gate each.",
+      "confidence": 85
+    },
+    {
+      "item": "BTC_STOP_0.8PCT_CODE",
+      "description": "signal_pipeline.py: add BTC-specific 0.8% minimum stop width gate. Code change requires human safety review per execution-safety.md.",
+      "confidence": 80,
+      "file": "bot/core/signal_pipeline.py:265"
+    },
+    {
+      "item": "LLM_REGIME_CAPTURE_GAP",
+      "description": "llm_regime column empty in trades.csv — 12 regime A/B rules unmeasurable.",
+      "confidence": 99
+    }
+  ],
+  "report_generated": true
+}

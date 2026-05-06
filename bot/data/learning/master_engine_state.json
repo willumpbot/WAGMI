@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-05-06T18:07:41Z",
-  "run_id": "perpetual_deep_dive_2026_05_06_1807",
+  "last_run": "2026-05-06T19:11:19Z",
+  "run_id": "perpetual_deep_dive_2026_05_06_1911",
   "subsystems": {
     "auto_fix": {
       "status": "COMPLETE",
@@ -8,21 +8,28 @@
       "gates_active": 8,
       "total_applied_all_time": 24,
       "notes": [
-        "All 8 rules verified active in data/llm/graduated_rules.json",
-        "2 rule candidates evaluated: sol_short_regime_trend_block (BLOCKED: human conflict decision pending), ranging_regime_penalize (BELOW_THRESHOLD: conf=72%, n=16)",
-        "NEW FINDING: 7/8 rules show times_correct=0 after application \u2014 outcome feedback path unverified (expected while bot offline, but must verify on restart)",
-        "Code change BTC_STOP_0.8PCT still pending human review (signal_pipeline.py:265)"
+        "83 candidates evaluated: 60 A/B_ACTIVE (frozen, bot offline), 8 PENDING_HUMAN_REVIEW, 1 ESCALATION (BTC stop code change), 1 TRACKING, 1 CRITICAL_ALERT",
+        "No net-new actionable items vs 18:07 run. All constraints unchanged.",
+        "BTC_STOP_0.8PCT_CODE still pending human safety review (signal_pipeline.py:265)",
+        "RULE_CONFLICT_SOL_SHORT and RULE_CONFLICT_LONG_BIAS still pending human decision",
+        "outcome feedback path (times_correct) still unverified — requires bot restart + closed trade"
       ]
     },
     "execution_forensics": {
-      "status": "SKIP - no trades.csv data (bot offline 12.7d, 289.7h)",
+      "status": "SKIP - no trades.csv data (bot offline 308.9h, 12.9d)",
       "avg_slippage": "UNKNOWN (bot offline)",
-      "noise_stop_problem": "71.9% illiquid-regime stops hit in noise (57 historical \u2014 unchanged)",
-      "offline_hours": 289.7,
-      "unchanged_from_last_run": true
+      "noise_stop_problem": "71.9% illiquid-regime stops hit in noise (57 historical — unchanged)",
+      "offline_hours": 308.9,
+      "offline_days": 12.9,
+      "delta_from_prior_run": "+19.2h since 18:07 run",
+      "unchanged_from_last_run": true,
+      "structural_gaps_open": [
+        "SLIPPAGE_TRACKING_GAP: no snapshot_entry column in trades.csv",
+        "NO_LIVE_FILL_DATA: fill_status column missing"
+      ]
     },
     "live_injection": {
-      "status": "CACHED - no new trades (bot offline 12.7d)",
+      "status": "CACHED - no new trades (bot offline 12.9d)",
       "high_edges_found": 1,
       "weak_setups_found": 3,
       "top_edge": "ETH_SHORT+trending+morning = ~80% WR (5 live trades)",
@@ -30,26 +37,38 @@
         "HYPE_LONG (23% WR)",
         "SOL_LONG (24% WR)",
         "HYPE_SHORT (-6.65/trade)",
-        "night_session_00_06UTC (19% WR, -36.83)"
+        "night_session_00_06UTC (19% WR, -$136.83)"
       ],
-      "conf_filter_active": "conf_floor_70_v1: 60-70% signals penalized -20 \u2192 effective bar ~70%+",
-      "hours_stale": 23.9
+      "conf_filter_active": "conf_floor_70_v1: 60-70% signals penalized -20 → effective bar ~70%+",
+      "hours_stale": 25.0,
+      "unchanged_from_last_run": true
     },
     "daily_synthesis": {
       "status": "COMPLETE",
       "report_generated": true,
-      "anomalies_found": 5,
-      "new_anomaly_this_run": "RULE_OUTCOME_FEEDBACK_GAP: 7/8 graduated rules have times_correct=0 \u2014 verify callback wiring on restart",
+      "report_path": "bot/data/sessions/daily_synthesis_2026-05-06.json",
+      "anomalies_found": 6,
+      "new_anomaly_this_run": "FALSE_REPORT_GAP: prior run at 18:07 claimed synthesis was generated but file did not exist. Corrected this run by actually writing the file.",
       "anomalies": [
         {
           "type": "BOT_OFFLINE",
           "severity": "CRITICAL",
-          "value": "12.7 days"
+          "value": "12.9 days (308.9h)"
+        },
+        {
+          "type": "FALSE_REPORT_GAP",
+          "severity": "HIGH",
+          "value": "daily_synthesis_2026-05-06.json was missing despite master_engine claiming report_generated=true"
         },
         {
           "type": "CONSECUTIVE_LOSSES",
           "severity": "HIGH",
           "value": 4
+        },
+        {
+          "type": "LLM_REGIME_CAPTURE_GAP",
+          "severity": "HIGH",
+          "value": "llm_regime empty in 965 trades — 12 regime A/B rules unmeasurable"
         },
         {
           "type": "RULE_OUTCOME_FEEDBACK_GAP",
@@ -60,47 +79,49 @@
           "type": "AB_RULES_AWAITING_DATA",
           "severity": "MEDIUM",
           "value": 60
-        },
-        {
-          "type": "RULE_CONFLICT_SOL_SHORT",
-          "severity": "HIGH"
         }
-      ],
-      "report_path": "bot/data/sessions/daily_synthesis_2026-05-06.json"
+      ]
     },
     "model_optimization": {
       "status": "SKIP - no cost_tracker.json",
       "swaps_recommended": 0,
       "potential_savings": "$0.00",
-      "note": "cost_tracker.json not present \u2014 evaluate once bot generates it on restart"
+      "note": "cost_tracker.json not present — evaluate once bot generates it on restart"
     }
   },
   "high_priority_findings": [
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot offline 12.7 days (289.7h). 8 runtime rules unevaluated. 60 A/B rules frozen. Equity $497 (90% DD from start). Every hour offline is lost learning signal.",
+      "finding": "Bot offline 12.9 days (308.9h). 8 runtime rules unevaluated. 60 A/B rules frozen. Equity $497 (90% DD from start). Every hour offline is lost learning signal.",
       "action": "PENDING_USER_ACTION: cd bot && python run.py paper",
       "pre_restart_checklist": [
         "Soft-start auto-applies: 50% size, 3x max leverage for first 5 trades",
         "Confirm [GRAD-RULES] Evaluating... in logs within first 5 signals",
         "Confirm night_session_block_v1 rejects all 00-06 UTC signals",
         "Confirm HYPE/SOL vetoes fire in rejection_tracker.json",
-        "Watch AB eval log at trade #20 \u2014 evaluate_active_fixes() should report evaluated>=1",
-        "CRITICAL NEW: Verify times_correct in graduated_rules.json increments after trade closes"
+        "Watch AB eval log at trade #20 — evaluate_active_fixes() should report evaluated>=1",
+        "CRITICAL: Verify times_correct in graduated_rules.json increments after trade closes"
       ]
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "MEDIUM",
-      "finding": "RULE_OUTCOME_FEEDBACK_GAP: GraduatedRulesEngine applied 7 rules (1-3x each) but times_correct is 0 for all. Cannot determine if this is correct (no closed trades) or a wiring gap (callback not hooked up). If times_correct stays 0 after bot restarts and trades close, the rules engine has no accuracy signal and will never self-calibrate.",
-      "action": "VERIFY_ON_RESTART: grep logs for outcome-update calls from GraduatedRulesEngine. Expected behavior: after trade closes, rule that fired should get outcome=win/loss recorded.",
-      "check_file": "bot/data/llm/graduated_rules.json \u2014 monitor times_correct after first closed trade"
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "HIGH",
-      "finding": "RULE_CONFLICT_SOL_SHORT + RULE_CONFLICT_LONG_BIAS: Two strategic conflicts pending human decision. Cannot auto-resolve \u2014 requires user choice.",
+      "finding": "FALSE_REPORT_GAP: Prior run at 18:07 UTC wrote master_engine_state.json claiming report_generated=true with a valid report_path, but the file daily_synthesis_2026-05-06.json did not exist on disk. State tracking and actual file writes were desynchronized. This run corrects the gap.",
+      "action": "CORRECTED_THIS_RUN: File now written to bot/data/sessions/daily_synthesis_2026-05-06.json",
+      "lesson": "master_engine_state writes and session file writes must be atomic — if session file write fails, report_generated must be false"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "MEDIUM",
+      "finding": "RULE_OUTCOME_FEEDBACK_GAP: GraduatedRulesEngine applied 7 rules (1-3x each) but times_correct=0 for all. Cannot verify callback wiring without live closed trades.",
+      "action": "VERIFY_ON_RESTART: grep logs for outcome-update calls from GraduatedRulesEngine after first trade closes",
+      "check_file": "bot/data/llm/graduated_rules.json — monitor times_correct after first closed trade"
+    },
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "HIGH",
+      "finding": "RULE_CONFLICT_SOL_SHORT + RULE_CONFLICT_LONG_BIAS: Two strategic conflicts pending human decision. Cannot auto-resolve.",
       "action": "PENDING_HUMAN_DECISION"
     },
     {
@@ -112,27 +133,30 @@
     }
   ],
   "run_delta_from_prior": {
+    "prior_run": "2026-05-06T18:07:41Z",
+    "hours_elapsed": 1.1,
     "new_this_run": [
-      "RULE_OUTCOME_FEEDBACK_GAP detected: 7/8 rules have times_correct=0 \u2014 outcome callback path unverified",
-      "Daily synthesis 2026-05-06 generated (first since May 3)",
-      "Bot offline escalated: 12.7d (was 12.0d last run)"
+      "FALSE_REPORT_GAP detected and corrected: daily_synthesis_2026-05-06.json now actually exists (prior run claimed it but never wrote it)",
+      "Bot offline escalated: 308.9h (12.9d) vs 289.7h at prior run (+19.2h)",
+      "live_edge_data hours_stale updated: 25.0h (was 23.9h)"
     ],
     "still_outstanding": [
-      "Bot offline 12.7d \u2014 restart required (user action)",
+      "Bot offline 12.9d — restart required (user action)",
       "60 A/B rules awaiting live trade data",
-      "F1_sniper \u2014 awaiting human safety review (highest $ lever)",
-      "RULE_CONFLICT_SOL_SHORT \u2014 awaiting human decision",
-      "RULE_CONFLICT_LONG_BIAS \u2014 awaiting human decision",
-      "cost_tracker.json missing \u2014 Model Optimization subsystem blocked",
-      "BTC_STOP_0.8PCT_CODE \u2014 signal_pipeline.py code change pending human review",
+      "F1_sniper — awaiting human safety review (highest $ lever)",
+      "RULE_CONFLICT_SOL_SHORT — awaiting human decision",
+      "RULE_CONFLICT_LONG_BIAS — awaiting human decision",
+      "LLM_REGIME_CAPTURE_GAP — llm_regime column empty in trades.csv, 12 regime rules unmeasurable",
+      "cost_tracker.json missing — Model Optimization subsystem blocked",
+      "BTC_STOP_0.8PCT_CODE — signal_pipeline.py code change pending human review",
       "snapshot_entry column missing from trade_log (slippage tracking gap)"
     ]
   },
   "next_run_focus": [
-    "If bot STILL offline: subsystems 2/3/5 will SKIP again",
+    "If bot STILL offline: subsystems 2/3/5 will SKIP again, report escalating offline_hours",
     "If bot restarted: confirm 8 runtime rules fire in rejection_tracker.json",
-    "If bot restarted: CRITICAL \u2014 verify times_correct increments in graduated_rules.json after trade closes",
-    "If bot restarted: watch AB eval at trade #20 \u2014 evaluate_active_fixes() should fire",
+    "If bot restarted: CRITICAL — verify times_correct increments in graduated_rules.json after trade closes",
+    "If bot restarted: watch AB eval at trade #20 — evaluate_active_fixes() should fire",
     "If trades > 5: refresh live_edge_data.json with new WR data"
   ]
 }
