@@ -1,41 +1,41 @@
 {
   "symbol": "BTC",
-  "updated_at": "2026-05-06T17:14:28.740965+00:00",
-  "price": 81638.5,
+  "updated_at": "2026-05-06T17:17:05.203952+00:00",
+  "price": 81416.5,
   "levels": {
     "symbol": "BTC",
-    "ts": "2026-05-06T17:14:16.734444+00:00",
-    "price": 81638.5,
+    "ts": "2026-05-06T17:16:51.565541+00:00",
+    "price": 81416.5,
     "daily": {
-      "ema20": 77443.43947628675,
-      "ema50": 76156.52510498119,
-      "slope_pct": 2.894561042135837,
-      "rsi14": 65.68407848759071,
+      "ema20": 77425.24900009627,
+      "ema50": 76144.20252433603,
+      "slope_pct": 2.870392422102641,
+      "rsi14": 65.0865998176846,
       "atr14": 1890.5,
       "hi60d": 82799.0,
       "lo60d": 64904.0,
       "trend": "UP"
     },
     "h4": {
-      "ema20": 80601.57918329284,
-      "ema50": 79218.10822181201,
-      "rsi14": 71.11306128418897,
+      "ema20": 80582.91251662617,
+      "ema50": 79210.42194730221,
+      "rsi14": 69.13123844731977,
       "atr14": 985.5714285714286,
       "hi20": 82799.0,
       "lo20": 78156.0
     },
     "h1": {
-      "ema20": 81597.68213607157,
-      "ema50": 81053.57241526752,
-      "rsi14": 51.53353555780249,
-      "atr14": 458.2142857142857,
+      "ema20": 81577.30118369062,
+      "ema50": 81045.18025840478,
+      "rsi14": 48.009064422143084,
+      "atr14": 464.14285714285717,
       "hi20": 82799.0,
       "lo20": 80711.0,
-      "vol_ratio": 0.5423594272880107
+      "vol_ratio": 0.5535169983518435
     },
     "m5": {
-      "rsi14": 46.840659340659336,
-      "atr14": 125.0
+      "rsi14": 27.141133896260556,
+      "atr14": 130.28571428571428
     }
   },
   "factors": {
@@ -43,48 +43,48 @@
     "btc_4h_aligned_long": true,
     "chop_score": 0.22,
     "chop_ok": true,
-    "rsi_aligned": true,
-    "rsi_bullish_stack": true,
+    "rsi_aligned": false,
+    "rsi_bullish_stack": false,
     "daily_trend_up": true,
-    "conviction_count": 4,
+    "conviction_count": 3,
     "conviction_max": 4,
-    "conviction_wr_est": 61
+    "conviction_wr_est": 50
   },
   "committee": {
     "regime": {
       "ok": false,
       "agent": "regime",
-      "narrative": "Daily trend UP with slope +2.89%/10d and RSI 66. Price +5.42% vs daily EMA20 ($77,443). ATR 2.32% \u2014 extended momentum.",
+      "narrative": "Daily trend UP with slope +2.87%/10d and RSI 65. Price +5.15% vs daily EMA20 ($77,425). ATR 2.32% \u2014 extended momentum.",
       "latency_s": 0,
       "regime_label": "trending_bull",
       "confidence": 70,
       "bias": "bullish",
       "vol_band": "low",
-      "daily_slope_pct": 2.89,
-      "daily_rsi": 66.0,
-      "h1_rsi": 52.0,
-      "vol_ratio_1h": 0.54
+      "daily_slope_pct": 2.87,
+      "daily_rsi": 65.0,
+      "h1_rsi": 48.0,
+      "vol_ratio_1h": 0.55
     },
     "trade": {
       "ok": false,
       "agent": "trade",
-      "narrative": "Bullish bias intact. Long entry near $81,598 (1h EMA20) with stop below $80,711 (1h support). Target $82,799 then $82,799.",
+      "narrative": "Bullish bias intact. Long entry near $81,577 (1h EMA20) with stop below $80,711 (1h support). Target $82,799 then $82,799.",
       "latency_s": 0,
-      "action": "wait",
-      "confidence": 60,
-      "entry_low": 81434.49,
-      "entry_high": 81760.88,
-      "stop": 80573.54,
+      "action": "go_long",
+      "confidence": 65,
+      "entry_low": 81253.67,
+      "entry_high": 81579.33,
+      "stop": 80571.76,
       "target1": 82799.0,
       "target2": 82799.0,
-      "rr_t1": 1.17,
-      "rr_t2": 1.17,
-      "invalidation": 76156.53
+      "rr_t1": 1.64,
+      "rr_t2": 1.64,
+      "invalidation": 76144.2
     },
     "critic": {
       "ok": false,
       "agent": "critic",
-      "narrative": "Pass \u2014 no trade proposed. Waiting is the right call when confluence is absent.",
+      "narrative": "Primary risks: none major. Size down if any conviction factor missing.",
       "latency_s": 0,
       "vote": "pass",
       "risk_flags": []
@@ -92,14 +92,12 @@
     "risk": {
       "ok": false,
       "agent": "risk",
-      "narrative": "Size 0.0x at 1x leverage. Conviction=1/4 . Max loss 0.0% of equity. Flags: no_trade.",
+      "narrative": "Size 0.5x at 3x leverage. Conviction=1/4 . Max loss 2.0% of equity. Flags: none.",
       "latency_s": 0,
-      "size_multiplier": 0.0,
-      "leverage": 1,
-      "max_loss_pct": 0.0,
-      "risk_flags": [
-        "no_trade"
-      ]
+      "size_multiplier": 0.5,
+      "leverage": 3,
+      "max_loss_pct": 2.0,
+      "risk_flags": []
     },
     "mode": "cli"
   }

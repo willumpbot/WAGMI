@@ -1,93 +1,95 @@
 {
   "symbol": "ETH",
-  "updated_at": "2026-05-06T16:57:11.540858+00:00",
-  "price": 2358.95,
+  "updated_at": "2026-05-06T17:17:55.336888+00:00",
+  "price": 2353.75,
   "levels": {
     "symbol": "ETH",
-    "ts": "2026-05-06T16:56:59.094533+00:00",
-    "price": 2358.95,
+    "ts": "2026-05-06T17:17:42.900770+00:00",
+    "price": 2353.75,
     "daily": {
-      "ema20": 2308.0087963309784,
-      "ema50": 2283.1677220490674,
-      "slope_pct": 0.7237397312727567,
-      "rsi14": 47.94803661056987,
+      "ema20": 2307.465939188121,
+      "ema50": 2282.799980113584,
+      "slope_pct": 0.7000489196712775,
+      "rsi14": 47.154471544715456,
       "atr14": 71.94999999999995,
       "hi60d": 2462.5,
       "lo60d": 1910.0,
       "trend": "UP"
     },
     "h4": {
-      "ema20": 2358.4573168930933,
-      "ema50": 2335.5832941316735,
-      "rsi14": 55.55555555555561,
+      "ema20": 2357.9525549883315,
+      "ema50": 2335.3754509944188,
+      "rsi14": 54.16058394160584,
       "atr14": 35.27857142857147,
       "hi20": 2423.8,
       "lo20": 2308.4
     },
     "h1": {
-      "ema20": 2376.297193280349,
-      "ema50": 2369.2406253502845,
-      "rsi14": 46.24796084828719,
-      "atr14": 19.385714285714357,
+      "ema20": 2373.9712323219096,
+      "ema50": 2368.652197541167,
+      "rsi14": 40.70647603027759,
+      "atr14": 19.071428571428637,
       "hi20": 2423.8,
       "lo20": 2337.9,
-      "vol_ratio": 0.937380120310741
+      "vol_ratio": 0.3563398885234939
     },
     "m5": {
-      "rsi14": 52.42718446601945,
-      "atr14": 4.335714285714305
+      "rsi14": 35.25179856115044,
+      "atr14": 4.314285714285753
     }
   },
   "factors": {
-    "btc_4h_direction": "bullish",
-    "btc_4h_aligned_long": true,
-    "chop_score": 0.23,
+    "btc_4h_direction": "neutral",
+    "btc_4h_aligned_long": false,
+    "chop_score": 0.22,
     "chop_ok": true,
     "rsi_aligned": false,
     "rsi_bullish_stack": false,
     "daily_trend_up": true,
-    "conviction_count": 3,
+    "conviction_count": 2,
     "conviction_max": 4,
-    "conviction_wr_est": 50
+    "conviction_wr_est": 38
   },
   "committee": {
     "regime": {
       "ok": false,
       "agent": "regime",
-      "narrative": "Daily trend UP with slope +0.72%/10d and RSI 48. Price +2.21% vs daily EMA20 ($2,308). ATR 3.05% \u2014 healthy momentum.",
+      "narrative": "Daily trend UP with slope +0.70%/10d and RSI 47. Price +2.01% vs daily EMA20 ($2,307). ATR 3.06% \u2014 healthy momentum.",
       "latency_s": 0,
       "regime_label": "trending_bull",
       "confidence": 70,
       "bias": "bullish",
       "vol_band": "medium",
-      "daily_slope_pct": 0.72,
-      "daily_rsi": 48.0,
-      "h1_rsi": 46.0,
-      "vol_ratio_1h": 0.94
+      "daily_slope_pct": 0.7,
+      "daily_rsi": 47.0,
+      "h1_rsi": 41.0,
+      "vol_ratio_1h": 0.36
     },
     "trade": {
       "ok": false,
       "agent": "trade",
-      "narrative": "Bullish bias intact. Long entry near $2,376 (1h EMA20) with stop below $2,338 (1h support). Target $2,424 then $2,462.",
+      "narrative": "Bullish bias intact. Long entry near $2,374 (1h EMA20) with stop below $2,338 (1h support). Target $2,424 then $2,462.",
       "latency_s": 0,
       "action": "go_long",
       "confidence": 65,
-      "entry_low": 2354.23,
-      "entry_high": 2363.67,
-      "stop": 2332.08,
+      "entry_low": 2349.04,
+      "entry_high": 2358.46,
+      "stop": 2332.18,
       "target1": 2423.8,
       "target2": 2462.5,
-      "rr_t1": 2.41,
-      "rr_t2": 3.85,
-      "invalidation": 2283.17
+      "rr_t1": 3.25,
+      "rr_t2": 5.04,
+      "invalidation": 2282.8
     },
     "critic": {
       "ok": false,
       "agent": "critic",
-      "narrative": "Primary risks: none major. Size down if any conviction factor missing.",
+      "narrative": "Primary risks: thin_volume. Size down if any conviction factor missing.",
       "latency_s": 0,
       "vote": "pass",
-      "risk_flags": []
+      "risk_flags": [
+        "thin_volume"
+      ]
     },
     "risk": {
       "ok": false,

@@ -7576,6 +7576,40 @@
       "category": "trade_outcome",
       "tags": [],
       "source": "consolidation"
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_73 blocked a winning BUY trade on ETH in trend (hypothetical +11.2%). Consider relaxing this filter.",
+      "confidence": 0.612,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_73",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1778087940.658515,
+      "last_validated": 1778087940.6585152,
+      "validation_count": 1,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "counterfactual_evidence",
+      "content": "[FILTER_MISS] confidence_floor_76 blocked a winning BUY trade on ETH in trend (hypothetical +2.6%). Consider relaxing this filter.",
+      "confidence": 0.526,
+      "evidence_count": 1,
+      "category": "execution",
+      "tags": [
+        "confidence_floor_76",
+        "ETH",
+        "BUY"
+      ],
+      "source": "counterfactual_resolution",
+      "created_at": 1778087940.689582,
+      "last_validated": 1778087940.689582,
+      "validation_count": 1,
+      "invalidation_count": 0
     }
   ]
 }
