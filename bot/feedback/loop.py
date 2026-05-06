@@ -37,12 +37,13 @@ Usage in main loop:
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 
 from feedback.adaptive_confidence import AdaptiveConfidenceFloor
 from feedback.continuous_backtest import ContinuousBacktester
 from feedback.parameter_tuner import ParameterTuner
 from feedback.signal_quality import SignalQualityScorer, QualityFeatures
+from learning.auto_fix_pipeline import AutoFixPipeline
 
 logger = logging.getLogger("bot.feedback.loop")
 
@@ -63,12 +64,15 @@ class FeedbackLoop:
         self.backtester = ContinuousBacktester(data_dir=data_dir)
         self.tuner = ParameterTuner(data_dir=data_dir)
         self.quality = SignalQualityScorer(data_dir=data_dir)
+        self.auto_fix = AutoFixPipeline(data_dir="data/learning")
 
         # Tick counter for periodic operations
         self._tick_count = 0
         self._last_tuner_update = 0
         self._trade_count = 0  # Trade counter for fast weight updates
         self._weight_manager = None  # Set externally for fast strategy weight recomputation
+        self._last_ab_eval_trade = 0  # Track trade count at last AB evaluation
+        self._recent_ab_records: List[Dict] = []  # Stable (win, ab_gate_hash) pairs for A/B eval
 
         # AutoOptimizer (optional — requires EvolutionTracker)
         self._auto_optimizer = None
@@ -278,6 +282,25 @@ class FeedbackLoop:
                 self._auto_optimizer.record_trade(pnl, win)
             except Exception as e:
                 logger.debug(f"AutoOptimizer record_trade failed: {e}")
+
+        # 7. A/B fix evaluation: every 20 trades, evaluate active fixes
+        # Maintain a stable ab_gate_hash per trade (hashed from symbol+side+conf+pnl) so
+        # A/B splits are consistent across evaluations rather than index-position-dependent.
+        ab_hash = int(abs(hash((symbol, side, round(confidence), round(abs(pnl) * 1000)))) % 100)
+        self._recent_ab_records.append({"win": win, "ab_gate_hash": ab_hash})
+        if len(self._recent_ab_records) > 100:
+            self._recent_ab_records = self._recent_ab_records[-100:]
+
+        if self._trade_count - self._last_ab_eval_trade >= 20:
+            try:
+                result = self.auto_fix.evaluate_active_fixes(self._recent_ab_records)
+                self._last_ab_eval_trade = self._trade_count
+                logger.info(
+                    f"[FEEDBACK] AB eval: evaluated={result.get('evaluated', 0)} "
+                    f"reverted={result.get('reverted', 0)} promoted={result.get('promoted', 0)}"
+                )
+            except Exception as e:
+                logger.debug(f"AB fix evaluation failed: {e}")
 
         logger.info(
             f"[FEEDBACK] Outcome recorded: {symbol} {side} "

@@ -41,6 +41,7 @@ LEDGER_COLUMNS = [
     "hold_hours",
     "exit_type",
     "entry_price",
+    "snapshot_entry",
     "exit_price",
     "gross_pnl",
     "fees",
@@ -48,6 +49,7 @@ LEDGER_COLUMNS = [
     "net_pnl",
     "running_equity",
     "session_dd_pct",
+    "ab_gate_hash",  # 0-99 stable hash for A/B split (hash of trade_id % 100)
 ]
 
 
@@ -118,6 +120,10 @@ class TradeLedger:
                 row["trade_id"] = uuid.uuid4().hex[:12]
             if not row["timestamp"]:
                 row["timestamp"] = str(time.time())
+
+            # Stable A/B bucket (0-99) derived from trade_id — reproducible per trade
+            if not row["ab_gate_hash"]:
+                row["ab_gate_hash"] = str(int(row["trade_id"], 16) % 100 if all(c in "0123456789abcdef" for c in row["trade_id"]) else hash(row["trade_id"]) % 100)
 
             self._ensure_header()
             try:

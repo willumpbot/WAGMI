@@ -3315,6 +3315,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 "hold_hours": f"{_hold_hours:.2f}",
                                 "exit_type": event.action,
                                 "entry_price": str(pos.entry),
+                                "snapshot_entry": str(pos.entry_reasons.get("snapshot_entry", "")) if pos.entry_reasons else "",
                                 "exit_price": str(event.price),
                                 "gross_pnl": str(round(total_pnl + (pos.fees_paid or 0), 2)),
                                 "fees": str(round(pos.fees_paid or 0, 2)),

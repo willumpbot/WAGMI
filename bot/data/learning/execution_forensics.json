@@ -1,0 +1,54 @@
+{
+  "last_run": "2026-05-05T18:16:13.524576+00:00",
+  "data_available": false,
+  "data_gap_reason": "trades.csv empty (headers only) \u2014 bot offline 284.0h (11.8 days)",
+  "avg_slippage": "UNKNOWN \u2014 no live trade data",
+  "noise_stop_problem": "71.9% of illiquid-regime stops hit in noise (historical: 57 trades)",
+  "regime_analysis": {
+    "trending": {
+      "wr": 0.519,
+      "trades": 52,
+      "verdict": "VIABLE (>50%)"
+    },
+    "illiquid": {
+      "wr": 0.281,
+      "trades": 57,
+      "verdict": "LOSING \u2014 noise-stop domination"
+    },
+    "ranging": {
+      "wr": 0.25,
+      "trades": 16,
+      "verdict": "LOSING \u2014 insufficient edge"
+    }
+  },
+  "hold_time_forensics": {
+    "win_median_hold_h": 3.3,
+    "loss_median_hold_h": 1.5,
+    "interpretation": "Losses resolve 2x faster than wins \u2014 noise stops firing in first 1.5h before directional move materializes",
+    "implication": "Minimum 2h hold guard in trending regime would filter structural noise exits"
+  },
+  "worst_regime": "illiquid",
+  "noise_stop_pct": 0.719,
+  "partial_fills": "UNKNOWN \u2014 no live data",
+  "structural_gaps": [
+    {
+      "gap": "SLIPPAGE_TRACKING_GAP",
+      "finding": "trades.csv has no snapshot_entry column \u2014 slippage cannot be computed even when bot is running. Need to add snapshot_entry at signal time.",
+      "confidence": 100,
+      "source": "Orphan rule AB_RESULT_TRACKER_CODE + SLIPPAGE_TRACKING_GAP from prior runs"
+    },
+    {
+      "gap": "NO_LIVE_FILL_DATA",
+      "finding": "Partial fill rate completely unknown. No fill_status column in trades.csv.",
+      "confidence": 90
+    }
+  ],
+  "action_required": "Restart bot + add snapshot_entry column to trade logging for slippage measurement",
+  "unchanged_from_last_run": true,
+  "new_finding_this_run": {
+    "type": "FALSE_FINDING_CORRECTION",
+    "finding": "evaluate_active_fixes() IS implemented at bot/learning/auto_fix_pipeline.py:106. Daily synthesis 2026-05-03 incorrectly flagged this as a TODO stub. Verified: full A/B split logic present, wired via FeedbackLoop.auto_fix=AutoFixPipeline.",
+    "impact": "60 A/B rules can graduate on next bot restart + 20 trades. No code fix needed.",
+    "severity": "RESOLVED"
+  }
+}

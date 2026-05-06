@@ -108,7 +108,8 @@ class AutoFixPipeline:
         Evaluate active A/B tests and auto-revert if treatment WR < control WR - threshold.
 
         Args:
-            recent_trades: List of recent closed trades with gate application info
+            recent_trades: List of recent closed trades with gate application info.
+                           Each trade should have 'ab_gate_hash' (int 0-99) and 'win' (bool).
 
         Returns:
             {evaluated: N, reverted: M, promoted: K}
@@ -116,15 +117,123 @@ class AutoFixPipeline:
         evaluated = 0
         reverted = 0
         promoted = 0
-        threshold = 3.0  # Auto-revert if treatment WR 3% below control
+        revert_threshold = 3.0   # Revert if treatment WR 3pp below control
+        promote_threshold = 2.0  # Promote if treatment WR 2pp above control
+        min_trades_per_group = 20  # Minimum trades before evaluation
 
-        # TODO: Implementation
-        # 1. For each active fix:
-        #    a. Split recent_trades into control (80%) vs treatment (20%)
-        #    b. Calculate WR for each group
-        #    c. If treatment < control - threshold: revert
-        #    d. If treatment >= control + 2%: graduate to 100% (promote)
-        #    e. Track all changes
+        if not recent_trades:
+            self._save_state()
+            return {"evaluated": 0, "reverted": 0, "promoted": 0, "skip_reason": "no_trades"}
+
+        # Also sync with graduated_rules.json A/B_ACTIVE rules
+        graduated_path = os.path.join(os.path.dirname(self.data_dir), "feedback", "graduated_rules.json")
+        graduated_rules = []
+        try:
+            with open(graduated_path) as f:
+                gd = json.load(f)
+                graduated_rules = gd.get("rules", [])
+        except Exception:
+            pass
+
+        active_in_graduated = [r for r in graduated_rules if r.get("status") == "A/B_ACTIVE"]
+
+        fixes_to_evaluate = list(self._state["active_fixes"])
+        # Add graduated A/B_ACTIVE rules not already tracked
+        tracked_fixes = {f.get("fix") for f in fixes_to_evaluate}
+        for gr in active_in_graduated:
+            if gr["rule_id"] not in tracked_fixes:
+                fixes_to_evaluate.append({
+                    "fix": gr["rule_id"],
+                    "gate_percentage": gr.get("gate_percentage", 20),
+                    "applied_ts": 0,
+                    "baseline_wr": gr.get("baseline_wr"),
+                    "expected_impact": 0,
+                    "confidence": gr.get("confidence", 0),
+                    "_graduated_rule": True,
+                })
+
+        updated_fixes = []
+        graduated_updates = {}
+
+        for fix in fixes_to_evaluate:
+            gate_pct = fix.get("gate_percentage", 20)
+            fix_id = fix.get("fix", "unknown")
+
+            # Split trades: treatment = ab_gate_hash < gate_pct, control = rest
+            treatment = [t for t in recent_trades if t.get("ab_gate_hash", 100) < gate_pct]
+            control = [t for t in recent_trades if t.get("ab_gate_hash", 100) >= gate_pct]
+
+            if len(treatment) < min_trades_per_group or len(control) < min_trades_per_group:
+                logger.debug(f"[AUTO_FIX] {fix_id}: insufficient data (treatment={len(treatment)}, control={len(control)})")
+                updated_fixes.append(fix)
+                continue
+
+            evaluated += 1
+            treatment_wr = sum(1 for t in treatment if t.get("win")) / len(treatment)
+            control_wr = sum(1 for t in control if t.get("win")) / len(control)
+            wr_delta = (treatment_wr - control_wr) * 100
+
+            fix["treatment_wr"] = round(treatment_wr, 4)
+            fix["control_wr"] = round(control_wr, 4)
+            fix["last_evaluated_ts"] = time.time()
+            fix["sample_sizes"] = {"treatment": len(treatment), "control": len(control)}
+
+            if fix.get("_graduated_rule"):
+                graduated_updates[fix_id] = {
+                    "treatment_wr": round(treatment_wr, 4),
+                    "baseline_wr": fix.get("baseline_wr") or round(control_wr, 4),
+                }
+
+            if wr_delta < -revert_threshold:
+                fix["status"] = "REVERTED"
+                reverted += 1
+                self._state["reverted_total"] += 1
+                logger.warning(
+                    f"[AUTO_FIX] REVERT {fix_id}: treatment_wr={treatment_wr:.1%} "
+                    f"control_wr={control_wr:.1%} delta={wr_delta:+.1f}pp"
+                )
+                if fix.get("_graduated_rule"):
+                    graduated_updates[fix_id]["status"] = "REVERTED"
+            elif wr_delta >= promote_threshold:
+                fix["status"] = "PROMOTED"
+                fix["gate_percentage"] = 100
+                promoted += 1
+                logger.info(
+                    f"[AUTO_FIX] PROMOTE {fix_id}: treatment_wr={treatment_wr:.1%} "
+                    f"control_wr={control_wr:.1%} delta={wr_delta:+.1f}pp → 100% gate"
+                )
+                if fix.get("_graduated_rule"):
+                    graduated_updates[fix_id]["status"] = "PROMOTED"
+                    graduated_updates[fix_id]["gate_percentage"] = 100
+            else:
+                logger.info(
+                    f"[AUTO_FIX] HOLD {fix_id}: treatment_wr={treatment_wr:.1%} "
+                    f"control_wr={control_wr:.1%} delta={wr_delta:+.1f}pp (within ±{revert_threshold}pp)"
+                )
+                updated_fixes.append(fix)
+                continue
+
+            if fix.get("status") not in ("REVERTED",):
+                updated_fixes.append(fix)
+
+        self._state["active_fixes"] = updated_fixes
+        self._state["ab_tests_active"] = len([f for f in updated_fixes if f.get("status") not in ("REVERTED", "PROMOTED")])
+
+        # Write treatment_wr updates back to graduated_rules.json
+        if graduated_updates:
+            try:
+                with open(graduated_path) as f:
+                    gd = json.load(f)
+                for rule in gd.get("rules", []):
+                    rid = rule["rule_id"]
+                    if rid in graduated_updates:
+                        rule.update(graduated_updates[rid])
+                gd["last_updated"] = datetime.utcnow().isoformat() + "Z"
+                with open(graduated_path, "w") as f:
+                    json.dump(gd, f, indent=2)
+                logger.info(f"[AUTO_FIX] Updated {len(graduated_updates)} graduated rules with treatment_wr")
+            except Exception as e:
+                logger.warning(f"[AUTO_FIX] Failed to update graduated_rules.json: {e}")
 
         self._save_state()
         return {

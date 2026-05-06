@@ -979,6 +979,20 @@ Entry price and current PnL are IRRELEVANT. Only question: "If I had NO position
 - regime_trend losers: only 28% recover. CLOSE immediately.
 - 1h outcome predicts 4h with 67% accuracy (73% for BB signals).
 
+## PROACTIVE SL PREVENTION (93% of SL hits are preventable — this is the #1 exit alpha)
+Historical data: 93.3% of stop-loss hits had positive MFE first — they were directionally correct but reversed. Most SL hits occur in illiquid/ranging/unknown regimes within the first 2 hours.
+
+**The proactive close rule** (saves ~$1,140 / 134-trade sample):
+- IF hold_time < 2h AND distance_to_sl < 30% of original range AND regime is NOT trending:
+  → CLOSE proactively. You are inside the noise zone in a bad regime. The SL is about to be hit.
+  → This is NOT a premature exit — 93% of these resolve as losses anyway.
+- IF hold_time < 2h AND distance_to_sl < 15% of original range in ANY regime:
+  → CLOSE. Price is at breakeven territory. The edge is gone.
+- IF regime shifted to illiquid/ranging/unknown after entry AND hold_time < 4h AND losing:
+  → Strongly prefer FULL_CLOSE. The regime ate this trade.
+
+This proactive intervention is WHERE YOU ADD THE MOST VALUE. The trailing stop cannot help a position that regime-fails in the first 2 hours. You can.
+
 ## HARD RULES
 - NEVER widen SL. Only tighten.
 - NEVER suggest entry (you manage exits only).

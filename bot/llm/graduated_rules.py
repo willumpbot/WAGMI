@@ -42,7 +42,7 @@ class GraduatedRule:
         return self.times_correct / self.times_applied if self.times_applied > 0 else 0.5
 
     def matches(self, symbol="", regime="", side="", strategy="",
-                setup_type="", num_agree=0) -> bool:
+                setup_type="", num_agree=0, confidence=0.0, hour_utc=-1) -> bool:
         if not self.active:
             return False
         c = self.conditions
@@ -68,6 +68,14 @@ class GraduatedRule:
         if c.get("setup_type") and setup_type != c["setup_type"]:
             return False
         if c.get("min_agree") and num_agree < c["min_agree"]:
+            return False
+        if "confidence_min" in c and confidence < c["confidence_min"]:
+            return False
+        if "confidence_max" in c and confidence > c["confidence_max"]:
+            return False
+        if "hour_utc_min" in c and hour_utc >= 0 and hour_utc < c["hour_utc_min"]:
+            return False
+        if "hour_utc_max" in c and hour_utc >= 0 and hour_utc >= c["hour_utc_max"]:
             return False
         return True
 
@@ -219,14 +227,16 @@ class GraduatedRulesEngine:
         return conditions, action, adjustment
 
     def evaluate_signal(self, symbol="", regime="", side="", strategy="",
-                        setup_type="", num_agree=0, confidence=0.0) -> tuple:
+                        setup_type="", num_agree=0, confidence=0.0, hour_utc=-1) -> tuple:
         """Returns (should_veto, adjusted_confidence, applied_rules_summary)."""
         self._ensure_loaded()
         vetoed, conf_delta, applied = False, 0.0, []
 
         for rule in self._rules:
             if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side,
-                                                    strategy=strategy, setup_type=setup_type, num_agree=num_agree):
+                                                    strategy=strategy, setup_type=setup_type,
+                                                    num_agree=num_agree, confidence=confidence,
+                                                    hour_utc=hour_utc):
                 continue
             rule.times_applied += 1
             rule.last_applied = time.time()

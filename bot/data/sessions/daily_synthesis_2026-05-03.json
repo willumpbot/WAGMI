@@ -1,0 +1,83 @@
+{
+  "date": "2026-05-03",
+  "generated_at": "2026-05-03T19:09:26.987527+00:00",
+  "bot_status": "OFFLINE",
+  "offline_duration_hours": 241.9,
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "equity": 497.0523,
+  "peak_equity": 508.0609,
+  "dd_from_peak_pct": 2.17,
+  "dd_from_start_pct": 90.06,
+  "recent_20_wr": 0.35,
+  "historical_core_wr": 0.376,
+  "trailing_loss_streak": 4,
+  "anomalies": [
+    {
+      "type": "CONSECUTIVE_LOSSES",
+      "severity": "CRITICAL",
+      "value": 4,
+      "threshold": 5,
+      "finding": "4 consecutive losses \u2014 circuit breaker likely engaged",
+      "recommendation": "Soft-start protocol: first 5 trades at 50% size until 2 wins achieved"
+    },
+    {
+      "type": "BOT_OFFLINE",
+      "severity": "CRITICAL",
+      "value": "9.8 days",
+      "finding": "Bot offline since 2026-04-23 22:17 UTC \u2014 0 trades in 9.8 days",
+      "recommendation": "Restart bot with soft-start protocol; verify circuit breaker state before live trading"
+    },
+    {
+      "type": "ORPHAN_RULE_ACCUMULATION",
+      "severity": "HIGH",
+      "value": 29,
+      "finding": "29 rules written to sub-buckets across previous hourly runs were never merged into main rules[]. Risk: signal pipeline ignores these rules silently.",
+      "recommendation": "Merge all non-resolved orphan rules into main rules[]. Add merge audit check."
+    },
+    {
+      "type": "AB_TRACKING_BROKEN",
+      "severity": "CRITICAL",
+      "value": "evaluate_active_fixes() is TODO",
+      "finding": "The code that should measure treatment_wr for all 47 A/B_ACTIVE rules is a code stub (TODO). No rule can ever graduate without bot restart + implementation.",
+      "recommendation": "Implement evaluate_active_fixes() in auto_fix_pipeline.py \u2014 split trades by gate hash, compute control vs treatment WR, write back."
+    }
+  ],
+  "circuit_breaker_state": "ENGAGED (4 consecutive losses + 10 day offline)",
+  "tomorrows_focus": {
+    "priority_symbols": [
+      "ETH",
+      "BTC"
+    ],
+    "priority_regimes": [
+      "trending"
+    ],
+    "avoid_symbols": [
+      "SOL",
+      "HYPE"
+    ],
+    "avoid_regimes": [
+      "illiquid",
+      "ranging"
+    ],
+    "priority_time_window": "06:00-12:00 UTC (morning session, 71-75% WR confirmed)",
+    "restart_protocol": "Soft-start: max 3x leverage, 50% position size for first 5 trades",
+    "new_priority": "Fix A/B tracking code gap before restart \u2014 otherwise rules never graduate",
+    "new_block": "BTC_SHORT at 70-79% confidence (add to execution filter)",
+    "new_opportunity": "Wire Exit agent for proactive close \u2014 93.3% SL prevention potential"
+  },
+  "report_generated": true,
+  "last_updated": "2026-05-03T20:12:47+00:00",
+  "update_note": "Updated at 2026-05-03T20:12:47+00:00 \u2014 additional hourly pass",
+  "anomaly_count": 4,
+  "new_findings_this_run": [
+    "29 orphan rules found in sub-buckets, not in main rules list",
+    "A/B tracking is a code stub \u2014 treatment_wr never computed",
+    "SLIPPAGE_TRACKING_GAP: no snapshot_entry in trades.csv",
+    "RULE_CONFLICT: SOL_SHORT_full_block makes reversal probe unmeasurable",
+    "RULE_CONFLICT: SIDE_BIAS_LONG filter and suspension cancel each other",
+    "BTC_SHORT 70-79% confidence = worst loss bucket (new block recommendation)",
+    "Night session 00-06 UTC: 19% WR, 27 live trades, -$136.83 (catastrophic)",
+    "EXIT_PROACTIVE_CLOSE_PRIORITY: 93.3% SL hits may be preventable via early close"
+  ]
+}
