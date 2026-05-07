@@ -1,157 +1,150 @@
 {
-  "last_run": "2026-05-07T22:04:07Z",
-  "run_id": "perpetual_deep_dive_2026_05_07_2204",
-  "prior_run": "2026-05-07T22:00:00Z",
-  "hours_since_prior_run": 0.07,
-  "subsystems": {
-    "auto_fix": {
-      "status": "COMPLETE — 2 rule reinitializations applied",
-      "fixes_applied": 2,
-      "gates_active": 8,
-      "total_applied_all_time": 27,
-      "fixes_this_run": [
+    "last_run": "2026-05-07T23:55:00Z",
+    "run_id": "perpetual_deep_dive_2026_05_07_2355",
+    "prior_run": "2026-05-07T22:04:07Z",
+    "hours_since_prior_run": 1.85,
+    "data_sources_read": [
+        "bot/data/sessions/daily_synthesis_2026-05-07.json",
+        "bot/data/learning/auto_fix_state.json",
+        "bot/data/learning/live_edge_data.json",
+        "bot/data/learning/execution_forensics.json",
+        "bot/data/llm/graduated_rules.json",
+        "bot/data/feedback/graduated_rules.json",
+        "bot/data/feedback/adaptive_risk_state.json",
+        "bot/trades_10d.csv (965 backtest trades)"
+    ],
+    "subsystems": {
+        "auto_fix": {
+            "status": "COMPLETE — 0 new code fixes this run. 0 new graduated rules (backtest-vs-live gap prevents safe promotion).",
+            "fixes_applied": 0,
+            "gates_active": 8,
+            "total_applied_all_time": 27,
+            "fixes_this_run": [],
+            "key_finding": "59 A/B rules with conf>=75% remain frozen (bot offline 15d). No new rules applied: backtest-vs-live performance gap (+30-45% overfitting for BTC_LONG/SOL_LONG/HYPE_LONG) makes A/B data unsafe to graduate without live confirmation.",
+            "new_pending_code_recommendation": {
+                "rule": "streak_momentum_gate",
+                "confidence": 90,
+                "implementation": "signal_pipeline.py: read adaptive_risk_state.recent_outcomes; if consecutive_losses >= 2 => penalize signal.confidence -= 15",
+                "evidence": "After 2+ consecutive losses: 28-29% WR. After 2+ wins: 74-77% WR. Cannot implement as graduated rule (requires system-state access not in conditions schema)."
+            }
+        },
+        "execution_forensics": {
+            "status": "COMPLETE — trades_10d.csv (965 backtest trades) analyzed. Live trades.csv empty (bot offline 15d+).",
+            "avg_slippage": "UNKNOWN (no snapshot_entry column)",
+            "noise_stop_problem": "38.3% overall SL rate (370/965). 71.9% illiquid-regime noise stops (57 live trades).",
+            "offline_hours": 362.1,
+            "offline_days": 15.1,
+            "consecutive_losses_live": 4,
+            "new_finding": "BTC_SHORT at 90%+ confidence = +$102.92/trade EV (67% WR, 43 trades). btc_short_conf70_80_penalize_v1 is correctly scoped to 70-80% only.",
+            "backtest_vs_live_critical": "BTC_LONG: backtest=64% WR vs live=19% (+45% gap). SOL_LONG: 53% vs 24% (+29%). DO NOT promote backtest-only LONG-direction findings.",
+            "leverage_anomaly": false,
+            "wdraw_trend": "last 200 backtest trades WR=53.5% vs all-time 57% — 3.5pp declining trend, monitor on restart"
+        },
+        "live_injection": {
+            "status": "UPDATED — added BTC_SHORT_90plus_conf as 5th high edge. Backtest-vs-live gap documented.",
+            "high_edges_found": 5,
+            "weak_setups_found": 3,
+            "new_this_run": [
+                "BTC_SHORT@90%+: 67% WR, +$102.92/trade EV (43 trades) — NEW HIGH EDGE not in prior state",
+                "SOL_SHORT@90%+: 71% WR, +$78.32/trade EV (7 trades) — confirms elite setup when consistent",
+                "BACKTEST-LIVE GAP documented: BTC_LONG/SOL_LONG/HYPE_LONG show 30-45% overfitting in trades_10d.csv"
+            ],
+            "injection_file_updated": true
+        },
+        "daily_synthesis": {
+            "status": "SKIP — END_OF_DAY report already generated at 23:00Z. Bot offline, 0 trades today.",
+            "report_generated": false,
+            "existing_report": "bot/data/sessions/daily_synthesis_2026-05-07.json",
+            "existing_anomalies": 7,
+            "new_anomaly_this_run": {
+                "type": "WR_DECLINING_TREND",
+                "severity": "MEDIUM",
+                "value": "Last 200 backtest trades: 53.5% WR vs all-time 57.0% (-3.5pp)",
+                "detail": "Performance compressing in most recent backtest segment. Monitor in first 50 live trades post-restart.",
+                "action": "Flag if live WR drops below 50% in first 20 trades after restart"
+            },
+            "consecutive_losses_confirmed": 4,
+            "consecutive_losses_source": "adaptive_risk_state.json recent_outcomes (live data)"
+        },
+        "model_optimization": {
+            "status": "SKIP — cost_tracker.json missing (bot offline, zero API calls since 2026-04-23)",
+            "swaps_recommended": 0,
+            "potential_savings": "$0.00",
+            "note": "BTC_SHORT@90%+ finding suggests Opus routing for high-conf BTC SHORT signals would be ROI-positive. Review on restart."
+        }
+    },
+    "high_priority_findings": [
         {
-          "rule_id": "hype_short_veto_v1",
-          "change": "evidence_ratio 0.0 → 0.35",
-          "reason": "Initialization bug: 239 trades at -$16.65/trade confirms ~35% WR. Evidence: HYPE_SELL_BB=35% (92% conf A/B). Rule correctly blocks HYPE SELL."
+            "subsystem": "auto_fix",
+            "severity": "CRITICAL",
+            "finding": "Bot offline 362h (15.1 days). 59 high-conf (>=75%) A/B rules frozen at treatment_wr=null. 4 consecutive losses at shutdown (circuit breaker edge). Every additional hour deepens graduation backlog.",
+            "action": "RESTART NOW: cd bot && python run.py paper. Soft-start: activate streak penalty (-15 conf) for first 10 signals.",
+            "urgency": "HIGHEST"
         },
         {
-          "rule_id": "btc_short_conf70_80_penalize_v1",
-          "change": "evidence_ratio 0.0 → 0.25",
-          "reason": "Initialization bug: 40 trades, 'single largest loss bucket'. 25% WR estimated from orphan rule BTC_SHORT_CONF70_80_BLOCK (90% conf). Rule correctly penalizes BTC SELL 70-80% conf."
+            "subsystem": "execution_forensics",
+            "severity": "HIGH",
+            "finding": "NEW THIS RUN: BTC_SHORT at 90%+ confidence = +$102.92/trade EV, 67% WR (43 backtest trades). This is a POSITIVE EV setup being partially suppressed. The btc_short_conf70_80_penalize_v1 rule must NOT apply to 90%+ signals — verify conditions exclude conf >= 90.",
+            "action": "ON RESTART: Verify btc_short_conf70_80_penalize_v1 conditions: confidence_max=80 correctly excludes 90%+. If rule fires on 90%+ BTC SHORT, fix condition bounds.",
+            "urgency": "High — potential alpha suppression"
+        },
+        {
+            "subsystem": "execution_forensics",
+            "severity": "HIGH",
+            "finding": "NEW THIS RUN: BACKTEST OVERFITTING confirmed and quantified. BTC_LONG: +45% gap (backtest 64% vs live 19%). SOL_LONG: +29%. HYPE_LONG: +34%. Only SOL_SHORT (0%) and HYPE_SHORT (0%) are trustworthy in backtest. trades_10d.csv is NOT representative for LONG direction rules.",
+            "action": "DO NOT reverse LONG-direction vetoes (hype_long_veto_v1, sol_long_veto_v1) based on backtest data. They are correctly calibrated from live data.",
+            "urgency": "High — prevents incorrect rule reversals"
+        },
+        {
+            "subsystem": "auto_fix",
+            "severity": "HIGH",
+            "finding": "SOL_SHORT blockade: +$32.44/trade EV (64% WR, 179 trades, 0% backtest-live gap = most reliable setup). Blocked by RULE_CONFLICT_SOL_SHORT (92% conf). Highest-ROI blocked alpha source.",
+            "action": "PENDING_HUMAN_DECISION: Allow SOL_SHORT 50%-gate reversal probe or maintain block. EV data strongly supports probe.",
+            "urgency": "High"
+        },
+        {
+            "subsystem": "auto_fix",
+            "severity": "HIGH",
+            "finding": "streak_momentum_gate (90% conf A/B rule) cannot be implemented as graduated rule — requires system-state access. Must be code change. Currently at 4 consecutive losses (circuit breaker edge) — this gate is most critical NOW.",
+            "action": "CODE CHANGE: signal_pipeline.py — read adaptive_risk_state.recent_outcomes, penalize -15 if consecutive_losses>=2.",
+            "urgency": "Medium-High"
+        },
+        {
+            "subsystem": "daily_synthesis",
+            "severity": "MEDIUM",
+            "finding": "WR declining trend: last 200 backtest trades 53.5% vs all-time 57.0% (-3.5pp). Performance compressing in recent data.",
+            "action": "Monitor first 20 live trades post-restart. Trigger deep analysis if live WR < 50%.",
+            "urgency": "Medium"
         }
-      ],
-      "rules_now_with_valid_ev": "8/8 (was 6/8 — all rules now have non-zero evidence_ratio)",
-      "new_code_fixes_applied": "NONE — all major Apr 15 findings (F2/F5/F11/F16/F17) already APPLIED per feedback/graduated_rules.json",
-      "conf_60_70_resolution": "CONFIRMED RESOLVED: sweet_spot SUSPENDED_DATA_CONTRADICTION, ROUTING_FIX APPLIED, conf_floor_70_v1 runtime ACTIVE, rollback_probe A/B at 20% gate. No conflict in effect.",
-      "ab_rules_awaiting_live_data": 82,
-      "total_rules_in_feedback": 99
-    },
-    "execution_forensics": {
-      "status": "SKIP — no trades.csv data (bot offline 15d)",
-      "avg_slippage": "UNKNOWN (bot offline)",
-      "noise_stop_problem": "71.9% illiquid-regime stops hit in noise (57 historical — unchanged)",
-      "offline_hours": 360.1,
-      "offline_days": 15.0,
-      "structural_gaps_open": [
-        "SLIPPAGE_TRACKING_GAP: no snapshot_entry column in trades.csv",
-        "NO_LIVE_FILL_DATA: fill_status column missing"
-      ],
-      "hold_time_forensics": {
-        "win_median_hold_h": 3.3,
-        "loss_median_hold_h": 1.5,
-        "interpretation": "Losses resolve 2x faster than wins — noise stops fire before directional move materializes"
-      }
-    },
-    "live_injection": {
-      "status": "UPDATED — added BB golden setups from A/B analysis (no new live trades)",
-      "high_edges_found": 4,
-      "weak_setups_found": 3,
-      "new_this_run": [
-        "ETH_SHORT_BB_golden: 70% WR, +$9.49 avg (95% conf A/B rule)",
-        "BTC_BUY_BB_golden: 69% WR (91% conf A/B rule)",
-        "BB_solo_high_WR: 67.6% WR vs ensemble 51.9% — BB alone outperforms consensus"
-      ],
-      "new_anti_patterns": [
-        "BB_MTQ_combo: BB+MTQ co-agreement = 35% WR (92% conf) — anti-predictive, penalize",
-        "HYPE_SELL_BB: 35% WR (92% conf) — worst BB setup"
-      ],
-      "top_edges": {
-        "live_confirmed": "ETH_SHORT+trending = 80% WR (5 live trades)",
-        "ab_pending": "ETH_SHORT+BB = 70% WR, BTC_BUY+BB = 69% WR, BB_solo = 67.6% WR"
-      },
-      "kill_zones": "BTC_LONG (18%), SOL_LONG (24%), HYPE_LONG (23%), HYPE_SELL_BB (35%), BB+MTQ_combo (35%)",
-      "hours_stale": 56.9,
-      "injection_file_updated": true
-    },
-    "daily_synthesis": {
-      "status": "SKIP — END_OF_DAY report already complete (this run is 4min after prior)",
-      "report_generated": false,
-      "existing_report_path": "bot/data/sessions/daily_synthesis_2026-05-07.json",
-      "existing_anomalies": 8,
-      "correction_this_run": "CONF_60_70_DATA_CONFLICT (listed as anomaly in prior run) is NOT an active conflict: sweet_spot is SUSPENDED, ROUTING_FIX is APPLIED. Effective anomaly count: 7.",
-      "effective_anomaly_count": 7
-    },
-    "model_optimization": {
-      "status": "SKIP — cost_tracker.json missing (bot offline, zero API calls)",
-      "swaps_recommended": 0,
-      "potential_savings": "$0.00",
-      "note": "confidence_60_70_ROUTING_FIX already APPLIED: high-conf (>80%) correctly routes to Opus in AGGRESSIVE tier. Usage tier is correctly calibrated."
-    }
-  },
-  "high_priority_findings": [
-    {
-      "subsystem": "auto_fix",
-      "severity": "CRITICAL",
-      "finding": "Bot offline 360h (15 days). All 82 high-confidence A/B rules frozen at treatment_wr=null. Zero learning accumulation. 4-consecutive-loss buffer at circuit breaker threshold.",
-      "action": "RESTART NOW: cd bot && python run.py paper. Soft-start: 3x max leverage, 50% size for first 5 trades.",
-      "urgency": "HIGHEST — every additional hour deepens graduation backlog"
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "HIGH",
-      "finding": "SOL_SHORT full blockade: #1 historical alpha (+$5807, 63.7% WR, 179 trades) is SUSPENDED_LIVE_CONTRADICTION + fully blocked by RULE_CONFLICT_SOL_SHORT (92%). Bot cannot trade its primary historical alpha source.",
-      "action": "PENDING_HUMAN_DECISION: Allow controlled 50%-gate probe of SOL_SHORT, or maintain full block. Decide before restart.",
-      "urgency": "High — this is the primary historical profit driver"
-    },
-    {
-      "subsystem": "live_injection",
-      "severity": "HIGH",
-      "finding": "BB anti-pattern newly documented: BB+MTQ co-agreement = 35% WR (92% conf) is an anti-signal. BB solo = 67.6% WR. The ensemble's MTQ consensus may be HURTING BB signal quality. When BB fires alone, it outperforms consensus by 15+ percentage points.",
-      "action": "ON RESTART: Inject BB_solo boost and BB_MTQ_combo penalize into Trade Agent context via live_edge_data.json. Verify Trade Agent reads injection file.",
-      "urgency": "Medium-High — structural finding about ensemble anti-pattern"
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "HIGH",
-      "finding": "RULE_CONFLICT_LONG_BIAS: SIDE_BIAS_LONG_filter (80% gate) + SIDE_BIAS_LONG_SUSPENSION (80%) both active and cancel each other. LONG WR 29-32% confirmed bad.",
-      "action": "PENDING_HUMAN_DECISION: Keep filter (reduce LONG sizes) OR suspension (block LONG direction). Cannot coexist.",
-      "urgency": "Medium"
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "HIGH",
-      "finding": "BTC_STOP_0.8PCT_CODE: 47/47 BTC losses are instant SL hits (avg stop 0.494%). Needs hard code gate at signal_pipeline.py:265.",
-      "action": "PENDING_HUMAN_SAFETY_REVIEW: Add BTC stop_width_pct >= 0.008 gate at signal_pipeline.py:265",
-      "urgency": "Medium"
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "MEDIUM",
-      "finding": "RULE_OUTCOME_FEEDBACK_GAP narrowed: 2 rules reinitialized with correct ev_ratio this run. All 8 rules now have valid non-zero evidence_ratio. Outcome callback (times_correct) still unverified — needs first 2 closed trades post-restart.",
-      "action": "ON RESTART: After 2 closed trades matching any rule condition, verify times_correct > 0 in data/llm/graduated_rules.json",
-      "urgency": "Medium"
-    }
-  ],
-  "new_this_run_vs_prior": [
-    "FIXED: hype_short_veto_v1 evidence_ratio 0.0 → 0.35 (initialization bug corrected from HYPE_SELL_BB data)",
-    "FIXED: btc_short_conf70_80_penalize_v1 evidence_ratio 0.0 → 0.25 (initialization bug corrected)",
-    "FIXED: All 8/8 runtime rules now have valid non-zero evidence_ratio (was 6/8 broken)",
-    "NEW EDGES: Added ETH_SHORT_BB (70% WR), BTC_BUY_BB (69% WR), BB_solo (67.6% WR) to live_edge_data.json",
-    "NEW ANTI-PATTERNS: BB+MTQ_combo (35% WR) and HYPE_SELL_BB (35% WR) added to injection block_setups",
-    "RESOLVED: CONF_60_70_DATA_CONFLICT is not an active conflict — sweet_spot SUSPENDED, ROUTING_FIX APPLIED",
-    "CONFIRMED: All Apr 15 code fixes (F2/F5/F11/F16/F17) are APPLIED — no pending code work from that session",
-    "CONFIRMED: 15-day offline milestone — 360h as of this run"
-  ],
-  "still_outstanding": [
-    "BOT OFFLINE 360h — restart required (user action: cd bot && python run.py paper)",
-    "82 high-conf A/B rules awaiting live trade data (treatment_wr=null)",
-    "SOL_SHORT full blockade — awaiting human decision (highest urgency for PnL)",
-    "RULE_CONFLICT_LONG_BIAS — awaiting human decision",
-    "BTC_STOP_0.8PCT_CODE — signal_pipeline.py:265 pending human safety review",
-    "F1_sniper — awaiting human safety review (re-enable with 5x cap + $50 loss ceiling)",
-    "LLM_REGIME_CAPTURE_GAP — llm_regime column not written to trades.csv",
-    "SLIPPAGE_TRACKING_GAP — snapshot_entry column missing from trade_log",
-    "times_correct=0 for all 8 rules — outcome callback wiring needs post-restart verification",
-    "cost_tracker.json missing — Model Optimization blocked until bot restarts"
-  ],
-  "next_run_focus": [
-    "IF BOT STILL OFFLINE: flag 361h milestone, subsystems 2/3/5 SKIP again",
-    "IF BOT RESTARTED: all 5 subsystems become live; monitor rule outcome callbacks",
-    "VERIFY ON RESTART: [GRAD-RULES] log line appears in first 5 signals",
-    "VERIFY ON RESTART: night_session_block_v1 rejects 00-06 UTC signals",
-    "VERIFY ON RESTART: hype_long_veto and sol_long_veto fire on first HYPE/SOL signals",
-    "WATCH: times_correct in data/llm/graduated_rules.json after first 2 closed trades",
-    "PRIORITY: Inject BB_solo boost + BB_MTQ_combo anti-pattern into Trade Agent context"
-  ]
+    ],
+    "new_this_run_vs_prior": [
+        "NEW EDGE: BTC_SHORT@90%+ = +$102.92/trade EV, 67% WR (43 trades) — not in any prior state",
+        "NEW: Backtest-vs-live overfitting quantified: BTC_LONG +45%, SOL_LONG +29%, HYPE_LONG +34%",
+        "NEW: WR declining trend detected (-3.5pp in last 200 vs all-time 57%)",
+        "CONFIRMED: 4 consecutive losses from adaptive_risk_state.json live data",
+        "CONFIRMED: btc_short_conf70_80_penalize_v1 is correctly scoped (90%+ is profitable)",
+        "CONFIRMED: streak_momentum_gate requires CODE change, not a rules-level fix",
+        "ADDED: BTC_SHORT_90plus to live_edge_data.json high_edges (now 5 high edges)",
+        "ADDED: backtest-vs-live gap analysis to live_edge_data.json and execution_forensics.json"
+    ],
+    "still_outstanding": [
+        "BOT OFFLINE 362h — restart required (cd bot && python run.py paper)",
+        "59 high-conf A/B rules awaiting live trade data (treatment_wr=null)",
+        "SOL_SHORT full blockade — awaiting human decision (highest PnL impact, +$32.44/trade EV)",
+        "RULE_CONFLICT_LONG_BIAS — awaiting human decision",
+        "BTC_STOP_0.8PCT_CODE — signal_pipeline.py:265 pending human safety review",
+        "streak_momentum_gate — code change needed in signal_pipeline.py",
+        "LLM_REGIME_CAPTURE_GAP — llm_regime not written to trades.csv",
+        "SLIPPAGE_TRACKING_GAP — snapshot_entry column missing from trade logging",
+        "times_correct=0 for all 8 graduated rules — outcome callback needs post-restart verification",
+        "cost_tracker.json missing — Model Optimization blocked until restart"
+    ],
+    "next_run_focus": [
+        "IF BOT STILL OFFLINE: flag 363h+ milestone, confirm btc_short_conf70_80 condition bounds",
+        "IF BOT RESTARTED: all 5 subsystems live; monitor rule outcome callbacks (times_correct > 0 after 2 closed trades)",
+        "PRIORITY: Verify btc_short_conf70_80_penalize_v1 confidence_max=80 excludes 90%+ signals",
+        "PRIORITY: Soft-start with streak penalty active (4 consecutive loss buffer)",
+        "WATCH: WR in first 20 live trades. Flag if <50%.",
+        "WATCH: SOL_SHORT signals — human decision pending on probe approval"
+    ]
 }

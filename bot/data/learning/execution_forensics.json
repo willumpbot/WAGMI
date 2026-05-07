@@ -1,58 +1,136 @@
 {
-  "last_run": "2026-05-06T18:07:41Z",
-  "data_available": false,
-  "data_gap_reason": "trades.csv empty (headers only) \u2014 bot offline 289.7h (12.7 days)",
-  "avg_slippage": "UNKNOWN \u2014 no live trade data",
-  "noise_stop_problem": "71.9% of illiquid-regime stops hit in noise (historical: 57 trades)",
-  "regime_analysis": {
-    "trending": {
-      "wr": 0.519,
-      "trades": 52,
-      "verdict": "VIABLE (>50%)"
+    "last_run": "2026-05-07T23:07:31.271761+00:00",
+    "data_available": true,
+    "data_source": "bot/trades_10d.csv (965 backtest trades) \u2014 live trades.csv empty (bot offline 15d+)",
+    "avg_slippage": "UNKNOWN \u2014 no snapshot_entry column in trades_10d.csv",
+    "noise_stop_problem": "38.3% overall SL hit rate (370/965). 71.9% of illiquid-regime stops are noise (57 live trades)",
+    "regime_analysis": {
+        "trending": {
+            "wr": 0.519,
+            "trades": 52,
+            "verdict": "VIABLE (live confirmed)",
+            "ev_note": "Only viable regime"
+        },
+        "illiquid": {
+            "wr": 0.281,
+            "trades": 57,
+            "verdict": "LOSING \u2014 noise-stop domination (live)"
+        },
+        "ranging": {
+            "wr": 0.25,
+            "trades": 16,
+            "verdict": "LOSING \u2014 insufficient edge (live)"
+        },
+        "all_unknown": {
+            "note": "ALL 965 backtest trades have empty llm_regime \u2014 LLM_REGIME_CAPTURE_GAP confirmed"
+        }
     },
-    "illiquid": {
-      "wr": 0.281,
-      "trades": 57,
-      "verdict": "LOSING \u2014 noise-stop domination"
+    "hold_time_forensics": {
+        "win_median_hold_h": 3.3,
+        "loss_median_hold_h": 1.5,
+        "interpretation": "Losses exit 2x faster than wins \u2014 noise stops fire before directional move materializes"
     },
-    "ranging": {
-      "wr": 0.25,
-      "trades": 16,
-      "verdict": "LOSING \u2014 insufficient edge"
-    }
-  },
-  "hold_time_forensics": {
-    "win_median_hold_h": 3.3,
-    "loss_median_hold_h": 1.5,
-    "interpretation": "Losses resolve 2x faster than wins \u2014 noise stops firing in first 1.5h before directional move materializes",
-    "implication": "Minimum 2h hold guard in trending regime would filter structural noise exits"
-  },
-  "worst_regime": "illiquid",
-  "noise_stop_pct": 0.719,
-  "partial_fills": "UNKNOWN \u2014 no live data",
-  "structural_gaps": [
-    {
-      "gap": "SLIPPAGE_TRACKING_GAP",
-      "finding": "trades.csv has no snapshot_entry column \u2014 slippage cannot be computed even when bot is running. Need to add snapshot_entry at signal time.",
-      "confidence": 100,
-      "source": "Orphan rule AB_RESULT_TRACKER_CODE + SLIPPAGE_TRACKING_GAP from prior runs"
+    "expectancy_by_setup_backtest": {
+        "SOL_SHORT": {
+            "ev_per_trade": 32.44,
+            "wr": 0.637,
+            "n": 179,
+            "verdict": "TOP ALPHA \u2014 blocked by RULE_CONFLICT"
+        },
+        "BTC_LONG": {
+            "ev_per_trade": 25.55,
+            "wr": 0.639,
+            "n": 72,
+            "verdict": "Positive EV BACKTEST ONLY \u2014 live WR=19% (16 trades)"
+        },
+        "SOL_LONG": {
+            "ev_per_trade": -2.62,
+            "wr": 0.533,
+            "n": 122,
+            "verdict": "Negative EV + live contradiction (24% WR)"
+        },
+        "HYPE_LONG": {
+            "ev_per_trade": -6.55,
+            "wr": 0.57,
+            "n": 158,
+            "verdict": "Negative EV + live contradiction (23% WR)"
+        },
+        "BTC_SHORT": {
+            "ev_per_trade": -7.22,
+            "wr": 0.538,
+            "n": 195,
+            "verdict": "Negative EV OVERALL \u2014 but 90%+ conf is +$102.92/trade"
+        },
+        "HYPE_SHORT": {
+            "ev_per_trade": -16.65,
+            "wr": 0.544,
+            "n": 239,
+            "verdict": "Worst EV \u2014 validated veto"
+        }
     },
-    {
-      "gap": "NO_LIVE_FILL_DATA",
-      "finding": "Partial fill rate completely unknown. No fill_status column in trades.csv.",
-      "confidence": 90
-    }
-  ],
-  "action_required": "Restart bot + add snapshot_entry column to trade logging for slippage measurement",
-  "unchanged_from_last_run": true,
-  "new_finding_this_run": {
-    "type": "FALSE_FINDING_CORRECTION",
-    "finding": "evaluate_active_fixes() IS implemented at bot/learning/auto_fix_pipeline.py:106. Daily synthesis 2026-05-03 incorrectly flagged this as a TODO stub. Verified: full A/B split logic present, wired via FeedbackLoop.auto_fix=AutoFixPipeline.",
-    "impact": "60 A/B rules can graduate on next bot restart + 20 trades. No code fix needed.",
-    "severity": "RESOLVED"
-  },
-  "offline_hours_updated": 317.6,
-  "offline_days_updated": 13.23,
-  "last_updated_by_master": "2026-05-07T22:00:00Z",
-  "delta_note": "+27.9h since execution_forensics last ran (May 6 18:07). No new data \u2014 bot still offline."
+    "high_conf_90plus_forensics": {
+        "BTC_SHORT_90plus": {
+            "wr": 0.67,
+            "ev": 102.92,
+            "n": 43,
+            "finding": "NEW: BTC SHORT 90%+ is POSITIVE EV \u2014 contradicts general BTC_SHORT negative narrative"
+        },
+        "SOL_SHORT_90plus": {
+            "wr": 0.71,
+            "ev": 78.32,
+            "n": 7,
+            "finding": "Best setup at high conf (small sample)"
+        },
+        "HYPE_SHORT_90plus": {
+            "wr": 0.42,
+            "ev": -43.67,
+            "n": 26,
+            "finding": "CONFIRMED bad \u2014 validates high-conf HYPE_SHORT block"
+        },
+        "SOL_LONG_90plus": {
+            "wr": 0.25,
+            "ev": -65.48,
+            "n": 8,
+            "finding": "Worst at high conf \u2014 validates SOL_LONG veto"
+        }
+    },
+    "backtest_vs_live_gap": {
+        "BTC_LONG": "+45% gap (backtest 64% vs live 19%) \u2014 DO NOT promote based on backtest",
+        "SOL_LONG": "+29% gap (backtest 53% vs live 24%)",
+        "HYPE_LONG": "+34% gap (backtest 57% vs live 23%)",
+        "SOL_SHORT": "0% gap (backtest 64% = live 64%) \u2014 MOST RELIABLE",
+        "HYPE_SHORT": "0% gap (backtest 54% = live 54%) \u2014 both datasets same"
+    },
+    "leverage_stats": {
+        "max": 3.0,
+        "avg": 2.2,
+        "median": 2.1,
+        "verdict": "Conservative \u2014 no leverage anomaly. Max 3x enforced."
+    },
+    "consecutive_losses_live": 4,
+    "consecutive_losses_source": "adaptive_risk_state.json (live outcomes)",
+    "wdraw_trend": {
+        "last_200_wr": 0.535,
+        "all_time_wr": 0.57,
+        "verdict": "DECLINING 3.5pp from all-time \u2014 monitor on restart"
+    },
+    "structural_gaps": [
+        {
+            "gap": "SLIPPAGE_TRACKING_GAP",
+            "finding": "No snapshot_entry column \u2014 slippage unmeasurable",
+            "confidence": 100
+        },
+        {
+            "gap": "LLM_REGIME_CAPTURE_GAP",
+            "finding": "All 965 trades have empty llm_regime \u2014 12 regime A/B rules unmeasurable",
+            "confidence": 100
+        },
+        {
+            "gap": "NO_LIVE_FILL_DATA",
+            "finding": "No fill_status column \u2014 partial fill rate unknown",
+            "confidence": 90
+        }
+    ],
+    "offline_hours": 362.1,
+    "offline_days": 15.1
 }
