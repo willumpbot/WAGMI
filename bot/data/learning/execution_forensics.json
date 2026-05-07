@@ -51,5 +51,8 @@
     "impact": "60 A/B rules can graduate on next bot restart + 20 trades. No code fix needed.",
     "severity": "RESOLVED"
   },
-  "offline_hours_updated": 289.7
+  "offline_hours_updated": 317.6,
+  "offline_days_updated": 13.23,
+  "last_updated_by_master": "2026-05-07T22:00:00Z",
+  "delta_note": "+27.9h since execution_forensics last ran (May 6 18:07). No new data \u2014 bot still offline."
 }
