@@ -1,40 +1,43 @@
 {
-  "last_run": "2026-05-07T18:12:00Z",
-  "run_id": "perpetual_deep_dive_2026_05_07_1812",
+  "last_run": "2026-05-07T23:00:00Z",
+  "run_id": "perpetual_deep_dive_2026_05_07_2300",
   "subsystems": {
     "auto_fix": {
-      "status": "COMPLETE",
-      "fixes_applied": 1,
-      "fix_description": "Archived CONF_60_70_all_block A/B rule: treatment_wr (0.463) = baseline_wr (0.463) — zero net improvement. Superseded by runtime rule conf_floor_70_v1.",
+      "status": "COMPLETE — no new fixes available",
+      "fixes_applied": 0,
+      "fix_description": "No new audit files found. AUTONOMOUS_SESSION_2026_04_15.md fully processed in prior runs. 0 new recommendations meet confidence >= 75% AND are not blocked by human-review flag or live-data dependency.",
       "gates_active": 8,
       "total_applied_all_time": 25,
       "candidates_evaluated": 99,
+      "candidates_blocked_human_review": 8,
+      "candidates_blocked_live_data": 82,
       "candidates_archived": 1,
+      "new_finding": "SOL_SHORT_edge_promote (90% conf) is SUSPENDED_LIVE_CONTRADICTION despite being the #1 historical alpha (+$5807, 63.7% WR, 179 trades). This is the primary A/B conflict requiring human decision.",
       "notes": [
         "No new audit files since AUTONOMOUS_SESSION_2026_04_15.md (fully processed).",
-        "CONF_60_70_all_block ARCHIVED: treatment_wr=0.463 = baseline_wr=0.463. conf_floor_70_v1 runtime rule is the live implementation and supersedes this A/B test.",
-        "BTC_STOP_0.8PCT_CODE: confidence=80% (>= 75% threshold) BUT flagged requires_human_review=true per execution-safety.md. Pending human safety review.",
-        "All 8 runtime rules in data/llm/graduated_rules.json still show times_correct=0 — outcome callback unverified (needs live closed trade to confirm wiring).",
-        "98 active A/B rules (was 60 in last master state — delta +38). Count discrepancy explained: feedback/graduated_rules.json accumulated all prior run log entries in its rules array. Actual count is 99 total / 98 active after archive.",
-        "RULE_CONFLICT_SOL_SHORT and RULE_CONFLICT_LONG_BIAS pending human decision (cannot auto-resolve)."
+        "82 high-confidence (>=75%) A/B rules blocked by live-data dependency — cannot graduate without trades.",
+        "BTC_STOP_0.8PCT_CODE: confidence=80% meets threshold BUT requires_human_review=true per execution-safety.md. Pending human safety review.",
+        "All 8 runtime rules in data/llm/graduated_rules.json still show times_correct=0 — outcome callback unverified.",
+        "SOL_SHORT suspension conflict: historical alpha blocked by live contradiction + RULE_CONFLICT_SOL_SHORT full block.",
+        "CONF_60_70_DATA_CONFLICT: confidence_60_70_sweet_spot (93%, suspended) vs conf_floor_70_v1 (87%, active) — opposite conclusions for same confidence range.",
+        "RULE_CONFLICT_SOL_SHORT and RULE_CONFLICT_LONG_BIAS pending human decision."
       ],
       "pending_human_review": [
         "BTC_STOP_0.8PCT_CODE — signal_pipeline.py:265, conf=80%, requires safety review",
-        "RULE_CONFLICT_SOL_SHORT",
-        "RULE_CONFLICT_LONG_BIAS",
+        "RULE_CONFLICT_SOL_SHORT — #1 historical alpha blocked, highest urgency",
+        "RULE_CONFLICT_LONG_BIAS — dual-rule cancel requires human resolution",
         "F1_sniper_pending_safety_review",
         "LLM_REGIME_CAPTURE_GAP"
       ]
     },
     "execution_forensics": {
-      "status": "SKIP — no trades.csv data (bot offline 354.2h, 14.8d — 2-WEEK THRESHOLD CROSSED)",
+      "status": "SKIP — no trades.csv data (bot offline 359.0h, 15.0d — 15-DAY MILESTONE CROSSED)",
       "avg_slippage": "UNKNOWN (bot offline)",
       "noise_stop_problem": "71.9% illiquid-regime stops hit in noise (57 historical — unchanged)",
-      "offline_hours": 354.2,
-      "offline_days": 14.8,
-      "two_week_threshold_crossed": true,
-      "two_week_crossed_hours_ago": 18.2,
-      "delta_from_prior_run": "+21h since 21:11 run",
+      "offline_hours": 359.0,
+      "offline_days": 15.0,
+      "fifteen_day_threshold_crossed": true,
+      "delta_from_prior_run": "+4.8h since 18:12 run",
       "unchanged_from_last_run": true,
       "structural_gaps_open": [
         "SLIPPAGE_TRACKING_GAP: no snapshot_entry column in trades.csv",
@@ -42,7 +45,7 @@
       ]
     },
     "live_injection": {
-      "status": "CACHED — no new trades (bot offline 14.8d)",
+      "status": "CACHED — no new trades (bot offline 15.0d)",
       "high_edges_found": 1,
       "weak_setups_found": 3,
       "top_edge": "ETH_SHORT+trending+morning = ~80% WR (5 live trades)",
@@ -53,48 +56,33 @@
         "night_session_00_06UTC (19% WR, -$136.83)"
       ],
       "conf_filter_active": "conf_floor_70_v1: 60-70% signals penalized -20 — effective bar ~70%+",
-      "hours_stale": 48.0,
+      "hours_stale": 52.8,
       "unchanged_from_last_run": true,
+      "new_conflict_flagged": "confidence_60_70_sweet_spot (93% conf, SUSPENDED) claims same range is +$2.19 avg — contradicts conf_floor_70_v1. Needs investigation post-restart.",
       "injection_status": "No update possible — bot offline, no new trade outcomes to learn from"
     },
     "daily_synthesis": {
-      "status": "COMPLETE — daily_synthesis_2026-05-07.json generated",
+      "status": "COMPLETE — daily_synthesis_2026-05-07.json upgraded to END_OF_DAY",
       "report_generated": true,
       "report_path": "bot/data/sessions/daily_synthesis_2026-05-07.json",
-      "anomalies_found": 6,
-      "anomalies": [
-        {
-          "type": "BOT_OFFLINE_CRITICAL",
-          "severity": "CRITICAL",
-          "value": "354.2h (14.8d) — 2-WEEK THRESHOLD CROSSED 18.2h ago"
-        },
-        {
-          "type": "AB_RULES_FROZEN",
-          "severity": "CRITICAL",
-          "value": "98 active A/B rules with treatment_wr=null — all frozen"
-        },
-        {
-          "type": "CONSECUTIVE_LOSSES",
-          "severity": "HIGH",
-          "value": 4
-        },
-        {
-          "type": "RULE_OUTCOME_FEEDBACK_GAP",
-          "severity": "HIGH",
-          "value": "8/8 runtime rules times_correct=0"
-        },
-        {
-          "type": "EDGE_DATA_STALE",
-          "severity": "MEDIUM",
-          "value": "48h stale — live_edge_data.json"
-        },
-        {
-          "type": "LLM_REGIME_CAPTURE_GAP",
-          "severity": "HIGH",
-          "value": "llm_regime column empty — 12 regime A/B rules unmeasurable"
-        }
+      "run_type": "END_OF_DAY",
+      "anomalies_found": 8,
+      "new_anomalies_vs_midday_run": [
+        "15-DAY OFFLINE MILESTONE CROSSED (was 14.8d at 18:12, now exactly 15.0d)",
+        "SOL_SHORT_SUSPENSION_CONFLICT: #1 historical alpha blocked by suspension — needs human decision",
+        "CONF_60_70_DATA_CONFLICT: sweet_spot rule (93%) contradicts floor rule (87%) for same confidence range",
+        "Edge data staleness escalated: 48h → 52.8h"
       ],
-      "new_today": "2-week offline threshold crossed (was projected in last run, now confirmed)"
+      "anomalies": [
+        {"type": "BOT_OFFLINE_CRITICAL", "severity": "CRITICAL", "value": "359.0h (15.0d)"},
+        {"type": "AB_RULES_FROZEN", "severity": "CRITICAL", "value": "82 high-conf rules frozen"},
+        {"type": "SOL_SHORT_SUSPENSION_CONFLICT", "severity": "HIGH", "value": "#1 historical alpha blocked"},
+        {"type": "CONSECUTIVE_LOSSES", "severity": "HIGH", "value": 4},
+        {"type": "RULE_OUTCOME_FEEDBACK_GAP", "severity": "HIGH", "value": "8/8 runtime rules times_correct=0"},
+        {"type": "CONF_60_70_DATA_CONFLICT", "severity": "MEDIUM", "value": "opposite rule conclusions same range"},
+        {"type": "LLM_REGIME_CAPTURE_GAP", "severity": "HIGH", "value": "llm_regime column empty"},
+        {"type": "EDGE_DATA_STALE", "severity": "MEDIUM", "value": "52.8h stale"}
+      ]
     },
     "model_optimization": {
       "status": "SKIP — no cost_tracker.json (bot offline, zero API calls since 2026-04-23)",
@@ -112,9 +100,9 @@
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot offline 354.2h (14.8d). The 2-WEEK threshold was crossed 18.2 hours ago. 98 A/B rules cannot graduate. 8 runtime rules generating 0 outcome feedback. Learning signal completely dead.",
+      "finding": "Bot offline 359.0h (15.0d). 15-DAY MILESTONE crossed this run. 82 A/B rules (conf>=75%) cannot graduate. 8 runtime rules generating 0 outcome feedback. Learning signal completely dead for 15 days.",
       "action": "URGENT USER ACTION REQUIRED: cd bot && python run.py paper",
-      "escalation": "Every additional hour deepens A/B backlog. Rules designed to graduate at 25-30 trades are now 15 days behind schedule.",
+      "escalation": "82 rules at confidence >=75% await graduation. Estimated time to first rule graduation: 20+ trades post-restart = 1-3 days trading.",
       "pre_restart_checklist": [
         "Soft-start: 50% size, 3x max leverage for first 5 trades (4-consecutive-loss buffer)",
         "Confirm [GRAD-RULES] Evaluating... in logs within first 5 signals",
@@ -127,10 +115,24 @@
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
+      "finding": "SOL_SHORT is the bot's #1 historical alpha (+$5807, 63.7% WR, 179 trades). Currently blocked: SOL_SHORT_edge_promote SUSPENDED_LIVE_CONTRADICTION + RULE_CONFLICT_SOL_SHORT at 100% gate. The live contradiction that triggered suspension is unknown — no record of what specific live data caused it.",
+      "action": "PENDING_HUMAN_DECISION: (A) Allow SOL_SHORT probe at 50% gate size to re-test hypothesis. (B) Maintain full block. This is the highest-EV unresolved decision in the system.",
+      "expected_impact_if_unblocked": "Historical: +$5807 on 179 trades (63.7% WR). If live contradiction holds: could lose ~$50-100 on 3-5 probe trades before re-blocking."
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
       "finding": "BTC_STOP_MIN_0.8PCT: conf=80% meets threshold but blocked by requires_human_review=true. Evidence: 47/47 BTC losses are instant SL hits. BTC avg stop 0.494%.",
       "action": "PENDING_HUMAN_REVIEW: Add BTC stop_width_pct >= 0.008 gate to signal_pipeline.py:265",
       "code_location": "bot/core/signal_pipeline.py:265",
       "expected_impact": "Block ~50% of BTC signals — 47/47 blocked would have been instant SL losses"
+    },
+    {
+      "subsystem": "live_injection",
+      "severity": "MEDIUM",
+      "finding": "CONF_60_70 data conflict: confidence_60_70_sweet_spot (93% confidence, SUSPENDED) claims conf 60-70% = +$2.19 avg profit. Active runtime rule conf_floor_70_v1 says 46.3% WR / -$2321 total — and penalizes -20pts. These rules cover the same confidence range but reached opposite conclusions.",
+      "action": "POST-RESTART: Investigate dataset size difference. sweet_spot rule may be based on a specific symbol/regime subset while conf_floor_70_v1 aggregates all. Do NOT change conf_floor_70_v1 without investigation.",
+      "risk": "If sweet_spot is correct, we're blocking profitable signals. If floor rule is correct, the suspension was appropriate."
     },
     {
       "subsystem": "daily_synthesis",
@@ -142,52 +144,49 @@
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "RULE_CONFLICT_SOL_SHORT + RULE_CONFLICT_LONG_BIAS: Two strategic conflicts pending human decision.",
-      "action": "PENDING_HUMAN_DECISION: (A) SOL_SHORT: keep blocked OR allow probe at 50% gate. (B) LONG_BIAS: keep suspension or keep filter — cannot have both."
+      "finding": "RULE_CONFLICT_LONG_BIAS: SIDE_BIAS_LONG_filter (gate=80%) and SIDE_BIAS_LONG_SUSPENSION (gate=80%) at equal gates cancel each other. LONG trades are 74-82% of all trades but LONG WR = 29-32% vs SHORT WR much higher. Both rules agree on the problem but cannot both be active.",
+      "action": "PENDING_HUMAN_DECISION: Keep SIDE_BIAS_LONG_filter (reduces LONG sizes) OR SIDE_BIAS_LONG_SUSPENSION (blocks LONG direction entirely at 80% gate). Cannot have both."
     },
     {
       "subsystem": "live_injection",
       "severity": "MEDIUM",
-      "finding": "Edge data 48h stale. ETH_SHORT+trending+morning ~80% WR is only confirmed edge. Kill-zones confirmed: SOL_LONG (24% WR), HYPE_LONG (23% WR), BTC_LONG (18% WR).",
-      "action": "On restart: inject edge summary into agent prompts. conf_floor_70_v1 already active."
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "LOW",
-      "finding": "CONF_60_70_all_block ARCHIVED this run: treatment_wr=baseline_wr=0.463. Zero improvement. Superseded by conf_floor_70_v1 runtime rule.",
-      "action": "COMPLETE — archived to feedback/graduated_rules.json. Active A/B rules reduced from 99 to 98."
+      "finding": "Edge data 52.8h stale. ETH_SHORT+trending+morning ~80% WR is only confirmed high edge. Kill-zones confirmed: SOL_LONG (24% WR), HYPE_LONG (23% WR), BTC_LONG (18% WR). conf_floor_70_v1 already active.",
+      "action": "On restart: inject edge summary into agent prompts. Refresh edge data after 5+ new trades."
     }
   ],
   "run_delta_from_prior": {
-    "prior_run": "2026-05-06T21:11:00Z",
-    "this_run": "2026-05-07T18:12:00Z",
-    "hours_elapsed": 21.0,
+    "prior_run": "2026-05-07T18:12:00Z",
+    "this_run": "2026-05-07T23:00:00Z",
+    "hours_elapsed": 4.8,
     "new_this_run": [
-      "2-WEEK OFFLINE THRESHOLD CROSSED (14.8d offline, threshold was 14d) — was projected last run, now confirmed",
-      "CONF_60_70_all_block ARCHIVED: treatment_wr=baseline_wr=0.463, no improvement, superseded by runtime rule",
-      "A/B rule count clarified: 99 total (vs 60 previously tracked) — prior count was stale; actual live A/B pipeline has 98 active rules after archive",
-      "daily_synthesis_2026-05-07.json generated (first synthesis of the day)",
-      "offline_hours escalated: 354.2h (was 310.9h at prior run)"
+      "15-DAY OFFLINE MILESTONE CROSSED (359h = 15.0d — prior was 354.2h = 14.8d)",
+      "SOL_SHORT_SUSPENSION_CONFLICT identified as new HIGH-priority finding — #1 historical alpha blocked",
+      "CONF_60_70_DATA_CONFLICT documented: sweet_spot vs floor rule contradiction for same confidence range",
+      "Edge data staleness escalated: 48h → 52.8h",
+      "Daily synthesis upgraded from MID_DAY to END_OF_DAY — 4 new anomalies added",
+      "A/B pending count corrected to 82 high-conf (>=75%) — was cited as 98 total previously"
     ],
     "still_outstanding": [
-      "Bot offline 14.8d — restart required (user action: cd bot && python run.py paper)",
-      "98 A/B rules awaiting live trade data (treatment_wr=null for all 98 active)",
+      "Bot offline 15.0d — restart required (user action: cd bot && python run.py paper)",
+      "82 high-conf A/B rules awaiting live trade data (treatment_wr=null)",
       "8 runtime graduated rules: times_correct=0 for all (outcome callback unverified)",
       "F1_sniper — awaiting human safety review",
-      "RULE_CONFLICT_SOL_SHORT — awaiting human decision",
+      "RULE_CONFLICT_SOL_SHORT — awaiting human decision (HIGHEST URGENCY: #1 historical alpha)",
       "RULE_CONFLICT_LONG_BIAS — awaiting human decision",
       "LLM_REGIME_CAPTURE_GAP — llm_regime column not written to trades.csv",
       "cost_tracker.json missing — Model Optimization blocked until restart",
       "BTC_STOP_0.8PCT_CODE — signal_pipeline.py:265 pending human safety review",
-      "SLIPPAGE_TRACKING_GAP — snapshot_entry column missing from trade_log"
+      "SLIPPAGE_TRACKING_GAP — snapshot_entry column missing from trade_log",
+      "CONF_60_70_DATA_CONFLICT — contradictory rules need post-restart investigation"
     ]
   },
   "next_run_focus": [
-    "If bot STILL offline: subsystems 2/3/5 SKIP again, escalate offline to ~375h (15.6d)",
+    "If bot STILL offline: subsystems 2/3/5 SKIP again, offline escalates to ~363.8h (15.2d)",
     "If bot restarted: CRITICAL — verify times_correct increments in graduated_rules.json after first closed trade",
     "If bot restarted: confirm all 8 runtime rules fire in rejection_tracker.json within first 10 signals",
     "If bot restarted: watch AB eval at trade #20 — evaluate_active_fixes() should report evaluated>=1",
     "If trades > 5: refresh live_edge_data.json and reset stale counter",
-    "On any run: check if cost_tracker.json has appeared (indicates bot is live)"
+    "On any run: check if cost_tracker.json has appeared (indicates bot is live)",
+    "SOL_SHORT probe decision required before restart for maximum PnL impact"
   ]
 }

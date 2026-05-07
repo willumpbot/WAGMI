@@ -1,24 +1,34 @@
 {
-  "generated_at": "2026-05-07T18:12:00Z",
+  "generated_at": "2026-05-07T23:00:00Z",
   "date": "2026-05-07",
-  "run_type": "MID_DAY_OFFLINE_SYNTHESIS",
+  "run_type": "END_OF_DAY",
   "trades_today": 0,
   "wr_today": null,
   "pnl_today": 0.0,
-  "note": "Bot offline — no trades generated today. Synthesis captures escalating offline anomalies.",
+  "note": "Bot offline 15.0 days — zero trades generated today. 15-DAY threshold crossed this run.",
   "anomalies": [
     {
       "type": "BOT_OFFLINE_CRITICAL",
       "severity": "CRITICAL",
-      "value": "354.2h (14.8d) — 2-WEEK THRESHOLD CROSSED 18.2h ago",
-      "detail": "Bot has been offline since ~2026-04-23. The 14-day (336h) escalation threshold was crossed at ~2026-05-07T00:00Z. All learning systems are deeply stalled.",
-      "escalation": "URGENT — every additional hour deepens A/B backlog. 98 rules at treatment_wr=null cannot graduate."
+      "value": "359.0h (15.0d) — 15-DAY MILESTONE CROSSED THIS RUN",
+      "detail": "Bot has been offline since ~2026-04-23. The 15-day (360h) milestone is crossed as of this run. All learning systems are deeply stalled. Every additional hour deepens the A/B graduation backlog.",
+      "escalation": "URGENT — 82 A/B rules at conf>=75% cannot graduate. 98 active rules total at treatment_wr=null. Critical learning paralysis.",
+      "delta_from_prior_run": "+4.8h (was 354.2h at 18:12 run)"
     },
     {
       "type": "AB_RULES_FROZEN",
       "severity": "CRITICAL",
-      "value": "98 high-confidence A/B rules with treatment_wr=null",
-      "detail": "98 rules in feedback/graduated_rules.json have confidence >= 75% but cannot be evaluated without live trade data. Rules like TRENDING_EARLY_HOLD_GUARD (88%), ILLIQUID_HOLD_TIMEOUT_RULE (87%), TRENDING_MIN_HOLD_2H (80%) are proven by historical analysis but unconfirmed by live outcomes."
+      "value": "82 high-confidence (>=75%) A/B rules frozen — treatment_wr=null for all",
+      "detail": "Top-confidence rules unable to graduate: BB_solo_signal_boost (95%), ETH_SHORT_BB_golden (95%), streak_momentum_gate (90%), BTC_BUY_BB_golden (91%), TIGHT_TP_preference (90%). All proven by historical analysis but cannot be confirmed or rejected without live trade data.",
+      "new_this_run": "Rule count corrected to 82 high-conf pending (was 98 total rules cited; 82 are conf>=75%)."
+    },
+    {
+      "type": "SOL_SHORT_SUSPENSION_CONFLICT",
+      "severity": "HIGH",
+      "value": "SOL_SHORT_edge_promote (90% conf) SUSPENDED for live contradiction — but it's the #1 historical alpha (+$5807, 63.7% WR)",
+      "detail": "SOL_SHORT_edge_promote and SOL_SHORT_priority_boost (76%) are both SUSPENDED_LIVE_CONTRADICTION. Historically SOL_SHORT is the best-performing setup. The live contradiction suspended it. RULE_CONFLICT_SOL_SHORT (92%) blocks further probe. Need: human decision on whether to allow controlled reversal probe at 50% gate size.",
+      "new_this_run": true,
+      "action_required": "Human decision: (A) unblock SOL_SHORT for controlled probe at 50% gate, or (B) maintain full block and accept losing the #1 historical alpha source"
     },
     {
       "type": "CONSECUTIVE_LOSSES",
@@ -33,11 +43,11 @@
       "detail": "All 8 runtime rules in data/llm/graduated_rules.json have times_correct=0. Outcome callback wiring unverified. Must monitor first 5 closed trades after restart."
     },
     {
-      "type": "CONF_60_70_AB_DEAD",
+      "type": "CONF_60_70_DATA_CONFLICT",
       "severity": "MEDIUM",
-      "value": "CONF_60_70_all_block: treatment_wr=0.463 = baseline_wr=0.463 — zero net improvement",
-      "detail": "The only A/B rule with treatment_wr data shows no improvement vs baseline. This rule is superseded by the live runtime rule conf_floor_70_v1 (which penalizes -20pts). CONF_60_70_all_block should be archived to reduce A/B noise.",
-      "action": "Archive CONF_60_70_all_block — runtime conf_floor_70_v1 is the active implementation."
+      "value": "confidence_60_70_sweet_spot (93%) says range is +EV; conf_floor_70_v1 (87%) penalizes it -20pts",
+      "detail": "SUSPENDED rule confidence_60_70_sweet_spot (93%) states conf 60-70% = +$2.19 avg. Runtime rule conf_floor_70_v1 says 46.3% WR / -$2321 total — and penalizes -20pts. These are the same confidence range but opposite conclusions. Dataset size difference or time-window split may explain; needs investigation post-restart.",
+      "new_this_run": true
     },
     {
       "type": "LLM_REGIME_CAPTURE_GAP",
@@ -48,8 +58,8 @@
     {
       "type": "EDGE_DATA_STALE",
       "severity": "MEDIUM",
-      "value": "48h stale — live_edge_data.json last updated from bot-active session",
-      "detail": "ETH_SHORT+trending+morning edge data (80% WR) is 48h stale. Historical pattern still valid but needs live confirmation post-restart."
+      "value": "52.8h stale — live_edge_data.json (was 48h at 18:12 run)",
+      "detail": "ETH_SHORT+trending+morning edge data (80% WR) is 52.8h stale. Historical pattern still valid but needs live confirmation post-restart."
     }
   ],
   "best_trade_today": null,
@@ -79,12 +89,13 @@
   "pending_human_decisions": [
     {
       "item": "RULE_CONFLICT_SOL_SHORT",
-      "description": "sol_short_regime_trend_block makes reversal probe ungatherable. Decision: keep blocked OR allow probe at 50% gate.",
-      "confidence": 92
+      "description": "SOL_SHORT historically = #1 alpha (+$5807, 63.7% WR, 179 trades). Currently blocked by SUSPENDED_LIVE_CONTRADICTION + full block rule. Decision: allow controlled 50% gate probe OR maintain full block.",
+      "confidence": 92,
+      "new_urgency": "Highest urgency — this is the bot's historical primary alpha source"
     },
     {
       "item": "RULE_CONFLICT_LONG_BIAS",
-      "description": "SIDE_BIAS_LONG_filter and SIDE_BIAS_LONG_SUSPENSION cancel each other at 80% gate each. Cannot have both.",
+      "description": "SIDE_BIAS_LONG_filter (gate=80%) and SIDE_BIAS_LONG_SUSPENSION (gate=80%) cancel each other. Cannot have both.",
       "confidence": 85
     },
     {
@@ -95,10 +106,22 @@
     },
     {
       "item": "F1_sniper_reenable",
-      "description": "Re-enable SNIPER_AUTO_EXECUTE with 5x leverage cap + $50 per-trade loss ceiling. Sniper carried +$328 of net +$252.",
+      "description": "Re-enable SNIPER_AUTO_EXECUTE with 5x leverage cap + $50 per-trade loss ceiling. Sniper carried +$328 of net +$252 in historical window.",
       "confidence": 91
     }
   ],
+  "end_of_day_summary": {
+    "trades": 0,
+    "pnl": 0.0,
+    "new_anomalies_vs_midday": [
+      "15-DAY OFFLINE MILESTONE CROSSED (was 14.8d at 18:12, now 15.0d)",
+      "SOL_SHORT_SUSPENSION_CONFLICT identified as new high-priority finding",
+      "CONF_60_70_DATA_CONFLICT documented (sweet_spot vs floor rule contradiction)",
+      "Edge data staleness escalated: 48h → 52.8h"
+    ],
+    "key_insight": "SOL_SHORT is the bot's historical #1 alpha (+$5807, 63.7% WR). It is currently fully blocked by a suspension rule. This conflict needs human decision before restart — re-enabling a controlled probe could restore the primary profit driver.",
+    "critical_restart_gap": "15 days of A/B learning lost. Estimated time to graduation of first rule: 20+ trades after restart = 1-3 days of active trading."
+  },
   "report_generated": true,
   "prior_synthesis": "daily_synthesis_2026-05-06.json"
 }
