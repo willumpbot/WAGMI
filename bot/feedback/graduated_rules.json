@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-05-05T17:09:59Z",
+  "last_updated": "2026-05-07T18:12:00Z",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -792,7 +792,7 @@
       "description": "60-70% confidence bin is net-negative after 123 trades. This segment destroys PnL.",
       "problem": "60-70% confidence: 46.3% WR, -$2320.54 PnL on 123 trades. At 46% WR with typical 1.5-2:1 R:R this should break even but doesn't. Net drag of ~$19/trade on average. Remove this tier or raise floor to 70%.",
       "fix_applied": "A/B gate: raise effective confidence floor to 70% for 50% of signals (confidence_floor soft-block). Parallel tracking of blocked vs passed signals.",
-      "status": "A/B_ACTIVE",
+      "status": "ARCHIVED",
       "confidence": 85,
       "gate_percentage": 100,
       "gate_escalated_date": "2026-04-27",
@@ -802,7 +802,9 @@
       "applied_date": "2026-04-25",
       "verified": false,
       "notes": "If existing CONF_60_70_floor_raise rule is already active, this is a reinforcing confirmation. Check interaction. Overlapping rule risk: CONF_60_70_floor_raise already A/B at 20% (baseline 0.463 matches). | 2026-04-28: Gate escalated 80\u2192100% after 10d data confirmed 46.3% WR on n=123, -$2320 PnL.",
-      "review_note": "treatment_wr == baseline_wr (0.463) \u2014 rule has no effect. Reviewed 2026-04-29T19:18:13.874877+00:00."
+      "review_note": "treatment_wr == baseline_wr (0.463) \u2014 rule has no effect. Reviewed 2026-04-29T19:18:13.874877+00:00.",
+      "archived_at": "2026-05-07T18:12:00Z",
+      "archive_reason": "treatment_wr (0.463) == baseline_wr (0.463) \u2014 zero net improvement. Superseded by runtime rule conf_floor_70_v1 (penalize -20pts for 60-70% confidence). Archived by perpetual_deep_dive 2026-05-07."
     },
     {
       "rule_id": "SOL_SHORT_priority_boost",
@@ -3415,5 +3417,12 @@
     "new_finding": "EXIT_PROACTIVE_CLOSE_PRIORITY falsely tracked as PENDING \u2014 now RESOLVED (prompts.py:985-994)",
     "bot_status": "OFFLINE 287.8h (12.0d)",
     "pending_code_change": "BTC_STOP_MIN_0.8PCT: signal_pipeline.py needs BTC-specific 0.8% minimum stop width gate (rules engine cannot enforce stop_width conditions)"
+  },
+  "run_log_2026_05_07_1812": {
+    "run": "perpetual_deep_dive_2026_05_07_1812",
+    "action": "archived CONF_60_70_all_block (treatment_wr=baseline_wr=0.463, no improvement, superseded by conf_floor_70_v1)",
+    "ab_rules_archived": 1,
+    "ab_rules_active": 98,
+    "ab_rules_total": 99
   }
 }

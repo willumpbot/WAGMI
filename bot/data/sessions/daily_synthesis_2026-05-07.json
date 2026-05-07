@@ -1,0 +1,104 @@
+{
+  "generated_at": "2026-05-07T18:12:00Z",
+  "date": "2026-05-07",
+  "run_type": "MID_DAY_OFFLINE_SYNTHESIS",
+  "trades_today": 0,
+  "wr_today": null,
+  "pnl_today": 0.0,
+  "note": "Bot offline — no trades generated today. Synthesis captures escalating offline anomalies.",
+  "anomalies": [
+    {
+      "type": "BOT_OFFLINE_CRITICAL",
+      "severity": "CRITICAL",
+      "value": "354.2h (14.8d) — 2-WEEK THRESHOLD CROSSED 18.2h ago",
+      "detail": "Bot has been offline since ~2026-04-23. The 14-day (336h) escalation threshold was crossed at ~2026-05-07T00:00Z. All learning systems are deeply stalled.",
+      "escalation": "URGENT — every additional hour deepens A/B backlog. 98 rules at treatment_wr=null cannot graduate."
+    },
+    {
+      "type": "AB_RULES_FROZEN",
+      "severity": "CRITICAL",
+      "value": "98 high-confidence A/B rules with treatment_wr=null",
+      "detail": "98 rules in feedback/graduated_rules.json have confidence >= 75% but cannot be evaluated without live trade data. Rules like TRENDING_EARLY_HOLD_GUARD (88%), ILLIQUID_HOLD_TIMEOUT_RULE (87%), TRENDING_MIN_HOLD_2H (80%) are proven by historical analysis but unconfirmed by live outcomes."
+    },
+    {
+      "type": "CONSECUTIVE_LOSSES",
+      "severity": "HIGH",
+      "value": 4,
+      "detail": "4 consecutive losses at shutdown. Circuit breaker threshold is 5. Soft-start protocol required on restart."
+    },
+    {
+      "type": "RULE_OUTCOME_FEEDBACK_GAP",
+      "severity": "HIGH",
+      "value": "8/8 runtime graduated rules — times_correct=0 for all",
+      "detail": "All 8 runtime rules in data/llm/graduated_rules.json have times_correct=0. Outcome callback wiring unverified. Must monitor first 5 closed trades after restart."
+    },
+    {
+      "type": "CONF_60_70_AB_DEAD",
+      "severity": "MEDIUM",
+      "value": "CONF_60_70_all_block: treatment_wr=0.463 = baseline_wr=0.463 — zero net improvement",
+      "detail": "The only A/B rule with treatment_wr data shows no improvement vs baseline. This rule is superseded by the live runtime rule conf_floor_70_v1 (which penalizes -20pts). CONF_60_70_all_block should be archived to reduce A/B noise.",
+      "action": "Archive CONF_60_70_all_block — runtime conf_floor_70_v1 is the active implementation."
+    },
+    {
+      "type": "LLM_REGIME_CAPTURE_GAP",
+      "severity": "HIGH",
+      "value": "llm_regime column empty in trades.csv — 12 regime A/B rules unmeasurable",
+      "detail": "Even when the bot restarts, regime-based A/B rules cannot be measured unless the llm_regime column is written to trades.csv at trade close."
+    },
+    {
+      "type": "EDGE_DATA_STALE",
+      "severity": "MEDIUM",
+      "value": "48h stale — live_edge_data.json last updated from bot-active session",
+      "detail": "ETH_SHORT+trending+morning edge data (80% WR) is 48h stale. Historical pattern still valid but needs live confirmation post-restart."
+    }
+  ],
+  "best_trade_today": null,
+  "worst_trade_today": null,
+  "7d_wr_context": {
+    "trending": 0.519,
+    "illiquid": 0.281,
+    "overall_historical": "46.9% WR, 352 resolved trades"
+  },
+  "tomorrows_focus": {
+    "priority_action": "RESTART BOT — cd bot && python run.py paper",
+    "priority_symbols": ["ETH", "BTC"],
+    "priority_regimes": ["trending"],
+    "avoid_symbols": ["SOL", "HYPE"],
+    "avoid_regimes": ["illiquid", "ranging"],
+    "priority_time_window": "06:00-12:00 UTC (morning session, 71-75% WR confirmed)",
+    "restart_protocol": [
+      "Soft-start: max 3x leverage, 50% position size for first 5 trades (4-consecutive-loss buffer)",
+      "Confirm [GRAD-RULES] Evaluating... in logs within first 5 signals",
+      "Confirm night_session_block_v1 rejects all 00-06 UTC signals",
+      "Confirm hype_long_veto_v1 and sol_long_veto_v1 fire on first HYPE/SOL signals",
+      "Watch AB eval log at trade #20 — evaluate_active_fixes() should report evaluated>=1",
+      "CRITICAL: Verify times_correct increments in data/llm/graduated_rules.json after first closed trade",
+      "If times_correct still 0 after 5 closed trades — outcome callback is broken, requires immediate investigation"
+    ]
+  },
+  "pending_human_decisions": [
+    {
+      "item": "RULE_CONFLICT_SOL_SHORT",
+      "description": "sol_short_regime_trend_block makes reversal probe ungatherable. Decision: keep blocked OR allow probe at 50% gate.",
+      "confidence": 92
+    },
+    {
+      "item": "RULE_CONFLICT_LONG_BIAS",
+      "description": "SIDE_BIAS_LONG_filter and SIDE_BIAS_LONG_SUSPENSION cancel each other at 80% gate each. Cannot have both.",
+      "confidence": 85
+    },
+    {
+      "item": "BTC_STOP_0.8PCT_CODE",
+      "description": "signal_pipeline.py: add BTC-specific 0.8% minimum stop width gate at ~line 265. Evidence: 47/47 BTC losses are instant SL hits (avg stop 0.494%). Requires safety review per execution-safety.md.",
+      "confidence": 80,
+      "file": "bot/core/signal_pipeline.py:265"
+    },
+    {
+      "item": "F1_sniper_reenable",
+      "description": "Re-enable SNIPER_AUTO_EXECUTE with 5x leverage cap + $50 per-trade loss ceiling. Sniper carried +$328 of net +$252.",
+      "confidence": 91
+    }
+  ],
+  "report_generated": true,
+  "prior_synthesis": "daily_synthesis_2026-05-06.json"
+}
