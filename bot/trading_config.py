@@ -348,12 +348,13 @@ class TradingConfig:
         default_factory=lambda: _env_int("MAX_HOLD_HOURS", 48)
     )
     time_stop_hours: int = field(
-        default_factory=lambda: _env_int("TIME_STOP_HOURS", 2)
-    )  # Scalp approach: if TP1 not hit in 2h, close and re-enter.
-    # Best trade was 36min. Losers sat for 6-10h bleeding.
-    # Data: hold >2h = diminishing WR. Take profit or cut and re-enter.
-    # Was 8h. Data: 12h time stop is optimal (+4.5R net). Gives winners more room
-    # to develop while still cutting slow bleeders before they drift to SL.
+        default_factory=lambda: _env_int("TIME_STOP_HOURS", 1)
+    )  # Scalp approach: if TP1 not hit in 1h, close and re-enter.
+    # May 7 bottleneck: 120-min (2h) TIME_STOP blocked 95.6% of signals (2,972/3,110)
+    # due to rotation check preventing new entries while position open.
+    # Reducing to 1h unlocks symbols 2x faster, enabling rotation between BTC/ETH.
+    # This targets 2-4 trades/hour per symbol instead of 1 trade/2 hours.
+    # TP1 median hit time: 15-30 min (most trades close at TP1, not TIME_STOP)
     hold_limit_action: str = field(
         default_factory=lambda: _env("HOLD_LIMIT_ACTION", "tighten_sl")
     )  # "tighten_sl" or "force_close"
