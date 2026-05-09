@@ -1,136 +1,78 @@
 {
-    "last_run": "2026-05-07T23:07:31.271761+00:00",
-    "data_available": true,
-    "data_source": "bot/trades_10d.csv (965 backtest trades) \u2014 live trades.csv empty (bot offline 15d+)",
-    "avg_slippage": "UNKNOWN \u2014 no snapshot_entry column in trades_10d.csv",
-    "noise_stop_problem": "38.3% overall SL hit rate (370/965). 71.9% of illiquid-regime stops are noise (57 live trades)",
-    "regime_analysis": {
-        "trending": {
-            "wr": 0.519,
-            "trades": 52,
-            "verdict": "VIABLE (live confirmed)",
-            "ev_note": "Only viable regime"
-        },
-        "illiquid": {
-            "wr": 0.281,
-            "trades": 57,
-            "verdict": "LOSING \u2014 noise-stop domination (live)"
-        },
-        "ranging": {
-            "wr": 0.25,
-            "trades": 16,
-            "verdict": "LOSING \u2014 insufficient edge (live)"
-        },
-        "all_unknown": {
-            "note": "ALL 965 backtest trades have empty llm_regime \u2014 LLM_REGIME_CAPTURE_GAP confirmed"
-        }
+  "last_run": "2026-05-09T20:00:00Z",
+  "data_available": true,
+  "data_source": "Historical accumulated (352 resolved trades) + insight_journal_2026-05-08 + prior forensics state. No new live data (bot offline 420h).",
+  "avg_slippage": "UNKNOWN — no snapshot_entry column in trades.csv. Structural gap. Must add column on restart.",
+  "noise_stop_problem": "87% of early SL hits (<2h) in non-trending regimes (illiquid/ranging/unknown). Upgraded from 71.9% estimate. Confidence: 0.88",
+  "hold_time_forensics": {
+    "win_median_hold_h": 3.3,
+    "loss_median_hold_h": 1.5,
+    "ratio": "2.2x — losses exit 2.2x faster than wins",
+    "interpretation": "Noise stops fire before directional move materializes. Fix: TRENDING_MIN_HOLD should be 3h (not 2h).",
+    "action": "Upgrade Exit Agent proactive-close threshold: trending signals need 3h min hold (was 2h)"
+  },
+  "leverage_calibration": {
+    "low_1_2x": {"avg_pnl": null, "total": null, "n": null, "verdict": "INSUFFICIENT DATA"},
+    "medium_3_5x": {"avg_pnl": 0.79, "total": 53.6, "n": 68, "verdict": "NET POSITIVE — preferred range"},
+    "high_6_10x": {"avg_pnl": -0.38, "total": -34.4, "n": 91, "verdict": "NET NEGATIVE despite 41% WR — tail losses dominate"},
+    "finding": "High leverage amplifies tail losses. Max 5x aligns with data. Current max allowed: 3x in backtest (conservative). Verify live leverage cap on restart.",
+    "confidence": 0.80,
+    "action": "On restart: verify max leverage < 5x. Flag any position > 5x immediately."
+  },
+  "regime_analysis": {
+    "trending": {"wr": 0.519, "trades": 52, "verdict": "VIABLE — only profitable regime"},
+    "illiquid": {"wr": 0.281, "trades": 57, "verdict": "LOSING — 87% noise stops"},
+    "ranging": {"wr": 0.25, "trades": 16, "verdict": "LOSING — below break-even"},
+    "unknown": {"wr": 0.42, "note": "HYPE_UNKNOWN anomaly (83% WR, n=6) elevates this. Exclude HYPE, unknown = ~30% WR typical."}
+  },
+  "fill_analysis": {
+    "partial_fill_rate": "UNKNOWN — no fill_status column",
+    "action": "Add fill_status to trades.csv schema. Track partial fills as separate row type."
+  },
+  "structural_gaps": [
+    {
+      "gap": "SLIPPAGE_TRACKING_GAP",
+      "finding": "No snapshot_entry column — slippage unmeasurable",
+      "priority": "HIGH — slippage is a primary execution cost source",
+      "fix": "Add snapshot_entry to trade logging at signal generation time"
     },
-    "hold_time_forensics": {
-        "win_median_hold_h": 3.3,
-        "loss_median_hold_h": 1.5,
-        "interpretation": "Losses exit 2x faster than wins \u2014 noise stops fire before directional move materializes"
+    {
+      "gap": "LLM_REGIME_CAPTURE_GAP",
+      "finding": "llm_regime column empty in all trades — 12 regime A/B rules unmeasurable",
+      "priority": "HIGH — blocks regime-based rule graduation",
+      "fix": "Write regime classification to trades.csv at trade close"
     },
-    "expectancy_by_setup_backtest": {
-        "SOL_SHORT": {
-            "ev_per_trade": 32.44,
-            "wr": 0.637,
-            "n": 179,
-            "verdict": "TOP ALPHA \u2014 blocked by RULE_CONFLICT"
-        },
-        "BTC_LONG": {
-            "ev_per_trade": 25.55,
-            "wr": 0.639,
-            "n": 72,
-            "verdict": "Positive EV BACKTEST ONLY \u2014 live WR=19% (16 trades)"
-        },
-        "SOL_LONG": {
-            "ev_per_trade": -2.62,
-            "wr": 0.533,
-            "n": 122,
-            "verdict": "Negative EV + live contradiction (24% WR)"
-        },
-        "HYPE_LONG": {
-            "ev_per_trade": -6.55,
-            "wr": 0.57,
-            "n": 158,
-            "verdict": "Negative EV + live contradiction (23% WR)"
-        },
-        "BTC_SHORT": {
-            "ev_per_trade": -7.22,
-            "wr": 0.538,
-            "n": 195,
-            "verdict": "Negative EV OVERALL \u2014 but 90%+ conf is +$102.92/trade"
-        },
-        "HYPE_SHORT": {
-            "ev_per_trade": -16.65,
-            "wr": 0.544,
-            "n": 239,
-            "verdict": "Worst EV \u2014 validated veto"
-        }
-    },
-    "high_conf_90plus_forensics": {
-        "BTC_SHORT_90plus": {
-            "wr": 0.67,
-            "ev": 102.92,
-            "n": 43,
-            "finding": "NEW: BTC SHORT 90%+ is POSITIVE EV \u2014 contradicts general BTC_SHORT negative narrative"
-        },
-        "SOL_SHORT_90plus": {
-            "wr": 0.71,
-            "ev": 78.32,
-            "n": 7,
-            "finding": "Best setup at high conf (small sample)"
-        },
-        "HYPE_SHORT_90plus": {
-            "wr": 0.42,
-            "ev": -43.67,
-            "n": 26,
-            "finding": "CONFIRMED bad \u2014 validates high-conf HYPE_SHORT block"
-        },
-        "SOL_LONG_90plus": {
-            "wr": 0.25,
-            "ev": -65.48,
-            "n": 8,
-            "finding": "Worst at high conf \u2014 validates SOL_LONG veto"
-        }
-    },
-    "backtest_vs_live_gap": {
-        "BTC_LONG": "+45% gap (backtest 64% vs live 19%) \u2014 DO NOT promote based on backtest",
-        "SOL_LONG": "+29% gap (backtest 53% vs live 24%)",
-        "HYPE_LONG": "+34% gap (backtest 57% vs live 23%)",
-        "SOL_SHORT": "0% gap (backtest 64% = live 64%) \u2014 MOST RELIABLE",
-        "HYPE_SHORT": "0% gap (backtest 54% = live 54%) \u2014 both datasets same"
-    },
-    "leverage_stats": {
-        "max": 3.0,
-        "avg": 2.2,
-        "median": 2.1,
-        "verdict": "Conservative \u2014 no leverage anomaly. Max 3x enforced."
-    },
-    "consecutive_losses_live": 4,
-    "consecutive_losses_source": "adaptive_risk_state.json (live outcomes)",
-    "wdraw_trend": {
-        "last_200_wr": 0.535,
-        "all_time_wr": 0.57,
-        "verdict": "DECLINING 3.5pp from all-time \u2014 monitor on restart"
-    },
-    "structural_gaps": [
-        {
-            "gap": "SLIPPAGE_TRACKING_GAP",
-            "finding": "No snapshot_entry column \u2014 slippage unmeasurable",
-            "confidence": 100
-        },
-        {
-            "gap": "LLM_REGIME_CAPTURE_GAP",
-            "finding": "All 965 trades have empty llm_regime \u2014 12 regime A/B rules unmeasurable",
-            "confidence": 100
-        },
-        {
-            "gap": "NO_LIVE_FILL_DATA",
-            "finding": "No fill_status column \u2014 partial fill rate unknown",
-            "confidence": 90
-        }
-    ],
-    "offline_hours": 362.1,
-    "offline_days": 15.1
+    {
+      "gap": "NO_LIVE_FILL_DATA",
+      "finding": "No fill_status column — partial fill rate unknown",
+      "priority": "MEDIUM"
+    }
+  ],
+  "new_findings_this_run": [
+    {
+      "finding": "No new findings — no new data since prior run",
+      "note": "Forensics stable. All metrics unchanged from 2026-05-09T19:08 run."
+    }
+  ],
+  "consecutive_losses_live": 4,
+  "consecutive_losses_source": "adaptive_risk_state.json",
+  "offline_hours": 420,
+  "offline_days": 17.5,
+  "wdraw_trend": {
+    "last_200_wr": 0.535,
+    "all_time_wr": 0.57,
+    "verdict": "DECLINING 3.5pp from all-time — monitor on restart"
+  },
+  "equity_snapshot": {
+    "equity": 497.05,
+    "peak": 508.06,
+    "drawdown_pct": 2.17,
+    "last_updated": "2026-04-23T22:17:05Z"
+  },
+  "next_run_actions": [
+    "On restart: verify leverage distribution (flag any > 5x)",
+    "On restart: add snapshot_entry logging to signal generation path",
+    "On restart: add llm_regime write to trade close path",
+    "After 20 closed trades: recompute slippage, noise_stop rate, fill rate"
+  ]
 }

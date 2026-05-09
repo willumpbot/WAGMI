@@ -1,99 +1,97 @@
 {
-  "last_run": "2026-05-07T22:04:00Z",
-  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_07_2204",
-  "fixes_applied_this_run": 2,
+  "last_run": "2026-05-09T20:00:00Z",
+  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_09_2000",
+  "fixes_applied_this_run": 0,
   "gates_active": 8,
-  "applied_this_run": [
-    {
-      "rule_id": "HYPE_SHORT_EV_REINIT",
-      "description": "Reinitialized hype_short_veto_v1 evidence_ratio from 0.0 → 0.35. Prior 0.0 was an initialization bug (no historical data seeded at rule creation). Evidence source: HYPE_SELL_BB_block (92% conf A/B rule), HYPE_SELL_BB = 35% WR. Rule remains active as veto — 239 total evidence trades at -$16.65/trade confirms net-negative EV. The 35% WR is consistent with this loss magnitude.",
-      "confidence": 85,
-      "gate_percentage": 0,
-      "files_changed": ["bot/data/llm/graduated_rules.json"],
-      "verified": true,
-      "applied_at": "2026-05-07T22:04:00Z"
-    },
-    {
-      "rule_id": "BTC_SHORT_CONF70_EV_REINIT",
-      "description": "Reinitialized btc_short_conf70_80_penalize_v1 evidence_ratio from 0.0 → 0.25. Prior 0.0 was an initialization bug. Evidence source: orphan rule BTC_SHORT_CONF70_80_BLOCK (90% conf): 'single largest loss bucket across all setups' on 40 trades. 25% WR is conservative estimate consistent with 'worst loss bucket' descriptor, well below BTC average (~33%). Rule remains active as -20pt penalize.",
-      "confidence": 80,
-      "gate_percentage": 0,
-      "files_changed": ["bot/data/llm/graduated_rules.json"],
-      "verified": true,
-      "applied_at": "2026-05-07T22:04:00Z"
-    },
-    {
-      "rule_id": "CONF_FLOOR_70_RUNTIME",
-      "description": "Promoted CONF_70_HARD_FLOOR to runtime graduated_rules.json. Penalizes all 60-70% confidence signals by -20 points. Evidence: 123 trades at 46.3% WR, -$2321 PnL \u2014 worst confidence bin across all symbols/regimes. Supersedes overlapping CONF_60_70_floor_raise + CONF_60_70_all_block A/B rules.",
-      "confidence": 87,
-      "gate_percentage": 20,
-      "files_changed": [
-        "bot/data/llm/graduated_rules.json"
-      ],
-      "verified": true,
-      "verification": "8 rules in data/llm/graduated_rules.json. conf_floor_70_v1 added: penalize -20 for confidence_min=60 confidence_max=70.",
-      "applied_at": "2026-05-05T18:15:55.654013+00:00"
-    }
+  "new_fixes_this_run": [],
+  "reason_no_new_fixes": [
+    "CONF_70_80_GENERAL_PENALIZE: 33% WR, n=43, est conf=76%. DEFERRED — cannot safely apply without symbol/regime breakdown. Would double-penalize BTC_SHORT 70-80% (btc_short_conf70_80_penalize_v1 already active -20pts). Risk: blanket rule hurts ETH/SOL trending signals that may score in 70-80% range.",
+    "HYPE_UNKNOWN_REGIME_EXCEPTION: 83% WR but n=6. Too small for a rule. Direction (BUY/SELL) unverified.",
+    "streak_momentum_gate: conf=90% but requires code change to signal_pipeline.py. Safety review needed.",
+    "BTC_STOP_0.8PCT_CODE: conf=80% but requires code change. Safety review needed.",
+    "CALIBRATION_OFFSET_CAP: conf=80% but requires code change to parameter_tuner.py."
   ],
+  "applied_this_run": [],
   "audit_resolution": {
-    "HYPE_RULE_NOT_WIRED": {
-      "status": "RESOLVED",
-      "finding": "data/llm/graduated_rules.json had only 1 rule (BTC trend boost). Prior run claimed 5 rules but wrote to feedback/graduated_rules.json instead of data/llm/graduated_rules.json.",
-      "action_taken": "This run wrote all 6 missing vetoes/penalties directly to data/llm/graduated_rules.json. Verified via GraduatedRulesEngine.evaluate_signal() live test.",
-      "resolved_at": "2026-05-04T20:31:00+00:00"
-    },
-    "F8_STALE_89PCT_HYPE": {
-      "status": "RESOLVED",
-      "finding": "ensemble.py line 1799 comment and line 1829 log claimed HYPE BUY = '89% empirical WR' based on counterfactual tests. Live data: 23% WR, 35 trades, -$77.26.",
-      "action_taken": "Removed _PROVEN_SETUP_EXEMPT and orphaned proven-setup override block. Updated comment to reference live contradiction.",
-      "resolved_at": "2026-05-04T20:31:00+00:00"
-    }
+    "HYPE_RULE_NOT_WIRED": {"status": "RESOLVED", "resolved_at": "2026-05-04T20:31:00+00:00"},
+    "F8_STALE_89PCT_HYPE": {"status": "RESOLVED", "resolved_at": "2026-05-04T20:31:00+00:00"},
+    "EXIT_PROACTIVE_CLOSE_PRIORITY": {"status": "RESOLVED", "resolved_at": "2026-05-05T22:08:09Z"},
+    "BTC_STOP_MIN_0.8PCT_GATE": {"status": "ALREADY_ESCALATED — gate_percentage=50", "resolved_at": "2026-05-05T22:08:09Z"}
   },
   "pending_human_review": [
-    "F1_sniper_pending_safety_review",
+    "F1_sniper_auto_execute_off — enable SNIPER_AUTO_EXECUTE=true? Review first.",
+    "CONF_FLOOR_70_RULE_CONFLICT — conf_floor_70_v1 penalizes -20pts but insight_journal shows 60-70% = +$2.19/trade EV. Conflicting sample windows. Suspend rule pending live re-evaluation?",
+    "SOL_SHORT_SUSPENSION — SOL_SHORT suspended (live contradiction) but #1 historical alpha (+$5807, 63.7% WR). Allow 50% gate probe or maintain full block?",
     "HIGH_CONF_CALIBRATION_DRIFT",
     "BTC_CONCENTRATION_MONITOR",
-    "LLM_REGIME_CAPTURE_GAP",
-    "BTC_TOTAL_CONCENTRATION",
-    "RULE_CONFLICT_SOL_SHORT",
+    "LLM_REGIME_CAPTURE_GAP — llm_regime not written to trades.csv. 12 regime A/B rules unmeasurable.",
     "RULE_CONFLICT_LONG_BIAS",
     "BOT_INACTIVE_ALERT"
   ],
-  "ab_rules_awaiting_live_data": 59,
-  "ab_rules_with_measurement": 0,
-  "total_applied_all_time": 20,
-  "runtime_rules_now_active": 8,
-  "gap_discovered_this_run": "Prior runs wrote 'applied' claims to feedback/graduated_rules.json audit log but never wrote to data/llm/graduated_rules.json runtime file. State files were aspirational, not actual. Fixed this run.",
-  "next_run_priority": "Bot restart required. On restart: verify all 7 graduated rules fire in rejection_tracker.json within first 10 signals. Then monitor night_session_block_v1 (expected: veto all 00-06 UTC signals).",
-  "corrections_this_run": [
-    {
-      "corrects": "daily_synthesis_2026-05-03.json anomaly: 'evaluate_active_fixes() is TODO'",
-      "actual_status": "IMPLEMENTED \u2014 evaluate_active_fixes() exists at bot/learning/auto_fix_pipeline.py:106. Full A/B split logic with revert/promote thresholds. Wired via FeedbackLoop.auto_fix (AutoFixPipeline). The May 3 synthesis was wrong.",
-      "impact": "No code change needed. 60 A/B rules WILL graduate once bot restarts and generates 20+ trades."
-    },
-    {
-      "corrects": "EXIT_PROACTIVE_CLOSE_PRIORITY status TRACKED_PENDING_IMPLEMENTATION",
-      "actual_status": "RESOLVED \u2014 prompts.py:985-994 has full proactive close rule implemented. hold_time<2h+dist<30%+non-trending\u2192CLOSE; <15%\u2192CLOSE; regime_shift+losing\u2192CLOSE.",
-      "impact": "Subsystem tracking now accurate. No code change needed \u2014 already live.",
-      "resolved_at": "2026-05-05T22:08:09.455342+00:00"
-    },
-    {
-      "corrects": "BTC_STOP_MIN_0.8PCT gate was thought to be at 20%. Already at 50% from prior escalation.",
-      "actual_status": "ALREADY_ESCALATED \u2014 gate_percentage=50 in feedback/graduated_rules.json.",
-      "impact": "No change needed. Pending code impl: signal_pipeline.py BTC min-stop 0.8% filter.",
-      "resolved_at": "2026-05-05T22:08:09.455342+00:00"
-    }
-  ],
   "pending_code_changes": [
     {
+      "change_id": "streak_momentum_gate",
+      "description": "signal_pipeline.py: penalize -15 if consecutive_losses >= 2. Needs system-state access.",
+      "confidence": 0.90,
+      "file_target": "bot/core/signal_pipeline.py",
+      "priority": "HIGH — 4 consecutive losses at shutdown. Would fire on restart after 2nd loss.",
+      "requires_safety_review": true
+    },
+    {
       "change_id": "BTC_STOP_0.8PCT_CODE",
-      "description": "signal_pipeline.py: add BTC-specific minimum stop width of 0.8%. When symbol==BTC and stop_width_pct < 0.008, reject signal. Rules engine cannot enforce stop_width conditions \u2014 needs direct code impl.",
-      "confidence": 80,
-      "evidence": "47/47 BTC losses in backtest are instant SL hits. BTC avg stop 0.494%. BTC_NOISE_SL_widen A/B gate at 50%. This is the code-level enforcement.",
-      "file_target": "bot/core/signal_pipeline.py (validity gate, ~line 265)",
-      "logged_at": "2026-05-05T22:08:09.455342+00:00",
-      "requires_human_review": true,
-      "reason": "Code change to execution path \u2014 safety review required per execution-safety.md"
+      "description": "signal_pipeline.py: BTC-specific min stop width 0.8%. Reject if symbol==BTC and stop_width_pct < 0.008.",
+      "confidence": 0.80,
+      "file_target": "bot/core/signal_pipeline.py (~line 265)",
+      "priority": "MEDIUM — 47/47 BTC losses are instant SL hits avg 0.494% stop",
+      "requires_safety_review": true
+    },
+    {
+      "change_id": "CALIBRATION_OFFSET_CAP",
+      "description": "parameter_tuner.py: cap calibration_offset at ±3. Current -9.28 cancels quality boosts on all signals (Finding 2, AUTONOMOUS_SESSION_2026_04_15.md).",
+      "confidence": 0.80,
+      "file_target": "bot/feedback/parameter_tuner.py",
+      "priority": "HIGH — tuner is in feedback deadlock: losses → negative offset → fewer trades → fewer data → offset stays negative",
+      "new_this_run": true,
+      "requires_safety_review": false,
+      "note": "Discovered in AUTONOMOUS_SESSION_2026_04_15.md Finding 2. Previously overlooked in auto_fix processing."
     }
+  ],
+  "new_candidates_not_yet_applied": [
+    {
+      "candidate_id": "CONF_70_80_GENERAL_PENALIZE",
+      "description": "Penalize all 70-80% confidence signals by -10 to -15pts. 33% WR on n=43, -$4.05/trade (insight_journal).",
+      "estimated_confidence": 0.76,
+      "gate_percentage_if_applied": 20,
+      "blocker": "Cannot apply safely without symbol+regime breakdown. Would double-penalize BTC_SHORT 70-80% where btc_short_conf70_80_penalize_v1 already applies -20pts. Need: breakdown of the 43 trades by symbol/regime first.",
+      "action": "Collect symbol-regime breakdown after 20+ live trades on restart. Then re-evaluate.",
+      "new_this_run": true
+    },
+    {
+      "candidate_id": "HYPE_UNKNOWN_REGIME_EXCEPTION",
+      "description": "Exception to hype_short_veto_v1: allow HYPE signals in UNKNOWN regime (83% WR, n=6).",
+      "estimated_confidence": 0.70,
+      "blocker": "n=6 too small. Direction (BUY vs SELL) unverified. Cannot create exception without knowing which side drives the 83% WR.",
+      "action": "After 10+ HYPE+UNKNOWN trades: verify direction, then create targeted exception if confirmed.",
+      "new_this_run": false
+    }
+  ],
+  "total_applied_all_time": 20,
+  "runtime_rules_now_active": 8,
+  "ab_rules_awaiting_live_data": 82,
+  "ab_rules_with_measurement": 0,
+  "previously_applied": [
+    "HYPE_RULE_WIRING (x6 rules written to data/llm/graduated_rules.json — 2026-05-04)",
+    "F8_89PCT_HARDCODED_WR_REMOVED (2026-05-04)",
+    "BTC_TREND_BOOST_REINIT (2026-05-04)",
+    "HYPE_SHORT_EV_REINIT (2026-05-07)",
+    "BTC_SHORT_CONF70_EV_REINIT (2026-05-07)",
+    "CONF_FLOOR_70_RUNTIME (2026-05-05)"
+  ],
+  "next_run_priority": [
+    "IF BOT RESTARTS: verify all 8 runtime rules fire in rejection_tracker.json (first 10 signals)",
+    "IF BOT RESTARTS: check outcome callbacks — times_correct should be > 0 after 2 closed trades",
+    "CALIBRATION_OFFSET_CAP: new finding, high priority. Check parameter_tuner.py current offset value.",
+    "CONF_FLOOR_70 conflict: investigate 123-trade vs 67-trade sample windows",
+    "CONF_70_80 breakdown: after 20 live trades, compute by symbol+regime"
   ]
 }
