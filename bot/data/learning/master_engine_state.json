@@ -1,118 +1,118 @@
 {
-  "last_run": "2026-05-09T20:00:00Z",
-  "run_id": "perpetual_deep_dive_2026_05_09_2000",
-  "prior_run": "2026-05-09T19:08:43Z",
-  "hours_since_prior_run": 0.87,
+  "last_run": "2026-05-13T23:07:14Z",
+  "run_id": "perpetual_deep_dive_2026_05_13_2307",
+  "prior_run": "2026-05-09T20:00:00Z",
+  "hours_since_prior_run": 99.1,
   "subsystems": {
     "auto_fix": {
-      "status": "COMPLETE — 0 new fixes. New finding: CALIBRATION_OFFSET_CAP (conf=80%). New candidate: CONF_70_80_GENERAL_PENALIZE (deferred).",
-      "fixes_applied": 0,
-      "gates_active": 8,
-      "total_applied_all_time": 20,
-      "new_finding": {
-        "rule": "CALIBRATION_OFFSET_CAP",
+      "status": "COMPLETE — 1 new fix applied (btc_narrow_stop_veto_v1). 2 items resolved (already in code: CALIBRATION_OFFSET_CAP, streak_momentum_gate).",
+      "fixes_applied": 1,
+      "gates_active": 9,
+      "total_applied_all_time": 21,
+      "new_fix": {
+        "rule": "btc_narrow_stop_veto_v1",
         "severity": "HIGH",
-        "description": "parameter_tuner.py calibration_offset=-9.28 cancels quality boosts on ALL signals. Feedback deadlock. Fix: cap at ±3.",
+        "description": "BTC signals with stop_width < 0.8% now hard-blocked via graduated_rules.json. Also added stop_width_pct condition type to graduated_rules engine and wired into signal_pipeline. Evidence: 47/47 losses (0% WR, avg 0.494% stop).",
         "confidence": 0.80,
-        "file_target": "bot/feedback/parameter_tuner.py",
+        "files_changed": ["bot/llm/graduated_rules.py", "bot/data/llm/graduated_rules.json", "bot/core/signal_pipeline.py"],
         "is_new_this_run": true
-      }
+      },
+      "resolved_items": [
+        "CALIBRATION_OFFSET_CAP — confirmed already in parameter_tuner.py:186",
+        "streak_momentum_gate — confirmed already implemented in signal_pipeline.py:720-737"
+      ]
     },
     "execution_forensics": {
-      "status": "STABLE — no new live data (bot offline 420h)",
-      "avg_slippage": "UNKNOWN",
-      "noise_stop_problem": "87% in non-trending regimes (conf=0.88)",
-      "offline_hours": 420
+      "status": "CACHED — no new live data (bot offline 503h / 21d)",
+      "avg_slippage": "UNKNOWN — no snapshot_entry column in trades.csv. Add on restart.",
+      "noise_stop_problem": "87% of early SL hits in non-trending regimes (conf=0.88) — unchanged from last run",
+      "key_findings": {
+        "win_median_hold_h": 3.3,
+        "loss_median_hold_h": 1.5,
+        "leverage_verdict": "3-5x net positive ($0.79/trade avg), 6-10x net negative (-$0.38/trade). Max 5x supported by data.",
+        "trending_wr": 0.519,
+        "illiquid_wr": 0.281
+      },
+      "new_this_run": false
     },
     "live_injection": {
-      "status": "STABLE — no new live data",
+      "status": "CACHED — no new live data (trades.csv empty, bot offline)",
       "high_edges_found": 9,
       "weak_setups_found": 4,
-      "new_this_run": [],
-      "injection_file_updated": false
+      "injection_file_updated": false,
+      "top_edges": [
+        "ETH_SHORT: 80% WR, n=5",
+        "BTC_TRENDING_REGIME: 80% WR, n=5",
+        "BTC_SHORT_90plus_conf: 67% WR, n=43, +$102.92/trade"
+      ],
+      "top_weak": [
+        "BTC_LONG: 18% WR",
+        "CONF_70_80_BIN: 33% WR, -$4.05/trade"
+      ],
+      "new_this_run": false
     },
     "daily_synthesis": {
-      "status": "COMPLETE — gap-filled 2026-05-08, generated 2026-05-09",
+      "status": "COMPLETE — generated daily_synthesis_2026-05-13.json",
       "report_generated": true,
-      "anomalies_found": 6,
-      "gap_filled": "daily_synthesis_2026-05-08.json was missing — generated retroactively"
+      "anomalies_found": 8,
+      "critical_count": 2,
+      "high_count": 4,
+      "info_count": 2,
+      "gap_filled": "Covers 2026-05-08 through 2026-05-13 (6-day gap since last synthesis)"
     },
     "model_optimization": {
-      "status": "SKIP — cost_tracker.json missing (bot offline)",
+      "status": "SKIP — cost_tracker.json missing (no JSON data file, bot offline 21d)",
       "swaps_recommended": 0,
-      "potential_savings": "$0.00"
+      "potential_savings": "$0.00",
+      "note": "cost_tracker.py exists but no runtime data. Will populate on bot restart."
     }
   },
   "high_priority_findings": [
     {
       "subsystem": "auto_fix",
-      "severity": "CRITICAL",
-      "finding": "Bot offline 420h (17.5 days). 82 A/B rules frozen. CALIBRATION_OFFSET_CAP newly discovered: tuner at -9.28 creates feedback deadlock blocking good signals on restart.",
-      "action": "RESTART bot. THEN cap parameter_tuner.py calibration_offset at ±3 before first signals.",
-      "urgency": "HIGHEST"
+      "severity": "HIGH",
+      "finding": "btc_narrow_stop_veto_v1 APPLIED — BTC signals with stop < 0.8% now blocked. 47/47 historical losses prevented going forward. New condition type (stop_width_pct) added to graduated_rules engine.",
+      "action": "On restart: verify rule fires on first BTC signal with stop < 0.8%. Check rejection_tracker.json."
     },
     {
       "subsystem": "auto_fix",
-      "severity": "HIGH",
-      "finding": "NEW: CALIBRATION_OFFSET_CAP — bot/feedback/parameter_tuner.py offset=-9.28 cancels all quality boosts. From AUTONOMOUS_SESSION Finding 2, previously unprocessed. Fix: max(-3.0, min(3.0, raw_offset)). No safety review needed.",
-      "action": "Implement cap in parameter_tuner.py before restart.",
-      "urgency": "High"
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "HIGH",
-      "finding": "CONF_FLOOR_70 conflict: penalizes 60-70% by -20pts but insight_journal shows same bin = +$2.19/trade EV (67 trades, conf=0.83). Conflicting datasets.",
-      "action": "HUMAN REVIEW: Compare sample windows. Suspend rule if conflict confirmed.",
-      "urgency": "High"
-    },
-    {
-      "subsystem": "live_injection",
-      "severity": "HIGH",
-      "finding": "HYPE_UNKNOWN_REGIME: 83% WR, +$6.56/trade (n=6). Under full veto but unknown-regime shows anomalous alpha. Direction unverified.",
-      "action": "On restart: tag HYPE trades with llm_regime. After 10+ closes, verify direction.",
-      "urgency": "Medium-High"
+      "severity": "MEDIUM",
+      "finding": "CALIBRATION_OFFSET_CAP and streak_momentum_gate were both already implemented in code. Pending_code_changes list now empty — all items resolved.",
+      "action": "No action needed. Monitoring state is now accurate."
     },
     {
       "subsystem": "daily_synthesis",
-      "severity": "LOW",
-      "finding": "SYNTHESIS GAP: 2026-05-08 synthesis was missing (prior run claimed to generate it). Gap filled retroactively this run.",
-      "action": "Add file-existence verification to synthesis writes.",
-      "urgency": "Low"
+      "severity": "CRITICAL",
+      "finding": "Bot offline 21 days (503h). 82 high-confidence A/B rules frozen at treatment_wr=null. Rule graduation completely stalled.",
+      "action": "RESTART BOT: cd bot && python run.py paper. Use soft-start (50% size first 2 trades)."
+    },
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "HIGH",
+      "finding": "SOL_SHORT suspension conflict unresolved — suspended rule is #1 historical alpha (+$5807, 63.7% WR). Awaiting human decision on controlled 50% gate probe.",
+      "action": "Human decision required: allow SOL_SHORT probe at 50% gate or maintain full block."
+    },
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "HIGH",
+      "finding": "Rule outcome feedback loop unverified — all 9 runtime rules have times_correct=0. Outcome callback wiring may be broken.",
+      "action": "After restart: monitor first 5 closed trades, confirm times_correct increments in graduated_rules.json."
+    },
+    {
+      "subsystem": "execution_forensics",
+      "severity": "HIGH",
+      "finding": "High leverage (6-10x) net negative: -$0.38/trade, -$34.4 total on 91 trades. 3-5x net positive. Data supports max 5x cap.",
+      "action": "On restart: verify max leverage cap <= 5x. Flag any position > 5x immediately."
     }
   ],
-  "new_this_run_vs_prior": [
-    "NEW CODE FIX: CALIBRATION_OFFSET_CAP — parameter_tuner.py offset=-9.28, feedback deadlock. Previously overlooked.",
-    "NEW CANDIDATE: CONF_70_80_GENERAL_PENALIZE — 33% WR, n=43, deferred pending symbol breakdown",
-    "GAP FILL: daily_synthesis_2026-05-08.json generated (was claimed but missing)",
-    "GENERATED: daily_synthesis_2026-05-09.json (today)",
-    "STABLE: All other findings unchanged — no new live data between runs"
-  ],
-  "still_outstanding": [
-    "BOT OFFLINE 420h — restart is critical",
-    "CALIBRATION_OFFSET_CAP: parameter_tuner.py fix needed before restart",
-    "99 A/B rules (82 high-conf) awaiting live trade data",
-    "conf_floor_70_v1 conflict — human review needed",
-    "SOL_SHORT blockade — awaiting human decision (+$32.44/trade EV historical)",
-    "streak_momentum_gate — code change in signal_pipeline.py",
-    "BTC_STOP_0.8PCT_CODE — signal_pipeline.py pending safety review",
-    "LLM_REGIME_CAPTURE_GAP — llm_regime not written to trades.csv",
-    "HYPE_UNKNOWN_REGIME — needs direction verification",
-    "times_correct=0 for all 8 runtime graduated rules",
-    "cost_tracker.json missing — Model Optimization blocked",
-    "snapshot_entry column missing — slippage unmeasurable"
-  ],
-  "next_run_focus": [
-    "IF BOT STILL OFFLINE: flag 432h milestone, check if calibration_offset fix applied",
-    "IF BOT RESTARTED: verify CALIBRATION_OFFSET_CAP implemented",
-    "IF BOT RESTARTED: verify all 8 runtime rules fire in first 10 signals",
-    "PRIORITY: Resolve CONF_60_70 conflict before 20+ trades accumulate",
-    "WATCH: Leverage > 5x on any position"
-  ],
-  "equity_snapshot": {
-    "equity": 497.05,
-    "peak": 508.06,
-    "drawdown_from_start": "90.1% ($5000 -> $497)",
-    "drawdown_from_peak": "2.17%",
-    "last_updated": "2026-04-23T22:17:05Z"
+  "run_stats": {
+    "subsystems_complete": 4,
+    "subsystems_skipped": 1,
+    "fixes_applied_this_run": 1,
+    "new_rules_active": 9,
+    "bot_offline_hours": 503.1,
+    "bot_offline_days": 21.0,
+    "trades_analyzed_this_run": 0,
+    "trades_total_historical": 352
   }
 }

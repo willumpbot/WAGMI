@@ -42,7 +42,8 @@ class GraduatedRule:
         return self.times_correct / self.times_applied if self.times_applied > 0 else 0.5
 
     def matches(self, symbol="", regime="", side="", strategy="",
-                setup_type="", num_agree=0, confidence=0.0, hour_utc=-1) -> bool:
+                setup_type="", num_agree=0, confidence=0.0, hour_utc=-1,
+                stop_width_pct=-1.0) -> bool:
         if not self.active:
             return False
         c = self.conditions
@@ -77,6 +78,13 @@ class GraduatedRule:
             return False
         if "hour_utc_max" in c and hour_utc >= 0 and hour_utc >= c["hour_utc_max"]:
             return False
+        if "stop_width_max" in c or "stop_width_min" in c:
+            if stop_width_pct < 0:
+                return False  # No stop width data — skip stop_width rules (fail-safe)
+            if "stop_width_max" in c and stop_width_pct > c["stop_width_max"]:
+                return False
+            if "stop_width_min" in c and stop_width_pct < c["stop_width_min"]:
+                return False
         return True
 
 
@@ -227,7 +235,8 @@ class GraduatedRulesEngine:
         return conditions, action, adjustment
 
     def evaluate_signal(self, symbol="", regime="", side="", strategy="",
-                        setup_type="", num_agree=0, confidence=0.0, hour_utc=-1) -> tuple:
+                        setup_type="", num_agree=0, confidence=0.0, hour_utc=-1,
+                        stop_width_pct=-1.0) -> tuple:
         """Returns (should_veto, adjusted_confidence, applied_rules_summary)."""
         self._ensure_loaded()
         vetoed, conf_delta, applied = False, 0.0, []
@@ -236,7 +245,8 @@ class GraduatedRulesEngine:
             if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side,
                                                     strategy=strategy, setup_type=setup_type,
                                                     num_agree=num_agree, confidence=confidence,
-                                                    hour_utc=hour_utc):
+                                                    hour_utc=hour_utc,
+                                                    stop_width_pct=stop_width_pct):
                 continue
             rule.times_applied += 1
             rule.last_applied = time.time()

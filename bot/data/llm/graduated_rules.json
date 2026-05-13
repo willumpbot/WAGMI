@@ -149,6 +149,28 @@
       "_source": "CONF_70_HARD_FLOOR (A/B conf=87%, 123 trades confirmed, escalated 30%->50% gate on 2026-05-02). Promoted to runtime 2026-05-05. Supersedes CONF_60_70_floor_raise + CONF_60_70_all_block.",
       "_gate_percentage": 20,
       "_ab_cohort_start": "2026-05-05T00:00:00Z"
+    },
+    {
+      "rule_id": "btc_narrow_stop_veto_v1",
+      "hypothesis_statement": "BTC signals with stop width < 0.8% have 0% WR: 47/47 losses (100% loss rate, avg stop 0.494%). Noise stops fire before directional move materializes.",
+      "action": "veto",
+      "conditions": {
+        "symbol": "BTC",
+        "stop_width_max": 0.008
+      },
+      "adjustment": 0.0,
+      "confidence": 0.80,
+      "evidence_ratio": 0.0,
+      "total_evidence": 47,
+      "created_at": 1747094400.0,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "_source": "BTC_STOP_0.8PCT_CODE (conf=80%, 47/47 losses with avg 0.494% stop). Applied as veto rule 2026-05-13. Requires safety review before hard code gate — runtime rule first.",
+      "_gate_percentage": 20,
+      "_ab_cohort_start": "2026-05-13T00:00:00Z",
+      "_review_after_n_trades": 20
     }
   ]
 }
