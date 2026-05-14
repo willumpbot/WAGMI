@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-05-09T20:00:00Z",
-  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_09_2000",
+  "last_run": "2026-05-14T00:00:00Z",
+  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_14_0000",
   "fixes_applied_this_run": 0,
   "gates_active": 8,
   "new_fixes_this_run": [],
@@ -9,14 +9,19 @@
     "HYPE_UNKNOWN_REGIME_EXCEPTION: 83% WR but n=6. Too small for a rule. Direction (BUY/SELL) unverified.",
     "streak_momentum_gate: conf=90% but requires code change to signal_pipeline.py. Safety review needed.",
     "BTC_STOP_0.8PCT_CODE: conf=80% but requires code change. Safety review needed.",
-    "CALIBRATION_OFFSET_CAP: conf=80% but requires code change to parameter_tuner.py."
+    "CALIBRATION_OFFSET_CAP: ALREADY IMPLEMENTED IN CODE — parameter_tuner.py:186 + :448-453. Reconciled this run. Removed from pending."
   ],
   "applied_this_run": [],
   "audit_resolution": {
     "HYPE_RULE_NOT_WIRED": {"status": "RESOLVED", "resolved_at": "2026-05-04T20:31:00+00:00"},
     "F8_STALE_89PCT_HYPE": {"status": "RESOLVED", "resolved_at": "2026-05-04T20:31:00+00:00"},
     "EXIT_PROACTIVE_CLOSE_PRIORITY": {"status": "RESOLVED", "resolved_at": "2026-05-05T22:08:09Z"},
-    "BTC_STOP_MIN_0.8PCT_GATE": {"status": "ALREADY_ESCALATED — gate_percentage=50", "resolved_at": "2026-05-05T22:08:09Z"}
+    "BTC_STOP_MIN_0.8PCT_GATE": {"status": "ALREADY_ESCALATED — gate_percentage=50", "resolved_at": "2026-05-05T22:08:09Z"},
+    "CALIBRATION_OFFSET_CAP": {
+      "status": "RESOLVED — CODE ALREADY IMPLEMENTED",
+      "resolved_at": "2026-05-14T00:00:00Z",
+      "note": "parameter_tuner.py:186 uses max(-3, min(3, calibration_offset)) AND :448-453 corrects at load-time if offset < -3. graduated_rules.json confirms APPLIED. Prior auto_fix_state incorrectly listed as pending_code_changes — reconciled this run."
+    }
   },
   "pending_human_review": [
     "F1_sniper_auto_execute_off — enable SNIPER_AUTO_EXECUTE=true? Review first.",
@@ -26,7 +31,7 @@
     "BTC_CONCENTRATION_MONITOR",
     "LLM_REGIME_CAPTURE_GAP — llm_regime not written to trades.csv. 12 regime A/B rules unmeasurable.",
     "RULE_CONFLICT_LONG_BIAS",
-    "BOT_INACTIVE_ALERT"
+    "BOT_INACTIVE_ALERT — now 504h (21 days)"
   ],
   "pending_code_changes": [
     {
@@ -44,16 +49,16 @@
       "file_target": "bot/core/signal_pipeline.py (~line 265)",
       "priority": "MEDIUM — 47/47 BTC losses are instant SL hits avg 0.494% stop",
       "requires_safety_review": true
-    },
+    }
+  ],
+  "resolved_code_changes": [
     {
       "change_id": "CALIBRATION_OFFSET_CAP",
-      "description": "parameter_tuner.py: cap calibration_offset at ±3. Current -9.28 cancels quality boosts on all signals (Finding 2, AUTONOMOUS_SESSION_2026_04_15.md).",
-      "confidence": 0.80,
-      "file_target": "bot/feedback/parameter_tuner.py",
-      "priority": "HIGH — tuner is in feedback deadlock: losses → negative offset → fewer trades → fewer data → offset stays negative",
-      "new_this_run": true,
-      "requires_safety_review": false,
-      "note": "Discovered in AUTONOMOUS_SESSION_2026_04_15.md Finding 2. Previously overlooked in auto_fix processing."
+      "description": "parameter_tuner.py: cap calibration_offset at ±3.",
+      "confidence": 0.92,
+      "file_target": "bot/feedback/parameter_tuner.py:186, :448-453",
+      "resolved_at": "2026-04-15",
+      "resolution_note": "Implemented as part of Finding 2 code changes. Confirmed: line 186 applies max(-3,min(3,...)) on every update; lines 448-453 correct at load-time. graduated_rules.json: rule F2_calibration_offset_cap status=APPLIED."
     }
   ],
   "new_candidates_not_yet_applied": [
@@ -63,35 +68,45 @@
       "estimated_confidence": 0.76,
       "gate_percentage_if_applied": 20,
       "blocker": "Cannot apply safely without symbol+regime breakdown. Would double-penalize BTC_SHORT 70-80% where btc_short_conf70_80_penalize_v1 already applies -20pts. Need: breakdown of the 43 trades by symbol/regime first.",
-      "action": "Collect symbol-regime breakdown after 20+ live trades on restart. Then re-evaluate.",
-      "new_this_run": true
+      "action": "Collect symbol-regime breakdown after 20+ live trades on restart. Then re-evaluate."
     },
     {
       "candidate_id": "HYPE_UNKNOWN_REGIME_EXCEPTION",
       "description": "Exception to hype_short_veto_v1: allow HYPE signals in UNKNOWN regime (83% WR, n=6).",
       "estimated_confidence": 0.70,
       "blocker": "n=6 too small. Direction (BUY vs SELL) unverified. Cannot create exception without knowing which side drives the 83% WR.",
-      "action": "After 10+ HYPE+UNKNOWN trades: verify direction, then create targeted exception if confirmed.",
-      "new_this_run": false
+      "action": "After 10+ HYPE+UNKNOWN trades: verify direction, then create targeted exception if confirmed."
     }
   ],
   "total_applied_all_time": 20,
   "runtime_rules_now_active": 8,
   "ab_rules_awaiting_live_data": 82,
   "ab_rules_with_measurement": 0,
+  "graduated_rules_breakdown": {
+    "total": 99,
+    "applied": 11,
+    "ab_active": 59,
+    "suspended_live_contradiction": 2,
+    "pending_human_review": 8,
+    "superseded": 9,
+    "archived": 1,
+    "other": 9
+  },
   "previously_applied": [
     "HYPE_RULE_WIRING (x6 rules written to data/llm/graduated_rules.json — 2026-05-04)",
     "F8_89PCT_HARDCODED_WR_REMOVED (2026-05-04)",
     "BTC_TREND_BOOST_REINIT (2026-05-04)",
     "HYPE_SHORT_EV_REINIT (2026-05-07)",
     "BTC_SHORT_CONF70_EV_REINIT (2026-05-07)",
-    "CONF_FLOOR_70_RUNTIME (2026-05-05)"
+    "CONF_FLOOR_70_RUNTIME (2026-05-05)",
+    "CALIBRATION_OFFSET_CAP (2026-04-15, confirmed 2026-05-14)"
   ],
   "next_run_priority": [
     "IF BOT RESTARTS: verify all 8 runtime rules fire in rejection_tracker.json (first 10 signals)",
     "IF BOT RESTARTS: check outcome callbacks — times_correct should be > 0 after 2 closed trades",
-    "CALIBRATION_OFFSET_CAP: new finding, high priority. Check parameter_tuner.py current offset value.",
+    "IF BOT RESTARTS: collect symbol+regime breakdown on first 20 trades for CONF_70_80 candidate",
     "CONF_FLOOR_70 conflict: investigate 123-trade vs 67-trade sample windows",
-    "CONF_70_80 breakdown: after 20 live trades, compute by symbol+regime"
+    "streak_momentum_gate: requires safety review before implementation",
+    "BTC_STOP_0.8PCT_CODE: requires safety review before implementation"
   ]
 }
