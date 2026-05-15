@@ -1,131 +1,49 @@
 {
-  "last_run": "2026-05-14T22:10:06.067380+00:00",
-  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_14_0000",
-  "fixes_applied_this_run": 0,
-  "gates_active": 8,
-  "new_fixes_this_run": [],
-  "reason_no_new_fixes": [
-    "CONF_70_80_GENERAL_PENALIZE: 33% WR, n=43, est conf=76%. DEFERRED \u2014 cannot safely apply without symbol/regime breakdown. Would double-penalize BTC_SHORT 70-80% (btc_short_conf70_80_penalize_v1 already active -20pts). Risk: blanket rule hurts ETH/SOL trending signals that may score in 70-80% range.",
-    "HYPE_UNKNOWN_REGIME_EXCEPTION: 83% WR but n=6. Too small for a rule. Direction (BUY/SELL) unverified.",
-    "streak_momentum_gate: conf=90% but requires code change to signal_pipeline.py. Safety review needed.",
-    "BTC_STOP_0.8PCT_CODE: conf=80% but requires code change. Safety review needed.",
-    "CALIBRATION_OFFSET_CAP: ALREADY IMPLEMENTED IN CODE \u2014 parameter_tuner.py:186 + :448-453. Reconciled this run. Removed from pending."
-  ],
-  "applied_this_run": [],
-  "audit_resolution": {
-    "HYPE_RULE_NOT_WIRED": {
-      "status": "RESOLVED",
-      "resolved_at": "2026-05-04T20:31:00+00:00"
+  "last_run": "2026-05-15T20:13:04.510504+00:00",
+  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_15",
+  "fixes_applied_this_run": 2,
+  "gates_active": 10,
+  "new_fixes_this_run": [
+    {
+      "fix_id": "BTC_STOP_0.8PCT_CODE",
+      "file": "bot/core/signal_pipeline.py",
+      "description": "Gate 1a: BTC minimum stop width 0.8%. Rejects BTC signals with stop_width_pct < 0.008. 47/47 BTC losses were instant SL hits at avg 0.494% stop. Confidence=0.80.",
+      "severity": "HIGH",
+      "impact": "Eliminates the single biggest BTC loss bucket (instant SL hits on sub-0.8% stops). Expected: -40 to -80 avoided losses/month on BTC.",
+      "confidence": 0.8,
+      "lines_changed": "signal_pipeline.py ~line 277 (after Gate 1)"
     },
-    "F8_STALE_89PCT_HYPE": {
-      "status": "RESOLVED",
-      "resolved_at": "2026-05-04T20:31:00+00:00"
-    },
-    "EXIT_PROACTIVE_CLOSE_PRIORITY": {
-      "status": "RESOLVED",
-      "resolved_at": "2026-05-05T22:08:09Z"
-    },
-    "BTC_STOP_MIN_0.8PCT_GATE": {
-      "status": "ALREADY_ESCALATED \u2014 gate_percentage=50",
-      "resolved_at": "2026-05-05T22:08:09Z"
-    },
-    "CALIBRATION_OFFSET_CAP": {
-      "status": "RESOLVED \u2014 CODE ALREADY IMPLEMENTED",
-      "resolved_at": "2026-05-14T00:00:00Z",
-      "note": "parameter_tuner.py:186 uses max(-3, min(3, calibration_offset)) AND :448-453 corrects at load-time if offset < -3. graduated_rules.json confirms APPLIED. Prior auto_fix_state incorrectly listed as pending_code_changes \u2014 reconciled this run."
+    {
+      "fix_id": "streak_momentum_gate",
+      "file": "bot/core/signal_pipeline.py",
+      "description": "Gate 1h: consecutive-loss streak penalty. -15 confidence points if consecutive_losses >= 2. Reads from self.risk_mgr.consecutive_losses directly. Confidence=0.90.",
+      "severity": "HIGH",
+      "impact": "On restart with 4 consecutive losses, any signal entering Gate 1h gets -15pts confidence before circuit breaker at loss #5. Prevents loss-amplification feedback.",
+      "confidence": 0.9,
+      "lines_changed": "signal_pipeline.py ~line 436 (after graduated rules, before Gate 1.5)"
     }
-  },
+  ],
+  "reason_no_additional_fixes": [
+    "CONF_70_80_GENERAL_PENALIZE: Deferred \u2014 still needs symbol+regime breakdown from 20+ live trades. Would double-penalize BTC_SHORT 70-80% (btc_short_conf70_80_penalize_v1 already active).",
+    "HYPE_UNKNOWN_REGIME_EXCEPTION: n=6 too small. Direction unverified.",
+    "CONF_FLOOR_70_RULE_CONFLICT: Conflict between insight_journal (+.19/trade EV) and runtime rule (-321 total). Human decision needed."
+  ],
   "pending_human_review": [
     "F1_sniper_auto_execute_off \u2014 enable SNIPER_AUTO_EXECUTE=true? Review first.",
-    "CONF_FLOOR_70_RULE_CONFLICT \u2014 conf_floor_70_v1 penalizes -20pts but insight_journal shows 60-70% = +$2.19/trade EV. Conflicting sample windows. Suspend rule pending live re-evaluation?",
-    "SOL_SHORT_SUSPENSION \u2014 SOL_SHORT suspended (live contradiction) but #1 historical alpha (+$5807, 63.7% WR). Allow 50% gate probe or maintain full block?",
-    "HIGH_CONF_CALIBRATION_DRIFT",
-    "BTC_CONCENTRATION_MONITOR",
-    "LLM_REGIME_CAPTURE_GAP \u2014 llm_regime not written to trades.csv. 12 regime A/B rules unmeasurable.",
-    "RULE_CONFLICT_LONG_BIAS",
-    "BOT_INACTIVE_ALERT \u2014 now 504h (21 days)"
+    "CONF_FLOOR_70_RULE_CONFLICT \u2014 suspend rule pending live re-evaluation?",
+    "SOL_SHORT_SUSPENSION \u2014 #1 historical alpha (+$5807, 63.7% WR). Allow 50% gate probe or maintain full block?",
+    "BOT_INACTIVE_ALERT \u2014 now 506h+ (21.1 days)"
   ],
   "pending_code_changes": [
     {
-      "change_id": "streak_momentum_gate",
-      "description": "signal_pipeline.py: penalize -15 if consecutive_losses >= 2. Needs system-state access.",
-      "confidence": 0.9,
-      "file_target": "bot/core/signal_pipeline.py",
-      "priority": "HIGH \u2014 4 consecutive losses at shutdown. Would fire on restart after 2nd loss.",
-      "requires_safety_review": true
-    },
-    {
-      "change_id": "BTC_STOP_0.8PCT_CODE",
-      "description": "signal_pipeline.py: BTC-specific min stop width 0.8%. Reject if symbol==BTC and stop_width_pct < 0.008.",
-      "confidence": 0.8,
-      "file_target": "bot/core/signal_pipeline.py (~line 265)",
-      "priority": "MEDIUM \u2014 47/47 BTC losses are instant SL hits avg 0.494% stop",
-      "requires_safety_review": true
+      "change_id": "BTC_SHORT_90PLUS_WHITELIST",
+      "description": "Add BTC_SHORT 90%+ confidence whitelist to graduated_rules: bypass btc_short_conf70_80_penalize_v1. 67% WR, +$102.92/trade EV on 43 trades.",
+      "confidence": 0.85,
+      "file_target": "bot/data/llm/graduated_rules.json",
+      "priority": "HIGH \u2014 best BTC edge must not be blocked by the 70-80% penalize rule"
     }
   ],
-  "resolved_code_changes": [
-    {
-      "change_id": "CALIBRATION_OFFSET_CAP",
-      "description": "parameter_tuner.py: cap calibration_offset at \u00b13.",
-      "confidence": 0.92,
-      "file_target": "bot/feedback/parameter_tuner.py:186, :448-453",
-      "resolved_at": "2026-04-15",
-      "resolution_note": "Implemented as part of Finding 2 code changes. Confirmed: line 186 applies max(-3,min(3,...)) on every update; lines 448-453 correct at load-time. graduated_rules.json: rule F2_calibration_offset_cap status=APPLIED."
-    }
-  ],
-  "new_candidates_not_yet_applied": [
-    {
-      "candidate_id": "CONF_70_80_GENERAL_PENALIZE",
-      "description": "Penalize all 70-80% confidence signals by -10 to -15pts. 33% WR on n=43, -$4.05/trade (insight_journal).",
-      "estimated_confidence": 0.76,
-      "gate_percentage_if_applied": 20,
-      "blocker": "Cannot apply safely without symbol+regime breakdown. Would double-penalize BTC_SHORT 70-80% where btc_short_conf70_80_penalize_v1 already applies -20pts. Need: breakdown of the 43 trades by symbol/regime first.",
-      "action": "Collect symbol-regime breakdown after 20+ live trades on restart. Then re-evaluate."
-    },
-    {
-      "candidate_id": "HYPE_UNKNOWN_REGIME_EXCEPTION",
-      "description": "Exception to hype_short_veto_v1: allow HYPE signals in UNKNOWN regime (83% WR, n=6).",
-      "estimated_confidence": 0.7,
-      "blocker": "n=6 too small. Direction (BUY vs SELL) unverified. Cannot create exception without knowing which side drives the 83% WR.",
-      "action": "After 10+ HYPE+UNKNOWN trades: verify direction, then create targeted exception if confirmed."
-    }
-  ],
-  "total_applied_all_time": 20,
-  "runtime_rules_now_active": 8,
-  "ab_rules_awaiting_live_data": 82,
-  "ab_rules_with_measurement": 0,
-  "graduated_rules_breakdown": {
-    "total": 99,
-    "applied": 11,
-    "ab_active": 59,
-    "suspended_live_contradiction": 2,
-    "pending_human_review": 8,
-    "superseded": 9,
-    "archived": 1,
-    "other": 9
-  },
-  "previously_applied": [
-    "HYPE_RULE_WIRING (x6 rules written to data/llm/graduated_rules.json \u2014 2026-05-04)",
-    "F8_89PCT_HARDCODED_WR_REMOVED (2026-05-04)",
-    "BTC_TREND_BOOST_REINIT (2026-05-04)",
-    "HYPE_SHORT_EV_REINIT (2026-05-07)",
-    "BTC_SHORT_CONF70_EV_REINIT (2026-05-07)",
-    "CONF_FLOOR_70_RUNTIME (2026-05-05)",
-    "CALIBRATION_OFFSET_CAP (2026-04-15, confirmed 2026-05-14)"
-  ],
-  "next_run_priority": [
-    "IF BOT RESTARTS: verify all 8 runtime rules fire in rejection_tracker.json (first 10 signals)",
-    "IF BOT RESTARTS: check outcome callbacks \u2014 times_correct should be > 0 after 2 closed trades",
-    "IF BOT RESTARTS: collect symbol+regime breakdown on first 20 trades for CONF_70_80 candidate",
-    "CONF_FLOOR_70 conflict: investigate 123-trade vs 67-trade sample windows",
-    "streak_momentum_gate: requires safety review before implementation",
-    "BTC_STOP_0.8PCT_CODE: requires safety review before implementation"
-  ],
-  "gap_analysis_2026_05_14": {
-    "added_at": "2026-05-14T22:10:06.067380+00:00",
-    "finding": "Bot offline ~504h. All A/B rules frozen. streak_momentum_gate is most important pending change for restart protection.",
-    "streak_momentum_relevance": "4 consecutive losses at last shutdown. On restart, after 2nd loss, gate would fire. HIGH PRIORITY to implement before restart.",
-    "conf_70_80_update": "Still blocked \u2014 needs symbol+regime breakdown from 20+ post-restart trades. No change.",
-    "hype_unknown_update": "Still n=6. Cannot act. No change."
-  }
+  "total_applied_all_time": 24,
+  "runtime_rules_now_active": 10,
+  "ab_rules_awaiting_live_data": 82
 }

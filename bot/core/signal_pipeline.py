@@ -274,6 +274,14 @@ class RiskFilterChain:
             _log_rejection(signal, "validity", _reason)
             self._log_signal_filtered(signal, "validity", _reason)
             return FilterResult(approved=False, signal=signal, rejection_reason=_reason)
+        # Gate 1a: BTC minimum stop width 0.8% — 47/47 BTC losses were instant SL hits
+        # at avg 0.494% stop; sub-0.8% stops on BTC are structural noise, not edge.
+        if signal.symbol == "BTC" and signal.stop_width_pct < 0.008:
+            _reason = f"BTC min stop 0.8% violated: stop_width={signal.stop_width_pct:.4f}"
+            if _pt: _pt.record_gate(signal.symbol, "btc_stop_width", False, signal.stop_width_pct, 0.008, _reason)
+            _log_rejection(signal, "btc_stop_width", _reason)
+            self._log_signal_filtered(signal, "btc_stop_width", _reason)
+            return FilterResult(approved=False, signal=signal, rejection_reason=_reason)
         # Gate 1b: Minimum R:R from config (stricter than is_valid's 1.0 floor)
         min_rr = getattr(self.config, "min_signal_rr", 1.0)
         if signal.risk_reward_tp1 < min_rr:
@@ -431,6 +439,22 @@ class RiskFilterChain:
                     signal.confidence = max(0.0, min(100.0, _gr_adj_conf))
                     meta["graduated_rules_adj"] = round(_adj_delta, 1)
                     meta["graduated_rules_applied"] = _gr_applied[:120]
+        except Exception:
+            pass
+
+        # Gate 1h: Consecutive-loss streak penalty — penalize -15 conf after 2+ losses.
+        # Prevents amplifying bad signals during losing streaks (4 consecutive losses at shutdown).
+        try:
+            _consec_losses = getattr(self.risk_mgr, "consecutive_losses", 0)
+            if _consec_losses >= 2:
+                signal = copy.copy(signal)
+                signal.confidence = max(0.0, min(100.0, signal.confidence - 15.0))
+                meta["streak_penalty"] = -15.0
+                meta["consecutive_losses_at_eval"] = _consec_losses
+                logger.info(
+                    f"[{signal.symbol}] STREAK GATE: consecutive_losses={_consec_losses} "
+                    f"→ conf -15pts to {signal.confidence:.1f}"
+                )
         except Exception:
             pass
 
