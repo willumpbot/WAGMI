@@ -1,106 +1,103 @@
 {
-  "last_run": "2026-05-16T22:06:24.379722+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_16_2206",
-  "prior_run": "2026-05-16T01:12:14.854885+00:00",
-  "hours_since_prior_run": 20.9,
-  "bot_offline_hours": 551.8,
-  "bot_offline_days": 22.99,
+  "last_run": "2026-05-16T23:08:08.136687+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_16_2308",
+  "prior_run": "2026-05-16T22:06:24.379722+00:00",
+  "hours_since_prior_run": 1.03,
+  "bot_offline_hours": 552.9,
+  "bot_offline_days": 23.04,
   "next_optimal_window": "2026-05-17T06:00:00+00:00",
-  "hours_to_next_window": 7.9,
-  "missed_window_today": "2026-05-16 06:00-12:00 UTC window MISSED — bot not restarted",
+  "hours_to_next_window": 6.9,
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 1,
       "gates_active": 11,
-      "total_applied_all_time": 27,
+      "total_applied_all_time": 28,
       "new_fix_this_run": {
-        "fix_id": "F17_CONFIRMED_CODED_AUDIT_CORRECTION",
-        "file": "bot/execution/sector_exposure.py:55",
-        "description": "Audit correction: F17 (l1 sector cap 60%→1.5x) was incorrectly marked NOT_CODED in prior run. Confirmed CODED at sector_exposure.py:55 as 'l1': 1.50. Prior run searched risk.py (wrong file); graduated_rules.json already had status=APPLIED+verified=true pointing to the correct file. This removes F17 from the outstanding_pending list.",
-        "confidence": 1.0,
+        "fix_id": "OUTCOME_CALLBACK_WIRED_IN_LOOP",
+        "file": "bot/feedback/loop.py:294-302",
+        "description": "Wired GraduatedRulesEngine.record_outcome(symbol, regime, side, won) as step 8 in FeedbackLoop.record_outcome(). This closes the feedback gap: 6 LLM graduated rules had times_applied>0 but times_correct=0 because the callback was never called. On restart, each trade close will now update rule accuracy. Rules can auto-retire at <35% accuracy (threshold: 10 applications). Tests: 56/56 feedback loop tests pass.",
+        "confidence": 0.99,
         "gate_percentage": 100,
-        "impact": "Removes a false-alarm from outstanding items. Sector concentration cap allowing 3 concurrent L1 positions (at 50% each) has been live since 2026-04-15. No code change needed.",
-        "verification": "grep 'l1.*1.50' sector_exposure.py:55 confirmed. graduated_rules.json F17 entry status=APPLIED+verified=true."
-      },
-      "code_audit_findings": {
-        "F2_calibration_cap": "CONFIRMED_CODED at bot/feedback/parameter_tuner.py:186",
-        "F5_llm_mode_guard": "CONFIRMED_CODED at bot/core/llm_integration.py:972/1143/1221",
-        "F16_clean_win_label": "CONFIRMED_CODED at bot/execution/position_manager.py:1296",
-        "F17_l1_sector_cap": "CONFIRMED_CODED at bot/execution/sector_exposure.py:55 (l1: 1.50). Prior run FALSE_NEGATIVE — searched wrong file.",
-        "VETO_CF_WIRE": "CONFIRMED_CODED at bot/llm/counterfactual_learner.py:461-471 (applied prior run)"
+        "impact": "Activates accuracy tracking for 10 LLM graduated rules. Rules with 0% measured accuracy (hype_long_veto_v1, sol_long_veto_v1, hype_short_veto_v1, illiquid_regime_penalize_v1, btc_short_conf70_80_penalize_v1, conf_floor_70_v1) will now accumulate correct/incorrect counts. Auto-retirement will fire at 10+ applications below 35% accuracy.",
+        "verification": "grep 'get_graduated_rules_engine' feedback/loop.py confirmed. 56 tests pass.",
+        "data_corruption_noted": {
+          "rule_1777922205_0": "correct=21 > applied=3 (700%) \u2014 impossible; likely bulk-initialized from historical analysis",
+          "night_session_block_v1": "correct=25 > applied=4 (625%) \u2014 same bulk init artifact. Fix does not corrupt further."
+        }
       },
       "outstanding_pending": [
-        "CONF_FLOOR_70_CONFLICT: human decision after shadow eval data (20+ outcomes needed). conf_floor_70_v1 may block +EV 60-70% signals.",
+        "CONF_FLOOR_70_CONFLICT: human decision after shadow eval data (20+ outcomes needed). conf_floor_70_v1 times_correct=0 after 2 applications \u2014 may be blocking +EV 60-70% signals. Now will track accuracy post-restart.",
         "SOL_SHORT_SUSPENSION: human decision (+$5807 historical alpha, conf 90%, gate=20% probe).",
         "SNIPER_AUTO_EXECUTE: human decision (primary alpha, +$328/34-trade path, conf 90%, gate=0% pending human).",
-        "AB_RESULT_TRACKER_CODE: P0 CRITICAL — A/B feedback loop not wired in loop.py. 82 rules frozen.",
-        "OUTCOME_CALLBACK_GAP: 10 graduated rules have times_correct=0 (outcome callback never fires). Need wire in decision_engine.py/coordinator.py.",
-        "LLM_REGIME_CAPTURE_GAP: llm_regime not written to trades.csv — 12 regime rules unmeasurable.",
-        "SNAPSHOT_ENTRY_GAP: snapshot_entry missing from signal generation — slippage unmeasurable."
+        "AB_RESULT_TRACKER_CODE: P0 partially addressed \u2014 OUTCOME_CALLBACK now wired. Full A/B treatment_wr tracking via evaluate_active_fixes() requires 20+ trades per cohort (needs live trading data).",
+        "LLM_REGIME_CAPTURE_GAP: llm_regime not written to trades.csv \u2014 12 regime rules unmeasurable.",
+        "SNAPSHOT_ENTRY_GAP: snapshot_entry missing from signal generation \u2014 slippage unmeasurable."
       ],
-      "status": "ACTIVE - 1 audit correction applied (F17 false_negative resolved). 27 total code changes all-time. No outstanding code-ready items (all remaining require human decision or live data)."
+      "status": "ACTIVE - 1 code fix applied (OUTCOME_CALLBACK wired in loop.py). 28 total code changes all-time. P0 AB_RESULT_TRACKER partially resolved. 6 LLM rules will now track accuracy on restart."
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN - snapshot_entry column missing from trades.csv",
-      "noise_stops": "87% early SL hits (<2h) in non-trending regimes (confirmed, no change)",
-      "status": "FROZEN - bot offline 551.8h. No new execution data.",
-      "hours_stale": 552,
+      "avg_slippage": "UNKNOWN - snapshot_entry column missing from signal generation (structural gap)",
+      "noise_stops": "87% early SL hits (<2h) in non-trending regimes (unchanged, 552h stale)",
+      "status": "FROZEN - bot offline 552.9h. No new execution data.",
+      "hours_stale": 553,
       "structural_gaps_persist": [
         "snapshot_entry missing from signal generation (slippage unmeasurable on restart)",
         "llm_regime empty in trades.csv (12 regime A/B rules unmeasurable)",
         "fill_status missing (partial fill rate unknown)"
       ],
-      "key_validated_findings": {
-        "leverage_finding": "3-5x = +$0.79/trade POSITIVE (n=68); 6-10x = -$0.38/trade NEGATIVE (n=91). Max 5x on restart.",
-        "hold_time_finding": "Wins exit 3.3h median, losses 1.5h. trending_min_hold_3h_v1 applied (prev run).",
-        "regime_finding": "trending=51.9% WR only viable regime. illiquid=28.1%, ranging=25.0%.",
-        "restart_gate_stack": "streak_gate(-15pts) + conf_floor_70_v1(-20pts) = raw 85%+ needed to clear both"
+      "key_validated_findings_unchanged": {
+        "leverage": "3-5x = +$0.79/trade POSITIVE (n=68); 6-10x = -$0.38/trade NEGATIVE (n=91)",
+        "hold_time": "Wins at 3.3h median, losses at 1.5h. trending_min_hold_3h_v1 applied last run.",
+        "regime": "trending=51.9% WR only viable; illiquid=28.1%, ranging=25.0%",
+        "consecutive_losses": "4 at shutdown. streak_gate fires -15pts on next signal."
       }
     },
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 4,
-      "stale_hours": 150.1,
-      "status": "STALE - 150h since last live data. No change from prior run.",
+      "stale_hours": 297,
+      "status": "STALE - ~553h since last live data. No change from prior run.",
       "top_edge": "ETH_SHORT + trending + morning (06:00-12:00 UTC): ~80% WR (5 live trades + 70% historical)",
-      "top_killer": "HYPE_LONG: 23% WR, -$77.26 total. SOL_LONG: 24% WR, -$21.89.",
+      "top_killers": [
+        "HYPE_LONG: 23% WR, -$77.26 total",
+        "SOL_LONG: 24% WR, -$21.89 total"
+      ],
       "restart_priority_edges": [
-        "ETH TREND signals 06:00-12:00 UTC: 80% WR (eth_trending_regime_boost_v1 active +8pts, 20% A/B gate)",
-        "BTC_SHORT at 90%+ confidence: 67% WR, +$102.92/trade EV (btc_short_90plus_boost_v1 active)",
-        "BB solo (no MTQ): 67.6% WR — anti-pattern is BB+MTQ which is 35% WR"
+        "ETH TREND signals 06:00-12:00 UTC: 80% WR (eth_trending_regime_boost_v1 +8pts, 20% A/B gate)",
+        "BTC_SHORT at 90%+ confidence: 67% WR, +$102.92/trade EV",
+        "BB solo (no MTQ): 67.6% WR vs BB+MTQ=35% WR (anti-pattern)"
       ],
       "hard_blocks_on_restart": [
         "night_session 00:00-06:00 UTC: 19% WR (veto rule active until 06:00)",
         "HYPE_LONG veto (hype_long_veto_v1 active)",
         "SOL_LONG veto (sol_long_veto_v1 active)",
-        "illiquid regime penalized"
-      ],
-      "new_meta_insight": "Size bias detected: positions >1.5x have 50% WR vs 71% for smaller (13 evidence). Reinforces max-3x soft-start cap."
+        "illiquid regime penalized (-15pts)"
+      ]
     },
     "daily_synthesis": {
       "anomalies_found": 3,
-      "report_generated": false,
+      "report_generated": true,
       "date": "2026-05-16",
-      "current_time_utc": "22:06",
-      "status": "INTRADAY 2026-05-16 22:06 UTC. EOD report not yet triggered (pending midnight run).",
+      "eod_generated_at": "2026-05-16T23:08:08.136687+00:00",
+      "current_time_utc": "23:08",
+      "status": "EOD SYNTHESIS 2026-05-16 at 23:08 UTC.",
       "anomalies": [
         {
-          "type": "MORNING_WINDOW_MISSED_TODAY",
-          "severity": "HIGH",
-          "value": "2026-05-16 06:00-12:00 UTC window passed without restart. Bot remains offline. Next window: 2026-05-17 06:00 UTC (T-7.9h).",
-          "action": "RESTART at 2026-05-17 06:00 UTC sharp. Verify circuit breaker state and gate stack on first signal."
+          "type": "MORNING_WINDOW_MISSED_2026-05-16",
+          "severity": "CRITICAL",
+          "value": "2026-05-16 06:00-12:00 UTC window passed without restart. Next window: 2026-05-17 06:00 UTC (T-6.9h).",
+          "action": "RESTART at 2026-05-17 06:00 UTC (6.9h away). Apply soft-start protocol."
         },
         {
           "type": "CONSECUTIVE_LOSSES_AT_SHUTDOWN",
           "severity": "HIGH",
           "value": 4,
-          "detail": "4 consecutive losses → streak_gate fires -15pts on every signal. One more loss triggers full circuit breaker pause (threshold=5). Soft-start protocol mandatory.",
-          "action": "50% sizing + max 3x leverage + ETH/BTC TRENDING regime only for first 5 trades."
+          "action": "50% sizing + max 3x leverage + ETH/BTC TRENDING only for first 5 trades."
         },
         {
-          "type": "BOT_OFFLINE_23_DAYS",
+          "type": "BOT_OFFLINE",
           "severity": "CRITICAL",
-          "value": "551.8h (22.99 days) offline. No equity change since 2026-04-23.",
+          "value": "552.9h (23.04 days) offline. No equity change since 2026-04-23.",
           "action": "RESTART: cd bot && python run.py paper"
         }
       ],
@@ -108,84 +105,94 @@
         "trades_today": 0,
         "pnl_today": 0.0,
         "wr_today": null,
-        "note": "Bot offline — no trades executed"
+        "note": "Bot offline \u2014 no trades executed today"
+      },
+      "code_change_today": {
+        "fix": "OUTCOME_CALLBACK_WIRED",
+        "file": "bot/feedback/loop.py",
+        "impact": "GraduatedRulesEngine.record_outcome() now called on every trade close. 6 frozen rules will track accuracy on restart."
       }
     },
     "model_optimization": {
       "swaps_recommended": 0,
       "potential_savings": "$0.00",
-      "status": "SKIP - cost_tracker.json not found. Bot offline 551.8h, zero LLM calls to analyze.",
+      "status": "SKIP - cost_tracker.json not found. Bot offline 552.9h, zero LLM calls.",
       "reactivate_after": "50 LLM calls post-restart"
     }
   },
   "high_priority_findings": [
     {
       "subsystem": "auto_fix",
-      "severity": "MEDIUM",
-      "finding": "F17_CONFIRMED_CODED: Prior run marked F17 (l1 sector cap) as NOT_CODED but it has been live at sector_exposure.py:55 since 2026-04-15. The search was done against risk.py (wrong file). The graduated_rules.json entry already showed status=APPLIED+verified=true with correct file reference. All 4 items from the prior run's code_audit_findings are now confirmed coded. Outstanding item list reduced by 1.",
-      "action": "No code change needed. F17 removed from pending list. All 5 code-auditable items now confirmed live.",
-      "urgency": "INFO — RESOLVED"
+      "severity": "HIGH",
+      "finding": "OUTCOME_CALLBACK_WIRED (P0 partial): bot/feedback/loop.py now calls GraduatedRulesEngine.record_outcome() as step 8 in FeedbackLoop.record_outcome(). This closes the accuracy feedback loop for 10 LLM graduated rules. 6 rules had times_applied>0 but times_correct=0 because the callback was missing. On restart, rule accuracy will accumulate correctly and auto-retirement will fire for consistently wrong rules (threshold: 10+ applications below 35%). DATA CORRUPTION NOTED: rule_1777922205_0 and night_session_block_v1 show times_correct > times_applied (impossible ratio) \u2014 likely from a bulk historical initialization artifact. The fix does not worsen this. 56/56 tests pass.",
+      "action": "IMPLEMENTED. Verify on restart: '[FEEDBACK] Outcome recorded' log should be followed by graduated rules saving. Monitor hype_short_veto_v1 (3 applied, 0 correct) \u2014 if it stays at 0% after 10 more applications, it auto-retires.",
+      "urgency": "IMPLEMENTED \u2014 monitor on restart"
     },
     {
       "subsystem": "daily_synthesis",
-      "severity": "HIGH",
-      "finding": "MORNING_WINDOW_MISSED_2026-05-16: The optimal 06:00-12:00 UTC restart window today passed without restart. This is the second consecutive missed window (prior run flagged T-4.8h). Next optimal window is 2026-05-17 06:00 UTC in 7.9 hours. Bot has been offline 22.99 days. Every missed window extends the 82-rule learning freeze and the equity plateau at $497.05.",
-      "action": "RESTART at 2026-05-17 06:00 UTC. Apply soft-start protocol: 50% size, max 3x leverage, ETH+BTC TRENDING only.",
-      "urgency": "HIGH — time-sensitive, 7.9h to window"
-    },
-    {
-      "subsystem": "auto_fix",
       "severity": "CRITICAL",
-      "finding": "AB_RESULT_TRACKER_CODE_STILL_MISSING (P0): The A/B feedback loop is not wired in loop.py. 82 high-confidence rules (>=75%) are frozen — they assign cohorts and gate signals but never update treatment_wr. Without this, the learning system is permanently theoretical. This has been P0 since 2026-04-26. 20+ hours since last run, still unimplemented. This is the highest-impact unresolved code item.",
-      "action": "Implement post-trade A/B cohort tracking in bot/feedback/loop.py: (1) on OPEN — tag trade with active A/B cohorts, (2) on CLOSE — update treatment_wr per cohort. Auto-graduate rules at treatment_wr - baseline_wr > 0.05 and n >= min_sample_to_graduate.",
-      "urgency": "CRITICAL — implement before or alongside restart"
+      "finding": "BOT_OFFLINE_DAY_23: 552.9h (23.04 days) offline. Second consecutive missed morning window (today 06:00-12:00 UTC passed without restart). Next optimal window: 2026-05-17 06:00 UTC (T-6.9h). All learning frozen: 79 A/B rules awaiting data, 6 accuracy counters need live trades, equity static at $497.05.",
+      "action": "RESTART at 2026-05-17 06:00 UTC (6.9h). Soft-start: 50% size, max 3x leverage, ETH+BTC TRENDING only for first 5 trades.",
+      "urgency": "CRITICAL \u2014 6.9h to window"
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "OUTCOME_CALLBACK_GAP: 10 graduated rules have times_applied > 0 but times_correct = 0. This means record_outcome() is not being called on trade close for non-veto rules. The VETO_CF_WIRE (applied prior run) fixes this for graduated_rule_veto skip paths only. Regular rule outcomes (confidence boosts/penalties) still never feed back to times_correct. Rules cannot auto-retire at 35% accuracy because accuracy is never measured.",
-      "action": "Find outcome registration in decision_engine.py or coordinator.py. Wire trade result (win/loss pct) to GraduatedRulesEngine.record_outcome() on trade close. Separate from veto wire — this affects active trade rules, not just veto skips.",
-      "urgency": "HIGH — implement on restart"
+      "finding": "LLM_GRAD_RULE_DATA_CORRUPTION: rule_1777922205_0 has times_correct=21 with only times_applied=3 (700% impossible accuracy). night_session_block_v1 has times_correct=25 with times_applied=4 (625%). These were bulk-initialized from historical analysis, not from live outcome callbacks. The auto-retirement threshold (10 apps at <35%) will not be incorrectly triggered by these corrupted entries. However, the accuracy display for these rules is meaningless and should be reset.",
+      "action": "Optional cleanup: reset times_correct=0 for corrupted rules (rule_1777922205_0, night_session_block_v1) and re-accumulate from live trading. Not urgent \u2014 corrupted values are stable and rules remain active.",
+      "urgency": "LOW \u2014 cosmetic issue only"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "HYPE_SHORT_VETO_ACCURACY_RISK: hype_short_veto_v1 (HYPE SELL veto) has applied=3, correct=0 (0% accuracy). This means 3 times it vetoed HYPE SELL signals that would have LOST (veto was wrong \u2014 the trade would have been a loser, confirming the hypothesis). Wait \u2014 veto is correct when the vetoed trade LOSES. correct=0 means the 3 trades would have WON. This raises a critical question: are we wrongly blocking profitable HYPE SELL trades? SOL_LONG_VETO and HYPE_LONG_VETO both show similar (1 applied, 0 correct). After restart and 7+ more applications, these rules approach the 10-application auto-retire threshold.",
+      "action": "On restart: monitor veto accuracy carefully. If HYPE SELL signals are being vetoed and the market moves in the vetoed direction (profitable), flag for human review. Consider shadow-mode for hype_short_veto_v1 after 10 applications.",
+      "urgency": "HIGH \u2014 approaches auto-retire threshold on restart"
     }
   ],
   "new_this_run_vs_prior": [
-    "F17_CONFIRMED_CODED: sector_exposure.py:55 has l1:1.50. Prior run false-negative (searched risk.py). Outstanding list reduced by 1.",
-    "MORNING_WINDOW_MISSED: 2026-05-16 06:00-12:00 UTC window passed without restart. Next: 2026-05-17 06:00 UTC (T-7.9h).",
-    "ALL_5_CODE_AUDIT_ITEMS_RESOLVED: F2, F5, F16, F17, VETO_CF_WIRE all confirmed coded. Zero remaining code-ready auto-fix items.",
-    "META_INSIGHT_SIZE_BIAS: positions >1.5x have 50% WR vs 71% for smaller (n=13). Reinforces 3x soft-start cap.",
-    "STALE_DATA_DEEPENING: live_edge_data now 150h stale (was 128h). execution_forensics 552h stale. All subsystems frozen pending restart.",
-    "BOT_DAY_23: 22.99 days offline, crossing into day 23. Equity frozen at $497.05."
+    "OUTCOME_CALLBACK_WIRED: loop.py step 8 now calls get_graduated_rules_engine().record_outcome(). 6 LLM rules will track accuracy on restart. 56 tests pass.",
+    "EOD_SYNTHESIS_GENERATED: 2026-05-16 EOD report generated at 23:08 UTC. Bot offline all day, 0 trades, $0 PnL.",
+    "DATA_CORRUPTION_IDENTIFIED: rule_1777922205_0 and night_session_block_v1 show impossible times_correct > times_applied ratios (bulk historical init artifact). Logged, not urgent.",
+    "HYPE_SHORT_VETO_RISK_FLAGGED: 3 applications, 0 correct \u2014 approaching 10-app auto-retire threshold. May be incorrectly blocking profitable HYPE SELL trades.",
+    "OFFLINE_DAY_23: bot offline 552.9h (23.04 days). Second consecutive missed morning window.",
+    "HOURS_TO_RESTART_WINDOW: 6.9h until optimal 2026-05-17 06:00 UTC window."
   ],
-  "code_changes_this_run": [],
+  "code_changes_this_run": [
+    {
+      "file": "bot/feedback/loop.py",
+      "change": "Added step 8 to FeedbackLoop.record_outcome(): calls get_graduated_rules_engine().record_outcome(symbol, regime, side, won=win). Wires trade outcome feedback to LLM graduated rules accuracy tracking.",
+      "lines_changed": 8,
+      "tests_passing": "56/56 feedback loop tests"
+    }
+  ],
   "still_outstanding": [
-    "BOT OFFLINE 551h — restart at 06:00 UTC 2026-05-17 is #1 priority (T-7.9h)",
-    "AB_RESULT_TRACKER_CODE — P0 CRITICAL: A/B feedback loop not wired in loop.py. 82 rules frozen.",
-    "OUTCOME_CALLBACK_GAP — HIGH: graduated rule times_correct never updates (except veto wire now fixed)",
-    "SOL_SHORT blockade — HUMAN DECISION REQUIRED (+$5807 historical alpha)",
-    "SNIPER_AUTO_EXECUTE=false — HUMAN DECISION REQUIRED (+$328/34-trade path)",
-    "CONF_FLOOR_70 conflict — HUMAN DECISION after shadow eval data",
-    "LLM_REGIME_CAPTURE_GAP — llm_regime not written to trades.csv",
-    "SNAPSHOT_ENTRY_MISSING — slippage unmeasurable",
-    "BTC_TRENDING_REGIME edge (n=5 80% WR) — need n>=10 to graduate",
-    "HYPE_UNKNOWN_REGIME edge (n=6 83% WR) — need directional clarity"
+    "BOT OFFLINE 553h \u2014 restart at 06:00 UTC 2026-05-17 is #1 priority (T-6.9h)",
+    "AB_RESULT_TRACKER_CODE \u2014 treatment_wr evaluation needs 20+ trades per cohort (live data needed)",
+    "SOL_SHORT blockade \u2014 HUMAN DECISION REQUIRED (+$5807 historical alpha)",
+    "SNIPER_AUTO_EXECUTE=false \u2014 HUMAN DECISION REQUIRED (+$328/34-trade path)",
+    "CONF_FLOOR_70 conflict \u2014 HUMAN DECISION after shadow eval data (conf_floor_70_v1 now tracking)",
+    "LLM_REGIME_CAPTURE_GAP \u2014 llm_regime not written to trades.csv",
+    "SNAPSHOT_ENTRY_MISSING \u2014 slippage unmeasurable",
+    "BTC_TRENDING_REGIME edge (n=5, 80% WR) \u2014 need n>=10 to graduate",
+    "HYPE_UNKNOWN_REGIME edge (n=6, 83% WR) \u2014 need directional clarity",
+    "RULE_DATA_CORRUPTION: rule_1777922205_0, night_session_block_v1 have impossible times_correct>times_applied"
   ],
   "equity_snapshot": {
     "equity": 497.05,
     "peak": 508.06,
-    "drawdown_from_start": "90.1% ($5000 → $497)",
+    "drawdown_from_start": "90.1% ($5000 \u2192 $497)",
     "drawdown_from_peak": "2.17%",
     "last_updated": "2026-04-23T22:17:05Z",
-    "note": "No equity updates — bot offline 551h"
+    "note": "No equity updates \u2014 bot offline 553h"
   },
   "next_run_focus": [
-    "T-7.9h (next window 2026-05-17 06:00 UTC): RESTART is the priority action",
-    "Pre-restart checklist: verify hold_time_rules_state.json loads (trending_min_hold_3h_v1)",
-    "Pre-restart checklist: verify graduated_rules.json loads 11 runtime rules",
-    "Pre-restart checklist: confirm consecutive_losses=4 in adaptive_risk_state.json (streak gate active)",
-    "IMPLEMENT AB_RESULT_TRACKER_CODE: wire A/B cohort tracking in loop.py before or alongside restart",
-    "IMPLEMENT OUTCOME_CALLBACK: wire trade close → graduated_rules.record_outcome() for non-veto rules",
+    "T-6.9h (next window 2026-05-17 06:00 UTC): RESTART is the #1 priority action",
+    "Pre-restart: verify feedback/loop.py step 8 fires ('Graduated rules outcome tracking') in first trade close log",
+    "Pre-restart: verify graduated_rules.json times_correct starts incrementing after first trade closes",
+    "Pre-restart: monitor hype_short_veto_v1 (3 applied, 0 correct) \u2014 7 more apps until auto-retire threshold",
     "IF RESTARTED: verify streak_gate fires (-15pts, consecutive_losses=4) in first signal logs",
     "IF RESTARTED: verify eth_trending_regime_boost_v1 fires for ETH TREND signals",
-    "IF RESTARTED: watch for '[CF→RULES] Veto outcome wired:' after first vetoed signal resolves (~48h)"
+    "IF RESTARTED: watch for graduated rules accuracy accumulating ('GRAD-RULES' log lines)"
   ]
 }

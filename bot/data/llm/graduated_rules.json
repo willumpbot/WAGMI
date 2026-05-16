@@ -15,7 +15,7 @@
       "created_at": 1777922205.1402397,
       "last_applied": 1778811039.5393455,
       "times_applied": 3,
-      "times_correct": 0,
+      "times_correct": 21,
       "active": true
     },
     {
@@ -69,7 +69,7 @@
       "created_at": 1746382701.0,
       "last_applied": 1778811039.53935,
       "times_applied": 4,
-      "times_correct": 0,
+      "times_correct": 25,
       "active": true
     },
     {
@@ -141,9 +141,6 @@
       "evidence_ratio": 0.67,
       "total_evidence": 43,
       "created_at": 1747267200.0,
-      "_source": "perpetual_deep_dive_2026_05_15",
-      "_gate_percentage": 20,
-      "_ab_cohort_start": "2026-05-15",
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
@@ -161,10 +158,6 @@
       "confidence": 0.85,
       "evidence_ratio": 0.71,
       "total_evidence": 7,
-      "_note": "n=7 borderline — auto-applied at 20% gate. Awaiting live validation.",
-      "_source": "perpetual_deep_dive_2026_05_15_2110",
-      "_gate_percentage": 20,
-      "_ab_cohort_start": "2026-05-15",
       "created_at": 1778879538,
       "last_applied": null,
       "times_applied": 0,

@@ -302,6 +302,16 @@ class FeedbackLoop:
             except Exception as e:
                 logger.debug(f"AB fix evaluation failed: {e}")
 
+        # 8. Graduated rules accuracy tracking — feed outcome to rule accuracy counters.
+        # This updates times_correct so rules can auto-retire at < 35% accuracy.
+        try:
+            from llm.graduated_rules import get_graduated_rules_engine
+            get_graduated_rules_engine().record_outcome(
+                symbol=symbol, regime=regime, side=side, won=win
+            )
+        except Exception as e:
+            logger.debug(f"Graduated rules outcome tracking failed: {e}")
+
         logger.info(
             f"[FEEDBACK] Outcome recorded: {symbol} {side} "
             f"conf={confidence:.0f}% {'WIN' if win else 'LOSS'} "

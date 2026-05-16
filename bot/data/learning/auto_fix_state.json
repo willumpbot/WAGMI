@@ -1,4 +1,8 @@
 {
+  "active_fixes": [],
+  "applied_total": 0,
+  "reverted_total": 0,
+  "ab_tests_active": 0,
   "last_run": "2026-05-16T22:06:24.379722+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_15 + perpetual_deep_dive_2026_05_16_0014 + perpetual_deep_dive_2026_05_16_0112 + perpetual_deep_dive_2026_05_16_2206",
   "fixes_applied_this_run": 1,
@@ -59,7 +63,7 @@
     "F2_calibration_cap": "CODED at parameter_tuner.py:186",
     "F5_llm_mode_guard": "CODED at llm_integration.py:972/1143/1221",
     "F16_clean_win_label": "CODED at position_manager.py:1296",
-    "F17_l1_sector_cap": "CONFIRMED_CODED at bot/execution/sector_exposure.py:55 (l1: 1.50). Prior run FALSE_NEGATIVE — searched risk.py (wrong file). graduated_rules.json status=APPLIED+verified=true since 2026-04-15."
+    "F17_l1_sector_cap": "CONFIRMED_CODED at bot/execution/sector_exposure.py:55 (l1: 1.50). Prior run FALSE_NEGATIVE \u2014 searched risk.py (wrong file). graduated_rules.json status=APPLIED+verified=true since 2026-04-15."
   },
   "new_finding_this_run": {
     "finding_id": "VETO_ACCURACY_WIRE_COMPLETE",
