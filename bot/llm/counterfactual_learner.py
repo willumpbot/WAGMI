@@ -456,6 +456,23 @@ class CounterfactualLearner:
                 self._maybe_write_kb_entry(rec)
             except Exception:
                 pass
+            # Wire graduated-rule veto outcomes back for accuracy tracking.
+            # Without this, veto rules accumulate times_applied but times_correct stays
+            # at 0 forever (no trade → no trade_close → record_outcome never fires).
+            if "graduated_rule_veto" in (rec.skip_reason or ""):
+                try:
+                    from llm.graduated_rules import get_graduated_rules_engine
+                    _won = (rec.hypothetical_pnl_pct or 0) > 0
+                    get_graduated_rules_engine().record_outcome(
+                        symbol=rec.symbol, regime=rec.regime,
+                        side=rec.side, won=_won,
+                    )
+                    logger.debug(
+                        f"[CF→RULES] Veto outcome wired: {rec.symbol} {rec.side} "
+                        f"won={_won} pnl={rec.hypothetical_pnl_pct:.1f}%"
+                    )
+                except Exception:
+                    pass
 
         # Periodic compaction of pending file
         if to_resolve:

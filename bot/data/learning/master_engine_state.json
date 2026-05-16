@@ -1,56 +1,62 @@
 {
-  "last_run": "2026-05-16T00:14:02.000000+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_16_0014",
-  "prior_run": "2026-05-15T23:10:01.993199+00:00",
-  "hours_since_prior_run": 1.07,
-  "bot_offline_hours": 530.2,
-  "bot_offline_days": 22.09,
-  "hours_to_restart_window": 5.77,
+  "last_run": "2026-05-16T01:12:14.854885+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_16_0112",
+  "prior_run": "2026-05-16T00:14:02.000000+00:00",
+  "hours_since_prior_run": 0.97,
+  "bot_offline_hours": 531.2,
+  "bot_offline_days": 22.13,
+  "hours_to_restart_window": 4.8,
   "restart_window": "2026-05-16T06:00:00+00:00",
   "subsystems": {
     "auto_fix": {
-      "fixes_applied": 0,
+      "fixes_applied": 1,
       "gates_active": 11,
-      "total_applied_all_time": 26,
-      "new_finding": "OUTCOME_FEEDBACK_MISDIAGNOSIS_CORRECTED: Code review (llm/graduated_rules.py:266, multi_strategy_main.py:3255) confirms record_outcome() IS correctly wired. Root cause of times_correct=0 is architectural: VETO rules block trades from executing so no trade_close fires and record_outcome() is never called for vetoed signals. Penalize rules may also push signals below confidence floor (also blocked). Design gap not a code bug. Fix: implement veto_shadow.json counter-factual evaluation.",
-      "root_cause_analysis": {
-        "record_outcome_wired_at": "multi_strategy_main.py:3255-3259",
-        "veto_rules_untrackable": ["hype_long_veto_v1", "sol_long_veto_v1", "night_session_block_v1", "hype_short_veto_v1"],
-        "penalize_rules_potentially_blocked": ["illiquid_regime_penalize_v1", "btc_short_conf70_80_penalize_v1", "conf_floor_70_v1"],
-        "mechanism": "VETO fires -> signal blocked -> no trade -> no close event -> record_outcome() never called. Design gap not a bug.",
-        "shadow_eval_design": "Log vetoed signals to veto_shadow.json with entry price + SL. Check counter-factual outcome N hours later. Call record_outcome(won=counterfactual). ~80 lines, 2-3 files."
+      "total_applied_all_time": 27,
+      "new_fix_this_run": {
+        "fix_id": "VETO_CF_WIRE_IMPLEMENTED",
+        "file": "bot/llm/counterfactual_learner.py",
+        "description": "Wire counterfactual-resolved veto outcomes back to graduated_rules.record_outcome(). When a signal is vetoed by a graduated rule, the counterfactual_learner now tracks price action and calls record_outcome(won=pnl>0) on resolution. Previously, veto rules accumulated times_applied=N but times_correct stayed at 0 forever because no trade executed so no trade_close so record_outcome never fired. 14 lines added in update_with_price() after _maybe_write_kb_entry().",
+        "confidence": 0.97,
+        "gate_percentage": 100,
+        "impact": "Completes the graduated rules feedback loop for vetoed signals. 4 active veto rules (hype_long_veto_v1, sol_long_veto_v1, night_session_block_v1, hype_short_veto_v1) will get accuracy tracking from next restart. Rules that are consistently wrong will auto-retire at accuracy < 35% after 10 evaluations.",
+        "verification": "python3 inspect.getsource confirmed: 'graduated_rule_veto' in skip_reason check present, get_graduated_rules_engine() called, record_outcome(won=pnl>0) called"
       },
-      "still_deferred": [
-        "BTC_TRENDING_REGIME: 80% WR, n=5 (conf 72% < 75%) - awaiting n>=10",
-        "HYPE_UNKNOWN_REGIME: 83% WR, n=6 (conf 68% < 75%)",
-        "CONF_FLOOR_70_RULE_CONFLICT - HUMAN DECISION REQUIRED (after shadow eval design)",
-        "SOL_SHORT - HUMAN DECISION REQUIRED (+$5807 alpha)",
-        "SNIPER_AUTO_EXECUTE - HUMAN DECISION REQUIRED"
+      "code_audit_findings": {
+        "F2_calibration_cap": "CONFIRMED_CODED at bot/feedback/parameter_tuner.py:186 (cap target = max(-3, min(3, calibration_offset))). No code change needed.",
+        "F5_llm_mode_guard": "CONFIRMED_CODED at bot/core/llm_integration.py:972, 1143, 1221 (should_call_llm guard at all 3 Scout/Overseer/Exit call sites).",
+        "F16_clean_win_label": "CONFIRMED_CODED at bot/execution/position_manager.py:1296 (return CLEAN_WIN if win else CLEAN_LOSS).",
+        "F17_l1_sector_cap": "NOT_CODED - bot/execution/risk.py has no l1 or sector cap. Only max_risk_multiplier=1.5 found, unrelated to sector concentration. Still pending."
+      },
+      "outstanding_pending": [
+        "F17_l1_sector_cap: raise sector cap 60% -> 1.5x in risk.py (conf=88%). Single-position bottleneck.",
+        "CONF_FLOOR_70_CONFLICT: human decision after shadow eval data (20+ outcomes needed).",
+        "SOL_SHORT_SUSPENSION: human decision (+$5807 historical alpha, conf 90%, gate=20% probe).",
+        "SNIPER_AUTO_EXECUTE: human decision (primary alpha, conf 90%, gate=0% pending human)."
       ],
-      "status": "STABLE - 0 new fixes. CORRECTED prior misdiagnosis: outcome feedback IS wired; gap is design (veto shadow eval missing)."
+      "status": "ACTIVE - 1 code fix applied this run (veto CF wire). 27 total applied all time."
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN - snapshot_entry column missing",
-      "noise_stops": "87% of early SL hits (<2h) in non-trending regimes (confidence=0.88)",
-      "status": "FROZEN - bot offline 530h. No new execution data since prior run.",
+      "avg_slippage": "UNKNOWN - snapshot_entry column missing from trades.csv",
+      "noise_stops": "87% early SL hits (<2h) in non-trending regimes (confirmed prior run)",
+      "status": "FROZEN - bot offline 531h. No new execution data.",
+      "structural_gaps_persist": [
+        "snapshot_entry missing from signal generation (slippage unmeasurable on restart)",
+        "llm_regime empty in trades.csv (12 regime A/B rules unmeasurable)",
+        "fill_status missing (partial fill rate unknown)"
+      ],
+      "leverage_finding": "3-5x = +$0.79/trade POSITIVE (n=68); 6-10x = -$0.38/trade NEGATIVE (n=91). Verify max 5x on restart.",
       "restart_gate_stack": {
         "streak_gate_pts": -15,
         "conf_floor_70_v1_pts": -20,
         "combined_threshold": "Raw signal must be 85%+ to reliably clear both gates at restart",
         "safe_window": "ETH+BTC in TRENDING regime 06:00-12:00 UTC most likely to clear"
-      },
-      "leverage_finding": "3-5x = +$0.79/trade (n=68) POSITIVE; 6-10x = -$0.38/trade (n=91) NEGATIVE. Verify max 5x on restart.",
-      "structural_gaps": [
-        "snapshot_entry missing - slippage unmeasurable (add at signal generation time)",
-        "llm_regime empty - 12 regime A/B rules unmeasurable (write at trade close)",
-        "fill_status missing - partial fill rate unknown"
-      ]
+      }
     },
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 4,
-      "stale_hours": 127.1,
-      "status": "STALE - 127h since last live data. Bot offline, no new trades. No change from prior run.",
+      "stale_hours": 128.1,
+      "status": "STALE - 128h since last live data. No change from prior run.",
       "top_edge": "ETH_SHORT + trending + morning (06:00-12:00 UTC): ~80% WR",
       "top_killer": "HYPE_LONG: 23% WR, -$77.26 total",
       "restart_priority_edges": [
@@ -68,29 +74,19 @@
     "daily_synthesis": {
       "anomalies_found": 1,
       "report_generated": false,
-      "status": "DAY_START 2026-05-16 00:14 UTC. Not EOD - full daily report not yet generated. Bot offline day 23.",
+      "status": "DAY_START 2026-05-16 01:12 UTC. Not EOD - full daily report not yet generated. Bot offline day 23.",
       "anomaly_this_run": {
-        "type": "RESTART_WINDOW_IMMINENT",
+        "type": "RESTART_WINDOW_T-4.8H",
         "severity": "HIGH",
-        "value": "T-5.77h to optimal morning restart window (06:00-12:00 UTC 2026-05-16). Bot offline 530h (22.1 days).",
-        "action": "Soft-start protocol at 06:00 UTC: (1) 50% sizing, (2) max 3x leverage, (3) ETH+BTC in TRENDING regime only, (4) verify streak gate fires -15pts on first signal, (5) monitor gate cascade"
+        "value": "4.8h to optimal morning restart window (06:00-12:00 UTC 2026-05-16). Bot offline 531h (22.1 days).",
+        "action": "At 06:00 UTC: (1) 50% sizing, (2) max 3x leverage, (3) ETH+BTC TRENDING regime only, (4) verify streak_gate fires -15pts on first signal, (5) watch for [CF->RULES] veto wire log messages."
       },
-      "todays_focus": {
-        "symbols_priority": ["ETH (trending_regime_boost_v1 +8pts active 20% A/B gate)", "BTC (btc_short_90plus_boost_v1 active)"],
-        "regimes_to_trade": ["trending ONLY unless confidence > 85%"],
-        "regimes_avoid": ["illiquid (87% noise stops)", "ranging (25% WR)"],
-        "time_window_priority": "06:00-12:00 UTC (71-75% WR historically)",
-        "human_decisions_needed": [
-          "SOL_SHORT probe at 50% gate - #1 alpha +$5807 blocked 23+ days",
-          "SNIPER_AUTO_EXECUTE=true - restores +$328/34-trade path (verify 5x cap first)",
-          "CONF_FLOOR_70 suspend for 50-trade live re-eval (after shadow eval design)"
-        ]
-      }
+      "new_this_run": "VETO_CF_WIRE active on restart: graduated veto rules will get counterfactual accuracy feedback for the first time."
     },
     "model_optimization": {
       "swaps_recommended": 0,
       "potential_savings": "$0.00",
-      "status": "SKIP - cost_tracker.json not found at data/llm/cost_tracker.json. Bot offline 530h, zero LLM calls to analyze.",
+      "status": "SKIP - cost_tracker.json not found. Bot offline 531h, zero LLM calls to analyze.",
       "reactivate_after": "50 LLM calls post-restart"
     }
   },
@@ -98,43 +94,58 @@
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "VETO_SHADOW_EVAL_DESIGN_NEEDED: Prior 'OUTCOME_FEEDBACK_BROKEN' diagnosis was wrong - record_outcome() IS wired (multi_strategy_main.py:3255). Root cause: VETO rules block trades so no trade_close fires and veto accuracy is unmeasurable. 4 veto rules (hype_long, sol_long, night_session, hype_short) have 9 combined applications with 0 validated outcomes. Flying blind on whether vetoes are correct.",
-      "action": "Design veto_shadow.json counter-factual: when evaluate_signal() returns vetoed=True, log signal with entry_price+sl+tp. N hours later compare price to SL/TP and call record_outcome(won=counterfactual). ~80 lines, 2-3 files. High-value pre-restart work.",
-      "urgency": "HIGH - all 4 veto rules currently unvalidated"
+      "finding": "VETO_CF_WIRE_APPLIED: The missing graduated-rules feedback loop for vetoed signals has been implemented in counterfactual_learner.py. Previously, veto rules (hype_long_veto_v1, sol_long_veto_v1, night_session_block_v1, hype_short_veto_v1) accumulated times_applied=9 combined with times_correct=0 forever, making veto accuracy unmeasurable. The 14-line fix wires counterfactual resolution outcomes back to graduated_rules.record_outcome() when skip_reason contains 'graduated_rule_veto'. After next restart, rules will auto-retire at accuracy < 35% after 10 counterfactual outcomes.",
+      "action": "DONE - code change applied. Verify on restart: watch logs for '[CF->RULES] Veto outcome wired:' messages after first vetoed signal resolves (~48h delay for counterfactual resolution).",
+      "urgency": "RESOLVED_THIS_RUN"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "MEDIUM",
+      "finding": "CODE_AUDIT_3_CONFIRMED: F2 (calibration cap at parameter_tuner.py:186), F5 (LLM mode guard at llm_integration.py:972/1143/1221), F16 (clean_win_label at position_manager.py:1296) all confirmed coded. Prior runs documented them as recommendations; this run confirms code implementation. 3 outstanding audit items resolved.",
+      "action": "No action needed. These fixes are live.",
+      "urgency": "INFO"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "MEDIUM",
+      "finding": "F17_STILL_UNCODED: L1 sector cap (raise 60% -> 1.5x) not found in bot/execution/risk.py. Only max_risk_multiplier=1.5 exists, unrelated to sector concentration. This causes single-position bottleneck: BTC and HYPE were blocked while ETH took 69% of equity alone in April. Confidence=88%.",
+      "action": "Find the sector concentration limit in risk.py or portfolio_risk module and raise cap from 60% to 1.5x (or add if missing). Implement pre-restart.",
+      "urgency": "MEDIUM - implement before or shortly after restart"
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "HIGH",
-      "finding": "RESTART_WINDOW_T-5.77H: Optimal morning restart window (06:00-12:00 UTC 2026-05-16) is 5.77h away. Bot offline 530h (22.1 days). Streak gate fires on first signal (-15pts). Two compounding penalty gates create effective 85%+ confidence bar on restart day.",
-      "action": "At 06:00 UTC: soft-start with 50% sizing + max 3x leverage + ETH/BTC in TRENDING regime only. Monitor first 5 signals for gate cascade behavior.",
+      "finding": "RESTART_WINDOW_T-4.8H: Optimal morning restart window 06:00-12:00 UTC is 4.8h away. Bot offline 531h (22.1 days). Two compounding penalty gates active: streak_gate (-15pts) + conf_floor_70_v1 (-20pts). Effective bar: 85%+ raw confidence needed on restart day. New this hour: VETO_CF_WIRE active, so first vetoed signals on restart will generate counterfactual learning data.",
+      "action": "Soft-start at 06:00 UTC: 50% sizing + max 3x leverage + ETH/BTC TRENDING only. New: monitor for veto accuracy wire log messages.",
       "urgency": "HIGH - time-sensitive"
-    },
-    {
-      "subsystem": "live_injection",
-      "severity": "MEDIUM",
-      "finding": "CONF_FLOOR_70_UNVALIDATABLE: conf_floor_70_v1 has been applied 2x (times_correct=0) but accuracy is unmeasurable due to veto/block design gap. Insight journal shows 60-70% confidence = +$2.19/trade EV (42% WR, 67 trades). Rule may be blocking +EV signals.",
-      "action": "Implement shadow eval design first. Then collect 20+ shadow outcomes for conf_floor_70_v1. If shadow accuracy < 50%, suspend rule for 50-trade live probe.",
-      "urgency": "MEDIUM - depends on shadow eval feature"
     }
   ],
   "new_this_run_vs_prior": [
-    "OUTCOME_FEEDBACK_MISDIAGNOSIS_CORRECTED: record_outcome() IS wired at multi_strategy_main.py:3255. Root cause is veto design gap - vetoed trades have no close event. Shadow evaluation needed not a code fix.",
-    "RESTART_WINDOW_T-5.77H: Morning window 06:00-12:00 UTC is 5.77h away (was T-7h in prior run).",
-    "Code inspection confirms: llm/graduated_rules.py:235-260 (evaluate_signal) and :266-280 (record_outcome) logic is correct; veto path has no counter-factual mechanism.",
-    "VETO_SHADOW_EVAL_DESIGN_NEEDED replaces OUTCOME_FEEDBACK_BROKEN as the correct problem statement."
+    "VETO_CF_WIRE_IMPLEMENTED: 14 lines in counterfactual_learner.py. When skip_reason='graduated_rule_veto', call gre.record_outcome(won=pnl>0) on counterfactual resolution. First veto accuracy data will arrive ~48h after next restart.",
+    "CODE_AUDIT_CONFIRMED: F2 (parameter_tuner.py:186), F5 (llm_integration.py:972/1143/1221), F16 (position_manager.py:1296) all confirmed coded. 3 outstanding recommendations resolved as already-implemented.",
+    "F17_NOT_CODED: l1_sector_cap still missing from risk.py. Added to high-priority pre-restart list.",
+    "RESTART_WINDOW: T-4.8h (was T-5.77h in prior run). Countdown continues.",
+    "COUNTERFACTUAL_ARCHITECTURE_TRACED: _record_counterfactual() in ensemble.py:1238 -> brain_wiring.record_skipped_trade() -> counterfactual_learner.record_skip(). Resolution in update_with_price(). Was NOT feeding back to graduated_rules. Now fixed."
   ],
-  "code_changes_this_run": [],
+  "code_changes_this_run": [
+    {
+      "file": "bot/llm/counterfactual_learner.py",
+      "change": "Added graduated_rule veto outcome wire in update_with_price() after _maybe_write_kb_entry(). 14 lines. Condition: 'graduated_rule_veto' in rec.skip_reason. Action: get_graduated_rules_engine().record_outcome(symbol, regime, side, won=pnl>0). Logger: '[CF->RULES] Veto outcome wired: {symbol} {side} won={won} pnl={pnl:.1f}%'",
+      "confidence": 0.97,
+      "test_result": "Import OK. Logic confirmed via inspect.getsource() check."
+    }
+  ],
   "still_outstanding": [
-    "BOT OFFLINE 530H - restart at 06:00 UTC 2026-05-16 is #1 priority (T-5.77h)",
-    "VETO_SHADOW_EVAL_DESIGN - design counter-factual evaluation for vetoed signals (NEW THIS RUN corrects OUTCOME_FEEDBACK_BROKEN)",
+    "BOT OFFLINE 531H - restart at 06:00 UTC 2026-05-16 is #1 priority (T-4.8h)",
+    "F17_l1_sector_cap - NOT coded in risk.py (HUMAN REVIEW + CODE NEEDED)",
     "SOL_SHORT blockade - HUMAN DECISION REQUIRED (+$5807 historical alpha)",
     "SNIPER_AUTO_EXECUTE=false - HUMAN DECISION REQUIRED (primary alpha source)",
-    "CONF_FLOOR_70 conflict - HUMAN DECISION REQUIRED after shadow eval design",
+    "CONF_FLOOR_70 conflict - HUMAN DECISION after shadow eval data",
     "LLM_REGIME_CAPTURE_GAP - llm_regime not written to trades.csv",
     "snapshot_entry missing - slippage unmeasurable",
-    "BTC_TRENDING_REGIME edge (n=5 80% WR) - deferred need n>=10",
-    "HYPE_UNKNOWN_REGIME edge (n=6 83% WR) - deferred need directional clarity",
-    "TRENDING_MIN_HOLD_2H_CONFLICT - verify on restart (hold_time_rules_state.json 3h vs signal pipeline 2h)"
+    "BTC_TRENDING_REGIME edge (n=5 80% WR) - need n>=10",
+    "HYPE_UNKNOWN_REGIME edge (n=6 83% WR) - need directional clarity",
+    "TRENDING_MIN_HOLD_2H_CONFLICT - verify hold_time_rules_state.json on restart (3h vs 2h)"
   ],
   "equity_snapshot": {
     "equity": 497.05,
@@ -142,14 +153,14 @@
     "drawdown_from_start": "90.1% ($5000 -> $497)",
     "drawdown_from_peak": "2.17%",
     "last_updated": "2026-04-23T22:17:05Z",
-    "note": "No equity updates - bot offline 530h"
+    "note": "No equity updates - bot offline 531h"
   },
   "next_run_focus": [
-    "T-4.77h (next run at ~01:14 UTC): final restart prep verification",
-    "IF RESTARTED: verify streak_gate fires first signal (-15pts consecutive_losses=4) in logs",
-    "IF RESTARTED: verify eth_trending_regime_boost_v1 fires for ETH TREND signals (20% A/B gate)",
-    "IF RESTARTED: verify hold_time_rules_state.json loaded (3h trending min hold)",
-    "IF RESTARTED: verify leverage stays <= 5x on all positions",
-    "PRE-RESTART DESIGN: veto_shadow.json counter-factual evaluation (resolves veto accuracy gap)"
+    "T-3.8h (next run at ~02:12 UTC): continue countdown + implement F17 l1_sector_cap if not done",
+    "IMPLEMENT F17: find sector cap in risk.py/portfolio_risk, raise from 60% to 1.5x",
+    "IF RESTARTED: verify streak_gate fires (-15pts, consecutive_losses=4) in first signal logs",
+    "IF RESTARTED: verify eth_trending_regime_boost_v1 fires for ETH TREND signals",
+    "IF RESTARTED: watch for '[CF->RULES] Veto outcome wired:' after first vetoed signal is rejected",
+    "IF RESTARTED: monitor graduated_rules times_correct updates for veto rules after 48h"
   ]
 }

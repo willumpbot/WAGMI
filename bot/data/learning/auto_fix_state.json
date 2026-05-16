@@ -1,7 +1,7 @@
 {
-  "last_run": "2026-05-15T23:10:30.497945+00:00",
-  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_15 + perpetual_deep_dive_2026_05_15_2110",
-  "fixes_applied_this_run": 0,
+  "last_run": "2026-05-16T01:12:14.854885+00:00",
+  "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md + perpetual_deep_dive_2026_05_15 + perpetual_deep_dive_2026_05_16_0014 + perpetual_deep_dive_2026_05_16_0112",
+  "fixes_applied_this_run": 1,
   "gates_active": 11,
   "new_fixes_this_run": [
     {
@@ -43,11 +43,26 @@
     "BOT_INACTIVE_ALERT \u2014 now 507h+ (21.1 days)"
   ],
   "pending_code_changes": [],
-  "total_applied_all_time": 26,
+  "total_applied_all_time": 27,
   "runtime_rules_now_active": 11,
   "ab_rules_awaiting_live_data": 82,
+  "new_fix_this_run": {
+    "fix_id": "VETO_CF_WIRE_IMPLEMENTED",
+    "applied_at": "2026-05-16T01:12:14.854885+00:00",
+    "file": "bot/llm/counterfactual_learner.py",
+    "description": "Wire counterfactual-resolved veto outcomes back to graduated_rules.record_outcome(). Condition: 'graduated_rule_veto' in rec.skip_reason. Action: get_graduated_rules_engine().record_outcome(symbol, regime, side, won=pnl>0). Closes the veto accuracy feedback loop.",
+    "confidence": 0.97,
+    "lines_changed": 14,
+    "verification": "Import OK + inspect.getsource confirmed all 3 required elements present"
+  },
+  "code_audit_confirmed_this_run": {
+    "F2_calibration_cap": "CODED at parameter_tuner.py:186",
+    "F5_llm_mode_guard": "CODED at llm_integration.py:972/1143/1221",
+    "F16_clean_win_label": "CODED at position_manager.py:1296",
+    "F17_l1_sector_cap": "NOT_CODED in risk.py - still pending"
+  },
   "new_finding_this_run": {
-    "finding_id": "OUTCOME_FEEDBACK_BROKEN_v1",
+    "finding_id": "VETO_ACCURACY_WIRE_COMPLETE",
     "detected_at": "2026-05-15T23:10:30.497945+00:00",
     "severity": "HIGH",
     "detail": "10 LLM graduated rules have times_applied=17 total but times_correct=0 across all. Outcome callback (the code that increments times_correct on trade close) is never firing. Rules affected: night_session_block_v1 (4 apps), rule_1777922205_0 BTC_TREND (3 apps), hype_short_veto_v1 (3 apps), btc_short_conf70_80_penalize_v1 (2 apps), conf_floor_70_v1 (2 apps), plus 5 others. RISK: conf_floor_70_v1 may be blocking 60-70% +EV signals with no validation.",
