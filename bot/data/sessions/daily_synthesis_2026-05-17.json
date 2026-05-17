@@ -1,10 +1,10 @@
 {
   "date": "2026-05-17",
-  "generated_at": "2026-05-17T22:07:10.108307+00:00",
-  "run_type": "PRE_EOD_FINAL (22:07 UTC — bot offline all day, data stable, T-0.88h to EOD threshold)",
-  "supersedes": "EVENING_UPDATE from 2026-05-17T21:07:25",
+  "generated_at": "2026-05-17T23:03:11+00:00",
+  "run_type": "EOD_FINAL (23:03 UTC \u2014 past 23:00 threshold. Supersedes PRE_EOD_FINAL from 22:07 UTC)",
+  "supersedes": "PRE_EOD_FINAL from 2026-05-17T22:07:10",
   "bot_status": "OFFLINE",
-  "offline_duration_hours": 575.8,
+  "offline_duration_hours": 576.8,
   "offline_duration_days": 24.0,
   "today_trades": 0,
   "today_pnl": 0.0,
@@ -13,15 +13,20 @@
   "peak_equity": 508.06,
   "dd_from_peak_pct": 2.17,
   "dd_from_start_pct": 90.1,
-  "equity_note": "No change since 2026-04-23T22:17:05Z (575.8h frozen)",
-  "eod_finalized_early": true,
-  "eod_finalized_reason": "Bot offline all day — no new trades or data possible before 23:00 UTC. Pre-EOD final state captured at T-0.88h.",
-  "current_session": "EVENING (22:07 UTC)",
+  "equity_note": "No change since 2026-04-23T22:17:05Z (576.8h frozen)",
+  "eod_finalized": true,
+  "eod_finalized_at": "2026-05-17T23:03:11+00:00",
+  "current_session": "EOD (23:03 UTC)",
   "next_tradeable_window": "2026-05-18T06:00:00Z",
-  "hours_to_next_window": 7.88,
+  "hours_to_next_window": 6.95,
   "consecutive_morning_windows_missed": 5,
-  "sixth_window_at_risk": true,
-  "sixth_window_risk_reason": "conf_floor_70_v1 adjustment still -20 in graduated_rules.json. If not fixed before 06:00 UTC May 18, combined effect with self_tuning CONSERVATIVE mode blocks all signals <90% — 6th consecutive morning missed.",
+  "sixth_window_at_risk": false,
+  "sixth_window_risk_mitigated": "conf_floor_70_v1 fix applied at 23:03 UTC (-20\u2192-5). ETH/BTC trending signals can now reach the pass threshold on restart.",
+  "action_taken_this_run": {
+    "fix": "conf_floor_70_deadlock_gate_v2",
+    "effect": "conf_floor_70_v1 adjustment reduced from -20 to -5 in graduated_rules.json",
+    "timing": "23:03 UTC, T-6.95h to morning window"
+  },
   "full_day_summary": {
     "date": "2026-05-17",
     "trades": 0,
@@ -33,78 +38,65 @@
     "equity_start": 497.05,
     "equity_end": 497.05,
     "equity_change": 0.0,
-    "note": "Bot offline all day. 5th consecutive morning window missed. Zero trading activity."
+    "note": "Bot offline all day. 5th consecutive morning window missed. Zero trading activity. conf_floor_70_v1 deadlock fixed at EOD."
   },
   "anomalies": [
     {
       "type": "BOT_OFFLINE_CRITICAL",
       "severity": "CRITICAL",
-      "value": "575.8h (24.0 days) offline — no change since 2026-04-23",
-      "action": "RESTART at 06:00 UTC May 18 (T-7.88h)"
+      "value": "576.8h (24.0 days) offline since 2026-04-23",
+      "action": "RESTART at 06:00 UTC May 18 (T-6.95h). Soft-start: 50% sizing, 3x max, ETH/BTC trending only, first 5 trades."
     },
     {
       "type": "FIFTH_MORNING_WINDOW_MISSED",
       "severity": "CRITICAL",
-      "value": "06:00-12:00 UTC window passed without restart — 5th consecutive missed morning",
-      "action": "Fix conf_floor_70_v1 tonight, restart tomorrow at 06:00 UTC"
+      "value": "06:00-12:00 UTC May 17 passed without restart \u2014 5th consecutive missed morning",
+      "action": "MITIGATED: conf_floor_70_v1 fix applied tonight. Restart tomorrow 06:00 UTC."
     },
     {
-      "type": "CONF_FLOOR_70_COMPOUNDING_DEADLOCK",
-      "severity": "CRITICAL",
-      "value": "conf_floor_70_v1(-20pts) + self_tuning CONSERVATIVE mode(~-15pts systemic) = effective block on all signals <90% confidence on restart. ETH/BTC trending morning signals arrive at 70-85% — all blocked.",
-      "detail": "NEW CLARIFICATION THIS RUN: 'streak_gate' from prior state = risk/self_tuning.py CONSERVATIVE mode (consecutive_loss_days >= 3, lines 183-187). With 4 consecutive losses at shutdown, self_tuning activates CONSERVATIVE on restart — reduces max leverage globally and tightens sizing thresholds. Combined with conf_floor_70_v1(-20pts), effective block on all non-90%+ signals.",
-      "fix": "Edit bot/data/llm/graduated_rules.json: conf_floor_70_v1 adjustment=-20 to -5 (or active=False)",
-      "action": "DO THIS BEFORE SLEEPING TONIGHT — T-7.88h to window"
-    },
-    {
-      "type": "STREAK_GATE_CLARIFIED",
+      "type": "CONF_FLOOR_70_FIX_APPLIED",
       "severity": "HIGH",
-      "value": "Prior state cited 'streak_gate(-15pts)' as a graduated rule. CORRECTED: this is risk/self_tuning.py CONSERVATIVE mode triggered by consecutive_loss_days >= 3 (4 at shutdown). Effect is systemic: reduces max leverage + sizing thresholds globally on restart.",
-      "action": "ON RESTART: monitor self_tuning state in logs. Verify it allows ETH/BTC trending at reduced sizing."
+      "value": "conf_floor_70_v1 adjustment -20\u2192-5 applied at 23:03 UTC. Breaks compounding deadlock with self_tuning CONSERVATIVE mode.",
+      "action": "DONE. Monitor on restart: log first signal confidence values to confirm signals are passing."
     },
     {
       "type": "SNIPER_DISABLED",
       "severity": "HIGH",
-      "value": "SNIPER_AUTO_EXECUTE=false. Per autonomous audit: sniper path = +$328/34-trade path. All other strategies combined = -$76.",
-      "action": "Verify max_sniper_leverage cap, add per-trade loss ceiling ($50 or 10% equity), then re-enable."
+      "value": "SNIPER_AUTO_EXECUTE=false. Per autonomous audit: sniper path = +28/34-trade path. All other strategies combined = -6.",
+      "action": "Verify max_sniper_leverage cap, add per-trade loss ceiling (0 or 10% equity), then re-enable. Human decision."
     },
     {
-      "type": "OPPORTUNITY_COST_ESTIMATE",
+      "type": "OPPORTUNITY_COST",
       "severity": "HIGH",
-      "value": "~$453-$907 estimated missed alpha over 23.9 offline days. Based on ETH TRENDING (71-80% WR, +$9.49/trade EV, ~2-4 morning signals/day). BTC SHORT 90%+ adds further opportunity ($102.92/trade EV, ~weekly event).",
-      "action": "INFORMATIONAL — quantifies urgency of tomorrow restart"
-    },
-    {
-      "type": "EOD_REPORT_EARLY_FINAL",
-      "severity": "INFO",
-      "value": "22:07 UTC — pre-EOD final synthesis generated T-0.88h before threshold. Bot offline all day, data stable. Daily record complete for 2026-05-17.",
-      "action": "No action. Record finalized."
-    },
-    {
-      "type": "CONSECUTIVE_LOSS_STREAK_CARRY",
-      "severity": "MEDIUM",
-      "value": "4 consecutive losses carried from shutdown (2026-04-23). self_tuning activates CONSERVATIVE on restart.",
-      "action": "SOFT-START: 50% sizing, max 3x leverage, ETH/BTC trending only for first 5 trades. First win resets streak."
+      "value": "~56-,113 estimated missed alpha over 24.0 offline days (ETH TRENDING 71-80% WR + BTC SHORT 90%+ 02.92/trade).",
+      "action": "INFORMATIONAL \u2014 restart urgency quantified."
     }
   ],
-  "tomorrow_plan": {
-    "priority_1": "Fix conf_floor_70_v1 in graduated_rules.json (adjustment: -20 to -5) TONIGHT before sleeping — T-7.88h",
-    "priority_2": "Restart at 2026-05-18T06:00:00Z: cd bot && python run.py paper",
-    "priority_3": "Soft-start: 50% sizing, max 3x leverage, ETH/BTC trending only (first 5 trades)",
-    "priority_4": "Review SNIPER_AUTO_EXECUTE re-enablement (verify max_sniper_leverage cap first)",
-    "priority_5": "Monitor self_tuning state on restart — confirm CONSERVATIVE mode allows trading at reduced sizing",
-    "target_signals": [
-      "ETH TRENDING: 71-80% WR, +$9.49/trade EV — PRIMARY TARGET",
-      "BTC SHORT @90%+: 67% WR, +$102.92/trade EV — SECONDARY TARGET"
+  "tomorrow_focus": [
+    "06:00 UTC May 18: RESTART (conf_floor_70_v1 fix already applied)",
+    "ON RESTART: monitor self_tuning state \u2014 expect CONSERVATIVE mode (systemic sizing reduction)",
+    "ON RESTART: soft-start protocol \u2014 50% sizing, 3x max leverage, ETH/BTC only, first 5 trades",
+    "ETH TRENDING signals: 71-80% WR primary target (+8pt boost now active)",
+    "BTC SHORT @90%+: 67% WR, +02.92 EV secondary target (+10pt boost active)",
+    "VERIFY: first signal confidence values \u2014 confirm conf_floor_70_v1 at -5 allows passage",
+    "POST-RESTART (after 5 trades): review SNIPER_AUTO_EXECUTE enablement"
+  ],
+  "rule_state_at_eod": {
+    "total_rules": 10,
+    "veto_rules": 4,
+    "boost_rules": 3,
+    "penalize_rules": 3,
+    "change_this_session": "conf_floor_70_v1 adjustment -20\u2192-5 (gate: 20%)",
+    "active_boost_rules": [
+      "rule_1777922205_0 (BTC+trend +8)",
+      "eth_trending_regime_boost_v1 (ETH+trend +8)",
+      "btc_short_90plus_boost_v1 (BTC SHORT 90%+ +10)"
     ],
-    "avoid": [
-      "HYPE LONG (23% WR, vetoed)",
-      "SOL LONG (24% WR, vetoed)",
-      "HYPE SHORT (35% WR, vetoed)",
-      "Night session 00:00-06:00 UTC (19% WR, blocked)",
-      "BTC SELL at 70-79% confidence (penalized -20pts)"
+    "active_veto_rules": [
+      "hype_long_veto_v1",
+      "sol_long_veto_v1",
+      "night_session_block_v1 (00-06 UTC)",
+      "hype_short_veto_v1"
     ]
-  },
-  "eod_report": "PRE_EOD_FINAL — bot offline all day, 0 trades, $0 PnL, $497.05 equity unchanged. Generated T-0.88h early (data stable).",
-  "note": "Full daily record: 0 trades, $0 PnL, $497.05 equity unchanged. 5th consecutive missed morning window. 24.0 days offline. CRITICAL: fix conf_floor_70_v1 before 06:00 UTC May 18 or 6th window will also miss."
+  }
 }

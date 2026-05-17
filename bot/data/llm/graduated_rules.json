@@ -166,13 +166,13 @@
     },
     {
       "rule_id": "conf_floor_70_v1",
-      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes.",
+      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes. GATED (2026-05-17): adjustment reduced -20→-5 to break compounding deadlock with self_tuning CONSERVATIVE mode. Evidence conflict: insight_journal (67 trades) shows +$2.19/trade EV in this bin; rule built on older 123-trade window. -5pts preserves caution without total block. Gate: 20%.",
       "action": "penalize",
       "conditions": {
         "confidence_min": 60.0,
         "confidence_max": 70.0
       },
-      "adjustment": -20.0,
+      "adjustment": -5.0,
       "confidence": 0.87,
       "evidence_ratio": 0.463,
       "total_evidence": 123,
@@ -180,7 +180,11 @@
       "last_applied": 1778811039.5375004,
       "times_applied": 2,
       "times_correct": 0,
-      "active": true
+      "active": true,
+      "gate_percentage": 20,
+      "gated_at": "2026-05-17T23:03:00Z",
+      "prior_adjustment": -20.0,
+      "gate_reason": "COMPOUNDING_DEADLOCK: -20pts + self_tuning CONSERVATIVE = total block on all signals <90%. T-6.95h to morning window. 5th consecutive missed window. Reduced to -5 to allow ETH/BTC trending signals (typically 70-85%) to pass on restart."
     }
   ]
 }
