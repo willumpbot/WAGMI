@@ -1,0 +1,72 @@
+{
+  "date": "2026-05-17",
+  "generated_at": "2026-05-17T00:12:43+00:00",
+  "run_type": "START_OF_DAY",
+  "bot_status": "OFFLINE",
+  "offline_duration_hours": 553.9,
+  "offline_duration_days": 23.08,
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "today_wr": null,
+  "equity": 497.05,
+  "peak_equity": 508.06,
+  "dd_from_peak_pct": 2.17,
+  "current_session": "NIGHT_BLOCK (00:00-06:00 UTC)",
+  "next_tradeable_window": "2026-05-17T06:00:00Z",
+  "hours_to_next_window": 5.8,
+  "anomalies": [
+    {
+      "type": "BOT_OFFLINE_CRITICAL",
+      "severity": "CRITICAL",
+      "value": "553.9h (23.1 days) offline — no change since 2026-04-23",
+      "action": "RESTART at 06:00 UTC (T-5.8h): cd bot && python run.py paper"
+    },
+    {
+      "type": "NIGHT_SESSION_BLOCK_ACTIVE",
+      "severity": "INFO",
+      "value": "night_session_block_v1 veto active 00:00-06:00 UTC. Even if restarted now, zero trades would fire until 06:00 UTC.",
+      "detail": "This is a FEATURE not a bug — 19% WR night session historically. Block correctly prevents trading. Next open window: 06:00 UTC (T-5.8h).",
+      "action": "No action needed. Bot restart at 06:00 optimal."
+    },
+    {
+      "type": "STREAK_GATE_ACTIVE_ON_RESTART",
+      "severity": "HIGH",
+      "value": "4 consecutive losses at shutdown → streak_gate fires -15pts on first signal at restart.",
+      "detail": "With streak=-15pts: any signal < 85% confidence becomes < 70%. conf_floor_70_v1 (-20pts for 60-70%) may compound. First win resets counter to 0.",
+      "action": "Soft-start: 50% sizing + max 3x leverage + ETH/BTC TRENDING only for first 5 trades on restart."
+    },
+    {
+      "type": "MORNING_WINDOW_APPROACHING",
+      "severity": "HIGH",
+      "value": "06:00-12:00 UTC window is the bot's highest-edge session (ETH_SHORT+trending=80% WR, BTC_SHORT@90%=67% WR).",
+      "detail": "T-5.8h to window. This morning (05-17 06:00) = third consecutive day the window is missed if bot not restarted.",
+      "action": "RESTART at 2026-05-17T06:00:00Z. Soft-start protocol applies."
+    }
+  ],
+  "active_veto_rules_now": [
+    "night_session_block_v1 (00:00-06:00 UTC) — ACTIVE RIGHT NOW",
+    "hype_long_veto_v1 (HYPE BUY, all session)",
+    "sol_long_veto_v1 (SOL BUY, all session)"
+  ],
+  "soft_start_protocol": {
+    "applies": true,
+    "reason": "4 consecutive losses at last shutdown",
+    "rules": [
+      "50% of normal position sizing for first 5 trades",
+      "Max 3x leverage regardless of confidence",
+      "ETH and BTC TRENDING regime signals only",
+      "Skip SOL/HYPE entirely for first 5 trades",
+      "After 1 winning trade, full sizing unlocks"
+    ]
+  },
+  "data_fix_this_run": {
+    "fix": "DATA_CORRUPTION_CLEANUP",
+    "description": "Reset times_correct=0 for rule_1777922205_0 (was 21 > applied=3) and night_session_block_v1 (was 25 > applied=4). Both had impossible times_correct > times_applied values from bulk historical initialization. Now both start clean at 0/3 and 0/4 respectively, ready to accumulate real live-trade accuracy.",
+    "files_changed": ["bot/data/llm/graduated_rules.json"],
+    "confidence": 0.85,
+    "gate": "100%",
+    "risk": "ZERO — cosmetic data integrity fix only"
+  },
+  "eod_report": null,
+  "note": "Start-of-day run (00:12 UTC). EOD synthesis will generate at ~23:00 UTC."
+}
