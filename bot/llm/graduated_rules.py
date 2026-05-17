@@ -264,15 +264,23 @@ class GraduatedRulesEngine:
         return vetoed, max(0, min(100, confidence + conf_delta)), "; ".join(applied)
 
     def record_outcome(self, symbol="", regime="", side="", won=False):
-        """Track rule accuracy after trade closes."""
+        """Track rule accuracy after trade closes.
+
+        VETO rules are skipped here — their accuracy is tracked by
+        counterfactual_learner.py which has the blocked-trade context.
+        Including veto rules here inflates times_correct because closed trades
+        all passed the veto (weren't blocked), and time-based conditions
+        (hour_utc_min/max) can't be evaluated without the entry hour.
+        """
         self._ensure_loaded()
         for rule in self._rules:
-            if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side):
+            if not rule.active:
                 continue
             if rule.action == "veto":
-                if not won:
-                    rule.times_correct += 1
-            elif rule.action == "boost":
+                continue  # handled by counterfactual_learner.py
+            if not rule.matches(symbol=symbol, regime=regime, side=side):
+                continue
+            if rule.action == "boost":
                 if won:
                     rule.times_correct += 1
             elif rule.action == "penalize":
