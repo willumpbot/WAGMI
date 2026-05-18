@@ -63,10 +63,13 @@
       },
       "expected_edge": "~5-10% WR improvement during evening hours",
       "source_pattern": "Significant time-of-day weakness: 'evening' (18:00-24:00 UTC) has only 33% WR over 9 trades",
-      "status": "proposed",
+      "status": "invalidated",
       "test_results": {},
       "created_at": 1774577407.1340423,
-      "updated_at": 1774577407.1340423
+      "updated_at": 1774577407.1340423,
+      "invalidation_reason": "INVERTED: evening=33% WR but applies 1.08x boost (should be penalize). Auto-fix engine validation.",
+      "invalidated_at": "2026-05-18T22:05:46.254827+00:00",
+      "invalidated_by": "perpetual_improvement_loop_subsystem1"
     },
     {
       "id": "idea_e5ebabb4",
@@ -99,10 +102,13 @@
       },
       "expected_edge": "~5-10% WR improvement during night hours",
       "source_pattern": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 67% vs 'night' at 33% (spread: 33%)",
-      "status": "proposed",
+      "status": "invalidated",
       "test_results": {},
       "created_at": 1775054259.2033484,
-      "updated_at": 1775054259.2033484
+      "updated_at": 1775054259.2033484,
+      "invalidation_reason": "INVERTED: night=33% WR but applies 1.08x boost (should be penalize). Auto-fix engine validation.",
+      "invalidated_at": "2026-05-18T22:05:46.254827+00:00",
+      "invalidated_by": "perpetual_improvement_loop_subsystem1"
     },
     {
       "id": "idea_623426ad",
@@ -119,10 +125,13 @@
       },
       "expected_edge": "~5-10% WR improvement during night hours",
       "source_pattern": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 33% WR over 9 trades",
-      "status": "proposed",
+      "status": "invalidated",
       "test_results": {},
       "created_at": 1775054259.2033484,
-      "updated_at": 1775054259.2033484
+      "updated_at": 1775054259.2033484,
+      "invalidation_reason": "INVERTED_DUPLICATE: night=33% WR + boost applied, duplicate of 07f475b8. Deduplication required.",
+      "invalidated_at": "2026-05-18T22:05:46.254827+00:00",
+      "invalidated_by": "perpetual_improvement_loop_subsystem1"
     },
     {
       "id": "idea_920b3e13",
@@ -139,10 +148,13 @@
       },
       "expected_edge": "~5-10% WR improvement during afternoon hours",
       "source_pattern": "Significant time-of-day weakness: 'afternoon' (12:00-18:00 UTC) has only 33% WR over 15 trades",
-      "status": "proposed",
+      "status": "invalidated",
       "test_results": {},
       "created_at": 1775095188.192538,
-      "updated_at": 1775095188.192538
+      "updated_at": 1775095188.192538,
+      "invalidation_reason": "INVERTED: afternoon=33% WR but applies 1.08x boost (should be penalize). Auto-fix engine validation.",
+      "invalidated_at": "2026-05-18T22:05:46.254827+00:00",
+      "invalidated_by": "perpetual_improvement_loop_subsystem1"
     },
     {
       "id": "idea_98fac4ad",

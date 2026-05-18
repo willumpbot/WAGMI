@@ -25,84 +25,12 @@
       "timestamp": 1776987543.8175309
     },
     {
-      "category": "edge",
-      "description": "Size edge: larger positions (>5.0x) have 60% WR vs 40% for smaller. Higher conviction trades are more profitable.",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1776946435.7245893
-    },
-    {
-      "category": "edge",
-      "description": "Size edge: larger positions (>5.0x) have 58% WR vs 35% for smaller. Higher conviction trades are more profitable.",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1776858308.524664
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 71% vs 'night' at 9% (spread: 62%)",
-      "confidence": 0.7,
-      "evidence_count": 18,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1776817531.9659946
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 9% WR over 11 trades",
-      "confidence": 0.775,
-      "evidence_count": 11,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
-      "timestamp": 1776817531.9659946
-    },
-    {
-      "category": "edge",
-      "description": "Size edge: larger positions (>5.0x) have 59% WR vs 36% for smaller. Higher conviction trades are more profitable.",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1776817531.9659946
-    },
-    {
       "category": "pattern",
       "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 65% vs 'night' at 10% (spread: 55%)",
       "confidence": 0.85,
       "evidence_count": 27,
       "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
       "timestamp": 1776797749.9410007
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 10% WR over 10 trades",
-      "confidence": 0.75,
-      "evidence_count": 10,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
-      "timestamp": 1776797749.9410007
-    },
-    {
-      "category": "edge",
-      "description": "Size edge: larger positions (>5.0x) have 62% WR vs 32% for smaller. Higher conviction trades are more profitable.",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1776797749.9410007
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 62% vs 'night' at 10% (spread: 52%)",
-      "confidence": 0.8333333333333334,
-      "evidence_count": 26,
-      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1776777002.7425194
-    },
-    {
-      "category": "edge",
-      "description": "Size edge: larger positions (>5.0x) have 71% WR vs 27% for smaller. Higher conviction trades are more profitable.",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1776777002.7425194
     },
     {
       "category": "bias",
@@ -113,116 +41,12 @@
       "timestamp": 1776777002.7425194
     },
     {
-      "category": "edge",
-      "description": "Size edge: larger positions (>5.0x) have 67% WR vs 28% for smaller. Higher conviction trades are more profitable.",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1776690008.5426087
-    },
-    {
-      "category": "bias",
-      "description": "Side bias: 76% of trades are LONG but LONG WR is 29% vs 83% for the other side",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce LONG bias \u2014 we're taking too many LONG trades that underperform. Consider adding a side-balance check to the ensemble.",
-      "timestamp": 1776690008.5426087
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 62% vs 'night' at 7% (spread: 55%)",
-      "confidence": 0.7666666666666666,
-      "evidence_count": 22,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1776605464.7810628
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 7% WR over 14 trades",
-      "confidence": 0.8,
-      "evidence_count": 14,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
-      "timestamp": 1776605464.7810628
-    },
-    {
-      "category": "edge",
-      "description": "Size edge: larger positions (>5.0x) have 47% WR vs 31% for smaller. Higher conviction trades are more profitable.",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1776605464.7810628
-    },
-    {
-      "category": "bias",
-      "description": "Side bias: 82% of trades are LONG but LONG WR is 32% vs 56% for the other side",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce LONG bias \u2014 we're taking too many LONG trades that underperform. Consider adding a side-balance check to the ensemble.",
-      "timestamp": 1776605464.7810628
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 53% vs 'night' at 7% (spread: 46%)",
-      "confidence": 0.85,
-      "evidence_count": 29,
-      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1776580272.6186643
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 53% vs 'night' at 8% (spread: 45%)",
-      "confidence": 0.85,
-      "evidence_count": 27,
-      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1776558594.7938206
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 8% WR over 12 trades",
-      "confidence": 0.8,
-      "evidence_count": 12,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
-      "timestamp": 1776558594.7938206
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 73% vs 'night' at 8% (spread: 64%)",
-      "confidence": 0.7833333333333334,
-      "evidence_count": 23,
-      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1776383318.7350101
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 58% vs 'morning' at 14% (spread: 44%)",
-      "confidence": 0.8333333333333334,
-      "evidence_count": 26,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1776346399.1892202
-    },
-    {
       "category": "weakness",
       "description": "Significant time-of-day weakness: 'morning' (6:00-12:00 UTC) has only 14% WR over 7 trades",
       "confidence": 0.675,
       "evidence_count": 7,
       "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during morning (6:00-12:00 UTC).",
       "timestamp": 1776346399.1892202
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 57% vs 'morning' at 0% (spread: 57%)",
-      "confidence": 0.8333333333333334,
-      "evidence_count": 26,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1776301658.6094482
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'morning' (6:00-12:00 UTC) has only 0% WR over 5 trades",
-      "confidence": 0.625,
-      "evidence_count": 5,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during morning (6:00-12:00 UTC).",
-      "timestamp": 1776301658.6094482
     },
     {
       "category": "bias",
@@ -233,30 +57,6 @@
       "timestamp": 1776301658.6094482
     },
     {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 60% vs 'morning' at 0% (spread: 60%)",
-      "confidence": 0.7833333333333334,
-      "evidence_count": 23,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1776122197.0121517
-    },
-    {
-      "category": "bias",
-      "description": "Size bias detected: larger positions (>5.6x) have 33% WR vs 55% for smaller positions. Avg PnL: $-1.48 vs $+1.17",
-      "confidence": 0.8,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1776122197.0121517
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 67% vs 'morning' at 0% (spread: 67%)",
-      "confidence": 0.7,
-      "evidence_count": 18,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1776010377.2515354
-    },
-    {
       "category": "bias",
       "description": "Strategy concentration: 'ensemble' accounts for 94% of all trades (47/50). WR: 45%",
       "confidence": 0.8,
@@ -265,172 +65,12 @@
       "timestamp": 1776010377.2515354
     },
     {
-      "category": "bias",
-      "description": "Size bias detected: larger positions (>5.6x) have 26% WR vs 61% for smaller positions. Avg PnL: $-4.02 vs $+7.54",
-      "confidence": 0.8,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1776010377.2515354
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 62% vs 'morning' at 0% (spread: 62%)",
-      "confidence": 0.7166666666666667,
-      "evidence_count": 19,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1775909971.0499914
-    },
-    {
-      "category": "bias",
-      "description": "Size bias detected: larger positions (>5.6x) have 30% WR vs 57% for smaller positions. Avg PnL: $-3.63 vs $+6.10",
-      "confidence": 0.8,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1775909971.0499914
-    },
-    {
-      "category": "bias",
-      "description": "Side bias: 82% of trades are LONG but LONG WR is 44% vs 56% for the other side",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce LONG bias \u2014 we're taking too many LONG trades that underperform. Consider adding a side-balance check to the ensemble.",
-      "timestamp": 1775909971.0499914
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 58% vs 'morning' at 0% (spread: 58%)",
-      "confidence": 0.7666666666666666,
-      "evidence_count": 22,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1775856980.656317
-    },
-    {
-      "category": "bias",
-      "description": "Size bias detected: larger positions (>5.6x) have 37% WR vs 52% for smaller positions. Avg PnL: $-3.44 vs $+5.81",
-      "confidence": 0.8,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1775856980.656317
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'night' (0:00-6:00 UTC) wins 45% vs 'morning' at 0% (spread: 45%)",
-      "confidence": 0.65,
-      "evidence_count": 15,
-      "actionable_suggestion": "Boost confidence for trades during night (0:00-6:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1775814555.6870656
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 94% of all trades (47/50). WR: 36%",
-      "confidence": 0.8,
-      "evidence_count": 47,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775814555.6870656
-    },
-    {
-      "category": "bias",
-      "description": "Side bias: 82% of trades are LONG but LONG WR is 37% vs 56% for the other side",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce LONG bias \u2014 we're taking too many LONG trades that underperform. Consider adding a side-balance check to the ensemble.",
-      "timestamp": 1775814555.6870656
-    },
-    {
-      "category": "bias",
-      "description": "Size bias detected: larger positions (>5.6x) have 33% WR vs 48% for smaller positions. Avg PnL: $-3.31 vs $+5.86",
-      "confidence": 0.8,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1775791924.9325402
-    },
-    {
-      "category": "bias",
-      "description": "Side bias: 80% of trades are LONG but LONG WR is 38% vs 60% for the other side",
-      "confidence": 0.75,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce LONG bias \u2014 we're taking too many LONG trades that underperform. Consider adding a side-balance check to the ensemble.",
-      "timestamp": 1775791924.9325402
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 55% vs 'evening' at 39% (spread: 16%)",
-      "confidence": 0.85,
-      "evidence_count": 40,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during evening by 5-10%.",
-      "timestamp": 1775770575.3798418
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 90% of all trades (45/50). WR: 42%",
-      "confidence": 0.8,
-      "evidence_count": 45,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775770575.3798418
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 55% vs 'morning' at 20% (spread: 35%)",
-      "confidence": 0.8166666666666667,
-      "evidence_count": 25,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1775712729.8803551
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'morning' (6:00-12:00 UTC) has only 20% WR over 5 trades",
-      "confidence": 0.625,
-      "evidence_count": 5,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during morning (6:00-12:00 UTC).",
-      "timestamp": 1775712729.8803551
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 62% vs 'morning' at 33% (spread: 29%)",
-      "confidence": 0.7666666666666666,
-      "evidence_count": 22,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1775648465.0441241
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'morning' (6:00-12:00 UTC) has only 33% WR over 6 trades",
-      "confidence": 0.65,
-      "evidence_count": 6,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during morning (6:00-12:00 UTC).",
-      "timestamp": 1775648465.0441241
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 61% vs 'morning' at 33% (spread: 28%)",
-      "confidence": 0.8,
-      "evidence_count": 24,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1775537810.233382
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 55% vs 'morning' at 33% (spread: 22%)",
-      "confidence": 0.85,
-      "evidence_count": 29,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1775517082.443973
-    },
-    {
       "category": "edge",
       "description": "Size edge: larger positions (>6.0x) have 58% WR vs 35% for smaller. Higher conviction trades are more profitable.",
       "confidence": 0.75,
       "evidence_count": 50,
       "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
       "timestamp": 1775517082.443973
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 88% of all trades (44/50). WR: 48%",
-      "confidence": 0.8,
-      "evidence_count": 44,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775495907.6601598
     },
     {
       "category": "weakness",
@@ -450,163 +90,11 @@
     },
     {
       "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 64% vs 'morning' at 30% (spread: 34%)",
-      "confidence": 0.8,
-      "evidence_count": 24,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during morning by 5-10%.",
-      "timestamp": 1775472829.8755274
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'morning' (6:00-12:00 UTC) has only 30% WR over 10 trades",
-      "confidence": 0.75,
-      "evidence_count": 10,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during morning (6:00-12:00 UTC).",
-      "timestamp": 1775472829.8755274
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 84% of all trades (42/50). WR: 45%",
-      "confidence": 0.8,
-      "evidence_count": 42,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775472829.8755274
-    },
-    {
-      "category": "weakness",
-      "description": "Strategy 'sniper_premium' underperforming: 25% WR over 8 trades",
-      "confidence": 0.7,
-      "evidence_count": 8,
-      "actionable_suggestion": "Reduce weight for 'sniper_premium' in ensemble. Consider disabling if <30% WR persists over 20+ trades.",
-      "timestamp": 1775472829.8755274
-    },
-    {
-      "category": "pattern",
       "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 64% vs 'night' at 31% (spread: 34%)",
       "confidence": 0.85,
       "evidence_count": 27,
       "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
       "timestamp": 1775453531.0103774
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 31% WR over 13 trades",
-      "confidence": 0.8,
-      "evidence_count": 13,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
-      "timestamp": 1775453531.0103774
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 82% of all trades (41/50). WR: 46%",
-      "confidence": 0.8,
-      "evidence_count": 41,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775453531.0103774
-    },
-    {
-      "category": "weakness",
-      "description": "Strategy 'sniper_premium' underperforming: 22% WR over 9 trades",
-      "confidence": 0.725,
-      "evidence_count": 9,
-      "actionable_suggestion": "Reduce weight for 'sniper_premium' in ensemble. Consider disabling if <30% WR persists over 20+ trades.",
-      "timestamp": 1775453531.0103774
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 64% vs 'night' at 25% (spread: 39%)",
-      "confidence": 0.8333333333333334,
-      "evidence_count": 26,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1775436508.9495084
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 25% WR over 12 trades",
-      "confidence": 0.8,
-      "evidence_count": 12,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
-      "timestamp": 1775436508.9495084
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 78% of all trades (39/50). WR: 44%",
-      "confidence": 0.8,
-      "evidence_count": 39,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775436508.9495084
-    },
-    {
-      "category": "weakness",
-      "description": "Strategy 'sniper_premium' underperforming: 27% WR over 11 trades",
-      "confidence": 0.775,
-      "evidence_count": 11,
-      "actionable_suggestion": "Reduce weight for 'sniper_premium' in ensemble. Consider disabling if <30% WR persists over 20+ trades.",
-      "timestamp": 1775436508.9495084
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 67% vs 'night' at 27% (spread: 39%)",
-      "confidence": 0.8333333333333334,
-      "evidence_count": 26,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1775416859.4455802
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 27% WR over 11 trades",
-      "confidence": 0.775,
-      "evidence_count": 11,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
-      "timestamp": 1775416859.4455802
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 72% of all trades (36/50). WR: 47%",
-      "confidence": 0.8,
-      "evidence_count": 36,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775416859.4455802
-    },
-    {
-      "category": "weakness",
-      "description": "Strategy 'sniper_premium' underperforming: 29% WR over 14 trades",
-      "confidence": 0.8,
-      "evidence_count": 14,
-      "actionable_suggestion": "Reduce weight for 'sniper_premium' in ensemble. Consider disabling if <30% WR persists over 20+ trades.",
-      "timestamp": 1775416859.4455802
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 50% vs 'night' at 27% (spread: 23%)",
-      "confidence": 0.8166666666666667,
-      "evidence_count": 25,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1775395669.6868858
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 66% of all trades (33/50). WR: 42%",
-      "confidence": 0.8,
-      "evidence_count": 33,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775395669.6868858
-    },
-    {
-      "category": "weakness",
-      "description": "Strategy 'sniper_premium' underperforming: 29% WR over 17 trades",
-      "confidence": 0.8,
-      "evidence_count": 17,
-      "actionable_suggestion": "Reduce weight for 'sniper_premium' in ensemble. Consider disabling if <30% WR persists over 20+ trades.",
-      "timestamp": 1775395669.6868858
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 55% vs 'evening' at 29% (spread: 26%)",
-      "confidence": 0.8166666666666667,
-      "evidence_count": 25,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during evening by 5-10%.",
-      "timestamp": 1775374182.2370985
     },
     {
       "category": "weakness",
@@ -617,68 +105,12 @@
       "timestamp": 1775374182.2370985
     },
     {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 62% of all trades (31/50). WR: 45%",
-      "confidence": 0.8,
-      "evidence_count": 31,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775374182.2370985
-    },
-    {
-      "category": "weakness",
-      "description": "Strategy 'sniper_premium' underperforming: 32% WR over 19 trades",
-      "confidence": 0.8,
-      "evidence_count": 19,
-      "actionable_suggestion": "Reduce weight for 'sniper_premium' in ensemble. Consider disabling if <30% WR persists over 20+ trades.",
-      "timestamp": 1775374182.2370985
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 60% vs 'evening' at 0% (spread: 60%)",
-      "confidence": 0.6000000000000001,
-      "evidence_count": 12,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during evening by 5-10%.",
-      "timestamp": 1775282374.8157156
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'evening' (18:00-24:00 UTC) has only 0% WR over 7 trades",
-      "confidence": 0.675,
-      "evidence_count": 7,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during evening (18:00-24:00 UTC).",
-      "timestamp": 1775282374.8157156
-    },
-    {
-      "category": "weakness",
-      "description": "Strategy 'sniper_premium' underperforming: 35% WR over 23 trades",
-      "confidence": 0.8,
-      "evidence_count": 23,
-      "actionable_suggestion": "Reduce weight for 'sniper_premium' in ensemble. Consider disabling if <30% WR persists over 20+ trades.",
-      "timestamp": 1775282374.8157156
-    },
-    {
       "category": "weakness",
       "description": "Strategy 'ensemble' underperforming: 30% WR over 27 trades",
       "confidence": 0.8,
       "evidence_count": 27,
       "actionable_suggestion": "Reduce weight for 'ensemble' in ensemble. Consider disabling if <30% WR persists over 20+ trades.",
       "timestamp": 1775282374.8157156
-    },
-    {
-      "category": "bias",
-      "description": "Size bias detected: larger positions (>5.6x) have 15% WR vs 43% for smaller positions. Avg PnL: $-15.01 vs $+5.46",
-      "confidence": 0.8,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1775282374.8157156
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 67% vs 'afternoon' at 27% (spread: 40%)",
-      "confidence": 0.75,
-      "evidence_count": 21,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during afternoon by 5-10%.",
-      "timestamp": 1775261560.8799977
     },
     {
       "category": "weakness",
@@ -690,99 +122,11 @@
     },
     {
       "category": "bias",
-      "description": "Size bias detected: larger positions (>5.6x) have 26% WR vs 52% for smaller positions. Avg PnL: $-13.72 vs $+5.58",
-      "confidence": 0.8,
-      "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1775261560.8799977
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 75% vs 'afternoon' at 40% (spread: 35%)",
-      "confidence": 0.7833333333333334,
-      "evidence_count": 23,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during afternoon by 5-10%.",
-      "timestamp": 1775138814.3076222
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 78% of all trades (39/50). WR: 54%",
-      "confidence": 0.8,
-      "evidence_count": 39,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775138814.3076222
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 80% vs 'afternoon' at 33% (spread: 47%)",
-      "confidence": 0.7333333333333334,
-      "evidence_count": 20,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during afternoon by 5-10%.",
-      "timestamp": 1775095748.2047987
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'afternoon' (12:00-18:00 UTC) has only 33% WR over 15 trades",
-      "confidence": 0.8,
-      "evidence_count": 15,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during afternoon (12:00-18:00 UTC).",
-      "timestamp": 1775095748.2047987
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 86% of all trades (43/50). WR: 49%",
-      "confidence": 0.8,
-      "evidence_count": 43,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775095748.2047987
-    },
-    {
-      "category": "bias",
       "description": "Size bias detected: larger positions (>2.1x) have 44% WR vs 56% for smaller positions. Avg PnL: $-3.46 vs $-0.40",
       "confidence": 0.8,
       "evidence_count": 50,
       "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
       "timestamp": 1775095748.2047987
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 67% vs 'night' at 33% (spread: 33%)",
-      "confidence": 0.65,
-      "evidence_count": 15,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1775054947.5698075
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 33% WR over 9 trades",
-      "confidence": 0.725,
-      "evidence_count": 9,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
-      "timestamp": 1775054947.5698075
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 91% of all trades (39/43). WR: 49%",
-      "confidence": 0.8,
-      "evidence_count": 39,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775054947.5698075
-    },
-    {
-      "category": "bias",
-      "description": "Size bias detected: larger positions (>2.0x) have 41% WR vs 54% for smaller positions. Avg PnL: $-5.70 vs $-0.55",
-      "confidence": 0.8,
-      "evidence_count": 43,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1775054947.5698075
-    },
-    {
-      "category": "bias",
-      "description": "Strategy concentration: 'ensemble' accounts for 91% of all trades (31/34). WR: 61%",
-      "confidence": 0.8,
-      "evidence_count": 31,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
-      "timestamp": 1775005067.1790636
     },
     {
       "category": "edge",
@@ -793,14 +137,6 @@
       "timestamp": 1775005067.1790636
     },
     {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 75% vs 'evening' at 45% (spread: 30%)",
-      "confidence": 0.65,
-      "evidence_count": 15,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during evening by 5-10%.",
-      "timestamp": 1774782093.8768063
-    },
-    {
       "category": "edge",
       "description": "Size edge: larger positions (>1.5x) have 73% WR vs 42% for smaller. Higher conviction trades are more profitable.",
       "confidence": 0.75,
@@ -809,60 +145,14 @@
       "timestamp": 1774782093.8768063
     },
     {
-      "category": "edge",
-      "description": "Size edge: larger positions (>1.5x) have 64% WR vs 45% for smaller. Higher conviction trades are more profitable.",
-      "confidence": 0.75,
-      "evidence_count": 22,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1774709281.105981
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 75% vs 'evening' at 33% (spread: 42%)",
-      "confidence": 0.6166666666666667,
-      "evidence_count": 13,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during evening by 5-10%.",
-      "timestamp": 1774630903.8715463
-    },
-    {
-      "category": "weakness",
-      "description": "Significant time-of-day weakness: 'evening' (18:00-24:00 UTC) has only 33% WR over 9 trades",
-      "confidence": 0.725,
-      "evidence_count": 9,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during evening (18:00-24:00 UTC).",
-      "timestamp": 1774630903.8715463
-    },
-    {
       "category": "bias",
       "description": "Size bias detected: larger positions (>1.5x) have 50% WR vs 62% for smaller positions. Avg PnL: $-0.06 vs $-0.16",
       "confidence": 0.6666666666666667,
       "evidence_count": 16,
       "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
       "timestamp": 1774458397.3132286
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 75% vs 'evening' at 50% (spread: 25%)",
-      "confidence": 0.5666666666666667,
-      "evidence_count": 10,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during evening by 5-10%.",
-      "timestamp": 1774441776.49708
-    },
-    {
-      "category": "bias",
-      "description": "Size bias detected: larger positions (>1.5x) have 50% WR vs 71% for smaller positions. Avg PnL: $+0.86 vs $+0.21",
-      "confidence": 0.6166666666666667,
-      "evidence_count": 13,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1774441776.49708
-    },
-    {
-      "category": "pattern",
-      "description": "Time-of-day edge: 'morning' (6:00-12:00 UTC) wins 67% vs 'evening' at 50% (spread: 17%)",
-      "confidence": 0.55,
-      "evidence_count": 9,
-      "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during evening by 5-10%.",
-      "timestamp": 1774424723.0146015
     }
-  ]
+  ],
+  "last_dedup_at": "2026-05-18T22:06:12.775083+00:00",
+  "dedup_note": "Pruned from 108 to 19 by perpetual_improvement_loop (removed 89 duplicates, kept most-recent per insight category/bucket)"
 }

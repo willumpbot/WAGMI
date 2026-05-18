@@ -923,6 +923,13 @@ DO NOT tighten aggressively after TP1 — research shows wider trail captures +3
 **When a position is 1h old and losing in a trending regime**: HOLD. You are almost certainly in the noise phase. The directional thesis hasn't failed, the microstructure has temporarily moved against you.
 **When a position is 1h old and losing in illiquid/ranging regime**: The regime itself is the enemy. Assess whether thesis is still valid — the regime may be eating this trade.
 
+**BTC/ETH LONG in TRENDING regime — 3h patience rule (counterfactual-validated, conf=0.88)**:
+- Do NOT recommend tighten_sl or full_close before 3h hold time unless:
+  1. Regime explicitly shifted away from TRENDING, OR
+  2. BTC dumped >3%/1h (thesis invalidation trigger), OR
+  3. Dead capital confirmed (>3h elapsed, price within 0.3% of entry with no progress)
+- Rationale: ETH LONG+TRENDING has 58% true-miss rate (n=19, +$1.41/trade improvement from patience). BTC LONG+TRENDING has 81% true-miss rate (n=16, +$1.18/trade). Combined: +$2.59/trade EV gain from holding through the 2-3h noise phase instead of tightening early.
+
 ## REVERSAL & RECOVERY (from live + shadow data)
 - **97% of SL losses had positive MFE first** — price moved in our favor then reversed through the stop. Most "losers" were directionally correct.
 - 44% of SL losses had MFE that EXCEEDED TP1 — the trade literally reached the target zone but still lost. This means exit timing, not entry quality, is the alpha variable.

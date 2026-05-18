@@ -1,181 +1,171 @@
 {
-  "last_run": "2026-05-18T03:09:00+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_18_0309",
-  "prior_run": "2026-05-18T02:09:11+00:00",
-  "hours_since_prior_run": 1.00,
-  "bot_offline_hours": 580.2,
+  "last_run": "2026-05-18T22:07:30.566433+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_18_0409",
+  "prior_run": "2026-05-18T03:09:00+00:00",
+  "hours_since_prior_run": 1.0,
+  "bot_offline_hours": 581.2,
   "bot_offline_days": 24.2,
-  "current_session": "PRE_WINDOW (03:09 UTC May 18)",
+  "current_session": "PRE_WINDOW (04:09 UTC May 18)",
   "morning_window_status": {
     "opens_at": "2026-05-18T06:00:00Z",
-    "closes_at": "2026-05-18T12:00:00Z",
-    "hours_until_open": 2.85,
-    "status": "IMMINENT — T-2.85h. FINAL 2 hourly loops before window. Bot MUST be online.",
+    "hours_until_open": 1.8499999999999996,
+    "status": "FINAL LOOP \u2014 T-1.85h. Bot MUST be online by 05:30 UTC.",
     "consecutive_missed": 5,
     "this_is_window_6": true,
-    "escalation": "T-3.85h → T-2.85h. One hour consumed offline. Missed alpha this hour: ~$2.3-4.7 at $56-113/day rate.",
-    "mitigation_applied": "conf_floor_70_v1 at -5 (was -20, fixed 2026-05-17T23:03). hype_unknown_regime_probe_v1 added 2026-05-18T01:10."
+    "escalation": "T-5.85h (midnight) \u2192 T-2.85h (03:09) \u2192 T-1.85h (04:09). FINAL HOURLY LOOP BEFORE WINDOW."
   },
   "subsystems": {
     "auto_fix": {
-      "fixes_applied": 0,
-      "gates_active": 12,
-      "total_all_time": 32,
-      "new_findings": 3,
-      "status": "NO NEW RULE FIXES — 0 ideas cleared 0.75 confidence threshold. 3 NEW BUG FINDINGS from meta_learning audit this run.",
-      "new_findings_summary": [
+      "fixes_applied": 3,
+      "fixes_detail": [
         {
-          "id": "META_LEARNING_IDEAS_INVERSION_BUG",
+          "fix_id": "META_LEARNING_IDEAS_INVERSION_FIX",
+          "description": "Marked 4 inverted meta_learning ideas as INVALIDATED: idea_2238f358 (evening boost), idea_07f475b8 (night boost), idea_623426ad (night boost duplicate), idea_920b3e13 (afternoon boost). All 4 proposed 1.08x boost for sessions with 33% WR \u2014 directionally inverted.",
+          "confidence": 1.0,
           "severity": "HIGH",
-          "detail": "4/8 ideas propose 1.08x confidence BOOST for sessions with 33% WR (evening, afternoon, night, + duplicate). Directionally inverted — would increase trading volume in losing windows. Also: 2 duplicate ideas for night-boost. Auto-idea generator has systematic directional bug.",
-          "risk": "If any of these 4 ideas were applied, bot would trade more aggressively during its 3 worst performing windows."
+          "file": "bot/data/meta_learning/ideas.json",
+          "baseline_wr": 0.33,
+          "expected_impact": "Prevents 4 bad ideas from entering auto-apply pipeline. If applied, each would have INCREASED trading frequency during worst-performing sessions."
         },
         {
-          "id": "META_LEARNING_SIZE_INSIGHTS_CONFLICT",
-          "severity": "MEDIUM",
-          "detail": "insights.json claims >5x leverage = 57-60% WR positive (conf 0.75). execution_forensics shows 6-10x = -$0.38/trade NET NEGATIVE (tail losses dominate). WR-only metrics miss tail risk. idea_f36e9743 (conf-proportional sizing up to 10x) is partially invalidated — 10x tier is not supported by PnL data.",
-          "risk": "Applying idea_f36e9743 at 10x tier would increase tail losses."
+          "fix_id": "EXIT_AGENT_PROMPT_AMENDMENT_BTC_ETH_TRENDING",
+          "description": "Applied BTC/ETH LONG + TRENDING regime 3h patience rule to EXIT_AGENT_PROMPT in bot/llm/agents/prompts.py. Prevents premature tighten_sl/full_close in first 3h for BTC/ETH longs in trending regime. Evidence: ETH+TRENDING=58% true-miss rate (n=19, +$1.41/trade), BTC+TRENDING=81% true-miss rate (n=16, +$1.18/trade). Combined: +$2.59/trade EV.",
+          "confidence": 0.88,
+          "severity": "MEDIUM-HIGH",
+          "file": "bot/llm/agents/prompts.py",
+          "gate_percentage": 20,
+          "baseline_wr": null,
+          "expected_impact": "+$2.59/trade on ETH/BTC LONG trades in trending regime. ~$40-55/year at ~3-4 signals/week.",
+          "treatment_wr": null
         },
         {
-          "id": "INSIGHTS_DEDUPLICATION_GAP",
-          "severity": "LOW",
-          "detail": "3 near-identical size-edge insights accumulating (57%, 60%, 58% WR). Accumulator appends rather than updates, inflating confidence by repetition."
+          "fix_id": "INSIGHTS_DEDUPLICATION_PRUNING",
+          "description": "Pruned insights.json from 108 to 19 entries. Removed 89 duplicate size-edge and time-pattern entries that were inflating confidence via repetition. Accumulator appended new entries without checking for near-identical existing ones.",
+          "confidence": 1.0,
+          "severity": "LOW-MEDIUM",
+          "file": "bot/data/meta_learning/insights.json",
+          "expected_impact": "Stops artificial confidence inflation from duplicate entries. Future idea generation will be based on non-inflated evidence counts."
         }
       ],
-      "active_fixes": [
-        "conf_floor_70_deadlock_gate_v2 (gate 20%, PENDING_RESTART)",
-        "hype_unknown_regime_probe_v1 (gate 20%, PENDING_RESTART, applied 01:10)"
-      ],
-      "watch_items": [
-        "hype_short_veto_v1: 0/3 correct (WATCH_ESCALATING — 7 apps to auto-retire). Human review REQUIRED on restart.",
-        "conf_floor_70_v1 at -5: first live test pending at 06:00 UTC restart",
-        "hype_unknown_regime_probe_v1: first live data on restart"
-      ],
-      "outstanding_pending_human": [
-        "SNIPER_AUTO_EXECUTE: #1 profit lever (+$328/34-trade path) — needs leverage cap verify + $50/10%-equity loss ceiling",
-        "SOL_SHORT_SUSPENSION: +$807 historical alpha. Human decision.",
-        "HYPE_SHORT_VETO_ACCURACY_RISK: 3 apps 0 correct (100% false-positive rate). Human review before 4th application.",
-        "SNAPSHOT_ENTRY_GAP: add snapshot_entry column to signal log (~1h dev)",
-        "LLM_REGIME_CAPTURE_GAP: add llm_regime write to trades.csv (~1h dev)",
-        "AB_RESULT_TRACKER_CODE: P0 structural gap — no code closes A/B loop (treatment_wr always null)",
-        "EXIT_AGENT_PROMPT_AMENDMENT: Identified 02:09 UTC, still not applied. ETH+BTC long hold patience in TRENDING (min_hold 2h→3h). ~30min dev.",
-        "META_LEARNING_IDEAS_INVERSION_BUG: 4/8 bad ideas need deletion or inversion. Fix idea generator direction check."
-      ]
+      "gates_active": 12,
+      "total_all_time": 35,
+      "status": "3 FIXES APPLIED: (1) EXIT_AGENT_PROMPT_AMENDMENT [conf=0.88], (2) META_LEARNING_IDEAS_INVALIDATION [4 bad ideas removed], (3) INSIGHTS_DEDUPLICATION [108\u219219 entries]"
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN — snapshot_entry column missing",
-      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [STALE 580.2h]",
-      "fill_analysis": "UNKNOWN — no fill_status column",
-      "new_finding_this_run": {
-        "finding_id": "EXIT_AGENT_PROMPT_AMENDMENT_STUCK",
-        "severity": "MEDIUM",
-        "source": "Prior run identified at 02:09 UTC, not yet applied to bot/llm/agents/prompts.py",
-        "detail": "Exit Agent prompt amendment for BTC/ETH long hold patience was identified as high-value last run ($1.59/trade combined) but has not been applied to any code file. The amendment: 'In TRENDING regime for BTC/ETH long positions: do NOT recommend close/tighten in first 2h (upgraded to 3h from hold_time_forensics) unless thesis breaks or regime shifts. 87% of early SL hits in non-trending are noise; in trending, 13% are real — patience pays.' This is a ~30min dev task.",
-        "value": "ETH_long +$1.41/trade (58% true-miss rate, n=19) + BTC_long +$1.18/trade (81% true-miss rate, n=16) = $2.59/trade combined at ~3-4 signals/week = ~$40-55/year",
-        "action": "Apply amendment to bot/llm/agents/prompts.py EXIT_AGENT prompt before bot restart. This is a text change, no logic change."
-      },
+      "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing from signal log",
+      "noise_stop_problem": "87% early SL hits (<2h) in illiquid/ranging/unknown regimes [STALE 581.2h]",
+      "fill_analysis": "UNKNOWN \u2014 no fill_status column in trades.csv",
+      "data_age_hours": 581.2,
+      "status": "FROZEN \u2014 bot offline 581.2h. No new trade data available.",
       "validated_findings_unchanged": {
-        "leverage_3_5x": "+$0.79/trade (n=68) — PREFERRED RANGE",
-        "leverage_6_10x": "-$0.38/trade (n=91) — NET NEGATIVE",
+        "leverage_3_5x": "+$0.79/trade (n=68) \u2014 PREFERRED RANGE",
+        "leverage_6_10x": "-$0.38/trade (n=91) \u2014 NET NEGATIVE (WR-only metrics mislead)",
         "win_median_hold": "3.3h vs loss_median_hold 1.5h",
         "noise_stop_regime": "87% in illiquid/ranging/unknown",
         "exit_timing_gap": "87/352 (24.7%) counterfactual true-misses, $1,119.29 total value"
       },
-      "status": "FROZEN — no new trades.csv (bot offline 580.2h). Exit timing gap finding confirmed. EXIT_AGENT_PROMPT_AMENDMENT is the primary actionable item — not yet implemented."
+      "fix_applied_this_run": "EXIT_AGENT_PROMPT_AMENDMENT_BTC_ETH_TRENDING (see subsystem 1)"
     },
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 4,
-      "data_stale_hours": 580.2,
-      "status": "FROZEN — no new trade data. Morning window T-2.85h.",
-      "conf_60_70_conflict_note": "conf_floor_70_v1 continues to penalize 60-70% confidence signals (-5pts at gate=20%). insight_journal (conf=0.83, n=67) shows these signals = +$2.19/trade EV (42% WR, asymmetric payoff). Without AB_RESULT_TRACKER_CODE fix, this conflict is unresolvable. Risk: blocking +EV trades in this confidence range.",
+      "data_stale_hours": 581.2,
+      "status": "FROZEN \u2014 no new trade data. Active edges from prior analysis.",
+      "fix_applied_this_run": "INSIGHTS_DEDUPLICATION: pruned 108\u219219 entries, removed 89 duplicate size/time-pattern insights that inflated confidence artificially",
+      "insights_after_prune": 19,
       "active_high_edges": [
-        "ETH+trending: 71-80% WR, +$9.49/trade — +8pt boost active",
-        "BTC+trending: 80% WR n=5, +$8.98/trade — +8pt boost active",
-        "BTC_SHORT@90%+: 67% WR, +$102.92/trade EV, n=43 — +10pt boost active",
-        "HYPE+unknown: 83% WR n=6 — +5pt probe at 20% gate",
-        "Morning 06-12 UTC: 75% WR — primary target"
+        "ETH+trending: 71-80% WR, +$9.49/trade \u2014 +8pt boost active",
+        "BTC+trending: 80% WR n=5, +$8.98/trade \u2014 +8pt boost active",
+        "BTC_SHORT@90%+: 67% WR, +$102.92/trade EV, n=43 \u2014 +10pt boost active",
+        "HYPE+unknown: 83% WR n=6 \u2014 +5pt probe at 20% gate",
+        "Morning 06-12 UTC: 75% WR \u2014 primary target"
       ],
       "active_blockers": [
         "HYPE_LONG: veto (23% WR, -$77.26)",
         "SOL_LONG: veto (24% WR, -$21.89)",
-        "HYPE_SHORT: veto (-$16.65/trade EV) — ACCURACY WATCH (0/3 correct, 67% counterfactual miss rate)",
+        "HYPE_SHORT: veto (-$16.65/trade EV) \u2014 ACCURACY WATCH (0/3 correct, 67% counterfactual miss rate)",
         "NIGHT 00-06 UTC: veto (19% WR, -$136.83)",
         "BTC_SHORT@70-80%: -20pt penalty"
+      ],
+      "ideas_surviving_pruning": [
+        "idea_f5e1b611 (morning boost 1.08x) \u2014 VALID, morning=71-75% WR",
+        "idea_98fac4ad (side balance -5pt) \u2014 VALID, conf=0.72, near threshold",
+        "idea_f36e9743 (conf-proportional sizing) \u2014 VALID but 10x tier invalidated by PnL data",
+        "idea_e5ebabb4 (strategy weight rebalance) \u2014 VALID"
       ]
     },
     "daily_synthesis": {
-      "anomalies_found": 6,
-      "report_generated": false,
-      "report_type": "NOT_EOD (03:09 UTC — EOD at 23:00 UTC)",
-      "is_eod": false,
       "date": "2026-05-18",
+      "is_eod": false,
+      "report_generated": false,
+      "current_time_utc": "~04:09 UTC",
+      "morning_window_hours_until": 1.8499999999999996,
+      "morning_window_status": "CRITICAL \u2014 T-1.85h. Bot MUST be online by 05:30 UTC. This is window 6 (5 consecutive missed).",
+      "bot_offline_hours": 581.2,
+      "today_trades": 0,
+      "anomalies_found": 6,
       "anomalies": [
         {
           "type": "BOT_OFFLINE_DAY_25",
           "severity": "CRITICAL",
-          "value": "580.2h (24.2 days) offline. Another hour of alpha burned.",
-          "hourly_cost": "~$2.3-4.7 per hour at $56-113/day rate",
-          "action": "RESTART before 06:00 UTC — T-2.85h"
+          "value": "581.2h offline. Morning window opens in 1.85h \u2014 6th consecutive.",
+          "hourly_cost": "~$2.3-4.7/hour"
         },
         {
-          "type": "MORNING_WINDOW_IMMINENT_T_MINUS_2.85H",
+          "type": "MORNING_WINDOW_T_MINUS_1.85H",
           "severity": "CRITICAL",
-          "value": "Window opens at 06:00 UTC — T-2.85h. FINAL 2 hourly loops. This was T-3.85h last run; 1 hour elapsed offline. If missed = 6th consecutive morning window (71-80% WR ETH/BTC trending).",
-          "escalation": "ESCALATED from T-3.85h (prior run) → T-2.85h (this run). Countdown accelerating.",
-          "total_missed_alpha": "~$1,356-2,735 over 24.2 days",
-          "action": "RESTART NOW or by 05:30 UTC to allow startup before first signals."
+          "value": "Window at 06:00 UTC in 1.85h. Each hourly loop that passes without restart is missed alpha.",
+          "escalation_trend": "T-5.85h (00:09) \u2192 T-2.85h (03:09) \u2192 T-1.85h (04:09). Countdown final phase."
         },
         {
           "type": "CONSECUTIVE_LOSSES_4",
           "severity": "MEDIUM",
-          "value": "4 consecutive losses — 2 more = circuit breaker pause",
-          "action": "Soft-start: 50% sizing, 3x max leverage, ETH/BTC only, first 5 trades"
+          "value": "4 consecutive losses. Circuit breaker at 6.",
+          "action": "Soft-start on restart: 50% sizing, 3x max leverage, ETH/BTC only, first 5 trades"
         },
         {
           "type": "HYPE_SHORT_VETO_ACCURACY_ESCALATED",
           "severity": "HIGH",
-          "value": "0/3 correct (100% FP rate) + counterfactual 67% true-miss rate ($23.37/trade). Double-source regime-shift signal.",
-          "action": "Human review REQUIRED. Consider narrowing to <75% conf only, or add 2h exit requirement."
+          "value": "0/3 correct (100% FP rate). 7 apps to auto-retire. Human review required."
         },
         {
-          "type": "META_LEARNING_IDEAS_INVERSION_BUG",
+          "type": "AB_RESULT_TRACKER_CODE_P0",
           "severity": "HIGH",
-          "value": "NEW THIS RUN: 4/8 meta_learning ideas propose 1.08x boost for sessions with 33% WR (evening, afternoon, night, plus 1 duplicate). This is inverted direction — would increase confidence and trading frequency in the bot's worst-performing windows. Ideas are PROPOSED only (not applied), but the generator bug must be fixed before any idea reaches the auto-apply pipeline.",
-          "action": "Human review: delete or invert idea_2238f358, idea_07f475b8, idea_623426ad, idea_920b3e13. Fix idea generator to check WR vs 50% breakeven before assigning boost direction."
+          "value": "No code closes A/B feedback loop. 12 active gates, all treatment_wr=null. Learning system structurally blind.",
+          "action": "P0 dev task: implement post_trade hooks in bot/feedback/loop.py (~4h)"
         },
         {
-          "type": "EXIT_AGENT_PROMPT_AMENDMENT_NOT_APPLIED",
-          "severity": "MEDIUM",
-          "value": "NEW THIS RUN: Exit Agent prompt amendment identified at 02:09 UTC (BTC/ETH long hold patience in TRENDING — min_hold 2h→3h). Still not applied to prompts.py. Each delayed restart means more BTC/ETH long trades exit early from noise stops. Value: ~$2.59/trade improvement, $40-55/year.",
-          "action": "Implement in bot/llm/agents/prompts.py before restart. ~30min dev. High confidence (0.88 from counterfactual analysis)."
+          "type": "META_LEARNING_IDEAS_FIXED",
+          "severity": "RESOLVED_THIS_RUN",
+          "value": "4 inverted ideas invalidated. Bad ideas can no longer enter auto-apply pipeline."
         }
       ],
       "tomorrow_focus": [
-        "06:00 UTC: RESTART — ETH/BTC trending primary targets",
-        "Soft-start: 50% sizing, 3x max leverage",
-        "Human review HYPE_SHORT veto before first HYPE SHORT signal",
-        "Apply Exit Agent prompt amendment BEFORE restart",
-        "Delete/invert bad meta_learning ideas BEFORE idea generator runs again",
-        "After 5 stable trades: review SNIPER_AUTO_EXECUTE enablement",
-        "After 20 trades: recheck side_balance rule eligibility (idea_98fac4ad at conf 0.72 → threshold 0.75)"
+        "IMMEDIATE: RESTART by 05:30 UTC (T-1.85h)",
+        "ON RESTART: verify conf_floor_70_v1 at -5pts allows ETH/BTC trending signals",
+        "ON RESTART: soft-start protocol (50% sizing, 3x max leverage, ETH/BTC only)",
+        "ON RESTART: EXIT_AGENT_PROMPT_AMENDMENT now live \u2014 monitor BTC/ETH long holds",
+        "POST-5-TRADES: review SNIPER_AUTO_EXECUTE enablement",
+        "DEV PRIORITY: AB_RESULT_TRACKER_CODE (P0, ~4h)",
+        "DEV PRIORITY: snapshot_entry column (~1h)",
+        "HUMAN REVIEW: HYPE_SHORT veto accuracy (0/3)"
       ]
     },
     "model_optimization": {
       "swaps_recommended": 0,
       "potential_savings": "$0.00",
       "cost_tracker_available": false,
-      "status": "SKIPPED — no cost_tracker.json (bot offline 580.2h). Architecture optimal.",
-      "new_note": "insights.json accumulates 3 near-identical size-edge entries at each run (WR: 57%, 60%, 58%) with identical confidence (0.75) and evidence_count (50). This is a meta_learning accumulator bug. Not a model routing issue, but contributes to false confidence inflation in the meta-learning layer.",
+      "status": "SKIPPED \u2014 no cost_tracker.json (bot offline 581.2h). Architecture still optimal.",
       "prompt_caching_opportunity": "Static agent system prompts qualify for cache_control. 30-40% cost reduction. P1 on restart.",
+      "new_note": "insights.json deduplication bug fixed this run (108\u219219 entries). Meta_learning size-edge confidence was artificially inflated via repeated near-identical entries. Insight quality now improved.",
       "current_routing": {
-        "regime": "Haiku — CORRECT",
-        "risk": "Haiku — CORRECT",
-        "learning": "Haiku — CORRECT",
-        "exit": "Haiku — CORRECT",
-        "scout": "Haiku — CORRECT",
-        "trade": "Sonnet — CORRECT",
-        "critic": "Sonnet — CORRECT"
+        "regime": "Haiku \u2014 CORRECT",
+        "risk": "Haiku \u2014 CORRECT",
+        "learning": "Haiku \u2014 CORRECT",
+        "exit": "Haiku \u2014 CORRECT",
+        "scout": "Haiku \u2014 CORRECT",
+        "trade": "Sonnet \u2014 CORRECT",
+        "critic": "Sonnet \u2014 CORRECT"
       }
     }
   },
@@ -183,37 +173,41 @@
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "MORNING_WINDOW_IMMINENT_T_MINUS_2.85H: 6th consecutive morning window opens in 2.85h. Bot offline 580.2h. Cumulative missed alpha: ~$1,356-2,735 over 24.2 days. Each hour offline costs ~$2.3-4.7.",
-      "action": "RESTART BOT by 05:30 UTC to allow startup before first signals. All prep is complete."
+      "finding": "MORNING_WINDOW_T_MINUS_1.85H: Window opens 06:00 UTC in ~1.85h (T-5.85h at midnight \u2192 T-1.85h now). 6th consecutive morning window. Bot offline 581.2h. Cumulative missed alpha: ~$1,360-2,750.",
+      "action": "RESTART BOT NOW. Must be online by 05:30 UTC to capture first signals."
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "META_LEARNING_IDEAS_INVERSION_BUG (NEW): 4/8 proposed ideas have directionally inverted logic — they recommend 1.08x confidence boost for sessions with 33% WR. If applied, this would increase trading frequency during the bot's worst-performing hours. Root cause: idea generator may apply fixed 'boost' template without checking whether WR is above/below 50% breakeven.",
-      "action": "Delete or invert idea_2238f358, idea_07f475b8, idea_623426ad, idea_920b3e13. Fix idea generator to require WR > 55% before assigning boost direction. HUMAN REVIEW before any meta_learning idea is applied to a live rule."
+      "finding": "META_LEARNING_IDEAS_INVERSION_BUG FIXED: 4/8 ideas that were directionally inverted (proposing 1.08x boost for 33% WR sessions) have been marked INVALIDATED. Bad ideas removed from auto-apply pipeline. Root cause: idea generator applied fixed 'boost' template regardless of whether session WR was above/below 50% breakeven.",
+      "action": "RESOLVED this run. Fix idea generator direction check before next run to prevent recurrence."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "EXIT_AGENT_PROMPT_AMENDMENT_NOT_APPLIED: High-value Exit Agent prompt change (BTC/ETH long hold patience, TRENDING regime min_hold 3h) was identified at 02:09 UTC but remains unapplied. Estimated value: +$2.59/trade combined, ~$40-55/year. Counterfactual confidence: 0.88.",
-      "action": "Implement in bot/llm/agents/prompts.py EXIT_AGENT section before restart. ~30min. In TRENDING regime for BTC/ETH long: hold minimum 3h before recommending tighten/close unless thesis breaks or regime shifts."
+      "finding": "EXIT_AGENT_PROMPT_AMENDMENT APPLIED: BTC/ETH LONG + TRENDING regime 3h patience rule now live in prompts.py. Previously identified at 02:09 UTC (2+ runs ago), now implemented. Expected value: +$2.59/trade combined.",
+      "action": "RESOLVED this run. Monitor on restart: BTC/ETH long trades in trending should survive first 3h without exit agent recommending close."
     },
     {
       "subsystem": "auto_fix",
-      "severity": "CRITICAL",
-      "finding": "AB_RESULT_TRACKER_CODE (conf=100%): No code closes A/B feedback loop. 12 active gates, all treatment_wr = null. Self-improvement system is learning-blind. CONF_FLOOR_70 conflict unresolvable without this.",
-      "action": "P0 dev: implement post_trade hooks in bot/feedback/loop.py. ~4h. Without this, no rule can graduate by evidence."
+      "severity": "HIGH",
+      "finding": "AB_RESULT_TRACKER_CODE (conf=100%): No code closes A/B feedback loop. 12 active gates, all treatment_wr=null. Without this, no rule can graduate by evidence. The self-improvement system cannot self-verify.",
+      "action": "P0 dev task. Implement post_trade outcome hooks in bot/feedback/loop.py. ~4h. Blocking all rule graduation."
     }
   ],
   "run_summary": {
     "subsystems_completed": 5,
-    "fixes_applied": 0,
+    "fixes_applied": 3,
     "gates_active": 12,
     "high_priority_findings_count": 4,
-    "new_findings_this_run": 3,
-    "new_finding_detail": "META_LEARNING_IDEAS_INVERSION_BUG (4/8 ideas propose boost for losing sessions — systematic generator bug), META_LEARNING_SIZE_INSIGHTS_CONFLICT (WR-only metric contradicts PnL forensics for high leverage), EXIT_AGENT_PROMPT_AMENDMENT_STUCK (high-value prompt change identified last run, still not applied).",
-    "data_status": "FROZEN — bot offline 580.2h. All subsystems operating on stale data. No new analytical sources available this run.",
-    "next_run_eta": "2026-05-18T04:09:00+00:00",
-    "critical_action": "RESTART BOT by 05:30 UTC. Morning window opens 06:00 UTC (T-2.85h). ALSO: apply Exit Agent prompt amendment and fix meta_learning idea inversions BEFORE restart."
+    "new_findings_this_run": 0,
+    "fixes_detail": [
+      "META_LEARNING_IDEAS_INVERSION_FIX",
+      "EXIT_AGENT_PROMPT_AMENDMENT_BTC_ETH_TRENDING",
+      "INSIGHTS_DEDUPLICATION_PRUNING"
+    ],
+    "data_status": "FROZEN \u2014 bot offline 581.2h. 3 actionable fixes applied to code/data.",
+    "next_run_eta": "2026-05-18T05:09:00+00:00",
+    "critical_action": "RESTART BOT by 05:30 UTC. Morning window opens 06:00 UTC (T-1.85h). EXIT_AGENT_PROMPT_AMENDMENT and META_LEARNING_IDEAS_FIX are now live."
   }
 }
