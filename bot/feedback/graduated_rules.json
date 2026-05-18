@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-05-07T18:12:00Z",
+  "last_updated": "2026-05-18T01:10:31+00:00",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -2082,6 +2082,25 @@
       "action": "Flag trending-regime positions closed via SL in <2h as noise_stop_candidate. Exit agent should consider hold if still within 2h and thesis intact.",
       "ab_cohort_start": "2026-05-05T00:00:00Z",
       "min_sample_to_graduate": 30
+    },
+    {
+      "rule_id": "HYPE_UNKNOWN_REGIME_PROBE",
+      "source": "live_edge_data 2026-05-15 insight_journal_2026-05-08_NEW",
+      "description": "HYPE in UNKNOWN regime: 83% WR, +6.56/trade (n=6). Possible regime-transition breakout signal. Small sample probe.",
+      "problem": "HYPE trades in unknown regime systematically outperform (83% WR vs 28% illiquid, 51.9% trending). Not yet gated. Unknown-regime may signal breakout.",
+      "fix_applied": "A/B probe at 20% gate: HYPE signals in unknown regime get +5pt boost in treatment cohort. Track treatment_wr vs baseline_wr=0.83",
+      "action": "graduated_rules.py: apply +5pt adjustment for HYPE in unknown regime in 20% A/B cohort",
+      "status": "A/B_ACTIVE",
+      "confidence": 75,
+      "gate_percentage": 20,
+      "baseline_wr": 0.83,
+      "treatment_wr": null,
+      "sample_count": 6,
+      "applied_date": "2026-05-18",
+      "ab_cohort_start": "2026-05-18T01:10:31+00:00",
+      "min_sample_to_graduate": 15,
+      "expected_impact": "Small sample (n=6) but highest-WR discovered setup. If validated live, becomes major edge for HYPE. Probe-only until n>=15.",
+      "note": "Contradicts general HYPE veto rules (HYPE_LONG veto, HYPE_SHORT veto). This is SIDE-AGNOSTIC in unknown regime. Must investigate if LONG or SHORT drives the 83% WR."
     }
   ],
   "rules_added_2026_04_26_1545_hourly": [

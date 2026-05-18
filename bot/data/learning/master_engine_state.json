@@ -1,189 +1,169 @@
 {
-  "last_run": "2026-05-18T00:09:00+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_18_0009",
-  "prior_run": "2026-05-17T23:03:11+00:00",
-  "hours_since_prior_run": 1.1,
-  "bot_offline_hours": 577.9,
+  "last_run": "2026-05-18T01:10:31+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_18_0110",
+  "prior_run": "2026-05-18T00:09:00+00:00",
+  "hours_since_prior_run": 1.02,
+  "bot_offline_hours": 578.2,
   "bot_offline_days": 24.1,
-  "current_session": "PRE_WINDOW (00:09 UTC May 18)",
+  "current_session": "PRE_WINDOW (01:10 UTC May 18)",
   "morning_window_status": {
     "opens_at": "2026-05-18T06:00:00Z",
     "closes_at": "2026-05-18T12:00:00Z",
-    "hours_until_open": 5.85,
+    "hours_until_open": 4.83,
     "consecutive_missed": 5,
     "this_is_window_6": true,
-    "mitigation_applied": "conf_floor_70_v1 at -5 (was -20, fixed 2026-05-17T23:03)"
+    "mitigation_applied": "conf_floor_70_v1 at -5 (was -20, fixed 2026-05-17T23:03). hype_unknown_regime_probe_v1 added 2026-05-18T01:10."
   },
   "subsystems": {
     "auto_fix": {
-      "fixes_applied": 0,
-      "gates_active": 11,
-      "total_all_time": 31,
-      "status": "IDLE — no new fixes applicable. Bot offline, no new outcome data. Existing fix (conf_floor_70_deadlock_gate_v2) monitoring pending restart.",
+      "fixes_applied": 1,
+      "gates_active": 12,
+      "total_all_time": 32,
+      "new_fix": "hype_unknown_regime_probe_v1: HYPE+unknown regime +5pt boost at 20% A/B gate. Source: 83% WR, n=6, insight_journal_2026-05-08_NEW. Applied to both runtime (data/llm/graduated_rules.json) and tracking (feedback/graduated_rules.json).",
       "watch_items": [
-        "hype_short_veto_v1: 0/3 correct (0% accuracy, watch for auto-retire at app 10)",
-        "conf_floor_70_v1 at -5: first live test pending at 06:00 UTC restart"
-      ]
+        "hype_short_veto_v1: 0/3 correct (WATCH_ESCALATING — 7 apps to auto-retire threshold). Human review recommended on restart.",
+        "conf_floor_70_v1 at -5: first live test pending at 06:00 UTC restart",
+        "hype_unknown_regime_probe_v1: new probe, first live data on restart"
+      ],
+      "status": "1 fix applied. All 8 high-confidence PENDING items require human review (no autonomous action possible). Next autonomous action requires bot restart to generate new outcome data."
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN — snapshot_entry column missing. Structural gap deepening at 577.9h offline.",
-      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [STALE 577.9h — no new data]",
+      "avg_slippage": "UNKNOWN — snapshot_entry column missing. Structural gap at 578.2h offline.",
+      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [STALE 578.2h]",
       "fill_analysis": "UNKNOWN — no fill_status column",
-      "key_validated_prior_findings": {
+      "key_validated_findings": {
         "leverage_3_5x": "+$0.79/trade (n=68) — PREFERRED RANGE",
-        "leverage_6_10x": "-$0.38/trade (n=91) — NET NEGATIVE, tail losses dominate",
+        "leverage_6_10x": "-$0.38/trade (n=91) — NET NEGATIVE",
         "win_median_hold": "3.3h vs loss_median_hold 1.5h (2.2x ratio)",
         "noise_stop_regime": "87% in illiquid/ranging/unknown — avoid these regimes"
       },
-      "new_finding": "CONSECUTIVE_LOSS_TAIL: last 4 outcomes = [false,false,false,false]. Circuit breaker at 6 consecutive. 2 losses away from 1h pause on restart. With 50% sizing soft-start, loss magnitude manageable.",
-      "status": "FROZEN — awaiting bot restart for new data",
+      "new_finding": "CONSECUTIVE_LOSS_TAIL_DEEPENING: last 4 outcomes = [false,false,false,false] (unchanged from prior run — no new trades). Circuit breaker at 6 consecutive. With 50% sizing soft-start, loss magnitude is bounded. STATUS: unchanged from 00:09 run.",
+      "status": "FROZEN — awaiting bot restart for new data. No change from prior run.",
       "restart_checklist": [
-        "Verify max_leverage <= 5x at execution (prior blowup was 9.7x bypassing cap)",
-        "Log leverage tier for every trade (validate 3-5x is the operating range)",
-        "Add snapshot_entry to signal log (enables slippage measurement)",
-        "Add llm_regime to trade close log (enables regime A/B rule measurement)"
+        "Verify max_leverage <= 5x at execution",
+        "Log leverage tier for every trade",
+        "Add snapshot_entry to signal log",
+        "Add llm_regime to trade close log"
       ]
     },
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 4,
-      "data_stale_hours": 73.0,
-      "status": "CACHED — edge data from 2026-05-15T23:10. Cache valid for rule application. No new computation possible (bot offline, 0 new trades).",
+      "data_stale_hours": 578.2,
+      "status": "CACHED — edge data from 2026-05-15T23:10. No new computation possible (bot offline). HYPE_UNKNOWN_REGIME probe rule now active in runtime.",
+      "new_finding_this_run": "HYPE_UNKNOWN_REGIME confirmed across 2 independent sources (live_edge_data insight_journal + meta_learning regime_wr analysis). Probe rule applied. Morning window T-4.83h.",
       "active_high_edges": [
-        "ETH+trending: 71-80% WR, +$9.49/trade EV — +8pt boost active, MORNING WINDOW PRIMARY TARGET",
-        "BTC+trending: 80% WR n=5, +$8.98/trade EV — +8pt boost active",
+        "ETH+trending: 71-80% WR, +$9.49/trade — +8pt boost active, MORNING WINDOW PRIMARY TARGET",
+        "BTC+trending: 80% WR n=5, +$8.98/trade — +8pt boost active",
         "BTC_SHORT@90%+: 67% WR, +$102.92/trade EV, n=43 — +10pt boost active",
-        "BB_solo (no MTQ): 67.6% WR — pending graduation rule",
-        "ETH_SHORT: 80% WR n=5 — strong live signal"
+        "HYPE+unknown: 83% WR n=6 — new +5pt probe active at 20% gate",
+        "BB_solo (no MTQ): 67.6% WR — pending graduation"
       ],
       "active_blockers": [
-        "HYPE_LONG: veto active (23% WR, -$77.26 total)",
-        "SOL_LONG: veto active (24% WR, -$21.89 total)",
-        "HYPE_SHORT: veto active (-$16.65/trade EV, 239 trades)",
-        "NIGHT 00-06 UTC: veto active (19% WR, -$136.83 total)",
-        "BTC_SHORT@70-80%: -20pt penalty active"
+        "HYPE_LONG: veto (23% WR, -$77.26)",
+        "SOL_LONG: veto (24% WR, -$21.89)",
+        "HYPE_SHORT: veto (-$16.65/trade EV, 239 trades) — ACCURACY WATCH (0/3 correct)",
+        "NIGHT 00-06 UTC: veto (19% WR, -$136.83)",
+        "BTC_SHORT@70-80%: -20pt penalty"
       ],
-      "new_finding_this_run": "MORNING_WINDOW_ACTIVE_IN_T-5.85H: The 06:00-12:00 UTC morning edge window (71-75% WR, confirmed across ETH+trending and BTC+trending) opens in 5.85h. This is the highest-priority live injection target. Rules already configured. Restart timing is the only blocker.",
       "post_restart_actions": [
-        "After 20 new trades: recompute WR by symbol/regime/confidence/time-of-day",
-        "After 10 BB_solo signals: evaluate BB_solo graduation rule",
-        "After 10 BB+MTQ signals: evaluate anti-pattern penalize rule"
+        "After 10 trades: compute current WR by symbol/regime",
+        "After 10 BB_solo signals: evaluate BB_solo graduation",
+        "After 4th HYPE_SHORT block: human review of veto accuracy"
       ]
     },
     "daily_synthesis": {
-      "anomalies_found": 4,
-      "report_generated": true,
-      "report_file": "daily_synthesis_2026-05-18.json",
-      "report_type": "PRE_WINDOW (00:09 UTC — not EOD)",
+      "anomalies_found": 5,
+      "report_generated": false,
+      "report_type": "NOT_GENERATED (01:10 UTC — pre-window, EOD at 23:00 UTC)",
       "is_eod": false,
       "date": "2026-05-18",
-      "status": "PRE_WINDOW synthesis generated. EOD synthesis will run at 23:00 UTC.",
-      "anomaly_summary": [
-        {"type": "BOT_OFFLINE_DAY_25", "severity": "CRITICAL"},
-        {"type": "SIXTH_MORNING_WINDOW_APPROACHING", "severity": "CRITICAL", "hours_until": 5.85},
-        {"type": "CONSECUTIVE_LOSSES_TAIL_4", "severity": "MEDIUM"},
-        {"type": "DATA_GAPS_STRUCTURAL", "severity": "HIGH"}
+      "status": "Pre-window synthesis from 00:09 UTC still current. EOD synthesis scheduled at 23:00 UTC.",
+      "anomalies": [
+        {
+          "type": "BOT_OFFLINE_DAY_25",
+          "severity": "CRITICAL",
+          "value": "578.2h (24.1 days) offline",
+          "action": "RESTART before 06:00 UTC morning window"
+        },
+        {
+          "type": "SIXTH_MORNING_WINDOW_T_MINUS_4.83H",
+          "severity": "CRITICAL",
+          "value": "Window opens at 06:00 UTC — T-4.83h. ETH/BTC trending = 71-80% WR primary targets.",
+          "action": "RESTART NOW to capture morning window"
+        },
+        {
+          "type": "CONSECUTIVE_LOSSES_4",
+          "severity": "MEDIUM",
+          "value": "4 consecutive losses — 2 more losses = circuit breaker pause",
+          "action": "Soft-start: 50% sizing, 3x max leverage, ETH/BTC only"
+        },
+        {
+          "type": "HYPE_SHORT_VETO_ACCURACY_RISK",
+          "severity": "HIGH",
+          "value": "hype_short_veto_v1 is 0/3 correct (100% false-positive rate). 7 apps to auto-retire.",
+          "action": "Human review of HYPE SHORT veto before 4th application on restart"
+        },
+        {
+          "type": "DATA_GAPS_STRUCTURAL",
+          "severity": "HIGH",
+          "value": "snapshot_entry missing (slippage unmeasurable). llm_regime empty (12 A/B rules unmeasurable).",
+          "action": "Add columns on restart (~2h dev)"
+        }
       ],
-      "today_trades": 0,
-      "equity": 497.05,
-      "equity_frozen_days": 24.1
+      "new_anomaly_this_run": "HYPE_SHORT_VETO_ACCURACY_RISK elevated from WATCH to HIGH — 0/3 correct is a 100% false-positive rate that is eating profitable signals"
     },
     "model_optimization": {
       "swaps_recommended": 0,
       "potential_savings": "$0.00",
-      "status": "SKIP — cost_tracker.json not found. Bot offline 577.9h, zero LLM calls since April 23.",
-      "reactivate_after": "50 LLM calls post-restart",
-      "prior_baseline_on_file": {
-        "haiku_agents": ["Regime", "Risk", "Learning", "Exit"],
-        "sonnet_agents": ["Trade", "Critic"],
-        "cost_per_cycle_estimate": "$0.007/decision (multi-agent)"
-      }
+      "cost_tracker_available": false,
+      "status": "SKIPPED — no cost_tracker.json in data/llm/ (bot offline 578.2h, 0 API calls). Architecture already optimal.",
+      "current_routing_assessment": {
+        "regime_agent": "Haiku — CORRECT (low stakes, frequent, $0.0001/call)",
+        "risk_agent": "Haiku — CORRECT",
+        "learning_agent": "Haiku — CORRECT",
+        "exit_agent": "Haiku — CORRECT",
+        "scout_agent": "Haiku — CORRECT",
+        "trade_agent": "Sonnet — CORRECT (high stakes, directional thesis)",
+        "critic_agent": "Sonnet — CORRECT (veto accuracy critical)"
+      },
+      "optimization_opportunity": "Enable prompt caching for all agents. Estimated 30-40% cost reduction on cached agent context. Currently uncached: agent system prompts are static and ideal for cache_control.",
+      "next_action": "On restart with API credits: verify cost_tracker.json is recording. After 50 calls, compute per-agent ROI."
     }
   },
   "high_priority_findings": [
     {
+      "subsystem": "auto_fix",
+      "severity": "MEDIUM",
+      "finding": "HYPE_UNKNOWN_REGIME_PROBE: 83% WR, n=6. New probe rule applied at 20% gate. Side-agnostic HYPE+unknown edge not previously gated.",
+      "action": "Probe active. Monitor first 15 HYPE signals in unknown regime on restart."
+    },
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "HIGH",
+      "finding": "HYPE_SHORT_VETO_ACCURACY_RISK: hype_short_veto_v1 is 0/3 correct (all blocked signals were profitable). 100% false-positive rate on live blocks despite 239-trade historical evidence. Possible regime shift — HYPE SHORT may no longer be negative EV.",
+      "action": "Human review required before 4th application. Do NOT auto-retire (evidence base is 239 trades). Review on restart."
+    },
+    {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "SIXTH_MORNING_WINDOW_T-5.85H: The 06:00-12:00 UTC morning window (71-75% WR confirmed, ETH+trending primary target) opens in 5.85h. 5 consecutive windows have been missed. Total estimated missed alpha: ~$1,344-2,712 over 24.1 offline days. conf_floor_70_v1 deadlock is fixed (-5pts now). Only blocker is restart execution.",
-      "action": "RESTART bot at 06:00 UTC May 18. Soft-start: 50% sizing, 3x max leverage, ETH/BTC only, 5-trade review gate.",
-      "urgency": "CRITICAL — window opens in 5.85h"
+      "finding": "MORNING_WINDOW_T_MINUS_4.83H: 6th consecutive morning window (71-80% WR) opens in 4.83h. Bot still offline. Estimated missed alpha: ~$56-113/day = ~$1,400-2,700 over 24 days.",
+      "action": "RESTART BOT before 06:00 UTC. conf_floor_70_v1 fix applied. Soft-start protocol ready."
     },
     {
       "subsystem": "auto_fix",
-      "severity": "HIGH",
-      "finding": "SNIPER_AUTO_EXECUTE=false: #1 profit lever remains disabled. Sniper/anticipatory path carried +$328 on 34 trades (all other strategies combined = -$76). Three largest wins in bot history (+$160, +$130, +$100) all sniper_premium SOL SHORT.",
-      "action": "Human decision: verify max_sniper_leverage cap binds at execution time, add $50/10%-equity per-trade loss ceiling, then enable SNIPER_AUTO_EXECUTE=true. Target: first 5 trades post soft-start review.",
-      "urgency": "HIGH — #1 profit lever, pending leverage cap verification"
-    },
-    {
-      "subsystem": "execution_forensics",
-      "severity": "HIGH",
-      "finding": "DATA_GAPS_DEEPENING: snapshot_entry (slippage measurement) and llm_regime (12 regime A/B rules) columns missing from trades.csv. 577.9h offline means 577.9h of A/B test validation delay. Both gaps require ~1h dev each to fix on restart.",
-      "action": "On restart day: add snapshot_entry to signal generation path, add llm_regime to trade close path. Unblocks $100s of annual decisions from unvalidated rules.",
-      "urgency": "HIGH — fix during restart session"
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "MEDIUM",
-      "finding": "HYPE_SHORT_VETO_ACCURACY: hype_short_veto_v1 has 0% accuracy on 3 applications (3 blocked signals were profitable). 7 more applications to auto-retire threshold. If HYPE behavior has regime-shifted, this veto is costing alpha.",
-      "action": "WATCH closely on restart. Log outcomes for every HYPE SELL block. At application 7+, escalate to human review before auto-retire decision.",
-      "urgency": "MEDIUM — monitor on restart"
-    },
-    {
-      "subsystem": "live_injection",
-      "severity": "MEDIUM",
-      "finding": "CONF_FLOOR_70_FIRST_LIVE_TEST: conf_floor_70_v1 at -5pts will see its first live test at 06:00 UTC restart. ETH+trending signal should arrive with raw conf ~73-82%. Net effect: -5pt (conf_floor) +8pt (eth_trending_boost) = net +3pt. Verify this math holds in live execution.",
-      "action": "On restart: log the first 3 signal confidence values and their rule adjustments. Confirm ETH/BTC trending signals are passing through.",
-      "urgency": "MEDIUM — validate at restart"
+      "severity": "CRITICAL",
+      "finding": "AB_RESULT_TRACKER_CODE (conf=100%): No code exists to close A/B feedback loop. All treatment_wr values are null. 12 active A/B gates produce zero learning signal. Rules cannot graduate or be rejected by evidence.",
+      "action": "Implement in bot/feedback/loop.py: post_trade_open_hook + post_trade_close_hook. ~4h dev. P0 priority."
     }
   ],
-  "new_this_run_vs_prior": [
-    "PRE_WINDOW synthesis generated for 2026-05-18 (first run of new day)",
-    "OFFLINE_HOURS: 577.9h (was 576.8h, delta +1.1h)",
-    "MORNING_WINDOW: T-5.85h until 06:00 UTC — critical countdown",
-    "AUTO_FIX: fixes_applied=0 (no new qualified recommendations)",
-    "HYPE_SHORT_VETO accuracy tracking added (0/3, 7 to threshold)",
-    "All subsystem data remains cached — no new trade data"
-  ],
-  "still_outstanding": [
-    "BOT OFFLINE 577.9h — RESTART at 06:00 UTC May 18 is #1 operational priority.",
-    "SNIPER_AUTO_EXECUTE=false — #1 profit lever. Human review: verify leverage cap, add loss ceiling, enable.",
-    "SOL_SHORT_SUSPENSION — +$807 historical alpha. Human decision.",
-    "HYPE_SHORT_VETO_RISK — 3/0 correct, 7 apps to auto-retire threshold. WATCH.",
-    "SNAPSHOT_ENTRY_MISSING — add to signal generation on restart.",
-    "LLM_REGIME_CAPTURE_GAP — add to trade close on restart.",
-    "BB_SOLO/BB_MTQ graduation rules — pending 20+ live signals post-restart."
-  ],
-  "resolved_all_sessions": [
-    "CONF_FLOOR_70_COMPOUNDING_DEADLOCK — APPLIED 2026-05-17T23:03. adjustment -20→-5. 20% gate.",
-    "F2_calibration_cap — CODED at parameter_tuner.py:186",
-    "F5_llm_mode_guard — CODED at llm_integration.py:972/1143/1221",
-    "F16_clean_win_label — CODED at position_manager.py:1296",
-    "F17_l1_sector_cap — CONFIRMED_CODED at bot/execution/sector_exposure.py:55",
-    "VETO_CF_WIRE — CODED at bot/llm/counterfactual_learner.py"
-  ],
-  "equity_snapshot": {
-    "equity": 497.05,
-    "peak": 508.06,
-    "drawdown_from_peak": "2.17%",
-    "last_updated": "2026-04-23T22:17:05Z",
-    "hours_unchanged": 577.9
-  },
-  "graduated_rules_state": {
-    "total_rules": 10,
-    "veto_rules": 4,
-    "boost_rules": 3,
-    "penalize_rules": 3,
-    "last_change": "conf_floor_70_v1 adjustment -20→-5 at 2026-05-17T23:03",
-    "key_interaction_on_restart": "ETH+trending: raw 73% → -5 (conf_floor) +8 (eth_boost) = net 76%. Should clear any reasonable threshold. BTC+trending: similar math."
-  },
-  "next_run_focus": [
-    "T-5.85h: Pre-window watchlist preparation",
-    "T-0h (06:00 UTC): RESTART — soft-start protocol",
-    "ON RESTART: log first 3 signal confidence values (validate conf_floor_70_v1 at -5 is working)",
-    "ON RESTART: verify self_tuning mode and sizing multiplier",
-    "POST-RESTART (5 trades): review SNIPER_AUTO_EXECUTE enablement",
-    "POST-RESTART (20 trades): recompute live_edge_data WR by dimension",
-    "POST-RESTART: fix snapshot_entry and llm_regime data capture gaps"
-  ]
+  "run_summary": {
+    "subsystems_completed": 5,
+    "fixes_applied": 1,
+    "gates_active": 12,
+    "high_priority_findings_count": 4,
+    "data_status": "FROZEN — bot offline 578.2h, no new trades",
+    "next_run_eta": "2026-05-18T02:10:31+00:00",
+    "critical_action_before_next_run": "RESTART BOT — morning window opens at 06:00 UTC (T-4.83h)"
+  }
 }

@@ -165,6 +165,27 @@
       "active": true
     },
     {
+      "rule_id": "hype_unknown_regime_probe_v1",
+      "hypothesis_statement": "HYPE in UNKNOWN regime achieves 83% WR, +$6.56/trade (n=6). Highest-WR setup found across all symbol×regime combinations. Possible regime-transition breakout signal. SIDE-AGNOSTIC probe — does not conflict with HYPE_LONG/HYPE_SHORT vetoes since this targets unknown regime only.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "HYPE",
+        "regime": "unknown"
+      },
+      "adjustment": 5.0,
+      "confidence": 0.75,
+      "evidence_ratio": 0.83,
+      "total_evidence": 6,
+      "created_at": 1747527031.0,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "gate_percentage": 20,
+      "min_sample_to_graduate": 15,
+      "probe_note": "Small sample (n=6). 20% A/B probe only. Graduate at n>=15 with WR>=0.65. Retire if WR falls below 0.50 by n=15."
+    },
+    {
       "rule_id": "conf_floor_70_v1",
       "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes. GATED (2026-05-17): adjustment reduced -20→-5 to break compounding deadlock with self_tuning CONSERVATIVE mode. Evidence conflict: insight_journal (67 trades) shows +$2.19/trade EV in this bin; rule built on older 123-trade window. -5pts preserves caution without total block. Gate: 20%.",
       "action": "penalize",

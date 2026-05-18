@@ -1,26 +1,32 @@
 {
-  "last_run": "2026-05-18T00:09:00+00:00",
+  "last_run": "2026-05-18T01:10:31+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
-  "fixes_applied_this_run": 0,
-  "gates_active": 11,
-  "total_applied_all_time": 31,
-  "no_new_fix_reason": "No pending recommendations in graduated_rules scope with confidence >= 75% that have not already been applied. Bot offline — no new outcome data to validate pending A/B tests (BB_solo, BTC_TRENDING graduated rule). Code-level fixes (calibration_offset cap, LLM_MODE guard, proven-setup table) are out of graduated_rules scope and require human review.",
+  "fixes_applied_this_run": 1,
+  "gates_active": 12,
+  "total_applied_all_time": 32,
   "last_fix": {
-    "fix_id": "conf_floor_70_deadlock_gate_v2",
-    "applied_at": "2026-05-17T23:03:11+00:00",
-    "file": "bot/data/llm/graduated_rules.json",
-    "description": "Reduced conf_floor_70_v1 adjustment from -20.0 to -5.0 to break compounding deadlock with self_tuning CONSERVATIVE mode. Evidence conflict acknowledged (insight_journal 67-trade window shows +.19/trade EV vs rule 123-trade window shows -321 total). -5pts preserves caution without creating total signal block on restart.",
-    "confidence": 0.85,
+    "fix_id": "hype_unknown_regime_probe_v1",
+    "applied_at": "2026-05-18T01:10:31+00:00",
+    "file": "bot/data/llm/graduated_rules.json + bot/feedback/graduated_rules.json",
+    "description": "HYPE in UNKNOWN regime: 83% WR, +$6.56/trade (n=6). Added +5pt boost rule at 20% A/B gate. Side-agnostic probe — targets HYPE x unknown regime interaction regardless of BUY/SELL side. Highest-WR setup in all data. Small sample (n=6), probe-only.",
+    "confidence": 0.75,
     "gate_percentage": 20,
-    "prior_value": -20.0,
-    "new_value": -5.0,
+    "prior_value": null,
+    "new_value": 5.0,
     "status": "ACTIVE",
-    "outcome_tracking": "PENDING_RESTART — no live data yet"
+    "outcome_tracking": "PENDING_RESTART — no live data yet. Graduate at n>=15 WR>=0.65, retire if WR<0.50 by n=15."
   },
   "active_fixes": [
     {
       "fix_id": "conf_floor_70_deadlock_gate_v2",
       "applied_at": "2026-05-17T23:03:11+00:00",
+      "gate_pct": 20,
+      "status": "ACTIVE",
+      "outcome_tracking": "PENDING_RESTART — no live data yet"
+    },
+    {
+      "fix_id": "hype_unknown_regime_probe_v1",
+      "applied_at": "2026-05-18T01:10:31+00:00",
       "gate_pct": 20,
       "status": "ACTIVE",
       "outcome_tracking": "PENDING_RESTART — no live data yet"
@@ -33,20 +39,20 @@
       "accuracy": 0.0,
       "auto_retire_threshold": 10,
       "apps_to_threshold": 7,
-      "status": "WATCH",
-      "note": "0% accuracy on 3 applications (3 blocked signals were profitable). But underlying evidence is -$16.65/trade EV on 239 trades. Small block sample. If accuracy stays 0% through app 10, flag for human review before auto-retire."
+      "status": "WATCH_ESCALATING",
+      "note": "0% accuracy on 3 applications (all blocked signals were profitable). Underlying evidence: -$16.65/trade EV on 239 trades. CONFLICT: large historical sample negative EV vs small live block sample 0/3 correct. Recommend human review at restart before 4th application."
     },
     "night_session_block_v1": {
       "times_applied": 4,
       "times_correct": 0,
       "accuracy": 0.0,
-      "note": "4 blocks with 0 correct but night session WR is 19% on 27 trades. Rule evidence strong. Block sample too small to override."
+      "note": "4 blocks 0 correct but underlying WR=19% on 27 trades is strong. Block sample too small to override."
     },
     "hype_long_veto_v1": {
       "times_applied": 1,
       "times_correct": 0,
       "accuracy": 0.0,
-      "note": "1 application only. Evidence: 23% WR, -$77.26 on 35 trades. Keep active."
+      "note": "1 application. Evidence: 23% WR, -$77.26 on 35 trades. Keep active."
     },
     "sol_long_veto_v1": {
       "times_applied": 1,
@@ -65,25 +71,32 @@
     {
       "id": "BB_SOLO_BOOST_RULE",
       "description": "BB firing alone (no MTQ agreement) = 67.6% WR. Pending 95% confidence live confirmation.",
-      "action": "WAIT for live data post-restart. After 20+ BB_solo signals with outcome tracking, evaluate for +10pt boost rule."
+      "action": "WAIT for live data post-restart. After 20+ BB_solo signals, evaluate for +10pt boost."
     },
     {
       "id": "BB_MTQ_ANTI_PATTERN_RULE",
       "description": "BB+MTQ co-agreement = 35% WR (anti-pattern). Pending 92% confidence.",
-      "action": "WAIT for live data. After 20+ BB+MTQ co-signals, evaluate for -10pt penalize rule."
+      "action": "WAIT for live data. After 20+ BB+MTQ co-signals, evaluate for -10pt penalize."
+    },
+    {
+      "id": "HYPE_UNKNOWN_REGIME_PROBE_v1",
+      "description": "HYPE in UNKNOWN regime = 83% WR (n=6). 20% A/B probe active.",
+      "action": "Collect live data. Graduate at n>=15 WR>=0.65, retire at WR<0.50 by n=15."
     }
   ],
-  "recommendations_reviewed": 11,
-  "high_confidence_pending_human": 4,
-  "resolved_this_run": [],
+  "recommendations_reviewed": 12,
+  "high_confidence_pending_human": 8,
+  "resolved_this_run": [
+    "HYPE_UNKNOWN_REGIME_PROBE: Added to feedback/graduated_rules.json and runtime data/llm/graduated_rules.json at gate=20%"
+  ],
   "outstanding_pending": [
     "SNIPER_AUTO_EXECUTE: #1 profit lever (+$328/34-trade path). Verify leverage cap + add $50/10%-equity loss ceiling, then enable.",
-    "SOL_SHORT_SUSPENSION: +$807 historical alpha. Human decision (50% gate probe or maintain neutral stance).",
-    "HYPE_SHORT_VETO_RISK: 3 apps, 0 correct. 7 apps remaining to auto-retire threshold. WATCH on restart.",
-    "SNAPSHOT_ENTRY_GAP: add snapshot_entry column to signal generation on restart (~1h dev).",
+    "SOL_SHORT_SUSPENSION: +$807 historical alpha. Human decision.",
+    "HYPE_SHORT_VETO_RISK: 3 apps, 0 correct. 7 apps to auto-retire. Human review recommended on restart.",
+    "SNAPSHOT_ENTRY_GAP: add snapshot_entry column on restart (~1h dev).",
     "LLM_REGIME_CAPTURE_GAP: add llm_regime write to trades.csv on restart (~1h dev).",
-    "RULE_CONFLICT_SOL_SHORT: full block may deadlock probe data collection — investigate neutrality approach.",
-    "RULE_CONFLICT_LONG_BIAS: likely resolved (not visible in current 10-rule set). Verify on restart."
+    "RULE_CONFLICT_SOL_SHORT: 100% block prevents probe data collection — needs human resolution.",
+    "AB_RESULT_TRACKER_CODE: P0 structural gap — no code closes A/B feedback loop. treatment_wr stays null forever."
   ],
   "code_audit_confirmed": {
     "F2_calibration_cap": "CODED at parameter_tuner.py:186",

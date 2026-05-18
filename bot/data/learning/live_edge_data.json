@@ -1,7 +1,7 @@
 {
-  "last_run": "2026-05-15T23:10:30.497945+00:00",
-  "data_source": "Historical accumulated (352 resolved trades) + insight_journal_2026-05-08 update + A/B rule analysis",
-  "note": "Edge data updated 2026-05-07 (hourly run). Bot offline 15d+. Key new finding: BTC_SHORT@90%+ is +EV (+$102.92/trade EV). Backtest-vs-live gap confirmed: BTC_LONG/SOL_LONG/HYPE_LONG overfit 30-45% in backtest vs live.",
+  "last_run": "2026-05-18T01:10:31+00:00",
+  "data_source": "Historical accumulated (352 resolved trades) + insight_journal_2026-05-08 + meta_learning cross-validation",
+  "note": "No new trades (bot offline 578.2h). HYPE_UNKNOWN_REGIME added from cross-source validation (live_edge_data + meta_learning). EVENING_SESSION confirmed from meta_learning (65% WR, n=27) \u2014 rule already gated at 80% (EVENING_session_boost). MORNING_WINDOW opens in T-4.85h (06:00 UTC May 18).",
   "high_edges": [
     {
       "setup": "ETH_SHORT",
@@ -64,7 +64,8 @@
       "trades": 6,
       "pnl": 6.56,
       "source": "insight_journal_2026-05-08_NEW",
-      "note": "HYPE in UNKNOWN regime: 83% WR, +6.56/trade (n=6). Possible regime-transition breakout signal. NEW \u2014 not in any prior state. Needs investigation: unknown regime may signal regime-transition breakout with alpha when HYPE involved."
+      "note": "HYPE in UNKNOWN regime: 83% WR, +6.56/trade (n=6). Side-agnostic. Probe rule applied. Investigate if LONG or SHORT drives edge on restart.",
+      "rule_applied": "hype_unknown_regime_probe_v1 at gate=20% (applied 2026-05-18T01:10)"
     },
     {
       "setup": "CONF_60_70_CONFLICT_FLAG",
@@ -213,5 +214,7 @@
     "detail": "conf_floor_70_v1 (LLM layer, penalizes -20pts for 60-70% confidence signals) has been applied 2 times with times_correct=0. Without outcome callbacks, we cannot determine if this rule is helping or hurting. Risk: the insight_journal (conf=0.83, 67 trades) shows 60-70% signals = +$2.19/trade EV with 42% WR (asymmetric payoff). If conf_floor_70_v1 is blocking these, it is costing alpha. This is only resolvable after outcome callback fix.",
     "dependency": "Fix outcome_feedback_callback FIRST, then re-evaluate conf_floor_70_v1 after 20+ trade outcomes.",
     "confidence": 0.95
-  }
+  },
+  "data_stale_hours": 578.2,
+  "morning_window_note": "T-4.85h until 06:00 UTC morning window (71-80% WR, +8pt boost active for ETH+trend and BTC+trend)"
 }
