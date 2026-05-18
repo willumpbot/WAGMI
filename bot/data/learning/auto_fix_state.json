@@ -1,10 +1,11 @@
 {
-  "last_run": "2026-05-17T23:03:11+00:00",
+  "last_run": "2026-05-18T00:09:00+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
-  "fixes_applied_this_run": 1,
+  "fixes_applied_this_run": 0,
   "gates_active": 11,
   "total_applied_all_time": 31,
-  "new_fix_this_run": {
+  "no_new_fix_reason": "No pending recommendations in graduated_rules scope with confidence >= 75% that have not already been applied. Bot offline — no new outcome data to validate pending A/B tests (BB_solo, BTC_TRENDING graduated rule). Code-level fixes (calibration_offset cap, LLM_MODE guard, proven-setup table) are out of graduated_rules scope and require human review.",
+  "last_fix": {
     "fix_id": "conf_floor_70_deadlock_gate_v2",
     "applied_at": "2026-05-17T23:03:11+00:00",
     "file": "bot/data/llm/graduated_rules.json",
@@ -13,30 +14,76 @@
     "gate_percentage": 20,
     "prior_value": -20.0,
     "new_value": -5.0,
-    "deadline_urgency": "CRITICAL \u2014 T-6.95h to 06:00 UTC morning window",
-    "expected_impact": "ETH/BTC trending signals (typically 70-85% conf) can now pass conf_floor_70_v1 gate. Net effect: -5pts manageable by ETH/BTC trending boost (+8pts each). Without this: 6th consecutive morning window missed."
+    "status": "ACTIVE",
+    "outcome_tracking": "PENDING_RESTART — no live data yet"
   },
   "active_fixes": [
     {
       "fix_id": "conf_floor_70_deadlock_gate_v2",
       "applied_at": "2026-05-17T23:03:11+00:00",
       "gate_pct": 20,
-      "status": "ACTIVE"
+      "status": "ACTIVE",
+      "outcome_tracking": "PENDING_RESTART — no live data yet"
+    }
+  ],
+  "rule_accuracy_tracking": {
+    "hype_short_veto_v1": {
+      "times_applied": 3,
+      "times_correct": 0,
+      "accuracy": 0.0,
+      "auto_retire_threshold": 10,
+      "apps_to_threshold": 7,
+      "status": "WATCH",
+      "note": "0% accuracy on 3 applications (3 blocked signals were profitable). But underlying evidence is -$16.65/trade EV on 239 trades. Small block sample. If accuracy stays 0% through app 10, flag for human review before auto-retire."
+    },
+    "night_session_block_v1": {
+      "times_applied": 4,
+      "times_correct": 0,
+      "accuracy": 0.0,
+      "note": "4 blocks with 0 correct but night session WR is 19% on 27 trades. Rule evidence strong. Block sample too small to override."
+    },
+    "hype_long_veto_v1": {
+      "times_applied": 1,
+      "times_correct": 0,
+      "accuracy": 0.0,
+      "note": "1 application only. Evidence: 23% WR, -$77.26 on 35 trades. Keep active."
+    },
+    "sol_long_veto_v1": {
+      "times_applied": 1,
+      "times_correct": 0,
+      "accuracy": 0.0,
+      "note": "1 application. Evidence: 24% WR, -$21.89 on 34 trades. Keep active."
+    },
+    "btc_short_conf70_80_penalize_v1": {
+      "times_applied": 2,
+      "times_correct": 0,
+      "accuracy": 0.0,
+      "note": "2 applications. Evidence: worst confidence bin, 40 trades. Keep active."
+    }
+  },
+  "pending_ab_graduation": [
+    {
+      "id": "BB_SOLO_BOOST_RULE",
+      "description": "BB firing alone (no MTQ agreement) = 67.6% WR. Pending 95% confidence live confirmation.",
+      "action": "WAIT for live data post-restart. After 20+ BB_solo signals with outcome tracking, evaluate for +10pt boost rule."
+    },
+    {
+      "id": "BB_MTQ_ANTI_PATTERN_RULE",
+      "description": "BB+MTQ co-agreement = 35% WR (anti-pattern). Pending 92% confidence.",
+      "action": "WAIT for live data. After 20+ BB+MTQ co-signals, evaluate for -10pt penalize rule."
     }
   ],
   "recommendations_reviewed": 11,
   "high_confidence_pending_human": 4,
-  "resolved_this_run": [
-    "CONF_FLOOR_70_COMPOUNDING_DEADLOCK \u2014 APPLIED at 23:03 UTC May 17. adjustment -20\u2192-5. 20% gate."
-  ],
+  "resolved_this_run": [],
   "outstanding_pending": [
-    "SNIPER_AUTO_EXECUTE: #1 profit lever (+28/34-trade path). Verify leverage cap + add 0/10%-equity loss ceiling, then enable.",
-    "SOL_SHORT_SUSPENSION: +807 historical alpha. Human decision (50% gate probe or maintain block).",
-    "HYPE_SHORT_VETO_RISK: 3 apps, 0 correct. 7 apps remaining to auto-retire.",
-    "SNAPSHOT_ENTRY_GAP: add snapshot_entry column to signal generation on restart.",
-    "LLM_REGIME_CAPTURE_GAP: add llm_regime write to trades.csv on restart.",
-    "RULE_CONFLICT_SOL_SHORT: full block may deadlock probe data collection.",
-    "RULE_CONFLICT_LONG_BIAS: two cancelling 80% gates in graduated_rules \u2014 investigate."
+    "SNIPER_AUTO_EXECUTE: #1 profit lever (+$328/34-trade path). Verify leverage cap + add $50/10%-equity loss ceiling, then enable.",
+    "SOL_SHORT_SUSPENSION: +$807 historical alpha. Human decision (50% gate probe or maintain neutral stance).",
+    "HYPE_SHORT_VETO_RISK: 3 apps, 0 correct. 7 apps remaining to auto-retire threshold. WATCH on restart.",
+    "SNAPSHOT_ENTRY_GAP: add snapshot_entry column to signal generation on restart (~1h dev).",
+    "LLM_REGIME_CAPTURE_GAP: add llm_regime write to trades.csv on restart (~1h dev).",
+    "RULE_CONFLICT_SOL_SHORT: full block may deadlock probe data collection — investigate neutrality approach.",
+    "RULE_CONFLICT_LONG_BIAS: likely resolved (not visible in current 10-rule set). Verify on restart."
   ],
   "code_audit_confirmed": {
     "F2_calibration_cap": "CODED at parameter_tuner.py:186",

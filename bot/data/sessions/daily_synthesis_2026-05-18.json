@@ -1,0 +1,90 @@
+{
+  "date": "2026-05-18",
+  "generated_at": "2026-05-18T00:09:00+00:00",
+  "run_type": "PRE_WINDOW (00:09 UTC — morning window T-5.85h at 06:00 UTC)",
+  "bot_status": "OFFLINE",
+  "offline_duration_hours": 577.9,
+  "offline_duration_days": 24.1,
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "today_wr": null,
+  "equity": 497.05,
+  "peak_equity": 508.06,
+  "dd_from_peak_pct": 2.17,
+  "equity_note": "No change since 2026-04-23T22:17:05Z (577.9h frozen)",
+  "morning_window": {
+    "start_utc": "2026-05-18T06:00:00Z",
+    "end_utc": "2026-05-18T12:00:00Z",
+    "hours_until_open": 5.85,
+    "status": "APPROACHING — T-5.85h",
+    "consecutive_windows_missed": 5,
+    "this_is_window_6": true,
+    "risk_level": "CRITICAL — 5 consecutive morning windows already missed",
+    "mitigation": "conf_floor_70_v1 fix applied 2026-05-17T23:03 (adjustment -20→-5). ETH/BTC trending signals should now pass on restart."
+  },
+  "eod_finalized": false,
+  "eod_finalized_at": null,
+  "current_session": "PRE_WINDOW (00:09 UTC May 18)",
+  "anomalies": [
+    {
+      "type": "BOT_OFFLINE_DAY_25",
+      "severity": "CRITICAL",
+      "value": "577.9h (24.1 days) offline since 2026-04-23. Day 25 begins.",
+      "action": "RESTART at 06:00 UTC May 18 — T-5.85h. Soft-start: 50% sizing, 3x max leverage, ETH/BTC only, first 5 trades."
+    },
+    {
+      "type": "SIXTH_MORNING_WINDOW_APPROACHING",
+      "severity": "CRITICAL",
+      "value": "06:00-12:00 UTC window in T-5.85h. If missed = 6th consecutive morning window lost.",
+      "opportunity_cost_per_day": "~$56-113 estimated (ETH+trending 71-80% WR, 2-4 signals/day = $9-18/day + BTC SHORT 90%+ occasional)",
+      "total_missed_alpha": "~$1,344-2,712 over 24.1 days",
+      "action": "RESTART NOW (or by 06:00 UTC). conf_floor_70_v1 at -5 cleared the deadlock."
+    },
+    {
+      "type": "CONSECUTIVE_LOSSES_TAIL",
+      "severity": "MEDIUM",
+      "value": "Last 4 recent_outcomes = [false, false, false, false]. Circuit breaker at 6 consecutive. 2 losses away from pause.",
+      "action": "On restart: monitor first 2 trades carefully. If both lose, circuit breaker may pause for 1h. Expected with soft-start (50% sizing, 3x max — loss magnitude is small)."
+    },
+    {
+      "type": "SELF_TUNING_CONSERVATIVE_EXPECTED",
+      "severity": "MEDIUM",
+      "value": "adaptive_risk_state.json shows 4 consecutive losses. self_tuning likely in CONSERVATIVE mode: systemic sizing reduction active.",
+      "action": "On restart: log self_tuning state. Expect 50-60% position sizing vs normal. This is correct behavior — let it run, verify sizing is bounded."
+    },
+    {
+      "type": "DATA_GAPS_STRUCTURAL",
+      "severity": "HIGH",
+      "value": "snapshot_entry column missing (slippage unmeasurable). llm_regime column empty (12 regime A/B rules unmeasurable). Both gaps deepening with each offline hour.",
+      "action": "On restart: add snapshot_entry to signal generation path. Add llm_regime write to trade close path. Estimate 2-4h development time."
+    }
+  ],
+  "today_focus": [
+    "06:00 UTC: RESTART — #1 priority for day",
+    "ON RESTART: verify conf_floor_70_v1 at -5 allows ETH/BTC trending signals to pass (log first 3 signal confidence values)",
+    "ON RESTART: confirm self_tuning state (expect CONSERVATIVE — sizing reduction, not signal block)",
+    "ON RESTART: soft-start protocol — 50% sizing, 3x max leverage, ETH/BTC trending only, first 5 trades",
+    "POST-RESTART: ETH+trending signals (71-80% WR, +8pt boost) = primary target in morning window",
+    "POST-RESTART (5 trades): review SNIPER_AUTO_EXECUTE enablement (#1 profit lever)",
+    "AFTERNOON (if 5 trades done): review structural gap fixes (snapshot_entry, llm_regime)"
+  ],
+  "rule_state_at_midnight": {
+    "total_rules": 10,
+    "veto_rules": 4,
+    "boost_rules": 3,
+    "penalize_rules": 3,
+    "key_active_protections": [
+      "hype_long_veto_v1 (HYPE BUY blocked — 23% WR, -$77.26)",
+      "sol_long_veto_v1 (SOL BUY blocked — 24% WR, -$21.89)",
+      "night_session_block_v1 (00-06 UTC blocked — 19% WR)",
+      "hype_short_veto_v1 (HYPE SELL blocked — -$16.65/trade EV)"
+    ],
+    "key_active_boosts": [
+      "rule_1777922205_0 (BTC+trend +8pts)",
+      "eth_trending_regime_boost_v1 (ETH+trend +8pts)",
+      "btc_short_90plus_boost_v1 (BTC SHORT 90%+ +10pts)"
+    ],
+    "conf_floor_status": "conf_floor_70_v1 at -5pts (was -20, reduced 2026-05-17T23:03 to break deadlock)"
+  },
+  "prior_day_reference": "daily_synthesis_2026-05-17.json (EOD_FINAL, 23:03 UTC)"
+}
