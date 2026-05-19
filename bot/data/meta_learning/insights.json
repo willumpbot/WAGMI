@@ -30,7 +30,10 @@
       "confidence": 0.85,
       "evidence_count": 27,
       "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1776797749.9410007
+      "timestamp": 1776797749.9410007,
+      "invalidated": true,
+      "invalidated_at": "2026-05-19T02:04:26.010467+00:00",
+      "invalidation_reason": "Post-dedup evidence invalidated. INSIGHTS_DEDUP_PRUNING (2026-05-18) removed 89 duplicate entries that inflated this WR. Meta_learning analysis confirmed evening=33% WR (not 65%) and afternoon=27% WR (not 64%), n=27. idea_2238f358 and idea_920b3e13 explicitly invalidated based on this. Marking insight to prevent re-proposal of inverted rules."
     },
     {
       "category": "bias",
@@ -94,7 +97,10 @@
       "confidence": 0.85,
       "evidence_count": 27,
       "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1775453531.0103774
+      "timestamp": 1775453531.0103774,
+      "invalidated": true,
+      "invalidated_at": "2026-05-19T02:04:26.010467+00:00",
+      "invalidation_reason": "Post-dedup evidence invalidated. INSIGHTS_DEDUP_PRUNING (2026-05-18) removed 89 duplicate entries that inflated this WR. Meta_learning analysis confirmed evening=33% WR (not 65%) and afternoon=27% WR (not 64%), n=27. idea_2238f358 and idea_920b3e13 explicitly invalidated based on this. Marking insight to prevent re-proposal of inverted rules."
     },
     {
       "category": "weakness",
@@ -154,5 +160,7 @@
     }
   ],
   "last_dedup_at": "2026-05-18T22:06:12.775083+00:00",
-  "dedup_note": "Pruned from 108 to 19 by perpetual_improvement_loop (removed 89 duplicates, kept most-recent per insight category/bucket)"
+  "dedup_note": "Pruned from 108 to 19 by perpetual_improvement_loop (removed 89 duplicates, kept most-recent per insight category/bucket)",
+  "last_invalidation_run": "2026-05-19T02:04:26.010467+00:00",
+  "invalidation_note": "Perpetual deep-dive 2026-05-19T02:07 marked 2 inverted time-of-day insights."
 }

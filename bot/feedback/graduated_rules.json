@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-05-19T01:07:41+00:00",
+  "last_updated": "2026-05-19T02:04:49.654374+00:00",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -2136,6 +2136,52 @@
       "expected_impact": "Removes +8pt confidence boost from 80% of evening signals. If evening truly is 33-36% WR, this prevents systematic over-trading in a losing session at scale. Conservative: at 20% probe, effect is limited until outcome data collected.",
       "auto_retire_criteria": "If treatment_wr >= 0.60 after 20 evening signals, re-escalate to 50%",
       "verified": false
+    },
+    {
+      "rule_id": "SIDE_BIAS_ENFORCEMENT_V2",
+      "source": "idea_98fac4ad + insights.json side_bias (conf=0.75, n=50) + HYPE_LONG/SOL_LONG forensics",
+      "description": "Side-balance penalty: when >65% of recent 20 trades are same direction, apply -5pt confidence to new same-direction signals.",
+      "problem": "74% of trades are LONG. LONG WR=30% vs SHORT WR=77% (n=50). Structural directional bias destroys EV.",
+      "fix_applied": "Gate at 20% A/B probe. Control: no penalty. Treatment: -5pt confidence on over-represented direction.",
+      "status": "A/B_PROBE_ACTIVE",
+      "confidence": 76,
+      "gate_percentage": 20,
+      "baseline_wr": 0.3,
+      "treatment_wr": null,
+      "applied_date": "2026-05-19",
+      "verified": false,
+      "expected_impact": "Redirect 12-15% of over-LONG signals to skip. If LONG WR=30% persists, each redirected trade saves ~$0.70 avg loss.",
+      "graduation_criteria": "Graduate to gate=50% when treatment_wr >= 0.45 (n>=15). Retire if treatment_wr < baseline after n=20."
+    },
+    {
+      "rule_id": "INSIGHTS_REINVERSION_RISK",
+      "source": "perpetual_deep_dive_2026_05_19_0207",
+      "description": "AUDIT: insights.json contained inverted time-of-day WR claims (evening 65%, afternoon 64%) that survived dedup pruning. Both marked invalidated. Meta_learning re-proposal risk mitigated.",
+      "problem": "After INSIGHTS_DEDUP_PRUNING (108->19 entries), 2 high-conf inverted insights remained. Evening: insight claims 65% WR (conf=0.85) but meta_learning shows 33%. Afternoon: insight claims 64% WR (conf=0.85) but meta_learning shows 27%. These would drive re-proposal of already-invalidated ideas.",
+      "fix_applied": "insights.json: marked evening+afternoon pattern insights as invalidated=True with timestamp and reason.",
+      "status": "APPLIED",
+      "confidence": 82,
+      "gate_percentage": 100,
+      "baseline_wr": null,
+      "treatment_wr": null,
+      "applied_date": "2026-05-19",
+      "verified": false,
+      "expected_impact": "Prevents re-escalation of EVENING_session_boost. Rule was just de-escalated 80%->20% \u2014 without this fix, the inverted insight at conf=0.85 would drive re-escalation within 1-2 meta_learning cycles."
+    },
+    {
+      "rule_id": "CONF_60_70_COLLISION_AUDIT",
+      "source": "perpetual_deep_dive_2026_05_19_0207",
+      "description": "HUMAN_REVIEW: 6 rules collide on 60-70% confidence range with contradictory evidence and conflicting actions. Needs rule consolidation.",
+      "problem": "confidence_60_70_sweet_spot(20%), confidence_60_70_ROUTING_FIX(100%), CONF_60_70_floor_raise(80%), CONF_60_70_all_block(100%), CONF_60_70_rollback_probe(20%), CONF_CALIBRATION_INVERSION_AUDIT(0%) all target same signal band. Two 100% rules + one 80% rule + two 20% probes = undefined net effect. authoritative_data: 123 live trades = 46.3% WR, -$2321 (block is correct). backtest: 53.4% WR (contradicts block). Rollback probe running but treatment_wr=null (no outcome tracking).",
+      "fix_applied": "None yet \u2014 flagged for human review. Recommend: retire confidence_60_70_sweet_spot, confidence_60_70_ROUTING_FIX, CONF_60_70_floor_raise as superseded by CONF_60_70_all_block. Keep rollback_probe as the only A/B mechanism.",
+      "status": "PENDING_HUMAN_REVIEW",
+      "confidence": 72,
+      "gate_percentage": 0,
+      "baseline_wr": null,
+      "treatment_wr": null,
+      "applied_date": "2026-05-19",
+      "verified": false,
+      "expected_impact": "Rule collision cleanup: 6 rules -> 2 (block + rollback probe). Reduces confusion and potential for contradictory rule execution."
     }
   ],
   "rules_added_2026_04_26_1545_hourly": [
@@ -3499,5 +3545,16 @@
     ],
     "finding": "EVENING_BOOST_POST_DEDUP_CONFLICT (conf=82): evening boost evidence invalidated by dedup pruning",
     "gates_active": 61
+  },
+  "run_log_2026_05_19_0207": {
+    "run_at": "2026-05-19T02:04:49.654374+00:00",
+    "run_id": "perpetual_deep_dive_2026_05_19_0207",
+    "fixes_applied": [
+      "SIDE_BIAS_ENFORCEMENT_V2",
+      "INSIGHTS_REINVERSION_RISK",
+      "CONF_60_70_COLLISION_AUDIT"
+    ],
+    "prior_run": "perpetual_deep_dive_2026_05_19_0107",
+    "hours_since_prior": 1.0
   }
 }
