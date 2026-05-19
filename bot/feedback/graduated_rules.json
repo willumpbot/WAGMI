@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-05-19T22:04:00+00:00",
+  "last_updated": "2026-05-19T23:04:00+00:00",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -2247,6 +2247,51 @@
       "verified": false,
       "expected_impact": "At -2pt adjustment: minimal near-term impact (few signals near the 70-point floor threshold). Primary value: establishes calibration probe infrastructure for upper bins. If graduated to -5pt, expected to filter ~8% of 80-90% signals, recovering ~$0.40/trade EV (60% WR \u2192 same trade with 63% actual WR).",
       "graduation_criteria": "Graduate to gate=20% with -4pt if treatment signals show improved realized WR vs control (n>=20). Retire if no WR difference after n=30."
+    },
+    {
+      "rule_id": "STALE_SHADOW_RULES_FILE_RISK",
+      "source": "perpetual_deep_dive_2026_05_19_2304 \u2014 STRUCTURAL_AUDIT",
+      "description": "bot/data/llm/graduated_rules.json (11 rules) is a stale shadow of bot/feedback/graduated_rules.json (109 rules). Any read from wrong path misses 98 rules including all live A/B gates.",
+      "problem": "Two graduated_rules.json files exist at different paths. data/llm/ version has 11 rules with timestamps from 2024-era, the correct active file is feedback/ with 109 rules. Reads from the wrong path silently miss: all veto rules, all regime filters, all BB patterns, all session blocks, all calibration probes. Root cause: data/llm/ is likely a legacy file that was never deleted when feedback/ became authoritative.",
+      "fix_applied": "DOCUMENTATION ONLY \u2014 Human action required: delete or rename bot/data/llm/graduated_rules.json OR add a load-time assertion that the file at feedback/ is the canonical path. ~15 min dev. Add path redirect to any code that reads graduated_rules.json.",
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "confidence": 90,
+      "gate_percentage": 0,
+      "baseline_wr": null,
+      "treatment_wr": null,
+      "applied_date": "2026-05-19",
+      "verified": false,
+      "expected_impact": "Prevents future automation/scripts from silently reading 11-rule file instead of 109-rule file. Risk of silent miss is HIGH: any new learning pipeline that reads from data/ dir instead of feedback/ dir will make decisions against stale data."
+    },
+    {
+      "rule_id": "MORNING_WINDOW_8TH_MISS_IMMINENT",
+      "source": "perpetual_deep_dive_2026_05_19_2304 \u2014 escalation of MORNING_WINDOW_7TH_MISS_EOD_ESCALATION",
+      "description": "8th consecutive morning window (06:00-12:00 UTC May 20) is T-7h. Day 27 ends without restart. Cumulative alpha lost: $1,680-3,390. Escalation status: CRITICAL_IMMINENT.",
+      "problem": "Bot has been offline since Apr 23 (~626h). 7 consecutive morning windows missed. 8th window opens at 06:00 UTC May 20. The bot has 14 confirmed active edges (ETH_SHORT 80% WR, BTC_TRENDING 80% WR, SOL_SHORT 63.7% WR, BTC_SHORT_90plus 67% WR) that are only accessible during market hours. Each missed window = $56-113 EV. 7 windows = $392-791 direct opportunity cost. 109 rules stalled with 0 live tests.",
+      "fix_applied": "ESCALATION ONLY \u2014 Deadline: restart before 05:30 UTC May 20. Soft-start: 50% sizing, 3x max leverage, ETH/BTC trending only, first 5 trades. All 109 rules active. A/B gates will begin collecting data on first live trade.",
+      "status": "CRITICAL_IMMINENT",
+      "confidence": 95,
+      "gate_percentage": 0,
+      "baseline_wr": null,
+      "treatment_wr": null,
+      "applied_date": "2026-05-19",
+      "verified": false,
+      "expected_impact": "Missing 8th window locks in $1,680-3,390 cumulative alpha loss and further delays all 109 A/B rules from collecting needed n>=15 data. Each additional day offline = ~$56-113 direct + compounding backlog in rule graduation pipeline."
+    },
+    {
+      "rule_id": "CONF_60_70_CONFLICT_FREEZE_V2",
+      "source": "perpetual_deep_dive_2026_05_19_2304 \u2014 Subsystem 3 live injection + prior conflict audit",
+      "description": "60-70% confidence conflict is unresolved after 2 weeks. Freeze all escalation on this bin until live data resolves.",
+      "problem": "Direct conflict: (A) Insight journal (conf=0.83, n=67): 60-70% conf = +$2.19/trade EV (42% WR). (B) conf_floor_70_v1 runtime rule (conf=0.87, n=123): 60-70% conf = -$2321 total (-18.86/trade). Two separate datasets, opposite conclusions. The larger-sample evidence (123 trades) supports the block. But CONF_60_70_rollback_probe (gate=20%) is running a live test. 6 overlapping rules now target this bin: conf_floor_70_v1, CONF_70_HARD_FLOOR, CONF_60_70_all_block, CONF_60_70_floor_raise, CONF_60_70_sweet_spot, CONF_60_70_rollback_probe. Escalating any one risks amplifying a potentially false signal.",
+      "fix_applied": "FREEZE: Do not escalate any 60-70% confidence rules beyond current gates until CONF_60_70_rollback_probe collects n>=20 live trades. Required live evidence before any graduation: treatment_wr comparison vs 0.463 baseline. Human review gate=0 (no auto-apply). Estimated live data availability: 5-7 days post-restart.",
+      "status": "FROZEN_PENDING_LIVE_DATA",
+      "confidence": 85,
+      "gate_percentage": 0,
+      "baseline_wr": 0.42,
+      "treatment_wr": null,
+      "applied_date": "2026-05-19",
+      "verified": false,
+      "expected_impact": "Prevents premature escalation of a conflicted rule from inflating false signals. The 6-rule collision on 60-70% bin is currently the highest-risk rule conflict in the system \u2014 a wrong escalation could either block all 42% WR positive signals OR permanently elevate negative-EV noise."
     }
   ],
   "rules_added_2026_04_26_1545_hourly": [
@@ -3621,5 +3666,25 @@
     ],
     "prior_run": "perpetual_deep_dive_2026_05_19_0107",
     "hours_since_prior": 1.0
+  },
+  "run_log_2026_05_19_2304": {
+    "run_at": "2026-05-19T23:04:00+00:00",
+    "run_id": "perpetual_deep_dive_2026_05_19_2304",
+    "fixes_applied": [
+      "STALE_SHADOW_RULES_FILE_RISK",
+      "MORNING_WINDOW_8TH_MISS_IMMINENT",
+      "CONF_60_70_CONFLICT_FREEZE_V2"
+    ],
+    "prior_run": "perpetual_deep_dive_2026_05_19_0207",
+    "hours_since_prior": 1.0,
+    "new_rule_count": 3,
+    "total_rule_count": 112,
+    "subsystem": "perpetual_improvement_deep_dive",
+    "key_findings": [
+      "STALE_SHADOW_RULES_FILE discovered: data/llm/ has 11 stale rules vs feedback/ 109 rules",
+      "MORNING_WINDOW_8TH: T-7h deadline. CRITICAL_IMMINENT.",
+      "CONF_60_70 conflict frozen pending live data",
+      "All 109 rules stalled at 0 applications \u2014 AB_RESULT_TRACKER_CODE is P0 blocker"
+    ]
   }
 }

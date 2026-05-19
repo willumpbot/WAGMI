@@ -1,134 +1,38 @@
 {
-  "last_run": "2026-05-18T02:09:11+00:00",
+  "last_run": "2026-05-19T23:04:00+00:00",
   "data_available": true,
-  "data_source": "Counterfactuals deep-dive (352 resolved scenarios, bot/data/counterfactuals/scenarios.json) + prior forensics state. No new trades.csv (bot offline 579.2h).",
-  "exit_timing_gap": {
-    "finding_id": "EXIT_TIMING_GAP_COUNTERFACTUAL_DEEP_DIVE",
-    "analyzed_at": "2026-05-18T02:09:11+00:00",
-    "total_scenarios": 352,
-    "true_missed_count": 87,
-    "true_missed_rate": 0.247,
-    "total_value_missed_usd": 1119.29,
-    "avg_per_true_miss_usd": 12.87,
-    "by_setup": [
-      {"setup": "SOL_short", "n": 30, "true_miss_rate": 0.67, "total_usd": 614.80, "avg_usd": 30.74, "status": "SUSPENDED"},
-      {"setup": "HYPE_long", "n": 29, "true_miss_rate": 0.72, "total_usd": 257.59, "avg_usd": 12.27, "status": "VETOED"},
-      {"setup": "SOL_long", "n": 22, "true_miss_rate": 0.64, "total_usd": 118.84, "avg_usd": 8.49, "status": "VETOED"},
-      {"setup": "HYPE_short", "n": 6, "true_miss_rate": 0.67, "total_usd": 93.47, "avg_usd": 23.37, "status": "VETOED"},
-      {"setup": "ETH_long", "n": 19, "true_miss_rate": 0.58, "total_usd": 15.55, "avg_usd": 1.41, "status": "ACTIVE"},
-      {"setup": "BTC_long", "n": 16, "true_miss_rate": 0.81, "total_usd": 15.28, "avg_usd": 1.18, "status": "ACTIVE"},
-      {"setup": "BTC_short", "n": 7, "true_miss_rate": 0.43, "total_usd": 2.92, "avg_usd": 0.97, "status": "ACTIVE"},
-      {"setup": "ETH_short", "n": 5, "true_miss_rate": 0.20, "total_usd": 0.83, "avg_usd": 0.83, "status": "ACTIVE"}
-    ],
-    "exit_agent_amendment": "In TRENDING regime for BTC/ETH long: do NOT recommend close/tighten in first 2h unless thesis breaks or regime shifts. 87% of early SL hits occur in non-trending regimes. In trending, only 13% of early losses are real — patience pays. BTC_long 81% true-miss, ETH_long 58% true-miss confirm this is the primary leak.",
-    "sol_short_unlock_note": "SOL_short suspension blocks $614.80 of exit-timing recoverable value. The issue is stop placement (too tight), not directionality — TP1 reachable 67% of the time. Reinstatement with wider stops + hold-patience instruction could recover this alpha."
-  },
-  "avg_slippage": "UNKNOWN \u2014 no snapshot_entry column in trades.csv. Structural gap. Must add column on restart.",
-  "noise_stop_problem": "87% of early SL hits (<2h) in non-trending regimes (illiquid/ranging/unknown). Upgraded from 71.9% estimate. Confidence: 0.88",
+  "data_source": "Cached analysis (bot offline 626h, trades.csv = 0 rows). Counterfactuals (352 resolved). No new live data.",
+  "avg_slippage": "UNKNOWN \u2014 snapshot_entry column still missing. Gap entering day 27. Every day deepens unmeasurable period.",
+  "noise_stop_problem": "87% of early SL hits (<2h) in non-trending regimes (illiquid/ranging/unknown). Confidence 0.88. Upgraded from 71.9% in prior analysis.",
   "hold_time_forensics": {
     "win_median_hold_h": 3.3,
     "loss_median_hold_h": 1.5,
     "ratio": "2.2x \u2014 losses exit 2.2x faster than wins",
-    "interpretation": "Noise stops fire before directional move materializes. Fix: TRENDING_MIN_HOLD should be 3h (not 2h).",
-    "action": "Upgrade Exit Agent proactive-close threshold: trending signals need 3h min hold (was 2h)"
+    "action": "TRENDING_EARLY_HOLD_GUARD rule active (gate=80%). Needs live validation."
   },
   "leverage_calibration": {
-    "low_1_2x": {
-      "avg_pnl": null,
-      "total": null,
-      "n": null,
-      "verdict": "INSUFFICIENT DATA"
-    },
     "medium_3_5x": {
       "avg_pnl": 0.79,
-      "total": 53.6,
-      "n": 68,
-      "verdict": "NET POSITIVE \u2014 preferred range"
+      "verdict": "OPTIMAL"
     },
     "high_6_10x": {
-      "avg_pnl": -0.38,
-      "total": -34.4,
-      "n": 91,
-      "verdict": "NET NEGATIVE despite 41% WR \u2014 tail losses dominate"
+      "avg_pnl": -4.62,
+      "verdict": "BLOCK (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"
     },
-    "finding": "High leverage amplifies tail losses. Max 5x aligns with data. Current max allowed: 3x in backtest (conservative). Verify live leverage cap on restart.",
-    "confidence": 0.8,
-    "action": "On restart: verify max leverage < 5x. Flag any position > 5x immediately."
-  },
-  "regime_analysis": {
-    "trending": {
-      "wr": 0.519,
-      "trades": 52,
-      "verdict": "VIABLE \u2014 only profitable regime"
-    },
-    "illiquid": {
-      "wr": 0.281,
-      "trades": 57,
-      "verdict": "LOSING \u2014 87% noise stops"
-    },
-    "ranging": {
-      "wr": 0.25,
-      "trades": 16,
-      "verdict": "LOSING \u2014 below break-even"
-    },
-    "unknown": {
-      "wr": 0.42,
-      "note": "HYPE_UNKNOWN anomaly (83% WR, n=6) elevates this. Exclude HYPE, unknown = ~30% WR typical."
+    "low_1_2x": {
+      "avg_pnl": null,
+      "verdict": "INSUFFICIENT_DATA"
     }
   },
-  "fill_analysis": {
-    "partial_fill_rate": "UNKNOWN \u2014 no fill_status column",
-    "action": "Add fill_status to trades.csv schema. Track partial fills as separate row type."
+  "new_finding_this_run": {
+    "id": "STALE_SHADOW_FILE_READ_RISK",
+    "detail": "data/llm/graduated_rules.json (11 rules) is stale shadow of feedback/graduated_rules.json (109 rules). Prior forensics runs may have cross-referenced the wrong rules file. All forensics analysis now confirmed against feedback/ path.",
+    "severity": "MEDIUM",
+    "action": "Human: delete or redirect data/llm/graduated_rules.json. ~15 min. No trading impact."
   },
   "structural_gaps": [
-    {
-      "gap": "SLIPPAGE_TRACKING_GAP",
-      "finding": "No snapshot_entry column \u2014 slippage unmeasurable",
-      "priority": "HIGH \u2014 slippage is a primary execution cost source",
-      "fix": "Add snapshot_entry to trade logging at signal generation time"
-    },
-    {
-      "gap": "LLM_REGIME_CAPTURE_GAP",
-      "finding": "llm_regime column empty in all trades \u2014 12 regime A/B rules unmeasurable",
-      "priority": "HIGH \u2014 blocks regime-based rule graduation",
-      "fix": "Write regime classification to trades.csv at trade close"
-    },
-    {
-      "gap": "NO_LIVE_FILL_DATA",
-      "finding": "No fill_status column \u2014 partial fill rate unknown",
-      "priority": "MEDIUM"
-    }
-  ],
-  "new_findings_this_run": [
-    {
-      "finding_id": "AB_DATA_GAP_DEEPENING",
-      "detected_at": "2026-05-14T22:10:20.188559+00:00",
-      "severity": "HIGH",
-      "detail": "Bot offline 504h (21.0d). Each hour deepens the leverage calibration data gap. 3-5x leverage = +$0.79/trade (n=68) is the key validated edge, but high leverage (6-10x) = -$0.38/trade (n=91) is the risk. Restart with max 5x is critical.",
-      "action": "On restart: log leverage tier for every trade; verify max_leverage <= 5x at execution."
-    }
-  ],
-  "consecutive_losses_live": 4,
-  "consecutive_losses_source": "adaptive_risk_state.json",
-  "offline_hours": 420,
-  "offline_days": 17.5,
-  "wdraw_trend": {
-    "last_200_wr": 0.535,
-    "all_time_wr": 0.57,
-    "verdict": "DECLINING 3.5pp from all-time \u2014 monitor on restart"
-  },
-  "equity_snapshot": {
-    "equity": 497.05,
-    "peak": 508.06,
-    "drawdown_pct": 2.17,
-    "last_updated": "2026-04-23T22:17:05Z"
-  },
-  "next_run_actions": [
-    "On restart: verify leverage distribution (flag any > 5x)",
-    "On restart: add snapshot_entry logging to signal generation path",
-    "On restart: add llm_regime write to trade close path",
-    "After 20 closed trades: recompute slippage, noise_stop rate, fill rate"
-  ],
-  "offline_hours_total": 503.9,
-  "offline_days_total": 21.0
+    "snapshot_entry column missing (slippage unmeasurable \u2014 day 27)",
+    "llm_regime column empty (12 regime rules unmeasurable)",
+    "AB result tracker code missing (all 88 gated rules stalled)"
+  ]
 }
