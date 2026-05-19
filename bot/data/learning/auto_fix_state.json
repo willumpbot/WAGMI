@@ -1,22 +1,32 @@
 {
-  "last_run": "2026-05-19T00:11:06+00:00",
+  "last_run": "2026-05-19T01:07:41+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
   "fixes_applied_this_run": 1,
-  "gates_active": 14,
-  "total_applied_all_time": 37,
+  "gates_active": 62,
+  "total_applied_all_time": 38,
   "last_fix": {
-    "fix_id": "HIGH_LEV_10X_FORENSICS_BLOCK",
-    "applied_at": "2026-05-19T00:11:06+00:00",
+    "fix_id": "EVENING_BOOST_DEESCALATE_FIX",
+    "applied_at": "2026-05-19T01:07:41+00:00",
     "file": "bot/feedback/graduated_rules.json",
-    "description": "New rule: block leverage >6x via forensics evidence (6-10x = -$0.38/trade net negative on 91 trades). idea_f36e9743 10x tier marked partially_invalidated in ideas.json. Resolves META_LEARNING_SIZE_INSIGHTS_CONFLICT finding (conf=80%).",
-    "confidence": 0.8,
+    "description": "EVENING_session_boost de-escalated from 80% gate to 20% gate. Post-deduplication (108->19 insights), the evidence base for 62-65% evening WR was 89 duplicate entries \u2014 all removed. Internal baseline_wr=0.36 confirms real WR closer to 33-36%, not 62-65%. Meta_learning correctly invalidated idea_2238f358 (evening boost) at 33% WR (n=27). Rule was boosting 80% of evening signals with invalidated evidence.",
+    "confidence": 0.82,
     "gate_percentage": 20,
     "status": "ACTIVE",
-    "outcome_tracking": "PENDING_RESTART \u2014 bot offline 601.9h",
-    "justification": "conf=80 >= 75 threshold. Forensics cross-validation: WR alone at high leverage misleads. 91-trade sample shows net negative PnL at 6-10x. Prevents idea_f36e9743 10x tier from being applied on restart.",
-    "expected_impact": "20% of high-confidence sizing attempts capped at 5x. Reduces tail-loss exposure from rare but large high-leverage losers."
+    "outcome_tracking": "PENDING_RESTART \u2014 bot offline 602.8h",
+    "justification": "conf=0.82 >= 0.75 threshold. Three corroborating signals: (1) baseline_wr stored in rule = 0.36 (not 62-65% as claimed in description), (2) INSIGHTS_DEDUP_PRUNING removed 89 of 108 duplicate entries that inflated evidence, (3) meta_learning invalidated evening boost idea at 33% WR (n=27, conf=0.85). De-escalating prevents active harm at scale.",
+    "expected_impact": "Reduces evening signal boosting from 80% coverage to 20% probe. If evening is truly 33-36% WR, removes net-negative confidence inflation from 80% of evening trades. Net: prevents ~$0.3-0.8 per-trade harm at 80% scale."
   },
   "new_findings_this_run": [
+    {
+      "finding_id": "EVENING_BOOST_POST_DEDUP_CONFLICT",
+      "detected_at": "2026-05-19T01:07:41+00:00",
+      "severity": "HIGH",
+      "source": "graduated_rules.json rule[15] EVENING_session_boost + auto_fix_state.json INSIGHTS_DEDUPLICATION_PRUNING fix",
+      "detail": "EVENING_session_boost was escalated to 80% gate on 2026-04-24 based on meta_learning/insights.json claiming 27+ samples of 62-65% evening WR. The INSIGHTS_DEDUPLICATION_PRUNING fix (2026-05-18) removed 89 duplicate entries from insights.json (108->19). The rule's own internal baseline_wr field = 0.36 (36%) \u2014 directly contradicting the 62-65% description. Meta_learning analysis independently arrived at 33% WR for evening (n=27), correctly invalidating idea_2238f358. The escalation from 50%->80% gate occurred without any outcome tracking (treatment_wr=null still). Rule has been running at 80% scale with inverted evidence, boosting a likely losing session.",
+      "action": "RESOLVED \u2014 EVENING_session_boost gate de-escalated 80%\u219220%. Awaiting live outcome data.",
+      "confidence_to_flag": 0.82,
+      "resolved_at": "2026-05-19T01:07:41+00:00"
+    },
     {
       "finding_id": "META_LEARNING_IDEAS_INVERSION_BUG",
       "detected_at": "2026-05-18T03:09:00+00:00",
@@ -93,6 +103,13 @@
       "gate_pct": 20,
       "status": "ACTIVE",
       "outcome_tracking": "PENDING_RESTART \u2014 no live data yet"
+    },
+    {
+      "fix_id": "EVENING_BOOST_DEESCALATE_FIX",
+      "applied_at": "2026-05-19T01:07:41+00:00",
+      "gate_pct": 20,
+      "status": "ACTIVE",
+      "outcome_tracking": "PENDING_RESTART \u2014 no live data yet"
     }
   ],
   "rule_accuracy_tracking": {
@@ -152,7 +169,7 @@
     "inferred_confidence": 0.72,
     "data": "80% of trades are LONG, LONG WR = 38% vs SHORT WR = 60%. Side imbalance contributing to overall losses.",
     "gap_to_threshold": 0.03,
-    "action": "At restart, collect first 20 trades. If LONG-side imbalance persists with <45% WR, this reaches 0.75 threshold for a -5pt penalize rule on same-side overload."
+    "action": "At restart, collect first 20 trades. If LONG-side imbalance persists with <45% WR, this reaches 0.75 threshold for -5pt penalize rule on same-side overload."
   },
   "recommendations_reviewed": 12,
   "high_confidence_pending_human": 8,
@@ -166,7 +183,8 @@
     "RULE_CONFLICT_SOL_SHORT: 100% block prevents probe data collection \u2014 needs human resolution.",
     "AB_RESULT_TRACKER_CODE: P0 structural gap \u2014 no code closes A/B feedback loop. treatment_wr stays null forever.",
     "META_LEARNING_IDEAS_INVERSION_BUG: 4/8 ideas have inverted direction (boosting losing sessions). Fix idea generator before any idea is applied.",
-    "INSIGHTS_DEDUPLICATION_GAP: insights.json accumulates duplicates, inflating confidence artificially. Fix accumulator to UPDATE not APPEND."
+    "INSIGHTS_DEDUPLICATION_GAP: insights.json accumulates duplicates, inflating confidence artificially. Fix accumulator to UPDATE not APPEND.",
+    "EVENING_BOOST_MONITORING: After restart, track treatment_wr for EVENING_session_boost. Re-escalate to 50% ONLY if treatment_wr >= 0.60 after 20 evening signals."
   ],
   "code_audit_confirmed": {
     "F2_calibration_cap": "CODED at parameter_tuner.py:186",

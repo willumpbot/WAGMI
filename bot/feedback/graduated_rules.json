@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-05-19T00:11:06+00:00",
+  "last_updated": "2026-05-19T01:07:41+00:00",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -282,13 +282,13 @@
     {
       "rule_id": "EVENING_session_boost",
       "source": "meta_learning/insights \u2014 timing_edge, validated n=27+ across multiple windows",
-      "description": "Evening session (18:00-24:00 UTC) wins 62-65% WR vs night 7-15%. Boost evening signals.",
+      "description": "Evening session (18:00-24:00 UTC) \u2014 originally claimed 62-65% WR, DEESCALATED: post-dedup evidence shows baseline_wr=36%; meta_learning invalidated evening boost idea at 33% WR. Probe at 20% gate pending outcome.",
       "problem": "Evening edge consistently validated across 20+ insights but no active rule promotes it",
       "fix_applied": "A/B gate at 20% \u2014 evening signals get +8pt confidence boost; raise floor to 58%",
       "action": "core/signal_pipeline.py or ensemble.py: detect hour 18-23 UTC, apply +8pt confidence boost",
       "status": "A/B_ACTIVE",
       "confidence": 85,
-      "gate_percentage": 80,
+      "gate_percentage": 20,
       "baseline_wr": 0.36,
       "treatment_wr": null,
       "sample_count": 27,
@@ -296,7 +296,10 @@
       "ab_cohort_start": "2026-04-24T18:12:08.470609+00:00",
       "min_sample_to_graduate": 25,
       "last_escalated": "2026-05-01T16:13:56.935630+00:00",
-      "escalation_reason": "conf=85%, sample=27 \u2192 escalate 50%\u219280%"
+      "escalation_reason": "conf=85%, sample=27 \u2192 escalate 50%\u219280%",
+      "gate_percentage_prior": 80,
+      "deescalation_reason": "INSIGHTS_DEDUP_INVALIDATION: Rule was escalated to 80% gate based on meta_learning/insights.json evidence (n=27+, claimed 62-65% WR). After INSIGHTS_DEDUPLICATION_PRUNING (108->19 entries, 2026-05-18), the 89 duplicate entries inflating this claim were removed. Internal baseline_wr=0.36 (36%) contradicts claimed 62-65% WR. Meta_learning correctly invalidated idea_2238f358 (evening boost) at 33% WR. Rule applied without outcome tracking (treatment_wr=null). De-escalating to 20% probe gate pending post-restart live outcome measurement. Confidence: 0.82.",
+      "deescalation_applied_at": "2026-05-19T01:07:41+00:00"
     },
     {
       "rule_id": "INSTANT_SL_stop_buffer",
@@ -2117,6 +2120,22 @@
       "treatment_wr": null,
       "applied_date": "2026-05-19",
       "verified": false
+    },
+    {
+      "rule_id": "EVENING_BOOST_DEESCALATE_FIX",
+      "source": "perpetual_deep_dive_2026_05_19_0107 \u2014 EVENING_BOOST_POST_DEDUP_CONFLICT (conf=82)",
+      "description": "De-escalated EVENING_session_boost from 80% gate to 20% gate. After INSIGHTS_DEDUPLICATION_PRUNING removed 89 duplicate entries that inflated evening edge evidence, baseline_wr=0.36 contradicts 62-65% WR claim. Meta_learning confirms evening = 33% WR (n=27). Prevents active harm from inverted rule running at 80% scale.",
+      "problem": "EVENING_session_boost at 80% gate was boosting 80% of evening signals with invalidated evidence. Internal baseline_wr=0.36 (36%) directly contradicts description's 62-65% WR claim. The 89 duplicate insights.json entries that supported this were pruned yesterday.",
+      "fix_applied": "Modified EVENING_session_boost gate_percentage: 80 \u2192 20. Rule stays A/B_ACTIVE but at reduced influence (20% probe only). Outcome tracking (treatment_wr) required before any re-escalation.",
+      "status": "A/B_ACTIVE",
+      "confidence": 82,
+      "gate_percentage": 20,
+      "baseline_wr": 0.36,
+      "treatment_wr": null,
+      "applied_date": "2026-05-19",
+      "expected_impact": "Removes +8pt confidence boost from 80% of evening signals. If evening truly is 33-36% WR, this prevents systematic over-trading in a losing session at scale. Conservative: at 20% probe, effect is limited until outcome data collected.",
+      "auto_retire_criteria": "If treatment_wr >= 0.60 after 20 evening signals, re-escalate to 50%",
+      "verified": false
     }
   ],
   "rules_added_2026_04_26_1545_hourly": [
@@ -3467,5 +3486,18 @@
       "TRENDING_MIN_HOLD_2H_gate_upgrade_20pct_to_50pct"
     ],
     "reason": "EXIT_AGENT_PROMPT_AMENDMENT live + exec forensics 3h hold validated. Gate upgrade aligns rule with prompt."
+  },
+  "run_log_2026_05_19_0107": {
+    "run_id": "perpetual_deep_dive_2026_05_19_0107",
+    "timestamp": "2026-05-19T01:07:41+00:00",
+    "fixes_applied": 1,
+    "new_rules": [
+      "EVENING_BOOST_DEESCALATE_FIX"
+    ],
+    "modifications": [
+      "EVENING_session_boost gate 80->20"
+    ],
+    "finding": "EVENING_BOOST_POST_DEDUP_CONFLICT (conf=82): evening boost evidence invalidated by dedup pruning",
+    "gates_active": 61
   }
 }

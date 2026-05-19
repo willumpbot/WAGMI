@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-05-18T01:10:31+00:00",
+  "last_run": "2026-05-19T01:07:41+00:00",
   "data_source": "Historical accumulated (352 resolved trades) + insight_journal_2026-05-08 + meta_learning cross-validation",
   "note": "No new trades (bot offline 578.2h). HYPE_UNKNOWN_REGIME added from cross-source validation (live_edge_data + meta_learning). EVENING_SESSION confirmed from meta_learning (65% WR, n=27) \u2014 rule already gated at 80% (EVENING_session_boost). MORNING_WINDOW opens in T-4.85h (06:00 UTC May 18).",
   "high_edges": [
@@ -101,6 +101,13 @@
       "trades": 43,
       "pnl": -4.05,
       "note": "Confidence 70-80% is the WORST band: 33% WR, -4.05/trade. -174 total. Counterintuitive: high confidence underperforms lower confidence."
+    },
+    {
+      "setup": "EVENING_SESSION_18_24UTC",
+      "wr": 0.33,
+      "trades": 27,
+      "pnl": null,
+      "note": "De-escalated from HIGH_EDGE to WEAK_SETUP. Internal baseline_wr=0.36 in graduated rule; meta_learning analysis: 33% WR (n=27). The 62-65% WR claim in EVENING_session_boost was inflated by 89 duplicate insight entries (removed by INSIGHTS_DEDUP_PRUNING 2026-05-18). Rule de-escalated 80%->20%."
     }
   ],
   "regime_edges": {
@@ -125,7 +132,8 @@
     "BTC_TRENDING_REGIME": "NEW: 80% WR, +8.98/trade (insight_journal update)",
     "HYPE_UNKNOWN_REGIME": "NEW_UNDISCOVERED: 83% WR, +6.56/trade \u2014 not in any prior state",
     "CONF_60_70_CONFLICT": "CRITICAL: insight shows +EV but conf_floor_70_v1 penalizes -20pts",
-    "CONF_70_80_WORST": "NEW WEAK: 33% WR, -4.05/trade (worst confidence band)"
+    "CONF_70_80_WORST": "NEW WEAK: 33% WR, -4.05/trade (worst confidence band)",
+    "EVENING_BOOST_INVALIDATED": "DEESCALATED: EVENING_session_boost evidence invalidated by dedup pruning. Evening session reclassified from HIGH_EDGE to WEAK_SETUP (33-36% WR). Rule gate: 80%->20%."
   },
   "top_edge": "ETH_SHORT+trending+morning = ~80%+ WR (5 live trades + 70% historical pattern)",
   "top_killer": "SOL_LONG: 24% WR on 34 trades, -$21.89. HYPE_LONG: 23% WR on 35 trades, -$77.26",
@@ -154,7 +162,7 @@
     "bb_golden_setups": "ETH_SHORT+BB = 70% WR, BTC_BUY+BB = 69% WR, SOL_BUY+BB = 67% WR (all tier-1 golden setups awaiting live confirmation)"
   },
   "high_edges_found": 9,
-  "weak_setups_found": 4,
+  "weak_setups_found": 5,
   "new_insights_found": 5,
   "new_anti_patterns": {
     "BB_MTQ_combo": "BB+MTQ co-agreement = 35% WR (92% conf, pending live confirmation). Treat as contra-indicator.",
@@ -215,6 +223,6 @@
     "dependency": "Fix outcome_feedback_callback FIRST, then re-evaluate conf_floor_70_v1 after 20+ trade outcomes.",
     "confidence": 0.95
   },
-  "data_stale_hours": 578.2,
+  "data_stale_hours": 602.8,
   "morning_window_note": "T-4.85h until 06:00 UTC morning window (71-80% WR, +8pt boost active for ETH+trend and BTC+trend)"
 }

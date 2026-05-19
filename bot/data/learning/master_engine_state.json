@@ -1,37 +1,38 @@
 {
-  "last_run": "2026-05-19T00:11:06+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_19_0011_MIDNIGHT",
-  "prior_run": "2026-05-18T23:04:47+00:00",
-  "hours_since_prior_run": 1.1,
-  "bot_offline_hours": 601.9,
+  "last_run": "2026-05-19T01:07:41+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_19_0107",
+  "prior_run": "2026-05-19T00:11:06+00:00",
+  "hours_since_prior_run": 0.94,
+  "bot_offline_hours": 602.8,
   "bot_offline_days": 25.1,
-  "current_session": "MIDNIGHT_RUN (00:11 UTC May 19)",
+  "current_session": "EARLY_HOURS_RUN (01:07 UTC May 19)",
   "morning_window_status": {
     "date": "2026-05-19",
-    "status": "APPROACHING \u2014 5.8h until open. RESTART DEADLINE: 05:30 UTC",
+    "status": "T-4.9h until 06:00 UTC. RESTART DEADLINE: 05:30 UTC",
     "consecutive_missed": 6,
     "next_window": "2026-05-19T06:00:00Z",
-    "hours_until_next": 5.8,
-    "restart_required_by": "2026-05-19T05:30:00Z"
+    "hours_until_next": 4.9,
+    "restart_required_by": "2026-05-19T05:30:00Z",
+    "urgency": "CRITICAL"
   },
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 1,
-      "gates_active": 61,
-      "total_rules": 101,
-      "total_all_time": 37,
-      "status": "1 FIX APPLIED: HIGH_LEV_10X_FORENSICS_BLOCK added (gate=20%, conf=80%); idea_f36e9743 partially_invalidated",
+      "gates_active": 62,
+      "total_rules": 102,
+      "total_all_time": 38,
+      "status": "1 FIX APPLIED: EVENING_BOOST_DEESCALATE_FIX (conf=82%). EVENING_session_boost gate reduced 80%->20% after dedup pruning invalidated its evidence base. New finding: EVENING_BOOST_POST_DEDUP_CONFLICT (HIGH).",
       "fixes_detail": [
         {
-          "fix_id": "HIGH_LEV_10X_FORENSICS_BLOCK",
-          "description": "New graduated rule: block leverage >6x via forensics evidence. 6-10x leverage = -$0.38/trade net negative on 91 trades. Partially resolves META_LEARNING_SIZE_INSIGHTS_CONFLICT finding. idea_f36e9743 10x tier now officially blocked.",
-          "confidence": 0.8,
-          "severity": "MEDIUM",
+          "fix_id": "EVENING_BOOST_DEESCALATE_FIX",
+          "description": "EVENING_session_boost gate 80%->20%. Post-dedup evidence shows evening WR 33-36% (not 62-65%). Meta_learning idea_2238f358 correctly invalidated. 89 duplicate insight entries (removed 2026-05-18) were the sole support for the 62-65% WR claim.",
+          "confidence": 0.82,
+          "severity": "HIGH",
           "file": "bot/feedback/graduated_rules.json",
           "gate_percentage": 20,
-          "baseline_wr": 0.41,
+          "baseline_wr": 0.36,
           "treatment_wr": null,
-          "expected_impact": "20% of high-confidence sizing attempts capped at 5x instead of 10x. Reduces tail-loss exposure. Pairs with CONF_SIZING_tiered_leverage rule."
+          "expected_impact": "Prevents +8pt evening boost from affecting 80% of evening signals. If evening is 33-36% WR as evidence suggests, removes net-negative confidence inflation from ~60% of previously over-boosted signals."
         }
       ],
       "pending_human_review_count": 8,
@@ -39,63 +40,63 @@
     },
     "execution_forensics": {
       "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing from signal log",
-      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [STALE 601.9h]",
+      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [STALE 602.8h]",
       "fill_analysis": "UNKNOWN \u2014 no fill_status column in trades.csv",
-      "data_age_hours": 601.9,
-      "status": "FROZEN \u2014 bot offline 601.9h. EXIT_AGENT_PROMPT_AMENDMENT live but untested.",
+      "data_age_hours": 602.8,
+      "status": "FROZEN \u2014 bot offline 602.8h. EXIT_AGENT_PROMPT_AMENDMENT + TRENDING_MIN_HOLD_2H live but untested.",
       "validated_findings_unchanged": {
         "leverage_3_5x": "+$0.79/trade (n=68) \u2014 PREFERRED RANGE",
         "leverage_6_10x": "-$0.38/trade (n=91) \u2014 NET NEGATIVE",
         "win_median_hold": "3.3h vs loss_median_hold 1.5h",
         "noise_stop_regime": "87% in illiquid/ranging/unknown",
         "exit_timing_gap": "87/352 (24.7%) counterfactual true-misses, $1,119.29 total value",
-        "high_lev_block": "HIGH_LEV_10X_FORENSICS_BLOCK now active at gate=20%"
+        "high_lev_block": "HIGH_LEV_10X_FORENSICS_BLOCK active at gate=20%"
       }
     },
     "live_injection": {
       "high_edges_found": 9,
-      "weak_setups_found": 4,
-      "data_stale_hours": 601.9,
-      "status": "FROZEN \u2014 no new trade data. Active edges from prior analysis.",
-      "new_this_run": "idea_98fac4ad (SIDE_BALANCE_ENFORCEMENT) flagged for graduation on restart \u2014 80% LONG bias, LONG WR=38%, EV impact +$0.8-1.2/affected trade. Recommend A/B gate at 20%.",
+      "weak_setups_found": 5,
+      "data_stale_hours": 602.8,
+      "status": "FROZEN \u2014 no new trade data. 602.8h offline. New weak_setup: EVENING_SESSION_18_24UTC.",
+      "new_this_run": "EVENING_SESSION_18_24UTC reclassified from HIGH_EDGE to WEAK_SETUP (33-36% WR). EVENING_session_boost de-escalated 80%->20%.",
       "active_high_edges": [
         "ETH+trending: 71-80% WR, +$9.49/trade \u2014 +8pt boost active (80% gate)",
         "BTC+trending: 80% WR n=5, +$8.98/trade \u2014 +8pt boost active (80% gate)",
         "BTC_SHORT@90%+: 67% WR, +$102.92/trade EV, n=43 \u2014 +10pt boost active (80% gate)",
         "HYPE+unknown: 83% WR n=6 \u2014 +5pt probe at 20% gate",
-        "Morning 06-12 UTC: 75% WR \u2014 primary target (window opens in T-5.8h)"
+        "Morning 06-12 UTC: 75% WR \u2014 primary target (window opens in T-4.9h)"
       ],
       "active_blockers": [
         "HYPE_LONG: hard_block (23% WR, -$77.26)",
         "SOL_LONG: hard_block (24% WR, -$21.89)",
         "HYPE_SHORT: veto (-$16.65/trade EV) \u2014 0/3 correct live (ACCURACY WATCH)",
         "NIGHT 00-06 UTC: block (19% WR, -$136.83)",
-        "BTC_SHORT@70-80%: -20pt penalty active"
+        "BTC_SHORT@70-80%: -20pt penalty active",
+        "EVENING 18-24 UTC: DOWNGRADED from boost to probe (gate 80%->20%)"
       ]
     },
     "daily_synthesis": {
       "date": "2026-05-19",
       "is_eod": false,
-      "run_time_utc": "00:11",
-      "report_generated": true,
-      "report_path": "bot/data/sessions/daily_synthesis_2026-05-19.json",
+      "run_time_utc": "01:07",
+      "report_generated": false,
       "today_trades": 0,
-      "anomalies_found": 6,
+      "anomalies_found": 7,
       "anomalies": [
         {
           "type": "BOT_OFFLINE_DAY_26",
           "severity": "CRITICAL",
-          "value": "601.9h offline. Day 26 begins."
+          "value": "602.8h offline. Day 26. Each hour = ~$2.3-4.7 lost morning alpha."
         },
         {
-          "type": "MORNING_WINDOW_7TH_APPROACHING",
+          "type": "MORNING_WINDOW_7TH_T4_9H",
           "severity": "CRITICAL",
-          "value": "T-5.8h. Restart deadline 05:30 UTC."
+          "value": "T-4.9h until 7th morning window (06:00-12:00 UTC May 19). DEADLINE: 05:30 UTC."
         },
         {
           "type": "CONSECUTIVE_LOSSES_4",
           "severity": "MEDIUM",
-          "value": "4 consecutive losses. Soft-start required."
+          "value": "4 consecutive losses. Soft-start required on restart."
         },
         {
           "type": "HYPE_SHORT_VETO_ACCURACY_WATCH",
@@ -105,19 +106,25 @@
         {
           "type": "AB_RESULT_TRACKER_CODE_P0",
           "severity": "HIGH",
-          "value": "14 gates active, all treatment_wr=null. Graduation blocked."
+          "value": "14+ gates active, all treatment_wr=null. Graduation blocked. P0 dev ~4h."
         },
         {
           "type": "DATA_GAP_STRUCTURAL",
           "severity": "HIGH",
-          "value": "snapshot_entry + llm_regime columns missing. 12 rules unmeasurable."
+          "value": "snapshot_entry + llm_regime columns missing. 12+ rules unmeasurable."
+        },
+        {
+          "type": "EVENING_BOOST_POST_DEDUP_CONFLICT",
+          "severity": "HIGH",
+          "value": "NEWLY DETECTED THIS RUN: EVENING_session_boost was at 80% gate with invalidated evidence (dedup pruning removed supporting entries). De-escalated to 20% probe. Prevents ~$0.3-0.8/trade harm at scale."
         }
       ],
       "tomorrow_focus": [
-        "RESTART before 05:30 UTC May 19 (THIS IS TODAY \u2014 window in T-5.8h)",
+        "CRITICAL: RESTART before 05:30 UTC May 19 (T-4.9h)",
         "Soft-start: 50% sizing, 3x max leverage, ETH/BTC trending, first 5 trades",
+        "EVENING trades: EVENING_session_boost now at 20% probe \u2014 observe impact",
         "Verify EXIT_AGENT_PROMPT_AMENDMENT on first BTC/ETH long in trending",
-        "Graduate idea_98fac4ad \u2192 SIDE_BIAS_ENFORCEMENT_V2 (gate=20%)",
+        "Graduate idea_98fac4ad \u2192 SIDE_BIAS_ENFORCEMENT_V2 (gate=20%) after 20 live trades",
         "DEV P0: AB_RESULT_TRACKER_CODE (~4h)",
         "DEV P1: snapshot_entry + llm_regime columns (~2h)"
       ]
@@ -126,7 +133,7 @@
       "swaps_recommended": 0,
       "potential_savings": "$0.00",
       "cost_tracker_available": false,
-      "status": "SKIPPED \u2014 no cost_tracker.json (bot offline 601.9h). Architecture optimal.",
+      "status": "SKIPPED \u2014 no cost_tracker.json (bot offline 602.8h). Architecture optimal.",
       "current_routing": {
         "regime": "Haiku \u2014 CORRECT",
         "risk": "Haiku \u2014 CORRECT",
@@ -141,44 +148,43 @@
   },
   "high_priority_findings": [
     {
-      "subsystem": "daily_synthesis",
-      "severity": "CRITICAL",
-      "finding": "MORNING_WINDOW_7TH_APPROACHING: 06:00-12:00 UTC May 19 is T-5.8h away. 7th consecutive miss if bot not restarted by 05:30 UTC. Cumulative alpha lost: ~$1,456-2,938. Single-day opportunity: ~$56-113. Bot is READY \u2014 all fixes live.",
-      "action": "RESTART NOW. Soft-start: 50% sizing, 3x max leverage, ETH/BTC trending, first 5 trades."
-    },
-    {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "HIGH_LEV_10X_FORENSICS_BLOCK rule added this run (conf=80%). Blocks leverage > 6x from being applied, invalidating idea_f36e9743's 10x tier. Evidence: 6-10x leverage = -$0.38/trade on 91 trades. 14 total gates now active (all treatment_wr=null pending AB_RESULT_TRACKER implementation).",
-      "action": "On restart: verify no trade attempts leverage > 6x. AB_RESULT_TRACKER_CODE remains P0 (~4h dev)."
+      "finding": "EVENING_BOOST_POST_DEDUP_CONFLICT (conf=82%): EVENING_session_boost rule was at 80% gate boosting evening signals with invalidated evidence. After INSIGHTS_DEDUP_PRUNING (108->19 entries, 2026-05-18) removed 89 duplicate entries, the supporting data for 62-65% evening WR is gone. Internal baseline_wr=0.36 in the rule itself confirms real WR = 36%, not 62-65%. Meta_learning independently confirmed evening = 33% WR (n=27). Rule was actively harming 80% of evening trade decisions.",
+      "action": "RESOLVED THIS RUN: EVENING_session_boost de-escalated 80%->20%. Monitor outcome_tracking on restart."
     },
     {
-      "subsystem": "live_injection",
-      "severity": "MEDIUM",
-      "finding": "idea_98fac4ad (SIDE_BALANCE_ENFORCEMENT) still 'proposed' after 25 days. Evidence: 80% LONG bias, LONG WR = 38%. Graduating this to A/B gate at 20% would test a -5pt confidence penalty when >65% LONG, potentially shifting 12-15 trades per 100 from forced-LONG to neutral/SKIP. EV impact estimate: +$0.8-1.2/affected trade.",
-      "action": "Graduate idea_98fac4ad \u2192 SIDE_BIAS_ENFORCEMENT_V2 in graduated_rules.json at gate=20% on next run with bot active."
+      "subsystem": "daily_synthesis",
+      "severity": "CRITICAL",
+      "finding": "MORNING_WINDOW_7TH: 06:00-12:00 UTC May 19 is T-4.9h. 7th consecutive miss if bot not restarted by 05:30 UTC. Cumulative alpha lost: ~$1,512-3,048. Single-day opportunity: ~$56-113.",
+      "action": "RESTART NOW. Soft-start: 50% sizing, 3x max leverage, ETH/BTC trending, first 5 trades."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "MEDIUM",
-      "finding": "EXIT_AGENT_PROMPT_AMENDMENT live but untested. 87% noise stops in <2h confirmed in cached data. TRENDING_MIN_HOLD_2H gate at 50% ready. On restart: first BTC/ETH long in trending regime is the validation test \u2014 exit agent must NOT recommend close in first 2h without thesis break.",
-      "action": "Monitor first 3 BTC/ETH trending trades on restart. Log exit agent reasoning for each."
+      "finding": "EXIT_AGENT_PROMPT_AMENDMENT + TRENDING_MIN_HOLD_2H (50% gate) live but untested. 87% noise stops in <2h confirmed in frozen data. On restart: first BTC/ETH long in trending regime is the validation test.",
+      "action": "Monitor first 3 BTC/ETH trending trades on restart. Log exit agent reasoning."
+    },
+    {
+      "subsystem": "live_injection",
+      "severity": "MEDIUM",
+      "finding": "idea_98fac4ad (SIDE_BALANCE_ENFORCEMENT) at 0.72 confidence (0.03 below threshold). 80% LONG bias, LONG WR=38% \u2014 persistent structural issue. Cannot graduate without 20+ live trades to push confidence to 0.75+.",
+      "action": "On restart: track LONG/SHORT split in first 20 trades. Graduate if LONG <45% WR persists."
     }
   ],
   "run_summary": {
     "subsystems_completed": 5,
     "fixes_applied": 1,
-    "gates_active": 61,
+    "gates_active": 62,
     "high_priority_findings_count": 4,
-    "new_findings_this_run": 2,
+    "new_findings_this_run": 1,
     "eod_report_generated": false,
-    "daily_synthesis_generated": true,
+    "daily_synthesis_generated": false,
     "fixes_detail": [
-      "HIGH_LEV_10X_FORENSICS_BLOCK (gate=20%, conf=80%) \u2014 blocks >6x leverage per forensics",
-      "idea_f36e9743 10x tier: partially_invalidated"
+      "EVENING_BOOST_DEESCALATE_FIX (conf=82%): EVENING_session_boost gate 80%->20% \u2014 prevents inverted boost at scale"
     ],
-    "data_status": "FROZEN \u2014 bot offline 601.9h. Morning window in T-5.8h.",
-    "next_run_eta": "2026-05-19T01:11:06+00:00",
-    "critical_action": "RESTART BOT by 05:30 UTC May 19. 7th morning window at 06:00 UTC. All fixes live. System READY."
+    "data_status": "FROZEN \u2014 bot offline 602.8h. Morning window T-4.9h.",
+    "next_run_eta": "2026-05-19T02:07:41+00:00",
+    "critical_action": "RESTART BOT by 05:30 UTC May 19. 7th morning window at 06:00 UTC. T-4.9h. All fixes live."
   }
 }
