@@ -1,9 +1,9 @@
 {
-  "last_run": "2026-05-19T23:04:00+00:00",
+  "last_run": "2026-05-20T00:08:44+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
-  "fixes_applied_this_run": 3,
-  "gates_active": 88,
-  "total_applied_all_time": 46,
+  "fixes_applied_this_run": 1,
+  "gates_active": 77,
+  "total_applied_all_time": 47,
   "last_fix": {
     "fix_id": "STALE_SHADOW_RULES_FILE_RISK + MORNING_WINDOW_8TH_MISS_IMMINENT + CONF_60_70_CONFLICT_FREEZE_V2",
     "applied_at": "2026-05-19T23:04:00+00:00",
@@ -40,6 +40,14 @@
       "detail": "6 overlapping rules target 60-70% confidence bin with conflicting signals. Insight (n=67): +$2.19/trade. Runtime rule (n=123): -$18.86/trade. Escalation frozen by CONF_60_70_CONFLICT_FREEZE_V2 until live data resolves.",
       "action": "Do not escalate any 60-70% conf rules. Wait for CONF_60_70_rollback_probe (gate=20%) to collect n>=20 live trades post-restart.",
       "resolved_at": null,
+      "requires_human_review": false
+    },
+    {
+      "finding_id": "MORNING_WINDOW_9TH_MISS_DAY28",
+      "detected_at": "2026-05-20T00:08:44+00:00",
+      "severity": "HIGH",
+      "detail": "Day 27: 9th consecutive morning window (06:00-12:00 UTC May 20) \u2014 status: UPCOMING.",
+      "action": "RESTART NOW. Soft-start protocol active.",
       "requires_human_review": false
     }
   ],

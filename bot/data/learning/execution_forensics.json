@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-05-19T23:04:00+00:00",
+  "last_run": "2026-05-20T00:08:44+00:00",
   "data_available": true,
   "data_source": "Cached analysis (bot offline 626h, trades.csv = 0 rows). Counterfactuals (352 resolved). No new live data.",
   "avg_slippage": "UNKNOWN \u2014 snapshot_entry column still missing. Gap entering day 27. Every day deepens unmeasurable period.",
@@ -25,14 +25,15 @@
     }
   },
   "new_finding_this_run": {
-    "id": "STALE_SHADOW_FILE_READ_RISK",
-    "detail": "data/llm/graduated_rules.json (11 rules) is stale shadow of feedback/graduated_rules.json (109 rules). Prior forensics runs may have cross-referenced the wrong rules file. All forensics analysis now confirmed against feedback/ path.",
-    "severity": "MEDIUM",
-    "action": "Human: delete or redirect data/llm/graduated_rules.json. ~15 min. No trading impact."
+    "id": "ZERO_TRADE_BASELINE_RISK",
+    "detail": "Bot offline 27 days. When it restarts, there will be ZERO slippage baseline and ZERO regime tracking data for the first N trades. First 10-20 trades will operate fully blind on forensics. snapshot_entry P1 dev must be deployed ON RESTART.",
+    "severity": "HIGH",
+    "action": "Add snapshot_entry write at signal creation time. Zero-cost: just store signal.entry before broker fill."
   },
   "structural_gaps": [
     "snapshot_entry column missing (slippage unmeasurable \u2014 day 27)",
     "llm_regime column empty (12 regime rules unmeasurable)",
     "AB result tracker code missing (all 88 gated rules stalled)"
-  ]
+  ],
+  "days_offline": 27.0
 }
