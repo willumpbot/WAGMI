@@ -2339,6 +2339,24 @@
       },
       "adjustment": -13.0,
       "action": "penalize"
+    },
+    {
+      "rule_id": "CRITIC_PROMPT_BTC_LONG_BIAS",
+      "source": "perpetual_deep_dive_2026_05_20_0311 — model_optimization + execution_forensics",
+      "description": "BTC BUY directional bias added to Critic Agent prompt. 18% live WR on 17 trades unvetoed. Critic now defaults to CHALLENGE on any BTC BUY signal.",
+      "problem": "BTC LONG = 18% WR on 17 live trades (net negative EV). Critic Agent was passing all BTC LONG signals without challenge. No directional bias check existed.",
+      "fix_applied": "PROMPT_AMENDMENT — prompts.py CRITIC_AGENT_PROMPT: added BTC BUY to STRATEGY TRUST (default CHALLENGE, require 3+ red flags), added BTC BUY signal to RED FLAGS list.",
+      "status": "ACTIVE",
+      "confidence": 78,
+      "gate_percentage": 100,
+      "baseline_wr": 0.18,
+      "treatment_wr": null,
+      "sample_count": 17,
+      "applied_date": "2026-05-20T03:11:24+00:00",
+      "action": "Monitor BTC LONG execution rate post-restart. Should drop from ~100% pass-through to <40%.",
+      "expected_impact": "60-80% challenge rate on BTC LONG signals at Critic stage.",
+      "outcome_tracking": "PENDING_RESTART — bot offline",
+      "code_change": "bot/llm/agents/prompts.py: CRITIC_AGENT_PROMPT STRATEGY TRUST + RED FLAGS sections amended"
     }
   ],
   "rules_added_2026_04_26_1545_hourly": [
@@ -3627,6 +3645,24 @@
         "CONF_70_HARD_FLOOR",
         "SOL_STOP_MIN_0.9PCT"
       ]
+    },
+    {
+      "rule_id": "CRITIC_PROMPT_BTC_LONG_BIAS",
+      "source": "perpetual_deep_dive_2026_05_20_0311 — model_optimization + execution_forensics",
+      "description": "BTC BUY directional bias added to Critic Agent prompt. 18% live WR on 17 trades unvetoed. Critic now defaults to CHALLENGE on any BTC BUY signal.",
+      "problem": "BTC LONG = 18% WR on 17 live trades (net negative EV). Critic Agent has never vetoed a BTC LONG — no directional bias check existed. BTC+trend boost (rule_1777922205_0) was contaminating with 0/3 accuracy before counter added last run. Critic must now catch these upstream.",
+      "fix_applied": "PROMPT_AMENDMENT — prompts.py CRITIC_AGENT_PROMPT: added BTC BUY to STRATEGY TRUST (default CHALLENGE, require 3+ red flags), added BTC BUY signal to RED FLAGS list. Gate: no gate needed for prompt — applies to 100% of future Critic calls.",
+      "status": "APPLIED",
+      "confidence": 78,
+      "gate_percentage": 100,
+      "baseline_wr": 0.18,
+      "treatment_wr": null,
+      "sample_count": 17,
+      "applied_date": "2026-05-20",
+      "action": "Monitor BTC LONG outcomes post-restart. If WR improves to >35% after n>=20 (Critic filtering working), mark as effective. If WR stays <25%, escalate to full veto.",
+      "expected_impact": "Catching 60-80% of BTC LONG signals at Critic stage before execution. Prior: 100% pass-through. Estimated +$X/trade by blocking ~4-6 losing BTC LONG trades per 20-trade window.",
+      "outcome_tracking": "PENDING_RESTART — bot offline",
+      "code_change": "bot/llm/agents/prompts.py: CRITIC_AGENT_PROMPT STRATEGY TRUST + RED FLAGS sections amended"
     }
   ],
   "orphan_merge_2026_05_03_2106": {
@@ -3734,7 +3770,25 @@
       "All 109 rules stalled at 0 applications \u2014 AB_RESULT_TRACKER_CODE is P0 blocker"
     ]
   },
-  "total_rules": 115,
+  "total_rules": 116,
+  "run_log_2026_05_20_0311": {
+    "run_at": "2026-05-20T03:11:24+00:00",
+    "run_id": "perpetual_deep_dive_2026_05_20_0311",
+    "fixes_applied": [
+      "CRITIC_PROMPT_BTC_LONG_BIAS"
+    ],
+    "prior_run": "perpetual_deep_dive_2026_05_20_0211",
+    "hours_since_prior": 1.0,
+    "new_rule_count": 1,
+    "total_rule_count": 116,
+    "subsystem": "perpetual_improvement_deep_dive",
+    "key_findings": [
+      "CRITIC_PROMPT_BTC_LONG_BIAS applied: Critic now defaults to CHALLENGE on BTC BUY (18% WR, 17 trades). Code change to prompts.py.",
+      "MORNING_WINDOW T-169m: 2.8h until May 20 06:00 UTC window. ALERT <3H threshold crossed. 9th window.",
+      "Bot offline day 27.2. Cumulative alpha lost ~$2,012-4,066.",
+      "All subsystems nominal: no new trades data. Gap deepens."
+    ]
+  },
   "run_log_2026_05_20_0211": {
     "run_at": "2026-05-20T02:11:24.427606+00:00",
     "run_id": "perpetual_deep_dive_2026_05_20_0211",

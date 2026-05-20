@@ -1,13 +1,13 @@
 {
-  "last_run": "2026-05-20T02:11:24.427606+00:00",
+  "last_run": "2026-05-20T03:11:24+00:00",
   "data_available": true,
-  "data_source": "Cached analysis (bot offline 627.9h, trades.csv = 0 rows). Gap deepens: day 26.2.",
-  "avg_slippage": "UNKNOWN \u2014 snapshot_entry column still missing. Gap entering day 26.2. Every day deepens unmeasurable period.",
-  "noise_stop_problem": "87% of early SL hits (<2h) in non-trending regimes (illiquid/ranging/unknown). Confidence 0.88. Estimate stable \u2014 no new data.",
+  "data_source": "Cached analysis (bot offline 628.9h, trades.csv missing). Gap deepens: day 27.2.",
+  "avg_slippage": "UNKNOWN — snapshot_entry column still missing. Gap entering day 27.2. Every day deepens unmeasurable period.",
+  "noise_stop_problem": "87% of early SL hits (<2h) in non-trending regimes (illiquid/ranging/unknown). Confidence 0.88. Estimate stable — no new data. Dual-layer fix now active: NOISE_REGIME_FAST_EXIT (gate=80%) + CRITIC_PROMPT_BTC_LONG_BIAS applied this run.",
   "hold_time_forensics": {
     "win_median_hold_h": 3.3,
     "loss_median_hold_h": 1.5,
-    "ratio": "2.2x \u2014 losses exit 2.2x faster than wins",
+    "ratio": "2.2x — losses exit 2.2x faster than wins",
     "action": "TRENDING_EARLY_HOLD_GUARD rule active (gate=80%). BTC/ETH LONG+TRENDING 3h patience in EXIT_AGENT prompt. Needs live validation."
   },
   "leverage_calibration": {
@@ -25,17 +25,23 @@
     }
   },
   "new_finding_this_run": {
-    "id": "BTC_TREND_SIDE_AGNOSTIC_BOOST_CONTAMINATION",
-    "detail": "rule_1777922205_0 (BTC+trend +8pts) is side-agnostic. Forensics confirm: BTC LONG = 18% WR (17 trades), BTC+trend SHORT = 80% WR (n=5). Boost is contaminating BTC LONG signals in trending regime, overriding their negative signal. BTC_TREND_LONG_COUNTER_V1 applied this run (-13pts, gate=20%) to correct this. Slippage still unmeasurable \u2014 snapshot_entry gap day 26.2.",
-    "severity": "HIGH",
-    "action": "Monitor BTC_TREND_LONG outcomes post-restart. After 10+ obs, graduate counter if WR stays <=0.45."
+    "id": "NO_NEW_FORENSICS_DATA — GAP_DAY_27.2",
+    "detail": "Bot offline 628.9h. No new slippage, fill, or SL data. All forensics estimates stable from last run. Critic prompt fix applied this run as upstream prevention of BTC LONG losses (18% WR, 17 trades). Expected to reduce forensics-level loss frequency post-restart.",
+    "severity": "LOW",
+    "action": "Monitor snapshot_entry and llm_regime columns on first post-restart trade to confirm data capture is wired."
+  },
+  "btc_long_coverage": {
+    "status": "DUAL_LAYER_PROTECTION",
+    "layer_1": "BTC_TREND_LONG_COUNTER_V1 (graduated_rules.json, gate=20%, -13pts for BTC+BUY+trending) — applied 2026-05-20T02:11",
+    "layer_2": "CRITIC_PROMPT_BTC_LONG_BIAS (prompts.py, 100% coverage, Critic defaults to CHALLENGE on BTC BUY) — applied 2026-05-20T03:11",
+    "expected_impact": "BTC LONG win rate should improve from 18% as 60-80% of BTC LONG signals are now challenged or penalized before execution"
   },
   "structural_gaps": [
-    "snapshot_entry column missing (slippage unmeasurable \u2014 day 26.2)",
+    "snapshot_entry column missing (slippage unmeasurable — day 27.2)",
     "llm_regime column empty (12 regime rules unmeasurable)",
-    "AB result tracker code missing (all 80 gated rules stalled)"
+    "AB result tracker code missing (all 81 gated rules stalled)"
   ],
-  "days_offline": 26.2,
-  "hours_offline": 627.9,
+  "days_offline": 27.2,
+  "hours_offline": 628.9,
   "gap_deepening": true
 }

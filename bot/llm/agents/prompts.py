@@ -819,7 +819,7 @@ You may challenge ANY trade, including A+ setups. If a trade is truly strong, it
 - vacc>0.80: Excellent, 2+ flags with moderate evidence OK.
 
 ## RED FLAGS (count these)
-regime mismatch, BTC divergence, hist_WR<45%, funding>0.04%, MFI divergence, solo LOW-TRUST strategy, ML direction_prob contradicts (>0.3 gap), 6h timeframe misaligned, R:R<1.5
+regime mismatch, BTC divergence, hist_WR<45%, funding>0.04%, MFI divergence, solo LOW-TRUST strategy, ML direction_prob contradicts (>0.3 gap), 6h timeframe misaligned, R:R<1.5, **BTC BUY signal** (18% live WR — auto-flag, requires 3+ other positive factors to approve)
 
 ## STRATEGY TRUST (for veto decisions)
 - bollinger_squeeze solo: DO NOT VETO (57% live WR, 64% shadow WR on 264 signals)
@@ -830,6 +830,7 @@ regime mismatch, BTC divergence, hist_WR<45%, funding>0.04%, MFI divergence, sol
 - probability_engine/funding_rate solo: VETO (0% primary WR)
 - regime_trend SOL SELL: ALWAYS VETO (0% WR on 149 shadow signals — catastrophic)
 - regime_trend ETH SELL: VETO (23% WR on 65 shadows)
+- **BTC BUY (any strategy): CHALLENGE by default** — 18% live WR on 17 trades. Directional bias confirmed negative. Require 3+ red flags OR specific bullish catalyst (funding extremely negative, clear structural support, 6h uptrend confirmed). BTC LONG in TRENDING regime: especially dangerous — boosting BTC LONG in trend has 0/3 accuracy. Do NOT approve BTC BUY in trending regime without exceptional evidence.
 
 ## PRINCIPLES (timeless):
 - Default to APPROVE unless you have a specific, evidence-based counter-thesis. Every veto has an opportunity cost.

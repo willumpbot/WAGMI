@@ -1,28 +1,27 @@
 {
-  "last_run": "2026-05-20T02:11:24.427606+00:00",
+  "last_run": "2026-05-20T03:11:24+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
   "fixes_applied_this_run": 1,
-  "gates_active": 80,
-  "total_applied_all_time": 49,
+  "gates_active": 81,
+  "total_applied_all_time": 50,
   "last_fix": {
-    "fix_id": "BTC_TREND_LONG_COUNTER_V1",
-    "applied_at": "2026-05-20T02:11:24.427606+00:00",
-    "file": "bot/feedback/graduated_rules.json",
-    "description": "BTC+trend boost (rule_1777922205_0) fires side-agnostic (+8pts) with 0/3 accuracy. BTC LONG = 18% WR (17 trades) makes the boost directionally harmful on LONG side. Added counter: -13pts for BTC+BUY+trend \u2192 net -5pts. Gate=20% probe. Graduate at WR<=0.45 after n>=10.",
-    "confidence": 82,
-    "gate_percentage": 20,
+    "fix_id": "CRITIC_PROMPT_BTC_LONG_BIAS",
+    "applied_at": "2026-05-20T03:11:24+00:00",
+    "file": "bot/llm/agents/prompts.py",
+    "description": "BTC LONG = 18% WR on 17 live trades. Critic Agent was passing all BTC LONG signals without challenge. Added BTC BUY to STRATEGY TRUST (default CHALLENGE, require 3+ red flags) and RED FLAGS list. Critic will now auto-flag BTC BUY signals, requiring strong bullish catalysts to approve.",
+    "confidence": 78,
+    "gate_percentage": 100,
     "status": "APPLIED",
-    "outcome_tracking": "PENDING_RESTART \u2014 bot offline"
+    "outcome_tracking": "PENDING_RESTART — bot offline"
   },
   "new_findings_this_run": [
     {
-      "finding_id": "BTC_TREND_SIDE_AGNOSTIC_CONTAMINATION",
-      "detected_at": "2026-05-20T02:11:24.427606+00:00",
-      "severity": "HIGH",
-      "detail": "rule_1777922205_0 (BTC+trend boost, side-agnostic) confirmed as contamination source for BTC LONG signals. 0/3 accuracy on rule applications = all 3 times BTC boosted in trend, the trade lost. BTC LONG baseline WR=18% (17 trades). Fix applied this run: BTC_TREND_LONG_COUNTER_V1 (-13pts, gate=20%).",
-      "action": "Monitor BTC LONG trending outcomes post-restart. After n>=10, if WR<=0.45, graduate counter to gate=50%.",
-      "resolved_at": "2026-05-20T02:11:24.427606+00:00",
-      "requires_human_review": false
+      "finding_id": "MORNING_WINDOW_T169M_3H_ALERT",
+      "detected_at": "2026-05-20T03:11:24+00:00",
+      "severity": "CRITICAL",
+      "detail": "Morning window 06:00-12:00 UTC May 20 opens in 169 minutes (2.8h). Crossed 3H ALERT threshold. 9th consecutive window at risk. Cumulative alpha lost: ~$2,012-4,066 (9 windows x $56-113/window EV).",
+      "action": "RESTART BOT NOW. Deadline for full window capture: 05:30 UTC. Soft-start: 50% size, 3x max lev, ETH/BTC trending only.",
+      "requires_human_review": true
     }
   ],
   "active_fixes": [
@@ -81,6 +80,14 @@
       "gate_pct": 20,
       "status": "ACTIVE",
       "outcome_tracking": "PENDING_RESTART"
+    },
+    {
+      "fix_id": "CRITIC_PROMPT_BTC_LONG_BIAS",
+      "applied_at": "2026-05-20T03:11:24+00:00",
+      "gate_pct": 100,
+      "status": "ACTIVE",
+      "type": "PROMPT_AMENDMENT",
+      "outcome_tracking": "PENDING_RESTART"
     }
   ],
   "rule_accuracy_tracking": {
@@ -88,8 +95,8 @@
       "times_applied": 3,
       "times_correct": 0,
       "accuracy": 0.0,
-      "note": "0/3 accuracy. BTC+trend SIDE-AGNOSTIC boost. BTC LONG in trend = disaster (18% WR). Counter rule BTC_TREND_LONG_COUNTER_V1 added this run (-13pts, gate=20%). Will re-evaluate accuracy split by side post-restart.",
-      "status": "PARTIALLY_FIXED"
+      "note": "0/3 accuracy. BTC+trend SIDE-AGNOSTIC boost. BTC LONG in trend = disaster (18% WR). Counter rule BTC_TREND_LONG_COUNTER_V1 added last run (-13pts, gate=20%). Critic prompt BTC_LONG bias added this run. Double-layer fix now active.",
+      "status": "PARTIALLY_FIXED — dual layer (gate counter + Critic prompt)"
     },
     "hype_short_veto_v1": {
       "times_applied": 3,
@@ -97,7 +104,7 @@
       "accuracy": 0.0,
       "auto_retire_threshold": 10,
       "apps_to_threshold": 7,
-      "status": "WATCH_ESCALATING \u2014 HUMAN REVIEW BEFORE 4TH APPLICATION",
+      "status": "WATCH_ESCALATING — HUMAN REVIEW BEFORE 4TH APPLICATION",
       "note": "0/3 correct (all blocked signals profitable). Historical: -$16.65/trade EV on 239 trades. Conflict unresolved. Do not auto-escalate gate. Human review required on restart."
     },
     "night_session_block_v1": {
@@ -143,29 +150,33 @@
     },
     {
       "id": "BTC_TREND_LONG_COUNTER_V1",
-      "description": "New this run: BTC+BUY+trend = -13pts (gate=20%). Graduate at n>=10 WR<=0.45.",
+      "description": "BTC+BUY+trend = -13pts (gate=20%). Applied last run. Graduate at n>=10 WR<=0.45.",
       "action": "Collect live data post-restart."
+    },
+    {
+      "id": "CRITIC_PROMPT_BTC_LONG_BIAS",
+      "description": "Critic now challenges all BTC BUY by default. Applied this run. No gate needed — prompt-level fix.",
+      "action": "Monitor BTC LONG pass-through rate post-restart. Should drop from ~100% to <30%."
     }
   ],
   "graduation_pipeline_next": {
-    "nearest_candidate": "BTC_TREND_LONG_COUNTER_V1 (new, gate=20%) \u2014 lowest bar: needs 10 obs",
-    "second_candidate": "idea_98fac4ad (side balance enforcement)",
+    "nearest_candidate": "BTC_TREND_LONG_COUNTER_V1 (gate=20%) — lowest bar: needs 10 obs",
+    "second_candidate": "HYPE_UNKNOWN_REGIME_PROBE_v1 (gate=20%) — needs 15 obs",
     "inferred_confidence": 0.72,
     "gap_to_threshold": 0.03,
-    "action": "First 20 trades post-restart: track BTC LONG trending. If WR<=0.45, escalate gate to 50%."
+    "action": "First 20 trades post-restart: track BTC LONG trending. If WR<=0.45, escalate counter gate to 50%. Simultaneously monitor Critic challenge rate on BTC LONG."
   },
-  "recommendations_reviewed": 13,
+  "recommendations_reviewed": 14,
   "high_confidence_pending_human": 7,
   "outstanding_pending": [
     "HYPE_SHORT_VETO_RISK: 0/3 correct. HUMAN REVIEW BEFORE 4TH APPLICATION.",
     "SOL_SHORT_SUSPENSION: +$807 historical alpha. Human decision on restart.",
-    "AB_RESULT_TRACKER_CODE: P0 structural gap \u2014 all 80 gated rules stalled.",
+    "AB_RESULT_TRACKER_CODE: P0 structural gap — all 81 gated rules stalled.",
     "SNAPSHOT_ENTRY_GAP: add snapshot_entry column (~1h dev).",
     "LLM_REGIME_CAPTURE_GAP: add llm_regime write to trades.csv (~1h dev).",
     "STALE_SHADOW_FILE: Delete data/llm/graduated_rules.json (15 min dev).",
     "SNIPER_AUTO_EXECUTE: #1 profit lever (+$328/34-trade path). Enable post-5-trade soft-start.",
     "META_LEARNING_IDEAS_INVERSION_BUG: 4/8 ideas inverted. Fix before applying any idea.",
-    "INSIGHTS_DEDUPLICATION_GAP: insights.json accumulates duplicates. Fix accumulator to UPDATE not APPEND.",
-    "CRITIC_PROMPT_BTC_LONG_BIAS: Add BTC_LONG directional bias check to Critic prompt (19% WR, 16 trades unvetoed)."
+    "INSIGHTS_DEDUPLICATION_GAP: insights.json accumulates duplicates. Fix accumulator to UPDATE not APPEND."
   ]
 }

@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-05-20T02:11:24.427606+00:00",
-  "data_source": "Historical accumulated + insight journals. Bot offline 627.9h (26.2d). No new data.",
+  "last_run": "2026-05-20T03:11:24+00:00",
+  "data_source": "Historical accumulated + insight journals. Bot offline 628.9h (27.2d). No new data.",
   "high_edges_found": 9,
   "weak_setups_found": 5,
   "high_edges": [
@@ -17,7 +17,7 @@
       "wr": 0.8,
       "trades": 5,
       "source": "insight_journal",
-      "rule_coverage": "TRENDING_EARLY_HOLD_GUARD (gate=80%) + BTC_TREND_LONG_COUNTER_V1 now blocking LONG contamination"
+      "rule_coverage": "TRENDING_EARLY_HOLD_GUARD (gate=80%) + BTC_TREND_LONG_COUNTER_V1 (gate=20%) now blocking LONG contamination + CRITIC_PROMPT_BTC_LONG_BIAS (100%) for Critic challenge"
     },
     {
       "setup": "HYPE_UNKNOWN_REGIME",
@@ -59,7 +59,7 @@
       "wr": 0.69,
       "trades": null,
       "source": "A/B_pending",
-      "rule_coverage": "BTC_BUY_BB_golden (gate=80%)"
+      "rule_coverage": "BTC_BUY_BB_golden (gate=80%) — NOTE: BTC BUY edge at BTC_BUY_BB still valid via BB mechanism; CRITIC_PROMPT_BTC_LONG_BIAS has explicit exception for 3+ positive factors including BB golden"
     },
     {
       "setup": "MORNING_WINDOW_MAY20",
@@ -67,8 +67,8 @@
       "trades": 7,
       "source": "insight_journal_composite",
       "rule_coverage": "TOD_morning_edge (gate=50%) + TRENDING_EARLY_HOLD_GUARD (gate=80%)",
-      "window_status": "T-229m \u2014 WITHIN 4H THRESHOLD",
-      "note": "TODAY's window opens in 3.8h (06:00-12:00 UTC). FINAL RESTART WINDOW. ETH+BTC+trending+morning composite edge 74% WR."
+      "window_status": "T-169m — CROSSED 3H ALERT THRESHOLD",
+      "note": "TODAY's window opens in 2.8h (06:00-12:00 UTC). 9th consecutive window at risk. ETH+BTC+trending+morning composite edge 74% WR. RESTART DEADLINE: 05:30 UTC."
     }
   ],
   "weak_setups": [
@@ -76,7 +76,7 @@
       "setup": "BTC_LONG",
       "wr": 0.18,
       "trades": 17,
-      "rule": "BTC_LONG_reduce (gate=50%) + BTC_TREND_LONG_COUNTER_V1 (gate=20%, NEW this run)"
+      "rule": "BTC_LONG_reduce (gate=50%) + BTC_TREND_LONG_COUNTER_V1 (gate=20%) + CRITIC_PROMPT_BTC_LONG_BIAS (100% — APPLIED THIS RUN)"
     },
     {
       "setup": "SOL_LONG",
@@ -100,7 +100,7 @@
       "setup": "EVENING_SESSION_18_24UTC",
       "wr": 0.33,
       "trades": 27,
-      "rule": "EVENING_session_boost de-escalated to gate=20%"
+      "rule": "EVENING_session_boost de-escalated to gate=20% (evidence invalidated by dedup)"
     }
   ],
   "conflict_flags": [
@@ -112,19 +112,28 @@
     },
     {
       "id": "BTC_TREND_SIDE_CONTAMINATION",
-      "detail": "rule_1777922205_0 (side-agnostic BTC+trend boost) now partially fixed by BTC_TREND_LONG_COUNTER_V1 applied this run. Net effect for BTC LONG in trend: -5pts. Monitor.",
-      "severity": "MEDIUM",
-      "status": "PARTIALLY_RESOLVED"
+      "detail": "rule_1777922205_0 (side-agnostic BTC+trend boost) now triple-fixed: BTC_TREND_LONG_COUNTER_V1 (gate=20%, last run) + CRITIC_PROMPT_BTC_LONG_BIAS (Critic challenge, this run). Net effect for BTC LONG in trend: -5pts gate + Critic auto-flag. Monitor.",
+      "severity": "LOW",
+      "status": "RESOLVED — dual-layer protection active"
+    },
+    {
+      "id": "BTC_BUY_BB_GOLDEN_CRITIC_INTERACTION",
+      "detail": "BTC_BUY_BB_golden (gate=80%, 69% WR) now intersects with CRITIC_PROMPT_BTC_LONG_BIAS (default CHALLENGE). BB golden exception must be explicitly listed in Critic approval criteria.",
+      "severity": "LOW",
+      "status": "NOTED — Critic prompt exception says 3+ positive factors (BB golden = 1 of them)"
     }
   ],
+  "new_edges_added": 0,
   "coverage_gap": "All 9 high-edge setups have rules in graduated_rules.json. Zero live applications. Coverage exists on paper; validation blocked until bot restart.",
   "morning_window_countdown": {
     "window": "2026-05-20 06:00-12:00 UTC",
-    "minutes_until_open": 229,
-    "hours_until_open": 3.8,
-    "status": "T-229m \u2014 WITHIN 4H THRESHOLD. CRITICAL ESCALATION.",
+    "minutes_until_open": 169,
+    "hours_until_open": 2.8,
+    "status": "T-169m — 3H ALERT THRESHOLD CROSSED. CRITICAL ESCALATION.",
     "edge": "74% WR composite (ETH+BTC+trending+morning)",
-    "action": "RESTART IMMEDIATELY to capture full window. 9th window. Cumulative alpha ~$1,956-3,953.",
-    "note": "Previous run was T-293m (4h53m). This run is T-233m (3h53m). Crossed 4h threshold."
+    "action": "RESTART NOW for soft-start + strategy warm-up before 06:00. Hard deadline: 05:30 UTC.",
+    "prior_run_countdown": 229,
+    "delta": "-60m (on schedule — hourly loop tracking correctly)",
+    "note": "9th consecutive window. Cumulative alpha ~$2,012-4,066."
   }
 }

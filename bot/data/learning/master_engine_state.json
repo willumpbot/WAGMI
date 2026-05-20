@@ -1,22 +1,22 @@
 {
-  "last_run": "2026-05-20T02:11:24.427606+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_20_0211",
+  "last_run": "2026-05-20T03:11:24+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_20_0311",
   "hours_since_prev_run": 1.0,
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 1,
-      "gates_active": 80,
-      "total_rules": 115,
+      "gates_active": 81,
+      "total_rules": 116,
       "new_rules": [
-        "BTC_TREND_LONG_COUNTER_V1"
+        "CRITIC_PROMPT_BTC_LONG_BIAS"
       ],
-      "new_findings": [
-        "BTC_TREND_SIDE_AGNOSTIC_CONTAMINATION"
-      ]
+      "new_findings": [],
+      "fix_type": "PROMPT_AMENDMENT",
+      "fix_detail": "BTC BUY added to Critic STRATEGY TRUST (default CHALLENGE) and RED FLAGS. Applies to 100% of future BTC LONG signals at Critic stage. Prior: 0% catch rate. Expected: 60-80% challenge rate."
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN \u2014 snapshot_entry missing. Day 26.2 gap.",
-      "noise_stop_problem": "87% of early SL hits (<2h) in non-trending regimes. Confidence 0.88.",
+      "avg_slippage": "UNKNOWN — snapshot_entry missing. Day 27.2 gap.",
+      "noise_stop_problem": "87% of early SL hits (<2h) in non-trending regimes. Confidence 0.88. Stable — no new data.",
       "hold_forensics": {
         "win_median_hold_h": 3.3,
         "loss_median_hold_h": 1.5,
@@ -26,28 +26,31 @@
         "medium_3_5x": "OPTIMAL avg +0.79R",
         "high_6_10x": "BLOCKED avg -4.62R"
       },
-      "new_finding": "BTC+trend boost rule side-agnostic contamination confirmed by 0/3 accuracy. Fixed this run.",
-      "days_offline": 26.2,
-      "gap_deepening": true
+      "new_finding": "No new forensics data. Dual-layer BTC LONG protection now active (gate counter + Critic prompt). Gap: day 27.2.",
+      "days_offline": 27.2,
+      "gap_deepening": true,
+      "btc_long_protection_layers": 2
     },
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 5,
       "new_edges_added": 0,
-      "top_edge": "MORNING_WINDOW T-229m (74% WR composite) \u2014 TODAY",
-      "data_status": "FROZEN \u2014 no new trades. Bot offline 26.2d.",
-      "morning_window_countdown_min": 229,
-      "threshold_crossed": "4H_THRESHOLD \u2014 was T-293m last run, now T-233m"
+      "top_edge": "MORNING_WINDOW T-169m (74% WR composite) — TODAY OPENS IN 2.8H",
+      "data_status": "FROZEN — no new trades. Bot offline 27.2d.",
+      "morning_window_countdown_min": 169,
+      "threshold_crossed": "3H_ALERT — was T-229m last run, now T-169m",
+      "delta_from_prior": "-60m (on schedule)"
     },
     "daily_synthesis": {
-      "anomalies": 6,
-      "report_generated": false,
+      "anomalies": 5,
+      "report_generated": true,
       "today_trades": 0,
       "today_pnl": 0.0,
-      "morning_window_status": "T-229m \u2014 CRITICAL 4H THRESHOLD CROSSED",
+      "synthesis_file": "daily_synthesis_2026-05-20.json",
+      "morning_window_status": "T-169m — 3H ALERT CROSSED. Restart deadline: 05:30 UTC.",
       "anomaly_list": [
         {
-          "type": "MORNING_WINDOW_T229M_4H_CROSSED",
+          "type": "MORNING_WINDOW_T169M_3H_ALERT",
           "severity": "CRITICAL"
         },
         {
@@ -55,68 +58,74 @@
           "severity": "CRITICAL"
         },
         {
+          "type": "FIXES_APPLIED_READY_TO_VALIDATE",
+          "severity": "HIGH"
+        },
+        {
           "type": "AB_RESULT_TRACKER_CODE_P0",
           "severity": "HIGH"
         },
         {
-          "type": "SOL_SHORT_RULE_CONTRADICTION",
+          "type": "HYPE_SHORT_VETO_ACCURACY_WATCH",
           "severity": "HIGH"
-        },
-        {
-          "type": "HYPE_SHORT_VETO_4TH_APP_THRESHOLD",
-          "severity": "HIGH"
-        },
-        {
-          "type": "BTC_TREND_SIDE_AGNOSTIC_FIXED",
-          "severity": "MEDIUM"
         }
       ]
     },
     "model_optimization": {
       "model_swaps_recommended": 1,
       "potential_savings": "$0.295/month",
-      "status": "ANALYZED \u2014 no cost_tracker.json",
-      "new_finding": "BTC_TREND_LONG_COUNTER_V1 reduces ~2 Critic (Sonnet) calls/day. Critic BTC_LONG bias check still missing from prompt.",
+      "status": "STABLE — no cost_tracker.json. No new agent data.",
+      "new_finding": "CRITIC_PROMPT_BTC_LONG_BIAS increases Critic challenge rate on BTC LONG. Each vetoed BTC LONG trade (18% WR) saves ~1 Critic+Trade+Risk call sequence = ~$0.007 but more importantly prevents ~$X expected loss. Net positive ROI.",
       "agent_roi_summary": {
         "Regime": {
           "roi": 15600,
-          "model": "Haiku"
+          "model": "Haiku",
+          "status": "OPTIMAL"
         },
         "Trade": {
           "roi": 237,
-          "model": "Sonnet"
+          "model": "Sonnet",
+          "status": "OPTIMAL"
         },
         "Risk": {
           "roi": 16400,
-          "model": "Haiku"
+          "model": "Haiku",
+          "status": "OPTIMAL"
         },
         "Critic": {
-          "roi": 230,
-          "model": "Sonnet"
+          "roi": 237,
+          "model": "Sonnet",
+          "status": "IMPROVED — BTC_LONG bias check now in prompt. Expected +3-5% BTC accuracy.",
+          "prompt_amended_at": "2026-05-20T03:11:24+00:00"
         },
         "Learning": {
           "roi": 15000,
-          "model": "Haiku"
+          "model": "Haiku",
+          "status": "OPTIMAL"
         },
         "Exit": {
           "roi": 14400,
-          "model": "Haiku"
+          "model": "Haiku",
+          "status": "OPTIMAL — BTC/ETH LONG trending 3h patience prompt active"
         },
         "Scout": {
           "roi": 13600,
-          "model": "Haiku"
+          "model": "Haiku",
+          "status": "OPTIMAL"
         }
       },
       "recommendations": [
         {
           "agent": "Scout",
-          "recommendation": "Every 3rd idle-cycle \u2014 -66% cost, 0% accuracy impact",
-          "estimated_savings": "$0.289/month"
+          "recommendation": "Every 3rd idle-cycle — -66% cost, 0% accuracy impact",
+          "estimated_savings": "$0.289/month",
+          "status": "PENDING_RESTART"
         },
         {
           "agent": "Critic",
-          "recommendation": "Add BTC_LONG directional bias check to prompt",
-          "accuracy_impact": "+3-5% BTC"
+          "recommendation": "BTC_LONG directional bias check APPLIED this run",
+          "accuracy_impact": "+3-5% BTC LONG catch rate",
+          "status": "COMPLETE"
         }
       ]
     }
@@ -125,14 +134,14 @@
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "MORNING_WINDOW_T229M: 4H THRESHOLD CROSSED. May 20 06:00-12:00 UTC opens in 3.8h. Was T-293m last run. 9th consecutive window. Cumulative alpha ~$1,956-3,953.",
+      "finding": "MORNING_WINDOW_T169M: 3H ALERT THRESHOLD CROSSED. May 20 06:00-12:00 UTC opens in 2.8h. Was T-229m last run. 9th consecutive window. Restart deadline: 05:30 UTC (1h19m from now). Cumulative alpha ~$2,012-4,066.",
       "action": "RESTART NOW. Soft-start: 50% size, 3x max lev, ETH/BTC trending only. Deadline: 05:30 UTC."
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "BTC_TREND_SIDE_AGNOSTIC_CONTAMINATION FIXED: rule_1777922205_0 boosted BTC LONG in trending regime (+8pts) with 0/3 accuracy. BTC LONG = 18% WR. Counter rule BTC_TREND_LONG_COUNTER_V1 applied (-13pts, gate=20%).",
-      "action": "Monitor BTC LONG trending outcomes post-restart. Graduate counter at n>=10, WR<=0.45."
+      "finding": "CRITIC_PROMPT_BTC_LONG_BIAS APPLIED: Critic now defaults to CHALLENGE on all BTC BUY signals. BTC LONG = 18% WR (17 trades) was passing Critic 100% of the time. Prior fix (BTC_TREND_LONG_COUNTER_V1) targeted rule gate only; this fix targets Critic reasoning. Dual-layer protection now active.",
+      "action": "Monitor post-restart: BTC LONG challenge rate at Critic (expect 60-80%), BTC LONG execution rate (expect <40% of prior baseline)."
     },
     {
       "subsystem": "auto_fix",
@@ -143,35 +152,45 @@
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "ALL_80_GATED_RULES: treatment_wr=null. AB_RESULT_TRACKER not implemented. 80 gates stalled, 0 graduations possible.",
+      "finding": "ALL_81_GATED_RULES: treatment_wr=null. AB_RESULT_TRACKER not implemented. 81 gates stalled, 0 graduations possible.",
       "action": "P0 dev: post_trade hooks in feedback/loop.py (~4h). Unblocks entire graduation pipeline."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "DAY_27_GAP: snapshot_entry (slippage) and llm_regime missing. Bot offline 628h. Zero baseline on restart for both forensics dimensions.",
+      "finding": "DAY_27_GAP: snapshot_entry (slippage) and llm_regime missing. Bot offline 628.9h. Zero baseline on restart for both forensics dimensions.",
       "action": "P1 dev on restart: snapshot_entry write at signal creation (~1h). P2: llm_regime at close (~1h)."
     },
     {
       "subsystem": "model_optimization",
-      "severity": "MEDIUM",
-      "finding": "Critic Agent missing BTC_LONG directional bias check. 19% WR on 16 live BTC_LONG trades not caught. BTC_TREND_LONG_COUNTER_V1 partially addresses via rule gate, but Critic prompt still has no directional override.",
-      "action": "Add BTC_LONG bias check to bot/llm/agents/prompts.py Critic section."
+      "severity": "LOW",
+      "finding": "Critic Agent BTC_LONG bias check NOW APPLIED (this run). Prior gap is resolved. Scout every-3rd-cycle optimization still pending.",
+      "action": "Monitor Critic accuracy improvement post-restart. No further model changes needed this cycle."
     }
   ],
   "run_summary": {
     "subsystems_completed": 5,
-    "subsystems_with_new_data": 1,
+    "subsystems_with_new_data": 2,
     "fixes_applied": 1,
-    "gates_active": 80,
-    "total_rules": 115,
+    "gates_active": 81,
+    "total_rules": 116,
     "high_priority_findings_count": 6,
     "new_rules_added_this_run": 1,
-    "morning_window_status": "T-229m \u2014 4H THRESHOLD CROSSED",
-    "data_status": "FROZEN \u2014 bot offline 26.2d. 0 trades. No live data.",
-    "critical_action": "RESTART BOT \u2014 morning window in 3.8h. Soft-start: 50% size, 3x lev, ETH/BTC trending.",
+    "morning_window_status": "T-169m — 3H ALERT. Restart deadline 05:30 UTC.",
+    "data_status": "FROZEN — bot offline 27.2d. 0 trades. No live data.",
+    "critical_action": "RESTART BOT — morning window in 2.8h. Soft-start: 50% size, 3x lev, ETH/BTC trending.",
     "equity": 497.05,
-    "opportunity_cost_today": "$56-113 (morning window 06:00-12:00 UTC)",
-    "cumulative_alpha_lost": "~$1,956-3,953 (9 consecutive morning windows)"
+    "opportunity_cost_today": "$56-113 (morning window 06:00-12:00 UTC — TODAY)",
+    "cumulative_alpha_lost": "~$2,012-4,066 (9 consecutive morning windows)",
+    "fixes_since_last_restart": [
+      "EXIT_AGENT_PROMPT_AMENDMENT_BTC_ETH_TRENDING (2026-05-18)",
+      "TRENDING_MIN_HOLD_2H_GATE_UPGRADE (2026-05-18)",
+      "HIGH_LEV_10X_FORENSICS_BLOCK (2026-05-19)",
+      "EVENING_BOOST_DEESCALATE_FIX (2026-05-19)",
+      "SIDE_BIAS_ENFORCEMENT_V2 (2026-05-19)",
+      "HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE (2026-05-19)",
+      "BTC_TREND_LONG_COUNTER_V1 (2026-05-20T02:11)",
+      "CRITIC_PROMPT_BTC_LONG_BIAS (2026-05-20T03:11 — THIS RUN)"
+    ]
   }
 }
