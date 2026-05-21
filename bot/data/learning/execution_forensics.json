@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-05-21T22:09:44.214042+00:00",
+  "last_run": "2026-05-21T23:07:48.952629+00:00",
   "data_available": true,
   "data_source": "Cached analysis (bot offline ~29 days, trades.csv missing). Gap: day 29.",
   "avg_slippage": "UNKNOWN \u2014 snapshot_entry column still missing. Day 29 of measurement gap.",
@@ -21,17 +21,19 @@
     }
   },
   "new_finding_this_run": {
-    "id": "EVENING_SESSION_NOW_ACTIVE",
-    "detail": "Current UTC 22:06 \u2014 we are in the EVENING window (18-24 UTC). tod_evening_edge_v1 (+5pts, gate=ON) would be boosting signals RIGHT NOW if bot were running. This is the second-best trading window (65% WR, n=27). A restart at this hour would immediately catch 1.9h of high-edge evening session PLUS the night block (00-06) would prevent overnight noise.",
-    "severity": "MEDIUM",
-    "action": "If user restarts bot before 24:00 UTC, it enters immediately into 65%-WR window. 1.9h of remaining edge available tonight (22:06 UTC \u2192 24:00 UTC)."
+    "id": "MORNING_EDGE_RULE_SYNC_BUG_ROOT_CAUSE",
+    "detail": "Three consecutive runs (May 20, May 21 22:11, May 21 23:06) have each found a rule that exists in bot/feedback/graduated_rules.json but is missing from bot/data/llm/graduated_rules.json. Root cause: two separate rule systems with no sync mechanism. feedback/ = trading strategy A/B gates. llm/ = LLM confidence adjustments. Rules graduate independently into each system. Structural gap: no atomic write protocol or consistency check between the two files.",
+    "severity": "HIGH",
+    "action": "P1 dev: Add startup consistency check in bot/llm/graduated_rules_engine.py that cross-validates llm/graduated_rules.json against feedback/graduated_rules.json and alerts on sync drift. Also: audit remaining feedback rules for any that should be in the LLM engine.",
+    "pattern": "Three-run pattern: btc_trend_long_counter_v1 (May 20) \u2192 TOD_schema_bug (May 21 00:00) \u2192 tod_morning_edge_v1 (May 21 23:06). All same root cause."
   },
   "structural_gaps": [
-    "snapshot_entry column missing (slippage unmeasurable \u2014 day 29)",
-    "llm_regime column empty (12 regime rules unmeasurable)",
-    "AB result tracker code missing (all gated rules stalled)"
+    "snapshot_entry column missing (slippage unmeasurable \u2014 day 30)",
+    "llm_regime column empty (regime rules unmeasurable)",
+    "AB result tracker code missing (all gated rules stalled \u2014 day 30)",
+    "feedback/llm graduated_rules sync gap (3 write-consistency bugs found in 3 consecutive runs)"
   ],
-  "days_offline": 29.0,
-  "hours_offline": 697.2,
+  "days_offline": 30.0,
+  "hours_offline": 9172.8,
   "gap_deepening": true
 }

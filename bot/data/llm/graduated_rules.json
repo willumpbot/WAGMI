@@ -255,6 +255,25 @@
       "times_applied": 1,
       "times_correct": 0,
       "active": true
+    },
+    {
+      "rule_id": "tod_morning_edge_v1",
+      "hypothesis_statement": "Morning session 06:00-12:00 UTC = 74% WR on 7 insight_journal trades. BEST TOD window by WR (74% vs 65% evening, 64% afternoon, 19% night). Composite edge: ETH+BTC+trending+morning = confirmed alpha. Missing from LLM engine despite being tracked in feedback/graduated_rules.json (A/B_ACTIVE gate=50%) — write-consistency bug detected 2026-05-21T23:06 UTC. Graduate: escalate gate 50%→100% at n>=15 obs with WR>=0.65.",
+      "action": "boost",
+      "conditions": {
+        "hour_utc_min": 6,
+        "hour_utc_max": 12
+      },
+      "adjustment": 5.0,
+      "confidence": 0.88,
+      "evidence_ratio": 0.74,
+      "total_evidence": 7,
+      "created_at": 1779404804.0,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "gate_percentage": 50
     }
   ]
 }

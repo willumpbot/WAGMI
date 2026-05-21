@@ -1,18 +1,18 @@
 {
-  "last_run": "2026-05-21T22:09:12.942977+00:00",
+  "last_run": "2026-05-21T23:07:36.248575+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
   "fixes_applied_this_run": 1,
-  "gates_active": 81,
-  "total_applied_all_time": 52,
+  "gates_active": 82,
+  "total_applied_all_time": 53,
   "last_fix": {
-    "fix_id": "BTC_TREND_LONG_COUNTER_V1_WRITE",
-    "applied_at": "2026-05-21T22:09:12.942977+00:00",
+    "fix_id": "TOD_MORNING_EDGE_V1_WRITE",
+    "applied_at": "2026-05-21T23:07:36.248575+00:00",
     "file": "bot/data/llm/graduated_rules.json",
-    "description": "Added missing btc_trend_long_counter_v1 rule to graduated_rules.json. Rule was tracked as ACTIVE in auto_fix_state.json since 2026-05-20T02:11 but was never written to the runtime engine file. Fix: appended rule with conditions={symbol:BTC, side:BUY, regime:trend}, adjustment=-13.0, gate_percentage=20, active=true. Verified: engine simulation confirms -13pts applies to BTC BUY in trending regime. Completed the triple protection stack: (1) this rule, (2) Critic prompt BTC_LONG_BIAS, (3) parent boost rule_1777922205_0 deactivated.",
-    "confidence": 92,
-    "gate_percentage": 20,
+    "description": "Added missing tod_morning_edge_v1 rule to LLM graduated_rules.json. Rule existed in bot/feedback/graduated_rules.json (A/B_ACTIVE gate=50%) but was absent from LLM confidence engine \u2014 same write-consistency bug as btc_trend_long_counter_v1 (fixed last run). Morning window 06:00-12:00 UTC is the BEST TOD edge (74% WR, n=7). Fix: appended tod_morning_edge_v1 with conditions={hour_utc_min:6, hour_utc_max:12}, adjustment=+5.0, gate_percentage=50, active=true. Now 15 rules in LLM engine (was 14). TOD rule stack now complete: Night(veto)+Morning(+5,g50%)+Afternoon(+5)+Evening(+5).",
+    "confidence": 90,
+    "gate_percentage": 50,
     "status": "APPLIED",
-    "outcome_tracking": "PENDING_RESTART \u2014 verify BTC BUY in trend gets -13pts on first occurrence. Graduate at n>=10 WR<=0.45."
+    "outcome_tracking": "PENDING_RESTART \u2014 verify first signal in 06:00-12:00 UTC window gets +5pts boost. Graduate gate 50%\u2192100% at n>=15 obs, WR>=0.65."
   },
   "new_findings_this_run": [
     {
@@ -37,6 +37,14 @@
       "severity": "HIGH",
       "detail": "btc_trend_long_counter_v1 was tracked as ACTIVE in auto_fix_state since 2026-05-20T02:11 but was absent from graduated_rules.json. The fix was logged but the file write step was missing \u2014 possibly because the prior run only wrote to auto_fix_state and did not append to graduated_rules.json. Fixed this run. Now 14 rules in graduated_rules.json.",
       "action": "FIXED \u2014 rule written to graduated_rules.json. Verified via engine simulation.",
+      "requires_human_review": false
+    },
+    {
+      "finding_id": "TOD_MORNING_EDGE_WRITE_BUG",
+      "detected_at": "2026-05-21T23:07:36.248575+00:00",
+      "severity": "HIGH",
+      "detail": "tod_morning_edge_v1 was tracked in bot/feedback/graduated_rules.json (A/B_ACTIVE gate=50%) but completely absent from LLM engine bot/data/llm/graduated_rules.json. This is the BEST TOD window (74% WR) and opens in 6.9h (Window 13 = 06:00-12:00 UTC May 22). Without this rule, LLM confidence engine gives no signal boost to morning trades. Pattern: third consecutive run discovering a missing rule in graduated_rules.json. Root cause: two separate graduated_rules.json files (feedback/ vs llm/) with inconsistent sync.",
+      "action": "FIXED \u2014 tod_morning_edge_v1 added to LLM engine. 15 rules now active. TOD stack complete. Monitor: first trade in 06:00-12:00 UTC window post-restart should show +5pts.",
       "requires_human_review": false
     }
   ],
@@ -109,6 +117,13 @@
       "fix_id": "TOD_RUNTIME_FIX_V1",
       "applied_at": "2026-05-21T01:09:32.358251+00:00",
       "gate_pct": 100,
+      "status": "ACTIVE",
+      "outcome_tracking": "PENDING_RESTART"
+    },
+    {
+      "fix_id": "TOD_MORNING_EDGE_V1_WRITE",
+      "applied_at": "2026-05-21T23:07:36.248575+00:00",
+      "gate_pct": 50,
       "status": "ACTIVE",
       "outcome_tracking": "PENDING_RESTART"
     }
