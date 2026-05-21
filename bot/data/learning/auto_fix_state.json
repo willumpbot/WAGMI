@@ -12,7 +12,7 @@
     "confidence": 78,
     "gate_percentage": 100,
     "status": "APPLIED",
-    "outcome_tracking": "PENDING_RESTART — bot offline"
+    "outcome_tracking": "PENDING_RESTART \u2014 bot offline"
   },
   "new_findings_this_run": [
     {
@@ -96,7 +96,7 @@
       "times_correct": 0,
       "accuracy": 0.0,
       "note": "0/3 accuracy. BTC+trend SIDE-AGNOSTIC boost. BTC LONG in trend = disaster (18% WR). Counter rule BTC_TREND_LONG_COUNTER_V1 added last run (-13pts, gate=20%). Critic prompt BTC_LONG bias added this run. Double-layer fix now active.",
-      "status": "PARTIALLY_FIXED — dual layer (gate counter + Critic prompt)"
+      "status": "PARTIALLY_FIXED \u2014 dual layer (gate counter + Critic prompt)"
     },
     "hype_short_veto_v1": {
       "times_applied": 3,
@@ -104,7 +104,7 @@
       "accuracy": 0.0,
       "auto_retire_threshold": 10,
       "apps_to_threshold": 7,
-      "status": "WATCH_ESCALATING — HUMAN REVIEW BEFORE 4TH APPLICATION",
+      "status": "WATCH_ESCALATING \u2014 HUMAN REVIEW BEFORE 4TH APPLICATION",
       "note": "0/3 correct (all blocked signals profitable). Historical: -$16.65/trade EV on 239 trades. Conflict unresolved. Do not auto-escalate gate. Human review required on restart."
     },
     "night_session_block_v1": {
@@ -155,13 +155,23 @@
     },
     {
       "id": "CRITIC_PROMPT_BTC_LONG_BIAS",
-      "description": "Critic now challenges all BTC BUY by default. Applied this run. No gate needed — prompt-level fix.",
+      "description": "Critic now challenges all BTC BUY by default. Applied this run. No gate needed \u2014 prompt-level fix.",
       "action": "Monitor BTC LONG pass-through rate post-restart. Should drop from ~100% to <30%."
+    },
+    {
+      "id": "TOD_EVENING_EDGE_V1",
+      "description": "Evening session 18:00-24:00 UTC wins 65% vs 10% night (spread 55%). n=27.",
+      "action": "Graduate at n>=20 WR>=0.60"
+    },
+    {
+      "id": "TOD_AFTERNOON_EDGE_V1",
+      "description": "Afternoon session 12:00-18:00 UTC wins 64% vs 31% night (spread 33%). n=27.",
+      "action": "Graduate at n>=20 WR>=0.58"
     }
   ],
   "graduation_pipeline_next": {
-    "nearest_candidate": "BTC_TREND_LONG_COUNTER_V1 (gate=20%) — lowest bar: needs 10 obs",
-    "second_candidate": "HYPE_UNKNOWN_REGIME_PROBE_v1 (gate=20%) — needs 15 obs",
+    "nearest_candidate": "BTC_TREND_LONG_COUNTER_V1 (gate=20%) \u2014 lowest bar: needs 10 obs",
+    "second_candidate": "HYPE_UNKNOWN_REGIME_PROBE_v1 (gate=20%) \u2014 needs 15 obs",
     "inferred_confidence": 0.72,
     "gap_to_threshold": 0.03,
     "action": "First 20 trades post-restart: track BTC LONG trending. If WR<=0.45, escalate counter gate to 50%. Simultaneously monitor Critic challenge rate on BTC LONG."
@@ -171,12 +181,34 @@
   "outstanding_pending": [
     "HYPE_SHORT_VETO_RISK: 0/3 correct. HUMAN REVIEW BEFORE 4TH APPLICATION.",
     "SOL_SHORT_SUSPENSION: +$807 historical alpha. Human decision on restart.",
-    "AB_RESULT_TRACKER_CODE: P0 structural gap — all 81 gated rules stalled.",
+    "AB_RESULT_TRACKER_CODE: P0 structural gap \u2014 all 81 gated rules stalled.",
     "SNAPSHOT_ENTRY_GAP: add snapshot_entry column (~1h dev).",
     "LLM_REGIME_CAPTURE_GAP: add llm_regime write to trades.csv (~1h dev).",
     "STALE_SHADOW_FILE: Delete data/llm/graduated_rules.json (15 min dev).",
     "SNIPER_AUTO_EXECUTE: #1 profit lever (+$328/34-trade path). Enable post-5-trade soft-start.",
     "META_LEARNING_IDEAS_INVERSION_BUG: 4/8 ideas inverted. Fix before applying any idea.",
     "INSIGHTS_DEDUPLICATION_GAP: insights.json accumulates duplicates. Fix accumulator to UPDATE not APPEND."
+  ],
+  "fixes_history": [
+    {
+      "fix_id": "TOD_EVENING_EDGE_V1",
+      "applied_at": "2026-05-21T00:12:52.387053+00:00",
+      "gate_pct": 20,
+      "status": "ACTIVE",
+      "type": "NEW_AB_PROBE",
+      "source": "perpetual_loop_subsystem1+3",
+      "description": "Evening session 18:00-24:00 UTC wins 65% vs 10% night (spread 55%). n=27.",
+      "outcome_tracking": "PENDING_RESTART"
+    },
+    {
+      "fix_id": "TOD_AFTERNOON_EDGE_V1",
+      "applied_at": "2026-05-21T00:12:52.387053+00:00",
+      "gate_pct": 20,
+      "status": "ACTIVE",
+      "type": "NEW_AB_PROBE",
+      "source": "perpetual_loop_subsystem1+3",
+      "description": "Afternoon session 12:00-18:00 UTC wins 64% vs 31% night (spread 33%). n=27.",
+      "outcome_tracking": "PENDING_RESTART"
+    }
   ]
 }

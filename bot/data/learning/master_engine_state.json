@@ -1,198 +1,119 @@
 {
-  "last_run": "2026-05-20T23:11:52.067044+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_20_2311",
-  "hours_since_prev_run": 19.9,
+  "last_run": "2026-05-21T00:13:44.717222+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_21_0013",
+  "hours_since_prev_run": 1.0,
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 2,
-      "gates_active": 9,
-      "total_runtime_rules": 11,
-      "active_runtime_rules": 9,
-      "new_rules": [
-        "BTC_TREND_BOOST_DEACTIVATION",
-        "CONF_FLOOR_70_DEACTIVATION"
+      "gates_active": 11,
+      "total_runtime_rules": 13,
+      "new_rules_added": [
+        "TOD_EVENING_EDGE_V1",
+        "TOD_AFTERNOON_EDGE_V1"
       ],
-      "fix_details": [
-        {
-          "id": "BTC_TREND_BOOST_DEACTIVATION",
-          "confidence": 90,
-          "file": "bot/data/llm/graduated_rules.json",
-          "rule_id": "rule_1777922205_0",
-          "action": "SET active=false",
-          "reason": "0/3 correct. BTC+TREND boost (no side filter) was sabotaging BTC LONG veto stack. Directly conflicts with CRITIC_PROMPT_BTC_LONG_BIAS and BTC_TREND_LONG_COUNTER_V1.",
-          "expected_impact": "Removes +8pt spurious boost on BTC LONG trending. BTC LONG veto stack now: gate(-13pts A/B 20%) + Critic(CHALLENGE 100%) + clean runtime."
-        },
-        {
-          "id": "CONF_FLOOR_70_DEACTIVATION",
-          "confidence": 82,
-          "file": "bot/data/llm/graduated_rules.json",
-          "rule_id": "conf_floor_70_v1",
-          "action": "SET active=false",
-          "reason": "0/2 correct (both penalized signals won). 60-70% confidence = sweet spot (+.19/trade, 42% WR per insight_journal 67 trades). Improvement system already SUSPENDED_DATA_CONTRADICTION.",
-          "expected_impact": "Recover ~+.19/trade EV on 60-70% confidence signals. Previously being penalized -5pts, risking floor block."
-        }
-      ]
+      "note": "2 new A/B probes: evening 18-24UTC (65% WR n=27) + afternoon 12-18UTC (64% WR n=27). gate=20%.",
+      "previous_run_note": "BTC_TREND_BOOST_DEACTIVATION + CONF_FLOOR_70_DEACTIVATION (last run)"
     },
     "execution_forensics": {
       "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 28)",
-      "noise_stop_problem": "87% of early SL hits in non-trending regimes. Confidence 0.88. STABLE (no new data).",
+      "noise_stop_problem": "87% of early SL hits in non-trending regimes. Stable estimate.",
       "hold_forensics": {
         "win_median_hold_h": 3.3,
         "loss_median_hold_h": 1.5,
         "ratio": "2.2x"
       },
       "leverage_calibration": {
-        "medium_3_5x": "OPTIMAL +0.79R avg",
-        "high_6_10x": "BLOCKED (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"
+        "medium_3_5x": "OPTIMAL +0.79R",
+        "high_6_10x": "BLOCKED (gate=20%)"
       },
-      "new_finding": "NONE \u2014 bot offline day 28. Gap deepening. AB_RESULT_TRACKER needed for live forensics.",
-      "days_offline": 28.0,
+      "days_offline": 27.1,
       "gap_deepening": true,
-      "critical_new_insight": "Runtime rule_1777922205_0 was active boosting BTC LONG trending by +8pts despite 0/3 forensics outcome. Now deactivated."
+      "cumulative_opportunity_cost_usd": 616,
+      "new_finding": "WINDOW_COST: 11 morning windows \u00d7 ~$56 EV = $616+ cumulative alpha abandoned"
     },
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 5,
-      "new_edges_added": 0,
+      "new_edges_added": 2,
       "data_status": "FROZEN \u2014 no trades. Bot offline day 28.",
-      "key_update": "CONF_FLOOR_70 deactivated: 60-70% confidence bin now unpenalized. Allows sweet-spot signals to pass.",
-      "morning_window": {
-        "may21_opens_in_min": 409,
-        "opens_in_h": 6.8,
-        "status": "11TH_WINDOW \u2014 T-409m",
-        "restart_deadline_utc": "2026-05-21T05:30:00Z",
-        "cumulative_windows_missed": 10
-      },
-      "insight_contradiction_flag": {
-        "issue": "insights.json contains two morning entries: 71% WR (n=large, conf=0.73) AND 14% WR (n=7, conf=0.675)",
-        "resolution": "Primary edge (71%) from larger sample dominates. 14% entry is small-window artifact. TOD_morning_edge graduated_rule (gate=50%) based on 71% WR.",
-        "action": "No change \u2014 contradiction benign. Primary insight dominates."
-      }
+      "new_finding": "TOD_EVENING (65% WR n=27) + TOD_AFTERNOON (64% WR n=27) \u2192 2 new A/B probes created",
+      "morning_window_mins": 348,
+      "morning_window_status": "T-5.8h \u2014 12th window at risk. RESTART DEADLINE 05:30 UTC."
     },
     "daily_synthesis": {
       "anomalies": 5,
       "report_generated": true,
       "today_trades": 0,
       "today_pnl": 0.0,
-      "synthesis_file": "daily_synthesis_2026-05-20.json",
-      "morning_may20_status": "MISSED (10th consecutive)",
-      "anomaly_list": [
-        {
-          "type": "BOT_OFFLINE_DAY_28",
-          "severity": "CRITICAL"
-        },
-        {
-          "type": "MORNING_WINDOW_MISSED_10TH",
-          "severity": "CRITICAL"
-        },
-        {
-          "type": "RUNTIME_RULES_CONFLICT_RESOLVED",
-          "severity": "HIGH"
-        },
-        {
-          "type": "CONF_SWEET_SPOT_PENALIZATION_RESOLVED",
-          "severity": "HIGH"
-        },
-        {
-          "type": "AB_RESULT_TRACKER_CODE_P0",
-          "severity": "HIGH"
-        }
-      ]
+      "synthesis_file": "/home/user/WAGMI/bot/data/sessions/daily_synthesis_2026-05-21.json",
+      "morning_window_status": "PENDING \u2014 opens in 348m (T-5.8h)",
+      "new_finding": "TOD_EDGE_COVERAGE_GAP: Evening+Afternoon edges uncovered \u2192 resolved by Sub1 new rules"
     },
     "model_optimization": {
-      "model_swaps_recommended": 0,
-      "potential_savings": "$0.295/month",
-      "status": "STABLE \u2014 no cost_tracker.json. All agents OPTIMAL.",
-      "new_finding": "NONE \u2014 BTC_TREND_BOOST deactivation reduces Critic workload: fewer BTC LONG signals will reach Critic stage (lower confidence floor without spurious +8pt boost \u2192 more filtered by gate first). Net: marginal Critic cost reduction.",
-      "agent_roi_summary": {
-        "Regime": {
-          "roi": 15600,
-          "model": "Haiku",
-          "status": "OPTIMAL"
-        },
-        "Trade": {
-          "roi": 237,
-          "model": "Sonnet",
-          "status": "OPTIMAL"
-        },
-        "Risk": {
-          "roi": 16400,
-          "model": "Haiku",
-          "status": "OPTIMAL"
-        },
-        "Critic": {
-          "roi": 237,
-          "model": "Sonnet",
-          "status": "IMPROVED \u2014 BTC_LONG bias + BTC_TREND_BOOST removal reduces false approvals"
-        },
-        "Learning": {
-          "roi": 15000,
-          "model": "Haiku",
-          "status": "OPTIMAL"
-        },
-        "Exit": {
-          "roi": 14400,
-          "model": "Haiku",
-          "status": "OPTIMAL"
-        },
-        "Scout": {
-          "roi": 13600,
-          "model": "Haiku",
-          "status": "OPTIMAL"
-        }
-      }
+      "model_swaps_recommended": 1,
+      "potential_savings": "$0.096/month (Scout 3rd-cycle) + $2-8/month if LLM_MODE_GUARD verified",
+      "status": "SCOUT_FREQUENCY_REDUCTION_PENDING",
+      "all_agents_optimal": true,
+      "new_finding": "Scout every-3rd-cycle = -67% cost, ~-5% accuracy. Implement post-restart.",
+      "pending_verification": "F5_llm_mode_guard in codebase prevents silent spend at LLM_MODE=0"
     }
   },
   "high_priority_findings": [
     {
-      "subsystem": "auto_fix",
+      "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "RUNTIME_RULE_SABOTAGE_RESOLVED: rule_1777922205_0 (BTC+TREND BOOST +8pts, no side filter, 0/3 correct) was actively undermining the BTC LONG veto stack. Applied before Critic stage \u2014 BTC LONG trending signals were getting +8pt confidence boost before the Critic saw them, potentially pushing them above the threshold. NOW DEACTIVATED.",
-      "action": "MONITOR post-restart: BTC LONG pass-through at Critic should drop further (was 60-80% challenge rate expected from Critic alone, now +8pt boost also removed from pipeline)."
+      "finding": "MORNING_WINDOW_12TH_RISK: May 21 06:00-12:00 UTC opens in 5.8h (T-348m). 11 consecutive windows missed. Cumulative EV lost: $616+. RESTART DEADLINE: 05:30 UTC.",
+      "action": "RESTART BEFORE 05:30 UTC. Soft-start: 50% sizing, 3x max, ETH/BTC trending only."
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "CONF_SWEET_SPOT_UNBLOCKED: conf_floor_70_v1 (60-70% confidence \u2192 -5pts penalty, 0/2 correct) deactivated. This rule was penalizing the highest-EV confidence bin (+.19/trade, 42% WR per 67-trade insight_journal). Rule was already SUSPENDED_DATA_CONTRADICTION in improvement system. Runtime sync now corrected.",
-      "action": "MONITOR post-restart: 60-70% confidence signals now pass without penalty. Expect improvement in overall WR as sweet-spot signals stop being near-floor-blocked."
-    },
-    {
-      "subsystem": "daily_synthesis",
-      "severity": "CRITICAL",
-      "finding": "MORNING_WINDOW_11TH: May 21 06:00-12:00 UTC opens in 6.8h (T-409m). 10th consecutive window missed. Soft-start: 50% size, 3x lev, ETH/BTC trending. Restart deadline 05:30 UTC.",
-      "action": "RESTART NOW. All 4-layer BTC LONG protections live: Critic(CHALLENGE) + gate(-13pts A/B) + no spurious boost + night_session_block."
+      "finding": "TOD_EDGE_RULES_ADDED: Evening 18-24UTC (65% WR, n=27, conf=0.85) + Afternoon 12-18UTC (64% WR, n=27, conf=0.85) added as A/B gate=20% probes. Will boost confidence +5pts for signals in these windows.",
+      "action": "ACTIVE on restart. Graduate at n>=20 post-restart WR>=0.60/0.58."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "AB_RESULT_TRACKER_CODE: 62 A/B active gates stalled. Zero graduations possible. Day 28 without fix.",
-      "action": "P0 dev: post_trade outcome hooks in bot/feedback/loop.py (~4h). Top priority on restart."
+      "finding": "AB_TRACKER_DAY_28_STALL: 62 active gates, zero graduations possible. Self-improvement pipeline frozen. snapshot_entry + llm_regime columns also missing.",
+      "action": "P0 dev: AB tracker hooks in bot/feedback/loop.py (~4h). Critical path for all future learning."
     },
     {
       "subsystem": "model_optimization",
-      "severity": "LOW",
-      "finding": "All 7 agents OPTIMAL on Haiku/Sonnet routing. BTC_TREND_BOOST deactivation marginally reduces Critic call frequency (fewer boosted BTC LONG signals reaching Critic). Scout every-3rd-cycle pending.",
-      "action": "No changes needed. Monitor Scout cycle cost on restart."
+      "severity": "MEDIUM",
+      "finding": "SCOUT_FREQUENCY_REDUCTION: Scout runs every cycle (Haiku). Reducing to every-3rd-cycle = -67% Scout API calls, -5% accuracy. Est $0.10/month savings plus preserves context window.",
+      "action": "Implement post-restart in bot/llm/agents/coordinator.py (scout call throttle)."
+    },
+    {
+      "subsystem": "live_injection",
+      "severity": "MEDIUM",
+      "finding": "TWO_NEW_TOD_EDGES_ACTIVATED: tod_evening_edge_v1 + tod_afternoon_edge_v1 added to runtime rules (13 total, 11 active). Rules active immediately on next bot restart.",
+      "action": "Monitor: first 20 trades post-restart with 18-24 or 12-18 UTC timestamps. Track WR vs baseline."
     }
   ],
   "run_summary": {
     "subsystems_completed": 5,
-    "fixes_applied": 2,
-    "runtime_rules_active": 9,
-    "runtime_rules_deactivated_this_run": 2,
+    "fixes_applied_this_run": 2,
+    "runtime_rules_total": 13,
+    "runtime_rules_active": 11,
+    "runtime_rules_added_this_run": 2,
     "high_priority_findings_count": 5,
-    "morning_window_status": "May 21 06:00 UTC \u2014 T-409m (6.8h). RESTART DEADLINE 05:30 UTC.",
-    "data_status": "FROZEN \u2014 bot offline 28 days. 0 trades.",
+    "morning_window_status": "May 21 06:00 UTC \u2014 T-5.8h (348m). RESTART DEADLINE 05:30 UTC.",
+    "data_status": "FROZEN \u2014 bot offline 27.1 days. 0 trades.",
+    "equity": 497.05,
     "btc_long_protection_layers": 4,
     "btc_long_protection_stack": [
-      "Layer 1: graduated_rules BTC_TREND_LONG_COUNTER_V1 (-13pts, A/B 20%)",
-      "Layer 2: Critic prompt CHALLENGE by default on BTC BUY",
-      "Layer 3: rule_1777922205_0 DEACTIVATED (spurious +8pt boost removed)",
-      "Layer 4: night_session_block_v1 (00:00-06:00 UTC veto)"
+      "Layer 1: BTC_TREND_LONG_COUNTER_V1 (-13pts, A/B 20%) \u2014 applied 2026-05-20T02:11",
+      "Layer 2: Critic prompt CHALLENGE by default on BTC BUY \u2014 applied 2026-05-20T03:11",
+      "Layer 3: rule_1777922205_0 DEACTIVATED (spurious +8pt boost removed) \u2014 applied 2026-05-20T23:06",
+      "Layer 4: night_session_block_v1 (00:00-06:00 UTC veto) \u2014 active"
     ],
-    "conf_60_70_status": "UNBLOCKED \u2014 conf_floor_70_v1 deactivated. Sweet-spot signals now unpenalized.",
-    "equity": 497.05,
-    "fixes_since_last_restart": [
+    "conf_60_70_status": "UNBLOCKED \u2014 conf_floor_70_v1 deactivated (last run). Sweet-spot signals unpenalized.",
+    "tod_rules_status": "3 active TOD rules: morning_edge(gate=50%) + evening_edge(gate=20%) + afternoon_edge(gate=20%). Night veto active.",
+    "new_rules_this_run": [
+      "tod_evening_edge_v1 (gate=20%, +5pts 18-24UTC, 65% WR n=27)",
+      "tod_afternoon_edge_v1 (gate=20%, +5pts 12-18UTC, 64% WR n=27)"
+    ],
+    "fixes_all_time": [
       "EXIT_AGENT_PROMPT_AMENDMENT_BTC_ETH_TRENDING (2026-05-18)",
       "TRENDING_MIN_HOLD_2H_GATE_UPGRADE (2026-05-18)",
       "HIGH_LEV_10X_FORENSICS_BLOCK (2026-05-19)",
@@ -201,8 +122,10 @@
       "HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE (2026-05-19)",
       "BTC_TREND_LONG_COUNTER_V1 (2026-05-20T02:11)",
       "CRITIC_PROMPT_BTC_LONG_BIAS (2026-05-20T03:11)",
-      "BTC_TREND_BOOST_DEACTIVATION (2026-05-20T23:06 \u2014 THIS RUN)",
-      "CONF_FLOOR_70_DEACTIVATION (2026-05-20T23:06 \u2014 THIS RUN)"
+      "BTC_TREND_BOOST_DEACTIVATION (2026-05-20T23:06)",
+      "CONF_FLOOR_70_DEACTIVATION (2026-05-20T23:06)",
+      "TOD_EVENING_EDGE_V1 (2026-05-21T00:09 \u2014 THIS RUN)",
+      "TOD_AFTERNOON_EDGE_V1 (2026-05-21T00:09 \u2014 THIS RUN)"
     ]
   }
 }
