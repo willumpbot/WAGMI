@@ -21,19 +21,21 @@
     }
   },
   "new_finding_this_run": {
-    "id": "HIGH_VOL_SYNC_GAP_FIXED_PATTERN_4",
-    "detail": "high_vol_regime_boost_v1 was 4th consecutive rule found in feedback/ engine but missing from llm/ engine. Pattern: btc_trend_long_counter_v1 (May 20) \u2192 TOD_schema_bug (May 21 00:00) \u2192 tod_morning_edge_v1 (May 21 23:06) \u2192 high_vol_regime_boost_v1 (May 22 01:06). FIXED THIS RUN: +5pts on high_volatility regime, gate=20%, n=2172, conf=88%. SOL_SHORT_reversal_probe (conf=85, n=179, WR=63.7%) noted as potential 5th sync gap \u2014 requires human review before applying (SOL_SHORT_suspension_reversal may conflict with sol_long_veto_v1).",
+    "id": "SOL_SHORT_LIVE_PAPER_VALIDATES_SUSPENSION",
+    "detail": "Full sync audit (51 high-conf feedback rules reviewed). SOL_SHORT live paper trading: 34.6% WR on 52 trades (-$176.24) CONTRADICTS backtest claim of 63.7% WR on 179. Suspension is VALIDATED \u2014 live data takes precedence. Also: BTC_LONG unprotected in NON-TREND regimes (ranging/illiquid/unknown). btc_trend_long_counter_v1 covers TREND only. BTC LONG 18% WR (17 trades) has no counter-rule outside trend. New gap found this run.",
     "severity": "HIGH",
-    "action": "FIXED: high_vol_regime_boost_v1 written. P1: add startup consistency check. P2: human review SOL_SHORT reversal probe.",
-    "pattern": "Four-run consecutive sync gap pattern \u2014 structural root cause: two graduated_rules files with no cross-validation on write."
+    "action": "CLOSE SOL_SHORT reversal probe \u2014 live paper data confirms suspension. OPEN: btc_long_nontrend_penalize_v1 for human review. BB schema extension (P1 dev): 6 rules (conf=90-95%) unlockable by adding 'strategy' condition type.",
+    "pattern": "Sync audit complete. All 51 candidates reviewed. 0 applicable this run. Structural gaps: BB schema, AB tracker, slippage tracking."
   },
   "structural_gaps": [
     "snapshot_entry column missing (slippage unmeasurable \u2014 day 32)",
     "llm_regime column empty (regime rules unmeasurable)",
     "AB result tracker code missing (all gated rules stalled \u2014 day 32)",
-    "feedback/llm graduated_rules sync gap (4 gaps fixed in consecutive runs \u2014 add startup validator)"
+    "BB 'strategy' condition type missing from rule schema (blocks 6 high-conf rules)",
+    "btc_trend_long_counter_v1 covers TREND only \u2014 non-trend BTC LONG unprotected"
   ],
   "days_offline": 32.0,
-  "hours_offline": 9936.0,
-  "gap_deepening": true
+  "hours_offline": 9993.6,
+  "gap_deepening": true,
+  "last_updated": "2026-05-22T02:12:35.000000+00:00"
 }

@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-05-21T23:08:03.482688+00:00",
-  "data_source": "Historical accumulated. Bot offline ~29 days. No new trade data.",
+  "last_run": "2026-05-22T02:12:35.000000+00:00",
+  "data_source": "Historical accumulated. Bot offline ~32 days. No new trade data. SOL_SHORT suspension validated by live paper (34.6% WR, 52 trades).",
   "high_edges_found": 9,
   "weak_setups_found": 5,
   "high_edges": [
@@ -139,11 +139,20 @@
     "evening_edge": "65% WR \u2014 tod_evening_edge_v1 active (+5pts). 1.9h remaining tonight (22:06\u219200:00 UTC)."
   },
   "new_finding_this_run": {
-    "id": "WINDOW_12_MISSED_WINDOW_13_DEADLINE",
-    "detail": "May 21 06:00-12:00 window CLOSED 10.1h ago (12th consecutive miss). Window 13 (May 22 06-12) opens in 7.9h. Restart deadline 7.4h. EVENING BONUS: Current hour (22 UTC) is in tod_evening_edge_v1 window \u2014 restart NOW catches 1.9h of 65%-WR session before night block kicks in at 00:00 UTC.",
-    "severity": "CRITICAL"
+    "id": "SOL_SHORT_SUSPENSION_FINAL_VALIDATED",
+    "detail": "Full sync audit completed this run. SOL_SHORT reversal probe CLOSED: live paper WR=34.6% on 52 trades (-$176.24) contradicts backtest 63.7% on 179. Suspension correct. New weak setup added: BTC_LONG_NONTREND (18% WR, unprotected in ranging/illiquid/unknown regime \u2014 btc_trend_long_counter_v1 covers TREND only). BB_SCHEMA_UNLOCK: 6 golden setups (ETH_SHORT_BB, BTC_BUY_BB, SOL_BUY_BB, BB_solo, BB_MTQ_block) blocked by missing 'strategy' condition type.",
+    "severity": "HIGH"
   },
-  "window_status": "Evening edge: 54min remaining (closes 00:00 UTC). Window 13: 6.9h away (06:00 UTC May 22). Morning rule WRITTEN to engine this run.",
-  "llm_engine_rules": 15,
-  "tod_stack_status": "COMPLETE: Night(veto,0-6) + Morning(+5,g50%,6-12) + Afternoon(+5,12-18) + Evening(+5,18-24). All 4 TOD windows covered."
+  "window_status": "NIGHT BLOCK active (02:12 UTC). Window 14: 228 min away (06:00 UTC May 22). Restart deadline: 198 min (05:30 UTC).",
+  "llm_engine_rules": 16,
+  "tod_stack_status": "COMPLETE: Night(veto,0-6) + Morning(+5,g50%,6-12) + Afternoon(+5,12-18) + Evening(+5,18-24). All 4 TOD windows covered.",
+  "sol_short_resolution": "CLOSED: Suspension validated by live paper (34.6% WR, 52 trades). Reversal probe not recommended.",
+  "new_weak_setup": {
+    "setup": "BTC_LONG_NONTREND",
+    "wr": 0.18,
+    "trades": 17,
+    "regime": "ranging/illiquid/unknown",
+    "rule": "UNPROTECTED \u2014 btc_trend_long_counter_v1 covers TREND only",
+    "recommendation": "btc_long_nontrend_penalize_v1 adj=-8, gate=20%, conditions={symbol:BTC, side:BUY, regime:!trend}"
+  }
 }
