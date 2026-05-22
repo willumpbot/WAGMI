@@ -589,6 +589,7 @@ class EnsembleStrategy:
                 symbol=symbol, regime=_regime, side=result.side,
                 strategy=result.strategy or "", setup_type=_setup,
                 num_agree=_n_agree, confidence=result.confidence,
+                strategies_active=result.metadata.get("strategies_agree") or [],
             )
             if _vetoed:
                 logger.info(f"[{symbol}] Signal VETOED by graduated rule: {_rule_summary}")
@@ -991,6 +992,7 @@ class EnsembleStrategy:
                 symbol=symbol, regime=_regime, side=result.side,
                 strategy=result.strategy or "", setup_type=_setup,
                 num_agree=_n_agree, confidence=result.confidence,
+                strategies_active=result.metadata.get("strategies_agree") or [],
             )
             result.metadata["graduated_rules_advisory"] = {
                 "would_veto": _vetoed,

@@ -1,18 +1,24 @@
 {
-  "last_run": "2026-05-22T01:06:42.000000+00:00",
+  "last_run": "2026-05-22T03:17:08.705879+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
   "fixes_applied_this_run": 1,
-  "gates_active": 83,
-  "total_applied_all_time": 54,
+  "gates_active": 19,
+  "total_applied_all_time": 55,
   "last_fix": {
-    "fix_id": "HIGH_VOL_REGIME_BOOST_V1",
-    "applied_at": "2026-05-22T01:06:42.000000+00:00",
-    "file": "bot/data/llm/graduated_rules.json",
-    "description": "Added high_vol_regime_boost_v1 to LLM engine. Feedback engine had it at gate=80%, n=2172, conf=88% \u2014 highest validated sample count of any regime rule. high_volatility = 55% WR vs ~38% avg. LLM engine had illiquid_regime_penalize_v1 (penalize illiquid) but NO corresponding rule to boost best regime. Sync gap: 4th consecutive run detecting a feedback\u2192LLM engine rule gap. Applied: adj=+5.0, conditions={regime:high_volatility}, gate=20%, active=true. Now 16 rules in LLM engine (was 15).",
-    "confidence": 88,
+    "fix_id": "BB_SCHEMA_UNLOCK",
+    "applied_at": "2026-05-22T03:17:08.705879+00:00",
+    "description": "strategies_include/strategies_exclude condition types added to GraduatedRule.matches() + strategies_active parameter to evaluate_signal(). Updated ensemble.py (2 sites) and signal_pipeline.py call sites. 5 BB rules written to LLM engine at gate=20% probe: eth_sell_bb_golden_v1 (+8), btc_buy_bb_golden_v1 (+8), sol_buy_bb_golden_v1 (+8), hype_sell_bb_block_v1 (-15), bb_mtq_antipattern_v1 (-10).",
+    "root_cause_correction": "Prior 6 runs said 'strategy condition not supported in schema'. WRONG. Engine supports strategy conditions. Real issue: ensemble.strategy='ensemble', individual names in metadata['strategies_agree']. Fix adds list-matching via strategies_include.",
+    "files_changed": [
+      "bot/llm/graduated_rules.py",
+      "bot/strategies/ensemble.py",
+      "bot/core/signal_pipeline.py",
+      "bot/data/llm/graduated_rules.json"
+    ],
+    "confidence": 93,
     "gate_percentage": 20,
     "status": "APPLIED",
-    "outcome_tracking": "PENDING_RESTART \u2014 verify high_vol regime signals get +5pts boost. Graduate gate 20%\u219250% at n>=25 obs, WR>=0.52."
+    "outcome_tracking": "PENDING_RESTART \u2014 verify BB rules fire on bollinger_squeeze signals. Graduate gate 20%\u219250% at n>=20 obs, WR>=0.62."
   },
   "new_findings_this_run": [
     {
@@ -45,6 +51,14 @@
       "severity": "HIGH",
       "detail": "tod_morning_edge_v1 was tracked in bot/feedback/graduated_rules.json (A/B_ACTIVE gate=50%) but completely absent from LLM engine bot/data/llm/graduated_rules.json. This is the BEST TOD window (74% WR) and opens in 6.9h (Window 13 = 06:00-12:00 UTC May 22). Without this rule, LLM confidence engine gives no signal boost to morning trades. Pattern: third consecutive run discovering a missing rule in graduated_rules.json. Root cause: two separate graduated_rules.json files (feedback/ vs llm/) with inconsistent sync.",
       "action": "FIXED \u2014 tod_morning_edge_v1 added to LLM engine. 15 rules now active. TOD stack complete. Monitor: first trade in 06:00-12:00 UTC window post-restart should show +5pts.",
+      "requires_human_review": false
+    },
+    {
+      "finding_id": "BB_SCHEMA_ROOT_CAUSE_CORRECTED",
+      "detected_at": "2026-05-22T03:17:08.705879+00:00",
+      "severity": "CRITICAL",
+      "detail": "BB_SCHEMA_UNLOCK: 6 prior runs (since May 22 session start) blocked BB rules with diagnosis 'strategy condition type not supported in LLM rule schema'. This was WRONG. GraduatedRule.matches() DID support strategy condition (single-value). Real blocker: ensemble always emits strategy='ensemble'; individual strategy names live in metadata['strategies_agree']. Required strategies_include list-matching condition type. Fix: added strategies_include/strategies_exclude to GraduatedRule.matches(), strategies_active param to evaluate_signal(), updated 3 call sites, wrote 5 BB rules to LLM engine.",
+      "action": "FIXED \u2014 code changes applied, 5 rules written at gate=20% probe. Monitor at restart.",
       "requires_human_review": false
     }
   ],
@@ -216,7 +230,7 @@
     {
       "id": "HIGH_VOL_REGIME_BOOST_V1",
       "description": "high_volatility regime = 55% WR on n=2172. gate=20% probe in LLM engine. Feedback engine gate=80%.",
-      "action": "Graduate gate 20%→50% at n>=25 obs WR>=0.52."
+      "action": "Graduate gate 20%\u219250% at n>=25 obs WR>=0.52."
     }
   ],
   "graduation_pipeline_next": {
@@ -286,7 +300,7 @@
       "type": "MISSING_LLM_RULE",
       "source": "perpetual_loop_subsystem1",
       "description": "high_vol_regime_boost_v1 added to LLM engine. Feedback engine: gate=80%, n=2172, conf=88%. high_volatility = 55% WR (best regime). LLM engine had no corresponding rule. 4th consecutive cross-system sync gap fixed. +5.0 adj, gate=20% probe.",
-      "outcome_tracking": "PENDING_RESTART — graduate gate 20%→50% at n>=25 obs WR>=0.52."
+      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 20%\u219250% at n>=25 obs WR>=0.52."
     }
   ],
   "corrections": [

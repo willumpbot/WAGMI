@@ -425,6 +425,7 @@ class RiskFilterChain:
                 symbol=signal.symbol, regime=_gr_regime, side=_gr_side,
                 num_agree=_gr_n, confidence=signal.confidence,
                 hour_utc=datetime.now(timezone.utc).hour,
+                strategies_active=(meta.get("strategies_agree") or []) if meta else [],
             )
             if _gr_veto:
                 _reason = f"Graduated rule veto: {_gr_applied[:100]}"

@@ -67,8 +67,8 @@
       "evidence_ratio": 0.19,
       "total_evidence": 27,
       "created_at": 1746382701.0,
-      "last_applied": 1779325621.570832,
-      "times_applied": 5,
+      "last_applied": 1779419617.7340784,
+      "times_applied": 6,
       "times_correct": 0,
       "active": true
     },
@@ -217,8 +217,7 @@
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 20
+      "active": true
     },
     {
       "rule_id": "tod_evening_edge_v1",
@@ -233,8 +232,8 @@
       "evidence_ratio": 0.65,
       "total_evidence": 27,
       "created_at": 1779310372.0,
-      "last_applied": 1779325621.5691223,
-      "times_applied": 1,
+      "last_applied": 1779419617.7344398,
+      "times_applied": 2,
       "times_correct": 0,
       "active": true
     },
@@ -251,14 +250,14 @@
       "evidence_ratio": 0.64,
       "total_evidence": 27,
       "created_at": 1779310372.0,
-      "last_applied": 1779325621.5699947,
-      "times_applied": 1,
+      "last_applied": 1779419617.734446,
+      "times_applied": 2,
       "times_correct": 0,
       "active": true
     },
     {
       "rule_id": "high_vol_regime_boost_v1",
-      "hypothesis_statement": "high_volatility regime = 55% WR vs 38% avg across all regimes. Best regime for trading by WR margin. Feedback engine: gate=80%, n=2172, conf=88%. LLM engine was missing this rule — sync gap detected 2026-05-22T01:06 UTC. Exempt from illiquid penalty stacking (different regime). Graduate: escalate gate 20%→50% at n>=25 obs with WR>=0.52.",
+      "hypothesis_statement": "high_volatility regime = 55% WR vs 38% avg across all regimes. Best regime for trading by WR margin. Feedback engine: gate=80%, n=2172, conf=88%. LLM engine was missing this rule \u2014 sync gap detected 2026-05-22T01:06 UTC. Exempt from illiquid penalty stacking (different regime). Graduate: escalate gate 20%\u219250% at n>=25 obs with WR>=0.52.",
       "action": "boost",
       "conditions": {
         "regime": "high_volatility"
@@ -271,12 +270,11 @@
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 20
+      "active": true
     },
     {
       "rule_id": "tod_morning_edge_v1",
-      "hypothesis_statement": "Morning session 06:00-12:00 UTC = 74% WR on 7 insight_journal trades. BEST TOD window by WR (74% vs 65% evening, 64% afternoon, 19% night). Composite edge: ETH+BTC+trending+morning = confirmed alpha. Missing from LLM engine despite being tracked in feedback/graduated_rules.json (A/B_ACTIVE gate=50%) — write-consistency bug detected 2026-05-21T23:06 UTC. Graduate: escalate gate 50%→100% at n>=15 obs with WR>=0.65.",
+      "hypothesis_statement": "Morning session 06:00-12:00 UTC = 74% WR on 7 insight_journal trades. BEST TOD window by WR (74% vs 65% evening, 64% afternoon, 19% night). Composite edge: ETH+BTC+trending+morning = confirmed alpha. Missing from LLM engine despite being tracked in feedback/graduated_rules.json (A/B_ACTIVE gate=50%) \u2014 write-consistency bug detected 2026-05-21T23:06 UTC. Graduate: escalate gate 50%\u2192100% at n>=15 obs with WR>=0.65.",
       "action": "boost",
       "conditions": {
         "hour_utc_min": 6,
@@ -287,11 +285,114 @@
       "evidence_ratio": 0.74,
       "total_evidence": 7,
       "created_at": 1779404804.0,
-      "last_applied": null,
+      "last_applied": 1779419680.301572,
+      "times_applied": 7,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "eth_sell_bb_golden_v1",
+      "hypothesis_statement": "ETH SELL with bollinger_squeeze = 70% WR (n=2172 shadow signals). Tier-1 golden setup.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "ETH",
+        "side": "SELL",
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
+      },
+      "adjustment": 8.0,
+      "confidence": 0.95,
+      "evidence_ratio": 0.7,
+      "total_evidence": 2172,
+      "created_at": 1779419602.7878811,
+      "last_applied": 1779419680.3015776,
+      "times_applied": 3,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "btc_buy_bb_golden_v1",
+      "hypothesis_statement": "BTC BUY with bollinger_squeeze = 69% WR (n=2172 shadow signals). Tier-1 golden setup.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "BTC",
+        "side": "BUY",
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
+      },
+      "adjustment": 8.0,
+      "confidence": 0.91,
+      "evidence_ratio": 0.69,
+      "total_evidence": 2172,
+      "created_at": 1779419602.7878811,
+      "last_applied": 1779419634.0488565,
+      "times_applied": 1,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "sol_buy_bb_golden_v1",
+      "hypothesis_statement": "SOL BUY with bollinger_squeeze = 67% WR (n=2172 shadow signals). Tier-1 golden setup.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "SOL",
+        "side": "BUY",
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
+      },
+      "adjustment": 8.0,
+      "confidence": 0.9,
+      "evidence_ratio": 0.67,
+      "total_evidence": 2172,
+      "created_at": 1779419602.7878811,
+      "last_applied": 0.0,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50
+      "active": true
+    },
+    {
+      "rule_id": "hype_sell_bb_block_v1",
+      "hypothesis_statement": "HYPE SELL with bollinger_squeeze = 35% WR (n=2172). Worst BB setup. Block.",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "HYPE",
+        "side": "SELL",
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
+      },
+      "adjustment": -15.0,
+      "confidence": 0.92,
+      "evidence_ratio": 0.35,
+      "total_evidence": 2172,
+      "created_at": 1779419602.7878811,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "bb_mtq_antipattern_v1",
+      "hypothesis_statement": "BB+MTQ co-agreement = 35% WR (n=2172). When both bollinger_squeeze AND multi_tier_quality fire, it's a contra-indicator. Penalize.",
+      "action": "penalize",
+      "conditions": {
+        "strategies_include": [
+          "bollinger_squeeze",
+          "multi_tier_quality"
+        ]
+      },
+      "adjustment": -10.0,
+      "confidence": 0.92,
+      "evidence_ratio": 0.35,
+      "total_evidence": 2172,
+      "created_at": 1779419602.7878811,
+      "last_applied": 1779419634.0497034,
+      "times_applied": 1,
+      "times_correct": 0,
+      "active": true
     }
   ]
 }

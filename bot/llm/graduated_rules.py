@@ -42,7 +42,8 @@ class GraduatedRule:
         return self.times_correct / self.times_applied if self.times_applied > 0 else 0.5
 
     def matches(self, symbol="", regime="", side="", strategy="",
-                setup_type="", num_agree=0, confidence=0.0, hour_utc=-1) -> bool:
+                setup_type="", num_agree=0, confidence=0.0, hour_utc=-1,
+                strategies_active=None) -> bool:
         if not self.active:
             return False
         c = self.conditions
@@ -65,6 +66,18 @@ class GraduatedRule:
             return False
         if c.get("strategy") and strategy != c["strategy"]:
             return False
+        if c.get("strategies_include"):
+            # Check that ALL listed strategies are present in the active strategies list.
+            # Enables rules like "when bollinger_squeeze fires" on ensemble signals where
+            # strategy="ensemble" but metadata["strategies_agree"] has the individual names.
+            _active = set(strategies_active or [])
+            if not all(s in _active for s in c["strategies_include"]):
+                return False
+        if c.get("strategies_exclude"):
+            # Block match if any of these strategies are active (anti-pattern detection).
+            _active = set(strategies_active or [])
+            if any(s in _active for s in c["strategies_exclude"]):
+                return False
         if c.get("setup_type") and setup_type != c["setup_type"]:
             return False
         if c.get("min_agree") and num_agree < c["min_agree"]:
@@ -234,8 +247,15 @@ class GraduatedRulesEngine:
         return conditions, action, adjustment
 
     def evaluate_signal(self, symbol="", regime="", side="", strategy="",
-                        setup_type="", num_agree=0, confidence=0.0, hour_utc=-1) -> tuple:
-        """Returns (should_veto, adjusted_confidence, applied_rules_summary)."""
+                        setup_type="", num_agree=0, confidence=0.0, hour_utc=-1,
+                        strategies_active=None) -> tuple:
+        """Returns (should_veto, adjusted_confidence, applied_rules_summary).
+
+        strategies_active: list of individual strategy names that fired (e.g.
+        ["bollinger_squeeze", "multi_tier_quality"]). Enables rules that condition
+        on which strategies contributed — needed because ensemble signals always
+        have strategy="ensemble" while individual names live in metadata.
+        """
         self._ensure_loaded()
         vetoed, conf_delta, applied = False, 0.0, []
 
@@ -243,7 +263,8 @@ class GraduatedRulesEngine:
             if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side,
                                                     strategy=strategy, setup_type=setup_type,
                                                     num_agree=num_agree, confidence=confidence,
-                                                    hour_utc=hour_utc):
+                                                    hour_utc=hour_utc,
+                                                    strategies_active=strategies_active):
                 continue
             rule.times_applied += 1
             rule.last_applied = time.time()

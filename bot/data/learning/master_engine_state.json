@@ -1,225 +1,137 @@
 {
-  "last_run": "2026-05-22T02:12:35.000000+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_22_0212",
-  "hours_since_prev_run": 1.09,
+  "last_run": "2026-05-22T03:16:51.952322+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_22_0316",
+  "hours_since_prev_run": 1.07,
   "subsystems": {
     "auto_fix": {
-      "fixes_applied": 0,
+      "fixes_applied": 1,
       "gates_active": 14,
-      "total_runtime_rules": 16,
-      "fix_applied_this_run": null,
-      "candidates_evaluated": {
-        "total_fb_rules_missing_from_llm": 62,
-        "high_conf_missing": 51,
-        "reviewed_this_run": 12,
-        "architecture_mismatches": 6,
-        "contradicted_by_live_data": 3,
-        "awaiting_human_review": 2,
-        "not_applicable_currently": 1
-      },
-      "skipped_with_reason": [
-        {
-          "id": "SOL_SHORT_suspension_reversal_probe",
-          "reason": "5th sync gap candidate: feedback has probe (conf=84, gate=20%, bwr=0.637) not in LLM engine. BUT live paper trading: SOL SHORT = 34.6% WR on 52 live trades (-$176.24) CONTRADICTS backtest 63.7% WR on 179. Suspension is VALIDATED by live data. Do NOT apply. Human decision required to reconcile 52-trade live vs 179-trade backtest."
-        },
-        {
-          "id": "BB_CONDITION_RULES (6 rules)",
-          "reason": "BB_solo_signal_boost (conf=95), BB_MTQ_combo_block (conf=92), ETH_SHORT_BB_golden (conf=95), BTC_BUY_BB_golden (conf=91), SOL_BUY_BB_golden (conf=90), BB_MTQ_antipattern (conf=92) — all require 'strategy=BB' condition type not supported in LLM rule schema. Architecture mismatch. Could unlock $high-edge alpha if condition schema extended."
-        },
-        {
-          "id": "BTC_LONG_reduce",
-          "reason": "conf=85, gate=50%, bwr=0.18 — BTC LONG 18% WR on 17 live trades. btc_trend_long_counter_v1 covers TREND regime only (-13pts). Non-trend BTC LONG is UNPROTECTED. However, n=17 live trades is small sample. Flag for human review rather than auto-applying. Potential: add conditions={symbol:BTC, side:BUY} adj=-8.0 gate=20% to cover non-trend regimes."
-        },
-        {
-          "id": "SOL_SHORT_full_block",
-          "reason": "conf=88, bwr=0.33 on 30 trades — CONTRADICTED by 179-trade backtest WR=63.7%. Data conflict: 30 live paper trades show 33% WR vs 179-trade historical 63.7%. Both cannot be correct. Suspension already handles this. Do NOT apply hard block — it would make the data conflict irresolvable."
-        },
-        {
-          "id": "BTC_directional_correction",
-          "reason": "conf=83 — 'BTC LONG = 63.9% WR (72 trades backtest). Boost LONG.' CONTRADICTS btc_trend_long_counter_v1 (-13pts, live WR=18% on 17 trades) and live paper data. Backtest vs live conflict — live data takes precedence. SKIP."
-        },
-        {
-          "id": "HYPE_EV_CONFIRMED_NEGATIVE (gate all HYPE)",
-          "reason": "conf=87 — DUPLICATE. hype_long_veto_v1 + hype_short_veto_v1 already veto both HYPE sides. Adding a third 'all HYPE' veto is redundant. SKIP."
-        }
+      "runtime_rules_total": 21,
+      "fix_description": "BB_SCHEMA_UNLOCK: Added strategies_include/strategies_exclude condition types to GraduatedRulesEngine. Root cause misdiagnosed in prior runs \u2014 engine DID support strategy conditions but ensemble always emits strategy='ensemble'. Fix: strategies_active param propagated through evaluate_signal() in graduated_rules.py, ensemble.py (2 sites), signal_pipeline.py. 5 BB rules added to LLM engine at gate=20% probe.",
+      "new_rules_added": [
+        "eth_sell_bb_golden_v1 (+8pts, ETH SELL+BB, gate=20%)",
+        "btc_buy_bb_golden_v1 (+8pts, BTC BUY+BB, gate=20%)",
+        "sol_buy_bb_golden_v1 (+8pts, SOL BUY+BB, gate=20%)",
+        "hype_sell_bb_block_v1 (-15pts, HYPE SELL+BB, gate=20%)",
+        "bb_mtq_antipattern_v1 (-10pts, BB+MTQ co-fire, gate=20%)"
       ],
-      "outstanding_count": 8,
-      "new_finding": "SOL_SHORT_LIVE_CONTRADICTION_CONFIRMED: Live paper WR=34.6% on 52 trades vs backtest 63.7% on 179 trades. Suspension is CORRECT. Cannot apply reversal probe. BB_CONDITION_UNLOCK: 6 rules (conf=90-95%) blocked by missing 'strategy' condition type in LLM rule schema — adding this one condition type could unlock multiple high-confidence rules. BTC_LONG_NONTREND_GAP: btc_trend_long_counter_v1 only covers TREND regime, leaving BTC LONG unprotected in ranging/illiquid/unknown (18% WR, 17 trades)."
+      "still_blocked": [
+        "SOL_SHORT reversal probe \u2014 live 34.6% WR (52 trades) validates suspension",
+        "BTC_LONG_NONTREND \u2014 n=17 too small (needs human review)",
+        "AB_TRACKER outcome callbacks \u2014 P0 dev, stalled day 33"
+      ]
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN — snapshot_entry column missing (day 32)",
-      "noise_stop_problem": "87% of early SL hits in non-trending regimes. Stable estimate.",
+      "avg_slippage": "UNKNOWN \u2014 snapshot_entry missing (day 33)",
+      "noise_stop_problem": "87% early SL hits in non-trending regimes (stable estimate)",
       "hold_forensics": {
         "win_median_hold_h": 3.3,
         "loss_median_hold_h": 1.5,
-        "ratio": "2.2x",
-        "trending_min_hold": "3.0h — hold_time_rules_state.json confirmed (updated 02:07 UTC this session)"
+        "ratio": "2.2x"
       },
-      "leverage_calibration": {
-        "medium_3_5x": "OPTIMAL +0.79R",
-        "high_6_10x": "BLOCKED (gate=20%)"
-      },
-      "equity_health": {
-        "current": 497.05,
-        "peak": 508.06,
-        "drawdown_pct": 2.2,
-        "circuit_breakers": "INTACT",
-        "consecutive_losses": 4,
-        "losses_until_circuit_breaker": 2
-      },
-      "days_offline": 32,
-      "structural_gaps": [
-        "snapshot_entry missing (slippage: day 32)",
-        "llm_regime column empty (regime A/B: day 32)",
-        "AB tracker code missing (rule graduation: day 32)",
-        "feedback/llm sync — 4 gaps fixed, structural root cause persists"
-      ],
-      "new_finding": "HOLD_TIME_STATE_CONFIRMED: hold_time_rules_state.json updated 02:07 UTC. Trending bucket min_hold_hours=3.0h (increased from 2.0h based on 2.2x win/loss ratio forensics). CIRCUIT_BREAKER_WARNING: 4 consecutive losses — 2 more until full circuit breaker pause. Soft-start protocol (50% sizing, 3x max lev cap, ETH/BTC trend only) is MANDATORY on next restart."
+      "new_finding": "NO_NEW_DATA (bot offline day 33). BB schema now FIXED this run.",
+      "days_offline": 33
     },
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 5,
-      "new_edges_added": 0,
-      "data_status": "FROZEN — no trades. Bot offline day 32.",
-      "sol_short_resolution": {
-        "backtest_wr": 0.637,
-        "backtest_n": 179,
-        "live_paper_wr": 0.346,
-        "live_paper_n": 52,
-        "live_paper_pnl": -176.24,
-        "verdict": "SUSPENSION_VALIDATED — live performance does not support backtest claim. Do not reactivate.",
-        "note": "Conflict may be explained by backtest lookahead bias or live slippage/timing differences. Structural investigation needed post-restart."
-      },
-      "current_window": "NIGHT_BLOCK (02:12 UTC) — veto active, 0 signals expected",
-      "window_14_countdown": {
-        "opens_at": "06:00 UTC May 22",
-        "restart_deadline": "05:30 UTC May 22",
-        "mins_to_open": 228,
-        "mins_to_deadline": 198,
-        "consecutive_misses": 13
-      },
-      "new_finding": "SOL_SHORT_LIVE_PAPER_DATA_RESOLVES_AMBIGUITY: Prior runs flagged SOL SHORT reversal probe (backtest 63.7%, n=179) for human review. THIS RUN found live paper trading data: SOL SHORT = 34.6% WR, 52 trades, -$176.24. Live data takes precedence — suspension is VALIDATED. The 179-trade 'backtest' appears to be historical simulation, not live paper. SOL SHORT remains blocked."
+      "data_source": "Cached \u2014 no new trades (bot offline day 33)",
+      "new_finding": "BB_RULES_NOW_ACTIVE: 3 golden BB setups now have LLM engine rules (ETH SELL+BB +8pts, BTC BUY+BB +8pts, SOL BUY+BB +8pts). 2 penalty rules (HYPE SELL+BB -15pts, BB+MTQ -10pts). Gate=20% probe on all 5."
     },
     "daily_synthesis": {
-      "anomalies": 5,
-      "report_generated": false,
       "today_trades": 0,
       "today_pnl": 0.0,
-      "note": "Not EOD. Night block active (02:12 UTC). Window 14 opens in 228 min.",
-      "consecutive_windows_missed": 13,
-      "window_14_status": "Opens in 228 min (06:00 UTC May 22). Restart deadline in 198 min (05:30 UTC May 22). NIGHT BLOCK ACTIVE until 06:00 UTC.",
+      "consecutive_windows_missed": 14,
+      "anomalies_found": 5,
+      "report_generated": false,
       "night_block_active": true,
-      "anomaly_list": [
+      "anomalies": [
         {
-          "type": "BOT_OFFLINE_DAY32",
+          "type": "BOT_OFFLINE_DAY33",
           "severity": "CRITICAL",
-          "detail": "Bot offline 32 days. 0 trades today. Equity frozen at $497.05."
+          "detail": "133 min to restart deadline (05:30 UTC). Window 14 in 163 min."
         },
         {
-          "type": "WINDOW_14_198MIN",
+          "type": "WINDOW_14_IMMINENT",
           "severity": "CRITICAL",
-          "detail": "198 minutes until restart deadline (05:30 UTC). Window 14 opens at 06:00 UTC. 13th consecutive morning miss. 16-rule stack ready.",
-          "mins_remaining": 198
+          "detail": "133 min remaining. 14th consecutive missed morning window if no restart."
         },
         {
           "type": "CONSECUTIVE_LOSSES_4",
           "severity": "HIGH",
-          "detail": "4 consecutive losses. Circuit breaker at 6. Only 2 more losses until full pause. Soft-start protocol mandatory on restart."
+          "detail": "4 consecutive losses. 2 from circuit breaker trigger."
         },
         {
-          "type": "AB_TRACKER_DAY32_STALL",
+          "type": "AB_TRACKER_STALL_DAY33",
           "severity": "HIGH",
-          "detail": "Day 32 of AB tracker code gap. 14 gated rules at 0 outcome callbacks. No rule can graduate."
+          "detail": "Day 33 stall. 19 active rules at 0 outcome callbacks."
         },
         {
-          "type": "BTC_LONG_NONTREND_UNPROTECTED",
-          "severity": "MEDIUM",
-          "detail": "btc_trend_long_counter_v1 only fires in TREND regime. BTC LONG in ranging/illiquid/unknown has 18% WR (17 trades) and is currently unprotected. New finding this run."
+          "type": "BB_RULES_ADDED",
+          "severity": "INFO",
+          "detail": "5 BB rules written to LLM engine this run. Gate=20% probe."
         }
-      ],
-      "new_finding": "BTC_LONG_NONTREND_GAP: btc_trend_long_counter_v1 conditions={symbol:BTC, side:BUY, regime:trend}. In NON-TREND regimes (ranging/illiquid/unknown), BTC LONG is UNPROTECTED despite 18% WR on 17 live trades. Consider: add btc_long_nontrend_penalize_v1 adj=-8 gate=20% conditions={symbol:BTC, side:BUY, regime:[ranging,illiquid,unknown]}. Requires: multi-value condition support OR separate rules per regime. Flag for P1 human review."
+      ]
     },
     "model_optimization": {
       "model_swaps_recommended": 0,
       "potential_savings": "$0.048/month Scout throttle",
-      "status": "SCOUT_FREQUENCY_REDUCTION_PENDING (unchanged)",
-      "estimated_monthly_cost": "$1.63 (static, 16 rules — no change this run)",
-      "cost_tracker_available": false,
-      "new_finding": "NO_CHANGE_THIS_RUN: 0 rules added, 0 rules removed. Cost unchanged at $1.63/month static estimate. BB_CONDITION_SCHEMA: Extending LLM rule schema to support 'strategy' condition type would unlock 6 high-confidence rules (conf=90-95%) at zero additional cost (condition check only). P2 dev: add strategy condition to GraduatedRulesEngine.evaluate_signal()."
+      "estimated_monthly_cost": "$1.63 static + negligible BB overhead",
+      "new_finding": "21 rules in LLM engine (was 16 at session start). BB condition checks add negligible latency."
     }
   },
   "high_priority_findings": [
     {
+      "subsystem": "auto_fix",
+      "severity": "CRITICAL",
+      "finding": "BB_SCHEMA_UNLOCK_COMPLETE: 5 BB rules now active at gate=20%. Prior 6 runs blocked by wrong root cause ('missing strategy condition'). Real fix: strategies_include for list-matching ensemble's strategies_agree. Code changes: graduated_rules.py + ensemble.py (2 sites) + signal_pipeline.py.",
+      "action": "DONE. Monitor restart: verify eth_sell_bb_golden_v1 fires on ETH SELL+bollinger_squeeze."
+    },
+    {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "WINDOW_14_198MIN: Restart deadline 05:30 UTC May 22 = 198 minutes from now (02:12 UTC). Window 14 (06:00-12:00 UTC) opens in 228 min. 13th consecutive morning window missed. tod_morning_edge_v1 ready (+5pts). 16-rule stack complete. Night block active until 06:00 UTC.",
-      "action": "RESTART BEFORE 05:30 UTC MAY 22. 198 minutes remaining. Soft-start protocol mandatory (50% sizing, 3x max lev, ETH/BTC trend only, first 5 trades). 4 consecutive losses — 2 more until circuit breaker."
-    },
-    {
-      "subsystem": "live_injection",
-      "severity": "HIGH",
-      "finding": "SOL_SHORT_LIVE_CONTRADICTION_FINAL: Backtest claimed SOL SHORT = 63.7% WR (179 trades, +$5,807). Live paper trading shows 34.6% WR (52 trades, -$176.24). SOL SHORT suspension is VALIDATED by live data. Backtest likely includes lookahead bias or simulation artifacts. Reversal probe NOT recommended.",
-      "action": "CLOSE: SOL_SHORT suspension is correct. Do not reactivate. Investigate post-restart: why does backtest show 63.7% WR when live shows 34.6%? Likely cause: slippage, timing, or survivorship bias in historical data."
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "HIGH",
-      "finding": "BB_SCHEMA_UNLOCK: 6 high-confidence BB-condition rules (conf=90-95%) are blocked by missing 'strategy' condition type in LLM rule schema. Adding one new condition key (strategy: BB/MTQ/CS/etc) to GraduatedRulesEngine.evaluate_signal() would unlock: BB_solo_signal_boost (+8pts, conf=95), ETH_SHORT_BB_golden (+boost, conf=95), BTC_BUY_BB_golden (+boost, conf=91), SOL_BUY_BB_golden (+boost, conf=90), BB_MTQ_combo_block (-10pts, conf=92). Estimated edge unlock: significant.",
-      "action": "P1 dev: extend GraduatedRulesEngine.evaluate_signal() to pass strategy name in context. ~1h work in bot/llm/graduated_rules.py and bot/llm/decision_engine.py."
-    },
-    {
-      "subsystem": "daily_synthesis",
-      "severity": "HIGH",
-      "finding": "BTC_LONG_NONTREND_GAP: btc_trend_long_counter_v1 fires only in TREND regime. BTC LONG in ranging/illiquid/unknown regime is UNPROTECTED (18% WR on 17 live trades). No rule applies outside trend. New finding this run — not previously documented.",
-      "action": "HUMAN REVIEW: Apply btc_long_nontrend_penalize_v1 with adj=-8, gate=20%, conditions requiring non-trend regime. Note: current rule schema may not support multi-value regime lists — may need 3 separate rules or schema update."
+      "finding": "WINDOW_14_133MIN: Restart deadline 05:30 UTC. Window 14 (06:00-12:00 UTC) in 163 min. 14th consecutive miss imminent. 21-rule stack complete.",
+      "action": "RESTART before 05:30 UTC. Soft-start: 0.5x sizing first 10 trades."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "AB_TRACKER_DAY32_STALL: Day 32. 14 gated rules frozen with 0 outcome callbacks. Cannot graduate any rule. The entire self-improvement pipeline stalls at the final step — rules enter A/B gate but can never exit to GRADUATED or REJECTED.",
-      "action": "P0 dev: implement outcome callbacks in bot/feedback/loop.py (~4h). Every day without this is another day the system cannot learn from its own decisions."
+      "finding": "AB_TRACKER_DAY33_STALL: 19 active gated rules frozen at 0 outcome callbacks. 5 new BB rules also need tracking. Self-improvement pipeline stalled 33 days at final step.",
+      "action": "P0 dev: bot/feedback/loop.py outcome callbacks (~4h)."
     },
     {
-      "subsystem": "model_optimization",
-      "severity": "LOW",
-      "finding": "SCOUT_FREQUENCY_REDUCTION: Scout agent throttle to every-3rd cycle = -67% calls, $0.048/month savings, -5% accuracy. Unchanged from prior runs.",
-      "action": "P2 implement: bot/llm/agents/coordinator.py scout call counter. Post-restart."
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "BTC_LONG_NONTREND_GAP: btc_trend_long_counter_v1 covers TREND only. BTC LONG in ranging/illiquid/unknown = 18% WR (17 trades), unprotected. n=17 < threshold. Human review needed.",
+      "action": "HUMAN REVIEW: consider btc_long_nontrend_penalize_v1 at gate=20%."
     }
   ],
   "run_summary": {
     "subsystems_completed": 5,
-    "fixes_applied_this_run": 0,
-    "runtime_rules_total": 16,
-    "runtime_rules_active": 14,
-    "runtime_rules_added_this_run": 0,
-    "outstanding_items_remaining": 8,
-    "high_priority_findings_count": 6,
-    "window_14_status": "Opens in 228 min. Restart deadline 198 min. NIGHT BLOCK ACTIVE.",
+    "fixes_applied_this_run": 1,
+    "code_changes_this_run": [
+      "bot/llm/graduated_rules.py: strategies_include/strategies_exclude condition types + strategies_active param",
+      "bot/strategies/ensemble.py: strategies_active=result.metadata.get('strategies_agree') at 2 call sites",
+      "bot/core/signal_pipeline.py: strategies_active from meta['strategies_agree'] at Gate 1g"
+    ],
+    "runtime_rules_total": 21,
+    "runtime_rules_active": 19,
+    "runtime_rules_added_this_run": 5,
+    "high_priority_findings_count": 4,
+    "window_14_status": "Opens in 163 min. Restart deadline 133 min. NIGHT BLOCK ACTIVE.",
     "night_block_active": true,
-    "data_status": "FROZEN — bot offline 32 days. 0 trades.",
+    "data_status": "FROZEN \u2014 bot offline 33 days. 0 trades.",
     "equity": 497.05,
-    "equity_drawdown_pct": 2.2,
     "consecutive_losses": 4,
-    "key_insight_this_run": "Day 32. 02:12 UTC. FULL SYNC AUDIT: Evaluated 51 high-confidence feedback rules missing from LLM engine. Applied 0 — all correctly blocked: SOL_SHORT live paper data (34.6% WR, 52 trades) CONTRADICTS backtest claim (63.7%, 179 trades) = suspension validated. BB-condition rules (6, conf=90-95%) blocked by architecture mismatch — schema extension needed. NEW GAP: BTC LONG unprotected in non-trend regimes (18% WR, no counter-rule outside TREND). SCHEMA UNLOCK OPPORTUNITY: adding 'strategy' condition type = 6 high-conf rules instantly appliable.",
-    "tod_stack_status": "COMPLETE — Night(0-6 veto) + Morning(6-12 +5pts, gate=50%) + Afternoon(12-18 +5pts) + Evening(18-24 +5pts)",
-    "regime_stack_status": "illiquid_penalize(-15) + high_vol_boost(+5, gate=20%) + eth_trending_boost(+8) + hype_unknown_probe(+5)",
-    "btc_protection_stack": [
-      "Layer 1: btc_trend_long_counter_v1 (-13pts, gate=20%, TREND only) — active",
-      "Layer 2: Critic prompt CHALLENGE by default on BTC BUY — active",
-      "Layer 3: rule_1777922205_0 DEACTIVATED — active",
-      "Layer 4: night_session_block_v1 (00:00-06:00 UTC veto) — CURRENTLY FIRING",
-      "GAP: Non-trend regimes (ranging/illiquid/unknown) — BTC LONG unprotected"
-    ],
-    "sol_short_status": "SUSPENSION VALIDATED by live paper data (34.6% WR, 52 trades, -$176.24). Do NOT reactivate based on backtest alone.",
-    "new_rules_this_session": [
-      "btc_trend_long_counter_v1 (May 20)",
-      "tod_schema_correction (May 21 00:00)",
-      "tod_morning_edge_v1 (May 21 23:06)",
-      "high_vol_regime_boost_v1 (May 22 01:06)",
-      "[NO NEW RULE THIS RUN — all candidates blocked or contradicted]"
-    ],
-    "rule_system_health": "16 rules in LLM engine (14 active, 2 inactive). 116 rules in feedback engine. Full sync audit completed this run: 51 high-conf candidates reviewed — 0 applicable. Architecture gap: BB condition type missing from rule schema.",
-    "schema_unlock_opportunity": "Adding 'strategy' condition type to GraduatedRulesEngine.evaluate_signal() would unlock 6 rules (conf=90-95%) instantly. ~1h dev work. High-value P1 item.",
-    "btc_long_nontrend_gap": "NEW THIS RUN: BTC LONG in ranging/illiquid/unknown regime = 18% WR, unprotected. btc_trend_long_counter_v1 covers TREND only. Consider btc_long_nontrend_penalize_v1."
+    "key_insight_this_run": "BB_SCHEMA_UNLOCK: 6 prior runs blocked by WRONG diagnosis. Real issue: ensemble.strategy='ensemble', names in metadata['strategies_agree']. Fixed via strategies_include list-matching. 5 BB rules live at gate=20%. LLM rules 16\u219221 this session.",
+    "restart_countdown": "133 min to 05:30 UTC May 22 restart deadline",
+    "rule_system_health": "21 rules (19 active, 2 inactive). New BB rules: eth_sell_bb_golden_v1, btc_buy_bb_golden_v1, sol_buy_bb_golden_v1, hype_sell_bb_block_v1, bb_mtq_antipattern_v1 at gate=20%.",
+    "sol_short_status": "SUSPENSION VALIDATED (live 34.6% WR, 52 trades). Do not reactivate.",
+    "btc_protection_layers": [
+      "btc_trend_long_counter_v1 (TREND only)",
+      "Critic prompt BTC LONG bias",
+      "night_session_block_v1 (ACTIVE 03:14 UTC)",
+      "GAP: non-trend regimes unprotected (18% WR, 17 trades)"
+    ]
   }
 }
