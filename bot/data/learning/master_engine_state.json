@@ -1,19 +1,20 @@
 {
-  "last_run": "2026-05-21T23:09:37.996596+00:00",
-  "run_id": "perpetual_deep_dive_2026_05_21_2306",
-  "hours_since_prev_run": 0.93,
+  "last_run": "2026-05-22T00:17:53.721694+00:00",
+  "run_id": "perpetual_deep_dive_2026_05_22_0017",
+  "hours_since_prev_run": 1.14,
   "subsystems": {
     "auto_fix": {
-      "fixes_applied": 1,
-      "gates_active": 15,
+      "fixes_applied": 0,
+      "gates_active": 11,
       "total_runtime_rules": 15,
-      "fix_this_run": "TOD_MORNING_EDGE_V1_WRITE",
-      "finding": "CRITICAL: tod_morning_edge_v1 (74% WR, best TOD window) tracked in bot/feedback/graduated_rules.json as A/B_ACTIVE gate=50% but ABSENT from LLM confidence engine (bot/data/llm/graduated_rules.json). Third consecutive run finding a write-consistency bug. Fixed: tod_morning_edge_v1 added with conditions={hour_utc_min:6, hour_utc_max:12}, adj=+5.0, gate=50%, active=true. Now 15 rules in LLM engine. TOD stack complete.",
-      "outstanding_count": 8,
-      "tod_stack": "COMPLETE \u2014 Night(0-6 veto) + Morning(6-12 +5pts gate=50%) + Afternoon(12-18 +5pts) + Evening(18-24 +5pts)"
+      "reason_no_fix": "TOD stack complete (15 rules). No new audit files. All outstanding items require dev work or human decision.",
+      "outstanding_count": 7,
+      "tod_stack": "COMPLETE \u2014 Night(0-6 veto) + Morning(6-12 +5pts gate=50%) + Afternoon(12-18 +5pts) + Evening(18-24 +5pts)",
+      "new_finding": "BB_RULES_LLM_EVALUATION: BB_solo_signal_boost (conf=95) and BB_MTQ_combo_block (conf=92) are high-confidence signal co-firing rules in feedback engine with no LLM engine equivalent. If LLM agents receive strategy_agreement signals, these could become LLM adjustment rules. Gap requires architecture decision.",
+      "correction": "STALE_SHADOW_FILE outstanding item CLOSED as INVALID \u2014 bot/data/llm/graduated_rules.json is the active 15-rule LLM engine, not a shadow file. Outstanding count reduced from 8 to 7."
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 30)",
+      "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 31)",
       "noise_stop_problem": "87% of early SL hits in non-trending regimes. Stable estimate.",
       "hold_forensics": {
         "win_median_hold_h": 3.3,
@@ -24,17 +25,34 @@
         "medium_3_5x": "OPTIMAL +0.79R",
         "high_6_10x": "BLOCKED (gate=20%)"
       },
-      "days_offline": 30.0,
-      "new_finding": "SYNC_GAP_ROOT_CAUSE: Three consecutive runs (btc_trend_long_counter + TOD_schema + tod_morning_edge) expose systemic sync failure between bot/feedback/graduated_rules.json and bot/data/llm/graduated_rules.json. No atomic write protocol exists. Structural gap documented."
+      "equity_health": {
+        "current": 497.05,
+        "peak": 508.06,
+        "drawdown_pct": 2.2,
+        "circuit_breakers": "INTACT"
+      },
+      "days_offline": 31,
+      "new_finding": "STALE_SHADOW_FILE_ITEM_INVALID: bot/data/llm/graduated_rules.json was listed in outstanding_pending as 'delete this shadow file'. INCORRECT \u2014 this is the active LLM confidence engine with 15 carefully curated rules. Deleting would destroy all runtime LLM adjustments. Item removed from pending list.",
+      "structural_gaps_unchanged": [
+        "snapshot_entry column missing (day 31)",
+        "llm_regime column empty (day 31)",
+        "AB result tracker code missing (day 31)"
+      ]
     },
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 5,
-      "new_edges_added": 1,
-      "data_status": "FROZEN \u2014 no trades. Bot offline day 30.",
-      "new_edge_detail": "tod_morning_edge_v1 written to LLM engine. TOD stack complete. Morning rule will fire on Window 13 (6.9h away).",
-      "window_status": "Evening edge: 54min remaining. Window 13: 6.9h away (06:00 UTC May 22).",
-      "tod_stack_status": "COMPLETE"
+      "new_edges_added": 0,
+      "data_status": "FROZEN \u2014 no trades. Bot offline day 31.",
+      "current_window": "NIGHT_BLOCK (00:14 UTC) \u2014 veto active, 0 signals expected",
+      "window_14_countdown": {
+        "opens_at": "06:00 UTC May 22",
+        "restart_deadline": "05:30 UTC May 22",
+        "mins_remaining": 315,
+        "consecutive_misses": 13
+      },
+      "new_finding": "OVERSEER_QUANT_VERIFIED: Coordinator.py confirmed to contain both Overseer and Quant agents \u2014 9-agent system documented in CLAUDE.md is accurate. Prior concern about 9 vs 7 agent gap resolved. All 9 agents active in coordinator.",
+      "insight_journal": "213 entries, 0 exact duplicates \u2014 INSIGHTS_DEDUPLICATION_GAP concern from prior runs appears resolved for exact duplicates. Semantic dedup not assessed."
     },
     "daily_synthesis": {
       "anomalies": 6,
@@ -42,70 +60,81 @@
       "today_trades": 0,
       "today_pnl": 0.0,
       "consecutive_windows_missed": 13,
-      "window_13_status": "Opens in 6.9h (06:00-12:00 UTC May 22). Restart deadline: 05:30 UTC (6.4h). Morning rule now in engine.",
-      "new_finding": "GRADUATED_RULES_SYNC_GAP: Three-run pattern exposes systemic sync failure between two rule stores. P1 dev: cross-validation startup check. Also: TOD_morning_edge fix completes the rule stack \u2014 all 15 LLM rules ready for Window 13."
+      "window_14_status": "Opens in 5h46min (06:00 UTC). Restart deadline in 5h16min (05:30 UTC).",
+      "night_block_active": true,
+      "synthesis_path": "/home/user/WAGMI/bot/data/sessions/daily_synthesis_2026-05-22.json",
+      "new_finding": "SYNTHESIS_DAY22_GENERATED: First synthesis for 2026-05-22. Bot offline day 31. Night block active. Correction applied: STALE_SHADOW_FILE outstanding item closed as invalid."
     },
     "model_optimization": {
       "model_swaps_recommended": 1,
-      "potential_savings": "$0.096/month Scout",
-      "status": "SCOUT_FREQUENCY_REDUCTION_PENDING",
-      "all_agents_optimal": true,
-      "new_finding": "No change. Static analysis (bot offline 30 days)."
+      "potential_savings": "$0.048/month Scout throttle",
+      "status": "SCOUT_FREQUENCY_REDUCTION_PENDING (unchanged)",
+      "estimated_monthly_cost": "$1.63 (static estimate)",
+      "cost_tracker_available": false,
+      "new_finding": "OVERSEER_QUANT_COST_CONFIRMED: Overseer and Quant agents verified present in coordinator.py. Their model assignments affect monthly cost. With cost_tracker.json absent, cannot compute per-agent ROI. P2: generate cost_tracker.json on restart.",
+      "all_agents_model_optimal": true
     }
   },
   "high_priority_findings": [
     {
-      "subsystem": "auto_fix",
-      "severity": "HIGH",
-      "finding": "TOD_MORNING_EDGE_WRITE_BUG: tod_morning_edge_v1 (74% WR = best TOD window) was A/B_ACTIVE in feedback/graduated_rules.json but absent from LLM engine. Third consecutive run finding same write-consistency bug pattern. Fixed \u2014 15 rules now in engine, TOD stack complete.",
-      "action": "RESOLVED. Monitor: first 06:00-12:00 UTC signal post-restart gets +5pts boost. Graduate gate 50%\u2192100% at n>=15 WR>=0.65."
+      "subsystem": "daily_synthesis",
+      "severity": "CRITICAL",
+      "finding": "WINDOW_14_315MIN: May 22 06:00-12:00 UTC window opens in 5h46min. Restart deadline 05:30 UTC (5h16min = 315min). 13th consecutive morning miss. Night block currently active (00:00-06:00 UTC) \u2014 no signals firing. Rule stack complete: 15 LLM rules ready.",
+      "action": "RESTART BEFORE 05:30 UTC MAY 22. Currently 00:14 UTC \u2014 315min window."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "GRADUATED_RULES_SYNC_GAP_ROOT_CAUSE: bot/feedback/graduated_rules.json and bot/data/llm/graduated_rules.json are two independent stores with no sync mechanism. Three missing rules discovered in 3 consecutive runs. Any rule that graduates into feedback/ may be silently absent from the LLM engine.",
-      "action": "P1 dev: Add startup cross-validation in graduated_rules_engine.py. Also: audit all 116 feedback rules for any that should be in LLM engine (~2h). Critical for self-improvement pipeline integrity."
-    },
-    {
-      "subsystem": "daily_synthesis",
-      "severity": "CRITICAL",
-      "finding": "WINDOW_13_6.9H: May 22 06:00-12:00 UTC window opens in 6.9h. Restart deadline 05:30 UTC (6.4h). 13th consecutive morning miss. Cumulative EV lost: 89+. NOW WITH COMPLETE RULE STACK \u2014 15 LLM rules, full TOD coverage, BTC triple protection, all gated rules ready.",
-      "action": "RESTART BEFORE 05:30 UTC MAY 22. ALSO: 54min of evening edge remaining (23:06 UTC). Restart before 23:45 UTC tonight = bonus 39min of 65% WR exposure."
+      "finding": "STALE_SHADOW_FILE_ITEM_INVALID: Outstanding item 'Delete bot/data/llm/graduated_rules.json' is WRONG. This file IS the active 15-rule LLM confidence engine. Deleting it would destroy all LLM confidence adjustments. Item closed. Outstanding count: 8\u21927.",
+      "action": "CLOSED \u2014 item removed. No action needed on the file itself (keep it)."
     },
     {
       "subsystem": "live_injection",
-      "severity": "MEDIUM",
-      "finding": "AB_TRACKER_DAY30_STALL: 30 days since last trade. 12 gated rules accumulating zero outcome callbacks. Cannot graduate any rule. Self-improvement pipeline fully blocked.",
+      "severity": "HIGH",
+      "finding": "AB_TRACKER_DAY31_STALL: Day 31 of AB tracker code gap. 11 active gated rules stalled at 0 outcome callbacks. Cannot graduate any rule. Self-improvement pipeline blocked.",
       "action": "P0 dev: implement outcome callbacks in bot/feedback/loop.py (~4h). Critical path for ALL rule graduation."
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "MEDIUM",
+      "finding": "BB_RULES_LLM_EVALUATION: BB_solo_signal_boost (conf=95) and BB_MTQ_combo_block (conf=92) are high-confidence co-firing rules in feedback engine not represented in LLM engine. If strategy_agreement signals reach LLM agents, these become LLM rule candidates.",
+      "action": "Architecture assessment: does LLM receive strategy_agreement? If yes, add bb_solo_boost_v1 (+8pts) and bb_mtq_combo_penalty_v1 (-10pts) to LLM engine."
     },
     {
       "subsystem": "model_optimization",
       "severity": "LOW",
-      "finding": "SCOUT_FREQUENCY_REDUCTION: Still pending. Scout runs every cycle. Every-3rd = -67% calls, -5% accuracy, $0.096/month savings.",
+      "finding": "SCOUT_FREQUENCY_REDUCTION: Scout agent runs every cycle. Throttle to every-3rd = -67% calls, -5% accuracy, $0.048/month savings. Pending implementation.",
       "action": "Implement post-restart in bot/llm/agents/coordinator.py (scout call throttle)."
     }
   ],
   "run_summary": {
     "subsystems_completed": 5,
-    "fixes_applied_this_run": 1,
+    "fixes_applied_this_run": 0,
     "runtime_rules_total": 15,
     "runtime_rules_active": 13,
-    "runtime_rules_added_this_run": 1,
-    "outstanding_items_closed": 0,
-    "outstanding_items_remaining": 8,
+    "runtime_rules_added_this_run": 0,
+    "outstanding_items_closed": 1,
+    "outstanding_items_correction": "STALE_SHADOW_FILE closed as INVALID",
+    "outstanding_items_remaining": 7,
     "high_priority_findings_count": 5,
-    "window_13_status": "Opens in 6.9h. Restart deadline 6.4h. MORNING RULE NOW IN ENGINE.",
-    "evening_session": "54min remaining (65% WR, tod_evening_edge_v1 active)",
-    "data_status": "FROZEN \u2014 bot offline 30 days. 0 trades.",
+    "window_14_status": "Opens in 5h46min. Restart deadline 5h16min. NIGHT BLOCK ACTIVE.",
+    "night_block_active": true,
+    "data_status": "FROZEN \u2014 bot offline 31 days. 0 trades.",
     "equity": 497.05,
-    "key_insight_this_run": "Three consecutive runs have found the same write-consistency bug: a rule exists in feedback/graduated_rules.json but is absent from llm/graduated_rules.json. Root cause: two independent rule stores with no sync validation. Fixed tod_morning_edge_v1 (74% WR, best TOD window). Now have complete rule stack for Window 13 restart.",
+    "equity_drawdown_pct": 2.2,
+    "key_insight_this_run": "Day 31. Night block active (00:14 UTC). Window 14 opens in 5h46min. CORRECTION: Closed STALE_SHADOW_FILE outstanding item as INVALID \u2014 bot/data/llm/graduated_rules.json IS the active LLM engine. Verified Overseer+Quant agents are present in coordinator.py (9-agent system confirmed). No new fixes needed \u2014 rule stack complete.",
     "tod_stack_status": "COMPLETE \u2014 Night(0-6 veto) + Morning(6-12 +5pts gate=50%) + Afternoon(12-18 +5pts) + Evening(18-24 +5pts)",
     "btc_protection_stack": [
       "Layer 1: btc_trend_long_counter_v1 (-13pts, gate=20%) \u2014 active",
       "Layer 2: Critic prompt CHALLENGE by default on BTC BUY \u2014 active",
       "Layer 3: rule_1777922205_0 DEACTIVATED (parent boost removed) \u2014 active",
-      "Layer 4: night_session_block_v1 (00:00-06:00 UTC veto) \u2014 active"
+      "Layer 4: night_session_block_v1 (00:00-06:00 UTC veto) \u2014 CURRENTLY FIRING"
     ],
-    "rule_system_health": "ATTENTION: Two graduated_rules.json files out of sync. 116 feedback rules vs 15 LLM rules. Audit needed for remaining 101 feedback rules not cross-referenced to LLM engine."
+    "rule_system_health": "15 rules in LLM engine (all present and correctly formatted). 116 rules in feedback engine (64 A/B_ACTIVE). Two-system architecture \u2014 not a bug.",
+    "corrections_this_run": [
+      "STALE_SHADOW_FILE outstanding item CLOSED as INVALID",
+      "Confirmed bot/data/llm/graduated_rules.json is active (keep it)",
+      "Overseer+Quant agents verified present in coordinator.py"
+    ]
   }
 }

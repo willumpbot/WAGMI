@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-05-21T23:07:36.248575+00:00",
+  "last_run": "2026-05-22T00:18:01.850648+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
   "fixes_applied_this_run": 1,
   "gates_active": 82,
@@ -222,7 +222,6 @@
     "AB_RESULT_TRACKER_CODE: P0 structural gap \u2014 all 81 gated rules stalled.",
     "SNAPSHOT_ENTRY_GAP: add snapshot_entry column (~1h dev).",
     "LLM_REGIME_CAPTURE_GAP: add llm_regime write to trades.csv (~1h dev).",
-    "STALE_SHADOW_FILE: Delete data/llm/graduated_rules.json (15 min dev).",
     "SNIPER_AUTO_EXECUTE: #1 profit lever (+$328/34-trade path). Enable post-5-trade soft-start.",
     "INSIGHTS_DEDUPLICATION_GAP: insights.json accumulates duplicates. Fix accumulator to UPDATE not APPEND."
   ],
@@ -266,6 +265,15 @@
       "source": "perpetual_loop_subsystem1",
       "description": "btc_trend_long_counter_v1 added to graduated_rules.json. Was tracked in auto_fix_state since 2026-05-20 but file write was missing. -13pts on BTC BUY+trending, gate=20%.",
       "outcome_tracking": "PENDING_RESTART"
+    }
+  ],
+  "corrections": [
+    {
+      "correction_id": "STALE_SHADOW_FILE_CLOSED",
+      "closed_at": "2026-05-22T00:18:01.850648+00:00",
+      "original_item": "STALE_SHADOW_FILE: Delete data/llm/graduated_rules.json (15 min dev).",
+      "reason": "INVALID ITEM \u2014 bot/data/llm/graduated_rules.json IS the active 15-rule LLM engine. Deleting it would destroy all LLM confidence adjustments. Item was incorrectly added to pending list.",
+      "action": "CLOSED \u2014 no action needed on the file."
     }
   ]
 }
