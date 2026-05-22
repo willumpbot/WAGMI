@@ -1,148 +1,154 @@
 {
-    "last_run": "2026-05-22T22:13:03.769373+00:00",
-    "run_id": "perpetual_deep_dive_2026_05_22_2213",
-    "hours_since_prev_run": 18.94,
+    "last_run": "2026-05-22T23:17:14.282476+00:00",
+    "run_id": "perpetual_deep_dive_2026_05_22_2317",
+    "hours_since_prev_run": 1.02,
     "subsystems": {
         "auto_fix": {
-            "fixes_applied": 1,
+            "fixes_applied": 0,
             "gates_active": 20,
             "runtime_rules_total": 22,
-            "fix_description": "RANGING_REGIME_SYNC_GAP: ranging_regime_penalize_v1 added to LLM engine. Evidence: 25% WR on 16 trades (WORST regime, worse than illiquid 28.1%). Feedback RANGING_regime_reduce A/B_ACTIVE at gate=50% conf=76%. 6th consecutive cross-system sync gap. Rule: adj=-10.0, conditions={regime:ranging}, gate=20% probe.",
-            "new_rules_added": [
-                "ranging_regime_penalize_v1 (-10pts, ranging regime, gate=20%)"
-            ],
-            "still_blocked": [
-                "btc_long_nontrend_penalize_v1 \u2014 n=17 (needs human review)",
-                "AB_TRACKER outcome callbacks \u2014 P0 dev, stalled day 33",
-                "SNIPER_AUTO_EXECUTE \u2014 #1 profit lever, requires human approval"
-            ],
-            "regime_coverage_status": "COMPLETE \u2014 all 5 regimes now have LLM rules"
+            "candidates_reviewed": 3,
+            "candidates_applied": 0,
+            "candidates_blocked": 3,
+            "block_reasons": {
+                "btc_long_nontrend_penalize_v1": "BELOW_THRESHOLD \u2014 n=17 < 20, conf=72% < 75%. Skip.",
+                "BB_solo_signal_boost_generic": "BLOCKED \u2014 symbol-specific rules (ETH/BTC/SOL BB golden) already cover high-WR BB setups. Generic rule would double-count. Cannot cleanly isolate uncovered BB combos.",
+                "CONF_60_70_reactivate_floor": "FROZEN \u2014 data contradiction between insight (42% WR, +$2.19/trade) and runtime (n=123, -$18.86/trade). CONF_60_70_CONFLICT_FREEZE_V2 in place."
+            },
+            "critical_finding": {
+                "id": "ALL_RULES_TIMES_CORRECT_ZERO",
+                "severity": "HIGH",
+                "detail": "ALL 13 applied rules show times_correct=0. Root cause: AB_TRACKER code gap means outcome callbacks never fire \u2014 times_applied increments during simulation, times_correct never updates. hype_short_veto_v1: applied=3, correct=0 (these are simulation evaluations, NOT real trade outcomes \u2014 veto still valid based on 239-trade base evidence). No rule performance data can be trusted until AB_TRACKER code (~4h dev) is implemented.",
+                "action": "P0: implement outcome callbacks in bot/feedback/loop.py. Until then, do not use times_correct for rule health assessment."
+            },
+            "regime_coverage": "COMPLETE \u2014 all 5 regimes have LLM rules (trend:boost, illiquid:-15, ranging:-10, high_vol:+5, unknown:+5 HYPE-specific)"
         },
         "execution_forensics": {
-            "avg_slippage": "UNKNOWN \u2014 snapshot_entry missing (day 33+)",
-            "noise_stop_problem": "87% early SL hits in non-trending regimes (stable estimate)",
+            "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 33+). Dev gap.",
+            "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes. Stable estimate. No new data.",
             "hold_forensics": {
                 "win_median_hold_h": 3.3,
                 "loss_median_hold_h": 1.5,
-                "ratio": "2.2x"
+                "ratio": "2.2x \u2014 losses exit 2.2x faster than wins"
             },
-            "new_finding": "ranging_regime_penalize_v1 now provides upstream signal filter \u2014 expected to reduce ranging false positives that contribute to noise SL hits. Combined with feedback 40% size reduce."
+            "leverage_calibration": {
+                "medium_3_5x": {
+                    "verdict": "OPTIMAL"
+                },
+                "high_6_10x": {
+                    "verdict": "BLOCK (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"
+                }
+            },
+            "timing_advisory": {
+                "night_block_in_min": 46,
+                "detail": "night_session_block_v1 activates in 46 min (00:00 UTC May 23). Bot offline so no active trades. PRE-RESTART NOTE: if user restarts tonight, last 46 min of evening edge (65% WR, tod_evening_edge_v1) are available before night block.",
+                "window_15_in_min": 406,
+                "restart_deadline_for_window15_in_min": 376,
+                "window_15_detail": "Window 15 (May 23 06:00-12:00 UTC) in 406 min (6.8h). Restart deadline 376 min (05:30 UTC May 23)."
+            },
+            "structural_gaps": [
+                "snapshot_entry column missing (slippage unmeasurable \u2014 day 33+)",
+                "llm_regime column empty (regime rules unmeasurable)",
+                "AB result tracker code missing (all gated rules stalled \u2014 day 33+)",
+                "btc_long_nontrend unprotected in ranging/illiquid/unknown (18% WR, n=17)"
+            ],
+            "data_status": "FROZEN \u2014 bot offline 33+ days. 0 new trades."
         },
         "live_injection": {
             "high_edges_found": 9,
             "weak_setups_found": 5,
-            "data_source": "Cached \u2014 no new trades (bot offline 33+ days)",
-            "regime_coverage": "COMPLETE \u2014 all 5 regime types now have LLM confidence rules",
-            "new_finding": "REGIME_COVERAGE_COMPLETE: ranging_regime_penalize_v1 fills last regime gap. LLM engine: trend(boost), illiquid(-15), ranging(-10), high_vol(+5), unknown(+5 HYPE-specific). All regime types covered for first time."
+            "data_source": "Cached \u2014 no new trades",
+            "coverage_update": "Ranging regime weak setup now has LLM rule coverage. All 5 regimes covered.",
+            "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all applied rules."
         },
         "daily_synthesis": {
             "today_trades": 0,
             "today_pnl": 0.0,
-            "consecutive_windows_missed": 14,
             "anomalies_found": 5,
             "report_generated": true,
-            "anomalies": [
-                {
-                    "type": "BOT_OFFLINE_DAY33",
-                    "severity": "CRITICAL",
-                    "detail": "~436 min to restart deadline (05:30 UTC May 23). Window 15 in ~466 min."
-                },
-                {
-                    "type": "WINDOW_14_IMMINENT",
-                    "severity": "CRITICAL",
-                    "detail": "Window 14 CONFIRMED MISSED (passed 10h ago). Window 15 (May 23 06:00 UTC) in 466 min. Restart deadline 436 min away."
-                },
-                {
-                    "type": "CONSECUTIVE_LOSSES_4",
-                    "severity": "HIGH",
-                    "detail": "4 consecutive losses. 2 from circuit breaker trigger."
-                },
-                {
-                    "type": "AB_TRACKER_STALL_DAY33",
-                    "severity": "HIGH",
-                    "detail": "Day 33 stall. 20 active rules at 0 outcome callbacks."
-                },
-                {
-                    "type": "RANGING_RULE_ADDED",
-                    "severity": "INFO",
-                    "detail": "ranging_regime_penalize_v1 written to LLM engine this run. Regime coverage COMPLETE."
-                }
-            ]
+            "consecutive_windows_missed": 15,
+            "night_block_in_min": 46,
+            "window_15_in_min": 406
         },
         "model_optimization": {
+            "status": "SKIPPED \u2014 no cost_tracker.json (only cost_tracker.py exists). Bot offline, no API calls.",
             "model_swaps_recommended": 0,
-            "potential_savings": "$0.048/month Scout throttle",
-            "estimated_monthly_cost": "$1.63 static",
-            "new_finding": "22 rules in LLM engine (was 21). Ranging rule adds negligible latency. No model swaps needed."
+            "potential_savings": "N/A",
+            "static_estimate": {
+                "monthly_cost_estimate_usd": 1.63,
+                "basis": "22 LLM rules, 9 agents, paper mode. No calls since bot offline.",
+                "note": "Previous run: $0.048/month Scout throttle savings identified. No new swaps needed \u2014 Haiku agents (Regime/Risk/Learning/Exit/Scout) already optimal. Sonnet (Trade/Critic) appropriate for decision quality."
+            }
         }
     },
     "high_priority_findings": [
         {
-            "subsystem": "auto_fix",
+            "subsystem": "daily_synthesis",
             "severity": "CRITICAL",
-            "finding": "WINDOW_14_MISSED_WINDOW_15_NEXT: Window 14 (06:00-12:00 UTC May 22) has PASSED \u2014 confirmed missed. Window 15 opens in 466 min (May 23 06:00 UTC). Restart deadline 436 min (05:30 UTC May 23). 14 consecutive morning windows missed. EVENING EDGE ACTIVE NOW (22:13 UTC, 107 min remaining, 65% WR).",
-            "action": "RESTART within 107 min to capture tonight's EVENING EDGE (tod_evening_edge_v1, 18-24 UTC, +5pts, 65% WR). Hard deadline: 05:30 UTC May 23 for Window 15."
+            "finding": "WINDOW_15_IN_6.8H: Window 15 (May 23 06:00-12:00 UTC, 74% WR historical) opens in 6.8h. Restart deadline 05:30 UTC May 23 (6.3h). 15th consecutive morning window missed = ~$840 cumulative opportunity cost.",
+            "action": "RESTART before 05:30 UTC May 23. Best config: paper mode, ETH+BTC, all 22 LLM rules active. Evening edge also available NOW (46 min remaining, 65% WR)."
         },
         {
             "subsystem": "auto_fix",
             "severity": "HIGH",
-            "finding": "RANGING_REGIME_SYNC_GAP_FIXED: ranging_regime_penalize_v1 added to LLM engine (adj=-10.0, gate=20%). 25% WR on 16 trades = worst regime. Feedback was A/B_ACTIVE gate=50% but LLM engine had no rule. Pattern: 6th consecutive sync gap (feedback has rule \u2192 LLM doesn't \u2192 perpetual loop finds and fixes it).",
-            "action": "DONE. Monitor at restart: ranging signals should show -10pts in decision logs."
+            "finding": "ALL_RULES_TIMES_CORRECT_ZERO: ALL 13 applied LLM rules have times_correct=0. AB_TRACKER code gap means outcome callbacks never fire \u2014 entire rule performance tracking system is dark. 81 feedback rules also at 0 outcome callbacks. Self-improvement pipeline paralyzed at final validation step for 33 days.",
+            "action": "P0 dev: implement outcome callbacks in bot/feedback/loop.py (~4h). Without this, can't validate any of the 22 LLM rules or 116 feedback rules."
         },
         {
             "subsystem": "execution_forensics",
             "severity": "HIGH",
-            "finding": "AB_TRACKER_DAY33_STALL: 20 active gated rules frozen at 0 outcome callbacks. Self-improvement pipeline stalled at final step for 33 days.",
-            "action": "P0 dev: bot/feedback/loop.py outcome callbacks (~4h). ALL current improvements are unvalidatable until this is fixed."
+            "finding": "NIGHT_BLOCK_IN_46MIN: night_session_block_v1 activates at 00:00 UTC (46 min). Last chance for evening edge capture tonight. Then 6h night silence before Window 15.",
+            "action": "If user can restart in next 46 min: captures evening edge + prepares for Window 15. No action needed after 00:00 UTC until restart before 05:30 UTC."
         },
         {
             "subsystem": "auto_fix",
-            "severity": "HIGH",
-            "finding": "BTC_LONG_NONTREND_GAP: BTC LONG in ranging/illiquid/unknown = 18% WR (17 trades), unprotected. btc_trend_long_counter_v1 covers TREND only. n=17 < threshold for auto-apply.",
-            "action": "HUMAN REVIEW: consider btc_long_nontrend_penalize_v1 at gate=20%. Confidence ~72% due to small n."
-        },
-        {
-            "subsystem": "daily_synthesis",
             "severity": "MEDIUM",
-            "finding": "EVENING_EDGE_ACTIVE: tod_evening_edge_v1 active now (22:13 UTC, 18-24 UTC window, +5pts LLM boost). 107 min remaining. Historical 65% WR. Restart now = ~107 min of best available edge.",
-            "action": "RESTART NOW to capture evening edge. Combined with 22 LLM rules active."
+            "finding": "NO_NEW_FIXES_STEADY_STATE: All remaining rule candidates below 75% confidence threshold. btc_long_nontrend (72%, n=17) needs human review. BB_solo generic boost would double-count existing symbol rules. CONF_60_70 data contradiction frozen. System at steady-state \u2014 perpetual loop has exhausted auto-applicable improvements from current data.",
+            "action": "RESTART BOT to generate new trade data and break the data starvation cycle. AB_TRACKER code enables outcome validation. These are the only paths to new improvements."
         }
     ],
     "run_summary": {
         "subsystems_completed": 5,
-        "fixes_applied_this_run": 1,
+        "fixes_applied_this_run": 0,
         "code_changes_this_run": [
-            "bot/data/llm/graduated_rules.json: ranging_regime_penalize_v1 added (22nd rule)"
+            "bot/data/learning/live_edge_data.json: updated window countdown + ranging coverage note + new finding",
+            "bot/data/sessions/daily_synthesis_2026-05-22.json: EOD synthesis written",
+            "bot/data/learning/master_engine_state.json: updated (this file)"
         ],
         "runtime_rules_total": 22,
         "runtime_rules_active": 20,
-        "runtime_rules_added_this_run": 1,
+        "runtime_rules_added_this_run": 0,
         "high_priority_findings_count": 4,
-        "window_14_status": "Window 14 MISSED (passed 10h ago). Evening edge ACTIVE now (22:13 UTC, 107 min remaining). Window 15 opens in 466 min (May 23 06:00 UTC).",
-        "night_block_active": true,
+        "night_block_in_min": 46,
+        "window_15_in_h": 6.8,
+        "restart_deadline_in_h": 6.3,
         "data_status": "FROZEN \u2014 bot offline 33 days. 0 trades.",
-        "equity": 497.05,
+        "equity": 497.0523,
         "consecutive_losses": 4,
-        "key_insight_this_run": "REGIME_COVERAGE_COMPLETE: All 5 regime types now have LLM confidence rules. Pattern: perpetual loop has now found and fixed 6 consecutive cross-system sync gaps where feedback engine had rule but LLM engine did not. Gap sequence: illiquid(pre-existing)\u2192high_vol(run N-3)\u2192TOD_morning+BTC_counter+BB_UNLOCK(run N-1)\u2192ranging(this run).",
-        "restart_countdown": "~107 min of evening edge remaining. Hard deadline: 05:30 UTC May 23 for Window 15 (436 min away).",
-        "rule_system_health": "22 rules (20 active, 2 inactive). New: ranging_regime_penalize_v1 at gate=20%. Regime coverage COMPLETE.",
-        "sol_short_status": "SUSPENSION VALIDATED (live 34.6% WR, 52 trades). Do not reactivate.",
-        "sync_gap_pattern": {
-            "gap_count": 6,
+        "key_insight_this_run": "STEADY_STATE_REACHED: Perpetual loop has applied 57 total fixes (56 from prior runs + 1 from last run = ranging rule). All remaining candidates below 75% confidence threshold. System health: 22 LLM rules (20 active), all 5 regimes covered, all 9 high-edge setups have rules. TWO BLOCKERS remain: (1) BOT OFFLINE prevents new data generation, (2) AB_TRACKER code gap prevents outcome validation. Both require human action.",
+        "rule_system_health": "22 rules (20 active). Regime coverage COMPLETE. High-edge coverage 9/9. Outcome validation 0/9 (AB stall).",
+        "sync_gap_history": {
+            "total_gaps_fixed": 7,
             "sequence": [
-                "illiquid_regime_penalize_v1 (pre-existing, baseline)",
-                "high_vol_regime_boost_v1 (fixed run N-3)",
-                "TOD_morning_edge_v1 (fixed run N-2)",
-                "btc_trend_long_counter_v1 (fixed run N-2)",
-                "BB_SCHEMA_UNLOCK x5 rules (fixed run N-1)",
-                "ranging_regime_penalize_v1 (FIXED THIS RUN)"
+                "illiquid_regime_penalize_v1 (baseline)",
+                "high_vol_regime_boost_v1 (run N-3)",
+                "TOD_morning_edge_v1 (run N-2)",
+                "btc_trend_long_counter_v1 (run N-2)",
+                "BB_SCHEMA_UNLOCK x5 rules (run N-1)",
+                "ranging_regime_penalize_v1 (last run)",
+                "CONF_floor_70_v1 INACTIVE (data contradiction, correctly blocked)"
             ],
-            "root_cause": "Two graduated_rules.json files (bot/feedback/ and bot/data/llm/) with no atomic sync protocol. Perpetual loop serves as manual sync agent.",
-            "remaining_gap_candidates": [
-                "btc_long_nontrend_penalize_v1 (n=17, needs human review)",
-                "BB_solo_signal_boost (feedback gate=80%, LLM has ETH/BTC/SOL BB golden rules but no generic BB solo boost)",
-                "NOISE_REGIME_FAST_EXIT (feedback gate=80% \u2014 execution-side, not LLM confidence)"
-            ]
-        }
+            "remaining_candidates": [
+                "btc_long_nontrend_penalize_v1 (n=17, conf=72% \u2014 below threshold, human review)",
+                "BB_solo_generic_boost (double-counting risk \u2014 blocked)",
+                "CONF_60_70 rules (data contradiction frozen \u2014 blocked)"
+            ],
+            "auto_applicable_gaps": 0
+        },
+        "next_run_focus": [
+            "If bot restarted: capture first post-restart signals, verify ranging_regime_penalize_v1 fires, verify tod_morning_edge_v1 for Window 15",
+            "Monitor: RESTART_SOFT_START_4LOSS should auto-apply on startup",
+            "Continue monitoring for new sync gaps post-restart"
+        ]
     }
 }

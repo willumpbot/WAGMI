@@ -1,6 +1,6 @@
 {
-    "last_run": "2026-05-22T22:11:46.173715+00:00",
-    "data_source": "Historical accumulated. Bot offline ~32 days. No new trade data. SOL_SHORT suspension validated by live paper (34.6% WR, 52 trades).",
+    "last_run": "2026-05-22T23:17:14.282476+00:00",
+    "data_source": "Historical accumulated. Bot offline ~33 days. No new trade data. SOL_SHORT suspension validated by live paper (34.6% WR, 52 trades).",
     "high_edges_found": 9,
     "weak_setups_found": 5,
     "high_edges": [
@@ -126,22 +126,23 @@
     "new_edges_added": 2,
     "coverage_gap": "All 9 high-edge setups have rules in graduated_rules.json. Zero live applications. Coverage exists on paper; validation blocked until bot restart.",
     "morning_window_countdown": {
-        "window_12": "2026-05-21 06:00-12:00 UTC \u2014 CLOSED/MISSED 10.1h ago",
-        "window_13": "2026-05-22 06:00-12:00 UTC",
-        "minutes_until_window_13": 104,
-        "hours_until_window_13": 7.8,
-        "restart_deadline_for_window_13": "2026-05-22 05:30 UTC",
-        "minutes_to_restart_deadline": 74,
-        "consecutive_windows_missed": 14,
-        "status": "Window 14 in 104 min. Restart deadline 74 min. CRITICAL.",
+        "window_14": "2026-05-22 06:00-12:00 UTC \u2014 MISSED (passed 17h ago)",
+        "window_15": "2026-05-23 06:00-12:00 UTC",
+        "minutes_until_window_15": 406,
+        "hours_until_window_15": 6.8,
+        "restart_deadline_for_window_15": "2026-05-23 05:30 UTC",
+        "minutes_to_restart_deadline": 376,
+        "consecutive_windows_missed": 15,
+        "status": "Window 15 in 406 min (6.8h). Restart deadline in 376 min.",
         "evening_window_active_now": true,
-        "evening_window_remaining_minutes": 110,
-        "evening_edge": "65% WR \u2014 tod_evening_edge_v1 active (+5pts). 1.9h remaining tonight (22:06\u219200:00 UTC)."
+        "evening_window_remaining_minutes": 46,
+        "evening_edge": "65% WR \u2014 tod_evening_edge_v1 active (+5pts). 46 min remaining tonight (23:13\u219200:00 UTC)."
     },
     "new_finding_this_run": {
-        "id": "RANGING_REGIME_LLM_GAP_CLOSED",
-        "detail": "ranging_regime_penalize_v1 added to LLM engine. All 5 regime types now have LLM confidence rules. Regime coverage: COMPLETE. Combined protection: LLM -10pts + feedback 40% size reduce on ranging. Expected: filter ~25% of signals that were ranging-regime false positives.",
-        "severity": "MEDIUM"
+        "id": "RANGING_REGIME_COVERAGE_CONFIRMED + TIMES_CORRECT_ZERO_AB_STALL",
+        "detail": "1) All 5 regime weak setups now have LLM rule coverage (ranging_regime_penalize_v1 -10pts from last run). 2) AB_TRACKER stall confirmed: ALL 13 applied rules have times_correct=0. High-edge rules ARE firing in simulation but outcome validation is impossible until AB_TRACKER (~4h dev) is built. All 9 high-edge setups have rules; 0 have validated outcomes.",
+        "severity": "HIGH",
+        "coverage_status": "HIGH_EDGE_COVERAGE: 9/9 setups have rules. OUTCOME_VALIDATION: 0/9 validated (AB stall)."
     },
     "window_status": "Window 14 opens in ~104 min (06:00 UTC May 22). Restart deadline ~74 min (05:30 UTC). CRITICAL: if no restart in 74 min, Window 14 missed.",
     "llm_engine_rules": 22,
@@ -176,5 +177,6 @@
             "ranging_regime_penalize_v1 (-10pts, gate=20%)"
         ],
         "gap_remaining": "ranging has no symbol-specific override; btc_long_nontrend_penalize_v1 still pending human review"
-    }
+    },
+    "weak_setup_regime_coverage": "COMPLETE \u2014 all 5 regimes now covered: illiquid(-15pts), ranging(-10pts), unknown(+5pts HYPE-specific), high_vol(+5pts), trend(boost). RANGING was last gap, filled last run."
 }
