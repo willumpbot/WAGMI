@@ -1,69 +1,27 @@
 {
-    "last_run": "2026-05-22T22:11:21.607259+00:00",
+    "last_run": "2026-05-23T01:16:32.642180+00:00",
     "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
     "fixes_applied_this_run": 1,
     "gates_active": 20,
     "total_applied_all_time": 56,
     "last_fix": {
-        "fix_id": "RANGING_REGIME_PENALIZE_V1",
-        "applied_at": "2026-05-22T22:11:21.607259+00:00",
-        "description": "ranging_regime_penalize_v1 added to LLM engine: adj=-10.0, conditions={regime:ranging}, gate=20%. Evidence: 25% WR on 16 trades (WORSE than illiquid 28.1%). Feedback engine RANGING_regime_reduce A/B_ACTIVE at gate=50% conf=76%. Sync gap: illiquid has LLM rule (-15pts), ranging had none. 6th consecutive cross-system sync gap fixed.",
-        "root_cause": "RANGING regime coverage gap in LLM engine. illiquid_regime_penalize_v1 covers illiquid, high_vol_regime_boost_v1 covers high_volatility, but ranging (25% WR = worst regime) had zero LLM confidence adjustment.",
-        "files_changed": [
-            "bot/data/llm/graduated_rules.json"
-        ],
-        "confidence": 0.76,
-        "gate_percentage": 20,
+        "fix_id": "GATE_PERCENTAGE_SCHEMA_NORMALIZATION_V1",
+        "applied_at": "2026-05-23T01:16:32.642180+00:00",
+        "gate_pct": "N/A",
         "status": "APPLIED",
-        "outcome_tracking": "PENDING_RESTART \u2014 verify ranging regime signals get -10pts LLM adjustment. Graduate gate 20%\u219250% at n>=20 obs, WR<=0.35."
+        "type": "SCHEMA_NORMALIZATION",
+        "source": "perpetual_loop_subsystem1",
+        "description": "gate_percentage field added to all 21 LLM rules that were missing it. Gate assignments: 2 disabled (gate=0: rule_1777922205_0, conf_floor_70_v1), 8 fully deployed (gate=100: veto/penalize originals), 12 A/B probe (gate=20: new rules since May 17), 1 graduated (gate=50: tod_morning_edge_v1). Prerequisite for AB_TRACKER implementation. No rule logic changed \u2014 metadata only.",
+        "evidence": "21/23 LLM rules had missing gate_percentage. Only last 2 rules (ranging_regime_penalize_v1, sol_short_penalize_v1) had the field. Schema now uniform.",
+        "outcome_tracking": "STRUCTURAL \u2014 no A/B gate needed. Enables AB_TRACKER implementation on next dev sprint."
     },
     "new_findings_this_run": [
         {
-            "finding_id": "TOD_RUNTIME_BUG_FIXED",
-            "detected_at": "2026-05-21T01:09:32.358251+00:00",
-            "severity": "CRITICAL",
-            "detail": "tod_evening_edge_v1 and tod_afternoon_edge_v1 were in runtime engine in wrong format. Engine parsed them as rule_id='?' adj=0.0 \u2014 no boost would ever fire. Root cause: last run wrote documentation-format dict instead of GraduatedRule dataclass fields.",
-            "action": "FIXED \u2014 reformatted to proper schema. Verified via engine.evaluate_signal() test.",
-            "requires_human_review": false
-        },
-        {
-            "finding_id": "META_INVERSION_ALREADY_RESOLVED",
-            "detected_at": "2026-05-21T01:09:32.358251+00:00",
-            "severity": "LOW",
-            "detail": "Outstanding item META_LEARNING_IDEAS_INVERSION_BUG already resolved: all 4 inverted ideas in ideas.json marked invalidated on 2026-05-18. Removing from outstanding pending.",
-            "action": "CLOSED \u2014 outstanding item removed from pending list.",
-            "requires_human_review": false
-        },
-        {
-            "finding_id": "BTC_COUNTER_RULE_WRITE_BUG",
-            "detected_at": "2026-05-21T22:09:12.942977+00:00",
-            "severity": "HIGH",
-            "detail": "btc_trend_long_counter_v1 was tracked as ACTIVE in auto_fix_state since 2026-05-20T02:11 but was absent from graduated_rules.json. The fix was logged but the file write step was missing \u2014 possibly because the prior run only wrote to auto_fix_state and did not append to graduated_rules.json. Fixed this run. Now 14 rules in graduated_rules.json.",
-            "action": "FIXED \u2014 rule written to graduated_rules.json. Verified via engine simulation.",
-            "requires_human_review": false
-        },
-        {
-            "finding_id": "TOD_MORNING_EDGE_WRITE_BUG",
-            "detected_at": "2026-05-21T23:07:36.248575+00:00",
-            "severity": "HIGH",
-            "detail": "tod_morning_edge_v1 was tracked in bot/feedback/graduated_rules.json (A/B_ACTIVE gate=50%) but completely absent from LLM engine bot/data/llm/graduated_rules.json. This is the BEST TOD window (74% WR) and opens in 6.9h (Window 13 = 06:00-12:00 UTC May 22). Without this rule, LLM confidence engine gives no signal boost to morning trades. Pattern: third consecutive run discovering a missing rule in graduated_rules.json. Root cause: two separate graduated_rules.json files (feedback/ vs llm/) with inconsistent sync.",
-            "action": "FIXED \u2014 tod_morning_edge_v1 added to LLM engine. 15 rules now active. TOD stack complete. Monitor: first trade in 06:00-12:00 UTC window post-restart should show +5pts.",
-            "requires_human_review": false
-        },
-        {
-            "finding_id": "BB_SCHEMA_ROOT_CAUSE_CORRECTED",
-            "detected_at": "2026-05-22T03:17:08.705879+00:00",
-            "severity": "CRITICAL",
-            "detail": "BB_SCHEMA_UNLOCK: 6 prior runs (since May 22 session start) blocked BB rules with diagnosis 'strategy condition type not supported in LLM rule schema'. This was WRONG. GraduatedRule.matches() DID support strategy condition (single-value). Real blocker: ensemble always emits strategy='ensemble'; individual strategy names live in metadata['strategies_agree']. Required strategies_include list-matching condition type. Fix: added strategies_include/strategies_exclude to GraduatedRule.matches(), strategies_active param to evaluate_signal(), updated 3 call sites, wrote 5 BB rules to LLM engine.",
-            "action": "FIXED \u2014 code changes applied, 5 rules written at gate=20% probe. Monitor at restart.",
-            "requires_human_review": false
-        },
-        {
-            "finding_id": "RANGING_REGIME_SYNC_GAP",
-            "detected_at": "2026-05-22T22:11:21.607259+00:00",
-            "severity": "HIGH",
-            "detail": "RANGING_regime_reduce feedback rule (gate=50%, conf=76%) had NO LLM engine counterpart. Pattern: 6th consecutive cross-system sync gap (run 1:illiquid\u2713, run N-2:high_vol\u2713, run N-1:TOD_morning+BTC_counter+BB_UNLOCK, run N:ranging). Ranging=25%WR worse than illiquid=28.1%WR. Fixed: ranging_regime_penalize_v1 adj=-10.0 gate=20%.",
-            "action": "FIXED \u2014 ranging_regime_penalize_v1 written to LLM engine. Monitor at restart.",
+            "finding_id": "GATE_PERCENTAGE_SCHEMA_GAP_RESOLVED",
+            "detected_at": "2026-05-23T01:16:32.642180+00:00",
+            "severity": "MEDIUM",
+            "detail": "21 of 23 LLM rules were missing gate_percentage field. This blocks AB_TRACKER implementation which needs gate state to route A/B splits. Root cause: gate_percentage was only added to new rules (last 2) starting May 22, but not backfilled to prior 21 rules. Fixed this run: full gate map established based on deployment history from auto_fix_state and fixes_history records.",
+            "action": "FIXED \u2014 gate_percentage added to all 23 rules. Gate distribution: 2 disabled, 8 full, 12 probe, 1 graduated.",
             "requires_human_review": false
         }
     ],
@@ -345,6 +303,17 @@
             "description": "sol_short_penalize_v1 added to LLM engine. Feedback has SOL_SHORT_full_block (conf=88, gate=100%) but LLM engine had 0 SOL SHORT rules. 7th consecutive cross-system sync gap fixed. adj=-10pts, gate=20% probe (conservative due to RULE_CONFLICT_SOL_SHORT PENDING).",
             "evidence": "SOL SHORT: 34.6% WR on 52 live paper trades (suspension probe). n=52 >> 20 threshold.",
             "outcome_tracking": "PENDING_RESTART"
+        },
+        {
+            "fix_id": "GATE_PERCENTAGE_SCHEMA_NORMALIZATION_V1",
+            "applied_at": "2026-05-23T01:16:32.642180+00:00",
+            "gate_pct": "N/A",
+            "status": "APPLIED",
+            "type": "SCHEMA_NORMALIZATION",
+            "source": "perpetual_loop_subsystem1",
+            "description": "gate_percentage field added to all 21 LLM rules that were missing it. Gate assignments: 2 disabled (gate=0: rule_1777922205_0, conf_floor_70_v1), 8 fully deployed (gate=100: veto/penalize originals), 12 A/B probe (gate=20: new rules since May 17), 1 graduated (gate=50: tod_morning_edge_v1). Prerequisite for AB_TRACKER implementation. No rule logic changed \u2014 metadata only.",
+            "evidence": "21/23 LLM rules had missing gate_percentage. Only last 2 rules (ranging_regime_penalize_v1, sol_short_penalize_v1) had the field. Schema now uniform.",
+            "outcome_tracking": "STRUCTURAL \u2014 no A/B gate needed. Enables AB_TRACKER implementation on next dev sprint."
         }
     ]
 }

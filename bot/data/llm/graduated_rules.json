@@ -16,7 +16,8 @@
             "last_applied": 1778811039.5393455,
             "times_applied": 3,
             "times_correct": 0,
-            "active": false
+            "active": false,
+            "gate_percentage": 0
         },
         {
             "rule_id": "hype_long_veto_v1",
@@ -34,7 +35,8 @@
             "last_applied": 1777926052.3763394,
             "times_applied": 1,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 100
         },
         {
             "rule_id": "sol_long_veto_v1",
@@ -52,7 +54,8 @@
             "last_applied": 1777926052.377478,
             "times_applied": 1,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 100
         },
         {
             "rule_id": "night_session_block_v1",
@@ -70,7 +73,8 @@
             "last_applied": 1779419617.7340784,
             "times_applied": 6,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 100
         },
         {
             "rule_id": "illiquid_regime_penalize_v1",
@@ -87,7 +91,8 @@
             "last_applied": 1777926052.3784072,
             "times_applied": 1,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 100
         },
         {
             "rule_id": "hype_short_veto_v1",
@@ -105,7 +110,8 @@
             "last_applied": 1778811039.5388637,
             "times_applied": 3,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 100
         },
         {
             "rule_id": "btc_short_conf70_80_penalize_v1",
@@ -125,7 +131,8 @@
             "last_applied": 1779325621.569989,
             "times_applied": 3,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 100
         },
         {
             "rule_id": "btc_short_90plus_boost_v1",
@@ -144,7 +151,8 @@
             "last_applied": null,
             "times_applied": 0,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 100
         },
         {
             "rule_id": "eth_trending_regime_boost_v1",
@@ -162,7 +170,8 @@
             "last_applied": 1779325621.570845,
             "times_applied": 2,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 100
         },
         {
             "rule_id": "hype_unknown_regime_probe_v1",
@@ -180,7 +189,8 @@
             "last_applied": null,
             "times_applied": 0,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 20
         },
         {
             "rule_id": "conf_floor_70_v1",
@@ -198,7 +208,8 @@
             "last_applied": 1778811039.5375004,
             "times_applied": 2,
             "times_correct": 0,
-            "active": false
+            "active": false,
+            "gate_percentage": 0
         },
         {
             "rule_id": "btc_trend_long_counter_v1",
@@ -217,7 +228,8 @@
             "last_applied": null,
             "times_applied": 0,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 20
         },
         {
             "rule_id": "tod_evening_edge_v1",
@@ -235,7 +247,8 @@
             "last_applied": 1779419617.7344398,
             "times_applied": 2,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 20
         },
         {
             "rule_id": "tod_afternoon_edge_v1",
@@ -253,7 +266,8 @@
             "last_applied": 1779419617.734446,
             "times_applied": 2,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 20
         },
         {
             "rule_id": "high_vol_regime_boost_v1",
@@ -270,7 +284,8 @@
             "last_applied": null,
             "times_applied": 0,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 20
         },
         {
             "rule_id": "tod_morning_edge_v1",
@@ -288,7 +303,8 @@
             "last_applied": 1779419680.301572,
             "times_applied": 7,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 50
         },
         {
             "rule_id": "eth_sell_bb_golden_v1",
@@ -309,7 +325,8 @@
             "last_applied": 1779419680.3015776,
             "times_applied": 3,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 20
         },
         {
             "rule_id": "btc_buy_bb_golden_v1",
@@ -330,7 +347,8 @@
             "last_applied": 1779419634.0488565,
             "times_applied": 1,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 20
         },
         {
             "rule_id": "sol_buy_bb_golden_v1",
@@ -351,7 +369,8 @@
             "last_applied": 0.0,
             "times_applied": 0,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 20
         },
         {
             "rule_id": "hype_sell_bb_block_v1",
@@ -372,7 +391,8 @@
             "last_applied": 0.0,
             "times_applied": 0,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 20
         },
         {
             "rule_id": "bb_mtq_antipattern_v1",
@@ -392,7 +412,8 @@
             "last_applied": 1779419634.0497034,
             "times_applied": 1,
             "times_correct": 0,
-            "active": true
+            "active": true,
+            "gate_percentage": 20
         },
         {
             "rule_id": "ranging_regime_penalize_v1",
