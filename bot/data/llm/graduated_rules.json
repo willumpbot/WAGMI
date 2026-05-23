@@ -413,6 +413,27 @@
             "active": true,
             "source": "feedback/graduated_rules.json RANGING_regime_reduce (gate=50%, conf=76%). Sync gap: illiquid has LLM rule (-15pts), ranging does not. Pattern: 6th consecutive cross-system sync gap.",
             "outcome_tracking": "PENDING_RESTART"
+        },
+        {
+            "rule_id": "sol_short_penalize_v1",
+            "hypothesis_statement": "SOL SELL = 34.6% WR on 52 live paper trades (suspension probe). Structurally weak short side. Feedback engine has SOL_SHORT_full_block (conf=88, gate=100%). 7th consecutive LLM\u2194feedback sync gap fixed.",
+            "action": "penalize",
+            "conditions": {
+                "symbol": "SOL",
+                "side": "SELL"
+            },
+            "adjustment": -10.0,
+            "confidence": 0.88,
+            "evidence_ratio": 0.346,
+            "total_evidence": 52,
+            "gate_percentage": 20,
+            "created_at": 1779495301.5124173,
+            "last_applied": null,
+            "times_applied": 0,
+            "times_correct": 0,
+            "active": true,
+            "source": "feedback/graduated_rules.json SOL_SHORT_full_block (conf=88, gate=100%) + live evidence 34.6% WR n=52. RULE_CONFLICT_SOL_SHORT PENDING so gate=20% probe only.",
+            "outcome_tracking": "PENDING_RESTART \u2014 grad gate 20%\u219250% at WR<40% n>=30 post-restart."
         }
     ]
 }

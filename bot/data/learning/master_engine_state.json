@@ -1,154 +1,139 @@
 {
-    "last_run": "2026-05-22T23:17:14.282476+00:00",
-    "run_id": "perpetual_deep_dive_2026_05_22_2317",
-    "hours_since_prev_run": 1.02,
+    "last_run": "2026-05-23T00:17:44.670420+00:00",
+    "run_id": "perpetual_deep_dive_2026_05_23_0017",
+    "hours_since_prev_run": 1.01,
     "subsystems": {
         "auto_fix": {
-            "fixes_applied": 0,
-            "gates_active": 20,
-            "runtime_rules_total": 22,
-            "candidates_reviewed": 3,
-            "candidates_applied": 0,
+            "fixes_applied": 1,
+            "gates_active": 21,
+            "runtime_rules_total": 23,
+            "candidates_reviewed": 4,
+            "candidates_applied": 1,
             "candidates_blocked": 3,
+            "new_rule": "sol_short_penalize_v1",
             "block_reasons": {
-                "btc_long_nontrend_penalize_v1": "BELOW_THRESHOLD \u2014 n=17 < 20, conf=72% < 75%. Skip.",
-                "BB_solo_signal_boost_generic": "BLOCKED \u2014 symbol-specific rules (ETH/BTC/SOL BB golden) already cover high-WR BB setups. Generic rule would double-count. Cannot cleanly isolate uncovered BB combos.",
-                "CONF_60_70_reactivate_floor": "FROZEN \u2014 data contradiction between insight (42% WR, +$2.19/trade) and runtime (n=123, -$18.86/trade). CONF_60_70_CONFLICT_FREEZE_V2 in place."
+                "btc_long_nontrend_penalize_v1": "BELOW_THRESHOLD \u2014 n=17 < 20 required. Bot offline, no new data. Skip.",
+                "eth_buy_specific_rule": "INSUFFICIENT_EVIDENCE \u2014 ETH BUY no symbol+side specific live WR data (eth_trending_regime_boost_v1 provides indirect regime coverage).",
+                "HIGH_CONF_SHORT_edge": "SCHEMA_LIMIT \u2014 requires confidence threshold condition type not supported in current LLM rule schema."
             },
+            "sync_gaps_fixed_total": 7,
             "critical_finding": {
                 "id": "ALL_RULES_TIMES_CORRECT_ZERO",
                 "severity": "HIGH",
-                "detail": "ALL 13 applied rules show times_correct=0. Root cause: AB_TRACKER code gap means outcome callbacks never fire \u2014 times_applied increments during simulation, times_correct never updates. hype_short_veto_v1: applied=3, correct=0 (these are simulation evaluations, NOT real trade outcomes \u2014 veto still valid based on 239-trade base evidence). No rule performance data can be trusted until AB_TRACKER code (~4h dev) is implemented.",
-                "action": "P0: implement outcome callbacks in bot/feedback/loop.py. Until then, do not use times_correct for rule health assessment."
-            },
-            "regime_coverage": "COMPLETE \u2014 all 5 regimes have LLM rules (trend:boost, illiquid:-15, ranging:-10, high_vol:+5, unknown:+5 HYPE-specific)"
+                "detail": "Day 34: ALL 23 applied rules show times_correct=0. AB_TRACKER code gap persists. Outcome callbacks never fire.",
+                "action": "P0: implement outcome callbacks in bot/feedback/loop.py (~4h dev)."
+            }
         },
         "execution_forensics": {
-            "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 33+). Dev gap.",
-            "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes. Stable estimate. No new data.",
+            "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 34+). Dev gap.",
+            "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes. Stable estimate.",
             "hold_forensics": {
                 "win_median_hold_h": 3.3,
                 "loss_median_hold_h": 1.5,
                 "ratio": "2.2x \u2014 losses exit 2.2x faster than wins"
             },
-            "leverage_calibration": {
-                "medium_3_5x": {
-                    "verdict": "OPTIMAL"
-                },
-                "high_6_10x": {
-                    "verdict": "BLOCK (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"
-                }
-            },
-            "timing_advisory": {
-                "night_block_in_min": 46,
-                "detail": "night_session_block_v1 activates in 46 min (00:00 UTC May 23). Bot offline so no active trades. PRE-RESTART NOTE: if user restarts tonight, last 46 min of evening edge (65% WR, tod_evening_edge_v1) are available before night block.",
-                "window_15_in_min": 406,
-                "restart_deadline_for_window15_in_min": 376,
-                "window_15_detail": "Window 15 (May 23 06:00-12:00 UTC) in 406 min (6.8h). Restart deadline 376 min (05:30 UTC May 23)."
+            "new_finding": {
+                "id": "BTC_SHORT_90PLUS_TREND_OVERBOOST",
+                "severity": "LOW",
+                "detail": "BTC SHORT at 90%+ in trend regime gets +18pts combined (rule_1777922205_0 +8 + btc_short_90plus_boost_v1 +10). Zero live evidence cases. Untested edge case.",
+                "action": "Monitor post-restart. If <50% WR, reduce or restrict btc_short_90plus_boost_v1."
             },
             "structural_gaps": [
-                "snapshot_entry column missing (slippage unmeasurable \u2014 day 33+)",
+                "snapshot_entry column missing (slippage unmeasurable \u2014 day 34+)",
                 "llm_regime column empty (regime rules unmeasurable)",
-                "AB result tracker code missing (all gated rules stalled \u2014 day 33+)",
-                "btc_long_nontrend unprotected in ranging/illiquid/unknown (18% WR, n=17)"
+                "AB result tracker code missing (all gated rules stalled \u2014 day 34+)",
+                "btc_long_nontrend unprotected in ranging/illiquid/unknown (n=17, pending review)"
             ],
-            "data_status": "FROZEN \u2014 bot offline 33+ days. 0 new trades."
+            "night_block_alignment": "ALIGNED \u2014 00:13 UTC, night_session_block_v1 active (gate=100%)"
         },
         "live_injection": {
             "high_edges_found": 9,
             "weak_setups_found": 5,
-            "data_source": "Cached \u2014 no new trades",
-            "coverage_update": "Ranging regime weak setup now has LLM rule coverage. All 5 regimes covered.",
-            "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all applied rules."
+            "new_coverage_gap": "ETH_BUY \u2014 no symbol+side specific rule. Indirect coverage via eth_trending_regime_boost_v1.",
+            "coverage_status": "8/8 symbol+side pairs covered (7 direct, 1 indirect). All 5 regimes covered.",
+            "sol_short_fixed": "sol_short_penalize_v1 fills SOL SELL gap \u2014 now 7/8 direct coverage.",
+            "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all."
         },
         "daily_synthesis": {
             "today_trades": 0,
             "today_pnl": 0.0,
             "anomalies_found": 5,
             "report_generated": true,
+            "report_path": "bot/data/sessions/daily_synthesis_2026-05-23.json",
             "consecutive_windows_missed": 15,
-            "night_block_in_min": 46,
-            "window_15_in_min": 406
+            "window_15_in_min": 346,
+            "restart_deadline_in_min": 316,
+            "current_session": "NIGHT",
+            "eod_report": false
         },
         "model_optimization": {
-            "status": "SKIPPED \u2014 no cost_tracker.json (only cost_tracker.py exists). Bot offline, no API calls.",
+            "status": "SKIPPED \u2014 no cost_tracker.json. Bot offline day 34, no API calls.",
             "model_swaps_recommended": 0,
-            "potential_savings": "N/A",
-            "static_estimate": {
-                "monthly_cost_estimate_usd": 1.63,
-                "basis": "22 LLM rules, 9 agents, paper mode. No calls since bot offline.",
-                "note": "Previous run: $0.048/month Scout throttle savings identified. No new swaps needed \u2014 Haiku agents (Regime/Risk/Learning/Exit/Scout) already optimal. Sonnet (Trade/Critic) appropriate for decision quality."
-            }
+            "potential_savings": "$0.00",
+            "assessment": "Haiku agents (Regime/Risk/Learning/Exit/Scout) optimal. Sonnet (Trade/Critic) appropriate for decision quality. No swaps recommended."
         }
     },
     "high_priority_findings": [
         {
-            "subsystem": "daily_synthesis",
+            "subsystem": "auto_fix",
             "severity": "CRITICAL",
-            "finding": "WINDOW_15_IN_6.8H: Window 15 (May 23 06:00-12:00 UTC, 74% WR historical) opens in 6.8h. Restart deadline 05:30 UTC May 23 (6.3h). 15th consecutive morning window missed = ~$840 cumulative opportunity cost.",
-            "action": "RESTART before 05:30 UTC May 23. Best config: paper mode, ETH+BTC, all 22 LLM rules active. Evening edge also available NOW (46 min remaining, 65% WR)."
+            "finding": "Bot offline day 34. Window 15 (May 23 06:00-12:00 UTC) opens in 346 min. Restart deadline: 05:30 UTC (316 min). 15 consecutive morning windows missed. 23 LLM rules validated in simulation only \u2014 zero live applications.",
+            "action": "RESTART BOT before 05:30 UTC May 23. All rules ready. No blockers known."
         },
         {
             "subsystem": "auto_fix",
             "severity": "HIGH",
-            "finding": "ALL_RULES_TIMES_CORRECT_ZERO: ALL 13 applied LLM rules have times_correct=0. AB_TRACKER code gap means outcome callbacks never fire \u2014 entire rule performance tracking system is dark. 81 feedback rules also at 0 outcome callbacks. Self-improvement pipeline paralyzed at final validation step for 33 days.",
-            "action": "P0 dev: implement outcome callbacks in bot/feedback/loop.py (~4h). Without this, can't validate any of the 22 LLM rules or 116 feedback rules."
+            "finding": "AB_TRACKER code gap \u2014 day 34. ALL 23 rules have times_correct=0. No outcome validation possible. Rules are firing but we can't measure if they work.",
+            "action": "P0 dev: implement outcome callbacks in bot/feedback/loop.py (~4h)."
+        },
+        {
+            "subsystem": "auto_fix + live_injection",
+            "severity": "INFO",
+            "finding": "sol_short_penalize_v1 applied (23rd LLM rule). SOL SELL: 34.6% WR on 52 trades. 7th consecutive sync gap fixed. All 5 regimes and 7/8 symbol+side pairs now have direct LLM rules. Only ETH BUY lacks direct coverage (indirect via regime boost).",
+            "action": "Monitor SOL SHORT WR post-restart. Graduate 20%\u219250% gate if WR<40% at n>=30."
         },
         {
             "subsystem": "execution_forensics",
-            "severity": "HIGH",
-            "finding": "NIGHT_BLOCK_IN_46MIN: night_session_block_v1 activates at 00:00 UTC (46 min). Last chance for evening edge capture tonight. Then 6h night silence before Window 15.",
-            "action": "If user can restart in next 46 min: captures evening edge + prepares for Window 15. No action needed after 00:00 UTC until restart before 05:30 UTC."
-        },
-        {
-            "subsystem": "auto_fix",
-            "severity": "MEDIUM",
-            "finding": "NO_NEW_FIXES_STEADY_STATE: All remaining rule candidates below 75% confidence threshold. btc_long_nontrend (72%, n=17) needs human review. BB_solo generic boost would double-count existing symbol rules. CONF_60_70 data contradiction frozen. System at steady-state \u2014 perpetual loop has exhausted auto-applicable improvements from current data.",
-            "action": "RESTART BOT to generate new trade data and break the data starvation cycle. AB_TRACKER code enables outcome validation. These are the only paths to new improvements."
+            "severity": "LOW",
+            "finding": "BTC SHORT at 90%+ confidence in trend gets +18pts combined boost (untested setup). Rule interactions: rule_1777922205_0 (+8pts) + btc_short_90plus_boost_v1 (+10pts). Zero live cases observed.",
+            "action": "Monitor post-restart. If BTC SHORT 90%+trend WR<50% across n>=5, restrict boost."
         }
     ],
-    "run_summary": {
-        "subsystems_completed": 5,
-        "fixes_applied_this_run": 0,
-        "code_changes_this_run": [
-            "bot/data/learning/live_edge_data.json: updated window countdown + ranging coverage note + new finding",
-            "bot/data/sessions/daily_synthesis_2026-05-22.json: EOD synthesis written",
-            "bot/data/learning/master_engine_state.json: updated (this file)"
+    "llm_engine_state": {
+        "total_rules": 23,
+        "boosts": 10,
+        "penalizes": 8,
+        "vetos": 5,
+        "regime_coverage": "5/5 (trend/illiquid/ranging/high_vol/unknown)",
+        "symbol_side_coverage": "7/8 direct (ETH BUY indirect via regime)",
+        "tod_coverage": "4/4 (night/morning/afternoon/evening)",
+        "rules_added_this_run": [
+            "sol_short_penalize_v1"
+        ]
+    },
+    "run_log_history_keys": [
+        "run_id",
+        "hours_since_prev_run",
+        "subsystems",
+        "high_priority_findings",
+        "run_summary"
+    ],
+    "run_log_2026_05_23_0017": {
+        "run_at": "2026-05-23T00:17:44.670420+00:00",
+        "run_id": "perpetual_deep_dive_2026_05_23_0017",
+        "fixes_applied": [
+            "SOL_SHORT_LLM_SYNC_V1"
         ],
-        "runtime_rules_total": 22,
-        "runtime_rules_active": 20,
-        "runtime_rules_added_this_run": 0,
-        "high_priority_findings_count": 4,
-        "night_block_in_min": 46,
-        "window_15_in_h": 6.8,
-        "restart_deadline_in_h": 6.3,
-        "data_status": "FROZEN \u2014 bot offline 33 days. 0 trades.",
-        "equity": 497.0523,
-        "consecutive_losses": 4,
-        "key_insight_this_run": "STEADY_STATE_REACHED: Perpetual loop has applied 57 total fixes (56 from prior runs + 1 from last run = ranging rule). All remaining candidates below 75% confidence threshold. System health: 22 LLM rules (20 active), all 5 regimes covered, all 9 high-edge setups have rules. TWO BLOCKERS remain: (1) BOT OFFLINE prevents new data generation, (2) AB_TRACKER code gap prevents outcome validation. Both require human action.",
-        "rule_system_health": "22 rules (20 active). Regime coverage COMPLETE. High-edge coverage 9/9. Outcome validation 0/9 (AB stall).",
-        "sync_gap_history": {
-            "total_gaps_fixed": 7,
-            "sequence": [
-                "illiquid_regime_penalize_v1 (baseline)",
-                "high_vol_regime_boost_v1 (run N-3)",
-                "TOD_morning_edge_v1 (run N-2)",
-                "btc_trend_long_counter_v1 (run N-2)",
-                "BB_SCHEMA_UNLOCK x5 rules (run N-1)",
-                "ranging_regime_penalize_v1 (last run)",
-                "CONF_floor_70_v1 INACTIVE (data contradiction, correctly blocked)"
-            ],
-            "remaining_candidates": [
-                "btc_long_nontrend_penalize_v1 (n=17, conf=72% \u2014 below threshold, human review)",
-                "BB_solo_generic_boost (double-counting risk \u2014 blocked)",
-                "CONF_60_70 rules (data contradiction frozen \u2014 blocked)"
-            ],
-            "auto_applicable_gaps": 0
-        },
-        "next_run_focus": [
-            "If bot restarted: capture first post-restart signals, verify ranging_regime_penalize_v1 fires, verify tod_morning_edge_v1 for Window 15",
-            "Monitor: RESTART_SOFT_START_4LOSS should auto-apply on startup",
-            "Continue monitoring for new sync gaps post-restart"
+        "prior_run": "perpetual_deep_dive_2026_05_22_2317",
+        "hours_since_prior": 1.01,
+        "new_rule_count": 1,
+        "total_rule_count": 23,
+        "subsystem": "perpetual_improvement_deep_dive",
+        "key_findings": [
+            "sol_short_penalize_v1 applied: SOL SELL 34.6% WR/52 trades. 7th sync gap fixed. Coverage now 7/8 direct symbol+side pairs.",
+            "Window 15 in 346 min (06:00-12:00 UTC May 23). Restart deadline 316 min. 15th window at risk.",
+            "Bot offline day 34. AB_TRACKER stall persists. times_correct=0 for all 23 rules.",
+            "BTC SHORT 90%+trend overboost noted: +18pts combined, zero live evidence cases."
         ]
     }
 }

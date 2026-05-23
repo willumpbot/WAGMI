@@ -333,5 +333,18 @@
             "reason": "INVALID ITEM \u2014 bot/data/llm/graduated_rules.json IS the active 15-rule LLM engine. Deleting it would destroy all LLM confidence adjustments. Item was incorrectly added to pending list.",
             "action": "CLOSED \u2014 no action needed on the file."
         }
+    ],
+    "fixes": [
+        {
+            "fix_id": "SOL_SHORT_LLM_SYNC_V1",
+            "applied_at": "2026-05-23T00:15:14.780400+00:00",
+            "gate_pct": 20,
+            "status": "APPLIED",
+            "type": "MISSING_LLM_RULE",
+            "source": "perpetual_loop_subsystem1",
+            "description": "sol_short_penalize_v1 added to LLM engine. Feedback has SOL_SHORT_full_block (conf=88, gate=100%) but LLM engine had 0 SOL SHORT rules. 7th consecutive cross-system sync gap fixed. adj=-10pts, gate=20% probe (conservative due to RULE_CONFLICT_SOL_SHORT PENDING).",
+            "evidence": "SOL SHORT: 34.6% WR on 52 live paper trades (suspension probe). n=52 >> 20 threshold.",
+            "outcome_tracking": "PENDING_RESTART"
+        }
     ]
 }
