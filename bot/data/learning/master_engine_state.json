@@ -1,32 +1,33 @@
 {
-    "last_run": "2026-05-23T01:16:15.396128+00:00",
-    "run_id": "perpetual_deep_dive_2026_05_23_0116",
-    "hours_since_prev_run": 0.98,
+    "last_run": "2026-05-23T02:08:24.282618+00:00",
+    "run_id": "perpetual_deep_dive_2026_05_23_0208",
+    "hours_since_prev_run": 0.87,
+    "prior_run_id": "perpetual_deep_dive_2026_05_23_0116",
     "subsystems": {
         "auto_fix": {
-            "fixes_applied": 1,
+            "fixes_applied": 0,
             "gates_active": 21,
             "runtime_rules_total": 23,
-            "candidates_reviewed": 5,
-            "candidates_applied": 1,
+            "candidates_reviewed": 4,
+            "candidates_applied": 0,
             "candidates_blocked": 4,
-            "new_fix": "GATE_PERCENTAGE_SCHEMA_NORMALIZATION_V1",
-            "fix_detail": "Added gate_percentage to all 21 LLM rules missing it. Gate distribution: 2 disabled (gate=0: rule_1777922205_0, conf_floor_70_v1), 8 fully deployed (gate=100), 12 A/B probe (gate=20), 1 graduated (gate=50: tod_morning_edge_v1). Schema now uniform \u2014 enables AB_TRACKER implementation.",
+            "new_fix": "NONE \u2014 no new fixes applied this run",
+            "new_finding": "SOL_SHORT_UNDERSTRENGTH_GAP \u2014 LLM engine 5x weaker than feedback on SOL SHORT. Blocked by RULE_CONFLICT. Needs human review.",
             "block_reasons": {
                 "btc_long_nontrend_penalize_v1": "BELOW_THRESHOLD \u2014 n=17 < 20 required. No new live data.",
+                "sol_short_escalation": "RULE_CONFLICT_SOL_SHORT unresolved \u2014 competing promote vs block rules. Human review required.",
                 "eth_buy_specific_rule": "INSUFFICIENT_EVIDENCE \u2014 ETH BUY no direct evidence. Indirect via regime boost.",
-                "HIGH_CONF_SHORT_edge": "INTERACTION_RISK \u2014 general 90%+ SHORT rule would double-boost BTC (already +10pts) and net-negative SOL (-10pts general). Symbol-specific rules already cover the best cases.",
                 "hype_short_veto_conflict": "HUMAN_REVIEW \u2014 0/3 correct (blocked signals profitable) vs 239-trade historical EV. Conflict unresolved."
             },
             "critical_finding": {
-                "id": "AB_TRACKER_CODE_GAP_DAY35",
+                "id": "AB_TRACKER_CODE_GAP_DAY36",
                 "severity": "HIGH",
-                "detail": "Day 35: ALL 23 rules have times_correct=0. Schema normalization adds gate_percentage to enable future AB_TRACKER \u2014 but the outcome callbacks still missing from bot/feedback/loop.py.",
-                "action": "P0: implement outcome callbacks in bot/feedback/loop.py (~4h dev). Schema normalization is prerequisite step \u2014 now complete."
+                "detail": "Day 36: ALL 23 rules have times_correct=0. Schema prerequisite complete (gate_percentage on all rules). Outcome callbacks still missing from bot/feedback/loop.py.",
+                "action": "P0: implement outcome callbacks in bot/feedback/loop.py (~4h dev). Unblocks graduation of 12 A/B probe rules."
             }
         },
         "execution_forensics": {
-            "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 35+). Dev gap.",
+            "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 36+). Dev gap.",
             "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes. Stable estimate.",
             "hold_forensics": {
                 "win_median_hold_h": 3.3,
@@ -34,57 +35,58 @@
                 "ratio": "2.2x \u2014 losses exit 2.2x faster than wins"
             },
             "new_finding": {
-                "id": "NO_NEW_DATA_DAY35",
-                "severity": "INFO",
-                "detail": "Bot offline day 35. No trades.csv. All execution metrics are cached estimates. Slippage, regime classification, and leverage data unavailable until restart.",
-                "action": "Restart bot. First 10 trades will populate slippage baseline."
+                "id": "SOL_SHORT_UNDERSTRENGTH_DETECTED",
+                "severity": "MEDIUM",
+                "detail": "Bot offline day 36. SOL SHORT: LLM engine 5x weaker than feedback (adj=-10pts gate=20% vs feedback block gate=100%). New structural gap documented. All other metrics cached \u2014 no new data until restart.",
+                "action": "Resolve RULE_CONFLICT_SOL_SHORT. Then escalate sol_short_penalize_v1 adj\u2192-18 gate\u219250%."
             },
             "structural_gaps": [
-                "snapshot_entry column missing (slippage unmeasurable \u2014 day 35+)",
+                "snapshot_entry column missing (slippage unmeasurable \u2014 day 36+)",
                 "llm_regime column empty (regime rules unmeasurable)",
-                "AB result tracker code missing (all gated rules stalled \u2014 day 35+)",
-                "btc_long_nontrend unprotected in ranging/illiquid/unknown (n=17, below 20 threshold)"
+                "AB result tracker code missing (all gated rules stalled \u2014 day 36+)",
+                "btc_long_nontrend unprotected in ranging/illiquid/unknown (n=17, below threshold)",
+                "sol_short_penalize_v1 understrength (-10pts gate=20% vs feedback full_block gate=100%)"
             ],
-            "night_block_alignment": "ALIGNED \u2014 01:15 UTC, night_session_block_v1 active (gate=100%)"
+            "night_block_alignment": "ALIGNED \u2014 02:08 UTC, night_session_block_v1 active (gate=100%)"
         },
         "live_injection": {
             "high_edges_found": 9,
             "weak_setups_found": 5,
-            "new_coverage_gap": "ETH_BUY \u2014 no symbol+side specific rule (n=0 direct evidence). Indirect via eth_trending_regime_boost_v1.",
+            "new_finding": "SOL_SHORT_INTENSITY_ASYMMETRY \u2014 9 feedback rules for SOL SHORT, LLM engine has 1 weak rule. Pre-filter efficiency gap.",
             "coverage_status": "8/8 symbol+side pairs covered (7 direct, 1 indirect). All 5 regimes covered.",
-            "gate_schema_fixed": "gate_percentage now present on all 9 high-edge rules. Previously: 7 rules had missing gate_percentage. AB_TRACKER can now parse all rules.",
-            "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all. Schema fix is prerequisite for resolution."
+            "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all. AB_TRACKER code needed."
         },
         "daily_synthesis": {
             "today_trades": 0,
             "today_pnl": 0.0,
             "anomalies_found": 4,
-            "report_generated": false,
+            "report_generated": true,
+            "report_path": "bot/data/sessions/daily_synthesis_2026-05-23.json",
             "current_session": "NIGHT",
-            "window_15_opens_in_min": 285,
-            "window_15_opens_in_h": 4.7,
-            "restart_deadline_in_min": 255,
+            "window_15_opens_in_min": 231,
+            "window_15_opens_in_h": 3.85,
+            "restart_deadline_in_min": 201,
             "restart_deadline_utc": "2026-05-23T05:30:00+00:00",
             "consecutive_windows_missed": 15,
             "eod_report": false,
             "anomalies": [
                 {
-                    "type": "BOT_OFFLINE_DAY35",
+                    "type": "BOT_OFFLINE_DAY36",
                     "severity": "CRITICAL",
-                    "detail": "Day 35 offline. Restart in 4.2h to catch Window 15 (06:00-12:00 UTC). 15 consecutive morning windows missed."
+                    "detail": "Day 36 offline. Restart in 3.85h to catch Window 15 (06:00-12:00 UTC). 15 consecutive morning windows missed."
                 },
                 {
-                    "type": "AB_TRACKER_STALL",
+                    "type": "WINDOW_15_FINAL_COUNTDOWN",
                     "severity": "HIGH",
-                    "detail": "Day 35 of AB tracker code gap. Schema normalization applied this run \u2014 prerequisites now met for implementation."
+                    "detail": "231 min to Window 15. Restart deadline 201 min. Miss = 16th consecutive morning window."
                 },
                 {
-                    "type": "WINDOW_15_COUNTDOWN",
+                    "type": "AB_TRACKER_CODE_GAP_DAY36",
                     "severity": "HIGH",
-                    "detail": "285 min to Window 15. Restart deadline 255 min. Miss = 16th consecutive morning window."
+                    "detail": "Day 36 of AB tracker code gap. Schema prerequisites now met. Code work remaining."
                 },
                 {
-                    "type": "SCHEMA_NORMALIZATION_APPLIED",
+                    "type": "SOL_SHORT_UNDERSTRENGTH_NEW",
                     "severity": "INFO",
                     "detail": "gate_percentage added to 21/23 rules this run. LLM engine schema now fully uniform."
                 }
@@ -101,26 +103,26 @@
         {
             "subsystem": "daily_synthesis",
             "severity": "CRITICAL",
-            "finding": "Bot offline day 35. Window 15 (May 23 06:00-12:00 UTC) opens in 285 min. Restart deadline: 255 min (05:30 UTC). 15 consecutive morning windows missed. 23 LLM rules ready \u2014 zero live applications.",
-            "action": "RESTART BOT before 05:30 UTC May 23. Schema normalization complete this run \u2014 all rules properly configured."
+            "finding": "Bot offline day 36. Window 15 (May 23 06:00-12:00 UTC) opens in 231 min. Restart deadline: 201 min (05:30 UTC). 15 consecutive morning windows at risk. 23 LLM rules ready \u2014 zero live applications.",
+            "action": "RESTART BOT before 05:30 UTC May 23. All prerequisites met."
         },
         {
             "subsystem": "auto_fix",
             "severity": "HIGH",
-            "finding": "AB_TRACKER code gap \u2014 day 35. ALL 23 rules have times_correct=0. Schema prerequisite now met (gate_percentage on all rules). Next step: outcome callbacks in bot/feedback/loop.py.",
-            "action": "P0 dev: implement outcome callbacks (~4h). Unblocks graduation pipeline for 13 A/B rules."
+            "finding": "AB_TRACKER code gap \u2014 day 36. ALL 23 rules have times_correct=0. Schema prerequisite complete. Outcome callbacks still missing from bot/feedback/loop.py.",
+            "action": "P0 dev: implement outcome callbacks (~4h). Unblocks graduation pipeline for 12 A/B probe rules."
         },
         {
             "subsystem": "auto_fix",
             "severity": "MEDIUM",
-            "finding": "Schema normalization APPLIED: gate_percentage added to 21 LLM rules. Gate map: 2 disabled (gate=0), 8 fully deployed (gate=100), 12 A/B probe (gate=20), 1 graduated (gate=50). Previously all 21 had no gate tracking.",
-            "action": "DONE \u2014 file updated. AB_TRACKER can now parse full gate state on implementation."
+            "finding": "SOL_SHORT_UNDERSTRENGTH_GAP: LLM engine 5x weaker than feedback on SOL SHORT (adj=-10pts gate=20% vs feedback block gate=100%). RULE_CONFLICT_SOL_SHORT blocks escalation. 34.6% WR confirmed on 52 trades.",
+            "action": "HUMAN_REVIEW: resolve RULE_CONFLICT_SOL_SHORT (disable promote/boost rules), then escalate penalize adj\u2192-18 gate\u219250%."
         },
         {
             "subsystem": "execution_forensics",
             "severity": "LOW",
-            "finding": "87% noise stops (non-trending regimes) and 2.2x hold asymmetry stable estimates. No new data \u2014 gap deepening (day 35). Slippage measurement impossible until snapshot_entry added.",
-            "action": "Post-restart: add snapshot_entry column to trades.csv (~1h dev). Priority: HIGH once bot running."
+            "finding": "87% noise stops and 2.2x hold asymmetry stable cached estimates. Gap deepening (day 36). New structural gap: sol_short_penalize_v1 understrength vs feedback.",
+            "action": "Post-restart: add snapshot_entry column (~1h dev). Resolve SOL_SHORT conflict. Priority: HIGH once bot running."
         }
     ],
     "llm_engine_state": {
@@ -139,9 +141,7 @@
         "symbol_side_coverage": "7/8 direct (ETH BUY indirect via regime)",
         "tod_coverage": "4/4 (night/morning/afternoon/evening)",
         "schema_version": "v2 \u2014 gate_percentage normalized on all 23 rules (2026-05-23T01:15 UTC)",
-        "rules_changed_this_run": [
-            "gate_percentage added to 21 rules (schema normalization)"
-        ]
+        "rules_changed_this_run": []
     },
     "run_log_history_keys": [
         "run_id",
@@ -150,6 +150,32 @@
         "high_priority_findings",
         "run_summary"
     ],
+    "run_log_2026_05_23_0208": {
+        "run_at": "2026-05-23T02:08:24.282618+00:00",
+        "run_id": "perpetual_deep_dive_2026_05_23_0208",
+        "fixes_applied": [],
+        "prior_run": "perpetual_deep_dive_2026_05_23_0116",
+        "hours_since_prior": 0.87,
+        "new_rule_count": 0,
+        "total_rule_count": 23,
+        "schema_changes": 0,
+        "subsystem": "perpetual_improvement_deep_dive",
+        "key_findings": [
+            "SOL_SHORT_UNDERSTRENGTH_GAP: LLM engine 5x weaker than feedback on SOL SHORT. Blocked by RULE_CONFLICT. Human review needed.",
+            "Window 15 in 231 min (06:00-12:00 UTC May 23). Restart deadline 201 min. 15th morning window at risk.",
+            "Bot offline day 36. AB_TRACKER stall persists (day 36). Schema prerequisites complete.",
+            "No new rule additions this run — all candidates blocked (conflicts/data insufficient).",
+            "Daily synthesis 2026-05-23 created: 4 anomalies logged.",
+            "Model optimization skipped — no cost_tracker.json (bot offline)."
+        ],
+        "subsystem_status": {
+            "auto_fix": "COMPLETE — 0 fixes applied, 1 new finding (SOL_SHORT_UNDERSTRENGTH)",
+            "execution_forensics": "COMPLETE — no new data, gap counter updated to day 36",
+            "live_injection": "COMPLETE — no new trades, window countdown updated",
+            "daily_synthesis": "COMPLETE — daily_synthesis_2026-05-23.json written",
+            "model_optimization": "SKIPPED — no cost_tracker.json"
+        }
+    },
     "run_log_2026_05_23_0116": {
         "run_at": "2026-05-23T01:16:15.396128+00:00",
         "run_id": "perpetual_deep_dive_2026_05_23_0116",

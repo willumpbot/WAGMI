@@ -1,8 +1,8 @@
 {
-    "last_run": "2026-05-23T01:16:32.642180+00:00",
+    "last_run": "2026-05-23T02:08:24.282618+00:00",
     "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
-    "fixes_applied_this_run": 1,
-    "gates_active": 20,
+    "fixes_applied_this_run": 0,
+    "gates_active": 21,
     "total_applied_all_time": 56,
     "last_fix": {
         "fix_id": "GATE_PERCENTAGE_SCHEMA_NORMALIZATION_V1",
@@ -17,11 +17,20 @@
     },
     "new_findings_this_run": [
         {
+            "finding_id": "SOL_SHORT_UNDERSTRENGTH_GAP",
+            "detected_at": "2026-05-23T02:08:24.282618+00:00",
+            "severity": "MEDIUM",
+            "detail": "LLM engine: sol_short_penalize_v1 adj=-10pts at gate=20% (very weak). Feedback: SOL_SHORT_full_block gate=100% conf=88% + SOL_SHORT_LIVE_CONTRADICTION gate=100% conf=95%. The LLM engine is 5x weaker than the feedback system on the same signal. A 34.6% WR / 52 live trades warrants stronger than -10pts. However RULE_CONFLICT_SOL_SHORT (gate=0%, conf=92%) is unresolved \u2014 competing SOL_SHORT_edge_promote and SOL_SHORT_priority_boost (both gate=20%) conflict with the block. Net: understrength is real but escalation requires resolving the conflict first.",
+            "action": "PENDING_HUMAN_REVIEW \u2014 RULE_CONFLICT_SOL_SHORT must be resolved before escalating sol_short_penalize_v1. Recommended resolution: disable SOL_SHORT_edge_promote + SOL_SHORT_priority_boost (gate=0%), then escalate sol_short_penalize_v1 gate 20%\u219250% and adj -10\u2192-18. Requires user approval.",
+            "requires_human_review": true,
+            "confidence": 0.70
+        },
+        {
             "finding_id": "GATE_PERCENTAGE_SCHEMA_GAP_RESOLVED",
             "detected_at": "2026-05-23T01:16:32.642180+00:00",
             "severity": "MEDIUM",
-            "detail": "21 of 23 LLM rules were missing gate_percentage field. This blocks AB_TRACKER implementation which needs gate state to route A/B splits. Root cause: gate_percentage was only added to new rules (last 2) starting May 22, but not backfilled to prior 21 rules. Fixed this run: full gate map established based on deployment history from auto_fix_state and fixes_history records.",
-            "action": "FIXED \u2014 gate_percentage added to all 23 rules. Gate distribution: 2 disabled, 8 full, 12 probe, 1 graduated.",
+            "detail": "21 of 23 LLM rules were missing gate_percentage field. Fixed in prior run.",
+            "action": "CLOSED",
             "requires_human_review": false
         }
     ],

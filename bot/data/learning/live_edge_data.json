@@ -1,6 +1,6 @@
 {
-    "last_run": "2026-05-22T23:17:14.282476+00:00",
-    "data_source": "Historical accumulated. Bot offline ~33 days. No new trade data. SOL_SHORT suspension validated by live paper (34.6% WR, 52 trades).",
+    "last_run": "2026-05-23T02:08:24.282618+00:00",
+    "data_source": "Historical accumulated. Bot offline ~36 days. No new trade data. SOL_SHORT suspension validated by live paper (34.6% WR, 52 trades).",
     "high_edges_found": 9,
     "weak_setups_found": 5,
     "high_edges": [
@@ -178,5 +178,19 @@
         ],
         "gap_remaining": "ranging has no symbol-specific override; btc_long_nontrend_penalize_v1 still pending human review"
     },
-    "weak_setup_regime_coverage": "COMPLETE \u2014 all 5 regimes now covered: illiquid(-15pts), ranging(-10pts), unknown(+5pts HYPE-specific), high_vol(+5pts), trend(boost). RANGING was last gap, filled last run."
+    "weak_setup_regime_coverage": "COMPLETE \u2014 all 5 regimes now covered: illiquid(-15pts), ranging(-10pts), unknown(+5pts HYPE-specific), high_vol(+5pts), trend(boost). RANGING was last gap, filled last run.",
+    "new_finding_2026_05_23_0208": {
+        "id": "SOL_SHORT_INTENSITY_ASYMMETRY",
+        "detail": "SOL SHORT: 9 rules in feedback (7 SOL-SHORT-specific), but LLM engine coverage is 5x weaker than feedback system. Feedback blocks at 100%; LLM penalizes only -10pts at gate=20%. This means the LLM can still GENERATE high-confidence SOL SHORT signals that then get blocked later by the feedback layer. Dual-layer is inefficient \u2014 LLM should pre-filter aggressively to save API cost.",
+        "severity": "MEDIUM",
+        "action": "PENDING_CONFLICT_RESOLUTION \u2014 RULE_CONFLICT_SOL_SHORT blocks escalation. Resolve with user before next dev sprint."
+    },
+    "window_status_2026_05_23": {
+        "window_15": "2026-05-23 06:00-12:00 UTC",
+        "minutes_until_window_15": 231,
+        "restart_deadline_utc": "2026-05-23T05:30:00+00:00",
+        "minutes_to_restart_deadline": 201,
+        "consecutive_windows_missed": 15,
+        "status": "Window 15 in 231 min. Restart deadline in 201 min."
+    }
 }
