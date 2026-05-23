@@ -1,13 +1,13 @@
 {
-  "last_run": "2026-05-23T22:12:55.537662+00:00",
+  "last_run": "2026-05-23T23:12:59.986813+00:00",
   "data_source": "Historical accumulated. Bot offline ~36 days. No new trade data.",
   "high_edges_found": 9,
   "weak_setups_found": 5,
   "new_finding_this_run": {
-    "id": "SOL_BUY_RULE_CONFLICT_SURFACE",
-    "detail": "sol_buy_bb_golden_v1 (boost SOL BUY on BB, gate=20%) conflicts with sol_long_veto_v1 (veto SOL BUY, gate=100%). The veto wins at runtime but the boost rule wastes compute and creates false positives in monitoring. The boost rule should be disabled (gate=0).",
-    "severity": "LOW",
-    "action": "Disable sol_buy_bb_golden_v1 (set active=False, gate=0). SOL BUY WR=24%, veto is correct."
+    "id": "TOD_AFTERNOON_CONFLICT_DETECTED",
+    "detail": "LLM engine and feedback engine are running OPPOSITE probes for afternoon session (12:00-18:00 UTC). LLM: +5pts boost gate=20%. Feedback: -8pts block gate=20%. These are contradictory A/B probes. Post-restart: measure WR for each cohort separately. This cannot be auto-resolved without live data.",
+    "severity": "MEDIUM",
+    "action": "HUMAN_REVIEW post-restart: compare afternoon signal WR for boost vs block cohort. Winner after n>=20 becomes policy."
   },
   "window_status_2026_05_23": {
     "window_15": "2026-05-23 06:00-12:00 UTC \u2014 MISSED (16th consecutive)",
@@ -124,5 +124,19 @@
       "rule": "bb_mtq_antipattern_v1 NOW gate=50% (escalated this run from 20%)"
     }
   ],
-  "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all. AB_TRACKER code still needed."
+  "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all. AB_TRACKER code still needed.",
+  "window_status_2026_05_24": {
+    "window_16": "2026-05-24 06:00-12:00 UTC \u2014 NEXT",
+    "minutes_until_window_16": 407,
+    "restart_deadline_utc": "2026-05-24T05:30:00+00:00",
+    "minutes_to_restart_deadline": 377,
+    "consecutive_windows_missed": 16,
+    "status": "Window 15 MISSED (16th). Window 16 in 407 min (6.8h). Restart deadline in 377 min (6.3h)."
+  },
+  "rules_escalated_this_run": [
+    "ranging_regime_penalize_v1: 20%\u219250%",
+    "btc_trend_long_counter_v1: 20%\u219250% (graduation criterion met)",
+    "high_vol_regime_boost_v1: 20%\u219250% (graduation criterion met)",
+    "eth_sell_bb_golden_v1: 20%\u219250% (sync gap close)"
+  ]
 }

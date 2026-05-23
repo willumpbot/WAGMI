@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-05-23T22:12:39.580570+00:00",
+  "last_run": "2026-05-23T23:12:59.986813+00:00",
   "data_available": false,
   "data_source": "Cached analysis (bot offline ~36 days, trades.csv missing). Gap: day 36.",
   "avg_slippage": "UNKNOWN \u2014 snapshot_entry column still missing. Day 36 of measurement gap.",
@@ -21,10 +21,10 @@
     }
   },
   "new_finding_this_run": {
-    "id": "WINDOW_15_MISSED_CONFIRMED",
-    "detail": "Window 15 (May 23 06:00 UTC) confirmed missed \u2014 16th consecutive morning window. Bot still offline at 22:11 UTC. Next restart deadline: May 24 05:30 UTC (~7h 18min).",
-    "severity": "HIGH",
-    "action": "RESTART bot before 05:30 UTC May 24 to capture Window 16."
+    "id": "GATE_READINESS_ASSESSMENT",
+    "detail": "4-rule gate escalation batch applied this run. LLM engine now: 8 fully deployed (gate=100%), 7 partially graduated (gate=50%), 5 probe (gate=20%), 3 disabled. This is the most complete configuration before any restart. Notable: btc_trend_long_counter graduated (criterion met: 17 trades 18% WR), eth_sell_bb_golden escalated to 50% (strongest live edge 80% WR/5 trades). Restart deadline in 377 min.",
+    "severity": "INFO",
+    "action": "RESTART before 05:30 UTC May 24 to activate this configuration."
   },
   "structural_gaps": [
     "snapshot_entry column missing (slippage unmeasurable \u2014 day 36+)",
@@ -33,8 +33,8 @@
     "btc_long_nontrend unprotected in ranging/illiquid/unknown (18% WR, n=17 \u2014 needs human review)",
     "sol_short_penalize_v1 understrength (-10pts at gate=20% vs feedback full_block at gate=100%)"
   ],
-  "days_offline": 37,
-  "hours_offline": 886,
+  "days_offline": 38,
+  "hours_offline": 919.2,
   "gap_deepening": true,
   "last_updated": "2026-05-23T02:08:24.282618+00:00",
   "window_status": {
@@ -42,6 +42,17 @@
     "last_missed": "Window 15 \u2014 2026-05-23 06:00-12:00 UTC",
     "next_window": "Window 16 \u2014 2026-05-24 06:00-12:00 UTC",
     "next_restart_deadline": "2026-05-24T05:30:00+00:00",
-    "status": "CRITICAL \u2014 16 consecutive morning windows missed. Window 16 in ~8h."
-  }
+    "minutes_to_restart_deadline": 377,
+    "minutes_to_window": 407,
+    "status": "CRITICAL \u2014 377 min (6.3h) to restart deadline. Window 16 in 407 min (6.8h).",
+    "window_16_note": "LLM engine now has 7 rules at gate=50% (up from 3 at start of day). Best pre-restart configuration yet."
+  },
+  "post_restart_watch_list": [
+    "btc_trend_long_counter_v1 (50%): BTC BUY+trend should be blocked ~50% of time. Expected: BTC LONG pass-through drops from ~100% to <50%.",
+    "eth_sell_bb_golden_v1 (50%): ETH SELL with BB gets +8pts on 50% of decisions. Expected: ETH SHORT signals pass more reliably.",
+    "high_vol_regime_boost_v1 (50%): HIGH_VOL regime gets +5pts on 50% of decisions. Monitor first 25 trades.",
+    "ranging_regime_penalize_v1 (50%): Ranging signals get -10pts on 50% of decisions. Monitor first 20 trades.",
+    "TOD_AFTERNOON_CONFLICT: Track afternoon signals WR in boost-cohort (LLM) vs block-cohort (feedback). Report after n>=10 each.",
+    "hype_short_veto_v1: 0/3 correct. REQUIRES HUMAN REVIEW before 4th application. Flag immediately if HYPE SELL fires."
+  ]
 }

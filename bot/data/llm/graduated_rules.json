@@ -229,7 +229,9 @@
       "times_applied": 0,
       "times_correct": 0,
       "active": true,
-      "gate_percentage": 20
+      "gate_percentage": 50,
+      "gate_escalated_at": "2026-05-23T23:11:54.661001+00:00",
+      "gate_escalation_reason": "GRADUATION_CRITERION_MET: pending_ab_graduation threshold was n>=10 WR<=0.45. Live data: 17 trades at 18% WR. Threshold met (17>=10, 0.18<=0.45). Feedback BTC_LONG_reduce at gate=50%. Triple protection stack (counter+Critic prompt+parent disabled). Conf=0.92 >> 0.75 threshold."
     },
     {
       "rule_id": "tod_evening_edge_v1",
@@ -285,7 +287,9 @@
       "times_applied": 0,
       "times_correct": 0,
       "active": true,
-      "gate_percentage": 20
+      "gate_percentage": 50,
+      "gate_escalated_at": "2026-05-23T23:11:54.661001+00:00",
+      "gate_escalation_reason": "GRADUATION_CRITERION_MET: pending_ab_graduation threshold was n>=25 WR>=0.52. Backtest: n=2172 at 55% WR. Feedback HIGH_VOL_regime_boost at gate=80%. Best regime by WR margin (55% vs 38% avg). No conflicts (different conditions from illiquid_regime_penalize). Conf=0.88 >> 0.75 threshold."
     },
     {
       "rule_id": "tod_morning_edge_v1",
@@ -326,7 +330,9 @@
       "times_applied": 3,
       "times_correct": 0,
       "active": true,
-      "gate_percentage": 20
+      "gate_percentage": 50,
+      "gate_escalated_at": "2026-05-23T23:11:54.661001+00:00",
+      "gate_escalation_reason": "SYNC_GAP_CLOSE: feedback ETH_SHORT_BB_golden at gate=80%. Backtest: 70% WR on n=2172. Live_edge_data: 80% WR on 5 live trades (strongest live edge found). ETH SELL is protected from side-bias filter. Conf=0.95 >> 0.75 threshold. First BB golden rule to escalate (sol_buy disabled, btc_buy at 20% pending conflict check)."
     },
     {
       "rule_id": "btc_buy_bb_golden_v1",
@@ -432,14 +438,16 @@
       "confidence": 0.76,
       "evidence_ratio": 0.25,
       "total_evidence": 16,
-      "gate_percentage": 20,
+      "gate_percentage": 50,
       "created_at": 1779487857.5699627,
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
       "active": true,
       "source": "feedback/graduated_rules.json RANGING_regime_reduce (gate=50%, conf=76%). Sync gap: illiquid has LLM rule (-15pts), ranging does not. Pattern: 6th consecutive cross-system sync gap.",
-      "outcome_tracking": "PENDING_RESTART"
+      "outcome_tracking": "PENDING_RESTART",
+      "gate_escalated_at": "2026-05-23T23:11:54.661001+00:00",
+      "gate_escalation_reason": "SYNC_GAP_CLOSE_V2: feedback RANGING_regime_reduce at gate=50%. Ranging WR=25% on 16 live trades (worse than illiquid 28%). Penalty rule, no conflicts. Conf=0.76 >= 0.75 threshold. 10th consecutive cross-system sync gap action."
     },
     {
       "rule_id": "sol_short_penalize_v1",

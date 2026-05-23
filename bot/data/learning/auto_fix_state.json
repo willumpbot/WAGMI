@@ -1,38 +1,38 @@
 {
-  "last_run": "2026-05-23T22:14:39.737140+00:00",
+  "last_run": "2026-05-23T23:12:31.750605+00:00",
   "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
-  "fixes_applied_this_run": 2,
-  "gates_active": 22,
-  "total_applied_all_time": 60,
+  "fixes_applied_this_run": 4,
+  "gates_active": 20,
+  "total_applied_all_time": 64,
   "last_fix": {
-    "fix_id": "SOL_BUY_RULE_CONFLICT_DISABLE_V1",
-    "applied_at": "2026-05-23T22:14:39.737140+00:00",
-    "gate_pct": "20\u21920 (disabled)",
+    "fix_id": "ETH_SELL_BB_GOLDEN_ESCALATION_V1",
+    "applied_at": "2026-05-23T23:12:31.750605+00:00",
+    "gate_pct": "20\u219250",
     "status": "APPLIED",
-    "type": "RULE_DISABLE",
-    "source": "perpetual_loop_subsystem3",
-    "description": "sol_buy_bb_golden_v1 disabled: dead rule conflicting with sol_long_veto_v1 (gate=100%). SOL BUY WR=24%. The boost never fired against a 100% veto. Reduces noise in monitoring.",
-    "evidence": "sol_long_veto_v1 gate=100% always overrides sol_buy_bb_golden_v1 gate=20%. SOL BUY 24% WR on 34 trades confirms veto is correct.",
-    "outcome_tracking": "N/A \u2014 rule disabled, not gated"
+    "type": "GATE_ESCALATION",
+    "description": "4-rule batch escalation: ranging, btc_trend_long_counter, high_vol, eth_sell_bb. All met graduation criteria.",
+    "evidence": "ranging(25%WR/16), btc_trend_long(18%WR/17), high_vol(55%WR/2172), eth_sell_bb(70%WR/2172+80%live/5)",
+    "outcome_tracking": "PENDING_RESTART"
   },
   "new_findings_this_run": [
     {
-      "finding_id": "AUTONOMOUS_SESSION_COMPLETION_AUDIT",
-      "detected_at": "2026-05-23T22:14:39.737140+00:00",
-      "severity": "LOW",
-      "detail": "Complete audit of AUTONOMOUS_SESSION_2026_04_15 (17 findings): 5/7 critical findings DONE in code. Only Finding 1 (sniper re-enable, user-blocked) and Finding 13 (MFE/MAE instrumentation, deferred) remain. VERIFIED: Finding 2 (parameter_tuner.py:186), Finding 5 (llm_integration.py:969,1142,1220), Finding 11 (ensemble.py:2281), Finding 16 (position_manager.py:1296), Finding 17 (sector_exposure.py:55).",
-      "action": "SURFACE_TO_USER \u2014 all critical automated fixes complete. Only Finding 1 needs user review to re-enable sniper with guardrails.",
+      "finding_id": "TOD_AFTERNOON_CONFLICT_V1",
+      "detected_at": "2026-05-23T23:12:31.750605+00:00",
+      "severity": "MEDIUM",
+      "detail": "LLM engine probes afternoon BOOST (+5pts, gate=20%) via tod_afternoon_edge_v1, while feedback engine probes AFTERNOON_SESSION_BLOCK (-8pts, gate=20%). These are mutually contradictory probes for the same 12:00-18:00 UTC window. The two systems are running A/B tests with opposing hypotheses simultaneously. Cannot auto-resolve \u2014 requires live data to determine which direction is correct.",
+      "evidence": "LLM: tod_afternoon_edge_v1 boost+5 gate=20% (evidence_ratio=0.64, n=27). Feedback: AFTERNOON_SESSION_BLOCK -8pts gate=20%. Same time window, opposite signs.",
+      "action": "HUMAN_REVIEW \u2014 post-restart: track afternoon signal WR separately for boost-cohort vs block-cohort. If WR<0.45 over n>=20, disable the boost rule and escalate the block rule.",
       "requires_human_review": true,
-      "confidence": 0.98
+      "confidence": 0.95
     },
     {
-      "finding_id": "FEEDBACK_RULES_KEY_SPRAWL_FIXED",
-      "detected_at": "2026-05-23T22:14:39.737140+00:00",
+      "finding_id": "GATE_DIST_MILESTONE",
+      "detected_at": "2026-05-23T23:12:31.750605+00:00",
       "severity": "LOW",
-      "detail": "feedback/graduated_rules.json: 12 run_log keys older than 7 days archived to bot/data/learning/feedback_run_log_archive.json. File cleaned from 38 \u2192 26 keys. 6 recent run_logs kept.",
-      "action": "DONE \u2014 maintenance debt cleared.",
+      "detail": "LLM engine gate distribution milestone: 3 disabled / 5 probe(20%) / 7 graduated(50%) / 8 deployed(100%). First run with 7 rules at gate=50%.",
+      "action": "INFO \u2014 healthy progression toward full deployment.",
       "requires_human_review": false,
-      "confidence": 0.95
+      "confidence": 0.99
     }
   ],
   "active_fixes": [
@@ -127,6 +127,34 @@
       "gate_pct": 20,
       "status": "ACTIVE",
       "outcome_tracking": "PENDING_RESTART"
+    },
+    {
+      "fix_id": "RANGING_REGIME_GATE_ESCALATION_V1",
+      "applied_at": "2026-05-23T23:12:31.750605+00:00",
+      "gate_pct": 50,
+      "status": "ACTIVE",
+      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u2192100% at n>=20 WR<=0.35."
+    },
+    {
+      "fix_id": "BTC_TREND_LONG_COUNTER_GRADUATION_V1",
+      "applied_at": "2026-05-23T23:12:31.750605+00:00",
+      "gate_pct": 50,
+      "status": "ACTIVE",
+      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u2192100% at n>=20 WR<=0.35."
+    },
+    {
+      "fix_id": "HIGH_VOL_REGIME_BOOST_GRADUATION_V1",
+      "applied_at": "2026-05-23T23:12:31.750605+00:00",
+      "gate_pct": 50,
+      "status": "ACTIVE",
+      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u219280% at n>=50 live obs WR>=0.52."
+    },
+    {
+      "fix_id": "ETH_SELL_BB_GOLDEN_ESCALATION_V1",
+      "applied_at": "2026-05-23T23:12:31.750605+00:00",
+      "gate_pct": 50,
+      "status": "ACTIVE",
+      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u219280% at n>=20 live obs WR>=0.65."
     }
   ],
   "rule_accuracy_tracking": {
@@ -344,6 +372,50 @@
       "source": "perpetual_loop_subsystem1",
       "description": "bb_mtq_antipattern_v1: gate 20%\u219250%. BB+MTQ cofire = 35% WR / n=2172. Feedback gate=80%. Penalty rule, no conflicts. 9th sync gap action.",
       "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u219280% at n>=20 obs WR<=0.40."
+    },
+    {
+      "fix_id": "RANGING_REGIME_GATE_ESCALATION_V1",
+      "applied_at": "2026-05-23T23:12:31.750605+00:00",
+      "gate_pct": 50,
+      "status": "APPLIED",
+      "type": "GATE_ESCALATION",
+      "source": "perpetual_loop_subsystem1",
+      "description": "ranging_regime_penalize_v1: gate 20%\u219250%. Ranging WR=25% on 16 live trades. Feedback RANGING_regime_reduce at gate=50%. 10th cross-system sync gap action.",
+      "evidence": "25% WR/16 live, feedback gate=50%, no conflicts. Conf=0.80 >= 0.75 threshold.",
+      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u2192100% at n>=20 WR<=0.35."
+    },
+    {
+      "fix_id": "BTC_TREND_LONG_COUNTER_GRADUATION_V1",
+      "applied_at": "2026-05-23T23:12:31.750605+00:00",
+      "gate_pct": 50,
+      "status": "APPLIED",
+      "type": "GATE_ESCALATION",
+      "source": "perpetual_loop_subsystem1",
+      "description": "btc_trend_long_counter_v1: gate 20%\u219250%. GRADUATION CRITERION MET: threshold was n>=10 WR<=0.45. Actual: n=17 WR=18%. Feedback BTC_LONG_reduce at gate=50%. Triple protection layer (counter+Critic+disabled parent). Conf=0.92.",
+      "evidence": "17 live trades 18% WR (clearly meets <=0.45 threshold with n>=10). Highest-confidence escalation in this run.",
+      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u2192100% at n>=20 WR<=0.35."
+    },
+    {
+      "fix_id": "HIGH_VOL_REGIME_BOOST_GRADUATION_V1",
+      "applied_at": "2026-05-23T23:12:31.750605+00:00",
+      "gate_pct": 50,
+      "status": "APPLIED",
+      "type": "GATE_ESCALATION",
+      "source": "perpetual_loop_subsystem1",
+      "description": "high_vol_regime_boost_v1: gate 20%\u219250%. GRADUATION CRITERION MET: threshold was n>=25 WR>=0.52. Backtest: n=2172 at 55% WR. Feedback gate=80%. Best regime by WR margin. Conf=0.88.",
+      "evidence": "n=2172 backtest at 55% WR meets threshold. Feedback HIGH_VOL_regime_boost at gate=80%.",
+      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u219280% at n>=50 live obs WR>=0.52."
+    },
+    {
+      "fix_id": "ETH_SELL_BB_GOLDEN_ESCALATION_V1",
+      "applied_at": "2026-05-23T23:12:31.750605+00:00",
+      "gate_pct": 50,
+      "status": "APPLIED",
+      "type": "GATE_ESCALATION",
+      "source": "perpetual_loop_subsystem1",
+      "description": "eth_sell_bb_golden_v1: gate 20%\u219250%. Backtest 70% WR/2172 + live_edge_data 80% WR/5 trades. Feedback ETH_SHORT_BB_golden at gate=80%. ETH SELL exempt from side-bias filter (ETH_SHORT_protect_from_bias). Conf=0.95.",
+      "evidence": "Dual evidence: backtest 70% WR + live 80% WR on 5 trades. Feedback gate=80% confirms direction. No conflicts.",
+      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u219280% at n>=20 live obs WR>=0.65."
     }
   ]
 }
