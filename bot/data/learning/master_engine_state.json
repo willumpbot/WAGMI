@@ -1,60 +1,32 @@
 {
-    "last_run": "2026-05-23T02:08:24.282618+00:00",
-    "run_id": "perpetual_deep_dive_2026_05_23_0208",
-    "hours_since_prev_run": 0.87,
-    "prior_run_id": "perpetual_deep_dive_2026_05_23_0116",
+    "last_run": "2026-05-23T03:10:23.327780+00:00",
+    "run_id": "perpetual_deep_dive_2026_05_23_0310",
+    "hours_since_prev_run": 1.04,
+    "prior_run_id": "perpetual_deep_dive_2026_05_23_0208",
     "subsystems": {
         "auto_fix": {
-            "fixes_applied": 0,
-            "gates_active": 21,
+            "fixes_applied": 2,
+            "gates_active": 22,
             "runtime_rules_total": 23,
-            "candidates_reviewed": 4,
-            "candidates_applied": 0,
-            "candidates_blocked": 4,
-            "new_fix": "NONE \u2014 no new fixes applied this run",
-            "new_finding": "SOL_SHORT_UNDERSTRENGTH_GAP \u2014 LLM engine 5x weaker than feedback on SOL SHORT. Blocked by RULE_CONFLICT. Needs human review.",
+            "candidates_reviewed": 5,
+            "candidates_applied": 2,
+            "candidates_blocked": 3,
+            "new_fix": "BB_GATE_SYNC_GAP_FIX: hype_sell_bb_block_v1 (20%\u219250%) + bb_mtq_antipattern_v1 (20%\u219250%). Closes 2 of 5 systematic gate understrength gaps.",
             "block_reasons": {
-                "btc_long_nontrend_penalize_v1": "BELOW_THRESHOLD \u2014 n=17 < 20 required. No new live data.",
-                "sol_short_escalation": "RULE_CONFLICT_SOL_SHORT unresolved \u2014 competing promote vs block rules. Human review required.",
-                "eth_buy_specific_rule": "INSUFFICIENT_EVIDENCE \u2014 ETH BUY no direct evidence. Indirect via regime boost.",
-                "hype_short_veto_conflict": "HUMAN_REVIEW \u2014 0/3 correct (blocked signals profitable) vs 239-trade historical EV. Conflict unresolved."
-            },
-            "critical_finding": {
-                "id": "AB_TRACKER_CODE_GAP_DAY36",
-                "severity": "HIGH",
-                "detail": "Day 36: ALL 23 rules have times_correct=0. Schema prerequisite complete (gate_percentage on all rules). Outcome callbacks still missing from bot/feedback/loop.py.",
-                "action": "P0: implement outcome callbacks in bot/feedback/loop.py (~4h dev). Unblocks graduation of 12 A/B probe rules."
+                "eth_sell_bb_golden_v1": "DEFERRED \u2014 escalating boost rule; monitor Critic prompt interaction first",
+                "btc_buy_bb_golden_v1": "DEFERRED \u2014 conflicts with BTC_LONG anti-bias fix (escalating boost would undo anti-bias)",
+                "high_vol_regime_boost_v1": "INSUFFICIENT_LIVE_DATA \u2014 n_live=0, need >=25 before escalating boost rule"
             }
         },
         "execution_forensics": {
             "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 36+). Dev gap.",
             "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes. Stable estimate.",
-            "hold_forensics": {
-                "win_median_hold_h": 3.3,
-                "loss_median_hold_h": 1.5,
-                "ratio": "2.2x \u2014 losses exit 2.2x faster than wins"
-            },
-            "new_finding": {
-                "id": "SOL_SHORT_UNDERSTRENGTH_DETECTED",
-                "severity": "MEDIUM",
-                "detail": "Bot offline day 36. SOL SHORT: LLM engine 5x weaker than feedback (adj=-10pts gate=20% vs feedback block gate=100%). New structural gap documented. All other metrics cached \u2014 no new data until restart.",
-                "action": "Resolve RULE_CONFLICT_SOL_SHORT. Then escalate sol_short_penalize_v1 adj\u2192-18 gate\u219250%."
-            },
-            "structural_gaps": [
-                "snapshot_entry column missing (slippage unmeasurable \u2014 day 36+)",
-                "llm_regime column empty (regime rules unmeasurable)",
-                "AB result tracker code missing (all gated rules stalled \u2014 day 36+)",
-                "btc_long_nontrend unprotected in ranging/illiquid/unknown (n=17, below threshold)",
-                "sol_short_penalize_v1 understrength (-10pts gate=20% vs feedback full_block gate=100%)"
-            ],
-            "night_block_alignment": "ALIGNED \u2014 02:08 UTC, night_session_block_v1 active (gate=100%)"
+            "new_finding": "BB_GATE_SYNC_GAP_DETECTED: 5 LLM rules 4x weaker than feedback counterparts. 2 penalty rules escalated."
         },
         "live_injection": {
             "high_edges_found": 9,
-            "weak_setups_found": 5,
-            "new_finding": "SOL_SHORT_INTENSITY_ASYMMETRY \u2014 9 feedback rules for SOL SHORT, LLM engine has 1 weak rule. Pre-filter efficiency gap.",
-            "coverage_status": "8/8 symbol+side pairs covered (7 direct, 1 indirect). All 5 regimes covered.",
-            "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all. AB_TRACKER code needed."
+            "weak_setups_found": 6,
+            "new_finding": "HYPE_SELL_BB and BB_MTQ_COFIRE added as explicit weak setups. Both now penalized at gate=50% (up from 20%)."
         },
         "daily_synthesis": {
             "today_trades": 0,
@@ -63,9 +35,9 @@
             "report_generated": true,
             "report_path": "bot/data/sessions/daily_synthesis_2026-05-23.json",
             "current_session": "NIGHT",
-            "window_15_opens_in_min": 231,
-            "window_15_opens_in_h": 3.85,
-            "restart_deadline_in_min": 201,
+            "window_15_opens_in_min": 170,
+            "window_15_opens_in_h": 2.83,
+            "restart_deadline_in_min": 140,
             "restart_deadline_utc": "2026-05-23T05:30:00+00:00",
             "consecutive_windows_missed": 15,
             "eod_report": false,
@@ -73,56 +45,56 @@
                 {
                     "type": "BOT_OFFLINE_DAY36",
                     "severity": "CRITICAL",
-                    "detail": "Day 36 offline. Restart in 3.85h to catch Window 15 (06:00-12:00 UTC). 15 consecutive morning windows missed."
+                    "detail": "Restart in 140 min to catch Window 15. 15 consecutive morning windows missed."
                 },
                 {
-                    "type": "WINDOW_15_FINAL_COUNTDOWN",
-                    "severity": "HIGH",
-                    "detail": "231 min to Window 15. Restart deadline 201 min. Miss = 16th consecutive morning window."
+                    "type": "WINDOW_15_DEADLINE_CRITICAL",
+                    "severity": "CRITICAL",
+                    "detail": "140 min to restart deadline. Window 15 in 170 min."
                 },
                 {
                     "type": "AB_TRACKER_CODE_GAP_DAY36",
                     "severity": "HIGH",
-                    "detail": "Day 36 of AB tracker code gap. Schema prerequisites now met. Code work remaining."
+                    "detail": "Day 36 of AB tracker stall."
                 },
                 {
-                    "type": "SOL_SHORT_UNDERSTRENGTH_NEW",
-                    "severity": "INFO",
-                    "detail": "gate_percentage added to 21/23 rules this run. LLM engine schema now fully uniform."
+                    "type": "BB_GATE_SYNC_GAP_PARTIALLY_FIXED",
+                    "severity": "LOW",
+                    "detail": "2/5 BB gate sync gaps fixed this run."
                 }
             ]
         },
         "model_optimization": {
-            "status": "SKIPPED \u2014 no cost_tracker.json. Bot offline day 35, no API calls.",
+            "status": "SKIPPED \u2014 no cost_tracker.json. Bot offline day 36, no API calls.",
             "model_swaps_recommended": 0,
             "potential_savings": "$0.00",
-            "assessment": "Haiku agents (Regime/Risk/Learning/Exit/Scout) optimal. Sonnet (Trade/Critic) appropriate for decision quality. No swaps recommended until cost data resumes post-restart."
+            "assessment": "Haiku (Regime/Risk/Learning/Exit/Scout) + Sonnet (Trade/Critic) routing unchanged. No data to evaluate."
         }
     },
     "high_priority_findings": [
         {
             "subsystem": "daily_synthesis",
             "severity": "CRITICAL",
-            "finding": "Bot offline day 36. Window 15 (May 23 06:00-12:00 UTC) opens in 231 min. Restart deadline: 201 min (05:30 UTC). 15 consecutive morning windows at risk. 23 LLM rules ready \u2014 zero live applications.",
-            "action": "RESTART BOT before 05:30 UTC May 23. All prerequisites met."
+            "finding": "Bot offline day 36. Window 15 (May 23 06:00-12:00 UTC, 74% WR morning edge) opens in 170 min. Restart deadline: 140 min (05:30 UTC). 15 consecutive morning windows at risk.",
+            "action": "RESTART BOT before 05:30 UTC May 23. 140 min remaining."
         },
         {
             "subsystem": "auto_fix",
             "severity": "HIGH",
-            "finding": "AB_TRACKER code gap \u2014 day 36. ALL 23 rules have times_correct=0. Schema prerequisite complete. Outcome callbacks still missing from bot/feedback/loop.py.",
+            "finding": "AB_TRACKER code gap \u2014 day 36. ALL 23 rules have times_correct=0. Schema prerequisite complete. Outcome callbacks missing from bot/feedback/loop.py.",
             "action": "P0 dev: implement outcome callbacks (~4h). Unblocks graduation pipeline for 12 A/B probe rules."
         },
         {
             "subsystem": "auto_fix",
             "severity": "MEDIUM",
-            "finding": "SOL_SHORT_UNDERSTRENGTH_GAP: LLM engine 5x weaker than feedback on SOL SHORT (adj=-10pts gate=20% vs feedback block gate=100%). RULE_CONFLICT_SOL_SHORT blocks escalation. 34.6% WR confirmed on 52 trades.",
-            "action": "HUMAN_REVIEW: resolve RULE_CONFLICT_SOL_SHORT (disable promote/boost rules), then escalate penalize adj\u2192-18 gate\u219250%."
+            "finding": "BB_GATE_SYNC_GAP: 3 remaining LLM rules still at gate=20% while feedback counterparts at gate=80%: ETH SELL BB golden (deferred: Critic interaction), BTC BUY BB golden (deferred: BTC LONG conflict), high_vol_regime_boost (deferred: need live obs).",
+            "action": "Post-restart: collect 25+ obs on high_vol regime, then escalate. Review Critic-BB interaction before escalating ETH/BTC BB boosts."
         },
         {
-            "subsystem": "execution_forensics",
-            "severity": "LOW",
-            "finding": "87% noise stops and 2.2x hold asymmetry stable cached estimates. Gap deepening (day 36). New structural gap: sol_short_penalize_v1 understrength vs feedback.",
-            "action": "Post-restart: add snapshot_entry column (~1h dev). Resolve SOL_SHORT conflict. Priority: HIGH once bot running."
+            "subsystem": "auto_fix",
+            "severity": "MEDIUM",
+            "finding": "SOL_SHORT_UNDERSTRENGTH_GAP: LLM engine 5x weaker than feedback (adj=-10pts gate=20% vs feedback block gate=100%). RULE_CONFLICT_SOL_SHORT unresolved.",
+            "action": "HUMAN_REVIEW: disable SOL_SHORT_edge_promote + SOL_SHORT_priority_boost, then escalate sol_short_penalize_v1 gate 20%\u219250% and adj -10\u2192-18."
         }
     ],
     "llm_engine_state": {
@@ -134,14 +106,17 @@
         "gate_distribution": {
             "0_disabled": 2,
             "100_fully_deployed": 8,
-            "20_ab_probe": 12,
-            "50_ab_graduated": 1
+            "50_graduated": 3,
+            "20_ab_probe": 10
         },
+        "gate_changes_this_run": [
+            "hype_sell_bb_block_v1: 20%\u219250%",
+            "bb_mtq_antipattern_v1: 20%\u219250%"
+        ],
         "regime_coverage": "5/5 (trend/illiquid/ranging/high_vol/unknown)",
         "symbol_side_coverage": "7/8 direct (ETH BUY indirect via regime)",
         "tod_coverage": "4/4 (night/morning/afternoon/evening)",
-        "schema_version": "v2 \u2014 gate_percentage normalized on all 23 rules (2026-05-23T01:15 UTC)",
-        "rules_changed_this_run": []
+        "schema_version": "v2 \u2014 gate_percentage normalized on all 23 rules"
     },
     "run_log_history_keys": [
         "run_id",
@@ -150,6 +125,37 @@
         "high_priority_findings",
         "run_summary"
     ],
+    "run_log_2026_05_23_0310": {
+        "run_at": "2026-05-23T03:10:23.327780+00:00",
+        "run_id": "perpetual_deep_dive_2026_05_23_0310",
+        "fixes_applied": [
+            "HYPE_SELL_BB_GATE_ESCALATION_V1: gate 20%\u219250%",
+            "BB_MTQ_ANTIPATTERN_GATE_ESCALATION_V1: gate 20%\u219250%"
+        ],
+        "prior_run": "perpetual_deep_dive_2026_05_23_0208",
+        "hours_since_prior": 1.04,
+        "new_rule_count": 0,
+        "total_rule_count": 23,
+        "schema_changes": 0,
+        "gate_changes": 2,
+        "subsystem": "perpetual_improvement_deep_dive",
+        "key_findings": [
+            "BB_GATE_SYNC_GAP_DETECTED: 5 LLM rules at gate=20% while feedback counterparts at gate=80%. Fixed 2 (penalty rules, no conflicts). 3 deferred.",
+            "hype_sell_bb_block_v1 escalated: gate 20%\u219250%. HYPE SELL BB now penalized on 50% of decisions.",
+            "bb_mtq_antipattern_v1 escalated: gate 20%\u219250%. BB+MTQ cofire now blocked on 50% of decisions.",
+            "Window 15 in 170 min (06:00 UTC May 23). Restart deadline in 140 min. CRITICAL.",
+            "insights.json dedup confirmed clean (19 unique insights, deduped 2026-05-18).",
+            "feedback/graduated_rules.json key sprawl noted: 40+ run_log keys accumulated. Not harmful, maintenance debt.",
+            "Model optimization skipped \u2014 no cost_tracker.json (bot offline)."
+        ],
+        "subsystem_status": {
+            "auto_fix": "COMPLETE \u2014 2 gate escalations applied (BB penalty rules), 1 new structural finding (BB sync gap)",
+            "execution_forensics": "COMPLETE \u2014 BB gate sync gap analyzed, 2/5 gaps fixed this run",
+            "live_injection": "COMPLETE \u2014 weak_setups updated +2 (HYPE_SELL_BB, BB+MTQ), window countdown updated",
+            "daily_synthesis": "COMPLETE \u2014 daily_synthesis_2026-05-23.json updated, 4 anomalies",
+            "model_optimization": "SKIPPED \u2014 no cost_tracker.json"
+        }
+    },
     "run_log_2026_05_23_0208": {
         "run_at": "2026-05-23T02:08:24.282618+00:00",
         "run_id": "perpetual_deep_dive_2026_05_23_0208",
@@ -164,16 +170,16 @@
             "SOL_SHORT_UNDERSTRENGTH_GAP: LLM engine 5x weaker than feedback on SOL SHORT. Blocked by RULE_CONFLICT. Human review needed.",
             "Window 15 in 231 min (06:00-12:00 UTC May 23). Restart deadline 201 min. 15th morning window at risk.",
             "Bot offline day 36. AB_TRACKER stall persists (day 36). Schema prerequisites complete.",
-            "No new rule additions this run — all candidates blocked (conflicts/data insufficient).",
+            "No new rule additions this run \u2014 all candidates blocked (conflicts/data insufficient).",
             "Daily synthesis 2026-05-23 created: 4 anomalies logged.",
-            "Model optimization skipped — no cost_tracker.json (bot offline)."
+            "Model optimization skipped \u2014 no cost_tracker.json (bot offline)."
         ],
         "subsystem_status": {
-            "auto_fix": "COMPLETE — 0 fixes applied, 1 new finding (SOL_SHORT_UNDERSTRENGTH)",
-            "execution_forensics": "COMPLETE — no new data, gap counter updated to day 36",
-            "live_injection": "COMPLETE — no new trades, window countdown updated",
-            "daily_synthesis": "COMPLETE — daily_synthesis_2026-05-23.json written",
-            "model_optimization": "SKIPPED — no cost_tracker.json"
+            "auto_fix": "COMPLETE \u2014 0 fixes applied, 1 new finding (SOL_SHORT_UNDERSTRENGTH)",
+            "execution_forensics": "COMPLETE \u2014 no new data, gap counter updated to day 36",
+            "live_injection": "COMPLETE \u2014 no new trades, window countdown updated",
+            "daily_synthesis": "COMPLETE \u2014 daily_synthesis_2026-05-23.json written",
+            "model_optimization": "SKIPPED \u2014 no cost_tracker.json"
         }
     },
     "run_log_2026_05_23_0116": {

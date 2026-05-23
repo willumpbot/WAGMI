@@ -1,37 +1,38 @@
 {
-    "last_run": "2026-05-23T02:08:24.282618+00:00",
+    "last_run": "2026-05-23T03:11:00.653271+00:00",
     "source_audit": "AUTONOMOUS_SESSION_2026_04_15.md (17 findings) + perpetual_deep_dive series",
-    "fixes_applied_this_run": 0,
-    "gates_active": 21,
-    "total_applied_all_time": 56,
+    "fixes_applied_this_run": 2,
+    "gates_active": 22,
+    "total_applied_all_time": 58,
     "last_fix": {
-        "fix_id": "GATE_PERCENTAGE_SCHEMA_NORMALIZATION_V1",
-        "applied_at": "2026-05-23T01:16:32.642180+00:00",
-        "gate_pct": "N/A",
+        "fix_id": "BB_GATE_SYNC_GAP_FIX_V1",
+        "applied_at": "2026-05-23T03:11:00.653271+00:00",
+        "gate_pct": "20\u219250 (2 rules)",
         "status": "APPLIED",
-        "type": "SCHEMA_NORMALIZATION",
+        "type": "GATE_ESCALATION",
         "source": "perpetual_loop_subsystem1",
-        "description": "gate_percentage field added to all 21 LLM rules that were missing it. Gate assignments: 2 disabled (gate=0: rule_1777922205_0, conf_floor_70_v1), 8 fully deployed (gate=100: veto/penalize originals), 12 A/B probe (gate=20: new rules since May 17), 1 graduated (gate=50: tod_morning_edge_v1). Prerequisite for AB_TRACKER implementation. No rule logic changed \u2014 metadata only.",
-        "evidence": "21/23 LLM rules had missing gate_percentage. Only last 2 rules (ranging_regime_penalize_v1, sol_short_penalize_v1) had the field. Schema now uniform.",
-        "outcome_tracking": "STRUCTURAL \u2014 no A/B gate needed. Enables AB_TRACKER implementation on next dev sprint."
+        "description": "BB gate sync gap detected and partially fixed. hype_sell_bb_block_v1 (gate 20%\u219250%) + bb_mtq_antipattern_v1 (gate 20%\u219250%). Feedback counterparts run at gate=80%; LLM was at gate=20%. 2 of 5 gaps closed \u2014 penalty rules only, no conflicts. 3 boost rules deferred (interaction risks). Systematic 4x understrength gap narrowed to 2.5x on penalty side.",
+        "evidence": "hype_sell_bb_block: HYPE SELL BB = 35% WR / n=2172. bb_mtq_antipattern: BB+MTQ cofire = 35% WR / n=2172. Both conf=0.92 >> 0.75 auto-apply threshold.",
+        "outcome_tracking": "PENDING_RESTART \u2014 graduate to gate=80% at n>=20 live obs with WR<=0.40 for penalize rules."
     },
     "new_findings_this_run": [
         {
-            "finding_id": "SOL_SHORT_UNDERSTRENGTH_GAP",
-            "detected_at": "2026-05-23T02:08:24.282618+00:00",
+            "finding_id": "BB_GATE_SYNC_GAP",
+            "detected_at": "2026-05-23T03:11:00.653271+00:00",
             "severity": "MEDIUM",
-            "detail": "LLM engine: sol_short_penalize_v1 adj=-10pts at gate=20% (very weak). Feedback: SOL_SHORT_full_block gate=100% conf=88% + SOL_SHORT_LIVE_CONTRADICTION gate=100% conf=95%. The LLM engine is 5x weaker than the feedback system on the same signal. A 34.6% WR / 52 live trades warrants stronger than -10pts. However RULE_CONFLICT_SOL_SHORT (gate=0%, conf=92%) is unresolved \u2014 competing SOL_SHORT_edge_promote and SOL_SHORT_priority_boost (both gate=20%) conflict with the block. Net: understrength is real but escalation requires resolving the conflict first.",
-            "action": "PENDING_HUMAN_REVIEW \u2014 RULE_CONFLICT_SOL_SHORT must be resolved before escalating sol_short_penalize_v1. Recommended resolution: disable SOL_SHORT_edge_promote + SOL_SHORT_priority_boost (gate=0%), then escalate sol_short_penalize_v1 gate 20%\u219250% and adj -10\u2192-18. Requires user approval.",
-            "requires_human_review": true,
-            "confidence": 0.70
+            "detail": "5 BB-family and regime rules in LLM engine at gate=20% while feedback counterparts at gate=80%. Systematic 4x understrength. Penalty rules fixed (2); boost rules deferred pending conflict analysis.",
+            "action": "PARTIALLY_APPLIED \u2014 2 penalty rules escalated. 3 boost rules deferred.",
+            "requires_human_review": false,
+            "confidence": 0.92
         },
         {
-            "finding_id": "GATE_PERCENTAGE_SCHEMA_GAP_RESOLVED",
-            "detected_at": "2026-05-23T01:16:32.642180+00:00",
-            "severity": "MEDIUM",
-            "detail": "21 of 23 LLM rules were missing gate_percentage field. Fixed in prior run.",
-            "action": "CLOSED",
-            "requires_human_review": false
+            "finding_id": "FEEDBACK_FILE_KEY_SPRAWL",
+            "detected_at": "2026-05-23T03:11:00.653271+00:00",
+            "severity": "LOW",
+            "detail": "feedback/graduated_rules.json has accumulated 40+ run_log_* keys across 37 run dates. File is growing unboundedly. No functional harm \u2014 all run logs are metadata. Same pattern as insights.json before the 2026-05-18 dedup that pruned from 108\u219219 entries.",
+            "action": "MAINTENANCE: Archive run_log keys older than 7 days to a separate run_history file. ~1h dev. Low priority.",
+            "requires_human_review": false,
+            "confidence": 0.95
         }
     ],
     "active_fixes": [
@@ -215,9 +216,9 @@
     "graduation_pipeline_next": {
         "nearest_candidate": "BTC_TREND_LONG_COUNTER_V1 (gate=20%) \u2014 lowest bar: needs 10 obs",
         "second_candidate": "HYPE_UNKNOWN_REGIME_PROBE_v1 (gate=20%) \u2014 needs 15 obs",
-        "inferred_confidence": 0.72,
-        "gap_to_threshold": 0.03,
-        "action": "First 20 trades post-restart: track BTC LONG trending. If WR<=0.45, escalate counter gate to 50%. Simultaneously monitor Critic challenge rate on BTC LONG."
+        "bb_penalty_graduation": "hype_sell_bb_block_v1 + bb_mtq_antipattern_v1 (gate=50%) \u2014 graduate to 80% at n>=20 WR<=0.40",
+        "inferred_confidence": 0.92,
+        "action": "Post-restart: track BTC LONG trending (need 10 obs) and HYPE SELL BB outcomes (need 20 obs)."
     },
     "recommendations_reviewed": 14,
     "high_confidence_pending_human": 7,
@@ -323,6 +324,26 @@
             "description": "gate_percentage field added to all 21 LLM rules that were missing it. Gate assignments: 2 disabled (gate=0: rule_1777922205_0, conf_floor_70_v1), 8 fully deployed (gate=100: veto/penalize originals), 12 A/B probe (gate=20: new rules since May 17), 1 graduated (gate=50: tod_morning_edge_v1). Prerequisite for AB_TRACKER implementation. No rule logic changed \u2014 metadata only.",
             "evidence": "21/23 LLM rules had missing gate_percentage. Only last 2 rules (ranging_regime_penalize_v1, sol_short_penalize_v1) had the field. Schema now uniform.",
             "outcome_tracking": "STRUCTURAL \u2014 no A/B gate needed. Enables AB_TRACKER implementation on next dev sprint."
+        },
+        {
+            "fix_id": "HYPE_SELL_BB_GATE_ESCALATION_V1",
+            "applied_at": "2026-05-23T03:11:00.653271+00:00",
+            "gate_pct": 50,
+            "status": "APPLIED",
+            "type": "GATE_ESCALATION",
+            "source": "perpetual_loop_subsystem1",
+            "description": "hype_sell_bb_block_v1: gate 20%\u219250%. HYPE SELL with BB = 35% WR / n=2172. Feedback gate=80%. Penalty rule, no conflicts. 8th sync gap action.",
+            "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u219280% at n>=20 obs WR<=0.40."
+        },
+        {
+            "fix_id": "BB_MTQ_ANTIPATTERN_GATE_ESCALATION_V1",
+            "applied_at": "2026-05-23T03:11:00.653271+00:00",
+            "gate_pct": 50,
+            "status": "APPLIED",
+            "type": "GATE_ESCALATION",
+            "source": "perpetual_loop_subsystem1",
+            "description": "bb_mtq_antipattern_v1: gate 20%\u219250%. BB+MTQ cofire = 35% WR / n=2172. Feedback gate=80%. Penalty rule, no conflicts. 9th sync gap action.",
+            "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u219280% at n>=20 obs WR<=0.40."
         }
     ]
 }

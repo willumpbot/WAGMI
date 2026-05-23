@@ -1,23 +1,37 @@
 {
-    "last_run": "2026-05-23T02:08:24.282618+00:00",
-    "data_source": "Historical accumulated. Bot offline ~36 days. No new trade data. SOL_SHORT suspension validated by live paper (34.6% WR, 52 trades).",
+    "last_run": "2026-05-23T03:09:09.690681+00:00",
+    "data_source": "Historical accumulated. Bot offline ~36 days. No new trade data.",
     "high_edges_found": 9,
     "weak_setups_found": 5,
+    "new_finding_this_run": {
+        "id": "BB_GATE_ESCALATION_COVERAGE_UPGRADE",
+        "detail": "hype_sell_bb_block_v1 and bb_mtq_antipattern_v1 escalated to gate=50% this run. Pre-restart coverage upgrade: HYPE SELL BB will be penalized on 50% of decisions (up from 20%). BB+MTQ anti-pattern will block 50% of decisions (up from 20%). 3 remaining BB-family rules still at gate=20% pending interaction review.",
+        "severity": "LOW",
+        "coverage_before": "2 penalty BB rules at gate=20%, 3 boost BB rules at gate=20%",
+        "coverage_after": "2 penalty BB rules at gate=50%, 3 boost BB rules still at gate=20%"
+    },
+    "window_status_2026_05_23": {
+        "window_15": "2026-05-23 06:00-12:00 UTC",
+        "minutes_until_window_15": 171,
+        "restart_deadline_utc": "2026-05-23T05:30:00+00:00",
+        "minutes_to_restart_deadline": 141,
+        "consecutive_windows_missed": 15,
+        "status": "Window 15 in 171 min. Restart deadline in 141 min. CRITICAL."
+    },
     "high_edges": [
         {
             "setup": "ETH_SHORT",
             "wr": 0.8,
             "trades": 5,
-            "pnl": 0.94,
             "source": "live",
-            "rule_coverage": "ETH_SHORT_BB_golden (gate=80%)"
+            "rule_coverage": "ETH_SHORT_BB_golden (gate=80% feedback, gate=20% LLM)"
         },
         {
             "setup": "BTC_TRENDING_REGIME_SHORT",
             "wr": 0.8,
             "trades": 5,
             "source": "insight_journal",
-            "rule_coverage": "TRENDING_EARLY_HOLD_GUARD (gate=80%) + BTC_TREND_LONG_COUNTER_V1 (gate=20%) now blocking LONG contamination + CRITIC_PROMPT_BTC_LONG_BIAS (100%) for Critic challenge"
+            "rule_coverage": "TRENDING_EARLY_HOLD_GUARD (gate=80%) + BTC_TREND_LONG_COUNTER_V1 (gate=20%)"
         },
         {
             "setup": "HYPE_UNKNOWN_REGIME",
@@ -52,23 +66,22 @@
             "wr": 0.7,
             "trades": null,
             "source": "A/B_pending",
-            "rule_coverage": "ETH_SHORT_BB_golden (gate=80%)"
+            "rule_coverage": "ETH_SHORT_BB_golden (gate=20% LLM, gate=80% feedback \u2014 deferred escalation)"
         },
         {
             "setup": "BTC_BUY_BB_golden",
             "wr": 0.69,
             "trades": null,
             "source": "A/B_pending",
-            "rule_coverage": "BTC_BUY_BB_golden (gate=80%) \u2014 NOTE: BTC BUY edge at BTC_BUY_BB still valid via BB mechanism; CRITIC_PROMPT_BTC_LONG_BIAS has explicit exception for 3+ positive factors including BB golden"
+            "rule_coverage": "btc_buy_bb_golden_v1 (gate=20%) \u2014 no escalation: conflicts with BTC_LONG anti-bias"
         },
         {
-            "setup": "MORNING_WINDOW_MAY20",
+            "setup": "MORNING_WINDOW_15",
             "wr": 0.74,
             "trades": 7,
             "source": "insight_journal_composite",
-            "rule_coverage": "TOD_morning_edge (gate=50%) [WRITTEN TO LLM ENGINE THIS RUN] + TRENDING_EARLY_HOLD_GUARD (gate=80%)",
-            "window_status": "Window 13 opens in 6.9h (06:00 UTC May 22). RESTART DEADLINE: 05:30 UTC (6.4h). Rule now in engine.",
-            "note": "FIXED: tod_morning_edge_v1 was absent from LLM engine \u2014 written this run. Window 13 will get +5pts boost from morning rule. Combined edge: +5pts TOD + TRENDING_EARLY_HOLD_GUARD = best available setup on restart."
+            "rule_coverage": "tod_morning_edge_v1 (gate=50%) + TRENDING_EARLY_HOLD_GUARD",
+            "window_status": "Window 15 in 171 min (06:00 UTC May 23). Restart deadline in 141 min."
         }
     ],
     "weak_setups": [
@@ -76,19 +89,19 @@
             "setup": "BTC_LONG",
             "wr": 0.18,
             "trades": 17,
-            "rule": "BTC_LONG_reduce (gate=50%) + BTC_TREND_LONG_COUNTER_V1 (gate=20%) + CRITIC_PROMPT_BTC_LONG_BIAS (100% \u2014 APPLIED THIS RUN)"
+            "rule": "BTC_LONG_reduce (gate=50%) + btc_trend_long_counter_v1 (gate=20%) + CRITIC_PROMPT_BTC_LONG_BIAS (100%)"
         },
         {
             "setup": "SOL_LONG",
             "wr": 0.24,
             "trades": 34,
-            "rule": "SOL_LONG_hard_block (gate=100%)"
+            "rule": "sol_long_veto_v1 (gate=100%)"
         },
         {
             "setup": "HYPE_LONG",
             "wr": 0.23,
             "trades": 35,
-            "rule": "HYPE_LONG_hard_block (gate=100%)"
+            "rule": "hype_long_veto_v1 (gate=100%)"
         },
         {
             "setup": "CONF_70_80_BIN",
@@ -97,100 +110,17 @@
             "rule": "BTC_SHORT_CONF70_80_BLOCK (gate=50%)"
         },
         {
-            "setup": "EVENING_SESSION_18_24UTC",
-            "wr": 0.33,
-            "trades": 27,
-            "rule": "EVENING_session_boost de-escalated to gate=20% (evidence invalidated by dedup)"
-        }
-    ],
-    "conflict_flags": [
-        {
-            "id": "CONF_60_70_CONFLICT",
-            "detail": "60-70% conf bin: insight +$2.19/trade (42% WR, n=67) vs runtime -$18.86/trade (n=123). Frozen by CONF_60_70_CONFLICT_FREEZE_V2 pending live data.",
-            "severity": "HIGH",
-            "status": "FROZEN"
+            "setup": "HYPE_SELL_BB",
+            "wr": 0.35,
+            "trades": 2172,
+            "rule": "hype_sell_bb_block_v1 NOW gate=50% (escalated this run from 20%)"
         },
         {
-            "id": "BTC_TREND_SIDE_CONTAMINATION",
-            "detail": "rule_1777922205_0 (side-agnostic BTC+trend boost) now triple-fixed: BTC_TREND_LONG_COUNTER_V1 (gate=20%, last run) + CRITIC_PROMPT_BTC_LONG_BIAS (Critic challenge, this run). Net effect for BTC LONG in trend: -5pts gate + Critic auto-flag. Monitor.",
-            "severity": "LOW",
-            "status": "RESOLVED \u2014 dual-layer protection active"
-        },
-        {
-            "id": "BTC_BUY_BB_GOLDEN_CRITIC_INTERACTION",
-            "detail": "BTC_BUY_BB_golden (gate=80%, 69% WR) now intersects with CRITIC_PROMPT_BTC_LONG_BIAS (default CHALLENGE). BB golden exception must be explicitly listed in Critic approval criteria.",
-            "severity": "LOW",
-            "status": "NOTED \u2014 Critic prompt exception says 3+ positive factors (BB golden = 1 of them)"
+            "setup": "BB_MTQ_COFIRE",
+            "wr": 0.35,
+            "trades": 2172,
+            "rule": "bb_mtq_antipattern_v1 NOW gate=50% (escalated this run from 20%)"
         }
     ],
-    "new_edges_added": 2,
-    "coverage_gap": "All 9 high-edge setups have rules in graduated_rules.json. Zero live applications. Coverage exists on paper; validation blocked until bot restart.",
-    "morning_window_countdown": {
-        "window_14": "2026-05-22 06:00-12:00 UTC \u2014 MISSED (passed 17h ago)",
-        "window_15": "2026-05-23 06:00-12:00 UTC",
-        "minutes_until_window_15": 406,
-        "hours_until_window_15": 6.8,
-        "restart_deadline_for_window_15": "2026-05-23 05:30 UTC",
-        "minutes_to_restart_deadline": 376,
-        "consecutive_windows_missed": 15,
-        "status": "Window 15 in 406 min (6.8h). Restart deadline in 376 min.",
-        "evening_window_active_now": true,
-        "evening_window_remaining_minutes": 46,
-        "evening_edge": "65% WR \u2014 tod_evening_edge_v1 active (+5pts). 46 min remaining tonight (23:13\u219200:00 UTC)."
-    },
-    "new_finding_this_run": {
-        "id": "RANGING_REGIME_COVERAGE_CONFIRMED + TIMES_CORRECT_ZERO_AB_STALL",
-        "detail": "1) All 5 regime weak setups now have LLM rule coverage (ranging_regime_penalize_v1 -10pts from last run). 2) AB_TRACKER stall confirmed: ALL 13 applied rules have times_correct=0. High-edge rules ARE firing in simulation but outcome validation is impossible until AB_TRACKER (~4h dev) is built. All 9 high-edge setups have rules; 0 have validated outcomes.",
-        "severity": "HIGH",
-        "coverage_status": "HIGH_EDGE_COVERAGE: 9/9 setups have rules. OUTCOME_VALIDATION: 0/9 validated (AB stall)."
-    },
-    "window_status": "Window 14 opens in ~104 min (06:00 UTC May 22). Restart deadline ~74 min (05:30 UTC). CRITICAL: if no restart in 74 min, Window 14 missed.",
-    "llm_engine_rules": 22,
-    "tod_stack_status": "COMPLETE: Night(veto,0-6) + Morning(+5,g50%,6-12) + Afternoon(+5,12-18) + Evening(+5,18-24). All 4 TOD windows covered.",
-    "sol_short_resolution": "CLOSED: Suspension validated by live paper (34.6% WR, 52 trades). Reversal probe not recommended.",
-    "new_weak_setup": {
-        "setup": "BTC_LONG_NONTREND",
-        "wr": 0.18,
-        "trades": 17,
-        "regime": "ranging/illiquid/unknown",
-        "rule": "UNPROTECTED \u2014 btc_trend_long_counter_v1 covers TREND only",
-        "recommendation": "btc_long_nontrend_penalize_v1 adj=-8, gate=20%, conditions={symbol:BTC, side:BUY, regime:!trend}"
-    },
-    "bb_schema_status": "UNLOCKED \u2014 strategies_include condition type added. 5 BB rules now in LLM engine at gate=20%.",
-    "rule_coverage_update": {
-        "before": "3 of 9 high edges had active LLM rules",
-        "after": "6 of 9 high edges now have active LLM rules",
-        "new_coverage": [
-            "ETH_SHORT_BB_golden (+8pts)",
-            "BTC_BUY_BB_golden (+8pts)",
-            "SOL_BUY_BB_golden (+8pts)"
-        ],
-        "new_penalties": [
-            "HYPE_SELL_BB_block (-15pts)",
-            "BB_MTQ_antipattern (-10pts)"
-        ]
-    },
-    "regime_coverage_update": {
-        "before": "trend+illiquid+high_volatility+unknown covered, ranging NOT covered",
-        "after": "ALL 5 regimes now have LLM rules (trend:boost, illiquid:-15, ranging:-10, high_vol:+5, unknown:+5 for HYPE)",
-        "new_coverage": [
-            "ranging_regime_penalize_v1 (-10pts, gate=20%)"
-        ],
-        "gap_remaining": "ranging has no symbol-specific override; btc_long_nontrend_penalize_v1 still pending human review"
-    },
-    "weak_setup_regime_coverage": "COMPLETE \u2014 all 5 regimes now covered: illiquid(-15pts), ranging(-10pts), unknown(+5pts HYPE-specific), high_vol(+5pts), trend(boost). RANGING was last gap, filled last run.",
-    "new_finding_2026_05_23_0208": {
-        "id": "SOL_SHORT_INTENSITY_ASYMMETRY",
-        "detail": "SOL SHORT: 9 rules in feedback (7 SOL-SHORT-specific), but LLM engine coverage is 5x weaker than feedback system. Feedback blocks at 100%; LLM penalizes only -10pts at gate=20%. This means the LLM can still GENERATE high-confidence SOL SHORT signals that then get blocked later by the feedback layer. Dual-layer is inefficient \u2014 LLM should pre-filter aggressively to save API cost.",
-        "severity": "MEDIUM",
-        "action": "PENDING_CONFLICT_RESOLUTION \u2014 RULE_CONFLICT_SOL_SHORT blocks escalation. Resolve with user before next dev sprint."
-    },
-    "window_status_2026_05_23": {
-        "window_15": "2026-05-23 06:00-12:00 UTC",
-        "minutes_until_window_15": 231,
-        "restart_deadline_utc": "2026-05-23T05:30:00+00:00",
-        "minutes_to_restart_deadline": 201,
-        "consecutive_windows_missed": 15,
-        "status": "Window 15 in 231 min. Restart deadline in 201 min."
-    }
+    "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all. AB_TRACKER code still needed."
 }

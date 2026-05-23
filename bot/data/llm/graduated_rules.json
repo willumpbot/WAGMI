@@ -392,7 +392,9 @@
             "times_applied": 0,
             "times_correct": 0,
             "active": true,
-            "gate_percentage": 20
+            "gate_percentage": 50,
+            "gate_escalated_at": "2026-05-23T03:05:37+00:00",
+            "gate_escalation_reason": "BB_GATE_SYNC_GAP_FIX: feedback engine runs at gate=80%; LLM was at gate=20%. Escalated to 50% to close 4x understrength gap. Penalty rule, no conflicts, conf=0.92 >> 0.75 threshold."
         },
         {
             "rule_id": "bb_mtq_antipattern_v1",
@@ -413,7 +415,9 @@
             "times_applied": 1,
             "times_correct": 0,
             "active": true,
-            "gate_percentage": 20
+            "gate_percentage": 50,
+            "gate_escalated_at": "2026-05-23T03:05:37+00:00",
+            "gate_escalation_reason": "BB_GATE_SYNC_GAP_FIX: feedback engine runs at gate=80%; LLM was at gate=20%. Escalated to 50% to close 4x understrength gap. Penalty rule, no conflicts, conf=0.92 >> 0.75 threshold."
         },
         {
             "rule_id": "ranging_regime_penalize_v1",
