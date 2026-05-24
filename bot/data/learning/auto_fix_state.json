@@ -1,40 +1,41 @@
 {
-  "last_run": "2026-05-24T01:08:27.720302+00:00",
+  "last_run": "2026-05-24T05:00:00+00:00",
   "source_audit": "perpetual_deep_dive series (adaptive_risk_state analysis)",
-  "fixes_applied_this_run": 0,
-  "gates_active": 20,
-  "total_applied_all_time": 65,
+  "fixes_applied_this_run": 1,
+  "gates_active": 21,
+  "total_applied_all_time": 66,
   "last_fix": {
-    "fix_id": "TOD_EVENING_EDGE_GRADUATION_V1",
-    "applied_at": "2026-05-24T00:16:06.407355+00:00",
+    "fix_id": "SOL_SHORT_GATE_ESCALATION_V1",
+    "applied_at": "2026-05-24T05:00:00+00:00",
     "gate_pct": "20\u219250",
     "status": "APPLIED",
-    "type": "GATE_ESCALATION",
-    "description": "tod_evening_edge_v1 graduated: gate 20%\u219250%. GRADUATION CRITERION MET: threshold was n>=20 WR>=0.60. Actual: n=27 WR=65% (both conditions cleared). Evening session 18:00-24:00 UTC is second-best TOD window after morning. No feedback engine conflict (no contradicting evening block rule). TOD stack now: night(veto=100%) + morning(50%) + evening(50%) + afternoon(20% blocked).",
-    "evidence": "n=27 live paper trades, WR=65% vs 10% night (spread 55%). Criterion: n>=20 WR>=60%. Actual: n=27 (27>=20 \u2713) WR=65% (65%>=60% \u2713). Conf=0.85 >> 0.75 threshold.",
-    "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u219280% at n>=20 live obs WR>=0.60."
+    "type": "RULE_CONFLICT_RESOLUTION",
+    "description": "sol_short_penalize_v1 graduated from probe (gate=20%) to A/B-active (gate=50%). Graduation criterion met: WR=34.6%<40% AND n=52>=30 AND conf=0.88>>0.75. RULE_CONFLICT_SOL_SHORT resolved: conflict was LLM understrength vs feedback full_block. Escalation closes half the alignment gap.",
+    "evidence": "WR=34.6% on 52 live paper trades. Criterion: WR<40% n>=30. Actual: WR=34.6% (34.6%<40% \u2713) n=52 (52>=30 \u2713). Conf=0.88 >> 0.75 threshold. Feedback SOL_SHORT_full_block at gate=100%.",
+    "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u2192100% (full veto) at n>=20 post-restart WR<40%."
   },
   "new_findings_this_run": [
     {
-      "finding_id": "TRAILING_LOSS_STREAK_PRE_SHUTDOWN_V1",
-      "detected_at": "2026-05-24T01:08:27.720302+00:00",
-      "severity": "INFORMATIONAL",
-      "detail": "adaptive_risk_state.json: last 4 pre-shutdown trades = 0/4 WR. Recent 20 WR=35% (first-half 40%, last-half 30% \u2014 degrading trend). Circuit breaker threshold = 5 consecutive losses. Bot restarts with implicit streak=4. If first post-restart trade loses \u2192 circuit breaker fires \u2192 Window 16 (74% WR) is blocked.",
-      "evidence": "recent_outcomes[-4:] = [F,F,F,F]. recent_outcomes total: 7/20 = 35% WR.",
-      "action": "NO ACTION NEEDED \u2014 streak resets on restart (risk.py:64). Monitor first-10 post-restart WR for degradation signal.",
+      "finding_id": "TRENDING_REGIME_LIVE_DEGRADATION_V1",
+      "detected_at": "2026-05-24T05:00:00+00:00",
+      "severity": "MEDIUM",
+      "detail": "Live trending regime WR = 51.9% (27/52) vs advertised 55% backtest figure. 3.1-point live underperformance. Overall trending category dragged down by BTC LONG trending (18% WR, n=17) while ETH trending (71%) and BTC SHORT trending (80%) remain strong. Symbol-specific rules correctly isolate the alpha subsets. BTC LONG trending is now protected by triple-stack: btc_trend_long_counter_v1 (-13pts, gate=50%) + Critic prompt + parent boost disabled.",
+      "evidence": "adaptive_risk_state.json: trending=27/52=51.9%, illiquid=16/57=28.1%, ranging=4/16=25.0%. Recent 20 overall: 7/20=35.0%.",
+      "action": "No rule change needed. Symbol-specific rules already isolate BTC LONG trending (blocked). Monitor trending WR post-restart \u2014 if < 48% after 20 trending trades, investigate ETH trending degradation.",
       "requires_human_review": false,
-      "confidence": 0.95,
-      "resolution": "RESOLVED \u2014 risk.py:64: self.consecutive_losses = 0 at __init__. Every restart creates fresh instance with count=0. No manual reset needed."
+      "confidence": 0.87,
+      "resolution": "INFORMATIONAL \u2014 existing rules handle this. Monitor post-restart."
     },
     {
-      "finding_id": "NEAR_GRADUATION_PROXIMITY_V1",
-      "detected_at": "2026-05-24T01:08:27.720302+00:00",
+      "finding_id": "SOL_SHORT_CONFLICT_RESOLUTION_V1",
+      "detected_at": "2026-05-24T05:00:00+00:00",
       "severity": "MEDIUM",
-      "detail": "Two gate=50% rules are within reach of gate=100% graduation post-restart: (1) btc_trend_long_counter_v1: n=17, needs 20, 3 BTC LONG trending trades away. (2) ranging_regime_penalize_v1: n=16, needs 20, 4 ranging trades away. Both have WR safely below 35% threshold (18% and 25% respectively). These will graduate early in Window 16+ session.",
-      "evidence": "LLM graduated_rules.json: btc_trend_long_counter n=17 WR=18%, ranging n=16 WR=25%.",
-      "action": "POST-RESTART: flag after 3rd BTC LONG trending trade \u2192 graduate btc_trend_long_counter. Flag after 4th ranging trade \u2192 graduate ranging_penalize.",
+      "detail": "RULE_CONFLICT_SOL_SHORT resolved. sol_short_penalize_v1 graduated gate=20%\u219250%. Conflict was LLM engine 5x weaker than feedback engine (penalty at 20% vs full_block at 100%). Graduation criterion met on 52-trade historical sample. Next step: escalate to gate=100% (full veto) after first 20 post-restart SOL SELL trades confirm WR<40%.",
+      "evidence": "sol_short_penalize_v1: WR=34.6% on 52 live paper trades. Feedback SOL_SHORT_full_block: conf=88, gate=100%. Criterion: WR<40% n>=30 \u2192 MET.",
+      "action": "APPLIED \u2014 gate_percentage updated 20\u219250 in graduated_rules.json. Auto-fix count: 66 total.",
       "requires_human_review": false,
-      "confidence": 0.92
+      "confidence": 0.88,
+      "resolution": "PARTIALLY_RESOLVED \u2014 gate=50% applied. Full veto pending post-restart confirmation."
     }
   ],
   "active_fixes": [
@@ -157,6 +158,13 @@
       "gate_pct": 50,
       "status": "ACTIVE",
       "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u219280% at n>=20 live obs WR>=0.65."
+    },
+    {
+      "fix_id": "SOL_SHORT_GATE_ESCALATION_V1",
+      "applied_at": "2026-05-24T05:00:00+00:00",
+      "gate_pct": 50,
+      "status": "ACTIVE",
+      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u2192100% at n>=20 WR<40%."
     }
   ],
   "rule_accuracy_tracking": {
@@ -438,5 +446,12 @@
       "evidence": "n=27 live trades at 65% WR. No feedback conflict. Conf=0.85.",
       "outcome_tracking": "PENDING_RESTART \u2014 graduate 50%\u219280% at n>=20 live WR>=0.60."
     }
-  ]
+  ],
+  "note": "1 fix applied: SOL_SHORT gate 20%\u219250% (conflict resolution). 2 new structural findings. Rule distribution: 3 disabled / 4 probe(20%) / 8 graduated(50% with new SOL_SHORT) / 8 deployed(100%).",
+  "rule_distribution": {
+    "0_disabled": 3,
+    "20_probe": 3,
+    "50_graduated": 9,
+    "100_deployed": 8
+  }
 }
