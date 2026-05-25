@@ -1,38 +1,70 @@
 {
-  "last_run": "2026-05-25T00:10:20+00:00",
-  "data_source": "Historical accumulated. Bot offline 42 days. No new trade data.",
+  "last_run": "2026-05-25T03:04:55+00:00",
+  "data_source": "Historical accumulated. Bot offline 43 days. No new trade data.",
   "high_edges_found": 9,
   "weak_setups_found": 6,
-  "new_finding_this_run": {
-    "id": "WINDOW_17_SETUP_FINAL_COUNTDOWN",
-    "detail": "Night block active (00:10 UTC May 25). Window 17 (06:00-12:00 UTC May 25) opens in 5h 50min. tod_morning_edge_v1 +5pts (gate=50%) ready. TRENDING_EARLY_HOLD_GUARD active at gate=80%. Evening session May 24 MISSED — closed at 00:00 UTC (10 min ago). This is the first run of May 25. Restart deadline: 05:30 UTC = 5h 20min.",
-    "severity": "CRITICAL",
-    "action": "RESTART NOW — night block prevents any trade fires until 06:00 UTC. Safe restart window. Bot must be running for Window 17."
+  "no_new_trades": true,
+  "delta_vs_last_run": "No change — no new trades or data. Window 17 opens in 175 min.",
+  "window_17_prime": {
+    "opens_utc": "2026-05-25T06:00:00+00:00",
+    "minutes_until_open": 175,
+    "restart_deadline_utc": "2026-05-25T05:30:00+00:00",
+    "minutes_to_restart_deadline": 145,
+    "severity": "CRITICAL — restart deadline 2h 25min away, window opens in 2h 55min",
+    "primed_rules": [
+      "tod_morning_edge_v1 gate=50% (+5pts)",
+      "eth_sell_bb_golden_v1 gate=50% (+8pts)",
+      "eth_trending_regime_boost_v1 gate=100% (+8pts)",
+      "hype_unknown_regime_probe_v1 gate=20% (+5pts limited)"
+    ],
+    "composite_wr": 0.74
   },
   "night_block_status": {
     "active": true,
     "rule": "night_session_block_v1",
     "gate": 100,
     "wr": "19%",
-    "active_from": "2026-05-25 00:00 UTC",
     "active_until": "2026-05-25 06:00 UTC",
-    "minutes_remaining": 350,
-    "note": "Veto prevents all trades. Safest time to restart bot — no signal risk during warmup."
+    "minutes_remaining": 175,
+    "note": "Veto prevents all trades until 06:00 UTC. Safest restart window."
   },
-  "window_17_countdown": {
-    "opens_utc": "2026-05-25 06:00",
-    "closes_utc": "2026-05-25 12:00",
-    "restart_deadline_utc": "2026-05-25 05:30",
-    "hours_to_deadline": 5.33,
-    "wr_composite": "74%",
-    "active_rules": [
-      "tod_morning_edge_v1 +5pts (gate=50%)",
-      "TRENDING_EARLY_HOLD_GUARD (gate=80%)",
-      "eth_trending_regime_boost_v1 +8pts (gate=100%)",
-      "btc_short_90plus_boost_v1 +10pts (gate=100%)"
-    ],
-    "if_missed": "18th consecutive morning window | cumulative EV loss ~$94"
-  },
+  "top_edges": [
+    {
+      "setup": "HYPE_UNKNOWN_REGIME",
+      "wr": 0.83,
+      "n": 6,
+      "rule": "hype_unknown_regime_probe_v1 gate=20%",
+      "status": "NOT_READY (n=6, needs 15)"
+    },
+    {
+      "setup": "ETH_SHORT_BB",
+      "wr": 0.8,
+      "n": 5,
+      "rule": "eth_sell_bb_golden_v1 gate=50%",
+      "status": "PRIMED for Window 17"
+    },
+    {
+      "setup": "BTC_TRENDING_SHORT",
+      "wr": 0.8,
+      "n": 5,
+      "rule": "TRENDING_EARLY_HOLD_GUARD gate=80%",
+      "status": "DEPLOYED"
+    },
+    {
+      "setup": "MORNING_WINDOW_17",
+      "wr": 0.74,
+      "n": 7,
+      "rule": "tod_morning_edge_v1 gate=50%",
+      "status": "PRIMED — opens in 175 min"
+    },
+    {
+      "setup": "ETH_TRENDING",
+      "wr": 0.71,
+      "n": 7,
+      "rule": "eth_trending_regime_boost_v1 gate=100%",
+      "status": "DEPLOYED — fully active"
+    }
+  ],
   "high_edges": [
     {
       "setup": "MORNING_WINDOW_17",
@@ -40,7 +72,7 @@
       "trades": 7,
       "source": "insight_journal_composite",
       "rule_coverage": "tod_morning_edge_v1 (gate=50%) + TRENDING_EARLY_HOLD_GUARD",
-      "window_status": "Window 17 opens 06:00 UTC May 25. Restart deadline 05:30 UTC (5h 20min)."
+      "window_status": "Window 17 opens 06:00 UTC May 25. Restart deadline 05:30 UTC (145 min)."
     },
     {
       "setup": "ETH_SHORT_BB",
@@ -138,6 +170,5 @@
     }
   ],
   "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all. AB_TRACKER callback wiring needed (P0, ~2h dev).",
-  "no_new_trades": true,
-  "last_updated": "2026-05-25T00:10:20+00:00"
+  "last_updated": "2026-05-25T03:04:55+00:00"
 }
