@@ -1,60 +1,52 @@
 {
-  "last_run": "2026-05-24T23:04:33+00:00",
+  "last_run": "2026-05-25T00:10:20+00:00",
   "data_available": false,
-  "data_source": "Cached analysis (bot offline 41 days, trades.csv missing). Gap: day 41.",
-  "avg_slippage": "UNKNOWN \u2014 snapshot_entry column still missing. Day 41 of measurement gap.",
-  "noise_stop_problem": "87% of early SL hits (<2h) in non-trending regimes (illiquid/ranging/unknown). Estimate stable \u2014 no new data.",
+  "data_source": "Cached analysis (bot offline 42 days, trades.csv missing). Gap: day 42.",
+  "avg_slippage": "UNKNOWN — snapshot_entry column still missing. Day 42 of measurement gap.",
+  "noise_stop_problem": "87% of early SL hits (<2h) in non-trending regimes (illiquid/ranging/unknown). Estimate stable — no new data.",
   "hold_time_forensics": {
     "win_median_hold_h": 3.3,
     "loss_median_hold_h": 1.5,
-    "ratio": "2.2x \u2014 losses exit 2.2x faster than wins",
+    "ratio": "2.2x — losses exit 2.2x faster than wins",
     "action": "TRENDING_EARLY_HOLD_GUARD active (gate=80%). BTC/ETH+TRENDING: 3h patience in EXIT_AGENT prompt."
   },
   "leverage_calibration": {
-    "medium_3_5x": {
-      "avg_pnl": 0.79,
-      "verdict": "OPTIMAL"
-    },
-    "high_6_10x": {
-      "avg_pnl": -4.62,
-      "verdict": "BLOCK (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"
-    }
+    "medium_3_5x": {"avg_pnl": 0.79, "verdict": "OPTIMAL"},
+    "high_6_10x": {"avg_pnl": -4.62, "verdict": "BLOCK (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"}
   },
   "new_finding_this_run": {
-    "id": "TRAILING_LOSS_STREAK_4_AND_WR_DEGRADATION",
-    "detail": "adaptive_risk_state analysis: 4-trade trailing all-loss streak before shutdown. Recent 20 outcomes: first-half 40% WR \u2192 last-half 30% WR (degrading). Last 4 outcomes: 0% WR. Circuit breaker fires at 5 consecutive losses. Bot restarts with implicit streak=4. Night block (01-06 UTC) prevents trading \u2014 first real risk at Window 16 open (06:00 UTC). If first morning trade loses \u2192 circuit breaker fires \u2192 entire Window 16 lost. 74% morning WR means ~26% chance of this.",
-    "severity": "INFORMATIONAL (was HIGH)",
-    "action": "Monitor first-10 post-restart trades for WR < 40% (pre-shutdown degradation signal).",
-    "circuit_breaker_risk": "RESOLVED \u2014 risk.py:64 consecutive_losses=0 at __init__. Streak resets on restart automatically."
+    "id": "EVENING_SESSION_EOD_MISSED",
+    "detail": "Evening session (18:00-24:00 UTC May 24) fully missed. Last run at 23:04 UTC noted 56 minutes remaining in tod_evening_edge_v1 window (65% WR, gate=50%). Bot remained offline. Window closed at 00:00 UTC May 25. Current session: NIGHT_BLOCK active (00:00-06:00 UTC, gate=100%, 19% WR veto). Next opportunity: Window 17 06:00-12:00 UTC May 25 (74% WR). Restart deadline: 05:30 UTC (5h 20min).",
+    "severity": "HIGH",
+    "action": "RESTART BOT NOW — night block is safe (no trades will fire until 06:00 UTC). Window 17 deadline 5h 20min."
   },
   "structural_gaps": [
-    "snapshot_entry column missing (slippage unmeasurable \u2014 day 41+)",
-    "llm_regime column empty (regime rules unmeasurable)",
-    "AB result tracker outcome callbacks not firing (all gated rules stalled \u2014 day 41+)",
-    "btc_long_nontrend unprotected in ranging/illiquid/unknown (18% WR, n=17 \u2014 needs human review)",
+    "snapshot_entry column missing (slippage unmeasurable — day 42+)",
+    "llm_regime column empty (regime rules unmeasurable — day 42+)",
+    "AB result tracker outcome callbacks not firing (all gated rules stalled — day 42+)",
+    "btc_long_nontrend unprotected in ranging/illiquid/unknown (18% WR, n=17 — needs human review)",
     "sol_short_penalize_v1 understrength (-10pts at gate=50% vs feedback full_block at gate=100%)"
   ],
-  "days_offline": 41,
-  "hours_offline": 984.4,
+  "days_offline": 42,
+  "hours_offline": 1008.2,
   "gap_deepening": true,
-  "last_updated": "2026-05-24T23:04:33+00:00",
+  "last_updated": "2026-05-25T00:10:20+00:00",
   "window_status": {
     "windows_missed_consecutive": 17,
-    "last_missed": "Window 16 \u2014 2026-05-24 06:00-12:00 UTC (CONFIRMED CLOSED this run)",
-    "current_session": "EVENING_WINDOW_ACTIVE \u2014 tod_evening_edge_v1 active (18:00-24:00 UTC). 56 min remaining.",
-    "next_window": "Window 17 \u2014 2026-05-25 06:00-12:00 UTC",
+    "last_missed": "Window 16 — 2026-05-24 06:00-12:00 UTC + Evening Session 18:00-24:00 UTC (BOTH missed)",
+    "current_session": "NIGHT_BLOCK — night_session_block_v1 veto active (00:00-06:00 UTC, 19% WR). No trades possible.",
+    "next_window": "Window 17 — 2026-05-25 06:00-12:00 UTC",
     "next_restart_deadline": "2026-05-25T05:30:00+00:00",
-    "hours_to_restart_deadline": 6.4,
-    "status": "HIGH \u2014 Evening window FINAL 56 min (65% WR). Night block fires at 00:00 UTC. Window 17 restart deadline 6.4h away.",
-    "current_tod": "23:04 UTC \u2014 EVENING SESSION (18-24 UTC, tod_evening_edge_v1 active, 56 min remaining)"
+    "hours_to_restart_deadline": 5.33,
+    "status": "CRITICAL — Window 17 deadline 5h 20min. Night block provides safe restart window now."
   },
   "post_restart_watch_list": [
-    "IMMEDIATE: Restart before 00:00 UTC for final 56 min of evening window (65% WR)",
-    "btc_trend_long_counter_v1 (gate=50%): Need 3 more BTC LONG trending trades \u2192 graduation to gate=100%",
-    "ranging_regime_penalize_v1 (gate=50%): Need 4 more ranging trades \u2192 graduation to gate=100%",
-    "tod_morning_edge_v1 (gate=50%): Window 17 is the test \u2014 15 obs needed for graduation",
+    "IMMEDIATE: Bot must be running before 06:00 UTC for Window 17 (74% WR composite)",
+    "btc_trend_long_counter_v1 (gate=50%): Need 3 more BTC LONG trending trades → graduation to gate=100%",
+    "ranging_regime_penalize_v1 (gate=50%): Need 4 more ranging trades → graduation to gate=100%",
+    "tod_morning_edge_v1 (gate=50%): Window 17 is the test — 8 obs needed for graduation",
     "eth_sell_bb_golden_v1 (gate=50%): Track first 20 live ETH SELL+BB signals for graduation to gate=80%",
-    "hype_short_veto_v1: HUMAN REVIEW before 4th application \u2014 0/3 accuracy metric unreliable (AB tracker gap)"
+    "hype_short_veto_v1: HUMAN REVIEW before 4th application — 0/3 accuracy metric unreliable (AB tracker gap)"
   ],
   "hold_time_analysis_v2": {
     "win_median_hold_h": 3.3,
@@ -62,7 +54,7 @@
     "min_hold_threshold_h": 3.0,
     "threshold_margin_h": 0.3,
     "margin_pct_of_win_median": "9%",
-    "finding": "Hold threshold (3.0h) is only 0.3h below win median (3.3h) \u2014 9% margin. This means 50% of wins that close exactly at 3.3h median are at risk of being held open until threshold (3.0h) without extra benefit. Recommend evaluating 2.5h threshold post-restart: wider 0.8h margin from win median, still 1.0h above loss median (1.5h). Filters noise stops while giving wins space.",
+    "finding": "Hold threshold (3.0h) is only 0.3h below win median (3.3h) — 9% margin. Recommend evaluating 2.5h threshold post-restart: wider 0.8h margin from win median, still 1.0h above loss median (1.5h).",
     "recommendation": "EVALUATE: test 2.5h vs 3.0h threshold in first 50 trending trades post-restart",
     "severity": "LOW",
     "confidence": 0.65

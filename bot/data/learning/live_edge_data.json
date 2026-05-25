@@ -1,39 +1,60 @@
 {
-  "last_run": "2026-05-24T23:04:33+00:00",
-  "data_source": "Historical accumulated. Bot offline 41 days. No new trade data.",
+  "last_run": "2026-05-25T00:10:20+00:00",
+  "data_source": "Historical accumulated. Bot offline 42 days. No new trade data.",
   "high_edges_found": 9,
   "weak_setups_found": 6,
   "new_finding_this_run": {
-    "id": "EVENING_WINDOW_FINAL_56MIN_V1",
-    "detail": "Current UTC: 23:04. tod_evening_edge_v1 is LIVE RIGHT NOW \u2014 56 minutes of the evening 65% WR window remaining (closes 00:00 UTC). This is the last profitable window until Window 17 (06:00 UTC May 25). Window 16 confirmed missed (17th consecutive). Restarting the bot in the next 20 minutes would capture ~36 minutes of evening edge trading.",
-    "severity": "HIGH",
-    "action": "RESTART NOW \u2014 final 56 min of evening edge (tod_evening_edge_v1 +5pts active, gate=50%). After 00:00 UTC: NIGHT BLOCK fires (19% WR, gate=100%). Next window: 06:00 UTC May 25."
+    "id": "WINDOW_17_SETUP_FINAL_COUNTDOWN",
+    "detail": "Night block active (00:10 UTC May 25). Window 17 (06:00-12:00 UTC May 25) opens in 5h 50min. tod_morning_edge_v1 +5pts (gate=50%) ready. TRENDING_EARLY_HOLD_GUARD active at gate=80%. Evening session May 24 MISSED — closed at 00:00 UTC (10 min ago). This is the first run of May 25. Restart deadline: 05:30 UTC = 5h 20min.",
+    "severity": "CRITICAL",
+    "action": "RESTART NOW — night block prevents any trade fires until 06:00 UTC. Safe restart window. Bot must be running for Window 17."
   },
-  "window_status_2026_05_24_eod": {
-    "window_16": "2026-05-24 06:00-12:00 UTC \u2014 MISSED (17th consecutive)",
-    "minutes_until_window_15": 171,
-    "restart_deadline_utc": "2026-05-23T05:30:00+00:00",
-    "minutes_to_restart_deadline": 141,
-    "consecutive_windows_missed": 16,
-    "status": "Window 15 MISSED. Window 16 in ~469 min. Restart deadline in ~439 min.",
-    "window_16": "2026-05-24 06:00-12:00 UTC \u2014 NEXT",
-    "minutes_until_window_16": 467,
-    "minutes_to_restart_deadline_window16": 437
+  "night_block_status": {
+    "active": true,
+    "rule": "night_session_block_v1",
+    "gate": 100,
+    "wr": "19%",
+    "active_from": "2026-05-25 00:00 UTC",
+    "active_until": "2026-05-25 06:00 UTC",
+    "minutes_remaining": 350,
+    "note": "Veto prevents all trades. Safest time to restart bot — no signal risk during warmup."
+  },
+  "window_17_countdown": {
+    "opens_utc": "2026-05-25 06:00",
+    "closes_utc": "2026-05-25 12:00",
+    "restart_deadline_utc": "2026-05-25 05:30",
+    "hours_to_deadline": 5.33,
+    "wr_composite": "74%",
+    "active_rules": [
+      "tod_morning_edge_v1 +5pts (gate=50%)",
+      "TRENDING_EARLY_HOLD_GUARD (gate=80%)",
+      "eth_trending_regime_boost_v1 +8pts (gate=100%)",
+      "btc_short_90plus_boost_v1 +10pts (gate=100%)"
+    ],
+    "if_missed": "18th consecutive morning window | cumulative EV loss ~$94"
   },
   "high_edges": [
     {
-      "setup": "ETH_SHORT",
+      "setup": "MORNING_WINDOW_17",
+      "wr": 0.74,
+      "trades": 7,
+      "source": "insight_journal_composite",
+      "rule_coverage": "tod_morning_edge_v1 (gate=50%) + TRENDING_EARLY_HOLD_GUARD",
+      "window_status": "Window 17 opens 06:00 UTC May 25. Restart deadline 05:30 UTC (5h 20min)."
+    },
+    {
+      "setup": "ETH_SHORT_BB",
       "wr": 0.8,
       "trades": 5,
       "source": "live",
-      "rule_coverage": "ETH_SHORT_BB_golden (gate=80% feedback, gate=20% LLM)"
+      "rule_coverage": "ETH_SHORT_BB_golden (gate=80% feedback, gate=50% LLM)"
     },
     {
       "setup": "BTC_TRENDING_REGIME_SHORT",
       "wr": 0.8,
       "trades": 5,
       "source": "insight_journal",
-      "rule_coverage": "TRENDING_EARLY_HOLD_GUARD (gate=80%) + BTC_TREND_LONG_COUNTER_V1 (gate=20%)"
+      "rule_coverage": "TRENDING_EARLY_HOLD_GUARD (gate=80%) + BTC_TREND_LONG_COUNTER_V1 (gate=50%)"
     },
     {
       "setup": "HYPE_UNKNOWN_REGIME",
@@ -47,14 +68,14 @@
       "wr": 0.71,
       "trades": 7,
       "source": "insight_journal",
-      "rule_coverage": "TRENDING_EARLY_HOLD_GUARD (gate=80%)"
+      "rule_coverage": "eth_trending_regime_boost_v1 (gate=100%)"
     },
     {
       "setup": "BTC_SHORT_90plus_conf",
       "wr": 0.67,
       "trades": 43,
       "source": "backtest",
-      "rule_coverage": "HIGH_CONF_SHORT_edge (gate=50%)"
+      "rule_coverage": "btc_short_90plus_boost_v1 (gate=100%)"
     },
     {
       "setup": "BB_solo_high_WR",
@@ -68,30 +89,14 @@
       "wr": 0.7,
       "trades": null,
       "source": "A/B_pending",
-      "rule_coverage": "eth_sell_bb_golden_v1 (gate=50% LLM after 2023-05-23 escalation, gate=80% feedback)"
+      "rule_coverage": "eth_sell_bb_golden_v1 (gate=50% LLM, gate=80% feedback)"
     },
     {
       "setup": "BTC_BUY_BB_golden",
       "wr": 0.69,
       "trades": null,
       "source": "A/B_pending",
-      "rule_coverage": "btc_buy_bb_golden_v1 (gate=20%) \u2014 no escalation: conflicts with BTC_LONG anti-bias"
-    },
-    {
-      "setup": "MORNING_WINDOW_16",
-      "wr": 0.74,
-      "trades": 7,
-      "source": "insight_journal_composite",
-      "rule_coverage": "tod_morning_edge_v1 (gate=50%) + TRENDING_EARLY_HOLD_GUARD",
-      "window_status": "Window 16 in 344 min (06:00 UTC May 24). Restart deadline in 314 min."
-    },
-    {
-      "setup": "EVENING_SESSION_GRADUATED",
-      "wr": 0.65,
-      "trades": 27,
-      "source": "live_paper",
-      "rule_coverage": "tod_evening_edge_v1 (gate=50% \u2014 GRADUATED this run from 20%)",
-      "note": "18:00-24:00 UTC. Second TOD window at gate=50%. Graduate to 80% at n>=20 WR>=60% post-restart."
+      "rule_coverage": "btc_buy_bb_golden_v1 (gate=20%) — blocked: conflicts with BTC_LONG anti-bias stack"
     }
   ],
   "weak_setups": [
@@ -99,7 +104,7 @@
       "setup": "BTC_LONG",
       "wr": 0.18,
       "trades": 17,
-      "rule": "BTC_LONG_reduce (gate=50%) + btc_trend_long_counter_v1 (gate=20%) + CRITIC_PROMPT_BTC_LONG_BIAS (100%)"
+      "rule": "BTC_LONG_reduce (gate=50%) + btc_trend_long_counter_v1 (gate=50%) + CRITIC_PROMPT_BTC_LONG_BIAS (100%)"
     },
     {
       "setup": "SOL_LONG",
@@ -117,49 +122,22 @@
       "setup": "CONF_70_80_BIN",
       "wr": 0.33,
       "trades": 43,
-      "rule": "BTC_SHORT_CONF70_80_BLOCK (gate=50%)"
+      "rule": "btc_short_conf70_80_penalize_v1 (gate=100%)"
     },
     {
       "setup": "HYPE_SELL_BB",
       "wr": 0.35,
       "trades": 2172,
-      "rule": "hype_sell_bb_block_v1 NOW gate=50% (escalated this run from 20%)"
+      "rule": "hype_sell_bb_block_v1 gate=50%"
     },
     {
       "setup": "BB_MTQ_COFIRE",
       "wr": 0.35,
       "trades": 2172,
-      "rule": "bb_mtq_antipattern_v1 NOW gate=50% (escalated this run from 20%)"
+      "rule": "bb_mtq_antipattern_v1 gate=50%"
     }
   ],
-  "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all. AB_TRACKER code still needed.",
-  "window_status_2026_05_24": {
-    "window_16": "2026-05-24 06:00-12:00 UTC \u2014 NEXT",
-    "minutes_until_window_16": 235,
-    "restart_deadline_utc": "2026-05-24T05:30:00+00:00",
-    "minutes_to_restart_deadline": 205,
-    "consecutive_windows_missed": 16,
-    "status": "Window 16 in 235 min (3.9h). Restart deadline in 205 min. Night block active until 06:00 UTC."
-  },
-  "rules_escalated_this_run": [
-    "ranging_regime_penalize_v1: 20%\u219250%",
-    "btc_trend_long_counter_v1: 20%\u219250% (graduation criterion met)",
-    "high_vol_regime_boost_v1: 20%\u219250% (graduation criterion met)",
-    "eth_sell_bb_golden_v1: 20%\u219250% (sync gap close)"
-  ],
-  "last_updated": "2026-05-24T02:04:41.049719+00:00",
-  "tod_coverage_note": "TOD_STACK_MILESTONE 2026-05-24: night(veto=100%) + morning(50%) + evening(50%) + afternoon(20% blocked). 18h alpha coverage at 50% gate.",
+  "ab_stall_impact": "0 of 9 high-edge setups have validated outcomes. times_correct=0 for all. AB_TRACKER callback wiring needed (P0, ~2h dev).",
   "no_new_trades": true,
-  "edge_update": "MORNING_WINDOW_16: 293 min to open (06:00 UTC May 24). tod_morning_edge_v1 gate=50% ready. Night block active until 06:00. tod_evening_edge_v1 NEWLY GRADUATED (gate=50%) \u2014 first test this evening (18-24 UTC May 24).",
-  "weak_setup_new": {
-    "id": "PRE_SHUTDOWN_DEGRADATION_SIGNAL",
-    "detail": "Last 10 pre-shutdown trades: 3/10=30% WR (down from 4/10=40% first-half). Trailing 4: 0%. Unknown if this is a regime issue, time-of-day issue, or specific setup failure.",
-    "action": "Post-restart: flag if first-10 WR < 40% \u2014 indicates degradation may be structural, not random noise."
-  },
-  "run_this_cycle": {
-    "run_at": "2026-05-24T02:04:41.049719+00:00",
-    "new_high_edges": 0,
-    "new_weak_setups": 0,
-    "note": "No new trades. Window countdown updated. AB_TRACKER_CODE_CONFIRMED (new structural finding)."
-  }
+  "last_updated": "2026-05-25T00:10:20+00:00"
 }

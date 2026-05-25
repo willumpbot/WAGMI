@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-05-24T23:04:33+00:00",
+  "last_run": "2026-05-25T00:10:20+00:00",
   "source_audit": "perpetual_deep_dive series (adaptive_risk_state analysis)",
   "fixes_applied_this_run": 0,
   "gates_active": 21,
@@ -16,16 +16,28 @@
   },
   "new_findings_this_run": [
     {
-      "finding_id": "TOD_AFTERNOON_CONFLICT_ESCALATION_V1",
-      "detected_at": "2026-05-24T23:04:33+00:00",
-      "severity": "MEDIUM",
-      "detail": "tod_afternoon_edge_v1 conflict unresolved for 4+ consecutive perpetual-loop runs. LLM rule: +5pts boost (hypothesis: 64% WR on 27 trades). Feedback rule: AFTERNOON_SESSION_BLOCK at gate=20% with -8pts penalty. Net in 20% cohort: -3pts; 80% cohort: -8pts feedback only. Conflict cannot be resolved without fresh live data. 4-run age is the longest unresolved conflict in the pipeline.",
-      "evidence": "Master state history: blocked in runs at 01:09, 03:11, 05:00 UTC May 24 (all flagged conflict). Now 23:04 UTC = 4th consecutive run with no resolution.",
-      "action": "HUMAN REVIEW — decide: (A) accept feedback (-8pts dominates, disable LLM boost), (B) accept LLM (+5pts dominates, disable feedback probe), (C) wait for post-restart live data to settle which signal is correct.",
+      "finding_id": "TOD_AFTERNOON_CONFLICT_5TH_CONSECUTIVE",
+      "detected_at": "2026-05-25T00:10:20+00:00",
+      "severity": "MEDIUM-HIGH",
+      "detail": "tod_afternoon_edge_v1 conflict unresolved for 5 consecutive perpetual-loop runs. LLM rule: +5pts boost (hypothesis: 64% WR on 27 trades). Feedback rule: AFTERNOON_SESSION_BLOCK at gate=20% with -8pts penalty. Net in 20% cohort: -3pts; 80% cohort: -8pts feedback only. 5-run age is now the LONGEST UNRESOLVED CONFLICT in pipeline history. Escalating from MEDIUM to MEDIUM-HIGH. Human decision overdue.",
+      "evidence": "Blocked at: 01:09, 03:11, 05:00 UTC May 24 (3 runs), 23:04 UTC May 24 (4th), 00:10 UTC May 25 (5th). No resolution in 23h.",
+      "action": "HUMAN DECISION REQUIRED — ESCALATED: (A) disable LLM boost → -8pts feedback dominates (RECOMMENDED: cleaner signal), (B) disable feedback probe → +5pts LLM dominates, (C) wait for post-restart data. Each additional run without resolution means 20% cohort continues receiving contradictory signals.",
       "requires_human_review": true,
-      "confidence": 0.80,
+      "confidence": 0.85,
       "auto_fix_eligible": false,
-      "reason_blocked": "CONFLICT — opposing signals from LLM and feedback subsystems. Net effect is noise (-3pts), not signal."
+      "reason_blocked": "CONFLICT — opposing signals from LLM and feedback subsystems. Net effect is noise (-3pts). Cannot auto-resolve. 5-run escalation threshold reached."
+    },
+    {
+      "finding_id": "EVENING_SESSION_EOD_MISSED_V1",
+      "detected_at": "2026-05-25T00:10:20+00:00",
+      "severity": "HIGH",
+      "detail": "Evening session (18:00-24:00 UTC May 24) closed 10 minutes ago. Last run (23:04 UTC) noted 56-min window remaining with tod_evening_edge_v1 active (65% WR, gate=50%). Bot remained offline. Window closed at 00:00 UTC May 25. Night block (gate=100%) now active until 06:00 UTC. This is the first run of May 25.",
+      "evidence": "UTC clock: 00:10 May 25. Evening window ended at 00:00. tod_evening_edge_v1 last_applied=1779419617. Night block last_applied timestamp updated.",
+      "action": "INFORMATIONAL — no auto-fix. Operational: restart bot during night block (safe window). Window 17 deadline 5h 20min.",
+      "requires_human_review": false,
+      "confidence": 1.0,
+      "auto_fix_eligible": false,
+      "reason_blocked": "OPERATIONAL — bot restart is a human action. Night block provides safe restart window."
     },
     {
       "finding_id": "AB_TRACKER_SYSTEMIC_ZERO_V1",
