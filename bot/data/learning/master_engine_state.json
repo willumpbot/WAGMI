@@ -1,26 +1,27 @@
 {
-  "last_run": "2026-05-26T01:12:05.988371+00:00",
-  "run_number": 11,
-  "current_utc": "2026-05-26 01:12 UTC",
-  "tod_bin": "NIGHT_BLOCK (00-06 UTC) \u2014 19% WR veto active",
+  "last_run": "2026-05-26T02:11:00+00:00",
+  "run_number": 12,
+  "current_utc": "2026-05-26 02:11 UTC",
+  "tod_bin": "NIGHT_BLOCK (00-06 UTC) — 19% WR veto active",
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
       "gates_active": 21,
       "total_applied_all_time": 66,
       "new_audit_files": 0,
+      "graduated_rules_total": 116,
       "blocked_escalations": [
         {
           "rule_id": "tod_afternoon_edge_v1",
           "confidence": 0.85,
-          "proposed_change": "gate_percentage: 20\u21920",
-          "blocked_reason": "CONFLICT_10TH_RUN (LLM+5pts vs feedback-8pts)",
+          "proposed_change": "gate_percentage: 20→0",
+          "blocked_reason": "CONFLICT_11TH_RUN (LLM+5pts vs feedback-8pts) — 28.9h",
           "action": "REQUIRES_HUMAN_CONFIRMATION"
         },
         {
           "rule_id": "btc_buy_bb_golden_v1",
           "confidence": 0.91,
-          "blocked_reason": "ANTI_BIAS_STACK \u2014 BTClong already at -3pts net"
+          "blocked_reason": "ANTI_BIAS_STACK — BTClong already at -3pts net"
         },
         {
           "rule_id": "hype_unknown_regime_probe_v1",
@@ -28,138 +29,93 @@
           "blocked_reason": "INSUFFICIENT_SAMPLE n=6 (threshold: n>=15)"
         }
       ],
-      "note": "No new data to process. Bot offline 46 days. Awaiting restart."
+      "note": "No new data. Bot offline 46d. 11th run with tod_afternoon conflict unresolved. 116 graduated rules total (67 A/B_ACTIVE, 12 APPLIED gate=100%)."
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 46+)",
+      "avg_slippage": "UNKNOWN — snapshot_entry column missing (day 46+)",
       "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, day 46]",
       "hold_time_forensics": {
         "win_median_hold_h": 3.3,
         "loss_median_hold_h": 1.5,
-        "ratio": "2.2x \u2014 losses exit 2.2x faster than wins",
-        "active_fix": "TRENDING_EARLY_HOLD_GUARD gate=80%"
+        "ratio": "2.2x — losses exit 2.2x faster than wins",
+        "active_fix": "TRENDING_EARLY_HOLD_GUARD gate=80%, TRENDING_MIN_HOLD_2H gate=50%"
       },
       "leverage_forensics": {
-        "medium_3_5x": {
-          "avg_pnl": 0.79,
-          "verdict": "OPTIMAL"
-        },
-        "high_6_10x": {
-          "avg_pnl": -4.62,
-          "verdict": "BLOCKED (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"
-        }
+        "medium_3_5x": {"avg_pnl": 0.79, "verdict": "OPTIMAL"},
+        "high_6_10x": {"avg_pnl": -4.62, "verdict": "BLOCKED (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"}
       },
       "structural_gaps": [
-        "snapshot_entry missing \u2192 slippage unmeasurable",
-        "llm_regime column empty \u2192 regime rules unmeasurable",
-        "AB outcome callbacks not firing \u2192 all gated rules stalled"
+        "snapshot_entry missing → slippage unmeasurable (P1 dev, ~2h)",
+        "llm_regime column empty → regime rules unmeasurable (P1 dev, ~4h)",
+        "AB outcome callbacks not firing → all gated rules stalled (P0 dev, ~2h)"
       ],
       "p0_issue": {
         "id": "AB_TRACKER_NOT_WIRING_OUTCOMES",
-        "detail": "AB_RESULT_TRACKER_CODE APPLIED but times_correct=0 on all 23 rules. 9 rules stuck at 50% gate.",
+        "detail": "times_correct=0 on all 21 rules despite AB_RESULT_TRACKER_CODE marked APPLIED. 9 rules stuck at 50% gate. Stalled 46 days.",
         "fix_estimate": "~2h dev work",
-        "impact": "Blocking ALL rule graduation until fixed"
+        "impact": "Blocking ALL rule graduation"
       },
-      "data_source": "cached_day46"
+      "data_source": "cached_day46",
+      "delta_vs_last_run": "No change. Same structural gaps. +1h offline."
     },
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 6,
-      "data_source": "cached (no new trades \u2014 bot offline 46d)",
+      "data_source": "cached (no new trades — bot offline 46d)",
+      "delta_vs_last_run": "No change in edges. Window 18 now 3h49m away (was 4.3h).",
       "top_high_edges": [
-        {
-          "setup": "HYPE_UNKNOWN_REGIME",
-          "wr": 0.83,
-          "n": 6,
-          "rule": "hype_unknown_regime_probe_v1 gate=20%"
-        },
-        {
-          "setup": "ETH_SHORT_BB",
-          "wr": 0.8,
-          "n": 5,
-          "rule": "eth_sell_bb_golden_v1 gate=50%"
-        },
-        {
-          "setup": "BTC_TRENDING_SHORT",
-          "wr": 0.8,
-          "n": 5,
-          "rule": "TRENDING_EARLY_HOLD_GUARD gate=80%"
-        },
-        {
-          "setup": "MORNING_WINDOW_COMPOSITE",
-          "wr": 0.74,
-          "n": 7,
-          "rule": "tod_morning_edge_v1 gate=50%"
-        },
-        {
-          "setup": "ETH_TRENDING",
-          "wr": 0.71,
-          "n": 7,
-          "rule": "eth_trending_regime_boost_v1 gate=100%"
-        }
+        {"setup": "HYPE_UNKNOWN_REGIME", "wr": 0.83, "n": 6, "rule": "hype_unknown_regime_probe_v1 gate=20%"},
+        {"setup": "ETH_SHORT_BB", "wr": 0.80, "n": 5, "rule": "eth_sell_bb_golden_v1 gate=50%"},
+        {"setup": "BTC_TRENDING_SHORT", "wr": 0.80, "n": 5, "rule": "TRENDING_EARLY_HOLD_GUARD gate=80%"},
+        {"setup": "MORNING_WINDOW_COMPOSITE", "wr": 0.74, "n": 7, "rule": "tod_morning_edge_v1 gate=50%"},
+        {"setup": "ETH_TRENDING", "wr": 0.71, "n": 7, "rule": "eth_trending_regime_boost_v1 gate=100%"},
+        {"setup": "BB_SOLO_SIGNAL", "wr": 0.676, "n": 2172, "rule": "BB_solo_trust gate=50%"},
+        {"setup": "ETH_SELL_BB_GOLDEN", "wr": 0.70, "n": 10, "rule": "ETH_SHORT_BB_golden gate=80%"},
+        {"setup": "BTC_BUY_BB_GOLDEN", "wr": 0.69, "n": 10, "rule": "BTC_BUY_BB_golden gate=80%"},
+        {"setup": "SOL_BUY_BB", "wr": 0.67, "n": 10, "rule": "SOL_BUY_BB_golden gate=80%"}
       ],
       "top_weak_setups": [
-        {
-          "setup": "SOL+ILLIQUID",
-          "wr": 0.18,
-          "n": 11,
-          "rule": "NOISE_STOP_WIDEN_illiquid gate=100%"
-        },
-        {
-          "setup": "BTC+RANGING_HIGH_LEV",
-          "wr": 0.22,
-          "n": 9,
-          "rule": "RANGING_regime_reduce gate=50%"
-        },
-        {
-          "setup": "AFTERNOON_SESSION",
-          "wr": 0.28,
-          "n": 14,
-          "rule": "AFTERNOON_SESSION_BLOCK gate=20% \u2014 CONFLICT"
-        }
+        {"setup": "NIGHT_00_06UTC", "wr": 0.19, "n": 27, "rule": "NIGHT_SESSION_ESCALATE gate=80%, NIGHT_session_pause gate=100%"},
+        {"setup": "HYPE_BUY", "wr": 0.23, "n": 35, "rule": "HYPE_LONG_hard_block gate=100%"},
+        {"setup": "SOL_BUY", "wr": 0.24, "n": 34, "rule": "SOL_LONG_hard_block gate=100%"},
+        {"setup": "ILLIQUID_REGIME", "wr": 0.28, "n": 57, "rule": "ILLIQUID_regime_block gate=80%"},
+        {"setup": "BB_MTQ_COMBO", "wr": 0.35, "n": 2172, "rule": "BB_MTQ_combo_block gate=80%, BB_MTQ_antipattern gate=50%"},
+        {"setup": "RANGING_REGIME", "wr": 0.30, "n": 22, "rule": "RANGING_regime_reduce gate=50%"}
       ],
-      "new_conflict_detected": {
-        "id": "SOL_SHORT_INSIGHT_VS_PENALIZE",
-        "detail": "SOL SHORT directionally correct 67% per insight_journal ($614.80 missed). sol_short_penalize_v1 gate=50% suppresses valid setups.",
-        "resolution": "MONITOR post-restart (need 10 live SOL SHORT trades)"
-      },
       "window_18_primed": {
         "opens_utc": "2026-05-26T06:00:00+00:00",
         "restart_deadline": "2026-05-26T05:30:00+00:00",
-        "hours_away": 4.3,
+        "hours_away": 3.82,
+        "deadline_hours_away": 3.32,
         "primed_rules": 4,
         "composite_wr": 0.74
+      },
+      "sol_short_conflict": {
+        "id": "SOL_SHORT_INSIGHT_VS_PENALIZE",
+        "detail": "SOL SHORT 67% directionally correct ($614.80 missed). sol_short_penalize_v1 gate=50% suppresses. SOL_SHORT_full_block gate=100% hardblocksall SOL SELL.",
+        "resolution": "MONITOR post-restart (need 10 live SOL SHORT trades)"
       }
     },
     "daily_synthesis": {
       "anomalies_found": 5,
       "report_generated": true,
       "report_path": "bot/data/sessions/daily_synthesis_2026-05-26.json",
+      "is_eod": false,
       "anomalies": [
-        {
-          "type": "BOT_OFFLINE_DAY46",
-          "severity": "CRITICAL"
-        },
-        {
-          "type": "WINDOW_18_CRITICAL_DEADLINE",
-          "severity": "CRITICAL"
-        },
-        {
-          "type": "TOD_AFTERNOON_CONFLICT_RUN10",
-          "severity": "HIGH"
-        },
-        {
-          "type": "AB_TRACKER_STALLED_P0",
-          "severity": "HIGH"
-        },
-        {
-          "type": "SOL_SHORT_INSIGHT_CONFLICT",
-          "severity": "MEDIUM"
-        }
+        {"type": "BOT_OFFLINE_DAY46", "severity": "CRITICAL"},
+        {"type": "WINDOW_18_DEADLINE_3H19M", "severity": "CRITICAL"},
+        {"type": "TOD_AFTERNOON_CONFLICT_RUN11", "severity": "HIGH"},
+        {"type": "AB_TRACKER_STALLED_P0", "severity": "HIGH"},
+        {"type": "SOL_SHORT_INSIGHT_CONFLICT", "severity": "MEDIUM"}
       ],
       "win_rate_7d": "N/A (no trades)",
       "today_trades": 0,
-      "today_pnl": 0.0
+      "today_pnl": 0.0,
+      "new_vs_last_run": {
+        "daily_synthesis_2026-05-26": "CREATED (first May 26 run)",
+        "window_18_deadline_delta": "4.3h → 3.32h remaining",
+        "afternoon_conflict_run_delta": "Run 10 → Run 11"
+      }
     },
     "model_optimization": {
       "status": "SKIPPED_NO_DATA",
@@ -167,65 +123,76 @@
       "model_swaps_recommended": 0,
       "potential_savings": "$0.00",
       "current_routing_inferred": {
-        "haiku_agents": [
-          "Regime",
-          "Risk",
-          "Learning",
-          "Exit",
-          "Scout"
-        ],
-        "sonnet_agents": [
-          "Trade",
-          "Critic"
-        ],
+        "haiku_agents": ["Regime", "Risk", "Learning", "Exit", "Scout"],
+        "sonnet_agents": ["Trade", "Critic"],
         "opus_agents": "none_by_default",
         "model_ids": {
-          "haiku": "claude-haiku-4-5",
+          "haiku": "claude-haiku-4-5-20251001",
           "sonnet": "claude-sonnet-4-6",
-          "opus": "claude-opus-4-5"
+          "opus": "claude-opus-4-7"
         }
       },
-      "action": "Create cost_tracker.json schema in bot/llm/ on next restart to enable subsystem 5"
+      "action": "Create cost_tracker.json schema in bot/llm/ on next bot restart to enable subsystem 5 data collection"
     }
   },
   "high_priority_findings": [
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot offline 46 days. Window 18 (74% composite WR) opens 06:00 UTC May 26. Restart deadline 05:30 UTC \u2014 only 4.3h away.",
-      "action": "RESTART BOT by 05:30 UTC May 26 to capture Window 18 and avoid 19th consecutive morning miss. 4 primed rules ready."
+      "finding": "Bot offline 46 days. Window 18 (74% composite WR, 4 primed rules) opens 06:00 UTC May 26. Restart deadline 05:30 UTC — 3h19m away. 19th consecutive morning miss at risk.",
+      "action": "RESTART BOT by 05:30 UTC May 26. Minimum viable: 'cd bot && python run.py paper'. Window 18 is capturable if restarted NOW.",
+      "urgency": "T-3h19m"
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "tod_afternoon_edge_v1 conflict in 10th consecutive run (28.9h). LLM +5pts vs feedback -8pts = net noise in 20% cohort. Confidence=0.85 qualifies for auto-disable but blocked by conflict safety protocol.",
-      "action": "HUMAN ACTION: manually set tod_afternoon_edge_v1 gate_percentage=0 in bot/data/llm/graduated_rules.json"
+      "finding": "tod_afternoon_edge_v1 conflict in 11th consecutive run (28.9h total). LLM +5pts vs feedback -8pts = -3pts net noise in 20% afternoon cohort. Confidence=0.85 clears auto-threshold but conflict safety protocol requires human resolution.",
+      "action": "HUMAN ACTION: Open bot/data/llm/graduated_rules.json, find tod_afternoon_edge_v1, set gate_percentage: 0. Removes noise, lets feedback -8pts dominate.",
+      "file": "bot/data/llm/graduated_rules.json",
+      "rule": "tod_afternoon_edge_v1"
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "AB_RESULT_TRACKER_CODE status=APPLIED but outcome callbacks never fire. 9 rules stalled at 50% gate with times_correct=0. All rule graduation frozen. P0 dev debt.",
-      "action": "DEV FIX: wire outcome callbacks (~2h). Path: feedback loop or cost_tracker must call update_times_correct() on trade close."
+      "finding": "AB_RESULT_TRACKER_CODE marked APPLIED but outcome callbacks never fire. 9 graduated rules stalled at 50% gate with times_correct=0 for 46 days. All rule auto-graduation frozen. Every correct prediction is unrecorded.",
+      "action": "P0 DEV: wire outcome callbacks in bot/feedback/loop.py (call update_times_correct(rule_id, outcome) on trade close). ~2h work. Unblocks 9 rule promotions and restores self-improvement compounding.",
+      "dev_estimate_hours": 2,
+      "blocked_rules": 9
     },
     {
       "subsystem": "live_injection",
       "severity": "MEDIUM",
-      "finding": "SOL SHORT conflict: insight_journal shows 67% directional accuracy ($614.80 true-miss) but sol_short_penalize_v1 at gate=50% suppresses valid setups.",
-      "action": "MONITOR post-restart \u2014 need 10 live SOL SHORT trades before adjudicating conflict between insight and penalize rule."
+      "finding": "SOL SHORT conflict: insight_journal shows 67% directional accuracy ($614.80 missed EV) but SOL_SHORT_full_block (gate=100%) suppresses all SOL SELL. Rule conflict RULE_CONFLICT_SOL_SHORT flagged (conf=92) in graduated_rules.json but unresolved.",
+      "action": "MONITOR post-restart — adjudicate after 10 live SOL SHORT trades with SOL_STOP_MIN_0.9PCT (wider stops). Do not modify SOL_SHORT_full_block preemptively.",
+      "monitor_trades_needed": 10
     }
   ],
   "summary": {
     "fixes_applied_this_run": 0,
     "gates_active": 21,
+    "total_applied_all_time": 66,
+    "graduated_rules_total": 116,
     "high_edges": 9,
     "weak_setups": 6,
     "anomalies": 5,
     "avg_slippage": "UNKNOWN",
-    "noise_stop_pct": "87% (cached)",
+    "noise_stop_pct": "87% (cached day46)",
     "model_swaps": 0,
     "bot_status": "OFFLINE_46D",
-    "window_18_deadline_hours": 4.3,
+    "window_18_deadline_hours": 3.32,
+    "window_18_capturable": true,
     "critical_human_actions": 2,
-    "p0_dev_items": 1
+    "p0_dev_items": 1,
+    "tod_afternoon_conflict_runs": 11,
+    "tod_afternoon_conflict_hours": 28.9,
+    "daily_synthesis_created": "2026-05-26",
+    "delta_vs_run_11": {
+      "window_18_deadline_h": "4.3 → 3.32 (-0.98h)",
+      "afternoon_conflict_runs": "10 → 11 (+1)",
+      "afternoon_conflict_hours": "27.9 → 28.9 (+1h)",
+      "daily_synthesis_2026-05-26": "CREATED (new)",
+      "fixes_applied": "0 (unchanged)",
+      "edges": "9 high, 6 weak (unchanged — no new data)"
+    }
   }
 }
