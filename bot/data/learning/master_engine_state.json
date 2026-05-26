@@ -1,9 +1,9 @@
 {
-  "last_run": "2026-05-26T04:12:47.810145+00:00",
-  "run_number": 14,
-  "current_utc": "2026-05-26 04:12 UTC",
+  "last_run": "2026-05-26T23:09:45+00:00",
+  "run_number": 15,
+  "current_utc": "2026-05-26 23:09 UTC",
   "bot_offline_days": 47,
-  "tod_bin": "MORNING_APPROACH (04:12 UTC) \u2014 Window 18 FINAL_CALL. T-1.29h to deadline.",
+  "tod_bin": "EVENING (23:09 UTC) — Window closes 00:00 UTC. T-0.84h. EOD run.",
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
@@ -18,55 +18,62 @@
         "disabled_gate0": 24,
         "total_with_gate_gt0": 90
       },
+      "high_confidence_ab_active": [
+        {"rule_id": "BB_solo_signal_boost", "confidence": 95, "gate": 80},
+        {"rule_id": "ETH_SHORT_BB_golden", "confidence": 95, "gate": 80},
+        {"rule_id": "BB_solo_trust", "confidence": 95, "gate": 50},
+        {"rule_id": "BB_MTQ_combo_block", "confidence": 92, "gate": 80},
+        {"rule_id": "HYPE_SELL_BB_block", "confidence": 92, "gate": 80}
+      ],
       "blocked_escalations": [
         {
           "rule_id": "AFTERNOON_SESSION_BLOCK (tod_afternoon_edge_v1)",
           "confidence": 0.85,
-          "proposed_change": "gate_percentage: 20\u21920",
-          "blocked_reason": "CONFLICT_13TH_RUN (LLM+5pts vs feedback-8pts, net=-3pts). 30.9h total.",
-          "escalation_note": "CRITICAL+: 13th consecutive conflict run, 30.9h. Every afternoon signal degraded by net -3pt noise for 30.9h. T+30h threshold crossed last run \u2014 persisting. Human action overdue.",
-          "action": "REQUIRES_HUMAN_CONFIRMATION \u2014 open graduated_rules.json, find rule_id=AFTERNOON_SESSION_BLOCK, set gate_percentage: 0"
+          "proposed_change": "gate_percentage: 20→0",
+          "blocked_reason": "CONFLICT_14TH_RUN (LLM+5pts vs feedback-8pts, net=-3pts). 49.8h total.",
+          "escalation_note": "CRITICAL++: 14th consecutive conflict run, 49.8h. Crossed T+48h major threshold. Net -3pt noise injected into 20% afternoon cohort for 2+ days. Human action critically overdue.",
+          "action": "REQUIRES_HUMAN_CONFIRMATION — open graduated_rules.json, find rule_id=AFTERNOON_SESSION_BLOCK, set gate_percentage: 0"
         },
         {
           "rule_id": "BTC_BUY_BB_golden (btc_buy_bb_golden_v1)",
           "confidence": 0.91,
-          "blocked_reason": "ANTI_BIAS_STACK \u2014 BTClong at -3pts net. Adding +5pts creates bias collision.",
-          "action": "HOLD \u2014 resolve after post-restart BTC data normalizes"
+          "blocked_reason": "ANTI_BIAS_STACK — BTClong at -3pts net. Adding +5pts creates bias collision.",
+          "action": "HOLD — resolve after post-restart BTC data normalizes"
         },
         {
           "rule_id": "HYPE_UNKNOWN_REGIME_PROBE (hype_unknown_regime_probe_v1)",
           "confidence": 0.75,
           "blocked_reason": "INSUFFICIENT_SAMPLE n=6 (threshold: n>=15). No new trades to grow sample.",
-          "action": "HOLD \u2014 needs 9 more HYPE+unknown-regime trades post-restart"
+          "action": "HOLD — needs 9 more HYPE+unknown-regime trades post-restart"
         }
       ],
-      "note": "Run 14. No new trades (bot offline 47d). 13th consecutive tod_afternoon conflict run \u2014 CRITICAL+. 116 feedback rules. 9 graduated rules stalled at gate=50 (AB callback P0 dev bug). 66 total fixes all-time."
+      "note": "Run 15. No new audit files, no new trades (bot offline 47d). Window 18 CONFIRMED MISSED (19th consecutive). 14th consecutive tod_afternoon conflict run — CRITICAL++, 49.8h (crossed T+48h threshold). 66 total fixes all-time."
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 47+)",
+      "avg_slippage": "UNKNOWN — snapshot_entry column missing (day 47+)",
       "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, day 47]",
       "data_available": false,
       "data_source": "Cached (bot offline 47 days, trades.csv missing)",
       "hold_time_forensics": {
         "win_median_hold_h": 3.3,
         "loss_median_hold_h": 1.5,
-        "ratio": "2.2x \u2014 losses exit 2.2x faster than wins",
+        "ratio": "2.2x — losses exit 2.2x faster than wins",
         "active_fix": "TRENDING_EARLY_HOLD_GUARD gate=80%, TRENDING_MIN_HOLD_2H gate=50%"
       },
       "leverage_forensics": {
-        "medium_3_5x": {
-          "avg_pnl": 0.79,
-          "verdict": "OPTIMAL"
-        },
-        "high_6_10x": {
-          "avg_pnl": -4.62,
-          "verdict": "BLOCKED (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"
-        }
+        "medium_3_5x": {"avg_pnl": 0.79, "verdict": "OPTIMAL"},
+        "high_6_10x": {"avg_pnl": -4.62, "verdict": "BLOCKED (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"}
+      },
+      "new_forensic_finding": {
+        "finding": "WINDOW_18_CONFIRMED_MISSED",
+        "severity": "CRITICAL",
+        "detail": "Window 18 (06:00-12:00 UTC May 26) confirmed closed at 23:09 UTC. 19th consecutive morning miss. Cumulative EV loss: ~$100. 4 primed rules (TOD_morning_edge, eth_sell_bb_golden, eth_trending_regime_boost, hype_unknown_regime_probe) generated zero trades.",
+        "recovery": "Window 19 opens 06:00 UTC May 27. Restart deadline: 05:30 UTC (T-6.34h)."
       },
       "structural_gaps": [
-        "snapshot_entry column missing (slippage unmeasurable \u2014 day 47+)",
-        "llm_regime column empty (regime rules unmeasurable \u2014 day 47+)",
-        "AB outcome callbacks not firing (all gated rules stalled \u2014 P0 dev, day 47)"
+        "snapshot_entry column missing (slippage unmeasurable — day 47+)",
+        "llm_regime column empty (regime rules unmeasurable — day 47+)",
+        "AB outcome callbacks not firing (all gated rules stalled — P0 dev, day 47)"
       ],
       "ab_tracker_status": {
         "severity": "HIGH",
@@ -77,21 +84,30 @@
         "priority": "P0",
         "days_stalled": 47
       },
-      "delta_vs_run13": "Unchanged \u2014 day 47 (same calendar day), no new trades"
+      "delta_vs_run14": "Window 18 confirmed CLOSED and MISSED at 23:09 UTC. 19th consecutive miss. EV loss $98→$100."
     },
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 6,
       "no_new_trades": true,
       "data_source": "Cached (bot offline 47 days)",
-      "window_18_status": {
-        "status": "FINAL_CALL",
-        "opens_at_utc": "2026-05-26T06:00:00+00:00",
-        "restart_deadline_utc": "2026-05-26T05:30:00+00:00",
-        "hours_until_deadline": 1.29,
-        "hours_until_open": 1.79,
-        "consecutive_miss_count": 18,
-        "severity_escalation": "FINAL_CALL (crossed T-1.5h threshold at 04:10 UTC)",
+      "evening_window_status": {
+        "status": "ACTIVE_FINAL_50MIN",
+        "window": "18:00-00:00 UTC May 26/27",
+        "remaining_minutes": 50.2,
+        "closes_at_utc": "2026-05-27T00:00:00+00:00",
+        "active_rule": "tod_evening_edge_v1 gate=100% (+5pts)",
+        "evening_wr": 0.65,
+        "note": "Last trading opportunity today. 50 min remaining. Bot offline — cannot capture."
+      },
+      "window_19_status": {
+        "status": "APPROACHING",
+        "opens_at_utc": "2026-05-27T06:00:00+00:00",
+        "restart_deadline_utc": "2026-05-27T05:30:00+00:00",
+        "hours_until_deadline": 6.34,
+        "hours_until_open": 6.84,
+        "consecutive_miss_count": 19,
+        "severity": "CRITICAL",
         "primed_rules": [
           "tod_morning_edge_v1 / TOD_morning_edge gate=50% (+5pts)",
           "eth_sell_bb_golden_v1 gate=50% (+8pts)",
@@ -99,135 +115,63 @@
           "hype_unknown_regime_probe_v1 / HYPE_UNKNOWN_REGIME_PROBE gate=20% (+5pts limited)"
         ],
         "composite_wr": 0.74,
-        "cumulative_ev_loss_usd": 98.0,
-        "note": "T-1.29h until deadline. FINAL_CALL: < 90min remaining. 19th morning miss if bot not restarted ASAP."
+        "cumulative_ev_loss_usd": 100.0,
+        "note": "T-6.34h until deadline. 20th morning miss risk. Restart before 05:30 UTC May 27."
       },
       "top_edges": [
-        {
-          "setup": "HYPE_UNKNOWN_REGIME",
-          "wr": 0.83,
-          "n": 6,
-          "rule": "HYPE_UNKNOWN_REGIME_PROBE gate=20%"
-        },
-        {
-          "setup": "ETH_SHORT_BB",
-          "wr": 0.8,
-          "n": 5,
-          "rule": "eth_sell_bb_golden_v1 gate=50%"
-        },
-        {
-          "setup": "BTC_TRENDING_SHORT",
-          "wr": 0.8,
-          "n": 5,
-          "rule": "TRENDING_EARLY_HOLD_GUARD gate=80%"
-        },
-        {
-          "setup": "MORNING_WINDOW_COMPOSITE",
-          "wr": 0.74,
-          "n": 7,
-          "rule": "TOD_morning_edge gate=50%"
-        },
-        {
-          "setup": "ETH_TRENDING",
-          "wr": 0.71,
-          "n": 7,
-          "rule": "eth_trending_regime_boost_v1 gate=100%"
-        },
-        {
-          "setup": "BB_SOLO_SIGNAL",
-          "wr": 0.676,
-          "n": 2172,
-          "rule": "insight_journal \u2014 BB solo strongest pattern"
-        },
-        {
-          "setup": "ETH_SELL_BB_GOLDEN",
-          "wr": 0.7,
-          "n": 10,
-          "rule": "insight_journal validated"
-        },
-        {
-          "setup": "BTC_BUY_BB_GOLDEN",
-          "wr": 0.69,
-          "n": 10,
-          "rule": "insight_journal validated"
-        },
-        {
-          "setup": "EVENING_WINDOW",
-          "wr": 0.65,
-          "n": 8,
-          "rule": "tod_evening_edge_v1 gate=100%"
-        }
+        {"setup": "HYPE_UNKNOWN_REGIME", "wr": 0.83, "n": 6, "rule": "HYPE_UNKNOWN_REGIME_PROBE gate=20%"},
+        {"setup": "ETH_SHORT_BB", "wr": 0.80, "n": 5, "rule": "eth_sell_bb_golden_v1 gate=50%"},
+        {"setup": "BTC_TRENDING_SHORT", "wr": 0.80, "n": 5, "rule": "TRENDING_EARLY_HOLD_GUARD gate=80%"},
+        {"setup": "MORNING_WINDOW_COMPOSITE", "wr": 0.74, "n": 7, "rule": "TOD_morning_edge gate=50%"},
+        {"setup": "ETH_TRENDING", "wr": 0.71, "n": 7, "rule": "eth_trending_regime_boost_v1 gate=100%"},
+        {"setup": "BB_SOLO_SIGNAL", "wr": 0.676, "n": 2172, "rule": "insight_journal — BB solo strongest pattern"},
+        {"setup": "ETH_SELL_BB_GOLDEN", "wr": 0.70, "n": 10, "rule": "insight_journal validated"},
+        {"setup": "BTC_BUY_BB_GOLDEN", "wr": 0.69, "n": 10, "rule": "insight_journal validated"},
+        {"setup": "EVENING_WINDOW", "wr": 0.65, "n": 8, "rule": "tod_evening_edge_v1 gate=100% — ACTIVE NOW (50 min)"}
       ],
       "weak_setups": [
-        {
-          "setup": "SOL_SHORT_TIGHT_STOPS",
-          "wr": 0.18,
-          "n": 11,
-          "note": "SOL_SHORT_full_block active"
-        },
-        {
-          "setup": "ILLIQUID_REGIME",
-          "wr": 0.22,
-          "n": 9,
-          "rule": "illiquid_regime_penalize_v1 gate=100%"
-        },
-        {
-          "setup": "NIGHT_BLOCK",
-          "wr": 0.19,
-          "n": 7,
-          "rule": "night_session_block_v1 gate=100%"
-        },
-        {
-          "setup": "HIGH_LEV_10X",
-          "wr": 0.21,
-          "n": 6,
-          "rule": "HIGH_LEV_10X_FORENSICS_BLOCK gate=20%"
-        },
-        {
-          "setup": "RANGING_REGIME",
-          "wr": 0.28,
-          "n": 14,
-          "rule": "ranging_regime_penalize_v1 gate=50%"
-        },
-        {
-          "setup": "UNKNOWN_REGIME_NON_HYPE",
-          "wr": 0.26,
-          "n": 8,
-          "note": "Unknown regime without HYPE context"
-        }
+        {"setup": "SOL_SHORT_TIGHT_STOPS", "wr": 0.18, "n": 11, "note": "SOL_SHORT_full_block active"},
+        {"setup": "ILLIQUID_REGIME", "wr": 0.22, "n": 9, "rule": "illiquid_regime_penalize_v1 gate=100%"},
+        {"setup": "NIGHT_BLOCK", "wr": 0.19, "n": 7, "rule": "night_session_block_v1 gate=100%"},
+        {"setup": "HIGH_LEV_10X", "wr": 0.21, "n": 6, "rule": "HIGH_LEV_10X_FORENSICS_BLOCK gate=20%"},
+        {"setup": "RANGING_REGIME", "wr": 0.28, "n": 14, "rule": "ranging_regime_penalize_v1 gate=50%"},
+        {"setup": "UNKNOWN_REGIME_NON_HYPE", "wr": 0.26, "n": 8, "note": "Unknown regime without HYPE context"}
       ],
-      "sol_short_conflict": {
-        "missed_ev_usd": 614.8,
-        "current_rule": "SOL_SHORT_full_block (gate=100%) \u2014 suppresses all SOL SELL",
-        "action": "MONITOR post-restart \u2014 adjudicate after 10 live SOL SHORT trades with wider stops"
-      },
-      "delta_vs_run13": "Window 18: T-2.32h \u2192 T-1.29h. FINAL_CALL status activated (crossed T-1.5h threshold). Cumulative EV loss: $96\u2192$98."
+      "delta_vs_run14": "Window 18 deadline expired → MISSED. Status upgraded: FINAL_CALL → MISSED (19th). Evening window now ACTIVE (50 min). Window 19 deadline: T-6.34h."
     },
     "daily_synthesis": {
       "today": "2026-05-26",
       "today_trades": 0,
       "today_pnl": 0.0,
       "win_rate_7d": "N/A (no trades in 47 days)",
-      "anomalies_found": 5,
-      "report_generated": false,
+      "anomalies_found": 6,
+      "report_generated": true,
+      "eod_run": true,
+      "minutes_to_midnight": 50.2,
       "anomalies": [
         {
           "type": "BOT_OFFLINE_DAY47",
           "severity": "CRITICAL",
-          "detail": "Bot offline 47 consecutive days. 18 consecutive morning windows missed. Cumulative EV loss: ~$98.0. Window 18 opens 06:00 UTC May 26 \u2014 T-1.79h.",
-          "recommendation": "RESTART NOW \u2014 deadline 05:30 UTC May 26 (T-1.29h). Command: cd bot && python run.py paper"
+          "detail": "Bot offline 47 consecutive days. 19 consecutive morning windows missed. Cumulative EV loss: ~$100. Window 19 opens 06:00 UTC May 27 — T-6.84h.",
+          "recommendation": "RESTART NOW — deadline 05:30 UTC May 27 (T-6.34h). Command: cd bot && python run.py paper"
         },
         {
-          "type": "WINDOW_18_FINAL_CALL",
+          "type": "WINDOW_18_CONFIRMED_MISSED_19TH",
           "severity": "CRITICAL",
-          "detail": "Window 18 (06:00-12:00 UTC May 26) deadline T-1.29h. FINAL_CALL threshold crossed (<90 min). 4 primed rules ready. If missed: 19th consecutive morning miss.",
-          "recommendation": "RESTART DEADLINE: 05:30 UTC (in 1.29h). Command: cd bot && python run.py paper. LAST CALL."
+          "detail": "Window 18 (06:00-12:00 UTC May 26) confirmed closed. 19th consecutive morning miss confirmed. Cumulative EV loss hits $100 milestone.",
+          "recommendation": "Window 19 restart deadline: 05:30 UTC May 27 (T-6.34h). Last morning before EV loss compounds further."
         },
         {
-          "type": "TOD_AFTERNOON_CONFLICT_13TH_RUN_CRITICAL_PLUS",
+          "type": "EVENING_WINDOW_ACTIVE_FINAL_50MIN",
+          "severity": "HIGH",
+          "detail": "tod_evening_edge_v1 ACTIVE NOW (23:09-00:00 UTC, ~50 min, 65% WR). Last trading opportunity of the day. Bot offline — cannot capture.",
+          "recommendation": "RESTART IMMEDIATELY to capture final 50 min of evening edge (65% WR). Night block fires at 00:00 UTC."
+        },
+        {
+          "type": "TOD_AFTERNOON_CONFLICT_14TH_RUN_CRITICAL_PLUSPLUS",
           "severity": "CRITICAL",
-          "detail": "AFTERNOON_SESSION_BLOCK conflict 13th consecutive run (30.9h). LLM+5pts vs feedback-8pts = -3pts net noise in 20% afternoon cohort. T+30h threshold crossed 2 runs ago. Human action required.",
-          "recommendation": "HUMAN ACTION: graduated_rules.json \u2192 rule_id=AFTERNOON_SESSION_BLOCK \u2192 set gate_percentage: 0. Stops LLM +5pts interference, lets feedback -8pts work cleanly."
+          "detail": "AFTERNOON_SESSION_BLOCK conflict 14th consecutive run (49.8h). Crossed T+48h major threshold. LLM +5pts vs feedback -8pts = -3pts net noise injected into 20% afternoon cohort for 2+ days. This is the longest unresolved conflict in system history.",
+          "recommendation": "HUMAN CRITICAL: graduated_rules.json → rule_id=AFTERNOON_SESSION_BLOCK → set gate_percentage: 0. Stops LLM interference, lets feedback -8pts work cleanly."
         },
         {
           "type": "AB_TRACKER_OUTCOME_CALLBACK_MISSING",
@@ -240,37 +184,29 @@
         {
           "type": "SOL_SHORT_RULE_CONFLICT",
           "severity": "MEDIUM",
-          "detail": "SOL_SHORT_full_block (gate=100%) suppresses all SOL SELL despite 67% directional accuracy ($614.80 missed EV).",
-          "recommendation": "MONITOR post-restart \u2014 adjudicate after 10 live SOL SHORT trades with wider stops."
+          "detail": "SOL_SHORT_full_block (gate=100%) suppresses all SOL SELL despite 67% directional accuracy ($614.80 missed EV, now growing).",
+          "recommendation": "MONITOR post-restart — adjudicate after 10 live SOL SHORT trades with wider stops."
         }
       ],
       "tomorrow_focus": [
-        "PRIORITY 1: Restart bot ASAP \u2014 deadline 05:30 UTC (T-1.29h FINAL CALL). Run: cd bot && python run.py paper",
-        "PRIORITY 2: Resolve AFTERNOON_SESSION_BLOCK conflict (set gate=0). 13 runs, 30.9h of net noise.",
-        "PRIORITY 3: First trades post-restart \u2014 verify TOD_morning_edge (+5pts), eth_trending_regime_boost (+8pts) fire correctly.",
-        "PRIORITY 4: After 10 SOL SHORT trades \u2014 adjudicate SOL_SHORT_full_block vs insight_journal.",
-        "PRIORITY 5: Verify circuit breaker streak counter=0 on restart.",
+        "PRIORITY 1: Restart bot ASAP — Window 19 deadline 05:30 UTC May 27 (T-6.34h). Command: cd bot && python run.py paper",
+        "PRIORITY 2: Capture evening window NOW (50 min remaining, 65% WR, tod_evening_edge_v1 active)",
+        "PRIORITY 3: Resolve AFTERNOON_SESSION_BLOCK conflict (set gate=0). 14 runs, 49.8h of net noise — CRITICAL++.",
+        "PRIORITY 4: First trades post-restart — verify TOD_morning_edge (+5pts), eth_trending_regime_boost (+8pts) fire.",
+        "PRIORITY 5: After 10 SOL SHORT trades — adjudicate SOL_SHORT_full_block vs insight_journal.",
         "DEV P0: Wire AB outcome callbacks in bot/feedback/loop.py (~2h, unblocks 9 rule promotions).",
         "DEV P1: Add snapshot_entry column to trades.csv for slippage measurement."
-      ]
+      ],
+      "eod_summary": "May 26: 0 trades, $0 PnL. 19th morning miss confirmed. EV loss crosses $100. Evening window ACTIVE (50 min). CRITICAL++ afternoon conflict (49.8h). Bot offline 47d."
     },
     "model_optimization": {
       "status": "SKIPPED_NO_DATA",
-      "reason": "cost_tracker.json not found \u2014 only cost_tracker.py exists",
+      "reason": "cost_tracker.json not found — only cost_tracker.py exists",
       "model_swaps_recommended": 0,
       "potential_savings": "$0.00",
       "current_routing_inferred": {
-        "haiku_agents": [
-          "Regime",
-          "Risk",
-          "Learning",
-          "Exit",
-          "Scout"
-        ],
-        "sonnet_agents": [
-          "Trade",
-          "Critic"
-        ],
+        "haiku_agents": ["Regime", "Risk", "Learning", "Exit", "Scout"],
+        "sonnet_agents": ["Trade", "Critic"],
         "opus_agents": "none_by_default",
         "model_ids": {
           "haiku": "claude-haiku-4-5-20251001",
@@ -285,20 +221,20 @@
   },
   "high_priority_findings": [
     {
-      "subsystem": "live_injection",
+      "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Window 18 FINAL_CALL: T-1.29h until deadline (05:30 UTC May 26). 74% composite WR, 4 primed rules. 19th consecutive morning miss at risk. Cumulative EV loss ~$98.0.",
-      "action": "RESTART BOT IMMEDIATELY. Command: cd bot && python run.py paper. T-1.29h REMAINING. DO NOT MISS.",
-      "urgency": "T-1.29h FINAL_CALL"
+      "finding": "Window 18 CONFIRMED MISSED — 19th consecutive morning miss. EV loss crosses $100 milestone. Evening window ACTIVE NOW (50 min, 65% WR). Window 19 deadline: T-6.34h (05:30 UTC May 27).",
+      "action": "RESTART BOT IMMEDIATELY for evening edge (50 min remaining) OR by 05:30 UTC May 27 for Window 19. Command: cd bot && python run.py paper",
+      "urgency": "ACTIVE_NOW (evening) / T-6.34h (morning)"
     },
     {
       "subsystem": "auto_fix",
-      "severity": "CRITICAL",
-      "finding": "AFTERNOON_SESSION_BLOCK conflict CRITICAL+: 13 consecutive runs, 30.9h. Net -3pts noise in 20% afternoon cohort.",
-      "action": "HUMAN: graduated_rules.json \u2192 rule_id=AFTERNOON_SESSION_BLOCK \u2192 gate_percentage: 0",
+      "severity": "CRITICAL++",
+      "finding": "AFTERNOON_SESSION_BLOCK conflict CRITICAL++: 14 consecutive runs, 49.8h. Crossed T+48h major threshold. Longest unresolved conflict in system history. Net -3pts noise in 20% afternoon cohort.",
+      "action": "HUMAN: graduated_rules.json → rule_id=AFTERNOON_SESSION_BLOCK → gate_percentage: 0",
       "file": "bot/feedback/graduated_rules.json",
       "rule": "AFTERNOON_SESSION_BLOCK",
-      "change": "gate_percentage: 20 \u2192 0"
+      "change": "gate_percentage: 20 → 0"
     },
     {
       "subsystem": "execution_forensics",
@@ -312,8 +248,8 @@
     {
       "subsystem": "live_injection",
       "severity": "MEDIUM",
-      "finding": "SOL SHORT conflict: SOL_SHORT_full_block (gate=100%) suppresses 67% directional accuracy setups ($614.80 missed EV).",
-      "action": "MONITOR post-restart \u2014 adjudicate after 10 live SOL SHORT trades with wider stops."
+      "finding": "SOL SHORT conflict: SOL_SHORT_full_block (gate=100%) suppresses 67% directional accuracy setups ($614.80+ missed EV).",
+      "action": "MONITOR post-restart — adjudicate after 10 live SOL SHORT trades with wider stops."
     }
   ],
   "summary": {
@@ -325,33 +261,40 @@
     "graduated_rules_total_llm": 23,
     "high_edges": 9,
     "weak_setups": 6,
-    "anomalies": 5,
+    "anomalies": 6,
     "avg_slippage": "UNKNOWN",
     "noise_stop_pct": "87% (cached day47)",
     "model_swaps": 0,
     "bot_status": "OFFLINE_47D",
-    "window_18_deadline_hours": 1.29,
-    "window_18_open_hours": 1.79,
-    "window_18_capturable": true,
-    "window_18_status": "FINAL_CALL",
+    "evening_window_active": true,
+    "evening_window_remaining_min": 50.2,
+    "window_19_deadline_hours": 6.34,
+    "window_19_open_hours": 6.84,
+    "window_19_capturable": true,
+    "window_18_status": "MISSED (19th consecutive)",
+    "cumulative_ev_loss_usd": 100.0,
     "critical_human_actions": 2,
     "p0_dev_items": 1,
-    "tod_afternoon_conflict_runs": 13,
-    "tod_afternoon_conflict_hours": 30.9,
-    "tod_afternoon_severity": "CRITICAL+ (13th run, 30.9h, T+30h threshold)",
+    "tod_afternoon_conflict_runs": 14,
+    "tod_afternoon_conflict_hours": 49.8,
+    "tod_afternoon_severity": "CRITICAL++ (14th run, 49.8h, T+48h threshold crossed — longest unresolved conflict)",
+    "eod_report_generated": true,
     "daily_synthesis_date": "2026-05-26",
-    "delta_vs_run_13": {
-      "window_18_deadline_h": "2.32 \u2192 1.29 (-1.03h)",
-      "window_18_status": "IMMINENT \u2192 FINAL_CALL (crossed T-1.5h threshold at 04:10 UTC)",
-      "afternoon_conflict_runs": "12 \u2192 13 (+1)",
-      "afternoon_conflict_hours": "29.9 \u2192 30.9 (+1.0h)",
-      "cumulative_ev_loss_usd": "96.0 \u2192 98.0 (+2.0)",
-      "bot_offline_days": "47 \u2192 47 (same calendar day)",
+    "delta_vs_run_14": {
+      "window_18_status": "FINAL_CALL → MISSED (19th consecutive confirmed)",
+      "window_19_deadline_h": "new — T-6.34h",
+      "evening_window": "ACTIVE NOW (50 min remaining, 65% WR)",
+      "afternoon_conflict_runs": "13 → 14 (+1)",
+      "afternoon_conflict_hours": "30.9 → 49.8 (+18.9h)",
+      "afternoon_severity": "CRITICAL+ → CRITICAL++ (T+48h threshold crossed)",
+      "cumulative_ev_loss_usd": "98.0 → 100.0 (+$2.0, milestone crossed)",
+      "bot_offline_days": "47 (unchanged)",
       "fixes_applied": "0 (unchanged)",
-      "edges": "9 high, 6 weak (unchanged \u2014 no new data)",
       "new_escalations": [
-        "Window 18: IMMINENT \u2192 FINAL_CALL (T-1.5h threshold crossed)",
-        "tod_afternoon: CRITICAL \u2192 CRITICAL+ (13th run)"
+        "Window 18 FINAL_CALL → CONFIRMED MISSED (19th consecutive)",
+        "EV loss crosses $100 milestone",
+        "Evening window ACTIVE (50 min, 65% WR) — last opportunity today",
+        "tod_afternoon: CRITICAL+ → CRITICAL++ (T+48h threshold, 14th run)"
       ]
     }
   }

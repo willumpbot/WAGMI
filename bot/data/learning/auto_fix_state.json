@@ -1,56 +1,66 @@
 {
-  "last_run": "2026-05-26T03:11:00+00:00",
+  "last_run": "2026-05-26T23:09:45+00:00",
   "fixes_applied_this_run": 0,
   "gates_active": 20,
   "total_applied_all_time": 66,
   "rules": {},
   "current_session_status": {
-    "run_number_today": 2,
-    "new_day": "2026-05-26",
+    "run_number_today": 3,
+    "run_number_total": 15,
+    "date": "2026-05-26",
     "data_changed": false,
     "no_new_trades": true,
     "no_new_audit_files": true,
-    "window_18_status": "IMMINENT \u2014 opens 06:00 UTC (T-2.82h). Restart deadline: 05:30 UTC (T-2.32h). CRITICAL.",
-    "prev_run_delta_minutes": 60.0
+    "window_18_status": "CONFIRMED_MISSED (19th consecutive). Window 19 deadline: 05:30 UTC May 27 (T-6.34h).",
+    "evening_window_status": "ACTIVE — 50 min remaining (23:09-00:00 UTC, 65% WR)",
+    "prev_run_delta_hours": 18.95,
+    "eod_run": true
   },
   "tod_afternoon_milestone": {
-    "id": "TOD_AFTERNOON_12TH_RUN_CRITICAL_ESCALATED",
-    "detected_at": "2026-05-26T03:11:00+00:00",
-    "conflict_run_count": 12,
-    "duration_hours": 29.9,
-    "severity": "CRITICAL",
-    "escalation_reason": "Crossed 30-hour / 12-run threshold. Previous severity: HIGH.",
-    "detail": "AFTERNOON_SESSION_BLOCK conflict persists into 12th consecutive run (29.9h). Confidence=0.85 >= 0.75 auto-threshold but safety protocol blocked auto-disable. LLM +5pts vs feedback -8pts = -3pts net noise in 20% cohort. Signal quality degraded for 29.9h with no resolution. ESCALATED to CRITICAL.",
-    "delta_vs_last_run": "Run 11 \u2192 Run 12. +1 run, +1h. No resolution. Window 18 deadline now T-2.32h.",
+    "id": "TOD_AFTERNOON_14TH_RUN_CRITICAL_PLUSPLUS",
+    "detected_at": "2026-05-26T23:09:45+00:00",
+    "conflict_run_count": 14,
+    "duration_hours": 49.8,
+    "severity": "CRITICAL++",
+    "escalation_reason": "Crossed T+48h threshold (2-day mark). Previous severity: CRITICAL+. Longest unresolved conflict in system history.",
+    "detail": "AFTERNOON_SESSION_BLOCK conflict persists into 14th consecutive run (49.8h). Confidence=0.85 >= 0.75 auto-threshold but safety protocol blocks auto-disable. LLM +5pts vs feedback -8pts = -3pts net noise in 20% cohort. 49.8h of degraded afternoon signal quality with no resolution.",
+    "delta_vs_last_run": "Run 13 → Run 14. +1 run, +18.9h. T+48h threshold crossed. No resolution.",
     "proposed_fix": {
       "file": "bot/feedback/graduated_rules.json",
       "rule_id": "AFTERNOON_SESSION_BLOCK",
-      "change": "gate_percentage: 20 \u2192 0",
+      "change": "gate_percentage: 20 → 0",
       "effect": "Disables LLM +5pts boost. Feedback -8pts continues unimpeded. Removes -3pts net noise from 20% cohort.",
       "confidence": 0.85,
       "auto_eligible": false,
-      "blocked_reason": "CONFLICT_SAFETY_PROTOCOL \u2014 12 consecutive contradictory runs (29.9h) requires human confirmation"
+      "blocked_reason": "CONFLICT_SAFETY_PROTOCOL — 14 consecutive contradictory runs (49.8h) requires human confirmation. T+48h major threshold crossed."
     },
-    "recommendation": "HUMAN CRITICAL: set AFTERNOON_SESSION_BLOCK gate_percentage=0 in bot/feedback/graduated_rules.json"
+    "recommendation": "HUMAN CRITICAL++: set AFTERNOON_SESSION_BLOCK gate_percentage=0 in bot/feedback/graduated_rules.json. OVERDUE."
   },
-  "window_18_alert": {
-    "id": "WINDOW_18_DEADLINE_IMMINENT_2.32H",
-    "detected_at": "2026-05-26T03:11:00+00:00",
+  "window_19_alert": {
+    "id": "WINDOW_19_DEADLINE_T_6.34H",
+    "detected_at": "2026-05-26T23:09:45+00:00",
     "severity": "CRITICAL",
-    "status": "IMMINENT",
-    "escalation_reason": "Crossed T-2.5h threshold (now T-2.32h). Status upgraded: APPROACHING\u2192IMMINENT.",
-    "detail": "Window 18 opens 06:00 UTC May 26. Restart deadline 05:30 UTC. T-2.32h remaining. 19th consecutive morning miss if bot not restarted. Composite WR=74%, 4 primed rules active.",
-    "action": "RESTART BOT NOW \u2014 deadline=05:30 UTC May 26 (T-2.32h). Window 18 = 74% composite WR."
+    "status": "APPROACHING",
+    "detail": "Window 19 opens 06:00 UTC May 27. Restart deadline 05:30 UTC. T-6.34h remaining. 20th consecutive morning miss risk. 4 primed rules active. Composite WR=74%.",
+    "action": "RESTART BOT BEFORE 05:30 UTC May 27 — T-6.34h remaining. Command: cd bot && python run.py paper"
+  },
+  "evening_window_alert": {
+    "id": "EVENING_WINDOW_ACTIVE_50MIN",
+    "detected_at": "2026-05-26T23:09:45+00:00",
+    "severity": "HIGH",
+    "status": "ACTIVE",
+    "detail": "tod_evening_edge_v1 ACTIVE NOW. 50 min remaining (23:09-00:00 UTC). 65% WR. Bot offline — cannot capture.",
+    "action": "RESTART IMMEDIATELY for last 50 min of evening edge OR focus on Window 19 (T-6.34h)."
   },
   "blocked_escalations": [
     {
       "id": "AFTERNOON_SESSION_BLOCK",
-      "reason": "CONFLICT_12TH_CONSECUTIVE",
-      "run_count": 12,
-      "duration_hours": 29.9,
+      "reason": "CONFLICT_14TH_CONSECUTIVE",
+      "run_count": 14,
+      "duration_hours": 49.8,
       "auto_eligible_by_confidence": true,
       "auto_eligible_final": false,
-      "blocked_by": "conflict safety protocol (29.9h, 12 runs without resolution)"
+      "blocked_by": "conflict safety protocol (49.8h, 14 runs — CRITICAL++, T+48h threshold crossed)"
     },
     {
       "id": "BTC_BUY_BB_golden",

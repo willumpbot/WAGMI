@@ -1,0 +1,87 @@
+{
+  "date": "2026-05-26",
+  "generated_at": "2026-05-26T23:09:45+00:00",
+  "run_type": "HOURLY_PERPETUAL_LOOP_EOD",
+  "bot_status": "OFFLINE",
+  "offline_duration_hours": 1127.2,
+  "offline_duration_days": 46.97,
+  "eod_finalized": true,
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "equity": 497.05,
+  "fixes_applied_this_run": 0,
+  "fixes_applied_today_total": 0,
+  "llm_engine_rules_total": 23,
+  "feedback_rules_total": 116,
+  "rule_distribution": {
+    "0_disabled": 24,
+    "20_probe": 22,
+    "50_graduated": 18,
+    "80_active": 28,
+    "100_deployed": 20
+  },
+  "window_status": {
+    "current_utc": "2026-05-26 23:09 UTC",
+    "window_18_status": "CONFIRMED_MISSED (19th consecutive) — 06:00-12:00 UTC May 26",
+    "evening_session": "ACTIVE — tod_evening_edge_v1 +5pts, gate=100%, 50 min remaining (closes 00:00 UTC)",
+    "night_block_fires": "2026-05-27 00:00 UTC (50 min)",
+    "window_19": "2026-05-27 06:00-12:00 UTC",
+    "window_19_restart_deadline": "2026-05-27 05:30 UTC (T-6.34h away)",
+    "consecutive_windows_missed": 19,
+    "cumulative_ev_loss_usd": 100.0,
+    "eod_summary": "Day 47 ends with 0 trades, $0 PnL. Window 18 missed (19th consecutive). EV loss crosses $100 milestone. Evening window active 50 min. Morning conflict 49.8h."
+  },
+  "anomalies": [
+    {
+      "type": "BOT_OFFLINE_DAY47",
+      "severity": "CRITICAL",
+      "detail": "Bot offline 47 consecutive days. 19 consecutive morning windows missed. Cumulative EV loss: ~$100. Window 19 opens 06:00 UTC May 27 — T-6.84h.",
+      "recommendation": "RESTART NOW — deadline 05:30 UTC May 27 (T-6.34h). Command: cd bot && python run.py paper"
+    },
+    {
+      "type": "WINDOW_18_CONFIRMED_MISSED_19TH",
+      "severity": "CRITICAL",
+      "detail": "Window 18 (06:00-12:00 UTC May 26) confirmed closed. 19th consecutive morning miss. Cumulative EV loss crosses $100 milestone.",
+      "recommendation": "Window 19 restart deadline: 05:30 UTC May 27 (T-6.34h)."
+    },
+    {
+      "type": "EVENING_WINDOW_ACTIVE_50MIN",
+      "severity": "HIGH",
+      "detail": "tod_evening_edge_v1 ACTIVE NOW (23:09-00:00 UTC, ~50 min, 65% WR). Last trading opportunity of the day. Bot offline — cannot capture.",
+      "recommendation": "RESTART IMMEDIATELY to capture final ~50 min of evening edge. Night block fires at 00:00 UTC (19% WR)."
+    },
+    {
+      "type": "TOD_AFTERNOON_CONFLICT_14TH_RUN_CRITICAL_PLUSPLUS",
+      "severity": "CRITICAL",
+      "detail": "AFTERNOON_SESSION_BLOCK conflict 14th consecutive run (49.8h total). Crossed T+48h threshold — longest unresolved conflict in system history. LLM +5pts vs feedback -8pts = -3pts net noise in 20% afternoon cohort.",
+      "recommendation": "HUMAN CRITICAL: graduated_rules.json → rule_id=AFTERNOON_SESSION_BLOCK → set gate_percentage: 0",
+      "file": "bot/feedback/graduated_rules.json",
+      "change": "gate_percentage: 20 → 0"
+    },
+    {
+      "type": "AB_TRACKER_OUTCOME_CALLBACK_MISSING",
+      "severity": "HIGH",
+      "detail": "P0 dev: 70 A/B_ACTIVE rules stalled (times_correct=0/stale). 9 gate=50 rules cannot auto-promote. Self-improvement compounding frozen 47 days. 55 high-confidence rules stuck at sub-100% gates.",
+      "recommendation": "P0 DEV: Wire update_times_correct(rule_id, outcome) on trade close in bot/feedback/loop.py. ~2h. Unblocks 9 gate=50 rule promotions.",
+      "file": "bot/feedback/loop.py",
+      "dev_estimate_hours": 2
+    },
+    {
+      "type": "SOL_SHORT_RULE_CONFLICT",
+      "severity": "MEDIUM",
+      "detail": "SOL_SHORT_full_block (gate=100%) suppresses all SOL SELL signals despite 67% directional accuracy. Estimated missed EV: $614.80+ and growing.",
+      "recommendation": "MONITOR post-restart — adjudicate after 10 live SOL SHORT trades with wider stops."
+    }
+  ],
+  "best_trade": null,
+  "worst_trade": null,
+  "tomorrow_focus": [
+    "PRIORITY 1: Restart bot — evening window NOW (50 min, 65% WR) OR Window 19 deadline 05:30 UTC May 27 (T-6.34h).",
+    "PRIORITY 2: Resolve AFTERNOON_SESSION_BLOCK conflict (graduated_rules.json, gate_percentage: 0). 14 runs, 49.8h.",
+    "PRIORITY 3: First trades post-restart — verify TOD_morning_edge (+5pts), eth_trending_regime_boost (+8pts) fire.",
+    "PRIORITY 4: After 10 SOL SHORT trades — adjudicate SOL_SHORT_full_block vs insight_journal ($614.80 EV conflict).",
+    "PRIORITY 5: Verify circuit breaker streak counter=0 on restart.",
+    "DEV P0: Wire AB outcome callbacks in bot/feedback/loop.py (~2h, unblocks 9 rule promotions, unfreezes 47-day stall).",
+    "DEV P1: Add snapshot_entry column to trades.csv for slippage measurement."
+  ]
+}
