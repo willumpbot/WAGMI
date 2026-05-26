@@ -1,34 +1,29 @@
 {
-  "last_run": "2026-05-25T23:09:25.543808+00:00",
-  "run_number_today": 6,
-  "today_date": "2026-05-25",
+  "last_run": "2026-05-26T00:10:43+00:00",
+  "run_number_today": 1,
+  "today_date": "2026-05-26",
   "runs_today_utc": [
-    "01:05",
-    "02:07",
-    "02:09",
-    "03:04",
-    "04:05",
-    "23:09"
+    "00:10"
   ],
-  "run_delta_minutes": 61,
+  "run_delta_minutes": 61.3,
   "data_changed_since_last_run": false,
-  "days_bot_offline": 43,
+  "days_bot_offline": 44,
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
       "gates_active": 21,
       "total_applied_all_time": 66,
-      "status": "NO_NEW_FIXES \u2014 3 blocked escalations persist",
+      "status": "NO_NEW_FIXES — 3 blocked escalations persist",
       "blocked_escalations": [
         {
           "id": "tod_afternoon_edge_v1",
           "confidence": 0.85,
           "meets_auto_threshold": true,
-          "blocked_by": "CONFLICT_SAFETY_PROTOCOL_RUN8",
-          "proposed_fix": "gate_percentage: 20 \u2192 0 in bot/data/llm/graduated_rules.json",
+          "blocked_by": "CONFLICT_SAFETY_PROTOCOL_RUN9",
+          "proposed_fix": "gate_percentage: 20 → 0 in bot/data/llm/graduated_rules.json",
           "severity": "CRITICAL_REQUIRES_HUMAN",
-          "run_count": 8,
-          "duration_hours": 26.9
+          "run_count": 9,
+          "duration_hours": 27.9
         },
         {
           "id": "btc_buy_bb_golden_v1",
@@ -45,15 +40,15 @@
       ]
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 43+)",
+      "avg_slippage": "UNKNOWN — snapshot_entry column missing (day 44+)",
       "noise_stops": "87% early SL hits (<2h) in non-trending regimes (cached)",
       "data_available": false,
-      "days_offline": 43,
-      "hold_time_ratio": "2.2x \u2014 losses exit 2.2x faster than wins (guard active gate=80%)",
+      "days_offline": 44,
+      "hold_time_ratio": "2.2x — losses exit 2.2x faster than wins (guard active gate=80%)",
       "leverage": {
         "medium_3_5x_avg_pnl": 0.79,
         "high_6_10x_avg_pnl": -4.62,
-        "verdict": "High leverage BLOCKED (gate=20%) \u2014 structural risk confirmed"
+        "verdict": "High leverage BLOCKED (gate=20%) — structural risk confirmed"
       },
       "structural_gaps": [
         "snapshot_entry column missing (slippage unmeasurable)",
@@ -64,7 +59,7 @@
     "live_injection": {
       "high_edges_found": 9,
       "weak_setups_found": 6,
-      "data_source": "CACHED (no new trades, bot offline 43 days)",
+      "data_source": "CACHED (no new trades, bot offline 44 days)",
       "top_edges": [
         {
           "setup": "HYPE_UNKNOWN_REGIME",
@@ -82,7 +77,7 @@
           "n": 5
         },
         {
-          "setup": "MORNING_WINDOW_17",
+          "setup": "MORNING_WINDOW_COMPOSITE",
           "wr": 0.74,
           "n": 7
         },
@@ -113,38 +108,34 @@
         }
       ],
       "new_finding": {
-        "id": "SOL_SHORT_WIDER_STOPS",
-        "confidence": 0.85,
-        "detail": "67% true-miss rate, $614.80 missed EV. Thesis correct, exits too tight. Conflicts with sol_short_penalize_v1.",
-        "action": "MONITOR post-restart (10 trades)"
-      },
-      "window_17_primed": {
-        "rules_ready": 4,
-        "composite_wr": 0.74,
-        "opens_utc": "2026-05-25T06:00:00+00:00",
-        "status": "ALREADY_PASSED \u2014 window 17 closed (current UTC 23:08)"
+        "id": "WINDOW_18_PRIMED_AND_CAPTURABLE",
+        "confidence": 0.74,
+        "detail": "Window 18 (06:00-12:00 UTC May 26) opens in 5h50m. 4 rules primed for composite 74% WR. Restart deadline 05:30 UTC. 18 consecutive misses so far.",
+        "action": "RESTART BOT before 05:30 UTC May 26"
       }
     },
     "daily_synthesis": {
       "anomalies_found": 5,
       "report_generated": false,
       "is_eod": false,
-      "bot_status": "OFFLINE day 43",
+      "bot_status": "OFFLINE day 44",
       "today_trades": 0,
       "today_pnl": 0.0,
       "consecutive_window_misses": 18,
       "cumulative_ev_loss_usd": 94.0,
+      "new_day": "2026-05-26",
+      "synthesis_initialized": "2026-05-26T00:10:43+00:00",
       "anomalies": [
         {
-          "type": "BOT_OFFLINE_DAY43",
+          "type": "BOT_OFFLINE_DAY44",
           "severity": "CRITICAL"
         },
         {
-          "type": "WINDOW_17_MISSED_18TH_CONSECUTIVE",
+          "type": "WINDOW_18_DEADLINE_5H20M",
           "severity": "CRITICAL"
         },
         {
-          "type": "TOD_AFTERNOON_CONFLICT_RUN8",
+          "type": "TOD_AFTERNOON_CONFLICT_RUN9",
           "severity": "CRITICAL"
         },
         {
@@ -161,27 +152,28 @@
       "swaps_recommended": 0,
       "potential_savings": "$0.00",
       "data_available": false,
-      "reason": "cost_tracker.json missing \u2014 bot offline 43 days, no API calls recorded",
-      "structural_note": "Agent tier assignments appear correct by design: Haiku for Regime/Risk/Learning/Exit/Scout, Sonnet for Trade/Critic. Cannot compute runtime ROI without live data."
+      "reason": "cost_tracker.json missing — bot offline 44 days, no API calls recorded",
+      "structural_note": "Agent tier assignments appear correct by design: Haiku for Regime/Risk/Learning/Exit/Scout, Sonnet for Trade/Critic. Cannot compute runtime ROI without live data.",
+      "cost_tracker_file": "bot/llm/cost_tracker.py exists (module) — json output file never written"
     }
   },
   "high_priority_findings": [
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot offline day 43. Window 17 (06:00-12:00 UTC) confirmed MISSED \u2014 18th consecutive morning miss. Cumulative EV loss ~$94. Window 18 deadline: 2026-05-26T05:30:00 UTC.",
-      "action": "RESTART BOT \u2014 capture window 18 (next opportunity 06:00 UTC May 26)"
+      "finding": "Bot offline day 44. Window 18 (06:00-12:00 UTC May 26) opens in 5h50m — 19th morning miss if no restart. Restart deadline 05:30 UTC May 26 (5h20m away). Cumulative EV loss $94.",
+      "action": "RESTART BOT — capture window 18 before 05:30 UTC May 26"
     },
     {
       "subsystem": "auto_fix",
       "severity": "CRITICAL",
-      "finding": "tod_afternoon_edge_v1 conflict: run 8 (26.9h). conf=0.85 \u2265 0.75 threshold but blocked by conflict safety protocol. LLM +5pts vs feedback -8pts = -3pts noise injected into 20% cohort. Requires human override.",
+      "finding": "tod_afternoon_edge_v1 conflict: run 9 (27.9h). conf=0.85 ≥ 0.75 threshold but blocked by conflict safety protocol. LLM +5pts vs feedback -8pts = -3pts noise injected into 20% cohort. 9 consecutive contradictory runs.",
       "action": "HUMAN: set tod_afternoon_edge_v1 gate_percentage=0 in bot/data/llm/graduated_rules.json"
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "AB outcome callbacks not firing \u2014 all 23 LLM rules show times_correct=0. 9 graduated rules (gate=50%) cannot auto-promote without live outcome data. Rules stalled since day-43 offline began.",
+      "finding": "AB outcome callbacks not firing — all 23 LLM rules show times_correct=0. 9 graduated rules (gate=50%) cannot auto-promote without live outcome data. Rules stalled since day-44 offline began.",
       "action": "DEV P0: wire outcome callbacks to LLM engine times_correct field (~2h)"
     },
     {
@@ -193,8 +185,8 @@
     {
       "subsystem": "model_optimization",
       "severity": "LOW",
-      "finding": "cost_tracker.json absent. Per-agent model ROI unmeasurable. No model swaps recommended based on structural analysis.",
-      "action": "Wire cost_tracker.json logging on bot restart"
+      "finding": "cost_tracker.json absent (cost_tracker.py module exists but never writes output file). Per-agent model ROI unmeasurable. No model swaps recommended based on structural analysis.",
+      "action": "Wire cost_tracker.json logging on bot restart — add json write to cost_tracker.py"
     }
   ]
 }

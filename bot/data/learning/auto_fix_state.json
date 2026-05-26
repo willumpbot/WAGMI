@@ -1,51 +1,53 @@
 {
-  "last_run": "2026-05-25T23:09:40.917613+00:00",
+  "last_run": "2026-05-26T00:10:43+00:00",
   "fixes_applied_this_run": 0,
   "gates_active": 21,
   "total_applied_all_time": 66,
   "rules": {},
   "current_session_status": {
-    "run_6_of_day": true,
+    "run_1_of_day": true,
+    "new_day": "2026-05-26",
     "data_changed": false,
     "no_new_trades": true,
     "no_new_audit_files": true,
-    "window_17_status": "MISSED \u2014 18th consecutive (23:08 UTC, window closed at 12:00 UTC)"
+    "window_18_status": "APPROACHING — opens 06:00 UTC (5h50m away). Restart deadline: 05:30 UTC (5h20m away).",
+    "prev_run_delta_minutes": 61.3
   },
   "tod_afternoon_milestone": {
-    "id": "TOD_AFTERNOON_8TH_RUN_CRITICAL",
-    "detected_at": "2026-05-25T23:09:40.917613+00:00",
-    "conflict_run_count": 8,
-    "duration_hours": 26.9,
+    "id": "TOD_AFTERNOON_9TH_RUN_CRITICAL",
+    "detected_at": "2026-05-26T00:10:43+00:00",
+    "conflict_run_count": 9,
+    "duration_hours": 27.9,
     "severity": "CRITICAL",
-    "detail": "tod_afternoon_edge_v1 conflict persists into 8th consecutive run (26.9h). Confidence=0.85 \u2265 0.75 auto-threshold but safety protocol blocked auto-disable. LLM +5pts vs feedback -8pts = -3pts noise in 20% cohort.",
-    "delta_vs_last_run": "Run 7 \u2192 Run 8. No resolution. Window 17 also missed (18th consecutive).",
+    "detail": "tod_afternoon_edge_v1 conflict persists into 9th consecutive run (27.9h). Confidence=0.85 ≥ 0.75 auto-threshold but safety protocol blocked auto-disable. LLM +5pts vs feedback -8pts = -3pts noise in 20% cohort. No resolution since first detection.",
+    "delta_vs_last_run": "Run 8 → Run 9. +1 run, +1h. No resolution. New day May 26.",
     "proposed_fix": {
       "file": "bot/data/llm/graduated_rules.json",
       "rule_id": "tod_afternoon_edge_v1",
-      "change": "gate_percentage: 20 \u2192 0",
+      "change": "gate_percentage: 20 → 0",
       "effect": "Disables LLM +5pts boost. Feedback -8pts continues. Removes noise from 20% cohort.",
       "confidence": 0.85,
       "auto_eligible": false,
-      "blocked_reason": "CONFLICT \u2014 requires human confirmation (8 consecutive contradictory runs)"
+      "blocked_reason": "CONFLICT — requires human confirmation (9 consecutive contradictory runs, 27.9h)"
     },
     "recommendation": "HUMAN CRITICAL: set tod_afternoon_edge_v1 gate_percentage=0 in bot/data/llm/graduated_rules.json"
   },
   "new_observation": {
-    "id": "SOL_SHORT_EXIT_TIMING_CONFLICT_WITH_PENALIZE_RULE",
-    "detected_at": "2026-05-25T23:09:40.917613+00:00",
-    "severity": "MEDIUM",
-    "detail": "insight_journal (conf=0.85): SOL_short 67% true-miss rate, avg $30.74/trade missed, total $614.80. Directional thesis often correct, exits too tight. sol_short_penalize_v1 (gate=50%) may be penalizing valid setups.",
-    "action": "MONITOR \u2014 flag for human review after 10 post-restart SOL SHORT trades"
+    "id": "WINDOW_18_CRITICAL_DEADLINE",
+    "detected_at": "2026-05-26T00:10:43+00:00",
+    "severity": "CRITICAL",
+    "detail": "Window 18 opens 06:00 UTC May 26. Restart deadline 05:30 UTC. 5h20m remaining. 19th consecutive morning miss if bot not restarted by deadline.",
+    "action": "RESTART BOT NOW — restart_deadline=05:30 UTC May 26. Window 18 = 74% composite WR."
   },
   "blocked_escalations": [
     {
       "id": "tod_afternoon_edge_v1",
-      "reason": "CONFLICT_8TH_CONSECUTIVE",
-      "run_count": 8,
-      "duration_hours": 26.9,
+      "reason": "CONFLICT_9TH_CONSECUTIVE",
+      "run_count": 9,
+      "duration_hours": 27.9,
       "auto_eligible_by_confidence": true,
       "auto_eligible_final": false,
-      "blocked_by": "conflict safety protocol"
+      "blocked_by": "conflict safety protocol (27.9h, 9 runs)"
     },
     {
       "id": "btc_buy_bb_golden_v1",

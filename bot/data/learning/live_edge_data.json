@@ -1,23 +1,25 @@
 {
-  "last_run": "2026-05-25T23:10:07.307326+00:00",
-  "data_source": "Cached (bot offline day 43, last_updated: 2026-05-25T23:10:07.307326+00:00)",
+  "last_run": "2026-05-26T00:10:43+00:00",
+  "data_source": "Cached (bot offline day 44, last_updated: 2026-05-26T00:10:43+00:00)",
   "high_edges_found": 9,
   "weak_setups_found": 6,
   "no_new_trades": true,
-  "delta_vs_last_run": "No change \u2014 no new trades. Window 17 now MISSED (18th consecutive).",
-  "window_17_status": {
-    "status": "MISSED",
-    "missed_at_utc": "2026-05-25T12:00:00+00:00",
+  "delta_vs_last_run": "No change — no new trades. Window 18 now APPROACHING (06:00 UTC, 5h50m away). New day May 26.",
+  "window_18_status": {
+    "status": "APPROACHING",
+    "opens_at_utc": "2026-05-26T06:00:00+00:00",
+    "restart_deadline_utc": "2026-05-26T05:30:00+00:00",
+    "hours_until_open": 5.83,
+    "hours_until_deadline": 5.33,
     "consecutive_miss_count": 18,
-    "next_window_18": "2026-05-26T06:00:00+00:00",
-    "next_restart_deadline": "2026-05-26T05:30:00+00:00",
     "primed_rules": [
       "tod_morning_edge_v1 gate=50% (+5pts)",
       "eth_sell_bb_golden_v1 gate=50% (+8pts)",
       "eth_trending_regime_boost_v1 gate=100% (+8pts)",
       "hype_unknown_regime_probe_v1 gate=20% (+5pts limited)"
     ],
-    "composite_wr": 0.74
+    "composite_wr": 0.74,
+    "note": "CAPTURABLE if restart happens before 05:30 UTC May 26"
   },
   "new_insight_journal_finding": {
     "setup": "SOL_SHORT_WIDER_STOPS",
@@ -26,7 +28,7 @@
     "detail": "SOL_short 67% true-miss rate ($614.80 total missed). Directional often correct, exits too tight.",
     "current_rule": "sol_short_penalize_v1 gate=50% penalizes SOL SELL",
     "conflict": "Insight says SOL SHORT thesis correct; penalize rule suppresses valid setups",
-    "action": "MONITOR post-restart before adjudicating \u2014 need 10 post-restart SOL SHORT trades"
+    "action": "MONITOR post-restart before adjudicating — need 10 post-restart SOL SHORT trades"
   },
   "top_edges": [
     {
@@ -63,7 +65,7 @@
       "setup": "BB_SOLO_SIGNAL",
       "wr": 0.676,
       "n": 2172,
-      "rule": "Insight journal \u2014 BB solo strongest pattern"
+      "rule": "Insight journal — BB solo strongest pattern"
     },
     {
       "setup": "ETH_SELL_BB_GOLDEN",
@@ -119,7 +121,7 @@
       "setup": "BB_MTQ_COMBO",
       "wr": 0.35,
       "n": 2172,
-      "rule": "Insight: BB+MTQ combo is contra-indicator \u2014 skip"
+      "rule": "Insight: BB+MTQ combo is contra-indicator — skip"
     }
   ],
   "anti_edge_discovery": {
@@ -138,5 +140,5 @@
       "rule_needed": "CONSIDER: confidence de-weighting rule (conflicts with current LLM confidence usage)"
     }
   },
-  "last_updated": "2026-05-25T23:10:07.307326+00:00"
+  "last_updated": "2026-05-26T00:10:43+00:00"
 }

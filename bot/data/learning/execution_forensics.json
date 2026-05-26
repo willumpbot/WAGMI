@@ -1,13 +1,13 @@
 {
-  "last_run": "2026-05-25T23:10:21.146521+00:00",
+  "last_run": "2026-05-26T00:10:43+00:00",
   "data_available": false,
-  "data_source": "Cached (bot offline 43 days, trades.csv missing)",
-  "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 43+)",
+  "data_source": "Cached (bot offline 44 days, trades.csv missing)",
+  "avg_slippage": "UNKNOWN — snapshot_entry column missing (day 44+)",
   "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes (stable cached estimate)",
   "hold_time_forensics": {
     "win_median_hold_h": 3.3,
     "loss_median_hold_h": 1.5,
-    "ratio": "2.2x \u2014 losses exit 2.2x faster than wins",
+    "ratio": "2.2x — losses exit 2.2x faster than wins",
     "action": "TRENDING_EARLY_HOLD_GUARD active (gate=80%)"
   },
   "leverage_calibration": {
@@ -21,9 +21,9 @@
     }
   },
   "structural_gaps": [
-    "snapshot_entry column missing (slippage unmeasurable \u2014 day 43+)",
-    "llm_regime column empty (regime rules unmeasurable \u2014 day 43+)",
-    "AB result tracker outcome callbacks not firing (all gated rules stalled \u2014 day 43+)"
+    "snapshot_entry column missing (slippage unmeasurable — day 44+)",
+    "llm_regime column empty (regime rules unmeasurable — day 44+)",
+    "AB result tracker outcome callbacks not firing (all gated rules stalled — day 44+)"
   ],
   "ab_tracker_status": {
     "severity": "HIGH",
@@ -33,14 +33,16 @@
     "fix_estimate": "~2h dev work to wire outcome callbacks",
     "priority": "P0"
   },
-  "days_offline": 43,
+  "days_offline": 44,
   "window_18_forensic": {
     "window_18_opens_utc": "2026-05-26T06:00:00+00:00",
     "restart_deadline_utc": "2026-05-26T05:30:00+00:00",
-    "hours_until_window_18": 6.9,
+    "hours_until_window_18": 5.83,
+    "hours_until_deadline": 5.33,
     "consecutive_morning_misses": 18,
     "cumulative_ev_loss_usd": 94.0,
-    "severity": "CRITICAL \u2014 window 17 now confirmed missed"
+    "severity": "CRITICAL — restart deadline 5h20m away (00:10 UTC May 26)",
+    "note": "If restarted before 05:30 UTC, Window 18 is capturable. 4 primed rules ready."
   },
-  "last_updated": "2026-05-25T23:10:21.146521+00:00"
+  "last_updated": "2026-05-26T00:10:43+00:00"
 }
