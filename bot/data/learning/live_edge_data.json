@@ -1,143 +1,127 @@
 {
-  "last_run": "2026-05-27T01:12:03+00:00",
-  "data_source": "Cached (bot offline day 48, last_updated: 2026-05-27T00:12:20+00:00)",
-  "high_edges_found": 9,
-  "weak_setups_found": 6,
-  "no_new_trades": true,
-  "delta_vs_last_run": "Run 17. Window 19 deadline: T-5.29h to T-4.33h (-0.97h). Night block continues.",
-  "current_session_state": {
-    "utc_time": "2026-05-27 00:12 UTC",
-    "active_tod_rule": "night_session_block_v1 gate=100% (-8pts or skip, 19% WR)",
-    "active_window": "NIGHT_BLOCK (00:00-06:00 UTC)",
-    "trading_expected": false,
-    "note": "Night block active. No profitable signals expected 00:00-06:00 UTC. Edge resumes at morning window open (06:00 UTC)."
-  },
-  "evening_window_status": {
-    "status": "CONFIRMED_MISSED",
-    "window": "18:00-00:00 UTC May 26/27",
-    "closed_at_utc": "2026-05-27T00:00:00+00:00",
-    "confirmed_at_utc": "2026-05-27T00:12:20+00:00",
-    "prev_status": "ACTIVE_FINAL_50MIN (last run 23:09 UTC)",
-    "rule": "tod_evening_edge_v1 gate=100% (+5pts)",
-    "evening_wr": 0.65,
-    "estimated_missed_ev_usd": 3.13,
-    "note": "Window closed 12 min ago. Bot offline \u2014 missed final 50 min (65% WR). Night block now active."
-  },
-  "window_19_status": {
-    "status": "APPROACHING",
-    "opens_at_utc": "2026-05-27T06:00:00+00:00",
-    "restart_deadline_utc": "2026-05-27T05:30:00+00:00",
-    "hours_until_deadline": 4.33,
-    "hours_until_open": 4.83,
-    "consecutive_morning_miss_count": 19,
-    "severity": "CRITICAL",
-    "primed_rules": [
-      "tod_morning_edge_v1 / TOD_morning_edge gate=50% (+5pts)",
-      "eth_sell_bb_golden_v1 gate=50% (+8pts)",
-      "eth_trending_regime_boost_v1 gate=100% (+8pts)",
-      "hype_unknown_regime_probe_v1 gate=20% (+5pts limited)"
+    "last_run": "2026-05-27T02:11:56+00:00",
+    "data_source": "Cached (bot offline day 48, last_updated: 2026-05-27T00:12:20+00:00)",
+    "high_edges_found": 9,
+    "weak_setups_found": 6,
+    "no_new_trades": true,
+    "delta_vs_last_run": "Run 18. Window 19 deadline: T-4.33h to T-3.32h (-1.01h). Night block continues 02:09 UTC.",
+    "current_session_state": {
+        "utc_time": "2026-05-27 02:09 UTC",
+        "active_tod_rule": "night_session_block_v1 gate=100% (-8pts or skip, 19% WR)",
+        "active_window": "NIGHT_BLOCK (00:00-06:00 UTC)",
+        "trading_expected": false,
+        "note": "Night block active. No profitable signals expected 00:00-06:00 UTC. Edge resumes at morning window open (06:00 UTC)."
+    },
+    "window_19_status": {
+        "status": "APPROACHING",
+        "opens_at_utc": "2026-05-27T06:00:00+00:00",
+        "restart_deadline_utc": "2026-05-27T05:30:00+00:00",
+        "hours_until_deadline": 3.32,
+        "hours_until_open": 3.82,
+        "consecutive_morning_miss_count": 19,
+        "severity": "CRITICAL",
+        "primed_rules": [
+            "tod_morning_edge_v1 / TOD_morning_edge gate=50% (+5pts)",
+            "eth_sell_bb_golden_v1 gate=50% (+8pts)",
+            "eth_trending_regime_boost_v1 gate=100% (+8pts)",
+            "hype_unknown_regime_probe_v1 gate=20% (+5pts limited)"
+        ],
+        "composite_wr": 0.74,
+        "cumulative_morning_ev_loss_usd": 100.0,
+        "note": "T-3.32h until restart deadline. 20th morning miss risk. Restart: cd bot && python run.py paper"
+    },
+    "top_edges": [
+        {
+            "setup": "HYPE_UNKNOWN_REGIME",
+            "wr": 0.83,
+            "n": 6,
+            "rule": "HYPE_UNKNOWN_REGIME_PROBE gate=20%"
+        },
+        {
+            "setup": "ETH_SHORT_BB",
+            "wr": 0.8,
+            "n": 5,
+            "rule": "ETH_SELL_BB_GOLDEN gate=50%"
+        },
+        {
+            "setup": "BTC_TRENDING_SHORT",
+            "wr": 0.8,
+            "n": 5,
+            "rule": "eth_trending_regime_boost_v1"
+        },
+        {
+            "setup": "MORNING_WINDOW_COMPOSITE",
+            "wr": 0.74,
+            "n": 7,
+            "rule": "tod_morning_edge_v1 gate=50%"
+        },
+        {
+            "setup": "ETH_TRENDING",
+            "wr": 0.71,
+            "n": 7,
+            "rule": "eth_trending_regime_boost_v1 gate=100%"
+        },
+        {
+            "setup": "BB_SOLO_SIGNAL",
+            "wr": 0.676,
+            "n": 2172,
+            "rule": "BB_solo_signal_boost gate=80%"
+        },
+        {
+            "setup": "ETH_SELL_BB_GOLDEN",
+            "wr": 0.7,
+            "n": 10,
+            "rule": "eth_sell_bb_golden_v1"
+        },
+        {
+            "setup": "BTC_BUY_BB_GOLDEN",
+            "wr": 0.69,
+            "n": 10,
+            "rule": "BTC_BUY_BB_golden (blocked anti-bias)"
+        },
+        {
+            "setup": "EVENING_WINDOW",
+            "wr": 0.65,
+            "n": 8,
+            "rule": "tod_evening_edge_v1 gate=100%"
+        }
     ],
-    "composite_wr": 0.74,
-    "cumulative_morning_ev_loss_usd": 100.0,
-    "note": "T-5.29h until restart deadline. 20th morning miss risk. Last chance for Window 19 is 05:30 UTC restart."
-  },
-  "top_edges": [
-    {
-      "setup": "HYPE_UNKNOWN_REGIME",
-      "wr": 0.83,
-      "n": 6,
-      "rule": "HYPE_UNKNOWN_REGIME_PROBE gate=20%"
-    },
-    {
-      "setup": "ETH_SHORT_BB",
-      "wr": 0.8,
-      "n": 5,
-      "rule": "eth_sell_bb_golden_v1 gate=50%"
-    },
-    {
-      "setup": "BTC_TRENDING_SHORT",
-      "wr": 0.8,
-      "n": 5,
-      "rule": "TRENDING_EARLY_HOLD_GUARD gate=80%"
-    },
-    {
-      "setup": "MORNING_WINDOW_COMPOSITE",
-      "wr": 0.74,
-      "n": 7,
-      "rule": "TOD_morning_edge gate=50%"
-    },
-    {
-      "setup": "ETH_TRENDING",
-      "wr": 0.71,
-      "n": 7,
-      "rule": "eth_trending_regime_boost_v1 gate=100%"
-    },
-    {
-      "setup": "BB_SOLO_SIGNAL",
-      "wr": 0.676,
-      "n": 2172,
-      "rule": "insight_journal \u2014 BB solo strongest pattern"
-    },
-    {
-      "setup": "ETH_SELL_BB_GOLDEN",
-      "wr": 0.7,
-      "n": 10,
-      "rule": "insight_journal validated"
-    },
-    {
-      "setup": "BTC_BUY_BB_GOLDEN",
-      "wr": 0.69,
-      "n": 10,
-      "rule": "insight_journal validated"
-    },
-    {
-      "setup": "EVENING_WINDOW",
-      "wr": 0.65,
-      "n": 8,
-      "rule": "tod_evening_edge_v1 gate=100% \u2014 CLOSED (next: 18:00 UTC May 27)"
-    }
-  ],
-  "worst_setups": [
-    {
-      "setup": "NIGHT_00_06UTC",
-      "wr": 0.19,
-      "n": 27,
-      "rule": "night_session_block_v1 gate=100% ACTIVE NOW"
-    },
-    {
-      "setup": "HYPE_BUY",
-      "wr": 0.23,
-      "n": 35,
-      "rule": "hype_long_veto_v1 gate=100% ACTIVE"
-    },
-    {
-      "setup": "SOL_SHORT_TIGHT_STOPS",
-      "wr": 0.18,
-      "n": 11,
-      "rule": "SOL_SHORT_full_block gate=100% ACTIVE"
-    },
-    {
-      "setup": "ILLIQUID_REGIME",
-      "wr": 0.22,
-      "n": 9,
-      "rule": "illiquid_regime_penalize_v1 gate=100% ACTIVE"
-    },
-    {
-      "setup": "HIGH_LEV_10X",
-      "wr": 0.21,
-      "n": 6,
-      "rule": "HIGH_LEV_10X_FORENSICS_BLOCK gate=20%"
-    },
-    {
-      "setup": "RANGING_REGIME",
-      "wr": 0.28,
-      "n": 14,
-      "rule": "ranging_regime_penalize_v1 gate=50%"
-    }
-  ],
-  "sol_short_conflict": {
-    "missed_ev_usd": 614.8,
-    "current_rule": "SOL_SHORT_full_block (gate=100%) \u2014 suppresses all SOL SELL",
-    "action": "MONITOR post-restart \u2014 adjudicate after 10 live SOL SHORT trades with wider stops"
-  }
+    "weak_setups": [
+        {
+            "setup": "SOL_SHORT_TIGHT_STOPS",
+            "wr": 0.18,
+            "n": 11,
+            "rule": "SOL_SHORT_full_block gate=100%"
+        },
+        {
+            "setup": "ILLIQUID_REGIME",
+            "wr": 0.22,
+            "n": 9,
+            "rule": "ILLIQUID_REGIME_REDUCE gate=80%"
+        },
+        {
+            "setup": "NIGHT_BLOCK",
+            "wr": 0.19,
+            "n": 7,
+            "rule": "night_session_block_v1 gate=100%"
+        },
+        {
+            "setup": "HIGH_LEV_10X",
+            "wr": 0.21,
+            "n": 6,
+            "rule": "HIGH_LEV_10X_FORENSICS_BLOCK gate=20%"
+        },
+        {
+            "setup": "RANGING_REGIME",
+            "wr": 0.28,
+            "n": 14,
+            "rule": "RANGING_regime_reduce gate=50%"
+        },
+        {
+            "setup": "UNKNOWN_REGIME_NON_HYPE",
+            "wr": 0.26,
+            "n": 8,
+            "rule": "UNKNOWN_REGIME_BLOCK gate=80%"
+        }
+    ]
 }

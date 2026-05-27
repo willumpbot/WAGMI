@@ -1,86 +1,65 @@
 {
-  "last_run": "2026-05-27T01:12:03+00:00",
-  "data_available": false,
-  "data_source": "Cached (bot offline 48 days, trades.csv missing)",
-  "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 48+)",
-  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes (stable cached estimate)",
-  "hold_time_forensics": {
-    "win_median_hold_h": 3.3,
-    "loss_median_hold_h": 1.5,
-    "ratio": "2.2x \u2014 losses exit 2.2x faster than wins",
-    "action": "TRENDING_EARLY_HOLD_GUARD active (gate=80%)"
-  },
-  "leverage_calibration": {
-    "medium_3_5x": {
-      "avg_pnl": 0.79,
-      "verdict": "OPTIMAL"
+    "last_run": "2026-05-27T02:11:56+00:00",
+    "data_available": false,
+    "data_source": "Cached (bot offline 48 days, trades.csv missing)",
+    "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 48+)",
+    "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes (stable cached estimate)",
+    "hold_time_forensics": {
+        "win_median_hold_h": 3.3,
+        "loss_median_hold_h": 1.5,
+        "ratio": "2.2x \u2014 losses exit 2.2x faster than wins",
+        "action": "TRENDING_EARLY_HOLD_GUARD active (gate=80%)"
     },
-    "high_6_10x": {
-      "avg_pnl": -4.62,
-      "verdict": "BLOCK (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"
-    }
-  },
-  "new_forensic_finding": {
-    "finding": "EVENING_WINDOW_CONFIRMED_MISSED",
-    "severity": "HIGH",
-    "detail": "Evening window (18:00-00:00 UTC May 26/27) CONFIRMED MISSED at 00:00 UTC. Was still ACTIVE (50 min remaining) in previous run (23:09 UTC). Bot offline \u2014 could not trade. Estimated missed EV: ~$3.13 (65% WR \u00d7 ~1 trade \u00d7 $4.81 avg net). Night block now ACTIVE (00:00-06:00 UTC, 19% WR).",
-    "recovery": "Window 19 opens 06:00 UTC May 27 (T-5.79h). Restart deadline: 05:30 UTC (T-5.29h). 4 primed rules active."
-  },
-  "ev_loss_tracker": {
-    "morning_windows_missed": 19,
-    "ev_loss_morning_usd": 100.0,
-    "ev_loss_evening_this_run_usd": 3.13,
-    "ev_loss_total_usd": 103.13,
-    "note": "Running total. Evening window added $3.13 this run (50 min \u00d7 65% WR \u00d7 1 expected trade)."
-  },
-  "structural_gaps": [
-    "snapshot_entry column missing (slippage unmeasurable \u2014 day 48+)",
-    "llm_regime column empty (regime rules unmeasurable \u2014 day 48+)",
-    "AB result tracker outcome callbacks not firing (all gated rules stalled \u2014 P0 dev, day 48)"
-  ],
-  "ab_tracker_status": {
-    "severity": "HIGH",
-    "detail": "All 70 A/B_ACTIVE rules show times_correct=0/stale. AB_RESULT_TRACKER_CODE marked APPLIED but outcome callbacks not updating times_correct field. 9 gate=50 rules cannot auto-promote.",
-    "stalled_rules": 9,
-    "stalled_gate": "50% (cannot auto-promote without outcome data)",
-    "high_conf_stuck": [
-      {
-        "rule_id": "BB_solo_signal_boost",
-        "confidence": 95,
-        "gate": 80
-      },
-      {
-        "rule_id": "ETH_SHORT_BB_golden",
-        "confidence": 95,
-        "gate": 80
-      },
-      {
-        "rule_id": "BB_solo_trust",
-        "confidence": 95,
-        "gate": 50
-      },
-      {
-        "rule_id": "BB_MTQ_combo_block",
-        "confidence": 92,
-        "gate": 80
-      },
-      {
-        "rule_id": "HYPE_SELL_BB_block",
-        "confidence": 92,
-        "gate": 80
-      }
+    "leverage_calibration": {
+        "medium_3_5x": {
+            "avg_pnl": 0.79,
+            "verdict": "OPTIMAL"
+        },
+        "high_6_10x": {
+            "avg_pnl": -4.62,
+            "verdict": "BLOCK (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"
+        }
+    },
+    "ev_loss_tracker": {
+        "morning_windows_missed": 19,
+        "ev_loss_morning_usd": 100.0,
+        "ev_loss_evening_this_run_usd": 3.13,
+        "ev_loss_total_usd": 103.13,
+        "note": "Unchanged run 18 - no new windows closed since 00:12 UTC."
+    },
+    "structural_gaps": [
+        "snapshot_entry column missing (slippage unmeasurable \u2014 day 48+)",
+        "llm_regime column empty (regime rules unmeasurable \u2014 day 48+)",
+        "AB result tracker outcome callbacks not firing (all gated rules stalled \u2014 P0 dev, day 48)"
     ],
-    "fix_estimate": "~2h dev work to wire outcome callbacks",
-    "priority": "P0",
-    "days_stalled": 48
-  },
-  "days_offline": 48,
-  "last_updated": "2026-05-27T00:12:20+00:00",
-  "window_19_countdown": {
-    "deadline_utc": "2026-05-27T05:30:00+00:00",
-    "open_utc": "2026-05-27T06:00:00+00:00",
-    "hours_until_deadline": 4.33,
-    "hours_until_open": 4.83,
-    "status": "APPROACHING - T-4.33h until restart deadline"
-  }
+    "ab_tracker_status": {
+        "severity": "HIGH",
+        "detail": "All 70 A/B_ACTIVE rules show times_correct=0/stale. 9 gate=50 rules cannot auto-promote.",
+        "stalled_rules": 9,
+        "stalled_gate": "50% (cannot auto-promote without outcome data)",
+        "high_conf_stuck": [
+            {
+                "rule_id": "BB_solo_signal_boost",
+                "confidence": 95,
+                "gate": 80
+            },
+            {
+                "rule_id": "ETH_SHORT_BB_golden",
+                "confidence": 95,
+                "gate": 80
+            },
+            {
+                "rule_id": "BB_solo_trust",
+                "confidence": 95,
+                "gate": 50
+            }
+        ]
+    },
+    "window_19_countdown": {
+        "deadline_utc": "2026-05-27T05:30:00+00:00",
+        "open_utc": "2026-05-27T06:00:00+00:00",
+        "hours_until_deadline": 3.32,
+        "hours_until_open": 3.82,
+        "status": "APPROACHING - T-3.32h until restart deadline"
+    }
 }
