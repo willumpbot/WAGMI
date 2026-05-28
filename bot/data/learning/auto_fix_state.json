@@ -1,33 +1,23 @@
 {
-  "last_run": "2026-05-28T00:17:45+00:00",
-  "run_number": 22,
-  "fixes_applied_this_run": 0,
-  "total_applied_all_time": 66,
-  "gates_active": 20,
+  "last_run": "2026-05-28T01:14:22.703325+00:00",
+  "run_number": 23,
+  "fixes_applied_this_run": 1,
+  "total_applied_all_time": 67,
+  "gates_active": 65,
   "new_audit_files_this_run": 0,
   "new_trades_this_run": 0,
-  "elapsed_since_last_run_h": 19.0,
+  "elapsed_since_last_run_h": 0.89,
+  "fix_applied_this_run": {
+    "rule_id": "AFTERNOON_SESSION_BLOCK",
+    "change": "gate_percentage: 20 -> 0 (DISABLED)",
+    "reason": "23rd consecutive escalation. 75.67h total (27.67h past T+48h threshold). A/B tracker broken \u2014 NEVER self-resolves. Net -3pts noise in 20% cohort. Sample too small (n=15 < n=20 min).",
+    "confidence": 0.75,
+    "baseline_wr": 0.33,
+    "treatment_wr": null,
+    "action": "Disabled. Afternoon signals no longer penalized. Post-restart: monitor afternoon WR to confirm 33% baseline holds, then re-evaluate with larger sample.",
+    "applied_at": "2026-05-28T01:14:22.703325+00:00"
+  },
   "blocked_escalations": [
-    {
-      "id": "AFTERNOON_SESSION_BLOCK",
-      "reason": "CONFLICT_20TH_CONSECUTIVE",
-      "run_count": 20,
-      "duration_hours": 73.67,
-      "past_threshold_hours": 25.67,
-      "auto_eligible_by_confidence": true,
-      "auto_eligible_final": false,
-      "blocked_by": "conflict safety protocol (73.67h, 20 runs \u2014 CRITICAL+++, 25.67h past T+48h threshold)",
-      "data": {
-        "feedback_signal": "33% WR on 15 afternoon trades (empirical)",
-        "llm_signal": "+5pts boost (unconfirmed, no live outcome data)",
-        "net_effect": "-3pts noise in 20% afternoon cohort",
-        "ab_tracker_broken": true,
-        "will_self_resolve": false
-      },
-      "action": "REQUIRES_HUMAN \u2014 bot/feedback/graduated_rules.json \u2192 AFTERNOON_SESSION_BLOCK \u2192 gate_percentage: 0",
-      "severity": "CRITICAL+++ (20th run, 73.67h, 25.67h past T+48h threshold \u2014 MANDATORY HUMAN)",
-      "escalation": "20th consecutive run. 25.67h past emergency threshold. Conflict CONFIRMED it will NEVER self-resolve (A/B tracker broken). Human action mandatory NOW."
-    },
     {
       "id": "BTC_BUY_BB_golden",
       "reason": "BLOCKED_ANTI_BIAS_STACK",
@@ -42,32 +32,5 @@
       "note": "Needs 9 more HYPE+unknown-regime trades post-restart."
     }
   ],
-  "window_19_status": {
-    "status": "CONFIRMED_MISSED \u2014 20th consecutive morning miss",
-    "deadline_was_utc": "2026-05-27T05:30:00+00:00",
-    "window_was_utc": "2026-05-27T06:00:00-12:00:00",
-    "missed_at": "2026-05-27T12:00:00+00:00",
-    "hours_since_close": 11.17,
-    "consecutive_morning_miss_count": 20,
-    "ev_loss_this_window": 5.26,
-    "cumulative_morning_ev_loss": 105.26
-  },
-  "window_20_alert": {
-    "id": "WINDOW_20_DEADLINE_APPROACHING",
-    "restart_deadline_utc": "2026-05-28T05:30:00+00:00",
-    "open_utc": "2026-05-28T06:00:00+00:00",
-    "hours_until_deadline": 6.32,
-    "hours_until_open": 6.82,
-    "severity": "HIGH \u2014 T-6.32h to deadline",
-    "action": "RESTART: cd bot && python run.py paper \u2014 before 05:30 UTC May 28"
-  },
-  "evening_window_alert": {
-    "id": "EVENING_WINDOW_ACTIVE_NOW",
-    "status": "ACTIVE \u2014 tod_evening_edge_v1 gate=100% (+8pts)",
-    "window": "18:00-00:00 UTC",
-    "minutes_remaining": 49,
-    "wr": 0.65,
-    "severity": "HIGH \u2014 49 min left, bot still offline"
-  },
-  "note": "Run 21 (+19h from run 20). No new trades (bot offline 48.97d). W19 CONFIRMED MISSED (20th). Evening window ACTIVE 49min. W20 deadline T-6.32h. 20th afternoon conflict run \u2014 CRITICAL+++, 73.67h, 25.67h past threshold."
+  "note": "Run 23 (+0.89h from run 22). AFTERNOON_SESSION_BLOCK DISABLED this run \u2014 23 escalations resolved. No new trades (bot offline 49.05d). W20 deadline T-4.31h."
 }

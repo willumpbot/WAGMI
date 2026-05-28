@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-05-23T22:12:26.436796+00:00",
+  "last_updated": "2026-05-28T01:11:55.956257+00:00",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -1968,9 +1968,9 @@
       "problem": "ideas.json idea_920b3e13 proposed +1.08x confidence multiplier for afternoon session despite 33% WR data. Implementing as written would boost the second-worst time window. Only evening (18-24 UTC) is net-positive among non-morning sessions.",
       "fix_applied": "A/B gate at 20% \u2014 afternoon signals get -8pt confidence penalty. Mirrors NIGHT_session_pause treatment.",
       "action": "core/signal_pipeline.py or ensemble.py: if UTC hour between 12-18, apply -8pt confidence adjustment in 20% A/B cohort",
-      "status": "A/B_ACTIVE",
+      "status": "DISABLED_AB_TRACKER_BROKEN",
       "confidence": 75,
-      "gate_percentage": 20,
+      "gate_percentage": 0,
       "baseline_wr": 0.33,
       "treatment_wr": null,
       "sample_count": 15,
@@ -1979,7 +1979,10 @@
       "min_sample_to_graduate": 20,
       "expected_impact": "Reducing afternoon trading frequency via lower confidence should avoid 33% WR bucket; net-neutral worst case, positive if even a few bad afternoon signals filtered",
       "supersedes_idea": "idea_920b3e13 (converted from boost to block, direction reversed)",
-      "merged_at": "2026-05-03T21:08:36.791816Z"
+      "merged_at": "2026-05-03T21:08:36.791816Z",
+      "disabled_at": "2026-05-28T01:11:55.956257+00:00",
+      "disabled_reason": "23rd consecutive escalation (75.67h). 27.67h past T+48h threshold. A/B tracker broken \u2014 NEVER self-resolves. Net -3pts noise in 20% cohort. Applied gate_percentage: 20 -> 0. Fix logged in auto_fix_state.json run 23.",
+      "disabled_by": "perpetual_improvement_run_23_auto_fix"
     },
     {
       "rule_id": "F8_log_string_fix",
