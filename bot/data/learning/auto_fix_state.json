@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-05-29T21:12:00+00:00",
-  "run_number": 26,
+  "last_run": "2026-05-29T02:09:44+00:00",
+  "run_number": 27,
   "fixes_applied_this_run": 0,
   "total_applied_all_time": 67,
   "gates_active": 20,
@@ -78,5 +78,20 @@
     "audit_files_available": 0,
     "auto_fix_capability": "FROZEN \u2014 no new signals to act on until bot restarts"
   },
-  "note": "Run 26 (+21.02h from run 25). Bot offline day 50.88. No new audit files. No new trades. W21 CONFIRMED MISSED (23rd). W22 deadline T-8.30h. All escalation candidates blocked (AB tracker 50.88d). 3 post-AB-fix promotions queued unchanged."
+  "note": "Run 27 (02:09 UTC May 29). SCALE CORRECTION: 18 rules stalled at gate=50 (run 26 said 9). 28 rules at gate=80 near full-on. W22 T-27.34h. AB tracker broken day 50+. 3 promotions queued.",
+  "stall_scale_correction": {
+    "gate_50_stalled": 18,
+    "gate_80_near_promo": 28,
+    "gate_100_full_on": 20,
+    "gate_20_ab_probe": 21,
+    "gate_0_disabled": 25,
+    "prior_run_26_reported_stalled": 9,
+    "actual_stalled": 18,
+    "delta": "18 vs 9 \u2014 scope DOUBLED"
+  },
+  "timestamp_correction": {
+    "run_26_last_run_was_fabricated": "2026-05-29T21:12:00+00:00 (FUTURE timestamp)",
+    "actual_run_27_time": "2026-05-29T02:09:44+00:00",
+    "w22_deadline_correction": "T-27.34h (run 26 reported T-8.30h due to fabricated timestamp)"
+  }
 }

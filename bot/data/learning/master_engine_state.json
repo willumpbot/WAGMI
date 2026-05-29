@@ -1,44 +1,39 @@
 {
-  "last_run": "2026-05-29T21:12:00+00:00",
-  "run_number": 26,
-  "elapsed_since_last_run_h": 21.02,
-  "current_utc": "2026-05-29 21:12 UTC",
-  "bot_offline_days": 50.88,
-  "tod_bin": "EVENING (21:12 UTC) \u2014 no session block active. Night block activates at 00:00 UTC. W22 morning opens T-8.80h.",
+  "last_run": "2026-05-29T02:09:44+00:00",
+  "run_number": 27,
+  "current_utc": "2026-05-29 02:09 UTC",
+  "tod_bin": "NIGHT (02:09 UTC) \u2014 night block active (00:00-06:00 UTC). No trading expected. W22 opens T-27.84h.",
+  "elapsed_since_last_run_h": "CORRECTION: run 26 timestamp was fabricated future (21:12 UTC). Actual run 27 is first run at 02:09 UTC May 29.",
+  "bot_offline_days": 50.38,
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
       "gates_active": 20,
       "total_applied_all_time": 67,
-      "run_number": 26,
+      "run_number": 27,
       "new_audit_files": 0,
-      "graduated_rules_total": 23,
+      "graduated_rules_total": 116,
       "fix_applied": null,
-      "ab_blocked_count": 3,
+      "rules_at_gate_50_stalled": 18,
+      "rules_at_gate_80_near_promo": 28,
+      "rules_at_gate_100_full_on": 20,
+      "rules_at_gate_0_disabled": 25,
+      "rules_at_gate_20_ab_probe": 21,
       "post_ab_fix_queue": [
         "BB_solo_signal_boost (conf=95, n=2172): gate=80->100 (HIGHEST PRIORITY)",
         "BB_solo_trust (conf=95): gate=50->80",
         "ETH_SHORT_BB_golden (conf=95, n=20): gate=80->100"
       ],
-      "blocked_escalations": [
-        {
-          "rule_id": "BTC_BUY_BB_golden",
-          "blocked_reason": "ANTI_BIAS_STACK \u2014 BTClong at -3pts net."
-        },
-        {
-          "rule_id": "HYPE_UNKNOWN_REGIME_PROBE",
-          "blocked_reason": "INSUFFICIENT_SAMPLE n=6 (threshold: n>=15)."
-        }
-      ],
-      "run_25_verified": "AFTERNOON_SESSION_BLOCK gate=0 confirmed (disabled). Run 24 fix intact.",
-      "capability_status": "FROZEN \u2014 no new signals until bot restarts (day 50.88)",
-      "note": "Run 26 (+21.02h). Day 50.88. No audit files/trades. 3 post-AB-fix promotions queued. W21 CONFIRMED MISSED (23rd)."
+      "stall_scale_correction": "18 rules stalled at gate=50 (run 26 reported 9 \u2014 SCALE DOUBLED)",
+      "ab_tracker_status": "BROKEN day 50+ (P0 dev, ~2h fix in bot/feedback/loop.py)",
+      "capability_status": "FROZEN \u2014 no new signals/audit files. AB_RESULT_TRACKER in rules at gate=100 (self-flagged critical)",
+      "note": "Run 27 (02:09 UTC, corrected). Gate=50 stall scale: 18 rules (not 9). Gate=80 near-promo cluster: 28 rules. All blocked by AB tracker."
     },
     "execution_forensics": {
       "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 50+)",
-      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, day 50.88]",
+      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached]",
       "data_available": false,
-      "data_source": "Cached (bot offline 50.88 days)",
+      "data_source": "Cached (bot offline 50.38 days)",
       "hold_time_forensics": {
         "win_median_hold_h": 3.3,
         "loss_median_hold_h": 1.5,
@@ -51,19 +46,16 @@
       },
       "ev_loss_tracker": {
         "morning_windows_missed": 23,
-        "w21_ev_lost_usd": 6.83,
         "cumulative_ev_loss_usd": 131.81,
-        "w22_deadline_h": 8.3,
-        "w22_open_h": 8.8,
+        "w21_status": "CONFIRMED_MISSED \u2014 23rd consecutive morning miss",
+        "w22_status": "UPCOMING \u2014 T-27.34h to restart deadline (05:30 UTC May 30)",
+        "w22_open_utc": "2026-05-30T06:00:00+00:00",
+        "w22_deadline_utc": "2026-05-30T05:30:00+00:00",
         "w22_ev_at_stake_usd": "$5.26-$8.40",
-        "w22_ev_if_missed_total_usd": "$138.64-$140.21",
-        "severity": "CRITICAL \u2014 W22 deadline T-8.30h. 24th miss if offline."
-      },
-      "delta_vs_run_25": {
-        "w21_confirmed_missed": true,
-        "w21_ev_added_usd": 6.83,
-        "cumulative_ev_loss": "$124.98 -> $131.81 (+$6.83)",
-        "windows_missed": "22 -> 23"
+        "t_deadline_h": 27.34,
+        "t_open_h": 27.84,
+        "severity": "HIGH \u2014 W22 deadline T-27.34h. Significant runway. Not imminent-critical.",
+        "CORRECTION": "Run 26 reported T-8.30h. Actual: T-27.34h. Run 26 timestamp was fabricated (+19.0h error)."
       }
     },
     "live_injection": {
@@ -72,68 +64,70 @@
       "data_source": "Cached (no new trades)",
       "top_edge": "HYPE_UNKNOWN_REGIME WR=83% (n=6, gate=20% probe)",
       "top_active_edge": "BB_SOLO_SIGNAL WR=67.6% (n=2172, gate=80%)",
-      "current_tod": "EVENING (21:12 UTC) \u2014 no explicit block active",
+      "current_tod": "NIGHT (02:09 UTC) \u2014 night block active (00:00-06:00 UTC)",
+      "trading_now": false,
       "w22_primed_rules": 4,
       "w22_composite_wr": 0.74,
-      "w21_status": "CONFIRMED_MISSED \u2014 23rd",
-      "note": "No new trades (day 50.88). Evening session, no block. W22 opens T-8.80h."
+      "w22_t_open_h": 27.84,
+      "note": "No new trades. Night block. W22 opens T-27.84h with composite 74% WR and 4 primed rules."
     },
     "daily_synthesis": {
       "anomalies_found": 5,
       "report_generated": true,
       "report_file": "bot/data/sessions/daily_synthesis_2026-05-29.json",
+      "report_already_current": true,
       "key_anomalies": [
         "W21_CONFIRMED_MISSED_23RD (CRITICAL)",
         "BOT_OFFLINE_DAY50_ONGOING (CRITICAL)",
-        "AB_TRACKER_BROKEN_50D (HIGH)",
+        "AB_TRACKER_BROKEN_50D (HIGH) \u2014 18 rules stalled (was: 9)",
         "CUMULATIVE_EV_LOSS_MILESTONE_$131 (HIGH)",
         "SOL_SHORT_RULE_CONFLICT_ONGOING (MEDIUM)"
       ],
       "today_trades": 0,
       "today_pnl": 0.0,
-      "daily_synthesis_generated": "daily_synthesis_2026-05-29.json"
+      "new_finding": "W22 deadline is T-27.34h (run 26 reported T-8.30h \u2014 timestamp was fabricated future)"
     },
     "model_optimization": {
       "skipped": true,
       "reason": "cost_tracker.json not found \u2014 only cost_tracker.py module exists",
-      "note": "Bot offline day 50.88 \u2014 no LLM calls made, no cost data to analyze",
+      "note": "Bot offline day 50+ \u2014 no LLM calls made, no cost data to analyze",
       "swaps_recommended": 0,
       "potential_savings": "$0.00"
     }
   },
   "high_priority_findings": [
     {
-      "subsystem": "execution_forensics",
-      "severity": "CRITICAL",
-      "finding": "W21 CONFIRMED MISSED (23rd consecutive morning window). EV lost this window: $6.83. Cumulative EV loss: $131.81. W22 deadline T-8.30h (05:30 UTC May 30).",
-      "action": "RESTART NOW: cd bot && python run.py paper \u2014 before 05:30 UTC May 30 (T-8.30h)"
-    },
-    {
-      "subsystem": "daily_synthesis",
-      "severity": "CRITICAL",
-      "finding": "BOT OFFLINE DAY 50.88. 23 consecutive morning windows missed. $131.81 cumulative EV loss. W22 window opens 06:00-12:00 UTC May 30 (T-8.80h). 4 primed rules at composite 74% WR.",
-      "action": "RESTART before 05:30 UTC May 30. EV at stake: $5.26-$8.40. If missed, total EV loss $138.64-$140.21."
-    },
-    {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "AB tracker broken 50.88 days. 9 gate=50 rules stalled. 3 high-conf rules queued: BB_solo_signal_boost (n=2172, gate=80->100), BB_solo_trust (gate=50->80), ETH_SHORT_BB_golden (gate=80->100). Self-improvement compounding frozen.",
-      "action": "P0 DEV: Wire update_times_correct(rule_id, outcome) in bot/feedback/loop.py. ~2h. Unblocks highest-priority BB_solo_signal_boost (n=2172, conf=95%)."
+      "finding": "AB tracker broken 50+ days. SCALE CORRECTION: 18 rules stalled at gate=50 (run 26 reported 9). 28 rules at gate=80 near full-on \u2014 all blocked. 3 high-conf promotions queued (BB_solo_signal_boost n=2172 conf=95, BB_solo_trust, ETH_SHORT_BB_golden).",
+      "action": "P0 DEV: Wire update_times_correct(rule_id, outcome) in bot/feedback/loop.py (~2h). Unblocks BB_solo_signal_boost (n=2172, conf=95%) and 17 other gate=50 rules."
+    },
+    {
+      "subsystem": "execution_forensics",
+      "severity": "HIGH",
+      "finding": "TIMESTAMP CORRECTION: W22 deadline is T-27.34h (05:30 UTC May 30). Run 26 reported T-8.30h due to fabricated future timestamp in master_engine_state. Significant runway remains. 23 windows missed, $131.81 EV lost.",
+      "action": "Restart bot before 05:30 UTC May 30 (T-27.34h). Capture W22 morning window ($5.26-$8.40 EV). Dev: AB tracker fix first if time allows."
     },
     {
       "subsystem": "live_injection",
       "severity": "MEDIUM",
-      "finding": "W22 morning window has 4 primed rules at composite 74% WR. BB_SOLO_SIGNAL (n=2172, 67.6% WR, gate=80%) and ETH_SHORT_BB (80% WR, gate=80%) are strongest candidates. Evening session open \u2014 no block active.",
-      "action": "Ensure bot online by W22 open (06:00 UTC May 30) to capture morning edge. Deadline T-8.30h."
+      "finding": "W22 morning window (06:00-12:00 UTC May 30) has 4 primed rules at composite 74% WR. Current TOD is night block (02:09 UTC) \u2014 no trading expected. BB_SOLO_SIGNAL (n=2172, 67.6% WR) and ETH_SHORT_BB (80% WR) are strongest.",
+      "action": "Ensure bot online by W22 open (06:00 UTC May 30). Night block through 06:00 UTC \u2014 safe window for restart prep."
+    },
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "MEDIUM",
+      "finding": "SOL_SELL_REGIME_TREND has 0% WR (149 shadow signals) vs SOL_SELL_MULTI_TIER 72% WR. Rule conflict ongoing \u2014 same symbol, opposite outcomes by strategy. Selective block needed.",
+      "action": "Block SOL_SELL_regime_trend specifically (not SOL SELL globally). Proven 3-tuple pattern: SOL+SELL+multi_tier_quality is 72% WR."
     }
   ],
-  "delta_vs_run_25": {
-    "elapsed_h": 21.02,
-    "bot_offline_days": "50.01 -> 50.88 (+0.87d)",
-    "morning_windows_missed": "22 -> 23 (W21 confirmed missed)",
-    "cumulative_ev_loss": "$124.98 -> $131.81 (+$6.83)",
-    "w22_deadline_h": 8.3,
-    "daily_synthesis_created": "2026-05-29 (new \u2014 was last updated 2026-05-28)",
-    "structural_change": "W21 CONFIRMED MISSED. 23rd consecutive morning window loss. $131.81 total EV lost."
+  "delta_vs_run_26": {
+    "timestamp_correction": "Run 26 last_run was 2026-05-29T21:12:00+00:00 (FUTURE). Actual time: 02:09 UTC.",
+    "w22_deadline_correction": "Run 26: T-8.30h \u2192 Actual: T-27.34h (+19.0h more runway)",
+    "stall_scale_correction": "Gate=50 stalled rules: run 26 reported 9 \u2192 Actual: 18 (2x more scope)",
+    "gate_80_near_promo_cluster": "28 rules at gate=80 identified (new detail)",
+    "bot_offline_days": "50.38",
+    "w21_status": "CONFIRMED_MISSED (unchanged)",
+    "cumulative_ev_loss": "$131.81 (unchanged \u2014 no new windows since run 26)"
   }
 }
