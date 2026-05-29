@@ -1,13 +1,15 @@
 {
   "date": "2026-05-29",
-  "generated_at": "2026-05-29T03:09:21+00:00",
-  "run_number": 28,
-  "bot_status": "OFFLINE \u2014 day 50.42",
+  "generated_at": "2026-05-29T04:09:00+00:00",
+  "run_number": 29,
+  "bot_status": "OFFLINE \u2014 day 50.46",
   "today_trades": 0,
   "today_pnl": 0.0,
   "today_wr": null,
-  "current_tod": "NIGHT (03:09 UTC) \u2014 night block active (00:00-06:00 UTC)",
+  "current_tod": "NIGHT (04:09 UTC) \u2014 night block active (00:00-06:00 UTC)",
   "trading_now": false,
+  "night_block_ends_utc": "2026-05-29T06:00:00+00:00",
+  "t_night_block_end_h": 1.85,
   "w21_status": "CONFIRMED_MISSED \u2014 23rd consecutive miss (06:00-12:00 UTC May 29 elapsed)",
   "w21_ev_lost": 6.83,
   "cumulative_ev_loss": 131.81,
@@ -16,19 +18,19 @@
     {
       "type": "W21_CONFIRMED_MISSED_23RD",
       "severity": "CRITICAL",
-      "detail": "23rd consecutive morning window missed. Bot offline day 50.42. EV lost W21: $6.83. Cumulative: $131.81.",
-      "recommendation": "Restart bot before 05:30 UTC May 30 (W22 deadline T-26.34h)"
+      "detail": "23rd consecutive morning window missed. Bot offline day 50.46. EV lost W21: $6.83. Cumulative: $131.81.",
+      "recommendation": "Restart bot before 05:30 UTC May 30 (W22 deadline T-25.35h). Night block ends in 1.85h — restart window opens at 06:00 UTC today."
     },
     {
       "type": "BOT_OFFLINE_DAY50_ONGOING",
       "severity": "CRITICAL",
-      "detail": "Bot offline 50.42 days. All A/B-dependent rule promotions frozen. No live signals. Morning EV compounding missed.",
-      "recommendation": "Restart immediately. W22 is 24th opportunity. Night block ends 06:00 UTC."
+      "detail": "Bot offline 50.46 days. All A/B-dependent rule promotions frozen. No live signals. Morning EV compounding missed.",
+      "recommendation": "RESTART NOW — Night block ends 06:00 UTC (T-1.85h). Restart at 06:00 UTC gives 22h warmup before W22 opens. Command: cd bot && python run.py paper"
     },
     {
-      "type": "AB_TRACKER_BROKEN_50D",
+      "type": "AB_TRACKER_BROKEN_51D",
       "severity": "HIGH",
-      "detail": "AB outcome callback broken 50.42 days. 18 rules stalled at gate=50. 3 high-conf promotions queued (BB_solo_signal_boost n=2172 conf=95, BB_solo_trust conf=95, ETH_SHORT_BB_golden conf=95).",
+      "detail": "AB outcome callback broken 51 days. 18 rules stalled at gate=50. 5 high-conf promotions queued: BB_solo_signal_boost (n=2172, conf=95), BB_solo_trust (conf=95), ETH_SHORT_BB_golden (conf=95), TOD_morning_edge (conf=82), EVENING_session_boost (conf=85, NEW).",
       "recommendation": "P0 dev: Wire update_times_correct(rule_id, outcome) in bot/feedback/loop.py (~2h). Unblocks 28 rules at gate=80 near full-on."
     },
     {
@@ -41,7 +43,7 @@
       "type": "CUMULATIVE_EV_LOSS_$131",
       "severity": "HIGH",
       "detail": "23 missed morning windows \u00d7 avg $5.74 EV = $131.81 cumulative loss. W22 stakes: $5.26-$8.40 additional.",
-      "recommendation": "Treat as real money. W22 restart deadline: 05:30 UTC May 30 (T-26.34h)."
+      "recommendation": "Treat as real money. W22 restart deadline: 05:30 UTC May 30 (T-25.35h). Restart at 06:00 UTC today for maximum warmup."
     }
   ],
   "run_28_fix": {

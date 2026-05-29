@@ -1,32 +1,17 @@
 {
-  "last_run": "2026-05-29T03:09:21+00:00",
-  "run_number": 28,
-  "fixes_applied_this_run": 2,
+  "last_run": "2026-05-29T04:09:00+00:00",
+  "run_number": 29,
+  "fixes_applied_this_run": 0,
   "total_applied_all_time": 69,
-  "gates_active": 20,
+  "gates_active": 19,
   "new_audit_files_this_run": 0,
   "new_trades_this_run": 0,
-  "elapsed_since_last_run_h": 0.99,
-  "fixes_applied": [
-    {
-      "rule_id": "SOL_SHORT_edge_promote",
-      "action": "gate=20->0 (DISABLED_LIVE_CONTRADICTION)",
-      "reason": "Status=SUSPENDED_LIVE_CONTRADICTION but gate=20 left 20% A/B cohort eligible. SOL live WR=34.6% on 52 trades (-$176.24), 82.7% SL rate. Confidence=90% justify.",
-      "confidence": 90,
-      "applied_at": "2026-05-29T03:09:21+00:00"
-    },
-    {
-      "rule_id": "SOL_SHORT_priority_boost",
-      "action": "gate=20->0 (DISABLED_LIVE_CONTRADICTION)",
-      "reason": "Companion fix \u2014 same SOL evidence applies. Rule was logically dead-code under SOL_SHORT_LIVE_CONTRADICTION (gate=100, conf=95).",
-      "confidence": 90,
-      "applied_at": "2026-05-29T03:09:21+00:00"
-    }
-  ],
+  "elapsed_since_last_run_h": 1.00,
+  "fixes_applied": [],
   "escalation_candidates_reviewed": [
     {
       "rule_id": "BB_solo_signal_boost",
-      "action": "HOLD \u2014 conf=95%, gate=80, n=2172. Eligible gate=80->100. BLOCKED: AB tracker broken (50.42d stalled).",
+      "action": "HOLD \u2014 conf=95%, gate=80, n=2172. Eligible gate=80->100. BLOCKED: AB tracker broken (51d stalled).",
       "blocked_reason": "AB_TRACKER_BROKEN"
     },
     {
@@ -38,9 +23,19 @@
       "rule_id": "ETH_SHORT_BB_golden",
       "action": "HOLD \u2014 conf=95%, gate=80, n=20. Eligible gate=80->100. BLOCKED: AB tracker broken.",
       "blocked_reason": "AB_TRACKER_BROKEN"
+    },
+    {
+      "rule_id": "TOD_morning_edge",
+      "action": "HOLD \u2014 conf=82%, gate=50. Next escalation: gate=50->80. BLOCKED: AB tracker broken.",
+      "blocked_reason": "AB_TRACKER_BROKEN"
+    },
+    {
+      "rule_id": "EVENING_session_boost",
+      "action": "NEW CANDIDATE \u2014 conf=85%, gate=20. Escalation candidate gate=20->50 when AB tracker restored. Historical data supports promotion.",
+      "blocked_reason": "AB_TRACKER_BROKEN"
     }
   ],
-  "gate_distribution_after_fix": {
+  "gate_distribution_current": {
     "0": 29,
     "5": 1,
     "20": 19,
@@ -49,6 +44,14 @@
     "80": 28,
     "100": 20
   },
-  "ab_tracker_status": "BROKEN day 50+ (P0 dev, ~2h fix in bot/feedback/loop.py)",
-  "note": "Run 28 (03:09 UTC). Applied 2 SOL conflict fixes: SOL_SHORT_edge_promote + SOL_SHORT_priority_boost gate=20->0. Resolves 'SUSPENDED but active' ambiguity. Total fixes all-time: 69. Gate=0 count: 25->27 (adding 2 SOL fixes)."
+  "ab_tracker_status": "BROKEN day 51 (P0 dev, ~2h fix in bot/feedback/loop.py)",
+  "escalation_queue_when_ab_fixed": [
+    "BB_solo_signal_boost (gate=80->100, conf=95, n=2172) \u2014 highest priority",
+    "BB_solo_trust (gate=50->80, conf=95)",
+    "ETH_SHORT_BB_golden (gate=80->100, conf=95, n=20)",
+    "TOD_morning_edge (gate=50->80, conf=82)",
+    "EVENING_session_boost (gate=20->50, conf=85) \u2014 NEW this run"
+  ],
+  "run29_finding": "No new audit files. 0 new fixes applied. Gate distribution unchanged from run 28. NEW: EVENING_session_boost (conf=85, gate=20) identified as next-queue escalation candidate. Night block ends 06:00 UTC \u2014 optimal bot restart window in 1.85h.",
+  "note": "Run 29 (04:09 UTC). No structural changes. Gate=0 count: 29. Total fixes all-time: 69. AB tracker P0 blocker preventing 5 queued promotions."
 }

@@ -1,8 +1,8 @@
 {
-  "last_run": "2026-05-29T03:09:21+00:00",
-  "run_number": 28,
+  "last_run": "2026-05-29T04:09:00+00:00",
+  "run_number": 29,
   "data_available": false,
-  "data_source": "Cached (bot offline 50.42 days, trades.csv empty)",
+  "data_source": "Cached (bot offline 50.46 days, trades.csv empty)",
   "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 50+)",
   "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached]",
   "hold_time_forensics": {
@@ -25,19 +25,25 @@
     "morning_windows_missed": 23,
     "ev_loss_morning_usd": 131.81,
     "w21_status": "CONFIRMED_MISSED \u2014 23rd consecutive miss.",
-    "w22_status": "UPCOMING \u2014 T-26.34h to restart deadline (05:30 UTC May 30)",
+    "w22_status": "UPCOMING \u2014 T-25.35h to restart deadline (05:30 UTC May 30)",
     "w22_open_utc": "2026-05-30T06:00:00+00:00",
     "w22_deadline_utc": "2026-05-30T05:30:00+00:00",
     "w22_ev_at_stake_usd": "$5.26-$8.40",
     "cumulative_ev_loss_usd": 131.81,
-    "t_deadline_h": 26.34,
-    "t_open_h": 26.84,
-    "severity": "HIGH \u2014 W22 deadline T-26.34h. Significant runway remains."
+    "t_deadline_h": 25.35,
+    "t_open_h": 25.85,
+    "severity": "HIGH \u2014 W22 deadline T-25.35h. Night block ends 06:00 UTC (T-1.85h): optimal restart window opening soon."
+  },
+  "restart_window": {
+    "night_block_end_utc": "2026-05-29T06:00:00+00:00",
+    "t_night_block_end_h": 1.85,
+    "recommendation": "Restart at 06:00-08:00 UTC today. Bot will be live for full 22h before W22 opens. Maximizes setup quality.",
+    "urgency": "ACTIONABLE \u2014 1.85h until optimal restart window"
   },
   "structural_gaps": [
     "snapshot_entry column missing (slippage unmeasurable \u2014 day 50+)",
     "llm_regime column empty (regime rules unmeasurable \u2014 day 50+)",
-    "AB outcome callbacks not firing (all gated rules stalled \u2014 P0 dev, day 50.42)"
+    "AB outcome callbacks not firing (all gated rules stalled \u2014 P0 dev, day 51)"
   ],
   "ab_tracker_status": {
     "severity": "HIGH",
@@ -45,15 +51,16 @@
     "stalled_gate": "50%",
     "fix_estimate": "~2h dev",
     "priority": "P0",
-    "days_stalled": 50.42,
-    "post_ab_fix_queue_size": 3,
+    "days_stalled": 51,
+    "post_ab_fix_queue_size": 5,
     "highest_priority": "BB_solo_signal_boost (conf=95, n=2172, gate=80->100)"
   },
-  "delta_vs_run_27": {
-    "elapsed_h": 0.99,
-    "w22_deadline_h": "27.34 -> 26.34 (-1.00h)",
+  "delta_vs_run_28": {
+    "elapsed_h": 1.00,
+    "w22_deadline_h": "26.34 -> 25.35 (-0.99h)",
+    "t_night_block_end_h": "2.85 -> 1.85 (-1.00h) \u2014 restart window imminent",
     "cumulative_ev_loss": "$131.81 (unchanged \u2014 no new window)",
     "morning_windows_missed": "23 (unchanged)",
-    "new_finding": "SOL_SHORT_edge_promote and SOL_SHORT_priority_boost disabled (gate=20->0) \u2014 reduces execution risk"
+    "new_finding": "Restart window now 1.85h away (06:00 UTC). This is the most actionable timing update since run 28."
   }
 }
