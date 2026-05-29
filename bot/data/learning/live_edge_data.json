@@ -1,27 +1,27 @@
 {
-  "last_run": "2026-05-28T03:09:40.000000+00:00",
-  "run_number": 24,
-  "data_source": "Cached (bot offline day 49, no new trades)",
+  "last_run": "2026-05-29T00:10:59.000000+00:00",
+  "run_number": 25,
+  "data_source": "Cached (bot offline day 50, no new trades)",
   "high_edges_found": 9,
   "weak_setups_found": 6,
   "no_new_trades": true,
   "current_session_state": {
-    "utc_time": "2026-05-28 03:09 UTC",
+    "utc_time": "2026-05-29 00:10 UTC",
     "active_tod_rule": "night_session_block_v1 gate=100% (WR 19% — CORRECT: block active)",
     "active_window": "NIGHT BLOCK (00:00-06:00 UTC)",
-    "hours_remaining_in_block": 2.84,
+    "hours_remaining_in_block": 5.82,
     "trading_expected": false,
-    "note": "Night block active. W20 opens T-2.84h at 06:00 UTC May 28."
+    "note": "Night block active. W21 opens T-5.82h at 06:00 UTC May 29. Restart deadline T-5.32h."
   },
-  "window_20_status": {
-    "status": "IMMINENT CRITICAL — T-2.34h to restart deadline",
-    "restart_deadline_utc": "2026-05-28T05:30:00+00:00",
-    "opens_at_utc": "2026-05-28T06:00:00+00:00",
-    "closes_at_utc": "2026-05-28T12:00:00+00:00",
-    "hours_until_deadline": 2.34,
-    "hours_until_open": 2.84,
-    "consecutive_morning_miss_count": 21,
-    "severity": "CRITICAL — T-2.34h. Final restart window. 22nd miss if bot doesn't restart.",
+  "window_21_status": {
+    "status": "CRITICAL — T-5.32h to restart deadline",
+    "restart_deadline_utc": "2026-05-29T05:30:00+00:00",
+    "opens_at_utc": "2026-05-29T06:00:00+00:00",
+    "closes_at_utc": "2026-05-29T12:00:00+00:00",
+    "hours_until_deadline": 5.32,
+    "hours_until_open": 5.82,
+    "consecutive_morning_miss_count": 22,
+    "severity": "CRITICAL — T-5.32h. 23rd miss if bot doesn't restart.",
     "primed_rules": [
       "TOD_morning_edge gate=50% (+5pts)",
       "ETH_SHORT_BB_golden gate=80% (+8pts)",
@@ -84,7 +84,7 @@
       "setup": "EVENING_WINDOW",
       "wr": 0.65,
       "n": 8,
-      "status": "INACTIVE — next: 18:00-00:00 UTC tonight"
+      "status": "INACTIVE — next: 18:00-00:00 UTC tonight (May 29)"
     }
   ],
   "weak_setups": [
@@ -125,5 +125,5 @@
       "status": "flagged"
     }
   ],
-  "delta_vs_run_23": "1.92h elapsed. Night block active (2.84h remaining). W20 deadline: T-2.34h (was T-4.31h, now CRITICAL <3h). AFTERNOON_SESSION_BLOCK confirmed disabled (gate=0). No new trades. All edges cached."
+  "delta_vs_run_24": "21.02h elapsed. Night block active (5.82h remaining). W20 CONFIRMED MISSED (+$6.83 EV lost). W21 deadline: T-5.32h. Bot offline day 50 milestone. No new trades. All edges cached unchanged."
 }
