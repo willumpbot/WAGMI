@@ -1,9 +1,9 @@
 {
-  "last_run": "2026-05-29T00:10:59.000000+00:00",
-  "run_number": 25,
+  "last_run": "2026-05-29T21:12:00+00:00",
+  "run_number": 26,
   "fixes_applied_this_run": 0,
   "total_applied_all_time": 67,
-  "gates_active": 65,
+  "gates_active": 20,
   "new_audit_files_this_run": 0,
   "new_trades_this_run": 0,
   "elapsed_since_last_run_h": 21.02,
@@ -11,39 +11,39 @@
   "escalation_candidates_reviewed": [
     {
       "rule_id": "BB_solo_signal_boost",
-      "action": "HOLD — conf=95%, gate=80, n=2172. Eligible gate=80->100. BLOCKED: AB tracker broken (times_correct not updating). Post-AB-fix: highest-priority promotion candidate.",
+      "action": "HOLD \u2014 conf=95%, gate=80, n=2172. Eligible gate=80->100. BLOCKED: AB tracker broken (50.88d stalled).",
       "confidence": 95,
       "gate": 80,
       "n": 2172,
-      "eligible_action": "gate=80 -> 100",
-      "blocked_reason": "AB_TRACKER_BROKEN (50.01d stalled)"
+      "eligible_action": "gate=80->100",
+      "blocked_reason": "AB_TRACKER_BROKEN (50.88d stalled)"
     },
     {
       "rule_id": "BB_solo_trust",
-      "action": "HOLD — conf=95%, gate=50. Eligible gate=50->80. BLOCKED: AB tracker broken.",
+      "action": "HOLD \u2014 conf=95%, gate=50. Eligible gate=50->80. BLOCKED: AB tracker broken.",
       "confidence": 95,
       "gate": 50,
-      "eligible_action": "gate=50 -> 80",
-      "blocked_reason": "AB_TRACKER_BROKEN (50.01d stalled)"
+      "eligible_action": "gate=50->80",
+      "blocked_reason": "AB_TRACKER_BROKEN"
     },
     {
       "rule_id": "ETH_SHORT_BB_golden",
-      "action": "HOLD — conf=95%, gate=80, n=20. Eligible gate=80->100. BLOCKED: AB tracker broken.",
+      "action": "HOLD \u2014 conf=95%, gate=80, n=20. Eligible gate=80->100. BLOCKED: AB tracker broken.",
       "confidence": 95,
       "gate": 80,
       "n": 20,
-      "eligible_action": "gate=80 -> 100",
-      "blocked_reason": "AB_TRACKER_BROKEN (50.01d stalled)"
+      "eligible_action": "gate=80->100",
+      "blocked_reason": "AB_TRACKER_BROKEN"
     },
     {
       "rule_id": "BTC_BUY_BB_golden",
-      "action": "HOLD — ANTI_BIAS_STACK: BTClong at -3pts net. Adding +5pts creates bias collision.",
-      "blocked_reason": "ANTI_BIAS_STACK (stable, no change)",
+      "action": "HOLD \u2014 ANTI_BIAS_STACK: BTClong at -3pts net. Adding +5pts creates bias collision.",
+      "blocked_reason": "ANTI_BIAS_STACK (stable)",
       "auto_eligible": false
     },
     {
       "rule_id": "HYPE_UNKNOWN_REGIME_PROBE",
-      "action": "HOLD — INSUFFICIENT_SAMPLE n=6 (threshold: n>=15). Needs 9 more HYPE+unknown-regime trades.",
+      "action": "HOLD \u2014 INSUFFICIENT_SAMPLE n=6 (threshold: n>=15). Needs 9 more trades post-restart.",
       "blocked_reason": "INSUFFICIENT_SAMPLE_n=6",
       "auto_eligible": false
     }
@@ -51,16 +51,14 @@
   "blocked_escalations": [
     {
       "id": "BTC_BUY_BB_golden",
-      "reason": "BLOCKED_ANTI_BIAS_STACK",
-      "detail": "BTClong at -3pts net. Adding +5pts creates bias collision. Stable.",
+      "reason": "ANTI_BIAS_STACK",
       "auto_eligible": false
     },
     {
       "id": "HYPE_UNKNOWN_REGIME_PROBE",
       "reason": "INSUFFICIENT_SAMPLE_n=6",
       "threshold": "n>=15",
-      "auto_eligible": false,
-      "note": "Needs 9 more HYPE+unknown-regime trades post-restart."
+      "auto_eligible": false
     }
   ],
   "post_ab_fix_queue": [
@@ -68,17 +66,17 @@
     "BB_solo_trust (conf=95): gate=50 -> 80",
     "ETH_SHORT_BB_golden (conf=95, n=20): gate=80 -> 100"
   ],
-  "run_24_verified": {
+  "run_25_verified": {
     "verified_items": [
-      "AFTERNOON_SESSION_BLOCK gate=0 confirmed in graduated_rules.json (disabled)"
+      "AFTERNOON_SESSION_BLOCK gate=0 confirmed (disabled)"
     ],
     "status": "ALL_CLEAR"
   },
   "structural_gap_summary": {
-    "ab_tracker_broken_days": 50,
+    "ab_tracker_broken_days": 50.88,
     "trades_csv_empty": true,
     "audit_files_available": 0,
-    "auto_fix_capability": "FROZEN — no new signals to act on until bot restarts"
+    "auto_fix_capability": "FROZEN \u2014 no new signals to act on until bot restarts"
   },
-  "note": "Run 25 (+21.02h from run 24). Bot offline day 50 milestone. No new audit files. No new trades. W20 confirmed missed (22nd). W21 deadline T-5.32h. All escalation candidates blocked (AB tracker 50.01d). 3 post-AB-fix promotions queued unchanged."
+  "note": "Run 26 (+21.02h from run 25). Bot offline day 50.88. No new audit files. No new trades. W21 CONFIRMED MISSED (23rd). W22 deadline T-8.30h. All escalation candidates blocked (AB tracker 50.88d). 3 post-AB-fix promotions queued unchanged."
 }

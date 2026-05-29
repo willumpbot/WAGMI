@@ -1,0 +1,74 @@
+{
+  "date": "2026-05-29",
+  "generated_at": "2026-05-29T21:12:00+00:00",
+  "run_number": 26,
+  "bot_status": "OFFLINE \u2014 day 50.88",
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "today_wr": null,
+  "w21_status": "CONFIRMED_MISSED \u2014 23rd consecutive miss (06:00-12:00 UTC May 29 elapsed)",
+  "w21_ev_lost": 6.83,
+  "cumulative_ev_loss": 131.81,
+  "anomalies_found": 5,
+  "anomalies": [
+    {
+      "type": "W21_CONFIRMED_MISSED_23RD",
+      "severity": "CRITICAL",
+      "detail": "23rd consecutive morning window missed. Bot offline day 50.88. EV lost this window: $6.83. Cumulative: $131.81.",
+      "recommendation": "RESTART NOW: cd bot && python run.py paper \u2014 before 05:30 UTC May 30 (T-8.30h)"
+    },
+    {
+      "type": "BOT_OFFLINE_DAY50_ONGOING",
+      "severity": "CRITICAL",
+      "detail": "Bot offline 50.88 days. All rule promotion frozen. No live signals. Compounding missed.",
+      "recommendation": "Restart immediately. W22 is the 24th opportunity."
+    },
+    {
+      "type": "AB_TRACKER_BROKEN_50D",
+      "severity": "HIGH",
+      "detail": "AB outcome callback broken 50.88 days. 9 gated rules stalled at gate=50. 3 high-confidence promotions queued but unexecutable.",
+      "recommendation": "P0 dev: Wire update_times_correct(rule_id, outcome) in bot/feedback/loop.py (~2h). Unblocks BB_solo_signal_boost (n=2172, conf=95%)."
+    },
+    {
+      "type": "CUMULATIVE_EV_LOSS_MILESTONE",
+      "severity": "HIGH",
+      "detail": "Total EV loss crosses $131.81 (23 morning windows \u00d7 ~$5.74 avg). W22 stakes: $5.26-$8.40 additional.",
+      "recommendation": "Treat as real money lost. Compound effect of inaction growing."
+    },
+    {
+      "type": "SOL_SHORT_RULE_CONFLICT",
+      "severity": "MEDIUM",
+      "detail": "SOL_SELL_regime_trend 0% WR (149 shadow signals) vs SOL_SELL_multi_tier_quality 72% WR. Same symbol, opposite outcomes by strategy.",
+      "recommendation": "Block SOL_SELL_regime_trend specifically (not SOL SELL globally). 3-tuple proven-setup rebuild (Finding 11)."
+    }
+  ],
+  "tomorrow_focus": {
+    "primary": "RESTART BOT before 05:30 UTC May 30 to capture W22 morning window",
+    "symbols_priority": [
+      "ETH",
+      "HYPE",
+      "BTC"
+    ],
+    "regimes_priority": [
+      "trending"
+    ],
+    "rules_primed": [
+      "TOD_morning_edge (gate=50%)",
+      "ETH_SHORT_BB_golden (gate=80%)",
+      "eth_trending_regime_boost (gate=100%)"
+    ],
+    "avoid": [
+      "SOL_SELL_regime_trend (0% WR)",
+      "HIGH_LEV_6_10X (avg PnL -4.62)",
+      "afternoon_session (gate=0)"
+    ],
+    "dev_p0": "AB tracker fix in bot/feedback/loop.py (~2h) \u2014 unlocks 3 promotions and unblocks self-improvement"
+  },
+  "best_trade_today": null,
+  "worst_trade_today": null,
+  "delta_vs_yesterday": {
+    "w_window_missed": "W21 (23rd)",
+    "cumulative_ev_change": "$124.98 -> $131.81 (+$6.83)",
+    "offline_days_change": "50.01 -> 50.88 (+0.87d)"
+  }
+}
