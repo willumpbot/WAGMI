@@ -1,0 +1,162 @@
+{
+  "last_run": "2026-05-30T05:15:08.074578+00:00",
+  "run_number": 36,
+  "current_utc": "2026-05-30 05:15 UTC",
+  "elapsed_since_last_run_h": 1.02,
+  "bot_offline_days": 55.46,
+  "w22_status": "IMMINENT: T-15min to deadline, T-45min to open",
+  "subsystems": {
+    "auto_fix": {
+      "fixes_applied": 0,
+      "gates_active": 66,
+      "total_applied_all_time": 69,
+      "run_number": 36,
+      "new_audit_files": 0,
+      "graduated_rules_total": 116,
+      "fixes_applied_detail": [],
+      "blockers": [
+        "AB_tracker broken day 57 \u2014 no outcome tracking for 20 rules",
+        "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation",
+        "ETH_SHORT_protect n=5, HYPE_PROBE n=6 \u2014 below 10-sample graduation threshold",
+        "RULE_CONFLICT_SOL_SHORT pending human review"
+      ],
+      "escalation_candidates_blocked": 20,
+      "near_threshold_watch": [
+        "ETH_SHORT_protect_from_bias: needs n=5\u219210 to graduate gate=50\u219280 (5 more trades)",
+        "HYPE_UNKNOWN_REGIME_PROBE: needs n=6\u219210 to graduate gate=20\u219250 (4 more trades)",
+        "SOL_SHORT_suspension_reversal_probe: BLOCKED by SOL_SHORT_full_block conflict"
+      ],
+      "gate_distribution": {
+        "0": 29,
+        "5": 1,
+        "20": 19,
+        "35": 1,
+        "50": 18,
+        "80": 28,
+        "100": 20
+      }
+    },
+    "execution_forensics": {
+      "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 52+)",
+      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached]",
+      "data_available": false,
+      "data_source": "Cached (bot offline 55.13 days)",
+      "ev_loss_morning_usd": 150.87,
+      "morning_windows_missed": 24,
+      "new_finding": "W22 restart deadline T-14.9min. If missed: 25th consecutive window.",
+      "demotion_candidate": {
+        "rule": "HIGH_VOL_regime_boost",
+        "gate": 50,
+        "wr": 0.55,
+        "n": 2172,
+        "action": "Review for demotion gate=50\u219220 if WR doesn't improve on next 100 live samples"
+      }
+    },
+    "live_injection": {
+      "high_edges": 8,
+      "weak_setups": 7,
+      "new_insight_run36": "SOL_SHORT_suspension_reversal_probe: 179 live trades, WR=63.7%, conf=84% \u2014 LARGE-SAMPLE validated but blocked by SOL_SHORT_full_block conflict. Needs human resolution.",
+      "top_edge_by_wr": "HYPE_UNKNOWN_REGIME_PROBE (WR=83%, n=6) \u2014 escalation blocked on low-n",
+      "top_edge_by_n_and_wr": "ETH_SHORT_BB_golden (WR=70%, n=2172) \u2014 definitive backbone",
+      "sol_short_reactivation_signal": {
+        "finding": "SOL_SHORT_suspension_reversal_probe n=179 WR=0.637 is definitively high-edge",
+        "blocker": "SOL_SHORT_full_block=100 is contradictory \u2014 needs human arbitration",
+        "recommended_action": "Resolve RULE_CONFLICT_SOL_SHORT: either demote full_block or add WR-conditioned exemption"
+      },
+      "data_source": "Graduated rules analysis + cached (no new trades day 55)"
+    },
+    "daily_synthesis": {
+      "anomalies": 5,
+      "report_generated": true,
+      "report_path": "bot/data/sessions/daily_synthesis_2026-05-30.json",
+      "today_trades": 0,
+      "today_pnl": 0.0,
+      "critical_anomalies": [
+        "W22_DEADLINE_IMMINENT_15MIN",
+        "BOT_OFFLINE_DAY55"
+      ],
+      "high_anomalies": [
+        "AB_TRACKER_BROKEN_57D",
+        "SOL_SHORT_CONFLICT_UNRESOLVED",
+        "CUMULATIVE_EV_LOSS_$150"
+      ],
+      "anomaly_details": [
+        {
+          "type": "W22_DEADLINE_IMMINENT_15MIN",
+          "severity": "CRITICAL",
+          "detail": "W22 restart deadline T-14.9min (05:30 UTC). Window opens T-44.9min. 25th consecutive miss if bot not started NOW.",
+          "recommendation": "RESTART BOT IMMEDIATELY: cd bot && python run.py paper"
+        },
+        {
+          "type": "BOT_OFFLINE_DAY55",
+          "severity": "CRITICAL",
+          "detail": "Bot offline ~55 days. No live signals. Cumulative morning EV loss ~$150+.",
+          "recommendation": "Start bot before W22 opens (06:00 UTC) \u2014 T-45min"
+        },
+        {
+          "type": "AB_TRACKER_BROKEN_57D",
+          "severity": "HIGH",
+          "detail": "AB outcome callback broken 57 days. 20 rules cannot graduate. ETH_SHORT_protect WR=80% (n=5) stalled at gate=50.",
+          "recommendation": "P0: Wire update_times_correct(rule_id, outcome) in bot/feedback/loop.py (~2h)"
+        },
+        {
+          "type": "SOL_SHORT_CONFLICT_UNRESOLVED",
+          "severity": "HIGH",
+          "detail": "RULE_CONFLICT_SOL_SHORT pending human review. SOL_SHORT_suspension_reversal_probe (WR=63.7%, n=179) cannot escalate due to SOL_SHORT_full_block=100.",
+          "recommendation": "Human review: resolve gate conflict to unlock SOL SHORT edge"
+        },
+        {
+          "type": "CUMULATIVE_EV_LOSS_$150",
+          "severity": "HIGH",
+          "detail": "24 missed morning windows + W22 imminent = ~$150 cumulative EV loss.",
+          "recommendation": "Prioritize restart. Every hour = ~$0.57 EV bleed."
+        }
+      ]
+    },
+    "model_optimization": {
+      "skipped": true,
+      "reason": "cost_tracker.json absent \u2014 bot offline",
+      "swaps_recommended": 0,
+      "potential_savings": "$0.00"
+    }
+  },
+  "high_priority_findings": [
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "CRITICAL",
+      "finding": "W22 restart deadline in 15 minutes (05:30 UTC). 25th consecutive morning window miss if unaddressed.",
+      "action": "RESTART BOT: cd bot && python run.py paper"
+    },
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "CRITICAL",
+      "finding": "Bot offline 55 days. Cumulative EV loss ~$150. Morning window (06:00-12:00 UTC) has 74% composite WR when bot is running.",
+      "action": "START NOW to capture W22 06:00-12:00 UTC window"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "AB tracker broken 57 days. ETH_SHORT_protect_from_bias (WR=80%, n=5) and HYPE_PROBE (WR=83%, n=6) stalled at gate=50 and gate=20 respectively. 20 total escalations frozen.",
+      "action": "P0 dev: Fix bot/feedback/loop.py update_times_correct() (~2h). Unblocks $150+ recovery path."
+    },
+    {
+      "subsystem": "live_injection",
+      "severity": "HIGH",
+      "finding": "SOL_SHORT_suspension_reversal_probe: 179-trade large sample, WR=63.7%. Cannot escalate due to SOL_SHORT_full_block=100 conflict. RULE_CONFLICT_SOL_SHORT pending human review.",
+      "action": "Human decision: arbitrate SOL SHORT conflict (SOL_SHORT_suspension vs SOL_SHORT_full_block)"
+    },
+    {
+      "subsystem": "execution_forensics",
+      "severity": "MEDIUM",
+      "finding": "87% noise stop rate in non-trending regimes (cached). HIGH_VOL_regime_boost at WR=0.55 is borderline demotion candidate.",
+      "action": "On bot restart: monitor HIGH_VOL_regime_boost first 100 live samples"
+    }
+  ],
+  "run_summary": {
+    "fixes_applied_this_run": 0,
+    "new_insights_this_run": 1,
+    "new_insight": "SOL_SHORT_suspension_reversal_probe: n=179 WR=63.7% CONFIRMED large-sample edge, blocked by SOL_SHORT conflict \u2014 needs human arbitration",
+    "escalation_candidates_blocked": 20,
+    "critical_deadline": "W22 RESTART DEADLINE T-15min!"
+  }
+}

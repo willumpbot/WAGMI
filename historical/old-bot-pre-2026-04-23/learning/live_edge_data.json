@@ -1,0 +1,161 @@
+{
+  "last_run": "2026-05-30T05:15:24.969483+00:00",
+  "run_number": 36,
+  "high_edges_found": 8,
+  "weak_setups_found": 7,
+  "no_new_trades": true,
+  "data_source": "Graduated rules analysis + cached (bot offline day 54.13)",
+  "new_insights_this_run": [
+    "ETH_SHORT_protect_from_bias (WR=0.80, n=5, gate=50) \u2014 NEWLY SURFACED. Highest confirmed active WR in system above large-sample threshold. Missing from escalation queue. Added as priority #2.",
+    "HYPE_UNKNOWN_REGIME_PROBE (WR=0.83, n=6, gate=20) \u2014 NEWLY SURFACED in escalation queue. Small sample but 83% WR = highest in system. Added as priority #1.",
+    "BB_GOLDEN trio (ETH/BTC/SOL, WR=70/69/67%, n=2172 each) remain statistical backbone."
+  ],
+  "current_session_state": {
+    "utc_time": "2026-05-30 04:11 UTC",
+    "active_tod_rule": "NIGHT (00:00-06:00 UTC). Night block ends in 1.84h (06:00 UTC).",
+    "trading_expected": false,
+    "hours_until_night_block_end": 1.84,
+    "w22_day": true
+  },
+  "window_22_status": {
+    "status": "CRITICAL_IMMINENT \u2014 T-1.34h to restart deadline (05:30 UTC). T-1.84h to open.",
+    "restart_deadline_utc": "2026-05-30T05:30:00+00:00",
+    "opens_at_utc": "2026-05-30T06:00:00+00:00",
+    "closes_at_utc": "2026-05-30T12:00:00+00:00",
+    "t_deadline_h": 1.34,
+    "t_open_h": 1.84,
+    "consecutive_morning_miss_count": 24,
+    "severity": "CRITICAL_IMMINENT \u2014 1h 20min to restart deadline. LAST HOURLY RUN BEFORE DEADLINE.",
+    "primed_rules": [
+      "ETH_SHORT_protect_from_bias gate=50% (+bias_bypass, WR=80%)",
+      "TOD_morning_edge gate=50% (+8pts, WR=74%)",
+      "ETH_SHORT_BB_golden gate=80% (+10pts, WR=70%, n=2172)",
+      "BTC_BUY_BB_golden gate=80% (+10pts, WR=69%, n=2172)",
+      "eth_trending_regime_boost gate=100% (+8pts)"
+    ],
+    "composite_wr": 0.74,
+    "ev_at_stake_usd": "$5.26-$8.40"
+  },
+  "top_edges": [
+    {
+      "setup": "HYPE_UNKNOWN_REGIME_PROBE",
+      "wr": 0.83,
+      "n": 6,
+      "gate": 20,
+      "conf": 0.75,
+      "status": "ACTIVE",
+      "note": "Highest WR, small sample"
+    },
+    {
+      "setup": "ETH_SHORT_protect_from_bias",
+      "wr": 0.8,
+      "n": 5,
+      "gate": 50,
+      "conf": 0.8,
+      "status": "ACTIVE",
+      "note": "NEW RUN35 \u2014 highest WR with gate>=50, critical pattern"
+    },
+    {
+      "setup": "tod_morning_edge_v1",
+      "wr": 0.74,
+      "n": 7,
+      "gate": 50,
+      "conf": 0.82,
+      "status": "ACTIVE"
+    },
+    {
+      "setup": "ETH_SHORT_BB_golden",
+      "wr": 0.7,
+      "n": 2172,
+      "gate": 80,
+      "conf": 0.95,
+      "status": "ACTIVE",
+      "note": "Largest definitive sample"
+    },
+    {
+      "setup": "BTC_BUY_BB_golden",
+      "wr": 0.69,
+      "n": 2172,
+      "gate": 80,
+      "conf": 0.91,
+      "status": "ACTIVE"
+    },
+    {
+      "setup": "SOL_BUY_BB_golden",
+      "wr": 0.67,
+      "n": null,
+      "gate": 80,
+      "conf": 0.9,
+      "status": "ACTIVE"
+    },
+    {
+      "setup": "tod_evening_edge_v1",
+      "wr": 0.65,
+      "n": 27,
+      "gate": 50,
+      "conf": 0.85,
+      "status": "ACTIVE"
+    },
+    {
+      "setup": "tod_afternoon_edge_v1",
+      "wr": 0.64,
+      "n": 27,
+      "gate": 20,
+      "conf": 0.85,
+      "status": "ACTIVE"
+    }
+  ],
+  "weak_setups": [
+    {
+      "setup": "HIGH_VOL_regime_boost",
+      "wr": 0.55,
+      "n": 2172,
+      "gate": 50,
+      "conf": 0.88,
+      "note": "Marginal edge, demotion candidate"
+    },
+    {
+      "setup": "NIGHT_SESSION_ESCALATE",
+      "wr": 0.19,
+      "gate": 80,
+      "note": "Negative edge at gate=80"
+    },
+    {
+      "setup": "BTC_LONG_LIVE_CONTRADICTION",
+      "wr": 0.19,
+      "gate": 20
+    },
+    {
+      "setup": "BTC_LONG_reduce",
+      "wr": 0.18,
+      "gate": 50
+    },
+    {
+      "setup": "INSTANT_SL_stop_buffer",
+      "wr": 0.11,
+      "gate": 80,
+      "note": "Worst rule in system"
+    },
+    {
+      "setup": "NOISE_REGIME_FAST_EXIT",
+      "wr": 0.28,
+      "gate": 80
+    },
+    {
+      "setup": "HYPE_LONG_hard_reduce",
+      "wr": 0.23,
+      "gate": 20,
+      "status": "SUPERSEDED"
+    }
+  ],
+  "sol_short_large_sample_reconfirmed": {
+    "rule": "SOL_SHORT_suspension_reversal_probe",
+    "wr": 0.637,
+    "n": 179,
+    "conf": 84,
+    "gate_current": 20,
+    "gate_target": 50,
+    "blocker": "SOL_SHORT_full_block=100 conflict + RULE_CONFLICT_SOL_SHORT pending human",
+    "status": "BLOCKED_HUMAN_REVIEW"
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "last_run": "2026-05-30T05:15:24.969483+00:00",
+  "run_number": 36,
+  "fixes_applied_this_run": 0,
+  "total_applied_all_time": 69,
+  "gates_active": 66,
+  "new_audit_files_this_run": 0,
+  "new_trades_this_run": 0,
+  "elapsed_since_last_run_h": 1.02,
+  "fixes_applied": [],
+  "new_findings_this_run": [
+    {
+      "finding_id": "RUN36_SOL_SHORT_CONFLICT_RECONFIRMED",
+      "type": "HUMAN_DECISION_NEEDED",
+      "severity": "HIGH",
+      "detail": "SOL_SHORT_suspension_reversal_probe (n=179, WR=63.7%, conf=84%) cannot escalate due to SOL_SHORT_full_block=100 + RULE_CONFLICT_SOL_SHORT pending human review. Large-sample evidence is solid.",
+      "action": "Resolve RULE_CONFLICT_SOL_SHORT: arbitrate between SOL_SHORT_full_block (blanket block) and suspension_reversal_probe (conditional unblock on high WR). Human decision required."
+    },
+    {
+      "finding_id": "RUN36_W22_DEADLINE_IMMINENT_15MIN",
+      "type": "RESTART_DEADLINE",
+      "severity": "CRITICAL",
+      "detail": "W22 restart deadline T-15min (05:30 UTC). Window opens T-45min (06:00 UTC). 25th consecutive morning miss if bot not started now.",
+      "action": "RESTART BOT NOW: cd bot && python run.py paper"
+    },
+    {
+      "finding_id": "RUN36_AB_TRACKER_DAY57",
+      "type": "SYSTEM_BLOCKER",
+      "severity": "HIGH",
+      "detail": "AB tracker broken 57 days. 20 escalations frozen. P0 fix: bot/feedback/loop.py update_times_correct().",
+      "action": "Schedule P0 fix after W22 window capture"
+    }
+  ],
+  "escalation_candidates_blocked": 20,
+  "escalation_priority_queue": [
+    {
+      "rule_id": "HYPE_UNKNOWN_REGIME_PROBE",
+      "gate_from": 20,
+      "gate_to": 50,
+      "conf": 0.75,
+      "wr": 0.83,
+      "n": 6,
+      "priority": 1,
+      "note": "Highest WR but n<10"
+    },
+    {
+      "rule_id": "ETH_SHORT_protect_from_bias",
+      "gate_from": 50,
+      "gate_to": 80,
+      "conf": 0.8,
+      "wr": 0.8,
+      "n": 5,
+      "priority": 2,
+      "note": "NEW RUN35 \u2014 highest WR with active rule, n<10 graduation threshold"
+    },
+    {
+      "rule_id": "ETH_SHORT_BB_golden",
+      "gate_from": 80,
+      "gate_to": 100,
+      "conf": 0.95,
+      "wr": 0.7,
+      "n": 2172,
+      "priority": 3,
+      "note": "Largest sample, statistically definitive"
+    },
+    {
+      "rule_id": "BTC_BUY_BB_golden",
+      "gate_from": 80,
+      "gate_to": 100,
+      "conf": 0.91,
+      "wr": 0.69,
+      "n": 2172,
+      "priority": 4,
+      "note": "2nd largest sample"
+    },
+    {
+      "rule_id": "SOL_BUY_BB_golden",
+      "gate_from": 80,
+      "gate_to": 100,
+      "conf": 0.9,
+      "wr": 0.67,
+      "n": null,
+      "priority": 5,
+      "note": "Third golden setup"
+    },
+    {
+      "rule_id": "tod_morning_edge_v1",
+      "gate_from": 50,
+      "gate_to": 80,
+      "conf": 0.82,
+      "wr": 0.74,
+      "n": 7,
+      "priority": 6
+    },
+    {
+      "rule_id": "tod_afternoon_edge_v1",
+      "gate_from": 20,
+      "gate_to": 50,
+      "conf": 0.85,
+      "wr": 0.64,
+      "n": 27,
+      "priority": 7
+    },
+    {
+      "rule_id": "tod_evening_edge_v1",
+      "gate_from": 50,
+      "gate_to": 80,
+      "conf": 0.85,
+      "wr": 0.65,
+      "n": 27,
+      "priority": 8
+    }
+  ],
+  "ab_tracker_status": "BROKEN day 56 (P0 dev, ~2h fix in bot/feedback/loop.py)",
+  "gate_distribution": {
+    "0": 29,
+    "5": 1,
+    "20": 19,
+    "35": 1,
+    "50": 18,
+    "80": 28,
+    "100": 20
+  },
+  "note": "Run 35: 0 new fixes. 2 NEW escalation candidates identified (ETH_SHORT_protect WR=80%, HYPE_PROBE WR=83%) \u2014 both missing from prior queue. AB tracker day 56 blocks all escalations. W22 deadline T-1.34h = LAST HOURLY RUN BEFORE DEADLINE."
+}
