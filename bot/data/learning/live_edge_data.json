@@ -1,25 +1,26 @@
 {
-  "last_run": "2026-05-29T05:09:00+00:00",
-  "run_number": 30,
+  "last_run": "2026-05-30T05:09:00+00:00",
+  "run_number": 31,
   "high_edges_found": 9,
   "weak_setups_found": 6,
   "no_new_trades": true,
-  "data_source": "Cached (no new trades \u2014 bot offline day 50.50)",
+  "data_source": "Cached (no new trades \u2014 bot offline day 51.50)",
   "current_session_state": {
-    "utc_time": "2026-05-29 05:09 UTC",
-    "active_tod_rule": "NIGHT (00:00-06:00 UTC) \u2014 night block ends in 0.85h (06:00 UTC).",
+    "utc_time": "2026-05-30 05:09 UTC",
+    "active_tod_rule": "NIGHT (00:00-06:00 UTC) \u2014 W22 DAY. Night block ends in 0.85h (06:00 UTC).",
     "trading_expected": false,
-    "hours_until_night_block_end": 0.85
+    "hours_until_night_block_end": 0.85,
+    "w22_day": true
   },
   "window_22_status": {
-    "status": "UPCOMING \u2014 T-24.85h to open",
+    "status": "IMMINENT \u2014 T-0.85h to open. RESTART DEADLINE T-0.35h (21 MINUTES)",
     "restart_deadline_utc": "2026-05-30T05:30:00+00:00",
     "opens_at_utc": "2026-05-30T06:00:00+00:00",
     "closes_at_utc": "2026-05-30T12:00:00+00:00",
-    "t_deadline_h": 24.35,
-    "t_open_h": 24.85,
+    "t_deadline_h": 0.35,
+    "t_open_h": 0.85,
     "consecutive_morning_miss_count": 23,
-    "severity": "CRITICAL \u2014 T-24.85h. Night block ends in 0.85h: RESTART NOW (51 min window).",
+    "severity": "CRITICAL \u2014 21 MINUTES TO RESTART DEADLINE. MOST URGENT STATE YET.",
     "primed_rules": [
       "TOD_morning_edge gate=50% (+5pts)",
       "ETH_SHORT_BB_golden gate=80% (+8pts)",
@@ -40,7 +41,7 @@
       "setup": "ETH_SHORT_BB",
       "wr": 0.8,
       "n": 5,
-      "status": "A/B_ACTIVE gate=80%"
+      "status": "A/B_ACTIVE gate=80% \u2014 W22 PRIMARY"
     },
     {
       "setup": "BTC_TRENDING_SHORT",
@@ -52,7 +53,7 @@
       "setup": "MORNING_WINDOW_COMPOSITE",
       "wr": 0.74,
       "n": 7,
-      "status": "gate=50% primed \u2014 W22"
+      "status": "gate=50% primed \u2014 W22 TODAY"
     },
     {
       "setup": "ETH_TRENDING",
@@ -64,7 +65,7 @@
       "setup": "BB_SOLO_SIGNAL",
       "wr": 0.676,
       "n": 2172,
-      "status": "gate=80%"
+      "status": "gate=80% \u2014 HIGHEST VOLUME EDGE"
     },
     {
       "setup": "ETH_SELL_BB_GOLDEN",
@@ -79,51 +80,68 @@
       "status": "gate=80%"
     },
     {
-      "setup": "SOL_HIGH_CONF_premium",
-      "wr": 0.735,
-      "n": 34,
+      "setup": "SOL_BUY_BB",
+      "wr": 0.67,
+      "n": 9,
       "status": "gate=80%"
     }
   ],
   "weak_setups": [
     {
-      "setup": "SOL_SHORT_regime_trend",
-      "wr": 0.0,
-      "n": 149,
-      "status": "SHADOW \u2014 0% WR, blocked via SOL_SHORT_LIVE_CONTRADICTION gate=100"
-    },
-    {
-      "setup": "SOL_SHORT_live",
-      "wr": 0.346,
-      "n": 52,
-      "status": "SUSPENDED (gate=20->0 applied run28)"
+      "setup": "SOL_SHORT",
+      "wr": 0.35,
+      "n": 23,
+      "status": "DISABLED gate=0"
     },
     {
       "setup": "HYPE_SELL_BB",
-      "wr": 0.3,
-      "n": 10,
+      "wr": 0.35,
+      "n": 17,
       "status": "BLOCKED gate=80%"
     },
     {
       "setup": "HIGH_LEV_6_10X",
-      "wr": 0.25,
-      "n": 20,
+      "wr": 0.31,
+      "n": 51,
       "status": "BLOCKED gate=20%"
     },
     {
-      "setup": "RANGING_regime",
-      "wr": 0.25,
-      "n": 16,
-      "status": "REDUCE gate=50%"
+      "setup": "LONG_BIAS_all",
+      "wr": 0.3,
+      "n": 422,
+      "status": "FILTERED gate=80%"
     },
     {
-      "setup": "BTC_LONG",
-      "wr": 0.18,
-      "n": 17,
-      "status": "REDUCE gate=50%"
+      "setup": "AFTERNOON_SESSION",
+      "wr": 0.29,
+      "n": 33,
+      "status": "DISABLED gate=0"
+    },
+    {
+      "setup": "EVENING_session",
+      "wr": 0.33,
+      "n": 28,
+      "status": "DEMOTION_CANDIDATE gate=20%"
     }
   ],
-  "rule_fix_impact": "No new fixes this run. SOL_SHORT conflict remains resolved from run 28. Gate distribution stable.",
-  "night_block_end_note": "Night block ends 06:00 UTC (T-0.85h). CRITICAL: restart window is NOW within 51 minutes. W22 primed at 74% composite WR.",
-  "note": "Run 30 (05:09 UTC). Night block ending T-0.85h. No new signals. W22 opens T-24.85h. Restart window is CRITICAL — 51 minutes."
+  "w22_injection_brief": {
+    "recommended_focus": [
+      "ETH_SHORT_BB",
+      "HYPE (unknown regime probe)",
+      "BB_SOLO in trending"
+    ],
+    "symbols_priority": [
+      "ETH",
+      "HYPE",
+      "BTC"
+    ],
+    "avoid": [
+      "SOL",
+      "HYPE_SHORT_BB",
+      "HIGH_LEV_6-10x",
+      "LONG bias",
+      "AFTERNOON+EVENING sessions"
+    ],
+    "first_signal_expected": "06:00-07:00 UTC after regime classification runs"
+  }
 }

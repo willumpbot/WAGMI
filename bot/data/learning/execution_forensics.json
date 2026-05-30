@@ -1,9 +1,9 @@
 {
-  "last_run": "2026-05-29T05:09:00+00:00",
-  "run_number": 30,
+  "last_run": "2026-05-30T05:09:00+00:00",
+  "run_number": 31,
   "data_available": false,
-  "data_source": "Cached (bot offline 50.50 days, trades.csv empty)",
-  "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 50+)",
+  "data_source": "Cached (bot offline 51.50 days, trades.csv empty)",
+  "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 51+)",
   "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached]",
   "hold_time_forensics": {
     "win_median_hold_h": 3.3,
@@ -21,46 +21,36 @@
       "verdict": "BLOCKED (HIGH_LEV_10X_FORENSICS_BLOCK gate=20%)"
     }
   },
+  "new_finding_run31": {
+    "type": "RULE_CONFLICT",
+    "detail": "SIZE_edge_boost (gate=80, conf=75) promotes 'large positions >5x win 57-60%' vs HIGH_LEV_10X_FORENSICS_BLOCK avg PnL -4.62. Needs disambiguation: is 'large' notional size % or leverage ratio?",
+    "severity": "MEDIUM",
+    "action": "Clarify SIZE_edge_boost scope before bot restart"
+  },
   "ev_loss_tracker": {
     "morning_windows_missed": 23,
     "ev_loss_morning_usd": 131.81,
-    "w21_status": "CONFIRMED_MISSED \u2014 23rd consecutive miss.",
-    "w22_status": "UPCOMING \u2014 T-24.35h to restart deadline (05:30 UTC May 30)",
+    "w22_status": "IMMINENT \u2014 T-0.85h to open (06:00 UTC). RESTART DEADLINE T-0.35h (05:30 UTC, 21 MINUTES).",
     "w22_open_utc": "2026-05-30T06:00:00+00:00",
     "w22_deadline_utc": "2026-05-30T05:30:00+00:00",
+    "w22_close_utc": "2026-05-30T12:00:00+00:00",
     "w22_ev_at_stake_usd": "$5.26-$8.40",
     "cumulative_ev_loss_usd": 131.81,
-    "t_deadline_h": 24.35,
-    "t_open_h": 24.85,
-    "severity": "CRITICAL \u2014 W22 deadline T-24.35h. Night block ends in 0.85h: RESTART WINDOW NOW WITHIN 51 MINUTES."
-  },
-  "restart_window": {
-    "night_block_end_utc": "2026-05-29T06:00:00+00:00",
-    "t_night_block_end_h": 0.85,
-    "recommendation": "RESTART AT 06:00 UTC (T-0.85h). Bot live at 06:00 = 23.85h warmup before W22 deadline. Do not delay.",
-    "urgency": "CRITICAL \u2014 51 minutes to restart window. Highest urgency since bot went offline."
+    "projected_if_missed_usd": 138.64,
+    "t_deadline_h": 0.35,
+    "t_open_h": 0.85,
+    "severity": "CRITICAL \u2014 MOST URGENT TIMING STATE. W22 deadline 21 minutes away."
   },
   "structural_gaps": [
-    "snapshot_entry column missing (slippage unmeasurable \u2014 day 50+)",
-    "llm_regime column empty (regime rules unmeasurable \u2014 day 50+)",
-    "AB outcome callbacks not firing (all gated rules stalled \u2014 P0 dev, day 52)"
+    "snapshot_entry column missing (slippage unmeasurable \u2014 day 51+)",
+    "llm_regime column empty (regime rules unmeasurable \u2014 day 51+)",
+    "AB outcome callbacks not firing (all gated rules stalled \u2014 P0 dev, day 53)"
   ],
-  "ab_tracker_status": {
-    "severity": "HIGH",
-    "stalled_rules": 18,
-    "stalled_gate": "50%",
-    "fix_estimate": "~2h dev",
-    "priority": "P0",
-    "days_stalled": 52,
-    "post_ab_fix_queue_size": 5,
-    "highest_priority": "BB_solo_signal_boost (conf=95, n=2172, gate=80->100)"
-  },
-  "delta_vs_run_29": {
-    "elapsed_h": 1.00,
-    "w22_deadline_h": "25.35 -> 24.35 (-1.00h)",
-    "t_night_block_end_h": "1.85 -> 0.85 (-1.00h) \u2014 RESTART WINDOW NOW WITHIN 1 HOUR",
-    "cumulative_ev_loss": "$131.81 (unchanged \u2014 no new window)",
-    "morning_windows_missed": "23 (unchanged)",
-    "new_finding": "Night block end now 0.85h away. MOST CRITICAL TIMING STATE: restart window opens in 51 minutes at 06:00 UTC. Restart = max 23.85h warmup before W22."
+  "delta_vs_run_30": {
+    "elapsed_h": 24.0,
+    "w22_deadline_h": "24.35 -> 0.35 (-24.00h) \u2014 W22 DEADLINE NOW 21 MINUTES AWAY",
+    "t_night_block_end_h": "0.85 -> 0.85 (same \u2014 new night block cycle)",
+    "cumulative_ev_loss": "$131.81 (unchanged \u2014 no new window yet)",
+    "new_finding": "SIZE_edge_boost/HIGH_LEV_10X conflict detected. W22 is TODAY. Restart deadline imminent."
   }
 }
