@@ -146,47 +146,54 @@ class BacktestLLMIntegration:
         """
         result = PreflightResult(passed=True)
 
-        # 1. API key check
-        try:
-            from llm.client import get_client
-            client = get_client()
-            if client is None:
+        # 1. API key check — allow CLI path (USE_CLI_LLM=true) to bypass API key requirement
+        use_cli_llm = os.getenv("USE_CLI_LLM", "").lower() in ("true", "1", "yes")
+        if use_cli_llm:
+            logger.info("[PREFLIGHT] USE_CLI_LLM=true detected — skipping API key check, using claude CLI")
+        else:
+            try:
+                from llm.client import get_client
+                client = get_client()
+                if client is None:
+                    result.passed = False
+                    result.errors.append(
+                        "ANTHROPIC_API_KEY not set or anthropic package not installed. "
+                        "No API calls possible."
+                    )
+                    return result
+            except Exception as e:
                 result.passed = False
-                result.errors.append(
-                    "ANTHROPIC_API_KEY not set or anthropic package not installed. "
-                    "No API calls possible."
-                )
+                result.errors.append(f"Failed to initialize API client: {e}")
                 return result
-        except Exception as e:
-            result.passed = False
-            result.errors.append(f"Failed to initialize API client: {e}")
-            return result
 
-        # 2. API ping (one cheap Haiku call)
-        try:
-            from llm.client import call_llm
-            text, usage = call_llm(
-                system_prompt="Reply with exactly: OK",
-                snapshot_json="{}",
-                model="claude-haiku-4-5",
-                max_tokens=8,
-                max_retries=1,
-                timeout=15.0,
-            )
-            if text is None:
-                result.passed = False
-                error_msg = usage.get("error", "unknown error")
-                result.errors.append(
-                    f"API ping failed: {error_msg}. "
-                    "Check your API key and network connection."
+        # 2. API ping (one cheap Haiku call) — skip when using CLI path
+        if use_cli_llm:
+            logger.info("[PREFLIGHT] CLI mode: skipping API ping, CLI handles routing")
+        else:
+            try:
+                from llm.client import call_llm
+                text, usage = call_llm(
+                    system_prompt="Reply with exactly: OK",
+                    snapshot_json="{}",
+                    model="claude-haiku-4-5",
+                    max_tokens=8,
+                    max_retries=1,
+                    timeout=15.0,
                 )
-                return result
-            ping_cost = self._compute_cost_from_usage(usage)
-            self.total_cost_usd += ping_cost
-            logger.info(f"[PREFLIGHT] API ping OK (cost: ${ping_cost:.6f})")
-        except Exception as e:
-            result.passed = False
-            result.errors.append(f"API ping failed with exception: {e}")
+                if text is None:
+                    result.passed = False
+                    error_msg = usage.get("error", "unknown error")
+                    result.errors.append(
+                        f"API ping failed: {error_msg}. "
+                        "Check your API key and network connection."
+                    )
+                    return result
+                ping_cost = self._compute_cost_from_usage(usage)
+                self.total_cost_usd += ping_cost
+                logger.info(f"[PREFLIGHT] API ping OK (cost: ${ping_cost:.6f})")
+            except Exception as e:
+                result.passed = False
+                result.errors.append(f"API ping failed with exception: {e}")
             return result
 
         # 3. Data validation
@@ -266,10 +273,11 @@ class BacktestLLMIntegration:
             result.errors.append(f"Snapshot builder failed: {e}")
             return result
 
-        # 6. Coordinator instantiation
+        # 6. Coordinator instantiation — use env-var-aware factory so that
+        # AGENT_*_ENABLED flags (e.g. AGENT_QUANT_ENABLED=false) are honoured.
         try:
-            from llm.agents.coordinator import AgentCoordinator
-            self._coordinator = AgentCoordinator()
+            from llm.agents.coordinator import get_coordinator
+            self._coordinator = get_coordinator()
             logger.info("[PREFLIGHT] AgentCoordinator instantiated OK")
         except Exception as e:
             result.passed = False

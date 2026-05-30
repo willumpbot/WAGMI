@@ -834,7 +834,15 @@ class BacktestEngine:
                 if self._dynamic_floor_adj != 0:
                     ensemble.confidence_floor = self.config.ensemble_confidence_floor + self._dynamic_floor_adj
 
-                signal = ensemble.evaluate(symbol, windowed)
+                # LLM mode: use evaluate_raw() so the EV gate and confidence floor
+                # don't pre-filter signals before the LLM pipeline sees them.
+                # evaluate_raw() passes llm_first_raw=True internally, which keeps
+                # all consensus signals alive for LLM quality filtering.
+                # Mechanical mode (no LLM): use evaluate() — EV gate and floors active.
+                if self.llm:
+                    signal = ensemble.evaluate_raw(symbol, windowed)
+                else:
+                    signal = ensemble.evaluate(symbol, windowed)
                 if signal and not signal.is_valid:
                     logger.debug(f"[{symbol}] Invalid signal rejected by is_valid")
                     signal = None

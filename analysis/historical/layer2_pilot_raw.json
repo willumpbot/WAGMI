@@ -1,0 +1,1316 @@
+{
+  "config": {
+    "symbols": [
+      "BTC"
+    ],
+    "days": 7,
+    "starting_equity": 10000,
+    "risk_per_trade": 0.08,
+    "ensemble_mode": "weighted_veto",
+    "leverage_enabled": true,
+    "trailing_stop_enabled": true
+  },
+  "results": {
+    "final_equity": 10000,
+    "total_return_pct": 0.0,
+    "max_drawdown_pct": 0,
+    "total_signals": 0,
+    "total_trades": 0,
+    "positions_opened": 0,
+    "close_events": 0
+  },
+  "by_strategy": {},
+  "by_symbol": {},
+  "leverage_stats": {
+    "spot": {
+      "trades": 0,
+      "pnl": 0.0
+    },
+    "leveraged": {
+      "trades": 0,
+      "pnl": 0.0,
+      "avg_leverage": 0.0
+    }
+  },
+  "equity_curve_length": 118,
+  "circuit_breaker_stats": {
+    "total_trips": 0,
+    "signals_blocked": 0,
+    "candles_locked_out": 0,
+    "lockout_pct": 0.0,
+    "force_close_events": 0,
+    "force_close_pnl": 0,
+    "peak_equity": 10000
+  },
+  "by_agreement": {},
+  "strategy_health": {},
+  "exit_types": {},
+  "signal_funnel": {
+    "candles_processed": 118,
+    "no_signal": 118,
+    "cb_blocked": 0,
+    "regime_blocked": 0,
+    "signals_generated": 0,
+    "gate_rejections": {},
+    "other_rejections": 0,
+    "executed": 0,
+    "conversion_rate": 0.0
+  },
+  "positions": {
+    "count": 0
+  },
+  "costs": {
+    "gross_pnl": 0.0,
+    "total_fees": 0.0,
+    "total_funding": 0.0,
+    "net_pnl": 0.0,
+    "fee_drag_pct": 0,
+    "avg_fee_per_event": 0,
+    "breakeven_wr": 50.0
+  },
+  "confidence_analysis": {
+    "buckets": {},
+    "optimal_threshold": null
+  },
+  "risk_metrics": {
+    "sharpe": 0,
+    "sortino": 0,
+    "calmar": 0,
+    "profit_factor": 99.0,
+    "recovery_factor": 0,
+    "time_in_market_pct": 0.0,
+    "max_dd_duration_candles": 0,
+    "annualized_return_pct": 0.0
+  },
+  "trailing_analysis": {
+    "entered_trailing": 0,
+    "outcomes": {},
+    "net_trailing_edge": 0.0
+  },
+  "by_regime": {},
+  "by_hour": {},
+  "hold_time_analysis": {
+    "0-2h": {
+      "min": 0,
+      "max": 2,
+      "trades": 0,
+      "wins": 0,
+      "pnl": 0.0,
+      "win_rate": 0
+    },
+    "2-6h": {
+      "min": 2,
+      "max": 6,
+      "trades": 0,
+      "wins": 0,
+      "pnl": 0.0,
+      "win_rate": 0
+    },
+    "6-12h": {
+      "min": 6,
+      "max": 12,
+      "trades": 0,
+      "wins": 0,
+      "pnl": 0.0,
+      "win_rate": 0
+    },
+    "12-24h": {
+      "min": 12,
+      "max": 24,
+      "trades": 0,
+      "wins": 0,
+      "pnl": 0.0,
+      "win_rate": 0
+    },
+    "24-48h": {
+      "min": 24,
+      "max": 48,
+      "trades": 0,
+      "wins": 0,
+      "pnl": 0.0,
+      "win_rate": 0
+    },
+    "48h+": {
+      "min": 48,
+      "max": 9999,
+      "trades": 0,
+      "wins": 0,
+      "pnl": 0.0,
+      "win_rate": 0
+    }
+  },
+  "by_setup_type": {},
+  "conf_regime_crosstab": {},
+  "symbol_pnl": {
+    "BTC": 0
+  },
+  "recommendations": [],
+  "equity_curve": [
+    {
+      "time": "2026-03-27 05:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 06:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 07:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 08:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 09:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 10:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 11:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 12:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 13:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 14:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 15:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 16:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 17:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 18:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 19:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 20:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 21:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 22:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-27 23:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 00:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 01:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 02:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 03:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 04:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 05:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 06:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 07:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 08:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 09:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 10:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 11:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 12:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 13:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 14:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 15:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 16:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 17:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 18:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 19:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 20:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 21:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 22:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-28 23:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 00:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 01:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 02:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 03:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 04:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 05:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 06:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 07:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 08:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 09:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 10:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 11:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 12:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 13:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 14:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 15:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 16:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 17:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 18:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 19:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 20:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 21:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 22:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-29 23:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 00:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 01:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 02:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 03:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 04:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 05:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 06:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 07:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 08:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 09:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 10:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 11:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 12:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 13:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 14:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 15:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 16:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 17:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 18:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 19:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 20:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 21:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 22:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-30 23:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 00:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 01:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 02:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 03:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 04:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 05:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 06:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 07:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 08:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 09:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 10:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 11:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 12:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 13:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 14:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 15:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 16:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 17:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 18:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 19:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 20:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 21:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 22:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-03-31 23:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-04-01 00:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-04-01 01:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    },
+    {
+      "time": "2026-04-01 02:00:00+00:00",
+      "equity": 10000,
+      "mtm_equity": 10000.0,
+      "unrealized_pnl": 0.0,
+      "open_positions": 0,
+      "cb_active": false,
+      "drawdown_pct": 0.0
+    }
+  ],
+  "missed_trades": {
+    "total_missed": 1,
+    "with_counterfactual": 1,
+    "would_have_won": 1,
+    "would_have_lost": 0,
+    "overall_gate_accuracy_pct": 0.0,
+    "total_missed_alpha_pct": 4.144,
+    "total_saved_loss_pct": 0,
+    "net_gate_value_pct": -4.144,
+    "by_category": {
+      "opposition_veto": {
+        "count": 1,
+        "with_outcome": 1,
+        "would_have_won": 1,
+        "would_have_lost": 0,
+        "win_rate_if_taken": 100.0,
+        "missed_alpha_pct": 4.144,
+        "saved_loss_pct": 0,
+        "net_impact_pct": 4.144,
+        "gate_accuracy_pct": 0.0
+      }
+    },
+    "by_symbol": {
+      "BTC": 1
+    },
+    "by_regime": {
+      "unknown": 1
+    },
+    "by_strategy_solo": {},
+    "top_missed_opportunities": [
+      {
+        "symbol": "BTC",
+        "side": "BUY",
+        "confidence": 65.45,
+        "entry": 67091.0,
+        "missed_pnl_pct": 4.144,
+        "rejected_by": "ensemble",
+        "reason": "graduated_rule_veto",
+        "regime": "unknown",
+        "strategies": [
+          "confidence_scorer"
+        ]
+      }
+    ]
+  },
+  "gate_effectiveness": {
+    "ensemble": {
+      "total_rejections": 1,
+      "correct_rejections": 0,
+      "incorrect_rejections": 1,
+      "accuracy_pct": 0.0,
+      "recommendation": "LOOSEN \u2014 blocking too many winners"
+    }
+  },
+  "llm_stats": {
+    "total_cost_usd": 0.0,
+    "budget_usd": 2.0,
+    "budget_used_pct": 0.0,
+    "llm_calls": 0,
+    "llm_failures": 0,
+    "candles_with_llm": 0,
+    "candles_fallback": 0,
+    "pre_filter_skips": 0,
+    "budget_exhausted": false,
+    "decisions_logged": 0,
+    "agent_costs": {},
+    "exit_decisions_logged": 0,
+    "learning_lessons_processed": 0,
+    "regime_transitions": 0,
+    "regime_timeline": [],
+    "veto_stats": {
+      "total_decisions": 0,
+      "approved": 0,
+      "vetoed": 0,
+      "veto_rate": 0.0
+    }
+  },
+  "llm_agent_costs": {},
+  "llm_regime_timeline": [],
+  "llm_veto_stats": {
+    "total_decisions": 0,
+    "approved": 0,
+    "vetoed": 0,
+    "veto_rate": 0.0
+  },
+  "llm_exit_decisions": [],
+  "llm_learning_lessons": 0,
+  "trade_timeline": [],
+  "quant_analytics": {
+    "error": "no_trades",
+    "total_trades": 0
+  },
+  "signal_digest_summary": {
+    "total_evaluations": 21,
+    "total_signals_generated": 0,
+    "signal_rate": 0.0,
+    "strategy_fire_rates": {},
+    "consensus_histogram": {},
+    "near_misses": {
+      "count": 0,
+      "samples": []
+    },
+    "min_votes_required": 1
+  }
+}

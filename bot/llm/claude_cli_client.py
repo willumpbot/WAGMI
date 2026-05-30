@@ -19,6 +19,7 @@ import logging
 import os
 import shutil
 import subprocess
+import tempfile
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
@@ -84,9 +85,6 @@ def call_agent(
     if CLAUDE_BIN is None:
         return CliResponse(ok=False, error="claude CLI not found in PATH")
 
-    # Build cmd — keep it short. Windows has an 8191-char argv limit; agent system
-    # prompts can be 7000+ chars, so we embed the system prompt in stdin instead
-    # of passing it via --append-system-prompt.
     cmd = [CLAUDE_BIN, "--print",
            "--output-format", "json",
            "--model", model,
@@ -94,35 +92,64 @@ def call_agent(
            "--no-session-persistence",
            "--dangerously-skip-permissions"]
 
-    # Embed system prompt in stdin (avoids Windows 8191-char cmd-line limit)
-    if system_prompt:
-        combined_input = f"<system>\n{system_prompt}\n</system>\n\n{user_prompt}"
-    else:
-        combined_input = user_prompt
-
     if json_schema:
         cmd.extend(["--json-schema", json.dumps(json_schema)])
     if not allow_tools:
         cmd.extend(["--tools", ""])
 
-    start = time.time()
+    # Pass system prompt via --system-prompt flag (cheaper: uses only the base
+    # Claude Code context, not the full project context). Falls back to a temp
+    # file for very long prompts to stay within Windows 8191-char cmd limit.
+    # NOTE: --system-prompt-file loads the full project context (~39K tokens at
+    # $0.11/Sonnet call), blowing through the $0.10 per-call budget. Using
+    # --system-prompt keeps costs under $0.03/Sonnet call.
+    _CMDLINE_SAFE_LIMIT = 6500  # conservative threshold for inline system prompt
+    tmp_file = None
     try:
-        result = subprocess.run(
-            cmd, input=combined_input, capture_output=True, text=True,
-            timeout=timeout, cwd=cwd, encoding="utf-8", errors="replace",
-        )
-        latency = time.time() - start
-    except subprocess.TimeoutExpired:
-        return CliResponse(ok=False, error=f"timeout after {timeout}s",
-                           latency_s=time.time() - start, model=model)
-    except Exception as e:
-        return CliResponse(ok=False, error=f"subprocess error: {e}",
-                           latency_s=time.time() - start, model=model)
+        if system_prompt:
+            if len(system_prompt) <= _CMDLINE_SAFE_LIMIT:
+                cmd.extend(["--system-prompt", system_prompt])
+            else:
+                # Long prompt: write to temp file. Increase budget so the extra
+                # project context tokens don't blow the per-call limit.
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".txt", delete=False, encoding="utf-8"
+                ) as f:
+                    f.write(system_prompt)
+                    tmp_file = f.name
+                cmd.extend(["--system-prompt-file", tmp_file])
+                # Bump budget: file mode loads full project context (~39K tokens)
+                for idx, arg in enumerate(cmd):
+                    if arg == "--max-budget-usd" and idx + 1 < len(cmd):
+                        cmd[idx + 1] = str(max(float(cmd[idx + 1]), 0.50))
+                        break
+
+        start = time.time()
+        try:
+            result = subprocess.run(
+                cmd, input=user_prompt, capture_output=True, text=True,
+                timeout=timeout, cwd=cwd, encoding="utf-8", errors="replace",
+            )
+            latency = time.time() - start
+        except subprocess.TimeoutExpired:
+            return CliResponse(ok=False, error=f"timeout after {timeout}s",
+                               latency_s=time.time() - start, model=model)
+        except Exception as e:
+            return CliResponse(ok=False, error=f"subprocess error: {e}",
+                               latency_s=time.time() - start, model=model)
+    finally:
+        if tmp_file:
+            try:
+                os.unlink(tmp_file)
+            except Exception:
+                pass
 
     if result.returncode != 0:
+        # Include stdout snippet — CLI sometimes writes error details there (JSON envelope)
+        _err_detail = result.stderr[:300] or result.stdout[:300]
         return CliResponse(
             ok=False,
-            error=f"exit {result.returncode}: {result.stderr[:500]}",
+            error=f"exit {result.returncode}: {_err_detail}",
             latency_s=latency,
             model=model,
         )

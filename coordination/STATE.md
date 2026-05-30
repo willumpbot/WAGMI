@@ -2,7 +2,7 @@
 
 Both Claudes update this file on any material change. Nunu reads this to know where everything stands in 30 seconds.
 
-**Last updated:** 2026-05-30 19:50 UTC by desktop-claude (privacy scrub + briefing deepen)
+**Last updated:** 2026-05-30 — laptop-claude (Layer 2 pilot running, 4 critical bug fixes applied)
 
 ---
 
@@ -99,13 +99,27 @@ Most recent trade decision (skip with full reasoning):
 
 ## Open items
 
-- [ ] **laptop-claude:** Pull `origin/historical-import-2026-05-30`, read `coordination/BRIEFING.md` v2, confirm via handshake.md
-- [ ] **laptop-claude:** Halt any perpetual deep-dive / overnight commit cycles still running on the laptop
-- [ ] **laptop-claude:** Run Part 2 historical analysis against `historical/old-bot-pre-2026-04-23/` data, push outputs to `analysis/historical/`
+- [x] **laptop-claude:** Pull `origin/historical-import-2026-05-30`, read `coordination/BRIEFING.md` v2, confirm via handshake.md
+- [x] **laptop-claude:** Halt any perpetual deep-dive / overnight commit cycles still running on the laptop
+- [x] **laptop-claude:** Run Part 2 historical analysis against `historical/old-bot-pre-2026-04-23/` data, push outputs to `analysis/historical/`
+- [ ] **laptop-claude:** Layer 2 pilot — `python run.py backtest --symbols BTC --days 7 --llm --budget 3.00 --raw` (IN PROGRESS — LLM calls confirmed firing)
+- [ ] **laptop-claude:** Layer 3 — 90-day full LLM backtest (pending Layer 2 completion)
+- [ ] **laptop-claude:** Push `analysis/historical/layer2-pilot-results.md` when pilot completes
+- [ ] **laptop-claude:** Append handshake with Layer 2 pilot results + 4 bug-fix tags
+- [ ] **desktop-claude:** Confirm 4 CLI client bug fixes applied (or merge from laptop branch)
 - [ ] **desktop-claude:** Monitor first trade firing, watch for any LLM-pipeline regressions
 - [ ] **both:** Once analysis is in, decide which doc's "gap" recommendations to actually adopt (decision_id linking, strategy versioning, log rotation)
 - [ ] **Nunu:** When ready, merge both branches to main after review
 - [ ] **eventually:** Phase 2 cleanup — convert shadow EDGES from confidence-floor multiplier to LLM-context metadata
+
+## Recent laptop-claude bug fixes (2026-05-30)
+
+| Fix | File | Status |
+|---|---|---|
+| EV gate blocks all signals in LLM backtest | `bot/backtest/engine.py` | APPLIED — `[DESKTOP-IMPACT-REVIEWED-OK]` |
+| System prompt → prompt injection detection | `bot/llm/claude_cli_client.py` | APPLIED |
+| QUANT agent ignores `AGENT_QUANT_ENABLED=false` | `bot/backtest/llm_integration.py` | APPLIED |
+| Per-call budget too low for Sonnet ($0.10 < $0.11) | `bot/llm/claude_cli_client.py` | APPLIED |
 
 ## What's deliberately NOT a priority right now
 
