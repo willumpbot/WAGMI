@@ -2305,13 +2305,18 @@ class EnsembleStrategy:
         #   so the LLM sees "this setup had 100% WR on 135 samples" as context and decides itself.
         _SHADOW_EDGES = {
             # KEEP — strong positive edges (high WR + positive avg return)
-            ("ETH", "BUY", "regime_trend"):          0.90,  # 100% WR on 135 samples
-            ("HYPE", "BUY", "bollinger_squeeze"):    0.80,  # 61.2% WR on 196 samples
-            ("SOL", "SELL", "multi_tier_quality"):   0.80,  # 72.1% WR on 68 samples
-            ("SOL", "SELL", "bollinger_squeeze"):    0.80,  # 72.1% WR on 68 samples
-            # NEUTRAL — marginal but positive (keep as soft floor)
-            ("BTC", "BUY", "regime_trend"):          0.65,  # 55.1% WR on 78 samples
-            ("HYPE", "BUY", "regime_trend"):         0.72,  # 80.0% WR on 40 samples
+            ("ETH", "BUY", "regime_trend"):          0.90,  # 100% WR on 135 samples (confirmed 2026-05-30 audit)
+            ("HYPE", "BUY", "bollinger_squeeze"):    0.80,  # 61.2% WR on 196 samples (confirmed 2026-05-30 audit)
+            ("SOL", "SELL", "multi_tier_quality"):   0.80,  # 72.1% WR on 68 samples (confirmed 2026-05-30 audit)
+            ("SOL", "SELL", "bollinger_squeeze"):    0.80,  # 72.1% WR on 68 samples (confirmed 2026-05-30 audit)
+            # UPGRADED 2026-05-30 — laptop-claude audit found more data, stronger numbers
+            ("BTC", "BUY", "regime_trend"):          0.72,  # was 0.65; n grew 78->117, WR 55.1%->65.0%
+            ("HYPE", "BUY", "regime_trend"):         0.80,  # was 0.72; n grew 40->63, WR 80.0%->87.3%
+            # NEW 2026-05-30 — discovered in shadow-ledger audit
+            # CAVEAT: 19-day April window. Could be a SOL bull-phase artifact.
+            # LLM should weigh these against current regime, not treat as law.
+            ("SOL", "BUY", "multi_tier_quality"):    0.90,  # 100% WR on 90 samples (April 2026 window)
+            ("SOL", "BUY", "bollinger_squeeze"):     0.85,  # 90.0% WR on 100 samples (April 2026 window)
         }
         _SHADOW_BLOCKS = set()  # Hardcoded blocks removed — see commit note above
 
