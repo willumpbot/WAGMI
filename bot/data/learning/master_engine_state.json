@@ -1,27 +1,37 @@
 {
-  "last_run": "2026-05-30T01:09:06+00:00",
-  "run_number": 32,
-  "current_utc": "2026-05-30 01:09 UTC",
+  "last_run": "2026-05-30T02:11:50.947233+00:00",
+  "run_number": 33,
+  "current_utc": "2026-05-30 02:11 UTC",
   "elapsed_since_last_run_h": 1.0,
-  "tod_bin": "NIGHT (01:09 UTC) — W22 DAY. Night block ends in 4.85h (06:00 UTC). RESTART DEADLINE 05:30 UTC (T-4.35h).",
-  "bot_offline_days": 51.33,
-  "clock_correction_note": "Run 31 used timestamp 05:09 UTC causing false T-0.35h (21 min) alarm. Actual system clock: 01:09 UTC. All W22 timing corrected.",
+  "tod_bin": "NIGHT (02:11 UTC) \u2014 W22 DAY. Night block ends in 3.80h (06:00 UTC). RESTART DEADLINE 05:30 UTC (T-3.30h).",
+  "bot_offline_days": 52.33,
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
-      "gates_active": 19,
+      "gates_active": 66,
       "total_applied_all_time": 69,
-      "run_number": 32,
+      "run_number": 33,
       "new_audit_files": 0,
       "graduated_rules_total": 116,
       "fixes_applied_detail": [],
       "new_findings": [
-        "SIZE_edge_boost/HIGH_LEV_10X conflict RESOLVED — complementary bands 5-6x vs >6x (LOW)",
-        "EVENING_session_boost demotion needs AB data (twr=null) — HOLD until tracker fixed (MEDIUM)",
-        "W22 timing corrected — 4.35h to deadline, not 21 min (HIGH)"
+        "ETH_SHORT_protect_from_bias (gate=50, conf=80, wr=0.8) flagged as escalation candidate \u2014 PROTECTIVE RULE, held pending AB tracker fix (MEDIUM)",
+        "18 gate=50 rules stalled \u2014 AB tracker broken day 55 \u2014 all escalations frozen (HIGH)",
+        "W22 restart deadline T-3.30h (05:30 UTC). Opens T-3.80h (06:00 UTC). (URGENT)"
       ],
-      "escalation_candidates_blocked": 5,
-      "ab_tracker_status": "BROKEN day 54 (P0 dev, ~2h fix in bot/feedback/loop.py)",
+      "escalation_candidates_blocked": 18,
+      "new_escalation_identified": {
+        "rule_id": "ETH_SHORT_protect_from_bias",
+        "gate_current": 50,
+        "gate_proposed": 80,
+        "conf": 80,
+        "wr": 0.8,
+        "type": "PROTECTIVE",
+        "rationale": "Protection rule prevents long-bias on ETH shorts. wr=0.8 at gate=50 for 55 days. Would escalate except AB tracker broken \u2014 outcome validation required.",
+        "status": "HELD \u2014 AB tracker must be fixed first",
+        "priority": "MEDIUM"
+      },
+      "ab_tracker_status": "BROKEN day 55 (P0 dev, ~2h fix in bot/feedback/loop.py)",
       "gate_distribution": {
         "0": 27,
         "5": 1,
@@ -32,53 +42,71 @@
         "100": 20,
         "missing": 2
       },
-      "note": "Run 32: 0 new fixes. 3 new findings. SIZE/LEV conflict resolved. EVENING demotion held for AB data. Clock correction applied."
+      "note": "Run 33: 0 new fixes. 1 new escalation candidate (ETH_SHORT_protect_from_bias) identified but held. 55 days AB tracker broken."
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN — snapshot_entry column missing (day 51+)",
+      "avg_slippage": "UNKNOWN \u2014 snapshot_entry column missing (day 52+)",
       "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached]",
       "data_available": false,
-      "data_source": "Cached (bot offline 51.33 days)",
+      "data_source": "Cached (bot offline 52.33 days, trades.csv absent)",
       "hold_time_forensics": {
         "win_median_hold_h": 3.3,
         "loss_median_hold_h": 1.5,
-        "ratio": "2.2x — losses exit 2.2x faster than wins",
+        "ratio": "2.2x \u2014 losses exit 2.2x faster than wins",
         "active_fix": "TRENDING_EARLY_HOLD_GUARD gate=80%"
       },
       "leverage_forensics": {
-        "sweet_spot_5_6x": "SIZE_edge_boost gate=80% (57-60% WR) — CONFIRMED non-overlapping with >6x block",
+        "sweet_spot_5_6x": "SIZE_edge_boost gate=80% (57-60% WR) \u2014 CONFIRMED non-overlapping with >6x block",
         "medium_3_5x": "OPTIMAL (avg PnL +0.79)",
         "high_6_10x": "BLOCKED gate=20% (avg PnL -4.62)"
       },
-      "new_finding_run32": "SIZE/LEV conflict resolved. Leverage tiers confirmed: 3-5x neutral, 5-6x promoted, >6x blocked.",
       "ev_loss_tracker": {
         "morning_windows_missed": 23,
         "cumulative_ev_loss_usd": 131.81,
         "projected_if_w22_missed_usd": 138.64,
-        "w22_status": "UPCOMING — T-4.85h to open",
+        "w22_status": "UPCOMING",
         "w22_open_utc": "2026-05-30T06:00:00+00:00",
         "w22_deadline_utc": "2026-05-30T05:30:00+00:00",
+        "w22_close_utc": "2026-05-30T12:00:00+00:00",
         "w22_ev_at_stake_usd": "$5.26-$8.40",
-        "t_deadline_h": 4.35,
-        "t_open_h": 4.85,
-        "severity": "URGENT — W22 deadline T-4.35h. Restart before 05:30 UTC. Clock error from run 31 corrected."
+        "t_deadline_h": 3.3,
+        "t_open_h": 3.8,
+        "t_close_h": 9.8,
+        "severity": "URGENT \u2014 3.30h to restart deadline (05:30 UTC). Restart now: cd bot && python run.py paper"
       },
-      "restart_window": "URGENT — 05:30 UTC TODAY (T-4.35h / 4h 21min). Restart = full warmup before W22."
+      "structural_gaps": [
+        "snapshot_entry column missing (slippage unmeasurable \u2014 day 52+)",
+        "llm_regime column empty (regime rules unmeasurable \u2014 day 52+)",
+        "AB outcome callbacks not firing (all gated rules stalled \u2014 P0 dev, day 55)"
+      ],
+      "delta_vs_run_32": {
+        "elapsed_h": 1.0,
+        "t_deadline_h": "4.35 -> 3.30 (-1.03h, normal progression)",
+        "cumulative_ev_loss": "$131.81 (unchanged \u2014 W22 not yet elapsed)",
+        "bot_offline_days": "51.33 -> 52.33 (+1.0 day)"
+      },
+      "restart_window": "URGENT \u2014 05:30 UTC TODAY (T-3.30h). Restart = full warmup before W22."
     },
     "live_injection": {
       "high_edges": 9,
       "weak_setups": 6,
-      "data_source": "Cached (no new trades)",
+      "data_source": "Cached (no new trades \u2014 bot offline)",
       "top_edge": "HYPE_UNKNOWN_REGIME WR=83% (n=6, gate=20% probe)",
       "top_active_edge": "BB_SOLO_SIGNAL WR=67.6% (n=2172, gate=80%)",
-      "w22_primary_setup": "ETH_SHORT_BB (WR=80%, gate=80%) — W22 PRIMARY TARGET",
-      "current_tod": "NIGHT (01:09 UTC) — W22 DAY. Night block ends T-4.85h",
+      "w22_primary_setup": "ETH_SHORT_BB (WR=80%, gate=80%) \u2014 W22 PRIMARY TARGET",
+      "current_tod": "NIGHT (02:11 UTC) \u2014 W22 DAY. Night block ends T-3.80h",
       "trading_now": false,
       "w22_primed_rules": 4,
       "w22_composite_wr": 0.74,
-      "w22_t_open_h": 4.85,
-      "w22_t_deadline_h": 4.35,
-      "leverage_clarification": "5-6x = SIZE_edge_boost promoted band. >6x = HIGH_LEV_10X blocked band."
+      "w22_t_open_h": 3.8,
+      "w22_t_deadline_h": 3.3,
+      "w22_primed_rules_detail": [
+        "TOD_morning_edge (gate=50, conf=82)",
+        "ETH_SHORT_BB_golden (gate=80, conf=95)",
+        "eth_trending_regime_boost (gate=100, conf=88)",
+        "HYPE_UNKNOWN_REGIME_PROBE (gate=20, conf=75)"
+      ],
+      "delta_vs_run_32": "No change \u2014 0 new trades, all edges cached"
     },
     "daily_synthesis": {
       "anomalies_found": 4,
@@ -86,18 +114,18 @@
       "report_file": "bot/data/sessions/daily_synthesis_2026-05-30.json",
       "report_updated_this_run": true,
       "key_anomalies": [
-        "BOT_OFFLINE_DAY51 (CRITICAL) — 51.33 days offline, $131.81 EV loss",
-        "AB_TRACKER_BROKEN_54D (HIGH) — 5 promotions queued",
-        "RUN31_CLOCK_TIMESTAMP_ERROR (MEDIUM) — corrected in this run",
-        "EVENING_BOOST_PENDING_VERIFICATION (LOW) — needs AB data before demotion"
+        "BOT_OFFLINE_DAY52 (CRITICAL) \u2014 52.33 days offline, $131.81 EV loss",
+        "AB_TRACKER_BROKEN_55D (HIGH) \u2014 18 escalations queued, 5 high-priority",
+        "W22_DEADLINE_T3.30H (URGENT) \u2014 restart before 05:30 UTC today",
+        "ETH_SHORT_PROTECT_ESCALATION_PENDING (MEDIUM) \u2014 new escalation candidate identified"
       ],
       "today_trades": 0,
-      "today_pnl": 0.0
+      "today_pnl": 0.0,
+      "run_33_synthesis_note": "Run 33 (02:09 UTC). W22 countdown: 3.30h to restart deadline. No new data. 1 new finding: ETH_SHORT_protect_from_bias escalation candidate."
     },
     "model_optimization": {
       "skipped": true,
-      "reason": "cost_tracker.json not found — only cost_tracker.py module exists",
-      "note": "Bot offline day 51.33 — no LLM calls made, no cost data to analyze",
+      "reason": "cost_tracker.json not found \u2014 bot offline 52.33 days, no LLM calls",
       "swaps_recommended": 0,
       "potential_savings": "$0.00"
     }
@@ -106,36 +134,30 @@
     {
       "subsystem": "execution_forensics",
       "severity": "URGENT",
-      "finding": "W22 MORNING WINDOW RESTART DEADLINE T-4.35h (05:30 UTC). Opens 06:00 UTC May 30. 23 consecutive misses. $131.81 cumulative EV loss. 4 primed rules at 74% composite WR. Plenty of time — restart well before 05:30 UTC.",
-      "action": "RESTART BEFORE 05:30 UTC: cd bot && python run.py paper"
+      "finding": "W22 MORNING WINDOW RESTART DEADLINE T-3.30h (05:30 UTC). Opens T-3.80h (06:00 UTC May 30). 23 consecutive misses. $131.81 cumulative EV loss. 4 primed rules at 74% composite WR. ETH_SHORT_BB primary (WR=80%). Time to act: 3.30h.",
+      "action": "RESTART BEFORE 05:30 UTC (T-3.30h): cd bot && python run.py paper"
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "AB tracker broken 54 days. 18 rules stalled at gate=50. 5 promotions queued: BB_solo_signal_boost (n=2172, conf=95%), BB_solo_trust, ETH_SHORT_BB_golden, TOD_morning_edge, EVENING_session_boost (DEMOTION — needs AB data first).",
-      "action": "P0 DEV post-W22: Wire update_times_correct(rule_id, outcome) in bot/feedback/loop.py (~2h)."
+      "finding": "AB tracker broken 55 days. 18 rules stalled at gate=50. NEW: ETH_SHORT_protect_from_bias (conf=80, wr=0.8) identified as escalation candidate \u2014 protective rule ready for gate=80. Held pending AB tracker fix. 5 priority promotions queued: BB_solo_signal_boost (n=2172, conf=95%), BB_solo_trust, ETH_SHORT_BB_golden, TOD_morning_edge, EVENING_session_boost.",
+      "action": "P0 DEV post-W22: Wire update_times_correct(rule_id, outcome) in bot/feedback/loop.py (~2h). Then escalate ETH_SHORT_protect_from_bias to gate=80."
     },
     {
       "subsystem": "auto_fix",
       "severity": "MEDIUM",
-      "finding": "RUN31 CLOCK CORRECTION: Run 31 was timestamped 05:09 UTC but actual system clock reads 01:09 UTC. All timing references corrected. W22 deadline was falsely shown as T-0.35h; actual is T-4.35h. Source unknown — likely session artifact.",
-      "action": "Investigate timestamp source in perpetual loop. Use date -u as authoritative clock. Monitor run 33+ for consistency."
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "LOW",
-      "finding": "SIZE_edge_boost/HIGH_LEV_10X conflict RESOLVED. SIZE_edge_boost targets 5-6x leverage band (57-60% WR, encouraged). HIGH_LEV_10X blocks >6x (avg PnL -4.62, blocked). Adjacent non-overlapping bands. Leverage policy finalized: 3-5x neutral, 5-6x promoted, >6x blocked.",
-      "action": "Codify leverage policy in trading_config.py comment. No code changes needed — rules already correct."
+      "finding": "ETH_SHORT_protect_from_bias NEW ESCALATION CANDIDATE: gate=50\u219280 ready. Protective rule (prevents ETH short long-bias), conf=80, wr=0.8, been at gate=50 for 55 days. Cannot escalate without AB outcome data. Will auto-escalate when AB tracker fixed.",
+      "action": "Queue for immediate escalation after AB tracker fix. Mark as PRIORITY_ESCALATION_1."
     }
   ],
-  "delta_vs_run_31": {
+  "delta_vs_run_32": {
     "elapsed_h": 1.0,
     "fixes_applied_this_run": "0 -> 0",
     "total_fixes_all_time": "69 (unchanged)",
-    "gate_distribution_delta": "27 disabled (was 29 due to SOL_SHORT fix run 28 — recount: 27 gate=0 confirmed from graduated_rules.json scan)",
-    "w22_deadline_h": "0.35 -> 4.35 (+4.00h — CLOCK CORRECTION, not actual time passage)",
-    "new_findings": "SIZE/LEV conflict resolved + EVENING demotion held + clock correction applied",
-    "severity_change": "CRITICAL (21 min) -> URGENT (4.35h) — same W22 window, corrected timestamp"
+    "w22_deadline_h": "4.35 -> 3.30 (normal 1h progression)",
+    "bot_offline_days": "51.33 -> 52.33 (+1.0)",
+    "new_findings": "ETH_SHORT_protect_from_bias escalation candidate identified",
+    "severity_change": "URGENT (4.35h) -> URGENT (3.32h) \u2014 same window, 1h closer"
   },
-  "stdout_alert": "URGENT: W22 morning window opens in 4h 51min (06:00 UTC May 30). RESTART DEADLINE 05:30 UTC (T-4.35h). 23 consecutive misses. $131.81 EV lost. Bot offline 51.33d. RUN32 NEW: SIZE/LEV conflict resolved (complementary bands confirmed). Clock correction applied (run31 timestamp was 4h ahead). EVENING demotion on hold pending AB data. AB tracker broken day 54. RESTART SOON: cd bot && python run.py paper"
+  "stdout_alert": "URGENT: W22 morning window opens in 3.80h (06:00 UTC May 30). RESTART DEADLINE 3.30h (05:30 UTC). 23 consecutive misses. $131.81 EV lost. Bot offline 52.33d. RUN33 NEW: ETH_SHORT_protect_from_bias escalation candidate (gate=50\u219280, conf=80, wr=0.8) \u2014 held pending AB tracker fix. AB tracker broken day 55. RESTART NOW: cd bot && python run.py paper"
 }
