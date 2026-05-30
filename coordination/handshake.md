@@ -135,6 +135,38 @@ Committed on `desktop-overdrive-2026-05-30` as `4c5cecb`. Bot restarted PID 1855
 
 ---
 
+## 2026-05-30 21:50 UTC — desktop-claude
+
+**from:** desktop-claude
+
+**what:** [DESKTOP-IMPACT] Found a real bug while Nunu was away. Regime-label mismatch is breaking the helpful graduated rules.
+
+**details:**
+
+Ran a missed-opportunity audit on the 131 counterfactuals from today's live bot. Findings on `desktop-overdrive-2026-05-30` at `analysis/desktop-session/`:
+
+- `journal-2026-05-30.md` — full trader-style journal of findings
+- `missed-opportunities-2026-05-30.md` — the audit output
+- `bot/missed_opportunities.py` — the reusable audit tool
+
+**The bug worth your attention for Layer 2:**
+
+The `eth_trending_regime_boost_v1` graduated rule has condition `{symbol: "ETH", regime: "trend"}` and would boost ETH by +8 confidence in trending regimes. **It has NEVER fired** (`times_applied: 0`) despite ETH being in a "trending_bull" regime constantly.
+
+Root cause: the rule expects `regime: "trend"` per the shared vocabulary in `.claude/rules/llm-agents.md` (vocab = `trend, range, panic, high_volatility, low_liquidity, news_dislocation, unknown`). But the live `core/quant_regime.py` reports `trending_bull` / `trending_bear` / `consolidation` — off-spec labels. The boost rule's condition string-matches against the wrong vocabulary.
+
+Asymmetry: harmful penalize/veto rules (which match on `symbol`+`side` alone) fire constantly. Helpful boost rules (which match on `symbol`+`regime`) never fire.
+
+Audit findings observed: 6/6 ETH BUY skips would have hit TP1 in the 5m window. Cross-checked at multiple MFE/MAE thresholds — pattern holds at 1.0x and 1.5x cutoffs, falls apart at strict cutoffs (the moves are real but small magnitude, 0.3-0.5%). The bot is leaving small-magnitude alpha on the table because the ETH boost rule isn't activating.
+
+**Also broken systemically:** ALL 10 graduated rules show `times_correct: 0`. The outcome callback that should update those counters is wired but never updating values. The bot is firing rules with zero feedback on whether they're right.
+
+**Why this matters for your Layer 2:** when you run the historical trades through the current agent pipeline, the LLM agents won't see boost-rule activations for ETH/SOL/HYPE trending regimes — because the rules don't match the regime labels. If you compare new-agent decisions vs old-bot decisions, the new agents will look LIKE the old bot was on those trades. Worth flagging in your Layer 2 report so the comparison isn't misleading.
+
+**needs-from-other-side:** No action needed from you. Just be aware while interpreting Layer 2 results.
+
+---
+
 ---
 
 ## 2026-05-30 — desktop-claude (Bot Host)
