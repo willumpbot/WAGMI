@@ -1,36 +1,37 @@
 # WAGMI State — Single Source of Truth
 
-Both Claudes update this file on any material change. Vince reads this to know where everything stands in 30 seconds.
+Both Claudes update this file on any material change. Nunu reads this to know where everything stands in 30 seconds.
 
-**Last updated:** 2026-05-30 by desktop-claude
+**Last updated:** 2026-05-30 19:50 UTC by desktop-claude (privacy scrub + briefing deepen)
 
 ---
 
-## TL;DR for Vince
+## TL;DR for Nunu
 
 - **Bot is alive on the desktop** (PID 1864, 30s scans, multi-agent LLM pipeline running, ~73s per decision)
 - **LLM-driven architecture is live**: mechanical strategies feed data → LLM decides → bot executes
-- **Zero API spend**: every LLM call routes through your Claude Code subscription via `claude -p` CLI
+- **Zero API spend**: every LLM call routes through Claude Code subscription via `claude -p` CLI
 - **No trades yet today**, by design — LLM is being patient; just smart-skipped a BTC consolidation
 - **Watchlist (LLM's pre-formed theses):** HYPE compression at $67.70 support → BUY on continuation; ETH funding-spike → mean rev on pullback
 - **Two computers, two Claudes, coordinating via this repo** (no OneDrive, no networking)
+- **Identity**: this project uses "Nunu" everywhere it's user-facing. The username "vince" only appears in OS-level file paths.
 
 ---
 
 ## Machines
 
-### Desktop (this PC, stationary workhorse)
+### Desktop (stationary workhorse)
 - **Role:** Bot host. Runs the live paper-trading bot 24/7.
 - **Status:** Healthy. python PID 1864, heartbeat fresh, supervised.
 - **Owns:** `bot/`, live data in `bot/data/`, the running process.
-- **Vince uses for:** development, monitoring, Claude Code work.
+- **Nunu uses for:** development, monitoring, Claude Code work, multiple parallel terminals.
 - **Branch with today's surgery:** `desktop-overdrive-2026-05-30`
 
-### Laptop (other PC, mobile)
-- **Role:** Analysis hub + Vince's mobile trading / remote-control station.
+### Laptop (mobile)
+- **Role:** Analysis hub + Nunu's mobile trading / remote-control station.
 - **Status:** Nothing running (correct — this is not a bot host).
 - **Owns:** Historical bot data from the OLD bot (pre-blackout). Already pushed to `historical/old-bot-pre-2026-04-23/`.
-- **Vince uses for:** travel, ask-Claude analysis, dashboard browsing.
+- **Nunu uses for:** travel, ask-Claude analysis, dashboard browsing.
 - **Branch with historical data + analysis:** `historical-import-2026-05-30`
 
 ---
@@ -98,12 +99,12 @@ Most recent trade decision (skip with full reasoning):
 
 ## Open items
 
-- [ ] **laptop-claude:** Pull `origin/desktop-overdrive-2026-05-30`, re-audit, confirm CLI routing path (NOT API key path)
+- [ ] **laptop-claude:** Pull `origin/historical-import-2026-05-30`, read `coordination/BRIEFING.md` v2, confirm via handshake.md
 - [ ] **laptop-claude:** Halt any perpetual deep-dive / overnight commit cycles still running on the laptop
 - [ ] **laptop-claude:** Run Part 2 historical analysis against `historical/old-bot-pre-2026-04-23/` data, push outputs to `analysis/historical/`
 - [ ] **desktop-claude:** Monitor first trade firing, watch for any LLM-pipeline regressions
 - [ ] **both:** Once analysis is in, decide which doc's "gap" recommendations to actually adopt (decision_id linking, strategy versioning, log rotation)
-- [ ] **Vince:** When ready, merge both branches to main after review
+- [ ] **Nunu:** When ready, merge both branches to main after review
 - [ ] **eventually:** Phase 2 cleanup — convert shadow EDGES from confidence-floor multiplier to LLM-context metadata
 
 ## What's deliberately NOT a priority right now
@@ -111,7 +112,8 @@ Most recent trade decision (skip with full reasoning):
 - OneDrive sync (decided against)
 - USB data transfers (decided against)
 - Adding an Anthropic API key (intentional — subscription is doing the work)
-- The architecture doc's specific schema for `decisions.jsonl` (the bot's actual structure is in `bot/data/llm/agent_performance.jsonl` + `counterfactual_pending.jsonl`; we may align eventually but not today)
+- Renaming the OS-level `vince` user account (out of scope; only public docs use "Nunu")
+- The architecture doc's specific schema for `decisions.jsonl` (the bot's actual structure is in `bot/data/llm/agent_performance.jsonl` + `counterfactual_pending.jsonl`; may align eventually but not today)
 
 ---
 
