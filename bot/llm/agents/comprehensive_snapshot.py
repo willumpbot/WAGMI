@@ -266,15 +266,31 @@ def _build_market_layer(
     return {k: v for k, v in mkt.items() if v is not None}
 
 
+# Shadow edges — mirrors bot/strategies/ensemble.py _SHADOW_EDGES.
+# Wired into the snapshot 2026-05-30 so agents see "this is a known alpha setup" when applicable.
+# Each entry: (symbol, side, strategy) -> dict with wr%, n, hypothesis_text.
+_AGENT_SHADOW_EDGES = {
+    ("ETH",  "BUY",  "regime_trend"):       {"wr": 100, "n": 135, "hypothesis": "100% WR validated edge on ETH BUY via regime_trend (3,802-trade audit)"},
+    ("HYPE", "BUY",  "bollinger_squeeze"):  {"wr": 61,  "n": 196, "hypothesis": "61.2% WR validated edge on HYPE BUY via bollinger_squeeze"},
+    ("SOL",  "SELL", "multi_tier_quality"): {"wr": 72,  "n": 68,  "hypothesis": "72.1% WR validated edge on SOL SELL via multi_tier_quality"},
+    ("SOL",  "SELL", "bollinger_squeeze"):  {"wr": 72,  "n": 68,  "hypothesis": "72.1% WR validated edge on SOL SELL via bollinger_squeeze"},
+    ("BTC",  "BUY",  "regime_trend"):       {"wr": 65,  "n": 117, "hypothesis": "65% WR validated edge on BTC BUY via regime_trend (upgraded 2026-05-30)"},
+    ("HYPE", "BUY",  "regime_trend"):       {"wr": 87,  "n": 63,  "hypothesis": "87.3% WR validated edge on HYPE BUY via regime_trend (upgraded 2026-05-30)"},
+    ("SOL",  "BUY",  "multi_tier_quality"): {"wr": 100, "n": 90,  "hypothesis": "100% WR / 90 samples — new edge discovered 2026-05-30 (April 19-day window, may be SOL bull-phase artifact)"},
+    ("SOL",  "BUY",  "bollinger_squeeze"):  {"wr": 90,  "n": 100, "hypothesis": "90% WR / 100 samples — new edge discovered 2026-05-30 (caveat: 19-day window)"},
+}
+
+
 def _build_signal_layer(
     strategy_signals: Optional[Dict[str, Any]],
     ensemble_result: Any,
     gate_decisions: Optional[List[Dict]],
     multiplier_chain: Optional[List[Dict]],
+    symbol: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Layer 2: Strategy signals, gate decisions, multiplier chain.
+    """Layer 2: Strategy signals, gate decisions, multiplier chain, shadow-edge matches.
 
-    Token budget: ~150 tokens.
+    Token budget: ~150 tokens (plus ~50 if shadow edges match).
     """
     sig: Dict[str, Any] = {}
 
@@ -343,6 +359,31 @@ def _build_signal_layer(
         if chain:
             sig["mults"] = chain
             sig["final_mult"] = round(running, 3)
+
+    # SHADOW EDGES: surface any (symbol, side, strategy) matches so the LLM sees
+    # "this is a validated alpha setup" instead of having to remember from prompt context.
+    # Wired 2026-05-30 per Nunu's directive: agents must see all evidence available.
+    if symbol and strategy_signals:
+        matches = []
+        for strat_name, info in strategy_signals.items():
+            if not isinstance(info, dict): continue
+            side = info.get("side")
+            fired = info.get("fired", False)
+            if not (side and fired): continue
+            key = (symbol.upper(), side.upper(), strat_name)
+            if key in _AGENT_SHADOW_EDGES:
+                edge = _AGENT_SHADOW_EDGES[key]
+                matches.append({
+                    "setup": f"{symbol} {side} via {strat_name}",
+                    "wr": edge["wr"],
+                    "n": edge["n"],
+                    "note": edge["hypothesis"][:120],
+                })
+        if matches:
+            sig["validated_edges"] = matches
+            sig["edge_count"] = len(matches)
+        else:
+            sig["validated_edges"] = []
 
     return sig
 
@@ -530,14 +571,72 @@ def _build_system_layer(
     return sys
 
 
+# Cache the most recent skip-stats read so we don't hit disk every snapshot.
+# Refreshes if file mtime changes.
+_skip_stats_cache = {"mtime": 0, "stats": {}, "symbol_stats": {}}
+
+
+def _load_recent_skip_stats(symbol: Optional[str] = None) -> Dict[str, Any]:
+    """Read counterfactual_pending.jsonl and surface skip patterns.
+
+    Wired 2026-05-30 per Nunu directive: agents should see how often we've been
+    skipping similar setups so they can corroborate or contradict their own
+    inclination to skip.
+    """
+    import os, json as _json
+    path = os.path.join("data", "llm", "counterfactual_pending.jsonl")
+    if not os.path.exists(path):
+        return {}
+    try:
+        mtime = os.path.getmtime(path)
+        if mtime == _skip_stats_cache["mtime"] and _skip_stats_cache["stats"]:
+            cached = dict(_skip_stats_cache["stats"])
+            if symbol:
+                cached["this_symbol"] = _skip_stats_cache["symbol_stats"].get(symbol.upper(), {})
+            return cached
+        # Recompute
+        from collections import Counter
+        rows = []
+        with open(path) as f:
+            for line in f:
+                try: rows.append(_json.loads(line))
+                except Exception: pass
+        total = len(rows)
+        sym_count = Counter(r.get("symbol", "?") for r in rows)
+        side_count = Counter(r.get("side", "?") for r in rows)
+        reason_count = Counter(r.get("skip_reason", "?")[:40] for r in rows)
+        symbol_stats = {}
+        for sym in ("BTC", "ETH", "SOL", "HYPE"):
+            sym_rows = [r for r in rows if r.get("symbol") == sym]
+            buys = sum(1 for r in sym_rows if r.get("side") == "BUY")
+            sells = sum(1 for r in sym_rows if r.get("side") == "SELL")
+            symbol_stats[sym] = {"total": len(sym_rows), "buy": buys, "sell": sells}
+        stats = {
+            "total_skips_today": total,
+            "by_symbol_count": dict(sym_count),
+            "by_side_count": dict(side_count),
+            "top_skip_reasons": dict(reason_count.most_common(3)),
+        }
+        _skip_stats_cache["mtime"] = mtime
+        _skip_stats_cache["stats"] = stats
+        _skip_stats_cache["symbol_stats"] = symbol_stats
+        if symbol:
+            stats = dict(stats)
+            stats["this_symbol"] = symbol_stats.get(symbol.upper(), {})
+        return stats
+    except Exception:
+        return {}
+
+
 def _build_memory_layer(
     lessons: Optional[List[str]],
     hypotheses: Optional[List[str]],
     trade_dna: Optional[Dict],
+    symbol: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Layer 5: Memory — lessons, hypotheses, trade DNA.
+    """Layer 5: Memory — lessons, hypotheses, trade DNA, live skip patterns.
 
-    Token budget: ~100 tokens.
+    Token budget: ~100 tokens (plus ~30 if skip stats present).
     """
     mem: Dict[str, Any] = {}
 
@@ -548,6 +647,17 @@ def _build_memory_layer(
     if hypotheses:
         # Active hypotheses, truncated
         mem["hyp"] = [h[:60] for h in hypotheses[:3]]
+
+    # LIVE SKIP PATTERNS: surface how much we've been skipping similar setups.
+    # If a setup has been skipped 30+ times today, that's evidence the LLM should
+    # weigh — either we're correctly being cautious, or we're missing alpha.
+    skip_stats = _load_recent_skip_stats(symbol)
+    if skip_stats:
+        mem["live_skip_evidence"] = {
+            "total_skips_today": skip_stats.get("total_skips_today", 0),
+            "this_symbol_skips": skip_stats.get("this_symbol", {}).get("total", 0),
+            "top_reasons": skip_stats.get("top_skip_reasons", {}),
+        }
 
     if trade_dna:
         # Compact DNA summary
@@ -682,6 +792,7 @@ def build_comprehensive_snapshot(
     try:
         snapshot["signals"] = _build_signal_layer(
             strategy_signals, ensemble_result, gate_decisions, multiplier_chain,
+            symbol=symbol,  # passes through so shadow edge matching can run
         )
     except Exception as e:
         logger.warning(f"[SNAPSHOT] Signal layer error: {e}")
@@ -708,7 +819,7 @@ def build_comprehensive_snapshot(
 
     # -- LAYER 5: MEMORY --
     try:
-        snapshot["memory"] = _build_memory_layer(lessons, hypotheses, trade_dna)
+        snapshot["memory"] = _build_memory_layer(lessons, hypotheses, trade_dna, symbol=symbol)
     except Exception as e:
         logger.warning(f"[SNAPSHOT] Memory layer error: {e}")
         snapshot["memory"] = {}
