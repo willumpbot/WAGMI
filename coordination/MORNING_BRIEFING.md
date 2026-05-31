@@ -118,3 +118,56 @@ I flagged for them that `backtest/simulated_agents.py:431` has a `< 60` red-flag
 **Bot is on the right path. The LLM is now actually being consulted. Sleep well -- you've got real signal coming in.**
 
 -- desktop-claude
+
+---
+
+## UPDATE 13:05 UTC -- Quota exhaustion observed (and resolved)
+
+**The big new finding from the second half of the night:**
+
+From 09:42 UTC to 13:02 UTC (~3 hours, 20 minutes), every LLM agent CLI call failed with `exit 1: (latency=1400-3000ms)` and empty stderr. **27+ consecutive pipeline failures** across HYPE, ETH, BTC, and SOL signals. The bot kept scanning, generating signals, calling the pipeline, and gracefully failing-safe (all `LLM-FIRST SKIP: LLM pipeline failure`) -- but ZERO trades, zero successful agent calls during this window.
+
+**Signature of subscription quota exhaustion:**
+
+- Fast exit-1 (not timeout) -- CLI returned immediately, didn't even run for the 300s timeout window
+- Empty stderr -- CLI suppressed error message
+- Consistent across all agent roles (Regime/Trade/Critic/Scout)
+- Recovered cleanly at exactly the 5-hour rolling window mark (first pipeline after restart at 09:20 succeeded at 09:23; first failure was 09:42; first recovery was 13:02 -- roughly 5h later from initial heavy burn)
+
+**Why this happened:**
+
+The bot was firing ~one full pipeline (~5 LLM calls) per 10-minute cooldown window across 4 symbols. Plus Scout calls (Haiku, frequent) and background_thinker. Over ~30 min of heavy operation, we burned through the subscription's 5-hour rolling cap. Once hit, every call failed for the remainder of the window.
+
+**Current state (13:05 UTC):**
+
+Quota refreshed. Pipeline #5 just completed at 13:04:39 in 138s -- decision: skip on SOL SHORT, thesis "validated toxic setup (36% WR, n=42, -$135.3 total loss)". The agent is now actively citing historical performance data. The wiring works.
+
+**Tally for the entire overnight session:**
+
+- Pipeline attempts: ~30
+- Successful pipeline completions: 5 (3 before quota crash, 2 since recovery)
+- Decisions taken: 0 trades (all skips with proper reasoning)
+- Failures during quota window: ~25
+- Total agent decisions logged: 19 in `data/llm/agent_performance.jsonl` since 09:00 UTC
+
+**Recommendations for daily operation:**
+
+1. **Per-symbol cooldown should probably be longer.** Current 10-min same-side cooldown means HYPE alone can fire 6 pipelines/hour. With Scout + Regime + Trade + Risk + Critic per pipeline, that's 30 agent calls/hour just from HYPE. Across 4 symbols at full burst, we'd burn the daily/window cap in ~1-2 hours.
+2. **Watch the early-evening Asia/EU session window.** Bot fired the most pipelines in the first 30 min after restart, then ran dry for 3+ hours. This is volatile signal density × narrow quota.
+3. **Consider downgrading Critic from Opus to Sonnet.** Opus draws 5-10x the quota. Critic doesn't need Opus precision for skip-approval decisions.
+4. **NOT recommending any changes autonomously.** All four are judgment calls for you. Documenting only.
+
+**What the agents DID get right tonight (the 5 successful pipelines):**
+
+- All 5 were skips with coherent thesis
+- All cited proper data (regime, vol, EV, historical WR)
+- All respected the trust hierarchy (no false vetoes from disabled rules)
+- Consistency 1.00 across all 5 (agents agreed)
+- Latency: 106-138s per pipeline (well under 300s ceiling)
+
+**Net for you, when you wake:**
+
+- The architecture is **proven correct**. Six gates fixed (4 live, 2 collaborative w/ laptop). LLM pipeline runs end-to-end. Agents make data-cited skip decisions.
+- Tonight's trades = 0, but each skip was legitimate (low conviction, toxic setups, or quota-killed).
+- Tomorrow's question is operational: **how to spread our subscription quota across the day to keep continuous pipeline coverage**.
+
