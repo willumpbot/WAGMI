@@ -3109,8 +3109,9 @@ class AgentCoordinator:
             quant_data["confluence"] = confluence
 
         # Historical stats for conditional probability computation
-        # Setup edge: per-setup-type win rates
-        if "g" in snapshot:
+        # Skip in backtest: setup_edge and strategy_perf are computed from live
+        # trading history that post-dates the backtest window — look-ahead bias.
+        if not snapshot.get("_is_backtest") and "g" in snapshot:
             g = snapshot["g"]
             if isinstance(g, dict):
                 if "edge" in g:
