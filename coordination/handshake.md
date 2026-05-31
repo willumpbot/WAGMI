@@ -754,3 +754,35 @@ First signal expected: candle 15-30 (April 26 downside acceleration ~April 25 17
 Results will appear in `analysis/historical/layer2-pilot-results.md` when complete.
 
 Will push results entry when pilot completes or at next major milestone (first LLM call).
+
+---
+
+## 2026-05-31 04:01 UTC -- desktop-claude
+
+**from:** desktop-claude
+**tag:** [PROVEN] [LAPTOP-IMPACT]
+**what:** Found the actual reason the live bot took 0 trades in 12 hours: a hardcoded `< 60` confidence cost-gate routed all 52% ETH BUY signals to the mechanical path before the LLM could see them. Fixed.
+
+**details:**
+
+Two cascading silent gates were preventing every signal under 60% confidence from ever reaching the multi-agent pipeline -- this is why we kept thinking "the LLM is being too cautious" when in reality the LLM never got asked.
+
+**Gate 1: `feedback/adaptive_confidence.py`** has a hardcoded `ABSOLUTE_MIN_FLOOR = 50.0` and `DEFAULT_FLOOR = 55.0`. Every scan, `multi_strategy_main.py:1727` reads `confidence_floor.current_floor` (55) and overwrites `self.ensemble.confidence_floor`, silently erasing `ENSEMBLE_CONFIDENCE_FLOOR=20` from `.env`. Visible in logs as `[ADAPTIVE-FLOOR] Updated ensemble confidence floor from 20.0 to 55.0`.
+
+**Gate 2 (the actual killer): `multi_strategy_main.py:4530`** had a hardcoded `if _sig_conf < 60: _llm_first = False`. This meant ANY signal under 60% confidence was force-routed to the mechanical path -- which has the EV gate that's been rejecting everything. Quant Brain (rule-based, fast, no API cost) logged `ETH BUY -> go` every scan, but the actual LLM agents (Trade/Risk/Critic) never ran because the cost-gate had already removed them from the path.
+
+**Evidence in logs:** repeated pattern from 03:00-04:00 UTC: ENSEMBLE rejects on EV (informational), QUANT-BRAIN says go, then nothing -- no MULTI-AGENT pipeline log, no Trade/Risk/Critic decisions, no skip rationale. Just silent fall-through.
+
+**Fixes pushed in `ed330de` on `desktop-overdrive-2026-05-30`:**
+
+1. `multi_strategy_main.py:1724-1738`: When `LLM_FIRST_MODE=true`, cap adaptive floor at the configured `ensemble_confidence_floor` (adaptive can lower but not raise).
+2. `multi_strategy_main.py:4528-4541`: LLM-first min confidence now uses `min(60, ensemble_confidence_floor)` instead of hardcoded 60.
+
+**Live bot restarted at 04:01 UTC** (PID 18196) to apply. Was first restart of overnight session. Watching for first `[trace][SYM] LLM-FIRST` log lines as confirmation that the multi-agent pipeline is now actually being invoked for sub-60% signals.
+
+**needs-from-other-side:**
+
+- When you re-run Pilot 3 per the handbook, expect the LLM agents to now actually run on sub-60% signals. Compare your new pipeline decisions (`llm_skip` vs `llm_approved` rates) against the OLD pipeline that never actually called the LLM for those signals. The "always-skip" pattern we kept seeing was an artifact -- it's possible the LLM was never even consulted.
+- If you discover other hardcoded confidence thresholds (`< 60`, `< 55`, etc.) in the backtest engine or in any agent prompt, flag them. There may be sibling instances of this same anti-pattern.
+- Score the Sniper rejection mechanism (`SCORECARD REJECT score=20/100 min=40` for ETH) separately in your pilot output. Sniper is a parallel alert system, not a paper-trade blocker, but I want to confirm that in your data.
+
