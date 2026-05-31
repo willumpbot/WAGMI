@@ -75,55 +75,89 @@ Candles: 82 (1h timeframe)
 |---|---|---|
 | btho42o8k | Fixes 1-12 (no 13-15) | Critic timeout at 90s → consistency force-skip. 0 go decisions. |
 | b9t60jfkh | All fixes (wrong launch method) | `&` double-background caused stdin EOF. Exited after 0 LLM calls. |
-| bjk46iosz | Fixes 1-13 (no 14-15) | Running. Expected: agents complete within 300s timeout. |
+| bjk46iosz | Fixes 1-13 (no 14-15) | **COMPLETED** — see results below. |
 
 ---
 
-## Results (bjk46iosz — PENDING)
-
-*Will be filled when task completes.*
+## Results (bjk46iosz — COMPLETED)
 
 ### Decision Summary
 
 | Metric | Pilot 3 Original | Pilot 3 v2 |
 |---|---|---|
-| Candles processed | 82 | 82 |
-| Signals generated | — | — |
-| LLM calls made | 3 (session-limited) | — |
-| Pre-filtered (no LLM) | 97.3% | — |
-| LLM go decisions | 0 | — |
-| LLM skip decisions | 3 | — |
-| Trades executed | 3 | — |
-| Total PnL | -$73 | — |
-| Budget used | ~$0.06 | — |
+| Candles processed | 82 | 82 ✅ |
+| Signals generated | — | 44 (53.7% of candles) |
+| LLM calls attempted | 3 (session-limited) | 73 |
+| LLM calls succeeded | 3 | 13 (session limit hit at ~candle 50) |
+| LLM calls failed (429) | 0 | 60 (session exhausted) |
+| LLM go decisions | 0 | 0 |
+| LLM skip decisions | 3 | 13 (all pipeline completions) |
+| Fallback (veto in raw) | — | 11+ (candles 50-82 post-session-limit) |
+| Trades executed | 3 | 1 (signal funnel, likely pre-LLM path) |
+| Positions opened | 3 | 0 (LLM vetoed or fallback-vetoed all) |
+| Net PnL | -$73 | -$27.10 (fees only; equity -$63.07) |
+| Budget used | ~$0.06 | $0.00 (CLI subscription, no cost tracking) |
 
-### Agent Decision Breakdown
+### Agent Decision Breakdown (from backtest_decisions.jsonl — 13 completed calls)
 
-| Agent | n_calls | n_go | n_skip | n_flip | avg_conf |
-|---|---|---|---|---|---|
-| Regime | — | — | — | — | — |
-| Trade | — | — | — | — | — |
-| Risk | — | — | — | — | — |
-| Critic | — | — | — | — | — |
+| Agent | Observations |
+|---|---|
+| Regime | Cached per-candle (same regime output reused for multiple signals in same 1h window). high_volatility(68%), bearish bias, SELL ensemble 0.83. Latency ~45s per unique call. |
+| Trade | All 13 decisions: SKIP. Cited wired hard-blocks: BTC LONG WR=19% (n=16, 90% conf), BTC SELL at 70-79% conf = 0% WR (n=402). Latency 31-53s. |
+| Risk | Affirmed all Trade SKIP decisions. Size=0 on all. Latency 27-63s. |
+| Critic | Approved all 13 SKIP decisions (no counter-thesis possible with overwhelming wired evidence). Latency 14-26s. Vacc=0% on 6-8 challenges — self-calibrated not to challenge skip. |
 
-### Pipeline Latency
+### Pipeline Latency (from logged decisions)
 
 | Metric | Value |
 |---|---|
-| Avg pipeline latency | — |
-| Min latency | — |
-| Max latency | — |
-| Timeouts | — |
+| Regime latency | ~45s (cached after first call per candle) |
+| Trade latency | 31-53s |
+| Risk latency | 27-63s |
+| Critic latency | 14-26s |
+| Total per-signal (with cached regime) | ~75-142s |
+| Total per-signal (cold regime) | ~120-187s |
+| CLI session limit hit at | Candle ~50 / signal ~13 |
 
 ### Regime Breakdown
 
 | Regime | Signals | LLM go | LLM skip |
 |---|---|---|---|
-| consolidation | — | — | — |
-| high_volatility | — | — | — |
-| panic | — | — | — |
-| trending_bull | — | — | — |
-| trending_bear | — | — | — |
+| high_volatility | All 13 completed | 0 | 13 |
+| other regimes | — (post session limit) | — | — |
+
+---
+
+## New Issues Found During bjk46iosz
+
+### Issue: CLI Session Limit Mid-Backtest (New Constraint)
+
+The CLI subscription has a **daily session limit** that resets at 8am America/Chicago. The overnight session exhausted it before bjk46iosz could complete. At candle ~50 (signal 13), all subsequent calls returned:
+
+```
+api_error_status: 429 | "You've hit your session limit · resets 8am (America/Chicago)"
+```
+
+**Impact:** Only 13 of the needed ~22 signals got full LLM evaluation. The remaining ~32 candles ran on fallback (veto in raw mode).
+
+**Rule for future runs:** Launch backtests at the start of a fresh session, not mid-session after intensive overnight work. Do not run more than ~20 full LLM calls per day budget.
+
+---
+
+### Bug #16: Wired Data Contamination (Graduated Rules / Quant Intelligence)
+
+The `_is_backtest` flag (fixes 1-8) blocks live performance data injection (`self_performance`, `feedback_state`, `dynamic_stats`, etc.). However, the **graduated rules** and **quant intelligence** data were NOT blocked.
+
+In all 13 completed decisions, agents cited:
+- `"BTC.LONG WR=19% avg=-$3.65 — Hard-block" (conf=90%, n=16)` — from quant intelligence
+- `"BTC SELL at 70-79% conf = 0% WR on n=402 validated trades"` — from graduated rules
+- `"BTC overall WR=30%"` — from wired symbol performance
+
+These statistics come from **post-April-28 live trading** (the bot ran May through the current date). Injecting them into an April 23-28 backtest creates look-ahead bias — the agents in the simulation "know" future trading outcomes.
+
+**Symptom:** All signals skipped. Agents had overwhelming evidence to skip because BTC's live trading performance (30% WR, hard-blocked LONG) happened AFTER the backtest window.
+
+**Fix needed:** Add graduated rules, quant intelligence, and symbol-level wired data to the `_is_backtest` bypass list in coordinator.py, OR pass a `backtest_cutoff_date` so wired data is only loaded from before that date.
 
 ---
 
@@ -147,9 +181,9 @@ Candles: 82 (1h timeframe)
 
 ---
 
-## Next Steps After Results
+## Next Steps
 
-1. If go decisions appear: document which regimes/strategies triggered them, compare to live bot behavior
-2. If all-skip: check Trade Agent reasoning for each signal — is it coherent or overcautious?
-3. Run Pilot 3 v3 with all 15 fixes applied (fixes 14-15 not in bjk46iosz)
-4. Layer 3 prep: extended 30-day window, multiple symbols
+1. **Pilot 3 v3** — Run fresh at session start with all 15 fixes + Bug #16 fix (block wired data in backtest mode). Without contaminated graduated rules, agents should see unbiased signals and potentially make go decisions on the cascade window.
+2. **Bug #16 fix** — Identify which data structures carry graduated rules / quant intelligence into the prompt and add them to `_is_backtest` bypass in `coordinator.py`.
+3. **Session budget tracking** — Add a pre-flight check: if `SESSIONS_USED_TODAY > 15`, warn user to wait for reset.
+4. **Layer 3 prep** — Extended 30-day window, multiple symbols (after Pilot 3 v3 confirmed working).

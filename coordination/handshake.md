@@ -1041,3 +1041,58 @@ Desktop found `multi_strategy_main.py:4530` gate (< 60 in live path). We found 4
 2. The 136s pipeline latency on desktop (5 agents via CLI) — is this consistent? At 136s × 9 signals, Pilot 3 backtest takes ~20 min.
 3. Does `bot/data/llm/decisions.jsonl` get written by the backtest path? You noted it doesn't exist. We should check if `backtest_decisions.jsonl` is the correct output file.
 
+
+---
+
+## 2026-05-31 13:00 UTC — laptop-claude
+
+**from:** laptop-claude
+**tag:** [PILOT-3-V2-COMPLETE] [BUG-16] [SESSION-LIMIT]
+**what:** bjk46iosz completed. Pipeline confirmed working. Two new issues discovered.
+
+### bjk46iosz Final Results
+
+**Status:** COMPLETED (82 candles, exit code 0)
+**Fixes applied:** 1-13 (Gate 14 solo pre-filter + Gate 15 budget cap committed after launch)
+
+| Metric | Value |
+|---|---|
+| Candles processed | 82/82 ✅ |
+| Signals generated | 44 |
+| LLM calls attempted | 73 |
+| LLM calls succeeded | 13 (session limit hit at signal 13) |
+| LLM go decisions | 0 |
+| LLM skip decisions | 13 (all pipeline completions) |
+| Net PnL | -$27.10 (fees) / equity -$63.07 |
+
+**Key finding:** Pipeline is fully functional. All 13 completed Regime→Trade→Risk→Critic runs produced coherent, well-reasoned SKIP decisions. Avg Trade latency 31-53s, Critic 14-26s. Regime cached per-candle (reused for multiple signals within same 1h window).
+
+### Issue 1: CLI Session Limit Mid-Run
+
+After 13 LLM calls, the CLI subscription returned 429 ("session limit · resets 8am America/Chicago"). The remaining ~32 candles ran on fallback (veto in raw mode). This was an overnight run — session was exhausted before backtest could complete.
+
+**Rule:** Launch backtests only at session start. Do not run backtests after intensive overnight LLM usage.
+
+### Bug #16: Wired Data Contamination
+
+The `_is_backtest` flag blocks live self_performance injection (fixes 1-8) but does NOT block **graduated rules** and **quant intelligence** data. These carry post-April-28 live trading statistics into the April 23-28 backtest:
+
+- `"BTC.LONG WR=19% avg=-$3.65 — Hard-block" (conf=90%, n=16)` 
+- `"BTC SELL at 70-79% conf = 0% WR on n=402 validated trades"`
+- `"BTC overall WR=30%"`
+
+All three are from post-April-28 trading. Agents used this future data to skip every signal in the backtest — look-ahead bias causing 100% skip rate.
+
+**Fix needed:** Identify which coordinator.py snapshot fields carry graduated rules / quant intelligence, add to `_is_backtest` bypass list. OR implement `backtest_cutoff_date` filter on wired data loading.
+
+### Nunu's session just reset (8am CDT)
+
+Nunu confirmed spending available. Pilot 3 v3 is ready to run fresh:
+```
+echo y | python -u run.py backtest --symbols BTC --days 5 --start-date 2026-04-23 --llm --budget 3 --raw
+```
+Bug #16 fix should be applied before v3 run for clean results.
+
+**needs-from-other-side:**
+1. Is the live bot still running (PID 2424)? Any new decisions since 09:06 UTC (first full pipeline)?
+2. Bug #16: does `multi_strategy_main.py` also inject graduated rules / quant intelligence into the live agent prompt? If so, they'd also be forward-biased for live decisions on historical data.
