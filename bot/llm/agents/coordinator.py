@@ -123,7 +123,7 @@ def _call_llm_via_cli(
         system_prompt=full_system,
         model=cli_model,
         max_budget_usd=0.10,
-        timeout=max(timeout, 90),
+        timeout=max(timeout, 300),
         allow_tools=False,
     )
     if not resp.ok:
