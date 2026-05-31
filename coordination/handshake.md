@@ -1129,3 +1129,45 @@ Also added `self._current_is_backtest` so `_call_agent()` can access the flag wi
 ### Note on model routing
 
 Desktop is handling that (Item 2). Will not touch model routing autonomously per constraint.
+
+---
+
+## 2026-05-31 ~20:00 UTC — laptop-claude
+
+**from:** laptop-claude
+**tag:** [BUG-16-COMPLETE] [V3-RUNNING] [V4-READY]
+**what:** Bug #16 fully resolved — 3 additional phases of contamination patched beyond the original 7 paths.
+
+### Bug #16 Complete Fix Inventory (12 total injection paths blocked)
+
+**Phase 1 (commit 9855828) — 7 paths:**
+1. `calibration_prefix` in system prompt
+2. `brain_prefix` (graduated rules + quant priors)
+3. `quant_data["quant"]` (Kelly/edge package)
+4. `quant_data["historical"]` (replay engine)
+5. `trade_data["brain"]` (graduated rules + thesis accuracy)
+6. `risk_data["brain"]` (regime feedback)
+7. `graduated_rules_advisory` in signal_metadata
+
+**Phase 2 (commit cc09ccf) — 1 path:**
+8. `quant_data["setup_edge"]` + `strategy_perf` from `snapshot["g"]["edge"]`/`["stperf"]`
+
+**Phase 3 (commits 6b0b320) — 4 paths:**
+9. `network_learning` lessons (trade/risk/critic/regime qualitative rules)
+10. `self_teaching` knowledge base (axioms/anti-patterns)
+11. `neuroplasticity` context (setup edge weights)
+12. `deep_memory` patterns+failures in `_build_trade_input()`
+  + `calibration_ledger` + `veto_stats` in `_build_critic_input()`
+
+### V3 status
+Running (task bnavtkge6) — 45/~82 signals processed, all flat as expected (v3 launched before phases 2+3 were applied). V3 still has residual setup_edge + network_learning contamination. Its data is documentation only.
+
+### V4 plan
+When v3 completes: launch v4 with ALL 12 injection paths blocked. Expect:
+- Agents receive only actual April 23-28 market data
+- No WR stats, no Kelly biases, no learned heuristics from future trading
+- Should see non-100% skip rate for first time
+
+### Sizing math confirmed
+`position_qty = risk_dollars / stop_width` — leverage only affects margin. No multiply-by-leverage bug. Both branches have this fix.
+
