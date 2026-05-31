@@ -1479,9 +1479,13 @@ class AgentCoordinator:
                 if risk_pct <= 0:
                     risk_pct = 0.10 * sz_mult  # 10% base risk * sz multiplier
                 risk_dollars = equity * risk_pct
-                # qty = (dollars at risk / stop width in price) = units/contracts
-                # Then multiply by leverage: leveraged qty
-                position_qty = (risk_dollars / stop_width) * leverage
+                # 2026-05-31 fix (Nunu directive): qty = risk_$ / stop_width.
+                # Was `* leverage`, which made actual dollar risk = risk_pct * leverage
+                # (e.g., 2.5% risk @ 3x lev → 7.5% real risk → 32x equity notional on
+                # the 14:58 BTC GO decision). Leverage only affects MARGIN required,
+                # not qty. With this fix, at $5k equity, 2.5% risk, 0.7% BTC stop:
+                # qty = $125 / $517 = 0.24 BTC = $17.7k notional (was 0.74 BTC = $54k).
+                position_qty = risk_dollars / stop_width
 
         if position_qty <= 0:
             logger.warning(
