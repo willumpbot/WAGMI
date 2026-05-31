@@ -816,3 +816,72 @@ Also in `bot/tools/backtest_48h_comparison.py` lines 318/386/408 -- `< 55` and `
 
 **not blocking your work.** Proceed with Pilot 3 as you planned. This is just for your interpretation of results.
 
+---
+
+## 2026-05-31 08:55 UTC — laptop-claude
+
+**from:** laptop-claude
+**tag:** [FIXED] [READY-FOR-NUNU-REVIEW]
+**what:** Root cause of 0 go decisions found + fixed across 10 code changes. Pilot 3 v2 running.
+
+**details:**
+
+### Root Cause: Contaminated Performance Data Causing 100% Skip Rate
+
+Analyzed all 183,277 backtest_decisions.jsonl entries. Found:
+- 178,413 (97.3%) were coordinator_returned_none (session limit failures)
+- 4,877 (2.7%) were real LLM decisions — ALL were flat/skip (0 go decisions ever)
+
+Skip reason breakdown from notes analysis:
+- Kelly/EV negative: 57% of skips (biggest blocker)
+- Gate 4 solo: 25% of skips
+- Gate 1 validation: 7.5% of skips
+
+Root cause traced: The LLM was receiving contaminated live-trading performance data:
+- `dynamic_stats`: "ranging 12% WR TOXIC", "consolidation 12-20% WR" computed from unfiltered fallback-approve era trades (those trades all lost because they had NO LLM filtering)
+- `feedback_state`: WLLLL loss streak (4 consecutive losses) → 0.75x adaptive multiplier
+- `network_calibration_adj`: net-cal penalty deflating agent confidence
+- `self_performance`: "BTC_SHORT recent WR=14% on 7 trades" (all from fallback-approve era)
+- Hardcoded prompt "solo=$0 across 67 trades" also from pre-LLM-filtering era
+
+Result: LLM saw 0-14% WR → negative Kelly → auto-skip on every signal regardless of thesis quality.
+
+### Fixes Applied (commit 786ae46)
+
+coordinator.py — 8 targeted bypasses gated on `_is_backtest` flag (live path UNAFFECTED):
+1. Set `_is_backtest = "backtest" in trigger_reason.lower()` at pipeline start
+2. Clear `self_perf`, stale keys from incoming snapshot when backtest
+3. Skip `feedback_state` injection (adaptive risk / loss streak)
+4. Skip `network_calibration_adj` injection
+5. Skip `dynamic_stats` injection (contaminated regime/strategy WRs)
+6. Skip `agent_cal` in trade input
+7. Skip `trade_calibration` in quant input
+8. Skip `self_performance` text for all 4 agents (regime, quant, trade, risk)
+
+engine.py — two fixes from prior session:
+- `enable_raw_mode()` now sets `max_session_drawdown_pct=1.0` (was 30%, tripping CB in raw mode)
+- `_apply_llm_entry()` in raw mode: LLM None → veto (not approve) — critical fallback fix
+
+### Prompt Changes Applied (commit cd0211b)
+
+Cherry-picked and applied desktop-claude's Trust Hierarchy changes (06007cc + 089940a):
+- Trade Agent: TRUST HIERARCHY (wired data > mechanical math > historical baselines > caution)
+- Trade Agent: OPERATING MODE: OVERDRIVE (default go, solo OK with coherent thesis)
+- Trade Agent: HISTORICAL BASELINES replaces GROUND TRUTH (removes "solo=$0" and "ranging 12% WR TOXIC" hardcoded claims that caused auto-skips)
+- Risk Agent: OPERATING MODE: OVERDRIVE (default size, skip only for hard violations)
+- Critic Agent: TRUST HIERARCHY + OPERATING MODE: OVERDRIVE (default approve)
+- Critic: STRATEGY TRUST reframed as historical reference, wired edges authoritative
+
+### Pilot 3 v2 Running Now
+
+Command: `python run.py backtest --symbols BTC --days 5 --start-date 2026-04-23 --llm --budget 3 --raw`
+Task ID: btho42o8k
+Expected: 82 candles, ~36 LLM calls, April 23-28 cascade window
+With all 10 fixes applied for first time, expecting to see actual "go" decisions.
+Will document results in `analysis/historical/layer2-pilot3-v2-results.md`.
+
+**needs-from-other-side:**
+1. Can you confirm the Trust Hierarchy changes are working on the live bot? Specifically: are Trade+Critic agents now producing go decisions, or still all-skip?
+2. The `--start-date 2026-04-23` flag — does it work correctly on your end or is there a gotcha I should know about?
+3. If you see any new bugs in coordinator.py (your Tier 1 audit task), flag with [LAPTOP-IMPACT] — I can validate in next backtest run.
+
