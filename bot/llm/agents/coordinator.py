@@ -598,35 +598,36 @@ class AgentCoordinator:
             logger.debug("[MULTI-AGENT] ML predictions enrichment failed: %s", e)
 
         # Network learning: inject accumulated lessons from past trades
-        try:
-            from llm.agents.network_learning import get_network_learning
-            _nl = get_network_learning()
-            # Inject per-agent lessons into snapshot for downstream builders
-            _nl_trade = _nl.get_prompt_injection("trade")
-            _nl_risk = _nl.get_prompt_injection("risk")
-            _nl_regime = _nl.get_regime_intelligence()
-            _nl_critic = _nl.get_prompt_injection("critic")
-            if _nl_trade:
-                snapshot_data["network_lessons_trade"] = _nl_trade
-            if _nl_risk:
-                snapshot_data["network_lessons_risk"] = _nl_risk
-                snapshot_data["risk_constraints"] = _nl.get_risk_constraints()
-            if _nl_regime:
-                enriched_parts.append(_nl_regime)
-            if _nl_critic:
-                snapshot_data["network_lessons_critic"] = _nl_critic
-            # Calibration adjustment for Quant Agent
-            # Skip in backtest: net-calibration adj is learned from live trades and
-            # would unfairly deflate confidence in data-collection backtests.
-            _cal_adj = _nl.get_calibration_adjustment()
-            if _cal_adj != 0 and not _is_backtest:
-                snapshot_data["network_calibration_adj"] = round(_cal_adj, 4)
-            # Edge decay alerts for Overseer
-            _decaying = _nl.get_decaying_edges()
-            if _decaying:
-                snapshot_data["edge_decay_alerts"] = _decaying
-        except Exception as e:
-            logger.debug("[MULTI-AGENT] Network learning injection failed: %s", e)
+        # Skip in backtest: lessons are derived from live trades that post-date the
+        # backtest window — injects look-ahead bias even as qualitative heuristics.
+        if not _is_backtest:
+            try:
+                from llm.agents.network_learning import get_network_learning
+                _nl = get_network_learning()
+                # Inject per-agent lessons into snapshot for downstream builders
+                _nl_trade = _nl.get_prompt_injection("trade")
+                _nl_risk = _nl.get_prompt_injection("risk")
+                _nl_regime = _nl.get_regime_intelligence()
+                _nl_critic = _nl.get_prompt_injection("critic")
+                if _nl_trade:
+                    snapshot_data["network_lessons_trade"] = _nl_trade
+                if _nl_risk:
+                    snapshot_data["network_lessons_risk"] = _nl_risk
+                    snapshot_data["risk_constraints"] = _nl.get_risk_constraints()
+                if _nl_regime:
+                    enriched_parts.append(_nl_regime)
+                if _nl_critic:
+                    snapshot_data["network_lessons_critic"] = _nl_critic
+                # Calibration adjustment for Quant Agent
+                _cal_adj = _nl.get_calibration_adjustment()
+                if _cal_adj != 0:
+                    snapshot_data["network_calibration_adj"] = round(_cal_adj, 4)
+                # Edge decay alerts for Overseer
+                _decaying = _nl.get_decaying_edges()
+                if _decaying:
+                    snapshot_data["edge_decay_alerts"] = _decaying
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Network learning injection failed: %s", e)
 
         # Dynamic stats: live rolling WR, PF, regime performance, calibration
         # Replaces hardcoded historical stats in prompts with current data.
@@ -643,45 +644,49 @@ class AgentCoordinator:
                 logger.debug("[MULTI-AGENT] Dynamic stats enrichment failed: %s", e)
 
         # Self-teaching knowledge base: axioms, principles, hypotheses, anti-patterns
-        # This is the brain's accumulated wisdom — what it has LEARNED from trading.
-        # Previously disconnected: the knowledge base was built but never read by agents.
-        try:
-            from llm.self_teaching import get_teaching_engine
-            _teach = get_teaching_engine()
-            _knowledge_text = _teach.get_knowledge_for_prompt(
-                symbol=_enrich_symbol, regime=""
-            )
-            if _knowledge_text:
-                enriched_parts.append(f"KNOWLEDGE BASE:\n{_knowledge_text}")
-                snapshot_data["_enr_knowledge"] = _knowledge_text
+        # Skip in backtest: knowledge base is built from live trading outcomes that
+        # post-date the backtest window — look-ahead bias (Bug #16).
+        if not _is_backtest:
+            try:
+                from llm.self_teaching import get_teaching_engine
+                _teach = get_teaching_engine()
+                _knowledge_text = _teach.get_knowledge_for_prompt(
+                    symbol=_enrich_symbol, regime=""
+                )
+                if _knowledge_text:
+                    enriched_parts.append(f"KNOWLEDGE BASE:\n{_knowledge_text}")
+                    snapshot_data["_enr_knowledge"] = _knowledge_text
 
-            # Curriculum level: what the LLM should be focused on learning
-            _curriculum = _teach.get_curriculum_report()
-            if _curriculum:
-                _level = _curriculum.get("current_level", 1)
-                _level_name = _curriculum.get("level_name", "PATTERN_RECOGNITION")
-                _focus = _curriculum.get("focus", "")
-                snapshot_data["curriculum_level"] = _level
-                snapshot_data["curriculum_focus"] = _focus
-                if _level >= 3:  # Level 3+ has predictive capability
-                    enriched_parts.append(
-                        f"CURRICULUM: Level {_level} ({_level_name}) — {_focus}"
-                    )
-        except Exception as e:
-            logger.debug("[MULTI-AGENT] Self-teaching knowledge injection failed: %s", e)
+                # Curriculum level: what the LLM should be focused on learning
+                _curriculum = _teach.get_curriculum_report()
+                if _curriculum:
+                    _level = _curriculum.get("current_level", 1)
+                    _level_name = _curriculum.get("level_name", "PATTERN_RECOGNITION")
+                    _focus = _curriculum.get("focus", "")
+                    snapshot_data["curriculum_level"] = _level
+                    snapshot_data["curriculum_focus"] = _focus
+                    if _level >= 3:  # Level 3+ has predictive capability
+                        enriched_parts.append(
+                            f"CURRICULUM: Level {_level} ({_level_name}) — {_focus}"
+                        )
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Self-teaching knowledge injection failed: %s", e)
 
         # Neuroplasticity: setup edge strengths, decay alerts, surprises
-        try:
-            from llm.neuroplasticity import get_neuro_context_for_agents
-            _neuro = get_neuro_context_for_agents(
-                symbol=_enrich_symbol,
-                side="",  # All sides
-            )
-            if _neuro:
-                enriched_parts.append(f"NEURO:\n{_neuro}")
-                snapshot_data["_enr_neuro"] = _neuro
-        except Exception as e:
-            logger.debug("[MULTI-AGENT] Neuroplasticity context failed: %s", e)
+        # Skip in backtest: neuro weights are learned from live trades that post-date
+        # the backtest window — look-ahead bias (Bug #16).
+        if not _is_backtest:
+            try:
+                from llm.neuroplasticity import get_neuro_context_for_agents
+                _neuro = get_neuro_context_for_agents(
+                    symbol=_enrich_symbol,
+                    side="",  # All sides
+                )
+                if _neuro:
+                    enriched_parts.append(f"NEURO:\n{_neuro}")
+                    snapshot_data["_enr_neuro"] = _neuro
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Neuroplasticity context failed: %s", e)
 
         enriched_context = "\n\n".join(enriched_parts) if enriched_parts else ""
         if enriched_context:
@@ -3416,38 +3421,41 @@ class AgentCoordinator:
                 pass
 
         # Inject similar patterns + known failure modes from deep memory
-        try:
-            from llm.deep_memory import get_deep_memory
-            dm = get_deep_memory()
-            regime = regime_out.data.get("rg", "unknown") if regime_out else "unknown"
-            # Find signals that have patterns from this market context
-            signals = snapshot.get("signals", [])
-            symbol = ""
-            if signals:
-                symbol = signals[0].get("sym", "") if isinstance(signals[0], dict) else ""
+        # Skip in backtest: deep memory is populated from live trades that post-date
+        # the backtest window — injecting it causes look-ahead bias (Bug #16).
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.deep_memory import get_deep_memory
+                dm = get_deep_memory()
+                regime = regime_out.data.get("rg", "unknown") if regime_out else "unknown"
+                # Find signals that have patterns from this market context
+                signals = snapshot.get("signals", [])
+                symbol = ""
+                if signals:
+                    symbol = signals[0].get("sym", "") if isinstance(signals[0], dict) else ""
 
-            # PatternLibrary: find similar historical patterns for context
-            similar = dm.patterns.find_similar(
-                pattern_type="trade_setup",
-                symbol=symbol,
-                regime=regime,
-                limit=3,
-            )
-            if similar:
-                trade_data["similar_patterns"] = [
-                    {k: v for k, v in p.items() if k in ("type", "symbol", "regime", "outcome", "lesson")}
-                    for p in similar[:3]
-                ]
+                # PatternLibrary: find similar historical patterns for context
+                similar = dm.patterns.find_similar(
+                    pattern_type="trade_setup",
+                    symbol=symbol,
+                    regime=regime,
+                    limit=3,
+                )
+                if similar:
+                    trade_data["similar_patterns"] = [
+                        {k: v for k, v in p.items() if k in ("type", "symbol", "regime", "outcome", "lesson")}
+                        for p in similar[:3]
+                    ]
 
-            # TradeDNAStore: get recent failure patterns to avoid
-            failures = dm.trade_dna.get_failures(limit=5)
-            if failures:
-                trade_data["recent_failures"] = [
-                    {k: v for k, v in f.items() if k in ("symbol", "side", "regime", "strategy", "pnl", "lesson")}
-                    for f in failures[:3]
-                ]
-        except Exception:
-            pass
+                # TradeDNAStore: get recent failure patterns to avoid
+                failures = dm.trade_dna.get_failures(limit=5)
+                if failures:
+                    trade_data["recent_failures"] = [
+                        {k: v for k, v in f.items() if k in ("symbol", "side", "regime", "strategy", "pnl", "lesson")}
+                        for f in failures[:3]
+                    ]
+            except Exception:
+                pass
 
         # ── Brain Intelligence Injection ──
         # Skip in backtest: brain context carries graduated rules and quant priors
@@ -3758,25 +3766,29 @@ class AgentCoordinator:
         _ensure_field(critic_data, "ext_liq", snapshot)
 
         # Gap 4+5: Inject calibration data for the critic
-        try:
-            from llm.agents.calibration_ledger import get_calibration_ledger
-            ledger = get_calibration_ledger()
-            cal_data = ledger.get_compact_for_snapshot("critic")
-            if cal_data:
-                critic_data["agent_cal"] = cal_data
-        except Exception:
-            pass
+        # Skip in backtest: calibration ledger is populated from live trade outcomes
+        # that post-date the backtest window — look-ahead bias (Bug #16).
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.agents.calibration_ledger import get_calibration_ledger
+                ledger = get_calibration_ledger()
+                cal_data = ledger.get_compact_for_snapshot("critic")
+                if cal_data:
+                    critic_data["agent_cal"] = cal_data
+            except Exception:
+                pass
 
         # Veto counterfactual feedback: show Critic its recent veto outcomes
-        # so it can calibrate whether vetoes are helping or hurting
-        try:
-            _pt = getattr(self, '_perf_tracker_ref', None)
-            if _pt:
-                veto_stats = _pt.get_veto_stats() if hasattr(_pt, 'get_veto_stats') else None
-                if veto_stats:
-                    critic_data["veto_feedback"] = veto_stats
-        except Exception:
-            pass
+        # Skip in backtest: veto stats are from live session, not the backtest window.
+        if not snapshot.get("_is_backtest"):
+            try:
+                _pt = getattr(self, '_perf_tracker_ref', None)
+                if _pt:
+                    veto_stats = _pt.get_veto_stats() if hasattr(_pt, 'get_veto_stats') else None
+                    if veto_stats:
+                        critic_data["veto_feedback"] = veto_stats
+            except Exception:
+                pass
 
         # Network learning: inject past lessons for better veto decisions
         if "network_lessons_critic" in snapshot:
