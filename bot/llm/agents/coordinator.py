@@ -123,7 +123,7 @@ def _call_llm_via_cli(
         system_prompt=full_system,
         model=cli_model,
         max_budget_usd=1.00,  # 2026-05-30: was 0.10, hit "Reached maximum budget" on every Sonnet/Opus call
-        timeout=max(timeout, 90),
+        timeout=max(timeout, 300),  # 2026-05-31 laptop-claude: was 90s, Trade Agent timed out via CLI subprocess
         allow_tools=False,
     )
     if not resp.ok:

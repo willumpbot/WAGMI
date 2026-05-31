@@ -209,14 +209,15 @@ def _check_confidence_coherence(
             suggestion="Reduce trade confidence by 15-20%",
         ))
 
-    # Acting with very low confidence
-    if action_normalized == "go" and trade_conf < 0.40:
+    # Acting with very low confidence — threshold reads from ENSEMBLE_CONFIDENCE_FLOOR (default 20%)
+    _min_go_conf = float(os.getenv("ENSEMBLE_CONFIDENCE_FLOOR", "40")) / 100.0
+    if action_normalized == "go" and trade_conf < _min_go_conf:
         issues.append(ConsistencyIssue(
             check_name="confidence_coherence",
             severity="critical",
             description=(
                 f"Proceeding with trade at confidence {trade_conf:.2f} "
-                f"(below 0.40 minimum for action)"
+                f"(below {_min_go_conf:.2f} minimum for action)"
             ),
             agents_involved=["trade"],
             suggestion="Override to skip — no edge at this confidence",
