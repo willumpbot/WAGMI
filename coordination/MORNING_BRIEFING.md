@@ -171,3 +171,65 @@ Quota refreshed. Pipeline #5 just completed at 13:04:39 in 138s -- decision: ski
 - Tonight's trades = 0, but each skip was legitimate (low conviction, toxic setups, or quota-killed).
 - Tomorrow's question is operational: **how to spread our subscription quota across the day to keep continuous pipeline coverage**.
 
+
+---
+
+## UPDATE 14:58 UTC -- First GO decision (BLOCKED by safety caps)
+
+**The third major development of the night.**
+
+At 14:57:42 UTC, after 32 consecutive skips, the multi-agent pipeline returned the first **action=proceed** of the overnight session. BTC, Sonnet on Trade Agent, conf=78 raw signal in consolidation regime.
+
+**Full pipeline trace:**
+
+```
+14:54:44  Pre-trade simulation: EV=$91.63 rec=reduce_size
+14:54:44  Trade Agent -> Sonnet (n_agree=1 conf=78 regime=consolidation)
+[192s of agent reasoning]
+14:57:42  Pipeline done: 5 agents, 192398ms, action=proceed conf=0.27 consistency=0.95
+14:57:42  Entry decision: go lev=3.0x risk=2.5% qty=0.7361 conf=0.27
+14:57:42  LLM-FIRST notional cap: $162,694 -> $75,000
+14:57:42  PORTFOLIO-CAP rejected: $75,000 > cap=$20,000 (equity=$5,000 * 4.0x)
+14:57:42  LLM-FIRST portfolio cap reject
+```
+
+**Trade rejected. No money at risk. No paper-position taken.**
+
+**Why the safety caps fired:**
+
+The Risk Agent sized `qty=0.7361 BTC` at `lev=3.0x` with `risk_pct=2.5%`. At ~$73,900 BTC, that's a $54,400 base notional, $163k leveraged notional. On a $5,000 equity account, **that's 32x equity exposure**. The hard notional cap (`multi_strategy_main.py:7137`, `15 * equity`) clamped to $75k. The portfolio cap (`max_portfolio_leverage=4.0`) then rejected the clamped $75k because it still exceeded `4 * $5,000 = $20,000`.
+
+**Math check:**
+
+- `risk_pct=2.5%` * `equity=$5,000` = **$125 risk budget**
+- BTC at ~$73,900 with a ~0.7% stop = ~$517 stop distance
+- Risk-correct sizing: `$125 / $517 per BTC` = **0.24 BTC** (not 0.7361)
+- Agent sized **3.06x the risk-correct quantity**
+
+The Risk Agent over-sized by ~3x. This is sizing-arithmetic, not a "should we trade" judgment call. The agents wanted to be in this trade -- they just sized it for a much larger account.
+
+**Why this matters:**
+
+1. **GO logic confirmed working.** After 32 disciplined skips, the agents identified a setup they liked enough to enter (`action=proceed`, `consistency=0.95`). They are not stuck in a perma-skip mode.
+2. **Safety layer caught the over-sizing.** The notional cap and portfolio cap saved us from a 32x-equity blowup on the very first GO. Multi-layered defense works.
+3. **Risk Agent sizing needs calibration for the current $5k equity.** The prompt's general guidance ("Start with sz=1.0", "sz=0.6-0.8 standard") is overshooting for small accounts. Either the prompt should be updated to be account-size-aware, or the configured `risk_per_trade=0.015` (1.5%) should be honored more strictly.
+
+**Recommendations -- yours to decide:**
+
+1. **Easiest:** lower `MAX_LEVERAGE` in `.env` from 15.0 to 5.0 for current equity. The 15x cap was sized for a larger account. At $5k equity, 5x notional cap ($25k) is more appropriate.
+2. **Better:** update the Risk Agent prompt to explicitly factor `equity` into sizing math, capping notional at `equity * 5` for accounts under $10k.
+3. **Best (eventually):** add `equity` as an explicit input to the Risk Agent's "sizing tiers" table and have it compute `qty = (risk_budget / stop_distance)` directly, not `qty = signal_size * 1.0`.
+
+**NOT applying autonomously.** All three are policy decisions for you.
+
+**Tally update:**
+
+- Total pipelines tonight: ~33 attempts
+- Successful pipeline completions: 19
+- Quota-window failures: ~25 (all 09:42-13:02 UTC)
+- Decisions: 18 SKIP + 1 GO (this one, blocked by safety)
+- Actual trades executed: 0
+- Money at risk: $0
+
+The architecture is working in full. The agents made one GO call. Safety caught the sizing miscalibration. After your calibration fix, the next GO should actually execute.
+
