@@ -190,6 +190,8 @@ class BacktestEngine:
         cb = self.risk_mgr.circuit_breaker
         cb.daily_loss_limit_pct = 1.0
         cb.max_drawdown_pct = 1.0
+        cb.max_session_drawdown_pct = 1.0  # Fix: raw mode must also disable session-DD trip
+        cb._session_halted = False          # Clear any pre-existing session halt
         cb.max_consecutive_losses = 999999
         self.risk_mgr.max_open_positions = 50
         self.risk_mgr.max_portfolio_leverage = 100.0
@@ -1462,8 +1464,13 @@ class BacktestEngine:
 
         decision = self.llm.evaluate_entry(snapshot_data, signal, "pre_trade_backtest")
         if decision is None:
+            if self._raw_mode:
+                # In raw mode, LLM IS the filter. Session-limit failures must veto rather than
+                # approve — otherwise fallback trades pollute the dataset with unfiltered noise.
+                signal.metadata["llm_status"] = "llm_required_missing"
+                return None  # Veto: no LLM opinion in raw mode = don't trade
             signal.metadata["llm_status"] = "fallback"
-            return signal  # No LLM opinion -> use strategy signal as-is
+            return signal  # No LLM opinion -> use strategy signal as-is (non-raw fallback)
 
         # Apply LLM decision
         if decision.action == "flat":

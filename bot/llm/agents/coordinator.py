@@ -375,6 +375,22 @@ class AgentCoordinator:
         scratchpad = reset_pipeline_scratchpad()
         shared_lessons = get_shared_lessons()
 
+        # Flag backtest mode so inner builders skip live-performance penalties.
+        # Live trading penalties (loss streaks, calibration drift) come from unfiltered
+        # trades in the fallback era and should not colour data-collection backtests.
+        _is_backtest = "backtest" in trigger_reason.lower()
+        snapshot_data["_is_backtest"] = _is_backtest
+
+        # In backtest mode strip all live-performance data from the snapshot so
+        # it can't bleed into any agent's context.  These stats were accumulated
+        # during the fallback-approve era (unfiltered trades) and carry poisoned
+        # WR numbers (0-14%) that make Kelly universally negative → all skips.
+        if _is_backtest:
+            for _perf_key in ("self_perf", "network_calibration_adj",
+                              "edge_decay_alerts", "_enr_dynamic_stats",
+                              "_perf_tracker_summary"):
+                snapshot_data.pop(_perf_key, None)
+
         # ── Inject external data (funding/OI, liq levels, shadow MR) ──
         if _EXTERNAL_DATA_AVAILABLE:
             try:
@@ -447,7 +463,9 @@ class AgentCoordinator:
                 logger.debug("[MULTI-AGENT] External data text enrichment failed: %s", e)
 
         # Feedback loop states (strategy weights, Kelly, adaptive risk, tuner)
-        if _FEEDBACK_STATE_AVAILABLE:
+        # Skip in backtest: adaptive-risk multiplier is derived from unfiltered live
+        # trades and would penalise fresh LLM evaluations with stale loss-streak data.
+        if _FEEDBACK_STATE_AVAILABLE and not _is_backtest:
             try:
                 fb_text = format_feedback_for_agent()
                 if fb_text:
@@ -597,8 +615,10 @@ class AgentCoordinator:
             if _nl_critic:
                 snapshot_data["network_lessons_critic"] = _nl_critic
             # Calibration adjustment for Quant Agent
+            # Skip in backtest: net-calibration adj is learned from live trades and
+            # would unfairly deflate confidence in data-collection backtests.
             _cal_adj = _nl.get_calibration_adjustment()
-            if _cal_adj != 0:
+            if _cal_adj != 0 and not _is_backtest:
                 snapshot_data["network_calibration_adj"] = round(_cal_adj, 4)
             # Edge decay alerts for Overseer
             _decaying = _nl.get_decaying_edges()
@@ -608,15 +628,18 @@ class AgentCoordinator:
             logger.debug("[MULTI-AGENT] Network learning injection failed: %s", e)
 
         # Dynamic stats: live rolling WR, PF, regime performance, calibration
-        # Replaces hardcoded historical stats in prompts with current data
-        try:
-            from llm.agents.dynamic_stats import get_all_dynamic_stats
-            _dyn_stats = get_all_dynamic_stats()
-            if _dyn_stats:
-                enriched_parts.append(_dyn_stats)
-                snapshot_data["_enr_dynamic_stats"] = _dyn_stats
-        except Exception as e:
-            logger.debug("[MULTI-AGENT] Dynamic stats enrichment failed: %s", e)
+        # Replaces hardcoded historical stats in prompts with current data.
+        # Skip in backtest: live WR stats are from the fallback-approve era (unfiltered
+        # trades) and would poison the agent with regime/setup WRs near 0-14%.
+        if not _is_backtest:
+            try:
+                from llm.agents.dynamic_stats import get_all_dynamic_stats
+                _dyn_stats = get_all_dynamic_stats()
+                if _dyn_stats:
+                    enriched_parts.append(_dyn_stats)
+                    snapshot_data["_enr_dynamic_stats"] = _dyn_stats
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Dynamic stats enrichment failed: %s", e)
 
         # Self-teaching knowledge base: axioms, principles, hypotheses, anti-patterns
         # This is the brain's accumulated wisdom — what it has LEARNED from trading.
@@ -3120,15 +3143,18 @@ class AgentCoordinator:
             logger.debug(f"Quant data injection error: {e}")
 
         # Per-agent calibration for Bayesian updating
-        try:
-            from llm.agents.calibration_ledger import get_calibration_ledger
-            ledger = get_calibration_ledger()
-            regime = regime_out.data.get("rg", "unknown")
-            cal = ledger.get_calibration("trade", regime)
-            if cal.get("reliable"):
-                quant_data["trade_calibration"] = cal
-        except Exception:
-            pass
+        # Skip in backtest: same reasoning as agent_cal — stale live-trade accuracy
+        # data would make Quant deflate confidence before Trade agent even decides.
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.agents.calibration_ledger import get_calibration_ledger
+                ledger = get_calibration_ledger()
+                regime = regime_out.data.get("rg", "unknown")
+                cal = ledger.get_calibration("trade", regime)
+                if cal.get("reliable"):
+                    quant_data["trade_calibration"] = cal
+            except Exception:
+                pass
 
         # Historical patterns from replay engine
         try:
@@ -3151,9 +3177,9 @@ class AgentCoordinator:
         if snapshot.get("enriched_context"):
             quant_data["enriched"] = snapshot["enriched_context"]
 
-        # Per-agent self-performance stats for the Quant Agent
+        # Per-agent self-performance stats for the Quant Agent (skip in backtest)
         _pt = getattr(self, '_perf_tracker_ref', None)
-        if _pt:
+        if _pt and not snapshot.get("_is_backtest"):
             try:
                 _self_perf_text = _pt.format_for_agent("quant")
                 if _self_perf_text:
@@ -3256,9 +3282,9 @@ class AgentCoordinator:
         if snapshot.get("enriched_context"):
             regime_data["enriched"] = snapshot["enriched_context"]
 
-        # Per-agent self-performance stats for the Regime Agent
+        # Per-agent self-performance stats for the Regime Agent (skip in backtest)
         _pt = getattr(self, '_perf_tracker_ref', None)
-        if _pt:
+        if _pt and not snapshot.get("_is_backtest"):
             try:
                 _self_perf_text = _pt.format_for_agent("regime")
                 if _self_perf_text:
@@ -3362,14 +3388,17 @@ class AgentCoordinator:
             trade_data["quant_analysis"] = quant_out.data
 
         # Gap 4+5: Inject per-agent calibration data into trade input
-        try:
-            from llm.agents.calibration_ledger import get_calibration_ledger
-            ledger = get_calibration_ledger()
-            cal_data = ledger.get_compact_for_snapshot("trade")
-            if cal_data:
-                trade_data["agent_cal"] = cal_data
-        except Exception:
-            pass
+        # Skip in backtest: agent-cal reflects live-trading accuracy which has been
+        # contaminated by the fallback-approve era and would distort fresh evaluations.
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.agents.calibration_ledger import get_calibration_ledger
+                ledger = get_calibration_ledger()
+                cal_data = ledger.get_compact_for_snapshot("trade")
+                if cal_data:
+                    trade_data["agent_cal"] = cal_data
+            except Exception:
+                pass
 
         # Inject similar patterns + known failure modes from deep memory
         try:
@@ -3450,8 +3479,9 @@ class AgentCoordinator:
                 trade_data[_agent_key] = snapshot[_snap_key]
 
         # Per-agent self-performance stats for the Trade Agent
+        # Skip in backtest: perf tracker has contaminated live-trade accuracy data.
         _pt = getattr(self, '_perf_tracker_ref', None)
-        if _pt:
+        if _pt and not snapshot.get("_is_backtest"):
             try:
                 _self_perf_text = _pt.format_for_agent("trade")
                 if _self_perf_text:
@@ -3603,9 +3633,9 @@ class AgentCoordinator:
             if _snap_key in snapshot:
                 risk_data[_agent_key] = snapshot[_snap_key]
 
-        # Per-agent self-performance stats for the Risk Agent
+        # Per-agent self-performance stats for the Risk Agent (skip in backtest)
         _pt = getattr(self, '_perf_tracker_ref', None)
-        if _pt:
+        if _pt and not snapshot.get("_is_backtest"):
             try:
                 _self_perf_text = _pt.format_for_agent("risk")
                 if _self_perf_text:

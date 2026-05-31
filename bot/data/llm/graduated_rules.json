@@ -16,8 +16,7 @@
       "last_applied": 1778811039.5393455,
       "times_applied": 3,
       "times_correct": 0,
-      "active": false,
-      "gate_percentage": 0
+      "active": false
     },
     {
       "rule_id": "hype_long_veto_v1",
@@ -35,8 +34,7 @@
       "last_applied": 1777926052.3763394,
       "times_applied": 1,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 100
+      "active": false
     },
     {
       "rule_id": "sol_long_veto_v1",
@@ -54,8 +52,7 @@
       "last_applied": 1777926052.377478,
       "times_applied": 1,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 100
+      "active": false
     },
     {
       "rule_id": "night_session_block_v1",
@@ -70,11 +67,10 @@
       "evidence_ratio": 0.19,
       "total_evidence": 27,
       "created_at": 1746382701.0,
-      "last_applied": 1779419617.7340784,
-      "times_applied": 6,
+      "last_applied": 1780183788.718958,
+      "times_applied": 1077,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 100
+      "active": false
     },
     {
       "rule_id": "illiquid_regime_penalize_v1",
@@ -91,8 +87,7 @@
       "last_applied": 1777926052.3784072,
       "times_applied": 1,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 100
+      "active": true
     },
     {
       "rule_id": "hype_short_veto_v1",
@@ -110,8 +105,7 @@
       "last_applied": 1778811039.5388637,
       "times_applied": 3,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 100
+      "active": false
     },
     {
       "rule_id": "btc_short_conf70_80_penalize_v1",
@@ -128,11 +122,10 @@
       "evidence_ratio": 0.25,
       "total_evidence": 40,
       "created_at": 1746382701.0,
-      "last_applied": 1779325621.569989,
-      "times_applied": 3,
+      "last_applied": 1780216263.704327,
+      "times_applied": 395,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 100
+      "active": true
     },
     {
       "rule_id": "btc_short_90plus_boost_v1",
@@ -148,11 +141,10 @@
       "evidence_ratio": 0.67,
       "total_evidence": 43,
       "created_at": 1747267200.0,
-      "last_applied": null,
-      "times_applied": 0,
+      "last_applied": 1780200853.3753784,
+      "times_applied": 51,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 100
+      "active": true
     },
     {
       "rule_id": "eth_trending_regime_boost_v1",
@@ -160,7 +152,7 @@
       "action": "boost",
       "conditions": {
         "symbol": "ETH",
-        "regime": "trend"
+        "regime": "trending_bull"
       },
       "adjustment": 8.0,
       "confidence": 0.85,
@@ -170,8 +162,7 @@
       "last_applied": 1779325621.570845,
       "times_applied": 2,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 100
+      "active": true
     },
     {
       "rule_id": "hype_unknown_regime_probe_v1",
@@ -189,8 +180,7 @@
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 20
+      "active": true
     },
     {
       "rule_id": "conf_floor_70_v1",
@@ -208,8 +198,7 @@
       "last_applied": 1778811039.5375004,
       "times_applied": 2,
       "times_correct": 0,
-      "active": false,
-      "gate_percentage": 0
+      "active": false
     },
     {
       "rule_id": "btc_trend_long_counter_v1",
@@ -228,10 +217,7 @@
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50,
-      "gate_escalated_at": "2026-05-23T23:11:54.661001+00:00",
-      "gate_escalation_reason": "GRADUATION_CRITERION_MET: pending_ab_graduation threshold was n>=10 WR<=0.45. Live data: 17 trades at 18% WR. Threshold met (17>=10, 0.18<=0.45). Feedback BTC_LONG_reduce at gate=50%. Triple protection stack (counter+Critic prompt+parent disabled). Conf=0.92 >> 0.75 threshold."
+      "active": true
     },
     {
       "rule_id": "tod_evening_edge_v1",
@@ -246,13 +232,10 @@
       "evidence_ratio": 0.65,
       "total_evidence": 27,
       "created_at": 1779310372.0,
-      "last_applied": 1779419617.7344398,
-      "times_applied": 2,
+      "last_applied": 1780217484.1896727,
+      "times_applied": 1622,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50,
-      "gate_escalated_at": "2026-05-24T00:11:00+00:00",
-      "gate_escalation_reason": "GRADUATION_CRITERION_MET: threshold was n>=20 WR>=0.60. Live data: n=27 WR=65%. Both conditions met (27>=20, 0.65>=0.60). No feedback engine conflict (evening slot unique). Second TOD window to graduate (after tod_morning_edge_v1). Feedback engine has no contradicting evening block rule. Conf=0.85 >> 0.75 threshold. Gate distribution now: 3 disabled / 4 probe(20%) / 8 graduated(50%) / 8 deployed(100%)."
+      "active": true
     },
     {
       "rule_id": "tod_afternoon_edge_v1",
@@ -267,11 +250,10 @@
       "evidence_ratio": 0.64,
       "total_evidence": 27,
       "created_at": 1779310372.0,
-      "last_applied": 1779419617.734446,
-      "times_applied": 2,
+      "last_applied": 1780217484.1896753,
+      "times_applied": 1622,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 20
+      "active": true
     },
     {
       "rule_id": "high_vol_regime_boost_v1",
@@ -288,10 +270,7 @@
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50,
-      "gate_escalated_at": "2026-05-23T23:11:54.661001+00:00",
-      "gate_escalation_reason": "GRADUATION_CRITERION_MET: pending_ab_graduation threshold was n>=25 WR>=0.52. Backtest: n=2172 at 55% WR. Feedback HIGH_VOL_regime_boost at gate=80%. Best regime by WR margin (55% vs 38% avg). No conflicts (different conditions from illiquid_regime_penalize). Conf=0.88 >> 0.75 threshold."
+      "active": true
     },
     {
       "rule_id": "tod_morning_edge_v1",
@@ -306,11 +285,10 @@
       "evidence_ratio": 0.74,
       "total_evidence": 7,
       "created_at": 1779404804.0,
-      "last_applied": 1779419680.301572,
-      "times_applied": 7,
+      "last_applied": 1780217484.1896777,
+      "times_applied": 1627,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50
+      "active": true
     },
     {
       "rule_id": "eth_sell_bb_golden_v1",
@@ -328,13 +306,10 @@
       "evidence_ratio": 0.7,
       "total_evidence": 2172,
       "created_at": 1779419602.7878811,
-      "last_applied": 1779419680.3015776,
-      "times_applied": 3,
+      "last_applied": 1780217014.2813818,
+      "times_applied": 9,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50,
-      "gate_escalated_at": "2026-05-23T23:11:54.661001+00:00",
-      "gate_escalation_reason": "SYNC_GAP_CLOSE: feedback ETH_SHORT_BB_golden at gate=80%. Backtest: 70% WR on n=2172. Live_edge_data: 80% WR on 5 live trades (strongest live edge found). ETH SELL is protected from side-bias filter. Conf=0.95 >> 0.75 threshold. First BB golden rule to escalate (sol_buy disabled, btc_buy at 20% pending conflict check)."
+      "active": true
     },
     {
       "rule_id": "btc_buy_bb_golden_v1",
@@ -352,11 +327,10 @@
       "evidence_ratio": 0.69,
       "total_evidence": 2172,
       "created_at": 1779419602.7878811,
-      "last_applied": 1779419634.0488565,
-      "times_applied": 1,
+      "last_applied": 1780216486.3038757,
+      "times_applied": 105,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 20
+      "active": true
     },
     {
       "rule_id": "sol_buy_bb_golden_v1",
@@ -377,10 +351,7 @@
       "last_applied": 0.0,
       "times_applied": 0,
       "times_correct": 0,
-      "active": false,
-      "gate_percentage": 0,
-      "disabled_reason": "Dead rule: sol_long_veto_v1 (gate=100%) always wins. SOL BUY WR=24%. Boost never fires. Disabled 2026-05-23.",
-      "disabled_at": "2026-05-23T22:14:22.771526+00:00"
+      "active": false
     },
     {
       "rule_id": "hype_sell_bb_block_v1",
@@ -401,10 +372,7 @@
       "last_applied": 0.0,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50,
-      "gate_escalated_at": "2026-05-23T03:05:37+00:00",
-      "gate_escalation_reason": "BB_GATE_SYNC_GAP_FIX: feedback engine runs at gate=80%; LLM was at gate=20%. Escalated to 50% to close 4x understrength gap. Penalty rule, no conflicts, conf=0.92 >> 0.75 threshold."
+      "active": true
     },
     {
       "rule_id": "bb_mtq_antipattern_v1",
@@ -421,13 +389,10 @@
       "evidence_ratio": 0.35,
       "total_evidence": 2172,
       "created_at": 1779419602.7878811,
-      "last_applied": 1779419634.0497034,
-      "times_applied": 1,
+      "last_applied": 1780216107.2791746,
+      "times_applied": 73,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50,
-      "gate_escalated_at": "2026-05-23T03:05:37+00:00",
-      "gate_escalation_reason": "BB_GATE_SYNC_GAP_FIX: feedback engine runs at gate=80%; LLM was at gate=20%. Escalated to 50% to close 4x understrength gap. Penalty rule, no conflicts, conf=0.92 >> 0.75 threshold."
+      "active": true
     },
     {
       "rule_id": "ranging_regime_penalize_v1",
@@ -440,16 +405,11 @@
       "confidence": 0.76,
       "evidence_ratio": 0.25,
       "total_evidence": 16,
-      "gate_percentage": 50,
       "created_at": 1779487857.5699627,
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
-      "source": "feedback/graduated_rules.json RANGING_regime_reduce (gate=50%, conf=76%). Sync gap: illiquid has LLM rule (-15pts), ranging does not. Pattern: 6th consecutive cross-system sync gap.",
-      "outcome_tracking": "PENDING_RESTART",
-      "gate_escalated_at": "2026-05-23T23:11:54.661001+00:00",
-      "gate_escalation_reason": "SYNC_GAP_CLOSE_V2: feedback RANGING_regime_reduce at gate=50%. Ranging WR=25% on 16 live trades (worse than illiquid 28%). Penalty rule, no conflicts. Conf=0.76 >= 0.75 threshold. 10th consecutive cross-system sync gap action."
+      "active": true
     },
     {
       "rule_id": "sol_short_penalize_v1",
@@ -463,16 +423,11 @@
       "confidence": 0.88,
       "evidence_ratio": 0.346,
       "total_evidence": 52,
-      "gate_percentage": 50,
       "created_at": 1779495301.5124173,
-      "last_applied": null,
-      "times_applied": 0,
+      "last_applied": 1780199407.5684154,
+      "times_applied": 3,
       "times_correct": 0,
-      "active": true,
-      "source": "feedback/graduated_rules.json SOL_SHORT_full_block (conf=88, gate=100%) + live evidence 34.6% WR n=52. RULE_CONFLICT resolved: conflict was LLM understrength (20%) vs feedback full_block (100%). Escalating to 50% closes half the gap.",
-      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u2192100% (full veto) at WR<40% n>=20 post-restart.",
-      "gate_escalated_at": "2026-05-24T05:00:00+00:00",
-      "gate_escalation_reason": "RULE_CONFLICT_RESOLUTION_V1: Graduation criterion met on historical data (WR=34.6%<40% n=52>=30 conf=0.88). RULE_CONFLICT_SOL_SHORT was that LLM engine was 5x weaker than feedback engine (gate=20% vs feedback gate=100%). Escalating to gate=50% closes half the alignment gap. Directional alignment: both engines agree SOL SELL is weak. Next graduation: full veto (gate=100%) after n>=20 post-restart trades at WR<40%."
+      "active": true
     }
   ]
 }

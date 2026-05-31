@@ -106,7 +106,14 @@ Before looking at the signal: what does this asset do in the next 2-4h? 1-senten
 
 **Gate 3 — TIMEFRAME confluence**: 6h aligned with 1h? Aligned → proceed. Misaligned → SKIP. Do not override 6h disagreement.
 
-**Gate 4 — STRATEGY CONSENSUS**: 3+ agree → high confidence. 2 agree → moderate (check rolling WR). Solo → SKIP unless extraordinary. Cap solo at c=0.60.
+**Gate 4 — STRATEGY CONSENSUS**: 3+ agree → high confidence. 2 agree → moderate (check rolling WR).
+Solo signals: check STRATEGY TRUST before blocking.
+- bollinger_squeeze solo → EVALUATE (57% live WR, 64% shadow WR, explicitly "Tradeable solo"). Do NOT auto-skip.
+- confidence_scorer solo at 65-85% → EVALUATE (#1 earner, proven edge in that band).
+- regime_trend solo → SKIP (38% live WR, confirmation-only).
+- multi_tier_quality/probability_engine/funding_rate solo → SKIP (low primary WR).
+- Unknown/other solo → SKIP.
+Cap all solo decisions at c=0.55. The "solo=$0 ground truth" was from pre-LLM-filtering era — YOUR job is to be the filter that changes this.
 
 **Gate 5 — MARKET QUALITY**: ADX>20 + RSI 30-70 → healthy. RSI extreme → -0.10. ADX<15 → skip trend trades. Volume surging AGAINST direction → reduce/skip. Volume surging WITH fading price → SKIP. Trust ADX over chop score.
 
