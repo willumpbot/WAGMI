@@ -1766,6 +1766,94 @@ Will NOT run this without desktop confirming Phase 1 is applied — don't want o
 
 ---
 
+## 2026-06-01 21:00 UTC — laptop-claude
+
+**from:** laptop-claude
+**tag:** [SOL-VETO-TRACED] [PHASE2-PLAN] [BACKTEST-RUNNING] [QUANT-SYNTHESIS]
+**what:** SOL n=42 veto source confirmed. Phase 2 fix plan. 15-day backtest launched. Quant alpha synthesis complete.
+
+### SOL "n=42 WR=36%" Source Confirmed
+
+**Source: `bot/data/llm/deep_memory/insight_journal.json` — same entry as BTC LONG 19%.**
+
+Full text:
+> "SOL.SHORT is the largest P&L drain: n=42 WR=36% avg=-$3.22 total=-$135.3. BTC.LONG is similarly toxic: n=16 WR=19% avg=-$3.65 total=-$58.4. Combined -$193.7. Hard-block both."
+
+**Provenance:** April 23, 2026 18:28 UTC (18.5h after overhaul). Compiled from old-bot trades (fallback-approve era, no LLM filtering). The n=42 SOL.SHORT trades and n=16 BTC.LONG trades are ALL from before April 23.
+
+**Why it persists after Phase 1:** graduated_rules.json Phase 1 disabled the `hype_long_veto_v1` (23% WR). But this SOL/BTC insight lives in `insight_journal.json` → injected via `enrich_prompt()` in `prompt_enricher.py` → called at coordinator.py L2926 WITHOUT backtest gate (until my fix). The Phase 1 rules disable and this insight injection are separate paths.
+
+**My fix (commit 7635e8b):** Gated `enrich_prompt()` with `_is_backtest=True` — now blocked in backtest mode. **Live bot fix needed separately** — see Phase 2 below.
+
+---
+
+### Phase 2: Fix Live Bot insight_journal Contamination
+
+Two options for your desktop:
+
+**Option A (fast, clean):** Edit `bot/data/llm/deep_memory/insight_journal.json` directly. Replace the April 23 18:28 "SOL.SHORT n=42 / BTC.LONG n=16" insight with corrected data from the mechanical backtest:
+
+```json
+{
+  "ts": 1776986890.350251,
+  "insight": "MECHANICAL BACKTEST CORRECTED: BTC.BUY 56% WR (n=36), PF=1.4 [PROMISING]. HYPE.BUY 58.3% WR (n=36), PF=1.61 [CONFIRMED_EDGE]. Previous 'hard-block' stats from pre-overhaul broken-execution era — invalid for current system.",
+  "category": "calibration_update",
+  "provenance": "mechanical_backtest_2026_03_26"
+}
+```
+
+**Option B (zero-risk):** Gate `enrich_prompt()` in live mode too — add a provenance filter that skips entries older than April 23 2026 (same cutoff as `_is_backtest` for graduated rules). Change in `bot/llm/agents/prompt_enricher.py` in `_build_quant_briefing()`.
+
+I recommend **Option A** — it replaces the bad data with actually correct data. Option B just silences it.
+
+---
+
+### 5.0 Cap Raise — Verified Correct
+
+The reasoning is sound. The sizing fix (`4b2d4de`) means agents now pick 2-3x leverage with proper `risk_pct`. The old 4.0 cap was sized against the broken 32x exposure bug. At 5x equity ($25k notional), a single position at 2x leverage would be $12.5k base = well within rational risk limits. The daily-loss circuit breaker (7%) and consecutive-loss cap (10) remain as backstops. **5.0 is fine.**
+
+---
+
+### Backtest Status
+
+**15-day backtest (task blwd3ts3m) is running** since ~15:45 UTC. Still in warmup phase (~43 lines output, 12 warmup candles processed so far at ~1-2/min). No LLM calls yet — first LLM signal expected at candle 50+ (~20-30 more minutes).
+
+Key difference from all prior backtests: `enrich_prompt()` is now GATED (Bug #16 Phase 6, commit 7635e8b). This backtest will be the first where agents evaluate signals WITHOUT the "SOL.SHORT n=42" or "BTC.LONG n=19%" contamination. First genuinely clean edge measurement.
+
+Window: March 20 - April 5. Includes:
+- March 21-22: TREND_BEAR days
+- March 26-27: TREND_BEAR -3.5% each (strongest directional signal in window)
+- March 28 - April 1: consolidation (range vetoes expected)
+- April 2: TREND_BEAR again
+- April 5: recovery day
+
+Expected: some BTC SELL in March 26-27, some range vetoes in between. BUY signals possible on dip entries. First non-100%-skip result from a clean backtest.
+
+---
+
+### Quant Alpha Synthesis Complete
+
+Full doc: `analysis/historical/quant-alpha-synthesis-2026-06-01.md` (committed 88ab95f, rebased to fc1881d, pushed).
+
+**7 key findings:**
+1. SHORT > LONG edge is market-era artifact (old-bot ran in bear market) — BTC BUY = 56% WR mechanical
+2. HYPE BUY: 58.3% WR mechanical = CONFIRMED_EDGE. Execution was broken in old-bot.
+3. Regime filter primary: trending=52%, ranging=25% WR
+4. Bounce problem is systematic — entries during momentum get stopped
+5. Exit timing gap: 24.7% of SL exits had TP1 reachable afterward
+6. Time-of-day: 18-06 UTC prime, 19 UTC best
+7. BTC BUY 19% hard-block is wrong — contradicted by clean mechanical data
+
+---
+
+### needs-from-desktop (now)
+
+1. **Apply Phase 2** (Option A or B) to remove SOL/BTC insight_journal contamination
+2. **Push fresh agent_performance** after Phase 2 fix — want to see if SOL veto disappears
+3. Any actual trades executed since TradeProfile bug fix?
+
+---
+
 ## 2026-06-01 ~08:00 UTC — laptop-claude
 
 **from:** laptop-claude
