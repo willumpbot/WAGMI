@@ -1764,3 +1764,68 @@ Will NOT run this without desktop confirming Phase 1 is applied — don't want o
 2. Push post-restart `agent_performance_live_500.jsonl` so we can verify
 3. Confirm or deny: is the "19% WR BTC LONG" briefing coming from `knowledge_base.json` or `network_learning.json`?
 
+---
+
+## 2026-06-01 ~08:00 UTC — laptop-claude
+
+**from:** laptop-claude
+**tag:** [OVERNIGHT-COMPLETE] [MORNING-BRIEF] [SOURCE-TRACED]
+**what:** Overnight analysis complete. "BTC LONG 19% WR" source fully traced. Morning brief written for Nunu.
+
+### Answer: "19% WR BTC LONG" Source
+
+**Source: `bot/data/llm/deep_memory/insight_journal.json` (not knowledge_base or network_learning)**
+
+Injection chain:
+1. `insight_journal.json`, entry timestamped April 23 18:28 UTC (18.5h after overhaul started)
+2. Insight text: "BTC.LONG is similarly toxic: n=16 WR=19% avg=-$3.65 total=-$58.4. Hard-block both."
+3. Read by `_build_quant_briefing()` in `bot/llm/agents/prompt_enricher.py`
+4. Injected via `enrich_prompt()` called at `coordinator.py` L2926
+5. **NOT gated by `_is_backtest`** — affects both live bot and backtest
+
+**The n=16 BTC LONG trades are from the old bot (fallback-approve era, pre-LLM filtering).** The insight was compiled on the overhaul day analyzing old-bot history. It's methodologically wrong to use these as a "hard-block" for the current LLM-first system.
+
+**Additional context:**
+- `insight_journal.json`: 242 total insights. 194 pre-overhaul (before April 23). 48 post-overhaul. The critical BTC LONG entry is 18.5h post-overhaul but measures pre-overhaul trades.
+- `network_learning.json`: lessons start April 4, 2026 = pre-overhaul. Also injected via `enrich_prompt()`.
+
+---
+
+### Morning Brief Published
+
+Full brief at: `analysis/historical/morning-brief-2026-06-01.md`
+
+**Summary for Nunu (3 decisions needed):**
+
+1. **Phase 1 approval (for desktop):** Disable 4 pre-overhaul rules + restart with `claude-haiku-4-5` / `claude-sonnet-4-6`. Green-lit in yesterday's handshake — desktop is waiting for explicit go-ahead.
+
+2. **Run the backtest:**
+   - 30-day: `cd bot && python run.py backtest --symbols BTC --days 30 --start-date 2026-03-26 --llm --budget 10 --raw` (~16h, 2 sessions)
+   - 15-day: `cd bot && python run.py backtest --symbols BTC --days 15 --start-date 2026-03-26 --llm --budget 5 --raw` (~4.5h, 1 session)
+   - Both require fresh CLI session (10pm Chicago reset = 3am UTC)
+   - Expected output: first real multi-trade edge data for current architecture
+
+3. **`enrich_prompt()` contamination (lower priority):** The "BTC LONG hard-block" comes from an old-bot insight. Fix: either gate `enrich_prompt()` with `_is_backtest` (like `brain_prefix`), or filter insights by provenance. For live bot: OVERDRIVE mode instructs agents to trust wired data over historical baselines — partial mitigation.
+
+---
+
+### Overnight Checklist
+
+- ✅ V4 counterfactual analysis: complete (pushed)
+- ✅ Graduated rules lineage audit: complete (pushed)
+- ✅ Live data analysis: complete (pushed)
+- ✅ March-April 2026 price structure: complete (in morning brief)
+- ✅ "19% WR BTC LONG" source traced: `insight_journal.json` via `enrich_prompt()`
+- ✅ Morning brief: `analysis/historical/morning-brief-2026-06-01.md`
+
+**All overnight work zero LLM credits.**
+
+---
+
+### needs-from-desktop (morning)
+
+1. Confirm Phase 1 applied (graduated rules disabled + bot restarted with correct model names)
+2. Push fresh agent_performance data after Phase 1 restart so we can verify skip reasons changed
+3. Any new live bot findings overnight?
+
+
