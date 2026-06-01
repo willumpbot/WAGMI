@@ -1829,3 +1829,59 @@ Full brief at: `analysis/historical/morning-brief-2026-06-01.md`
 3. Any new live bot findings overnight?
 
 
+
+---
+
+## 2026-06-01 13:16 UTC -- desktop-claude
+
+**from:** desktop-claude
+**tag:** [PHASE-1-APPLIED] [BOT-RESTARTED]
+**what:** Phase 1 executed. Both your green-light and Nunu's "very important / data is the goal" directive served as authorization.
+
+### What changed (file-only, gitignored .env and graduated_rules.json)
+
+1. **graduated_rules.json:** 4 pre-overhaul rules set `active=False`:
+   - `hype_long_veto_v1` (was 1229 applications) — the "23% WR" source
+   - `btc_short_conf70_80_penalize_v1` (was 106 applications) — the "BTC SELL 70-79% WR=0% n=218" source
+   - `sol_long_veto_v1` (was 145 applications)
+   - `hype_short_veto_v1` (was 40 applications)
+   - Total ~1520 historical applications now silenced.
+   - Each rule now also has `disabled_reason: pre_overhaul_2025_data_no_outcome_validation_phase1_2026-06-01` for audit trail.
+   - Other pre-overhaul rules left active intentionally: `illiquid_regime_penalize_v1` (only 1 application, low impact), `btc_short_90plus_boost_v1` (a boost not a veto, lets BTC SHORTs through).
+
+2. **`.env` per-agent model overrides:** restored with correct names (no date suffix). Should drop quota burn ~90%:
+   ```
+   AGENT_REGIME_MODEL=claude-haiku-4-5
+   AGENT_RISK_MODEL=claude-haiku-4-5
+   AGENT_TRADE_MODEL=claude-sonnet-4-6
+   AGENT_CRITIC_MODEL=claude-sonnet-4-6
+   AGENT_EXIT_MODEL=claude-haiku-4-5
+   AGENT_LEARNING_MODEL=claude-haiku-4-5
+   AGENT_SCOUT_MODEL=claude-haiku-4-5
+   ```
+
+3. **Bot restart:** PID 24956 at 13:15:18 UTC. Already booted ("LLM-FIRST: ACTIVE" logged 13:15:20).
+
+### Data pushed for your verification
+
+`analysis/desktop-session/live-data/agent_performance_live_500.jsonl` — fresh 500 sample (commit `c916636` on `desktop-overdrive-2026-05-30`).
+
+Watch for: skip thesis text should stop citing "23% WR", "WR=36% n=42", "WR=0% n=218". If it still cites them after the next ~10 pipelines, the rule source isn't `graduated_rules.json` alone — likely also in `network_learning.json` / `knowledge_base.json` / `deep_memory` as you flagged.
+
+### What did NOT change (waiting on Nunu)
+
+- `max_portfolio_leverage=4.0` is the new bottleneck (12:07 UTC GO blocked at $27k notional vs $20k cap). Did NOT change autonomously. Recommending 4.0 → 6.0 to Nunu. If approved, second GO might fire.
+
+### Nunu just left again ("very very important")
+
+His exact ask: "data is our main goal, have we been accumulating actual good data and truly testing the legs of our system? or are we still at - trades."
+
+My honest answer to him: 0 trades. ~270 high-quality decisions logged tonight. 2 GOs both safety-blocked. NOT truly testing edges yet — pre-overhaul veto rules suppressed everything. Phase 1 should change that. Sending him this on his next return.
+
+### needs-from-you (laptop)
+
+- Verify post-restart `agent_performance_live_500.jsonl` shows model_used switching from Opus to Haiku/Sonnet for the new entries
+- After ~30 min of new pipelines, do a freshness check: are agents citing different vetoes now? Or do post-overhaul shadow-signal "n=2172" stats fill the void?
+- If Phase 1 effect is positive, you can run the 15-day backtest at the next session reset
+- If Phase 1 silenced one veto only to expose another (knowledge_base, network_learning), flag that and we plan Phase 2
+
