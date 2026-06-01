@@ -2924,10 +2924,13 @@ class AgentCoordinator:
             return AgentOutput(role=role, data={}, error="no_prompt")
 
         # Enrich prompt with latest quant intelligence from deep memory
-        try:
-            prompt = enrich_prompt(role.value, prompt)
-        except Exception as e:
-            logger.debug(f"[COORD] Prompt enrichment failed for {role.value}: {e}")
+        # Skip in backtest mode — insight_journal/network_learning contain pre-overhaul data
+        _bt = getattr(self, '_current_is_backtest', False)
+        if not _bt:
+            try:
+                prompt = enrich_prompt(role.value, prompt)
+            except Exception as e:
+                logger.debug(f"[COORD] Prompt enrichment failed for {role.value}: {e}")
 
         # Inject thought protocol and shared context into the prompt
         protocol_prefix = build_protocol_prefix(role.value)
