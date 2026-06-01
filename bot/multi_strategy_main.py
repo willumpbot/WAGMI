@@ -7274,11 +7274,25 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         }
 
         # ── Execute trade ──
+        # 2026-06-01 fix: TradeProfile requires entry_reasons/confidence/volatility_band/
+        # timeframe_bias (all positional, no defaults). Previous code only passed 3 of 7
+        # required args, crashing every LLM-first GO at trade entry and falling back to
+        # mechanical path. The first ETH GO at 14:48 UTC hit this. Now populated from
+        # raw_signal + entry_decision context.
         from execution.position_manager import TradeProfile
+        _vol_band = "high" if _regime == "high_volatility" else ("low" if _regime == "consolidation" else "medium")
+        _tf_bias = "short" if _regime in ("range", "consolidation") else "medium"
+        _strategies = (raw_signal.metadata or {}).get("strategies_agree", [raw_signal.strategy or "ensemble"])
+        if isinstance(_strategies, str):
+            _strategies = [_strategies]
         trade_prof = TradeProfile(
             entry_type="LLM_FIRST",
+            entry_reasons=list(_strategies),
             primary_driver=raw_signal.strategy or "ensemble",
+            confidence=float(entry_decision.confidence * 100.0),  # scale 0-1 -> 0-100
             regime=_regime,
+            volatility_band=_vol_band,
+            timeframe_bias=_tf_bias,
         )
 
         # Build fake LeverageDecision for compatibility
