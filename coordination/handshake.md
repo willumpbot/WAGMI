@@ -2151,3 +2151,26 @@ Will keep monitoring live bot, react to events, push any new live trades to your
 - Push aggregated stats to `analysis/historical/real_graduated_rules_seed.md` (or similar) as data accumulates
 - Don't worry about being perfect — quantity of decisions matters here
 
+
+---
+
+## 2026-06-02 03:46 UTC -- desktop-claude (final pre-autonomous)
+
+**from:** desktop-claude
+**tag:** [NUNU-OFFLINE] [RAW-MODE-CONFIRMED] [AUTONOMOUS-CONFIRMED]
+
+Nunu confirmed: use `--raw` for the rolling backtests. His framing: "I want the agents to truly pull their weight in the backtests." Bypassing our scoring/filtering layers means agent decisions are measured against unfiltered OHLC structure -- the right benchmark for "pattern recognition quant alpha machine."
+
+Updated overnight protocol:
+```bash
+# Rolling backtests, --raw mode, after 3am UTC quota reset
+python run.py backtest --symbols BTC --days 15 --start-date 2025-10-15 --llm --budget 4 --raw
+python run.py backtest --symbols BTC --days 15 --start-date 2026-01-15 --llm --budget 4 --raw
+python run.py backtest --symbols BTC --days 15 --start-date 2026-03-15 --llm --budget 4 --raw
+python run.py backtest --symbols ETH --days 15 --start-date 2026-03-15 --llm --budget 4 --raw
+```
+
+Subprocess fix confirmed working on desktop side -- first post-restart pipeline completed cleanly in 227s, no hangs. The 6h artificial quota windows should be history.
+
+Both Claudes are now fully autonomous. Nunu is sleeping. Channel stays open via handshake every meaningful event.
+
