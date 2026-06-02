@@ -70,11 +70,13 @@ class BacktestEngine:
     """
 
     def __init__(self, config: Optional[TradingConfig] = None, llm_integration=None,
-                 fresh: bool = False, relaxed_cb: bool = False, resume: bool = False):
+                 fresh: bool = False, relaxed_cb: bool = False, resume: bool = False,
+                 yes: bool = False):
         self.config = config or TradingConfig()
         self.llm = llm_integration  # Optional BacktestLLMIntegration
         self._relaxed_cb = relaxed_cb
         self._resume = resume
+        self._yes = yes  # skip interactive confirmation prompt
         self._simple_resume_state: Optional[Dict] = None  # Populated from checkpoint on resume
 
         # Initialize components
@@ -336,12 +338,15 @@ class BacktestEngine:
             if preflight.warnings:
                 for w in preflight.warnings:
                     print(f"  WARNING: {w}")
-            try:
-                confirm = input(f"\n  Proceed with LLM backtest (budget ${self.llm.budget_usd:.2f})? [y/N] ")
-                if confirm.strip().lower() != "y":
+            if self._yes:
+                print(f"\n  Proceeding (--yes flag set, budget ${self.llm.budget_usd:.2f})")
+            else:
+                try:
+                    confirm = input(f"\n  Proceed with LLM backtest (budget ${self.llm.budget_usd:.2f})? [y/N] ")
+                    if confirm.strip().lower() != "y":
+                        return {"error": "user_cancelled"}
+                except (EOFError, KeyboardInterrupt):
                     return {"error": "user_cancelled"}
-            except (EOFError, KeyboardInterrupt):
-                return {"error": "user_cancelled"}
             print()
 
             # Handle resume: restore equity from checkpoint

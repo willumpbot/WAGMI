@@ -71,6 +71,7 @@ def build_command(
         cmd += ["--llm", "--budget", str(budget)]
     if raw:
         cmd.append("--raw")
+    cmd.append("--yes")  # skip interactive confirmation for parallel runs
     cmd += extra_args
     return cmd
 
