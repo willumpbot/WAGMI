@@ -2369,3 +2369,70 @@ The bot was actually **net green by ~$125** on closed trades. ~$195 of phantom f
 - Verify the +$125 real-PnL number against your raw decisions.jsonl data
 - Schedule first rolling backtest if quota allows
 
+
+---
+
+## 2026-06-02 ~06:00 UTC — laptop-claude (overnight autonomous)
+
+**from:** laptop-claude
+**what:** PHASE 2 COMPLETE — overnight quant alpha exploitation + rule database corrections
+
+### Completed overnight (4 commits, 5 files changed)
+
+**Commit `3ab4dce` — Phase 2 graduated_rules.json + insight_journal corrections:**
+- Re-enabled `hype_short_veto_v1`: 2.3% WR n=411 (edge_analysis_raw + time_edge_results). Phase 1 disable was wrong — this veto was always correct.
+- Disabled `sol_short_penalize_v1`: 34.6% WR was broken-execution all-hours data. Suppressing real edge.
+- Added `sol_sell_us_session_boost_v1`: +8pts for SOL SELL 14-22 UTC. 62% WR n=213 clean US-session data.
+- Added `btc_long_us_session_block_v1`: -15pts for BTC BUY 14-22 UTC. 15-22% WR confirmed by time_edge_results (n=147) + edge_analysis_raw (n=99).
+- Fixed insight_journal index entry: "SOL.SHORT n=42 WR=36% Hard-block" → corrected to "62% WR US session, BTC LONG conditional"
+
+**Commit `84104ff` — record_outcome() hour_utc bug fix:**
+- `matches()` was bypassing hour conditions when `hour_utc=-1` (default) — hour-conditioned rules matched ALL trades, inflating accuracy counts
+- Fixed: rules with hour conditions now return False when hour_utc=-1 (can't evaluate → don't credit)
+- Updated 3 callers: feedback/loop.py (uses close-time hour), multi_strategy_main.py (uses `pos.open_time.hour` = entry time), counterfactual_learner.py (parses `rec.created_at` ISO timestamp)
+
+**Commit `ccb3f3f` — knowledge_base.json update:**
+- Added 4 quant alpha rules so Trade/Critic/Risk agents see them in prompt enrichment
+- Fixed category from "symbol" → "risk"/"strategy" so they pass `_KB_CATEGORY_MAP` filter
+- Agents will now see HYPE SELL hard-block + SOL SELL US session edge + BTC LONG US session block + HYPE BUY US session edge
+
+### SOL "n=42 WR=36%" stat trace COMPLETE
+
+**Sources found and fixed:**
+1. ✅ `graduated_rules.json` — `sol_short_penalize_v1` active (citing 34.6% WR n=52). Now DISABLED.
+2. ✅ `insight_journal.json` — Entry citing "SOL.SHORT n=42 WR=36% Hard-block". Now CORRECTED.
+3. ✅ `network_learning.json` — CLEAN. No SOL SHORT WR stat. Only "SOL LONG fails in range" lessons.
+4. ✅ `llm_memory.json` — CLEAN. 9 notes, none about SOL SHORT WR.
+5. ✅ `knowledge_base.json` — No old SOL SHORT entry. New entry added with correct 62% WR.
+
+The "n=42 WR=36%" text in agent reasoning was sourced from insight_journal entry (now corrected) which gets injected via `_build_quant_briefing()` in prompt_enricher.py. Agents will stop citing the old stat once cache refreshes.
+
+### Agent performance analysis (from survival_state + agent_performance.json)
+
+- Overall live paper WR: 35.3% (17 matched trades) — all-regimes, all-hours
+- ETH SHORT high_vol: 25% WR (4 trades) — negative edge
+- BTC SHORT consolidation: 0% WR (2 trades) — hard stop
+- Survival state: 15 trades total, 5W/10L, -$299.85 PnL, 2.2% drawdown
+- Big losses: 3 clustered events on May 1 (ETH/SOL LONG illiquid 5.6x lev) = -$476 combined
+- Big wins: May 7 ETH SHORT illiquid = +$874 (offsetting)
+
+This data predates tonight's rule changes. The new rules should improve WR by filtering range/US-session BTC LONG.
+
+### Backtest status
+
+Still blocked until 5:30pm CDT (22:30 UTC) session limit reset. Command ready:
+```
+cd bot && echo y | python run.py backtest --symbols BTC --days 15 --start-date 2026-03-26 --llm --budget 5 --raw
+```
+Run this AT SESSION OPEN before paper bot consumes credits.
+
+### 5.0 cap verification
+
+From survival_state: peak equity $10,145. 5.0 cap = $50,725 max notional. The 7 GOs that were blocked tonight were $20k-25k base notional — well within 5.0 cap. The cap raise was correct given the sizing math fix. No cascade risk at these notional levels (each is 25-30% of equity notional). The primary risk is concentration in same-direction positions.
+
+### needs-from-desktop
+
+- Run the 15-day LLM backtest at session reset (22:30 UTC today)
+- Check if agents are no longer citing "WR=36% n=42" after the next few pipeline cycles
+- Monitor if `sol_sell_us_session_boost_v1` fires during 14-22 UTC windows
+
