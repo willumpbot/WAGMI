@@ -519,6 +519,46 @@ class AgentCoordinator:
                     _basis_str = f" ({_interp})"
                 enriched_parts.append(f"Mark price: ${_mark:,.2f}{_basis_str}")
 
+        # OI history trend (live rolling window — skip in backtest)
+        if not _is_backtest:
+            _oi_hist = snapshot_data.get("oi_history")
+            if _oi_hist:
+                try:
+                    _oi_vals = [e["oi"] for e in _oi_hist if isinstance(e, dict) and "oi" in e]
+                    if len(_oi_vals) >= 2:
+                        _oi_first, _oi_last = _oi_vals[0], _oi_vals[-1]
+                        _oi_chg = (_oi_last - _oi_first) / _oi_first * 100 if _oi_first else 0
+                        _oi_dir = "expanding" if _oi_chg > 2 else "contracting" if _oi_chg < -2 else "flat"
+                        def _fmt_oi(v):
+                            return f"${v/1e9:.2f}B" if v >= 1e8 else f"${v/1e6:.0f}M"
+                        _mid = len(_oi_vals) // 2
+                        _oi_str = " → ".join(_fmt_oi(v) for v in [_oi_vals[0], _oi_vals[_mid], _oi_vals[-1]])
+                        _oi_note = ""
+                        if abs(_oi_chg) > 10:
+                            _oi_note = " — strong accumulation" if _oi_chg > 0 else " — strong distribution"
+                        elif abs(_oi_chg) > 4:
+                            _oi_note = " — accumulation" if _oi_chg > 0 else " — distribution"
+                        enriched_parts.append(
+                            f"OI trend: {_oi_dir} — {_oi_str} ({_oi_chg:+.1f}%{_oi_note})"
+                        )
+                except Exception as _e:
+                    logger.debug("[MULTI-AGENT] OI history format failed: %s", _e)
+
+        # Funding rate (valid in both live and backtest — reflects period's actual rate)
+        _fr = snapshot_data.get("funding_rate")
+        if _fr is not None:
+            try:
+                _fr_pct = float(_fr) * 100  # Stored as decimal e.g. 0.0005 → 0.05%
+                if _fr_pct > 0.02:
+                    _fr_interp = "longs pay — crowded long, mean-reversion risk"
+                elif _fr_pct < -0.02:
+                    _fr_interp = "shorts pay — crowded short, short squeeze risk"
+                else:
+                    _fr_interp = "near neutral"
+                enriched_parts.append(f"Funding: {_fr_pct:+.4f}%/8h ({_fr_interp})")
+            except Exception as _e:
+                logger.debug("[MULTI-AGENT] Funding rate format failed: %s", _e)
+
         # External data (funding, OI, liquidation) — formatted text
         # Skip in backtest: fetches live current rates (May 2026), not historical
         # April data — injects present-day market state into past-window context.

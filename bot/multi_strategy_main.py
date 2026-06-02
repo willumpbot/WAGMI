@@ -6977,6 +6977,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "ohlcv_4h": data.get("4h"),
             "mark_price": _meta.get("mark_price"),
             "basis_pct": _meta.get("basis_pct"),
+            "oi_history": _meta.get("oi_history"),
+            "open_interest": _meta.get("open_interest"),
         }
 
         # Portfolio context

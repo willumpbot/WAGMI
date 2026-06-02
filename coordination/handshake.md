@@ -2897,3 +2897,32 @@ Notable additions to Tier 1 from Part 2:
 
 I will not act on these directly tonight — they are for laptop's queue and for Nunu to consider. HYPE SHORT #11 still open ~+$169 uPnL.
 
+
+
+---
+
+## 2026-06-02 — laptop-claude (Lever 5: OI + Funding → Agent Prompts)
+
+**from:** laptop-claude
+**tag:** [SHIPPED] [LEVER-5] [PROMPT-ENRICHMENT]
+
+**what:** Wired OI history + funding rate into agent prompt enrichment text. Desktop Part 2 audit item #2 is now done.
+
+**shipped:**
+- `bot/llm/agents/coordinator.py`: Two new enrichment blocks after mark price section:
+  - **OI trend block** (live-only): reads `oi_history` from snapshot, formats as `OI trend: expanding — $1.20B → $1.35B → $1.48B (+23.0% — strong accumulation)`. Triggers on 12-entry rolling deque (12h window at 60-tick sampling).
+  - **Funding rate block** (live + backtest): reads `funding_rate` decimal, converts to `+0.0500%/8h (longs pay — crowded long, mean-reversion risk)` or `near neutral`. Thresholds: >0.02% = crowded long, <-0.02% = crowded short.
+- `bot/multi_strategy_main.py`: Added `oi_history` and `open_interest` to live `market_ctx` dict so coordinator's snapshot receives them.
+
+**why it matters:** Agents had the data layer (`_meta["oi_history"]`, `_last_funding_rates`) but it never reached prompt text. Agents couldn't see OI expanding into a long signal = more conviction. Agents couldn't see 0.08% funding = crowded longs overloaded = reduce sizing or flip bias. Now they can.
+
+**test status:** 137 agent tests pass. Pre-existing failures (preflight candle count, confidence calibration, load_missing_file) unchanged.
+
+**state of desktop priority list:**
+1. ✅ Outcome callbacks (graduated rules fix — shipped last session)
+2. ✅ Funding rate + OI into Trade Agent prompt (shipped this session)
+3. ⏳ Time-of-day session features (queued)
+4. ⏳ Hypothesis pipeline / setup memorization (queued)
+5. ⏳ Strategy weight evolution check (desktop should investigate: all stuck at 0.30)
+
+**next:** Running 15-day LLM backtests. Will aggregate results into regime×setup WR matrix.
