@@ -91,21 +91,21 @@
     },
     {
       "rule_id": "hype_short_veto_v1",
-      "hypothesis_statement": "HYPE SELL is net-negative EV: -$16.65 per trade on 239 live trades",
+      "hypothesis_statement": "HYPE SELL is catastrophic negative EV: 2.3% WR (n=172, edge_analysis_raw.json US session) and -$16.65/trade on 239 live trades. EV=-3.57%/trade. Confirmed by time_edge_results.json: 2.3% WR (n=173) at 18 UTC. Re-enabled 2026-06-02: Phase 1 disable was over-broad — this rule was always correct. This is a permanent hard-block regardless of regime or session.",
       "action": "veto",
       "conditions": {
         "symbol": "HYPE",
         "side": "SELL"
       },
       "adjustment": 0.0,
-      "confidence": 0.87,
-      "evidence_ratio": 0.35,
-      "total_evidence": 239,
+      "confidence": 0.95,
+      "evidence_ratio": 0.023,
+      "total_evidence": 411,
       "created_at": 1746382701.0,
       "last_applied": 1778811039.5388637,
       "times_applied": 3,
       "times_correct": 0,
-      "active": false
+      "active": true
     },
     {
       "rule_id": "btc_short_conf70_80_penalize_v1",
@@ -122,8 +122,8 @@
       "evidence_ratio": 0.25,
       "total_evidence": 40,
       "created_at": 1746382701.0,
-      "last_applied": 1780216263.704327,
-      "times_applied": 395,
+      "last_applied": 1780348408.9727871,
+      "times_applied": 440,
       "times_correct": 0,
       "active": true
     },
@@ -141,8 +141,8 @@
       "evidence_ratio": 0.67,
       "total_evidence": 43,
       "created_at": 1747267200.0,
-      "last_applied": 1780200853.3753784,
-      "times_applied": 51,
+      "last_applied": 1780348246.5763674,
+      "times_applied": 52,
       "times_correct": 0,
       "active": true
     },
@@ -232,8 +232,8 @@
       "evidence_ratio": 0.65,
       "total_evidence": 27,
       "created_at": 1779310372.0,
-      "last_applied": 1780217484.1896727,
-      "times_applied": 1622,
+      "last_applied": 1780348418.9720886,
+      "times_applied": 1808,
       "times_correct": 0,
       "active": true
     },
@@ -250,8 +250,8 @@
       "evidence_ratio": 0.64,
       "total_evidence": 27,
       "created_at": 1779310372.0,
-      "last_applied": 1780217484.1896753,
-      "times_applied": 1622,
+      "last_applied": 1780348418.9720907,
+      "times_applied": 1808,
       "times_correct": 0,
       "active": true
     },
@@ -285,8 +285,8 @@
       "evidence_ratio": 0.74,
       "total_evidence": 7,
       "created_at": 1779404804.0,
-      "last_applied": 1780217484.1896777,
-      "times_applied": 1627,
+      "last_applied": 1780348418.9720926,
+      "times_applied": 1813,
       "times_correct": 0,
       "active": true
     },
@@ -327,8 +327,8 @@
       "evidence_ratio": 0.69,
       "total_evidence": 2172,
       "created_at": 1779419602.7878811,
-      "last_applied": 1780216486.3038757,
-      "times_applied": 105,
+      "last_applied": 1780348418.972096,
+      "times_applied": 127,
       "times_correct": 0,
       "active": true
     },
@@ -389,8 +389,8 @@
       "evidence_ratio": 0.35,
       "total_evidence": 2172,
       "created_at": 1779419602.7878811,
-      "last_applied": 1780216107.2791746,
-      "times_applied": 73,
+      "last_applied": 1780348323.2694592,
+      "times_applied": 78,
       "times_correct": 0,
       "active": true
     },
@@ -406,14 +406,14 @@
       "evidence_ratio": 0.25,
       "total_evidence": 16,
       "created_at": 1779487857.5699627,
-      "last_applied": null,
-      "times_applied": 0,
+      "last_applied": 1780348173.675499,
+      "times_applied": 2,
       "times_correct": 0,
       "active": true
     },
     {
       "rule_id": "sol_short_penalize_v1",
-      "hypothesis_statement": "SOL SELL = 34.6% WR on 52 live paper trades (suspension probe). Structurally weak short side. Feedback engine has SOL_SHORT_full_block (conf=88, gate=100%). 7th consecutive LLM\u2194feedback sync gap fixed.",
+      "hypothesis_statement": "DISABLED 2026-06-02: 34.6% WR (n=52) was measured on broken-execution old-bot data across ALL hours. US-session clean data (edge_analysis_raw.json) shows SOL_SELL = 62% WR (n=213, EV +0.99%/trade). This rule was suppressing a confirmed positive-EV edge. Replaced by sol_sell_us_session_boost_v1.",
       "action": "penalize",
       "conditions": {
         "symbol": "SOL",
@@ -426,6 +426,46 @@
       "created_at": 1779495301.5124173,
       "last_applied": 1780199407.5684154,
       "times_applied": 3,
+      "times_correct": 0,
+      "active": false
+    },
+    {
+      "rule_id": "sol_sell_us_session_boost_v1",
+      "hypothesis_statement": "SOL SELL in US session (14-22 UTC) = 62.0% WR on n=213 clean trades (edge_analysis_raw.json, March 24 2026). EV +0.99%/trade, Kelly 30.1%, grade B. Confirmed by time_edge_results.json: 58.7% WR (n=225) at 18 UTC. This is the 2nd confirmed positive-EV setup after HYPE_BUY. insight_journal index 200 hard-block was based on 36% WR from broken-execution all-hours data \u2014 overridden by clean US-session evidence.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "SOL",
+        "side": "SELL",
+        "hour_utc_min": 14,
+        "hour_utc_max": 22
+      },
+      "adjustment": 8.0,
+      "confidence": 0.90,
+      "evidence_ratio": 0.62,
+      "total_evidence": 213,
+      "created_at": 1748822400.0,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "btc_long_us_session_block_v1",
+      "hypothesis_statement": "BTC BUY in US session (14-22 UTC) = 15.0% WR at 18 UTC (n=147, time_edge_results.json) and 22.2% WR overall US session (n=99, edge_analysis_raw.json). Hard block during this window. BTC LONG is only viable in trending regime OUTSIDE 14-22 UTC (mechanical backtest 56% WR). Resolves contradiction: old quant 56% WR was trending/non-US; old-bot live 19% WR was all-hours broken execution. Current Critic prompt already challenges BTC BUY \u2014 this penalty stack reinforces during prime losing window.",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "BTC",
+        "side": "BUY",
+        "hour_utc_min": 14,
+        "hour_utc_max": 22
+      },
+      "adjustment": -15.0,
+      "confidence": 0.92,
+      "evidence_ratio": 0.15,
+      "total_evidence": 246,
+      "created_at": 1748822400.0,
+      "last_applied": null,
+      "times_applied": 0,
       "times_correct": 0,
       "active": true
     }

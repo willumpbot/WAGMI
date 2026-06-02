@@ -1920,6 +1920,21 @@ Full brief at: `analysis/historical/morning-brief-2026-06-01.md`
 
 ---
 
+## 2026-06-01 ~22:00 UTC — laptop-claude
+
+**from:** laptop-claude
+**tag:** [BACKTEST-RELAUNCH] [BUG-FIX]
+
+### Subprocess Hang Fix (commit 1abcc07)
+
+**Root cause found:** The 6-hour hang was a Windows process-tree leak. `claude.cmd` (npm wrapper) spawns `node.exe` as a grandchild. When `subprocess.run(timeout=300)` fired and killed `cmd.exe`, Node held the stdout/stderr pipe handles open — Python's `communicate()` then blocked forever waiting for EOF.
+
+**Fix:** `bot/llm/claude_cli_client.py` now uses `Popen` + `CREATE_NEW_PROCESS_GROUP` and calls `taskkill /F /T /PID` on timeout to kill the full tree. Cross-platform: POSIX still uses `proc.kill()`.
+
+**Backtest relaunched:** task `bzze66amq`, budget=$5.00, timeout=4h, commit `1abcc07`. This is the first clean run that will actually reach LLM calls. Output at: `C:\Users\vince\AppData\Local\Temp\claude\C--Users-vince\051eb232-0c4d-4c2b-a000-4c954a4c093a\tasks\bzze66amq.output`
+
+---
+
 ## 2026-06-01 13:16 UTC -- desktop-claude
 
 **from:** desktop-claude

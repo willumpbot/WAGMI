@@ -1,11 +1,59 @@
 {
-  "last_updated": 1777033366,
+  "last_updated": 1780348173,
   "notes": [
     {
-      "text": "SOL LONG SL hit in 3min in range\u2014wait for pullback",
-      "ts": 1777033366.1642852,
-      "symbol": "SOL",
+      "text": "BTC range/bearish solo ensemble SELL \u2014 quality 0.3, miscalibrated system (35% acc). Outcome needed for learning.",
+      "ts": 1780346817.2352262,
+      "symbol": "BTC",
       "regime": "range"
+    },
+    {
+      "text": "BTC solo ensemble SELL in range regime; volume compressed 0.4x, miscalibrated system (35% acc). Low conviction but no hard block. Monitor for volume expansion confirming continuation or reversal.",
+      "ts": 1780346977.2814243,
+      "symbol": "BTC",
+      "regime": "range"
+    },
+    {
+      "text": "BTC range-sell taken: solo_ensemble 0.70, range bearish regime, quality 0.3, agent MISCALIBRATED 35% acc +18% drift \u2014 track outcome for calibration",
+      "ts": 1780347161.209755,
+      "symbol": "BTC",
+      "regime": "range"
+    },
+    {
+      "text": "Solo signal flag acknowledged but already priced into 0.35 floor confidence and minimum sizing. Syst",
+      "ts": 1780347319.1313775,
+      "symbol": "BTC",
+      "regime": "range"
+    },
+    {
+      "text": "BTC SELL signal 2026-06-01: solo ensemble 0.72 in range regime; skipped \u2014 existing short at 70031 already profitable at 69538, range bounce risk, quality 0.3",
+      "ts": 1780347492.1819491,
+      "symbol": "BTC",
+      "regime": "range"
+    },
+    {
+      "text": "BTC solo ensemble SELL 0.77 in range; system miscalibrated 35% accuracy \u2014 log outcome for recalibration; existing short at 70031 already ~0.8% ITM",
+      "ts": 1780347658.6404746,
+      "symbol": "BTC",
+      "regime": "range"
+    },
+    {
+      "text": "BTC solo ensemble SELL in consolidation/squeeze skipped: regime wired data explicitly flagged as false signal; ATR% extreme low (0.68%) makes fee EV negative",
+      "ts": 1780348099.8425226,
+      "symbol": "BTC",
+      "regime": "consolidation"
+    },
+    {
+      "text": "BTC squeeze breakout pending; solo ensemble SELL explicitly flagged as likely false signal by regime agent in compression phase. Revisit when ADX/OI/EMA data confirm direction post-squeeze.",
+      "ts": 1780348152.6347027,
+      "symbol": "BTC",
+      "regime": "consolidation"
+    },
+    {
+      "text": "BTC solo ensemble SELL in consolidation, quality 0.3, vol 0.7x. Trade agent MISCALIBRATED at 35% accuracy n=17 drift +18%. Note for calibration review.",
+      "ts": 1780348173.7640083,
+      "symbol": "BTC",
+      "regime": "consolidation"
     }
   ]
 }

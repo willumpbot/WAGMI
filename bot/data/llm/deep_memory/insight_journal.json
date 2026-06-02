@@ -2003,10 +2003,10 @@
     {
       "ts": 1776986890.350251,
       "category": "symbol_insight",
-      "insight": "SOL.SHORT is the largest P&L drain: n=42 WR=36% avg=-$3.22 total=-$135.3. BTC.LONG is similarly toxic: n=16 WR=19% avg=-$3.65 total=-$58.4. Combined -$193.7. Hard-block both.",
-      "confidence": 0.9,
-      "evidence": "SOL.SHORT: n=42 WR=36% avg=-3.22 total=-135.3; BTC.LONG: n=16 WR=19% avg=-3.65 total=-58.4",
-      "source": "deep_trade_analyst",
+      "insight": "CORRECTED 2026-06-02: SOL.SHORT hard-block was based on broken-execution all-hours data (n=42 WR=36%). Clean US-session data (edge_analysis_raw.json, n=213) shows SOL.SELL = 62% WR EV+0.99%/trade — POSITIVE edge. Gate: US session only (14-22 UTC). BTC.LONG hard-block partially correct: 22% WR in US session (BLOCK), but 56% WR in trending non-US hours (ALLOW with multi-strategy agreement). Original n=42/n=16 were from broken-execution old-bot across all hours — not representative of clean filtered conditions.",
+      "confidence": 0.93,
+      "evidence": "SOL.SELL US-session: edge_analysis_raw.json n=213 WR=62% EV=+0.99%; time_edge_results.json n=225 WR=58.7% at 18 UTC. BTC.LONG US-session: edge_analysis_raw.json n=99 WR=22%; time_edge_results.json n=147 WR=15% at 18 UTC. BTC.LONG trending non-US: strategy_fingerprints.json n=36 WR=56% mechanical backtest. Original broken-exec data: SOL.SHORT n=42 WR=36%; BTC.LONG n=16 WR=19% — all-hours, broken execution.",
+      "source": "quant_alpha_update_2026_06_02",
       "validated": true,
       "validation_count": 58
     },
@@ -2127,6 +2127,86 @@
       "source": "counterfactual_analysis_2026_05_18",
       "validated": false,
       "note": "Currently SUSPENDED \u2014 human decision required for reinstatement"
+    },
+    {
+      "ts": 1780346817.153821,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent is operating in Overdrive data-collection mode with no edge. If this pattern repeats (intentional floor-confidence trades for learning), t",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4+ red flags present (solo signal <2 agree, hist_WR 31% <45%, miscalibrated system 35% accuracy, no ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780346817.1568625,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC in compressed range (0.7x volume) with no directional catalyst. Solo ensemble SELL has 31% historical WR \u2014 at any reasonable R:R, EV is borderline",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4+ red flags present (solo signal <2 agree, hist_WR 31% <45%, miscalibrated system 35% accuracy, no ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780346977.2735572,
+      "category": "meta",
+      "insight": "Self-critique: If g.b1h/g.b24h are stale or represent something other than BTC % change, re-evaluate. Challenge is specifically grounded in the data inconsistency \u2014 ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 compounding red flags with wired-data evidence: (1) live momentum data is 0.0% contradicting the t",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780346977.2772467,
+      "category": "prediction",
+      "insight": "Counter-thesis: Wired live data shows g.b1h=0.0 and g.b24h=0.0 \u2014 BTC has ZERO directional momentum in the snapshot, directly contradicting Trade Agent's core premise ",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 compounding red flags with wired-data evidence: (1) live momentum data is 0.0% contradicting the t",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780347161.2019374,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent is MISCALIBRATED (+18% drift, 35% acc). This veto is driven by R:R math (objective) not agent caution. If stop is tighter than 2%, recalcu",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Three hard red flags converge: (1) R:R < 1.0 (target 0.9% vs ~2% stop = 0.45:1, well below 1.5 minim",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780347161.2053804,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC in a 0.7x-volume range will oscillate within noise rather than deliver a clean directional 0.9% leg. The asymmetric R:R (0.9% target vs ~2% stop w",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Three hard red flags converge: (1) R:R < 1.0 (target 0.9% vs ~2% stop = 0.45:1, well below 1.5 minim",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780347658.6329029,
+      "category": "meta",
+      "insight": "Self-critique: Challenge based on two wired ground-truth red flags (solo signal documented WR, explicit checklist rule), not caution. If vacc<0.50, reduce challenge ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Two hard red flags confirmed with wired evidence: (1) solo signal at 31% WR net $0 payoff per ground",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780347658.6364534,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC at 69,480 after -2.6% 24h decline in a range regime is more likely to oscillate or mean-revert than to continue falling. Range regimes by definiti",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Two hard red flags confirmed with wired evidence: (1) solo signal at 31% WR net $0 payoff per ground",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
     }
   ]
 }
