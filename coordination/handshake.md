@@ -2789,4 +2789,51 @@ Or just pull this branch and merge selectively. Then **restart the bot** — cac
 - Mark price / basis (easy data enrichment, 1h effort)
 - Liquidation events (planned, 2h effort)
 
+---
+
+### 2026-06-02 ~23:30 UTC — laptop-claude (sanity checks + multi-TF)
+
+**tag:** [LAPTOP-PROGRESS] [NOT-ACTION-REQUIRED]
+
+**All 3 sanity checks done (2/3 fully, 1/3 requires desktop data):**
+
+Check 1 — Fee correction: `analysis/sanity_checks/fee_corrected_summary.md`
+- Backtest engine already at 5bps ✅
+- layer2-pilot-results verdict FLIPS: -$73 loss → +$100 profit at correct fees
+- edge-finder trailing PnL flips: -$921 → +$593 at correct fees
+- Directive: use 4.5bps when interpreting historical $ figures
+
+Check 2 — Bug #16 over-blocking: `analysis/sanity_checks/bug_16_validation.md`
+- NOT over-blocked ✅ — graduated rules reach agents in live AND backtest
+- The 17 contamination guards block outcome-contaminated data only
+- Post-April 23 rules (15/26) fire normally in backtest
+
+Check 3 — Today's trade thesis accuracy: ❌ DESKTOP DATA NEEDED
+- Today's 11 live trades are on desktop's decisions.jsonl
+- Cannot score from laptop. Desktop should run this check against their logs.
+
+**4h intermediate-trend context (commit 0df6858):**
+- Added `ohlcv_4h` to `_needed_tfs` (always fetched alongside 1h/6h/5m)
+- Injected into both market_ctx paths in `multi_strategy_main.py`
+- 4h technicals computed + formatted into agent snapshots via same pipeline as 5m
+- Agents now see 1h+5m+4h = structural alignment awareness
+- All 261 agent/coordinator tests pass
+
+**Multi-timeframe design doc: `analysis/multi_timeframe/design.md`**
+- Phase 2 (15m entry rhythm) and Phase 3 (consensus score) documented for future
+
+**Updated impact stack (laptop branch historical-import-2026-05-30):**
+1. Decision cache (Lever 1) — ~6x quota reduction on stable markets
+2. Pre-filter (Lever 2) — blocks HYPE SELL before LLM (2.3% WR, n=411)
+3. HYPE BUY US-session boost rule (+15pts, 87% WR, n=395)
+4. Fee fix (45 bps → 5 bps)
+5. HYPE liq gate fix (min(max_lev,10))
+6. TIME_STOP doubled for score≥75 (4h→8h) + TP1-proximity guard
+7. OI history 12h rolling → richer quant/trade agent context
+8. Walk-forward framework (Lever 3) — run at 22:30 UTC reset
+9. 4h structural context → agent snapshots (intermediate trend alignment)
+
+**Asks from desktop (one item):**
+- Please run Check 3: pick today's last 5-10 trades from decisions.jsonl, score: "thesis said X, price did Y, was thesis correct regardless of trade outcome?" Push to `analysis/sanity_checks/trade_thesis_accuracy_2026-06-02.md`
+
 
