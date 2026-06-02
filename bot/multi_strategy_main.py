@@ -9,6 +9,7 @@ Usage:
 """
 
 import asyncio
+import collections
 import logging
 import os
 import signal
@@ -774,6 +775,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # Last known funding rates per symbol (updated from fetcher)
         self._last_funding_rates: Dict[str, float] = {}  # symbol -> funding rate
         self._last_open_interest: Dict[str, float] = {}  # symbol -> OI (for oi_delta strategy)
+        self._oi_history: Dict[str, collections.deque] = {}  # symbol -> deque of {ts, oi} (12-entry rolling)
 
         # LLM meta-brain
         self.llm_mode = get_llm_mode()
@@ -2726,12 +2728,19 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     _meta["open_interest"] = _oi
                     if _oi_prev is not None:
                         _meta["open_interest_prev"] = _oi_prev
+                    # Append to rolling OI history (12 entries ≈ 12h at 60-tick sampling)
+                    if symbol not in self._oi_history:
+                        self._oi_history[symbol] = collections.deque(maxlen=12)
+                    self._oi_history[symbol].append({"ts": int(time.time()), "oi": _oi})
             except Exception:
                 pass
         else:
             _oi = self._last_open_interest.get(symbol)
             if _oi is not None:
                 _meta["open_interest"] = _oi
+        # Always inject OI history when available
+        if symbol in self._oi_history and len(self._oi_history[symbol]) >= 2:
+            _meta["oi_history"] = list(self._oi_history[symbol])
 
         # Inject BTC 1h data for lead_lag strategy on non-BTC symbols
         if symbol != "BTC":
