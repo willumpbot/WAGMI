@@ -340,8 +340,39 @@ class AgentCoordinator:
         # with Scout's pre-formed view instead of building from scratch.
         self._scout_thesis_cache: Dict[str, Dict[str, Any]] = {}
         self._scout_cache_ttl: float = 20 * 60  # 20 minutes
+        # Decision cache: avoid re-running 5-agent pipeline for unchanged conditions.
+        # Only SKIP decisions are cached — GO decisions are single-use by nature.
+        # Structure: {cache_key: {"decision": EntryDecision, "ts": float, "entry_price": float}}
+        # Quota impact: bot calls pipeline every 30s × 4 symbols. On stable markets this
+        # burns all quota in ~30 min. Caching skips for 3 minutes reduces burn by ~6x.
+        self._entry_decision_cache: Dict[str, Dict[str, Any]] = {}
+        self._entry_cache_ttl: float = 3 * 60   # 3 minutes: fast enough to catch regime shifts
+        self._entry_cache_price_tolerance: float = 0.003  # 0.3% price move busts the cache
+        self._entry_cache_hits: int = 0
+        self._entry_cache_misses: int = 0
 
     # ── Public API ──────────────────────────────────────────────
+
+    def _entry_cache_key(self, signal_ctx: Dict[str, Any], market_ctx: Dict[str, Any]) -> str:
+        """Build a stable cache key from the decision inputs.
+
+        Buckets confidence to ±2.5pp and price to ±0.2% so near-identical
+        repeated signals map to the same key without requiring exact equality.
+        """
+        symbol = signal_ctx.get("symbol", "")
+        side = signal_ctx.get("side", "")
+        conf_raw = float(signal_ctx.get("confidence", 0))
+        # Bucket confidence in 5pp increments (65.2 → 65)
+        conf_bucket = int(conf_raw // 5) * 5
+        # Bucket price to nearest 0.2% (prevents micro-tick misses)
+        entry = float(signal_ctx.get("entry", 1.0))
+        price_bucket = round(entry / (entry * 0.002)) if entry > 0 else 0
+        hour_utc = int(market_ctx.get("time_utc_hour", -1))
+        # Include the strategy set so regime_trend vs bollinger_squeeze don't share a key
+        strats = signal_ctx.get("strategies_agree", []) or []
+        strat_key = ",".join(sorted(str(s) for s in strats)) if strats else signal_ctx.get("strategy", "")
+        num_agree = int(signal_ctx.get("num_agree", signal_ctx.get("num_strategies_agree", 0)))
+        return f"{symbol}|{side}|c{conf_bucket}|p{price_bucket}|h{hour_utc}|n{num_agree}|{strat_key}"
 
     def invalidate_regime_cache(self, symbol: Optional[str] = None) -> None:
         """Clear regime cache for a symbol or all symbols."""
@@ -1425,6 +1456,45 @@ class AgentCoordinator:
         """
         start = time.monotonic()
 
+        # ── Decision cache: return cached skip without running the pipeline ──
+        # Quota rationale: bot scans every 30s × 4 symbols = potential 480 LLM
+        # calls/hour. A cached skip for unchanged conditions saves ~5 CLI agent
+        # calls per cache hit (~130-190s of quota per hit avoided).
+        # Only skip decisions are cached (GOs are single-use — never repeat a trade).
+        # Backtest mode bypasses the cache (each scenario must be independent).
+        _is_backtest_mode = portfolio_context.get("_is_backtest", False)
+        if not _is_backtest_mode:
+            _cache_key = self._entry_cache_key(signal_context, market_context)
+            _now = time.time()
+            _cached = self._entry_decision_cache.get(_cache_key)
+            if _cached is not None:
+                _age = _now - _cached["ts"]
+                _entry_price = float(signal_context.get("entry", 0))
+                _cached_price = _cached["entry_price"]
+                _price_move = abs(_entry_price - _cached_price) / _cached_price if _cached_price > 0 else 1.0
+                _ttl_ok = _age < self._entry_cache_ttl
+                _price_ok = _price_move < self._entry_cache_price_tolerance
+                if _ttl_ok and _price_ok:
+                    self._entry_cache_hits += 1
+                    _cached_dec = _cached["decision"]
+                    logger.info(
+                        f"[LLM-CACHE] HIT {signal_context.get('symbol','')} {signal_context.get('side','')} "
+                        f"age={_age:.0f}s price_drift={_price_move*100:.2f}% "
+                        f"(hits={self._entry_cache_hits} misses={self._entry_cache_misses})"
+                    )
+                    # Return a copy tagged as cached so callers can distinguish
+                    from dataclasses import replace as _dc_replace
+                    return _dc_replace(
+                        _cached_dec,
+                        notes=f"[CACHED {_age:.0f}s ago] {_cached_dec.notes}",
+                    )
+                else:
+                    # Stale cache entry — remove it
+                    del self._entry_decision_cache[_cache_key]
+            self._entry_cache_misses += 1
+        else:
+            _cache_key = None
+
         # ── Build a snapshot_data dict compatible with existing pipeline ──
         # The existing _build_*_input methods expect snapshot_data format.
         # We translate signal_context + market/portfolio into that format.
@@ -1576,6 +1646,18 @@ class AgentCoordinator:
             f"regime={decision.regime} conf={decision.confidence:.2f} "
             f"({elapsed_ms}ms)"
         )
+
+        # ── Store skip decisions in cache ──
+        # GOs are single-use (never replay a trade). Skips in stable conditions are safe to cache.
+        if entry_decision.action == "skip" and _cache_key is not None and not _is_backtest_mode:
+            self._entry_decision_cache[_cache_key] = {
+                "decision": entry_decision,
+                "ts": time.time(),
+                "entry_price": float(signal_context.get("entry", 0)),
+            }
+            if len(self._entry_decision_cache) > 50:
+                oldest = min(self._entry_decision_cache, key=lambda k: self._entry_decision_cache[k]["ts"])
+                del self._entry_decision_cache[oldest]
 
         return entry_decision
 
