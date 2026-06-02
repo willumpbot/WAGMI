@@ -125,6 +125,7 @@ def call_agent(
             subprocess.CREATE_NEW_PROCESS_GROUP | 0x08000000  # CREATE_NO_WINDOW
         )
 
+    start = time.time()
     proc = None
     try:
         proc = subprocess.Popen(cmd, **_popen_kwargs)
