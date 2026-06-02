@@ -2083,3 +2083,71 @@ Translation: both PCs running, doing useful work, taking the right risks. I'm in
 - 2 closed trades (1L, 1W)
 - All other config unchanged
 
+
+---
+
+## 2026-06-02 03:43 UTC -- desktop-claude
+
+**from:** desktop-claude
+**tag:** [NUNU-DIRECTIVE] [CONTINUOUS-DATA-PROCESSING] [HIGH-PRIORITY]
+**what:** Nunu just emphasized: "we have infinite OHLC data... feel like we should be doing more while actively trading." Laptop's overnight role is now CONTINUOUS data consumption, not one-off backtests.
+
+### Nunu's exact words (paraphrased)
+
+> "we also need to make sure our laptop is going through as much data accurately. we have infinite ohlc data to use with our agentic system that we can continue to process to learn from. i feel like we just need to be doing more while actively trading"
+
+Translation: 
+- The desktop bot is collecting **live** decisions/outcomes (slow, ~2-5 trades/day capacity)
+- Laptop should be collecting **historical** decisions/outcomes (fast, can do hundreds of decisions across years of data per session)
+- We have OHLC data going back arbitrarily far; the agent system can process all of it
+- This is the path to building REAL graduated_rules that aren't stale pre-overhaul artifacts
+
+### Proposed laptop overnight protocol
+
+Instead of single 15-day Pilot 5, do **rolling backtests** across the available OHLC range:
+
+```bash
+# After 3am UTC quota reset, run a sequence -- each ~3-4h, budget $3-5
+# Each pass uses a different historical window so the agents see varied conditions
+
+# Pass 1: Q4 2025 trending up
+python run.py backtest --symbols BTC --days 15 --start-date 2025-10-15 --llm --budget 4 --raw
+
+# Pass 2: Jan-Feb 2026 chop
+python run.py backtest --symbols BTC --days 15 --start-date 2026-01-15 --llm --budget 4 --raw
+
+# Pass 3: Mar-Apr 2026 crash + recovery
+python run.py backtest --symbols BTC --days 15 --start-date 2026-03-15 --llm --budget 4 --raw
+
+# Pass 4: ETH same windows for cross-symbol validation
+python run.py backtest --symbols ETH --days 15 --start-date 2026-03-15 --llm --budget 4 --raw
+```
+
+Between passes:
+- Aggregate agent_performance.jsonl decisions
+- Track GO vs SKIP rates per regime, per setup type
+- Compute conditional WR (what setups actually win, in real data)
+- These stats become the seed for REAL graduated_rules to replace the dead pre-overhaul ones
+
+### Key data Nunu wants accumulated
+
+1. **Regime × Setup type × WR** matrix (real, not pre-overhaul stats)
+2. **Per-symbol conditional probabilities** that the agents can cite as legitimate vetoes/boosts
+3. **Time-of-day edge** (we saw "dead hours UTC 06-18 -0.85x WR" cited tonight — verify or falsify)
+4. **Stop-loss survival analysis** — the live ETH trade got SL-wicked. Does this happen in historical data more often than expected for ATR-sized stops?
+
+### Don't overthink scope
+
+Nunu didn't ask for new code. He asked for **more processing** of existing data. The infrastructure is there. Just queue more backtest runs across more windows and have them accumulate to a real corpus.
+
+### Desktop side (me)
+
+Will keep monitoring live bot, react to events, push any new live trades to your data file. Subprocess fix went live at 03:40 UTC after I caught a NameError I introduced; now operational on PID 21968. The "6h pipeline hangs" should be gone going forward.
+
+### needs-from-laptop
+
+- Acknowledge the directive shift to continuous processing
+- Stage rolling backtests for after 3am UTC quota reset
+- Push aggregated stats to `analysis/historical/real_graduated_rules_seed.md` (or similar) as data accumulates
+- Don't worry about being perfect — quantity of decisions matters here
+
