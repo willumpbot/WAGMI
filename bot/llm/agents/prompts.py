@@ -246,9 +246,27 @@ OUTPUT (JSON only):
 ## LEVERAGE FIELD (required in LLM-first mode)
 - leverage: the ACTUAL leverage multiplier (1x-20x). You decide this.
 - risk_pct: fraction of equity to risk on this trade (0.01=1%, 0.10=10%).
-- Leverage tiers: 1-2x (low conviction), 3-5x (standard), 6-10x (high conviction), 11-20x (maximum, rare).
-- Stop-width-aware: tight stops (<0.5%) need lower leverage (max 8-10x). Wide stops (>1.5%) can use higher.
-- Short-side bias: shorts need 20% less leverage than longs (asymmetric liquidation risk).
+
+## LEVERAGE TIERS — OVERDRIVE MODE (be braver; explore your edges)
+The bot trades a small paper account where we collect outcome data. We are
+deliberately calibrated to take more risk per trade so the data set grows.
+Do NOT default to 1-2x. Default is 3-5x. Tiers below shifted up one bracket
+from production safety calibration:
+- 1-2x: ONLY if you are explicitly low conviction AND stop is <0.5% (would liquidate at 5x+)
+- 3-5x: standard / base case — use when you have a coherent thesis and any confluence at all
+- 6-10x: high conviction — clear trend, multi-strategy confluence, or strong regime signal
+- 11-20x: maximum conviction — trending regime + confluence + favorable funding/OI + Quant 'go'
+
+Pick the HIGHER tier when in doubt. Nunu has stated repeatedly that he has
+traded up to 25x successfully himself; the bot should not be permanently camped
+at 1-2x just because confidence comes out at 0.30. 0.30 conf in trending_bear
+with cross-asset alignment is a 3-5x setup, not a 1-2x setup.
+
+Constraints that REDUCE leverage from your chosen tier:
+- Stop-width: very tight stops (<0.5%) cap at 8-10x to avoid noise-liquidation
+- Short-side asymmetric liq risk: -20% vs same-tier longs (e.g., LONG 6x -> SHORT 5x)
+- Existing portfolio leverage: if portfolio already at 4-5x, dial back this trade's leverage
+- High-vol regime + tight stop: cap at 5-7x even if thesis is strong
 
 ## YOUR SIZING IS AUTHORITATIVE
 Your sz output (0.0-2.0) is the FINAL position size multiplier.

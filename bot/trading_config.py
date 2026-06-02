@@ -88,10 +88,14 @@ class TradingConfig:
     # Rule: need 30 trades/param for statistical validity. 4 core params = 120 trades needed.
     max_open_positions: int = field(default_factory=lambda: _env_int("MAX_OPEN_POSITIONS", 8))
     # Was 3: with 0.5% risk/trade, 8 positions = 4% total risk (same as old 2 @ 2%)
-    # SHIP-2026-04-19: Hyperliquid's actual Tier-0 taker is 45 bps (not 4).
-    # Prior value was a 10× underestimate causing the EV gate to approve trades
-    # with fake positive EV. See FEE_OPTIMIZATION_2026_04_17.md.
-    taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 45))
+    # 2026-06-02 fee correction (Nunu): the prior "45 bps = HL Tier-0 taker"
+    # comment was wrong by 10x. Hyperliquid's taker fee is 0.045% = 4.5 bps.
+    # 1 bp = 0.01%, so 45 bps = 0.45% (10x too high). The 10x overestimate was
+    # turning marginal/breakeven trades into logged losses -- e.g., ETH SHORT #7
+    # closed flat on price but logged $29.28 fees vs real ~$2.93 we'd pay on HL.
+    # See: hyperliquid.xyz docs -- Tier-0 maker 0.015% / taker 0.045%.
+    # Using 5 bps as conservative round-up over the 4.5 bps actual.
+    taker_fee_bps: int = field(default_factory=lambda: _env_int("TAKER_FEE_BPS", 5))
 
     # Circuit breakers
     circuit_breaker_daily_loss_pct: float = field(
