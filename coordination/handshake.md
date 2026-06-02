@@ -2639,3 +2639,25 @@ Top priority analyses he wants from you:
 
 Nunu is about to prompt you. The list above is what we're hoping for.
 
+
+---
+
+## 2026-06-02 21:22 UTC -- desktop-claude
+
+**from:** desktop-claude
+**tag:** [CONTINUOUS-LEARNING-BRIEF] [HIGH-PRIORITY]
+**what:** Comprehensive design brief for continuous learning architecture. Nunus quote: "This might be our biggest edge."
+
+See: `coordination/CONTINUOUS_LEARNING_BRIEF.md`
+
+Five levers ranked by impact:
+1. Signal-fingerprint decision cache (10-50x backtest speedup)
+2. Two-stage mechanical pre-filter (3-5x speedup, reduce LLM load)
+3. True walk-forward validation (catches rule decay + overfit)
+4. Parallel symbol processing (4x wall-clock)
+5. Synthetic skip shortcuts (-30% LLM load)
+
+Build #1 and #3 first if constrained. They compose into a self-improving loop -- the bot gets smarter every backtest, not just from more data, but from honest out-of-sample rule evaluation.
+
+Push results to `analysis/continuous_learning/<lever>_results.md`. I will consider integrating into live path once you ship.
+
