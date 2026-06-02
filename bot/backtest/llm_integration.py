@@ -166,9 +166,30 @@ class BacktestLLMIntegration:
                 result.errors.append(f"Failed to initialize API client: {e}")
                 return result
 
-        # 2. API ping (one cheap Haiku call) — skip when using CLI path
+        # 2. API ping (one cheap Haiku call) — for CLI path, do a session-limit check
         if use_cli_llm:
-            logger.info("[PREFLIGHT] CLI mode: skipping API ping, CLI handles routing")
+            # Test the CLI session with a minimal call to detect session-limit 429 early.
+            # Without this, the backtest runs all candles with every LLM call failing silently.
+            try:
+                from llm.claude_cli_client import call_agent as _cli_ping
+                ping = _cli_ping(
+                    user_prompt='{"ping":1}',
+                    system_prompt="Reply with exactly: {\"ok\":true}",
+                    model="haiku",
+                    max_budget_usd=0.01,
+                    timeout=30,
+                )
+                if not ping.ok and ("session limit" in (ping.error or "").lower() or "429" in (ping.error or "")):
+                    result.passed = False
+                    result.errors.append(
+                        f"CLI SESSION LIMIT HIT — all LLM calls will fail. "
+                        f"Retry after session resets (error: {ping.error[:120]})"
+                    )
+                    return result
+                logger.info(f"[PREFLIGHT] CLI session OK (latency {ping.latency_s:.1f}s)")
+            except Exception as e:
+                result.warnings.append(f"CLI session ping failed (non-fatal): {e}")
+
         else:
             try:
                 from llm.client import call_llm
