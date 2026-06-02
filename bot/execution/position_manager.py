@@ -659,15 +659,36 @@ class PositionManager:
                 _extended_stop = time_stop_hours + min(_extension, _max_extension)
 
                 if hold_hours >= _extended_stop:
-                    _reason = _health.get("reason", "time_expired")
-                    logger.info(
-                        f"[{symbol}] TIME STOP: held {hold_hours:.1f}h >= {_extended_stop:.1f}h "
-                        f"(base={time_stop_hours}h + ext={min(_extension, _max_extension):.1f}h) "
-                        f"reason={_reason} health={_health_score:.0f}%"
-                    )
-                    event = self._close_position(pos, current_price, "TIME_STOP")
-                    events.append(event)
-                    return events
+                    # TP1-proximity guard: if price is within 0.5% of TP1, extend 1h.
+                    # Prevents closing 5 minutes before TP1 (BTC #4 incident: +$77 left
+                    # on the table when TP1 was just minutes away at 16h).
+                    _tp1 = getattr(pos, 'tp1', 0)
+                    _is_long = pos.side == "LONG"
+                    _tp1_dist_pct = 0.0
+                    if _tp1 > 0 and current_price > 0:
+                        if _is_long:
+                            _tp1_dist_pct = (_tp1 - current_price) / current_price
+                        else:
+                            _tp1_dist_pct = (current_price - _tp1) / current_price
+                    _tp1_very_close = 0 < _tp1_dist_pct < 0.005  # within 0.5%
+                    if _tp1_very_close and pos.state not in ("TP1_HIT", "TRAILING"):
+                        _extended_stop += 1.0
+                        logger.info(
+                            f"[{symbol}] TIME STOP DEFERRED 1h: TP1 within "
+                            f"{_tp1_dist_pct*100:.2f}% ({current_price:.2f} → {_tp1:.2f})"
+                        )
+                    if hold_hours < _extended_stop:
+                        pass  # deferred — TP1 proximity extended stop, skip close this tick
+                    else:
+                        _reason = _health.get("reason", "time_expired")
+                        logger.info(
+                            f"[{symbol}] TIME STOP: held {hold_hours:.1f}h >= {_extended_stop:.1f}h "
+                            f"(base={time_stop_hours}h + ext={min(_extension, _max_extension):.1f}h) "
+                            f"reason={_reason} health={_health_score:.0f}%"
+                        )
+                        event = self._close_position(pos, current_price, "TIME_STOP")
+                        events.append(event)
+                        return events
                 else:
                     # Position is healthy — log extension and continue
                     if not hasattr(pos, '_extension_logged'):
