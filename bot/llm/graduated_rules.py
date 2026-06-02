@@ -292,13 +292,17 @@ class GraduatedRulesEngine:
 
         return vetoed, max(0, min(100, confidence + conf_delta)), "; ".join(applied)
 
-    def record_outcome(self, symbol="", regime="", side="", won=False, hour_utc: int = -1):
+    def record_outcome(self, symbol="", regime="", side="", won=False, hour_utc: int = -1,
+                       strategies_active=None, num_agree: int = 0, confidence: float = 0.0):
         """Track rule accuracy after trade closes.
 
         VETO rules are skipped here — their accuracy is tracked by
         counterfactual_learner.py which has the blocked-trade context.
         hour_utc: entry UTC hour (0-23). Pass -1 to skip hour-conditioned matching
         (rules with hour conditions will then be skipped rather than incorrectly matched).
+        strategies_active: list of strategy names that agreed on this signal at entry.
+        num_agree: number of agreeing strategies.
+        confidence: signal confidence at entry (0-100).
         """
         self._ensure_loaded()
         for rule in self._rules:
@@ -306,7 +310,9 @@ class GraduatedRulesEngine:
                 continue
             if rule.action == "veto":
                 continue  # handled by counterfactual_learner.py
-            if not rule.matches(symbol=symbol, regime=regime, side=side, hour_utc=hour_utc):
+            if not rule.matches(symbol=symbol, regime=regime, side=side, hour_utc=hour_utc,
+                                strategies_active=strategies_active, num_agree=num_agree,
+                                confidence=confidence):
                 continue
             if rule.action == "boost":
                 if won:

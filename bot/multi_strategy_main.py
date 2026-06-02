@@ -3285,9 +3285,14 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 try:
                     from llm.graduated_rules import get_graduated_rules_engine
                     _gr_hr = pos.open_time.hour if pos and getattr(pos, "open_time", None) else -1
+                    _gr_er = (pos.entry_reasons or {}) if pos and getattr(pos, "entry_reasons", None) else {}
+                    _gr_strats = _gr_er.get("strategies_agree", [])
+                    _gr_num = len(_gr_strats) or _gr_er.get("num_agree", 0)
+                    _gr_conf = _gr_er.get("llm_confidence") or _gr_er.get("win_prob_deflated") or 0.0
                     get_graduated_rules_engine().record_outcome(
                         symbol=symbol, regime=_rg_fb, side=event.side, won=total_pnl > 0,
-                        hour_utc=_gr_hr,
+                        hour_utc=_gr_hr, strategies_active=_gr_strats,
+                        num_agree=_gr_num, confidence=float(_gr_conf) if _gr_conf else 0.0,
                     )
                 except Exception:
                     pass
