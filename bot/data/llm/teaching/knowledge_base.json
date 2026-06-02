@@ -6960,6 +6960,122 @@
       "last_validated": 1777033371.255534,
       "validation_count": 15,
       "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[AVOID] HYPE SELL is permanently blocked: 2.3% WR on n=411 clean trades (edge_analysis_raw n=172 + time_edge_results n=173 + 66 live). EV=-3.57%/trade. Catastrophic capital destruction. NO exceptions \u2014 not regime, not session, not confidence level.",
+      "confidence": 0.95,
+      "evidence_count": 411,
+      "evidence_ratio": 0.023,
+      "category": "risk",
+      "tags": [
+        "symbol",
+        "side",
+        "hype",
+        "sell",
+        "veto"
+      ],
+      "action": "veto",
+      "conditions": {
+        "symbol": "HYPE",
+        "side": "SELL"
+      },
+      "source": "quant_alpha_2026_06_02",
+      "rule_id": "hype_short_veto_v1",
+      "created_at": 1780373157.5624044,
+      "last_validated": 1780373157.5624044,
+      "validation_count": 411,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[EDGE] SOL SELL in US session (14-22 UTC) = 62% WR on n=213 clean trades. EV=+0.99%/trade. Grade B alpha. Confirmed: edge_analysis_raw.json 62% (n=213) and time_edge_results.json 58.7% (n=225) at 18 UTC. Prior hard-block (36% WR n=42) was from broken-execution all-hours data \u2014 overridden.",
+      "confidence": 0.9,
+      "evidence_count": 213,
+      "evidence_ratio": 0.62,
+      "category": "strategy",
+      "tags": [
+        "symbol",
+        "side",
+        "hour_utc_min",
+        "hour_utc_max",
+        "sol",
+        "sell",
+        "boost"
+      ],
+      "action": "boost",
+      "conditions": {
+        "symbol": "SOL",
+        "side": "SELL",
+        "hour_utc_min": 14,
+        "hour_utc_max": 22
+      },
+      "source": "quant_alpha_2026_06_02",
+      "rule_id": "sol_sell_us_session_boost_v1",
+      "created_at": 1780373157.5624044,
+      "last_validated": 1780373157.5624044,
+      "validation_count": 213,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[CAUTION] BTC BUY in US session (14-22 UTC) is a hard block: 15% WR at 18 UTC (n=147), 22% WR overall US session (n=99). BTC LONG is ONLY viable in trending regime outside 14-22 UTC (56% WR mechanical backtest). Two separate signals \u2014 US session = block, non-US trending = allow.",
+      "confidence": 0.92,
+      "evidence_count": 246,
+      "evidence_ratio": 0.15,
+      "category": "risk",
+      "tags": [
+        "symbol",
+        "side",
+        "hour_utc_min",
+        "hour_utc_max",
+        "btc",
+        "buy",
+        "penalize"
+      ],
+      "action": "penalize",
+      "conditions": {
+        "symbol": "BTC",
+        "side": "BUY",
+        "hour_utc_min": 14,
+        "hour_utc_max": 22
+      },
+      "source": "quant_alpha_2026_06_02",
+      "rule_id": "btc_long_us_session_block_v1",
+      "created_at": 1780373157.5624044,
+      "last_validated": 1780373157.5624044,
+      "validation_count": 246,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "graduated_rule",
+      "content": "[EDGE] HYPE BUY in US session (14-22 UTC) = 85-88% WR. Grade A+ alpha. edge_analysis_raw: 88.1% WR n=194 EV=+4.75%/trade. time_edge_results: 85.1% WR n=201 at 18 UTC specifically. Outside US session: drops to 35-40% WR. The 18-20 UTC window is the prime entry window. Optimal: trending regime, RSI 35-65, 2-3x leverage, 3.75% TP, 2.5% SL.",
+      "confidence": 0.93,
+      "evidence_count": 395,
+      "evidence_ratio": 0.875,
+      "category": "strategy",
+      "tags": [
+        "symbol",
+        "side",
+        "hour_utc_min",
+        "hour_utc_max",
+        "hype",
+        "buy",
+        "boost"
+      ],
+      "action": "boost",
+      "conditions": {
+        "symbol": "HYPE",
+        "side": "BUY",
+        "hour_utc_min": 14,
+        "hour_utc_max": 22
+      },
+      "source": "quant_alpha_2026_06_02",
+      "rule_id": "hype_buy_us_session_kb_v1",
+      "created_at": 1780373157.5624044,
+      "last_validated": 1780373157.5624044,
+      "validation_count": 395,
+      "invalidation_count": 0
     }
   ]
 }
