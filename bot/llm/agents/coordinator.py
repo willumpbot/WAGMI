@@ -1497,6 +1497,55 @@ class AgentCoordinator:
         else:
             _cache_key = None
 
+        # ── Lever 2: Graduated-rules veto pre-filter ──
+        # Run VETO-only graduated rules before the 5-agent pipeline.
+        # Any hard-veto rule (e.g. hype_short_veto_v1, WR=2.3%) eliminates the
+        # LLM call entirely — saves ~130-190s of subscription quota per hit.
+        # BOOST/PENALIZE rules are NOT applied here — those need LLM context.
+        # Backtest is excluded (snapshot cache key = None is backtest signal).
+        if not _is_backtest_mode:
+            try:
+                from llm.graduated_rules import get_graduated_rules_engine
+                _sym = signal_context.get("symbol", "")
+                _side = signal_context.get("side", "")
+                _conf = float(signal_context.get("confidence", 0))
+                _strat = signal_context.get("strategy", "")
+                _n_agree = int(signal_context.get("num_agree",
+                               signal_context.get("num_strategies_agree", 0)))
+                _hour = int(market_context.get("time_utc_hour", -1))
+                _strats_active = signal_context.get("strategies_agree", [])
+                _gre = get_graduated_rules_engine()
+                _pre_vetoed, _, _pre_notes = _gre.evaluate_signal(
+                    symbol=_sym, side=_side, confidence=_conf,
+                    strategy=_strat, num_agree=_n_agree,
+                    hour_utc=_hour, strategies_active=_strats_active,
+                    veto_only=True,
+                )
+                if _pre_vetoed:
+                    logger.info(
+                        f"[PRE-FILTER] VETO {_sym}/{_side} before LLM: {_pre_notes[:80]}"
+                    )
+                    _veto_decision = EntryDecision(
+                        action="skip",
+                        leverage=1.0,
+                        risk_pct=0.0,
+                        position_qty=0.0,
+                        regime="unknown",
+                        thesis="",
+                        confidence=_conf / 100.0 if _conf > 1.0 else _conf,
+                        notes=f"[PRE-FILTER VETO] {_pre_notes[:200]}",
+                    )
+                    # Store in cache as skip (same TTL as LLM skips)
+                    if _cache_key is not None:
+                        self._entry_decision_cache[_cache_key] = {
+                            "decision": _veto_decision,
+                            "ts": time.time(),
+                            "entry_price": float(signal_context.get("entry", 0)),
+                        }
+                    return _veto_decision
+            except Exception as _pfe:
+                logger.debug(f"[PRE-FILTER] Error: {_pfe}")
+
         # ── Build a snapshot_data dict compatible with existing pipeline ──
         # The existing _build_*_input methods expect snapshot_data format.
         # We translate signal_context + market/portfolio into that format.

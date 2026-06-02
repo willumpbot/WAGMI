@@ -251,13 +251,16 @@ class GraduatedRulesEngine:
 
     def evaluate_signal(self, symbol="", regime="", side="", strategy="",
                         setup_type="", num_agree=0, confidence=0.0, hour_utc=-1,
-                        strategies_active=None) -> tuple:
+                        strategies_active=None, veto_only=False) -> tuple:
         """Returns (should_veto, adjusted_confidence, applied_rules_summary).
 
         strategies_active: list of individual strategy names that fired (e.g.
         ["bollinger_squeeze", "multi_tier_quality"]). Enables rules that condition
         on which strategies contributed — needed because ensemble signals always
         have strategy="ensemble" while individual names live in metadata.
+        veto_only: if True, only check VETO rules (no times_applied increment for
+        BOOST/PENALIZE). Used by the pre-LLM filter to avoid double-counting when
+        the signal later flows through the full pipeline evaluation.
         """
         self._ensure_loaded()
         vetoed, conf_delta, applied = False, 0.0, []
@@ -268,6 +271,8 @@ class GraduatedRulesEngine:
                                                     num_agree=num_agree, confidence=confidence,
                                                     hour_utc=hour_utc,
                                                     strategies_active=strategies_active):
+                continue
+            if veto_only and rule.action != "veto":
                 continue
             rule.times_applied += 1
             rule.last_applied = time.time()
