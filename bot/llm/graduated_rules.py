@@ -86,10 +86,13 @@ class GraduatedRule:
             return False
         if "confidence_max" in c and confidence > c["confidence_max"]:
             return False
-        if "hour_utc_min" in c and hour_utc >= 0 and hour_utc < c["hour_utc_min"]:
-            return False
-        if "hour_utc_max" in c and hour_utc >= 0 and hour_utc >= c["hour_utc_max"]:
-            return False
+        if "hour_utc_min" in c or "hour_utc_max" in c:
+            if hour_utc < 0:
+                return False  # can't evaluate hour condition without entry hour — skip rather than false-match
+            if "hour_utc_min" in c and hour_utc < c["hour_utc_min"]:
+                return False
+            if "hour_utc_max" in c and hour_utc >= c["hour_utc_max"]:
+                return False
         return True
 
 
@@ -284,14 +287,13 @@ class GraduatedRulesEngine:
 
         return vetoed, max(0, min(100, confidence + conf_delta)), "; ".join(applied)
 
-    def record_outcome(self, symbol="", regime="", side="", won=False):
+    def record_outcome(self, symbol="", regime="", side="", won=False, hour_utc: int = -1):
         """Track rule accuracy after trade closes.
 
         VETO rules are skipped here — their accuracy is tracked by
         counterfactual_learner.py which has the blocked-trade context.
-        Including veto rules here inflates times_correct because closed trades
-        all passed the veto (weren't blocked), and time-based conditions
-        (hour_utc_min/max) can't be evaluated without the entry hour.
+        hour_utc: entry UTC hour (0-23). Pass -1 to skip hour-conditioned matching
+        (rules with hour conditions will then be skipped rather than incorrectly matched).
         """
         self._ensure_loaded()
         for rule in self._rules:
@@ -299,7 +301,7 @@ class GraduatedRulesEngine:
                 continue
             if rule.action == "veto":
                 continue  # handled by counterfactual_learner.py
-            if not rule.matches(symbol=symbol, regime=regime, side=side):
+            if not rule.matches(symbol=symbol, regime=regime, side=side, hour_utc=hour_utc):
                 continue
             if rule.action == "boost":
                 if won:

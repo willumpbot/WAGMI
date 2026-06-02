@@ -463,9 +463,13 @@ class CounterfactualLearner:
                 try:
                     from llm.graduated_rules import get_graduated_rules_engine
                     _won = (rec.hypothetical_pnl_pct or 0) > 0
+                    try:
+                        _cf_hr = datetime.fromisoformat(rec.created_at).hour
+                    except Exception:
+                        _cf_hr = -1
                     get_graduated_rules_engine().record_outcome(
                         symbol=rec.symbol, regime=rec.regime,
-                        side=rec.side, won=_won,
+                        side=rec.side, won=_won, hour_utc=_cf_hr,
                     )
                     logger.debug(
                         f"[CF→RULES] Veto outcome wired: {rec.symbol} {rec.side} "

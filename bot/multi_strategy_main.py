@@ -3253,8 +3253,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 # Graduated rules: record outcome so rules track accuracy + auto-retire poor rules
                 try:
                     from llm.graduated_rules import get_graduated_rules_engine
+                    _gr_hr = pos.open_time.hour if pos and getattr(pos, "open_time", None) else -1
                     get_graduated_rules_engine().record_outcome(
-                        symbol=symbol, regime=_rg_fb, side=event.side, won=total_pnl > 0
+                        symbol=symbol, regime=_rg_fb, side=event.side, won=total_pnl > 0,
+                        hour_utc=_gr_hr,
                     )
                 except Exception:
                     pass
