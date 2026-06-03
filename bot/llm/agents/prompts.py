@@ -61,7 +61,7 @@ ATR% = (ATR/price)*100. Check CURRENT EDGES and REGIME PERFORMANCE for live WR b
 - High BTC-alt correlation reduces alt alpha
 
 ## TIMING
-18-06 UTC historically outperforms. Check CURRENT EDGES for time-of-day data. Factor into outlook.
+Time-of-day edge is unconfirmed in live data. Check CURRENT EDGES if available. Do not factor as a primary signal.
 
 ## RULES
 - Use ALL data: price, volume, funding, OI, BTC correlation
@@ -154,7 +154,7 @@ Cap all solo decisions at c=0.55. The "solo=$0 ground truth" was from pre-LLM-fi
 
 ## INTERNAL STEP 2: CONFIDENCE CALIBRATION (think silently)
 Base 0.50, adjust additively:
-+0.15: 3+ agree trending | +0.10: 6h aligned | +0.05: favorable time (18-06 UTC) | +0.05: BTC confirms (>0.3%) | +0.05: scout matches at HIGH
++0.15: 3+ agree trending | +0.10: 6h aligned | +0.05: BTC confirms (>0.3%) | +0.05: scout matches at HIGH
 -0.10: solo signal | -0.10: adverse volume | -0.05: adverse funding (>0.03%) | -0.10: post-big-win giveback risk | -0.05: price moved >1.5% in direction
 Cap 0.85, floor 0.30. Self-correct: self_perf cal>+0.10 → reduce 10%. cal<-0.10 → increase 10%. vacc<0.50 → default proceed.
 
@@ -196,13 +196,15 @@ RULE: never cite "X strategy is bad" as a veto reason if the (symbol, side, stra
 The current 8 validated shadow_edges are wired into your snapshot as `signals.validated_edges`. When present, those numbers are LIVE truth — use them.
 
 Historical reference (for tiebreaker only when no wired match):
-- regime_trend ETH BUY: 100% WR, n=135 — wired as validated edge
-- bollinger_squeeze HYPE BUY: 61% WR, n=196 — wired
-- SOL SELL (BB or MTQ): 72% WR, n=68 — wired
-- BTC BUY regime_trend: 65% WR, n=117 (upgraded) — wired
-- HYPE BUY regime_trend: 87% WR, n=63 (upgraded) — wired
-- SOL BUY multi_tier_quality: 100% WR, n=90 (new, 19-day caveat) — wired
-- SOL BUY bollinger_squeeze: 90% WR, n=100 (new, 19-day caveat) — wired
+LIVE DATA UPDATE (Mar-May 2026, 181 trades): BUY signal WRs are much lower than shadow data.
+Shadow data was pre-live, simulated fills. Live is authoritative when available.
+- ETH BUY (any strategy): shadow 100%, LIVE 25% (n=32, -$1724). Require strong thesis.
+- BTC BUY (any strategy): shadow 65%, LIVE 25% (n=20, -$196). No free pass.
+- HYPE BUY (any strategy): shadow 61-87%, LIVE 22% (n=36, -$89). Consistently weak.
+- SOL BUY (any strategy): shadow 90-100%, LIVE 28% (n=29, -$670). Caveat applies.
+- SOL SELL (BB or MTQ): shadow 72%, LIVE 38% (n=34, +$46). Still positive but modest.
+- ETH SELL: no shadow data, LIVE 91% (n=11, small sample — do not over-rely).
+- BTC SELL: no separate shadow, LIVE 46% (n=11, +$193). Positive but modest.
 
 Historical "poison" setups (from old data — verify against wired data before treating as veto):
 - regime_trend SOL SELL was a catastrophic loser (0% WR on 149 shadows) — this remains a soft caution.
@@ -223,7 +225,7 @@ Historical "poison" setups (from old data — verify against wired data before t
 
 ## PRINCIPLES
 - Winners enter after sustained selling with fading volume. Losers chase surging volume.
-- More agreement = exponentially better WR. 3-agree is 2x better than 2-agree.
+- 2-agree historically outperforms solo. 3-agree: n=5, 0% WR in live data — verify inputs carefully, no automatic confidence boost.
 - PnL = Move - Funding - Fees. Funding >0.03% → prefer SCALP profile.
 - If you see strong edge, state explicitly — downstream sizing discounts by default.
 - Check g.edge for rolling WR on this symbol+side — edges strengthen and weaken.
@@ -271,7 +273,7 @@ Do NOT try to compensate for downstream filters — they have been removed.
    - Quant Agent EV: ev>0.30 → sz*1.2. ev<0.10 → sz*0.7
    - Portfolio exposure: if adding to directional concentration → sz*0.7
    - Regime: trend → sz*1.0. range → sz*0.8. panic → sz*0.5
-   - Time-of-day: prime hours (18-06 UTC) → sz*1.1. dead hours → sz*0.7
+   - Time-of-day: no consistent edge confirmed in live data — do not apply size adjustment
    - Recent streak: 3+ losses → sz*0.6. 3+ wins → sz*0.8 (giveback risk)
 3. Hard caps: sz never below 0.3 (minimum meaningful), never above 2.0
 4. Portfolio budget: if this trade would push total exposure above 5x equity → reduce sz
@@ -341,7 +343,7 @@ Size based on what ACTUALLY made and lost money:
 7. **BTC at high leverage is toxic.** BTC 0-7x: 100% WR. BTC 7-9x: 25% WR. Cap BTC leverage.
 8. **The bot is a 35% WR system with 2:1 payoff.** This IS profitable. Don't over-reduce size because of low WR — the wins are big enough to carry.
 9. **Normal price noise by symbol:** BTC 0.37%, ETH 0.50%, SOL 0.47%, HYPE 0.77%. Stops must be WIDER than these numbers.
-10. **US session (16-24 UTC) = where the money is.** Size up during US session, size down during Asia (00-08 UTC).
+10. **US session (16-24 UTC) historically outperformed Asia (00-08 UTC)** (+$243 vs -$114 in 101-trade reference dataset). Live Mar-May 2026 data shows no consistent time-of-day edge — treat as weak signal only, do not apply automatic size adjustments.
 
 ## SIGNAL QUALITY DATA (LLM-first mode)
 When `signal_quality` is present in your input, YOU are the quality gate:
@@ -1105,7 +1107,7 @@ OUTPUT (JSON only):
 - **SOL extreme oversold** = continuation SHORT, not bounce buy. Extreme oversold often continues down.
 - **Cross-asset divergence**: alt holding while BTC dumps = relative strength signal.
 - **Funding rates**: extreme (>0.05%/8h) = mean reversion opportunity. Flag counter-funding trades.
-- **Prime hours**: 18-06 UTC historically outperforms. Flag upcoming prime windows.
+- **Session context**: US session historically outperformed in old data; live data shows no consistent time-of-day edge. Note session in watchlist but do not weight it heavily.
 
 ## WATCHLIST PRIORITY
 - HIGH: within 1% of key level + favorable regime + lead-lag active + HYPE BUY setup
