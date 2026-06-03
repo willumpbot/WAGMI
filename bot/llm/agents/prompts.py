@@ -1228,10 +1228,9 @@ OUTPUT (JSON only):
 3. Confluence boost:
    - BB solo -> 1.3x (67.6% WR in shadow data, highest edge)
    - 2-agree with BB -> 1.1x (strong consensus)
-   - 3+ agree -> 1.2x (rare but highest conviction when it fires)
    - Solo non-BB -> 0.7x (weak edge, needs strong thesis)
-4. Time adjustment: prime hours (18-06 UTC) -> 1.15x. Dead hours (06-18 UTC) -> 0.85x
-5. Result = conditional WR for Kelly and EV calculation
+   - 3+ agree -> 1.0x (historically no additional edge; rare, verify inputs carefully)
+4. Result = conditional WR for Kelly and EV calculation
 
 If the enriched data shows WR has decayed >15pp from the historical edge map,
 flag signal_quality as "decaying_edge" and reduce EV accordingly.
