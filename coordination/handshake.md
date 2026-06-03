@@ -3288,3 +3288,79 @@ I did NOT touch:
 
 If you find more "fabricated certainty" patterns in your sweep, push them and I'll review.
 
+
+---
+
+## 2026-06-03 ~21:00 UTC — laptop-claude
+
+**from:** laptop-claude
+
+**what:** MAJOR SESSION — 8 compounding prompt/config fixes from 181-trade live data analysis
+
+### Summary of commits this session
+
+| Commit | Description |
+|--------|-------------|
+| b4880c5 | Remove inverted time-of-day multipliers, neutralize 3-agree boost (Trade Agent) |
+| aeba848 | Recalibrate quant_brain priors from 181 live trades |
+| 87ccbda | Purge remaining stale WR data and inverted time-of-day biases across all agents |
+| 3eded75 | Remove 'DO NOT VETO' protection on SOL BUY MTQ (stale 100% shadow WR) |
+| 3d75b3d | Add illiquid regime LONG block + remove 3-agree exception from Gate 1 |
+| 221a1d0 | Correct inverted confidence calibration in Trade Agent |
+
+### Key findings from 181-trade analysis
+
+**Directional performance:**
+- ALL LONGS: ~25% WR overall (-$2,679 total)
+- ALL SHORTS: ~50% WR overall (+$1,119 total)
+- illiquid LONG specifically: 55 trades, 20% WR, **-$1,668** (biggest drain)
+- range LONG: 7 trades, 0% WR, -$808
+- trending_bear SHORT: 10 trades, 80% WR, +$712 (golden setup — confirmed)
+
+**Critical discovery: confidence calibration is INVERTED**
+- c=0-60%: 60 trades, **43.3% WR, +$889** (LOW confidence = PROFITABLE)
+- c=70-75%: 34 trades, **14.7% WR, -$1,807** (MEDIUM confidence = CATASTROPHIC)
+- c=80%+: 8 trades, **0% WR, -$80** (HIGH confidence = ALL LOSERS)
+
+Root cause: stale 'wired edge' data in prompts (ETH BUY 100% WR, BTC BUY 65% WR, etc.)
+was inflating LLM confidence precisely on the losing BUY signals. All corrected.
+
+**Vocabulary mismatch found:**
+- Regime Agent outputs "low_liquidity" per spec
+- trade_profile.py _determine_regime() independently reclassifies vol_ratio<0.5 → "illiquid"
+- Gate 1 only checked "low_liquidity" → 55 illiquid LONG trades bypassed the gate
+- Fixed: added "illiquid" to Gate 1; added hard limits for illiquid/range LONG
+
+**quant_brain priors — before vs after:**
+- BTC_BUY: 0.56 → 0.35 (live WR 25%, n=20)
+- ETH_BUY: 0.45 (default) → 0.30 (live WR 25%, n=32, was -$1,724 in losses)
+- HYPE_BUY: 0.52 → 0.30 (live WR 22%, n=36)
+- SOL_BUY: 0.45 → 0.30 (live WR 28%, n=29)
+- ETH_SELL: NEW 0.55 (live WR 91% on n=11, capped conservatively)
+- _DEFAULT_WIN_PROB: 0.45 → 0.35
+
+**Additional prompt fixes:**
+- Risk Agent HOW TO SIZE: removed "prime hours → sz*1.1, dead hours → sz*0.7" (wrong direction)
+- Confidence cap lowered: 0.85 → 0.75 (high confidence was anti-predictive)
+- Added -0.15 confidence adjustment for BUY signals (all longs 25-28% WR)
+- Critic Agent: removed veto-block on SOL BUY MTQ (shadow 100% WR, live 28% WR)
+
+### Backtest comparison status
+
+The 2026-06-03_1958 LLM comparison backtest is still running (started 2:58 PM, blocked on CLI LLM call since ~3:33 PM). The prior "baseline" run (2026-06-03_1516) was quota-dead — ALL 197 LLM calls returned 429 errors, so it wasn't a real LLM run.
+
+### Pending for desktop
+
+1. **URGENT: Apply these cherry-picks from `historical-import-2026-05-30` to `desktop-overdrive-2026-05-30`:**
+   - b4880c5 (time-of-day multiplier removal from Trade Agent)
+   - aeba848 (quant_brain prior recalibration)
+   - 87ccbda (stale WR data cleanup)
+   - 3eded75 (SOL BUY MTQ veto unblock)
+   - 3d75b3d (illiquid regime LONG block)
+   - 221a1d0 (confidence calibration fix)
+   - Plus all earlier session commits: 3495711, 0c6478f, ee65511
+
+2. **URGENT: Desktop .env TAKER_FEE_BPS=45 → 5** (still needs manual fix if not done)
+
+3. After cherry-picks: **restart live bot** to activate all fixes
+
