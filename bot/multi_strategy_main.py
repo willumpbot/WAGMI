@@ -7050,8 +7050,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             _reg_n = int(_regime_setup.get("total", 0) or 0)
             _reg_wins = int(_regime_setup.get("wins", 0) or 0)
             _reg_wr = (_reg_wins / _reg_n * 100.0) if _reg_n > 0 else None
-            # TOXIC threshold: WR < 10% AND n >= 10 (statistically meaningful)
-            _is_toxic = bool(_reg_wr is not None and _reg_wr < 10.0 and _reg_n >= 10)
+            # TOXIC threshold: WR < 10% AND n >= 20 (n=10 was too small; 20 gives ~2.5 SE).
+            # n=10 caused SOL SHORT to be hard-blocked with insufficient data.
+            _is_toxic = bool(_reg_wr is not None and _reg_wr < 10.0 and _reg_n >= 20)
 
             if _setup and _setup.get("total", 0) > 0:
                 signal_ctx["edge_data"] = {

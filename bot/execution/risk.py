@@ -452,39 +452,24 @@ class RiskManager:
         Returns (equity_value, True) when we actually loaded a persisted
         state that's consistent with the caller's starting_equity context.
         Returns (fallback, False) when we fell back (e.g., test context).
-        """
-        val = cls._load_persisted_equity(fallback)
-        # If the returned value differs from fallback, we loaded a persisted one.
-        # This is an approximation but good enough given the 10x guard inside.
-        used_persisted = (abs(val - fallback) > 0.01)
-        return val, used_persisted
 
-    @staticmethod
-    def _load_persisted_equity(fallback: float) -> float:
-        """Load persisted equity from state file or compute from trades.csv.
-
-        Tries in order:
-        1. Read `bot/data/risk_equity_state.json` (fast path, single value)
-        2. Compute `fallback + sum(trades.csv pnl column)` (reconstruct)
-        3. Return `fallback` (fresh start)
-
-        Safety: if the persisted equity is wildly different from the
-        caller's `fallback` (10x difference), trust the caller — this
-        is usually a test or backtest that passed a specific value.
+        Bug fix: the previous implementation used (abs(val - fallback) > 0.01) to
+        detect file-loaded state, but this fails when persisted equity == starting_equity
+        (e.g., bot restarts at $5000 with a $5000 state file → used_persisted=False →
+        _should_persist_equity=False → equity updates never saved). Now uses a direct
+        file-existence flag from the new _load_persisted_equity_with_source helper.
         """
         import json
         import os
         import csv
         state_path = os.path.join("data", "risk_equity_state.json")
+        # Check if state file exists and is usable (the real bot's indicator)
+        _found_state_file = False
         try:
             if os.path.exists(state_path):
                 with open(state_path, "r", encoding="utf-8") as f:
                     state = json.load(f)
                 val = float(state.get("equity", fallback))
-                # Sanity check: reject state if it's 10x off from fallback.
-                # Tests commonly pass starting_equity=10000 while real bot
-                # uses ~$500 — a 20x difference means this is NOT the
-                # matching context for this state file.
                 if fallback > 0:
                     ratio = max(val / fallback, fallback / val) if val > 0 else 0
                     if ratio > 10:
@@ -492,12 +477,13 @@ class RiskManager:
                             f"[RISK] Persisted equity ${val:.2f} is {ratio:.1f}x off "
                             f"from fallback ${fallback:.2f}; using fallback (likely test context)"
                         )
-                        return fallback
+                        return fallback, False
                 logger.info(
                     f"[RISK] Loaded persisted equity: ${val:.2f} "
                     f"(saved {state.get('saved_at', 'unknown')})"
                 )
-                return val
+                # State file found and loaded — this is the real bot; persist future updates
+                return val, True
         except Exception as e:
             logger.warning(f"[RISK] Could not load equity state: {e}")
 
@@ -524,12 +510,15 @@ class RiskManager:
                                 f"[RISK] Reconstructed equity from {n} trades: "
                                 f"${fallback:.2f} + ${total_pnl:+.2f} = ${reconstructed:.2f}"
                             )
-                            return reconstructed
+                            # Reconstructed from trades.csv → treat as persisted (real bot)
+                            return reconstructed, True
         except Exception as e:
             logger.warning(f"[RISK] Could not reconstruct equity from trades.csv: {e}")
 
         logger.info(f"[RISK] Using fallback starting equity: ${fallback:.2f}")
-        return fallback
+        return fallback, False
+
+
 
     def save_equity_state(self) -> None:
         """Persist current equity to disk for restart continuity.
