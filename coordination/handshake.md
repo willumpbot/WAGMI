@@ -3191,10 +3191,49 @@ No LLM calls yet (still in early candles). 6h data unavailable → 0.85x confide
 NOTE: This backtest ran with TAKER_FEE_BPS=45 (pre-fix). PnL results will be inflated-fee.
 Comparing vs mechanical baseline (2026-06-03_1516): 3 trades, 33.3% WR, -$491 net.
 
+### force_close() event capture — FIXED (commit 0c6478f)
+
+LIQUIDATION_PROXIMITY, FUNDING_AVOIDANCE, MFE_TAKE_PROFIT, MFE_EXIT_NOW all discarded
+force_close() TradeEvent results → equity/ledger/kelly never updated for these closes.
+Fixed by capturing results into `_force_close_events[]` and injecting after update_price().
+Guard added to skip duplicate exchange submission for already-submitted events.
+MFE_TAKE_PROFIT and MFE_EXIT_NOW also added to _FULL_CLOSE tuple.
+
+### Hardcoded multipliers analysis — FROM LIVE DATA
+
+Analyzed 181 trade_ledger.csv rows:
+
+**ALL LONGS: WR=24.8%, total=-$2679 | ALL SHORTS: WR=46.9%, total=+$1119**
+Bear market (March-May 2026) → EVERY long loses, every short wins.
+
+Symbol-side breakdown:
+- ETH_SHORT: WR=90.9%, +$895 (n=11) ← STAR EDGE
+- BTC_SHORT: WR=45.5%, +$193 (n=11)
+- SOL_SHORT: WR=38.2%, +$46 (n=34)
+- ETH_LONG: WR=25.0%, -$1724 (n=32) ← BIGGEST MONEY SINK
+- SOL_LONG: WR=27.6%, -$670 (n=29)
+- HYPE_LONG: WR=22.2%, -$89 (n=36)
+
+quant_brain.py priors are 10-31pp over-optimistic for every symbol-side:
+- BTC_BUY prior=0.56 vs live WR=25.0% (-31pp)
+- HYPE_BUY prior=0.52 vs live WR=22.2% (-30pp)
+- BTC_SELL prior=0.55 vs live WR=45.5% (-10pp)
+- SOL_SELL prior=0.55 vs live WR=38.2% (-17pp)
+- SOL_BUY prior=0.45 vs live WR=27.6% (-17pp)
+
+**ACTION FOR NUNU:** Priors feed into quant_brain EV calculations. Should we update them to current live data?
+Risk: the bear-market period (March-May 2026) may not represent current conditions. 
+Recommendation: reduce BUY priors to current live values as floor, add regime flag.
+
+Time-of-day multipliers also INVERTED in live data:
+- "Prime hours (18-06 UTC) → 1.15x" WRONG: live shows WR=31.7%, avg=-$13 (WORSE)
+- "Dead hours (06-18 UTC) → 0.85x" WRONG: live shows WR=33.8%, avg=-$2 (BETTER)
+The 1.15x prime boost is a liability. Recommend: remove both or flip signs.
+
 ### Next focus suggestions
 
-1. Investigate why omniscient_integrated and sniper_standard are muted — low ensemble weights suppressing signals
-2. Re-derive hardcoded multipliers (0.7x solo, 0.85x dead hours, 1.15x prime) from fresh data
-3. force_close() result discarded at LIQUIDATION_PROXIMITY/FUNDING_AVOIDANCE (multi_strategy_main.py:3004, 3050) — equity not updated, no ledger row for those close types
+1. Update quant_brain.py priors with live data (needs Nunu decision)
+2. Fix time-of-day multipliers in prompts.py (clear reversal, n>50)
+3. Wait for LLM comparison backtest to complete, compare vs mechanical baseline
 
 -- laptop-claude
