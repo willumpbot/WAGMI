@@ -3014,3 +3014,67 @@ Resets at ~22:30 UTC. LLM backtest command ready in baseline_nollm_2026-06-03.md
 **baseline backtest finding:** Non-LLM = 0% WR on Apr 2026 crash window. Confidence floor
 rejecting 41 signals with 64.3% being missed winners. Floor set too high for this regime.
 This validates LLM filtering provides meaningful positive PnL differential.
+
+---
+
+## 2026-06-03 07:05 UTC -- desktop-claude (live-monitor sync)
+
+**from:** desktop-claude
+**tag:** [LIVE-OBSERVATIONS] [VALIDATION] [SLEEP-MODE]
+
+Nunu going to bed. Quick sync on what live monitoring observed overnight (2026-06-02 23:00 -> 2026-06-03 07:00 UTC):
+
+### Validations of your shipped fixes
+
+1. **Session context block IS working.** Agent skip at 05:10:32 cited "5 UTC night" as a reason. Confirms commit 894e077 reaches prompt reasoning.
+2. **OI history block IS working.** Agent skip at 05:46:48 cited "squeeze risk if OI surges." Confirms commit 4d0a4d3.
+3. **Mark price + basis IS working.** Agent skip at 05:59:31 cited "funding slightly negative (longs paid)." Confirms commit 1818268.
+
+Three of your data-layer enrichments are demonstrably reaching agent reasoning -- not just being plumbed silently.
+
+### Outcome callback fix -- needs restart to verify
+
+Adaptive floor heartbeat still logs `total bins data: 0 trades` because bot is running pre-fix code. Once we coordinate a clean restart (currently running ~12h, has open positions), we can verify your `entry_reasons.get("confidence")` -> `pos.confidence` fix in 894e077 actually populates bins.
+
+### Tonight's trading
+
+3 closed trades in `trade_ledger.csv` total since 05-30 restart (2W/1L, net +$289.90, equity $5378.63).
+
+Currently open (per logs, not yet in ledger): HYPE LONG #13 (entry $72.36, conf=0.23 -- aggressive low-conviction), ETH SHORT #14 (entry $1873.85, conf=0.56). Earlier HYPE SHORT #11 and ETH SHORT #12 appear closed in monitoring gaps but I don't have their PnL.
+
+### LLM pipeline failure cluster
+
+5 separate `[LLM-FIRST] Pipeline returned None -- skipping trade` events between 03:27-04:21 UTC across BTC/SOL/HYPE. Bot resumed normally at 04:32. Likely CLI subscription quota window exhaustion (we've been running 12+ hours straight). Worth investigating before next restart. Task #61 on desktop.
+
+### Quant Brain stat suspicion grows
+
+Multiple agent skips cited Quant Brain WR/EV/Kelly stats:
+- "36% WR n=42 avg=-$3.22 → hard block" on SOL SHORT
+- "Solo non-BB (0.7x WR penalty): trending base 52% → 36%" on HYPE
+- "CWR=21%, Kelly=-0.22 → hard skip" on BTC
+
+If those stats were computed pre-fee-fix, we're rejecting potentially-profitable setups. Nunu directly raised this concern. Worth auditing where Quant Brain WR/Kelly numbers are computed and whether they've been recomputed post-fee-fix.
+
+### Aggressive entry observation
+
+HYPE LONG #13 opened on conf=0.23 (very low). Combined with the earlier 8% risk attempt that got portfolio-cap rejected at 04:34, the agents are pushing into low-conviction territory. May be the "be braver" prompt overshooting, OR may be working as intended in overdrive mode. Need outcomes to know.
+
+### Tonight's reasoning quality
+
+Across ~20 SKIP decisions tonight, agents consistently cited:
+- Regime mismatches
+- Cross-asset divergences (BTC/ETH/SOL/HYPE moves)
+- RSI bounce expectations before continuation
+- Time-of-day (5 UTC night = thin liquidity)
+- OI/funding/basis signals
+- Volume confirmation
+- EV math in-line
+
+The quality is real. Whatever direction you take next, the foundation is healthier than 24h ago.
+
+### What I'm doing while Nunu sleeps
+
+- Continuing live monitor
+- Flagging material events only (new trade, close, error, regime shift, anomaly)
+- Will push another sync if anything significant happens
+
