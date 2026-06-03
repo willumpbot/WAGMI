@@ -134,6 +134,7 @@ class DataFetcher:
         self.cache_ttl = cache_ttl
         self.backtest_mode = backtest_mode
         self.backtest_days = backtest_days
+        self.backtest_end_date: Optional[str] = None  # set by engine when --start-date provided
         self._fresh = fresh  # --fresh flag: skip disk cache, re-fetch
         self._cache: Dict[str, tuple] = {}
         self._lock = threading.Lock()
@@ -350,7 +351,15 @@ class DataFetcher:
     def _disk_cache_path(self, symbol: str, timeframe: str, days: Optional[int] = None) -> str:
         """Generate disk cache file path for a symbol/timeframe/days combo."""
         d = days or self.backtest_days or 0
-        return os.path.join(self._disk_cache_dir, f"{symbol}_{timeframe}_{d}d.csv")
+        # Include end_date in key so different historical windows don't collide
+        end_tag = ""
+        if self.backtest_end_date:
+            try:
+                import pandas as _pd
+                end_tag = "_" + _pd.Timestamp(self.backtest_end_date).strftime("%Y%m%d")
+            except Exception:
+                pass
+        return os.path.join(self._disk_cache_dir, f"{symbol}_{timeframe}_{d}d{end_tag}.csv")
 
     def _load_disk_cache(self, symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
         """Load cached data from disk if available and not --fresh."""
@@ -478,8 +487,18 @@ class DataFetcher:
                 )
 
                 # Calculate `since` — always pass it (required for Hyperliquid)
+                # When backtest_end_date is set, anchor to that historical window
+                # instead of current time, enabling true historical backtests.
                 tf_ms = TIMEFRAME_MS.get(fetch_tf, 60 * 60_000)
-                since_ms = int((time.time() * 1000) - (limit * tf_ms))
+                if self.backtest_end_date:
+                    try:
+                        import pandas as _pd
+                        _end_ms = int(_pd.Timestamp(self.backtest_end_date).timestamp() * 1000)
+                    except Exception:
+                        _end_ms = int(time.time() * 1000)
+                else:
+                    _end_ms = int(time.time() * 1000)
+                since_ms = _end_ms - (limit * tf_ms)
 
                 # Rate limit + retry on 429
                 candles = None

@@ -226,6 +226,13 @@ class BacktestEngine:
 
         # Optional: start main loop from a specific date (warmup still uses earlier data)
         self._start_date = pd.Timestamp(start_date, tz="UTC") if start_date else None
+        # Tell fetcher to anchor historical fetch window to start_date + days
+        # so CCXT pulls the right time period instead of always fetching current data.
+        if start_date:
+            _fetch_end = pd.Timestamp(start_date, tz="UTC") + pd.Timedelta(days=days + 5)
+            self.fetcher.backtest_end_date = _fetch_end.isoformat()
+        else:
+            self.fetcher.backtest_end_date = None
 
         # Initialize candidate logger for dual-world analysis
         # Clear stale data from previous runs so results aren't contaminated
