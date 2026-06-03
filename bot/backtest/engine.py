@@ -220,6 +220,11 @@ class BacktestEngine:
         """
         logger.info(f"Starting backtest: {symbols} | {days} days | strategies={strategies or 'all'}")
 
+        # Prevent live paper-trading confidence floors from contaminating historical backtests.
+        # DynamicThresholds.get_confidence_floor() returns the caller's fallback when this is set.
+        import os as _os
+        _os.environ["BACKTEST_CLEAN_FLOOR"] = "1"
+
         # Configure fetcher to pull enough data for the requested backtest period
         self._backtest_days = days
         self.fetcher.backtest_days = days

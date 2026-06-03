@@ -307,6 +307,11 @@ class DataFetcher:
                         )
                         ex.session.mount("https://", adapter)
                         ex.session.mount("http://", adapter)
+                    # Workaround for CCXT 4.5.37: Hyperliquid fetch_spot_markets
+                    # crashes when a new token has no mapped base currency.
+                    # We only need perp markets, so override spot market loading.
+                    if name == "hyperliquid":
+                        ex.fetch_spot_markets = lambda params=None: []
                     self._exchanges[name] = ex
                 except Exception as e:
                     logger.warning(f"CCXT failed to init {name}: {e}")
@@ -742,7 +747,14 @@ class DataFetcher:
             coin_id: CoinGecko coin ID for fallback (e.g. "bitcoin", "hyperliquid")
             timeframe: "5m", "15m", "30m", "1h", "4h", "6h", "16h", "1d", "daily"
         """
-        cache_key = f"ohlcv:{symbol_name}:{timeframe}"
+        _end_suffix = ""
+        if self.backtest_end_date:
+            try:
+                import pandas as _pd
+                _end_suffix = "_" + _pd.Timestamp(self.backtest_end_date).strftime("%Y%m%d")
+            except Exception:
+                pass
+        cache_key = f"ohlcv:{symbol_name}:{timeframe}{_end_suffix}"
         cached = self._get_cached(cache_key)
         if cached is not None:
             return cached
@@ -789,9 +801,18 @@ class DataFetcher:
         cg_fallback_tfs = []
         tfs_to_fetch = []
 
+        # Build end-date suffix for cache keys (matches fetch_ohlcv logic)
+        _mtf_end_suffix = ""
+        if self.backtest_end_date:
+            try:
+                import pandas as _pd
+                _mtf_end_suffix = "_" + _pd.Timestamp(self.backtest_end_date).strftime("%Y%m%d")
+            except Exception:
+                pass
+
         # Check cache first (in-memory, then disk)
         for tf in timeframes:
-            cache_key = f"ohlcv:{symbol_name}:{tf}"
+            cache_key = f"ohlcv:{symbol_name}:{tf}{_mtf_end_suffix}"
             cached = self._get_cached(cache_key)
             if cached is not None:
                 result[tf] = cached
