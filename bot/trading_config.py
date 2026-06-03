@@ -422,9 +422,9 @@ class TradingConfig:
     )  # Lowered from 1.5→1.2: EV gate (min_signal_ev) already handles profitability.
     # 1.5 was blocking valid risk/reward setups. Fee-drag filter handles quality.
     min_stop_width_pct: float = field(
-        default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.004)
-    )  # 0.4% minimum — allows scalp-style tight stops at high leverage.
-    # At 10x with 0.5% SL: $25 risk, 5% DD on margin, exits in 5-15min.
+        default_factory=lambda: _env_float("MIN_STOP_WIDTH_PCT", 0.005)
+    )  # 0.5% minimum. Was 0.4%, raised 2026-06-03: live data showed 60/120 SL-hit trades
+    # had stop < 0.5%; BTC noise is 0.37% so 0.4% stops were inside the noise band.
     # The 1.0% floor was blocking all high-leverage scalps.
     # Minimum expected value per dollar risked. EV = (win_prob × R:R) - (1-win_prob).
     # Filters trades where the probability × payoff doesn't justify the risk.
