@@ -115,7 +115,7 @@ def run_parallel(
             "start_time": time.time(),
             "exit_code": None,
         })
-        print(f"  [{label}] started PID {proc.pid} → {log_path.name}")
+        print(f"  [{label}] started PID {proc.pid} -> {log_path.name}")
 
     summary = {}
     quota_paused = False

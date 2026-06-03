@@ -1976,7 +1976,7 @@ class EnsembleStrategy:
         and daily-TF caps. Caps daily-timeframe strategies (monte_carlo_zones) at
         MAX_OPPOSITION_WEIGHT to prevent a single high-timeframe strategy from dominating voting."""
         if self.weight_manager is not None:
-            w = self.weight_manager.get_weight(strategy_name)
+            w = self.weight_manager.get_weight(strategy_name, symbol=self._current_eval_symbol or "")
         else:
             w = self.weights.get(strategy_name, 1.0)
         # Static base multiplier: demote strategies with poor backtest performance

@@ -559,6 +559,35 @@ class AgentCoordinator:
             except Exception as _e:
                 logger.debug("[MULTI-AGENT] Funding rate format failed: %s", _e)
 
+        # Time-of-day session context (live + backtest if hour available)
+        _hour = snapshot_data.get("time_utc_hour")
+        if _hour is not None:
+            try:
+                _h = int(_hour)
+                if 0 <= _h < 24:
+                    if 8 <= _h < 12:
+                        _sess = "London open"
+                        _sess_note = "high directional momentum, trend initiation — prime setup window"
+                    elif 12 <= _h < 17:
+                        _sess = "NY session"
+                        _sess_note = "peak liquidity, strong follow-through, best for momentum"
+                    elif 17 <= _h < 21:
+                        _sess = "NY afternoon"
+                        _sess_note = "liquidity draining, choppy — reduce size, prefer mean-reversion"
+                    elif 0 <= _h < 4:
+                        _sess = "Asia early"
+                        _sess_note = "low volume, range-bound — avoid breakout plays"
+                    else:
+                        _sess = "Asia/crossover"
+                        _sess_note = "moderate activity"
+                    _dow = snapshot_data.get("day_of_week")
+                    _day_note = ""
+                    if _dow is not None and int(_dow) >= 5:
+                        _day_note = " | WEEKEND: reduced liquidity, fade extremes"
+                    enriched_parts.append(f"Session: {_h:02d}:00 UTC — {_sess} ({_sess_note}){_day_note}")
+            except Exception as _e:
+                logger.debug("[MULTI-AGENT] Session context format failed: %s", _e)
+
         # External data (funding, OI, liquidation) — formatted text
         # Skip in backtest: fetches live current rates (May 2026), not historical
         # April data — injects present-day market state into past-window context.

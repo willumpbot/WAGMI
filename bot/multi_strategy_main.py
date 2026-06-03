@@ -3160,7 +3160,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     hold_hours = 0.0
                     if pos:
                         regime = pos.entry_reasons.get("regime", "unknown") if pos.entry_reasons else "unknown"
-                        confidence = pos.entry_reasons.get("confidence", 50.0) if pos.entry_reasons else 50.0
+                        confidence = pos.confidence if pos.confidence else (pos.entry_reasons.get("llm_confidence") or pos.entry_reasons.get("win_prob_deflated") or 50.0) if pos.entry_reasons else 50.0
                         if pos.opened_at and pos.close_time:
                             hold_hours = (pos.close_time - pos.opened_at).total_seconds() / 3600.0
                     self.regime_feedback.record_trade(
@@ -3176,7 +3176,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         confidence=confidence,
                         win=total_pnl > 0,
                         pnl=total_pnl,
-                        strategy=event.strategy
+                        strategy=event.strategy,
+                        symbol=symbol,
+                        regime=regime,
                     )
                     # Record hold-time performance (learn min hold times per regime)
                     self.hold_time_rules.record_trade(
