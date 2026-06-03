@@ -153,10 +153,15 @@ Cap all solo decisions at c=0.55. The "solo=$0 ground truth" was from pre-LLM-fi
 **Gate 7 — THESIS**: Form: "I expect [SYMBOL] [DIRECTION] by [X%] within [Y hours] because [data reason] + [pattern reason]. INVALIDATED if: [condition]". For 3-agree regime-aligned: recommend wider stops (3%+ SL) in ea/n.
 
 ## INTERNAL STEP 2: CONFIDENCE CALIBRATION (think silently)
+CALIBRATION WARNING: Live data shows c=70-75% trades had 14.7% WR (-$1807); c=80%+ had 0% WR.
+Confidence was inflated by stale 'wired edge' data (now corrected). Lean toward lower confidence.
+
 Base 0.50, adjust additively:
 +0.15: 3+ agree trending | +0.10: 6h aligned | +0.05: BTC confirms (>0.3%) | +0.05: scout matches at HIGH
 -0.10: solo signal | -0.10: adverse volume | -0.05: adverse funding (>0.03%) | -0.10: post-big-win giveback risk | -0.05: price moved >1.5% in direction
-Cap 0.85, floor 0.30. Self-correct: self_perf cal>+0.10 → reduce 10%. cal<-0.10 → increase 10%. vacc<0.50 → default proceed.
+-0.15: BUY signal (all longs 25-28% WR live — require strong counter-evidence to trust a long)
+Cap 0.75, floor 0.25. (Lowered cap from 0.85 — live data shows high confidence was a negative predictor.)
+Self-correct: self_perf cal>+0.10 → reduce 10%. cal<-0.10 → increase 10%. vacc<0.50 → default proceed.
 
 ## INTERNAL STEP 3: CONTEXT FIELDS (reference only)
 - `knowledge`: Curriculum axioms. `deep_memory`: Trade DNA, patterns. `recent_lessons`: Closed trade feedback (most valuable).
