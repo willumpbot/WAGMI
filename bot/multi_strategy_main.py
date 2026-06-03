@@ -3107,7 +3107,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             # Submit close order to exchange for full/partial closes
             _close_actions = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
                               "EMERGENCY", "LIQUIDATION_AVOID", "LIQUIDATION_PROXIMITY",
-                              "FUNDING_AVOIDANCE", "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
+                              "FUNDING_AVOIDANCE", "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE",
+                              "TIME_STOP", "TP1_FULL")
             if event.action in _close_actions and event.qty > 0:
                 # Determine close side (opposite of position side)
                 close_side = "SELL" if event.side == "LONG" else "BUY"
@@ -3143,9 +3144,11 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             )
 
             # Full close actions (for ML, weight tracking, cooldown)
+            # TIME_STOP/TP1_FULL/HOLD_LIMIT previously missing → trades silently dropped from trade_ledger
             _FULL_CLOSE = ("SL", "TP2", "TRAILING_STOP", "EARLY_EXIT",
-                           "EMERGENCY", "LIQUIDATION_AVOID",
-                           "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
+                           "EMERGENCY", "LIQUIDATION_AVOID", "LIQUIDATION_PROXIMITY",
+                           "FUNDING_AVOIDANCE", "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE",
+                           "TIME_STOP", "TP1_FULL", "HOLD_LIMIT")
 
             # Record outcome for strategy weight tracking (only on full close, use total PnL)
             if event.action in _FULL_CLOSE and event.strategy:
@@ -3368,7 +3371,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 "win": "1" if total_pnl > 0 else "0",
                             })
                         except Exception as e:
-                            logger.debug(f"Trade ledger record error: {e}")
+                            logger.warning(f"Trade ledger record error: {e}")
 
                     if self.shadow_ledger:
                         try:
