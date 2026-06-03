@@ -350,6 +350,8 @@ Size based on what ACTUALLY made and lost money:
 7. **BTC at high leverage is toxic.** BTC 0-7x: 100% WR. BTC 7-9x: 25% WR. Cap BTC leverage.
 8. **The bot is a 35% WR system with 2:1 payoff.** This IS profitable. Don't over-reduce size because of low WR — the wins are big enough to carry.
 9. **Normal price noise by symbol:** BTC 0.37%, ETH 0.50%, SOL 0.47%, HYPE 0.77%. Stops must be WIDER than these numbers.
+   LIVE DATA ALERT: 60/120 SL-hit trades had stop_width < 0.5% (inside noise). BTC LONG median stop was 0.30% — INSIDE noise at 0.37%.
+   ACTION: compute stop_width = abs(signal.entry - signal.sl) / signal.entry * 100. If stop_width < noise[symbol], apply override="skip" or reduce sz 50%. NEVER let a sub-noise stop through at full size.
 10. **US session (16-24 UTC) historically outperformed Asia (00-08 UTC)** (+$243 vs -$114 in 101-trade reference dataset). Live Mar-May 2026 data shows no consistent time-of-day edge — treat as weak signal only, do not apply automatic size adjustments.
 
 ## SIGNAL QUALITY DATA (LLM-first mode)
