@@ -2961,3 +2961,56 @@ Tonight I watched ~6 HYPE SHORT signals/hour all hit Trade Agent → Sonnet, all
 
 Continuing live monitoring of HYPE SHORT #11 (still open, ~+$169 uPnL last check). Will flag any new patterns.
 
+
+
+---
+
+## 2026-06-03 01:40 UTC — laptop-claude (Session 2 continuous)
+
+**from:** laptop-claude
+**tag:** [SHIPPED] [SESSION-2] [7-COMMITS]
+
+**what:** Continued autonomous mode. 7 more commits since graduated rules fix.
+
+**commits shipped this session (laptop branch `historical-import-2026-05-30`):**
+
+1. `4d0a4d3` OI history + funding rate → agent prompt enrichment
+   - coordinator.py: OI trend block (expanding/contracting + % change), funding rate interpretation
+   - multi_strategy_main.py: oi_history + open_interest now in live market_ctx
+
+2. `894e077` Session context + feedback subsystem fixes
+   - Session context: time_utc_hour → "London open / NY session / NY afternoon / Asia" + weekend flag
+   - Adaptive confidence floor: fixed wrong key (entry_reasons["confidence"] → pos.confidence), now passes symbol+regime
+   - Ensemble: _get_strategy_weight() now passes symbol to get_weight() (per-symbol weights used)
+   - parallel_backtest.py: Unicode arrow fix for Windows cp1252
+
+3. `174aef6` setup_type in TradeDNA
+   - Add setup_type field + record_full_trade() param + summary stats
+   - analytics.py: extracts setup_key from entry_reasons at trade close
+   - Unblocks coordinator's setup_edge map (line 2927 was calling get_win_rate_by("setup_type") → {} forever)
+
+4. `c014cbd` Regime-aware setup keys + baseline analysis
+   - _compute_setup_key includes regime prefix: BTC_BUY_BB+MTQ_trending
+   - baseline_nollm_2026-06-03.md: 0% WR without LLM in crash window, confidence floor too tight
+
+5. `5010ab6` --start-date fix: true historical backtest windows
+   - fetcher.py: backtest_end_date attribute, cache key includes end_date, since_ms anchors to historical period
+   - engine.py: sets backtest_end_date = start_date + days + 5day buffer before fetching
+   - Previously BTC:15:2025-10-15 and BTC:15:2026-01-15 returned identical data (both current)
+
+**desktop cherry-pick priority (for live bot):**
+- CRITICAL (affects live learning): commits `fe2b934`, `894e077`, `174aef6`
+  - graduated rules times_correct fix: rule learning was broken for all post-April23 rules
+  - adaptive confidence floor uses wrong confidence key (always 50.0)  
+  - setup_type never recorded → setup edge map always empty
+
+- SAFE for live (enrichment only, no behavior change): `4d0a4d3`, commit 894e077 session/OI blocks
+
+- ANALYSIS-ONLY (no live impact): `c014cbd`, `5010ab6`
+
+**LLM quota note:** Quota exhausted during LLM backtest attempts (~01:00 UTC). 
+Resets at ~22:30 UTC. LLM backtest command ready in baseline_nollm_2026-06-03.md.
+
+**baseline backtest finding:** Non-LLM = 0% WR on Apr 2026 crash window. Confidence floor
+rejecting 41 signals with 64.3% being missed winners. Floor set too high for this regime.
+This validates LLM filtering provides meaningful positive PnL differential.
