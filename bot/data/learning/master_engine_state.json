@@ -1,86 +1,101 @@
 {
-  "last_run": "2026-06-02T01:16:23.471449+00:00",
-  "run_number": 38,
-  "current_utc": "2026-06-02 01:13 UTC",
-  "elapsed_since_last_run_h": 25.0,
-  "bot_offline_days": 39,
-  "engine_gap_note": "25h gap since Run 37 (2026-06-01 00:14 UTC). Normal engine cycle. W25 elapsed during gap.",
+  "last_run": "2026-06-04T01:16:00.000000+00:00",
+  "run_number": 39,
+  "current_utc": "2026-06-04 01:16 UTC",
+  "elapsed_since_last_run_h": 48.0,
+  "bot_offline_days": 42,
+  "engine_gap_note": "48h gap since Run 38 (2026-06-02 01:13 UTC). W26 (June 2) + W27 (June 3) elapsed during gap. 29 consecutive morning misses total. Engine scheduler needs watchdog — target cadence 1h, actual 48h.",
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
       "gates_active": 66,
       "total_applied_all_time": 69,
-      "run_number": 38,
+      "run_number": 39,
       "new_audit_files": 0,
       "graduated_rules_total": 116,
       "fixes_applied_detail": [],
       "blockers": [
-        "AB_tracker broken Day 40 — 20 rules cannot graduate (outcome callback still wired)",
+        "AB_tracker broken Day 42 — 20 rules cannot graduate (outcome callback still wired)",
         "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation",
         "ETH_SHORT_protect n=5, HYPE_PROBE n=6 — below 10-sample graduation threshold",
-        "RULE_CONFLICT_SOL_SHORT pending human review",
+        "RULE_CONFLICT_SOL_SHORT pending human review (254h+ unresolved)",
         "F1_sniper_pending_safety_review — conf=90%, needs human sign-off",
         "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review before applying",
-        "7 gate=0 rules appear actionable but require code-level verification",
-        "AFTERNOON_SESSION_BLOCK: already gate=0 DISABLED — paper report alert is stale/resolved"
+        "7 gate=0 rules appear actionable but require code-level verification"
       ],
       "escalation_candidates_blocked": 20,
       "near_threshold_watch": [
-        "HYPE_UNKNOWN_REGIME_PROBE: needs n=6→10 to graduate gate=20→50 (4 more trades — unchanged)",
-        "ETH_SHORT_protect_from_bias: needs n=5→10 to graduate gate=50→80 (5 more trades — unchanged)",
+        "HYPE_UNKNOWN_REGIME_PROBE: needs n=6->10 to graduate gate=20->50 (4 more trades — unchanged)",
+        "ETH_SHORT_protect_from_bias: needs n=5->10 to graduate gate=50->80 (5 more trades — unchanged)",
         "SOL_SHORT_suspension_reversal_probe: BLOCKED by SOL_SHORT_full_block (unchanged)"
       ],
-      "new_finding_run38": "AFTERNOON_SESSION_BLOCK stale alert confirmed: rule disabled gate=0 since Run 23. No conflict exists.",
+      "new_finding_run39": "48h gap: no new trades, no new auto-fixes. Two additional morning windows (W26, W27) confirmed missed. All blockers from Run 38 persist. Engine cadence failure noted.",
       "gate_distribution": {"0": 29, "5": 1, "20": 19, "35": 1, "50": 18, "80": 28, "100": 20}
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 40+)",
-      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 40]",
+      "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 42+)",
+      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 42]",
       "data_available": false,
-      "data_source": "Cached (bot offline 40 days)",
-      "ev_loss_morning_usd": 157.68,
-      "morning_windows_missed": 27,
-      "w26_opens_utc": "2026-06-02T06:00:00+00:00",
-      "w26_deadline_t_minus_h": 4.8,
-      "new_finding_run38": "W25 (June 1) confirmed missed. W26 opens T-4.8h. Cumulative EV: $157.68 (27 windows × $5.84 avg).",
+      "data_source": "Cached (bot offline 42 days)",
+      "ev_loss_morning_usd": 169.36,
+      "morning_windows_missed": 29,
+      "windows_missed_during_gap": ["W26 (June 2)", "W27 (June 3)"],
+      "ev_lost_during_gap": 11.68,
+      "w29_opens_utc": "2026-06-04T06:00:00+00:00",
+      "w29_deadline_utc": "2026-06-04T05:30:00+00:00",
+      "new_finding_run39": "W26 + W27 confirmed missed during 48h gap. EV lost: $11.68. Cumulative: $169.36 (29 windows x ~$5.84 avg). W29 opens TODAY in T-4.73h.",
       "demotion_candidate": {
         "rule": "HIGH_VOL_regime_boost",
         "gate": 50,
         "wr": 0.55,
         "n": 2172,
-        "action": "Review for demotion gate=50→20 on next 100 live samples post-restart"
+        "action": "Review for demotion gate=50->20 on next 100 live samples post-restart"
       }
     },
     "live_injection": {
       "high_edges": 8,
       "weak_setups": 7,
-      "new_insights_run38": [
-        "W25 (June 1 06:00-12:00 UTC) confirmed missed during 25h Run 37→38 engine gap. 27th consecutive morning miss.",
-        "W26 (June 2 06:00-12:00 UTC) opens in T-4.8h — CRITICAL restart deadline 05:30 UTC today. Primed rules active.",
-        "tod_morning_edge_v1 (WR=74%, gate=50) + ETH_SHORT_BB_golden (WR=70%, gate=80) + BTC_BUY_BB_golden (WR=69%, gate=80) = composite 71% WR for W26.",
-        "AFTERNOON_SESSION_BLOCK stale alert confirmed: rule was disabled (gate=0) at Run 23 on 2026-05-28. Paper report showing this as 'unresolved conflict' is outdated — no action needed.",
-        "HIGH_VOL_regime_boost WR=0.55 still borderline: first 100 live trades after restart should trigger demotion check gate=50→20."
+      "new_insights_run39": [
+        "48h gap: W26 (June 2) + W27 (June 3) confirmed missed during engine gap. 29 consecutive morning misses total.",
+        "W29 (June 4 06:00-12:00 UTC) opens TODAY in T-4.73h — CRITICAL restart deadline 05:30 UTC. Last chance to break streak.",
+        "tod_morning_edge_v1 (WR=74%, gate=50) + ETH_SHORT_BB_golden (WR=70%, gate=80) + BTC_BUY_BB_golden (WR=69%, gate=80) = composite 71% WR for W29.",
+        "Edge staleness Day 42: large-n rules (n=2172) remain valid. Small-n edges (n<15) flagged — need live re-validation on restart.",
+        "SOL_SHORT conflict now 254h unresolved — EV cost accumulating on $5807+ historical edge.",
+        "Engine cadence failure: 48h gap vs 1h target. Scheduler watchdog needed."
       ],
-      "top_edge_by_wr": "HYPE_UNKNOWN_REGIME_PROBE (WR=83%, n=6) — small sample, needs live validation",
-      "top_edge_by_n_and_wr": "ETH_SHORT_BB_golden (WR=70%, n=2172) — statistical backbone",
-      "w26_composite_wr": "71% (ETH_SHORT_BB_golden + BTC_BUY_BB_golden + tod_morning_edge_v1)",
-      "data_source": "Graduated rules analysis + cached (no new trades Day 40)"
+      "top_edge_by_wr": "HYPE_UNKNOWN_REGIME_PROBE (WR=83%, n=6) — stale Day 42, small sample, live validation required",
+      "top_edge_by_n_and_wr": "ETH_SHORT_BB_golden (WR=70%, n=2172) — statistical backbone, valid despite staleness",
+      "w29_composite_wr": "71% (ETH_SHORT_BB_golden + BTC_BUY_BB_golden + tod_morning_edge_v1)",
+      "data_source": "Graduated rules analysis + cached (no new trades Day 42)"
     },
     "daily_synthesis": {
-      "anomalies": 8,
+      "anomalies": 9,
       "report_generated": true,
-      "report_path": "bot/data/sessions/daily_synthesis_2026-06-02.json",
+      "report_path": "bot/data/sessions/daily_synthesis_2026-06-04.json",
       "today_trades": 0,
       "today_pnl": 0.0,
-      "consecutive_morning_misses": 27,
-      "w26_imminent": true,
-      "critical_anomalies": ["BOT_OFFLINE_DAY40", "W25_CONFIRMED_MISSED_27TH", "W26_DEADLINE_IMMINENT_4.8H"],
-      "high_anomalies": ["AB_TRACKER_BROKEN_40D", "SOL_SHORT_CONFLICT_UNRESOLVED_230H"],
-      "resolved_alerts": ["AFTERNOON_SESSION_BLOCK_CONFLICT — confirmed stale, gate=0 since Run 23"]
+      "consecutive_morning_misses": 29,
+      "w29_imminent": true,
+      "t_w29_deadline_h": 4.23,
+      "critical_anomalies": [
+        "BOT_OFFLINE_DAY42",
+        "W29_IMMINENT_DEADLINE_T4.23H",
+        "ENGINE_GAP_48H_CADENCE_FAILURE"
+      ],
+      "high_anomalies": [
+        "W26_W27_CONFIRMED_MISSED_DURING_GAP",
+        "AB_TRACKER_BROKEN_DAY42",
+        "SOL_SHORT_CONFLICT_UNRESOLVED_254H"
+      ],
+      "medium_anomalies": [
+        "SLIPPAGE_TRACKING_BLIND_DAY42",
+        "SMALL_N_EDGE_STALENESS_3_EDGES"
+      ],
+      "new_finding_run39": "48h engine gap is itself an anomaly — perpetual improvement loop failed to run hourly. Scheduler watchdog is a new P1 finding."
     },
     "model_optimization": {
       "skipped": true,
-      "reason": "cost_tracker.json absent — bot offline 40 days, no LLM API calls since 2026-04-23",
+      "reason": "cost_tracker.json absent — bot offline 42 days, no LLM API calls since 2026-04-23",
       "swaps_recommended": 0,
       "potential_savings": "$0.00",
       "last_known_routing": {
@@ -100,51 +115,52 @@
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "W26 (June 2 06:00-12:00 UTC) morning window opens in T-4.8h. Primed composite: ETH_SHORT_BB_golden + BTC_BUY_BB_golden + tod_morning_edge_v1 = 71% WR. Soft-start mandatory (streak=4, 2 losses from circuit breaker).",
-      "action": "RESTART IMMEDIATELY — deadline 05:30 UTC. Command: cd bot && python run.py paper"
+      "finding": "W29 (June 4 06:00-12:00 UTC) morning window opens in T-4.73h. Restart deadline 05:30 UTC TODAY. Primed composite: ETH_SHORT_BB_golden + BTC_BUY_BB_golden + tod_morning_edge_v1 = 71% WR. Soft-start mandatory (streak=4, 1 more loss hits circuit breaker).",
+      "action": "RESTART IMMEDIATELY — deadline 05:30 UTC TODAY. Command: cd bot && python run.py paper"
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot offline Day 40. W25 confirmed missed = 27th consecutive morning miss. Cumulative EV loss: $157.68. 28th miss (W26) in 4.8h.",
-      "action": "Every hour of further delay = ~$0.96 EV loss. W26 is today's best chance to recover."
+      "finding": "Bot offline Day 42. 29 consecutive morning misses. Cumulative EV loss: $169.36. W26 + W27 missed during 48h engine gap. W29 is today's only chance to break the streak.",
+      "action": "Every hour of further delay = ~$0.97 EV loss. W29 is the 30th deadline — restart or accept another miss."
+    },
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "HIGH",
+      "finding": "Engine cadence FAILURE: 48h gap between Run 38 (June 2 01:13 UTC) and Run 39 (June 4 01:16 UTC). Expected 1h cadence. Two full morning windows (W26, W27) missed during gap. Scheduler needs watchdog.",
+      "action": "Add cron/watchdog: if perpetual_improvement_loop.py has not written master_engine_state.json within 2h, auto-restart. P1 infrastructure fix."
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "AB tracker broken Day 40. 20 escalation candidates frozen. ETH_SHORT_protect_from_bias (WR=80%, n=5) and HYPE_PROBE (WR=83%, n=6) stalled at threshold.",
-      "action": "P0 dev: Wire update_times_correct() in bot/feedback/loop.py (~2h). Unblocks graduation cascade."
+      "finding": "AB tracker broken Day 42. 20 escalation candidates frozen. ETH_SHORT_protect_from_bias (WR=80%, n=5) + HYPE_PROBE (WR=83%, n=6) stalled at threshold. BB_solo_signal_boost (n=2172, conf=95%) stuck at gate=80 — cannot reach gate=100 without outcome data.",
+      "action": "P0 dev: Wire update_times_correct() in bot/feedback/loop.py (~2h). Schedule after W29 capture. Unblocks graduation cascade for 20 rules."
     },
     {
       "subsystem": "live_injection",
       "severity": "HIGH",
-      "finding": "SOL_SHORT_suspension_reversal_probe: 179-trade edge WR=63.7% blocked by SOL_SHORT_full_block=100. RULE_CONFLICT_SOL_SHORT (conf=92%) pending human arbitration since run 28.",
-      "action": "Human decision required: reduce SOL_SHORT_full_block gate=100→80 OR merge probe exception. EV at stake: $5807+ historical edge."
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "MEDIUM",
-      "finding": "Paper report showing 'TOD_AFTERNOON CONFLICT (229h+ unresolved)' is a STALE ALERT. AFTERNOON_SESSION_BLOCK was disabled (gate=0) at Run 23 on 2026-05-28. No conflict exists.",
-      "action": "Update paper trading report generator: clear AFTERNOON_SESSION_BLOCK alert (rule.status='DISABLED_AB_TRACKER_BROKEN', gate=0 since Run 23)."
+      "finding": "SOL_SHORT_suspension_reversal_probe: 179-trade edge WR=63.7% blocked by SOL_SHORT_full_block=100. RULE_CONFLICT_SOL_SHORT (conf=92%) pending human arbitration 254h+. Conflict cost accumulating.",
+      "action": "Human decision required: reduce SOL_SHORT_full_block gate=100->80 OR merge probe exception. EV at stake: $5807+ historical edge. Provide decision to unblock."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "MEDIUM",
-      "finding": "Slippage tracking blind since Day 40+ (snapshot_entry column missing). 87% noise stop rate cached. HIGH_VOL_regime_boost WR=0.55 borderline for demotion.",
-      "action": "On restart: instrument snapshot_entry; monitor HIGH_VOL_regime_boost first 100 live trades."
+      "finding": "Slippage tracking blind since Day 42+ (snapshot_entry column missing). 87% noise stop rate cached. HIGH_VOL_regime_boost WR=0.55 borderline for demotion. 3 small-n edges stale after 42 days offline.",
+      "action": "On restart: (1) instrument snapshot_entry in trades.csv; (2) monitor HIGH_VOL_regime_boost first 100 live trades; (3) treat HYPE_PROBE + ETH_SHORT_protect + EVENING_boost as provisional until 5 live trades each."
     }
   ],
   "run_summary": {
     "fixes_applied_this_run": 0,
-    "new_insights_this_run": 5,
+    "new_insights_this_run": 6,
     "new_insights": [
-      "W25 (June 1 06:00-12:00 UTC) confirmed missed — 27th consecutive morning window miss",
-      "W26 (June 2 06:00-12:00 UTC) opens in T-4.8h — restart deadline 05:30 UTC TODAY",
-      "AFTERNOON_SESSION_BLOCK stale alert confirmed RESOLVED (gate=0 since Run 23 on 2026-05-28)",
-      "Engine gap: 25h (normal, within target). No data loss beyond W25 window miss.",
-      "HIGH_VOL_regime_boost WR=0.55 borderline: demotion watch active for first 100 live trades post-restart"
+      "48h engine gap confirmed — W26 (June 2) + W27 (June 3) both missed during gap (28th + 29th consecutive misses)",
+      "W29 (June 4 06:00-12:00 UTC) opens TODAY in T-4.73h — restart deadline 05:30 UTC",
+      "Cumulative EV loss updated: $169.36 (was $157.68 at Run 38) — added $11.68 for W26+W27",
+      "Engine cadence failure is a new finding: 48h gap vs 1h target — needs scheduler watchdog (P1)",
+      "Edge staleness Day 42: large-n rules valid, small-n rules (n<15) flagged as provisional — need live re-validation",
+      "SOL_SHORT conflict escalated to 254h+ unresolved — EV cost accumulating"
     ],
     "escalation_candidates_blocked": 20,
-    "w26_recovery_path": "June 2 06:00-12:00 UTC — restart before 05:30 UTC. Primed: ETH_SHORT_BB_golden + tod_morning_edge_v1 + BTC_BUY_BB_golden (composite WR=71%). Soft-start: 50% size, ETH/BTC trending only."
+    "w29_recovery_path": "June 4 06:00-12:00 UTC — restart before 05:30 UTC (T-4.23h). Primed: ETH_SHORT_BB_golden + BTC_BUY_BB_golden + tod_morning_edge_v1 (composite WR=71%). Soft-start: 50% size, ETH/BTC trending only, first 5 trades."
   }
 }
