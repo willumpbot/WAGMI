@@ -3130,6 +3130,14 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         if _force_close_events:
             events.extend(_force_close_events)
         for event in events:
+            # 2026-06-05: capture position object BEFORE close processing removes
+            # it from pos_mgr.positions. Without this snapshot, every downstream
+            # lookup (line ~3282 strategy weights, ~3457 deep_memory trade_dna,
+            # learning_integration, etc) gets None and silently skips writes.
+            # This was the root cause of ALL memory/learning writes being dead
+            # since 2026-05-30 restart — every closed trade was information loss.
+            _captured_pos = self.pos_mgr.positions.get(symbol)
+
             # Submit close order to exchange for full/partial closes
             _close_actions = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
                               "EMERGENCY", "LIQUIDATION_AVOID", "LIQUIDATION_PROXIMITY",
@@ -3279,7 +3287,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
             # Record outcome for feedback loop (TOTAL trade PnL)
             if event.action in _FULL_CLOSE:
-                pos = self.pos_mgr.positions.get(symbol)
+                # 2026-06-05: use _captured_pos (snapshot taken before close removed
+                # position from pos_mgr) so trade DNA + memory writes actually fire
+                pos = _captured_pos if _captured_pos else self.pos_mgr.positions.get(symbol)
                 total_pnl = pos.realized_pnl if pos else event.pnl
                 _et_fb = ""
                 _pd_fb = ""
@@ -3453,8 +3463,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     pass  # Corpus not critical
 
                 # Deep memory: record full trade DNA for LLM knowledge base
+                # 2026-06-05: use _captured_pos snapshot — re-fetching from
+                # pos_mgr.positions returned None because close already removed it.
                 try:
-                    _dm_pos = self.pos_mgr.positions.get(symbol)
+                    _dm_pos = _captured_pos if _captured_pos else self.pos_mgr.positions.get(symbol)
                     if _dm_pos:
                         self._record_trade_dna(symbol, _dm_pos, event)
                         # Invalidate dynamic threshold cache so next decision sees fresh data
