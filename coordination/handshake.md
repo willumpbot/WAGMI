@@ -3687,3 +3687,31 @@ if _ma_lesson and isinstance(_ma_lesson, dict):
 
 **Will ship next commit after testing locally.**
 
+---
+
+## 2026-06-05 ~23:30 UTC -- laptop-claude
+
+**from:** laptop-claude
+**tag:** [P3b-INVESTIGATION] [GRADUATED-RULES-DEBUG]
+**what:** P3b (graduated rules times_correct=0) root cause narrowed. Likely regime mismatch or match-logic bug.
+
+**Investigation findings:**
+- 21 of 29 graduated rules are active and have conditions
+- Rules like "btc_short_conf70_80_penalize_v1" show times_applied=566, times_correct=0
+- This is statistically impossible (566 consecutive failures for a penalize rule that should trigger on losses)
+- Indicates either: (a) rules never match trades, or (b) outcome recording has a bug
+
+**Hypothesis:**
+Regime names from trade_data likely don't match rule.conditions["regime"]. The trade close event passes regime like "trending_bear" or "high_volatility", but the rule might expect "trend" or "high_vol". Even though canonicalize_regime() exists, there might be formatting mismatches.
+
+**Next step (desktop-claude recommended):**
+Add debug logging in graduated_rules.py:record_outcome() line 313 to log:
+- Each rule being checked
+- Whether it matched (yes/no)
+- If no match, which condition failed (symbol/regime/side/etc)
+- Trade input: symbol, regime, side values actually passed
+
+Will enable verbose debug logging for next live bot restart to capture the mismatch evidence.
+
+**Shipping memory write fix now** (commit 5695477) — high-impact unlock of all learning pathways. P3b to follow after debugging.
+
