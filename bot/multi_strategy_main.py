@@ -3179,10 +3179,15 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                            "MFE_TAKE_PROFIT", "MFE_EXIT_NOW")
 
             # Record outcome for strategy weight tracking (only on full close, use total PnL)
-            if event.action in _FULL_CLOSE and event.strategy:
+            # 2026-06-05: removed `and event.strategy` guard — empty strategy was silently
+            # bypassing record_outcome for ALL ensemble trades since 2026-05-30 restart,
+            # causing strategy weights frozen at 0.30 across all 6 strategies. Fallback
+            # to "ensemble" when event.strategy is empty so the outcome still records.
+            if event.action in _FULL_CLOSE:
                 pos = self.pos_mgr.positions.get(symbol)
                 total_pnl = pos.realized_pnl if pos else event.pnl
-                self.weight_mgr.record_outcome(event.strategy, total_pnl > 0, symbol=symbol)
+                _strategy_key = event.strategy if event.strategy else "ensemble"
+                self.weight_mgr.record_outcome(_strategy_key, total_pnl > 0, symbol=symbol)
 
                 # Record regime-specific feedback and confidence floor
                 try:
