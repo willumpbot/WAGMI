@@ -3583,6 +3583,25 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             _lesson_txt = _ma_lesson.get("lesson", "") or _ma_lesson.get("insight", "")
                             if _lesson_txt:
                                 logger.info(f"[LEARNING-AGENT] {symbol}: {str(_lesson_txt)[:100]}")
+
+                            # Wire lesson into all learning systems (deep_memory, knowledge_base, calibration, etc.)
+                            try:
+                                from llm.agents.learning_integration import process_agent_lesson
+                                _trade_data_for_learning = {
+                                    "symbol": symbol,
+                                    "side": event.side,
+                                    "outcome": "WIN" if total_pnl > 0 else "LOSS",
+                                    "pnl": total_pnl,
+                                    "pnl_pct": (total_pnl / self.risk_mgr.equity * 100) if self.risk_mgr.equity > 0 else 0,
+                                    "confidence": pos.confidence if pos else 0,
+                                    "regime": _rg_fb,
+                                    "strategy": event.strategy,
+                                    "notes": _llm_notes_close,
+                                }
+                                process_agent_lesson(_ma_lesson, _trade_data_for_learning)
+                                logger.debug(f"[LEARNING-AGENT] Lesson wired to deep_memory/knowledge/calibration")
+                            except Exception as e:
+                                logger.debug(f"[LEARNING-AGENT] Integration error: {e}")
                     except Exception as e:
                         logger.debug(f"Multi-agent learning error: {e}")
 

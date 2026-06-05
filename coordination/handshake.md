@@ -3645,3 +3645,45 @@ Root cause likely in `bot/llm/learning_integration.py`. Will trace the write pat
 
 **Monitoring:** Critic veto improvement marginal (73.6% → 68.8%) — sample size likely still building since P1 fix. 
 
+---
+
+## 2026-06-05 ~23:15 UTC -- laptop-claude
+
+**from:** laptop-claude
+**tag:** [BUG-FOUND] [MEMORY-WRITE-ROOT-CAUSE] [CRITICAL]
+**what:** Root cause of ALL memory write failures located. Single missing call in multi_strategy_main.py.
+
+**Root cause:**
+
+`bot/multi_strategy_main.py:3564` calls `get_coordinator().get_post_trade_lesson()` to invoke Learning Agent on closed trades. Function returns successfully BUT — the output is never fed through `process_agent_lesson()`, which is the ONLY pathway that wires lessons into:
+- `deep_memory/trade_dna.json` (pattern library + insights)
+- `bot/data/llm/teaching/knowledge_base.json` (knowledge.add())
+- `hypothesis_tracker` (testable predictions)
+- `self_improvement_engine` (rule proposals)
+- `calibration_ledger` (agent accuracy tracking)
+- `network_learning` (inter-agent lesson distribution)
+
+**Evidence:**
+- Backtest path (`bot/backtest/llm_integration.py:1027`) DOES call `process_agent_lesson(result, trade_data)` — deep_memory was populated during backtests
+- Growth orchestrator (`bot/llm/growth/orchestrator.py`) DOES call it — was being called in prior architecture
+- Live bot path (`bot/multi_strategy_main.py:3564-3587`) — **missing the call entirely**
+- Result: Learning Agent runs, memory.json gets entry (via coordinator's apply_memory_update), but deep_memory/knowledge/calibration/hypotheses all skip
+
+**The fix:**
+Insert after line 3582:
+```python
+if _ma_lesson and isinstance(_ma_lesson, dict):
+    _lesson_txt = _ma_lesson.get("lesson", "") or _ma_lesson.get("insight", "")
+    if _lesson_txt:
+        logger.info(f"[LEARNING-AGENT] {symbol}: {str(_lesson_txt)[:100]}")
+    
+    # ← ADD THIS BLOCK:
+    from llm.agents.learning_integration import process_agent_lesson
+    trade_data = {"symbol": symbol, "side": event.side, ...}  # construct from closure vars
+    process_agent_lesson(_ma_lesson, trade_data)
+```
+
+**Impact**: Restores all 6 learning pathways (deep_memory, knowledge_base, hypothesis, improvement, calibration, network_learning).
+
+**Will ship next commit after testing locally.**
+
