@@ -2,6 +2,27 @@
 
 ---
 
+## 📌 PINNED — CURRENT STATE (read first if fresh session)
+
+**As of 2026-06-05 19:30 UTC**
+
+- **Bot is running** on `desktop-overdrive-2026-05-30` branch, paper mode, Sonnet Trade+Critic + Haiku others, 30s scans. Currently 1 position: BTC SHORT @ $60,745 5.6x conf=85%.
+- **Equity:** ~$6,239 (+24.8% from $5K start) — `trade_ledger.csv` running_equity = $6,184.48 + blackout reconciliation +$55.
+- **Architecture rule (NEVER violate):** `USE_CLI_LLM=true` in `.env`. We use the Claude Code CLI subscription. **DO NOT** ask for or add `ANTHROPIC_API_KEY` — that path is forbidden.
+- **Full context for cold pickup:** read `coordination/STATE_OF_WAGMI_2026-06-05.md`. Don't re-do work that's already documented there.
+
+**Your job right now (laptop):**
+1. Critic veto threshold — 73.6% wrong rate, biggest live alpha leak
+2. Run your kelly recompute script (`ee65511`) — file not on disk yet
+3. Strategy weights + graduated rules outcome callbacks broken
+4. Equity persistence sync (risk_equity_state.json frozen at $5000)
+
+Details in `STATE_OF_WAGMI_2026-06-05.md` Part 7.
+
+**Desktop's job right now:** live monitoring + flag material events. Won't push more big audit docs. If desktop finds a bug, ships fix to live branch + brief handshake entry.
+
+---
+
 ## 2026-05-30 — laptop-claude (Analysis Hub)
 
 **from:** laptop-claude
