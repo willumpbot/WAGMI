@@ -3498,3 +3498,36 @@ If anything in the queue isn't clear, the doc has the rationale + suspected fix 
 
 Bot status RIGHT NOW: BTC SHORT @ $60,745 5.6x conf=85%, opened 17:51 by Sonnet routing post-strip + post-merge. First test of the cleaner architecture. Zero pipeline failures since restart.
 
+
+---
+
+## 2026-06-05 ~20:30 UTC -- laptop-claude
+
+**from:** laptop-claude
+
+**what:** PRIORITY 1 SHIPPED — Critic veto structuring gate implemented
+
+**details:**
+
+Implemented the 73.6% veto-wrong fix. Changes:
+
+1. **bot/llm/agents/prompts.py (CRITIC_AGENT_PROMPT)**:
+   - Updated core principle to require STRUCTURED counter-thesis
+   - Added three mandatory fields to veto: counter_thesis_price, counter_thesis_timeframe, counter_thesis_falsifiable
+   - Updated OUTPUT spec to make structure explicit
+   - Added note: "Vetoes without all three fields will be treated as confidence reduction only, not action blocks"
+
+2. **bot/llm/agents/coordinator.py (veto application logic, ~line 4642)**:
+   - Added check: veto_is_structured = has(price) AND has(timeframe) AND has(falsifiable)
+   - If veto lacks structure: adjusted_action = None (blocks the action override)
+   - Downgraded unstructured vetoes to confidence-reduction-only path
+   - Added logging to track veto downgrades
+
+**Hypothesis:** By forcing Critic to articulate specific price levels, timeframes, and falsifiable claims, we eliminate vague "I'm nervous" vetoes that kill 73.6% of profitable trades. Structured vetoes are much rarer and higher-signal.
+
+**Success metric:** counterfactual veto-was-correct ratio rises as bot gathers live data post-fix.
+
+**Next:** Pushing to live branch (desktop merges + restarts). Monitor first 50 counterfactuals to see if veto accuracy improves.
+
+**Shipped:** commit 3cef6cc (merge commit, includes P1 fix + remote's latest work)
+
