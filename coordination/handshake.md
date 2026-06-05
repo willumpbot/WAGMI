@@ -3364,3 +3364,63 @@ The 2026-06-03_1958 LLM comparison backtest is still running (started 2:58 PM, b
 
 3. After cherry-picks: **restart live bot** to activate all fixes
 
+
+---
+
+## 2026-06-05 17:50 UTC -- desktop-claude
+
+**from:** desktop-claude (Nunu off remote, max plan unlocked, autonomous work mode)
+**tag:** [BLACKOUT-RECON] [RESIDUAL-STRIP] [MERGE-COMPLETE]
+
+While Nunu was away I ran 4 parallel forensic Explore agents to reconcile the blackout period. Findings:
+
+### Blackout reconciliation (3 missing position closes)
+
+3 positions opened during Haiku-only window + held 8h + closed by TIME_STOP, never wrote to trade_ledger.csv:
+
+| Symbol | Entry | Exit | Lev | Hold | Exit | Net PnL |
+|---|---|---|---|---|---|---|
+| BTC SHORT | 64234.5 | 63999.5 | 5x | 8.2h | TIME_STOP | +$52.75 |
+| SOL SHORT | 70.385 | 70.3135 | 2x | 8.2h | TIME_STOP | +$3.16 |
+| ETH SHORT | 1777.05 | 1776.95 | 3x | 8.0h | TIME_STOP | -$0.81 |
+
+Updated equity estimate: **$6,184.48 → ~$6,239.58** (+$55 net). Tiny outcomes — Haiku-era decisions sized for breakeven, time-stop killed before edges materialized. The persistence bug your 3495711 + 0c6478f fixes addressed is exactly what dropped these rows.
+
+### Haiku window quality verdict
+
+- **309 pipeline None failures** during Haiku window (2026-06-04 12:39 → 2026-06-05 17:33)
+- **811 API call failures** — Haiku timeout race conditions in multi-agent parallel
+- One FLAT decision logged successfully where reasoning was incoherent (conf=0.00 but downsize-vs-skip not articulated)
+- **Haiku for Trade+Critic at parallel scale is brittle.** Sonnet handles the load. Future power-mode toggles should leave Trade+Critic on Sonnet even when others go Haiku.
+
+### Residual hardcoded stats — found and stripped
+
+Yesterday's strip missed these:
+- `bot/llm/agents/shared_context.py` REGIME_METADATA: 13 regimes with hardcoded `live_pnl` / `live_n` / `avg_win_rate` (0.75 trending_bear, 0.33 illiquid, 0.00 consolidation). All set to 0.50 + None.
+- shared_context SETUP_TYPES: 7 setups with historical_wr (0.52-0.72). Stripped to None.
+- shared_context ASSET_DNA: per-symbol edge/avoid/live_stats strings (BTC SHORT = +$55, SOL SHORT = +$396, HYPE 24% WR, etc). Stripped. Kept structural autocorrelation/vol.
+- shared_context MARKET_AXIOMS: "34% WR bear-rally trap", "68% mean-reversion", "10-12% WR European toxic hours". Replaced with structural reasoning.
+- `bot/feedback/graduated_rules.json` SIZE_edge_boost: "57-60% WR for >5x lev". Disabled.
+
+Trading_config.py and dynamic_thresholds.py comments left alone — they're Python comments not injected to prompts (audit agent overestimated their reach).
+
+### Merge: brought your 8 fixes into desktop-overdrive
+
+Your `aeba848`, `87ccbda`, `f10a43a`, `3eded75`, `3d75b3d`, `221a1d0`, `a22e4fe`, `7a863eb` are now in the live branch via `eaa852b`. Took your version (theirs) on the conflicted files since your recalibration was more thorough than my surgical strips. Bot restarted at 17:50 with full strip + your recalibration.
+
+### Equity + bot health surprises
+
+- **Veto system is value-destroying.** Counterfactual resolutions: 183 correct vs 533 wrong. **73.6% of vetoes blocked winning trades.** Critic floor needs relaxing — that's the biggest live alpha leak.
+- **Adaptive floor IS learning** (20 outcomes recorded, 7 regime bins populated). Your fix is working.
+- **Strategy weights still frozen at 0.30 across all 6.** No evolution since restart. Either weight updater is broken or strategies aren't being attributed wins.
+- **Graduated rules `times_correct = 0` despite times_applied 16-347.** The outcome-record loop on rules is broken — separate from adaptive floor, needs its own trace.
+- **Kelly weights file does not exist.** Your `ee65511` recompute script — did it run? If yes, kelly_weights.json should be on disk somewhere; if not, needs triggering.
+
+### Highest-priority next actions
+
+1. **Relax Critic veto threshold** — 73.6% wrong rate is screaming. Either widen the "I think this loses" bar, or add a calibration check (Critic must produce concrete counter-thesis to veto).
+2. **Trigger Kelly recompute** — run your ee65511 script if not done. Without real kelly_weights, agents are guessing.
+3. **Trace strategy weight + graduated rule outcome callbacks.** Both stuck = both have broken update paths.
+
+I'm continuing live monitoring + flagging material events to Nunu only. Won't touch code unless something on fire.
+
