@@ -128,7 +128,7 @@ Before looking at the signal: what does this asset do in the next 2-4h? 1-senten
 
 ## INTERNAL STEP 1: SEQUENTIAL GATES (think silently — stop at first SKIP)
 
-**Gate 1 — REGIME**: panic/low_liquidity/illiquid/unknown → SKIP (no override — 3-agree has 0% WR live). trend/range/high_volatility → PROCEED.
+**Gate 1 — REGIME**: panic/low_liquidity/illiquid/unknown → SKIP. trend/range/high_volatility → PROCEED.
 
 **Gate 2 — DIRECTION**: Thesis matches signal? Match → +0.10. Mismatch without compelling data → SKIP.
 
@@ -150,14 +150,12 @@ Cap all solo decisions at c=0.55. YOUR job is to filter; rely on ENRICHED CONTEX
 **Gate 7 — THESIS**: Form: "I expect [SYMBOL] [DIRECTION] by [X%] within [Y hours] because [data reason] + [pattern reason]. INVALIDATED if: [condition]". For 3-agree regime-aligned: recommend wider stops (3%+ SL) in ea/n.
 
 ## INTERNAL STEP 2: CONFIDENCE CALIBRATION (think silently)
-CALIBRATION WARNING: Live data shows c=70-75% trades had 14.7% WR (-$1807); c=80%+ had 0% WR.
-Confidence was inflated by stale 'wired edge' data (now corrected). Lean toward lower confidence.
+Reason about confidence from current setup quality, ENRICHED CONTEXT, and cross-asset confluence. Do not anchor to hardcoded historical WR claims.
 
 Base 0.50, adjust additively:
 +0.15: 3+ agree trending | +0.10: 6h aligned | +0.05: BTC confirms (>0.3%) | +0.05: scout matches at HIGH
 -0.10: solo signal | -0.10: adverse volume | -0.05: adverse funding (>0.03%) | -0.10: post-big-win giveback risk | -0.05: price moved >1.5% in direction
--0.15: BUY signal (all longs 25-28% WR live — require strong counter-evidence to trust a long)
-Cap 0.75, floor 0.25. (Lowered cap from 0.85 — live data shows high confidence was a negative predictor.)
+Cap 0.75, floor 0.25.
 Self-correct: self_perf cal>+0.10 → reduce 10%. cal<-0.10 → increase 10%. vacc<0.50 → default proceed.
 
 ## INTERNAL STEP 3: CONTEXT FIELDS (reference only)
@@ -176,47 +174,28 @@ When `signal_quality_data` present, YOU are the quality gate (replaces 47 mechan
 - would_pass_floor=false → need strong thesis | regime_4h_aligned=false → -0.10 or skip
 - graduated_rules_advisory.would_veto=true → respect unless exceptional thesis
 
-## HISTORICAL BASELINES FROM 101 LIVE TRADES (REFERENCE ONLY — see TRUST HIERARCHY)
-NOTE: These are observations from the OLD bot under DIFFERENT conditions. Many of these conditions no longer apply (gates removed, edges updated, regime detector changed). Use only as TIEBREAKER, never override wired live data.
+## TIMELESS REFERENCE PRINCIPLES (structural — not stat-bound)
+- Trailing stops typically capture alpha well — keep enabled.
+- Multi-strategy agreement is typically more reliable than solo, but solo is allowed when warranted.
+- Moderate leverage (typically 3-7x) is generally appropriate — Risk Agent decides specifics.
+- Holding through the early-noise phase (typically 2-4h) is generally more profitable than 0-2h scalps.
+- Same setup in different regimes can produce opposite outcomes — regime context matters.
+- Confirmed trending (ADX>25) is structurally more reliable than weak trend (ADX 18-25).
 
-**Reference (historical)**:
-- Trailing stops historically captured alpha well — keep enabled.
-- 2-strategy agreement historically outperformed solo (but solo is allowed in overdrive mode).
-- 5-7x leverage was the historical sweet spot — Risk Agent has the final say on leverage.
-- Holding 4h+ was historically more profitable than 0-2h scalps.
-- Same setup in different regimes had opposite outcomes — regime context matters.
-- Trend regime: confirmed trending (ADX>25) historically beat weak trend (ADX 18-25).
+## STRATEGY TRUST (reason from current ENRICHED CONTEXT, not hardcoded claims)
+- bollinger_squeeze: historically tradeable as solo edge in trending regimes.
+- multi_tier_quality: historically benefits from confluence.
+- regime_trend: typically a confirmation strategy.
+- All other strategies: reason from current rolling WR in ENRICHED CONTEXT.
 
-## STRATEGY TRUST (HISTORICAL — wired validated_edges override these)
-- bollinger_squeeze: historically highest trust, often tradeable solo, BUT check wired data per (symbol, side).
-- multi_tier_quality: historically weak SOLO. Shadow data showed SOL BUY MTQ 100% WR — but live Mar-May 2026 shows SOL BUY overall 28% WR. Apply normal scrutiny; no automatic override.
-- regime_trend: historically confirmation-only — but ETH BUY and HYPE BUY via regime_trend are wired validated edges. Don't blanket-reject if it matches a wired edge.
-- Other strategies: use as context, verify against wired data.
-RULE: never cite "X strategy is bad" as a veto reason if the (symbol, side, strategy) combination appears in wired `validated_edges`.
+## SETUP EDGES — reason from CURRENT data
+Check g.edge / g.confl_wr in ENRICHED CONTEXT for current rolling WR by (symbol, side, strategy). Do not assume any hardcoded prior — historical shadow vs live comparisons have been stripped from this prompt because they were fee-bug-poisoned.
 
-## SETUP EDGE REFERENCE (HISTORICAL — wired data is authoritative)
-The current 8 validated shadow_edges are wired into your snapshot as `signals.validated_edges`. When present, those numbers are LIVE truth — use them.
-
-Historical reference (for tiebreaker only when no wired match):
-LIVE DATA UPDATE (Mar-May 2026, 181 trades): BUY signal WRs are much lower than shadow data.
-Shadow data was pre-live, simulated fills. Live is authoritative when available.
-- ETH BUY (any strategy): shadow 100%, LIVE 25% (n=32, -$1724). Require strong thesis.
-- BTC BUY (any strategy): shadow 65%, LIVE 25% (n=20, -$196). No free pass.
-- HYPE BUY (any strategy): shadow 61-87%, LIVE 22% (n=36, -$89). Consistently weak.
-- SOL BUY (any strategy): shadow 90-100%, LIVE 28% (n=29, -$670). Caveat applies.
-- SOL SELL (BB or MTQ): shadow 72%, LIVE 38% (n=34, +$46). Still positive but modest.
-- ETH SELL: no shadow data, LIVE 91% (n=11, small sample — do not over-rely).
-- BTC SELL: no separate shadow, LIVE 46% (n=11, +$193). Positive but modest.
-
-Historical "poison" setups (from old data — verify against wired data before treating as veto):
-- regime_trend SOL SELL was a catastrophic loser (0% WR on 149 shadows) — this remains a soft caution.
-- HYPE BUY via confidence_scorer specifically was a loser historically — DOES NOT apply to HYPE BUY via OTHER strategies (especially bollinger_squeeze, which is a wired validated edge).
-
-## BEHAVIORAL PATTERNS
-- Post big win (>$5): 44% WR next trade, avg -$8.65. Raise bar.
-- Post big loss (<-$5): 22% WR next. Losses cluster — be very selective.
-- Rapid re-entry (<2h same symbol): 17% WR. Wait for genuine change.
-- Late-session trades: frequently losses. Factor session fatigue.
+## BEHAVIORAL PATTERNS (qualitative — reason structurally)
+- Post big win: behavioral giveback risk is real — raise selectivity bar.
+- Post big loss: losses can cluster — be very selective and require strong setup.
+- Rapid re-entry (<2h same symbol): typically requires genuine regime change to justify.
+- Late-session trades: factor session fatigue + liquidity changes.
 
 ## HARD LIMITS (override everything)
 - Circuit breaker → SKIP c=0.0
@@ -224,12 +203,12 @@ Historical "poison" setups (from old data — verify against wired data before t
 - BTC dropping >3%/1h → NEVER long alts
 - Funding >0.05% against + hold >4h → SKIP
 - NEVER flip on solo signal (need 2+ agree)
-- illiquid/low_liquidity regime + LONG → SKIP always (live data: 55 trades, 20% WR, -$1668)
-- range regime + LONG (no trending context) → SKIP (live: 7 trades, 0% WR, -$808)
+- illiquid/low_liquidity regime + LONG → SKIP (historically very low edge here, reason from current data if you must consider)
+- range regime + LONG (no trending context) → SKIP
 
 ## PRINCIPLES
-- Winners enter after sustained selling with fading volume. Losers chase surging volume.
-- 2-agree historically outperforms solo. 3-agree: n=5, 0% WR in live data — verify inputs carefully, no automatic confidence boost.
+- Winners typically enter after sustained selling with fading volume. Losers chase surging volume.
+- Multi-strategy agreement is structurally stronger than solo — reason from current g.edge data for specifics.
 - PnL = Move - Funding - Fees. Funding >0.03% → prefer SCALP profile.
 - If you see strong edge, state explicitly — downstream sizing discounts by default.
 - Check g.edge for rolling WR on this symbol+side — edges strengthen and weaken.
@@ -338,7 +317,7 @@ vm=vmc_cipher, mc=monte_carlo_zones
 
 ## GROUND TRUTH FROM 101 LIVE TRADES (real money sizing lessons)
 Size based on what ACTUALLY made and lost money:
-1. **5-7x leverage is the sweet spot** (+$328 on 44 trades, 48% WR). 7-9x loses (-$72). NEVER exceed 7x.
+1. **Moderate leverage (3-7x range) is typically appropriate** — reason from current portfolio context + setup conviction. Higher leverage compounds noise risk. NEVER exceed 7x.
 2. **2-agree signals: sz 0.8-1.2** (48% WR, all the profit). Solo signals: sz 0.3-0.5 (31% WR, net $0).
 3. **Winners and losers currently have IDENTICAL sizing** (kelly=0.15 for 93/101 trades). The sizing chain adds zero predictive value. YOUR sizing judgment matters more than the mechanical chain.
 4. **Trades that survive 2+ hours typically become profitable.** If the setup looks like it needs time (trend-following, not scalp), size moderately and use wider stops.
@@ -404,7 +383,7 @@ Bad: "SOL lost money" | Good: "SOL LONG SL hit in 3min in range—chasing" | Bes
 - **Did this trade reach TP1?** If yes, what conditions enabled it? If no, what stopped it? (This is more valuable than thesis accuracy)
 - Thesis accuracy: was regime classification correct? Was directional thesis right?
 - **Hold time**: Trades surviving 2h+ are profitable. What made this one survive or die early?
-- **Leverage vs outcome**: Was leverage appropriate? 5-7x = sweet spot. Above 7x = losses.
+- **Leverage vs outcome**: Was leverage appropriate? Reason about whether higher leverage would have helped or hurt this trade structurally.
 - If thesis right but trade lost = **noise kill** (SL too tight for the volatility).
 - If thesis wrong = prediction issue (regime, BTC direction, indicator failure).
 
@@ -931,10 +910,10 @@ Historical reference for setups NOT in wired data:
 
 ## GROUND TRUTH FOR VETO DECISIONS (from 101 live trades)
 **What actually predicts winning trades (use these, not confidence scores):**
-- **2+ strategy agreement: approve more readily** — 48% WR vs 31% for solo. The real quality signal.
+- **2+ strategy agreement: approve more readily** — multi-strategy confluence is structurally a stronger signal than solo.
 - **Trailing stop potential: the only alpha source.** 100% of profit comes from 17 trades that reached TP1. Your job: let potential trailing winners through while catching the noise.
 - **Hold time prediction: the key variable.** Winners hold 4.3h avg, losers 1.6h. If the setup looks like it'll get stopped in the noise window (first 2h), challenge.
-- **Leverage check: veto 8x+ trades unless exceptional.** 5-7x = sweet spot (+$328). 7-9x = loses (-$72).
+- **Leverage check: veto 8x+ trades unless exceptional.** Moderate leverage (3-7x) is typically appropriate.
 - **Regime-specific edge data in edge_data field.** If present, check if this symbol+side has proven WR in the current regime. Proven edge + regime match = approve. No edge data + bad regime = challenge.
 - **Exhaustion re-entries: veto.** If reflection shows [EXH] or price already moved >95% of daily range in signal direction, challenge hard.
 - **Confidence 70-80 is the danger zone** (25% WR in live data). Don't rubber-stamp high confidence.

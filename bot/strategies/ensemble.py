@@ -1667,12 +1667,14 @@ class EnsembleStrategy:
                 _base_sym = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "")
                 _setup_key = f"{_base_sym}_{_sig.side}"
 
-                # Golden setups from 1,410-signal analysis (higher size)
-                _GOLDEN = {"ETH_SELL": 0.8, "BTC_BUY": 0.7, "SOL_BUY": 0.7,
-                           "BTC_SELL": 0.7, "ETH_BUY": 0.6}
-                # Dead setup — always skip even for BB
-                if _base_sym == "HYPE" and _sig.side == "SELL" and _sig.strategy == "bollinger_squeeze":
-                    logger.info(f"[{symbol}] DEAD SETUP: HYPE_SELL_BB (35% WR) — skipping")
+                # 2026-06-05: Hardcoded "GOLDEN setups" and "DEAD SETUP" rules stripped per Nunu directive.
+                # The 0.8 ETH_SELL / 0.7 BTC_BUY etc multipliers and the HYPE_SELL_BB "35% WR" auto-skip
+                # were from a "1,410-signal analysis" under the fee bug — fabricated certainty.
+                # All solo setups now get a neutral 0.5 risk multiplier; let LLM agents reason about
+                # quality from current ENRICHED CONTEXT, not hardcoded per-symbol-side bias.
+                _GOLDEN = {}  # emptied
+                if False:  # was: HYPE SELL BB auto-skip — DISABLED
+                    logger.info(f"[{symbol}] (legacy HYPE_SELL_BB block removed)")
                 else:
                     _rm = _GOLDEN.get(_setup_key, 0.5)
                     _sig.metadata["solo_proven"] = True
@@ -2305,21 +2307,14 @@ class EnsembleStrategy:
         #   - EDGES (positive-WR setups from 3,802 resolved trades, 2026-04-15) — KEPT, this is real alpha
         # Phase 2 (later): convert EDGES from confidence-floor multiplier to metadata that flows to the LLM,
         #   so the LLM sees "this setup had 100% WR on 135 samples" as context and decides itself.
-        _SHADOW_EDGES = {
-            # KEEP — strong positive edges (high WR + positive avg return)
-            ("ETH", "BUY", "regime_trend"):          0.90,  # 100% WR on 135 samples (confirmed 2026-05-30 audit)
-            ("HYPE", "BUY", "bollinger_squeeze"):    0.80,  # 61.2% WR on 196 samples (confirmed 2026-05-30 audit)
-            ("SOL", "SELL", "multi_tier_quality"):   0.80,  # 72.1% WR on 68 samples (confirmed 2026-05-30 audit)
-            ("SOL", "SELL", "bollinger_squeeze"):    0.80,  # 72.1% WR on 68 samples (confirmed 2026-05-30 audit)
-            # UPGRADED 2026-05-30 — laptop-claude audit found more data, stronger numbers
-            ("BTC", "BUY", "regime_trend"):          0.72,  # was 0.65; n grew 78->117, WR 55.1%->65.0%
-            ("HYPE", "BUY", "regime_trend"):         0.80,  # was 0.72; n grew 40->63, WR 80.0%->87.3%
-            # NEW 2026-05-30 — discovered in shadow-ledger audit
-            # CAVEAT: 19-day April window. Could be a SOL bull-phase artifact.
-            # LLM should weigh these against current regime, not treat as law.
-            ("SOL", "BUY", "multi_tier_quality"):    0.90,  # 100% WR on 90 samples (April 2026 window)
-            ("SOL", "BUY", "bollinger_squeeze"):     0.85,  # 90.0% WR on 100 samples (April 2026 window)
-        }
+        # 2026-06-05: _SHADOW_EDGES emptied per Nunu directive (overdrive strip).
+        # The 8 hardcoded (symbol,side,strategy) -> confidence-floor mappings were
+        # directly modulating real trade sizing via confidence floors (0.72-0.90).
+        # All claimed 60-100% WR from a pre-fee-fix April-window shadow audit. The
+        # fabricated certainty was the SINGLE most impactful injection point — it
+        # didn't just inform reasoning, it sized actual capital. Empty until live
+        # rolling stats can be computed from corrected-fee trade_ledger.
+        _SHADOW_EDGES: dict = {}
         _SHADOW_BLOCKS = set()  # Hardcoded blocks removed — see commit note above
 
         # Walk every agreeing strategy: find the best floor AND any block.

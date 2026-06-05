@@ -266,19 +266,13 @@ def _build_market_layer(
     return {k: v for k, v in mkt.items() if v is not None}
 
 
-# Shadow edges — mirrors bot/strategies/ensemble.py _SHADOW_EDGES.
-# Wired into the snapshot 2026-05-30 so agents see "this is a known alpha setup" when applicable.
-# Each entry: (symbol, side, strategy) -> dict with wr%, n, hypothesis_text.
-_AGENT_SHADOW_EDGES = {
-    ("ETH",  "BUY",  "regime_trend"):       {"wr": 100, "n": 135, "hypothesis": "100% WR validated edge on ETH BUY via regime_trend (3,802-trade audit)"},
-    ("HYPE", "BUY",  "bollinger_squeeze"):  {"wr": 61,  "n": 196, "hypothesis": "61.2% WR validated edge on HYPE BUY via bollinger_squeeze"},
-    ("SOL",  "SELL", "multi_tier_quality"): {"wr": 72,  "n": 68,  "hypothesis": "72.1% WR validated edge on SOL SELL via multi_tier_quality"},
-    ("SOL",  "SELL", "bollinger_squeeze"):  {"wr": 72,  "n": 68,  "hypothesis": "72.1% WR validated edge on SOL SELL via bollinger_squeeze"},
-    ("BTC",  "BUY",  "regime_trend"):       {"wr": 65,  "n": 117, "hypothesis": "65% WR validated edge on BTC BUY via regime_trend (upgraded 2026-05-30)"},
-    ("HYPE", "BUY",  "regime_trend"):       {"wr": 87,  "n": 63,  "hypothesis": "87.3% WR validated edge on HYPE BUY via regime_trend (upgraded 2026-05-30)"},
-    ("SOL",  "BUY",  "multi_tier_quality"): {"wr": 100, "n": 90,  "hypothesis": "100% WR / 90 samples — new edge discovered 2026-05-30 (April 19-day window, may be SOL bull-phase artifact)"},
-    ("SOL",  "BUY",  "bollinger_squeeze"):  {"wr": 90,  "n": 100, "hypothesis": "90% WR / 100 samples — new edge discovered 2026-05-30 (caveat: 19-day window)"},
-}
+# 2026-06-05: _AGENT_SHADOW_EDGES emptied per Nunu directive (overdrive strip).
+# Was injecting "100% WR validated edge" / "72.1% WR validated edge" / etc directly
+# into the agent snapshot under field name "validated_edges" — telling agents these
+# specific (symbol, side, strategy) combos were proven alpha. All from pre-fee-fix
+# 3,802-trade audit + April-19-day-window data. Agents were treating these as truth
+# every cycle. Empty until live rolling stats can be derived from corrected-fee ledger.
+_AGENT_SHADOW_EDGES: dict = {}
 
 
 def _build_signal_layer(

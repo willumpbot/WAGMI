@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1776982626.9255514,
+  "updated_at": 1780694424.4025786,
   "scenarios": [
     {
       "id": "cf_1774470140_6aa484a8",
@@ -7761,6 +7761,196 @@
         "actual_pnl_raw": -11.014174808386553,
         "pnl_at_tp1_pct": 1.4766,
         "pnl_at_tp2_pct": 6.1226
+      }
+    },
+    {
+      "id": "cf_1780687801_0b658caf",
+      "timestamp": 1780687801.4263484,
+      "symbol": "BTC",
+      "scenario_type": "exit_timing",
+      "actual_action": "TRAILING_STOP",
+      "counterfactual_action": "exit_at_tp1",
+      "actual_pnl": 0.06424656391993998,
+      "counterfactual_pnl": 1.980561491075865,
+      "delta": 1.9163149271559252,
+      "resolved": true,
+      "metadata": {
+        "side": "short",
+        "entry_price": 60745.4,
+        "actual_exit_price": 59729.5,
+        "tp1_price": 59542.3,
+        "tp2_price": 58333.0,
+        "actual_pnl_raw": 39.026832239423214,
+        "pnl_at_tp1_pct": 1.9806,
+        "pnl_at_tp2_pct": 3.9713
+      }
+    },
+    {
+      "id": "cf_1780688754_82c172ff",
+      "timestamp": 1780688754.721314,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SHORT",
+      "counterfactual_action": "entered_SHORT",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SHORT",
+        "entry_price": 59726.5,
+        "sl_price": 62086.142857142855,
+        "tp1_price": 55287.71428571428,
+        "tp2_price": 50755.42857142858,
+        "confidence": 86.93491666015589,
+        "reason": "[MA] regime=range(50%) | THESIS: ETH trending_bear (ADX=57) but RSI=26 deeply oversold creates bounce trap \u2014 poor | CONFLUENCE: 1strat q=30% type=none setup=solo_multi_tier_quality | Gate 4 fail: solo multi_tier_quality (REGULAR tier, weak solo WR per strategy trust). Quant SKIP verdict: conditional_wr=39%, Kelly=0.04 sub-threshold, noise_prob=55%. Regime agent explicitly warns 'oversold bounce likely, trend exhaustion imminent' \u2014 shorting at RSI=26 fades the exhaustion signal. BTC +0.7%/1h diverges from ETH short thesis (should be confirming down if trend continues). trending_bear live WR=0% (n=1). EV=+0.30% gross is thin and unreliable at n_similar=2. Downtrend is real (ADX=57, EMA9<20<50) but this specific entry is poorly timed \u2014 need bounce first, then re-short on RSI reclaim above 35-40. | QUANT_ADJ: -0.15 | RISK: override to skip (unspecified) | KELLY: f=0.040 mult=0.50 sz=0.00\u21920.00 | RISKS: Trade Agent action='skip' with confidence=0.3 (floor=55%), Quant kelly=0.04 below 0.05 fl"
+      }
+    },
+    {
+      "id": "cf_1780689544_1ffab31b",
+      "timestamp": 1780689544.772694,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SHORT",
+      "counterfactual_action": "entered_SHORT",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SHORT",
+        "entry_price": 1575.6,
+        "sl_price": 1648.9714285714285,
+        "tp1_price": 1422.557142857143,
+        "tp2_price": 1271.6142857142859,
+        "confidence": 78.70417283257953,
+        "reason": "[MA] regime=range(50%) | THESIS: ETH SHORT: 1h dead-cat bounce (+1.4%) in strong trending_bear downtrend (-11.3%  | CONFLUENCE: 1strat q=30% type=none setup=solo_multi_tier_quality | Gate1 PASS: ETH trending_bear conf=0.80 (ADX=38 strong trend, EMA bearish, MACD=-891). Gate2 PASS: thesis=bearish matches SELL signal. Gate4: solo confidence_scorer\u2014evaluate per rules (#1 earner 65-85% band), cap c=0.55. Gate5 PASS: RSI=38 not extreme, ADX=38 healthy, fee_drag=3.3%, ev_per_dollar=0.4285. Active graduated rule BOOST: ETH in TRENDING=71% WR. ETH SELL historical 91% WR (n=11). 1h bounce +1.4% is adverse entry timing\u2014wait for BTC to roll over confirming dead-cat before entry. Quant 58% down_4h probability supports direction. Cold streak (LLLLW) acknowledged\u20140.5x size per overseer. BTC SHORT already executing via pipeline. Portfolio clean 0 positions. HYPE SELL 4-agree skipped: permanently disabled per overseer. Calibration: underconfident system (+46% correction headroom) but solo cap enforced"
+      }
+    },
+    {
+      "id": "cf_1780690496_dd23527d",
+      "timestamp": 1780690496.3268344,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SHORT",
+      "counterfactual_action": "entered_SHORT",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SHORT",
+        "entry_price": 60226.5,
+        "sl_price": 62178.85714285715,
+        "tp1_price": 55555.28571428571,
+        "tp2_price": 51139.57142857142,
+        "confidence": 87.0795147201526,
+        "reason": "[MA] regime=range(50%) | THESIS: BTC SHORT to ~$58-59k within 6-8h as dead-cat 1h bounce exhausts in confirmed tr | CONFLUENCE: 1strat q=30% type=none setup=solo_multi_tier_quality | Regime Agent wired data overrides system 'illiquid' label: BTC=trending_bear conf=0.85, ADX=38 strongly trending, EMA/MACD fully bearish-aligned. Confidence_scorer solo SELL 65% = evaluate range (#1 earner proven edge). Quant conditional_wr=53% positive EV=(0.53*1.5)-(0.47*1.0)-0.07=+0.255R. BTC SHORT recent 75% WR (4 trades). Negatives: solo signal (-0.10), vr=0.2 very low volume (-0.10), post-big-win giveback risk (-0.10), regime_trend neutral raises 6h alignment concern. Calc: 0.50-0.10-0.10-0.10=0.20 base, but trending_bear adj+0.30 partial offset lifts to ~0.40; capped at solo floor 0.55. No hard veto active. OVERDRIVE default-go with coherent thesis and positive EV. | QUANT_ADJ: -0.10 | KELLY: f=0.110 mult=0.73 sz=0.70\u21920.51 | CRITIC: proceed\u2192flat (3 hard red flags meet the vacc=0.50 threshold of 3+ w"
+      }
+    },
+    {
+      "id": "cf_1780690947_110ef95d",
+      "timestamp": 1780690947.1905775,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SHORT",
+      "counterfactual_action": "entered_SHORT",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SHORT",
+        "entry_price": 1584.55,
+        "sl_price": 1653.4857142857143,
+        "tp1_price": 1440.2285714285717,
+        "tp2_price": 1298.0571428571434,
+        "confidence": 86.830212456033,
+        "reason": "[MA] regime=range(50%) | THESIS: ETH SHORT to $1,540-1,510: Regime Agent says trending_bear (conf=0.80), BTC ADX= | CONFLUENCE: 1strat q=30% type=none setup=solo_multi_tier_quality | Regime Agent (wired, conf=0.80) classifies ETH as trending_bear and explicitly flags '1h+1.4% is dead_cat_bounce_not_reversal' \u2014 this overrides mechanical pipeline's illiquid label. BOOST graduated rule active: ETH in trending regime = 71% WR, +$9.49/trade EV. BTC trending_bear (ADX=38, MACD=-833, EMA bearish stack) provides macro backdrop with 17.5m lead-lag to ETH (-2.0% BTC \u2192 -2.33% ETH historically). Solo confidence_scorer at 65% = EVALUATE tier (cap 0.55). Quant uses n=2 ETH SHORT (insufficient) \u2192 base 56% \u00d7 0.7 penalty = 39%; but historical ETH SELL live = 91% (n=11) is more informative and trust hierarchy says live data > quant estimate when quant explicitly flags sample insufficient. Adverse: vr=0.3 low volume, 1h bounce ongoing \u2014 hence 'enter only if btc confirms' to time entry after dead-cat exha"
+      }
+    },
+    {
+      "id": "cf_1780692313_c24c322e",
+      "timestamp": 1780692313.6848605,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SHORT",
+      "counterfactual_action": "entered_SHORT",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SHORT",
+        "entry_price": 61164.5,
+        "sl_price": 63448.57142857143,
+        "tp1_price": 56477.85714285714,
+        "tp2_price": 51830.71428571429,
+        "confidence": 86.95166948260254,
+        "reason": "[MA] regime=trending_bear(70%) bias=bearish shifting_to_trend | OUTLOOK: BTC-led multiasset bearish momentum confirmed by ADX=56. Expect SOL/ETH/HYPE ext | THESIS: SOL SHORT to $62-63 over 4-12h in ADX=56 trending_bear; BTC-led multi-asset sell | CONFLUENCE: 1strat q=30% type=none setup=solo_multi_tier_quality | REGIME: trending_bear ADX=56 (STRONG), price below EMA9/20/50, VWAP=$67.64 far above (+7.2%), MACD=-1.24 bearish \u2014 structurally confirmed. DIRECTION: CS SHORT 65% + MTQ SHORT 0.5 both point same way; pipeline treats as solo CS but mechanically 2 strategies agree. EDGE: Validated SOL SHORT US-session 62% WR n=213 applies here. FILTER: Passed with ev_per_dollar=0.43, fee_drag=2.9% (clean). HEADWINDS: BTC +1.4% 1h bounce is dead-cat in trending_bear \u2014 acceptable. Quant conditional WR=43% reflects solo non-BB discount but filter overrides. Quant noise=0.9 noted but overdrive mode + calibration underconfidence (+0.46 error) support GO. CALC: base 0.50 +0.10 direction +0.30 trending_"
+      }
+    },
+    {
+      "id": "cf_1780692996_9fcf9d2c",
+      "timestamp": 1780692996.9086123,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SHORT",
+      "counterfactual_action": "entered_SHORT",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SHORT",
+        "entry_price": 61386.5,
+        "sl_price": 63742.57142857143,
+        "tp1_price": 56699.857142857145,
+        "tp2_price": 52004.71428571429,
+        "confidence": 88.55337290798656,
+        "reason": "[MA] regime=trending_bear(72%) bias=bearish | OUTLOOK: BTC extends lower toward 60.5k\u221261k support. Watch 1h close >61.6k for early exha | THESIS: BTC bearish structure intact (ADX=36, EMA9<20<50, MACD-784) in trending_bear reg | CONFLUENCE: 1strat q=30% type=none setup=solo_multi_tier_quality | QUANT_NOISE: Solo non-BB signal (+0.15 noise); BTC_SHORT n=4 forces base rate fallback 56% (+0.15); regime_trend strategy NEUTRAL contradicts short direction (+0.15); 1h relief bounce +1.7% adverse timing risk (+0.15); regime conf=0.72 ok (-0.15); BTC technical structure bearish ADX=36 EMA-stack MACD-784 (-0.15). Net=0.65. HYPE SELL: PERMANENT VETO active (2.3% WR n=411, validated rule). kelly at 1.5R:R: (0.39x1.5-0.61)/1.5=-0.013 \u2192 negative \u2192 hard skip. EV after 0.07% fees still negative at 39% conditional WR. | RISK: override to skip (unspecified) | RISKS: kelly=0.0 (hard skip floor at 0.05), noise_probability=0.65 (exceeds 0.6 hard gate), solo signal (CS only), no 2-agree ensemble confirmatio"
+      }
+    },
+    {
+      "id": "cf_1780693453_b2b7d29f",
+      "timestamp": 1780693453.815967,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SHORT",
+      "counterfactual_action": "entered_SHORT",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SHORT",
+        "entry_price": 1603.15,
+        "sl_price": 1676.5428571428572,
+        "tp1_price": 1455.9142857142856,
+        "tp2_price": 1308.8285714285712,
+        "confidence": 88.4779827424306,
+        "reason": "[MA] regime=trending_bear(72%) bias=bearish | OUTLOOK: BTC extends lower toward 60.5k\u221261k support. Watch 1h close >61.6k for early exha | THESIS: ETH short toward $1550-1565 in 4-6h as trending_bear structure intact (EMA9<20<5 | CONFLUENCE: 1strat q=30% type=none setup=solo_multi_tier_quality | Trending_bear regime confirmed (ADX=36, EMA bear stack, MACD negative, VWAP>price). Solo confidence_scorer signal \u2014 capped at 0.55, reduced to 0.50 for 1h bounce timing risk (+1.9% adverse). ETH live SHORT: 50% WR n=2 PF 5.38 +$822 \u2014 positive. Prob_down_4h=0.53, EV marginal positive, fee_drag 3.5% acceptable. BOOST rule (ETH trending=71% WR) partially applicable. Bayesian posterior: structure valid, timing suboptimal mid-bounce; optimal entry on rejection. Do not enter market-now into momentum. Memory note corroborates: condition on BTC bounce rollover. Calibration error -0.46 (underconfident) supports taking trade. 0 positions, 100% risk budget clear. | RISK: sizing 0.4x\u21920.4x () | KELLY: f=0.18"
+      }
+    },
+    {
+      "id": "cf_1780694424_b0b26683",
+      "timestamp": 1780694424.4023979,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SHORT",
+      "counterfactual_action": "entered_SHORT",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SHORT",
+        "entry_price": 1610.35,
+        "sl_price": 1679.2285714285715,
+        "tp1_price": 1473.042857142857,
+        "tp2_price": 1335.585714285714,
+        "confidence": 88.5476522069684,
+        "reason": "[MA] regime=trending_bear(72%) bias=bearish | OUTLOOK: BTC extends lower toward 60.5k\u221261k support. Watch 1h close >61.6k for early exha | THESIS: SOL SHORT toward $62-63 within 4-6h: trending_bear regime (ADX=33), full PRIORIT | CONFLUENCE: 1strat q=30% type=none setup=solo_multi_tier_quality | HYPE SHORT: hard block (n=411, 2.3% WR). ETH SHORT: Gate 1 skip \u2014 tc confirms regime=illiquid, illiquid \u2192 skip all directions. BTC SHORT: solo REGULAR tier, marginal. SOL SHORT: best signal \u2014 PRIORITY MTQ with full multi-TF alignment in trending_bear (ADX=33, EMA bear structure, BTC -3.1% 24h). Conditional WR 43% solo (0.7x non-BB penalty on 62% base); upgrades to 62% in US session 14-22 UTC (n=213 Grade B validated). Key risk: VR=0.1x extremely low = poor breakdown timing; BTC in 1h micro-bounce (+0.2%) creates short-term upside noise. Quant EV +0.22R marginally positive. Solo cap 0.55. Enter on BTC bounce fade + volume expansion signal; hold 4h+ per quant lesson to avoid noise stops. Conservat"
       }
     }
   ]

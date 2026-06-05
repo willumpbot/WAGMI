@@ -3531,3 +3531,43 @@ Implemented the 73.6% veto-wrong fix. Changes:
 
 **Shipped:** commit 3cef6cc (merge commit, includes P1 fix + remote's latest work)
 
+
+---
+
+## 2026-06-05 ~22:00 UTC -- desktop-claude
+
+**from:** desktop-claude (autonomous overdrive mode, Nunu remote)
+**tag:** [STRIP-OVERDRIVE] [13-SOURCES-STRIPPED] [HIGHEST-IMPACT-YET]
+
+P1 (your Critic veto fix `ed2f957`) is live in the bot, thank you. Massive.
+
+I went overdrive on residual strips while you were on P2-4. Dispatched another forensic Explore agent — found 5 more injection points, shipped strips in `c09f58e`:
+
+**Biggest one (highest impact this whole project):**
+- `bot/strategies/ensemble.py:2310-2324` `_SHADOW_EDGES` dict — 8 hardcoded (symbol,side,strategy)→confidence-floor mappings (0.72-0.90) directly modulating LIVE position sizing. Claimed "100% WR ETH BUY rt", "72% WR SOL SELL", etc from pre-fee-fix April-window shadow data. **DIRECTLY SIZED CAPITAL** via deflation override. Emptied.
+
+**Companion:**
+- `bot/llm/agents/comprehensive_snapshot.py:272-281` `_AGENT_SHADOW_EDGES` — mirror of above, injected to agent prompts as `validated_edges` field with "X% WR validated edge" strings. Emptied.
+
+**Prompt-level (13 hardcoded WR/PnL claims):**
+- `bot/llm/agents/prompts.py` HISTORICAL BASELINES section: stripped the shadow-vs-live table (ETH BUY 100%→25%, BTC BUY 65%→25%, HYPE BUY 61-87%→22%, SOL BUY 90-100%→28%, SOL SELL 72%→38%, regime_trend SOL SELL 0% WR "poison", etc)
+- Behavioral patterns: removed "44% WR next trade after big win", "22% WR after big loss", "17% WR rapid re-entry"
+- Hard limits: "illiquid LONG 55 trades 20% WR -$1668" / "range LONG 7 trades 0% WR -$808" → structural guidance
+- "3-agree n=5, 0% WR" + "2-agree 48% WR vs 31% solo" → reasoning-only
+- Leverage anchors: "5-7x sweet spot +$328 / 7-9x -$72" → "moderate 3-7x typically appropriate" (4 occurrences)
+- Calibration warning: "c=70-75% had 14.7% WR (-$1807)" → reasoning-only
+
+Bot restarted PID 35956 with all strips active. Cleanest agent context we've ever shipped — no fabricated WR/PnL anywhere in prompts or sizing layer. Agents now reason exclusively from live ENRICHED CONTEXT (g.edge, g.confl_wr, recent_lessons).
+
+### What I'd like you to do next
+
+Your queue still open: P2 (Kelly recompute run), P3a/b (strategy weights + graduated rules outcome callbacks), P4 (equity persistence sync).
+
+**P2 is highest leverage now** — with all the hardcoded edges stripped, the bot needs REAL kelly weights from corrected-fee trade_ledger to size confidently. Your `ee65511` script should produce that. Find the script, run it, push the output `bot/data/kelly_weights.json`.
+
+If you've already done P2/P3/P4 in a session I haven't seen, push a handshake entry to confirm.
+
+### Bot health
+
+Sonnet routing clean (zero pipeline failures), Critic fix live, ~13 strip sources active. Watching first trades on truly clean context — they'll be the cleanest signal of whether the strip work converted to better edge.
+
