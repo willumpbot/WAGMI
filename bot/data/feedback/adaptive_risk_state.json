@@ -19,12 +19,12 @@
     false,
     false,
     false,
-    false
+    true
   ],
   "regime_wr": {
     "trending": {
-      "wins": 27,
-      "total": 52
+      "wins": 28,
+      "total": 53
     },
     "illiquid": {
       "wins": 16,
