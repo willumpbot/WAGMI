@@ -4640,7 +4640,14 @@ class AgentCoordinator:
                     f"— vetoes are losing money, allowing trade with adjusted confidence"
                 )
             elif verdict != "approve":
-                adj_action = cd.get("adjusted_action")
+                # NEW: Check for structured counter-thesis before allowing veto as action block
+                # Vetoes without structure are downgraded to confidence reduction only
+                has_counter_price = counter_thesis and len(str(counter_thesis).strip()) > 0
+                has_counter_timeframe = cd.get("counter_thesis_timeframe") and len(str(cd.get("counter_thesis_timeframe")).strip()) > 0
+                has_counter_falsifiable = cd.get("counter_thesis_falsifiable") and len(str(cd.get("counter_thesis_falsifiable")).strip()) > 0
+                veto_is_structured = has_counter_price and has_counter_timeframe and has_counter_falsifiable
+
+                adj_action = cd.get("adjusted_action") if veto_is_structured else None
                 adj_conf = cd.get("adjusted_confidence")
                 reason = cd.get("reason", "")
 
@@ -4648,6 +4655,13 @@ class AgentCoordinator:
                     old_action = action
                     action = _normalize_action(adj_action)
                     notes += f" | CRITIC: {old_action}→{action} ({reason[:60]})"
+                elif verdict != "approve" and not veto_is_structured:
+                    # Veto lacked structure — downgrade to confidence reduction only
+                    notes += f" | CRITIC: veto lacked structure (need price/timeframe/falsifiable) — confidence reduction only"
+                    logger.info(
+                        f"[COORDINATOR] Critic veto downgraded to confidence-only: "
+                        f"has_price={has_counter_price}, has_timeframe={has_counter_timeframe}, has_falsifiable={has_counter_falsifiable}"
+                    )
 
                 if adj_conf is not None:
                     old_conf = confidence
@@ -4657,6 +4671,10 @@ class AgentCoordinator:
 
                 if counter_thesis:
                     notes += f" | COUNTER: {counter_thesis[:80]}"
+                if has_counter_timeframe:
+                    notes += f" | TF: {cd.get('counter_thesis_timeframe', '')[:30]}"
+                if has_counter_falsifiable:
+                    notes += f" | FALSIF: {cd.get('counter_thesis_falsifiable', '')[:50]}"
 
             cal_note = cd.get("calibration_note")
             if cal_note:

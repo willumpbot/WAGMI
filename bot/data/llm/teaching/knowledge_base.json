@@ -190,7 +190,7 @@
     {
       "knowledge_type": "principle",
       "content": "Support becomes resistance once broken, and resistance becomes support once reclaimed. Always check these flips before entering.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -209,7 +209,7 @@
     {
       "knowledge_type": "principle",
       "content": "The trend is determined by higher highs and higher lows (uptrend) or lower highs and lower lows (downtrend). A break of structure signals potential reversal.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -246,7 +246,7 @@
     {
       "knowledge_type": "principle",
       "content": "Large buy walls can be fake (spoofing). Don't rely on order book depth alone. Actual fills (volume on candles) are more reliable than standing orders.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -264,7 +264,7 @@
     {
       "knowledge_type": "principle",
       "content": "Market makers profit from the spread. In low liquidity, spreads widen and slippage increases. Avoid market orders in thin markets - use limits.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -283,7 +283,7 @@
     {
       "knowledge_type": "principle",
       "content": "RSI above 70 is overbought, below 30 is oversold. BUT in a strong trend, RSI can stay overbought for extended periods. Don't short RSI 80 in a bull trend.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -302,7 +302,7 @@
     {
       "knowledge_type": "principle",
       "content": "MACD crossover (signal line cross) confirms momentum shifts. MACD histogram divergence from price is a strong reversal signal.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -321,7 +321,7 @@
     {
       "knowledge_type": "principle",
       "content": "EMA 20 and EMA 50 crossovers (golden cross / death cross) are lagging but reliable. Price above both EMAs = bullish structure. Below both = bearish.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -340,7 +340,7 @@
     {
       "knowledge_type": "principle",
       "content": "ATR (Average True Range) measures volatility. When ATR is high, use wider stops. When ATR is low, tighter stops work. Always scale stops to ATR, not fixed percentages.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -359,7 +359,7 @@
     {
       "knowledge_type": "principle",
       "content": "VWAP (Volume Weighted Average Price) is institutional. Price above VWAP = buyers in control. Below = sellers. VWAP acts as dynamic support/resistance.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -378,7 +378,7 @@
     {
       "knowledge_type": "principle",
       "content": "Higher timeframe structure always wins. A 1h buy signal against a daily downtrend will likely fail. Always check the 4h and daily trend before trading lower timeframes.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -397,7 +397,7 @@
     {
       "knowledge_type": "principle",
       "content": "Breakouts from tight ranges (Bollinger Band squeeze, low ATR) produce the strongest moves. The longer the compression, the bigger the expansion.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -416,7 +416,7 @@
     {
       "knowledge_type": "observation",
       "content": "Failed breakouts (price breaks above resistance then immediately returns below) are one of the strongest reversal signals. Trade the failure, not the breakout.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -435,7 +435,7 @@
     {
       "knowledge_type": "principle",
       "content": "Divergence between price and RSI/MACD is a leading indicator. Bullish divergence: price makes lower low, RSI makes higher low = potential bottom.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -508,7 +508,7 @@
     {
       "knowledge_type": "principle",
       "content": "Take partial profits at TP1 (40-50% of position). This locks in gains and lets the rest ride risk-free. Emotion cannot affect a position that's already in profit.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -527,7 +527,7 @@
     {
       "knowledge_type": "principle",
       "content": "After TP1 is hit, move stop loss to breakeven. Now the trade is risk-free. The remaining position either hits TP2 for bonus profit or gets stopped at breakeven.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -563,7 +563,7 @@
     {
       "knowledge_type": "principle",
       "content": "Leverage amplifies BOTH gains and losses. 10x leverage means a 10% move against you wipes out the position. Only use high leverage (5x+) with tight stops and high confidence.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -638,7 +638,7 @@
     {
       "knowledge_type": "principle",
       "content": "Liquidation cascades create the biggest moves. When OI drops rapidly + price drops rapidly, it's a liquidation cascade. These create overshoots and snap-back rallies.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -657,7 +657,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC dominance drives alt behavior. When BTC dominance rises, alts bleed. When BTC dominance falls, alts pump. Never long alts when BTC is dumping - they fall 2-3x harder.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -676,7 +676,7 @@
     {
       "knowledge_type": "principle",
       "content": "Crypto is 24/7 but not equally liquid. Asian session (00:00-08:00 UTC) and European open (07:00-09:00 UTC) are high activity. US close to Asian open (21:00-00:00 UTC) is thin.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -695,7 +695,7 @@
     {
       "knowledge_type": "observation",
       "content": "Weekend markets are thinner, more manipulable, and produce more false signals. Reduce position size on weekends. Best signals come Tuesday-Thursday.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -714,7 +714,7 @@
     {
       "knowledge_type": "principle",
       "content": "Meme coins (DOGE, PEPE, FARTCOIN) have higher volatility and thinner books. They move 2-5x faster than BTC. Use wider stops, lower leverage, and expect bigger swings.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -773,7 +773,7 @@
     {
       "knowledge_type": "principle",
       "content": "Funding cost scales with leverage. 0.01% funding on 10x = 0.3%/day cost. On a trade expecting 2% move over 3 days, funding eats 0.9% \u2014 nearly half your profit. Always factor funding into R:R math.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -792,7 +792,7 @@
     {
       "knowledge_type": "principle",
       "content": "When funding is extreme (>0.05%), the crowded side usually gets liquidated. This is both a reversal signal AND a cost signal. Trading against extreme funding is often free money \u2014 you get paid to hold AND profit from the reversal.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -811,7 +811,7 @@
     {
       "knowledge_type": "principle",
       "content": "In high funding environments, prefer shorter hold times. A 2-hour scalp avoids the 8-hour funding payment entirely. Adjust your entry refinement: 'market now' for quick scalps, avoid 'scale in' which extends hold time.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -830,7 +830,7 @@
     {
       "knowledge_type": "principle",
       "content": "A good trading signal must have: clear entry, defined stop loss, at least one take profit target, and a reason (why NOW, not just why this direction).",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -848,7 +848,7 @@
     {
       "knowledge_type": "principle",
       "content": "Signal timing matters as much as direction. A correct direction with wrong timing gets stopped out before the move happens. Check if the signal is early, on time, or late.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -884,7 +884,7 @@
     {
       "knowledge_type": "principle",
       "content": "Multiple timeframe confirmation increases signal quality. A buy signal on 1h that aligns with 4h uptrend and daily support = high quality. A buy signal on 1h against daily downtrend = low quality.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -903,7 +903,7 @@
     {
       "knowledge_type": "principle",
       "content": "Strategy agreement is the strongest predictor of trade success. When 3+ independent strategies agree on direction, the probability of success increases significantly.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -922,7 +922,7 @@
     {
       "knowledge_type": "observation",
       "content": "Signals with vague entry zones ('buy around 95k-97k') are weaker than precise entries ('buy at 96,200 on the retest'). Precision = conviction from the signal source.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -940,7 +940,7 @@
     {
       "knowledge_type": "principle",
       "content": "Check the signal's risk-reward BEFORE taking it. If the stop is 3% away and the target is 2% away, the R:R is 0.67:1 - that's a bad trade even if the direction is right.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -958,7 +958,7 @@
     {
       "knowledge_type": "principle",
       "content": "Read charts from left to right. Start with the daily, then 4h, then 1h. The higher timeframe sets the bias, the lower timeframe finds the entry.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -977,7 +977,7 @@
     {
       "knowledge_type": "principle",
       "content": "Key levels come from: previous day high/low, weekly open, monthly open, significant swing points, round numbers (90k, 95k, 100k). These are where orders cluster.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -996,7 +996,7 @@
     {
       "knowledge_type": "principle",
       "content": "Candlestick wicks show rejection. A long lower wick on a daily candle means buyers stepped in hard. A long upper wick means sellers rejected the price. Pay attention to wick length relative to body.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1015,7 +1015,7 @@
     {
       "knowledge_type": "principle",
       "content": "Volume profile shows where most trading occurred. High Volume Nodes (HVN) act as magnets. Low Volume Nodes (LVN) get passed through quickly. Price spends time at HVN and gaps through LVN.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1034,7 +1034,7 @@
     {
       "knowledge_type": "principle",
       "content": "When evaluating a signal's entry/SL/TP: map the levels onto the chart structure. Is the entry at support/resistance? Is the SL below the last swing low? Is the TP at a logical target?",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1053,7 +1053,7 @@
     {
       "knowledge_type": "principle",
       "content": "Consolidation (low ATR, tight range) followed by expansion (volume + breakout) is the highest-probability setup. The entry is on the breakout retest, not the initial break.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1109,7 +1109,7 @@
     {
       "knowledge_type": "principle",
       "content": "The best trade is often NO trade. If the setup isn't clear, if the regime is uncertain, if cross-market is conflicting - staying flat IS a position. Cash has zero drawdown.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1128,7 +1128,7 @@
     {
       "knowledge_type": "principle",
       "content": "Confirmation bias makes you see what you want to see. If you're already long, you'll interpret neutral data as bullish. Always consider the counter-argument before confirming a bias.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1146,7 +1146,7 @@
     {
       "knowledge_type": "principle",
       "content": "Size down after a losing streak, size up after a winning streak. This is counterintuitive but mathematically optimal - winning streaks compound, losing streaks preserve capital.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1184,7 +1184,7 @@
     {
       "knowledge_type": "principle",
       "content": "RegimeTrend alignment scored 0-4: (1) WaveTrend cross direction, (2) MFI above/below 50, (3) 6h MACD+MFI bullish, (4) 16h MACD+MFI bullish. Needs 3/4 minimum. 4/4 = highest conviction. Confidence = align \u00d7 25.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1203,7 +1203,7 @@
     {
       "knowledge_type": "principle",
       "content": "RegimeTrend excels in trending markets (strong regime). Fails in ranges where WaveTrend produces false crosses. MFI < 40 in a bullish regime = divergence warning. Momentum entries (recent cross, not this-bar) are slightly lower conviction but catch trends early.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1241,7 +1241,7 @@
     {
       "knowledge_type": "principle",
       "content": "MonteCarlo is a mean-reversion strategy. It buys when price is in buy zone AND MC simulation shows >60% up probability. RSI14 < 30 confirms oversold. It answers: 'Is price statistically extreme AND likely to revert?'",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1260,7 +1260,7 @@
     {
       "knowledge_type": "principle",
       "content": "MonteCarlo excels in range-bound markets where price oscillates around SMA20. Fails in trends where price blows through zones without reverting. News dislocations make the historical distribution unreliable. Trust it most when RSI confirms extremes.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1298,7 +1298,7 @@
     {
       "knowledge_type": "principle",
       "content": "ConfidenceScorer is the most adaptive strategy. Trust grows with sample size \u2014 20+ similar trades = statistically meaningful. Best used to arbitrate when other strategies disagree. Cold start problem: unreliable with < 10 trades. Lags regime shifts because it learns from past, not present.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1337,7 +1337,7 @@
     {
       "knowledge_type": "principle",
       "content": "MultiTierQuality excels for scalps (5-30min holds). When EMA + VWAP + 1h all align = high conviction. Noisy in ranges where EMA crossovers whipsaw. MANUAL tier = low conviction, should not drive decisions. Strongest when combined with regime_trend macro direction.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1357,7 +1357,7 @@
     {
       "knowledge_type": "principle",
       "content": "When regime_trend and multi_tier_quality agree on direction, the signal has both macro (6h/16h regime) and micro (5m entry) confirmation \u2014 highest quality setup. regime_trend provides the 'why' (regime supports), multi_tier provides the 'when' (exact entry bar).",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1376,7 +1376,7 @@
     {
       "knowledge_type": "principle",
       "content": "monte_carlo acts as a contrarian check on regime_trend. If regime_trend says BUY but monte_carlo says price is in SELL zone, the trade may be chasing. If both agree (regime bullish + price in buy zone), the setup is strong from both trend and mean-reversion perspectives.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1395,7 +1395,7 @@
     {
       "knowledge_type": "principle",
       "content": "confidence_scorer with hist_WR > 60% for a setup type = validated statistical edge. Weight this signal up. hist_WR < 40% = historically losing setup. This should override other strategies' raw confidence scores.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1433,7 +1433,7 @@
     {
       "knowledge_type": "principle",
       "content": "When evaluating signal ctx (context), read the indicator values, not just the direction. 'WT cross-up, 4/4 align' is vastly different from 'WT cross-up, 2/4 align (momentum)'. The ctx tells you HOW strong the signal's own internal confirmation is.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1470,7 +1470,7 @@
     {
       "knowledge_type": "principle",
       "content": "Convergent confluence is the strongest predictor: when trend-following (regime_trend) AND mean-reversion (monte_carlo) agree on direction, price is BOTH trending AND at a statistical edge. This is the highest-probability setup \u2014 size up aggressively.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1489,7 +1489,7 @@
     {
       "knowledge_type": "principle",
       "content": "Conflicting strategies are INFORMATIVE, not noise. regime_trend BUY + monte_carlo SELL zone = price is trending but overextended. Prediction: short-term pullback within the trend. Action: wait for pullback to MC buy zone, then enter with trend.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1508,7 +1508,7 @@
     {
       "knowledge_type": "principle",
       "content": "RSI divergence + WT divergence = strongest reversal predictor. If price makes new high but RSI and WaveTrend don't, the move is exhausting. Predict reversal. If MFI also dropping (MFI<40 in bull): double confirmation of exhaustion.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1527,7 +1527,7 @@
     {
       "knowledge_type": "principle",
       "content": "MC probability >70% with RSI extreme (<25 or >75) = high-probability mean-reversion. Predict a return to SMA20 within 12h. The further price deviates from SMA20 in sigmas, the stronger the reversion pull. 2+ sigma = strong, 3+ sigma = very strong.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1546,7 +1546,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC leads, alts follow with 10-30min lag. If BTC breaks structure (new 4h high/low), predict alts will follow within 30min. Use BTC's move to front-run alt entries \u2014 this is the single most reliable cross-market predictor.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1565,7 +1565,7 @@
     {
       "knowledge_type": "principle",
       "content": "Veto is a prediction opportunity. When you veto a trade, you're predicting the OPPOSITE will happen. Track your veto accuracy \u2014 if vetoed trades would have won (vacc < 0.50), your predictions are inverted. Consider flipping your thesis when vacc is poor.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1584,7 +1584,7 @@
     {
       "knowledge_type": "principle",
       "content": "RegimeTrend confidence = align \u00d7 25: 75% means 3/4 criteria met (cross + MFI + one HTF). 100% means 4/4 = all timeframes confirming. Momentum entries (-5% penalty) are slightly weaker but catch trends earlier. Read ctx for which criteria are missing.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1603,7 +1603,7 @@
     {
       "knowledge_type": "principle",
       "content": "MonteCarlo confidence = zone depth + MC probability + RSI confirmation. DEEP_BUY with MC>70%up and RSI<30 \u2192 maximum conviction (~85%). Regular BUY with MC~55% \u2192 moderate conviction (~65%). The MC probability is forward-looking \u2014 it tells you the statistical odds, not just current position.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1622,7 +1622,7 @@
     {
       "knowledge_type": "principle",
       "content": "ConfidenceScorer adjusts base zone confidence by historical win rate. If hist_WR=70% for BUY signals on this symbol, confidence gets boosted. If hist_WR=35%, confidence gets crushed. hist_WR=n/a means cold start \u2014 treat as 50% baseline, don't discount or boost.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1641,7 +1641,7 @@
     {
       "knowledge_type": "principle",
       "content": "MultiTier confidence maps to tiers: PRIORITY (75%+) = all alignments (EMA cross + VWAP + 1h). REGULAR (65-74%) = 2/3 aligned. MANUAL (<65%) = weak, should not drive decisions alone. VWAP opposition is a strong negative \u2014 price fighting VWAP rarely sustains.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1679,7 +1679,7 @@
     {
       "knowledge_type": "principle",
       "content": "Trend regime is where 70%+ of all profit is made. Be aggressive entering trend trades, patient exiting them. Range regime: most trades are small winners or small losers \u2014 reduce frequency, tighten targets. Panic: stay flat. The regime determines your playbook, not individual signals.",
-      "confidence": 0.672,
+      "confidence": 0.365,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1698,7 +1698,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 47% win rate (30 trades)",
-      "confidence": 1.033,
+      "confidence": 0.597,
       "evidence_count": 17,
       "supporting": [],
       "contradicting": [],
@@ -1715,7 +1715,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 48% win rate (31 trades)",
-      "confidence": 1.06,
+      "confidence": 0.633,
       "evidence_count": 52,
       "supporting": [],
       "contradicting": [],
@@ -1732,7 +1732,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 52% win rate (33 trades)",
-      "confidence": 1.098,
+      "confidence": 0.657,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -1749,7 +1749,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 50% win rate (34 trades)",
-      "confidence": 1.125,
+      "confidence": 0.694,
       "evidence_count": 18,
       "supporting": [],
       "contradicting": [],
@@ -1766,7 +1766,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 49% win rate (35 trades)",
-      "confidence": 1.145,
+      "confidence": 0.708,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -1783,7 +1783,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in  regime (33% WR)",
-      "confidence": 0.6666666666666667,
+      "confidence": 0.516,
       "evidence_count": 51,
       "supporting": [],
       "contradicting": [],
@@ -1801,7 +1801,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 47% win rate (36 trades)",
-      "confidence": 1.165,
+      "confidence": 0.725,
       "evidence_count": 8,
       "supporting": [],
       "contradicting": [],
@@ -1818,7 +1818,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in  regime (25% WR)",
-      "confidence": 0.7,
+      "confidence": 0.543,
       "evidence_count": 14,
       "supporting": [],
       "contradicting": [],
@@ -1836,7 +1836,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 46% win rate (37 trades)",
-      "confidence": 1.185,
+      "confidence": 0.738,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -1853,7 +1853,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in  regime (20% WR)",
-      "confidence": 0.67,
+      "confidence": 0.419,
       "evidence_count": 9,
       "supporting": [],
       "contradicting": [],
@@ -1871,7 +1871,7 @@
     {
       "knowledge_type": "observation",
       "content": "Overconfidence detected: 3 high-conf trades lost",
-      "confidence": 0.582,
+      "confidence": 0.387,
       "evidence_count": 84,
       "supporting": [
         "3 losses at >80% confidence",
@@ -1909,7 +1909,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 44% win rate (39 trades)",
-      "confidence": 1.225,
+      "confidence": 0.767,
       "evidence_count": 9,
       "supporting": [],
       "contradicting": [],
@@ -1926,7 +1926,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 45% win rate (40 trades)",
-      "confidence": 1.244,
+      "confidence": 0.781,
       "evidence_count": 2,
       "supporting": [],
       "contradicting": [],
@@ -1943,7 +1943,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 45% win rate (42 trades)",
-      "confidence": 1.283,
+      "confidence": 0.807,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -1960,7 +1960,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 47% win rate (43 trades)",
-      "confidence": 1.303,
+      "confidence": 0.821,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -1977,7 +1977,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in  regime (67% WR)",
-      "confidence": 0.659,
+      "confidence": 0.477,
       "evidence_count": 9,
       "supporting": [],
       "contradicting": [],
@@ -1995,7 +1995,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 67% win rate (3 trades)",
-      "confidence": 0.56,
+      "confidence": 0.478,
       "evidence_count": 72,
       "supporting": [],
       "contradicting": [],
@@ -2012,7 +2012,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 48% win rate (44 trades)",
-      "confidence": 1.322,
+      "confidence": 0.834,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -2029,7 +2029,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in  regime (75% WR)",
-      "confidence": 0.693,
+      "confidence": 0.504,
       "evidence_count": 10,
       "supporting": [],
       "contradicting": [],
@@ -2047,7 +2047,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 75% win rate (4 trades)",
-      "confidence": 0.572,
+      "confidence": 0.41,
       "evidence_count": 12,
       "supporting": [],
       "contradicting": [],
@@ -2064,7 +2064,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 60% win rate (5 trades)",
-      "confidence": 0.592,
+      "confidence": 0.424,
       "evidence_count": 5,
       "supporting": [],
       "contradicting": [],
@@ -2081,7 +2081,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 47% win rate (45 trades)",
-      "confidence": 1.342,
+      "confidence": 0.848,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -2098,7 +2098,7 @@
     {
       "knowledge_type": "observation",
       "content": "SOL performing poorly (25% WR, 4 trades, $+58)",
-      "confidence": 0.719,
+      "confidence": 0.455,
       "evidence_count": 1,
       "supporting": [
         "1/4 wins"
@@ -2118,7 +2118,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 50% win rate (6 trades)",
-      "confidence": 0.594,
+      "confidence": 0.375,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -2135,7 +2135,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 45% win rate (47 trades)",
-      "confidence": 1.381,
+      "confidence": 0.873,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -2152,7 +2152,7 @@
     {
       "knowledge_type": "observation",
       "content": "SOL performing poorly (20% WR, 5 trades, $+48)",
-      "confidence": 0.767,
+      "confidence": 0.485,
       "evidence_count": 1,
       "supporting": [
         "1/5 wins"
@@ -2172,7 +2172,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 33% win rate (6 trades)",
-      "confidence": 0.611,
+      "confidence": 0.435,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -2189,7 +2189,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 67% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.428,
       "evidence_count": 54,
       "supporting": [],
       "contradicting": [],
@@ -2207,7 +2207,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 46% win rate (48 trades)",
-      "confidence": 1.4,
+      "confidence": 0.885,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -2224,7 +2224,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 45% win rate (49 trades)",
-      "confidence": 1.419,
+      "confidence": 0.898,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -2241,7 +2241,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 33% win rate (3 trades)",
-      "confidence": 0.56,
+      "confidence": 0.452,
       "evidence_count": 87,
       "supporting": [],
       "contradicting": [],
@@ -2258,7 +2258,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 44% win rate (50 trades)",
-      "confidence": 1.441,
+      "confidence": 0.918,
       "evidence_count": 6,
       "supporting": [],
       "contradicting": [],
@@ -2275,7 +2275,7 @@
     {
       "knowledge_type": "observation",
       "content": "SOL performing poorly (25% WR, 4 trades, $+1)",
-      "confidence": 0.72,
+      "confidence": 0.457,
       "evidence_count": 7,
       "supporting": [
         "1/4 wins",
@@ -2301,7 +2301,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 25% win rate (4 trades)",
-      "confidence": 0.58,
+      "confidence": 0.499,
       "evidence_count": 39,
       "supporting": [],
       "contradicting": [],
@@ -2318,7 +2318,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in  regime (35% WR)",
-      "confidence": 0.638,
+      "confidence": 0.447,
       "evidence_count": 26,
       "supporting": [],
       "contradicting": [],
@@ -2336,7 +2336,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 42% win rate (50 trades)",
-      "confidence": 1.485,
+      "confidence": 1.076,
       "evidence_count": 26,
       "supporting": [],
       "contradicting": [],
@@ -2353,7 +2353,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in  regime (32% WR)",
-      "confidence": 0.659,
+      "confidence": 0.431,
       "evidence_count": 17,
       "supporting": [],
       "contradicting": [],
@@ -2371,7 +2371,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 40% win rate (50 trades)",
-      "confidence": 1.492,
+      "confidence": 1.105,
       "evidence_count": 64,
       "supporting": [],
       "contradicting": [],
@@ -2388,7 +2388,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in  regime (30% WR)",
-      "confidence": 0.6956521739130435,
+      "confidence": 0.597,
       "evidence_count": 68,
       "supporting": [],
       "contradicting": [],
@@ -2406,7 +2406,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 38% win rate (50 trades)",
-      "confidence": 1.493,
+      "confidence": 1.107,
       "evidence_count": 19,
       "supporting": [],
       "contradicting": [],
@@ -2423,7 +2423,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in  regime (29% WR)",
-      "confidence": 0.688,
+      "confidence": 0.483,
       "evidence_count": 2,
       "supporting": [],
       "contradicting": [],
@@ -2441,7 +2441,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in ranging regime (0% WR)",
-      "confidence": 0.7,
+      "confidence": 0.599,
       "evidence_count": 5,
       "supporting": [],
       "contradicting": [],
@@ -2459,7 +2459,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 36% win rate (50 trades)",
-      "confidence": 1.5,
+      "confidence": 1.253,
       "evidence_count": 54,
       "supporting": [],
       "contradicting": [],
@@ -2476,7 +2476,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in ranging regime (20% WR)",
-      "confidence": 0.682,
+      "confidence": 0.462,
       "evidence_count": 23,
       "supporting": [],
       "contradicting": [],
@@ -2494,7 +2494,7 @@
     {
       "knowledge_type": "rule",
       "content": "HARD CAP: Never allow position notional > 15x account equity. 4 trades at 20-37x equity caused 72% of all losses (-$330).",
-      "confidence": 0.918,
+      "confidence": 0.6,
       "evidence_count": 35,
       "supporting": [
         "4 catastrophic trades at 20-37x = -$330",
@@ -2516,7 +2516,7 @@
     {
       "knowledge_type": "rule",
       "content": "Trailing stops generate all positive alpha. Widen trail to 2.0%, raise activation threshold. Current 0.7-0.9% effective trail captures only 65% of MFE.",
-      "confidence": 0.869,
+      "confidence": 0.567,
       "evidence_count": 5,
       "supporting": [
         "+$325 from 5 trailing wins",
@@ -2540,7 +2540,7 @@
     {
       "knowledge_type": "rule",
       "content": "H17 UTC is PRIME for shorts (58-68% WR). H20 UTC is DEAD (worst hour). Monday is best day. Weekends mean-revert with lower vol.",
-      "confidence": 0.918,
+      "confidence": 0.6,
       "evidence_count": 168,
       "supporting": [
         "7-day 5-min win rate analysis by hour",
@@ -2562,7 +2562,7 @@
     {
       "knowledge_type": "rule",
       "content": "Disable or heavily down-weight: vmc_cipher (5% WR), sniper_premium (0% WR), regime_trend (20% WR, 182 sig/day spam). Weight UP: confidence_scorer (50% WR, Kelly 0.28), probability_engine (45% WR), bollinger_squeeze (40% WR).",
-      "confidence": 0.869,
+      "confidence": 0.567,
       "evidence_count": 60,
       "supporting": [
         "20+ trades per strategy",
@@ -2584,7 +2584,7 @@
     {
       "knowledge_type": "rule",
       "content": "No cross-asset lead-lag at 5min resolution -- all assets move simultaneously. But fading BTC pumps on SOL = 76% WR (n=67). Asymmetry: fade pumps works, fade dumps does not.",
-      "confidence": 0.821,
+      "confidence": 0.537,
       "evidence_count": 67,
       "supporting": [
         "67 BTC-pump fade events at 76% WR",
@@ -2609,7 +2609,7 @@
     {
       "knowledge_type": "rule",
       "content": "Hurst exponent = 0.64-0.70 for all assets = TRENDING at 12-24h timescale. Mean-reversion at daily+. Match strategy to timescale: trend-follow 12-24h, mean-revert daily.",
-      "confidence": 0.821,
+      "confidence": 0.537,
       "evidence_count": 4,
       "supporting": [
         "Hurst calculation on 500 1h candles per asset",
@@ -2634,7 +2634,7 @@
     {
       "knowledge_type": "rule",
       "content": "Pipeline has 79 components (47 gates + 32 multipliers). 18 redundant pairs identified. Biggest killer: duplicate position (63.6% of rejections). Chop detector kills 48% of remaining. Simplification = more trades = more data = faster learning.",
-      "confidence": 0.918,
+      "confidence": 0.6,
       "evidence_count": 79,
       "supporting": [
         "Complete gate audit with file:line references",
@@ -2657,7 +2657,7 @@
     {
       "knowledge_type": "rule",
       "content": "40% of worst losses had RIGHT direction but got stopped out. Tight stops at high leverage = real killer. 2 SOL trades lost $130 but would have made $540 with wider stops. Wider stops + lower leverage > tight stops + high leverage.",
-      "confidence": 0.869,
+      "confidence": 0.567,
       "evidence_count": 5,
       "supporting": [
         "MFE/MAE analysis: 2/5 worst losses had MFE > |SL|",
@@ -2680,7 +2680,7 @@
     {
       "knowledge_type": "rule",
       "content": "Feedback systems deadlocked: cal offset -15, adaptive risk 0.60x, Kelly floor. Combined = 1.1% of full Kelly. Reset feedback state when root cause (oversizing) is fixed.",
-      "confidence": 0.869,
+      "confidence": 0.567,
       "evidence_count": 1,
       "supporting": [
         "Feedback state inspection shows all at floor/ceiling"
@@ -2702,7 +2702,7 @@
     {
       "knowledge_type": "rule",
       "content": "Execution costs: slippage 2.4 bps (fine), taker fees 4.5 bps (high). 100% market orders. Limit order system exists but not wired in. Would save 39% on fees. At 5+ trades/day = 21%/month fee drag on $500.",
-      "confidence": 0.918,
+      "confidence": 0.6,
       "evidence_count": 35,
       "supporting": [
         "All 35 live trades analyzed for execution costs"
@@ -2724,7 +2724,7 @@
     {
       "knowledge_type": "rule",
       "content": "HYPE vol regime edge: best = High Vol P50-P75 (PF=3.51, 73.9% WR). Worst = Extreme >P90 (PF=0.65). SOL best = Normal P25-P50 (PF=1.75). BTC best = Very High P75-P90 (PF=3.13). Each asset has different optimal vol regime.",
-      "confidence": 0.821,
+      "confidence": 0.537,
       "evidence_count": 278,
       "supporting": [
         "500 1h candles per asset bucketed by ATR percentile"
@@ -2748,7 +2748,7 @@
     {
       "knowledge_type": "rule",
       "content": "SOL RSI<10 is a DEATH TRAP: 0% up-rate at 6h (n=6), avg -4.73% at 24h. SOL RSI<20 = -1.52% at 12h, 7% WR. SOL extreme oversold is a CONTINUATION signal, not reversal. NEVER buy SOL at RSI<20.",
-      "confidence": 0.869,
+      "confidence": 0.567,
       "evidence_count": 34,
       "supporting": [
         "6 events RSI<10, 28 events RSI<20, all negative forward returns"
@@ -2771,7 +2771,7 @@
     {
       "knowledge_type": "rule",
       "content": "12h time stop is optimal (+4.5R net). 3h too early (-0R), 24h diminishing returns (+2.4R). Most winners resolve in 6-12 bars. Losers hit SL within 1-2 bars. If trade survives 5+ bars, very likely a slow winner -- HOLD.",
-      "confidence": 0.821,
+      "confidence": 0.537,
       "evidence_count": 28,
       "supporting": [
         "Time stop sweep: 8 settings (3h-48h) on 28 entries",
@@ -2793,7 +2793,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in illiquid regime (67% WR)",
-      "confidence": 0.6666666666666666,
+      "confidence": 0.569,
       "evidence_count": 18,
       "supporting": [],
       "contradicting": [],
@@ -2811,7 +2811,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (33% WR)",
-      "confidence": 0.6666666666666667,
+      "confidence": 0.572,
       "evidence_count": 62,
       "supporting": [],
       "contradicting": [],
@@ -2829,7 +2829,7 @@
     {
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 33% win rate (3 trades)",
-      "confidence": 0.56,
+      "confidence": 0.429,
       "evidence_count": 36,
       "supporting": [],
       "contradicting": [],
@@ -2846,7 +2846,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in trending regime (100% WR)",
-      "confidence": 0.683,
+      "confidence": 0.465,
       "evidence_count": 18,
       "supporting": [],
       "contradicting": [],
@@ -2864,7 +2864,7 @@
     {
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 67% win rate (6 trades)",
-      "confidence": 0.6,
+      "confidence": 0.396,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -2881,7 +2881,7 @@
     {
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 80% win rate (5 trades)",
-      "confidence": 0.581,
+      "confidence": 0.384,
       "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
@@ -2898,7 +2898,7 @@
     {
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 75% win rate (4 trades)",
-      "confidence": 0.562,
+      "confidence": 0.372,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -2915,7 +2915,7 @@
     {
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 100% win rate (3 trades)",
-      "confidence": 0.543,
+      "confidence": 0.36,
       "evidence_count": 3,
       "supporting": [],
       "contradicting": [],
@@ -2932,7 +2932,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in trending regime (67% WR)",
-      "confidence": 0.6666666666666666,
+      "confidence": 0.512,
       "evidence_count": 22,
       "supporting": [],
       "contradicting": [],
@@ -2950,7 +2950,7 @@
     {
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 67% win rate (3 trades)",
-      "confidence": 0.552,
+      "confidence": 0.392,
       "evidence_count": 5,
       "supporting": [],
       "contradicting": [],
@@ -2967,7 +2967,7 @@
     {
       "knowledge_type": "observation",
       "content": "SOL performing poorly (25% WR, 4 trades, $+20)",
-      "confidence": 0.727,
+      "confidence": 0.483,
       "evidence_count": 5,
       "supporting": [
         "1/4 wins",
@@ -2991,7 +2991,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 60% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.385,
       "evidence_count": 23,
       "supporting": [],
       "contradicting": [],
@@ -3009,7 +3009,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in ranging regime (17% WR)",
-      "confidence": 0.679,
+      "confidence": 0.45,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -3027,7 +3027,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (0% long WR vs 67% short WR)",
-      "confidence": 0.049,
+      "confidence": 0.032,
       "evidence_count": 0,
       "supporting": [
         "Short WR=67%"
@@ -3057,7 +3057,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in ranging regime (33% WR)",
-      "confidence": 0.6666666666666667,
+      "confidence": 0.524,
       "evidence_count": 33,
       "supporting": [],
       "contradicting": [],
@@ -3075,7 +3075,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "Winning trades resolve faster than losing trades - consider tighter timeouts",
-      "confidence": 0.5,
+      "confidence": 0.411,
       "evidence_count": 10,
       "supporting": [],
       "contradicting": [],
@@ -3093,7 +3093,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in trending regime (75% WR)",
-      "confidence": 0.688,
+      "confidence": 0.483,
       "evidence_count": 19,
       "supporting": [],
       "contradicting": [],
@@ -3111,7 +3111,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in ranging regime (25% WR)",
-      "confidence": 0.7,
+      "confidence": 0.602,
       "evidence_count": 48,
       "supporting": [],
       "contradicting": [],
@@ -3129,7 +3129,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in trending regime (71% WR)",
-      "confidence": 0.68,
+      "confidence": 0.455,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -3147,7 +3147,7 @@
     {
       "knowledge_type": "observation",
       "content": "SOL performing poorly (30% WR, 30 trades, $-106)",
-      "confidence": 0.68,
+      "confidence": 0.456,
       "evidence_count": 1,
       "supporting": [
         "9/30 wins"
@@ -3167,7 +3167,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in trending regime (80% WR)",
-      "confidence": 0.686,
+      "confidence": 0.475,
       "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
@@ -3185,7 +3185,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in ranging regime (22% WR)",
-      "confidence": 0.683,
+      "confidence": 0.465,
       "evidence_count": 3,
       "supporting": [],
       "contradicting": [],
@@ -3203,7 +3203,7 @@
     {
       "knowledge_type": "observation",
       "content": "SOL performing poorly (30% WR, 30 trades, $-108)",
-      "confidence": 0.682,
+      "confidence": 0.462,
       "evidence_count": 6,
       "supporting": [
         "9/30 wins",
@@ -3228,7 +3228,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 75% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.405,
       "evidence_count": 26,
       "supporting": [],
       "contradicting": [],
@@ -3246,7 +3246,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_SELL_0-agree: WIN in unknown, pnl=7.45%",
-      "confidence": 0.75,
+      "confidence": 0.617,
       "evidence_count": 54,
       "supporting": [
         "5 observations",
@@ -3282,8 +3282,8 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-4.04%",
-      "confidence": 0.75,
-      "evidence_count": 148,
+      "confidence": 0.7,
+      "evidence_count": 149,
       "supporting": [
         "5 observations",
         "5 observations",
@@ -3308,7 +3308,7 @@
       ],
       "contradicting": [],
       "created_at": 1775576798.0486548,
-      "last_validated": 1777033368.5515976,
+      "last_validated": 1780502940.3039014,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
@@ -3318,7 +3318,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_BUY_0-agree: LOSS in unknown, pnl=-102.47%",
-      "confidence": 0.75,
+      "confidence": 0.589,
       "evidence_count": 8,
       "supporting": [
         "5 observations",
@@ -3342,7 +3342,7 @@
     {
       "knowledge_type": "principle",
       "content": "[surprise] Pattern from 5 observations: Surprise BTC_BUY_0-agree: expected loss at 29% but won",
-      "confidence": 0.741,
+      "confidence": 0.535,
       "evidence_count": 7,
       "supporting": [
         "5 observations",
@@ -3365,7 +3365,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-1.04%",
-      "confidence": 0.75,
+      "confidence": 0.577,
       "evidence_count": 14,
       "supporting": [
         "5 observations",
@@ -3395,7 +3395,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-5.64%",
-      "confidence": 0.75,
+      "confidence": 0.617,
       "evidence_count": 15,
       "supporting": [
         "5 observations",
@@ -3426,7 +3426,7 @@
     {
       "knowledge_type": "principle",
       "content": "[surprise] Pattern from 5 observations: Surprise BTC_BUY_0-agree: expected loss at 27% but won",
-      "confidence": 0.734,
+      "confidence": 0.508,
       "evidence_count": 2,
       "supporting": [
         "5 observations",
@@ -3444,7 +3444,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: WIN in unknown, pnl=12.98%",
-      "confidence": 0.75,
+      "confidence": 0.617,
       "evidence_count": 15,
       "supporting": [
         "5 observations",
@@ -3475,7 +3475,7 @@
     {
       "knowledge_type": "observation",
       "content": "SOL performing poorly (28% WR, 29 trades, $-117)",
-      "confidence": 0.707,
+      "confidence": 0.482,
       "evidence_count": 1,
       "supporting": [
         "8/29 wins"
@@ -3495,7 +3495,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (30% WR)",
-      "confidence": 0.7,
+      "confidence": 0.583,
       "evidence_count": 43,
       "supporting": [],
       "contradicting": [],
@@ -3513,7 +3513,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 34% win rate (50 trades)",
-      "confidence": 1.5,
+      "confidence": 1.249,
       "evidence_count": 61,
       "supporting": [],
       "contradicting": [],
@@ -3530,7 +3530,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 61% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.418,
       "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
@@ -3548,7 +3548,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (31% WR)",
-      "confidence": 0.691,
+      "confidence": 0.518,
       "evidence_count": 20,
       "supporting": [],
       "contradicting": [],
@@ -3566,7 +3566,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (25% WR)",
-      "confidence": 0.7,
+      "confidence": 0.601,
       "evidence_count": 62,
       "supporting": [],
       "contradicting": [],
@@ -3584,7 +3584,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_0-agree: WIN in unknown, pnl=196.08%",
-      "confidence": 0.75,
+      "confidence": 0.639,
       "evidence_count": 10,
       "supporting": [
         "5 observations",
@@ -3610,7 +3610,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (0% WR, 3 trades, $-3)",
-      "confidence": 0.783,
+      "confidence": 0.54,
       "evidence_count": 3,
       "supporting": [
         "0/3 wins",
@@ -3632,7 +3632,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (20% WR)",
-      "confidence": 0.7,
+      "confidence": 0.566,
       "evidence_count": 14,
       "supporting": [],
       "contradicting": [],
@@ -3650,7 +3650,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (0% WR, 4 trades, $-3)",
-      "confidence": 0.783,
+      "confidence": 0.541,
       "evidence_count": 3,
       "supporting": [
         "0/4 wins",
@@ -3672,7 +3672,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 20% win rate (5 trades)",
-      "confidence": 0.6,
+      "confidence": 0.486,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -3689,7 +3689,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (0% WR, 3 trades, $-2)",
-      "confidence": 0.783,
+      "confidence": 0.54,
       "evidence_count": 4,
       "supporting": [
         "0/3 wins",
@@ -3712,7 +3712,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (27% WR, 11 trades, $-10)",
-      "confidence": 0.712,
+      "confidence": 0.492,
       "evidence_count": 1,
       "supporting": [
         "3/11 wins"
@@ -3732,7 +3732,7 @@
     {
       "knowledge_type": "observation",
       "content": "ETH showing strong performance (80% WR, 5 trades, $+7)",
-      "confidence": 0.786,
+      "confidence": 0.551,
       "evidence_count": 14,
       "supporting": [
         "4/5 wins",
@@ -3765,7 +3765,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in ranging regime (29% WR)",
-      "confidence": 0.698,
+      "confidence": 0.524,
       "evidence_count": 67,
       "supporting": [],
       "contradicting": [],
@@ -3783,7 +3783,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (27% WR)",
-      "confidence": 0.7,
+      "confidence": 0.59,
       "evidence_count": 10,
       "supporting": [],
       "contradicting": [],
@@ -3801,7 +3801,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (0% WR)",
-      "confidence": 0.7,
+      "confidence": 0.602,
       "evidence_count": 39,
       "supporting": [],
       "contradicting": [],
@@ -3819,7 +3819,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (3 trades)",
-      "confidence": 0.552,
+      "confidence": 0.391,
       "evidence_count": 13,
       "supporting": [],
       "contradicting": [],
@@ -3836,7 +3836,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: ETH_BUY_0-agree: WIN in unknown, pnl=3.29%",
-      "confidence": 0.75,
+      "confidence": 0.632,
       "evidence_count": 11,
       "supporting": [
         "5 observations",
@@ -3863,7 +3863,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_2-agree: LOSS in illiquid, pnl=-0.01%",
-      "confidence": 0.734,
+      "confidence": 0.508,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -3880,7 +3880,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_BUY_0-agree: LOSS in unknown, pnl=-78.23%",
-      "confidence": 0.749,
+      "confidence": 0.565,
       "evidence_count": 7,
       "supporting": [
         "5 observations",
@@ -3903,7 +3903,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: WIN in unknown, pnl=10.96%",
-      "confidence": 0.75,
+      "confidence": 0.585,
       "evidence_count": 10,
       "supporting": [
         "5 observations",
@@ -3929,7 +3929,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-0.04%",
-      "confidence": 0.75,
+      "confidence": 0.585,
       "evidence_count": 10,
       "supporting": [
         "5 observations",
@@ -3955,7 +3955,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-8.04%",
-      "confidence": 0.75,
+      "confidence": 0.585,
       "evidence_count": 18,
       "supporting": [
         "5 observations",
@@ -3989,7 +3989,7 @@
     {
       "knowledge_type": "principle",
       "content": "[surprise] Pattern from 5 observations: Surprise BTC_BUY_0-agree: expected loss at 30% but won",
-      "confidence": 0.742,
+      "confidence": 0.538,
       "evidence_count": 4,
       "supporting": [
         "5 observations",
@@ -4009,7 +4009,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_SELL_0-agree: LOSS in unknown, pnl=-6.05%",
-      "confidence": 0.75,
+      "confidence": 0.648,
       "evidence_count": 14,
       "supporting": [
         "5 observations",
@@ -4039,7 +4039,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (25% WR, 12 trades, $-11)",
-      "confidence": 0.735,
+      "confidence": 0.509,
       "evidence_count": 3,
       "supporting": [
         "3/12 wins",
@@ -4061,7 +4061,7 @@
     {
       "knowledge_type": "observation",
       "content": "SOL performing poorly (30% WR, 27 trades, $-4)",
-      "confidence": 0.689,
+      "confidence": 0.478,
       "evidence_count": 3,
       "supporting": [
         "8/27 wins",
@@ -4083,7 +4083,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC LONG illiquid 8.0x: conf=44% weak signal executed at leverage ceiling. 29% WR in illiquid regime known. Avoid ensemble in illiquid <50% conf.",
-      "confidence": 0.784,
+      "confidence": 0.543,
       "evidence_count": 1,
       "supporting": [
         "BTC in illiquid"
@@ -4104,7 +4104,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (25% WR, 12 trades, $-9)",
-      "confidence": 0.737,
+      "confidence": 0.518,
       "evidence_count": 12,
       "supporting": [
         "3/12 wins",
@@ -4135,7 +4135,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (24% WR)",
-      "confidence": 0.7,
+      "confidence": 0.601,
       "evidence_count": 24,
       "supporting": [],
       "contradicting": [],
@@ -4153,7 +4153,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in trending regime (83% WR)",
-      "confidence": 0.687,
+      "confidence": 0.482,
       "evidence_count": 9,
       "supporting": [],
       "contradicting": [],
@@ -4171,7 +4171,7 @@
     {
       "knowledge_type": "observation",
       "content": "SOL performing poorly (28% WR, 25 trades, $-97)",
-      "confidence": 0.707,
+      "confidence": 0.497,
       "evidence_count": 1,
       "supporting": [
         "7/25 wins"
@@ -4191,7 +4191,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in trending regime (33% WR)",
-      "confidence": 0.6666666666666667,
+      "confidence": 0.513,
       "evidence_count": 8,
       "supporting": [],
       "contradicting": [],
@@ -4209,7 +4209,7 @@
     {
       "knowledge_type": "observation",
       "content": "SOL performing poorly (29% WR, 24 trades, $-78)",
-      "confidence": 0.696,
+      "confidence": 0.49,
       "evidence_count": 1,
       "supporting": [
         "7/24 wins"
@@ -4229,7 +4229,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in  regime (31% WR)",
-      "confidence": 0.676,
+      "confidence": 0.475,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -4247,7 +4247,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (28% WR)",
-      "confidence": 0.693,
+      "confidence": 0.504,
       "evidence_count": 3,
       "supporting": [],
       "contradicting": [],
@@ -4265,7 +4265,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (29% WR, 14 trades, $-1)",
-      "confidence": 0.702,
+      "confidence": 0.495,
       "evidence_count": 2,
       "supporting": [
         "4/14 wins",
@@ -4286,7 +4286,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (0% WR, 3 trades, $-23)",
-      "confidence": 0.787,
+      "confidence": 0.556,
       "evidence_count": 1,
       "supporting": [
         "0/3 wins"
@@ -4306,7 +4306,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 80% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.405,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -4324,7 +4324,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_0-agree: WIN in unknown, pnl=25.42%",
-      "confidence": 0.738,
+      "confidence": 0.521,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -4341,7 +4341,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (25% WR, 4 trades, $+2)",
-      "confidence": 0.738,
+      "confidence": 0.521,
       "evidence_count": 1,
       "supporting": [
         "1/4 wins"
@@ -4361,7 +4361,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (29% WR, 17 trades, $+2)",
-      "confidence": 0.696,
+      "confidence": 0.496,
       "evidence_count": 7,
       "supporting": [
         "5/17 wins",
@@ -4387,7 +4387,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (21% WR)",
-      "confidence": 0.7,
+      "confidence": 0.568,
       "evidence_count": 8,
       "supporting": [],
       "contradicting": [],
@@ -4405,7 +4405,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in trending regime (70% WR)",
-      "confidence": 0.695,
+      "confidence": 0.511,
       "evidence_count": 35,
       "supporting": [],
       "contradicting": [],
@@ -4423,7 +4423,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (4 trades)",
-      "confidence": 0.571,
+      "confidence": 0.405,
       "evidence_count": 3,
       "supporting": [],
       "contradicting": [],
@@ -4440,7 +4440,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: ETH_BUY_2-agree: LOSS in trending, pnl=-0.08%",
-      "confidence": 0.739,
+      "confidence": 0.526,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -4457,7 +4457,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_SELL_0-agree: WIN in unknown, pnl=10.00%",
-      "confidence": 0.75,
+      "confidence": 0.648,
       "evidence_count": 12,
       "supporting": [
         "5 observations",
@@ -4485,7 +4485,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in illiquid regime (75% WR)",
-      "confidence": 0.691,
+      "confidence": 0.495,
       "evidence_count": 18,
       "supporting": [],
       "contradicting": [],
@@ -4503,7 +4503,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 50% win rate (4 trades)",
-      "confidence": 0.58,
+      "confidence": 0.498,
       "evidence_count": 51,
       "supporting": [],
       "contradicting": [],
@@ -4520,7 +4520,7 @@
     {
       "knowledge_type": "observation",
       "content": "ETH showing strong performance (71% WR, 7 trades, $+13)",
-      "confidence": 0.704,
+      "confidence": 0.503,
       "evidence_count": 5,
       "supporting": [
         "5/7 wins",
@@ -4544,7 +4544,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in  regime (80% WR)",
-      "confidence": 0.69,
+      "confidence": 0.492,
       "evidence_count": 3,
       "supporting": [],
       "contradicting": [],
@@ -4562,7 +4562,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in illiquid regime (80% WR)",
-      "confidence": 0.69,
+      "confidence": 0.493,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -4580,7 +4580,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in illiquid regime (100% WR)",
-      "confidence": 0.69,
+      "confidence": 0.492,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -4598,7 +4598,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (32% WR)",
-      "confidence": 0.6785714285714286,
+      "confidence": 0.568,
       "evidence_count": 3,
       "supporting": [],
       "contradicting": [],
@@ -4616,7 +4616,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_2-agree: LOSS in trending, pnl=-0.00%",
-      "confidence": 0.741,
+      "confidence": 0.535,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -4633,7 +4633,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_BUY_confidence_scorer: WIN in ranging, pnl=3.06%",
-      "confidence": 0.741,
+      "confidence": 0.535,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -4650,9 +4650,10 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-20.09%",
-      "confidence": 0.75,
-      "evidence_count": 8,
+      "confidence": 0.65,
+      "evidence_count": 9,
       "supporting": [
+        "5 observations",
         "5 observations",
         "5 observations",
         "5 observations",
@@ -4664,7 +4665,7 @@
       ],
       "contradicting": [],
       "created_at": 1775922998.5611956,
-      "last_validated": 1776712963.6563323,
+      "last_validated": 1780518332.8593166,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
@@ -4674,7 +4675,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_SELL_0-agree: LOSS in unknown, pnl=-4.04%",
-      "confidence": 0.75,
+      "confidence": 0.615,
       "evidence_count": 8,
       "supporting": [
         "5 observations",
@@ -4698,7 +4699,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-6.05%",
-      "confidence": 0.75,
+      "confidence": 0.615,
       "evidence_count": 16,
       "supporting": [
         "5 observations",
@@ -4730,7 +4731,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_SELL_0-agree: LOSS in unknown, pnl=-5.66%",
-      "confidence": 0.75,
+      "confidence": 0.615,
       "evidence_count": 8,
       "supporting": [
         "5 observations",
@@ -4754,7 +4755,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: WIN in unknown, pnl=194.45%",
-      "confidence": 0.75,
+      "confidence": 0.615,
       "evidence_count": 8,
       "supporting": [
         "5 observations",
@@ -4814,7 +4815,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_SELL_0-agree: LOSS in unknown, pnl=-4.00%",
-      "confidence": 0.75,
+      "confidence": 0.615,
       "evidence_count": 8,
       "supporting": [
         "5 observations",
@@ -4838,7 +4839,7 @@
     {
       "knowledge_type": "principle",
       "content": "[surprise] Pattern from 5 observations: Surprise TEST_BUY_0-agree: expected win at 75% but lost",
-      "confidence": 0.75,
+      "confidence": 0.577,
       "evidence_count": 20,
       "supporting": [
         "5 observations",
@@ -4874,7 +4875,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: WIN in unknown, pnl=6.00%",
-      "confidence": 0.75,
+      "confidence": 0.617,
       "evidence_count": 14,
       "supporting": [
         "5 observations",
@@ -4904,7 +4905,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: ETH_BUY_confidence_scorer: LOSS in illiquid, pnl=-0.01%",
-      "confidence": 0.741,
+      "confidence": 0.535,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -4921,7 +4922,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-12.04%",
-      "confidence": 0.75,
+      "confidence": 0.648,
       "evidence_count": 10,
       "supporting": [
         "5 observations",
@@ -4947,7 +4948,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_SELL_0-agree: LOSS in unknown, pnl=-7.55%",
-      "confidence": 0.75,
+      "confidence": 0.648,
       "evidence_count": 16,
       "supporting": [
         "5 observations",
@@ -4979,7 +4980,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 6 observations: SOL_BUY_0-agree: LOSS in unknown, pnl=-78.23%",
-      "confidence": 0.791,
+      "confidence": 0.57,
       "evidence_count": 1,
       "supporting": [
         "6 observations"
@@ -4996,7 +4997,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 6 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-4.04%",
-      "confidence": 0.791,
+      "confidence": 0.57,
       "evidence_count": 1,
       "supporting": [
         "6 observations"
@@ -5013,7 +5014,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: WIN in unknown, pnl=0.02%",
-      "confidence": 0.75,
+      "confidence": 0.589,
       "evidence_count": 8,
       "supporting": [
         "5 observations",
@@ -5037,7 +5038,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-0.26%",
-      "confidence": 0.75,
+      "confidence": 0.607,
       "evidence_count": 9,
       "supporting": [
         "5 observations",
@@ -5062,7 +5063,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: WIN in unknown, pnl=15.96%",
-      "confidence": 0.75,
+      "confidence": 0.607,
       "evidence_count": 10,
       "supporting": [
         "5 observations",
@@ -5088,7 +5089,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: WIN in unknown, pnl=15.94%",
-      "confidence": 0.75,
+      "confidence": 0.607,
       "evidence_count": 8,
       "supporting": [
         "5 observations",
@@ -5112,9 +5113,10 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_BUY_0-agree: LOSS in consolidation, pnl=-40.38%",
-      "confidence": 0.75,
-      "evidence_count": 19,
+      "confidence": 0.683,
+      "evidence_count": 20,
       "supporting": [
+        "5 observations",
         "5 observations",
         "5 observations",
         "5 observations",
@@ -5137,7 +5139,7 @@
       ],
       "contradicting": [],
       "created_at": 1775956139.5362158,
-      "last_validated": 1776721936.7125022,
+      "last_validated": 1780502940.2877994,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "trade_outcome",
@@ -5147,7 +5149,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: WIN in unknown, pnl=19.45%",
-      "confidence": 0.75,
+      "confidence": 0.607,
       "evidence_count": 16,
       "supporting": [
         "5 observations",
@@ -5179,7 +5181,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (29% WR, 17 trades, $-4)",
-      "confidence": 0.704,
+      "confidence": 0.528,
       "evidence_count": 41,
       "supporting": [
         "5/17 wins",
@@ -5218,7 +5220,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (29% WR)",
-      "confidence": 0.7,
+      "confidence": 0.582,
       "evidence_count": 39,
       "supporting": [],
       "contradicting": [],
@@ -5260,7 +5262,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_BUY_0-agree: LOSS in high_volatility, pnl=-40.38%",
-      "confidence": 0.75,
+      "confidence": 0.617,
       "evidence_count": 9,
       "supporting": [
         "5 observations",
@@ -5285,7 +5287,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_SELL_0-agree: WIN in unknown, pnl=4.00%",
-      "confidence": 0.75,
+      "confidence": 0.607,
       "evidence_count": 6,
       "supporting": [
         "5 observations",
@@ -5307,7 +5309,7 @@
     {
       "knowledge_type": "principle",
       "content": "SOL SHORT illiquid regime at 5.6x: stopped early despite correct direction. Illiquid = wide wicks kill tight SLs. Avoid 5.5x+ in illiquid; cap at 4.5x or widen SL to 3.5%+.",
-      "confidence": 0.796,
+      "confidence": 0.59,
       "evidence_count": 1,
       "supporting": [
         "SOL in illiquid"
@@ -5328,7 +5330,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_SELL_multi_tier_quality: LOSS in illiquid, pnl=-8.79%",
-      "confidence": 0.746,
+      "confidence": 0.554,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -5345,7 +5347,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: WIN in unknown, pnl=18.56%",
-      "confidence": 0.75,
+      "confidence": 0.648,
       "evidence_count": 6,
       "supporting": [
         "5 observations",
@@ -5367,7 +5369,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: WIN in unknown, pnl=14.96%",
-      "confidence": 0.75,
+      "confidence": 0.648,
       "evidence_count": 6,
       "supporting": [
         "5 observations",
@@ -5389,7 +5391,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_0-agree: LOSS in unknown, pnl=-4.00%",
-      "confidence": 0.75,
+      "confidence": 0.648,
       "evidence_count": 6,
       "supporting": [
         "5 observations",
@@ -5411,7 +5413,7 @@
     {
       "knowledge_type": "principle",
       "content": "ETH LONG at 7.0x leverage in unknown regime lost $0.13 in 40min. High conf (69.7%) + leverage mismatch = noise kill. Hold time suggests stopped early.",
-      "confidence": 0.796,
+      "confidence": 0.591,
       "evidence_count": 1,
       "supporting": [
         "ETH in "
@@ -5431,7 +5433,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (27% WR, 11 trades, $-37)",
-      "confidence": 0.726,
+      "confidence": 0.547,
       "evidence_count": 19,
       "supporting": [
         "3/11 wins",
@@ -5469,7 +5471,7 @@
     {
       "knowledge_type": "principle",
       "content": "HYPE LONG in trending regime: ensemble 27% WR despite regime match. Exit early (25min) saved $X. Thesis was right, execution noise killed it. Avoid ensemble on HYPE\u2014BB only has edge (61% WR).",
-      "confidence": 0.798,
+      "confidence": 0.599,
       "evidence_count": 1,
       "supporting": [
         "HYPE in trending"
@@ -5490,7 +5492,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (28% WR, 18 trades, $-7)",
-      "confidence": 0.721,
+      "confidence": 0.543,
       "evidence_count": 5,
       "supporting": [
         "5/18 wins",
@@ -5514,7 +5516,7 @@
     {
       "knowledge_type": "principle",
       "content": "SOL LONG illiquid regime: ensemble 47% on SOL but only 32% in illiquid. Regime mismatch cost the trade. Illiquid = noise spikes, wider spreads, stop hunts. Hold 100min = survived past noise kill thres",
-      "confidence": 0.798,
+      "confidence": 0.599,
       "evidence_count": 1,
       "supporting": [
         "SOL in illiquid"
@@ -5535,7 +5537,7 @@
     {
       "knowledge_type": "principle",
       "content": "ETH LONG at 62% confidence + 5x lev in unclear regime = noise kill. Ensemble in range/illiquid needs 75%+ conf or skip. Hold 48min suggests stopped early\u2014volatility mismatch.",
-      "confidence": 0.799,
+      "confidence": 0.602,
       "evidence_count": 1,
       "supporting": [
         "ETH in "
@@ -5555,7 +5557,7 @@
     {
       "knowledge_type": "principle",
       "content": "BTC LONG at 64.8% confidence + 5x lev in unclear regime + 48min hold = noise kill. Ensemble needs 75%+ in ambiguous conditions. SL hit fast.",
-      "confidence": 0.799,
+      "confidence": 0.602,
       "evidence_count": 1,
       "supporting": [
         "BTC in "
@@ -5575,7 +5577,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: ETH_BUY_0-agree: LOSS in unknown, pnl=-0.50%",
-      "confidence": 0.749,
+      "confidence": 0.565,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -5592,7 +5594,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (25% WR, 16 trades, $-7)",
-      "confidence": 0.75,
+      "confidence": 0.568,
       "evidence_count": 9,
       "supporting": [
         "4/16 wins",
@@ -5620,7 +5622,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (25% WR, 12 trades, $-46)",
-      "confidence": 0.75,
+      "confidence": 0.574,
       "evidence_count": 11,
       "supporting": [
         "3/12 wins",
@@ -5650,7 +5652,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (24% WR, 17 trades, $-9)",
-      "confidence": 0.7647058823529411,
+      "confidence": 0.585,
       "evidence_count": 2,
       "supporting": [
         "4/17 wins",
@@ -5671,7 +5673,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 32% win rate (50 trades)",
-      "confidence": 1.5,
+      "confidence": 1.278,
       "evidence_count": 39,
       "supporting": [],
       "contradicting": [],
@@ -5688,7 +5690,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (18% WR, 11 trades, $-50)",
-      "confidence": 0.8,
+      "confidence": 0.613,
       "evidence_count": 2,
       "supporting": [
         "2/11 wins",
@@ -5709,7 +5711,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (20% WR, 10 trades, $-37)",
-      "confidence": 0.8,
+      "confidence": 0.613,
       "evidence_count": 2,
       "supporting": [
         "2/10 wins",
@@ -5730,7 +5732,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (26% WR)",
-      "confidence": 0.7,
+      "confidence": 0.546,
       "evidence_count": 11,
       "supporting": [],
       "contradicting": [],
@@ -5748,7 +5750,7 @@
     {
       "knowledge_type": "observation",
       "content": "2-strategy agreement: 25% win rate (4 trades)",
-      "confidence": 0.58,
+      "confidence": 0.445,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -5765,7 +5767,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (29% WR, 17 trades, $+15)",
-      "confidence": 0.7058823529411764,
+      "confidence": 0.543,
       "evidence_count": 3,
       "supporting": [
         "5/17 wins",
@@ -5787,7 +5789,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (20% WR, 10 trades, $-36)",
-      "confidence": 0.8,
+      "confidence": 0.615,
       "evidence_count": 3,
       "supporting": [
         "2/10 wins",
@@ -5809,7 +5811,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (23% WR)",
-      "confidence": 0.7,
+      "confidence": 0.602,
       "evidence_count": 17,
       "supporting": [],
       "contradicting": [],
@@ -5827,7 +5829,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (18% WR, 11 trades, $-37)",
-      "confidence": 0.8,
+      "confidence": 0.617,
       "evidence_count": 2,
       "supporting": [
         "2/11 wins",
@@ -5848,7 +5850,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: ETH_BUY_BB: WIN in trending, pnl=0.93%",
-      "confidence": 0.75,
+      "confidence": 0.577,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -5865,7 +5867,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (9% WR, 11 trades, $-40)",
-      "confidence": 0.8,
+      "confidence": 0.617,
       "evidence_count": 4,
       "supporting": [
         "1/11 wins",
@@ -5888,7 +5890,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 63% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.416,
       "evidence_count": 20,
       "supporting": [],
       "contradicting": [],
@@ -5906,7 +5908,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 64% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.385,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -5924,7 +5926,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (10% WR, 10 trades, $-37)",
-      "confidence": 0.8,
+      "confidence": 0.623,
       "evidence_count": 10,
       "supporting": [
         "1/10 wins",
@@ -5953,7 +5955,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 100% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.388,
       "evidence_count": 5,
       "supporting": [],
       "contradicting": [],
@@ -5971,7 +5973,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: TEST_SELL_0-agree: WIN in unknown, pnl=500.00%",
-      "confidence": 0.75,
+      "confidence": 0.648,
       "evidence_count": 7,
       "supporting": [
         "5 observations",
@@ -5994,7 +5996,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: ETH_BUY_0-agree: LOSS in unknown, pnl=-0.06%",
-      "confidence": 0.75,
+      "confidence": 0.585,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -6011,7 +6013,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (0% WR, 9 trades, $-41)",
-      "confidence": 0.8,
+      "confidence": 0.639,
       "evidence_count": 12,
       "supporting": [
         "0/9 wins",
@@ -6042,7 +6044,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 66% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.398,
       "evidence_count": 11,
       "supporting": [],
       "contradicting": [],
@@ -6060,7 +6062,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_BUY_BB: WIN in trending, pnl=40.03%",
-      "confidence": 0.75,
+      "confidence": 0.585,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -6077,7 +6079,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (0% WR, 8 trades, $-40)",
-      "confidence": 0.8,
+      "confidence": 0.645,
       "evidence_count": 7,
       "supporting": [
         "0/8 wins",
@@ -6103,7 +6105,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (22% WR)",
-      "confidence": 0.7,
+      "confidence": 0.562,
       "evidence_count": 2,
       "supporting": [],
       "contradicting": [],
@@ -6121,7 +6123,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 65% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.422,
       "evidence_count": 14,
       "supporting": [],
       "contradicting": [],
@@ -6139,7 +6141,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (29% WR, 14 trades, $-13)",
-      "confidence": 0.7142857142857143,
+      "confidence": 0.579,
       "evidence_count": 10,
       "supporting": [
         "4/14 wins",
@@ -6168,7 +6170,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (0% WR, 9 trades, $-54)",
-      "confidence": 0.8,
+      "confidence": 0.647,
       "evidence_count": 1,
       "supporting": [
         "0/9 wins"
@@ -6188,7 +6190,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 30% win rate (50 trades)",
-      "confidence": 1.5,
+      "confidence": 1.286,
       "evidence_count": 6,
       "supporting": [],
       "contradicting": [],
@@ -6205,7 +6207,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 68% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.429,
       "evidence_count": 6,
       "supporting": [],
       "contradicting": [],
@@ -6223,7 +6225,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: SOL_BUY_0-agree: LOSS in unknown, pnl=-15.85%",
-      "confidence": 0.75,
+      "confidence": 0.606,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -6240,7 +6242,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in illiquid regime (17% WR)",
-      "confidence": 0.7,
+      "confidence": 0.567,
       "evidence_count": 0,
       "supporting": [],
       "contradicting": [],
@@ -6258,7 +6260,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (0% WR, 8 trades, $-36)",
-      "confidence": 0.8,
+      "confidence": 0.649,
       "evidence_count": 5,
       "supporting": [
         "0/8 wins",
@@ -6282,7 +6284,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (25% WR, 12 trades, $-15)",
-      "confidence": 0.75,
+      "confidence": 0.611,
       "evidence_count": 4,
       "supporting": [
         "3/12 wins",
@@ -6305,7 +6307,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (12% WR, 8 trades, $-25)",
-      "confidence": 0.8,
+      "confidence": 0.656,
       "evidence_count": 10,
       "supporting": [
         "1/8 wins",
@@ -6334,7 +6336,7 @@
     {
       "knowledge_type": "observation",
       "content": "System performs well in ranging regime (67% WR)",
-      "confidence": 0.6666666666666666,
+      "confidence": 0.556,
       "evidence_count": 28,
       "supporting": [],
       "contradicting": [],
@@ -6352,7 +6354,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (29% long WR vs 62% short WR)",
-      "confidence": 0.9000000000000004,
+      "confidence": 0.734,
       "evidence_count": 3,
       "supporting": [
         "Short WR=62%",
@@ -6380,7 +6382,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 62% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.415,
       "evidence_count": 20,
       "supporting": [],
       "contradicting": [],
@@ -6398,7 +6400,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (27% WR, 11 trades, $-15)",
-      "confidence": 0.7272727272727273,
+      "confidence": 0.595,
       "evidence_count": 6,
       "supporting": [
         "3/11 wins",
@@ -6423,7 +6425,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (29% long WR vs 56% short WR)",
-      "confidence": 0.9000000000000004,
+      "confidence": 0.738,
       "evidence_count": 5,
       "supporting": [
         "Short WR=56%",
@@ -6451,7 +6453,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (25% WR, 12 trades, $-18)",
-      "confidence": 0.75,
+      "confidence": 0.639,
       "evidence_count": 26,
       "supporting": [
         "3/12 wins",
@@ -6490,7 +6492,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (14% WR, 7 trades, $-23)",
-      "confidence": 0.8,
+      "confidence": 0.681,
       "evidence_count": 39,
       "supporting": [
         "1/7 wins",
@@ -6529,7 +6531,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (30% long WR vs 50% short WR)",
-      "confidence": 0.9000000000000004,
+      "confidence": 0.75,
       "evidence_count": 18,
       "supporting": [
         "Short WR=50%",
@@ -6557,7 +6559,7 @@
     {
       "knowledge_type": "principle",
       "content": "[trade_outcome] Pattern from 5 observations: HYPE_BUY_regime_trend: LOSS in illiquid, pnl=-22.34%",
-      "confidence": 0.75,
+      "confidence": 0.615,
       "evidence_count": 1,
       "supporting": [
         "5 observations"
@@ -6574,7 +6576,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (27% WR, 11 trades, $-17)",
-      "confidence": 0.7272727272727273,
+      "confidence": 0.605,
       "evidence_count": 2,
       "supporting": [
         "3/11 wins",
@@ -6595,7 +6597,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (31% long WR vs 55% short WR)",
-      "confidence": 0.15000000000000005,
+      "confidence": 0.126,
       "evidence_count": 2,
       "supporting": [
         "Short WR=55%",
@@ -6619,12 +6621,13 @@
       "tags": [
         "side_bias"
       ],
-      "source": "causal_analysis"
+      "source": "causal_analysis",
+      "stale": true
     },
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors longs (67% long WR vs 33% short WR)",
-      "confidence": 0.1,
+      "confidence": 0.086,
       "evidence_count": 0,
       "supporting": [
         "Long WR=67%",
@@ -6648,12 +6651,13 @@
       "tags": [
         "side_bias"
       ],
-      "source": "causal_analysis"
+      "source": "causal_analysis",
+      "stale": true
     },
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (0% WR, 3 trades, $-45)",
-      "confidence": 0.8,
+      "confidence": 0.685,
       "evidence_count": 1,
       "supporting": [
         "0/3 wins"
@@ -6673,7 +6677,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 40% win rate (5 trades)",
-      "confidence": 0.6,
+      "confidence": 0.515,
       "evidence_count": 1,
       "supporting": [],
       "contradicting": [],
@@ -6690,7 +6694,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors longs (50% long WR vs 0% short WR)",
-      "confidence": 0.7500000000000003,
+      "confidence": 0.643,
       "evidence_count": 0,
       "supporting": [
         "Long WR=50%",
@@ -6719,7 +6723,7 @@
     {
       "knowledge_type": "observation",
       "content": "HYPE performing poorly (21% WR, 14 trades, $-51)",
-      "confidence": 0.7857142857142857,
+      "confidence": 0.675,
       "evidence_count": 6,
       "supporting": [
         "3/14 wins",
@@ -6744,7 +6748,7 @@
     {
       "knowledge_type": "observation",
       "content": "BTC performing poorly (12% WR, 8 trades, $-40)",
-      "confidence": 0.8,
+      "confidence": 0.689,
       "evidence_count": 6,
       "supporting": [
         "1/8 wins",
@@ -6769,7 +6773,7 @@
     {
       "knowledge_type": "observation",
       "content": "System struggles in  regime (22% WR)",
-      "confidence": 0.7,
+      "confidence": 0.602,
       "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
@@ -6787,7 +6791,7 @@
     {
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 28% win rate (50 trades)",
-      "confidence": 1.5,
+      "confidence": 1.291,
       "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
@@ -6804,7 +6808,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "High leverage (5x+) trades losing at 69% - consider capping leverage",
-      "confidence": 0.5,
+      "confidence": 0.431,
       "evidence_count": 4,
       "supporting": [],
       "contradicting": [],
@@ -6822,7 +6826,7 @@
     {
       "knowledge_type": "graduated_rule",
       "content": "[EDGE] BTC performs strongly in trend regime",
-      "confidence": 0.8,
+      "confidence": 0.692,
       "evidence_count": 15,
       "evidence_ratio": 0.75,
       "category": "regime",
@@ -6845,7 +6849,7 @@
     {
       "knowledge_type": "graduated_rule",
       "content": "[CAUTION] ETH short signals are weak in range regime",
-      "confidence": 0.8,
+      "confidence": 0.692,
       "evidence_count": 15,
       "evidence_ratio": 0.75,
       "category": "regime",
@@ -6870,7 +6874,7 @@
     {
       "knowledge_type": "graduated_rule",
       "content": "[AVOID] Never buy SOL in panic regime",
-      "confidence": 0.8,
+      "confidence": 0.692,
       "evidence_count": 15,
       "evidence_ratio": 0.75,
       "category": "regime",
@@ -6895,7 +6899,7 @@
     {
       "knowledge_type": "graduated_rule",
       "content": "[EDGE] BTC has a strong edge in trend regime",
-      "confidence": 0.8,
+      "confidence": 0.692,
       "evidence_count": 15,
       "evidence_ratio": 0.85,
       "category": "regime",
@@ -6918,7 +6922,7 @@
     {
       "knowledge_type": "graduated_rule",
       "content": "[CAUTION] DOGE shows poor performance in range regime",
-      "confidence": 0.8,
+      "confidence": 0.692,
       "evidence_count": 15,
       "evidence_ratio": 0.75,
       "category": "regime",
@@ -6941,7 +6945,7 @@
     {
       "knowledge_type": "graduated_rule",
       "content": "[CAUTION] DOGE shows poor performance in range",
-      "confidence": 0.8,
+      "confidence": 0.692,
       "evidence_count": 15,
       "evidence_ratio": 0.75,
       "category": "regime",
@@ -7103,6 +7107,161 @@
       "last_validated": 1780415188.104773,
       "validation_count": 395,
       "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "[trade_outcome] Pattern from 5 observations: BTC_SELL_regime_trend: LOSS in trending_bear, pnl=-0.04%",
+      "confidence": 0.75,
+      "evidence_count": 1,
+      "supporting": [
+        "5 observations"
+      ],
+      "contradicting": [],
+      "created_at": 1780501417.2058005,
+      "last_validated": 1780501417.2058008,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "trade_outcome",
+      "tags": [],
+      "source": "consolidation"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Ensemble shorts in consolidation hit SL 75% of the time (25% WR on 16 trades). Skip or require >3 confluence.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "BTC in consolidation"
+      ],
+      "contradicting": [],
+      "created_at": 1780501694.2086525,
+      "last_validated": 1780501694.2086527,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "btc",
+        "consolidation"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "[trade_outcome] Pattern from 5 observations: BTC_SELL_BB: LOSS in trending_bear, pnl=-1.30%",
+      "confidence": 0.75,
+      "evidence_count": 1,
+      "supporting": [
+        "5 observations"
+      ],
+      "contradicting": [],
+      "created_at": 1780502107.6598282,
+      "last_validated": 1780502107.6598282,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "trade_outcome",
+      "tags": [],
+      "source": "consolidation"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "BTC LONG 26% confidence at 5.6x (inverse sizing error). Exit agent caught regime mismatch @4h. Rule: leverage < (confidence / 25).",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "BTC in range"
+      ],
+      "contradicting": [],
+      "created_at": 1780502823.5762165,
+      "last_validated": 1780502823.5762165,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "sizing",
+      "tags": [
+        "sizing",
+        "btc",
+        "range"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "[trade_outcome] Pattern from 5 observations: BTC_BUY_confidence_scorer: LOSS in high_volatility, pnl=-0.32%",
+      "confidence": 0.75,
+      "evidence_count": 1,
+      "supporting": [
+        "5 observations"
+      ],
+      "contradicting": [],
+      "created_at": 1780502940.189738,
+      "last_validated": 1780502940.189738,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "trade_outcome",
+      "tags": [],
+      "source": "consolidation"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Ensemble SHORT in consolidation/range has 25% WR (16 trades). This loss exemplifies regime mismatch. Avoid or use 2-3x leverage.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "BTC in consolidation"
+      ],
+      "contradicting": [],
+      "created_at": 1780518392.459656,
+      "last_validated": 1780518392.4596562,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "btc",
+        "consolidation"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "Ranging regime weak for LONGs (25% WR). 5.6x leverage at 24.8% confidence, volume thesis broke. Fix: cap 2-3x leverage in ranges.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "BTC in ranging"
+      ],
+      "contradicting": [],
+      "created_at": 1780520146.1174123,
+      "last_validated": 1780520146.1174126,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "btc",
+        "ranging"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "SOL SHORT sniper_premium: stopped 30min at 5x. Strategy 30% WR on SOL vs 45% ensemble\u2014avoid or filter regime.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "SOL in "
+      ],
+      "contradicting": [],
+      "created_at": 1780688480.0886238,
+      "last_validated": 1780688480.0886242,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "strategy_edge",
+      "tags": [
+        "strategy_edge",
+        "sol"
+      ],
+      "source": "learning_agent"
     }
   ]
 }

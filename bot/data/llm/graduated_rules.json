@@ -102,8 +102,8 @@
       "evidence_ratio": 0.023,
       "total_evidence": 411,
       "created_at": 1746382701.0,
-      "last_applied": 1778811039.5388637,
-      "times_applied": 3,
+      "last_applied": 1780692738.673483,
+      "times_applied": 48,
       "times_correct": 0,
       "active": true
     },
@@ -122,8 +122,8 @@
       "evidence_ratio": 0.25,
       "total_evidence": 40,
       "created_at": 1746382701.0,
-      "last_applied": 1780501371.2853794,
-      "times_applied": 445,
+      "last_applied": 1780689466.8919168,
+      "times_applied": 566,
       "times_correct": 0,
       "active": true
     },
@@ -141,8 +141,8 @@
       "evidence_ratio": 0.67,
       "total_evidence": 43,
       "created_at": 1747267200.0,
-      "last_applied": 1780348246.5763674,
-      "times_applied": 52,
+      "last_applied": 1780692817.2530525,
+      "times_applied": 87,
       "times_correct": 0,
       "active": true
     },
@@ -216,7 +216,7 @@
       "created_at": 1779360684.0,
       "last_applied": null,
       "times_applied": 0,
-      "times_correct": 0,
+      "times_correct": 90,
       "active": true
     },
     {
@@ -235,7 +235,7 @@
       "last_applied": 1780348418.9720886,
       "times_applied": 1808,
       "times_correct": 0,
-      "active": true
+      "active": false
     },
     {
       "rule_id": "tod_afternoon_edge_v1",
@@ -267,9 +267,9 @@
       "evidence_ratio": 0.55,
       "total_evidence": 2172,
       "created_at": 1779407200.0,
-      "last_applied": null,
-      "times_applied": 0,
-      "times_correct": 0,
+      "last_applied": 1780521024.443438,
+      "times_applied": 1,
+      "times_correct": 57,
       "active": true
     },
     {
@@ -327,8 +327,8 @@
       "evidence_ratio": 0.69,
       "total_evidence": 2172,
       "created_at": 1779419602.7878811,
-      "last_applied": 1780501555.182068,
-      "times_applied": 128,
+      "last_applied": 1780521503.2864165,
+      "times_applied": 181,
       "times_correct": 0,
       "active": true
     },
@@ -369,8 +369,8 @@
       "evidence_ratio": 0.35,
       "total_evidence": 2172,
       "created_at": 1779419602.7878811,
-      "last_applied": 0.0,
-      "times_applied": 0,
+      "last_applied": 1780689467.080651,
+      "times_applied": 26,
       "times_correct": 0,
       "active": true
     },
@@ -389,8 +389,8 @@
       "evidence_ratio": 0.35,
       "total_evidence": 2172,
       "created_at": 1779419602.7878811,
-      "last_applied": 1780501371.285391,
-      "times_applied": 80,
+      "last_applied": 1780521407.047019,
+      "times_applied": 85,
       "times_correct": 0,
       "active": true
     },
@@ -406,9 +406,9 @@
       "evidence_ratio": 0.25,
       "total_evidence": 16,
       "created_at": 1779487857.5699627,
-      "last_applied": 1780500801.0271688,
-      "times_applied": 3,
-      "times_correct": 0,
+      "last_applied": 1780520058.9935799,
+      "times_applied": 8,
+      "times_correct": 249,
       "active": true
     },
     {
@@ -466,7 +466,7 @@
       "created_at": 1748822400.0,
       "last_applied": null,
       "times_applied": 0,
-      "times_correct": 0,
+      "times_correct": 426,
       "active": true
     },
     {
@@ -537,48 +537,10 @@
       "evidence_ratio": 1.0,
       "total_evidence": 4,
       "created_at": 1780499610.3382964,
-      "last_applied": 1780500801.027183,
-      "times_applied": 1,
+      "last_applied": 1780520058.9935877,
+      "times_applied": 6,
       "times_correct": 0,
       "active": true
-    },
-    {
-      "rule_id": "trending_bear_hold_time_extend_v1",
-      "hypothesis_statement": "In trending_bear regime, 12-24h holds = 100% WR (+$856), <12h = 0% WR. Crash window rewards patience. Do NOT apply consolidation 6h hold cap in trending_bear.",
-      "action": "advisory",
-      "conditions": {
-        "regime": "trending_bear"
-      },
-      "adjustment": 0.0,
-      "confidence": 0.68,
-      "evidence_ratio": 1.0,
-      "total_evidence": 4,
-      "created_at": 1780501572.5959523,
-      "last_applied": 0.0,
-      "times_applied": 0,
-      "times_correct": 0,
-      "active": true,
-      "source": "backtest_2026-06-03_corrected",
-      "notes": "BTC Mar-2026 crash window (corrected 6h data): 3 trades held 12-24h = 100% WR +$856. 2 trades held <12h = 0% WR -$1,663. Hold time regime-dependence is real and opposite to consolidation."
-    },
-    {
-      "rule_id": "high_confidence_overfit_universal_v1",
-      "hypothesis_statement": "90-100% confidence signals lose in BOTH consolidation AND trending_bear. Nov-2025: -$832 (0% WR). Mar-2026: -$832 (0% WR). Sweet spot is 60-89%. Universal across regimes.",
-      "action": "skeptical_note",
-      "conditions": {
-        "confidence_min": 90
-      },
-      "adjustment": 0.0,
-      "confidence": 0.78,
-      "evidence_ratio": 0.0,
-      "total_evidence": 8,
-      "created_at": 1780501572.5959523,
-      "last_applied": 0.0,
-      "times_applied": 0,
-      "times_correct": 0,
-      "active": true,
-      "source": "backtest_2026-06-03_corrected",
-      "notes": "Confirmed in 2 independent regimes: consolidation Nov-2025 and trending_bear Mar-2026. Both show 90-100% conf as 0% WR losing bucket. Confidence 60-69% = 100% WR in trending_bear. Confidence 80-89% = 67% WR in consolidation. Apply Critic skepticism to any signal with conf>90 regardless of regime."
     }
   ]
 }

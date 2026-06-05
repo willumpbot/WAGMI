@@ -18,7 +18,7 @@
       "evidence": "2,172-signal analysis: BB solo >> multi-strategy agreement",
       "source": "deep_signal_analysis_2172",
       "validated": true,
-      "validation_count": 2170
+      "validation_count": 2169
     },
     {
       "ts": 1776722083.6466646,
@@ -688,7 +688,7 @@
       "evidence": "5-week rolling window analysis. Long vs short PnL by symbol by week.",
       "source": "quant_research_2026_04_03",
       "validated": false,
-      "validation_count": -15
+      "validation_count": -16
     },
     {
       "ts": 1775338634.1558795,
@@ -1108,7 +1108,7 @@
       "evidence": "Critic predicted opposite: SIX OVERLAPPING VETO CRITERIA:\n\n1. **REGIME VETO (0% WR)**: HYPE_LONG_ranging = 0% WR on 4 trades. N",
       "source": "critic_agent",
       "validated": true,
-      "validation_count": 14
+      "validation_count": 15
     },
     {
       "ts": 1776048479.7240715,
@@ -1288,7 +1288,7 @@
       "evidence": "Critic predicted opposite: VETO WITH EXTREME PREJUDICE. This trade violates 8+ structural axioms and has ZERO historical edge i",
       "source": "critic_agent",
       "validated": true,
-      "validation_count": 18
+      "validation_count": 19
     },
     {
       "ts": 1776052426.9235864,
@@ -1398,7 +1398,7 @@
       "evidence": "Critic predicted opposite: HARD VETO. This is a textbook structural trap that the Trade Agent ALREADY REJECTED (action=skip, co",
       "source": "critic_agent",
       "validated": true,
-      "validation_count": 8
+      "validation_count": 9
     },
     {
       "ts": 1776069738.8285975,
@@ -1458,7 +1458,7 @@
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": true,
-      "validation_count": 8
+      "validation_count": 9
     },
     {
       "ts": 1776081410.39285,
@@ -2003,9 +2003,9 @@
     {
       "ts": 1776986890.350251,
       "category": "symbol_insight",
-      "insight": "CORRECTED 2026-06-02: SOL.SHORT hard-block was based on broken-execution all-hours data (n=42 WR=36%). Clean US-session data (edge_analysis_raw.json, n=213) shows SOL.SELL = 62% WR EV+0.99%/trade — POSITIVE edge. Gate: US session only (14-22 UTC). BTC.LONG hard-block partially correct: 22% WR in US session (BLOCK), but 56% WR in trending non-US hours (ALLOW with multi-strategy agreement). Original n=42/n=16 were from broken-execution old-bot across all hours — not representative of clean filtered conditions.",
+      "insight": "CORRECTED 2026-06-02: SOL.SHORT hard-block was based on broken-execution all-hours data (n=42 WR=36%). Clean US-session data (edge_analysis_raw.json, n=213) shows SOL.SELL = 62% WR EV+0.99%/trade \u00e2\u20ac\u201d POSITIVE edge. Gate: US session only (14-22 UTC). BTC.LONG hard-block partially correct: 22% WR in US session (BLOCK), but 56% WR in trending non-US hours (ALLOW with multi-strategy agreement). Original n=42/n=16 were from broken-execution old-bot across all hours \u00e2\u20ac\u201d not representative of clean filtered conditions.",
       "confidence": 0.93,
-      "evidence": "SOL.SELL US-session: edge_analysis_raw.json n=213 WR=62% EV=+0.99%; time_edge_results.json n=225 WR=58.7% at 18 UTC. BTC.LONG US-session: edge_analysis_raw.json n=99 WR=22%; time_edge_results.json n=147 WR=15% at 18 UTC. BTC.LONG trending non-US: strategy_fingerprints.json n=36 WR=56% mechanical backtest. Original broken-exec data: SOL.SHORT n=42 WR=36%; BTC.LONG n=16 WR=19% — all-hours, broken execution.",
+      "evidence": "SOL.SELL US-session: edge_analysis_raw.json n=213 WR=62% EV=+0.99%; time_edge_results.json n=225 WR=58.7% at 18 UTC. BTC.LONG US-session: edge_analysis_raw.json n=99 WR=22%; time_edge_results.json n=147 WR=15% at 18 UTC. BTC.LONG trending non-US: strategy_fingerprints.json n=36 WR=56% mechanical backtest. Original broken-exec data: SOL.SHORT n=42 WR=36%; BTC.LONG n=16 WR=19% \u00e2\u20ac\u201d all-hours, broken execution.",
       "source": "quant_alpha_update_2026_06_02",
       "validated": true,
       "validation_count": 58
@@ -2204,6 +2204,796 @@
       "insight": "Counter-thesis: BTC at 69,480 after -2.6% 24h decline in a range regime is more likely to oscillate or mean-revert than to continue falling. Range regimes by definiti",
       "confidence": 0.5,
       "evidence": "Critic predicted opposite: Two hard red flags confirmed with wired evidence: (1) solo signal at 31% WR net $0 payoff per ground",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780500034.324547,
+      "category": "meta",
+      "insight": "Self-critique: No vacc data provided. Challenge driven by negative-EV fee math (mechanical) and regime agent's own directional uncertainty statement \u2014 not pure risk ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Three convergent evidence-based objections: (1) mechanical fee math yields negative EV at 31% WR + 3",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780500034.327845,
+      "category": "prediction",
+      "insight": "Counter-thesis: BB squeeze resolves upward or laterally, not down. Solo SELL at 0.6c ensemble confidence with unconfirmed breakout direction is a coin flip. At 31% WR",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Three convergent evidence-based objections: (1) mechanical fee math yields negative EV at 31% WR + 3",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780500183.898385,
+      "category": "meta",
+      "insight": "Self-critique: vacc not provided; defaulting to normal threshold. Would require 4+ red flags at vacc<0.50 \u2014 6 red flags present including hard EV math failure. Chall",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: CHALLENGE on EV math, not caution. R:R 0.5:1 + 35% WR = -0.475 EV per unit. No amount of regime fit ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780500183.901829,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC consolidation squeeze direction is genuinely uncertain; 0.5:1 R:R at 35% WR produces deeply negative EV (-0.475 per unit). Price equally likely to",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: CHALLENGE on EV math, not caution. R:R 0.5:1 + 35% WR = -0.475 EV per unit. No amount of regime fit ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780500369.3966541,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent self-assigned 0.4 confidence, flagged network miscalibration, and acknowledged solo signal cap \u2014 the thesis is coherent but the agent's ow",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 5 concrete red flags with supporting evidence: (1) solo signal 31% WR net $0 historically \u2014 no stati",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780500369.400295,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC breaks UPWARD from the BB squeeze. The 1h candle is trending +0.3% against the SELL thesis, volume is at 0.5x average (no selling conviction), and",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 5 concrete red flags with supporting evidence: (1) solo signal 31% WR net $0 historically \u2014 no stati",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780500655.2116168,
+      "category": "meta",
+      "insight": "Self-critique: Challenge based solely on system's own flagged metrics (fee drag, trade agent accuracy, solo WR) and EV math \u2014 not external caution. If vacc < 0.50, o",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Three wired-data red flags from the system's own snapshot combine for negative EV: (1) solo WR 31% <",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780500655.2154646,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC BB squeeze resolves upward or remains rangebound. The bearish thesis rests on a solo ensemble signal generated by a demonstrably miscalibrated Tra",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Three wired-data red flags from the system's own snapshot combine for negative EV: (1) solo WR 31% <",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780501023.9281042,
+      "category": "meta",
+      "insight": "Self-critique: vacc not provided in snapshot. Applied normal challenge threshold (2+ red flags with evidence). 4 red flags present with cited data \u2014 challenge is war",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 red flags with direct evidence: (1) solo signal <80% conf (explicit challenge rule), (2) network 3",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780501023.931749,
+      "category": "prediction",
+      "insight": "Counter-thesis: BB squeeze direction is explicitly uncertain until volatility expansion confirms. The slight 1h bullish price action (+0.2% uptick against thesis) and",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 red flags with direct evidence: (1) solo signal <80% conf (explicit challenge rule), (2) network 3",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780501220.52155,
+      "category": "meta",
+      "insight": "Self-critique: vacc not available in snapshot. Challenge justified by 4 compounding flags including Trade Agent's own internal timing contradiction, not critic cauti",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Four compounding issues prevent approval: (1) Trade Agent's own guidance explicitly says 'wait for p",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780501220.5252848,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC is pre-breakout in declining-vol consolidation (0.9x vol ratio). Without a confirmed pullback entry, entering now places the position in the noise",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Four compounding issues prevent approval: (1) Trade Agent's own guidance explicitly says 'wait for p",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780501555.1329517,
+      "category": "meta",
+      "insight": "Self-critique: OVERDRIVE default-approve was considered, but wired miscalibration data (35% acc, +18% drift) constitutes specific evidence-based counter-thesis, not ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 red flags with wired-data backing meet the challenge bar: (1) network miscalibration is explicit w",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780501555.1366606,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC squeeze more likely resolves upward: 1h momentum is +0.6% positive, network is miscalibrated with +18% bearish drift (wired: 35% acc n=17) meaning",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 red flags with wired-data backing meet the challenge bar: (1) network miscalibration is explicit w",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780502342.228302,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent at 35% WR (n=17, +18% drift) means expected value on its 'go' calls is already depressed. Applying this calibration further supports skip.",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Three hard red flags with mathematical and wired-data backing: (1) R:R=1.41<1.5 yields negative EV a",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780502342.2321014,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC consolidates within range or mean-reverts. Regime momentum is explicitly WEAKENING \u2014 the range-to-trend breakout thesis requires ADX surge >20 and",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Three hard red flags with mathematical and wired-data backing: (1) R:R=1.41<1.5 yields negative EV a",
+      "source": "critic_agent",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1780502504.308577,
+      "category": "meta",
+      "insight": "Self-critique: Critic invoking R:R math veto \u2014 log this decision for vacc tracking. If BTC reaches $107.5K within 8h, vacc penalty applies.",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Negative EV math is the decisive factor: 31% solo WR * 1.07 R:R = -0.36% expected value per trade. R",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780502504.3124008,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC at $106,469 post +4.5% 24h move in a range regime with flat 1h momentum (0.0%) and below-avg volume (0.6x) is more likely to consolidate or retrac",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Negative EV math is the decisive factor: 31% solo WR * 1.07 R:R = -0.36% expected value per trade. R",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780502763.3426113,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Regime failure. 1h-old LONG in RANGE regime (25% WR vs 39% overall) with 0.5x dead volume and -0.2% 1h momentum. Range-to-trend transition mechanism f",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780503013.8578913,
+      "category": "meta",
+      "insight": "Self-critique: R:R geometry is the primary veto driver, not regime or confidence alone. If stop can be tightened to achieve R:R >= 1.5 with same target, reconsider. ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 red flags with evidence: negative EV (R:R <1.0 at 35% WR), solo signal below confidence threshold,",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780503013.8617992,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC range consolidation with 35% WR solo signal and R:R likely below 1.0 (stop 1.2% vs target 0.5-1% = R:R 0.42-0.83) yields mathematically negative E",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 red flags with evidence: negative EV (R:R <1.0 at 35% WR), solo signal below confidence threshold,",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780503200.1111758,
+      "category": "meta",
+      "insight": "Self-critique: Miscalibrated system (35% acc) makes confidence scores unreliable. All 5 red flags sourced from live data in snapshot, not historical wisdom. Counter-",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 5 red flags with evidence: (1) solo signal 31% WR ground truth, (2) system miscalibrated 35% acc, (3",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780503200.1149857,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC more likely to consolidate within range or revisit range midpoint given solo signal from a miscalibrated system (35% acc, n=17), weakening 1h mome",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 5 red flags with evidence: (1) solo signal 31% WR ground truth, (2) system miscalibrated 35% acc, (3",
+      "source": "critic_agent",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1780503305.772399,
+      "category": "meta",
+      "insight": "Self-critique: Risk Agent override=skip with sz=0.0 is the strongest signal \u2014 when sizing chain independently reaches zero through mechanical EV failure (not just ca",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Four independent red flags with concrete evidence: (1) solo signal 31% WR below 43% break-even, (2) ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780503305.776257,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC is in compressed range with no directional force (ATR 0.44%, ADX absent). A solo miscalibrated ensemble signal at 35% WR with +18% drift cannot ov",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Four independent red flags with concrete evidence: (1) solo signal 31% WR below 43% break-even, (2) ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780503430.3497407,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent drift +18% at n=17 is reaching statistical significance. Learning Agent should flag this for curriculum review. Consider requiring 2+ stra",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 concurrent red flags with evidence, no wired validated_edge to override, Trade Agent itself admits",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780503430.3536036,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC at $101,680 with a +0.1% 1h move is pure noise-level consolidation, not directional drift. In a 0.62-confidence range regime with compressed ATR (",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 concurrent red flags with evidence, no wired validated_edge to override, Trade Agent itself admits",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780516918.571314,
+      "category": "meta",
+      "insight": "Self-critique: If $101K breaks with 2+ strategy confirmation and 6h alignment, that is the A+ short entry \u2014 do not miss it. This challenge is about timing and entry ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Three explicit mechanical challenge triggers are met: (1) solo signal <2 agree at <80% confidence, (",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780516918.575135,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC is currently AT $101K support, not below it. Selling into an untested support level without multi-strategy confirmation risks a short squeeze towa",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Three explicit mechanical challenge triggers are met: (1) solo signal <2 agree at <80% confidence, (",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780517093.4095047,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent at 35% accuracy is the key disqualifier: a consistently wrong agent issuing a solo 'go' in a low-momentum consolidation is precisely the n",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 evidence-based red flags: (1) solo signal 31% WR below 45% floor, (2) Trade Agent 35% accuracy str",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780517093.4133391,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC consolidation with ADX<18 and a solo ensemble SELL resolves directionally with ~50% probability either way; ground truth from 101 live trades show",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 evidence-based red flags: (1) solo signal 31% WR below 45% floor, (2) Trade Agent 35% accuracy str",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780517289.9970858,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent running +18% confidence drift at 35% accuracy (n=17). All 'go' calls from this agent should be discounted ~0.08-0.10 until recalibrated. R",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Two explicit named challenge triggers from WHAT TO CATCH fire simultaneously: (1) solo signal <2 agr",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780517290.0010483,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC consolidation with solo ensemble signal (31% historical WR) generates negative EV at the proposed R:R. At $101,884 entry with 1% stop ($1,018) and",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Two explicit named challenge triggers from WHAT TO CATCH fire simultaneously: (1) solo signal <2 agr",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780517495.8631597,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent at 35% WR (+18% drift) producing solo signals in consolidation is near-random. System should require 2+ strategy agreement for BTC shorts ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 5 concurrent red flags with specific wired-data evidence: solo signal (31% WR, sub-45% floor), misca",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780517495.8672056,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC consolidation with ADX<18 and 0.5x volume will resolve sideways or slightly upward as buyers defend support without volume-driven selling pressure",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 5 concurrent red flags with specific wired-data evidence: solo signal (31% WR, sub-45% floor), misca",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780517667.8536246,
+      "category": "meta",
+      "insight": "Self-critique: Solo BTC SELL in 0.3x vol consolidation: negative EV at historical 31% WR. Skip preserves capital for higher-conviction setups. If support does break ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 3+ red flags meet challenge threshold for unknown vacc tier: (1) solo signal WR 31% = negative EV at",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780517667.8576448,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC likely continues consolidating or mean-reverts upward rather than breaking support within 4h. The 0.3x vol ratio is the key contradiction: breakou",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 3+ red flags meet challenge threshold for unknown vacc tier: (1) solo signal WR 31% = negative EV at",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780518008.8582625,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent drift at +18% is the primary concern here \u2014 it is generating go signals at confidence levels that historically lose. Learning Agent should",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Hard safety block from Risk Agent (duplicate position + miscalibrated Trade Agent + zero sizing) com",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780518008.8622308,
+      "category": "prediction",
+      "insight": "Counter-thesis: Risk Agent has already hard-blocked this with sz=0.0 due to duplicate BTC SHORT (101847.1 at 5.6x already open per g.pos=1) and Trade Agent miscalibra",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Hard safety block from Risk Agent (duplicate position + miscalibrated Trade Agent + zero sizing) com",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780518816.037198,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent +18% drift at 35% WR requires outcome tracking regardless of this decision. Solo signal at 0.30 confidence is the exact noise-vs-edge disc",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 3+ concrete red flags with ground-truth evidence clears OVERDRIVE challenge threshold: (1) solo sign",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780518816.0411713,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC consolidation after a 2.6% uptrend more likely resolves with range continuation or reversion than breakout at this entry; solo ensemble signal car",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 3+ concrete red flags with ground-truth evidence clears OVERDRIVE challenge threshold: (1) solo sign",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780519020.3281233,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent +18% drift at 35% accuracy is the primary driver here \u2014 the 'go' signal is coming from a miscalibrated source with no corroborating conflu",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Four explicit red flags triggered: (1) solo signal <80% conf per challenge rules, (2) Trade Agent hi",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780519020.3320389,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC solo ensemble BUY at 35% Trade Agent historical accuracy (n=17) with missing ADX/BB/OI/funding/ATR data yields negative expected EV. Solo signal b",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Four explicit red flags triggered: (1) solo signal <80% conf per challenge rules, (2) Trade Agent hi",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780519185.3964984,
+      "category": "meta",
+      "insight": "Self-critique: R:R = (107000-105742)/(105742-104500) = 1258/1242 = 1.013. EV at 31% WR = (0.31*1.013)-(0.69*1.0) = 0.314-0.690 = -0.376. Trade Agent drift (+18%) mea",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 5 hard red flags with quantitative backing: (1) R:R 1.01 < 1.5 minimum, (2) 31% solo WR = negative E",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780519185.4005625,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC consolidation at $105,742 after a 3.9% 24h run presents R:R of approximately 1.01:1 (reward $1,258 to $107,000 vs risk $1,242 to SL $104,500). At ",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 5 hard red flags with quantitative backing: (1) R:R 1.01 < 1.5 minimum, (2) 31% solo WR = negative E",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780519354.6542718,
+      "category": "meta",
+      "insight": "Self-critique: Trade agent drift correction: +18% overconfidence drift applied to raw 0.38 confidence \u2192 adjusted 0.28. Solo signal WR penalty: 31% baseline (wired gr",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 red flags met with specific wired-data counter-thesis: (1) solo signal at noise-floor quality, (2)",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780519354.6585777,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC consolidation buy is missing the two highest-fit strategies for consolidation regime (Bollinger Squeeze and VMC Cipher did NOT fire). Their absenc",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 red flags met with specific wired-data counter-thesis: (1) solo signal at noise-floor quality, (2)",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780519705.1178195,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent at 35% WR n=17 is the strongest signal here \u2014 this agent is systematically overconfident by 18%. Do not approve solo signals from this age",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 5 red flags present: solo signal <80% confidence, hist_WR<45% for this agent+setup, floor-level conf",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": -1
+    },
+    {
+      "ts": 1780519705.1220763,
+      "category": "prediction",
+      "insight": "Counter-thesis: Solo ensemble BTC long at 0.32 confidence from a 35%-WR miscalibrated agent carries a ~31% base win rate (solo vs multi-agree). Implied R:R is ~2.2x (",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 5 red flags present: solo signal <80% confidence, hist_WR<45% for this agent+setup, floor-level conf",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780519896.4704974,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent self-reported +18% miscalibration drift \u2014 all confidence reads from this agent should be treated as inflated until recalibrated on larger ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Mechanical EV/fee math (Trust Hierarchy Level 2) is the deciding factor: Trade Agent and Risk Agent ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780519896.4745774,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC post-uptrend consolidation with solo ensemble (31% expected WR) and confidence explicitly floored at 0.30 \u2014 below the 0.43 post-fee breakeven thre",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Mechanical EV/fee math (Trust Hierarchy Level 2) is the deciding factor: Trade Agent and Risk Agent ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780520100.5151598,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Volume assumption contradiction breaks core thesis (0.6x \u2260 elevated accumulation). Consolidation is bot's weak setup (25% historical WR). Proactive SL",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1780520312.6442146,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent +18% drift on BTC solo BUY setups is the primary evidence. If breakout fires on volume, re-enter at confirmed break \u2014 do not FOMO.",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 3+ explicit challenge conditions triggered with wired evidence: solo signal at <80% conf (historical",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780520312.648449,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC is consolidating with below-average volume (vr=0.6, contradicting the accumulation narrative) and a solo ensemble signal from a Trade Agent with d",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 3+ explicit challenge conditions triggered with wired evidence: solo signal at <80% conf (historical",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780520677.9189963,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent at 35% accuracy on 17 BTC live trades \u2014 recommend imposing confidence floor of 0.55+ for solo-ensemble BTC signals until recalibrated. The",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 hard red flags converge: (1) solo_ensemble WR<45% with no wired edge override, (2) Trade Agent mis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780520677.9233215,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC at 103,391 in early high_volatility regime (not yet confirmed trending_bear) \u2014 the 2.2x volume surge and -1.1%/1h move may represent a transient v",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 hard red flags converge: (1) solo_ensemble WR<45% with no wired edge override, (2) Trade Agent mis",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780520860.4022553,
+      "category": "meta",
+      "insight": "Self-critique: BTC solo ensemble SELL signals with quality<0.4 should require 2+ strategy agreement before Critic approval, given persistent 35% WR miscalibration. T",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Three simultaneous hard red flags with wired-data support require challenge: (1) hist_WR=35% on BTC ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780520860.4065974,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC at $103,313 is more likely to consolidate or whipsaw than sustain a clean 1.75% breakdown. Solo ensemble (quality=0.3, confluence=1) is the weakes",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Three simultaneous hard red flags with wired-data support require challenge: (1) hist_WR=35% on BTC ",
+      "source": "critic_agent",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1780521244.4293034,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent at 35% WR (n=17) with +18% drift is a live miscalibration signal. Solo 'go' decisions from this agent should require 2+ confirming strateg",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Three hard red flags from the review checklist converge: (1) solo signal at <80% confidence explicit",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780521244.433579,
+      "category": "prediction",
+      "insight": "Counter-thesis: Existing BTC short at 103,261 already captures the bearish thesis in play. Adding a second position via a solo-ensemble signal (0.3 confluence, 31% WR",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Three hard red flags from the review checklist converge: (1) solo signal at <80% confidence explicit",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780687229.4149222,
+      "category": "meta",
+      "insight": "Self-critique: vacc=no_data; applied standard logic with 2 formal red flags (R:R<1.5, hist_WR 14%<45%) plus coherent structural counter-thesis on stop geometry. R:R<",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: R:R=1.1 is a hard checklist red flag (threshold 1.5) and the instructions say challenge when this co",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780687229.4194505,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC's 0.27% stop width (~$160) is narrower than its typical 1h noise floor. With R:R=1.1 and fee drag consuming 3.3% of the 0.9% target, the trade wil",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: R:R=1.1 is a hard checklist red flag (threshold 1.5) and the instructions say challenge when this co",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780687689.465159,
+      "category": "meta",
+      "insight": "Self-critique: ML direction_prob=0.31 for SHORT direction should be weighted heavily \u2014 2000-sample mature model in disagreement is a hard signal. BTC_SELL_trending_b",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Three wired-data flags converge against this trade: (1) ML dir_prob=0.31 SHORT is a textbook ML-cont",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780687689.469707,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC is oversold at RSI=32 in a weakening trending_bear regime (regime_momentum=weakening, volume declining per regime analysis). ML model trained on 2",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Three wired-data flags converge against this trade: (1) ML dir_prob=0.31 SHORT is a textbook ML-cont",
+      "source": "critic_agent",
+      "validated": true,
+      "validation_count": 1
+    },
+    {
+      "ts": 1780689189.6660972,
+      "category": "meta",
+      "insight": "Self-critique: ETH symbol adj +1.7 per calibration cannot rescue a setup with PF=0.45 on 27 trades. The regime adjustment trending_bear=+0.9 is meaningful but live t",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 6 independent red flags all pointing to negative EV: (1) Live ETH_SHORT WR=33% PF=0.45 on n=27 = con",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780689189.6708853,
+      "category": "prediction",
+      "insight": "Counter-thesis: ETH_SHORT confidence_scorer solo is demonstrably negative EV in live data: 33% WR on 27 trades, PF=0.45, -$1,206 cumulative. At 2:1 R:R and 2.7% fee d",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 6 independent red flags all pointing to negative EV: (1) Live ETH_SHORT WR=33% PF=0.45 on n=27 = con",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780689532.480436,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Early loss in PANIC regime (non-trending, reversal-prone). Stop room 32.6% consumed; price accelerating toward SL. Non-trending losers recover only 28",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780690043.3507838,
+      "category": "meta",
+      "insight": "Self-critique: BTC_SHORT PF=11.42 confirms massive wins when trend holds \u2014 thesis is directionally sound but entry timing is suboptimal at RSI=31 oversold extreme. S",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 confirmed red flags with wired counter-evidence: ML direction contradiction (0.38 gap exceeds 0.3 ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780690043.3554862,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC RSI=31 oversold after -4.7% drop; ML dir_prob=0.31 SHORT implies 69% LONG probability \u2014 ML is capturing near-term mean-reversion bounce risk that ",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 confirmed red flags with wired counter-evidence: ML direction contradiction (0.38 gap exceeds 0.3 ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780690537.9260461,
+      "category": "meta",
+      "insight": "Self-critique: BTC SHORT is a valid trending_bear trade in principle. Challenge is purely on entry timing (RSI=30 oversold + ML 32% SHORT prob) and mechanical confid",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Three concrete red flags with wired data evidence: (1) confidence 0.42 below mechanical floor 0.58 \u2014",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780690537.9305189,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC at RSI=30 in oversold territory is due for a near-term dead-cat bounce before trend continuation. ML model (mature phase, 2001 samples) assigns on",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Three concrete red flags with wired data evidence: (1) confidence 0.42 below mechanical floor 0.58 \u2014",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780691216.68198,
+      "category": "exit_pattern",
+      "insight": "Exit [ETH]: PANIC regime invalidates directional thesis. Non-trending early losers: 45% recovery vs 73% trending WR. Position 48% distance-to-SL. Regime shift is ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780691632.165019,
+      "category": "meta",
+      "insight": "Self-critique: ETH_SHORT PF 0.45 requires reassessment of sizing/SL/TP geometry before re-enabling. Consider tighter SL or higher TP targets to improve PF above 2.0 ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: vacc=0.50 requires 3+ red flags AND clear counter-thesis. I have 4 red flags (hist_WR<45% with negat",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780691632.169683,
+      "category": "prediction",
+      "insight": "Counter-thesis: ETH SHORT has demonstrated empirically negative EV over 27 live trades: 33% WR with PF 0.45 = $-1206.62 cumulative. At 33% WR, breakeven requires PF >",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: vacc=0.50 requires 3+ red flags AND clear counter-thesis. I have 4 red flags (hist_WR<45% with negat",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780692027.0429366,
+      "category": "meta",
+      "insight": "Self-critique: vacc=0.50 exactly at challenge threshold. Challenge driven by 4 wired-data flags with explicit PF<1.0 evidence, not general caution. ML dir_prob=0.31 ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 wired-data red flags clear the vacc=0.50 threshold (requires 3+ with counter-thesis): ETH_SHORT PF",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780692027.0476727,
+      "category": "prediction",
+      "insight": "Counter-thesis: ETH SHORT has 33% WR and PF=0.45 across 27 live trades \u2014 a profit factor below 1.0 means real-world losses exceed wins regardless of the theoretical 2",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 wired-data red flags clear the vacc=0.50 threshold (requires 3+ with counter-thesis): ETH_SHORT PF",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780692398.2441587,
+      "category": "exit_pattern",
+      "insight": "Exit [ETH]: Regime mismatch: entered trending_bear, current regime is PANIC (non-trending). Price moved against position (+0.26, favoring sell). Hold time 4.5min ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780692705.932962,
+      "category": "meta",
+      "insight": "Self-critique: ETH_SHORT is the best-evidenced setup in live data (n=27) and shows consistent losses. Network Trade agent accuracy 27% (severe miscalibration) furthe",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 evidence-based red flags with wired data: (1) ETH_SHORT 33% WR n=27 established losing pattern, (2",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780692705.937756,
+      "category": "prediction",
+      "insight": "Counter-thesis: ETH likely consolidates or bounces toward $1615-1630 before any continuation lower. BTC's +1.8% 1h bounce creates near-term adverse momentum that will",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 evidence-based red flags with wired data: (1) ETH_SHORT 33% WR n=27 established losing pattern, (2",
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0

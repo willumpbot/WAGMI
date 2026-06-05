@@ -1,8 +1,307 @@
 {
   "trend": {
-    "buckets": [],
-    "min_hold_hours": 3.0,
-    "_source": "perpetual_deep_dive_2026_05_15_2110",
-    "_evidence": "Forensics: losses exit at 1.5h median, wins at 3.3h median. Noise stops fire before directional move. Increasing from 2.0h to 3.0h to filter premature exits. Confidence=0.80."
+    "buckets": [
+      {
+        "low_hours": 0,
+        "high_hours": 0.5,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 0.5,
+        "high_hours": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 1,
+        "high_hours": 2,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 2,
+        "high_hours": 4,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 4,
+        "high_hours": 6,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 6,
+        "high_hours": 12,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 12,
+        "high_hours": 24,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 24,
+        "high_hours": 999,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      }
+    ],
+    "min_hold_hours": 2.0
+  },
+  "ranging": {
+    "buckets": [
+      {
+        "low_hours": 0,
+        "high_hours": 0.5,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 0.5,
+        "high_hours": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 1,
+        "high_hours": 2,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 2,
+        "high_hours": 4,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 4,
+        "high_hours": 6,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 6,
+        "high_hours": 12,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 12,
+        "high_hours": 24,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 24,
+        "high_hours": 999,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      }
+    ],
+    "min_hold_hours": 4.0
+  },
+  "high_volatility": {
+    "buckets": [
+      {
+        "low_hours": 0,
+        "high_hours": 0.5,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 0.5,
+        "high_hours": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 1,
+        "high_hours": 2,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 2,
+        "high_hours": 4,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 4,
+        "high_hours": 6,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 6,
+        "high_hours": 12,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 12,
+        "high_hours": 24,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 24,
+        "high_hours": 999,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      }
+    ],
+    "min_hold_hours": 1.0
+  },
+  "panic": {
+    "buckets": [
+      {
+        "low_hours": 0,
+        "high_hours": 0.5,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 0.5,
+        "high_hours": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 1,
+        "high_hours": 2,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 2,
+        "high_hours": 4,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 4,
+        "high_hours": 6,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 6,
+        "high_hours": 12,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 12,
+        "high_hours": 24,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 24,
+        "high_hours": 999,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      }
+    ],
+    "min_hold_hours": 0.5
+  },
+  "unknown": {
+    "buckets": [
+      {
+        "low_hours": 0,
+        "high_hours": 0.5,
+        "wins": 0,
+        "losses": 1,
+        "total_pnl": -63.97885928940108
+      },
+      {
+        "low_hours": 0.5,
+        "high_hours": 1,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 1,
+        "high_hours": 2,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 2,
+        "high_hours": 4,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 4,
+        "high_hours": 6,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 6,
+        "high_hours": 12,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 12,
+        "high_hours": 24,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      },
+      {
+        "low_hours": 24,
+        "high_hours": 999,
+        "wins": 0,
+        "losses": 0,
+        "total_pnl": 0.0
+      }
+    ],
+    "min_hold_hours": 2.0
   }
 }
