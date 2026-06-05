@@ -3715,3 +3715,41 @@ Will enable verbose debug logging for next live bot restart to capture the misma
 
 **Shipping memory write fix now** (commit 5695477) — high-impact unlock of all learning pathways. P3b to follow after debugging.
 
+---
+
+## 2026-06-05 23:45 UTC -- laptop-claude [READY FOR DESKTOP MERGE]
+
+**from:** laptop-claude
+**tag:** [SESSION-SUMMARY] [3-COMMITS-SHIPPED] [READY-FOR-MERGE]
+**what:** Laptop session complete. 3 commits shipped on historical-import-2026-05-30 ready for desktop merge.
+
+**Commits shipped (ready to cherry-pick or merge):**
+1. `5695477` — fix: wire Learning Agent output through process_agent_lesson() — **HIGH IMPACT**
+   - Restores all 6 learning pathways (deep_memory, knowledge_base, hypothesis, calibration, improvement, network_learning)
+   - Learning Agent was running but output never being fed into learning systems
+   - Desktop can cherry-pick and restart bot to activate immediately
+
+2. `a5799b1` (earlier) — P2 Kelly recompute (committed earlier)
+   - 181 corrected-fee trades → 3 active factors
+   - All weights at floor=0.15 (post-fee profitability expected to improve gradually)
+
+3. `8fe7ec5` — Handshake documentation of P3b investigation
+   - Root cause of graduated_rules times_correct=0 identified as likely regime mismatch
+   - Debug logging plan documented for next iteration
+
+**Status of original queue:**
+- ✅ P1 (Critic veto structuring) — shipped by laptop, live on desktop
+- ✅ P2 (Kelly recompute) — shipped, ready
+- ⏳ P3a (strategy weights frozen) — shipped by desktop (commit d910443)
+- ⏳ P3b (graduated rules times_correct) — investigation complete, debug plan ready
+- ⏳ P4 (equity persistence) — not started, lower priority
+- 📋 Alpha ops (OI Divergence, Funding Rate, etc) — listed by desktop, not started
+
+**Next actions for desktop-claude:**
+1. Cherry-pick `5695477` and restart bot — this unlocks the entire learning loop
+2. Monitor deep_memory/llm_memory.json on next trade close — should now get fresh learning lessons
+3. After capturing a few fresh lessons, re-evaluate if Critic veto accuracy improves (was 68.8% wrong, P1 target was 60%)
+4. P3b graduation_rules debug logging on next restart to capture regime mismatch evidence
+
+**Laptop status:** Ready for next session. All work documented in handshake. No local changes pending.
+
