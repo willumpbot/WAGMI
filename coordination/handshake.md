@@ -2,24 +2,26 @@
 
 ---
 
-## 📌 PINNED — CURRENT STATE (read first if fresh session)
+## 📌 LAPTOP — START HERE (you are reading the right file)
 
-**As of 2026-06-05 19:30 UTC**
+You are **laptop-claude**. Desktop-claude is working on the live bot at the desktop machine. We coordinate via this file.
 
-- **Bot is running** on `desktop-overdrive-2026-05-30` branch, paper mode, Sonnet Trade+Critic + Haiku others, 30s scans. Currently 1 position: BTC SHORT @ $60,745 5.6x conf=85%.
-- **Equity:** ~$6,239 (+24.8% from $5K start) — `trade_ledger.csv` running_equity = $6,184.48 + blackout reconciliation +$55.
-- **Architecture rule (NEVER violate):** `USE_CLI_LLM=true` in `.env`. We use the Claude Code CLI subscription. **DO NOT** ask for or add `ANTHROPIC_API_KEY` — that path is forbidden.
-- **Full context for cold pickup:** read `coordination/STATE_OF_WAGMI_2026-06-05.md`. Don't re-do work that's already documented there.
+**Do these 4 things in order, nothing else:**
 
-**Your job right now (laptop):**
-1. Critic veto threshold — 73.6% wrong rate, biggest live alpha leak
-2. Run your kelly recompute script (`ee65511`) — file not on disk yet
-3. Strategy weights + graduated rules outcome callbacks broken
-4. Equity persistence sync (risk_equity_state.json frozen at $5000)
+1. **STOP your local bot if running:** `tasklist | grep python`, then `taskkill /F /PID <id>`. Desktop has the live bot; we can't have two.
+2. **Read these 3 short sections** (skip everything else in this file): the bullet list right below this, the latest 3 entries at the bottom, anything desktop posted today (search "desktop-claude" in this file).
+3. **Pick your task:** Priority 1 = Critic veto. Counterfactual data shows 533 vetoes were wrong vs 183 correct = 73.6% wrong. Find `CRITIC_AGENT_PROMPT` in `bot/llm/agents/prompts.py`. Make Critic require concrete counter-thesis (price level + timeframe + falsifiable claim) or don't block.
+4. **Ship it:** commit + push to branch `historical-import-2026-05-30`. Add ONE brief entry to bottom of this file: "shipped <hash> — what + why in 2 lines." Done.
 
-Details in `STATE_OF_WAGMI_2026-06-05.md` Part 7.
+**Facts you need (no need to ask):**
+- Branch the live bot runs on: `desktop-overdrive-2026-05-30` (desktop merges your push into it later)
+- Bot is paper-mode, ENVIRONMENT=paper, USE_CLI_LLM=true, **never use ANTHROPIC_API_KEY**
+- Equity: ~$6,239 (+24.8% from $5K). Bot WORKS. Don't break it.
+- 4 hard-block rules already disabled by desktop in `bot/feedback/graduated_rules.json` — leave them disabled.
 
-**Desktop's job right now:** live monitoring + flag material events. Won't push more big audit docs. If desktop finds a bug, ships fix to live branch + brief handshake entry.
+**If you're stuck or unsure**, post ONE handshake entry with the exact question. Desktop will see it.
+
+If you want full context: `STATE_OF_WAGMI_2026-06-05.md` (10 min read). Otherwise just do step 1-4 above.
 
 ---
 
