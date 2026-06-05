@@ -16,7 +16,7 @@
       "last_applied": 1778811039.5393455,
       "times_applied": 3,
       "times_correct": 0,
-      "active": true
+      "active": false
     },
     {
       "rule_id": "hype_long_veto_v1",
@@ -34,7 +34,7 @@
       "last_applied": 1777926052.3763394,
       "times_applied": 1,
       "times_correct": 0,
-      "active": true
+      "active": false
     },
     {
       "rule_id": "sol_long_veto_v1",
@@ -52,7 +52,7 @@
       "last_applied": 1777926052.377478,
       "times_applied": 1,
       "times_correct": 0,
-      "active": true
+      "active": false
     },
     {
       "rule_id": "night_session_block_v1",
@@ -67,10 +67,10 @@
       "evidence_ratio": 0.19,
       "total_evidence": 27,
       "created_at": 1746382701.0,
-      "last_applied": 1778811039.53935,
-      "times_applied": 4,
+      "last_applied": 1780183788.718958,
+      "times_applied": 1077,
       "times_correct": 0,
-      "active": true
+      "active": false
     },
     {
       "rule_id": "illiquid_regime_penalize_v1",
@@ -91,16 +91,16 @@
     },
     {
       "rule_id": "hype_short_veto_v1",
-      "hypothesis_statement": "HYPE SELL is net-negative EV: -$16.65 per trade on 239 live trades",
+      "hypothesis_statement": "HYPE SELL is catastrophic negative EV: 2.3% WR (n=172, edge_analysis_raw.json US session) and -$16.65/trade on 239 live trades. EV=-3.57%/trade. Confirmed by time_edge_results.json: 2.3% WR (n=173) at 18 UTC. Re-enabled 2026-06-02: Phase 1 disable was over-broad \u00e2\u20ac\u201d this rule was always correct. This is a permanent hard-block regardless of regime or session.",
       "action": "veto",
       "conditions": {
         "symbol": "HYPE",
         "side": "SELL"
       },
       "adjustment": 0.0,
-      "confidence": 0.87,
-      "evidence_ratio": 0.35,
-      "total_evidence": 239,
+      "confidence": 0.95,
+      "evidence_ratio": 0.023,
+      "total_evidence": 411,
       "created_at": 1746382701.0,
       "last_applied": 1778811039.5388637,
       "times_applied": 3,
@@ -122,8 +122,8 @@
       "evidence_ratio": 0.25,
       "total_evidence": 40,
       "created_at": 1746382701.0,
-      "last_applied": 1778810899.020772,
-      "times_applied": 2,
+      "last_applied": 1780501371.2853794,
+      "times_applied": 445,
       "times_correct": 0,
       "active": true
     },
@@ -141,8 +141,8 @@
       "evidence_ratio": 0.67,
       "total_evidence": 43,
       "created_at": 1747267200.0,
-      "last_applied": null,
-      "times_applied": 0,
+      "last_applied": 1780348246.5763674,
+      "times_applied": 52,
       "times_correct": 0,
       "active": true
     },
@@ -152,13 +152,31 @@
       "action": "boost",
       "conditions": {
         "symbol": "ETH",
-        "regime": "trend"
+        "regime": "trending_bull"
       },
       "adjustment": 8.0,
       "confidence": 0.85,
       "evidence_ratio": 0.71,
       "total_evidence": 7,
       "created_at": 1778879538,
+      "last_applied": 1779325621.570845,
+      "times_applied": 2,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "hype_unknown_regime_probe_v1",
+      "hypothesis_statement": "HYPE in UNKNOWN regime achieves 83% WR, +$6.56/trade (n=6). Highest-WR setup found across all symbol\u00d7regime combinations. Possible regime-transition breakout signal. SIDE-AGNOSTIC probe \u2014 does not conflict with HYPE_LONG/HYPE_SHORT vetoes since this targets unknown regime only.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "HYPE",
+        "regime": "unknown"
+      },
+      "adjustment": 5.0,
+      "confidence": 0.75,
+      "evidence_ratio": 0.83,
+      "total_evidence": 6,
+      "created_at": 1747527031.0,
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
@@ -166,13 +184,13 @@
     },
     {
       "rule_id": "conf_floor_70_v1",
-      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes.",
+      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes. GATED (2026-05-17): adjustment reduced -20\u2192-5 to break compounding deadlock with self_tuning CONSERVATIVE mode. Evidence conflict: insight_journal (67 trades) shows +$2.19/trade EV in this bin; rule built on older 123-trade window. -5pts preserves caution without total block. Gate: 20%.",
       "action": "penalize",
       "conditions": {
         "confidence_min": 60.0,
         "confidence_max": 70.0
       },
-      "adjustment": -20.0,
+      "adjustment": -5.0,
       "confidence": 0.87,
       "evidence_ratio": 0.463,
       "total_evidence": 123,
@@ -180,7 +198,387 @@
       "last_applied": 1778811039.5375004,
       "times_applied": 2,
       "times_correct": 0,
+      "active": false
+    },
+    {
+      "rule_id": "btc_trend_long_counter_v1",
+      "hypothesis_statement": "BTC BUY in TRENDING regime = 18% WR on 17 live trades. Original BTC+trend boost (rule_1777922205_0) was 0/3 correct and deactivated. This counter-rule completes the triple protection stack: (1) this -13pt penalty gate=20%, (2) Critic prompt auto-challenges all BTC BUY by default, (3) parent boost rule deactivated. Graduate: escalate gate to 50% at n>=10 obs with WR<=0.45.",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "BTC",
+        "side": "BUY",
+        "regime": "trend"
+      },
+      "adjustment": -13.0,
+      "confidence": 0.92,
+      "evidence_ratio": 0.18,
+      "total_evidence": 17,
+      "created_at": 1779360684.0,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
       "active": true
+    },
+    {
+      "rule_id": "tod_evening_edge_v1",
+      "hypothesis_statement": "Evening session 18:00-24:00 UTC yields 65% WR vs 10% night (spread 55%). n=27 live trades. Second-best TOD window after morning.",
+      "action": "boost",
+      "conditions": {
+        "hour_utc_min": 18,
+        "hour_utc_max": 24
+      },
+      "adjustment": 5.0,
+      "confidence": 0.85,
+      "evidence_ratio": 0.65,
+      "total_evidence": 27,
+      "created_at": 1779310372.0,
+      "last_applied": 1780348418.9720886,
+      "times_applied": 1808,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "tod_afternoon_edge_v1",
+      "hypothesis_statement": "Afternoon session 12:00-18:00 UTC yields 64% WR vs 31% night (spread 33%). n=27 live trades. Third-best TOD window.",
+      "action": "boost",
+      "conditions": {
+        "hour_utc_min": 12,
+        "hour_utc_max": 18
+      },
+      "adjustment": 5.0,
+      "confidence": 0.85,
+      "evidence_ratio": 0.64,
+      "total_evidence": 27,
+      "created_at": 1779310372.0,
+      "last_applied": 1780348418.9720907,
+      "times_applied": 1808,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "high_vol_regime_boost_v1",
+      "hypothesis_statement": "high_volatility regime = 55% WR vs 38% avg across all regimes. Best regime for trading by WR margin. Feedback engine: gate=80%, n=2172, conf=88%. LLM engine was missing this rule \u2014 sync gap detected 2026-05-22T01:06 UTC. Exempt from illiquid penalty stacking (different regime). Graduate: escalate gate 20%\u219250% at n>=25 obs with WR>=0.52.",
+      "action": "boost",
+      "conditions": {
+        "regime": "high_volatility"
+      },
+      "adjustment": 5.0,
+      "confidence": 0.88,
+      "evidence_ratio": 0.55,
+      "total_evidence": 2172,
+      "created_at": 1779407200.0,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "tod_morning_edge_v1",
+      "hypothesis_statement": "Morning session 06:00-12:00 UTC = 74% WR on 7 insight_journal trades. BEST TOD window by WR (74% vs 65% evening, 64% afternoon, 19% night). Composite edge: ETH+BTC+trending+morning = confirmed alpha. Missing from LLM engine despite being tracked in feedback/graduated_rules.json (A/B_ACTIVE gate=50%) \u2014 write-consistency bug detected 2026-05-21T23:06 UTC. Graduate: escalate gate 50%\u2192100% at n>=15 obs with WR>=0.65.",
+      "action": "boost",
+      "conditions": {
+        "hour_utc_min": 6,
+        "hour_utc_max": 12
+      },
+      "adjustment": 5.0,
+      "confidence": 0.88,
+      "evidence_ratio": 0.74,
+      "total_evidence": 7,
+      "created_at": 1779404804.0,
+      "last_applied": 1780348418.9720926,
+      "times_applied": 1813,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "eth_sell_bb_golden_v1",
+      "hypothesis_statement": "ETH SELL with bollinger_squeeze = 70% WR (n=2172 shadow signals). Tier-1 golden setup.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "ETH",
+        "side": "SELL",
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
+      },
+      "adjustment": 8.0,
+      "confidence": 0.95,
+      "evidence_ratio": 0.7,
+      "total_evidence": 2172,
+      "created_at": 1779419602.7878811,
+      "last_applied": 1780217014.2813818,
+      "times_applied": 9,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "btc_buy_bb_golden_v1",
+      "hypothesis_statement": "BTC BUY with bollinger_squeeze = 69% WR (n=2172 shadow signals). Tier-1 golden setup.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "BTC",
+        "side": "BUY",
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
+      },
+      "adjustment": 8.0,
+      "confidence": 0.91,
+      "evidence_ratio": 0.69,
+      "total_evidence": 2172,
+      "created_at": 1779419602.7878811,
+      "last_applied": 1780501555.182068,
+      "times_applied": 128,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "sol_buy_bb_golden_v1",
+      "hypothesis_statement": "SOL BUY with bollinger_squeeze = 67% WR (n=2172 shadow signals). Tier-1 golden setup.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "SOL",
+        "side": "BUY",
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
+      },
+      "adjustment": 8.0,
+      "confidence": 0.9,
+      "evidence_ratio": 0.67,
+      "total_evidence": 2172,
+      "created_at": 1779419602.7878811,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": false
+    },
+    {
+      "rule_id": "hype_sell_bb_block_v1",
+      "hypothesis_statement": "HYPE SELL with bollinger_squeeze = 35% WR (n=2172). Worst BB setup. Block.",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "HYPE",
+        "side": "SELL",
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
+      },
+      "adjustment": -15.0,
+      "confidence": 0.92,
+      "evidence_ratio": 0.35,
+      "total_evidence": 2172,
+      "created_at": 1779419602.7878811,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "bb_mtq_antipattern_v1",
+      "hypothesis_statement": "BB+MTQ co-agreement = 35% WR (n=2172). When both bollinger_squeeze AND multi_tier_quality fire, it's a contra-indicator. Penalize.",
+      "action": "penalize",
+      "conditions": {
+        "strategies_include": [
+          "bollinger_squeeze",
+          "multi_tier_quality"
+        ]
+      },
+      "adjustment": -10.0,
+      "confidence": 0.92,
+      "evidence_ratio": 0.35,
+      "total_evidence": 2172,
+      "created_at": 1779419602.7878811,
+      "last_applied": 1780501371.285391,
+      "times_applied": 80,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "ranging_regime_penalize_v1",
+      "hypothesis_statement": "Ranging regime: 25% WR on 16 live trades (worse than illiquid 28.1%). Structurally losing regime.",
+      "action": "penalize",
+      "conditions": {
+        "regime": "ranging"
+      },
+      "adjustment": -10.0,
+      "confidence": 0.76,
+      "evidence_ratio": 0.25,
+      "total_evidence": 16,
+      "created_at": 1779487857.5699627,
+      "last_applied": 1780500801.0271688,
+      "times_applied": 3,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "sol_short_penalize_v1",
+      "hypothesis_statement": "DISABLED 2026-06-02: 34.6% WR (n=52) was measured on broken-execution old-bot data across ALL hours. US-session clean data (edge_analysis_raw.json) shows SOL_SELL = 62% WR (n=213, EV +0.99%/trade). This rule was suppressing a confirmed positive-EV edge. Replaced by sol_sell_us_session_boost_v1.",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "SOL",
+        "side": "SELL"
+      },
+      "adjustment": -10.0,
+      "confidence": 0.88,
+      "evidence_ratio": 0.346,
+      "total_evidence": 52,
+      "created_at": 1779495301.5124173,
+      "last_applied": 1780199407.5684154,
+      "times_applied": 3,
+      "times_correct": 0,
+      "active": false
+    },
+    {
+      "rule_id": "sol_sell_us_session_boost_v1",
+      "hypothesis_statement": "SOL SELL in US session (14-22 UTC) = 62.0% WR on n=213 clean trades (edge_analysis_raw.json, March 24 2026). EV +0.99%/trade, Kelly 30.1%, grade B. Confirmed by time_edge_results.json: 58.7% WR (n=225) at 18 UTC. This is the 2nd confirmed positive-EV setup after HYPE_BUY. insight_journal index 200 hard-block was based on 36% WR from broken-execution all-hours data \u2014 overridden by clean US-session evidence.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "SOL",
+        "side": "SELL",
+        "hour_utc_min": 14,
+        "hour_utc_max": 22
+      },
+      "adjustment": 8.0,
+      "confidence": 0.9,
+      "evidence_ratio": 0.62,
+      "total_evidence": 213,
+      "created_at": 1748822400.0,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "btc_long_us_session_block_v1",
+      "hypothesis_statement": "BTC BUY in US session (14-22 UTC) = 15.0% WR at 18 UTC (n=147, time_edge_results.json) and 22.2% WR overall US session (n=99, edge_analysis_raw.json). Hard block during this window. BTC LONG is only viable in trending regime OUTSIDE 14-22 UTC (mechanical backtest 56% WR). Resolves contradiction: old quant 56% WR was trending/non-US; old-bot live 19% WR was all-hours broken execution. Current Critic prompt already challenges BTC BUY \u2014 this penalty stack reinforces during prime losing window.",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "BTC",
+        "side": "BUY",
+        "hour_utc_min": 14,
+        "hour_utc_max": 22
+      },
+      "adjustment": -15.0,
+      "confidence": 0.92,
+      "evidence_ratio": 0.15,
+      "total_evidence": 246,
+      "created_at": 1748822400.0,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "hype_buy_us_session_boost_v1",
+      "hypothesis_statement": "HYPE BUY during US session (14-22 UTC) has 85-88% WR (n=395, edge_analysis_raw + time_edge_results). Hour 18 UTC is peak. Time-of-day filter worth +30pp over all-hours. Strong positive EV.",
+      "action": "boost",
+      "conditions": {
+        "symbol": "HYPE",
+        "side": "BUY",
+        "hour_utc_min": 14,
+        "hour_utc_max": 22
+      },
+      "adjustment": 15.0,
+      "confidence": 0.87,
+      "evidence_ratio": 0.87,
+      "total_evidence": 395,
+      "created_at": 1780415177.9783213,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "regime_trend_consolidation_avoid_v1",
+      "hypothesis_statement": "regime_trend strategy fires 0% WR in consolidation regime (backtest 2025-11-06 to 2025-11-23). Standalone regime_trend = -$978 loss. Multi_tier_quality + confidence_scorer combo = 75% WR in same window.",
+      "action": "reduce",
+      "conditions": {
+        "strategy": "regime_trend",
+        "regime": "consolidation"
+      },
+      "adjustment": -15.0,
+      "confidence": 0.72,
+      "evidence_ratio": 0.0,
+      "total_evidence": 4,
+      "created_at": 1780499610.3382945,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "high_confidence_overfit_consolidation_v1",
+      "hypothesis_statement": "90-100% confidence signals lose in consolidation regime. Lower bins (80-89%) = +$552, higher bin (90-100%) = -$978. Overconfidence = already priced in or stale signal.",
+      "action": "skeptical_note",
+      "conditions": {
+        "confidence_min": 90,
+        "regime": "consolidation"
+      },
+      "adjustment": 0.0,
+      "confidence": 0.65,
+      "evidence_ratio": 0.0,
+      "total_evidence": 4,
+      "created_at": 1780499610.3382957,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "consolidation_hold_time_cap_v1",
+      "hypothesis_statement": "In consolidation regime, 2-6h holds = 100% WR (+$529), 6-12h holds = 50% WR (-$956). Cap hold time at 6h.",
+      "action": "advisory",
+      "conditions": {
+        "regime": "consolidation"
+      },
+      "adjustment": 0.0,
+      "confidence": 0.7,
+      "evidence_ratio": 1.0,
+      "total_evidence": 4,
+      "created_at": 1780499610.3382964,
+      "last_applied": 1780500801.027183,
+      "times_applied": 1,
+      "times_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "trending_bear_hold_time_extend_v1",
+      "hypothesis_statement": "In trending_bear regime, 12-24h holds = 100% WR (+$856), <12h = 0% WR. Crash window rewards patience. Do NOT apply consolidation 6h hold cap in trending_bear.",
+      "action": "advisory",
+      "conditions": {
+        "regime": "trending_bear"
+      },
+      "adjustment": 0.0,
+      "confidence": 0.68,
+      "evidence_ratio": 1.0,
+      "total_evidence": 4,
+      "created_at": 1780501572.5959523,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "source": "backtest_2026-06-03_corrected",
+      "notes": "BTC Mar-2026 crash window (corrected 6h data): 3 trades held 12-24h = 100% WR +$856. 2 trades held <12h = 0% WR -$1,663. Hold time regime-dependence is real and opposite to consolidation."
+    },
+    {
+      "rule_id": "high_confidence_overfit_universal_v1",
+      "hypothesis_statement": "90-100% confidence signals lose in BOTH consolidation AND trending_bear. Nov-2025: -$832 (0% WR). Mar-2026: -$832 (0% WR). Sweet spot is 60-89%. Universal across regimes.",
+      "action": "skeptical_note",
+      "conditions": {
+        "confidence_min": 90
+      },
+      "adjustment": 0.0,
+      "confidence": 0.78,
+      "evidence_ratio": 0.0,
+      "total_evidence": 8,
+      "created_at": 1780501572.5959523,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "source": "backtest_2026-06-03_corrected",
+      "notes": "Confirmed in 2 independent regimes: consolidation Nov-2025 and trending_bear Mar-2026. Both show 90-100% conf as 0% WR losing bucket. Confidence 60-69% = 100% WR in trending_bear. Confidence 80-89% = 67% WR in consolidation. Apply Critic skepticism to any signal with conf>90 regardless of regime."
     }
   ]
 }

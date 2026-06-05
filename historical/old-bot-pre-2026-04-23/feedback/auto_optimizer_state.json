@@ -1,0 +1,91 @@
+{
+  "last_scheduled_review_ts": 1777483449.244521,
+  "last_trade_count_review": 0,
+  "total_trades": 0,
+  "total_reviews": 11,
+  "review_history": [
+    {
+      "ts": 1777446058.048108,
+      "trigger": "scheduled (interval 12.0h elapsed)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    },
+    {
+      "ts": 1777449947.0170586,
+      "trigger": "alert_degradation (WR 31.0% vs baseline 50.0%, drop >15%)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    },
+    {
+      "ts": 1777453754.4862843,
+      "trigger": "alert_degradation (WR 31.0% vs baseline 50.0%, drop >15%)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    },
+    {
+      "ts": 1777457701.0226524,
+      "trigger": "alert_degradation (WR 31.0% vs baseline 50.0%, drop >15%)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    },
+    {
+      "ts": 1777461415.910351,
+      "trigger": "alert_degradation (WR 31.0% vs baseline 50.0%, drop >15%)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    },
+    {
+      "ts": 1777465104.506944,
+      "trigger": "alert_degradation (WR 31.0% vs baseline 50.0%, drop >15%)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    },
+    {
+      "ts": 1777468707.5513878,
+      "trigger": "alert_degradation (WR 31.0% vs baseline 50.0%, drop >15%)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    },
+    {
+      "ts": 1777472309.2189834,
+      "trigger": "alert_degradation (WR 31.0% vs baseline 50.0%, drop >15%)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    },
+    {
+      "ts": 1777476169.868799,
+      "trigger": "alert_degradation (WR 31.0% vs baseline 50.0%, drop >15%)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    },
+    {
+      "ts": 1777479828.1064727,
+      "trigger": "alert_degradation (WR 31.0% vs baseline 50.0%, drop >15%)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    },
+    {
+      "ts": 1777483449.244521,
+      "trigger": "alert_degradation (WR 31.0% vs baseline 50.0%, drop >15%)",
+      "lessons_applied": 0,
+      "wr_7d": null,
+      "llm_urgency": null
+    }
+  ],
+  "adaptive_interval_s": 21600,
+  "performance_baseline": {
+    "win_rate": 50.0,
+    "avg_pnl": 0.0
+  },
+  "consecutive_losses": 0
+}

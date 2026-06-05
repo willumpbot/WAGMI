@@ -1,0 +1,146 @@
+{
+  "date": "2026-05-18",
+  "generated_at": "2026-05-18T23:04:47+00:00",
+  "run_type": "EOD_FINAL (23:04 UTC)",
+  "eod_finalized": true,
+  "eod_finalized_at": "2026-05-18T23:04:47+00:00",
+  "bot_status": "OFFLINE",
+  "offline_duration_hours": 600.8,
+  "offline_duration_days": 25.0,
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "today_wr": null,
+  "equity": 497.05,
+  "peak_equity": 508.06,
+  "dd_from_peak_pct": 2.17,
+  "equity_note": "No change since 2026-04-23T22:17:05Z (600.8h frozen)",
+  "morning_window": {
+    "date": "2026-05-18",
+    "start_utc": "2026-05-18T06:00:00Z",
+    "end_utc": "2026-05-18T12:00:00Z",
+    "status": "MISSED \u2014 6th consecutive morning window lost",
+    "consecutive_windows_missed": 6,
+    "opportunity_cost_estimate": "~$56-113 today (ETH+trending 71-80% WR, 2-4 signals)",
+    "cumulative_alpha_lost_days25": "~$1,400-2,825 estimated"
+  },
+  "daily_summary": {
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "wr": null,
+    "pnl": 0.0,
+    "best_trade": null,
+    "worst_trade": null,
+    "avg_hold_h": null,
+    "active_positions": 0
+  },
+  "anomalies": [
+    {
+      "type": "BOT_OFFLINE_DAY_25_EOD",
+      "severity": "CRITICAL",
+      "value": "600.8h offline. DAY 25 ENDS with no restart. Opportunity cost: ~$56-113 today alone.",
+      "action": "RESTART before 05:30 UTC May 19 for 7th window (final chance before cumulative alpha exceeds $3k)"
+    },
+    {
+      "type": "MORNING_WINDOW_MISSED_6TH",
+      "severity": "CRITICAL",
+      "value": "06:00-12:00 UTC May 18 passed without bot. 6th consecutive morning window missed despite 12+ hourly CRITICAL alerts.",
+      "escalation": "Each missed window = ~$56-113 EV (ETH+trending 71-80% WR, BTC SHORT 90%+ occasional). 6 windows = ~$336-678 direct.",
+      "action": "RESTART before 05:30 UTC May 19. Exit_agent prompt amendment + meta_learning fixes live. System is ready."
+    },
+    {
+      "type": "CONSECUTIVE_LOSSES_4",
+      "severity": "MEDIUM",
+      "value": "4 consecutive losses trailing into day 25. Circuit breaker at 6. Soft-start protocol required on restart.",
+      "action": "On restart: 50% sizing, 3x max leverage, ETH/BTC trending only, first 5 trades."
+    },
+    {
+      "type": "HYPE_SHORT_VETO_ACCURACY_WATCH",
+      "severity": "HIGH",
+      "value": "hype_short_veto_v1: 0/3 correct (100% FP rate). 7 applications to auto-retire threshold. Historical EV: -$16.65/trade on 239 trades.",
+      "action": "Human review recommended at restart. Conflict: large historical negative EV vs live blocked signals all profitable."
+    },
+    {
+      "type": "AB_RESULT_TRACKER_CODE_P0",
+      "severity": "HIGH",
+      "value": "12 active A/B gates, all treatment_wr=null. No code closes the A/B feedback loop. Self-improvement system structurally blind.",
+      "action": "P0 dev task: post_trade outcome hooks in bot/feedback/loop.py (~4h). Blocks all rule graduation.",
+      "cost_per_day_offline": "Compounding \u2014 each day without fix deepens the graduation backlog."
+    },
+    {
+      "type": "DATA_GAP_STRUCTURAL",
+      "severity": "HIGH",
+      "value": "snapshot_entry missing (slippage unmeasurable). llm_regime column empty (12 regime rules unmeasurable). Both gaps deepen hourly.",
+      "fix_eta": "2-4h dev on restart. snapshot_entry + llm_regime write paths."
+    }
+  ],
+  "fixes_applied_today": [
+    {
+      "fix_id": "META_LEARNING_IDEAS_INVERSION_FIX",
+      "applied_at": "2026-05-18T22:07:30+00:00",
+      "description": "4 inverted meta_learning ideas invalidated. ideas.json: idea_2238f358/07f475b8/623426ad/920b3e13 all proposed boosts for 33% WR windows.",
+      "impact": "Prevented 4 directionally-inverted rules from entering auto-apply pipeline."
+    },
+    {
+      "fix_id": "EXIT_AGENT_PROMPT_AMENDMENT_BTC_ETH_TRENDING",
+      "applied_at": "2026-05-18T22:07:30+00:00",
+      "description": "BTC/ETH LONG+TRENDING 3h patience rule applied to EXIT_AGENT_PROMPT in prompts.py.",
+      "expected_impact": "+$2.59/trade combined EV. ETH 58% true-miss rate (n=19), BTC 81% true-miss rate (n=16)."
+    },
+    {
+      "fix_id": "INSIGHTS_DEDUPLICATION_PRUNING",
+      "applied_at": "2026-05-18T22:07:30+00:00",
+      "description": "insights.json pruned 108 \u2192 19 entries. 89 duplicate size/time-pattern entries removed.",
+      "impact": "Stops artificial confidence inflation from repeated near-identical entries."
+    },
+    {
+      "fix_id": "TRENDING_MIN_HOLD_2H_GATE_UPGRADE",
+      "applied_at": "2026-05-18T23:04:47+00:00",
+      "description": "graduated_rules.json TRENDING_MIN_HOLD_2H gate upgraded 20% \u2192 50%. Aligns with EXIT_AGENT_PROMPT_AMENDMENT.",
+      "impact": "50% of trending signals now route through 3h min-hold treatment. Was 20% A/B probe."
+    }
+  ],
+  "tomorrow_focus": [
+    "CRITICAL: RESTART before 05:30 UTC May 19 (7th morning window at 06:00 UTC)",
+    "ON RESTART: soft-start protocol (50% sizing, 3x max leverage, ETH/BTC trending only, first 5 trades)",
+    "ON RESTART: verify EXIT_AGENT_PROMPT_AMENDMENT live \u2014 BTC/ETH LONG trending should hold 3h without exit agent close",
+    "ON RESTART: verify conf_floor_70_v1 at -5pts allows ETH+trending signals to pass (log first 3 confidence values)",
+    "POST-5-TRADES: review SNIPER_AUTO_EXECUTE enablement (#1 profit lever, $328/34-trade path)",
+    "DEV PRIORITY 1: AB_RESULT_TRACKER_CODE (P0, ~4h \u2014 blocks all rule graduation)",
+    "DEV PRIORITY 2: snapshot_entry column (~1h \u2014 enables slippage measurement)",
+    "DEV PRIORITY 3: llm_regime write path (~1h \u2014 enables 12 regime rule graduation)",
+    "HUMAN REVIEW: HYPE_SHORT_VETO accuracy (0/3 correct, 7 apps to auto-retire)"
+  ],
+  "rule_state_eod": {
+    "total_rules": 100,
+    "applied_rules": 12,
+    "ab_active_rules": 62,
+    "pending_human_review": 7,
+    "superseded": 10,
+    "key_protections_active": [
+      "hype_long_veto_v1 (HYPE BUY blocked \u2014 23% WR, -$77.26)",
+      "sol_long_veto_v1 (SOL BUY blocked \u2014 24% WR, -$21.89)",
+      "night_session_block_v1 (00-06 UTC blocked \u2014 19% WR, -$136.83)",
+      "hype_short_veto_v1 (HYPE SELL blocked \u2014 -$16.65/trade avg, ACCURACY WATCH 0/3)"
+    ],
+    "key_boosts_active": [
+      "BTC+trend +8pts (A/B 80%)",
+      "ETH+trend +8pts (A/B 80%)",
+      "BTC_SHORT 90%+ +10pts (A/B 80%)",
+      "BB_solo +8pts (A/B 80%)",
+      "Morning 06-12 UTC +8pts (A/B 50%)"
+    ],
+    "new_today": [
+      "TRENDING_MIN_HOLD_2H gate upgraded 20%\u219250% (this run)",
+      "EXIT_AGENT_PROMPT_AMENDMENT live (prompts.py, 22:07 UTC)",
+      "HYPE_UNKNOWN_REGIME_PROBE active at 20% gate (01:10 UTC)"
+    ]
+  },
+  "learning_velocity": {
+    "fixes_applied_all_time": 36,
+    "ab_gates_active": 12,
+    "treatment_wr_filled": 0,
+    "bottleneck": "AB_RESULT_TRACKER_CODE \u2014 no feedback loop closes A/B outcomes. 12 gates accumulating data with no graduation mechanism.",
+    "system_health": "GOOD structure, BLOCKED graduation. All signals correct direction. Revenue blocked by offline status."
+  }
+}

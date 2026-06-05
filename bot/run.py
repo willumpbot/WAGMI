@@ -83,8 +83,9 @@ def cmd_backtest(args):
 
     fresh_mode = getattr(args, "fresh", False)
     relaxed_cb = getattr(args, "relaxed_cb", False)
+    yes_mode = getattr(args, "yes", False)
     engine = BacktestEngine(config, llm_integration=llm_integration, fresh=fresh_mode,
-                            relaxed_cb=relaxed_cb, resume=resume)
+                            relaxed_cb=relaxed_cb, resume=resume, yes=yes_mode)
 
     raw_mode = getattr(args, "raw", False)
     if raw_mode:
@@ -124,7 +125,7 @@ def cmd_backtest(args):
     elif resume:
         print("  Resume: from last checkpoint (simple mode)")
 
-    report = engine.run(symbols, args.days, strategies, learn=learn)
+    report = engine.run(symbols, args.days, strategies, learn=learn, start_date=getattr(args, "start_date", "") or None)
 
     if report.get("error") == "preflight_failed":
         print("\nBACKTEST ABORTED: LLM preflight checks failed.")
@@ -430,11 +431,13 @@ Commands:
     sub_bt.add_argument("--llm", action="store_true", help="Enable LLM multi-agent pipeline during backtest (requires ANTHROPIC_API_KEY)")
     sub_bt.add_argument("--budget", type=float, default=5.0, help="Max LLM API spend in USD (default: $5)")
     sub_bt.add_argument("--resume", action="store_true", help="Resume LLM backtest from last checkpoint")
+    sub_bt.add_argument("--yes", "-y", action="store_true", help="Skip interactive confirmation prompt (for scripted/parallel runs)")
     sub_bt.add_argument("--csv", default="", help="Export per-trade timeline to CSV file")
     sub_bt.add_argument("--raw", action="store_true", help="Disable circuit breakers, notional caps, and risk gates for raw strategy analysis")
     sub_bt.add_argument("--fresh", action="store_true", help="Force re-fetch data from exchanges, ignoring disk cache")
     sub_bt.add_argument("--relaxed-cb", action="store_true", help="Use relaxed circuit breaker settings (15%%/30%%) instead of live (5%%/10%%)")
     sub_bt.add_argument("--sim-agents", action="store_true", help="Enable simulated LLM agents (rule-based, no API) to filter signals")
+    sub_bt.add_argument("--start-date", default="", help="Start main loop from this date (YYYY-MM-DD). Warmup still uses earlier data from --days window.")
 
     # Signals
     sub_sig = subparsers.add_parser("signals", help="One-shot signal check")

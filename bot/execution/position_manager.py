@@ -648,26 +648,53 @@ class PositionManager:
             if hold_hours >= time_stop_hours:
                 # Assess position health before closing
                 _health = self._assess_position_health(pos, current_price, df_5m)
-                _max_extension = 4.0  # Maximum 4h extension (8h -> 12h absolute max)
+                # Very healthy positions (score≥75) get double extension (8h vs 4h).
+                # BTC SHORT #4 was closed at +$105 real PnL before hitting TP1 because
+                # 12h + 4h = 16h max wasn't enough for a trending_bear move. At 20h max,
+                # TP1 would have been reachable. Extension only applies if score ≥75 and
+                # MFE retention is high (position isn't giving back gains).
+                _health_score = _health.get("score", 0)
+                _max_extension = 8.0 if _health_score >= 75 else 4.0
                 _extension = _health.get("extension_hours", 0)
                 _extended_stop = time_stop_hours + min(_extension, _max_extension)
 
                 if hold_hours >= _extended_stop:
-                    _reason = _health.get("reason", "time_expired")
-                    logger.info(
-                        f"[{symbol}] TIME STOP: held {hold_hours:.1f}h >= {_extended_stop:.1f}h "
-                        f"(base={time_stop_hours}h + ext={min(_extension, _max_extension):.1f}h) "
-                        f"reason={_reason} health={_health.get('score', 0):.0f}%"
-                    )
-                    event = self._close_position(pos, current_price, "TIME_STOP")
-                    events.append(event)
-                    return events
+                    # TP1-proximity guard: if price is within 0.5% of TP1, extend 1h.
+                    # Prevents closing 5 minutes before TP1 (BTC #4 incident: +$77 left
+                    # on the table when TP1 was just minutes away at 16h).
+                    _tp1 = getattr(pos, 'tp1', 0)
+                    _is_long = pos.side == "LONG"
+                    _tp1_dist_pct = 0.0
+                    if _tp1 > 0 and current_price > 0:
+                        if _is_long:
+                            _tp1_dist_pct = (_tp1 - current_price) / current_price
+                        else:
+                            _tp1_dist_pct = (current_price - _tp1) / current_price
+                    _tp1_very_close = 0 < _tp1_dist_pct < 0.005  # within 0.5%
+                    if _tp1_very_close and pos.state not in ("TP1_HIT", "TRAILING"):
+                        _extended_stop += 1.0
+                        logger.info(
+                            f"[{symbol}] TIME STOP DEFERRED 1h: TP1 within "
+                            f"{_tp1_dist_pct*100:.2f}% ({current_price:.2f} → {_tp1:.2f})"
+                        )
+                    if hold_hours < _extended_stop:
+                        pass  # deferred — TP1 proximity extended stop, skip close this tick
+                    else:
+                        _reason = _health.get("reason", "time_expired")
+                        logger.info(
+                            f"[{symbol}] TIME STOP: held {hold_hours:.1f}h >= {_extended_stop:.1f}h "
+                            f"(base={time_stop_hours}h + ext={min(_extension, _max_extension):.1f}h) "
+                            f"reason={_reason} health={_health_score:.0f}%"
+                        )
+                        event = self._close_position(pos, current_price, "TIME_STOP")
+                        events.append(event)
+                        return events
                 else:
                     # Position is healthy — log extension and continue
                     if not hasattr(pos, '_extension_logged'):
                         logger.info(
                             f"[{symbol}] TIME STOP EXTENDED: {hold_hours:.1f}h held, "
-                            f"extending to {_extended_stop:.1f}h (health={_health.get('score', 0):.0f}% "
+                            f"extending to {_extended_stop:.1f}h (health={_health_score:.0f}% "
                             f"tp1_progress={_health.get('tp1_progress', 0):.0f}%)"
                         )
                         pos._extension_logged = True

@@ -96,6 +96,7 @@ class TradeDNA:
     llm_confidence: float = 0.0
     llm_reasoning: str = ""
     entry_type: str = ""
+    setup_type: str = ""  # Compound key: regime+strategy+side e.g. "trend_bollinger_squeeze_BUY"
     # Outcome
     outcome: str = ""  # WIN, LOSS, BREAKEVEN
     pnl: float = 0.0
@@ -226,6 +227,7 @@ class TradeDNAStore:
             "by_symbol": self.get_win_rate_by("symbol"),
             "by_side": self.get_win_rate_by("side"),
             "by_entry_type": self.get_win_rate_by("entry_type"),
+            "by_setup_type": self.get_win_rate_by("setup_type"),
         }
 
     def _compress_old_trades(self):
@@ -764,6 +766,7 @@ class DeepMemoryManager:
         llm_confidence: float = 0.0,
         llm_reasoning: str = "",
         entry_type: str = "",
+        setup_type: str = "",
         btc_trend: str = "",
         volume_ratio: float = 0.0,
         funding_rate: float = 0.0,
@@ -809,6 +812,7 @@ class DeepMemoryManager:
             llm_confidence=llm_confidence,
             llm_reasoning=llm_reasoning,
             entry_type=entry_type,
+            setup_type=setup_type,
             outcome=outcome,
             pnl=pnl,
             pnl_pct=round(pnl_pct, 2),

@@ -425,6 +425,7 @@ class RiskFilterChain:
                 symbol=signal.symbol, regime=_gr_regime, side=_gr_side,
                 num_agree=_gr_n, confidence=signal.confidence,
                 hour_utc=datetime.now(timezone.utc).hour,
+                strategies_active=(meta.get("strategies_agree") or []) if meta else [],
             )
             if _gr_veto:
                 _reason = f"Graduated rule veto: {_gr_applied[:100]}"
@@ -1501,24 +1502,27 @@ class SafetyFilterChain:
                 metadata=meta,
             )
 
-        # ── Gate 5: Liquidation safety (worst-case check) ──
-        # Use max_leverage as ceiling — the LLM will pick actual leverage.
-        # This just ensures the signal's stop loss isn't beyond liquidation
-        # even at maximum possible leverage.
+        # ── Gate 5: Liquidation safety (practical-max check) ──
+        # Check at the practical leverage ceiling (10x), not the theoretical max.
+        # The Risk Agent uses 3-5x standard / 6-10x high conviction in overdrive mode.
+        # Checking at config.max_leverage (15x) was blocking wide-ATR-stop signals for
+        # volatile assets (HYPE, SOL) that the LLM would correctly size at 3-8x.
+        # At 10x, a 7% stop is still safely above liquidation; at 15x it is not.
         max_lev = getattr(self.config, "max_leverage", 25.0)
+        liq_check_lev = min(max_lev, 10.0)  # practical ceiling: LLM max is 6-10x in overdrive
         side_str = "BUY" if signal.side == "BUY" else "SELL"
-        notional_est = equity * max_lev * 0.5
+        notional_est = equity * liq_check_lev * 0.5
         liq_check = self.leverage_mgr.validate_stop_vs_liquidation(
             entry=signal.entry,
             stop_loss=signal.sl,
             side=side_str,
-            leverage=max_lev,
+            leverage=liq_check_lev,
             notional_usd=notional_est,
         )
         if not liq_check["safe"]:
             _reason = (
                 f"SL ({signal.sl}) beyond liquidation "
-                f"({liq_check['liquidation_price']:.2f}) at max leverage {max_lev}x"
+                f"({liq_check['liquidation_price']:.2f}) at practical max leverage {liq_check_lev}x"
             )
             _log_rejection(signal, "safety_liquidation", _reason)
             self._log_signal_filtered(signal, "liquidation", _reason)
@@ -1527,6 +1531,7 @@ class SafetyFilterChain:
                 metadata=meta,
             )
         meta["liq_gap_pct"] = round(liq_check.get("gap_pct", 0), 4)
+        meta["liq_check_leverage"] = liq_check_lev  # inform LLM of the leverage ceiling used
 
         # ── PASS: Signal is structurally safe ──
         # Attach useful metadata for the LLM pipeline to consume.

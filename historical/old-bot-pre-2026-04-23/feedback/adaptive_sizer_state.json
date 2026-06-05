@@ -1,0 +1,38 @@
+{
+  "outcomes": {
+    "HYPE": [
+      false,
+      true,
+      false,
+      false,
+      false
+    ],
+    "SOL": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ],
+    "BTC": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ],
+    "ETH": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "window": 20
+}

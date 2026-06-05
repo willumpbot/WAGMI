@@ -202,6 +202,7 @@ class AnalyticsMixin:
             _llm_action = _er.get("llm_action", "")
             _llm_conf = _er.get("llm_confidence", 0.0)
             _llm_reasoning = _er.get("llm_reasoning", "")
+            _setup_type = _er.get("setup_key", "") or (pos.setup_type if pos.setup_type else "")
             _strategies_agreed = _er.get("strategies_agreed") or _er.get("strategies_agree", [])
             if not _strategies_agreed and pos.strategy:
                 _strategies_agreed = [pos.strategy]
@@ -252,6 +253,7 @@ class AnalyticsMixin:
                 llm_confidence=_llm_conf,
                 llm_reasoning=_llm_reasoning,
                 entry_type=_entry_type,
+                setup_type=_setup_type,
                 btc_trend=btc_trend,
                 volume_ratio=_vol_ratio,
                 funding_rate=_funding_rate,

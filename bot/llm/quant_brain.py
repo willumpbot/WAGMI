@@ -181,15 +181,24 @@ class QuantBrainDecision:
 
 # ── Constants ────────────────────────────────────────────────────────────
 
-# 2026-06-03: Hardcoded setup-specific WR priors REMOVED per Nunu directive.
-# These were computed pre-fee-fix (45 bps vs real 4.5 bps) and based on stale
-# "500h study" data. Treating them as truth fed false confidence into Quant Brain
-# decisions, polluting LLM reasoning with fabricated certainties. All setups now
-# fall through to the neutral _DEFAULT_WIN_PROB. When kelly_engine recomputes
-# from corrected-fee trade_ledger, real priors can be reintroduced from data.
-_SETUP_WIN_PROBS: Dict[str, float] = {}
+# Setup-specific win probability priors.
+# Calibrated 2026-06-03 via 181 live trades (Mar-May 2026, bearish regime).
+# Values = 60% live_WR + 40% old_prior, then rounded conservatively.
+# BUY priors dropped significantly — all longs underperformed in this window.
+# ETH_BUY / ETH_SELL added (were using _DEFAULT_WIN_PROB=0.45 before).
+# Recalibrate if regime flips sustainably bullish.
+_SETUP_WIN_PROBS: Dict[str, float] = {
+    "BTC_BUY":   0.35,   # Live WR 25% (n=20). Was 0.56. Blend: 0.37 → 0.35 conservative.
+    "BTC_SELL":  0.50,   # Live WR 45.5% (n=11). Was 0.55.
+    "ETH_BUY":   0.30,   # Live WR 25% (n=32). New entry (was default 0.45). Largest loser: -$1724.
+    "ETH_SELL":  0.55,   # Live WR 90.9% (n=11, small sample — capped at 0.55). New entry.
+    "HYPE_BUY":  0.30,   # Live WR 22.2% (n=36). Was 0.52.
+    "HYPE_SELL": 0.28,   # Live WR 25% (n=8, small sample). Was 0.35.
+    "SOL_BUY":   0.30,   # Live WR 27.6% (n=29). Was 0.45.
+    "SOL_SELL":  0.45,   # Live WR 38.2% (n=34). Was 0.55.
+}
 
-_DEFAULT_WIN_PROB = 0.50  # Neutral coin-flip — no fabricated edge
+_DEFAULT_WIN_PROB = 0.35  # Lowered from 0.45: live data shows all unlisted symbols ~25-30% WR
 
 # RSI-based win probability adjustments
 _RSI_WP_ADJUSTMENTS: Dict[str, Tuple[float, float]] = {

@@ -61,7 +61,7 @@ ATR% = (ATR/price)*100. Check CURRENT EDGES and REGIME PERFORMANCE for live WR b
 - High BTC-alt correlation reduces alt alpha
 
 ## TIMING
-18-06 UTC historically outperforms. Check CURRENT EDGES for time-of-day data. Factor into outlook.
+Time-of-day edge is unconfirmed in live data. Check CURRENT EDGES if available. Do not factor as a primary signal.
 
 ## RULES
 - Use ALL data: price, volume, funding, OI, BTC correlation
@@ -73,7 +73,7 @@ ATR% = (ATR/price)*100. Check CURRENT EDGES and REGIME PERFORMANCE for live WR b
 ## CRITICAL: REGIME = #1 TRADE OUTCOME DETERMINANT (101 live trades)
 Same symbol+side in different regimes = OPPOSITE results:
 - SOL SHORT trending_bear = +$396 (67% WR). SOL SHORT consolidation = -$169 (0% WR)
-- BTC LONG trending = 80% WR. BTC LONG illiquid = 40% WR
+- BTC LONG trending = 80% WR (101-trade history). Live Mar-May 2026: BTC LONG overall 25% WR — bearish regime may have inverted this.
 - US session (16-24 UTC) = +$243. Asia (00-08 UTC) = -$114
 
 **THE "trend" TRAP**: weak trend (ADX 18-25) = -$200, PF=0.15. Strong trend (ADX>25) = +$28, PF=1.9. ADX 18-25 with weak directional movement → classify "range" not "trend".
@@ -118,6 +118,7 @@ This is paper trading. Goal: generate trade outcomes for learning. CAPITAL PRESE
 - If `live_skip_evidence.this_symbol_skips` > 20, your prior decisions have probably been wrong. Take the next reasonable thesis as `"go"`.
 - DISABLED graduated rules (active=false in wired data) ARE NOT VETOES. Do not cite "Night session veto" or "conf_floor_70 penalty" if those rules have `active: false`. They were OVERRIDDEN by operator decision because they were unvalidated.
 
+
 CRITICAL OUTPUT RULE: Your response MUST be ONLY the JSON object below. NO prose before it. NO markdown headings. NO "STEP 0:" text in the output. Your first character must be `{`. The reasoning steps below are INTERNAL thinking — do them silently, then emit only the JSON.
 
 OUTPUT (JSON only, nothing else):
@@ -130,13 +131,20 @@ Before looking at the signal: what does this asset do in the next 2-4h? 1-senten
 
 ## INTERNAL STEP 1: SEQUENTIAL GATES (think silently — stop at first SKIP)
 
-**Gate 1 — REGIME**: panic/low_liquidity/unknown → SKIP (unless 3+ agree at 80%+). trend/range/high_volatility → PROCEED.
+**Gate 1 — REGIME**: panic/low_liquidity/illiquid/unknown → SKIP (no override — 3-agree has 0% WR live). trend/range/high_volatility → PROCEED.
 
 **Gate 2 — DIRECTION**: Thesis matches signal? Match → +0.10. Mismatch without compelling data → SKIP.
 
 **Gate 3 — TIMEFRAME confluence**: 6h aligned with 1h? Aligned → proceed. Misaligned → SKIP. Do not override 6h disagreement.
 
-**Gate 4 — STRATEGY CONSENSUS**: 3+ agree → high confidence. 2 agree → moderate (check rolling WR). Solo → SKIP unless extraordinary. Cap solo at c=0.60.
+**Gate 4 — STRATEGY CONSENSUS**: 3+ agree → high confidence. 2 agree → moderate (check rolling WR).
+Solo signals: check STRATEGY TRUST before blocking.
+- bollinger_squeeze solo → EVALUATE (57% live WR, 64% shadow WR, explicitly "Tradeable solo"). Do NOT auto-skip.
+- confidence_scorer solo at 65-85% → EVALUATE (#1 earner, proven edge in that band).
+- regime_trend solo → SKIP (38% live WR, confirmation-only).
+- multi_tier_quality/probability_engine/funding_rate solo → SKIP (low primary WR).
+- Unknown/other solo → SKIP.
+Cap all solo decisions at c=0.55. The "solo=$0 ground truth" was from pre-LLM-filtering era — YOUR job is to be the filter that changes this.
 
 **Gate 5 — MARKET QUALITY**: ADX>20 + RSI 30-70 → healthy. RSI extreme → -0.10. ADX<15 → skip trend trades. Volume surging AGAINST direction → reduce/skip. Volume surging WITH fading price → SKIP. Trust ADX over chop score.
 
@@ -145,10 +153,15 @@ Before looking at the signal: what does this asset do in the next 2-4h? 1-senten
 **Gate 7 — THESIS**: Form: "I expect [SYMBOL] [DIRECTION] by [X%] within [Y hours] because [data reason] + [pattern reason]. INVALIDATED if: [condition]". For 3-agree regime-aligned: recommend wider stops (3%+ SL) in ea/n.
 
 ## INTERNAL STEP 2: CONFIDENCE CALIBRATION (think silently)
+CALIBRATION WARNING: Live data shows c=70-75% trades had 14.7% WR (-$1807); c=80%+ had 0% WR.
+Confidence was inflated by stale 'wired edge' data (now corrected). Lean toward lower confidence.
+
 Base 0.50, adjust additively:
-+0.15: 3+ agree trending | +0.10: 6h aligned | +0.05: favorable time (18-06 UTC) | +0.05: BTC confirms (>0.3%) | +0.05: scout matches at HIGH
++0.15: 3+ agree trending | +0.10: 6h aligned | +0.05: BTC confirms (>0.3%) | +0.05: scout matches at HIGH
 -0.10: solo signal | -0.10: adverse volume | -0.05: adverse funding (>0.03%) | -0.10: post-big-win giveback risk | -0.05: price moved >1.5% in direction
-Cap 0.85, floor 0.30. Self-correct: self_perf cal>+0.10 → reduce 10%. cal<-0.10 → increase 10%. vacc<0.50 → default proceed.
+-0.15: BUY signal (all longs 25-28% WR live — require strong counter-evidence to trust a long)
+Cap 0.75, floor 0.25. (Lowered cap from 0.85 — live data shows high confidence was a negative predictor.)
+Self-correct: self_perf cal>+0.10 → reduce 10%. cal<-0.10 → increase 10%. vacc<0.50 → default proceed.
 
 ## INTERNAL STEP 3: CONTEXT FIELDS (reference only)
 - `knowledge`: Curriculum axioms. `deep_memory`: Trade DNA, patterns. `recent_lessons`: Closed trade feedback (most valuable).
@@ -179,7 +192,7 @@ NOTE: These are observations from the OLD bot under DIFFERENT conditions. Many o
 
 ## STRATEGY TRUST (HISTORICAL — wired validated_edges override these)
 - bollinger_squeeze: historically highest trust, often tradeable solo, BUT check wired data per (symbol, side).
-- multi_tier_quality: historically weak SOLO — but SOL BUY via MTQ is a wired validated edge (100% WR/n=90). Don't blanket-reject MTQ if it matches a wired edge.
+- multi_tier_quality: historically weak SOLO. Shadow data showed SOL BUY MTQ 100% WR — but live Mar-May 2026 shows SOL BUY overall 28% WR. Apply normal scrutiny; no automatic override.
 - regime_trend: historically confirmation-only — but ETH BUY and HYPE BUY via regime_trend are wired validated edges. Don't blanket-reject if it matches a wired edge.
 - Other strategies: use as context, verify against wired data.
 RULE: never cite "X strategy is bad" as a veto reason if the (symbol, side, strategy) combination appears in wired `validated_edges`.
@@ -188,13 +201,15 @@ RULE: never cite "X strategy is bad" as a veto reason if the (symbol, side, stra
 The current 8 validated shadow_edges are wired into your snapshot as `signals.validated_edges`. When present, those numbers are LIVE truth — use them.
 
 Historical reference (for tiebreaker only when no wired match):
-- regime_trend ETH BUY: 100% WR, n=135 — wired as validated edge
-- bollinger_squeeze HYPE BUY: 61% WR, n=196 — wired
-- SOL SELL (BB or MTQ): 72% WR, n=68 — wired
-- BTC BUY regime_trend: 65% WR, n=117 (upgraded) — wired
-- HYPE BUY regime_trend: 87% WR, n=63 (upgraded) — wired
-- SOL BUY multi_tier_quality: 100% WR, n=90 (new, 19-day caveat) — wired
-- SOL BUY bollinger_squeeze: 90% WR, n=100 (new, 19-day caveat) — wired
+LIVE DATA UPDATE (Mar-May 2026, 181 trades): BUY signal WRs are much lower than shadow data.
+Shadow data was pre-live, simulated fills. Live is authoritative when available.
+- ETH BUY (any strategy): shadow 100%, LIVE 25% (n=32, -$1724). Require strong thesis.
+- BTC BUY (any strategy): shadow 65%, LIVE 25% (n=20, -$196). No free pass.
+- HYPE BUY (any strategy): shadow 61-87%, LIVE 22% (n=36, -$89). Consistently weak.
+- SOL BUY (any strategy): shadow 90-100%, LIVE 28% (n=29, -$670). Caveat applies.
+- SOL SELL (BB or MTQ): shadow 72%, LIVE 38% (n=34, +$46). Still positive but modest.
+- ETH SELL: no shadow data, LIVE 91% (n=11, small sample — do not over-rely).
+- BTC SELL: no separate shadow, LIVE 46% (n=11, +$193). Positive but modest.
 
 Historical "poison" setups (from old data — verify against wired data before treating as veto):
 - regime_trend SOL SELL was a catastrophic loser (0% WR on 149 shadows) — this remains a soft caution.
@@ -212,10 +227,12 @@ Historical "poison" setups (from old data — verify against wired data before t
 - BTC dropping >3%/1h → NEVER long alts
 - Funding >0.05% against + hold >4h → SKIP
 - NEVER flip on solo signal (need 2+ agree)
+- illiquid/low_liquidity regime + LONG → SKIP always (live data: 55 trades, 20% WR, -$1668)
+- range regime + LONG (no trending context) → SKIP (live: 7 trades, 0% WR, -$808)
 
 ## PRINCIPLES
 - Winners enter after sustained selling with fading volume. Losers chase surging volume.
-- More agreement = exponentially better WR. 3-agree is 2x better than 2-agree.
+- 2-agree historically outperforms solo. 3-agree: n=5, 0% WR in live data — verify inputs carefully, no automatic confidence boost.
 - PnL = Move - Funding - Fees. Funding >0.03% → prefer SCALP profile.
 - If you see strong edge, state explicitly — downstream sizing discounts by default.
 - Check g.edge for rolling WR on this symbol+side — edges strengthen and weaken.
@@ -246,27 +263,9 @@ OUTPUT (JSON only):
 ## LEVERAGE FIELD (required in LLM-first mode)
 - leverage: the ACTUAL leverage multiplier (1x-20x). You decide this.
 - risk_pct: fraction of equity to risk on this trade (0.01=1%, 0.10=10%).
-
-## LEVERAGE TIERS — OVERDRIVE MODE (be braver; explore your edges)
-The bot trades a small paper account where we collect outcome data. We are
-deliberately calibrated to take more risk per trade so the data set grows.
-Do NOT default to 1-2x. Default is 3-5x. Tiers below shifted up one bracket
-from production safety calibration:
-- 1-2x: ONLY if you are explicitly low conviction AND stop is <0.5% (would liquidate at 5x+)
-- 3-5x: standard / base case — use when you have a coherent thesis and any confluence at all
-- 6-10x: high conviction — clear trend, multi-strategy confluence, or strong regime signal
-- 11-20x: maximum conviction — trending regime + confluence + favorable funding/OI + Quant 'go'
-
-Pick the HIGHER tier when in doubt. Nunu has stated repeatedly that he has
-traded up to 25x successfully himself; the bot should not be permanently camped
-at 1-2x just because confidence comes out at 0.30. 0.30 conf in trending_bear
-with cross-asset alignment is a 3-5x setup, not a 1-2x setup.
-
-Constraints that REDUCE leverage from your chosen tier:
-- Stop-width: very tight stops (<0.5%) cap at 8-10x to avoid noise-liquidation
-- Short-side asymmetric liq risk: -20% vs same-tier longs (e.g., LONG 6x -> SHORT 5x)
-- Existing portfolio leverage: if portfolio already at 4-5x, dial back this trade's leverage
-- High-vol regime + tight stop: cap at 5-7x even if thesis is strong
+- Leverage tiers: 1-2x (low conviction), 3-5x (standard), 6-10x (high conviction), 11-20x (maximum, rare).
+- Stop-width-aware: tight stops (<0.5%) need lower leverage (max 8-10x). Wide stops (>1.5%) can use higher.
+- Short-side bias: shorts need 20% less leverage than longs (asymmetric liquidation risk).
 
 ## YOUR SIZING IS AUTHORITATIVE
 Your sz output (0.0-2.0) is the FINAL position size multiplier.
@@ -281,7 +280,7 @@ Do NOT try to compensate for downstream filters — they have been removed.
    - Quant Agent EV: ev>0.30 → sz*1.2. ev<0.10 → sz*0.7
    - Portfolio exposure: if adding to directional concentration → sz*0.7
    - Regime: trend → sz*1.0. range → sz*0.8. panic → sz*0.5
-   - Time-of-day: prime hours (18-06 UTC) → sz*1.1. dead hours → sz*0.7
+   - Time-of-day: no consistent edge confirmed in live data — do not apply size adjustment
    - Recent streak: 3+ losses → sz*0.6. 3+ wins → sz*0.8 (giveback risk)
 3. Hard caps: sz never below 0.3 (minimum meaningful), never above 2.0
 4. Portfolio budget: if this trade would push total exposure above 5x equity → reduce sz
@@ -333,6 +332,7 @@ vm=vmc_cipher, mc=monte_carlo_zones
 - Hard cap: NEVER exceed 15x equity notional regardless of edge. Flag override=reduce if proposed notional > 15x equity.
 - At $500 equity, minimum meaningful position is $50 notional. Below this, fees eat the trade. If your sizing math produces <$50 notional, either size up or override=skip.
 - Use OBSERVED WR and payoff for sizing, not theoretical Kelly. If quant_analysis.kelly is at floor (0.15), the edge is marginal — size conservatively.
+- OpsGuard cap: position notional must stay under 500% of equity. risk_pct × (1/stop_width_pct) = notional%. If `sizing_constraint` is present, your risk_pct MUST NOT exceed `sizing_constraint.max_risk_pct` — exceeding it triggers an OpsGuard rejection and wastes the trade opportunity. Check this field first before sizing.
 
 ## DO NOT
 - DO NOT approve sz>1.5x unless kelly>0.15 AND g.edge wr>60%.
@@ -350,7 +350,9 @@ Size based on what ACTUALLY made and lost money:
 7. **BTC at high leverage is toxic.** BTC 0-7x: 100% WR. BTC 7-9x: 25% WR. Cap BTC leverage.
 8. **The bot is a 35% WR system with 2:1 payoff.** This IS profitable. Don't over-reduce size because of low WR — the wins are big enough to carry.
 9. **Normal price noise by symbol:** BTC 0.37%, ETH 0.50%, SOL 0.47%, HYPE 0.77%. Stops must be WIDER than these numbers.
-10. **US session (16-24 UTC) = where the money is.** Size up during US session, size down during Asia (00-08 UTC).
+   LIVE DATA ALERT: 60/120 SL-hit trades had stop_width < 0.5% (inside noise). BTC LONG median stop was 0.30% — INSIDE noise at 0.37%.
+   ACTION: compute stop_width = abs(signal.entry - signal.sl) / signal.entry * 100. If stop_width < noise[symbol], apply override="skip" or reduce sz 50%. NEVER let a sub-noise stop through at full size.
+10. **US session (16-24 UTC) historically outperformed Asia (00-08 UTC)** (+$243 vs -$114 in 101-trade reference dataset). Live Mar-May 2026 data shows no consistent time-of-day edge — treat as weak signal only, do not apply automatic size adjustments.
 
 ## SIGNAL QUALITY DATA (LLM-first mode)
 When `signal_quality` is present in your input, YOU are the quality gate:
@@ -909,7 +911,7 @@ The 8 wired validated_edges are AUTHORITATIVE. If a setup appears there, do NOT 
 Historical reference for setups NOT in wired data:
 - bollinger_squeeze solo: historically tradeable (matches wired HYPE BUY, SOL SELL).
 - confidence_scorer at 65-85% solo: historically #1 earner.
-- multi_tier_quality solo: historically weak EXCEPT for SOL BUY (wired 100% WR edge — DO NOT VETO that combination).
+- multi_tier_quality solo: historically weak. Shadow data showed SOL BUY MTQ at 100% WR, but LIVE Mar-May 2026 shows SOL BUY overall 28% WR (n=29). No longer an automatic approve — apply normal veto logic.
 - probability_engine / funding_rate solo: historically poor as primary. Soft caution only.
 - regime_trend SOL SELL: historically catastrophic (0% on 149). Still treat as caution but verify against wired data first.
 
@@ -1004,6 +1006,13 @@ DO NOT tighten aggressively after TP1 — research shows wider trail captures +3
 
 **When a position is 1h old and losing in a trending regime**: HOLD. You are almost certainly in the noise phase. The directional thesis hasn't failed, the microstructure has temporarily moved against you.
 **When a position is 1h old and losing in illiquid/ranging regime**: The regime itself is the enemy. Assess whether thesis is still valid — the regime may be eating this trade.
+
+**BTC/ETH LONG in TRENDING regime — 3h patience rule (counterfactual-validated, conf=0.88)**:
+- Do NOT recommend tighten_sl or full_close before 3h hold time unless:
+  1. Regime explicitly shifted away from TRENDING, OR
+  2. BTC dumped >3%/1h (thesis invalidation trigger), OR
+  3. Dead capital confirmed (>3h elapsed, price within 0.3% of entry with no progress)
+- Rationale: ETH LONG+TRENDING has 58% true-miss rate (n=19, +$1.41/trade improvement from patience). BTC LONG+TRENDING has 81% true-miss rate (n=16, +$1.18/trade). Combined: +$2.59/trade EV gain from holding through the 2-3h noise phase instead of tightening early.
 
 ## REVERSAL & RECOVERY (from live + shadow data)
 - **97% of SL losses had positive MFE first** — price moved in our favor then reversed through the stop. Most "losers" were directionally correct.
@@ -1107,7 +1116,7 @@ OUTPUT (JSON only):
 - **SOL extreme oversold** = continuation SHORT, not bounce buy. Extreme oversold often continues down.
 - **Cross-asset divergence**: alt holding while BTC dumps = relative strength signal.
 - **Funding rates**: extreme (>0.05%/8h) = mean reversion opportunity. Flag counter-funding trades.
-- **Prime hours**: 18-06 UTC historically outperforms. Flag upcoming prime windows.
+- **Session context**: US session historically outperformed in old data; live data shows no consistent time-of-day edge. Note session in watchlist but do not weight it heavily.
 
 ## WATCHLIST PRIORITY
 - HIGH: within 1% of key level + favorable regime + lead-lag active + HYPE BUY setup
@@ -1224,20 +1233,24 @@ OUTPUT (JSON only):
 }
 ```
 
-## CONDITIONAL EDGE CALCULATION (reason from current data, no hardcoded multipliers)
+## CONDITIONAL EDGE CALCULATION (compute, don't look up)
 1. Base WR from enriched data (current rolling WR for this symbol+side)
-2. Reason about regime adjustment from current data (do not apply hardcoded multipliers)
-3. Reason about confluence quality from current data — number of strategies agreeing, their independence, and recent performance — without applying hardcoded boost ratios
-4. Reason about time-of-day effect from current volume/volatility, not hardcoded session multipliers
-5. Result = your judgment on conditional WR for Kelly and EV calculation
+2. Regime adjustment: trending WR / overall WR (multiply)
+3. Confluence boost:
+   - BB solo -> 1.3x (67.6% WR in shadow data, highest edge)
+   - 2-agree with BB -> 1.1x (strong consensus)
+   - Solo non-BB -> 0.7x (weak edge, needs strong thesis)
+   - 3+ agree -> 1.0x (historically no additional edge; rare, verify inputs carefully)
+4. Result = conditional WR for Kelly and EV calculation
 
-If enriched data shows WR has decayed substantially from historical, flag
-signal_quality as "decaying_edge". If no live WR data exists, say so explicitly.
+If the enriched data shows WR has decayed >15pp from the historical edge map,
+flag signal_quality as "decaying_edge" and reduce EV accordingly.
 
-## STRUCTURAL VETOES (reason, do not look up hardcoded thresholds)
-- TOXIC setup marking in CURRENT EDGES: respect if present, otherwise reason from data.
-- Reason about RSI extremes from current chart context. Do not apply hardcoded RSI thresholds (e.g. "<10", "<20") as auto-vetoes — they encode stale assumptions.
-- Cross-asset signals: reason from BTC/ETH/SOL/HYPE correlations as shown in enriched data.
+## HARD VETOES (check CURRENT EDGES for live data; these are structural)
+- Check CURRENT EDGES for any setup marked TOXIC. Set noise_probability=1.0, confidence_adjustment=-1.0.
+- SOL RSI<10 BUY: noise_probability=0.95 (extreme oversold continues down, not bounces)
+- BTC RSI<20 BUY: noise_probability=0.90 (oversold BTC has negative returns structurally)
+- BTC RSI<20 + HYPE alpha>0.5%: exception — cross-asset combo signal (small n, powerful)
 
 ## NOISE PROBABILITY SCALE
 0.0 = pristine signal, 0.3 = minor concerns, 0.6 = likely noise, 0.9 = almost certainly noise

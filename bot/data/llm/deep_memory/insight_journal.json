@@ -313,7 +313,7 @@
     {
       "ts": 1774489763.0081108,
       "category": "risk_insight",
-      "insight": "HYPE_BUY losers hit SL within 1-2 bars. Winners take 6-12 bars. If a HYPE_BUY trade survives 5+ bars, it is very likely a slow winner — HOLD and extend time stop. Do NOT cut early.",
+      "insight": "HYPE_BUY losers hit SL within 1-2 bars. Winners take 6-12 bars. If a HYPE_BUY trade survives 5+ bars, it is very likely a slow winner \u2014 HOLD and extend time stop. Do NOT cut early.",
       "confidence": 0.85,
       "evidence": "Bar-by-bar resolution analysis on 49 replay trades. Source: clean_replay.py",
       "source": "quant_backtest_2026_03_26",
@@ -323,7 +323,7 @@
     {
       "ts": 1774489764.0081108,
       "category": "regime_insight",
-      "insight": "RSI 35-65 is the sweet spot for HYPE_BUY entries (62-64% WR). Oversold (RSI<35) shows only 50% WR — counterintuitive but validated. RSI 55-65 has highest WR at 64%.",
+      "insight": "RSI 35-65 is the sweet spot for HYPE_BUY entries (62-64% WR). Oversold (RSI<35) shows only 50% WR \u2014 counterintuitive but validated. RSI 55-65 has highest WR at 64%.",
       "confidence": 0.8,
       "evidence": "RSI zone analysis on 84 HYPE_BUY entries over 30 days. Source: deep_edge_analysis.py",
       "source": "quant_backtest_2026_03_26",
@@ -333,7 +333,7 @@
     {
       "ts": 1774489765.0081108,
       "category": "meta_insight",
-      "insight": "BTC_BUY shows 56% WR, PF 1.40 over 30 days but is not yet in the sniper filter proven setups. Monitor in sim. BTC_SELL and HYPE_SELL are confirmed negative EV — hard blocked.",
+      "insight": "BTC_BUY shows 56% WR, PF 1.40 over 30 days but is not yet in the sniper filter proven setups. Monitor in sim. BTC_SELL and HYPE_SELL are confirmed negative EV \u2014 hard blocked.",
       "confidence": 0.85,
       "evidence": "30-day parameter sweep. BTC_BUY: 36 trades. HYPE_SELL: 0% WR. Source: deep_edge_analysis.py",
       "source": "quant_backtest_2026_03_26",
@@ -353,7 +353,7 @@
     {
       "ts": 1774493459.121772,
       "category": "strategy_insight",
-      "insight": "BTC lead-lag ONLY works for swing entries (2.5%+ TP, 6x lev, 12h hold). Tight scalps (0.5-1.5% TP) FAIL with BTC trigger — follow-through takes 6-12 bars. BTC >0.8% trigger + HYPE swing = 77% WR PF 3.72 (13 trades). Do NOT scalp on BTC signals.",
+      "insight": "BTC lead-lag ONLY works for swing entries (2.5%+ TP, 6x lev, 12h hold). Tight scalps (0.5-1.5% TP) FAIL with BTC trigger \u2014 follow-through takes 6-12 bars. BTC >0.8% trigger + HYPE swing = 77% WR PF 3.72 (13 trades). Do NOT scalp on BTC signals.",
       "confidence": 0.85,
       "evidence": "Multi-config backtest: 5 configs x 4 BTC thresholds. Scalps PF<1 across all. Swings PF 3+ at >0.8% threshold.",
       "source": "quant_leadlag_2026_03_26",
@@ -363,7 +363,7 @@
     {
       "ts": 1774493459.1224174,
       "category": "execution_insight",
-      "insight": "Pure scalps (0.3-0.8% SL) on HYPE have 40-46% WR without strong directional trigger — barely profitable via R:R. The edge is in ENTRY TIMING (BTC trigger, regime, time-of-day), not in tight stops. Wider stops with good entries beat tight stops with any entry.",
+      "insight": "Pure scalps (0.3-0.8% SL) on HYPE have 40-46% WR without strong directional trigger \u2014 barely profitable via R:R. The edge is in ENTRY TIMING (BTC trigger, regime, time-of-day), not in tight stops. Wider stops with good entries beat tight stops with any entry.",
       "confidence": 0.85,
       "evidence": "Multi-edge backtest: 13 configs across 3 symbols. Tight scalps profitable only via volume (159 trades) not WR.",
       "source": "quant_multi_edge_2026_03_26",
@@ -413,7 +413,7 @@
     {
       "ts": 1774495664.3899477,
       "category": "strategy_insight",
-      "insight": "Multi-timeframe alignment is critical: 1h+6h aligned = 33% WR, misaligned = 10% WR on HYPE BUY. The multi_tier_quality strategy already gates on 6h EMA alignment — this validates that gate. Never override 6h misalignment.",
+      "insight": "Multi-timeframe alignment is critical: 1h+6h aligned = 33% WR, misaligned = 10% WR on HYPE BUY. The multi_tier_quality strategy already gates on 6h EMA alignment \u2014 this validates that gate. Never override 6h misalignment.",
       "confidence": 0.85,
       "evidence": "31 trades split by 1h/6h alignment. Aligned 7/21 (33%), misaligned 1/10 (10%).",
       "source": "quant_mtf_2026_03_26",
@@ -443,7 +443,7 @@
     {
       "ts": 1774496474.256516,
       "category": "symbol_insight",
-      "insight": "BTC min SL is 0.96% (1.5x median range). BTC is tighter than HYPE — can use tighter stops. Volume support at 70117 (1% below). BTC autocorrelation -0.04 (random walk at 1h). All assets show random walk — edge is in ENTRY QUALITY not trend riding.",
+      "insight": "BTC min SL is 0.96% (1.5x median range). BTC is tighter than HYPE \u2014 can use tighter stops. Volume support at 70117 (1% below). BTC autocorrelation -0.04 (random walk at 1h). All assets show random walk \u2014 edge is in ENTRY QUALITY not trend riding.",
       "confidence": 0.85,
       "evidence": "500 1h candles per symbol. Autocorrelation, range stats, volume profile.",
       "source": "quant_microstructure_2026_03_26",
@@ -453,7 +453,7 @@
     {
       "ts": 1774496571.6916223,
       "category": "strategy_insight",
-      "insight": "Strategy weights show vmc_cipher at 0.02 (0% WR on 42 trials) — effectively dead. regime_trend at 0.32 (25% recent WR) — struggling. confidence_scorer at 0.36 (45% recent WR) — decent. mean_reversion at 0.47 (40% recent WR, currently firing on oversold HYPE). multi_tier_quality and monte_carlo_zones at 0.50 (default, no live data yet). Consider disabling vmc_cipher to reduce noise in ensemble voting.",
+      "insight": "Strategy weights show vmc_cipher at 0.02 (0% WR on 42 trials) \u2014 effectively dead. regime_trend at 0.32 (25% recent WR) \u2014 struggling. confidence_scorer at 0.36 (45% recent WR) \u2014 decent. mean_reversion at 0.47 (40% recent WR, currently firing on oversold HYPE). multi_tier_quality and monte_carlo_zones at 0.50 (default, no live data yet). Consider disabling vmc_cipher to reduce noise in ensemble voting.",
       "confidence": 0.85,
       "evidence": "Strategy weights from ml_data/strategy_weights.json with recent outcomes.",
       "source": "quant_weights_2026_03_26",
@@ -463,7 +463,7 @@
     {
       "ts": 1774519800.0,
       "category": "risk_insight",
-      "insight": "After 3+ consecutive red 1h candles on HYPE, next 6h has 79% probability of being up with +1.17% avg gain (n=48). Mean reversion is real and tradeable. After RSI enters 30-35 zone, 3h forward return is 64% up with +0.43% avg (n=28). Entry at RSI<30 is too early â€” wait for RSI recovery to 30-35.",
+      "insight": "After 3+ consecutive red 1h candles on HYPE, next 6h has 79% probability of being up with +1.17% avg gain (n=48). Mean reversion is real and tradeable. After RSI enters 30-35 zone, 3h forward return is 64% up with +0.43% avg (n=28). Entry at RSI<30 is too early \u00e2\u20ac\u201d wait for RSI recovery to 30-35.",
       "confidence": 0.9,
       "evidence": "500 1h candles, 49 events of 3+ red streaks, 29 events of RSI 30-35. Forward return analysis.",
       "source": "quant_mean_reversion_2026_03_26",
@@ -503,7 +503,7 @@
     {
       "ts": 1774520000.0,
       "category": "risk_insight",
-      "insight": "CRITICAL: MIN_SIGNAL_EV in .env is 0.03 (default 0.08). At 0.03 the EV gate blocks NOTHING â€” trades with actual negative EV (42% WR, EV=-0.13) pass through. This is the #1 reason bad trades execute. Raise to 0.08 minimum. Also: ensemble win_prob deflation uses regime-dependent factors (e.g., 2-agree consolidation = 0.65x deflation). A 70% confidence becomes 45.5% win prob after deflation. Add a win_prob >= 0.48 gate to the signal pipeline to catch these.",
+      "insight": "CRITICAL: MIN_SIGNAL_EV in .env is 0.03 (default 0.08). At 0.03 the EV gate blocks NOTHING \u00e2\u20ac\u201d trades with actual negative EV (42% WR, EV=-0.13) pass through. This is the #1 reason bad trades execute. Raise to 0.08 minimum. Also: ensemble win_prob deflation uses regime-dependent factors (e.g., 2-agree consolidation = 0.65x deflation). A 70% confidence becomes 45.5% win prob after deflation. Add a win_prob >= 0.48 gate to the signal pipeline to catch these.",
       "confidence": 0.95,
       "evidence": "Analysis of ensemble.py lines 1689-1748, signal_pipeline.py gates 1c/1d, and 3 live losing trades. EV at 42% WR with 1.2 R:R and 1% fee drag = -0.129.",
       "source": "quant_ev_gate_analysis_2026_03_26",
@@ -523,7 +523,7 @@
     {
       "ts": 1774560100.0,
       "category": "risk_insight",
-      "insight": "SOL RSI<10 is a DEATH TRAP â€” 0% up-rate at 6h (n=6), avg -4.73% at 24h. SOL RSI<20 = -1.52% at 12h with 7% WR. MFE only +0.59% vs MAE -1.94%. SOL extreme oversold is a CONTINUATION signal, not reversal. NEVER buy SOL at RSI<20.",
+      "insight": "SOL RSI<10 is a DEATH TRAP \u00e2\u20ac\u201d 0% up-rate at 6h (n=6), avg -4.73% at 24h. SOL RSI<20 = -1.52% at 12h with 7% WR. MFE only +0.59% vs MAE -1.94%. SOL extreme oversold is a CONTINUATION signal, not reversal. NEVER buy SOL at RSI<20.",
       "confidence": 0.9,
       "evidence": "500 1h candle cross-asset analysis. 6 events RSI<10, 28 events RSI<20.",
       "source": "quant_cross_asset_2026_03_26",
@@ -543,7 +543,7 @@
     {
       "ts": 1774560102.0,
       "category": "risk_insight",
-      "insight": "CRITICAL BUG FOUND: multi_tier_quality had 0.50 weight (MAXIMUM) via Laplace smoothing on zero trials, despite causing ALL 3 live losses. Zero-trial strategies got more voting power than proven performers. Fixed: zero-trial default 0.50â†’0.30, multi_tier seeded with 0/3 record (weight 0.20).",
+      "insight": "CRITICAL BUG FOUND: multi_tier_quality had 0.50 weight (MAXIMUM) via Laplace smoothing on zero trials, despite causing ALL 3 live losses. Zero-trial strategies got more voting power than proven performers. Fixed: zero-trial default 0.50\u00e2\u2020\u20190.30, multi_tier seeded with 0/3 record (weight 0.20).",
       "confidence": 0.95,
       "evidence": "Strategy weights analysis. multi_tier_quality was primary_driver on all 3 live losing trades totaling -$19.16.",
       "source": "quant_weight_bug_2026_03_26",
@@ -1093,7 +1093,7 @@
     {
       "ts": 1776048165.427896,
       "category": "meta",
-      "insight": "Self-critique: Aware of 0% veto accuracy (n=1, -$9.85 missed PnL). However, this trade has 6 independent, data-backed rejection criteria. Not over-cautious — evidenc",
+      "insight": "Self-critique: Aware of 0% veto accuracy (n=1, -$9.85 missed PnL). However, this trade has 6 independent, data-backed rejection criteria. Not over-cautious \u2014 evidenc",
       "confidence": 0.7,
       "evidence": "Critic challenged: SIX OVERLAPPING VETO CRITERIA:\n\n1. **REGIME VETO (0% WR)**: HYPE_LONG_ranging = 0% WR on 4 trades. N",
       "source": "critic_agent",
@@ -1113,7 +1113,7 @@
     {
       "ts": 1776048479.7240715,
       "category": "meta",
-      "insight": "Self-critique: Trade Agent confidence 0.0, adjusted_confidence 0.0 → NO ADJUSTMENT NEEDED. Upstream correctly identified systemic failure mode. My veto accuracy is 0",
+      "insight": "Self-critique: Trade Agent confidence 0.0, adjusted_confidence 0.0 \u2192 NO ADJUSTMENT NEEDED. Upstream correctly identified systemic failure mode. My veto accuracy is 0",
       "confidence": 0.7,
       "evidence": "Critic challenged: CATEGORICAL REJECTION. Six objections, all high-likelihood, thesis-invalidating:\n\n1. **Solo signal v",
       "source": "critic_agent",
@@ -1203,7 +1203,7 @@
     {
       "ts": 1776050048.72383,
       "category": "prediction",
-      "insight": "Counter-thesis: HYPE consolidates 40.80-42.20 for 4-6h in range/chop before directional clarity. BUY at 41.64 after +2.2% pump into fading volume (314K→15K) = buying ",
+      "insight": "Counter-thesis: HYPE consolidates 40.80-42.20 for 4-6h in range/chop before directional clarity. BUY at 41.64 after +2.2% pump into fading volume (314K\u219215K) = buying ",
       "confidence": 0.5,
       "evidence": "Critic predicted opposite: HARD VETO with 9 converging objections (8 at thesis_invalid, 1 at size_wrong). This is the EXACT set",
       "source": "critic_agent",
@@ -1215,7 +1215,7 @@
       "category": "meta",
       "insight": "Self-critique: Veto accuracy 0% (n=1) normally requires approval bias, BUT this trade fails 6 objective criteria with hard evidence (not subjective). Solo signal + r",
       "confidence": 0.7,
-      "evidence": "Critic challenged: HARD VETO — structural failure on primary gates. (1) REGIME UNKNOWN with ZERO evidence: Cannot class",
+      "evidence": "Critic challenged: HARD VETO \u2014 structural failure on primary gates. (1) REGIME UNKNOWN with ZERO evidence: Cannot class",
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0
@@ -1225,7 +1225,7 @@
       "category": "prediction",
       "insight": "Counter-thesis: HYPE will continue chopping in range or liquidate longs on illiquid conditions. Recent HYPE_LONG pattern shows 9% WR in illiquid (11 trades, -$22.56) ",
       "confidence": 0.5,
-      "evidence": "Critic predicted opposite: HARD VETO — structural failure on primary gates. (1) REGIME UNKNOWN with ZERO evidence: Cannot class",
+      "evidence": "Critic predicted opposite: HARD VETO \u2014 structural failure on primary gates. (1) REGIME UNKNOWN with ZERO evidence: Cannot class",
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0
@@ -1253,7 +1253,7 @@
     {
       "ts": 1776051182.6633196,
       "category": "meta",
-      "insight": "Self-critique: Critic vacc=0% (n=1) means my vetoes have destroyed value so far. But the alternative — rubber-stamping a solo CS signal in a TOXIC regime with negati",
+      "insight": "Self-critique: Critic vacc=0% (n=1) means my vetoes have destroyed value so far. But the alternative \u2014 rubber-stamping a solo CS signal in a TOXIC regime with negati",
       "confidence": 0.7,
       "evidence": "Critic challenged: HARD VETO. This trade violates EVERY quality gate: (1) Solo CS signal = $0 net on 67 trades, only BB",
       "source": "critic_agent",
@@ -1263,7 +1263,7 @@
     {
       "ts": 1776051182.668003,
       "category": "prediction",
-      "insight": "Counter-thesis: HYPE ranging/illiquid → continuation down -2% next 4h. Solo CS signal in dead hours (03:00 UTC) with 0% regime-specific WR = structural noise.",
+      "insight": "Counter-thesis: HYPE ranging/illiquid \u2192 continuation down -2% next 4h. Solo CS signal in dead hours (03:00 UTC) with 0% regime-specific WR = structural noise.",
       "confidence": 0.5,
       "evidence": "Critic predicted opposite: HARD VETO. This trade violates EVERY quality gate: (1) Solo CS signal = $0 net on 67 trades, only BB",
       "source": "critic_agent",
@@ -1293,9 +1293,9 @@
     {
       "ts": 1776052426.9235864,
       "category": "meta",
-      "insight": "Self-critique: Trade Agent already called skip at 0.35 confidence — I am APPROVING that skip decision, not vetoing a 'go'. This is alignment, not challenge. My poor ",
+      "insight": "Self-critique: Trade Agent already called skip at 0.35 confidence \u2014 I am APPROVING that skip decision, not vetoing a 'go'. This is alignment, not challenge. My poor ",
       "confidence": 0.7,
-      "evidence": "Critic challenged: STRUCTURAL VETO — 6 red flags converge: (1) Regime Agent explicitly blocks ('CANNOT EVALUATE TRADE',",
+      "evidence": "Critic challenged: STRUCTURAL VETO \u2014 6 red flags converge: (1) Regime Agent explicitly blocks ('CANNOT EVALUATE TRADE',",
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0
@@ -1305,7 +1305,7 @@
       "category": "prediction",
       "insight": "Counter-thesis: HYPE continues range-bound 40-42 consolidation next 4-8h, no breakout catalyst present. Historical HYPE_LONG edge (22% WR, 0% in range, 9% illiquid) +",
       "confidence": 0.5,
-      "evidence": "Critic predicted opposite: STRUCTURAL VETO — 6 red flags converge: (1) Regime Agent explicitly blocks ('CANNOT EVALUATE TRADE',",
+      "evidence": "Critic predicted opposite: STRUCTURAL VETO \u2014 6 red flags converge: (1) Regime Agent explicitly blocks ('CANNOT EVALUATE TRADE',",
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0
@@ -1315,7 +1315,7 @@
       "category": "meta",
       "insight": "Self-critique: Veto accuracy currently 0% (n=1, -$9.85 missed PnL) BUT this reflects ONE prior veto on a different setup. Cannot generalize. This decision is indepen",
       "confidence": 0.7,
-      "evidence": "Critic challenged: HARD VETO. Trade Agent already decided SKIP with confidence 0.25 — I AGREE and AMPLIFY. Seven object",
+      "evidence": "Critic challenged: HARD VETO. Trade Agent already decided SKIP with confidence 0.25 \u2014 I AGREE and AMPLIFY. Seven object",
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0
@@ -1325,7 +1325,7 @@
       "category": "prediction",
       "insight": "Counter-thesis: HYPE likely pulls back to 39.5-40.5 range (2-5% down) as regime=range/unknown prevents breakout, funding neutral shows no positioning edge, BTC -0.10%",
       "confidence": 0.5,
-      "evidence": "Critic predicted opposite: HARD VETO. Trade Agent already decided SKIP with confidence 0.25 — I AGREE and AMPLIFY. Seven object",
+      "evidence": "Critic predicted opposite: HARD VETO. Trade Agent already decided SKIP with confidence 0.25 \u2014 I AGREE and AMPLIFY. Seven object",
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0
@@ -1405,7 +1405,7 @@
       "category": "meta",
       "insight": "Self-critique: MY VETO ACCURACY = 0% (n=1, drift -45%). I am DESTROYING VALUE. This 'challenge' is actually an APPROVAL of Trade Agent's skip decision. I am validati",
       "confidence": 0.7,
-      "evidence": "Critic challenged: APPROVE Trade Agent's SKIP decision. This is NOT a veto — this is validation that the skip was CORRE",
+      "evidence": "Critic challenged: APPROVE Trade Agent's SKIP decision. This is NOT a veto \u2014 this is validation that the skip was CORRE",
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0
@@ -1413,9 +1413,9 @@
     {
       "ts": 1776069738.8318822,
       "category": "prediction",
-      "insight": "Counter-thesis: SOL direction UNCLEAR — regime unknown blocks directional conviction. Cannot form counter-thesis without market structure data (EMA20/50, ADX, OI delt",
+      "insight": "Counter-thesis: SOL direction UNCLEAR \u2014 regime unknown blocks directional conviction. Cannot form counter-thesis without market structure data (EMA20/50, ADX, OI delt",
       "confidence": 0.5,
-      "evidence": "Critic predicted opposite: APPROVE Trade Agent's SKIP decision. This is NOT a veto — this is validation that the skip was CORRE",
+      "evidence": "Critic predicted opposite: APPROVE Trade Agent's SKIP decision. This is NOT a veto \u2014 this is validation that the skip was CORRE",
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0
@@ -1473,7 +1473,7 @@
     {
       "ts": 1776082722.8072472,
       "category": "exit_pattern",
-      "insight": "Exit [HYPE]: REGIME MISMATCH (critical). Scout flagged: 'BTC breaks 70500 on volume → BB fires ETH SHORT. SL=41.20 critical. Cold exit if BTC breaks 70500. Do NOT ",
+      "insight": "Exit [HYPE]: REGIME MISMATCH (critical). Scout flagged: 'BTC breaks 70500 on volume \u2192 BB fires ETH SHORT. SL=41.20 critical. Cold exit if BTC breaks 70500. Do NOT ",
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
@@ -1543,7 +1543,7 @@
     {
       "ts": 1776096971.7855756,
       "category": "meta",
-      "insight": "Self-critique: Trade Agent applied -14% calibration reduction (0.72 raw → 0.62 final) per overconfident drift. My counter-thesis further reduces to 0.35 based on reg",
+      "insight": "Self-critique: Trade Agent applied -14% calibration reduction (0.72 raw \u2192 0.62 final) per overconfident drift. My counter-thesis further reduces to 0.35 based on reg",
       "confidence": 0.7,
       "evidence": "Critic challenged: CHALLENGE on 5 red flags: (1) SOLO signal from multi_tier_quality violates 'require 3+ confluence af",
       "source": "critic_agent",
@@ -1563,9 +1563,9 @@
     {
       "ts": 1776097781.3603547,
       "category": "prediction",
-      "insight": "Counter-thesis: HYPE rejects at $43.50 resistance within 2h on failed breakout attempt. High_vol regime (1.09x) is volatility expansion RISK, not EDGE — BB squeeze ca",
+      "insight": "Counter-thesis: HYPE rejects at $43.50 resistance within 2h on failed breakout attempt. High_vol regime (1.09x) is volatility expansion RISK, not EDGE \u2014 BB squeeze ca",
       "confidence": 0.5,
-      "evidence": "Critic predicted opposite: COUNTER-THESIS WITH EVIDENCE: This is NOT a veto based on fear — it's a veto based on DATA CONFLICT ",
+      "evidence": "Critic predicted opposite: COUNTER-THESIS WITH EVIDENCE: This is NOT a veto based on fear \u2014 it's a veto based on DATA CONFLICT ",
       "source": "critic_agent",
       "validated": false,
       "validation_count": 0
@@ -2003,10 +2003,10 @@
     {
       "ts": 1776986890.350251,
       "category": "symbol_insight",
-      "insight": "SOL.SHORT is the largest P&L drain: n=42 WR=36% avg=-$3.22 total=-$135.3. BTC.LONG is similarly toxic: n=16 WR=19% avg=-$3.65 total=-$58.4. Combined -$193.7. Hard-block both.",
-      "confidence": 0.9,
-      "evidence": "SOL.SHORT: n=42 WR=36% avg=-3.22 total=-135.3; BTC.LONG: n=16 WR=19% avg=-3.65 total=-58.4",
-      "source": "deep_trade_analyst",
+      "insight": "CORRECTED 2026-06-02: SOL.SHORT hard-block was based on broken-execution all-hours data (n=42 WR=36%). Clean US-session data (edge_analysis_raw.json, n=213) shows SOL.SELL = 62% WR EV+0.99%/trade — POSITIVE edge. Gate: US session only (14-22 UTC). BTC.LONG hard-block partially correct: 22% WR in US session (BLOCK), but 56% WR in trending non-US hours (ALLOW with multi-strategy agreement). Original n=42/n=16 were from broken-execution old-bot across all hours — not representative of clean filtered conditions.",
+      "confidence": 0.93,
+      "evidence": "SOL.SELL US-session: edge_analysis_raw.json n=213 WR=62% EV=+0.99%; time_edge_results.json n=225 WR=58.7% at 18 UTC. BTC.LONG US-session: edge_analysis_raw.json n=99 WR=22%; time_edge_results.json n=147 WR=15% at 18 UTC. BTC.LONG trending non-US: strategy_fingerprints.json n=36 WR=56% mechanical backtest. Original broken-exec data: SOL.SHORT n=42 WR=36%; BTC.LONG n=16 WR=19% — all-hours, broken execution.",
+      "source": "quant_alpha_update_2026_06_02",
       "validated": true,
       "validation_count": 58
     },
@@ -2023,7 +2023,7 @@
     {
       "ts": 1776986890.350262,
       "category": "correlation_insight",
-      "insight": "Regime x symbol interaction dominates all other filters. Trending-ETH: 71% WR avg=+$9.49 (n=7). Trending-BTC: 80% WR avg=+$8.98 (n=5). Illiquid-HYPE: 11% WR avg=-$2.82 (n=18) — complete money furnace.",
+      "insight": "Regime x symbol interaction dominates all other filters. Trending-ETH: 71% WR avg=+$9.49 (n=7). Trending-BTC: 80% WR avg=+$8.98 (n=5). Illiquid-HYPE: 11% WR avg=-$2.82 (n=18) \u2014 complete money furnace.",
       "confidence": 0.85,
       "evidence": "trending-ETH: n=7 WR=71% avg=+9.49; trending-BTC: n=5 WR=80% avg=+8.98; illiquid-HYPE: n=18 WR=11% avg=-2.82; ranging-SOL: n=5 WR=20% avg=-5.53",
       "source": "deep_trade_analyst",
@@ -2053,7 +2053,7 @@
     {
       "ts": 1776986890.3502731,
       "category": "meta_insight",
-      "insight": "Unknown-HYPE anomaly: 83% WR avg=+$6.56 (n=6). Unknown-ETH: 40% WR avg=+$4.72 (n=5). Unknown regime may signal regime-transition breakout with alpha. Do not blanket-block unknown — filter by symbol.",
+      "insight": "Unknown-HYPE anomaly: 83% WR avg=+$6.56 (n=6). Unknown-ETH: 40% WR avg=+$4.72 (n=5). Unknown regime may signal regime-transition breakout with alpha. Do not blanket-block unknown \u2014 filter by symbol.",
       "confidence": 0.72,
       "evidence": "unknown-HYPE: n=6 WR=83% avg=+6.56 total=+39.4; unknown-ETH: n=5 WR=40% avg=+4.72 vs unknown baseline WR=36% avg=-1.56",
       "source": "deep_trade_analyst",
@@ -2099,6 +2099,114 @@
       "source": "mechanistic_hold_analysis_164",
       "validated": true,
       "validation_count": 164
+    },
+    {
+      "ts": 1779156540.0,
+      "category": "exit_timing_insight",
+      "insight": "EXIT TIMING GAP (352 counterfactuals): 24.7% of resolved SL exits (87/352) had TP1 reachable afterward. BTC_long worst: 81% true-miss rate. ETH_long: 58%. Total system-wide missed value: $1,119.29. Avg per true-miss: $12.87. The leak is microstructure noise killing positions before the directional move develops.",
+      "confidence": 0.9,
+      "evidence": "bot/data/counterfactuals/scenarios.json: 352 resolved exit_timing scenarios analyzed 2026-05-18T02:09Z",
+      "source": "perpetual_deep_dive_0209",
+      "validated": true
+    },
+    {
+      "ts": 1779156541.0,
+      "category": "exit_timing_insight",
+      "insight": "BTC_long has 81% true-miss rate on exit timing \u2014 highest of all active setups. In 13/16 cases where BTC long SL was hit, TP1 was later reachable. Avg recovery opportunity: $1.18/trade. Root cause: stops too tight in first 2h vs trending regime microstructure. Exit Agent should hold BTC long through first 2h of noise before considering tighten/close.",
+      "confidence": 0.88,
+      "evidence": "16 BTC_long resolved counterfactuals: 13/16 true-miss, total=$15.28",
+      "source": "counterfactual_analysis_2026_05_18",
+      "validated": true
+    },
+    {
+      "ts": 1779156542.0,
+      "category": "exit_timing_insight",
+      "insight": "SOL_short exit timing: 67% true-miss rate (20/30 scenarios), avg $30.74/trade missed, total $614.80. This is by far the biggest exit timing loss in the system. The directional thesis for SOL_short is often correct (TP1 reachable) but stops are placed too tight. If reinstated with wider stops and hold-patience, SOL_short could be a major alpha source.",
+      "confidence": 0.85,
+      "evidence": "30 SOL_short resolved counterfactuals: 20/30 true-miss, total=$614.80, avg=$30.74/trade",
+      "source": "counterfactual_analysis_2026_05_18",
+      "validated": false,
+      "note": "Currently SUSPENDED \u2014 human decision required for reinstatement"
+    },
+    {
+      "ts": 1780346817.153821,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent is operating in Overdrive data-collection mode with no edge. If this pattern repeats (intentional floor-confidence trades for learning), t",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4+ red flags present (solo signal <2 agree, hist_WR 31% <45%, miscalibrated system 35% accuracy, no ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780346817.1568625,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC in compressed range (0.7x volume) with no directional catalyst. Solo ensemble SELL has 31% historical WR \u2014 at any reasonable R:R, EV is borderline",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4+ red flags present (solo signal <2 agree, hist_WR 31% <45%, miscalibrated system 35% accuracy, no ",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780346977.2735572,
+      "category": "meta",
+      "insight": "Self-critique: If g.b1h/g.b24h are stale or represent something other than BTC % change, re-evaluate. Challenge is specifically grounded in the data inconsistency \u2014 ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: 4 compounding red flags with wired-data evidence: (1) live momentum data is 0.0% contradicting the t",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780346977.2772467,
+      "category": "prediction",
+      "insight": "Counter-thesis: Wired live data shows g.b1h=0.0 and g.b24h=0.0 \u2014 BTC has ZERO directional momentum in the snapshot, directly contradicting Trade Agent's core premise ",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: 4 compounding red flags with wired-data evidence: (1) live momentum data is 0.0% contradicting the t",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780347161.2019374,
+      "category": "meta",
+      "insight": "Self-critique: Trade Agent is MISCALIBRATED (+18% drift, 35% acc). This veto is driven by R:R math (objective) not agent caution. If stop is tighter than 2%, recalcu",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Three hard red flags converge: (1) R:R < 1.0 (target 0.9% vs ~2% stop = 0.45:1, well below 1.5 minim",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780347161.2053804,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC in a 0.7x-volume range will oscillate within noise rather than deliver a clean directional 0.9% leg. The asymmetric R:R (0.9% target vs ~2% stop w",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Three hard red flags converge: (1) R:R < 1.0 (target 0.9% vs ~2% stop = 0.45:1, well below 1.5 minim",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780347658.6329029,
+      "category": "meta",
+      "insight": "Self-critique: Challenge based on two wired ground-truth red flags (solo signal documented WR, explicit checklist rule), not caution. If vacc<0.50, reduce challenge ",
+      "confidence": 0.7,
+      "evidence": "Critic challenged: Two hard red flags confirmed with wired evidence: (1) solo signal at 31% WR net $0 payoff per ground",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1780347658.6364534,
+      "category": "prediction",
+      "insight": "Counter-thesis: BTC at 69,480 after -2.6% 24h decline in a range regime is more likely to oscillate or mean-revert than to continue falling. Range regimes by definiti",
+      "confidence": 0.5,
+      "evidence": "Critic predicted opposite: Two hard red flags confirmed with wired evidence: (1) solo signal at 31% WR net $0 payoff per ground",
+      "source": "critic_agent",
+      "validated": false,
+      "validation_count": 0
     }
   ]
 }

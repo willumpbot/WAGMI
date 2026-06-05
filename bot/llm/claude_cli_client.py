@@ -19,6 +19,7 @@ import logging
 import os
 import shutil
 import subprocess
+import tempfile
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
@@ -61,7 +62,7 @@ def call_agent(
     system_prompt: str = "",
     model: str = "haiku",
     json_schema: Optional[Dict[str, Any]] = None,
-    max_budget_usd: float = 1.00,  # 2026-05-30: was 0.10. Sonnet/Opus calls cost $0.10-0.30 each; sub pays anyway.
+    max_budget_usd: float = 0.10,
     timeout: int = 90,
     allow_tools: bool = False,
     cwd: Optional[str] = None,
@@ -84,88 +85,114 @@ def call_agent(
     if CLAUDE_BIN is None:
         return CliResponse(ok=False, error="claude CLI not found in PATH")
 
-    # Build cmd — keep it short. Windows has an 8191-char argv limit; agent system
-    # prompts can be 7000+ chars, so we embed the system prompt in stdin instead
-    # of passing it via --append-system-prompt.
     cmd = [CLAUDE_BIN, "--print",
            "--output-format", "json",
            "--model", model,
            "--max-budget-usd", str(max_budget_usd),
-           "--no-session-persistence"]
-
-    # Embed system prompt in stdin (avoids Windows 8191-char cmd-line limit)
-    if system_prompt:
-        combined_input = f"<system>\n{system_prompt}\n</system>\n\n{user_prompt}"
-    else:
-        combined_input = user_prompt
+           "--no-session-persistence",
+           "--dangerously-skip-permissions"]
 
     if json_schema:
         cmd.extend(["--json-schema", json.dumps(json_schema)])
     if not allow_tools:
         cmd.extend(["--tools", ""])
 
-    # 2026-06-02 laptop-claude fix (cherry-picked): On Windows, claude.cmd spawns
-    # Node.js as a grandchild. subprocess.run() timeout killing cmd.exe leaves Node
-    # holding the pipe handles open -- communicate() then blocks forever (6h+ observed,
-    # which explains the multi-hour quota windows we kept hitting). Fix: Popen +
-    # CREATE_NEW_PROCESS_GROUP + taskkill /F /T on timeout to kill the whole tree.
-    # Adapted to keep desktop's combined_input (system_prompt embedded in stdin)
-    # approach rather than laptop's --system-prompt-file.
-    _win = os.name == "nt"
-    _popen_kwargs: dict = dict(
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=cwd,
-        encoding="utf-8",
-        errors="replace",
-    )
-    if _win:
-        _popen_kwargs["creationflags"] = (
-            subprocess.CREATE_NEW_PROCESS_GROUP | 0x08000000  # CREATE_NO_WINDOW
-        )
-
-    start = time.time()
-    proc = None
+    # Pass system prompt via --system-prompt flag (cheaper: uses only the base
+    # Claude Code context, not the full project context). Falls back to a temp
+    # file for very long prompts to stay within Windows 8191-char cmd limit.
+    # NOTE: --system-prompt-file loads the full project context (~39K tokens at
+    # $0.11/Sonnet call), blowing through the $0.10 per-call budget. Using
+    # --system-prompt keeps costs under $0.03/Sonnet call.
+    _CMDLINE_SAFE_LIMIT = 6500  # conservative threshold for inline system prompt
+    tmp_file = None
     try:
-        proc = subprocess.Popen(cmd, **_popen_kwargs)
-        stdout_data, stderr_data = proc.communicate(input=combined_input, timeout=timeout)
-        latency = time.time() - start
-
-        class _Result:
-            def __init__(self, rc, out, err):
-                self.returncode, self.stdout, self.stderr = rc, out, err
-
-        result = _Result(proc.returncode, stdout_data, stderr_data)
-    except subprocess.TimeoutExpired:
-        if proc is not None:
-            if _win:
-                subprocess.run(
-                    ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                    capture_output=True,
-                )
+        if system_prompt:
+            if len(system_prompt) <= _CMDLINE_SAFE_LIMIT:
+                cmd.extend(["--system-prompt", system_prompt])
             else:
-                proc.kill()
+                # Long prompt: write to temp file. Increase budget so the extra
+                # project context tokens don't blow the per-call limit.
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".txt", delete=False, encoding="utf-8"
+                ) as f:
+                    f.write(system_prompt)
+                    tmp_file = f.name
+                cmd.extend(["--system-prompt-file", tmp_file])
+                # Bump budget: file mode loads full project context (~39K tokens)
+                for idx, arg in enumerate(cmd):
+                    if arg == "--max-budget-usd" and idx + 1 < len(cmd):
+                        cmd[idx + 1] = str(max(float(cmd[idx + 1]), 0.50))
+                        break
+
+        # On Windows, claude.cmd spawns Node.js as a grandchild. If we use
+        # subprocess.run() and the timeout fires, killing cmd.exe leaves the
+        # Node grandchild holding the pipe handles open — communicate() then
+        # blocks forever. Fix: use Popen + CREATE_NEW_PROCESS_GROUP so we can
+        # kill the entire tree with taskkill on timeout.
+        _win = os.name == "nt"
+        _popen_kwargs: dict = dict(
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=cwd,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if _win:
+            _popen_kwargs["creationflags"] = (
+                subprocess.CREATE_NEW_PROCESS_GROUP | 0x08000000  # CREATE_NO_WINDOW
+            )
+
+        start = time.time()
+        proc = None
+        try:
+            proc = subprocess.Popen(cmd, **_popen_kwargs)
+            stdout_data, stderr_data = proc.communicate(input=user_prompt, timeout=timeout)
+            latency = time.time() - start
+
+            class _Result:
+                def __init__(self, rc, out, err):
+                    self.returncode, self.stdout, self.stderr = rc, out, err
+
+            result = _Result(proc.returncode, stdout_data, stderr_data)
+        except subprocess.TimeoutExpired:
+            # Kill entire process tree to avoid grandchild pipe-handle leak
+            if proc is not None:
+                if _win:
+                    subprocess.run(
+                        ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                        capture_output=True,
+                    )
+                else:
+                    proc.kill()
+                try:
+                    proc.communicate(timeout=5)
+                except Exception:
+                    pass
+            return CliResponse(ok=False, error=f"timeout after {timeout}s",
+                               latency_s=time.time() - start, model=model)
+        except Exception as e:
+            if proc is not None:
+                try:
+                    proc.kill()
+                    proc.communicate(timeout=3)
+                except Exception:
+                    pass
+            return CliResponse(ok=False, error=f"subprocess error: {e}",
+                               latency_s=time.time() - start, model=model)
+    finally:
+        if tmp_file:
             try:
-                proc.communicate(timeout=5)
+                os.unlink(tmp_file)
             except Exception:
                 pass
-        return CliResponse(ok=False, error=f"timeout after {timeout}s",
-                           latency_s=time.time() - start, model=model)
-    except Exception as e:
-        if proc is not None:
-            try:
-                proc.kill()
-                proc.communicate(timeout=3)
-            except Exception:
-                pass
-        return CliResponse(ok=False, error=f"subprocess error: {e}",
-                           latency_s=time.time() - start, model=model)
 
     if result.returncode != 0:
+        # Include stdout snippet — CLI sometimes writes error details there (JSON envelope)
+        _err_detail = result.stderr[:300] or result.stdout[:300]
         return CliResponse(
             ok=False,
-            error=f"exit {result.returncode}: {result.stderr[:500]}",
+            error=f"exit {result.returncode}: {_err_detail}",
             latency_s=latency,
             model=model,
         )

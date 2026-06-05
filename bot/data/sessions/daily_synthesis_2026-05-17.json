@@ -1,72 +1,102 @@
 {
   "date": "2026-05-17",
-  "generated_at": "2026-05-17T00:12:43+00:00",
-  "run_type": "START_OF_DAY",
+  "generated_at": "2026-05-17T23:03:11+00:00",
+  "run_type": "EOD_FINAL (23:03 UTC \u2014 past 23:00 threshold. Supersedes PRE_EOD_FINAL from 22:07 UTC)",
+  "supersedes": "PRE_EOD_FINAL from 2026-05-17T22:07:10",
   "bot_status": "OFFLINE",
-  "offline_duration_hours": 553.9,
-  "offline_duration_days": 23.08,
+  "offline_duration_hours": 576.8,
+  "offline_duration_days": 24.0,
   "today_trades": 0,
   "today_pnl": 0.0,
   "today_wr": null,
   "equity": 497.05,
   "peak_equity": 508.06,
   "dd_from_peak_pct": 2.17,
-  "current_session": "NIGHT_BLOCK (00:00-06:00 UTC)",
-  "next_tradeable_window": "2026-05-17T06:00:00Z",
-  "hours_to_next_window": 5.8,
+  "dd_from_start_pct": 90.1,
+  "equity_note": "No change since 2026-04-23T22:17:05Z (576.8h frozen)",
+  "eod_finalized": true,
+  "eod_finalized_at": "2026-05-17T23:03:11+00:00",
+  "current_session": "EOD (23:03 UTC)",
+  "next_tradeable_window": "2026-05-18T06:00:00Z",
+  "hours_to_next_window": 6.95,
+  "consecutive_morning_windows_missed": 5,
+  "sixth_window_at_risk": false,
+  "sixth_window_risk_mitigated": "conf_floor_70_v1 fix applied at 23:03 UTC (-20\u2192-5). ETH/BTC trending signals can now reach the pass threshold on restart.",
+  "action_taken_this_run": {
+    "fix": "conf_floor_70_deadlock_gate_v2",
+    "effect": "conf_floor_70_v1 adjustment reduced from -20 to -5 in graduated_rules.json",
+    "timing": "23:03 UTC, T-6.95h to morning window"
+  },
+  "full_day_summary": {
+    "date": "2026-05-17",
+    "trades": 0,
+    "pnl": 0.0,
+    "wr": null,
+    "best_trade": null,
+    "worst_trade": null,
+    "sessions_active": 0,
+    "equity_start": 497.05,
+    "equity_end": 497.05,
+    "equity_change": 0.0,
+    "note": "Bot offline all day. 5th consecutive morning window missed. Zero trading activity. conf_floor_70_v1 deadlock fixed at EOD."
+  },
   "anomalies": [
     {
       "type": "BOT_OFFLINE_CRITICAL",
       "severity": "CRITICAL",
-      "value": "553.9h (23.1 days) offline — no change since 2026-04-23",
-      "action": "RESTART at 06:00 UTC (T-5.8h): cd bot && python run.py paper"
+      "value": "576.8h (24.0 days) offline since 2026-04-23",
+      "action": "RESTART at 06:00 UTC May 18 (T-6.95h). Soft-start: 50% sizing, 3x max, ETH/BTC trending only, first 5 trades."
     },
     {
-      "type": "NIGHT_SESSION_BLOCK_ACTIVE",
-      "severity": "INFO",
-      "value": "night_session_block_v1 veto active 00:00-06:00 UTC. Even if restarted now, zero trades would fire until 06:00 UTC.",
-      "detail": "This is a FEATURE not a bug — 19% WR night session historically. Block correctly prevents trading. Next open window: 06:00 UTC (T-5.8h).",
-      "action": "No action needed. Bot restart at 06:00 optimal."
+      "type": "FIFTH_MORNING_WINDOW_MISSED",
+      "severity": "CRITICAL",
+      "value": "06:00-12:00 UTC May 17 passed without restart \u2014 5th consecutive missed morning",
+      "action": "MITIGATED: conf_floor_70_v1 fix applied tonight. Restart tomorrow 06:00 UTC."
     },
     {
-      "type": "STREAK_GATE_ACTIVE_ON_RESTART",
+      "type": "CONF_FLOOR_70_FIX_APPLIED",
       "severity": "HIGH",
-      "value": "4 consecutive losses at shutdown → streak_gate fires -15pts on first signal at restart.",
-      "detail": "With streak=-15pts: any signal < 85% confidence becomes < 70%. conf_floor_70_v1 (-20pts for 60-70%) may compound. First win resets counter to 0.",
-      "action": "Soft-start: 50% sizing + max 3x leverage + ETH/BTC TRENDING only for first 5 trades on restart."
+      "value": "conf_floor_70_v1 adjustment -20\u2192-5 applied at 23:03 UTC. Breaks compounding deadlock with self_tuning CONSERVATIVE mode.",
+      "action": "DONE. Monitor on restart: log first signal confidence values to confirm signals are passing."
     },
     {
-      "type": "MORNING_WINDOW_APPROACHING",
+      "type": "SNIPER_DISABLED",
       "severity": "HIGH",
-      "value": "06:00-12:00 UTC window is the bot's highest-edge session (ETH_SHORT+trending=80% WR, BTC_SHORT@90%=67% WR).",
-      "detail": "T-5.8h to window. This morning (05-17 06:00) = third consecutive day the window is missed if bot not restarted.",
-      "action": "RESTART at 2026-05-17T06:00:00Z. Soft-start protocol applies."
+      "value": "SNIPER_AUTO_EXECUTE=false. Per autonomous audit: sniper path = +28/34-trade path. All other strategies combined = -6.",
+      "action": "Verify max_sniper_leverage cap, add per-trade loss ceiling (0 or 10% equity), then re-enable. Human decision."
+    },
+    {
+      "type": "OPPORTUNITY_COST",
+      "severity": "HIGH",
+      "value": "~56-,113 estimated missed alpha over 24.0 offline days (ETH TRENDING 71-80% WR + BTC SHORT 90%+ 02.92/trade).",
+      "action": "INFORMATIONAL \u2014 restart urgency quantified."
     }
   ],
-  "active_veto_rules_now": [
-    "night_session_block_v1 (00:00-06:00 UTC) — ACTIVE RIGHT NOW",
-    "hype_long_veto_v1 (HYPE BUY, all session)",
-    "sol_long_veto_v1 (SOL BUY, all session)"
+  "tomorrow_focus": [
+    "06:00 UTC May 18: RESTART (conf_floor_70_v1 fix already applied)",
+    "ON RESTART: monitor self_tuning state \u2014 expect CONSERVATIVE mode (systemic sizing reduction)",
+    "ON RESTART: soft-start protocol \u2014 50% sizing, 3x max leverage, ETH/BTC only, first 5 trades",
+    "ETH TRENDING signals: 71-80% WR primary target (+8pt boost now active)",
+    "BTC SHORT @90%+: 67% WR, +02.92 EV secondary target (+10pt boost active)",
+    "VERIFY: first signal confidence values \u2014 confirm conf_floor_70_v1 at -5 allows passage",
+    "POST-RESTART (after 5 trades): review SNIPER_AUTO_EXECUTE enablement"
   ],
-  "soft_start_protocol": {
-    "applies": true,
-    "reason": "4 consecutive losses at last shutdown",
-    "rules": [
-      "50% of normal position sizing for first 5 trades",
-      "Max 3x leverage regardless of confidence",
-      "ETH and BTC TRENDING regime signals only",
-      "Skip SOL/HYPE entirely for first 5 trades",
-      "After 1 winning trade, full sizing unlocks"
+  "rule_state_at_eod": {
+    "total_rules": 10,
+    "veto_rules": 4,
+    "boost_rules": 3,
+    "penalize_rules": 3,
+    "change_this_session": "conf_floor_70_v1 adjustment -20\u2192-5 (gate: 20%)",
+    "active_boost_rules": [
+      "rule_1777922205_0 (BTC+trend +8)",
+      "eth_trending_regime_boost_v1 (ETH+trend +8)",
+      "btc_short_90plus_boost_v1 (BTC SHORT 90%+ +10)"
+    ],
+    "active_veto_rules": [
+      "hype_long_veto_v1",
+      "sol_long_veto_v1",
+      "night_session_block_v1 (00-06 UTC)",
+      "hype_short_veto_v1"
     ]
-  },
-  "data_fix_this_run": {
-    "fix": "DATA_CORRUPTION_CLEANUP",
-    "description": "Reset times_correct=0 for rule_1777922205_0 (was 21 > applied=3) and night_session_block_v1 (was 25 > applied=4). Both had impossible times_correct > times_applied values from bulk historical initialization. Now both start clean at 0/3 and 0/4 respectively, ready to accumulate real live-trade accuracy.",
-    "files_changed": ["bot/data/llm/graduated_rules.json"],
-    "confidence": 0.85,
-    "gate": "100%",
-    "risk": "ZERO — cosmetic data integrity fix only"
-  },
-  "eod_report": null,
-  "note": "Start-of-day run (00:12 UTC). EOD synthesis will generate at ~23:00 UTC."
+  }
 }

@@ -1,0 +1,88 @@
+{
+  "date": "2026-05-24",
+  "generated_at": "2026-05-24T23:04:33+00:00",
+  "run_type": "HOURLY_PERPETUAL_LOOP_EOD",
+  "bot_status": "OFFLINE",
+  "offline_duration_hours": 984.4,
+  "offline_duration_days": 41.0,
+  "eod_finalized": true,
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "equity": 497.05,
+  "fixes_applied_this_run": 0,
+  "fixes_applied_today_total": 1,
+  "llm_engine_rules_total": 23,
+  "rule_distribution": {
+    "0_disabled": 3,
+    "20_probe": 3,
+    "50_graduated": 9,
+    "100_deployed": 8
+  },
+  "fix_details": {
+    "WINDOW_16_MISSED": {
+      "type": "INFORMATIONAL",
+      "detail": "No fix applied. Window 16 (06:00-12:00 UTC) confirmed missed = 17th consecutive. Bot offline at run time.",
+      "action": "OPERATIONAL \u2014 restart required."
+    }
+  },
+  "window_status": {
+    "current_utc": "2026-05-24 23:04 UTC",
+    "window_16_status": "MISSED (17th consecutive) \u2014 2026-05-24 06:00-12:00 UTC",
+    "evening_session": "ACTIVE \u2014 tod_evening_edge_v1 +5pts, gate=50%, 56 min remaining (closes 00:00 UTC)",
+    "night_block_fires": "2026-05-25 00:00 UTC (56 min)",
+    "window_17": "2026-05-25 06:00-12:00 UTC",
+    "window_17_restart_deadline": "2026-05-25 05:30 UTC (6.4h away)",
+    "consecutive_windows_missed": 17,
+    "cumulative_opportunity_cost_usd": 890,
+    "eod_summary": "Day 41 ends with 0 trades, 0 PnL. Evening window still open 56 min."
+  },
+  "anomalies": [
+    {
+      "type": "BOT_OFFLINE_DAY41",
+      "severity": "CRITICAL",
+      "detail": "Bot offline 41 consecutive days. 17 consecutive morning windows missed. Cumulative estimated opportunity cost: 90 at ~2/window average.",
+      "recommendation": "RESTART NOW \u2014 56 min of evening edge remaining. Window 17 deadline 6.4h away (05:30 UTC May 25)."
+    },
+    {
+      "type": "WINDOW_16_MISSED_17TH",
+      "severity": "HIGH",
+      "detail": "Window 16 (06:00-12:00 UTC May 24) confirmed closed. 17th consecutive morning miss. tod_morning_edge_v1 +5pts has never fired on live data since being added to LLM engine.",
+      "recommendation": "Window 17 is next (06:00 UTC May 25). Restart deadline 05:30 UTC. 6.4h from now."
+    },
+    {
+      "type": "EVENING_WINDOW_FINAL_56MIN",
+      "severity": "HIGH",
+      "detail": "tod_evening_edge_v1 is LIVE RIGHT NOW \u2014 56 min of 65% WR window remaining (23:04-00:00 UTC). Restarting in the next 20 min captures ~36 min of edge. Night block fires at 00:00 UTC (19% WR veto).",
+      "recommendation": "RESTART IMMEDIATELY for last 56 min of evening edge."
+    },
+    {
+      "type": "TOD_AFTERNOON_CONFLICT_MULTIRUN",
+      "severity": "MEDIUM",
+      "detail": "tod_afternoon_edge_v1 conflict unresolved for 4 consecutive perpetual-loop runs (01:09, 03:11, 05:00, 23:04 UTC May 24). LLM +5pts vs feedback -8pts = net noise. Cannot auto-resolve without live data or human decision.",
+      "recommendation": "HUMAN REVIEW \u2014 (A) disable LLM boost and let feedback -8pts dominate, (B) disable feedback probe and let LLM +5pts dominate, (C) wait for post-restart live data."
+    },
+    {
+      "type": "AB_TRACKER_SYSTEMIC_ZERO",
+      "severity": "HIGH",
+      "detail": "All 23 LLM rules show times_correct=0. AB_RESULT_TRACKER_CODE is marked APPLIED but outcome callbacks are not updating LLM rules. 9 graduated rules (gate=50%) cannot auto-advance without manual audit every run.",
+      "recommendation": "P0 DEV \u2014 wire outcome callbacks to LLM engine times_correct field. ~2h work. Unblocks 9 graduated rule auto-promotions."
+    }
+  ],
+  "anomalies_count": 5,
+  "report_generated": true,
+  "tomorrow_focus": [
+    "PRIORITY 1: Restart bot before 05:30 UTC May 25 to capture Window 17 (06:00-12:00 UTC, 74% WR composite)",
+    "PRIORITY 2: Watch for tod_evening_edge_v1 (+5pts) firing in tonight 56-min window (if restart happens)",
+    "PRIORITY 3: Monitor first-10 post-restart trades for WR degradation (pre-shutdown was degrading 40%\u219230%)",
+    "PRIORITY 4: Verify circuit breaker streak counter = 0 on restart (confirmed auto-reset at __init__)",
+    "PRIORITY 5: First BTC LONG in trending \u2192 verify btc_trend_long_counter_v1 -13pts fires (gate=50%)",
+    "PRIORITY 6: First ranging regime trade \u2192 verify ranging_regime_penalize_v1 -10pts fires (gate=50%)",
+    "DEV ITEM: Wire AB outcome callbacks to LLM engine times_correct field (P0, ~2h)"
+  ],
+  "near_graduation_rules": [
+    "btc_trend_long_counter_v1 (gate=50%): 3 BTC LONG trending trades away from gate=100%",
+    "ranging_regime_penalize_v1 (gate=50%): 4 ranging trades away from gate=100%",
+    "tod_morning_edge_v1 (gate=50%): 8 morning trades away from gate=100% graduation",
+    "sol_short_penalize_v1 (gate=50%): 20 post-restart SOL SELL trades away from gate=100% veto"
+  ]
+}

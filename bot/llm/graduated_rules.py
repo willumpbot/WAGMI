@@ -42,7 +42,8 @@ class GraduatedRule:
         return self.times_correct / self.times_applied if self.times_applied > 0 else 0.5
 
     def matches(self, symbol="", regime="", side="", strategy="",
-                setup_type="", num_agree=0, confidence=0.0, hour_utc=-1) -> bool:
+                setup_type="", num_agree=0, confidence=0.0, hour_utc=-1,
+                strategies_active=None) -> bool:
         if not self.active:
             return False
         c = self.conditions
@@ -65,6 +66,18 @@ class GraduatedRule:
             return False
         if c.get("strategy") and strategy != c["strategy"]:
             return False
+        if c.get("strategies_include"):
+            # Check that ALL listed strategies are present in the active strategies list.
+            # Enables rules like "when bollinger_squeeze fires" on ensemble signals where
+            # strategy="ensemble" but metadata["strategies_agree"] has the individual names.
+            _active = set(strategies_active or [])
+            if not all(s in _active for s in c["strategies_include"]):
+                return False
+        if c.get("strategies_exclude"):
+            # Block match if any of these strategies are active (anti-pattern detection).
+            _active = set(strategies_active or [])
+            if any(s in _active for s in c["strategies_exclude"]):
+                return False
         if c.get("setup_type") and setup_type != c["setup_type"]:
             return False
         if c.get("min_agree") and num_agree < c["min_agree"]:
@@ -73,10 +86,13 @@ class GraduatedRule:
             return False
         if "confidence_max" in c and confidence > c["confidence_max"]:
             return False
-        if "hour_utc_min" in c and hour_utc >= 0 and hour_utc < c["hour_utc_min"]:
-            return False
-        if "hour_utc_max" in c and hour_utc >= 0 and hour_utc >= c["hour_utc_max"]:
-            return False
+        if "hour_utc_min" in c or "hour_utc_max" in c:
+            if hour_utc < 0:
+                return False  # can't evaluate hour condition without entry hour — skip rather than false-match
+            if "hour_utc_min" in c and hour_utc < c["hour_utc_min"]:
+                return False
+            if "hour_utc_max" in c and hour_utc >= c["hour_utc_max"]:
+                return False
         return True
 
 
@@ -234,8 +250,18 @@ class GraduatedRulesEngine:
         return conditions, action, adjustment
 
     def evaluate_signal(self, symbol="", regime="", side="", strategy="",
-                        setup_type="", num_agree=0, confidence=0.0, hour_utc=-1) -> tuple:
-        """Returns (should_veto, adjusted_confidence, applied_rules_summary)."""
+                        setup_type="", num_agree=0, confidence=0.0, hour_utc=-1,
+                        strategies_active=None, veto_only=False) -> tuple:
+        """Returns (should_veto, adjusted_confidence, applied_rules_summary).
+
+        strategies_active: list of individual strategy names that fired (e.g.
+        ["bollinger_squeeze", "multi_tier_quality"]). Enables rules that condition
+        on which strategies contributed — needed because ensemble signals always
+        have strategy="ensemble" while individual names live in metadata.
+        veto_only: if True, only check VETO rules (no times_applied increment for
+        BOOST/PENALIZE). Used by the pre-LLM filter to avoid double-counting when
+        the signal later flows through the full pipeline evaluation.
+        """
         self._ensure_loaded()
         vetoed, conf_delta, applied = False, 0.0, []
 
@@ -243,7 +269,10 @@ class GraduatedRulesEngine:
             if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side,
                                                     strategy=strategy, setup_type=setup_type,
                                                     num_agree=num_agree, confidence=confidence,
-                                                    hour_utc=hour_utc):
+                                                    hour_utc=hour_utc,
+                                                    strategies_active=strategies_active):
+                continue
+            if veto_only and rule.action != "veto":
                 continue
             rule.times_applied += 1
             rule.last_applied = time.time()
@@ -263,14 +292,17 @@ class GraduatedRulesEngine:
 
         return vetoed, max(0, min(100, confidence + conf_delta)), "; ".join(applied)
 
-    def record_outcome(self, symbol="", regime="", side="", won=False):
+    def record_outcome(self, symbol="", regime="", side="", won=False, hour_utc: int = -1,
+                       strategies_active=None, num_agree: int = 0, confidence: float = 0.0):
         """Track rule accuracy after trade closes.
 
         VETO rules are skipped here — their accuracy is tracked by
         counterfactual_learner.py which has the blocked-trade context.
-        Including veto rules here inflates times_correct because closed trades
-        all passed the veto (weren't blocked), and time-based conditions
-        (hour_utc_min/max) can't be evaluated without the entry hour.
+        hour_utc: entry UTC hour (0-23). Pass -1 to skip hour-conditioned matching
+        (rules with hour conditions will then be skipped rather than incorrectly matched).
+        strategies_active: list of strategy names that agreed on this signal at entry.
+        num_agree: number of agreeing strategies.
+        confidence: signal confidence at entry (0-100).
         """
         self._ensure_loaded()
         for rule in self._rules:
@@ -278,7 +310,9 @@ class GraduatedRulesEngine:
                 continue
             if rule.action == "veto":
                 continue  # handled by counterfactual_learner.py
-            if not rule.matches(symbol=symbol, regime=regime, side=side):
+            if not rule.matches(symbol=symbol, regime=regime, side=side, hour_utc=hour_utc,
+                                strategies_active=strategies_active, num_agree=num_agree,
+                                confidence=confidence):
                 continue
             if rule.action == "boost":
                 if won:

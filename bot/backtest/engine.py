@@ -70,11 +70,13 @@ class BacktestEngine:
     """
 
     def __init__(self, config: Optional[TradingConfig] = None, llm_integration=None,
-                 fresh: bool = False, relaxed_cb: bool = False, resume: bool = False):
+                 fresh: bool = False, relaxed_cb: bool = False, resume: bool = False,
+                 yes: bool = False):
         self.config = config or TradingConfig()
         self.llm = llm_integration  # Optional BacktestLLMIntegration
         self._relaxed_cb = relaxed_cb
         self._resume = resume
+        self._yes = yes  # skip interactive confirmation prompt
         self._simple_resume_state: Optional[Dict] = None  # Populated from checkpoint on resume
 
         # Initialize components
@@ -190,6 +192,8 @@ class BacktestEngine:
         cb = self.risk_mgr.circuit_breaker
         cb.daily_loss_limit_pct = 1.0
         cb.max_drawdown_pct = 1.0
+        cb.max_session_drawdown_pct = 1.0  # Fix: raw mode must also disable session-DD trip
+        cb._session_halted = False          # Clear any pre-existing session halt
         cb.max_consecutive_losses = 999999
         self.risk_mgr.max_open_positions = 50
         self.risk_mgr.max_portfolio_leverage = 100.0
@@ -200,6 +204,7 @@ class BacktestEngine:
         days: int = 30,
         strategies: Optional[List[str]] = None,
         learn: bool = False,
+        start_date: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Run a backtest.
@@ -215,9 +220,24 @@ class BacktestEngine:
         """
         logger.info(f"Starting backtest: {symbols} | {days} days | strategies={strategies or 'all'}")
 
+        # Prevent live paper-trading confidence floors from contaminating historical backtests.
+        # DynamicThresholds.get_confidence_floor() returns the caller's fallback when this is set.
+        import os as _os
+        _os.environ["BACKTEST_CLEAN_FLOOR"] = "1"
+
         # Configure fetcher to pull enough data for the requested backtest period
         self._backtest_days = days
         self.fetcher.backtest_days = days
+
+        # Optional: start main loop from a specific date (warmup still uses earlier data)
+        self._start_date = pd.Timestamp(start_date, tz="UTC") if start_date else None
+        # Tell fetcher to anchor historical fetch window to start_date + days
+        # so CCXT pulls the right time period instead of always fetching current data.
+        if start_date:
+            _fetch_end = pd.Timestamp(start_date, tz="UTC") + pd.Timedelta(days=days + 5)
+            self.fetcher.backtest_end_date = _fetch_end.isoformat()
+        else:
+            self.fetcher.backtest_end_date = None
 
         # Initialize candidate logger for dual-world analysis
         # Clear stale data from previous runs so results aren't contaminated
@@ -330,12 +350,15 @@ class BacktestEngine:
             if preflight.warnings:
                 for w in preflight.warnings:
                     print(f"  WARNING: {w}")
-            try:
-                confirm = input(f"\n  Proceed with LLM backtest (budget ${self.llm.budget_usd:.2f})? [y/N] ")
-                if confirm.strip().lower() != "y":
+            if self._yes:
+                print(f"\n  Proceeding (--yes flag set, budget ${self.llm.budget_usd:.2f})")
+            else:
+                try:
+                    confirm = input(f"\n  Proceed with LLM backtest (budget ${self.llm.budget_usd:.2f})? [y/N] ")
+                    if confirm.strip().lower() != "y":
+                        return {"error": "user_cancelled"}
+                except (EOFError, KeyboardInterrupt):
                     return {"error": "user_cancelled"}
-            except (EOFError, KeyboardInterrupt):
-                return {"error": "user_cancelled"}
             print()
 
             # Handle resume: restore equity from checkpoint
@@ -554,8 +577,16 @@ class BacktestEngine:
         warmup = 50
         total_candles = len(df_1h)
 
-        # Handle resume: skip to checkpointed candle
+        # Handle start_date: skip candles before the requested start date
+        # (warmup still uses all data before start_idx for indicator history)
         start_idx = warmup
+        if getattr(self, "_start_date", None) is not None:
+            time_col = df_1h["time"]
+            date_pos = int(time_col.searchsorted(self._start_date))
+            start_idx = max(warmup, date_pos)
+            if date_pos > warmup:
+                logger.info(f"[{symbol}] --start-date: skipping to candle {start_idx} ({time_col.iloc[start_idx]})")
+
         if (self.llm and self.llm.resume_state
                 and self.llm.resume_state.symbol == symbol):
             start_idx = max(warmup, self.llm.resume_state.candle_index + 1)
@@ -834,7 +865,15 @@ class BacktestEngine:
                 if self._dynamic_floor_adj != 0:
                     ensemble.confidence_floor = self.config.ensemble_confidence_floor + self._dynamic_floor_adj
 
-                signal = ensemble.evaluate(symbol, windowed)
+                # LLM mode: use evaluate_raw() so the EV gate and confidence floor
+                # don't pre-filter signals before the LLM pipeline sees them.
+                # evaluate_raw() passes llm_first_raw=True internally, which keeps
+                # all consensus signals alive for LLM quality filtering.
+                # Mechanical mode (no LLM): use evaluate() — EV gate and floors active.
+                if self.llm:
+                    signal = ensemble.evaluate_raw(symbol, windowed)
+                else:
+                    signal = ensemble.evaluate(symbol, windowed)
                 if signal and not signal.is_valid:
                     logger.debug(f"[{symbol}] Invalid signal rejected by is_valid")
                     signal = None
@@ -1064,7 +1103,7 @@ class BacktestEngine:
                         equity=self.risk_mgr.equity,
                     )
                 if i % 50 == 0:
-                    print(self.llm.get_progress_line(i - warmup, total_candles - warmup))
+                    print(self.llm.get_progress_line(i - start_idx, total_candles - start_idx))
             # Non-LLM checkpoint: save every 100 candles when --resume was requested
             elif self._resume and i % 100 == 0:
                 self._save_simple_checkpoint(
@@ -1442,8 +1481,13 @@ class BacktestEngine:
 
         decision = self.llm.evaluate_entry(snapshot_data, signal, "pre_trade_backtest")
         if decision is None:
+            if self._raw_mode:
+                # In raw mode, LLM IS the filter. Session-limit failures must veto rather than
+                # approve — otherwise fallback trades pollute the dataset with unfiltered noise.
+                signal.metadata["llm_status"] = "llm_required_missing"
+                return None  # Veto: no LLM opinion in raw mode = don't trade
             signal.metadata["llm_status"] = "fallback"
-            return signal  # No LLM opinion -> use strategy signal as-is
+            return signal  # No LLM opinion -> use strategy signal as-is (non-raw fallback)
 
         # Apply LLM decision
         if decision.action == "flat":

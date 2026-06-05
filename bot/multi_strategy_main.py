@@ -9,6 +9,7 @@ Usage:
 """
 
 import asyncio
+import collections
 import logging
 import os
 import signal
@@ -746,6 +747,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
         self._tick = 0
         self._needed_tfs = self.ensemble.get_all_required_timeframes()
+        # Always fetch 4h for intermediate-trend context injected into LLM agent snapshots
+        if "4h" not in self._needed_tfs:
+            self._needed_tfs.append("4h")
 
         # Per-symbol cooldown: prevent rapid re-entry after a position closes
         self._symbol_cooldown: Dict[str, float] = {}  # symbol -> timestamp of last close
@@ -774,6 +778,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # Last known funding rates per symbol (updated from fetcher)
         self._last_funding_rates: Dict[str, float] = {}  # symbol -> funding rate
         self._last_open_interest: Dict[str, float] = {}  # symbol -> OI (for oi_delta strategy)
+        self._oi_history: Dict[str, collections.deque] = {}  # symbol -> deque of {ts, oi} (12-entry rolling)
 
         # LLM meta-brain
         self.llm_mode = get_llm_mode()
@@ -2734,12 +2739,38 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     _meta["open_interest"] = _oi
                     if _oi_prev is not None:
                         _meta["open_interest_prev"] = _oi_prev
+                    # Append to rolling OI history (12 entries ≈ 12h at 60-tick sampling)
+                    if symbol not in self._oi_history:
+                        self._oi_history[symbol] = collections.deque(maxlen=12)
+                    self._oi_history[symbol].append({"ts": int(time.time()), "oi": _oi})
             except Exception:
                 pass
         else:
             _oi = self._last_open_interest.get(symbol)
             if _oi is not None:
                 _meta["open_interest"] = _oi
+        # Always inject OI history when available
+        if symbol in self._oi_history and len(self._oi_history[symbol]) >= 2:
+            _meta["oi_history"] = list(self._oi_history[symbol])
+        # Mark price + basis: fetch every 60 ticks (same cadence as OI)
+        if self._tick % 60 == 0 or symbol not in getattr(self, "_last_mark_price", {}):
+            if not hasattr(self, "_last_mark_price"):
+                self._last_mark_price: Dict[str, tuple] = {}
+            try:
+                _mark, _basis = self.fetcher.fetch_mark_price(symbol)
+                if _mark is not None:
+                    self._last_mark_price[symbol] = (_mark, _basis)
+                    _meta["mark_price"] = _mark
+                    if _basis is not None:
+                        _meta["basis_pct"] = round(_basis * 100, 4)  # as % e.g. 0.15
+            except Exception:
+                pass
+        else:
+            _cached = getattr(self, "_last_mark_price", {}).get(symbol)
+            if _cached:
+                _meta["mark_price"] = _cached[0]
+                if _cached[1] is not None:
+                    _meta["basis_pct"] = round(_cached[1] * 100, 4)
 
         # Inject BTC 1h data for lead_lag strategy on non-BTC symbols
         if symbol != "BTC":
@@ -2953,6 +2984,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     context=pre_close,
                 )
 
+        # force_close() calls below return TradeEvents that bypass the normal events loop.
+        # Collect them here and inject after update_price() so equity/ledger/kelly stay in sync.
+        _force_close_events: list = []
+
         # Liquidation distance monitoring: check every tick for leveraged positions
         if symbol in open_pos and open_pos[symbol].leverage > 1.0:
             _liq_pos = open_pos[symbol]
@@ -2978,7 +3013,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         symbol, _close_side, _fc_pos.qty, current_price, "LIQUIDATION_PROXIMITY"
                     )
                     if _liq_close and getattr(_liq_close, "filled", False):
-                        self.pos_mgr.force_close(symbol, current_price, "LIQUIDATION_PROXIMITY")
+                        _fc = self.pos_mgr.force_close(symbol, current_price, "LIQUIDATION_PROXIMITY")
+                        if _fc:
+                            _fc.metadata["_exchange_submitted"] = True
+                            _force_close_events.append(_fc)
                     else:
                         logger.critical(
                             f"[{trace_id}][{symbol}] LIQUIDATION CLOSE FAILED — position still open on exchange. "
@@ -3024,7 +3062,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             symbol, _close_side, _fc_pos.qty, current_price, "FUNDING_AVOIDANCE"
                         )
                         if _fund_close and getattr(_fund_close, "filled", False):
-                            self.pos_mgr.force_close(symbol, current_price, "FUNDING_AVOIDANCE")
+                            _fc = self.pos_mgr.force_close(symbol, current_price, "FUNDING_AVOIDANCE")
+                            if _fc:
+                                _fc.metadata["_exchange_submitted"] = True
+                                _force_close_events.append(_fc)
                         else:
                             logger.critical(
                                 f"[{trace_id}][{symbol}] FUNDING CLOSE FAILED — position still open. "
@@ -3054,14 +3095,20 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 )
                 if _mfe_rec.action == "TAKE_PROFIT":
                     logger.info(f"[{symbol}] MFE EXIT: TAKE_PROFIT — {_mfe_rec.reason}")
-                    self.pos_mgr.force_close(symbol, current_price, "MFE_TAKE_PROFIT")
+                    _fc = self.pos_mgr.force_close(symbol, current_price, "MFE_TAKE_PROFIT")
                     close_side = "SELL" if _mfe_pos.side == "LONG" else "BUY"
                     self.order_executor.close_position(symbol, close_side, _mfe_pos.qty, current_price, "MFE_TAKE_PROFIT")
+                    if _fc:
+                        _fc.metadata["_exchange_submitted"] = True
+                        _force_close_events.append(_fc)
                 elif _mfe_rec.action == "EXIT_NOW":
                     logger.info(f"[{symbol}] MFE EXIT: EXIT_NOW — {_mfe_rec.reason}")
-                    self.pos_mgr.force_close(symbol, current_price, "MFE_EXIT_NOW")
+                    _fc = self.pos_mgr.force_close(symbol, current_price, "MFE_EXIT_NOW")
                     close_side = "SELL" if _mfe_pos.side == "LONG" else "BUY"
                     self.order_executor.close_position(symbol, close_side, _mfe_pos.qty, current_price, "MFE_EXIT_NOW")
+                    if _fc:
+                        _fc.metadata["_exchange_submitted"] = True
+                        _force_close_events.append(_fc)
                 elif _mfe_rec.action == "TIGHTEN_STOP":
                     # Move SL closer to lock in gains
                     if _mfe_pos.side == "LONG":
@@ -3079,13 +3126,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
         # Update existing positions (pass 5m data for early exit momentum detection)
         df_5m = data.get("5m")
-        events = self.pos_mgr.update_price(symbol, current_price, df_5m=df_5m)
+        events = list(self.pos_mgr.update_price(symbol, current_price, df_5m=df_5m))
+        if _force_close_events:
+            events.extend(_force_close_events)
         for event in events:
             # Submit close order to exchange for full/partial closes
             _close_actions = ("SL", "TP1", "TP2", "TRAILING_STOP", "EARLY_EXIT",
                               "EMERGENCY", "LIQUIDATION_AVOID", "LIQUIDATION_PROXIMITY",
-                              "FUNDING_AVOIDANCE", "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
-            if event.action in _close_actions and event.qty > 0:
+                              "FUNDING_AVOIDANCE", "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE",
+                              "TIME_STOP", "TP1_FULL")
+            if event.action in _close_actions and event.qty > 0 and not event.metadata.get("_exchange_submitted"):
                 # Determine close side (opposite of position side)
                 close_side = "SELL" if event.side == "LONG" else "BUY"
                 close_result = self.order_executor.close_position(
@@ -3120,9 +3170,13 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             )
 
             # Full close actions (for ML, weight tracking, cooldown)
+            # TIME_STOP/TP1_FULL/HOLD_LIMIT previously missing → trades silently dropped from trade_ledger
+            # MFE_TAKE_PROFIT/MFE_EXIT_NOW: force-close path, injected via _force_close_events
             _FULL_CLOSE = ("SL", "TP2", "TRAILING_STOP", "EARLY_EXIT",
-                           "EMERGENCY", "LIQUIDATION_AVOID",
-                           "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
+                           "EMERGENCY", "LIQUIDATION_AVOID", "LIQUIDATION_PROXIMITY",
+                           "FUNDING_AVOIDANCE", "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE",
+                           "TIME_STOP", "TP1_FULL", "HOLD_LIMIT",
+                           "MFE_TAKE_PROFIT", "MFE_EXIT_NOW")
 
             # Record outcome for strategy weight tracking (only on full close, use total PnL)
             if event.action in _FULL_CLOSE and event.strategy:
@@ -3137,7 +3191,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     hold_hours = 0.0
                     if pos:
                         regime = pos.entry_reasons.get("regime", "unknown") if pos.entry_reasons else "unknown"
-                        confidence = pos.entry_reasons.get("confidence", 50.0) if pos.entry_reasons else 50.0
+                        confidence = pos.confidence if pos.confidence else (pos.entry_reasons.get("llm_confidence") or pos.entry_reasons.get("win_prob_deflated") or 50.0) if pos.entry_reasons else 50.0
                         if pos.opened_at and pos.close_time:
                             hold_hours = (pos.close_time - pos.opened_at).total_seconds() / 3600.0
                     self.regime_feedback.record_trade(
@@ -3153,7 +3207,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         confidence=confidence,
                         win=total_pnl > 0,
                         pnl=total_pnl,
-                        strategy=event.strategy
+                        strategy=event.strategy,
+                        symbol=symbol,
+                        regime=regime,
                     )
                     # Record hold-time performance (learn min hold times per regime)
                     self.hold_time_rules.record_trade(
@@ -3261,8 +3317,15 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 # Graduated rules: record outcome so rules track accuracy + auto-retire poor rules
                 try:
                     from llm.graduated_rules import get_graduated_rules_engine
+                    _gr_hr = pos.open_time.hour if pos and getattr(pos, "open_time", None) else -1
+                    _gr_er = (pos.entry_reasons or {}) if pos and getattr(pos, "entry_reasons", None) else {}
+                    _gr_strats = _gr_er.get("strategies_agree", [])
+                    _gr_num = len(_gr_strats) or _gr_er.get("num_agree", 0)
+                    _gr_conf = _gr_er.get("llm_confidence") or _gr_er.get("win_prob_deflated") or 0.0
                     get_graduated_rules_engine().record_outcome(
-                        symbol=symbol, regime=_rg_fb, side=event.side, won=total_pnl > 0
+                        symbol=symbol, regime=_rg_fb, side=event.side, won=total_pnl > 0,
+                        hour_utc=_gr_hr, strategies_active=_gr_strats,
+                        num_agree=_gr_num, confidence=float(_gr_conf) if _gr_conf else 0.0,
                     )
                 except Exception:
                     pass
@@ -3336,7 +3399,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 "win": "1" if total_pnl > 0 else "0",
                             })
                         except Exception as e:
-                            logger.debug(f"Trade ledger record error: {e}")
+                            logger.warning(f"Trade ledger record error: {e}")
 
                     if self.shadow_ledger:
                         try:
@@ -6790,17 +6853,21 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         strats = meta.get("strategies_agree", [signal_result.strategy])
         sym = signal_result.symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").split("/")[0]
         side = signal_result.side
+        rg = (getattr(trade_prof, "regime", "") or meta.get("regime", "")).split("_")[0][:8]
         has_bb = "bollinger_squeeze" in strats
         has_mtq = "multi_tier_quality" in strats
         if has_bb and has_mtq:
-            return f"{sym}_{side}_BB+MTQ"
+            strat_tag = "BB+MTQ"
         elif has_bb:
-            return f"{sym}_{side}_BB"
+            strat_tag = "BB"
         elif len(strats) >= 2:
-            return f"{sym}_{side}_{len(strats)}-agree"
+            strat_tag = f"{len(strats)}agree"
         elif strats:
-            return f"{sym}_{side}_{strats[0]}"
-        return f"{sym}_{side}_unknown"
+            strat_tag = strats[0][:12]
+        else:
+            strat_tag = "unknown"
+        regime_tag = f"_{rg}" if rg else ""
+        return f"{sym}_{side}_{strat_tag}{regime_tag}"
 
     # ══════════════════════════════════════════════════════════════════
     # ── LLM-FIRST ARCHITECTURE: Signal → Safety → LLM → Execute ──
@@ -6949,14 +7016,33 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "signal_age": time.time() - (raw_signal.metadata or {}).get("generated_at", time.time()),
             "ohlcv_1h": data.get("1h"),
             "ohlcv_5m": data.get("5m"),
+            "ohlcv_4h": data.get("4h"),
+            "mark_price": _meta.get("mark_price"),
+            "basis_pct": _meta.get("basis_pct"),
+            "oi_history": _meta.get("oi_history"),
+            "open_interest": _meta.get("open_interest"),
         }
 
         # Portfolio context
+        _equity = self.risk_mgr.equity
+        # Include "symbol" key in each position dict so _parse() in
+        # portfolio_intelligence.py can identify the symbol when iterating values.
+        # Without it, _parse silently drops all positions → Risk Agent sees "0 positions"
+        # → sizes freely → OpsGuard rejects at 500% notional cap.
+        _open_positions_ctx = {
+            s: {"symbol": s, "side": p.side, "entry": float(p.entry),
+                "qty": float(p.qty), "leverage": getattr(p, "leverage", 1.0)}
+            for s, p in open_pos.items()
+        }
+        # Pre-compute total notional deployed so Risk Agent has explicit budget info
+        _total_notional = sum(
+            v["entry"] * v["qty"] for v in _open_positions_ctx.values()
+        )
+        _notional_cap = _equity * 5.0  # OpsGuard MAX_SINGLE_POSITION_PCT = 5.0
+        _remaining_notional = max(0.0, _notional_cap - _total_notional)
         portfolio_ctx = {
-            "equity": self.risk_mgr.equity,
-            "open_positions": {s: {"side": p.side, "entry": p.entry, "qty": p.qty,
-                                   "leverage": p.leverage}
-                              for s, p in open_pos.items()},
+            "equity": _equity,
+            "open_positions": _open_positions_ctx,
             "open_positions_count": len(open_pos),
             "daily_pnl": getattr(self.risk_mgr, 'daily_pnl', 0.0),
             "circuit_breaker_proximity": getattr(
@@ -6965,6 +7051,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "consecutive_losses": getattr(
                 self.risk_mgr.circuit_breaker, 'consecutive_losses', 0
             ) if hasattr(self.risk_mgr, 'circuit_breaker') else 0,
+            "total_notional": round(_total_notional, 2),
+            "total_notional_pct": round(_total_notional / _equity * 100, 1) if _equity > 0 else 0.0,
+            "notional_cap_pct": 500.0,
+            "remaining_notional_pct": round(_remaining_notional / _equity * 100, 1) if _equity > 0 else 500.0,
         }
 
         # Enrich signal context with edge data and behavioral patterns
@@ -6996,8 +7086,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             _reg_n = int(_regime_setup.get("total", 0) or 0)
             _reg_wins = int(_regime_setup.get("wins", 0) or 0)
             _reg_wr = (_reg_wins / _reg_n * 100.0) if _reg_n > 0 else None
-            # TOXIC threshold: WR < 10% AND n >= 10 (statistically meaningful)
-            _is_toxic = bool(_reg_wr is not None and _reg_wr < 10.0 and _reg_n >= 10)
+            # TOXIC threshold: WR < 10% AND n >= 20 (n=10 was too small; 20 gives ~2.5 SE).
+            # n=10 caused SOL SHORT to be hard-blocked with insufficient data.
+            _is_toxic = bool(_reg_wr is not None and _reg_wr < 10.0 and _reg_n >= 20)
 
             if _setup and _setup.get("total", 0) > 0:
                 signal_ctx["edge_data"] = {
@@ -7415,11 +7506,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             market_ctx = {
                 "ohlcv_1h": data.get("1h"),
                 "ohlcv_5m": data.get("5m"),
+                "ohlcv_4h": data.get("4h"),
             }
             portfolio_ctx = {
                 "equity": self.risk_mgr.equity,
-                "open_positions": {s: {"side": p.side, "entry": p.entry}
-                                  for s, p in open_pos.items()},
+                "open_positions": {
+                    s: {"symbol": s, "side": p.side, "entry": float(p.entry),
+                        "qty": float(getattr(p, "qty", 0)),
+                        "leverage": getattr(p, "leverage", 1.0)}
+                    for s, p in open_pos.items()
+                },
                 "open_positions_count": len(open_pos),
             }
 

@@ -122,8 +122,8 @@ def _call_llm_via_cli(
         user_prompt=json_guard + snapshot_json,
         system_prompt=full_system,
         model=cli_model,
-        max_budget_usd=1.00,  # 2026-05-30: was 0.10, hit "Reached maximum budget" on every Sonnet/Opus call
-        timeout=max(timeout, 300),  # 2026-05-31 laptop-claude: was 90s, Trade Agent timed out via CLI subprocess
+        max_budget_usd=1.00,
+        timeout=max(timeout, 300),
         allow_tools=False,
     )
     if not resp.ok:
@@ -340,8 +340,39 @@ class AgentCoordinator:
         # with Scout's pre-formed view instead of building from scratch.
         self._scout_thesis_cache: Dict[str, Dict[str, Any]] = {}
         self._scout_cache_ttl: float = 20 * 60  # 20 minutes
+        # Decision cache: avoid re-running 5-agent pipeline for unchanged conditions.
+        # Only SKIP decisions are cached — GO decisions are single-use by nature.
+        # Structure: {cache_key: {"decision": EntryDecision, "ts": float, "entry_price": float}}
+        # Quota impact: bot calls pipeline every 30s × 4 symbols. On stable markets this
+        # burns all quota in ~30 min. Caching skips for 3 minutes reduces burn by ~6x.
+        self._entry_decision_cache: Dict[str, Dict[str, Any]] = {}
+        self._entry_cache_ttl: float = 3 * 60   # 3 minutes: fast enough to catch regime shifts
+        self._entry_cache_price_tolerance: float = 0.003  # 0.3% price move busts the cache
+        self._entry_cache_hits: int = 0
+        self._entry_cache_misses: int = 0
 
     # ── Public API ──────────────────────────────────────────────
+
+    def _entry_cache_key(self, signal_ctx: Dict[str, Any], market_ctx: Dict[str, Any]) -> str:
+        """Build a stable cache key from the decision inputs.
+
+        Buckets confidence to ±2.5pp and price to ±0.2% so near-identical
+        repeated signals map to the same key without requiring exact equality.
+        """
+        symbol = signal_ctx.get("symbol", "")
+        side = signal_ctx.get("side", "")
+        conf_raw = float(signal_ctx.get("confidence", 0))
+        # Bucket confidence in 5pp increments (65.2 → 65)
+        conf_bucket = int(conf_raw // 5) * 5
+        # Bucket price to nearest 0.2% (prevents micro-tick misses)
+        entry = float(signal_ctx.get("entry", 1.0))
+        price_bucket = round(entry / (entry * 0.002)) if entry > 0 else 0
+        hour_utc = int(market_ctx.get("time_utc_hour", -1))
+        # Include the strategy set so regime_trend vs bollinger_squeeze don't share a key
+        strats = signal_ctx.get("strategies_agree", []) or []
+        strat_key = ",".join(sorted(str(s) for s in strats)) if strats else signal_ctx.get("strategy", "")
+        num_agree = int(signal_ctx.get("num_agree", signal_ctx.get("num_strategies_agree", 0)))
+        return f"{symbol}|{side}|c{conf_bucket}|p{price_bucket}|h{hour_utc}|n{num_agree}|{strat_key}"
 
     def invalidate_regime_cache(self, symbol: Optional[str] = None) -> None:
         """Clear regime cache for a symbol or all symbols."""
@@ -375,8 +406,27 @@ class AgentCoordinator:
         scratchpad = reset_pipeline_scratchpad()
         shared_lessons = get_shared_lessons()
 
+        # Flag backtest mode so inner builders skip live-performance penalties.
+        # Live trading penalties (loss streaks, calibration drift) come from unfiltered
+        # trades in the fallback era and should not colour data-collection backtests.
+        _is_backtest = "backtest" in trigger_reason.lower()
+        snapshot_data["_is_backtest"] = _is_backtest
+        self._current_is_backtest = _is_backtest  # accessible to _call_agent system-prompt builders
+
+        # In backtest mode strip all live-performance data from the snapshot so
+        # it can't bleed into any agent's context.  These stats were accumulated
+        # during the fallback-approve era (unfiltered trades) and carry poisoned
+        # WR numbers (0-14%) that make Kelly universally negative → all skips.
+        if _is_backtest:
+            for _perf_key in ("self_perf", "network_calibration_adj",
+                              "edge_decay_alerts", "_enr_dynamic_stats",
+                              "_perf_tracker_summary"):
+                snapshot_data.pop(_perf_key, None)
+
         # ── Inject external data (funding/OI, liq levels, shadow MR) ──
-        if _EXTERNAL_DATA_AVAILABLE:
+        # Skip in backtest: fetches live current data (funding/OI/liquidation),
+        # not historical April values — look-ahead bias.
+        if _EXTERNAL_DATA_AVAILABLE and not _is_backtest:
             try:
                 ext = get_external_data_for_snapshot()
                 if ext:
@@ -433,12 +483,115 @@ class AgentCoordinator:
             except Exception as e:
                 logger.debug("[MULTI-AGENT] 5m technicals enrichment failed: %s", e)
 
+            # 4h intermediate-trend technicals (structural alignment context)
+            try:
+                _ohlcv_4h = snapshot_data.get("ohlcv_4h")
+                if _ohlcv_4h is not None:
+                    techs_4h = compute_all_technicals(_ohlcv_4h)
+                    if techs_4h:
+                        tech_text_4h = format_technicals_for_agent(
+                            techs_4h, _enrich_symbol, timeframe="4h"
+                        )
+                        if tech_text_4h:
+                            enriched_parts.append(tech_text_4h)
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] 4h technicals enrichment failed: %s", e)
+
         # Strip raw OHLCV arrays after technicals computed — saves ~1800 tokens per call
-        for _ohlcv_key in ["ohlcv_1h", "ohlcv_5m", "ohlcv_by_symbol_1h", "ohlcv_by_symbol_5m"]:
+        for _ohlcv_key in ["ohlcv_1h", "ohlcv_5m", "ohlcv_4h", "ohlcv_by_symbol_1h", "ohlcv_by_symbol_5m"]:
             snapshot_data.pop(_ohlcv_key, None)
 
+        # Mark price / basis — inject when available (live mode only)
+        # basis_pct = (oracle - mark) / mark: negative = longs overloaded (overheated),
+        # positive = shorts overloaded (capitulation/oversold)
+        if not _is_backtest:
+            _mark = snapshot_data.get("mark_price")
+            _basis = snapshot_data.get("basis_pct")
+            if _mark is not None:
+                _basis_str = ""
+                if _basis is not None:
+                    if _basis < -0.1:
+                        _interp = f"mark {abs(_basis):.3f}% above oracle — longs overloaded"
+                    elif _basis > 0.1:
+                        _interp = f"mark {abs(_basis):.3f}% below oracle — shorts overloaded"
+                    else:
+                        _interp = "mark near oracle — neutral"
+                    _basis_str = f" ({_interp})"
+                enriched_parts.append(f"Mark price: ${_mark:,.2f}{_basis_str}")
+
+        # OI history trend (live rolling window — skip in backtest)
+        if not _is_backtest:
+            _oi_hist = snapshot_data.get("oi_history")
+            if _oi_hist:
+                try:
+                    _oi_vals = [e["oi"] for e in _oi_hist if isinstance(e, dict) and "oi" in e]
+                    if len(_oi_vals) >= 2:
+                        _oi_first, _oi_last = _oi_vals[0], _oi_vals[-1]
+                        _oi_chg = (_oi_last - _oi_first) / _oi_first * 100 if _oi_first else 0
+                        _oi_dir = "expanding" if _oi_chg > 2 else "contracting" if _oi_chg < -2 else "flat"
+                        def _fmt_oi(v):
+                            return f"${v/1e9:.2f}B" if v >= 1e8 else f"${v/1e6:.0f}M"
+                        _mid = len(_oi_vals) // 2
+                        _oi_str = " → ".join(_fmt_oi(v) for v in [_oi_vals[0], _oi_vals[_mid], _oi_vals[-1]])
+                        _oi_note = ""
+                        if abs(_oi_chg) > 10:
+                            _oi_note = " — strong accumulation" if _oi_chg > 0 else " — strong distribution"
+                        elif abs(_oi_chg) > 4:
+                            _oi_note = " — accumulation" if _oi_chg > 0 else " — distribution"
+                        enriched_parts.append(
+                            f"OI trend: {_oi_dir} — {_oi_str} ({_oi_chg:+.1f}%{_oi_note})"
+                        )
+                except Exception as _e:
+                    logger.debug("[MULTI-AGENT] OI history format failed: %s", _e)
+
+        # Funding rate (valid in both live and backtest — reflects period's actual rate)
+        _fr = snapshot_data.get("funding_rate")
+        if _fr is not None:
+            try:
+                _fr_pct = float(_fr) * 100  # Stored as decimal e.g. 0.0005 → 0.05%
+                if _fr_pct > 0.02:
+                    _fr_interp = "longs pay — crowded long, mean-reversion risk"
+                elif _fr_pct < -0.02:
+                    _fr_interp = "shorts pay — crowded short, short squeeze risk"
+                else:
+                    _fr_interp = "near neutral"
+                enriched_parts.append(f"Funding: {_fr_pct:+.4f}%/8h ({_fr_interp})")
+            except Exception as _e:
+                logger.debug("[MULTI-AGENT] Funding rate format failed: %s", _e)
+
+        # Time-of-day session context (live + backtest if hour available)
+        _hour = snapshot_data.get("time_utc_hour")
+        if _hour is not None:
+            try:
+                _h = int(_hour)
+                if 0 <= _h < 24:
+                    if 8 <= _h < 12:
+                        _sess = "London open"
+                        _sess_note = "high directional momentum, trend initiation — prime setup window"
+                    elif 12 <= _h < 17:
+                        _sess = "NY session"
+                        _sess_note = "peak liquidity, strong follow-through, best for momentum"
+                    elif 17 <= _h < 21:
+                        _sess = "NY afternoon"
+                        _sess_note = "liquidity draining, choppy — reduce size, prefer mean-reversion"
+                    elif 0 <= _h < 4:
+                        _sess = "Asia early"
+                        _sess_note = "low volume, range-bound — avoid breakout plays"
+                    else:
+                        _sess = "Asia/crossover"
+                        _sess_note = "moderate activity"
+                    _dow = snapshot_data.get("day_of_week")
+                    _day_note = ""
+                    if _dow is not None and int(_dow) >= 5:
+                        _day_note = " | WEEKEND: reduced liquidity, fade extremes"
+                    enriched_parts.append(f"Session: {_h:02d}:00 UTC — {_sess} ({_sess_note}){_day_note}")
+            except Exception as _e:
+                logger.debug("[MULTI-AGENT] Session context format failed: %s", _e)
+
         # External data (funding, OI, liquidation) — formatted text
-        if _EXTERNAL_DATA_AVAILABLE:
+        # Skip in backtest: fetches live current rates (May 2026), not historical
+        # April data — injects present-day market state into past-window context.
+        if _EXTERNAL_DATA_AVAILABLE and not _is_backtest:
             try:
                 ext_text = format_external_data(["BTC", "ETH", "SOL", "HYPE"])
                 if ext_text:
@@ -447,7 +600,9 @@ class AgentCoordinator:
                 logger.debug("[MULTI-AGENT] External data text enrichment failed: %s", e)
 
         # Feedback loop states (strategy weights, Kelly, adaptive risk, tuner)
-        if _FEEDBACK_STATE_AVAILABLE:
+        # Skip in backtest: adaptive-risk multiplier is derived from unfiltered live
+        # trades and would penalise fresh LLM evaluations with stale loss-streak data.
+        if _FEEDBACK_STATE_AVAILABLE and not _is_backtest:
             try:
                 fb_text = format_feedback_for_agent()
                 if fb_text:
@@ -456,7 +611,9 @@ class AgentCoordinator:
                 logger.debug("[MULTI-AGENT] Feedback state enrichment failed: %s", e)
 
         # Pipeline telemetry (recent gate decisions)
-        if _TELEMETRY_AVAILABLE:
+        # Pipeline telemetry: recent live gate decisions — skip in backtest to avoid
+        # injecting May 2026 signal rejections into the April 23-28 context window.
+        if _TELEMETRY_AVAILABLE and not _is_backtest:
             try:
                 tel_text = get_telemetry().format_for_llm(
                     symbol=_enrich_symbol, last_n=5
@@ -518,7 +675,9 @@ class AgentCoordinator:
                 logger.debug("[MULTI-AGENT] Agent performance enrichment failed: %s", e)
 
         # Background thinker journal (market observations, patterns, opportunities)
-        if _BACKGROUND_THINKER_AVAILABLE:
+        # Skip in backtest: journal contains observations about the live current market
+        # (May 2026), not the historical backtest window — look-ahead bias.
+        if _BACKGROUND_THINKER_AVAILABLE and not _is_backtest:
             try:
                 if self._background_thinker is None:
                     self._background_thinker = BackgroundThinker()
@@ -529,7 +688,9 @@ class AgentCoordinator:
                 logger.debug("[MULTI-AGENT] Background thinker enrichment failed: %s", e)
 
         # GAP 1: Execution quality / slippage metrics
-        if _HAS_EXEC_QUALITY:
+        # Skip in backtest: execution quality is computed from live trading fills that
+        # post-date the backtest window — look-ahead bias.
+        if _HAS_EXEC_QUALITY and not _is_backtest:
             try:
                 eq_summary = get_execution_quality_summary()
                 if eq_summary:
@@ -538,7 +699,8 @@ class AgentCoordinator:
                 logger.debug("[MULTI-AGENT] Execution quality enrichment failed: %s", e)
 
         # GAP 2: Reflection engine (move exhaustion, re-entry patterns, trade quality)
-        if _HAS_REFLECTION:
+        # Skip in backtest: reflection reads from closed live trades post-dating the window.
+        if _HAS_REFLECTION and not _is_backtest:
             try:
                 if not hasattr(self, '_reflection_engine') or self._reflection_engine is None:
                     self._reflection_engine = ReflectionEngine()
@@ -579,85 +741,95 @@ class AgentCoordinator:
             logger.debug("[MULTI-AGENT] ML predictions enrichment failed: %s", e)
 
         # Network learning: inject accumulated lessons from past trades
-        try:
-            from llm.agents.network_learning import get_network_learning
-            _nl = get_network_learning()
-            # Inject per-agent lessons into snapshot for downstream builders
-            _nl_trade = _nl.get_prompt_injection("trade")
-            _nl_risk = _nl.get_prompt_injection("risk")
-            _nl_regime = _nl.get_regime_intelligence()
-            _nl_critic = _nl.get_prompt_injection("critic")
-            if _nl_trade:
-                snapshot_data["network_lessons_trade"] = _nl_trade
-            if _nl_risk:
-                snapshot_data["network_lessons_risk"] = _nl_risk
-                snapshot_data["risk_constraints"] = _nl.get_risk_constraints()
-            if _nl_regime:
-                enriched_parts.append(_nl_regime)
-            if _nl_critic:
-                snapshot_data["network_lessons_critic"] = _nl_critic
-            # Calibration adjustment for Quant Agent
-            _cal_adj = _nl.get_calibration_adjustment()
-            if _cal_adj != 0:
-                snapshot_data["network_calibration_adj"] = round(_cal_adj, 4)
-            # Edge decay alerts for Overseer
-            _decaying = _nl.get_decaying_edges()
-            if _decaying:
-                snapshot_data["edge_decay_alerts"] = _decaying
-        except Exception as e:
-            logger.debug("[MULTI-AGENT] Network learning injection failed: %s", e)
+        # Skip in backtest: lessons are derived from live trades that post-date the
+        # backtest window — injects look-ahead bias even as qualitative heuristics.
+        if not _is_backtest:
+            try:
+                from llm.agents.network_learning import get_network_learning
+                _nl = get_network_learning()
+                # Inject per-agent lessons into snapshot for downstream builders
+                _nl_trade = _nl.get_prompt_injection("trade")
+                _nl_risk = _nl.get_prompt_injection("risk")
+                _nl_regime = _nl.get_regime_intelligence()
+                _nl_critic = _nl.get_prompt_injection("critic")
+                if _nl_trade:
+                    snapshot_data["network_lessons_trade"] = _nl_trade
+                if _nl_risk:
+                    snapshot_data["network_lessons_risk"] = _nl_risk
+                    snapshot_data["risk_constraints"] = _nl.get_risk_constraints()
+                if _nl_regime:
+                    enriched_parts.append(_nl_regime)
+                if _nl_critic:
+                    snapshot_data["network_lessons_critic"] = _nl_critic
+                # Calibration adjustment for Quant Agent
+                _cal_adj = _nl.get_calibration_adjustment()
+                if _cal_adj != 0:
+                    snapshot_data["network_calibration_adj"] = round(_cal_adj, 4)
+                # Edge decay alerts for Overseer
+                _decaying = _nl.get_decaying_edges()
+                if _decaying:
+                    snapshot_data["edge_decay_alerts"] = _decaying
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Network learning injection failed: %s", e)
 
         # Dynamic stats: live rolling WR, PF, regime performance, calibration
-        # Replaces hardcoded historical stats in prompts with current data
-        try:
-            from llm.agents.dynamic_stats import get_all_dynamic_stats
-            _dyn_stats = get_all_dynamic_stats()
-            if _dyn_stats:
-                enriched_parts.append(_dyn_stats)
-                snapshot_data["_enr_dynamic_stats"] = _dyn_stats
-        except Exception as e:
-            logger.debug("[MULTI-AGENT] Dynamic stats enrichment failed: %s", e)
+        # Replaces hardcoded historical stats in prompts with current data.
+        # Skip in backtest: live WR stats are from the fallback-approve era (unfiltered
+        # trades) and would poison the agent with regime/setup WRs near 0-14%.
+        if not _is_backtest:
+            try:
+                from llm.agents.dynamic_stats import get_all_dynamic_stats
+                _dyn_stats = get_all_dynamic_stats()
+                if _dyn_stats:
+                    enriched_parts.append(_dyn_stats)
+                    snapshot_data["_enr_dynamic_stats"] = _dyn_stats
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Dynamic stats enrichment failed: %s", e)
 
         # Self-teaching knowledge base: axioms, principles, hypotheses, anti-patterns
-        # This is the brain's accumulated wisdom — what it has LEARNED from trading.
-        # Previously disconnected: the knowledge base was built but never read by agents.
-        try:
-            from llm.self_teaching import get_teaching_engine
-            _teach = get_teaching_engine()
-            _knowledge_text = _teach.get_knowledge_for_prompt(
-                symbol=_enrich_symbol, regime=""
-            )
-            if _knowledge_text:
-                enriched_parts.append(f"KNOWLEDGE BASE:\n{_knowledge_text}")
-                snapshot_data["_enr_knowledge"] = _knowledge_text
+        # Skip in backtest: knowledge base is built from live trading outcomes that
+        # post-date the backtest window — look-ahead bias (Bug #16).
+        if not _is_backtest:
+            try:
+                from llm.self_teaching import get_teaching_engine
+                _teach = get_teaching_engine()
+                _knowledge_text = _teach.get_knowledge_for_prompt(
+                    symbol=_enrich_symbol, regime=""
+                )
+                if _knowledge_text:
+                    enriched_parts.append(f"KNOWLEDGE BASE:\n{_knowledge_text}")
+                    snapshot_data["_enr_knowledge"] = _knowledge_text
 
-            # Curriculum level: what the LLM should be focused on learning
-            _curriculum = _teach.get_curriculum_report()
-            if _curriculum:
-                _level = _curriculum.get("current_level", 1)
-                _level_name = _curriculum.get("level_name", "PATTERN_RECOGNITION")
-                _focus = _curriculum.get("focus", "")
-                snapshot_data["curriculum_level"] = _level
-                snapshot_data["curriculum_focus"] = _focus
-                if _level >= 3:  # Level 3+ has predictive capability
-                    enriched_parts.append(
-                        f"CURRICULUM: Level {_level} ({_level_name}) — {_focus}"
-                    )
-        except Exception as e:
-            logger.debug("[MULTI-AGENT] Self-teaching knowledge injection failed: %s", e)
+                # Curriculum level: what the LLM should be focused on learning
+                _curriculum = _teach.get_curriculum_report()
+                if _curriculum:
+                    _level = _curriculum.get("current_level", 1)
+                    _level_name = _curriculum.get("level_name", "PATTERN_RECOGNITION")
+                    _focus = _curriculum.get("focus", "")
+                    snapshot_data["curriculum_level"] = _level
+                    snapshot_data["curriculum_focus"] = _focus
+                    if _level >= 3:  # Level 3+ has predictive capability
+                        enriched_parts.append(
+                            f"CURRICULUM: Level {_level} ({_level_name}) — {_focus}"
+                        )
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Self-teaching knowledge injection failed: %s", e)
 
         # Neuroplasticity: setup edge strengths, decay alerts, surprises
-        try:
-            from llm.neuroplasticity import get_neuro_context_for_agents
-            _neuro = get_neuro_context_for_agents(
-                symbol=_enrich_symbol,
-                side="",  # All sides
-            )
-            if _neuro:
-                enriched_parts.append(f"NEURO:\n{_neuro}")
-                snapshot_data["_enr_neuro"] = _neuro
-        except Exception as e:
-            logger.debug("[MULTI-AGENT] Neuroplasticity context failed: %s", e)
+        # Skip in backtest: neuro weights are learned from live trades that post-date
+        # the backtest window — look-ahead bias (Bug #16).
+        if not _is_backtest:
+            try:
+                from llm.neuroplasticity import get_neuro_context_for_agents
+                _neuro = get_neuro_context_for_agents(
+                    symbol=_enrich_symbol,
+                    side="",  # All sides
+                )
+                if _neuro:
+                    enriched_parts.append(f"NEURO:\n{_neuro}")
+                    snapshot_data["_enr_neuro"] = _neuro
+            except Exception as e:
+                logger.debug("[MULTI-AGENT] Neuroplasticity context failed: %s", e)
 
         enriched_context = "\n\n".join(enriched_parts) if enriched_parts else ""
         if enriched_context:
@@ -777,7 +949,7 @@ class AgentCoordinator:
         # Skip Quant in Tier 2 (normal signals don't need statistical deep-dive)
         if _tier == 2 and os.getenv("AGENT_TIERED_ROUTING", "false").lower() == "true":
             _quant_enabled = False
-            logger.debug("[ROUTER] Tier 2: skipping Quant agent")
+            logger.info("[ROUTER] Tier 2: Quant agent skipped (tier-2 routing)")
         if _quant_enabled:
             quant_input = self._build_quant_input(snapshot_data, regime_out)
             quant_out = self._call_agent(
@@ -1107,6 +1279,8 @@ class AgentCoordinator:
                     record_agent_decision("risk", risk_out.data, regime=_regime)
                 if critic_out and critic_out.ok:
                     record_agent_decision("critic", critic_out.data, regime=_regime)
+                if quant_out and quant_out.ok:
+                    record_agent_decision("quant", quant_out.data, regime=_regime)
             except Exception as e:
                 logger.debug(f"[MULTI-AGENT] Brain recording error: {e}")
 
@@ -1385,6 +1559,94 @@ class AgentCoordinator:
         """
         start = time.monotonic()
 
+        # ── Decision cache: return cached skip without running the pipeline ──
+        # Quota rationale: bot scans every 30s × 4 symbols = potential 480 LLM
+        # calls/hour. A cached skip for unchanged conditions saves ~5 CLI agent
+        # calls per cache hit (~130-190s of quota per hit avoided).
+        # Only skip decisions are cached (GOs are single-use — never repeat a trade).
+        # Backtest mode bypasses the cache (each scenario must be independent).
+        _is_backtest_mode = portfolio_context.get("_is_backtest", False)
+        if not _is_backtest_mode:
+            _cache_key = self._entry_cache_key(signal_context, market_context)
+            _now = time.time()
+            _cached = self._entry_decision_cache.get(_cache_key)
+            if _cached is not None:
+                _age = _now - _cached["ts"]
+                _entry_price = float(signal_context.get("entry", 0))
+                _cached_price = _cached["entry_price"]
+                _price_move = abs(_entry_price - _cached_price) / _cached_price if _cached_price > 0 else 1.0
+                _ttl_ok = _age < self._entry_cache_ttl
+                _price_ok = _price_move < self._entry_cache_price_tolerance
+                if _ttl_ok and _price_ok:
+                    self._entry_cache_hits += 1
+                    _cached_dec = _cached["decision"]
+                    logger.info(
+                        f"[LLM-CACHE] HIT {signal_context.get('symbol','')} {signal_context.get('side','')} "
+                        f"age={_age:.0f}s price_drift={_price_move*100:.2f}% "
+                        f"(hits={self._entry_cache_hits} misses={self._entry_cache_misses})"
+                    )
+                    # Return a copy tagged as cached so callers can distinguish
+                    from dataclasses import replace as _dc_replace
+                    return _dc_replace(
+                        _cached_dec,
+                        notes=f"[CACHED {_age:.0f}s ago] {_cached_dec.notes}",
+                    )
+                else:
+                    # Stale cache entry — remove it
+                    del self._entry_decision_cache[_cache_key]
+            self._entry_cache_misses += 1
+        else:
+            _cache_key = None
+
+        # ── Lever 2: Graduated-rules veto pre-filter ──
+        # Run VETO-only graduated rules before the 5-agent pipeline.
+        # Any hard-veto rule (e.g. hype_short_veto_v1, WR=2.3%) eliminates the
+        # LLM call entirely — saves ~130-190s of subscription quota per hit.
+        # BOOST/PENALIZE rules are NOT applied here — those need LLM context.
+        # Backtest is excluded (snapshot cache key = None is backtest signal).
+        if not _is_backtest_mode:
+            try:
+                from llm.graduated_rules import get_graduated_rules_engine
+                _sym = signal_context.get("symbol", "")
+                _side = signal_context.get("side", "")
+                _conf = float(signal_context.get("confidence", 0))
+                _strat = signal_context.get("strategy", "")
+                _n_agree = int(signal_context.get("num_agree",
+                               signal_context.get("num_strategies_agree", 0)))
+                _hour = int(market_context.get("time_utc_hour", -1))
+                _strats_active = signal_context.get("strategies_agree", [])
+                _gre = get_graduated_rules_engine()
+                _pre_vetoed, _, _pre_notes = _gre.evaluate_signal(
+                    symbol=_sym, side=_side, confidence=_conf,
+                    strategy=_strat, num_agree=_n_agree,
+                    hour_utc=_hour, strategies_active=_strats_active,
+                    veto_only=True,
+                )
+                if _pre_vetoed:
+                    logger.info(
+                        f"[PRE-FILTER] VETO {_sym}/{_side} before LLM: {_pre_notes[:80]}"
+                    )
+                    _veto_decision = EntryDecision(
+                        action="skip",
+                        leverage=1.0,
+                        risk_pct=0.0,
+                        position_qty=0.0,
+                        regime="unknown",
+                        thesis="",
+                        confidence=_conf / 100.0 if _conf > 1.0 else _conf,
+                        notes=f"[PRE-FILTER VETO] {_pre_notes[:200]}",
+                    )
+                    # Store in cache as skip (same TTL as LLM skips)
+                    if _cache_key is not None:
+                        self._entry_decision_cache[_cache_key] = {
+                            "decision": _veto_decision,
+                            "ts": time.time(),
+                            "entry_price": float(signal_context.get("entry", 0)),
+                        }
+                    return _veto_decision
+            except Exception as _pfe:
+                logger.debug(f"[PRE-FILTER] Error: {_pfe}")
+
         # ── Build a snapshot_data dict compatible with existing pipeline ──
         # The existing _build_*_input methods expect snapshot_data format.
         # We translate signal_context + market/portfolio into that format.
@@ -1475,41 +1737,14 @@ class AgentCoordinator:
             stop_width = abs(entry_price - sl_price)
             if stop_width > 0:
                 # risk_pct is fraction of equity to risk per trade
-                # If Risk Agent didn't return risk_pct, fall back to configured value
-                # (2026-06-03: was 0.10 * sz_mult = up to 20%, hardcoded baseline. Per
-                # Nunu directive, default to configured risk_per_trade so missing-output
-                # cases respect user intent instead of a fabricated 10% baseline.)
+                # If Risk Agent didn't return risk_pct, derive from sz_mult
                 if risk_pct <= 0:
-                    try:
-                        from trading_config import TradingConfig as _TC
-                        risk_pct = float(getattr(_TC(), "risk_per_trade", 0.015)) * sz_mult
-                    except Exception:
-                        risk_pct = 0.015 * sz_mult
-                # 2026-06-03 fix: Risk Agent + fallback both ignored config.risk_per_trade.
-                # Tonight saw GO attempts at 8%, 6%, 4%, 696% notional vs configured 1.5%
-                # — all rejected by portfolio cap / OpsGuard, burning Sonnet quota and
-                # missing high-conviction BTC SHORT alpha. Cap to configured value so
-                # the agent's intent is respected for direction/conviction but the
-                # account's risk budget is the user's, not the LLM's.
-                try:
-                    from trading_config import TradingConfig
-                    _cfg = TradingConfig()
-                    _max_risk_pct = float(getattr(_cfg, "risk_per_trade", 0.015))
-                except Exception:
-                    _max_risk_pct = 0.015
-                if risk_pct > _max_risk_pct:
-                    logger.info(
-                        f"[LLM-FIRST] Risk Agent over-sized risk_pct={risk_pct:.3f} "
-                        f"capped at config {_max_risk_pct:.3f}"
-                    )
-                    risk_pct = _max_risk_pct
+                    risk_pct = 0.10 * sz_mult  # 10% base risk * sz multiplier
                 risk_dollars = equity * risk_pct
-                # 2026-05-31 fix (Nunu directive): qty = risk_$ / stop_width.
-                # Was `* leverage`, which made actual dollar risk = risk_pct * leverage
-                # (e.g., 2.5% risk @ 3x lev → 7.5% real risk → 32x equity notional on
-                # the 14:58 BTC GO decision). Leverage only affects MARGIN required,
-                # not qty. With this fix, at $5k equity, 2.5% risk, 0.7% BTC stop:
-                # qty = $125 / $517 = 0.24 BTC = $17.7k notional (was 0.74 BTC = $54k).
+                # qty = risk_$ / stop_width. Do NOT multiply by leverage.
+                # Leverage affects margin required, not qty for a given risk budget.
+                # Old bug: (risk_$ / stop_width) * leverage made actual dollar risk
+                # = risk_pct * leverage (e.g., 2.5% @ 3x = 7.5% real risk → 32x equity).
                 position_qty = risk_dollars / stop_width
 
         if position_qty <= 0:
@@ -1563,6 +1798,18 @@ class AgentCoordinator:
             f"regime={decision.regime} conf={decision.confidence:.2f} "
             f"({elapsed_ms}ms)"
         )
+
+        # ── Store skip decisions in cache ──
+        # GOs are single-use (never replay a trade). Skips in stable conditions are safe to cache.
+        if entry_decision.action == "skip" and _cache_key is not None and not _is_backtest_mode:
+            self._entry_decision_cache[_cache_key] = {
+                "decision": entry_decision,
+                "ts": time.time(),
+                "entry_price": float(signal_context.get("entry", 0)),
+            }
+            if len(self._entry_decision_cache) > 50:
+                oldest = min(self._entry_decision_cache, key=lambda k: self._entry_decision_cache[k]["ts"])
+                del self._entry_decision_cache[oldest]
 
         return entry_decision
 
@@ -1632,6 +1879,9 @@ class AgentCoordinator:
             "open_count": portfolio_ctx.get("open_positions_count", 0),
             "setup_mfe": _edge_data,
             "historical_edge": _edge_data,
+            # Portfolio utilization so Risk Agent sees remaining OpsGuard capacity
+            "notional_deployed_pct": portfolio_ctx.get("total_notional_pct", 0),
+            "notional_remaining_pct": portfolio_ctx.get("remaining_notional_pct", 500),
         }
 
         # Positions
@@ -2911,10 +3161,13 @@ class AgentCoordinator:
             return AgentOutput(role=role, data={}, error="no_prompt")
 
         # Enrich prompt with latest quant intelligence from deep memory
-        try:
-            prompt = enrich_prompt(role.value, prompt)
-        except Exception as e:
-            logger.debug(f"[COORD] Prompt enrichment failed for {role.value}: {e}")
+        # Skip in backtest mode — insight_journal/network_learning contain pre-overhaul data
+        _bt = getattr(self, '_current_is_backtest', False)
+        if not _bt:
+            try:
+                prompt = enrich_prompt(role.value, prompt)
+            except Exception as e:
+                logger.debug(f"[COORD] Prompt enrichment failed for {role.value}: {e}")
 
         # Inject thought protocol and shared context into the prompt
         protocol_prefix = build_protocol_prefix(role.value)
@@ -2938,8 +3191,11 @@ class AgentCoordinator:
         )
 
         # Dynamic calibration injection for Trade, Critic, and Regime agents
+        # Skip in backtest: calibration ledger tracks live-trade agent accuracy and
+        # would penalise confidence based on post-backtest-window performance data.
         calibration_prefix = ""
-        if role in (AgentRole.TRADE, AgentRole.CRITIC, AgentRole.REGIME):
+        _bt = getattr(self, '_current_is_backtest', False)
+        if not _bt and role in (AgentRole.TRADE, AgentRole.CRITIC, AgentRole.REGIME):
             try:
                 from llm.agents.calibration_ledger import get_calibration_ledger
                 ledger = get_calibration_ledger()
@@ -2949,8 +3205,10 @@ class AgentCoordinator:
                 pass
 
         # Agent brain context injection (beliefs, performance, calibration)
+        # Skip in backtest: brain context includes graduated rules and quant priors
+        # derived from live trading AFTER the backtest window — look-ahead bias.
         brain_prefix = ""
-        if _EXTENSIONS_AVAILABLE:
+        if _EXTENSIONS_AVAILABLE and not _bt:
             try:
                 current_regime = scratchpad.read_by_key("regime") or ""
                 brain_prefix = get_brain_context_for_agent(role.value, regime=current_regime)
@@ -3107,8 +3365,9 @@ class AgentCoordinator:
             quant_data["confluence"] = confluence
 
         # Historical stats for conditional probability computation
-        # Setup edge: per-setup-type win rates
-        if "g" in snapshot:
+        # Skip in backtest: setup_edge and strategy_perf are computed from live
+        # trading history that post-dates the backtest window — look-ahead bias.
+        if not snapshot.get("_is_backtest") and "g" in snapshot:
             g = snapshot["g"]
             if isinstance(g, dict):
                 if "edge" in g:
@@ -3130,60 +3389,68 @@ class AgentCoordinator:
                 quant_data[key] = snapshot[key]
 
         # Real quant data backbone: Kelly, conditional edge, fat-tail, priors
-        try:
-            from llm.quant_data import get_quant_provider
-            qp = get_quant_provider()
-            regime = regime_out.data.get("rg", "unknown") if regime_out.ok else "unknown"
-            n_agree = 0
-            setup_type = ""
-            if "m" in snapshot:
-                for mkt in (snapshot["m"] if isinstance(snapshot["m"], list) else []):
-                    sigs = mkt.get("sg", mkt.get("sigs", []))
-                    if sigs:
-                        n_agree = max(n_agree, len(sigs))
-                        if isinstance(sigs[0], dict):
-                            setup_type = sigs[0].get("st", "")
-            quant_package = qp.build_quant_package(regime=regime, num_agree=n_agree, setup_type=setup_type)
-            if quant_package:
-                quant_data["quant"] = quant_package
-        except Exception as e:
-            logger.debug(f"Quant data injection error: {e}")
+        # Skip in backtest: quant provider computes priors from live-trading history
+        # accumulated AFTER the backtest window — look-ahead bias.
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.quant_data import get_quant_provider
+                qp = get_quant_provider()
+                regime = regime_out.data.get("rg", "unknown") if regime_out.ok else "unknown"
+                n_agree = 0
+                setup_type = ""
+                if "m" in snapshot:
+                    for mkt in (snapshot["m"] if isinstance(snapshot["m"], list) else []):
+                        sigs = mkt.get("sg", mkt.get("sigs", []))
+                        if sigs:
+                            n_agree = max(n_agree, len(sigs))
+                            if isinstance(sigs[0], dict):
+                                setup_type = sigs[0].get("st", "")
+                quant_package = qp.build_quant_package(regime=regime, num_agree=n_agree, setup_type=setup_type)
+                if quant_package:
+                    quant_data["quant"] = quant_package
+            except Exception as e:
+                logger.debug(f"Quant data injection error: {e}")
 
         # Per-agent calibration for Bayesian updating
-        try:
-            from llm.agents.calibration_ledger import get_calibration_ledger
-            ledger = get_calibration_ledger()
-            regime = regime_out.data.get("rg", "unknown")
-            cal = ledger.get_calibration("trade", regime)
-            if cal.get("reliable"):
-                quant_data["trade_calibration"] = cal
-        except Exception:
-            pass
+        # Skip in backtest: same reasoning as agent_cal — stale live-trade accuracy
+        # data would make Quant deflate confidence before Trade agent even decides.
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.agents.calibration_ledger import get_calibration_ledger
+                ledger = get_calibration_ledger()
+                regime = regime_out.data.get("rg", "unknown")
+                cal = ledger.get_calibration("trade", regime)
+                if cal.get("reliable"):
+                    quant_data["trade_calibration"] = cal
+            except Exception:
+                pass
 
         # Historical patterns from replay engine
-        try:
-            from llm.replay_engine import get_historical_patterns
-            patterns = get_historical_patterns(max_decisions=100)
-            if patterns and "error" not in patterns:
-                # Only pass the most relevant stats
-                compact = {}
-                for k in ("regime_wr", "conf_low_wr", "conf_mid_wr", "conf_high_wr",
-                           "conf_low_n", "conf_mid_n", "conf_high_n",
-                           "max_win_streak", "max_loss_streak", "recent_outcomes"):
-                    if k in patterns:
-                        compact[k] = patterns[k]
-                if compact:
-                    quant_data["historical"] = compact
-        except Exception:
-            pass
+        # Skip in backtest: replay engine reads from live decisions.jsonl which
+        # post-dates the backtest window — look-ahead bias.
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.replay_engine import get_historical_patterns
+                patterns = get_historical_patterns(max_decisions=100)
+                if patterns and "error" not in patterns:
+                    compact = {}
+                    for k in ("regime_wr", "conf_low_wr", "conf_mid_wr", "conf_high_wr",
+                               "conf_low_n", "conf_mid_n", "conf_high_n",
+                               "max_win_streak", "max_loss_streak", "recent_outcomes"):
+                        if k in patterns:
+                            compact[k] = patterns[k]
+                    if compact:
+                        quant_data["historical"] = compact
+            except Exception:
+                pass
 
         # Enriched context from technicals, feedback, telemetry, positions
         if snapshot.get("enriched_context"):
             quant_data["enriched"] = snapshot["enriched_context"]
 
-        # Per-agent self-performance stats for the Quant Agent
+        # Per-agent self-performance stats for the Quant Agent (skip in backtest)
         _pt = getattr(self, '_perf_tracker_ref', None)
-        if _pt:
+        if _pt and not snapshot.get("_is_backtest"):
             try:
                 _self_perf_text = _pt.format_for_agent("quant")
                 if _self_perf_text:
@@ -3286,9 +3553,9 @@ class AgentCoordinator:
         if snapshot.get("enriched_context"):
             regime_data["enriched"] = snapshot["enriched_context"]
 
-        # Per-agent self-performance stats for the Regime Agent
+        # Per-agent self-performance stats for the Regime Agent (skip in backtest)
         _pt = getattr(self, '_perf_tracker_ref', None)
-        if _pt:
+        if _pt and not snapshot.get("_is_backtest"):
             try:
                 _self_perf_text = _pt.format_for_agent("regime")
                 if _self_perf_text:
@@ -3392,66 +3659,73 @@ class AgentCoordinator:
             trade_data["quant_analysis"] = quant_out.data
 
         # Gap 4+5: Inject per-agent calibration data into trade input
-        try:
-            from llm.agents.calibration_ledger import get_calibration_ledger
-            ledger = get_calibration_ledger()
-            cal_data = ledger.get_compact_for_snapshot("trade")
-            if cal_data:
-                trade_data["agent_cal"] = cal_data
-        except Exception:
-            pass
+        # Skip in backtest: agent-cal reflects live-trading accuracy which has been
+        # contaminated by the fallback-approve era and would distort fresh evaluations.
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.agents.calibration_ledger import get_calibration_ledger
+                ledger = get_calibration_ledger()
+                cal_data = ledger.get_compact_for_snapshot("trade")
+                if cal_data:
+                    trade_data["agent_cal"] = cal_data
+            except Exception:
+                pass
 
         # Inject similar patterns + known failure modes from deep memory
-        try:
-            from llm.deep_memory import get_deep_memory
-            dm = get_deep_memory()
-            regime = regime_out.data.get("rg", "unknown") if regime_out else "unknown"
-            # Find signals that have patterns from this market context
-            signals = snapshot.get("signals", [])
-            symbol = ""
-            if signals:
-                symbol = signals[0].get("sym", "") if isinstance(signals[0], dict) else ""
+        # Skip in backtest: deep memory is populated from live trades that post-date
+        # the backtest window — injecting it causes look-ahead bias (Bug #16).
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.deep_memory import get_deep_memory
+                dm = get_deep_memory()
+                regime = regime_out.data.get("rg", "unknown") if regime_out else "unknown"
+                # Find signals that have patterns from this market context
+                signals = snapshot.get("signals", [])
+                symbol = ""
+                if signals:
+                    symbol = signals[0].get("sym", "") if isinstance(signals[0], dict) else ""
 
-            # PatternLibrary: find similar historical patterns for context
-            similar = dm.patterns.find_similar(
-                pattern_type="trade_setup",
-                symbol=symbol,
-                regime=regime,
-                limit=3,
-            )
-            if similar:
-                trade_data["similar_patterns"] = [
-                    {k: v for k, v in p.items() if k in ("type", "symbol", "regime", "outcome", "lesson")}
-                    for p in similar[:3]
-                ]
+                # PatternLibrary: find similar historical patterns for context
+                similar = dm.patterns.find_similar(
+                    pattern_type="trade_setup",
+                    symbol=symbol,
+                    regime=regime,
+                    limit=3,
+                )
+                if similar:
+                    trade_data["similar_patterns"] = [
+                        {k: v for k, v in p.items() if k in ("type", "symbol", "regime", "outcome", "lesson")}
+                        for p in similar[:3]
+                    ]
 
-            # TradeDNAStore: get recent failure patterns to avoid
-            failures = dm.trade_dna.get_failures(limit=5)
-            if failures:
-                trade_data["recent_failures"] = [
-                    {k: v for k, v in f.items() if k in ("symbol", "side", "regime", "strategy", "pnl", "lesson")}
-                    for f in failures[:3]
-                ]
-        except Exception:
-            pass
+                # TradeDNAStore: get recent failure patterns to avoid
+                failures = dm.trade_dna.get_failures(limit=5)
+                if failures:
+                    trade_data["recent_failures"] = [
+                        {k: v for k, v in f.items() if k in ("symbol", "side", "regime", "strategy", "pnl", "lesson")}
+                        for f in failures[:3]
+                    ]
+            except Exception:
+                pass
 
         # ── Brain Intelligence Injection ──
-        # Inject thesis accuracy, calibration, counterfactual, regime feedback,
-        # and drawdown context from the brain upgrade modules.
-        try:
-            from llm.brain_wiring import get_brain_context_for_trade
-            regime = regime_out.data.get("rg", "unknown") if regime_out else "unknown"
-            symbol = ""
-            signals = snapshot.get("signals", [])
-            if signals and isinstance(signals[0], dict):
-                symbol = signals[0].get("sym", "")
-            elif "m" in snapshot and snapshot["m"]:
-                symbol = snapshot["m"][0].get("s", snapshot["m"][0].get("sym", ""))
-            brain_ctx = get_brain_context_for_trade(symbol, regime)
-            if brain_ctx:
-                trade_data["brain"] = brain_ctx
-        except Exception as e:
-            logger.info(f"[MULTI-AGENT] Brain context injection error: {e}")
+        # Skip in backtest: brain context carries graduated rules and quant priors
+        # from live trading AFTER the backtest window — look-ahead bias (Bug #16).
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.brain_wiring import get_brain_context_for_trade
+                regime = regime_out.data.get("rg", "unknown") if regime_out else "unknown"
+                symbol = ""
+                signals = snapshot.get("signals", [])
+                if signals and isinstance(signals[0], dict):
+                    symbol = signals[0].get("sym", "")
+                elif "m" in snapshot and snapshot["m"]:
+                    symbol = snapshot["m"][0].get("s", snapshot["m"][0].get("sym", ""))
+                brain_ctx = get_brain_context_for_trade(symbol, regime)
+                if brain_ctx:
+                    trade_data["brain"] = brain_ctx
+            except Exception as e:
+                logger.info(f"[MULTI-AGENT] Brain context injection error: {e}")
 
         # Inject Scout Agent findings (rename from agent_outputs.scout to scout_preparation
         # so Trade Agent prompt can find it by the documented key name)
@@ -3480,8 +3754,9 @@ class AgentCoordinator:
                 trade_data[_agent_key] = snapshot[_snap_key]
 
         # Per-agent self-performance stats for the Trade Agent
+        # Skip in backtest: perf tracker has contaminated live-trade accuracy data.
         _pt = getattr(self, '_perf_tracker_ref', None)
-        if _pt:
+        if _pt and not snapshot.get("_is_backtest"):
             try:
                 _self_perf_text = _pt.format_for_agent("trade")
                 if _self_perf_text:
@@ -3518,7 +3793,7 @@ class AgentCoordinator:
                 "time_utc_hour": sm.get("time_utc_hour"),
                 "btc_trend": sm.get("btc_trend"),
             }
-            if sm.get("graduated_rules_advisory"):
+            if sm.get("graduated_rules_advisory") and not snapshot.get("_is_backtest"):
                 trade_data["graduated_rules_advisory"] = sm["graduated_rules_advisory"]
 
         return json.dumps(trade_data, separators=(",", ":"), default=str)
@@ -3600,14 +3875,16 @@ class AgentCoordinator:
                     pass
 
         # ── Brain Intelligence: regime feedback + graduated risk ──
-        try:
-            from llm.brain_wiring import get_brain_context_for_risk
-            regime = regime_out.data.get("rg", "unknown") if regime_out else "unknown"
-            brain_risk = get_brain_context_for_risk(regime)
-            if brain_risk:
-                risk_data["brain"] = brain_risk
-        except Exception as e:
-            logger.info(f"[MULTI-AGENT] Brain risk context error: {e}")
+        # Skip in backtest: same look-ahead bias concern as trade brain injection.
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.brain_wiring import get_brain_context_for_risk
+                regime = regime_out.data.get("rg", "unknown") if regime_out else "unknown"
+                brain_risk = get_brain_context_for_risk(regime)
+                if brain_risk:
+                    risk_data["brain"] = brain_risk
+            except Exception as e:
+                logger.info(f"[MULTI-AGENT] Brain risk context error: {e}")
 
         # External data: liq levels critical for risk sizing
         _ensure_field(risk_data, "ext_liq", snapshot)
@@ -3633,9 +3910,9 @@ class AgentCoordinator:
             if _snap_key in snapshot:
                 risk_data[_agent_key] = snapshot[_snap_key]
 
-        # Per-agent self-performance stats for the Risk Agent
+        # Per-agent self-performance stats for the Risk Agent (skip in backtest)
         _pt = getattr(self, '_perf_tracker_ref', None)
-        if _pt:
+        if _pt and not snapshot.get("_is_backtest"):
             try:
                 _self_perf_text = _pt.format_for_agent("risk")
                 if _self_perf_text:
@@ -3669,8 +3946,34 @@ class AgentCoordinator:
                 "btc_trend": sm.get("btc_trend"),
             }
             # Graduated rules advisory (what mechanical system would do)
-            if sm.get("graduated_rules_advisory"):
+            if sm.get("graduated_rules_advisory") and not snapshot.get("_is_backtest"):
                 risk_data["graduated_rules_advisory"] = sm["graduated_rules_advisory"]
+
+        # ── Sizing constraint: pre-compute max_risk_pct so Risk Agent stays under OpsGuard cap ──
+        # risk_pct / stop_width_pct = position notional / equity. OpsGuard cap = 500% notional.
+        # Without this, Risk Agent sizes blind to remaining capacity and OpsGuard rejects the trade.
+        try:
+            _port_state = snapshot.get("_portfolio_state", {}) or {}
+            _exposure_pct = float(_port_state.get("total_exposure_pct", 0) or 0)
+            _remaining_pct = max(0.0, 500.0 - _exposure_pct)  # OpsGuard MAX_SINGLE_POSITION_PCT
+            _sm = snapshot.get("signal_metadata", {}) or {}
+            _sw_pct = float(_sm.get("stop_width_pct", 0) or 0)
+            if _sw_pct > 0:
+                # max_risk_pct such that resulting notional <= remaining capacity
+                _max_risk_pct = (_remaining_pct / 100.0) * (_sw_pct / 100.0)
+                risk_data["sizing_constraint"] = {
+                    "current_notional_pct": round(_exposure_pct, 1),
+                    "remaining_capacity_pct": round(_remaining_pct, 1),
+                    "stop_width_pct": round(_sw_pct, 3),
+                    "max_risk_pct": round(_max_risk_pct, 4),
+                    "note": (
+                        f"risk_pct ceiling={_max_risk_pct:.3f} "
+                        f"(stop={_sw_pct:.2f}%, {_exposure_pct:.0f}% notional already deployed, "
+                        f"{_remaining_pct:.0f}% cap remaining)"
+                    ),
+                }
+        except Exception:
+            pass
 
         return json.dumps(risk_data, separators=(",", ":"), default=str)
 
@@ -3740,25 +4043,29 @@ class AgentCoordinator:
         _ensure_field(critic_data, "ext_liq", snapshot)
 
         # Gap 4+5: Inject calibration data for the critic
-        try:
-            from llm.agents.calibration_ledger import get_calibration_ledger
-            ledger = get_calibration_ledger()
-            cal_data = ledger.get_compact_for_snapshot("critic")
-            if cal_data:
-                critic_data["agent_cal"] = cal_data
-        except Exception:
-            pass
+        # Skip in backtest: calibration ledger is populated from live trade outcomes
+        # that post-date the backtest window — look-ahead bias (Bug #16).
+        if not snapshot.get("_is_backtest"):
+            try:
+                from llm.agents.calibration_ledger import get_calibration_ledger
+                ledger = get_calibration_ledger()
+                cal_data = ledger.get_compact_for_snapshot("critic")
+                if cal_data:
+                    critic_data["agent_cal"] = cal_data
+            except Exception:
+                pass
 
         # Veto counterfactual feedback: show Critic its recent veto outcomes
-        # so it can calibrate whether vetoes are helping or hurting
-        try:
-            _pt = getattr(self, '_perf_tracker_ref', None)
-            if _pt:
-                veto_stats = _pt.get_veto_stats() if hasattr(_pt, 'get_veto_stats') else None
-                if veto_stats:
-                    critic_data["veto_feedback"] = veto_stats
-        except Exception:
-            pass
+        # Skip in backtest: veto stats are from live session, not the backtest window.
+        if not snapshot.get("_is_backtest"):
+            try:
+                _pt = getattr(self, '_perf_tracker_ref', None)
+                if _pt:
+                    veto_stats = _pt.get_veto_stats() if hasattr(_pt, 'get_veto_stats') else None
+                    if veto_stats:
+                        critic_data["veto_feedback"] = veto_stats
+            except Exception:
+                pass
 
         # Network learning: inject past lessons for better veto decisions
         if "network_lessons_critic" in snapshot:

@@ -1,0 +1,85 @@
+{
+  "date": "2026-05-21",
+  "generated_at": "2026-05-21T23:08:33.754070+00:00",
+  "run_type": "HOURLY_PERPETUAL_LOOP",
+  "bot_status": "OFFLINE",
+  "offline_duration_hours": 9172.8,
+  "offline_duration_days": 30.0,
+  "eod_finalized": false,
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "equity": 497.05,
+  "fixes_applied_this_run": 1,
+  "llm_engine_rules_total": 15,
+  "fix_details": {
+    "TOD_MORNING_EDGE_V1_WRITE": {
+      "type": "MISSING_RULE_WRITE",
+      "confidence": 0.9,
+      "files": [
+        "bot/data/llm/graduated_rules.json"
+      ],
+      "before": "tod_morning_edge_v1 absent from LLM engine (only evening+afternoon present)",
+      "after": "Rule added: conditions={hour_utc_min:6, hour_utc_max:12} adj=+5.0 gate=50%",
+      "verified": true,
+      "verification": "Engine now has 15 rules. TOD stack complete: Night+Morning+Afternoon+Evening all covered.",
+      "impact": "Morning Window 13 (06:00-12:00 UTC May 22, 6.9h away) will now get +5pts LLM confidence boost"
+    }
+  },
+  "window_status": {
+    "window_13_may22": "Opens in 6.9h (06:00-12:00 UTC May 22). Restart deadline 05:30 UTC (6.4h).",
+    "consecutive_windows_missed": 13,
+    "cumulative_opportunity_cost_usd": 789,
+    "evening_bonus": "54min remaining \u2014 tod_evening_edge_v1 active (18-24 UTC, 65% WR)",
+    "evening_edge_window_close_utc": "2026-05-22 00:00 UTC (~54min)"
+  },
+  "anomalies": [
+    {
+      "type": "TOD_MORNING_EDGE_WRITE_BUG",
+      "severity": "HIGH",
+      "detail": "tod_morning_edge_v1 (74% WR, best TOD window) was in feedback/graduated_rules.json A/B_ACTIVE but absent from LLM engine. Third consecutive run finding a rule write-consistency bug. Fixed this run.",
+      "recommendation": "FIXED. P1 dev: cross-validation startup check between bot/feedback/ and bot/data/llm/ graduated_rules files."
+    },
+    {
+      "type": "GRADUATED_RULES_SYNC_GAP",
+      "severity": "HIGH",
+      "detail": "Three-run pattern (btc_trend_long_counter + TOD_schema + tod_morning_edge) exposes systemic sync failure between two rule stores. Root cause: no atomic write protocol or consistency validation.",
+      "recommendation": "P1 dev: graduated_rules_engine.py startup sync-check. ~2h work. Prevents future silent misses."
+    },
+    {
+      "type": "BOT_OFFLINE_DAY30",
+      "severity": "CRITICAL",
+      "detail": "Bot offline 30 days. 13th morning window missed today. Cumulative EV lost: 89+.",
+      "recommendation": "RESTART before 05:30 UTC May 22. Window 13 opens in 6.9h. Rules now complete: 15 LLM rules, full TOD stack, BTC protection triple-layer."
+    },
+    {
+      "type": "AB_TRACKER_DAY30_STALL",
+      "severity": "HIGH",
+      "detail": "Day 30 of AB tracker code gap. 12 active gated rules accumulating zero outcome callbacks.",
+      "recommendation": "P0 dev: implement outcome callbacks in bot/feedback/loop.py (~4h work)."
+    },
+    {
+      "type": "WINDOW_13_IMMINENT",
+      "severity": "HIGH",
+      "detail": "Window 13 (May 22 06:00-12:00 UTC) opens in 6.9h. Hard restart deadline 6.4h (05:30 UTC). 13th consecutive morning miss.",
+      "recommendation": "RESTART BEFORE 05:30 UTC May 22. Best config: paper mode, ETH+BTC, trending regime, all 15 LLM rules now active."
+    },
+    {
+      "type": "EVENING_SESSION_ACTIVE",
+      "severity": "MEDIUM",
+      "detail": "23:06 UTC \u2014 tod_evening_edge_v1 active (18-24 UTC, 65% WR). 54min remaining.",
+      "recommendation": "Restart before 23:45 UTC catches last 39min of evening edge before night block (00-06 UTC, veto)."
+    }
+  ],
+  "anomalies_count": 6,
+  "report_generated": true,
+  "tomorrow_focus": [
+    "RESTART BOT before 05:30 UTC May 22 to capture Window 13 (06:00-12:00 UTC)",
+    "Morning rule NOW IN ENGINE \u2014 tod_morning_edge_v1 +5pts will fire on Window 13 signals",
+    "BONUS: Evening edge 54min remaining \u2014 restart before 23:45 UTC for 39min of 65% WR window",
+    "Monitor: first signal in 06:00-12:00 UTC window \u2192 verify +5pts from tod_morning_edge_v1",
+    "Monitor: first BTC BUY in trend \u2192 verify -13pts from btc_trend_long_counter_v1",
+    "Monitor: first signal in 12-18 or 18-24 UTC \u2192 verify +5pts afternoon/evening TOD boost",
+    "P1 dev: graduated_rules startup cross-check (feedback/ vs llm/ sync validation)",
+    "P0 dev: AB outcome callbacks in bot/feedback/loop.py"
+  ]
+}

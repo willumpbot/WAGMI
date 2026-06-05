@@ -146,47 +146,75 @@ class BacktestLLMIntegration:
         """
         result = PreflightResult(passed=True)
 
-        # 1. API key check
-        try:
-            from llm.client import get_client
-            client = get_client()
-            if client is None:
+        # 1. API key check — allow CLI path (USE_CLI_LLM=true) to bypass API key requirement
+        use_cli_llm = os.getenv("USE_CLI_LLM", "").lower() in ("true", "1", "yes")
+        if use_cli_llm:
+            logger.info("[PREFLIGHT] USE_CLI_LLM=true detected — skipping API key check, using claude CLI")
+        else:
+            try:
+                from llm.client import get_client
+                client = get_client()
+                if client is None:
+                    result.passed = False
+                    result.errors.append(
+                        "ANTHROPIC_API_KEY not set or anthropic package not installed. "
+                        "No API calls possible."
+                    )
+                    return result
+            except Exception as e:
                 result.passed = False
-                result.errors.append(
-                    "ANTHROPIC_API_KEY not set or anthropic package not installed. "
-                    "No API calls possible."
-                )
+                result.errors.append(f"Failed to initialize API client: {e}")
                 return result
-        except Exception as e:
-            result.passed = False
-            result.errors.append(f"Failed to initialize API client: {e}")
-            return result
 
-        # 2. API ping (one cheap Haiku call)
-        try:
-            from llm.client import call_llm
-            text, usage = call_llm(
-                system_prompt="Reply with exactly: OK",
-                snapshot_json="{}",
-                model="claude-haiku-4-5",
-                max_tokens=8,
-                max_retries=1,
-                timeout=15.0,
-            )
-            if text is None:
-                result.passed = False
-                error_msg = usage.get("error", "unknown error")
-                result.errors.append(
-                    f"API ping failed: {error_msg}. "
-                    "Check your API key and network connection."
+        # 2. API ping (one cheap Haiku call) — for CLI path, do a session-limit check
+        if use_cli_llm:
+            # Test the CLI session with a minimal call to detect session-limit 429 early.
+            # Without this, the backtest runs all candles with every LLM call failing silently.
+            try:
+                from llm.claude_cli_client import call_agent as _cli_ping
+                ping = _cli_ping(
+                    user_prompt='{"ping":1}',
+                    system_prompt="Reply with exactly: {\"ok\":true}",
+                    model="haiku",
+                    max_budget_usd=0.01,
+                    timeout=30,
                 )
-                return result
-            ping_cost = self._compute_cost_from_usage(usage)
-            self.total_cost_usd += ping_cost
-            logger.info(f"[PREFLIGHT] API ping OK (cost: ${ping_cost:.6f})")
-        except Exception as e:
-            result.passed = False
-            result.errors.append(f"API ping failed with exception: {e}")
+                if not ping.ok and ("session limit" in (ping.error or "").lower() or "429" in (ping.error or "")):
+                    result.passed = False
+                    result.errors.append(
+                        f"CLI SESSION LIMIT HIT — all LLM calls will fail. "
+                        f"Retry after session resets (error: {ping.error[:120]})"
+                    )
+                    return result
+                logger.info(f"[PREFLIGHT] CLI session OK (latency {ping.latency_s:.1f}s)")
+            except Exception as e:
+                result.warnings.append(f"CLI session ping failed (non-fatal): {e}")
+
+        else:
+            try:
+                from llm.client import call_llm
+                text, usage = call_llm(
+                    system_prompt="Reply with exactly: OK",
+                    snapshot_json="{}",
+                    model="claude-haiku-4-5",
+                    max_tokens=8,
+                    max_retries=1,
+                    timeout=15.0,
+                )
+                if text is None:
+                    result.passed = False
+                    error_msg = usage.get("error", "unknown error")
+                    result.errors.append(
+                        f"API ping failed: {error_msg}. "
+                        "Check your API key and network connection."
+                    )
+                    return result
+                ping_cost = self._compute_cost_from_usage(usage)
+                self.total_cost_usd += ping_cost
+                logger.info(f"[PREFLIGHT] API ping OK (cost: ${ping_cost:.6f})")
+            except Exception as e:
+                result.passed = False
+                result.errors.append(f"API ping failed with exception: {e}")
             return result
 
         # 3. Data validation
@@ -266,10 +294,11 @@ class BacktestLLMIntegration:
             result.errors.append(f"Snapshot builder failed: {e}")
             return result
 
-        # 6. Coordinator instantiation
+        # 6. Coordinator instantiation — use env-var-aware factory so that
+        # AGENT_*_ENABLED flags (e.g. AGENT_QUANT_ENABLED=false) are honoured.
         try:
-            from llm.agents.coordinator import AgentCoordinator
-            self._coordinator = AgentCoordinator()
+            from llm.agents.coordinator import get_coordinator
+            self._coordinator = get_coordinator()
             logger.info("[PREFLIGHT] AgentCoordinator instantiated OK")
         except Exception as e:
             result.passed = False
@@ -366,15 +395,17 @@ class BacktestLLMIntegration:
         if not snapshot_data or not signal:
             return True
 
-        # Check signal confidence — solo signals below 55% almost always get
-        # quant_noise vetoed. Save the ~$0.007 API call.
+        # Check signal confidence — solo signals below floor almost always get vetoed.
+        # Threshold reads from ENSEMBLE_CONFIDENCE_FLOOR (default 55% if not set).
+        # In OVERDRIVE/paper-trading mode with floor=20, solo signals down to 20% pass through.
+        _solo_floor = float(os.getenv("ENSEMBLE_CONFIDENCE_FLOOR", "55")) / 100.0
         markets = snapshot_data.get("m", [])
         if markets:
             sigs = markets[0].get("sg", [])
             if sigs and len(sigs) == 1:
                 # Solo strategy signal — check confidence
                 sig_conf = sigs[0].get("c", 0)
-                if sig_conf < 0.55:
+                if sig_conf < _solo_floor:
                     return True
 
         return False

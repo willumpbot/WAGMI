@@ -1,0 +1,1366 @@
+{
+  "ensemble": {
+    "total": 131,
+    "wins": 51,
+    "pnl": 2822.435554481799,
+    "by_regime": {
+      "trending": {
+        "wins": 13,
+        "total": 25,
+        "pnl": 92.34182828330194
+      },
+      "illiquid": {
+        "wins": 16,
+        "total": 57,
+        "pnl": -82.62858656510538
+      },
+      "ranging": {
+        "wins": 4,
+        "total": 16,
+        "pnl": -46.42920712638233
+      },
+      "": {
+        "wins": 11,
+        "total": 25,
+        "pnl": 183.65325808998213
+      },
+      "unknown": {
+        "wins": 7,
+        "total": 8,
+        "pnl": 2675.4982618000026
+      }
+    },
+    "by_symbol": {
+      "HYPE": {
+        "wins": 13,
+        "total": 43,
+        "pnl": 452.39754487375296
+      },
+      "BTC": {
+        "wins": 7,
+        "total": 23,
+        "pnl": 11.99779540852817
+      },
+      "ETH": {
+        "wins": 14,
+        "total": 27,
+        "pnl": 401.2253239555795
+      },
+      "SOL": {
+        "wins": 17,
+        "total": 38,
+        "pnl": 1956.8148902439386
+      }
+    },
+    "by_side": {
+      "LONG": {
+        "wins": 31,
+        "total": 95,
+        "pnl": 306.3645218930966
+      },
+      "SHORT": {
+        "wins": 20,
+        "total": 36,
+        "pnl": 2516.0710325887026
+      }
+    },
+    "by_hour": {
+      "0": {
+        "note": "Prime hours (18-06 UTC)",
+        "edge": "high"
+      },
+      "1": {
+        "note": "Prime hours",
+        "edge": "high"
+      },
+      "2": {
+        "note": "Prime hours",
+        "edge": "high"
+      },
+      "3": {
+        "note": "Prime hours",
+        "edge": "high"
+      },
+      "4": {
+        "note": "Prime hours",
+        "edge": "high"
+      },
+      "5": {
+        "note": "Prime hours",
+        "edge": "high"
+      },
+      "18": {
+        "note": "Prime hours",
+        "edge": "high"
+      },
+      "19": {
+        "note": "Prime hours (best)",
+        "edge": "highest"
+      },
+      "20": {
+        "note": "Prime hours",
+        "edge": "high"
+      },
+      "21": {
+        "note": "Prime hours",
+        "edge": "high"
+      },
+      "22": {
+        "note": "Prime hours",
+        "edge": "high"
+      },
+      "23": {
+        "note": "Prime hours",
+        "edge": "high"
+      },
+      "6": {
+        "note": "Weak hours (06-18 UTC)",
+        "edge": "low"
+      },
+      "12": {
+        "note": "Weak hours",
+        "edge": "low"
+      }
+    },
+    "confidence_vs_actual": [
+      {
+        "predicted": 83.65643545797802,
+        "actual": 0.0
+      },
+      {
+        "predicted": 77.33441888394697,
+        "actual": 0.0
+      },
+      {
+        "predicted": 78.50949581489802,
+        "actual": 0.0
+      },
+      {
+        "predicted": 79.94834756296171,
+        "actual": 1.0
+      },
+      {
+        "predicted": 85.46528527110496,
+        "actual": 1.0
+      },
+      {
+        "predicted": 61.192675537365595,
+        "actual": 0.0
+      },
+      {
+        "predicted": 80.40052775048856,
+        "actual": 0.0
+      },
+      {
+        "predicted": 80.40052775048856,
+        "actual": 0.0
+      },
+      {
+        "predicted": 80.40052775048856,
+        "actual": 0.0
+      },
+      {
+        "predicted": 55.782250059013684,
+        "actual": 0.0
+      },
+      {
+        "predicted": 80.75698080785581,
+        "actual": 0.0
+      },
+      {
+        "predicted": 74.27993187473031,
+        "actual": 1.0
+      },
+      {
+        "predicted": 59.89532220589673,
+        "actual": 1.0
+      },
+      {
+        "predicted": 37.21899708431782,
+        "actual": 1.0
+      },
+      {
+        "predicted": 37.21899708431782,
+        "actual": 0.0
+      },
+      {
+        "predicted": 22.204408796388,
+        "actual": 0.0
+      },
+      {
+        "predicted": 48.7397818703714,
+        "actual": 0.0
+      },
+      {
+        "predicted": 49.05906632725423,
+        "actual": 1.0
+      },
+      {
+        "predicted": 61.252402253745274,
+        "actual": 0.0
+      },
+      {
+        "predicted": 29.429390753071154,
+        "actual": 1.0
+      },
+      {
+        "predicted": 49.37057998834723,
+        "actual": 1.0
+      },
+      {
+        "predicted": 52.86195987669838,
+        "actual": 0.0
+      },
+      {
+        "predicted": 61.08125206151692,
+        "actual": 1.0
+      },
+      {
+        "predicted": 71.2880611310675,
+        "actual": 0.0
+      },
+      {
+        "predicted": 62.224173152916855,
+        "actual": 1.0
+      },
+      {
+        "predicted": 67.99754289787325,
+        "actual": 1.0
+      },
+      {
+        "predicted": 40.482435451630124,
+        "actual": 1.0
+      },
+      {
+        "predicted": 59.91035721375887,
+        "actual": 0.0
+      },
+      {
+        "predicted": 51.59077121587259,
+        "actual": 0.0
+      },
+      {
+        "predicted": 70.89367334364654,
+        "actual": 0.0
+      },
+      {
+        "predicted": 59.535115024822645,
+        "actual": 1.0
+      },
+      {
+        "predicted": 53.22136062102379,
+        "actual": 1.0
+      },
+      {
+        "predicted": 71.36241824112025,
+        "actual": 0.0
+      },
+      {
+        "predicted": 74.18461125520632,
+        "actual": 0.0
+      },
+      {
+        "predicted": 54.44114019528514,
+        "actual": 1.0
+      },
+      {
+        "predicted": 63.10597888115253,
+        "actual": 0.0
+      },
+      {
+        "predicted": 49.79621393685854,
+        "actual": 0.0
+      },
+      {
+        "predicted": 52.46464535964042,
+        "actual": 0.0
+      },
+      {
+        "predicted": 51.245615679850594,
+        "actual": 0.0
+      },
+      {
+        "predicted": 46.62869092816336,
+        "actual": 0.0
+      },
+      {
+        "predicted": 42.31672206878541,
+        "actual": 1.0
+      },
+      {
+        "predicted": 27.899688153606647,
+        "actual": 0.0
+      },
+      {
+        "predicted": 43.620036029703826,
+        "actual": 0.0
+      },
+      {
+        "predicted": 54.482550671006024,
+        "actual": 1.0
+      },
+      {
+        "predicted": 41.385244676639985,
+        "actual": 0.0
+      },
+      {
+        "predicted": 34.53107636436281,
+        "actual": 0.0
+      },
+      {
+        "predicted": 43.87307606558384,
+        "actual": 0.0
+      },
+      {
+        "predicted": 63.32834812248984,
+        "actual": 1.0
+      },
+      {
+        "predicted": 61.765210986607315,
+        "actual": 1.0
+      },
+      {
+        "predicted": 35.074463376777295,
+        "actual": 0.0
+      },
+      {
+        "predicted": 37.525675646983096,
+        "actual": 0.0
+      },
+      {
+        "predicted": 53.27591075922944,
+        "actual": 0.0
+      },
+      {
+        "predicted": 66.92935312629625,
+        "actual": 1.0
+      },
+      {
+        "predicted": 45.305172951646014,
+        "actual": 1.0
+      },
+      {
+        "predicted": 54.87111838488776,
+        "actual": 0.0
+      },
+      {
+        "predicted": 55.596380863760984,
+        "actual": 0.0
+      },
+      {
+        "predicted": 57.64007199024899,
+        "actual": 1.0
+      },
+      {
+        "predicted": 61.39262552792841,
+        "actual": 0.0
+      },
+      {
+        "predicted": 63.37611556752231,
+        "actual": 0.0
+      },
+      {
+        "predicted": 40.90854501834921,
+        "actual": 0.0
+      },
+      {
+        "predicted": 52.7983690057127,
+        "actual": 0.0
+      },
+      {
+        "predicted": 44.58119124094554,
+        "actual": 0.0
+      },
+      {
+        "predicted": 52.378399092618636,
+        "actual": 1.0
+      },
+      {
+        "predicted": 50.047545076402116,
+        "actual": 1.0
+      },
+      {
+        "predicted": 41.18064591937959,
+        "actual": 1.0
+      },
+      {
+        "predicted": 52.87796774150541,
+        "actual": 1.0
+      },
+      {
+        "predicted": 48.879294581974975,
+        "actual": 1.0
+      },
+      {
+        "predicted": 54.22915710525511,
+        "actual": 0.0
+      },
+      {
+        "predicted": 41.00888564985997,
+        "actual": 0.0
+      },
+      {
+        "predicted": 70.4560852482634,
+        "actual": 1.0
+      },
+      {
+        "predicted": 45.64587520356873,
+        "actual": 0.0
+      },
+      {
+        "predicted": 42.20311546158334,
+        "actual": 0.0
+      },
+      {
+        "predicted": 69.66126970918941,
+        "actual": 1.0
+      },
+      {
+        "predicted": 74.11848650668738,
+        "actual": 0.0
+      },
+      {
+        "predicted": 69.66129552180864,
+        "actual": 0.0
+      },
+      {
+        "predicted": 69.66129552180864,
+        "actual": 0.0
+      },
+      {
+        "predicted": 61.28871732406313,
+        "actual": 1.0
+      },
+      {
+        "predicted": 65.29408656233701,
+        "actual": 0.0
+      },
+      {
+        "predicted": 67.91909084338751,
+        "actual": 0.0
+      },
+      {
+        "predicted": 62.41820452860048,
+        "actual": 0.0
+      },
+      {
+        "predicted": 64.8750460008301,
+        "actual": 0.0
+      },
+      {
+        "predicted": 69.58933858478065,
+        "actual": 0.0
+      },
+      {
+        "predicted": 75.42054024784849,
+        "actual": 0.0
+      },
+      {
+        "predicted": 64.21897524824966,
+        "actual": 1.0
+      },
+      {
+        "predicted": 60.021639324883964,
+        "actual": 0.0
+      },
+      {
+        "predicted": 63.451034519473694,
+        "actual": 1.0
+      },
+      {
+        "predicted": 66.3558586155628,
+        "actual": 1.0
+      },
+      {
+        "predicted": 73.64052119636376,
+        "actual": 0.0
+      },
+      {
+        "predicted": 71.87841596790699,
+        "actual": 0.0
+      },
+      {
+        "predicted": 64.41438530063891,
+        "actual": 0.0
+      },
+      {
+        "predicted": 63.79508905153702,
+        "actual": 0.0
+      },
+      {
+        "predicted": 66.10055148800211,
+        "actual": 0.0
+      },
+      {
+        "predicted": 67.39754438167553,
+        "actual": 0.0
+      },
+      {
+        "predicted": 68.15167131001063,
+        "actual": 0.0
+      },
+      {
+        "predicted": 70.33580296070771,
+        "actual": 0.0
+      },
+      {
+        "predicted": 65.17433441320226,
+        "actual": 1.0
+      },
+      {
+        "predicted": 68.51715004329262,
+        "actual": 0.0
+      },
+      {
+        "predicted": 70.73671570668755,
+        "actual": 1.0
+      },
+      {
+        "predicted": 74.70965279591083,
+        "actual": 0.0
+      },
+      {
+        "predicted": 68.05391408113111,
+        "actual": 0.0
+      },
+      {
+        "predicted": 70.81919361877331,
+        "actual": 0.0
+      },
+      {
+        "predicted": 70.58997932050501,
+        "actual": 0.0
+      },
+      {
+        "predicted": 69.65445634136732,
+        "actual": 1.0
+      },
+      {
+        "predicted": 66.4882686350321,
+        "actual": 0.0
+      },
+      {
+        "predicted": 69.35436950113214,
+        "actual": 0.0
+      },
+      {
+        "predicted": 72.35822458409376,
+        "actual": 1.0
+      },
+      {
+        "predicted": 75.17126776848728,
+        "actual": 1.0
+      },
+      {
+        "predicted": 77.83712442511866,
+        "actual": 1.0
+      },
+      {
+        "predicted": 81.3106425593066,
+        "actual": 0.0
+      },
+      {
+        "predicted": 69.2855869302667,
+        "actual": 0.0
+      },
+      {
+        "predicted": 68.53621760522738,
+        "actual": 0.0
+      },
+      {
+        "predicted": 65.5865500778298,
+        "actual": 1.0
+      },
+      {
+        "predicted": 72.30029333753744,
+        "actual": 0.0
+      },
+      {
+        "predicted": 66.14894185198463,
+        "actual": 0.0
+      },
+      {
+        "predicted": 76.16571642704638,
+        "actual": 1.0
+      },
+      {
+        "predicted": 67.70249015539696,
+        "actual": 1.0
+      },
+      {
+        "predicted": 70.48766976882322,
+        "actual": 0.0
+      },
+      {
+        "predicted": 69.8427703015055,
+        "actual": 0.0
+      },
+      {
+        "predicted": 67.23492788521818,
+        "actual": 0.0
+      },
+      {
+        "predicted": 76.94110327704188,
+        "actual": 0.0
+      },
+      {
+        "predicted": 76.32000000000001,
+        "actual": 1.0
+      },
+      {
+        "predicted": 76.32000000000001,
+        "actual": 1.0
+      },
+      {
+        "predicted": 69.3,
+        "actual": 1.0
+      },
+      {
+        "predicted": 83.7,
+        "actual": 0.0
+      },
+      {
+        "predicted": 76.32000000000001,
+        "actual": 1.0
+      },
+      {
+        "predicted": 79.5,
+        "actual": 1.0
+      },
+      {
+        "predicted": 69.01,
+        "actual": 1.0
+      },
+      {
+        "predicted": 76.32000000000001,
+        "actual": 1.0
+      },
+      {
+        "predicted": 61.015201066522415,
+        "actual": 0.0
+      },
+      {
+        "predicted": 53.915971173634176,
+        "actual": 1.0
+      },
+      {
+        "predicted": 53.92453834610648,
+        "actual": 1.0
+      }
+    ],
+    "strengths": [
+      "Strong in unknown (88% WR, 8 trades)"
+    ],
+    "weaknesses": [
+      "Weak in illiquid (28% WR, 57 trades)",
+      "Weak in ranging (25% WR, 16 trades)",
+      "Weak LONGs (33% WR)"
+    ],
+    "by_symbol_side": {
+      "HYPE_LONG": {
+        "wins": 11,
+        "total": 35,
+        "pnl": 468.03998864939956
+      },
+      "BTC_SHORT": {
+        "wins": 4,
+        "total": 7,
+        "pnl": 70.40435631763286
+      },
+      "ETH_LONG": {
+        "wins": 8,
+        "total": 20,
+        "pnl": 73.4580215798157
+      },
+      "HYPE_SHORT": {
+        "wins": 2,
+        "total": 8,
+        "pnl": -15.642443775646445
+      },
+      "BTC_LONG": {
+        "wins": 3,
+        "total": 16,
+        "pnl": -58.40656090910466
+      },
+      "ETH_SHORT": {
+        "wins": 6,
+        "total": 7,
+        "pnl": 327.7673023757638
+      },
+      "SOL_LONG": {
+        "wins": 9,
+        "total": 24,
+        "pnl": -176.72692742701395
+      },
+      "SOL_SHORT": {
+        "wins": 8,
+        "total": 14,
+        "pnl": 2133.5418176709527
+      }
+    },
+    "by_symbol_regime": {
+      "HYPE_trending": {
+        "wins": 2,
+        "total": 7,
+        "pnl": -16.841788336723774
+      },
+      "BTC_illiquid": {
+        "wins": 3,
+        "total": 13,
+        "pnl": -12.483978204720902
+      },
+      "BTC_trending": {
+        "wins": 4,
+        "total": 5,
+        "pnl": 44.88083027376741
+      },
+      "ETH_ranging": {
+        "wins": 2,
+        "total": 4,
+        "pnl": 12.602169981977983
+      },
+      "HYPE_": {
+        "wins": 5,
+        "total": 8,
+        "pnl": 34.18655593312354
+      },
+      "BTC_": {
+        "wins": 0,
+        "total": 4,
+        "pnl": -19.31852137748648
+      },
+      "ETH_": {
+        "wins": 4,
+        "total": 7,
+        "pnl": 330.400196129316
+      },
+      "SOL_": {
+        "wins": 2,
+        "total": 6,
+        "pnl": -161.6149725949709
+      },
+      "BTC_ranging": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -1.0805352830318453
+      },
+      "HYPE_ranging": {
+        "wins": 1,
+        "total": 6,
+        "pnl": -30.291641160973107
+      },
+      "SOL_illiquid": {
+        "wins": 8,
+        "total": 17,
+        "pnl": -11.208912589046111
+      },
+      "ETH_illiquid": {
+        "wins": 3,
+        "total": 9,
+        "pnl": -8.201492409662347
+      },
+      "ETH_trending": {
+        "wins": 5,
+        "total": 7,
+        "pnl": 66.4244502539479
+      },
+      "SOL_trending": {
+        "wins": 2,
+        "total": 6,
+        "pnl": -2.1216639076895802
+      },
+      "SOL_ranging": {
+        "wins": 1,
+        "total": 5,
+        "pnl": -27.659200664355357
+      },
+      "HYPE_illiquid": {
+        "wins": 2,
+        "total": 18,
+        "pnl": -50.73420336167604
+      },
+      "HYPE_unknown": {
+        "wins": 3,
+        "total": 4,
+        "pnl": 516.0786218000025
+      },
+      "SOL_unknown": {
+        "wins": 4,
+        "total": 4,
+        "pnl": 2159.4196400000005
+      }
+    }
+  },
+  "_quant_backtest_2026_03_26": {
+    "note": "Validated via 30-day 1h OHLCV backtest. Supersedes early live data (3 trades from broken pipeline).",
+    "HYPE_BUY": {
+      "total": 36,
+      "wins": 21,
+      "wr": 58.3,
+      "pf": 1.61,
+      "best_hours_utc": "18-06",
+      "best_hour_wr": 62.0,
+      "best_hour_pf": 2.19,
+      "median_mfe_pct": 3.6,
+      "median_mae_pct": 2.1,
+      "optimal_sl_pct": 2.5,
+      "optimal_tp_pct": 3.75,
+      "rsi_sweet_spot": "35-65",
+      "verdict": "CONFIRMED_EDGE"
+    },
+    "SOL_SELL": {
+      "total": 36,
+      "wins": 17,
+      "wr": 47.0,
+      "pf": 0.82,
+      "verdict": "MARGINAL_NEEDS_DATA"
+    },
+    "BTC_BUY": {
+      "total": 36,
+      "wins": 20,
+      "wr": 56.0,
+      "pf": 1.4,
+      "verdict": "PROMISING_NOT_PROVEN"
+    },
+    "HYPE_SELL": {
+      "verdict": "NEGATIVE_EV_BLOCKED"
+    },
+    "BTC_SELL": {
+      "verdict": "NEGATIVE_EV_BLOCKED"
+    }
+  },
+  "sniper_premium": {
+    "total": 20,
+    "wins": 6,
+    "pnl": -99.83332332823966,
+    "by_regime": {
+      "": {
+        "wins": 6,
+        "total": 20,
+        "pnl": -99.83332332823966
+      }
+    },
+    "by_symbol": {
+      "SOL": {
+        "wins": 6,
+        "total": 20,
+        "pnl": -99.83332332823966
+      }
+    },
+    "by_side": {
+      "SHORT": {
+        "wins": 6,
+        "total": 20,
+        "pnl": -99.83332332823966
+      }
+    },
+    "by_hour": {},
+    "confidence_vs_actual": [
+      {
+        "predicted": 76.0,
+        "actual": 1.0
+      },
+      {
+        "predicted": 76.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 70.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 65.0,
+        "actual": 1.0
+      },
+      {
+        "predicted": 70.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 66.0,
+        "actual": 1.0
+      },
+      {
+        "predicted": 60.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 65.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 76.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 66.0,
+        "actual": 1.0
+      },
+      {
+        "predicted": 76.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 76.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 76.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 66.0,
+        "actual": 1.0
+      },
+      {
+        "predicted": 66.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 61.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 66.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 76.0,
+        "actual": 0.0
+      },
+      {
+        "predicted": 76.0,
+        "actual": 1.0
+      },
+      {
+        "predicted": 76.0,
+        "actual": 0.0
+      }
+    ],
+    "strengths": [],
+    "weaknesses": [
+      "Weak in  (30% WR, 20 trades)",
+      "Poor on SOL (30% WR)",
+      "Weak SHORTs (30% WR)"
+    ],
+    "by_symbol_side": {
+      "SOL_SHORT": {
+        "wins": 6,
+        "total": 20,
+        "pnl": -99.83332332823966
+      }
+    },
+    "by_symbol_regime": {
+      "SOL_": {
+        "wins": 6,
+        "total": 20,
+        "pnl": -99.83332332823966
+      }
+    }
+  },
+  "omniscient_integrated": {
+    "total": 9,
+    "wins": 2,
+    "pnl": -647.2840001941257,
+    "by_regime": {
+      "ranging": {
+        "wins": 1,
+        "total": 5,
+        "pnl": -216.36676677871952
+      },
+      "illiquid": {
+        "wins": 1,
+        "total": 4,
+        "pnl": -430.9172334154061
+      }
+    },
+    "by_symbol": {
+      "BTC": {
+        "wins": 0,
+        "total": 2,
+        "pnl": -3.378617144925142
+      },
+      "ETH": {
+        "wins": 2,
+        "total": 7,
+        "pnl": -643.9053830492005
+      }
+    },
+    "by_side": {
+      "SHORT": {
+        "wins": 2,
+        "total": 9,
+        "pnl": -647.2840001941257
+      }
+    },
+    "by_hour": {},
+    "confidence_vs_actual": [
+      {
+        "predicted": 24.474031224244655,
+        "actual": 0.0
+      },
+      {
+        "predicted": 29.502542400007215,
+        "actual": 0.0
+      },
+      {
+        "predicted": 28.34203488760118,
+        "actual": 1.0
+      },
+      {
+        "predicted": 30.790733001470983,
+        "actual": 1.0
+      },
+      {
+        "predicted": 40.207946340258374,
+        "actual": 0.0
+      },
+      {
+        "predicted": 31.027422421372634,
+        "actual": 0.0
+      },
+      {
+        "predicted": 31.01630643102135,
+        "actual": 0.0
+      },
+      {
+        "predicted": 30.279691938348016,
+        "actual": 0.0
+      },
+      {
+        "predicted": 26.181899965655134,
+        "actual": 0.0
+      }
+    ],
+    "strengths": [],
+    "weaknesses": [],
+    "by_symbol_side": {
+      "BTC_SHORT": {
+        "wins": 0,
+        "total": 2,
+        "pnl": -3.378617144925142
+      },
+      "ETH_SHORT": {
+        "wins": 2,
+        "total": 7,
+        "pnl": -643.9053830492005
+      }
+    },
+    "by_symbol_regime": {
+      "BTC_ranging": {
+        "wins": 0,
+        "total": 2,
+        "pnl": -3.378617144925142
+      },
+      "ETH_ranging": {
+        "wins": 1,
+        "total": 3,
+        "pnl": -212.9881496337944
+      },
+      "ETH_illiquid": {
+        "wins": 1,
+        "total": 4,
+        "pnl": -430.9172334154061
+      }
+    }
+  },
+  "trend_breakout": {
+    "total": 12,
+    "wins": 5,
+    "pnl": -325.02550442063534,
+    "by_regime": {
+      "illiquid": {
+        "wins": 5,
+        "total": 11,
+        "pnl": -274.0630953405241
+      },
+      "trending": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -50.9624090801112
+      }
+    },
+    "by_symbol": {
+      "BTC": {
+        "wins": 1,
+        "total": 2,
+        "pnl": 19.326135650886513
+      },
+      "ETH": {
+        "wins": 4,
+        "total": 8,
+        "pnl": -33.61644430210508
+      },
+      "SOL": {
+        "wins": 0,
+        "total": 2,
+        "pnl": -310.73519576941646
+      }
+    },
+    "by_side": {
+      "LONG": {
+        "wins": 0,
+        "total": 7,
+        "pnl": -1037.5795702755363
+      },
+      "SHORT": {
+        "wins": 5,
+        "total": 5,
+        "pnl": 712.554065854901
+      }
+    },
+    "by_hour": {},
+    "confidence_vs_actual": [
+      {
+        "predicted": 72.76607217564217,
+        "actual": 0.0
+      },
+      {
+        "predicted": 72.69319675921818,
+        "actual": 0.0
+      },
+      {
+        "predicted": 72.83835912668424,
+        "actual": 0.0
+      },
+      {
+        "predicted": 61.015201066522415,
+        "actual": 0.0
+      },
+      {
+        "predicted": 72.57390014211694,
+        "actual": 0.0
+      },
+      {
+        "predicted": 61.05267665821045,
+        "actual": 0.0
+      },
+      {
+        "predicted": 53.6415583215536,
+        "actual": 1.0
+      },
+      {
+        "predicted": 53.92453834610648,
+        "actual": 1.0
+      },
+      {
+        "predicted": 53.915971173634176,
+        "actual": 1.0
+      },
+      {
+        "predicted": 53.91522186305682,
+        "actual": 1.0
+      },
+      {
+        "predicted": 47.102133898284094,
+        "actual": 1.0
+      },
+      {
+        "predicted": 49.09893561838831,
+        "actual": 0.0
+      }
+    ],
+    "strengths": [
+      "Strong SHORTs (100% WR)"
+    ],
+    "weaknesses": [
+      "Weak LONGs (0% WR)"
+    ],
+    "by_symbol_side": {
+      "BTC_LONG": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -125.96318736815981
+      },
+      "ETH_LONG": {
+        "wins": 0,
+        "total": 4,
+        "pnl": -600.8811871379598
+      },
+      "SOL_LONG": {
+        "wins": 0,
+        "total": 2,
+        "pnl": -310.73519576941646
+      },
+      "ETH_SHORT": {
+        "wins": 4,
+        "total": 4,
+        "pnl": 567.2647428358547
+      },
+      "BTC_SHORT": {
+        "wins": 1,
+        "total": 1,
+        "pnl": 145.28932301904632
+      }
+    },
+    "by_symbol_regime": {
+      "BTC_illiquid": {
+        "wins": 1,
+        "total": 2,
+        "pnl": 19.326135650886513
+      },
+      "ETH_illiquid": {
+        "wins": 4,
+        "total": 7,
+        "pnl": 17.34596477800612
+      },
+      "SOL_illiquid": {
+        "wins": 0,
+        "total": 2,
+        "pnl": -310.73519576941646
+      },
+      "ETH_trending": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -50.9624090801112
+      }
+    }
+  },
+  "confidence_scorer": {
+    "total": 1,
+    "wins": 1,
+    "pnl": 145.28932301904632,
+    "by_regime": {
+      "illiquid": {
+        "wins": 1,
+        "total": 1,
+        "pnl": 145.28932301904632
+      }
+    },
+    "by_symbol": {
+      "BTC": {
+        "wins": 1,
+        "total": 1,
+        "pnl": 145.28932301904632
+      }
+    },
+    "by_side": {
+      "SHORT": {
+        "wins": 1,
+        "total": 1,
+        "pnl": 145.28932301904632
+      }
+    },
+    "by_hour": {},
+    "confidence_vs_actual": [
+      {
+        "predicted": 47.102133898284094,
+        "actual": 1.0
+      }
+    ],
+    "strengths": [],
+    "weaknesses": [],
+    "by_symbol_side": {
+      "BTC_SHORT": {
+        "wins": 1,
+        "total": 1,
+        "pnl": 145.28932301904632
+      }
+    },
+    "by_symbol_regime": {
+      "BTC_illiquid": {
+        "wins": 1,
+        "total": 1,
+        "pnl": 145.28932301904632
+      }
+    }
+  },
+  "multi_tier_quality": {
+    "total": 1,
+    "wins": 0,
+    "pnl": -50.9624090801112,
+    "by_regime": {
+      "trending": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -50.9624090801112
+      }
+    },
+    "by_symbol": {
+      "ETH": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -50.9624090801112
+      }
+    },
+    "by_side": {
+      "LONG": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -50.9624090801112
+      }
+    },
+    "by_hour": {},
+    "confidence_vs_actual": [
+      {
+        "predicted": 49.09893561838831,
+        "actual": 0.0
+      }
+    ],
+    "strengths": [],
+    "weaknesses": [],
+    "by_symbol_side": {
+      "ETH_LONG": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -50.9624090801112
+      }
+    },
+    "by_symbol_regime": {
+      "ETH_trending": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -50.9624090801112
+      }
+    }
+  },
+  "sniper_standard": {
+    "total": 1,
+    "wins": 0,
+    "pnl": -77.99223587208397,
+    "by_regime": {
+      "": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -77.99223587208397
+      }
+    },
+    "by_symbol": {
+      "ETH": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -77.99223587208397
+      }
+    },
+    "by_side": {
+      "LONG": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -77.99223587208397
+      }
+    },
+    "by_hour": {},
+    "confidence_vs_actual": [
+      {
+        "predicted": 100.0,
+        "actual": 0.0
+      }
+    ],
+    "strengths": [],
+    "weaknesses": [],
+    "by_symbol_side": {
+      "ETH_LONG": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -77.99223587208397
+      }
+    },
+    "by_symbol_regime": {
+      "ETH_": {
+        "wins": 0,
+        "total": 1,
+        "pnl": -77.99223587208397
+      }
+    }
+  }
+}

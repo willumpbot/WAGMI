@@ -134,6 +134,7 @@ class DataFetcher:
         self.cache_ttl = cache_ttl
         self.backtest_mode = backtest_mode
         self.backtest_days = backtest_days
+        self.backtest_end_date: Optional[str] = None  # set by engine when --start-date provided
         self._fresh = fresh  # --fresh flag: skip disk cache, re-fetch
         self._cache: Dict[str, tuple] = {}
         self._lock = threading.Lock()
@@ -306,6 +307,11 @@ class DataFetcher:
                         )
                         ex.session.mount("https://", adapter)
                         ex.session.mount("http://", adapter)
+                    # Workaround for CCXT 4.5.37: Hyperliquid fetch_spot_markets
+                    # crashes when a new token has no mapped base currency.
+                    # We only need perp markets, so override spot market loading.
+                    if name == "hyperliquid":
+                        ex.fetch_spot_markets = lambda params=None: []
                     self._exchanges[name] = ex
                 except Exception as e:
                     logger.warning(f"CCXT failed to init {name}: {e}")
@@ -350,10 +356,23 @@ class DataFetcher:
     def _disk_cache_path(self, symbol: str, timeframe: str, days: Optional[int] = None) -> str:
         """Generate disk cache file path for a symbol/timeframe/days combo."""
         d = days or self.backtest_days or 0
-        return os.path.join(self._disk_cache_dir, f"{symbol}_{timeframe}_{d}d.csv")
+        # Include end_date in key so different historical windows don't collide
+        end_tag = ""
+        if self.backtest_end_date:
+            try:
+                import pandas as _pd
+                end_tag = "_" + _pd.Timestamp(self.backtest_end_date).strftime("%Y%m%d")
+            except Exception:
+                pass
+        return os.path.join(self._disk_cache_dir, f"{symbol}_{timeframe}_{d}d{end_tag}.csv")
 
     def _load_disk_cache(self, symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
-        """Load cached data from disk if available and not --fresh."""
+        """Load cached data from disk if available and not --fresh.
+
+        Validates that cached data overlaps the expected backtest window.
+        A cache file that covers the wrong era (e.g. May 2026 data for a
+        Jan 2026 backtest) is treated as a miss and triggers a fresh fetch.
+        """
         if not self.backtest_mode or self._fresh:
             return None
         path = self._disk_cache_path(symbol, timeframe)
@@ -363,6 +382,29 @@ class DataFetcher:
             df = pd.read_csv(path, parse_dates=["time"])
             if df.empty or len(df) < 5:
                 return None
+            # If backtest_end_date is set, verify the data actually covers that window.
+            # A file with the correct date-suffix but wrong contents (from a prior
+            # run using a different exchange fallback) would fail this check and be
+            # re-fetched with correct data.
+            if self.backtest_end_date:
+                try:
+                    import pandas as _pd
+                    end_ts = _pd.Timestamp(self.backtest_end_date, tz="UTC")
+                    # Allow data from up to (days+10) before backtest_end up to end+5d
+                    lookback_days = (self.backtest_days or 30) + 10
+                    window_start = end_ts - _pd.Timedelta(days=lookback_days)
+                    window_end = end_ts + _pd.Timedelta(days=5)
+                    cache_times = _pd.to_datetime(df["time"], utc=True)
+                    overlap = ((cache_times >= window_start) & (cache_times <= window_end)).sum()
+                    if overlap < 5:
+                        logger.warning(
+                            f"[CACHE] {symbol}/{timeframe} disk cache has wrong era "
+                            f"({cache_times.iloc[0].date()} to {cache_times.iloc[-1].date()} "
+                            f"vs expected window ending {end_ts.date()}). Treating as miss."
+                        )
+                        return None
+                except Exception:
+                    pass  # Skip validation on parse error; use cached data
             logger.info(f"[CACHE] Loaded {len(df)} candles for {symbol}/{timeframe} from disk cache")
             return df
         except Exception as e:
@@ -478,8 +520,18 @@ class DataFetcher:
                 )
 
                 # Calculate `since` — always pass it (required for Hyperliquid)
+                # When backtest_end_date is set, anchor to that historical window
+                # instead of current time, enabling true historical backtests.
                 tf_ms = TIMEFRAME_MS.get(fetch_tf, 60 * 60_000)
-                since_ms = int((time.time() * 1000) - (limit * tf_ms))
+                if self.backtest_end_date:
+                    try:
+                        import pandas as _pd
+                        _end_ms = int(_pd.Timestamp(self.backtest_end_date).timestamp() * 1000)
+                    except Exception:
+                        _end_ms = int(time.time() * 1000)
+                else:
+                    _end_ms = int(time.time() * 1000)
+                since_ms = _end_ms - (limit * tf_ms)
 
                 # Rate limit + retry on 429
                 candles = None
@@ -723,7 +775,14 @@ class DataFetcher:
             coin_id: CoinGecko coin ID for fallback (e.g. "bitcoin", "hyperliquid")
             timeframe: "5m", "15m", "30m", "1h", "4h", "6h", "16h", "1d", "daily"
         """
-        cache_key = f"ohlcv:{symbol_name}:{timeframe}"
+        _end_suffix = ""
+        if self.backtest_end_date:
+            try:
+                import pandas as _pd
+                _end_suffix = "_" + _pd.Timestamp(self.backtest_end_date).strftime("%Y%m%d")
+            except Exception:
+                pass
+        cache_key = f"ohlcv:{symbol_name}:{timeframe}{_end_suffix}"
         cached = self._get_cached(cache_key)
         if cached is not None:
             return cached
@@ -770,9 +829,18 @@ class DataFetcher:
         cg_fallback_tfs = []
         tfs_to_fetch = []
 
+        # Build end-date suffix for cache keys (matches fetch_ohlcv logic)
+        _mtf_end_suffix = ""
+        if self.backtest_end_date:
+            try:
+                import pandas as _pd
+                _mtf_end_suffix = "_" + _pd.Timestamp(self.backtest_end_date).strftime("%Y%m%d")
+            except Exception:
+                pass
+
         # Check cache first (in-memory, then disk)
         for tf in timeframes:
-            cache_key = f"ohlcv:{symbol_name}:{tf}"
+            cache_key = f"ohlcv:{symbol_name}:{tf}{_mtf_end_suffix}"
             cached = self._get_cached(cache_key)
             if cached is not None:
                 result[tf] = cached
@@ -797,7 +865,7 @@ class DataFetcher:
                     try:
                         tf, df = fut.result()
                         if df is not None and not df.empty:
-                            self._set_cache(f"ohlcv:{symbol_name}:{tf}", df)
+                            self._set_cache(f"ohlcv:{symbol_name}:{tf}{_mtf_end_suffix}", df)
                             self._save_disk_cache(symbol_name, tf, df)
                             result[tf] = df
                         else:
@@ -943,6 +1011,38 @@ class DataFetcher:
                 logger.debug(f"[{symbol_name}] Funding rate {ex_name}: {e}")
                 continue
         return None
+
+    def fetch_mark_price(self, symbol_name: str) -> tuple:
+        """Fetch mark price and basis (mark - oracle) / oracle for a symbol.
+
+        Returns (mark_price, basis_pct) where basis_pct is a fraction e.g. 0.003 = +0.3%.
+        Positive basis = mark above oracle (market overheated).
+        Negative basis = mark below oracle (fear/deleveraging).
+        Returns (None, None) if not available.
+        """
+        if not self._ccxt_available:
+            return None, None
+
+        chain = self._symbol_exchanges.get(symbol_name, [])
+        for ex_name, pair in chain:
+            exchange = self._exchanges.get(ex_name)
+            if exchange is None:
+                continue
+            try:
+                self._ccxt_requests += 1
+                ticker = exchange.fetch_ticker(pair)
+                info = ticker.get("info", {})
+                mark = info.get("markPx") or info.get("mark_price") or info.get("markPrice")
+                oracle = info.get("oraclePx") or info.get("index_price") or info.get("indexPrice")
+                if mark is not None:
+                    mark = float(mark)
+                    basis = (float(oracle) - mark) / mark if oracle else None
+                    # Note: basis = (oracle - mark)/mark; negative basis means mark > oracle (longs pay)
+                    return mark, basis
+            except Exception as e:
+                logger.debug(f"[{symbol_name}] Mark price {ex_name}: {e}")
+                continue
+        return None, None
 
     def fetch_open_interest(self, symbol_name: str) -> Optional[float]:
         """Fetch current open interest for a symbol via CCXT.

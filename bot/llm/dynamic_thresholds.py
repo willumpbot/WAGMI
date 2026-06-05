@@ -260,7 +260,13 @@ class DynamicThresholds:
           1. symbol.side.regime combo (most specific, requires n >= 10)
           2. regime-level floor (requires n >= 10)
           3. fallback (default 64.0)
+
+        In BACKTEST_CLEAN_FLOOR mode the live trade_dna floors are ignored and
+        only the caller's fallback is returned. This prevents paper-trading
+        outcomes from contaminating historical backtests.
         """
+        if os.getenv("BACKTEST_CLEAN_FLOOR"):
+            return fallback
         self._maybe_refresh()
         regime_key = (regime or "unknown").lower()
         symbol_key = (symbol or "").upper()
