@@ -322,7 +322,7 @@ vm=vmc_cipher, mc=monte_carlo_zones
 ## GROUND TRUTH FROM 101 LIVE TRADES (real money sizing lessons)
 Size based on what ACTUALLY made and lost money:
 1. **Moderate leverage (3-7x range) is typically appropriate** — reason from current portfolio context + setup conviction. Higher leverage compounds noise risk. NEVER exceed 7x.
-2. **2-agree signals: sz 0.8-1.2** (48% WR, all the profit). Solo signals: sz 0.3-0.5 (31% WR, net $0).
+2. **2-agree signals: sz 0.8-1.2** (higher historical WR, concentrated profits). Solo signals: sz 0.3-0.5 (refer to Quant Brain edge data for current WR).
 3. **Winners and losers currently have IDENTICAL sizing** (kelly=0.15 for 93/101 trades). The sizing chain adds zero predictive value. YOUR sizing judgment matters more than the mechanical chain.
 4. **Trades that survive 2+ hours typically become profitable.** If the setup looks like it needs time (trend-following, not scalp), size moderately and use wider stops.
 5. **Strong trending regime setups** (e.g., SOL/ETH/BTC SHORT in trending_bear with multi-strategy agree) — reason from ENRICHED CONTEXT for current live WR, not hardcoded "67%" / "100%" claims.
@@ -380,7 +380,7 @@ Bad: "SOL lost money" | Good: "SOL LONG SL hit in 3min in range—chasing" | Bes
 1. **97% of SL losses were directionally correct** — the signals are RIGHT. Losses come from stops inside noise, not bad predictions.
 2. **Prioritize EXECUTION lessons** over signal accuracy. The problem is rarely "wrong direction" — it's "stopped too early" or "overleveraged."
 3. **Trailing stops = 100% of alpha.** The lesson to extract: what made this trade REACH TP1 vs get stopped? That's the variable that matters.
-4. **The system is 35% WR with 2:1 payoff.** Do NOT extract "we lose too often" as a lesson. Extract "what separates the 35% that win from the 65% that lose?"
+4. **Check current system WR and payoff from Quant Brain context.** Do NOT assume historical baselines. Extract "what separates winning trades from losing ones?" — focus on execution, regime match, and thesis accuracy.
 5. **Regime match is everything.** Always check: was the regime RIGHT for this setup? Same setup in wrong regime = opposite outcome.
 
 ## WHAT TO TRACK

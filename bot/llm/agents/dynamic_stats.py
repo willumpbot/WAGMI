@@ -16,7 +16,7 @@ import os
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple  # Tuple used in get_system_baseline return type
 
 logger = logging.getLogger(__name__)
 
@@ -76,21 +76,52 @@ def _load_recent_trades(max_trades: int = 100) -> List[dict]:
     return trades
 
 
+def get_system_baseline() -> Tuple[float, float]:
+    """Compute live system WR and payoff ratio from recent trades.
+
+    Returns: (win_rate, payoff_ratio)
+    Fallback: (0.50, 1.5) if insufficient data
+    """
+    trades = _load_recent_trades(max_trades=100)
+    if len(trades) < 10:
+        return (0.50, 1.5)
+
+    wins = sum(1 for t in trades if t["won"])
+    wr = wins / len(trades)
+
+    # Compute payoff ratio: avg_win / abs(avg_loss)
+    win_pnls = [t["pnl"] for t in trades if t["won"] and t["pnl"] > 0]
+    loss_pnls = [abs(t["pnl"]) for t in trades if not t["won"] and t["pnl"] < 0]
+
+    avg_win = sum(win_pnls) / len(win_pnls) if win_pnls else 0
+    avg_loss = sum(loss_pnls) / len(loss_pnls) if loss_pnls else 1
+
+    payoff_ratio = avg_win / avg_loss if avg_loss > 0 else 1.5
+
+    return (wr, payoff_ratio)
+
+
 def _wr_label(wr: float, n: int) -> str:
     """Human-readable label for a win rate given sample size.
 
-    System runs at 35% WR with 2:1 payoff ratio. Labels are relative to
-    system baseline, not 50%. 35% WR = NORMAL, not "weak".
+    Labels are relative to dynamic system baseline, not 50%.
+    Baseline = system's actual win rate from recent trades.
     """
     if n < 3:
         return "INSUFFICIENT DATA"
     if n < 10:
         return "LOW SAMPLE"
-    if wr >= 0.55:
+
+    baseline_wr, _ = get_system_baseline()
+
+    # STRONG: at least 0.10 above baseline
+    if wr >= baseline_wr + 0.10:
         return "STRONG"
-    if wr >= 0.35:
+    # NORMAL: within 0.10 of baseline
+    if wr >= baseline_wr - 0.10:
         return "NORMAL"
-    if wr >= 0.20:
+    # BELOW AVG: 0.10-0.20 below baseline
+    if wr >= baseline_wr - 0.20:
         return "BELOW AVG"
     return "TOXIC"
 
