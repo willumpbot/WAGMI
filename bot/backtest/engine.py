@@ -106,7 +106,7 @@ class BacktestEngine:
         # Simulated LLM agents (rule-based, no API calls)
         self._sim_agents_enabled = os.getenv("SIM_AGENTS_ENABLED", "false").lower() in ("1", "true", "yes")
         self._current_df_1h = None  # Set during candle processing for sim agents
-        self._sim_agent_decisions = {}  # Store decisions keyed by (symbol, timestamp) for CSV export
+        self._sim_agent_decisions = []  # Store (symbol, decision) tuples for CSV export
 
         # Portfolio risk engine: correlation guard for multi-symbol backtests.
         # Prevents clustered same-direction positions from creating cascade risk.
@@ -1758,14 +1758,14 @@ class BacktestEngine:
                 # Store simulated agent decision for CSV export
                 try:
                     _sim_decision = run_sim_agent_pipeline(signal, equity=_equity, df_1h=_df_1h)
-                    _key = (signal.symbol, sim_dt)
                     if not hasattr(self, '_sim_agent_decisions'):
-                        self._sim_agent_decisions = {}
-                    self._sim_agent_decisions[_key] = {
+                        self._sim_agent_decisions = []
+                    self._sim_agent_decisions.append({
+                        'symbol': signal.symbol,
                         'action': 'go' if _should else 'skip',
                         'regime': getattr(_sim_decision, 'regime', 'unknown'),
-                        'confidence': getattr(_sim_decision, 'confidence', 0.0),
-                    }
+                        'confidence': float(getattr(_sim_decision, 'confidence', 0.0)),
+                    })
                 except Exception:
                     pass
 
@@ -3235,12 +3235,13 @@ class BacktestEngine:
                             break
                 # Fall back to simulated agent decisions (if --sim-agents mode)
                 elif hasattr(self, '_sim_agent_decisions') and self._sim_agent_decisions:
-                    _key = (event.symbol, event.sim_dt) if hasattr(event, 'sim_dt') else None
-                    if _key and _key in self._sim_agent_decisions:
-                        _sim_dec = self._sim_agent_decisions[_key]
-                        row["llm_action"] = _sim_dec.get("action", "")
-                        row["llm_regime"] = _sim_dec.get("regime", "")
-                        row["llm_confidence"] = _sim_dec.get("confidence", 0)
+                    # Find the most recent decision for this symbol
+                    for _sim_dec in reversed(self._sim_agent_decisions):
+                        if _sim_dec.get("symbol") == event.symbol:
+                            row["llm_action"] = _sim_dec.get("action", "")
+                            row["llm_regime"] = _sim_dec.get("regime", "")
+                            row["llm_confidence"] = _sim_dec.get("confidence", 0)
+                            break
 
                 timeline.append(row)
         return timeline
