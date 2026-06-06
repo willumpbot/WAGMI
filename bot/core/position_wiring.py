@@ -584,8 +584,16 @@ class PositionWiringMixin:
         regime-specific patterns) to decide when to tighten stops on losing patterns
         and widen TPs on confirmed winning patterns.
 
+        Stores TradeEvents from full closes (LLM_EXIT_AGENT force_close calls) in
+        self._pending_exit_events so they can be injected into the main event loop
+        for post-trade callbacks (graduated_rules.record_outcome, learning, etc).
+
         Called every 5th tick from _tick_once() to avoid excessive computation.
         """
+        # Initialize pending events list if needed
+        if not hasattr(self, '_pending_exit_events'):
+            self._pending_exit_events = []
+
         if not self.exit_engine:
             return
 
@@ -767,7 +775,14 @@ class PositionWiringMixin:
                                                     reason="LLM_EXIT_AGENT"
                                                 )
                                                 if _llm_close and getattr(_llm_close, "filled", False):
-                                                    self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_AGENT")
+                                                    _fc = self.pos_mgr.force_close(symbol, current_price, "LLM_EXIT_AGENT")
+                                                    # Store force_close event for post-trade callbacks
+                                                    # (record_outcome, learning, ledger, etc).
+                                                    # Event will be injected into main event loop by
+                                                    # next symbol processing cycle.
+                                                    if _fc:
+                                                        _fc.metadata["_exchange_submitted"] = True
+                                                        self._pending_exit_events.append(_fc)
                                                 else:
                                                     logger.critical(
                                                         f"[{symbol}] LLM EXIT CLOSE FAILED — position still open. "

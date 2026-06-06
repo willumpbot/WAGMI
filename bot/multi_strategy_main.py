@@ -3129,6 +3129,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         events = list(self.pos_mgr.update_price(symbol, current_price, df_5m=df_5m))
         if _force_close_events:
             events.extend(_force_close_events)
+        # Inject LLM_EXIT_AGENT close events from _check_llm_exit_suggestions()
+        # These were collected in self._pending_exit_events during background exit checks.
+        # Must be injected per symbol to ensure they go through post-trade callbacks.
+        if hasattr(self, '_pending_exit_events') and self._pending_exit_events:
+            # Filter to events for this symbol
+            symbol_exit_events = [e for e in self._pending_exit_events if e.symbol == symbol]
+            if symbol_exit_events:
+                events.extend(symbol_exit_events)
+                # Remove from pending (already injected)
+                self._pending_exit_events = [e for e in self._pending_exit_events if e.symbol != symbol]
         for event in events:
             # 2026-06-05: capture position object BEFORE close processing removes
             # it from pos_mgr.positions. Without this snapshot, every downstream
