@@ -26,19 +26,12 @@ from typing import Dict, Any, Optional
 
 logger = logging.getLogger("bot.manual.trade_scorecard")
 
-# ── Edge trend classification per setup ──
-# Updated from comprehensive edge study data.
-# "strengthening" = WR improving over trailing window
-# "stable"        = WR flat
-# "weakening"     = WR declining
-EDGE_TRENDS: Dict[str, str] = {
-    "HYPE_BUY":  "weakening",      # 64% -> 40% WR over 500h study
-    "HYPE_SELL": "weakening",      # Toxic, 0-7% WR
-    "SOL_SELL":  "strengthening",  # 35% -> 68% WR over 500h study
-    "SOL_BUY":   "stable",         # No validated edge, flat
-    "BTC_BUY":   "stable",         # 56% WR, PF 1.40 — not enough data
-    "BTC_SELL":  "weakening",      # Confirmed negative EV overall
-}
+# 2026-06-06: EDGE_TRENDS hardcoded values STRIPPED per Nunu directive.
+# Was from "500h study" pre-fee-fix data. Caused sniper rejections at 28-30/100
+# because BTC_SELL/HYPE_SELL "weakening" scored 0pts even on high-conviction setups.
+# All setups now default to "stable" (neutral 8pts in scorecard) until live data
+# rebuilds. To re-enable: recompute from current trade_ledger and update from data.
+EDGE_TRENDS: Dict[str, str] = {}  # empty — all setups treated as "stable" default
 
 # ── Regime alignment mapping ──
 # Maps regime name to quality category.
