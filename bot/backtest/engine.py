@@ -106,6 +106,7 @@ class BacktestEngine:
         # Simulated LLM agents (rule-based, no API calls)
         self._sim_agents_enabled = os.getenv("SIM_AGENTS_ENABLED", "false").lower() in ("1", "true", "yes")
         self._current_df_1h = None  # Set during candle processing for sim agents
+        self._sim_agent_decisions = {}  # Store decisions keyed by (symbol, timestamp) for CSV export
 
         # Portfolio risk engine: correlation guard for multi-symbol backtests.
         # Prevents clustered same-direction positions from creating cascade risk.
@@ -1747,12 +1748,27 @@ class BacktestEngine:
         # Filters ~50% of signals that would hit SL based on regime/quality checks.
         if getattr(self, '_sim_agents_enabled', False):
             try:
-                from backtest.simulated_agents import should_execute_signal
+                from backtest.simulated_agents import should_execute_signal, run_sim_agent_pipeline
                 _df_1h = getattr(self, '_current_df_1h', None)
                 _equity = self.risk_mgr.equity or 500.0
                 _should, _sz_mult, _reason = should_execute_signal(
                     signal, equity=_equity, df_1h=_df_1h,
                 )
+
+                # Store simulated agent decision for CSV export
+                try:
+                    _sim_decision = run_sim_agent_pipeline(signal, equity=_equity, df_1h=_df_1h)
+                    _key = (signal.symbol, sim_dt)
+                    if not hasattr(self, '_sim_agent_decisions'):
+                        self._sim_agent_decisions = {}
+                    self._sim_agent_decisions[_key] = {
+                        'action': 'go' if _should else 'skip',
+                        'regime': getattr(_sim_decision, 'regime', 'unknown'),
+                        'confidence': getattr(_sim_decision, 'confidence', 0.0),
+                    }
+                except Exception:
+                    pass
+
                 if not _should:
                     logger.debug(
                         f"[{signal.symbol}] SIM-AGENT SKIP: {_reason[:80]}"
@@ -3209,6 +3225,7 @@ class BacktestEngine:
                 }
 
                 # LLM context
+                # Try LLM API decisions first (if --llm mode)
                 if self.llm and self.llm.decisions:
                     for dec in reversed(self.llm.decisions):
                         if dec.get("symbol", "") == event.symbol:
@@ -3216,6 +3233,14 @@ class BacktestEngine:
                             row["llm_regime"] = dec.get("regime", "")
                             row["llm_confidence"] = dec.get("confidence", 0)
                             break
+                # Fall back to simulated agent decisions (if --sim-agents mode)
+                elif hasattr(self, '_sim_agent_decisions') and self._sim_agent_decisions:
+                    _key = (event.symbol, event.sim_dt) if hasattr(event, 'sim_dt') else None
+                    if _key and _key in self._sim_agent_decisions:
+                        _sim_dec = self._sim_agent_decisions[_key]
+                        row["llm_action"] = _sim_dec.get("action", "")
+                        row["llm_regime"] = _sim_dec.get("regime", "")
+                        row["llm_confidence"] = _sim_dec.get("confidence", 0)
 
                 timeline.append(row)
         return timeline
