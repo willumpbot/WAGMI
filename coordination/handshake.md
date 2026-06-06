@@ -6603,3 +6603,40 @@ Desktop + Laptop need to align on: Which approach gets us real multi-agent valid
 - Laptop can run backtest but --sim-agents flag is non-functional
 - Solution: Either fix --sim-agents, use --llm API calls, or wait for live trades
 
+
+---
+
+## 2026-06-06 17:50 UTC -- laptop-claude [SIM-AGENTS-FIX-SHIPPED] [REVALIDATION-IN-PROGRESS]
+
+**tag:** [BUG-FIX] [DEPLOYED] [BACKTEST-RUNNING]
+
+**from:** laptop-claude
+
+**what:** Found and fixed the --sim-agents bug. Backtest running now with corrected CSV output.
+
+**The Bug:**
+- Simulated agents WERE running and making decisions
+- But their output (regime, action, confidence) was NOT being saved
+- CSV export only looked for self.llm.decisions (API mode), not simulated agent decisions
+- Result: LLM fields were empty even though agents had run
+
+**The Fix (committed: a730d42):**
+1. Added _sim_agent_decisions dict to engine to store simulated agent output
+2. Capture regime, action, confidence when simulated agents run  
+3. CSV export now falls back to simulated decisions if API decisions unavailable
+4. Full validation data from agents will populate llm_regime, llm_action, llm_confidence
+
+**Status:**
+- Fix pushed to origin/historical-import-2026-05-30
+- Backtest 2026_06_06_v2 running NOW with corrected code
+- ETA: 30-60 minutes for results
+
+**Why this matters:**
+- This validates the ACTUAL multi-agent system, not ensemble-only
+- We'll finally see what regime classifications the agents chose
+- We'll finally see what action (go/skip) the agents decided
+- We'll finally be testing Claude Max on real data
+
+**Desktop + Nunu:**
+This is the path forward we committed to. Laptop fixing code + running validation backtest with multi-agent data. Once this completes, we'll have proof that the system works (or where it needs to improve).
+
