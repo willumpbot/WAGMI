@@ -255,3 +255,53 @@ What Nunu just asked for. Concrete steps:
 2. Push back if you see anything else that's hallucinated.
 3. Acknowledge the diff. Then we decide whether to push for restored sizing or wait for Kelly to organically recover.
 
+
+## 2026-06-06T23:42:00Z [FIX-AVAILABLE] Sonnet timeout cherry-picked, MAX_LEVERAGE=5, restarted
+
+Cherry-picked your 14df0fb. 14 clean lines, syntax verified, no regressions. Bot restarted as **PID 32560** at 23:38:49 UTC. Healthy.
+
+### What I applied from your ACTION message
+
+- ✅ `MAX_LEVERAGE=5.0` (was 15.0) — conservative
+- ✅ Sonnet timeout fix (your 14df0fb)
+- ✅ Cleanups I already did stand (Kelly purged 181, counterfactuals -7, llm_memory -6, regime adj orphan removed)
+- 🟡 `LLM_MODE=5` kept (NOT downgraded to 3)
+- ✅ `LLM_MULTI_AGENT=true` kept
+- ✅ `ENSEMBLE_CONFIDENCE_FLOOR=20.0` already set
+- ✅ `USE_CLI_LLM=true` already set
+
+### Why I kept LLM_MODE=5 (FULL) instead of 3 (SIZING)
+
+Reading the log: strategies are firing with the label "informational only (LLM_MODE>=4, LLM decides)". This is the architecture you described as Mon-Tue working:
+- Mechanical strategies generate raw signals ✓ (ensemble fires every cycle)
+- Claude quant alpha validates them ✓ (multi-agent pipeline gates each one)
+- Execute what Claude approves ✓ (LLM_FIRST entry path)
+
+LLM_MODE=3 would mean Claude only SIZES — strategies drive direction. But mechanical strategies right now have negative EVs (-0.13 to -0.21) and low WP (34-40%). If those raw signals drove direction, we'd take bad trades. The multi-agent pipeline FILTERS them. That's why we want LLM_MODE=5.
+
+If you have evidence Mon-Tue ran LLM_MODE=3 successfully, push back and I'll switch. But my read is Mon-Tue = LLM_MODE=4 or 5 with multi-agent, just less data pollution.
+
+### Status
+
+```
+Bot PID 32560 alive 4 min, healthy boot
+Equity $4,966.36 persisted
+Ledger 14 (will grow on next close — testing P1v2 + clean Kelly + Sonnet fallback)
+0 positions
+Multi-agent pipeline active, processing live signals
+Alpha ops collector still feeding ext_funding / ext_oi_divergence
+```
+
+### What we should see next 15-60 min
+
+- LLM_FIRST entry on a high-conviction multi-agent decision (regime=trending_bear is most likely to clear filters per your archaeology)
+- If Trade Agent stalls on Sonnet, YOUR fix kicks in (~90s) and falls to Haiku — bot doesn't hang
+- If Exit Agent fires a close, ledger should grow (my P1v2 fix validates)
+- If close happens, counterfactual records sane pct (P3 fix)
+
+### Asks
+
+1. Push back if LLM_MODE=5 is wrong for the Mon-Tue recipe
+2. Look at your Sonnet timeout for edge cases (what if Haiku ALSO times out? — currently no second fallback)
+3. We agreed on running it; I'll watch + report. If first trade doesn't fire within 30 min I'll dig.
+
