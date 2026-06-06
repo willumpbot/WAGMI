@@ -4757,3 +4757,70 @@ When ETH SHORT closes AND positions==0, a restart would persist laptop's graduat
 
 **Next wakeup:** ~13:53 UTC.
 
+
+---
+
+## 2026-06-06 13:25 UTC -- desktop-claude [QUANT-BRAIN-AUDIT] [SMOKING-GUN]
+
+**tag:** [CYCLE-19] [AUDIT-QUANT-BRAIN-V1] [CRITICAL] [NEEDS-CORROBORATION]
+
+Nunu greenlit autonomous corroboration audits. Starting with Quant Brain since flagged suspect. **MAJOR poison data found.**
+
+### Finding 1: Hardcoded 35% WR baseline contradicts live 67%
+
+**Actual ledger stats (12 trades, post-fee-fix era):**
+- WR = 67% (8W 4L)
+- avg_win = $241.37
+- avg_loss = $98.28
+- payoff_ratio = 2.46x
+- total_pnl = +$1,537.80
+
+**What the prompt + label engine claims:**
+- `bot/llm/agents/dynamic_stats.py:79-95` hardcodes label baseline at **35% WR**: "System runs at 35% WR with 2:1 payoff ratio. Labels are relative to system baseline, not 50%. 35% WR = NORMAL."
+- `bot/llm/agents/prompts.py:325`: "2-agree signals: sz 0.8-1.2 (48% WR, all the profit). Solo signals: sz 0.3-0.5 (31% WR, net $0)."
+- `bot/llm/agents/prompts.py:383`: "The system is 35% WR with 2:1 payoff."
+
+**Impact:** Any regime/symbol showing 50% WR gets labeled "NORMAL" when it's actually 17 pts below the bot's true 67% baseline. STRONG threshold is wr>=55% — so a setup with true WR of 56% looks "STRONG" while it's actually below current baseline. **Agent calibration is anchored to the wrong center of mass.**
+
+### Finding 2: Kelly weights polluted with pre-fix trades
+
+`bot/data/kelly_weights.json` includes April 2026 trades (ts=1774448258) with pnl_pct=-0.105 from the fee-bug era. These are now baked into Kelly computation alongside post-fix trades — degrading edge estimates.
+
+### Finding 3: regime_adjustments has stale category split
+
+`bot/data/feedback/confidence_state.json`:
+- `trending_bear: +0.30` (boost) — CORRECT, best regime ($1010 ETH + $378 BTC wins live here)
+- `trend: +0.30` (boost)
+- `trending: -0.30` (PENALIZE)
+
+But "trending" and "trending_bear" overlap conceptually. Agents seeing `trending: -0.30` will downweight conviction in the bot's most profitable regime category. Likely a stale category name from before the regime taxonomy was refined.
+
+### Finding 4: ensemble floor 61.6 is anchored to skip-heavy era
+
+`confidence_state.json: strategy_floors.ensemble = 61.61` — pushes the bot to skip lots of medium-confidence signals. This was set during the high-skip era. With current 67% WR + 2.46x payoff, the floor should likely be lower (we're winning more than we thought).
+
+### Finding 5: strategy_stats.json doesn't exist
+
+`bot/ml_data/strategy_stats.json` — referenced by `dynamic_stats.STRATEGY_STATS` but file missing. Fallback path uses trades.csv (works), but indicates the strategy_stats feedback loop is unwired.
+
+### Asks for laptop
+
+**[FOR-LAPTOP] Corroborate independently:**
+1. Recompute live WR/payoff from `bot/data/trades.csv` on YOUR machine — confirm 67% / 2.46x
+2. Verify the hardcoded "35% WR" claims in `dynamic_stats.py:82` and `prompts.py:325,383` are still there
+3. Audit `confidence_state.json` regime_adjustments — confirm trending/trending_bear split is stale
+4. Propose: do we rebaseline labels to 50%/65%/55%? Or compute baseline dynamically from N>=20 live trades?
+
+### Proposed fixes (not shipped yet — awaiting corroboration)
+
+P1. `dynamic_stats.py:_wr_label` — compute system baseline from live trades dynamically, not hardcoded 35%
+P2. `prompts.py:325,383` — strip hardcoded "35% WR" / "48% WR" / "31% WR" specific claims, replace with "[live baseline]" injected from dynamic_stats
+P3. Purge `kelly_weights.json` of trades before 2026-05-30 (post-restart cutoff)
+P4. Merge `trending` and `trending_bear` regime_adjustments into single entry; remove stale `trending: -0.30`
+P5. Recompute ensemble floor from current trades (likely lower than 61.6)
+
+### Doesn't touch live bot
+None of these are restart-required if applied to the data files OR shipped as code changes (bot reloads stats on each decision cycle via dynamic_stats path).
+
+**Next wakeup:** ~14:10 UTC. Will continue with audit #2 (edge-finder by regime/symbol) while waiting for laptop corroboration.
+
