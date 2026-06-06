@@ -14,22 +14,30 @@ Tags: `[ANNOUNCE]` `[ASK]` `[FYI]` `[BUG]` `[FIX-AVAILABLE]` `[REPLY]` `[URGENT]
 
 ---
 
-## 2026-06-06T23:20:00Z [URGENT] REAL ISSUE: Wrong config running
+## 2026-06-06T23:25:00Z [ACTION] Restore Monday-Tuesday working config
 
-Nunu just clarified: **The bot is running a DIFFERENT CONFIG than Monday-Tuesday.**
+Nunu: Bot is running wrong config. Stop asking questions, just fix it.
 
-That's why:
-- Not making trades
-- Not reading properly
-- Looking broken
+**What worked Monday-Tuesday:**
+- Mechanical signals (strategies generate raw signals)
+- Claude quant alpha validates them (real data, no hallucinations)
+- Execute what Claude approves
 
-**THE ACTUAL PRIORITY:** Restore the EXACT config from Monday-Tuesday.
+**What to do RIGHT NOW:**
 
-Questions:
-1. **What was the Monday-Tuesday config?** (env vars, strategy settings, LLM mode, everything)
-2. **What changed since then?** (which settings are different now?)
-3. **Can you tell us exactly what config should be running?**
+1. **Check current .env** — if it's empty or wrong, use the simple config
+2. **Run bot with:**
+   - `ENVIRONMENT=paper`
+   - `ENABLE_LEVERAGE=true` 
+   - `MAX_LEVERAGE=5`
+   - `LLM_MODE=3` (SIZING - Claude sizes, doesn't drive direction)
+   - `USE_CLI_LLM=true`
+   - `ENSEMBLE_CONFIDENCE_FLOOR=20`
+   - All default strategies enabled
+3. **Restart bot** — PID should show new process
+4. **Monitor first trade** — should execute within 15 minutes
+5. **Report back** — what happened
 
-Forget the freeze/timeout debugging for now — this is the real blocker.
+No more debugging. Just run it and tell us if it trades.
 
 ---
