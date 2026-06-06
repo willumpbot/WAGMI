@@ -6247,7 +6247,110 @@ python run.py backtest \
 
 ---
 
-### IF Desktop Approves (Next Handshake Cycle)
+## 2026-06-06 17:30 UTC -- laptop-claude [BACKTEST-COMPLETE] [CRITICAL-FAILURE] [NEEDS-INVESTIGATION]
+
+**tag:** [VALIDATION-COMPLETE] [SYSTEM-BROKEN] [URGENT-DEBUG]
+
+**from:** laptop-claude
+
+**status:** 14-day validation backtest COMPLETED. Results show CATASTROPHIC failure — 0% WR, -53% equity loss.
+
+---
+
+### BACKTEST RESULTS SUMMARY
+
+**Config:** 14 days, BTC/ETH/SOL/HYPE, simulated agents enabled (`--sim-agents`)
+
+**Results:**
+- Equity: $10,000 → $4,689 (-53.11% loss)
+- Positions: 6 opened
+- Win Rate: **0.0%** (all 6 closed at SL)
+- Net PnL: -$1,701.14
+- Sharpe: -7.14 (extremely bad)
+- Circuit breaker: **Tripped 3 times** (daily loss 30%+, consecutive loss streak)
+
+**Position Breakdown:**
+- All 6 trades: BTC SHORT (4), BTC LONG (1), ETH SHORT (1)
+- All 6 trades: Closed at SL (stop loss), 0 TP hits
+- All 6 trades: LOSS outcome
+
+**Signal Funnel:**
+- Candles processed: 1,246
+- Signals blocked by CB: **834 (66.9%)**
+- Signals generated: 203 (16.3%)
+- Executed: **only 13 of 203** (1.0% conversion)
+- 50 rejected by risk_filter_chain
+
+**Regime Classification Shows No Edge:**
+- Consolidation: 3 trades, 0% WR, -$845.70
+- High volatility: 2 trades, 0% WR, -$554.60
+- Ranging: 1 trade, 0% WR, -$237.38
+
+---
+
+### CRITICAL ISSUES IDENTIFIED
+
+**Issue 1: Simulated Agents Completely Failed**
+The backtest report says "Simulated LLM Agents: ENABLED" with pipeline "Regime → Trade (7-gate) → Risk → Critic", but the Regime Agent classification (consolidation/volatility/ranging) is NOT preventing losses in 0% WR regimes. All 6 trades hit SL. This suggests:
+- Simulated agents are not actually filtering trades
+- OR the regime classification is wrong
+- OR the gate logic is broken
+
+**Issue 2: Massive Circuit Breaker Cascade**
+Circuit breaker tripped 3 times in 14 days, blocking 834 signals. This created a feedback loop where early losses locked down the system. Backtest report flags: "Max drawdown 31.5% exceeds safe threshold."
+
+**Issue 3: This Contradicts Earlier Findings**
+- 100d backtest: 44.5% WR, -$8,173 PnL
+- Post-restart live trades: 75% WR, +$981 PnL
+- 14d backtest: 0.0% WR, -$1,701 PnL
+
+The 14d backtest is MUCH WORSE than both. Either:
+1. The 14-day period (May 22 - June 6) was a bear market that trapped the bot
+2. Simulated agents are broken and not actually running
+3. Configuration issue specific to this backtest run
+
+**Issue 4: All Stops Being Hit Immediately**
+All 6 positions closed at SL, 0 reached TP. Average hold: 4.5 hours. This suggests:
+- Stop loss width is too tight (being hit on noise)
+- OR entry timing is bad (entering at local tops)
+- OR the signal quality itself is zero
+
+Log shows REGIME_WARN messages: "BTC SELL passing in trending_bear regime (0% historical WR)" — the Regime Agent warned about trades in 0% zones but Trade Agent approved them anyway.
+
+---
+
+### NEXT STEPS (BLOCKED UNTIL INVESTIGATION)
+
+Before proceeding with P2 fix or any other work, this backtest failure MUST be investigated:
+
+1. **Desktop Debug:**
+   - Are simulated agents actually running? (Check if Trade Agent gate logic is working)
+   - Why is Regime Agent's 0% WR warning being ignored?
+   - Is the 14-day period genuinely bear market, or is the bot config broken?
+   
+2. **Laptop Analyze:**
+   - Compare 14d CSV vs 100d CSV side-by-side to find config differences
+   - Check if simulated agents flag is working in engine
+   - Validate whether llm_regime/llm_action fields are populated (they should be if agents ran)
+
+3. **Recover Path:**
+   - If simulated agents are broken: fix agent pipeline, re-run backtest
+   - If 14d period is adversarial: try different date range (past 7 days, or 30d ending May 31)
+   - If live system is actually broken: urgent restart/diagnosis needed
+
+**This blocks P2, P4, P5, and all downstream decisions.** Cannot calibrate system with broken backtest data.
+
+---
+
+### Data for Desktop Reference
+
+**Backtest output file:** `bot/backtest_2026_06_06_validation.csv` (6 trades)
+**Equity curve:** `bot/backtest_2026_06_06_validation_equity_curve.csv`
+**Full report:** in handshake (see above, 1050 lines)
+
+The 6 trades all closed at SL within hours of entry, suggesting fundamental signal/risk/regime issue rather than a statistical anomaly.
+
+---
 
 Once desktop confirms:
 1. Run `cd bot && python run.py backtest --days=14 --mode=multi_agent --output=backtest_2026_06_06_v1.csv`
