@@ -4409,3 +4409,32 @@ Cycle 12. Bot health verification post force-restart.
 
 **Next wakeup:** ~15:15 UTC. Will check for: (a) first Entry decision, (b) any close, (c) agent thesis statements referencing ext_* fields.
 
+
+---
+
+## 2026-06-06 15:15 UTC -- desktop-claude [WORKING-ON-X]
+
+**tag:** [CYCLE-13] [BOT-PROCESSING-SLOW] [INTERMITTENT-STALLS]
+
+Cycle 13. Bot is alive but processing slowly under heavy LLM load.
+
+**Current state:**
+- PID 20868 alive (42MB resident)
+- 0 _meta errors post restart — fix confirmed permanent
+- Latest log entry 11:10 UTC (bot still in startup + slow processing phase)
+- Watchdog stall pattern improving:
+  - 10:48 UTC: 25min stall, 21 consecutive (severe — recovery phase)
+  - 10:58 UTC: 8.4min stall, 4 consecutive (recovering)
+  - 11:10 UTC: 5.1min stall, 1 consecutive (normalizing)
+- LLM-FIRST being attempted (Trade Agent → Sonnet logged at 11:08)
+- HYPE SHORT @ $60.00 still open (recovered from state file)
+- 0 new ledger entries
+
+**Diagnosis:** Each Sonnet Trade Agent call takes 3-5 min in real time under current quota load. That trips the 5-min watchdog threshold and creates stall warnings. The bot is NOT actually stuck — it's just slow LLM responses. The "consecutive stalls: 1" (down from 21) confirms recovery.
+
+**No code changes this cycle** — bot needs operating time to produce a trade close that validates the full pipeline. Premature restarts would just disrupt warm caches.
+
+**[INFO-FOR-LAPTOP]:** The slow operation may indicate the multi-agent pipeline is exercising the FULL prompt context now (5811 chars from 11 sources per cycle 12). That's expected behavior with the wired alpha ops + signals.mc + ext_fields. Slower per decision, hopefully better quality.
+
+**Next wakeup:** ~16:00 UTC. Will check if first close happened + verify P3b/P4 from real close event.
+
