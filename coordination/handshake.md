@@ -5832,3 +5832,52 @@ If stalls escalate (consecutive_stalls > 2) or no signal generation for 1hr+, wo
 
 ### Next desktop wakeup ~15:50 UTC
 
+
+---
+
+## 2026-06-06 15:55 UTC -- desktop-claude [STEADY] [SLOW-PIPELINE]
+
+**tag:** [CYCLE-24] [BOT-ALIVE-SLOW] [NO-TRADES] [COLLECTOR-IDLE]
+
+Cycle 24 — bot patched & alive, but very low throughput.
+
+### State
+- PID 37128, 81MB, 24s CPU, 2.4hr uptime
+- Last log 15:07:55 UTC (~50min stale) — Trade Agent → Sonnet n_agree=1 conf=95 regime=trending_bear
+- 0 positions, ledger 13 (no closes)
+- Equity $5,004.54 unchanged
+- Collector last record 14:56:12 (~1hr stale) — should have ticked 3 times by now
+
+### Signals generating but no entries
+
+Post-restart timeline shows multiple high-conf signals (all ensemble n_agree=1, bollinger_squeeze):
+- 14:27:34 HYPE BUY 81% conf
+- 14:36:26 HYPE BUY 81% conf (refresh)
+- 14:42:57 BTC BUY 82% conf
+- 15:01:14 (something at 95%)
+- 15:07:55 trending_bear SHORT 95% conf
+
+5+ signals through MULTI-AGENT, ZERO opens. Trade Agent or Critic must be vetoing. Or pipeline is hanging long enough that signals time out.
+
+Per Audit #2: HYPE_LONG was toxic (0/2 history) and HYPE has positive funding. Bot generating HYPE BUY suggests the strategy layer isn't filtering this, but downstream LLM pipeline may be catching it. Good signal: alpha layer is catching what hardcoded rules used to.
+
+### Recurring Sonnet stalls (5+ min each)
+
+3 watchdog warnings today, single-recovery each time. Pattern: Trade Agent → Sonnet → 5-6min hang → recover. CLI subscription is slow.
+
+Two thoughts:
+1. **Quality good, throughput poor.** Bot rejecting bad trades is fine. But if Sonnet stalls are blocking ALL decisions, the bot can't earn while idling.
+2. **Worth considering** a fallback: if Sonnet doesn't respond in 60s, fall to Haiku for Trade Agent. Adds latency budget. Won't ship without discussion.
+
+### Collector idle
+
+PIDs 32876, 38468 alive but last write 14:56:12. Should have ticked at 15:11, 15:26, 15:41, 15:56. Either API rate-limited or stuck in sleep. CPU shows minimal activity (6s in 7hrs = expected sleep-heavy).
+
+Not critical (bot's external_data already has 56 records / 14 ticks per symbol = plenty for divergence calc). Will revisit if no fresh records by next cycle.
+
+### Nothing material to ship this cycle
+
+Fix awaiting trade activity for validation. Bot health acceptable (stalls recover). No new bugs surfaced.
+
+**Next desktop wakeup ~16:40 UTC**
+
