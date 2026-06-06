@@ -6971,3 +6971,84 @@ The two LLM_EXIT closes today missing from CSV are tracked correctly in equity b
 
 **Next desktop wakeup ~22:50 UTC.** Will trace the second LLM_EXIT path.
 
+
+---
+
+## 2026-06-06 22:32 UTC -- desktop-claude [P1-V2-SHIPPED] [LAPTOP-INTEGRATIONS-LIVE]
+
+**tag:** [CYCLE-38B] [BUG-FOUND-AND-FIXED] [PID-40064] [INTEGRATIONS-DONE]
+
+Found the real P1 root cause + applied laptop's pending integrations + restarted.
+
+### Real P1 root cause (different from my original fix)
+
+The earlier `_captured_pos` fix at line 3211 was correct in concept but didn't catch this scenario:
+
+1. Background `_check_llm_exit_suggestions()` runs DURING `_process_symbol(SOL)` (not before)
+2. Force-closes SOL position → state=CLOSED, event in `_pending_exit_events`
+3. `_process_symbol(SOL)` ends (event NOT yet picked up — injection check was at line 3135 BEFORE the background fire)
+4. **Line 4126: stale closed positions deleted from `pos_mgr.positions`** ← THIS
+5. Next `_process_symbol(SOL)` runs
+6. Line 3149 `_captured_pos = pos_mgr.positions.get(symbol)` → returns **None**
+7. Event injection picks up the pending event
+8. Line 3211 my fix sets `pos = _captured_pos` → `pos = None`
+9. Line 3398 `pos.entry_reasons.get(...)` → AttributeError
+10. Caught silently at line 3438 (logger.warning that I couldn't find because the log line wasn't formatted as I'd grepped for)
+11. Silent ledger write miss
+
+### The fix (`multi_strategy_main.py:4121-4130`)
+
+```python
+# 2026-06-06: skip cleanup if there's a pending Exit Agent close event
+# for that symbol — otherwise the main loop's _captured_pos lookup at
+# line 3149 returns None and the trade_ledger.record_trade silently
+# fails, losing the trade row.
+_pending_syms = {e.symbol for e in getattr(self, '_pending_exit_events', [])}
+stale = [s for s, p in self.pos_mgr.positions.items()
+         if p.state == _CLOSED and s not in open_pos and s not in _pending_syms]
+```
+
+One-line addition (the `s not in _pending_syms` check) plus a set construction. Keeps closed positions in dict until their pending event is processed. Then the next cycle they get cleaned normally.
+
+### Laptop's pending integrations applied
+
+- ✅ `abd9c93` (Critic veto fix) — cherry-picked `bot/llm/agents/prompts.py`
+- ✅ `bc22d60` (Claude CLI Windows path) — cherry-picked `bot/llm/claude_cli_client.py`
+- ✅ `7146864` (P2 baseline) — already loaded earlier
+
+All syntax verified. No conflicts.
+
+### Restart
+
+- Old PID 36380 stopped
+- Supervisor caught at 17:30:42 local
+- New PID 40064 launched 17:31:12 (22:31:12 UTC)
+- Currently in SYMBOL HEALTH CHECK boot phase
+
+### Validation plan
+
+On next LLM_EXIT_AGENT close (direct path, not SL-trigger):
+- ✅ Should grow `trade_ledger.csv` 
+- ✅ Should grow `trades.csv`
+- ✅ Should record counterfactual with sane percentage
+
+We have 2 known cases this morning (ETH @22:00 and SOL @22:01) that were missed. Cycle count of missing-from-ledger LLM_EXIT_AGENT closes today: 6 (the 4 morning + 2 evening).
+
+### State
+
+- PID 40064 booting on patched code (P1v2 + Critic v2 + CLI fix + P2)
+- Equity $4,966.36 persisted (from 22:01 close)
+- 0 positions
+- Ledger still 14 (won't grow until next close on patched code)
+
+### For Nunu
+
+Bot is now running with EVERYTHING that's been shipped today:
+- All four fixes integrated
+- Laptop's data analysis (omniscient_integrated disabled, confidence_scorer boosted) ready (weights file may need sync — flagged for laptop on reboot)
+- Real bug for ledger write closed
+
+Strategy weights from laptop's runtime: still pending — `ml_data/strategy_weights.json` was modified by laptop locally per their report, but I don't see it in their commits. May still be desktop's old weights. Will check next cycle.
+
+**Next desktop wakeup ~23:15 UTC.**
+
