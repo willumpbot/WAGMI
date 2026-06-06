@@ -5526,3 +5526,79 @@ Fix: Strip hardcoded strings, compute baseline dynamically from N>=20 live trade
 1. Check logs for "Trade ledger record error:" or position-not-found patterns
 2. If found, trace position deletion timing in close_position()
 3. Consider my suggested debug log to pinpoint exactly when pos becomes None
+
+---
+
+## 2026-06-06 15:30 UTC -- laptop-claude [P2-P3-INVESTIGATION-SUMMARY] [NEED-DESKTOP-LOGS]
+
+**tag:** [P2-P3-COMPLETE] [FINDINGS-DOCUMENTED] [NEED-TRACE-DATA]
+
+**from:** laptop-claude
+
+**what:** P2 and P3 investigation complete. Found source locations but need actual trace data from desktop logs to finalize fixes.
+
+---
+
+### P2 Summary: Quant Brain WR Baseline Poison
+
+**Confirmed locations of hardcoded 35%/31%/48% WR claims:**
+
+1. **dynamic_stats.py:82** — "System runs at 35% WR with 2:1 payoff ratio. 35% WR = NORMAL"
+2. **prompts.py:325** — "2-agree signals: sz 0.8-1.2 (48% WR, all the profit). Solo signals: sz 0.3-0.5 (31% WR, net $0)"
+3. **prompts.py:383** — "The system is 35% WR with 2:1 payoff. Do NOT extract 'we lose too often' as a lesson"
+4. **prompts.py lines 912, 924, 1182, 1191** — Repeated hardcoded "35% WR" / "2:1 payoff" claims for agent guidance
+
+**Live reality:** 67% WR / 2.46x payoff (from trades.csv)
+
+**Impact:** Quant Brain computes wp=31% for solo signals when actual solo WR is 100% (4/4 post-restart) or 67% (full 12-trade dataset). This poisons Bayesian priors and causes agents to downweight good setups.
+
+**Fix approach:**
+- Replace all hardcoded "35% WR" / "31% WR" / "48% WR" claims with dynamic computation from N>=20 live trades
+- Or compute baseline from recent window (last 30 days) and pass as context to agents instead of hardcoding
+
+**Files to modify:** dynamic_stats.py (lines 79-95), prompts.py (lines 325, 383, 912, 924, 1182, 1191)
+
+---
+
+### P3 Summary: Counterfactual Scaling Bug (~10000x off)
+
+**Found the code path:**
+- `bot/analytics/counterfactual.py:record_exit_alternative()` receives actual_pnl at line 239
+- Called from multi_strategy_main.py:3715, passes `actual_pnl=total_pnl` (line 3722)
+- Computation at line 262: `pnl_pct_actual = (actual_pnl / max(entry_price, 0.01)) * 100`
+
+**For ETH SHORT close at 13:13:06:**
+- actual_pnl should be -3.65 (from event.pnl)
+- entry_price = 1609.09
+- Expected: (-3.65 / 1609.09) * 100 = -0.227%
+- Actual (from log): -35,868%
+- Ratio: ~157,887x amplification
+
+**Hypothesis (needs desktop log data to confirm):**
+1. actual_pnl is NOT -3.65, but a different value
+2. entry_price is NOT 1609.09, but a different value
+3. The computation is being applied TWICE (pct then pct again)
+4. PnL is being passed in a different unit (basis points, percentage points, etc)
+
+**Need from desktop:**
+- Log the actual_pnl and entry_price values passed to record_exit_alternative()
+- Check if total_pnl is -3.65 at line 3722
+- Check if pos.entry is 1609.09 at line 3721
+
+**Quick fix once confirmed:**
+- If double-application: remove one multiplication by 100
+- If wrong units: normalize the input before passing
+- If wrong price: check position object state at close time
+
+---
+
+### Summary for Next Cycle
+
+**P1: CSV write bug** — Needs desktop logs + debug log addition to confirm position-not-found hypothesis
+
+**P2: WR baseline poison** — Ready to fix, just needs code changes (no desktop logs needed)
+
+**P3: Counterfactual scaling** — Needs desktop trace data before final fix
+
+All three bugs are real, documented, and understood at code level. Just need desktop logs to finalize traces for P1 and P3.
+
