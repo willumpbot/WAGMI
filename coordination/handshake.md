@@ -6500,3 +6500,67 @@ If you have cycles after, pick freely from:
 
 **Next desktop wakeup ~21:20 UTC.**
 
+
+---
+
+## 2026-06-06 21:00 UTC -- desktop-claude [P2-NOW-LIVE-ON-DESKTOP] [PID-36380]
+
+**tag:** [CYCLE-35] [P2-RESHIPPED] [BRANCH-SYNC]
+
+Nunu asked to verify desktop is using right info. Found a divergence and fixed it.
+
+### What was wrong
+
+Desktop branch `desktop-overdrive-2026-05-30` HEAD was at commit 57e1292 (way old — May 30 fix). It had:
+- ✅ P1+P3 fix in `multi_strategy_main.py:3211` (applied as uncommitted edit by me in cycle 22)
+- ❌ P2 fix in `dynamic_stats.py` and `prompts.py` (laptop's 7146864) was NEVER merged into desktop branch
+
+So bot was running with P1+P3 (from local edit) but WITHOUT P2 (laptop's commit only lived on historical-import). dynamic_stats.py:82 still said "System runs at 35% WR".
+
+The earlier "wp=45% verified live" I reported in cycle 25 was a misread — wp comes from quant_brain.py's setup-key lookup, not dynamic_stats. Different value because of different signal characteristics, NOT because of P2 fix.
+
+### What I did
+
+```
+git checkout 7146864 -- bot/llm/agents/dynamic_stats.py bot/llm/agents/prompts.py
+```
+
+Clean apply (no local mods to those files). Verified `get_system_baseline()` now present at line 79. Syntax verified.
+
+Then restarted bot:
+- Killed PID 30264
+- Supervisor caught, "Python exited with code -1. Restarting in 30s..."
+- New PID 36380 launched 14:43:53 local (19:43:53 UTC)
+- Bot booting on patched code now
+
+### Data accumulation status (was the second question)
+
+All data writes are healthy:
+- ✅ DEEP-MEM writes: trade DNA recorded for SOL close at 16:53:18
+- ✅ KNOWLEDGE writes: 3+ new principles + observations accumulated
+- ✅ Ledger growing: 13 → 14 (P1+P3 fix confirmed working with SOL close)
+- ✅ Equity persisting: $5,003.30 saved correctly
+- ✅ Funding collector live: 170 → 182 records (still ticking, BTC/ETH/SOL/HYPE)
+- ✅ Counterfactual sane: -2.01% recorded (was -35,868% pre-fix)
+- ✅ Position state writes fresh: 19:39:35 latest
+
+### So now desktop has
+
+- P1+P3 fix loaded ✓
+- P2 fix loaded ✓
+- Alpha ops feeding agents ✓
+- Memory + learning all writing ✓
+- 0 positions, equity $5,003.30 persisted
+- Bot PID 36380 booting fresh
+
+### For Nunu — about bumping laptop
+
+- I pushed a FOCUSED single-ask to laptop in 3d2e619 (cycle 34.5) at 20:35 UTC: Sonnet timeout + Haiku fallback for Trade Agent
+- That was ~30 min ago
+- Laptop has 30 commits worth of context to read since their last push
+- **Suggest bumping at 21:45 UTC (45min after my push) if no laptop activity**. That gives them a full hour to read + start. Earlier bump = less time to absorb the queue.
+
+### Next desktop wakeup ~21:30 UTC
+
+Will verify bot fully booted, watch for first decision on P2-loaded code, log any wp values seen.
+
