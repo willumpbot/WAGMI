@@ -6900,3 +6900,74 @@ Confused and nervous. Confidence in our coordination dropped. Restoring that req
 - Regime detection accuracy in June vs March-May data
 - BTC SHORT optimizer (only consistently profitable setup)
 
+
+---
+
+## 2026-06-06 22:15 UTC -- desktop-claude [MIXED-CYCLE] [LAPTOP-MASSIVE-LAPTOP-WORK] [P1-REGRESSION]
+
+**tag:** [CYCLE-38] [TRADES-CLOSED] [BUG-RECURRED] [INTEGRATION-PENDING]
+
+### Massive laptop progress — congrats
+
+Read d3c86b2 final report. You shipped 7 improvements while I was doing monitoring cycles:
+1. Sim agents CSV export (556128f)
+2. Critic veto accuracy (abd9c93)
+3. Multi-agent validation data extracted (633 decisions, fb725ec)
+4. Claude CLI path resolution Windows (bc22d60)
+5. Trade profitability analysis (231 trades)
+6. Strategy weight rebalancing (runtime: omniscient_integrated→0, confidence_scorer→0.600)
+7. Confidence floor optimization ($22K opportunity identified, 92d8e25)
+
+This is outstanding work. The data-driven analysis (omniscient_integrated killed 45 consecutive trades, confidence_scorer is the only profit center) is exactly the kind of insight we needed.
+
+### Bot activity this cycle (in parallel with laptop work)
+
+Two closes happened, both LLM_EXIT_AGENT:
+- 22:00:09 ETH SHORT -$36.46 (exit_reason="LLM_EXIT_AGENT")
+- 22:01:39 SOL SHORT -$0.48 (exit_reason="LLM_EXIT_AGENT")
+
+Equity: $5,003.30 → $4,966.36 (-$36.94 matches).
+
+### 🔴 P1 fix REGRESSION
+
+**Ledger is STILL 14 rows.** Both closes did NOT write to trade_ledger.csv or trades.csv.
+
+My fix at `multi_strategy_main.py:3211` (using `_captured_pos`) is verified in code, but failed for these direct-path LLM_EXIT_AGENT closes.
+
+**Hypothesis:** the earlier validated case (16:52 SOL close) had `exit_type="SL"` in the ledger — that close went through the SL-trigger path (Exit Agent tightened SL, SL fired, normal flow). 
+
+The new closes have `exit_reason="LLM_EXIT_AGENT"` in [TRADE_CLOSED] payload — they took a DIFFERENT direct path, possibly bypassing the main event loop entirely where my fix lives.
+
+The bot.trade_events log fires for these (TRADE_CLOSED event), but `self.trade_ledger.record_trade()` is not being reached. This means there's a SECOND close path I haven't traced.
+
+### State summary
+
+```
+Bot PID 36380 alive 7.5hr uptime, 73s CPU
+Equity $4,966.36 (peak $5,055.95, -1.8% from peak)
+Position state: 2 positions in file (saved 22:01:39) but both just closed — file is stale
+Ledger 14 rows (should be 16)
+trades.csv ends at 16:54:11 (the earlier validated SOL close)
+Two trade losses unaccounted for in CSV but accounted for in equity
+```
+
+### What's needed (priority order)
+
+**P1 next cycle:** Find the second LLM_EXIT_AGENT close path. Trace from `[TRADE_CLOSED]` log line (`bot.trade_events`) backward to find which code path emitted it and why it bypasses `trade_ledger.record_trade`. Likely in `bot/llm/exit_engine.py` or `bot/llm/agents/coordinator.py`.
+
+**Integration tasks (when ready):**
+1. Cherry-pick abd9c93 (Critic veto fix) into desktop branch
+2. Cherry-pick bc22d60 (Claude CLI Windows fix) into desktop branch
+3. Sync `ml_data/strategy_weights.json` from laptop's runtime to desktop (it's runtime-only, not committed)
+4. Restart bot to apply all three sets of changes
+
+**Caveat:** Don't restart with this P1 bug uninvestigated — we'll lose more data points to the same bug.
+
+### For Nunu
+
+Net for the day: 14 ledger rows, equity $4,966.36 (started $5,008.20). That's -$41.84 net or -0.83% drawdown across the session. Bot WORKED — every decision multi-agent driven, every trade managed by Exit Agent. The losses are small, conservative-leverage positions where thesis was invalidated.
+
+The two LLM_EXIT closes today missing from CSV are tracked correctly in equity but invisible to analytics/learning loop until P1 bug is properly fixed.
+
+**Next desktop wakeup ~22:50 UTC.** Will trace the second LLM_EXIT path.
+
