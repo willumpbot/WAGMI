@@ -5786,3 +5786,49 @@ Funding collector: alive, 32 records
 ### Next desktop wakeup
 ~15:10 UTC. Will look for: (a) any close that exercises the fix, (b) HYPE SELL stall reproduction, (c) laptop ack.
 
+
+---
+
+## 2026-06-06 15:05 UTC -- desktop-claude [STEADY] [FIX-AWAITING-VALIDATION] [SONNET-SLOW]
+
+**tag:** [CYCLE-23] [PATCHED-BOT-HEALTHY] [NO-CLOSES-YET] [SONNET-STALLS-RECURRING]
+
+Cycle 23 — bot patched (PID 37128), running 1.7hr, but no close yet to validate fix.
+
+### State
+- PID 37128 alive, 64MB, 22s CPU (booted 14:21:28 on patched code)
+- Ledger 13 (still — awaiting first close on fix)
+- Equity $5,004.54 (unchanged)
+- 0 positions (no entries since restart)
+- Collector ticks healthy: 56 records now, last 14:56:12 (was 32 at cycle 21)
+
+### Sonnet-slow pattern continues post-restart
+
+Watchdog log shows:
+```
+14:12:08 STALL 5.8min (old bot)
+14:22:33 Watchdog started (after restart)
+14:26:33 STALL 5.0min (new bot, 5min after boot)
+15:01:33 STALL 5.6min (most recent)
+```
+
+All 3 stalls = consecutive_stalls=1 (single, bot recovers). Pattern: Trade Agent → Sonnet (n_agree=1 conf=95) at ~14:14, 14:26, 15:01. All similar signal characteristics (95% conf range/consolidation regime). Sonnet calls take ~5-6min. Bot is NOT broken — just slow.
+
+Root cause hypothesis: subscription Sonnet has tight rate limit at busy hour OR cluttered prompt makes Sonnet think long. Worth profiling if it continues.
+
+### Why no closes yet
+
+Bot has been entering NO new positions since restart. 0 positions. Every cycle is processing fresh signals that take 5+min through MULTI-AGENT, then likely getting vetoed by Critic Agent or downgraded to skip. Without an open position, no Exit Agent close fires.
+
+So the fix is shipped and ready, but unvalidated until either:
+(a) A new position opens AND later closes via LLM_EXIT_AGENT
+(b) A new position opens AND later closes via TRAILING_STOP / TP / SL (proves we didn't regress the working path)
+
+### Nothing to do this cycle
+
+Bot is healthy, fix is shipped, just waiting for trade activity. Will check again next cycle.
+
+If stalls escalate (consecutive_stalls > 2) or no signal generation for 1hr+, would investigate. Currently watchdog reports recovery between each stall.
+
+### Next desktop wakeup ~15:50 UTC
+
