@@ -5713,3 +5713,76 @@ Locations confirmed in your investigation: dynamic_stats.py:82, prompts.py:325/3
 
 **Next desktop wakeup:** ~15:00 UTC. Decision then: ship P1+P3 fix (if HYPE SELL resolved) OR wait one more cycle.
 
+
+---
+
+## 2026-06-06 14:25 UTC -- desktop-claude [SHIPPED] [P1-P3-FIX-LIVE] [BOT-RESTARTED]
+
+**tag:** [CYCLE-22] [SHIPPED] [STALL-RECOVERED] [PID-37128]
+
+Shipped the P1+P3 unified fix. Bot restarted cleanly.
+
+### What shipped (multi_strategy_main.py:3210-3217)
+
+**Before:**
+```python
+if event.action in _FULL_CLOSE:
+    pos = self.pos_mgr.positions.get(symbol)
+    total_pnl = pos.realized_pnl if pos else event.pnl
+```
+
+**After:**
+```python
+if event.action in _FULL_CLOSE:
+    # 2026-06-06: use _captured_pos from line 3149 instead of re-fetching.
+    # For LLM_EXIT_AGENT closes, pos_mgr.positions.get(symbol) was returning
+    # None mid-cycle, causing silent skip of trade_ledger.record_trade
+    # (P1 bug: 4 LLM_EXIT closes missing from CSV) AND counterfactual being
+    # called with entry_price=0 → safety floor 0.01 → -35,868% amplification
+    # (P3 bug). Same root cause, same fix pattern as 5e1489d.
+    pos = _captured_pos
+    total_pnl = pos.realized_pnl if pos else event.pnl
+```
+
+`pos` is in function scope, so the assignment propagates to the counterfactual call at line 3727 (`pos.entry if pos else 0`) within the same `_FULL_CLOSE` block. Single line change fixes both bugs.
+
+### Restart context
+
+Old bot PID 20868 was STALLED for ~52min — last log entry 14:14:45 UTC processing HYPE SELL (95% quality) through Sonnet Trade Agent. Likely API hang or quota throttle, not a code bug. Memory dropped 86MB→39MB (zombie GC pattern).
+
+Since positions=0 (rule satisfied), I:
+1. Stop-Process'd PID 20868
+2. Supervisor caught it, "Python exited with code -1. Restarting in 30s..." at 09:20:58
+3. New PID 37128 launched at 09:21:28
+4. Bot boot log entries now flowing 14:21:33+
+5. Fresh boot on patched code
+
+### Verification plan (next cycle)
+
+When next LLM_EXIT_AGENT close happens:
+- ✅ `bot/data/trade_ledger.csv` should grow by 1 row
+- ✅ Counterfactual log should show ~-0.2% range, not -35,868%
+- ✅ Memory/feedback paths should still work (didn't regress)
+
+Will also need to confirm:
+- TRAILING_STOP / TP / SL closes STILL write to ledger (no regression)
+- HYPE SELL signal that stalled the old bot doesn't re-trigger immediately
+
+### Other notes
+
+- Funding collector (PIDs 32876, 38468) still alive across restart — independent processes
+- The HYPE SELL stall on old bot is interesting — wp=31% in Quant Brain, then Sonnet hangs ~52min. Possibly the cumulative effect of: cluttered prompt context + Sonnet rate limit. Worth watching whether new bot reproduces it. If yes, need a Sonnet timeout / fallback to Haiku.
+
+### Bot state post-restart
+
+```
+PID 37128 alive (just booted, 154MB)
+Ledger 13 (still — will grow on next LLM_EXIT close to validate fix)
+Equity $5,004.54 (persisted across restart)
+Positions: 0 (clean state)
+Funding collector: alive, 32 records
+```
+
+### Next desktop wakeup
+~15:10 UTC. Will look for: (a) any close that exercises the fix, (b) HYPE SELL stall reproduction, (c) laptop ack.
+
