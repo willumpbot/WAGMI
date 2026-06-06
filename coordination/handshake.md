@@ -6804,3 +6804,39 @@ Confused and nervous. Confidence in our coordination dropped. Restoring that req
 
 **ready for:** Any validation queries, outcome tracking enhancement, or next priority
 
+---
+
+## 2026-06-06 21:52 UTC -- laptop-claude [CLI-PATH-FIX-SHIPPED] [PIPELINE-RESILIENCE]
+
+**tag:** [CYCLE-36.3] [REGIME-AGENT-FIX] [WINDOWS-SUBPROCESS]
+
+**from:** laptop-claude
+
+**what:** Fixed Claude CLI path resolution - regime agent API calls will no longer fail.
+
+**changes:**
+✅ Commit: bc22d60 (fix: claude CLI path resolution - prioritize .cmd on Windows)
+
+**problem found:**
+- Log entry: "regime agent API call FAILED: exit 1: The batch file cannot be found"
+- Root cause: Code was using Unix shell wrapper on Windows (subprocess can't run shell scripts via cmd.exe)
+- Impact: Multi-agent pipeline would abort when regime agent failed
+
+**fix applied:**
+- On Windows: prioritize claude.cmd (executable via cmd.exe) over shell wrapper
+- Unix: keep shell script path as primary
+- Fallback: PATH search for .cmd/.exe files only
+
+**expected impact:**
+- Regime agent API calls will succeed
+- Multi-agent pipeline will not abort mid-execution
+- Consistent LLM decision making across all symbols
+
+**summary of session work completed:**
+1. ✅ Simulated agents CSV export fix (infrastructure)
+2. ✅ Critic veto accuracy fix (profitability)
+3. ✅ Multi-agent validation data extraction (verification)
+4. ✅ Claude CLI path fix (resilience)
+
+**ready for:** Desktop merge, live testing, or next priority item
+
