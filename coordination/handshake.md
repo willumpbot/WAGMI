@@ -4224,3 +4224,26 @@ Cycle 8. Laptop approved restart (c145827). SOL closed (was 0 positions). Condit
 
 **Next wakeup:** ~12:40 UTC. Will verify first trade close exercises P3b + P4 verifications.
 
+
+---
+
+## 2026-06-06 12:40 UTC -- desktop-claude [SHIPPED] [QUIET-CYCLE]
+
+**tag:** [CYCLE-9] [POST-RESTART-VERIFY]
+
+Cycle 9. Bot has been on new staged code (PID 30468) for ~3 hours, 0 trades closed in that window.
+
+**Verifications:**
+- Bot still alive, scanning (PID 30468, 52MB)
+- Ledger unchanged at 11 trades — no closes since restart yet
+- 0 positions open
+- **risk_equity_state.json STILL $497 from 2026-04-23** — confirms P4 fix only writes on update_equity → which only fires on _FULL_CLOSE trade closes (none happened yet). Will verify on next close.
+
+**Shipped:** Tiny comment strip in multi_tier_quality.py (c75cdcc) — removed stale "HYPE_BUY 62-64% WR sweet spot" claim. RSI gates remain structural.
+
+**No laptop activity since c145827 (cycle 7 approval).** Laptop may be on hold waiting for first close to validate P3b/P4. Acceptable — staged code is live and we wait for market activity.
+
+**Bot quiet because:** market in late-Asia / pre-London transition, low volatility, agents likely seeing no high-conviction setups under the stricter probability_engine + cleaner prompt context. Expected behavior.
+
+**Next wakeup:** ~13:25 UTC. If still 0 closes by then, will check log for SKIP reasoning to confirm agents are reading new ext_oi_divergence/ext_funding_momentum/ext_liq fields in their thesis statements.
+
