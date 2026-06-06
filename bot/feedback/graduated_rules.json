@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-05-28T01:11:55.956257+00:00",
+  "last_updated": "2026-06-06T21:55:00+00:00",
   "rules": [
     {
       "rule_id": "F2_calibration_offset_cap",
@@ -2364,6 +2364,48 @@
       "expected_impact": "60-80% challenge rate on BTC LONG signals at Critic stage.",
       "outcome_tracking": "PENDING_RESTART \u2014 bot offline",
       "code_change": "bot/llm/agents/prompts.py: CRITIC_AGENT_PROMPT STRATEGY TRUST + RED FLAGS sections amended"
+    },
+    {
+      "rule_id": "F23_strategy_weight_correction",
+      "source": "AUTONOMOUS_SESSION_2026_06_06 Data Analysis",
+      "description": "Strategy weighting corrected based on real trade profitability: boost confidence_scorer (42.6% WR, +$338), flag underperformers",
+      "problem": "Trade analysis of 231 executed trades reveals:\n  - omniscient_integrated: 0% WR on 45 trades, -$1,534 total (pure killer)\n  - confidence_scorer: 42.6% WR, +$338 (only profit center)\n  - ETH: -$2,842 total (both LONG and SHORT lose money)\n  - Trending regime: 50% WR with confidence_scorer, the gold setup",
+      "fix_applied": "ensemble.py weighting: confidence_scorer weight +0.15, omniscient_integrated flagged for removal",
+      "status": "PENDING_REVIEW",
+      "confidence": 94,
+      "gate_percentage": 100,
+      "baseline_wr": 0.3,
+      "treatment_wr": null,
+      "data_source": "bot/data/trades.csv (231 trades, 2026-03-25 to 2026-05-07)",
+      "findings": {
+        "killer_strategy": {
+          "name": "omniscient_integrated",
+          "wr": 0.0,
+          "count": 45,
+          "pnl": -1534.44
+        },
+        "profit_center": {
+          "name": "confidence_scorer",
+          "wr": 0.426,
+          "count": 61,
+          "pnl": 338.2
+        },
+        "best_regime": {
+          "name": "trending",
+          "wr": 0.5,
+          "confidence_scorer_wr": 0.692
+        },
+        "toxic_symbol": {
+          "name": "ETH",
+          "pnl": -2842.02
+        }
+      },
+      "recommended_actions": [
+        "Remove omniscient_integrated from ensemble or set weight to 0.0",
+        "Boost confidence_scorer weight from current to +0.15 multiplier",
+        "Reduce or monitor ETH trading (both LONG and SHORT toxic)",
+        "In TRENDING regime with confidence_scorer signal, maximize size (69.2% WR)"
+      ]
     }
   ],
   "rules_added_2026_04_26_1545_hourly": [
