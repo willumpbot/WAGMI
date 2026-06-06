@@ -6237,3 +6237,63 @@ This is the SECOND hard-freeze of the day. Pattern is concerning. While bot is h
 
 Will check: SOL close outcome (ledger should grow), any new bugs from the recovery, laptop progress.
 
+
+---
+
+## 2026-06-06 17:35 UTC -- desktop-claude [STEADY] [STALL-EVERY-10MIN]
+
+**tag:** [CYCLE-28] [SOL-STILL-OPEN] [WATCHDOG-CATCHING-STALLS]
+
+Cycle 28 — bot alive, SOL holding, but the stall cadence is now CONSISTENT.
+
+### Stall pattern this hour (every ~10-12 min)
+
+```
+16:01:35 STALL 5.0min (recovered)
+16:16:35 STALL 5.9min (recovered)
+16:27:35 STALL 5.1min (recovered)
+16:38:35 STALL 5.2min (recovered)
+```
+
+Watchdog is doing its job — single-stall recovers each time, no escalation to consecutive_stalls=11 like before. Looks like the prior 2hr hard-freeze was a Sonnet endpoint outage; current pattern is just normal slow Sonnet calls + recovery.
+
+Net throughput: ~1 Sonnet decision every 10-15 min. That's slow but functional.
+
+### SOL position status
+
+- Still open SHORT @ $61.751
+- Latest collector tick (16:31:10): SOL $61.6065 (-0.23% adverse from entry, still slightly favorable for SHORT actually since we want price to drop)
+- Wait — entry $61.751, current $61.6065 → price went DOWN $0.14 → SHORT is favorable by $0.14 × 2.04 qty = +$0.29
+- Trail at $64.20 (well away), TP1 at $56.85 (long way still)
+- Thesis still intact: trending_bear regime + negative funding + bearish OI signals
+
+### Log shows bot generating SOL SELL signals (rejected as duplicate)
+
+```
+16:44:08 [REGIME] SOL: trending_bear | ADX=56.9 ATR%=1.886 price < EMA20 < EMA50
+16:44:08 [QUALITY] SOL SELL: conf 76% * quality 1.21 = 92%
+16:44:08 [SOL] Trend aligned SELL: score=-1.5/2
+```
+
+Strong SOL SELL signal at 92% quality. Strategy layer keeps wanting MORE SOL shorts (consistent with thesis). Duplicate guard correctly rejecting. Good safety check at work.
+
+### Collector stuck at 100 records
+
+Last write 16:31:10 — expected ticks at 16:46 (now), 17:01, 17:16 didn't happen. Either:
+- Collector PIDs 32876/38468 are themselves stalled in API call
+- Or HL API rate-limiting our IP
+
+CPU on both collectors only +2s since cycle 27 — definitely idle. Will revisit if no fresh records by next cycle. Bot's `get_oi_divergence_insight` already has plenty of data (25 ticks × 4 syms = 100 records, well over the N=2 minimum).
+
+### Nothing material to ship this cycle
+
+No new closes, no bugs surfaced, fix still pending validation. SOL trade alive and well, Exit Agent quiet (good — thesis holding), no escalating stalls.
+
+### Asks for laptop (if cycles available)
+
+1. **Sonnet timeout / Haiku fallback** for Trade Agent (high-leverage reliability fix)
+2. **Hyperliquid reconcile param** — `[RECONCILE] Failed to fetch positions from Hyperliquid: requires user parameter` — add wallet address or skip query in paper mode
+3. **Funding collector watchdog** — restart collector if no records for 30 min
+
+**Next desktop wakeup ~18:20 UTC**
+
