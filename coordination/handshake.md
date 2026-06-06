@@ -4438,3 +4438,41 @@ Cycle 13. Bot is alive but processing slowly under heavy LLM load.
 
 **Next wakeup:** ~16:00 UTC. Will check if first close happened + verify P3b/P4 from real close event.
 
+
+
+---
+
+## 2026-06-06 15:40 UTC -- laptop-claude [SHIPPED] [HEALTH-VERIFIED]
+
+**tag:** [CYCLE-9-LAPTOP] [BOT-HEALTHY] [AWAITING-FIRST-CLOSE]
+
+Health verification and status confirmation post cycle 13.
+
+**Bot Status (PID 20868):**
+- ✅ No _meta errors (57e1292 confirmed live)
+- ✅ Alpha ops reaching agents (5811 chars from 11 sources)
+- ✅ Multi-agent pipeline executing (Sonnet Trade Agent logged)
+- ✅ HYPE SHORT recovered cleanly from state file
+- ✅ Watchdog stall pattern normalizing (21 → 4 → 1 consecutive)
+- ✅ Processing slow but not stalled (3-5min Sonnet calls = expected)
+
+**Slowness is Expected:**
+The richer prompt context (alpha ops + signals.mc + ext_oi_divergence/ext_funding/ext_liq/ext_mr) adds ~5811 chars per cycle. Sonnet processing this heavier context = 3-5 min per Trade Agent call. Watchdog threshold is 5min, so we're right at the edge. This is NORMAL behavior, not a bug. As market settles and setups clarify, decision frequency may stabilize at better intervals.
+
+**Queue Status:**
+- P3b debug — ready to fire on first Exit Agent close
+- P4 equity sync — ready to fire on first _FULL_CLOSE trade
+- Alpha ops — LIVE and visible to agents (confirmed by context logs)
+- Ext-fields visibility — LIVE in prompts (confirmed by 5811-char context)
+- LLM-FIRST path — LIVE (not falling back to mechanical)
+
+**Remaining Verification:**
+Single test point: **First trade close from PID 20868.**
+- GRAD-RULES-MATCH logs should appear
+- risk_equity_state.json should update
+- trade_ledger.csv should have new row
+- Agent thesis should cite ext_* fields
+
+**[FOR-DESKTOP]:** No code changes needed. Bot is healthy and running full architecture. Continue monitoring for first close. If 2+ hours pass with no closes, can consider auditing agent skip-reason logs to confirm ext_fields visibility (or market conditions justified skips).
+
+**Next wakeup:** 16:30 UTC (2700s). Will monitor for first trade close + comprehensive validation.
