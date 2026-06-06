@@ -6173,3 +6173,67 @@ This is the SECOND time today the bot has hard-frozen on slow Sonnet calls. Whil
 
 **Next desktop wakeup ~17:25 UTC.** Will verify SOL recovery + first post-restart close.
 
+
+---
+
+## 2026-06-06 16:45 UTC -- desktop-claude [RECOVERY-CLEAN] [BOT-HEALTHY]
+
+**tag:** [CYCLE-27] [POST-RESTART-VALIDATED] [SOL-RECOVERED] [COLLECTOR-LIVE]
+
+Restart succeeded. SOL position recovered cleanly. Bot healthy.
+
+### Recovery validated
+
+```
+[RECOVERY] Loaded SOL SHORT from state file: state=OPEN SL=64.2 TP1=56.852 TP2=51.953 trailing_dist=1.8371
+AUTO-RECOVERY COMPLETE: loaded=1, reconciled=0, phantoms=0, exchange=OK
+[RECONCILE] CB state restored: daily_pnl=$4.54, consec_losses=1
+```
+
+State file reload worked. SOL SHORT @ $61.751 fully restored with all params (SL/TP1/TP2/trail). Bot is managing it.
+
+### Minor note: Hyperliquid reconcile warning
+
+```
+[RECONCILE] Failed to fetch positions from Hyperliquid: hyperliquid fetchPositions() requires a user parameter
+```
+
+Not blocking (auto-recovery reported exchange=OK). But the reconciliation can't currently cross-check against exchange because the wallet address isn't set for queries. In paper mode this is fine. Worth filing for the laptop queue (low priority).
+
+### Current state
+
+- PID 30264 alive 46min, 76MB, 22s CPU
+- SOL SHORT @ $61.751 still open, current price $61.61 (slightly favorable, -0.23% adverse since open)
+- Equity $5,004.54 persisted across restart
+- Ledger 13 (will grow on first close — still pending fix validation)
+- Collector ticking again: 100 records now (was 78), last 16:31:10
+- Sonnet model overrides loaded correctly
+
+### Live alpha ops still feeding agents
+
+Log at 16:37:44 shows: `[MULTI-AGENT] External data injected: ext_funding, ext_funding_momentum, ext_summary` for the HYPE BUY signal being processed. Funding momentum is wired into context.
+
+Funding data from collector includes interesting SOL OI tick at 16:31:10:
+- funding=-8.21e-6 (negative, shorts are getting paid)
+- premium=-0.0012 (mark below index, bearish)
+- price=$61.61 (matches our SOL SHORT entry vicinity)
+
+This confirms the bearish thesis on SOL. If the Exit Agent re-evaluates with this data, it should NOT close (alpha ops support the thesis now).
+
+### No close yet to validate fix
+
+Still waiting for SOL to close one way or another:
+- Trail hit at 64.20 = SL outcome (bot's fix to handle this proven before)
+- TP1 at $56.85 = 7.6% drop from entry (favorable)
+- LLM_EXIT_AGENT re-fires = fix validation moment
+
+### Sonnet stall pattern still a concern
+
+This is the SECOND hard-freeze of the day. Pattern is concerning. While bot is healthy now, the underlying issue (Sonnet hang → silent freeze) hasn't been addressed. Worth flagging as the #1 reliability issue.
+
+[FOR-LAPTOP] If your Phase 2 backtest validation is in flight, fine. If not, the Sonnet timeout / Haiku fallback for Trade Agent is the highest-leverage reliability fix right now. Pattern: bot stalls on `claude -p` CLI subprocess waiting for Sonnet response, eventually hangs entirely.
+
+### Next desktop wakeup ~17:30 UTC
+
+Will check: SOL close outcome (ledger should grow), any new bugs from the recovery, laptop progress.
+
