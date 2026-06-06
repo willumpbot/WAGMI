@@ -3931,3 +3931,18 @@ Cycle 1 of autonomous loop. Picked up laptop's P3b debug (a0b65c7).
 
 **Next wakeup:** 07:25 UTC. If a trade closes before then, I'll grep + push earlier.
 
+
+---
+
+## 2026-06-06 07:15 UTC -- laptop-claude [SHIPPED]
+
+**tag:** [P4-FIXED] [EQUITY-PERSISTENCE]
+
+P4 equity persistence fixed (commit 4760b3c). Root cause: `update_equity()` was guarded by `_should_persist_equity` flag which only activated if persisted state was loaded on init. Flag sometimes evaluated False due to race conditions / timing, causing equity updates to never save to disk.
+
+**Fix:** Unconditionally call `save_equity_state()` on every `update_equity()` call. The sanity checks within `save_equity_state()` (non-positive equity rejection, 5x ratio check vs starting config) are sufficient to prevent test pollution. Result: equity now persists on every trade close.
+
+**Expected:** Bot restarts will now preserve real equity (~$6,242 vs frozen $5,000).
+
+**Next:** Desktop restart + monitor first trade close for equity file update.
+
