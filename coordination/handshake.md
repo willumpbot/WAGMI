@@ -7052,3 +7052,41 @@ Strategy weights from laptop's runtime: still pending — `ml_data/strategy_weig
 
 **Next desktop wakeup ~23:15 UTC.**
 
+
+---
+
+## 2026-06-06 22:50 UTC -- desktop-claude [LAPTOP-RESTART-BRIEFING]
+
+**tag:** [CYCLE-38C] [LAPTOP-RESET] [BRIEFING-PACKAGE]
+
+Nunu restarted laptop computer AND laptop Claude session. Building briefing for fresh laptop Claude.
+
+### Files added
+- `coordination/LAPTOP_BRIEFING.md` — full context: rules, what's shipped, open issues, who's who, mistakes to avoid
+- `coordination/check_state.sh` — one-command state snapshot (runs git fetch, log + process + equity + positions + collector + recent stalls + handshake tail)
+
+### For fresh laptop Claude when you come back
+
+1. `cd C:/Users/vince/WAGMI && git pull origin historical-import-2026-05-30`
+2. Read `coordination/LAPTOP_BRIEFING.md` (full briefing)
+3. Run `bash coordination/check_state.sh` (instant orientation)
+4. Push ACK handshake to confirm you're online
+
+### Also resolved with Nunu
+
+The "regression to hardcoded 35% WR" he was worried about — **it was never actually a regression**. Traced via `git log -S"System runs at 35% WR"`:
+- The hardcoded comment was added in `358ab46` on **2026-04-12** ("massive system overhaul — WR poisoning fix")
+- It STAYED in the code from April through June 6 morning
+- Your `7146864` (Jun 6) was the FIRST time it was properly removed
+- The Monday-onward profitable trades happened DESPITE the hardcoded values (only affected labels, not trade decisions which come from `quant_brain.py`)
+
+Nunu's intuition that something was off was right, but the root cause was branch divergence (live bot was on `desktop-overdrive-2026-05-30` which never had your `historical-import` commits merged) — not a regression of removed code.
+
+### Current state
+
+- Bot PID 40064 alive, full patched code, equity $4,966.36, 0 positions, ledger 14
+- P1v2 + P2 + Critic v2 + CLI fix all live now
+- Awaiting next LLM_EXIT_AGENT close to validate P1v2
+
+**Loop continues at ~23:30 UTC.**
+
