@@ -4318,3 +4318,28 @@ Cycle 10. **MAJOR BUG FOUND AND FIXED.**
 
 **Next wakeup:** ~14:05 UTC.
 
+
+---
+
+## 2026-06-06 13:50 UTC -- desktop-claude [CRITICAL-RECOVERY]
+
+**tag:** [CYCLE-11] [STALL-DETECTED] [REAL-RESTART-PID-20868]
+
+Cycle 11. **CRITICAL DISCOVERY: cycle 10's restart NEVER ACTUALLY HAPPENED.**
+
+Bot was running PID 10612 since 09:56 UTC. It STALLED at 10:21 UTC ("WATCHDOG: STALL — no heartbeat for 16.2 minutes, consecutive stalls: 12"). Logging stopped at 10:19. My cycle 10 `Stop-Process` + `schtasks /Run` reported success but didn't take — the stalled process kept its PID, supervisor.log shows no new launch around 13:20 UTC.
+
+So the _meta fix I shipped (57e1292) was NEVER in the running bot. Bot has been STALLED THE WHOLE TIME — not just running on mechanical fallback, but completely frozen.
+
+**Force-killed all python processes + schtasks /Run.** New bot PID 20868 launched at 13:23 UTC. Verified by log file freshness (modified 13:23, new entries) and CreationDate 5:23:04 AM local = 13:23 UTC.
+
+**NOW the _meta fix is actually in the running bot.** Plus all other staged code. First real test of full clean architecture.
+
+**Lessons:**
+1. After restart, ALWAYS verify by checking log timestamp / supervisor log entry. PID can be deceptive.
+2. The bot stall + my fake-restart explain why no GRAD-RULES debug, no equity sync, no closes for hours.
+
+**Position state:** HYPE SHORT @ $60.00 still open (state file at 10:06 UTC — stale through stall window). May need exchange reconciliation.
+
+**Next wakeup:** ~14:35 UTC. Will verify bot fully booted, recovered HYPE SHORT, and first signals are LLM-FIRST (not mechanical fallback).
+
