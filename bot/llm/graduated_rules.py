@@ -305,25 +305,50 @@ class GraduatedRulesEngine:
         confidence: signal confidence at entry (0-100).
         """
         self._ensure_loaded()
+
+        # DEBUG: Log incoming trade context
+        logger.debug(f"[GRAD-RULES-DEBUG] record_outcome called: symbol={symbol} regime={regime} side={side} won={won} hour={hour_utc} strats={strategies_active} conf={confidence:.1f}")
+
+        matched_count = 0
         for rule in self._rules:
             if not rule.active:
                 continue
             if rule.action == "veto":
                 continue  # handled by counterfactual_learner.py
-            if not rule.matches(symbol=symbol, regime=regime, side=side, hour_utc=hour_utc,
+
+            # DEBUG: Check each rule's match status
+            match_result = rule.matches(symbol=symbol, regime=regime, side=side, hour_utc=hour_utc,
                                 strategies_active=strategies_active, num_agree=num_agree,
-                                confidence=confidence):
+                                confidence=confidence)
+            if not match_result:
+                # Log why this rule didn't match (detailed diagnosis)
+                logger.debug(f"[GRAD-RULES-DEBUG] Rule NO MATCH: {rule.rule_id} | sym={rule.conditions.get('symbol','*')} vs {symbol} | regime={rule.conditions.get('regime','*')} vs {regime} | side={rule.conditions.get('side','*')} vs {side} | active={rule.active}")
                 continue
+
+            # Rule matched
+            matched_count += 1
+            logger.info(f"[GRAD-RULES-MATCH] {rule.rule_id}: {rule.hypothesis_statement[:60]} (action={rule.action})")
+
             if rule.action == "boost":
                 if won:
                     rule.times_correct += 1
+                    logger.info(f"[GRAD-RULES] BOOST +correct: {rule.rule_id} won trade (times_correct now={rule.times_correct}, times_applied={rule.times_applied})")
+                else:
+                    logger.debug(f"[GRAD-RULES] BOOST not incr: trade lost (correct only on wins)")
             elif rule.action == "penalize":
                 if not won:
                     rule.times_correct += 1
+                    logger.info(f"[GRAD-RULES] PENALIZE +correct: {rule.rule_id} lost trade (times_correct now={rule.times_correct}, times_applied={rule.times_applied})")
+                else:
+                    logger.debug(f"[GRAD-RULES] PENALIZE not incr: trade won (correct only on losses)")
 
             if rule.times_applied >= 10 and rule.accuracy < 0.35:
                 rule.active = False
                 logger.info(f"[GRAD-RULES] Auto-retired: {rule.hypothesis_statement[:50]} (acc={rule.accuracy:.0%})")
+
+        if matched_count == 0:
+            logger.debug(f"[GRAD-RULES-DEBUG] NO RULES MATCHED for {symbol} {side} in {regime} (checked {len([r for r in self._rules if r.active and r.action != 'veto'])} active non-veto rules)")
+
         self._save()
 
     def get_active_rules_summary(self) -> str:
