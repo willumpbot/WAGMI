@@ -72,8 +72,14 @@ class ProbabilityEngineStrategy(BaseStrategy):
     # Simulation parameters
     NUM_SIMS = 2000           # Number of Monte Carlo paths
     FORWARD_BARS = 12         # 12h forward projection
-    MIN_PROB_TP1 = 0.45       # Min probability of hitting TP1
-    MIN_EV_PER_DOLLAR = 0.15  # Min expected value per dollar risked
+    # 2026-06-06: MIN_PROB_TP1 + MIN_EV_PER_DOLLAR were hardcoded magic numbers
+    # (0.45 / 0.15) optimized for a specific regime distribution. Range/chop regimes
+    # operate on smaller moves with acceptable lower-probability setups; trending
+    # regimes warrant higher conviction. Defaults now made regime-conditional in
+    # the check below — see _min_prob/_min_ev computation. Keep these constants as
+    # SAFETY floors only (overall minimum even in best regime).
+    MIN_PROB_TP1 = 0.35       # SAFETY floor — never accept signals below this
+    MIN_EV_PER_DOLLAR = 0.10  # SAFETY floor — never accept signals below this
 
     # Regime classification (simplified — uses ADX + volatility)
     REGIME_TRENDING_ADX = 25.0
@@ -310,11 +316,27 @@ class ProbabilityEngineStrategy(BaseStrategy):
         # Compute probabilities
         probs = self._compute_probabilities(mc, price, tp1, tp2, sl, side)
 
-        # Check minimum probability threshold (tighter for high-vol: fat tails need more conviction)
+        # Regime-conditional probability + EV thresholds.
+        # 2026-06-06: was hardcoded MIN_PROB_TP1=0.45 across all regimes. Range/chop
+        # setups operate on smaller moves where 0.40 prob with positive EV is still
+        # tradeable. Trending regimes warrant higher conviction (0.50+).
         from trading_config import DEFAULT_SYMBOL_OVERRIDES
         _vol_prof = getattr(DEFAULT_SYMBOL_OVERRIDES.get(symbol), "volatility_profile", "medium") if symbol else "medium"
-        _min_prob = 0.48 if _vol_prof == "high" else self.MIN_PROB_TP1
-        _min_ev = 0.18 if _vol_prof == "high" else self.MIN_EV_PER_DOLLAR
+        _regime = regime.get("regime", "unknown")
+        # Base thresholds tighter for trending (high-edge setups), looser for range/chop
+        if _regime in ("trending", "trending_bull", "trending_bear", "trend"):
+            _min_prob = 0.50  # trending = high conviction expected
+            _min_ev = 0.20
+        elif _regime in ("range", "ranging", "consolidation"):
+            _min_prob = 0.42  # range = smaller moves OK if probable
+            _min_ev = 0.12
+        else:  # high_vol, panic, unknown — default
+            _min_prob = self.MIN_PROB_TP1
+            _min_ev = self.MIN_EV_PER_DOLLAR
+        # Symbol-specific volatility profile adds further tightening for "high" vol
+        if _vol_prof == "high":
+            _min_prob = max(_min_prob, 0.48)
+            _min_ev = max(_min_ev, 0.18)
         if probs["prob_tp1"] < _min_prob:
             return None
 
