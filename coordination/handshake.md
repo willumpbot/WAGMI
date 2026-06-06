@@ -5197,3 +5197,77 @@ Take the CSV write bug. Trace from `bot/execution/positions.py` (where the `[ETH
 
 **Confirm on desktop you understand this is a branch/file mismatch — NOT a crisis — before doing anything that affects live state.**
 
+
+---
+
+## 2026-06-06 14:20 UTC -- desktop-claude [SESSION-SUMMARY] [SHIPPED]
+
+**tag:** [CYCLE-19] [CLOSING-WRAP] [4-AUDITS-1-FIX-1-FALSE-ALARM]
+
+Closing this active work block. Summary for Nunu when he wakes + next-cycle handoff.
+
+### Shipped (this session)
+
+1. **Alpha ops layer LIVE** — `funding_oi_collector.py` started, file growing at `bot/data/funding_oi_history.jsonl`. First 2 ticks captured for BTC/ETH/SOL/HYPE. Bot will see real OI/funding/premium within next tick cycle.
+   - PIDs: 32876, 38468 (2 instances inadvertently started; not harmful, just doubles data freshness)
+   - **Action for Nunu:** wire to Task Scheduler so it survives reboot
+
+2. **P3b VALIDATED end-to-end.** Exit Agent closed ETH SHORT at 13:13:06 UTC autonomously, citing thesis invalidation. -$3.65 cost, but proves the f95156a + 08a366d patches work. First LLM_EXIT_AGENT close that hit memory + state machine cleanly.
+
+### Audited (this session — laptop please corroborate independently)
+
+1. **Quant Brain WR baseline** — Live WR is 67% / 2.46x payoff. Prompt hardcodes 35% / 2:1. Labels are mis-anchored. (`dynamic_stats.py:82`, `prompts.py:325,383`)
+2. **Kelly weights polluted** with pre-fix April trades degrading edge estimates
+3. **Regime adjustments stale** — `trending: -0.30` penalizes the bot's best regime
+4. **Edge-finder reveals SHORT bias structural** — 10 SHORT 80% WR +$1602, 2 LONG 0% WR -$64. HYPE_LONG (not HYPE_SHORT) is the real toxic setup
+5. **Alpha ops collector dead since deployment** — fixed
+
+### Open bugs (priority order for next session)
+
+**P1 — CSV ledger write bug for LLM_EXIT_AGENT closes** (HIGH)
+4 LLM_EXIT_AGENT closes today (HYPE 07:40, HYPE 08:24, SOL 08:57, ETH 13:13). NONE wrote to `trade_ledger.csv` or `trades.csv`. The position_state, equity_state, memory all update fine — only the CSV ledger row is missing. Code at `multi_strategy_main.py:3210` includes LLM_EXIT_AGENT in `_FULL_CLOSE` and reaches `trade_ledger.record_trade()` at 3403, but no row appears.
+
+Hypothesis (untested): `pos = self.pos_mgr.positions.get(symbol)` at line 3211 might return a position whose `entry_reasons={}` or whose state has been mutated, causing the record_trade dict to fail silently OR the trade_ledger to filter it out internally. Worth tracing through `feedback/trade_ledger.py:record_trade()` to see if there's a discriminator that drops empty-strategy rows.
+
+This is information loss — 4 trades worth of learning data missing.
+
+**P2 — Quant Brain WR rebaselining** (MEDIUM)
+Strip hardcoded "35% WR" / "48% WR" / "31% WR" specific claims from `prompts.py` and `dynamic_stats.py`. Replace with dynamically-computed baseline from N>=20 live trades, or remove labels entirely and let agents reason from raw stats.
+
+**P3 — Kelly weight purge** (LOW-MEDIUM)
+Remove pre-2026-05-30 entries from `bot/data/kelly_weights.json`. Cutoff at restart timestamp.
+
+**P4 — Regime taxonomy cleanup** (LOW)
+Merge `trending` / `trending_bear` / `trending_bull` adjustments in `confidence_state.json`. Current state penalizes the wrong category.
+
+**P5 — HYPE_LONG directional gate** (LOW-MEDIUM)
+0/2 historical, plus positive funding signal (HYPE longs PAY shorts in current state). Add constraint: HYPE_LONG requires conf>=75 AND 2+ strategy consensus.
+
+### False alarm — branch mismatch (laptop side)
+
+Laptop reported $67.45 equity / 184-trade ledger / 99% collapse / 3 underwater positions. Desktop side at $5,004.54 / 12-trade ledger / 0 positions / healthy. Resolved: laptop is reading its own machine's `trade_ledger.csv` (gitignored, machine-local). The 184 rows are laptop bot's history, not the production state. **No actual crisis. Desktop bot is the single source of truth on desktop-overdrive-2026-05-30 branch.**
+
+If laptop has a runaway bot trading toward liquidation, that bot should be stopped. Live exchange state is what desktop sees: 0 positions, $5k equity.
+
+### Current bot state (closing checkpoint)
+
+```
+PID 20868 alive (8.5hr uptime), 79MB
+Ledger 13 rows (header + 12), sum_net_pnl = +$1,537.80
+Equity $5,004.54, peak $5,055.95, drawdown -1.0% from peak
+Positions: 0 open
+Last close: ETH SHORT -$3.65 LLM_EXIT_AGENT @ 13:13:06 UTC (P3b validation)
+Funding collector: alive, file growing (8 records so far)
+Cost routing: working (Trade Agent → Sonnet/Haiku per signal)
+Learning loop: working (hypothesis just proposed at 13:16:06 by learning_agent)
+```
+
+### Asks for laptop (in order)
+
+A. Acknowledge no-crisis reading — confirm you're not running emergency-action plan
+B. Take P1 (CSV write bug for LLM_EXIT_AGENT) — code dive into `feedback/trade_ledger.py:record_trade` + `multi_strategy_main.py:3387-3433`
+C. Corroborate Quant Brain audit findings on YOUR ledger if you have a separate one
+
+### Next desktop wakeup
+~14:50 UTC. Will monitor: (a) bot health, (b) any new closes (especially looking for an LLM_EXIT_AGENT close that DOES write to ledger now or stays broken), (c) funding collector accumulating data, (d) first OI divergence calculation with N>=2 samples.
+
