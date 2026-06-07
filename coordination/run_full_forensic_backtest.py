@@ -8,8 +8,14 @@ No user input required - handles everything autonomously
 import json
 import subprocess
 import os
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+
+# Fix Windows encoding issues
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # Configuration
 QUARTERS = [
@@ -87,20 +93,20 @@ def run_backtest_quarter(quarter):
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=7200)
 
         if result.returncode == 0:
-            log(f"✓ Backtest complete: {quarter['label']}")
+            log(f"[OK] Backtest complete: {quarter['label']}")
             # Save checkpoint
             save_checkpoint(quarter["label"], "backtest_complete", "Success")
             return {"status": "success", "quarter": quarter["label"]}
         else:
-            log(f"✗ Backtest failed: {quarter['label']} - {result.stderr}")
+            log(f"[FAILED] Backtest failed: {quarter['label']} - {result.stderr}")
             save_checkpoint(quarter["label"], "backtest_failed", result.stderr)
             return {"status": "error", "quarter": quarter["label"], "error": result.stderr}
 
     except subprocess.TimeoutExpired:
-        log(f"✗ Backtest timeout: {quarter['label']}")
+        log(f"[TIMEOUT] Backtest timeout: {quarter['label']}")
         return {"status": "timeout", "quarter": quarter["label"]}
     except Exception as e:
-        log(f"✗ Backtest error: {quarter['label']} - {str(e)}")
+        log(f"[ERROR] Backtest error: {quarter['label']} - {str(e)}")
         return {"status": "exception", "quarter": quarter["label"], "error": str(e)}
 
 def generate_forensic_analysis(quarter):
@@ -141,11 +147,11 @@ def generate_forensic_analysis(quarter):
         # Save progress checkpoint
         save_checkpoint(quarter["label"], "forensic_generated", str(output_file))
 
-        log(f"✓ Forensic analysis saved: {output_file}")
+        log(f"[OK] Forensic analysis saved: {output_file}")
         return {"status": "success", "quarter": quarter["label"], "output": str(output_file)}
 
     except Exception as e:
-        log(f"✗ Analysis generation failed: {quarter['label']} - {str(e)}")
+        log(f"[ERROR] Analysis generation failed: {quarter['label']} - {str(e)}")
         return {"status": "error", "quarter": quarter["label"], "error": str(e)}
 
 def generate_final_report():
@@ -212,11 +218,11 @@ Status: COMPLETE - All 14 quarters analyzed with maximum data extraction
         with open(report_file, "w") as f:
             f.write(report)
 
-        log(f"✓ Final report generated: {report_file}")
+        log(f"[OK] Final report generated: {report_file}")
         return str(report_file)
 
     except Exception as e:
-        log(f"✗ Final report generation failed: {str(e)}")
+        log(f"[ERROR] Final report generation failed: {str(e)}")
         raise
 
 def main():
