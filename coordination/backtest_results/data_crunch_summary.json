@@ -1,0 +1,64 @@
+{
+  "checkpoints": 28,
+  "by_quarter": {
+    "Q1 2023": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q2 2023": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q3 2023": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q4 2023": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q1 2024": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q2 2024": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q3 2024": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q4 2024": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q1 2025": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q2 2025": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q3 2025": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q4 2025": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q1 2026": [
+      "backtest_complete",
+      "forensic_generated"
+    ],
+    "Q2 2026": [
+      "backtest_complete",
+      "forensic_generated"
+    ]
+  },
+  "backtest_complete": 14,
+  "forensic_complete": 14,
+  "total_quarters": 14
+}
