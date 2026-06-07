@@ -449,3 +449,63 @@ Multi-agent + Sonnet timeout + P1v2 + clean data + clean prompts + clean memory
 
 Watching next 30-60 min for first trade. If Trade Agent still skips citing stale anchors, more digging needed.
 
+
+## 2026-06-07T13:30:00Z [FIX-AVAILABLE] Quant Brain: live calibration + manual override (no more hardcoded WPs)
+
+Per Nunu's "useful or stale?" concern — built the right answer: derive from live data, allow manual override.
+
+### What changed in `bot/llm/quant_brain.py`
+
+- Added `self._calibrations` dict (loaded on init, refreshable)
+- Added `self._default_wp` (computed from `dynamic_stats.get_system_baseline()`)
+- Added `_refresh_calibrations()` private method (60% live / 40% prior blend)
+- Added `refresh_calibrations()` public method (force recompute)
+- Line 643: `_SETUP_WIN_PROBS.get(setup_key, _DEFAULT_WIN_PROB)` → `self._calibrations.get(setup_key, self._default_wp)`
+
+### Manual override mechanism
+
+File: `bot/data/quant_brain_overrides.json` (created with sample)
+
+```json
+{
+  "setup_wp": {
+    "BTC_BUY": 0.50,
+    "HYPE_SELL": 0.20
+  },
+  "default_wp": 0.45
+}
+```
+
+Overrides ALWAYS win over live calibration. Useful for: pinning a known regime, disabling a setup (set very low), or pin-pointing a research finding.
+
+### How it works at runtime
+
+1. **Boot**: `_refresh_calibrations(initial=True)` runs in `__init__`
+   - Pulls live WR per setup from `trade_dna.get_win_rate_by("setup_type")` (only if n>=5)
+   - Computes `default_wp` from `get_system_baseline()` (clamped 0.20-0.80)
+   - Blends 60% live + 40% prior hardcoded fallback
+   - Applies overrides from JSON (always wins)
+   - Caches in `self._calibrations` dict
+2. **Decision time** (every signal): lookup `self._calibrations[setup_key]` — same <1ms latency
+3. **Refresh on demand**: call `quant_brain.refresh_calibrations()` from anywhere
+
+### Safety
+
+- If trade DNA unavailable: falls back to existing hardcoded `_SETUP_WIN_PROBS` constants
+- If `get_system_baseline()` fails: falls back to `_DEFAULT_WIN_PROB = 0.35`
+- Override file corrupt → logs warning, ignores overrides
+- `default_wp` clamped to [0.20, 0.80] to prevent extremes
+
+### What's still hardcoded (legitimately)
+
+- Funding rate extreme thresholds (0.05%/8h, 0.02%/8h) — real exchange constants
+- R:R floor (2.0) — risk math
+- RSI band 35-65 (TA principle, but the +3% WP boost is now via cache → can be tuned in overrides)
+- Bear regime haircut +4% — still hardcoded, next pass
+
+### Restart pending
+
+SOL LONG still open. Won't restart now (Nunu rule). Bot picks up the refactor on next natural close + restart.
+
+Override file at `bot/data/quant_brain_overrides.json` is loaded fresh on every Quant Brain init.
+
