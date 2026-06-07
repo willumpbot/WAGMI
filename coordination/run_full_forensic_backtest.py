@@ -66,7 +66,7 @@ def save_checkpoint(quarter, stage, result):
         json.dump(checkpoint, f)
         f.write("\n")
 
-    log(f"Checkpoint saved: {quarter} → {stage}")
+    log(f"Checkpoint saved: {quarter} > {stage}")
 
 def ensure_data_exists(quarter):
     """Verify OHLCV data exists for quarter"""
@@ -78,7 +78,7 @@ def ensure_data_exists(quarter):
 def run_backtest_quarter(quarter):
     """Run backtest for one quarter with full LLM pipeline"""
     try:
-        log(f"Starting backtest: {quarter['label']} ({quarter['start']} to {quarter['end']})")
+        log(f"Starting backtest: {quarter['label']} ({quarter['start']} for {quarter['days']} days)")
 
         cmd = [
             "python", "bot/run.py", "backtest",
