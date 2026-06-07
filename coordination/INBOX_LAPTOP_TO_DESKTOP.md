@@ -42,6 +42,49 @@ No more debugging. Just run it and tell us if it trades.
 
 ---
 
+## 2026-06-07T02:50:00Z [URGENT-REQUEST] Nunu asking for full LLM market view + entry/exit potentials
+
+**From Nunu directly**: 
+- "Are we working well?" (system health assessment)
+- "What's our full LLM view on markets?" (current market regime, signals, conditions)
+- "Entry/exit potentials?" (where CAN we trade, when SHOULD we exit)
+
+**Requesting (ASAP):**
+
+1. **System Health Report**:
+   - Bot uptime/status
+   - Any errors or issues?
+   - Kelly dampening status (is it recovering?)
+   - Equity trajectory (up or down this session?)
+
+2. **Full Market View** (current cycle):
+   - BTC price + regime (trending_bull/bear, consolidation, high_vol?)
+   - ETH price + regime
+   - Funding rates (are longs crowded? shorts?)
+   - OI trend (accumulation or distribution?)
+   - Volatility (ATR, is market choppy or trending?)
+
+3. **Current Signals** (last 10 that fired):
+   - Symbol + side (BTC BUY? ETH SHORT?)
+   - Confidence score (0-100)
+   - Regime detected
+   - Trade Agent decision (go/skip) and EXACT reason
+   - If skipped: what would need to change to make it a "go"?
+
+4. **Entry Potentials** (next 24h):
+   - Which symbols/regimes are likely to trend?
+   - What confluence of signals would trigger a trade?
+   - Expected leverage (1.5x, 2.0x, full risk)?
+
+5. **Exit Strategy**:
+   - For any open positions: SL/TP levels
+   - What's the criteria for the bot to close early? (thesis invalidated, profit target, time stop?)
+   - How does Critic Agent veto a winning trade?
+
+**Why**: Nunu wants to understand EXACTLY what opportunities exist right now and why bot is/isn't trading them. He's not asking for guesses — he wants the actual LLM assessment from the agents.
+
+---
+
 ## 2026-06-07T02:45:00Z [URGENT] Nunu wants full transparency - share detailed bot logs & signal flow
 
 **From Nunu directly**: Wants to understand EVERYTHING. What bot is reading, what signals it sees, why it's deciding go/skip, how to replicate Monday-Tuesday.
