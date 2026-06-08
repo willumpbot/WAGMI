@@ -2048,24 +2048,17 @@ class EnsembleStrategy:
         else:
             weighted_conf = sum(s.confidence for s in signals) / len(signals)
 
-        # Combo-specific edge bonus: data-validated strategy combinations.
-        # Applied BEFORE consensus multiplier so the floor check uses the boosted value.
+        # 2026-06-08: hardcoded _COMBO_EDGE dict removed. The 1.06x-1.12x boosts
+        # were calibrated to 90d backtest PFs ("PF=4+ in 90d") that are stale.
+        # The combination of strategies firing IS still useful information, but
+        # the boost should come from CURRENT live edge data, not frozen multipliers.
+        # We surface the combo as DATA so the LLM agents can weigh it themselves.
         signal_names = frozenset(s.strategy for s in signals)
-        # Data-validated combo bonuses. Strategy independence analysis:
-        # probability_engine = 95% independent (Monte Carlo, unique methodology)
-        # regime_trend = 60% independent (multi-TF confirmation)
-        # Best combos combine genuinely independent signal sources.
-        _COMBO_EDGE = {
-            frozenset({"confidence_scorer", "probability_engine"}): 1.08,  # PF=4+ in 90d
-            frozenset({"probability_engine", "regime_trend"}): 1.10,  # EV + multi-TF = highest quality
-            frozenset({"probability_engine", "bollinger_squeeze"}): 1.08,  # EV + volatility regime
-            frozenset({"confidence_scorer", "regime_trend"}): 1.06,  # Oscillator + multi-TF
-            frozenset({"bollinger_squeeze", "confidence_scorer", "probability_engine"}): 1.12,  # 3-way: max independence
-        }
-        _combo_mult = _COMBO_EDGE.get(signal_names, 1.0)
-        if _combo_mult != 1.0:
-            weighted_conf *= _combo_mult
-            logger.info(f"[{symbol}] Combo edge bonus: {sorted(signal_names)} → {_combo_mult:.0%}")
+        if hasattr(self, '_combo_log_metadata'):
+            self._combo_log_metadata = {}
+        # Note the combo composition for LLM context (no auto-multiplier applied).
+        if len(signal_names) >= 2:
+            logger.info(f"[{symbol}] Strategy combo firing: {sorted(signal_names)} — surfaced to LLM as data, no hardcoded boost")
 
         # Consensus bonus: reward genuine INDEPENDENT multi-strategy agreement.
         # 90d backtest: "strong_confluence" (4+ agree) = 0% WR because redundant
@@ -2111,24 +2104,16 @@ class EnsembleStrategy:
                 _groups_present.add(f"_unknown_{s.strategy}")  # Unknown = independent
         n_independent = len(_groups_present)
 
-        _CONSENSUS_MULT = {
-            "trending_bull":    {2: 1.06, 3: 1.14, 4: 1.20},
-            "trending_bear":    {2: 1.04, 3: 1.10, 4: 1.15},
-            "consolidation":    {2: 1.06, 3: 1.10, 4: 1.15},
-            "range":            {2: 1.03, 3: 1.06, 4: 1.10},
-            "high_volatility":  {2: 1.02, 3: 1.04, 4: 1.06},
-            "panic":            {2: 1.01, 3: 1.02, 4: 1.03},
-        }
-        _default_mult = {2: 1.04, 3: 1.08, 4: 1.12}
-        _regime_mults = _CONSENSUS_MULT.get(_regime, _default_mult)
-        # Use INDEPENDENT group count for consensus bonus, not raw strategy count
-        consensus_mult = _regime_mults.get(n_independent, 1.0) if n_independent >= 2 else 1.0
-        # If 4+ strategies agree but only 1-2 independent groups: penalize (exhaustion signal)
+        # 2026-06-08: hardcoded _CONSENSUS_MULT regime×N-agree dict removed.
+        # The 1.20x trending_bull 4-agree boost, 0.92x redundant penalty etc.
+        # were calibrated to historical data and applied automatically. Now
+        # we surface consensus + independence as DATA. LLM weighs it with
+        # current regime + alpha-ops context.
+        consensus_mult = 1.0  # neutral — LLM decides if consensus deserves a boost
         if n_agree >= 4 and n_independent <= 2:
-            consensus_mult = 0.92  # Penalty: redundant agreement = likely exhausted move
             logger.info(
-                f"[{symbol}] Redundant 4+ agree: {n_agree} strategies but only "
-                f"{n_independent} independent groups — consensus penalty applied"
+                f"[{symbol}] Redundant 4+ agree: {n_agree} strategies, {n_independent} "
+                f"independent groups — surfaced to LLM (no auto-penalty)"
             )
         # Cap ensemble confidence — raised to 92% so genuine unanimous signals pass
         try:
