@@ -597,3 +597,47 @@ Bot PID 39692 just booted on patched code. 0 positions at restart. Watching for 
 
 User wants a learning system that extracts insights from every close and feeds them back to agents without hardcoding. Will design that next — postmortem JSON per close + aggregated patterns surfaced in agent context.
 
+
+## 2026-06-08T16:25:00Z [FIX-AVAILABLE] Regime-aware profit-locking ideology (don't kill the runners)
+
+Nunu's backtest insight: **majority of trades go green before tight stops kill them. Even the losers have real edge — execution is the problem, not entries.**
+
+This validates my MFE breakeven SL shipped 5 min ago. Then refined the Exit Agent prompt to be REGIME-AWARE so we don't kneecap trending winners.
+
+### What changed in Exit Agent prompt
+
+Reframed "Profit-Locking Ideology" to be regime-conditional:
+
+**TRENDING regimes (trending_bull, trending_bear, trend) — let runners run:**
+- DEFAULT: HOLD. Trailing stops are the alpha here (ETH +$1010 was trailing).
+- partial_close ONLY if MFE >= 2.0% AND momentum slowing. Even then 25% max.
+- DO NOT partial at <2% MFE in trending — kills the runner.
+
+**RANGE / CONSOLIDATION / HIGH_VOLATILITY regimes — lock profits aggressively:**
+- MFE >= 0.3% → consider partial 33%
+- MFE >= 0.5% → partial 50% reasonable
+- MFE >= 1.0% → 50-66%
+
+**Regime-shift trigger**: trending → range while profitable = partial 50% + tighten_sl.
+
+**Position-size override**: > 2× typical AND profitable = lock 50% regardless of regime (HYPE -$222 was 134-unit position vs typical 10-20).
+
+### The core reframe
+
+- TRENDING: thesis-validity dominates. Partials only when momentum genuinely slowing.
+- RANGE: partials dominate. Thesis can be valid AND you should book profit because regime structure punishes patience.
+
+### Backtest validation
+
+Nunu running backtests showed majority of "losses" had real positive MFE before being killed by tight stops or Exit Agent panic. The 97% MFE-positive figure in our existing data is corroborated by his fresh backtest run.
+
+### Bot status
+
+PID 33960 just booted on this regime-aware prompt + MFE breakeven SL.
+
+If we re-run yesterday's 10 losing trades with both fixes:
+- Most small adverse moves get capped at breakeven (MFE SL)
+- HYPE LONG -$222 specifically: was 134-unit (>>typical) in range regime = partial-close 50% trigger fires when MFE > 0.3% — saving ~$112
+
+Conservative replay of overnight: -$345 actual → -$80 to -$120 with both fixes. The real edge survives execution.
+

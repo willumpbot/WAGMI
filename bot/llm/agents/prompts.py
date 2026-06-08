@@ -1058,24 +1058,39 @@ Short holds (<2h) typically underperform — bid/ask noise + microstructure chur
 - **Move SL to breakeven when favorable** (typically after +0.3% or after early-noise window). Removes downside while keeping upside.
 - **MFE typically peaks well after entry.** Read MFE distribution from edge_data; don't cut winners on first pullback.
 
-## PROFIT-LOCKING IDEOLOGY (use `partial_close` aggressively when winning)
-You have a `partial_close` verb. USE IT when the position has shown meaningful profit. Don't wait passively for TP1 price — small wins compound.
+## PROFIT-LOCKING IDEOLOGY (regime-aware — don't kill the runners)
 
-**Trigger thresholds (suggestions, reason from current conditions):**
-- **MFE >= 0.3% AND momentum slowing → partial_close 33%** (lock first profit, let rest run with breakeven SL)
-- **MFE >= 0.5% AND in range/consolidation regime → partial_close 50%** (range regimes mean-revert; book profit before reversal)
-- **MFE >= 1.0% in any regime → partial_close 33-50%** (1% is meaningful — capture some)
-- **Position is showing >2x typical size for this setup AND profitable → partial_close 50%** (large positions amplify reversal damage; lock half)
-- **Regime shifting AGAINST your direction while profitable → partial_close 50% AND tighten_sl** (don't ride a winner into a thesis change)
+**The principle: trailing stops are the alpha in trending regimes. Partial-close is the defense in range/non-trending regimes.** Match the tool to the regime.
 
-**Why this matters (from HYPE LONG 2026-06-08 -$222 incident):**
-At 08:02 the position was +$52.75 (+0.25% MFE) — agent saw it, voted hold ("thesis strengthening"). 23 minutes later, force-closed at -$222.93 on basically the same price level. A partial_close at 08:02 would have locked +$26 instead of taking -$222. Even a tighten_sl to breakeven would have closed at flat.
+### IN TRENDING REGIMES (trending_bull, trending_bear, trend) — let runners run
+- **DEFAULT: HOLD.** Trailing stops capture the big wins (ETH LONG TRAILING +$1,010 etc). Don't cut early.
+- `partial_close` ONLY if: MFE >= 2.0% AND momentum clearly slowing on 1h. Even then, 25% max.
+- DO NOT partial at <2% MFE in trending — you're killing the runner before it runs.
 
-**The asymmetry: a small partial lock NEVER hurts.** Worst case you locked $20 and missed $50 more upside. Best case you saved $200 of downside. Take the asymmetric trade.
+### IN RANGE / CONSOLIDATION / HIGH_VOLATILITY REGIMES — lock profits aggressively
+Range regimes mean-revert. Unrealized profit becomes unrealized loss quickly.
+- **MFE >= 0.3% → consider partial_close 33%** (book first profit, breakeven SL protects the rest)
+- **MFE >= 0.5% → partial_close 50% is reasonable** (range regimes punish patience)
+- **MFE >= 1.0% in range → partial_close 50-66%** (1% in range is a gift, take it)
 
-**DO NOT confuse "thesis still valid" with "should not partial."** Thesis validity is about IF you should hold. Partial lock is about HOW MUCH to hold. You can be 100% confident in thesis AND still take 33% off the table.
+### REGIME-SHIFT TRIGGERS (any regime → range while in profit)
+- If regime transitions from trending → range while you're profitable: `partial_close 50% + tighten_sl`. Don't ride a winner into mean reversion.
 
-**Use partial_close as a DEFAULT response when**: MFE > 0.5% AND any one of (range regime, position size > median × 2, hold > 1h with no momentum).
+### POSITION-SIZE OVERRIDE (independent of regime)
+- If position size > 2× typical for this setup AND profitable: lock 50% regardless of regime. Large positions amplify reversal damage. (Cf. HYPE LONG 2026-06-08: 134-unit position vs typical 10-20 units, +$52 → -$222 reversal.)
+
+### THE HYPE LONG LESSON (2026-06-08 -$222 cited)
+At 08:02 position was +$52.75 (+0.25% MFE) in a **range regime** with size 134.4 (>>typical). The agent voted hold ("thesis strengthening"). 23 minutes later, force-closed at -$222.93 on basically the same price. A `partial_close 50%` at 08:02 would have locked +$26 + left half running. Net result vs actual: spared ~$112.
+
+### CORE REFRAME
+- **"Thesis still valid"** and **"should partial-lock"** are orthogonal. You can be 100% confident in thesis AND still take some off.
+- In TRENDING regimes: thesis-validity is the dominant question. Partials only when momentum slowing AND MFE meaningful.
+- In RANGE regimes: partials are the dominant action. The thesis can be valid AND you should still book profit because the regime structure punishes you for not.
+
+### WHAT NOT TO DO
+- Don't partial at MFE <0.5% in trending regimes — you'll cut runners like the ETH +$1010 (which was trailing, not partial).
+- Don't override the trailing stop after TP1 hit — it's well-calibrated. Trailing stops in trends = alpha.
+- Don't partial just because you see profit. The regime decides the tool: trail in trends, partial in ranges.
 
 ## HOLD TIME BY LEVERAGE
 - High leverage (>20x): max 4h hold
