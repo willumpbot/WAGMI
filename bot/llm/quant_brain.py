@@ -369,15 +369,20 @@ class QuantBrain:
             prior = _SETUP_WIN_PROBS.get(setup, self._default_wp)
             merged[setup] = round(0.6 * wr + 0.4 * prior, 3)
 
-        # Step 4: apply overrides (always wins)
+        # Step 4: apply overrides (always wins) — skip null/None values gracefully
         try:
             ov_path = os.path.join(os.path.dirname(__file__), "..", "data", "quant_brain_overrides.json")
             if os.path.exists(ov_path):
                 with open(ov_path) as f:
                     ov = json.load(f)
-                self._calibration_overrides = {k: float(v) for k, v in ov.get("setup_wp", {}).items()}
-                if "default_wp" in ov:
-                    self._default_wp = float(ov["default_wp"])
+                # Only include non-null entries
+                self._calibration_overrides = {
+                    k: float(v) for k, v in (ov.get("setup_wp") or {}).items()
+                    if v is not None
+                }
+                _ov_default = ov.get("default_wp")
+                if _ov_default is not None:
+                    self._default_wp = float(_ov_default)
                 merged.update(self._calibration_overrides)
         except Exception as e:
             logger.warning(f"[QUANT-BRAIN] override file load failed: {e}")
