@@ -741,35 +741,39 @@ class QuantBrain:
                 wp = wp / 100.0  # convert from percentage
             base_wp = min(base_wp, wp) if wp > 0 else base_wp
 
-        # ── RSI adjustment ──
+        # ── RSI observation (data only — was hardcoded +3%/-3%/-8%/-10% adjustments) ──
+        # 2026-06-08: RSI bands are textbook TA principles but the calibration
+        # deltas (+3% in 35-65, -10% above 75) were stale backtest constants.
+        # Now we OBSERVE the RSI value and pass it as data; the LLM decides
+        # whether the band matters in current regime. Adjustment is much
+        # smaller (0.01 max) — directional hint only, not a calibration.
         rsi_adj = 0.0
         rsi_note = ""
         if rsi is not None and isinstance(rsi, (int, float)) and not math.isnan(rsi):
             if 35 <= rsi <= 65:
-                rsi_adj = 0.03  # Sweet spot: +3% WP
-                rsi_note = f"RSI {rsi:.0f} in sweet spot (35-65)"
+                rsi_adj = 0.01  # tiny directional hint
+                rsi_note = f"RSI {rsi:.0f} in 35-65 band — historically a continuation zone, but LLM should verify regime"
             elif 30 <= rsi < 35:
-                if regime.regime == "mean_reversion_opportunity":
-                    rsi_adj = 0.02  # Bounce setup
-                    rsi_note = f"RSI {rsi:.0f} + mean reversion = bounce setup"
-                else:
-                    rsi_adj = -0.03  # Oversold but no reversal signal
-                    rsi_note = f"RSI {rsi:.0f} oversold without reversal signal"
+                rsi_adj = 0.0
+                rsi_note = f"RSI {rsi:.0f} mild oversold — could be early dip or trend acceleration; LLM decides"
             elif rsi < 30:
-                rsi_adj = -0.08  # Deep oversold = panic zone
-                rsi_note = f"RSI {rsi:.0f} panic zone"
+                rsi_adj = -0.02
+                rsi_note = f"RSI {rsi:.0f} deep oversold (panic zone) — counter-trend BUYs possible if support holds, otherwise capitulation risk"
             elif 65 < rsi <= 75:
-                rsi_adj = -0.02  # Getting stretched
-                rsi_note = f"RSI {rsi:.0f} extended"
+                rsi_adj = 0.0
+                rsi_note = f"RSI {rsi:.0f} stretched — common in trending regimes, weak signal alone"
             else:  # > 75
-                rsi_adj = -0.10  # Overbought
+                rsi_adj = -0.02
+                rsi_note = f"RSI {rsi:.0f} overbought — could be exhaustion or strong trend; LLM should weigh trend strength"
                 rsi_note = f"RSI {rsi:.0f} overbought"
 
-        # ── Volatility regime adjustment (from comprehensive edge study) ──
-        # ATR% determines vol regime. Each setup has an optimal vol band.
-        # HYPE BUY: High Vol (ATR% 1.40-1.69%) = PF 3.51. Extreme (>1.90%) = PF 0.65.
-        # SOL SELL: Normal Vol (ATR% 0.80-0.98%) = PF 1.75. High+ Vol = PF <0.72.
-        # BTC BUY: Very High Vol (ATR% 0.92-1.03%) = PF 3.13.
+        # ── ATR observation (data only — was hardcoded ±8% / ±12% adjustments) ──
+        # 2026-06-08: The previous code hardcoded "PF 3.51, WR 73.9%" specific
+        # backtest constants per (setup × ATR band). Those constants are stale
+        # and only covered 3 setups (HYPE_BUY, SOL_SELL, BTC_BUY). Other setups
+        # got no adjustment. Now we OBSERVE the ATR percentile and pass it as
+        # a data point + brief context note. The LLM decides if current vol
+        # band is favorable based on regime + ALL setups, not 3 hardcoded ones.
         vol_adj = 0.0
         vol_note = ""
         atr = merged.get("atr")
@@ -781,39 +785,18 @@ class QuantBrain:
                 pass
 
         if atr_pct is not None:
-            if setup_key == "HYPE_BUY":
-                if 1.40 <= atr_pct <= 1.69:
-                    vol_adj = 0.08   # Optimal vol: PF 3.51, WR 73.9%
-                    vol_note = f"HYPE optimal vol (ATR%={atr_pct:.2f}%)"
-                elif 1.15 <= atr_pct < 1.40:
-                    vol_adj = 0.0    # Low vol: PF 1.22, neutral
-                    vol_note = f"HYPE low vol (ATR%={atr_pct:.2f}%)"
-                elif 1.69 < atr_pct <= 1.90:
-                    vol_adj = -0.03  # Very high: PF 1.03, marginal
-                    vol_note = f"HYPE very high vol (ATR%={atr_pct:.2f}%)"
-                elif atr_pct > 1.90:
-                    vol_adj = -0.12  # Extreme vol: PF 0.65, NEGATIVE EV
-                    vol_note = f"HYPE EXTREME vol (ATR%={atr_pct:.2f}%) — negative EV!"
-            elif setup_key == "SOL_SELL":
-                if 0.80 <= atr_pct <= 0.98:
-                    vol_adj = 0.06   # Optimal: PF 1.75, WR 61.5%
-                    vol_note = f"SOL optimal vol (ATR%={atr_pct:.2f}%)"
-                elif atr_pct < 0.80:
-                    vol_adj = 0.03   # Low vol: PF 1.56, decent
-                    vol_note = f"SOL low vol (ATR%={atr_pct:.2f}%)"
-                elif atr_pct > 1.20:
-                    vol_adj = -0.10  # High+ vol: PF <0.72, negative EV
-                    vol_note = f"SOL high vol (ATR%={atr_pct:.2f}%) — negative EV!"
-                else:
-                    vol_adj = -0.04  # Transition zone
-                    vol_note = f"SOL elevated vol (ATR%={atr_pct:.2f}%)"
-            elif setup_key == "BTC_BUY":
-                if 0.92 <= atr_pct <= 1.03:
-                    vol_adj = 0.08   # Very high vol: PF 3.13, WR 66.2%
-                    vol_note = f"BTC optimal vol (ATR%={atr_pct:.2f}%)"
-                elif atr_pct < 0.77:
-                    vol_adj = -0.08  # Low/normal vol: PF <0.80
-                    vol_note = f"BTC low vol (ATR%={atr_pct:.2f}%) — negative EV"
+            # Categorize without baking PF/WR claims. Volatility is regime-dependent
+            # and LLM can correlate with funding/OI/volume for actual edge assessment.
+            if atr_pct < 0.5:
+                vol_note = f"ATR%={atr_pct:.2f}% LOW — tight stops possible, may lack momentum for full TP move"
+            elif atr_pct < 1.0:
+                vol_note = f"ATR%={atr_pct:.2f}% NORMAL — typical execution conditions"
+            elif atr_pct < 1.7:
+                vol_note = f"ATR%={atr_pct:.2f}% HIGH — wider stops needed, trends extend faster in this band"
+            elif atr_pct < 2.5:
+                vol_note = f"ATR%={atr_pct:.2f}% VERY HIGH — choppy conditions, fakeouts common"
+            else:
+                vol_note = f"ATR%={atr_pct:.2f}% EXTREME — panic-like volatility, tight risk management critical"
 
         # ── Bearish market haircut (now data-derived, not hardcoded) ──
         # 2026-06-08: hardcoded -8%/-12% bear penalties were killing counter-trend
