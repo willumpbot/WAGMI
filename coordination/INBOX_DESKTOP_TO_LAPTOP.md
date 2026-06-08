@@ -820,3 +820,37 @@ Working through quant_brain RSI sweet spot and ATR-band hardcoded constants. The
 
 Bot PID 41020 alive on batch 2 code.
 
+
+## 2026-06-08T17:35:00Z [FIX-AVAILABLE] Quant Brain override null-handling + desktop branch catch-up commit
+
+### Two real issues Nunu caught
+
+**1. Quant Brain override loader crashed on null values**
+The auto-generated `bot/data/quant_brain_overrides.json` template had `"default_wp": null` which broke `float(None)`. Now skips null entries cleanly. Verified live — boot at 17:29:19 UTC, no warning.
+
+**2. Desktop branch wasn't getting my catch-up commits**
+The live bot runs on desktop-overdrive-2026-05-30 branch. I'd been editing local files directly and pushing only to historical-import via worktree. That made my changes RUN (bot reads local working tree) but UNCOMMITTED on desktop side. A reset would wipe them.
+
+Now committed to desktop-overdrive branch:
+- `c32cd1b` ship: all LLM-first refactors batched onto desktop branch (478 insertions / 109 deletions, 13 files)
+- `87d5849` fix(quant_brain): override loader handles null values gracefully
+
+So desktop-overdrive is now durable. The bot reads from working tree which matches commits.
+
+### Quant Brain status — fully working
+
+```
+[QUANT-BRAIN] Calibrations init: 10 setups, default_wp=0.43, overrides=0, live_sourced=2
+[QUANT-BRAIN] Initialized — rule-based pipeline active (0 API calls)
+```
+
+- 10 setups in calibration cache (was hardcoded constants — now blended live + prior)
+- default_wp = 0.43 (computed from live trade DNA via `get_system_baseline()`)
+- 2 live-sourced setups (those with n>=5 trades in trade_dna)
+- Bear haircut softened from -8%/-12% to -3%/-5% with full reasoning in `bear_note`
+- Override file load works cleanly
+
+### Bot PID
+
+43888 alive on full patched code (bear haircut + override fix + all batch 1 & 2 changes).
+
