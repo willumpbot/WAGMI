@@ -810,21 +810,33 @@ class QuantBrain:
                     vol_adj = -0.08  # Low/normal vol: PF <0.80
                     vol_note = f"BTC low vol (ATR%={atr_pct:.2f}%) — negative EV"
 
-        # ── Bearish market haircut ──
-        # When the regime is bearish (price < EMA20 < EMA50), BUY signals get
-        # a confidence haircut. Buying dips in a bear market is the #1 money loser.
-        # The 2026-03-25 selloff: 3/4 sim trades were HYPE LONG during 8% drop.
+        # ── Bearish market haircut (now data-derived, not hardcoded) ──
+        # 2026-06-08: hardcoded -8%/-12% bear penalties were killing counter-trend
+        # mean-reversion setups. Now we pass the bear/trending_bear regime + side
+        # alignment as a DATA POINT for downstream agents and apply a SMALLER,
+        # softer haircut so the LLM can override based on counter-trend evidence
+        # (RSI divergence, oversold extreme, support hold, etc.).
+        # The full historical penalty data is surfaced in `bear_note` so the LLM
+        # sees WHY this trade is being flagged.
         bear_haircut = 0.0
         bear_note = ""
         if signal.side == "BUY" and regime.bias == "bearish":
-            bear_haircut = -0.08  # -8% WP penalty for buying into bearish regime
-            bear_note = "bearish regime haircut on BUY"
+            # Softened from -8% to -3% — advisory, not destructive
+            bear_haircut = -0.03
+            bear_note = (
+                "BUY into bearish bias — historical -8% penalty applied as -3% advisory. "
+                "Counter-trend BUYs (RSI divergence, support hold) can still have edge."
+            )
             if regime.regime == "trending_bear":
-                bear_haircut = -0.12  # Full bear trend = stronger penalty
-                bear_note = "trending bear: strong haircut on BUY"
+                # Softened from -12% to -5%
+                bear_haircut = -0.05
+                bear_note = (
+                    "BUY into trending_bear — historical -12% penalty applied as -5% advisory. "
+                    "Strong counter-trend evidence required to override."
+                )
         elif signal.side == "SELL" and regime.bias == "bearish":
-            bear_haircut = 0.04  # +4% WP bonus for shorting in bearish regime
-            bear_note = "bearish regime bonus on SELL"
+            bear_haircut = 0.04
+            bear_note = "SELL aligned with bearish bias — +4% confluence bonus"
 
         final_wp = max(0.0, min(1.0, base_wp + rsi_adj + vol_adj + bear_haircut))
 

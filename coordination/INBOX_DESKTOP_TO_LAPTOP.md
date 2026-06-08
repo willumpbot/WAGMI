@@ -793,3 +793,30 @@ LOW: 24 items
 
 Will keep walking the list as bot runs. Bot picks up each refactor on natural restart.
 
+
+## 2026-06-08T17:45:00Z [SHIPPED] Batch 2: win_prob floor + bear haircut → advisory
+
+### Changes
+
+**`bot/core/signal_pipeline.py:382-450`** — `win_prob_floor` gate
+- Was: `if win_prob < 0.43: REJECT signal`
+- Now: critical floor at 0.30 (true noise) still rejects. 0.30-0.43 emits with `metadata.advisory_warnings = ["win_prob X below edge floor Y"]`. LLM sees the warning + the setup + decides.
+
+**`bot/llm/quant_brain.py:813-838`** — bear regime haircut
+- Was: BUY in bearish = -8% WP penalty, BUY in trending_bear = -12%
+- Now: BUY in bearish = -3% (softened) with descriptive `bear_note` saying "counter-trend BUYs (RSI divergence, support hold) can still have edge"
+- Trending_bear BUY: -5% (down from -12%) with note "strong counter-trend evidence required"
+- The full reasoning is in `bear_note` so the LLM sees WHY the penalty exists, not just the number.
+
+### Impact
+
+Previously, every BUY signal in a bear bias was getting up to -12% WP automatically — which torpedoed many EV calculations and triggered downstream rejections. Now the penalty is smaller AND surfaced as data so the LLM can override when counter-trend evidence is strong.
+
+This pairs with batch 1's strategy-layer changes — more signals reach the LLM, with the LLM having the context to evaluate them properly.
+
+### Coming next
+
+Working through quant_brain RSI sweet spot and ATR-band hardcoded constants. Then pos_manager.py TP1 mechanical auto-close (alpha leak on every winner).
+
+Bot PID 41020 alive on batch 2 code.
+

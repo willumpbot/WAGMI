@@ -409,16 +409,34 @@ class RiskFilterChain:
                         _min_wp = max(0.35, _dyn_wp)  # absolute floor
             except Exception:
                 pass
-            if _win_prob < _min_wp:
-                _reason = f"Win probability {_win_prob:.1%} < min {_min_wp:.1%} (insufficient edge)"
-                if _pt: _pt.record_gate(signal.symbol, "win_prob_floor", False, _win_prob, _min_wp, _reason)
-                _log_rejection(signal, "win_prob_floor", _reason)
-                self._log_signal_filtered(signal, "win_prob_floor", _reason)
+            # 2026-06-08: win_prob floor → ADVISORY in LLM_FIRST mode. The
+            # old code hard-rejected; now we tag the signal so the LLM sees
+            # "this is below historical edge floor — investigate before
+            # approving." Hard reject only if win_prob is critically low
+            # (<0.30, the structural noise floor).
+            try:
+                from trading_config import TradingConfig as _TC2
+                _llm_mode = getattr(_TC2(), "llm_mode", 5)
+            except Exception:
+                _llm_mode = 5  # default to LLM_FIRST
+            _critical_wp_floor = 0.30
+            if _win_prob < _critical_wp_floor:
+                _reason = f"Win probability {_win_prob:.1%} < critical {_critical_wp_floor:.1%} (true noise floor)"
+                if _pt: _pt.record_gate(signal.symbol, "win_prob_critical", False, _win_prob, _critical_wp_floor, _reason)
+                _log_rejection(signal, "win_prob_critical", _reason)
+                self._log_signal_filtered(signal, "win_prob_critical", _reason)
                 return FilterResult(
                     approved=False, signal=signal,
                     rejection_reason=_reason,
                     metadata=meta,
                 )
+            elif _win_prob < _min_wp:
+                # Below edge floor but above noise floor — advisory to LLM.
+                if hasattr(signal, 'metadata') and isinstance(signal.metadata, dict):
+                    signal.metadata.setdefault("advisory_warnings", []).append(
+                        f"win_prob {_win_prob:.1%} below edge floor {_min_wp:.1%} (regime-adjusted)"
+                    )
+                if _pt: _pt.record_gate(signal.symbol, "win_prob_advisory", True, _win_prob, _min_wp, "advisory_not_rejected")
 
         # Gate 1g: Graduated rules — validated hypotheses become executable rules.
         # Rules can VETO (block), BOOST (add confidence), or PENALIZE (subtract).
