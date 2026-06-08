@@ -246,23 +246,19 @@ _REGIME_STRATEGY_WEIGHTS: Dict[str, Dict[str, float]] = {
     },
 }
 
-# Regime risk multipliers (how aggressively to size in each regime)
-_REGIME_RISK_MULT: Dict[str, float] = {
-    "trending_bull": 1.2,
-    "trending_bear": 1.1,
-    "neutral": 0.9,
-    "momentum": 1.15,
-    "overbought": 0.5,
-    "panic_oversold": 0.4,
-    "recovering": 0.8,
-    "mean_reversion_opportunity": 0.7,
-    "overleveraged_long": 0.9,   # Counter-trade overcrowded longs (mean-reversion edge)
-    "overleveraged_short": 0.9,  # Counter-trade overcrowded shorts (squeeze edge)
-    "unknown": 0.6,
-}
+# Regime risk multipliers — INFORMATIONAL FLOOR ONLY (2026-06-08 strip).
+# These were hardcoded sizing biases (trending_bull=1.2x, panic_oversold=0.4x)
+# that ran before any LLM saw the signal. The Risk Agent should decide sizing
+# based on regime + confluence + alpha-ops together. Keeping a neutral 1.0x
+# fallback so the math doesn't break — but the actual sizing decision is now
+# fully owned by Risk Agent. Regime is exposed as DATA in regime_note for the
+# LLM to weigh.
+_REGIME_RISK_MULT_NEUTRAL = 1.0
 
-# Toxic setups that should always be skipped
-_TOXIC_SETUPS = {"HYPE_SELL"}
+# _TOXIC_SETUPS removed — was already commented out at usage site. The
+# "HYPE_SELL n=411 2.3% WR" claim was fee-bug-era poison we already scrubbed
+# from agent memory. Letting setups breathe means the LLM evaluates each on
+# current evidence, not frozen labels.
 
 # Setups with known profitable confidence bands
 # Aggressive mode: all setups allowed at any confidence with 1 agree
@@ -687,8 +683,11 @@ class QuantBrain:
         else:
             bias = "neutral"
 
-        # ── Regime risk multiplier ──
-        risk_mult = _REGIME_RISK_MULT.get(primary_regime, 0.7)
+        # ── Regime risk multiplier — neutral by design ──
+        # 2026-06-08: was a hardcoded dict (trending_bull=1.2x, panic_oversold=0.4x).
+        # Now neutral 1.0x. Risk Agent (LLM) sees regime as DATA and decides sizing
+        # based on confluence + alpha-ops + thesis, not a frozen multiplier.
+        risk_mult = _REGIME_RISK_MULT_NEUTRAL
 
         return RegimeClassification(
             regime=primary_regime,
@@ -720,10 +719,9 @@ class QuantBrain:
         num_agree = merged.get("num_agree", 1)
         win_prob_meta = merged.get("win_prob", merged.get("win_prob_deflated"))
 
-        # ── Toxic setup check disabled for aggressive data collection ──
-        # HYPE_SELL was 7% WR historically but we need fresh data
-        # if setup_key in _TOXIC_SETUPS:
-        #     return TradeThesis(action="skip_toxic", ...)
+        # Toxic setup check removed 2026-06-08. Any "X_Y has Z% WR" hardcoded
+        # label is poison: it traps the LLM into reading a frozen statistic
+        # instead of evaluating current setup with current data.
 
         # ── Get base win probability (live calibration, override-aware) ──
         # 2026-06-07: replaced hardcoded _SETUP_WIN_PROBS with self._calibrations
