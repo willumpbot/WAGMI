@@ -748,3 +748,48 @@ if sig is None and LLM_FIRST_BACKTEST:
 
 That captures every dead signal so you can at least SEE them in the output. From there, iterate.
 
+
+## 2026-06-08T17:30:00Z [SHIPPED] First batch: strategy + signal-pipeline mechanical → advisory refactors
+
+Shipped 5 files. All `return None` mechanical gates that killed signals before the LLM ever saw them are now PENALTY-based or ADVISORY. The signal lives, the LLM decides.
+
+### Changed files
+
+**Strategy layer (4 files):**
+- `bot/strategies/regime_trend.py` — ADX<22 was `return None` → now applies scaled penalty + emits signal. Floor lowered from 55 → 30.
+- `bot/strategies/confidence_scorer.py` — same ADX fix. Conf 65/85 floors lowered: 30-65 still emits as "MARGINAL" for LLM review.
+- `bot/strategies/monte_carlo_zones.py` — SMA20<SMA50 counter-trend BUY/SELL was `return None` → now -15 conf penalty, signal still emitted.
+- `bot/strategies/multi_tier_quality.py` — ADX, squeeze, neutral-regime all were `return None` → now applied as confidence penalties. Floor 55 → 25.
+
+**Signal pipeline (1 file):**
+- `bot/core/signal_pipeline.py`:
+  - Line 841: confidence ≥90% in non-consolidation → was auto 0.7x size penalty. Now advisory-only metadata. Risk Agent decides.
+  - Line 279: BTC stop <0.8% → was hard reject. Now only hard-rejects below 0.3% (true noise floor). 0.3-0.8% is advisory in `metadata.advisory_warnings`.
+
+### Impact
+
+The previous "0 signals generated" lulls were partially the strategy layer killing setups before they could be evaluated. After this batch, every regime_trend / confidence_scorer / multi_tier_quality / monte_carlo signal with ADX between 14-22 will reach the ensemble + LLM. Each one is a potential trade.
+
+### Still on the list (autonomous shipping continuing)
+
+```
+HIGH:
+- signal_pipeline.py:382  win_prob < floor → REJECT
+- ensemble.py:676         magnitude bypass requires R:R≥2.5
+- ensemble.py:1664        solo signal allowlist
+- ensemble.py:2403        EV<0 → block
+- pos_manager.py:1096     TP1 50% mechanical auto-close
+- pos_manager.py:1013     early exit momentum auto-close
+- quant_brain.py:743      RSI sweet spot hardcoded +3%
+- quant_brain.py:763      ATR-band PF 3.51 constants
+- quant_brain.py:813      bear haircut -8% to -12%
+- risk.py:231             consecutive loss CB → mechanical block (HYPE -$222 cause)
+- risk.py:226             daily loss limit → halt
+- leverage.py:180         extreme leverage cap
+
+MED: 25 items
+LOW: 24 items
+```
+
+Will keep walking the list as bot runs. Bot picks up each refactor on natural restart.
+

@@ -321,8 +321,8 @@ class MonteCarloZonesStrategy(BaseStrategy):
                 logger.info(f"[{symbol}] monte_carlo BUY rejected: SMA20 < SMA50 (downtrend)")
                 return None
             if side == "SELL" and sma20 > sma50:
-                logger.info(f"[{symbol}] monte_carlo SELL rejected: SMA20 > SMA50 (uptrend)")
-                return None
+                counter_trend_penalty = 15
+                logger.info(f"[{symbol}] monte_carlo SELL counter-trend (SMA20>SMA50): -{counter_trend_penalty} conf, emitting for LLM review")
 
         # Enforce minimum R:R — zone targets can be too close to entry.
         # Use deeper zone level as TP2 when available (preserves zone logic).

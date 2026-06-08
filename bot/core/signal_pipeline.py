@@ -274,14 +274,22 @@ class RiskFilterChain:
             _log_rejection(signal, "validity", _reason)
             self._log_signal_filtered(signal, "validity", _reason)
             return FilterResult(approved=False, signal=signal, rejection_reason=_reason)
-        # Gate 1a: BTC minimum stop width 0.8% — 47/47 BTC losses were instant SL hits
-        # at avg 0.494% stop; sub-0.8% stops on BTC are structural noise, not edge.
-        if signal.symbol == "BTC" and signal.stop_width_pct < 0.008:
-            _reason = f"BTC min stop 0.8% violated: stop_width={signal.stop_width_pct:.4f}"
-            if _pt: _pt.record_gate(signal.symbol, "btc_stop_width", False, signal.stop_width_pct, 0.008, _reason)
-            _log_rejection(signal, "btc_stop_width", _reason)
-            self._log_signal_filtered(signal, "btc_stop_width", _reason)
+        # Gate 1a: BTC stop width advisory — 47/47 historical BTC losses had stops <0.8%.
+        # 2026-06-08: changed from hard reject to advisory. A tight-stop BTC scalp
+        # might be valid; let the LLM see the warning + the setup and decide.
+        # Only HARD-REJECT for sub-noise stops (<0.3% — below BTC's 1min wick noise).
+        if signal.symbol == "BTC" and signal.stop_width_pct < 0.003:
+            _reason = f"BTC stop below noise floor: stop_width={signal.stop_width_pct:.4f} <0.3%"
+            if _pt: _pt.record_gate(signal.symbol, "btc_stop_width_noise", False, signal.stop_width_pct, 0.003, _reason)
+            _log_rejection(signal, "btc_stop_width_noise", _reason)
+            self._log_signal_filtered(signal, "btc_stop_width_noise", _reason)
             return FilterResult(approved=False, signal=signal, rejection_reason=_reason)
+        elif signal.symbol == "BTC" and signal.stop_width_pct < 0.008:
+            # Advisory: historically poor performance, but LLM can override.
+            if hasattr(signal, 'metadata') and isinstance(signal.metadata, dict):
+                signal.metadata.setdefault("advisory_warnings", []).append(
+                    f"BTC tight stop {signal.stop_width_pct:.4f} — historical 47/47 SL hits"
+                )
         # Gate 1b: Minimum R:R from config (stricter than is_valid's 1.0 floor)
         min_rr = getattr(self.config, "min_signal_rr", 1.0)
         if signal.risk_reward_tp1 < min_rr:
@@ -838,9 +846,15 @@ class RiskFilterChain:
         # Confidence sizing: leverage tiers already scale by confidence, so this
         # layer only applies conviction BOOSTS, not penalties. Previous version
         # double-penalized low confidence (leverage rm=0.3 × conf sizing 0.5 = 0.15).
+        # 2026-06-08: 90% exhaustion penalty REMOVED at base. Risk Agent (LLM)
+        # decides if exhaustion penalty applies based on regime + momentum +
+        # alpha-ops context. Old code hardcoded 0.7x for ALL 90%+ signals in
+        # non-consolidation regimes — that penalized genuine high-conviction
+        # bull-run signals. Now surfaced as advisory only.
         if _conf >= 90 and _regime not in ("consolidation",):
-            risk_mult *= 0.7  # Exhaustion protection: slight reduction, not a kill shot
-            meta["confidence_sizing"] = "exhaustion_0.7x"
+            # Advisory only — no mechanical penalty. LLM sees this in metadata.
+            meta["exhaustion_signal_advisory"] = "conf>=90 in non-consolidation — historically 22% WR. LLM should weigh."
+            meta["confidence_sizing"] = "exhaustion_advisory_no_penalty"
         elif _conf >= 85:
             risk_mult *= 1.5  # High conviction — 85%+ is PF=17-22 sweet spot
             meta["confidence_sizing"] = "high_conviction_1.5x"

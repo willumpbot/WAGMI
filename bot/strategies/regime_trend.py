@@ -154,15 +154,20 @@ class RegimeTrendStrategy(BaseStrategy):
         if df_htf.empty or len(df_htf) < 5:
             return None
 
-        # ADX filter: skip signal generation in ranging markets (ADX < threshold)
-        # This is the #1 profitability lever — ranging markets have 24% WR
+        # ADX gate — emit signal with confidence penalty instead of dropping.
+        # 2026-06-08: changed from `return None` to penalty-based. Killing signals
+        # at strategy layer means LLM never sees the setup. Ranging markets have
+        # lower WR but a high-confluence cross in low-ADX could still be valid;
+        # let downstream (ensemble + LLM) decide based on full context.
         adx_val = _adx(df_1h, 14)
+        adx_penalty = 0
         if adx_val < self.adx_min_trending:
+            # Scale penalty by how far below threshold. ADX 18 vs 22 → -8 conf.
+            adx_penalty = (self.adx_min_trending - adx_val) * 2
             logger.info(
                 f"[{symbol}] regime_trend: ADX {adx_val:.1f} < {self.adx_min_trending} "
-                f"— ranging market, skipping"
+                f"— low-ADX penalty {adx_penalty:.0f} applied, signal still emitted for LLM review"
             )
-            return None
 
         # 1h WaveTrend + MFI
         src_1h = (df_1h["high"] + df_1h["low"] + df_1h["close"]) / 3.0
@@ -261,9 +266,16 @@ class RegimeTrendStrategy(BaseStrategy):
         except Exception:
             pass
 
+        # Apply ADX penalty before final clamp (computed above)
+        confidence -= adx_penalty
         confidence = max(0, min(100, confidence))
 
-        if confidence < 55:
+        # Confidence floor — relaxed for LLM-first review.
+        # 2026-06-08: lowered hard floor from 55 to 30. Signals at 30-55% conf
+        # used to be silently dropped here. Now they reach the ensemble/LLM
+        # with their full diagnostic and the LLM decides. Below 30 still
+        # dropped to avoid noise spam.
+        if confidence < 30:
             return None
 
         align = align_long if buy else align_short

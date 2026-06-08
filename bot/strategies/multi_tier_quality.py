@@ -226,8 +226,10 @@ class MultiTierQualityStrategy(BaseStrategy):
             _adx_thresh = _TC().adx_min_trending
         except Exception:
             _adx_thresh = 22.0
+        # 2026-06-08: ADX gate softened. Track penalty, don't drop.
+        adx_penalty_mtq = 0
         if adx_val < _adx_thresh:
-            return None
+            adx_penalty_mtq = int((_adx_thresh - adx_val) * 2)
 
         # Squeeze detection: skip signals during volatility compression.
         # ATR compression (current ATR < 60% of 20-bar ATR average) = squeeze.
@@ -240,8 +242,11 @@ class MultiTierQualityStrategy(BaseStrategy):
                 _squeeze_ratio = _TC().squeeze_atr_ratio
             except Exception:
                 _squeeze_ratio = 0.65
+            # 2026-06-08: squeeze no longer drops signal. Apply small penalty
+            # — squeeze setups can be pre-breakout entries with tight risk.
+            squeeze_penalty_mtq = 0
             if _avg_atr > 0 and _cur_atr < _avg_atr * _squeeze_ratio:
-                return None  # Volatility squeeze — skip
+                squeeze_penalty_mtq = 10
 
         # RSI momentum filter: block signals in extreme exhaustion zones.
         # RSI <22 = oversold panic (avoid shorting into capitulation).
@@ -350,13 +355,29 @@ class MultiTierQualityStrategy(BaseStrategy):
             elif tier == "MANUAL":
                 return None  # No tier left — reject signal
 
-        # Hard regime gate: neutral regime (no directional conviction) → reject.
-        # Backtest data shows neutral-regime trades are net losers. The previous
-        # soft-cap to 68% still allowed losing trades through.
+        # 2026-06-08: neutral regime no longer auto-rejected. Apply confidence
+        # penalty and let the LLM decide based on full setup context.
+        neutral_regime_penalty = 0
         if abs(regime) == 0:
-            return None  # No trend on any timeframe = no trade
+            neutral_regime_penalty = 15
 
-        if conf < 55:
+        # Apply all 2026-06-08 penalties from earlier checks (ADX, squeeze, regime).
+        # These were declared but not yet applied — now they shape the final conf
+        # without dropping the signal.
+        try:
+            conf -= int(adx_penalty_mtq) if 'adx_penalty_mtq' in dir() else 0
+        except Exception:
+            pass
+        try:
+            conf -= int(squeeze_penalty_mtq) if 'squeeze_penalty_mtq' in dir() else 0
+        except Exception:
+            pass
+        conf -= neutral_regime_penalty
+        conf = max(0, min(100, conf))
+
+        # 2026-06-08: floor lowered from 55 to 25. Signals 25-55% are emitted
+        # with diagnostic so LLM can review with full context.
+        if conf < 25:
             return None
 
         rr = abs(entry - tp1) / stop_width if stop_width > 0 else 0

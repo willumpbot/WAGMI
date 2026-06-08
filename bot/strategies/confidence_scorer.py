@@ -296,8 +296,11 @@ class ConfidenceScorerStrategy(BaseStrategy):
             _adx_thresh = _TC().adx_min_trending
         except Exception:
             _adx_thresh = 22.0
+        # 2026-06-08: don't drop signal on low ADX. Penalize via adx_score,
+        # let downstream + LLM decide. Killing at strategy layer means the
+        # LLM never sees the setup even if confluence is exceptional.
         if adx < _adx_thresh:
-            return None  # No/weak trend = no trade
+            adx_score = max(0, int((adx / _adx_thresh) * 8))  # 0-8 for sub-threshold
         elif adx > 35:
             adx_score = 25  # Strong trend
         elif adx > 25:
@@ -435,17 +438,19 @@ class ConfidenceScorerStrategy(BaseStrategy):
             )
         confidence = max(0, min(100, confidence))
 
-        # Classify signal strength with RECALIBRATED thresholds.
-        # Forensic data: observed WR at 55-75% confidence was 30-50%. The
-        # hardcoded thresholds were overconfident by ~15 points. Raised from
-        # 55→65 (floor) and 75→85 (strong) to filter the worst-calibrated
-        # signals at the source, before they flood downstream gates or LLM.
+        # 2026-06-08: relaxed hard floor from 65 to 30. Low-confidence signals
+        # still emit (with diagnostic) so the LLM can review them with full
+        # context. Old hardcoded 65/85 thresholds were calibrated to specific
+        # backtest era and may be stale. Below 30 still dropped to limit noise.
         if confidence >= 85:
             action = "STRONG_BUY" if di_bullish else "STRONG_SELL"
         elif confidence >= 65:
             action = "BUY" if di_bullish else "SELL"
+        elif confidence >= 30:
+            # Below historic floor — emit as MARGINAL for LLM review.
+            action = "BUY" if di_bullish else "SELL"
         else:
-            return None  # Below recalibrated floor
+            return None  # True noise threshold
 
         # Log signal
         self._log_signal(symbol, action, entry)
