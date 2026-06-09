@@ -207,43 +207,26 @@ _RSI_WP_ADJUSTMENTS: Dict[str, Tuple[float, float]] = {
 }
 
 # Regime -> strategy weight recommendations
+# 2026-06-09 STRIP: This was a hardcoded regime x strategy weight table that
+# biased downstream sizing decisions on stale priors. Same pattern as the
+# Risk Agent prompt strip (Batch 11) — but in code. Per Nunu directive
+# (LLMs reason from live data, not hardcoded heuristics), all weights
+# neutralized to 0.5. The Risk Agent now decides strategy weights from
+# CURRENT EDGES + regime + setup conviction at decision time.
+_NEUTRAL_STRATEGY_WEIGHTS = {
+    "regime_trend": 0.5, "monte_carlo_zones": 0.5,
+    "confidence_scorer": 0.5, "multi_tier_quality": 0.5,
+}
 _REGIME_STRATEGY_WEIGHTS: Dict[str, Dict[str, float]] = {
-    "trending_bull": {
-        "regime_trend": 0.8, "monte_carlo_zones": 0.4,
-        "confidence_scorer": 0.6, "multi_tier_quality": 0.7,
-    },
-    "trending_bear": {
-        "regime_trend": 0.8, "monte_carlo_zones": 0.4,
-        "confidence_scorer": 0.6, "multi_tier_quality": 0.7,
-    },
-    "neutral": {
-        "regime_trend": 0.5, "monte_carlo_zones": 0.6,
-        "confidence_scorer": 0.5, "multi_tier_quality": 0.5,
-    },
-    "momentum": {
-        "regime_trend": 0.7, "monte_carlo_zones": 0.3,
-        "confidence_scorer": 0.7, "multi_tier_quality": 0.6,
-    },
-    "overbought": {
-        "regime_trend": 0.3, "monte_carlo_zones": 0.7,
-        "confidence_scorer": 0.4, "multi_tier_quality": 0.4,
-    },
-    "panic_oversold": {
-        "regime_trend": 0.2, "monte_carlo_zones": 0.8,
-        "confidence_scorer": 0.3, "multi_tier_quality": 0.3,
-    },
-    "recovering": {
-        "regime_trend": 0.5, "monte_carlo_zones": 0.7,
-        "confidence_scorer": 0.5, "multi_tier_quality": 0.5,
-    },
-    "mean_reversion_opportunity": {
-        "regime_trend": 0.3, "monte_carlo_zones": 0.8,
-        "confidence_scorer": 0.5, "multi_tier_quality": 0.4,
-    },
-    "unknown": {
-        "regime_trend": 0.5, "monte_carlo_zones": 0.5,
-        "confidence_scorer": 0.5, "multi_tier_quality": 0.5,
-    },
+    "trending_bull": dict(_NEUTRAL_STRATEGY_WEIGHTS),
+    "trending_bear": dict(_NEUTRAL_STRATEGY_WEIGHTS),
+    "neutral": dict(_NEUTRAL_STRATEGY_WEIGHTS),
+    "momentum": dict(_NEUTRAL_STRATEGY_WEIGHTS),
+    "overbought": dict(_NEUTRAL_STRATEGY_WEIGHTS),
+    "panic_oversold": dict(_NEUTRAL_STRATEGY_WEIGHTS),
+    "recovering": dict(_NEUTRAL_STRATEGY_WEIGHTS),
+    "mean_reversion_opportunity": dict(_NEUTRAL_STRATEGY_WEIGHTS),
+    "unknown": dict(_NEUTRAL_STRATEGY_WEIGHTS),
 }
 
 # Regime risk multipliers — INFORMATIONAL FLOOR ONLY (2026-06-08 strip).
