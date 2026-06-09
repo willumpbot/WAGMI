@@ -1,0 +1,60 @@
+{
+  "last_run": "2026-06-09T08:09:47.186176+00:00",
+  "run_number": 42,
+  "date": "2026-06-09",
+  "generated_at": "2026-06-09T08:09:47.186176+00:00",
+  "bot_status": "OFFLINE — day 47.3",
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "today_wr": null,
+  "current_tod": "MORNING (08:07 UTC) — W34 active, morning peak edge window open until 10:00 UTC.",
+  "trading_now": false,
+  "anomalies_found": 10,
+  "report_generated": false,
+  "w34_active": true,
+  "w34_elapsed_h": 2.12,
+  "w34_remaining_h": 3.88,
+  "w34_peak_remaining_h": 1.88,
+  "t_w35_deadline_h": 21.38,
+  "cadence_milestone": "ACHIEVED: 1.01h gap (target: 1h) — first time hitting cadence target in 375h+",
+  "consecutive_morning_misses": 34,
+  "critical_anomalies": [
+    "BOT_OFFLINE_DAY47",
+    "W34_IN_PROGRESS_BOT_OFFLINE_2.12H_ELAPSED",
+    "W34_MORNING_PEAK_CLOSING_1.88H_REMAINING",
+    "CUMULATIVE_EV_APPROACHING_$200_MILESTONE"
+  ],
+  "high_anomalies": [
+    "W34_RESTART_DEADLINE_PASSED_LATE_RESTART_STILL_VIABLE",
+    "AB_TRACKER_BROKEN_DAY47_20_RULES_FROZEN",
+    "SOL_SHORT_CONFLICT_UNRESOLVED_375H+",
+    "ETH_SELL_REGIME_TREND_WR23PCT_DEMOTION_CANDIDATE"
+  ],
+  "medium_anomalies": [
+    "SLIPPAGE_TRACKING_BLIND_DAY47",
+    "SMALL_N_EDGE_STALENESS_DAY47"
+  ],
+  "positive_developments": [
+    "ENGINE_CADENCE_TARGET_ACHIEVED_1.01H",
+    "CADENCE_IMPROVING: R39->R40 was 122.8h, R40->R41 was 2.99h, R41->R42 is 1.01h"
+  ],
+  "tomorrow_focus": {
+    "primary": "RESTART BOT — W35 deadline June 10 05:30 UTC (T-21.38h). Start 06:00 UTC for clean window.",
+    "symbols_priority": ["ETH", "BTC", "HYPE"],
+    "regimes_priority": ["trending"],
+    "rules_primed": [
+      "ETH_SHORT_BB_golden (gate=80%, WR=70%, n=2172)",
+      "BTC_BUY_BB_golden (gate=80%, WR=69%, n=2172)",
+      "tod_morning_edge_v1 (gate=50%, WR=74%, n=20)",
+      "SOL_BUY_BB_golden (gate=80%, WR=67%, n=2172)"
+    ],
+    "avoid": [
+      "SOL_SHORT (conflict, gate=100)",
+      "SOL_LONG (hard blocked, gate=100)",
+      "ETH_SELL_regime_trend (WR=23%, demotion candidate)",
+      "HIGH_LEV_6_10X (avg PnL -4.62)"
+    ],
+    "dev_p0": "AB tracker fix in bot/feedback/loop.py (~2h) — unlocks BB_solo_signal_boost (n=2172, conf=95%) and 19 other rules"
+  },
+  "new_finding_run42": "CADENCE ACHIEVED (1.01h). W34 morning peak CLOSING in 1.88h. Cumulative EV: $199.81, approaching $200 milestone. Engine cadence trajectory: 122.8h → 2.99h → 1.01h."
+}
