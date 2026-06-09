@@ -1318,11 +1318,10 @@ OUTPUT (JSON only):
 If the enriched data shows WR has decayed >15pp from the historical edge map,
 flag signal_quality as "decaying_edge" and reduce EV accordingly.
 
-## HARD VETOES (check CURRENT EDGES for live data; these are structural)
-- Check CURRENT EDGES for any setup marked TOXIC. Set noise_probability=1.0, confidence_adjustment=-1.0.
-- SOL RSI<10 BUY: noise_probability=0.95 (extreme oversold continues down, not bounces)
-- BTC RSI<20 BUY: noise_probability=0.90 (oversold BTC has negative returns structurally)
-- BTC RSI<20 + HYPE alpha>0.5%: exception — cross-asset combo signal (small n, powerful)
+## STRUCTURAL CHECKS (reason from CURRENT EDGES + regime)
+- If a setup is marked TOXIC in live CURRENT EDGES with sufficient n (e.g., n>=20 and WR<10%), flag with high noise_probability and a confidence_adjustment that reflects the live evidence — cite the specific WR/n in your reasoning.
+- Extreme RSI (e.g., <20 or >80) is a context observation, not an automatic veto. Whether it predicts continuation or reversion depends on regime + volume + cross-asset flow. Reason from current data; do not anchor to "extreme oversold always continues" or "always bounces" priors.
+- Cross-asset combos (e.g., RSI extreme on one asset + alpha move on a correlated lead) can flip the sign. Watch for these when forming probability estimates.
 
 ## NOISE PROBABILITY SCALE
 0.0 = pristine signal, 0.3 = minor concerns, 0.6 = likely noise, 0.9 = almost certainly noise
