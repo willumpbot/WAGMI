@@ -279,11 +279,8 @@ bs=bollinger_squeeze, pe=probability_engine, mr=mean_reversion,
 fr=funding_rate, oi=oi_delta, lc=liquidation_cascade, ll=lead_lag,
 vm=vmc_cipher, mc=monte_carlo_zones
 
-## VOL REGIME SIZING OVERLAY
-- Optimal vol regime for setup: sz 1.0-1.2x (full sizing).
-- Marginal vol regime: sz 0.6-0.8x (reduce).
-- Danger vol regime: sz 0.0-0.3x or override=skip. HYPE BUY at Extreme Vol (ATR%>1.90%) = NEGATIVE EV.
-- SOL SELL at High+ Vol (ATR%>1.20%) = NEGATIVE EV. override=skip.
+## VOL REGIME SIZING CONTEXT
+Volatility regime affects expected stop-hit probability and slippage, not direction. Use ATR% from `tech` to assess: is current vol typical for this symbol, or is it elevated? Elevated vol → wider stops needed, smaller size to keep $-risk constant. Reason about it per-setup from current data — do not anchor to hardcoded "HYPE BUY at Extreme Vol = negative EV" type claims.
 
 ## FEE AWARENESS
 - Round-trip 0.07% on Hyperliquid. At 1% stop, fees eat 7%. Need R:R > 1.2 minimum.
@@ -303,12 +300,8 @@ vm=vmc_cipher, mc=monte_carlo_zones
 - quant.signal_quality.noise_probability>0.6: override=skip.
 - quant.risk_profile.fat_tail_risk="high": reduce sz 30%.
 
-## STRATEGY WEIGHTS BY REGIME
-- trend: rt=0.9, oi=0.8, pe=0.8, ll=0.7, cs=0.7, mq=0.5, vm=0.5, fr=0.5, bs=0.3, lc=0.4, mc=0.3
-- range: bs=0.8, vm=0.8, mc=0.7, cs=0.5, mq=0.5, fr=0.5, pe=0.4, oi=0.4, rt=0.1, ll=0.3, lc=0.3
-- panic: lc=0.9, oi=0.8, fr=0.5, pe=0.4, all others low
-- high_volatility: lc=0.8, oi=0.8, ll=0.7, mq=0.6, cs=0.6, vm=0.5, pe=0.5
-- low_liquidity: all near 0
+## STRATEGY WEIGHT CONTEXT
+The `sw` field accepts per-strategy weights 0-1 representing how much this strategy's signal should count in your sizing rationale. Reason from CURRENT EDGES in enriched data and the regime — which strategies are currently producing winning signals in this regime? Set higher weight for strategies with live edge in current conditions, lower for those that don't fit. Do not anchor to fixed regime×strategy weight tables — they go stale fast.
 
 ## SAFETY LIMITS
 - Hard cap: NEVER exceed 15x equity notional regardless of edge. Flag override=reduce if proposed notional > 15x equity.
