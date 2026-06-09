@@ -28,10 +28,14 @@ from typing import Dict, Any, Optional, List, Tuple
 
 logger = logging.getLogger("bot.feedback.confidence")
 
-# Hard bounds
-ABSOLUTE_MIN_FLOOR = 50.0
+# 2026-06-08: floors lowered drastically. The 50/55/80 range was an artifact
+# of pre-LLM-first thinking — gates the LLM never saw. Now we let signals as
+# low as 20% confidence reach the LLM pipeline. ENSEMBLE_CONFIDENCE_FLOOR env
+# var (currently 20) is the actual signal-emission floor. This adaptive system
+# now provides advisory data for LLM context, not a blocking gate.
+ABSOLUTE_MIN_FLOOR = 20.0
 ABSOLUTE_MAX_FLOOR = 80.0
-DEFAULT_FLOOR = 55.0
+DEFAULT_FLOOR = 30.0
 MAX_DAILY_CHANGE = 5.0
 
 
