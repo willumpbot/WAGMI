@@ -1,13 +1,13 @@
 {
-  "last_run": "2026-06-09T04:07:36.908287+00:00",
-  "run_number": 40,
+  "last_run": "2026-06-09T07:06:56+00:00",
+  "run_number": 41,
   "fixes_applied_this_run": 0,
   "total_applied_all_time": 69,
   "gates_active": 66,
   "new_audit_files_this_run": 0,
   "new_trades_this_run": 0,
-  "elapsed_since_last_run_h": 122.8,
-  "engine_gap_note": "122.8h gap since Run 39 (2026-06-04 01:16 UTC). W29-W33 all missed during gap.",
+  "elapsed_since_last_run_h": 2.99,
+  "engine_gap_note": "2.99h gap since Run 40 (2026-06-09 04:07 UTC). Improved vs 122.8h previous gap. W34 NOW ACTIVE (1.12h elapsed, 4.88h remaining). Bot offline Day 47.",
   "fixes_applied": [],
   "blockers": [
     "AB_tracker broken Day 47 — 20 rules cannot graduate (outcome callback unwired)",
@@ -28,5 +28,5 @@
     "80": 28,
     "100": 20
   },
-  "new_finding_run40": "122.8h engine gap. No new trades (bot offline Day 47). No new auto-fixes possible. 5 additional morning windows (W29-W33) confirmed missed during gap."
+  "new_finding_run41": "Run 40->41 gap: 2.99h (improved cadence). W34 NOW ACTIVE — bot offline means live data still absent. No new auto-fixes possible. All blockers unchanged. Gate distribution stable at 116 rules."
 }
