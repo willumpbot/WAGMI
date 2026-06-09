@@ -1,62 +1,24 @@
 {
-  "last_run": "2026-06-04T01:16:00.000000+00:00",
-  "run_number": 39,
+  "last_run": "2026-06-09T04:07:36.908287+00:00",
+  "run_number": 40,
   "fixes_applied_this_run": 0,
   "total_applied_all_time": 69,
   "gates_active": 66,
   "new_audit_files_this_run": 0,
   "new_trades_this_run": 0,
-  "elapsed_since_last_run_h": 48.0,
-  "engine_gap_note": "48h gap since Run 38 (2026-06-02 01:13 UTC). W26 (June 2) + W27 (June 3) elapsed during gap. Two additional morning misses confirmed.",
+  "elapsed_since_last_run_h": 122.8,
+  "engine_gap_note": "122.8h gap since Run 39 (2026-06-04 01:16 UTC). W29-W33 all missed during gap.",
   "fixes_applied": [],
   "blockers": [
-    "AB_tracker broken Day 42 — 20 rules cannot graduate (outcome callback still wired)",
+    "AB_tracker broken Day 47 — 20 rules cannot graduate (outcome callback unwired)",
     "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation",
     "ETH_SHORT_protect n=5, HYPE_PROBE n=6 — below 10-sample graduation threshold (no new trades)",
-    "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 254h+)",
+    "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 374h+)",
     "F1_sniper_pending_safety_review — conf=90%, needs human sign-off",
     "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review before applying",
-    "7 gate=0 rules appear actionable but require code-level verification",
-    "AFTERNOON_SESSION_BLOCK: gate=0 DISABLED since Run 23 — stale alert persists in paper report (known)"
+    "7 gate=0 rules require code-level verification before escalation"
   ],
   "escalation_candidates_blocked": 20,
-  "near_threshold_watch": [
-    "HYPE_UNKNOWN_REGIME_PROBE: needs n=6->10 to graduate gate=20->50 (4 more trades — unchanged, bot offline)",
-    "ETH_SHORT_protect_from_bias: needs n=5->10 to graduate gate=50->80 (5 more trades — unchanged, bot offline)",
-    "SOL_SHORT_suspension_reversal_probe: BLOCKED by SOL_SHORT_full_block (unchanged, pending human decision)"
-  ],
-  "actionable_gate0_rules": 7,
-  "new_finding_run39": "48h engine gap. No new trades (bot offline Day 42). No new auto-fixes possible. Two additional morning windows (W26 June 2, W27 June 3) confirmed missed during gap.",
-  "human_actions_pending": [
-    {
-      "action": "RULE_CONFLICT_SOL_SHORT: choose gate=100->80 (allow probe) OR merge exception. EV at stake: $5807+ historical edge. Pending 254h+.",
-      "priority": "HIGH",
-      "stale_hours": 254
-    },
-    {
-      "action": "F1_sniper_safety_review: sign off or reject conf=90% sniper filter. Unlocks ~$2-5/trade EV improvement.",
-      "priority": "MEDIUM"
-    },
-    {
-      "action": "HIGH_CONF_CALIBRATION_DRIFT: review conf=88% calibration fix. Apply or reject.",
-      "priority": "MEDIUM"
-    }
-  ],
-  "dev_actions_pending": [
-    {
-      "action": "P0: Wire update_times_correct() in bot/feedback/loop.py (~2h). Unblocks 20 frozen graduations.",
-      "priority": "CRITICAL",
-      "blocked_rules": 20,
-      "blocked_since_days": 42
-    }
-  ],
-  "stale_alert_confirmed": {
-    "rule": "AFTERNOON_SESSION_BLOCK",
-    "current_gate": 0,
-    "status": "DISABLED_AB_TRACKER_BROKEN",
-    "disabled_at": "2026-05-28T01:11:55.956257+00:00",
-    "paper_report_alert": "STALE — confirmed disabled at Run 23. No conflict. Paper report should suppress this."
-  },
   "gate_distribution": {
     "0": 29,
     "5": 1,
@@ -65,5 +27,6 @@
     "50": 18,
     "80": 28,
     "100": 20
-  }
+  },
+  "new_finding_run40": "122.8h engine gap. No new trades (bot offline Day 47). No new auto-fixes possible. 5 additional morning windows (W29-W33) confirmed missed during gap."
 }
