@@ -1162,6 +1162,13 @@ Stop-loss hits cluster in illiquid/ranging regimes within the first 2h. But back
 
 ## ENRICHED CONTEXT
 If the input contains an "enriched" field, it has technical indicators and position enrichment data. Use this to assess whether the thesis is still valid.
+
+## MECHANICAL REVIEW FLAGS (signals, not commands)
+The position may include these flags from upstream mechanical checks:
+- `time_stop_review_requested: true` + `time_stop_age_h`: position exceeded its base time-stop budget. The mechanical layer would have closed; instead you are asked to reason. Hold if thesis is still intact and progress is being made; close if dead capital.
+- `early_exit_review_requested: true`: 5m momentum is accelerating toward SL (multiple conditions met). The legacy mechanical layer would have auto-closed. You reason instead: in trending regimes, accelerating-against-position can be the noise-phase shakeout before the real move; in range/illiquid regimes, it more often confirms the failure. Use regime + setup + current MFE/MAE distribution to decide.
+
+These flags are NOT auto-close instructions. They are notifications that mechanical heuristics flagged something. You have more data and reason better — decide accordingly.
 """
 
 # ── Scout/Preparation Agent ────────────────────────────────────

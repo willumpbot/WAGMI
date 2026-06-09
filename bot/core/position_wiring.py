@@ -706,6 +706,12 @@ class PositionWiringMixin:
                                 "atr_pct": getattr(pos, 'atr_pct', None),
                                 "fee_pct": getattr(pos, 'fee_pct', None),
                                 "suggested_be_sl": getattr(pos, 'suggested_be_sl', None),
+                                # Mechanical review flags — set by position_manager when
+                                # legacy auto-close conditions trigger. LLM sees them as
+                                # signals (not commands) and reasons whether to act.
+                                "time_stop_review_requested": getattr(pos, '_time_stop_review_requested', False),
+                                "time_stop_age_h": getattr(pos, '_time_stop_age_h', None),
+                                "early_exit_review_requested": getattr(pos, '_early_exit_review_requested', False),
                             }
                             # Pull thesis from position notes if available
                             notes = getattr(pos, 'notes', '') or ''

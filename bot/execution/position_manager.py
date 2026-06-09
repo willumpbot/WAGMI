@@ -803,14 +803,21 @@ class PositionManager:
                             f"NOT tightening — {_skip_reason}"
                         )
 
-        # 1b. Early exit: cut position if momentum accelerating toward SL
-        # Only in OPEN state (after TP1, breakeven SL protects us)
+        # 1b. Early exit telemetry: when mechanical conditions detect momentum
+        # accelerating toward SL, publish to position for Exit Agent review rather
+        # than auto-close. Backtests showed many "early exit" closes were trades
+        # that would have gone green if held. Exit Agent reasons regime-aware
+        # from this signal + full context instead of mechanical auto-close.
+        # Set MECHANICAL_EARLY_EXIT_ENABLED=true to restore legacy auto-close.
         if pos.state == OPEN and df_5m is not None:
             early = self._check_early_exit(pos, current_price, df_5m)
             if early:
-                event = self._close_position(pos, current_price, "EARLY_EXIT")
-                events.append(event)
-                return events
+                pos._early_exit_review_requested = True
+                _mech_enabled = os.getenv("MECHANICAL_EARLY_EXIT_ENABLED", "false").lower() in ("1", "true", "yes")
+                if _mech_enabled:
+                    event = self._close_position(pos, current_price, "EARLY_EXIT")
+                    events.append(event)
+                    return events
 
         # 2. Check TP1 (dynamic partial close -> TP1_HIT -> TRAILING)
         if pos.state == OPEN:
