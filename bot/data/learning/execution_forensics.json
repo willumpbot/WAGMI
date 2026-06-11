@@ -1,49 +1,49 @@
 {
-  "last_run": "2026-06-11T10:03:23.000000+00:00",
-  "run_number": 45,
-  "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 49+); bot offline",
-  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 49]",
+  "last_run": "2026-06-11T11:04:00.000000+00:00",
+  "run_number": 46,
+  "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 50+); bot offline",
+  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 50]",
   "data_available": false,
-  "data_source": "Cached (bot offline 49.5 days since 2026-04-23 22:17 UTC)",
-  "ev_loss_morning_usd": 213.46,
-  "ev_loss_delta_since_run44": 1.94,
+  "data_source": "Cached (bot offline 50 days since 2026-04-23 22:17 UTC)",
+  "ev_loss_morning_usd": 214.44,
+  "ev_loss_delta_since_run45": 0.98,
   "ev_loss_breakdown": {
     "through_run43": 203.70,
     "w35_miss_full": 5.82,
-    "w36_elapsed_4.05h_at_rate_0.97": 3.93,
-    "total_run45": 213.46,
-    "w36_capturable_remaining_1.95h": 1.89,
+    "w36_elapsed_5.07h_at_rate_0.97": 4.92,
+    "total_run46": 214.44,
+    "w36_capturable_remaining_0.93h": 0.91,
     "rate_per_hour": 0.97,
     "w36_peak_ev_lost": 2.91,
-    "w36_peak_window": "07:00-10:00 UTC — FULLY MISSED at 10:00 UTC (Run 45 is 3 min post-peak)"
+    "w36_nonpeak_ev_lost_so_far": 2.01,
+    "w36_window": "Jun 11 06:00-12:00 UTC — peak ended 10:00 UTC, non-peak ends 12:00 UTC"
   },
-  "ev_milestone_note": "$213.46 total — climbing at $0.97/h during morning windows",
+  "ev_milestone_note": "$214.44 total — W36 non-peak 0.93h capturable ($0.91). Last chance before W37.",
   "morning_windows_missed": 36,
   "morning_peak_windows_missed": 37,
   "morning_window_tracking": {
-    "w34_status": "FULLY MISSED — window Jun 9 06:00-12:00 UTC (35th miss)",
-    "w35_status": "FULLY MISSED — window Jun 10 06:00-12:00 UTC (36th miss)",
-    "w36_status": "PEAK FULLY MISSED — Jun 11 07:00-10:00 UTC ended at 10:00 UTC. Full window (06:00-12:00) still active: 1.95h remaining (non-peak). 37th consecutive missed peak window.",
+    "w36_status": "NON-PEAK CLOSING — Jun 11 10:03-12:00 UTC. Peak ended 10:00 UTC. 0.93h remaining. URGENT: Start bot now or W36 fully missed = 38th consecutive full miss.",
     "w36_peak_active": false,
     "w36_peak_ended_utc": "2026-06-11T10:00:00+00:00",
-    "w36_remaining_h": 1.95,
-    "w36_non_peak_note": "BB golden edges still active (WR 67-70%) — lower edge than peak but capturable",
+    "w36_remaining_h": 0.93,
+    "w36_non_peak_note": "BB golden edges still active (WR 67-70%) — 0.93h window closing FAST",
     "w36_late_restart_viable": true,
-    "w36_late_restart_note": "Non-peak window still open 1.95h (10:03-12:00 UTC). BB golden edges primed.",
+    "w36_late_restart_note": "URGENT — 0.93h until W36 fully expires (12:00 UTC). BB golden edges primed.",
     "w37_opens_utc": "2026-06-12T06:00:00+00:00",
     "w37_deadline_utc": "2026-06-12T05:30:00+00:00",
-    "t_w37_deadline_h": 19.45
+    "t_w37_deadline_h": 18.43,
+    "t_w37_peak_h": 19.93
   },
-  "bot_offline_days": 49.5,
-  "gap_since_last_engine_run_h": 2.00,
-  "cadence_note": "CADENCE RECOVERY Run 45: 2.00h gap (vs 23.9h in Run 44). First sub-3h run since Run 42.",
+  "bot_offline_days": 50.0,
+  "gap_since_last_engine_run_h": 1.01,
+  "cadence_note": "CADENCE TARGET HIT Run 46: 1.01h gap — first sub-1.05h since Run 42. Target sustained.",
   "demotion_candidate": {
     "rule": "HIGH_VOL_regime_boost",
     "gate": 50,
     "wr": 0.55,
     "n": 2172,
     "action": "Review for demotion gate=50->20 on next 100 live samples post-restart",
-    "staleness_days": 49.5
+    "staleness_days": 50.0
   },
-  "new_finding_run45": "W36 PEAK FULLY MISSED at 10:00 UTC (3 min before this run). 37th consecutive missed peak window. EV $213.46 total (+$1.94 from Run 44, +$9.76 from Run 43). W36 non-peak window: 1.95h remaining (10:03-12:00 UTC, BB golden primed WR=67-70%). W37 deadline T-19.45h. CADENCE RECOVERY: 2.00h gap vs 23.9h in Run 44."
+  "new_finding_run46": "W36 NON-PEAK CLOSING (0.93h remaining, ends 12:00 UTC). EV $214.44 (+$0.98 from Run 45). If bot not started in 0.93h, W36 = 38th consecutive full miss. CADENCE TARGET HIT: 1.01h gap. W37 deadline T-18.43h (Jun 12 05:30 UTC)."
 }

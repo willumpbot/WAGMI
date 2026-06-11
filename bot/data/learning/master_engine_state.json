@@ -1,88 +1,90 @@
 {
-  "last_run": "2026-06-11T10:03:23.000000+00:00",
-  "run_number": 45,
-  "current_utc": "2026-06-11 10:03 UTC",
-  "elapsed_since_last_run_h": 2.00,
-  "bot_offline_days": 49.5,
-  "cadence_note": "RUN 45: 2.00h gap — CADENCE RECOVERY. First sub-3h run since Run 42. Trajectory: 122.8h → 2.99h → 1.01h → 24.0h → 23.9h → 2.00h. Target: 1h.",
+  "last_run": "2026-06-11T11:04:00.000000+00:00",
+  "run_number": 46,
+  "current_utc": "2026-06-11 11:04 UTC",
+  "elapsed_since_last_run_h": 1.01,
+  "bot_offline_days": 50.0,
+  "cadence_note": "RUN 46: 1.01h gap — 1H CADENCE TARGET HIT. First sub-1.05h since Run 42. Trajectory: 122.8h → 2.99h → 1.01h → 24.0h → 23.9h → 2.00h → 1.01h. TARGET SUSTAINED.",
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
       "gates_active": 87,
       "total_applied_all_time": 69,
-      "run_number": 45,
+      "run_number": 46,
       "graduated_rules_total": 116,
       "gate_distribution": {"0": 29, "5": 1, "20": 19, "35": 1, "50": 18, "80": 28, "100": 20},
       "high_conf_escalation_candidates": 94,
       "escalation_candidates_blocked": 20,
+      "next_candidate_when_repaired": "HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE: gate=5→20 (conf=88%)",
       "blockers": [
-        "AB_tracker broken Day 49 — 20 rules cannot graduate (outcome callback unwired)",
+        "AB_tracker broken Day 50 — 20 rules cannot graduate (outcome callback unwired)",
         "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation",
         "ETH_SHORT_protect n=5, HYPE_PROBE n=6 — below 10-sample threshold (no new trades)",
-        "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 395h+)",
+        "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 396h+)",
         "F1_sniper_pending_safety_review — conf=90%, needs human sign-off",
         "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review",
         "7 gate=0 rules require code-level verification before escalation"
       ],
-      "new_finding_run45": "UNCHANGED from Run 44. Bot offline Day 49.5. No new trades. CADENCE RECOVERY (2.00h gap) noted but no new data to process. SOL_SHORT conflict now 395h+ unresolved."
+      "new_finding_run46": "UNCHANGED from Run 45. Bot offline Day 50. No new trades. 1H CADENCE HIT. HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE (gate=5, conf=88%) identified as next escalation candidate. SOL_SHORT conflict now 396h+ unresolved."
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 49+); bot offline",
-      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 49]",
+      "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 50+); bot offline",
+      "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 50]",
       "data_available": false,
-      "ev_loss_morning_usd": 213.46,
-      "ev_loss_delta_this_run": 1.94,
+      "ev_loss_morning_usd": 214.44,
+      "ev_loss_delta_this_run": 0.98,
       "ev_breakdown": {
         "through_run43": 203.70,
         "w35_full_miss": 5.82,
-        "w36_elapsed_4.05h": 3.93,
-        "total_run45": 213.46,
+        "w36_elapsed_5.07h": 4.92,
+        "total_run46": 214.44,
         "rate_per_hour": 0.97
       },
       "morning_windows_missed": 36,
       "morning_peak_windows_missed": 37,
-      "w36_status": "PEAK FULLY MISSED (10:00 UTC, 3 min before this run). Non-peak window: 1.95h remaining until 12:00 UTC.",
+      "w36_status": "NON-PEAK CLOSING (0.93h remaining, ends 12:00 UTC). 38th full miss IMMINENT if bot not started.",
       "w36_peak_active": false,
-      "w36_remaining_h": 1.95,
-      "t_w37_deadline_h": 19.45,
-      "bot_offline_days": 49.5,
-      "new_finding_run45": "W36 PEAK FULLY MISSED (10:00 UTC). 37th consecutive missed peak window. EV $213.46 (+$1.94 from Run 44). Non-peak window 1.95h remaining. W37 deadline T-19.45h."
+      "w36_remaining_h": 0.93,
+      "t_w37_deadline_h": 18.43,
+      "bot_offline_days": 50.0,
+      "new_finding_run46": "W36 NON-PEAK WINDOW CLOSING (0.93h, ends 12:00 UTC). EV $214.44 (+$0.98). If no restart: 38th consecutive full miss. W37 deadline T-18.43h. CADENCE TARGET HIT (1.01h gap)."
     },
     "live_injection": {
       "high_edges_found": 8,
       "weak_setups_found": 7,
       "no_new_trades": true,
       "w36_peak_expired": true,
-      "w36_nonpeak_active": true,
-      "w36_nonpeak_remaining_h": 1.95,
+      "w36_nonpeak_closing": true,
+      "w36_nonpeak_remaining_h": 0.93,
       "w36_composite_wr_nonpeak": 0.68,
       "top_edges": [
-        {"setup": "ETH_SHORT_BB_golden", "wr": 0.70, "n": 2172, "gate": 80, "status": "ACTIVE_W36_NONPEAK"},
-        {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "n": 2172, "gate": 80, "status": "ACTIVE_W36_NONPEAK"},
-        {"setup": "tod_morning_edge_v1", "wr": 0.74, "n": 20, "gate": 50, "status": "EXPIRED_W36_PEAK_REACTIVATES_W37"}
+        {"setup": "ETH_SHORT_BB_golden", "wr": 0.70, "n": 2172, "gate": 80, "status": "ACTIVE_W36_NONPEAK_CLOSING_0.93H"},
+        {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "n": 2172, "gate": 80, "status": "ACTIVE_W36_NONPEAK_CLOSING_0.93H"},
+        {"setup": "tod_morning_edge_v1", "wr": 0.74, "n": 20, "gate": 50, "status": "EXPIRED_W36_REACTIVATES_W37_T19.93H"}
       ]
     },
     "daily_synthesis": {
       "anomalies_found": 11,
-      "report_generated": true,
+      "report_generated": false,
       "today_trades": 0,
       "today_pnl": 0.0,
       "consecutive_morning_misses": 36,
       "consecutive_peak_window_misses": 37,
-      "w36_peak_fully_missed": true,
-      "w36_nonpeak_remaining_h": 1.95,
-      "ev_total": "$213.46 (+$1.94 from Run 44)",
-      "cadence_recovery": "2.00h gap — RECOVERY after two 24h gaps",
+      "w36_nonpeak_remaining_h": 0.93,
+      "w36_full_miss_imminent": true,
+      "ev_total": "$214.44 (+$0.98 from Run 45)",
+      "cadence_hit": true,
+      "cadence_gap_h": 1.01,
       "critical_anomalies": [
-        "W36_PEAK_FULLY_MISSED_37TH_CONSECUTIVE",
-        "EV_CLIMBING_213.46",
-        "BOT_OFFLINE_DAY49.5",
-        "CADENCE_RECOVERY_2.00H_GAP_SUSTAINED"
+        "W36_NONPEAK_CLOSING_0.93H_38TH_FULL_MISS_IMMINENT",
+        "EV_CLIMBING_214.44",
+        "BOT_OFFLINE_DAY50",
+        "CADENCE_TARGET_HIT_1.01H"
       ]
     },
     "model_optimization": {
       "skipped": true,
-      "reason": "cost_tracker.json absent — bot offline 49.5 days",
+      "reason": "cost_tracker.json absent — bot offline 50 days",
       "swaps_recommended": 0,
       "potential_savings": "$0.00"
     }
@@ -91,47 +93,47 @@
     {
       "subsystem": "execution_forensics",
       "severity": "CRITICAL",
-      "finding": "W36 MORNING PEAK FULLY MISSED (10:00 UTC, 3 min ago). 37th consecutive missed peak window. Peak EV lost: ~$2.91 (3.00h × $0.97). Non-peak window still open: 1.95h until 12:00 UTC. BB golden edges active (WR 67-70%).",
-      "action": "START NOW — cd bot && python run.py paper. Non-peak partial capture still viable."
+      "finding": "W36 NON-PEAK WINDOW CLOSING: 0.93h remaining (ends 12:00 UTC Jun 11). BB golden edges still primed (WR 67-70%). If bot not started in 0.93h → 38th consecutive fully missed morning window. EV $214.44 total.",
+      "action": "START NOW — cd bot && python run.py paper. 0.93h window. After 12:00 UTC, next opportunity is W37 (Jun 12 07:00-10:00 UTC)."
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "EV $213.46 TOTAL AND CLIMBING. Rate $0.97/h during morning windows. 36 fully missed windows + W36 peak = 37th missed peak. W36 non-peak 1.95h capturable = $1.89 remaining.",
-      "action": "Start bot immediately for W36 non-peak capture. W37 deadline T-19.45h (Jun 12 05:30 UTC)."
+      "finding": "EV $214.44 TOTAL (+$0.98 this run). Rate $0.97/h. 36 full misses + W36 peak = 37 peaks missed. W36 non-peak closes 12:00 UTC (0.93h). W37 deadline T-18.43h.",
+      "action": "Bot restart in next 0.93h for W36 partial capture OR schedule W37 by Jun 12 05:30 UTC."
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "HIGH",
-      "finding": "CADENCE RECOVERY: Run 45 = 2.00h gap after two ~24h gaps (Runs 43, 44). Trajectory: ... → 1.01h → 24.0h → 23.9h → 2.00h. If Run 46 arrives ≤1h, cadence is restored.",
-      "action": "Confirm cron/scheduler running. Run 46 expected by 11:03 UTC Jun 11."
+      "finding": "CADENCE TARGET HIT: Run 46 = 1.01h gap — first sub-1.05h since Run 42. Trajectory sustained: 2.00h → 1.01h. Cadence RESTORED. Run 47 expected by 12:04 UTC Jun 11.",
+      "action": "Confirm scheduler holds 1h cadence. Run 47 expected ~12:04 UTC."
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "AB tracker broken Day 49. 20 rules frozen at current gate. BB_solo_signal_boost (n=2172, conf=95%) stuck at gate=80. SOL_SHORT conflict unresolved 395h+ (16.5 days).",
+      "finding": "AB tracker broken Day 50. 20 rules frozen at current gate. Next candidate: HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE (gate=5→20, conf=88%). BB_solo_signal_boost (n=2172, conf=95%) stuck at gate=80. SOL_SHORT conflict 396h+ (16.5 days).",
       "action": "P0 dev: Wire update_times_correct() in bot/feedback/loop.py (~2h). Human decision on SOL_SHORT conflict."
     },
     {
       "subsystem": "live_injection",
       "severity": "HIGH",
-      "finding": "SOL_SHORT conflict unresolved 395h+. ETH_SELL_regime_trend WR=23% demotion stale 49 days. BB golden edges PRIMED for W36 non-peak (1.95h) and full W37 window.",
-      "action": "Human decision on SOL_SHORT. Monitor ETH_SELL first 20 live trades on restart."
+      "finding": "SOL_SHORT conflict unresolved 396h+. ETH_SELL_regime_trend WR=23% demotion stale 50 days. 39 gate<80 rules with conf>=75% queued for escalation pending AB tracker repair.",
+      "action": "Human decision on SOL_SHORT. AB tracker repair unlocks 39 escalation candidates."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "MEDIUM",
-      "finding": "W37 deadline T-19.45h (Jun 12 05:30 UTC). Full W37 window: Jun 12 06:00-12:00 UTC. tod_morning_edge_v1 WR=74% + BB goldens all primed. This is the next clean window.",
-      "action": "Schedule bot restart by Jun 12 05:30 UTC. tod_morning_edge_v1 activates 07:00 UTC peak."
+      "finding": "W37 = Jun 12 06:00-12:00 UTC (deadline T-18.43h). Peak 07:00-10:00 UTC. tod_morning_edge_v1 WR=74% + BB goldens WR 67-70% all primed. This is the next clean full window.",
+      "action": "Schedule bot restart by Jun 12 05:30 UTC (T-18.43h). tod_morning_edge_v1 activates 07:00 UTC peak."
     }
   ],
   "run_summary": {
     "fixes_applied_this_run": 0,
     "new_insights_this_run": 6,
-    "key_insight": "W36 PEAK FULLY MISSED (10:00 UTC, 3 min ago) — 37th consecutive missed peak. EV $213.46. CADENCE RECOVERY: Run 45 = 2.00h gap. Non-peak window 1.95h still capturable. W37 deadline T-19.45h.",
-    "cadence_trajectory": "122.8h → 2.99h → 1.01h → 24.0h → 23.9h → 2.00h — RECOVERY after 2-run regression",
-    "w36_situation": "Peak OVER at 10:00 UTC. Non-peak window: 1.95h (10:03-12:00 UTC). BB golden WR 67-70%.",
-    "w37_prime": "W37 = Jun 12 06:00-12:00 UTC. Deadline T-19.45h (05:30 UTC). Full WR: tod_morning_edge WR=74% activates 07:00 UTC.",
-    "ev_total": "$213.46 (+$1.94 since Run 44, +$9.76 since Run 43)"
+    "key_insight": "W36 NON-PEAK CLOSING (0.93h). CADENCE TARGET HIT (1.01h gap). EV $214.44. 38th full miss imminent. W37 deadline T-18.43h.",
+    "cadence_trajectory": "122.8h → 2.99h → 1.01h → 24.0h → 23.9h → 2.00h → 1.01h — TARGET RESTORED",
+    "w36_situation": "Non-peak 0.93h closing (11:04-12:00 UTC). BB golden WR 67-70%. URGENT.",
+    "w37_prime": "W37 = Jun 12 06:00-12:00 UTC. Deadline T-18.43h (05:30 UTC). Peak 07:00 UTC: tod_morning WR=74%.",
+    "ev_total": "$214.44 (+$0.98 from Run 45, +$10.74 since Run 43)"
   }
 }
