@@ -1,91 +1,74 @@
 {
-  "last_run": "2026-06-12T10:02:58+00:00",
-  "run_number": 49,
+  "last_run": "2026-06-12T14:04:00+00:00",
+  "run_number": 50,
   "date": "2026-06-12",
-  "generated_at": "2026-06-12T10:02:58+00:00",
-  "bot_status": "OFFLINE — day 51.33",
+  "generated_at": "2026-06-12T14:04:00+00:00",
+  "bot_status": "OFFLINE — day 49.66",
   "today_trades": 0,
   "today_pnl": 0.0,
   "today_wr": null,
-  "current_tod": "MIDDAY (10:03 UTC) — W37 active (past peak). Non-peak window 10:03-12:00 UTC (1.97h). Peak 07:00-10:00 MISSED (39th consecutive).",
+  "current_tod": "AFTERNOON (14:04 UTC) — W37 FULLY CLOSED (12:00 UTC, 2.07h ago). Evening session 16:00-22:00 UTC IMMINENT (T+1.93h). WARM-UP DEADLINE: 15:30 UTC.",
   "trading_now": false,
-  "anomalies_found": 12,
-  "report_generated": true,
-  "w37_active": true,
+  "anomalies_found": 13,
+  "report_generated": false,
+  "end_of_day_report_pending": true,
+  "eod_report_time": "22:00 UTC",
+  "w37_active": false,
+  "w37_closed": true,
+  "w37_closed_at": "2026-06-12T12:00:00+00:00",
   "w37_peak_missed": true,
+  "w37_nonpeak_missed": true,
   "w37_peak_miss_number": 39,
-  "w37_nonpeak_remaining_h": 1.97,
-  "w37_closes_utc": "2026-06-12T12:00:00+00:00",
-  "t_evening_session_h": 5.97,
-  "t_w38_deadline_h": 19.47,
+  "w37_closed_h_ago": 2.07,
+  "t_evening_session_h": 1.93,
+  "t_w38_deadline_h": 15.43,
   "cadence_hit": false,
-  "cadence_gap_h": 6.99,
+  "cadence_gap_h": 4.017,
   "cadence_consecutive_hits": 0,
-  "cadence_note": "RUN 49: 6.99h gap (Run 48→49). Cadence broke again. Peak window (07:00-10:00 UTC) missed during engine sleep.",
-  "consecutive_morning_misses": 38,
+  "consecutive_morning_misses": 39,
   "consecutive_peak_window_misses": 39,
-  "cumulative_ev_loss_usd": 236.72,
-  "ev_delta_this_run": 6.78,
+  "cumulative_ev_loss_usd": 240.62,
+  "ev_delta_this_run": 3.90,
   "ev_rate_per_hour": 0.97,
+  "ev_milestone_next": "$250 at T+9.67h if bot stays offline (Jun 12 23:41 UTC)",
   "critical_anomalies": [
-    "W37_PEAK_MISSED_39TH_CONSECUTIVE_PEAK_MISS_10:00_UTC_JUN12",
-    "EV_236.72_RATE_0.97_PER_HOUR",
-    "BOT_OFFLINE_DAY51.33",
-    "CADENCE_BROKE_6.99H_GAP_PEAK_WINDOW_MISSED",
-    "SOL_SHORT_CONFLICT_UNRESOLVED_417.99H_17.4_DAYS"
+    "W37_FULLY_CLOSED_PEAK_AND_NONPEAK_BOTH_MISSED_39TH_CONSECUTIVE",
+    "EVENING_SESSION_JUN12_IMMINENT_T+1.93H_WARMUP_DEADLINE_15:30_UTC",
+    "EV_240.62_RATE_0.97_PER_HOUR_250_MILESTONE_IN_9.67H",
+    "BOT_OFFLINE_DAY49.66",
+    "SOL_SHORT_CONFLICT_UNRESOLVED_422.01H_17.6_DAYS"
   ],
   "high_anomalies": [
-    "W37_NONPEAK_WINDOW_1.97H_REMAINING_BB_GOLDENS_67-70PCT",
-    "EVENING_SESSION_JUN12_VIABLE_16:00-22:00_UTC_T+5.97H",
-    "W38_DEADLINE_JUN13_05:30_UTC_T+19.47H",
-    "AB_TRACKER_BROKEN_DAY51_20_RULES_FROZEN",
-    "ETH_SELL_REGIME_TREND_WR23PCT_DEMOTION_CANDIDATE_STALE_51D"
+    "W38_DEADLINE_JUN13_05:30_UTC_T+15.43H",
+    "AB_TRACKER_BROKEN_DAY49.66_20_RULES_FROZEN",
+    "ETH_SELL_REGIME_TREND_WR23PCT_DEMOTION_CANDIDATE_STALE_49D",
+    "CADENCE_4.02H_STILL_MISSING_1H_TARGET"
   ],
   "medium_anomalies": [
-    "SLIPPAGE_TRACKING_BLIND_DAY51",
-    "SMALL_N_EDGE_STALENESS_DAY51_ETH_SHORT_PROTECT_N5_HYPE_PROBE_N6",
-    "HIGH_VOL_REGIME_BOOST_BORDERLINE_GATE50"
+    "SLIPPAGE_TRACKING_BLIND_DAY49.66",
+    "SMALL_N_EDGE_STALENESS_DAY49.66_ETH_SHORT_PROTECT_N5_HYPE_PROBE_N6",
+    "HIGH_VOL_REGIME_BOOST_BORDERLINE_GATE50",
+    "EV_MILESTONE_250_APPROACHING_T+9.67H"
   ],
   "positive_developments": [
-    "W37_NONPEAK_BB_GOLDEN_CAPTURABLE_1.97H_REMAINING",
-    "EVENING_SESSION_JUN12_VIABLE_WR65PCT_T+5.97H",
-    "W38_PRIME_T+19.47H_NEXT_FULL_MORNING_CAPTURE_OPPORTUNITY",
-    "116_RULES_CODIFIED_87_ACTIVE_STRONG_FOUNDATION"
+    "EVENING_SESSION_JUN12_VIABLE_WR65PCT_T+1.93H_START_BOT_NOW",
+    "W38_PRIME_T+16.93H_NEXT_FULL_MORNING_CAPTURE",
+    "116_RULES_CODIFIED_87_ACTIVE_STRONG_FOUNDATION",
+    "CADENCE_IMPROVED_4.02H_VS_6.99H_PREVIOUS"
   ],
-  "daily_summary": {
-    "trades": 0,
-    "wins": 0,
-    "losses": 0,
-    "pnl_usd": 0.0,
-    "best_trade": null,
-    "worst_trade": null,
-    "7d_wr_baseline": null,
-    "today_wr_vs_baseline": "N/A — no trades"
-  },
+  "daily_summary": {"trades": 0, "wins": 0, "losses": 0, "pnl_usd": 0.0, "best_trade": null, "worst_trade": null, "7d_wr_baseline": null, "today_wr_vs_baseline": "N/A — no trades"},
   "today_opportunities_remaining": {
-    "w37_nonpeak": "10:03-12:00 UTC (1.97h remaining) — BB goldens WR 67-70% capturable if bot started NOW. tod_morning_edge_v1 deactivated (peak ended).",
-    "evening_session": "16:00-22:00 UTC Jun 12 (T+5.97h) — EVENING_session_boost WR=65% + BB goldens WR 67-70%. ~6h opportunity.",
-    "morning_missed": "W37 peak 07:00-10:00 UTC MISSED (39th). tod_morning_edge_v1 WR=74% uncaptured."
+    "evening_session": "16:00-22:00 UTC Jun 12 (T+1.93h) — WARMUP DEADLINE 15:30 UTC NOW. EVENING_session_boost WR=65% + BB goldens WR 67-70%. DO NOT MISS 3RD CONSECUTIVE EVENING.",
+    "morning_missed": "W37 FULLY CLOSED at 12:00 UTC (2.07h ago). Both peak (07:00-10:00) and non-peak (10:03-12:00) missed.",
+    "status": "RECOVERY_WINDOW_ACTIVE — Evening session only remaining opportunity today."
   },
   "tomorrow_focus": {
-    "primary": "W38 deadline Jun 13 05:30 UTC (T+19.47h). Start bot by 05:30 UTC Jun 13. Open 06:00, peak 07:00-10:00.",
-    "w38_window": "Jun 13 06:00-12:00 UTC. Peak 07:00-10:00 UTC. Composite edge WR=74% (tod_morning) + BB goldens 67-70%.",
+    "primary": "W38 deadline Jun 13 05:30 UTC (T+15.43h). Start bot by 05:30 UTC Jun 13. Open 06:00, peak 07:00-10:00.",
     "symbols_priority": ["ETH", "BTC", "HYPE"],
     "regimes_priority": ["trending"],
-    "rules_primed": [
-      "tod_morning_edge_v1 (gate=50%, WR=74%, n=20) — activates 07:00 UTC peak",
-      "ETH_SHORT_BB_golden (gate=80%, WR=70%, n=2172)",
-      "BTC_BUY_BB_golden (gate=80%, WR=69%, n=2172)",
-      "SOL_BUY_BB_golden (gate=80%, WR=67%, n=2172)",
-      "EVENING_session_boost (gate=20%, WR=65%, n=12) — also active Jun 12 16:00-22:00 UTC TODAY"
-    ],
-    "avoid": [
-      "SOL_SHORT (conflict, gate=100)",
-      "SOL_LONG (hard blocked, gate=100)",
-      "ETH_SELL_regime_trend (WR=23%, demotion candidate)",
-      "HIGH_LEV_6_10X (avg PnL -4.62)"
-    ],
+    "rules_primed": ["tod_morning_edge_v1 WR=74% (gate=50%)", "ETH_SHORT_BB_golden WR=70% (gate=80%)", "BTC_BUY_BB_golden WR=69% (gate=80%)", "SOL_BUY_BB_golden WR=67% (gate=80%)", "EVENING_session_boost WR=65% (gate=20%) — ALSO active TODAY 16:00-22:00 UTC"],
+    "avoid": ["SOL_SHORT (conflict, gate=100)", "SOL_LONG (hard blocked)", "ETH_SELL_regime_trend (WR=23%)", "HIGH_LEV_6_10X (avg PnL -4.62)"],
     "dev_p0": "AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 rules incl BB_solo_signal_boost (n=2172, conf=95%)"
   },
-  "new_finding_run49": "W37 PEAK MISSED (07:00-10:00 UTC ended at 10:00 UTC, 3min before this run). 39th consecutive peak miss. EV $236.72 (+$6.78 from 6.99h gap). Non-peak window 10:03-12:00 UTC (1.97h remaining, BB goldens WR 67-70% capturable). Evening Jun 12 viable 16:00-22:00 UTC (T+5.97h). W38 deadline Jun 13 05:30 UTC (T+19.47h). SOL_SHORT conflict 417.99h+."
+  "new_finding_run50": "W37 FULLY CLOSED (12:00 UTC, 2.07h ago). EV $240.62 (+$3.90). EVENING SESSION IMMINENT T+1.93h (16:00 UTC). WARMUP DEADLINE 15:30 UTC. W38 deadline Jun 13 05:30 UTC (T+15.43h). SOL_SHORT conflict 422.01h+."
 }

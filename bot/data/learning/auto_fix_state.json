@@ -1,1 +1,43 @@
-{"last_run": "2026-06-12T10:02:58+00:00", "run_number": 49, "fixes_applied_this_run": 0, "total_applied_all_time": 69, "gates_active": 87, "new_audit_files_this_run": 0, "new_trades_this_run": 0, "elapsed_since_last_run_h": 6.99, "cadence_note": "RUN 49: 6.99h gap since Run 48 (03:03→10:03 UTC). CADENCE BROKE AGAIN. 1h streak ended Run 47. Gap covered W37 peak window (07:00-10:00 UTC) — peak MISSED while engine was sleeping. Trajectory: 122.8h→2.99h→1.01h→24.0h→23.9h→2.00h→1.01h→1.01h→14.97h→6.99h.", "fixes_applied": [], "blockers": ["AB_tracker broken Day 51 — 20 rules cannot graduate (outcome callback unwired in bot/feedback/loop.py)", "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation", "ETH_SHORT_protect n=5, HYPE_PROBE n=6 — below 10-sample graduation threshold (no new trades)", "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 417.99h+ / ~17.4 days)", "F1_sniper_pending_safety_review — conf=90%, needs human sign-off", "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review before applying", "7 gate=0 rules require code-level verification before escalation"], "escalation_candidates_blocked": 20, "gate_distribution": {"0": 27, "5": 1, "20": 19, "35": 1, "50": 18, "80": 28, "100": 20, "unknown": 2}, "graduated_rules_total": 116, "high_conf_escalation_candidates": 94, "sol_short_conflict_age_h": 417.99, "new_finding_run49": "UNCHANGED from Run 48. Bot offline Day 51.33. No new trades. W37 peak (07:00-10:00 UTC) MISSED while engine slept 6.99h. SOL_SHORT conflict now 417.99h+. W37 non-peak window 10:03-12:00 UTC (1.97h remaining). Next: EVENING_session_boost Jun 12 16:00-22:00 UTC.", "next_action_on_repair": "When AB tracker fixed: HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE gate=5→20 (conf=88%), then 39 gate<80 candidates queue", "status": "UNCHANGED — awaiting bot restart and AB tracker repair. W37 PEAK MISSED. Non-peak window 1.97h remaining."}
+{
+  "last_run": "2026-06-12T14:04:00+00:00",
+  "run_number": 50,
+  "fixes_applied_this_run": 0,
+  "total_applied_all_time": 69,
+  "gates_active": 87,
+  "new_audit_files_this_run": 0,
+  "new_trades_this_run": 0,
+  "elapsed_since_last_run_h": 4.017,
+  "cadence_note": "RUN 50: 4.017h gap since Run 49 (10:02→14:04 UTC). Better than 6.99h gap in Run 48→49 but still misses 1h target. W37 non-peak window (10:03-12:00 UTC) closed during engine sleep. Evening session Jun 12 now IMMINENT (T+1.93h). Trajectory: 122.8h→2.99h→1.01h→24.0h→23.9h→2.00h→1.01h→1.01h→14.97h→6.99h→4.02h.",
+  "fixes_applied": [],
+  "blockers": [
+    "AB_tracker broken Day 49.66 — 20 rules cannot graduate (outcome callback unwired in bot/feedback/loop.py)",
+    "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation",
+    "ETH_SHORT_protect n=5, HYPE_PROBE n=6 — below 10-sample graduation threshold (no new trades)",
+    "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 422.01h+ / ~17.6 days)",
+    "F1_sniper_pending_safety_review — conf=90%, needs human sign-off",
+    "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review before applying",
+    "7 gate=0 rules require code-level verification before escalation"
+  ],
+  "escalation_candidates_blocked": 20,
+  "gate_distribution": {
+    "0": 27,
+    "5": 1,
+    "20": 19,
+    "35": 1,
+    "50": 18,
+    "80": 28,
+    "100": 20,
+    "unknown": 2
+  },
+  "graduated_rules_total": 116,
+  "high_conf_escalation_candidates": 94,
+  "sol_short_conflict_age_h": 422.01,
+  "new_finding_run50": "UNCHANGED from Run 49. Bot offline Day 49.66. No new trades. W37 non-peak (10:03-12:00 UTC) closed while engine slept 4.02h. SOL_SHORT conflict now 422.01h+ (17.6 days). Evening session Jun 12 IMMINENT (T+1.93h). No new audit files to process.",
+  "next_action_on_repair": "When AB tracker fixed: HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE gate=5→20 (conf=88%), then 39 gate<80 candidates queue",
+  "status": "UNCHANGED — awaiting bot restart and AB tracker repair. W37 fully closed. Evening session imminent T+1.93h.",
+  "priority_dev_tasks": [
+    "P0: AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 frozen rules incl BB_solo_signal_boost (n=2172, conf=95%)",
+    "P1: SOL_SHORT conflict human decision required (422h+, 17.6 days governance failure)",
+    "P2: snapshot_entry column restore to trades.csv — enables slippage tracking"
+  ]
+}
