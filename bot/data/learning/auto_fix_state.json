@@ -1,19 +1,19 @@
 {
-  "last_run": "2026-06-12T15:04:00+00:00",
-  "run_number": 51,
+  "last_run": "2026-06-12T16:04:00+00:00",
+  "run_number": 52,
   "fixes_applied_this_run": 0,
   "total_applied_all_time": 69,
   "gates_active": 87,
   "new_audit_files_this_run": 0,
   "new_trades_this_run": 0,
   "elapsed_since_last_run_h": 1.0,
-  "cadence_note": "RUN 51: 1.0h gap (Run 50→51). Evening session opens in 56 min (16:00 UTC). Warm-up deadline 15:30 UTC.",
+  "cadence_note": "RUN 52: 1.0h gap (Run 51→52). EVENING SESSION NOW OPEN (16:00 UTC — 4 min ago). ~5.93h remaining.",
   "fixes_applied": [],
   "blockers": [
-    "AB_tracker broken Day 50.66 — 20 rules cannot graduate (outcome callback unwired in bot/feedback/loop.py)",
+    "AB_tracker broken Day 51.66 — 20 rules cannot graduate (outcome callback unwired in bot/feedback/loop.py)",
     "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation",
     "ETH_SHORT_protect n=5, HYPE_PROBE n=6 — below 10-sample graduation threshold (no new trades)",
-    "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 423.01h+ / ~17.6 days)",
+    "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 424.01h+ / ~17.67 days)",
     "F1_sniper_pending_safety_review — conf=90%, needs human sign-off",
     "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review before applying",
     "7 gate=0 rules require code-level verification before escalation"
@@ -31,13 +31,13 @@
   },
   "graduated_rules_total": 116,
   "high_conf_escalation_candidates": 94,
-  "sol_short_conflict_age_h": 423.01,
-  "new_finding_run51": "UNCHANGED from Run 50. Bot offline Day 50.66. No new trades. Evening session Jun 12 OPENS IN 56 MIN (16:00 UTC). Warm-up deadline 15:30 UTC. SOL_SHORT conflict now 423.01h+ (17.6 days). No new audit files.",
+  "sol_short_conflict_age_h": 424.01,
+  "new_finding_run52": "UNCHANGED from Run 51. Bot offline Day 51.66. No new trades. Evening session NOW OPEN (16:00-22:00 UTC — 4 min in, 5.93h remaining). SOL_SHORT conflict now 424.01h+ (17.67 days). No new audit files.",
   "next_action_on_repair": "When AB tracker fixed: HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE gate=5→20 (conf=88%), then 39 gate<80 candidates queue",
-  "status": "UNCHANGED — bot offline Day 50.66. Evening session IMMINENT (16:00 UTC, T+0.93h). Start bot now.",
+  "status": "UNCHANGED — bot offline Day 51.66. Evening session OPEN (16:00 UTC, 5.93h left). Start bot NOW.",
   "priority_dev_tasks": [
     "P0: AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 frozen rules incl BB_solo_signal_boost (n=2172, conf=95%)",
-    "P1: SOL_SHORT conflict human decision required (423h+, 17.6 days governance failure)",
+    "P1: SOL_SHORT conflict human decision required (424h+, 17.67 days governance failure)",
     "P2: snapshot_entry column restore to trades.csv — enables slippage tracking"
   ]
 }

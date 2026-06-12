@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-06-12T15:04:00+00:00",
-  "run_number": 51,
-  "current_utc": "2026-06-12 15:04 UTC",
+  "last_run": "2026-06-12T16:04:00+00:00",
+  "run_number": 52,
+  "current_utc": "2026-06-12 16:04 UTC",
   "elapsed_since_last_run_h": 1.0,
-  "bot_offline_days": 50.66,
-  "cadence_note": "RUN 51: 1.0h gap (Run 50→51). EVENING SESSION STARTS IN 56 MIN (16:00 UTC). LAST CHANCE WARM-UP WINDOW.",
+  "bot_offline_days": 51.66,
+  "cadence_note": "RUN 52: 1.0h gap (Run 51→52). EVENING SESSION NOW OPEN (16:00 UTC — 4 min ago, 5.93h left until 22:00 UTC). 3rd consecutive evening miss in progress.",
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
@@ -12,27 +12,26 @@
       "total_applied_all_time": 69,
       "graduated_rules_total": 116,
       "escalation_candidates_blocked": 20,
-      "sol_short_conflict_age_h": 423.01,
-      "status": "UNCHANGED — bot offline Day 50.66. AB tracker broken. SOL_SHORT conflict 423h+ (17.6 days)."
+      "sol_short_conflict_age_h": 424.01,
+      "status": "UNCHANGED — bot offline Day 51.66. AB tracker broken. SOL_SHORT conflict 424.01h+ (17.67 days)."
     },
     "execution_forensics": {
       "avg_slippage": "UNKNOWN",
       "noise_stop_problem": "87% early SL hits cached",
       "data_available": false,
-      "ev_loss_morning_usd": 241.59,
+      "ev_loss_morning_usd": 242.56,
       "ev_loss_delta_this_run": 0.97,
-      "evening_jun12_t_h": 0.93,
-      "w38_deadline_t_h": 14.43,
-      "evening_session_status": "OPENS IN 56 MIN — last warm-up window NOW"
+      "evening_session_status": "NOW OPEN — 16:00 UTC (4 min in, 5.93h left). Warm-up missed by 34 min. Start bot now to capture 5h+ of session.",
+      "w38_deadline_t_h": 13.43
     },
     "live_injection": {
       "high_edges_found": 8,
       "weak_setups_found": 7,
       "no_new_trades": true,
-      "t_evening_session_h": 0.93,
-      "t_w38_deadline_h": 14.43,
-      "next_opportunity": "EVENING_session_boost Jun 12 16:00-22:00 UTC OPENS IN 56 MIN. WARM-UP WINDOW CLOSES NOW.",
-      "urgency": "CRITICAL — 56 minutes to evening session open. Bot warm-up needs 30min. START IMMEDIATELY."
+      "t_evening_session_remaining_h": 5.93,
+      "t_w38_deadline_h": 13.43,
+      "next_opportunity": "EVENING_session_boost Jun 12 16:00-22:00 UTC NOW OPEN (4 min in, 5.93h left). START BOT NOW.",
+      "urgency": "HIGH — evening session open, warm-up missed by 34 min but 5h+ remains. Start bot NOW."
     },
     "daily_synthesis": {
       "anomalies_found": 13,
@@ -42,14 +41,14 @@
       "today_pnl": 0.0,
       "consecutive_peak_window_misses": 39,
       "w37_closed": true,
-      "ev_total": "$241.59",
+      "ev_total": "$242.56",
       "cadence_gap_h": 1.0,
       "eod_report_time": "22:00 UTC",
-      "session_remaining": "EVENING only — 16:00-22:00 UTC"
+      "session_remaining": "EVENING only — 16:04-22:00 UTC (5.93h left)"
     },
     "model_optimization": {
       "skipped": true,
-      "reason": "cost_tracker.json absent — bot offline 50.66 days",
+      "reason": "cost_tracker.json absent — bot offline 51.66 days",
       "swaps_recommended": 0,
       "potential_savings": "$0.00"
     }
@@ -58,50 +57,50 @@
     {
       "subsystem": "live_injection",
       "severity": "CRITICAL",
-      "finding": "EVENING SESSION JUN 12 OPENS IN 56 MIN (16:00 UTC). Bot warm-up requires 30min. START BOT BY 15:30 UTC OR MISS 3RD CONSECUTIVE EVENING. EVENING_session_boost WR=65% + BB goldens ETH/BTC/SOL WR 67-70%.",
-      "action": "START BOT NOW (15:04 UTC) — ready by 15:34 for 16:00 session open. Do not miss 3rd consecutive evening."
+      "finding": "EVENING SESSION JUN 12 NOW OPEN (16:04 UTC). 5.93h remaining (until 22:00 UTC). Warm-up deadline missed by 34 min but 5h+ of EVENING_session_boost WR=65% + BB goldens ETH/BTC/SOL WR 67-70% still capturable. 3rd consecutive evening miss in progress.",
+      "action": "START BOT NOW — 5.93h of evening session remain. Do not complete 3rd consecutive evening miss."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "CRITICAL",
-      "finding": "EV $241.59 (+$0.97 from 1h gap). Rate $0.97/h. $250 milestone in T+8.67h (23:41 UTC Jun 12) if offline. W37 fully closed — 39th consecutive peak miss.",
-      "action": "Start bot for evening session. W38 deadline Jun 13 05:30 UTC (T+14.43h)."
+      "finding": "EV $242.56 (+$0.97 from 1h gap). Rate $0.97/h. $250 milestone in T+7.67h (Jun 12 23:41 UTC) if offline. W38 deadline Jun 13 05:30 UTC (T+13.43h). 39th morning peak miss recorded.",
+      "action": "Start bot for evening session NOW. Set alarm Jun 13 05:00 UTC for W38."
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "SOL_SHORT conflict 423h+ (17.6 days unresolved). AB tracker broken — 20 rules frozen Day 50.66. 0 trades today.",
+      "finding": "SOL_SHORT conflict 424.01h+ (17.67 days unresolved). AB tracker broken — 20 rules frozen Day 51.66. 0 trades today. 39 consecutive morning peaks missed.",
       "action": "P0: Human decision on SOL_SHORT. P1: AB tracker fix bot/feedback/loop.py (~2h). P2: Restore snapshot_entry column."
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "94 escalation candidates, 20 frozen (AB tracker broken). BB_solo_signal_boost (n=2172, conf=95%) blocked. F1_sniper + HIGH_CONF_DRIFT pending human sign-off.",
+      "finding": "94 escalation candidates, 20 frozen (AB tracker broken). BB_solo_signal_boost (n=2172, conf=95%) blocked. F1_sniper + HIGH_CONF_DRIFT pending human sign-off. SOL_SHORT now 17.67 days unresolved.",
       "action": "AB tracker repair P0. Unlocks BB_solo_signal_boost est +$0.23/trade."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "W38 deadline Jun 13 05:30 UTC (T+14.43h). Peak 07:00-10:00 UTC WR=74% + BB goldens 67-70%. Miss would be 40th consecutive morning peak miss.",
-      "action": "Set alarm 05:00 UTC Jun 13. Evening warmup deadline is RIGHT NOW."
+      "finding": "W38 deadline Jun 13 05:30 UTC (T+13.43h). Peak 07:00-10:00 UTC WR=74% + BB goldens 67-70%. Would be 40th consecutive morning peak miss if bot not online.",
+      "action": "Set alarm 05:00 UTC Jun 13. Start bot tonight to avoid 40th morning miss."
     },
     {
       "subsystem": "live_injection",
       "severity": "MEDIUM",
-      "finding": "8 high-edge setups stable (BB goldens n=2172 still reliable). ETH_SHORT_protect n=5 needs 5 more trades to graduate to gate=80. Stale Day 50.66.",
+      "finding": "8 high-edge setups stable (BB goldens n=2172 still reliable). ETH_SHORT_protect n=5 needs 5 more trades to graduate to gate=80. Stale Day 51.66.",
       "action": "No code changes needed — start bot to refresh stale edges."
     }
   ],
   "run_summary": {
     "fixes_applied_this_run": 0,
     "new_insights_this_run": 3,
-    "key_insight": "EVENING SESSION OPENS IN 56 MIN (16:00 UTC). START BOT NOW — 15:30 UTC warm-up deadline. EV $241.59. W38 T+14.43h.",
+    "key_insight": "EVENING SESSION NOW OPEN (16:04 UTC, 5.93h left). EV $242.56. W38 T+13.43h. START BOT NOW.",
     "w37_peak_miss_count": 39,
     "w37_nonpeak_closed": true,
-    "evening_jun12": "CRITICAL — 16:00-22:00 UTC opens in 56 min. START BOT BY 15:30 UTC.",
-    "ev_total": "$241.59 (+$0.97 from Run 50)",
-    "ev_milestone_250_in_h": 8.67,
-    "next_full_morning": "W38 Jun 13 07:00-10:00 UTC peak (T+15.93h). Deadline T+14.43h.",
-    "p0_action": "START BOT NOW — 56 min to evening session open (16:00 UTC). Last warm-up window closes at 15:30 UTC."
+    "evening_jun12": "OPEN — 16:00-22:00 UTC (4 min in, 5.93h left). Warm-up missed by 34 min. Bot can still catch 5h+.",
+    "ev_total": "$242.56 (+$0.97 from Run 51)",
+    "ev_milestone_250_in_h": 7.67,
+    "next_full_morning": "W38 Jun 13 07:00-10:00 UTC peak (T+14.93h). Deadline T+13.43h.",
+    "p0_action": "START BOT NOW — 5.93h of evening session remain (16:04-22:00 UTC). 3rd consecutive evening miss in progress."
   }
 }
