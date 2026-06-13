@@ -1,19 +1,19 @@
 {
-  "last_run": "2026-06-12T17:04:00+00:00",
-  "run_number": 53,
+  "last_run": "2026-06-13T06:04:00+00:00",
+  "run_number": 54,
   "fixes_applied_this_run": 0,
   "total_applied_all_time": 69,
   "gates_active": 87,
   "new_audit_files_this_run": 0,
   "new_trades_this_run": 0,
-  "elapsed_since_last_run_h": 1.0,
-  "cadence_note": "RUN 53: 1.0h gap (Run 52→53). EVENING SESSION 1H IN (17:04 UTC). 3rd consecutive evening miss in progress, 4.93h left.",
+  "elapsed_since_last_run_h": 13.0,
+  "cadence_note": "RUN 54: 13.0h gap (Run 53→54) — CADENCE BREAK. Overnight gap. Evening Jun12 CONFIRMED MISSED. EV $256.14 ($250 milestone passed offline).",
   "fixes_applied": [],
   "blockers": [
-    "AB_tracker broken Day 51.70 — 20 rules cannot graduate (outcome callback unwired in bot/feedback/loop.py)",
-    "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation",
+    "AB_tracker broken Day 52.24 — 20 rules cannot graduate (outcome callback unwired in bot/feedback/loop.py)",
+    "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation (438.01h / 18.25 days)",
     "ETH_SHORT_protect n=5, HYPE_PROBE n=6 — below 10-sample graduation threshold (no new trades)",
-    "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 425.01h+ / ~17.71 days)",
+    "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 438.01h+ / ~18.25 days)",
     "F1_sniper_pending_safety_review — conf=90%, needs human sign-off",
     "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review before applying",
     "7 gate=0 rules require code-level verification before escalation"
@@ -31,13 +31,14 @@
   },
   "graduated_rules_total": 116,
   "high_conf_escalation_candidates": 94,
-  "sol_short_conflict_age_h": 425.01,
-  "new_finding_run53": "UNCHANGED from Run 52. Bot offline Day 51.70. No new trades. Evening session IN PROGRESS (17:04 UTC, 4.93h left — 3rd consecutive miss). SOL_SHORT conflict now 425.01h+ (17.71 days). No new audit files.",
+  "sol_short_conflict_age_h": 438.01,
+  "sol_short_conflict_age_days": 18.25,
+  "new_finding_run54": "CADENCE BREAK (13h gap, overnight). Evening Jun12 CONFIRMED MISSED (22:00 UTC closed). $250 EV milestone crossed while offline. W38 morning NOW OPEN (06:00 UTC) — peak at 07:00 UTC (T+56min). 40th morning peak miss imminent if bot not started.",
   "next_action_on_repair": "When AB tracker fixed: HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE gate=5→20 (conf=88%), then 39 gate<80 candidates queue",
-  "status": "UNCHANGED — bot offline Day 51.70. Evening session OPEN (17:04 UTC, 4.93h left). 3rd consecutive evening miss in progress.",
+  "status": "UNCHANGED — bot offline Day 52.24. W38 morning OPEN NOW (06:00-12:00 UTC). Peak 07:00-10:00 UTC in 56min. 40th consecutive morning peak miss imminent.",
   "priority_dev_tasks": [
     "P0: AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 frozen rules incl BB_solo_signal_boost (n=2172, conf=95%)",
-    "P1: SOL_SHORT conflict human decision required (425h+, 17.71 days governance failure)",
+    "P1: SOL_SHORT conflict human decision required (438h+, 18.25 days governance failure)",
     "P2: snapshot_entry column restore to trades.csv — enables slippage tracking"
   ]
 }
