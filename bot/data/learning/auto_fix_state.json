@@ -1,19 +1,19 @@
 {
-  "last_run": "2026-06-13T06:03:10+00:00",
-  "run_number": 55,
+  "last_run": "2026-06-13T21:03:36+00:00",
+  "run_number": 56,
   "fixes_applied_this_run": 0,
   "total_applied_all_time": 69,
   "gates_active": 87,
   "new_audit_files_this_run": 0,
   "new_trades_this_run": 0,
-  "elapsed_since_last_run_h": 0.0,
-  "cadence_note": "RUN 55: <1min gap (Run 54→55) — SAME-MOMENT RERUN. W38 peak in 56.8min. Data unchanged.",
+  "elapsed_since_last_run_h": 15.0,
+  "cadence_note": "RUN 56: 15h gap (Run55 06:03→Run56 21:03). W38 fully missed. Evening ACTIVE NOW 57min. Data unchanged.",
   "fixes_applied": [],
   "blockers": [
-    "AB_tracker broken Day 52.24 — 20 rules cannot graduate (outcome callback unwired in bot/feedback/loop.py)",
-    "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation (438.01h / 18.25 days)",
-    "ETH_SHORT_protect n=5, HYPE_PROBE n=6 — below 10-sample graduation threshold (no new trades)",
-    "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 438.01h+ / ~18.25 days)",
+    "AB_tracker broken Day 52.86 — 20 rules cannot graduate (outcome callback unwired in bot/feedback/loop.py)",
+    "SOL_SHORT_full_block=100 blocks SOL_SHORT_suspension_reversal_probe escalation (453.01h / 18.88 days — approaching 19-day governance milestone)",
+    "ETH_SHORT_protect n=5, HYPE_PROBE n=6 — below 10-sample graduation threshold (no new trades, stale 52.86 days)",
+    "RULE_CONFLICT_SOL_SHORT pending human review (unresolved 453.01h+ / ~18.88 days — GOVERNANCE OVERDUE)",
     "F1_sniper_pending_safety_review — conf=90%, needs human sign-off",
     "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review before applying",
     "7 gate=0 rules require code-level verification before escalation"
@@ -31,15 +31,16 @@
   },
   "graduated_rules_total": 116,
   "high_conf_escalation_candidates": 94,
-  "sol_short_conflict_age_h": 438.01,
-  "sol_short_conflict_age_days": 18.25,
-  "new_finding_run54": "CADENCE BREAK (13h gap, overnight). Evening Jun12 CONFIRMED MISSED (22:00 UTC closed). $250 EV milestone crossed while offline. W38 morning NOW OPEN (06:00 UTC) — peak at 07:00 UTC (T+56min). 40th morning peak miss imminent if bot not started.",
-  "next_action_on_repair": "When AB tracker fixed: HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE gate=5→20 (conf=88%), then 39 gate<80 candidates queue",
-  "status": "UNCHANGED — bot offline Day 52.24. <1min rerun. AB tracker broken. SOL_SHORT conflict 438.01h (18.25d). No new fixes.",
+  "sol_short_conflict_age_h": 453.01,
+  "sol_short_conflict_age_days": 18.88,
+  "sol_short_conflict_milestone": "19-day governance review threshold in T+0.12 days (~3h at 00:00 UTC Jun14)",
+  "new_finding_run56": "15h gap (Run55→56). No new audit files. No new trades. W38 fully missed. Evening active NOW (57min). SOL_SHORT conflict hits 453h — approaching 19-day mark. AB tracker still broken. No fixes possible without live trades or AB repair.",
+  "next_action_on_repair": "When AB tracker fixed: HIGH_CONF_UPPER_BIN_CALIBRATION_PROBE gate=5→20 (conf=88%), then 39 gate<80 candidates queue. BB_solo_signal_boost (gate=80%) should escalate first given n=2172 conf=95%.",
+  "status": "UNCHANGED — bot offline Day 52.86. AB tracker broken. SOL_SHORT conflict 453.01h (18.88d). No new fixes. Evening window 57min remaining.",
   "priority_dev_tasks": [
     "P0: AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 frozen rules incl BB_solo_signal_boost (n=2172, conf=95%)",
-    "P1: SOL_SHORT conflict human decision required (438h+, 18.25 days governance failure)",
-    "P2: snapshot_entry column restore to trades.csv — enables slippage tracking"
-  ],
-  "new_finding_run55": "<1min rerun from Run 54. No new data. 92 escalation candidates stalled (AB tracker broken). SOL_SHORT conflict 438.01h. W38 peak in 56.8min."
+    "P1: SOL_SHORT conflict human decision required (453h, 18.88 days — 19-day governance review overdue in ~3h)",
+    "P2: snapshot_entry column restore to trades.csv — enables slippage tracking",
+    "P3: Fix hourly loop cadence reliability (15h gap occurred Run55→56, loop broke mid-day)"
+  ]
 }

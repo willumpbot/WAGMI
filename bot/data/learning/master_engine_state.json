@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-06-13T06:03:10+00:00",
-  "run_number": 55,
-  "current_utc": "2026-06-13 06:03 UTC",
-  "elapsed_since_last_run_h": 0.0,
-  "bot_offline_days": 52.24,
-  "cadence_note": "RUN 55: <1min gap (Run 54→55) — SAME-MOMENT RE-RUN. W38 morning OPEN (06:00 UTC). Peak 07:00-10:00 UTC in 56.8min. 40th morning peak miss imminent.",
+  "last_run": "2026-06-13T21:03:36+00:00",
+  "run_number": 56,
+  "current_utc": "2026-06-13 21:03 UTC",
+  "elapsed_since_last_run_h": 15.0,
+  "bot_offline_days": 52.86,
+  "cadence_note": "RUN 56: 15h gap (Run55→56). W38 FULLY MISSED (peak 07-10 UTC + non-peak 10-12 UTC). EVENING SESSION ACTIVE NOW (21:03 UTC, closes 22:00 UTC) — 57 MIN REMAINING. 4th consecutive evening miss in 57min unless bot started.",
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
@@ -12,43 +12,67 @@
       "total_applied_all_time": 69,
       "graduated_rules_total": 116,
       "escalation_candidates_blocked": 92,
-      "sol_short_conflict_age_h": 438.01,
-      "sol_short_conflict_age_days": 18.25,
-      "status": "UNCHANGED — bot offline Day 52.24. AB tracker broken. SOL_SHORT conflict 438.01h (18.25d). No new audit files. No new trades. <1min rerun."
+      "sol_short_conflict_age_h": 453.01,
+      "sol_short_conflict_age_days": 18.88,
+      "status": "UNCHANGED — bot offline Day 52.86. No new audit files. No new trades. AB tracker broken (20 rules frozen). SOL_SHORT conflict 453.01h (18.88d). Evening session closing in 57min.",
+      "new_finding_run56": "15h gap (Run55→56). W38 fully missed. Evening active NOW 57min remaining. 92 escalation candidates stalled (AB tracker broken). SOL_SHORT conflict now 453.01h (18.88d) — approaching 19-day governance failure."
     },
     "execution_forensics": {
       "avg_slippage": "UNKNOWN",
       "noise_stop_problem": "87% early SL hits cached",
       "data_available": false,
-      "ev_loss_morning_usd": 256.14,
-      "ev_loss_delta_this_run": 0.0,
-      "w38_status": "PEAK_IN_56.8MIN",
-      "w38_peak_t_min": 56.8,
-      "morning_peak_misses_confirmed": 39,
-      "w38_miss_number_if_missed": 40
+      "ev_loss_morning_usd": 270.69,
+      "ev_loss_delta_this_run": 14.55,
+      "ev_loss_since_run55_usd": 14.55,
+      "ev_loss_rate_per_hour": 0.97,
+      "elapsed_h_this_run": 15.0,
+      "morning_peak_misses_confirmed": 40,
+      "w38_peak_status": "MISSED — 40th consecutive morning peak miss confirmed (07:00-10:00 UTC, missed 11h ago)",
+      "w38_nonpeak_status": "MISSED — non-peak window 10:00-12:00 UTC also missed (9h ago)",
+      "w38_full_miss": true,
+      "evening_session_status": "ACTIVE NOW — 16:00-22:00 UTC Jun13, 21:03 UTC = 5h in, 57min remaining",
+      "ev_milestone_250": "CROSSED (Run 54, ~Jun12 23:41 UTC)",
+      "ev_milestone_270": "CROSSED this run (~Jun13 20:33 UTC estimate)",
+      "ev_milestone_300_t_plus_h": 30.2,
+      "ev_milestone_300_eta_utc": "2026-06-15T03:14:00+00:00"
     },
     "live_injection": {
       "high_edges_found": 8,
       "weak_setups_found": 7,
       "no_new_trades": true,
-      "w38_peak_t_plus_min": 56.8,
-      "evening_jun13_available_t_plus_h": 9.95,
-      "next_opportunity": "W38 peak 07:00-10:00 UTC Jun13 in 56.8min. tod_morning_edge_v1 WR=74% + BB goldens 67-70% ACTIVE.",
-      "urgency": "CRITICAL — W38 peak in 56.8min. Start bot NOW or 40th morning peak miss."
+      "edge_staleness_days": 52.86,
+      "urgency": "CRITICAL — Evening session ACTIVE NOW (21:03 UTC). 57min to close (22:00 UTC). EVENING_session_boost WR=65% active. If bot not started: 4th consecutive evening miss.",
+      "w38_peak_status": "MISSED (40th) — 11h ago",
+      "evening_session_now": "ACTIVE — 21:03 UTC, closes 22:00 UTC (57min remaining)",
+      "next_morning_opportunity": "W39 Jun14 06:00-12:00 UTC (T+8.95h). Peak 07:00-10:00 UTC (T+9.95h). Deadline 05:30 UTC Jun14.",
+      "top_edges_status": {
+        "tod_morning_edge_v1": "MISSED W38 (40th). W39 in T+8.95h.",
+        "ETH_SHORT_BB_golden": "Active — next morning W39",
+        "BTC_BUY_BB_golden": "Active — next morning W39",
+        "SOL_BUY_BB_golden": "Active — next morning W39",
+        "EVENING_session_boost": "ACTIVE NOW — 57min remaining Jun13 21:03 UTC"
+      }
     },
     "daily_synthesis": {
-      "anomalies_found": 15,
-      "report_generated": true,
+      "anomalies_found": 17,
+      "report_generated": false,
+      "eod_report_pending_in_min": 57,
+      "eod_report_time": "22:00 UTC",
       "today_trades": 0,
       "today_pnl": 0.0,
-      "consecutive_peak_window_misses": 39,
-      "w38_peak_miss_imminent": true,
-      "w38_peak_miss_in_min": 56.8,
-      "new_anomaly_run55": "SAME-MOMENT RERUN <1MIN — data unchanged. W38 peak in 56.8min. All 15 anomalies persist."
+      "consecutive_morning_peak_misses": 40,
+      "w38_fully_missed": true,
+      "evening_session_critical": true,
+      "evening_session_closes_in_min": 57,
+      "new_anomalies_this_run": [
+        "W38_PEAK_MISS_CONFIRMED_40TH — peak 07:00-10:00 UTC missed (11h ago). 40th consecutive.",
+        "W38_NONPEAK_MISS_CONFIRMED — fallback 10:00-12:00 UTC also missed (9h ago). Full W38 missed.",
+        "EVENING_SESSION_CLOSING_IN_57MIN — active NOW 21:03 UTC, must start bot before 22:00 UTC or 4th consecutive evening miss."
+      ]
     },
     "model_optimization": {
       "skipped": true,
-      "reason": "cost_tracker.json absent — bot offline 52.24 days",
+      "reason": "cost_tracker.json absent — bot offline 52.86 days",
       "swaps_recommended": 0,
       "potential_savings": "$0.00"
     }
@@ -57,44 +81,45 @@
     {
       "subsystem": "live_injection",
       "severity": "CRITICAL",
-      "finding": "W38 MORNING PEAK IN 56.8MIN — 07:00-10:00 UTC Jun13, bot offline. tod_morning_edge_v1 WR=74% + BB goldens ETH/BTC/SOL WR 67-70% active. If bot not started in 56.8min: 40th consecutive morning peak miss.",
-      "action": "START BOT NOW — 56.8min window before W38 peak opens."
+      "finding": "EVENING SESSION ACTIVE NOW — 21:03 UTC Jun13, closes 22:00 UTC. 57 MINUTES REMAINING. EVENING_session_boost WR=65% (gate=20%) active. Previous 3 consecutive evenings all missed. 4th consecutive evening miss in 57min if bot not started.",
+      "action": "START BOT NOW — 57min window before evening session closes at 22:00 UTC Jun13."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "CRITICAL",
-      "finding": "$256.14 EV LOSS SUSTAINED (Day 52.24 offline). Rate $0.97/h. W38 peak in 56.8min. 39 morning peaks missed.",
-      "action": "Start bot for W38 peak (56.8min). Set alarm Jun14 05:00 UTC for W39."
+      "finding": "$270.69 EV LOSS (Day 52.86 offline, +$14.55 this run). W38 FULLY MISSED: peak (40th miss) + non-peak window both missed. Rate $0.97/h. $300 milestone in T+30.2h (Jun15 03:14 UTC) if offline.",
+      "action": "Start bot for evening session (57min). Set alarm Jun14 05:30 UTC for W39 morning peak."
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "40th morning peak miss imminent in 56.8min. 3 consecutive evening sessions missed. Jun12 EOD finalized as FULL_MISS. Evening Jun13 available T+9.95h (last chance this week).",
-      "action": "P0: Start bot NOW. P1: If peak missed, set alarm for 15:30 UTC Jun13 (evening session)."
+      "finding": "EOD report due in 57min (22:00 UTC). 17 anomalies. W38 fully missed (both windows). 40th consecutive morning peak miss confirmed. Evening session closes at 22:00 UTC (same time as EOD). 4th consecutive evening miss imminent.",
+      "action": "P0: Start bot NOW for evening session (57min). P1: Set alarm W39 morning Jun14 05:30 UTC."
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "92 escalation candidates stalled. AB tracker broken (20 rules frozen). SOL_SHORT conflict 438.01h (18.25d). BB_solo_signal_boost (conf=95%) blocked. No fixes possible without live trades or AB tracker repair.",
-      "action": "P0: AB tracker fix (~2h) in bot/feedback/loop.py. P1: Human decision on SOL_SHORT conflict."
+      "finding": "92 escalation candidates stalled. AB tracker broken (20 rules frozen). SOL_SHORT conflict now 453.01h (18.88 days) — approaching 19-day governance milestone. BB_solo_signal_boost (conf=95%, n=2172) remains locked. No fixes possible without live trades or AB tracker repair.",
+      "action": "P0: AB tracker fix in bot/feedback/loop.py (~2h). P1: SOL_SHORT conflict human resolution (453h — 19-day governance review overdue)."
     },
     {
-      "subsystem": "live_injection",
+      "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "Evening Jun13 session available T+9.95h (16:00-22:00 UTC). EVENING_session_boost WR=65%. Previous 3 evenings all missed. Must start bot before 16:00 UTC Jun13 to break streak.",
-      "action": "If morning session missed: set alarm for Jun13 15:30 UTC for evening session."
+      "finding": "15h cadence gap (Run55→56). System ran at 06:03 UTC, W38 peak opened 07:00 UTC = missed peak 57min after last run. Non-peak fallback 10:00-12:00 also missed. Total: 40 morning peaks missed + 3 evening sessions. Evening session #4 still capturable in 57min.",
+      "action": "Post-session: verify hourly loop cadence. 15h gap indicates loop broke overnight. Fix loop reliability before W39."
     }
   ],
   "run_summary": {
     "fixes_applied_this_run": 0,
-    "new_insights_this_run": 0,
-    "key_insight": "RUN 55 (SAME-MOMENT RERUN). W38 PEAK IN 56.8MIN. EV $256.14 (39 peak misses). EVENING JUN13 T+9.95h.",
-    "morning_peak_misses_confirmed": 39,
-    "w38_peak_miss_number_if_missed": 40,
-    "ev_total": "$256.14 (unchanged, <1min gap)",
-    "ev_milestone_250": "CROSSED (Run 54, ~Jun12 23:41 UTC)",
-    "ev_milestone_300_t_plus_h": 45.6,
-    "cadence_note": "<1min since Run 54 — same-moment rerun",
-    "p0_action": "START BOT NOW — W38 peak in 56.8min (07:00 UTC Jun13). tod_morning_edge_v1 WR=74% + BB goldens 67-70% ACTIVE."
+    "new_insights_this_run": 3,
+    "key_insight": "RUN 56: 15h GAP. EVENING SESSION ACTIVE NOW — 57MIN TO CLOSE (22:00 UTC). W38 FULLY MISSED (40th peak + non-peak). EV $270.69 (+$14.55). SOL_SHORT 453.01h.",
+    "morning_peak_misses_confirmed": 40,
+    "w38_status": "FULLY_MISSED",
+    "evening_window": "ACTIVE — 57MIN REMAINING (21:03 UTC → 22:00 UTC)",
+    "ev_total": "$270.69 (+$14.55 this run, 15h gap)",
+    "ev_milestone_270": "CROSSED (~Jun13 20:33 UTC)",
+    "ev_milestone_300_eta": "Jun15 03:14 UTC (T+30.2h if offline)",
+    "cadence_issue": "15h gap (Run55 06:03→Run56 21:03). Loop broke mid-day. Fix required.",
+    "p0_action": "START BOT NOW — 57min remaining in evening session (21:03 UTC, closes 22:00 UTC Jun13). EVENING_session_boost WR=65% active."
   }
 }

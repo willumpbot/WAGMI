@@ -1,61 +1,59 @@
 {
-  "last_run": "2026-06-13T06:03:10+00:00",
-  "run_number": 55,
+  "last_run": "2026-06-13T21:03:36+00:00",
+  "run_number": 56,
   "high_edges_found": 8,
   "weak_setups_found": 7,
   "no_new_trades": true,
-  "data_source": "Graduated rules analysis + cached (bot offline ~52.24 days)",
-  "w37_status": "CLOSED — fully ended Jun12 12:00 UTC. Peak (39th miss) and non-peak both missed.",
-  "w38_status": "PEAK_IN_56.8MIN — Open NOW. 07:00-10:00 UTC Jun13.",
-  "edge_staleness_days": 52.24,
-  "w38_peak_deadline_status": "URGENT — peak window opens in 56min (07:00 UTC). Start bot NOW to capture 40th peak before miss.",
+  "data_source": "Graduated rules analysis + cached (bot offline ~52.86 days)",
+  "edge_staleness_days": 52.86,
+  "w38_status": "FULLY_MISSED — peak (40th) + non-peak (10:00-12:00 UTC) both missed",
   "cadence_break": true,
-  "cadence_break_gap_h": 13.0,
-  "cadence_break_note": "13h overnight gap (Run53→54). $250 EV milestone crossed while offline. Evening Jun12 confirmed missed.",
-  "URGENT_ACTION": "W38 morning OPEN (06:03 UTC). Peak 07:00-10:00 UTC in 56.8min. tod_morning_edge_v1 WR=74% + BB goldens 67-70% ACTIVE. Start bot NOW or 40th morning peak miss.",
-  "new_insights_run54": [
-    "OVERNIGHT CADENCE BREAK — 13.0h gap (Run53→54). $250 EV milestone passed while offline (~Jun12 23:41 UTC).",
-    "EVENING JUN12 CONFIRMED MISSED — session 16:00-22:00 UTC closed (8.07h ago). 3rd consecutive evening miss final.",
-    "W38 MORNING NOW OPEN — 06:00-12:00 UTC Jun13 (4min in). Peak 07:00-10:00 UTC in 56min. LAST CHANCE to avoid 40th peak miss.",
-    "EV $256.14 (+$12.61 from 13h gap). Rate $0.97/h. $300 milestone at T+45.6h (Jun15 03:41 UTC) if offline.",
-    "SOL_SHORT conflict 438.01h+ (18.25 days). AB tracker broken. 20 rules frozen. No change.",
-    "All 8 edges and 7 weak setups UNCHANGED — no new data. Edge staleness Day 52.24.",
-    "W38 window open 4min ago (06:00 UTC) — non-peak window (10:00-12:00) is fallback if peak missed."
+  "cadence_break_gap_h": 15.0,
+  "cadence_break_note": "15h gap (Run55 06:03→Run56 21:03). W38 peak opened 07:00 UTC = missed 57min after last run. Full W38 missed.",
+  "URGENT_ACTION": "EVENING SESSION ACTIVE NOW — 21:03 UTC Jun13 (57min remaining, closes 22:00 UTC). EVENING_session_boost WR=65% (gate=20%) ACTIVE. Start bot NOW or 4th consecutive evening miss.",
+  "new_insights_run56": [
+    "15H GAP (Run55 06:03→Run56 21:03). W38 fully missed (peak 07-10 + non-peak 10-12 UTC).",
+    "W38 40TH MORNING PEAK MISS CONFIRMED — consecutive morning peak miss streak now 40.",
+    "W38 NON-PEAK FALLBACK ALSO MISSED — 10:00-12:00 UTC Jun13 was second fallback, also missed.",
+    "EVENING SESSION ACTIVE NOW — 21:03 UTC Jun13, closes 22:00 UTC (57min). LAST CHANCE today.",
+    "EV $270.69 (+$14.55 from 15h gap). $270 milestone crossed ~20:33 UTC. Rate $0.97/h.",
+    "SOL_SHORT conflict 453.01h (18.88 days) — 19-day governance threshold in ~3h.",
+    "All 8 edges and 7 weak setups UNCHANGED — no new data (bot offline Day 52.86).",
+    "W39 morning: Jun14 06:00-12:00 UTC (T+8.95h). Deadline 05:30 UTC Jun14."
   ],
   "top_edges": [
-    {"setup": "tod_morning_edge_v1", "wr": 0.74, "n": 20, "gate": 50, "conf": 0.82, "status": "W38_PEAK_IN_56MIN", "staleness_flag": false, "note": "W38 OPEN NOW. Peak 07:00-10:00 UTC in 56min. Start bot NOW — this is the #1 priority edge. 40th peak miss if bot offline."},
-    {"setup": "ETH_SHORT_BB_golden", "wr": 0.70, "n": 2172, "gate": 80, "conf": 0.95, "status": "ACTIVE_W38_MORNING_NOW_OPEN", "staleness_flag": false, "note": "W38 morning OPEN NOW — 4min in (06:04 UTC). Peak in 56min. Start bot."},
-    {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "n": 2172, "gate": 80, "conf": 0.91, "status": "ACTIVE_W38_MORNING_NOW_OPEN", "staleness_flag": false, "note": "W38 morning OPEN NOW — peak in 56min. High-volume setup."},
-    {"setup": "SOL_BUY_BB_golden", "wr": 0.67, "n": 2172, "gate": 80, "conf": 0.90, "status": "ACTIVE_W38_MORNING_NOW_OPEN", "staleness_flag": false, "note": "W38 morning OPEN NOW — peak in 56min."},
-    {"setup": "EVENING_session_boost", "wr": 0.65, "n": 12, "gate": 20, "conf": 0.85, "status": "JUN12_CONFIRMED_MISSED_NEXT_JUN13_16:00UTC", "staleness_flag": false, "note": "Jun12 evening CONFIRMED MISSED (3rd consecutive). Next: Jun13 16:00-22:00 UTC (T+9.93h)."},
-    {"setup": "ETH_SHORT_protect_from_bias", "wr": 0.80, "n": 5, "gate": 50, "conf": 0.80, "status": "ACTIVE_STALE_NEEDS_5_MORE_TRADES", "staleness_flag": true, "note": "Needs 5 more trades (n=5→10) to graduate gate=50→80. Stale Day 52.24."},
-    {"setup": "HYPE_UNKNOWN_REGIME_PROBE", "wr": 0.83, "n": 6, "gate": 20, "conf": 0.75, "status": "ACTIVE_STALE_SMALL_N", "staleness_flag": true, "note": "Small-n stale Day 52.24."},
+    {"setup": "EVENING_session_boost", "wr": 0.65, "n": 27, "gate": 20, "conf": 0.85, "status": "ACTIVE_NOW_57MIN_REMAINING", "staleness_flag": false, "note": "ACTIVE NOW — 21:03 UTC Jun13, closes 22:00 UTC (57min). Previous 3 consecutive evenings all missed. Start bot NOW for last daily opportunity."},
+    {"setup": "tod_morning_edge_v1", "wr": 0.74, "n": 20, "gate": 50, "conf": 0.82, "status": "W38_MISSED_W39_IN_T+8.95H", "staleness_flag": false, "note": "W38 peak MISSED (40th). W39 morning Jun14 06:00 UTC (T+8.95h). Set alarm 05:30 UTC."},
+    {"setup": "ETH_SHORT_BB_golden", "wr": 0.70, "n": 2172, "gate": 80, "conf": 0.95, "status": "ACTIVE_NEXT_W39_MORNING", "staleness_flag": false, "note": "W38 missed. Next: W39 Jun14 07:00-10:00 UTC (T+9.95h)."},
+    {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "n": 2172, "gate": 80, "conf": 0.91, "status": "ACTIVE_NEXT_W39_MORNING", "staleness_flag": false, "note": "W38 missed. Next: W39 Jun14 07:00-10:00 UTC (T+9.95h)."},
+    {"setup": "SOL_BUY_BB_golden", "wr": 0.67, "n": 2172, "gate": 80, "conf": 0.90, "status": "ACTIVE_NEXT_W39_MORNING", "staleness_flag": false, "note": "W38 missed. Next: W39 Jun14 07:00-10:00 UTC (T+9.95h)."},
+    {"setup": "ETH_SHORT_protect_from_bias", "wr": 0.80, "n": 5, "gate": 50, "conf": 0.80, "status": "ACTIVE_STALE_NEEDS_5_MORE_TRADES", "staleness_flag": true, "note": "Needs 5 more trades (n=5→10) to graduate gate=50→80. Stale Day 52.86."},
+    {"setup": "HYPE_UNKNOWN_REGIME_PROBE", "wr": 0.83, "n": 6, "gate": 20, "conf": 0.75, "status": "ACTIVE_STALE_SMALL_N", "staleness_flag": true, "note": "Small-n stale Day 52.86."},
     {"setup": "confidence_60_70_sweet_spot", "wr": 0.62, "n": 22, "gate": 20, "conf": 0.93, "status": "SUSPENDED_DATA_CONTRADICTION", "note": "Contradicted by backtest: -$18.87/trade in 60-70% bin. Suspended pending reconciliation."}
   ],
   "weak_setups": [
-    {"setup": "SOL_SHORT_full_block", "wr": 0.0, "n": 179, "gate": 100, "note": "Full block — conflict unresolved 438.01h+ (18.25 days)"},
+    {"setup": "SOL_SHORT_full_block", "wr": 0.0, "n": 179, "gate": 100, "note": "Full block — conflict unresolved 453.01h (18.88 days). 19-day governance review imminent."},
     {"setup": "HIGH_VOL_regime_boost", "wr": 0.55, "n": 2172, "gate": 50, "note": "Borderline — demotion candidate on first 100 live samples"},
     {"setup": "BTC_NOISE_SL_widen", "wr": 0.0, "n": 0, "gate": 20, "note": "Unvalidated — A/B gated"},
     {"setup": "SOL_SELL_regime_trend", "wr": 0.0, "n": 149, "gate": 100, "note": "0% WR on 149 shadow signals — correct to block"},
-    {"setup": "ETH_SELL_regime_trend", "wr": 0.23, "n": 65, "gate": 80, "note": "DEMOTION CANDIDATE — below 30% WR threshold. Stale 52.24 days."},
+    {"setup": "ETH_SELL_regime_trend", "wr": 0.23, "n": 65, "gate": 80, "note": "DEMOTION CANDIDATE — below 30% WR threshold. Stale 52.86 days."},
     {"setup": "HYPE_SHORT_block_high_conf", "wr": 0.0, "n": 0, "gate": 20, "note": "Unvalidated"},
     {"setup": "CONF_60_70_rollback_probe", "wr": 0.0, "n": 0, "gate": 20, "note": "Probe — testing confidence floor rollback"}
   ],
   "priority_injection_on_restart": {
-    "URGENT_w38_peak_in_56min": "W38 morning OPEN NOW (06:04 UTC). Peak 07:00-10:00 UTC in 56min. tod_morning_edge_v1 WR=74% + BB goldens ETH/BTC/SOL WR 67-70% active. Start bot NOW for peak window.",
-    "w38_nonpeak_fallback": "If peak missed: W38 non-peak 10:00-12:00 UTC (T+3.93h) still available.",
+    "CRITICAL_evening_now": "EVENING SESSION ACTIVE — 21:03 UTC Jun13. 57min remaining (22:00 UTC). Start bot NOW — EVENING_session_boost WR=65% (gate=20%) is live.",
+    "w39_morning": "W39 Jun14 06:00-12:00 UTC (T+8.95h). Peak 07:00-10:00 UTC. Set alarm 05:30 UTC Jun14.",
     "watch_for_demotion": "ETH_SELL_regime_trend (WR=23%, n=65) — first 20 live trades, if WR stays <=30% demote gate=80→50",
     "critical_unlocks": "ETH_SHORT_protect_from_bias needs 5 more trades (n=5→10 to graduate gate=50→80)",
-    "sol_watch": "SOL_SHORT conflict unresolved 438.01h+ — hold at gate=100 until human decision",
-    "evening_jun13": "Next evening session Jun13 16:00-22:00 UTC (T+9.93h). Avoid 4th consecutive evening miss."
+    "sol_watch": "SOL_SHORT conflict 453.01h — 19-day governance review in ~3h (00:00 UTC Jun14). Hold at gate=100 until human decision.",
+    "w39_evening": "Jun14 16:00-22:00 UTC (T+18.95h). Avoid 5th consecutive evening miss."
   },
-  "w38_peak_t_plus_min": 56.8,
-  "evening_jun13_available_t_plus_h": 9.95,
-  "new_insights_run55": [
-    "RUN 55: <1min rerun from Run 54. Data unchanged. W38 peak in 56.8min.",
-    "W38 MORNING OPEN — 06:00 UTC (3min ago). Peak 07:00 UTC in 56.8min. LAST CHANCE.",
-    "Evening Jun13 T+9.95h (16:00-22:00 UTC). Previous 3 evenings all missed.",
-    "All 8 high edges and 7 weak setups unchanged — no new data (bot offline Day 52.24).",
-    "EV $256.14 unchanged. $300 milestone at T+45.6h if bot stays offline."
-  ]
+  "session_tracker": {
+    "morning_misses_consecutive": 40,
+    "evening_misses_consecutive": 3,
+    "evening_session_active_now": true,
+    "evening_closes_in_min": 57,
+    "w39_morning_in_h": 8.95,
+    "w39_evening_in_h": 18.95
+  }
 }

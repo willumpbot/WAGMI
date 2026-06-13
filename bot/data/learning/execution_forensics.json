@@ -1,37 +1,47 @@
 {
-  "last_run": "2026-06-13T06:03:10+00:00",
-  "run_number": 55,
-  "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 52.24); bot offline",
-  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 52.24]",
+  "last_run": "2026-06-13T21:03:36+00:00",
+  "run_number": 56,
+  "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 52.86); bot offline",
+  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 52.86]",
   "data_available": false,
-  "data_source": "Cached (bot offline ~52.24 days since ~2026-04-22 UTC)",
-  "ev_loss_morning_usd": 256.14,
-  "ev_loss_delta_since_run54": 0.0,
+  "data_source": "Cached (bot offline ~52.86 days since ~2026-04-22 UTC)",
+  "ev_loss_total_usd": 270.69,
+  "ev_loss_delta_this_run": 14.55,
   "ev_loss_breakdown": {
-    "through_run53": 256.14,
-    "run54_to_run55_accrual": 0.0,
-    "total_run55": 256.14,
+    "through_run55": 256.14,
+    "run56_accrual_15h": 14.55,
     "rate_per_hour": 0.97,
-    "note": "<1min gap (Run54→55). No additional EV loss."
+    "total_run56": 270.69,
+    "note": "15h gap (Run55 06:03→Run56 21:03 UTC). +$14.55 accrued."
   },
-  "ev_milestone_250_crossed": true,
-  "ev_milestone_250_crossed_at_est": "2026-06-12T23:41:00+00:00",
-  "morning_windows_missed": 39,
+  "ev_milestones": {
+    "ev_250_crossed": true,
+    "ev_250_crossed_at_est": "2026-06-12T23:41:00+00:00",
+    "ev_270_crossed": true,
+    "ev_270_crossed_at_est": "2026-06-13T20:33:00+00:00",
+    "ev_300_t_plus_h": 30.2,
+    "ev_300_eta_utc": "2026-06-15T03:14:00+00:00"
+  },
+  "morning_windows_missed": 40,
   "w38_status": {
-    "window_open": true,
-    "window_open_utc": "2026-06-13T06:00:00+00:00",
-    "peak_start_utc": "2026-06-13T07:00:00+00:00",
-    "peak_start_t_plus_min": 56.8,
-    "peak_close_utc": "2026-06-13T10:00:00+00:00",
-    "window_close_utc": "2026-06-13T12:00:00+00:00",
-    "status": "PEAK_IN_56.8MIN — Start bot NOW."
+    "peak_window": "07:00-10:00 UTC Jun13 — MISSED (40th consecutive morning peak miss)",
+    "non_peak_window": "10:00-12:00 UTC Jun13 — MISSED (fallback also missed)",
+    "full_miss": true,
+    "miss_confirmed_at": "2026-06-13T12:00:00+00:00"
+  },
+  "evening_session_status": {
+    "window": "16:00-22:00 UTC Jun13",
+    "status": "ACTIVE NOW — 21:03 UTC, 57min remaining",
+    "wr": 0.65,
+    "gate": 20,
+    "note": "4th consecutive evening miss imminent if bot not started before 22:00 UTC",
+    "previous_misses": 3
   },
   "next_opportunity": {
-    "w38_peak": "07:00-10:00 UTC Jun13 (T+56.8min). WR=74%. START NOW.",
-    "w38_nonpeak": "10:00-12:00 UTC Jun13 (T+3.95h). Fallback if peak missed.",
-    "evening_jun13": "16:00-22:00 UTC Jun13 (T+9.95h). WR=65%.",
-    "w39_morning": "Jun14 06:00-12:00 UTC (T+23.95h)."
+    "evening_jun13_NOW": "21:03 UTC — 57min remaining (22:00 close). WR=65%. LAST CHANCE TODAY.",
+    "w39_morning": "Jun14 06:00-12:00 UTC (T+8.95h). Peak 07:00-10:00 UTC (T+9.95h). Deadline 05:30 UTC.",
+    "w39_evening": "Jun14 16:00-22:00 UTC (T+18.95h)."
   },
-  "bot_offline_days": 52.24,
-  "new_finding_run55": "<1min rerun. EV $256.14 unchanged. W38 peak in 56.8min. 39 peak misses. Bot offline Day 52.24."
+  "bot_offline_days": 52.86,
+  "new_finding_run56": "15h gap (Run55 06:03→Run56 21:03). EV +$14.55 this run → total $270.69. W38 fully missed (peak + non-peak, confirmed 12:00 UTC). Evening session ACTIVE NOW with 57min remaining. 40th morning peak miss confirmed. $300 milestone in T+30.2h."
 }
