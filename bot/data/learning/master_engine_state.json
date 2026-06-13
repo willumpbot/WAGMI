@@ -1,125 +1,134 @@
 {
-  "last_run": "2026-06-13T21:03:36+00:00",
-  "run_number": 56,
-  "current_utc": "2026-06-13 21:03 UTC",
-  "elapsed_since_last_run_h": 15.0,
-  "bot_offline_days": 52.86,
-  "cadence_note": "RUN 56: 15h gap (Run55→56). W38 FULLY MISSED (peak 07-10 UTC + non-peak 10-12 UTC). EVENING SESSION ACTIVE NOW (21:03 UTC, closes 22:00 UTC) — 57 MIN REMAINING. 4th consecutive evening miss in 57min unless bot started.",
+  "last_run": "2026-06-13T22:05:00+00:00",
+  "run_number": 57,
+  "current_utc": "2026-06-13 22:05 UTC",
+  "elapsed_since_last_run_h": 1.02,
+  "bot_offline_days": 53.7,
+  "cadence_note": "RUN 57: 1.02h gap (Run56 21:03→Run57 22:05 UTC Jun13). Evening session CLOSED at 22:00 UTC — 4th consecutive evening miss CONFIRMED. W38 FULLY CLOSED (peak + non-peak + evening ALL missed). EOD report generated. W39 morning in T+7.92h. SOL_SHORT 19d milestone in T+1.93h.",
+
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
       "gates_active": 87,
       "total_applied_all_time": 69,
       "graduated_rules_total": 116,
-      "escalation_candidates_blocked": 92,
-      "sol_short_conflict_age_h": 453.01,
-      "sol_short_conflict_age_days": 18.88,
-      "status": "UNCHANGED — bot offline Day 52.86. No new audit files. No new trades. AB tracker broken (20 rules frozen). SOL_SHORT conflict 453.01h (18.88d). Evening session closing in 57min.",
-      "new_finding_run56": "15h gap (Run55→56). W38 fully missed. Evening active NOW 57min remaining. 92 escalation candidates stalled (AB tracker broken). SOL_SHORT conflict now 453.01h (18.88d) — approaching 19-day governance failure."
+      "escalation_candidates_blocked": 20,
+      "sol_short_conflict_age_h": 454.04,
+      "sol_short_conflict_age_days": 18.92,
+      "sol_short_19d_milestone_h_remaining": 1.96,
+      "status": "UNCHANGED — bot offline Day 53.7. No new audit files. No new trades. AB tracker broken (20 rules frozen). SOL_SHORT conflict 454.04h (18.92d). 19d governance milestone in ~2h (00:01 UTC Jun14).",
+      "new_finding_run57": "Evening miss #4 confirmed (22:00 UTC). EOD window open. W38 fully closed. SOL_SHORT conflict 454.04h — 19d milestone IMMINENT in ~2h."
     },
+
     "execution_forensics": {
       "avg_slippage": "UNKNOWN",
-      "noise_stop_problem": "87% early SL hits cached",
+      "noise_stop_problem": "87% early SL hits cached [Day 53.7]",
       "data_available": false,
-      "ev_loss_morning_usd": 270.69,
-      "ev_loss_delta_this_run": 14.55,
-      "ev_loss_since_run55_usd": 14.55,
+      "ev_loss_total_usd": 271.66,
+      "ev_loss_delta_this_run": 0.97,
       "ev_loss_rate_per_hour": 0.97,
-      "elapsed_h_this_run": 15.0,
+      "elapsed_h_this_run": 1.02,
       "morning_peak_misses_confirmed": 40,
-      "w38_peak_status": "MISSED — 40th consecutive morning peak miss confirmed (07:00-10:00 UTC, missed 11h ago)",
-      "w38_nonpeak_status": "MISSED — non-peak window 10:00-12:00 UTC also missed (9h ago)",
-      "w38_full_miss": true,
-      "evening_session_status": "ACTIVE NOW — 16:00-22:00 UTC Jun13, 21:03 UTC = 5h in, 57min remaining",
-      "ev_milestone_250": "CROSSED (Run 54, ~Jun12 23:41 UTC)",
-      "ev_milestone_270": "CROSSED this run (~Jun13 20:33 UTC estimate)",
-      "ev_milestone_300_t_plus_h": 30.2,
+      "evening_miss_streak": 4,
+      "w38_peak_status": "MISSED — 40th consecutive morning peak miss (07:00-10:00 UTC Jun13)",
+      "w38_nonpeak_status": "MISSED — non-peak window 10:00-12:00 UTC also missed",
+      "w38_evening_status": "MISSED — 4th consecutive evening miss confirmed (16:00-22:00 UTC Jun13, closed at 22:00)",
+      "w38_full_day_miss": true,
+      "ev_milestone_270": "CROSSED (Run 56, ~Jun13 20:33 UTC)",
+      "ev_milestone_275_eta_utc": "2026-06-13T23:26:00+00:00",
+      "ev_milestone_300_t_plus_h": 29.2,
       "ev_milestone_300_eta_utc": "2026-06-15T03:14:00+00:00"
     },
+
     "live_injection": {
       "high_edges_found": 8,
       "weak_setups_found": 7,
       "no_new_trades": true,
-      "edge_staleness_days": 52.86,
-      "urgency": "CRITICAL — Evening session ACTIVE NOW (21:03 UTC). 57min to close (22:00 UTC). EVENING_session_boost WR=65% active. If bot not started: 4th consecutive evening miss.",
-      "w38_peak_status": "MISSED (40th) — 11h ago",
-      "evening_session_now": "ACTIVE — 21:03 UTC, closes 22:00 UTC (57min remaining)",
-      "next_morning_opportunity": "W39 Jun14 06:00-12:00 UTC (T+8.95h). Peak 07:00-10:00 UTC (T+9.95h). Deadline 05:30 UTC Jun14.",
+      "edge_staleness_days": 53.7,
+      "urgency": "HIGH — W39 morning in T+7.92h (06:00-12:00 UTC Jun14). Peak 07:00-10:00 UTC. tod_morning_edge_v1 WR=74% + BB goldens active. SET ALARM 05:30 UTC Jun14.",
+      "w38_full_day_miss": true,
+      "evening_session_now": "CLOSED — 4th miss confirmed at 22:00 UTC Jun13",
+      "next_morning_opportunity": "W39 Jun14 06:00-12:00 UTC (T+7.92h). Peak 07:00-10:00 UTC (T+8.92h). ALARM DEADLINE 05:30 UTC Jun14.",
       "top_edges_status": {
-        "tod_morning_edge_v1": "MISSED W38 (40th). W39 in T+8.95h.",
-        "ETH_SHORT_BB_golden": "Active — next morning W39",
-        "BTC_BUY_BB_golden": "Active — next morning W39",
-        "SOL_BUY_BB_golden": "Active — next morning W39",
-        "EVENING_session_boost": "ACTIVE NOW — 57min remaining Jun13 21:03 UTC"
+        "tod_morning_edge_v1": "W38 MISSED (40th). W39 in T+7.92h. SET ALARM 05:30 UTC Jun14.",
+        "ETH_SHORT_BB_golden": "Active — next morning W39 (T+8.92h)",
+        "BTC_BUY_BB_golden": "Active — next morning W39 (T+8.92h)",
+        "SOL_BUY_BB_golden": "Active — next morning W39 (T+8.92h)",
+        "EVENING_session_boost": "CLOSED — 4th miss confirmed. Next: Jun14 16:00-22:00 UTC (T+17.92h)"
       }
     },
+
     "daily_synthesis": {
-      "anomalies_found": 17,
-      "report_generated": false,
-      "eod_report_pending_in_min": 57,
-      "eod_report_time": "22:00 UTC",
+      "anomalies_found": 18,
+      "report_generated": true,
+      "eod_report_generated_at": "2026-06-13T22:05:00+00:00",
       "today_trades": 0,
       "today_pnl": 0.0,
+      "w38_session_result": "FULL_DAY_MISS — peak + non-peak + evening all missed",
       "consecutive_morning_peak_misses": 40,
+      "consecutive_evening_misses": 4,
       "w38_fully_missed": true,
-      "evening_session_critical": true,
-      "evening_session_closes_in_min": 57,
       "new_anomalies_this_run": [
-        "W38_PEAK_MISS_CONFIRMED_40TH — peak 07:00-10:00 UTC missed (11h ago). 40th consecutive.",
-        "W38_NONPEAK_MISS_CONFIRMED — fallback 10:00-12:00 UTC also missed (9h ago). Full W38 missed.",
-        "EVENING_SESSION_CLOSING_IN_57MIN — active NOW 21:03 UTC, must start bot before 22:00 UTC or 4th consecutive evening miss."
+        "W38_EVENING_MISS_4TH_CONFIRMED — evening 16:00-22:00 UTC Jun13 closed at 22:00 UTC. 4th consecutive.",
+        "W38_FULL_DAY_MISS_CONFIRMED — all 4 session windows missed on Jun13. Worst day result.",
+        "EOD_REPORT_GENERATED — Jun13 end-of-day synthesis completed at 22:05 UTC.",
+        "SOL_SHORT_19DAY_IMMINENT — 454.04h (18.92d), 19d milestone at ~00:01 UTC Jun14 (T+1.93h)."
       ]
     },
+
     "model_optimization": {
       "skipped": true,
-      "reason": "cost_tracker.json absent — bot offline 52.86 days",
+      "reason": "cost_tracker.json absent — bot offline 53.7 days",
       "swaps_recommended": 0,
       "potential_savings": "$0.00"
     }
   },
+
   "high_priority_findings": [
     {
-      "subsystem": "live_injection",
+      "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "EVENING SESSION ACTIVE NOW — 21:03 UTC Jun13, closes 22:00 UTC. 57 MINUTES REMAINING. EVENING_session_boost WR=65% (gate=20%) active. Previous 3 consecutive evenings all missed. 4th consecutive evening miss in 57min if bot not started.",
-      "action": "START BOT NOW — 57min window before evening session closes at 22:00 UTC Jun13."
+      "finding": "W38 FULL DAY MISS — all 4 session windows missed on Jun13: peak (07-10 UTC, 40th miss) + non-peak fallback (10-12 UTC) + evening (16-22 UTC, 4th miss). Zero trades, zero PnL. W39 morning is next opportunity in T+7.92h.",
+      "action": "SET ALARM 05:30 UTC Jun14 (T+7.42h). Start bot with 'cd bot && python run.py paper' before 06:00 UTC Jun14 for W39 morning (peak 07:00-10:00 UTC). tod_morning_edge_v1 WR=74% applies."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "CRITICAL",
-      "finding": "$270.69 EV LOSS (Day 52.86 offline, +$14.55 this run). W38 FULLY MISSED: peak (40th miss) + non-peak window both missed. Rate $0.97/h. $300 milestone in T+30.2h (Jun15 03:14 UTC) if offline.",
-      "action": "Start bot for evening session (57min). Set alarm Jun14 05:30 UTC for W39 morning peak."
-    },
-    {
-      "subsystem": "daily_synthesis",
-      "severity": "CRITICAL",
-      "finding": "EOD report due in 57min (22:00 UTC). 17 anomalies. W38 fully missed (both windows). 40th consecutive morning peak miss confirmed. Evening session closes at 22:00 UTC (same time as EOD). 4th consecutive evening miss imminent.",
-      "action": "P0: Start bot NOW for evening session (57min). P1: Set alarm W39 morning Jun14 05:30 UTC."
+      "finding": "$271.66 EV LOSS (Day 53.7 offline, +$0.97 this run). 4th consecutive evening miss confirmed. W38 full day missed. Rate $0.97/h. $300 milestone in T+29.2h (Jun15 03:14 UTC). 40th morning peak miss, 4th evening miss.",
+      "action": "START BOT before 06:00 UTC Jun14 for W39 morning. Set alarm 05:30 UTC Jun14. Avoid 5th evening miss: start bot before 16:00 UTC Jun14."
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "92 escalation candidates stalled. AB tracker broken (20 rules frozen). SOL_SHORT conflict now 453.01h (18.88 days) — approaching 19-day governance milestone. BB_solo_signal_boost (conf=95%, n=2172) remains locked. No fixes possible without live trades or AB tracker repair.",
-      "action": "P0: AB tracker fix in bot/feedback/loop.py (~2h). P1: SOL_SHORT conflict human resolution (453h — 19-day governance review overdue)."
+      "finding": "SOL_SHORT conflict 454.04h (18.92 days) — 19-DAY GOVERNANCE MILESTONE IN T+1.93H (~00:01 UTC Jun14). 92 escalation candidates stalled. AB tracker broken (20 rules frozen). BB_solo_signal_boost (conf=95%, n=2172) locked.",
+      "action": "P0: Resolve SOL_SHORT governance deadlock at 19d milestone — reduce SOL_SHORT_full_block gate to 80% to allow reversal probe. P1: AB tracker fix in bot/feedback/loop.py (~2h)."
     },
     {
-      "subsystem": "execution_forensics",
+      "subsystem": "live_injection",
       "severity": "HIGH",
-      "finding": "15h cadence gap (Run55→56). System ran at 06:03 UTC, W38 peak opened 07:00 UTC = missed peak 57min after last run. Non-peak fallback 10:00-12:00 also missed. Total: 40 morning peaks missed + 3 evening sessions. Evening session #4 still capturable in 57min.",
-      "action": "Post-session: verify hourly loop cadence. 15h gap indicates loop broke overnight. Fix loop reliability before W39."
+      "finding": "W39 morning window opens in T+7.92h (06:00 UTC Jun14). Peak 07:00-10:00 UTC. tod_morning_edge_v1 WR=74% + ETH_SHORT_BB (70%) + BTC_BUY_BB (69%) + SOL_BUY_BB (67%) all primed. 4th consecutive evening miss means W39 morning is the ONLY remaining opportunity today/tomorrow.",
+      "action": "ALARM: 05:30 UTC Jun14. Start bot: 'cd bot && python run.py paper'. Confirm LLM_MULTI_AGENT=true and LLM_MODE>=2 in .env before start."
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "MEDIUM",
+      "finding": "Loop cadence failure risk — Run55→56 had 15h gap despite hourly schedule. W39 window opens at 06:00 UTC Jun14 (T+7.92h). If loop breaks again, W39 morning will be missed.",
+      "action": "After bot start: verify loop runs every hour. Check bot/run.py loop interval. Consider cron-based fallback if loop reliability is uncertain."
     }
   ],
+
   "run_summary": {
     "fixes_applied_this_run": 0,
-    "new_insights_this_run": 3,
-    "key_insight": "RUN 56: 15h GAP. EVENING SESSION ACTIVE NOW — 57MIN TO CLOSE (22:00 UTC). W38 FULLY MISSED (40th peak + non-peak). EV $270.69 (+$14.55). SOL_SHORT 453.01h.",
+    "new_insights_this_run": 4,
+    "key_insight": "RUN 57: 1h gap. W38 FULL DAY MISS (peak + non-peak + evening ALL missed). EVENING MISS #4 CONFIRMED. EV $271.66 (+$0.97). EOD REPORT GENERATED. W39 morning T+7.92h. SOL_SHORT 19d milestone T+1.93h.",
     "morning_peak_misses_confirmed": 40,
-    "w38_status": "FULLY_MISSED",
-    "evening_window": "ACTIVE — 57MIN REMAINING (21:03 UTC → 22:00 UTC)",
-    "ev_total": "$270.69 (+$14.55 this run, 15h gap)",
-    "ev_milestone_270": "CROSSED (~Jun13 20:33 UTC)",
-    "ev_milestone_300_eta": "Jun15 03:14 UTC (T+30.2h if offline)",
-    "cadence_issue": "15h gap (Run55 06:03→Run56 21:03). Loop broke mid-day. Fix required.",
-    "p0_action": "START BOT NOW — 57min remaining in evening session (21:03 UTC, closes 22:00 UTC Jun13). EVENING_session_boost WR=65% active."
+    "evening_misses_confirmed": 4,
+    "w38_status": "FULLY_MISSED_ALL_WINDOWS",
+    "eod_report": "GENERATED — bot/data/sessions/daily_synthesis_2026-06-13.json",
+    "ev_total": "$271.66 (+$0.97 this run, 1.02h gap)",
+    "ev_milestone_300_eta": "Jun15 03:14 UTC (T+29.2h if offline)",
+    "next_opportunity": "W39 MORNING — Jun14 06:00-12:00 UTC (T+7.92h). Peak 07:00-10:00 UTC. ALARM 05:30 UTC Jun14.",
+    "sol_short_governance": "19-day milestone in T+1.93h (~00:01 UTC Jun14). IMMINENT.",
+    "p0_action": "SET ALARM 05:30 UTC Jun14. Start bot before 06:00 UTC Jun14 for W39 morning window. tod_morning_edge_v1 WR=74% + BB golden setups active."
   }
 }
