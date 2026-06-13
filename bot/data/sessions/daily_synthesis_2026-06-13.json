@@ -1,0 +1,111 @@
+{
+  "last_run": "2026-06-13T09:00:00+00:00",
+  "run_number": 54,
+  "date": "2026-06-13",
+  "generated_at": "2026-06-13T09:00:00+00:00",
+  "bot_status": "OFFLINE — day 52.36",
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "today_wr": null,
+  "current_tod": "W38 MORNING PEAK (09:00 UTC) — 07:00-10:00 UTC ACTIVE. 40TH CONSECUTIVE MORNING MISS IN PROGRESS. ~1h remaining in peak.",
+  "trading_now": false,
+  "anomalies_found": 16,
+  "report_generated": false,
+  "end_of_day_report_pending": true,
+  "eod_report_time": "22:00 UTC",
+  "w38_active": true,
+  "w38_morning_peak_open": true,
+  "w38_morning_peak_remaining_h": 1.0,
+  "w38_deadline_passed": false,
+  "yesterday_recap": {
+    "date": "2026-06-12",
+    "trades": 0,
+    "pnl": 0.0,
+    "morning_peak": "MISSED (W37 39th consecutive miss)",
+    "evening_session": "FULLY MISSED — 4th consecutive evening miss confirmed",
+    "ev_delta_yesterday": 7.27,
+    "note": "Jun 12 produced 0 trades. Both W37 morning peak and evening session missed. Cadence was 1h (Run52→53) but master engine not triggered again during day."
+  },
+  "cadence_gap_h": 15.93,
+  "cadence_broken": true,
+  "cadence_consecutive_hits": 0,
+  "consecutive_morning_misses": 39,
+  "morning_miss_w38_status": "40th IN PROGRESS — W38 morning peak OPEN at 09:00 UTC, 1h left",
+  "consecutive_peak_window_misses_to_w38": 39,
+  "consecutive_evening_misses": 4,
+  "cumulative_ev_loss_usd": 258.98,
+  "ev_delta_this_run": 15.45,
+  "ev_rate_per_hour": 0.97,
+  "ev_milestone_250": "CROSSED — Jun 12 23:41 UTC",
+  "ev_milestone_next": "$300 at ~Jun 15 03:18 UTC at $0.97/h",
+  "critical_anomalies": [
+    "W38_MORNING_PEAK_40TH_MISS_IN_PROGRESS — peak (07:00-10:00 UTC) open at 09:00 UTC, 1h left, bot offline",
+    "4TH_CONSECUTIVE_EVENING_MISS_CONFIRMED — Jun 12 evening (16:00-22:00 UTC) fully missed. 4 of last 4 evenings missed.",
+    "CADENCE_BROKEN — 15.93h gap (Run53→54) vs 1h target. Loop frequency failure.",
+    "BOT_OFFLINE_DAY52.36 — 1204h+ offline since 2026-04-23 22:17 UTC",
+    "EV_258.98_250_MILESTONE_CROSSED_JUN12_23:41",
+    "SOL_SHORT_GOVERNANCE_CRITICAL_440.94H_18.37_DAYS"
+  ],
+  "high_anomalies": [
+    "5TH_CONSECUTIVE_EVENING_MISS_RISK — W38 evening (16:00-22:00 UTC Jun 13) is next window (T+7h). Must not miss.",
+    "AB_TRACKER_BROKEN_DAY52.36_20_RULES_FROZEN",
+    "ETH_SELL_REGIME_TREND_WR23PCT_DEMOTION_CANDIDATE_STALE_52D",
+    "EXIT_TIMING_GAP_24.7PCT_SL_EXITS_TP1_REACHABLE_USD1119_MISSED",
+    "EQUITY_90.1PCT_DRAWDOWN_USD497_CONSECUTIVE_LOSS_STREAK_4"
+  ],
+  "medium_anomalies": [
+    "SLIPPAGE_TRACKING_BLIND_DAY52.36",
+    "SMALL_N_EDGE_STALENESS_DAY52.36_ETH_SHORT_PROTECT_N5_HYPE_PROBE_N6",
+    "HIGH_VOL_REGIME_BOOST_BORDERLINE_GATE50",
+    "EV_300_MILESTONE_APPROACHING_T+42.3H",
+    "LOSS_STREAK_4_CIRCUIT_BREAKER_AT_6_TWO_LOSSES_FROM_PAUSE"
+  ],
+  "positive_developments": [
+    "W38_MORNING_PEAK_STILL_CAPTURABLE — 1h remaining at 09:00 UTC. Do not squander last chance.",
+    "W38_EVENING_SESSION_16:00-22:00_UTC_T+7H_NEXT_FULL_OPPORTUNITY",
+    "116_RULES_CODIFIED_87_ACTIVE_STRONG_FOUNDATION",
+    "BB_GOLDEN_SETUPS_ETH_BTC_SOL_WR67-80PCT_AVAILABLE_ON_RESTART",
+    "P0_AB_TRACKER_FIX_IDENTIFIED_bot/feedback/loop.py_UNBLOCKS_20_RULES"
+  ],
+  "daily_summary": {
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "pnl_usd": 0.0,
+    "best_trade": null,
+    "worst_trade": null,
+    "7d_wr_baseline": 0.35,
+    "today_wr_vs_baseline": "N/A — no trades",
+    "all_time_wr": 0.469,
+    "resolved_trades": 352,
+    "equity_usd": 497.05
+  },
+  "today_opportunities": {
+    "morning_peak": "07:00-10:00 UTC — OPEN AT 09:00 UTC. 40th miss IN PROGRESS. ~1h left. START BOT NOW.",
+    "afternoon": "12:00-18:00 UTC (33% WR) — T+3h",
+    "evening": "16:00-22:00 UTC (65% WR) — T+7h. MUST NOT MISS 5th consecutive.",
+    "status": "MORNING_MISS_IN_PROGRESS — 1h remaining in peak. Bot offline. Start NOW."
+  },
+  "tomorrow_focus": {
+    "primary": "W39 Jun 14 morning peak (07:00-10:00 UTC). Also: W38 afternoon + evening today.",
+    "symbols_priority": ["ETH", "BTC", "HYPE"],
+    "regimes_priority": ["trending"],
+    "rules_primed": [
+      "ETH_SHORT_BB_golden WR=80% (gate=50%) — confirm trending regime",
+      "BTC_TRENDING_REGIME_SHORT WR=80% (gate=80%) — confirm trending regime",
+      "BTC_SHORT_90plus WR=67% (gate=100%)",
+      "tod_morning_edge_v1 WR=74% (gate=50%)",
+      "EVENING_session_boost WR=65% (gate=20%) — W38 evening T+7h"
+    ],
+    "avoid": [
+      "SOL_SHORT (conflict GOVERNANCE_CRITICAL, gate=100)",
+      "SOL_LONG (hard blocked, gate=100)",
+      "HYPE_LONG/HYPE_SHORT (veto, gate=100)",
+      "ETH_SELL_regime_trend (WR=23%)",
+      "HIGH_LEV_6_10X (avg PnL -4.62)",
+      "TOD_NIGHT (00:00-06:00 UTC, WR=19%)"
+    ],
+    "dev_p0": "AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 rules incl BB_solo_signal_boost (n=2172, conf=95%)"
+  },
+  "new_finding_run54": "RUN 54 — NEW ESCALATIONS: 4th consecutive evening miss confirmed (Jun 12 fully missed). W38 morning peak 40th miss in progress (09:00 UTC, 1h remaining). EV $258.98 (+$15.45 from 15.93h cadence gap). SOL_SHORT conflict 440.94h (18.37 days — GOVERNANCE_CRITICAL threshold). Cadence broken (15.93h vs 1h target). $250 milestone confirmed crossed Jun 12 23:41 UTC."
+}

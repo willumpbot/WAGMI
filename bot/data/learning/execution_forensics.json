@@ -1,12 +1,12 @@
 {
-  "last_run": "2026-06-12T17:04:00+00:00",
-  "run_number": 53,
-  "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 51.70+); bot offline",
-  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 51.70]",
+  "last_run": "2026-06-13T09:00:00+00:00",
+  "run_number": 54,
+  "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 52.36+); bot offline",
+  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 52.36]",
   "data_available": false,
-  "data_source": "Cached (bot offline ~51.70 days since 2026-04-23 22:17 UTC)",
-  "ev_loss_morning_usd": 243.53,
-  "ev_loss_delta_since_run52": 0.97,
+  "data_source": "Cached (bot offline ~52.36 days since 2026-04-23 22:17 UTC)",
+  "ev_loss_morning_usd": 258.98,
+  "ev_loss_delta_since_run53": 15.45,
   "ev_loss_breakdown": {
     "through_run43": 203.70,
     "w35_miss_full": 5.82,
@@ -17,32 +17,52 @@
     "run50_to_run51_accrual": 0.97,
     "run51_to_run52_accrual": 0.97,
     "run52_to_run53_accrual": 0.97,
-    "total_run53": 243.53,
+    "run53_to_run54_accrual": 15.45,
+    "total_run54": 258.98,
     "rate_per_hour": 0.97,
-    "note": "1.0h gap (Run52→53) x $0.97/h = $0.97. Evening session IN PROGRESS (17:04 UTC, 4.93h left). 3rd consecutive miss."
+    "note": "15.93h gap (Run53→54) x $0.97/h = $15.45. Cadence broken (was 1h, now 15.93h). 4th evening miss confirmed. W38 morning peak (07:00-10:00 UTC Jun 13) open/closing."
   },
-  "w37_status": "CLOSED — fully ended 12:00 UTC (5.07h ago). Peak 07:00-10:00 UTC missed (39th). Non-peak 10:03-12:00 UTC missed.",
+  "w37_status": "CLOSED — fully ended 12:00 UTC Jun 12 (21h ago). Peak AND non-peak missed (39th+4th consecutive evening).",
   "w37_peak_missed": true,
-  "w37_nonpeak_closed": true,
-  "w37_nonpeak_closed_h_ago": 5.07,
-  "w37_miss_number": 39,
-  "morning_windows_missed": 38,
-  "morning_peak_windows_missed": 39,
-  "evening_session_jun12_status": "1H IN — 17:04 UTC. 4.93h remaining (until 22:00 UTC). Bot offline. 3rd consecutive evening miss in progress. EVENING_session_boost WR=65% being lost.",
-  "evening_warm_up_missed": true,
-  "evening_warm_up_deadline_missed_min": 94,
-  "next_opportunity": {
-    "evening_session_jun12_remaining": "4.93h remaining (17:04-22:00 UTC). EVENING_session_boost WR=65% — START BOT NOW.",
-    "w38_morning": "Jun 13 06:00-12:00 UTC (T+12.93h). Peak 07:00-10:00 UTC (T+13.93h). Deadline 05:30 UTC (T+12.43h).",
-    "critical_action": "Start bot NOW — 4.93h of evening session remain. BB goldens ETH/BTC/SOL WR 67-70% also active."
+  "w38_status": "MORNING PEAK (07:00-10:00 UTC Jun 13) IS OPEN — bot offline. W38 morning miss #40 IN PROGRESS.",
+  "w38_peak_open": true,
+  "w38_peak_window": "07:00-10:00 UTC Jun 13 — currently at ~09:00 UTC (1h remaining in peak). Start bot NOW.",
+  "evening_sessions_missed": 4,
+  "consecutive_evening_miss_count": 4,
+  "morning_windows_missed": 39,
+  "morning_peak_windows_missed_through_w37": 39,
+  "morning_peak_w38_status": "MISS #40 IN PROGRESS — 40th consecutive morning peak miss unless bot started by ~09:00-10:00 UTC",
+  "exit_timing_gap": {
+    "sl_exits_with_tp1_reachable_pct": 24.7,
+    "count": 87,
+    "total_resolved": 352,
+    "est_missed_value_usd": 1119.29
   },
-  "bot_offline_days": 51.70,
-  "gap_since_last_engine_run_h": 1.0,
-  "cadence_note": "RUN 53: 1.0h gap — ON TARGET. Evening session IN PROGRESS (4.93h left). 3rd consecutive miss.",
+  "equity_state": {
+    "current_usd": 497.05,
+    "start_usd": 5000.0,
+    "drawdown_pct": 90.1,
+    "session_peak_usd": 508.06,
+    "session_dd_pct": 2.2,
+    "all_time_wr": 0.469,
+    "last_20_wr": 0.35,
+    "resolved_trades": 352,
+    "loss_streak": 4,
+    "circuit_breaker_at": 6,
+    "losses_until_pause": 2
+  },
+  "next_opportunity": {
+    "w38_morning_peak_NOW": "07:00-10:00 UTC Jun 13 — OPEN at 09:00 UTC. ~1h remaining. Start bot NOW.",
+    "w38_afternoon": "12:00-18:00 UTC Jun 13 (~33% WR).",
+    "w38_evening": "16:00-22:00 UTC Jun 13 (65% WR). Do NOT miss 5th consecutive.",
+    "critical_action": "Start bot IMMEDIATELY — 1h of W38 morning peak remaining. BB goldens ETH/BTC/SOL WR 67-80% active."
+  },
   "ev_milestones": {
     "ev_200_crossed": true,
-    "ev_250_est_h": "T+6.67h from now at $0.97/h if bot stays offline (Jun 12 23:41 UTC)",
-    "ev_300_est_h": "T+58.25h from now (Jun 15 03:18 UTC) at $0.97/h"
+    "ev_250_crossed": true,
+    "ev_250_crossed_at": "2026-06-12T23:41:00+00:00",
+    "ev_300_est_h": "T+42.3h from now (Jun 15 03:18 UTC) at $0.97/h",
+    "ev_milestone_next": "$300 at T+42.3h if bot stays offline"
   },
-  "new_finding_run53": "EV $243.53 (+$0.97 from 1.0h gap). Evening Jun 12 IN PROGRESS — 1h in (17:04 UTC), 4.93h left. 3rd consecutive evening miss accumulating. W38 deadline Jun 13 05:30 UTC (T+12.43h). Warm-up missed 1h34min ago."
+  "new_finding_run54": "EV $258.98 (+$15.45 from 15.93h gap). $250 milestone crossed Jun 12 23:41 UTC (confirmed). 4th consecutive evening miss (Jun 12) confirmed. W38 morning peak OPEN (07:00-10:00 UTC) — 40th consecutive miss IN PROGRESS at ~09:00 UTC. 1h remaining in peak window. Cadence broken (15.93h gap vs 1h target)."
 }
