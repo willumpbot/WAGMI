@@ -1,17 +1,18 @@
 {
-  "last_run": "2026-06-14T00:05:00+00:00",
-  "run_number": 58,
+  "last_run": "2026-06-14T16:02:49+00:00",
+  "run_number": 59,
   "date": "2026-06-14",
-  "generated_at": "2026-06-14T00:05:00+00:00",
+  "generated_at": "2026-06-14T16:02:49+00:00",
   "eod_report_generated": false,
-  "bot_status": "OFFLINE — day 54.7",
+  "bot_status": "OFFLINE — day 55.4",
   "today_trades": 0,
   "today_pnl": 0.0,
   "today_wr": null,
   "trading_now": false,
-  "anomalies_found": 5,
+  "anomalies_found": 7,
   "report_generated": false,
   "end_of_day_report_pending": true,
+  "eod_report_eta_utc": "2026-06-14T22:00:00+00:00",
 
   "daily_summary": {
     "date": "2026-06-14",
@@ -22,67 +23,75 @@
     "best_trade": null,
     "worst_trade": null,
     "7d_wr_baseline": null,
-    "today_wr_vs_baseline": "N/A — no trades yet",
-    "ev_loss_today_usd": 0.09,
+    "today_wr_vs_baseline": "N/A — no trades today",
+    "ev_loss_today_usd": 15.49,
     "ev_rate_per_hour": 0.97,
+    "ev_milestones_crossed_today": ["$275 (~01:30 UTC)", "$280 (~06:41 UTC)", "$285 (~11:51 UTC)"],
+    "ev_total_cumulative": 289.09,
     "session_windows": {
-      "morning_peak": "07:00-10:00 UTC — PENDING (T+6.92h)",
-      "morning_full": "06:00-12:00 UTC — PENDING (T+5.92h)",
-      "afternoon": "12:00-16:00 UTC — PENDING",
-      "evening": "16:00-22:00 UTC — PENDING (T+15.92h)"
+      "morning_peak": "07:00-10:00 UTC — CONFIRMED MISSED (41st consecutive)",
+      "morning_full": "06:00-12:00 UTC — CONFIRMED MISSED (41st consecutive)",
+      "afternoon": "12:00-16:00 UTC — PASSED (bot offline)",
+      "evening": "16:00-22:00 UTC — NOW ACTIVE (16:02 UTC, 5.97h remaining, WR=65%)"
     }
   },
 
   "critical_anomalies": [
-    "SOL_SHORT_19D_GOVERNANCE_CROSSED — conflict age 456.07h (19.0 days). Governance milestone crossed at ~00:01 UTC Jun14. Human decision required: reduce gate=100→80 for reversal probe OR ratify block with evidence.",
-    "W39_MORNING_PEAK_IN_T+6.92H — 07:00-10:00 UTC Jun14. tod_morning_edge_v1 WR=74%. SET ALARM 05:30 UTC Jun14 (T+5.42h). Miss would be 41st consecutive.",
-    "EV_$275_MILESTONE_IN_T+1.44H — ~01:30 UTC Jun14. Cumulative EV loss $273.60 at $0.97/h."
+    "W39_MORNING_CONFIRMED_MISSED — 41st consecutive morning miss. Window 06:00-12:00 UTC Jun14 closed while bot offline. tod_morning_edge_v1 WR=74% = most valuable daily edge missed again.",
+    "W39_EVENING_NOW_ACTIVE — Window open since 16:00 UTC, 5.97h remaining. WR=65% (gate=20%). IMMEDIATE action needed: start bot NOW to catch partial window. Miss = 5th consecutive evening miss.",
+    "EV_$289.09_THREE_MILESTONES_TODAY — $275, $280, $285 all crossed Jun14. $290 in T+0.94h (~17:00 UTC). $23.28/day lost staying offline. Largest single-run EV accrual ($15.49 in 15.97h)."
   ],
 
   "high_anomalies": [
-    "W39_MORNING_WINDOW_T+5.92H — 06:00-12:00 UTC Jun14. Bot must start before 06:00 UTC Jun14 for full window.",
-    "AB_TRACKER_BROKEN_DAY54.7 — 20 rules frozen. BB_solo_signal_boost (n=2172, conf=95%) locked."
+    "SOL_SHORT_GOVERNANCE_16H_OVERDUE — conflict 472.04h (19.67 days). 19d milestone crossed 16h ago. Human decision still pending.",
+    "AB_TRACKER_BROKEN_DAY55.4 — 20 rules frozen. BB_solo_signal_boost (n=2172, conf=95%) cannot graduate.",
+    "EV_$290_IN_T+0.94H — ~17:00 UTC Jun14. 4th milestone today, 6th this week.",
+    "41ST_CONSECUTIVE_MORNING_MISS — tod_morning_edge_v1 WR=74% missed every morning since Apr22. Pattern critical."
   ],
 
   "medium_anomalies": [
-    "BOT_OFFLINE_DAY54.7 — approaching 55 days of non-trading.",
-    "W39_EVENING_T+15.92H — 16:00-22:00 UTC Jun14. Must start before 16:00 to avoid 5th consecutive miss.",
-    "EV_RATE_$0.97/H — accumulating $23.28/day offline."
+    "BOT_OFFLINE_DAY55.4 — approaching 56 days of non-trading.",
+    "EV_RATE_$0.97/H — accumulating $23.28/day offline.",
+    "ETH_SELL_REGIME_TREND_DEMOTION_CANDIDATE — WR=23%, n=65. Needs review when bot restarts."
   ],
 
   "positive_developments": [
-    "SOL_SHORT_GOVERNANCE_PROBE_WINDOW_OPEN — 19d milestone crossed. Probe may restore SOL SHORT edge (63.7% WR candidate).",
-    "W39_MORNING_PEAK_AVAILABLE_T+6.92H — tod_morning_edge_v1 WR=74% + BB goldens all active.",
-    "EV_$275_IMMINENT — milestone tracking shows system learning value accumulating correctly.",
-    "116_RULES_CODIFIED_87_ACTIVE — strong rule base ready."
+    "W39_EVENING_CATCHABLE — Window open NOW. 5.97h remaining. Starting bot immediately = partial catch possible.",
+    "SOL_SHORT_PROBE_WINDOW_STILL_OPEN — 19d+16h milestone. Probe may restore SOL SHORT edge (63.7% WR candidate).",
+    "116_RULES_CODIFIED_87_ACTIVE — strong rule base ready for when trading resumes.",
+    "EV_MILESTONE_TRACKING_ACCURATE — $275, $280, $285 all crossed on schedule, system learning value properly quantified."
   ],
 
   "tomorrow_focus": {
-    "primary": "W39 Jun14 06:00-12:00 UTC (peak 07:00-10:00). ALARM 05:30 UTC Jun14.",
+    "primary": "W40 Jun15 06:00-12:00 UTC (peak 07:00-10:00). SET ALARM 05:30 UTC Jun15. DO NOT MISS AGAIN.",
+    "today_immediate": "START BOT NOW for W39 evening partial (16:02-22:00 UTC, 5.97h remaining, WR=65%)",
     "symbols_priority": ["ETH", "BTC", "HYPE"],
     "regimes_priority": ["trending"],
     "rules_primed": [
-      "tod_morning_edge_v1 WR=74% (gate=50%)",
-      "ETH_SHORT_BB_golden WR=70% (gate=80%)",
-      "BTC_BUY_BB_golden WR=69% (gate=80%)",
-      "SOL_BUY_BB_golden WR=67% (gate=80%)",
-      "EVENING_session_boost WR=65% (gate=20%) — active 16:00-22:00 UTC daily"
+      "EVENING_session_boost WR=65% (gate=20%) — ACTIVE NOW 16:00-22:00 UTC",
+      "ETH_SHORT_BB_golden WR=70% (gate=80%) — evening compatible",
+      "BTC_BUY_BB_golden WR=69% (gate=80%) — evening compatible",
+      "SOL_BUY_BB_golden WR=67% (gate=80%) — evening compatible",
+      "tod_morning_edge_v1 WR=74% (gate=50%) — NEXT: Jun15 06:00 UTC"
     ],
     "avoid": [
       "SOL_SHORT (conflict, gate=100, governance probe required first)",
       "SOL_LONG (hard blocked)",
       "ETH_SELL_regime_trend (WR=23%)",
-      "HIGH_LEV_6_10X (avg PnL -4.62)"
+      "HIGH_LEV_6_10X (avg PnL -4.62)",
+      "NIGHT session 00:00-06:00 UTC (WR=15%, gate=100)"
     ],
-    "dev_p0": "SOL_SHORT governance decision — 19d milestone CROSSED. Reduce gate=100→80 or ratify block.",
-    "dev_p1": "AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 rules incl BB_solo_signal_boost (n=2172, conf=95%)",
-    "dev_p2": "START BOT before 06:00 UTC Jun14 for W39 morning peak"
+    "dev_p0": "START BOT NOW for W39 evening (immediate action, 5.97h window remaining)",
+    "dev_p1": "SOL_SHORT governance decision — 16h OVERDUE past 19d milestone. Reduce gate=100→80 or ratify block.",
+    "dev_p2": "AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 rules incl BB_solo_signal_boost (n=2172, conf=95%)",
+    "dev_p3": "SET ALARM 05:30 UTC Jun15 for W40 morning (42nd miss imminent tomorrow)"
   },
 
-  "consecutive_morning_misses": 40,
+  "consecutive_morning_misses": 41,
   "consecutive_evening_misses": 4,
-  "cumulative_ev_loss_usd": 273.60,
+  "cumulative_ev_loss_usd": 289.09,
   "ev_rate_per_hour": 0.97,
-  "bot_offline_days": 54.7,
-  "sol_short_governance_milestone": "CROSSED at 00:01 UTC Jun14 (456.07h / 19.0 days)"
+  "bot_offline_days": 55.4,
+  "sol_short_governance_milestone": "CROSSED at 00:01 UTC Jun14, now 16h OVERDUE (472.04h / 19.67 days)",
+  "run59_largest_ev_accrual": "$15.49 in 15.97h — largest single-run EV delta yet (long overnight+morning+afternoon gap)"
 }
