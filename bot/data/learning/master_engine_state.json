@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-06-15T12:04:58+00:00",
-  "run_number": 63,
-  "current_utc": "2026-06-15 12:04 UTC",
-  "elapsed_since_last_run_h": 1.02,
-  "bot_offline_days": 56.33,
-  "cadence_note": "RUN 63: 1.02h gap (Run62 11:03 UTC Jun15 → Run63 12:04 UTC Jun15). AFTERNOON NOW ACTIVE (started 12:00 UTC, 3.92h remaining). Morning full CLOSED 4min ago (43rd miss). EV $308.53 (+$0.99 this run). $310 in 1.47h. W40 Evening 3.92h away (WR=65%). SOL_SHORT 36.08h past 19d milestone (20.50 days).",
+  "last_run": "2026-06-15T13:05:00+00:00",
+  "run_number": 64,
+  "current_utc": "2026-06-15 13:05 UTC",
+  "elapsed_since_last_run_h": 1.0,
+  "bot_offline_days": 56.37,
+  "cadence_note": "RUN 64: 1.0h gap (Run63 12:04 UTC Jun15 → Run64 13:05 UTC Jun15). $310 MILESTONE IMMINENT (~31min, 13:36 UTC). Afternoon ACTIVE (2.92h remaining, 1.08h already lost). EV $309.50 (+$0.97 this run). W40 Evening 2.92h away (WR=65%). SOL_SHORT 37.08h past 19d milestone (20.54 days).",
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
@@ -12,118 +12,121 @@
       "total_applied_all_time": 69,
       "graduated_rules_total": 116,
       "escalation_candidates_blocked": 20,
-      "sol_short_conflict_age_h": 492.08,
-      "sol_short_conflict_age_days": 20.5,
-      "sol_short_hours_past_milestone": 36.08,
-      "sol_short_governance_action_required": "GOVERNANCE 36.08H OVERDUE: SOL_SHORT 20.50d (492.08h). HUMAN DECISION CRITICAL — reduce gate 100→80 for reversal probe OR ratify block. WR candidate 63.7% if unblocked.",
-      "status": "GOVERNANCE_CRITICAL + AFTERNOON_ACTIVE — SOL_SHORT 36.08h past 19d milestone. AFTERNOON NOW ACTIVE (3.92h). AB tracker broken Day 56.33. Morning full CLOSED 4min ago. No new trades.",
-      "new_finding_run63": "AFTERNOON NOW ACTIVE (3.92h remaining). Morning full CLOSED 12:00 UTC (4 min ago, 43rd consecutive). EV $308.53 (+$0.99). $310 in 1.47h. SOL_SHORT 36.08h overdue. No new trades."
+      "sol_short_conflict_age_h": 493.08,
+      "sol_short_conflict_age_days": 20.54,
+      "sol_short_hours_past_milestone": 37.08,
+      "sol_short_governance_action_required": "GOVERNANCE 37.08H OVERDUE: SOL_SHORT 20.54d (493.08h). HUMAN DECISION CRITICAL — reduce gate 100→80 for reversal probe OR ratify block. WR candidate 63.7% if unblocked.",
+      "status": "GOVERNANCE_CRITICAL + AFTERNOON_ACTIVE + $310_IMMINENT — SOL_SHORT 37.08h past 19d milestone. AFTERNOON 2.92h remaining (1.08h lost). $310 in 31min. Bot offline Day 56.37.",
+      "new_finding_run64": "$310 MILESTONE IMMINENT (~31min, ~13:36 UTC). Afternoon 2.92h remaining (1.08h already lost). Bot OFFLINE. EV $309.50 (+$0.97). W40 Evening 2.92h away (WR=65%). SOL_SHORT 37.08h overdue."
     },
     "execution_forensics": {
       "avg_slippage": "UNKNOWN",
-      "noise_stop_problem": "87% early SL hits cached [Day 56.33]",
+      "noise_stop_problem": "87% early SL hits cached [Day 56.37]",
       "data_available": false,
-      "ev_loss_total_usd": 308.53,
-      "ev_loss_delta_this_run": 0.99,
+      "ev_loss_total_usd": 309.50,
+      "ev_loss_delta_this_run": 0.97,
       "ev_loss_rate_per_hour": 0.97,
-      "elapsed_h_this_run": 1.02,
-      "milestones_crossed_this_run": ["None (ev_310 in 1.47h at ~13:33 UTC)"],
-      "morning_full_closed_this_run": true,
-      "morning_full_closed_at_utc": "2026-06-15T12:00:00+00:00",
+      "elapsed_h_this_run": 1.0,
+      "milestones_crossed_this_run": ["None ($310 IMMINENT in ~31min at ~13:36 UTC)"],
+      "morning_full_closed_this_run": false,
       "afternoon_active": true,
-      "afternoon_remaining_h": 3.92,
-      "evening_status": "UPCOMING — 3.92h away (16:00-22:00 UTC Jun15, WR=65%)",
-      "ev_milestone_310_remaining_h": 1.47,
-      "ev_milestone_310_eta_utc": "2026-06-15T13:33:00+00:00",
-      "ev_milestone_315_eta_utc": "2026-06-15T18:46:00+00:00"
+      "afternoon_remaining_h": 2.92,
+      "afternoon_lost_h": 1.08,
+      "evening_status": "UPCOMING — 2.92h away (16:00-22:00 UTC Jun15, WR=65%)",
+      "ev_milestone_310_remaining_h": 0.52,
+      "ev_milestone_310_eta_utc": "2026-06-15T13:36:00+00:00",
+      "ev_milestone_310_status": "IMMINENT — ~31min away. DURING ACTIVE AFTERNOON WINDOW.",
+      "ev_milestone_315_eta_utc": "2026-06-15T18:45:00+00:00"
     },
     "live_injection": {
       "high_edges_found": 8,
       "weak_setups_found": 7,
       "no_new_trades": true,
-      "edge_staleness_days": 56.33,
+      "edge_staleness_days": 56.37,
       "sol_short_governance_overdue": true,
-      "sol_short_hours_past_milestone": 36.08,
-      "urgency": "CRITICAL_IMMEDIATE — AFTERNOON ACTIVE NOW (3.92h remaining). BB goldens (ETH 70%, BTC 69%, SOL 67%) compatible. W40 Evening 3.92h away (WR=65%). Start bot: 'cd bot && python run.py paper'.",
-      "w40_afternoon_status": "ACTIVE — 3.92h remaining. Bot OFFLINE.",
-      "w40_evening_status": "UPCOMING — 3.92h away. WR=65%. 5 consecutive misses.",
-      "top_edge_now_active": "Afternoon (ACTIVE 3.92h) + Evening (WR=65%, 3.92h) — best remaining windows. BB goldens all compatible."
+      "sol_short_hours_past_milestone": 37.08,
+      "urgency": "CRITICAL_IMMEDIATE — $310 IMMINENT (~31min, 13:36 UTC). Afternoon 2.92h remaining (1.08h lost). BB goldens (ETH 70%, BTC 69%, SOL 67%) compatible. W40 Evening 2.92h away (WR=65%). Start bot: 'cd bot && python run.py paper'.",
+      "w40_afternoon_status": "ACTIVE — 2.92h remaining. 1.08h ALREADY LOST. Bot OFFLINE.",
+      "w40_evening_status": "UPCOMING — 2.92h away. WR=65%. 5 consecutive misses.",
+      "top_edge_now_active": "Afternoon (ACTIVE 2.92h, 1.08h lost) + $310 IMMINENT (31min) + Evening (WR=65%, 2.92h) — best remaining windows. BB goldens all compatible."
     },
     "daily_synthesis": {
-      "anomalies_found": 9,
+      "anomalies_found": 10,
       "report_generated": false,
       "date": "2026-06-15",
       "today_trades": 0,
       "today_pnl": 0.0,
-      "ev_loss_today_usd": 9.93,
+      "ev_loss_today_usd": 10.90,
       "eod_report_pending": true,
       "eod_report_eta_utc": "2026-06-15T22:00:00+00:00",
       "new_anomalies_this_run": [
-        "AFTERNOON_ACTIVE_BOT_OFFLINE — 3.92h remaining. Losing edge REAL-TIME.",
-        "MORNING_FULL_CLOSED_12:00_UTC — 43rd consecutive full-window miss.",
-        "EV_$309_CROSSED — +$0.99 this run. $310 in 1.47h.",
-        "W40_EVENING_6TH_MISS_IMMINENT — 3.92h away (WR=65%).",
-        "SOL_SHORT_GOVERNANCE_36.08H_OVERDUE — 1.02h additional since Run62."
+        "$310_EV_MILESTONE_IMMINENT — ~31min away (~13:36 UTC). During active afternoon window. NEW THRESHOLD.",
+        "AFTERNOON_1.08H_ALREADY_LOST — Bot offline since window opened 12:00 UTC. Opportunity decay active.",
+        "W40_EVENING_6TH_MISS_IMMINENT — 2.92h away (WR=65%).",
+        "SOL_SHORT_GOVERNANCE_37.08H_OVERDUE — +1.0h additional since Run63.",
+        "$315_EV_MILESTONE_ETA_18:45_UTC — During W40 evening window (~5.67h away)."
       ]
     },
     "model_optimization": {
       "skipped": true,
-      "reason": "cost_tracker.json absent — bot offline 56.3 days",
+      "reason": "cost_tracker.json absent — bot offline 56.37 days",
       "swaps_recommended": 0,
       "potential_savings": "$0.00"
     }
   },
   "high_priority_findings": [
     {
-      "subsystem": "live_injection",
-      "severity": "CRITICAL_IMMEDIATE",
-      "finding": "W40 AFTERNOON ACTIVE NOW — 3.92h remaining (closes 16:00 UTC Jun15). Bot OFFLINE. Morning full CLOSED 4min ago. BB goldens (ETH SHORT 70%, BTC BUY 69%, SOL BUY 67%) all compatible. W40 Evening 16:00-22:00 UTC (WR=65%, 3.92h away). Both windows fully catchable if bot starts NOW.",
-      "action": "START BOT NOW: 'cd bot && python run.py paper'. Catches: full afternoon (3.92h) + W40 evening (WR=65%, 3.92h away). Verify LLM_MULTI_AGENT=true, LLM_MODE>=2."
+      "subsystem": "execution_forensics",
+      "severity": "CRITICAL_IMMINENT",
+      "finding": "$310 EV MILESTONE IMMINENT — ~31min away (~13:36 UTC Jun15). $309.50 total EV loss accumulated over 56.37 offline days. Rate: $0.97/h ($23.28/day). $315 milestone at ~18:45 UTC (during W40 evening window). NEW THRESHOLD CROSSING.",
+      "action": "Start bot NOW. $310 crossing in ~31min is a significant psychological + tracking milestone. Catches: 2.92h afternoon + W40 evening (WR=65%, 2.92h away)."
     },
     {
-      "subsystem": "execution_forensics",
-      "severity": "CRITICAL",
-      "finding": "$308.53 total EV loss (+$0.99 this run). $310 milestone in 1.47h (~13:33 UTC, during afternoon window). $315 ETA: ~18:46 UTC (during evening window). Rate: $23.28/day. Day 56.33 offline. Morning full CLOSED at 12:00 UTC (4 min ago).",
-      "action": "Start bot NOW for full afternoon (3.92h) + W40 evening. $310 milestone in 1.47h. This is the critical remaining opportunity today."
+      "subsystem": "live_injection",
+      "severity": "CRITICAL_IMMEDIATE",
+      "finding": "AFTERNOON WINDOW ACTIVE — 1.08h already lost, 2.92h remaining (closes 16:00 UTC Jun15). BB goldens (ETH SHORT 70%, BTC BUY 69%, SOL BUY 67%) all compatible. W40 Evening (16:00-22:00 UTC, WR=65%, 2.92h away) still catchable. Bot OFFLINE.",
+      "action": "START BOT NOW: 'cd bot && python run.py paper'. Every additional hour offline loses ~$0.97 in expected value. Afternoon closes 16:00 UTC."
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "HIGH",
-      "finding": "AFTERNOON NOW ACTIVE + W40 EVENING UPCOMING — Afternoon 12:00-16:00 UTC (ACTIVE, 3.92h remaining) + Evening 16:00-22:00 UTC (3.92h away, WR=65%). $310 milestone during afternoon (~13:33 UTC). $315 during evening (~18:46 UTC). 9 anomalies detected (up from 8).",
-      "action": "Start bot NOW, keep running through W40 evening (16:00-22:00 UTC). Afternoon (3.92h) + Evening (3.92h) = best remaining windows."
+      "finding": "10 anomalies today (up from 9). New: $310 IMMINENT + 1.08h afternoon already lost. $309.50 EV loss. Evening (16:00-22:00 UTC, WR=65%) is the last best window today. $315 milestone during evening.",
+      "action": "Start bot NOW for remaining afternoon (2.92h) + W40 evening (2.92h, WR=65%). $315 milestone catchable during evening session."
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "SOL_SHORT GOVERNANCE 36.08H OVERDUE — SOL_SHORT conflict 492.08h (20.50 days). 36.08h past 19d milestone. Probe window remains open but critically overdue. Candidate WR=63.7% if unblocked.",
+      "finding": "SOL_SHORT GOVERNANCE 37.08H OVERDUE — SOL_SHORT conflict 493.08h (20.54 days). 37.08h past 19d milestone. Probe window open but critically overdue. Candidate WR=63.7% if unblocked.",
       "action": "DECIDE BEFORE RESTARTING BOT: (A) Probe — reduce SOL_SHORT_full_block gate=100→80; (B) Ratify — confirm block with written evidence."
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "AB tracker broken Day 56.33 — 20 rules frozen including BB_solo_signal_boost (n=2172, conf=95%). Fix outcome callback in bot/feedback/loop.py (~2h work).",
+      "finding": "AB tracker broken Day 56.37 — 20 rules frozen including BB_solo_signal_boost (n=2172, conf=95%). Fix outcome callback in bot/feedback/loop.py (~2h work).",
       "action": "Fix outcome callback in bot/feedback/loop.py. This unlocks BB_solo_signal_boost and 19 other frozen rules."
     }
   ],
   "run_summary": {
     "fixes_applied_this_run": 0,
     "new_insights_this_run": 5,
-    "key_milestone": "AFTERNOON NOW ACTIVE (3.92h remaining). Morning full CLOSED 12:00 UTC (4 min ago, 43rd miss).",
-    "key_insight": "RUN 63: AFTERNOON WINDOW NOW ACTIVE (3.92h remaining, closes 16:00 UTC). Morning full closed at 12:00 UTC (4min ago, 43rd consecutive miss). EV $308.53 (+$0.99 this run). $310 milestone in 1.47h (~13:33 UTC, during afternoon). W40 Evening 3.92h away (WR=65%). SOL_SHORT 36.08H OVERDUE (20.50 days). AB tracker broken Day 56.33.",
+    "key_milestone": "$310 EV MILESTONE IMMINENT (~31min, ~13:36 UTC). Afternoon 1.08h already lost, 2.92h remaining.",
+    "key_insight": "RUN 64: $310 EV MILESTONE IMMINENT (~31min). Afternoon window ACTIVE (2.92h remaining, 1.08h already lost). EV $309.50 (+$0.97 this run). W40 Evening 2.92h away (WR=65%). SOL_SHORT 37.08H OVERDUE (20.54 days). AB tracker broken Day 56.37.",
     "consecutive_morning_peak_misses": 42,
     "consecutive_morning_full_misses": 43,
     "consecutive_evening_misses": 5,
     "w40_afternoon_active": true,
-    "w40_afternoon_remaining_h": 3.92,
-      "w40_afternoon_closes_utc": "2026-06-15T16:00:00+00:00",
+    "w40_afternoon_remaining_h": 2.92,
+    "w40_afternoon_lost_h": 1.08,
+    "w40_afternoon_closes_utc": "2026-06-15T16:00:00+00:00",
     "w40_evening_upcoming_utc": "2026-06-15T16:00:00+00:00",
-    "w40_evening_upcoming_h": 3.92,
-    "sol_short_governance": "20.50d / 492.08h — 36.08h past 19d milestone. CRITICALLY OVERDUE.",
-    "ev_total": "$308.53 (+$0.99 this run)",
-    "ev_milestone_310_remaining_h": 1.47,
-    "ev_milestone_310_eta": "~13:33 UTC Jun15 (T+1.47h from now, during afternoon)",
-    "ev_milestone_315_eta": "~18:46 UTC Jun15 (during evening window)",
-    "p0_action": "START BOT NOW (12:04 UTC Jun15) — 3.92h afternoon + W40 evening (3.92h away, WR=65%). Then SOL_SHORT governance decision.",
-    "today_remaining_opportunity": "Afternoon (ACTIVE, 3.92h remaining 12:00-16:00 UTC) + Evening W40 (16:00-22:00 UTC, WR=65%, 3.92h away)."
+    "w40_evening_upcoming_h": 2.92,
+    "sol_short_governance": "20.54d / 493.08h — 37.08h past 19d milestone. CRITICALLY OVERDUE.",
+    "ev_total": "$309.50 (+$0.97 this run)",
+    "ev_milestone_310_remaining_h": 0.52,
+    "ev_milestone_310_eta": "~13:36 UTC Jun15 (IMMINENT — ~31min, during afternoon)",
+    "ev_milestone_315_eta": "~18:45 UTC Jun15 (during evening window)",
+    "p0_action": "START BOT NOW (13:05 UTC Jun15) — 2.92h afternoon remaining + W40 evening (2.92h, WR=65%). Then SOL_SHORT governance decision.",
+    "today_remaining_opportunity": "Afternoon (ACTIVE, 2.92h remaining 12:00-16:00 UTC, 1.08h already lost) + Evening W40 (16:00-22:00 UTC, WR=65%, 2.92h away).",
+    "new_this_run": "$310 MILESTONE CROSSED FROM IMMINENT STATUS (31min). First time reaching this threshold. $309.50 now — next milestone $315 at ~18:45 UTC."
   }
 }

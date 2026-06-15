@@ -1,11 +1,11 @@
 {
-  "last_run": "2026-06-15T12:04:58+00:00",
-  "run_number": 63,
+  "last_run": "2026-06-15T13:05:00+00:00",
+  "run_number": 64,
   "date": "2026-06-15",
-  "bot_status": "OFFLINE — day 56.33",
+  "bot_status": "OFFLINE — day 56.37",
   "today_trades": 0,
   "today_pnl": 0.0,
-  "anomalies_found": 9,
+  "anomalies_found": 10,
   "report_generated": false,
   "eod_report_pending": true,
   "eod_report_eta_utc": "2026-06-15T22:00:00+00:00",
@@ -13,45 +13,47 @@
     "date": "2026-06-15",
     "trades": 0,
     "pnl_usd": 0.0,
-    "ev_loss_today_usd": 9.93,
+    "ev_loss_today_usd": 10.90,
     "ev_rate_per_hour": 0.97,
     "ev_milestones_crossed_today": [
       "$300 (~03:14 UTC)",
       "$305 (~08:26 UTC)",
       "$307 (~10:32 UTC)",
-      "$310 expected ~13:33 UTC (1.47h away)"
+      "$310 IMMINENT ~13:36 UTC (31 min away)",
+      "$315 expected ~18:45 UTC (during W40 evening)"
     ],
-    "ev_total_cumulative": 308.53,
+    "ev_total_cumulative": 309.50,
     "session_windows": {
       "morning_peak": "07:00-10:00 UTC — CONFIRMED MISSED (42nd consecutive, closed 10:00 UTC)",
-      "morning_full": "06:00-12:00 UTC — CLOSED (4 min ago). 43rd consecutive full-window miss.",
-      "afternoon": "12:00-16:00 UTC — NOW ACTIVE (3.92h remaining). Bot OFFLINE.",
-      "evening": "16:00-22:00 UTC — UPCOMING (3.92h away, WR=65%). 6th miss if bot not started."
+      "morning_full": "06:00-12:00 UTC — CLOSED 1h 5min ago. 43rd consecutive full-window miss.",
+      "afternoon": "12:00-16:00 UTC — ACTIVE (2.92h remaining). 1.08h already lost. Bot OFFLINE.",
+      "evening": "16:00-22:00 UTC — UPCOMING (2.92h away, WR=65%). 6th miss if bot not started."
     }
   },
   "critical_anomalies": [
-    "AFTERNOON_ACTIVE_BOT_OFFLINE — Afternoon window started 12:00 UTC Jun15. 3.92h remaining. Bot OFFLINE. Losing afternoon edge REAL-TIME.",
-    "MORNING_FULL_CLOSED_4MIN_AGO — 12:00 UTC Jun15. 43rd consecutive full-window miss.",
-    "$308.53_EV_TOTAL — $310 milestone in 1.47h. Rate: $23.28/day. Day 56.33 offline."
+    "AFTERNOON_ACTIVE_1.08H_LOST — Afternoon window started 12:00 UTC Jun15. 1.08h already lost. 2.92h remaining. Bot OFFLINE.",
+    "$310_MILESTONE_IMMINENT — ~31min away (~13:36 UTC Jun15). During active afternoon window. Rate $0.97/h.",
+    "$309.50_EV_TOTAL — Rate: $23.28/day. Day 56.37 offline. $315 during evening (~18:45 UTC)."
   ],
   "high_anomalies": [
-    "SOL_SHORT_GOVERNANCE_36.08H_OVERDUE — 492.08h (20.50 days). 36.08h past 19d milestone.",
-    "43RD_CONSECUTIVE_MORNING_MISS — Morning full closed 12:00 UTC Jun15.",
-    "AB_TRACKER_BROKEN_DAY_56.33 — 20 rules frozen. BB_solo_signal_boost (n=2172, conf=95%) blocked.",
-    "W40_EVENING_6TH_MISS_IMMINENT — 3.92h away. 6th consecutive miss if bot not started.",
-    "$310_EV_MILESTONE_IN_1.47H — During afternoon window (~13:33 UTC Jun15).",
-    "$315_EV_MILESTONE_ETA_18:46_UTC — During W40 evening window."
+    "SOL_SHORT_GOVERNANCE_37.08H_OVERDUE — 493.08h (20.54 days). 37.08h past 19d milestone.",
+    "43RD_CONSECUTIVE_MORNING_FULL_MISS — Closed 12:00 UTC Jun15.",
+    "AB_TRACKER_BROKEN_DAY_56.37 — 20 rules frozen. BB_solo_signal_boost (n=2172, conf=95%) blocked.",
+    "W40_EVENING_6TH_MISS_IMMINENT — 2.92h away (WR=65%).",
+    "$310_EV_MILESTONE_IMMINENT — During afternoon window (~13:36 UTC Jun15).",
+    "$315_EV_MILESTONE_ETA_18:45_UTC — During W40 evening window.",
+    "1.08H_AFTERNOON_WINDOW_ALREADY_LOST — Bot offline during active high-edge window."
   ],
   "today_focus": {
-    "immediate_p0": "START BOT NOW (12:04 UTC Jun15) — 3.92h afternoon remaining + W40 evening (3.92h away, WR=65%).",
-    "governance_p0": "SOL_SHORT governance — 36.08H OVERDUE. Reduce gate=100→80 OR ratify block.",
+    "immediate_p0": "START BOT NOW (13:05 UTC Jun15) — 2.92h afternoon remaining (1.08h already lost). W40 evening starts 16:00 UTC (2.92h away, WR=65%).",
+    "governance_p0": "SOL_SHORT governance — 37.08H OVERDUE. Reduce gate=100→80 OR ratify block.",
     "dev_p1": "AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 frozen rules"
   },
   "consecutive_morning_peak_misses": 42,
   "consecutive_morning_full_misses": 43,
   "consecutive_evening_misses": 5,
-  "cumulative_ev_loss_usd": 308.53,
-  "bot_offline_days": 56.33,
-  "new_anomaly_run63": "AFTERNOON ACTIVE (3.92h remaining) — bot OFFLINE. Morning full closed 12:00 UTC (4 min ago). EV $308.53 (+$0.99). $310 in 1.47h. Evening 3.92h away (WR=65%). SOL_SHORT 36.08h overdue.",
-  "run63_summary": "Morning full CLOSED 12:00 UTC Jun15 (4 min ago). AFTERNOON NOW ACTIVE (3.92h). Bot OFFLINE. $308.53 EV (+$0.99). $310 in 1.47h. Evening 3.92h (WR=65%). SOL_SHORT 36.08h overdue."
+  "cumulative_ev_loss_usd": 309.50,
+  "bot_offline_days": 56.37,
+  "new_anomaly_run64": "$310 MILESTONE IMMINENT (~31min, ~13:36 UTC). Afternoon 2.92h remaining (1.08h already lost). Bot OFFLINE. EV $309.50 (+$0.97). Evening 2.92h away (WR=65%). SOL_SHORT 37.08h overdue.",
+  "run64_summary": "$310 MILESTONE IMMINENT (~31min, ~13:36 UTC). Afternoon 2.92h remaining (1.08h lost). Bot OFFLINE. $309.50 EV (+$0.97). Evening 2.92h (WR=65%). SOL_SHORT 37.08h overdue."
 }
