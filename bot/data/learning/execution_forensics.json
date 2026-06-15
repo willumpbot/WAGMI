@@ -1,72 +1,52 @@
 {
-  "last_run": "2026-06-15T09:03:25+00:00",
-  "run_number": 61,
-  "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 56.1); bot offline",
-  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 56.1]",
+  "last_run": "2026-06-15T11:03:40+00:00",
+  "run_number": 62,
+  "avg_slippage": "UNKNOWN — snapshot_entry column missing (Day 56.3); bot offline",
+  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 56.3]",
   "data_available": false,
-  "data_source": "Cached (bot offline ~56.1 days since ~2026-04-22 UTC)",
-  "ev_loss_total_usd": 305.60,
-  "ev_loss_delta_this_run": 2.00,
+  "ev_loss_total_usd": 307.54,
+  "ev_loss_delta_this_run": 1.94,
   "ev_loss_breakdown": {
-    "through_run60": 303.60,
-    "run61_accrual_2_06h": 2.00,
+    "through_run61": 305.60,
+    "run62_accrual_2_0h": 1.94,
     "rate_per_hour": 0.97,
-    "total_run61": 305.60,
-    "note": "2.06h gap (Run60 07:00 UTC Jun15 → Run61 09:03 UTC Jun15). +$2.00 accrued. $305 MILESTONE CROSSED at ~08:26 UTC Jun15."
+    "total_run62": 307.54,
+    "note": "2.0h gap (Run61 09:03 UTC Jun15 → Run62 11:03 UTC Jun15). +$1.94 accrued. Morning peak CONFIRMED MISSED at 10:00 UTC (42nd consecutive)."
   },
   "ev_milestones": {
-    "ev_250_crossed": true,
-    "ev_270_crossed": true,
-    "ev_275_crossed": true,
-    "ev_280_crossed": true,
-    "ev_285_crossed": true,
-    "ev_290_crossed": true,
-    "ev_290_crossed_at_est": "2026-06-14T17:00:00+00:00",
-    "ev_295_crossed": true,
-    "ev_295_crossed_at_est": "2026-06-14T22:10:00+00:00",
-    "ev_300_crossed": true,
-    "ev_300_crossed_at_est": "2026-06-15T03:14:00+00:00",
     "ev_305_crossed": true,
     "ev_305_crossed_at_est": "2026-06-15T08:26:00+00:00",
+    "ev_307_crossed": true,
+    "ev_307_crossed_at_est": "2026-06-15T10:32:00+00:00",
     "ev_310_crossed": false,
-    "ev_310_t_plus_h": 4.54,
+    "ev_310_t_plus_h": 2.54,
     "ev_310_eta_utc": "2026-06-15T13:33:00+00:00",
-    "ev_315_t_plus_h": 9.69,
+    "ev_315_t_plus_h": 7.69,
     "ev_315_eta_utc": "2026-06-15T18:46:00+00:00",
-    "ev_milestone_note": "$305 MILESTONE CROSSED at ~08:26 UTC Jun15. FOUR milestones crossed since Run59 ($290/$295/$300/$305). Total EV loss $305.60. $310 expected ~13:33 UTC Jun15 (during afternoon window)."
+    "ev_milestone_note": "$307.54 total EV loss. $310 expected ~13:33 UTC Jun15 (afternoon, 2.54h away). $315 expected ~18:46 UTC (evening window)."
   },
-  "milestones_crossed_this_run": [
-    "ev_305 (~08:26 UTC Jun15)"
-  ],
-  "sol_short_19d_governance_crossed": true,
-  "sol_short_conflict_age_h": 489.06,
-  "sol_short_conflict_age_days": 20.38,
-  "sol_short_hours_past_milestone": 33.06,
-  "morning_windows_missed": 41,
-  "w40_morning_status": {
-    "window": "06:00-12:00 UTC Jun15",
-    "peak_window": "07:00-10:00 UTC Jun15",
-    "status": "PEAK WINDOW CLOSING — 57 MINUTES REMAINING (09:03 UTC Jun15). Full window closes 12:00 UTC (2.95h remaining).",
-    "peak_remaining_min": 57,
-    "peak_remaining_h": 0.95,
-    "full_remaining_h": 2.95,
-    "wr": 0.74,
-    "gate": 50,
-    "urgency": "HIGH — W40 MORNING PEAK WINDOW CLOSING IN 57 MINUTES. Starting bot NOW still catches end of peak + full morning. Miss = 42nd consecutive morning miss in under 1 hour.",
-    "window_closes_utc": "2026-06-15T12:00:00+00:00",
-    "peak_closes_utc": "2026-06-15T10:00:00+00:00"
+  "milestones_crossed_this_run": ["ev_307 (~10:32 UTC Jun15 estimated)"],
+  "morning_peak_miss_confirmed": true,
+  "morning_peak_miss_count": 42,
+  "morning_peak_confirmed_missed_at_utc": "2026-06-15T10:00:00+00:00",
+  "morning_full_remaining_h": 0.94,
+  "morning_full_closes_utc": "2026-06-15T12:00:00+00:00",
+  "w40_morning_full_status": {
+    "status": "LAST CHANCE — 0.94h remaining (closes 12:00 UTC Jun15). Start bot NOW.",
+    "full_remaining_h": 0.94,
+    "wr": 0.60
   },
   "w40_afternoon_status": {
     "window": "12:00-16:00 UTC Jun15",
-    "status": "UPCOMING — 3h away",
-    "ev_milestone_during_window": "$310 expected ~13:33 UTC during this window"
+    "status": "UPCOMING — 0.94h away",
+    "ev_milestone_during_window": "$310 expected ~13:33 UTC (2.54h from now)"
   },
   "w40_evening_status": {
     "window": "16:00-22:00 UTC Jun15",
-    "status": "UPCOMING — 6.95h away",
+    "status": "UPCOMING — 4.94h away",
     "wr": 0.65,
-    "note": "High-value window. Previous 5 evenings ALL missed (bot offline). Today is catchable if bot started."
+    "note": "6th consecutive miss if bot not started today."
   },
-  "bot_offline_days": 56.11,
-  "new_finding_run61": "$305 MILESTONE CROSSED at ~08:26 UTC Jun15 (as projected by Run60). Total EV $305.60 (+$2.00 this run). W40 MORNING PEAK WINDOW CLOSING — 57 MINUTES REMAINING. FOUR milestones crossed since Run59 ($290/$295/$300/$305). $310 eta: ~13:33 UTC (afternoon window). W40 evening upcoming (16:00-22:00, WR=65%)."
+  "bot_offline_days": 56.29,
+  "new_finding_run62": "MORNING PEAK CONFIRMED MISSED at 10:00 UTC Jun15 — 42nd consecutive miss. Morning full: 0.94h LAST CHANCE (closes 12:00 UTC). EV $307.54 (+$1.94). $310 eta: 2.54h (~13:33 UTC). W40 evening: 4.94h away (WR=65%). SOL_SHORT governance 35.06h past milestone."
 }
