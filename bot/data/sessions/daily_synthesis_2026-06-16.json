@@ -1,0 +1,62 @@
+{
+  "last_run": "2026-06-16T14:05:00+00:00",
+  "run_number": 65,
+  "date": "2026-06-16",
+  "bot_status": "OFFLINE — day 57.42",
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "anomalies_found": 12,
+  "report_generated": false,
+  "eod_report_pending": true,
+  "eod_report_eta_utc": "2026-06-16T22:00:00+00:00",
+  "daily_summary": {
+    "date": "2026-06-16",
+    "trades": 0,
+    "pnl_usd": 0.0,
+    "ev_loss_today_usd": 13.58,
+    "ev_rate_per_hour": 0.97,
+    "ev_milestones_crossed_today": [
+      "$325 (~05:04 UTC Jun16)",
+      "$330 (~10:11 UTC Jun16)",
+      "$335 ETA ~19:26 UTC (during W40 evening window)",
+      "$340 ETA ~01:37 UTC Jun17"
+    ],
+    "ev_total_cumulative": 333.75,
+    "loop_skip_alert": "CRITICAL — 25h gap between Run64 (13:05 Jun15) and Run65 (14:05 Jun16). Hourly loop missed ~24 cycles. Infrastructure failure.",
+    "session_windows": {
+      "morning_peak": "07:00-10:00 UTC — CONFIRMED MISSED (43rd consecutive, closed 10:00 UTC Jun16)",
+      "morning_full": "06:00-12:00 UTC — CLOSED 2h ago. 44th consecutive full-window miss.",
+      "afternoon": "12:00-16:00 UTC — ACTIVE (1.92h remaining). 2.08h already lost. Bot OFFLINE.",
+      "evening": "16:00-22:00 UTC — UPCOMING (1.92h away, WR=65%). 7th miss if bot not started. $335 milestone during window."
+    }
+  },
+  "critical_anomalies": [
+    "LOOP_SKIP_25H_CRITICAL — Hourly loop missed ~24 cycles (Run64 13:05 Jun15 → Run65 14:05 Jun16). Infrastructure failure requiring investigation.",
+    "5_EV_MILESTONES_CROSSED_UNDETECTED — $310→$330 all crossed during 25h loop gap. Total EV $333.75.",
+    "$333.75_EV_TOTAL — Rate: $23.28/day. Day 57.42 offline. $335 milestone at ~19:26 UTC."
+  ],
+  "high_anomalies": [
+    "SOL_SHORT_GOVERNANCE_62.08H_OVERDUE — 518.08h (21.59 days). 62h past 19d milestone.",
+    "44TH_CONSECUTIVE_MORNING_FULL_MISS — Closed 12:00 UTC Jun16.",
+    "AB_TRACKER_BROKEN_DAY_57.42 — 20 rules frozen. BB_solo_signal_boost (n=2172, conf=95%) blocked.",
+    "W40_EVENING_7TH_MISS_IMMINENT — 1.92h away (WR=65%). $335 during window.",
+    "AFTERNOON_2.08H_ALREADY_LOST — Bot offline during active high-edge window.",
+    "$325_EV_MILESTONE_CROSSED_05:04_UTC — During W40 morning window Jun16.",
+    "$330_EV_MILESTONE_CROSSED_10:11_UTC — During morning peak window Jun16.",
+    "$335_EV_MILESTONE_ETA_19:26_UTC — During W40 evening window today.",
+    "57.42_DAYS_OFFLINE — Longest offline streak tracked."
+  ],
+  "today_focus": {
+    "immediate_p0": "INVESTIGATE LOOP SCHEDULER — 25h gap (24 missed cycles) is a critical infrastructure failure.",
+    "immediate_p1": "START BOT NOW (14:05 UTC Jun16) — 1.92h afternoon remaining + W40 evening (1.92h, WR=65%). $335 during evening.",
+    "governance_p0": "SOL_SHORT governance — 62.08H OVERDUE. Reduce gate=100→80 OR ratify block. Cannot wait.",
+    "dev_p1": "AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 frozen rules"
+  },
+  "consecutive_morning_peak_misses": 43,
+  "consecutive_morning_full_misses": 44,
+  "consecutive_evening_misses": 6,
+  "cumulative_ev_loss_usd": 333.75,
+  "bot_offline_days": 57.42,
+  "new_anomaly_run65": "LOOP_SKIP_25H (24 missed cycles) + 5_MILESTONES_CROSSED ($310→$330) + EV_$333.75 + SOL_SHORT_62H_OVERDUE. Afternoon 1.92h remaining. Evening WR=65% in 1.92h.",
+  "run65_summary": "LOOP SKIP 25H (24 missed cycles). 5 milestones crossed ($310→$330). EV $333.75 (+$24.25). Afternoon 1.92h remaining. Evening WR=65% in 1.92h. SOL_SHORT 62h overdue. Bot offline Day 57.42."
+}
