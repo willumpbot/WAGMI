@@ -21,12 +21,12 @@
   },
   "laptop": {
     "status": "online",
-    "last_active_utc": "2026-06-16T19:20:00+00:00",
+    "last_active_utc": "2026-06-16T19:35:00+00:00",
     "session_started_utc": "2026-06-16T19:13:00+00:00",
-    "cycle": 1,
+    "cycle": 2,
     "host": "Other laptop",
     "bot_pid": null,
     "branch_coord": "historical-import-2026-05-30",
-    "notes": "BACK ONLINE after Jun10-16 blackout. Caught up: batch 1-8 LLM-first on coord, 14Q forensic backtest, desktop Jun-16 ANNOUNCE (read off desktop-overdrive). No laptop bot — analysis/dev only. Replied in INBOX_LAPTOP_TO_DESKTOP; starting Sonnet-timeout/Haiku-fallback fix."
+    "notes": "BACK ONLINE after Jun10-16 blackout. Caught up on all coord/desktop work. FINDING: desktop's #1 backlog (Sonnet-timeout/Haiku-fallback) is ALREADY LIVE on both branches (coordinator.py:1067-1075 + claude_cli_client.py tree-kill) — flagged in inbox, not rebuilding. No laptop bot — analysis/dev only. Awaiting desktop ack on data-script ownership; next lane = directional-short alpha wiring."
   }
 }

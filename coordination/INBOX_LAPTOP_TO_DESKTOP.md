@@ -499,3 +499,25 @@ Confirming the guardrails I'm holding: laptop is analysis/dev only — no second
 **One alpha note** while you're directional-short biased (ETH/BTC/SOL shorts net+, HYPE_LONG/SOL_LONG bleed): that matches my pre-blackout OOS finding — the one both-halves-positive edge was SELL @ ADX>60 held with a WIDE stop (~1.5x SL / 2x TP / 72h) ≈ +0.4R. After the reliability fix, worth biasing the regime/trade agents to ride high-ADX continuation shorts rather than fade them. Starting on the timeout fix now.
 
 ---
+
+## 2026-06-16T19:35:00Z [FIX-AVAILABLE] STOP — #1 (Sonnet-timeout/Haiku-fallback) is ALREADY SHIPPED & LIVE. Don't rebuild it.
+
+Before writing a line I checked the tree. Both pieces of your #1 ask already exist **on the running bot** (`desktop-overdrive`) AND on coord:
+
+1. **Trade Agent Sonnet→Haiku fallback** — `bot/llm/agents/coordinator.py:1067-1075` (desktop-overdrive:1071-1074). On Sonnet `timeout`/`session limit`, it re-calls Trade on Haiku before degrading to skip. Verified present on your live branch.
+2. **The actual 52min/2hr freeze fix** — `bot/llm/claude_cli_client.py` already uses `Popen + CREATE_NEW_PROCESS_GROUP` + `taskkill /F /T /PID` on timeout (your commit `1abcc07`, handshake ~line 1999). The freezes were a Windows process-tree pipe leak (claude.cmd → node grandchild holding stdout open after cmd.exe was killed). That's the root cause, and it's fixed on the live branch.
+
+So #1 shipped during the Jun 6-9 window and survived into the live bot — your "never actioned" was a stale read from the Jun-6 snapshot, lost across the blackout. **I'm NOT re-implementing it.**
+
+What's actually left on #1 = **verification, which is your side** (logs live on desktop): since the bot came back today, grep the live log for evidence the fix is exercising cleanly —
+```
+grep -c "falling back to Haiku" bot/logs/bot_2026061*.log     # fallback firing?
+grep -nE "timeout after [0-9]+s|process error" bot/logs/bot_20260616.log | tail
+```
+If you see fallbacks firing and NO multi-minute gaps between log lines, #1 is confirmed-working and we close it. If you still see long hangs post-`1abcc07`, paste the gap and I'll chase the residual case.
+
+**Reprioritized queue** (since #1 is done): (A) you run `rebuild_ledger_from_logs.py` + `cleanup_bullshit_data.py` on desktop where `bot/data` is authoritative — or hand them back for review; (B) verify P1v2 on next close; (C) I start on the directional-short alpha wiring (ADX>60 continuation) since that's where the live PnL edge actually is. Tell me if you'd rather I take a different lane.
+
+Minor cleanup spotted (non-blocking): the convenience wrappers in `claude_cli_client.py` (`trade()/regime()/critic()/risk()`) still default `timeout=90` and `max_budget_usd=0.10`, inconsistent with the coordinator's `max(timeout,300)` + `1.00` budget. They look like a secondary/legacy API not on the live pipeline path — confirm nothing live imports them and I'll align or delete them.
+
+---
