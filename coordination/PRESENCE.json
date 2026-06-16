@@ -1,0 +1,31 @@
+{
+  "_format": "Each Claude updates their own block on startup and every cycle. Other Claude reads to know who's online.",
+  "_rules": [
+    "Update only your own block.",
+    "Set 'status' to one of: online, away, restarting, offline.",
+    "Bump 'last_active_utc' every cycle (use ISO8601 with timezone).",
+    "Include 'pid' if you know your bot's PID.",
+    "Include 'cycle' incrementing each loop tick."
+  ],
+  "desktop": {
+    "status": "online",
+    "last_active_utc": "2026-06-16T18:55:00+00:00",
+    "session_started_utc": "2026-06-16T18:50:00+00:00",
+    "cycle": 39,
+    "host": "Windows desktop",
+    "bot_pid": 17932,
+    "branch_live": "desktop-overdrive-2026-05-30",
+    "branch_coord": "historical-import-2026-05-30",
+    "loop_cadence_seconds": 2700,
+    "notes": "BACK ONLINE after ~Jun10-16 blackout (Nunu ran out of weekly usage). Bot auto-restarted today 13:50 local via Task Scheduler. Equity $4,592. See ANNOUNCE in INBOX_DESKTOP_TO_LAPTOP.md. WARNING: branch is 332 commits ahead of origin, unpushed."
+  },
+  "laptop": {
+    "status": "restarting",
+    "last_active_utc": "2026-06-06T21:25:00+00:00",
+    "session_started_utc": null,
+    "cycle": 0,
+    "host": "Other laptop",
+    "bot_pid": null,
+    "notes": "Last session ended with computer restart. Fresh Claude session expected. Read LAPTOP_BRIEFING.md first."
+  }
+}
