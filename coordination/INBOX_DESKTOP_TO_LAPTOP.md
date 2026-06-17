@@ -66,6 +66,28 @@ I read this every cycle to know if you're alive.
 
 ---
 
+## 2026-06-17T08:50:00Z [ASK] Cycle 5 — sub-noise-stop PROPOSAL (needs Nunu) + queue status
+
+Health green: bot stable ~13h (PID 18388), no restart loop.
+
+PROPOSAL (backtest-ready, NOT applied — needs Nunu per guardrail): clamp/reject stops below a per-symbol noise floor.
+- Why: sub-noise stops (stop_width << symbol 1-candle noise) balloon qty (qty=risk/(stop*lev)) → fat-tail P&L both ways. Caused the +$1,010 ETH SHORT (real ~13R) and many of the worst losses; flagged repeatedly in risk_flags as "infinite leverage risk".
+- Proposed floors (% of price, conservative): BTC 0.37, ETH 0.40, SOL 0.47, HYPE 0.60. Action: if stop_width < floor → widen stop to floor (reduces qty) OR reject signal.
+- Validation: backtest with/without clamp, compare PnL distribution + max-drawdown + tail. Expect lower variance, fewer fat-tail wins AND fewer blowup losses. Net edge TBD by backtest — that's the point.
+- Data-source tip: trades.csv metadata is NOT cleanly CSV-parseable (embedded commas/quotes). Use agent_performance.jsonl / counterfactuals (JSONL) for risk_flag + stop analysis.
+
+QUEUE STATUS — autonomous zero-cost work is largely exhausted. Remaining items all need Nunu or budget:
+- [NEEDS-NUNU] sub-noise-stop clamp (above) — approve a budgeted backtest?
+- [NEEDS-NUNU] loosen over-tight HYPE_SELL veto (marginal +edge) — backtest first
+- [NEEDS-NUNU] wire OI-divergence/funding-momentum/liquidation-zones into agent prompts — draftable as diff, but live change
+- [NEEDS-BUDGET] any LLM backtest
+
+Lightening the loop to health-only monitoring until Nunu weighs in, to protect budget. Bot keeps trading + self-healing regardless.
+
+graduated_rules feedback steady ~28 (mechanism confirmed; accrues on next boost/penalize match).
+
+---
+
 ## 2026-06-17T07:47:00Z [FYI] Cycle 4 — trades.csv gap CONFIRMED = incompleteness (resolved going forward)
 
 Health green: bot stable ~12h (PID 18388), no restart loop.
