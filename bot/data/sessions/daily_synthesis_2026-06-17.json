@@ -1,8 +1,8 @@
 {
-  "last_run": "2026-06-17T08:04:42+00:00",
-  "run_number": 67,
+  "last_run": "2026-06-17T09:04:00+00:00",
+  "run_number": 68,
   "date": "2026-06-17",
-  "bot_status": "OFFLINE — day 58.8",
+  "bot_status": "OFFLINE — day 58.87",
   "today_trades": 0,
   "today_pnl": 0.0,
   "anomalies_found": 11,
@@ -23,47 +23,45 @@
       "$355 (~01:58 UTC Jun17 — overnight)",
       "$360 (~07:07 UTC Jun17 — 57min before Run67)"
     ],
-    "ev_total_cumulative": 360.92,
+    "ev_total_cumulative": 361.89,
     "loop_gap_note": "28h gap — Run66 (04:03 Jun16) → Run67 (08:04 Jun17). Still not hourly.",
     "session_windows_jun17": {
-      "morning_peak": "07:00-10:00 UTC — ACTIVE NOW (1.92h remaining). START BOT IMMEDIATELY.",
-      "morning_full": "06:00-12:00 UTC — ACTIVE (3.92h remaining). 2.08h already lost.",
-      "afternoon": "12:00-16:00 UTC — UPCOMING (3.92h away). $365 ETA 12:16 UTC.",
-      "evening": "16:00-22:00 UTC — UPCOMING (7.92h away, WR=65%). $370 ETA 17:26 UTC."
+      "morning_peak": "07:00-10:00 UTC — CLOSING IN 56MIN (Run203 09:04 UTC). 45th miss imminent.",
+      "morning_full": "06:00-12:00 UTC — ACTIVE (2.92h remaining).",
+      "afternoon": "12:00-16:00 UTC — UPCOMING (3.12h away). $365 ETA 12:16 UTC.",
+      "evening": "16:00-22:00 UTC — UPCOMING (8.92h away, WR=65%). $370 ETA 17:26 UTC."
     }
   },
   "critical_anomalies": [
-    "MORNING_PEAK_ACTIVE_NOW — 07:00-10:00 UTC Jun17. 1.92h remaining. Bot offline. START NOW.",
-    "$360_EV_MILESTONE_CROSSED — ~07:07 UTC Jun17 (57min ago). Total EV $360.92 at $0.97/h.",
+    "MORNING_PEAK_CLOSING_56MIN — 07:00-10:00 UTC Jun17. 56min remaining. Bot offline. 45th miss imminent.",
+    "$360_EV_MILESTONE_CROSSED — ~07:07 UTC Jun17. Total EV $361.89 at $0.97/h.",
     "LOOP_CADENCE_28H — Run66 (04:03 Jun16) → Run67 (08:04 Jun17). Still not hourly. 27 missed cycles."
   ],
   "high_anomalies": [
-    "SOL_SHORT_GOVERNANCE_90.09H_OVERDUE — 546.09h (22.75 days). 90h past 19d milestone.",
-    "45TH_CONSECUTIVE_MORNING_MISS_IMMINENT — Closes 10:00 UTC Jun17. 1.08h already lost.",
-    "AB_TRACKER_BROKEN_DAY_58.8 — 20 rules frozen (BB_solo_signal_boost n=2172, conf=95%).",
-    "W40_EVENING_8TH_MISS_PENDING — 16:00-22:00 UTC Jun17 (WR=65%). 7.92h away.",
-    "$365_EV_MILESTONE_ETA — ~12:16 UTC Jun17 (4.2h). During afternoon window.",
-    "$370_EV_MILESTONE_ETA — ~17:26 UTC Jun17 (9.4h). During evening window.",
-    "58.8_DAYS_OFFLINE — EV $360.92 total ($23.28/day)."
+    "SOL_SHORT_GOVERNANCE_91H_OVERDUE — 91h+ past 19d milestone.",
+    "45TH_CONSECUTIVE_MORNING_PEAK_MISS_AT_10:00 UTC — 56min remaining.",
+    "AB_TRACKER_BROKEN_DAY_58.87 — 20 rules frozen (BB_solo_signal_boost n=2172, conf=95%).",
+    "W40_EVENING_8TH_MISS_PENDING — 16:00-22:00 UTC Jun17 (WR=65%).",
+    "$365_EV_MILESTONE_ETA — ~12:16 UTC Jun17 (3.2h). During afternoon window.",
+    "$370_EV_MILESTONE_ETA — ~17:26 UTC Jun17 (8.4h). During evening window.",
+    "58.87_DAYS_OFFLINE — EV $361.89 total ($23.28/day)."
   ],
   "today_focus": {
-    "IMMEDIATE_P0": "START BOT NOW — 'cd bot && python run.py paper'. Morning peak ACTIVE (1.92h remaining, closes 10:00 UTC).",
-    "IMMEDIATE_P1": "SOL_SHORT governance 90h overdue — decide: (A) reduce gate=100→80 or (B) ratify block.",
+    "IMMEDIATE_P0": "START BOT NOW — 'cd bot && python run.py paper'. Morning peak CLOSING in 56min (10:00 UTC).",
+    "IMMEDIATE_P1": "SOL_SHORT governance 91h overdue — decide: (A) reduce gate=100→80 or (B) ratify block.",
     "DEV_P1": "AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 frozen rules",
     "LOOP_FIX": "Investigate loop scheduler — 28h gap (27 missed cycles, cadence worsening)"
   },
-  "consecutive_morning_peak_misses": 44,
-  "consecutive_morning_full_misses": 44,
+  "consecutive_morning_peak_misses": 45,
+  "consecutive_morning_full_misses": 45,
   "consecutive_evening_misses": 7,
-  "cumulative_ev_loss_usd": 360.92,
-  "bot_offline_days": 58.8,
-  "milestones_crossed_this_run": ["$335", "$340", "$345", "$350", "$355", "$360"],
-  "note_run66_eta_correction": "Run66 had wrong milestone ETAs (off by ~14h). Corrected via recalculation from $333.75 base at $0.97/h.",
-  "run67_new_findings": [
-    "MORNING_PEAK_ACTIVE_1.92H — 08:04 UTC, window closes 10:00 UTC. 1.08h already lost since 07:00.",
-    "$360 crossed 57min ago (~07:07 UTC Jun17). $365 ETA ~12:16 UTC Jun17.",
-    "SOL_SHORT governance now 90.09h overdue (3.75 days past 19d milestone).",
-    "28h loop gap (vs 25h in Run66). Loop cadence still degrading.",
-    "Run66 milestone ETAs corrected — all 6 milestones ($335-$360) now accurately timed."
+  "cumulative_ev_loss_usd": 361.89,
+  "bot_offline_days": 58.87,
+  "milestones_crossed_this_run": [],
+  "run68_new_findings": [
+    "MORNING_PEAK_FINAL_HOUR — 09:04 UTC, window closes 10:00 UTC. 45th miss locks in at 10:00.",
+    "EV cumulative updated to $361.89 (+$0.97 since Run67).",
+    "$365 milestone ETA confirmed ~12:16 UTC Jun17 (3.12h from now).",
+    "Loop cadence: Run67 (08:04 Jun17) → Run68 (09:04 Jun17) = 1h gap. Hourly cadence restored for this cycle."
   ]
 }
