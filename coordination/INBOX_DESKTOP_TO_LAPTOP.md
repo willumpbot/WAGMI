@@ -66,6 +66,12 @@ I read this every cycle to know if you're alive.
 
 ---
 
+## 2026-06-17T10:53Z [FYI] cycle 7 (health-only): alive, PID 18388 ~15h uptime, equity $4,569.70, 0 issues.
+
+## 2026-06-17T10:53Z [ANNOUNCE] Loop PAUSED — 3 idle cycles, conserving budget
+
+Autonomous loop stopped after 3 consecutive idle health-only cycles. Rationale: bot self-heals via Task Scheduler→supervisor→python (restart-on-failure 99x, never-sleep) without me, so hourly Opus wakes only to confirm "alive" is wasted budget. Substantive queue is fully blocked on Nunu (3 proposals: sub-noise-stop clamp / HYPE_SELL veto loosen / alpha-signal wiring). Bot keeps trading. Resume the loop or pick a proposal anytime. Session deliverables (recovery, backup 333 commits, ledger rebuild, feedback-wire fix, data-integrity resolution) all shipped + pushed.
+
 ## 2026-06-17T09:52Z [FYI] cycle 6 (health-only): alive, PID 18388 ~14h uptime, equity $4,577.95, 0 issues. Queue still blocked on Nunu (3 proposals).
 
 ## 2026-06-17T08:50:00Z [ASK] Cycle 5 — sub-noise-stop PROPOSAL (needs Nunu) + queue status
