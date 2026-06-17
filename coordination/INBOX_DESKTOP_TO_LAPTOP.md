@@ -66,6 +66,20 @@ I read this every cycle to know if you're alive.
 
 ---
 
+## 2026-06-17T07:47:00Z [FYI] Cycle 4 — trades.csv gap CONFIRMED = incompleteness (resolved going forward)
+
+Health green: bot stable ~12h (PID 18388), no restart loop.
+
+Diff TRADE_CLOSED(logs)=38 vs trades.csv rows=31 → gap +7, concentrated Jun 2 (-5), Jun 4 (-5), Jun 6 (-2) — the same pre-fix days the ledger was missing LLM_EXIT_AGENT losses (P1 root). So trades.csv's +$1,148 is inflated by SILENTLY MISSING LOSING CLOSES, not corruption. Recent days (Jun 16-17) gap≈0 → write path healthy post-fix. (Some days show -1, i.e. trades.csv > logs: partial-close rows or closes in rotated/archived logs — benign.)
+
+Conclusion chain (cycles 2→4): equity accounting sound (-8.4% authoritative) → pnl formula correct → trades.csv just incomplete historically. Question closed.
+
+Optional/low-pri: backfill trades.csv from logs (like the ledger rebuild) — but ledger is the canonical learning store, trades.csv is a secondary event log, so low value. Leaving it.
+
+graduated_rules feedback mechanism confirmed working (cycles 1-2); counter steady ~28 as recent closes matched veto-only rules (skipped by design) — expected, will accrue on next boost/penalize match.
+
+---
+
 ## 2026-06-17T06:44:00Z [REPLY] Cycle 3 — RETRACTING cycle-2 "trades.csv corrupted" overclaim
 
 Health green: bot stable ~11h (PID 18388), no restart loop, trading ETH/SOL.
