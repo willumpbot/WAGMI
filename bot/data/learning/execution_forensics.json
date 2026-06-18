@@ -1,51 +1,59 @@
 {
-  "last_run": "2026-06-18T09:02:00+00:00",
-  "run_number": 70,
-  "avg_slippage": "UNKNOWN — trades.csv absent (bot offline Day 59.84, snapshot_entry column not yet restored)",
-  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, Day 59.84]",
+  "last_run": "2026-06-18T10:03:39+00:00",
+  "run_number": 71,
+  "avg_slippage": "UNKNOWN — trades.csv absent (bot offline Day 59.88, snapshot_entry column not yet restored)",
+  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, last live session Apr 19]",
   "data_available": false,
-  "ev_loss_total_usd": 385.13,
-  "ev_loss_delta_this_run": 1.90,
-  "ev_loss_delta_note": "1.955h gap × $0.97/h = $1.90 accrued since Run69",
-  "loop_gap_note": "RUN 70: 1.955h gap (Run69 07:04 Jun18 → Run70 09:02 Jun18). Cadence improving — sub-2h gap, 2nd in 3 runs. History: 25h → 28h → 1h → 22h → 1.97h.",
+  "trades_csv_present": false,
+  "trades_csv_note": "bot/data/trades.csv missing — bot offline 59.88 days. Last live session ended ~2026-04-19.",
+  "last_50_trades_analysis": {
+    "status": "NO_DATA",
+    "reason": "trades.csv absent",
+    "cached_findings": {
+      "avg_slippage_last_known": "UNKNOWN — snapshot_entry column never restored after schema migration",
+      "noise_stop_pct_last_known": 87.0,
+      "noise_stop_dataset_size": 164,
+      "noise_stop_dataset_age_days": 59.88,
+      "worst_performers": [
+        {"symbol": "SOL", "side": "SELL", "strategy": "regime_trend", "wr": 0.0, "n": 149, "note": "0% WR on 149 shadow signals — worst performer in history"},
+        {"symbol": "BTC", "side": "BUY", "strategy": "all", "wr": 0.18, "n": 17, "note": "18% live WR — Critic now challenges by default (CRITIC_PROMPT_BTC_LONG_BIAS rule)"},
+        {"symbol": "HYPE", "side": "BUY", "strategy": "confidence_scorer", "wr": 0.28, "n": 25, "note": "Blocked by HYPE_BUY_CS_block gate=80"}
+      ]
+    }
+  },
+  "ev_loss_total_usd": 386.12,
+  "ev_loss_delta_this_run": 0.99,
+  "ev_loss_delta_note": "1.017h gap × $0.97/h = $0.99 accrued since Run70",
   "ev_loss_breakdown": {
-    "through_run69": 383.23,
-    "run70_accrual_1.97h": 1.90,
+    "through_run70": 385.13,
+    "run71_accrual_1.02h": 0.99,
     "rate_per_hour": 0.97,
-    "total_run70": 385.13,
-    "note": "1.97h gap — small accrual. Cadence improving. Largest prior: $21.34 (Run69, 22h)."
+    "total_run71": 386.12,
+    "note": "1.02h gap — small accrual. Cadence best yet (3rd sub-2h in 4 runs)."
   },
   "ev_milestones": {
-    "ev_360_crossed": true,
-    "ev_365_crossed": true,
-    "ev_365_crossed_est": "~12:16 UTC Jun17 (during afternoon window)",
-    "ev_370_crossed": true,
-    "ev_370_crossed_est": "~17:26 UTC Jun17 (during evening window)",
-    "ev_375_crossed": true,
-    "ev_375_crossed_est": "~22:36 UTC Jun17 (night session)",
-    "ev_380_crossed": true,
-    "ev_380_crossed_est": "~03:46 UTC Jun18",
     "ev_385_crossed": true,
-    "ev_385_crossed_est": "~08:54 UTC Jun18 (during morning peak window)",
-    "ev_385_note": "$385 CROSSED at ~08:54 UTC Jun18 — during morning peak, while bot OFFLINE. 46th miss.",
+    "ev_385_crossed_est": "~08:54 UTC Jun18 (Run70, morning peak, bot offline)",
     "ev_390_crossed": false,
     "ev_390_eta_utc": "2026-06-18T14:03:00+00:00",
-    "ev_390_note": "$390 ETA ~14:03 UTC Jun18 — afternoon window. Bot must start to avoid.",
+    "ev_390_note": "$390 ETA ~14:03 UTC Jun18 — afternoon window. SOL_SHORT 120h governance mark at same time.",
     "ev_395_eta_utc": "2026-06-18T19:09:00+00:00",
-    "ev_milestone_note": "$385.13 total EV loss. +$1.90 this run (1.97h). Rate $0.97/h ($23.28/day)."
+    "ev_395_note": "$395 ETA ~19:09 UTC Jun18 — evening window."
   },
-  "morning_peak_active": true,
-  "morning_peak_window": "07:00-10:00 UTC Jun18",
-  "morning_peak_remaining_h": 0.967,
-  "morning_peak_remaining_note": "58 MINUTES REMAINING (closes 10:00 UTC). FINAL WINDOW TO START BOT TODAY FOR MORNING PEAK.",
-  "morning_full_miss_count": 45,
-  "morning_peak_miss_count": 45,
-  "morning_peak_46th_status": "IN PROGRESS — window still open (09:02 UTC). If bot starts NOW, partial recovery possible. If no start by 10:00, 46th full miss confirmed.",
-  "bot_offline_days": 59.84,
+  "morning_peak_status": "CLOSED — 46th CONSECUTIVE MISS CONFIRMED at 10:00 UTC Jun18",
+  "consecutive_morning_peak_misses": 46,
   "noise_regime_active_rules": [
-    "ILLIQUID_regime_block (gate=80, conf=78%)",
-    "RANGING_regime_reduce (gate=50, conf=76%)",
-    "NOISE_REGIME_FAST_EXIT (gate=80, conf=88%)"
+    "illiquid_regime_penalize_v1 (gate=100, conf=0.8)",
+    "ranging_regime_penalize_v1 (gate=50, conf=0.8)",
+    "night_session_block_v1 (gate=100, conf=0.9)"
   ],
-  "new_finding_run70": "RUN 70: $385 CROSSED at 08:54 UTC (during morning peak, bot offline). $385.13 total EV loss. Morning peak ACTIVE 58min (09:02 UTC). Cadence 1.97h (improving). $390 ETA 14:03 UTC. SOL_SHORT 115h overdue."
+  "slippage_restoration_needed": true,
+  "slippage_restoration_action": "Restore snapshot_entry column to trades.csv schema — blocked by bot being offline",
+  "worst_symbols_by_regime": {
+    "SOL_illiquid_short": {"wr": 0.18, "n": 12, "note": "Blocked by SOL_SHORT_full_block gate=100"},
+    "BTC_buy_any_regime": {"wr": 0.18, "n": 17, "note": "Critic now defaults CHALLENGE mode"},
+    "HYPE_buy_ranging": {"wr": 0.22, "n": 9, "note": "Blocked by HYPE_BUY_CS_block"}
+  },
+  "bot_offline_days": 59.88,
+  "new_finding_run71": "RUN 71: No new trades data. 46th morning miss CONFIRMED at 10:00 UTC. $386.12 EV total. $390 ETA 14:03 UTC (same time as SOL_SHORT 120h governance mark)."
 }

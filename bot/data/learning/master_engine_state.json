@@ -1,186 +1,232 @@
 {
-  "last_run": "2026-06-18T09:02:00+00:00",
-  "run_number": 70,
-  "current_utc": "2026-06-18 09:02 UTC",
-  "elapsed_since_last_run_h": 1.955,
-  "loop_cadence_status": "IMPROVING — Run70 fired 1.97h after Run69 (not 22h). Two sub-2h gaps in last 3 runs (Runs 68+70). Alternating pattern: 25h→28h→1h→22h→1.97h. Likely session-restart behavior, not stable automation yet.",
-  "bot_offline_days": 59.84,
-  "cadence_note": "RUN 70: Cadence improving (1.97h gap). Bot offline Day 59.84. EV $385.13 at $0.97/h. $385 milestone CROSSED at 08:54 UTC (morning peak, bot offline). SOL_SHORT governance 115.05h overdue. MORNING PEAK CLOSING IN 58MIN (10:00 UTC).",
+  "last_run": "2026-06-18T10:03:39+00:00",
+  "run_number": 71,
+  "current_utc": "2026-06-18 10:03 UTC",
+  "elapsed_since_last_run_h": 1.017,
+  "loop_cadence_status": "IMPROVING — Run71 fired 1.02h after Run70. BEST GAP YET. 3rd sub-2h gap in last 4 runs. History: 25h→28h→1h→22h→1.97h→1.02h. Pattern strengthening toward stable sub-2h cadence.",
+  "bot_offline_days": 59.88,
+  "cadence_note": "RUN 71: 1.02h gap (best). Bot offline Day 59.88. EV $386.12. 46th morning miss CONFIRMED at 10:00 UTC. SOL_SHORT governance 116.07h overdue. Afternoon window ~2h (12:00 UTC). $390 ETA 14:03 UTC.",
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
       "gates_active": 20,
       "total_applied_all_time": 69,
-      "graduated_rules_total": 23,
-      "high_conf_active_rules": 20,
+      "graduated_rules_total": 116,
+      "high_conf_active_rules": 77,
       "escalation_candidates_blocked": 20,
       "new_audit_files_found": 0,
-      "note": "No new autonomous_audit_*.md files found. 23 rules in graduated_rules.json, all high-confidence (conf>=0.75 decimal). 20 non-zero gates. 3 gate=0 rules (sol_buy_bb_golden_v1, conf_floor_70_v1, rule_1777922205_0) need code verification before activation. 20 rules still frozen by broken AB tracker.",
-      "sol_short_governance_status": "CRITICALLY OVERDUE — 115.05h past 19-day milestone (571.05h / 23.79 days). Was 113.09h at Run69 (+1.97h). 5-day-overdue mark (120h) ETA ~14:00 UTC Jun18. Human decision required: (A) reduce SOL_SHORT gate=100→80 for probe, or (B) ratify full block with written evidence.",
+      "source_file": "AUTONOMOUS_SESSION_2026_04_15.md (no new autonomous_audit_*.md files)",
+      "session_recommendations_processed": 6,
+      "session_recommendations_qualifying_conf75": 6,
+      "session_recommendations_already_applied": 5,
+      "session_recommendations_pending_human": 1,
+      "new_fixes_this_run": [],
+      "new_gate20_escalations": [
+        {
+          "rule_id": "ENSEMBLE_WR_DEGRADATION_ALERT",
+          "confidence": 80,
+          "from_gate": 0,
+          "to_gate": 20,
+          "reason": "conf=80% >= 75% threshold, status=MONITORING, not blocked by human review requirement. Safe to probe at 20% gate."
+        }
+      ],
+      "note": "No new autonomous_audit_*.md files found. 116 total rules; 77 active (gate>0). 20 rules frozen by broken AB tracker. 5 of 6 qualifying session recommendations already applied (gate=100). 1 pending human review (F1_sniper). ENSEMBLE_WR_DEGRADATION_ALERT escalated to gate=20.",
+      "sol_short_governance_status": "CRITICALLY OVERDUE — 116.07h past 19-day milestone (572.07h / 23.84 days). 120h mark ETA ~14:03 UTC Jun18. HUMAN DECISION REQUIRED: (A) reduce gate=100→80 for probe, or (B) ratify full block.",
       "gate_distribution": {"0": 3, "20": 3, "50": 7, "100": 7},
       "blockers": [
-        "MORNING_PEAK_CLOSING_58MIN — 09:02 UTC Jun18 (closes 10:00). Bot OFFLINE. 46th miss avoidable if bot starts NOW.",
+        "46TH_MORNING_MISS_CONFIRMED — window closed 10:00 UTC. Afternoon 12:00 UTC (~2h).",
         "AB_tracker broken — 20 rules cannot graduate (outcome callback unwired in bot/feedback/loop.py)",
-        "SOL_SHORT_full_block=100 GOVERNANCE 115.05H PAST 19D MILESTONE — HUMAN DECISION REQUIRED (120h mark ETA 14:00 UTC)",
+        "SOL_SHORT_full_block=100 GOVERNANCE 116.07H PAST 19D MILESTONE — 120h mark 14:03 UTC TODAY",
         "F1_sniper_pending_safety_review — conf=90%, needs human sign-off",
         "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review",
         "3 gate=0 rules require code-level verification before escalation"
       ]
     },
     "execution_forensics": {
-      "avg_slippage": "UNKNOWN — trades.csv absent (bot offline Day 59.84)",
-      "noise_stops": "87% — cached from last live session",
-      "noise_stop_problem": "87% early SL hits in noise regimes confirmed (164-trade dataset, stale 59.84d)",
+      "avg_slippage": "UNKNOWN — trades.csv absent (bot offline Day 59.88)",
+      "noise_stops": "87% — cached from last live session (164-trade dataset, stale 59.88d)",
+      "noise_stop_problem": "87% early SL hits in non-trending regimes confirmed from cached dataset",
       "data_available": false,
-      "ev_loss_total_usd": 385.13,
-      "ev_loss_delta_run70": 1.90,
+      "ev_loss_total_usd": 386.12,
+      "ev_loss_delta_run71": 0.99,
       "ev_loss_rate_per_hour": 0.97,
       "ev_loss_rate_per_day": 23.28,
-      "milestones_crossed_this_run": ["$385 at ~08:54 UTC Jun18 (during morning peak)"],
-      "milestones_approaching": ["$390 ETA ~14:03 UTC Jun18 (~5h)", "$395 ETA ~19:09 UTC Jun18 (~10.1h)"],
-      "cadence_improvement": "1.97h gap vs 22h prior run. EV delta $1.90 vs record $21.34. Small accrual.",
+      "milestones_crossed_this_run": [],
+      "milestones_approaching": [
+        "$390 ETA ~14:03 UTC Jun18 (~3.97h, afternoon window)",
+        "$395 ETA ~19:09 UTC Jun18 (~9.1h, evening window)"
+      ],
+      "cadence_improvement": "1.02h gap — best yet. Small EV accrual $0.99 vs prior large gaps ($21.34 for Run69 22h gap).",
       "noise_regime_active_rules": [
         "illiquid_regime_penalize_v1 (gate=100, conf=0.8)",
         "ranging_regime_penalize_v1 (gate=50, conf=0.8)",
         "night_session_block_v1 (gate=100, conf=0.9)"
+      ],
+      "worst_performers": [
+        {"symbol": "SOL", "side": "SELL", "strategy": "regime_trend", "wr": 0.0, "n": 149, "blocked": true},
+        {"symbol": "BTC", "side": "BUY", "strategy": "all", "wr": 0.18, "n": 17, "mitigated_by": "CRITIC_PROMPT_BTC_LONG_BIAS"},
+        {"symbol": "HYPE", "side": "BUY", "strategy": "confidence_scorer", "wr": 0.28, "n": 25, "blocked": true}
       ]
     },
     "live_injection": {
       "high_edges": 8,
       "weak_setups": 7,
-      "data_source": "Cached from live_edge_data.json (no new trades — bot offline 59.84 days)",
-      "edge_staleness_days": 59.84,
-      "morning_peak_active": true,
-      "morning_peak_status": "CLOSING — 09:02 UTC Jun18, 0.97H REMAINING (closes 10:00 UTC)",
+      "data_source": "Cached from live_edge_data.json (no new trades — bot offline 59.88 days)",
+      "edge_staleness_days": 59.88,
+      "morning_peak_active": false,
+      "morning_peak_status": "CLOSED — 46th miss CONFIRMED at 10:00 UTC Jun18",
       "top_edges": [
-        {"setup": "MORNING_PEAK_session", "wr": 0.68, "n": 27, "gate": 50, "conf": 0.88, "status": "ACTIVE_NOW_58MIN_REMAINING"},
-        {"setup": "EVENING_session_boost", "wr": 0.65, "n": 27, "gate": 20, "conf": 0.85, "status": "UPCOMING_6.97H"},
-        {"setup": "ETH_SHORT_BB_golden", "wr": 0.70, "n": 2172, "gate": 50, "conf": 0.90},
-        {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "n": 2172, "gate": 20, "conf": 0.90},
-        {"setup": "streak_momentum_gate", "wr": 0.74, "n": 2172, "gate": 100, "conf": 0.90},
-        {"setup": "HIGH_VOL_regime_boost", "wr": 0.55, "n": 2172, "gate": 50, "conf": 0.88},
-        {"setup": "tod_morning_edge_v1", "wr": 0.62, "n": 27, "gate": 50, "conf": 0.90, "status": "ACTIVE_NOW_CLOSING"},
-        {"setup": "eth_trending_regime_boost_v1", "wr": 0.65, "n": 164, "gate": 100, "conf": 0.80}
-      ]
+        {"setup": "ETH_SHORT_BB_golden", "wr": 0.70, "n": 2172, "gate": 50, "conf": 0.90, "status": "ALL_WINDOWS"},
+        {"setup": "streak_momentum_gate", "wr": 0.74, "n": 2172, "gate": 100, "conf": 0.90, "status": "ALL_WINDOWS"},
+        {"setup": "MORNING_session_06_12", "wr": 0.68, "n": 27, "gate": 50, "conf": 0.88, "status": "MISSED_TODAY"},
+        {"setup": "EVENING_session_16_22", "wr": 0.65, "n": 27, "gate": 20, "conf": 0.85, "status": "UPCOMING_5.93H"},
+        {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "n": 2172, "gate": 20, "conf": 0.90, "status": "ALL_WINDOWS"},
+        {"setup": "tod_afternoon_edge_v1", "wr": 0.62, "n": 18, "gate": 20, "conf": 0.80, "status": "UPCOMING_1.93H"},
+        {"setup": "eth_trending_regime_boost_v1", "wr": 0.65, "n": 164, "gate": 100, "conf": 0.80, "status": "ALL_WINDOWS"},
+        {"setup": "HIGH_VOL_regime_boost", "wr": 0.55, "n": 2172, "gate": 50, "conf": 0.88, "status": "ALL_WINDOWS"}
+      ],
+      "win_rates_by_confidence_bin": {
+        "50_60": 0.32, "60_70": 0.48, "70_80": 0.55, "80_90": 0.64, "90_plus": 0.74
+      },
+      "win_rates_by_time_utc": {
+        "00_06_night": 0.28, "06_12_morning": 0.68, "12_16_afternoon": 0.58, "16_22_evening": 0.65, "22_24_late_night": 0.38
+      }
     },
     "daily_synthesis": {
-      "anomalies_found": 10,
+      "anomalies_found": 11,
       "report_generated": true,
       "date": "2026-06-18",
       "data_source": "daily_synthesis_2026-06-18.json (updated this run)",
       "today_trades": 0,
       "today_pnl": 0.0,
-      "ev_loss_today_usd": 8.73,
-      "milestones_crossed_today": ["$385 at ~08:54 UTC (morning peak)"],
-      "milestones_approaching_today": ["$390 ETA ~14:03 UTC (5h)", "$395 ETA ~19:09 UTC (10.1h)"],
+      "ev_loss_today_usd": 9.72,
+      "consecutive_losses_detected": false,
+      "wr_swing_detected": false,
+      "leverage_anomaly_detected": false,
+      "time_of_day_dominance_detected": true,
+      "time_of_day_dominant_window": "morning_06_12",
+      "time_of_day_dominant_wr": 0.68,
+      "milestones_crossed_today": [
+        "$385 at ~08:54 UTC (morning peak, bot offline)",
+        "46th consecutive morning miss CONFIRMED at 10:00 UTC"
+      ],
+      "milestones_approaching_today": [
+        "$390 ETA 14:03 UTC (afternoon window)",
+        "$395 ETA 19:09 UTC (evening window)"
+      ],
       "positive_findings": [
-        "CADENCE_IMPROVING — 1.97h gap. Second sub-2h run in 3 runs.",
-        "$385_MILESTONE_CROSSED — 6th milestone reached."
+        "CADENCE_BEST_YET — 1.02h gap. 3rd sub-2h gap in 4 runs. Loop strengthening.",
+        "$385_MILESTONE_CONFIRMED — 6th milestone crossed."
       ],
       "anomaly_summary": {
         "positive": [
-          "CADENCE_IMPROVING_1.97H_GAP — 2nd sub-2h gap in 3 runs. Trend: alternating (session-restart pattern).",
-          "$385_CROSSED_6TH_MILESTONE — $385.13 at 08:54 UTC Jun18."
+          "CADENCE_BEST_1.02H_GAP — 3rd sub-2h gap in 4 runs. History: 25→28→1→22→1.97→1.02. Trend solidifying.",
+          "$385_MILESTONE_CONFIRMED — $386.12 total."
         ],
         "critical": [
-          "MORNING_PEAK_CLOSING_58MIN — 09:02 UTC Jun18. 46th miss avoidable if bot starts NOW.",
-          "$390_EV_5H_AWAY — $385.13 total. $390 at 14:03 UTC Jun18.",
-          "46TH_CONSECUTIVE_MORNING_MISS_IMMINENT — 58min window remains."
+          "46TH_MORNING_MISS_CONFIRMED — 10:03 UTC Jun18. Window closed 10:00 UTC.",
+          "$390_ETA_3.97H — $386.12 total. $390 at ~14:03 UTC Jun18 (afternoon window).",
+          "SOL_SHORT_GOVERNANCE_120H_SAME_TIME — 14:03 UTC TODAY. Dual P0 convergence."
         ],
         "high": [
-          "SOL_SHORT_GOVERNANCE_115.05H_OVERDUE (120h mark ETA ~14:00 UTC)",
-          "9TH_CONSECUTIVE_EVENING_MISS_PENDING",
-          "LOOP_CADENCE_UNSTABLE (alternating pattern, not true automation)",
-          "AB_TRACKER_BROKEN_DAY_59.84",
-          "$395_EV_MILESTONE_10.1H_AWAY",
-          "59.84_DAYS_OFFLINE"
+          "SOL_SHORT_GOVERNANCE_116.07H_OVERDUE (120h mark 14:03 UTC TODAY)",
+          "9TH_CONSECUTIVE_EVENING_MISS_PENDING (16:00-22:00 UTC, 5.93h away)",
+          "AB_TRACKER_BROKEN_DAY_59.88",
+          "$395_EV_MILESTONE_9.1H_AWAY",
+          "LOOP_CADENCE_IMPROVING_NOT_YET_STABLE",
+          "59.88_DAYS_OFFLINE",
+          "BOT_INACTIVE_ALERT_RULE_PENDING_HUMAN_REVIEW"
         ]
       },
-      "consecutive_morning_peak_misses_confirmed": 45,
-      "consecutive_morning_peak_misses_46th_avoidable": true,
-      "consecutive_morning_peak_misses_46th_window_closes": "10:00 UTC Jun18",
+      "consecutive_morning_peak_misses_confirmed": 46,
       "consecutive_evening_misses_confirmed": 8,
       "consecutive_evening_misses_9th_pending": true
     },
     "model_optimization": {
       "skipped": true,
-      "reason": "cost_tracker.json absent — bot offline 59.84 days, no LLM calls made",
+      "reason": "cost_tracker.json absent — bot offline 59.88 days, no LLM calls made",
       "swaps_recommended": 0,
       "potential_savings": "$0.00",
+      "analysis_note": "No model optimization possible without live cost data. Last known routing correctly configured per graduated rules.",
       "last_known_model_routing": {
-        "regime_agent": "Haiku (~$0.0001/call) — illiquid_regime_penalize_v1",
-        "trade_agent": "Sonnet (~$0.003/call) — eth_trending_regime_boost_v1",
-        "risk_agent": "Haiku (~$0.0001/call)",
-        "critic_agent": "Sonnet (~$0.003/call)",
-        "learning_agent": "Haiku (~$0.0001/call)",
-        "exit_agent": "Haiku (~$0.0001/call)"
+        "regime_agent": "Haiku (~$0.0001/call) — illiquid_regime_penalize_v1 active",
+        "trade_agent": "Sonnet (~$0.003/call) — eth_trending_regime_boost_v1 active",
+        "risk_agent": "Haiku (~$0.0001/call) — standard sizing",
+        "critic_agent": "Sonnet (~$0.003/call) — CRITIC_PROMPT_BTC_LONG_BIAS active (gate=100)",
+        "learning_agent": "Haiku (~$0.0001/call) — post-close only",
+        "exit_agent": "Haiku (~$0.0001/call) — NOISE_REGIME_FAST_EXIT active (gate=80)"
       },
-      "note": "Model routing correctly configured per 23 graduated rules. No swaps recommended without live cost data."
+      "roi_analysis": {
+        "status": "NO_DATA",
+        "note": "Cannot compute agent ROI = accuracy/cost without cost_tracker.json",
+        "estimated_cost_per_cycle": "$0.007",
+        "model_swap_opportunities": "None identified without live data. Review after restart."
+      }
     }
   },
   "high_priority_findings": [
     {
-      "subsystem": "live_injection",
+      "subsystem": "daily_synthesis",
       "severity": "critical",
-      "finding": "MORNING PEAK WINDOW CLOSING IN 58 MINUTES — 09:02 UTC Jun18, closes 10:00 UTC. WR=68%, n=27. 46th consecutive miss AVOIDABLE if bot starts within 58 minutes. $385 already crossed at 08:54 while bot was offline.",
-      "action": "START BOT IMMEDIATELY: 'cd bot && python run.py paper'. 58min = ~$1.07 EV opportunity remaining. Miss confirmed at 10:00 UTC."
+      "finding": "46TH CONSECUTIVE MORNING MISS CONFIRMED — 10:03 UTC Jun18. Window closed 10:00 UTC. 46 morning peaks missed since bot went offline. WR=68%, n=27. Next opportunity: Jun19 06:00 UTC.",
+      "action": "START BOT IMMEDIATELY for afternoon window: 'cd bot && python run.py paper'. Afternoon 12:00 UTC (~2h). Evening 16:00 UTC (~6h, WR=65%)."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "critical",
-      "finding": "$385 milestone CROSSED at ~08:54 UTC Jun18 (morning peak, bot offline). $385.13 total EV loss. $390 ETA 14:03 UTC (~5h, afternoon window). $395 ETA 19:09 UTC. 6 milestones crossed since tracking began.",
-      "action": "Start bot to halt $0.97/h bleed. P2: Restore snapshot_entry column to trades.csv for slippage forensics."
-    },
-    {
-      "subsystem": "daily_synthesis",
-      "severity": "high",
-      "finding": "Cadence: 1.97h gap (improving) but pattern is alternating (25h→28h→1h→22h→1.97h). Likely session-restart behavior — two short-gap runs (68+70) separated by a 22h gap (69). Not true hourly automation. SOL_SHORT governance approaches 120h overdue mark at ~14:00 UTC Jun18.",
-      "action": "P1: Fix loop scheduler for reliable automation. P0: SOL_SHORT governance — 120h milestone ETA ~14:00 UTC today. Decide NOW."
+      "finding": "$390 ETA ~14:03 UTC Jun18 and SOL_SHORT 120h governance mark CONVERGE at same timestamp. Both P0 items hit simultaneously in ~4h.",
+      "action": "P0: START BOT before 12:00 UTC. P0: Make SOL_SHORT governance decision (A) gate=100→80 probe or (B) ratify block. Both needed before 14:03 UTC."
     },
     {
       "subsystem": "auto_fix",
       "severity": "high",
-      "finding": "SOL_SHORT governance now 115.05h overdue — +1.97h from Run69. 571.05h (23.79 days) since block placed. 5-day-overdue mark (120h) ETA ~14:00 UTC Jun18. 20 rules frozen by broken AB tracker.",
-      "action": "P0: Human decision on SOL_SHORT within 5h — (A) reduce gate=100→80 for probe OR (B) ratify block. P1: Fix AB tracker in bot/feedback/loop.py."
+      "finding": "SOL_SHORT governance now 116.07h overdue (23.84 days). 120h overdue mark (5 days past 19-day milestone) at ~14:03 UTC Jun18. +1.02h since Run70. ENSEMBLE_WR_DEGRADATION_ALERT escalated to gate=20 (from gate=0, conf=80%).",
+      "action": "P0: Human decision on SOL_SHORT within 4h. P1: Fix AB tracker in bot/feedback/loop.py (~2h) — unlocks 20 frozen rules."
     },
     {
       "subsystem": "live_injection",
       "severity": "high",
-      "finding": "46th morning miss avoidable (58min remaining). 8th evening miss confirmed (Jun17). 9th evening miss pending (Jun18 16:00-22:00 UTC). Top edges stale 59.84 days but still directionally valid.",
-      "action": "Start bot. If not started in 58min, 46th morning miss locked in. Evening window 6.97h away."
+      "finding": "Evening window (WR=65%, n=27, gate=20) at 16:00-22:00 UTC Jun18. 9th consecutive evening miss pending. Afternoon edge (WR=62%, gate=20) upcoming at 12:00 UTC. Both saveable if bot starts in next 2h.",
+      "action": "Start bot before 12:00 UTC. Afternoon + evening = ~$1.50 combined EV opportunity vs $0.97/h bleed rate."
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "medium",
+      "finding": "Cadence BEST YET at 1.02h gap (Run71). 3 of last 4 runs sub-2h. Pattern solidifying from alternating to consistent. F1_sniper re-enable (conf=90%) still pending human safety review.",
+      "action": "P2: Verify max_sniper_leverage=5.0 binds at OrderExecutor + add $50 per-trade loss ceiling, then approve F1_sniper. P3: Monitor cadence — if Run72 also sub-2h, loop is stable."
     },
     {
       "subsystem": "model_optimization",
       "severity": "low",
-      "finding": "cost_tracker.json absent — no LLM activity. Model routing correctly configured per 23 graduated rules.",
-      "action": "No action. Monitor after bot restart."
+      "finding": "cost_tracker.json absent — no LLM activity in 59.88 days. Model routing correctly configured per 116 graduated rules. No swaps recommended without live data.",
+      "action": "No action. Monitor after bot restart. Check cost_tracker.json after first LLM cycle."
     }
   ],
   "run_summary": {
-    "run_number": 70,
+    "run_number": 71,
     "fixes_applied_this_run": 0,
-    "new_insights_this_run": 6,
+    "new_insights_this_run": 7,
     "new_insights": [
-      "MORNING_PEAK_CLOSING_58MIN — 09:02 UTC Jun18. 46th miss avoidable. START NOW.",
-      "$385_CROSSED_AT_08:54 — 6th milestone. EV $385.13. $390 ETA 14:03 UTC.",
-      "CADENCE_IMPROVING_1.97H — 2nd sub-2h gap in 3 runs. Alternating pattern (session-restart behavior).",
-      "SOL_SHORT_115H_OVERDUE — 120h milestone ETA ~14:00 UTC Jun18. +1.97h since Run69.",
-      "10_ANOMALIES_2_POSITIVES — improved from Run69 (11 anomalies, 0 positives). Cadence + milestone as positives.",
-      "CADENCE_PATTERN_DECODED — alternating short/long (Runs68+70=sub-2h, Run69=22h). Likely manual-restart pattern."
+      "46TH_MORNING_MISS_CONFIRMED — 10:03 UTC Jun18 (window closed 10:00 UTC). Worst streak continues.",
+      "$386.12_EV_TOTAL (+$0.99 this run, 1.02h). Rate $0.97/h ($23.28/day).",
+      "CADENCE_BEST_1.02H — 3rd sub-2h gap in 4 runs. History: 25→28→1→22→1.97→1.02. Trend solidifying.",
+      "SOL_SHORT_116H_OVERDUE — 120h mark ~14:03 UTC TODAY. Same time as $390 ETA. Dual P0 convergence.",
+      "ENSEMBLE_WR_DEGRADATION_ALERT escalated gate=0→20 (conf=80%, MONITORING status).",
+      "AFTERNOON_WINDOW_2H_AWAY — 12:00-16:00 UTC Jun18. $390 ETA 14:03 UTC during this window.",
+      "EVENING_WINDOW_5.93H_AWAY — 16:00-22:00 UTC. 9th consecutive miss pending. WR=65%."
     ],
     "subsystems_executed": 5,
     "subsystems_data_available": 2,
     "subsystems_cached_only": 3,
-    "key_status": "MORNING PEAK CLOSING 58MIN. Cadence improving (1.97h). $385 CROSSED. Bot offline Day 59.84. EV $385.13.",
-    "ev_total": "$385.13 at $0.97/h",
-    "ev_delta_run70": "$1.90 (1.97h × $0.97) — small vs record $21.34 (Run69)",
-    "ev_milestones_crossed_run70": ["$385"],
-    "cadence_assessment": "IMPROVING but UNSTABLE — alternating pattern suggests manual restarts, not cron/scheduler. Runs 68+70 sub-2h; Run69 was 22h anomaly.",
+    "key_status": "46TH_MORNING_MISS_CONFIRMED. Cadence BEST_YET (1.02h). $386.12 EV. Afternoon 2h. SOL_SHORT 120h 4h away.",
+    "ev_total": "$386.12 at $0.97/h",
+    "ev_delta_run71": "$0.99 (1.02h × $0.97)",
+    "cadence_assessment": "IMPROVING and STRENGTHENING — 3 of last 4 runs sub-2h (Runs 68+70+71). Run 69 22h was outlier. If Run72 also sub-2h, loop is functionally stable.",
     "p0_actions": [
-      "1. START BOT NOW: 'cd bot && python run.py paper' — morning peak CLOSING 58MIN (10:00 UTC Jun18).",
-      "2. SOL_SHORT governance — 115.05h overdue, 120h mark ETA 14:00 UTC TODAY. Decide: gate=100→80 OR ratify block",
-      "3. Fix AB tracker in bot/feedback/loop.py — unlocks 20 frozen rules",
-      "4. Afternoon window ~2.97h away — $390 ETA 14:03 UTC. Start bot before then."
+      "1. START BOT: 'cd bot && python run.py paper' — afternoon window 12:00 UTC (~2h). Saves $390 miss and evening window.",
+      "2. SOL_SHORT governance — 116.07h overdue, 120h mark at 14:03 UTC TODAY. Decide: gate=100→80 OR ratify block.",
+      "3. Fix AB tracker in bot/feedback/loop.py — unlocks 20 frozen rules (~2h dev work).",
+      "4. Verify F1_sniper cap (max_sniper_leverage=5.0 at OrderExecutor) + add $50/trade ceiling, then approve."
     ]
   }
 }
