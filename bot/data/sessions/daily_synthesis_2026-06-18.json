@@ -1,0 +1,77 @@
+{
+  "last_run": "2026-06-18T09:02:00+00:00",
+  "run_number": 70,
+  "date": "2026-06-18",
+  "bot_status": "OFFLINE — day 59.84",
+  "today_trades": 0,
+  "today_pnl": 0.0,
+  "anomalies_found": 10,
+  "report_generated": true,
+  "eod_report_pending": true,
+  "eod_report_eta_utc": "2026-06-18T22:00:00+00:00",
+  "daily_summary": {
+    "date": "2026-06-18",
+    "trades": 0,
+    "pnl_usd": 0.0,
+    "ev_loss_today_usd": 8.73,
+    "ev_rate_per_hour": 0.97,
+    "ev_milestones_crossed_today": [
+      "$385 crossed ~08:54 UTC Jun18 (during morning peak, bot offline)"
+    ],
+    "ev_milestones_approaching_today": [
+      "$390 ETA ~14:03 UTC Jun18 (~5.0h away, afternoon window)",
+      "$395 ETA ~19:09 UTC Jun18 (~10.1h away, evening window)"
+    ],
+    "ev_total_cumulative": 385.13,
+    "loop_cadence_note": "RUN 70: 1.97h gap (Run69 07:04 → Run70 09:02). Second sub-2h gap in last 3 runs. Cadence improving but not stable (history: 25h→28h→1h→22h→1.97h).",
+    "session_windows_jun18": {
+      "morning_peak": "07:00-10:00 UTC — CLOSING IN 58MIN (09:02 UTC). 46th miss avoidable if bot starts NOW. START NOW: 'cd bot && python run.py paper'",
+      "morning_full": "06:00-12:00 UTC — ACTIVE (2.97h remaining). 3.03h already lost (06:00-09:02).",
+      "afternoon": "12:00-16:00 UTC — UPCOMING (~2.97h away). $390 ETA 14:03 UTC. HIGH RISK.",
+      "evening": "16:00-22:00 UTC — UPCOMING (~6.97h away, WR=65%). 9th consecutive miss pending."
+    }
+  },
+  "positive_anomalies": [
+    "CADENCE_IMPROVING — Run70 fired 1.97h after Run69. Second sub-2h gap in last 3 runs (Runs 68+70). Alternating short/long pattern suggests session-restart behavior, not true automation yet.",
+    "$385_NEW_MILESTONE_CROSSED — $385.13 total. 6th milestone crossed (360→365→370→375→380→385)."
+  ],
+  "critical_anomalies": [
+    "MORNING_PEAK_CLOSING_58MIN — 07:00-10:00 UTC Jun18. 58min remaining. Bot offline. 46th miss avoidable if bot starts NOW. Start: 'cd bot && python run.py paper'.",
+    "$390_EV_ETA_5H — $385.13 total. $390 ETA 14:03 UTC (~5h, afternoon window). HIGH RISK if bot offline.",
+    "46TH_CONSECUTIVE_MORNING_MISS_IMMINENT — Bot must start within 58min or miss confirmed."
+  ],
+  "high_anomalies": [
+    "SOL_SHORT_GOVERNANCE_115.05H_OVERDUE — 571.05h (23.79 days). +1.97h since Run69. Approaching 5-day overdue mark (120h). DECIDE NOW.",
+    "AB_TRACKER_BROKEN_DAY_59.84 — 20 rules frozen. BB_solo_signal_boost n=2172, conf=95% cannot graduate.",
+    "9TH_CONSECUTIVE_EVENING_MISS_PENDING — 16:00-22:00 UTC Jun18 (WR=65%). 6.97h away.",
+    "$395_EV_MILESTONE_ETA — ~19:09 UTC Jun18 (~10.1h). During evening window.",
+    "CADENCE_UNSTABLE — Pattern 25h→28h→1h→22h→1.97h. Not true hourly automation. Manual restarts likely needed.",
+    "59.84_DAYS_OFFLINE — EV $385.13 total ($23.28/day). 2 months of missed opportunity.",
+    "$385_CROSSED_WHILE_OFFLINE — Milestone crossed in active morning peak window. Bot not running to capture it."
+  ],
+  "today_focus": {
+    "IMMEDIATE_P0": "START BOT NOW — 'cd bot && python run.py paper'. Morning peak CLOSING in 58min (10:00 UTC). Save remaining window.",
+    "IMMEDIATE_P1": "SOL_SHORT governance 115h overdue — decide: (A) reduce gate=100→80 or (B) ratify block. 5-day overdue mark (120h) approaching.",
+    "DEV_P1": "AB tracker fix in bot/feedback/loop.py (~2h) — unlocks 20 frozen rules",
+    "DEV_P2": "Restore snapshot_entry column in trades.csv — enables slippage forensics",
+    "AFTERNOON": "Afternoon window 12:00-16:00 UTC (~2.97h away). Start bot before then to avoid $390 milestone crossing while offline.",
+    "EVENING": "Evening window 16:00-22:00 UTC (~6.97h). WR=65%, 9th consecutive miss pending."
+  },
+  "consecutive_morning_peak_misses": 45,
+  "consecutive_morning_peak_misses_note": "46th miss avoidable — 58min window remains",
+  "consecutive_morning_full_misses": 45,
+  "consecutive_evening_misses": 8,
+  "consecutive_evening_misses_9th_pending": true,
+  "cumulative_ev_loss_usd": 385.13,
+  "bot_offline_days": 59.84,
+  "milestones_crossed_today": ["$385 at ~08:54 UTC (morning peak)"],
+  "milestones_approaching_today": ["$390 ETA 14:03 UTC", "$395 ETA 19:09 UTC"],
+  "run70_new_findings": [
+    "MORNING PEAK CLOSING in 58min at 09:02 UTC — final chance to avoid 46th full miss.",
+    "$385 CROSSED at 08:54 UTC (6th milestone) during morning peak. Bot offline. Missed opportunity.",
+    "EV $385.13 (+$1.90 this run, 1.97h). Small accrual vs Run69's record $21.34.",
+    "SOL_SHORT governance: 115.05h overdue (+1.97h). 5-day overdue mark (120h) approaching by ~14:00 UTC.",
+    "Cadence: 1.97h gap (improving). 2nd sub-2h gap in 3 runs. Alternating pattern — not stable automation.",
+    "10 anomalies Jun18 (2 positive: cadence + milestone crossed). vs Run69's 11 anomalies, 0 positives."
+  ]
+}
