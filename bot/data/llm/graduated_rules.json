@@ -152,7 +152,9 @@
       "times_applied": 0,
       "times_correct": 0,
       "active": true,
-      "gate_percentage": 100
+      "gate_percentage": 20,
+      "gate_demoted_at": "2026-06-19T12:05:34Z",
+      "gate_demotion_reason": "DEMOTED Run82 2026-06-19T12:05:34Z: 10d evidence (67% WR, n=43) contradicted by 100d backtest (50% WR, -$3.48/trade, n=10). Rule has times_applied=0 — possibly broken condition match. Reducing gate=100%->20% (probe mode) pending live verification. Graduate back to 50% if WR>=60% n>=15; deactivate if WR<45% n>=15."
     },
     {
       "rule_id": "eth_trending_regime_boost_v1",
