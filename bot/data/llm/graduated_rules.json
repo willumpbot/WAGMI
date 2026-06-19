@@ -175,7 +175,7 @@
     },
     {
       "rule_id": "hype_unknown_regime_probe_v1",
-      "hypothesis_statement": "HYPE in UNKNOWN regime achieves 83% WR, +$6.56/trade (n=6). Highest-WR setup found across all symbol\u00d7regime combinations. Possible regime-transition breakout signal. SIDE-AGNOSTIC probe \u2014 does not conflict with HYPE_LONG/HYPE_SHORT vetoes since this targets unknown regime only.",
+      "hypothesis_statement": "HYPE in UNKNOWN regime achieves 83% WR, +$6.56/trade (n=6). Highest-WR setup found across all symbol×regime combinations. Possible regime-transition breakout signal. SIDE-AGNOSTIC probe — does not conflict with HYPE_LONG/HYPE_SHORT vetoes since this targets unknown regime only.",
       "action": "boost",
       "conditions": {
         "symbol": "HYPE",
@@ -194,7 +194,7 @@
     },
     {
       "rule_id": "conf_floor_70_v1",
-      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes. GATED (2026-05-17): adjustment reduced -20\u2192-5 to break compounding deadlock with self_tuning CONSERVATIVE mode. Evidence conflict: insight_journal (67 trades) shows +$2.19/trade EV in this bin; rule built on older 123-trade window. -5pts preserves caution without total block. Gate: 20%.",
+      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes. GATED (2026-05-17): adjustment reduced -20→-5 to break compounding deadlock with self_tuning CONSERVATIVE mode. Evidence conflict: insight_journal (67 trades) shows +$2.19/trade EV in this bin; rule built on older 123-trade window. -5pts preserves caution without total block. Gate: 20%.",
       "action": "penalize",
       "conditions": {
         "confidence_min": 60.0,
@@ -275,7 +275,7 @@
     },
     {
       "rule_id": "high_vol_regime_boost_v1",
-      "hypothesis_statement": "high_volatility regime = 55% WR vs 38% avg across all regimes. Best regime for trading by WR margin. Feedback engine: gate=80%, n=2172, conf=88%. LLM engine was missing this rule \u2014 sync gap detected 2026-05-22T01:06 UTC. Exempt from illiquid penalty stacking (different regime). Graduate: escalate gate 20%\u219250% at n>=25 obs with WR>=0.52.",
+      "hypothesis_statement": "high_volatility regime = 55% WR vs 38% avg across all regimes. Best regime for trading by WR margin. Feedback engine: gate=80%, n=2172, conf=88%. LLM engine was missing this rule — sync gap detected 2026-05-22T01:06 UTC. Exempt from illiquid penalty stacking (different regime). Graduate: escalate gate 20%→50% at n>=25 obs with WR>=0.52.",
       "action": "boost",
       "conditions": {
         "regime": "high_volatility"
@@ -295,7 +295,7 @@
     },
     {
       "rule_id": "tod_morning_edge_v1",
-      "hypothesis_statement": "Morning session 06:00-12:00 UTC = 74% WR on 7 insight_journal trades. BEST TOD window by WR (74% vs 65% evening, 64% afternoon, 19% night). Composite edge: ETH+BTC+trending+morning = confirmed alpha. Missing from LLM engine despite being tracked in feedback/graduated_rules.json (A/B_ACTIVE gate=50%) \u2014 write-consistency bug detected 2026-05-21T23:06 UTC. Graduate: escalate gate 50%\u2192100% at n>=15 obs with WR>=0.65.",
+      "hypothesis_statement": "Morning session 06:00-12:00 UTC = 74% WR on 7 insight_journal trades. BEST TOD window by WR (74% vs 65% evening, 64% afternoon, 19% night). Composite edge: ETH+BTC+trending+morning = confirmed alpha. Missing from LLM engine despite being tracked in feedback/graduated_rules.json (A/B_ACTIVE gate=50%) — write-consistency bug detected 2026-05-21T23:06 UTC. Graduate: escalate gate 50%→100% at n>=15 obs with WR>=0.65.",
       "action": "boost",
       "conditions": {
         "hour_utc_min": 6,
@@ -452,8 +452,30 @@
       "gate_escalation_reason": "SYNC_GAP_CLOSE_V2: feedback RANGING_regime_reduce at gate=50%. Ranging WR=25% on 16 live trades (worse than illiquid 28%). Penalty rule, no conflicts. Conf=0.76 >= 0.75 threshold. 10th consecutive cross-system sync gap action."
     },
     {
+      "rule_id": "high_conf_80_85_penalty_v1",
+      "hypothesis_statement": "80-85% confidence bin = 36.1% WR, -$52.16/trade avg on 100d backtest (n=36, 589 total trades). Worst performing confidence bin. Confidence anti-correlation confirmed by deep_memory (conf=0.93, n=2172): high confidence is NOT predictive above 80%.",
+      "action": "penalize",
+      "conditions": {
+        "confidence_min": 80.0,
+        "confidence_max": 85.0
+      },
+      "adjustment": -5.0,
+      "confidence": 0.88,
+      "evidence_ratio": 0.361,
+      "total_evidence": 36,
+      "created_at": 1750320000.0,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "gate_percentage": 20,
+      "source": "perpetual_improvement_run_80_2026-06-19 — 100d backtest (589 trades). HIGH_CONF_BACKTEST_PENALTY_100D from auto_fix pipeline. Conf=0.88 >= 0.75 threshold. Soft probe only — -5pts avoids over-correction vs earlier rules (btc_short_90plus_boost says 90%+ is still good). Does NOT affect 85%+ range.",
+      "conflict_note": "WARN: live_edge_data shows 80-90%=64% WR (vs 100d backtest 36.1%). Contradictory sources. Soft -5pt probe resolves via A/B: gate=20 (metadata only, rule always active when conditions match).",
+      "outcome_tracking": "PENDING_RESTART — graduate gate 20->50 if WR<45% n>=15 post-restart; deactivate if WR>=55% n>=15"
+    },
+    {
       "rule_id": "sol_short_penalize_v1",
-      "hypothesis_statement": "SOL SELL = 34.6% WR on 52 live paper trades (suspension probe). Structurally weak short side. Feedback engine has SOL_SHORT_full_block (conf=88, gate=100%). 7th consecutive LLM\u2194feedback sync gap fixed.",
+      "hypothesis_statement": "SOL SELL = 34.6% WR on 52 live paper trades (suspension probe). Structurally weak short side. Feedback engine has SOL_SHORT_full_block (conf=88, gate=100%). 7th consecutive LLM↔feedback sync gap fixed.",
       "action": "penalize",
       "conditions": {
         "symbol": "SOL",
@@ -470,7 +492,7 @@
       "times_correct": 0,
       "active": true,
       "source": "feedback/graduated_rules.json SOL_SHORT_full_block (conf=88, gate=100%) + live evidence 34.6% WR n=52. RULE_CONFLICT resolved: conflict was LLM understrength (20%) vs feedback full_block (100%). Escalating to 50% closes half the gap.",
-      "outcome_tracking": "PENDING_RESTART \u2014 graduate gate 50%\u2192100% (full veto) at WR<40% n>=20 post-restart.",
+      "outcome_tracking": "PENDING_RESTART — graduate gate 50%→100% (full veto) at WR<40% n>=20 post-restart.",
       "gate_escalated_at": "2026-05-24T05:00:00+00:00",
       "gate_escalation_reason": "RULE_CONFLICT_RESOLUTION_V1: Graduation criterion met on historical data (WR=34.6%<40% n=52>=30 conf=0.88). RULE_CONFLICT_SOL_SHORT was that LLM engine was 5x weaker than feedback engine (gate=20% vs feedback gate=100%). Escalating to gate=50% closes half the alignment gap. Directional alignment: both engines agree SOL SELL is weak. Next graduation: full veto (gate=100%) after n>=20 post-restart trades at WR<40%."
     }
