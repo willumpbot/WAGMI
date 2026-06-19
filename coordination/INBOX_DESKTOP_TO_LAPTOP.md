@@ -68,6 +68,10 @@ I read this every cycle to know if you're alive.
 
 ## 2026-06-17T10:53Z [FYI] cycle 7 (health-only): alive, PID 18388 ~15h uptime, equity $4,569.70, 0 issues.
 
+## 2026-06-19T18:43Z [FYI] Calibration-fix test: promising, inconclusive (n=2). Healthy.
+
+Bot healthy (PID 22352, vetoes active). Since 17:40Z restart (~70min): risk skip 50% (was 81%), trade go 50% (was 9.5%), exit full_close 67% (was 82%) — all directionally right but n=2 risk/trade = meaningless yet. Calibration buckets empty (no closes since restart) → bot has no false "8.5%" to react to (relief in place). NOT claiming victory; need more closes/decisions. Holding sub-noise-stop until the spine test resolves. Full reasoning in THOUGHT_JOURNAL.md.
+
 ## 2026-06-19T17:40Z [FIX-AVAILABLE] Calibration mismeasurement FIXED + reset (death-spiral root)
 
 Fixed the regime-accuracy metric: learning_integration.py now scores regime vs ACTUAL price move (new _regime_was_correct + added price_move_pct to trade_data at multi_strategy_main.py:3638), decoupled from trade win/loss. Trade/critic calibration left as-is (thesis_correct is correct for them). Reset poisoned agent_calibration.json (backup saved) so the bot stops reacting to false "8.5% accuracy". Validated: py_compile + smoke test proving decoupling. Restarted PID 22352, clean, long vetoes still active. FALSIFIABLE TEST next cycles: does Risk skip-rate (was 81%) / Exit force-close (82%) drop and trade-rate rise? If yes, measurement-spine was the root. Full reasoning in THOUGHT_JOURNAL.md.

@@ -6,6 +6,22 @@ Conventions: each entry = OBSERVED / REASONED / DECIDED / RULED-OUT / OPEN-QUEST
 
 ---
 
+## 2026-06-19 ~18:43Z — Cycle: falsifiable test of the calibration fix — PROMISING but INCONCLUSIVE (n too small)
+
+**OBSERVED:** Bot healthy (PID 22352, vetoes active, heartbeat ~4s). First measured with a buggy cutoff (future timestamp → 0 decisions); recomputed with now-4200s. Since the 17:40Z restart (~70min): only 26 agent decisions total — risk n=2 (1 skip = 50%, was 81%), trade n=2 (1 go = 50%, was 9.5%), exit full_close 8/12 = 67% (was 82%), regime calls {high_volatility:1, range:1}. agent_calibration.json still empty (0 buckets) — no trade has CLOSED since restart, so regime accuracy hasn't re-accrued.
+
+**REASONED:** Direction of every metric is encouraging (less skipping, more go, fewer force-closes) and consistent with removing the false self-distrust — AND the empty calibration means the bot currently has NO "8.5% accuracy" garbage to react to (immediate relief mechanism is in place). BUT n=2 on the decisive risk/trade metrics is statistically meaningless. Cannot declare the death-spiral lifted on this.
+
+**DECIDED:** Do NOT claim victory. Keep monitoring; need ~20+ post-restart risk/trade decisions and several closes (to re-accrue calibration) before judging. Did NOT advance to the sub-noise-stop item — confirming the spine result is the higher priority and moving on early would muddy the test. Fixed my own cutoff-timestamp bug.
+
+**RULED-OUT:** overclaiming on n=2; force-accruing calibration (needs real closes, can't fake); changing anything else this cycle (would confound the test).
+
+**OPEN-QUESTIONS:** Will trade-open frequency actually rise now (it's been skip-heavy, so closes are rare → test accrues slowly)? When calibration re-fills, do regime buckets show realistic, non-uniform accuracy (proving the metric fix works end-to-end)? If skip-rate stays high once n grows, the regime CLASSIFIER itself is weak (next: measure true classifier accuracy).
+
+**NEXT:** re-measure next cycle with larger sample; inspect regime calibration buckets once closes accrue. Hold sub-noise-stop until the spine test resolves.
+
+---
+
 ## 2026-06-19 ~17:40Z — Cycle: fixed the calibration mismeasurement (death-spiral root)
 
 **OBSERVED:** Bot healthy (PID 26588, vetoes active). agent_calibration.json showed ~0% accuracy in nearly every regime. Confirmed root cause at learning_integration.py:396: regime_correct = (regime_fit>=0.5 and thesis_correct) with regime_fit defaulting to 0.5 (strategy key usually empty) → regime "accuracy" ≡ trade win-rate. trade_data passed to calibration (_trade_data_for_learning, multi_strategy_main.py:3638) had pnl/pnl_pct/side/regime but NOT raw price move %; exit_price + pos.entry ARE available at that call site.
