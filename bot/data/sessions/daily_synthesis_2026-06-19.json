@@ -1,11 +1,11 @@
 {
-    "last_run": "2026-06-19T17:03:17+00:00",
-    "run_number": 77,
+    "last_run": "2026-06-19T18:06:00+00:00",
+    "run_number": 78,
     "date": "2026-06-19",
-    "bot_status": "OFFLINE — Day 62.16",
+    "bot_status": "OFFLINE — Day 62.23",
     "today_trades": 0,
     "today_pnl": 0.0,
-    "anomalies_found": 21,
+    "anomalies_found": 22,
     "report_generated": false,
     "eod_report_pending": true,
     "eod_report_eta_utc": "2026-06-19T22:00:00+00:00",
@@ -13,88 +13,80 @@
         "date": "2026-06-19",
         "trades": 0,
         "pnl_usd": 0.0,
-        "ev_loss_today_usd": 16.49,
+        "ev_loss_today_usd": 18.52,
         "ev_rate_per_hour": 0.97,
         "ev_milestones_crossed_today": [
-            "$400 crossed 00:22 UTC Jun 19 (overnight milestone)",
+            "$400 crossed 00:22 UTC Jun 19",
             "$405 crossed 05:31 UTC Jun 19",
             "$410 crossed 10:41 UTC Jun 19",
-            "48th consecutive MORNING MISS — Jun 19 12:00 UTC CONFIRMED",
+            "48th consecutive MORNING MISS — Jun 19 12:00 UTC",
             "$415 crossed 15:50 UTC Jun 19",
-            "AFTERNOON WINDOW Jun 19 MISSED — 16:00 UTC (10th+ afternoon miss)",
-            "CADENCE STREAK BROKEN — Run77 fires 24h after Run76"
+            "AFTERNOON WINDOW MISSED — 16:00 UTC",
+            "CADENCE REGRESSION Run77 (24h gap) — then RESTORED Run78 (1.05h)"
         ],
         "ev_milestones_approaching": [
-            "$420 ETA ~3.94h (20:59 UTC Jun 19) (during evening window)",
-            "$425 ETA ~9.09h (02:08 UTC Jun 20) (overnight Jun 19/20)",
-            "EOD synthesis at 22:00 UTC (~4h57m)"
+            "$420 ETA ~2.9h (20:58 UTC Jun 19) — evening window open",
+            "$425 ETA ~8.0h (02:06 UTC Jun 20)",
+            "EOD synthesis at 22:00 UTC (~3h54m)"
         ],
-        "ev_total_cumulative": 416.18,
+        "ev_total_cumulative": 417.2,
         "session_windows_jun19": {
             "morning_06_12": "MISSED — 48th consecutive miss. $5.82 EV gone.",
-            "afternoon_12_16": "MISSED — 10th+ consecutive afternoon miss.",
-            "evening_16_22": "OPEN — 1h03m in (17:03 UTC, WR=65%). $4.80 remaining. ~3.94h (20:59 UTC Jun 19) to $420."
+            "afternoon_12_16": "MISSED — 10th+ consecutive miss.",
+            "evening_16_22": "OPEN — 2h06m in (18:06 UTC, WR=65%). $3.78 remaining. ~2.9h to $420 milestone."
         }
     },
-    "new_anomalies_run77": [
+    "new_anomalies_run78": [
         {
-            "type": "CADENCE_REGRESSION_24H",
-            "severity": "CRITICAL",
-            "detail": "Run77 fires 24.00h after Run76. 4-consecutive 1.00h streak BROKEN (was record). Longest gap since early Jun.",
-            "recommendation": "Investigate scheduler. Was the scheduled task missed, or is this expected?"
-        },
-        {
-            "type": "LLM_REGIME_CAPTURE_GAP_CONF99",
-            "severity": "CRITICAL",
-            "detail": "965 trades ALL have empty llm_regime field. Regime-based learning is completely blind. Gate=0, conf=99.",
-            "recommendation": "Fix data pipeline: llm_regime must be stored at trade entry. Requires code fix in decision_engine.py."
-        },
-        {
-            "type": "AB_TRACKER_STALL_38_RULES",
+            "type": "NEW_AUDIT_FILE_MISSED_BY_RUN77",
             "severity": "HIGH",
-            "detail": "STALE_AB_DATA_FLAG (conf=100) confirms 38 A/B gates stalled — not 20 as previously tracked. 18 more rules than acknowledged.",
-            "recommendation": "Fix bot/feedback/loop.py outcome callback. Priority: high."
+            "detail": "autonomous_audit_2026-06-19T02-06-05Z.md created at 02:06 UTC but Run77 (17:03 UTC) reported no new audit files. Source file search bug.",
+            "action_taken": "Run78 processed audit. 1 new rule applied. 2 existing rules re-validated."
         },
         {
-            "type": "29_GATE0_RULES_DISCOVERED",
-            "severity": "HIGH",
-            "detail": "29 gate=0 rules in graduated_rules.json vs 3 previously noted. 26 undocumented. Includes high-confidence critical alerts.",
-            "recommendation": "Full gate=0 audit needed. Categorize: RESOLVED, SUPERSEDED, PENDING, NEEDS_ESCALATION."
+            "type": "CADENCE_REGRESSION_RESOLVED",
+            "severity": "INFO",
+            "detail": "Run78 1.05h after Run77. 24h gap was single-run anomaly."
         },
         {
-            "type": "ENSEMBLE_WR_DEGRADATION",
-            "severity": "HIGH",
-            "detail": "ENSEMBLE_WR_DEGRADATION_ALERT (conf=80): ensemble WR degraded to 30% on recent trades. Gate=0, MONITORING.",
-            "recommendation": "Verify against fresh data. If confirmed, review ensemble weights and strategy mix."
+            "type": "HIGH_CONF_SIZING_PENALTY_APPLIED",
+            "severity": "INFO",
+            "detail": "HIGH_CONF_BACKTEST_PENALTY_100D added to graduated_rules.json at gate=20.",
+            "rule_id": "HIGH_CONF_BACKTEST_PENALTY_100D"
         }
     ],
-    "anomaly_summary": {
+    "all_anomalies_today": {
         "critical": [
-            "CADENCE_REGRESSION_24H — streak broken. Longest gap since Jun 9.",
-            "LLM_REGIME_CAPTURE_GAP — 965 trades empty llm_regime (conf=99)",
-            "10TH_CONSECUTIVE_EVENING_MISS — bot offline during WR=65% window"
+            "BOT_OFFLINE_62D — 0 trades, $417.20 EV accrued",
+            "LLM_REGIME_CAPTURE_GAP — 965 trades empty llm_regime",
+            "EVENING_WINDOW_10TH_MISS_IN_PROGRESS — WR=65%, $3.78 remaining"
         ],
         "high": [
-            "AB_TRACKER_38_STALLED — 18 more than previously counted",
+            "AB_TRACKER_38_STALLED — outcome callback broken",
             "29_GATE0_RULES — 26 undocumented",
-            "ENSEMBLE_WR_30_PCT — potential degradation",
-            "$416.18 EV milestone (bot offline 62.2 days)"
+            "ENSEMBLE_WR_30PCT — degradation alert",
+            "NEW_AUDIT_MISSED_BY_RUN77 — source file search bug"
         ],
         "medium": [
-            "F1_SNIPER_65D_PENDING — day 65 without human sign-off",
-            "RULE_CONFLICT_SOL_SHORT — conf=92 unresolved",
-            "BTC_TOTAL_CONCENTRATION — 100% BTC in last 200 trades",
-            "HIGH_CONF_CALIBRATION_DRIFT — 15-30% overconfident"
+            "F1_SNIPER_65D_PENDING",
+            "RULE_CONFLICT_SOL_SHORT conf=92",
+            "BTC_TOTAL_CONCENTRATION 100% last 200 trades",
+            "TRAILING_STOP_NET_NEGATIVE -$37 on 111 exits (100d backtest)"
+        ],
+        "info": [
+            "CADENCE_RESTORED Run78 1.05h",
+            "HIGH_CONF_BACKTEST_PENALTY_100D added gate=20 (70 total fixes)"
         ]
     },
     "tomorrow_focus": {
-        "symbols": ["ETH (short, BB golden, WR=70%)", "BTC (long cautiously, WR=69% BB golden)"],
-        "regimes": ["trending (WR=62%)", "high_volatility (WR=55%)"],
-        "windows": ["evening 16:00-22:00 UTC (WR=65%) — highest priority"],
+        "symbols": ["ETH (short BB golden WR=70%)", "BTC (long cautiously WR=69% BB, Critic challenges)"],
+        "regimes": ["trending WR=62%", "high_volatility WR=55%"],
+        "windows": ["evening 16-22 UTC WR=65% — 3h54m remaining TODAY"],
         "priority_fixes": [
             "llm_regime data pipeline (decision_engine.py — CRITICAL)",
+            "Implement HIGH_CONF_BACKTEST_PENALTY_100D in leverage.py (HIGH)",
             "AB tracker outcome callback (bot/feedback/loop.py — HIGH)",
-            "Gate=0 rule audit (graduated_rules.json — HIGH)"
+            "Source file search bug in auto_fix subsystem"
         ]
     }
 }
