@@ -1,142 +1,54 @@
 {
-  "last_run": "2026-06-19T16:00:00Z",
-  "run_number": 84,
-  "fixes_applied_this_run": 1,
-  "governance_actions_this_run": 1,
+  "last_run": "2026-06-19T18:10:00Z",
+  "run_number": 85,
+  "fixes_applied_this_run": 0,
   "total_applied_all_time": 76,
   "gates_active": 17,
-  "new_audit_files_this_run": 0,
-  "elapsed_since_last_run_h": 2.0,
-  "loop_gap_note": "RUN 84: 2.0h gap from Run83. 1 new fix — high_conf_80_85_penalty_v1 gate escalated 20->50%.",
-  "governance_actions": [
+  "loop_gap_note": "RUN 85: 2.17h gap from Run84. 0 new fixes. BLOCKED: TP1->_FULL_CLOSE (semantic error — TP1 is partial close). NEW finding: TP1_CUMULATIVE_PNL_INSTRUMENTATION needed.",
+  "block_log": [
     {
-      "rule_id": "high_conf_80_85_penalty_v1",
-      "file": "bot/data/llm/graduated_rules.json",
-      "action": "GATE_ESCALATION",
-      "gate_before": 20,
-      "gate_after": 50,
-      "confidence": 0.88,
-      "reason": "Run84 auto-escalation: 100d backtest graduation criterion met (WR=36.1%<45%, n=36>=15 for 80-85 sub-bucket; full 80-90 bin n=120 at 40% WR further confirms). Escalating from probe(20%) to half-deploy(50%). Conf=0.88 >> 0.75 threshold.",
-      "applied_at": "2026-06-19T16:00:00Z",
-      "expected_impact": "Doubles -5pt penalty coverage for 80-85% confidence signals. Reduces slot allocation to worst-performing confidence bin by 2x."
-    }
-  ],
-  "fixes_applied": [
-    {
-      "rule_id": "high_conf_80_85_penalty_v1",
-      "type": "GATE_ESCALATION",
-      "from_gate": 20,
-      "to_gate": 50,
-      "confidence": 0.88,
-      "evidence_n": 36,
-      "evidence_wr": 0.361,
-      "dataset": "backtest_100d.csv (589 trades)",
-      "applied_at": "2026-06-19T16:00:00Z"
-    }
-  ],
-  "source_audit_file": "autonomous_audit_2026-06-19T12-05-34Z.md",
-  "session_recs_processed": 3,
-  "session_recs_qualifying_conf75": 1,
-  "session_recs_already_applied": 1,
-  "session_recs_pending_human": 2,
-  "session_recs_new_rules": 0,
-  "no_fix_reason": "Rec#1 (btc_short_90plus gate demotion, conf=72%): BELOW 75% threshold. Rec#2 (integration test, conf=88%): Code task. Rec#3 (btc_short_conf70_80 gate 100->50, conf=82%): Already satisfied. NEW this run: high_conf_80_85_penalty_v1 gate escalation (conf=88%) — graduation criterion met by 100d data.",
-  "recommendations_from_audit_run82": [
-    {
-      "rec": "BTC_SHORT_90PLUS_DEMOTION",
-      "conf": 72,
-      "status": "BELOW 75% threshold — not auto-applied. BTC_HIGH_CONF_90plus already gate=20%."
-    },
-    {
-      "rec": "GRADUATED_RULE_INTEGRATION_TEST",
-      "conf": 88,
-      "status": "CODE TASK — pending developer action (add pytest test for rule condition matching)"
-    },
-    {
-      "rec": "BTC_SHORT_CONF70_80_GATE_REDUCE_100_TO_50",
-      "conf": 82,
-      "status": "ALREADY SATISFIED — BTC_SHORT_CONF70_80_BLOCK is gate=50% in graduated_rules.json"
+      "rec": "ADD_TP1_TO_FULL_CLOSE",
+      "audit_confidence": 0.95,
+      "block_reason": "SEMANTIC_ERROR",
+      "finding": "TP1 is a PARTIAL close (position_manager.py:73 tp1_close_pct=0.5). Adding TP1 to _FULL_CLOSE would cause feedback systems to record a full-close outcome while 50% of the position is still in trailing mode. Corrupts all 7 feedback learning loops.",
+      "correct_fix": "Accumulate partial_close_pnl in position object at TP1 hit. When trailing stop fires, pass total_pnl = partial_close_pnl + trailing_pnl to record_outcome().",
+      "blocked_at": "2026-06-19T18:10:00Z"
     }
   ],
   "pending_code_implementations": [
     {
+      "id": "TP1_CUMULATIVE_PNL_INSTRUMENTATION",
+      "description": "New finding Run85: Store partial_close_pnl on position object at TP1 hit. Pass cumulative total to all 7 record_outcome() calls at trailing close. Fixes $61/trade feedback underestimation on 111 trailing exits/100d.",
+      "confidence": 0.90,
+      "status": "PENDING_CODE_CHANGE",
+      "new_this_run": true
+    },
+    {
       "id": "TRAILING_STOP_LOCK",
-      "description": "Lock 70% TP1 gain as trailing floor in position_manager.py:_update_trailing_stop (line 1244). Change breakeven-only floor to entry + (tp1-entry)*0.70 for LONG / entry - (entry-tp1)*0.70 for SHORT.",
-      "expected_impact": "+$9,460 per 10d sim period (152 trailing exits x $62.24 avg improvement)",
+      "description": "Lock 70% TP1 gain as trailing floor in position_manager.py:1244. env_var: TRAILING_MIN_LOCK_PCT=0.70.",
+      "expected_impact": "+$9,460 per 10d sim",
       "confidence": 0.88,
-      "code_file": "bot/execution/position_manager.py",
-      "code_line": 1244,
-      "env_var": "TRAILING_MIN_LOCK_PCT=0.70",
       "status": "PENDING_HUMAN_REVIEW",
-      "days_pending": 2
+      "days_pending": 3
     },
     {
       "id": "GRADUATED_RULE_INTEGRATION_TEST",
-      "description": "Add pytest: load graduated_rules.json, create mock signal {symbol:BTC, side:SELL, confidence:92}, run through graduated rule applier, assert rule fires.",
+      "description": "Add pytest for graduated rule condition matching.",
       "confidence": 0.88,
-      "code_file": "bot/tests/",
       "status": "PENDING_CODE_CHANGE",
-      "days_pending": 2
-    },
-    {
-      "id": "LLM_REGIME_CAPTURE_FIX_VERIFY",
-      "description": "Verify llm_integration.py:221 correctly populates llm_regime on live trades.",
-      "confidence": 0.95,
-      "code_file": "bot/llm/llm_integration.py",
-      "code_line": 221,
-      "status": "PENDING_VERIFICATION_POST_RESTART",
-      "days_pending": 63
-    }
-  ],
-  "pending_human_recs": [
-    {
-      "finding": "BOT_RESTART",
-      "confidence": 100,
-      "status": "PENDING_HUMAN_REVIEW",
-      "days_pending": 63,
-      "description": "cd bot && python run.py paper — $425.88 EV accrued since Apr 19 shutdown."
-    },
-    {
-      "finding": "TRAILING_STOP_LOCK",
-      "confidence": 88,
-      "status": "PENDING_CODE_CHANGE",
-      "days_pending": 2,
-      "description": "position_manager.py:1244 — change trailing floor from breakeven to 70% TP1 gain. $9,460 expected recovery per 10d (100d shows $3,759)."
-    },
-    {
-      "finding": "F1_sniper_re-enable",
-      "confidence": 90,
-      "status": "PENDING_HUMAN_REVIEW",
-      "days_pending": 66,
-      "description": "Re-enable SNIPER_AUTO_EXECUTE with 5x leverage cap + $50/trade loss ceiling."
+      "days_pending": 3
     }
   ],
   "gate_distribution_current": {
-    "0": 50,
-    "5": 1,
-    "20": 7,
-    "50": 11,
-    "80": 34,
-    "100": 13,
-    "note": "116 total rules. 66 active (gate>0). 50 inactive (gate=0). high_conf_80_85_penalty_v1 moved 20->50."
+    "0": 50, "5": 1, "20": 7, "50": 11, "80": 34, "100": 13,
+    "note": "116 total rules. 66 active. 50 inactive. Unchanged from Run84."
   },
-  "graduated_rules_total": 116,
-  "ab_tracker_stalled_rules": 38,
   "loop_cadence_history": [
-    {"run": 78, "gap_h": 1.05, "note": "CADENCE RESTORED"},
-    {"run": 79, "gap_h": 1.0, "note": "STREAK 2"},
     {"run": 80, "gap_h": 1.0, "note": "STREAK 3. Fix: high_conf_80_85_penalty_v1"},
     {"run": 81, "gap_h": 1.98, "note": "STREAK 4. 4 fixes: SOL SHORT + 3 TOD rules"},
-    {"run": 82, "gap_h": 1.98, "note": "STREAK 5. 0 fixes — all recs processed"},
-    {"run": 83, "gap_h": 1.92, "note": "STREAK 6. 0 fixes — all recs satisfied or below threshold"},
-    {"run": 84, "gap_h": 2.0, "note": "STREAK 7. 1 fix: high_conf_80_85_penalty_v1 gate 20->50%"}
-  ],
-  "new_fixes_this_run": [
-    {
-      "rule_id": "high_conf_80_85_penalty_v1",
-      "action": "GATE_ESCALATION 20->50",
-      "confidence": 0.88,
-      "applied_at": "2026-06-19T16:00:00Z"
-    }
+    {"run": 82, "gap_h": 1.98, "note": "STREAK 5. 0 fixes"},
+    {"run": 83, "gap_h": 1.92, "note": "STREAK 6. 0 fixes"},
+    {"run": 84, "gap_h": 2.0, "note": "STREAK 7. 1 fix: high_conf_80_85_penalty_v1 gate 20->50%"},
+    {"run": 85, "gap_h": 2.17, "note": "STREAK 8. 0 fixes. BLOCKED: TP1->_FULL_CLOSE. NEW: TP1_CUMULATIVE_PNL_INSTRUMENTATION."}
   ]
 }
