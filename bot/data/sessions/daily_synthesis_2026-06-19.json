@@ -1,51 +1,93 @@
 {
-  "last_run": "2026-06-19T08:07:58Z",
-  "run_number": 80,
+  "last_run": "2026-06-19T12:05:22Z",
+  "run_number": 82,
   "date": "2026-06-19",
-  "bot_status": "OFFLINE — Day 62.33",
+  "bot_status": "OFFLINE — Day 62.50",
   "today_trades": 0,
   "today_pnl": 0.0,
-  "anomalies_found": 24,
+  "anomalies_found": 28,
   "report_generated": false,
   "eod_report_pending": true,
-  "eod_report_eta_utc": "2026-06-19T22:00:00+00:00",
+  "eod_report_eta_utc": "2026-06-19T22:00:00Z",
   "daily_summary": {
     "date": "2026-06-19",
     "trades": 0,
     "pnl_usd": 0.0,
-    "ev_total_cumulative": 419.14,
+    "ev_total_cumulative": 422.98,
     "ev_rate_per_hour": 0.97,
     "session_windows_jun19": {
-      "morning_06_12": "OPEN — 08:07 UTC 3h53m remaining. WR=68%. $3.77 capturable. 49th miss unless bot starts NOW.",
-      "afternoon_12_16": "NOT YET — 3h53m away",
-      "evening_16_22": "NOT YET — 7h53m away"
+      "morning_06_12": "CLOSED — 12:00 UTC. MISS CONFIRMED (consecutive miss streak). WR=68%. $1.84 capturable since Run81. Gone.",
+      "afternoon_12_16": "ACTIVE NOW — 12:05 UTC. WR=62%. ~3h55m remaining. ~$2.40 capturable EV. 3:55pm closes window.",
+      "evening_16_22": "NOT YET — opens 16:00 UTC. WR=65%. ~$5.80 capturable EV."
     }
   },
-  "all_anomalies_today": {
-    "critical": [
-      "BOT_OFFLINE_62.33D — 0 trades $419.14 EV accrued.",
-      "LLM_REGIME_CAPTURE_GAP — 965 trades empty llm_regime",
-      "MORNING_WINDOW_49TH_MISS_IN_PROGRESS — WR=68% $3.77 remaining 3h53m"
-    ],
-    "high": [
-      "AB_TRACKER_38_STALLED — outcome callback broken",
-      "HIGH_CONF_CONFIDENCE_DATA_CONFLICT — live_edge_data vs 100d backtest give opposite signals on 80-90% conf. Arbiter rule added.",
-      "29_GATE0_RULES — pending human categorization",
-      "TRAILING_STOP_NET_NEGATIVE — -$37 on 111 exits"
-    ],
-    "medium": [
-      "F1_SNIPER_65D_PENDING",
-      "BTC_LONG_NO_HARD_GATE — 18% WR no hard block",
-      "HYPE_SL_MAGNITUDE — avg -$204.77 vs win ~$34"
-    ],
-    "info": [
-      "CADENCE_STREAK_3 — Run78+79+80 all 1.00h",
-      "HIGH_CONF_80_85_PENALTY_RULE_ADDED — rule #24 added to graduated_rules (-5pts soft probe)"
+  "anomalies": [
+    {
+      "type": "BOT_OFFLINE_62.50D",
+      "severity": "CRITICAL",
+      "description": "Bot offline for 62.50 days. $422.98 cumulative EV not captured. Requires manual restart: cd bot && python run.py paper",
+      "days_outstanding": 62,
+      "action": "P0: cd bot && python run.py paper"
+    },
+    {
+      "type": "MORNING_WINDOW_MISS_CONFIRMED",
+      "severity": "HIGH",
+      "description": "Morning window (06-12 UTC WR=68%) closed at 12:00 UTC without a trade. Another consecutive miss.",
+      "action": "Start bot before 06:00 UTC tomorrow"
+    },
+    {
+      "type": "AFTERNOON_WINDOW_OPEN",
+      "severity": "INFO",
+      "description": "Afternoon window (12-16 UTC WR=62%) NOW OPEN. 3h55m remaining. ~$2.40 EV capturable.",
+      "action": "P0: Start bot NOW for afternoon session"
+    },
+    {
+      "type": "TRAILING_STOP_UNDERPERFORMANCE",
+      "severity": "HIGH",
+      "description": "+$8.86/trade on 152 trailing exits vs +$71.10 TP2. $9,460 foregone EV in 10d sim. Fix: lock 70% TP1 gain as trailing floor.",
+      "code_fix": "position_manager.py:1244 — change breakeven floor to entry + (tp1-entry)*0.70"
+    },
+    {
+      "type": "TIMES_CORRECT_TRACKING_PARTIAL_DEPLOY",
+      "severity": "HIGH",
+      "description": "times_correct fix pushed for graduated_rules.py + feedback/loop.py (commit 724673e). But ensemble.py + multi_strategy_main.py caller changes may not have been pushed. All 24 rules still show times_correct=0.",
+      "action": "Verify ensemble.py + multi_strategy_main.py callers are deployed post-restart"
+    },
+    {
+      "type": "AB_TRACKER_38_STALLED",
+      "severity": "HIGH",
+      "description": "38 A/B tracker rules stalled — outcome callback broken. Rule governance cannot self-correct.",
+      "action": "Fix outcome callback in feedback loop post-restart"
+    },
+    {
+      "type": "LLM_REGIME_CAPTURE_GAP",
+      "severity": "MEDIUM",
+      "description": "All 965 trades have empty llm_regime field. Regime learning loop is blind. Verify llm_integration.py:221 on first live trade.",
+      "action": "Post-restart: check first 5 trades for non-empty llm_regime"
+    },
+    {
+      "type": "HIGH_CONF_CONFIDENCE_DATA_CONFLICT",
+      "severity": "MEDIUM",
+      "description": "10d sim: 90%+ conf = 56% WR +$32.33/trade. 100d backtest: 90%+ conf = 40.5% WR -$18.23/trade. Opposite signals. high_conf_80_85_penalty_v1 active at gate=20% as arbiter probe.",
+      "action": "Collect 50+ live trades at 80-90% conf, compare WR to both datasets to resolve conflict."
+    }
+  ],
+  "rules_state_snapshot": {
+    "total_rules": 24,
+    "active_gate_gt0": 17,
+    "inactive_gate0": 7,
+    "key_deactivations_run81": [
+      "sol_short_penalize_v1 — FREED best edge (64% WR n=179)",
+      "tod_evening_edge_v1 — INVALIDATED data",
+      "tod_afternoon_edge_v1 — INVALIDATED data",
+      "tod_morning_edge_v1 — INVALIDATED data"
     ]
   },
-  "new_anomalies_run80": [
-    {"type": "HIGH_CONF_CONFIDENCE_DATA_CONFLICT", "severity": "HIGH", "detail": "live_edge_data 80-90%=64% WR vs 100d backtest 80-85%=36.1% WR. Arbiter rule added.", "action": "Monitor post-restart. Deactivate rule if WR>=55% n>=15."},
-    {"type": "MORNING_WINDOW_OPEN", "severity": "INFO", "detail": "08:07 UTC morning window OPEN 3h53m WR=68% $3.77 capturable.", "action": "P0: Start bot paper mode"}
-  ],
-  "last_updated": "2026-06-19T08:07:58Z"
+  "run82_subsystem_outputs": {
+    "auto_fix": {"fixes_applied": 0, "gates_active": 17, "note": "All Run81 recs applied. No new conf>=75% rules found."},
+    "execution_forensics": {"avg_slippage": "UNKNOWN", "noise_stops": "87% stale", "trailing_stop_ev_gap": 9460},
+    "live_injection": {"high_edges_found": 3, "weak_setups_found": 2},
+    "daily_synthesis": {"anomalies_found": 28, "report_generated": false},
+    "model_optimization": {"skipped": true, "reason": "cost_tracker.json absent"}
+  }
 }

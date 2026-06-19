@@ -1,63 +1,118 @@
 {
-    "last_run": "2026-06-18T17:03:17+00:00",
-    "run_number": 77,
-    "high_edges_found": 8,
-    "weak_setups_found": 7,
-    "edge_staleness_days": 62.16,
-    "trades_csv_available": false,
-    "win_rates_by_symbol": {
-        "ETH": {"wr_short": 0.7, "wr_long": 0.55, "note": "ETH SHORT BB_golden strongest (conf=95%)"},
-        "BTC": {"wr_short": 0.58, "wr_long": 0.18, "note": "BTC LONG underperforming — Critic challenges by default"},
-        "SOL": {"wr_short": 0.63, "wr_long": 0.45, "note": "Both directions blocked gate=100 (DEFAULT RATIFIED Run73)"},
-        "HYPE": {"wr_short": 0.35, "wr_long": 0.28, "note": "Both directions hard-blocked"}
+  "last_updated": "2026-06-19T12:05:22Z",
+  "run_number": 82,
+  "data_source": "10d simulation (trades_10d.csv, 965 trades). No live trades since Apr 19 (Day 62.50).",
+  "high_edges_found": 3,
+  "weak_setups_found": 2,
+  "edge_staleness_days": 0,
+  "trades_csv_available": false,
+  "win_rates_by_symbol": {
+    "BTC": {
+      "wr_long": 0.64, "n_long": 72, "avg_pnl_long": 25.55,
+      "wr_short": 0.54, "n_short": 195, "avg_pnl_short": -7.22,
+      "wr_short_90plus": 0.67, "n_short_90plus": 43, "avg_pnl_short_90plus": 102.92,
+      "wr_short_7079": 0.44, "n_short_7079": 98, "avg_pnl_short_7079": -91.87,
+      "note": "BTC LONG free to trade (64% WR). BTC SHORT 70-79% BLOCKED. BTC SHORT 90%+ BOOSTED."
     },
-    "win_rates_by_regime": {
-        "trending": {"wr": 0.62, "n": 1200},
-        "high_volatility": {"wr": 0.55, "n": 800},
-        "ranging": {"wr": 0.38, "n": 600},
-        "illiquid": {"wr": 0.28, "n": 164, "note": "87% noise stops"},
-        "unknown": {"wr": 0.32, "n": 200}
+    "SOL": {
+      "wr_long": 0.53, "n_long": 122, "avg_pnl_long": -2.62,
+      "wr_short": 0.64, "n_short": 179, "avg_pnl_short": 32.44,
+      "note": "SOL SHORT best edge (64% WR, n=179). UNBLOCKED as of Run 81 (sol_short_penalize_v1 deactivated). SOL LONG BLOCKED (sol_long_veto_v1 gate=100%)."
     },
-    "win_rates_by_confidence_bin": {
-        "50_60": 0.32, "60_70": 0.48, "70_80": 0.55, "80_90": 0.64, "90_plus": 0.74
+    "HYPE": {
+      "wr_long": 0.57, "n_long": 158, "avg_pnl_long": -6.55,
+      "wr_short": 0.54, "n_short": 239, "avg_pnl_short": -16.65,
+      "note": "Both directions BLOCKED (veto gate=100%). Net drag: -$5,014 total avoided."
     },
-    "win_rates_by_time_utc": {
-        "00_06_night": 0.28, "06_12_morning": 0.68, "12_16_afternoon": 0.62,
-        "16_22_evening": 0.65, "22_24_late_night": 0.38
+    "ETH": {
+      "note": "No ETH data in 10d sim dataset. Prior rule: eth_trending_regime_boost_v1 (gate=100, applied=2). ETH SHORT BB_golden from live data: 70% WR."
+    }
+  },
+  "win_rates_by_regime": {
+    "trend": {"wr": 0.62, "note": "Best performing regime"},
+    "high_volatility": {"wr": 0.55},
+    "ranging": {"wr": 0.38, "note": "ranging_regime_penalize_v1 active gate=50"},
+    "illiquid": {"wr": 0.28, "n": 57, "note": "illiquid_regime_penalize_v1 active gate=100. 87% noise stops (stale)."},
+    "unknown": {"wr": 0.32}
+  },
+  "win_rates_by_confidence_bin": {
+    "60_70": {"wr": 0.46, "n": 123, "avg_pnl": -18.87, "status": "WORST BIN — conf_floor_70_v1 deactivated due to conflicts"},
+    "70_80": {"wr": 0.59, "n": 633, "avg_pnl": -0.98, "status": "BORDERLINE — majority of trades"},
+    "80_90": {"wr": 0.60, "n": 118, "avg_pnl": 7.67, "status": "POSITIVE — high_conf_80_85_penalty_v1 probe active gate=20"},
+    "90_plus": {"wr": 0.56, "n": 91, "avg_pnl": 32.33, "status": "BEST RETURN — data conflict with 100d backtest (40.5% WR)"}
+  },
+  "win_rates_by_time_utc": {
+    "00_06_night": {"wr": 0.19, "status": "BLOCKED night_session_block_v1 gate=100"},
+    "06_12_morning": {"wr": 0.68, "status": "Best window — CLOSED at 12:00 UTC today (52nd+ miss)"},
+    "12_16_afternoon": {"wr": 0.62, "status": "ACTIVE NOW — window open 12:00-16:00 UTC, 3h55m remaining"},
+    "16_22_evening": {"wr": 0.65, "status": "Opens 16:00 UTC — 3h55m away"},
+    "22_24_late": {"wr": 0.38}
+  },
+  "high_edges": [
+    {
+      "setup": "SOL_SHORT",
+      "wr": 0.64,
+      "n": 179,
+      "avg_pnl": 32.44,
+      "total_pnl_10d": 5807,
+      "status": "BEST EDGE — sol_short_penalize_v1 deactivated Run81, now free",
+      "rule_changes_run81": "Freed from gate=50% penalty rule"
     },
-    "high_edges": [
-        {"setup": "streak_momentum_gate", "wr": 0.74, "gate": 100},
-        {"setup": "ETH_SHORT_BB_golden", "wr": 0.7, "gate": 50},
-        {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "gate": 20},
-        {"setup": "BTC_BB_golden", "wr": 0.69, "gate": 20},
-        {"setup": "EVENING_session_16_22", "wr": 0.65, "gate": 20, "status": "OPEN_NOW_4H57M"},
-        {"setup": "tod_evening_edge_v1", "wr": 0.65, "gate": 20, "status": "OPEN_NOW_4H57M"},
-        {"setup": "eth_trending_regime_boost_v1", "wr": 0.65, "gate": 100},
-        {"setup": "HIGH_VOL_regime_boost", "wr": 0.55, "gate": 50}
-    ],
-    "weak_setups": [
-        {"setup": "SOL_SHORT_all_strategies", "wr": 0.0, "gate": 100, "note": "DEFAULT RATIFIED"},
-        {"setup": "BTC_LONG_all", "wr": 0.18, "gate": 0},
-        {"setup": "NIGHT_00_06_all", "wr": 0.28, "gate": 100},
-        {"setup": "ILLIQUID_regime_all", "wr": 0.28, "gate": 80},
-        {"setup": "HYPE_LONG_confidence_scorer", "wr": 0.28, "gate": 80},
-        {"setup": "HYPE_SHORT_all", "wr": 0.35, "gate": 80},
-        {"setup": "RANGING_regime_all", "wr": 0.38, "gate": 50}
-    ],
-    "prompt_injection_targets": [
-        {"agent": "Regime", "injection": "Tag ILLIQUID aggressively — 87% noise stops. TRENDING (62%) >> RANGING (38%).", "priority": "HIGH"},
-        {"agent": "Trade", "injection": "BTC LONG 18% WR — needs extreme justification. ETH SHORT BB_golden 70% WR.", "priority": "HIGH"},
-        {"agent": "Risk", "injection": "Evening 16-22 UTC: 65% WR. Morning 06-12: 68% WR.", "priority": "MEDIUM"},
-        {"agent": "Critic", "injection": "90%+ conf bin = 74% WR — do not veto if criteria met.", "priority": "MEDIUM"}
-    ],
-    "last_updated": "2026-06-19T17:03:17+00:00",
-    "staleness_note": "Data cached from last live session (Apr 19 2026). Stale 62.2 days. No new trades.",
-    "evening_window_jun19": {
-        "status": "OPEN — 1h03m in (17:03 UTC Jun 19)",
-        "ev_remaining": 4.8,
-        "min_remaining": 297,
-        "consecutive_miss": 10
+    {
+      "setup": "BTC_LONG",
+      "wr": 0.64,
+      "n": 72,
+      "avg_pnl": 25.55,
+      "total_pnl_10d": 1839,
+      "status": "SECOND-BEST — no block, free to trade"
     },
-    "high_edges_count": 8,
-    "weak_setups_count": 7
+    {
+      "setup": "BTC_SHORT_90plus",
+      "wr": 0.67,
+      "n": 43,
+      "avg_pnl": 102.92,
+      "total_pnl_10d": 4426,
+      "status": "HIGHEST RETURN/TRADE — btc_short_90plus_boost_v1 active gate=100 but times_applied=0 (no live data)"
+    }
+  ],
+  "weak_setups": [
+    {
+      "setup": "BTC_SHORT_70_79pct",
+      "wr": 0.44,
+      "n": 98,
+      "avg_pnl": -91.87,
+      "total_pnl_10d": -9003,
+      "status": "BLOCKED — btc_short_conf70_80_penalize_v1 gate=100%"
+    },
+    {
+      "setup": "CONF_60_70",
+      "wr": 0.46,
+      "n": 123,
+      "avg_pnl": -18.87,
+      "total_pnl_10d": -2321,
+      "status": "UNBLOCKED — conf_floor_70_v1 deactivated (evidence conflict). Confidence floor logic should catch most of these."
+    }
+  ],
+  "prompt_injection_targets": [
+    {
+      "agent": "Trade",
+      "injection": "SOL SHORT 64% WR n=179 — BEST EDGE. No longer penalized. Prioritize SOL SHORT in trending regime.",
+      "priority": "HIGH"
+    },
+    {
+      "agent": "Regime",
+      "injection": "Tag ILLIQUID aggressively — 87% noise stops (stale). TRENDING (62%) >> RANGING (38%) >> ILLIQUID (28%).",
+      "priority": "HIGH"
+    },
+    {
+      "agent": "Risk",
+      "injection": "Afternoon 12-16 UTC: 62% WR OPEN NOW. Morning 06-12 UTC: 68% WR (best window, now closed). BTC SHORT at 90%+ conf: 67% WR — boost is active.",
+      "priority": "MEDIUM"
+    },
+    {
+      "agent": "Critic",
+      "injection": "SOL SHORT newly freed — do not apply stale penalization logic. BTC LONG 64% WR — support, no block. BTC SHORT 70-79% conf: BLOCK.",
+      "priority": "HIGH"
+    }
+  ]
 }
