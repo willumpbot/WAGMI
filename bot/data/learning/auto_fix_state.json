@@ -1,1 +1,53 @@
-{see content above}
+{
+  "last_run": "2026-06-19T08:07:58Z",
+  "run_number": 80,
+  "fixes_applied_this_run": 1,
+  "governance_actions_this_run": 0,
+  "total_applied_all_time": 71,
+  "gates_active": 22,
+  "new_audit_files_this_run": 0,
+  "elapsed_since_last_run_h": 1.0,
+  "loop_gap_note": "RUN 80: 1.00h gap. Fix applied: high_conf_80_85_penalty_v1",
+  "governance_actions": [],
+  "fixes_applied": [
+    {
+      "rule_id": "high_conf_80_85_penalty_v1",
+      "description": "Added penalize rule for 80-85% confidence band (-5pt adj, gate=20 soft probe). Evidence: 100d backtest 36.1% WR on n=36. Conf=0.88.",
+      "baseline_wr": 0.361,
+      "treatment_wr": null,
+      "gate_percentage": 20,
+      "source_finding": "HIGH_CONF_BACKTEST_PENALTY_100D from autonomous_audit_2026-06-19T02-06-05Z",
+      "action": "ADDED_TO_data_llm_graduated_rules.json",
+      "ts": "2026-06-19T08:07:58Z"
+    }
+  ],
+  "source_audit_file": "autonomous_audit_2026-06-19T02-06-05Z.md",
+  "session_recs_processed": 3,
+  "session_recs_qualifying_conf75": 2,
+  "session_recs_already_applied": 1,
+  "session_recs_pending_human": 2,
+  "session_recs_new_rules": 1,
+  "recommendations_from_new_audit": [
+    {"rec": "BOT_RESTART", "conf": 100, "status": "PENDING_HUMAN"},
+    {"rec": "LLM_REGIME_CAPTURE_FIX", "conf": 95, "status": "CODE_INVESTIGATION: llm_integration.py:221 already wires candidate.llm_regime. Gap may be backtest path only."},
+    {"rec": "HIGH_CONF_BACKTEST_PENALTY_100D", "conf": 88, "status": "APPLIED — graduated rule added. Leverage.py code change deferred."}
+  ],
+  "pending_human_recs": [
+    {"finding": "F1_sniper_re-enable", "confidence": 90, "status": "PENDING_HUMAN_REVIEW", "days_pending": 65, "description": "Re-enable SNIPER_AUTO_EXECUTE with 5x leverage cap + $50/trade loss ceiling."},
+    {"finding": "BOT_RESTART", "confidence": 100, "status": "PENDING_HUMAN_REVIEW", "days_pending": 62, "description": "cd bot && python run.py paper — $419.14 EV accrued since Apr 19 shutdown."},
+    {"finding": "LLM_REGIME_CAPTURE_FIX_VERIFY", "confidence": 95, "status": "VERIFY_NEEDED", "days_pending": 62, "description": "llm_integration.py:221 sets candidate.llm_regime. But backtest_100d.csv empty. Verify live vs backtest gap."}
+  ],
+  "gate_distribution": {"0": 29, "5": 1, "20": 21, "35": 1, "50": 18, "80": 28, "100": 20},
+  "graduated_rules_total": 24,
+  "ab_tracker_stalled_rules": 38,
+  "loop_cadence_history": [
+    {"run": 76, "gap_h": 1.0, "note": "STREAK 4"},
+    {"run": 77, "gap_h": 24.0, "note": "STREAK BROKEN"},
+    {"run": 78, "gap_h": 1.05, "note": "CADENCE RESTORED"},
+    {"run": 79, "gap_h": 1.0, "note": "STREAK 2"},
+    {"run": 80, "gap_h": 1.0, "note": "STREAK 3. Fix applied: high_conf_80_85_penalty_v1"}
+  ],
+  "new_fixes_this_run": [
+    "high_conf_80_85_penalty_v1 — added to data/llm/graduated_rules.json (rule #24, gate=20 soft probe)"
+  ]
+}

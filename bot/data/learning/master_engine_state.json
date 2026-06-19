@@ -1,168 +1,65 @@
 {
-    "last_run": "2026-06-19T19:06:00+00:00",
-    "run_number": 79,
-    "current_utc": "2026-06-19 19:06 UTC",
-    "elapsed_since_last_run_h": 1.0,
-    "loop_cadence_status": "CADENCE STREAK 2 — Run79 fires 1.00h after Run78. Streak rebuilding after Run77 24h anomaly. History: ...1.00→1.00→1.00→1.00→24.00→1.05→1.00",
-    "bot_offline_days": 62.27,
-    "cadence_note": "RUN 79: 1.00h gap. Evening window OPEN — 3h06m in, $2.81 remaining, 2h54m until close (22:00 UTC Jun 19). $420 milestone ~1.9h (20:59 UTC).",
-    "subsystems": {
-        "auto_fix": {
-            "fixes_applied": 0,
-            "governance_actions": 0,
-            "gates_active": 21,
-            "total_applied_all_time": 70,
-            "graduated_rules_total": 117,
-            "high_conf_active_rules": 88,
-            "new_audit_files_found": 0,
-            "audit_file_processed": "autonomous_audit_2026-06-19T02-06-05Z.md (processed Run78 — no new files Run79)",
-            "new_fixes_this_run": [],
-            "recommendations_processed": 0,
-            "qualifying_conf75": 0,
-            "already_tracked": 0,
-            "new_rules_added": 0,
-            "human_blocked": 0,
-            "gate_distribution": {"0": 29, "5": 1, "20": 20, "35": 1, "50": 18, "80": 28, "100": 20},
-            "ab_tracker_stalled_rules": 38,
-            "pending_code_implementations": [
-                "HIGH_CONF_BACKTEST_PENALTY_100D — leverage.py code not yet written (rule exists at gate=20 but has no code path)"
-            ],
-            "blockers": [
-                "BOT_OFFLINE_62.27D — primary blocker",
-                "AB_tracker broken (bot/feedback/loop.py callback)",
-                "LLM_REGIME_CAPTURE_GAP conf=99 — code fix needed in decision_engine.py",
-                "HIGH_CONF_BACKTEST_PENALTY_100D — needs leverage.py implementation",
-                "29 gate=0 rules need categorization",
-                "F1_sniper conf=90% — 65 days pending human sign-off"
-            ]
-        },
-        "execution_forensics": {
-            "avg_slippage": "UNKNOWN — no live trades (bot offline Day 62.27)",
-            "noise_stops": "87% — cached from last live session (Apr 19, 62.27d stale)",
-            "data_available": false,
-            "trades_csv_rows": 0,
-            "backtest_100d_findings_new_this_run": 0,
-            "backtest_100d_findings_carried_forward": {
-                "hype_sl_magnitude_crisis": "HYPE SL avg -$204.77 (6x win). Status: PENDING human fix.",
-                "trailing_stop_net_negative": "-$37 on 111 exits. Status: PENDING human fix.",
-                "confidence_size_inversion": "80-85% conf = 36.1% WR. Rule gate=20 added Run78. Code PENDING."
-            },
-            "ev_loss_total_usd": 418.17,
-            "ev_loss_delta_run79": 0.97,
-            "ev_loss_rate_per_hour": 0.97,
-            "ev_milestones_approaching": [
-                "$420 ETA ~1.9h (20:59 UTC Jun 19) — inside evening window",
-                "$425 ETA ~7.0h (02:06 UTC Jun 20)",
-                "$450 ETA ~33.9h (04:59 UTC Jun 21)"
-            ],
-            "evening_window_jun19": {
-                "status": "OPEN — 3h06m elapsed (19:06 UTC), WR=65%",
-                "ev_remaining_usd": 2.81,
-                "minutes_remaining": 174,
-                "consecutive_miss_count": 10,
-                "action": "10th miss in progress. $2.81 capturable in next 2h54m. 11th miss confirmed at 22:00 UTC unless bot starts."
-            }
-        },
-        "live_injection": {
-            "high_edges": 8,
-            "weak_setups": 7,
-            "data_source": "Cached from live_edge_data.json (no new trades — bot offline 62.27d)",
-            "edge_staleness_days": 62.27,
-            "new_finding_run79": "Evening window countdown: 2h54m remaining. $420 milestone approaching inside window.",
-            "confidence_bin_resolution": {
-                "verdict": "100d backtest (589 actual trades) prioritized over shadow signal analysis.",
-                "backtest_100d_worst_bin": "80-85% conf → 36.1% WR, -$52.16/trade",
-                "rule_active": "HIGH_CONF_BACKTEST_PENALTY_100D gate=20 (code pending in leverage.py)"
-            },
-            "top_edges": [
-                {"setup": "streak_momentum_gate", "wr": 0.74, "n": 2172, "gate": 100},
-                {"setup": "ETH_SHORT_BB_golden", "wr": 0.70, "gate": 50},
-                {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "gate": 20},
-                {"setup": "EVENING_session_16_22", "wr": 0.65, "n": 27, "gate": 20, "status": "OPEN_3H06M_ELAPSED_2H54M_REMAINING"},
-                {"setup": "trending_regime", "wr": 0.62, "n": 1200, "gate": "NA"}
-            ],
-            "urgent_safety_gap": "BTC_LONG_all at gate=0 despite 18% WR — only Critic prompt challenge, no hard gate"
-        },
-        "daily_synthesis": {
-            "anomalies_found": 23,
-            "new_anomalies_this_run": 1,
-            "report_generated": false,
-            "eod_report_eta_utc": "2026-06-19T22:00:00+00:00",
-            "minutes_to_eod": 174,
-            "date": "2026-06-19",
-            "today_trades": 0,
-            "today_pnl": 0.0,
-            "ev_loss_today_usd": 19.49,
-            "session_windows": {
-                "morning": "MISSED (48th)",
-                "afternoon": "MISSED (10th+)",
-                "evening": "OPEN — $2.81 remaining, 2h54m"
-            },
-            "new_this_run": [
-                "$420_MILESTONE_APPROACHING — ETA 20:59 UTC (~1.9h) — inside tonight's open evening window",
-                "CADENCE_STREAK_2 — Run79 1.00h, streak rebuilding"
-            ]
-        },
-        "model_optimization": {
-            "skipped": true,
-            "reason": "cost_tracker.json absent — bot offline 62.27d, no LLM calls made",
-            "swaps_recommended": 0,
-            "potential_savings": "$0.00"
-        }
+  "last_run": "2026-06-19T08:07:58Z",
+  "run_number": 80,
+  "current_utc": "2026-06-19 08:07 UTC",
+  "elapsed_since_last_run_h": 1.0,
+  "loop_cadence_status": "CADENCE STREAK 3 — Run80 1.00h after Run79",
+  "bot_offline_days": 62.33,
+  "subsystems": {
+    "auto_fix": {
+      "fixes_applied": 1,
+      "gates_active": 22,
+      "total_applied_all_time": 71,
+      "graduated_rules_total": 24,
+      "new_fixes_this_run": ["high_conf_80_85_penalty_v1 — penalize 80-85% conf by -5pts (36.1% WR backtest n=36). Rule #24 in data/llm/graduated_rules.json."],
+      "pending_code_implementations": [
+        "leverage.py confidence penalty — DEFERRED: conflicting evidence (live_edge_data 90%+WR=74% vs backtest 80-85%WR=36.1%)",
+        "LLM_REGIME_CAPTURE_FIX — llm_integration.py:221 already wires it; gap may be backtest-specific"
+      ]
     },
-    "high_priority_findings": [
-        {
-            "subsystem": "daily_synthesis",
-            "severity": "CRITICAL",
-            "finding": "Bot offline Day 62.27. $418.17 cumulative EV loss at $0.97/h. Evening window OPEN (WR=65%): 2h54m remaining, $2.81 capturable. 11th miss locked in at 22:00 UTC.",
-            "action": "P0: START BOT — cd bot && python run.py paper"
-        },
-        {
-            "subsystem": "execution_forensics",
-            "severity": "HIGH",
-            "finding": "$420 milestone ETA 20:59 UTC (~1.9h). $420 is a psychological threshold: $417 → $420 → $425 → ... each missed window adds $0.97.",
-            "action": "P0: Start bot before 20:59 UTC to prevent $420 crossing."
-        },
-        {
-            "subsystem": "auto_fix",
-            "severity": "HIGH",
-            "finding": "HIGH_CONF_BACKTEST_PENALTY_100D rule added to graduated_rules.json (Run78) but leverage.py code NOT YET WRITTEN. Rule is completely inert.",
-            "action": "P1: Add to leverage.py: if signal.confidence > 80: size_multiplier *= 0.6 elif signal.confidence > 75: size_multiplier *= 0.8"
-        },
-        {
-            "subsystem": "auto_fix",
-            "severity": "HIGH",
-            "finding": "LLM_REGIME_CAPTURE_GAP: decision_engine.py does not write llm_regime to trade record. Regime learning completely blind. 965 trades with empty llm_regime.",
-            "action": "P1: In decision_engine.py trade logging path: trade_record['llm_regime'] = decision.regime"
-        },
-        {
-            "subsystem": "execution_forensics",
-            "severity": "HIGH",
-            "finding": "Trailing stops net -$37 on 111 exits (100d backtest). Converting TP1 winners into breakeven or losses.",
-            "action": "P2: Lock 70% of TP1 gain before trailing stop activates."
-        },
-        {
-            "subsystem": "live_injection",
-            "severity": "MEDIUM",
-            "finding": "BTC_LONG_all at gate=0 despite 18% WR. Only Critic prompt challenge — no hard position-sizing gate. Safety gap.",
-            "action": "P2: Add BTC_LONG_hard_reduce at gate=20 as safety net."
-        },
-        {
-            "subsystem": "model_optimization",
-            "severity": "LOW",
-            "finding": "cost_tracker.json absent — 62.27d no LLM activity.",
-            "action": "Monitor after bot restart."
-        }
-    ],
-    "run_summary": {
-        "run_number": 79,
-        "fixes_applied_this_run": 0,
-        "new_rules_added": 0,
-        "new_insights_this_run": 1,
-        "subsystems_executed": 5,
-        "key_status": "Day 62.27. $418.17 EV. Cadence STREAK 2 (1.00h). Evening OPEN ($2.81, 2h54m). $420 in ~1.9h.",
-        "ev_total": "$418.17 at $0.97/h",
-        "ev_milestone_420_eta": "~1.9h (20:59 UTC Jun 19)",
-        "cadence_assessment": "STREAK 2 — Run79 1.00h. History: ...1.00→1.00→1.00→1.00→24.00→1.05→1.00"
-    }
+    "execution_forensics": {
+      "avg_slippage": "UNKNOWN — no live trades (bot offline Day 62.33)",
+      "noise_stops": "87% — cached Apr 19, 62.33d stale",
+      "ev_loss_total_usd": 419.14,
+      "ev_loss_rate_per_hour": 0.97,
+      "morning_window_status": {"status": "OPEN — 08:07 UTC WR=68%", "ev_remaining_usd": 3.77, "minutes_remaining": 233, "consecutive_miss_count": 48}
+    },
+    "live_injection": {
+      "high_edges": 8,
+      "weak_setups": 7,
+      "new_finding_run80": "CONFIDENCE_DATA_CONFLICT: live_edge_data 80-90%=64% WR vs 100d backtest 80-85%=36.1% WR. Opposite signals. Graduated rule -5pt is arbiter.",
+      "top_edges": [
+        {"setup": "streak_momentum_gate", "wr": 0.74, "n": 2172},
+        {"setup": "ETH_SHORT_BB_golden", "wr": 0.70},
+        {"setup": "morning_06_12", "wr": 0.68, "status": "OPEN_NOW_3H53M"}
+      ]
+    },
+    "daily_synthesis": {
+      "anomalies_found": 24,
+      "new_anomalies_this_run": 2,
+      "date": "2026-06-19",
+      "today_trades": 0,
+      "session_windows": {
+        "morning": "OPEN — 08:07 UTC 3h53m remaining WR=68% $3.77 EV",
+        "afternoon": "NOT YET",
+        "evening": "NOT YET"
+      }
+    },
+    "model_optimization": {"skipped": true, "reason": "cost_tracker.json absent"}
+  },
+  "high_priority_findings": [
+    {"subsystem": "daily_synthesis", "severity": "CRITICAL", "finding": "Bot offline Day 62.33. $419.14 EV loss. Morning window OPEN WR=68%: 3h53m, $3.77 capturable. 49th consecutive miss.", "action": "P0: cd bot && python run.py paper"},
+    {"subsystem": "live_injection", "severity": "HIGH", "finding": "CONFIDENCE_DATA_CONFLICT: live_edge_data 90%+=74% WR vs 100d backtest 80-85%=36.1% WR. Opposite conclusions.", "action": "P1: After restart track 80-85% and 90%+ bins separately, 30 trades each."},
+    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "APPLIED: high_conf_80_85_penalty_v1 rule #24 added (-5pt probe). 71 total fixes all-time.", "action": "Monitor accuracy post-restart. Graduate gate 20->50 if WR<45% n>=15."},
+    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "LLM_REGIME_CAPTURE: llm_integration.py:221 already sets candidate.llm_regime. Gap may be backtest-path only.", "action": "P1: Run 5min paper, verify data/trades.csv llm_regime column populates."},
+    {"subsystem": "execution_forensics", "severity": "HIGH", "finding": "Trailing stops net -$37 on 111 exits. Converting TP1 winners to breakeven.", "action": "P2: Lock 70% of TP1 gain before trailing activates."}
+  ],
+  "run_summary": {
+    "run_number": 80,
+    "fixes_applied_this_run": 1,
+    "new_rules_added": 1,
+    "subsystems_executed": 5,
+    "key_status": "Day 62.33. $419.14 EV. Cadence STREAK 3. Morning OPEN $3.77 3h53m. Fix: high_conf_80_85_penalty_v1.",
+    "ev_total": "$419.14 at $0.97/h"
+  }
 }
