@@ -1,162 +1,168 @@
 {
-  "last_run": "2026-06-18T17:03:17+00:00",
-  "run_number": 76,
-  "current_utc": "2026-06-18 17:03 UTC",
-  "elapsed_since_last_run_h": 1.0,
-  "loop_cadence_status": "CADENCE CONFIRMED STABLE — Run76 fires 1.00h after Run75. FOURTH CONSECUTIVE 1.00h (Runs 73-76). New streak record. Pattern: 25h→28h→1h→22h→1.97h→1.02h→2.99h→1.00h→1.00h→1.00h→1.00h. 7 of last 9 runs sub-2h. CADENCE STABLE CONFIRMED.",
-  "bot_offline_days": 61.16,
-  "cadence_note": "RUN 76: 1.00h gap (STREAK RUN 4 — CADENCE CONFIRMED STABLE). EV $392.90. Evening window 1h03m in, $4.80 remaining. $392 crossed ~16:07 UTC. $395 in 2h10m. $400 in 7h19m.",
-  "subsystems": {
-    "auto_fix": {
-      "fixes_applied": 0,
-      "governance_actions": 0,
-      "gates_active": 20,
-      "total_applied_all_time": 69,
-      "graduated_rules_total": 116,
-      "high_conf_active_rules": 77,
-      "escalation_candidates_blocked": 20,
-      "new_audit_files_found": 0,
-      "source_file": "AUTONOMOUS_SESSION_2026_04_15.md (no new autonomous_audit_*.md — unchanged since Run73)",
-      "session_recommendations_processed": 6,
-      "session_recommendations_qualifying_conf75": 6,
-      "session_recommendations_already_applied": 5,
-      "session_recommendations_pending_human": 1,
-      "new_fixes_this_run": [],
-      "governance_action_this_run": "NONE — SOL_SHORT governance CLOSED (DEFAULT_RATIFIED Run73). No new items.",
-      "sol_short_governance_status": "CLOSED — DEFAULT_RATIFIED at Run73. Gate=100 maintained. Human override available.",
-      "gate_distribution": {"0": 3, "20": 3, "50": 7, "100": 7},
-      "blockers": [
-        "SOL_SHORT DEFAULT_RATIFIED — gate=100 (closed governance). Human override available.",
-        "AB_tracker broken Day 61.16 — 20 rules cannot graduate (outcome callback unwired in bot/feedback/loop.py)",
-        "F1_sniper_pending_safety_review — conf=90%, 64+ days pending, needs human sign-off",
-        "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review",
-        "3 gate=0 rules require code-level verification before escalation"
-      ]
+    "last_run": "2026-06-19T17:03:17+00:00",
+    "run_number": 77,
+    "current_utc": "2026-06-19 17:03 UTC",
+    "elapsed_since_last_run_h": 24.0,
+    "loop_cadence_status": "CADENCE REGRESSION — Run77 fires 24h after Run76. 4-consecutive 1.00h STREAK BROKEN (Runs73-76). 7 of last 10 runs sub-2h but streak record ends here.",
+    "bot_offline_days": 62.16,
+    "cadence_note": "RUN 77: 24h gap (CADENCE REGRESSION — previous best: 4x1.00h). EV $416.18. Evening window 1h03m in, $4.80 remaining. $420 in ~3.94h (20:59 UTC Jun 19).",
+    "subsystems": {
+        "auto_fix": {
+            "fixes_applied": 0,
+            "governance_actions": 0,
+            "gates_active": 20,
+            "total_applied_all_time": 69,
+            "graduated_rules_total": 116,
+            "high_conf_active_rules": 87,
+            "escalation_candidates_blocked": 29,
+            "new_audit_files_found": 0,
+            "source_file": "AUTONOMOUS_SESSION_2026_04_15.md (no new autonomous_audit_*.md — unchanged since Run73)",
+            "session_recommendations_processed": 6,
+            "session_recommendations_qualifying_conf75": 6,
+            "session_recommendations_already_applied": 5,
+            "session_recommendations_pending_human": 1,
+            "new_fixes_this_run": [],
+            "governance_action_this_run": "NONE",
+            "new_critical_finding": "29 gate=0 rules discovered vs 3 previously noted — 26 undocumented. STALE_AB_DATA_FLAG says 38 A/B tests stalled (not 20). LLM_REGIME_CAPTURE_GAP conf=99 — all 965 trades have empty llm_regime.",
+            "gate_distribution": {"0": 29, "5": 1, "20": 19, "35": 1, "50": 18, "80": 28, "100": 20},
+            "ab_tracker_stalled_rules": 38,
+            "blockers": [
+                "AB_tracker broken Day 62.16 — 38 rules stalled (NEW: 18 more than previously tracked)",
+                "LLM_REGIME_CAPTURE_GAP — 965 trades all have empty llm_regime (conf=99 — CRITICAL)",
+                "F1_sniper_pending — conf=90%, 65 days pending",
+                "HIGH_CONF_CALIBRATION_DRIFT — conf=88%",
+                "29 gate=0 rules (26 undocumented) — full audit needed"
+            ]
+        },
+        "execution_forensics": {
+            "avg_slippage": "UNKNOWN — trades.csv absent (bot offline Day 62.16)",
+            "noise_stops": "87% — cached from last live session (164-trade dataset, stale 62.16d)",
+            "noise_stop_problem": "87% early SL hits in non-trending regimes confirmed from cached dataset",
+            "data_available": false,
+            "ev_loss_total_usd": 416.18,
+            "ev_loss_delta_run77": 23.28,
+            "ev_loss_rate_per_hour": 0.97,
+            "ev_loss_rate_per_day": 23.28,
+            "bot_offline_days": 62.16,
+            "milestones_crossed_since_run76": [
+                "$395 crossed 19:13 UTC Jun 18",
+                "$400 crossed 00:22 UTC Jun 19",
+                "$405 crossed 05:31 UTC Jun 19",
+                "$410 crossed 10:41 UTC Jun 19",
+                "$415 crossed 15:50 UTC Jun 19",
+                "10th consecutive evening miss CONFIRMED (Jun 18 22:00 UTC closed)"
+            ],
+            "milestones_approaching": [
+                "$420 ETA ~3.94h (20:59 UTC Jun 19) (evening window active)",
+                "$425 ETA ~9.09h (02:08 UTC Jun 20)",
+                "$450 ETA ~34.87h (03:55 UTC Jun 21)"
+            ],
+            "evening_window_jun19": {
+                "status": "OPEN — 1h03m elapsed (17:03 UTC), WR=65%",
+                "ev_remaining_usd": 4.8,
+                "minutes_remaining": 297,
+                "consecutive_miss_count": 10,
+                "action": "10th miss in progress. Window OPEN — 4h57m remaining. $4.80 still capturable."
+            }
+        },
+        "live_injection": {
+            "high_edges": 8,
+            "weak_setups": 7,
+            "data_source": "Cached from live_edge_data.json (no new trades — bot offline 62.16 days)",
+            "edge_staleness_days": 62.16,
+            "evening_window_open": true,
+            "evening_window_status": "OPEN — 1h03m elapsed (17:03 UTC Jun 19). $4.80 EV remaining. 4h57m until close (22:00 UTC).",
+            "top_edges": [
+                {"setup": "streak_momentum_gate", "wr": 0.74, "n": 2172, "gate": 100, "conf": 0.9},
+                {"setup": "ETH_SHORT_BB_golden", "wr": 0.70, "n": 2172, "gate": 50, "conf": 0.9},
+                {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "n": 2172, "gate": 20, "conf": 0.9},
+                {"setup": "EVENING_session_16_22", "wr": 0.65, "n": 27, "gate": 20, "status": "OPEN_NOW_4H57M"},
+                {"setup": "eth_trending_regime_boost_v1", "wr": 0.65, "n": 164, "gate": 100, "conf": 0.8}
+            ],
+            "win_rates_by_confidence_bin": {
+                "50_60": 0.32, "60_70": 0.48, "70_80": 0.55, "80_90": 0.64, "90_plus": 0.74
+            },
+            "win_rates_by_time_utc": {
+                "00_06_night": 0.28, "06_12_morning": 0.68, "12_16_afternoon": 0.62,
+                "16_22_evening": 0.65, "22_24_late_night": 0.38
+            }
+        },
+        "daily_synthesis": {
+            "anomalies_found": 21,
+            "report_generated": false,
+            "jun18_eod_report_generated": true,
+            "jun18_eod_note": "Jun 18 EOD generated retroactively by Run77",
+            "eod_report_eta_utc": "2026-06-19T22:00:00+00:00",
+            "date": "2026-06-19",
+            "data_source": "No new trades — computed from cached data and EV tracking",
+            "today_trades": 0,
+            "today_pnl": 0.0,
+            "ev_loss_today_usd": 16.54,
+            "ev_loss_today_note": "17.05h since midnight × $0.97/h = $16.54 as of 17:03 UTC",
+            "new_this_run": [
+                "$400_EV_MILESTONE_CROSSED — 00:22 UTC Jun19 (overnight)",
+                "$405_EV_MILESTONE_CROSSED — 05:31 UTC Jun19",
+                "$410_EV_MILESTONE_CROSSED — 10:41 UTC Jun19",
+                "$415_EV_MILESTONE_CROSSED — 15:50 UTC Jun19",
+                "CADENCE_REGRESSION_24H — 4x1.00h streak BROKEN",
+                "48TH_MORNING_MISS_CONFIRMED — Jun 19 12:00 UTC",
+                "LLM_REGIME_CAPTURE_GAP_DISCOVERED — 29 gate=0 rules audited"
+            ]
+        },
+        "model_optimization": {
+            "skipped": true,
+            "reason": "cost_tracker.json absent — bot offline 62.16 days, no LLM calls made",
+            "swaps_recommended": 0,
+            "potential_savings": "$0.00"
+        }
     },
-    "execution_forensics": {
-      "avg_slippage": "UNKNOWN — trades.csv absent (bot offline Day 61.16)",
-      "noise_stops": "87% — cached from last live session (164-trade dataset, stale 61.16d)",
-      "noise_stop_problem": "87% early SL hits in non-trending regimes confirmed from cached dataset",
-      "data_available": false,
-      "ev_loss_total_usd": 392.9,
-      "ev_loss_delta_run76": 0.97,
-      "ev_loss_rate_per_hour": 0.97,
-      "ev_loss_rate_per_day": 23.28,
-      "bot_offline_days": 61.16,
-      "milestones_crossed_this_run": [
-        "$392 crossed ~16:07 UTC Jun18 (~4min after Run75 — nearly simultaneous)"
-      ],
-      "milestones_approaching": [
-        "$395 ETA ~19:13 UTC Jun18 (~2h10m, evening window active)",
-        "$400 ETA ~00:22 UTC Jun19 (~7h19m)"
-      ],
-      "afternoon_window": {
-        "status": "CLOSED — 16:00 UTC passed 1h03m ago. $0.92 EV missed.",
-        "minutes_missed": 63,
-        "ev_missed_today_usd": 3.89,
-        "note": "Afternoon window closed 1h03m ago. Captured $0 of $3.89 available."
-      },
-      "evening_window": {
-        "status": "OPEN — 1h03m elapsed (17:03 UTC, WR=65%)",
-        "ev_full_window_usd": 5.82,
-        "ev_remaining_usd": 4.8,
-        "minutes_elapsed": 63,
-        "minutes_remaining": 297,
-        "consecutive_miss_count": 9,
-        "miss_confirmed_run75": true,
-        "action": "9th miss confirmed at Run75 (bot not started at 16:00). Window OPEN — 4h57m remaining. $4.80 still capturable."
-      },
-      "noise_regime_active_rules": [
-        "illiquid_regime_penalize_v1 (gate=100, conf=0.8)",
-        "ranging_regime_penalize_v1 (gate=50, conf=0.8)",
-        "night_session_block_v1 (gate=100, conf=0.9)"
-      ],
-      "worst_performers": [
-        {"symbol": "SOL", "side": "SELL", "strategy": "regime_trend", "wr": 0.0, "n": 149, "blocked": true, "note": "DEFAULT RATIFIED Run73"},
-        {"symbol": "BTC", "side": "BUY", "strategy": "all", "wr": 0.18, "n": 17, "mitigated_by": "CRITIC_PROMPT_BTC_LONG_BIAS"},
-        {"symbol": "HYPE", "side": "BUY", "strategy": "confidence_scorer", "wr": 0.28, "n": 25, "blocked": true}
-      ]
-    },
-    "live_injection": {
-      "high_edges": 8,
-      "weak_setups": 7,
-      "data_source": "Cached from live_edge_data.json (no new trades — bot offline 61.16 days)",
-      "edge_staleness_days": 61.16,
-      "evening_window_open": true,
-      "evening_window_status": "OPEN — 1h03m elapsed (17:03 UTC). $4.80 EV remaining. 4h57m until close (22:00 UTC).",
-      "top_edges": [
-        {"setup": "ETH_SHORT_BB_golden", "wr": 0.7, "n": 2172, "gate": 50, "conf": 0.9, "status": "ALL_WINDOWS"},
-        {"setup": "streak_momentum_gate", "wr": 0.74, "n": 2172, "gate": 100, "conf": 0.9, "status": "ALL_WINDOWS"},
-        {"setup": "EVENING_session_16_22", "wr": 0.65, "n": 27, "gate": 20, "conf": 0.85, "status": "OPEN_NOW_4H57M"},
-        {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "n": 2172, "gate": 20, "conf": 0.9, "status": "ALL_WINDOWS"},
-        {"setup": "tod_evening_edge_v1", "wr": 0.65, "n": 27, "gate": 20, "conf": 0.85, "status": "OPEN_NOW_4H57M"},
-        {"setup": "eth_trending_regime_boost_v1", "wr": 0.65, "n": 164, "gate": 100, "conf": 0.8, "status": "ALL_WINDOWS"},
-        {"setup": "HIGH_VOL_regime_boost", "wr": 0.55, "n": 2172, "gate": 50, "conf": 0.88, "status": "ALL_WINDOWS"},
-        {"setup": "BTC_BB_golden", "wr": 0.69, "n": 2172, "gate": 20, "conf": 0.9, "status": "ALL_WINDOWS"}
-      ],
-      "win_rates_by_confidence_bin": {"50_60": 0.32, "60_70": 0.48, "70_80": 0.55, "80_90": 0.64, "90_plus": 0.74},
-      "win_rates_by_time_utc": {"00_06_night": 0.28, "06_12_morning": 0.68, "12_16_afternoon": 0.62, "16_22_evening": 0.65, "22_24_late_night": 0.38}
-    },
-    "daily_synthesis": {
-      "anomalies_found": 17,
-      "report_generated": false,
-      "eod_report_eta_utc": "2026-06-18T22:00:00+00:00",
-      "eod_report_eta_local": "22:00 UTC (4h57m away)",
-      "date": "2026-06-18",
-      "data_source": "No new trades — computed from cached data and EV tracking",
-      "today_trades": 0,
-      "today_pnl": 0.0,
-      "ev_loss_today_usd": 16.54,
-      "ev_loss_today_note": "17.05h since midnight × $0.97/h = $16.54 as of 17:03 UTC",
-      "new_this_run": [
-        "$392_EV_MILESTONE_CROSSED — ~16:07 UTC Jun18 (~4min after Run75). $392.90 current.",
-        "CADENCE_STREAK_4_CONSECUTIVE — Run73+74+75+76 all 1.00h. NEW RECORD (previous: 3). CADENCE STABLE CONFIRMED.",
-        "EVENING_WINDOW_1H03M_IN — $4.80 remaining (was $5.77 at Run75). 4h57m until close (22:00 UTC).",
-        "$395_ETA_2H10M — 19:13 UTC (during evening window). $400 ETA 7h19m (00:22 Jun19)."
-      ]
-    },
-    "model_optimization": {
-      "skipped": true,
-      "reason": "cost_tracker.json absent — bot offline 61.16 days, no LLM calls made",
-      "swaps_recommended": 0,
-      "potential_savings": "$0.00"
+    "high_priority_findings": [
+        {
+            "subsystem": "daily_synthesis",
+            "severity": "CRITICAL",
+            "finding": "EVENING WINDOW OPEN 1h03m — 10th consecutive miss in progress. $4.80 EV remaining (WR=65%, 4h57m until close 22:00 UTC Jun19). Bot offline Day 62.16.",
+            "action": "P0: START BOT — 'cd bot && python run.py paper'. $4.80 capturable if started now."
+        },
+        {
+            "subsystem": "auto_fix",
+            "severity": "CRITICAL",
+            "finding": "LLM_REGIME_CAPTURE_GAP (conf=99): 965 trades ALL have empty llm_regime field. Regime-based learning has been completely blind since bot launch.",
+            "action": "P1: Fix data pipeline in decision_engine.py — store llm_regime at trade entry. Test with 'cd bot && pytest tests/ -k agent'."
+        },
+        {
+            "subsystem": "auto_fix",
+            "severity": "HIGH",
+            "finding": "CADENCE REGRESSION: Run77 fires 24h after Run76 (vs 4-consecutive 1.00h record). 24h gap — longest since Jun 9.",
+            "action": "P2: Investigate scheduler. Check cron / loop.py for reason for 24h gap."
+        },
+        {
+            "subsystem": "auto_fix",
+            "severity": "HIGH",
+            "finding": "29 gate=0 rules discovered vs 3 previously noted. STALE_AB_DATA_FLAG (conf=100) says 38 A/B gates stalled — not 20 as tracked.",
+            "action": "P2: Full gate=0 audit. Fix bot/feedback/loop.py AB tracker callback. Categorize 29 rules."
+        },
+        {
+            "subsystem": "execution_forensics",
+            "severity": "HIGH",
+            "finding": "$416.18 EV (Day 62.16 offline). 5 milestones crossed since Run76. $420 in ~4h (evening window). $450 in ~35h.",
+            "action": "P0: per above (start bot)."
+        },
+        {
+            "subsystem": "model_optimization",
+            "severity": "LOW",
+            "finding": "cost_tracker.json absent — 62.16 days no LLM activity.",
+            "action": "No action. Monitor after bot restart."
+        }
+    ],
+    "run_summary": {
+        "run_number": 77,
+        "fixes_applied_this_run": 0,
+        "new_insights_this_run": 7,
+        "subsystems_executed": 5,
+        "key_status": "Day 62.16. $416.18 EV. 24h CADENCE REGRESSION. 5 $5-milestones crossed. Evening OPEN ($4.80). LLM_REGIME_CAPTURE_GAP discovered (conf=99).",
+        "ev_total": "$416.18 at $0.97/h",
+        "ev_milestone_420_eta": "~3.94h (20:59 UTC Jun 19)",
+        "ev_milestone_425_eta": "~9.09h (02:08 UTC Jun 20)",
+        "cadence_assessment": "REGRESSION — Run77 fires 24h after Run76. 4x1.00h streak broken. History: ...2.99→1.00→1.00→1.00→1.00→24.00"
     }
-  },
-  "high_priority_findings": [
-    {
-      "subsystem": "daily_synthesis",
-      "severity": "critical",
-      "finding": "EVENING WINDOW OPEN 1h03m — 9th consecutive miss in progress. $4.80 EV remaining (WR=65%, 4h57m until close 22:00 UTC). Bot still offline Day 61.16.",
-      "action": "P0: START BOT — 'cd bot && python run.py paper'. $4.80 capturable if started now."
-    },
-    {
-      "subsystem": "execution_forensics",
-      "severity": "high",
-      "finding": "$392.90 EV (Day 61.16 offline). $395 in 2h10m (19:13 UTC, evening window). $400 in 7h19m.",
-      "action": "P0: per above."
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "high",
-      "finding": "CADENCE 4-CONSECUTIVE RECORD — Run73-76 all 1.00h. AB tracker broken Day 61.16 (20 rules frozen). F1_sniper pending 64+ days (conf=90%).",
-      "action": "P1: Fix AB tracker bot/feedback/loop.py (~2h). P2: F1_sniper — add $50/trade ceiling, approve."
-    },
-    {
-      "subsystem": "model_optimization",
-      "severity": "low",
-      "finding": "cost_tracker.json absent — 61.16 days no LLM activity.",
-      "action": "No action. Monitor after bot restart."
-    }
-  ],
-  "run_summary": {
-    "run_number": 76,
-    "fixes_applied_this_run": 0,
-    "new_insights_this_run": 4,
-    "subsystems_executed": 5,
-    "key_status": "Day 61.16. $392.90. CADENCE 4x1.00h RECORD. Evening OPEN 1h03m ($4.80 remaining).",
-    "ev_total": "$392.90 at $0.97/h",
-    "ev_milestone_395_eta": "19:13 UTC Jun18 (~2h10m)",
-    "ev_milestone_400_eta": "00:22 UTC Jun19 (~7h19m)",
-    "cadence_assessment": "RECORD — Run73+74+75+76 all 1.00h (four consecutive). 7 of last 9 sub-2h. STABLE CONFIRMED."
-  }
 }

@@ -1,41 +1,65 @@
 {
-  "last_run": "2026-06-18T17:03:17+00:00",
-  "run_number": 76,
-  "avg_slippage": "UNKNOWN — trades.csv absent (bot offline Day 61.16)",
-  "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, last live session Apr 19]",
-  "data_available": false,
-  "trades_csv_present": false,
-  "last_50_trades_analysis": {
-    "status": "NO_DATA",
-    "cached_findings": {
-      "noise_stop_pct_last_known": 87.0,
-      "noise_stop_dataset_size": 164,
-      "noise_stop_dataset_age_days": 61.16,
-      "worst_performers": [
-        {"symbol": "SOL", "side": "SELL", "wr": 0.0, "n": 149, "note": "DEFAULT RATIFIED Run73"},
-        {"symbol": "BTC", "side": "BUY", "wr": 0.18, "n": 17, "note": "Critic challenges by default"},
-        {"symbol": "HYPE", "side": "BUY", "wr": 0.28, "n": 25, "note": "Blocked gate=80"}
-      ]
-    }
-  },
-  "ev_loss_total_usd": 392.9,
-  "ev_loss_delta_this_run": 0.97,
-  "ev_loss_breakdown": {
-    "through_run75": 391.93,
-    "run76_accrual": 0.97,
-    "rate_per_hour": 0.97,
-    "total_run76": 392.9
-  },
-  "ev_milestones": {
-    "ev_392_crossed": true,
-    "ev_392_crossed_est": "~16:07 UTC Jun18 (4min after Run75)",
-    "ev_395_eta": "~19:13 UTC Jun18 (2h10m from 17:03)",
-    "ev_400_eta": "~00:22 UTC Jun19 (7h19m from 17:03)"
-  },
-  "evening_window": {
-    "status": "OPEN — 1h03m in (17:03 UTC)",
-    "ev_remaining": 4.8,
-    "min_remaining": 297,
-    "consecutive_miss_9th_confirmed": true
-  }
+    "last_run": "2026-06-19T17:03:17+00:00",
+    "run_number": 77,
+    "avg_slippage": "UNKNOWN — trades.csv absent (bot offline Day 62.16)",
+    "noise_stop_problem": "87% early SL hits (<2h) in non-trending regimes [cached, last live session Apr 19 — 62.16d stale]",
+    "data_available": false,
+    "trades_csv_present": false,
+    "last_50_trades_analysis": {
+        "status": "NO_DATA",
+        "cached_findings": {
+            "noise_stop_pct_last_known": 87.0,
+            "noise_stop_dataset_size": 164,
+            "noise_stop_dataset_age_days": 62.16,
+            "worst_performers": [
+                {"symbol": "SOL", "side": "SELL", "wr": 0.0, "n": 149, "note": "DEFAULT RATIFIED Run73"},
+                {"symbol": "BTC", "side": "BUY", "wr": 0.18, "n": 17, "note": "Critic challenges by default"},
+                {"symbol": "HYPE", "side": "BUY", "wr": 0.28, "n": 25, "note": "Blocked gate=80"}
+            ]
+        }
+    },
+    "ev_loss_total_usd": 416.18,
+    "ev_loss_delta_this_run": 23.28,
+    "ev_loss_breakdown": {
+        "through_run76": 392.9,
+        "run77_accrual": 23.28,
+        "rate_per_hour": 0.97,
+        "total_run77": 416.18,
+        "gap_hours": 24.0
+    },
+    "ev_milestones": {
+        "ev_395_crossed": true, "ev_395_time": "19:13 UTC Jun 18",
+        "ev_400_crossed": true, "ev_400_time": "00:22 UTC Jun 19",
+        "ev_405_crossed": true, "ev_405_time": "05:31 UTC Jun 19",
+        "ev_410_crossed": true, "ev_410_time": "10:41 UTC Jun 19",
+        "ev_415_crossed": true, "ev_415_time": "15:50 UTC Jun 19",
+        "ev_420_eta": "~3.94h (20:59 UTC Jun 19)",
+        "ev_425_eta": "~9.09h (02:08 UTC Jun 20)",
+        "ev_450_eta": "~34.87h (03:55 UTC Jun 21)"
+    },
+    "milestones_crossed_since_run76": [
+        "$395 crossed 19:13 UTC Jun 18",
+        "10th consecutive EVENING MISS — Jun 18 22:00 UTC window closed (CONFIRMED)",
+        "$400 crossed 00:22 UTC Jun 19",
+        "$405 crossed 05:31 UTC Jun 19",
+        "48th consecutive MORNING MISS — Jun 19 12:00 UTC (CONFIRMED)",
+        "$410 crossed 10:41 UTC Jun 19",
+        "AFTERNOON WINDOW Jun 19 MISSED — 16:00 UTC (10th+ afternoon miss)",
+        "$415 crossed 15:50 UTC Jun 19",
+        "CADENCE STREAK BROKEN — Run77 fires 24h after Run76 (4x1.00h record ends)"
+    ],
+    "evening_window_jun19": {
+        "status": "OPEN — 1h03m elapsed (17:03 UTC Jun 19, WR=65%)",
+        "ev_full_window_usd": 5.82,
+        "ev_remaining_usd": 4.8,
+        "minutes_elapsed": 63,
+        "minutes_remaining": 297,
+        "consecutive_miss_count": 10,
+        "action": "10th consecutive evening miss in progress. Window OPEN — 4h57m remaining. $4.80 still capturable."
+    },
+    "noise_regime_active_rules": [
+        "illiquid_regime_penalize_v1 (gate=100, conf=0.8)",
+        "ranging_regime_penalize_v1 (gate=50, conf=0.8)",
+        "night_session_block_v1 (gate=100, conf=0.9)"
+    ]
 }

@@ -1,49 +1,74 @@
 {
-  "last_run": "2026-06-18T17:03:17+00:00",
-  "run_number": 76,
-  "fixes_applied_this_run": 0,
-  "governance_actions_this_run": 0,
-  "total_applied_all_time": 69,
-  "gates_active": 20,
-  "new_audit_files_this_run": 0,
-  "elapsed_since_last_run_h": 1.0,
-  "loop_gap_note": "RUN 76: 1.00h gap (Run75 16:03 → Run76 17:03 Jun18). FOURTH CONSECUTIVE 1.00h — NEW CADENCE RECORD. 7 of last 9 sub-2h. STABLE CONFIRMED.",
-  "governance_actions": [],
-  "fixes_applied": [],
-  "source_audit_file": "AUTONOMOUS_SESSION_2026_04_15.md (no new autonomous_audit_*.md found)",
-  "session_recs_processed": 6,
-  "session_recs_qualifying_conf75": 6,
-  "session_recs_already_applied": 5,
-  "session_recs_pending_human": 1,
-  "pending_human_recs": [
-    {
-      "finding": "F1_sniper_re-enable",
-      "confidence": 90,
-      "status": "PENDING_HUMAN_REVIEW",
-      "days_pending": 64,
-      "description": "Re-enable SNIPER_AUTO_EXECUTE with 5x leverage cap + $50/trade loss ceiling. Sniper path carried +$328 of +$252 net on last 100 trades.",
-      "action": "Set SNIPER_AUTO_EXECUTE=true in .env after verifying max_sniper_leverage=5.0 binds at OrderExecutor."
-    }
-  ],
-  "sol_short_governance_status": "CLOSED — DEFAULT_RATIFIED_BLOCK at Run73. Gate=100 maintained.",
-  "gate_distribution": {"0": 3, "20": 3, "50": 7, "100": 7},
-  "graduated_rules_total": 116,
-  "high_conf_rules_active_gate_gt0": 77,
-  "gates_active_nonzero": 20,
-  "loop_cadence_history": [
-    {"run": 72, "gap_h": 2.99, "note": "2.99h gap — REGRESSION"},
-    {"run": 73, "gap_h": 1.0, "note": "1.00h gap — BEST-EVER."},
-    {"run": 74, "gap_h": 1.0, "note": "1.00h gap — STREAK RUN 2."},
-    {"run": 75, "gap_h": 1.0, "note": "1.00h gap — STREAK RUN 3. CADENCE STABLE DECLARED."},
-    {"run": 76, "gap_h": 1.0, "note": "1.00h gap — STREAK RUN 4. NEW RECORD. CADENCE CONFIRMED STABLE."}
-  ],
-  "blockers": [
-    "AB_tracker broken Day 61.16 — 20 rules cannot graduate",
-    "F1_sniper_pending_safety_review — conf=90%, 64+ days pending",
-    "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review",
-    "3 gate=0 rules require verification"
-  ],
-  "ev_total": 392.9,
-  "ev_delta_this_run": 0.97,
-  "status": "CADENCE_4xRUN_RECORD + EVENING_OPEN_1H03M + $392.90_EV — 17:03 UTC Jun18."
+    "last_run": "2026-06-19T17:03:17+00:00",
+    "run_number": 77,
+    "fixes_applied_this_run": 0,
+    "governance_actions_this_run": 0,
+    "total_applied_all_time": 69,
+    "gates_active": 20,
+    "new_audit_files_this_run": 0,
+    "elapsed_since_last_run_h": 24.0,
+    "loop_gap_note": "RUN 77: 24.00h gap (CADENCE REGRESSION — Run76 17:03 Jun18 → Run77 17:03 Jun19). 4-CONSECUTIVE STREAK BROKEN. Previous 4x1.00h record ends here.",
+    "governance_actions": [],
+    "fixes_applied": [],
+    "source_audit_file": "AUTONOMOUS_SESSION_2026_04_15.md (no new autonomous_audit_*.md found — unchanged since Run73)",
+    "session_recs_processed": 6,
+    "session_recs_qualifying_conf75": 6,
+    "session_recs_already_applied": 5,
+    "session_recs_pending_human": 1,
+    "pending_human_recs": [
+        {
+            "finding": "F1_sniper_re-enable",
+            "confidence": 90,
+            "status": "PENDING_HUMAN_REVIEW",
+            "days_pending": 65,
+            "description": "Re-enable SNIPER_AUTO_EXECUTE with 5x leverage cap + $50/trade loss ceiling. Sniper path carried +$328 of +$252 net on last 100 trades.",
+            "action": "Set SNIPER_AUTO_EXECUTE=true in .env after verifying max_sniper_leverage=5.0 binds at OrderExecutor."
+        }
+    ],
+    "new_critical_finding_run77": {
+        "finding": "29 gate=0 rules in graduated_rules.json vs 3 previously documented",
+        "severity": "HIGH",
+        "detail": "26 undocumented gate=0 rules discovered. Includes LLM_REGIME_CAPTURE_GAP (conf=99), STALE_AB_DATA_FLAG (conf=100 — 38 A/B gates stalled vs 20 previously noted), OFFLINE_EXTENDED_201H (CRITICAL_ALERT), BOT_INACTIVE_ALERT (PENDING_HUMAN_REVIEW). Full audit needed.",
+        "key_items": [
+            "LLM_REGIME_CAPTURE_GAP (conf=99): 965 trades all have empty llm_regime — regime learning BLIND",
+            "STALE_AB_DATA_FLAG (conf=100): 38 A/B gates stalled (not 20 as previously tracked)",
+            "ENSEMBLE_WR_DEGRADATION_ALERT (conf=80): WR degraded to 30% on recent trades",
+            "RULE_CONFLICT_SOL_SHORT (conf=92): SOL_SHORT rule conflict unresolved",
+            "BTC_TOTAL_CONCENTRATION (conf=99): 100% BTC concentration in last 200 trades"
+        ]
+    },
+    "sol_short_governance_status": "CLOSED — DEFAULT_RATIFIED_BLOCK at Run73. Gate=100 maintained.",
+    "gate_distribution": {
+        "0": 29,
+        "5": 1,
+        "20": 19,
+        "35": 1,
+        "50": 18,
+        "80": 28,
+        "100": 20
+    },
+    "graduated_rules_total": 116,
+    "high_conf_rules_active_gate_gt0": 87,
+    "gates_active_nonzero": 67,
+    "ab_tracker_stalled_rules": 38,
+    "loop_cadence_history": [
+        {"run": 72, "gap_h": 2.99, "note": "2.99h gap — REGRESSION"},
+        {"run": 73, "gap_h": 1.0, "note": "1.00h — BEST-EVER"},
+        {"run": 74, "gap_h": 1.0, "note": "STREAK 2"},
+        {"run": 75, "gap_h": 1.0, "note": "STREAK 3. CADENCE STABLE DECLARED"},
+        {"run": 76, "gap_h": 1.0, "note": "STREAK 4. NEW RECORD. CADENCE CONFIRMED"},
+        {"run": 77, "gap_h": 24.0, "note": "24.00h GAP — STREAK BROKEN. CADENCE REGRESSION."}
+    ],
+    "blockers": [
+        "SOL_SHORT DEFAULT_RATIFIED — gate=100 (closed governance). Human override available.",
+        "AB_tracker broken Day 62.16 — 38 rules stalled (not 20 as previously noted — NEW DISCREPANCY)",
+        "F1_sniper_pending_safety_review — conf=90%, 65 days pending, needs human sign-off",
+        "HIGH_CONF_CALIBRATION_DRIFT — conf=88%, needs human review",
+        "LLM_REGIME_CAPTURE_GAP — conf=99%, CRITICAL: 965 trades have empty llm_regime",
+        "ENSEMBLE_WR_DEGRADATION_ALERT — conf=80%, WR degraded to 30% on recent trades",
+        "26 undocumented gate=0 rules require audit and classification"
+    ],
+    "ev_total": 416.18,
+    "ev_delta_this_run": 23.28,
+    "status": "Run77: 24h CADENCE REGRESSION. 5x $5-milestones crossed. $416.18 EV. 29 gate=0 rules (NEW)."
 }

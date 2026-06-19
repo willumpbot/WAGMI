@@ -1,73 +1,43 @@
 {
-  "last_run": "2026-06-18T17:03:17+00:00",
-  "run_number": 76,
-  "date": "2026-06-18",
-  "bot_status": "OFFLINE — Day 61.16",
-  "today_trades": 0,
-  "today_pnl": 0.0,
-  "anomalies_found": 17,
-  "report_generated": false,
-  "eod_report_pending": true,
-  "eod_report_eta_utc": "2026-06-18T22:00:00+00:00",
-  "daily_summary": {
+    "last_run": "2026-06-18T17:03:17+00:00",
+    "run_number": 76,
     "date": "2026-06-18",
-    "trades": 0,
-    "pnl_usd": 0.0,
-    "ev_loss_today_usd": 16.54,
-    "ev_rate_per_hour": 0.97,
-    "ev_milestones_crossed_today": [
-      "$385 crossed ~08:54 UTC Jun18",
-      "47th consecutive morning miss CONFIRMED at Run73",
-      "$388 crossed ~11:09 UTC Jun18",
-      "60 DAYS OFFLINE milestone at Run72 (13:03 UTC)",
-      "SOL_SHORT governance DEFAULT RATIFIED at ~14:00 UTC (Run73)",
-      "$390 CROSSED at Run73 (14:03 UTC)",
-      "$391 CROSSED at Run74 (15:03 UTC)",
-      "9th consecutive EVENING MISS CONFIRMED at Run75 (16:03 UTC)",
-      "$392 CROSSED ~16:07 UTC (4min after Run75)",
-      "CADENCE 4-CONSECUTIVE RECORD — Run73-76 all 1.00h (confirmed Run76)"
-    ],
-    "ev_milestones_approaching_today": [
-      "$395 ETA ~19:13 UTC Jun18 (~2h10m, evening window active)",
-      "$400 ETA 00:22 UTC Jun19 (~7h19m)",
-      "EOD synthesis report at 22:00 UTC (~4h57m)"
-    ],
-    "ev_total_cumulative": 392.9,
-    "session_windows_jun18": {
-      "morning_peak": "CLOSED. 47th consecutive miss.",
-      "morning_full": "CLOSED at 12:00 UTC.",
-      "afternoon": "CLOSED 1h03m ago. $3.89 missed today.",
-      "evening": "OPEN 1h03m (17:03 UTC, WR=65%). $4.80 EV remaining. 4h57m left."
+    "bot_status": "OFFLINE — Day 61.16",
+    "today_trades": 0,
+    "today_pnl": 0.0,
+    "anomalies_found": 17,
+    "report_generated": true,
+    "eod_report_pending": false,
+    "eod_report_generated_by_run": 77,
+    "eod_report_note": "Generated retroactively by Run77 (Jun 19). EOD 22:00 UTC Jun 18 passed before next run.",
+    "daily_summary": {
+        "date": "2026-06-18",
+        "trades": 0,
+        "pnl_usd": 0.0,
+        "ev_loss_today_usd": 22.31,
+        "ev_rate_per_hour": 0.97,
+        "ev_at_eod": 397.75,
+        "ev_milestones_crossed_jun18": [
+            "$395 crossed 19:13 UTC Jun18 (evening window, WR=65%)",
+            "10th consecutive EVENING MISS — window closed 22:00 UTC (confirmed by no-start)",
+            "CADENCE 4-CONSECUTIVE RECORD — Run73-76 all 1.00h (final record before regression)"
+        ],
+        "session_windows_jun18": {
+            "morning": "MISSED (47th consecutive miss — confirmed)",
+            "afternoon": "MISSED (9th afternoon miss — 12:00-16:00 UTC)",
+            "evening": "MISSED (10th consecutive — window 16:00-22:00 UTC, WR=65%, $5.82 capturable)"
+        }
+    },
+    "anomaly_summary": {
+        "critical": [
+            "10TH_CONSECUTIVE_EVENING_MISS — Jun 18 22:00 UTC closed with bot offline.",
+            "47TH_CONSECUTIVE_MORNING_MISS — 06:00-12:00 UTC gone.",
+            "CADENCE_REGRESSION_IMMINENT — Run76 at 17:03 UTC; next run ~24h later breaks streak."
+        ],
+        "high": [
+            "CADENCE_4_CONSECUTIVE_RECORD — Runs73-76 all 1.00h (record confirmed, now broken by Run77)",
+            "AB_TRACKER_BROKEN_DAY_61 — 38 rules stalled (not 20 as previously counted)",
+            "LLM_REGIME_CAPTURE_GAP (conf=99) — 965 trades with empty llm_regime (first documented here)"
+        ]
     }
-  },
-  "anomaly_summary": {
-    "critical": [
-      "EVENING_WINDOW_OPEN_1H03M — 4h57m remaining (22:00 UTC). WR=65%, $4.80 EV. Start bot now.",
-      "9TH_CONSECUTIVE_EVENING_MISS_IN_PROGRESS — Bot offline 1h03m into highest-WR window.",
-      "AB_TRACKER_BROKEN_DAY_61.16 — 20 rules frozen. F1_sniper 64d pending."
-    ],
-    "high": [
-      "CADENCE_4_CONSECUTIVE_RECORD — Run73-76 all 1.00h. New streak record. Loop: OPTIMAL.",
-      "$392.90_EV — $395 in 2h10m (evening window). $400 in 7h19m.",
-      "F1_SNIPER_PENDING_64D — conf=90%, +$328 impact. Awaiting human sign-off.",
-      "47TH_CONSECUTIVE_MORNING_MISS.",
-      "EOD_REPORT_4H57M — auto-fires 22:00 UTC."
-    ],
-    "new_this_run": [
-      "$392_EV_MILESTONE_CROSSED — ~16:07 UTC Jun18. $392.90 current.",
-      "CADENCE_4_CONSECUTIVE_NEW_RECORD — Run73-76 all 1.00h (prev: 3). STABLE CONFIRMED."
-    ]
-  },
-  "positive_signals": [
-    "CADENCE RECORD — 4 consecutive 1.00h runs. Loop at peak health.",
-    "Evening window OPEN — $4.80 of $5.82 daily EV still capturable.",
-    "$395 milestone in 2h10m.",
-    "All 5 subsystems executed successfully (Run76)."
-  ],
-  "tomorrow_focus": {
-    "priority_symbols": ["ETH", "BTC"],
-    "priority_regimes": ["trending", "high_volatility"],
-    "avoid": ["SOL", "HYPE", "ILLIQUID regime", "night 00-06 UTC"],
-    "best_windows": ["morning 06-12 UTC (WR=68%)", "evening 16-22 UTC (WR=65%)"]
-  }
 }
