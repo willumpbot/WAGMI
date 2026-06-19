@@ -97,6 +97,15 @@ class GraduatedRulesEngine:
     def __init__(self):
         self._rules: List[GraduatedRule] = []
         self._loaded = False
+        self._last_fired_rule_ids: List[str] = []  # scratchpad: populated by evaluate_signal, read by record_outcome
+
+    def get_last_fired_rule_ids(self) -> List[str]:
+        """Return rule IDs that fired in the most recent evaluate_signal call.
+
+        Callers that want accurate accuracy tracking should store this immediately
+        after evaluate_signal() and pass the list to record_outcome() at close time.
+        """
+        return list(self._last_fired_rule_ids)
 
     def _ensure_loaded(self):
         if self._loaded:
@@ -258,6 +267,7 @@ class GraduatedRulesEngine:
         """
         self._ensure_loaded()
         vetoed, conf_delta, applied = False, 0.0, []
+        self._last_fired_rule_ids = []  # reset scratchpad for this evaluation
 
         for rule in self._rules:
             if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side,
@@ -268,6 +278,7 @@ class GraduatedRulesEngine:
                 continue
             rule.times_applied += 1
             rule.last_applied = time.time()
+            self._last_fired_rule_ids.append(rule.rule_id)  # record in scratchpad
 
             if rule.action == "veto":
                 vetoed = True
@@ -284,30 +295,41 @@ class GraduatedRulesEngine:
 
         return vetoed, max(0, min(100, confidence + conf_delta)), "; ".join(applied)
 
-    def record_outcome(self, symbol="", regime="", side="", won=False):
+    def record_outcome(self, symbol="", regime="", side="", won=False,
+                       confidence=0.0, strategies_active=None,
+                       fired_rule_ids: Optional[List[str]] = None):
         """Track rule accuracy after trade closes.
 
-        VETO rules are skipped here — their accuracy is tracked by
-        counterfactual_learner.py which has the blocked-trade context.
-        Including veto rules here inflates times_correct because closed trades
-        all passed the veto (weren't blocked), and time-based conditions
-        (hour_utc_min/max) can't be evaluated without the entry hour.
+        Preferred: pass fired_rule_ids from get_last_fired_rule_ids() called right
+        after evaluate_signal() at entry time. This credits exactly the rules that
+        fired, regardless of how conditions may have changed by close time.
+
+        Fallback (fired_rule_ids=None): re-match by symbol/regime/side/confidence.
+        Pass confidence=entry_confidence so confidence-conditioned rules match correctly.
+
+        VETO rules are skipped — their accuracy is tracked by counterfactual_learner.py.
         """
         self._ensure_loaded()
-        for rule in self._rules:
-            if not rule.active:
-                continue
-            if rule.action == "veto":
-                continue  # handled by counterfactual_learner.py
-            if not rule.matches(symbol=symbol, regime=regime, side=side):
-                continue
-            if rule.action == "boost":
-                if won:
-                    rule.times_correct += 1
-            elif rule.action == "penalize":
-                if not won:
-                    rule.times_correct += 1
 
+        if fired_rule_ids is not None:
+            # Accurate path: credit exactly the rules that fired at signal evaluation time
+            rules_to_check = [r for r in self._rules
+                              if r.rule_id in fired_rule_ids and r.action != "veto"]
+        else:
+            # Fallback path: re-match by conditions at close time
+            # Pass confidence so confidence-conditioned rules (e.g. btc_short_conf70_80_penalize_v1)
+            # are correctly matched. Without this, confidence=0.0 causes them to never credit.
+            rules_to_check = [r for r in self._rules
+                              if r.active and r.action != "veto"
+                              and r.matches(symbol=symbol, regime=regime, side=side,
+                                            confidence=confidence,
+                                            strategies_active=strategies_active)]
+
+        for rule in rules_to_check:
+            if rule.action == "boost" and won:
+                rule.times_correct += 1
+            elif rule.action == "penalize" and not won:
+                rule.times_correct += 1
             if rule.times_applied >= 10 and rule.accuracy < 0.35:
                 rule.active = False
                 logger.info(f"[GRAD-RULES] Auto-retired: {rule.hypothesis_statement[:50]} (acc={rule.accuracy:.0%})")

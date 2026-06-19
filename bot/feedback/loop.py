@@ -307,7 +307,8 @@ class FeedbackLoop:
         try:
             from llm.graduated_rules import get_graduated_rules_engine
             get_graduated_rules_engine().record_outcome(
-                symbol=symbol, regime=regime, side=side, won=win
+                symbol=symbol, regime=regime, side=side, won=win,
+                confidence=confidence,  # required for confidence-conditioned rules to match
             )
         except Exception as e:
             logger.debug(f"Graduated rules outcome tracking failed: {e}")

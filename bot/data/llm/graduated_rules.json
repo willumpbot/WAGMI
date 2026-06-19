@@ -249,8 +249,10 @@
       "last_applied": 1779419617.7344398,
       "times_applied": 2,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50,
+      "active": false,
+      "gate_percentage": 0,
+      "disabled_reason": "DEACTIVATED Run81 2026-06-19T10:06:43Z: insight INVALIDATED in insights.json — actual WR=33% not 65%. Built on invalidated data. Auto-fix conf=95% >= 75% threshold.",
+      "disabled_at": "2026-06-19T10:06:43Z",
       "gate_escalated_at": "2026-05-24T00:11:00+00:00",
       "gate_escalation_reason": "GRADUATION_CRITERION_MET: threshold was n>=20 WR>=0.60. Live data: n=27 WR=65%. Both conditions met (27>=20, 0.65>=0.60). No feedback engine conflict (evening slot unique). Second TOD window to graduate (after tod_morning_edge_v1). Feedback engine has no contradicting evening block rule. Conf=0.85 >> 0.75 threshold. Gate distribution now: 3 disabled / 4 probe(20%) / 8 graduated(50%) / 8 deployed(100%)."
     },
@@ -270,8 +272,10 @@
       "last_applied": 1779419617.734446,
       "times_applied": 2,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 20
+      "active": false,
+      "gate_percentage": 0,
+      "disabled_reason": "DEACTIVATED Run81 2026-06-19T10:06:43Z: insight INVALIDATED in insights.json — actual WR=27% not 64%. Built on invalidated data. Auto-fix conf=95% >= 75% threshold.",
+      "disabled_at": "2026-06-19T10:06:43Z"
     },
     {
       "rule_id": "high_vol_regime_boost_v1",
@@ -309,8 +313,10 @@
       "last_applied": 1779419680.301572,
       "times_applied": 7,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50
+      "active": false,
+      "gate_percentage": 0,
+      "disabled_reason": "DEACTIVATED Run81 2026-06-19T10:06:43Z: n=7 insufficient evidence (below n=15 graduation threshold). insight_journal insight #6 directly contradicts with 14% WR for same session window. Two active insights give 74% vs 14% — conflicted data cannot support an active rule. Auto-fix conf=95% >= 75% threshold.",
+      "disabled_at": "2026-06-19T10:06:43Z"
     },
     {
       "rule_id": "eth_sell_bb_golden_v1",
@@ -485,14 +491,16 @@
       "confidence": 0.88,
       "evidence_ratio": 0.346,
       "total_evidence": 52,
-      "gate_percentage": 50,
+      "gate_percentage": 0,
       "created_at": 1779495301.5124173,
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
+      "active": false,
+      "disabled_reason": "DEACTIVATED Run81 2026-06-19T10:06:43Z: 179-trade 10d simulation shows SOL SHORT = 64% WR +$32.44/trade +$5,807 total. Rule based on 52 stale paper trades claiming 34.6% WR is contradicted by 30 WR points on 3.4x larger dataset. New dataset is authoritative. Re-evaluate if SOL SHORT live WR drops below 50% on n>=20 post-restart trades. Auto-fix conf=80% >= 75% threshold.",
+      "disabled_at": "2026-06-19T10:06:43Z",
       "source": "feedback/graduated_rules.json SOL_SHORT_full_block (conf=88, gate=100%) + live evidence 34.6% WR n=52. RULE_CONFLICT resolved: conflict was LLM understrength (20%) vs feedback full_block (100%). Escalating to 50% closes half the gap.",
-      "outcome_tracking": "PENDING_RESTART — graduate gate 50%→100% (full veto) at WR<40% n>=20 post-restart.",
+      "outcome_tracking": "DEACTIVATED — monitor SOL SHORT WR post-restart. Re-activate penalty only if WR<50% on n>=20 live trades.",
       "gate_escalated_at": "2026-05-24T05:00:00+00:00",
       "gate_escalation_reason": "RULE_CONFLICT_RESOLUTION_V1: Graduation criterion met on historical data (WR=34.6%<40% n=52>=30 conf=0.88). RULE_CONFLICT_SOL_SHORT was that LLM engine was 5x weaker than feedback engine (gate=20% vs feedback gate=100%). Escalating to gate=50% closes half the alignment gap. Directional alignment: both engines agree SOL SELL is weak. Next graduation: full veto (gate=100%) after n>=20 post-restart trades at WR<40%."
     }
