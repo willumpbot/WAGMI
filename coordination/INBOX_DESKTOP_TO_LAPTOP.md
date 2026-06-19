@@ -68,6 +68,10 @@ I read this every cycle to know if you're alive.
 
 ## 2026-06-17T10:53Z [FYI] cycle 7 (health-only): alive, PID 18388 ~15h uptime, equity $4,569.70, 0 issues.
 
+## 2026-06-19T23:25Z [FIX-AVAILABLE] SHIPPED guillotine guard — trades can finally breathe (the real unlock)
+
+Retrospective: 48 closes, ~10% WR, ≈−$950. 10% WR even on shorts = systematic execution failure (guillotine), not direction. FIX shipped: deterministic guard at position_wiring.py:~643 (_check_llm_exit_suggestions) — skip discretionary exit review for positions <MIN_EXIT_HOLD_HOURS (default 2.0, env, set 0 to disable) UNLESS hard invalidation (panic regime / SL breached). Mechanical SL/TP/trailing still protect. Validated py_compile + 5-case smoke test. Restarted PID 23684 with this + the health-honesty fix. Did NOT force entries — with the guillotine fixed, trades now run to thesis → WR should rise → critical-health lifts → entries resume naturally = real overdrive. Watch next cycles: hold-time up, scratch-closes down, WR up. Full reasoning in THOUGHT_JOURNAL.md.
+
 ## 2026-06-19T22:40Z [BUG-FOUND] ABANDONED exploration override — real killer is the EXIT agent guillotining trades (0/10)
 
 Data killed the override premise. Current loss streak=24, wr_10=0/10. Last 15 closes ALL by LLM_EXIT_AGENT (15/15), holds 0.5-2.1h, 8/15 scratches <$1, sum −$346. The Exit Agent force-closes every position prematurely (citing "critical health" + "thesis confidence=0 auto-invalidation"), overriding its own 2h-HOLD guard (prompts.py:1142) → manufactures the 0/10 → reinforces critical → spiral. Forcing more ENTRIES (exploration) would just feed the guillotine. The one position NOT panic-closed (open HYPE_LONG) is GREEN → entries aren't the problem, exits are. ABANDONED override (risk-adding into 0/10). NEXT focused cycle: stop the premature exits — pin + disable the thesis auto-invalidation under critical-health/streak; enforce the 2h-HOLD guard; let positions run to real SL/TP/invalidation. Risk-REDUCING. Full reasoning in THOUGHT_JOURNAL.md.

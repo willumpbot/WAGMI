@@ -642,6 +642,30 @@ class PositionWiringMixin:
                 # Funding rate
                 funding_rate = self._last_funding_rates.get(symbol, 0.0)
 
+                # ── 2026-06-19 GUILLOTINE GUARD ──────────────────────────────────
+                # The discretionary exit layer (LLM Exit Agent + heuristics) was
+                # force-closing nearly every position in <2h under "critical health"
+                # panic — 15/15 recent closes by LLM_EXIT_AGENT, 0/10 WR, a 24-loss
+                # streak — overriding the Exit Agent's own "2h = noise phase, default
+                # HOLD" rule. That manufactured the losing streak (trades never lived
+                # long enough to work). Fix: let young positions BREATHE — skip the
+                # discretionary exit review for positions younger than MIN_EXIT_HOLD_HOURS
+                # UNLESS a HARD invalidation is present (adverse regime, or stop already
+                # breached). Mechanical SL/TP/trailing in position_manager still protect
+                # downside the whole time. Fully reversible via env (set 0 to disable).
+                _min_exit_hold_h = float(os.getenv("MIN_EXIT_HOLD_HOURS", "2.0"))
+                _sl_breached = (is_long and current_price <= pos.sl) or \
+                               ((not is_long) and current_price >= pos.sl)
+                _hard_invalidation = regime in ("panic", "crash", "extreme_fear") or _sl_breached
+                if _min_exit_hold_h > 0 and hold_minutes < _min_exit_hold_h * 60 and not _hard_invalidation:
+                    logger.info(
+                        f"[EXIT-GUILLOTINE-GUARD] {symbol} discretionary exit skipped: "
+                        f"hold {hold_minutes:.0f}min < {_min_exit_hold_h}h, no hard invalidation "
+                        f"(regime={regime}, sl_breached={_sl_breached}) — letting it breathe."
+                    )
+                    self.exit_engine.mark_evaluated(symbol)
+                    continue
+
                 # ── Qualification gate: skip positions that don't warrant review ──
                 # Position must meet at least one criterion:
                 should_review = False

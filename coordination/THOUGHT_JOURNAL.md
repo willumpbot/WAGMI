@@ -6,6 +6,22 @@ Conventions: each entry = OBSERVED / REASONED / DECIDED / RULED-OUT / OPEN-QUEST
 
 ---
 
+## 2026-06-19 ~23:25Z — SHIPPED the guillotine guard (the real unlock) + retrospective for Nunu
+
+**OBSERVED:** Retrospective (Nunu asked): 48 closes, 5 wins (~10% WR), ≈ −$950. HYPE_LONG 0/6 −$610 (now vetoed); even "edge" shorts losing (ETH_SHORT 1/13, SOL_SHORT 1/7) — only BTC_SHORT net + (+$28). 10% WR across ALL directions = systematic execution failure, not bad direction. Confirmed cause: the discretionary exit layer (_check_llm_exit_suggestions, position_wiring.py:580) guillotines young positions — LLM full_close at :762, applied + continue at :826.
+
+**REASONED:** 10% WR even on shorts can't be entries alone — it's that nothing survives to its thesis. The Exit Agent panics on injected "critical health" and force-closes in <2h, overriding its own "2h=noise, default HOLD" rule. A PROMPT plea won't hold; needs a DETERMINISTIC guard the LLM can't override.
+
+**DECIDED (shipped, validated, reversible):** Added a guillotine guard at the top of the per-position exit loop: skip ALL discretionary exit review (LLM + heuristics) for positions younger than MIN_EXIT_HOLD_HOURS (default 2.0, env-tunable, set 0 to disable) UNLESS a HARD invalidation exists (regime panic/crash/extreme_fear, OR stop already breached). Mechanical SL/TP/trailing in position_manager still protect downside the whole time. py_compile OK + smoke test (young-calm→breathe; old→review; SL-breached→review/close; panic→review; disabled→off). Restarted PID 23684 with this + the pending health-honesty fix.
+
+**RULED-OUT:** forcing entries / overdrive THIS turn — with the guillotine fixed, trades that DO open now run to thesis → WR should rise → critical-health lifts → entries resume NATURALLY. Forcing entries before observing that would be premature (and was the abandoned override). Also ruled out a blanket no-close (kept hard-invalidation escape so genuine reversals + SL still close) and editing .env (code default works; documented the lever).
+
+**OPEN-QUESTIONS:** Over next cycles — does avg hold-time rise, scratch-close rate fall, WR improve? If yes → execution was THE problem, and as health lifts entries resume = real overdrive. If entries still don't fire after health recovers, enable the (now-safe, since guillotine fixed) bounded exploration override. Are entries actually any good? Finally measurable once trades run.
+
+**NEXT:** observe hold-time + WR + go-rate; re-measure entry edge by regime/symbol/side with trades that survive.
+
+---
+
 ## 2026-06-19 ~22:40Z — MAJOR PIVOT: abandoned exploration override; the killer is the EXIT agent, not entries
 
 **OBSERVED:** No existing exploration mechanism to enable. Current trailing loss streak = **24**, wr_10 = **0/10**. Last 15 closes were **ALL by LLM_EXIT_AGENT (15/15)** — short holds (0.5–2.1h), 8/15 scratches (<$1), sum −$346. Exit prompt ALREADY has a "if hold_time<2h you're in the noise phase, default HOLD, require explicit invalidation" guard (prompts.py:1142) — yet it's closing at 0.5–2h anyway. Exit reasoning (seen earlier): "Thesis confidence=0.0 (automatic invalidation). System in critical health…". 121 exit-invalidation mentions in today's log.
