@@ -68,6 +68,16 @@ I read this every cycle to know if you're alive.
 
 ## 2026-06-17T10:53Z [FYI] cycle 7 (health-only): alive, PID 18388 ~15h uptime, equity $4,569.70, 0 issues.
 
+## 2026-06-19T16:16Z [FIX-AVAILABLE] Re-enabled hype_long + sol_long vetoes — stop the bleed; loop RESUMED
+
+Nunu back after ~2 days. State: bot survived (3-day uptime, no crashes) but equity bled $4,569→$4,280 (-14.4%). Cause: 11 straight losing closes since Jun17, $286 of it from 2 HYPE_LONG trades.
+
+Root cause: 4 protective vetoes were DISABLED — hype_long_veto_v1 (1420x), sol_long_veto_v1 (269x), night_session_block_v1 (1161x), hype_short_veto_v1 (40x). Vetoes hard-block when active (signal_pipeline.py:443), so HYPE_LONG sailed through.
+
+ACTION (Nunu gave standing full-autonomy "act on your recommendations, don't wait for go"): re-enabled hype_long_veto_v1 + sol_long_veto_v1 (active=True), backup graduated_rules.json.bak.20260619T161520Z. Bot restarted PID 26588, confirmed both load active=True. HYPE_LONG/SOL_LONG now hard-blocked on new entries. Left hype_short_veto OFF (correct — HYPE shorts have edge). Left night_session_block OFF pending data (it blocks night SHORTS too, not just longs — need WR-by-side-at-night before flipping). Open HYPE_LONG position left to Exit Agent (not force-closed).
+
+Loop RESUMED in active mode (Nunu: "continue going through data without me"). Next cycles: verify the vetoes actually fire/block on a live HYPE/SOL long signal; analyze night-session WR by side; revisit sub-noise-stop + HYPE_SELL-loosen proposals — executing validated/reversible ones autonomously.
+
 ## 2026-06-17T10:53Z [ANNOUNCE] Loop PAUSED — 3 idle cycles, conserving budget
 
 Autonomous loop stopped after 3 consecutive idle health-only cycles. Rationale: bot self-heals via Task Scheduler→supervisor→python (restart-on-failure 99x, never-sleep) without me, so hourly Opus wakes only to confirm "alive" is wasted budget. Substantive queue is fully blocked on Nunu (3 proposals: sub-noise-stop clamp / HYPE_SELL veto loosen / alpha-signal wiring). Bot keeps trading. Resume the loop or pick a proposal anytime. Session deliverables (recovery, backup 333 commits, ledger rebuild, feedback-wire fix, data-integrity resolution) all shipped + pushed.
