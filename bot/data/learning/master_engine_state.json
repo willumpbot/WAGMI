@@ -1,98 +1,141 @@
 {
-  "last_run": "2026-06-20T09:00:00Z",
-  "run_number": 95,
-  "cadence_streak": 18,
-  "bot_offline_days": 65.17,
+  "last_run": "2026-06-20T14:00:00Z",
+  "run_number": 97,
+  "cadence_streak": 20,
+  "bot_offline_days": 65.58,
   "ev_accrued_usd_est": 449.87,
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
-      "gates_active": 20,
+      "gates_active": 18,
       "total_applied_all_time": 82,
-      "recs_evaluated": 5,
-      "recs_qualifying_by_confidence": 2,
+      "recs_evaluated": 4,
+      "recs_qualifying_by_confidence": 0,
       "recs_applied": 0,
-      "status": "NO_NEW_FIXES — all qualifying recs blocked by code-change-required or stale basis"
+      "already_applied_prior_runs": [
+        "tod_evening_edge_v1 deactivated (active=False, gate=0)",
+        "tod_afternoon_edge_v1 deactivated (active=False, gate=0)",
+        "sol_short_penalize_v1 deactivated (active=False, gate=0)",
+        "tod_morning_edge_v1 deactivated (active=False, gate=0)"
+      ],
+      "pending_recs": [
+        {"rec": "sol_short_veto_v1", "conf": 0.72, "gap_to_threshold": 0.03, "expected_impact": "+$1,125/32-trade"},
+        {"rec": "btc_short_veto_below90_v1", "conf": 0.72, "gap_to_threshold": 0.03, "expected_impact": "+$979/32-trade"},
+        {"rec": "sol_long_probe_mode", "conf": 0.55, "gap_to_threshold": 0.20, "expected_impact": "+$340/32-trade at 10% gate"},
+        {"rec": "tod_evening_afternoon_suspend", "conf": 0.65, "gap_to_threshold": 0.10, "note": "Effectively already applied (both rules inactive)"}
+      ],
+      "new_investigation_item": {
+        "item": "conf_floor_70_v1 INVESTIGATION",
+        "finding": "conf_floor_70_v1 (action=penalize, conf=0.87) is deactivated (active=False, gate=0). 60-70% confidence bin shows 14% WR (1/7 trades, -$920 net). Reactivating would filter the worst confidence bucket.",
+        "action": "Investigate WHY conf_floor_70_v1 was deactivated before considering re-enable. Do NOT auto-apply until deactivation reason is confirmed.",
+        "priority": "P1"
+      },
+      "status": "NO_NEW_FIXES — all qualifying recs below 75% threshold or require code changes"
     },
     "execution_forensics": {
-      "avg_slippage": "UNAVAILABLE — bot offline, no trades.csv",
-      "noise_stop_problem": "illiquid=71.9%, ranging=72.0% — both gated (from 100d backtest)",
-      "fill_rate": "UNAVAILABLE",
-      "trailing_stop_ev_gap_usd": 315.67,
-      "trailing_stop_verdict": "STALE LOCK RECOMMENDATION — 20d 84% WR contradicts 100d -$0.34 basis",
-      "data_source": "100d backtest (n=589), 20d backtest (n=111)"
+      "data_source": "10d_v3 backtest (n=32 trades) + adaptive_risk_state.json (n=589)",
+      "avg_slippage": "UNAVAILABLE — bot offline, no live trades.csv",
+      "noise_stop_problem": "illiquid=71.9%, ranging=72.0% — BOTH GATED (penalize rules active)",
+      "fill_rate": "UNAVAILABLE — bot offline",
+      "new_finding": "SHORT SL losses avg -$744 vs LONG SL avg -$281 (2.65x multiplier). Short stops placed too wide relative to bull-regime volatility.",
+      "short_sl_analysis": {
+        "long_avg_sl_loss": -280.51,
+        "short_avg_sl_loss": -743.5,
+        "multiplier": 2.65,
+        "worst_cases": [
+          {"setup": "SOL SHORT SL", "conf": 78.2, "loss": -768},
+          {"setup": "BTC SHORT SL", "conf": 79.8, "loss": -711}
+        ]
+      }
     },
     "live_injection": {
-      "data_source": "backtest (bot offline)",
+      "data_source": "10d_v3 backtest (n=32) via Run 96 audit",
       "high_edges_found": 4,
       "weak_setups_found": 4,
-      "critical_gap": "EVENING_session_boost applying +8pt to 29% WR window (wrong direction, conf=72%)",
-      "morning_edge_ungated": "tod_morning_edge_v1 deactivated — contradicting insight invalidated Run90, conf=73% (2% from threshold)"
+      "high_edges": [
+        {"edge": "LONG direction", "wr": 0.67, "n": 21, "rule_status": "NO BOOSTER RULE — sol_long_veto blocks top setup"},
+        {"edge": "80-90% confidence", "wr": 0.67, "n": 12, "rule_status": "PARTIAL COVERAGE"},
+        {"edge": "SOL LONG (10d_v3)", "wr": 1.0, "n": 8, "rule_status": "BLOCKED by sol_long_veto_v1"},
+        {"edge": "Morning 06-12 UTC", "wr": 0.71, "n": "20+", "rule_status": "DEACTIVATED — needs 2 more confirming trades"}
+      ],
+      "weak_setups": [
+        {"setup": "SHORT direction", "wr": 0.18, "n": 11, "rule_status": "UNPROTECTED — sol_short_penalize deactivated, no veto exists"},
+        {"setup": "60-70% confidence", "wr": 0.14, "n": 7, "rule_status": "DEACTIVATED — conf_floor_70_v1 inactive (investigate)"},
+        {"setup": "Evening 18-24 UTC", "wr": 0.29, "n": 14, "rule_status": "CORRECTLY DEACTIVATED"},
+        {"setup": "HYPE any direction", "wr": 0.33, "n": 6, "rule_status": "CORRECTLY VETOED"}
+      ]
     },
     "daily_synthesis": {
       "date": "2026-06-20",
       "today_trades": 0,
       "today_pnl": 0.0,
-      "anomalies_found": 5,
-      "report_generated": true,
-      "anomaly_types": ["BOT_OFFLINE_MORNING_WINDOW", "WRONG_DIRECTION_RULE", "STALE_LOCK_RECOMMENDATION", "FEEDBACK_PERSISTENCE_GAP", "CSV_REGIME_BLANK"]
+      "anomalies_found": 7,
+      "report_generated": false,
+      "anomaly_breakdown": {
+        "prior_unresolved": 5,
+        "new_from_run96": 2,
+        "new_anomaly_types": ["VETO_RULE_INVERTED", "SHORT_DIRECTION_UNPROTECTED"]
+      }
     },
     "model_optimization": {
       "status": "DATA_UNAVAILABLE",
       "cost_tracker_json_exists": false,
       "model_swaps_recommended": 0,
       "potential_savings_usd": 0.0,
-      "static_routing_verdict": "Appears optimal — 4 Haiku + 2 Sonnet, quality-sensitive agents already on Sonnet"
+      "static_routing_verdict": "4 Haiku (Regime/Risk/Learning/Exit/Scout) + 2 Sonnet (Trade/Critic) — appears optimal",
+      "note": "Bot offline. No live cost data to analyze. Routing unchanged from Run 95."
     }
   },
   "high_priority_findings": [
     {
       "rank": 1,
-      "subsystem": "daily_synthesis",
+      "subsystem": "live_injection + auto_fix",
       "severity": "P0",
-      "finding": "Bot OFFLINE Day 65.17. Morning window 06:00-12:00 UTC (68-71% WR) has been active 3 hours with zero trades. Window closes in ~3 hours.",
-      "action": "cd bot && python run.py paper — IMMEDIATELY",
-      "est_missed_ev_usd": "~$127-190 (2-3 missed trades at 20d avg $63.55)"
+      "finding": "sol_long_veto_v1 (active=True, gate=100) is BLOCKING the single best-performing setup: SOL LONG 100% WR (8/8 trades, +$1,895 net in 10d_v3 backtest). Veto was built on older data showing 24% WR. This is a direct conflict — system is vetoing its highest-probability setup.",
+      "action": "HUMAN DECISION REQUIRED: Move sol_long_veto_v1 to probe mode (gate=10%). Auto-apply conf=55% (below 75% threshold). Cannot self-apply.",
+      "confidence": 0.55,
+      "gap_to_threshold": 0.20
     },
     {
       "rank": 2,
-      "subsystem": "live_injection",
-      "severity": "P1",
-      "finding": "EVENING_session_boost rule applies +8pt confidence boost to 18-24 UTC. Post-dedup evidence: this window is 29% WR (confirmed negative EV). Rule direction is WRONG — boosts losers. Will misfire on every evening trade at restart.",
-      "action": "HUMAN DECISION: flip EVENING_session_boost from +8pt to -8pt, or deactivate. conf=72%, 3% below 75% auto-apply. Provide 3 live evening trades to cross threshold.",
+      "subsystem": "live_injection + execution_forensics",
+      "severity": "P0",
+      "finding": "SHORT direction: 18% WR (2/11 trades), -$2,104 net loss. No veto rule in place. sol_short_penalize_v1 was DEACTIVATED. SOL SHORT avg SL = -$744 (2.65x LONG SL). System is taking full-size SHORT positions with no protection in a bull-regime market.",
+      "action": "Add sol_short_veto_v1 + btc_short_veto_below90_v1. Conf=72% (3% below auto-apply threshold). Human can manually apply or add 3 more confirming SHORT failures to cross threshold.",
       "confidence": 0.72,
       "gap_to_threshold": 0.03
     },
     {
       "rank": 3,
-      "subsystem": "execution_forensics",
+      "subsystem": "auto_fix",
       "severity": "P1",
-      "finding": "TRAILING_STOP_LOCK (Day 9 pending, conf=88%) based on stale 100d data (-$0.34/trade). 20d=84% WR +$19.88/trade. 60d=73% WR +$5.13/trade. Implementing lock now would cut TP2 path during best trailing-stop period in dataset.",
-      "action": "DO NOT implement until 30+ live trades post-restart. EV forgone: ~$315 (bot offline anyway).",
-      "confidence": 0.88
+      "finding": "conf_floor_70_v1 (penalize, conf=0.87) is DEACTIVATED despite 14% WR at 60-70% confidence bin (1/7 trades, -$920 net). Deactivation reason unknown.",
+      "action": "Investigate deactivation history. If no valid reason found, re-enable with gate=50%.",
+      "confidence": 0.75
     },
     {
       "rank": 4,
-      "subsystem": "auto_fix",
-      "severity": "P2",
-      "finding": "CSV_REGIME_FIELD_FIX Day 4 unimplemented (conf=0.98). All 25 graduated rules show times_correct=0 — no lifecycle tracking. Rules cannot self-calibrate.",
-      "action": "CODE: Populate llm_regime field in CSV logger. Unlocks full 25-rule lifecycle system. Conf=0.98 (highest in pipeline).",
-      "confidence": 0.98
+      "subsystem": "daily_synthesis",
+      "severity": "P0",
+      "finding": "Bot OFFLINE Day 65.58. Morning window 06-12 UTC CLOSED at 12:00 UTC — missed again.",
+      "action": "cd bot && python run.py paper — RESTART REQUIRED",
+      "missed_ev_estimate_usd": "~$127-190"
     },
     {
       "rank": 5,
       "subsystem": "auto_fix",
       "severity": "P2",
-      "finding": "5/7 feedback state files missing. Cold restart = lost learning across 5 subsystems. ~50-trade warmup needed before they regain meaningful state.",
-      "action": "CODE: Restore or initialize feedback state files with learned parameters before restart.",
-      "confidence": 0.95
+      "finding": "CSV_REGIME_FIELD_FIX (conf=0.98) pending 5 days. All 25 graduated rules show times_correct=0.",
+      "action": "CODE: Populate llm_regime field in CSV logger. One-line fix.",
+      "confidence": 0.98,
+      "days_pending": 5
     }
   ],
   "run_history_tail": [
-    {"run": 91, "gap_h": 1.62, "fixes": 2, "notes": "SIZE_CONTRADICTION_ARCHIVE_V2 + ENSEMBLE_STALENESS_INVALIDATION_V1."},
-    {"run": 92, "gap_h": 3.9, "fixes": 0, "notes": "TRAILING_STOP 20d=84% WR contradicts lock. Morning window opened."},
-    {"run": 93, "gap_h": 0.92, "fixes": 0, "notes": "Morning 1h active, P0 escalated. All code changes pending."},
-    {"run": 94, "gap_h": 1.08, "fixes": 0, "notes": "Morning 2h05m active. 5 anomalies confirmed. 0 auto-fixes."},
-    {"run": 95, "gap_h": 0.92, "fixes": 0, "notes": "Morning 3h active. 5 anomalies persist. 0 auto-fixes. Cadence streak 18."}
+    {"run": 93, "gap_h": 1.0, "fixes": 0, "notes": "Morning 1h active, P0 escalated."},
+    {"run": 94, "gap_h": 1.08, "fixes": 0, "notes": "Morning 2h05m active. 5 anomalies confirmed."},
+    {"run": 95, "gap_h": 0.92, "fixes": 0, "notes": "Morning 3h active. 0 auto-fixes. Cadence streak 18."},
+    {"run": 96, "gap_h": 1.93, "fixes": 0, "notes": "NEW P0: veto inverted, SHORT unprotected. Morning window closed."},
+    {"run": 97, "gap_h": 1.95, "fixes": 0, "notes": "7 total anomalies. conf_floor_70 investigation added. Cadence streak 20."}
   ]
 }

@@ -1,80 +1,28 @@
 {
-  "last_run": "2026-06-20T09:00:00Z",
-  "run_number": 95,
+  "last_run": "2026-06-20T14:00:00Z",
+  "run_number": 97,
   "fixes_applied_this_run": 0,
   "total_applied_all_time": 82,
-  "gates_active": 20,
-  "loop_gap_note": "RUN 95: ~1h gap from Run94 (08:05 UTC). 0 new fixes. Morning window 06:00-12:00 UTC has been active 3h — bot still offline. Cadence streak: 18.",
+  "gates_active": 18,
+  "loop_gap_note": "RUN 97: ~1.95h gap from Run 96 (12:03 UTC). 0 new fixes. Morning window CLOSED at 12:00 UTC — missed again (bot offline). Cadence streak: 20.",
   "new_fixes_this_run": [],
   "recs_processed_this_run": [
-    {
-      "rec": "TRAILING_STOP_LOCK",
-      "confidence": 0.88,
-      "status": "PENDING_HUMAN_REVIEW",
-      "reason": "Code change required. 20d data (84% WR) now CONTRADICTS 100d basis. Do not implement until 30 live trades confirm regime."
-    },
-    {
-      "rec": "CSV_REGIME_FIELD_FIX",
-      "confidence": 0.98,
-      "status": "PENDING_CODE_CHANGE",
-      "days_pending": 4
-    },
-    {
-      "rec": "TP1_CUMULATIVE_PNL_INSTRUMENTATION",
-      "confidence": 0.9,
-      "status": "PENDING_CODE_CHANGE",
-      "days_pending": 8
-    },
-    {
-      "rec": "evening_session_penalize_v1",
-      "confidence": 0.72,
-      "status": "BELOW_THRESHOLD",
-      "reason": "72% < 75%. Need 3 live evening trades to confirm to 75%."
-    },
-    {
-      "rec": "tod_morning_edge_v1",
-      "confidence": 0.73,
-      "status": "BELOW_THRESHOLD",
-      "reason": "73% < 75%. Need 2 live morning trades. Contradicting insight invalidated Run 90."
-    }
-  ],
-  "pending_code_implementations": [
-    {
-      "id": "TRAILING_STOP_LOCK",
-      "confidence": 0.88,
-      "status": "PENDING_HUMAN_REVIEW",
-      "days_pending": 8,
-      "expected_impact": "+$3,759/100d",
-      "file": "position_manager.py:1244",
-      "env_var": "TRAILING_MIN_LOCK_PCT=0.70"
-    },
-    {
-      "id": "TP1_CUMULATIVE_PNL_INSTRUMENTATION",
-      "confidence": 0.9,
-      "status": "PENDING_CODE_CHANGE",
-      "days_pending": 7
-    },
-    {
-      "id": "CSV_REGIME_FIELD_FIX",
-      "confidence": 0.98,
-      "status": "PENDING_CODE_CHANGE",
-      "days_pending": 3
-    }
+    {"rec": "sol_short_veto_v1", "confidence": 0.72, "status": "BELOW_THRESHOLD", "reason": "72% < 75%. SOL SHORT: 17% WR, n=6 in 10d_v3. Need 3+ more confirming failures."},
+    {"rec": "btc_short_veto_below90_v1", "confidence": 0.72, "status": "BELOW_THRESHOLD", "reason": "72% < 75%. BTC SHORT <90%: 20% WR, n=5 in 10d_v3."},
+    {"rec": "sol_long_probe_mode", "confidence": 0.55, "status": "BELOW_THRESHOLD", "reason": "55% < 75%. Data conflict: 100d WR=24% vs 10d_v3 WR=100% (n=8). Human decision required."},
+    {"rec": "tod_evening_afternoon_suspend", "confidence": 0.65, "status": "EFFECTIVELY_ALREADY_APPLIED", "reason": "Both tod_evening_edge_v1 and tod_afternoon_edge_v1 already inactive (active=False, gate=0)."},
+    {"rec": "conf_floor_70_v1 INVESTIGATION", "confidence": 0.75, "status": "PENDING_INVESTIGATION", "reason": "Rule exists inactive. 14% WR at 60-70% conf bin (-$920 net). Cannot re-enable without knowing deactivation reason."},
+    {"rec": "TRAILING_STOP_LOCK", "confidence": 0.88, "status": "PENDING_HUMAN_REVIEW", "days_pending": 9, "reason": "Code change. 20d data contradicts 100d basis. Do NOT implement until 30 live trades."},
+    {"rec": "CSV_REGIME_FIELD_FIX", "confidence": 0.98, "status": "PENDING_CODE_CHANGE", "days_pending": 5},
+    {"rec": "TP1_CUMULATIVE_PNL_INSTRUMENTATION", "confidence": 0.9, "status": "PENDING_CODE_CHANGE", "days_pending": 9}
   ],
   "loop_cadence_history": [
-    {"run": 88, "gap_h": 1.0, "note": "STREAK 11. btc_long_veto_v1 gate=80% applied."},
-    {"run": 89, "gap_h": 1.9, "note": "STREAK 12. 1 fix: INSIGHT_CONTRADICTION_ARCHIVE_V1."},
-    {"run": 90, "gap_h": 0.38, "note": "STREAK 13. 2 fixes: INSIGHT_LONG_BIAS_INVALIDATION_V1 + BTC_BUY_BB_GATE_PROMOTION_V1."},
-    {"run": 91, "gap_h": 1.62, "note": "STREAK 14. 2 fixes: SIZE_CONTRADICTION_ARCHIVE_V2 + ENSEMBLE_STALENESS_INVALIDATION_V1. Active insights: 10 of 19."},
-    {"run": 92, "gap_h": 3.9, "note": "STREAK 15. 0 fixes. Afternoon/evening watch 2/2 complete. EVENING_session_boost direction WRONG. Morning window OPEN, bot offline."},
-    {"run": 93, "gap_h": 1.0, "note": "STREAK 16. 0 fixes. Morning window 1h active, bot still offline. P0 ESCALATED. All 3 code changes still pending."},
-    {"run": 94, "gap_h": 1.08, "note": "STREAK 17. 0 fixes. Morning window 2h05m active, bot still offline. EVENING_session_boost wrong-direction rule flagged as P1. 5 anomalies confirmed."},
-    {"run": 95, "gap_h": 0.92, "note": "STREAK 18. 0 fixes. Morning window 3h active, bot offline. 5 escalated anomalies persist. All pending actions require code or human decision."}
+    {"run": 92, "gap_h": 3.9, "note": "STREAK 15. 0 fixes. EVENING wrong direction. Morning window open."},
+    {"run": 93, "gap_h": 1.0, "note": "STREAK 16. 0 fixes. Morning 1h active."},
+    {"run": 94, "gap_h": 1.08, "note": "STREAK 17. 0 fixes. Morning 2h05m active."},
+    {"run": 95, "gap_h": 0.92, "note": "STREAK 18. 0 fixes. Morning 3h active."},
+    {"run": 96, "gap_h": 1.93, "note": "STREAK 19. 0 fixes. NEW: veto inverted, SHORT unprotected."},
+    {"run": 97, "gap_h": 1.95, "note": "STREAK 20. 0 fixes. conf_floor_70 investigation flagged. SHORT protection 3% below threshold."}
   ],
-  "insight_state_post_run93": {
-    "total": 19,
-    "active": 10,
-    "invalidated": 3,
-    "archived": 6
-  }
+  "insight_state": {"total": 19, "active": 10, "invalidated": 3, "archived": 6}
 }
