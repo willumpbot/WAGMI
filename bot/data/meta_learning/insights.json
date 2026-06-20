@@ -40,8 +40,11 @@
       "description": "Side bias: 74% of trades are LONG but LONG WR is 30% vs 77% for the other side",
       "confidence": 0.75,
       "evidence_count": 50,
-      "actionable_suggestion": "Reduce LONG bias \u2014 we're taking too many LONG trades that underperform. Consider adding a side-balance check to the ensemble.",
-      "timestamp": 1776777002.7425194
+      "actionable_suggestion": "Reduce LONG bias — we're taking too many LONG trades that underperform. Consider adding a side-balance check to the ensemble.",
+      "timestamp": 1776777002.7425194,
+      "invalidated": true,
+      "invalidated_at": "2026-06-20T00:30:00Z",
+      "invalidation_reason": "STALE_DATA_CONTRADICTED: 10d dataset (n=965 trades) shows only 12% LONG trades, not 74%. The LONG-heavy period this was built on no longer reflects current portfolio mix. Critically, this insight was suppressing SOL_LONG 70-80% confidence signals (62% WR, avg +$20.88, n=208) — the single best sub-condition in the dataset. Run 90 auto-fix (conf=82% >= 75% threshold). Expected impact: +$418-$1,059 EV/100d from restored SOL_LONG signals."
     },
     {
       "category": "weakness",
@@ -49,14 +52,17 @@
       "confidence": 0.675,
       "evidence_count": 7,
       "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during morning (6:00-12:00 UTC).",
-      "timestamp": 1776346399.1892202
+      "timestamp": 1776346399.1892202,
+      "invalidated": true,
+      "invalidated_at": "2026-06-20T00:30:00Z",
+      "invalidation_reason": "DIRECT_CONTRADICTION: Insight 1 (same file, ts=1776987543.82, n=20, conf=0.73) shows morning 06:00-12:00 UTC at 71% WR. This insight claims 14% WR on only n=7 trades. Smaller sample (n=7) contradicts larger (n=20). Morning 68-71% WR confirmed in audit backtest data. Run 90 auto-fix (conf=82% >= 75% threshold). Invalidating to prevent agents from suppressing morning signals."
     },
     {
       "category": "bias",
       "description": "Size bias detected: larger positions (>5.0x) have 36% WR vs 46% for smaller positions. Avg PnL: $-1.38 vs $+1.36",
       "confidence": 0.8,
       "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
+      "actionable_suggestion": "Reduce position sizes — larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
       "timestamp": 1776301658.6094482
     },
     {
@@ -131,7 +137,7 @@
       "description": "Size bias detected: larger positions (>2.1x) have 44% WR vs 56% for smaller positions. Avg PnL: $-3.46 vs $-0.40",
       "confidence": 0.8,
       "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
+      "actionable_suggestion": "Reduce position sizes — larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
       "timestamp": 1775095748.2047987
     },
     {
@@ -155,12 +161,12 @@
       "description": "Size bias detected: larger positions (>1.5x) have 50% WR vs 62% for smaller positions. Avg PnL: $-0.06 vs $-0.16",
       "confidence": 0.6666666666666667,
       "evidence_count": 16,
-      "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
+      "actionable_suggestion": "Reduce position sizes — larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
       "timestamp": 1774458397.3132286
     }
   ],
   "last_dedup_at": "2026-05-18T22:06:12.775083+00:00",
   "dedup_note": "Pruned from 108 to 19 by perpetual_improvement_loop (removed 89 duplicates, kept most-recent per insight category/bucket)",
-  "last_invalidation_run": "2026-05-19T02:04:26.010467+00:00",
-  "invalidation_note": "Perpetual deep-dive 2026-05-19T02:07 marked 2 inverted time-of-day insights."
+  "last_invalidation_run": "2026-06-20T00:30:00Z",
+  "invalidation_note": "Run90 2026-06-20T00:30Z marked 2 stale/contradictory insights: Insight 5 (LONG bias stale vs 10d) and Insight 6 (morning weakness contradicts Insight 1)."
 }
