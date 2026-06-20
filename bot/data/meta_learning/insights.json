@@ -6,7 +6,10 @@
       "confidence": 0.7333333333333334,
       "evidence_count": 20,
       "actionable_suggestion": "Boost confidence for trades during morning (6:00-12:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1776987543.8175309
+      "timestamp": 1776987543.8175309,
+      "invalidated": true,
+      "invalidated_at": "2026-06-20T22:30:00Z",
+      "invalidated_reason": "RUN105_LIVE_CONTRADICTION (conf=96%): MORNING_EDGE_REVIEW in feedback/graduated_rules.json shows live morning (06-12 UTC) = 28% WR on 18 real trades (-$76.94). This insight's 71% WR was computed from BACKTEST signals, not live trades — known meta_learning unreliability pattern (second case after SOL_SHORT: 63.7% backtest vs 33% live). Do NOT create morning boost rule on bot restart. Monitor first 25 live morning trades; add morning veto if WR<40%."
     },
     {
       "category": "weakness",
@@ -194,6 +197,6 @@
   ],
   "last_dedup_at": "2026-05-18T22:06:12.775083+00:00",
   "dedup_note": "Pruned from 108 to 19 by perpetual_improvement_loop (removed 89 duplicates, kept most-recent per insight category/bucket)",
-  "last_invalidation_run": "Run91_2026-06-20T04:02:52Z",
-  "invalidation_note": "Run91: 9 insights invalidated (8 contradictory SIZE + 1 stale ensemble). Active valid insights: 6 of 19. Run90: 2 additional (LONG bias stale, morning-14% contradiction)."
+  "last_invalidation_run": "Run105_2026-06-20T22:30:00Z",
+  "invalidation_note": "Run105: insight[0] (morning 71% WR) INVALIDATED — live WR=28% on 18 real trades. Second confirmed meta_learning unreliability case (first: SOL_SHORT). All meta_learning insights require live-trade confirmation (n>=20) before acting."
 }

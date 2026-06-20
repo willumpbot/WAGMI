@@ -201,7 +201,7 @@
     },
     {
       "rule_id": "conf_floor_70_v1",
-      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes. GATED (2026-05-17): adjustment reduced -20→-5 to break compounding deadlock with self_tuning CONSERVATIVE mode. Evidence conflict: insight_journal (67 trades) shows +$2.19/trade EV in this bin; rule built on older 123-trade window. -5pts preserves caution without total block. Gate: 20%.",
+      "hypothesis_statement": "Signals with 60-70% confidence are net-negative: 46.3% WR on 123 trades, -$2321 total PnL. Worst performing confidence bin across all symbols and regimes. GATED (2026-05-17): adjustment reduced -20→-5 to break compounding deadlock with self_tuning CONSERVATIVE mode. Evidence conflict: insight_journal (67 trades) shows +$2.19/trade EV in this bin; rule built on older 123-trade window. -5pts preserves caution without total block. REACTIVATED Run105: 10d_v3 shows 14.3% WR (1/7 trades) — complete collapse.",
       "action": "penalize",
       "conditions": {
         "confidence_min": 60.0,
@@ -215,8 +215,11 @@
       "last_applied": 1778811039.5375004,
       "times_applied": 2,
       "times_correct": 0,
-      "active": false,
-      "gate_percentage": 0
+      "active": true,
+      "gate_percentage": 20,
+      "enabled_at": "2026-06-20T22:30:00Z",
+      "enabled_reason": "RUN105_AUTO_FIX (conf=75%>=75%): Run104 audit — 60-70% confidence bin = 14.3% WR (1/7 trades) in 10d_v3. Complete collapse from 20d (50% WR). Symbol-agnostic. Each blocked trade saves est. avg -$131. Gate=20 (probe: blocks 80% of trades, passes 20% for monitoring). Suspend if 3+ consecutive wins in this bin. Re-evaluate at n=20.",
+      "ab_tracking": "Gate=20 A/B probe. Baseline: 14.3% WR (10d), 50% WR (20d), 46.3% WR (123-trade historical). Deactivate if live WR in this bin >=45% on n>=20 live trades. Escalate gate to 50% if WR remains <30% on n>=20."
     },
     {
       "rule_id": "btc_trend_long_counter_v1",
@@ -443,7 +446,7 @@
     },
     {
       "rule_id": "high_conf_80_85_penalty_v1",
-      "hypothesis_statement": "80-85% confidence bin = 36.1% WR, -$52.16/trade avg on 100d backtest (n=36, 589 total trades). Worst performing confidence bin. Confidence anti-correlation confirmed by deep_memory (conf=0.93, n=2172): high confidence is NOT predictive above 80%.",
+      "hypothesis_statement": "80-85% confidence bin = 36.1% WR, -$52.16/trade avg on 100d backtest (n=36, 589 total trades). Worst performing confidence bin. Confidence anti-correlation confirmed by deep_memory (conf=0.93, n=2172): high confidence is NOT predictive above 80%. CONTRADICTED in 10d+20d: 80-90% bin = 66.7% WR (10d, n=12) and 81.8% WR (20d). DEACTIVATED Run105.",
       "action": "penalize",
       "conditions": {
         "confidence_min": 80.0,
@@ -457,11 +460,13 @@
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 50,
+      "active": false,
+      "gate_percentage": 0,
       "gate_escalated_at": "2026-06-19T16:00:00Z",
       "gate_escalation_reason": "RUN84_AUTO_ESCALATION: Graduation criterion already met by 100d backtest data (WR=36.1%<45% n>=15). 80-85% bin: 36.1% WR on n=36. Full 80-90% bin: 40% WR on n=120. Conf=0.88 >> 0.75 threshold. Escalating 20%->50%.",
-      "outcome_tracking": "ESCALATED gate=20->50 by Run84. Graduate 50->80 if WR<45% n>=15 post-restart. Deactivate if WR>=55% n>=15."
+      "outcome_tracking": "DEACTIVATED Run105: 80-90% bin now BEST tier (66.7% WR 10d_v3 n=12, 81.8% WR 20d). Rule was penalizing the strongest confidence tier. Regime shift from 100d bear to recent bull. Re-activate if 80-85% WR<45% on n>=20 live trades.",
+      "disabled_at": "2026-06-20T22:30:00Z",
+      "disabled_reason": "RUN105_AUTO_FIX (conf=88%>=75%): Run104 audit — 80-90% confidence bin = 66.7% WR (10d_v3, 8/12 trades, +$1,535) and 81.8% WR (20d). BEST performing tier. Rule built on 100d bear-regime data (Apr-May). Regime shifted May 2026. Penalizing best tier estimated -$109/day impact. Re-activate if WR<45% on n>=20 live 80-85% trades."
     },
     {
       "rule_id": "sol_short_penalize_v1",
