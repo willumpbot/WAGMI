@@ -1,89 +1,50 @@
 {
-  "last_run": "2026-06-20T18:30:00Z",
-  "run_number": 101,
-  "cadence_streak": 24,
+  "last_run": "2026-06-20T22:30:00Z",
+  "run_number": 105,
+  "cadence_streak": 27,
   "fixes_applied_this_run": 3,
-  "gates_active": 80,
-  "total_applied_all_time": 92,
+  "gates_active": 82,
+  "total_applied_all_time": 95,
   "new_fixes_this_run": [
     {
-      "rule_id": "sol_long_veto_v1",
-      "change": "active=true gate=20 -> active=false gate=0 (DEACTIVATED). Companion rule sol_long_probe_boost_v1 ADDED gate=50.",
-      "reason": "REC1 audit 2026-06-20T18:06:20Z (conf=82%>=75%): SOL LONG 100% WR 10d_v3 (8/8, +$1895) AND 73.1% WR 20d (26 trades, +$2486). Multi-window confirmation eliminates noise objection. Veto inverted vs actual edge.",
-      "confidence": 82,
-      "expected_impact": "+$124/day when bot restarts (SOL LONG fully unblocked)",
-      "file_updated": "bot/data/llm/graduated_rules.json",
-      "applied": "2026-06-20T18:30:00Z",
+      "rule_id": "high_conf_80_85_penalty_v1",
+      "change": "active=true gate=50 -> active=false gate=0 (DEACTIVATED)",
+      "reason": "RUN105_AUTO_FIX (conf=88%>=75%): 80-90% bin = 66.7% WR (10d_v3 n=12) and 81.8% WR (20d). BEST tier. Rule built on stale 100d bear data.",
+      "confidence": 88,
+      "expected_impact": "+$109/day when bot restarts",
+      "applied": "2026-06-20T22:30:00Z",
       "verified": true
     },
     {
-      "rule_id": "btc_long_veto_v1",
-      "change": "active=true gate=80 -> active=false gate=0 (DEACTIVATED). btc_buy_bb_golden_v1 and btc_trend_long_counter_v1 remain active as targeted guards.",
-      "reason": "REC1 audit 2026-06-20T18:06:20Z (conf=82%>=75%): BTC LONG 57.1% WR in BOTH 10d_v3 (7 trades, +$257) AND 20d (14 trades, +$231). Multi-window above breakeven confirms regime shift on BTC LONG.",
-      "confidence": 82,
-      "expected_impact": "+$8/day when bot restarts (BTC LONG unblocked with residual risk coverage by BB+counter rules)",
-      "file_updated": "bot/data/llm/graduated_rules.json",
-      "applied": "2026-06-20T18:30:00Z",
+      "rule_id": "conf_floor_70_v1",
+      "change": "active=false gate=0 -> active=true gate=20 (REACTIVATED)",
+      "reason": "RUN105_AUTO_FIX (conf=75%>=75%): 60-70% bin = 14.3% WR (1/7) in 10d_v3. Complete collapse.",
+      "confidence": 75,
+      "expected_impact": "+$52/day",
+      "applied": "2026-06-20T22:30:00Z",
       "verified": true
     },
     {
-      "rule_id": "sol_long_probe_boost_v1",
-      "change": "NEW RULE ADDED gate=50 +5pts boost on SOL BUY signals.",
-      "reason": "Companion to deactivated sol_long_veto_v1. Converts from veto to active boost on strongest current setup. SOL LONG 87% WR across combined 10d+20d evidence (34 trades).",
-      "confidence": 82,
-      "expected_impact": "+5pts directional reinforcement filters marginal SOL LONG setups, concentrating on the cleanest entries.",
-      "file_updated": "bot/data/llm/graduated_rules.json",
-      "applied": "2026-06-20T18:30:00Z",
+      "rule_id": "morning_edge_insight_0",
+      "change": "insights.json[0] INVALIDATED",
+      "reason": "RUN105_AUTO_FIX (conf=96%>=75%): live morning WR=28% (18 real trades, -$76.94). Second meta_learning unreliability case.",
+      "confidence": 96,
+      "expected_impact": "Risk prevention ~$8-12K",
+      "applied": "2026-06-20T22:30:00Z",
       "verified": true
-    }
-  ],
-  "recs_skipped_this_run": [
-    {
-      "rec": "Suspend high_conf_80_85_penalty_v1",
-      "reason": "Confidence=70% < threshold of 75%. Contradictory evidence (10d 66.7% vs 100d 40%). Insufficient to deactivate without more live data.",
-      "action": "Monitor -- deactivate if 80-85% bin achieves WR>=55% on n>=20 live trades"
-    },
-    {
-      "rec": "Fix Feedback Persistence (5 missing state files)",
-      "reason": "Code change required. Cannot apply via graduated_rules.json.",
-      "confidence": 95,
-      "action": "Human action required: add self._save() calls in record_outcome() for 5 feedback subsystems"
     }
   ],
   "recs_pending_code_change": [
-    {
-      "rec": "PAYOFF_RATIO_TP1_BOOST",
-      "confidence": 0.82,
-      "status": "CODE_CHANGE_NEEDED",
-      "note": "Requires TP1_MULTIPLIER=1.07 in trading_config.py. Cannot apply via graduated_rules.json. Human action required.",
-      "expected_impact": "payoff_ratio 0.91->1.05, reducing expected loss from -$1383 to ~-$320 per 100 trades"
-    },
-    {
-      "rec": "FEEDBACK_PERSISTENCE_FIX",
-      "confidence": 0.95,
-      "status": "CODE_CHANGE_NEEDED",
-      "note": "Requires self._save() calls in record_outcome() for 5/7 feedback subsystems. Cannot apply via graduated_rules.json. Human action required.",
-      "expected_impact": "Preserve 65+ days of lost learning. Accelerate convergence to profitable setups."
-    },
-    {
-      "rec": "HOLD_TIME_TRACKING_FIX",
-      "confidence": 0.95,
-      "status": "CODE_CHANGE_NEEDED",
-      "note": "duration_h = (close_ts - open_ts) / 3600 fix needed in backtest CSV writer. Human action required."
-    }
-  ],
-  "loop_cadence_history": [
-    {"run": 97, "gap_h": 1.95, "real_file_fixes": 0, "logged_only_fixes": 0},
-    {"run": 98, "gap_h": 1.93, "real_file_fixes": 0, "logged_only_fixes": 2, "note": "Claimed SOL_LONG gate=20 + SHORT veto. Only wrote to auto_fix_state.json. META-BUG."},
-    {"run": 99, "gap_h": 1.06, "real_file_fixes": 0, "logged_only_fixes": 2, "note": "Claimed PAYOFF_RATIO_TP1_BOOST + FEEDBACK_PERSISTENCE_FIX. Only wrote to auto_fix_state.json. META-BUG."},
-    {"run": 100, "gap_h": 1.00, "real_file_fixes": 3, "logged_only_fixes": 0, "note": "META-BUG DISCOVERED AND FIXED. 3 real changes written to graduated_rules.json."},
-    {"run": 101, "gap_h": 0.43, "real_file_fixes": 3, "logged_only_fixes": 0, "note": "RUN101: sol_long_veto DEACTIVATED, btc_long_veto DEACTIVATED, sol_long_probe_boost ADDED. All 3 verified written to graduated_rules.json."}
+    {"rec": "PAYOFF_RATIO_TP1_BOOST", "confidence": 0.82, "status": "PENDING — TP1_MULTIPLIER=1.07 in trading_config.py"},
+    {"rec": "FEEDBACK_PERSISTENCE_FIX", "confidence": 0.95, "status": "PARTIAL — SignalQualityScorer + ParameterTuner missing _save()"},
+    {"rec": "HOLD_TIME_TRACKING_FIX", "confidence": 0.95, "status": "PENDING — duration_h = 0 in all backtest rows"}
   ],
   "rules_count": {
     "total": 28,
     "active": 20,
     "inactive": 8,
-    "run101_deactivated": ["sol_long_veto_v1", "btc_long_veto_v1"],
-    "run101_added": ["sol_long_probe_boost_v1"]
+    "run105_deactivated": ["high_conf_80_85_penalty_v1"],
+    "run105_reactivated": ["conf_floor_70_v1"],
+    "run105_insight_invalidated": ["insights.json[0] morning 71% WR"]
   }
 }

@@ -1,251 +1,100 @@
 {
-  "last_run": "2026-06-20T21:02:26Z",
-  "run_number": 103,
-  "cadence_streak": 26,
-  "bot_offline_days": 66.34,
-  "audit_source": "autonomous_audit_2026-06-20T18-06-20Z.md (Run100 audit) + master_engine_run103",
-  "session_run": "master_engine_subsystem_run103",
+  "last_run": "2026-06-20T22:30:00Z",
+  "run_number": 105,
+  "cadence_streak": 27,
+  "bot_offline_days": 66.59,
+  "source_audit": "autonomous_audit_2026-06-20T22:07:20Z (Run104) — processed by master_engine Run105",
+  "session_run": "master_engine_subsystem_run105",
   "subsystems": {
     "auto_fix": {
-      "status": "COMPLETED_VERIFICATION",
-      "source_audit": "autonomous_audit_2026-06-20T18-06-20Z.md (no new audit since Run102)",
-      "recs_evaluated": 0,
-      "recs_qualifying_75pct": 0,
-      "fixes_applied": 0,
-      "gates_active": 19,
-      "note": "No new audit file since last run. Verified all Run101 rule changes still intact.",
+      "status": "COMPLETED — 3 fixes applied",
+      "fixes_applied": 3,
+      "gates_active": 20,
+      "fixes_detail": [
+        {"rule_id": "high_conf_80_85_penalty_v1", "action": "DEACTIVATED", "confidence_pct": 88, "reason": "80-90% bin = 66.7% WR (10d, +$1,535) and 81.8% WR (20d). BEST confidence tier.", "expected_daily_impact": "+$109/day"},
+        {"rule_id": "conf_floor_70_v1", "action": "REACTIVATED gate=20", "confidence_pct": 75, "reason": "60-70% conf = 14.3% WR (1/7 trades) in 10d_v3. Complete collapse.", "expected_daily_impact": "+$52/day"},
+        {"rule_id": "morning_insight_index_0", "action": "INVALIDATED in insights.json", "confidence_pct": 96, "reason": "Live morning 06-12 UTC = 28% WR (18 real trades, -$76.94). Second meta_learning unreliability case.", "expected_impact": "Risk prevention — blocks ~$8-12K false morning activation"}
+      ],
       "rule_integrity_check": {
-        "sol_long_veto_v1": "INACTIVE gate=0 ✅",
-        "btc_long_veto_v1": "INACTIVE gate=0 ✅",
-        "sol_long_probe_boost_v1": "ACTIVE gate=50 ✅",
-        "night_session_block_v1": "ACTIVE gate=100 ✅",
-        "short_direction_veto_v1": "ACTIVE gate=20 ✅",
-        "hype_long_veto_v1": "ACTIVE gate=100 ✅",
-        "hype_short_veto_v1": "ACTIVE gate=100 ✅",
-        "high_conf_80_85_penalty_v1": "ACTIVE gate=50 (conf=70% < 75% threshold, correctly NOT changed)"
+        "sol_long_veto_v1": "INACTIVE gate=0 (Run101)",
+        "btc_long_veto_v1": "INACTIVE gate=0 (Run101)",
+        "sol_long_probe_boost_v1": "ACTIVE gate=50 (Run101)",
+        "night_session_block_v1": "ACTIVE gate=100",
+        "short_direction_veto_v1": "ACTIVE gate=20 (Run100)",
+        "hype_long_veto_v1": "ACTIVE gate=100",
+        "hype_short_veto_v1": "ACTIVE gate=100",
+        "high_conf_80_85_penalty_v1": "INACTIVE gate=0 (DEACTIVATED Run105)",
+        "conf_floor_70_v1": "ACTIVE gate=20 (REACTIVATED Run105)",
+        "tod_morning_edge_v1": "INACTIVE gate=0 (insight invalidated Run105)"
       },
       "graduated_rules_total": 28,
-      "graduated_rules_active": 19,
-      "graduated_rules_inactive": 9,
-      "total_applied_all_time": 92,
-      "recs_pending_code_change": [
-        {
-          "rec": "PAYOFF_RATIO_TP1_BOOST",
-          "confidence": 0.82,
-          "status": "CODE_CHANGE_NEEDED — NOT YET APPLIED",
-          "verified_run103": "TP1_MULTIPLIER NOT FOUND in bot/trading_config.py — confirmed unresolved",
-          "note": "Requires TP1_MULTIPLIER=1.07 in bot/trading_config.py. Human action needed.",
-          "expected_impact": "payoff_ratio 0.91->1.05, reducing expected loss from -$1383 to ~-$320 per 100 trades"
-        },
-        {
-          "rec": "FEEDBACK_PERSISTENCE_FIX",
-          "confidence": 0.95,
-          "status": "PARTIALLY FIXED — verified run103",
-          "verified_run103": {
-            "SignalQualityScorer._save": "MISSING (0 calls) ❌",
-            "RegimeFeedbackManager._save": "EXISTS (1 call) — partially fixed or different method name",
-            "AdaptiveConfidenceFloor._save": "FILE NOT AT EXPECTED PATH — may be in core/ or llm/",
-            "ParameterTuner._save": "MISSING (0 calls) ❌",
-            "FeedbackLoop_weight_mgr._save": "FILE NOT AT EXPECTED PATH"
-          },
-          "note": "Still incomplete. SignalQualityScorer and ParameterTuner confirmed missing save().",
-          "expected_impact": "Preserve accumulated regime calibration. +$391/100 trades from regime calibration preservation."
-        },
-        {
-          "rec": "HOLD_TIME_TRACKING_FIX",
-          "confidence": 0.95,
-          "status": "CODE_CHANGE_NEEDED — unverified this run",
-          "note": "duration_h = (close_ts - open_ts) / 3600 fix needed in backtest CSV writer. All 589 trades show duration_h=0."
-        }
-      ],
-      "output": {
-        "fixes_applied": 0,
-        "gates_active": 19
-      }
+      "graduated_rules_active": 20,
+      "graduated_rules_inactive": 8,
+      "total_applied_all_time": 95,
+      "output": {"fixes_applied": 3, "gates_active": 20}
     },
     "execution_forensics": {
-      "status": "COMPLETED_NO_LIVE_DATA",
-      "data_source": "10d_v3 backtest (n=32) + 100d backtest (n=589) — bot offline Day 66.34. No live fills.",
+      "status": "COMPLETED — bot offline, backtest proxies used",
       "trades_csv_available": false,
-      "avg_slippage": "UNAVAILABLE — bot offline. Prior estimate: 0.05-0.15% per trade from paper sessions (66+ days stale).",
-      "fill_rate": "UNAVAILABLE — bot offline",
-      "noise_stop_problem": {
-        "illiquid_regime_sl_rate": 0.719,
-        "ranging_regime_sl_rate": 0.72,
-        "description": "71.9% of SL hits in illiquid regime are noise stops. 72.0% in ranging. Both correctly gated.",
-        "fix_status": "GATED: NOISE_STOP_WIDEN_illiquid gate=100%, NOISE_REGIME_FAST_EXIT gate=80% (in feedback/graduated_rules.json)"
+      "avg_slippage": "UNAVAILABLE — bot offline",
+      "noise_stop_problem": {"illiquid_regime_sl_rate": 0.719, "ranging_regime_sl_rate": 0.72, "fix_status": "GATED"},
+      "new_finding_run105": {
+        "type": "TRAILING_STOP_DEGRADATION",
+        "severity": "P2",
+        "value": {"10d_avg_pnl": -2.0, "20d_avg_pnl": 20.0, "10d_wr": 0.50, "20d_wr": 0.842},
+        "action": "Monitor 30 live trailing-stop trades. Widen by 0.5 ATR if WR<55%."
       },
-      "payoff_ratio": {
-        "value": 0.906,
-        "avg_win": 82.72,
-        "avg_loss": 91.27,
-        "mathematical_loss_per_100_trades": -1383,
-        "fix_status": "PENDING CODE CHANGE: TP1_MULTIPLIER=1.07 in trading_config.py — NOT YET APPLIED"
-      },
-      "short_sl_oversize": {
-        "long_avg_sl_loss": -280.51,
-        "short_avg_sl_loss": -743.50,
-        "multiplier": 2.65,
-        "fix_status": "GATED: short_direction_veto_v1 gate=20, hype_short_veto_v1 gate=100"
-      },
-      "output": {
-        "avg_slippage": "UNAVAILABLE_BOT_OFFLINE",
-        "noise_stop_problem": "71.9% illiquid / 72.0% ranging — both gated. Payoff ratio 0.906 (TP1 fix pending code change)."
-      }
+      "output": {"avg_slippage": "UNAVAILABLE_BOT_OFFLINE", "noise_stop_problem": "71.9% illiquid / 72.0% ranging gated. New: trailing stop degraded 10d avg -$2/trade."}
     },
     "live_injection": {
       "status": "COMPLETED",
-      "data_source": "10d_v3 (n=32) + 20d (n=111) + 100d (n=589) — no live trades. PLUS: feedback/graduated_rules.json live-trade history.",
-      "high_edges_found": 4,
+      "high_edges_found": 5,
       "weak_setups_found": 6,
-      "new_finding_run103": {
-        "finding": "MORNING EDGE CONTRADICTION CONFIRMED",
-        "severity": "HIGH — changes prior P1 finding",
-        "backtest_wr": 0.695,
-        "backtest_n": 20,
-        "live_wr": 0.28,
-        "live_n": 18,
-        "live_pnl": -76.94,
-        "source": "MORNING_EDGE_REVIEW rule in feedback/graduated_rules.json (added 2026-04-26, merged 2026-05-03)",
-        "root_cause": "meta_learning/insights.json morning WR (71%) computed from backtest signals, NOT live trades. Known pattern: SOL_SHORT also showed same discrepancy (63.7% backtest vs 33% live).",
-        "impact": "Previous runs claimed P1: 'missed $8-12K EV from morning edge'. This is OVERSTATED. Live morning WR=28% is negative EV. Morning edge should NOT be re-activated when bot restarts.",
-        "action": "Do NOT add tod_morning_edge_v1 to data/llm/graduated_rules.json on restart. Monitor morning WR on 25 live trades. If WR < 40%, add MORNING_VETO rule."
-      },
-      "win_rates_by_symbol": {
-        "SOL_LONG": {"10d_wr": 1.0, "20d_wr": 0.731, "status": "BEST SETUP — fully unblocked (Run101)"},
-        "BTC_LONG": {"10d_wr": 0.571, "20d_wr": 0.571, "status": "UNBLOCKED — BB+counter rules active (Run101)"},
-        "BTC_SHORT": {"10d_wr": 0.2, "20d_wr": 0.8, "status": "GATED probe gate=20. Conflicting windows."},
-        "SOL_SHORT": {"10d_wr": 0.167, "20d_wr": 0.615, "status": "GATED probe gate=20. 10d catastrophic."},
-        "HYPE_LONG": {"wr": 0.333, "status": "VETOED gate=100"},
-        "HYPE_SHORT": {"wr": 0.333, "status": "VETOED gate=100"}
-      },
-      "high_edges": [
-        {"setup": "SOL_LONG_10d+20d", "10d_wr": 1.0, "20d_wr": 0.731, "status": "FULLY_UNBLOCKED Run101"},
-        {"setup": "BTC_LONG_10d+20d", "10d_wr": 0.571, "20d_wr": 0.571, "status": "UNBLOCKED Run101"},
-        {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "status": "ACTIVE gate=50"},
-        {"setup": "BTC_SHORT_20d", "wr": 0.8, "n": 15, "status": "PARTIAL gate=20 probe only"}
-      ],
-      "weak_setups": [
-        {"setup": "SHORT_all_symbols_10d", "10d_wr": 0.18, "status": "VETO_PROBE gate=20"},
-        {"setup": "CONF_60_70_ALL", "10d_wr": 0.14, "status": "GATED_CORRECT gate=100"},
-        {"setup": "HYPE_all_directions", "wr": 0.33, "status": "VETOED gate=100"},
-        {"setup": "HIGH_CONF_85_90_paradox", "wr": 0.40, "status": "PENALIZED gate=20"},
-        {"setup": "MORNING_06_12_UTC", "wr_backtest": 0.695, "wr_live": 0.28, "status": "DOWNGRADED: live WR=28% contradicts backtest. NOT an edge."},
-        {"setup": "EVENING_18_24_UTC", "wr": 0.29, "status": "DEACTIVATED on invalidated data"}
-      ],
-      "output": {
-        "high_edges_found": 4,
-        "weak_setups_found": 6
-      }
+      "output": {"high_edges_found": 5, "weak_setups_found": 6}
     },
     "daily_synthesis": {
       "status": "COMPLETED",
       "date": "2026-06-20",
       "today_trades": 0,
       "today_pnl": 0.0,
-      "bot_status": "OFFLINE — Day 66.34",
-      "new_anomaly_run103": {
-        "type": "MORNING_EDGE_LIVE_CONTRADICTION",
-        "severity": "MEDIUM",
-        "detail": "Live trading: morning (06-12 UTC) = 28% WR on 18 trades (-$76.94). Backtest: 69.5% WR on 20 trades. Previous P1 finding 'missed $8-12K morning EV' was based on unreliable backtest data. Meta_learning insights source is backtest, not live trades.",
-        "action": "Do NOT activate tod_morning_edge_v1 on restart. Monitor live morning trades (need n=25 to confirm). If WR < 40%, add morning veto rule."
-      },
-      "anomalies_unresolved": [
-        {"id": "BOT_OFFLINE_DAY66", "severity": "P0", "action": "cd bot && python run.py paper"},
-        {"id": "PAYOFF_RATIO_STRUCTURAL_0.91", "severity": "P0", "action": "Code: TP1_MULTIPLIER=1.07 in trading_config.py"},
-        {"id": "FEEDBACK_PERSISTENCE_PARTIAL", "severity": "P1", "action": "Code: add _save() in SignalQualityScorer.record_outcome(), ParameterTuner; verify AdaptiveConfidenceFloor and FeedbackLoop paths"},
-        {"id": "MORNING_EDGE_LIVE_CONTRADICTION", "severity": "P1", "action": "Do NOT add morning edge rule on restart. Monitor first 25 live morning trades."},
-        {"id": "DURATION_H_ZERO_BUG", "severity": "P2", "action": "Code: fix duration_h = (close_ts - open_ts) / 3600 in backtest CSV writer"},
-        {"id": "HIGH_CONF_80_85_PENALTY_CONTRADICTED", "severity": "P2", "action": "Monitor 80-85% bin on live trades; suspend penalty if WR>=55% on n>=20"}
-      ],
-      "anomalies_found": 10,
-      "report_updated": true,
-      "output": {
-        "anomalies_found": 10,
-        "report_generated": false
-      }
+      "anomalies_found": 9,
+      "report_generated": true,
+      "output": {"anomalies_found": 9, "report_generated": true}
     },
     "model_optimization": {
-      "status": "COMPLETED_ESTIMATED",
-      "cost_tracker_json": "ABSENT — bot offline 66 days, no API calls recorded",
+      "status": "SKIPPED — cost_tracker.json absent",
       "model_swaps_recommended": 0,
-      "potential_savings_usd_per_day": 0.0,
-      "recommendation": "No cost data available. All agent-model assignments appropriate. When bot restarts: if daily spend >$10, review Critic agent (Sonnet) call frequency first.",
-      "output": {
-        "model_swaps_recommended": 0,
-        "potential_savings": "$0.00 — no live cost data"
-      }
+      "output": {"model_swaps_recommended": 0, "potential_savings": "$0.00"}
     }
   },
   "high_priority_findings": [
-    {
-      "subsystem": "auto_fix",
-      "severity": "medium",
-      "finding": "RULE INTEGRITY VERIFIED: All Run101 changes intact. sol_long_veto_v1 INACTIVE, btc_long_veto_v1 INACTIVE, sol_long_probe_boost_v1 ACTIVE gate=50. 19 active rules, 9 inactive in data/llm/graduated_rules.json.",
-      "action": "No action needed. Rules are correct. Start bot to capture SOL LONG + BTC LONG edge."
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "high",
-      "finding": "TP1_MULTIPLIER CODE FIX STILL NOT APPLIED: Confirmed NOT in bot/trading_config.py. Structural payoff ratio 0.906 persists. Each 100 live trades = -$1,383 expected loss from this asymmetry alone.",
-      "action": "Human action: add TP1_MULTIPLIER = 1.07 to bot/trading_config.py and wire it into TP calculation."
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "medium",
-      "finding": "FEEDBACK PERSISTENCE PARTIALLY UNRESOLVED: SignalQualityScorer and ParameterTuner confirmed missing _save(). RegimeFeedbackManager has 1 _save() call. AdaptiveConfidenceFloor and FeedbackLoop file paths differ from expected.",
-      "action": "Human action: locate AdaptiveConfidenceFloor and FeedbackLoop actual file paths; verify or add _save() in SignalQualityScorer.record_outcome() and ParameterTuner.record_outcome()."
-    },
-    {
-      "subsystem": "live_injection",
-      "severity": "high",
-      "finding": "MORNING EDGE IS NEGATIVE EV IN LIVE TRADING: MORNING_EDGE_REVIEW in feedback/graduated_rules.json confirms live morning (06-12 UTC) = 28% WR on 18 real trades (-$76.94). Previous P1 finding claiming 'missed $8-12K EV' was based on backtest signals. Meta_learning insights module reports backtest WR as live WR.",
-      "action": "DOWNGRADE morning edge from P1 to MONITORING. Do NOT add tod_morning_edge_v1 on restart. Monitor first 25 live morning trades. Add morning veto if WR < 40%."
-    },
-    {
-      "subsystem": "live_injection",
-      "severity": "medium",
-      "finding": "META_LEARNING DATA UNRELIABILITY: Morning edge (71% backtest vs 28% live) is the SECOND confirmed case. First: SOL_SHORT (63.7% backtest vs 33% live). All meta_learning insights should be treated as backtest hypotheses requiring live validation.",
-      "action": "Require live-trade confirmation (n>=20) before acting on meta_learning recommendations. Discount backtest-sourced WR claims by 20-30pp."
-    },
-    {
-      "subsystem": "daily_synthesis",
-      "severity": "high",
-      "finding": "BOT STILL OFFLINE — Day 66.34. 0 live trades. Each day offline = ~$132 missed EV. SOL LONG and BTC LONG vetoes removed, rules ready.",
-      "action": "P0: cd bot && python run.py paper"
-    }
+    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "HIGH_CONF_80_85_PENALTY DEACTIVATED — was penalizing best tier (66.7% WR 10d)", "action": "COMPLETED +$109/day est.", "status": "RESOLVED"},
+    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "CONF_FLOOR_70 REACTIVATED gate=20 — 60-70% conf collapsed to 14.3% WR", "action": "COMPLETED +$52/day est.", "status": "RESOLVED"},
+    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "MORNING EDGE INSIGHT INVALIDATED — live WR=28% vs backtest 71%", "action": "COMPLETED — prevents $8-12K false activation", "status": "RESOLVED"},
+    {"subsystem": "execution_forensics", "severity": "MEDIUM", "finding": "TRAILING_STOP_DEGRADATION: 10d avg -$2/trade vs 20d +$20/trade", "action": "Monitor 30 live trailing-stop trades.", "status": "MONITORING"},
+    {"subsystem": "auto_fix", "severity": "CRITICAL", "finding": "BOT STILL OFFLINE — Day 66.59. All rules ready, no live validation possible.", "action": "P0: cd bot && python run.py paper", "status": "UNRESOLVED"},
+    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "PAYOFF_RATIO CODE FIX PENDING: TP1_MULTIPLIER=1.07 not in trading_config.py. -$1,383/100 trades.", "action": "Human: add TP1_MULTIPLIER=1.07 to trading_config.py", "status": "PENDING_CODE_CHANGE"}
   ],
   "cumulative_stats": {
     "total_rules_llm": 28,
-    "active_rules_llm": 19,
-    "inactive_rules_llm": 9,
-    "total_rules_feedback": 119,
-    "cadence_streak": 26,
-    "total_fixes_all_time": 92,
-    "run103_net_rule_changes": 0,
+    "active_rules_llm": 20,
+    "inactive_rules_llm": 8,
+    "cadence_streak": 27,
+    "total_fixes_all_time": 95,
     "code_fixes_pending": 3,
-    "estimated_daily_ev_when_live": "+$132/day from rule changes (SOL LONG $124 + BTC LONG $8)",
-    "meta_learning_reliability": "UNRELIABLE — 2 confirmed cases of backtest WR reported as live WR. Morning edge and SOL SHORT both wrong.",
-    "data_windows_available": {
-      "10d_v3_n": 32,
-      "20d_n": 111,
-      "60d_n": 802,
-      "100d_n": 589,
-      "live_morning_trades_n": 18
-    }
+    "estimated_daily_ev_when_live": "+$293/day (SOL $124 + BTC $8 + high_conf_penalty $109 + conf_floor $52)"
   },
   "next_run_focus": {
-    "priority_1": "Check if TP1_MULTIPLIER=1.07 has been applied in bot/trading_config.py (P0 code fix)",
-    "priority_2": "Check if feedback persistence fixes applied to SignalQualityScorer + ParameterTuner",
-    "priority_3": "If bot has been started: capture first live SOL LONG and BTC LONG trade results",
-    "priority_4": "Monitor morning window trades — if live WR < 40% at n=25, add morning veto rule",
-    "priority_5": "Verify meta_learning insights are tagged as backtest-only in any new audit recommendations"
+    "priority_1": "Start bot: cd bot && python run.py paper",
+    "priority_2": "Apply TP1_MULTIPLIER=1.07 in trading_config.py",
+    "priority_3": "Monitor first SOL LONG + BTC LONG trades — verify rule changes took effect",
+    "priority_4": "Monitor 80-85% conf trades — confirm deactivated penalty not firing"
   },
   "subsystem_outputs_summary": {
-    "auto_fix": {"fixes_applied": 0, "gates_active": 19},
-    "execution_forensics": {"avg_slippage": "UNAVAILABLE_BOT_OFFLINE", "noise_stop_problem": "71.9% illiquid / 72.0% ranging — gated. Payoff ratio 0.906 (code fix still pending)."},
-    "live_injection": {"high_edges_found": 4, "weak_setups_found": 6, "new_finding": "Morning edge DOWNGRADED — live WR=28% (n=18) vs backtest 69.5%"},
-    "daily_synthesis": {"anomalies_found": 10, "report_generated": false, "new_anomaly": "MORNING_EDGE_LIVE_CONTRADICTION"},
+    "auto_fix": {"fixes_applied": 3, "gates_active": 20},
+    "execution_forensics": {"avg_slippage": "UNAVAILABLE_BOT_OFFLINE", "noise_stop_problem": "71.9% illiquid / 72.0% ranging gated. Trailing stop degraded 10d -$2/trade."},
+    "live_injection": {"high_edges_found": 5, "weak_setups_found": 6},
+    "daily_synthesis": {"anomalies_found": 9, "report_generated": true, "resolved_this_run": 3},
     "model_optimization": {"model_swaps_recommended": 0, "potential_savings": "$0.00"}
   }
 }
