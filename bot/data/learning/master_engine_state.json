@@ -1,147 +1,98 @@
 {
-  "last_run": "2026-06-20T08:05:00Z",
-  "run_number": 94,
-  "cadence_streak": 17,
-  "bot_offline_days": 64.34,
-  "ev_accrued_usd": 436.01,
-
+  "last_run": "2026-06-20T09:00:00Z",
+  "run_number": 95,
+  "cadence_streak": 18,
+  "bot_offline_days": 65.17,
+  "ev_accrued_usd_est": 449.87,
   "subsystems": {
     "auto_fix": {
       "fixes_applied": 0,
       "gates_active": 20,
       "total_applied_all_time": 82,
-      "recs_evaluated": 3,
-      "recs_below_threshold": 2,
-      "recs_pending_human": 1,
-      "notes": [
-        "REC-1: evening_session_penalize_v1 — conf=72%, BELOW_THRESHOLD (72% < 75%)",
-        "REC-2: TRAILING_STOP_LOCK PAUSE — conf=88% but PENDING_HUMAN_REVIEW (code change, Day 8)",
-        "REC-3: tod_morning_edge_v1 reconsider — conf=73%, BELOW_THRESHOLD",
-        "STRUCTURAL: EVENING_session_boost rule at gate=20% applying +8pt BOOST to confirmed 29% WR window — wrong direction, but flip confidence only 72%"
-      ]
+      "recs_evaluated": 5,
+      "recs_qualifying_by_confidence": 2,
+      "recs_applied": 0,
+      "status": "NO_NEW_FIXES — all qualifying recs blocked by code-change-required or stale basis"
     },
     "execution_forensics": {
-      "avg_slippage": "UNAVAILABLE — bot offline Day 64.34",
-      "noise_stop_problem": "illiquid=71.9%, ranging=72.0% — both gated (NOISE_STOP_WIDEN@100%, NOISE_REGIME_FAST_EXIT@80%)",
-      "trailing_stop_regime_shift": {
-        "10d_wr": 0.49, "10d_avg_pnl": -3.93,
-        "20d_wr": 0.84, "20d_avg_pnl": 19.88,
-        "60d_wr": 0.73, "60d_avg_pnl": 5.13,
-        "100d_wr": 0.48, "100d_avg_pnl": -0.34,
-        "verdict": "TRAILING_STOP_LOCK recommendation is STALE — 20d and 60d data contradict 100d basis. Do NOT implement before 30 live trades."
-      },
-      "ev_gap_trailing_stop": {
-        "per_hour": 1.57,
-        "days_pending": 8,
-        "cumulative_forgone_est_usd": 301.44
-      },
-      "close_reason_breakdown_100d": {
-        "SL": {"pct": 0.457, "avg_pnl": -108.92},
-        "TP1": {"pct": 0.272, "avg_pnl": 122.01},
-        "TRAILING_STOP": {"pct": 0.188, "avg_pnl": -0.34},
-        "TP2": {"pct": 0.083, "avg_pnl": 33.53}
-      }
+      "avg_slippage": "UNAVAILABLE — bot offline, no trades.csv",
+      "noise_stop_problem": "illiquid=71.9%, ranging=72.0% — both gated (from 100d backtest)",
+      "fill_rate": "UNAVAILABLE",
+      "trailing_stop_ev_gap_usd": 315.67,
+      "trailing_stop_verdict": "STALE LOCK RECOMMENDATION — 20d 84% WR contradicts 100d -$0.34 basis",
+      "data_source": "100d backtest (n=589), 20d backtest (n=111)"
     },
     "live_injection": {
-      "data_source": "backtest only — bot offline",
-      "last_updated": "2026-06-20T06:00:00Z",
+      "data_source": "backtest (bot offline)",
       "high_edges_found": 4,
       "weak_setups_found": 4,
-      "high_edges": [
-        {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "count": 2172, "status": "GATED_ACTIVE@50%"},
-        {"setup": "MORNING_06_12_UTC", "wr": 0.68, "count": null, "status": "WINDOW_MISSED — bot offline 06:00-08:05 UTC (2h05m of bleeding)"},
-        {"setup": "BTC_SHORT_20d", "wr": 0.80, "count": null, "note": "20d n=? showing 80% WR, +$161/trade, partially gated 70-80% conf bin"},
-        {"setup": "SOL_SHORT_60d", "wr": 0.63, "note": "Consistent 3/4 windows positive. Unblocked after sol_short_penalize_v1 deactivation."}
-      ],
-      "weak_setups": [
-        {"setup": "NIGHT_00_06_UTC", "wr": 0.19, "status": "GATED_CORRECT@100%"},
-        {"setup": "AFTERNOON_12_18_UTC", "wr": 0.27, "status": "WATCH_COMPLETE_UNGATED, conf=72% (below 75% apply threshold)"},
-        {"setup": "EVENING_18_24_UTC", "wr": 0.29, "status": "WRONG_DIRECTION_RULE_ACTIVE — EVENING_session_boost applying +8pt to 29% WR window"},
-        {"setup": "ALL_HYPE", "wr": 0.48, "avg_pnl": -24.73, "status": "GATED_CORRECT@100%"}
-      ],
-      "critical_gap": "EVENING_session_boost rule (gate=20%) applies +8pt confidence boost to 18-24 UTC, confirmed 29% WR post-dedup. Every evening trade is incorrectly boosted. Flip confidence=72% — just 3% below auto-apply threshold."
+      "critical_gap": "EVENING_session_boost applying +8pt to 29% WR window (wrong direction, conf=72%)",
+      "morning_edge_ungated": "tod_morning_edge_v1 deactivated — contradicting insight invalidated Run90, conf=73% (2% from threshold)"
     },
     "daily_synthesis": {
       "date": "2026-06-20",
-      "bot_status": "OFFLINE — Day 64.34",
       "today_trades": 0,
       "today_pnl": 0.0,
-      "morning_window_status": "EXPIRED — window 06:00-12:00 UTC, bot missed first 2h05m (06:00-08:05 UTC). Still open until 12:00.",
       "anomalies_found": 5,
-      "anomalies": [
-        {"type": "BOT_OFFLINE", "severity": "P0", "detail": "64.34 consecutive days offline, morning window partially missed"},
-        {"type": "WRONG_DIRECTION_RULE", "severity": "P1", "detail": "EVENING_session_boost boosting 29% WR window at gate=20%"},
-        {"type": "STALE_RULE_BASIS", "severity": "P1", "detail": "TRAILING_STOP_LOCK pending Day 8 on 100d data; 20d data contradicts (84% WR vs 48%)"},
-        {"type": "FEEDBACK_FILES_MISSING", "severity": "P2", "detail": "5/7 feedback state files absent — cold start on restart loses all pre-shutdown learning"},
-        {"type": "CSV_REGIME_BLANK", "severity": "P2", "detail": "llm_regime field blank — 25 graduated rules have times_correct=0, zero lifecycle tracking"}
-      ],
-      "report_generated": false,
-      "7d_avg_wr_context": "20d window best at 65.8% WR avg +$63.55/trade; 10d positive (+$7.17); 60d barely negative (-$2.85)"
+      "report_generated": true,
+      "anomaly_types": ["BOT_OFFLINE_MORNING_WINDOW", "WRONG_DIRECTION_RULE", "STALE_LOCK_RECOMMENDATION", "FEEDBACK_PERSISTENCE_GAP", "CSV_REGIME_BLANK"]
     },
     "model_optimization": {
-      "status": "SKIPPED — cost_tracker.json not found",
-      "cost_tracker_py_exists": true,
+      "status": "DATA_UNAVAILABLE",
       "cost_tracker_json_exists": false,
-      "swaps_recommended": 0,
+      "model_swaps_recommended": 0,
       "potential_savings_usd": 0.0,
-      "note": "cost_tracker.py found but no JSON output file. Bot offline means no live cost data. Subsystem skipped gracefully."
+      "static_routing_verdict": "Appears optimal — 4 Haiku + 2 Sonnet, quality-sensitive agents already on Sonnet"
     }
   },
-
   "high_priority_findings": [
     {
+      "rank": 1,
       "subsystem": "daily_synthesis",
       "severity": "P0",
-      "finding": "Bot OFFLINE Day 64.34. Morning window 06:00-12:00 UTC (68-71% WR) is OPEN and already missed 2h05m. Estimated missed EV this morning: $60-130 (1-2 trades at 20d avg $63.55).",
-      "action": "cd bot && python run.py paper — IMMEDIATELY"
+      "finding": "Bot OFFLINE Day 65.17. Morning window 06:00-12:00 UTC (68-71% WR) has been active 3 hours with zero trades. Window closes in ~3 hours.",
+      "action": "cd bot && python run.py paper — IMMEDIATELY",
+      "est_missed_ev_usd": "~$127-190 (2-3 missed trades at 20d avg $63.55)"
     },
     {
+      "rank": 2,
       "subsystem": "live_injection",
       "severity": "P1",
-      "finding": "EVENING_session_boost rule applies +8pt confidence boost to 18-24 UTC. Post-dedup evidence confirms this window is 29% WR (negative EV). Rule direction is WRONG — it's boosting a losing window. Every evening trade the bot takes on restart will be incorrectly promoted.",
-      "action": "MANUAL REVIEW: Flip EVENING_session_boost from +8pt boost to -8pt penalize, or deactivate. Requires human decision (confidence=72%, just below 75% auto-apply). Or: provide 3 live evening trades to push confidence to 75% for auto-apply.",
+      "finding": "EVENING_session_boost rule applies +8pt confidence boost to 18-24 UTC. Post-dedup evidence: this window is 29% WR (confirmed negative EV). Rule direction is WRONG — boosts losers. Will misfire on every evening trade at restart.",
+      "action": "HUMAN DECISION: flip EVENING_session_boost from +8pt to -8pt, or deactivate. conf=72%, 3% below 75% auto-apply. Provide 3 live evening trades to cross threshold.",
       "confidence": 0.72,
       "gap_to_threshold": 0.03
     },
     {
+      "rank": 3,
       "subsystem": "execution_forensics",
       "severity": "P1",
-      "finding": "TRAILING_STOP_LOCK (Day 8 pending, conf=88%) is based on stale 100d data (-$0.34/trade). Recent 20d data shows 84% WR +$19.88/trade. 60d shows 73% WR +$5.13/trade. Implementing the lock now would forfeit TP2 path during the highest-performing trailing-stop period in the dataset.",
-      "action": "DO NOT implement TRAILING_STOP_LOCK until 30+ live trades post-restart confirm 20d regime has reverted. Current EV gap forgone: ~$301 over 8 days (bot offline anyway).",
+      "finding": "TRAILING_STOP_LOCK (Day 9 pending, conf=88%) based on stale 100d data (-$0.34/trade). 20d=84% WR +$19.88/trade. 60d=73% WR +$5.13/trade. Implementing lock now would cut TP2 path during best trailing-stop period in dataset.",
+      "action": "DO NOT implement until 30+ live trades post-restart. EV forgone: ~$315 (bot offline anyway).",
       "confidence": 0.88
     },
     {
+      "rank": 4,
       "subsystem": "auto_fix",
       "severity": "P2",
-      "finding": "Morning session (06:00-12:00 UTC, 68-71% WR) has no active boost rule. tod_morning_edge_v1 was deactivated in Run 81 due to a contradicting n=7 insight (14% WR). That insight was invalidated in Run 90. The contradiction is resolved. Rule can be reconsidered at confidence=73% (2% below threshold).",
-      "action": "Human decision: reactivate tod_morning_edge_v1 at gate=20% probe, or wait for 2 more live morning trades to cross 75% confidence threshold.",
-      "confidence": 0.73,
-      "gap_to_threshold": 0.02
+      "finding": "CSV_REGIME_FIELD_FIX Day 4 unimplemented (conf=0.98). All 25 graduated rules show times_correct=0 — no lifecycle tracking. Rules cannot self-calibrate.",
+      "action": "CODE: Populate llm_regime field in CSV logger. Unlocks full 25-rule lifecycle system. Conf=0.98 (highest in pipeline).",
+      "confidence": 0.98
     },
     {
+      "rank": 5,
       "subsystem": "auto_fix",
       "severity": "P2",
-      "finding": "CSV_REGIME_FIELD_FIX Day 3 unimplemented (confidence=0.98). All 25 graduated rules show times_correct=0, times_incorrect=0 — zero lifecycle tracking because llm_regime field is blank in backtest CSVs. Rules cannot self-calibrate.",
-      "action": "CODE CHANGE: Populate llm_regime field in CSV logging. One-line fix in data logger. Unlocks entire rule lifecycle system.",
-      "confidence": 0.98
+      "finding": "5/7 feedback state files missing. Cold restart = lost learning across 5 subsystems. ~50-trade warmup needed before they regain meaningful state.",
+      "action": "CODE: Restore or initialize feedback state files with learned parameters before restart.",
+      "confidence": 0.95
     }
   ],
-
-  "run94_summary": {
-    "new_vs_run93": [
-      "Morning window now 2h05m into active phase with 0 trades captured",
-      "Trailing stop EV gap accrued additional $3.14 since run 93",
-      "No new data (bot offline) — all findings are confirmations + escalations of run 92-93 alerts",
-      "cadence_streak incremented to 17"
-    ],
-    "no_changes_this_run": "No autonomous data changes applied. 0 qualifying fixes (all below 75% threshold or pending human/code action)."
-  },
-
   "run_history_tail": [
-    {"run": 90, "gap_h": 0.38, "fixes": 2, "notes": "INSIGHT_LONG_BIAS_INVALIDATION_V1 + BTC_BUY_BB_GATE_PROMOTION_V1. Active insights: 10 of 19."},
     {"run": 91, "gap_h": 1.62, "fixes": 2, "notes": "SIZE_CONTRADICTION_ARCHIVE_V2 + ENSEMBLE_STALENESS_INVALIDATION_V1."},
-    {"run": 92, "gap_h": 3.9, "fixes": 0, "notes": "TRAILING_STOP 20d=84% WR contradicts lock recommendation. Morning window opened."},
-    {"run": 93, "gap_h": 0.92, "fixes": 0, "notes": "Morning window 1h active. P0 escalated. Code changes still pending."},
-    {"run": 94, "gap_h": 1.08, "fixes": 0, "notes": "Morning window 2h05m active (still open until 12 UTC). 5 anomalies confirmed. 0 auto-fixes (all below threshold)."}
+    {"run": 92, "gap_h": 3.9, "fixes": 0, "notes": "TRAILING_STOP 20d=84% WR contradicts lock. Morning window opened."},
+    {"run": 93, "gap_h": 0.92, "fixes": 0, "notes": "Morning 1h active, P0 escalated. All code changes pending."},
+    {"run": 94, "gap_h": 1.08, "fixes": 0, "notes": "Morning 2h05m active. 5 anomalies confirmed. 0 auto-fixes."},
+    {"run": 95, "gap_h": 0.92, "fixes": 0, "notes": "Morning 3h active. 5 anomalies persist. 0 auto-fixes. Cadence streak 18."}
   ]
 }

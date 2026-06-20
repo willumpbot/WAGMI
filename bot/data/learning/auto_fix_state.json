@@ -1,22 +1,65 @@
 {
-  "last_run": "2026-06-20T08:05:00Z",
-  "run_number": 94,
+  "last_run": "2026-06-20T09:00:00Z",
+  "run_number": 95,
   "fixes_applied_this_run": 0,
   "total_applied_all_time": 82,
   "gates_active": 20,
-  "loop_gap_note": "RUN 94: ~1h gap from Run93 (07:00 UTC). 0 new fixes. Morning window ACTIVE 2h05m deep (still open until 12:00 UTC). All pending recs still below threshold or awaiting code/human action. Cadence streak: 17.",
+  "loop_gap_note": "RUN 95: ~1h gap from Run94 (08:05 UTC). 0 new fixes. Morning window 06:00-12:00 UTC has been active 3h — bot still offline. Cadence streak: 18.",
   "new_fixes_this_run": [],
   "recs_processed_this_run": [
-    {"rec": "AFTERNOON_SESSION_PENALIZE_V1", "confidence": 0.72, "status": "BELOW_THRESHOLD", "reason": "72% < 75% required. Watch 2/2 complete. Needs live trade confirmation to reach 75%."},
-    {"rec": "EVENING_SESSION_PENALIZE_V1", "confidence": 0.72, "status": "BELOW_THRESHOLD", "reason": "72% < 75% required. Watch 2/2 complete. Also requires direction flip of existing EVENING_session_boost rule."},
-    {"rec": "REC1_TRAILING_STOP_LOCK", "confidence": 0.88, "status": "PENDING_HUMAN_REVIEW", "reason": "Execution code change at position_manager.py:1244. Day 8."},
-    {"rec": "TP1_CUMULATIVE_PNL_INSTRUMENTATION", "confidence": 0.90, "status": "PENDING_CODE_CHANGE", "days_pending": 7},
-    {"rec": "CSV_REGIME_FIELD_FIX", "confidence": 0.98, "status": "PENDING_CODE_CHANGE", "days_pending": 3}
+    {
+      "rec": "TRAILING_STOP_LOCK",
+      "confidence": 0.88,
+      "status": "PENDING_HUMAN_REVIEW",
+      "reason": "Code change required. 20d data (84% WR) now CONTRADICTS 100d basis. Do not implement until 30 live trades confirm regime."
+    },
+    {
+      "rec": "CSV_REGIME_FIELD_FIX",
+      "confidence": 0.98,
+      "status": "PENDING_CODE_CHANGE",
+      "days_pending": 4
+    },
+    {
+      "rec": "TP1_CUMULATIVE_PNL_INSTRUMENTATION",
+      "confidence": 0.9,
+      "status": "PENDING_CODE_CHANGE",
+      "days_pending": 8
+    },
+    {
+      "rec": "evening_session_penalize_v1",
+      "confidence": 0.72,
+      "status": "BELOW_THRESHOLD",
+      "reason": "72% < 75%. Need 3 live evening trades to confirm to 75%."
+    },
+    {
+      "rec": "tod_morning_edge_v1",
+      "confidence": 0.73,
+      "status": "BELOW_THRESHOLD",
+      "reason": "73% < 75%. Need 2 live morning trades. Contradicting insight invalidated Run 90."
+    }
   ],
   "pending_code_implementations": [
-    {"id": "TRAILING_STOP_LOCK", "confidence": 0.88, "status": "PENDING_HUMAN_REVIEW", "days_pending": 8, "expected_impact": "+$3,759/100d", "file": "position_manager.py:1244", "env_var": "TRAILING_MIN_LOCK_PCT=0.70"},
-    {"id": "TP1_CUMULATIVE_PNL_INSTRUMENTATION", "confidence": 0.90, "status": "PENDING_CODE_CHANGE", "days_pending": 7},
-    {"id": "CSV_REGIME_FIELD_FIX", "confidence": 0.98, "status": "PENDING_CODE_CHANGE", "days_pending": 3}
+    {
+      "id": "TRAILING_STOP_LOCK",
+      "confidence": 0.88,
+      "status": "PENDING_HUMAN_REVIEW",
+      "days_pending": 8,
+      "expected_impact": "+$3,759/100d",
+      "file": "position_manager.py:1244",
+      "env_var": "TRAILING_MIN_LOCK_PCT=0.70"
+    },
+    {
+      "id": "TP1_CUMULATIVE_PNL_INSTRUMENTATION",
+      "confidence": 0.9,
+      "status": "PENDING_CODE_CHANGE",
+      "days_pending": 7
+    },
+    {
+      "id": "CSV_REGIME_FIELD_FIX",
+      "confidence": 0.98,
+      "status": "PENDING_CODE_CHANGE",
+      "days_pending": 3
+    }
   ],
   "loop_cadence_history": [
     {"run": 88, "gap_h": 1.0, "note": "STREAK 11. btc_long_veto_v1 gate=80% applied."},
@@ -25,9 +68,13 @@
     {"run": 91, "gap_h": 1.62, "note": "STREAK 14. 2 fixes: SIZE_CONTRADICTION_ARCHIVE_V2 + ENSEMBLE_STALENESS_INVALIDATION_V1. Active insights: 10 of 19."},
     {"run": 92, "gap_h": 3.9, "note": "STREAK 15. 0 fixes. Afternoon/evening watch 2/2 complete. EVENING_session_boost direction WRONG. Morning window OPEN, bot offline."},
     {"run": 93, "gap_h": 1.0, "note": "STREAK 16. 0 fixes. Morning window 1h active, bot still offline. P0 ESCALATED. All 3 code changes still pending."},
-    {"run": 94, "gap_h": 1.08, "note": "STREAK 17. 0 fixes. Morning window 2h05m active, bot still offline. EVENING_session_boost wrong-direction rule flagged as P1. 5 anomalies confirmed."}
+    {"run": 94, "gap_h": 1.08, "note": "STREAK 17. 0 fixes. Morning window 2h05m active, bot still offline. EVENING_session_boost wrong-direction rule flagged as P1. 5 anomalies confirmed."},
+    {"run": 95, "gap_h": 0.92, "note": "STREAK 18. 0 fixes. Morning window 3h active, bot offline. 5 escalated anomalies persist. All pending actions require code or human decision."}
   ],
   "insight_state_post_run93": {
-    "total": 19, "active": 10, "invalidated": 3, "archived": 6
+    "total": 19,
+    "active": 10,
+    "invalidated": 3,
+    "archived": 6
   }
 }

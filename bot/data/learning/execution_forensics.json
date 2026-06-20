@@ -1,25 +1,27 @@
 {
-  "last_updated": "2026-06-20T07:00:00Z",
-  "run_number": 93,
-  "avg_slippage": "UNAVAILABLE — bot offline Day 64.30",
-  "trailing_stop_detail": {
-    "avg_pnl_trailing": -0.34,
-    "avg_pnl_tp2": 33.53,
-    "ev_gap_per_trade": 33.87,
-    "ev_gap_total_100d": 3759,
-    "ev_gap_per_day": 37.59,
-    "ev_gap_per_hour": 1.57,
-    "days_pending": 8,
-    "fix_file": "bot/execution/position_manager.py",
-    "fix_line": 1244,
-    "env_var_required": "TRAILING_MIN_LOCK_PCT=0.70",
-    "status": "PENDING_HUMAN_REVIEW",
-    "ab_test_plan": "50 paper trades post-restart. Target: TRAILING_STOP avg PnL > +$10/trade. Rollback: TRAILING_MIN_LOCK_PCT=0.0"
-  },
+  "last_updated": "2026-06-20T09:00:00Z",
+  "run_number": 95,
+  "avg_slippage": "UNAVAILABLE — bot offline Day 65.17 (no live trades)",
+  "fill_rate": "UNAVAILABLE — bot offline, no live fills",
   "noise_stop_problem": {
     "illiquid_regime_rate": 0.719,
     "ranging_regime_rate": 0.72,
-    "fix_active": "NOISE_STOP_WIDEN_illiquid gate=100%, NOISE_REGIME_FAST_EXIT gate=80%"
+    "description": "71.9% of SL hits in illiquid regime, 72.0% in ranging regime — both gated",
+    "fix_status": "GATED: NOISE_STOP_WIDEN_illiquid gate=100%, NOISE_REGIME_FAST_EXIT gate=80%",
+    "data_source": "100d backtest (n=589)"
+  },
+  "trailing_stop_detail": {
+    "10d_wr": 0.49,
+    "10d_avg_pnl": -3.93,
+    "20d_wr": 0.84,
+    "20d_avg_pnl": 19.88,
+    "60d_wr": 0.73,
+    "60d_avg_pnl": 5.13,
+    "100d_wr": 0.48,
+    "100d_avg_pnl": -0.34,
+    "verdict": "TRAILING_STOP_LOCK recommendation is STALE — 20d and 60d data contradict 100d basis. EV gap accruing $1.57/hr.",
+    "cumulative_forgone_est_usd": 315.67,
+    "days_pending": 9
   },
   "close_reason_breakdown_100d": {
     "SL": {"count": 269, "pct": 0.457, "avg_pnl": -108.92, "total_pnl": -29300},
@@ -27,5 +29,6 @@
     "TRAILING_STOP": {"count": 111, "pct": 0.188, "avg_pnl": -0.34, "total_pnl": -37},
     "TP2": {"count": 49, "pct": 0.083, "avg_pnl": 33.53, "total_pnl": 1643}
   },
-  "run93_update": "Day 8 of TRAILING_STOP_LOCK pending. No new data. EV gap accruing $1.57/hour. Cumulative forgone EV from trailing stop gap (estimated 8 days): ~$300.72."
+  "run95_update": "Day 9 of TRAILING_STOP_LOCK pending. No live data (bot offline). Cumulative forgone EV: ~$315.67 ($1.57/hr x 201hrs). 20d trailing WR=84% still contradicts 100d=-$0.34 basis.",
+  "data_availability": "NONE — trades.csv does not exist (bot offline 65+ days)"
 }

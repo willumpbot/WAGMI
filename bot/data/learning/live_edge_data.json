@@ -1,92 +1,56 @@
 {
-  "last_updated": "2026-06-20T06:00:00Z",
-  "run_number": 92,
-  "high_edges_found": 3,
+  "last_updated": "2026-06-20T09:00:00Z",
+  "run_number": 95,
+  "data_source": "10d backtest (n=317), 20d backtest (n=111), 60d backtest (n=802), 100d backtest (n=589) — bot offline, no live data",
+  "high_edges_found": 4,
   "weak_setups_found": 4,
-  "data_source": "10d backtest (n=965) + 100d backtest (n=589) — bot offline, no live data",
+  "win_rates_by_symbol": {
+    "BTC_LONG": {"10d_wr": 0.47, "20d_wr": 0.57, "60d_wr": 0.58, "100d_wr": 0.32, "verdict": "GATED at 80% confidence — 20d improving but insufficient to lift long-horizon veto"},
+    "BTC_SHORT": {"10d_wr": 0.49, "20d_wr": 0.8, "60d_wr": 0.48, "100d_wr": 0.46, "verdict": "STRONGEST near-term edge: 20d 80% WR +$161/trade — partially gated 70-80% conf bin"},
+    "HYPE_LONG": {"10d_wr": 0.52, "20d_wr": 0.63, "60d_wr": 0.59, "100d_wr": 0.5, "verdict": "VETOED gate=100% — EV confirmed negative"},
+    "HYPE_SHORT": {"10d_wr": 0.48, "20d_wr": 0.58, "60d_wr": 0.53, "100d_wr": 0.48, "verdict": "VETOED gate=100% — worst setup, -$24 to -$39/trade across windows"},
+    "SOL_LONG": {"10d_wr": 0.38, "20d_wr": 0.73, "60d_wr": 0.5, "100d_wr": 0.33, "verdict": "VETOED gate=100% — 100d/10d negative, 20d uptick insufficient"},
+    "SOL_SHORT": {"10d_wr": 0.51, "20d_wr": 0.62, "60d_wr": 0.63, "100d_wr": 0.45, "verdict": "UNBLOCKED (correct) — sol_short_penalize_v1 deactivation justified"}
+  },
+  "win_rates_by_regime": {
+    "trending": {"wr": 0.519, "n": 52, "dataset": "adaptive_risk_state (100d)"},
+    "illiquid": {"wr": 0.281, "n": 57, "dataset": "adaptive_risk_state (100d)", "note": "Gated via NOISE_STOP_WIDEN"},
+    "ranging": {"wr": 0.25, "n": 16, "dataset": "adaptive_risk_state (100d)", "note": "Gated via NOISE_REGIME_FAST_EXIT"}
+  },
+  "win_rates_by_confidence_bin": {
+    "60-70": {"10d_wr": 0.53, "20d_wr": 0.5, "60d_wr": 0.54, "100d_wr": 0.49, "verdict": "NEUTRAL — conf_floor_70_v1 deactivation correct"},
+    "70-80": {"10d_wr": 0.49, "20d_wr": 0.69, "60d_wr": 0.56, "100d_wr": 0.45, "verdict": "Sweet spot in 20d regime"},
+    "80-90": {"10d_wr": 0.47, "20d_wr": 0.82, "60d_wr": 0.57, "100d_wr": 0.4, "verdict": "Best in 20d, regime-dependent — check before promoting"},
+    "90+": {"10d_wr": 0.42, "20d_wr": 0.0, "60d_wr": 0.49, "100d_wr": 0.41, "verdict": "Mixed, small N — not actionable"}
+  },
+  "win_rates_by_time_of_day_6h_utc": {
+    "00-06": {"wr": 0.15, "n": 13, "verdict": "WEAK — gated gate=100% (NIGHT_session_pause). Correct."},
+    "06-12": {"wr": 0.695, "n": 20, "verdict": "HIGH EDGE — tod_morning_edge_v1 DEACTIVATED (contradicting insight invalidated Run90). Rule needed."},
+    "12-18": {"wr": 0.27, "n": 15, "verdict": "WEAK — afternoon_session_penalize_v1 proposed (conf=72%, 3% below threshold)"},
+    "18-24": {"wr": 0.29, "n": 14, "verdict": "WEAK — EVENING_session_boost applying +8pt BOOST to this window. WRONG DIRECTION."}
+  },
   "high_edges": [
-    {
-      "setup": "BTC_BUY_BB_golden",
-      "wr": 0.69,
-      "count": 2172,
-      "avg_pnl": null,
-      "note": "gate=50% (promoted Run90). TIER-1 golden setup.",
-      "status": "GATED_ACTIVE"
-    },
-    {
-      "setup": "SOL_LONG_70_80pct_10d",
-      "wr": 0.62,
-      "count": 208,
-      "avg_pnl": 20.88,
-      "note": "sol_long_veto gate=100% still blocks. CONFLICTED — 10d edge can't fire.",
-      "status": "BLOCKED_BY_VETO"
-    },
-    {
-      "setup": "MORNING_06_12_UTC",
-      "wr": 0.68,
-      "count": null,
-      "note": "Window OPEN NOW (06:00-12:00 UTC). Bot offline — MISSED.",
-      "status": "WINDOW_OPEN_BOT_OFFLINE"
-    }
+    {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "count": 2172, "gate_pct": 50, "status": "ACTIVE", "note": "Tier-1 golden setup. Promoted Run 90."},
+    {"setup": "MORNING_06_12_UTC", "wr": 0.695, "count": 20, "gate_pct": null, "status": "UNGATED — boost rule deactivated", "note": "tod_morning_edge_v1 deactivated Run81, contradicting insight invalidated Run90. 73% conf (2% from threshold)."},
+    {"setup": "BTC_SHORT_20d", "wr": 0.8, "count": null, "gate_pct": "70-80% bin partially gated", "status": "PARTIAL", "note": "Strongest near-term edge. 20d n=? showing +$161/trade avg."},
+    {"setup": "SOL_SHORT_60d", "wr": 0.63, "count": null, "gate_pct": null, "status": "UNBLOCKED", "note": "Consistent 3/4 windows positive. Unblocked after sol_short_penalize_v1 deactivation (correct)."}
   ],
   "weak_setups": [
-    {
-      "setup": "NIGHT_00_06_UTC",
-      "wr": 0.19,
-      "n": 13,
-      "note": "gate=100% CORRECT. Night block enforced.",
-      "gate_rule": "NIGHT_session_pause gate=100%",
-      "status": "GATED_CORRECT"
-    },
-    {
-      "setup": "AFTERNOON_12_18_UTC",
-      "wr": 0.27,
-      "n": 15,
-      "note": "Post-dedup confirmed weak. Watch cycle 2/2 COMPLETE. Propose penalize rule at 75% confidence.",
-      "gate_rule": "NONE — ungated",
-      "status": "WATCH_COMPLETE_UNGATED",
-      "watch_run": 2,
-      "watch_max": 2,
-      "proposed_rule": "afternoon_session_penalize_v1",
-      "proposed_gate": 20,
-      "proposed_action": "Reduce confidence by -8pt for trades in 12:00-18:00 UTC window",
-      "confidence": 0.72,
-      "confidence_needed_to_apply": 0.75
-    },
-    {
-      "setup": "EVENING_18_24_UTC",
-      "wr": 0.29,
-      "n": 14,
-      "note": "Post-dedup confirmed weak (down from claimed 62-65% pre-dedup). Watch cycle 2/2 COMPLETE.",
-      "gate_rule": "EVENING_session_boost gate=20% (WRONG DIRECTION — this boosted evening, now confirmed weak)",
-      "status": "WATCH_COMPLETE_WRONG_DIRECTION_RULE",
-      "watch_run": 2,
-      "watch_max": 2,
-      "proposed_rule": "evening_session_penalize_v1",
-      "proposed_gate": 20,
-      "proposed_action": "De-escalate EVENING_session_boost from gate=20% boost to gate=20% penalty. Confidence -8pt for 18:00-24:00 UTC.",
-      "confidence": 0.72,
-      "confidence_needed_to_apply": 0.75,
-      "note_on_existing_rule": "EVENING_session_boost was de-escalated from 80% to 20% probe. Now confirmed weak (29% WR post-dedup). EVENING_session_boost rule direction is WRONG — should penalize, not boost."
-    },
-    {
-      "setup": "ALL_HYPE",
-      "wr": 0.48,
-      "avg_pnl": -24.73,
-      "note": "HYPE EV confirmed negative. gate=100% veto CORRECT.",
-      "gate_rule": "HYPE_EV_CONFIRMED_NEGATIVE gate=100%",
-      "status": "GATED_CORRECT"
-    }
+    {"setup": "NIGHT_00_06_UTC", "wr": 0.15, "n": 13, "status": "GATED_CORRECT", "gate": "gate=100%"},
+    {"setup": "AFTERNOON_12_18_UTC", "wr": 0.27, "n": 15, "status": "UNGATED", "conf": 0.72, "gap_to_apply": 0.03},
+    {"setup": "EVENING_18_24_UTC", "wr": 0.29, "n": 14, "status": "WRONG_DIRECTION_BOOST_ACTIVE", "conf": 0.72, "gap_to_apply": 0.03},
+    {"setup": "ALL_HYPE", "wr": 0.48, "avg_pnl": -24.73, "status": "GATED_CORRECT", "gate": "gate=100%"}
   ],
-  "run92_update": "Watch cycle 2/2 complete for afternoon/evening weakness. Both confirmed post-dedup. EVENING_session_boost rule direction is WRONG (boosts a weak window). Propose penalize rules when confidence reaches 75%. Morning window OPEN NOW — bot offline.",
   "afternoon_evening_watch_run": 2,
   "evening_rule_direction_error": {
     "rule_id": "EVENING_session_boost",
     "current_direction": "BOOST (+8pt confidence)",
     "evidence_direction": "PENALIZE (29% WR post-dedup)",
     "current_gate": 20,
-    "recommendation": "FLIP rule direction: change from +8pt boost to -8pt penalty. Rename to evening_session_penalize_v1.",
+    "recommendation": "FLIP rule direction: change from +8pt boost to -8pt penalty",
     "confidence": 0.72,
-    "severity": "MEDIUM"
-  }
+    "severity": "MEDIUM",
+    "gap_to_auto_apply": 0.03
+  },
+  "run95_update": "No new live data (bot offline). Confirmed 4 high edges, 4 weak setups. EVENING rule wrong direction persists (conf=72%). Morning boost rule still missing (conf=73%)."
 }
