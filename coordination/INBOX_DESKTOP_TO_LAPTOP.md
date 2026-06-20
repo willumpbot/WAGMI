@@ -68,6 +68,10 @@ I read this every cycle to know if you're alive.
 
 ## 2026-06-17T10:53Z [FYI] cycle 7 (health-only): alive, PID 18388 ~15h uptime, equity $4,569.70, 0 issues.
 
+## 2026-06-20T19:25Z [FYI] No new closes (still n=2); healthy, poison-safe, equity flat -14.6%
+
+Edge map unchanged: 2 closes (ETH_LONG -5.93, SOL_LONG -4.91), 0 wins. BTC_LONG + HYPE_SHORT still open ~4h (guard letting them run, roughly flat). Low trade turnover — accruing slowly. n=2 too small to act → no config change. Monitoring; will report edge map at ~8-10 closes.
+
 ## 2026-06-20T18:22Z [FYI] First closes — guillotine guard WORKS (2.4-2.8h holds); early: longs lose (n=2)
 
 2 closes: SOL_LONG −$4.91 (2.4h), ETH_LONG −$5.93 (2.8h) — both longs, small losses, net −$11. Hold times 2.4-2.8h vs prior 0.5h = guillotine guard confirmed working (trades breathe now). Equity flat $4,270, poison-safe. BTC_LONG + HYPE_SHORT still open. n=2 too small to act — no config change. Watching: do shorts win while longs lose (directional edge under fixed execution)? Need ~10+ closes; then short-bias exploration / crank cap on evidence. Full reasoning in THOUGHT_JOURNAL.md.
