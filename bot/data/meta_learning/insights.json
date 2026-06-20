@@ -22,7 +22,10 @@
       "confidence": 0.75,
       "evidence_count": 50,
       "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1776987543.8175309
+      "timestamp": 1776987543.8175309,
+      "invalidated": true,
+      "invalidated_at": "Run91_2026-06-20T04:02:52Z",
+      "invalidated_reason": "Invalidated Run91: contradicted by 8 competing size insights from different time windows — no consensus direction. Canonical rule in graduated_rules.json supersedes."
     },
     {
       "category": "pattern",
@@ -33,18 +36,18 @@
       "timestamp": 1776797749.9410007,
       "invalidated": true,
       "invalidated_at": "2026-05-19T02:04:26.010467+00:00",
-      "invalidation_reason": "Post-dedup evidence invalidated. INSIGHTS_DEDUP_PRUNING (2026-05-18) removed 89 duplicate entries that inflated this WR. Meta_learning analysis confirmed evening=33% WR (not 65%) and afternoon=27% WR (not 64%), n=27. idea_2238f358 and idea_920b3e13 explicitly invalidated based on this. Marking insight to prevent re-proposal of inverted rules."
+      "invalidation_reason": "Post-dedup evidence invalidated. INSIGHTS_DEDUP_PRUNING (2026-05-18) removed 89 duplicate entries that inflated this WR."
     },
     {
       "category": "bias",
       "description": "Side bias: 74% of trades are LONG but LONG WR is 30% vs 77% for the other side",
       "confidence": 0.75,
       "evidence_count": 50,
-      "actionable_suggestion": "Reduce LONG bias — we're taking too many LONG trades that underperform. Consider adding a side-balance check to the ensemble.",
+      "actionable_suggestion": "Reduce LONG bias — we're taking too many LONG trades that underperform.",
       "timestamp": 1776777002.7425194,
       "invalidated": true,
       "invalidated_at": "2026-06-20T00:30:00Z",
-      "invalidation_reason": "STALE_DATA_CONTRADICTED: 10d dataset (n=965 trades) shows only 12% LONG trades, not 74%. The LONG-heavy period this was built on no longer reflects current portfolio mix. Critically, this insight was suppressing SOL_LONG 70-80% confidence signals (62% WR, avg +$20.88, n=208) — the single best sub-condition in the dataset. Run 90 auto-fix (conf=82% >= 75% threshold). Expected impact: +$418-$1,059 EV/100d from restored SOL_LONG signals."
+      "invalidation_reason": "STALE_DATA_CONTRADICTED: 10d dataset (n=965) shows only 12% LONG trades, not 74%. Run 90 auto-fix."
     },
     {
       "category": "weakness",
@@ -55,22 +58,25 @@
       "timestamp": 1776346399.1892202,
       "invalidated": true,
       "invalidated_at": "2026-06-20T00:30:00Z",
-      "invalidation_reason": "DIRECT_CONTRADICTION: Insight 1 (same file, ts=1776987543.82, n=20, conf=0.73) shows morning 06:00-12:00 UTC at 71% WR. This insight claims 14% WR on only n=7 trades. Smaller sample (n=7) contradicts larger (n=20). Morning 68-71% WR confirmed in audit backtest data. Run 90 auto-fix (conf=82% >= 75% threshold). Invalidating to prevent agents from suppressing morning signals."
+      "invalidation_reason": "DIRECT_CONTRADICTION: Insight 1 (n=20) shows morning 71% WR. This (n=7) claims 14%. Run 90 auto-fix."
     },
     {
       "category": "bias",
       "description": "Size bias detected: larger positions (>5.0x) have 36% WR vs 46% for smaller positions. Avg PnL: $-1.38 vs $+1.36",
       "confidence": 0.8,
       "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes — larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1776301658.6094482
+      "actionable_suggestion": "Reduce position sizes — larger positions are losing more often.",
+      "timestamp": 1776301658.6094482,
+      "invalidated": true,
+      "invalidated_at": "Run91_2026-06-20T04:02:52Z",
+      "invalidated_reason": "Invalidated Run91: contradicted by 8 competing size insights from different time windows — no consensus direction. Canonical rule in graduated_rules.json supersedes."
     },
     {
       "category": "bias",
       "description": "Strategy concentration: 'ensemble' accounts for 94% of all trades (47/50). WR: 45%",
       "confidence": 0.8,
       "evidence_count": 47,
-      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
+      "actionable_suggestion": "Diversify: over-reliance on 'ensemble' creates fragility.",
       "timestamp": 1776010377.2515354
     },
     {
@@ -78,15 +84,18 @@
       "description": "Size edge: larger positions (>6.0x) have 58% WR vs 35% for smaller. Higher conviction trades are more profitable.",
       "confidence": 0.75,
       "evidence_count": 50,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1775517082.443973
+      "actionable_suggestion": "High-conviction sizing is working.",
+      "timestamp": 1775517082.443973,
+      "invalidated": true,
+      "invalidated_at": "Run91_2026-06-20T04:02:52Z",
+      "invalidated_reason": "Invalidated Run91: contradicted by 8 competing size insights from different time windows — no consensus direction. Canonical rule in graduated_rules.json supersedes."
     },
     {
       "category": "weakness",
       "description": "Strategy 'sniper_premium' underperforming: 33% WR over 6 trades",
       "confidence": 0.65,
       "evidence_count": 6,
-      "actionable_suggestion": "Reduce weight for 'sniper_premium' in ensemble. Consider disabling if <30% WR persists over 20+ trades.",
+      "actionable_suggestion": "Reduce weight for 'sniper_premium' in ensemble.",
       "timestamp": 1775495907.6601598
     },
     {
@@ -94,26 +103,29 @@
       "description": "Size edge: larger positions (>7.0x) have 59% WR vs 39% for smaller. Higher conviction trades are more profitable.",
       "confidence": 0.75,
       "evidence_count": 50,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1775495907.6601598
+      "actionable_suggestion": "High-conviction sizing is working.",
+      "timestamp": 1775495907.6601598,
+      "invalidated": true,
+      "invalidated_at": "Run91_2026-06-20T04:02:52Z",
+      "invalidated_reason": "Invalidated Run91: contradicted by 8 competing size insights from different time windows — no consensus direction. Canonical rule in graduated_rules.json supersedes."
     },
     {
       "category": "pattern",
       "description": "Time-of-day edge: 'afternoon' (12:00-18:00 UTC) wins 64% vs 'night' at 31% (spread: 34%)",
       "confidence": 0.85,
       "evidence_count": 27,
-      "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
+      "actionable_suggestion": "Boost confidence for trades during afternoon.",
       "timestamp": 1775453531.0103774,
       "invalidated": true,
       "invalidated_at": "2026-05-19T02:04:26.010467+00:00",
-      "invalidation_reason": "Post-dedup evidence invalidated. INSIGHTS_DEDUP_PRUNING (2026-05-18) removed 89 duplicate entries that inflated this WR. Meta_learning analysis confirmed evening=33% WR (not 65%) and afternoon=27% WR (not 64%), n=27. idea_2238f358 and idea_920b3e13 explicitly invalidated based on this. Marking insight to prevent re-proposal of inverted rules."
+      "invalidation_reason": "Post-dedup evidence invalidated. INSIGHTS_DEDUP_PRUNING (2026-05-18)."
     },
     {
       "category": "weakness",
       "description": "Significant time-of-day weakness: 'evening' (18:00-24:00 UTC) has only 29% WR over 14 trades",
       "confidence": 0.8,
       "evidence_count": 14,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during evening (18:00-24:00 UTC).",
+      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during evening.",
       "timestamp": 1775374182.2370985
     },
     {
@@ -121,15 +133,18 @@
       "description": "Strategy 'ensemble' underperforming: 30% WR over 27 trades",
       "confidence": 0.8,
       "evidence_count": 27,
-      "actionable_suggestion": "Reduce weight for 'ensemble' in ensemble. Consider disabling if <30% WR persists over 20+ trades.",
-      "timestamp": 1775282374.8157156
+      "actionable_suggestion": "Reduce weight for 'ensemble' in ensemble.",
+      "timestamp": 1775282374.8157156,
+      "invalidated": true,
+      "invalidated_at": "Run91_2026-06-20T04:02:52Z",
+      "invalidated_reason": "Invalidated Run91: stale (n=27 early trades). 10d dataset shows substantially improved ensemble WR."
     },
     {
       "category": "weakness",
       "description": "Significant time-of-day weakness: 'afternoon' (12:00-18:00 UTC) has only 27% WR over 15 trades",
       "confidence": 0.8,
       "evidence_count": 15,
-      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during afternoon (12:00-18:00 UTC).",
+      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during afternoon.",
       "timestamp": 1775261560.8799977
     },
     {
@@ -137,36 +152,48 @@
       "description": "Size bias detected: larger positions (>2.1x) have 44% WR vs 56% for smaller positions. Avg PnL: $-3.46 vs $-0.40",
       "confidence": 0.8,
       "evidence_count": 50,
-      "actionable_suggestion": "Reduce position sizes — larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1775095748.2047987
+      "actionable_suggestion": "Reduce position sizes.",
+      "timestamp": 1775095748.2047987,
+      "invalidated": true,
+      "invalidated_at": "Run91_2026-06-20T04:02:52Z",
+      "invalidated_reason": "Invalidated Run91: contradicted by 8 competing size insights from different time windows — no consensus direction. Canonical rule in graduated_rules.json supersedes."
     },
     {
       "category": "edge",
       "description": "Size edge: larger positions (>2.0x) have 76% WR vs 47% for smaller. Higher conviction trades are more profitable.",
       "confidence": 0.75,
       "evidence_count": 34,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1775005067.1790636
+      "actionable_suggestion": "High-conviction sizing is working.",
+      "timestamp": 1775005067.1790636,
+      "invalidated": true,
+      "invalidated_at": "Run91_2026-06-20T04:02:52Z",
+      "invalidated_reason": "Invalidated Run91: contradicted by 8 competing size insights from different time windows — no consensus direction. Canonical rule in graduated_rules.json supersedes."
     },
     {
       "category": "edge",
       "description": "Size edge: larger positions (>1.5x) have 73% WR vs 42% for smaller. Higher conviction trades are more profitable.",
       "confidence": 0.75,
       "evidence_count": 23,
-      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
-      "timestamp": 1774782093.8768063
+      "actionable_suggestion": "High-conviction sizing is working.",
+      "timestamp": 1774782093.8768063,
+      "invalidated": true,
+      "invalidated_at": "Run91_2026-06-20T04:02:52Z",
+      "invalidated_reason": "Invalidated Run91: contradicted by 8 competing size insights from different time windows — no consensus direction. Canonical rule in graduated_rules.json supersedes."
     },
     {
       "category": "bias",
       "description": "Size bias detected: larger positions (>1.5x) have 50% WR vs 62% for smaller positions. Avg PnL: $-0.06 vs $-0.16",
       "confidence": 0.6666666666666667,
       "evidence_count": 16,
-      "actionable_suggestion": "Reduce position sizes — larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
-      "timestamp": 1774458397.3132286
+      "actionable_suggestion": "Reduce position sizes.",
+      "timestamp": 1774458397.3132286,
+      "invalidated": true,
+      "invalidated_at": "Run91_2026-06-20T04:02:52Z",
+      "invalidated_reason": "Invalidated Run91: contradicted by 8 competing size insights from different time windows — no consensus direction. Canonical rule in graduated_rules.json supersedes."
     }
   ],
   "last_dedup_at": "2026-05-18T22:06:12.775083+00:00",
   "dedup_note": "Pruned from 108 to 19 by perpetual_improvement_loop (removed 89 duplicates, kept most-recent per insight category/bucket)",
-  "last_invalidation_run": "2026-06-20T00:30:00Z",
-  "invalidation_note": "Run90 2026-06-20T00:30Z marked 2 stale/contradictory insights: Insight 5 (LONG bias stale vs 10d) and Insight 6 (morning weakness contradicts Insight 1)."
+  "last_invalidation_run": "Run91_2026-06-20T04:02:52Z",
+  "invalidation_note": "Run91: 9 insights invalidated (8 contradictory SIZE + 1 stale ensemble). Active valid insights: 6 of 19. Run90: 2 additional (LONG bias stale, morning-14% contradiction)."
 }
