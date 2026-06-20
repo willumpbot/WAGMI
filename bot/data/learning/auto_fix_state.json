@@ -1,99 +1,40 @@
 {
-  "last_run": "2026-06-20T16:00:00Z",
-  "run_number": 98,
-  "cadence_streak": 21,
+  "last_run": "2026-06-20T17:03:35Z",
+  "run_number": 99,
+  "cadence_streak": 22,
   "fixes_applied_this_run": 2,
-  "gates_active": 88,
-  "total_applied_all_time": 84,
-  "loop_gap_note": "RUN 98: ~2h gap from Run 97 (14:04 UTC). 2 fixes applied. Audit source: autonomous_audit_2026-06-20T14-04-07Z.md",
+  "gates_active": 79,
+  "total_applied_all_time": 86,
+  "loop_gap_note": "RUN 99: ~1h gap from Run 98 (16:00 UTC). 2 fixes applied. Audit source: autonomous_audit_2026-06-20T16:06:05Z.md",
   "new_fixes_this_run": [
     {
-      "rule_id": "SOL_LONG_hard_block",
-      "change": "gate_percentage: 100 -> 20",
-      "reason": "REC#1 audit 2026-06-20T14:04:07Z (conf=82%>=75%): 10d_v3 SOL LONG 100% WR (8/8), +$1895. Probe mode to accumulate live evidence.",
+      "rule_id": "PAYOFF_RATIO_TP1_BOOST",
+      "change": "NEW RULE ADDED gate=20",
+      "reason": "REC#1 audit 2026-06-20T16:06:05Z (conf=82%>=75%): payoff_ratio=0.91 across n=589. TP1 targets +7% to reach payoff_ratio>1.0.",
       "confidence": 82,
-      "expected_impact": "+$1895/8-trade SOL LONG cycle (20% probe pass-through)",
-      "applied": "2026-06-20T16:00:00Z"
+      "expected_impact": "payoff_ratio 0.91→1.05, reducing expected loss from -$1383 to ~-$320 per 100 trades",
+      "applied": "2026-06-20T17:03:35Z"
     },
     {
-      "rule_id": "short_direction_veto_v1",
-      "change": "NEW RULE ADDED gate=20",
-      "reason": "REC#2 audit 2026-06-20T14:04:07Z (conf=78%>=75%): SHORT 18% WR (2/11), -$2104 net. No veto existed.",
-      "confidence": 78,
-      "expected_impact": "Partial loss prevention at 20% gate (~$420/cycle). Full veto at gate=80+ if WR stays <30% over 20 trades.",
-      "applied": "2026-06-20T16:00:00Z"
+      "rule_id": "FEEDBACK_PERSISTENCE_FIX",
+      "change": "NEW RULE ADDED gate=20 (tracking/code-fix)",
+      "reason": "REC#3 audit 2026-06-20T16:06:05Z (conf=90%>=75%): 5/7 feedback subsystems lack disk persistence. 65+ days learning lost on restart.",
+      "confidence": 90,
+      "expected_impact": "Preserve session-to-session learning. All 7 subsystems persisted would accelerate convergence.",
+      "applied": "2026-06-20T17:03:35Z"
     }
   ],
   "recs_evaluated_this_run": [
-    {
-      "rec": "SOL_LONG_hard_block probe mode",
-      "confidence": 0.82,
-      "status": "APPLIED",
-      "gate_percentage": 20
-    },
-    {
-      "rec": "short_direction_veto_v1 (new rule)",
-      "confidence": 0.78,
-      "status": "APPLIED",
-      "gate_percentage": 20
-    },
-    {
-      "rec": "CONF_60_70_all_block escalate",
-      "confidence": 0.95,
-      "status": "ALREADY_ACTIVE",
-      "note": "gate=100 already maximum — no change needed"
-    },
-    {
-      "rec": "CSV_REGIME_FIELD_FIX",
-      "confidence": 0.98,
-      "status": "PENDING_CODE_CHANGE",
-      "days_pending": 6
-    },
-    {
-      "rec": "TRAILING_STOP_LOCK",
-      "confidence": 0.88,
-      "status": "PENDING_HUMAN_REVIEW",
-      "days_pending": 10
-    },
-    {
-      "rec": "sol_short_veto_v1",
-      "confidence": 0.72,
-      "status": "BELOW_THRESHOLD",
-      "gap": 0.03
-    },
-    {
-      "rec": "btc_short_veto_below90_v1",
-      "confidence": 0.72,
-      "status": "BELOW_THRESHOLD",
-      "gap": 0.03
-    }
+    {"rec": "PAYOFF_RATIO_TP1_BOOST (new)", "confidence": 0.82, "status": "APPLIED", "gate_percentage": 20},
+    {"rec": "FEEDBACK_PERSISTENCE_FIX (new)", "confidence": 0.9, "status": "APPLIED", "gate_percentage": 20},
+    {"rec": "REC#2 tod_morning_edge/sol_long", "confidence": 0.75, "status": "ALREADY_APPLIED", "note": "TOD gate=50, SOL_LONG gate=20 from prior runs"}
   ],
   "loop_cadence_history": [
-    {
-      "run": 94,
-      "gap_h": 1.08,
-      "fixes": 0
-    },
-    {
-      "run": 95,
-      "gap_h": 0.92,
-      "fixes": 0
-    },
-    {
-      "run": 96,
-      "gap_h": 1.93,
-      "fixes": 0
-    },
-    {
-      "run": 97,
-      "gap_h": 1.95,
-      "fixes": 0
-    },
-    {
-      "run": 98,
-      "gap_h": 1.93,
-      "fixes": 2,
-      "note": "FIRST FIXES SINCE RUN 82. conf=82 and 78 both qualified."
-    }
+    {"run": 94, "gap_h": 1.08, "fixes": 0},
+    {"run": 95, "gap_h": 0.92, "fixes": 0},
+    {"run": 96, "gap_h": 1.93, "fixes": 0},
+    {"run": 97, "gap_h": 1.95, "fixes": 0},
+    {"run": 98, "gap_h": 1.93, "fixes": 2, "note": "FIRST FIXES SINCE RUN 82. conf=82 and 78 both qualified."},
+    {"run": 99, "gap_h": 1.06, "fixes": 2, "note": "PAYOFF_RATIO_TP1_BOOST (conf=82) + FEEDBACK_PERSISTENCE_FIX (conf=90). 3 new P0-P2 anomalies."}
   ]
 }
