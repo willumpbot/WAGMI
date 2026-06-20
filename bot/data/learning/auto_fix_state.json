@@ -1,28 +1,99 @@
 {
-  "last_run": "2026-06-20T14:00:00Z",
-  "run_number": 97,
-  "fixes_applied_this_run": 0,
-  "total_applied_all_time": 82,
-  "gates_active": 18,
-  "loop_gap_note": "RUN 97: ~1.95h gap from Run 96 (12:03 UTC). 0 new fixes. Morning window CLOSED at 12:00 UTC — missed again (bot offline). Cadence streak: 20.",
-  "new_fixes_this_run": [],
-  "recs_processed_this_run": [
-    {"rec": "sol_short_veto_v1", "confidence": 0.72, "status": "BELOW_THRESHOLD", "reason": "72% < 75%. SOL SHORT: 17% WR, n=6 in 10d_v3. Need 3+ more confirming failures."},
-    {"rec": "btc_short_veto_below90_v1", "confidence": 0.72, "status": "BELOW_THRESHOLD", "reason": "72% < 75%. BTC SHORT <90%: 20% WR, n=5 in 10d_v3."},
-    {"rec": "sol_long_probe_mode", "confidence": 0.55, "status": "BELOW_THRESHOLD", "reason": "55% < 75%. Data conflict: 100d WR=24% vs 10d_v3 WR=100% (n=8). Human decision required."},
-    {"rec": "tod_evening_afternoon_suspend", "confidence": 0.65, "status": "EFFECTIVELY_ALREADY_APPLIED", "reason": "Both tod_evening_edge_v1 and tod_afternoon_edge_v1 already inactive (active=False, gate=0)."},
-    {"rec": "conf_floor_70_v1 INVESTIGATION", "confidence": 0.75, "status": "PENDING_INVESTIGATION", "reason": "Rule exists inactive. 14% WR at 60-70% conf bin (-$920 net). Cannot re-enable without knowing deactivation reason."},
-    {"rec": "TRAILING_STOP_LOCK", "confidence": 0.88, "status": "PENDING_HUMAN_REVIEW", "days_pending": 9, "reason": "Code change. 20d data contradicts 100d basis. Do NOT implement until 30 live trades."},
-    {"rec": "CSV_REGIME_FIELD_FIX", "confidence": 0.98, "status": "PENDING_CODE_CHANGE", "days_pending": 5},
-    {"rec": "TP1_CUMULATIVE_PNL_INSTRUMENTATION", "confidence": 0.9, "status": "PENDING_CODE_CHANGE", "days_pending": 9}
+  "last_run": "2026-06-20T16:00:00Z",
+  "run_number": 98,
+  "cadence_streak": 21,
+  "fixes_applied_this_run": 2,
+  "gates_active": 88,
+  "total_applied_all_time": 84,
+  "loop_gap_note": "RUN 98: ~2h gap from Run 97 (14:04 UTC). 2 fixes applied. Audit source: autonomous_audit_2026-06-20T14-04-07Z.md",
+  "new_fixes_this_run": [
+    {
+      "rule_id": "SOL_LONG_hard_block",
+      "change": "gate_percentage: 100 -> 20",
+      "reason": "REC#1 audit 2026-06-20T14:04:07Z (conf=82%>=75%): 10d_v3 SOL LONG 100% WR (8/8), +$1895. Probe mode to accumulate live evidence.",
+      "confidence": 82,
+      "expected_impact": "+$1895/8-trade SOL LONG cycle (20% probe pass-through)",
+      "applied": "2026-06-20T16:00:00Z"
+    },
+    {
+      "rule_id": "short_direction_veto_v1",
+      "change": "NEW RULE ADDED gate=20",
+      "reason": "REC#2 audit 2026-06-20T14:04:07Z (conf=78%>=75%): SHORT 18% WR (2/11), -$2104 net. No veto existed.",
+      "confidence": 78,
+      "expected_impact": "Partial loss prevention at 20% gate (~$420/cycle). Full veto at gate=80+ if WR stays <30% over 20 trades.",
+      "applied": "2026-06-20T16:00:00Z"
+    }
+  ],
+  "recs_evaluated_this_run": [
+    {
+      "rec": "SOL_LONG_hard_block probe mode",
+      "confidence": 0.82,
+      "status": "APPLIED",
+      "gate_percentage": 20
+    },
+    {
+      "rec": "short_direction_veto_v1 (new rule)",
+      "confidence": 0.78,
+      "status": "APPLIED",
+      "gate_percentage": 20
+    },
+    {
+      "rec": "CONF_60_70_all_block escalate",
+      "confidence": 0.95,
+      "status": "ALREADY_ACTIVE",
+      "note": "gate=100 already maximum \u2014 no change needed"
+    },
+    {
+      "rec": "CSV_REGIME_FIELD_FIX",
+      "confidence": 0.98,
+      "status": "PENDING_CODE_CHANGE",
+      "days_pending": 6
+    },
+    {
+      "rec": "TRAILING_STOP_LOCK",
+      "confidence": 0.88,
+      "status": "PENDING_HUMAN_REVIEW",
+      "days_pending": 10
+    },
+    {
+      "rec": "sol_short_veto_v1",
+      "confidence": 0.72,
+      "status": "BELOW_THRESHOLD",
+      "gap": 0.03
+    },
+    {
+      "rec": "btc_short_veto_below90_v1",
+      "confidence": 0.72,
+      "status": "BELOW_THRESHOLD",
+      "gap": 0.03
+    }
   ],
   "loop_cadence_history": [
-    {"run": 92, "gap_h": 3.9, "note": "STREAK 15. 0 fixes. EVENING wrong direction. Morning window open."},
-    {"run": 93, "gap_h": 1.0, "note": "STREAK 16. 0 fixes. Morning 1h active."},
-    {"run": 94, "gap_h": 1.08, "note": "STREAK 17. 0 fixes. Morning 2h05m active."},
-    {"run": 95, "gap_h": 0.92, "note": "STREAK 18. 0 fixes. Morning 3h active."},
-    {"run": 96, "gap_h": 1.93, "note": "STREAK 19. 0 fixes. NEW: veto inverted, SHORT unprotected."},
-    {"run": 97, "gap_h": 1.95, "note": "STREAK 20. 0 fixes. conf_floor_70 investigation flagged. SHORT protection 3% below threshold."}
-  ],
-  "insight_state": {"total": 19, "active": 10, "invalidated": 3, "archived": 6}
+    {
+      "run": 94,
+      "gap_h": 1.08,
+      "fixes": 0
+    },
+    {
+      "run": 95,
+      "gap_h": 0.92,
+      "fixes": 0
+    },
+    {
+      "run": 96,
+      "gap_h": 1.93,
+      "fixes": 0
+    },
+    {
+      "run": 97,
+      "gap_h": 1.95,
+      "fixes": 0
+    },
+    {
+      "run": 98,
+      "gap_h": 1.93,
+      "fixes": 2,
+      "note": "FIRST FIXES SINCE RUN 82. conf=82 and 78 both qualified."
+    }
+  ]
 }

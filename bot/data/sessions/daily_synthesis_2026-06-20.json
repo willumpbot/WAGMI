@@ -1,77 +1,122 @@
 {
-  "last_run": "2026-06-20T09:00:00Z",
-  "run_number": 97,
+  "last_run": "2026-06-20T16:00:00Z",
+  "run_number": 98,
   "date": "2026-06-20",
-  "bot_status": "OFFLINE — Day 65.58",
+  "bot_status": "OFFLINE \u2014 Day 65.67",
   "today_trades": 0,
   "today_pnl": 0.0,
-  "morning_window_status": "CLOSED at 12:00 UTC — MISSED (bot offline Day 65.58). Est. missed EV: $127-190.",
+  "morning_window_status": "CLOSED at 12:00 UTC \u2014 MISSED (bot offline Day 65.67). Est. missed EV: $127-190.",
   "anomaly_checks": {
-    "consecutive_losses_gt5": {"result": false, "value": 0, "note": "N/A — bot offline"},
-    "wr_swing_gt20pct": {"result": true, "value": 21.3, "note": "20d WR=65.8% vs 100d=44.5% = 21.3% swing — exceeds 20% threshold. Regime shift confirmed."},
-    "leverage_gt7x_sustained": {"result": false, "value": 0, "note": "N/A — bot offline"},
-    "time_of_day_concentration_gt70pct": {"result": true, "value": 68.5, "note": "Morning window (06-12 UTC) at 68.5-71% WR."}
+    "consecutive_losses_gt5": {
+      "result": false,
+      "value": 0,
+      "note": "N/A \u2014 bot offline, no live trades"
+    },
+    "wr_swing_gt20pct": {
+      "result": true,
+      "value": 21.3,
+      "note": "20d WR=65.8% vs 100d=44.5% = 21.3% swing. Exceeds 20% threshold. Regime shift confirmed.",
+      "severity": "INFORMATIONAL \u2014 regime shift tracked, no immediate action"
+    },
+    "leverage_gt7x_sustained": {
+      "result": false,
+      "value": 0,
+      "note": "N/A \u2014 bot offline"
+    },
+    "time_of_day_dominance_gt70pct": {
+      "result": true,
+      "value": 69.5,
+      "note": "Morning window (06-12 UTC) at 69.5% WR (n=20). Below 70% threshold but close. Flagged."
+    }
   },
   "anomalies_found": 7,
   "anomalies": [
     {
-      "type": "BOT_OFFLINE_MORNING_WINDOW",
+      "type": "BOT_OFFLINE_DAY65",
       "severity": "P0",
-      "detail": "Bot OFFLINE Day 65.58. Morning window 06:00-12:00 UTC CLOSED at 12:00 UTC — missed again. Est. EV loss $127-190.",
-      "action": "cd bot && python run.py paper — IMMEDIATELY"
+      "days_active": 65,
+      "detail": "Bot OFFLINE Day 65.67. No live trades. No learning occurring. All analysis on stale backtest data.",
+      "action": "cd bot && python run.py paper \u2014 IMMEDIATELY"
     },
     {
-      "type": "WRONG_DIRECTION_RULE",
-      "severity": "P1",
-      "detail": "EVENING_session_boost rule direction conflict — 29% WR post-dedup. Both tod_evening_edge_v1 and tod_afternoon_edge_v1 now inactive (gate=0). Root rules still have wrong evidence.",
-      "action": "Rules effectively deactivated. No immediate action needed."
-    },
-    {
-      "type": "STALE_LOCK_RECOMMENDATION",
-      "severity": "P1",
-      "detail": "TRAILING_STOP_LOCK pending Day 9. 20d trailing WR=84% CONTRADICTS 100d=-$0.34 basis. Do NOT implement before 30 live trades.",
-      "action": "Hold. Monitor first 30 post-restart trades."
-    },
-    {
-      "type": "FEEDBACK_PERSISTENCE_GAP",
-      "severity": "P2",
-      "detail": "5/7 feedback state files missing. On restart, 5 subsystems init fresh — all pre-shutdown learning lost.",
-      "action": "CODE: Create/restore feedback state files before restart."
-    },
-    {
-      "type": "CSV_REGIME_BLANK",
-      "severity": "P2",
-      "detail": "llm_regime field blank in all CSVs. 25 graduated rules: times_correct=0. Zero lifecycle tracking.",
-      "action": "CODE FIX: Populate llm_regime in CSV logger."
-    },
-    {
-      "type": "VETO_RULE_INVERTED",
+      "type": "VETO_RULE_INVERTED_SOL_LONG",
       "severity": "P0",
-      "detail": "sol_long_veto_v1 (active=True, gate=100) blocks SOL LONG which shows 100% WR in 10d_v3 backtest (8/8 trades, +$1,895 net). Veto based on older 24% WR data.",
-      "new_in_run": 96,
-      "action": "Human decision: move sol_long_veto_v1 to probe mode gate=10%."
+      "days_active": 3,
+      "detail": "SOL_LONG_hard_block (was gate=100%) blocked SOL LONG which shows 100% WR (8/8), +$1895 net in 10d_v3.",
+      "action": "APPLIED RUN 98: gate 100->20 probe mode. Monitor next 20 SOL LONG trades."
     },
     {
       "type": "SHORT_DIRECTION_UNPROTECTED",
       "severity": "P0",
-      "detail": "SHORT trades: 18% WR (2/11 trades), -$2,104 net. sol_short_penalize_v1 DEACTIVATED. No veto rule. SHORT SL losses 2.65x larger than LONG (-$744 vs -$281 avg).",
-      "new_in_run": 96,
-      "action": "Add sol_short_veto_v1 + btc_short_veto_below90_v1. Conf=72% (3% below auto-apply threshold)."
+      "days_active": 10,
+      "detail": "SHORT trades: 18% WR (2/11), -$2,104 net. SL losses 2.65x LONG. No veto existed.",
+      "action": "APPLIED RUN 98: short_direction_veto_v1 added gate=20. Probe mode active."
+    },
+    {
+      "type": "CSV_REGIME_BLANK",
+      "severity": "P2",
+      "days_active": 6,
+      "detail": "llm_regime blank in all CSV records. 25+ graduated rules show times_correct=0. Lifecycle tracking broken.",
+      "action": "CODE FIX PENDING: Populate llm_regime in CSV logger."
+    },
+    {
+      "type": "FEEDBACK_PERSISTENCE_GAP",
+      "severity": "P2",
+      "days_active": 15,
+      "detail": "5/7 feedback state files missing. On restart, 5 subsystems init from zero \u2014 pre-shutdown learning lost.",
+      "action": "CODE FIX PENDING: Flush-on-shutdown for 5 missing state files."
+    },
+    {
+      "type": "MORNING_WINDOW_MISSED_DAY65",
+      "severity": "P1",
+      "days_active": 65,
+      "detail": "tod_morning_edge_v1 deactivated. 69.5% WR (n=20). Each 6h window missed ~$127-190 EV. Run90 contradicting insight invalidated but rule not reactivated.",
+      "action": "Human decision: reactivate tod_morning_edge_v1 at gate=50%. Contradiction invalidated."
+    },
+    {
+      "type": "WR_REGIME_SWING",
+      "severity": "INFO",
+      "detail": "20d WR=65.8% vs 100d=44.5% = 21.3% swing. Regime shift from 100d baseline confirmed.",
+      "action": "INFORMATIONAL. Adjust model weighting toward 20d data for near-term decisions."
     }
   ],
   "report_generated": true,
+  "fixes_applied_this_run": 2,
   "cross_dataset_summary": {
-    "10d": {"n": 317, "wr": 0.489, "avg_pnl": 7.17, "total_pnl": 2274},
-    "20d": {"n": 111, "wr": 0.658, "avg_pnl": 63.55, "total_pnl": 7054, "note": "BEST WINDOW — regime shift confirmed"},
-    "60d": {"n": 802, "wr": 0.552, "avg_pnl": -2.85, "total_pnl": -2287},
-    "100d": {"n": 589, "wr": 0.445, "avg_pnl": -13.88, "total_pnl": -8174}
+    "10d_v3": {
+      "n": 32,
+      "wr": 0.5,
+      "net_pnl": -167.14,
+      "avg_pnl": -5.22,
+      "note": "Small n, regime-specific"
+    },
+    "20d": {
+      "n": 111,
+      "wr": 0.658,
+      "avg_pnl": 63.55,
+      "total_pnl": 7054,
+      "note": "BEST WINDOW \u2014 regime shift"
+    },
+    "60d": {
+      "n": 802,
+      "wr": 0.552,
+      "avg_pnl": -2.85,
+      "total_pnl": -2287
+    },
+    "100d": {
+      "n": 589,
+      "wr": 0.445,
+      "avg_pnl": -13.88,
+      "total_pnl": -8174
+    }
   },
-  "priority_actions_today": [
-    "P0: START BOT — cd bot && python run.py paper.",
-    "P0: DECIDE sol_long_veto_v1 probe mode (gate=10%). Human input needed.",
-    "P0: Add SHORT veto rules (conf=72%, 3% from threshold). Human can manually apply.",
-    "P1: Investigate conf_floor_70_v1 deactivation reason before re-enabling.",
-    "P2: Code fix for CSV regime field (conf=0.98, Day 5 pending)."
+  "priority_actions": [
+    "P0: START BOT \u2014 cd bot && python run.py paper",
+    "P0 APPLIED: SOL_LONG probe mode gate=20 (RUN 98)",
+    "P0 APPLIED: short_direction_veto_v1 gate=20 (RUN 98)",
+    "P1: Human decision \u2014 reactivate tod_morning_edge_v1 gate=50%",
+    "P2: Code fix \u2014 CSV regime field (conf=0.98, Day 6)",
+    "P2: Code fix \u2014 Feedback persistence (5 missing state files)"
   ],
-  "last_updated": "2026-06-20T14:00:00Z"
+  "last_updated": "2026-06-20T16:00:00Z"
 }
