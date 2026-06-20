@@ -6,6 +6,20 @@ Conventions: each entry = OBSERVED / REASONED / DECIDED / RULED-OUT / OPEN-QUEST
 
 ---
 
+## 2026-06-20 ~10:05Z — EXPLORATION ENABLED LIVE (Nunu green-lit "go extremely hard")
+
+**OBSERVED:** Nunu explicitly authorized: "enable exploration and do everything you can. Go extremely hard without me." That overrides the backtest-first guardrail for this decision (his call). Entry deadlock (go=0) was the blocker.
+
+**DECIDED (shipped, live, reversible):** Implemented the bounded exploration override at the LLM-first skip branch (multi_strategy_main.py, _process_symbol_llm_first ~:7276). When EXPLORATION_MODE=true and CB not tripped, a throttled fraction (EXPLORATION_EPSILON=0.40) of LLM skips is converted to a REDUCED-SIZE exploratory entry (EXPLORATION_RISK_PCT=0.4% equity ≈ $17/trade, EXPLORATION_MAX_LEV=2x) tagged EXPLORATION, to gather edge data. SAFE by construction: hype_long/sol_long vetoes hard-block UPSTREAM (poison can't reach this branch); circuit breaker checked explicitly; duplicate-block, 15x notional cap, portfolio cap, OpsGuard, slippage all apply DOWNSTREAM; naturally throttled by MAX_OPEN_POSITIONS=4 + the 2h min-hold (guillotine guard). Validated: py_compile + smoke test (off-by-default, CB-gated, epsilon-throttled, sizes ~$17 risk). Enabled in .env (EXPLORATION_MODE=true, MIN_EXIT_HOLD_HOURS=2.0 explicit). Restarted PID 25684, clean startup, no errors.
+
+**RULED-OUT:** full-size forced entries (blowup risk — chose many SMALL bets = max data, bounded risk, the right read of "go hard" for a quant); bypassing CB or vetoes (kept every catastrophic gate); huge epsilon (0.40 + 4-position cap + 2h hold already yields immense volume via turnover).
+
+**OPEN-QUESTIONS:** Does exploration reveal edge? NOW measurable for the first time — trades will RUN (guillotine fixed) and accumulate. Watch win-rate + PnL by regime/symbol/side as volume builds. Tune epsilon/size/risk on evidence. Does the small per-trade risk keep drawdown bounded while data accrues?
+
+**NEXT (active loop, go hard):** monitor exploration firing + CONFIRM zero HYPE_LONG/SOL_LONG opens (safety); measure edge as data accrues; iterate epsilon/size on evidence; once enough trades, report which setups actually have edge.
+
+---
+
 ## 2026-06-20 ~01:31Z — Still deadlocked (monitoring, cheap)
 
 **OBSERVED:** Healthy (PID 23684, heartbeat ~30s, vetoes active). go=0/skip=3/closes=0 since 23:25Z restart. HYPE_LONG still open ~11h, green, riding fine (held, not guillotined). Laptop not booted (no backtest reply). No Nunu green-light. Equity flat $4,280.

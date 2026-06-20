@@ -7274,37 +7274,81 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
         _thesis = (entry_decision.thesis or "")[:100]
         if entry_decision.action == "skip":
-            logger.info(
-                f"[{trace_id}][{symbol}] LLM-FIRST SKIP: {_thesis}"
-            )
-            # Record for counterfactual tracking
-            if self.counterfactual:
-                try:
-                    self.counterfactual.record_veto(
-                        symbol=symbol,
-                        side=raw_signal.side,
-                        entry_price=raw_signal.entry,
-                        sl_price=raw_signal.sl,
-                        tp1_price=raw_signal.tp1,
-                        tp2_price=raw_signal.tp2,
-                        confidence=raw_signal.confidence,
-                        reason=f"LLM_FIRST: {_thesis}",
-                    )
-                except Exception:
-                    pass
-            # Track rejection in signal_outcomes.jsonl
-            self._track_llm_first_outcome(
-                raw_signal, symbol,
-                passed=False, hard_rejected=False,
-                reason=f"LLM veto: {_thesis}",
-                stage="llm_skip",
-                metadata={
-                    "llm_confidence": entry_decision.confidence,
-                    "llm_regime": entry_decision.regime,
-                    "thesis": _thesis,
-                },
-            )
-            return
+            # ── EXPLORATION MODE (Nunu-authorized 2026-06-20) ──────────────────
+            # Break the entry paralysis to GATHER EDGE DATA: convert a throttled
+            # fraction of LLM skips into REDUCED-SIZE exploratory entries. SAFE by
+            # construction: poison patterns (hype_long/sol_long graduated vetoes) are
+            # hard-blocked UPSTREAM in the signal pipeline so they cannot reach here;
+            # the circuit breaker is checked explicitly below; duplicate-block,
+            # 15x notional cap, portfolio cap, OpsGuard & slippage all still apply on
+            # the open path. Naturally throttled by MAX_OPEN_POSITIONS + the 2h min
+            # hold. Fully reversible: EXPLORATION_MODE=false. Tunables:
+            # EXPLORATION_EPSILON, EXPLORATION_RISK_PCT, EXPLORATION_MAX_LEV.
+            _explored = False
+            try:
+                import random as _rnd
+                _cb = getattr(self.risk_mgr, "circuit_breaker", None)
+                if (os.getenv("EXPLORATION_MODE", "false").lower() in ("1", "true", "yes")
+                        and not getattr(_cb, "tripped", False)
+                        and _rnd.random() < float(os.getenv("EXPLORATION_EPSILON", "0.40"))):
+                    _stop_w = abs(raw_signal.entry - raw_signal.sl)
+                    if _stop_w > 0 and raw_signal.entry > 0:
+                        _ex_lev = max(1.0, min(getattr(entry_decision, "leverage", 1.0) or 1.0,
+                                               float(os.getenv("EXPLORATION_MAX_LEV", "2.0"))))
+                        _risk_usd = (self.risk_mgr.equity or 0.0) * float(os.getenv("EXPLORATION_RISK_PCT", "0.004"))
+                        _ex_qty = _risk_usd / (_stop_w * _ex_lev)
+                        if _ex_qty > 0:
+                            entry_decision.action = "go"
+                            entry_decision.position_qty = _ex_qty
+                            entry_decision.leverage = _ex_lev
+                            if hasattr(entry_decision, "size_multiplier"):
+                                entry_decision.size_multiplier = 0.25
+                            _rf = list(getattr(entry_decision, "risk_flags", None) or [])
+                            _rf.append("EXPLORATION")
+                            entry_decision.risk_flags = _rf
+                            _explored = True
+                            logger.info(
+                                f"[{trace_id}][{symbol}] EXPLORATION ENTRY: skip→go "
+                                f"qty={_ex_qty:.6f} lev={_ex_lev:.1f}x risk=${_risk_usd:.2f} "
+                                f"(gathering edge data; LLM had skipped: {_thesis})"
+                            )
+            except Exception as _ex_e:
+                logger.debug(f"[{trace_id}][{symbol}] exploration convert error: {_ex_e}")
+                _explored = False
+
+            if not _explored:
+                logger.info(
+                    f"[{trace_id}][{symbol}] LLM-FIRST SKIP: {_thesis}"
+                )
+                # Record for counterfactual tracking
+                if self.counterfactual:
+                    try:
+                        self.counterfactual.record_veto(
+                            symbol=symbol,
+                            side=raw_signal.side,
+                            entry_price=raw_signal.entry,
+                            sl_price=raw_signal.sl,
+                            tp1_price=raw_signal.tp1,
+                            tp2_price=raw_signal.tp2,
+                            confidence=raw_signal.confidence,
+                            reason=f"LLM_FIRST: {_thesis}",
+                        )
+                    except Exception:
+                        pass
+                # Track rejection in signal_outcomes.jsonl
+                self._track_llm_first_outcome(
+                    raw_signal, symbol,
+                    passed=False, hard_rejected=False,
+                    reason=f"LLM veto: {_thesis}",
+                    stage="llm_skip",
+                    metadata={
+                        "llm_confidence": entry_decision.confidence,
+                        "llm_regime": entry_decision.regime,
+                        "thesis": _thesis,
+                    },
+                )
+                return
+            # else: fall through to the open path (all downstream safety gates apply)
 
         # ── Step 4: Post-LLM safety caps ──
         leverage = max(1.0, min(
