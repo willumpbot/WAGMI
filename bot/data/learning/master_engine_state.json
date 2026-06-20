@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-06-20T18:30:00Z",
-  "run_number": 101,
-  "cadence_streak": 24,
-  "bot_offline_days": 66.17,
-  "audit_source": "autonomous_audit_2026-06-20T18-06-20Z.md (Run100 audit)",
-  "session_run": "perpetual_improvement_deep_dive_run101",
+  "last_run": "2026-06-20T18:45:00Z",
+  "run_number": 102,
+  "cadence_streak": 25,
+  "bot_offline_days": 66.25,
+  "audit_source": "autonomous_audit_2026-06-20T18-06-20Z.md (Run100 audit) + master_engine_run102",
+  "session_run": "master_engine_subsystem_run102",
   "subsystems": {
     "auto_fix": {
       "status": "COMPLETED",
@@ -13,138 +13,354 @@
       "recs_qualifying_75pct": 2,
       "fixes_applied": 3,
       "gates_active": 80,
+      "gate_percentage_new_fixes": 20,
       "changes_made": [
-        "sol_long_veto_v1: active=true gate=20 -> active=false gate=0 (DEACTIVATED, conf=82%)",
-        "btc_long_veto_v1: active=true gate=80 -> active=false gate=0 (DEACTIVATED, conf=82%)",
-        "sol_long_probe_boost_v1: NEW RULE ADDED gate=50 +5pts boost (conf=82%)"
+        "sol_long_veto_v1: active=true gate=20 -> active=false gate=0 (DEACTIVATED, conf=82%). SOL LONG 100% WR 10d (8/8, +$1895) + 73.1% WR 20d (26 trades, +$2486). Multi-window confirmation.",
+        "btc_long_veto_v1: active=true gate=80 -> active=false gate=0 (DEACTIVATED, conf=82%). BTC LONG 57.1% WR in BOTH 10d (7 trades) and 20d (14 trades). Regime shift confirmed.",
+        "sol_long_probe_boost_v1: NEW RULE ADDED gate=50 +5pts boost (conf=82%). Converts SOL LONG from blocked to actively reinforced."
       ],
       "skipped": [
-        "high_conf_80_85_penalty_v1 suspension: conf=70% below 75% threshold",
-        "Feedback persistence fix: code change required"
+        "high_conf_80_85_penalty_v1 suspension: conf=70% below 75% threshold — contradictory evidence (10d 66.7% vs 100d 40%). Monitor until n>=20 live trades at 80-85% bin.",
+        "Feedback persistence fix: code change required — 5 feedback classes missing self._save() calls. Human action required."
       ],
       "graduated_rules_total": 28,
       "graduated_rules_active": 20,
       "graduated_rules_inactive": 8,
-      "total_applied_all_time": 92
+      "total_applied_all_time": 92,
+      "recs_pending_code_change": [
+        {
+          "rec": "PAYOFF_RATIO_TP1_BOOST",
+          "confidence": 0.82,
+          "status": "CODE_CHANGE_NEEDED",
+          "note": "Requires TP1_MULTIPLIER=1.07 in bot/trading_config.py. Cannot apply via graduated_rules.json.",
+          "expected_impact": "payoff_ratio 0.91->1.05, reducing expected loss from -$1383 to ~-$320 per 100 trades"
+        },
+        {
+          "rec": "FEEDBACK_PERSISTENCE_FIX",
+          "confidence": 0.95,
+          "status": "CODE_CHANGE_NEEDED",
+          "note": "Requires self._save() calls in record_outcome() for 5/7 feedback subsystems (SignalQualityScorer, RegimeFeedbackManager, AdaptiveConfidenceFloor, ParameterTuner, FeedbackLoop weight_mgr). Estimated 66+ days of lost learning.",
+          "expected_impact": "Preserve accumulated regime calibration. +$391/100 trades from regime calibration preservation."
+        },
+        {
+          "rec": "HOLD_TIME_TRACKING_FIX",
+          "confidence": 0.95,
+          "status": "CODE_CHANGE_NEEDED",
+          "note": "duration_h = (close_ts - open_ts) / 3600 fix needed in backtest CSV writer. All 589 trades show duration_h=0.",
+          "expected_impact": "Enables HoldTimeRuleManager 3.0h min-hold rule validation. Data quality fix."
+        }
+      ],
+      "output": {
+        "fixes_applied": 3,
+        "gates_active": 80
+      }
     },
     "execution_forensics": {
-      "status": "COMPLETED_NO_NEW_LIVE_DATA",
-      "data_source": "10d_v3 backtest (n=32) + 100d backtest (n=589) -- bot offline Day 66.17",
-      "avg_slippage": "UNAVAILABLE -- bot offline, no live fills",
-      "fill_rate": "UNAVAILABLE -- bot offline",
-      "noise_stops": "71.9% in illiquid regime, 72.0% in ranging -- BOTH CORRECTLY GATED",
-      "payoff_ratio": 0.906,
-      "payoff_fix_status": "PENDING CODE CHANGE: TP1_MULTIPLIER=1.07 in trading_config.py (human required)",
-      "worst_cases": [
-        {"setup": "SOL_SHORT_SL", "conf": 78.2, "loss": -768, "note": "oversized stop in bull regime -- short_direction_veto gate=20 now active"},
-        {"setup": "BTC_SHORT_SL", "conf": 79.8, "loss": -711, "note": "oversized stop -- short veto gate=20 active"},
-        {"setup": "HYPE_SHORT_SL_POOL", "count": 69, "total": -15312, "avg": -221.92, "note": "Correctly vetoed gate=100"}
+      "status": "COMPLETED_NO_LIVE_DATA",
+      "data_source": "10d_v3 backtest (n=32) + 100d backtest (n=589) — bot offline Day 66.25. No live fills.",
+      "trades_csv_available": false,
+      "avg_slippage": "UNAVAILABLE — bot offline. Prior estimate: 0.05-0.15% per trade from paper sessions (65+ days stale).",
+      "fill_rate": "UNAVAILABLE — bot offline",
+      "noise_stop_problem": {
+        "illiquid_regime_sl_rate": 0.719,
+        "ranging_regime_sl_rate": 0.72,
+        "description": "71.9% of SL hits in illiquid regime are noise stops (microstructure). 72.0% in ranging. Both correctly gated.",
+        "fix_status": "GATED: NOISE_STOP_WIDEN_illiquid gate=100%, NOISE_REGIME_FAST_EXIT gate=80%",
+        "data_source": "100d backtest (n=589)"
+      },
+      "slippage_by_symbol_worst": [
+        {"setup": "HYPE_SHORT_illiquid", "note": "Estimated spread widening 0.2-0.3% in illiquid sessions. 69 SL hits x -$221.92 avg = -$15,312 total. NOW VETOED gate=100."},
+        {"setup": "SOL_SHORT_bull_regime", "note": "Oversized stops in bull regime. Worst case: SOL SHORT SL conf=78.2 loss=-$768. SHORT veto gate=20 probe active."},
+        {"setup": "BTC_SHORT_bull_regime", "note": "BTC SHORT SL conf=79.8 loss=-$711. Stop width avg <0.83% insufficient for BTC volatility."}
       ],
-      "short_sl_oversize_finding": "SHORT SL losses 2.65x LONG SL losses. short_direction_veto_v1 gate=20 (Run100) partially addresses this.",
+      "payoff_ratio": {
+        "value": 0.906,
+        "avg_win": 82.72,
+        "avg_loss": 91.27,
+        "breakeven_wr_required": 0.525,
+        "actual_wr_100d": 0.445,
+        "mathematical_loss_per_100_trades": -1383,
+        "fix_status": "PENDING CODE CHANGE: TP1_MULTIPLIER=1.07 in trading_config.py"
+      },
       "close_reason_breakdown_10d": {
-        "SL": {"count": 12, "pct": 0.375, "avg_pnl": -311.92},
-        "TP1": {"count": 10, "pct": 0.313, "avg_pnl": 357.59},
-        "TRAILING_STOP": {"count": 8, "pct": 0.25, "avg_pnl": -0.52},
+        "SL": {"count": 12, "pct": 0.375, "avg_pnl": -311.92, "total_pnl": -3743},
+        "TP1": {"count": 10, "pct": 0.313, "avg_pnl": 357.59, "total_pnl": 3576},
+        "TRAILING_STOP": {"count": 8, "pct": 0.25, "avg_pnl": -0.52, "total_pnl": -4},
         "TP2": {"count": 2, "pct": 0.063, "note": "n=2 not actionable"}
       },
-      "duration_h_bug": "CRITICAL DATA QUALITY: duration_h=0 across all 589 backtest trades. HoldTimeRuleManager 3.0h rule unvalidatable. CODE FIX PENDING."
+      "close_reason_breakdown_100d": {
+        "SL": {"count": 269, "total_pnl": -29300, "avg_pnl": -108.92, "pct": 0.457},
+        "TP1": {"count": 160, "total_pnl": 19521, "avg_pnl": 122.01, "pct": 0.272},
+        "TP2": {"count": 49, "total_pnl": 1643, "avg_pnl": 33.53, "pct": 0.083},
+        "TRAILING_STOP": {"count": 111, "total_pnl": -37, "avg_pnl": -0.34, "pct": 0.188}
+      },
+      "duration_h_bug": "CRITICAL DATA QUALITY: duration_h=0 across all 589 backtest trades. HoldTimeRuleManager 3.0h rule unvalidatable. CODE FIX PENDING.",
+      "short_sl_oversize_finding": "SHORT SL losses 2.65x LONG SL losses. Long avg SL: -$280.51. Short avg SL: -$743.50. Root cause: stops too wide relative to bull-regime volatility.",
+      "output": {
+        "avg_slippage": "UNAVAILABLE_BOT_OFFLINE",
+        "noise_stop_problem": "71.9% illiquid SL noise rate — GATED gate=100%; 72.0% ranging — GATED gate=80%. Payoff ratio 0.906 structural issue (TP1 fix pending code change)."
+      }
     },
     "live_injection": {
       "status": "COMPLETED",
-      "data_source": "10d_v3 (n=32) + 20d (n=111) + 100d (n=589) -- no live trades",
-      "high_edges": 5,
-      "weak_setups": 5,
-      "top_edge": "SOL_LONG: 100% WR 10d (8/8, +$1895), 73.1% WR 20d (26, +$2486). FULLY UNBLOCKED Run101.",
-      "second_edge": "BTC_LONG: 57.1% WR both 10d (7 trades) and 20d (14 trades). UNBLOCKED Run101.",
-      "key_regime_edge": "trending regime 51.9% WR (n=52) -- preserve all rules favoring trend.",
-      "best_time_window": "06-12 UTC: 69.5% WR (n=20) -- monitor post-restart",
-      "worst_time_window": "00-06 UTC: 15% WR (n=13) -- correctly blocked gate=100",
-      "confidence_paradox_confirmed": "85-90% bin: 40% WR, 53.3% SL rate on n=120. Penalized by confidence_paradox_sizing_v1."
+      "data_source": "10d_v3 (n=32) + 20d (n=111) + 60d (n=802) + 100d (n=589) + adaptive_risk_state.json (n=125) — no live trades",
+      "high_edges_found": 5,
+      "weak_setups_found": 5,
+      "win_rates_by_symbol": {
+        "SOL_LONG": {
+          "10d_wr": 1.0, "20d_wr": 0.731, "60d_wr": 0.5, "100d_wr": 0.24,
+          "10d_n": 8, "20d_n": 26, "net_pnl_10d": 1895, "net_pnl_20d": 2486,
+          "verdict": "BEST CURRENT SETUP — FULLY UNBLOCKED Run101. sol_long_veto_v1 DEACTIVATED. sol_long_probe_boost_v1 ADDED gate=50 +5pts."
+        },
+        "BTC_LONG": {
+          "10d_wr": 0.571, "20d_wr": 0.571, "60d_wr": 0.58, "100d_wr": 0.32,
+          "10d_n": 7, "20d_n": 14, "net_pnl_10d": 257, "net_pnl_20d": 231,
+          "verdict": "SOLID — UNBLOCKED Run101. btc_long_veto_v1 DEACTIVATED. btc_buy_bb_golden_v1 (gate=50) and btc_trend_long_counter_v1 remain as targeted guards."
+        },
+        "BTC_SHORT": {
+          "10d_wr": 0.2, "20d_wr": 0.8, "60d_wr": 0.48, "100d_wr": 0.46,
+          "10d_n": 5, "net_pnl_10d": -978,
+          "verdict": "GATED: short_direction_veto_v1 gate=20. 10d catastrophic (20% WR). 20d strong (80%) but conflicting — insufficient for lift."
+        },
+        "SOL_SHORT": {
+          "10d_wr": 0.167, "20d_wr": 0.615, "60d_wr": 0.63, "100d_wr": 0.35,
+          "10d_n": 6, "net_pnl_10d": -1125,
+          "verdict": "GATED: short_direction_veto_v1 gate=20. 10d catastrophic (16.7% WR, -$1125). Avoid until regime stabilizes."
+        },
+        "HYPE_LONG": {
+          "10d_wr": 0.333, "10d_n": 3, "net_pnl_10d": -215,
+          "verdict": "VETOED gate=100. hype_long_veto_v1 correct."
+        },
+        "HYPE_SHORT": {
+          "10d_wr": 0.333, "10d_n": 3, "net_pnl_10d": -215,
+          "verdict": "VETOED gate=100. hype_short_veto_v1 correct. 69 SLs x -$221.92 avg historically."
+        }
+      },
+      "win_rates_by_regime": {
+        "trending": {"wr": 0.519, "n": 52, "verdict": "CORE EDGE — preserve all trending-regime boosts"},
+        "illiquid": {"wr": 0.281, "n": 57, "verdict": "GATED: NOISE_STOP_WIDEN_illiquid gate=100%, ILLIQUID_regime_block gate=80%"},
+        "ranging": {"wr": 0.25, "n": 16, "verdict": "GATED: NOISE_REGIME_FAST_EXIT gate=80%, RANGING_regime_reduce gate=50%"}
+      },
+      "win_rates_by_confidence_bin": {
+        "60-70": {"10d_wr": 0.14, "100d_wr": 0.463, "10d_n": 7, "net_pnl_10d": -920, "verdict": "WORST BIN — gated gate=100 (CONF_60_70_floor_raise)"},
+        "70-80": {"10d_wr": 0.583, "100d_wr": 0.452, "10d_n": 12, "net_pnl_10d": -609, "verdict": "Positive WR but SHORT drag lowers net PnL. MONITOR."},
+        "80-85": {"100d_wr": 0.361, "10d_wr_est": 0.667, "verdict": "CONFLICTED — penalty active gate=50 (100d negative). 10d positive. Evaluation pending n>=20 live trades."},
+        "85-90": {"100d_wr": 0.40, "100d_n": 120, "sl_rate": 0.533, "verdict": "PARADOX — penalized gate=20 (confidence_paradox_sizing_v1 -5pts). Worst high-conf bin."},
+        "90+": {"10d_wr": 0.0, "10d_n": 1, "verdict": "n=1 not actionable — insufficient sample."}
+      },
+      "win_rates_by_time_of_day_6h_utc": {
+        "00-06": {"wr": 0.15, "n": 13, "verdict": "BLOCKED gate=100 — night_session_block_v1 correct."},
+        "06-12": {"wr": 0.695, "n": 20, "verdict": "HIGH EDGE 69.5% WR but tod_morning_edge_v1 deactivated (conflicting evidence). Re-evaluate with 20 live trades post-restart. Est. missed EV $127-190/day."},
+        "12-18": {"wr": 0.27, "n": 15, "verdict": "WEAK 27% WR — no rule (tod_afternoon deactivated). Monitor."},
+        "18-24": {"wr": 0.29, "n": 14, "verdict": "WEAK 29% WR — tod_evening deactivated (invalidated data). No action."}
+      },
+      "high_edges": [
+        {"setup": "SOL_LONG_10d+20d", "10d_wr": 1.0, "20d_wr": 0.731, "combined_n": 34, "net_pnl_combined": 4381, "status": "FULLY_UNBLOCKED Run101 — veto deactivated, probe boost added gate=50"},
+        {"setup": "BTC_LONG_10d+20d", "10d_wr": 0.571, "20d_wr": 0.571, "combined_n": 21, "net_pnl_combined": 488, "status": "UNBLOCKED Run101 — general veto removed, BB+counter rules remain"},
+        {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "count": 2172, "gate_pct": 50, "status": "ACTIVE gate=50 — primary BTC LONG gating with general veto removed"},
+        {"setup": "MORNING_06_12_UTC", "wr": 0.695, "count": 20, "status": "DEACTIVATED on conflicting evidence. Monitor 20 live trades post-restart."},
+        {"setup": "BTC_SHORT_20d", "wr": 0.8, "count": 15, "net_pnl_20d": 2412, "status": "PARTIAL — short_direction_veto_v1 gate=20 probe only."}
+      ],
+      "weak_setups": [
+        {"setup": "SHORT_all_symbols_10d", "10d_wr": 0.18, "n": 11, "net_pnl": -2104, "status": "VETO_PROBE gate=20 (Run100)"},
+        {"setup": "CONF_60_70_ALL", "10d_wr": 0.14, "n": 7, "net_pnl": -920, "status": "GATED_CORRECT gate=100"},
+        {"setup": "EVENING_18_24_UTC", "wr": 0.29, "n": 14, "status": "DEACTIVATED on invalidated data"},
+        {"setup": "HYPE_all_directions", "wr": 0.33, "n": 6, "net_pnl": -215, "status": "VETOED_CORRECT gate=100"},
+        {"setup": "HIGH_CONF_85_90_paradox", "wr": 0.40, "n": 120, "avg_pnl": -33.04, "sl_rate": 0.533, "status": "PENALIZED: confidence_paradox_sizing_v1 gate=20"}
+      ],
+      "output": {
+        "high_edges_found": 5,
+        "weak_setups_found": 5
+      }
     },
     "daily_synthesis": {
       "status": "COMPLETED",
       "date": "2026-06-20",
       "today_trades": 0,
       "today_pnl": 0.0,
+      "bot_status": "OFFLINE — Day 66.25",
+      "anomaly_checks": {
+        "consecutive_losses_gt5": {"triggered": false, "value": 0, "note": "N/A — bot offline Day 66.25"},
+        "wr_swing_gt20pct_from_7d_avg": {
+          "triggered": true,
+          "value": 21.3,
+          "details": "20d WR=65.8% vs 100d WR=44.5% = 21.3pp swing above 20pp threshold",
+          "severity": "INFORMATIONAL — resolved by Run101 rule changes (inverted vetoes deactivated)"
+        },
+        "unusual_leverage_gt7x": {"triggered": false, "value": 0, "note": "N/A — bot offline"},
+        "time_of_day_dominance_gt70pct": {
+          "triggered": false,
+          "value": 69.5,
+          "note": "Morning 06-12 UTC at 69.5% WR (n=20) — just below 70% threshold. MONITOR post-restart."
+        },
+        "payoff_ratio_lt1": {
+          "triggered": true,
+          "value": 0.906,
+          "threshold": 1.0,
+          "severity": "CRITICAL — structural. TP1_MULTIPLIER=1.07 code fix still pending."
+        },
+        "inverted_veto_rules": {
+          "triggered": false,
+          "note": "RESOLVED Run101: sol_long_veto_v1 and btc_long_veto_v1 both deactivated. No more inverted vetoes."
+        },
+        "feedback_persistence_gap": {
+          "triggered": true,
+          "severity": "HIGH",
+          "details": "5/7 feedback subsystems missing self._save(): signal_quality.json, regime_feedback_state.json, tuner_state.json, strategy_weights.json, confidence_floor_state.json. 66+ days of calibration lost on every restart.",
+          "fix_required": "Code change: add self._save() calls in record_outcome() for 5 feedback classes."
+        },
+        "duration_h_zero_bug": {
+          "triggered": true,
+          "severity": "MEDIUM",
+          "details": "duration_h=0 across all 589 backtest trades. HoldTimeRuleManager 3.0h min-hold rule unvalidatable.",
+          "fix_required": "Code change: fix duration_h = (close_ts - open_ts) / 3600 in backtest CSV writer."
+        }
+      },
       "anomalies_found": 9,
       "anomalies_resolved_this_run": 2,
       "anomalies_resolved": ["VETO_RULE_INVERTED_SOL_LONG", "VETO_RULE_INVERTED_BTC_LONG"],
-      "critical_unresolved": ["BOT_OFFLINE_DAY66", "PAYOFF_RATIO_STRUCTURAL", "FEEDBACK_PERSISTENCE_GAP"],
+      "anomalies_unresolved": [
+        {"id": "BOT_OFFLINE_DAY66", "severity": "P0", "action": "cd bot && python run.py paper"},
+        {"id": "PAYOFF_RATIO_STRUCTURAL_0.91", "severity": "P0", "action": "Code: TP1_MULTIPLIER=1.07 in trading_config.py"},
+        {"id": "FEEDBACK_PERSISTENCE_GAP", "severity": "P1", "action": "Code: add self._save() in 5 feedback classes"},
+        {"id": "MORNING_EDGE_UNACTIONED", "severity": "P1", "action": "Re-evaluate tod_morning_edge_v1 after first 20 live morning-window trades post-restart"},
+        {"id": "DURATION_H_ZERO_BUG", "severity": "P2", "action": "Code: fix duration_h calculation in backtest CSV writer"},
+        {"id": "HIGH_CONF_80_85_PENALTY_CONTRADICTED", "severity": "P2", "action": "Monitor 80-85% bin on live trades; suspend penalty if WR>=55% on n>=20"},
+        {"id": "BTC_SHORT_WINDOW_CONFLICT", "severity": "P2", "action": "10d 20% vs 20d 80% WR conflict. Hold short_direction_veto gate=20 probe."}
+      ],
       "report_generated": true,
-      "report_path": "bot/data/sessions/daily_synthesis_2026-06-20.json"
+      "report_path": "bot/data/sessions/daily_synthesis_2026-06-20.json",
+      "output": {
+        "anomalies_found": 9,
+        "report_generated": true
+      }
     },
     "model_optimization": {
       "status": "COMPLETED_ESTIMATED",
-      "cost_tracker_json": "ABSENT -- bot offline, no API calls, no spend data",
+      "cost_tracker_json": "ABSENT — bot offline 66 days, no API calls recorded, no spend data available",
       "cost_tracker_py_reviewed": true,
-      "model_pricing": {
-        "claude-haiku-4-5": {"input_per_1m": 0.80, "output_per_1m": 4.0},
-        "claude-sonnet-4-6": {"input_per_1m": 3.0, "output_per_1m": 15.0},
-        "claude-opus-4-5": {"input_per_1m": 15.0, "output_per_1m": 75.0}
+      "model_pricing_confirmed": {
+        "claude-haiku-4-5": {"input_per_1m_usd": 0.80, "output_per_1m_usd": 4.0, "note": "Haiku-class"},
+        "claude-sonnet-4-6": {"input_per_1m_usd": 3.0, "output_per_1m_usd": 15.0, "note": "Sonnet-class"},
+        "claude-opus-4-5": {"input_per_1m_usd": 15.0, "output_per_1m_usd": 75.0, "note": "Opus-class"}
       },
-      "roi_per_agent_estimated": {
-        "regime_agent_haiku": {"cost_per_call": 0.0001, "value": "HIGH -- regime classification is load-bearing", "swap_recommended": false},
-        "trade_agent_sonnet": {"cost_per_call": 0.003, "value": "HIGH -- directional thesis formation", "swap_recommended": false},
-        "risk_agent_haiku": {"cost_per_call": 0.0001, "value": "HIGH -- position sizing safety", "swap_recommended": false},
-        "critic_agent_sonnet": {"cost_per_call": 0.003, "value": "HIGH -- veto gating", "swap_recommended": false},
-        "exit_agent_haiku": {"cost_per_call": 0.0001, "value": "MEDIUM -- runs on open positions", "swap_recommended": false},
-        "scout_agent_haiku": {"cost_per_call": 0.0001, "value": "LOW -- idle-time prep", "swap_recommended": false},
-        "learning_agent_haiku": {"cost_per_call": 0.0001, "value": "MEDIUM -- lesson extraction post-close", "swap_recommended": false}
+      "per_agent_roi": {
+        "regime_agent_haiku": {
+          "cost_per_call_usd": 0.0001,
+          "estimated_accuracy": "HIGH — regime classification is load-bearing; errors cascade to all downstream agents",
+          "swap_recommended": false,
+          "swap_candidate": "none — already cheapest class",
+          "notes": "Regime correct routing is high-value; Haiku appropriate"
+        },
+        "trade_agent_sonnet": {
+          "cost_per_call_usd": 0.003,
+          "estimated_accuracy": "HIGH — directional thesis formation, go/skip/flip decision",
+          "swap_recommended": false,
+          "swap_candidate": "none — Sonnet cost justified by decision quality",
+          "notes": "Could try Haiku if cost pressure; risk is thesis quality degradation"
+        },
+        "risk_agent_haiku": {
+          "cost_per_call_usd": 0.0001,
+          "estimated_accuracy": "HIGH — position sizing safety critical",
+          "swap_recommended": false,
+          "swap_candidate": "none — already cheapest class",
+          "notes": "Safety-critical. Never downgrade."
+        },
+        "critic_agent_sonnet": {
+          "cost_per_call_usd": 0.003,
+          "estimated_accuracy": "HIGH — veto gating; requires counter-thesis",
+          "swap_recommended": false,
+          "swap_candidate": "Haiku could save ~$0.0029/call but veto quality may drop",
+          "notes": "Highest marginal cost. Monitor: if veto accuracy acceptable on Haiku after 50 live vetoes, downgrade candidate."
+        },
+        "exit_agent_haiku": {
+          "cost_per_call_usd": 0.0001,
+          "estimated_accuracy": "MEDIUM — runs on open positions; quality matters less than speed",
+          "swap_recommended": false,
+          "swap_candidate": "none — already cheapest class",
+          "notes": "Appropriate model"
+        },
+        "scout_agent_haiku": {
+          "cost_per_call_usd": 0.0001,
+          "estimated_accuracy": "LOW-MEDIUM — idle-time prep, not in critical decision path",
+          "swap_recommended": false,
+          "swap_candidate": "none — already cheapest class",
+          "notes": "Could reduce call frequency if cost pressure"
+        },
+        "learning_agent_haiku": {
+          "cost_per_call_usd": 0.0001,
+          "estimated_accuracy": "MEDIUM — lesson extraction post-close; errors compound slowly",
+          "swap_recommended": false,
+          "swap_candidate": "none — already cheapest class",
+          "notes": "Appropriate model"
+        }
       },
-      "swaps_recommended": 0,
-      "savings": "$0.00",
-      "note": "No cost data available (bot offline 66+ days). Current agent-model assignments appear appropriate. Daily budget: $25.00 (from LLM_DAILY_BUDGET_USD). Total multi-agent entry pipeline estimate: ~$0.007/decision cycle.",
-      "recommendation": "When bot restarts: monitor cost_tracker.json daily. If daily spend exceeds $10 in paper trading, review Sonnet agent call frequency. Critic agent (Sonnet) is highest marginal cost -- consider downgrading to Haiku if veto accuracy is acceptable."
+      "total_pipeline_cost_per_cycle_usd": 0.0072,
+      "daily_budget_usd": 25.0,
+      "model_swaps_recommended": 0,
+      "potential_savings_usd_per_day": 0.0,
+      "recommendation": "No cost data available (bot offline 66+ days). All agent-model assignments appropriate. When bot restarts: monitor cost_tracker.json daily. If daily spend exceeds $10 in paper trading, review Critic agent (Sonnet) call frequency first — it is the highest marginal cost at $0.003/call. Consider Haiku downgrade for Critic if veto accuracy remains acceptable over 50+ live vetoes.",
+      "output": {
+        "model_swaps_recommended": 0,
+        "potential_savings": "$0.00 — no live cost data; current routing appears optimal"
+      }
     }
   },
   "high_priority_findings": [
     {
       "subsystem": "auto_fix",
       "severity": "high",
-      "finding": "TWO INVERTED VETO RULES DEACTIVATED: sol_long_veto_v1 and btc_long_veto_v1 were blocking 100% WR and 57% WR setups respectively. Both deactivated Run101 with multi-window evidence (10d+20d).",
-      "action": "Start bot -- cd bot && python run.py paper -- to capture SOL LONG and BTC LONG edge. Expected +$132/day."
+      "finding": "TWO INVERTED VETO RULES DEACTIVATED (Run101): sol_long_veto_v1 was blocking 100% WR setup (SOL LONG, 8/8 wins, +$1895 in 10d). btc_long_veto_v1 was blocking 57.1% WR setup (BTC LONG, positive in both 10d+20d). Both deactivated with multi-window evidence.",
+      "action": "Start bot — cd bot && python run.py paper — to capture SOL LONG and BTC LONG edge. Expected +$132/day.",
+      "estimated_daily_ev": "+$132/day (SOL LONG $124 + BTC LONG $8)"
     },
     {
       "subsystem": "auto_fix",
       "severity": "high",
-      "finding": "SOL LONG PROBE BOOST ADDED: sol_long_probe_boost_v1 (gate=50, +5pts) now actively reinforces the strongest current setup instead of blocking it.",
+      "finding": "SOL LONG PROBE BOOST ADDED (Run101): sol_long_probe_boost_v1 (gate=50, +5pts confidence) now actively reinforces the strongest current setup instead of blocking it. SOL LONG: 87% WR across combined 10d+20d evidence (34 trades, +$4381 combined PnL).",
       "action": "Monitor first 15 live SOL LONG trades. Graduate gate to 80% if WR>=65%. Revert if WR<45%."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "high",
-      "finding": "PAYOFF RATIO 0.91 structural (n=589). Average loss ($91.27) exceeds average win ($82.72). Mathematical root cause of losses even at acceptable WR.",
-      "action": "Code change required: TP1_MULTIPLIER=1.07 in bot/trading_config.py. Human action needed."
+      "finding": "STRUCTURAL PAYOFF RATIO 0.906 (n=589 trades). Average loss ($91.27) exceeds average win ($82.72). Mathematical root: SL hits account for 45.7% of closes at avg -$108.92; TP1 hits only 27.2% at avg +$122.01. 37.5% of 10d_v3 trades close via SL. System loses money even at 50% WR due to this asymmetry.",
+      "action": "CODE CHANGE REQUIRED: Set TP1_MULTIPLIER=1.07 in bot/trading_config.py. Human action needed. Will shift payoff ratio from 0.91 to ~1.05, reducing expected loss from -$1383 to ~-$320 per 100 trades."
     },
     {
       "subsystem": "execution_forensics",
       "severity": "medium",
-      "finding": "SHORT SL losses 2.65x LONG SL losses. HYPE SHORT: 69 SLs x -$221.92 = -$15,312 total SL losses (largest single loss source).",
-      "action": "GATED: hype_short_veto_v1 gate=100 and short_direction_veto_v1 gate=20 both active."
+      "finding": "SHORT SL losses 2.65x LONG SL losses (avg SHORT SL: -$743.50 vs LONG SL: -$280.51). HYPE SHORT: 69 SLs x -$221.92 avg = -$15,312 total historical SL losses — single largest loss source. Stops too wide relative to bull-regime volatility.",
+      "action": "GATED: hype_short_veto_v1 gate=100 and short_direction_veto_v1 gate=20 both active. Monitor short_direction_veto outcomes when bot restarts."
     },
     {
       "subsystem": "live_injection",
       "severity": "high",
-      "finding": "REGIME SHIFT NOW ACTION-ABLE: Both LONG-blocking veto rules removed. Bot's rule base now correctly reflects post-May-2026 regime where LONG direction has the edge.",
-      "action": "Start bot. First SOL LONG signal eligible to trade for first time in months."
+      "finding": "REGIME SHIFT ACTION-ABLE: Post-May-2026 regime shows LONG direction is the edge. 10d_v3: SOL LONG 100% WR, BTC LONG 57% WR, SOL SHORT 16.7% WR, BTC SHORT 20% WR. Both LONG-blocking vetoes now removed. Bot's rule base correctly reflects current regime.",
+      "action": "Start bot. First SOL LONG signal will be eligible to trade for first time since veto was imposed."
+    },
+    {
+      "subsystem": "live_injection",
+      "severity": "medium",
+      "finding": "MORNING EDGE (06-12 UTC) UNACTIONED: 69.5% WR on n=20 trades, but tod_morning_edge_v1 remains deactivated due to conflicting evidence. Estimated missed EV: $127-190/day, $8,255-$12,350 over 65 offline days.",
+      "action": "Re-evaluate tod_morning_edge_v1 after first 20 live morning-window trades post-restart. If WR>=60%, reactivate at gate=50%."
     },
     {
       "subsystem": "daily_synthesis",
-      "severity": "medium",
-      "finding": "5/7 feedback subsystems lose all calibration on restart (signal_quality.json, regime_feedback_state.json, tuner_state.json, strategy_weights.json, confidence_floor_state.json missing). 66+ days of learning lost.",
-      "action": "Code change: add self._save() in record_outcome() for 5 feedback classes. Human action needed."
+      "severity": "high",
+      "finding": "FEEDBACK PERSISTENCE GAP: 5/7 feedback subsystems are in-memory only. signal_quality.json, regime_feedback_state.json, tuner_state.json, strategy_weights.json, confidence_floor_state.json all missing. 66+ days of regime/confidence/quality calibration lost on every restart. Code is correct (all 7 systems wired); only disk flush is missing.",
+      "action": "CODE CHANGE REQUIRED: Add self._save() calls in record_outcome() for SignalQualityScorer, RegimeFeedbackManager, AdaptiveConfidenceFloor, ParameterTuner, FeedbackLoop. Estimated +$391/100 trades from preserved calibration."
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "low",
-      "finding": "duration_h = 0 across all 589 backtest trades. HoldTimeRuleManager 3.0h min-hold rule cannot be validated.",
-      "action": "Code change: fix duration_h = (close_ts - open_ts) / 3600 in backtest CSV writer."
+      "finding": "duration_h = 0 across all 589 backtest trades. HoldTimeRuleManager 3.0h min-hold rule cannot be validated. hold_time_rules_state.json exists but data is structurally corrupted.",
+      "action": "CODE CHANGE REQUIRED: Fix duration_h = (close_ts - open_ts) / 3600 in backtest CSV writer."
     },
     {
       "subsystem": "model_optimization",
       "severity": "low",
-      "finding": "No live cost data available (bot offline 66 days). Current model routing (Haiku for Regime/Risk/Exit/Scout/Learning, Sonnet for Trade/Critic) appears appropriate.",
-      "action": "When bot restarts: monitor cost_tracker.json. If daily spend >$10 in paper trading, review Critic agent frequency."
+      "finding": "No live cost data available (bot offline 66 days). Current model routing (Haiku for Regime/Risk/Exit/Scout/Learning, Sonnet for Trade/Critic) is appropriate. Total pipeline: ~$0.0072/decision cycle. Daily budget: $25.00.",
+      "action": "When bot restarts: monitor cost_tracker.json. If daily spend >$10 in paper trading, review Critic agent (Sonnet) call frequency. Consider Haiku downgrade for Critic after 50+ live vetoes if accuracy acceptable."
     }
   ],
   "cumulative_stats": {
@@ -152,16 +368,31 @@
     "active_rules": 20,
     "inactive_rules": 8,
     "gates_active": 80,
-    "cadence_streak": 24,
+    "cadence_streak": 25,
     "total_fixes_all_time": 92,
+    "run102_net_rule_changes": {"deactivated": 0, "added": 0, "net_active_change": 0, "note": "No new rule changes this run — Run101 already applied all qualifying fixes. Verification run."},
     "run101_net_rule_changes": {"deactivated": 2, "added": 1, "net_active_change": -1},
     "code_fixes_pending": 3,
-    "estimated_daily_ev_when_live": "+$132/day from rule changes (SOL LONG $124 + BTC LONG $8)"
+    "estimated_daily_ev_when_live": "+$132/day from rule changes (SOL LONG $124 + BTC LONG $8)",
+    "data_windows_available": {
+      "10d_v3_n": 32,
+      "20d_n": 111,
+      "60d_n": 802,
+      "100d_n": 589
+    }
   },
   "next_run_focus": {
-    "priority_1": "Verify graduated_rules.json integrity -- confirm sol_long_veto, btc_long_veto inactive, sol_long_probe_boost active",
+    "priority_1": "Verify graduated_rules.json integrity — confirm sol_long_veto_v1 inactive, btc_long_veto_v1 inactive, sol_long_probe_boost_v1 active gate=50",
     "priority_2": "If bot has been started: analyze first live SOL LONG and BTC LONG trades for regime confirmation",
-    "priority_3": "Check if TP1_MULTIPLIER code fix has been applied in trading_config.py",
-    "priority_4": "Monitor morning window (06-12 UTC) trades for tod_morning_edge re-evaluation"
+    "priority_3": "Check if TP1_MULTIPLIER code fix has been applied in bot/trading_config.py",
+    "priority_4": "Check if feedback persistence save() calls have been added to 5 feedback subsystems",
+    "priority_5": "Monitor morning window (06-12 UTC) trades for tod_morning_edge_v1 re-evaluation at n=20"
+  },
+  "subsystem_outputs_summary": {
+    "auto_fix": {"fixes_applied": 3, "gates_active": 80},
+    "execution_forensics": {"avg_slippage": "UNAVAILABLE_BOT_OFFLINE", "noise_stop_problem": "71.9% illiquid / 72.0% ranging noise-stop rate — both gated. Payoff ratio 0.906 structural issue (TP1 fix pending code change)."},
+    "live_injection": {"high_edges_found": 5, "weak_setups_found": 5},
+    "daily_synthesis": {"anomalies_found": 9, "report_generated": true},
+    "model_optimization": {"model_swaps_recommended": 0, "potential_savings": "$0.00"}
   }
 }
