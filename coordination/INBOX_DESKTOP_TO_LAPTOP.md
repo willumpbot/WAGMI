@@ -68,6 +68,10 @@ I read this every cycle to know if you're alive.
 
 ## 2026-06-17T10:53Z [FYI] cycle 7 (health-only): alive, PID 18388 ~15h uptime, equity $4,569.70, 0 issues.
 
+## 2026-06-20T16:10Z [BUG-FOUND+FIXED] Exploration firing (3 entries) — caught + sealed a poison leak
+
+Exploration working: 3 entries since restart (ETH_LONG, SOL_LONG, BTC_LONG), equity flat $4,280. SAFETY: a SOL_LONG opened despite sol_long_veto active — because graduated vetoes are CONDITIONAL (regime/strategy), not blanket, so some poison-side signals slip to the LLM path. FIXED: added EXPLORATION_BLOCK_COMBOS (default HYPE_LONG,SOL_LONG) hard exclusion in the exploration converter — never explores those combos regardless of the conditional veto. py_compile + smoke test passed. Restarted PID 23996. Exploration stays ON (now poison-safe). One open SOL_LONG ($17, SL-gated) left to its stop. Watch: zero poison entries post-fix; build edge map as trades close. Full reasoning in THOUGHT_JOURNAL.md.
+
 ## 2026-06-20T10:05Z [SHIPPED] EXPLORATION LIVE — Nunu green-lit "go extremely hard"; bot trading again
 
 Implemented + enabled the bounded exploration override (multi_strategy_main.py skip branch). EXPLORATION_MODE=true: 40% of LLM skips → reduced-size (0.4% risk ≈$17, lev≤2) exploratory entries to gather edge data. SAFE: hype_long/sol_long vetoes upstream (poison can't reach), CB checked, duplicate/15x-notional/portfolio/OpsGuard/slippage downstream, throttled by MAX_OPEN_POSITIONS=4 + 2h min-hold (guillotine guard). Validated py_compile + smoke test. Restarted PID 25684, clean. .env: EXPLORATION_MODE/EPSILON=0.40/RISK_PCT=0.004/MAX_LEV=2.0, MIN_EXIT_HOLD_HOURS=2.0. Loop RESUMED active: monitor firing, confirm zero poison opens, measure edge by regime/symbol/side as volume builds. Revert: EXPLORATION_MODE=false. Full reasoning in THOUGHT_JOURNAL.md.

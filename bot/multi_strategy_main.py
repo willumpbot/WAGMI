@@ -7288,7 +7288,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             try:
                 import random as _rnd
                 _cb = getattr(self.risk_mgr, "circuit_breaker", None)
+                # Belt-and-suspenders (2026-06-20): NEVER explore known-poison combos even
+                # if their graduated veto is CONDITIONAL and didn't fire for this signal.
+                # (Caught a SOL_LONG exploration entry — sol_long_veto is regime/strategy
+                # conditional, not a blanket symbol+side block, so some slip through to the LLM
+                # path.) This guarantees exploration can't open HYPE_LONG/SOL_LONG regardless.
+                _ex_side = "LONG" if raw_signal.side in ("BUY", "LONG") else "SHORT"
+                _ex_combo = f"{symbol}_{_ex_side}"
+                _ex_blocked = os.getenv("EXPLORATION_BLOCK_COMBOS", "HYPE_LONG,SOL_LONG").replace(" ", "").split(",")
                 if (os.getenv("EXPLORATION_MODE", "false").lower() in ("1", "true", "yes")
+                        and _ex_combo not in _ex_blocked
                         and not getattr(_cb, "tripped", False)
                         and _rnd.random() < float(os.getenv("EXPLORATION_EPSILON", "0.40"))):
                     _stop_w = abs(raw_signal.entry - raw_signal.sl)

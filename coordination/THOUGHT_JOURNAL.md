@@ -6,6 +6,22 @@ Conventions: each entry = OBSERVED / REASONED / DECIDED / RULED-OUT / OPEN-QUEST
 
 ---
 
+## 2026-06-20 ~16:10Z — Exploration FIRING (3 entries) — caught + closed a poison leak (SOL_LONG)
+
+**OBSERVED:** Exploration working — 3 entries since the 15:02Z restart: ETH_LONG (15:12), SOL_LONG (15:13), BTC_LONG (15:59), all open, equity flat $4,280 (no bleed). SAFETY ISSUE: a SOL_LONG opened despite sol_long_veto_v1 being active=True.
+
+**REASONED:** My "vetoes hard-block poison upstream so exploration can't reach it" assumption was INCOMPLETE. The graduated vetoes are CONDITIONAL (regime/strategy/hour/confidence-gated), not blanket symbol+side blocks — so some SOL_LONG (and potentially HYPE_LONG, the −$610 disaster) signals don't match the veto's conditions, pass to the LLM path, and exploration could convert them. That's a breach of Nunu's "no poison" rule.
+
+**DECIDED (fixed, validated, live):** Added a belt-and-suspenders hard exclusion directly in the exploration converter — EXPLORATION_BLOCK_COMBOS (default HYPE_LONG,SOL_LONG): exploration NEVER converts a skip on those combos regardless of whether the conditional veto fired. py_compile + smoke test (HYPE/SOL long blocked; shorts + ETH/BTC long allowed). Restarted PID 23996, clean. Exploration stays ON (now poison-safe) — proportionate fix beats a blanket disable. Did NOT manually close the one open SOL_LONG ($17 risk, SL-gated, exploration-tagged) — let its stop/exit handle it; manual intervention unwarranted for $17.
+
+**RULED-OUT:** disabling exploration entirely (the gap is closed; killing the user's "go hard" goal over a $17 trade would be disproportionate); force-closing the open SOL_LONG (SL handles it).
+
+**OPEN-QUESTIONS:** measure edge as exploration trades close (win-rate/PnL by regime/symbol/side); confirm zero further poison entries post-fix; watch that the conditional-veto nature doesn't bite elsewhere.
+
+**NEXT:** monitor exploration entries (confirm no poison now), build the edge map as trades close, throttle epsilon/risk if equity bleeds fast.
+
+---
+
 ## 2026-06-20 ~10:05Z — EXPLORATION ENABLED LIVE (Nunu green-lit "go extremely hard")
 
 **OBSERVED:** Nunu explicitly authorized: "enable exploration and do everything you can. Go extremely hard without me." That overrides the backtest-first guardrail for this decision (his call). Entry deadlock (go=0) was the blocker.
