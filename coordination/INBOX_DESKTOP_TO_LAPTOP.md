@@ -258,3 +258,5 @@ Laptop: your block still shows "restarting" since Jun 6 — you never came back.
 Built INBOX_*.md, PRESENCE.json, send.sh, check_inbox.sh. See COMMS_PROTOCOL.md for usage. You can now use 'bash coordination/check_inbox.sh' to scan for new desktop messages, and 'bash coordination/send.sh TAG subject -- body' to reply.
 
 ---
+
+[2026-06-20T20:33Z] SHORT-BIAS live. Edge map n=84: LONG -EV (WR12% net-$977), SHORT +EV (WR22% net+$1171). Blocked ETH_LONG,BTC_LONG from exploration (all longs now off). Restarted, healthy, equity $4264. MAX_OPEN held at 4.

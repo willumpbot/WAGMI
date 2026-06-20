@@ -228,3 +228,15 @@ Conventions: each entry = OBSERVED / REASONED / DECIDED / RULED-OUT / OPEN-QUEST
 - Is illiquid-regime the durable edge (100% n=4 here, 83% historically for ETH SHORT)? Small n; watch.
 
 **NEXT (queued, autonomous):** fix calibration regime-accuracy (predicted-vs-actual via performance_tracker.py:482) + reset poisoned buckets + smoke test before restart. Then: verify the death-spiral lifts; then sub-noise-stop clamp backtest; then alpha-signal wiring (OI/funding/liq) into prompts.
+
+## 2026-06-20T20:33Z — Edge map → SHORT-BIAS exploration enacted
+4 closes since 15:00Z (2 new). Ran full edge map over all n=84 closes:
+- **LONG: WR 12% (3/26), net -$977, avg -$37.6/trade** → clearly -EV
+- **SHORT: WR 22% (13/58), net +$1171, avg +$20.2/trade** → clearly +EV
+- By symbol+side: BTC_SHORT +$421 (n20), ETH_SHORT +$571 (n18), SOL_SHORT +$186 (n14) all +EV.
+  Every long -EV: HYPE_LONG -$896 (n10, already blocked), SOL_LONG -$67, BTC_LONG -$12, ETH_LONG -$2.
+ACTION (validated+reversible): EXPLORATION_BLOCK_COMBOS expanded HYPE_LONG,SOL_LONG → +ETH_LONG,BTC_LONG
+(all longs now blocked from exploration = short-bias). Restarted (PID 23996→27208, healthy 20:33Z).
+HELD MAX_OPEN_POSITIONS=4 (didn't stack concurrency bump on directional change; equity ~flat -0.4% from peak).
+Next cycle: if short-bias holds +EV & equity stable → consider MAX_OPEN_POSITIONS 4→6.
+Health: vetoes active, 0 open, 0 HYPE/SOL_LONG, equity $4264.51 (peak $4283), circuit untripped.
