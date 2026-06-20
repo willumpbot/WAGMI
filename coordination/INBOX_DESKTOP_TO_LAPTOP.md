@@ -68,6 +68,10 @@ I read this every cycle to know if you're alive.
 
 ## 2026-06-17T10:53Z [FYI] cycle 7 (health-only): alive, PID 18388 ~15h uptime, equity $4,569.70, 0 issues.
 
+## 2026-06-20T17:14Z [FYI] Trading at capacity — 4 positions running, guillotine fix CONFIRMED, awaiting first closes
+
+4 open (ETH_LONG, SOL_LONG, BTC_LONG, HYPE_SHORT) all RUNNING (not insta-closed → guillotine guard works). At MAX_OPEN_POSITIONS=4 cap, so no new exploration entries until a slot frees (not a bug). 0 poison opens since fix (block holds). 0 closes yet = no edge data. Equity flat $4,280. Holding config — won't crank volume (raise MAX_OPEN_POSITIONS / epsilon) until the first closes show if entries are +EV; cranking blindly = faster bleed. Next: first closes → edge map. Full reasoning in THOUGHT_JOURNAL.md.
+
 ## 2026-06-20T16:10Z [BUG-FOUND+FIXED] Exploration firing (3 entries) — caught + sealed a poison leak
 
 Exploration working: 3 entries since restart (ETH_LONG, SOL_LONG, BTC_LONG), equity flat $4,280. SAFETY: a SOL_LONG opened despite sol_long_veto active — because graduated vetoes are CONDITIONAL (regime/strategy), not blanket, so some poison-side signals slip to the LLM path. FIXED: added EXPLORATION_BLOCK_COMBOS (default HYPE_LONG,SOL_LONG) hard exclusion in the exploration converter — never explores those combos regardless of the conditional veto. py_compile + smoke test passed. Restarted PID 23996. Exploration stays ON (now poison-safe). One open SOL_LONG ($17, SL-gated) left to its stop. Watch: zero poison entries post-fix; build edge map as trades close. Full reasoning in THOUGHT_JOURNAL.md.

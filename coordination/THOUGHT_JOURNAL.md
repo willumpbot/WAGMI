@@ -6,6 +6,22 @@ Conventions: each entry = OBSERVED / REASONED / DECIDED / RULED-OUT / OPEN-QUEST
 
 ---
 
+## 2026-06-20 ~17:14Z — Trading at capacity (4 positions running); awaiting first closes for edge data
+
+**OBSERVED:** Healthy (PID 23996, vetoes active). 4 positions OPEN: ETH_LONG, SOL_LONG, BTC_LONG (pre-fix exploration entries) + HYPE_SHORT — all RUNNING (guillotine guard holding them, not insta-closed = the fix works). 0 exploration entries since the 16:11 fix-restart, 0 poison opens (block holds), 0 closes yet, equity flat $4,280.51.
+
+**REASONED:** 0 new exploration since the fix is NOT a bug — we're at MAX_OPEN_POSITIONS=4 (full), so the bot doesn't evaluate new entries while capped → no skips → no exploration. The position cap is now the volume throttle. The bot went from 0 trading to 4 concurrent running positions — big change. To "go harder" I'd raise MAX_OPEN_POSITIONS, but: NO trades have closed yet → ZERO edge data → cranking volume blindly before any +EV/−EV feedback just risks faster bleed. Guillotine guard CONFIRMED working (positions breathing past 30min, unlike the prior 15/15 insta-closes).
+
+**DECIDED:** Hold config; let the 4 run to close and produce the first edge signal. Did NOT raise MAX_OPEN_POSITIONS (no edge data yet — will crank once we see these are +EV, or on Nunu's explicit push). Did NOT throttle (equity flat, no bleed).
+
+**RULED-OUT:** raising the position cap now (blind volume before feedback); throttling (nothing's bleeding).
+
+**OPEN-QUESTIONS:** Do these first 4 closes win? That's the edge answer we've never been able to get (trades finally run to thesis). If +EV → crank cap + epsilon. If −EV → the entries genuinely lack edge → tune strategy, not volume.
+
+**NEXT:** watch for the first closes → tally edge by symbol/side/regime → then tune cap/epsilon on evidence. Report edge map to Nunu after ~20-30 closes.
+
+---
+
 ## 2026-06-20 ~16:10Z — Exploration FIRING (3 entries) — caught + closed a poison leak (SOL_LONG)
 
 **OBSERVED:** Exploration working — 3 entries since the 15:02Z restart: ETH_LONG (15:12), SOL_LONG (15:13), BTC_LONG (15:59), all open, equity flat $4,280 (no bleed). SAFETY ISSUE: a SOL_LONG opened despite sol_long_veto_v1 being active=True.
