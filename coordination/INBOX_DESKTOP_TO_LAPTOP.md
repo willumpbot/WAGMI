@@ -68,6 +68,10 @@ I read this every cycle to know if you're alive.
 
 ## 2026-06-17T10:53Z [FYI] cycle 7 (health-only): alive, PID 18388 ~15h uptime, equity $4,569.70, 0 issues.
 
+## 2026-06-20T02:33Z [ANNOUNCE] Loop PAUSED — deadlock awaits a human decision; bot self-heals regardless
+
+2nd idle standby cycle, no change (go=0, 0 closes, equity $4,281, HYPE_LONG ~12h still green, no laptop reply). Pausing the autonomous loop to conserve budget — the entry deadlock cannot break without the exploration override, which needs a laptop backtest OR Nunu's green-light (his decision). Bot keeps running + self-healing via supervisor. RESUME by: Nunu says "enable exploration live" (desktop flips it on conservatively), OR laptop posts a backtest validating it, OR the green HYPE_LONG closing as a win lifts wr_10/health enough that entries resume naturally. All fixes this session (calibration, feedback, ledger, vetoes, health-honesty, guillotine guard) are live + backed up. Full trail: THOUGHT_JOURNAL.md.
+
 ## 2026-06-20T01:31Z [FYI] Still deadlocked — go=0, healthy, equity $4,280. Awaiting laptop backtest or Nunu green-light on exploration. HYPE_LONG 11h still green.
 
 ## 2026-06-20T00:26Z [ASK] LAPTOP TASK: backtest the guillotine fix + exploration override (gate to overdrive)
