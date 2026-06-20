@@ -1,17 +1,31 @@
 {
-  "last_updated": "2026-06-20T02:07:00Z",
-  "run_number": 91,
-  "avg_slippage": "UNAVAILABLE — bot offline Day 64.1",
+  "last_updated": "2026-06-20T07:00:00Z",
+  "run_number": 93,
+  "avg_slippage": "UNAVAILABLE — bot offline Day 64.30",
   "trailing_stop_detail": {
-    "avg_pnl_trailing": -0.34, "avg_pnl_tp2": 33.53,
-    "ev_gap_total_100d": 3759, "days_pending": 7,
-    "fix_file": "bot/execution/position_manager.py", "fix_line": 1244,
+    "avg_pnl_trailing": -0.34,
+    "avg_pnl_tp2": 33.53,
+    "ev_gap_per_trade": 33.87,
+    "ev_gap_total_100d": 3759,
+    "ev_gap_per_day": 37.59,
+    "ev_gap_per_hour": 1.57,
+    "days_pending": 8,
+    "fix_file": "bot/execution/position_manager.py",
+    "fix_line": 1244,
     "env_var_required": "TRAILING_MIN_LOCK_PCT=0.70",
-    "status": "PENDING_HUMAN_REVIEW"
+    "status": "PENDING_HUMAN_REVIEW",
+    "ab_test_plan": "50 paper trades post-restart. Target: TRAILING_STOP avg PnL > +$10/trade. Rollback: TRAILING_MIN_LOCK_PCT=0.0"
   },
   "noise_stop_problem": {
-    "illiquid_regime_rate": 0.719, "ranging_regime_rate": 0.72
+    "illiquid_regime_rate": 0.719,
+    "ranging_regime_rate": 0.72,
+    "fix_active": "NOISE_STOP_WIDEN_illiquid gate=100%, NOISE_REGIME_FAST_EXIT gate=80%"
   },
-  "run91_update": "Post-dedup data confirms afternoon=27% WR (n=15) and evening=29-33% WR (n=14) are structurally weak. 10d backtest 62-65% for these windows was favorable-period artifact.",
-  "pending_fix_high_priority": "TRAILING_STOP_LOCK — position_manager.py:1244 — Day 7."
+  "close_reason_breakdown_100d": {
+    "SL": {"count": 269, "pct": 0.457, "avg_pnl": -108.92, "total_pnl": -29300},
+    "TP1": {"count": 160, "pct": 0.272, "avg_pnl": 122.01, "total_pnl": 19521},
+    "TRAILING_STOP": {"count": 111, "pct": 0.188, "avg_pnl": -0.34, "total_pnl": -37},
+    "TP2": {"count": 49, "pct": 0.083, "avg_pnl": 33.53, "total_pnl": 1643}
+  },
+  "run93_update": "Day 8 of TRAILING_STOP_LOCK pending. No new data. EV gap accruing $1.57/hour. Cumulative forgone EV from trailing stop gap (estimated 8 days): ~$300.72."
 }
