@@ -356,7 +356,9 @@
       "times_applied": 1,
       "times_correct": 0,
       "active": true,
-      "gate_percentage": 20
+      "gate_percentage": 50,
+      "gate_escalated_at": "2026-06-20T00:30:00Z",
+      "gate_escalation_reason": "RUN90_AUTO_FIX (conf=91%>=75%): btc_buy_bb_golden_v1 has evidence_ratio=0.69 (69% WR) on n=2172 shadow signals. Deep_memory confirms BTC_BUY_BB as Tier-1 golden setup. Graduation criterion met: WR=69%>=60% on n=2172>>15. Note: btc_long_veto_v1 at gate=80% limits pass-through, this rule provides targeted BB exception. Escalating gate 20%->50%."
     },
     {
       "rule_id": "sol_buy_bb_golden_v1",

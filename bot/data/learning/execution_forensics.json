@@ -1,20 +1,20 @@
 {
-  "last_updated": "2026-06-19T14:00:00Z",
-  "run_number": 83,
-  "data_source": "backtest_100d.csv (589 trades) — bot offline Day 63.0, no live trades.csv",
-  "data_freshness_days_stale": 63.0,
-  "avg_slippage": "UNAVAILABLE — no live trades (bot offline Day 63.0)",
+  "last_updated": "2026-06-20T00:30:00Z",
+  "run_number": 90,
+  "data_source": "backtest_100d.csv (589 trades) — bot offline Day 64.0, no live trades.csv",
+  "data_freshness_days_stale": 64.0,
+  "avg_slippage": "UNAVAILABLE — no live trades (bot offline Day 64.0)",
   "fill_rate": "N/A — no live execution",
   "noise_stop_problem": {
     "illiquid_regime_rate": 0.719,
     "ranging_regime_rate": 0.72,
     "trending_regime_rate": 0.13,
-    "note": "Stale from 2026-04-19 live session — 63.0d old. Rule illiquid_regime_penalize_v1 gate=100% active."
+    "note": "Stale from 2026-04-19 live session — 64.0d old. Rule illiquid_regime_penalize_v1 gate=100% active."
   },
   "close_reason_breakdown_100d": {
     "SL": {"count": 269, "rate": 0.457, "avg_pnl": -108.92, "total_pnl": -29300, "note": "Primary loss driver. 45.7% SL rate vs 38.3% in 10d. Stop too tight for 100d conditions."},
     "TP1": {"count": 160, "rate": 0.272, "avg_pnl": 122.01, "total_pnl": 19521},
-    "TRAILING_STOP": {"count": 111, "rate": 0.188, "avg_pnl": -0.34, "total_pnl": -37, "note": "Near-breakeven. EV gap vs TP2: $33.87/trade. $3,759 foregone per 100d."},
+    "TRAILING_STOP": {"count": 111, "rate": 0.188, "avg_pnl": -0.34, "total_pnl": -37, "note": "Near-breakeven. EV gap vs TP2: $33.87/trade. $3,759 foregone per 100d. PENDING_HUMAN_REVIEW Day 6."},
     "TP2": {"count": 49, "rate": 0.083, "avg_pnl": 33.53, "total_pnl": 1643}
   },
   "trailing_stop_detail": {
@@ -28,13 +28,16 @@
     "proposed_lock_pct": 0.7,
     "fix_file": "bot/execution/position_manager.py",
     "fix_line": 1244,
-    "status": "PENDING_HUMAN_REVIEW"
+    "status": "PENDING_HUMAN_REVIEW",
+    "days_pending": 6,
+    "env_var_required": "TRAILING_MIN_LOCK_PCT=0.70",
+    "code_snippet": "TRAILING_MIN_LOCK_PCT = float(os.environ.get('TRAILING_MIN_LOCK_PCT', '0.70'))\nif pos.state == 'TRAILING' and pos.tp1_price:\n    min_lock_price = pos.entry + (pos.tp1_price - pos.entry) * TRAILING_MIN_LOCK_PCT\n    if side == 'LONG': trailing_sl = max(trailing_sl, min_lock_price)\n    else: trailing_sl = min(trailing_sl, min_lock_price)"
   },
   "worst_cases_by_symbol_100d": [
-    {"symbol": "HYPE", "side": "SHORT", "count": 157, "wr": 0.48, "avg_pnl": -29.22, "total_pnl": -4587, "note": "WORST absolute loss. HYPE_SHORT_hard_block gate=80% active. Full block needed."},
-    {"symbol": "SOL", "side": "LONG", "count": 58, "wr": 0.33, "avg_pnl": -16.74, "total_pnl": -971, "note": "SOL_LONG_hard_block gate=100% — correctly deployed."},
-    {"symbol": "BTC", "side": "LONG", "count": 41, "wr": 0.32, "avg_pnl": -13.42, "total_pnl": -550, "note": "32% WR. BTC_LONG_reduce gate=50% + BTC_directional_correction active."},
-    {"symbol": "HYPE", "side": "LONG", "count": 68, "wr": 0.5, "avg_pnl": -14.36, "total_pnl": -977, "note": "HYPE_LONG_hard_block gate=100% — correctly deployed."}
+    {"symbol": "HYPE", "side": "SHORT", "count": 157, "wr": 0.48, "avg_pnl": -29.22, "total_pnl": -4587, "note": "WORST absolute loss. hype_short_veto_v1 gate=100% now ACTIVE. Top-5 wins all HYPE_SHORT TP1 — veto may sacrifice +$1,800 upside but stops -$4,587 downside."},
+    {"symbol": "SOL", "side": "LONG", "count": 58, "wr": 0.33, "avg_pnl": -16.74, "total_pnl": -971, "note": "sol_long_veto_v1 gate=100% — correctly deployed. Conflict: 10d shows 62% WR on n=208."},
+    {"symbol": "BTC", "side": "LONG", "count": 41, "wr": 0.32, "avg_pnl": -13.42, "total_pnl": -550, "note": "32% WR. btc_long_veto_v1 gate=80% active since Run88. btc_buy_bb_golden_v1 now gate=50%."},
+    {"symbol": "HYPE", "side": "LONG", "count": 68, "wr": 0.5, "avg_pnl": -14.36, "total_pnl": -977, "note": "hype_long_veto_v1 gate=100% — correctly deployed."}
   ],
   "dataset_conflict": {
     "10d_wr": 0.57, "10d_pnl": 905, "10d_trades": 965,
@@ -42,30 +45,18 @@
     "severity": "CRITICAL",
     "interpretation": "10d captured favorable bear-trending regime. 100d reflects mixed conditions. 12 of 17 active rules built from 10d need live validation."
   },
+  "graduated_rules_tracking_bug": {
+    "status": "DIAGNOSED_RUN90",
+    "root_cause": "llm_regime field is empty ('') in all 10d trade records. When feedback/loop.py calls record_outcome(regime=''), regime-conditioned rules (eth_trending_regime_boost_v1, ranging_regime_penalize_v1, etc.) fail to match in the fallback path. Result: times_correct stays 0 for regime-conditioned rules.",
+    "clarification": "graduated_rules.py EXISTS at bot/llm/graduated_rules.py — prior audit claim of 'file not found' was incorrect. The tracking mechanism is architecturally sound.",
+    "fix_needed": "Populate llm_regime in CSV logger at close time. Alternatively, pass fired_rule_ids from evaluate_signal() to record_outcome() (preferred path already supported in code).",
+    "severity": "MEDIUM — veto rules correctly have times_correct=0 by design; non-veto rule tracking degraded",
+    "rules_affected": ["eth_trending_regime_boost_v1", "illiquid_regime_penalize_v1", "ranging_regime_penalize_v1", "high_vol_regime_boost_v1"]
+  },
   "hold_time_bug": {
     "negative_duration_trades": 52, "inflated_wr": 1.0, "inflated_avg_pnl": 219.99,
     "root_cause": "close_time before opened_at for fast TP1 hits — timestamp calculation bug",
     "priority": "MEDIUM"
   },
-  "top_5_wins_100d": [
-    {"symbol": "SOL", "side": "SHORT", "conf": 79.7, "pnl": 713.84, "reason": "TP1"},
-    {"symbol": "HYPE", "side": "SHORT", "conf": 87.5, "pnl": 598.26, "reason": "TP1"},
-    {"symbol": "HYPE", "side": "SHORT", "conf": 71.1, "pnl": 494.33, "reason": "TP1"},
-    {"symbol": "HYPE", "side": "SHORT", "conf": 69.0, "pnl": 452.54, "reason": "TP1"},
-    {"symbol": "HYPE", "side": "SHORT", "conf": 72.1, "pnl": 425.95, "reason": "TP1"}
-  ],
-  "top_5_losses_100d": [
-    {"symbol": "HYPE", "side": "SHORT", "conf": 70.4, "pnl": -520.86, "reason": "SL"},
-    {"symbol": "HYPE", "side": "SHORT", "conf": 87.5, "pnl": -516.46, "reason": "SL"},
-    {"symbol": "HYPE", "side": "SHORT", "conf": 81.5, "pnl": -512.22, "reason": "SL"},
-    {"symbol": "HYPE", "side": "SHORT", "conf": 71.3, "pnl": -511.2, "reason": "SL"},
-    {"symbol": "HYPE", "side": "SHORT", "conf": 85.4, "pnl": -451.13, "reason": "SL"}
-  ],
-  "noise_regime_active_rules": [
-    "illiquid_regime_penalize_v1 gate=100, conf=78%",
-    "ranging_regime_penalize_v1 gate=50, conf=76%",
-    "night_session_block_v1 gate=100, conf=80%",
-    "NOISE_STOP_WIDEN_illiquid gate=100, conf=82%"
-  ],
-  "pending_fix_high_priority": "TRAILING_STOP_LOCK — position_manager.py:1244 — lock 70% TP1 gain as trailing floor. $3,759-$9,460 expected recovery."
+  "pending_fix_high_priority": "TRAILING_STOP_LOCK — position_manager.py:1244 — lock 70% TP1 gain as trailing floor. $3,759-$9,460 expected recovery. Day 6 pending."
 }

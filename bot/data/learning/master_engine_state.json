@@ -1,45 +1,51 @@
 {
-  "last_run": "2026-06-20T00:04:00Z",
-  "run_number": 89,
-  "current_utc": "2026-06-20 00:04 UTC",
-  "elapsed_since_last_run_h": 1.9,
-  "loop_cadence_status": "CADENCE STREAK 11 — Run89 ~1.9h after Run88",
+  "last_run": "2026-06-20T00:30:00Z",
+  "run_number": 90,
+  "current_utc": "2026-06-20 00:30 UTC",
+  "elapsed_since_last_run_h": 0.38,
+  "loop_cadence_status": "CADENCE STREAK 12 — Run90 ~0.38h after Run89 audit (immediate improvement cycle)",
   "bot_offline_days": 64.0,
-  "ev_accrued_usd": 433.54,
-  "ev_accrued_today_missed": 6.98,
+  "ev_accrued_usd": 434.03,
+  "ev_accrued_today_missed": 0.37,
   "ev_rate_per_hour": 0.97,
   "subsystems": {
     "auto_fix": {
-      "fixes_applied": 1,
-      "gates_active": 19,
-      "total_applied_all_time": 78,
-      "graduated_rules_total": 118,
+      "fixes_applied": 2,
+      "gates_active": 20,
+      "total_applied_all_time": 80,
       "new_fixes_this_run": [
         {
-          "rule_id": "INSIGHT_CONTRADICTION_ARCHIVE_V1",
-          "confidence": 0.80,
+          "rule_id": "INSIGHT_LONG_BIAS_INVALIDATION_V1",
+          "confidence": 0.82,
           "gate_percentage": 20,
-          "problem": "7 contradictory size-leverage insights (Insights 3,6,7,9,11,17,18,19) all ACTIVE simultaneously in meta_learning/insights.json. Contradictory WR claims at identical leverage thresholds. ~30% of agent decisions contaminated.",
-          "fix": "Marked 7 insights as invalidated=True with CONTRADICTION_TRIPLET/CLUSTER/SMALL_N reasons. Added canonical size insight (conf=0.92, n=589): 'leverage size does not predict WR; loss/win dollar asymmetry is structural problem.' Active insights: 9 of 20.",
-          "source": "Run87 REC3",
-          "files_changed": ["bot/data/meta_learning/insights.json", "bot/feedback/graduated_rules.json"]
-        }
-      ],
-      "recs_processed": 3,
-      "recs_applied": 1,
-      "recs_blocked": 2,
-      "blocked_recs": [
-        {
-          "rec": "REC1_BTC_LONG_VETO",
-          "confidence": 0.72,
-          "reason": "72% < 75% threshold. 10d counter-evidence (BTC_LONG 64% WR n=72) vs 100d (32% WR n=41) unresolved. Watch Run 1 of 2 remaining. Apply in Run 90 if confidence reaches 75%+ or 10d conflict resolves.",
-          "watch_run": "1_of_2"
+          "problem": "Insight 5 (LONG bias claim: 74% LONG, 30% WR) stale vs 10d (12% LONG, n=965). Was suppressing SOL_LONG 70-80% (62% WR, +$20.88 avg, n=208 — best sub-condition). Insight 6 (morning 14% WR, n=7) contradicts Insight 1 (morning 71% WR, n=20).",
+          "fix": "Both insights marked invalidated in meta_learning/insights.json. Active valid insights: 7 of 19.",
+          "expected_impact": "+$418-$1,059/100d from restored SOL_LONG signal flow + morning edge coherence."
         },
         {
-          "rec": "REC2_TRAILING_STOP_LOCK",
+          "rule_id": "BTC_BUY_BB_GATE_PROMOTION_V1",
+          "confidence": 0.91,
+          "gate_percentage": 50,
+          "problem": "btc_buy_bb_golden_v1 stuck at probe gate=20% despite graduation criterion met: WR=69%, n=2172 >> threshold WR=60%, n=15.",
+          "fix": "Gate promoted 20%->50% in bot/data/llm/graduated_rules.json.",
+          "expected_impact": "2.5x more BTC BUY+BB squeeze signals pass through (from 20% to 50% probability)."
+        }
+      ],
+      "recs_blocked": [
+        {
+          "rec": "REC1_TRAILING_STOP_LOCK",
           "confidence": 0.88,
-          "reason": "PENDING_HUMAN_REVIEW — execution code change at position_manager.py:1244. Requires code review per execution-safety.md. Day 5 pending.",
-          "status": "PENDING_HUMAN_REVIEW"
+          "reason": "PENDING_HUMAN_REVIEW — execution code change. Day 6.",
+          "expected_impact": "+$3,759/100d"
+        }
+      ],
+      "watch_cycles_closed": [
+        {
+          "rec": "BTC_LONG_VETO_WATCH",
+          "final_confidence": 0.72,
+          "threshold": 0.75,
+          "outcome": "CLOSED_BELOW_THRESHOLD — Watch Run 2 of 2 complete. Confidence never reached 75%. btc_long_veto_v1 stays at gate=80%. 10d/100d conflict unresolved. No further automatic escalation.",
+          "current_rule_status": "btc_long_veto_v1 active at gate=80%"
         }
       ]
     },
@@ -47,38 +53,46 @@
       "data_source": "backtest_100d.csv (589 trades) — bot offline Day 64.0. No live trades.csv.",
       "avg_slippage": "UNAVAILABLE — no live trades",
       "noise_stop_rate_illiquid": 0.719,
-      "new_finding_run89": "HYPE_SHORT R:R asymmetry: wins avg ~+$460/trade, losses avg ~-$520/trade. R:R≈0.88 with 48% WR = EV-negative by dollar size. TRAILING_STOP_LOCK is the structural fix. Escalating gate to 100% would also block top-5 wins (all HYPE_SHORT at TP1).",
+      "noise_stop_rate_ranging": 0.72,
       "trailing_stop_ev_gap": {
-        "run86_correction": "TP1+trailing path WR=64%, avg=+$10.03 (n=160). Prior -$0.34 was TRAILING_STOP close_reason only (111 trades).",
-        "trailing_lock_impact": "+$3,759/100d (convert trailing losses to TP2 wins)",
+        "avg_pnl_trailing": -0.34,
+        "avg_pnl_tp2": 33.53,
+        "ev_gap_total_100d": 3759,
         "status": "PENDING_HUMAN_REVIEW",
-        "days_pending": 5
+        "days_pending": 6
       },
-      "key_finding": "BTC_SHORT_conf60_70 (56% WR, n=18) elevated as only WR>50% sub-condition in 100d dataset. Low n — validate with live trades."
+      "new_finding_run90": "graduated_rules.py EXISTS at bot/llm/graduated_rules.py (not missing as previously claimed). Root cause of times_correct=0 for regime rules: llm_regime field empty in CSV records — regime-conditioned rules fail fallback match. Veto rules have times_correct=0 by design. New pending fix: CSV_REGIME_FIELD_FIX."
     },
     "live_injection": {
-      "data_source": "backtest_100d.csv (589) — bot offline Day 64.0",
-      "high_edges_found": 3,
+      "data_source": "backtest_100d.csv (589) primary; trades_10d.csv (965) secondary — bot offline Day 64.0",
+      "high_edges_found": 4,
       "weak_setups_found": 3,
-      "run89_update": "All June 19 windows closed. INSIGHT_CONTRADICTION_ARCHIVE_V1 applied — 7 contradictory size insights removed from active agent context.",
+      "run90_update": "Insight 5 INVALIDATED — SOL_LONG 70-80% edge (62% WR, +$20.88, n=208) restored in agent context. btc_buy_bb_golden_v1 gate=20%->50%. Morning contradiction (Insight 6) removed. BTC_BUY_BB now flagged as ELITE edge in live_edge_data.",
       "current_window": {
-        "window": "night_00_06_UTC",
+        "window": "early_morning_00_06_UTC",
         "wr": 0.19,
         "status": "BLOCKED — night_session_block_v1 gate=100%",
-        "next_window": "morning_06_12_UTC — opens in ~6h (68% WR, BEST window). Bot offline.",
-        "ev_remaining_usd": 0.0
+        "next_window": "morning_06_12_UTC — opens in ~5.5h (68% WR, BEST window). Bot offline.",
+        "ev_remaining_june20_morning_usd": 8.4
       }
     },
     "daily_synthesis": {
-      "date": "2026-06-19",
-      "day_complete": true,
-      "anomalies_found": 14,
+      "date": "2026-06-20",
+      "day_complete": false,
+      "time_of_run": "00:30 UTC",
+      "anomalies_found": 5,
       "today_trades": 0,
       "today_pnl": 0.0,
-      "ev_missed_today_usd": 6.98,
+      "ev_missed_today_usd": 0.37,
       "report_generated": true,
-      "new_anomaly_run89": "HYPE_SHORT_RR_ASYMMETRY — dollar asymmetry root cause identified (R:R≈0.88). INSIGHT_CONTRADICTION_RESOLVED — 7 insights archived.",
-      "all_high_edge_windows_today": "MISSED (morning 68%, afternoon 62%, evening 65%)"
+      "report_file": "sessions/daily_synthesis_2026-06-20.json",
+      "key_anomalies": [
+        "INSIGHT_STALENESS (HIGH_FIXED): Insight 5/6 invalidated this run",
+        "BOT_OFFLINE_EXTENDED (CRITICAL): Day 64, morning window in 5.5h",
+        "TRAILING_STOP_LOCK (HIGH): Day 6 pending, $3,759/100d",
+        "GRADUATED_RULES_TRACKING (MEDIUM): regime field empty in CSV",
+        "FEEDBACK_STATE_FILES (MEDIUM): 5/7 missing"
+      ]
     },
     "model_optimization": {
       "status": "SKIPPED — cost_tracker.json absent (bot offline)",
@@ -90,69 +104,62 @@
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot offline Day 64.0. $433.54 EV accrued. Morning window June 20 (68% WR) opens in ~6h at 06:00 UTC.",
+      "finding": "Bot offline Day 64.0. $434.03 EV accrued. Morning window June 20 (68-71% WR) opens in ~5.5h at 06:00 UTC. This is the highest-WR trading window of the day.",
       "action": "P0: cd bot && python run.py paper — START BEFORE 06:00 UTC JUNE 20"
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "TRAILING_STOP_LOCK: Day 5 pending. $3,759/100d foregone. Code location: position_manager.py:1244. TRAILING_MIN_LOCK_PCT=0.70 env var.",
+      "finding": "TRAILING_STOP_LOCK: Day 6 pending. $3,759/100d foregone EV. Code location: position_manager.py:1244. Add TRAILING_MIN_LOCK_PCT=0.70 env var.",
       "action": "Human code implementation required. Add env var TRAILING_MIN_LOCK_PCT=0.70, implement min-lock logic at position_manager.py:1244.",
       "expected_impact_usd": 3759
     },
     {
       "subsystem": "auto_fix",
-      "severity": "HIGH",
-      "finding": "INSIGHT_CONTRADICTION_ARCHIVE_V1 applied. 7 contradictory size-leverage insights invalidated. Canonical size rule added (conf=0.92, n=589). Active insights: 9 of 20.",
-      "action": "DONE this run. Monitor Risk Agent sizing quality on restart.",
+      "severity": "HIGH_RESOLVED",
+      "finding": "INSIGHT_LONG_BIAS_INVALIDATION_V1 applied. Insight 5 (LONG bias stale) and Insight 6 (morning weakness contradiction) invalidated. SOL_LONG 70-80% edge (62% WR, +$20.88 avg) unblocked from agent suppression. Morning edge coherence restored.",
+      "action": "DONE this run. Monitor SOL_LONG signal frequency post-restart.",
       "applied": true,
       "gate_percentage": 20
     },
     {
+      "subsystem": "auto_fix",
+      "severity": "HIGH_RESOLVED",
+      "finding": "BTC_BUY_BB_GATE_PROMOTION_V1 applied. btc_buy_bb_golden_v1 promoted gate=20%->50% (conf=0.91, 69% WR, n=2172). Graduation criterion met.",
+      "action": "DONE this run. Monitor BTC BUY+BB signal pass-through rate post-restart.",
+      "applied": true,
+      "gate_percentage": 50
+    },
+    {
       "subsystem": "execution_forensics",
       "severity": "MEDIUM",
-      "finding": "NEW Run89: HYPE_SHORT R:R asymmetry root cause — wins avg ~+$460 vs losses avg ~-$520 (R:R≈0.88, 48% WR = EV negative). Escalating to 100% gate blocks top-5 wins. Prefer TRAILING_STOP_LOCK fix first.",
-      "action": "Implement TRAILING_STOP_LOCK. Re-evaluate HYPE_SHORT gate escalation after R:R improves."
+      "finding": "NEW_RUN90: graduated_rules.py EXISTS at bot/llm/graduated_rules.py. times_correct=0 bug is regime-field-empty in CSV records causing fallback match failure, NOT a missing file. Veto rules times_correct=0 is by design.",
+      "action": "Add CSV_REGIME_FIELD_FIX: populate llm_regime in CSV logger at trade close, OR pass fired_rule_ids from evaluate_signal() to record_outcome()."
     },
     {
       "subsystem": "auto_fix",
       "severity": "MEDIUM",
-      "finding": "BTC_LONG_VETO_WATCH: confidence 72%, Watch Run 1 of 2. Apply gate=80% in Run 90 if confidence reaches 75% or 10d/100d conflict resolves.",
-      "action": "Monitor. Apply in Run 90 if conditions met."
-    },
-    {
-      "subsystem": "auto_fix",
-      "severity": "MEDIUM",
-      "finding": "TP1_CUMULATIVE_PNL_INSTRUMENTATION: Day 3 pending. Fix feedback loop underestimation of $61/trade at trailing close.",
-      "action": "Human code implementation required.",
-      "applied": false
+      "finding": "BTC_LONG_VETO Watch Cycle CLOSED. Confidence 72% never reached 75% threshold over 2 watch runs. btc_long_veto_v1 stays at gate=80%. 10d counter-evidence unresolved. No further auto-escalation.",
+      "action": "Accept gate=80% as final state. Escalate to gate=100% only if post-restart live BTC_LONG WR < 30% on n>=30 trades."
     }
   ],
   "run_summary": {
-    "run_number": 89,
-    "fixes_applied_this_run": 1,
+    "run_number": 90,
+    "fixes_applied_this_run": 2,
     "subsystems_executed": 5,
     "subsystems_skipped": 1,
     "skipped": "model_optimization (cost_tracker.json absent)",
-    "key_status": "Day 64.0. $433.54 EV accrued. STREAK 11. 1 fix applied. June 19 complete.",
-    "most_impactful_pending": "TRAILING_STOP_LOCK — $3,759. position_manager.py:1244. Day 5.",
-    "most_important_new_finding": "HYPE_SHORT R:R asymmetry (R:R≈0.88). Wins avg ~+$460, losses avg ~-$520. Don't escalate to 100% gate — TRAILING_STOP_LOCK addresses root cause.",
-    "fix_applied_this_run": "INSIGHT_CONTRADICTION_ARCHIVE_V1 — 7 contradictory size insights archived, canonical rule added. Agent reasoning on sizing now coherent.",
-    "cadence_streak": 11,
-    "total_graduated_rules": 118,
-    "active_rules_count": 19,
-    "btc_long_veto_watch": "confidence 72% — Watch Run 1 of 2. Final decision in Run 90.",
-    "june20_morning_alert": "Morning window (68% WR) opens in ~6h at 06:00 UTC June 20. HIGHEST PRIORITY ACTION."
+    "key_status": "Day 64.0. $434.03 EV accrued. STREAK 12. 2 fixes applied. June 20 early morning.",
+    "most_impactful_pending": "TRAILING_STOP_LOCK — $3,759. position_manager.py:1244. Day 6.",
+    "most_important_new_finding": "graduated_rules.py EXISTS — prior audit was wrong. times_correct=0 for regime rules caused by llm_regime='' in CSV records. Separate actionable fix (CSV_REGIME_FIELD_FIX) added to pending list.",
+    "fixes_applied_this_run_summary": "(1) INSIGHT_LONG_BIAS_INVALIDATION_V1 — Insight 5+6 invalidated, SOL_LONG edge unblocked; (2) BTC_BUY_BB_GATE_PROMOTION_V1 — gate 20%->50% on 69% WR n=2172 evidence.",
+    "watch_cycle_closed": "BTC_LONG_VETO Watch Run 2/2 CLOSED — 72% < 75%, no escalation, stays gate=80%.",
+    "cadence_streak": 12,
+    "total_graduated_rules": 25,
+    "active_rules_count": 18,
+    "active_insights_count": 7,
+    "june20_morning_alert": "Morning window (68-71% WR) opens in ~5.5h at 06:00 UTC June 20. CRITICAL: Bot offline."
   },
-  "loop_cadence_history": [
-    {"run": 83, "gap_h": 1.92, "note": "STREAK 6. 0 fixes"},
-    {"run": 84, "gap_h": 2.0, "note": "STREAK 7. 1 fix: high_conf_80_85_penalty_v1 gate 20->50%"},
-    {"run": 85, "gap_h": 2.17, "note": "STREAK 8. 0 fixes. NEW: TP1_CUMULATIVE_PNL."},
-    {"run": 86, "gap_h": 1.95, "note": "STREAK 9. 0 fixes. NEW: trailing WR=64% framing fix, contradiction triplet, BTC_LONG veto rec."},
-    {"run": 87, "gap_h": 2.0, "note": "STREAK 10. 1 fix: META_LEARNING_CONFLICT_DETECTION_V1 gate=20%. Evening window CLOSED."},
-    {"run": 88, "gap_h": 1.0, "note": "STREAK 11 (prior session). btc_long_veto_v1 gate=80% applied per commit cfd142c."},
-    {"run": 89, "gap_h": 1.9, "note": "STREAK 11. 1 fix: INSIGHT_CONTRADICTION_ARCHIVE_V1 gate=20%. June 19 complete. HYPE_SHORT R:R asymmetry identified."}
-  ],
   "pending_human_implementations": [
     {
       "id": "TRAILING_STOP_LOCK",
@@ -162,14 +169,30 @@
       "env_var": "TRAILING_MIN_LOCK_PCT=0.70",
       "expected_impact": "+$3,759/100d",
       "confidence": 0.88,
-      "days_pending": 5
+      "days_pending": 6
     },
     {
       "id": "TP1_CUMULATIVE_PNL_INSTRUMENTATION",
       "file": "bot/core/multi_strategy_main.py + position object",
       "description": "Accumulate partial P&L at TP1 hit, pass total to record_outcome() at trailing close. Fixes $61/trade feedback underestimation.",
       "confidence": 0.90,
-      "days_pending": 3
+      "days_pending": 4
+    },
+    {
+      "id": "CSV_REGIME_FIELD_FIX",
+      "file": "bot/data/storage/csv_logger.py (or equivalent)",
+      "description": "Populate llm_regime field in CSV at trade close time. Alternatively: propagate fired_rule_ids from evaluate_signal() to record_outcome() call in feedback/loop.py:309.",
+      "confidence": 0.85,
+      "days_pending": 0,
+      "priority": "MEDIUM",
+      "expected_impact": "Restores times_correct tracking for 4 regime-conditioned graduated rules"
     }
+  ],
+  "loop_cadence_history": [
+    {"run": 86, "gap_h": 1.95, "note": "STREAK 9. 0 fixes."},
+    {"run": 87, "gap_h": 2.0, "note": "STREAK 10. 1 fix: META_LEARNING_CONFLICT_DETECTION_V1."},
+    {"run": 88, "gap_h": 1.0, "note": "STREAK 11. btc_long_veto_v1 gate=80% applied."},
+    {"run": 89, "gap_h": 1.9, "note": "STREAK 11. 1 fix: INSIGHT_CONTRADICTION_ARCHIVE_V1. 7 size insights archived."},
+    {"run": 90, "gap_h": 0.38, "note": "STREAK 12. 2 fixes: INSIGHT_LONG_BIAS_INVALIDATION_V1 + BTC_BUY_BB_GATE_PROMOTION. BTC_LONG_VETO watch CLOSED."}
   ]
 }
