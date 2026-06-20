@@ -1,66 +1,117 @@
 {
-  "last_updated": "2026-06-20T17:03:35Z",
-  "run_number": 99,
-  "data_source": "10d_v3 backtest (n=32), 20d (n=111), 60d (n=802), 100d (n=589), adaptive_risk_state.json (n=125) — bot offline Day 65.58",
-  "high_edges_found": 4,
+  "last_updated": "2026-06-20T18:30:00Z",
+  "run_number": 101,
+  "data_source": "10d_v3 backtest (n=32), 20d (n=111), 60d (n=802), 100d (n=589), adaptive_risk_state.json (n=125) -- bot offline Day 66.17",
+  "high_edges_found": 5,
   "weak_setups_found": 5,
+  "run101_changes": {
+    "sol_long_veto_DEACTIVATED": "sol_long_veto_v1 deactivated. SOL LONG now fully enabled with +5pt boost probe.",
+    "btc_long_veto_DEACTIVATED": "btc_long_veto_v1 deactivated. BTC LONG now governed by btc_buy_bb_golden_v1 (gate=50) and btc_trend_long_counter_v1 (gate=50) only.",
+    "sol_long_probe_boost_ADDED": "sol_long_probe_boost_v1 added gate=50 +5pts. SOL LONG transitions from blocked to actively reinforced."
+  },
   "win_rates_by_symbol": {
-    "BTC_LONG": {"10d_wr": 0.47, "20d_wr": 0.57, "60d_wr": 0.58, "100d_wr": 0.32, "10d_n": 8, "net_pnl_10d": -720.94, "verdict": "MIXED — gated at 80% confidence."},
-    "BTC_SHORT": {"10d_wr": 0.2, "20d_wr": 0.8, "60d_wr": 0.48, "100d_wr": 0.46, "10d_n": 5, "net_pnl_10d": -979.0, "verdict": "10d CATASTROPHIC but 20d STRONGEST edge (80% WR). Regime-dependent."},
-    "HYPE_LONG": {"10d_wr": 0.33, "net_pnl_10d": -215.73, "10d_n": 3, "verdict": "VETOED gate=100%."},
-    "HYPE_SHORT": {"10d_wr": 0.33, "net_pnl_10d": -215.73, "10d_n": 3, "verdict": "VETOED gate=100%."},
-    "SOL_LONG": {"10d_wr": 1.0, "20d_wr": 0.73, "60d_wr": 0.5, "100d_wr": 0.24, "10d_n": 8, "net_pnl_10d": 1895.0, "verdict": "10d PERFECT (100% WR +$1895) — PROBE MODE gate=20 (Run 98)."},
-    "SOL_SHORT": {"10d_wr": 0.17, "20d_wr": 0.62, "60d_wr": 0.63, "100d_wr": 0.35, "10d_n": 6, "net_pnl_10d": -1125.0, "verdict": "10d CATASTROPHIC (17% WR). SHORT veto added Run 98."}
+    "BTC_LONG": {
+      "10d_wr": 0.571, "20d_wr": 0.571, "60d_wr": 0.58, "100d_wr": 0.32,
+      "10d_n": 7, "20d_n": 14, "net_pnl_10d": 257, "net_pnl_20d": 231,
+      "verdict": "UNBLOCKED Run101: btc_long_veto_v1 deactivated. 57.1% WR in both 10d AND 20d. btc_buy_bb_golden_v1+btc_trend_long_counter_v1 remain as targeted guards.",
+      "rule_change": "btc_long_veto_v1 -> INACTIVE"
+    },
+    "BTC_SHORT": {
+      "10d_wr": 0.2, "20d_wr": 0.8, "60d_wr": 0.48, "100d_wr": 0.46,
+      "10d_n": 5, "net_pnl_10d": -978,
+      "verdict": "GATED: short_direction_veto_v1 gate=20 (Run100). 10d catastrophic. 20d strong but conflicting window sizes."
+    },
+    "HYPE_LONG": {
+      "10d_wr": 0.333, "net_pnl_10d": -215, "10d_n": 3,
+      "verdict": "VETOED gate=100%. hype_long_veto_v1 correct."
+    },
+    "HYPE_SHORT": {
+      "10d_wr": 0.333, "net_pnl_10d": -215, "10d_n": 3,
+      "verdict": "VETOED gate=100%. hype_short_veto_v1 correct."
+    },
+    "SOL_LONG": {
+      "10d_wr": 1.0, "20d_wr": 0.731, "60d_wr": 0.5, "100d_wr": 0.24,
+      "10d_n": 8, "20d_n": 26, "net_pnl_10d": 1895, "net_pnl_20d": 2486,
+      "verdict": "FULLY UNBLOCKED Run101: sol_long_veto_v1 DEACTIVATED. sol_long_probe_boost_v1 ADDED +5pts gate=50. BEST CURRENT SETUP.",
+      "rule_change": "sol_long_veto_v1 -> INACTIVE; sol_long_probe_boost_v1 -> ACTIVE gate=50"
+    },
+    "SOL_SHORT": {
+      "10d_wr": 0.167, "20d_wr": 0.615, "60d_wr": 0.63, "100d_wr": 0.35,
+      "10d_n": 6, "net_pnl_10d": -1125,
+      "verdict": "GATED: short_direction_veto_v1 gate=20. 10d catastrophic (17% WR). Avoid until regime stabilizes."
+    }
   },
   "win_rates_by_regime": {
-    "trending": {"wr": 0.519, "n": 52, "dataset": "adaptive_risk_state (100d)", "verdict": "CORE EDGE — preserve"},
+    "trending": {"wr": 0.519, "n": 52, "dataset": "adaptive_risk_state (100d)", "verdict": "CORE EDGE -- preserve"},
     "illiquid": {"wr": 0.281, "n": 57, "dataset": "adaptive_risk_state (100d)", "verdict": "GATED: NOISE_STOP_WIDEN"},
     "ranging": {"wr": 0.25, "n": 16, "dataset": "adaptive_risk_state (100d)", "verdict": "GATED: NOISE_REGIME_FAST_EXIT"}
   },
   "win_rates_by_confidence_bin": {
-    "60-70": {"10d_wr": 0.14, "10d_n": 7, "net_pnl_10d": -920.45, "verdict": "WORST BIN — gate=100 active."},
-    "70-80": {"10d_wr": 0.58, "10d_n": 12, "net_pnl_10d": -608.9, "verdict": "Positive WR but SHORT drag."},
-    "80-90": {"10d_wr": 0.67, "10d_n": 12, "net_pnl_10d": 1535.16, "100d_wr": 0.40, "100d_n": 120, "verdict": "10d PROFITABLE but 100d PARADOX: 40% WR, 53.3% SL rate."},
-    "90+": {"10d_wr": 0.0, "10d_n": 1, "net_pnl_10d": -172.99, "verdict": "n=1 not actionable."}
+    "60-70": {
+      "10d_wr": 0.14, "10d_n": 7, "net_pnl_10d": -920,
+      "verdict": "WORST BIN: gate=100 active."
+    },
+    "70-80": {
+      "10d_wr": 0.583, "10d_n": 12, "net_pnl_10d": -609,
+      "verdict": "Positive WR but SHORT drag lowers net PnL. MONITOR."
+    },
+    "80-85": {
+      "100d_wr": 0.361, "100d_n": 36, "avg_pnl_100d": -52.16,
+      "10d_wr": 0.667, "10d_n": "est 6",
+      "verdict": "CONFLICTED: 100d negative (penalty active gate=50), 10d positive. Penalty suspended evaluation pending n>=20 live trades."
+    },
+    "85-90": {
+      "100d_wr": 0.40, "100d_n": 120, "avg_pnl_100d": -33.04, "sl_rate": 0.533,
+      "verdict": "PENALIZED: confidence_paradox_sizing_v1 gate=20 -5pts. Worst performing high-confidence bin."
+    },
+    "90+": {
+      "10d_wr": 0.0, "10d_n": 1,
+      "verdict": "n=1 not actionable."
+    }
   },
   "win_rates_by_time_of_day_6h_utc": {
-    "00-06": {"wr": 0.15, "n": 13, "verdict": "WEAK — gated gate=100% NIGHT_session_pause."},
-    "06-12": {"wr": 0.695, "n": 20, "verdict": "HIGH EDGE — TOD_morning_edge A/B gate=50 active."},
-    "12-18": {"wr": 0.27, "n": 15, "verdict": "WEAK — AFTERNOON gate=0."},
-    "18-24": {"wr": 0.29, "n": 14, "verdict": "WEAK — EVENING_session_boost WRONG direction. Structural error."}
+    "00-06": {"wr": 0.15, "n": 13, "verdict": "BLOCKED gate=100% night_session_block_v1."},
+    "06-12": {"wr": 0.695, "n": 20, "verdict": "HIGH EDGE 69.5% WR. tod_morning_edge_v1 DEACTIVATED (conflicting evidence). Human: re-evaluate post-restart."},
+    "12-18": {"wr": 0.27, "n": 15, "verdict": "WEAK 27% WR. No active rule (tod_afternoon deactivated on invalidated data)."},
+    "18-24": {"wr": 0.29, "n": 14, "verdict": "WEAK 29% WR. tod_evening deactivated (invalidated data)."}
   },
   "high_edges": [
-    {"setup": "SOL_LONG_10d", "wr": 1.0, "count": 8, "net_pnl": 1895.0, "gate_pct": 20, "status": "PROBE_MODE_ACTIVE — RUN 98 FIX", "run99_status": "gate=20 probe. +$237/trade. Unaffected by payoff issue."},
-    {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "count": 2172, "gate_pct": 80, "status": "ACTIVE", "run99_status": "gate=80. Need TP1 check given payoff_ratio=0.91."},
-    {"setup": "MORNING_06_12_UTC", "wr": 0.695, "count": 20, "gate_pct": 50, "status": "A/B_ACTIVE (TOD_morning_edge gate=50)"},
-    {"setup": "BTC_SHORT_20d", "wr": 0.8, "count": null, "gate_pct": "partial", "status": "PARTIAL — short_direction_veto_v1 probe gate=20."}
+    {
+      "setup": "SOL_LONG_10d+20d",
+      "10d_wr": 1.0, "20d_wr": 0.731, "combined_n": 34,
+      "net_pnl_10d": 1895, "net_pnl_20d": 2486,
+      "status": "FULLY_UNBLOCKED Run101 -- veto deactivated, probe boost added gate=50",
+      "run101_action": "sol_long_veto_v1 DEACTIVATED, sol_long_probe_boost_v1 ADDED"
+    },
+    {
+      "setup": "BTC_LONG_10d+20d",
+      "10d_wr": 0.571, "20d_wr": 0.571, "combined_n": 21,
+      "net_pnl_10d": 257, "net_pnl_20d": 231,
+      "status": "UNBLOCKED Run101 -- general veto removed, BB+counter rules remain",
+      "run101_action": "btc_long_veto_v1 DEACTIVATED"
+    },
+    {
+      "setup": "BTC_BUY_BB_golden",
+      "wr": 0.69, "count": 2172, "gate_pct": 50,
+      "status": "ACTIVE gate=50 -- now primary BTC LONG gating with veto removed"
+    },
+    {
+      "setup": "MORNING_06_12_UTC",
+      "wr": 0.695, "count": 20,
+      "status": "DEACTIVATED (tod_morning_edge_v1 conflicting evidence). Monitor post-restart."
+    },
+    {
+      "setup": "BTC_SHORT_20d",
+      "wr": 0.8, "count": 15, "net_pnl_20d": 2412,
+      "status": "PARTIAL -- short_direction_veto_v1 gate=20 probe. Only 20% SHORT trades pass through."
+    }
   ],
   "weak_setups": [
-    {"setup": "SHORT_all_symbols", "wr": 0.18, "n": 11, "net_pnl": -2104.09, "status": "VETO_PROBE gate=20 (Run 98)"},
-    {"setup": "CONF_60_70_ALL", "wr": 0.14, "n": 7, "net_pnl": -920.45, "status": "GATED_CORRECT gate=100"},
-    {"setup": "EVENING_18_24_UTC", "wr": 0.29, "n": 14, "status": "WRONG_DIRECTION_BOOST gate=20 — structural error"},
-    {"setup": "HYPE_all_directions", "wr": 0.33, "n": 6, "net_pnl": -215.73, "status": "VETOED_CORRECT gate=100"},
-    {"setup": "HIGH_CONF_80_90_overextended", "wr": 0.4, "n": 120, "avg_pnl": -33.04, "sl_rate": 0.533, "status": "NEW WEAK SETUP — confidence paradox n=589", "note": "CONF_SIZING_tiered_leverage may worsen this. Use TIGHTER entries, not LARGER sizes."}
+    {"setup": "SHORT_all_symbols", "10d_wr": 0.18, "n": 11, "net_pnl": -2104, "status": "VETO_PROBE gate=20 (Run100)"},
+    {"setup": "CONF_60_70_ALL", "10d_wr": 0.14, "n": 7, "net_pnl": -920, "status": "GATED_CORRECT gate=100"},
+    {"setup": "EVENING_18_24_UTC", "wr": 0.29, "n": 14, "status": "DEACTIVATED on invalidated data"},
+    {"setup": "HYPE_all_directions", "wr": 0.33, "n": 6, "net_pnl": -215, "status": "VETOED_CORRECT gate=100"},
+    {"setup": "HIGH_CONF_85_90_paradox", "wr": 0.40, "n": 120, "avg_pnl": -33.04, "sl_rate": 0.533, "status": "PENALIZED: confidence_paradox_sizing_v1 gate=20"}
   ],
-  "confidence_paradox_new_finding": {
-    "finding": "CONFIDENCE INVERSION confirmed at n=589 (first statistical significance)",
-    "data_source": "100d backtest n=589",
-    "bins": {
-      "60-70%": {"wr": 0.486, "n": 111, "avg_pnl": -7.15, "sl_rate": 0.423, "verdict": "GATED correctly"},
-      "70-80%": {"wr": 0.452, "n": 321, "avg_pnl": -8.54, "sl_rate": 0.433, "verdict": "ACTIVE — best volume"},
-      "80-90%": {"wr": 0.4, "n": 120, "avg_pnl": -33.04, "sl_rate": 0.533, "verdict": "PROBLEM — SL-dominant"},
-      "90%+": {"wr": 0.405, "n": 37, "avg_pnl": -18.23, "sl_rate": 0.514, "verdict": "SMALL N but confirms"}
-    },
-    "implication": "High-confidence signals should use TIGHTER entries, not larger size",
-    "action_proposed": "Reduce leverage at 80-90% conf to 0.8x until calibration fixed.",
-    "contradicts_rule": "CONF_SIZING_tiered_leverage (gate=20) which INCREASES leverage at high conf",
-    "priority": "P1"
-  },
-  "payoff_ratio_analysis": {
-    "system_payoff_ratio": 0.91, "breakeven_wr_needed": 0.525, "actual_wr": 0.445,
-    "fix_rule": "PAYOFF_RATIO_TP1_BOOST gate=20 added Run 99",
-    "trailing_stop_verdict": "NEAR_BREAKEVEN — avg -$0.34/trade, 47.7% WR (100d). Better than SL path."
-  },
-  "run98_update": "2 auto-fixes applied (SOL_LONG probe gate=20, short_direction_veto gate=20). Bot still offline.",
-  "run99_update": "Payoff ratio 0.91 confirmed at n=589. Confidence paradox confirmed. PAYOFF_RATIO_TP1_BOOST rule added (gate=20%)."
+  "key_insight_run101": "REGIME SHIFT NOW ACTION-ABLE: Two inverted veto rules (blocking 100% and 57% WR setups) have been DEACTIVATED. The bot's rule base now correctly reflects post-May-2026 regime: LONG direction is the edge, SHORT direction is the risk. When bot restarts, the first SOL LONG signal will be eligible to trade for the first time in months."
 }

@@ -1,48 +1,132 @@
 {
-  "last_run": "2026-06-20T17:03:35Z",
-  "run_number": 99,
+  "last_run": "2026-06-20T18:30:00Z",
+  "run_number": 101,
   "date": "2026-06-20",
-  "bot_status": "OFFLINE — Day 65.83",
+  "bot_status": "OFFLINE -- Day 66.17",
   "today_trades": 0,
   "today_pnl": 0.0,
-  "morning_window_status": "CLOSED at 12:00 UTC — MISSED (bot offline Day 65.67). Est. missed EV: $127-190.",
-  "anomaly_checks": {
-    "consecutive_losses_gt5": {"result": false, "value": 0, "note": "N/A — bot offline Day 65.83"},
-    "wr_swing_gt20pct": {"result": true, "value": 21.3, "note": "20d WR=65.8% vs 100d=44.5% = 21.3% swing. Regime shift confirmed.", "severity": "INFORMATIONAL"},
-    "leverage_gt7x_sustained": {"result": false, "value": 0, "note": "N/A — bot offline"},
-    "time_of_day_dominance_gt70pct": {"result": true, "value": 69.5, "note": "Morning window (06-12 UTC) at 69.5% WR (n=20). Below 70% threshold but close."},
-    "payoff_ratio_lt1": {"result": true, "value": 0.91, "threshold": 1.0, "severity": "CRITICAL", "note": "System payoff ratio 0.91 on n=589 trades. Structural problem."}
+  "morning_window_status": "CLOSED at 12:00 UTC -- MISSED (bot offline Day 66.00). tod_morning_edge_v1 deactivated (conflicted evidence). Est. missed EV if live: $127-190.",
+  "run101_actions_taken": {
+    "sol_long_veto_deactivated": true,
+    "btc_long_veto_deactivated": true,
+    "sol_long_probe_boost_added": true,
+    "expected_daily_ev_when_live": "+$132/day (SOL LONG $124 + BTC LONG $8)"
   },
-  "anomalies_found": 10,
+  "anomaly_checks": {
+    "consecutive_losses_gt5": {"result": false, "value": 0, "note": "N/A -- bot offline Day 66.17"},
+    "wr_swing_gt20pct": {
+      "result": true, "value": 21.3,
+      "note": "20d WR=65.8% vs 100d=44.5% = 21.3% swing. Regime shift CONFIRMED and now ACTION-ABLE (veto rules updated).",
+      "severity": "INFORMATIONAL -- RESOLVED by Run101 rule changes"
+    },
+    "leverage_gt7x_sustained": {"result": false, "value": 0, "note": "N/A -- bot offline"},
+    "time_of_day_dominance_gt70pct": {
+      "result": true, "value": 69.5,
+      "note": "Morning window (06-12 UTC) at 69.5% WR (n=20). Below 70% threshold. tod_morning_edge_v1 deactivated on conflicting evidence. MONITOR post-restart."
+    },
+    "payoff_ratio_lt1": {
+      "result": true, "value": 0.91, "threshold": 1.0,
+      "severity": "CRITICAL",
+      "note": "System payoff ratio 0.91 on n=589 trades. TP1_MULTIPLIER=1.07 fix still pending (code change required)."
+    },
+    "inverted_veto_rules": {
+      "result": false,
+      "note": "RESOLVED Run101: sol_long_veto_v1 and btc_long_veto_v1 both DEACTIVATED. No more inverted vetoes on LONG direction."
+    }
+  },
+  "anomalies_found": 9,
+  "anomalies_resolved_this_run": 1,
   "anomalies": [
-    {"type": "BOT_OFFLINE_DAY65", "severity": "P0", "days_active": 65, "detail": "Bot OFFLINE Day 65.83. No live trades.", "action": "cd bot && python run.py paper"},
-    {"type": "VETO_RULE_INVERTED_SOL_LONG", "severity": "P0", "days_active": 3, "detail": "SOL_LONG_hard_block blocked SOL LONG 100% WR (8/8) +$1895.", "action": "APPLIED RUN 98: gate 100->20 probe."},
-    {"type": "SHORT_DIRECTION_UNPROTECTED", "severity": "P0", "days_active": 10, "detail": "SHORT 18% WR (2/11), -$2,104 net. SL losses 2.65x LONG.", "action": "APPLIED RUN 98: short_direction_veto_v1 gate=20."},
-    {"type": "CSV_REGIME_BLANK", "severity": "P2", "days_active": 6, "detail": "llm_regime blank in all CSV records. times_correct=0 across 25 rules.", "action": "CODE FIX PENDING."},
-    {"type": "FEEDBACK_PERSISTENCE_GAP", "severity": "P2", "days_active": 15, "detail": "5/7 feedback state files missing. Learning lost on restart.", "action": "CODE FIX PENDING."},
-    {"type": "MORNING_WINDOW_MISSED_DAY65", "severity": "P1", "days_active": 65, "detail": "tod_morning_edge_v1 deactivated. 69.5% WR (n=20). ~$127-190 EV missed/day.", "action": "Human: reactivate at gate=50%."},
-    {"type": "WR_REGIME_SWING", "severity": "INFO", "detail": "20d WR=65.8% vs 100d=44.5% = 21.3% swing. Regime shift.", "action": "Weight toward 20d data."},
-    {"type": "PAYOFF_RATIO_STRUCTURAL", "severity": "P0_NEW", "days_active": 1, "detail": "Payoff ratio = 0.91 (losses 10% > wins). Breakeven WR=52.5% vs actual 44.5%. -$1,383/100 trades. MATHEMATICAL ROOT CAUSE.", "action": "CODE: TP1_MULTIPLIER=1.07 in trading_config.py. RULE: PAYOFF_RATIO_TP1_BOOST gate=20%.", "data_source": "100d n=589"},
-    {"type": "CONFIDENCE_PARADOX_CONFIRMED", "severity": "P1_NEW", "days_active": 1, "detail": "80-90% conf bin: 40% WR, 53.3% SL rate, avg -$33/trade on n=120. Higher confidence = worse outcomes.", "action": "INVESTIGATE overextended entries. Reduce size at 80-90% conf.", "data_source": "100d n=589"},
-    {"type": "HOLD_TIME_TRACKING_BROKEN", "severity": "P2_NEW", "days_active": 1, "detail": "duration_h = 0 across all 589 backtest trades. HoldTimeRuleManager 3.0h rule unvalidatable.", "action": "CODE: Fix duration_h = (close_ts - open_ts) / 3600.", "data_source": "100d n=589"}
+    {
+      "type": "BOT_OFFLINE_DAY66",
+      "severity": "P0",
+      "days_active": 66,
+      "detail": "Bot OFFLINE Day 66.17. No live trades.",
+      "action": "cd bot && python run.py paper",
+      "status": "UNRESOLVED"
+    },
+    {
+      "type": "VETO_RULE_INVERTED_SOL_LONG",
+      "severity": "P0",
+      "days_active": 3,
+      "detail": "RESOLVED Run101: sol_long_veto_v1 DEACTIVATED. SOL LONG now unblocked with +5pt probe boost.",
+      "action": "COMPLETED: sol_long_veto_v1 active=false, sol_long_probe_boost_v1 added gate=50.",
+      "status": "RESOLVED"
+    },
+    {
+      "type": "VETO_RULE_INVERTED_BTC_LONG",
+      "severity": "P0",
+      "days_active": 1,
+      "detail": "RESOLVED Run101: btc_long_veto_v1 DEACTIVATED. BTC LONG now governed by BB+counter rules only.",
+      "action": "COMPLETED: btc_long_veto_v1 active=false. btc_buy_bb_golden_v1 and btc_trend_long_counter_v1 remain.",
+      "status": "RESOLVED"
+    },
+    {
+      "type": "SHORT_DIRECTION_UNPROTECTED",
+      "severity": "P0",
+      "days_active": 10,
+      "detail": "SHORT 18% WR (2/11), -$2,104 net. SL losses 2.65x LONG.",
+      "action": "APPLIED Run100: short_direction_veto_v1 gate=20.",
+      "status": "GATED"
+    },
+    {
+      "type": "CSV_REGIME_BLANK",
+      "severity": "P2",
+      "days_active": 7,
+      "detail": "llm_regime blank in all CSV records. times_correct=0 across 25 rules.",
+      "action": "CODE FIX PENDING.",
+      "status": "UNRESOLVED"
+    },
+    {
+      "type": "FEEDBACK_PERSISTENCE_GAP",
+      "severity": "P2",
+      "days_active": 16,
+      "detail": "5/7 feedback state files missing. Learning lost on restart.",
+      "action": "CODE FIX PENDING: self._save() calls needed.",
+      "status": "UNRESOLVED"
+    },
+    {
+      "type": "MORNING_WINDOW_MISSED_DAY66",
+      "severity": "P1",
+      "days_active": 66,
+      "detail": "tod_morning_edge_v1 deactivated (conflicting evidence). 69.5% WR (n=20) not captured.",
+      "action": "Monitor post-restart. Re-evaluate at n>=20 live morning trades.",
+      "status": "UNRESOLVED"
+    },
+    {
+      "type": "PAYOFF_RATIO_STRUCTURAL",
+      "severity": "P0",
+      "days_active": 2,
+      "detail": "Payoff ratio = 0.91 (losses 10% > wins). Breakeven WR=52.5% vs actual 44.5%. -$1,383/100 trades.",
+      "action": "CODE: TP1_MULTIPLIER=1.07 in bot/trading_config.py. Human action required.",
+      "data_source": "100d n=589",
+      "status": "UNRESOLVED"
+    },
+    {
+      "type": "HOLD_TIME_TRACKING_BROKEN",
+      "severity": "P2",
+      "days_active": 2,
+      "detail": "duration_h = 0 across all 589 backtest trades. HoldTimeRuleManager 3.0h rule unvalidatable.",
+      "action": "CODE: Fix duration_h = (close_ts - open_ts) / 3600.",
+      "status": "UNRESOLVED"
+    }
   ],
   "report_generated": true,
-  "fixes_applied_this_run": 2,
-  "priority_actions_run99": [
-    {"priority": "P0", "action": "START BOT — cd bot && python run.py paper", "estimated_daily_ev": "+$127-190"},
-    {"priority": "P0", "action": "Implement TP1_MULTIPLIER=1.07 in trading_config.py", "expected_impact": "payoff_ratio 0.91→1.05"},
-    {"priority": "P1", "action": "Investigate confidence paradox: WHY does 80-90% conf hit SL at 53.3% rate?"},
-    {"priority": "P1", "action": "Fix feedback persistence: 5/7 subsystems lose data on restart"},
+  "fixes_applied_this_run": 3,
+  "priority_actions_run101": [
+    {"priority": "P0", "action": "START BOT -- cd bot && python run.py paper", "estimated_daily_ev": "+$132/day (SOL LONG +$124, BTC LONG +$8) with Run101 rules active"},
+    {"priority": "P0", "action": "Implement TP1_MULTIPLIER=1.07 in trading_config.py", "expected_impact": "payoff_ratio 0.91 -> 1.05"},
+    {"priority": "P1", "action": "Fix feedback persistence: 5/7 subsystems lose data on restart", "expected_impact": "Preserve 66+ days of lost calibration"},
     {"priority": "P2", "action": "Fix duration_h tracking in backtest CSV writer"},
-    {"priority": "P2", "action": "Resolve 6 contradictory insight pairs in meta_learning/insights.json"}
+    {"priority": "P2", "action": "Resolve llm_regime blank in CSV exports"}
   ],
   "tomorrow_focus": {
     "date": "2026-06-21",
-    "symbols_to_prioritize": ["SOL_LONG", "BTC_SHORT (20d edge)", "BTC in trending regime"],
-    "regimes_to_prioritize": ["trending (51.9% WR)", "high_volatility (88% gated boost)"],
-    "morning_window": "06:00-12:00 UTC — gate=50% A/B active (TOD_morning_edge). Prioritize.",
-    "avoid": ["HYPE all directions", "night 00-06 UTC", "illiquid regime", "ranging regime"]
+    "symbols_to_prioritize": ["SOL_LONG (fully unblocked +5pt boost)", "BTC_LONG (veto removed)", "BTC in trending regime"],
+    "regimes_to_prioritize": ["trending (51.9% WR)"],
+    "morning_window": "06:00-12:00 UTC -- watch if bot goes live (69.5% historical WR).",
+    "avoid": ["HYPE all directions", "night 00-06 UTC", "illiquid regime", "ranging regime", "ALL SHORT positions unless high confidence and trending regime"]
   },
-  "last_updated": "2026-06-20T17:03:35Z",
-  "learning_loop_run": "Run 99 (perpetual improvement deep-dive)"
+  "last_updated": "2026-06-20T18:30:00Z",
+  "learning_loop_run": "Run 101 (perpetual improvement deep-dive)"
 }
