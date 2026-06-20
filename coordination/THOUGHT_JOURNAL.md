@@ -6,6 +6,22 @@ Conventions: each entry = OBSERVED / REASONED / DECIDED / RULED-OUT / OPEN-QUEST
 
 ---
 
+## 2026-06-20 ~00:26Z — Guillotine fix is INERT (entries deadlocked); override needs a backtest → laptop
+
+**OBSERVED:** Since 23:25Z restart: LLM go=0, skip=3, 0 closes, [EXIT-GUILLOTINE-GUARD] fired 0×. Only open position = the 10h-old green HYPE_LONG (too old for the guard). So the guillotine guard is correct but INERT — no young trades exist to protect because entries aren't opening.
+
+**REASONED:** Two deadlocks, I fixed the exit one; the ENTRY one remains and is structural: go=0 → no new trades → wr_10 can't recover → system_health stays critical → agents skip → go=0. It will NOT self-resolve. The only lever is the forced exploration override (convert a fraction of skips → reduced-size go). It's now SAFE in design (guillotine fixed, so forced entries would actually run). BUT it is a genuine NEW FEATURE that forces trades the LLM declined — and Nunu's hard guardrail is "backtest + adversarial review before adding" ([[backtest-before-adding]]). My autonomy mandate ([[full-autonomy-no-approval]]) explicitly covers validated+reversible+RISK-REDUCING changes; a forced-entry override into a 0/10 bot is risk-ADDING and unvalidated. So shipping it live autonomously would overstep — even under "trade immensely."
+
+**DECIDED:** Do NOT ship the override live this cycle. Route its validation to the LAPTOP (the designated backtest hub, which Nunu is about to access). Wrote a concrete laptop task in the handshake: backtest (a) the guillotine guard and (b) a prototype exploration override to confirm they improve outcomes BEFORE enabling live. If Nunu explicitly says "flip exploration on live now" (overriding his own guardrail — his call), I'll do it conservatively (paper, reduced size, all catastrophic gates, reversible flag).
+
+**RULED-OUT:** YOLO-ing a forced-trading feature live, unbacktested, in an autonomous cycle (violates backtest-before-adding + risk-adding); more agent-prompt surgery (risky, soft); claiming the guillotine fix "worked" (it's inert — intellectually dishonest to call it validated without trades running through it).
+
+**OPEN-QUESTIONS:** When the green HYPE_LONG eventually closes as a WIN, does wr_10 tick up and start lifting health (a slow natural path out)? Does the laptop backtest validate the override? Is there entry edge at all (still unmeasurable)?
+
+**NEXT:** lighter monitoring (ball is on the laptop backtest + Nunu's call); watch for the HYPE_LONG close + any natural entry resumption; implement the override the moment it's backtest-validated OR Nunu green-lights live.
+
+---
+
 ## 2026-06-19 ~23:25Z — SHIPPED the guillotine guard (the real unlock) + retrospective for Nunu
 
 **OBSERVED:** Retrospective (Nunu asked): 48 closes, 5 wins (~10% WR), ≈ −$950. HYPE_LONG 0/6 −$610 (now vetoed); even "edge" shorts losing (ETH_SHORT 1/13, SOL_SHORT 1/7) — only BTC_SHORT net + (+$28). 10% WR across ALL directions = systematic execution failure, not bad direction. Confirmed cause: the discretionary exit layer (_check_llm_exit_suggestions, position_wiring.py:580) guillotines young positions — LLM full_close at :762, applied + continue at :826.

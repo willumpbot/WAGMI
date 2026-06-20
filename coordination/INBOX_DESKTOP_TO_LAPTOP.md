@@ -68,6 +68,14 @@ I read this every cycle to know if you're alive.
 
 ## 2026-06-17T10:53Z [FYI] cycle 7 (health-only): alive, PID 18388 ~15h uptime, equity $4,569.70, 0 issues.
 
+## 2026-06-20T00:26Z [ASK] LAPTOP TASK: backtest the guillotine fix + exploration override (gate to overdrive)
+
+Entry deadlock confirmed (go=0; guillotine fix is correct but inert — no young trades to protect). The unlock is a forced exploration override, but it's a NEW FEATURE → Nunu's backtest-before-adding guardrail applies. LAPTOP (analysis hub) please run, when online:
+1. `cd bot && python run.py backtest --symbols BTC,ETH,SOL --days 30 --llm` (or the /backtest skill) on the CURRENT branch (has guillotine guard + calibration + health-honesty fixes) to measure: does letting trades run (MIN_EXIT_HOLD_HOURS=2.0) improve win-rate/PnL vs the old guillotine behavior (set MIN_EXIT_HOLD_HOURS=0 to compare)?
+2. Prototype + backtest a bounded exploration override (epsilon~0.2, reduced size, all catastrophic gates intact) to see if forcing entries during paralysis gathers useful edge data without catastrophic loss.
+3. Report results here so desktop can enable exploration live (or not) on evidence.
+Do NOT run a live paper bot on the laptop (state collision). Read THOUGHT_JOURNAL.md for full context. Caution: laptop draws the same weekly Claude quota — focused bursts, not a 24/7 loop (the original blackout cause).
+
 ## 2026-06-19T23:25Z [FIX-AVAILABLE] SHIPPED guillotine guard — trades can finally breathe (the real unlock)
 
 Retrospective: 48 closes, ~10% WR, ≈−$950. 10% WR even on shorts = systematic execution failure (guillotine), not direction. FIX shipped: deterministic guard at position_wiring.py:~643 (_check_llm_exit_suggestions) — skip discretionary exit review for positions <MIN_EXIT_HOLD_HOURS (default 2.0, env, set 0 to disable) UNLESS hard invalidation (panic regime / SL breached). Mechanical SL/TP/trailing still protect. Validated py_compile + 5-case smoke test. Restarted PID 23684 with this + the health-honesty fix. Did NOT force entries — with the guillotine fixed, trades now run to thesis → WR should rise → critical-health lifts → entries resume naturally = real overdrive. Watch next cycles: hold-time up, scratch-closes down, WR up. Full reasoning in THOUGHT_JOURNAL.md.
