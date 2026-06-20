@@ -1,55 +1,53 @@
 {
-  "last_run": "2026-06-20T00:30:00Z",
-  "run_number": 90,
+  "last_run": "2026-06-20T02:07:00Z",
+  "run_number": 91,
   "fixes_applied_this_run": 2,
-  "total_applied_all_time": 80,
+  "total_applied_all_time": 82,
   "gates_active": 20,
-  "loop_gap_note": "RUN 90: ~30min gap from Run90 audit (00:07 UTC). 2 new fixes applied: INSIGHT_LONG_BIAS_INVALIDATION_V1 (82% conf, gate=20%) and BTC_BUY_BB_GATE_PROMOTION_V1 (91% conf). BTC_LONG_VETO Watch Run 2 of 2 CLOSED — confidence 72% below 75% threshold, did not escalate.",
+  "loop_gap_note": "RUN 91: ~1.6h gap from Run90 auto_fix (00:30 UTC). 2 new fixes applied: SIZE_CONTRADICTION_ARCHIVE_V2 (82% conf, archived 4 insight pairs) and ENSEMBLE_STALENESS_INVALIDATION_V1 (80% conf). Active valid insights: 10 of 19.",
   "new_fixes_this_run": [
     {
-      "rule_id": "INSIGHT_LONG_BIAS_INVALIDATION_V1",
+      "rule_id": "SIZE_CONTRADICTION_ARCHIVE_V2",
       "audit_confidence": 0.82,
       "gate_percentage": 20,
-      "source": "Run90 REC2 (2026-06-20T00:07:54Z)",
-      "problem": "Insight 5 (ts=1776777002.74, bias, conf=0.75): '74% of trades are LONG, LONG WR=30%'. Stale — 10d dataset (n=965) shows only 12% LONG. Was actively suppressing SOL_LONG 70-80% signals (62% WR, avg +$20.88, n=208). Insight 6 (ts=1776346399.19): 'morning 14% WR on 7 trades' directly contradicts Insight 1 (morning 71% WR on 20 trades, larger sample).",
-      "fix": "Marked both Insights 5 and 6 as invalidated=True in meta_learning/insights.json with detailed reasons. Active valid insights: 7 of 19 (2 more archived).",
-      "applied_at": "2026-06-20T00:30:00Z",
+      "source": "Run91 insight audit (2026-06-20T02:07:00Z)",
+      "problem": "4 size-related insights remained active in direct contradicting pairs. Pair 1: insight[2] (>5.0x=57% WR, n=50) vs insight[6] (>5.0x=36% WR, n=50). Pair 2: insight[17] (>1.5x=73% WR) vs insight[18] (>1.5x=50% WR).",
+      "fix": "Archived all 4 insights with DIRECT_CONTRADICTION reason. Active valid insights: 10 of 19.",
+      "applied_at": "2026-06-20T02:07:00Z",
       "files_changed": ["bot/data/meta_learning/insights.json"],
-      "expected_impact": "+$418-$1,059/100d from restored SOL_LONG signal flow. Morning edge contradiction removed."
+      "expected_impact": "Removes contradictory sizing signals from agent context."
     },
     {
-      "rule_id": "BTC_BUY_BB_GATE_PROMOTION_V1",
-      "audit_confidence": 0.91,
-      "gate_percentage": 50,
-      "source": "Run90 analysis (2026-06-20T00:07:54Z audit notes)",
-      "problem": "btc_buy_bb_golden_v1 stuck at gate=20% probe mode despite conf=0.91, evidence_ratio=0.69, n=2172 shadow signals. Graduation criterion already met (WR=69%>=60%, n=2172>>15). Deep_memory insight_journal confirms BB solo = 67.6% WR best pattern.",
-      "fix": "Promoted btc_buy_bb_golden_v1 gate=20%->50% in bot/data/llm/graduated_rules.json. Added gate_escalated_at annotation.",
-      "applied_at": "2026-06-20T00:30:00Z",
-      "files_changed": ["bot/data/llm/graduated_rules.json"],
-      "expected_impact": "2.5x more BTC BUY + BB squeeze signals pass through. btc_long_veto_v1 gate=80% still limits overall BTC LONG flow; BB-specific path gets better access."
+      "rule_id": "ENSEMBLE_STALENESS_INVALIDATION_V1",
+      "audit_confidence": 0.80,
+      "gate_percentage": 20,
+      "source": "Run91 insight audit (2026-06-20T02:07:00Z)",
+      "problem": "Insight[13] (n=27): ensemble 30% WR from early period. Reality: 100d WR=44.5% n=589, 10d WR=57% n=965. Suggestion was consider disabling — could block all signal flow.",
+      "fix": "Invalidated insight[13] in meta_learning/insights.json. Active valid insights: 10 of 19.",
+      "applied_at": "2026-06-20T02:07:00Z",
+      "files_changed": ["bot/data/meta_learning/insights.json"],
+      "expected_impact": "Prevents agents from suppressing ensemble-based signals."
     }
   ],
   "recs_processed_this_run": [
-    {"rec": "REC1_TRAILING_STOP_LOCK", "confidence": 0.88, "status": "PENDING_HUMAN_REVIEW", "reason": "Execution code change at position_manager.py:1244 requires human review per execution-safety.md. Day 6."},
-    {"rec": "REC2_INVALIDATE_INSIGHT_5_6", "confidence": 0.82, "status": "APPLIED", "gate_percentage": 20, "rule_id": "INSIGHT_LONG_BIAS_INVALIDATION_V1"},
-    {"rec": "REC3_GRADUATED_RULES_TRACKING", "confidence": 0.79, "status": "DIAGNOSED_ONLY", "note": "graduated_rules.py EXISTS (not missing). Root cause: llm_regime empty in CSV = regime-conditioned rules don't update times_correct. Fix requires CSV logger change or fired_rule_ids propagation."},
-    {"rec": "BTC_LONG_VETO_WATCH_RUN_2", "confidence": 0.72, "status": "CLOSED_BELOW_THRESHOLD", "note": "Watch Run 2 of 2 COMPLETE. Confidence 72% < 75% threshold. 10d/100d conflict unresolved. btc_long_veto_v1 stays at gate=80%. Watch cycle CLOSED — no further automatic escalation."},
-    {"rec": "BTC_BUY_BB_GATE_PROMOTION", "confidence": 0.91, "status": "APPLIED", "gate_percentage": 50, "rule_id": "BTC_BUY_BB_GATE_PROMOTION_V1"}
+    {"rec": "SIZE_CONTRADICTION_ARCHIVE_V2", "confidence": 0.82, "status": "APPLIED", "gate_percentage": 20},
+    {"rec": "ENSEMBLE_STALENESS_INVALIDATION_V1", "confidence": 0.80, "status": "APPLIED", "gate_percentage": 20},
+    {"rec": "REC1_TRAILING_STOP_LOCK", "confidence": 0.88, "status": "PENDING_HUMAN_REVIEW", "reason": "Execution code change at position_manager.py:1244. Day 7."},
+    {"rec": "TP1_CUMULATIVE_PNL_INSTRUMENTATION", "confidence": 0.90, "status": "PENDING_CODE_CHANGE"},
+    {"rec": "CSV_REGIME_FIELD_FIX", "confidence": 0.85, "status": "PENDING_CODE_CHANGE"}
   ],
   "pending_code_implementations": [
-    {"id": "TRAILING_STOP_LOCK", "confidence": 0.88, "status": "PENDING_HUMAN_REVIEW", "days_pending": 6, "expected_impact": "+$3,759/100d", "file": "position_manager.py:1244", "env_var": "TRAILING_MIN_LOCK_PCT=0.70"},
-    {"id": "TP1_CUMULATIVE_PNL_INSTRUMENTATION", "confidence": 0.90, "status": "PENDING_CODE_CHANGE", "days_pending": 4},
-    {"id": "CSV_REGIME_FIELD_FIX", "confidence": 0.85, "status": "NEW_FINDING_RUN90", "description": "Populate llm_regime in CSV logger at trade close. Fixes graduated_rules times_correct tracking for regime-conditioned rules.", "expected_impact": "Unlocks rule accuracy tracking for 4 regime-conditioned rules", "priority": "MEDIUM"}
+    {"id": "TRAILING_STOP_LOCK", "confidence": 0.88, "status": "PENDING_HUMAN_REVIEW", "days_pending": 7, "expected_impact": "+$3,759/100d", "file": "position_manager.py:1244", "env_var": "TRAILING_MIN_LOCK_PCT=0.70"},
+    {"id": "TP1_CUMULATIVE_PNL_INSTRUMENTATION", "confidence": 0.90, "status": "PENDING_CODE_CHANGE", "days_pending": 5},
+    {"id": "CSV_REGIME_FIELD_FIX", "confidence": 0.85, "status": "PENDING_CODE_CHANGE", "days_pending": 1}
   ],
-  "gate_distribution_current": {
-    "0": 50, "5": 1, "20": 8, "50": 12, "80": 34, "100": 13,
-    "note": "118 total rules. btc_buy_bb_golden_v1 moved from gate=20 to gate=50. Net: gate=20 decreased by 1, gate=50 increased by 1."
-  },
   "loop_cadence_history": [
-    {"run": 86, "gap_h": 1.95, "note": "STREAK 9. 0 fixes. NEW: trailing WR=64% framing, contradiction triplet, BTC_LONG veto rec."},
-    {"run": 87, "gap_h": 2.0, "note": "STREAK 10. 1 fix: META_LEARNING_CONFLICT_DETECTION_V1 gate=20%."},
-    {"run": 88, "gap_h": 1.0, "note": "STREAK 11 (prior session). btc_long_veto_v1 gate=80% applied per commit cfd142c."},
-    {"run": 89, "gap_h": 1.9, "note": "STREAK 11. 1 fix: INSIGHT_CONTRADICTION_ARCHIVE_V1 gate=20%. 7 contradictory size insights archived."},
-    {"run": 90, "gap_h": 0.38, "note": "STREAK 12. 2 fixes: INSIGHT_LONG_BIAS_INVALIDATION_V1 (gate=20%), BTC_BUY_BB_GATE_PROMOTION_V1 (gate=50%). BTC_LONG_VETO watch cycle CLOSED."}
-  ]
+    {"run": 88, "gap_h": 1.0, "note": "STREAK 11. btc_long_veto_v1 gate=80% applied."},
+    {"run": 89, "gap_h": 1.9, "note": "STREAK 11. 1 fix: INSIGHT_CONTRADICTION_ARCHIVE_V1."},
+    {"run": 90, "gap_h": 0.38, "note": "STREAK 12. 2 fixes: INSIGHT_LONG_BIAS_INVALIDATION_V1 + BTC_BUY_BB_GATE_PROMOTION_V1."},
+    {"run": 91, "gap_h": 1.62, "note": "STREAK 13. 2 fixes: SIZE_CONTRADICTION_ARCHIVE_V2 + ENSEMBLE_STALENESS_INVALIDATION_V1. Active insights: 10 of 19."}
+  ],
+  "insight_state_post_run91": {
+    "total": 19, "active": 10, "invalidated": 3, "archived": 6
+  }
 }

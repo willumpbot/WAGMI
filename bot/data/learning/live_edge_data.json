@@ -1,63 +1,18 @@
 {
-  "last_updated": "2026-06-20T00:30:00Z",
-  "run_number": 90,
-  "data_source": "backtest_100d.csv (589 trades) primary; trades_10d.csv (965 trades) secondary — bot offline Day 64.0",
-  "trades_csv_available": false,
-  "high_edges_found": 4,
-  "weak_setups_found": 3,
-  "edge_staleness_days": 64.0,
-  "dataset_conflict_alert": "CRITICAL: 10d (57% WR, +$905) vs 100d (44.5% WR, -$8,174) contradict. Use 100d as primary for live decisions.",
-  "run90_update": "Insight 5 (stale LONG bias) and Insight 6 (morning weakness contradiction) INVALIDATED. SOL_LONG 70-80% edge (62% WR, +$20.88 avg, n=208) now unblocked from agent context suppression. btc_buy_bb_golden_v1 promoted gate=20%->50%.",
-  "win_rates_by_symbol_100d": {
-    "BTC": {"wr": 0.42, "count": 166, "avg_pnl": -3.84, "total_pnl": -637},
-    "HYPE": {"wr": 0.49, "count": 225, "avg_pnl": -24.73, "total_pnl": -5563, "note": "Net negative despite near-50% WR — loss/win asymmetry"},
-    "SOL": {"wr": 0.41, "count": 198, "avg_pnl": -9.97, "total_pnl": -1974}
-  },
-  "win_rates_by_symbol_side_100d": {
-    "BTC_SHORT": {"wr": 0.46, "count": 125, "avg_pnl": -0.69, "edge": "NEUTRAL"},
-    "BTC_LONG": {"wr": 0.32, "count": 41, "avg_pnl": -13.42, "edge": "WEAK_GATED_80%"},
-    "SOL_SHORT": {"wr": 0.45, "count": 140, "avg_pnl": -7.16, "edge": "NEUTRAL"},
-    "SOL_LONG": {"wr": 0.33, "count": 58, "avg_pnl": -16.74, "edge": "WEAK_GATED_100%"},
-    "HYPE_LONG": {"wr": 0.5, "count": 68, "avg_pnl": -14.36, "edge": "NEUTRAL_BLOCKED_100%"},
-    "HYPE_SHORT": {"wr": 0.48, "count": 157, "avg_pnl": -29.22, "edge": "NEGATIVE_VETO_100%"}
-  },
-  "win_rates_by_symbol_10d": {
-    "BTC_LONG": {"wr": 0.64, "count": 72, "avg_pnl": 25.55, "edge": "HIGH_CONFLICT_100d"},
-    "SOL_SHORT": {"wr": 0.64, "count": 179, "avg_pnl": 32.44, "edge": "HIGH_CONFLICT_100d_BLOCKED"},
-    "BTC_SHORT_90plus": {"wr": 0.67, "count": 43, "avg_pnl": 102.92, "edge": "HIGH_CONFLICT_100d_50pct"},
-    "SOL_LONG_70_80pct": {"wr": 0.62, "count": 208, "avg_pnl": 20.88, "edge": "STRONG_EDGE_RESTORED", "note": "Was suppressed by stale Insight 5 (LONG bias). Now unblocked after Run 90 invalidation. BLOCKED by sol_long_veto_v1 gate=100% — this is a deep conflict: 10d shows edge but 100d shows 33% WR."},
-    "SOL_LONG_80_90pct": {"wr": 0.74, "count": 34, "avg_pnl": 40.10, "edge": "ELITE_EDGE_IF_UNBLOCKED", "note": "Best sub-condition in 10d. Still blocked by sol_long_veto_v1."},
-    "HYPE_SHORT_low_conf": {"wr": 0.60, "count": 15, "avg_pnl": 15.26, "note": "100d: only profitable HYPE sub-condition is <70% conf shorts"}
-  },
-  "win_rates_by_regime": {
-    "trend": {"wr": 0.62, "note": "Best performing regime in 10d sim"},
-    "high_volatility": {"wr": 0.55, "note": "Second best — HIGH_VOL_regime_boost active gate=50%"},
-    "ranging": {"wr": 0.38, "note": "Below average — RANGING_regime_reduce gate=50% active"},
-    "illiquid": {"wr": 0.28, "n": 57, "note": "Worst — illiquid_regime_penalize_v1 gate=100% active"},
-    "unknown": {"wr": 0.32, "note": "Weak — HYPE_unknown_regime_probe probe gate=20%"}
-  },
-  "win_rates_by_confidence_bin_100d": {
-    "60_70": {"wr": 0.49, "count": 111, "avg_pnl": -7.15, "note": "Low WR — conf_floor_70 partially addresses"},
-    "70_80": {"wr": 0.45, "count": 321, "avg_pnl": -8.54, "note": "Bulk of trades — BTC_SHORT_70_80 penalty at gate=50%"},
-    "80_90": {"wr": 0.40, "count": 120, "avg_pnl": -33.04, "note": "WORST avg PnL — INVERSE confidence relationship. high_conf_80_85_penalty_v1 gate=50% active."},
-    "90_plus": {"wr": 0.41, "count": 37, "avg_pnl": -18.23, "note": "10d claims 67% WR — major conflict. btc_short_90plus_boost_v1 gate=20% probe."}
-  },
-  "win_rates_by_time_utc_6h_bins": {
-    "00_06_night": {"wr": 0.19, "n": 13, "status": "BLOCKED_night_session_block_v1_gate=100%"},
-    "06_12_morning": {"wr": 0.68, "n": "20+", "status": "OPENS_06:00_UTC_TODAY — HIGHEST PRIORITY. Insight 6 contradiction INVALIDATED Run90. Morning edge stands at 71% WR (Insight 1, n=20)."},
-    "12_18_afternoon": {"wr": 0.62, "n": "20+", "status": "AVAILABLE — no gate active"},
-    "18_24_evening": {"wr": 0.65, "n": "27+", "status": "AVAILABLE — evening edge rules disabled (invalidated). Raw data suggests 65% WR unconfirmed."}
-  },
+  "last_updated": "2026-06-20T02:07:00Z",
+  "run_number": 91,
+  "high_edges_found": 3, "weak_setups_found": 4,
   "high_edges": [
-    {"setup": "SOL_LONG_70_80pct_10d", "wr": 0.62, "count": 208, "avg_pnl": 20.88, "note": "RESTORED: Insight 5 (stale LONG bias suppressor) INVALIDATED Run90. However, sol_long_veto_v1 gate=100% remains. Deep conflict: 10d=62% WR vs 100d=33% WR. Watch for live data post-restart.", "confidence_in_edge": "MODERATE_CONFLICTED"},
-    {"setup": "SOL_LONG_80_90pct_10d", "wr": 0.74, "count": 34, "avg_pnl": 40.10, "note": "Elite WR if unblocked. Same 10d/100d conflict as above.", "confidence_in_edge": "MODERATE_CONFLICTED"},
-    {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "count": 2172, "avg_pnl": "positive", "note": "btc_buy_bb_golden_v1 promoted gate=20%->50% Run90. Strong shadow evidence n=2172. BTC_LONG_VETO gate=80% limits pass-through but BB-specific exception preserved.", "confidence_in_edge": "HIGH"},
-    {"setup": "MORNING_06_12_UTC", "wr": 0.68, "count": "20+", "note": "Insight 6 contradiction invalidated Run90. Morning 71% WR edge (Insight 1) now stands without contradicting insight. TOD boost rules still disabled — may need re-evaluation with live data.", "confidence_in_edge": "MODERATE"}
+    {"setup": "BTC_BUY_BB_golden", "wr": 0.69, "count": 2172, "note": "gate=50% (Run90). HIGH confidence."},
+    {"setup": "SOL_LONG_70_80pct_10d", "wr": 0.62, "count": 208, "avg_pnl": 20.88, "note": "Unblocked (Insight5 Run90). sol_long_veto gate=100% still blocks. CONFLICTED."},
+    {"setup": "MORNING_06_12_UTC", "wr": 0.68, "note": "Opens in ~4h. Bot offline."}
   ],
   "weak_setups": [
-    {"setup": "NIGHT_00_06_UTC", "wr": 0.19, "count": 13, "note": "Structural losing session. night_session_block_v1 gate=100% ACTIVE — correctly blocked."},
-    {"setup": "BTC_SHORT_70_79pct_100d", "wr": 0.45, "count": 98, "avg_pnl": -0.69, "note": "100d: borderline. 10d: terrible (-$91.87). btc_short_conf70_80_penalize_v1 gate=50% active."},
-    {"setup": "ALL_HYPE", "wr": 0.48, "count": 225, "avg_pnl": -24.73, "note": "Dollar-negative despite near-50% WR. R:R asymmetry root cause. All HYPE vetoed (gate=100%)."}
+    {"setup": "NIGHT_00_06_UTC", "wr": 0.19, "note": "gate=100% CORRECT."},
+    {"setup": "AFTERNOON_12_18_UTC", "wr": 0.27, "n": 15, "note": "Post-dedup confirmed weak. No gate rule yet."},
+    {"setup": "EVENING_18_24_UTC", "wr": 0.29, "n": 14, "note": "Post-dedup confirmed weak. No gate rule yet."},
+    {"setup": "ALL_HYPE", "wr": 0.48, "avg_pnl": -24.73, "note": "All HYPE vetoed gate=100%."}
   ],
-  "key_insight_run90": "Two critical fixes this run: (1) Insight 5 LONG bias invalidated — was actively suppressing best 10d edge. (2) btc_buy_bb_golden_v1 gate promoted 20%->50%. Net: agent context now cleaner on LONG bias, BTC BB entries get better pass-through rate."
+  "run91_update": "SIZE_CONTRADICTION_ARCHIVE_V2 archived 4 insight pairs. ENSEMBLE_STALENESS_INVALIDATION_V1 applied. Afternoon/evening downgraded from AVAILABLE to WEAK.",
+  "afternoon_evening_watch_run": 1
 }
