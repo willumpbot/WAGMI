@@ -1,20 +1,21 @@
 {
-  "last_updated": "2026-06-21T10:10:00Z",
-  "run_number": 110,
+  "last_updated": "2026-06-21T12:07:00Z",
+  "run_number": 111,
   "data_source": "bot/trades_10d.csv (n=965)",
-  "high_edges_found": 4,
-  "weak_setups_found": 0,
+  "high_edges_found": 6,
+  "weak_setups_found": 3,
   "high_edges": {
-    "SOL_SHORT": {"wr_pct": 63.7, "n": 179, "ev_per_trade": 32.44, "total_pnl": 5806.76, "priority": "P0_CRITICAL_NEW", "rule": "short_direction_veto_v1 gate=20 BLOCKS 80%", "note": "HIGHEST EV setup. $259/day missed. Veto targets HYPE, not SOL."},
-    "BTC_LONG": {"wr_pct": 63.9, "n": 72, "ev_per_trade": 25.55, "total_pnl": 1839.60, "priority": "P1"},
-    "conf_90plus": {"wr_pct": 56.0, "n": 91, "ev_per_trade": 32.33, "total_pnl": 2942.03, "priority": "P1"},
-    "conf_80_90": {"wr_pct": 60.2, "n": 118, "ev_per_trade": 7.67, "total_pnl": 904.86, "priority": "P1"}
+    "SOL_SHORT": {"wr_pct": 63.7, "n": 179, "ev_per_trade": 32.44, "priority": "P0_CRITICAL", "note": "HIGHEST EV. 80% blocked by short_direction_veto_v1. Needs SOL exception code change."},
+    "BTC_SHORT_90plus": {"wr_pct": 67.4, "n": 43, "ev_per_trade": 102.92, "priority": "P0_CRITICAL", "rule_status": "btc_short_90plus_boost_v1 RE-ACTIVATED Run111 gate=20"},
+    "BTC_LONG": {"wr_pct": 63.9, "n": 72, "ev_per_trade": 25.55, "priority": "P1"},
+    "BTC_SHORT_80_90": {"wr_pct": 57.7, "n": 26, "ev_per_trade": 59.52, "priority": "P1_NEW_Run111", "rule_status": "btc_short_80_90_boost_v1 ADDED Run111 gate=20"},
+    "conf_90plus": {"wr_pct": 56.0, "n": 91, "ev_per_trade": 32.33, "priority": "P1"},
+    "conf_80_90": {"wr_pct": 60.2, "n": 118, "ev_per_trade": 7.67, "priority": "P1"}
   },
   "weak_setups": {
-    "conf_60_70": {"wr_pct": 46.3, "n": 123, "ev_per_trade": -18.87, "mitigation": "conf_floor_70_v1 gate=20"},
-    "band_70_80": {"wr_pct": 58.6, "n": 633, "ev_per_trade": -0.98, "note": "Primary drag. Payoff 0.697. TP1_MULTIPLIER_BOOST needed."}
+    "SOL_LONG": {"wr_pct": 53.3, "n": 122, "ev_per_trade": -2.62, "be_wr": 54.5, "note": "WR BELOW BREAKEVEN. sol_long_probe_boost_v1 gate REDUCED 50->20 Run111."},
+    "BTC_SHORT_70_80": {"wr_pct": 43.9, "n": 98, "ev_per_trade": -91.87, "note": "LARGEST LOSS BUCKET. btc_short_conf70_80_penalize_v1 gate=50 CRITICAL."},
+    "conf_60_70": {"wr_pct": 46.3, "n": 123, "ev_per_trade": -18.87, "mitigation": "conf_floor_70_v1 gate=20"}
   },
-  "critical_new_finding": {"id": "SOL_SHORT_HIGH_EV_BLOCKED", "severity": "HIGH", "confidence": 0.77, "auto_apply_eligible": false, "finding": "SOL_SHORT WR=63.7%, EV=$32.44, n=179. 80% blocked by veto. Add SOL exception."},
-  "key_insight": "SOL_SHORT ($32.44/trade, n=179) is top EV setup, 80% suppressed. 70-80% conf (65.6% of trades) loses despite 58.6% WR due to payoff 0.697.",
-  "regime_note": "All 965 rows: llm_regime=blank (CSV_REGIME_BLANK P1 bug)."
+  "key_insight": "SOL LONG (EV=-$2.62) and SOL SHORT (EV=+$32.44) have opposite EV. Combined SOL stat masked this split for 110 runs. BTC SHORT aggregate (EV=-$7.22) is 100% explained by the 70-80% conf band."
 }

@@ -1,37 +1,21 @@
 {
-  "last_run": "2026-06-21T10:10:00Z",
-  "run_number": 110,
+  "last_run": "2026-06-21T12:07:00Z",
+  "run_number": 111,
   "date": "2026-06-21",
-  "bot_status": "OFFLINE -- Day 68.42",
+  "bot_status": "OFFLINE — Day 68.42",
   "today_trades": 0,
   "today_pnl": 0.0,
-  "run110_new_findings": [
-    {"id": "SOL_SHORT_HIGH_EV_BLOCKED", "type": "CRITICAL_EDGE_SUPPRESSED", "severity": "HIGH", "detail": "SOL_SHORT WR=63.7%, EV=$32.44/trade, n=179. short_direction_veto_v1 blocks 80%. Veto for HYPE shorts. $259/day missed.", "action": "Add SOL exception or sol_short_probe_boost_v1 gate=30. Confidence=0.77."},
-    {"id": "BTC_SHORT_BOOST_CONFLICT_RESOLVED", "type": "RULE_CONFLICT_FIXED", "severity": "MEDIUM", "detail": "btc_short_90plus_boost_v1 deactivated. Conflict with short_direction_veto_v1. EV=-$7.22/trade, never fired.", "action": "APPLIED Run110."}
+  "run111_new_findings": [
+    {"id": "BTC_SHORT_CONF_REVERSAL", "severity": "CRITICAL", "detail": "Run110 deactivated btc_short_90plus_boost_v1 using aggregate BTC SHORT EV. Disaggregated: 70-80% conf is sole drag (EV=-$91.87). 80-90%: EV=+$59.52. 90%+: EV=+$102.92. CORRECTED Run111."},
+    {"id": "SOL_DIRECTION_SPLIT", "severity": "HIGH", "detail": "SOL_LONG EV=-$2.62 (WR below BE-WR). SOL_SHORT EV=+$32.44. Combined SOL stat masked this for 110 runs. sol_long_probe_boost_v1 gate reduced 50->20."}
   ],
-  "anomaly_checks": {
-    "consecutive_losses_gt5": {"result": true, "value": 8, "severity": "HIGH", "note": "Max consecutive losses in last 50 backtest trades = 8 (threshold = 5)"},
-    "payoff_ratio_lt1": {"result": true, "value": 0.763, "severity": "HIGH", "note": "TP1_MULTIPLIER_BOOST pending"},
-    "sol_short_edge_suppressed": {"result": true, "severity": "HIGH", "note": "SOL_SHORT top EV suppressed 80%. NEW Run110."},
-    "duration_h_broken": {"result": true, "severity": "P1", "note": "83.8% of 965 trades show duration_h=0.0"}
-  },
   "anomalies_found": 5,
-  "anomalies": [
-    {"type": "BOT_OFFLINE_DAY68", "severity": "P0", "status": "UNRESOLVED"},
-    {"type": "SOL_SHORT_EDGE_SUPPRESSED", "severity": "P0_NEW", "status": "NEW_Run110"},
-    {"type": "PAYOFF_RATIO_STRUCTURAL", "severity": "P1", "status": "UNRESOLVED"},
-    {"type": "CONSECUTIVE_LOSSES_8", "severity": "P1", "status": "NEW_Run110"},
-    {"type": "DURATION_H_BROKEN", "severity": "P1", "status": "UNRESOLVED"},
-    {"type": "BTC_SHORT_BOOST_CONFLICT", "severity": "P2", "status": "RESOLVED_Run110"}
-  ],
   "report_generated": true,
   "tomorrow_focus": {
-    "date": "2026-06-22",
-    "priority_1": "Review SOL SHORT exception to short_direction_veto_v1",
-    "priority_2": "TP1_MULTIPLIER=1.07 in trading_config.py",
-    "priority_3": "Fix duration_h in position_manager.py",
-    "symbols_to_prioritize": ["SOL_LONG", "SOL_SHORT (pending exception)", "BTC_LONG"],
-    "avoid": ["HYPE all directions", "night 00-06 UTC", "illiquid+ranging regimes"]
-  },
-  "learning_loop_run": "Run 110 (perpetual improvement deep-dive)"
+    "priority_1": "Investigate btc_short_90plus_boost_v1 times_applied=0 bug",
+    "priority_2": "CODE: Add exclude_symbols=['SOL'] to short_direction_veto_v1",
+    "priority_3": "CODE: Fix duration_h in position_manager.py",
+    "symbols_to_prioritize": ["SOL_SHORT", "BTC_SHORT_90plus", "BTC_LONG"],
+    "avoid": ["HYPE", "night 00-06 UTC", "BTC_SHORT 70-80% conf"]
+  }
 }

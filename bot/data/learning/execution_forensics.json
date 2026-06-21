@@ -1,11 +1,15 @@
 {
-  "last_updated": "2026-06-21T10:10:00Z",
-  "run_number": 110,
+  "last_updated": "2026-06-21T12:07:00Z",
+  "run_number": 111,
   "data_source": "bot/trades_10d.csv (n=965) — live trades.csv empty (bot offline Day 68.42)",
-  "avg_slippage": {"value": "UNAVAILABLE", "reason": "Bot offline. No live fill data."},
-  "sl_analysis": {"total_trades": 965, "sl_count": 370, "sl_rate_pct": 38.3, "sl_by_symbol_side": {"BTC_LONG": {"n": 24, "avg_pnl": -414.62, "total": -9950.84}, "BTC_SHORT": {"n": 83, "avg_pnl": -366.45, "total": -30415.76}, "HYPE_LONG": {"n": 58, "avg_pnl": -186.58, "total": -10821.64}, "HYPE_SHORT": {"n": 97, "avg_pnl": -181.42, "total": -17598.15}, "SOL_LONG": {"n": 52, "avg_pnl": -125.77, "total": -6539.94}, "SOL_SHORT": {"n": 56, "avg_pnl": -139.04, "total": -7786.28}}},
-  "duration_h_status": {"zero_duration_count": 809, "zero_duration_pct": 83.8, "status": "BROKEN", "note": "HoldTimeRuleManager corrupted. trending_early_hold_guard_v1 cannot function."},
-  "noise_stop_analysis": {"noise_regime_pct": 100.0, "note": "All 965 trades have blank llm_regime. CSV_REGIME_BLANK P1 bug.", "proxy_noise_stop_pct": 41.7},
-  "payoff_analysis": {"overall_payoff": 0.763, "by_conf_bin": {"60-70": {"payoff": 0.964, "wr": 0.463, "ev": -18.87, "avg_win": 203.51, "avg_loss": -210.92}, "70-80": {"payoff": 0.697, "wr": 0.586, "ev": -0.98, "avg_win": 127.31, "avg_loss": -182.65}, "80-90": {"payoff": 0.709, "wr": 0.602, "ev": 7.67}, "90+": {"payoff": 1.035, "wr": 0.560, "ev": 32.33, "avg_win": 238.12, "avg_loss": -230.05}}},
-  "output": {"avg_slippage": "UNAVAILABLE_BOT_OFFLINE", "payoff_ratio": 0.763, "key_finding": "70-80% conf band (n=633): WR=58.6% but EV=-$0.98 due to payoff 0.697"}
+  "avg_slippage": {"value": "UNAVAILABLE", "reason": "Bot offline."},
+  "sl_rate_pct": 38.3,
+  "duration_h_broken_pct": 83.8,
+  "payoff_by_btc_short_conf": {
+    "60-70": {"ev": 57.94, "wr": 0.643, "n": 28},
+    "70-80": {"ev": -91.87, "wr": 0.439, "n": 98, "note": "SOLE DRAG — btc_short_conf70_80_penalize_v1 CRITICAL"},
+    "80-90": {"ev": 59.52, "wr": 0.577, "n": 26, "note": "btc_short_80_90_boost_v1 added Run111"},
+    "90+": {"ev": 102.92, "wr": 0.674, "n": 43, "note": "btc_short_90plus_boost_v1 re-activated Run111"}
+  },
+  "key_finding": "BTC SHORT aggregate EV=-$7.22 is 100% explained by 70-80% conf drag. All other bands positive."
 }
