@@ -1,95 +1,68 @@
 {
-  "last_run": "2026-06-21T00:30:00Z",
-  "run_number": 108,
-  "cadence_streak": 30,
-  "fixes_applied_this_run": 0,
+  "last_run": "2026-06-21T10:05:40.316435Z",
+  "run_number": 109,
+  "cadence_streak": 31,
+  "fixes_applied_this_run": 1,
   "gates_active": 20,
-  "total_applied_all_time": 96,
-  "new_fixes_this_run": [],
-  "run108_review": {
-    "source_audit": "autonomous_audit_2026-06-20T22:07:20Z (Run104) — most recent audit",
+  "total_applied_all_time": 97,
+  "new_fixes_this_run": [
+    {
+      "rule_id": "trending_early_hold_guard_v1",
+      "source_rec": "REC-2",
+      "source_audit": "autonomous_audit_2026-06-21T08-05-38Z",
+      "confidence": 0.78,
+      "gate_percentage": 20,
+      "applied_at": "2026-06-21T10:05:40.316435Z",
+      "baseline_wr": "UNKNOWN_BOT_OFFLINE",
+      "treatment_wr": "PENDING_LIVE_TRADES",
+      "expected_impact": "+$5-15/day",
+      "rollback": "Set active=False on trending_early_hold_guard_v1"
+    }
+  ],
+  "run109_review": {
+    "source_audit": "autonomous_audit_2026-06-21T08-05-38Z (Run105) — most recent",
     "recs_reviewed": [
       {
-        "rec_id": "REC1",
-        "description": "Suspend high_conf_80_85_penalty_v1",
-        "confidence": 88,
-        "threshold": 75,
-        "qualifies": true,
-        "action_needed": "ALREADY APPLIED in Run105 — active=false, gate=0",
-        "status": "COMPLETED_PRIOR_RUN"
+        "rec_id": "REC1_TOD_AFTERNOON_EVENING_BLOCK",
+        "description": "Add tod_afternoon_block_v1 and tod_evening_block_v1 rules (27% and 29% WR respectively)",
+        "confidence": 70,
+        "action_type": "add_rules",
+        "qualifies": false,
+        "skip_reason": "Confidence 70% < 75% threshold. Sample n=14-15, too small. Apply only after n>=20."
       },
       {
-        "rec_id": "REC2",
-        "description": "Reactivate conf_floor_70_v1",
-        "confidence": 75,
-        "threshold": 75,
+        "rec_id": "REC2_TRENDING_EARLY_HOLD_GUARD",
+        "description": "Promote TRENDING_EARLY_HOLD_GUARD from KB to live graduated rules (78% confidence, 87/352 recoverable SL exits, $1,119 missed)",
+        "confidence": 78,
+        "action_type": "add_rule",
         "qualifies": true,
-        "action_needed": "ALREADY APPLIED in Run105 — active=true, gate=20",
-        "status": "COMPLETED_PRIOR_RUN"
+        "status": "APPLIED"
       },
       {
-        "rec_id": "REC3",
-        "description": "Invalidate Morning Edge Insight + sniper_premium stale insight",
-        "confidence": 96,
-        "threshold": 75,
+        "rec_id": "REC3_FEEDBACK_PERSISTENCE",
+        "description": "Fix 5 feedback subsystems missing _save() methods",
+        "confidence": 95,
+        "action_type": "code_change",
         "qualifies": true,
-        "action_needed": "ALREADY APPLIED in Runs 105+106",
-        "status": "COMPLETED_PRIOR_RUN"
+        "skip_reason": "Architectural code change — cannot auto-apply. Logged as HIGH priority deferred item."
       }
     ],
-    "pending_code_changes": [
+    "deferred_code_changes": [
+      {
+        "id": "FEEDBACK_PERSISTENCE_5_SYSTEMS",
+        "description": "REC-3: Add _save() to SignalQualityScorer, RegimeFeedbackManager, AdaptiveConfidenceFloor, ParameterTuner, FeedbackLoop",
+        "confidence": 0.95,
+        "priority": "P1",
+        "files": ["bot/feedback/signal_quality.py", "bot/feedback/regime_feedback.py", "bot/feedback/parameter_tuner.py", "bot/feedback/feedback_loop.py"],
+        "status": "LOGGED — needs manual code implementation"
+      },
       {
         "id": "TP1_MULTIPLIER_BOOST",
-        "description": "Boost TP1 targets 7% in trending regime — payoff ratio fix (0.916 -> ~1.00)",
+        "description": "Boost TP1 targets 7% in trending regime — payoff ratio fix (0.956 -> ~1.00)",
         "confidence": 0.82,
         "files": ["bot/trading_config.py"],
-        "details": "regime_trend_tp1_mult: 1.5 -> 1.605. Validate all strategy TP calcs stay above MIN_RR_TP1=1.5.",
         "status": "DEFERRED — needs R:R audit before applying"
-      },
-      {
-        "id": "DURATION_H_FIX",
-        "description": "Fix duration_h=0 in all backtest CSV rows. Prevents hold-time analysis.",
-        "confidence": 0.95,
-        "files": ["bot/cli.py or backtest runner"],
-        "status": "DEFERRED — needs investigation of backtest writer"
-      },
-      {
-        "id": "FEEDBACK_PERSISTENCE_AUDIT",
-        "description": "Verify RegimeFeedbackManager and ParameterTuner disk-flush paths",
-        "confidence": 0.95,
-        "files": ["bot/feedback/regime_feedback.py", "bot/feedback/parameter_tuner.py"],
-        "status": "DEFERRED — SignalQualityScorer confirmed fixed; others need audit"
-      }
-    ],
-    "deferred_escalations": [
-      {
-        "rule_id": "short_direction_veto_v1",
-        "reason": "Requires n>=15 live short trades. 10d_v3 has n=11. 20d contradicts: BTC_SHORT 80% WR, SOL_SHORT 62% WR. Deferred pending bot restart.",
-        "current_gate": 20,
-        "target_gate": 50,
-        "confidence": 0.75
       }
     ]
-  },
-  "rule_integrity": {
-    "total": 28,
-    "active": 20,
-    "inactive": 8,
-    "key_states": {
-      "high_conf_80_85_penalty_v1": "INACTIVE (deactivated Run105) — 80-90% bin = 66.7% WR (10d), 81.8% WR (20d). Correct.",
-      "conf_floor_70_v1": "ACTIVE gate=20 (reactivated Run105) — 60-70% bin = 14.3% WR (10d). Correct.",
-      "sol_long_probe_boost_v1": "ACTIVE — SOL LONG 100% WR, 8/8 trades (10d). Correct.",
-      "sol_long_veto_v1": "INACTIVE (deactivated Run101) — SOL LONG 100% WR confirms.",
-      "btc_long_veto_v1": "INACTIVE (deactivated Run101) — BTC LONG 57.1% WR confirms.",
-      "short_direction_veto_v1": "ACTIVE gate=20 — probe pending 15+ live short trades.",
-      "night_session_block_v1": "ACTIVE gate=100 — 15% WR confirmed.",
-      "hype_long_veto_v1": "ACTIVE — HYPE LONG 33.3% WR (10d) confirmed.",
-      "hype_short_veto_v1": "ACTIVE — HYPE SHORT protects vs -$5,592 (60d)."
-    }
-  },
-  "output": {
-    "fixes_applied": 0,
-    "gates_active": 20,
-    "note": "All Run104 recommendations applied in prior runs (105/106). No new eligible recommendations this run. 3 items deferred to code changes."
   }
 }

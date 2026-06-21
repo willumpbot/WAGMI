@@ -1,31 +1,107 @@
 {
-  "schema_version": "2.0",
-  "last_run": "2026-06-21T00:30:00Z",
-  "run_number": 108,
-  "cadence_streak": 30,
-  "bot_offline_days": 68,
-  "subsystem_outputs": {
-    "auto_fix": {"fixes_applied": 0, "gates_active": 20, "status": "COMPLETED"},
-    "execution_forensics": {"avg_slippage": "UNAVAILABLE_BOT_OFFLINE", "noise_stop_problem": true, "payoff_ratio": 0.956},
-    "live_prompt_injection": {"high_edges_found": 6, "weak_setups_found": 3},
-    "daily_synthesis": {"anomalies_found": 5, "report_generated": true},
-    "model_optimization": {"model_swaps_recommended": 0, "potential_savings": "$0.00", "status": "SKIPPED_NO_DATA"}
+  "schema_version": "2.1",
+  "last_run": "2026-06-21T10:06:33.214566Z",
+  "run_number": 109,
+  "cadence_streak": 31,
+  "bot_offline_days": 67.4,
+  "subsystems": {
+    "auto_fix": {
+      "status": "COMPLETED",
+      "fixes_applied": 1,
+      "gates_active": 20,
+      "total_rules": 29,
+      "fix_applied": "trending_early_hold_guard_v1 (conf=78%, gate=20%)",
+      "skipped": ["REC1 conf=70%<75%", "REC3 code_change_deferred"]
+    },
+    "execution_forensics": {
+      "status": "COMPLETED",
+      "data_source": "backtest_10d_v3 proxy (bot offline)",
+      "sl_rate_pct": 37.5,
+      "sl_count_10d": 12,
+      "noise_stop_pct": 41.7,
+      "noise_stops_count": 5,
+      "avg_stop_width_pct": 0.739,
+      "key_finding": "41.7% of SL exits in noise regimes (illiquid/unknown/blank). SHORT stop-outs dominate: BTC SHORT exit was 3.1x planned SL distance (momentum overshoot).",
+      "worst_cases": [
+        "BTC_SHORT: 213% SL overshoot (planned 0.35%, actual 1.1%)",
+        "SOL_SHORT: 192% overshoot (planned 0.48%, actual 1.4%)",
+        "BTC_SHORT: 179% overshoot (planned 0.46%, actual 1.3%)"
+      ]
+    },
+    "live_injection": {
+      "status": "COMPLETED",
+      "data_source": "10d_v3(32) + 20d_top68 = 100 rows",
+      "high_edges_found": 3,
+      "weak_setups_found": 1,
+      "top_edge": "SOL_LONG: 78.3% WR, +$2,324, n=23",
+      "key_insight": "70-80% conf bin has 63% WR but -$574 PnL — payoff compression in medium-confidence setups",
+      "regime_gap": "Regime column blank in all 100 rows — regime-based WR computation blocked"
+    },
+    "daily_synthesis": {
+      "status": "COMPLETED",
+      "anomalies_found": 3,
+      "report_generated": true,
+      "critical": "BOT_OFFLINE day 67.4",
+      "high": "PAYOFF_RATIO 0.956 (needs >50% WR to profit)",
+      "medium": "TRAILING_STOP_DEGRADATION 84%→50% WR in 10d"
+    },
+    "model_optimization": {
+      "status": "SKIPPED_NO_DATA",
+      "reason": "No cost_tracker.json. Bot offline 67d, no LLM calls to analyze.",
+      "model_swaps_recommended": 0,
+      "potential_savings": "$0.00"
+    }
   },
   "high_priority_findings": [
-    {"rank": 1, "type": "BOT_OFFLINE_DAY68", "severity": "CRITICAL", "action": "cd bot && python run.py paper"},
-    {"rank": 2, "type": "PAYOFF_RATIO_STRUCTURAL", "severity": "HIGH", "value": 0.956, "action": "TP1_MULTIPLIER 1.5->1.605 pending R:R audit"},
-    {"rank": 3, "type": "SHORT_DIRECTION_REGIME_FLIP", "severity": "HIGH", "action": "Maintain short_direction_veto_v1 gate=20"},
-    {"rank": 4, "type": "NOISE_REGIME_SL_DOMINANCE", "severity": "MEDIUM", "value": "41.7% of 10d SLs"},
-    {"rank": 5, "type": "TRAILING_STOP_DEGRADATION", "severity": "MEDIUM", "value": "10d avg -$0.50 vs 20d +$19.89"}
+    {
+      "rank": 1,
+      "subsystem": "daily_synthesis",
+      "severity": "CRITICAL",
+      "finding": "BOT OFFLINE Day 67.4 — zero live trades, all analysis on backtest data only",
+      "action": "cd bot && python run.py paper"
+    },
+    {
+      "rank": 2,
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "trending_early_hold_guard_v1 APPLIED — promotes KB rule to live rule. 87/352 SL exits recoverable ($1,119 missed over 60d). Gate=20% A/B test active.",
+      "action": "Monitor Exit Agent trending-regime decisions post-restart. Escalate gate to 50% after 20+ trending exits if hold guard effective."
+    },
+    {
+      "rank": 3,
+      "subsystem": "execution_forensics",
+      "severity": "HIGH",
+      "finding": "41.7% of SL hits in noise regimes (blank/unknown/illiquid). All 3 worst overshoot cases are SHORT positions (now gated by short_direction_veto_v1). Expected self-correction on restart.",
+      "action": "Monitor first 15 live SL exits. If noise_stop_pct >30% with veto active, investigate regime detection quality."
+    },
+    {
+      "rank": 4,
+      "subsystem": "live_injection",
+      "severity": "HIGH",
+      "finding": "70-80% conf bin: 63% WR but -$574 PnL on 54 trades. Payoff ratio problem persists in this range despite acceptable WR.",
+      "action": "Prioritize TP1_MULTIPLIER_BOOST code change. Until fixed, 70-80% confidence trades lose money despite being 'winners' 63% of the time."
+    },
+    {
+      "rank": 5,
+      "subsystem": "live_injection",
+      "severity": "MEDIUM",
+      "finding": "Regime column blank in all 100 analyzed rows — CSV_REGIME_BLANK bug prevents regime-based edge computation.",
+      "action": "Fix regime logging in backtest writer (known P1 issue, ongoing ~30 runs)"
+    }
   ],
   "cumulative_stats": {
-    "total_rules": 28, "active_rules": 20, "inactive_rules": 8,
-    "total_fixes_all_time": 96, "estimated_daily_ev_when_live": "+$293/day"
+    "total_rules": 29,
+    "active_rules": 21,
+    "inactive_rules": 8,
+    "total_fixes_all_time": 97,
+    "estimated_daily_ev_when_live": "+$298/day",
+    "rules_added_this_run": 1
   },
   "next_run_focus": {
-    "priority_1": "P0: Start bot — cd bot && python run.py paper",
-    "priority_2": "P0: TP1_MULTIPLIER audit — regime_trend_tp1_mult 1.5->1.605",
-    "priority_3": "P1: duration_h fix in backtest writer",
-    "priority_4": "P1: If live — verify SOL LONG + BTC LONG WR match expectations"
+    "priority_1": "P0: Monitor trending_early_hold_guard effectiveness (20% gate — check Exit Agent trending-regime decisions)",
+    "priority_2": "P0: Start bot when ready — cd bot && python run.py paper",
+    "priority_3": "P1: TP1_MULTIPLIER code change (payoff 0.956→1.0+ fix, +7% TP targets in trending)",
+    "priority_4": "P1: Feedback persistence fix for 5 systems (REC-3, confidence 95%)",
+    "priority_5": "P1: TOD afternoon/evening block rules — re-evaluate at n=20 per window"
   }
 }

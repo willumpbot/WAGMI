@@ -1,20 +1,17 @@
 {
-  "last_updated": "2026-06-21T00:30:00Z",
-  "run_number": 108,
-  "high_edges_found": 6,
-  "weak_setups_found": 3,
-  "high_edges": [
-    {"key": "SOL_LONG", "wr_10d": 1.0, "wr_20d": 0.731, "n_10d": 8, "pnl_10d": 1895, "priority": "P0"},
-    {"key": "80-90% conf bin", "wr_10d": 0.667, "wr_20d": 0.818, "n_10d": 12, "pnl_10d": 1535, "priority": "P0"},
-    {"key": "70-80% conf bin", "wr_10d": 0.583, "wr_20d": 0.689, "n_10d": 12, "priority": "P1"},
-    {"key": "BTC_LONG", "wr_10d": 0.571, "wr_20d": 0.571, "n_10d": 7, "stable": true, "priority": "P1"},
-    {"key": "BTC_SHORT_20d", "wr_20d": 0.8, "conflict": "10d=20% WR — regime flip", "priority": "P2"},
-    {"key": "SOL_all", "wr_10d": 0.571, "wr_20d": 0.692, "note": "driven by SOL_LONG", "priority": "P1"}
-  ],
-  "weak_setups": [
-    {"key": "60-70% conf", "wr_10d": 0.143, "pnl_10d": -920, "mitigation": "conf_floor_70_v1"},
-    {"key": "SOL_SHORT", "wr_10d": 0.167, "pnl_10d": -1125, "mitigation": "short_direction_veto_v1"},
-    {"key": "BTC_SHORT", "wr_10d": 0.2, "pnl_10d": -979, "mitigation": "short_direction_veto_v1"}
-  ],
-  "output": {"high_edges_found": 6, "weak_setups_found": 3}
+  "last_updated": "2026-06-21T10:06:33.214566Z",
+  "run_number": 109,
+  "data_source": "backtest_10d_v3(n=32) + backtest_20d_top68 = 100 rows",
+  "high_edges_found": 3,
+  "weak_setups_found": 1,
+  "high_edges": {
+    "SOL_LONG": {"wr_pct": 78.3, "n": 23, "pnl": 2323.68, "priority": "P0", "rule": "sol_long_probe_boost_v1 ACTIVE"},
+    "conf_80-90": {"wr_pct": 72.7, "n": 22, "pnl": 3837.90, "priority": "P0", "rule": "high_conf_80_85_penalty REMOVED - correct"},
+    "conf_70-80": {"wr_pct": 63.0, "n": 54, "pnl": -574.26, "priority": "P1", "note": "Positive WR but negative PnL — payoff ratio issue (avg loss > avg win)"}
+  },
+  "weak_setups": {
+    "BTC_SHORT": {"wr_pct": 20.0, "n": 5, "pnl": -978.66, "mitigation": "short_direction_veto_v1 ACTIVE gate=20"}
+  },
+  "key_insight": "70-80% conf bin: 63% WR but -$574 PnL on 54 trades = payoff ratio < 0.7 in this bin. Need to improve TP exits.",
+  "regime_note": "All 100 rows show regime='blank' — CSV regime column not populated. Cannot compute regime-based WR accurately. P1 fix needed."
 }

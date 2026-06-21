@@ -331,7 +331,9 @@
       "conditions": {
         "symbol": "ETH",
         "side": "SELL",
-        "strategies_include": ["bollinger_squeeze"]
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
       },
       "adjustment": 8.0,
       "confidence": 0.95,
@@ -351,7 +353,9 @@
       "conditions": {
         "symbol": "BTC",
         "side": "BUY",
-        "strategies_include": ["bollinger_squeeze"]
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
       },
       "adjustment": 8.0,
       "confidence": 0.91,
@@ -373,7 +377,9 @@
       "conditions": {
         "symbol": "SOL",
         "side": "BUY",
-        "strategies_include": ["bollinger_squeeze"]
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
       },
       "adjustment": 8.0,
       "confidence": 0.9,
@@ -395,7 +401,9 @@
       "conditions": {
         "symbol": "HYPE",
         "side": "SELL",
-        "strategies_include": ["bollinger_squeeze"]
+        "strategies_include": [
+          "bollinger_squeeze"
+        ]
       },
       "adjustment": -15.0,
       "confidence": 0.92,
@@ -413,7 +421,10 @@
       "hypothesis_statement": "BB+MTQ co-agreement = 35% WR (n=2172). When both bollinger_squeeze AND multi_tier_quality fire, it's a contra-indicator. Penalize.",
       "action": "penalize",
       "conditions": {
-        "strategies_include": ["bollinger_squeeze", "multi_tier_quality"]
+        "strategies_include": [
+          "bollinger_squeeze",
+          "multi_tier_quality"
+        ]
       },
       "adjustment": -10.0,
       "confidence": 0.92,
@@ -547,7 +558,7 @@
       },
       "adjustment": -5.0,
       "confidence": 0.82,
-      "evidence_ratio": 0.40,
+      "evidence_ratio": 0.4,
       "total_evidence": 120,
       "created_at": 1781978621.0,
       "last_applied": null,
@@ -581,6 +592,27 @@
       "applied_by": "perpetual_improvement_run101_2026-06-20T18:30Z",
       "source_audit": "Run100 audit (2026-06-20T18:06:20Z) Rec1 — inverted veto deactivated, positive probe added",
       "expected_impact": "+$124/day (SOL LONG EV) fully unblocked. +5pts boost adds directional confidence to filter weak SOL setups."
+    },
+    {
+      "rule_id": "trending_early_hold_guard_v1",
+      "hypothesis_statement": "In trending regime, 87% of early SL exits (<2h) had TP1 reachable afterward. $1,119.29 missed over 60d (87/352 SLs). Hold guard prevents early exit before 3h mark in trending regime.",
+      "action": "hold_guard",
+      "conditions": {
+        "regime": "trending",
+        "max_hold_hours": 3
+      },
+      "adjustment": 0.0,
+      "confidence": 0.78,
+      "evidence_ratio": 0.87,
+      "total_evidence": 87,
+      "gate_percentage": 20,
+      "active": true,
+      "created_at": 1782036340.315641,
+      "last_applied": null,
+      "times_applied": 0,
+      "times_correct": 0,
+      "source": "insight_journal.json (213 entries), autonomous_audit_2026-06-21T08-05-38Z REC-2",
+      "expected_impact": "+$5-15/day when live (conservative: 30% recovery of 87 recoverable SL exits)"
     }
   ]
 }
