@@ -1,29 +1,20 @@
 {
-  "last_updated": "2026-06-21T00:00:00Z",
-  "run_number": 107,
-  "data_source": "10d_v3 (n=32) + 20d (n=111) backtest — bot offline Day 67.5",
+  "last_updated": "2026-06-21T00:30:00Z",
+  "run_number": 108,
   "high_edges_found": 6,
   "weak_setups_found": 3,
   "high_edges": [
-    {"key": "SOL+LONG", "wr": 1.0, "n": 8, "window": "10d_v3", "pnl": 1895, "rules": "sol_long_probe_boost_v1 ACTIVE"},
-    {"key": "80-90% conf", "wr": 0.82, "n": 22, "window": "20d", "pnl": 4083, "rules": "high_conf_80_85_penalty_v1 DEACTIVATED Run105"},
-    {"key": "70-80% conf", "wr": 0.69, "n": 61, "window": "20d", "pnl": 3170, "rules": "no boost yet"},
-    {"key": "SOL (all)", "wr": 0.69, "n": 39, "window": "20d", "pnl": 4290, "rules": "sol_long_probe_boost_v1 ACTIVE"},
-    {"key": "BTC (all)", "wr": 0.69, "n": 29, "window": "20d", "pnl": 2645, "rules": "btc vetoes deactivated Run101"},
-    {"key": "BTC+SHORT 20d", "wr": 0.8, "n": 15, "window": "20d", "pnl": 2413, "note": "CONFLICTS 10d: 20% WR"}
+    {"key": "SOL_LONG", "wr_10d": 1.0, "wr_20d": 0.731, "n_10d": 8, "pnl_10d": 1895, "priority": "P0"},
+    {"key": "80-90% conf bin", "wr_10d": 0.667, "wr_20d": 0.818, "n_10d": 12, "pnl_10d": 1535, "priority": "P0"},
+    {"key": "70-80% conf bin", "wr_10d": 0.583, "wr_20d": 0.689, "n_10d": 12, "priority": "P1"},
+    {"key": "BTC_LONG", "wr_10d": 0.571, "wr_20d": 0.571, "n_10d": 7, "stable": true, "priority": "P1"},
+    {"key": "BTC_SHORT_20d", "wr_20d": 0.8, "conflict": "10d=20% WR — regime flip", "priority": "P2"},
+    {"key": "SOL_all", "wr_10d": 0.571, "wr_20d": 0.692, "note": "driven by SOL_LONG", "priority": "P1"}
   ],
   "weak_setups": [
-    {"key": "60-70% conf", "wr": 0.14, "n": 7, "window": "10d_v3", "pnl": -920, "mitigation": "conf_floor_70_v1 ACTIVE gate=20"},
-    {"key": "SOL+SHORT", "wr": 0.17, "n": 6, "window": "10d_v3", "pnl": -1125, "mitigation": "short_direction_veto_v1 ACTIVE gate=20"},
-    {"key": "BTC+SHORT 10d", "wr": 0.2, "n": 5, "window": "10d_v3", "pnl": -979, "mitigation": "short_direction_veto_v1 ACTIVE gate=20"}
+    {"key": "60-70% conf", "wr_10d": 0.143, "pnl_10d": -920, "mitigation": "conf_floor_70_v1"},
+    {"key": "SOL_SHORT", "wr_10d": 0.167, "pnl_10d": -1125, "mitigation": "short_direction_veto_v1"},
+    {"key": "BTC_SHORT", "wr_10d": 0.2, "pnl_10d": -979, "mitigation": "short_direction_veto_v1"}
   ],
-  "key_conflicts": [
-    "BTC+SHORT: 10d=20% WR vs 20d=80% WR — REGIME FLIP. Probe gate=20 is correct response.",
-    "SOL+SHORT: 10d=17% WR vs 20d=62% WR — REGIME FLIP. Same probe applies."
-  ],
-  "rules_confirmed": [
-    "sol_long_probe_boost_v1: SOL LONG 100% WR (10d) confirms boost correct",
-    "high_conf_80_85_penalty_v1 DEACTIVATED: 80-90% bin = 82% WR (20d) confirms deactivation correct",
-    "conf_floor_70_v1 ACTIVE: 60-70% bin = 14% WR (10d) confirms floor correct"
-  ]
+  "output": {"high_edges_found": 6, "weak_setups_found": 3}
 }

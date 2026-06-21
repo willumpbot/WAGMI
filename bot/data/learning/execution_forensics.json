@@ -1,86 +1,25 @@
 {
-  "last_updated": "2026-06-20T17:03:35Z",
-  "run_number": 99,
-  "data_source": "10d_v3 backtest (n=32 trades) + 100d backtest (n=589) + adaptive_risk_state.json — bot offline Day 65.83",
-  "trades_csv_available": false,
-  "trades_csv_note": "trades.csv not present — bot offline Day 65.58. All metrics from backtest cross-reference.",
-  "avg_slippage": "UNAVAILABLE — bot offline Day 65.58, no live fills",
-  "fill_rate": "UNAVAILABLE — bot offline",
+  "last_updated": "2026-06-21T00:30:00Z",
+  "run_number": 108,
+  "data_source": "bot/backtest_10d_v3.csv (n=32) + bot/backtest_20d.csv (n=111) — live trades.csv empty (bot offline Day 68)",
+  "avg_slippage": {"value": "UNAVAILABLE", "reason": "Bot offline. No live fill data."},
   "noise_stop_problem": {
-    "description": "71.9% of SL hits in illiquid regime, 72.0% in ranging — BOTH CORRECTLY GATED",
-    "illiquid_regime_sl_rate": 0.719,
-    "ranging_regime_sl_rate": 0.72,
-    "fix_status": "GATED: NOISE_STOP_WIDEN_illiquid gate=100%, NOISE_REGIME_FAST_EXIT gate=80%",
-    "data_source": "100d backtest (n=589)"
+    "10d_noise_sl_rate": 0.417,
+    "short_sl_multiplier": 2.65,
+    "mitigation": "conf_floor_70_v1 + short_direction_veto_v1 both ACTIVE gate=20"
   },
-  "slippage_analysis": {
-    "live_data": "UNAVAILABLE",
-    "backtest_proxy": {
-      "note": "Backtest assumes zero slippage. Live slippage estimates from prior paper sessions (now 65 days stale).",
-      "prior_avg_slippage_est": "0.05-0.15% per trade",
-      "worst_cases_prior": "HYPE and SOL in illiquid regimes — spread widening up to 0.3%"
-    }
+  "payoff_analysis": {
+    "10d_v3": {"n": 32, "wr": 0.5, "payoff_ratio": 0.956, "avg_win": 226.38, "avg_loss": -236.82},
+    "20d": {"n": 111, "wr": 0.658, "payoff_ratio": 0.916, "avg_win": 223.78, "avg_loss": -244.26}
   },
-  "close_reason_breakdown": {
-    "source": "10d_v3 backtest (n=32)",
-    "SL": {"count": 12, "pct": 0.375, "avg_pnl": -311.92, "total_pnl": -3743},
-    "TP1": {"count": 10, "pct": 0.313, "avg_pnl": 357.59, "total_pnl": 3576},
-    "TRAILING_STOP": {"count": 8, "pct": 0.25, "avg_pnl": -0.52, "total_pnl": -4},
-    "TP2": {"count": 2, "pct": 0.063, "avg_pnl": null, "note": "n=2 too small"}
+  "trailing_stop_analysis": {
+    "10d_wr": 0.5, "10d_avg_pnl": -0.5,
+    "20d_wr": 0.84, "20d_avg_pnl": 19.89,
+    "severity": "P2"
   },
-  "short_sl_oversize_finding": {
-    "long_avg_sl_loss": -280.51,
-    "short_avg_sl_loss": -743.5,
-    "multiplier": 2.65,
-    "finding": "SHORT SL losses 2.65x LONG SL losses. Stops placed too wide relative to bull-regime volatility.",
-    "worst_cases": [
-      {"setup": "SOL SHORT SL", "conf": 78.2, "loss": -768, "note": "oversized stop in bull regime"},
-      {"setup": "BTC SHORT SL", "conf": 79.8, "loss": -711, "note": "oversized stop in bull regime"},
-      {"setup": "SOL SHORT SL", "conf": 74.1, "loss": -502},
-      {"setup": "BTC SHORT SL", "conf": 65.3, "loss": -498},
-      {"setup": "BTC LONG SL", "conf": 63.4, "loss": -173, "note": "low-conf bucket"}
-    ]
-  },
-  "trailing_stop_detail": {
-    "10d_wr": 0.49, "20d_wr": 0.84, "60d_wr": 0.73, "100d_wr": 0.48,
-    "verdict": "TRAILING_STOP_LOCK pending Day 10. 20d=84% contradicts 100d basis. Hold until 30 live trades.",
-    "cumulative_forgone_ev_est_usd": 331.27,
-    "days_pending": 10
-  },
-  "run98_update": "Day 10 of TRAILING_STOP_LOCK pending. 2 auto-fixes applied this run (SOL_LONG probe, SHORT veto). No live data.",
-  "hold_time_tracking_gap": {
-    "finding": "CRITICAL DATA QUALITY GAP: duration_h = 0 or slightly negative across ALL 589 backtest trades",
-    "impact": "HoldTimeRuleManager's 3.0h minimum cannot be validated. hold_time_rules_state.json exists but data is corrupted.",
-    "discovered": "2026-06-20T17:03:35Z",
-    "discovered_run": "Run 99 audit (2026-06-20T16:06:05Z)",
-    "status": "PENDING_CODE_FIX",
-    "fix_required": "Fix duration_h calculation in backtest runner: close_time - open_time in hours.",
-    "confidence": 95
-  },
-  "payoff_ratio_finding": {
-    "finding": "STRUCTURAL PAYOFF RATIO = 0.91 across n=589 trades",
-    "avg_win": 82.72, "avg_loss": 91.27, "payoff_ratio": 0.91,
-    "breakeven_wr_required": 0.525, "actual_wr": 0.445, "wr_gap": -0.08,
-    "mathematical_loss_per_100_trades": -1383,
-    "close_reason_breakdown": {
-      "SL": {"count": 269, "total_pnl": -29300, "avg_pnl": -108.92, "pct": 0.457},
-      "TP1": {"count": 160, "total_pnl": 19521, "avg_pnl": 122.01, "pct": 0.272},
-      "TP2": {"count": 49, "total_pnl": 1643, "avg_pnl": 33.53, "pct": 0.083},
-      "TRAILING_STOP": {"count": 111, "total_pnl": -37, "avg_pnl": -0.34, "pct": 0.188}
-    },
-    "fix_applied": "PAYOFF_RATIO_TP1_BOOST rule added gate=20% (Run 99)",
-    "discovered_run": "Run 99 audit (2026-06-20T16:06:05Z)"
-  },
-  "confidence_paradox_100d": {
-    "finding": "CONFIDENCE PARADOX: higher confidence = worse outcomes (n=589)",
-    "by_bin": {
-      "60-70%": {"wr": 0.486, "count": 111, "avg_pnl": -7.15, "sl_rate": 0.423},
-      "70-80%": {"wr": 0.452, "count": 321, "avg_pnl": -8.54, "sl_rate": 0.433},
-      "80-90%": {"wr": 0.4, "count": 120, "avg_pnl": -33.04, "sl_rate": 0.533},
-      "90%+": {"wr": 0.405, "count": 37, "avg_pnl": -18.23, "sl_rate": 0.514}
-    },
-    "hypothesis": "High-confidence signals enter overextended, OR larger sizing amplifies absolute loss on SL",
-    "status": "CONFIRMED at n=589 — requires investigation",
-    "discovered_run": "Run 99 audit (2026-06-20T16:06:05Z)"
+  "output": {
+    "avg_slippage": "UNAVAILABLE_BOT_OFFLINE",
+    "noise_stop_problem": "41.7% of 10d SLs from conf<70% setups. SHORT SL losses 2.65x LONG SL losses.",
+    "payoff_ratio": 0.956
   }
 }

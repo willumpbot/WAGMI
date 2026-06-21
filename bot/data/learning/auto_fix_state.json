@@ -1,1 +1,95 @@
-see separate read
+{
+  "last_run": "2026-06-21T00:30:00Z",
+  "run_number": 108,
+  "cadence_streak": 30,
+  "fixes_applied_this_run": 0,
+  "gates_active": 20,
+  "total_applied_all_time": 96,
+  "new_fixes_this_run": [],
+  "run108_review": {
+    "source_audit": "autonomous_audit_2026-06-20T22:07:20Z (Run104) — most recent audit",
+    "recs_reviewed": [
+      {
+        "rec_id": "REC1",
+        "description": "Suspend high_conf_80_85_penalty_v1",
+        "confidence": 88,
+        "threshold": 75,
+        "qualifies": true,
+        "action_needed": "ALREADY APPLIED in Run105 — active=false, gate=0",
+        "status": "COMPLETED_PRIOR_RUN"
+      },
+      {
+        "rec_id": "REC2",
+        "description": "Reactivate conf_floor_70_v1",
+        "confidence": 75,
+        "threshold": 75,
+        "qualifies": true,
+        "action_needed": "ALREADY APPLIED in Run105 — active=true, gate=20",
+        "status": "COMPLETED_PRIOR_RUN"
+      },
+      {
+        "rec_id": "REC3",
+        "description": "Invalidate Morning Edge Insight + sniper_premium stale insight",
+        "confidence": 96,
+        "threshold": 75,
+        "qualifies": true,
+        "action_needed": "ALREADY APPLIED in Runs 105+106",
+        "status": "COMPLETED_PRIOR_RUN"
+      }
+    ],
+    "pending_code_changes": [
+      {
+        "id": "TP1_MULTIPLIER_BOOST",
+        "description": "Boost TP1 targets 7% in trending regime — payoff ratio fix (0.916 -> ~1.00)",
+        "confidence": 0.82,
+        "files": ["bot/trading_config.py"],
+        "details": "regime_trend_tp1_mult: 1.5 -> 1.605. Validate all strategy TP calcs stay above MIN_RR_TP1=1.5.",
+        "status": "DEFERRED — needs R:R audit before applying"
+      },
+      {
+        "id": "DURATION_H_FIX",
+        "description": "Fix duration_h=0 in all backtest CSV rows. Prevents hold-time analysis.",
+        "confidence": 0.95,
+        "files": ["bot/cli.py or backtest runner"],
+        "status": "DEFERRED — needs investigation of backtest writer"
+      },
+      {
+        "id": "FEEDBACK_PERSISTENCE_AUDIT",
+        "description": "Verify RegimeFeedbackManager and ParameterTuner disk-flush paths",
+        "confidence": 0.95,
+        "files": ["bot/feedback/regime_feedback.py", "bot/feedback/parameter_tuner.py"],
+        "status": "DEFERRED — SignalQualityScorer confirmed fixed; others need audit"
+      }
+    ],
+    "deferred_escalations": [
+      {
+        "rule_id": "short_direction_veto_v1",
+        "reason": "Requires n>=15 live short trades. 10d_v3 has n=11. 20d contradicts: BTC_SHORT 80% WR, SOL_SHORT 62% WR. Deferred pending bot restart.",
+        "current_gate": 20,
+        "target_gate": 50,
+        "confidence": 0.75
+      }
+    ]
+  },
+  "rule_integrity": {
+    "total": 28,
+    "active": 20,
+    "inactive": 8,
+    "key_states": {
+      "high_conf_80_85_penalty_v1": "INACTIVE (deactivated Run105) — 80-90% bin = 66.7% WR (10d), 81.8% WR (20d). Correct.",
+      "conf_floor_70_v1": "ACTIVE gate=20 (reactivated Run105) — 60-70% bin = 14.3% WR (10d). Correct.",
+      "sol_long_probe_boost_v1": "ACTIVE — SOL LONG 100% WR, 8/8 trades (10d). Correct.",
+      "sol_long_veto_v1": "INACTIVE (deactivated Run101) — SOL LONG 100% WR confirms.",
+      "btc_long_veto_v1": "INACTIVE (deactivated Run101) — BTC LONG 57.1% WR confirms.",
+      "short_direction_veto_v1": "ACTIVE gate=20 — probe pending 15+ live short trades.",
+      "night_session_block_v1": "ACTIVE gate=100 — 15% WR confirmed.",
+      "hype_long_veto_v1": "ACTIVE — HYPE LONG 33.3% WR (10d) confirmed.",
+      "hype_short_veto_v1": "ACTIVE — HYPE SHORT protects vs -$5,592 (60d)."
+    }
+  },
+  "output": {
+    "fixes_applied": 0,
+    "gates_active": 20,
+    "note": "All Run104 recommendations applied in prior runs (105/106). No new eligible recommendations this run. 3 items deferred to code changes."
+  }
+}
