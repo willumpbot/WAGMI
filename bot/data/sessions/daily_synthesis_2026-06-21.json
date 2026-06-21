@@ -1,21 +1,29 @@
 {
-  "last_run": "2026-06-21T12:07:00Z",
-  "run_number": 111,
   "date": "2026-06-21",
-  "bot_status": "OFFLINE — Day 68.42",
+  "generated_at": "2026-06-21T16:30:00Z",
+  "run_number": 114,
+  "cadence_streak": 36,
+  "bot_status": {"online": false, "offline_days": 69.08, "last_live_trade": "Approx 2026-04-13 (69 days ago)", "status_code": "OFFLINE_LONG_TERM"},
   "today_trades": 0,
   "today_pnl": 0.0,
-  "run111_new_findings": [
-    {"id": "BTC_SHORT_CONF_REVERSAL", "severity": "CRITICAL", "detail": "Run110 deactivated btc_short_90plus_boost_v1 using aggregate BTC SHORT EV. Disaggregated: 70-80% conf is sole drag (EV=-$91.87). 80-90%: EV=+$59.52. 90%+: EV=+$102.92. CORRECTED Run111."},
-    {"id": "SOL_DIRECTION_SPLIT", "severity": "HIGH", "detail": "SOL_LONG EV=-$2.62 (WR below BE-WR). SOL_SHORT EV=+$32.44. Combined SOL stat masked this for 110 runs. sol_long_probe_boost_v1 gate reduced 50->20."}
+  "today_pnl_note": "Bot offline — no live trading",
+  "backtest_reference": {"n": 965, "period": "10d", "source": "bot/trades_10d.csv", "overall_wr_pct": 57.0, "overall_pnl": 905.23, "payoff_ratio": 0.686},
+  "anomaly_detection": {"method": "Pattern scanning on audit Run 114 data (backtest, n=965)", "anomalies_found": 8},
+  "anomalies": [
+    {"id": "BOT_OFFLINE_DAY_69", "severity": "P0_CRITICAL", "type": "availability", "description": "Bot offline for 69.08 days — Day 69. No revenue generation. All edges remain unmonetized.", "action_required": "Restart bot in paper mode: cd bot && python run.py paper", "consecutive_runs_flagged": 50},
+    {"id": "SOL_SHORT_SUPPRESSED_4TH_RUN", "severity": "P0_CRITICAL", "type": "edge_suppression", "description": "SOL SHORT (WR=63.7%, EV=+$32.44/trade, n=179) blocked for 4th consecutive audit.", "action_required": "CODE: Add exclude_symbols=['SOL'] to short_direction_veto_v1 in bot/llm/graduated_rules.py:matches()", "estimated_daily_loss": "$194/day foregone"},
+    {"id": "PAYOFF_RATIO_CRITICAL", "severity": "P0", "type": "structural", "description": "Payoff ratio = 0.686x. Avg loss $224.63 > avg win $153.99. Requires 59.4% WR to break even. System at 57% = net negative EV.", "action_required": "Review TP1_MULTIPLIER (1.07 → 1.15). Monitor 2-3x R:R bucket.", "consecutive_runs_flagged": 5},
+    {"id": "CONSECUTIVE_LOSSES_8", "severity": "P1", "type": "streak", "description": "Max consecutive losses in backtest = 8. Last 4 trades before shutdown were SL hits.", "action_required": "Ensure RESTART_SOFT_START_4LOSS rule fires on next restart (0.5x sizing first 10 trades)."},
+    {"id": "DURATION_H_BROKEN_4TH_RUN", "severity": "P1", "type": "data_quality", "description": "100% of trades have duration_h=0.0 or -0.1. HoldTimeRuleManager cannot learn. 4th consecutive run flagging this.", "action_required": "CODE: Fix hold_time_s in position_manager.py and backtest/engine.py", "consecutive_runs_flagged": 4},
+    {"id": "FEEDBACK_PERSISTENCE_3_SYSTEMS", "severity": "P1", "type": "state_persistence", "description": "3 feedback state files missing: regime_feedback_state.json, signal_quality.json, confidence_state.json.", "action_required": "None — auto-creates on first trade close.", "auto_resolves": true},
+    {"id": "RR_23X_LOSS_ZONE_NEW", "severity": "P1", "type": "structural", "description": "NEW: 2-3x R:R bucket = 34% WR, -$14,574 on 212 trades. This is a structural loss zone. >3x R:R bucket = 64.8% WR, +$17,277.", "action_required": "Review TP1_MULTIPLIER in trading_config.py.", "first_identified": "2026-06-21 (Run 114)"},
+    {"id": "GRADUATED_RULES_SIDE_ENCODING_BUG", "severity": "P1", "type": "code_bug", "description": "record_outcome() passes side='LONG'/'SHORT' but rules use side='BUY'/'SELL'. times_correct stays 0 for ALL side-conditioned rules.", "action_required": "CODE: In multi_strategy_main.py line 3257, map LONG→SELL, SHORT→BUY before passing to record_outcome()", "consecutive_runs_flagged": 3}
   ],
-  "anomalies_found": 5,
-  "report_generated": true,
-  "tomorrow_focus": {
-    "priority_1": "Investigate btc_short_90plus_boost_v1 times_applied=0 bug",
-    "priority_2": "CODE: Add exclude_symbols=['SOL'] to short_direction_veto_v1",
-    "priority_3": "CODE: Fix duration_h in position_manager.py",
-    "symbols_to_prioritize": ["SOL_SHORT", "BTC_SHORT_90plus", "BTC_LONG"],
-    "avoid": ["HYPE", "night 00-06 UTC", "BTC_SHORT 70-80% conf"]
-  }
+  "priority_actions": [
+    {"rank": 1, "action": "RESTART BOT in paper mode", "command": "cd bot && python run.py paper"},
+    {"rank": 2, "action": "CODE FIX: Add exclude_symbols=['SOL'] to short_direction_veto_v1", "files": ["bot/llm/graduated_rules.py", "bot/data/llm/graduated_rules.json"]},
+    {"rank": 3, "action": "CODE FIX: Fix duration_h in position_manager.py and backtest/engine.py"},
+    {"rank": 4, "action": "CONFIG: Review TP1_MULTIPLIER in trading_config.py (1.07 → 1.15 to push 2-3x R:R into >3x)"},
+    {"rank": 5, "action": "CODE FIX: Map LONG/SHORT → BUY/SELL in record_outcome() call (multi_strategy_main.py:3257)"}
+  ]
 }

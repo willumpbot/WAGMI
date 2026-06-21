@@ -1,15 +1,74 @@
 {
-  "last_updated": "2026-06-21T12:07:00Z",
-  "run_number": 111,
-  "data_source": "bot/trades_10d.csv (n=965) — live trades.csv empty (bot offline Day 68.42)",
-  "avg_slippage": {"value": "UNAVAILABLE", "reason": "Bot offline."},
-  "sl_rate_pct": 38.3,
-  "duration_h_broken_pct": 83.8,
-  "payoff_by_btc_short_conf": {
-    "60-70": {"ev": 57.94, "wr": 0.643, "n": 28},
-    "70-80": {"ev": -91.87, "wr": 0.439, "n": 98, "note": "SOLE DRAG — btc_short_conf70_80_penalize_v1 CRITICAL"},
-    "80-90": {"ev": 59.52, "wr": 0.577, "n": 26, "note": "btc_short_80_90_boost_v1 added Run111"},
-    "90+": {"ev": 102.92, "wr": 0.674, "n": 43, "note": "btc_short_90plus_boost_v1 re-activated Run111"}
+  "last_updated": "2026-06-21T16:30:00Z",
+  "run_number": 114,
+  "data_source": "bot/trades_10d.csv (n=965, backtest) — trades.csv EMPTY (bot offline Day 69.08)",
+  "live_trades_available": false,
+  "bot_offline_days": 69.08,
+  "avg_slippage": {
+    "value": "UNAVAILABLE",
+    "reason": "No live trades. snapshot_entry column absent in backtest CSV. Cannot compute slippage without actual fill vs expected price.",
+    "previous_run_note": {"value": "UNAVAILABLE", "reason": "Bot offline."}
   },
-  "key_finding": "BTC SHORT aggregate EV=-$7.22 is 100% explained by 70-80% conf drag. All other bands positive."
+  "sl_analysis": {
+    "total_trades": 965,
+    "sl_hits": 370,
+    "sl_hit_rate_pct": 38.3,
+    "tp1_hits": 297,
+    "tp2_hits": 145,
+    "trailing_stop_hits": 152,
+    "trailing_stop_wr_pct": 71.1,
+    "avg_sl_loss_usd": -224.63,
+    "avg_win_usd": 153.99,
+    "payoff_ratio": 0.686,
+    "breakeven_wr_required_pct": 59.4,
+    "actual_wr_pct": 57.0,
+    "note": "BELOW BREAKEVEN. System loses money at current WR despite positive win rate."
+  },
+  "noise_stop_analysis": {
+    "estimated_noise_stop_pct": 36.4,
+    "note": "Audit confirms 100% of SL losses (370 trades) = -$83,112. HoldTimeRuleManager blind due to duration_h=0.0 bug.",
+    "known_noise_stop_patterns": [
+      "BTC stop width <0.86% avg too tight — 66.4% noise rate estimated",
+      "Illiquid regime: 71.9% noise-stop rate confirmed (57 trades)",
+      "89% of losses are instant SL hits per previous audit data"
+    ],
+    "recommendation": "Min stop width: 1.2% system-wide, 1.3% for BTC."
+  },
+  "fill_rate": {"value": "UNAVAILABLE", "reason": "Bot offline — no live order book access."},
+  "duration_analysis": {
+    "duration_h_broken_pct": 100.0,
+    "bug_confirmed_runs": 4,
+    "root_cause": "backtest/engine.py ~line 3125: hold_s = meta.get('hold_time_s') returns 0. Datetime vs float type mismatch.",
+    "impact": "HoldTimeRuleManager neutered — cannot enforce minimum hold times or learn from hold patterns",
+    "known_data": {
+      "median_loss_hold_h": 1.5,
+      "median_win_hold_h": 3.3,
+      "12h_plus_wr_pct": 73.0,
+      "note": "From previous audit mechanistic analysis (n=164 live trades)"
+    }
+  },
+  "worst_cases": {
+    "by_pnl": [
+      {"symbol": "BTC", "side": "LONG", "confidence": 69.0, "pnl": -1458, "close_reason": "SL"},
+      {"symbol": "BTC", "side": "SHORT", "confidence": 74.4, "pnl": -1243, "close_reason": "SL"},
+      {"symbol": "BTC", "side": "LONG", "confidence": 85.4, "pnl": -999, "close_reason": "SL"},
+      {"symbol": "BTC", "side": "SHORT", "confidence": 71.3, "pnl": -881, "close_reason": "SL"},
+      {"symbol": "BTC", "side": "SHORT", "confidence": 85.4, "pnl": -822, "close_reason": "SL"}
+    ],
+    "worst_symbol": "HYPE",
+    "worst_symbol_pnl": -5013,
+    "worst_symbol_trades": 397,
+    "worst_rr_bucket": {"range": "2-3x", "wr_pct": 34.0, "n": 212, "pnl": -14574, "note": "2-3x R:R is loss zone. >3x R:R works (64.8% WR, n=640, +$17,277)"},
+    "worst_subsetup": {"name": "SOL_LONG_60-70%_conf", "wr_pct": 14.3, "n": 14, "pnl": -1277, "note": "Worst sub-condition. sol_long_low_conf_penalize_v1 ADDED this run at gate=20"}
+  },
+  "max_consecutive_losses": 8,
+  "consecutive_losses_on_last_shutdown": 4,
+  "delta_from_run113": {
+    "sl_hit_rate_change": "38.3 (unch) — no new live trades",
+    "new_findings": [
+      "SOL_LONG <65% conf identified as worst sub-condition (14.3% WR, n=14) — rule added",
+      "2-3x R:R bucket quantified as structural loss zone (-$14,574 on 212 trades)",
+      "duration_h bug now 4th consecutive confirmation"
+    ]
+  }
 }
