@@ -1,51 +1,43 @@
 {
-  "last_updated": "2026-06-21T16:30:00Z",
-  "run_number": 114,
-  "data_source": "ARCHITECTURE_INFERENCE — cost_tracker.json absent (bot offline 69.08 days)",
+  "last_updated": "2026-06-21T18:30:00Z",
+  "run_number": 116,
   "cost_tracker_available": false,
-  "current_model_routing": {
-    "source": "bot/llm/usage_tiers.py + CLAUDE.md",
-    "note": "confidence_60_70_ROUTING_FIX applied 2026-04-30 — HIGH_CONFIDENCE now routes to Opus in AGGRESSIVE tier",
-    "routing_table": {
-      "HIGH_VALUE_triggers": {"triggers": ["PRE_TRADE", "REGIME_SHIFT", "HIGH_CONFIDENCE"], "model": "Opus ($15/1M tokens)"},
-      "MEDIUM_VALUE_triggers": {"triggers": ["POSITION_CLOSED", "PERIODIC_ANALYSIS"], "model": "Sonnet ($3/1M tokens)"},
-      "LOW_VALUE_triggers": {"triggers": ["PERIODIC", "MEMORY_EVENT"], "model": "Haiku ($0.25/1M tokens)"}
-    }
+  "verdict": "All current model assignments appropriate. No swaps recommended.",
+  "current_assignments": {
+    "regime_agent": "Haiku",
+    "trade_agent": "Sonnet",
+    "risk_agent": "Haiku",
+    "critic_agent": "Sonnet",
+    "learning_agent": "Haiku",
+    "exit_agent": "Haiku",
+    "scout_agent": "Haiku"
   },
-  "agent_model_assignments": {
-    "regime_agent": {"model": "Haiku", "rationale": "Regime classification — structured output, high frequency"},
-    "trade_agent": {"model": "Sonnet", "rationale": "Directional thesis — complex reasoning, moderate frequency"},
-    "risk_agent": {"model": "Haiku", "rationale": "Position sizing — formula-driven, high frequency"},
-    "critic_agent": {"model": "Sonnet", "rationale": "Stress testing — complex counter-thesis, moderate frequency"},
-    "learning_agent": {"model": "Haiku", "rationale": "Lesson extraction — pattern matching, high frequency"},
-    "exit_agent": {"model": "Haiku", "rationale": "Position monitoring — binary hold/close, high frequency"},
-    "scout_agent": {"model": "Haiku", "rationale": "Idle prep — watchlist maintenance, background"}
-  },
-  "roi_analysis": {
-    "available_data": "PARTIAL — backtest outcomes only, no live cost-to-outcome linkage",
-    "estimated_costs_per_decision_cycle": {
-      "full_9_agent_pipeline": "$0.007",
-      "exit_agent_per_position": "$0.0001",
-      "monthly_at_10_decisions_per_day": "$2.10"
-    }
-  },
-  "model_swap_recommendations": [
+  "swap_recommendations": [
     {
       "priority": "P1",
-      "swap": "Keep current routing — HIGH_CONFIDENCE → Opus already corrected 2026-04-30",
-      "impact": "Neutral — already optimal based on available data"
-    },
-    {
-      "priority": "P2",
-      "swap": "Regime Agent: consider bumping from Haiku to Sonnet for REGIME_SHIFT events",
-      "impact": "Cost: +$0.003/regime_shift event. Monitor after restart."
+      "agent": "regime_agent",
+      "change": "Upgrade to Sonnet for REGIME_SHIFT events only",
+      "cost_delta_monthly": "+$0.27",
+      "benefit": "Better trending/illiquid transition detection (12-point WR difference)",
+      "action": "Modify usage_tiers.py: add REGIME_SHIFT to MEDIUM_VALUE_TRIGGERS"
     }
   ],
-  "action_needed": "Install cost_tracker.json logging before restart. Enable bot/llm/cost_tracker.py collection from day 1.",
-  "pre_restart_cost_checklist": [
-    "Verify bot/llm/cost_tracker.py is wired to all API calls",
-    "Ensure decisions.jsonl captures model used per decision",
-    "Set cost alert threshold in .env: DAILY_COST_LIMIT_USD=5.00",
-    "Monitor first week: expected <$0.50/day at paper trading frequency"
+  "estimated_costs_per_decision_cycle": {
+    "full_9_agent_pipeline": 0.007,
+    "monthly_at_10_decisions_per_day": 2.10
+  },
+  "roi_ratio_when_live": {
+    "cost_per_day": 0.35,
+    "revenue_per_day_target": 400,
+    "roi_ratio": 1143
+  },
+  "agent_roi_ranking": [
+    {"agent": "critic_agent", "roi_tier": "HIGHEST", "swap_to_cheaper": false},
+    {"agent": "trade_agent", "roi_tier": "HIGH", "swap_to_cheaper": false},
+    {"agent": "regime_agent", "roi_tier": "HIGH", "swap_to_cheaper": false},
+    {"agent": "risk_agent", "roi_tier": "HIGH", "swap_to_cheaper": false},
+    {"agent": "exit_agent", "roi_tier": "MEDIUM_HIGH", "swap_to_cheaper": false},
+    {"agent": "learning_agent", "roi_tier": "MEDIUM", "swap_to_cheaper": false},
+    {"agent": "scout_agent", "roi_tier": "MEDIUM", "swap_to_cheaper": false}
   ]
 }
