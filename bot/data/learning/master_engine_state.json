@@ -1,17 +1,17 @@
 {
   "schema_version": "3.0",
-  "last_run": "2026-06-21T19:35:00Z",
-  "run_number": 115,
-  "cadence_streak": 37,
-  "bot_offline_days": 69.25,
+  "last_run": "2026-06-21T20:07:31Z",
+  "run_number": 116,
+  "cadence_streak": 38,
+  "bot_offline_days": 69.83,
   "data_sources": {
-    "trades_live": "bot/data/trades.csv — FILE MISSING (bot offline)",
+    "trades_live": "bot/data/trades.csv — header only (bot offline)",
     "trades_backtest": "bot/trades_10d.csv (n=965) — primary data source",
-    "audit": "bot/data/sessions/autonomous_audit_2026-06-21T16-09-26Z.md (Run 114 — latest available)",
+    "audit": "bot/data/sessions/autonomous_audit_2026-06-21T20-07-31Z.md (Run 116 — this run)",
     "daily_synthesis": "bot/data/sessions/daily_synthesis_2026-06-21.json (Run 114)",
-    "auto_fix_state": "bot/data/learning/auto_fix_state.json (Run 115, 3 code fixes applied)",
+    "auto_fix_state": "bot/data/learning/auto_fix_state.json (Run 114 state — not updated by Run 115)",
     "cost_tracker": "NOT FOUND — bot offline 69+ days",
-    "llm_graduated_rules": "bot/data/llm/graduated_rules.json (31 rules, SOL SHORT unblocked this run)"
+    "llm_graduated_rules": "bot/data/llm/graduated_rules.json (31 rules, 2 gate escalations this run)"
   },
   "subsystems": {
     "auto_fix": {
