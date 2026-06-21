@@ -1,119 +1,261 @@
 {
-  "schema_version": "2.3",
-  "last_run": "2026-06-21T12:07:00Z",
-  "run_number": 111,
-  "cadence_streak": 33,
-  "bot_offline_days": 68.58,
+  "schema_version": "3.0",
+  "last_run": "2026-06-21T14:00:00Z",
+  "run_number": 112,
+  "cadence_streak": 34,
+  "bot_offline_days": 68.75,
+  "data_sources": {
+    "trades_live": "bot/trades.csv (EMPTY — bot offline)",
+    "trades_backtest": "bot/trades_10d.csv (n=965)",
+    "audit": "autonomous_audit_2026-06-21T10-07-47Z.md (Run 106)",
+    "daily_synthesis": "bot/data/sessions/daily_synthesis_2026-06-21.json (Run 111)",
+    "auto_fix_state": "bot/data/learning/auto_fix_state.json (Run 111, 3 fixes)",
+    "cost_tracker": "NOT FOUND — bot offline"
+  },
   "subsystems": {
     "auto_fix": {
       "status": "COMPLETED",
-      "fixes_applied": 3,
-      "gates_active": 21,
-      "total_rules": 30,
-      "fixes_applied_detail": [
-        "btc_short_90plus_boost_v1 RE-ACTIVATED (gate=20): Run110 deactivation error corrected. BTC SHORT 90%+ EV=+$102.92 confirmed.",
-        "btc_short_80_90_boost_v1 ADDED (gate=20): New rule filling 80-90% BTC SHORT gap. EV=+$59.52, n=26.",
-        "sol_long_probe_boost_v1 GATE REDUCED (50→20): SOL LONG WR=53.3% < BE-WR=54.5%, EV=-$2.62 (n=122 backtest)."
+      "run_number": 112,
+      "audit_source": "Run 106 (2026-06-21T10:07:47Z)",
+      "recommendations_extracted": 4,
+      "fixes_applicable_new": 0,
+      "fix_details": [],
+      "fixes_skipped": [
+        {
+          "rule_id": "tod_afternoon_block_v1",
+          "reason": "confidence=0.72 < 0.75 threshold",
+          "conf": 0.72,
+          "expected_impact": "+$20-40/day when bot live"
+        },
+        {
+          "rule_id": "tod_evening_block_v1",
+          "reason": "confidence=0.72 < 0.75 threshold",
+          "conf": 0.72,
+          "expected_impact": "+$20-40/day when bot live"
+        },
+        {
+          "rule_id": "DURATION_H_FIX",
+          "reason": "code_change_required — position_manager.py hold_hours calculation",
+          "conf": 0.92
+        },
+        {
+          "rule_id": "APPLIED_COUNT_PERSISTENCE",
+          "reason": "code_change_required — graduated_rules flush on apply",
+          "conf": 0.95
+        }
       ],
-      "skipped": [
-        "REC1_TOD_BLOCK conf=72%<75%",
-        "REC2_DURATION_H code change",
-        "REC3_APPLIED_COUNT code change",
-        "SOL_SHORT_EXCEPTION code change"
-      ]
+      "already_applied_prior_run": [
+        {
+          "rule_id": "btc_short_90plus_boost_v1",
+          "action": "RE-ACTIVATED gate=20",
+          "run": 111,
+          "conf": 0.9
+        },
+        {
+          "rule_id": "btc_short_80_90_boost_v1",
+          "action": "ADDED gate=20",
+          "run": 111,
+          "conf": 0.82
+        },
+        {
+          "rule_id": "sol_long_probe_boost_v1",
+          "action": "GATE_REDUCED 50->20",
+          "run": 111,
+          "conf": 0.77
+        }
+      ],
+      "deferred_code_changes": [
+        {
+          "id": "DURATION_H_FIX",
+          "confidence": 0.92,
+          "priority": "P1",
+          "status": "LOGGED",
+          "file": "bot/execution/position_manager.py"
+        },
+        {
+          "id": "APPLIED_COUNT_PERSISTENCE",
+          "confidence": 0.95,
+          "priority": "P1",
+          "status": "LOGGED",
+          "file": "bot/data/llm/graduated_rules.json flush"
+        },
+        {
+          "id": "FEEDBACK_PERSISTENCE_5_SYSTEMS",
+          "confidence": 0.95,
+          "priority": "P1",
+          "status": "LOGGED"
+        },
+        {
+          "id": "SOL_SHORT_VETO_EXCEPTION",
+          "confidence": 0.8,
+          "priority": "P1_CRITICAL",
+          "status": "CODE_CHANGE_REQUIRED",
+          "detail": "Add exclude_symbols=['SOL'] to short_direction_veto_v1 conditions in graduated_rules.json or veto logic"
+        },
+        {
+          "id": "BTC_SHORT_CONDITION_BUG",
+          "confidence": 0.88,
+          "priority": "P1",
+          "status": "INVESTIGATE",
+          "detail": "btc_short_90plus_boost_v1 times_applied=0 despite n=43 matching trades"
+        }
+      ],
+      "total_rules_in_graduated": 30,
+      "active_rules": 21
     },
     "execution_forensics": {
       "status": "COMPLETED",
-      "data_source": "trades_10d.csv (n=965)",
-      "avg_slippage": "UNAVAILABLE_BOT_OFFLINE",
-      "sl_rate_pct": 38.3,
-      "sl_count": 370,
-      "worst_sl_bucket": "BTC_SHORT_70-80: n=98, avg -$333/SL, EV=-$91.87 (btc_short_conf70_80_penalize_v1 covers this)",
-      "duration_h_broken_pct": 83.8,
-      "noise_stop_pct": "UNAVAILABLE_REGIME_BLANK",
-      "payoff_ratio": 0.763,
+      "run_number": 112,
+      "data_source": "trades_10d.csv (n=965), last 50 for forensics",
+      "avg_slippage": "UNAVAILABLE — no snapshot_entry column in trades CSV; bot offline",
+      "sl_hit_count": 22,
+      "sl_hit_rate_pct": 44.0,
+      "noise_stop_pct": 36.4,
+      "noise_stop_detail": "8/22 SL hits had confidence >75%",
+      "duration_h_broken_pct": 100.0,
+      "duration_h_note": "ALL 50 last trades show duration_h=0.0 — HoldTimeRuleManager gets corrupted input",
       "max_consecutive_losses": 8,
-      "key_new_finding": "BTC SHORT confidence reversal: 70-80% EV=-$91.87 is the drag. 80-90%=+$59.52, 90%+=+$102.92 both profitable."
+      "consecutive_loss_threshold": 5,
+      "payoff_ratio_full": 0.763,
+      "close_reason_breakdown": {
+        "SL": 22,
+        "TP1": 14,
+        "TP2": 7,
+        "TRAILING_STOP": 7
+      },
+      "key_finding": "Last 50 are 100% BTC trades — possible BTC-only bias in recent data window. Full 965: BTC+SOL+HYPE all present. SL rate 44% in last 50 vs 38.3% overall."
     },
     "live_injection": {
       "status": "COMPLETED",
-      "data_source": "trades_10d.csv (n=965)",
-      "high_edges_found": 6,
-      "weak_setups_found": 3,
-      "top_edges": [
-        "SOL_SHORT: WR=63.7%, EV=+$32.44, n=179 (80% blocked by veto — SOL exception needed)",
-        "BTC_SHORT_90+: WR=67.4%, EV=+$102.92, n=43 (re-activated btc_short_90plus_boost_v1 Run111)",
-        "BTC_LONG: WR=63.9%, EV=+$25.55, n=72",
-        "BTC_SHORT_80-90: WR=57.7%, EV=+$59.52, n=26 (new btc_short_80_90_boost_v1 Run111)",
-        "conf_90+: WR=56.0%, EV=+$32.33, n=91",
-        "conf_80-90: WR=60.2%, EV=+$7.67, n=118"
+      "run_number": 112,
+      "data_source": "trades_10d.csv (n=965 full, last 100 secondary)",
+      "high_edges": [
+        {
+          "setup": "BTC_LONG",
+          "wr_pct": 63.9,
+          "n": 72,
+          "avg_pnl_per_trade": 25.55
+        },
+        {
+          "setup": "SOL_SHORT",
+          "wr_pct": 63.7,
+          "n": 179,
+          "avg_pnl_per_trade": 32.44
+        }
       ],
-      "critical_finding_run111": "SOL LONG direction split: SOL_LONG EV=-$2.62 (WR below breakeven), SOL_SHORT EV=+$32.44. Combined SOL stat (+$18.23) was masking this split in all 110 prior runs."
+      "weak_setups": [],
+      "confidence_bin_analysis": {
+        "60-70": {
+          "n": 123,
+          "wr_pct": 46.3,
+          "avg_pnl": -18.87,
+          "rule": "conf_floor_70_v1 active gate=20"
+        },
+        "70-80": {
+          "n": 633,
+          "wr_pct": 58.6,
+          "avg_pnl": -0.98,
+          "note": "HYPE drags band negative despite 58.6% WR"
+        },
+        "80-90": {
+          "n": 118,
+          "wr_pct": 60.2,
+          "avg_pnl": 7.67,
+          "note": "Best WR band"
+        },
+        "90+": {
+          "n": 91,
+          "wr_pct": 56.0,
+          "avg_pnl": 32.33,
+          "note": "Best EV band — highest absolute returns"
+        }
+      },
+      "symbol_side_full": {
+        "HYPE_SHORT": {"wr_pct": 54.4, "n": 239, "avg_pnl": -16.65},
+        "HYPE_LONG": {"wr_pct": 57.0, "n": 158, "avg_pnl": -6.55},
+        "SOL_LONG": {"wr_pct": 53.3, "n": 122, "avg_pnl": -2.62},
+        "SOL_SHORT": {"wr_pct": 63.7, "n": 179, "avg_pnl": 32.44},
+        "BTC_LONG": {"wr_pct": 63.9, "n": 72, "avg_pnl": 25.55},
+        "BTC_SHORT": {"wr_pct": 53.8, "n": 195, "avg_pnl": -7.22}
+      },
+      "last100_analysis": {
+        "note": "Last 100 are 100% BTC trades — stat bias; use full 965 for edge analysis",
+        "by_sym_side": {
+          "BTC_SHORT": {"wr_pct": 48.7, "n": 76, "avg_pnl": -76.6},
+          "BTC_LONG": {"wr_pct": 45.8, "n": 24, "avg_pnl": -82.61}
+        }
+      },
+      "critical_insight_run112": "Last 100 trades are ALL BTC — the CSV is ordered HYPE→BTC→SOL sequentially."
     },
     "daily_synthesis": {
       "status": "COMPLETED",
-      "anomalies_found": 5,
-      "report_generated": true,
-      "critical": "BOT_OFFLINE day 68.58",
-      "high_1": "BTC_SHORT_RULE_ERROR corrected Run111 (btc_short_90plus_boost_v1 re-activated)",
-      "high_2": "SOL direction split quantified: LONG is drag, SHORT is engine",
-      "high_3": "SOL_SHORT edge still 80% suppressed — code change needed",
-      "p1_1": "Consecutive losses = 8 in last 50 backtest trades (threshold=5)",
-      "p1_2": "duration_h broken (83.8% zeros)"
+      "run_number": 112,
+      "date": "2026-06-21",
+      "today_trades": 0,
+      "today_wr": null,
+      "today_pnl": 0.0,
+      "bot_status": "OFFLINE — Day 68.75",
+      "anomalies": [
+        {"id": "BOT_OFFLINE_DAY_68", "severity": "P0", "detail": "Bot has been offline 68.75 days. All trades are backtest."},
+        {"id": "CONSECUTIVE_LOSSES_8", "severity": "P1", "detail": "Max consecutive losses in last 50 backtest trades = 8 (threshold=5). All BTC trades."},
+        {"id": "DURATION_H_BROKEN_100PCT", "severity": "P1", "detail": "100% of last 50 trades show duration_h=0.0"},
+        {"id": "LLM_FIELDS_BLANK", "severity": "P1", "detail": "llm_action, llm_regime, llm_confidence blank in all trades"},
+        {"id": "CSV_ORDERING_BIAS", "severity": "P2", "detail": "Last 100 trades are 100% BTC. CSV ordering creates symbol-concentration artifact in rolling window analysis"},
+        {"id": "SOL_SHORT_SUPPRESSED", "severity": "P1_CRITICAL", "detail": "SOL SHORT EV=+$32.44 (n=179, WR=63.7%) blocked 80% by short_direction_veto_v1. Code change needed."}
+      ],
+      "cumulative_findings_run111": {
+        "btc_short_conf_reversal": "BTC SHORT 70-80% (EV=-$91.87, n=98) is sole drag. 80-90%=+$59.52, 90%+=+$102.92 both positive.",
+        "sol_direction_split": "SOL LONG (EV=-$2.62) vs SOL SHORT (EV=+$32.44) — combined SOL stat was misleading for 110 runs."
+      }
     },
     "model_optimization": {
       "status": "SKIPPED_NO_DATA",
-      "reason": "No cost_tracker.json found. Bot offline 68.58 days.",
-      "model_swaps_recommended": 0,
-      "potential_savings": "$0.00"
+      "reason": "cost_tracker.json not found. Bot offline 68.75 days — no API calls made recently.",
+      "swaps_recommended": [],
+      "potential_savings": "$0.00",
+      "note": "When bot restarts, cost_tracker.py should log per-agent costs. Then Run 113+ can analyze ROI per agent."
     }
   },
   "high_priority_findings": [
     {
       "rank": 1,
-      "subsystem": "auto_fix",
-      "severity": "CRITICAL",
-      "finding": "Run110 DEACTIVATION ERROR CORRECTED: btc_short_90plus_boost_v1 was deactivated using aggregate BTC SHORT EV (-$7.22) which is 100% explained by the 70-80% conf band drag (EV=-$91.87, n=98). BTC SHORT 90%+: WR=67.4%, EV=+$102.92, n=43 — strongly positive and confirmed by original hypothesis. Rule re-activated at gate=20.",
-      "action": "APPLIED Run111.",
-      "is_new": true
+      "subsystem": "live_injection",
+      "severity": "P1_CRITICAL",
+      "finding": "SOL SHORT WR=63.7%, EV=+$32.44/trade, n=179 — #2 highest EV edge — is 80% suppressed by short_direction_veto_v1.",
+      "action_required": "CODE: Add exclude_symbols=['SOL'] to short_direction_veto_v1 conditions",
+      "estimated_daily_impact": "+$200-400/day when bot live and SOL SHORT unblocked"
     },
     {
       "rank": 2,
-      "subsystem": "live_injection",
-      "severity": "CRITICAL",
-      "finding": "SOL direction split newly quantified (hidden in 110 prior runs): SOL_LONG WR=53.3%<BE-WR=54.5%, EV=-$2.62 (n=122). SOL_SHORT WR=63.7%, EV=+$32.44 (n=179). Combined SOL EV=+$18.23 was misleading. sol_long_probe_boost_v1 was boosting a loss-making setup.",
-      "action": "APPLIED Run111: sol_long_probe_boost_v1 gate 50→20. SOL SHORT exception still needs code change.",
-      "is_new": true
+      "subsystem": "execution_forensics",
+      "severity": "P1",
+      "finding": "duration_h=0.0 for 100% of last 50 trades. HoldTimeRuleManager and trending_early_hold_guard_v1 cannot function.",
+      "action_required": "CODE: Fix hold_hours calculation in position_manager.py",
+      "estimated_daily_impact": "+$5-15/day"
     },
     {
       "rank": 3,
-      "subsystem": "live_injection",
-      "severity": "HIGH",
-      "finding": "BTC SHORT 80-90% conf (EV=+$59.52, n=26) had no boost rule — gap between btc_short_conf70_80_penalize_v1 and btc_short_90plus_boost_v1.",
-      "action": "APPLIED Run111: btc_short_80_90_boost_v1 added at gate=20.",
-      "is_new": true
+      "subsystem": "auto_fix",
+      "severity": "P1",
+      "finding": "5/7 feedback systems lose all learned data on restart. applied_count resets to 0 for all 28+ rules on each session restart.",
+      "action_required": "CODE: Add _save() methods to 5 feedback managers. Flush applied_count to JSON on each rule application.",
+      "estimated_daily_impact": "Monitoring/compounding fix"
     },
     {
       "rank": 4,
-      "subsystem": "auto_fix",
-      "severity": "HIGH",
-      "finding": "btc_short_90plus_boost_v1 shows times_applied=0 despite n=43 matching trades in backtest. Condition match bug suspected.",
-      "action": "CODE_INVESTIGATION needed on restart.",
-      "is_new": true
+      "subsystem": "live_injection",
+      "severity": "P1",
+      "finding": "Afternoon (12-18 UTC): 27% WR, n=15 and Evening (18-24 UTC): 29% WR, n=14 — no block rules. TOD blocks at conf=0.72<0.75 threshold.",
+      "action_required": "Watch for more data OR manually approve tod_afternoon_block_v1 + tod_evening_block_v1",
+      "estimated_daily_impact": "+$20-40/day when live"
     },
     {
       "rank": 5,
       "subsystem": "execution_forensics",
-      "severity": "HIGH",
-      "finding": "83.8% of trades show duration_h=0.0. trending_early_hold_guard_v1 and HoldTimeRuleManager cannot function.",
-      "action": "CODE: pos.close_time - pos.opened_at duration fix in position_manager.py"
-    },
-    {
-      "rank": 6,
-      "subsystem": "live_injection",
-      "severity": "HIGH",
-      "finding": "SOL_SHORT WR=63.7%, EV=+$32.44, n=179 is 80% suppressed by short_direction_veto_v1. HYPE SHORT already blocked separately.",
-      "action": "CODE_CHANGE_REQUIRED: Add exclude_symbols=['SOL'] to short_direction_veto_v1 conditions."
+      "severity": "P2",
+      "finding": "btc_short_90plus_boost_v1 shows times_applied=0 despite n=43 matching trades — suspected condition-match bug.",
+      "action_required": "INVESTIGATE: Debug rules engine condition matching",
+      "estimated_daily_impact": "Unknown until root cause found"
     }
   ],
   "cumulative_stats": {
@@ -121,14 +263,14 @@
     "active_rules": 21,
     "inactive_rules": 9,
     "total_fixes_all_time": 101,
-    "fixes_this_run": 3,
+    "fixes_this_run": 0,
     "estimated_daily_ev_when_live": "+$400+/day if SOL SHORT unblocked + BTC SHORT high-conf rules fire"
   },
   "next_run_focus": {
-    "priority_1": "INVESTIGATE: btc_short_90plus_boost_v1 times_applied=0 condition-match bug",
-    "priority_2": "MANUAL_CODE: Add exclude_symbols=['SOL'] to short_direction_veto_v1",
-    "priority_3": "MANUAL_CODE: Fix duration_h in position_manager.py",
-    "priority_4": "MANUAL_CODE: TP1_MULTIPLIER=1.07 in trading_config.py",
-    "priority_5": "VERIFY: Confirm sol_long_probe_boost_v1 gate reduction took effect in rules engine"
+    "priority_1": "MANUAL_CODE: Add exclude_symbols=['SOL'] to short_direction_veto_v1",
+    "priority_2": "MANUAL_CODE: Fix duration_h in position_manager.py",
+    "priority_3": "INVESTIGATE: btc_short_90plus_boost_v1 times_applied=0 condition bug",
+    "priority_4": "WATCH: tod_afternoon+evening block rules — accumulate more evidence to reach 75% confidence",
+    "priority_5": "MANUAL_CODE: Add _save() to 5 feedback systems"
   }
 }
