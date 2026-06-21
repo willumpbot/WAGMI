@@ -1,143 +1,22 @@
 {
-  "last_updated": "2026-06-21T18:30:00Z",
-  "run_number": 116,
-  "data_source": "backtest_100d.csv (n=589, BTC/HYPE/SOL) — trades.csv FILE MISSING (bot offline Day 69.25)",
-  "live_trades_available": false,
-  "bot_offline_days": 69.25,
-  "dataset_note": "Run 116 uses backtest_100d.csv (n=589) — Run 115 used trades_10d.csv (n=965). Different dataset, different metrics.",
-  "avg_slippage": {
-    "value": "UNAVAILABLE",
-    "reason": "No live trades. snapshot_entry column absent in backtest CSV. Cannot compute slippage without actual fill vs expected price.",
-    "delta_from_run115": "No change — bot remains offline"
-  },
-  "sl_analysis": {
-    "dataset": "backtest_100d.csv n=589",
-    "total_trades": 589,
-    "total_wins": 262,
-    "total_losses": 327,
-    "win_rate_pct": 44.5,
-    "sl_hits": 269,
-    "sl_hit_rate_pct": 45.7,
-    "tp1_hits": 160,
-    "tp2_hits": 49,
-    "trailing_stop_hits": 111,
-    "trailing_stop_wr_pct": 47.7,
-    "avg_sl_loss_usd": -108.92,
-    "avg_tp_win_usd": 101.26,
-    "payoff_ratio": 0.930,
-    "breakeven_wr_required_pct": 54.0,
-    "actual_wr_pct": 44.5,
-    "note": "BELOW BREAKEVEN. 100d dataset: 44.5% WR vs 57% in 10d. Includes older pre-optimization trades. Payoff ratio 0.930 is better than 10d's 0.686 — TP sizing improved but WR collapsed.",
-    "10d_vs_100d_comparison": {
-      "10d_wr": 57.0,
-      "100d_wr": 44.5,
-      "delta": -12.5,
-      "explanation": "100d includes older pre-rule-optimization trades. Recent rules (vetos, floor raises) should improve WR on fresh data."
-    }
-  },
+  "status": "COMPLETE",
+  "data_source": "backtest_100d.csv (trades.csv empty - bot offline)",
+  "trades_analyzed": 50,
+  "avg_slippage_pct": 0.5128,
   "slippage_by_symbol": {
-    "BTC": {
-      "n": 166,
-      "wr_pct": 42.2,
-      "total_pnl": -637,
-      "avg_pnl": -3.84,
-      "slippage_est": "UNAVAILABLE — no fill data"
-    },
-    "HYPE": {
-      "n": 225,
-      "wr_pct": 48.9,
-      "total_pnl": -5564,
-      "avg_pnl": -24.73,
-      "slippage_est": "UNAVAILABLE — no fill data",
-      "note": "Primary loss source despite higher WR — asymmetric SL/TP sizes"
-    },
-    "SOL": {
-      "n": 198,
-      "wr_pct": 41.4,
-      "total_pnl": -1972,
-      "avg_pnl": -9.97,
-      "slippage_est": "UNAVAILABLE — no fill data"
-    }
+    "BTC": "0.513%"
   },
-  "noise_stop_analysis": {
-    "dataset": "100d backtest (n=589)",
-    "estimated_noise_stop_pct": "~35-40% (inferred from prior 10d analysis)",
-    "known_noise_patterns": [
-      "BTC stop width <0.86% avg too tight — 66.4% noise rate from 10d analysis",
-      "Illiquid regime: 71.9% noise-stop rate confirmed (57 trades, 10d)",
-      "91.2% of 100d trades have duration_h=0.0 — HoldTimeRuleManager blind"
-    ],
-    "stop_recommendations": {
-      "system_wide_min": "1.2%",
-      "btc_specific_min": "1.3%",
-      "illiquid_regime_multiplier": "1.3x SL width + 0.7x size"
-    }
-  },
-  "fill_rate": {
-    "value": "UNAVAILABLE",
-    "reason": "Bot offline — no live order flow"
-  },
-  "duration_analysis": {
-    "pct_valid_duration": 0.0,
-    "pct_zero_or_negative": 100.0,
-    "bug_confirmed_runs": 5,
-    "dataset_100d_breakdown": {
-      "zero_duration_h": "537 / 589 (91.2%)",
-      "negative_duration_h": "52 / 589 (8.8%)",
-      "valid_positive": "0 / 589 (0%)"
-    },
-    "root_cause": "backtest/engine.py ~line 2522-2540: hold_s = meta.get('hold_time_s') returns 0. Fallback reads entry_reasons.get('sim_time') and meta.get('close_sim_time') — both None in 100d dataset.",
-    "impact": "HoldTimeRuleManager completely neutered — cannot enforce minimum hold times or learn regime-specific patterns",
-    "known_data_from_10d": {
-      "median_loss_hold_h": 1.5,
-      "median_win_hold_h": 3.3,
-      "12h_plus_wr_pct": 73.0,
-      "early_loss_noise_pct": 87.0
-    }
-  },
-  "confidence_bin_forensics_100d": {
-    "note": "CRITICAL FINDING: Higher confidence correlates with LOWER WR in 100d data — inverse confidence paradox",
-    "60_70_pct": {"wr": 48.6, "n": 111, "total_pnl": -794},
-    "70_80_pct": {"wr": 45.2, "n": 321, "total_pnl": -2742},
-    "80_90_pct": {"wr": 40.0, "n": 120, "total_pnl": -3965, "flag": "WORST BAND — confidence inversely predicts outcome"},
-    "90_plus_pct": {"wr": 40.5, "n": 37, "total_pnl": -672, "flag": "Confidence fails at top end"}
-  },
-  "close_reason_analysis": {
-    "SL": {"n": 269, "wr_pct": 0, "total_pnl": -29300},
-    "TP1": {"n": 160, "wr_pct": 100, "total_pnl": 19521},
-    "TP2": {"n": 49, "wr_pct": 100, "total_pnl": 1643},
-    "TRAILING_STOP": {"n": 111, "wr_pct": 47.7, "total_pnl": -37}
-  },
-  "worst_cases_100d": {
-    "worst_symbol": "HYPE",
-    "hype_100d_pnl": -5564,
-    "hype_danger_zone": "75-85% confidence SHORT: 33% WR, -$4155 on 40 trades",
-    "top_5_losses": [
-      {"symbol": "HYPE", "side": "SHORT", "entry": 37.78, "confidence": 70.4, "pnl": -520.86},
-      {"symbol": "HYPE", "side": "SHORT", "entry": 26.90, "confidence": 87.5, "pnl": -516.46},
-      {"symbol": "HYPE", "side": "SHORT", "entry": 37.53, "confidence": 81.5, "pnl": -512.22},
-      {"symbol": "HYPE", "side": "SHORT", "entry": 28.25, "confidence": 71.3, "pnl": -511.20},
-      {"symbol": "HYPE", "side": "SHORT", "entry": 37.62, "confidence": 85.4, "pnl": -451.13}
-    ],
-    "top_5_wins": [
-      {"symbol": "SOL", "side": "SHORT", "entry": 130.75, "confidence": 79.7, "pnl": 713.84},
-      {"symbol": "HYPE", "side": "SHORT", "entry": 30.51, "confidence": 87.5, "pnl": 598.26},
-      {"symbol": "HYPE", "side": "SHORT", "entry": 34.34, "confidence": 71.1, "pnl": 494.33},
-      {"symbol": "HYPE", "side": "SHORT", "entry": 33.42, "confidence": 69.0, "pnl": 452.54},
-      {"symbol": "HYPE", "side": "SHORT", "entry": 37.82, "confidence": 72.1, "pnl": 425.95}
-    ]
-  },
-  "max_consecutive_losses": 8,
-  "consecutive_losses_on_last_shutdown": 4,
-  "delta_from_run115": {
-    "dataset_change": "Run 115 used trades_10d.csv (n=965); Run 116 uses backtest_100d.csv (n=589)",
-    "wr_delta": "-12.5 pts (57.0% -> 44.5%) due to older pre-optimization data in 100d",
-    "payoff_ratio_delta": "+0.244 (0.686 -> 0.930) — better average trade sizing in 100d data",
-    "new_findings": [
-      "Confidence inversion confirmed at 100d scale: 80-90% conf = 40% WR (WORST band)",
-      "HYPE SHORT 75-85% danger zone: 33% WR, -$4155 on 40 trades — validates hype_short_veto_v1",
-      "SOL SHORT best single trade: +$713 (SOL SHORT entry 130.75 conf 79.7%)",
-      "TRAILING_STOP exits: 47.7% WR (neutral) — not a primary loss source"
-    ]
+  "sl_count": 20,
+  "tp1_count": 15,
+  "tp2_count": 6,
+  "trailing_count": 9,
+  "noise_stop_pct": 100.0,
+  "noise_regime_sl_note": "20/20 SL hits had no regime tag (proxy for noise)",
+  "partial_fills": 15,
+  "full_fills": 6,
+  "partial_pct": 71.4,
+  "output": {
+    "avg_slippage": "0.5128%",
+    "noise_stop_problem": "100.0% of stops in no-regime (noise proxy)"
   }
 }

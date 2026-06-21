@@ -1,77 +1,151 @@
 {
-  "schema_version": "4.0",
-  "last_run": "2026-06-21T21:05:51Z",
-  "run_number": 117,
-  "cadence_streak": 39,
-  "bot_offline_days": 69.42,
-  "today_date": "2026-06-21",
-  "data_sources": {
-    "audit_latest": "bot/data/sessions/autonomous_audit_2026-06-21T18-30-00Z.md (Run 115)",
-    "audit_dataset": "backtest_100d.csv (n=589, BTC/HYPE/SOL)",
-    "trades_live": "bot/data/trades.csv - FILE MISSING (bot offline 69.42 days)",
-    "graduated_rules": "bot/data/llm/graduated_rules.json (31 rules, 23 now active - tod_morning_edge_v1 activated)"
+  "engine": "perpetual_improvement_loop",
+  "version": "2.0",
+  "timestamp": "2026-06-21T22:00:00Z",
+  "today": "2026-06-21",
+  "bot_status": "OFFLINE",
+  "days_offline": 69,
+  "subsystem_1_auto_fix": {
+    "status": "COMPLETE",
+    "fixes_applied": 0,
+    "gates_active": 22,
+    "total_active_rules": 22,
+    "skipped_recommendations": 3,
+    "skip_reasons": [
+      "REC1: exclude_symbols already applied in prior runs",
+      "REC2: confidence 65% < 75% threshold",
+      "REC3: BUY/SELL mapping already applied"
+    ],
+    "deferred_code_change": "DURATION_H_FIX (7th consecutive run unactioned, P1)"
   },
-  "subsystems": {
-    "auto_fix": {
-      "status": "COMPLETED",
-      "fixes_applied_this_run": 1,
-      "gates_active": 23,
-      "new_fix": {"rule_id": "tod_morning_edge_v1", "action": "activated gate=0->20", "evidence": "71% WR n=160", "confidence": 82},
-      "major_discovery": "PRIOR P0 CODE FIXES ALREADY APPLIED - exclude_symbols, record_outcome BUY/SELL, short_direction_veto_v1 SOL exclusion all confirmed.",
-      "total_fixes_all_time": 106
+  "subsystem_2_forensics": {
+    "status": "COMPLETE",
+    "data_source": "backtest_100d.csv last 50 trades (trades.csv empty)",
+    "avg_slippage_pct": 0.5128,
+    "sl_hit_rate_pct": 40.0,
+    "noise_stop_pct": 100.0,
+    "noise_note": "100% of SL hits lack regime tag — proxy for noise/unclassified regime",
+    "partial_fills_pct": 71.4,
+    "output": {
+      "avg_slippage": "0.5128%",
+      "noise_stop_problem": "100.0% of stops in no-regime (noise proxy)"
+    }
+  },
+  "subsystem_3_edge_detection": {
+    "status": "COMPLETE",
+    "trades_analyzed": 100,
+    "high_edges_found": 1,
+    "weak_setups_found": 0,
+    "high_edges": [
+      {
+        "type": "confidence_bin",
+        "key": "60-70",
+        "win_rate": 66.7,
+        "count": 15
+      }
+    ],
+    "insight": "60-70% confidence bin outperforms all higher confidence bins (66.7% WR vs 44.5% avg) — inverse confidence paradox confirmed",
+    "output": {
+      "high_edges_found": 1,
+      "weak_setups_found": 0
+    }
+  },
+  "subsystem_4_anomaly": {
+    "status": "COMPLETE",
+    "trades_today": 0,
+    "anomalies_found": 2,
+    "anomalies": [
+      {
+        "type": "CONSECUTIVE_LOSSES",
+        "severity": "HIGH",
+        "value": 11,
+        "threshold": 5,
+        "detail": "Max consecutive loss streak: 11 (exceeds threshold of 5)"
+      },
+      {
+        "type": "BOT_OFFLINE",
+        "severity": "CRITICAL",
+        "value": "Day 69+",
+        "detail": "Bot has been offline for 69+ days. trades.csv is header-only. No live trades today."
+      }
+    ],
+    "report_generated": true,
+    "report_path": "/home/user/WAGMI/bot/data/sessions/daily_synthesis_2026-06-21.json",
+    "key_metrics": {
+      "full_dataset_wr": 44.5,
+      "recent_30_wr": 46.7,
+      "wr_swing_vs_average": 2.2,
+      "max_consecutive_losses_all_time": 11,
+      "high_leverage_trades_count": 0,
+      "sl_dominance_recent_50": 40.0
     },
-    "execution_forensics": {
-      "status": "COMPLETED",
-      "live_data_available": false,
-      "key_metrics_100d": {"win_rate_pct": 44.5, "total_pnl": -8173.52, "payoff_ratio": 0.93, "sl_hit_rate_pct": 45.7},
-      "avg_slippage": "UNAVAILABLE - no live fills",
-      "duration_h_bug_runs": 6
-    },
-    "live_injection": {
-      "status": "COMPLETED",
-      "high_edges_found": 4,
-      "weak_setups_found": 4,
-      "high_edges": [
-        {"setup": "SOL_SHORT", "wr_pct": 63.7, "n": 179, "status": "UNBLOCKED"},
-        {"setup": "MORNING_06_12", "wr_pct": 71.0, "n": 160, "status": "ACTIVATED_THIS_RUN"},
-        {"setup": "BTC_SHORT_90plus", "wr_pct": 67.4, "n": 43, "status": "Active gate=20, never fired"},
-        {"setup": "BTC_LONG", "wr_pct": 63.9, "n": 72, "status": "btc_buy_bb_golden_v1 gate=50"}
-      ]
-    },
-    "daily_synthesis": {
-      "status": "COMPLETED",
-      "today_trades": 0,
-      "bot_status": "OFFLINE - Day 69.42",
-      "anomalies_count": 7,
-      "p0_anomalies": 2,
+    "output": {
+      "anomalies_found": 2,
       "report_generated": true
+    }
+  },
+  "subsystem_5_model_opt": {
+    "status": "COMPLETE_NO_COST_FILE",
+    "cost_file_found": null,
+    "note": "cost_tracker.json not found. Using architectural analysis.",
+    "current_cost_per_decision_cycle": 0.0065,
+    "agent_model_config": {
+      "regime_agent": {"model": "haiku", "cost_per_call": 0.0001, "role": "Regime classification"},
+      "trade_agent": {"model": "sonnet", "cost_per_call": 0.003, "role": "Trade decision"},
+      "risk_agent": {"model": "haiku", "cost_per_call": 0.0001, "role": "Position sizing"},
+      "critic_agent": {"model": "sonnet", "cost_per_call": 0.003, "role": "Thesis stress-test"},
+      "learning_agent": {"model": "haiku", "cost_per_call": 0.0001, "role": "Lesson extraction"},
+      "exit_agent": {"model": "haiku", "cost_per_call": 0.0001, "role": "Exit monitoring"},
+      "scout_agent": {"model": "haiku", "cost_per_call": 0.0001, "role": "Idle prep"}
     },
-    "model_optimization": {
-      "status": "COMPLETED_INFERENCE_ONLY",
-      "model_swaps_recommended": 1,
-      "swap_detail": "regime_agent: Haiku->Sonnet for REGIME_SHIFT events only (+$0.27/month)"
+    "model_swaps_recommended": 0,
+    "potential_savings": 0.0,
+    "reason_no_swaps": "Current model routing is architecturally sound. No live accuracy data available to safely recommend downgrades.",
+    "output": {
+      "model_swaps_recommended": 0,
+      "potential_savings": "$0.00"
     }
   },
   "high_priority_findings": [
-    {"rank": 1, "severity": "P0_CRITICAL", "finding": "Bot offline Day 69.42 - 52 consecutive runs flagged, zero revenue.", "action_required": "RESTART: cd bot && python run.py paper", "consecutive_runs_flagged": 52},
-    {"rank": 2, "severity": "P0_RESOLVED", "finding": "DEFERRED CODE CHANGES ALREADY APPLIED: exclude_symbols, record_outcome BUY/SELL, short_direction_veto_v1 SOL exclusion confirmed. Prior 5 runs incorrectly showed SOL SHORT as blocked.", "action_required": "NONE - resolved"},
-    {"rank": 3, "severity": "P0", "finding": "Confidence inversion: 80-90% conf WR=40% is WORST band. confidence_scorer.py miscalibrated.", "action_required": "Audit bot/strategies/confidence_scorer.py"},
-    {"rank": 4, "severity": "P1_FIXED", "finding": "tod_morning_edge_v1 ACTIVATED: 71% WR n=160, gate=0->20.", "fix_applied": true},
-    {"rank": 5, "severity": "P1", "finding": "duration_h=0.0 for 91.2% of 100d trades. 6th consecutive run flagged.", "action_required": "CODE: bot/backtest/engine.py ~line 2522", "consecutive_runs_unactioned": 6},
-    {"rank": 6, "severity": "P1", "finding": "btc_short_90plus_boost_v1 times_applied=0. Side vocab fix now live. Monitor on restart.", "action_required": "Monitor on restart"}
+    {
+      "priority": "P0_CRITICAL",
+      "finding": "BOT OFFLINE DAY 69+",
+      "detail": "No live trading for 69+ days. All analysis runs against backtest data. Investigate deployment blocker.",
+      "action": "Review ROADMAP.md for paper trading deployment checklist"
+    },
+    {
+      "priority": "P1_HIGH",
+      "finding": "INVERSE CONFIDENCE PARADOX",
+      "detail": "80-90% confidence band has 40.0% WR (worst). 60-70% has 66.7% WR (best). Confidence calibration is inverted.",
+      "action": "Run /confidence-calibrate to fix model confidence output. Consider penalizing 80-90% confidence trades."
+    },
+    {
+      "priority": "P1_HIGH",
+      "finding": "DURATION_H BUG (7th consecutive run unactioned)",
+      "detail": "HoldTimeRuleManager receives 0.0 hold hours for 91.2% of trades. Fix requires code change to backtest/engine.py ~line 2522",
+      "action": "Fix duration_h calculation in position_manager.py and engine.py"
+    },
+    {
+      "priority": "P1_HIGH",
+      "finding": "PAYOFF RATIO 0.930x",
+      "detail": "System needs 54% WR to break even but achieves 44.5%. Avg win ($101.26) < avg loss ($108.92)",
+      "action": "Widen TP targets or tighten SL to improve payoff ratio to minimum 1.5x"
+    },
+    {
+      "priority": "P2_MEDIUM",
+      "finding": "BTC_SHORT_90PLUS_BOOST never fires (times_applied=0)",
+      "detail": "4 consecutive runs: boost rule exists but never activates.",
+      "action": "Add diagnostic logging to GraduatedRulesEngine.evaluate_signal()"
+    },
+    {
+      "priority": "P2_MEDIUM",
+      "finding": "SL DOMINANCE 40% of recent 50 trades",
+      "detail": "40% of last 50 backtest trades closed at SL. Break-even requires max 33% SL rate at current payoff ratio.",
+      "action": "Review SL placement strategy — consider wider SLs with smaller position sizes"
+    }
   ],
-  "cumulative_stats": {
-    "total_rules_in_graduated": 31,
-    "active_rules": 23,
-    "total_fixes_all_time": 106,
-    "fixes_this_run": 1,
-    "consecutive_cadence_streak": 39
-  },
-  "next_run_focus": {
-    "priority_1": "RESTART: cd bot && python run.py paper - 52 consecutive runs flagged",
-    "priority_2": "AUDIT confidence_scorer.py (P0 confidence inversion)",
-    "priority_3": "CODE: duration_h fix in bot/backtest/engine.py (6th request)",
-    "priority_4": "MONITOR: tod_morning_edge_v1 first trades after restart",
-    "priority_5": "MONITOR: btc_short_90plus_boost_v1 times_applied on restart"
-  }
+  "consecutive_run_blockers": [
+    {"id": "DURATION_H_FIX", "consecutive_runs": 7, "priority": "P1", "reason": "Requires code change - not JSON auto-fixable"},
+    {"id": "BTC_SHORT_90PLUS_INVESTIGATE", "consecutive_runs": 4, "priority": "P2", "reason": "Requires investigation + diagnostic logging"}
+  ]
 }

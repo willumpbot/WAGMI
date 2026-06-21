@@ -1,53 +1,30 @@
 {
-  "last_run": "2026-06-21T21:04:02Z",
-  "run_number": 117,
-  "cadence_streak": 39,
+  "last_run": "2026-06-21T22:00:00Z",
+  "run_number": 118,
+  "cadence_streak": 40,
   "audit_source": "autonomous_audit_2026-06-21T18-30-00Z.md",
   "audit_run_number": 115,
   "audit_dataset": "backtest_100d.csv (n=589, BTC/HYPE/SOL)",
-  "fixes_applied_this_run": 1,
-  "new_fixes_this_run": [
-    {
-      "rec_id": "TOD_MORNING_EDGE_ACTIVATE",
-      "description": "Activated tod_morning_edge_v1: active=False,gate=0 -> active=True,gate=20",
-      "confidence": 82,
-      "evidence": "71% WR n=160 (backtest_100d + trades_10d), conditions: hour_utc 06-12",
-      "baseline_wr": 0.71,
-      "treatment_wr": null,
-      "applied_at": "2026-06-21T21:04:02Z",
-      "file": "bot/data/llm/graduated_rules.json",
-      "rule_id": "tod_morning_edge_v1",
-      "gate_before": 0,
-      "gate_after": 20,
-      "active_before": false,
-      "active_after": true
-    }
-  ],
-  "major_discovery_run117": {
-    "finding": "DEFERRED CODE CHANGES WERE ALREADY APPLIED IN PRIOR RUNS",
-    "details": [
-      "graduated_rules.py:matches() line 52-53: exclude_symbols already implemented",
-      "multi_strategy_main.py line 3257: _gr_side = BUY if LONG else SELL already applied",
-      "short_direction_veto_v1: already has exclude_symbols=[SOL] and is active gate=20"
-    ],
-    "implication": "SOL SHORT was ALREADY UNBLOCKED - not blocked as prior 5 runs assumed",
-    "severity": "P0_RESOLVED",
-    "runs_incorrectly_flagged_as_blocked": 5
-  },
+  "fixes_applied_this_run": 0,
+  "new_fixes_this_run": [],
   "skipped_this_run": [
     {
-      "rec_id": "REC2_BTC_SHORT_90PLUS_INVESTIGATE",
-      "reason": "INVESTIGATION_REQUIRED: btc_short_90plus_boost_v1 times_applied=0. Side vocab fix now live.",
-      "confidence": 65,
-      "priority": "P2",
-      "consecutive_runs_flagged": 4
+      "rec_id": "REC1_EXCLUDE_SYMBOLS",
+      "reason": "ALREADY_APPLIED: exclude_symbols implemented and short_direction_veto_v1 updated in prior runs",
+      "confidence": 82,
+      "priority": "P1"
     },
     {
-      "rec_id": "REC_DURATION_H_FIX",
-      "reason": "CODE_CHANGE_REQUIRED: backtest/engine.py ~line 2522. 6th run unactioned.",
-      "confidence": 92,
-      "priority": "P1",
-      "consecutive_runs_unactioned": 6
+      "rec_id": "REC2_BTC_SHORT_INVESTIGATE",
+      "reason": "CONFIDENCE_BELOW_THRESHOLD: 65% < 75% minimum, requires investigation not auto-fix",
+      "confidence": 65,
+      "priority": "P2"
+    },
+    {
+      "rec_id": "REC3_SIDE_VOCAB_FIX",
+      "reason": "ALREADY_APPLIED: BUY/SELL mapping already in multi_strategy_main.py:3257",
+      "confidence": 95,
+      "priority": "P0_RESOLVED"
     }
   ],
   "already_present": [
@@ -57,17 +34,50 @@
     "record_outcome() BUY/SELL mapping - already applied multi_strategy_main.py:3257"
   ],
   "total_rules_in_llm_graduated": 31,
-  "active_rules": 23,
+  "active_rules": 22,
+  "gate_20_active_rules": 10,
   "total_fixes_all_time": 106,
   "deferred_code_changes": [
     {
       "id": "DURATION_H_FIX",
       "confidence": 0.92,
       "priority": "P1",
-      "status": "CODE_CHANGE_REQUIRED - 6 consecutive runs",
+      "status": "CODE_CHANGE_REQUIRED - 7 consecutive runs",
       "file_1": "bot/execution/position_manager.py",
       "file_2": "bot/backtest/engine.py ~line 2522",
       "impact": "HoldTimeRuleManager neutered - min_hold_hours stuck at manual 3.0"
+    }
+  ],
+  "recommendations_from_audit": [
+    {
+      "rec_id": "REC1_EXCLUDE_SYMBOLS",
+      "problem": "short_direction_veto_v1 blocks SOL SHORT - exclude_symbols not implemented in matches()",
+      "proposed_fix": "Add exclude_symbols field to GraduatedRule.matches() and update short_direction_veto_v1",
+      "expected_impact": "+$160/day when live (SOL SHORT unlocked)",
+      "confidence": 82,
+      "type": "CODE_CHANGE",
+      "eligible_for_auto_fix": false,
+      "skip_reason": "Requires code change to graduated_rules.py - already applied per auto_fix_state.json"
+    },
+    {
+      "rec_id": "REC2_BTC_SHORT_INVESTIGATE",
+      "problem": "btc_short_90plus_boost_v1 has times_applied=0 across all audit runs",
+      "proposed_fix": "Add diagnostic logging, investigate rule evaluation path",
+      "expected_impact": "+$20-40/day when live",
+      "confidence": 65,
+      "type": "INVESTIGATION",
+      "eligible_for_auto_fix": false,
+      "skip_reason": "Confidence 65% < threshold 75%"
+    },
+    {
+      "rec_id": "REC3_SIDE_VOCAB_FIX",
+      "problem": "record_outcome() passes LONG/SHORT but rules expect BUY/SELL - accuracy tracking broken",
+      "proposed_fix": "Convert event.side from LONG/SHORT to BUY/SELL before calling record_outcome()",
+      "expected_impact": "Enables auto-deactivation of failing rules",
+      "confidence": 95,
+      "type": "CODE_CHANGE",
+      "eligible_for_auto_fix": false,
+      "skip_reason": "Already applied per auto_fix_state.json (major_discovery_run117)"
     }
   ]
 }

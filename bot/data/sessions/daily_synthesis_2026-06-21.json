@@ -1,25 +1,39 @@
 {
   "date": "2026-06-21",
-  "generated_at": "2026-06-21T21:05:08Z",
-  "run_number": 117,
-  "bot_status": {"online": false, "offline_days": 69.42, "restart_command": "cd bot && python run.py paper"},
-  "today_trades": 0,
-  "today_pnl": 0.0,
-  "anomalies_count": 7,
-  "p0_anomalies": 2,
+  "generated_at": "2026-06-21T22:00:00Z",
+  "bot_status": "OFFLINE",
+  "days_offline": 69,
+  "trades_today": 0,
+  "data_source_note": "trades.csv empty (bot offline). Analysis uses backtest_100d.csv (589 trades)",
+  "overall_metrics": {
+    "full_dataset_wr": 44.5,
+    "recent_30_wr": 46.7,
+    "wr_swing_vs_average": 2.2,
+    "max_consecutive_losses_all_time": 11,
+    "high_leverage_trades_count": 0,
+    "sl_dominance_recent_50": 40.0
+  },
   "anomalies": [
-    {"id": "BOT_OFFLINE_DAY_69", "severity": "P0_CRITICAL", "consecutive_runs": 52, "estimated_daily_revenue_lost": "$400-600/day", "restart_command": "cd bot && python run.py paper"},
-    {"id": "CONFIDENCE_INVERSION_100D", "severity": "P0", "description": "80-90% conf WR=40% is WORST band. confidence_scorer.py needs audit."},
-    {"id": "CONSECUTIVE_LOSSES_8", "severity": "P1", "description": "Max consecutive losses = 8 in 100d backtest"},
-    {"id": "DURATION_H_BROKEN_6TH_RUN", "severity": "P1", "consecutive_runs": 6},
-    {"id": "MORNING_EDGE_ACTIVATED_RUN117", "severity": "INFO_POSITIVE", "description": "tod_morning_edge_v1 activated at gate=20 - 71% WR n=160"},
-    {"id": "SOL_SHORT_UNBLOCKED_CONFIRMED", "severity": "INFO_POSITIVE", "description": "short_direction_veto_v1 already has exclude_symbols=[SOL] - prior 5 runs incorrectly flagged as blocked"},
-    {"id": "DEFERRED_CODE_CHANGES_RESOLVED", "severity": "INFO_POSITIVE", "description": "Both P0 deferred code changes (exclude_symbols, record_outcome side) already in codebase"}
+    {
+      "type": "CONSECUTIVE_LOSSES",
+      "severity": "HIGH",
+      "value": 11,
+      "threshold": 5,
+      "detail": "Max consecutive loss streak: 11 (exceeds threshold of 5)"
+    },
+    {
+      "type": "BOT_OFFLINE",
+      "severity": "CRITICAL",
+      "value": "Day 69+",
+      "detail": "Bot has been offline for 69+ days. trades.csv is header-only. No live trades today."
+    }
   ],
-  "priority_actions": [
-    {"rank": 1, "action": "RESTART: cd bot && python run.py paper - Day 69 offline"},
-    {"rank": 2, "action": "AUDIT: bot/strategies/confidence_scorer.py for calibration inflation"},
-    {"rank": 3, "action": "CODE: duration_h fix in bot/backtest/engine.py:2522 (6th run)"},
-    {"rank": 4, "action": "MONITOR: tod_morning_edge_v1 first 20 morning trades (target WR>60%)"}
-  ]
+  "anomalies_found": 2,
+  "anomaly_flags": {
+    "consecutive_losses_exceeds_5": true,
+    "wr_swing_exceeds_20pct": false,
+    "high_leverage_detected": false,
+    "tod_dominance_exceeds_70pct": false,
+    "bot_offline": true
+  }
 }

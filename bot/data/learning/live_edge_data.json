@@ -1,34 +1,56 @@
 {
-  "last_updated": "2026-06-21T18:30:00Z",
-  "run_number": 116,
-  "data_source": "backtest_100d.csv (n=589) + trades_10d.csv (n=965)",
-  "live_trades_available": false,
-  "bot_offline_days": 69.25,
+  "generated_at": "2026-06-21T22:00:00Z",
+  "data_source": "backtest_100d.csv last 100 trades",
+  "trades_analyzed": 100,
+  "symbol_win_rates": {
+    "BTC": {
+      "win_rate": 44.0,
+      "count": 100,
+      "pnl": -85.38
+    }
+  },
+  "confidence_bin_win_rates": {
+    "60-70": {
+      "win_rate": 66.7,
+      "count": 15,
+      "pnl": 32.21
+    },
+    "70-80": {
+      "win_rate": 43.1,
+      "count": 58,
+      "pnl": 72.26
+    },
+    "80-90": {
+      "win_rate": 33.3,
+      "count": 21,
+      "pnl": -106.59
+    },
+    "90+": {
+      "win_rate": 33.3,
+      "count": 6,
+      "pnl": -83.26
+    },
+    "<60": {
+      "win_rate": 0,
+      "count": 0,
+      "pnl": 0.0
+    }
+  },
+  "time_of_day": {
+    "note": "No timestamp column in backtest CSV - time-of-day analysis not available"
+  },
   "high_edges": [
-    {"setup": "SOL_SHORT", "wr_pct": 63.7, "n": 179, "ev_per_trade": 32.44, "status": "BLOCKED", "estimated_daily_impact": "+$160-194/day"},
-    {"setup": "BTC_SHORT_90plus_conf", "wr_pct": 67.4, "n": 43, "ev_per_trade": 102.92, "status": "RULE ACTIVE but times_applied=0"},
-    {"setup": "MORNING_SESSION_06_12", "wr_pct": 71.0, "n": 160, "status": "tod_morning_edge_v1 gate=0 — INACTIVE", "new_finding": true},
-    {"setup": "BTC_LONG", "wr_pct": 63.9, "n": 72, "ev_per_trade": 25.55, "status": "btc_buy_bb_golden_v1 gate=50 ACTIVE"}
+    {
+      "type": "confidence_bin",
+      "key": "60-70",
+      "win_rate": 66.7,
+      "count": 15,
+      "pnl": 32.21
+    }
   ],
-  "weak_setups": [
-    {"setup": "NIGHT_SESSION_00_06", "wr_pct": 19.0, "n": 27, "mitigation": "night_session_block_v1 gate=100%"},
-    {"setup": "RANGING_REGIME", "wr_pct": 25.0, "n": 16, "mitigation": "ranging_regime_penalize_v1 gate=50%"},
-    {"setup": "ILLIQUID_REGIME", "wr_pct": 28.1, "n": 57, "mitigation": "illiquid_regime_penalize_v1 gate=100%"},
-    {"setup": "HYPE_SHORT_75_85_conf", "wr_pct": 33.0, "n": 40, "pnl": -4155, "mitigation": "hype_short_veto_v1 gate=100% — VALIDATED"}
-  ],
-  "morning_edge_opportunity": {
-    "setup": "tod_morning_edge_v1",
-    "wr_pct": 71.0,
-    "n": 160,
-    "current_gate": 0,
-    "recommendation": "Activate at gate=20",
-    "priority": "P1_NEW_RUN116"
-  },
-  "confidence_bin_findings": {
-    "60_70_pct": {"wr_100d": 48.6, "n": 111, "wr_10d": 46.3},
-    "70_80_pct": {"wr_100d": 45.2, "n": 321, "wr_10d": 58.6},
-    "80_90_pct": {"wr_100d": 40.0, "n": 120, "flag": "WORST BAND in 100d — confidence inversion"},
-    "90_plus_pct": {"wr_100d": 40.5, "n": 37, "wr_10d": 56.0}
-  },
-  "key_insight": "SOL SHORT primary blocked alpha (+$194/day). Morning session (71% WR n=160) largest unmonetized edge. Confidence inversion in 100d (80-90% = 40% WR) suggests calibration drift."
+  "weak_setups": [],
+  "output": {
+    "high_edges_found": 1,
+    "weak_setups_found": 0
+  }
 }
