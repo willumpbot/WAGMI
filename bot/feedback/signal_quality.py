@@ -1,4 +1,4 @@
-"""
+""" 
 Signal Quality Scorer: Self-evaluating signal quality from realized outcomes.
 
 For every signal generated, this module:
@@ -157,10 +157,8 @@ class SignalQualityScorer:
         if len(self.overall_recent) > 100:
             self.overall_recent = self.overall_recent[-100:]
 
-        # Save periodically (every 10 outcomes)
-        total = sum(d["total"] for d in self.by_symbol.values())
-        if total % 10 == 0:
-            self._save_state()
+        # Save on every outcome to survive early restarts (was: every 10)
+        self._save_state()
 
     def score_signal(self, features: QualityFeatures) -> Tuple[float, Dict[str, float]]:
         """Score a signal's quality based on historical patterns.
