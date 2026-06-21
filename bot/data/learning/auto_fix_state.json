@@ -1,27 +1,71 @@
 {
-  "last_run": "2026-06-21T15:30:00Z",
-  "run_number": 113,
-  "cadence_streak": 35,
-  "fixes_applied_this_run": 0,
-  "gates_active": 21,
-  "total_applied_all_time": 101,
-  "new_fixes_this_run": [],
+  "last_run": "2026-06-21T16:30:00Z",
+  "run_number": 114,
+  "cadence_streak": 36,
+  "audit_source": "autonomous_audit_2026-06-21T16-09-26Z.md",
+  "audit_run_number": 114,
+  "fixes_applied_this_run": 1,
+  "new_fixes_this_run": [
+    {
+      "rec_id": "REC2_PAYOFF_RATIO",
+      "rule_id": "sol_long_low_conf_penalize_v1",
+      "action": "ADDED new rule to data/llm/graduated_rules.json",
+      "gate_percentage": 20,
+      "confidence": 88,
+      "note": "Probe gate=20. SOL LONG <65% conf penalized -20pts. Worst sub-condition in 10d dataset."
+    }
+  ],
   "skipped_this_run": [
-    {"rule_id": "tod_afternoon_block_v1", "reason": "confidence=0.72 < 0.75 threshold", "conf": 0.72},
-    {"rule_id": "tod_evening_block_v1", "reason": "confidence=0.72 < 0.75 threshold", "conf": 0.72},
-    {"rule_id": "DURATION_H_FIX", "reason": "code_change_required", "conf": 0.92},
-    {"rule_id": "APPLIED_COUNT_PERSISTENCE", "reason": "code_change_required", "conf": 0.95}
+    {
+      "rec_id": "REC1_SOL_SHORT_UNBLOCK",
+      "reason": "CODE_CHANGE_REQUIRED: graduated_rules.py needs exclude_symbols support before JSON change is safe",
+      "confidence": 95,
+      "priority": "P0_CRITICAL",
+      "consecutive_runs_unactioned": 4,
+      "escalation": "P0_CRITICAL — escalate to human for immediate code fix"
+    },
+    {
+      "rec_id": "REC3_DURATION_H_FIX",
+      "reason": "CODE_CHANGE_REQUIRED: backtest/engine.py and position_manager.py code fixes needed",
+      "confidence": 92,
+      "priority": "P1",
+      "consecutive_runs_unactioned": 4
+    }
   ],
-  "already_applied_prior_runs": [
-    {"rule_id": "btc_short_90plus_boost_v1", "action": "RE-ACTIVATED gate=20", "run": 111, "conf": 0.90},
-    {"rule_id": "btc_short_80_90_boost_v1", "action": "ADDED gate=20", "run": 111, "conf": 0.82},
-    {"rule_id": "sol_long_probe_boost_v1", "action": "GATE_REDUCED 50->20", "run": 111, "conf": 0.77}
-  ],
+  "already_present": [],
+  "total_rules_in_llm_graduated": 31,
+  "active_rules": 22,
+  "total_applied_all_time": 102,
   "deferred_code_changes": [
-    {"id": "SOL_SHORT_VETO_EXCEPTION", "confidence": 0.98, "priority": "P0_CRITICAL", "status": "CODE_CHANGE_REQUIRED — ESCALATED (3 consecutive runs unactioned)", "detail": "Add exclude_symbols=['SOL'] to short_direction_veto_v1", "run_first_flagged": 111, "runs_unactioned": 3},
-    {"id": "BTC_SHORT_CONDITION_BUG", "confidence": 0.88, "priority": "P1", "status": "INVESTIGATE", "run_first_flagged": 111},
-    {"id": "DURATION_H_FIX", "confidence": 0.92, "priority": "P1", "status": "LOGGED — 3 consecutive runs confirming", "file": "bot/execution/position_manager.py"},
-    {"id": "APPLIED_COUNT_PERSISTENCE", "confidence": 0.95, "priority": "P1", "status": "LOGGED"},
-    {"id": "FEEDBACK_PERSISTENCE_5_SYSTEMS", "confidence": 0.95, "priority": "P1", "status": "LOGGED"}
+    {
+      "id": "SOL_SHORT_VETO_EXCEPTION",
+      "confidence": 0.95,
+      "priority": "P0_CRITICAL",
+      "status": "CODE_CHANGE_REQUIRED — ESCALATED (4 consecutive runs unactioned)",
+      "detail": "Add exclude_symbols=['SOL'] to short_direction_veto_v1 + add exclude_symbols support to bot/llm/graduated_rules.py:matches()",
+      "run_first_flagged": 111,
+      "runs_unactioned": 4,
+      "estimated_daily_impact": "+$194/day"
+    },
+    {
+      "id": "DURATION_H_FIX",
+      "confidence": 0.92,
+      "priority": "P1",
+      "status": "CODE_CHANGE_REQUIRED — 4 consecutive runs confirming",
+      "file_1": "bot/execution/position_manager.py — set hold_time_s = (close_time - opened_at).total_seconds()",
+      "file_2": "bot/backtest/engine.py ~line 3125 — derive hold from candle index × candle duration"
+    },
+    {
+      "id": "FEEDBACK_PERSISTENCE_5_SYSTEMS",
+      "confidence": 0.95,
+      "priority": "P1",
+      "status": "LOGGED — regime_feedback_state.json, signal_quality.json, confidence_state.json missing"
+    },
+    {
+      "id": "GRADUATED_RULES_SIDE_ENCODING",
+      "confidence": 0.88,
+      "priority": "P1",
+      "status": "LOGGED — record_outcome() passes LONG/SHORT, rules expect BUY/SELL. times_correct always 0."
+    }
   ]
 }

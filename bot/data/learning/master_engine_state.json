@@ -1,100 +1,198 @@
 {
   "schema_version": "3.0",
-  "last_run": "2026-06-21T15:30:00Z",
-  "run_number": 113,
-  "cadence_streak": 35,
+  "last_run": "2026-06-21T16:30:00Z",
+  "run_number": 114,
+  "cadence_streak": 36,
   "bot_offline_days": 69.08,
   "data_sources": {
-    "trades_live": "bot/trades.csv (EMPTY — bot offline)",
-    "trades_backtest": "bot/trades_10d.csv (n=965)",
-    "audit": "autonomous_audit_2026-06-21T10-07-47Z.md (Run 106, unchanged)",
-    "daily_synthesis": "bot/data/sessions/daily_synthesis_2026-06-21.json (Run 112)",
-    "auto_fix_state": "bot/data/learning/auto_fix_state.json (Run 113, 0 new fixes)",
-    "cost_tracker": "NOT FOUND — bot offline"
+    "trades_live": "bot/data/trades.csv — FILE MISSING (bot offline)",
+    "trades_backtest": "bot/trades_10d.csv (n=965) — primary data source",
+    "audit": "bot/data/sessions/autonomous_audit_2026-06-21T16-09-26Z.md (Run 114)",
+    "daily_synthesis": "bot/data/sessions/daily_synthesis_2026-06-21.json (Run 114)",
+    "auto_fix_state": "bot/data/learning/auto_fix_state.json (Run 114, 1 new fix)",
+    "cost_tracker": "NOT FOUND — bot offline 69+ days",
+    "llm_graduated_rules": "bot/data/llm/graduated_rules.json (31 rules, +1 this run)"
   },
   "subsystems": {
     "auto_fix": {
       "status": "COMPLETED",
-      "run_number": 113,
-      "fixes_applicable_new": 0,
+      "run_number": 114,
+      "audit_run": 114,
+      "fixes_applied_this_run": 1,
+      "new_fixes": [
+        {
+          "rule_id": "sol_long_low_conf_penalize_v1",
+          "action": "ADDED to data/llm/graduated_rules.json at gate=20",
+          "evidence": "SOL LONG <65% conf: 14.3% WR, -$1277 PnL, n=14 — worst sub-condition in 10d dataset",
+          "adjustment": -20.0,
+          "confidence": 0.88
+        }
+      ],
       "fixes_skipped": [
-        {"rule_id": "tod_afternoon_block_v1", "reason": "confidence=0.72 < 0.75 threshold", "conf": 0.72},
-        {"rule_id": "tod_evening_block_v1", "reason": "confidence=0.72 < 0.75 threshold", "conf": 0.72},
-        {"rule_id": "DURATION_H_FIX", "reason": "code_change_required", "conf": 0.92},
-        {"rule_id": "APPLIED_COUNT_PERSISTENCE", "reason": "code_change_required", "conf": 0.95}
+        {
+          "rule_id": "SOL_SHORT_VETO_EXCEPTION",
+          "reason": "CODE_CHANGE_REQUIRED — 4th consecutive run",
+          "conf": 0.95
+        },
+        {
+          "rule_id": "DURATION_H_FIX",
+          "reason": "CODE_CHANGE_REQUIRED — 4th consecutive run",
+          "conf": 0.92
+        }
       ],
-      "deferred_code_changes": [
-        {"id": "SOL_SHORT_VETO_EXCEPTION", "confidence": 0.98, "priority": "P0_CRITICAL", "status": "CODE_CHANGE_REQUIRED — 3 consecutive runs", "detail": "Add exclude_symbols=['SOL'] to short_direction_veto_v1"},
-        {"id": "BTC_SHORT_CONDITION_BUG", "confidence": 0.88, "priority": "P1", "status": "INVESTIGATE — times_applied=0 despite n=43 matching trades"},
-        {"id": "DURATION_H_FIX", "confidence": 0.92, "priority": "P1", "status": "LOGGED — 3 consecutive runs", "file": "bot/execution/position_manager.py"},
-        {"id": "APPLIED_COUNT_PERSISTENCE", "confidence": 0.95, "priority": "P1", "status": "LOGGED"},
-        {"id": "FEEDBACK_PERSISTENCE_5_SYSTEMS", "confidence": 0.95, "priority": "P1", "status": "LOGGED"}
-      ],
-      "total_rules_in_graduated": 30,
-      "active_rules": 21
+      "total_rules_in_llm_graduated": 31,
+      "active_rules": 22,
+      "total_fixes_all_time": 102
     },
     "execution_forensics": {
       "status": "COMPLETED",
-      "run_number": 113,
-      "avg_slippage": "UNAVAILABLE — no snapshot_entry column",
-      "sl_hit_rate_pct": 44.0,
-      "noise_stop_pct": 36.4,
+      "run_number": 114,
+      "data_source": "backtest n=965 (no live data)",
+      "sl_hit_rate_pct": 38.3,
+      "payoff_ratio": 0.686,
+      "actual_wr_pct": 57.0,
+      "breakeven_wr_required": 59.4,
+      "noise_stop_pct_estimated": 36.4,
+      "avg_slippage": "UNAVAILABLE — no live data",
+      "fill_rate": "UNAVAILABLE — no live data",
       "duration_h_broken_pct": 100.0,
       "max_consecutive_losses": 8,
-      "payoff_ratio_full": 0.763
+      "worst_case_loss": {
+        "symbol": "BTC",
+        "side": "LONG",
+        "conf": 69.0,
+        "pnl": -1458
+      },
+      "worst_rr_bucket": {
+        "range": "2-3x",
+        "wr": 34.0,
+        "n": 212,
+        "pnl": -14574
+      },
+      "new_finding": "2-3x R:R bucket is structural loss zone (34% WR, -$14,574 on 212 trades). >3x R:R works (64.8% WR, +$17,277)."
     },
     "live_injection": {
       "status": "COMPLETED",
-      "run_number": 113,
-      "high_edges_found": 4,
-      "weak_setups_found": 5,
-      "high_edges": [
-        {"setup": "BTC_SHORT_90plus", "wr_pct": 67.4, "n": 43, "avg_pnl_per_trade": 102.92, "blocker": "times_applied=0 bug"},
-        {"setup": "SOL_SHORT", "wr_pct": 63.7, "n": 179, "avg_pnl_per_trade": 32.44, "status": "BLOCKED by short_direction_veto_v1"},
-        {"setup": "BTC_LONG", "wr_pct": 63.9, "n": 72, "avg_pnl_per_trade": 25.55, "status": "ACTIVE"},
-        {"setup": "BTC_SHORT_80_90", "wr_pct": 57.7, "n": 26, "avg_pnl_per_trade": 59.52, "status": "ACTIVE"}
+      "run_number": 114,
+      "high_edges_found": 6,
+      "weak_setups_found": 8,
+      "top_edge": {
+        "setup": "SOL_SHORT",
+        "wr_pct": 63.7,
+        "n": 179,
+        "ev_per_trade": 32.44,
+        "status": "BLOCKED — short_direction_veto_v1 gate=20 (80% blocked)",
+        "consecutive_audits_flagged": 4
+      },
+      "second_edge": {
+        "setup": "BTC_SHORT_90plus",
+        "wr_pct": 67.4,
+        "n": 43,
+        "ev_per_trade": 102.92,
+        "status": "btc_short_90plus_boost_v1 gate=20 (active, but times_applied=0 bug)"
+      },
+      "new_findings": [
+        "BTC SHORT 60-70% conf = 64.3% WR (+$1,622) — POSITIVE outlier in negative bin",
+        "SOL SHORT 60-70% conf = 53.3% WR — viable if unblocked",
+        "2-3x R:R structural loss zone quantified (-$14,574)"
       ]
     },
     "daily_synthesis": {
       "status": "COMPLETED",
-      "run_number": 113,
+      "run_number": 114,
       "date": "2026-06-21",
       "today_trades": 0,
       "bot_status": "OFFLINE — Day 69.08",
-      "anomalies_count": 5,
-      "anomalies": [
-        {"id": "BOT_OFFLINE_DAY_69", "severity": "P0"},
+      "anomalies_count": 8,
+      "p0_anomalies": 3,
+      "anomalies_summary": [
+        {"id": "BOT_OFFLINE_DAY_69", "severity": "P0_CRITICAL"},
+        {"id": "SOL_SHORT_SUPPRESSED_4TH_RUN", "severity": "P0_CRITICAL"},
+        {"id": "PAYOFF_RATIO_CRITICAL", "severity": "P0"},
         {"id": "CONSECUTIVE_LOSSES_8", "severity": "P1"},
-        {"id": "DURATION_H_BROKEN", "severity": "P1"},
-        {"id": "LLM_FIELDS_BLANK", "severity": "P1"},
-        {"id": "SOL_SHORT_SUPPRESSED", "severity": "P1_CRITICAL"}
+        {"id": "DURATION_H_BROKEN_4TH_RUN", "severity": "P1"},
+        {"id": "FEEDBACK_PERSISTENCE_3_SYSTEMS", "severity": "P1"},
+        {"id": "RR_23X_LOSS_ZONE_NEW", "severity": "P1"},
+        {"id": "GRADUATED_RULES_SIDE_ENCODING_BUG", "severity": "P1"}
       ]
     },
     "model_optimization": {
-      "status": "SKIPPED_NO_DATA",
-      "run_number": 113,
-      "reason": "cost_tracker.json not found. Bot offline 69+ days."
+      "status": "COMPLETED_NO_COST_DATA",
+      "run_number": 114,
+      "cost_tracker_available": false,
+      "reason": "cost_tracker.json absent — bot offline 69+ days",
+      "recommendations": [
+        "Current routing already optimal (HIGH_CONFIDENCE→Opus fix applied 2026-04-30)",
+        "Consider Sonnet for Regime Agent on REGIME_SHIFT events",
+        "Wire cost_tracker.py before restart to enable future ROI analysis"
+      ],
+      "roi_data_quality": "INFERENCE_ONLY"
     }
   },
   "high_priority_findings": [
-    {"rank": 1, "severity": "P1_CRITICAL", "finding": "SOL SHORT WR=63.7%, EV=+$32.44/trade, n=179 — THIRD consecutive run unactioned", "action_required": "CODE: Add exclude_symbols=['SOL'] to short_direction_veto_v1", "estimated_daily_impact": "+$200-400/day when live"},
-    {"rank": 2, "severity": "P1", "finding": "btc_short_90plus_boost_v1 times_applied=0 despite n=43 qualifying trades", "action_required": "INVESTIGATE condition matching bug"},
-    {"rank": 3, "severity": "P1", "finding": "duration_h=0.0 for 100% of trades, 3 consecutive runs", "action_required": "CODE: Fix hold_hours in position_manager.py"},
-    {"rank": 4, "severity": "P1", "finding": "5/7 feedback systems lose data on restart", "action_required": "CODE: Add _save() to 5 feedback managers"},
-    {"rank": 5, "severity": "P2", "finding": "TOD blocks at conf=0.72, below 0.75 threshold", "action_required": "WATCH or manually approve"}
+    {
+      "rank": 1,
+      "severity": "P0_CRITICAL",
+      "finding": "Bot offline Day 69.08 — zero revenue. All identified edges unmonetized.",
+      "action_required": "RESTART: cd bot && python run.py paper",
+      "consecutive_runs_flagged": 50
+    },
+    {
+      "rank": 2,
+      "severity": "P0_CRITICAL",
+      "finding": "SOL SHORT WR=63.7%, EV=+$32.44/trade, n=179 — 4th consecutive audit unactioned. Blocked by short_direction_veto_v1.",
+      "action_required": "CODE: (1) bot/llm/graduated_rules.py:matches() — add exclude_symbols support. (2) bot/data/llm/graduated_rules.json — add exclude_symbols=['SOL'] to short_direction_veto_v1.conditions",
+      "estimated_daily_impact": "+$194/day when live"
+    },
+    {
+      "rank": 3,
+      "severity": "P0",
+      "finding": "Payoff ratio 0.686x — system loses money at current 57% WR (need 59.4% to break even). 2-3x R:R bucket is structural loss zone (-$14,574 on 212 trades). NEW FINDING.",
+      "action_required": "CONFIG: Increase TP1_MULTIPLIER in trading_config.py from 1.07 → 1.15 to push 2-3x R:R trades into >3x bucket (64.8% WR zone)",
+      "estimated_daily_impact": "~$300/day if payoff ratio improves to 0.85"
+    },
+    {
+      "rank": 4,
+      "severity": "P1",
+      "finding": "btc_short_90plus_boost_v1 gate=20 active but times_applied=0. BTC SHORT 90%+ EV=+$102.92/trade, n=43. Rule may not be firing.",
+      "action_required": "INVESTIGATE: Check condition matching in graduated_rules.py — may be BUY/SELL vs LONG/SHORT encoding issue"
+    },
+    {
+      "rank": 5,
+      "severity": "P1",
+      "finding": "duration_h=0.0 for 100% of trades — HoldTimeRuleManager blind. 4th consecutive run.",
+      "action_required": "CODE: position_manager.py — set hold_time_s = (close_time - opened_at).total_seconds()"
+    },
+    {
+      "rank": 6,
+      "severity": "P1",
+      "finding": "record_outcome() passes side='LONG'/'SHORT' but all side-conditioned rules use 'BUY'/'SELL'. times_correct always 0.",
+      "action_required": "CODE: multi_strategy_main.py line ~3257 — map LONG→SELL, SHORT→BUY before record_outcome() call"
+    },
+    {
+      "rank": 7,
+      "severity": "P1",
+      "finding": "SOL LONG <65% conf = 14.3% WR, -$1277 (worst sub-condition). sol_long_low_conf_penalize_v1 ADDED this run at gate=20.",
+      "action_required": "MONITOR: Escalate gate 20→50 if WR stays <30% on n>=15 live SOL LONG <65% trades.",
+      "status": "APPLIED_THIS_RUN"
+    }
   ],
   "cumulative_stats": {
-    "total_rules": 30,
-    "active_rules": 21,
-    "total_fixes_all_time": 101,
-    "fixes_this_run": 0,
-    "estimated_daily_ev_when_live": "+$400+/day if SOL SHORT unblocked + BTC SHORT high-conf rules fire"
+    "total_rules_in_llm_graduated": 31,
+    "active_rules": 22,
+    "total_fixes_all_time": 102,
+    "fixes_this_run": 1,
+    "rules_added_this_run": ["sol_long_low_conf_penalize_v1"],
+    "consecutive_cadence_streak": 36,
+    "estimated_daily_ev_when_live": "+$400-600/day if SOL SHORT unblocked + BTC SHORT high-conf rules fire + payoff ratio fixed"
   },
   "next_run_focus": {
-    "priority_1": "MANUAL_CODE: Add exclude_symbols=['SOL'] to short_direction_veto_v1 — 3rd run flagging",
-    "priority_2": "INVESTIGATE: btc_short_90plus_boost_v1 times_applied=0 condition-match bug",
-    "priority_3": "MANUAL_CODE: Fix duration_h in position_manager.py",
-    "priority_4": "WATCH: tod block rules at 0.72 confidence",
-    "priority_5": "MANUAL_CODE: Add _save() methods to 5 feedback managers"
+    "priority_1": "CONFIRM: sol_long_low_conf_penalize_v1 correctly added to data/llm/graduated_rules.json",
+    "priority_2": "MANUAL_CODE: Add exclude_symbols=['SOL'] to short_direction_veto_v1 — 4th run, CRITICAL escalation",
+    "priority_3": "MANUAL_CODE: Fix duration_h in position_manager.py and backtest/engine.py — 4th run",
+    "priority_4": "MANUAL_CODE: Fix record_outcome() LONG/SHORT → BUY/SELL mapping in multi_strategy_main.py:3257",
+    "priority_5": "CONFIG_REVIEW: TP1_MULTIPLIER 1.07→1.15 in trading_config.py (2-3x R:R loss zone fix)",
+    "priority_6": "INVESTIGATE: btc_short_90plus_boost_v1 times_applied=0 (may be same LONG/SHORT encoding bug)",
+    "priority_7": "RESTART: cd bot && python run.py paper"
   }
 }
