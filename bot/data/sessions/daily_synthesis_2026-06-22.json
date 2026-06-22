@@ -1,0 +1,54 @@
+{
+  "date": "2026-06-22",
+  "generated_at": "2026-06-22T00:00:00Z",
+  "run_number": 119,
+  "data_source": "backtest data (trades.csv missing - bot offline)",
+  "trades_today": 0,
+  "bot_status": "OFFLINE",
+  "days_offline": 70,
+  "anomalies_found": 3,
+  "anomalies": [
+    {
+      "type": "CONSECUTIVE_LOSSES",
+      "severity": "HIGH",
+      "value": 11,
+      "threshold": 5,
+      "detail": "Max consecutive loss streak: 11 (exceeds threshold of 5)",
+      "data_source": "backtest_100d.csv last 100 trades"
+    },
+    {
+      "type": "BOT_OFFLINE",
+      "severity": "CRITICAL",
+      "value": "Day 70+",
+      "detail": "Bot has been offline for 70+ days as of 2026-06-22. trades.csv is missing. No live trades today or since June 5, 2026.",
+      "consecutive_audit_flags": 52
+    },
+    {
+      "type": "RECENT_REGRESSION",
+      "severity": "HIGH",
+      "value": "Last 100 WR=44.5%",
+      "detail": "Recent performance regression: full-period WR=57.0% vs last-100-trades WR=44.5%. Delta = 12.5pp.",
+      "total_pnl_last_100": -7804
+    }
+  ],
+  "report_generated": true,
+  "key_metrics": {
+    "full_dataset_wr": 57.0,
+    "recent_100_wr": 44.5,
+    "wr_swing_pct": 12.5,
+    "max_consecutive_losses": 11,
+    "high_leverage_7x_plus_count": 0,
+    "tod_dominance_analysis": "unavailable - no timestamps in CSV",
+    "total_pnl_last_100": -7804,
+    "total_pnl_full_dataset": 905.23
+  },
+  "recommendations": [
+    "P0_CRITICAL: Start bot immediately - cd /home/user/WAGMI/bot && python run.py paper",
+    "P0: Verify CONF_70_HARD_FLOOR gate set to 20% (auto-fixed this run)",
+    "P1: Fix duration_h bug in backtest/engine.py (8th consecutive unactioned flag)"
+  ],
+  "output": {
+    "anomalies_found": 3,
+    "report_generated": true
+  }
+}

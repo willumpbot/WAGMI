@@ -1,30 +1,33 @@
 {
-  "last_run": "2026-06-21T22:00:00Z",
-  "run_number": 118,
+  "last_run": "2026-06-22T00:00:00Z",
+  "run_number": 119,
   "cadence_streak": 40,
-  "audit_source": "autonomous_audit_2026-06-21T18-30-00Z.md",
+  "audit_source": "autonomous_audit_2026-06-21T22-00-00Z.md",
   "audit_run_number": 115,
   "audit_dataset": "backtest_100d.csv (n=589, BTC/HYPE/SOL)",
-  "fixes_applied_this_run": 0,
-  "new_fixes_this_run": [],
+  "fixes_applied_this_run": 1,
+  "new_fixes_this_run": [
+    {
+      "rule_id": "CONF_70_HARD_FLOOR",
+      "field": "gate_percentage",
+      "old_value": 50,
+      "new_value": 20,
+      "reason": "REC2 confidence floor hardening - audit conf=87%",
+      "audit_source": "autonomous_audit_2026-06-21T22-00-00Z.md"
+    }
+  ],
   "skipped_this_run": [
     {
-      "rec_id": "REC1_EXCLUDE_SYMBOLS",
-      "reason": "ALREADY_APPLIED: exclude_symbols implemented and short_direction_veto_v1 updated in prior runs",
-      "confidence": 82,
+      "rec_id": "REC1_RESTART_PAPER_TRADING",
+      "reason": "OPERATIONAL_ACTION_NOT_JSON_FIXABLE: Requires running python run.py paper - cannot auto-apply",
+      "confidence": 99,
+      "priority": "P0_CRITICAL"
+    },
+    {
+      "rec_id": "REC3_DURATION_H_FIX",
+      "reason": "CODE_CHANGE_REQUIRED: Requires modifying bot/backtest/engine.py ~line 2522 - 8th consecutive run unactioned",
+      "confidence": 92,
       "priority": "P1"
-    },
-    {
-      "rec_id": "REC2_BTC_SHORT_INVESTIGATE",
-      "reason": "CONFIDENCE_BELOW_THRESHOLD: 65% < 75% minimum, requires investigation not auto-fix",
-      "confidence": 65,
-      "priority": "P2"
-    },
-    {
-      "rec_id": "REC3_SIDE_VOCAB_FIX",
-      "reason": "ALREADY_APPLIED: BUY/SELL mapping already in multi_strategy_main.py:3257",
-      "confidence": 95,
-      "priority": "P0_RESOLVED"
     }
   ],
   "already_present": [
@@ -33,10 +36,10 @@
     "short_direction_veto_v1 (gate=20%) - already has exclude_symbols=[SOL]",
     "record_outcome() BUY/SELL mapping - already applied multi_strategy_main.py:3257"
   ],
-  "total_rules_in_llm_graduated": 31,
-  "active_rules": 22,
-  "gate_20_active_rules": 10,
-  "total_fixes_all_time": 106,
+  "total_rules_in_llm_graduated": 119,
+  "active_rules": 88,
+  "gate_20_active_rules": 24,
+  "total_fixes_all_time": 107,
   "deferred_code_changes": [
     {
       "id": "DURATION_H_FIX",

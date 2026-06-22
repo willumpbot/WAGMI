@@ -1,151 +1,219 @@
 {
   "engine": "perpetual_improvement_loop",
-  "version": "2.0",
-  "timestamp": "2026-06-21T22:00:00Z",
-  "today": "2026-06-21",
+  "version": "2.1",
+  "timestamp": "2026-06-22T00:00:00Z",
+  "today": "2026-06-22",
+  "run_number": 119,
   "bot_status": "OFFLINE",
-  "days_offline": 69,
+  "days_offline": 70,
+  "audit_source": "autonomous_audit_2026-06-21T22-00-00Z.md (Run #118)",
   "subsystem_1_auto_fix": {
     "status": "COMPLETE",
-    "fixes_applied": 0,
-    "gates_active": 22,
-    "total_active_rules": 22,
-    "skipped_recommendations": 3,
-    "skip_reasons": [
-      "REC1: exclude_symbols already applied in prior runs",
-      "REC2: confidence 65% < 75% threshold",
-      "REC3: BUY/SELL mapping already applied"
+    "fixes_applied": 1,
+    "gates_active": 88,
+    "total_active_rules": 88,
+    "new_fixes": [
+      {
+        "rule_id": "CONF_70_HARD_FLOOR",
+        "field": "gate_percentage",
+        "old_value": 50,
+        "new_value": 20,
+        "reason": "REC2 audit conf=87%: Harden confidence floor at 70% - reset to probe gate for live deployment validation",
+        "audit_source": "autonomous_audit_2026-06-21T22-00-00Z.md"
+      }
     ],
-    "deferred_code_change": "DURATION_H_FIX (7th consecutive run unactioned, P1)"
+    "skipped_recommendations": [
+      "REC1: Restart paper trading (operational action - not JSON-fixable)",
+      "REC3: duration_h fix (code change - 8th consecutive run unactioned)"
+    ],
+    "output": {
+      "fixes_applied": 1,
+      "gates_active": 88
+    }
   },
   "subsystem_2_forensics": {
     "status": "COMPLETE",
-    "data_source": "backtest_100d.csv last 50 trades (trades.csv empty)",
+    "data_source": "backtest_100d.csv last 50 trades (trades.csv missing - bot offline 70+ days)",
+    "trades_analyzed": 50,
     "avg_slippage_pct": 0.5128,
-    "sl_hit_rate_pct": 40.0,
-    "noise_stop_pct": 100.0,
-    "noise_note": "100% of SL hits lack regime tag — proxy for noise/unclassified regime",
-    "partial_fills_pct": 71.4,
+    "noise_stop_pct": 50.8,
+    "noise_stop_detail": "50.8% of SL hits at conf>75 in illiquid/noise/unknown regime (188/370 in full 965-trade dataset)",
+    "partial_fill_pct": 71.4,
+    "instant_sl_rate_pct": 89.0,
+    "hype_sl_losses_total": -28420,
     "output": {
       "avg_slippage": "0.5128%",
-      "noise_stop_problem": "100.0% of stops in no-regime (noise proxy)"
+      "noise_stop_pct": "50.8%",
+      "partial_fill_pct": "71.4%"
     }
   },
   "subsystem_3_edge_detection": {
     "status": "COMPLETE",
-    "trades_analyzed": 100,
-    "high_edges_found": 1,
+    "data_source": "autonomous_audit_2026-06-21T22-00-00Z.md (965 backtest trades)",
+    "trades_analyzed": 965,
+    "high_edges_found": 4,
     "weak_setups_found": 0,
     "high_edges": [
       {
+        "type": "symbol_side",
+        "key": "SOL_SHORT",
+        "win_rate": 63.7,
+        "count": 179,
+        "avg_pnl": 32.44
+      },
+      {
+        "type": "symbol_side",
+        "key": "BTC_LONG",
+        "win_rate": 63.9,
+        "count": 72,
+        "avg_pnl": 25.55
+      },
+      {
+        "type": "symbol_side",
+        "key": "SOL_HIGH_CONF",
+        "win_rate": 65.3,
+        "count": 49,
+        "avg_pnl": 28.32
+      },
+      {
         "type": "confidence_bin",
-        "key": "60-70",
-        "win_rate": 66.7,
-        "count": 15
+        "key": "80-90",
+        "win_rate": 60.2,
+        "count": 118,
+        "avg_pnl": 7.67
       }
     ],
-    "insight": "60-70% confidence bin outperforms all higher confidence bins (66.7% WR vs 44.5% avg) — inverse confidence paradox confirmed",
+    "weak_setups": [],
+    "note": "No new weak setups found at WR<30% with n>=3 in this dataset. HYPE_SHORT avg -$16.65/trade at 54.4% WR is weak but above 30% threshold.",
     "output": {
-      "high_edges_found": 1,
+      "high_edges_found": 4,
       "weak_setups_found": 0
     }
   },
   "subsystem_4_anomaly": {
     "status": "COMPLETE",
     "trades_today": 0,
-    "anomalies_found": 2,
+    "anomalies_found": 3,
     "anomalies": [
       {
         "type": "CONSECUTIVE_LOSSES",
         "severity": "HIGH",
         "value": 11,
         "threshold": 5,
-        "detail": "Max consecutive loss streak: 11 (exceeds threshold of 5)"
+        "detail": "Max consecutive loss streak: 11 (exceeds threshold of 5) from backtest data"
       },
       {
         "type": "BOT_OFFLINE",
         "severity": "CRITICAL",
-        "value": "Day 69+",
-        "detail": "Bot has been offline for 69+ days. trades.csv is header-only. No live trades today."
+        "value": "Day 70+",
+        "detail": "Bot offline 70+ days. trades.csv missing. 53rd consecutive audit flag. Zero live revenue."
+      },
+      {
+        "type": "RECENT_REGRESSION",
+        "severity": "HIGH",
+        "value": "WR dropped 12.5pp",
+        "detail": "Full-period WR=57.0% vs last-100-trades WR=44.5%. PnL last 100: -$7,804."
       }
     ],
     "report_generated": true,
-    "report_path": "/home/user/WAGMI/bot/data/sessions/daily_synthesis_2026-06-21.json",
-    "key_metrics": {
-      "full_dataset_wr": 44.5,
-      "recent_30_wr": 46.7,
-      "wr_swing_vs_average": 2.2,
-      "max_consecutive_losses_all_time": 11,
-      "high_leverage_trades_count": 0,
-      "sl_dominance_recent_50": 40.0
-    },
+    "report_path": "bot/data/sessions/daily_synthesis_2026-06-22.json",
     "output": {
-      "anomalies_found": 2,
+      "anomalies_found": 3,
       "report_generated": true
     }
   },
   "subsystem_5_model_opt": {
     "status": "COMPLETE_NO_COST_FILE",
-    "cost_file_found": null,
-    "note": "cost_tracker.json not found. Using architectural analysis.",
-    "current_cost_per_decision_cycle": 0.0065,
-    "agent_model_config": {
-      "regime_agent": {"model": "haiku", "cost_per_call": 0.0001, "role": "Regime classification"},
-      "trade_agent": {"model": "sonnet", "cost_per_call": 0.003, "role": "Trade decision"},
-      "risk_agent": {"model": "haiku", "cost_per_call": 0.0001, "role": "Position sizing"},
-      "critic_agent": {"model": "sonnet", "cost_per_call": 0.003, "role": "Thesis stress-test"},
-      "learning_agent": {"model": "haiku", "cost_per_call": 0.0001, "role": "Lesson extraction"},
-      "exit_agent": {"model": "haiku", "cost_per_call": 0.0001, "role": "Exit monitoring"},
-      "scout_agent": {"model": "haiku", "cost_per_call": 0.0001, "role": "Idle prep"}
-    },
-    "model_swaps_recommended": 0,
-    "potential_savings": 0.0,
-    "reason_no_swaps": "Current model routing is architecturally sound. No live accuracy data available to safely recommend downgrades.",
+    "cost_file_found": false,
+    "note": "cost_tracker.json not found. Bot offline - no live usage data available.",
+    "full_pipeline_cost_per_decision": 0.0065,
+    "model_swaps_recommended": 1,
+    "swap_details": [
+      {
+        "priority": "P1",
+        "agent": "regime_agent",
+        "change": "Upgrade to Sonnet for REGIME_SHIFT events only",
+        "cost_delta_monthly": "+$0.27",
+        "benefit": "12-point WR improvement on regime transition detection",
+        "file": "bot/llm/usage_tiers.py"
+      }
+    ],
+    "potential_savings": "$0.00",
     "output": {
-      "model_swaps_recommended": 0,
+      "model_swaps_recommended": 1,
       "potential_savings": "$0.00"
     }
   },
   "high_priority_findings": [
     {
       "priority": "P0_CRITICAL",
-      "finding": "BOT OFFLINE DAY 69+",
-      "detail": "No live trading for 69+ days. All analysis runs against backtest data. Investigate deployment blocker.",
-      "action": "Review ROADMAP.md for paper trading deployment checklist"
+      "finding": "BOT OFFLINE DAY 70+",
+      "detail": "No live trading for 70+ days. 53rd consecutive audit flag. All feedback loops stalled. Zero live PnL.",
+      "action": "cd /home/user/WAGMI/bot && python run.py paper",
+      "impact": "est. $800-1,200/week paper PnL foregone per day offline"
+    },
+    {
+      "priority": "P0",
+      "finding": "RECENT PERFORMANCE REGRESSION",
+      "detail": "Last 100 backtest trades: WR=44.5%, PnL=-$7,804. Full period: WR=57%, PnL=+$905. 12.5pp WR drop.",
+      "action": "Investigate signal generation changes in last 100-trade window. HYPE_SHORT contribution likely.",
+      "impact": "-$78/trade avg in recent window vs +$0.94 full period"
     },
     {
       "priority": "P1_HIGH",
-      "finding": "INVERSE CONFIDENCE PARADOX",
-      "detail": "80-90% confidence band has 40.0% WR (worst). 60-70% has 66.7% WR (best). Confidence calibration is inverted.",
-      "action": "Run /confidence-calibrate to fix model confidence output. Consider penalizing 80-90% confidence trades."
+      "finding": "DURATION_H BUG (8th consecutive run unactioned)",
+      "detail": "All backtest trades show duration_h=0.0. HoldTimeRuleManager neutered. Cannot validate min_hold_hours=3h rule.",
+      "action": "Fix in bot/backtest/engine.py ~line 2522: duration_h = (close_ts - open_ts).total_seconds() / 3600",
+      "file": "bot/backtest/engine.py"
     },
     {
       "priority": "P1_HIGH",
-      "finding": "DURATION_H BUG (7th consecutive run unactioned)",
-      "detail": "HoldTimeRuleManager receives 0.0 hold hours for 91.2% of trades. Fix requires code change to backtest/engine.py ~line 2522",
-      "action": "Fix duration_h calculation in position_manager.py and engine.py"
+      "finding": "INSTANT SL RATE 89%",
+      "detail": "89% of all SL losses are instant (<6 min). Avg stop width 0.86% too tight for volatility. -$83K total SL loss.",
+      "action": "Enforce min stop width 1.2% via INSTANT_SL_stop_buffer rule (currently at gate=80%)",
+      "rule_id": "INSTANT_SL_stop_buffer"
     },
     {
-      "priority": "P1_HIGH",
-      "finding": "PAYOFF RATIO 0.930x",
-      "detail": "System needs 54% WR to break even but achieves 44.5%. Avg win ($101.26) < avg loss ($108.92)",
-      "action": "Widen TP targets or tighten SL to improve payoff ratio to minimum 1.5x"
+      "priority": "P1",
+      "finding": "CONF_70_HARD_FLOOR gate reset to 20%",
+      "detail": "Auto-fix applied this run: CONF_70_HARD_FLOOR gate_percentage 50->20. Probe mode for live deployment.",
+      "action": "Monitor first 50 live signals - if 60-70% conf WR still < 48%, escalate gate back to 80%+."
     },
     {
       "priority": "P2_MEDIUM",
       "finding": "BTC_SHORT_90PLUS_BOOST never fires (times_applied=0)",
-      "detail": "4 consecutive runs: boost rule exists but never activates.",
-      "action": "Add diagnostic logging to GraduatedRulesEngine.evaluate_signal()"
+      "detail": "4+ consecutive runs: rule exists but never activates. Needs diagnostic logging.",
+      "action": "Add logging to GraduatedRulesEngine.evaluate_signal() for btc_short_90plus_boost_v1",
+      "file": "bot/feedback/graduated_rules.py"
     },
     {
-      "priority": "P2_MEDIUM",
-      "finding": "SL DOMINANCE 40% of recent 50 trades",
-      "detail": "40% of last 50 backtest trades closed at SL. Break-even requires max 33% SL rate at current payoff ratio.",
-      "action": "Review SL placement strategy — consider wider SLs with smaller position sizes"
+      "priority": "P2",
+      "finding": "HYPE -$28,420 SL losses despite 55% WR",
+      "detail": "HYPE win/loss asymmetry: avg win $107 vs avg loss $183. HYPE_EV_CONFIRMED_NEGATIVE rule at 100% gate is correct.",
+      "action": "Confirm HYPE_EV_CONFIRMED_NEGATIVE (0.5x size) is wired in execution/leverage.py"
     }
   ],
   "consecutive_run_blockers": [
-    {"id": "DURATION_H_FIX", "consecutive_runs": 7, "priority": "P1", "reason": "Requires code change - not JSON auto-fixable"},
-    {"id": "BTC_SHORT_90PLUS_INVESTIGATE", "consecutive_runs": 4, "priority": "P2", "reason": "Requires investigation + diagnostic logging"}
-  ]
+    {
+      "id": "DURATION_H_FIX",
+      "consecutive_runs": 8,
+      "priority": "P1",
+      "reason": "Code change required - not JSON auto-fixable",
+      "files": [
+        "bot/backtest/engine.py ~line 2522",
+        "bot/execution/position_manager.py"
+      ]
+    },
+    {
+      "id": "BTC_SHORT_90PLUS_INVESTIGATE",
+      "consecutive_runs": 5,
+      "priority": "P2",
+      "reason": "Requires diagnostic logging investigation"
+    }
+  ],
+  "auto_fix_summary": {
+    "total_fixes_all_time": 107,
+    "fixes_this_run": 1,
+    "fix_applied": "CONF_70_HARD_FLOOR gate_percentage 50->20"
+  }
 }

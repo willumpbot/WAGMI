@@ -1,56 +1,138 @@
 {
-  "generated_at": "2026-06-21T22:00:00Z",
-  "data_source": "backtest_100d.csv last 100 trades",
-  "trades_analyzed": 100,
+  "generated_at": "2026-06-22T00:00:00Z",
+  "run_number": 119,
+  "data_source": "autonomous_audit_2026-06-21T22-00-00Z.md (965 backtest trades, BTC/HYPE/SOL)",
+  "trades_analyzed": 965,
   "symbol_win_rates": {
+    "SOL": {
+      "win_rate": 59.5,
+      "count": 301,
+      "pnl": 5487.0
+    },
     "BTC": {
-      "win_rate": 44.0,
-      "count": 100,
-      "pnl": -85.38
+      "win_rate": 56.6,
+      "count": 267,
+      "pnl": 432.0
+    },
+    "HYPE": {
+      "win_rate": 55.4,
+      "count": 397,
+      "pnl": -5014.0
+    }
+  },
+  "symbol_side_win_rates": {
+    "SOL_SHORT": {
+      "win_rate": 63.7,
+      "count": 179,
+      "avg_pnl": 32.44
+    },
+    "BTC_LONG": {
+      "win_rate": 63.9,
+      "count": 72,
+      "avg_pnl": 25.55
+    },
+    "SOL_HIGH_CONF": {
+      "win_rate": 65.3,
+      "count": 49,
+      "avg_pnl": 28.32
+    },
+    "SOL_LONG": {
+      "win_rate": 53.3,
+      "count": 122,
+      "avg_pnl": -2.62
+    },
+    "BTC_SHORT": {
+      "win_rate": 53.8,
+      "count": 195,
+      "avg_pnl": -7.22
+    },
+    "HYPE_LONG": {
+      "win_rate": 57.0,
+      "count": 158,
+      "avg_pnl": -6.55
+    },
+    "HYPE_SHORT": {
+      "win_rate": 54.4,
+      "count": 239,
+      "avg_pnl": -16.65
     }
   },
   "confidence_bin_win_rates": {
     "60-70": {
-      "win_rate": 66.7,
-      "count": 15,
-      "pnl": 32.21
+      "win_rate": 46.3,
+      "count": 123,
+      "pnl": -2321.0,
+      "avg_pnl": -18.87
     },
     "70-80": {
-      "win_rate": 43.1,
-      "count": 58,
-      "pnl": 72.26
+      "win_rate": 58.6,
+      "count": 633,
+      "pnl": -620.0,
+      "avg_pnl": -0.98
     },
     "80-90": {
-      "win_rate": 33.3,
-      "count": 21,
-      "pnl": -106.59
+      "win_rate": 60.2,
+      "count": 118,
+      "pnl": 905.0,
+      "avg_pnl": 7.67
     },
     "90+": {
-      "win_rate": 33.3,
-      "count": 6,
-      "pnl": -83.26
-    },
-    "<60": {
-      "win_rate": 0,
-      "count": 0,
-      "pnl": 0.0
+      "win_rate": 56.0,
+      "count": 91,
+      "pnl": 2942.0,
+      "avg_pnl": 32.33
     }
   },
   "time_of_day": {
-    "note": "No timestamp column in backtest CSV - time-of-day analysis not available"
+    "note": "No timestamp column in backtest CSV. Time-of-day analysis from prior sessions only.",
+    "morning_06_12": {
+      "win_rate": 71.0,
+      "source": "meta_learning insights (unverified)"
+    },
+    "night_00_06": {
+      "win_rate": 15.0,
+      "source": "adaptive_risk_state.json (n=13)"
+    },
+    "evening_18_24": {
+      "win_rate": 36.0,
+      "source": "deescalated after dedup (unverified)"
+    },
+    "afternoon_12_18": {
+      "win_rate": 27.0,
+      "source": "insight journal (unverified)"
+    }
   },
   "high_edges": [
     {
+      "type": "symbol_side",
+      "key": "SOL_SHORT",
+      "win_rate": 63.7,
+      "count": 179
+    },
+    {
+      "type": "symbol_side",
+      "key": "BTC_LONG",
+      "win_rate": 63.9,
+      "count": 72
+    },
+    {
+      "type": "symbol_side",
+      "key": "SOL_HIGH_CONF",
+      "win_rate": 65.3,
+      "count": 49
+    },
+    {
       "type": "confidence_bin",
-      "key": "60-70",
-      "win_rate": 66.7,
-      "count": 15,
-      "pnl": 32.21
+      "key": "80-90",
+      "win_rate": 60.2,
+      "count": 118,
+      "avg_pnl": 7.67
     }
   ],
   "weak_setups": [],
   "output": {
-    "high_edges_found": 1,
+    "high_edges_found": 4,
     "weak_setups_found": 0
-  }
+  },
+  "key_insight": "SOL_SHORT (63.7% WR, +$32.44/trade) and BTC_LONG (63.9% WR, +$25.55/trade) are primary alpha sources. 60-70% confidence bin destroys -$2321 PnL and should be hard-blocked at 70% floor."
 }

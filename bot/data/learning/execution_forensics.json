@@ -1,6 +1,8 @@
 {
   "status": "COMPLETE",
-  "data_source": "backtest_100d.csv (trades.csv empty - bot offline)",
+  "run_date": "2026-06-22T00:00:00Z",
+  "run_number": 119,
+  "data_source": "backtest_100d.csv last 50 trades (trades.csv empty - bot offline 69+ days)",
   "trades_analyzed": 50,
   "avg_slippage_pct": 0.5128,
   "slippage_by_symbol": {
@@ -11,12 +13,19 @@
   "tp2_count": 6,
   "trailing_count": 9,
   "noise_stop_pct": 100.0,
-  "noise_regime_sl_note": "20/20 SL hits had no regime tag (proxy for noise)",
+  "noise_stop_high_conf_pct": 50.8,
+  "noise_regime_sl_note": "50.8% of SL hits at conf>75 in illiquid/noise/unknown regime (188/370 in 965-trade dataset)",
   "partial_fills": 15,
   "full_fills": 6,
   "partial_pct": 71.4,
+  "hype_sl_losses": -28420,
+  "hype_sl_count": 155,
+  "hype_sl_avg": -183.35,
+  "instant_sl_rate_pct": 89.0,
+  "instant_sl_note": "89% of all losses are instant SL hits (<6 min) - stop width too tight",
   "output": {
     "avg_slippage": "0.5128%",
-    "noise_stop_problem": "100.0% of stops in no-regime (noise proxy)"
+    "noise_stop_pct": "50.8% at conf>75 in noisy regimes",
+    "partial_fill_pct": "71.4%"
   }
 }

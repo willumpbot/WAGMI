@@ -1,17 +1,47 @@
 {
-  "last_updated": "2026-06-21T18:30:00Z",
-  "run_number": 116,
+  "last_updated": "2026-06-22T00:00:00Z",
+  "run_number": 119,
   "cost_tracker_available": false,
-  "verdict": "All current model assignments appropriate. No swaps recommended.",
+  "cost_tracker_note": "cost_tracker.json not found. Bot offline 70+ days - no live usage data.",
+  "verdict": "Current model routing architecturally sound. 1 upgrade opportunity identified for REGIME_SHIFT events.",
   "current_assignments": {
-    "regime_agent": "Haiku",
-    "trade_agent": "Sonnet",
-    "risk_agent": "Haiku",
-    "critic_agent": "Sonnet",
-    "learning_agent": "Haiku",
-    "exit_agent": "Haiku",
-    "scout_agent": "Haiku"
+    "regime_agent": {
+      "model": "haiku",
+      "cost_per_call": 0.0001,
+      "roi_tier": "HIGH"
+    },
+    "trade_agent": {
+      "model": "sonnet",
+      "cost_per_call": 0.003,
+      "roi_tier": "HIGHEST"
+    },
+    "risk_agent": {
+      "model": "haiku",
+      "cost_per_call": 0.0001,
+      "roi_tier": "HIGH"
+    },
+    "critic_agent": {
+      "model": "sonnet",
+      "cost_per_call": 0.003,
+      "roi_tier": "HIGHEST"
+    },
+    "learning_agent": {
+      "model": "haiku",
+      "cost_per_call": 0.0001,
+      "roi_tier": "MEDIUM"
+    },
+    "exit_agent": {
+      "model": "haiku",
+      "cost_per_call": 0.0001,
+      "roi_tier": "MEDIUM_HIGH"
+    },
+    "scout_agent": {
+      "model": "haiku",
+      "cost_per_call": 0.0001,
+      "roi_tier": "MEDIUM"
+    }
   },
+  "full_pipeline_cost_per_decision": 0.0065,
   "swap_recommendations": [
     {
       "priority": "P1",
@@ -22,22 +52,19 @@
       "action": "Modify usage_tiers.py: add REGIME_SHIFT to MEDIUM_VALUE_TRIGGERS"
     }
   ],
+  "model_swaps_recommended": 1,
+  "potential_savings": "$0.00",
   "estimated_costs_per_decision_cycle": {
-    "full_9_agent_pipeline": 0.007,
-    "monthly_at_10_decisions_per_day": 2.10
+    "full_7_agent_pipeline": 0.0065,
+    "monthly_at_10_decisions_per_day": 1.95
   },
   "roi_ratio_when_live": {
-    "cost_per_day": 0.35,
+    "cost_per_day": 0.065,
     "revenue_per_day_target": 400,
-    "roi_ratio": 1143
+    "roi_ratio": 6154
   },
-  "agent_roi_ranking": [
-    {"agent": "critic_agent", "roi_tier": "HIGHEST", "swap_to_cheaper": false},
-    {"agent": "trade_agent", "roi_tier": "HIGH", "swap_to_cheaper": false},
-    {"agent": "regime_agent", "roi_tier": "HIGH", "swap_to_cheaper": false},
-    {"agent": "risk_agent", "roi_tier": "HIGH", "swap_to_cheaper": false},
-    {"agent": "exit_agent", "roi_tier": "MEDIUM_HIGH", "swap_to_cheaper": false},
-    {"agent": "learning_agent", "roi_tier": "MEDIUM", "swap_to_cheaper": false},
-    {"agent": "scout_agent", "roi_tier": "MEDIUM", "swap_to_cheaper": false}
-  ]
+  "output": {
+    "model_swaps_recommended": 1,
+    "potential_savings": "$0.00"
+  }
 }
