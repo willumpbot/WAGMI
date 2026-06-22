@@ -407,11 +407,15 @@
       "source": "master_engine_run_2026-05-03",
       "description": "duration_h is 0.0 for ALL trades in trades.csv — HoldTimeRuleManager is neutered",
       "problem": "The hold-time rule cannot be measured because duration_h=0.0 for all closed trades.",
-      "fix_applied": "PENDING_DEV_FIX — code change needed at bot/backtest/engine.py ~line 2522",
-      "status": "PENDING_DEV_FIX",
+      "fix_applied": "APPLIED Run126 (2026-06-22): (1) position_manager.py:1367 + 1398 — max(..., 60.0) floor on hold_duration_seconds and hold_time_s to prevent zero on same-candle closes. (2) backtest/engine.py:1941 — patch _opened.opened_at=sim_dt alongside open_time so hold_time_rules.should_block_early_exit() fires in backtest mode.",
+      "status": "APPLIED",
       "confidence": 92,
-      "gate_percentage": 0,
-      "applied_date": "2026-05-03"
+      "gate_percentage": 100,
+      "applied_date": "2026-05-03",
+      "resolved_date": "2026-06-22",
+      "resolved_run": 126,
+      "consecutive_escalated_runs": 13,
+      "verified": false
     },
     {
       "rule_id": "CONF_70_HARD_FLOOR",
@@ -558,14 +562,19 @@
       "source": "perpetual_improvement_run120 — audit_run119_100d_backtest",
       "description": "HYPE SHORT >= 75% confidence catastrophic: -$70.06/trade, 31.2% WR (n=77). Blanket veto wrong for <75% band.",
       "problem": "HYPE SHORT split: <75% conf = 52-60% WR +$8-15/trade (n=80); >=75% = 31.2% -$70.06/trade (n=77).",
-      "fix_applied": "TRACKING_ONLY — confidence=71% (below 75% auto-apply threshold).",
-      "status": "TRACKING",
+      "fix_applied": "ESCALATED_MANUAL_APPROVAL — 8 consecutive runs at 71% confidence (below 75% auto-apply threshold). Evidence strong. Awaiting human approval to split hype_short_veto_v1 into targeted sub-rules.",
+      "status": "AWAITING_HUMAN_APPROVAL",
       "confidence": 71,
       "gate_percentage": 0,
       "baseline_wr_below_75": 0.547,
       "baseline_wr_above_75": 0.312,
       "applied_date": "2026-06-22",
-      "upgrade_condition": "Apply gate split when confidence reaches 75% or n>=100 live HYPE SHORT trades confirm <75% WR>=50%."
+      "escalated_date": "2026-06-22",
+      "escalated_run": 126,
+      "consecutive_runs_below_threshold": 8,
+      "upgrade_condition": "Awaiting human manual approval OR confidence reach 75%.",
+      "proposed_fix": "Split hype_short_veto_v1: (1) hype_short_highconf_veto_v1 — block HYPE SHORT when conf>=75% (31.2% WR, -$70/trade). (2) hype_short_lowconf_probe_v1 — allow HYPE SHORT when conf<75%, 50% size (52-60% WR, +$10/trade). Expected: +$97/month recovery.",
+      "rollback": "Re-enable blanket veto if live WR <40% on n=15 HYPE SHORT trades below 75% conf."
     },
     {
       "rule_id": "HYPE_SL_ATR_WIDEN",
@@ -600,5 +609,5 @@
   "orphan_merge_2026_05_03_2106": [],
   "rules_resolved_2026_05_04_1702": [],
   "run_log_2026_05_18_2304": [],
-  "last_improvement_run": "perpetual_improvement_run123"
+  "last_improvement_run": "perpetual_improvement_run126"
 }
