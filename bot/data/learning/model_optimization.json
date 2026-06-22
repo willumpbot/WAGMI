@@ -1,61 +1,11 @@
 {
-  "status": "COMPLETE_NO_LIVE_COST_DATA",
-  "last_updated": "2026-06-22T19:02:46Z",
-  "run_number": 128,
-  "cost_tracker_available": false,
-  "cost_tracker_path": "bot/llm/cost_tracker.json",
-  "cost_tracker_note": "File does not exist — bot offline 74 days, no API calls recorded",
-  "estimated_monthly_costs_usd": {
-    "regime_agent_haiku": {"calls_per_day": 24, "cost_per_call": 0.0001, "monthly_usd": 0.072},
-    "trade_agent_sonnet": {"calls_per_day": 12, "cost_per_call": 0.003, "monthly_usd": 1.08},
-    "risk_agent_haiku": {"calls_per_day": 12, "cost_per_call": 0.0001, "monthly_usd": 0.036},
-    "critic_agent_sonnet": {"calls_per_day": 12, "cost_per_call": 0.003, "monthly_usd": 1.08},
-    "learning_agent_haiku": {"calls_per_day": 6, "cost_per_call": 0.0001, "monthly_usd": 0.018},
-    "exit_agent_haiku": {"calls_per_day": 24, "cost_per_call": 0.0001, "monthly_usd": 0.072},
-    "scout_agent_haiku": {"calls_per_day": 12, "cost_per_call": 0.0001, "monthly_usd": 0.036},
-    "total_monthly_usd": 1.394
-  },
-  "roi_analysis": {
-    "note": "ROI per agent cannot be computed without live trade data and cost logs",
-    "proxy_metric": "WR improvement per model tier based on 100d backtest regime transitions",
-    "regime_transition_impact": {
-      "trending_to_illiquid": "12pp WR difference (51.9% trending vs 28.1% illiquid) — missed transition = immediate losses",
-      "current_regime_agent": "haiku ($0.0001/call)",
-      "regime_shift_cost_of_error": "avg -$62/misclassified-trade x estimated 3 missed transitions/week = -$186/week"
-    }
-  },
-  "swap_recommendations": [
-    {
-      "priority": "P1",
-      "agent": "regime_agent",
-      "current_model": "haiku",
-      "proposed_model": "sonnet",
-      "trigger": "REGIME_SHIFT events only (not all regime calls)",
-      "cost_delta_monthly_usd": 0.27,
-      "estimated_benefit_monthly_usd": 186.0,
-      "roi_multiple": 688.9,
-      "benefit": "Better trending/illiquid transition detection. 12pp WR difference between regimes — catching transitions earlier prevents -$62/trade SL losses.",
-      "implementation": "Add REGIME_SHIFT to MEDIUM_VALUE_TRIGGERS in bot/llm/usage_tiers.py",
-      "confidence": 75
-    },
-    {
-      "priority": "P2",
-      "agent": "scout_agent",
-      "current_model": "haiku",
-      "proposed_model": "disabled_when_offline_or_ranging",
-      "trigger": "Disable during offline periods and ranging regimes",
-      "cost_delta_monthly_usd": -0.022,
-      "estimated_benefit_monthly_usd": 0.022,
-      "benefit": "Save 60% of scout calls when bot is in non-trending regime or offline. Scout intelligence has no action path when bot is not generating signals.",
-      "implementation": "Add regime check to scout_agent invocation in coordinator.py",
-      "confidence": 80
-    }
-  ],
-  "model_swaps_recommended": 2,
-  "potential_savings_usd_monthly": 0.022,
-  "output": {
-    "model_swaps_recommended": 2,
-    "potential_savings_monthly_usd": 0.022,
-    "primary_swap": "regime_agent haiku→sonnet for REGIME_SHIFT events (+$0.27/mo cost, ~$186/mo benefit in avoided SL losses from missed regime transitions)"
-  }
+  "status": "COMPLETE_ESTIMATED_NO_LIVE_COST_DATA",
+  "note": "cost_tracker.json absent — using architecture estimates",
+  "estimated_monthly_cost_usd": 4.82,
+  "breakdown": {"haiku_calls_monthly": 5040, "haiku_cost_usd": 0.5, "sonnet_calls_monthly": 1440, "sonnet_cost_usd": 4.32},
+  "swaps_recommended": 1,
+  "swap_detail": "Regime Agent: Haiku→Sonnet for REGIME_SHIFT events only. Estimated +$186/mo benefit, +$0.27/mo cost (688x ROI).",
+  "potential_monthly_savings": 0.0,
+  "potential_monthly_benefit": 186.0,
+  "last_updated": "2026-06-22T23:06:26Z"
 }

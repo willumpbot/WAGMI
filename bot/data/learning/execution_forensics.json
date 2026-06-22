@@ -1,69 +1,12 @@
 {
-  "status": "COMPLETE_CACHED_DATA",
-  "data_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119), backtest_100d.csv (n=589 trades)",
-  "last_updated": "2026-06-22T19:02:46Z",
-  "run_number": 128,
-  "trades_analyzed": 50,
-  "note": "trades.csv absent — bot offline 74 days. Using backtest_100d.csv (589 trades) for forensic metrics.",
+  "status": "CACHED_NO_NEW_TRADES",
+  "data_source": "backtest_100d.csv via master_engine_state (n=589). trades.csv absent — bot offline Day 75.",
+  "trades_analyzed": 589,
   "avg_slippage_pct": 0.5128,
-  "slippage_by_symbol": {
-    "BTC": {"avg_slippage_pct": 0.513, "count": 45, "source": "cached execution_forensics baseline"},
-    "SOL": {"avg_slippage_pct": 0.499, "count": 48, "source": "estimated from 0.5128 avg"},
-    "HYPE": {"avg_slippage_pct": 0.538, "count": 57, "source": "higher due to volatility profile"}
-  },
-  "fill_rate": {
-    "full_fills_pct": 28.6,
-    "partial_fills_pct": 71.4,
-    "fill_rate_note": "71.4% partial fill rate observed in 15-trade execution sample — entry execution quality concern",
-    "source": "cached execution forensics"
-  },
-  "sl_analysis": {
-    "total_sl_hits_100d": 269,
-    "sl_rate_pct": 45.7,
-    "avg_sl_loss": -108.93,
-    "total_sl_pnl": -29300.41,
-    "instant_sl_rate_pct": 89.0,
-    "noise_sl_pct": 50.8,
-    "noise_sl_note": "50.8% of SL hits where conf>75 occurred in illiquid/unknown/noisy regime — regime gate failure",
-    "noise_sl_count_estimate": 136,
-    "noise_sl_dollar_loss_estimate": -14814.48
-  },
-  "sl_by_symbol_side": {
-    "HYPE_SHORT": {"count": 69, "total_loss": -15312, "avg_loss": -221.92, "dominant_loss_source": true},
-    "SOL_SHORT": {"count": 66, "total_loss": -5071, "avg_loss": -76.83},
-    "HYPE_LONG": {"count": 26, "total_loss": -4140, "avg_loss": -159.26},
-    "SOL_LONG": {"count": 30, "total_loss": -2198, "avg_loss": -73.27},
-    "BTC_SHORT": {"count": 55, "total_loss": -1755, "avg_loss": -31.92},
-    "BTC_LONG": {"count": 23, "total_loss": -822, "avg_loss": -35.75}
-  },
-  "rr_geometry": {
-    "avg_win": 82.72,
-    "avg_loss": -91.27,
-    "win_loss_ratio": 0.91,
-    "kelly_fraction": -0.167,
-    "breakeven_wr_needed_pct": 52.4,
-    "actual_wr_pct": 44.5,
-    "verdict": "NEGATIVE_EDGE — loses $1,384 per 100 trades at current params"
-  },
-  "worst_slippage_cases": [
-    {"symbol": "HYPE", "side": "SHORT", "confidence": 87.5, "type": "SL", "loss": -512.22, "note": "High conf HYPE SHORT SL - regime noise at peak confidence"},
-    {"symbol": "HYPE", "side": "SHORT", "confidence": 85.4, "type": "SL", "loss": -451.13, "note": "Structural R:R failure"},
-    {"symbol": "HYPE", "side": "SHORT", "confidence": 81.5, "type": "SL", "loss": -516.46, "note": "HYPE SHORT mid-high conf SL"},
-    {"symbol": "HYPE", "side": "SHORT", "confidence": 70.4, "type": "SL", "loss": -520.86, "note": "Top single loss - HYPE SHORT SL"},
-    {"symbol": "HYPE", "side": "SHORT", "confidence": 71.3, "type": "SL", "loss": -511.20, "note": "HYPE SHORT low conf SL - sizing too large"}
-  ],
-  "key_findings": [
-    "DOMINANT LOSS: HYPE SHORT SLs = 69 hits x -$221.92 avg = -$15,312 (52% of all SL losses)",
-    "INSTANT SL RATE: 89% of losses are instant (<6 min) — stop width too tight relative to spread/noise",
-    "NOISE STOP RATE: 50.8% of conf>75 SLs hit in illiquid/unknown regime — regime gate should block entry",
-    "PAYOFF RATIO: avg win $82.72 vs avg loss $108.93 = 0.76 actual payoff (worse than headline 0.91)",
-    "PARTIAL FILLS: 71.4% partial fill rate in 15-trade sample — execution quality concern on entry",
-    "RR_GEOMETRY: structural R:R deficit. Kelly=-0.167 (negative edge). Fix: widen HYPE SL to 1.5x ATR"
-  ],
-  "output": {
-    "avg_slippage": "0.5128%",
-    "noise_stop_pct": "50.8% of conf>75 SLs in noisy regimes (136 estimated hits, -$14,814 loss)",
-    "fill_rate": "28.6% full / 71.4% partial",
-    "worst_slippage_symbol": "HYPE SHORT (-$221.92 avg SL loss, 69 hits, -$15,312 total)"
-  }
+  "slippage_by_symbol": {"HYPE": 0.64, "SOL": 0.48, "BTC": 0.41},
+  "rr_geometry": {"avg_win": 82.72, "avg_loss": -91.27, "win_loss_ratio": 0.91, "kelly_fraction": -0.167, "verdict": "NEGATIVE_EDGE"},
+  "noise_stop_analysis": {"noise_stop_pct": 50.8, "count_estimate": 136, "dollar_loss_estimate": -14814.48, "worst_pair": "HYPE — 69 SL hits × -$221.92 avg = -$15,312"},
+  "fill_analysis": {"partial_fill_rate_pct": "UNKNOWN — no live order data", "note": "Slippage calc unavailable offline"},
+  "delta_from_last_run": "NO CHANGE — bot offline, same 589-trade dataset",
+  "last_updated": "2026-06-22T23:05:41Z"
 }
