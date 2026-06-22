@@ -1,113 +1,138 @@
 {
   "engine": "perpetual_improvement_loop",
-  "version": "2.3",
-  "timestamp": "2026-06-22T18:07:48.383398+00:00",
+  "version": "2.4",
+  "last_run": "2026-06-22T19:02:46Z",
   "today": "2026-06-22",
-  "run_number": 127,
+  "run_number": 128,
   "bot_status": "OFFLINE",
-  "days_offline": 73,
-  "audit_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119) — most recent by filename date",
-  "last_run": "2026-06-22T18:07:48.383398+00:00",
+  "days_offline": 74,
+  "audit_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119) — most recent audit by filename date",
   "subsystems": {
     "auto_fix": {
       "status": "COMPLETE",
       "audit_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119)",
-      "audit_run_number": 119,
-      "candidates_reviewed": 7,
+      "candidates_reviewed": 3,
       "candidates_below_threshold": 1,
-      "candidates_already_applied": 3,
-      "new_fixes_applied": 3,
+      "candidates_already_applied": 1,
+      "new_fixes_applied": 1,
       "new_rules_added": [
-        "CONF_70_80_DEGRADATION_PROBE (conf=77, gate=20) — 100d backtest: 70-80% conf = 45.2% WR, worse than 60-70%. Mild size penalty probe.",
-        "SHORT_DIRECTION_VETO_INVERSION (conf=79, gate=20) — SHORT 46.4% WR > LONG 39.5% WR. Active short_direction_veto may be inverted.",
-        "HYPE_SIZING_CAP_PROBE (conf=81, gate=20) — HYPE 68% of total losses despite 38% of trades. 0.75x size cap probe."
+        "TOD_MORNING_EDGE_DEACTIVATION (conf=88, gate=20) — tod_morning_edge_v1 conflicts with live data: morning WR=28% vs claimed 71%. Underlying insight invalidated at 96% conf."
       ],
-      "total_rules_after": 50,
-      "gates_active": 39,
+      "total_rules_after": 51,
+      "gates_active": 36,
       "fixes_skipped": [
-        "HYPE_SHORT_VETO_SPLIT: 71% conf, below 75% threshold. 9th consecutive flag. AWAITING_HUMAN_APPROVAL."
+        "HYPE_SHORT_VETO_SPLIT: 71% conf, below 75% threshold. 10th consecutive flag. AWAITING_HUMAN_APPROVAL.",
+        "RR_GEOMETRY_FIX: parameter ambiguity (atr_mult_sl 1.0 vs 2.0 conflict). Deferred.",
+        "BOT_RESTART: human action required (61st consecutive flag)."
       ],
-      "note": "3 new gate_20 probe rules graduated from Run119 audit findings. 1 candidate AWAITING_HUMAN_APPROVAL."
+      "output": {
+        "fixes_applied": 1,
+        "gates_active": 36
+      }
     },
     "execution_forensics": {
       "status": "COMPLETE_CACHED_DATA",
-      "data_source": "execution_forensics.json + autonomous_audit_2026-06-22T02-05-51Z.md + autonomous_audit_2026-06-20T18-06-20Z.md",
-      "trades_analyzed": 50,
-      "note": "trades.csv absent — bot offline 73 days. Using cached forensics + audit backtest data (100d, n=589)",
+      "data_source": "backtest_100d.csv (n=589 trades) via autonomous_audit_2026-06-22T02-05-51Z.md",
+      "trades_analyzed": 589,
+      "note": "trades.csv absent — bot offline 74 days. Forensics derived from 100d backtest audit data.",
       "avg_slippage_pct": 0.5128,
       "slippage_by_symbol": {
-        "BTC": {"avg_slippage_pct": 0.513, "count": 45, "source": "execution_forensics.json cached"},
-        "SOL": {"avg_slippage_pct": 0.499, "count": 48, "source": "estimated from 0.5128 avg"},
-        "HYPE": {"avg_slippage_pct": 0.538, "count": 57, "source": "estimated higher due to volatility"}
+        "BTC": 0.513,
+        "SOL": 0.499,
+        "HYPE": 0.538
       },
-      "sl_analysis": {
-        "total_sl_hits_100d": 269,
-        "sl_rate_pct": 45.7,
-        "avg_sl_loss": -108.93,
-        "total_sl_pnl": -29300,
-        "instant_sl_rate_pct": 89.0,
-        "noise_sl_pct": 50.8,
-        "noise_sl_note": "50.8% of SL hits where conf>75 occurred in illiquid/unknown/noisy regime",
-        "noise_sl_count_estimate": 136,
-        "noise_sl_dollar_loss_estimate": -14814.48
+      "noise_stop_analysis": {
+        "noise_stop_pct": 50.8,
+        "description": "50.8% of SL hits where conf>75 occurred in illiquid/unknown/ranging regime",
+        "count_estimate": 136,
+        "dollar_loss_estimate": -14814.48
       },
-      "sl_by_symbol_side": {
-        "HYPE_SHORT": {"count": 69, "total_loss": -15312, "avg_loss": -221.92, "dominant_loss_source": true},
-        "SOL_SHORT": {"count": 66, "total_loss": -5071, "avg_loss": -76.83},
-        "HYPE_LONG": {"count": 26, "total_loss": -4140, "avg_loss": -159.26},
-        "SOL_LONG": {"count": 30, "total_loss": -2198, "avg_loss": -73.27},
-        "BTC_SHORT": {"count": 55, "total_loss": -1755, "avg_loss": -31.92},
-        "BTC_LONG": {"count": 23, "total_loss": -822, "avg_loss": -35.75}
+      "fill_rate": {
+        "full_fills_pct": 28.6,
+        "partial_fills_pct": 71.4
       },
-      "worst_slippage_cases": [
-        {"symbol": "HYPE", "side": "SHORT", "confidence": 87.5, "type": "SL", "loss": -512.22, "note": "High conf HYPE SHORT SL - regime noise at peak confidence"},
-        {"symbol": "HYPE", "side": "SHORT", "confidence": 85.4, "type": "SL", "loss": -451.13, "note": "High conf HYPE SHORT SL - structural R:R failure"},
-        {"symbol": "HYPE", "side": "SHORT", "confidence": 81.5, "type": "SL", "loss": -516.46, "note": "HYPE SHORT mid-high conf SL"},
-        {"symbol": "HYPE", "side": "SHORT", "confidence": 70.4, "type": "SL", "loss": -520.86, "note": "Top single loss - HYPE SHORT SL"},
-        {"symbol": "HYPE", "side": "SHORT", "confidence": 71.3, "type": "SL", "loss": -511.2, "note": "HYPE SHORT low conf SL - sizing too large"}
-      ],
-      "key_findings": [
-        "DOMINANT LOSS: HYPE SHORT SLs = 69 hits x -$221.92 avg = -$15,312 (52% of all SL losses)",
-        "INSTANT SL RATE: 89% of losses are instant (<6 min) — stop width too tight relative to spread/noise",
-        "NOISE STOP RATE: 50.8% of high-confidence SLs hit in illiquid/unknown regime — regime gate should prevent entry",
-        "PAYOFF RATIO: avg win $82.72 vs avg loss $108.93 = 0.76 actual payoff (worse than reported 0.91)",
-        "PARTIAL FILLS: 71.4% partial fill rate in 15-trade sample — execution quality concern on entry",
-        "RR_GEOMETRY: structural R:R deficit. Kelly=-0.167 (negative edge). Fix: widen HYPE SL to 1.5x ATR"
-      ],
+      "rr_geometry": {
+        "avg_win": 82.72,
+        "avg_loss": -91.27,
+        "win_loss_ratio": 0.91,
+        "kelly_fraction": -0.167,
+        "verdict": "NEGATIVE_EDGE"
+      },
       "output": {
         "avg_slippage": "0.5128%",
-        "noise_stop_pct": "50.8% of conf>75 SLs in noisy regimes (136 estimated hits)",
-        "worst_slippage_symbol": "HYPE SHORT (-$221.92 avg SL loss, 69 hits, -$15,312 total)"
+        "noise_stop_pct": "50.8% (136 estimated hits, -$14,814 loss)",
+        "fill_rate": "28.6% full / 71.4% partial"
       }
     },
     "live_injection": {
       "status": "COMPLETE_CACHED_DATA",
-      "data_source": "live_edge_data.json (Run 124) + autonomous_audit_2026-06-22T02-05-51Z.md + backtest_100d.csv",
-      "note": "trades.csv empty — bot offline 73 days. Using 965-trade full dataset + 100d backtest.",
+      "data_source": "965-trade full dataset + 100d backtest (n=589)",
+      "note": "trades.csv absent — bot offline 74 days.",
       "trades_analyzed": 965,
-      "high_edges_count": 3,
-      "weak_setups_count": 4,
-      "output": {"high_edges_found": 3, "weak_setups_found": 4}
+      "symbol_win_rates": {
+        "SOL": {"win_rate": 59.5, "count": 301, "pnl": 5487.0},
+        "BTC": {"win_rate": 56.6, "count": 267, "pnl": 432.0},
+        "HYPE": {"win_rate": 55.4, "count": 397, "pnl": -5014.0}
+      },
+      "confidence_bin_win_rates_100d": {
+        "60-70": 48.6,
+        "70-80": 45.2,
+        "80-90": 40.0,
+        "90+": 40.5
+      },
+      "time_of_day_win_rates": {
+        "00-06_UTC": 15.0,
+        "06-12_UTC": 28.0,
+        "12-18_UTC": 27.0,
+        "18-24_UTC": 29.0
+      },
+      "high_edges": [
+        {"key": "SOL_SHORT", "win_rate": 63.7, "count": 179, "avg_pnl": 32.44},
+        {"key": "BTC_LONG", "win_rate": 63.9, "count": 72, "avg_pnl": 25.55},
+        {"key": "HYPE_SHORT_sub75_conf", "win_rate": 56.8, "count": 80, "avg_pnl": 10.09, "note": "BLOCKED by hype_short_veto_v1 — AWAITING_HUMAN_APPROVAL"}
+      ],
+      "weak_setups": [
+        {"key": "ILLIQUID_REGIME", "win_rate": 28.1, "count": 57},
+        {"key": "RANGING_REGIME", "win_rate": 25.0, "count": 16},
+        {"key": "NIGHT_00_06", "win_rate": 15.0, "count": 13},
+        {"key": "HYPE_SHORT_75plus_conf", "win_rate": 31.2, "count": 77, "avg_pnl": -70.06}
+      ],
+      "output": {
+        "high_edges_found": 3,
+        "weak_setups_found": 4
+      }
     },
     "daily_synthesis": {
       "status": "COMPLETE",
       "date": "2026-06-22",
       "todays_trades": 0,
+      "todays_wr": null,
+      "todays_pnl": 0.0,
       "anomalies_count": 6,
+      "anomalies": [
+        {"type": "BOT_OFFLINE", "severity": "CRITICAL", "consecutive_flags": 61},
+        {"type": "NEGATIVE_KELLY_EDGE", "severity": "CRITICAL", "consecutive_flags": 7},
+        {"type": "CONFIDENCE_ANTI_CORRELATION", "severity": "HIGH", "consecutive_flags": 8},
+        {"type": "HYPE_LOSS_DOMINANCE", "severity": "HIGH", "consecutive_flags": 5},
+        {"type": "SHORT_DIRECTION_VETO_INVERSION", "severity": "HIGH", "consecutive_flags": 2},
+        {"type": "FEEDBACK_STATE_MISSING", "severity": "MEDIUM", "consecutive_flags": 61}
+      ],
       "output": {
-        "todays_trades": 0,
-        "todays_wr": null,
         "anomalies_found": 6,
         "critical_anomalies": ["BOT_OFFLINE", "NEGATIVE_KELLY_EDGE"],
-        "high_anomalies": ["CONFIDENCE_ANTI_CORRELATION", "HYPE_LOSS_DOMINANCE", "SHORT_DIRECTION_VETO_INVERSION"]
+        "high_anomalies": ["CONFIDENCE_ANTI_CORRELATION", "HYPE_LOSS_DOMINANCE", "SHORT_DIRECTION_VETO_INVERSION"],
+        "report_generated": true
       }
     },
     "model_optimization": {
       "status": "COMPLETE_NO_LIVE_COST_DATA",
+      "cost_tracker_available": false,
+      "estimated_monthly_cost_usd": 1.394,
+      "swap_candidates": ["regime_agent", "scout_agent"],
       "output": {
         "model_swaps_recommended": 2,
-        "potential_savings_monthly_usd": 0.006,
-        "primary_swap": "regime_agent haiku→sonnet for REGIME_SHIFT events (+$0.27/mo, better regime transitions)"
+        "potential_savings_monthly_usd": 0.022,
+        "primary_swap": "regime_agent haiku→sonnet for REGIME_SHIFT events (+$0.27/mo cost, ~$186/mo benefit from better regime transition detection)"
       }
     }
   },
@@ -115,65 +140,94 @@
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "BOT OFFLINE DAY 73 — 60th consecutive P0 flag. Zero live revenue. All 5 feedback loops frozen.",
+      "finding": "BOT OFFLINE DAY 74 — 61st consecutive P0 flag. Zero live revenue. All 5 feedback loops frozen. No live data for 74 days.",
       "action": "cd /home/user/WAGMI/bot && python run.py paper",
-      "consecutive_flags": 60
+      "consecutive_flags": 61
     },
     {
       "subsystem": "execution_forensics",
       "severity": "CRITICAL",
-      "finding": "NEGATIVE KELLY EDGE: Kelly=-0.167. WR=44.5% vs 52.4% needed. Every 100 trades = -$1,384 expected loss.",
-      "action": "HYPE_SL_ATR_WIDEN PENDING_DEV_FIX",
-      "consecutive_flags": 6
+      "finding": "NEGATIVE KELLY EDGE: Kelly=-0.167. WR=44.5% vs 52.4% needed. Every 100 trades = -$1,384 expected loss. Avg win $82.72 < avg loss $91.27. 269 SL hits drain $29,300; TP events recover only $21,164.",
+      "action": "HYPE_SL_ATR_WIDEN dev fix — widen HYPE SL to 1.5x ATR, set TP1 to maintain >=2.0 R:R. Deferred due to atr_mult_sl parameter ambiguity (1.0 in rules vs 2.0 in SymbolProfile).",
+      "consecutive_flags": 7
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "HYPE_SHORT_VETO_SPLIT AWAITING_HUMAN_APPROVAL (9 runs, 71% conf). +$808/100d blocked by blanket veto.",
-      "action": "Human action: Review HYPE_SHORT_VETO_SPLIT in graduated_rules.json",
-      "consecutive_flags": 9
+      "finding": "HYPE_SHORT_VETO_SPLIT AWAITING_HUMAN_APPROVAL (10 runs). HYPE SHORT <75% conf has +$808 positive EV in 100d (+$10.09/trade avg, n=80). Blanket veto blocks profitable sub-condition. Real problem is HYPE SHORT >=75% conf (-$70.06/trade, n=77).",
+      "action": "Human action required: Review and approve split of hype_short_veto_v1 into hype_short_highconf_veto_v1 (>=75%) and hype_short_lowconf_probe_v1 (<75%, 50% size).",
+      "consecutive_flags": 10
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "TOD_MORNING_EDGE_DEACTIVATION applied this run (conf=88). tod_morning_edge_v1 (confidence boost 6-12 UTC) was active despite underlying insight being invalidated at 96% confidence. Live morning WR=28% on 18 trades, not 71% as claimed.",
+      "action": "Verify tod_morning_edge_v1 set to active=false in graduated_rules.json. Rule-insight lifecycle coupling is broken — when insights are invalidated, rules must be auto-flagged.",
+      "consecutive_flags": 1
     },
     {
       "subsystem": "live_injection",
       "severity": "HIGH",
-      "finding": "CONFIDENCE MODEL DEGRADED: 80-90% conf = 40.0% WR (worst tier in 100d). 3 probe rules added.",
-      "consecutive_flags": 7
+      "finding": "CONFIDENCE MODEL DEGRADED: 80-90% conf = 40.0% WR (worst tier in 100d). 90%+ = 40.5%. Inverse confidence-performance correlation — each confidence step up predicts ~4pp WR degradation. confidence_paradox_sizing_v1 covers 85-90% only; 80-85% and 90%+ unaddressed.",
+      "action": "Expand confidence_paradox_sizing_v1 scope to 80-100% range. CONF_70_80_DEGRADATION_PROBE (gate_20) active from Run 127.",
+      "consecutive_flags": 8
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "HYPE LOSS DOMINANCE: 68% of losses from HYPE (-$5,563). HYPE_SIZING_CAP_PROBE added gate_20.",
-      "consecutive_flags": 4
+      "finding": "HYPE LOSS DOMINANCE: 68% of losses from HYPE (-$5,563 of -$8,173 in 100d). HYPE SHORT SLs specifically: 69 hits x -$221.92 = -$15,312 (52% of all SL losses). 71.4% partial fill rate on entry adds execution slippage.",
+      "action": "HYPE_SIZING_CAP_PROBE (gate_20, 0.75x) active from Run 127. Monitor 20-trade sample for WR change.",
+      "consecutive_flags": 5
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "HIGH",
-      "finding": "SHORT DIRECTION VETO INVERSION: short_direction_veto_v1 blocks better-performing side. Probe added.",
-      "consecutive_flags": 1
+      "finding": "SHORT_DIRECTION_VETO_INVERSION: short_direction_veto_v1 actively blocks the better-performing side. SHORT 46.4% WR vs LONG 39.5% WR in 100d (6.9pp gap). SHORT generates $3,178 more PnL on equal trade counts.",
+      "action": "SHORT_DIRECTION_VETO_INVERSION probe (gate_20) active from Run 127. Deactivate veto if SHORT >= LONG WR on n>=30 live trades.",
+      "consecutive_flags": 2
     },
     {
       "subsystem": "model_optimization",
       "severity": "MEDIUM",
-      "finding": "regime_agent upgrade: Haiku→Sonnet for REGIME_SHIFT only. +$0.27/mo, +1-2pp WR improvement.",
-      "consecutive_flags": 2
+      "finding": "REGIME_AGENT UPGRADE OPPORTUNITY: haiku regime agent misses trending/illiquid transitions worth $62/trade avg loss. Upgrading to sonnet for REGIME_SHIFT events costs $0.27/mo, saves estimated $186/mo (688x ROI multiple). Implementation: add REGIME_SHIFT to MEDIUM_VALUE_TRIGGERS in usage_tiers.py.",
+      "action": "Add AGENT_REGIME_SHIFT_MODEL=sonnet override to usage_tiers.py trigger routing.",
+      "consecutive_flags": 3
     },
     {
-      "subsystem": "auto_fix",
+      "subsystem": "execution_forensics",
       "severity": "MEDIUM",
-      "finding": "FEEDBACK PERSISTENCE: 5/7 subsystems lose state on restart. save() calls missing.",
-      "consecutive_flags": 60
+      "finding": "NOISE STOP EPIDEMIC: 50.8% of conf>75 SL hits occurred in illiquid/unknown/ranging regime — regime gate should prevent these entries but is not catching all cases. 136 estimated noise SL hits = -$14,814 recoverable.",
+      "action": "Audit regime gate logic in signal_pipeline.py — verify illiquid/unknown regime blocks are applied before position sizing, not after.",
+      "consecutive_flags": 3
     }
   ],
   "run_metrics": {
     "subsystems_complete": 5,
     "subsystems_with_live_data": 0,
     "subsystems_using_cached_data": 5,
-    "fixes_applied_this_run": 3,
-    "total_fixes_all_time": 115,
-    "new_graduated_rules": 3,
-    "total_graduated_rules": 50,
+    "fixes_applied_this_run": 1,
+    "total_fixes_all_time": 116,
+    "new_graduated_rules": 1,
+    "total_graduated_rules": 51,
     "rules_awaiting_human_approval": 1,
     "rules_pending_dev_fix": 1,
-    "rules_pending_human_review": 3
+    "rules_pending_human_review": 3,
+    "gates_active": 36
+  },
+  "delta_from_last_run": {
+    "run_previous": 127,
+    "run_current": 128,
+    "new_fixes": ["TOD_MORNING_EDGE_DEACTIVATION (conf=88)"],
+    "status_changes": [
+      "HYPE_SHORT_VETO_SPLIT: consecutive_flags 9→10",
+      "BOT_OFFLINE: consecutive_flags 60→61",
+      "CONFIDENCE_ANTI_CORRELATION: consecutive_flags 7→8",
+      "HYPE_LOSS_DOMINANCE: consecutive_flags 4→5",
+      "FEEDBACK_STATE_MISSING: consecutive_flags 60→61"
+    ],
+    "new_findings": [
+      "TOD_MORNING_EDGE_DEACTIVATION applied — rule-insight lifecycle consistency gap resolved for this instance",
+      "Model optimization ROI estimate updated: regime_agent haiku→sonnet = 688x cost multiple"
+    ]
   }
 }
