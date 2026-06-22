@@ -240,3 +240,13 @@ ACTION (validated+reversible): EXPLORATION_BLOCK_COMBOS expanded HYPE_LONG,SOL_L
 HELD MAX_OPEN_POSITIONS=4 (didn't stack concurrency bump on directional change; equity ~flat -0.4% from peak).
 Next cycle: if short-bias holds +EV & equity stable → consider MAX_OPEN_POSITIONS 4→6.
 Health: vetoes active, 0 open, 0 HYPE/SOL_LONG, equity $4264.51 (peak $4283), circuit untripped.
+
+## 2026-06-22T18:16Z — SHORT-BIAS DID NOT PERSIST → reverted to neutral + throttled
+Since short-bias (06-20 20:33Z), 11 closes: SHORT n=10 WR20% net-$52.59 avg-$5.26 (LOSING),
+LONG n=1 -$2.93. The historical edge (shorts +EV over n=84) REVERSED — regime-dependent, not durable.
+Big losers: BTC_SHORT -$30.6, ETH_SHORT -$32.6 (two SL hits -21/-32). Only HYPE_SHORT +$13 (trailing-stop win).
+Equity $4264→$4209 (-1.3% / 2d), peak $4283, circuit fine, 0 open, exits working (SL+trailing confirmed firing).
+LESSON: do not extrapolate a directional edge across regimes; the down-regime short edge died in chop/reversal.
+ACTION (reversible, risk-reducing): EXPLORATION_BLOCK_COMBOS back to HYPE_LONG,SOL_LONG (drop forced short-only bias);
+EXPLORATION_EPSILON 0.40→0.20 (halve churn/bleed while regime unclear). Restarted (pid→12436, healthy 18:16Z).
+NOTE: bot has NO external alert channel (Discord/Telegram blank) — user's "audit/backtest pings" are the CC loop, not the bot.
