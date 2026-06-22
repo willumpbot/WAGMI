@@ -1,22 +1,67 @@
 {
   "date": "2026-06-22",
-  "generated_at": "2026-06-22T03:04:58.470559+00:00",
-  "run_number": 120,
+  "generated_at": "2026-06-22T13:00:00.000000+00:00",
+  "run_number": 124,
   "trades_today": 0,
-  "bot_status": "OFFLINE_DAY70",
-  "anomalies_found": 4,
+  "bot_status": "OFFLINE_DAY72",
+  "anomalies_found": 5,
   "anomalies": [
-    {"type": "BOT_OFFLINE", "severity": "CRITICAL", "value": "Day 70+", "detail": "Bot offline 70+ days. trades.csv missing. 54th consecutive audit flag. Zero live revenue.", "consecutive_flags": 54},
-    {"type": "STRUCTURAL_RR_DEFICIT", "severity": "CRITICAL", "value": "Kelly=-0.167 (negative edge)", "detail": "Win/loss ratio 0.91 at 44.5% WR = guaranteed long-term loss. Break-even requires WR>52.4% at current R:R.", "new_this_run": true},
-    {"type": "CONFIDENCE_ANTI_CORRELATION", "severity": "HIGH", "value": "80-90% conf = 40% WR (worst tier)", "detail": "100d backtest: WR degrades 4pp per confidence decile above 70%. 80-90% = 40% WR (-$33/trade). Model overconfidence predicts worse outcomes.", "new_this_run": false, "run_first_flagged": 119},
-    {"type": "RULE_INSIGHT_MISMATCH", "severity": "HIGH", "value": "TOD_morning_edge active with invalidated underlying insight", "detail": "FIXED THIS RUN: Disabled TOD_morning_edge rule (was boosting morning confidence despite live WR=28% on 18 trades). Underlying insight invalidated at 96% confidence.", "resolved_this_run": true}
+    {
+      "type": "BOT_OFFLINE",
+      "severity": "CRITICAL",
+      "value": "Day 72",
+      "detail": "Bot offline 72 days. trades.csv missing. 58th consecutive audit flag. Zero live revenue.",
+      "consecutive_flags": 58
+    },
+    {
+      "type": "STRUCTURAL_RR_DEFICIT",
+      "severity": "CRITICAL",
+      "value": "Kelly=-0.167 (negative edge)",
+      "detail": "Win/loss ratio 0.91 at 44.5% WR = guaranteed long-term loss. Root cause unresolved: HYPE atr_mult_sl already 2.0 — prior PENDING_DEV_FIX assumption was incorrect. Need further investigation of why actual R:R < theoretical R:R.",
+      "run_first_flagged": 119,
+      "status_change": "INVESTIGATION_REQUIRED (was PENDING_DEV_FIX)"
+    },
+    {
+      "type": "CONFIDENCE_ANTI_CORRELATION",
+      "severity": "HIGH",
+      "value": "100d: 80-90% conf = 40% WR (worst tier). But full 965-trade: 80-90% conf = 60.2% WR (strong edge).",
+      "detail": "DATASET_CONFLICT unresolved — temporal regime shift suspected. Do not expand CONF_PARADOX rule until split-date analysis done.",
+      "run_first_flagged": 119
+    },
+    {
+      "type": "HYPE_SHORT_VETO_INVERSION",
+      "severity": "HIGH",
+      "value": "HYPE SHORT <75% conf is positive EV (+$8-15/trade, n=80) — BLOCKED by blanket veto",
+      "detail": "hype_short_hard_block rule at 80% gate is blocking profitable sub-condition. HYPE_SHORT_HIGHCONF_VETO_PROBE at 71% conf (below 75% auto-apply threshold). 5 consecutive deferred runs.",
+      "run_first_flagged": 119
+    },
+    {
+      "type": "CONFIG_AUDIT_FINDING",
+      "severity": "HIGH",
+      "value": "HYPE atr_mult_sl=2.0 — PENDING_DEV_FIX assumption was wrong",
+      "detail": "Run 124 CONFIG AUDIT: HYPE already has atr_mult_sl=2.0 AND atr_mult_tp1=3.0 in trading_config.py:752. The HYPE_SL_ATR_WIDEN PENDING_DEV_FIX assumed current value was 1.0. Fix status downgraded to INVESTIGATION_REQUIRED. R:R gap (theoretical 1.5:1, actual 0.91) likely from trades exiting before TP1, not SL placement.",
+      "new_this_run": true
+    }
   ],
-  "daily_summary": {"trades": 0, "wr_pct": null, "pnl": 0.0, "best_trade": null, "worst_trade": null},
+  "fixes_applied_this_run": [
+    {
+      "id": "DURATION_H_FIX",
+      "description": "Applied 60s minimum floor on hold_time_s (position_manager.py:1367,1398) and opened_at=sim_dt patch (engine.py:1943). HoldTimeRuleManager was neutered for 12 consecutive runs.",
+      "files": ["bot/execution/position_manager.py", "bot/backtest/engine.py"]
+    }
+  ],
+  "daily_summary": {
+    "trades": 0,
+    "wr_pct": null,
+    "pnl": 0.0,
+    "best_trade": null,
+    "worst_trade": null
+  },
   "tomorrows_focus": [
-    "RESTART BOT: cd bot && python run.py paper — primary action, day 71 without this is $800+/day alpha loss",
-    "HYPE SHORT 75%+ veto: highest-confidence code change pending (blocks -$70/trade avg)",
-    "R:R geometry fix: widen HYPE SL to 1.5x ATR (Kelly=-0.167 is unsustainable)",
-    "Monitor SOL_SHORT and BTC_LONG as primary alpha sources when live"
+    "RESTART BOT: cd bot && python run.py paper — Day 72 offline, primary action",
+    "INVESTIGATE R:R gap: theoretical 1.5:1 vs actual 0.91 — check if trailing stops cut winners, or regime-conditional SL multipliers further tighten HYPE stops",
+    "HYPE SHORT <75% conf veto split: raise confidence from 71% to 75% threshold before applying gate split",
+    "Monitor SOL_SHORT (63.7% WR) and BTC_LONG (63.9% WR) as primary alpha when live"
   ],
-  "report_generated": true
+  "report_generated": false
 }

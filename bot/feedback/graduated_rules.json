@@ -570,18 +570,19 @@
     {
       "rule_id": "HYPE_SL_ATR_WIDEN",
       "source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119 REC3, conf=82%)",
-      "description": "Widen HYPE SL to 1.5x ATR minimum — Kelly=-0.167 at 1.0x ATR, R:R=0.91 creates structural negative EV",
-      "problem": "ATR SL multiplier 1.0x too tight for HYPE volatility. 89% instant SL rate. Kelly=-0.167. Break-even WR=52.4%. HYPE SL losses: -$28,420 on 155 trades.",
-      "fix_applied": "CODE CHANGE REQUIRED: bot/trading_config.py — set ATR_SL_MULTIPLIER_HYPE from 1.0 to 1.5. Adjust TP1/TP2 proportionally to maintain R:R >= 2.0. Backtest before live deployment.",
-      "status": "PENDING_DEV_FIX",
-      "confidence": 82,
+      "description": "HYPE R:R structural deficit investigation — Kelly=-0.167, 89% instant SL rate",
+      "problem": "Run 119 assumed HYPE atr_mult_sl=1.0x. AUDIT RUN 124 FINDING: HYPE ALREADY HAS atr_mult_sl=2.0 (trading_config.py:752). The 89% instant SL rate and Kelly=-0.167 cannot be fixed by widening the ATR multiplier — the root cause is elsewhere. Candidates: (1) HYPE ATR is small relative to actual intraday noise; (2) backtest candle-resolution artifact (SL fires on open of next candle); (3) TP1 at 3.0x ATR creates borderline R:R=1.5:1 which is barely break-even for 44.5% WR.",
+      "fix_applied": "INVESTIGATION REQUIRED: Current config already uses atr_mult_sl=2.0 and atr_mult_tp1=3.0 (R:R=1.5:1). To break even at 44.5% WR need R:R>=1.25 — currently satisfied in theory. Real issue: SL fires on candle bodies (not just price spike). Check if HYPE regime-conditional multipliers (trading_config.py:786-793) are further tightening SL in key regimes.",
+      "status": "INVESTIGATION_REQUIRED",
+      "confidence": 60,
       "gate_percentage": 0,
       "baseline_wr": 44.5,
       "treatment_wr": null,
       "applied_date": "2026-06-22",
       "verified": false,
-      "auto_fix_run": 123,
-      "consecutive_deferred_runs": 4
+      "auto_fix_run": 124,
+      "run_124_finding": "atr_mult_sl ALREADY 2.0 — original fix assumption was wrong. Downgraded from PENDING_DEV_FIX to INVESTIGATION_REQUIRED.",
+      "consecutive_deferred_runs": 0
     }
   ],
   "rules_added_2026_04_26_1545_hourly": [],

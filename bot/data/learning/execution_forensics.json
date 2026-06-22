@@ -1,8 +1,8 @@
 {
-  "status": "COMPLETE",
-  "run_date": "2026-06-22T00:00:00Z",
-  "run_number": 119,
-  "data_source": "backtest_100d.csv last 50 trades (trades.csv empty - bot offline 69+ days)",
+  "status": "COMPLETE_NO_NEW_DATA",
+  "run_date": "2026-06-22T13:00:00Z",
+  "run_number": 124,
+  "data_source": "backtest_100d.csv last 50 trades (trades.csv missing — bot offline Day 72)",
   "trades_analyzed": 50,
   "avg_slippage_pct": 0.5128,
   "slippage_by_symbol": {
@@ -22,10 +22,25 @@
   "hype_sl_count": 155,
   "hype_sl_avg": -183.35,
   "instant_sl_rate_pct": 89.0,
-  "instant_sl_note": "89% of all losses are instant SL hits (<6 min) - stop width too tight",
+  "instant_sl_note": "89% of all losses are instant SL hits (<6 min) — stop width too tight",
+  "run_124_finding": "HYPE atr_mult_sl IS ALREADY 2.0 (trading_config.py:752) — NOT 1.0 as assumed. HYPE_SL_ATR_WIDEN pending fix assumption was wrong. Root cause of 89% instant SL rate is unresolved: candle-resolution artifact or HYPE ATR too small relative to actual noise.",
+  "hype_config_audit": {
+    "atr_mult_sl": 2.0,
+    "atr_mult_tp1": 3.0,
+    "theoretical_rr": 1.5,
+    "actual_rr": 0.91,
+    "gap_explanation": "Theoretical R:R 1.5:1 but actual 0.91 — gap means trades exit before TP1 far more often than hitting TP1. Trailing stops or early exits cutting winners short.",
+    "max_leverage": 20.0
+  },
+  "duration_h_fix_applied": {
+    "status": "APPLIED_RUN_124",
+    "files": ["bot/execution/position_manager.py:1367,1398", "bot/backtest/engine.py:1943"],
+    "description": "60s minimum floor on hold_time_s; opened_at patched to sim_dt in backtest engine"
+  },
   "output": {
     "avg_slippage": "0.5128%",
     "noise_stop_pct": "50.8% at conf>75 in noisy regimes",
-    "partial_fill_pct": "71.4%"
+    "partial_fill_pct": "71.4%",
+    "new_finding": "HYPE ATR multiplier already 2.0 — SL_ATR_WIDEN assumption wrong"
   }
 }

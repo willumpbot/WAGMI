@@ -1,54 +1,59 @@
 {
   "engine": "perpetual_improvement_loop",
   "version": "2.1",
-  "timestamp": "2026-06-22T12:00:00.000000+00:00",
+  "timestamp": "2026-06-22T13:00:00.000000+00:00",
   "today": "2026-06-22",
-  "run_number": 123,
+  "run_number": 124,
   "bot_status": "OFFLINE",
   "days_offline": 72,
   "audit_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119) — no newer audit since Run 121",
-  "last_run": "2026-06-22T12:00:00.000000+00:00",
+  "last_run": "2026-06-22T13:00:00.000000+00:00",
   "subsystems": {
     "auto_fix": {
-      "status": "COMPLETE_1_FIX_APPLIED",
-      "fixes_applied": 1,
+      "status": "COMPLETE_2_FIXES_APPLIED",
+      "fixes_applied": 2,
       "gates_active": 35,
       "ab_active_rules": 25,
       "applied_rules": 10,
-      "new_rule_added": "HYPE_SL_ATR_WIDEN (PENDING_DEV_FIX, conf=82%) — added to graduated_rules.json",
-      "output": {"fixes_applied": 1, "gates_active": 35}
+      "new_fixes": [
+        "DURATION_H_FIX_POSITION_MANAGER: 60s floor on hold_time_s (position_manager.py:1367,1398)",
+        "DURATION_H_FIX_ENGINE: opened_at=sim_dt patch (engine.py:1943)"
+      ],
+      "new_finding": "HYPE atr_mult_sl ALREADY 2.0 in trading_config.py — HYPE_SL_ATR_WIDEN PENDING_DEV_FIX assumption incorrect. Downgraded to INVESTIGATION_REQUIRED.",
+      "output": {"fixes_applied": 2, "gates_active": 35}
     },
     "execution_forensics": {
       "status": "COMPLETE_NO_NEW_DATA",
       "data_source": "cached — trades.csv missing (bot offline Day 72)",
       "avg_slippage": "0.51%",
       "noise_stop_pct": "50.8% of SL hits at conf>75 in noisy regimes",
-      "instant_sl_rate": "89% same-candle SL closes — stop width 0.86% avg vs 1.2%+ needed",
+      "instant_sl_rate": "89% same-candle SL closes",
       "rr_ratio": 0.91,
       "kelly_fraction": -0.167,
-      "duration_h_bug": {
-        "status": "UNRESOLVED — 12 consecutive runs ESCALATING",
-        "fix_files": ["bot/execution/position_manager.py:1398", "bot/backtest/engine.py:~1941"]
-      },
-      "output": {"avg_slippage": "0.51%", "noise_stop_problem": "89% instant SL — stop too tight"}
+      "config_audit_finding": "HYPE atr_mult_sl=2.0 CONFIRMED — SL not at 1.0x as assumed. Theoretical R:R=1.5:1. Gap vs actual 0.91 R:R indicates winners cut short (trailing stops/early exits), not SL too tight.",
+      "duration_h_fix": "APPLIED — hold_time_s has 60s floor; opened_at patched in backtest engine",
+      "output": {"avg_slippage": "0.51%", "noise_stop_problem": "89% instant SL — investigating root cause (atr_mult already 2.0)"}
     },
     "live_injection": {
       "status": "COMPLETE_BACKTEST_DATA",
       "high_edges_found": 4,
       "weak_setups_found": 1,
+      "unchanged_from_run": 121,
       "output": {"high_edges_found": 4, "weak_setups_found": 1}
     },
     "daily_synthesis": {
-      "status": "COMPLETE_REUSE_EXISTING",
+      "status": "COMPLETE",
       "trades_today": 0,
-      "anomalies_found": 4,
+      "anomalies_found": 5,
+      "new_anomaly": "CONFIG_AUDIT_FINDING: HYPE atr_mult_sl=2.0 — PENDING_DEV_FIX assumption wrong",
       "report_generated": false,
-      "output": {"anomalies_found": 4, "report_generated": false}
+      "output": {"anomalies_found": 5, "report_generated": false}
     },
     "model_optimization": {
       "status": "COMPLETE_NO_COST_FILE",
       "model_swaps_recommended": 1,
       "potential_savings": "$0.00",
+      "recommendation": "Regime Agent: upgrade to Sonnet for REGIME_SHIFT events only (+$0.27/month, better trending/illiquid detection)",
       "output": {"model_swaps_recommended": 1, "potential_savings": "$0.00"}
     }
   },
@@ -56,47 +61,50 @@
     {
       "subsystem": "daily_synthesis",
       "priority": "P0_CRITICAL",
-      "finding": "BOT OFFLINE DAY 72 — 57th consecutive flag",
+      "finding": "BOT OFFLINE DAY 72 — 58th consecutive flag. Zero live revenue.",
       "action": "cd /home/user/WAGMI/bot && python run.py paper",
-      "consecutive_flags": 57
+      "consecutive_flags": 58
     },
     {
       "subsystem": "execution_forensics",
-      "priority": "P0_CRITICAL",
-      "finding": "NEGATIVE EDGE: Kelly=-0.167 — NOW TRACKED as HYPE_SL_ATR_WIDEN in graduated_rules.json",
-      "action": "Code change: bot/trading_config.py ATR_SL_MULTIPLIER_HYPE 1.0->1.5",
-      "consecutive_flags": 4
+      "priority": "P1_HIGH",
+      "finding": "CONFIG AUDIT: HYPE atr_mult_sl ALREADY 2.0 — PENDING_DEV_FIX assumption was wrong. R:R gap (0.91 actual vs 1.5 theoretical) is from winners being cut short, NOT SL too tight.",
+      "action": "Investigate: check if trailing-stop early-exit rate on HYPE cuts winners before TP1. Look at TRAILING_STOP exit events in backtest vs TP1 hit rate.",
+      "new_this_run": true
     },
     {
-      "subsystem": "execution_forensics",
-      "priority": "P0_HIGH",
-      "finding": "DURATION_H_FIX — 12 consecutive runs ESCALATED to P0",
-      "action": "Code fix: max(actual_hold, candle_duration_s) in position_manager.py:1398 + engine.py:~1941",
-      "consecutive_flags": 12
+      "subsystem": "auto_fix",
+      "priority": "P1_HIGH",
+      "finding": "DURATION_H_FIX APPLIED after 12 consecutive deferrals — HoldTimeRuleManager now active in backtest",
+      "action": "Monitor hold_time_s values in next backtest run. HoldTimeRuleManager 3h trend minimum should now enforce correctly.",
+      "new_this_run": true
     },
     {
       "subsystem": "live_injection",
       "priority": "P1_HIGH",
-      "finding": "HYPE_SHORT veto inversion — conf 71% below threshold (4 runs)",
-      "consecutive_flags": 4
+      "finding": "HYPE_SHORT veto inversion — <75% conf positive EV (+$8-15/trade). Veto confidence at 71% (5 runs below 75% threshold).",
+      "consecutive_flags": 5
     },
     {
-      "subsystem": "live_injection",
+      "subsystem": "execution_forensics",
       "priority": "P1_HIGH",
-      "finding": "DATASET_CONFLICT blocks CONF_PARADOX expansion (3 runs)",
+      "finding": "DATASET_CONFLICT: 80-90% conf WR is 60.2% (965 trades) vs 40.0% (recent 100d) — opposite conclusions",
+      "action": "Temporal split analysis needed. Cannot resolve without fresh live data or date-split of backtest.",
       "consecutive_flags": 3
     }
   ],
   "run_metrics": {
     "subsystems_complete": 5,
-    "fixes_applied": 1,
-    "total_fixes_all_time": 109,
+    "fixes_applied": 2,
+    "total_fixes_all_time": 111,
     "consecutive_run_blockers": [
-      {"id": "BOT_RESTART",           "consecutive_flags": 57, "priority": "P0_CRITICAL"},
-      {"id": "DURATION_H_FIX",        "consecutive_flags": 12, "priority": "P0_HIGH", "note": "ESCALATED — 12 runs"},
-      {"id": "RR_GEOMETRY_FIX",       "consecutive_flags": 4,  "priority": "P1_HIGH"},
-      {"id": "HYPE_SHORT_VETO_SPLIT", "consecutive_flags": 4,  "priority": "P1_HIGH"},
-      {"id": "DATASET_CONFLICT",      "consecutive_flags": 3,  "priority": "P1_HIGH"}
+      {"id": "BOT_RESTART",           "consecutive_flags": 58, "priority": "P0_CRITICAL"},
+      {"id": "HYPE_SHORT_VETO_SPLIT", "consecutive_flags": 5,  "priority": "P1_HIGH"},
+      {"id": "DATASET_CONFLICT",      "consecutive_flags": 3,  "priority": "P1_HIGH"},
+      {"id": "RR_GEOMETRY_FIX",       "consecutive_flags": 5,  "priority": "P1_HIGH", "note": "RECLASSIFIED: atr_mult already 2.0 — now INVESTIGATION not DEV_FIX"}
+    ],
+    "resolved_this_run": [
+      {"id": "DURATION_H_FIX", "consecutive_flags_at_resolution": 12, "resolution": "APPLIED — code changes in position_manager.py and engine.py"}
     ]
   }
 }
