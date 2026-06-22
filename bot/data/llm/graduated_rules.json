@@ -300,7 +300,7 @@
     },
     {
       "rule_id": "tod_morning_edge_v1",
-      "hypothesis_statement": "Morning session 06-12 UTC: 71% WR (n=~160). Best time-of-day window. Currently inactive (gate=0). Should be promoted to positive reinforcement.",
+      "hypothesis_statement": "Morning session 06-12 UTC: 71% WR (n=~160) in backtest. INVALIDATED: live morning WR=28% on 18 real trades (-$76.94). Backtest-vs-live contradiction confirmed at 96% confidence.",
       "action": "boost",
       "conditions": {
         "hour_utc_min": 6,
@@ -314,11 +314,13 @@
       "last_applied": null,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true,
-      "gate_percentage": 20,
+      "active": false,
+      "gate_percentage": 0,
       "activated_at": "2026-06-21T21:03:32Z",
       "activated_by": "perpetual_improvement_run117",
-      "activation_reason": "71% WR n=160 in 100d+10d backtest. A/B gate=20 probe. Monitor: target WR>60% on first 20 morning trades post-restart."
+      "activation_reason": "71% WR n=160 in 100d+10d backtest. A/B gate=20 probe. Monitor: target WR>60% on first 20 morning trades post-restart.",
+      "disabled_at": "2026-06-22T08:02:54Z",
+      "disabled_reason": "RUN121_ACTUAL_FIX: Underlying insight invalidated at 96% confidence — live morning WR=28% on 18 trades (-$76.94). Run120 daily synthesis falsely claimed this fix at 03:04Z without modifying this file. RUN121 executing the actual disable. Re-evaluate after 25 new live morning trades post-restart. If WR>50%, re-activate at gate=5 probe only."
     },
     {
       "rule_id": "eth_sell_bb_golden_v1",
@@ -622,5 +624,5 @@
       "applied_by": "master_engine_run114_2026-06-21T16:30Z"
     }
   ],
-  "last_updated": "2026-06-21T21:03:32Z"
+  "last_updated": "2026-06-22T08:02:54Z"
 }
