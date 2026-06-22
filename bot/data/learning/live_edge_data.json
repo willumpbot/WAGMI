@@ -1,30 +1,90 @@
 {
   "status": "COMPLETE_CACHED_DATA",
-  "data_source": "live_edge_data.json (Run 124) + autonomous_audit_2026-06-22T02-05-51Z.md",
-  "note": "trades.csv empty — bot offline 73 days. Using 965-trade full dataset + 100d backtest.",
+  "data_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119) + 965-trade full backtest dataset",
+  "last_updated": "2026-06-22T19:02:46Z",
+  "run_number": 128,
+  "note": "trades.csv absent — bot offline 74 days. Using 965-trade full dataset merged with 100d backtest (n=589).",
   "trades_analyzed": 965,
   "symbol_win_rates": {
-    "SOL": {"win_rate": 59.5, "count": 301, "pnl": 5487.0},
-    "BTC": {"win_rate": 56.6, "count": 267, "pnl": 432.0},
-    "HYPE": {"win_rate": 55.4, "count": 397, "pnl": -5014.0}
+    "SOL": {"win_rate": 59.5, "count": 301, "pnl": 5487.0, "verdict": "POSITIVE_EV"},
+    "BTC": {"win_rate": 56.6, "count": 267, "pnl": 432.0, "verdict": "MARGINAL_POSITIVE"},
+    "HYPE": {"win_rate": 55.4, "count": 397, "pnl": -5014.0, "verdict": "NEGATIVE_EV_SL_ASYMMETRY"}
   },
   "confidence_bin_win_rates": {
-    "70-80": {"win_rate_965d": 58.6, "win_rate_100d": 45.2, "count_965d": 633, "count_100d": 321, "note": "DATASET CONFLICT"},
-    "80-90": {"win_rate_965d": 60.2, "win_rate_100d": 40.0, "count_965d": 114, "count_100d": 120, "note": "WORST TIER in 100d"},
-    "90+": {"win_rate_965d": 56.0, "win_rate_100d": 40.5, "count_965d": 91, "count_100d": 37}
+    "50-60": {"win_rate": null, "count": 0, "note": "No data — signals rarely generated at this level"},
+    "60-70": {"win_rate_100d": 48.6, "count_100d": 111, "pnl_100d": -793.88},
+    "70-80": {"win_rate_100d": 45.2, "win_rate_965d": 58.6, "count_100d": 321, "count_965d": 633, "note": "DATASET CONFLICT — 100d worse than full history"},
+    "80-90": {"win_rate_100d": 40.0, "win_rate_965d": 60.2, "count_100d": 120, "count_965d": 114, "note": "WORST_TIER in 100d — anti-correlated"},
+    "90+": {"win_rate_100d": 40.5, "win_rate_965d": 56.0, "count_100d": 37, "count_965d": 91, "note": "Near-worst in 100d"}
+  },
+  "tod_win_rates": {
+    "00-06_UTC": {"win_rate": 15.0, "count": 13, "verdict": "BLOCKED by night_session_block_v1"},
+    "06-12_UTC": {"win_rate": 28.0, "count": 18, "verdict": "CONTESTED — live data contradicts 71% WR claim; tod_morning_edge_v1 deactivation recommended"},
+    "12-18_UTC": {"win_rate": 27.0, "count": 15, "verdict": "WEAK — tod_afternoon_edge_v1 inactive (below threshold)"},
+    "18-24_UTC": {"win_rate": 29.0, "count": 14, "verdict": "WEAK — tod_evening_edge_v1 inactive"},
+    "note": "ToD bins from adaptive_risk_state.json live session data (June 5 cutoff)"
   },
   "high_edges": [
-    {"key": "SOL_SHORT", "win_rate": 63.7, "count": 179, "avg_pnl": 32.44},
-    {"key": "BTC_LONG", "win_rate": 63.9, "count": 72, "avg_pnl": 25.55},
-    {"key": "SOL_HIGH_CONF_80plus", "win_rate": 65.3, "count": 49, "avg_pnl": 28.32}
+    {
+      "key": "SOL_SHORT",
+      "win_rate": 63.7,
+      "count": 179,
+      "avg_pnl": 32.44,
+      "regime_context": "best in trending regime",
+      "verdict": "EXPLOIT — increase allocation in trending regimes"
+    },
+    {
+      "key": "BTC_LONG",
+      "win_rate": 63.9,
+      "count": 72,
+      "avg_pnl": 25.55,
+      "verdict": "EXPLOIT — solid positive-EV setup"
+    },
+    {
+      "key": "HYPE_SHORT_sub75_conf",
+      "win_rate": 56.8,
+      "count": 80,
+      "avg_pnl": 10.09,
+      "note": "100d: <70% conf=60% WR (+$15.27/trade), 70-75% conf=52.3% WR (+$8.91/trade). BLOCKED by blanket hype_short_veto_v1.",
+      "verdict": "BLOCKED_POSITIVE_EV — +$808 total in 100d if unlocked. AWAITING_HUMAN_APPROVAL (10 runs)"
+    }
   ],
   "high_edges_count": 3,
   "weak_setups": [
-    {"key": "ILLIQUID_REGIME", "win_rate": 28.1, "count": 57},
-    {"key": "RANGING_REGIME", "win_rate": 25.0, "count": 16},
-    {"key": "NIGHT_00_06", "win_rate": 15.0, "count": 13},
-    {"key": "HYPE_SHORT_75plus_conf", "win_rate": 31.2, "count": 77, "avg_pnl": -70.06}
+    {
+      "key": "ILLIQUID_REGIME",
+      "win_rate": 28.1,
+      "count": 57,
+      "avg_pnl": -62.0,
+      "action": "Block — illiquid_regime penalty active"
+    },
+    {
+      "key": "RANGING_REGIME",
+      "win_rate": 25.0,
+      "count": 16,
+      "avg_pnl": -45.0,
+      "action": "Block — ranging_regime penalty active"
+    },
+    {
+      "key": "NIGHT_00_06",
+      "win_rate": 15.0,
+      "count": 13,
+      "avg_pnl": -95.0,
+      "action": "Block — night_session_block_v1 active (100% veto)"
+    },
+    {
+      "key": "HYPE_SHORT_75plus_conf",
+      "win_rate": 31.2,
+      "count": 77,
+      "avg_pnl": -70.06,
+      "action": "NEEDS_SPECIFIC_VETO — hype_short_highconf_veto_v1 not yet created. Covered by blanket veto currently."
+    }
   ],
   "weak_setups_count": 4,
-  "output": {"high_edges_found": 3, "weak_setups_found": 4}
+  "output": {
+    "high_edges_found": 3,
+    "weak_setups_found": 4,
+    "top_positive_ev": "SOL_SHORT (63.7% WR, +$32.44/trade, n=179)",
+    "top_negative_ev": "HYPE_SHORT_75plus_conf (31.2% WR, -$70.06/trade, n=77)"
+  }
 }

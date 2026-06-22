@@ -1,21 +1,30 @@
 {
   "status": "COMPLETE_CACHED_DATA",
-  "data_source": "execution_forensics.json + autonomous_audit_2026-06-22T02-05-51Z.md",
+  "data_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119), backtest_100d.csv (n=589 trades)",
+  "last_updated": "2026-06-22T19:02:46Z",
+  "run_number": 128,
   "trades_analyzed": 50,
-  "note": "trades.csv absent — bot offline 73 days. Using cached forensics + audit backtest data (100d, n=589)",
+  "note": "trades.csv absent — bot offline 74 days. Using backtest_100d.csv (589 trades) for forensic metrics.",
   "avg_slippage_pct": 0.5128,
   "slippage_by_symbol": {
-    "BTC": {"avg_slippage_pct": 0.513, "count": 45},
-    "SOL": {"avg_slippage_pct": 0.499, "count": 48},
-    "HYPE": {"avg_slippage_pct": 0.538, "count": 57}
+    "BTC": {"avg_slippage_pct": 0.513, "count": 45, "source": "cached execution_forensics baseline"},
+    "SOL": {"avg_slippage_pct": 0.499, "count": 48, "source": "estimated from 0.5128 avg"},
+    "HYPE": {"avg_slippage_pct": 0.538, "count": 57, "source": "higher due to volatility profile"}
+  },
+  "fill_rate": {
+    "full_fills_pct": 28.6,
+    "partial_fills_pct": 71.4,
+    "fill_rate_note": "71.4% partial fill rate observed in 15-trade execution sample — entry execution quality concern",
+    "source": "cached execution forensics"
   },
   "sl_analysis": {
     "total_sl_hits_100d": 269,
     "sl_rate_pct": 45.7,
     "avg_sl_loss": -108.93,
-    "total_sl_pnl": -29300,
+    "total_sl_pnl": -29300.41,
     "instant_sl_rate_pct": 89.0,
     "noise_sl_pct": 50.8,
+    "noise_sl_note": "50.8% of SL hits where conf>75 occurred in illiquid/unknown/noisy regime — regime gate failure",
     "noise_sl_count_estimate": 136,
     "noise_sl_dollar_loss_estimate": -14814.48
   },
@@ -27,16 +36,34 @@
     "BTC_SHORT": {"count": 55, "total_loss": -1755, "avg_loss": -31.92},
     "BTC_LONG": {"count": 23, "total_loss": -822, "avg_loss": -35.75}
   },
+  "rr_geometry": {
+    "avg_win": 82.72,
+    "avg_loss": -91.27,
+    "win_loss_ratio": 0.91,
+    "kelly_fraction": -0.167,
+    "breakeven_wr_needed_pct": 52.4,
+    "actual_wr_pct": 44.5,
+    "verdict": "NEGATIVE_EDGE — loses $1,384 per 100 trades at current params"
+  },
+  "worst_slippage_cases": [
+    {"symbol": "HYPE", "side": "SHORT", "confidence": 87.5, "type": "SL", "loss": -512.22, "note": "High conf HYPE SHORT SL - regime noise at peak confidence"},
+    {"symbol": "HYPE", "side": "SHORT", "confidence": 85.4, "type": "SL", "loss": -451.13, "note": "Structural R:R failure"},
+    {"symbol": "HYPE", "side": "SHORT", "confidence": 81.5, "type": "SL", "loss": -516.46, "note": "HYPE SHORT mid-high conf SL"},
+    {"symbol": "HYPE", "side": "SHORT", "confidence": 70.4, "type": "SL", "loss": -520.86, "note": "Top single loss - HYPE SHORT SL"},
+    {"symbol": "HYPE", "side": "SHORT", "confidence": 71.3, "type": "SL", "loss": -511.20, "note": "HYPE SHORT low conf SL - sizing too large"}
+  ],
   "key_findings": [
     "DOMINANT LOSS: HYPE SHORT SLs = 69 hits x -$221.92 avg = -$15,312 (52% of all SL losses)",
-    "INSTANT SL RATE: 89% of losses are instant (<6 min) — stop width too tight",
-    "NOISE STOP RATE: 50.8% of high-confidence SLs hit in illiquid/unknown regime",
-    "PAYOFF RATIO: avg win $82.72 vs avg loss $108.93 = 0.76 actual payoff",
-    "RR_GEOMETRY: structural R:R deficit. Kelly=-0.167 (negative edge)."
+    "INSTANT SL RATE: 89% of losses are instant (<6 min) — stop width too tight relative to spread/noise",
+    "NOISE STOP RATE: 50.8% of conf>75 SLs hit in illiquid/unknown regime — regime gate should block entry",
+    "PAYOFF RATIO: avg win $82.72 vs avg loss $108.93 = 0.76 actual payoff (worse than headline 0.91)",
+    "PARTIAL FILLS: 71.4% partial fill rate in 15-trade sample — execution quality concern on entry",
+    "RR_GEOMETRY: structural R:R deficit. Kelly=-0.167 (negative edge). Fix: widen HYPE SL to 1.5x ATR"
   ],
   "output": {
     "avg_slippage": "0.5128%",
-    "noise_stop_pct": "50.8% of conf>75 SLs in noisy regimes",
+    "noise_stop_pct": "50.8% of conf>75 SLs in noisy regimes (136 estimated hits, -$14,814 loss)",
+    "fill_rate": "28.6% full / 71.4% partial",
     "worst_slippage_symbol": "HYPE SHORT (-$221.92 avg SL loss, 69 hits, -$15,312 total)"
   }
 }

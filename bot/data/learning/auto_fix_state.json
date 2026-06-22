@@ -1,31 +1,88 @@
 {
-  "active_fixes": [],
-  "applied_total": 3,
+  "active_fixes": [
+    {
+      "fix_id": "TOD_MORNING_EDGE_DEACTIVATION",
+      "description": "Deactivate tod_morning_edge_v1 rule (confidence boost 6-12 UTC). Underlying insight invalidated at 96% conf: live morning WR=28% on 18 trades vs claimed 71% WR. Active boost contradicts empirical live data.",
+      "confidence": 88,
+      "gate_percentage": 20,
+      "applied_at": "2026-06-22T19:02:46Z",
+      "baseline_wr": 28.0,
+      "status": "active",
+      "rec_source": "REC2 from autonomous_audit_2026-06-22T02-05-51Z.md (Run 119)",
+      "rollback_condition": "Re-enable if morning session WR rises above 50% on n>=20 live trades"
+    }
+  ],
+  "applied_total": 4,
   "reverted_total": 0,
   "ab_tests_active": 0,
-  "last_run": "2026-06-22T18:08:05.215560+00:00",
-  "run_number": 127,
-  "cadence_streak": 47,
+  "last_run": "2026-06-22T19:02:46Z",
+  "run_number": 128,
+  "cadence_streak": 48,
   "audit_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119) — most recent audit",
   "audit_run_number": 119,
-  "fixes_applied_this_run": 3,
+  "fixes_applied_this_run": 1,
   "new_fixes_this_run": [
-    {"fix_id": "CONF_70_80_DEGRADATION_PROBE", "run": 127, "confidence": 77, "description": "gate_20 probe: 0.85x size for 70-80% conf signals. 100d backtest shows 45.2% WR at this tier.", "gate_percentage": 20, "status": "A/B_ACTIVE"},
-    {"fix_id": "SHORT_DIRECTION_VETO_INVERSION", "run": 127, "confidence": 79, "description": "gate_20 probe: track SHORT vs LONG WR with short_direction_veto suspended. SHORT=46.4% WR > LONG=39.5% WR in 100d.", "gate_percentage": 20, "status": "A/B_ACTIVE"},
-    {"fix_id": "HYPE_SIZING_CAP_PROBE", "run": 127, "confidence": 81, "description": "gate_20 probe: cap HYPE position size at 0.75x. HYPE=68% of total losses.", "gate_percentage": 20, "status": "A/B_ACTIVE"}
+    {
+      "fix_id": "TOD_MORNING_EDGE_DEACTIVATION",
+      "run": 128,
+      "confidence": 88,
+      "description": "gate_20 probe: deactivate tod_morning_edge_v1. Morning insight invalidated at 96% conf; live WR=28% on 18 trades.",
+      "gate_percentage": 20,
+      "status": "active"
+    }
   ],
   "skipped_this_run": [
-    {"rec_id": "HYPE_SHORT_VETO_SPLIT", "reason": "BELOW_THRESHOLD: confidence=71% < 75%. Escalated to AWAITING_HUMAN_APPROVAL after 8 consecutive runs.", "confidence": 71, "consecutive_runs": 8},
-    {"rec_id": "RR_GEOMETRY_FIX", "reason": "PARAMETER_AMBIGUITY: HYPE SymbolProfile atr_mult_sl=2.0 contradicts graduated_rules 'from 1.0'. Deferred.", "confidence": 82},
-    {"rec_id": "BOT_RESTART", "reason": "HUMAN_ACTION_REQUIRED", "priority": "P0_CRITICAL", "consecutive_runs": 59}
+    {
+      "rec_id": "HYPE_SHORT_VETO_SPLIT",
+      "reason": "AWAITING_HUMAN_APPROVAL: confidence=71% < 75% threshold. 10th consecutive flag.",
+      "confidence": 71,
+      "consecutive_runs": 10
+    },
+    {
+      "rec_id": "RR_GEOMETRY_FIX",
+      "reason": "PARAMETER_AMBIGUITY: HYPE SymbolProfile atr_mult_sl=2.0 contradicts graduated_rules 'from 1.0'. Deferred pending dev investigation.",
+      "confidence": 82
+    },
+    {
+      "rec_id": "BOT_RESTART",
+      "reason": "HUMAN_ACTION_REQUIRED",
+      "priority": "P0_CRITICAL",
+      "consecutive_runs": 60
+    }
   ],
-  "total_rules_in_llm_graduated": 50,
-  "ab_active_rules": 25,
-  "applied_rules": 11,
+  "previously_active_probes": [
+    {
+      "fix_id": "CONF_70_80_DEGRADATION_PROBE",
+      "run": 127,
+      "confidence": 77,
+      "description": "gate_20 probe: 0.85x size for 70-80% conf signals. 100d backtest shows 45.2% WR at this tier.",
+      "gate_percentage": 20,
+      "status": "A/B_ACTIVE"
+    },
+    {
+      "fix_id": "SHORT_DIRECTION_VETO_INVERSION",
+      "run": 127,
+      "confidence": 79,
+      "description": "gate_20 probe: track SHORT vs LONG WR with short_direction_veto suspended. SHORT=46.4% WR > LONG=39.5% WR in 100d.",
+      "gate_percentage": 20,
+      "status": "A/B_ACTIVE"
+    },
+    {
+      "fix_id": "HYPE_SIZING_CAP_PROBE",
+      "run": 127,
+      "confidence": 81,
+      "description": "gate_20 probe: cap HYPE position size at 0.75x. HYPE=68% of total losses.",
+      "gate_percentage": 20,
+      "status": "A/B_ACTIVE"
+    }
+  ],
+  "total_rules_in_llm_graduated": 51,
+  "ab_active_rules": 26,
+  "applied_rules": 12,
   "pending_dev_fix_rules": 1,
   "pending_human_review_rules": 3,
   "awaiting_human_approval_rules": 1,
-  "total_fixes_all_time": 115,
-  "gates_active": 35,
-  "run127_note": "Run 127: 3 new gate_20 probe rules added (CONF_70_80_DEGRADATION_PROBE, SHORT_DIRECTION_VETO_INVERSION, HYPE_SIZING_CAP_PROBE). HYPE_SHORT_VETO_SPLIT still AWAITING_HUMAN_APPROVAL (9 consecutive runs, 71% conf)."
+  "total_fixes_all_time": 116,
+  "gates_active": 36,
+  "run128_note": "Run 128: 1 new fix applied (TOD_MORNING_EDGE_DEACTIVATION, conf=88). HYPE_SHORT_VETO_SPLIT now 10th consecutive AWAITING_HUMAN_APPROVAL flag."
 }
