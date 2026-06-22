@@ -1,19 +1,60 @@
 {
-  "last_run": "2026-06-22T18:00:00.000000+00:00",
-  "run_number": 124,
-  "cadence_streak": 44,
+  "last_run": "2026-06-22T15:04:03.000000+00:00",
+  "run_number": 125,
+  "cadence_streak": 45,
   "audit_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119) — most recent audit",
   "audit_run_number": 119,
   "audit_dataset": "backtest_100d.csv (n=589, BTC/HYPE/SOL)",
   "fixes_applied_this_run": 0,
   "new_fixes_this_run": [],
-  "run124_note": "Run 124: No new fixes applied. HYPE_SHORT_VETO_SPLIT still at 71% confidence (below 75% auto-apply threshold, 4 consecutive runs). DURATION_H_BUG now 12 consecutive runs — ESCALATING to P0. DATASET_CONFLICT unresolved (4 runs). BOT_RESTART P0_CRITICAL (57 consecutive flags). All subsystems ran. 5 candidates reviewed — none cross 75% threshold this cycle.",
+  "run125_note": "Run 125: No new fixes applied. HYPE_SHORT_VETO_SPLIT at 71% confidence (6th consecutive run below 75% threshold). DURATION_H_BUG escalated to 13 consecutive runs — P0. DATASET_CONFLICT 5th run. BOT_RESTART 58th consecutive flag (73 days offline). All 5 candidates reviewed — none cross auto-apply threshold this cycle.",
   "skipped_this_run": [
-    {"rec_id": "REC1_HYPE_SHORT_VETO_SPLIT", "reason": "BELOW_THRESHOLD: confidence=71% < 75% auto-apply threshold.", "confidence": 71, "priority": "P0_CRITICAL", "consecutive_runs": 5, "description": "Refine hype_short_veto_v1 to target HYPE SHORT >=75% conf only. HYPE SHORT <75% conf shows +$8-15/trade positive EV (n=80).", "expected_impact": "Recover +$808 in 100d window. Projects to +$97/month."},
-    {"rec_id": "DURATION_H_FIX", "reason": "CODE_CHANGE_REQUIRED — awaiting human dev implementation", "confidence": 92, "priority": "P0_HIGH", "consecutive_runs": 12, "description": "HoldTimeRuleManager neutered: 89% trades show hold_time_s=0. Fix: max((close_time-open_time).total_seconds(), candle_duration_s) in position_manager.py:1398 + engine.py:~1941", "files": ["bot/execution/position_manager.py:1398", "bot/backtest/engine.py:~1941"], "status": "ESCALATED — 12 consecutive runs"},
-    {"rec_id": "RR_GEOMETRY_FIX", "reason": "CODE_CHANGE_REQUIRED — documented in graduated_rules.json as PENDING_DEV_FIX", "confidence": 82, "priority": "P1_HIGH", "consecutive_runs": 4, "description": "Widen HYPE SL to 1.5x ATR minimum. Kelly=-0.167 at current 1.0x ATR. Target R:R >= 1.25.", "files": ["bot/trading_config.py"], "expected_impact": "Kelly -0.167 -> est. -0.05. Reduces SL hit rate from 45.7% to ~38%."},
-    {"rec_id": "DATASET_CONFLICT_RESOLUTION", "reason": "ANALYSIS_REQUIRED — temporal split of 965-trade dataset needed before acting", "confidence": 85, "priority": "P1_HIGH", "consecutive_runs": 4, "description": "100d backtest (conf 80-90% = 40% WR) contradicts full 965-trade dataset (60.2% WR). Need date-split analysis. DO NOT expand CONF_PARADOX_sizing_v1 until resolved."},
-    {"rec_id": "BOT_RESTART", "reason": "HUMAN_ACTION_REQUIRED", "priority": "P0_CRITICAL", "consecutive_runs": 57, "description": "Bot offline 72 days. All feedback loops frozen. No live learning possible.", "action": "cd /home/user/WAGMI/bot && python run.py paper"}
+    {
+      "rec_id": "REC1_HYPE_SHORT_VETO_SPLIT",
+      "reason": "BELOW_THRESHOLD: confidence=71% < 75% auto-apply threshold.",
+      "confidence": 71,
+      "priority": "P0_CRITICAL",
+      "consecutive_runs": 6,
+      "description": "Refine hype_short_veto_v1 to target HYPE SHORT >=75% conf only. HYPE SHORT <75% conf shows +$10.09/trade positive EV (n=80, 100d backtest). Current blanket veto loses +$808 every 100 days.",
+      "expected_impact": "Recover +$808 in 100d window. Projects to +$97/month.",
+      "escalation_note": "6 consecutive runs at 71%. Consider manual override or lower auto-apply to 70% for this rec."
+    },
+    {
+      "rec_id": "DURATION_H_FIX",
+      "reason": "CODE_CHANGE_REQUIRED — awaiting human dev implementation",
+      "confidence": 92,
+      "priority": "P0_HIGH",
+      "consecutive_runs": 13,
+      "description": "HoldTimeRuleManager neutered: 89% trades show hold_time_s=0. Fix: max((close_time-open_time).total_seconds(), candle_duration_s) in position_manager.py:1398 + engine.py:~1941",
+      "files": ["bot/execution/position_manager.py:1398", "bot/backtest/engine.py:~1941"],
+      "status": "ESCALATED — 13 consecutive runs. P0 escalation threshold was 10 runs."
+    },
+    {
+      "rec_id": "RR_GEOMETRY_FIX",
+      "reason": "CODE_CHANGE_REQUIRED — documented in graduated_rules.json as PENDING_DEV_FIX",
+      "confidence": 82,
+      "priority": "P1_HIGH",
+      "consecutive_runs": 5,
+      "description": "Widen HYPE SL to 1.5x ATR minimum. Kelly=-0.167 at current 1.0x ATR. Target R:R >= 1.25.",
+      "files": ["bot/trading_config.py"],
+      "expected_impact": "Kelly -0.167 -> est. -0.05. Reduces SL hit rate from 45.7% to ~38%."
+    },
+    {
+      "rec_id": "DATASET_CONFLICT_RESOLUTION",
+      "reason": "ANALYSIS_REQUIRED — temporal split of 965-trade dataset needed before acting",
+      "confidence": 85,
+      "priority": "P1_HIGH",
+      "consecutive_runs": 5,
+      "description": "100d backtest (conf 80-90% = 40% WR) contradicts full 965-trade dataset (60.2% WR). Need date-split analysis. DO NOT expand CONF_PARADOX_sizing_v1 until resolved."
+    },
+    {
+      "rec_id": "BOT_RESTART",
+      "reason": "HUMAN_ACTION_REQUIRED",
+      "priority": "P0_CRITICAL",
+      "consecutive_runs": 58,
+      "description": "Bot offline 73 days. All feedback loops frozen. No live learning possible.",
+      "action": "cd /home/user/WAGMI/bot && python run.py paper"
+    }
   ],
   "already_applied": [
     "tod_morning_edge_v1 DISABLED (Run 120): underlying insight invalidated at 96% conf. Live morning WR=28%.",
@@ -31,19 +72,47 @@
   "total_fixes_all_time": 109,
   "gates_active": 35,
   "deferred_code_changes": [
-    {"id": "DURATION_H_FIX", "confidence": 0.92, "priority": "P0_HIGH", "status": "CODE_CHANGE_REQUIRED — 12 consecutive runs ESCALATING", "file_1": "bot/execution/position_manager.py:1398", "file_2": "bot/backtest/engine.py:~1941", "fix": "hold_time_s = max((pos.close_time - pos.open_time).total_seconds(), candle_duration_s) — add 1-candle minimum floor. Also patch pos.opened_at=sim_dt in engine.py alongside open_time.", "impact": "HoldTimeRuleManager's 3h minimum is currently neutered (89% trades show hold_time_s=0). Fix unblocks hold-time learning.", "consecutive_runs": 12},
-    {"id": "RR_GEOMETRY_FIX", "consecutive_runs": 4, "confidence": 0.82, "priority": "P1_HIGH", "status": "DOCUMENTED in graduated_rules.json (Run 123). Awaiting dev implementation.", "description": "Widen HYPE SL to 1.5x ATR minimum. Kelly=-0.167 at current 1.0x ATR. Target R:R >= 1.25 to break even at 44.5% WR.", "file_1": "bot/trading_config.py", "impact": "Kelly -0.167 -> est. -0.05 after SL widening. Reduces SL hit rate from 45.7% to ~38%."}
+    {
+      "id": "DURATION_H_FIX",
+      "confidence": 0.92,
+      "priority": "P0_HIGH",
+      "status": "CODE_CHANGE_REQUIRED — 13 consecutive runs. P0 ESCALATED.",
+      "file_1": "bot/execution/position_manager.py:1398",
+      "file_2": "bot/backtest/engine.py:~1941",
+      "fix": "hold_time_s = max((pos.close_time - pos.open_time).total_seconds(), candle_duration_s) — add 1-candle minimum floor. Also patch pos.opened_at=sim_dt in engine.py alongside open_time.",
+      "impact": "HoldTimeRuleManager's 3h minimum is currently neutered (89% trades show hold_time_s=0). Fix unblocks hold-time learning.",
+      "consecutive_runs": 13
+    },
+    {
+      "id": "RR_GEOMETRY_FIX",
+      "consecutive_runs": 5,
+      "confidence": 0.82,
+      "priority": "P1_HIGH",
+      "status": "DOCUMENTED in graduated_rules.json (Run 123). Awaiting dev implementation.",
+      "description": "Widen HYPE SL to 1.5x ATR minimum. Kelly=-0.167 at current 1.0x ATR. Target R:R >= 1.25 to break even at 44.5% WR.",
+      "file_1": "bot/trading_config.py",
+      "impact": "Kelly -0.167 -> est. -0.05 after SL widening. Reduces SL hit rate from 45.7% to ~38%."
+    }
   ],
   "candidates_this_run": [
-    {"rec_id": "HYPE_SHORT_VETO_SPLIT", "source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119)", "confidence": 71, "threshold_needed": 75, "gap": 4, "consecutive_evaluations": 5, "description": "Split hype_short_veto_v1 into two targeted rules: block HYPE SHORT >=75% conf, allow HYPE SHORT <75% conf at 50% size."}
+    {
+      "rec_id": "HYPE_SHORT_VETO_SPLIT",
+      "source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119)",
+      "confidence": 71,
+      "threshold_needed": 75,
+      "gap": 4,
+      "consecutive_evaluations": 6,
+      "description": "Split hype_short_veto_v1 into two targeted rules: block HYPE SHORT >=75% conf (31.2% WR, -$70/trade), allow HYPE SHORT <75% conf at 50% size (55% WR, +$10.09/trade).",
+      "escalation_note": "6 consecutive runs stuck at 71%. If no new data changes this in next 2 runs, recommend manual human approval."
+    }
   ],
   "output": {
     "fixes_applied": 0,
     "gates_active": 35,
     "candidates": [
-      {"rec_id": "HYPE_SHORT_VETO_SPLIT", "confidence": 71, "priority": "P0_CRITICAL", "description": "Refine hype_short_veto_v1 — <75% conf band is positive EV (+$808/100d). Needs 75% confidence to auto-apply (currently 71%)."},
-      {"rec_id": "DURATION_H_FIX", "confidence": 92, "priority": "P0_HIGH", "description": "Code fix for hold_time_s=0 bug — requires human dev implementation in position_manager.py:1398 + engine.py:~1941."},
-      {"rec_id": "RR_GEOMETRY_FIX", "confidence": 82, "priority": "P1_HIGH", "description": "Widen HYPE SL to 1.5x ATR in trading_config.py. Already documented in graduated_rules.json."}
+      {"rec_id": "HYPE_SHORT_VETO_SPLIT", "confidence": 71, "priority": "P0_CRITICAL", "consecutive_runs": 6},
+      {"rec_id": "DURATION_H_FIX", "confidence": 92, "priority": "P0_HIGH", "consecutive_runs": 13, "status": "ESCALATED"},
+      {"rec_id": "RR_GEOMETRY_FIX", "confidence": 82, "priority": "P1_HIGH", "consecutive_runs": 5}
     ]
   }
 }
