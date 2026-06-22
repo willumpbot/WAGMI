@@ -1,155 +1,70 @@
 {
-  "generated_at": "2026-06-22T06:00:00Z",
-  "run_number": 121,
-  "data_source": "autonomous_audit_2026-06-21T22-00-00Z.md (965 backtest trades, BTC/HYPE/SOL)",
+  "generated_at": "2026-06-22T18:00:00Z",
+  "run_number": 124,
+  "data_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119) + backtest_100d.csv (589 trades) + 965-trade full dataset",
   "trades_analyzed": 965,
   "symbol_win_rates": {
-    "SOL": {
-      "win_rate": 59.5,
-      "count": 301,
-      "pnl": 5487.0
-    },
-    "BTC": {
-      "win_rate": 56.6,
-      "count": 267,
-      "pnl": 432.0
-    },
-    "HYPE": {
-      "win_rate": 55.4,
-      "count": 397,
-      "pnl": -5014.0
-    }
+    "SOL": {"win_rate": 59.5, "count": 301, "pnl": 5487.0},
+    "BTC": {"win_rate": 56.6, "count": 267, "pnl": 432.0},
+    "HYPE": {"win_rate": 55.4, "count": 397, "pnl": -5014.0}
   },
   "symbol_side_win_rates": {
-    "SOL_SHORT": {
-      "win_rate": 63.7,
-      "count": 179,
-      "avg_pnl": 32.44
+    "SOL_SHORT": {"win_rate": 63.7, "count": 179, "avg_pnl": 32.44},
+    "BTC_LONG": {"win_rate": 63.9, "count": 72, "avg_pnl": 25.55},
+    "SOL_HIGH_CONF": {"win_rate": 65.3, "count": 49, "avg_pnl": 28.32},
+    "SOL_LONG": {"win_rate": 53.3, "count": 122, "avg_pnl": -2.62},
+    "BTC_SHORT": {"win_rate": 53.8, "count": 195, "avg_pnl": -7.22},
+    "HYPE_LONG": {"win_rate": 57.0, "count": 158, "avg_pnl": -6.55},
+    "HYPE_SHORT": {"win_rate": 54.4, "count": 239, "avg_pnl": -16.65},
+    "HYPE_SHORT_below75conf": {
+      "win_rate": 55.0, "count": 80, "avg_pnl": 10.09,
+      "note": "100d backtest: <70% conf = 60% WR +$15.27/trade; 70-75% conf = 52.3% WR +$8.91/trade — POSITIVE EV both bands"
     },
-    "BTC_LONG": {
-      "win_rate": 63.9,
-      "count": 72,
-      "avg_pnl": 25.55
-    },
-    "SOL_HIGH_CONF": {
-      "win_rate": 65.3,
-      "count": 49,
-      "avg_pnl": 28.32
-    },
-    "SOL_LONG": {
-      "win_rate": 53.3,
-      "count": 122,
-      "avg_pnl": -2.62
-    },
-    "BTC_SHORT": {
-      "win_rate": 53.8,
-      "count": 195,
-      "avg_pnl": -7.22
-    },
-    "HYPE_LONG": {
-      "win_rate": 57.0,
-      "count": 158,
-      "avg_pnl": -6.55
-    },
-    "HYPE_SHORT": {
-      "win_rate": 54.4,
-      "count": 239,
-      "avg_pnl": -16.65
+    "HYPE_SHORT_75plus_conf": {
+      "win_rate": 31.2, "count": 77, "avg_pnl": -70.06,
+      "note": "100d backtest: CATASTROPHIC. Not yet blocked by targeted rule."
     }
   },
   "confidence_bin_win_rates": {
-    "60-70": {
-      "win_rate": 46.3,
-      "count": 123,
-      "pnl": -2321.0,
-      "avg_pnl": -18.87
-    },
-    "70-80": {
-      "win_rate": 58.6,
-      "count": 633,
-      "pnl": -620.0,
-      "avg_pnl": -0.98
-    },
-    "80-90": {
-      "win_rate": 60.2,
-      "count": 118,
-      "pnl": 905.0,
-      "avg_pnl": 7.67
-    },
-    "90+": {
-      "win_rate": 56.0,
-      "count": 91,
-      "pnl": 2942.0,
-      "avg_pnl": 32.33
-    }
+    "60-70": {"win_rate": 46.3, "count": 123, "pnl": -2321.0, "avg_pnl": -18.87, "dataset": "965-trade full"},
+    "60-70_100d": {"win_rate": 48.6, "count": 111, "pnl": -793.88, "avg_pnl": -7.15, "dataset": "100d recent backtest"},
+    "70-80": {"win_rate": 58.6, "count": 633, "pnl": -620.0, "avg_pnl": -0.98, "dataset": "965-trade full"},
+    "70-80_100d": {"win_rate": 45.2, "count": 321, "pnl": -2740.21, "avg_pnl": -8.54, "dataset": "100d recent backtest"},
+    "80-90": {"win_rate": 60.2, "count": 118, "pnl": 905.0, "avg_pnl": 7.67, "dataset": "965-trade full"},
+    "80-90_100d": {"win_rate": 40.0, "count": 120, "pnl": -3964.91, "avg_pnl": -33.04, "dataset": "100d recent backtest — CONTRADICTS full dataset"},
+    "90+": {"win_rate": 56.0, "count": 91, "pnl": 2942.0, "avg_pnl": 32.33, "dataset": "965-trade full"},
+    "90+_100d": {"win_rate": 40.5, "count": 37, "pnl": -674.52, "avg_pnl": -18.23, "dataset": "100d recent backtest — CONTRADICTS full dataset"}
   },
   "time_of_day": {
     "note": "No timestamp column in backtest CSV. Time-of-day analysis from prior sessions only.",
-    "morning_06_12": {
-      "win_rate": 71.0,
-      "source": "meta_learning insights (unverified)"
-    },
-    "night_00_06": {
-      "win_rate": 15.0,
-      "source": "adaptive_risk_state.json (n=13)"
-    },
-    "evening_18_24": {
-      "win_rate": 36.0,
-      "source": "deescalated after dedup (unverified)"
-    },
-    "afternoon_12_18": {
-      "win_rate": 27.0,
-      "source": "insight journal (unverified)"
-    }
+    "morning_06_12": {"win_rate": 28.0, "source": "live trading 18 trades (insight #1 INVALIDATED at 96% conf — original 71% WR was backtest artifact)", "rule_status": "tod_morning_edge_v1 DISABLED Run120"},
+    "night_00_06": {"win_rate": 15.0, "source": "adaptive_risk_state.json (n=13)", "rule_status": "night_session_block_v1 ACTIVE — 100% veto"},
+    "evening_18_24": {"win_rate": 36.0, "source": "insight journal (n=14, unverified)", "rule_status": "tod_evening_edge_v1 INACTIVE (conf=0.72 < threshold)"},
+    "afternoon_12_18": {"win_rate": 27.0, "source": "insight journal (n=15, unverified)", "rule_status": "tod_afternoon_edge_v1 INACTIVE (conf=0.72 < threshold)"}
   },
   "high_edges": [
-    {
-      "type": "symbol_side",
-      "key": "SOL_SHORT",
-      "win_rate": 63.7,
-      "count": 179
-    },
-    {
-      "type": "symbol_side",
-      "key": "BTC_LONG",
-      "win_rate": 63.9,
-      "count": 72
-    },
-    {
-      "type": "symbol_side",
-      "key": "SOL_HIGH_CONF",
-      "win_rate": 65.3,
-      "count": 49
-    },
-    {
-      "type": "confidence_bin",
-      "key": "80-90",
-      "win_rate": 60.2,
-      "count": 118,
-      "avg_pnl": 7.67
-    }
+    {"type": "symbol_side", "key": "SOL_SHORT", "win_rate": 63.7, "count": 179, "avg_pnl": 32.44, "action": "Increase SOL SHORT position sizing by 25%"},
+    {"type": "symbol_side", "key": "BTC_LONG", "win_rate": 63.9, "count": 72, "avg_pnl": 25.55, "action": "Increase BTC LONG position sizing by 20%"},
+    {"type": "symbol_side_conf", "key": "SOL_HIGH_CONF", "win_rate": 65.3, "count": 49, "avg_pnl": 28.32, "action": "Max size SOL trades at 80%+ confidence"},
+    {"type": "confidence_bin", "key": "90+", "win_rate": 56.0, "count": 91, "avg_pnl": 32.33, "dataset": "965-trade full (note: 100d backtest contradicts — temporal split needed)", "action": "Hold at current sizing pending temporal split analysis"},
+    {"type": "symbol_side_conf", "key": "HYPE_SHORT_below75conf", "win_rate": 55.0, "count": 80, "avg_pnl": 10.09, "action": "Awaiting HYPE_SHORT_VETO_SPLIT rule to reach 75% confidence threshold (currently 71%, 4 runs)"}
   ],
   "weak_setups": [
-    {
-      "type": "symbol_side_conf",
-      "key": "HYPE_SHORT_75plus_conf",
-      "win_rate": 31.2,
-      "count": 77,
-      "avg_pnl": -70.06,
-      "note": "100d backtest confirms catastrophic. Not yet blocked by targeted rule (blanket 80% block applies but inverts profitable sub-condition)."
-    }
+    {"type": "symbol_side_conf", "key": "HYPE_SHORT_75plus_conf", "win_rate": 31.2, "count": 77, "avg_pnl": -70.06, "note": "100d backtest confirms catastrophic. Needs targeted veto (conf>=75 HYPE SHORT specifically).", "current_rule": "hype_short_veto_v1 (blanket) — over-broad, blocks profitable sub-condition too"}
   ],
-  "output": {
-    "high_edges_found": 4,
-    "weak_setups_found": 1
-  },
   "dataset_conflict": {
     "flagged_run": 121,
+    "consecutive_flags": 4,
     "finding": "100d backtest (589 trades) vs full 965-trade dataset give OPPOSITE conclusions on conf 80-90%",
     "full_965_result": "80-90% conf = 60.2% WR +$7.67/trade (STRONG EDGE)",
     "recent_100d_result": "80-90% conf = 40.0% WR -$33/trade (WORST TIER)",
-    "implication": "Temporal regime shift in confidence quality. High-confidence signals have degraded in recent 100 days. Do NOT expand CONF_PARADOX_sizing_v1 to full 80-100% range until temporal split analysis completed.",
-    "resolution_needed": "Split 965-trade dataset by date into early vs recent halves. If early=(60%+ WR) and recent=(40% WR), confirms model confidence calibration degraded after regime shift."
+    "implication": "Temporal regime shift in confidence quality. High-confidence signals have degraded in recent 100 days.",
+    "resolution_needed": "Split 965-trade dataset by date. If early=(60%+ WR) and recent=(40% WR), confirms model confidence calibration degraded after regime shift.",
+    "action": "DO NOT expand CONF_PARADOX_sizing_v1 to full 80-100% range until temporal split analysis completed."
   },
-  "key_insight": "SOL_SHORT (63.7% WR, +$32.44/trade) and BTC_LONG (63.9% WR, +$25.55/trade) are primary alpha sources. HYPE_SHORT_75plus is confirmed danger zone (-$70/trade). DATASET_CONFLICT on 80-90% conf bins requires temporal analysis before acting."
+  "key_insight": "SOL_SHORT (63.7% WR, +$32.44/trade) and BTC_LONG (63.9% WR, +$25.55/trade) are primary alpha sources. HYPE_SHORT_75plus confirmed danger zone (-$70/trade). DATASET_CONFLICT on conf bins unresolved — needs temporal split before acting. Confidence model has degraded recently (recent 100d inverts full-dataset conclusions).",
+  "output": {
+    "high_edges_found": 4,
+    "weak_setups_found": 1
+  }
 }

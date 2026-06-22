@@ -1,102 +1,184 @@
 {
   "engine": "perpetual_improvement_loop",
-  "version": "2.1",
-  "timestamp": "2026-06-22T12:00:00.000000+00:00",
+  "version": "2.2",
+  "timestamp": "2026-06-22T18:00:00.000000+00:00",
   "today": "2026-06-22",
-  "run_number": 123,
+  "run_number": 124,
   "bot_status": "OFFLINE",
   "days_offline": 72,
-  "audit_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119) — no newer audit since Run 121",
-  "last_run": "2026-06-22T12:00:00.000000+00:00",
+  "audit_source": "autonomous_audit_2026-06-22T02-05-51Z.md (Run 119)",
+  "last_run": "2026-06-22T18:00:00.000000+00:00",
   "subsystems": {
     "auto_fix": {
-      "status": "COMPLETE_1_FIX_APPLIED",
-      "fixes_applied": 1,
+      "status": "COMPLETE_0_FIXES_APPLIED",
+      "fixes_applied": 0,
       "gates_active": 35,
       "ab_active_rules": 25,
       "applied_rules": 10,
-      "new_rule_added": "HYPE_SL_ATR_WIDEN (PENDING_DEV_FIX, conf=82%) — added to graduated_rules.json",
-      "output": {"fixes_applied": 1, "gates_active": 35}
+      "pending_dev_fix_rules": 2,
+      "candidates_reviewed": 5,
+      "candidates_below_threshold": 5,
+      "note": "HYPE_SHORT_VETO_SPLIT at 71% (gap: 4% below auto-apply threshold). DURATION_H_FIX code-change required. BOT_RESTART human-required.",
+      "output": {
+        "fixes_applied": 0,
+        "gates_active": 35,
+        "candidates": [
+          {
+            "rec_id": "HYPE_SHORT_VETO_SPLIT",
+            "confidence": 71,
+            "priority": "P0_CRITICAL",
+            "description": "Split hype_short_veto_v1 — <75% conf band positive EV (+$808/100d). 4% below auto-apply threshold."
+          },
+          {
+            "rec_id": "DURATION_H_FIX",
+            "confidence": 92,
+            "priority": "P0_HIGH",
+            "description": "Code fix hold_time_s=0 bug. Requires human dev: position_manager.py:1398 + engine.py:~1941."
+          },
+          {
+            "rec_id": "RR_GEOMETRY_FIX",
+            "confidence": 82,
+            "priority": "P1_HIGH",
+            "description": "Widen HYPE SL 1.5x ATR in trading_config.py. Already in graduated_rules.json as PENDING_DEV_FIX."
+          }
+        ]
+      }
     },
     "execution_forensics": {
-      "status": "COMPLETE_NO_NEW_DATA",
-      "data_source": "cached — trades.csv missing (bot offline Day 72)",
-      "avg_slippage": "0.51%",
-      "noise_stop_pct": "50.8% of SL hits at conf>75 in noisy regimes",
-      "instant_sl_rate": "89% same-candle SL closes — stop width 0.86% avg vs 1.2%+ needed",
+      "status": "COMPLETE_CACHED_DATA",
+      "data_source": "execution_forensics.json (Run 119) — trades.csv absent (bot offline Day 72)",
+      "trades_analyzed": 50,
+      "avg_slippage_pct": 0.5128,
+      "noise_stop_count": 188,
+      "noise_stop_pct": 50.8,
+      "partial_fills": 15,
+      "full_fills": 6,
+      "partial_fill_pct": 71.4,
+      "instant_sl_rate_pct": 89.0,
+      "hype_sl_losses": -28420,
+      "hype_sl_count": 155,
+      "hype_sl_avg_loss": -183.35,
       "rr_ratio": 0.91,
       "kelly_fraction": -0.167,
+      "critical_flag": "NEGATIVE_KELLY — system has structural negative edge",
       "duration_h_bug": {
-        "status": "UNRESOLVED — 12 consecutive runs ESCALATING",
+        "status": "UNRESOLVED — 12 consecutive runs ESCALATED to P0",
+        "impact": "89% trades show hold_time_s=0 — HoldTimeRuleManager neutered",
         "fix_files": ["bot/execution/position_manager.py:1398", "bot/backtest/engine.py:~1941"]
       },
-      "output": {"avg_slippage": "0.51%", "noise_stop_problem": "89% instant SL — stop too tight"}
+      "output": {
+        "avg_slippage_pct": 0.5128,
+        "noise_stop_count": 188,
+        "noise_stop_pct": 50.8,
+        "partial_fills": 15
+      }
     },
     "live_injection": {
       "status": "COMPLETE_BACKTEST_DATA",
+      "data_source": "live_edge_data.json (Run 124 updated) — no live trades.csv",
+      "trades_analyzed": 965,
       "high_edges_found": 4,
       "weak_setups_found": 1,
-      "output": {"high_edges_found": 4, "weak_setups_found": 1}
+      "high_edges": [
+        {"key": "SOL_SHORT", "win_rate": 63.7, "count": 179, "avg_pnl": 32.44},
+        {"key": "BTC_LONG", "win_rate": 63.9, "count": 72, "avg_pnl": 25.55},
+        {"key": "SOL_HIGH_CONF", "win_rate": 65.3, "count": 49, "avg_pnl": 28.32},
+        {"key": "CONF_90plus_full_dataset", "win_rate": 56.0, "count": 91, "avg_pnl": 32.33, "caveat": "Contradicted by 100d recent data (40.5% WR) — temporal split pending"}
+      ],
+      "weak_setups": [
+        {"key": "HYPE_SHORT_75plus_conf", "win_rate": 31.2, "count": 77, "avg_pnl": -70.06}
+      ],
+      "dataset_conflict_unresolved": true,
+      "output": {
+        "high_edges": [
+          {"key": "SOL_SHORT", "win_rate": 63.7, "count": 179},
+          {"key": "BTC_LONG", "win_rate": 63.9, "count": 72},
+          {"key": "SOL_HIGH_CONF", "win_rate": 65.3, "count": 49},
+          {"key": "CONF_90plus", "win_rate": 56.0, "count": 91}
+        ],
+        "weak_setups": [
+          {"key": "HYPE_SHORT_75plus_conf", "win_rate": 31.2, "count": 77, "avg_pnl": -70.06}
+        ]
+      }
     },
     "daily_synthesis": {
-      "status": "COMPLETE_REUSE_EXISTING",
-      "trades_today": 0,
-      "anomalies_found": 4,
+      "status": "SKIPPED_NO_LIVE_DATA",
+      "reason": "trades.csv does not exist — bot offline 72 days. No trades recorded today (2026-06-22).",
+      "todays_trades": 0,
+      "todays_wr": null,
       "report_generated": false,
-      "output": {"anomalies_found": 4, "report_generated": false}
+      "anomalies": [
+        {"type": "BOT_OFFLINE", "severity": "CRITICAL", "description": "Bot has been offline 72 days — 57th consecutive flag. Zero live revenue. All feedback state files frozen.", "consecutive_flags": 57},
+        {"type": "NEGATIVE_KELLY", "severity": "HIGH", "description": "System Kelly fraction = -0.167. Structural negative edge. Requires R:R geometry fix before bot restart will generate positive PnL.", "consecutive_flags": 4},
+        {"type": "DURATION_H_BUG", "severity": "HIGH", "description": "89% of trades logged with hold_time_s=0. HoldTimeRuleManager 3h minimum rule neutered. 12 consecutive runs unresolved.", "consecutive_flags": 12},
+        {"type": "FEEDBACK_STATE_MISSING", "severity": "MEDIUM", "description": "4 of 6 feedback state files missing: signal_quality.json, regime_feedback_state.json, confidence_state.json, strategy_weights.json. Will regenerate once bot starts.", "consecutive_flags": 57}
+      ],
+      "output": {
+        "todays_trades": 0,
+        "todays_wr": null,
+        "anomalies": ["BOT_OFFLINE_72D", "NEGATIVE_KELLY", "DURATION_H_BUG", "FEEDBACK_STATE_MISSING"],
+        "report_generated": false
+      }
     },
     "model_optimization": {
       "status": "COMPLETE_NO_COST_FILE",
-      "model_swaps_recommended": 1,
-      "potential_savings": "$0.00",
-      "output": {"model_swaps_recommended": 1, "potential_savings": "$0.00"}
+      "cost_tracker_available": false,
+      "reason": "cost_tracker.json not found (bot offline, no live API calls recorded)",
+      "current_architecture": {
+        "full_pipeline_cost_per_decision": 0.0065,
+        "monthly_at_10_decisions_per_day": 1.95,
+        "agents": {
+          "regime_agent": {"model": "haiku", "cost_per_call": 0.0001, "roi_tier": "HIGH"},
+          "trade_agent": {"model": "sonnet", "cost_per_call": 0.003, "roi_tier": "HIGHEST"},
+          "risk_agent": {"model": "haiku", "cost_per_call": 0.0001, "roi_tier": "HIGH"},
+          "critic_agent": {"model": "sonnet", "cost_per_call": 0.003, "roi_tier": "HIGHEST"},
+          "learning_agent": {"model": "haiku", "cost_per_call": 0.0001, "roi_tier": "MEDIUM"},
+          "exit_agent": {"model": "haiku", "cost_per_call": 0.0001, "roi_tier": "MEDIUM_HIGH"},
+          "scout_agent": {"model": "haiku", "cost_per_call": 0.0001, "roi_tier": "MEDIUM"}
+        }
+      },
+      "swaps_recommended": [
+        {
+          "priority": "P1",
+          "agent": "regime_agent",
+          "change": "Upgrade to Sonnet for REGIME_SHIFT events only",
+          "cost_delta_monthly": "+$0.27",
+          "benefit": "Better trending/illiquid transition detection (12-point WR difference observed illiquid=28.1% vs trending=51.9%)",
+          "action": "Modify bot/llm/usage_tiers.py: add REGIME_SHIFT to MEDIUM_VALUE_TRIGGERS"
+        }
+      ],
+      "potential_savings_usd": 0.0,
+      "roi_projection_when_live": {
+        "cost_per_day": 0.065,
+        "revenue_per_day_target": 400,
+        "roi_ratio": 6154
+      },
+      "output": {
+        "swaps_recommended": [{"agent": "regime_agent", "change": "Sonnet for REGIME_SHIFT events", "cost_delta": "+$0.27/month", "benefit": "Better illiquid/trending transition detection"}],
+        "potential_savings_usd": 0.0
+      }
     }
   },
   "high_priority_findings": [
-    {
-      "subsystem": "daily_synthesis",
-      "priority": "P0_CRITICAL",
-      "finding": "BOT OFFLINE DAY 72 — 57th consecutive flag",
-      "action": "cd /home/user/WAGMI/bot && python run.py paper",
-      "consecutive_flags": 57
-    },
-    {
-      "subsystem": "execution_forensics",
-      "priority": "P0_CRITICAL",
-      "finding": "NEGATIVE EDGE: Kelly=-0.167 — NOW TRACKED as HYPE_SL_ATR_WIDEN in graduated_rules.json",
-      "action": "Code change: bot/trading_config.py ATR_SL_MULTIPLIER_HYPE 1.0->1.5",
-      "consecutive_flags": 4
-    },
-    {
-      "subsystem": "execution_forensics",
-      "priority": "P0_HIGH",
-      "finding": "DURATION_H_FIX — 12 consecutive runs ESCALATED to P0",
-      "action": "Code fix: max(actual_hold, candle_duration_s) in position_manager.py:1398 + engine.py:~1941",
-      "consecutive_flags": 12
-    },
-    {
-      "subsystem": "live_injection",
-      "priority": "P1_HIGH",
-      "finding": "HYPE_SHORT veto inversion — conf 71% below threshold (4 runs)",
-      "consecutive_flags": 4
-    },
-    {
-      "subsystem": "live_injection",
-      "priority": "P1_HIGH",
-      "finding": "DATASET_CONFLICT blocks CONF_PARADOX expansion (3 runs)",
-      "consecutive_flags": 3
-    }
+    {"subsystem": "daily_synthesis", "severity": "HIGH", "finding": "BOT OFFLINE 72 DAYS — 57th consecutive P0 flag. Zero live revenue. All adaptive feedback frozen.", "action": "cd /home/user/WAGMI/bot && python run.py paper", "consecutive_flags": 57},
+    {"subsystem": "execution_forensics", "severity": "HIGH", "finding": "NEGATIVE EDGE: Kelly fraction = -0.167. Win/loss ratio 0.91 at 44.5% WR = structural bleed. Every 100 trades produces -$1,384 expected loss.", "action": "Code change required: bot/trading_config.py ATR_SL_MULTIPLIER_HYPE 1.0 -> 1.5. Already tracked as PENDING_DEV_FIX in graduated_rules.json.", "consecutive_flags": 4},
+    {"subsystem": "execution_forensics", "severity": "HIGH", "finding": "DURATION_H_BUG: 89% trades log hold_time_s=0. HoldTimeRuleManager 3h minimum rule is completely neutered. 12 consecutive unresolved runs.", "action": "Code fix: max((pos.close_time - pos.open_time).total_seconds(), candle_duration_s) in bot/execution/position_manager.py:1398 + bot/backtest/engine.py:~1941", "consecutive_flags": 12},
+    {"subsystem": "live_injection", "severity": "MED", "finding": "HYPE_SHORT_VETO_SPLIT confidence at 71% (4 consecutive runs below 75% auto-apply threshold). HYPE SHORT <75% conf is +$808 over 100 days. Current blanket veto blocks profitable sub-condition.", "action": "Manual review: consider lowering auto-apply threshold to 70% for this specific rec, or approve manually.", "consecutive_flags": 5},
+    {"subsystem": "live_injection", "severity": "MED", "finding": "DATASET_CONFLICT: conf 80-90% WR is 60.2% in 965-trade full dataset but 40.0% in recent 100d subset. Opposite signals. Cannot safely act on confidence-bin sizing rules.", "action": "Run temporal split: split 965-trade dataset at median date. Quantify the confidence model degradation timeframe.", "consecutive_flags": 4}
   ],
   "run_metrics": {
     "subsystems_complete": 5,
-    "fixes_applied": 1,
+    "subsystems_with_data": 4,
+    "subsystems_skipped": 1,
+    "skipped": ["daily_synthesis (no live trades today)"],
+    "fixes_applied_this_run": 0,
     "total_fixes_all_time": 109,
     "consecutive_run_blockers": [
-      {"id": "BOT_RESTART",           "consecutive_flags": 57, "priority": "P0_CRITICAL"},
-      {"id": "DURATION_H_FIX",        "consecutive_flags": 12, "priority": "P0_HIGH", "note": "ESCALATED — 12 runs"},
-      {"id": "RR_GEOMETRY_FIX",       "consecutive_flags": 4,  "priority": "P1_HIGH"},
-      {"id": "HYPE_SHORT_VETO_SPLIT", "consecutive_flags": 4,  "priority": "P1_HIGH"},
-      {"id": "DATASET_CONFLICT",      "consecutive_flags": 3,  "priority": "P1_HIGH"}
+      {"id": "BOT_RESTART",           "consecutive_flags": 57, "severity": "HIGH", "note": "P0_CRITICAL"},
+      {"id": "DURATION_H_FIX",        "consecutive_flags": 12, "severity": "HIGH", "note": "ESCALATED — 12 runs, code change required"},
+      {"id": "RR_GEOMETRY_FIX",       "consecutive_flags": 4,  "severity": "HIGH", "note": "In graduated_rules.json as PENDING_DEV_FIX"},
+      {"id": "HYPE_SHORT_VETO_SPLIT", "consecutive_flags": 5,  "severity": "MED",  "note": "71% confidence — 4% below auto-apply"},
+      {"id": "DATASET_CONFLICT",      "consecutive_flags": 4,  "severity": "MED",  "note": "Temporal split analysis needed"}
     ]
   }
 }
