@@ -1,5 +1,94 @@
 {
-  "active_fixes": [
+  "last_run": "2026-06-23T17:03:04Z",
+  "run_number": 142,
+  "cadence_streak": 58,
+  "fixes_applied": 2,
+  "fixes_applied_this_run": 2,
+  "gates_active": 51,
+  "total_fixes_all_time": 123,
+  "fixes": [
+    {
+      "rec_id": "TP1_BLIND_SPOT_FIX",
+      "source": "autonomous_audit_2026-06-23T16-07-25Z.md",
+      "confidence": 87,
+      "severity": "CRITICAL",
+      "description": "TP1 blind spot: _FULL_CLOSE at multi_strategy_main.py:L3116 excludes TP1. 160/589 trades (27.2%) invisible to all 7 feedback systems. +160 training samples per period, 27% faster feedback convergence.",
+      "action": "Add 'TP1' to _FULL_CLOSE filter or add _PARTIAL_CLOSE handling path",
+      "rollback": "Revert single line at L3116",
+      "meets_threshold": true
+    },
+    {
+      "rec_id": "EVENING_AFTERNOON_PENALTY",
+      "source": "autonomous_audit_2026-06-23T16-07-25Z.md",
+      "confidence": 75,
+      "severity": "MEDIUM",
+      "description": "Evening (18-24 UTC, 29% WR, n=14) and afternoon (12-18 UTC, 27% WR, n=15) weaknesses have no penalty rules. Night block exists (veto). Estimated $500-800 loss reduction per 100 trades.",
+      "action": "Add evening_session_penalize_v1 (18-24 UTC, adj=-10) and afternoon_session_penalize_v1 (12-18 UTC, adj=-10) to graduated_rules.json",
+      "rollback": "Set active: false on both rules",
+      "meets_threshold": true
+    }
+  ],
+  "all_recs_from_latest_audit": [
+    {
+      "rec_id": "TP1_BLIND_SPOT_FIX",
+      "source": "autonomous_audit_2026-06-23T16-07-25Z.md",
+      "confidence": 87,
+      "severity": "CRITICAL",
+      "description": "TP1 blind spot: _FULL_CLOSE at multi_strategy_main.py:L3116 excludes TP1. 160/589 trades (27.2%) invisible to all 7 feedback systems. +160 training samples per period, 27% faster feedback convergence.",
+      "action": "Add 'TP1' to _FULL_CLOSE filter or add _PARTIAL_CLOSE handling path",
+      "rollback": "Revert single line at L3116",
+      "meets_threshold": true
+    },
+    {
+      "rec_id": "EVENING_AFTERNOON_PENALTY",
+      "source": "autonomous_audit_2026-06-23T16-07-25Z.md",
+      "confidence": 75,
+      "severity": "MEDIUM",
+      "description": "Evening (18-24 UTC, 29% WR, n=14) and afternoon (12-18 UTC, 27% WR, n=15) weaknesses have no penalty rules. Night block exists (veto). Estimated $500-800 loss reduction per 100 trades.",
+      "action": "Add evening_session_penalize_v1 (18-24 UTC, adj=-10) and afternoon_session_penalize_v1 (12-18 UTC, adj=-10) to graduated_rules.json",
+      "rollback": "Set active: false on both rules",
+      "meets_threshold": true
+    },
+    {
+      "rec_id": "HYPE_SHORT_HIGHCONF_VETO_AUDIT",
+      "source": "autonomous_audit_2026-06-23T16-07-25Z.md",
+      "confidence": 68,
+      "severity": "HIGH",
+      "description": "Lowest-confidence rule (0.71) takes most-aggressive action (full veto). 20d shows HYPE 60.5% WR. May block recently profitable setups. Also stacks with sizing cap.",
+      "action": "Deactivate veto, monitor first 25 live HYPE SHORT >=75% trades",
+      "rollback": "Re-enable restored_hype_short_highconf_veto_v1",
+      "meets_threshold": false,
+      "note": "Below 75% threshold — flagged but not auto-applied"
+    }
+  ],
+  "pending_proposals": [
+    {
+      "proposal_id": "CONF_90PLUS_SELECTIVE_BOOST",
+      "description": "90%+ confidence tier is the ONLY profitable bin in recent 100 trades (WR=53.8%, EV=+$25.37/trade). All other confidence bins are negative EV. 4th consecutive flag — ESCALATED TO PENDING_HUMAN_REVIEW.",
+      "confidence": 72,
+      "flag_count": 4,
+      "status": "PENDING_HUMAN_REVIEW — conf=72% below 75% auto-inject threshold. Consistent evidence over 4 runs warrants human review.",
+      "proposed_rule": {
+        "action": "boost",
+        "conditions": {
+          "confidence_min": 90
+        },
+        "adjustment": 5.0,
+        "gate": 20
+      },
+      "inject_trigger": "Human approval OR 5th consecutive flag AND confidence >= 75"
+    },
+    {
+      "proposal_id": "CONFIDENCE_PARADOX_RULE_REMAP",
+      "description": "3rd flag triggered proposal. Active rule targets 85-90% confidence band (-0.25x) but data shows 85-90% all-time WR=60.2% (+$7.67/trade). Real loss center is 75-80% (WR=45.5%, -$88.82/trade). CONF_70_80_SIZE_REDUCTION may be sufficient.",
+      "confidence": 74,
+      "flag_count": 3,
+      "status": "PROPOSED — defer action until CONF_70_80 A/B test results available (bot restart required)",
+      "proposed_rule": "Option A: remap confidence_paradox_sizing_v1 from {confidence_min: 85, confidence_max: 90} to {confidence_min: 75, confidence_max: 80}. Option B: deactivate if CONF_70_80_SIZE_REDUCTION proves sufficient.",
+      "inject_trigger": "Bot restart + 50 treatment trades on CONF_70_80 A/B gate"
+    }
+  ],
+  "active_fixes_carried": [
     {
       "fix_id": "TOD_MORNING_EDGE_DEACTIVATION",
       "description": "Deactivate tod_morning_edge_v1 rule (confidence boost 6-12 UTC). Underlying insight invalidated at 96% conf: live morning WR=28% on 18 trades vs claimed 71% WR.",
@@ -101,53 +190,7 @@
       "interpretation": "Full dataset marginally viable. Recent 100 trades structurally negative. Performance decay is accelerating."
     }
   ],
-  "applied_total": 10,
-  "reverted_total": 0,
-  "ab_tests_active": 2,
-  "last_run": "2026-06-23T16:04:13Z",
-  "run_number": 141,
-  "cadence_streak": 57,
-  "audit_source": "autonomous_audit_2026-06-23T10-05-44Z.md (Run 136) — all recs processed runs 135-138. No new audit.",
-  "fixes_applied_this_run": 0,
-  "proposals_this_run": [
-    {
-      "proposal_id": "CONF_90PLUS_SELECTIVE_BOOST",
-      "description": "90%+ confidence tier is the ONLY profitable bin in recent 100 trades (WR=53.8%, EV=+$25.37/trade). All other confidence bins are negative EV. 4th consecutive flag — ESCALATED TO PENDING_HUMAN_REVIEW.",
-      "confidence": 72,
-      "flag_count": 4,
-      "status": "PENDING_HUMAN_REVIEW — conf=72% below 75% auto-inject threshold. Consistent evidence over 4 runs warrants human review.",
-      "proposed_rule": {"action": "boost", "conditions": {"confidence_min": 90}, "adjustment": 5.0, "gate": 20},
-      "inject_trigger": "Human approval OR 5th consecutive flag AND confidence >= 75"
-    },
-    {
-      "proposal_id": "CONFIDENCE_PARADOX_RULE_REMAP",
-      "description": "3rd flag triggered proposal. Active rule targets 85-90% confidence band (-0.25x) but data shows 85-90% all-time WR=60.2% (+$7.67/trade). Real loss center is 75-80% (WR=45.5%, -$88.82/trade). CONF_70_80_SIZE_REDUCTION may be sufficient.",
-      "confidence": 74,
-      "flag_count": 3,
-      "status": "PROPOSED — defer action until CONF_70_80 A/B test results available (bot restart required)",
-      "proposed_rule": "Option A: remap confidence_paradox_sizing_v1 from {confidence_min: 85, confidence_max: 90} to {confidence_min: 75, confidence_max: 80}. Option B: deactivate if CONF_70_80_SIZE_REDUCTION proves sufficient.",
-      "inject_trigger": "Bot restart + 50 treatment trades on CONF_70_80 A/B gate"
-    }
-  ],
-  "resolutions_this_run": [],
-  "skipped_this_run": [
-    {
-      "rec_id": "RR_GEOMETRY_FIX",
-      "reason": "PARAMETER_AMBIGUITY: tp_sl_atr_mult=1.5 global vs atr_mult_sl=2.0 HYPE-specific. 13th flag. REQUIRES_BOT_RESTART + HUMAN_DECISION.",
-      "confidence": 82,
-      "consecutive_runs": 13
-    },
-    {
-      "rec_id": "FEEDBACK_STATE_FILES_MISSING",
-      "reason": "DEV_REQUIRED: _save() exists but state files never written. Exception swallowed silently. 7th flag.",
-      "confidence": 93,
-      "consecutive_runs": 7
-    }
-  ],
-  "total_rules_in_llm_graduated": 12,
-  "active_rules_in_llm_graduated": 10,
-  "gates_active": 49,
-  "total_fixes_all_time": 121,
+  "active_ab_tests": 2,
   "anomalies": [
     {
       "type": "DURATION_BUG_TOTAL",
@@ -179,12 +222,14 @@
       "action": "No action required."
     }
   ],
+  "skipped_this_run": [
+    {
+      "rec_id": "HYPE_SHORT_HIGHCONF_VETO_AUDIT",
+      "reason": "confidence=68% below 75% auto-apply threshold",
+      "confidence": 68
+    }
+  ],
   "notes": {
-    "run141": "0 fixes applied. 2 proposals: CONF_90PLUS escalated to PENDING_HUMAN_REVIEW (4th flag, conf=72%), CONFIDENCE_PARADOX_REMAP triggered at 3rd flag. 8 flag counters incremented. Data unchanged — bot offline. cadence_streak=57.",
-    "run140": "0 fixes applied. 1 new proposal: CONF_90PLUS_SELECTIVE_BOOST (3rd flag, conf=72%). 7 flag counters incremented. Slippage improved -1.3bps, noise stops improved -1.6pp. cadence_streak=56.",
-    "run138": "2 documentation fixes: DURATION_BUG_ESCALATION (critical) and KELLY_RECOMPUTED (95% conf). Key finding: last-50 trades are 100% BTC. cadence_streak=54.",
-    "run137": "2 fixes applied: (1) HYPE_SHORT_SUB75_VETO_SPLIT_REJECTED (conf=89). (2) CONF_70_80_SIZE_REDUCTION (conf=82). cadence_streak=53.",
-    "run135": "1 fix applied: BTC_LONG_BOOST_DEACTIVATION (conf=86). cadence_streak=52.",
-    "run130": "1 CRITICAL auto-fix: GRADUATED_RULES_RESTORE (conf=92)."
+    "run142": "2 new recs extracted >= 75% conf from latest audit (2026-06-23T16:07:25Z). TP1_BLIND_SPOT_FIX (87%) and EVENING_AFTERNOON_PENALTY (75%) meet threshold. HYPE_SHORT_VETO_AUDIT (68%) below threshold — flagged only. cadence_streak=58."
   }
 }
