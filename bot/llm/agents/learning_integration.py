@@ -393,55 +393,81 @@ def _regime_was_correct(regime: str, move_pct: float) -> bool:
 
 
 def _record_agent_calibration(trade_data: Dict, thesis_correct: bool) -> None:
-    """Record trade outcome into the per-agent calibration ledger."""
+    """Record trade outcome into the per-agent calibration ledger.
+
+    Each agent is recorded with ITS OWN stated confidence (captured at decision
+    time in trade_data['agent_confidences']), NOT the blended consensus. The
+    `correct` boolean is directional/thesis correctness (thesis_correct for
+    trade/critic/risk, _regime_was_correct vs realized move for regime) — never
+    raw PnL win/loss, which folds in sizing/fees in a 35%-WR-by-design system.
+    """
     try:
         from llm.agents.calibration_ledger import get_calibration_ledger
         ledger = get_calibration_ledger()
         regime = trade_data.get("regime", "unknown")
-        confidence = trade_data.get("confidence", 0.5)
+        # Blended consensus confidence (0-1). Used only as a fallback when an
+        # agent-specific stated confidence is unavailable. Normalize 0-100 -> 0-1.
+        _blended = trade_data.get("confidence", 0.5)
+        try:
+            _blended = float(_blended)
+            if _blended > 1.0:
+                _blended = _blended / 100.0
+            _blended = max(0.0, min(1.0, _blended))
+        except (TypeError, ValueError):
+            _blended = 0.5
+        confidence = _blended
+        # Per-agent stated confidences captured at decision time.
+        _agent_confs = trade_data.get("agent_confidences", {}) or {}
 
-        # Trade Agent's directional prediction
-        ledger.record_outcome("trade", regime, thesis_correct, confidence)
+        def _conf_for(agent: str, default: float) -> float:
+            v = _agent_confs.get(agent)
+            try:
+                v = float(v)
+            except (TypeError, ValueError):
+                return default
+            if v > 1.0:
+                v = v / 100.0
+            return max(0.0, min(1.0, v))
 
-        # If critic challenged and was wrong (trade won despite veto), record
+        # Trade Agent's directional prediction — scored vs thesis_correct,
+        # recorded with the Trade Agent's OWN stated confidence.
+        trade_conf = _conf_for("trade", confidence)
+        ledger.record_outcome("trade", regime, thesis_correct, trade_conf)
+
+        # If critic challenged and was wrong (trade won despite veto), record.
+        # Critic is scored on the OPPOSITE proposition (was the veto right), so
+        # its recorded confidence is its confidence the trade was BAD.
         critic_challenged = trade_data.get("critic_challenged", False)
         if critic_challenged:
-            # Critic said "no" — if thesis_correct, the veto was wrong
-            ledger.record_outcome("critic", regime, not thesis_correct, 1.0 - confidence)
+            critic_conf = _conf_for("critic", 1.0 - trade_conf)
+            ledger.record_outcome("critic", regime, not thesis_correct, 1.0 - critic_conf)
 
-        # Regime Agent calibration: was the classified regime correct?
-        # A regime classification is "correct" if the trade outcome aligns with
-        # what that regime predicts. Trending regime + winning trend trade = correct.
-        # Range regime + losing breakout trade = correct classification.
+        # Regime Agent calibration: score the classified regime vs ACTUAL price
+        # behavior (NOT trade win), recorded with the Regime Agent's OWN conf.
         if regime and regime != "unknown":
-            # 2026-06-19 FIX: score the regime vs ACTUAL price behavior, not trade win.
-            # Old code derived regime_correct from thesis_correct * regime_fit(default 0.5),
-            # so regime "accuracy" just mirrored trade win-rate (~0%) → false self-distrust.
             move_pct = trade_data.get("price_move_pct")
             if move_pct is None:
-                # fallback: derive direction from side+pnl (magnitude unknown → small)
                 side = (trade_data.get("side") or "").upper()
                 pnl = trade_data.get("pnl", 0) or 0
                 is_long = side in ("BUY", "LONG")
                 price_up = (is_long and pnl > 0) or ((not is_long) and pnl < 0)
                 move_pct = 0.6 if price_up else -0.6
             regime_correct = _regime_was_correct(regime, float(move_pct))
-            ledger.record_outcome("regime", regime, regime_correct, 0.5)
+            regime_conf = _conf_for("regime", 0.5)
+            ledger.record_outcome("regime", regime, regime_correct, regime_conf)
 
-        # Risk Agent override tracking: was the override correct?
-        # skip+loss = correct (avoided a loser), skip+win = wrong (missed a winner)
-        # reduce+loss = correct (limited damage), reduce+win = partially wrong
+        # Risk Agent override tracking: scored on whether the override was right.
         notes = trade_data.get("notes", "")
+        risk_conf = _conf_for("risk", 0.8)
         if "RISK: override to skip" in notes:
-            # Trade was skipped by Risk Agent — if thesis was correct, the skip was wrong
-            ledger.record_outcome("risk", regime, not thesis_correct, 0.8)
+            ledger.record_outcome("risk", regime, not thesis_correct, risk_conf)
         elif "RISK: sizing" in notes and "→" in notes:
-            # Risk Agent reduced size — less confident correct/wrong signal
-            ledger.record_outcome("risk", regime, not thesis_correct, 0.6)
+            ledger.record_outcome("risk", regime, not thesis_correct, _conf_for("risk", 0.6))
 
         logger.debug(
             f"[CALIBRATION] Recorded: trade_agent {regime} "
-            f"correct={thesis_correct} conf={confidence:.2f}"
+            f"correct={thesis_correct} conf={trade_conf:.2f} "
+            f"(per-agent={'yes' if _agent_confs else 'fallback'})"
         )
     except Exception as e:
         logger.debug(f"[CALIBRATION] Recording error: {e}")

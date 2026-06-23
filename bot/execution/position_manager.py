@@ -1499,6 +1499,38 @@ class PositionManager:
                 "lowest_price": pos.lowest_price,
             },
         )
+        # ── EXIT-REGRET STAMP (additive, measurement-only — 2026-06-23) ──
+        # Every full close flows through here (SL/TP/TRAILING/EARLY_EXIT/force_close/
+        # LLM_EXIT_AGENT/rotation/HOLD_LIMIT). Stamp a decision_id and append ONE line
+        # to exit_closes.jsonl so analytics/exit_regret.py can score +1h/+2h/+4h recovery.
+        # PURELY MEASUREMENT: never alters execution. Fully guarded.
+        try:
+            import uuid as _uuid
+            _decision_id = _uuid.uuid4().hex
+            event.metadata["decision_id"] = _decision_id  # correlate close <-> regret score
+            _regret_dir = os.path.join("data", "logs")
+            os.makedirs(_regret_dir, exist_ok=True)
+            _regret_row = {
+                "decision_id": _decision_id,
+                "ts": (pos.close_time or datetime.now(timezone.utc)).isoformat(),
+                "symbol": pos.symbol,
+                "side": pos.side,                       # "LONG" / "SHORT"
+                "exit_type": action,                    # "SL","TP2","TRAILING_STOP","EARLY_EXIT","LLM_EXIT_AGENT",...
+                "entry": pos.entry,
+                "exit_price": price,
+                "qty": qty,
+                "leverage": pos.leverage,
+                "pnl": pos.realized_pnl,
+                "regime": (pos.entry_reasons or {}).get("regime", "") or "unknown",
+                "strategy": pos.strategy,
+                "mfe_pct": round(pos.mfe / pos.entry * 100, 4) if pos.entry else 0.0,
+                "hold_time_s": (pos.close_time - pos.open_time).total_seconds() if pos.close_time and pos.open_time else 0.0,
+            }
+            with open(os.path.join(_regret_dir, "exit_closes.jsonl"), "a") as _rf:
+                _rf.write(json.dumps(_regret_row) + "\n")
+        except Exception as _regret_err:
+            logger.debug(f"[EXIT-REGRET] stamp failed (non-fatal): {_regret_err}")
+
         self.trade_log.append(event)
 
         # Log structured trade event (SL_HIT, TP_HIT, or TRADE_CLOSED)

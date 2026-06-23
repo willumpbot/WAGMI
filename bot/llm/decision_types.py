@@ -219,6 +219,12 @@ class EntryDecision:
     size_multiplier: float = 1.0              # For compatibility with LLMDecision consumers
     notes: str = ""              # Combined agent notes
     memory_update: Optional[str] = None
+    # Per-agent stated confidence at decision time, captured from the live
+    # pipeline (trade_out/regime_out/critic_out/risk_out). Keys: 'trade',
+    # 'regime', 'critic', 'risk' -> float in [0,1]. Persisted into the
+    # position's entry_reasons so the calibration ledger can record EACH
+    # agent's own confidence at close (was recording 0.0 for all).
+    agent_confidences: Dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -237,6 +243,7 @@ class EntryDecision:
             "size_multiplier": self.size_multiplier,
             "notes": self.notes,
             "memory_update": self.memory_update,
+            "agent_confidences": self.agent_confidences,
         }
 
     @classmethod

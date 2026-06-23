@@ -1790,6 +1790,46 @@ class AgentCoordinator:
         elif decision.action == "flip":
             action = "go"  # flip handled at caller level
 
+        # ── Capture per-agent STATED confidence for the calibration ledger ──
+        # These are the numbers each agent actually emitted (NOT the blended
+        # consensus). Without this they are discarded and the ledger records
+        # confidence:0.0 for every trade/critic/risk outcome. Keys match the
+        # agent names used in _record_agent_calibration: trade/regime/critic/risk.
+        regime_out = self.last_pipeline_results.get(AgentRole.REGIME)
+        _agent_confidences: Dict[str, float] = {}
+        try:
+            if trade_out and trade_out.ok:
+                _tc = float(trade_out.data.get("c", trade_out.data.get("confidence", 0.0)) or 0.0)
+                if _tc > 0.0:
+                    _agent_confidences["trade"] = round(max(0.0, min(1.0, _tc)), 3)
+            if regime_out and regime_out.ok:
+                _rc = float(regime_out.data.get("conf", regime_out.data.get("confidence", 0.0)) or 0.0)
+                if _rc > 0.0:
+                    _agent_confidences["regime"] = round(max(0.0, min(1.0, _rc)), 3)
+            if critic_out and critic_out.ok:
+                # Critic's belief about the trade: adjusted_confidence if present,
+                # else infer from verdict (approve high, challenge low).
+                _cc = critic_out.data.get("adjusted_confidence", critic_out.data.get("adj_c"))
+                if _cc is None:
+                    _verdict = str(critic_out.data.get("verdict", critic_out.data.get("v", "approve"))).lower().strip()
+                    _cc = 0.7 if _verdict in ("approve", "ok", "") else 0.3
+                _cc = float(_cc or 0.0)
+                if _cc > 0.0:
+                    _agent_confidences["critic"] = round(max(0.0, min(1.0, _cc)), 3)
+            if risk_out and risk_out.ok:
+                # Risk Agent confidence proxy: override=skip is a strong (high-conf)
+                # call to skip; normal sizing near 1.0x = moderate. Map to [0,1].
+                _ovr = str(risk_out.data.get("override", "") or "").lower()
+                if _ovr == "skip":
+                    _rk = 0.8
+                elif _ovr == "reduce":
+                    _rk = 0.6
+                else:
+                    _rk = 0.5
+                _agent_confidences["risk"] = round(_rk, 3)
+        except Exception as _ace:
+            logger.debug(f"[LLM-FIRST] agent_confidences capture error: {_ace}")
+
         entry_decision = EntryDecision(
             action=action,
             leverage=leverage,
@@ -1804,6 +1844,7 @@ class AgentCoordinator:
             size_multiplier=sz_mult,
             notes=decision.notes[:500] if decision.notes else "",
             memory_update=decision.memory_update,
+            agent_confidences=_agent_confidences,
         )
 
         logger.info(

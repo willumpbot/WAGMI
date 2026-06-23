@@ -3644,6 +3644,18 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                     _price_move_pct = ((_exit_price_close - _entry_px) / _entry_px * 100.0) if _entry_px else 0.0
                                 except Exception:
                                     _price_move_pct = 0.0
+                                # Recover per-agent stated confidences captured at
+                                # decision time (entry_reasons may be a JSON string).
+                                _er_close = {}
+                                if pos is not None and getattr(pos, "entry_reasons", None):
+                                    try:
+                                        import json as _json_er
+                                        _er_close = (_json_er.loads(pos.entry_reasons)
+                                                     if isinstance(pos.entry_reasons, str)
+                                                     else (pos.entry_reasons or {}))
+                                    except Exception:
+                                        _er_close = {}
+                                _agent_confs_close = _er_close.get("agent_confidences", {}) or {}
                                 _trade_data_for_learning = {
                                     "symbol": symbol,
                                     "side": event.side,
@@ -3654,6 +3666,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                     "exit_price": _exit_price_close,
                                     "price_move_pct": _price_move_pct,
                                     "confidence": pos.confidence if pos else 0,
+                                    "agent_confidences": _agent_confs_close,
                                     "regime": _rg_fb,
                                     "strategy": event.strategy,
                                     "notes": _llm_notes_close,
@@ -7511,6 +7524,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "llm_confidence": entry_decision.confidence,
             "llm_action": "go",
             "llm_agreed": True,
+            "agent_confidences": getattr(entry_decision, "agent_confidences", {}) or {},
         }
 
         # ── Execute trade ──

@@ -237,7 +237,9 @@ class ExitEngine:
     ):
         """Log exit decision to exit_decisions.jsonl."""
         try:
+            import uuid as _uuid
             entry = {
+                "decision_id": _uuid.uuid4().hex,
                 "ts": datetime.now(timezone.utc).isoformat(),
                 "symbol": decision.symbol,
                 "exit_action": decision.exit_action,

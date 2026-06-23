@@ -45,6 +45,182 @@ _HYPOTHESES_PATH = os.path.join(_DATA_DIR, "llm", "growth", "hypotheses.json")
 _CONFIDENCE_STATE_PATH = os.path.join(_DATA_DIR, "feedback", "confidence_state.json")
 _TRADE_DNA_PATH = os.path.join(_DATA_DIR, "llm", "deep_memory", "trade_dna.json")
 
+# ── Staleness / dedup config ────────────────────────────────────
+_RULE_MIN_TRADES_FOR_RECOMPUTE = 5   # need >=5 matching trades to trust live accuracy
+_RULE_STALE_ACC_FLOOR = 0.40         # graduated rule with live acc < this is dropped
+_ALL_TRADES_FOR_RECOMPUTE = 400      # cap rows scanned for rule recompute
+
+
+def _side_to_buysell(side: str) -> str:
+    """trades.csv uses LONG/SHORT; rule conditions use BUY/SELL. Normalize."""
+    s = (side or "").strip().upper()
+    if s in ("LONG", "BUY"):
+        return "BUY"
+    if s in ("SHORT", "SELL"):
+        return "SELL"
+    return s
+
+
+def _load_all_trades_for_recompute(path: str, cap: int = _ALL_TRADES_FOR_RECOMPUTE) -> List[Dict[str, str]]:
+    """Load up to the last `cap` trades from trades.csv for rule-accuracy recompute."""
+    if not os.path.exists(path):
+        return []
+    try:
+        rows: List[Dict[str, str]] = []
+        with open(path, "r", newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                rows.append(row)
+        return rows[-cap:]
+    except (IOError, OSError, csv.Error) as e:
+        logger.debug(f"[ENRICHER] Failed to load trades for recompute: {e}")
+        return []
+
+
+def _trade_matches_conditions(trade: Dict[str, str], conditions: Dict[str, Any]) -> bool:
+    """Does one trades.csv row satisfy a graduated rule's conditions?
+
+    Only the condition keys present in trades.csv are evaluated (symbol, regime,
+    side, strategy). Other condition keys (hour_utc, min_agree, etc.) are not in
+    trades.csv, so a rule carrying ONLY those is treated as unrecomputable (caller
+    handles via match count == 0).
+    """
+    c = conditions or {}
+    if c.get("symbol") and (trade.get("symbol", "") or "").upper() != str(c["symbol"]).upper():
+        return False
+    if c.get("side") and _side_to_buysell(trade.get("side", "")) != _side_to_buysell(str(c["side"])):
+        return False
+    if c.get("strategy"):
+        t_strat = (trade.get("primary_driver") or trade.get("strategy") or "")
+        if str(c["strategy"]) not in t_strat:
+            return False
+    if c.get("regime"):
+        t_reg = (trade.get("regime", "") or "").lower()
+        rule_reg = str(c["regime"]).lower()
+        try:
+            from llm.regime_canonical import canonicalize_regime
+            if canonicalize_regime(t_reg) != canonicalize_regime(rule_reg) and t_reg != rule_reg:
+                return False
+        except Exception:
+            if t_reg != rule_reg:
+                return False
+    return True
+
+
+def _recompute_rule_accuracy(conditions: Dict[str, Any], action: str,
+                             all_trades: List[Dict[str, str]]) -> Tuple[int, float]:
+    """Recompute a graduated rule's live accuracy from trades.csv (recompute-on-read).
+
+    Returns (n_matching_trades, accuracy). accuracy is the fraction of matching
+    trades on which the rule's directional advice was CORRECT:
+      boost  -> correct when the trade won (pnl>0)
+      penalize/veto -> correct when the trade lost (pnl<=0)
+    Returns (0, 0.5) when no trades match (unmeasured).
+    """
+    # A rule with no trades.csv-evaluable condition cannot be scored.
+    if not any(k in (conditions or {}) for k in ("symbol", "regime", "side", "strategy")):
+        return 0, 0.5
+    n = 0
+    correct = 0
+    act = (action or "").lower()
+    for t in all_trades:
+        if not _trade_matches_conditions(t, conditions):
+            continue
+        try:
+            pnl = float(t.get("pnl", 0) or 0)
+        except (ValueError, TypeError):
+            continue
+        won = pnl > 0
+        n += 1
+        if act == "boost" and won:
+            correct += 1
+        elif act in ("penalize", "veto") and not won:
+            correct += 1
+    if n == 0:
+        return 0, 0.5
+    return n, correct / n
+
+
+def _dedup_and_resolve_graduated(entries: List[Dict[str, Any]],
+                                 all_trades: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+    """Collapse graduated-rule entries by canonical (action, conditions) and resolve
+    contradictory actions on identical conditions.
+
+    Steps:
+      1. Recompute live (n, accuracy) per entry against trades.csv. Drop entries
+         that are stale==True, invalidation_count>=3, or empirically stale
+         (n>=_RULE_MIN_TRADES_FOR_RECOMPUTE and acc<_RULE_STALE_ACC_FLOOR).
+      2. Merge exact (action, frozenset(conditions)) duplicates: keep one, take
+         max live n and max live accuracy.
+      3. Resolve contradictions on the SAME conditions-set but different actions:
+         keep the action with the strongest live evidence (acc * sqrt(n)); when
+         no action has evidence (all n==0) or there is a tie, keep the protective
+         action (veto > penalize > boost) so a stale 'edge' can never win.
+    Non-graduated entries (no conditions+action) pass through unchanged.
+    """
+    import math
+    passthrough: List[Dict[str, Any]] = []
+    canon: Dict[Tuple, Dict[str, Any]] = {}  # (action, cond_fs) -> merged entry
+
+    for e in entries:
+        conds = e.get("conditions")
+        action = e.get("action")
+        if not isinstance(conds, dict) or not action:
+            passthrough.append(e)
+            continue
+        # (1) drop explicitly/empirically stale
+        if e.get("stale") is True or e.get("invalidation_count", 0) >= 3:
+            continue
+        n, acc = _recompute_rule_accuracy(conds, action, all_trades)
+        if n >= _RULE_MIN_TRADES_FOR_RECOMPUTE and acc < _RULE_STALE_ACC_FLOOR:
+            logger.info(
+                f"[ENRICHER] Dropping empirically-stale rule {e.get('rule_id','?')} "
+                f"({action} {conds}) live_acc={acc:.0%} n={n}"
+            )
+            continue
+        cond_fs = frozenset((str(k), str(v)) for k, v in conds.items())
+        merged = dict(e)
+        merged["_live_n"] = n
+        merged["_live_acc"] = acc
+        key = (action, cond_fs)
+        if key in canon:
+            prev = canon[key]
+            merged["_live_n"] = max(prev.get("_live_n", 0), n)
+            merged["_live_acc"] = max(prev.get("_live_acc", 0.0), acc)
+            merged["evidence_count"] = max(prev.get("evidence_count", 0), e.get("evidence_count", 0))
+        canon[key] = merged
+
+    # (3) resolve contradictions: group surviving entries by conditions-set
+    by_conds: Dict[frozenset, List[Dict[str, Any]]] = {}
+    for (action, cond_fs), merged in canon.items():
+        by_conds.setdefault(cond_fs, []).append(merged)
+
+    _protect_rank = {"veto": 2, "penalize": 1, "boost": 0}
+
+    def _evidence_strength(m: Dict[str, Any]) -> float:
+        return m.get("_live_acc", 0.5) * math.sqrt(m.get("_live_n", 0))
+
+    resolved: List[Dict[str, Any]] = list(passthrough)
+    for cond_fs, group in by_conds.items():
+        if len(group) == 1:
+            resolved.append(group[0])
+            continue
+        have_evidence = [m for m in group if m.get("_live_n", 0) > 0]
+        if have_evidence:
+            best = max(have_evidence, key=_evidence_strength)
+            # tie on strength -> prefer protective action
+            top = max(_evidence_strength(m) for m in have_evidence)
+            tied = [m for m in have_evidence if abs(_evidence_strength(m) - top) < 1e-9]
+            best = max(tied, key=lambda m: _protect_rank.get((m.get("action") or "").lower(), 0))
+        else:
+            # no live evidence anywhere -> keep most protective action
+            best = max(group, key=lambda m: _protect_rank.get((m.get("action") or "").lower(), 0))
+        logger.info(
+            f"[ENRICHER] Contradiction on {dict(cond_fs)} -> kept {best.get('action')} "
+            f"(live_acc={best.get('_live_acc'):.0%} n={best.get('_live_n')})"
+        )
+        resolved.append(best)
+    return resolved
+
 # ── Cache ───────────────────────────────────────────────────────
 _CACHE_TTL_S = 1800  # 30 min — balance freshness vs I/O
 _cache: Dict[str, Any] = {}
@@ -170,6 +346,7 @@ def _refresh_cache() -> None:
         "hypotheses": hypotheses_data.get("hypotheses", []),
         "confidence_state": _load_json_safe(_CONFIDENCE_STATE_PATH, {}),
         "trade_dna": _load_json_safe(_TRADE_DNA_PATH, {"trades": []}).get("trades", []),
+        "all_trades_recompute": _load_all_trades_for_recompute(_TRADES_CSV_PATH),
     }
     _cache_ts = now
 
@@ -383,8 +560,14 @@ def _build_knowledge_base_rules(agent_role: str) -> str:
         return ""
 
     relevant_cats = _KB_CATEGORY_MAP.get(agent_role, ["general"])
+    all_trades = _cache.get("all_trades_recompute", [])
+
+    # Resolve staleness, exact dups, and contradictions on graduated rules
+    # BEFORE relevance filtering so a dropped/merged rule can't sneak back in.
+    cleaned = _dedup_and_resolve_graduated(entries, all_trades)
+
     relevant = [
-        e for e in entries
+        e for e in cleaned
         if e.get("category", "general") in relevant_cats
         and (
             e.get("evidence_count", 0) > 0
@@ -392,22 +575,45 @@ def _build_knowledge_base_rules(agent_role: str) -> str:
         )
         and e.get("confidence", 0) >= 0.7
     ]
+    # Graduated entries whose confidence was frozen low but live accuracy is solid
+    # should still qualify: re-admit graduated rules with live evidence.
+    for e in cleaned:
+        if e in relevant:
+            continue
+        if (
+            e.get("category", "general") in relevant_cats
+            and e.get("conditions") and e.get("action")
+            and e.get("_live_n", 0) >= _RULE_MIN_TRADES_FOR_RECOMPUTE
+            and e.get("_live_acc", 0.0) >= 0.55
+        ):
+            relevant.append(e)
     if not relevant:
         return ""
 
-    # Sort: most evidence first, then confidence
+    # Sort: live evidence first (n then acc), then frozen evidence/confidence as fallback.
     relevant.sort(
-        key=lambda e: (e.get("evidence_count", 0), e.get("confidence", 0)),
+        key=lambda e: (
+            e.get("_live_n", 0),
+            e.get("_live_acc", 0.0),
+            e.get("evidence_count", 0),
+            e.get("confidence", 0),
+        ),
         reverse=True,
     )
     top = relevant[:5]
 
     lines = ["=== VALIDATED TRADING RULES ==="]
     for e in top:
-        conf = e.get("confidence", 0)
-        n = e.get("evidence_count", 0)
         text = str(e.get("content", e.get("rule", "")) or "")[:180]
-        lines.append(f"  • [conf={conf:.0%} n={n}] {text}")
+        live_n = e.get("_live_n", 0)
+        if live_n > 0:
+            # Show LIVE recomputed numbers, not frozen creation-time ones.
+            acc = e.get("_live_acc", 0.0)
+            lines.append(f"  • [live_acc={acc:.0%} n={live_n}] {text}")
+        else:
+            conf = e.get("confidence", 0)
+            n = e.get("evidence_count", 0)
+            lines.append(f"  • [conf={conf:.0%} n={n} unverified] {text}")
 
     return "\n".join(lines)
 

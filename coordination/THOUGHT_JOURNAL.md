@@ -297,3 +297,32 @@ Equity $4056 (peak $4200), continued bleeding ~$150/day = the exit-agent drain; 
 NEXT (deeper, needs care+tests via swarm): proper veto-scoring wire-back w/ override-distinction; exit
 counterfactual measurement (+1/2/4h regret); per-agent calibration confidence=0.0 fix; regime-keyed priors.
 DO NOT TOUCH (audit): mechanical SL/TP/trailing/time-stop (100% of profit), circuit breakers, guillotine guard.
+
+## 2026-06-23T18:40Z — EDGE MAP (swarm): the "shorts +EV" prior was an illusion
+Regime-conditional edge map (n=101 ledger). KEY FINDINGS:
+- "Pooled SHORT +EV (+$1134)" is FALSE — short edge lives ENTIRELY in trending_bear (15 trades +$1226, +82/trade).
+  Short in neutral ~breakeven, short in range/consolidation -EV (ETH/SOL range 0/13 -$444).
+- Trustworthy MECHANICAL-exit subset: 63.3% WR, +$1693 on shorts (vs contaminated pooled 18.8% from the 0/71 LLM cuts).
+- Mechanical winners cluster in 4-12h hold (0.92 WR, +$1959) — EXACTLY the window the exit agent was guillotining (cut 22/24 sub-1h, 35/47 of 1-4h).
+- LONG -EV everywhere incl bull (-$257). HYPE -EV even mechanical. BTC/ETH mechanical edge real (+$518/+$826).
+- agreement_level=2 is -EV (-$515) — higher agreement currently ANTI-correlates with quality. regime_4h blank in all 101 rows (broken feature).
+- BUG: get_system_baseline() (dynamic_stats.py:86-90) feeds contaminated 0.19 WR into QuantBrain._default_wp (true mechanical=0.63) — 44pt error poisoning EVERY prior. quant_brain.py:713 prior keyed symbol_side only, NO regime dim.
+NEXT DE-HARDCODE (needs backtest): regime-keyed empirical-Bayes priors (symbol.side.regime_bucket {bull/bear/neutral},
+recency half-life 21d, shrink k=5 toward per-(side,regime) default, computed from MECHANICAL-exit trades only).
+Measurement-impl swarm running now: stale-advisory suppression, exit-regret tracking, calibration-confidence fix.
+
+## 2026-06-23T18:34Z — Measurement-spine rebuild: 3 fixes shipped (impl swarm, all tested, 0 new failures)
+Implemented via swarm (disjoint files, each unit-tested; full suite: 277 pass, 0 new failures — 12 fails all pre-existing).
+1. STALE-ADVISORY (prompt_enricher.py, read-path only): drop stale/invalidated rules, recompute rule accuracy live vs
+   trades.csv on read, semantic dedup by (action,conditions) + contradiction resolution (protective action wins ties).
+   Stops frozen creation-time stats + contradictory boost/veto rules reaching the LLM. 6/6 tests.
+2. EXIT-REGRET (NEW analytics/exit_regret.py + position_manager._close_position stamp hook + exit_engine decision_id):
+   additive, ZERO execution impact. Stamps EVERY close (mechanical + LLM) to data/logs/exit_closes.jsonl (the only
+   complete close record — exit_decisions.jsonl misses all mechanical closes = 100% of profit). Scores +1/2/4h regret
+   per (symbol,side,regime,exit_type). 3/3 tests. NOTE: resolve_pending() not yet wired to tick loop — timer/script-driven; TODO wire it.
+3. CALIBRATION-CONFIDENCE (decision_types/coordinator/multi_strategy_main/learning_integration): thread each agent's
+   STATED confidence decision-time->entry_reasons->close->ledger; fixes confidence:0.0 poisoning of brier/drift/avg_conf.
+   Correctness booleans unchanged (already directional). 3/3 tests. Flushed poisoned data/llm/agent_calibration.json -> {} (backup kept).
+Bot restarted clean (pid 19452). Earlier edits (exit full-close gate, accuracy clamp) intact.
+REMAINING: veto self-measurement (Spec 1, HIGH risk, needs replay) + regime-keyed empirical-Bayes priors (needs backtest)
++ fix get_system_baseline contamination (dynamic_stats.py:86-90, feeds 0.19 vs true 0.63).
