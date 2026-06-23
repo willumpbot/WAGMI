@@ -1,58 +1,99 @@
 {
-  "status": "UPDATED_RUN141",
-  "data_source": "trades_10d.csv (n=965, full dataset). Bot offline Day 75 — no live trades. Data UNCHANGED from run140.",
+  "status": "UPDATED_RUN142",
+  "last_updated": "2026-06-23T17:04:27Z",
+  "run_number": 142,
+  "data_source": "Full 965-trade dataset (cached). Bot offline Day 75 — no new trades.",
   "trades_analyzed": 965,
-  "last_updated": "2026-06-23T16:04:13Z",
-  "run_number": 141,
   "high_edges": [
-    {"key": "SOL_SHORT", "win_rate": 68.2, "count": 179, "ev_per_trade": 32.44, "regime": "any", "injection": "BOOST +8 confidence for SOL SHORT signals (restored Run 130)", "status": "ACTIVE"},
-    {"key": "BTC_TREND_REGIME", "win_rate": null, "count": 15, "ev_per_trade": null, "injection": "BOOST +8 for BTC in trend regime (rule_1782144529_0)", "status": "ACTIVE"},
-    {"key": "BTC_LONG", "win_rate": 66.7, "count": 72, "ev_per_trade": 25.55, "injection": "HISTORICAL: BTC LONG 66.7% WR all-time. Current 100d WR=31.7% — BOOST DEACTIVATED Run135", "status": "DEACTIVATED_MONITORING"},
-    {"key": "BTC_SHORT_90plus", "win_rate": 67.4, "count": 43, "ev_per_trade": 102.92, "injection": "CANDIDATE: BTC SHORT 90%+ — n=43 full dataset. n=10 only in 100d (WR=50%). Monitor.", "status": "CANDIDATE — DO NOT INJECT until 100d n>=30"},
-    {"key": "conf_90plus", "win_rate": 59.3, "count": 91, "ev_per_trade": 32.33, "injection": "90%+ confidence is best tier. Recent 200: 64.1% WR, +$101.92/trade. Recent 100: 53.8% WR, +$25.37/trade.", "status": "PENDING_HUMAN_REVIEW — CONF_90PLUS_SELECTIVE_BOOST proposal at 4th flag, conf=72%"}
-  ],
-  "high_edges_found": 5,
-  "weak_setups": [
-    {"key": "ILLIQUID_REGIME", "win_rate": 28.1, "count": 57, "action": "VETO restored Run 130"},
-    {"key": "RANGING_REGIME", "win_rate": 25.0, "count": 16, "action": "PENALIZE -15 restored Run 130"},
-    {"key": "NIGHT_00_06_UTC", "win_rate": 15.0, "count": 13, "action": "VETO restored Run 130"},
-    {"key": "HYPE_SHORT_75plus_conf", "win_rate": 31.2, "count": 77, "ev_per_trade": -70.06, "action": "VETO restored Run 130"},
-    {"key": "HYPE_LONG", "win_rate": 23.0, "count": 35, "action": "VETO restored Run 130"},
-    {"key": "CONFIDENCE_80_90_ALL_SYMBOLS", "win_rate": 40.0, "count": 120, "ev_per_trade": -33.04, "action": "SIZE_ADJUST 0.75x restored Run 130"},
-    {"key": "BTC_LONG_RECENT_100d", "win_rate": 31.7, "count": 41, "ev_per_trade": -13.41, "action": "DEACTIVATED Run135: boost rule removed"},
-    {"key": "CONF_70_80_RECENT_200", "win_rate": 47.6, "count": 200, "ev_per_trade": -86.67, "action": "NEW RUN137: CONF_70_80_SIZE_REDUCTION rule added — A/B gate 20%"}
-  ],
-  "weak_setups_found": 8,
-  "new_injection_candidates": [
-    {"key": "SOL_SHORT_75_80", "win_rate": 52.9, "count": 34, "ev_per_trade": 24.26, "confidence": 68, "flag_count": 7, "action": "CANDIDATE (7th flag): SOL SHORT precision 75-80% conf. Below 75% auto-inject threshold. Monitor after bot restart."},
-    {"key": "CONF_90PLUS_SELECTIVE_BOOST", "win_rate": 53.8, "count": 13, "ev_per_trade": 25.37, "confidence": 72, "flag_count": 4, "status": "PENDING_HUMAN_REVIEW", "action": "ESCALATED (4th flag): 90%+ conf = only profitable tier recent 100. Conf=72% < 75% auto-inject. Human review: approve +5 boost rule at gate=20%?"},
-    {"key": "CONFIDENCE_PARADOX_RULE_REMAP", "win_rate": null, "count": null, "ev_per_trade": null, "confidence": 74, "flag_count": 3, "status": "PROPOSAL_TRIGGERED", "action": "3RD FLAG: Active rule targets 85-90% (-0.25x) but data shows 75-80% is the real loss center. CONF_70_80_SIZE_REDUCTION may be sufficient. Defer: collect A/B results on bot restart (50 trades)."}
-  ],
-  "deactivations_this_run": 0,
-  "new_rules_applied_this_run": 0,
-  "recent_200_confidence_bands": {
-    "70_80": {"win_rate": 47.6, "count": 200, "ev_per_trade": -86.67, "verdict": "PRIMARY_LOSS_CENTER — CONF_70_80_SIZE_REDUCTION A/B active at 20% gate"},
-    "80_90": {"win_rate": 52.2, "count": null, "ev_per_trade": -37.23, "verdict": "DEGRADING"},
-    "90plus": {"win_rate": 64.1, "count": 39, "ev_per_trade": 101.92, "verdict": "BEST_TIER — CONF_90PLUS boost pending human review"}
-  },
-  "run141_updates": {
-    "last_updated": "2026-06-23T16:04:13Z",
-    "run_number": 141,
-    "conf_90plus_flag_status": {
-      "flag_count": 4,
-      "threshold_hit": true,
-      "current_confidence": 72,
-      "inject_conf_required": 75,
-      "status": "PENDING_HUMAN_REVIEW — 4th flag. Conf=72% below 75% auto-inject. Evidence consistent over 4 runs.",
-      "proposed_action": {"rule": "boost", "conditions": {"confidence_min": 90}, "adjustment": 5.0, "gate": 20}
+    {
+      "key": "SOL_SHORT",
+      "win_rate": 63.7,
+      "count": 179,
+      "ev_per_trade": 32.44,
+      "status": "ACTIVE boost +8"
     },
-    "confidence_paradox_miscal_flag": {
-      "flag_count": 3,
-      "threshold_hit": true,
-      "current_rule": "restored_confidence_paradox_sizing_v1 targets 85-90%",
-      "actual_problem": "75-80% band: WR=45.5%, EV=-$88.82/trade (worst tier recent 100)",
-      "mitigation_status": "CONF_70_80_SIZE_REDUCTION (run137) at 20% gate may be sufficient",
-      "status": "PROPOSAL_TRIGGERED at 3rd flag — defer remap decision until A/B results"
+    {
+      "key": "BTC_LONG",
+      "win_rate": 63.9,
+      "count": 72,
+      "ev_per_trade": 25.55,
+      "status": "BOOST DEACTIVATED run135 (100d WR=31.7%)"
+    },
+    {
+      "key": "CONF_90_PLUS",
+      "win_rate": 64.1,
+      "count": 39,
+      "ev_per_trade": 101.92,
+      "status": "PENDING_HUMAN_REVIEW — boost +5 proposed"
     }
+  ],
+  "high_edges_found": 3,
+  "weak_setups": [
+    {
+      "key": "REGIME_ILLIQUID",
+      "win_rate": 28.1,
+      "rule_status": "VETO active (restored run130)"
+    },
+    {
+      "key": "REGIME_RANGING",
+      "win_rate": 25.0,
+      "rule_status": "PENALIZE -15 active (restored run130)"
+    },
+    {
+      "key": "HYPE_LONG",
+      "win_rate": 57.0,
+      "note": "Negative EV despite WR > 50% — loss asymmetry",
+      "rule_status": "VETO active (live WR=23%)"
+    },
+    {
+      "key": "CONF_70_80_PCT",
+      "win_rate": 47.6,
+      "ev_per_trade": -86.67,
+      "note": "Primary loss center by EV. 200 trades recent data. SIZE_REDUCTION A/B active.",
+      "rule_status": "CONF_70_80_SIZE_REDUCTION (run137) gate=20%"
+    }
+  ],
+  "weak_setups_found": 4,
+  "symbol_win_rates": {
+    "SOL_SHORT": {"trades": 179, "wr": 63.7, "ev": 32.44, "edge_type": "HIGH_EDGE", "rule_status": "ACTIVE boost +8"},
+    "BTC_LONG": {"trades": 72, "wr": 63.9, "ev": 25.55, "edge_type": "HIGH_EDGE_DEGRADING", "rule_status": "BOOST DEACTIVATED run135 (100d WR=31.7%)"},
+    "BTC_SHORT": {"trades": 195, "wr": 53.8, "ev": -7.22, "edge_type": "NEUTRAL_NEGATIVE_EV", "rule_status": "No rule"},
+    "SOL_LONG": {"trades": 122, "wr": 53.3, "ev": -2.62, "edge_type": "NEUTRAL_MARGINAL", "rule_status": "No rule"},
+    "HYPE_LONG": {"trades": 158, "wr": 57.0, "ev": -6.55, "edge_type": "NEGATIVE_EV_BLOCKED", "rule_status": "VETO active (live WR=23%)"},
+    "HYPE_SHORT": {"trades": 239, "wr": 54.4, "ev": -16.65, "edge_type": "WORST_EV", "rule_status": "SIZE_CAP -50% + VETO >=75% conf"}
+  },
+  "regime_win_rates": {
+    "trending": {"trades": 52, "wr": 51.9, "edge_type": "NEUTRAL", "rule_status": "No penalty, BTC trend boost active"},
+    "illiquid": {"trades": 57, "wr": 28.1, "edge_type": "WEAK_SETUP", "rule_status": "VETO active (restored run130)"},
+    "ranging": {"trades": 16, "wr": 25.0, "edge_type": "WEAK_SETUP", "rule_status": "PENALIZE -15 active (restored run130)"}
+  },
+  "confidence_win_rates": {
+    "60_70_pct": {"recent_200_wr": 48.6, "ev": null, "edge_type": "MARGINAL"},
+    "70_80_pct": {"recent_200_wr": 47.6, "ev": -86.67, "edge_type": "WEAK", "rule_status": "CONF_70_80_SIZE_REDUCTION A/B gate 20% — run137"},
+    "80_90_pct": {"recent_200_wr": 52.2, "ev": -37.23, "edge_type": "DEGRADING", "rule_status": "confidence_paradox_sizing_v1 (-0.25x active — MISCALIBRATED — proposal triggered run141)"},
+    "90plus_pct": {"recent_200_wr": 64.1, "ev": 101.92, "edge_type": "HIGH_EDGE", "rule_status": "BOOST +5 PENDING HUMAN REVIEW (4th flag, conf=72%)"}
+  },
+  "injection_candidates": [
+    {"key": "EVENING_SESSION_PENALIZE", "win_rate": 29.0, "count": 14, "edge_type": "WEAK", "proposed_action": "Add penalty rule: evening_session_penalize_v1 (18-24 UTC, adj=-10)", "confidence": 75, "status": "MEET_THRESHOLD — REC3 from run107 audit", "source": "autonomous_audit_2026-06-23T16:07:25Z"},
+    {"key": "AFTERNOON_SESSION_PENALIZE", "win_rate": 27.0, "count": 15, "edge_type": "WEAK", "proposed_action": "Add penalty rule: afternoon_session_penalize_v1 (12-18 UTC, adj=-10)", "confidence": 75, "status": "MEET_THRESHOLD — REC3 from run107 audit", "source": "autonomous_audit_2026-06-23T16:07:25Z"},
+    {"key": "CONF_90PLUS_BOOST", "win_rate": 64.1, "count": 39, "edge_type": "HIGH_EDGE", "proposed_action": "Add boost rule: boost +5 for signals with confidence >= 90", "confidence": 72, "status": "PENDING_HUMAN_REVIEW — 4th flag, confidence=72% below 75% auto-inject threshold", "flag_count": 4},
+    {"key": "SOL_SHORT_75_80", "win_rate": 52.9, "count": 34, "edge_type": "CANDIDATE", "proposed_action": "No action yet — monitor after bot restart with live data", "confidence": 68, "status": "CANDIDATE (7th flag) — below 75% auto-inject. Needs live confirmation."}
+  ],
+  "new_injections_this_run": 2,
+  "new_injection_details": [
+    "EVENING_SESSION_PENALIZE (conf=75%) — threshold met, from latest audit REC3",
+    "AFTERNOON_SESSION_PENALIZE (conf=75%) — threshold met, from latest audit REC3"
+  ],
+  "active_rules_summary": {
+    "SOL_SHORT_BOOST": "ACTIVE — +8 boost",
+    "HYPE_LONG_VETO": "ACTIVE — blocks all HYPE LONG",
+    "ILLIQUID_VETO": "ACTIVE — blocks illiquid regime",
+    "RANGING_PENALIZE": "ACTIVE — -15 confidence",
+    "NIGHT_VETO": "ACTIVE — blocks 00-06 UTC",
+    "HYPE_SHORT_HIGHCONF_VETO": "ACTIVE — blocks HYPE SHORT conf>=75% (conflict with 20d data)",
+    "HYPE_SIZE_CAP": "ACTIVE — -50% size all HYPE",
+    "BTC_TREND_BOOST": "ACTIVE — +8 for BTC in trend regime",
+    "CONFIDENCE_PARADOX_SIZING": "ACTIVE but MISCALIBRATED — targets 85-90% (wrong band)",
+    "INSTANT_SL_BUFFER": "ACTIVE — -10% size all trades"
   }
 }
