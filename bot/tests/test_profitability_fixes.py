@@ -619,16 +619,19 @@ class TestKellySizing:
         assert d.risk_multiplier >= 1.2, f"risk_mult should be >=1.2, got {d.risk_multiplier}"
 
     def test_3agree_scalp_kelly(self):
-        """Scalp-Kelly: base * agreement_mult, capped per tier."""
+        """Scalp-Kelly: base leverage, capped per tier.
+        2026-06-23: agreement no longer BOOSTS leverage (the +20% 3-agree boost rewarded
+        correlation-inflated raw vote count with no measured edge — removed). 3-agree now
+        gets base leverage (mult 1.0), still well within tier caps."""
         from execution.leverage import LeverageManager
         mgr = LeverageManager()
-        # Default (no symbol) = 7.0 base * 1.2 = 8.4x
+        # Default (no symbol) = 7.0 base * 1.0 = 7.0x
         d = mgr.decide(72, 3, 4)
         assert d.leverage >= 5.0, f"3-agree should get >=5x, got {d.leverage}"
         assert d.leverage <= 15.0, f"Should be <= cap 15x, got {d.leverage}"
-        # BTC = 10.0 base * 1.2 = 12.0x
+        # BTC base = 7.0 * 1.0 = 7.0x (no agreement boost)
         d_btc = mgr.decide(72, 3, 4, symbol="BTC")
-        assert d_btc.leverage >= 8.0, f"BTC 3-agree should get >=8x, got {d_btc.leverage}"
+        assert d_btc.leverage >= 7.0, f"BTC 3-agree should get base >=7x, got {d_btc.leverage}"
         assert d_btc.leverage <= 15.0, f"BTC should be <=15x cap, got {d_btc.leverage}"
 
     def test_risk_multiplier_stays_within_cap(self):

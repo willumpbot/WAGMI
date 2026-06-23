@@ -369,3 +369,13 @@ calibration repaired; accuracy clamp; baseline decontaminated. HELD (gates): reg
 veto self-scoring (reverted — needs full decision-ledger across 4 call sites).
 NEXT CANDIDATES: agreement_level anomaly (agree=2 is -EV vs agree=1 +EV — possible ensemble bug); veto decision-ledger;
 regime priors re-validate when mechanical n grows.
+
+## 2026-06-23T19:28Z — Agreement anomaly: CONFOUND (no action on data) + de-hardcoded the real boost bug
+Investigation verdict: "higher agreement = worse" is a CONFOUND ARTIFACT (high confidence) — 11/14 agree=2 trades were
+LLM-exit-severed (0/71); decontaminated agree=2 is n=3 noise (binomial P=0.26). Same illusion as "shorts +EV". DID NOT
+act on the phantom (no down-weighting high agreement). BUT code trace found a REAL bug: leverage.py:125 + sizing_optimizer.py:282
+BOOSTED leverage/size +20% on RAW vote count (correlated oscillators inflate it; code's own comment: "4+ agree = 0% WR,
+redundant oscillators fire together"), with no evidence agreement helps, while PENALIZING solo signals — yet clean data shows
+agree=1 IS the +EV bucket (n=27 WR 0.67 +$1873). FIX (de-hardcode, surgical): removed the 3-agree +20% BOOST (capped at 1.0)
+so agreement can no longer INCREASE leverage; KEPT the low-agreement caution (0.80x/0.7x) as a risk control (did not weaken
+any risk limit). Updated test_3agree_scalp_kelly to new behavior; suite back to 19 pre-existing fails, 0 new. Restarted (pid 35048).

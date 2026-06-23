@@ -278,8 +278,11 @@ class SizingOptimizer:
         # Regime multiplier
         regime_mult = _REGIME_MULT.get(regime, 0.7)
 
-        # Agreement multiplier (3-agree = 1.2x, 2 = 1.0x, 1 = 0.7x)
-        agree_mult = {1: 0.7, 2: 1.0, 3: 1.2}.get(num_agree, 1.0)
+        # Agreement multiplier — DE-HARDCODE (2026-06-23): removed the 3-agree +20% boost (was 1.2);
+        # it rewarded RAW correlation-inflated agreement with no evidence it helps ("high agreement =
+        # worse" was an exit-agent confound). Boost capped at 1.0; low-agreement caution (0.7x) kept
+        # as a risk control. Re-derive from n_independent + measured edge before letting agreement boost.
+        agree_mult = {1: 0.7, 2: 1.0, 3: 1.0}.get(num_agree, 1.0)
 
         # Dip-buy bonus (proven 88.5% WR on dips)
         dip_mult = 1.15 if is_dip_buy else 1.0

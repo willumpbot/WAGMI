@@ -122,7 +122,13 @@ class LeverageManager:
         }
         _sym_clean = symbol.replace("/USDC:USDC", "").replace("/USDT:USDT", "").split("/")[0]
         FULL_KELLY_LEV = _SCALP_KELLY_LEV.get(_sym_clean, 7.0)
-        _agree_mult = {1: 0.80, 2: 1.0, 3: 1.20}.get(
+        # DE-HARDCODE (2026-06-23): removed the +20% boost for 3-agree (was 1.20). It rewarded RAW
+        # vote count, which correlated oscillators inflate — the code's own comment says "4+ agree =
+        # 0% WR, redundant oscillators fire together" — and there is NO evidence raw agreement helps
+        # (the "high agreement = worse" finding was an exit-agent confound). Boost capped at 1.0 so
+        # agreement can no longer INCREASE leverage. The low-agreement caution (0.80x) is kept as a
+        # risk control. Re-derive from n_independent + measured edge before letting agreement boost.
+        _agree_mult = {1: 0.80, 2: 1.0, 3: 1.0}.get(
             min(num_strategies_agree, 3), 1.0
         )
 
