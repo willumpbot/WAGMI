@@ -1,29 +1,32 @@
 {
   "engine": "perpetual_improvement_loop",
   "version": "2.7",
-  "last_run": "2026-06-23T06:09:25Z",
+  "last_run": "2026-06-23T07:10:00Z",
   "today": "2026-06-23",
-  "run_number": 134,
+  "run_number": 135,
   "bot_status": "OFFLINE",
   "days_offline": 75,
   "audit_source": "autonomous_audit_2026-06-23T06-09-25Z.md (Run 134)",
   "subsystems": {
     "auto_fix": {
-      "status": "COMPLETE",
-      "fixes_applied": 0,
+      "status": "COMPLETE — 1 FIX APPLIED",
+      "fixes_applied": 1,
       "gates_active": 46,
-      "cadence_streak": 50,
-      "new_findings": [
-        "BTC_LONG_TEMPORAL_DEGRADATION confirmed (3rd flag): WR=31.7% in 100d. restored_btc_long_boost_v1 now flagged for deactivation as REC1.",
-        "GRADUATED_RULES_CODE_BUG confirmed FIXED: _save() now has _ensure_loaded() guard + atomic os.replace() write.",
-        "4/6 feedback state files missing from disk: signal_quality.json, regime_feedback_state.json, confidence_state.json, strategy_weights.json never written."
-      ],
+      "cadence_streak": 52,
+      "fix_applied": {
+        "fix_id": "BTC_LONG_BOOST_DEACTIVATION",
+        "rule": "restored_btc_long_boost_v1",
+        "action": "set active=false",
+        "confidence": 86,
+        "gate_percentage": 20,
+        "baseline_wr": 31.7,
+        "expected_ev_recovery_monthly": 165.0
+      },
       "skipped": [
-        "HYPE_SHORT_VETO_SPLIT (conf=71%, 13th flag, AWAITING_HUMAN_APPROVAL)",
-        "BTC_LONG_BOOST_MISCALIBRATION (conf=86%, 3rd flag, AWAITING_HUMAN_REVIEW)",
-        "SOL_SHORT_75_80_PRECISION (conf=68%, 3rd flag, below 75% threshold)",
-        "RR_GEOMETRY_FIX (conf=82%, 6th flag, PARAMETER_AMBIGUITY)",
-        "FEEDBACK_STATE_FILES_MISSING (conf=93%, infrastructure fix, requires dev)"
+        "HYPE_SHORT_VETO_SPLIT (conf=71%, 15th flag, AWAITING_HUMAN_APPROVAL)",
+        "SOL_SHORT_75_80_PRECISION (conf=68%, below 75% threshold)",
+        "RR_GEOMETRY_FIX (conf=82%, PARAMETER_AMBIGUITY, 8th flag)",
+        "FEEDBACK_STATE_FILES_MISSING (conf=93%, dev required)"
       ]
     },
     "execution_forensics": {
@@ -40,28 +43,32 @@
       "kelly_fraction": -0.168,
       "verdict": "NEGATIVE_EDGE — structural deficit persists",
       "delta": "NO CHANGE — same 589-trade dataset, bot offline",
+      "consecutive_cached_runs": 48,
       "duration_bug_status": "UNFIXED — 52 trades with negative duration (8.8%), biases hold-time ML"
     },
     "live_injection": {
-      "status": "UPDATED_DEGRADATION_RECLASSIFICATION",
+      "status": "UPDATED_BTC_LONG_DEACTIVATED",
       "trades_analyzed": 965,
       "high_edges_found": 3,
       "degrading_edges_found": 1,
       "weak_setups_found": 7,
-      "key_change": "BTC_LONG downgraded from high_edge to degrading_edge (3rd flag). FEEDBACK_STATE_FILES_MISSING flagged as new infrastructure gap."
+      "deactivations_this_run": 1,
+      "key_change": "BTC_LONG_GENERIC edge: boost rule deactivated Run 135. Regime-scoped rule (BTC+trend) remains. HYPE_SHORT_LOWCONF_SUB75 at 14th flag."
     },
     "daily_synthesis": {
       "status": "COMPLETE",
       "date": "2026-06-23",
       "todays_trades": 0,
       "todays_pnl": 0.0,
-      "anomalies_count": 6,
-      "is_end_of_day": false
+      "anomalies_count": 5,
+      "is_end_of_day": false,
+      "btc_long_boost_harmful_anomaly": "RESOLVED by deactivation this run"
     },
     "model_optimization": {
       "status": "CACHED_NO_CHANGE",
       "agents_analyzed": 7,
       "swaps_recommended": 1,
+      "swap_detail": "Regime Agent: Haiku→Sonnet for REGIME_SHIFT events only. Est +$186/mo benefit, +$0.27/mo cost.",
       "potential_benefit_usd": 186.0
     }
   },
@@ -76,40 +83,41 @@
     {
       "subsystem": "execution_forensics",
       "severity": "CRITICAL",
-      "finding": "NEGATIVE KELLY EDGE (10th flag): Kelly=-0.168. WR=44.5% vs 52.4% needed.",
+      "finding": "NEGATIVE KELLY EDGE (10th flag): Kelly=-0.168. WR=44.5% vs 52.4% needed. Structural deficit until R:R geometry fixed.",
       "consecutive_flags": 10
     },
     {
-      "subsystem": "live_injection",
-      "severity": "HIGH",
-      "finding": "BTC_LONG_TEMPORAL_DEGRADATION (3rd flag): restored_btc_long_boost_v1 boosts all BTC LONG +8 conf but 100d WR=31.7% (n=41, -$550 total). Deactivation is REC1 this run — no approval needed.",
-      "action": "Set active=false for restored_btc_long_boost_v1 in bot/data/llm/graduated_rules.json",
-      "consecutive_flags": 3
-    },
-    {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "HYPE_SHORT_VETO_SPLIT (13th flag): HYPE SHORT <75% conf = WR=53.8%, n=80, +$808 EV blocked. This is REC2 — awaiting human approval.",
+      "finding": "HYPE_SHORT_VETO_SPLIT (15th flag): HYPE SHORT <75% conf = WR=53.8%, n=80, +$808 EV blocked. Still awaiting human approval.",
       "action": "HUMAN DECISION REQUIRED: approve hype_short_sub75_boost_v1 rule",
-      "consecutive_flags": 13
+      "consecutive_flags": 15
     },
     {
       "subsystem": "auto_fix",
       "severity": "HIGH",
-      "finding": "FEEDBACK_STATE_FILES_MISSING (1st flag): 4/6 feedback sinks not persisting to disk. Learning evaporates on restart. This is REC3 — dev work required.",
-      "action": "Add _save() calls to RegimeFeedbackManager, AdaptiveConfidenceFloor, SignalQualityScorer, ParameterTuner",
-      "consecutive_flags": 1
+      "finding": "FEEDBACK_STATE_FILES_MISSING (2nd flag): 4/6 feedback sinks not persisting to disk. All learned calibration lost on restart.",
+      "action": "Dev: add _save() calls to RegimeFeedbackManager, AdaptiveConfidenceFloor, SignalQualityScorer, ParameterTuner",
+      "consecutive_flags": 2
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "RESOLVED_THIS_RUN",
+      "finding": "BTC_LONG_BOOST_HARMFUL (3rd flag): restored_btc_long_boost_v1 DEACTIVATED. A/B gate 20% active. Expected +$165/mo recovery.",
+      "action": "APPLIED — monitoring 50 trades",
+      "consecutive_flags": 0
     }
   ],
   "run_metrics": {
     "subsystems_complete": 5,
-    "fixes_applied_this_run": 0,
+    "fixes_applied_this_run": 1,
     "gates_active": 46,
-    "llm_rules_active": 11,
+    "llm_rules_active": 10,
+    "llm_rules_total": 11,
     "new_findings": [
-      "BTC_LONG_TEMPORAL_DEGRADATION escalated to REC1",
-      "FEEDBACK_STATE_FILES_MISSING first detected",
-      "GRADUATED_RULES_CODE_BUG confirmed FIXED"
+      "BTC_LONG_BOOST_DEACTIVATION applied (conf=86, A/B 20%)",
+      "FEEDBACK_STATE_FILES_MISSING escalated to 2nd flag",
+      "HYPE_SHORT_VETO_SPLIT escalated to 15th flag"
     ]
   }
 }

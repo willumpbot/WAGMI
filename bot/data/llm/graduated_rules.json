@@ -158,7 +158,9 @@
       "last_applied": 0.0,
       "times_applied": 0,
       "times_correct": 0,
-      "active": true
+      "active": false,
+      "deactivated_at": "2026-06-23T07:10:00Z",
+      "deactivated_reason": "Temporal degradation: 100d WR=31.7% (n=41, -$550.03). Below 52.4% break-even. Boost amplifying negative EV. Auto-fix Run 135, conf=86%."
     },
     {
       "rule_id": "restored_confidence_paradox_sizing_v1",

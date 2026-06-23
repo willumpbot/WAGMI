@@ -28,7 +28,7 @@
     "status": "UNFIXED — dev required"
   },
   "delta_from_last_run": "NO CHANGE — bot offline, same 589-trade backtest dataset",
-  "consecutive_cached_runs": 47,
-  "last_updated": "2026-06-23T05:04:19Z",
-  "run_number": 133
+  "consecutive_cached_runs": 48,
+  "last_updated": "2026-06-23T07:10:00Z",
+  "run_number": 135
 }

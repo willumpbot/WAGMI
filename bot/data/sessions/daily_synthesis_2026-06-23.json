@@ -1,17 +1,17 @@
 {
   "date": "2026-06-23",
-  "last_updated": "2026-06-23T06:09:25Z",
-  "run_number": 134,
+  "last_updated": "2026-06-23T07:10:00Z",
+  "run_number": 135,
   "bot_status": "OFFLINE",
   "days_offline": 75,
   "todays_trades": 0,
   "todays_pnl": 0.0,
-  "anomalies_count": 6,
+  "anomalies_count": 5,
   "anomalies": [
     {
       "type": "BOT_OFFLINE",
       "severity": "CRITICAL",
-      "consecutive_flags": 64,
+      "consecutive_flags": 65,
       "description": "Day 75 offline. Zero revenue. All feedback loops frozen.",
       "action": "cd /home/user/WAGMI/bot && python run.py paper"
     },
@@ -22,25 +22,18 @@
       "description": "Kelly=-0.168, WR=44.5% vs 52.4% needed. Avg win $101.26 < avg loss $108.92."
     },
     {
-      "type": "BTC_LONG_BOOST_HARMFUL",
-      "severity": "HIGH",
-      "consecutive_flags": 3,
-      "description": "restored_btc_long_boost_v1 active but BTC LONG WR=31.7% (100d). Boost injecting negative EV (-$550.03). DEACTIVATE. (REC1 this run)",
-      "action": "Set active=false for restored_btc_long_boost_v1 in bot/data/llm/graduated_rules.json"
-    },
-    {
       "type": "HYPE_SHORT_VETO_SPLIT",
       "severity": "HIGH",
-      "consecutive_flags": 13,
+      "consecutive_flags": 14,
       "description": "AWAITING_HUMAN_APPROVAL: HYPE SHORT <75% conf = +$808 EV blocked (WR=53.8%, n=80). HYPE SHORT >=75% now vetoed (correct).",
-      "action": "Human: approve hype_short_sub75_boost_v1 rule (REC2 this run)"
+      "action": "Human: approve hype_short_sub75_boost_v1 rule"
     },
     {
       "type": "FEEDBACK_STATE_FILES_MISSING",
       "severity": "HIGH",
-      "consecutive_flags": 1,
+      "consecutive_flags": 2,
       "description": "4/6 feedback state files not persisting to disk (signal_quality, regime_feedback, confidence, strategy_weights). Learning lost on each restart.",
-      "action": "Dev: add _save() persistence to 4 feedback managers (REC3 this run)"
+      "action": "Dev: add _save() persistence to 4 feedback managers (REC3 from Run 134)"
     },
     {
       "type": "CONFIDENCE_ANTI_CORRELATION",
@@ -50,12 +43,17 @@
     }
   ],
   "7day_avg_wr": 44.5,
+  "btc_long_boost_fix": {
+    "applied_run": 135,
+    "action": "BTC_LONG_BOOST_DEACTIVATION: restored_btc_long_boost_v1 set active=false. Expected EV recovery +$165/month.",
+    "ab_gate": "20% — monitoring 50 trades for WR change"
+  },
   "tomorrows_focus": {
     "priority_symbols": ["SOL", "BTC"],
-    "avoid": ["HYPE_LONG", "HYPE_SHORT_gte75", "illiquid_regime", "ranging_regime", "night_0-6_UTC", "BTC_LONG_generic"],
-    "watch": ["HYPE_SHORT_sub75_conf", "SOL_SHORT_75-80_conf"],
+    "avoid": ["HYPE_LONG", "HYPE_SHORT_gte75", "illiquid_regime", "ranging_regime", "night_0-6_UTC"],
+    "watch": ["BTC_LONG_WR_post_deactivation", "HYPE_SHORT_sub75_conf", "SOL_SHORT_75-80_conf"],
     "restart_required": true,
     "restart_command": "cd /home/user/WAGMI/bot && python run.py paper"
   },
-  "run134_action": "NO AUTO-FIX this run. REC1 (BTC_LONG_BOOST deactivation) queued. REC2 (HYPE_SHORT_SPLIT) awaiting human approval. REC3 (feedback persistence) dev required."
+  "run135_action": "1 auto-fix applied: BTC_LONG_BOOST_DEACTIVATION (conf=86, A/B 20%). BTC_LONG_BOOST_HARMFUL anomaly cleared. REC2 (HYPE_SHORT_SPLIT) still awaiting human approval. REC3 (feedback persistence) dev required."
 }
