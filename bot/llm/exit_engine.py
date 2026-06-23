@@ -127,6 +127,14 @@ class ExitEngine:
         # Profitable positions need MUCH higher bar to close — let trailing stop handle exits.
         # Only close a winner if thesis is truly dead (regime shift, not normal pullback).
         if decision.exit_action == "close":
+            # EVIDENCE GATE (2026-06-23): LLM exit-agent FULL-CLOSE authority is OFF by default.
+            # Measured 0 wins / 71 closes (-$1,502.92); it produced ZERO of the 19 winners while
+            # mechanical SL/TP/trailing produce 100% of profit. The agent keeps tighten_sl / partial /
+            # hold authority; mechanical exits handle full closes. Re-enable per-regime once it
+            # demonstrates positive exit edge on counterfactual scoring. Reversible: EXIT_AGENT_FULL_CLOSE=true.
+            if os.getenv("EXIT_AGENT_FULL_CLOSE", "false").lower() != "true":
+                return False, ("Exit-agent full-close disabled (measured 0/71 win-rate, -$1503); "
+                               "mechanical SL/TP/trailing handle closes. Set EXIT_AGENT_FULL_CLOSE=true to re-enable.")
             is_profitable = (current_price > position.entry) if is_long else (current_price < position.entry)
             if is_profitable:
                 # Winning trade: require 0.90 confidence to override trailing stop

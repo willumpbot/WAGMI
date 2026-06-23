@@ -280,3 +280,20 @@ Findings:
 - REMAINING throttle: RANGING_CONFIDENCE_FLOOR was unset → default 68, heavy gating in current chop. → set 30.0, restarted (pid 30984).
 - graduated vetoes (hype_long, sol_long) are CORRECTLY directional (block losing LONG side only, shorts free) → KEEP. NOT pre-decided blocks.
 - BUG noted (ties to Quant Brain suspect): veto rules show times_correct=0 over 3120 applications — learning loop not crediting veto correctness. Measurement spine still leaks here. TODO: fix veto outcome attribution.
+
+## 2026-06-23T18:17Z — OVERDRIVE: alpha-audit swarm (31 agents) + first fixes shipped
+Ran multi-agent audit (6 subsystems → adversarial verify → roadmap). 61 findings, 18 verified. HEADLINE:
+**LLM Exit Agent = 0 wins / 71 closes, -$1,502.92** — closes 70% of trades, produced ZERO of 19 winners.
+Mechanical SL/TP/trailing make 100% of profit (+$55/trade). Asymmetric gate (exit_engine.py:129-138: 0.60 to
+dump a loser, 0.90 to close a winner, agent caps self at 0.85 → CAN ONLY book losses). Account would be ~+$559
+not ~-$944 without it. Also: measurement spine structurally broken — veto rules times_correct=0 over 3120 uses
+by construction (graduated_rules.py:316 skip); accuracy property returned impossible >100% (8050%) injected to LLM.
+SHIPPED (safe, reversible, tested 166 pass):
+1. exit_engine.py — EXIT_AGENT_FULL_CLOSE gate (default OFF). LLM exit agent can no longer full-close; keeps
+   tighten_sl/partial/hold; mechanical exits handle closes. Stops the -$1503 bleed source. REVERT: env=true.
+2. graduated_rules.py accuracy property — clamp to [0,1] (was serving 8050% to LLM); 0.5=unmeasured.
+3. graduated_rules.py get_active_rules_summary — veto rules show 'unmeasured' not misleading 0%.
+Equity $4056 (peak $4200), continued bleeding ~$150/day = the exit-agent drain; fix should arrest it.
+NEXT (deeper, needs care+tests via swarm): proper veto-scoring wire-back w/ override-distinction; exit
+counterfactual measurement (+1/2/4h regret); per-agent calibration confidence=0.0 fix; regime-keyed priors.
+DO NOT TOUCH (audit): mechanical SL/TP/trailing/time-stop (100% of profit), circuit breakers, guillotine guard.

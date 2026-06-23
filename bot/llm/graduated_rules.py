@@ -39,7 +39,11 @@ class GraduatedRule:
 
     @property
     def accuracy(self) -> float:
-        return self.times_correct / self.times_applied if self.times_applied > 0 else 0.5
+        # Clamp to [0,1]: live data has corrupt counters (correct>applied → impossible >100%
+        # ratios were being injected verbatim into LLM prompts, e.g. 8050%). 0.5 = unmeasured.
+        if self.times_applied <= 0:
+            return 0.5
+        return max(0.0, min(1.0, self.times_correct / self.times_applied))
 
     def matches(self, symbol="", regime="", side="", strategy="",
                 setup_type="", num_agree=0, confidence=0.0, hour_utc=-1,
@@ -358,7 +362,12 @@ class GraduatedRulesEngine:
             return ""
         lines = []
         for r in active[:10]:
-            acc = f"{r.accuracy:.0%}" if r.times_applied >= 3 else "new"
+            # Veto correctness is not yet wired (times_correct structurally 0) — show 'unmeasured'
+            # rather than a misleading 0%. Non-veto rules show clamped accuracy once n>=3.
+            if r.action == "veto":
+                acc = "unmeasured"
+            else:
+                acc = f"{r.accuracy:.0%}" if r.times_applied >= 3 else "new"
             lines.append(f"  {r.action.upper()}: {r.hypothesis_statement[:50]} (acc={acc}, n={r.times_applied})")
         return "GRADUATED RULES:\n" + "\n".join(lines)
 
