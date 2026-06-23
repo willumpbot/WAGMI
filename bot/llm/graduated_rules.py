@@ -128,6 +128,8 @@ class GraduatedRulesEngine:
                 self._rules = _loaded_rules
                 logger.info(f"[GRAD-RULES] Loaded {len(self._rules)} rules ({sum(1 for r in self._rules if r.active)} active)")
         except Exception as e:
+            # Reset flag so the next call retries rather than silently operating on an empty rule set
+            self._loaded = False
             logger.warning(f"[GRAD-RULES] Load error: {e}")
 
     def _save(self):
@@ -140,6 +142,10 @@ class GraduatedRulesEngine:
 
     def graduate_hypothesis(self, hypothesis) -> Optional[GraduatedRule]:
         """Convert a validated hypothesis into an executable rule."""
+        # Force fresh disk read before writing — prevents stale in-memory state
+        # (e.g. from a failed load or a separate process instance) from overwriting
+        # rules that were accumulated on disk.
+        self._loaded = False
         self._ensure_loaded()
 
         for r in self._rules:
