@@ -1,9 +1,9 @@
 {
-  "status": "UPDATED_RUN137",
+  "status": "UPDATED_RUN140",
   "data_source": "trades_10d.csv (n=965, full dataset). Bot offline Day 75 — no live trades.",
   "trades_analyzed": 965,
-  "last_updated": "2026-06-23T12:00:00Z",
-  "run_number": 137,
+  "last_updated": "2026-06-23T16:08:00Z",
+  "run_number": 140,
   "high_edges": [
     {
       "key": "SOL_SHORT",
@@ -66,19 +66,49 @@
       "count": 34,
       "ev_per_trade": 24.26,
       "confidence": 68,
-      "flag_count": 5,
-      "action": "CANDIDATE (5th flag): SOL SHORT precision 75-80% conf. Below 75% auto-inject threshold. Monitor."
+      "flag_count": 6,
+      "action": "CANDIDATE (6th flag): SOL SHORT precision 75-80% conf. Below 75% auto-inject threshold. Monitor."
+    },
+    {
+      "key": "CONF_90PLUS_SELECTIVE_BOOST",
+      "win_rate": 53.8,
+      "count": 13,
+      "ev_per_trade": 25.37,
+      "confidence": 72,
+      "flag_count": 3,
+      "action": "PROPOSAL_READY (3rd flag): 90%+ conf = only profitable tier recent 100. Propose +5 boost rule at 4th flag."
     }
   ],
   "deactivations_this_run": 0,
-  "new_rules_applied_this_run": 1,
+  "new_rules_applied_this_run": 0,
   "recent_200_confidence_bands": {
     "70_80": {"win_rate": 47.6, "count": 200, "ev_per_trade": -86.67, "verdict": "PRIMARY_LOSS_CENTER"},
     "80_90": {"win_rate": 52.2, "count": null, "ev_per_trade": -37.23, "verdict": "DEGRADING"},
     "90plus": {"win_rate": 64.1, "count": 39, "ev_per_trade": 101.92, "verdict": "BEST_TIER"}
   },
-  "run136_new_finding": "70-80% confidence band = PRIMARY LOSS CENTER (recent 200: WR=47.6%, -$86.67/trade). CONF_70_80_SIZE_REDUCTION applied Run137.",
-  "hype_short_sub75_status": "REJECTED Run137 — full dataset (n=965) shows avg=-$4.41/trade. 100d sub-window was favorable artifact.",
+  "run140_updates": {
+    "last_updated": "2026-06-23T16:08:00Z",
+    "run_number": 140,
+    "conf_90plus_flag_status": {
+      "flag_count": 3,
+      "threshold_for_proposal": 3,
+      "current_confidence": 72,
+      "status": "PROPOSAL_READY — inject on next run if 4th consecutive flag + conf >= 75",
+      "proposed_action": {"rule": "boost", "conditions": {"confidence_min": 90}, "adjustment": 5.0, "gate": 20}
+    },
+    "confidence_paradox_miscal_flag": {
+      "flag_count": 2,
+      "current_rule": "restored_confidence_paradox_sizing_v1 targets 85-90%",
+      "actual_problem": "75-80% band: WR=45.5%, EV=-$88.82/trade (worst tier)",
+      "correct_target": "75-80% band (partially addressed by CONF_70_80_SIZE_REDUCTION at -0.3x)",
+      "status": "Flag at 3rd run then propose rule remap or confirm CONF_70_80_SIZE_REDUCTION suffices"
+    },
+    "execution_forensics_delta": {
+      "avg_slippage_pct": 0.521,
+      "noise_stop_pct": 34.8,
+      "note": "Both metrics improved vs run139. Sample unchanged (bot offline)."
+    }
+  },
   "run138_updates": {
     "last_updated": "2026-06-23T14:00:00Z",
     "run_number": 138,
@@ -97,31 +127,12 @@
       "90_100": {"win_rate": 53.8, "count": 13, "avg_pnl": 25.37, "verdict": "ONLY_POSITIVE_TIER"}
     },
     "key_finding": "Recent 100 trades: ONLY 90%+ confidence tier has positive EV (+$25.37/trade). ALL other tiers negative. This is a qualitative shift from full-dataset picture.",
-    "new_candidate_flags": [
-      {
-        "key": "CONF_90PLUS_SELECTIVE_BOOST",
-        "evidence": "90%+ conf: WR=53.8%, avg=+$25.37 (recent 100). Only profitable tier. All other bins negative.",
-        "flag_count": 1,
-        "action": "1st flag — monitor for 3 consecutive runs before proposing injection"
-      }
-    ],
     "anomaly_BTC_only_recent": "Last 50-100 trades appear to be BTC-only. SOL/HYPE absent from recent window. Multi-symbol edge data may be stale.",
     "consecutive_loss_streaks": {
       "max_streak_all_time": 9,
       "streaks_over_5": 8,
       "recent_streaks": [9, 8, 8, 6, 6],
       "verdict": "Streak frequency is HIGH. 8 separate streaks of >5 consecutive losses in 965 trades = 1 every ~120 trades."
-    },
-    "wr_swing_events": {
-      "count": 7,
-      "threshold": "20% swing between 20-trade rolling windows",
-      "notable": [
-        {"window": "150->160", "from": "55%", "to": "30%", "direction": "DOWN"},
-        {"window": "250->260", "from": "55%", "to": "35%", "direction": "DOWN"},
-        {"window": "630->640", "from": "50%", "to": "75%", "direction": "UP"},
-        {"window": "800->810", "from": "45%", "to": "70%", "direction": "UP"}
-      ],
-      "verdict": "WR regime shifts occurring every ~100-200 trades. Regime detection needs to be responsive at this frequency."
     },
     "leverage_summary": {
       "max_leverage_observed": 3.01,

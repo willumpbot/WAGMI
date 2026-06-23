@@ -84,7 +84,7 @@
       "rec_source": "perpetual_improvement_run138 — execution_forensics analysis",
       "action": "DOCUMENTATION: dev fix required to log correct timestamps in CSV",
       "data_evidence": "All 965 trades: duration_h=0.0 (809) or negative (156). Valid=0. No temporal data available.",
-      "consecutive_flag": 2,
+      "consecutive_flag": 4,
       "rollback_condition": "N/A — documentation only"
     },
     {
@@ -104,46 +104,46 @@
   "applied_total": 10,
   "reverted_total": 0,
   "ab_tests_active": 2,
-  "last_run": "2026-06-23T14:00:00Z",
-  "run_number": 138,
-  "cadence_streak": 54,
-  "audit_source": "autonomous_audit_2026-06-23T10-05-44Z.md (Run 136) + perpetual_improvement_run138",
-  "fixes_applied_this_run": 2,
-  "resolutions_this_run": [
+  "last_run": "2026-06-23T16:08:00Z",
+  "run_number": 140,
+  "cadence_streak": 56,
+  "audit_source": "autonomous_audit_2026-06-23T10-05-44Z.md (Run 136) — all recs processed runs 135-138",
+  "fixes_applied_this_run": 0,
+  "proposals_this_run": [
     {
-      "rec_id": "DURATION_BUG_SEVERITY",
-      "resolution": "ESCALATED — ALL 965 trades have zero or negative duration. Confirmed total loss of temporal ML capability.",
-      "confidence": 99
-    },
-    {
-      "rec_id": "KELLY_RECOMPUTED",
-      "resolution": "Full-dataset Kelly=+0.0061 (marginally positive). Recent-100 Kelly=-0.265 (structurally broken). Decay confirmed accelerating.",
-      "confidence": 95
+      "proposal_id": "CONF_90PLUS_SELECTIVE_BOOST",
+      "description": "90%+ confidence tier is the ONLY profitable bin in recent 100 trades (WR=53.8%, EV=+$25.37/trade). All other confidence bins are negative EV. 3rd consecutive flag — proposal ready for next run.",
+      "confidence": 72,
+      "flag_count": 3,
+      "status": "PROPOSED — not yet injected. Conf=72% < 75% auto-inject threshold.",
+      "proposed_rule": {"action": "boost", "conditions": {"confidence_min": 90}, "adjustment": 5.0},
+      "inject_trigger": "4th consecutive flag AND confidence >= 75"
     }
   ],
+  "resolutions_this_run": [],
   "skipped_this_run": [
     {
       "rec_id": "RR_GEOMETRY_FIX",
-      "reason": "PARAMETER_AMBIGUITY: tp_sl_atr_mult=1.5 global vs atr_mult_sl=2.0 HYPE-specific. 10th flag. REQUIRES_BOT_RESTART.",
+      "reason": "PARAMETER_AMBIGUITY: tp_sl_atr_mult=1.5 global vs atr_mult_sl=2.0 HYPE-specific. 12th flag. REQUIRES_BOT_RESTART + HUMAN_DECISION.",
       "confidence": 82,
-      "consecutive_runs": 10
+      "consecutive_runs": 12
     },
     {
       "rec_id": "FEEDBACK_STATE_FILES_MISSING",
-      "reason": "DEV_REQUIRED: _save() exists but state files never written. Exception swallowed silently. 4th flag.",
+      "reason": "DEV_REQUIRED: _save() exists but state files never written. Exception swallowed silently. 6th flag.",
       "confidence": 93,
-      "consecutive_runs": 4
+      "consecutive_runs": 6
     }
   ],
   "total_rules_in_llm_graduated": 12,
   "active_rules_in_llm_graduated": 10,
-  "gates_active": 48,
+  "gates_active": 49,
   "total_fixes_all_time": 121,
   "anomalies": [
     {
       "type": "DURATION_BUG_TOTAL",
       "severity": "CRITICAL",
-      "consecutive_flags": 2,
+      "consecutive_flags": 4,
       "description": "ALL 965 CSV trades have duration_h=0 or negative. 809 zero, 156 negative, 0 valid. HoldTimeRuleManager is flying blind.",
       "action": "DEV REQUIRED: Fix trade logging to record open/close timestamps and compute duration_h correctly.",
       "status": "ACTIVE_UNRESOLVED"
@@ -171,6 +171,7 @@
     }
   ],
   "notes": {
+    "run140": "0 fixes applied. 1 new proposal: CONF_90PLUS_SELECTIVE_BOOST (3rd flag, conf=72%). 7 flag counters incremented. Slippage improved -1.3bps, noise stops improved -1.6pp. cadence_streak=56.",
     "run138": "2 documentation fixes: DURATION_BUG_ESCALATION (critical) and KELLY_RECOMPUTED (95% conf). Key finding: last-50 trades are 100% BTC (SOL/HYPE absent — recent trading window BTC-only). cadence_streak=54.",
     "run137": "2 fixes applied: (1) HYPE_SHORT_SUB75_VETO_SPLIT_REJECTED (conf=89). (2) CONF_70_80_SIZE_REDUCTION (conf=82). cadence_streak=53.",
     "run135": "1 fix applied: BTC_LONG_BOOST_DEACTIVATION (conf=86). cadence_streak=52.",
