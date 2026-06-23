@@ -262,3 +262,11 @@ Restarted (pid 33308, healthy 23:04Z). Only remaining guards = bot's OWN data-le
 multi_strategy_main.py:6030 cost-gate skips LLM veto if conf<60; sizing/model-route tiers at 60/65/75/85/92;
 signal_pipeline conf>=75..90 tiers. None are hard "no-trade" directional blocks, but they are pre-decided numbers.
 TODO if Nunu wants fuller LLM control: backtest loosening the conf<60 veto cost-gate + sizing tiers.
+
+## 2026-06-23T06:06Z — FULL THROTTLE (Nunu: "go full throttle, haven't had time to communicate")
+Max-aggression autonomous mode. Live engine maxed: EXPLORATION_EPSILON 0.45→0.55, MAX_OPEN_POSITIONS 6→8,
+BLOCK_COMBOS empty (unrestricted). Restarted (pid 31120, healthy 06:06Z). Running fully autonomous — no waiting on Nunu.
+Kicked a backtest (run.py backtest) to baseline edge-by-regime before deciding whether to loosen the
+execution-side confidence gates (conf<60 veto cost-gate, sizing tiers). NOT yanking those blind — validating first
+(backtest-before-change guardrail) since they're execution-critical/real-money path.
+Guards remaining = bot's own data-learned vetoes only. Watching: does unrestricted alpha beat the chop or bleed faster.
