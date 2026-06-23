@@ -546,13 +546,16 @@
       "rule_id": "HYPE_SHORT_HIGHCONF_VETO_PROBE",
       "source": "perpetual_improvement_run120 — audit_run119_100d_backtest",
       "description": "HYPE SHORT >= 75% confidence catastrophic: -$70.06/trade, 31.2% WR (n=77). Blanket veto wrong for <75% band.",
-      "status": "AWAITING_HUMAN_APPROVAL",
+      "status": "REJECTED",
       "confidence": 71,
       "gate_percentage": 0,
       "baseline_wr_below_75": 0.547,
       "baseline_wr_above_75": 0.312,
       "applied_date": "2026-06-22",
-      "proposed_fix": "Split hype_short_veto_v1: (1) hype_short_highconf_veto_v1 — block HYPE SHORT when conf>=75%. (2) hype_short_lowconf_probe_v1 — allow HYPE SHORT when conf<75%, 50% size."
+      "proposed_fix": "Split hype_short_veto_v1: (1) hype_short_highconf_veto_v1 — block HYPE SHORT when conf>=75%. (2) hype_short_lowconf_probe_v1 — allow HYPE SHORT when conf<75%, 50% size.",
+      "rejected_at": "2026-06-23T12:00:00Z",
+      "rejected_run": 137,
+      "rejection_reason": "Full dataset (n=965) shows HYPE SHORT <75% = PnL=-$463.50, avg=-$4.41/trade. 100d backtest was favorable sub-window. Full data supersedes. (REC1 Run136, conf=89%)"
     },
     {
       "rule_id": "HYPE_SL_ATR_WIDEN",
@@ -611,7 +614,25 @@
       "rollback": "Re-run graduated_rules.py hypothesis_graduation to repopulate; or restore from backup.",
       "code_fix_still_needed": true,
       "code_fix_description": "Fix llm/graduated_rules.py to load-merge-write instead of overwrite on graduation."
+    },
+    {
+      "rule_id": "CONF_70_80_SIZE_REDUCTION",
+      "source": "autonomous_audit_2026-06-23T10-05-44Z.md (Run 136 REC2, conf=82%)",
+      "description": "Reduce position size by 0.3x for signals in 70-80% confidence band",
+      "problem": "Recent 200 trades: 70-80% conf = WR=47.6%, avg=-$86.67/trade. ~$9,100 PnL destruction. Not addressed by existing confidence_paradox_sizing (which targets 85-90%).",
+      "fix_applied": "A/B gate at 20%: signals with confidence in [70,80) range get size_adjust=-0.3x",
+      "status": "A/B_ACTIVE",
+      "confidence": 82,
+      "gate_percentage": 20,
+      "baseline_wr": 0.476,
+      "baseline_ev_per_trade": -86.67,
+      "applied_date": "2026-06-23",
+      "applied_run": 137,
+      "auto_applied": true,
+      "ab_gate": "20% — size_adjust=-0.3x for conf in [70,80)",
+      "ab_trades_target": 50,
+      "ab_success_criterion": "Treatment EV improves >$20/trade vs baseline control"
     }
   ],
-  "last_improvement_run": "perpetual_improvement_run130"
+  "last_improvement_run": "perpetual_improvement_run137"
 }

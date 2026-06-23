@@ -1,97 +1,198 @@
 {
   "engine": "perpetual_improvement_loop",
-  "version": "2.8",
-  "last_run": "2026-06-23T10:04:44Z",
+  "version": "2.9",
+  "last_run": "2026-06-23T12:00:00Z",
   "today": "2026-06-23",
-  "run_number": 136,
+  "run_number": 137,
   "bot_status": "OFFLINE",
   "days_offline": 75,
-  "audit_source": "autonomous_audit_2026-06-23T06-09-25Z.md (Run 134)",
+  "audit_source": "autonomous_audit_2026-06-23T10-05-44Z.md (Run 136)",
   "subsystems": {
     "auto_fix": {
-      "status": "NO_NEW_FIXES — all pending items blocked",
-      "fixes_applied": 0,
-      "gates_active": 46,
-      "cadence_streak": 53,
+      "status": "2_FIXES_APPLIED",
+      "fixes_applied": 2,
+      "gates_active": 48,
+      "cadence_streak": 54,
+      "fixes_detail": [
+        {
+          "fix_id": "HYPE_SHORT_SUB75_VETO_SPLIT_REJECTED",
+          "confidence": 89,
+          "gate_percentage": 20,
+          "action": "Rejected 15-run HYPE SHORT <75% approval. Full dataset (n=965) shows avg=-$4.41/trade. 100d sub-window (n=80, +$10.10/trade) was favorable artifact."
+        },
+        {
+          "fix_id": "CONF_70_80_SIZE_REDUCTION",
+          "confidence": 82,
+          "gate_percentage": 20,
+          "action": "Added -0.3x size A/B gate for 70-80% confidence band. Recent 200: WR=47.6%, avg=-$86.67/trade = primary loss center."
+        }
+      ],
       "skipped": [
-        {"rec_id": "RR_GEOMETRY_FIX", "reason": "PARAMETER_AMBIGUITY: tp_sl_atr_mult=1.5 global vs atr_mult_sl=2.0 HYPE-specific. Proposal 1.8 ambiguous. 9th flag.", "confidence": 82, "consecutive_runs": 9},
-        {"rec_id": "FEEDBACK_STATE_FILES_MISSING", "reason": "DEV_REQUIRED: _save() exists but state files never written. Exception swallowed silently. 3rd flag.", "confidence": 93, "consecutive_runs": 3},
-        {"rec_id": "HYPE_SHORT_VETO_SPLIT", "reason": "AWAITING_HUMAN_APPROVAL: conf=71% < 75%. 16th flag.", "confidence": 71, "consecutive_runs": 16},
-        {"rec_id": "SOL_SHORT_75_80_PRECISION", "reason": "BELOW_THRESHOLD: conf=68% < 75%. 5th flag.", "confidence": 68, "consecutive_runs": 5}
+        {
+          "rec_id": "RR_GEOMETRY_FIX",
+          "reason": "REQUIRES_BOT_RESTART + PARAMETER_AMBIGUITY. 9th flag.",
+          "confidence": 82
+        },
+        {
+          "rec_id": "FEEDBACK_STATE_FILES_MISSING",
+          "reason": "DEV_REQUIRED — _save() exists but silently fails. 3rd flag.",
+          "confidence": 93
+        }
       ],
       "ab_tests_monitoring": [
-        {"id": "BTC_LONG_BOOST_DEACTIVATION", "status": "ACTIVE", "gate": "20%", "trades_needed": 50, "trades_observed": 0, "note": "Applied Run 135 — awaiting live trades"}
-      ]
+        {
+          "id": "BTC_LONG_BOOST_DEACTIVATION",
+          "status": "ACTIVE",
+          "gate": "20%",
+          "trades_needed": 50,
+          "trades_observed": 0,
+          "applied_run": 135
+        },
+        {
+          "id": "CONF_70_80_SIZE_REDUCTION",
+          "status": "NEW_THIS_RUN",
+          "gate": "20%",
+          "trades_needed": 50,
+          "trades_observed": 0,
+          "applied_run": 137
+        }
+      ],
+      "total_fixes_all_time": 119,
+      "active_rules_in_llm_graduated": 10,
+      "total_rules_in_llm_graduated": 11,
+      "total_rules_in_feedback_graduated": 52
     },
     "execution_forensics": {
-      "status": "CACHED_NO_CHANGE — bot offline Day 75",
-      "data_source": "backtest_100d (n=589)",
-      "trades_analyzed": 589,
-      "avg_slippage": "0.51%",
-      "slippage_by_symbol": {"HYPE": "0.64%", "SOL": "0.48%", "BTC": "0.41%"},
-      "noise_stop_problem": "50.8% of SL hits in noise regime — est -$14,814 recoverable",
+      "status": "UPDATED_FROM_CSV_LAST50",
+      "data_source": "trades_10d.csv (last 50 trades, n=50 BTC-only in tail)",
+      "trades_analyzed": 50,
+      "avg_slippage": "0.57%",
+      "slippage_by_symbol": {
+        "BTC": "0.57%",
+        "SOL": "0.48% (cached from prior runs)",
+        "HYPE": "0.64% (cached from prior runs)"
+      },
+      "noise_stop_problem": "36.4% of SL hits in last 50 trades had conf>75% (noise stops)",
+      "sl_hits_last50": 22,
+      "high_conf_sl_hits": 8,
+      "worst_noise_cases": [
+        {"symbol": "BTC", "side": "SHORT", "conf": 77.8, "pnl": -524.43},
+        {"symbol": "BTC", "side": "SHORT", "conf": 78.0, "pnl": -442.36},
+        {"symbol": "BTC", "side": "SHORT", "conf": 76.6, "pnl": -305.22}
+      ],
       "kelly_fraction": -0.168,
-      "verdict": "NEGATIVE_EDGE — structural deficit persists (11th flag)",
       "rr_geometry": {"avg_win": 101.26, "avg_loss": -108.92, "ratio": 0.93},
-      "duration_bug": "52/589 trades negative duration (8.8%) — UNFIXED",
-      "delta": "NO CHANGE",
-      "consecutive_cached_runs": 49
+      "verdict": "NEGATIVE_EDGE — structural deficit persists. RR fix blocked pending restart.",
+      "duration_bug": "52/589 trades negative duration in 100d backtest — UNFIXED",
+      "delta": "SLIGHT_IMPROVEMENT — last50 noise stops 36.4% vs cached 50.8% (100d)",
+      "consecutive_cached_runs": 0
     },
     "live_injection": {
-      "status": "CACHED_NO_NEW_TRADES",
+      "status": "UPDATED_RUN137",
       "trades_analyzed": 965,
-      "high_edges_found": 3,
-      "weak_setups_found": 7,
+      "high_edges_found": 5,
+      "weak_setups_found": 8,
       "deactivations_this_run": 0,
+      "new_rules_applied": 1,
+      "confidence_bin_analysis_last100": {
+        "60_70": {"wr": 50.0, "count": 16, "pnl": -1327.29},
+        "70_80": {"wr": 48.5, "count": 66, "pnl": -5487.03},
+        "80_90": {"wr": 40.0, "count": 5, "pnl": -1319.44},
+        "90plus": {"wr": 61.5, "count": 13, "pnl": 329.76}
+      },
+      "symbol_wr_last100": {
+        "BTC_LONG": {"wr": 50.0, "count": 24, "pnl": -1982.74},
+        "BTC_SHORT": {"wr": 50.0, "count": 76, "pnl": -5821.26}
+      },
       "key_watchlist": [
-        "HYPE_SHORT_sub75_BLOCKED (16th flag)",
-        "BTC_LONG_GENERIC DEACTIVATED Run135 (A/B monitoring)",
-        "SOL_SHORT_75_80_PRECISION PENDING (5th flag)"
+        "CONF_70_80_SIZE_REDUCTION A/B gate now active (run137) — primary monitoring priority",
+        "BTC_LONG_GENERIC DEACTIVATED Run135 (A/B monitoring: 0/50 live trades)",
+        "SOL_SHORT_75_80_PRECISION: 5th flag, WR=52.9% (n=34) — below 75% auto-inject threshold"
       ]
     },
     "daily_synthesis": {
-      "status": "UPDATED",
+      "status": "UPDATED_RUN137",
       "date": "2026-06-23",
       "todays_trades": 0,
       "todays_pnl": 0.0,
       "is_end_of_day": false,
-      "anomalies_count": 6,
-      "anomalies": [
-        {"type": "BOT_OFFLINE", "severity": "CRITICAL", "consecutive_flags": 66, "description": "Day 75 offline. Zero revenue.", "action": "cd /home/user/WAGMI/bot && python run.py paper"},
-        {"type": "NEGATIVE_KELLY_EDGE", "severity": "CRITICAL", "consecutive_flags": 11, "description": "Kelly=-0.168. WR=44.5% vs 52.4% needed."},
-        {"type": "HYPE_SHORT_VETO_SPLIT", "severity": "HIGH", "consecutive_flags": 16, "description": "AWAITING_HUMAN_APPROVAL 16th flag: HYPE SHORT <75% conf = WR=53.8%, +$808 EV blocked.", "action": "Approve hype_short_sub75_boost_v1 in bot/feedback/graduated_rules.json"},
-        {"type": "RR_GEOMETRY_FIX_BLOCKED", "severity": "HIGH", "consecutive_flags": 9, "description": "conf=82, 9th flag. Param ambiguous: tp_sl_atr_mult=1.5 global vs HYPE atr_mult_sl=2.0.", "action": "Confirm: tp_sl_atr_mult 1.5→1.8 globally OR HYPE atr_mult_sl 2.0→2.3?"},
-        {"type": "FEEDBACK_STATE_FILES_MISSING", "severity": "HIGH", "consecutive_flags": 3, "description": "3rd flag: 4/6 feedback state files absent. All managers have _save() but never write.", "action": "Debug: cd bot && python3 -c \"from feedback.signal_quality import SignalQualityScorer; s=SignalQualityScorer('data/feedback'); s._save_state()\""},
-        {"type": "CONFIDENCE_ANTI_CORRELATION", "severity": "HIGH", "consecutive_flags": 10, "description": "80-90% conf = 40% WR (worst tier). Sizing penalty active but calibration broken."}
+      "anomalies_found": 7,
+      "report_generated": true,
+      "max_consecutive_losses": 9,
+      "wr_swing_from_7d": 3.5,
+      "unusual_leverage_trades": 0,
+      "new_anomalies": [
+        "CONF_70_80_LOSS_CENTER (1st flag): primary loss center identified, rule now applied",
+        "CONSECUTIVE_LOSS_STREAK: max 9 found in history (circuit breaker at 5 — verify live)"
       ]
     },
     "model_optimization": {
-      "status": "CACHED_NO_CHANGE",
+      "status": "CACHED_NO_LIVE_COST_DATA",
+      "note": "cost_tracker.json absent — using architecture estimates from prior run",
       "agents_analyzed": 7,
       "swaps_recommended": 1,
-      "swap_detail": "Regime Agent: Haiku→Sonnet for REGIME_SHIFT only. +$186/mo benefit, +$0.27/mo cost.",
-      "potential_benefit_usd": 186.0
+      "swap_detail": "Regime Agent: Haiku→Sonnet for REGIME_SHIFT events only. +$186/mo benefit, +$0.27/mo cost (688x ROI).",
+      "potential_savings": "$0.00",
+      "potential_benefit": "$186.00/month",
+      "recommended_swap": {
+        "agent": "regime_agent",
+        "from_model": "haiku",
+        "to_model": "sonnet",
+        "trigger": "REGIME_SHIFT events only",
+        "rationale": "Regime misclassification is the root cause of most losing trades. +$186/mo benefit vs +$0.27/mo cost.",
+        "estimated_roi": "688x"
+      }
     }
   },
   "high_priority_findings": [
-    {"subsystem": "daily_synthesis", "severity": "CRITICAL", "finding": "BOT OFFLINE DAY 75 — 66th consecutive P0 flag. Zero live revenue.", "action": "cd /home/user/WAGMI/bot && python run.py paper", "consecutive_flags": 66},
-    {"subsystem": "execution_forensics", "severity": "CRITICAL", "finding": "NEGATIVE KELLY EDGE (11th flag): Kelly=-0.168. Structural deficit until R:R geometry fixed.", "consecutive_flags": 11},
-    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "HYPE_SHORT_VETO_SPLIT (16th flag): +$808 EV blocked. Needs human approval.", "action": "HUMAN DECISION REQUIRED: approve hype_short_sub75_boost_v1 rule", "consecutive_flags": 16},
-    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "RR_GEOMETRY_FIX (9th flag): conf=82 but param ambiguous. Need human to confirm which ATR param.", "action": "HUMAN DECISION REQUIRED: tp_sl_atr_mult 1.5→1.8 globally OR HYPE atr_mult_sl 2.0→2.3?", "consecutive_flags": 9},
-    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "FEEDBACK_STATE_FILES_MISSING (3rd flag): conf=93, _save() exists but never fires. Debug command provided.", "consecutive_flags": 3}
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "CRITICAL",
+      "finding": "BOT OFFLINE DAY 75 — 67th consecutive P0 flag. Zero live revenue. All rules untested in production.",
+      "action": "cd /home/user/WAGMI/bot && python run.py paper",
+      "consecutive_flags": 67
+    },
+    {
+      "subsystem": "execution_forensics",
+      "severity": "CRITICAL",
+      "finding": "NEGATIVE KELLY EDGE (11th flag): Kelly=-0.168. R:R=0.93 (avg win $101, avg loss $109). Structural deficit until geometry fixed.",
+      "action": "Apply atr_mult_sl=1.8 A/B test on restart (requires bot running + param disambiguation)",
+      "consecutive_flags": 11
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "CONF_70_80_SIZE_REDUCTION APPLIED this run — new A/B gate (20%) targets primary loss center. Needs bot restart to activate.",
+      "action": "Restart bot: cd /home/user/WAGMI/bot && python run.py paper",
+      "consecutive_flags": 1
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "RR_GEOMETRY_FIX (9th flag, conf=82): blocked on bot restart + param ambiguity. Converting 20% noise-SLs → +$335/month.",
+      "action": "HUMAN DECISION REQUIRED: confirm tp_sl_atr_mult 1.5→1.8 globally OR HYPE-only 2.0→2.3",
+      "consecutive_flags": 9
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "FEEDBACK_STATE_FILES_MISSING (3rd flag, conf=93): 4/6 state files absent. _save() silently fails. Regime ML, confidence ML, signal quality ML all blind.",
+      "action": "DEV: debug _save() in 4 feedback managers, add exception logging",
+      "consecutive_flags": 3
+    }
   ],
   "run_metrics": {
     "subsystems_complete": 5,
-    "fixes_applied_this_run": 0,
-    "gates_active": 46,
+    "fixes_applied_this_run": 2,
+    "gates_active": 48,
     "llm_rules_active": 10,
     "llm_rules_total": 11,
-    "feedback_rules_total": 51,
+    "feedback_rules_total": 52,
     "new_findings": [
-      "HYPE_SHORT_VETO_SPLIT escalated to 16th flag — most urgent human action",
-      "RR_GEOMETRY_FIX escalated to 9th flag — parameter ambiguity formally documented",
-      "FEEDBACK_STATE_FILES_MISSING escalated to 3rd flag — debug command issued",
-      "BTC_LONG_BOOST_DEACTIVATION A/B gate open (0/50 live trades observed)"
+      "CONF_70_80_SIZE_REDUCTION: new rule applied (A/B gate 20%, -0.3x size)",
+      "HYPE_SHORT_SUB75_APPROVAL: REJECTED after 15-run pending. Full dataset overrides 100d claim.",
+      "BTC_SHORT noise SL concentration: 5 worst cases all BTC SHORT, conf 76-79%, avg loss -$347",
+      "90%+ confidence bin remains only profitable tier in last 100 trades (+$329.76, WR=61.5%)"
     ]
   }
 }

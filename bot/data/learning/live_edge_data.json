@@ -1,31 +1,53 @@
 {
-  "status": "UPDATED_RUN135_BTC_LONG_DEACTIVATED",
-  "data_source": "100d backtest (n=589) + full dataset (n=965). Bot offline Day 75 — no live trades.",
+  "status": "UPDATED_RUN137",
+  "data_source": "trades_10d.csv (n=965, full dataset). Bot offline Day 75 — no live trades.",
   "trades_analyzed": 965,
+  "last_updated": "2026-06-23T12:00:00Z",
+  "run_number": 137,
   "high_edges": [
-    {"key": "SOL_SHORT", "win_rate": 63.7, "count": 179, "ev_per_trade": 32.44, "regime": "any", "injection": "BOOST +8 confidence for SOL SHORT signals (restored Run 130)", "status": "ACTIVE"},
-    {"key": "BTC_TREND_REGIME", "win_rate": null, "count": 15, "ev_per_trade": null, "injection": "BOOST +8 for BTC in trend regime (rule_1782144529_0)", "status": "ACTIVE"},
-    {"key": "SOL_HIGH_CONF_80plus", "win_rate": 65.3, "count": null, "ev_per_trade": 28.32, "injection": "POTENTIAL: SOL 80%+ conf shows edge vs HYPE 80%+ — monitor", "status": "CANDIDATE"},
-    {"key": "BTC_SHORT_90plus", "win_rate": 67.4, "count": 46, "ev_per_trade": null, "injection": "POTENTIAL: BTC SHORT 90%+ — 67.4% WR in full dataset BUT n=10 in 100d (WR=50.0%). Overclaim confirmed.", "status": "SUSPECT — DO NOT INJECT"}
-  ],
-  "degrading_edges": [
     {
-      "key": "BTC_LONG_GENERIC",
-      "status": "DEACTIVATED_RUN135",
-      "full_dataset_wr": 63.9,
-      "full_dataset_n": 72,
-      "recent_100d_wr": 31.7,
-      "recent_100d_n": 41,
-      "wr_delta": -32.2,
-      "ev_100d": -13.41,
-      "ev_total_100d": -550.03,
-      "first_flagged": "2026-06-23T10:06:23Z",
-      "current_flag_count": 3,
-      "deactivated_at": "2026-06-23T07:10:00Z",
-      "analysis": "BTC LONG edge existed in data >100 days old but degraded to 31.7% WR in most recent 100d window. Generic boost rule restored_btc_long_boost_v1 was amplifying negative EV (-$550.03 over 100d). Deactivated Run 135 (conf=86%). Regime-scoped rule rule_1782144529_0 (BTC+trend, n=15) still active.",
-      "action": "DEACTIVATED — monitoring. Re-enable if BTC LONG WR > 48% on 30+ live trades."
+      "key": "SOL_SHORT",
+      "win_rate": 68.2,
+      "count": 179,
+      "ev_per_trade": 32.44,
+      "regime": "any",
+      "injection": "BOOST +8 confidence for SOL SHORT signals (restored Run 130)",
+      "status": "ACTIVE"
+    },
+    {
+      "key": "BTC_TREND_REGIME",
+      "win_rate": null,
+      "count": 15,
+      "ev_per_trade": null,
+      "injection": "BOOST +8 for BTC in trend regime (rule_1782144529_0)",
+      "status": "ACTIVE"
+    },
+    {
+      "key": "BTC_LONG",
+      "win_rate": 66.7,
+      "count": 72,
+      "ev_per_trade": 25.55,
+      "injection": "HISTORICAL: BTC LONG 66.7% WR all-time. Current 100d WR=31.7% — BOOST DEACTIVATED Run135",
+      "status": "DEACTIVATED_MONITORING"
+    },
+    {
+      "key": "BTC_SHORT_90plus",
+      "win_rate": 67.4,
+      "count": 43,
+      "ev_per_trade": 102.92,
+      "injection": "CANDIDATE: BTC SHORT 90%+ — n=43 full dataset. n=10 only in 100d (WR=50%). Monitor.",
+      "status": "CANDIDATE — DO NOT INJECT until 100d n>=30"
+    },
+    {
+      "key": "conf_90plus",
+      "win_rate": 59.3,
+      "count": 91,
+      "ev_per_trade": 32.33,
+      "injection": "90%+ confidence is best tier. Recent 200: 64.1% WR, +$101.92/trade.",
+      "status": "ACTIVE — natural edge, no intervention needed"
     }
   ],
+  "high_edges_found": 5,
   "weak_setups": [
     {"key": "ILLIQUID_REGIME", "win_rate": 28.1, "count": 57, "action": "VETO restored Run 130"},
     {"key": "RANGING_REGIME", "win_rate": 25.0, "count": 16, "action": "PENALIZE -15 restored Run 130"},
@@ -33,19 +55,28 @@
     {"key": "HYPE_SHORT_75plus_conf", "win_rate": 31.2, "count": 77, "ev_per_trade": -70.06, "action": "VETO restored Run 130"},
     {"key": "HYPE_LONG", "win_rate": 23.0, "count": 35, "action": "VETO restored Run 130"},
     {"key": "CONFIDENCE_80_90_ALL_SYMBOLS", "win_rate": 40.0, "count": 120, "ev_per_trade": -33.04, "action": "SIZE_ADJUST 0.75x restored Run 130"},
-    {"key": "BTC_LONG_RECENT_100d", "win_rate": 31.7, "count": 41, "ev_per_trade": -13.41, "action": "DEACTIVATED Run135: boost rule removed, now correctly unboosted"}
+    {"key": "BTC_LONG_RECENT_100d", "win_rate": 31.7, "count": 41, "ev_per_trade": -13.41, "action": "DEACTIVATED Run135: boost rule removed"},
+    {"key": "CONF_70_80_RECENT_200", "win_rate": 47.6, "count": 200, "ev_per_trade": -86.67, "action": "NEW RUN137: CONF_70_80_SIZE_REDUCTION rule added — A/B gate 20%"}
   ],
+  "weak_setups_found": 8,
   "new_injection_candidates": [
-    {"key": "BTC_SHORT_HIGHCONF", "win_rate": 67.4, "count": 46, "confidence": 72, "flag_count": 4, "action": "CANDIDATE — but n=10 only in 100d backtest. Overclaim risk. Do not inject."},
-    {"key": "HYPE_SHORT_LOWCONF_SUB75", "win_rate": 56.8, "count": 80, "ev_per_trade": 10.09, "flag_count": 14, "action": "CANDIDATE (14th flag): allow HYPE SHORT <75% — AWAITING_HUMAN_APPROVAL (conf=71%)"},
-    {"key": "SOL_SHORT_75_80", "win_rate": 52.9, "count": 34, "ev_per_trade": 24.26, "confidence": 68, "flag_count": 4, "action": "CANDIDATE (4th flag): SOL SHORT precision 75-80% conf. Below 75% auto-inject threshold."}
+    {
+      "key": "SOL_SHORT_75_80",
+      "win_rate": 52.9,
+      "count": 34,
+      "ev_per_trade": 24.26,
+      "confidence": 68,
+      "flag_count": 5,
+      "action": "CANDIDATE (5th flag): SOL SHORT precision 75-80% conf. Below 75% auto-inject threshold. Monitor."
+    }
   ],
-  "rules_restored_by_s1": 10,
-  "active_rules": 10,
-  "high_edges_found": 3,
-  "weak_setups_found": 7,
-  "degrading_edges_found": 1,
-  "deactivations_this_run": 1,
-  "last_updated": "2026-06-23T07:10:00Z",
-  "run_number": 135
+  "deactivations_this_run": 0,
+  "new_rules_applied_this_run": 1,
+  "recent_200_confidence_bands": {
+    "70_80": {"win_rate": 47.6, "count": 200, "ev_per_trade": -86.67, "verdict": "PRIMARY_LOSS_CENTER"},
+    "80_90": {"win_rate": 52.2, "count": null, "ev_per_trade": -37.23, "verdict": "DEGRADING"},
+    "90plus": {"win_rate": 64.1, "count": 39, "ev_per_trade": 101.92, "verdict": "BEST_TIER"}
+  },
+  "run136_new_finding": "70-80% confidence band = PRIMARY LOSS CENTER (recent 200: WR=47.6%, -$86.67/trade). CONF_70_80_SIZE_REDUCTION applied Run137.",
+  "hype_short_sub75_status": "REJECTED Run137 — full dataset (n=965) shows avg=-$4.41/trade. 100d sub-window was favorable artifact."
 }
