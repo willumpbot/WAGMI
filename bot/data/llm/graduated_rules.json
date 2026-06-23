@@ -194,6 +194,69 @@
       "times_applied": 0,
       "times_correct": 0,
       "active": true
+    },
+    {
+      "rule_id": "conf_70_80_size_reduction_v1",
+      "hypothesis_statement": "70-80% confidence band is primary loss center: WR=47.6%, EV=-$86.67/trade (n=200 recent). Reduce size 0.3x to cap damage. A/B gate 20%.",
+      "action": "size_adjust",
+      "conditions": {
+        "confidence_min": 70,
+        "confidence_max": 80
+      },
+      "adjustment": -0.3,
+      "confidence": 0.82,
+      "gate_percentage": 20,
+      "evidence_ratio": 0.76,
+      "total_evidence": 200,
+      "created_at": 1782302400.0,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "ab_gate": true,
+      "source": "auto_fix_run137, REC2 from autonomous_audit_2026-06-23T10-05-44Z.md (conf=82%)"
+    },
+    {
+      "rule_id": "evening_session_penalize_v1",
+      "hypothesis_statement": "Evening session (18:00-24:00 UTC) shows 29% WR (n=14) — sustained weakness. Night block (0-6 UTC) exists; this fills the 18-24 gap. Penalize -10 confidence. A/B gate 20%.",
+      "action": "penalize",
+      "conditions": {
+        "hour_utc_min": 18,
+        "hour_utc_max": 24
+      },
+      "adjustment": -10.0,
+      "confidence": 0.75,
+      "gate_percentage": 20,
+      "evidence_ratio": 0.71,
+      "total_evidence": 14,
+      "created_at": 1782324000.0,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "ab_gate": true,
+      "source": "auto_fix_run143, REC3 from autonomous_audit_2026-06-23T16-07-25Z.md (conf=75%)"
+    },
+    {
+      "rule_id": "afternoon_session_penalize_v1",
+      "hypothesis_statement": "Afternoon session (12:00-18:00 UTC) shows 27% WR (n=15) — weakest confirmed non-night window. Penalize -10 confidence. A/B gate 20%.",
+      "action": "penalize",
+      "conditions": {
+        "hour_utc_min": 12,
+        "hour_utc_max": 18
+      },
+      "adjustment": -10.0,
+      "confidence": 0.75,
+      "gate_percentage": 20,
+      "evidence_ratio": 0.69,
+      "total_evidence": 15,
+      "created_at": 1782324001.0,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "ab_gate": true,
+      "source": "auto_fix_run143, REC3 from autonomous_audit_2026-06-23T16-07-25Z.md (conf=75%)"
     }
   ]
 }

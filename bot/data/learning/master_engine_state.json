@@ -1,98 +1,169 @@
 {
   "engine": "perpetual_improvement_loop",
   "version": "3.1",
-  "last_run": "2026-06-23T17:06:57Z",
+  "last_run": "2026-06-23T18:05:00Z",
   "today": "2026-06-23",
-  "run_number": 142,
+  "run_number": 143,
   "bot_status": "OFFLINE",
   "days_offline": 75,
-  "cadence_streak": 58,
-  "data_source_confirmed": "trades_10d.csv (n=965 full dataset). No live trades available.",
+  "cadence_streak": 59,
+  "data_source_confirmed": "trades_10d.csv (n=965 full dataset). No live trades available. bot/data/trades.csv absent.",
   "subsystems": {
     "auto_fix": {
-      "last_run": "2026-06-23T17:06:57Z",
-      "fixes_applied_this_run": 2,
-      "total_fixes_all_time": 123,
-      "gates_active": 51,
-      "new_recs_above_75pct_conf": 2,
-      "new_recs": ["TP1_BLIND_SPOT_FIX (87%)", "EVENING_AFTERNOON_PENALTY (75%)"],
-      "proposals_pending_human_review": 2,
+      "last_run": "2026-06-23T18:05:00Z",
+      "fixes_applied_this_run": 3,
+      "total_fixes_all_time": 124,
+      "gates_active": 54,
+      "new_rules_written_to_file": 3,
+      "rules_added": [
+        "conf_70_80_size_reduction_v1 (BACKFILL — was logged run137, missing from file until now)",
+        "evening_session_penalize_v1 (conf=75%, gate=20%)",
+        "afternoon_session_penalize_v1 (conf=75%, gate=20%)"
+      ],
+      "deferred": ["TP1_BLIND_SPOT_FIX (87%) — BLOCKED_PENDING_INVESTIGATION: must verify TP1=partial close in position_manager.py before code change to multi_strategy_main.py:L3116"],
       "skipped": ["HYPE_SHORT_HIGHCONF_VETO_AUDIT (68% < 75% threshold)"],
-      "cadence_streak": 58
+      "graduated_rules_total": 14,
+      "cadence_streak": 59
     },
     "execution_forensics": {
-      "last_run": "2026-06-23T17:06:57Z",
+      "last_run": "2026-06-23T18:05:00Z",
       "trades_analyzed": 965,
+      "delta_from_prior": "NO CHANGE — bot offline, same 965-trade dataset",
       "avg_slippage_pct": 0.534,
       "noise_stop_pct": 34.8,
       "rr_ratio": 0.479,
       "win_rate_all_time": 57.0,
       "win_rate_recent_50": 56.0,
       "avg_pnl_recent_50": -52.71,
-      "duration_bug": "CRITICAL — 0/965 valid durations",
+      "duration_bug": "CRITICAL — 0/965 valid durations. 5th flag. Dev fix required.",
       "best_setup": "SOL_SHORT (WR=63.7%, EV=+$32.44)",
-      "worst_setup": "HYPE_SHORT (WR=54.4%, EV=-$16.65)"
+      "worst_setup": "HYPE_SHORT (WR=54.4%, EV=-$16.65)",
+      "rr_fix_status": "PENDING RESTART — atr_mult_sl 1.5->1.8 proposed, human decision overdue (13th flag)"
     },
     "live_injection": {
-      "last_run": "2026-06-23T17:06:57Z",
+      "last_run": "2026-06-23T18:05:00Z",
       "high_edges_found": 3,
       "weak_setups_found": 4,
-      "new_injections": 2,
-      "new_injection_details": ["EVENING_SESSION_PENALIZE (conf=75%)", "AFTERNOON_SESSION_PENALIZE (conf=75%)"],
-      "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 4th flag)",
-      "best_edge": "SOL_SHORT WR=63.7% EV=+$32.44 (ACTIVE)",
-      "worst_setup": "CONF_70_80_PCT EV=-$86.67 (A/B active)"
+      "new_injections_this_run": 3,
+      "new_injection_details": [
+        "CONF_70_80_SIZE_REDUCTION backfilled into graduated_rules.json (gate=20%, conf=82%)",
+        "EVENING_SESSION_PENALIZE physically applied to graduated_rules.json (gate=20%, conf=75%)",
+        "AFTERNOON_SESSION_PENALIZE physically applied to graduated_rules.json (gate=20%, conf=75%)"
+      ],
+      "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 4th flag) — threshold not met but strong evidence",
+      "best_edge": "SOL_SHORT WR=63.7% EV=+$32.44 (ACTIVE boost +8)",
+      "worst_setup": "CONF_70_80_PCT EV=-$86.67 (SIZE_REDUCTION A/B active — now physically in file)"
     },
     "daily_synthesis": {
-      "last_run": "2026-06-23T17:06:57Z",
+      "last_run": "2026-06-23T18:05:00Z",
       "todays_trades": 0,
       "anomalies_critical": 3,
       "anomalies_high": 5,
       "anomalies_medium": 2,
-      "bot_offline_flags": 72,
+      "bot_offline_flags": 73,
       "max_consecutive_losses": 8,
       "max_leverage_observed": 3.01,
       "wr_swing_20d_100d": 21.3,
-      "time_of_day_analysis": "BLOCKED — duration bug"
+      "time_of_day_analysis": "BLOCKED — duration bug (0/965 valid durations)",
+      "end_of_day_report_generated": false,
+      "note": "18:05 UTC — not end-of-day. Daily report deferred to final run ~22:00 UTC."
     },
     "model_optimization": {
-      "last_run": "2026-06-23T17:06:57Z",
+      "last_run": "2026-06-23T18:05:00Z",
       "cost_tracker_available": false,
       "roi_all_time": 140.0,
       "roi_recent_100": -11647.8,
       "monthly_cost_estimate": 4.82,
       "model_swaps_recommended": 0,
       "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST",
-      "upgrade_candidate": "Regime -> Sonnet for REGIME_SHIFT (est 688x ROI — unverified)"
+      "upgrade_candidate": "Regime -> Sonnet for REGIME_SHIFT (est 688x ROI — unverified, blocked on llm_regime logging fix)",
+      "delta_from_prior": "NO CHANGE — cost_tracker.json still absent"
     }
   },
   "high_priority_findings": [
-    {"subsystem": "daily_synthesis", "severity": "CRITICAL", "finding": "Bot OFFLINE Day 75 — 72nd consecutive flag. Zero live trades, zero revenue, zero rule validation. All 49+ A/B gate slots and graduated rules untested.", "action": "cd /home/user/WAGMI/bot && python run.py paper", "consecutive_flags": 72, "urgency": "OVERDUE"},
-    {"subsystem": "execution_forensics + daily_synthesis", "severity": "CRITICAL", "finding": "Duration bug: 0/965 trades have valid duration_h. HoldTimeRuleManager ML fully compromised. Time-of-day analysis impossible. 5th flag.", "action": "DEV: Fix trade logging — record open_time + close_time, compute duration_h", "consecutive_flags": 5, "urgency": "DEV_REQUIRED"},
-    {"subsystem": "auto_fix", "severity": "CRITICAL", "finding": "TP1 blind spot: _FULL_CLOSE at multi_strategy_main.py:L3116 excludes TP1. 160/589 trades (27.2%) invisible to all 7 feedback systems. +27% faster feedback convergence if fixed. Confidence=87%.", "action": "Add 'TP1' to _FULL_CLOSE or add _PARTIAL_CLOSE handling", "confidence": 87, "urgency": "HIGH_IMPACT_LOW_EFFORT"},
-    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "RR geometry broken: avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Need 68%+ WR to break even. 13th flag. Fix: atr_mult_sl 1.5->1.8. HUMAN DECISION OVERDUE.", "action": "Choose: global tp_sl_atr_mult 1.5->1.8 OR HYPE-specific atr_mult_sl 2.0->2.3", "consecutive_flags": 13, "urgency": "HUMAN_DECISION_OVERDUE"},
-    {"subsystem": "auto_fix + live_injection", "severity": "HIGH", "finding": "CONF_90PLUS_SELECTIVE_BOOST: 4th flag. 90%+ confidence ONLY profitable tier (WR=64.1%, EV=+$101.92/trade recent 200). Confidence=72% just below 75% auto-inject. PENDING_HUMAN_REVIEW.", "action": "Human approval: add boost +5 for signals confidence >= 90 at gate=20%", "consecutive_flags": 4, "urgency": "PENDING_HUMAN_REVIEW"},
-    {"subsystem": "auto_fix", "severity": "HIGH", "finding": "Evening/Afternoon penalty rules missing. Evening 18-24 UTC: 29% WR (n=14). Afternoon 12-18 UTC: 27% WR (n=15). New injection from today audit (conf=75%).", "action": "Add evening_session_penalize_v1 and afternoon_session_penalize_v1 to graduated_rules.json", "confidence": 75, "urgency": "READY_TO_APPLY"},
-    {"subsystem": "execution_forensics", "severity": "HIGH", "finding": "Dataset contradiction unresolved: 20d WR=65.8% (+$7,053) vs 100d WR=44.5% (-$8,173). Rules built from 100d may penalize recent-winning setups.", "action": "Define canonical data window for rule injection.", "urgency": "REQUIRES_DECISION"},
-    {"subsystem": "daily_synthesis", "severity": "HIGH", "finding": "Feedback state files missing: 4/6 absent (8th flag). signal_quality.json, regime_feedback_state.json, tuner_state.json missing. _save() silently fails.", "action": "DEV: Add write-confirmation log to each _save() method.", "consecutive_flags": 8, "urgency": "DEV_REQUIRED"},
-    {"subsystem": "model_optimization", "severity": "MEDIUM", "finding": "No cost_tracker.json. Regime agent upgrade to Sonnet estimated at 688x ROI but unverified. llm_regime empty in all 965 trades.", "action": "1) Create cost_tracker.json. 2) Fix llm_regime logging.", "urgency": "LOW_EFFORT_HIGH_LEVERAGE"},
-    {"subsystem": "live_injection", "severity": "MEDIUM", "finding": "HYPE double-penalty conflict: restored_hype_short_highconf_veto_v1 stacks with sizing cap. 20d shows HYPE 60.5% WR — veto may block profitable setups.", "action": "Monitor first 25 live HYPE SHORT >=75% trades after restart.", "urgency": "MONITOR_ON_RESTART"}
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "CRITICAL",
+      "finding": "Bot OFFLINE Day 75 — 73rd consecutive flag. Zero live trades, zero revenue, zero rule validation. 14 graduated rules and 54 A/B gate slots fully untested.",
+      "action": "cd /home/user/WAGMI/bot && python run.py paper",
+      "consecutive_flags": 73,
+      "urgency": "SEVERELY_OVERDUE"
+    },
+    {
+      "subsystem": "execution_forensics + daily_synthesis",
+      "severity": "CRITICAL",
+      "finding": "Duration bug: 0/965 trades have valid duration_h. HoldTimeRuleManager ML fully compromised. 6th flag.",
+      "action": "DEV: Fix trade logging — record open_time + close_time, compute duration_h",
+      "consecutive_flags": 6,
+      "urgency": "DEV_REQUIRED"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "CRITICAL",
+      "finding": "TP1 blind spot: _FULL_CLOSE at multi_strategy_main.py:L3116 excludes TP1 (27.2% of trades invisible). TP1 is partial close — needs _PARTIAL_CLOSE path, not _FULL_CLOSE addition.",
+      "action": "DEV: Add _PARTIAL_CLOSE handler with partial pnl recording to 7 feedback systems.",
+      "confidence": 87,
+      "urgency": "INVESTIGATION_REQUIRED_BEFORE_CODE_CHANGE"
+    },
+    {
+      "subsystem": "execution_forensics",
+      "severity": "HIGH",
+      "finding": "RR geometry broken: avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). 14th flag. HUMAN DECISION OVERDUE.",
+      "action": "Human approval: global tp_sl_atr_mult 1.5->1.8 OR HYPE-specific atr_mult_sl 2.0->2.3",
+      "consecutive_flags": 14,
+      "urgency": "HUMAN_DECISION_OVERDUE"
+    },
+    {
+      "subsystem": "auto_fix + live_injection",
+      "severity": "HIGH",
+      "finding": "CONF_90PLUS_SELECTIVE_BOOST: 4th flag. WR=64.1%, EV=+$101.92/trade. Conf=72% just below 75% auto-inject.",
+      "action": "Human approval: add boost +5 for conf>=90 at gate=20%",
+      "consecutive_flags": 4,
+      "urgency": "PENDING_HUMAN_REVIEW"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "HIGH",
+      "finding": "CONF_70_80_SIZE_REDUCTION was logged as applied run137 but MISSING from graduated_rules.json. Corrected this run.",
+      "action": "RESOLVED in run143",
+      "urgency": "RESOLVED_THIS_RUN"
+    },
+    {
+      "subsystem": "auto_fix",
+      "severity": "MEDIUM",
+      "finding": "File-state integrity gap: prior runs logged fixes as 'applied' without physically editing files. Corrected from run143 onward.",
+      "action": "Audit all active_fixes_carried against actual graduated_rules.json on next run.",
+      "urgency": "SYSTEMIC_PROCESS_GAP"
+    },
+    {
+      "subsystem": "model_optimization",
+      "severity": "MEDIUM",
+      "finding": "No cost_tracker.json. llm_regime empty in all 965 trades.",
+      "action": "1) Create cost_tracker.json. 2) Fix llm_regime logging.",
+      "urgency": "LOW_EFFORT_HIGH_LEVERAGE"
+    }
   ],
-  "findings_summary": {"critical": 3, "high": 5, "medium": 2, "total": 10},
+  "findings_summary": {"critical": 3, "high": 4, "medium": 2, "total": 9},
+  "run143_actions_taken": {
+    "graduated_rules_json_edits": 3,
+    "rules_added": ["conf_70_80_size_reduction_v1", "evening_session_penalize_v1", "afternoon_session_penalize_v1"],
+    "file_state_divergence_corrected": true,
+    "code_changes": 0,
+    "deferred_code_changes": 1
+  },
   "cumulative_stats": {
-    "total_fixes_all_time": 123,
-    "active_graduated_rules": 10,
-    "ab_tests_active": 2,
-    "total_runs": 142,
+    "total_fixes_all_time": 124,
+    "active_graduated_rules": 13,
+    "graduated_rules_file_total": 14,
+    "ab_tests_active": 5,
+    "total_runs": 143,
     "proposals_pending": 2,
     "items_pending_human_review": 3
   },
-  "run_delta_vs_141": {
-    "new_fixes_applied": 0,
-    "new_recs_extracted": 2,
-    "flag_increments": 8,
-    "new_injections_proposed": 2,
-    "escalations": 0,
-    "notes": "TP1_BLIND_SPOT_FIX (87%) and EVENING_AFTERNOON_PENALTY (75%) extracted from latest audit (run107, 2026-06-23T16:07:25Z). All execution metrics unchanged — bot offline, same 965-trade CSV."
+  "run_delta_vs_142": {
+    "new_fixes_applied": 3,
+    "rules_added_to_file": 3,
+    "new_recs_extracted": 0,
+    "notes": "3 rules physically written to graduated_rules.json. TP1 code fix blocked pending investigation."
   }
 }
