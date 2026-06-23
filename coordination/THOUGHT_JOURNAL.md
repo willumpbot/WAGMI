@@ -326,3 +326,18 @@ Implemented via swarm (disjoint files, each unit-tested; full suite: 277 pass, 0
 Bot restarted clean (pid 19452). Earlier edits (exit full-close gate, accuracy clamp) intact.
 REMAINING: veto self-measurement (Spec 1, HIGH risk, needs replay) + regime-keyed empirical-Bayes priors (needs backtest)
 + fix get_system_baseline contamination (dynamic_stats.py:86-90, feeds 0.19 vs true 0.63).
+
+## 2026-06-23T19:00Z — Regime-keyed priors: BUILT + VALIDATED + held OFF (discipline gate worked)
+Implemented flag-gated regime-keyed empirical-Bayes priors (USE_REGIME_PRIORS, default OFF) + de-contaminated
+baseline. New module llm/regime_priors.py; wired into dynamic_stats.get_system_baseline + quant_brain._form_thesis.
+7/7 unit tests, 28 regression pass. Flag OFF = byte-identical live (smoke: off=0.227 legacy, on=0.633 mechanical).
+FOUND BUG: dynamic_stats read trades.csv (n=66, no exit_type) not trade_ledger.csv — baseline was contaminated 0.19
+vs true mechanical 0.63 → bot is currently UNDER-confident, which also suppresses volume. (Fix is in the dormant code.)
+WALK-FORWARD VALIDATION (leakage-controlled, n=30 mechanical trades): vs raw pooled NEW Brier 0.353→0.294 (better),
+BUT vs shrinkage-matched OLD it's a TIE (0.291 vs 0.288, CI crosses 0) — the gain is the empirical-Bayes smoothing,
+NOT the regime dimension. EV-weighted PnL favored NEW in all variants. Adversarial review: code_correct + backtest_sound,
+final_recommendation = KEEP-OFF-INSUFFICIENT-EVIDENCE. DECISION: respect the gate — flag stays OFF.
+Known issues to fix before enabling later: (1) regime_bucket() only maps 'bull'/'bear' substrings — classifier also emits
+momentum/overleveraged_*/overbought/panic_oversold/recovering (all collapse to neutral), so the bull-leak fix rarely triggers;
+(2) win_prob(k=0) ZeroDivision (unreachable, default k=5). REVISIT when mechanical-exit n is larger (exit-agent now disabled → accruing).
+NET: bot is under-confident (conservative) live — acceptable while gathering clean data; do NOT enable unproven priors.

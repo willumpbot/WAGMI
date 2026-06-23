@@ -76,12 +76,74 @@ def _load_recent_trades(max_trades: int = 100) -> List[dict]:
     return trades
 
 
+def _load_mechanical_ledger_baseline() -> Optional[Tuple[float, float]]:
+    """De-contaminated baseline from data/trade_ledger.csv (mechanical exits).
+
+    The legacy baseline pools EVERY close, including LLM_EXIT_AGENT exits that
+    are 0/N by construction — dragging the pooled WR far below the true
+    mechanical-exit WR (audit: 0.19 pooled vs 0.63 mechanical). This computes
+    WR + payoff over mechanical-exit trades only.
+
+    Returns (win_rate, payoff_ratio) or None if unavailable / too few rows.
+    Best-effort: never raises.
+    """
+    try:
+        from llm.regime_priors import is_mechanical
+    except Exception:
+        return None
+    ledger = _DATA_DIR / "trade_ledger.csv"
+    try:
+        if not ledger.exists():
+            return None
+        with open(ledger, "r", newline="") as f:
+            rows = list(csv.DictReader(f))
+    except Exception as e:
+        logger.debug("dynamic_stats: failed to load ledger: %s", e)
+        return None
+
+    mech = []
+    for row in rows:
+        if not is_mechanical(row.get("exit_type")):
+            continue
+        # net_pnl is the canonical realized PnL column in trade_ledger.csv
+        pnl_raw = row.get("net_pnl", row.get("pnl", ""))
+        try:
+            pnl = float(pnl_raw)
+        except (ValueError, TypeError):
+            continue
+        mech.append(pnl)
+
+    if len(mech) < 10:
+        return None
+
+    wins = sum(1 for p in mech if p > 0)
+    wr = wins / len(mech)
+    win_pnls = [p for p in mech if p > 0]
+    loss_pnls = [abs(p) for p in mech if p < 0]
+    avg_win = sum(win_pnls) / len(win_pnls) if win_pnls else 0
+    avg_loss = sum(loss_pnls) / len(loss_pnls) if loss_pnls else 1
+    payoff_ratio = avg_win / avg_loss if avg_loss > 0 else 1.5
+    return (wr, payoff_ratio)
+
+
 def get_system_baseline() -> Tuple[float, float]:
     """Compute live system WR and payoff ratio from recent trades.
 
     Returns: (win_rate, payoff_ratio)
     Fallback: (0.50, 1.5) if insufficient data
+
+    When USE_REGIME_PRIORS is enabled, the baseline is computed from
+    MECHANICAL-exit trades only (excludes LLM_EXIT_AGENT closes that are 0/N
+    by construction). Default (flag off) preserves the legacy behavior exactly.
     """
+    if os.getenv("USE_REGIME_PRIORS", "false").strip().lower() in (
+        "1", "true", "yes", "on",
+    ):
+        mech_baseline = _load_mechanical_ledger_baseline()
+        if mech_baseline is not None:
+            return mech_baseline
+        # else: fall through to legacy logic (cold / no ledger)
+
     trades = _load_recent_trades(max_trades=100)
     if len(trades) < 10:
         return (0.50, 1.5)

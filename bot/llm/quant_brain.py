@@ -301,6 +301,10 @@ class QuantBrain:
         self._default_wp: float = _DEFAULT_WIN_PROB  # fallback to constant until refresh
         self._calibration_overrides: Dict[str, float] = {}
         self._calibration_last_refresh: float = 0.0
+        # 2026-06-23: regime-keyed empirical-Bayes prior table, gated behind
+        # USE_REGIME_PRIORS (default FALSE). Built from MECHANICAL-exit ledger
+        # trades only. None when the flag is off or the ledger is unavailable.
+        self._regime_priors = None
         self._refresh_calibrations(initial=True)
 
         logger.info("[QUANT-BRAIN] Initialized — rule-based pipeline active (0 API calls)")
@@ -367,6 +371,21 @@ class QuantBrain:
             logger.warning(f"[QUANT-BRAIN] override file load failed: {e}")
 
         self._calibrations = merged
+
+        # Step 5: build regime-keyed empirical-Bayes prior table (flag-gated).
+        # When USE_REGIME_PRIORS is off this stays None and base-WP lookup
+        # falls back to the legacy symbol_side calibration logic untouched.
+        self._regime_priors = None
+        try:
+            from llm import regime_priors as _rp
+            if _rp.flag_enabled():
+                self._regime_priors = _rp.build_table_from_ledger()
+                if self._regime_priors is not None:
+                    logger.info("[QUANT-BRAIN] Regime-keyed priors ACTIVE (USE_REGIME_PRIORS)")
+        except Exception as e:
+            logger.debug(f"[QUANT-BRAIN] regime priors unavailable: {e}")
+            self._regime_priors = None
+
         self._calibration_last_refresh = _t.time()
         src = "init" if initial else "refresh"
         logger.info(
@@ -711,6 +730,24 @@ class QuantBrain:
         # which is computed from live trade DNA on init + refreshable. Overrides
         # from bot/data/quant_brain_overrides.json take precedence.
         base_wp = self._calibrations.get(setup_key, self._default_wp)
+
+        # ── Regime-keyed empirical-Bayes prior (USE_REGIME_PRIORS, default off) ──
+        # 2026-06-23: the legacy base_wp above is keyed by symbol_side ONLY, so a
+        # bear-regime short edge leaks into bull regimes. When the flag is on and
+        # the (symbol, side, regime_bucket) cell has enough mechanical-exit mass,
+        # use the recency-weighted, shrunk prior instead — it pulls a SHORT-in-bull
+        # toward the SHORT.bull default, not the bear-driven pooled value. Cold
+        # cells fall back to the legacy base_wp untouched.
+        if self._regime_priors is not None:
+            try:
+                if not self._regime_priors.is_cold(
+                    signal.symbol, signal.side, regime.regime
+                ):
+                    base_wp = self._regime_priors.win_prob(
+                        signal.symbol, signal.side, regime.regime
+                    )
+            except Exception as e:
+                logger.debug(f"[QUANT-BRAIN] regime prior lookup failed: {e}")
 
         # Override with live win_prob if available from signal metadata
         if win_prob_meta is not None and isinstance(win_prob_meta, (int, float)):
