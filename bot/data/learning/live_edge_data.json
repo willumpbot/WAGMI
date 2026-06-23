@@ -78,5 +78,61 @@
     "90plus": {"win_rate": 64.1, "count": 39, "ev_per_trade": 101.92, "verdict": "BEST_TIER"}
   },
   "run136_new_finding": "70-80% confidence band = PRIMARY LOSS CENTER (recent 200: WR=47.6%, -$86.67/trade). CONF_70_80_SIZE_REDUCTION applied Run137.",
-  "hype_short_sub75_status": "REJECTED Run137 — full dataset (n=965) shows avg=-$4.41/trade. 100d sub-window was favorable artifact."
+  "hype_short_sub75_status": "REJECTED Run137 — full dataset (n=965) shows avg=-$4.41/trade. 100d sub-window was favorable artifact.",
+  "run138_updates": {
+    "last_updated": "2026-06-23T14:00:00Z",
+    "run_number": 138,
+    "confidence_bins_full_dataset": {
+      "60_70": {"win_rate": 46.3, "count": 123, "avg_pnl": -18.87, "verdict": "NEGATIVE_EV"},
+      "70_75": {"win_rate": 59.8, "count": 341, "avg_pnl": -5.16, "verdict": "MARGINALLY_NEGATIVE"},
+      "75_80": {"win_rate": 57.2, "count": 292, "avg_pnl": 3.90, "verdict": "SLIGHTLY_POSITIVE"},
+      "80_90": {"win_rate": 60.2, "count": 118, "avg_pnl": 7.67, "verdict": "POSITIVE_ALL_TIME"},
+      "90_100": {"win_rate": 56.0, "count": 91, "avg_pnl": 32.33, "verdict": "BEST_TIER"}
+    },
+    "confidence_bins_recent_100": {
+      "60_70": {"win_rate": 50.0, "count": 16, "avg_pnl": -82.96, "verdict": "DETERIORATING"},
+      "70_75": {"win_rate": 48.5, "count": 33, "avg_pnl": -77.45, "verdict": "PRIMARY_LOSS_CENTER"},
+      "75_80": {"win_rate": 45.5, "count": 33, "avg_pnl": -88.82, "verdict": "PRIMARY_LOSS_CENTER"},
+      "80_90": {"win_rate": 40.0, "count": 5, "avg_pnl": -263.89, "verdict": "SMALL_N_ALARMING"},
+      "90_100": {"win_rate": 53.8, "count": 13, "avg_pnl": 25.37, "verdict": "ONLY_POSITIVE_TIER"}
+    },
+    "key_finding": "Recent 100 trades: ONLY 90%+ confidence tier has positive EV (+$25.37/trade). ALL other tiers negative. This is a qualitative shift from full-dataset picture.",
+    "new_candidate_flags": [
+      {
+        "key": "CONF_90PLUS_SELECTIVE_BOOST",
+        "evidence": "90%+ conf: WR=53.8%, avg=+$25.37 (recent 100). Only profitable tier. All other bins negative.",
+        "flag_count": 1,
+        "action": "1st flag — monitor for 3 consecutive runs before proposing injection"
+      }
+    ],
+    "anomaly_BTC_only_recent": "Last 50-100 trades appear to be BTC-only. SOL/HYPE absent from recent window. Multi-symbol edge data may be stale.",
+    "consecutive_loss_streaks": {
+      "max_streak_all_time": 9,
+      "streaks_over_5": 8,
+      "recent_streaks": [9, 8, 8, 6, 6],
+      "verdict": "Streak frequency is HIGH. 8 separate streaks of >5 consecutive losses in 965 trades = 1 every ~120 trades."
+    },
+    "wr_swing_events": {
+      "count": 7,
+      "threshold": "20% swing between 20-trade rolling windows",
+      "notable": [
+        {"window": "150->160", "from": "55%", "to": "30%", "direction": "DOWN"},
+        {"window": "250->260", "from": "55%", "to": "35%", "direction": "DOWN"},
+        {"window": "630->640", "from": "50%", "to": "75%", "direction": "UP"},
+        {"window": "800->810", "from": "45%", "to": "70%", "direction": "UP"}
+      ],
+      "verdict": "WR regime shifts occurring every ~100-200 trades. Regime detection needs to be responsive at this frequency."
+    },
+    "leverage_summary": {
+      "max_leverage_observed": 3.01,
+      "trades_over_7x": 0,
+      "verdict": "No leverage anomalies. Max 3.01x confirms leverage safety gates functioning."
+    },
+    "fee_analysis": {
+      "total_fees_965_trades": 3945.33,
+      "avg_fee_per_trade": 4.09,
+      "fee_as_pct_total_pnl": 435.8,
+      "verdict": "Fees = 4.35x total net PnL. On $905 net PnL with $3,945 in fees. Fee drag significant."
+    }
+  }
 }

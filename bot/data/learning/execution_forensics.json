@@ -1,34 +1,106 @@
 {
-  "status": "CACHED_NO_NEW_TRADES",
-  "data_source": "backtest_100d.csv via master_engine_state (n=589). trades.csv absent — bot offline Day 75.",
-  "trades_analyzed": 589,
-  "avg_slippage_pct": 0.5128,
-  "slippage_by_symbol": {"HYPE": 0.64, "SOL": 0.48, "BTC": 0.41},
-  "rr_geometry": {
-    "avg_win": 82.72,
-    "avg_loss": -91.27,
-    "win_loss_ratio": 0.91,
-    "kelly_fraction": -0.167,
-    "verdict": "NEGATIVE_EDGE"
+  "status": "UPDATED_RUN138",
+  "data_source": "trades_10d.csv — last 50 trades (all BTC, n=50). Full dataset n=965.",
+  "trades_analyzed": 50,
+  "full_dataset_trades": 965,
+  "last_updated": "2026-06-23T14:00:00Z",
+  "run_number": 138,
+  "symbol_coverage_last50": ["BTC"],
+  "symbol_coverage_full": ["BTC", "SOL", "HYPE"],
+  "note": "Last 50 trades in CSV are 100% BTC. SOL and HYPE data is from full 965-trade dataset only.",
+  "slippage_analysis": {
+    "sl_hit_trades_last50": 22,
+    "avg_slippage_from_sl_level_pct": 0.5345,
+    "slippage_by_symbol": {
+      "BTC_last50": {"avg_pct": 0.5345, "n": 22},
+      "BTC_cached": 0.41,
+      "SOL_cached": 0.48,
+      "HYPE_cached": 0.64
+    },
+    "worst_slippage_cases": [
+      {"symbol": "BTC", "side": "SHORT", "entry": 64361.80, "sl": 64682.90, "exit": 65865.00, "slip_pct": 1.8366, "confidence": 71.3, "pnl": -881.00},
+      {"symbol": "BTC", "side": "SHORT", "entry": 63750.10, "sl": 64082.10, "exit": 65063.00, "slip_pct": 1.5387, "confidence": 73.3, "pnl": -401.83},
+      {"symbol": "BTC", "side": "SHORT", "entry": 68089.90, "sl": 69006.10, "exit": 69907.00, "slip_pct": 1.3231, "confidence": 73.7, "pnl": -351.32},
+      {"symbol": "BTC", "side": "SHORT", "entry": 67194.40, "sl": 67501.70, "exit": 68078.00, "slip_pct": 0.8577, "confidence": 77.8, "pnl": -524.43},
+      {"symbol": "BTC", "side": "LONG", "entry": 71652.80, "sl": 71267.70, "exit": 70668.00, "slip_pct": 0.8370, "confidence": 68.8, "pnl": -415.22}
+    ],
+    "slippage_context": "High slippage cases cluster in BTC SHORT at 71-74% confidence — consistent with 70-80% conf degradation finding."
   },
   "noise_stop_analysis": {
-    "noise_stop_pct": 50.8,
-    "count_estimate": 136,
-    "dollar_loss_estimate": -14814.48,
-    "worst_pair": "HYPE — 69 SL hits x -$221.92 avg = -$15,312"
+    "noise_stop_pct_last50": 36.4,
+    "noise_stop_count_last50": 8,
+    "total_sl_hits_last50": 22,
+    "noise_stop_definition": "SL hit with confidence >= 75%",
+    "top_noise_stops": [
+      {"symbol": "BTC", "side": "SHORT", "confidence": 77.8, "pnl": -524.43},
+      {"symbol": "BTC", "side": "SHORT", "confidence": 78.0, "pnl": -442.36},
+      {"symbol": "BTC", "side": "SHORT", "confidence": 76.6, "pnl": -305.22},
+      {"symbol": "BTC", "side": "SHORT", "confidence": 77.6, "pnl": -263.46},
+      {"symbol": "BTC", "side": "SHORT", "confidence": 78.5, "pnl": -202.44}
+    ],
+    "noise_stop_pattern": "5/5 top noise stops are BTC SHORT in 76-79% confidence range. ATR widening fix (atr_mult_sl=1.8) pending restart (10th flag).",
+    "noise_stop_improvement_vs_prior": "36.4% (last50) vs 50.8% (100d backtest cache). Improvement trend but still elevated."
+  },
+  "close_reason_breakdown_last50": {
+    "SL": {"n": 22, "win_rate": 0.0, "total_pnl": -6753.16, "pct_of_trades": 44.0},
+    "TP1": {"n": 14, "win_rate": 100.0, "total_pnl": 3349.47, "pct_of_trades": 28.0},
+    "TP2": {"n": 7, "win_rate": 100.0, "total_pnl": 608.03, "pct_of_trades": 14.0},
+    "TRAILING_STOP": {"n": 7, "win_rate": 100.0, "total_pnl": 160.34, "pct_of_trades": 14.0}
+  },
+  "rr_geometry": {
+    "avg_win_last50": 147.07,
+    "avg_loss_last50": -306.96,
+    "win_loss_ratio_last50": 0.479,
+    "verdict": "DEEPLY_NEGATIVE — avg loss is 2.09x avg win. Need 68%+ WR to break even at this ratio.",
+    "kelly_full_dataset": 0.0061,
+    "kelly_recent_100": -0.265,
+    "kelly_note": "Full dataset Kelly barely positive (p=0.570, b=0.763). Recent-100 Kelly deeply negative. Decay confirmed.",
+    "rr_fix_status": "PENDING_RESTART — atr_mult_sl=1.8 A/B test proposed (10th flag)"
   },
   "fill_analysis": {
-    "partial_fill_rate_pct": "UNKNOWN — no live order data",
-    "note": "Slippage calc unavailable offline"
+    "partial_fill_rate": "UNKNOWN — no live order data (bot offline Day 75)",
+    "fee_per_trade_avg": 4.09,
+    "total_fees_965_trades": 3945.33,
+    "fee_drag_last50": 204.50
   },
   "duration_bug": {
-    "affected_trades": 52,
-    "pct_affected": 8.8,
-    "description": "52/589 trades have negative duration (-0.1 to -0.2h). Duration field inverted for sub-6min exits. Biases hold-time ML.",
-    "status": "UNFIXED — dev required"
+    "severity": "CRITICAL_UPGRADED",
+    "zero_duration_count": 809,
+    "negative_duration_count": 156,
+    "valid_duration_count": 0,
+    "pct_affected": 100.0,
+    "prior_estimate": "52/589 affected (8.8%) — was severely UNDERESTIMATED",
+    "actual": "ALL 965 trades affected (100%). Prior audit only checked 589-trade backtest slice.",
+    "impact": "HoldTimeRuleManager ML entirely compromised. Time-of-day analysis impossible from CSV.",
+    "status": "UNFIXED — dev required. Severity upgraded from MEDIUM to CRITICAL.",
+    "consecutive_flags": 2
   },
-  "delta_from_last_run": "NO CHANGE — bot offline, same 589-trade backtest dataset",
-  "consecutive_cached_runs": 48,
-  "last_updated": "2026-06-23T07:10:00Z",
-  "run_number": 135
+  "symbol_performance_full_dataset": {
+    "SOL_SHORT": {"n": 179, "wr": 63.7, "total_pnl": 5807.40, "avg_pnl": 32.44},
+    "BTC_LONG": {"n": 72, "wr": 63.9, "total_pnl": 1839.45, "avg_pnl": 25.55},
+    "BTC_SHORT": {"n": 195, "wr": 53.8, "total_pnl": -1407.62, "avg_pnl": -7.22},
+    "SOL_LONG": {"n": 122, "wr": 53.3, "total_pnl": -320.09, "avg_pnl": -2.62},
+    "HYPE_LONG": {"n": 158, "wr": 57.0, "total_pnl": -1034.66, "avg_pnl": -6.55},
+    "HYPE_SHORT": {"n": 239, "wr": 54.4, "total_pnl": -3979.25, "avg_pnl": -16.65}
+  },
+  "performance_summary_last50": {
+    "win_rate": 56.0,
+    "total_pnl": -2635.32,
+    "avg_pnl_per_trade": -52.71,
+    "sl_hit_rate": 44.0
+  },
+  "performance_summary_last100": {
+    "win_rate": 48.0,
+    "total_pnl": -7804.00,
+    "avg_pnl_per_trade": -78.04
+  },
+  "high_priority_findings": [
+    "RR GEOMETRY CRITICAL: avg_loss=$306.96 vs avg_win=$147.07 (last50). Ratio=0.479. Need 68%+ WR at this ratio.",
+    "NOISE STOPS: 36.4% of SL hits are high-confidence (conf>=75%) signals — noise in SL placement, not signal quality.",
+    "SLIPPAGE PEAK: 1.84% worst case BTC SHORT. Avg 0.53%. Clustered in 70-74% confidence range.",
+    "BTC-ONLY RECENT: Last 50 trades are 100% BTC. SOL/HYPE performance metrics are all-time-only.",
+    "DURATION DATA TOTAL LOSS: 0/965 trades have valid duration (was: estimated 52/589 affected)."
+  ],
+  "delta_from_last_run": "MAJOR UPDATE — switched from cached backtest_100d.csv (n=589) to actual trades_10d.csv (n=965, last50). Duration bug severity upgraded from 8.8% to 100% affected. RR ratio worse than prior estimate (0.479 vs 0.91). Noise stop rate improved (36.4% vs 50.8%).",
+  "consecutive_cached_runs": 0
 }

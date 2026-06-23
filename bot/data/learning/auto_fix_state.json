@@ -73,71 +73,107 @@
       "ab_trades_target": 50,
       "ab_success_criterion": "Treatment EV > control+$20/trade",
       "rollback_condition": "Disable if treatment EV < control after 50 trades"
+    },
+    {
+      "fix_id": "RUN138_DURATION_BUG_ESCALATION",
+      "description": "CRITICAL: 965/965 trades have zero or negative duration. Zero=809, Negative=156, Valid=0. HoldTimeRuleManager ML is entirely compromised. No time-of-day analysis possible from current CSV.",
+      "confidence": 99,
+      "gate_percentage": 0,
+      "applied_at": "2026-06-23T14:00:00Z",
+      "status": "DOCUMENTATION_ESCALATION",
+      "rec_source": "perpetual_improvement_run138 — execution_forensics analysis",
+      "action": "DOCUMENTATION: dev fix required to log correct timestamps in CSV",
+      "data_evidence": "All 965 trades: duration_h=0.0 (809) or negative (156). Valid=0. No temporal data available.",
+      "consecutive_flag": 2,
+      "rollback_condition": "N/A — documentation only"
+    },
+    {
+      "fix_id": "RUN138_KELLY_RECOMPUTED",
+      "description": "Kelly fraction recomputed from full 965-trade CSV: p=0.570, b=0.763, K=+0.0061. Marginally positive but near-zero. Recent 100 trades show -$78.04/trade average, confirming structural decay.",
+      "confidence": 95,
+      "gate_percentage": 0,
+      "applied_at": "2026-06-23T14:00:00Z",
+      "status": "DOCUMENTATION",
+      "rec_source": "perpetual_improvement_run138 — CSV Kelly recalculation",
+      "action": "DOCUMENTATION: Kelly updated from -0.168 (100d backtest) to +0.0061 (full 965). Prior figure was from negative-EV backtest window.",
+      "kelly_full_dataset": 0.0061,
+      "kelly_recent_100": -0.265,
+      "interpretation": "Full dataset marginally viable. Recent 100 trades structurally negative. Performance decay is accelerating."
     }
   ],
-  "applied_total": 8,
+  "applied_total": 10,
   "reverted_total": 0,
-  "ab_tests_active": 1,
-  "last_run": "2026-06-23T12:00:00Z",
-  "run_number": 137,
-  "cadence_streak": 53,
-  "audit_source": "autonomous_audit_2026-06-23T10-05-44Z.md (Run 136)",
+  "ab_tests_active": 2,
+  "last_run": "2026-06-23T14:00:00Z",
+  "run_number": 138,
+  "cadence_streak": 54,
+  "audit_source": "autonomous_audit_2026-06-23T10-05-44Z.md (Run 136) + perpetual_improvement_run138",
   "fixes_applied_this_run": 2,
   "resolutions_this_run": [
     {
-      "rec_id": "HYPE_SHORT_VETO_SPLIT",
-      "resolution": "REJECTED — full dataset (n=965) shows -$4.41/trade avg. 100d sub-window claim invalidated.",
-      "confidence": 89
+      "rec_id": "DURATION_BUG_SEVERITY",
+      "resolution": "ESCALATED — ALL 965 trades have zero or negative duration. Confirmed total loss of temporal ML capability.",
+      "confidence": 99
+    },
+    {
+      "rec_id": "KELLY_RECOMPUTED",
+      "resolution": "Full-dataset Kelly=+0.0061 (marginally positive). Recent-100 Kelly=-0.265 (structurally broken). Decay confirmed accelerating.",
+      "confidence": 95
     }
   ],
   "skipped_this_run": [
     {
       "rec_id": "RR_GEOMETRY_FIX",
-      "reason": "PARAMETER_AMBIGUITY: tp_sl_atr_mult=1.5 global vs atr_mult_sl=2.0 HYPE-specific. 9th flag. REQUIRES_BOT_RESTART.",
+      "reason": "PARAMETER_AMBIGUITY: tp_sl_atr_mult=1.5 global vs atr_mult_sl=2.0 HYPE-specific. 10th flag. REQUIRES_BOT_RESTART.",
       "confidence": 82,
-      "consecutive_runs": 9
+      "consecutive_runs": 10
     },
     {
       "rec_id": "FEEDBACK_STATE_FILES_MISSING",
-      "reason": "DEV_REQUIRED: _save() exists but state files never written. Exception swallowed silently. 3rd flag.",
+      "reason": "DEV_REQUIRED: _save() exists but state files never written. Exception swallowed silently. 4th flag.",
       "confidence": 93,
-      "consecutive_runs": 3
+      "consecutive_runs": 4
     }
   ],
-  "total_rules_in_llm_graduated": 11,
+  "total_rules_in_llm_graduated": 12,
   "active_rules_in_llm_graduated": 10,
   "gates_active": 48,
-  "total_fixes_all_time": 119,
+  "total_fixes_all_time": 121,
   "anomalies": [
     {
-      "type": "HYPE_SHORT_VETO_SPLIT",
-      "severity": "HIGH",
-      "consecutive_flags": 15,
-      "description": "HYPE SHORT <75% conf = WR=53.8%, +$808.09, n=80. Still awaiting human approval.",
-      "action": "HUMAN DECISION REQUIRED: approve hype_short_sub75_boost_v1 rule",
-      "status": "RESOLVED_REJECTED",
-      "resolved_at": "2026-06-23T12:00:00Z",
-      "resolution": "Full dataset contradicts sub-window claim. REJECTED per REC1 Run136."
+      "type": "DURATION_BUG_TOTAL",
+      "severity": "CRITICAL",
+      "consecutive_flags": 2,
+      "description": "ALL 965 CSV trades have duration_h=0 or negative. 809 zero, 156 negative, 0 valid. HoldTimeRuleManager is flying blind.",
+      "action": "DEV REQUIRED: Fix trade logging to record open/close timestamps and compute duration_h correctly.",
+      "status": "ACTIVE_UNRESOLVED"
     },
     {
       "type": "BTC_SHORT_90PLUS_OVERCLAIM",
       "severity": "MEDIUM",
-      "consecutive_flags": 5,
-      "description": "Full dataset WR=67.4% (n=46) but 100d WR=50.0% (n=10).",
-      "action": "Do not inject until n>=30 in 100d."
+      "consecutive_flags": 6,
+      "description": "Full dataset WR=53.8% (n=195 all BTC SHORT). 90%+ sub-band not isolable in current last-50 window (100% BTC only).",
+      "action": "Maintain as CANDIDATE. Do not inject until 30+ recent 90%+ BTC SHORT trades confirmed."
     },
     {
       "type": "SOL_SHORT_PRECISION_EDGE_UNDETECTED",
       "severity": "MEDIUM",
-      "consecutive_flags": 5,
-      "description": "SOL SHORT 75-80% conf WR=52.9%, +$24.26/trade (n=34).",
-      "action": "Track as PENDING until n>=50 in 100d."
+      "consecutive_flags": 6,
+      "description": "SOL SHORT full dataset: n=179, WR=63.7%, avg=+$32.44. Last 50/100 trades appear to be BTC-only subsection. SOL SHORT edge needs re-validation on mixed symbol data.",
+      "action": "Track and confirm after bot restart with live multi-symbol data."
+    },
+    {
+      "type": "LEVERAGE_ANOMALY_NONE",
+      "severity": "INFO",
+      "consecutive_flags": 1,
+      "description": "Max observed leverage: 3.01x. No trades >7x detected in full 965-trade dataset. Leverage safety gates confirmed functioning.",
+      "action": "No action required."
     }
   ],
   "notes": {
-    "run135": "1 fix applied: BTC_LONG_BOOST_DEACTIVATION (conf=86). restored_btc_long_boost_v1 set active=false. A/B gate 20%. cadence_streak=52.",
-    "run134": "0 fixes applied. GRADUATED_RULES_CODE_BUG confirmed fixed by code inspection. RR_GEOMETRY_FIX concrete A/B proposal (atr_mult_sl=1.8, gate_10). cadence_streak=51.",
-    "run130": "1 CRITICAL auto-fix: GRADUATED_RULES_RESTORE (conf=92).",
-    "run137": "2 fixes applied: (1) HYPE_SHORT_SUB75_VETO_SPLIT_REJECTED (conf=89): rejected 15-run approval, full dataset invalidates claim. (2) CONF_70_80_SIZE_REDUCTION (conf=82): new A/B gate 20%, -0.3x size for 70-80% confidence band. cadence_streak=53."
+    "run138": "2 documentation fixes: DURATION_BUG_ESCALATION (critical) and KELLY_RECOMPUTED (95% conf). Key finding: last-50 trades are 100% BTC (SOL/HYPE absent — recent trading window BTC-only). cadence_streak=54.",
+    "run137": "2 fixes applied: (1) HYPE_SHORT_SUB75_VETO_SPLIT_REJECTED (conf=89). (2) CONF_70_80_SIZE_REDUCTION (conf=82). cadence_streak=53.",
+    "run135": "1 fix applied: BTC_LONG_BOOST_DEACTIVATION (conf=86). cadence_streak=52.",
+    "run130": "1 CRITICAL auto-fix: GRADUATED_RULES_RESTORE (conf=92)."
   }
 }

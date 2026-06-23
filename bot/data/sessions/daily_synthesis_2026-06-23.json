@@ -1,7 +1,7 @@
 {
   "date": "2026-06-23",
-  "last_updated": "2026-06-23T12:00:00Z",
-  "run_number": 137,
+  "last_updated": "2026-06-23T14:00:00Z",
+  "run_number": 138,
   "bot_status": "OFFLINE",
   "days_offline": 75,
   "todays_trades": 0,
@@ -11,7 +11,7 @@
     {
       "type": "BOT_OFFLINE_DAY_75",
       "severity": "CRITICAL",
-      "consecutive_flags": 67,
+      "consecutive_flags": 68,
       "description": "Day 75 offline. Zero revenue. No live validation of rules.",
       "action": "cd /home/user/WAGMI/bot && python run.py paper"
     },
@@ -48,7 +48,7 @@
       "severity": "HIGH",
       "consecutive_flags": 9,
       "description": "conf=82, 9th flag. atr_mult_sl=1.8 proposal blocked by restart requirement + param ambiguity.",
-      "action": "HUMAN DECISION: tp_sl_atr_mult 1.5→1.8 globally OR HYPE atr_mult_sl 2.0→2.3?"
+      "action": "HUMAN DECISION: tp_sl_atr_mult 1.5->1.8 globally OR HYPE atr_mult_sl 2.0->2.3?"
     },
     {
       "type": "FEEDBACK_STATE_FILES_MISSING",
@@ -60,20 +60,44 @@
   ],
   "7day_avg_wr": 44.5,
   "recent_100_wr": 48.0,
+  "recent_50_wr": 56.0,
   "all_time_wr": 57.0,
   "wr_swing_from_7d_avg": 3.5,
   "max_consecutive_losses": 9,
   "unusual_leverage_trades": 0,
-  "slippage_estimate": "0.57% avg SL width in last 50 trades",
-  "noise_stop_rate": "36.4% of SL hits had conf>75% (noise stops in last 50)",
+  "max_leverage_observed": 3.01,
+  "slippage_estimate_last50": "0.53% avg from SL level in last 50 trades (all BTC)",
+  "noise_stop_rate": "36.4% of SL hits had conf>=75% (noise stops in last 50 BTC trades)",
+  "rr_ratio_last50": 0.479,
+  "kelly_full_dataset": 0.0061,
+  "kelly_recent_100": -0.265,
+  "total_fees_965_trades": 3945.33,
   "run137_fixes": [
     "HYPE_SHORT_SUB75_VETO_SPLIT_REJECTED: 15-run approval rejected (full dataset invalidates 100d claim)",
     "CONF_70_80_SIZE_REDUCTION: new A/B gate 20% — -0.3x size for 70-80% confidence signals"
   ],
+  "run138_findings": [
+    "DURATION_BUG_UPGRADED: 100% of trades have zero/negative duration (was estimated 8.8%). HoldTime ML fully compromised.",
+    "KELLY_CORRECTED: Full-dataset Kelly=+0.0061 (not -0.168). Prior figure was from negative backtest sub-window.",
+    "RR_WORSENED: Last-50 ratio=0.479 vs prior estimate 0.91. Situation more severe than reported.",
+    "CONFIDENCE_BIN_COLLAPSE: Recent 100 trades — ONLY 90%+ tier is profitable (+$25.37/trade). All other bins negative.",
+    "BTC_ONLY_WINDOW: Last 50-100 trades are 100% BTC. SOL/HYPE edge data not in recent window."
+  ],
+  "anomalies_detected_run138": {
+    "consecutive_losses_over5": {"detected": true, "count": 8, "max_streak": 9, "verdict": "CIRCUIT_BREAKER_WILL_TRIGGER"},
+    "wr_swing_over20pct": {"detected": true, "events": 7, "verdict": "HIGH_REGIME_VOLATILITY"},
+    "unusual_leverage_over7x": {"detected": false, "verdict": "SAFETY_GATES_HOLDING"},
+    "time_of_day_dominance": {"detected": false, "reason": "CANNOT_COMPUTE — no timestamps in CSV (duration bug)", "verdict": "DATA_GAP"}
+  },
   "tomorrows_focus": {
     "priority_symbols": ["SOL", "BTC"],
-    "avoid": ["HYPE_LONG", "HYPE_SHORT_gte75", "illiquid_regime", "ranging_regime", "night_0-6_UTC", "conf_70-80 (now gated)"],
-    "watch": ["CONF_70_80_SIZE_REDUCTION A/B results", "BTC_LONG_WR_post_deactivation", "SOL_SHORT_75-80_conf"],
+    "avoid": ["HYPE_LONG", "HYPE_SHORT_gte75", "illiquid_regime", "ranging_regime", "night_0-6_UTC", "conf_70-80 (now gated)", "conf_below_60"],
+    "watch": ["CONF_70_80_SIZE_REDUCTION A/B results", "BTC_LONG_WR_post_deactivation", "SOL_SHORT_75-80_conf", "90%+ conf tier (only positive bin)"],
+    "dev_fixes_needed": [
+      "Fix duration_h logging (all zero/negative — 100% affected)",
+      "Fix feedback _save() methods (4 managers silently failing)",
+      "Add cost_tracker.json for LLM ROI measurement"
+    ],
     "restart_required": true,
     "restart_command": "cd /home/user/WAGMI/bot && python run.py paper"
   }

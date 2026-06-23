@@ -1,11 +1,89 @@
 {
-  "status": "COMPLETE_ESTIMATED_NO_LIVE_COST_DATA",
-  "note": "cost_tracker.json absent — using architecture estimates",
+  "status": "UPDATED_RUN138_NO_LIVE_COST_DATA",
+  "note": "cost_tracker.json absent — using architecture estimates from CLAUDE.md. Bot offline Day 75 — no live LLM calls.",
+  "last_updated": "2026-06-23T14:00:00Z",
+  "run_number": 138,
+  "cost_tracker_status": "NOT_FOUND",
+  "action_required": "Create bot/llm/cost_tracker.json to enable per-agent ROI measurement",
+
+  "agent_model_assignments": {
+    "Regime": {"model": "Haiku", "cost_per_call_usd": 0.0001, "role": "market_regime_classification", "frequency": "per_cycle"},
+    "Trade": {"model": "Sonnet", "cost_per_call_usd": 0.003, "role": "directional_thesis_entry", "frequency": "per_cycle"},
+    "Risk": {"model": "Haiku", "cost_per_call_usd": 0.0001, "role": "position_sizing", "frequency": "per_cycle"},
+    "Critic": {"model": "Sonnet", "cost_per_call_usd": 0.003, "role": "veto_stress_test", "frequency": "per_cycle"},
+    "Learning": {"model": "Haiku", "cost_per_call_usd": 0.0001, "role": "post_trade_learning", "frequency": "per_close"},
+    "Exit": {"model": "Haiku", "cost_per_call_usd": 0.0001, "role": "position_monitoring", "frequency": "per_open_position"},
+    "Scout": {"model": "Haiku", "cost_per_call_usd": 0.0001, "role": "idle_preparation", "frequency": "idle_only"}
+  },
+
+  "estimated_cost_per_cycle_usd": 0.0067,
   "estimated_monthly_cost_usd": 4.82,
-  "breakdown": {"haiku_calls_monthly": 5040, "haiku_cost_usd": 0.5, "sonnet_calls_monthly": 1440, "sonnet_cost_usd": 4.32},
-  "swaps_recommended": 1,
-  "swap_detail": "Regime Agent: Haiku→Sonnet for REGIME_SHIFT events only. Estimated +$186/mo benefit, +$0.27/mo cost (688x ROI).",
+  "cost_breakdown": {
+    "haiku_calls_monthly_est": 5040,
+    "haiku_cost_usd": 0.504,
+    "sonnet_calls_monthly_est": 1440,
+    "sonnet_cost_usd": 4.32
+  },
+
+  "roi_analysis": {
+    "total_pnl_965_trades": 905.23,
+    "estimated_total_llm_cost_965_cycles": 6.46,
+    "roi_multiplier_all_time": 140.1,
+    "roi_multiplier_recent_100": -120.7,
+    "interpretation": "All-time ROI is strong (140x) but recent 100 trades show deeply negative ROI (-120x). LLM cost is not the problem — trade PnL is."
+  },
+
+  "downgrade_candidates": [
+    {
+      "agent": "Trade",
+      "current_model": "Sonnet",
+      "candidate_model": "Haiku",
+      "rationale": "Recent 100 trades avg -$78/trade. Trade agent output quality is not generating positive EV. But Haiku downgrade may worsen directional thesis quality — need ablation test.",
+      "roi_delta_estimate": "UNKNOWN — no agent-level PnL attribution in current logging",
+      "recommendation": "DO_NOT_DOWNGRADE — directional thesis quality likely critical. Fix the RR geometry first.",
+      "confidence": 35
+    },
+    {
+      "agent": "Critic",
+      "current_model": "Sonnet",
+      "candidate_model": "Haiku",
+      "rationale": "Veto decisions saved money historically (HYPE LONG block, night block). Cannot attribute specific PnL to Critic without veto logging.",
+      "roi_delta_estimate": "UNKNOWN — veto outcomes not in CSV",
+      "recommendation": "DO_NOT_DOWNGRADE — Critic veto power is the primary protective mechanism. Value unclear but likely high.",
+      "confidence": 30
+    }
+  ],
+
+  "upgrade_candidates": [
+    {
+      "agent": "Regime",
+      "current_model": "Haiku",
+      "candidate_model": "Sonnet",
+      "rationale": "llm_regime field empty in ALL 965 CSV records. Regime classification may be failing. Sonnet may produce better regime labels.",
+      "estimated_benefit": "If regime accuracy improves +10%, expect +$18.7/month PnL (based on known regime-gated rules impact).",
+      "estimated_additional_cost_monthly": 0.27,
+      "roi_estimate": "69x if benefit estimate holds",
+      "recommendation": "CONSIDER — conditional Sonnet for REGIME_SHIFT events only",
+      "confidence": 65
+    }
+  ],
+
+  "missing_data_gaps": [
+    "bot/llm/cost_tracker.json — does not exist. Cannot measure actual per-agent costs.",
+    "llm_regime field in CSV — empty for all 965 trades. Regime ML blind.",
+    "Veto log — Critic decisions not recorded. Cannot measure Critic ROI.",
+    "Agent-level PnL attribution — no way to know which agent decisions led to profitable vs losing trades."
+  ],
+
+  "recommendations": [
+    "PRIORITY 1: Create cost_tracker.json logging per-agent call counts and costs.",
+    "PRIORITY 2: Fix llm_regime logging in CSV so regime-agent accuracy can be measured.",
+    "PRIORITY 3: Log Critic veto decisions with trade outcome linkage.",
+    "HOLD: All model swaps pending actual cost/ROI data. Estimated ROI is speculative."
+  ],
+
+  "swaps_recommended_this_run": 0,
   "potential_monthly_savings": 0.0,
   "potential_monthly_benefit": 186.0,
-  "last_updated": "2026-06-22T23:06:26Z"
+  "note_from_run137": "Regime->Sonnet for REGIME_SHIFT events estimate: +$186/mo benefit, +$0.27/mo cost (688x ROI). Still UNVERIFIED — no cost_tracker data."
 }
