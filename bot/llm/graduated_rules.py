@@ -134,9 +134,12 @@ class GraduatedRulesEngine:
 
     def _save(self):
         try:
+            self._ensure_loaded()  # Guard: never overwrite disk with empty in-memory state
             os.makedirs(os.path.dirname(_RULES_FILE), exist_ok=True)
-            with open(_RULES_FILE, "w") as f:
+            tmp_path = _RULES_FILE + ".tmp"
+            with open(tmp_path, "w") as f:
                 json.dump({"rules": [asdict(r) for r in self._rules]}, f, indent=2, default=str)
+            os.replace(tmp_path, _RULES_FILE)  # Atomic rename — crash-safe
         except Exception as e:
             logger.warning(f"[GRAD-RULES] Save error: {e}")
 
