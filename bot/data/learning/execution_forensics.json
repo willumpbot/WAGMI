@@ -4,9 +4,31 @@
   "trades_analyzed": 589,
   "avg_slippage_pct": 0.5128,
   "slippage_by_symbol": {"HYPE": 0.64, "SOL": 0.48, "BTC": 0.41},
-  "rr_geometry": {"avg_win": 82.72, "avg_loss": -91.27, "win_loss_ratio": 0.91, "kelly_fraction": -0.167, "verdict": "NEGATIVE_EDGE"},
-  "noise_stop_analysis": {"noise_stop_pct": 50.8, "count_estimate": 136, "dollar_loss_estimate": -14814.48, "worst_pair": "HYPE — 69 SL hits × -$221.92 avg = -$15,312"},
-  "fill_analysis": {"partial_fill_rate_pct": "UNKNOWN — no live order data", "note": "Slippage calc unavailable offline"},
-  "delta_from_last_run": "NO CHANGE — bot offline, same 589-trade dataset",
-  "last_updated": "2026-06-22T23:05:41Z"
+  "rr_geometry": {
+    "avg_win": 82.72,
+    "avg_loss": -91.27,
+    "win_loss_ratio": 0.91,
+    "kelly_fraction": -0.167,
+    "verdict": "NEGATIVE_EDGE"
+  },
+  "noise_stop_analysis": {
+    "noise_stop_pct": 50.8,
+    "count_estimate": 136,
+    "dollar_loss_estimate": -14814.48,
+    "worst_pair": "HYPE — 69 SL hits x -$221.92 avg = -$15,312"
+  },
+  "fill_analysis": {
+    "partial_fill_rate_pct": "UNKNOWN — no live order data",
+    "note": "Slippage calc unavailable offline"
+  },
+  "duration_bug": {
+    "affected_trades": 52,
+    "pct_affected": 8.8,
+    "description": "52/589 trades have negative duration (-0.1 to -0.2h). Duration field inverted for sub-6min exits. Biases hold-time ML.",
+    "status": "UNFIXED — dev required"
+  },
+  "delta_from_last_run": "NO CHANGE — bot offline, same 589-trade backtest dataset",
+  "consecutive_cached_runs": 47,
+  "last_updated": "2026-06-23T05:04:19Z",
+  "run_number": 133
 }
