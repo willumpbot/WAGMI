@@ -1,10 +1,10 @@
 {
-  "status": "UPDATED_RUN144",
-  "data_source": "trades_10d.csv (n=965 full dataset). Bot offline Day 76 — NO NEW TRADES. Data UNCHANGED.",
-  "last_updated": "2026-06-24T00:05:00Z",
-  "run_number": 144,
+  "status": "UPDATED_RUN147",
+  "data_source": "trades_10d.csv (n=965 full dataset). Bot offline Day 79 — NO NEW TRADES. Data UNCHANGED.",
+  "last_updated": "2026-06-24T14:00:00Z",
+  "run_number": 147,
   "trades_analyzed": 965,
-  "bot_offline_days": 76,
+  "bot_offline_days": 79,
   "trades_csv_exists": false,
   "note": "bot/data/trades.csv does not exist. All forensics from cached trades_10d.csv (n=965). No delta possible until live restart.",
   "slippage_analysis": {
@@ -33,8 +33,8 @@
     "verdict": "DEEPLY_NEGATIVE — avg loss is 2.09x avg win. Need 68%+ WR to break even at this R:R.",
     "kelly_full_dataset": 0.0061,
     "kelly_recent_100": -0.265,
-    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_15 — atr_mult_sl=1.8 proposed. 15th consecutive flag. No action taken.",
-    "consecutive_flags": 15,
+    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_18 — atr_mult_sl=1.8 proposed. 18th consecutive flag. CRITICALLY OVERDUE.",
+    "consecutive_flags": 18,
     "fix_options": [
       "Option A: global atr_mult_sl 1.5->1.8 (raises breakeven WR from 68%->62%)",
       "Option B: HYPE-specific atr_mult_sl 2.0->2.3 (targeted, lower risk)"
@@ -46,8 +46,8 @@
     "negative_duration_count": 156,
     "valid_duration_count": 0,
     "pct_affected": 100.0,
-    "status": "UNFIXED — prior Run126 applied max(60.0) floor patch to position_manager.py:1367+1398 and backtest/engine.py:1941, but patch not reflected in cached dataset. Will only show in live data post-restart.",
-    "consecutive_flags": 7,
+    "status": "UNFIXED — prior Run126 applied max(60.0) floor patch, but patch not reflected in cached dataset. 10th consecutive flag. Will only show in live data post-restart.",
+    "consecutive_flags": 10,
     "note": "Duration fix was APPLIED in code (run126) but cannot be verified until bot restarts and closes trades."
   },
   "performance_summary_last50": {
@@ -60,5 +60,6 @@
     "total_pnl": 905.23,
     "avg_pnl_per_trade": 0.94
   },
-  "delta_from_run143": "NO CHANGE — bot offline, same 965-trade dataset. Duration bug flag count: 6->7. RR fix flag count: 14->15."
+  "delta_from_run143": "NO CHANGE — bot offline, same 965-trade dataset. Duration bug flag count: 6->7. RR fix flag count: 14->15.",
+  "delta_from_run146": "NO CHANGE — bot offline, same 965-trade dataset. Duration bug flag count: 9->10. RR fix flag count: 17->18."
 }

@@ -1,8 +1,8 @@
 {
   "status": "UPDATED_RUN144",
-  "last_updated": "2026-06-24T00:05:00Z",
-  "run_number": 144,
-  "data_source": "Full 965-trade dataset (cached). Bot offline Day 76 — no new trades.",
+  "last_updated": "2026-06-24T14:00:00Z",
+  "run_number": 147,
+  "data_source": "Full 965-trade dataset (cached). Bot offline Day 79 — no new trades.",
   "trades_analyzed": 965,
   "high_edges": [
     {
@@ -26,9 +26,9 @@
       "win_rate": 64.1,
       "count": 39,
       "ev_per_trade": 101.92,
-      "status": "PENDING_HUMAN_REVIEW — boost +5 proposed. conf=72% (below 75% auto-inject). 5TH CONSECUTIVE FLAG.",
-      "consecutive_flags": 5,
-      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=5 MET, conf=72% NOT MET.",
+      "status": "PENDING_HUMAN_REVIEW — boost +5 proposed. conf=72% (below 75% auto-inject). 7TH CONSECUTIVE FLAG.",
+      "consecutive_flags": 7,
+      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=7 MET (threshold=5), conf=72% NOT MET. 7th flag — STRONGLY OVERDUE for human review.",
       "note": "5th flag reached. Threshold requires conf>=75 for auto-inject. Human approval can bypass."
     }
   ],
@@ -70,23 +70,10 @@
     "HYPE_SHORT": {"trades": 239, "wr": 54.4, "ev": -16.65, "edge_type": "WORST_EV", "rule_status": "SIZE_CAP -50% + VETO >=75% conf"}
   },
   "confidence_win_rates": {
-    "70_80_pct": {
-      "recent_200_wr": 47.6,
-      "ev": -86.67,
-      "rule_status": "CONF_70_80_SIZE_REDUCTION A/B gate 20% — in LLM rules",
-      "consecutive_bad_flags": 10
-    },
-    "80_90_pct": {
-      "recent_200_wr": 52.2,
-      "ev": -37.23,
-      "rule_status": "confidence_paradox_sizing_v1 (-0.25x, targets 85-90% — may be MISCALIBRATED per 20d data showing 82% WR in this band)"
-    },
-    "90plus_pct": {
-      "recent_200_wr": 64.1,
-      "ev": 101.92,
-      "rule_status": "BOOST +5 PENDING HUMAN REVIEW (5th flag, conf=72%, below 75% auto-inject)"
-    }
+    "70_80_pct": {"recent_200_wr": 47.6, "ev": -86.67, "rule_status": "CONF_70_80_SIZE_REDUCTION A/B gate 20% — in LLM rules", "consecutive_bad_flags": 10},
+    "80_90_pct": {"recent_200_wr": 52.2, "ev": -37.23, "rule_status": "confidence_paradox_sizing_v1 (-0.25x, targets 85-90% — may be MISCALIBRATED per 20d data showing 82% WR in this band)"},
+    "90plus_pct": {"recent_200_wr": 64.1, "ev": 101.92, "rule_status": "BOOST +5 PENDING HUMAN REVIEW (7th flag, conf=72%, below 75% auto-inject threshold)"}
   },
   "new_injections_this_run": 0,
-  "delta_from_run143": "No new injections. CONF_90PLUS flag count: 4->5 (5th flag reached, but conf=72% still below 75% auto-inject threshold)."
+  "delta_from_run146": "No new injections. CONF_90PLUS flag count: 6->7 (7th flag, conf=72% still below 75% auto-inject threshold)."
 }
