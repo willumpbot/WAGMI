@@ -1,8 +1,8 @@
 {
-  "status": "UPDATED_RUN152",
-  "last_updated": "2026-06-24T22:00:00Z",
-  "run_number": 152,
-  "data_source": "Full 965-trade dataset (cached). Bot offline Day 84 — no new trades.",
+  "status": "UPDATED_RUN153",
+  "last_updated": "2026-06-24T23:00:00Z",
+  "run_number": 153,
+  "data_source": "Full 965-trade dataset (cached). Bot offline Day 84 -- no new trades.",
   "trades_analyzed": 965,
   "high_edges": [
     {
@@ -11,25 +11,25 @@
       "count": 179,
       "ev_per_trade": 32.44,
       "status": "ACTIVE boost +8 in LLM rules (restored_sol_short_boost_v1)",
-      "consecutive_flags": 20
+      "consecutive_flags": 21
     },
     {
       "key": "BTC_LONG",
       "win_rate": 63.9,
       "count": 72,
       "ev_per_trade": 25.55,
-      "status": "BOOST DEACTIVATED run135 (100d WR=31.7% — temporal degradation). Boost active for BTC_TREND regime only.",
-      "consecutive_flags": 20
+      "status": "BOOST DEACTIVATED run135 (100d WR=31.7% -- temporal degradation). Boost active for BTC_TREND regime only.",
+      "consecutive_flags": 21
     },
     {
       "key": "CONF_90_PLUS",
       "win_rate": 64.1,
       "count": 39,
       "ev_per_trade": 101.92,
-      "status": "PENDING_HUMAN_REVIEW — boost +5 proposed. conf=72% (below 75% auto-inject). 12TH CONSECUTIVE FLAG.",
-      "consecutive_flags": 12,
-      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=12 MET (threshold=5), conf=72% NOT MET. 12th flag — human approval now critically overdue.",
-      "note": "12th consecutive flag. Strong evidence: EV=+$101.92/trade (n=39). Uncaptured edge every run without human approval. Recommend human bypass of confidence threshold given 12 consecutive milestone flags."
+      "status": "PENDING_HUMAN_REVIEW -- boost +5 proposed. conf=72% (below 75% auto-inject). 13TH CONSECUTIVE FLAG.",
+      "consecutive_flags": 13,
+      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=13 MET (threshold=5), conf=72% NOT MET. 13th flag -- human approval CRITICALLY overdue.",
+      "note": "13th consecutive flag. Strong evidence: EV=+$101.92/trade (n=39). Each run without action = uncaptured edge. Strongly recommend human bypass."
     }
   ],
   "high_edges_found": 3,
@@ -49,7 +49,7 @@
     {
       "key": "HYPE_LONG",
       "win_rate": 57.0,
-      "note": "Negative EV despite WR > 50% — avg loss > avg win",
+      "note": "Negative EV despite WR > 50% -- avg loss > avg win",
       "rule_status": "VETO active (restored_hype_long_block_v1, conf=0.88)"
     },
     {
@@ -61,20 +61,10 @@
     }
   ],
   "weak_setups_found": 4,
-  "symbol_win_rates": {
-    "SOL_SHORT": {"trades": 179, "wr": 63.7, "ev": 32.44, "edge_type": "HIGH_EDGE", "rule_status": "ACTIVE boost +8"},
-    "BTC_LONG": {"trades": 72, "wr": 63.9, "ev": 25.55, "edge_type": "HIGH_EDGE_DEGRADED_100D", "rule_status": "BOOST DEACTIVATED (100d)"},
-    "BTC_SHORT": {"trades": 195, "wr": 53.8, "ev": -7.22, "edge_type": "NEUTRAL_NEGATIVE_EV"},
-    "SOL_LONG": {"trades": 122, "wr": 53.3, "ev": -2.62, "edge_type": "NEUTRAL_MARGINAL"},
-    "HYPE_LONG": {"trades": 158, "wr": 57.0, "ev": -6.55, "edge_type": "NEGATIVE_EV_BLOCKED", "rule_status": "VETO active"},
-    "HYPE_SHORT": {"trades": 239, "wr": 54.4, "ev": -16.65, "edge_type": "WORST_EV", "rule_status": "SIZE_CAP -50% + VETO >=75% conf"}
-  },
-  "confidence_win_rates": {
-    "70_80_pct": {"recent_200_wr": 47.6, "ev": -86.67, "rule_status": "CONF_70_80_SIZE_REDUCTION A/B gate 20% — in LLM rules", "consecutive_bad_flags": 13},
-    "80_90_pct": {"recent_200_wr": 52.2, "ev": -37.23, "rule_status": "confidence_paradox_sizing_v1 (-0.25x, targets 85-90% — may be MISCALIBRATED per 20d data showing 82% WR in this band)"},
-    "90plus_pct": {"recent_200_wr": 64.1, "ev": 101.92, "rule_status": "BOOST +5 PENDING HUMAN REVIEW (12th flag, conf=72%, below 75% auto-inject threshold)"}
-  },
   "new_injections_this_run": 0,
-  "delta_from_run151": "No new injections. CONF_90PLUS flag count: 11->12 (12th flag). SOL_SHORT and BTC_LONG flags: 19->20.",
-  "output": {"high_edges_found": 3, "weak_setups_found": 4}
+  "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 13th flag) -- 13TH CONSECUTIVE FLAG. Threshold requires conf>=75 OR human approval. Flags=13 (threshold=5 met), confidence NOT met (72%). Uncaptured edge every run.",
+  "output": {
+    "high_edges_found": 3,
+    "weak_setups_found": 4
+  }
 }

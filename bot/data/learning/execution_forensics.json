@@ -1,8 +1,8 @@
 {
-  "status": "UPDATED_RUN152",
-  "data_source": "trades_10d.csv (n=965 full dataset). Bot offline Day 84 — NO NEW TRADES. Data UNCHANGED.",
-  "last_updated": "2026-06-24T22:00:00Z",
-  "run_number": 152,
+  "status": "UPDATED_RUN153",
+  "data_source": "trades_10d.csv (n=965 full dataset). Bot offline Day 84 -- NO NEW TRADES.",
+  "last_updated": "2026-06-24T23:00:00Z",
+  "run_number": 153,
   "trades_analyzed": 965,
   "bot_offline_days": 84,
   "trades_csv_exists": false,
@@ -11,12 +11,15 @@
     "sl_hit_trades_last50": 22,
     "avg_slippage_from_sl_level_pct": 0.5345,
     "slippage_by_symbol": {
-      "BTC_last50": {"avg_pct": 0.5345, "n": 22},
+      "BTC_last50": {
+        "avg_pct": 0.5345,
+        "n": 22
+      },
       "BTC_cached": 0.41,
       "SOL_cached": 0.48,
       "HYPE_cached": 0.64
     },
-    "slippage_context": "High slippage cases cluster in BTC SHORT at 71-74% confidence — consistent with 70-80% conf degradation. 70-80% conf size-reduction A/B gate (run137) should help when live."
+    "slippage_context": "High slippage cases cluster in BTC SHORT at 71-74% confidence -- consistent with 70-80% conf degradation. 70-80% conf size-reduction A/B gate (run137) should help when live."
   },
   "noise_stop_analysis": {
     "noise_stop_pct_last50": 36.4,
@@ -30,11 +33,11 @@
     "avg_win_last50": 147.07,
     "avg_loss_last50": -306.96,
     "win_loss_ratio_last50": 0.479,
-    "verdict": "DEEPLY_NEGATIVE — avg loss is 2.09x avg win. Need 68%+ WR to break even at this R:R.",
+    "verdict": "DEEPLY_NEGATIVE -- avg loss is 2.09x avg win. Need 68%+ WR to break even at this R:R.",
     "kelly_full_dataset": 0.0061,
     "kelly_recent_100": -0.265,
-    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_23 — atr_mult_sl=1.8 proposed. 23RD CONSECUTIVE FLAG. SEVERELY PAST CRITICAL MILESTONE.",
-    "consecutive_flags": 23,
+    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_24 -- atr_mult_sl=1.8 proposed. 24TH CONSECUTIVE FLAG. NO DECISION IN 24 RUNS.",
+    "consecutive_flags": 24,
     "fix_options": [
       "Option A: global atr_mult_sl 1.5->1.8 (raises breakeven WR from 68%->62%)",
       "Option B: HYPE-specific atr_mult_sl 2.0->2.3 (targeted, lower risk)"
@@ -46,20 +49,20 @@
     "negative_duration_count": 156,
     "valid_duration_count": 0,
     "pct_affected": 100.0,
-    "status": "UNFIXED in cached data — prior Run126 applied max(60.0) floor patch, but patch not reflected in cached dataset. 15th consecutive flag. Will only show in live data post-restart.",
-    "consecutive_flags": 15,
-    "note": "Duration fix was APPLIED in code (run126) but cannot be verified until bot restarts and closes trades."
+    "status": "UNFIXED in cached data -- code patch applied run126, cannot verify until restart. 16th consecutive flag.",
+    "consecutive_flags": 16,
+    "note": "Duration fix APPLIED in code (run126) but cannot be verified until bot restarts and closes trades."
   },
   "performance_summary_last50": {
     "win_rate": 56.0,
     "total_pnl": -2635.32,
     "avg_pnl_per_trade": -52.71
   },
-  "performance_summary_all_965": {
-    "win_rate": 57.0,
-    "total_pnl": 905.23,
-    "avg_pnl_per_trade": 0.94
-  },
-  "delta_from_run151": "NO CHANGE — bot offline, same 965-trade dataset. Duration bug flag count: 14->15. RR fix flag count: 22->23 (23rd flag — SEVERELY past critical milestone).",
-  "output": {"avg_slippage": "0.534%", "noise_stop_problem": "36.4% of stops in high-conf setups (last 50)"}
+  "best_setup": "SOL_SHORT (WR=63.7%, EV=+$32.44)",
+  "worst_setup": "HYPE_SHORT (WR=54.4%, EV=-$16.65)",
+  "delta_from_prior": "NO CHANGE -- bot offline Day 84, same 965-trade dataset. RR fix flag: 23->24 (CRITICAL). Duration bug flag: 15->16.",
+  "output": {
+    "avg_slippage": "0.534%",
+    "noise_stop_problem": "36.4% of stops in high-conf setups (last 50)"
+  }
 }

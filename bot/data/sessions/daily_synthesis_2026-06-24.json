@@ -1,43 +1,43 @@
 {
   "date": "2026-06-24",
-  "run": 149,
-  "generated_at": "2026-06-24T17:00:00Z",
+  "run": 153,
+  "generated_at": "2026-06-24T23:00:00Z",
   "bot_status": "OFFLINE",
-  "days_offline": 81,
+  "days_offline": 84,
   "todays_trades": 0,
   "data_source": "No live trades. Cached 965-trade dataset from trades_10d.csv.",
   "anomalies": [
     {
       "type": "BOT_OFFLINE",
       "severity": "CRITICAL",
-      "detail": "Bot OFFLINE Day 81 — 81st consecutive flag. Zero live trades, zero revenue, zero rule validation. 14 LLM rules and 3 A/B gates fully untested.",
-      "consecutive_days": 81,
+      "detail": "Bot OFFLINE Day 84 -- 84th consecutive flag. Zero live trades, zero revenue, zero rule validation. 14 LLM rules and 3 A/B gates fully untested.",
+      "consecutive_days": 84,
       "recommendation": "cd /home/user/WAGMI/bot && python run.py paper",
       "urgency": "SEVERELY_OVERDUE"
     },
     {
       "type": "RR_GEOMETRY_BROKEN",
       "severity": "CRITICAL",
-      "detail": "avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Kelly_recent=-0.265 (NEGATIVE). 20th consecutive flag without human decision — MILESTONE.",
-      "consecutive_flags": 20,
+      "detail": "avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Kelly_recent=-0.265 (NEGATIVE). 24th consecutive flag without human decision.",
+      "consecutive_flags": 24,
       "recommendation": "Human decision required: (A) global atr_mult_sl 1.5->1.8 OR (B) HYPE-specific atr_mult_sl 2.0->2.3",
-      "urgency": "CRITICAL_MILESTONE_OVERDUE"
+      "urgency": "CRITICAL_FLAG_24_OVERDUE"
     },
     {
       "type": "DURATION_BUG_UNVERIFIED",
       "severity": "HIGH",
-      "detail": "Duration code fix applied run126 but cannot verify until bot restarts. 12th consecutive flag.",
-      "consecutive_flags": 12,
+      "detail": "Duration code fix applied run126 but cannot verify until bot restarts. 16th consecutive flag.",
+      "consecutive_flags": 16,
       "recommendation": "Verify at first live trade close post-restart.",
       "urgency": "VERIFY_ON_RESTART"
     },
     {
       "type": "CONF_90PLUS_HUMAN_REVIEW_OVERDUE",
       "severity": "HIGH",
-      "detail": "CONF_90PLUS boost: WR=64.1%, EV=+$101.92/trade (n=39). Confidence=72% (below 75% auto-inject threshold). 9th consecutive flag, threshold flags>=5 met, human approval can bypass.",
-      "consecutive_flags": 9,
-      "recommendation": "Human approval to add boost +5 for conf>=90% at gate=20% in graduated_rules.json. EV evidence strong — each run without action is uncaptured edge.",
-      "urgency": "HUMAN_REVIEW_STRONGLY_URGED"
+      "detail": "CONF_90PLUS boost: WR=64.1%, EV=+$101.92/trade (n=39). Confidence=72% (below 75% auto-inject threshold). 13th consecutive flag, threshold flags>=5 met, human approval can bypass.",
+      "consecutive_flags": 13,
+      "recommendation": "Human approval to add boost +5 for conf>=90% at gate=20% in graduated_rules.json. EV evidence strong -- each run without action is uncaptured edge.",
+      "urgency": "HUMAN_REVIEW_CRITICALLY_OVERDUE"
     },
     {
       "type": "NO_LIVE_RULE_VALIDATION",
@@ -47,7 +47,13 @@
       "urgency": "BLOCKED_ON_RESTART"
     }
   ],
-  "anomaly_summary": {"critical": 2, "high": 2, "medium": 1, "total": 5},
+  "anomaly_summary": {
+    "critical": 2,
+    "high": 2,
+    "medium": 1,
+    "total": 5
+  },
+  "end_of_day_report": true,
   "changes_active": [
     "TP1_PARTIAL_FEEDBACK_BRANCH: multi_strategy_main.py wired with partial=True for regime_feedback + confidence_floor",
     "evening_session_penalize_v1: -10 confidence, 18-24 UTC, gate=20% (RULE 13)",
@@ -55,12 +61,12 @@
     "conf_70_80_size_reduction_v1: -0.3x size, 70-80% confidence, gate=20% (RULE 12)"
   ],
   "tomorrows_focus": [
-    "1. Restart bot paper trading (Day 81 — SEVERELY OVERDUE)",
-    "2. Human decision on RR geometry fix (20th flag MILESTONE — atr_mult_sl 1.5->1.8 or 2.0->2.3 for HYPE)",
-    "3. Review CONF_90PLUS boost (9th flag, $101.92 EV — approve to inject boost +5 at conf>=90%)",
+    "1. Restart bot paper trading (Day 84 -- SEVERELY OVERDUE). Command: cd /home/user/WAGMI/bot && python run.py paper",
+    "2. Human decision on RR geometry fix (24th flag -- atr_mult_sl 1.5->1.8 or 2.0->2.3 for HYPE)",
+    "3. Review CONF_90PLUS boost (13th flag, $101.92 EV -- approve to inject boost +5 at conf>=90%)",
     "4. Verify TP1 partial-feedback wiring at first TP1 close"
   ],
-  "active_rules_count": 13,
-  "inactive_rules_count": 1,
+  "active_rules_count": 14,
+  "inactive_rules_count": 0,
   "ab_gates_active": 3
 }

@@ -1,24 +1,23 @@
 {
-  "status": "UPDATED_RUN152",
-  "last_updated": "2026-06-24T22:00:00Z",
-  "run_number": 152,
+  "status": "UPDATED_RUN153",
+  "last_updated": "2026-06-24T23:00:00Z",
+  "run_number": 153,
   "cost_tracker_status": "NOT_FOUND",
   "cost_tracker_path": "bot/llm/cost_tracker.json",
-  "consecutive_skips": 9,
+  "consecutive_skips": 10,
   "data_source": "Architecture estimates from CLAUDE.md + accumulated forensics. No real cost data.",
   "roi_summary": {
     "total_pnl_965_trades": 905.23,
     "estimated_llm_cost_965_cycles": 6.4655,
     "roi_all_time": 140.0,
     "roi_recent_100": -11647.8,
-    "interpretation": "All-time ROI strong (140x) but recent 100 deeply negative. LLM cost is NOT the bottleneck — trade quality is.",
-    "monthly_cost_estimate": 4.82,
-    "monthly_cost_breakdown": {"haiku_agents": 0.576, "sonnet_agents_trade_critic": 4.32, "total": 4.9}
+    "interpretation": "All-time ROI strong (140x) but recent 100 deeply negative. LLM cost is NOT the bottleneck -- trade quality is.",
+    "monthly_cost_estimate": 4.82
   },
   "swaps_recommended_this_run": 0,
   "potential_monthly_savings": 0.0,
   "potential_monthly_benefit": 186.0,
-  "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST — fix RR geometry, restart bot, collect live data",
+  "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST -- fix RR geometry, restart bot, collect live data",
   "upgrade_candidates": [
     {
       "agent": "Regime",
@@ -27,22 +26,17 @@
       "confidence": 65,
       "estimated_monthly_benefit": 186.0,
       "estimated_monthly_cost_delta": 0.27,
-      "estimated_roi": "688x",
-      "status": "CONSIDER — blocked on regime logging fix first",
-      "condition": "Only after llm_regime field logging fixed and 100+ live trades collected"
+      "status": "CONSIDER -- blocked on regime logging fix first. Requires llm_regime field populated."
     }
   ],
   "missing_data_gaps": [
-    "bot/llm/cost_tracker.json — does not exist. 9th consecutive skip.",
-    "llm_regime field in CSV — empty for all 965 trades.",
-    "Veto log — Critic decisions not recorded.",
-    "Agent-level PnL attribution — unknown which agent decisions led to wins vs losses."
+    "bot/llm/cost_tracker.json -- does not exist. 10th consecutive skip.",
+    "llm_regime field in CSV -- empty for all 965 trades.",
+    "Veto log -- Critic decisions not recorded.",
+    "Agent-level PnL attribution -- unknown which agent decisions led to wins vs losses."
   ],
-  "recommendations": [
-    {"priority": 1, "action": "CREATE_COST_TRACKER", "description": "Create bot/llm/cost_tracker.json with per-agent call logging.", "effort": "LOW", "impact": "Enables real per-agent optimization"},
-    {"priority": 2, "action": "FIX_REGIME_LOGGING", "description": "llm_regime field empty in ALL 965 CSV records. Fix to populate this field.", "effort": "LOW", "impact": "Unlocks regime-gated rule accuracy tracking"},
-    {"priority": 3, "action": "REGIME_CONDITIONAL_SONNET", "description": "Upgrade Regime agent to Sonnet for REGIME_SHIFT events. Est +$186/mo benefit, +$0.27/mo cost.", "effort": "LOW", "impact": "HIGH if regime accuracy is actually the problem"},
-    {"priority": 4, "action": "LOG_CRITIC_VETO_DECISIONS", "description": "Add Critic veto decision logging to CSV.", "effort": "MEDIUM", "impact": "Enables Critic model optimization"}
-  ],
-  "delta_from_run151": "NO CHANGE — cost_tracker.json still absent. Skip count: 8->9 (9th consecutive)."
+  "output": {
+    "model_swaps_recommended": 0,
+    "potential_savings": "$0.00 (cost not bottleneck)"
+  }
 }
