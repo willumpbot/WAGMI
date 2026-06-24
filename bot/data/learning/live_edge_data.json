@@ -1,8 +1,8 @@
 {
-  "status": "UPDATED_RUN144",
-  "last_updated": "2026-06-24T14:00:00Z",
-  "run_number": 147,
-  "data_source": "Full 965-trade dataset (cached). Bot offline Day 79 — no new trades.",
+  "status": "UPDATED_RUN148",
+  "last_updated": "2026-06-24T16:00:00Z",
+  "run_number": 148,
+  "data_source": "Full 965-trade dataset (cached). Bot offline Day 80 — no new trades.",
   "trades_analyzed": 965,
   "high_edges": [
     {
@@ -11,7 +11,7 @@
       "count": 179,
       "ev_per_trade": 32.44,
       "status": "ACTIVE boost +8 in LLM rules (restored_sol_short_boost_v1)",
-      "consecutive_flags": 15
+      "consecutive_flags": 16
     },
     {
       "key": "BTC_LONG",
@@ -19,17 +19,17 @@
       "count": 72,
       "ev_per_trade": 25.55,
       "status": "BOOST DEACTIVATED run135 (100d WR=31.7% — temporal degradation). Boost active for BTC_TREND regime only.",
-      "consecutive_flags": 15
+      "consecutive_flags": 16
     },
     {
       "key": "CONF_90_PLUS",
       "win_rate": 64.1,
       "count": 39,
       "ev_per_trade": 101.92,
-      "status": "PENDING_HUMAN_REVIEW — boost +5 proposed. conf=72% (below 75% auto-inject). 7TH CONSECUTIVE FLAG.",
-      "consecutive_flags": 7,
-      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=7 MET (threshold=5), conf=72% NOT MET. 7th flag — STRONGLY OVERDUE for human review.",
-      "note": "5th flag reached. Threshold requires conf>=75 for auto-inject. Human approval can bypass."
+      "status": "PENDING_HUMAN_REVIEW — boost +5 proposed. conf=72% (below 75% auto-inject). 8TH CONSECUTIVE FLAG.",
+      "consecutive_flags": 8,
+      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=8 MET (threshold=5), conf=72% NOT MET. 8th flag — CRITICALLY OVERDUE for human review.",
+      "note": "8th consecutive flag. Strong evidence: EV=+$101.92/trade (n=39). Uncaptured edge every run without human approval."
     }
   ],
   "high_edges_found": 3,
@@ -70,10 +70,11 @@
     "HYPE_SHORT": {"trades": 239, "wr": 54.4, "ev": -16.65, "edge_type": "WORST_EV", "rule_status": "SIZE_CAP -50% + VETO >=75% conf"}
   },
   "confidence_win_rates": {
-    "70_80_pct": {"recent_200_wr": 47.6, "ev": -86.67, "rule_status": "CONF_70_80_SIZE_REDUCTION A/B gate 20% — in LLM rules", "consecutive_bad_flags": 10},
+    "70_80_pct": {"recent_200_wr": 47.6, "ev": -86.67, "rule_status": "CONF_70_80_SIZE_REDUCTION A/B gate 20% — in LLM rules", "consecutive_bad_flags": 11},
     "80_90_pct": {"recent_200_wr": 52.2, "ev": -37.23, "rule_status": "confidence_paradox_sizing_v1 (-0.25x, targets 85-90% — may be MISCALIBRATED per 20d data showing 82% WR in this band)"},
-    "90plus_pct": {"recent_200_wr": 64.1, "ev": 101.92, "rule_status": "BOOST +5 PENDING HUMAN REVIEW (7th flag, conf=72%, below 75% auto-inject threshold)"}
+    "90plus_pct": {"recent_200_wr": 64.1, "ev": 101.92, "rule_status": "BOOST +5 PENDING HUMAN REVIEW (8th flag, conf=72%, below 75% auto-inject threshold)"}
   },
   "new_injections_this_run": 0,
-  "delta_from_run146": "No new injections. CONF_90PLUS flag count: 6->7 (7th flag, conf=72% still below 75% auto-inject threshold)."
+  "delta_from_run147": "No new injections. CONF_90PLUS flag count: 7->8. SOL_SHORT and BTC_LONG flags: 15->16.",
+  "output": {"high_edges_found": 3, "weak_setups_found": 4}
 }
