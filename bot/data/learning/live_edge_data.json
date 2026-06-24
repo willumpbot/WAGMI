@@ -1,8 +1,8 @@
 {
-  "status": "UPDATED_RUN150",
-  "last_updated": "2026-06-24T18:00:00Z",
-  "run_number": 150,
-  "data_source": "Full 965-trade dataset (cached). Bot offline Day 82 — no new trades.",
+  "status": "UPDATED_RUN151",
+  "last_updated": "2026-06-24T20:00:00Z",
+  "run_number": 151,
+  "data_source": "Full 965-trade dataset (cached). Bot offline Day 83 — no new trades.",
   "trades_analyzed": 965,
   "high_edges": [
     {
@@ -11,7 +11,7 @@
       "count": 179,
       "ev_per_trade": 32.44,
       "status": "ACTIVE boost +8 in LLM rules (restored_sol_short_boost_v1)",
-      "consecutive_flags": 18
+      "consecutive_flags": 19
     },
     {
       "key": "BTC_LONG",
@@ -19,17 +19,17 @@
       "count": 72,
       "ev_per_trade": 25.55,
       "status": "BOOST DEACTIVATED run135 (100d WR=31.7% — temporal degradation). Boost active for BTC_TREND regime only.",
-      "consecutive_flags": 18
+      "consecutive_flags": 19
     },
     {
       "key": "CONF_90_PLUS",
       "win_rate": 64.1,
       "count": 39,
       "ev_per_trade": 101.92,
-      "status": "PENDING_HUMAN_REVIEW — boost +5 proposed. conf=72% (below 75% auto-inject). 10TH CONSECUTIVE FLAG MILESTONE.",
-      "consecutive_flags": 10,
-      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=10 MET (threshold=5), conf=72% NOT MET. 10th flag — MILESTONE REACHED. Human approval strongly indicated.",
-      "note": "10th consecutive flag. Strong evidence: EV=+$101.92/trade (n=39). Uncaptured edge every run without human approval. Propose bypass of confidence threshold given milestone."
+      "status": "PENDING_HUMAN_REVIEW — boost +5 proposed. conf=72% (below 75% auto-inject). 11TH CONSECUTIVE FLAG.",
+      "consecutive_flags": 11,
+      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=11 MET (threshold=5), conf=72% NOT MET. 11th flag — human approval strongly overdue.",
+      "note": "11th consecutive flag. Strong evidence: EV=+$101.92/trade (n=39). Uncaptured edge every run without human approval. Recommend human bypass of confidence threshold given persistent milestone."
     }
   ],
   "high_edges_found": 3,
@@ -70,11 +70,11 @@
     "HYPE_SHORT": {"trades": 239, "wr": 54.4, "ev": -16.65, "edge_type": "WORST_EV", "rule_status": "SIZE_CAP -50% + VETO >=75% conf"}
   },
   "confidence_win_rates": {
-    "70_80_pct": {"recent_200_wr": 47.6, "ev": -86.67, "rule_status": "CONF_70_80_SIZE_REDUCTION A/B gate 20% — in LLM rules", "consecutive_bad_flags": 12},
+    "70_80_pct": {"recent_200_wr": 47.6, "ev": -86.67, "rule_status": "CONF_70_80_SIZE_REDUCTION A/B gate 20% — in LLM rules", "consecutive_bad_flags": 13},
     "80_90_pct": {"recent_200_wr": 52.2, "ev": -37.23, "rule_status": "confidence_paradox_sizing_v1 (-0.25x, targets 85-90% — may be MISCALIBRATED per 20d data showing 82% WR in this band)"},
-    "90plus_pct": {"recent_200_wr": 64.1, "ev": 101.92, "rule_status": "BOOST +5 PENDING HUMAN REVIEW (10th flag MILESTONE, conf=72%, below 75% auto-inject threshold)"}
+    "90plus_pct": {"recent_200_wr": 64.1, "ev": 101.92, "rule_status": "BOOST +5 PENDING HUMAN REVIEW (11th flag, conf=72%, below 75% auto-inject threshold)"}
   },
   "new_injections_this_run": 0,
-  "delta_from_run149": "No new injections. CONF_90PLUS flag count: 9->10 (MILESTONE). SOL_SHORT and BTC_LONG flags: 17->18.",
+  "delta_from_run150": "No new injections. CONF_90PLUS flag count: 10->11 (11th flag). SOL_SHORT and BTC_LONG flags: 18->19.",
   "output": {"high_edges_found": 3, "weak_setups_found": 4}
 }

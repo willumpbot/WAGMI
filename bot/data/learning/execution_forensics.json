@@ -1,10 +1,10 @@
 {
-  "status": "UPDATED_RUN150",
-  "data_source": "trades_10d.csv (n=965 full dataset). Bot offline Day 82 — NO NEW TRADES. Data UNCHANGED.",
-  "last_updated": "2026-06-24T18:00:00Z",
-  "run_number": 150,
+  "status": "UPDATED_RUN151",
+  "data_source": "trades_10d.csv (n=965 full dataset). Bot offline Day 83 — NO NEW TRADES. Data UNCHANGED.",
+  "last_updated": "2026-06-24T20:00:00Z",
+  "run_number": 151,
   "trades_analyzed": 965,
-  "bot_offline_days": 82,
+  "bot_offline_days": 83,
   "trades_csv_exists": false,
   "note": "bot/data/trades.csv does not exist. All forensics from cached trades_10d.csv (n=965). No delta possible until live restart.",
   "slippage_analysis": {
@@ -33,8 +33,8 @@
     "verdict": "DEEPLY_NEGATIVE — avg loss is 2.09x avg win. Need 68%+ WR to break even at this R:R.",
     "kelly_full_dataset": 0.0061,
     "kelly_recent_100": -0.265,
-    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_21 — atr_mult_sl=1.8 proposed. 21ST CONSECUTIVE FLAG. CRITICAL MILESTONE EXCEEDED.",
-    "consecutive_flags": 21,
+    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_22 — atr_mult_sl=1.8 proposed. 22ND CONSECUTIVE FLAG. FAR PAST CRITICAL MILESTONE.",
+    "consecutive_flags": 22,
     "fix_options": [
       "Option A: global atr_mult_sl 1.5->1.8 (raises breakeven WR from 68%->62%)",
       "Option B: HYPE-specific atr_mult_sl 2.0->2.3 (targeted, lower risk)"
@@ -46,8 +46,8 @@
     "negative_duration_count": 156,
     "valid_duration_count": 0,
     "pct_affected": 100.0,
-    "status": "UNFIXED in cached data — prior Run126 applied max(60.0) floor patch, but patch not reflected in cached dataset. 13th consecutive flag. Will only show in live data post-restart.",
-    "consecutive_flags": 13,
+    "status": "UNFIXED in cached data — prior Run126 applied max(60.0) floor patch, but patch not reflected in cached dataset. 14th consecutive flag. Will only show in live data post-restart.",
+    "consecutive_flags": 14,
     "note": "Duration fix was APPLIED in code (run126) but cannot be verified until bot restarts and closes trades."
   },
   "performance_summary_last50": {
@@ -60,6 +60,6 @@
     "total_pnl": 905.23,
     "avg_pnl_per_trade": 0.94
   },
-  "delta_from_run149": "NO CHANGE — bot offline, same 965-trade dataset. Duration bug flag count: 12->13. RR fix flag count: 20->21 (21st flag — milestone exceeded).",
+  "delta_from_run150": "NO CHANGE — bot offline, same 965-trade dataset. Duration bug flag count: 13->14. RR fix flag count: 21->22 (22nd flag — far past critical milestone).",
   "output": {"avg_slippage": "0.534%", "noise_stop_problem": "36.4% of stops in high-conf setups (last 50)"}
 }
