@@ -1,16 +1,16 @@
 {
   "engine": "perpetual_improvement_loop",
   "version": "3.1",
-  "last_run": "2026-06-24T20:00:00Z",
+  "last_run": "2026-06-24T22:00:00Z",
   "today": "2026-06-24",
-  "run_number": 151,
+  "run_number": 152,
   "bot_status": "OFFLINE",
-  "days_offline": 83,
-  "cadence_streak": 67,
+  "days_offline": 84,
+  "cadence_streak": 68,
   "data_source_confirmed": "trades_10d.csv (n=965 full dataset). No live trades available. bot/data/trades.csv absent.",
   "subsystems": {
     "auto_fix": {
-      "last_run": "2026-06-24T20:00:00Z",
+      "last_run": "2026-06-24T22:00:00Z",
       "fixes_applied_this_run": 0,
       "total_fixes_all_time": 125,
       "gates_active": 3,
@@ -21,55 +21,55 @@
       "all_pending_audit_recs_applied": true,
       "note": "No new audit files since 2026-06-23T16-07-25Z. All recs applied in runs 143-146 (REC1: TP1 fix, REC3: evening+afternoon penalties). REC2 (68%) remains below threshold. No new fixes available.",
       "llm_graduated_rules_total": 14,
-      "cadence_streak": 67,
+      "cadence_streak": 68,
       "output": {"fixes_applied": 0, "gates_active": 3}
     },
     "execution_forensics": {
-      "last_run": "2026-06-24T20:00:00Z",
+      "last_run": "2026-06-24T22:00:00Z",
       "trades_analyzed": 965,
-      "delta_from_prior": "NO CHANGE — bot offline Day 83, same 965-trade dataset. RR fix flag: 21->22 (CRITICAL: 22nd consecutive flag). Duration bug flag: 13->14.",
+      "delta_from_prior": "NO CHANGE — bot offline Day 84, same 965-trade dataset. RR fix flag: 22->23 (CRITICAL: 23rd consecutive flag). Duration bug flag: 14->15.",
       "avg_slippage_pct": 0.534,
       "noise_stop_pct": 36.4,
       "rr_ratio": 0.479,
       "win_rate_all_time": 57.0,
       "win_rate_recent_50": 56.0,
       "avg_pnl_recent_50": -52.71,
-      "duration_bug": "CODE_FIX_APPLIED_UNVERIFIED — run126 patch applied. 14th consecutive flag.",
-      "duration_bug_consecutive_flags": 14,
+      "duration_bug": "CODE_FIX_APPLIED_UNVERIFIED — run126 patch applied. 15th consecutive flag.",
+      "duration_bug_consecutive_flags": 15,
       "best_setup": "SOL_SHORT (WR=63.7%, EV=+$32.44)",
       "worst_setup": "HYPE_SHORT (WR=54.4%, EV=-$16.65)",
-      "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_22 — atr_mult_sl 1.5->1.8 proposed. 22ND CONSECUTIVE FLAG. FAR PAST CRITICAL MILESTONE.",
+      "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_23 — atr_mult_sl 1.5->1.8 proposed. 23RD CONSECUTIVE FLAG. SEVERELY PAST CRITICAL MILESTONE.",
       "output": {"avg_slippage": "0.534%", "noise_stop_problem": "36.4% of stops in high-conf setups (last 50)"}
     },
     "live_injection": {
-      "last_run": "2026-06-24T20:00:00Z",
+      "last_run": "2026-06-24T22:00:00Z",
       "high_edges_found": 3,
       "weak_setups_found": 4,
       "new_injections_this_run": 0,
-      "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 11th flag) — 11TH CONSECUTIVE FLAG. Threshold requires conf>=75 OR human approval. Flags=11 (threshold=5 met), confidence NOT met (72%). Uncaptured edge every run.",
+      "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 12th flag) — 12TH CONSECUTIVE FLAG. Threshold requires conf>=75 OR human approval. Flags=12 (threshold=5 met), confidence NOT met (72%). Uncaptured edge every run.",
       "best_edge": "SOL_SHORT WR=63.7% EV=+$32.44 (ACTIVE boost +8 in LLM rules)",
       "worst_setup": "CONF_70_80_PCT EV=-$86.67 (SIZE_REDUCTION A/B gate=20%)",
-      "conf_90plus_flag_count": 11,
-      "sol_short_flag_count": 19,
-      "btc_long_flag_count": 19,
+      "conf_90plus_flag_count": 12,
+      "sol_short_flag_count": 20,
+      "btc_long_flag_count": 20,
       "output": {"high_edges_found": 3, "weak_setups_found": 4}
     },
     "daily_synthesis": {
-      "last_run": "2026-06-24T20:00:00Z",
+      "last_run": "2026-06-24T22:00:00Z",
       "todays_trades": 0,
       "anomalies_critical": 2,
       "anomalies_high": 2,
       "anomalies_medium": 1,
-      "bot_offline_flags": 83,
+      "bot_offline_flags": 84,
       "max_consecutive_losses": 8,
       "max_leverage_observed": 3.01,
       "wr_swing_20d_100d": 21.3,
       "end_of_day_report_generated": false,
-      "note": "End-of-day report written for 2026-06-24 in run 149. No new trades to synthesize.",
+      "note": "No new trades to synthesize. Bot offline Day 84.",
       "output": {"anomalies_found": 5, "report_generated": false}
     },
     "model_optimization": {
-      "last_run": "2026-06-24T20:00:00Z",
+      "last_run": "2026-06-24T22:00:00Z",
       "cost_tracker_available": false,
       "roi_all_time": 140.0,
       "roi_recent_100": -11647.8,
@@ -77,7 +77,7 @@
       "model_swaps_recommended": 0,
       "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST",
       "upgrade_candidate": "Regime -> Sonnet for REGIME_SHIFT (est 688x ROI — unverified, blocked on llm_regime logging fix)",
-      "delta_from_prior": "NO CHANGE — cost_tracker.json still absent. 8th consecutive skip.",
+      "delta_from_prior": "NO CHANGE — cost_tracker.json still absent. 9th consecutive skip.",
       "output": {"model_swaps_recommended": 0, "potential_savings": "$0.00"}
     }
   },
@@ -85,33 +85,33 @@
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot OFFLINE Day 83 — 83rd consecutive flag. Zero live trades, zero revenue, zero rule validation. 14 LLM rules and 3 A/B gates fully untested.",
+      "finding": "Bot OFFLINE Day 84 — 84th consecutive flag. Zero live trades, zero revenue, zero rule validation. 14 LLM rules and 3 A/B gates fully untested.",
       "action": "cd /home/user/WAGMI/bot && python run.py paper",
-      "consecutive_flags": 83,
+      "consecutive_flags": 84,
       "urgency": "SEVERELY_OVERDUE"
     },
     {
       "subsystem": "execution_forensics",
       "severity": "CRITICAL",
-      "finding": "RR geometry broken: avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Kelly recent=-0.265 (NEGATIVE). 22ND CONSECUTIVE FLAG. Human decision now 22 runs overdue. Every run without action = confirmed negative-EV trading if bot restarts.",
+      "finding": "RR geometry broken: avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Kelly recent=-0.265 (NEGATIVE). 23RD CONSECUTIVE FLAG. Human decision now 23 runs overdue. Every run without action = confirmed negative-EV trading if bot restarts.",
       "action": "Human approval required: (A) global atr_mult_sl 1.5->1.8 OR (B) HYPE-specific atr_mult_sl 2.0->2.3",
-      "consecutive_flags": 22,
-      "urgency": "FAR_PAST_CRITICAL_MILESTONE"
+      "consecutive_flags": 23,
+      "urgency": "SEVERELY_PAST_CRITICAL_MILESTONE"
     },
     {
       "subsystem": "live_injection",
       "severity": "HIGH",
-      "finding": "CONF_90PLUS_SELECTIVE_BOOST: 11TH CONSECUTIVE FLAG. WR=64.1%, EV=+$101.92/trade (n=39). Confidence=72% (below 75% auto-inject). Human approval bypasses threshold. Evidence is strong — 11 consecutive runs of uncaptured edge.",
+      "finding": "CONF_90PLUS_SELECTIVE_BOOST: 12TH CONSECUTIVE FLAG. WR=64.1%, EV=+$101.92/trade (n=39). Confidence=72% (below 75% auto-inject). Human approval bypasses threshold. Evidence is strong — 12 consecutive runs of uncaptured edge.",
       "action": "Human approval: add boost +5 for conf>=90 at gate=20% in bot/data/llm/graduated_rules.json.",
-      "consecutive_flags": 11,
-      "urgency": "HUMAN_REVIEW_OVERDUE"
+      "consecutive_flags": 12,
+      "urgency": "HUMAN_REVIEW_SEVERELY_OVERDUE"
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "Duration bug: code fix applied run126 but unverified. 14th consecutive flag.",
+      "finding": "Duration bug: code fix applied run126 but unverified. 15th consecutive flag.",
       "action": "Verify at first live trade-close post-restart.",
-      "consecutive_flags": 14,
+      "consecutive_flags": 15,
       "urgency": "VERIFY_ON_RESTART"
     },
     {
@@ -124,42 +124,43 @@
     {
       "subsystem": "model_optimization",
       "severity": "MEDIUM",
-      "finding": "No cost_tracker.json. 8th consecutive skip. Regime model optimization blocked.",
+      "finding": "No cost_tracker.json. 9th consecutive skip. Regime model optimization blocked.",
       "action": "1) Create bot/llm/cost_tracker.json with per-agent call logging. 2) Wire llm_regime field to trades.csv at close time.",
       "urgency": "LOW_EFFORT_HIGH_LEVERAGE"
     }
   ],
   "findings_summary": {"critical": 2, "high": 2, "medium": 2, "total": 6},
-  "run151_actions_taken": {
+  "run152_actions_taken": {
     "graduated_rules_json_edits": 0,
     "code_changes": 0,
     "state_files_updated": [
       "bot/data/learning/master_engine_state.json",
       "bot/data/learning/execution_forensics.json",
-      "bot/data/learning/live_edge_data.json"
+      "bot/data/learning/live_edge_data.json",
+      "bot/data/learning/model_optimization.json"
     ],
-    "notes": "Run 151: No new fixes available. No new audit files. All latest audit recs (run146) remain applied. Flag counters incremented: bot_offline 82->83, rr_fix 21->22 (22nd flag), duration_bug 13->14, conf_90plus 10->11 (11th flag), cost_tracker_skip 7->8, sol_short+btc_long 18->19. cadence_streak 66->67."
+    "notes": "Run 152: No new fixes available. No new audit files since 2026-06-23T16-07-25Z. All latest audit recs (run146) remain applied. Flag counters incremented: bot_offline 83->84, rr_fix 22->23 (23rd flag — SEVERELY PAST CRITICAL), duration_bug 14->15, conf_90plus 11->12 (12th flag), cost_tracker_skip 8->9, sol_short+btc_long 19->20. cadence_streak 67->68."
   },
   "cumulative_stats": {
     "total_fixes_all_time": 125,
     "active_llm_graduated_rules": 13,
     "llm_graduated_rules_file_total": 14,
     "ab_tests_active": 3,
-    "total_runs": 151,
+    "total_runs": 152,
     "proposals_pending": 1,
     "items_pending_human_review": 3
   },
-  "run_delta_vs_150": {
+  "run_delta_vs_151": {
     "new_fixes_applied": 0,
     "code_changes": [],
-    "duration_bug_flag": "13->14",
-    "rr_fix_flag": "21->22 (22nd consecutive flag — far past critical milestone)",
-    "conf_90plus_flag": "10->11 (11th consecutive flag)",
-    "bot_offline_flag": "82->83",
-    "cost_tracker_skip": "7->8",
-    "cadence_streak": "66->67",
-    "sol_short_flag": "18->19",
-    "btc_long_flag": "18->19",
-    "notes": "Run 151: No new code changes. No new audit files since 2026-06-23T16-07-25Z. Steady state: RR geometry fix continues to be critically overdue (22nd flag), CONF_90PLUS uncaptured edge continues (11th flag). Both require human decision."
+    "duration_bug_flag": "14->15",
+    "rr_fix_flag": "22->23 (23rd consecutive flag — SEVERELY past critical milestone)",
+    "conf_90plus_flag": "11->12 (12th consecutive flag)",
+    "bot_offline_flag": "83->84",
+    "cost_tracker_skip": "8->9",
+    "cadence_streak": "67->68",
+    "sol_short_flag": "19->20",
+    "btc_long_flag": "19->20",
+    "notes": "Run 152: No new code changes. No new audit files since 2026-06-23T16-07-25Z. Steady state: RR geometry fix continues to be critically overdue (23rd flag — now SEVERELY past critical), CONF_90PLUS uncaptured edge continues (12th flag). Both require human decision."
   }
 }

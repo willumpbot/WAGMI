@@ -1,9 +1,10 @@
 {
-  "status": "UPDATED_RUN142",
-  "last_updated": "2026-06-23T17:05:53Z",
-  "run_number": 142,
+  "status": "UPDATED_RUN152",
+  "last_updated": "2026-06-24T22:00:00Z",
+  "run_number": 152,
   "cost_tracker_status": "NOT_FOUND",
   "cost_tracker_path": "bot/llm/cost_tracker.json",
+  "consecutive_skips": 9,
   "data_source": "Architecture estimates from CLAUDE.md + accumulated forensics. No real cost data.",
   "roi_summary": {
     "total_pnl_965_trades": 905.23,
@@ -32,7 +33,7 @@
     }
   ],
   "missing_data_gaps": [
-    "bot/llm/cost_tracker.json — does not exist.",
+    "bot/llm/cost_tracker.json — does not exist. 9th consecutive skip.",
     "llm_regime field in CSV — empty for all 965 trades.",
     "Veto log — Critic decisions not recorded.",
     "Agent-level PnL attribution — unknown which agent decisions led to wins vs losses."
@@ -42,5 +43,6 @@
     {"priority": 2, "action": "FIX_REGIME_LOGGING", "description": "llm_regime field empty in ALL 965 CSV records. Fix to populate this field.", "effort": "LOW", "impact": "Unlocks regime-gated rule accuracy tracking"},
     {"priority": 3, "action": "REGIME_CONDITIONAL_SONNET", "description": "Upgrade Regime agent to Sonnet for REGIME_SHIFT events. Est +$186/mo benefit, +$0.27/mo cost.", "effort": "LOW", "impact": "HIGH if regime accuracy is actually the problem"},
     {"priority": 4, "action": "LOG_CRITIC_VETO_DECISIONS", "description": "Add Critic veto decision logging to CSV.", "effort": "MEDIUM", "impact": "Enables Critic model optimization"}
-  ]
+  ],
+  "delta_from_run151": "NO CHANGE — cost_tracker.json still absent. Skip count: 8->9 (9th consecutive)."
 }
