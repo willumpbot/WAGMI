@@ -1,10 +1,10 @@
 {
-  "status": "UPDATED_RUN153",
-  "data_source": "trades_10d.csv (n=965 full dataset). Bot offline Day 84 -- NO NEW TRADES.",
-  "last_updated": "2026-06-24T23:00:00Z",
-  "run_number": 153,
+  "status": "UPDATED_RUN155",
+  "data_source": "trades_10d.csv (n=965 full dataset). Bot offline Day 85 -- NO NEW TRADES.",
+  "last_updated": "2026-06-24T19:05:00Z",
+  "run_number": 155,
   "trades_analyzed": 965,
-  "bot_offline_days": 84,
+  "bot_offline_days": 85,
   "trades_csv_exists": false,
   "note": "bot/data/trades.csv does not exist. All forensics from cached trades_10d.csv (n=965). No delta possible until live restart.",
   "slippage_analysis": {
@@ -36,8 +36,8 @@
     "verdict": "DEEPLY_NEGATIVE -- avg loss is 2.09x avg win. Need 68%+ WR to break even at this R:R.",
     "kelly_full_dataset": 0.0061,
     "kelly_recent_100": -0.265,
-    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_24 -- atr_mult_sl=1.8 proposed. 24TH CONSECUTIVE FLAG. NO DECISION IN 24 RUNS.",
-    "consecutive_flags": 24,
+    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_26 -- atr_mult_sl=1.8 proposed. 26TH CONSECUTIVE FLAG. NO DECISION IN 26 RUNS.",
+    "consecutive_flags": 26,
     "fix_options": [
       "Option A: global atr_mult_sl 1.5->1.8 (raises breakeven WR from 68%->62%)",
       "Option B: HYPE-specific atr_mult_sl 2.0->2.3 (targeted, lower risk)"
@@ -49,8 +49,8 @@
     "negative_duration_count": 156,
     "valid_duration_count": 0,
     "pct_affected": 100.0,
-    "status": "UNFIXED in cached data -- code patch applied run126, cannot verify until restart. 16th consecutive flag.",
-    "consecutive_flags": 16,
+    "status": "UNFIXED in cached data -- code patch applied run126, cannot verify until restart. 18th consecutive flag.",
+    "consecutive_flags": 18,
     "note": "Duration fix APPLIED in code (run126) but cannot be verified until bot restarts and closes trades."
   },
   "performance_summary_last50": {
@@ -60,7 +60,7 @@
   },
   "best_setup": "SOL_SHORT (WR=63.7%, EV=+$32.44)",
   "worst_setup": "HYPE_SHORT (WR=54.4%, EV=-$16.65)",
-  "delta_from_prior": "NO CHANGE -- bot offline Day 84, same 965-trade dataset. RR fix flag: 23->24 (CRITICAL). Duration bug flag: 15->16.",
+  "delta_from_prior": "NO CHANGE -- bot offline Day 85, same 965-trade dataset. RR fix flag: 25->26 (CRITICAL). Duration bug flag: 17->18.",
   "output": {
     "avg_slippage": "0.534%",
     "noise_stop_problem": "36.4% of stops in high-conf setups (last 50)"

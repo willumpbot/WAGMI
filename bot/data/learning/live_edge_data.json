@@ -1,8 +1,8 @@
 {
-  "status": "UPDATED_RUN153",
-  "last_updated": "2026-06-24T23:00:00Z",
-  "run_number": 153,
-  "data_source": "Full 965-trade dataset (cached). Bot offline Day 84 -- no new trades.",
+  "status": "UPDATED_RUN155",
+  "last_updated": "2026-06-24T19:05:00Z",
+  "run_number": 155,
+  "data_source": "Full 965-trade dataset (cached). Bot offline Day 85 -- no new trades.",
   "trades_analyzed": 965,
   "high_edges": [
     {
@@ -26,10 +26,10 @@
       "win_rate": 64.1,
       "count": 39,
       "ev_per_trade": 101.92,
-      "status": "PENDING_HUMAN_REVIEW -- boost +5 proposed. conf=72% (below 75% auto-inject). 13TH CONSECUTIVE FLAG.",
-      "consecutive_flags": 13,
-      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=13 MET (threshold=5), conf=72% NOT MET. 13th flag -- human approval CRITICALLY overdue.",
-      "note": "13th consecutive flag. Strong evidence: EV=+$101.92/trade (n=39). Each run without action = uncaptured edge. Strongly recommend human bypass."
+      "status": "PENDING_HUMAN_REVIEW -- boost +5 proposed. conf=72% (below 75% auto-inject). 15TH CONSECUTIVE FLAG.",
+      "consecutive_flags": 15,
+      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=15 MET (threshold=5), conf=72% NOT MET. 15th flag -- human approval CRITICALLY overdue. ~$1,528 missed EV across 15 runs.",
+      "note": "15th consecutive flag. Strong evidence: EV=+$101.92/trade (n=39). Each run without action = uncaptured edge. Strongly recommend human bypass."
     }
   ],
   "high_edges_found": 3,
@@ -62,7 +62,7 @@
   ],
   "weak_setups_found": 4,
   "new_injections_this_run": 0,
-  "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 13th flag) -- 13TH CONSECUTIVE FLAG. Threshold requires conf>=75 OR human approval. Flags=13 (threshold=5 met), confidence NOT met (72%). Uncaptured edge every run.",
+  "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 15th flag) -- 15TH CONSECUTIVE FLAG. Threshold requires conf>=75 OR human approval. Flags=15 (threshold=5 met), confidence NOT met (72%). Uncaptured edge every run. ~$1,528 missed EV.",
   "output": {
     "high_edges_found": 3,
     "weak_setups_found": 4

@@ -1,27 +1,27 @@
 {
   "engine": "perpetual_improvement_loop",
   "version": "3.2",
-  "last_run": "2026-06-24T18:03:51Z",
+  "last_run": "2026-06-24T19:05:00Z",
   "today": "2026-06-24",
-  "run_number": 154,
+  "run_number": 155,
   "bot_status": "OFFLINE",
-  "days_offline": 84,
-  "cadence_streak": 70,
+  "days_offline": 85,
+  "cadence_streak": 71,
   "data_source_confirmed": "trades_10d.csv (n=965 full dataset). No live trades available. bot/data/trades.csv absent.",
   "subsystems": {
     "auto_fix": {
-      "last_run": "2026-06-24T18:03:51Z",
+      "last_run": "2026-06-24T19:05:00Z",
       "fixes_applied_this_run": 0,
       "total_fixes_all_time": 125,
       "gates_active": 3,
       "new_rules_written_to_file": 0,
       "code_changes_this_run": 0,
       "deferred": [
-        "HYPE_SHORT_HIGHCONF_VETO_AUDIT (68% < 75% threshold) -- 8th consecutive deferral"
+        "HYPE_SHORT_HIGHCONF_VETO_AUDIT (68% < 75% threshold) -- 9th consecutive deferral"
       ],
       "applied_this_run": [],
       "all_pending_audit_recs_applied": true,
-      "note": "Most recent audit: 2026-06-23T16-07-25Z (no new files). All recs applied in runs 143-146. No new audit files in 1 day.",
+      "note": "Most recent audit: 2026-06-23T16-07-25Z (no new files since). All recs applied in runs 143-146. No new audit files in 2 days.",
       "llm_graduated_rules_total": 14,
       "output": {
         "fixes_applied": 0,
@@ -29,17 +29,17 @@
       }
     },
     "execution_forensics": {
-      "last_run": "2026-06-24T18:03:51Z",
+      "last_run": "2026-06-24T19:05:00Z",
       "trades_analyzed": 965,
-      "delta_from_prior": "NO CHANGE -- bot offline Day 84, same 965-trade dataset. RR fix flag: 24->25 (CRITICAL). Duration bug flag: 16->17.",
+      "delta_from_prior": "NO CHANGE -- bot offline Day 85, same 965-trade dataset. RR fix flag: 25->26 (CRITICAL). Duration bug flag: 17->18.",
       "avg_slippage_pct": 0.534,
       "noise_stop_pct": 36.4,
       "rr_ratio": 0.479,
       "win_rate_all_time": 57.0,
       "win_rate_recent_50": 56.0,
       "avg_pnl_recent_50": -52.71,
-      "rr_consecutive_flags": 25,
-      "duration_bug_consecutive_flags": 17,
+      "rr_consecutive_flags": 26,
+      "duration_bug_consecutive_flags": 18,
       "rr_fix_options": [
         "Option A: global atr_mult_sl 1.5->1.8 (raises breakeven WR 68%->62%)",
         "Option B: HYPE-specific atr_mult_sl 2.0->2.3 (targeted, lower risk)"
@@ -50,41 +50,41 @@
       }
     },
     "live_injection": {
-      "last_run": "2026-06-24T18:03:51Z",
+      "last_run": "2026-06-24T19:05:00Z",
       "trades_analyzed": 965,
       "new_injections_this_run": 0,
-      "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 14th flag) -- CRITICALLY OVERDUE. EV=$101.92/trade.",
+      "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 15th flag) -- CRITICALLY OVERDUE. EV=$101.92/trade. 15 runs uncaptured = ~$1,528 missed EV (15 * $101.92).",
       "best_edge": "SOL_SHORT WR=63.7% EV=+$32.44 (ACTIVE boost +8 in LLM rules)",
       "worst_setup": "CONF_70_80_PCT EV=-$86.67 (SIZE_REDUCTION A/B gate=20%)",
-      "conf_90plus_flag_count": 14,
-      "sol_short_flag_count": 22,
-      "btc_long_flag_count": 22,
+      "conf_90plus_flag_count": 15,
+      "sol_short_flag_count": 23,
+      "btc_long_flag_count": 23,
       "output": {
         "high_edges_found": 3,
         "weak_setups_found": 4
       }
     },
     "daily_synthesis": {
-      "last_run": "2026-06-24T18:03:51Z",
+      "last_run": "2026-06-24T19:05:00Z",
       "todays_trades": 0,
       "anomalies_critical": 2,
       "anomalies_high": 2,
       "anomalies_medium": 1,
-      "bot_offline_flags": 84,
+      "bot_offline_flags": 85,
       "max_consecutive_losses": 8,
       "max_leverage_observed": 3.01,
       "wr_swing_20d_100d": 21.3,
       "end_of_day_report_generated": false,
-      "note": "Daily synthesis already generated run153 (2026-06-24T23:00Z). No new trades. Bot offline Day 84. Skipping re-generation.",
+      "note": "Daily synthesis generated run153 (2026-06-24T23:00Z). No new trades today. Bot offline Day 85. Skipping re-generation.",
       "output": {
         "anomalies_found": 5,
         "report_generated": false
       }
     },
     "model_optimization": {
-      "last_run": "2026-06-24T18:03:51Z",
+      "last_run": "2026-06-24T19:05:00Z",
       "cost_tracker_exists": false,
-      "consecutive_skips": 11,
+      "consecutive_skips": 12,
       "swaps_recommended_this_run": 0,
       "potential_monthly_savings": 0.0,
       "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST -- RR geometry fix + restart bot first",
@@ -98,37 +98,42 @@
     {
       "subsystem": "execution_forensics",
       "severity": "CRITICAL",
-      "finding": "RR geometry broken: avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Kelly recent=-0.265 (NEGATIVE). Flag 25 of 25.",
-      "action": "HUMAN_DECISION_REQUIRED: (A) global atr_mult_sl 1.5->1.8 OR (B) HYPE-specific 2.0->2.3",
-      "consecutive_flags": 25
+      "finding": "RR geometry broken: avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Kelly recent=-0.265 (NEGATIVE). Need 68%+ WR to break even. Flag 26 of 26.",
+      "action": "HUMAN_DECISION_REQUIRED: (A) global atr_mult_sl 1.5->1.8 OR (B) HYPE-specific 2.0->2.3. Every run without decision = continued structural losses.",
+      "consecutive_flags": 26
     },
     {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot OFFLINE Day 84. Zero live trades, zero revenue, zero rule validation. 14 rules untested.",
+      "finding": "Bot OFFLINE Day 85. Zero live trades, zero revenue, zero rule validation. 14 rules untested. 3 A/B gates active with no data flowing.",
       "action": "cd /home/user/WAGMI/bot && python run.py paper",
-      "consecutive_flags": 84
+      "consecutive_flags": 85
     },
     {
       "subsystem": "live_injection",
       "severity": "HIGH",
-      "finding": "CONF_90PLUS edge ($101.92 EV/trade, WR=64.1%, n=39) uncaptured for 14 consecutive runs. Threshold flags>=5 met. HUMAN APPROVAL ONLY BLOCKER.",
-      "action": "Human approve boost +5 for conf>=90% setups in graduated_rules.json at gate_percentage=20",
-      "consecutive_flags": 14
+      "finding": "CONF_90PLUS edge: EV=$101.92/trade, WR=64.1%, n=39. 15th consecutive flag. Uncaptured edge total: ~$1,528 missed EV across 15 runs. conf=72% -- only blocker is human approval threshold (75% auto vs human override).",
+      "action": "Human approve boost +5 for conf>=90% in graduated_rules.json at gate_percentage=20. No technical risk -- it's an A/B gate at 20%.",
+      "consecutive_flags": 15
     },
     {
       "subsystem": "execution_forensics",
       "severity": "HIGH",
-      "finding": "Duration bug code patch (run126) unverified for 17 consecutive runs. Cannot verify until bot restarts.",
+      "finding": "Duration bug code patch (run126) unverified for 18 consecutive runs. HoldTimeRuleManager blind since run126.",
       "action": "Auto-verify at first live close post-restart.",
-      "consecutive_flags": 17
+      "consecutive_flags": 18
     },
     {
       "subsystem": "auto_fix",
       "severity": "LOW",
-      "finding": "HYPE_SHORT veto rec at 68% confidence -- below 75% threshold. 8th consecutive deferred run.",
-      "action": "Needs 7 more data points or human override to reach threshold.",
-      "consecutive_flags": 8
+      "finding": "HYPE_SHORT veto rec at 68% confidence -- below 75% threshold. 9th consecutive deferred run.",
+      "action": "Needs 7 more supporting data points or human override to reach threshold.",
+      "consecutive_flags": 9
     }
-  ]
+  ],
+  "run_delta_summary": {
+    "vs_prior_run": "run154 -> run155. No structural changes. All flag counters incremented: RR (25->26), duration_bug (17->18), conf_90plus (14->15), bot_offline (84->85), hype_short_deferred (8->9), model_opt_skip (11->12).",
+    "new_thresholds_crossed": "None. CONF_90PLUS at 15th flag -- recommend escalating to CRITICAL.",
+    "action_required": "Two human decisions overdue: (1) RR geometry fix (atr_mult_sl Option A or B), (2) CONF_90PLUS boost approval."
+  }
 }
