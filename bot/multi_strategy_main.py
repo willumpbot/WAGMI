@@ -3116,6 +3116,33 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                            "EMERGENCY", "LIQUIDATION_AVOID",
                            "ROTATE_PROFIT", "ROTATE_LOSS_AVOIDANCE")
 
+            # TP1 partial feedback — regime calibration + confidence floor only (safe subset;
+            # weight_mgr/signal_quality/param_tuner/continuous_backtest excluded to avoid double-count)
+            if event.action == "TP1":
+                try:
+                    _tp1_pos = self.pos_mgr.positions.get(symbol)
+                    _tp1_regime = "unknown"
+                    _tp1_conf = 50.0
+                    if _tp1_pos and _tp1_pos.entry_reasons:
+                        _tp1_regime = _tp1_pos.entry_reasons.get("regime", "unknown")
+                        _tp1_conf = _tp1_pos.entry_reasons.get("confidence", 50.0)
+                    self.regime_feedback.record_trade(
+                        regime=_tp1_regime,
+                        pnl=event.pnl,
+                        confidence=_tp1_conf,
+                        strategy=event.strategy or "",
+                        hold_hours=0.0,
+                        metadata={"symbol": symbol, "action": "TP1", "partial": True}
+                    )
+                    self.confidence_floor.record_outcome(
+                        confidence=_tp1_conf,
+                        win=True,
+                        pnl=event.pnl,
+                        strategy=event.strategy or ""
+                    )
+                except Exception as _tp1_err:
+                    logger.debug(f"TP1 partial feedback error: {_tp1_err}")
+
             # Record outcome for strategy weight tracking (only on full close, use total PnL)
             if event.action in _FULL_CLOSE and event.strategy:
                 pos = self.pos_mgr.positions.get(symbol)

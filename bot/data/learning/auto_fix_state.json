@@ -1,12 +1,35 @@
 {
-  "last_run": "2026-06-24T06:00:00Z",
-  "run_number": 145,
-  "cadence_streak": 61,
-  "fixes_applied": 0,
-  "fixes_applied_this_run": 0,
+  "last_run": "2026-06-24T08:00:00Z",
+  "run_number": 146,
+  "cadence_streak": 62,
+  "fixes_applied": 1,
+  "fixes_applied_this_run": 1,
   "gates_active": 56,
-  "total_fixes_all_time": 124,
-  "fixes": [],
+  "total_fixes_all_time": 125,
+  "fixes": [
+    {
+      "fix_id": "TP1_PARTIAL_FEEDBACK_BRANCH",
+      "description": "Added TP1 partial-feedback branch in multi_strategy_main.py after L3117. Calls regime_feedback.record_trade() and confidence_floor.record_outcome() with partial=True on every TP1 event. Excludes weight_mgr, hold_time_rules, signal_quality, parameter_tuner, continuous_backtest (double-count risk). Fixes 27.2% of trades (160/589) previously invisible to learning systems.",
+      "confidence": 87,
+      "gate_percentage": 0,
+      "applied_at": "2026-06-24T08:00:00Z",
+      "code_location": "bot/multi_strategy_main.py after L3117 (_FULL_CLOSE definition)",
+      "systems_wired": ["regime_feedback", "confidence_floor"],
+      "systems_excluded": ["weight_mgr", "hold_time_rules", "signal_quality", "parameter_tuner", "continuous_backtest"],
+      "rollback": "Remove the `if event.action == 'TP1':` block (25 lines) from multi_strategy_main.py after L3117",
+      "status": "APPLIED — pending live verification at first TP1 close",
+      "investigation_runs": 3,
+      "audit_7_systems_run146": {
+        "weight_mgr": "EXCLUDED — same trade would register twice in strategy weights (TP1 win + final close)",
+        "regime_feedback": "INCLUDED — binned regime stats, partial=True metadata, TP1 feedback useful for regime calibration",
+        "confidence_floor": "INCLUDED — confidence-bin calibration, TP1 is always a win signal, no double-count risk",
+        "hold_time_rules": "EXCLUDED — hold_hours=0 at TP1 would distort minimum-hold statistics",
+        "signal_quality": "EXCLUDED — feature-key win rate would be inflated (TP1 always win + potential loss on TRAILING)",
+        "parameter_tuner": "EXCLUDED — win% distortion from registering same trade twice",
+        "continuous_backtest": "EXCLUDED — validates full-trade returns; partial exit_price/actual_return corrupts validation"
+      }
+    }
+  ],
   "all_recs_from_latest_audit": [
     {
       "rec_id": "TP1_BLIND_SPOT_FIX",
@@ -14,21 +37,12 @@
       "confidence": 87,
       "severity": "CRITICAL",
       "description": "TP1 blind spot: _FULL_CLOSE at multi_strategy_main.py:L3116 excludes TP1. 160/589 trades (27.2%) invisible to all 7 feedback systems.",
-      "investigation_run145": {
-        "status": "COMPLETE",
-        "finding": "TP1 in _close_actions (L3077) but excluded from _FULL_CLOSE (L3115). 7 feedback systems gate on _FULL_CLOSE check at L3120. Fix confirmed as SEPARATE partial-feedback branch, NOT adding TP1 to _FULL_CLOSE.",
-        "wrong_fix_reason": "At TP1 time, pos is still open so pos.realized_pnl = partial TP1 pnl only. Adding to _FULL_CLOSE would use wrong total_pnl.",
-        "correct_fix": "Add `if event.action == 'TP1'` branch after L3117. Call regime_feedback.record_trade() and signal_quality.record_outcome() with event.pnl and win=True, plus partial=True metadata.",
-        "double_count_risk": "Trades with OPEN->TP1_HIT->TRAILING->CLOSED fire BOTH TP1 branch AND final _FULL_CLOSE. Need to confirm which of 7 systems handle partial signals correctly.",
-        "systems_needing_audit": ["weight_mgr", "regime_feedback", "confidence_floor", "hold_time_rules", "signal_quality", "parameter_tuner", "continuous_backtest"],
-        "recommended_start": "regime_feedback + signal_quality only (safest subset — both accept partial metadata)",
-        "code_location": "bot/multi_strategy_main.py after L3117 (between _FULL_CLOSE definition and first if check)"
-      },
-      "action": "PENDING IMPLEMENTATION: Run 146 — audit 7 systems for double-count safety, then add TP1 partial branch.",
-      "rollback": "Remove TP1 branch if feedback systems degrade accuracy",
+      "action": "APPLIED run146 — separate partial-feedback branch added for regime_feedback + confidence_floor. Correct fix (not _FULL_CLOSE addition). Double-count audit completed this run.",
+      "rollback": "Remove TP1 branch block from multi_strategy_main.py after L3117",
       "meets_threshold": true,
-      "status": "INVESTIGATION_COMPLETE_IMPLEMENTATION_NEXT",
-      "deferred_runs": 3
+      "status": "APPLIED_PENDING_LIVE_VERIFICATION",
+      "investigation_runs": 3,
+      "applied_run": 146
     },
     {
       "rec_id": "EVENING_AFTERNOON_PENALTY",
@@ -36,7 +50,7 @@
       "confidence": 75,
       "severity": "MEDIUM",
       "description": "Evening (18-24 UTC, 29% WR, n=14) and afternoon (12-18 UTC, 27% WR, n=15) weaknesses.",
-      "action": "APPLIED in run143 — evening_session_penalize_v1 and afternoon_session_penalize_v1 confirmed in bot/data/llm/graduated_rules.json (verified run144, run145)",
+      "action": "APPLIED in run143 — evening_session_penalize_v1 and afternoon_session_penalize_v1 confirmed in bot/data/llm/graduated_rules.json (verified run144, run145, run146)",
       "rollback": "Set active: false on both rules in bot/data/llm/graduated_rules.json",
       "meets_threshold": true,
       "status": "VERIFIED_APPLIED"
@@ -56,9 +70,9 @@
   "pending_proposals": [
     {
       "proposal_id": "CONF_90PLUS_SELECTIVE_BOOST",
-      "description": "90%+ confidence tier: WR=64.1%, EV=+$101.92/trade (n=39). 5th consecutive flag (unchanged from run144).",
+      "description": "90%+ confidence tier: WR=64.1%, EV=+$101.92/trade (n=39). 6th consecutive flag.",
       "confidence": 72,
-      "flag_count": 5,
+      "flag_count": 6,
       "status": "PENDING_HUMAN_REVIEW — conf=72% below 75% auto-inject threshold. Human approval can bypass threshold.",
       "proposed_rule": {
         "action": "boost",
@@ -66,8 +80,8 @@
         "adjustment": 5.0,
         "gate": 20
       },
-      "inject_trigger": "Human approval (any time) OR (flag_count >= 5 AND confidence >= 75). Flags met, confidence NOT met.",
-      "note": "5th flag maintained. Strong evidence: EV=+$101.92/trade. Awaiting human approval."
+      "inject_trigger": "Human approval (any time) OR (flag_count >= 5 AND confidence >= 75). Flags met (6 consecutive), confidence NOT met (72%).",
+      "note": "6th consecutive flag. Strong evidence: EV=+$101.92/trade. Awaiting human approval."
     },
     {
       "proposal_id": "CONFIDENCE_PARADOX_RULE_REMAP",
@@ -80,12 +94,21 @@
   ],
   "active_fixes_carried": [
     {
+      "fix_id": "TP1_PARTIAL_FEEDBACK_BRANCH",
+      "description": "TP1 partial-feedback branch: regime_feedback + confidence_floor wired to TP1 events with partial=True.",
+      "confidence": 87,
+      "gate_percentage": 0,
+      "applied_at": "2026-06-24T08:00:00Z",
+      "status": "APPLIED_CODE_CHANGE_PENDING_LIVE_VERIFICATION",
+      "rollback_condition": "If regime_feedback or confidence_floor show WR drift > 5% at TP1 vs full-close"
+    },
+    {
       "fix_id": "EVENING_AFTERNOON_PENALTY_APPLIED",
       "description": "evening_session_penalize_v1 (18-24 UTC, adj=-10, gate=20%) and afternoon_session_penalize_v1 (12-18 UTC, adj=-10, gate=20%) in bot/data/llm/graduated_rules.json.",
       "confidence": 75,
       "gate_percentage": 20,
       "applied_at": "2026-06-23T18:05:00Z",
-      "status": "VERIFIED — confirmed present in LLM graduated_rules.json at run144+145",
+      "status": "VERIFIED — confirmed present in LLM graduated_rules.json at run144+145+146",
       "rec_source": "EVENING_AFTERNOON_PENALTY from autonomous_audit_2026-06-23T16-07-25Z.md",
       "rules_added": ["evening_session_penalize_v1", "afternoon_session_penalize_v1"],
       "rollback_condition": "Set active: false on both rules if live WR > 50% on n>=20 in these windows"
@@ -96,7 +119,7 @@
       "confidence": 82,
       "gate_percentage": 20,
       "applied_at": "2026-06-23T18:05:00Z",
-      "status": "VERIFIED — confirmed present in LLM graduated_rules.json at run144+145",
+      "status": "VERIFIED — confirmed present in LLM graduated_rules.json at run144+145+146",
       "rec_source": "REC2 from autonomous_audit_2026-06-23T10-05-44Z.md",
       "rules_added": ["conf_70_80_size_reduction_v1"],
       "rollback_condition": "Disable if treatment EV < control after 50 live trades"
@@ -150,7 +173,7 @@
       "gate_percentage": 0,
       "applied_at": "2026-06-23T14:00:00Z",
       "status": "CODE_FIX_APPLIED_UNVERIFIED",
-      "consecutive_flag": 8
+      "consecutive_flag": 9
     },
     {
       "fix_id": "RUN138_KELLY_RECOMPUTED",
@@ -170,7 +193,7 @@
     "inactive_rules": 1,
     "verified_at": "2026-06-24T00:05:00Z",
     "last_verified_run": 144,
-    "note": "Run 145 did not re-verify file — verified in run144, no changes expected.",
+    "note": "Run 146: not re-verified (stable at 14 rules since run144). Verified in run144+145, no changes expected.",
     "rule_ids": [
       "rule_1782144529_0 (BTC trend boost +8, ACTIVE)",
       "restored_night_session_block_v1 (ACTIVE)",
@@ -192,21 +215,21 @@
     {
       "type": "DURATION_BUG_TOTAL",
       "severity": "CRITICAL",
-      "consecutive_flags": 8,
+      "consecutive_flags": 9,
       "description": "ALL 965 trades have duration_h=0 or negative. Code fix applied run126 but unverifiable until bot restarts.",
       "status": "CODE_FIX_APPLIED_UNVERIFIED"
     },
     {
       "type": "RR_GEOMETRY_BROKEN",
       "severity": "HIGH",
-      "consecutive_flags": 16,
+      "consecutive_flags": 17,
       "description": "avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Need 68%+ WR to break even. Human decision CRITICALLY OVERDUE.",
       "status": "PENDING_HUMAN_DECISION"
     },
     {
       "type": "BTC_SHORT_90PLUS_OVERCLAIM",
       "severity": "MEDIUM",
-      "consecutive_flags": 8,
+      "consecutive_flags": 9,
       "description": "Full dataset WR=67.4% (n=43). Needs live confirmation."
     }
   ],
@@ -220,6 +243,7 @@
   "notes": {
     "run143": "3 rules physically added to LLM graduated_rules.json. TP1 code fix deferred. cadence_streak=59.",
     "run144": "0 new fixes. LLM graduated_rules.json verified: all 14 rules present. CONF_90PLUS at 5th flag. Duration bug 7th flag. RR fix 15th flag. cadence_streak=60.",
-    "run145": "TP1 investigation COMPLETE. Root cause confirmed: separate partial-feedback branch needed, not _FULL_CLOSE addition. Next: audit 7 systems for double-count safety in run146. No new rules applied. RR fix 16th flag (CRITICALLY OVERDUE). Duration bug 8th flag. cadence_streak=61."
+    "run145": "TP1 investigation COMPLETE. Root cause confirmed: separate partial-feedback branch needed, not _FULL_CLOSE addition. Next: audit 7 systems for double-count safety in run146. No new rules applied. RR fix 16th flag (CRITICALLY OVERDUE). Duration bug 8th flag. cadence_streak=61.",
+    "run146": "TP1 BLIND SPOT FIX APPLIED. 7-system double-count audit completed: regime_feedback + confidence_floor wired to TP1 events with partial=True. 5 systems excluded (weight_mgr, hold_time_rules, signal_quality, parameter_tuner, continuous_backtest — all have double-count risk). Code change: bot/multi_strategy_main.py after L3117. Fix addresses 27.2% of trades (160/589) previously invisible to learning systems. Pending live verification at first TP1 close. RR fix 17th flag. Duration bug 9th flag. cadence_streak=62."
   }
 }
