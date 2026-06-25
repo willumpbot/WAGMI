@@ -50,6 +50,12 @@ DEFAULT_SYMBOLS = {
     "ETH": SymbolConfig("ETH", "ETH-USD", "ethereum", "low"),
     "SOL": SymbolConfig("SOL", "SOL-USD", "solana", "medium"),
     "HYPE": SymbolConfig("HYPE", "HYPE-USD", "hyperliquid", "high"),
+    # XRP added 2026-06-25 as supply-side volume lever (one-at-a-time expansion).
+    # tier="medium" maps to RISK_MULTIPLIERS (1.5, 2.5) for zone width.
+    # Position-risk is bounded conservatively via DEFAULT_SYMBOL_OVERRIDES["XRP"]
+    # (max_leverage=10, risk_per_trade=0.05) + SYMBOL_RISK_MULTIPLIERS["XRP"]=0.60
+    # so n<10 uncalibrated trades stay small until the dynamic floor calibrates.
+    "XRP": SymbolConfig("XRP", "XRP-USD", "ripple", "medium"),
 }
 
 # Risk multipliers for zone computation (from user's original bots)
@@ -755,6 +761,18 @@ DEFAULT_SYMBOL_OVERRIDES: Dict[str, SymbolOverrides] = {
                             # causing ensemble to reject 498 valid HYPE signals/day as negative EV.
         mfe_tp1_pct=0.78, mfe_sl_pct=1.34,
     ),
+    # XRP: NEW symbol (added 2026-06-25), n=0 history. Bound the uncalibrated period
+    # (combo/regime gates have no data, dynamic floor falls to _DEFAULT_FLOOR=64).
+    # Most-conservative position sizing available: lowest leverage cap (10x, half of
+    # the 20x peers and below the 20x exchange max in symbol_precision.json) and
+    # risk_per_trade=0.05 (half the global 0.10). volatility_profile="medium" matches
+    # the medium risk_tier. Tightens until n>=10 trades calibrate; relies on the
+    # existing SHORT-bias + conviction gate. No global gate weakened.
+    "XRP": SymbolOverrides(
+        max_leverage=10.0,
+        risk_per_trade=0.05,
+        volatility_profile="medium",
+    ),
 }
 
 
@@ -831,6 +849,9 @@ SYMBOL_RISK_MULTIPLIERS = {
     "BTC":  0.90,  # Solid but needs leverage control (<=7x).
     "SOL":  0.80,  # High variance. Great in trending_bear, bad elsewhere.
     "HYPE": 0.60,  # LOSING SYMBOL: -$36, 24% WR, PF=0.5. Reduce until data improves.
+    "XRP":  0.60,  # NEW SYMBOL (2026-06-25), n=0: no edge data yet. Start at 0.60x
+                   # (same conservative floor as HYPE) to bound uncalibrated trades
+                   # until n>=10. Raise toward 1.0 once live PF/WR validates.
 }
 
 # Symbol+side risk scaling: penalize specific directional trades with weak edge.

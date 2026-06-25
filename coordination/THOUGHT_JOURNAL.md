@@ -578,3 +578,15 @@ LEVER VERDICTS: raise EPSILON 0.55->0.70 = DEPLOY (env-only, safe — #4 convict
 add 1 symbol = the real supply lever [GATED BUILD RUNNING: XRP/DOGE]. lower WR floor = NO (bleeds -EV longs). raise MAX_OPEN = NO
 (not binding). drop name-block = GATE (redundant but free belt-and-suspenders; keep). ACTION: epsilon 0.70 staged in .env;
 symbol-add gated build in flight; both deploy in ONE batched restart when symbol passes review.
+
+## AUDIT SWARM #10 / DEPLOY (2026-06-25T21:35Z) — go-harder volume deployed + campaign synthesis
+DEPLOYED (one batched restart, pid 34116->29508): EXPLORATION_EPSILON 0.55->0.70 + XRP added (5th symbol; review=deploy;
+bounded uncalibrated risk: max_lev 10, risk_per_trade 0.05, SYMBOL_RISK_MULTIPLIERS 0.60; pipeline verified intact). XRP scanning live.
+This is the REAL volume lever (supply +25%), not gate-loosening (which bleeds -EV longs).
+CAMPAIGN VERDICT (10 swarms): AGGRESSIVE=yes (epsilon 0.70, 5 symbols, parallel scan), OFTEN=yes (trading actively, +EV side;
+constraint was supply not gates, now relaxed via XRP), ACCURATE=yes-improving (longs blocked + enforced #2; exploration toxic
+leak closed #4; edge is SIDE-LEVEL avoid-longs not regime #5; muzzle correct #6). STABLE: heartbeat daemon killed the false restarts.
+"CONSTANTLY TRADING" PATH = MORE SYMBOL SUPPLY (more +EV-short markets), one-at-a-time calibration-gated — XRP first, queue more
+after XRP n>=10 calibrates. Quality gates STAY (forcing -EV trades is what bled before; consistent alpha needs +EV setups).
+PENDING: (a) fix veto-ledger real-rule crediting (#7 bug, stamp not firing on live veto path); (b) calibrate XRP then add next symbol;
+(c) gated: SL too eager on longs (#6, low pri since longs blocked); shadow-mode exit-agent measurement (#6).
