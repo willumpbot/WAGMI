@@ -562,3 +562,19 @@ Agent ALREADY has tighten_sl authority (38/40 applied, 9 post-muzzle) — no re-
 on LONGs/trend (4h regret +2.38% longs, +5.61% lone trend; SL cuts positions that recover 1.5-5.6%); trailing healthy. Longs already
 blocked so low priority. FUTURE (gated): SHADOW mode (log muzzled agent's would-be closes + score via exit_regret WITHOUT executing ->
 measure hypothetical edge to ever re-arm) + backtest widening SL for LONG/trend. n=14 directional only; need 50+. No runtime change.
+
+## AUDIT SWARMS #7-9 (2026-06-25T21:15Z) — collapsed (veto-measurement + stability + volume-levers)
+[#7 VETO] BUG: real veto rules NOT self-measuring — only synthetic veto_test_1 ever credited. 0 live counterfactuals carry
+metadata[veto_rule_ids], 0 [CF->RULES] events; record_veto_outcome never fires for a real rule. (Boost/penalize path DID work
+on real rules Jun23.) Compounded by graduated_rules.json RESET at Jun25 00:00:58 + today's deploy-restart churn wiping counters.
+Vetoes still FUNCTION (block trades) — just not self-scoring. FOCUSED FIX (pending, after stable window): verify the veto stamp
+fires on the live BTC-consolidation-SHORT veto (signal_pipeline.py:465 record_veto_counterfactual w/ non-empty _gr_veto_ids ->
+brain_wiring writes metadata[veto_rule_ids]); persist/merge rule counters across restarts so regraduation stops zeroing them.
+[#8 STABILITY] CLEAN: 0 rate-limits under K=2 parallel since 18:23; heartbeat daemon fresh, no watchdog false-restarts; the
+exit-code-1 events are MY deploy-kills, not crashes. Verdict stable. WR floor de-hardcode (lever #1): DO NOT — floor-gated signals
+are ~100% LONGS (win_prob 0.31-0.40, -EV), correctly killed by the EV gate; lowering it just feeds -EV longs.
+[#9 VOLUME] Volume is SUPPLY-constrained (4 symbols, bear tape), NOT gate/cap-constrained (MAX_OPEN 4/12 used, not binding).
+LEVER VERDICTS: raise EPSILON 0.55->0.70 = DEPLOY (env-only, safe — #4 conviction gate pre-filters, 0 long leakage) [STAGED].
+add 1 symbol = the real supply lever [GATED BUILD RUNNING: XRP/DOGE]. lower WR floor = NO (bleeds -EV longs). raise MAX_OPEN = NO
+(not binding). drop name-block = GATE (redundant but free belt-and-suspenders; keep). ACTION: epsilon 0.70 staged in .env;
+symbol-add gated build in flight; both deploy in ONE batched restart when symbol passes review.
