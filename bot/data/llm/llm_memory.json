@@ -1,11 +1,146 @@
-{
-  "last_updated": 1782144524,
-  "notes": [
-    {
-      "text": "SOL LONG SL hit in 3min in range—wait for pullback",
-      "ts": 1782144524.4197707,
-      "symbol": "SOL",
-      "regime": "range"
-    }
-  ]
-}
+[
+  {
+    "id": "mem_001",
+    "content": "SOL SHORT has 69.2% WR over last 20 trades (+$32.44/trade). Rule restored_sol_short_boost_v1 active with +8 confidence boost. This is the primary edge — prioritize SOL SHORT setups in trending regimes.",
+    "importance": 9,
+    "tags": ["SOL", "SHORT", "edge", "win_rate"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_002",
+    "content": "BTC trend regime trades: 69.0% WR last 20 trades (+$91.55/trade). Rule rule_1782144529_0 active with +8 boost. New rule added Jun 23. Strong edge — prioritize in trending regimes.",
+    "importance": 9,
+    "tags": ["BTC", "trend", "edge", "win_rate"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_003",
+    "content": "HYPE LONG is permanently vetoed (23% WR, -$77.26/trade). Rule restored_hype_long_block_v1 active. Never take HYPE LONG signals regardless of confidence.",
+    "importance": 10,
+    "tags": ["HYPE", "LONG", "veto", "loss"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_004",
+    "content": "SOL LONG is vetoed (24% WR). Rule sol_long_veto_v1 active with gate=100%. Never take SOL LONG signals.",
+    "importance": 10,
+    "tags": ["SOL", "LONG", "veto"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_005",
+    "content": "ILLIQUID regime trades have 28.1% WR. Rule restored_illiquid_regime_block_v1 active — veto all trades in illiquid regime.",
+    "importance": 9,
+    "tags": ["regime", "illiquid", "veto"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_006",
+    "content": "RANGING regime penalized -15 confidence (25% WR, 16 trades). Rule restored_ranging_regime_penalty_v1 active. Avoid ranging regime signals.",
+    "importance": 8,
+    "tags": ["regime", "ranging", "penalty"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_007",
+    "content": "AFTERNOON session (12-18 UTC) has ~27% WR. Rule afternoon_session_penalize_v1 active — penalize signals during afternoon. Best sessions: morning (74% WR 06-12 UTC) and evening (65% WR 18-24 UTC).",
+    "importance": 8,
+    "tags": ["time", "session", "afternoon", "penalty"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_008",
+    "content": "NIGHT session (00-06 UTC) is catastrophic (7-15% WR). Rule restored_night_session_block_v1 blocks all trades 00-06 UTC. Never trade during night session.",
+    "importance": 10,
+    "tags": ["time", "night", "veto"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_009",
+    "content": "BTC SHORT at 70-79% confidence has 33% WR (-$86.67/trade). Rule conf_70_80_size_reduction_v1 active — reduce size by 30% for BTC SHORT in this confidence range.",
+    "importance": 8,
+    "tags": ["BTC", "SHORT", "confidence", "size"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_010",
+    "content": "HYPE SHORT double-vetoed at 48.9% WR 100d / 60.5% WR 20d. Rule active with size cap -50%. Conflicting signals — use caution. Recent WR is improving but long-term is poor.",
+    "importance": 7,
+    "tags": ["HYPE", "SHORT", "veto", "conflicted"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_011",
+    "content": "ETH SHORT BB squeeze: 80% WR (n=5). Rule eth_sell_bb_golden_v1 active with gate=50%. Strong pattern but small sample — treat with appropriate weight.",
+    "importance": 8,
+    "tags": ["ETH", "SHORT", "bollinger", "edge"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_012",
+    "content": "BTC SHORT >=90% confidence: 67% WR (n=43). Rule btc_short_90plus_boost_v1 active with +10 confidence boost. Reliable edge at high confidence.",
+    "importance": 9,
+    "tags": ["BTC", "SHORT", "confidence", "edge"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_013",
+    "content": "Equity: $497.05 (90.1% drawdown from $5,000 start). Last 4 trades were losses. Soft-start: use 1% risk (half normal), first 5 trades ETH/BTC trending-regime only. Circuit breaker triggers at 6 consecutive losses.",
+    "importance": 10,
+    "tags": ["equity", "risk", "drawdown", "circuit_breaker"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_014",
+    "content": "RR geometry is broken: avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Fix applied: TP_SL_ATR_MULT increased from 1.5 to 1.8 in .env. This widens stops to reduce premature SL hits.",
+    "importance": 9,
+    "tags": ["rr_geometry", "atr", "config", "fix"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_015",
+    "content": "CONF >=90% trades: 64.1% WR, EV=+$101.92/trade, n=39. Rule conf_90plus_boost_v1 now injected (+5 pts boost). Previously pending 32 runs — approved this session.",
+    "importance": 9,
+    "tags": ["confidence", "edge", "rule_injected"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_016",
+    "content": "ETH TRENDING REGIME: 71% WR (n=7). Rule eth_trending_regime_boost_v1 active with +8 pts. Solid edge in trending regimes.",
+    "importance": 8,
+    "tags": ["ETH", "trend", "edge"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_017",
+    "content": "HYPE UNKNOWN REGIME: 83% WR (n=6). Rule probe gate=20% active. Very high edge but tiny sample — probe carefully with minimum size.",
+    "importance": 7,
+    "tags": ["HYPE", "unknown_regime", "edge", "probe"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  },
+  {
+    "id": "mem_018",
+    "content": "Bot was offline 63+ days (since 2026-04-23). Startup fixes this session: position_manager.py corruption fixed, hold_time_rules init order fixed, conf_90plus rule injected. Exchange APIs blocked in cloud env — needs local run.",
+    "importance": 8,
+    "tags": ["startup", "fixes", "offline", "context"],
+    "created_at": "2026-06-25T17:09:44Z",
+    "expires_at": null
+  }
+]
