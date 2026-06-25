@@ -482,3 +482,21 @@ INCIDENT: .env briefly truncated (186->10 lines) by a cp1252 encoding error mid-
 restored from pre-change backup, re-applied atomically (utf-8). Running bot was unaffected (loads .env only at restart).
 Bot restarted clean (pid 34716, attempt #14). Full config now: volume (60s interval, 12 concurrent) + conviction-aware exploration
 + name-block + parallel scan + Critic-Haiku + heartbeat daemon. Watching: actual cycle time + quota under parallel load.
+
+## AUDIT SWARM #1 (2026-06-25T18:30Z) — post-deploy verification
+INFRA DEPLOY CONFIRMED WORKING: parallel symbol scan interleaving at K=2 (ETH/BTC events same-ms), quota CLEAN (no
+429/session-limit since 18:23), heartbeat daemon live & fresh, per-symbol scratchpad isolated (no cross-symbol bleed),
+NO restart since 18:23 deploy (pid 34716). Verdict aggressive=no / often=partial / accurate=partial — deploy only ~8min old,
+1 entry, 0 closes/2h, too young to judge volume or the name-block.
+KEY CLARIFICATION (swarm lacked this): the "13-attempt exit-code-1 crash-loop today" is MOSTLY MY manual restarts —
+taskkill /F returns exit 1, and I restarted ~14x today for config deploys. NOT spontaneous crashes. The genuine restart
+cause (watchdog heartbeat-stall) is now fixed by the daemon. Future swarms: don't chase a phantom crash; do confirm zero
+NEW exit-code-1 that aren't preceded by a deliberate kill.
+ACTION ITEMS for next swarms: (a) #2 verify EXPLORATION_BLOCK_COMBOS is ENFORCED at the exploration converter (multi_strategy_main
+~7298), distinct from the unrelated unenforced LLM 'Hard-Block ALL LONG' growth recommendations; confirm post-deploy longs
+don't reach the ledger as losses. (b) stop pytest writing to live data/logs (my verification workflows run pytest in the live
+dir; PYTEST_CURRENT_TEST guard covers exit_closes but logs still get polluted) — test-harness isolation, not a runtime change.
+(c) real cycle-time delta needs 30-60min of post-deploy markers — note: individual Sonnet decisions still stall 2.5-7.5min
+(max(timeout,300) + retry) so per-symbol latency, not scan interval, is the residual bottleneck.
+ACCURACY SIGNAL (pre-deploy cohort): last-20 closed LONG 1/5 -$66, SHORT 7/15 +$68 — shorts carry the book, longs bleed (as mapped).
+Equity $2045.56, 0 open, healthy. immediate_action: none — observe (don't layer params on an 8-min-old run).
