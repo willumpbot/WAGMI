@@ -513,3 +513,17 @@ shaving 59-65% near-miss signals (26 rejections). NOT the .env floor(20). The on
 (strips WR protection system-wide) -> DO NOT use. Clean fix = code edit (lower _FLOOR_MIN 55->~50 or shift the 66-band), needs
 restart, batch later — de-hardcoding candidate, WR-protective so loosen carefully. NO urgent action; bot trading well.
 Live concern: 3 open positions are all correlated SHORTS ([OPERATOR] correlation alert) — directional concentration, watch.
+
+## AUDIT SWARM #3 (2026-06-25T19:32Z) — accuracy
+ACCURATE = PARTIAL. EDGE (mechanical exits only, n=44 clean; 71/115 still LLM_EXIT-contaminated): LONG n=9 WR44% net-$103 exp-$11.44 (-EV);
+SHORT n=35 WR63% net+$1746 exp+$49.89 (+EV). SHORT trending_bear n=7 exp+$194 = 78% of all net PnL (the cell to be aggressive in).
+SHORT range n=4 exp-$31 (worst). All LONG cells -EV. Direction good post-deploy: 4 entries ALL SHORT, 0 longs (name-block holding).
+BUT (a) all 4 post-deploy shorts were in CONSOLIDATION (thin +$4.85 exp, bot's own solo-short-consolidation stat is 18%WR -$514) not
+trending_bear -> right side, weak regime (chop = limited edge available). (b) VERIFIED BUG: exploration force-admitted a TOXIC BTC_SHORT
+(8%WR n=13 PF0.28) the LLM skipped, 8min after the LLM-path toxic veto blocked it. Root cause: TWO different toxic sources — exploration
+gate `_is_toxic` (multi_strategy_main:7428) needs regime-cell WR<10% AND n>=20; the counterfactual veto reads the {sym}_{side} verdict
+at n=13(<20). So _is_toxic=False reached exploration_conviction_ok() and it re-admitted the combo. Cost tiny (-$1) but a real leak.
+NO blunt action: EXPLORATION_MODE=false would gut aggression; a BTC_SHORT name-block would wrongly kill the +EV bear shorts (regime-dependent).
+FIX = swarm #4 (regime-aware): unify the exploration toxic/-EV source with the veto's (use win_prob + the {sym}_{side} toxic verdict, not
+only the n>=20 regime cell) AND fix the inverted conviction signal. Gated. This closes the toxic-admission gap WITHOUT a hardcoded block.
+Bot healthy, equity $2045, 3 shorts open, stable ~70min no restart.
