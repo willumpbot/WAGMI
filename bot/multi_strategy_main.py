@@ -350,25 +350,62 @@ def exploration_conviction_ok(
     respect: bool = None,
     conv_thresh: float = None,
     wp_floor: float = None,
+    # ── Unified-toxic / EV params (2026-06-25 swarm #4) ──────────────────
+    rr_tp1=None,
+    fee_drag=None,
+    setup_verdict=None,
+    setup_pf=None,
+    setup_wr=None,
+    setup_n=None,
+    unified: bool = None,
+    min_ev: float = None,
+    toxic_min_n: int = None,
 ):
     """Conviction-aware exploration gate (2026-06-25).
 
     Decides whether a forced skip->go exploration entry is ALLOWED, using only
     STRUCTURED signals (never text-parsing). Exploration adds edge-data value
     ONLY on genuinely-uncertain (coin-flip) skips; it must NOT override a
-    high-conviction or clearly -EV skip (that just bleeds money — overnight
-    BTC/ETH/HYPE LONG were forced and 3/3 stopped out -$64).
+    clearly -EV / toxic skip (that just bleeds money — overnight BTC/ETH/HYPE
+    LONG were forced and 3/3 stopped out -$64; a toxic BTC_SHORT at 8% WR / n=13
+    / PF 0.28 was force-admitted because the regime cell only gated at n>=20).
+
+    Design (swarm #4 GATED FIX):
+      * PRIMARY admit signal is the regime-keyed quant win_prob / EV arm, NOT
+        the inverted skip_conf "conviction" (entry_decision.confidence is the
+        GO-thesis confidence, which LLMs emit LOW on skips, so the old
+        `uncertain = skip_conf < conv_thresh` arm almost always passed and was
+        effectively inert). skip_conf is DEMOTED to a non-binding secondary
+        signal when EXPLORATION_UNIFIED_TOXIC is on.
+      * TOXIC is UNIFIED with the LLM/counterfactual veto: it reads the SAME
+        {sym}_{side} symbol-side verdict (NEGATIVE_EV/TOXIC, or PF<1.0 at
+        n>=EXPLORATION_TOXIC_MIN_N=13) the edge/veto path consults — closing the
+        force-admit hole where the regime cell only gated at n>=20.
+      * REGIME-AWARENESS is preserved: the admit path is the regime-keyed
+        win_prob/EV (so BTC_SHORT in trending_bear, +EV, still explores while
+        BTC_SHORT in range/consolidation is declined). No symbol-blanket block.
 
     Args:
-        skip_conf: entry_decision.confidence — the SKIP's 0-1 consensus
-            conviction (high = the LLM is SURE not to trade).
-        win_prob: quant final_wp on 0-1 scale, or None (degrades safe).
-        is_toxic: regime-cell toxic flag.
+        skip_conf: entry_decision.confidence — the GO-thesis 0-1 confidence
+            (NOT a skip-conviction; demoted to non-binding under unified mode).
+        win_prob: quant final_wp on 0-1 scale (regime-keyed when
+            USE_REGIME_PRIORS on), or None (degrades safe).
+        is_toxic: regime-cell toxic flag (belt-and-suspenders arm).
         reg_wr: regime-cell win-rate % (0-100) or None.
         reg_n: regime-cell sample count.
+        rr_tp1: reward:risk to TP1 for the EV arm (None -> EV arm skipped).
+        fee_drag: round-trip cost in R units for the EV arm (default 0.0).
+        setup_verdict: {sym}_{side} backtest verdict string (e.g.
+            NEGATIVE_EV_BLOCKED). Toxic when it contains NEGATIVE_EV or TOXIC.
+        setup_pf: {sym}_{side} profit factor. Toxic when <1.0 at n>=toxic_min_n.
+        setup_wr: {sym}_{side} win-rate % (informational).
+        setup_n: {sym}_{side} sample count.
         respect/conv_thresh/wp_floor: overrides; default to env vars
             EXPLORATION_RESPECT_CONVICTION / EXPLORATION_CONVICTION_MAX /
             EXPLORATION_MIN_WINPROB.
+        unified/min_ev/toxic_min_n: overrides; default to env vars
+            EXPLORATION_UNIFIED_TOXIC / EXPLORATION_MIN_EV /
+            EXPLORATION_TOXIC_MIN_N.
 
     Returns:
         (conviction_ok, uncertain, neg_ev) — conviction_ok is the gate result.
@@ -380,6 +417,12 @@ def exploration_conviction_ok(
         conv_thresh = float(os.getenv("EXPLORATION_CONVICTION_MAX", "0.65"))
     if wp_floor is None:
         wp_floor = float(os.getenv("EXPLORATION_MIN_WINPROB", "0.40"))
+    if unified is None:
+        unified = os.getenv("EXPLORATION_UNIFIED_TOXIC", "true").lower() in ("1", "true", "yes")
+    if min_ev is None:
+        min_ev = float(os.getenv("EXPLORATION_MIN_EV", "0.0"))
+    if toxic_min_n is None:
+        toxic_min_n = int(os.getenv("EXPLORATION_TOXIC_MIN_N", "13"))
     try:
         skip_conf = float(skip_conf or 0.0)
     except (TypeError, ValueError):
@@ -388,16 +431,63 @@ def exploration_conviction_ok(
         wp = float(win_prob) if win_prob is not None else None
     except (TypeError, ValueError):
         wp = None
-    # uncertain-skip gate: only explore LOW-conviction (coin-flip) skips
-    uncertain = (not respect) or (skip_conf < conv_thresh)
+
+    # ── Symbol-side toxic verdict (UNIFIED with the LLM/counterfactual veto) ──
+    # Same {sym}_{side} verdict the edge/veto path consults at n>=13. Degrades
+    # safe: missing verdict/PF adds no block.
+    setup_toxic = False
+    if unified and respect:
+        try:
+            _n = int(setup_n) if setup_n is not None else 0
+        except (TypeError, ValueError):
+            _n = 0
+        _verdict_str = str(setup_verdict or "").upper()
+        if "NEGATIVE_EV" in _verdict_str or "TOXIC" in _verdict_str:
+            setup_toxic = True
+        try:
+            _pf = float(setup_pf) if setup_pf is not None else None
+        except (TypeError, ValueError):
+            _pf = None
+        if _pf is not None and _pf < 1.0 and _n >= toxic_min_n:
+            setup_toxic = True
+
+    # ── EV arm (regime-keyed win_prob, same shape ensemble.py:2421 uses) ──────
+    # EV = wp*RR_tp1 - (1-wp)*1 - fee_drag. Degrades safe: only fires when both
+    # wp and rr_tp1 are present. Blocks when EV<=min_ev (default 0.0).
+    ev = None
+    ev_neg = False
+    if unified and respect and wp is not None and rr_tp1 is not None:
+        try:
+            _rr = float(rr_tp1)
+            _fd = float(fee_drag) if fee_drag is not None else 0.0
+            ev = wp * _rr - (1.0 - wp) * 1.0 - _fd
+            ev_neg = ev <= min_ev
+        except (TypeError, ValueError):
+            ev = None
+            ev_neg = False
+
     # -EV guard (independent of conviction): never explore a clearly negative-
-    # edge setup. Degrades safe — a missing/None win_prob adds no block.
+    # edge / toxic setup. Degrades safe — a missing/None win_prob adds no block.
     neg_ev = respect and (
         (wp is not None and wp < wp_floor)
         or bool(is_toxic)
         or (reg_wr == 0.0 and reg_n >= 5)
+        or setup_toxic
+        or ev_neg
     )
-    conviction_ok = uncertain and not neg_ev
+
+    if unified:
+        # PRIMARY admit = regime win_prob/EV / non-toxic cell. skip_conf is
+        # DEMOTED to a non-binding signal: it no longer GATES admission (it was
+        # inverted/inert), so `uncertain` is reported for visibility but the
+        # admit decision rests on the -EV/toxic guard only.
+        uncertain = (not respect) or (skip_conf < conv_thresh)
+        conviction_ok = not neg_ev
+    else:
+        # Legacy split-source behavior (flag OFF): inverted skip_conf primary +
+        # regime-cell-only toxic. Reproduces today's exact behavior.
+        uncertain = (not respect) or (skip_conf < conv_thresh)
+        conviction_ok = uncertain and not neg_ev
     return conviction_ok, uncertain, neg_ev
 
 
@@ -7554,6 +7644,22 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 _skip_conf = float(getattr(entry_decision, "confidence", 0.0) or 0.0)
                 _conv_thresh = float(os.getenv("EXPLORATION_CONVICTION_MAX", "0.65"))
                 _wp = (raw_signal.metadata or {}).get("win_prob")
+                # UNIFIED TOXIC (2026-06-25 swarm #4): pass the SAME {sym}_{side}
+                # verdict the LLM/counterfactual veto consults (n>=13-capable),
+                # not only the regime cell (n>=20). `_setup` is the symbol-side
+                # backtest verdict already pulled at :7413. Also pass an RR/EV
+                # arm so the regime-keyed win_prob is the PRIMARY admit signal.
+                _setup_verdict = (_setup or {}).get("verdict")
+                _setup_pf = (_setup or {}).get("pf")
+                _setup_wr = (_setup or {}).get("wr")
+                _setup_n = (_setup or {}).get("total")
+                _rr_tp1 = None
+                try:
+                    _sw = abs(raw_signal.entry - raw_signal.sl)
+                    if _sw > 0:
+                        _rr_tp1 = abs(raw_signal.tp1 - raw_signal.entry) / _sw
+                except (TypeError, ValueError, AttributeError):
+                    _rr_tp1 = None
                 _conviction_ok, _uncertain, _neg_ev = exploration_conviction_ok(
                     skip_conf=_skip_conf,
                     win_prob=_wp,
@@ -7561,6 +7667,11 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     reg_wr=_reg_wr,
                     reg_n=_reg_n,
                     conv_thresh=_conv_thresh,
+                    rr_tp1=_rr_tp1,
+                    setup_verdict=_setup_verdict,
+                    setup_pf=_setup_pf,
+                    setup_wr=_setup_wr,
+                    setup_n=_setup_n,
                 )
                 try:
                     _wp = float(_wp) if _wp is not None else None
@@ -7600,16 +7711,26 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         and _ex_combo not in _ex_blocked
                         and not getattr(_cb, "tripped", False)
                         and not _conviction_ok):
-                    _decline_reason = (
-                        "high-conviction skip" if not _uncertain
-                        else "clearly -EV setup"
-                    )
+                    # Under unified mode the admit decision rests on the -EV/
+                    # toxic guard (skip_conf is non-binding), so a decline here
+                    # means the cell is -EV or toxic (the bleed we are stopping).
+                    _unified_on = os.getenv("EXPLORATION_UNIFIED_TOXIC", "true").lower() in ("1", "true", "yes")
+                    if _unified_on:
+                        _decline_reason = "clearly -EV/toxic setup"
+                    else:
+                        _decline_reason = (
+                            "high-conviction skip" if not _uncertain
+                            else "clearly -EV setup"
+                        )
                     logger.info(
                         f"[{trace_id}][{symbol}] EXPLORATION DECLINED: respecting "
                         f"{_decline_reason} (skip_conf={_skip_conf:.2f} "
                         f"thresh={_conv_thresh:.2f} win_prob="
                         f"{('%.2f' % _wp) if _wp is not None else 'NA'} "
-                        f"toxic={_is_toxic} reg_wr={_reg_wr} reg_n={_reg_n}); "
+                        f"toxic={_is_toxic} reg_wr={_reg_wr} reg_n={_reg_n} "
+                        f"setup_verdict={_setup_verdict} setup_pf={_setup_pf} "
+                        f"setup_n={_setup_n} rr_tp1="
+                        f"{('%.2f' % _rr_tp1) if _rr_tp1 is not None else 'NA'}); "
                         f"keeping LLM skip: {_thesis}"
                     )
             except Exception as _ex_e:

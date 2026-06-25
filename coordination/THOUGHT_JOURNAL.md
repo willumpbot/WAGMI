@@ -527,3 +527,16 @@ NO blunt action: EXPLORATION_MODE=false would gut aggression; a BTC_SHORT name-b
 FIX = swarm #4 (regime-aware): unify the exploration toxic/-EV source with the veto's (use win_prob + the {sym}_{side} toxic verdict, not
 only the n>=20 regime cell) AND fix the inverted conviction signal. Gated. This closes the toxic-admission gap WITHOUT a hardcoded block.
 Bot healthy, equity $2045, 3 shorts open, stable ~70min no restart.
+
+## AUDIT SWARM #4 (2026-06-25T20:22Z) — conviction + toxic-source fix (GATED, review=DEPLOY, shipped)
+Fixed the swarm #3 accuracy leak. (1) DE-INVERTED the conviction signal: win_prob/EV is now the PRIMARY exploration admit
+gate (entry_decision.confidence was GO-thesis confidence = inert for skips); added explicit EV arm (wp*RR-(1-wp)-fee_drag<=0 -> decline).
+(2) UNIFIED toxic source: exploration now reads the SAME {sym}_{side} verdict the LLM/counterfactual veto uses (NEGATIVE_EV/TOXIC
+or PF<1.0 at n>=13) instead of only the regime-cell (WR<10% & n>=20) — closes the BTC_SHORT force-admit hole (8%WR n=13 PF0.28).
+(3) REGIME-AWARE: admit path is regime-keyed win_prob, so +EV bear shorts still explore, -EV range/consolidation toxic declined;
+NO symbol-blanket block. Behind EXPLORATION_UNIFIED_TOXIC=true (default), flag-off=current behavior.
+BACKTEST (49 recorded events): declines 24 toxic/-EV force-admits (incl the bleed shorts/longs 0-14%WR), KEEPS all 25 genuine/+EV/
+uncertain explorations (0 over-blocks; old gate caught only 2). Review=DEPLOY (flag_off_safe, accuracy_gain, aggression_preserved,
+regime_aware_ok). 13 conviction tests pass. Shipped: code (multi_strategy_main.py) + EXPLORATION_UNIFIED_TOXIC/MIN_EV/TOXIC_MIN_N env.
+Restarted (pid 34716->34116, healthy 20:22Z, heartbeat daemon fresh). NOTE: EXPLORATION_BLOCK_COMBOS name-block now REDUNDANT
+(unified guard catches it universally) — keep as belt-and-suspenders, drop after live confirmation (next: confirm 0 forced -EV/toxic post-#4).
