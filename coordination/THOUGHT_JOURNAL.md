@@ -451,3 +451,18 @@ Restarted (pid 39516->9572, healthy 15:20Z). Stopped the overnight auto health-w
 DEEPER FIX PENDING (the principled version): make the exploration converter RESPECT high-conviction LLM skips universally
 (don't force skip->go when the LLM's skip reason signals strong -EV like "0% WR"/"no edge") — then no directional block is
 needed at all; exploration only explores genuinely-uncertain skips. Build next (gated).
+## 2026-06-25T15:21Z — overnight auto-watch STOPPED (owner returned). Bot healthy pid 9572, equity $2046, circuit OK, accurate+aggressive change live. Resuming normal work.
+
+## 2026-06-25T17:39Z — FULL LOCK-IN: extensive volume + conviction-aware exploration (one restart, pid 38292)
+Owner wants to come back to an EXTENSIVE number of trades. Shipped together:
+VOLUME: SCAN_INTERVAL_S 180->60 (3x scan freq — the real bottleneck; was ~1 trade/hr), MAX_OPEN_POSITIONS 8->12.
+  No rate-limit pressure observed; faster scans = 3x LLM calls (the slow scan was old quota-saving) — WATCH quota.
+ACCURACY: conviction-aware exploration gate (gated workflow, deploy-with-tweak). Gate at multi_strategy_main.py converter
+  only forces skip->go on genuinely-uncertain skips, never clearly -EV (win_prob<floor / toxic / 0%-WR cell). Keeps the
+  epsilon RATE (aggression preserved: backtest 34/43 explore events KEPT incl the +EV shorts). EXPLORATION_RESPECT_CONVICTION=true,
+  EXPLORATION_MIN_WINPROB raised 0.40->0.45. 7 conviction tests + 183 broad tests pass, 0 new failures.
+KNOWN LIMITATION (review): the primary conviction signal entry_decision.confidence is the GO-thesis confidence (effectively
+  inverted for skips), so the gate currently works only via the win_prob/-EV guards (~40% of long bleed). MITIGATION: KEPT the
+  name-block EXPLORATION_BLOCK_COMBOS=HYPE/SOL/BTC/ETH_LONG as belt-and-suspenders for longs. NEXT: fix the inverted signal
+  (use win_prob/EV as primary skip-conviction proxy) -> then drop the name-block (the "no hardcoded blocks" end state).
+RESTART NOTE: supervisor backoff now 240s after 13 attempts today — minimize restarts; the watchdog-stall/restart fix is the priority daytime item.

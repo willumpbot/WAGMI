@@ -339,6 +339,67 @@ def get_tp1_close_pct(confidence: float) -> float:
         return 0.30
 
 
+def exploration_conviction_ok(
+    *,
+    skip_conf: float,
+    win_prob,
+    is_toxic: bool,
+    reg_wr,
+    reg_n: int,
+    respect: bool = None,
+    conv_thresh: float = None,
+    wp_floor: float = None,
+):
+    """Conviction-aware exploration gate (2026-06-25).
+
+    Decides whether a forced skip->go exploration entry is ALLOWED, using only
+    STRUCTURED signals (never text-parsing). Exploration adds edge-data value
+    ONLY on genuinely-uncertain (coin-flip) skips; it must NOT override a
+    high-conviction or clearly -EV skip (that just bleeds money — overnight
+    BTC/ETH/HYPE LONG were forced and 3/3 stopped out -$64).
+
+    Args:
+        skip_conf: entry_decision.confidence — the SKIP's 0-1 consensus
+            conviction (high = the LLM is SURE not to trade).
+        win_prob: quant final_wp on 0-1 scale, or None (degrades safe).
+        is_toxic: regime-cell toxic flag.
+        reg_wr: regime-cell win-rate % (0-100) or None.
+        reg_n: regime-cell sample count.
+        respect/conv_thresh/wp_floor: overrides; default to env vars
+            EXPLORATION_RESPECT_CONVICTION / EXPLORATION_CONVICTION_MAX /
+            EXPLORATION_MIN_WINPROB.
+
+    Returns:
+        (conviction_ok, uncertain, neg_ev) — conviction_ok is the gate result.
+        When respect is False, behaves exactly like prior behavior (always ok).
+    """
+    if respect is None:
+        respect = os.getenv("EXPLORATION_RESPECT_CONVICTION", "true").lower() in ("1", "true", "yes")
+    if conv_thresh is None:
+        conv_thresh = float(os.getenv("EXPLORATION_CONVICTION_MAX", "0.65"))
+    if wp_floor is None:
+        wp_floor = float(os.getenv("EXPLORATION_MIN_WINPROB", "0.40"))
+    try:
+        skip_conf = float(skip_conf or 0.0)
+    except (TypeError, ValueError):
+        skip_conf = 0.0
+    try:
+        wp = float(win_prob) if win_prob is not None else None
+    except (TypeError, ValueError):
+        wp = None
+    # uncertain-skip gate: only explore LOW-conviction (coin-flip) skips
+    uncertain = (not respect) or (skip_conf < conv_thresh)
+    # -EV guard (independent of conviction): never explore a clearly negative-
+    # edge setup. Degrades safe — a missing/None win_prob adds no block.
+    neg_ev = respect and (
+        (wp is not None and wp < wp_floor)
+        or bool(is_toxic)
+        or (reg_wr == 0.0 and reg_n >= 5)
+    )
+    conviction_ok = uncertain and not neg_ev
+    return conviction_ok, uncertain, neg_ev
+
+
 def _fmt_price(price: float) -> str:
     """Format price with appropriate precision (handles micro-prices like PEPE)."""
     if price == 0:
@@ -7341,9 +7402,39 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 _ex_side = "LONG" if raw_signal.side in ("BUY", "LONG") else "SHORT"
                 _ex_combo = f"{symbol}_{_ex_side}"
                 _ex_blocked = os.getenv("EXPLORATION_BLOCK_COMBOS", "HYPE_LONG,SOL_LONG").replace(" ", "").split(",")
+                # ── CONVICTION-AWARE EXPLORATION GATE (2026-06-25) ─────────────
+                # Exploration must add EDGE-DATA value, not bleed money. It only
+                # adds value on GENUINELY-UNCERTAIN skips (coin-flips where we
+                # truly don't know the edge). On HIGH-CONVICTION -EV skips ("0% WR",
+                # "lacks credible edge", "likely chops") the LLM is right and
+                # forcing a trade just loses money (overnight BTC/ETH/HYPE LONG:
+                # 3/3 stopped out -$64). We gate on STRUCTURED signals only — the
+                # SKIP's consensus conviction (entry_decision.confidence) and the
+                # quant win_prob / regime-cell guards — NEVER text-parsing.
+                # Behind EXPLORATION_RESPECT_CONVICTION (default true); flag OFF
+                # reproduces prior behavior exactly. This makes the name-based
+                # EXPLORATION_BLOCK_COMBOS list unnecessary (the -EV guard catches
+                # every symbol/side universally), but it is left in place as
+                # belt-and-suspenders.
+                _skip_conf = float(getattr(entry_decision, "confidence", 0.0) or 0.0)
+                _conv_thresh = float(os.getenv("EXPLORATION_CONVICTION_MAX", "0.65"))
+                _wp = (raw_signal.metadata or {}).get("win_prob")
+                _conviction_ok, _uncertain, _neg_ev = exploration_conviction_ok(
+                    skip_conf=_skip_conf,
+                    win_prob=_wp,
+                    is_toxic=_is_toxic,
+                    reg_wr=_reg_wr,
+                    reg_n=_reg_n,
+                    conv_thresh=_conv_thresh,
+                )
+                try:
+                    _wp = float(_wp) if _wp is not None else None
+                except (TypeError, ValueError):
+                    _wp = None
                 if (os.getenv("EXPLORATION_MODE", "false").lower() in ("1", "true", "yes")
                         and _ex_combo not in _ex_blocked
                         and not getattr(_cb, "tripped", False)
+                        and _conviction_ok
                         and _rnd.random() < float(os.getenv("EXPLORATION_EPSILON", "0.40"))):
                     _stop_w = abs(raw_signal.entry - raw_signal.sl)
                     if _stop_w > 0 and raw_signal.entry > 0:
@@ -7366,6 +7457,26 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                                 f"qty={_ex_qty:.6f} lev={_ex_lev:.1f}x risk=${_risk_usd:.2f} "
                                 f"(gathering edge data; LLM had skipped: {_thesis})"
                             )
+                # Visibility: log when the conviction gate DECLINED to convert a
+                # skip that exploration would otherwise have sampled. Only logs
+                # when exploration is enabled and the combo/circuit-breaker checks
+                # passed, so this directly surfaces the gate stopping the -EV bleed.
+                elif (os.getenv("EXPLORATION_MODE", "false").lower() in ("1", "true", "yes")
+                        and _ex_combo not in _ex_blocked
+                        and not getattr(_cb, "tripped", False)
+                        and not _conviction_ok):
+                    _decline_reason = (
+                        "high-conviction skip" if not _uncertain
+                        else "clearly -EV setup"
+                    )
+                    logger.info(
+                        f"[{trace_id}][{symbol}] EXPLORATION DECLINED: respecting "
+                        f"{_decline_reason} (skip_conf={_skip_conf:.2f} "
+                        f"thresh={_conv_thresh:.2f} win_prob="
+                        f"{('%.2f' % _wp) if _wp is not None else 'NA'} "
+                        f"toxic={_is_toxic} reg_wr={_reg_wr} reg_n={_reg_n}); "
+                        f"keeping LLM skip: {_thesis}"
+                    )
             except Exception as _ex_e:
                 logger.debug(f"[{trace_id}][{symbol}] exploration convert error: {_ex_e}")
                 _explored = False
