@@ -500,3 +500,16 @@ dir; PYTEST_CURRENT_TEST guard covers exit_closes but logs still get polluted) �
 (max(timeout,300) + retry) so per-symbol latency, not scan interval, is the residual bottleneck.
 ACCURACY SIGNAL (pre-deploy cohort): last-20 closed LONG 1/5 -$66, SHORT 7/15 +$68 — shorts carry the book, longs bleed (as mapped).
 Equity $2045.56, 0 open, healthy. immediate_action: none — observe (don't layer params on an 8-min-old run).
+
+## AUDIT SWARM #2 (2026-06-25T19:05Z) — aggression + name-block enforcement
+NAME-BLOCK ENFORCED = CONFIRMED (swarm #1 concern RESOLVED): multi_strategy_main.py:7539/7569-7573/7599-7602 — a matched
+-EV long combo fails the `_ex_combo not in _ex_blocked` guard on BOTH conversion branches -> hits neither -> _explored stays
+False -> LLM-FIRST SKIP, long NOT forced. Real short-circuit, ONE action=go site (no bypass). ZERO post-deploy forced longs
+(the earlier BTC/ETH/HYPE forced longs all PREDATE the deploy + the var). Conviction gate also live (2 EXPLORATION DECLINED, skip_conf 0.67/0.70>0.65).
+OFTEN = YES. Post-deploy ~5 opens/35min (all SHORTS, +EV side); MAX_OPEN 25% utilized (3/12, NOT binding); quota CLEAN under
+parallel load (Sonnet sem=2 + Critic-Haiku, no throttle). Cycle 4.5min->~3.6min median (modest; cycle time NOT the binding gate).
+#1 VOLUME GATE = hardcoded WR-driven confidence floor (llm/dynamic_thresholds.py _wr_to_floor: WR<45%->66, clamp _FLOOR_MIN=55..82),
+shaving 59-65% near-miss signals (26 rejections). NOT the .env floor(20). The only env lever BACKTEST_CLEAN_FLOOR=1 would BLEED
+(strips WR protection system-wide) -> DO NOT use. Clean fix = code edit (lower _FLOOR_MIN 55->~50 or shift the 66-band), needs
+restart, batch later — de-hardcoding candidate, WR-protective so loosen carefully. NO urgent action; bot trading well.
+Live concern: 3 open positions are all correlated SHORTS ([OPERATOR] correlation alert) — directional concentration, watch.
