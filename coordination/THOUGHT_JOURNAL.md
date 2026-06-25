@@ -379,3 +379,21 @@ redundant oscillators fire together"), with no evidence agreement helps, while P
 agree=1 IS the +EV bucket (n=27 WR 0.67 +$1873). FIX (de-hardcode, surgical): removed the 3-agree +20% BOOST (capped at 1.0)
 so agreement can no longer INCREASE leverage; KEPT the low-agreement caution (0.80x/0.7x) as a risk control (did not weaken
 any risk limit). Updated test_3agree_scalp_kelly to new behavior; suite back to 19 pre-existing fails, 0 new. Restarted (pid 35048).
+
+## 2026-06-25T00:05Z — VETO DECISION-LEDGER SHIPPED (self-retiring learned rules) — 3 gated iterations
+The core "not hardcoded, self-learning" capability. Graduated VETO rules were times_correct=0 over 3120 uses (structurally
+unmeasurable = de-facto permanent hardcoded blocks). Now they self-measure and self-retire.
+ARCHITECTURE (the fix that finally held): PAIRED INCREMENT. Removed veto times_applied from evaluate_signal entirely;
+record_veto_outcome(rule_ids, won) is the SOLE writer — increments times_applied AND (times_correct iff the blocked trade
+would have LOST), per rule_id, on resolution. So applied & correct are the SAME population BY CONSTRUCTION — no evaluate_signal
+caller (5 found, incl the leaky evaluate_raw) can inflate the denominator. Wired all 4 real veto sites to record a by-rule_id
+counterfactual (ensemble Gate0, signal_pipeline Gate1g, coordinator pre-LLM veto_only, coordinator merge). De-dup now UNIONS
+rule_ids across sites for the same would-be trade. LLM_FIRST overrides excluded (not blocked → not counted). won=None stubs
+fully unscored (counting an unscoreable denominator would itself leak). Auto-retire (n>=10 & acc<0.35) now applies to vetoes too.
+GATE HISTORY (why it took 3 passes): attempt1 reverted (3/4 sites uncounted); attempt2 fix-first (5th site evaluate_raw leak +
+de-dup collapse); attempt3 = paired-increment = leak-proof. Replay: no_leak_any_caller=true, applied_equals_recorded=true.
+Review: deploy (leak_proof, hot_loop_safe, attribution_correct, preserved_edits_intact). 62 veto/backbone tests pass; broad
+suite 0 NEW failures (the 10 fails are all pre-existing, verified). Restarted clean (pid 9808). Files: graduated_rules,
+counterfactual_learner, brain_wiring, ensemble, signal_pipeline, coordinator + 2 test files.
+NEXT: vetoes now accrue real accuracy as trades resolve → in ~weeks bad vetoes auto-retire, good ones earn trust. Then:
+crazyonsol.online live-data bridge; re-validate regime priors as mechanical n grows; convert remaining magic-number gates to measured.

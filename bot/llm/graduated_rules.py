@@ -35,6 +35,10 @@ class GraduatedRule:
     last_applied: float = 0.0
     times_applied: int = 0
     times_correct: int = 0
+    # Overridden = veto rule WOULD have fired but LLM_FIRST_MODE let the trade flow.
+    # These never touch accuracy (the trade was NOT blocked), tracked separately for audit.
+    times_overridden: int = 0
+    overridden_correct: int = 0
     active: bool = True
 
     @property
@@ -256,7 +260,22 @@ class GraduatedRulesEngine:
     def evaluate_signal(self, symbol="", regime="", side="", strategy="",
                         setup_type="", num_agree=0, confidence=0.0, hour_utc=-1,
                         strategies_active=None, veto_only=False) -> tuple:
-        """Returns (should_veto, adjusted_confidence, applied_rules_summary).
+        """Returns (should_veto, adjusted_confidence, applied_rules_summary, applied_veto_rule_ids).
+
+        applied_veto_rule_ids: list of rule_id strings for the VETO rules that fired
+        on this signal. Callers stamp these into the counterfactual record at veto
+        time so the outcome resolves against the SAME rule population that fired
+        (no lossy re-matching at resolution time).
+
+        DENOMINATOR-LEAK FIX (2026-06): times_applied for VETO rules is NO LONGER
+        incremented here. A veto fire that is not paired with a recorded outcome is
+        simply UNMEASURED (acceptable under-sampling) — it can never inflate the
+        denominator. record_veto_outcome() is the SOLE writer of veto times_applied
+        AND times_correct, so the two counters always describe the SAME population by
+        construction, regardless of how many code paths call evaluate_signal (incl.
+        ensemble.evaluate_raw and any future caller). BOOST/PENALIZE counting is
+        unchanged: their times_applied is still incremented here (numerator credited
+        later by record_outcome() on trade close).
 
         strategies_active: list of individual strategy names that fired (e.g.
         ["bollinger_squeeze", "multi_tier_quality"]). Enables rules that condition
@@ -268,6 +287,7 @@ class GraduatedRulesEngine:
         """
         self._ensure_loaded()
         vetoed, conf_delta, applied = False, 0.0, []
+        applied_veto_rule_ids: List[str] = []
 
         for rule in self._rules:
             if not rule.active or not rule.matches(symbol=symbol, regime=regime, side=side,
@@ -278,23 +298,31 @@ class GraduatedRulesEngine:
                 continue
             if veto_only and rule.action != "veto":
                 continue
-            rule.times_applied += 1
             rule.last_applied = time.time()
 
             if rule.action == "veto":
+                # NOTE: times_applied is intentionally NOT bumped here. The veto
+                # denominator is owned exclusively by record_veto_outcome() so the
+                # applied/correct populations can never diverge across call sites
+                # (see method docstring — denominator-leak fix).
                 vetoed = True
                 applied.append(f"VETO:{rule.hypothesis_statement[:40]}")
+                applied_veto_rule_ids.append(rule.rule_id)
             elif rule.action == "boost":
+                rule.times_applied += 1
                 conf_delta += rule.adjustment
                 applied.append(f"BOOST+{rule.adjustment}:{rule.hypothesis_statement[:30]}")
             elif rule.action == "penalize":
+                rule.times_applied += 1
                 conf_delta += rule.adjustment
                 applied.append(f"PEN{rule.adjustment}:{rule.hypothesis_statement[:30]}")
 
-        if applied:
+        # Persist only when a non-veto rule mutated a counter; veto fires no longer
+        # mutate state in evaluate_signal, so they need no save here.
+        if any(a.startswith(("BOOST", "PEN")) for a in applied):
             self._save()
 
-        return vetoed, max(0, min(100, confidence + conf_delta)), "; ".join(applied)
+        return vetoed, max(0, min(100, confidence + conf_delta)), "; ".join(applied), applied_veto_rule_ids
 
     def record_outcome(self, symbol="", regime="", side="", won=False, hour_utc: int = -1,
                        strategies_active=None, num_agree: int = 0, confidence: float = 0.0):
@@ -355,6 +383,83 @@ class GraduatedRulesEngine:
 
         self._save()
 
+    def record_veto_outcome(self, rule_ids: List[str], won: Optional[bool]) -> None:
+        """Credit VETO-rule accuracy by rule_id — the SOLE writer of veto counters.
+
+        This is the ONLY place veto times_applied AND times_correct are mutated. By
+        owning BOTH counters in one paired call, the applied (denominator) and correct
+        (numerator) populations are identical BY CONSTRUCTION — no call site of
+        evaluate_signal can inflate the denominator without a matching outcome record
+        (denominator-leak fix). Called from counterfactual_learner.update_with_price
+        when a stamped veto counterfactual resolves, using the exact rule_ids captured
+        at veto time (no re-matching, no lossy condition drift).
+
+        won: True  = the blocked trade WOULD have won  -> veto WRONG  -> applied +1
+             False = the blocked trade WOULD have lost -> veto CORRECT -> applied +1, correct +1
+             None  = unscored stub (e.g. site-4 missing SL/TP, no forward-track
+                     possible) -> UNMEASURED: touches NEITHER applied nor correct.
+                     The rule_id stamp is retained purely for audit. (Counting a
+                     denominator with no possible numerator would itself be a leak.)
+        """
+        self._ensure_loaded()
+        if not rule_ids:
+            return
+        if won is None:
+            # Unscored: do not enter the measured population at all.
+            return
+        _ids = set(rule_ids)
+        changed = False
+        for rule in self._rules:
+            if rule.rule_id not in _ids or rule.action != "veto":
+                continue
+            changed = True
+            # Denominator increment lives here (paired with the numerator), NOT in
+            # evaluate_signal — guarantees applied & correct share one population.
+            rule.times_applied += 1
+            if won is False:
+                rule.times_correct += 1
+                logger.info(
+                    f"[GRAD-RULES] VETO +correct: {rule.rule_id} blocked a loser "
+                    f"(times_correct now={rule.times_correct}, times_applied={rule.times_applied})"
+                )
+            else:  # won is True
+                logger.info(
+                    f"[GRAD-RULES] VETO applied (wrong): {rule.rule_id} blocked a would-be winner "
+                    f"(times_correct={rule.times_correct}, times_applied now={rule.times_applied})"
+                )
+
+            # Vetoes can now self-retire on the SAME criteria as other rules.
+            if rule.times_applied >= 10 and rule.accuracy < 0.35:
+                rule.active = False
+                logger.info(
+                    f"[GRAD-RULES] Auto-retired VETO: {rule.hypothesis_statement[:50]} "
+                    f"(acc={rule.accuracy:.0%})"
+                )
+        if changed:
+            self._save()
+
+    def record_veto_overridden(self, rule_ids: List[str], won: Optional[bool]) -> None:
+        """Track LLM_FIRST_MODE veto overrides separately (never touches accuracy).
+
+        The trade was NOT blocked (it flowed through), so it must NOT enter the veto
+        denominator. won=True means the overridden (taken) trade won -> the override
+        was right to let it through.
+        """
+        self._ensure_loaded()
+        if not rule_ids:
+            return
+        _ids = set(rule_ids)
+        changed = False
+        for rule in self._rules:
+            if rule.rule_id not in _ids or rule.action != "veto":
+                continue
+            changed = True
+            rule.times_overridden += 1
+            if won is True:
+                rule.overridden_correct += 1
+        if changed:
+            self._save()
+
     def get_active_rules_summary(self) -> str:
         self._ensure_loaded()
         active = [r for r in self._rules if r.active]
@@ -362,10 +467,12 @@ class GraduatedRulesEngine:
             return ""
         lines = []
         for r in active[:10]:
-            # Veto correctness is not yet wired (times_correct structurally 0) — show 'unmeasured'
-            # rather than a misleading 0%. Non-veto rules show clamped accuracy once n>=3.
+            # Veto correctness is now self-measuring via record_veto_outcome (resolved
+            # counterfactuals credit times_correct by rule_id). Show real accuracy once
+            # at least one outcome has resolved; 'unmeasured' only while times_correct
+            # is still structurally 0 (no resolved counterfactual yet).
             if r.action == "veto":
-                acc = "unmeasured"
+                acc = f"{r.accuracy:.0%}" if (r.times_applied >= 3 and r.times_correct > 0) else "unmeasured"
             else:
                 acc = f"{r.accuracy:.0%}" if r.times_applied >= 3 else "new"
             lines.append(f"  {r.action.upper()}: {r.hypothesis_statement[:50]} (acc={acc}, n={r.times_applied})")

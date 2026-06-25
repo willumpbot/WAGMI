@@ -367,6 +367,100 @@ class CounterfactualLearner:
         self._save_pending_record(rec)
         return rec.record_id
 
+    def record_veto_counterfactual(self, symbol: str, side: str, entry_price: float,
+                                   sl: float, tp1: float, tp2: float, confidence: float,
+                                   veto_rule_ids: List[str], strategy: str = "",
+                                   regime: str = "", denominator_only: bool = False,
+                                   metadata: Optional[Dict] = None) -> str:
+        """Record a graduated-rule VETO for self-measuring accuracy tracking.
+
+        Stamps metadata["veto_rule_ids"] = [...] so that when this counterfactual
+        resolves in update_with_price, the outcome is credited back to the EXACT
+        rules that fired (same population the times_applied denominator counted),
+        not a lossy re-match. skip_reason is forced to the canonical
+        "graduated_rule_veto" so the (now stamp-gated) resolution guard fires.
+
+        A stable decision_id (symbol+side+entry+rounded-minute) is stamped to de-dup
+        the same would-be trade vetoed at multiple sites in one cycle.
+
+        denominator_only=True: forward-tracking is impossible (e.g. site-4 snapshot
+        missing SL/TP). The record is still written so every veto fire has a ledger
+        row, but it is resolved immediately as unscored (won=None) — keeping the
+        rule_id stamp for audit without inflating the denominator silently.
+        """
+        meta = dict(metadata or {})
+        meta["veto_rule_ids"] = list(veto_rule_ids or [])
+        # Stable de-dup key: same would-be trade resolves once across sites.
+        try:
+            _ts_min = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M")
+            meta["decision_id"] = f"{symbol}_{side}_{round(float(entry_price), 6)}_{_ts_min}"
+        except Exception:
+            meta["decision_id"] = f"{symbol}_{side}"
+
+        if denominator_only:
+            meta["cf_denominator_only"] = True
+
+        # De-dup by decision_id: the SAME would-be trade can be vetoed at multiple
+        # sites in one cycle, each contributing its own fired rule_ids. We collapse
+        # to ONE pending record but MERGE (union) the veto_rule_ids so EVERY firing
+        # rule is credited on resolution — not just whichever site recorded first.
+        _did = meta["decision_id"]
+        for _rec in self._pending.values():
+            if _rec.metadata.get("decision_id") == _did and _rec.metadata.get("veto_rule_ids"):
+                _existing = _rec.metadata.get("veto_rule_ids") or []
+                _incoming = meta.get("veto_rule_ids") or []
+                # Union preserving order: existing first, then any new ids.
+                _merged = list(_existing)
+                for _rid in _incoming:
+                    if _rid not in _merged:
+                        _merged.append(_rid)
+                if _merged != _existing:
+                    _rec.metadata["veto_rule_ids"] = _merged
+                    logger.debug(
+                        f"[CF-VETO] De-dup MERGE: {_did} now credits {_merged}"
+                    )
+                else:
+                    logger.debug(f"[CF-VETO] De-dup drop: {_did} already pending")
+                return _rec.record_id
+
+        rec = CounterfactualRecord(
+            symbol=symbol, side=side, entry_price=entry_price,
+            sl=sl, tp1=tp1, tp2=tp2, confidence=confidence,
+            skip_reason="graduated_rule_veto", strategy=strategy,
+            regime=regime, metadata=meta,
+        )
+
+        if denominator_only:
+            # Resolve immediately as unscored — no forward-tracking possible.
+            rec.resolved = True
+            rec.resolved_at = datetime.now(timezone.utc).isoformat()
+            rec.hypothetical_pnl_pct = None
+            self._resolved_recent.append(rec)
+            self._resolved_count += 1
+            self._save_resolved_record(rec)
+            try:
+                from llm.graduated_rules import get_graduated_rules_engine
+                get_graduated_rules_engine().record_veto_outcome(
+                    meta["veto_rule_ids"], won=None
+                )
+            except Exception:
+                pass
+            return rec.record_id
+
+        # Normal path: register as pending and let update_with_price resolve it.
+        if len(self._pending) >= self.MAX_PENDING:
+            oldest_key = min(self._pending, key=lambda k: self._pending[k].created_at)
+            old = self._pending.pop(oldest_key)
+            old.resolved = True
+            old.resolved_at = datetime.now(timezone.utc).isoformat()
+            old.hypothetical_pnl_pct = 0.0
+            self._resolved_recent.append(old)
+            self._save_resolved_record(old)
+            self._resolved_count += 1
+        self._pending[rec.record_id] = rec
+        self._save_pending_record(rec)
+        return rec.record_id
+
     def update_with_price(self, symbol: str, high: float, low: float, close: float):
         """
         Update all pending counterfactuals for a symbol with new price data.
@@ -457,23 +551,22 @@ class CounterfactualLearner:
             except Exception:
                 pass
             # Wire graduated-rule veto outcomes back for accuracy tracking.
-            # Without this, veto rules accumulate times_applied but times_correct stays
-            # at 0 forever (no trade → no trade_close → record_outcome never fires).
-            if "graduated_rule_veto" in (rec.skip_reason or ""):
+            # Gate on the STAMPED marker, not the skip_reason string: this structurally
+            # excludes 'graduated_rule_veto_overridden' (LLM_FIRST overrides flow through
+            # — the trade is NOT blocked — so they must never enter the veto denominator).
+            # Only records actually blocked by a veto carry metadata["veto_rule_ids"].
+            _veto_ids = rec.metadata.get("veto_rule_ids") if rec.metadata else None
+            if _veto_ids:
                 try:
                     from llm.graduated_rules import get_graduated_rules_engine
+                    # won=True -> blocked trade would have WON -> veto was wrong (no credit).
+                    # won=False -> blocked trade would have LOST -> veto was correct (+correct).
+                    # Resolve by the EXACT rule_ids that fired (same population, no re-match).
                     _won = (rec.hypothetical_pnl_pct or 0) > 0
-                    try:
-                        _cf_hr = datetime.fromisoformat(rec.created_at).hour
-                    except Exception:
-                        _cf_hr = -1
-                    get_graduated_rules_engine().record_outcome(
-                        symbol=rec.symbol, regime=rec.regime,
-                        side=rec.side, won=_won, hour_utc=_cf_hr,
-                    )
+                    get_graduated_rules_engine().record_veto_outcome(_veto_ids, won=_won)
                     logger.debug(
-                        f"[CF→RULES] Veto outcome wired: {rec.symbol} {rec.side} "
-                        f"won={_won} pnl={rec.hypothetical_pnl_pct:.1f}%"
+                        f"[CF→RULES] Veto outcome wired by id: {rec.symbol} {rec.side} "
+                        f"ids={_veto_ids} won={_won} pnl={rec.hypothetical_pnl_pct}"
                     )
                 except Exception:
                     pass

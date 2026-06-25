@@ -1630,7 +1630,7 @@ class AgentCoordinator:
                 _hour = int(market_context.get("time_utc_hour", -1))
                 _strats_active = signal_context.get("strategies_agree", [])
                 _gre = get_graduated_rules_engine()
-                _pre_vetoed, _, _pre_notes = _gre.evaluate_signal(
+                _pre_vetoed, _, _pre_notes, _pre_veto_ids = _gre.evaluate_signal(
                     symbol=_sym, side=_side, confidence=_conf,
                     strategy=_strat, num_agree=_n_agree,
                     hour_utc=_hour, strategies_active=_strats_active,
@@ -1640,6 +1640,28 @@ class AgentCoordinator:
                     logger.info(
                         f"[PRE-FILTER] VETO {_sym}/{_side} before LLM: {_pre_notes[:80]}"
                     )
+                    # Highest-volume veto path — signals blocked here never reach
+                    # ensemble/pipeline, so this is an independent population slice.
+                    # Stamp veto_rule_ids so it becomes a measurable denominator.
+                    try:
+                        from llm.brain_wiring import record_veto_counterfactual
+                        _pf_entry = float(signal_context.get("entry", 0) or 0)
+                        _pf_sl = float(signal_context.get("sl", 0) or 0)
+                        _pf_tp1 = float(signal_context.get("tp1", 0) or 0)
+                        _pf_tp2 = float(signal_context.get("tp2", 0) or 0)
+                        _pf_denom_only = not (_pf_entry > 0 and _pf_sl > 0 and _pf_tp1 > 0)
+                        record_veto_counterfactual(
+                            symbol=_sym, side=_side,
+                            entry_price=_pf_entry, sl=_pf_sl,
+                            tp1=_pf_tp1, tp2=_pf_tp2,
+                            confidence=_conf,
+                            veto_rule_ids=_pre_veto_ids,
+                            strategy=_strat,
+                            regime=str(market_context.get("regime", "")),
+                            denominator_only=_pf_denom_only,
+                        )
+                    except Exception:
+                        pass
                     _veto_decision = EntryDecision(
                         action="skip",
                         leverage=1.0,
@@ -4805,7 +4827,11 @@ class AgentCoordinator:
                 _side = ""
                 _strat = ""
                 _n_agree = 0
-                # Extract from snapshot_data
+                _m_entry = 0.0
+                _m_sl = 0.0
+                _m_tp1 = 0.0
+                _m_tp2 = 0.0
+                # Extract from snapshot_data (abbreviated keys; mirrors sim block ~990-994)
                 for _mk in snapshot_data.get("m", []):
                     for _sg in _mk.get("sg", _mk.get("sigs", [])):
                         if not _sym:
@@ -4816,7 +4842,15 @@ class AgentCoordinator:
                             _strat = str(_sg.get("strategy", ""))
                         if not _n_agree:
                             _n_agree = int(snapshot_data.get("g", {}).get("n_agree", 0))
-                _vetoed, _adj_conf, _grad_notes = get_graduated_rules_engine().evaluate_signal(
+                        if _m_entry <= 0:
+                            _m_entry = float(_sg.get("entry", _sg.get("e", 0)) or 0)
+                        if _m_sl <= 0:
+                            _m_sl = float(_sg.get("sl", 0) or 0)
+                        if _m_tp1 <= 0:
+                            _m_tp1 = float(_sg.get("tp1", 0) or 0)
+                        if _m_tp2 <= 0:
+                            _m_tp2 = float(_sg.get("tp2", 0) or 0)
+                _vetoed, _adj_conf, _grad_notes, _m_veto_ids = get_graduated_rules_engine().evaluate_signal(
                     symbol=_sym, regime=regime, side=_side,
                     strategy=_strat, num_agree=_n_agree,
                     confidence=confidence * 100 if confidence <= 1.0 else confidence,
@@ -4825,6 +4859,24 @@ class AgentCoordinator:
                     action = "flat"
                     notes += f" | GRAD_VETO: {_grad_notes[:80]}"
                     logger.info(f"[GRAD-RULES] Signal vetoed for {_sym}/{_side}: {_grad_notes[:60]}")
+                    # Self-measuring veto denominator for the merge-veto path.
+                    try:
+                        from llm.brain_wiring import record_veto_counterfactual
+                        # Synthesize tp2 if compacted snapshot omitted it.
+                        if _m_tp2 <= 0 and _m_entry > 0 and _m_tp1 > 0:
+                            _m_tp2 = _m_entry + 2.0 * (_m_tp1 - _m_entry)
+                        _m_denom_only = not (_m_entry > 0 and _m_sl > 0 and _m_tp1 > 0)
+                        record_veto_counterfactual(
+                            symbol=_sym, side=_side,
+                            entry_price=_m_entry, sl=_m_sl,
+                            tp1=_m_tp1, tp2=_m_tp2,
+                            confidence=(confidence * 100 if confidence <= 1.0 else confidence),
+                            veto_rule_ids=_m_veto_ids,
+                            strategy=_strat, regime=str(regime or ""),
+                            denominator_only=_m_denom_only,
+                        )
+                    except Exception:
+                        pass
                 elif _grad_notes:
                     # Scale adjusted confidence back to [0,1] if needed
                     _new_conf = _adj_conf / 100.0 if _adj_conf > 1.0 else _adj_conf

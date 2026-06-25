@@ -447,7 +447,7 @@ class RiskFilterChain:
             _gr_regime = (meta.get("regime") or "") if meta else ""
             _gr_side = signal.side if isinstance(signal.side, str) else signal.side.value
             _gr_n = (meta.get("num_agree") or 1) if meta else 1
-            _gr_veto, _gr_adj_conf, _gr_applied = _gr_engine.evaluate_signal(
+            _gr_veto, _gr_adj_conf, _gr_applied, _gr_veto_ids = _gr_engine.evaluate_signal(
                 symbol=signal.symbol, regime=_gr_regime, side=_gr_side,
                 num_agree=_gr_n, confidence=signal.confidence,
                 hour_utc=datetime.now(timezone.utc).hour,
@@ -458,6 +458,23 @@ class RiskFilterChain:
                 if _pt: _pt.record_gate(signal.symbol, "graduated_rule_veto", False, 0, 0, _reason)
                 _log_rejection(signal, "graduated_rule_veto", _reason)
                 self._log_signal_filtered(signal, "graduated_rule_veto", _reason)
+                # Stamp veto_rule_ids so this gate's vetoes become self-measuring
+                # (new denominator path — previously recorded nothing).
+                try:
+                    from llm.brain_wiring import record_veto_counterfactual
+                    record_veto_counterfactual(
+                        symbol=signal.symbol, side=_gr_side,
+                        entry_price=getattr(signal, "entry", 0.0),
+                        sl=getattr(signal, "sl", 0.0),
+                        tp1=getattr(signal, "tp1", 0.0),
+                        tp2=getattr(signal, "tp2", 0.0),
+                        confidence=signal.confidence,
+                        veto_rule_ids=_gr_veto_ids,
+                        strategy=getattr(signal, "strategy", "") or "",
+                        regime=_gr_regime,
+                    )
+                except Exception:
+                    pass
                 return FilterResult(approved=False, signal=signal, rejection_reason=_reason, metadata=meta)
             if _gr_applied:
                 _adj_delta = _gr_adj_conf - signal.confidence

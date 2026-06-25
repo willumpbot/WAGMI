@@ -192,6 +192,31 @@ def record_skipped_trade(symbol: str, side: str, entry_price: float,
         return None
 
 
+def record_veto_counterfactual(symbol: str, side: str, entry_price: float,
+                               sl: float, tp1: float, tp2: float, confidence: float,
+                               veto_rule_ids, strategy: str = "", regime: str = "",
+                               denominator_only: bool = False,
+                               metadata: Optional[Dict] = None) -> Optional[str]:
+    """Record a graduated-rule VETO counterfactual (self-measuring accuracy).
+
+    Stamps veto_rule_ids into the record so the outcome resolves against the exact
+    rules that fired. Returns record_id or None.
+    """
+    cf = get_counterfactual_learner()
+    if cf is None:
+        return None
+    try:
+        return cf.record_veto_counterfactual(
+            symbol=symbol, side=side, entry_price=entry_price,
+            sl=sl, tp1=tp1, tp2=tp2, confidence=confidence,
+            veto_rule_ids=veto_rule_ids, strategy=strategy, regime=regime,
+            denominator_only=denominator_only, metadata=metadata,
+        )
+    except Exception as e:
+        logger.debug(f"[BRAIN] Veto counterfactual record error: {e}")
+        return None
+
+
 def update_counterfactuals_with_price(symbol: str, high: float, low: float, close: float):
     """Update pending counterfactuals with new price data."""
     cf = get_counterfactual_learner()

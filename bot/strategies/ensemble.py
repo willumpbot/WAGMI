@@ -592,7 +592,7 @@ class EnsembleStrategy:
             _regime = result.metadata.get("regime", "")
             _setup = result.metadata.get("entry_type", "")
             _n_agree = result.metadata.get("num_agree", 1)
-            _vetoed, _adj_conf, _rule_summary = _gre.evaluate_signal(
+            _vetoed, _adj_conf, _rule_summary, _veto_rule_ids = _gre.evaluate_signal(
                 symbol=symbol, regime=_regime, side=result.side,
                 strategy=result.strategy or "", setup_type=_setup,
                 num_agree=_n_agree, confidence=result.confidence,
@@ -606,11 +606,14 @@ class EnsembleStrategy:
                 if _os.environ.get("LLM_FIRST_MODE", "false").lower() == "true":
                     logger.info(f"[{symbol}] Graduated rule WOULD veto (LLM_FIRST_MODE override): {_rule_summary}")
                     result.metadata["graduated_rule_veto_overridden"] = _rule_summary
+                    # Override = trade is NOT blocked → plain counterfactual WITHOUT
+                    # veto_rule_ids. Must not enter the veto accuracy denominator.
                     self._record_counterfactual(result, "graduated_rule_veto_overridden")
                     # Continue — don't return None
                 else:
                     logger.info(f"[{symbol}] Signal VETOED by graduated rule: {_rule_summary}")
-                    self._record_counterfactual(result, "graduated_rule_veto")
+                    # Real block → stamp veto_rule_ids so accuracy resolves by rule_id.
+                    self._record_veto_counterfactual(result, _veto_rule_ids)
                     return None
             if _adj_conf != result.confidence:
                 logger.info(f"[{symbol}] Graduated rules: {result.confidence:.0f}% → {_adj_conf:.0f}% ({_rule_summary})")
@@ -1005,7 +1008,7 @@ class EnsembleStrategy:
             _regime = result.metadata.get("regime", "")
             _setup = result.metadata.get("entry_type", "")
             _n_agree = result.metadata.get("num_agree", 1)
-            _vetoed, _adj_conf, _rule_summary = _gre.evaluate_signal(
+            _vetoed, _adj_conf, _rule_summary, _ = _gre.evaluate_signal(
                 symbol=symbol, regime=_regime, side=result.side,
                 strategy=result.strategy or "", setup_type=_setup,
                 num_agree=_n_agree, confidence=result.confidence,
@@ -1287,6 +1290,45 @@ class EnsembleStrategy:
                 skip_reason=skip_reason,
                 strategy=signal.strategy or "",
                 regime=signal.metadata.get("regime", "") or self._current_regime.get(signal.symbol, ""),
+            )
+        except Exception:
+            pass  # Non-critical — don't let tracking break trading
+
+    def _record_veto_counterfactual(self, signal, veto_rule_ids):
+        """Record a graduated-rule VETO with rule_ids stamped for accuracy tracking.
+
+        Same rejection bookkeeping as _record_counterfactual (last_rejections digest +
+        missed-trade tracker) but routes the counterfactual through the veto ledger so
+        the blocked trade's outcome resolves against the exact rules that fired.
+        """
+        _regime = signal.metadata.get("regime", "") or self._current_regime.get(signal.symbol, "")
+        self._last_rejections[signal.symbol] = {
+            "reason": "graduated_rule_veto",
+            "side": signal.side,
+            "confidence": round(signal.confidence, 1),
+            "strategy": signal.strategy or "",
+            "regime": _regime,
+        }
+        if self._missed_trade_tracker is not None:
+            try:
+                self._missed_trade_tracker.record_rejection(
+                    signal=signal, reason="graduated_rule_veto", gate="ensemble",
+                )
+            except Exception:
+                pass
+        try:
+            from llm.brain_wiring import record_veto_counterfactual
+            record_veto_counterfactual(
+                symbol=signal.symbol,
+                side=signal.side,
+                entry_price=signal.entry,
+                sl=signal.sl,
+                tp1=signal.tp1,
+                tp2=getattr(signal, "tp2", 0.0),
+                confidence=signal.confidence,
+                veto_rule_ids=veto_rule_ids,
+                strategy=signal.strategy or "",
+                regime=_regime,
             )
         except Exception:
             pass  # Non-critical — don't let tracking break trading

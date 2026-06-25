@@ -312,30 +312,32 @@ class TestGraduatedRulesEngine:
         h = MockHypothesis("Never buy SOL in panic regime")
         engine.graduate_hypothesis(h)
 
-        vetoed, conf, summary = engine.evaluate_signal(
+        vetoed, conf, summary, veto_ids = engine.evaluate_signal(
             symbol="SOL", regime="panic", side="BUY", confidence=80.0
         )
         assert vetoed is True
         assert "VETO" in summary
+        assert veto_ids and isinstance(veto_ids, list)
 
     def test_evaluate_signal_boost(self):
         engine = self._make_engine()
         h = MockHypothesis("BTC has a strong edge in trend regime", evidence_ratio=0.85)
         engine.graduate_hypothesis(h)
 
-        vetoed, conf, summary = engine.evaluate_signal(
+        vetoed, conf, summary, veto_ids = engine.evaluate_signal(
             symbol="BTC", regime="trend", side="BUY", confidence=70.0
         )
         assert vetoed is False
         assert conf > 70.0  # Boosted
         assert "BOOST" in summary
+        assert veto_ids == []
 
     def test_evaluate_signal_penalize(self):
         engine = self._make_engine()
         h = MockHypothesis("DOGE shows poor performance in range regime")
         engine.graduate_hypothesis(h)
 
-        vetoed, conf, summary = engine.evaluate_signal(
+        vetoed, conf, summary, veto_ids = engine.evaluate_signal(
             symbol="DOGE", regime="range", side="BUY", confidence=70.0
         )
         assert vetoed is False
@@ -347,7 +349,7 @@ class TestGraduatedRulesEngine:
         h = MockHypothesis("BTC has a strong edge in trend regime")
         engine.graduate_hypothesis(h)
 
-        vetoed, conf, summary = engine.evaluate_signal(
+        vetoed, conf, summary, veto_ids = engine.evaluate_signal(
             symbol="ETH", regime="range", side="BUY", confidence=70.0
         )
         assert vetoed is False
@@ -359,7 +361,7 @@ class TestGraduatedRulesEngine:
         h = MockHypothesis("BTC has a strong edge in trend regime", evidence_ratio=0.85)
         engine.graduate_hypothesis(h)
 
-        _, conf, _ = engine.evaluate_signal(
+        _, conf, _, _ = engine.evaluate_signal(
             symbol="BTC", regime="trend", side="BUY", confidence=95.0
         )
         assert conf <= 100.0
