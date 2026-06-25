@@ -553,3 +553,12 @@ cells are EMPTY (SHORT.bull, LONG.bear). So: do NOT over-fit to regime cells; th
 ACTIONS: none (USE_REGIME_PRIORS already off; side-level guardrail already enforced via name-block). Name-block NOT droppable yet
 (need a clean post-#4 window with zero -EV/toxic exploration; today still had toxic entries pre-20:22; 0 after 20:22 but thin data).
 Re-test regime dimension only after SHORT.bear / the empty bull/bear cells each reach ~10+ post-cutoff trades. Bot healthy, equity $2045.
+
+## AUDIT SWARM #6 (2026-06-25T21:10Z) — exit quality (no change)
+Muzzle STILL CORRECT (keep EXIT_AGENT_FULL_CLOSE=false). 14 scored exits, ALL mechanical (9 SL, 5 TRAILING), 0 LLM (muzzled ->
+nothing to score -> no edge to re-arm on). Indirect signal: agent wanted to close 111 WINNERS (0.75-0.85 conf, blocked by 0.90 gate);
+the 5 trailing exits that handled winners scored NEGATIVE regret (med -1.78% = letting trailing run BEAT closing early) -> muzzle ADDED value.
+Agent ALREADY has tighten_sl authority (38/40 applied, 9 post-muzzle) — no re-arming needed. REAL exit leak is MECHANICAL: SL too eager
+on LONGs/trend (4h regret +2.38% longs, +5.61% lone trend; SL cuts positions that recover 1.5-5.6%); trailing healthy. Longs already
+blocked so low priority. FUTURE (gated): SHADOW mode (log muzzled agent's would-be closes + score via exit_regret WITHOUT executing ->
+measure hypothetical edge to ever re-arm) + backtest widening SL for LONG/trend. n=14 directional only; need 50+. No runtime change.
