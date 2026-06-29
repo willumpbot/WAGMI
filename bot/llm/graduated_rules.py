@@ -21,6 +21,23 @@ logger = logging.getLogger("bot.llm.graduated_rules")
 _RULES_FILE = os.path.join("data", "llm", "graduated_rules.json")
 
 
+def _canon_side(s: str) -> str:
+    """Canonicalize side vocabulary so the engine matches regardless of caller.
+
+    evaluate_signal() is called from the ensemble with BUY/SELL, but record_outcome()
+    is called at close with event.side = SHORT/LONG. Without this, every side-conditioned
+    rule (e.g. side="SELL") could never match at close ("SHORT" != "SELL") and so could
+    never accrue times_correct — the structural 0-numerator bug. Map both vocabularies to
+    one canonical form before comparison.
+    """
+    s = (s or "").upper()
+    if s in ("BUY", "LONG"):
+        return "LONG"
+    if s in ("SELL", "SHORT"):
+        return "SHORT"
+    return s
+
+
 @dataclass
 class GraduatedRule:
     rule_id: str = ""
@@ -70,7 +87,7 @@ class GraduatedRule:
             except Exception:
                 if regime.lower() != c["regime"].lower():
                     return False
-        if c.get("side") and side.upper() != c["side"].upper():
+        if c.get("side") and _canon_side(side) != _canon_side(c["side"]):
             return False
         if c.get("strategy") and strategy != c["strategy"]:
             return False
@@ -309,18 +326,20 @@ class GraduatedRulesEngine:
                 applied.append(f"VETO:{rule.hypothesis_statement[:40]}")
                 applied_veto_rule_ids.append(rule.rule_id)
             elif rule.action == "boost":
-                rule.times_applied += 1
+                # NOTE: times_applied is intentionally NOT bumped here. Doing so on every
+                # scan made the denominator a scan-count while times_correct is a close-count
+                # (two different populations -> meaningless accuracy, e.g. rule_10 3328/0).
+                # The denominator is now owned exclusively by record_outcome() so applied &
+                # correct share one population (mirrors the veto paired-increment fix).
                 conf_delta += rule.adjustment
                 applied.append(f"BOOST+{rule.adjustment}:{rule.hypothesis_statement[:30]}")
             elif rule.action == "penalize":
-                rule.times_applied += 1
+                # See boost note above — denominator owned by record_outcome().
                 conf_delta += rule.adjustment
                 applied.append(f"PEN{rule.adjustment}:{rule.hypothesis_statement[:30]}")
 
-        # Persist only when a non-veto rule mutated a counter; veto fires no longer
-        # mutate state in evaluate_signal, so they need no save here.
-        if any(a.startswith(("BOOST", "PEN")) for a in applied):
-            self._save()
+        # boost/penalize no longer mutate persistent counters here (only conf_delta, which
+        # is transient), so evaluate_signal does not need to save — matches the veto path.
 
         return vetoed, max(0, min(100, confidence + conf_delta)), "; ".join(applied), applied_veto_rule_ids
 
@@ -360,6 +379,11 @@ class GraduatedRulesEngine:
             # Rule matched
             matched_count += 1
             logger.info(f"[GRAD-RULES-MATCH] {rule.rule_id}: {rule.hypothesis_statement[:60]} (action={rule.action})")
+
+            # Denominator increment lives HERE (paired with the numerator below), NOT in
+            # evaluate_signal — guarantees applied & correct share one population (the set of
+            # closed trades this rule influenced), so accuracy = correct/applied is meaningful.
+            rule.times_applied += 1
 
             if rule.action == "boost":
                 if won:

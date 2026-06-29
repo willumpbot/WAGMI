@@ -14,9 +14,11 @@
       "total_evidence": 15,
       "created_at": 1777922205.1402397,
       "last_applied": 1780681158.2330234,
-      "times_applied": 17,
-      "times_correct": 27,
-      "active": true
+      "times_applied": 0,
+      "times_correct": 0,
+      "active": true,
+      "times_overridden": 0,
+      "overridden_correct": 0
     },
     {
       "rule_id": "hype_long_veto_v1",
@@ -32,9 +34,11 @@
       "total_evidence": 35,
       "created_at": 1746382701.0,
       "last_applied": 1780312875.5903728,
-      "times_applied": 1420,
+      "times_applied": 0,
       "times_correct": 0,
-      "active": false
+      "active": true,
+      "times_overridden": 0,
+      "overridden_correct": 0
     },
     {
       "rule_id": "sol_long_veto_v1",
@@ -50,9 +54,11 @@
       "total_evidence": 34,
       "created_at": 1746382701.0,
       "last_applied": 1780278998.263909,
-      "times_applied": 269,
+      "times_applied": 0,
       "times_correct": 0,
-      "active": false
+      "active": true,
+      "times_overridden": 0,
+      "overridden_correct": 0
     },
     {
       "rule_id": "night_session_block_v1",
@@ -68,9 +74,11 @@
       "total_evidence": 27,
       "created_at": 1746382701.0,
       "last_applied": 1780215324.3291583,
-      "times_applied": 1161,
+      "times_applied": 0,
       "times_correct": 0,
-      "active": false
+      "active": true,
+      "times_overridden": 0,
+      "overridden_correct": 0
     },
     {
       "rule_id": "illiquid_regime_penalize_v1",
@@ -85,9 +93,11 @@
       "total_evidence": 57,
       "created_at": 1746382701.0,
       "last_applied": 1777926052.3784072,
-      "times_applied": 1,
+      "times_applied": 0,
       "times_correct": 0,
-      "active": true
+      "active": true,
+      "times_overridden": 0,
+      "overridden_correct": 0
     },
     {
       "rule_id": "hype_short_veto_v1",
@@ -103,9 +113,11 @@
       "total_evidence": 239,
       "created_at": 1746382701.0,
       "last_applied": 1780248637.7884152,
-      "times_applied": 40,
+      "times_applied": 0,
       "times_correct": 0,
-      "active": false
+      "active": true,
+      "times_overridden": 0,
+      "overridden_correct": 0
     },
     {
       "rule_id": "btc_short_conf70_80_penalize_v1",
@@ -123,9 +135,11 @@
       "total_evidence": 40,
       "created_at": 1746382701.0,
       "last_applied": 1780318804.5178638,
-      "times_applied": 224,
+      "times_applied": 0,
       "times_correct": 0,
-      "active": false
+      "active": true,
+      "times_overridden": 0,
+      "overridden_correct": 0
     },
     {
       "rule_id": "btc_short_90plus_boost_v1",
@@ -142,9 +156,11 @@
       "total_evidence": 43,
       "created_at": 1747267200.0,
       "last_applied": 1780692567.751772,
-      "times_applied": 352,
+      "times_applied": 0,
       "times_correct": 0,
-      "active": true
+      "active": true,
+      "times_overridden": 0,
+      "overridden_correct": 0
     },
     {
       "rule_id": "eth_trending_regime_boost_v1",
@@ -160,9 +176,11 @@
       "total_evidence": 7,
       "created_at": 1778879538,
       "last_applied": 1780468405.0568275,
-      "times_applied": 2,
+      "times_applied": 0,
       "times_correct": 0,
-      "active": true
+      "active": true,
+      "times_overridden": 0,
+      "overridden_correct": 0
     },
     {
       "rule_id": "conf_floor_70_v1",
@@ -178,9 +196,11 @@
       "total_evidence": 123,
       "created_at": 1746547200.0,
       "last_applied": 1780215324.3302295,
-      "times_applied": 752,
+      "times_applied": 0,
       "times_correct": 0,
-      "active": false
+      "active": true,
+      "times_overridden": 0,
+      "overridden_correct": 0
     }
   ]
 }

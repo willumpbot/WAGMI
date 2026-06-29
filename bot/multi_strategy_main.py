@@ -3695,8 +3695,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                         hour_utc=_gr_hr, strategies_active=_gr_strats,
                         num_agree=_gr_num, confidence=_gr_conf,
                     )
-                except Exception:
-                    pass
+                except Exception as _gr_e:
+                    # Was a bare `except: pass` — silently swallowing this was a hidden cause
+                    # of times_correct=0 (the numerator never got written). Log it instead.
+                    logger.warning(f"[GRAD-RULES] record_outcome failed at close for {symbol}: {_gr_e}")
 
                 # Quant system: record to IC tracker, Kelly engine, trade ledger, resolve shadows
                 if pos:

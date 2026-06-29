@@ -302,15 +302,12 @@ class FeedbackLoop:
             except Exception as e:
                 logger.debug(f"AB fix evaluation failed: {e}")
 
-        # 8. Graduated rules accuracy tracking — feed outcome to rule accuracy counters.
-        # This updates times_correct so rules can auto-retire at < 35% accuracy.
-        try:
-            from llm.graduated_rules import get_graduated_rules_engine
-            get_graduated_rules_engine().record_outcome(
-                symbol=symbol, regime=regime, side=side, won=win, hour_utc=now.hour
-            )
-        except Exception as e:
-            logger.debug(f"Graduated rules outcome tracking failed: {e}")
+        # 8. Graduated rules accuracy tracking is NOT done here anymore.
+        # This was a DUPLICATE of the richer caller in multi_strategy_main.py (~3693),
+        # which fires in the same close block and passes full context (entry hour, agreeing
+        # strategies, num_agree, entry confidence). This site passed none of those plus the
+        # CLOSE-time hour, so confidence/agree/hour-conditioned rules mis-matched here AND it
+        # double-credited no-condition rules. The single authoritative caller now owns it.
 
         logger.info(
             f"[FEEDBACK] Outcome recorded: {symbol} {side} "

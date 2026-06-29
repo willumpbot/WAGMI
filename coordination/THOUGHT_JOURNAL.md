@@ -607,3 +607,27 @@ GOING FORWARD: ~2 selective trades/day is the TARGET not a failure; scale volume
 prove edge real. "Use usage" = learning work (audits/swarms/backtests), not forced trades.
 PENDING unchanged: (a) veto-ledger real-rule crediting bug; (b) why conviction is INVERTED (high-conf 11% WR vs
 low-conf 35% WR) -- read-only audit queued; (c) restore measurement instruments so the bot learns its own vetoes.
+
+=== 2026-06-29 RANK-1 INSTRUMENT FIX: graduated-rules accuracy wiring (precondition for all data-learned rules) ===
+SWARM (path-to-all-knowing) verdict: fix self-knowledge instruments BEFORE perception. #1 = grad-rules numerator dead.
+TWO real bugs found + fixed:
+ (1) SIDE-VOCAB CLASH: evaluate_signal called with BUY/SELL, record_outcome called at close with event.side=SHORT/LONG.
+     matches() compared side.upper() literally, so side-conditioned rules (e.g. rule_4 ETH/SELL 4-applied/0-correct)
+     could NEVER credit at close. FIX: added _canon_side() (BUY/LONG->LONG, SELL/SHORT->SHORT) used in matches().
+ (2) DENOMINATOR POPULATION MISMATCH: times_applied bumped in evaluate_signal on EVERY scan match, times_correct only
+     on close -> accuracy = closes/scans, meaningless (rule_10 BTC 3328-applied/0-correct created 06-27 w/ ~no closes).
+     This is the SAME denominator-leak already fixed for vetoes. FIX: moved times_applied increment OUT of
+     evaluate_signal INTO record_outcome (paired increment, same population), mirroring record_veto_outcome.
+ (3) DOUBLE CALLER: both multi_strategy_main:3650 (->feedback/loop:309, impoverished: no conf/agree/strats, close-hour)
+     AND multi_strategy_main:3693 (rich) fired per close. FIX: removed the graduated call inside feedback/loop.py;
+     rich direct caller is now sole owner. Also changed its bare `except: pass` -> logging warning.
+RE-BASELINE: zeroed all rule counters (old denominators were scan-spam). MISHAP: first rebaseline raced the Task
+Scheduler auto-restart (RestartInterval PT1M restarts on kill) -> a respawned process clobbered the 12 live rules down
+to 1 fresh boost rule. RECOVERED by restoring git HEAD's 10 committed rules (the cleaner set: learned vetoes + conf
+nudges, minus the 2 suspect broad BTC/SOL penalize rules) with zeroed counters. LESSON: safe restart = Stop-Task ->
+kill -> VERIFY no run.py proc -> edit files -> Start-Task, all within the 1-min restart window.
+TESTS: bot/tests/test_graduated_rules_wiring.py 6/6 pass (side-credit, no scan-spam, single-credit, boost-on-win,
+finite accuracy). 6 pre-existing failures (ensemble-bonus + live-state-pollution) confirmed via stash NOT mine.
+DEPLOYED: bot pid 35544, 0 errors, equity $2010.96, 10 rules zeroed+active. Measurement now correct: rules will
+accrue real accuracy on closes and auto-retire fairly at n>=10.
+NEXT (rank 2): promote real confidence to the trades.csv top-level column (81/85 are 0.0; true value in entry_reasons).
