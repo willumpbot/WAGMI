@@ -654,3 +654,11 @@ on a -0.205 that is really ~0 would be OVERFITTING NOISE — the exact "hardcode
 against. The instrument is now fixed (column populated, both fields queryable); the calibration DECISION waits
 for n to grow (target n>=100+ with the now-correct logging) before we trust any inversion. Honest > clever.
 NEXT: rank-6 (canonical regime label at trade-record time) — another no-edge instrument fix — then deploy.
+
+=== 2026-06-29 RANK-6 INSTRUMENT FIX: canonicalize regime at outcome-record time ===
+Per-regime WR table was fragmented (trending_bull/trending_bear/trend as separate buckets) below the
+n>=13 graduation bar. FIX: canonicalize regime via llm.regime_canonical.canonicalize_regime at BOTH the
+write site (continuous_backtest.record_outcome append) and the read/bucket site (analyze regime_performance),
+so historical fragmented records also consolidate. Blank/'unknown' capture root (37/87 records) is a deeper
+upstream caller trace — DEFERRED (diminishing returns vs the perception/intertwining work Nunu prioritized).
+TESTS: tests/test_regime_canon_outcome.py 2/2 pass. Deploying rank-2 + rank-6 together (one restart).

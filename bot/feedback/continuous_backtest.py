@@ -155,6 +155,14 @@ class ContinuousBacktester:
         leverage: float = 1.0,
     ):
         """Record a trade outcome for backtest validation."""
+        # rank-6 instrument fix: canonicalize the regime label at write time so named
+        # variants (trending_bull / trending_bear / trend) consolidate into one bucket
+        # instead of fragmenting the per-regime WR table below the n>=13 graduation bar.
+        try:
+            from llm.regime_canonical import canonicalize_regime
+            regime = canonicalize_regime(regime) if regime else regime
+        except Exception:
+            pass
         with self._lock:
             self._outcome_history.append({
                 "ts": time.time(),
@@ -234,9 +242,16 @@ class ContinuousBacktester:
         }
 
         # Regime performance
+        # rank-6: canonicalize at read time too, so historical records written before the
+        # write-time fix still consolidate (trending_bull/bear/trend -> trend).
+        try:
+            from llm.regime_canonical import canonicalize_regime as _canon_rg
+        except Exception:
+            _canon_rg = lambda x: x
         by_regime = defaultdict(lambda: {"wins": 0, "total": 0, "pnl": 0.0})
         for o in window_outcomes:
-            r = by_regime[o.get("regime", "unknown")]
+            _rg = o.get("regime") or "unknown"
+            r = by_regime[_canon_rg(_rg) if _rg != "unknown" else "unknown"]
             r["total"] += 1
             if o["win"]:
                 r["wins"] += 1
