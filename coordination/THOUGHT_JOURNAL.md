@@ -717,3 +717,6 @@ selective trade — opens don't write trades.csv, only closes do; healthy/tradin
 (last ~15min, 635 records, ~3.5h accrued of ~8h for rank-8). No close yet (trades.csv=85) -> rank-1 boost/penalize
 live validation still pending; veto path steady (hype_long_veto applied=3). Data insufficient for rank-8 (ETA ~check
 #5-6). Hold. (Parallel: heavy Louis Lane site polish this session — unrelated to bot.)
+
+=== 2026-06-29 ~22:00 UTC check #4 ===
+HEALTHY: pid=18440 scan=609 errors=0 equity=$1992.69 pos=2. Collector ~4.5h accrued (655 rec). No close (85). Veto applied=3. Insufficient for rank-8 (ETA check #6). Hold.
