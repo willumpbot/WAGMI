@@ -694,3 +694,11 @@ before they emit signals, so no more code churn — let data accrue, health-chec
 SESSION SUMMARY: ranks 1,2,6,7(+followup) DEPLOYED & tested; ranks 3,5 DEFERRED (inversion is n~50 noise, not
 -0.205 — refusing to overfit). Self-knowledge instruments fixed; dead perception revived & wired. rank-8
 (funding percentile veto) GATED on accruing data, graduate only at n>=13, data-learned not hardcoded.
+
+=== 2026-06-29 ~18:20 UTC hourly autonomous check #1 ===
+HEALTHY: bot pid=18440 hb_age=0s scan=139 errors=0 equity=$1992.69 (-$18 session, noise). Collector writing
+(last record ~12min ago, 590 records, ~1.25h accrued of the ~8h rank-8 needs). Veto self-measurement LIVE:
+hype_long_veto applied=3/correct=0 (now-fixed path working; n too small to judge). WATCH: positions drifted
+3->1 across restarts with NO new trades.csv rows -> likely restart-reconciliation dropping positions, not real
+closes (equity barely moved). Stopped restarting; will confirm position stability next tick. Rank-1 boost/penalize
+record_outcome path NOT yet exercised by a real close (none since deploy). Data insufficient for rank-8 -> hold.
