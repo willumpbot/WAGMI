@@ -590,3 +590,20 @@ leak closed #4; edge is SIDE-LEVEL avoid-longs not regime #5; muzzle correct #6)
 after XRP n>=10 calibrates. Quality gates STAY (forcing -EV trades is what bled before; consistent alpha needs +EV setups).
 PENDING: (a) fix veto-ledger real-rule crediting (#7 bug, stamp not firing on live veto path); (b) calibrate XRP then add next symbol;
 (c) gated: SL too eager on longs (#6, low pri since longs blocked); shadow-mode exit-agent measurement (#6).
+
+=== 2026-06-29 SELECTIVITY PIVOT (data-driven reversal of the volume push) ===
+Equity-curve-by-day analysis of 80 closed trades (price-move %): Jun1-6 = ~2 trades/day, 50-100% WR,
+cum climbed to +17% (THE working era). Jun7 first 7-trade day -> WR cratered to 28%. Jun17-25 = ~6 trades/day,
+~15% WR, bled to -12%. CONCLUSION: more trades/day correlated DIRECTLY with lower WR. The bot's own selectivity
+WAS the alpha; the Jun-25 "VOLUME" push (epsilon 0.55->0.70 force-admitting 70% of skips, max_open 8->12,
+scan 180->60) is what broke it. Owner confirmed: "2 trades a day is ideal... I was only pushing for data exploration."
+ACTIONS (two clean restarts so each is attributable):
+ (1) RESTORE-SELECTIVITY: EXPLORATION_EPSILON 0.70->0.12, MAX_OPEN_POSITIONS 12->6, SCAN_INTERVAL_S 60->120.
+ (2) REMOVE-HARDCODED-BLOCKS: EXPLORATION_BLOCK_COMBOS cleared (was HYPE/SOL/BTC/ETH_LONG). Return to Jun1-6 state.
+     Safety net is now the LEARNED unified-toxic veto (n>=13), NOT a hardcoded directional list.
+Bot healthy after both (pid 42140, 0 errors, equity ~$2011). Also found+fixed: bot had been HUNG ~? (heartbeat
+check earlier was a TZ-parse false alarm, but restart was needed anyway to load new .env).
+GOING FORWARD: ~2 selective trades/day is the TARGET not a failure; scale volume slowly only after instruments
+prove edge real. "Use usage" = learning work (audits/swarms/backtests), not forced trades.
+PENDING unchanged: (a) veto-ledger real-rule crediting bug; (b) why conviction is INVERTED (high-conf 11% WR vs
+low-conf 35% WR) -- read-only audit queued; (c) restore measurement instruments so the bot learns its own vetoes.
