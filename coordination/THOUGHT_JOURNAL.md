@@ -702,3 +702,11 @@ hype_long_veto applied=3/correct=0 (now-fixed path working; n too small to judge
 3->1 across restarts with NO new trades.csv rows -> likely restart-reconciliation dropping positions, not real
 closes (equity barely moved). Stopped restarting; will confirm position stability next tick. Rank-1 boost/penalize
 record_outcome path NOT yet exercised by a real close (none since deploy). Data insufficient for rank-8 -> hold.
+
+=== 2026-06-29 ~20:00 UTC hourly autonomous check #2 ===
+HEALTHY+STABLE: bot pid=18440 (no restart since deploy) hb_age=15s scan=335 errors=0 equity=$1992.69 (flat).
+WATCH ITEM RESOLVED: positions stable at 1 (was 1 @ check#1) — the 3->1 drift was restart reconciliation, NOT a
+bug; cleared now restarts stopped. Collector healthy (last ~2min, 620 records, ~2.75h accrued of ~8h for rank-8).
+No new trade close (trades.csv still 85) -> rank-1 boost/penalize live validation still pending; veto path stable
+(hype_long_veto applied=3). Selective behavior working as intended (335 scans, ~1 open, bear-chop). Data
+insufficient for rank-8 -> hold. Next check ~21:00 UTC.
