@@ -631,3 +631,26 @@ finite accuracy). 6 pre-existing failures (ensemble-bonus + live-state-pollution
 DEPLOYED: bot pid 35544, 0 errors, equity $2010.96, 10 rules zeroed+active. Measurement now correct: rules will
 accrue real accuracy on closes and auto-retire fairly at n>=10.
 NEXT (rank 2): promote real confidence to the trades.csv top-level column (81/85 are 0.0; true value in entry_reasons).
+
+=== 2026-06-29 RANK-2 INSTRUMENT FIX: populate confidence column + CRITICAL calibration finding ===
+BUG: 81/85 trades.csv rows had confidence=0.0. ROOT CAUSE: the LLM-FIRST entry path
+(multi_strategy_main.py ~7976) never passed confidence= to open_position; the value lived only in
+entry_reasons['confidence']. FIX (root, fixes all ~10 downstream pos.confidence readers at once):
+ (a) multi_strategy_main.py: pass confidence=raw_signal.confidence at the LLM-FIRST open_position call.
+ (b) position_manager.open_position: belt-and-suspenders — if confidence<=0 but entry_reasons has it,
+     derive (er['confidence'] or er['llm_confidence']*100). Covers recovery/other paths too.
+ (c) Backfilled 62 historical zeroed rows in trades.csv from entry_reasons (data migration, not committed).
+TESTS: tests/test_confidence_population.py 4/4 pass. 9 sizing-test failures confirmed PRE-EXISTING via
+stash (persisted $2010.96 equity pollutes tests expecting clean starting equity — test-hygiene debt, not mine).
+
+CRITICAL FINDING (changes the roadmap): the "conviction is INVERTED" claim is NOT robust at current n.
+ - corr(ENSEMBLE confidence, win) = +0.072 (n=62)   <- the canonical signal confidence, well-behaved
+ - corr(LLM agent confidence, win) = +0.013 (n=46)   <- near zero, NOT the -0.205 the swarms reported
+ - The earlier -0.205 was small-sample noise: sign flips to +0.205 with a slightly different field/subset,
+   swung by ~4 trades. Two swarm runs both landed -0.205 likely from a shared join/label choice on
+   decisions.jsonl, but careful per-field separation on trades.csv shows ~0 +/- noise.
+DECISION: DEFER ranks 3 & 5 (confidence->WR recalibration layer + prompt de-bias). Building a recalibration
+on a -0.205 that is really ~0 would be OVERFITTING NOISE — the exact "hardcode in a bubble" trap Nunu warned
+against. The instrument is now fixed (column populated, both fields queryable); the calibration DECISION waits
+for n to grow (target n>=100+ with the now-correct logging) before we trust any inversion. Honest > clever.
+NEXT: rank-6 (canonical regime label at trade-record time) — another no-edge instrument fix — then deploy.

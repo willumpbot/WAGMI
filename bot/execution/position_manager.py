@@ -404,6 +404,15 @@ class PositionManager:
         else:
             trailing_distance = atr * self.trailing_atr_mult if atr > 0 else _trail_fallback
 
+        # Belt-and-suspenders (rank-2 fix): some entry paths (LLM-first, recovery) put the
+        # confidence only inside entry_reasons and leave the confidence= arg at its 0.0 default,
+        # which left pos.confidence=0.0 -> trades.csv confidence column was 81/85 zeros. Derive
+        # it from entry_reasons so every downstream pos.confidence reader sees the real value.
+        if (not confidence or confidence <= 0) and isinstance(entry_reasons, dict):
+            _er_conf = entry_reasons.get("confidence") or (entry_reasons.get("llm_confidence") or 0) * 100
+            if _er_conf:
+                confidence = float(_er_conf)
+
         pos = Position(
             symbol=symbol,
             side=side,

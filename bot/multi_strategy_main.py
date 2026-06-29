@@ -7983,6 +7983,11 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             qty=qty,
             leverage=leverage,
             atr=raw_signal.atr,
+            # ROOT FIX (rank-2): the LLM-FIRST path never passed confidence=, so pos.confidence
+            # defaulted to 0.0 for every LLM-first trade (81/85 zeroed rows in trades.csv). The
+            # value lived only in entry_reasons['confidence']. Setting it here at entry makes the
+            # ~10 downstream pos.confidence readers (close-log, feedback, analytics) all correct.
+            confidence=raw_signal.confidence,
             entry_reasons=entry_reasons,
             trade_profile=trade_prof,
             notes=f"LLM-FIRST: {_thesis[:200]}",
