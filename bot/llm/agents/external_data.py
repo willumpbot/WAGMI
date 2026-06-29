@@ -23,8 +23,14 @@ FUNDING_FILE = os.path.join(DATA_DIR, "funding_oi_history.jsonl")
 LIQ_FILE = os.path.join(DATA_DIR, "liquidation_levels.jsonl")
 SHADOW_MR_FILE = os.path.join(DATA_DIR, "shadow_mr_signals.jsonl")
 
-# Default symbols tracked by the collectors
-DEFAULT_SYMBOLS = ["BTC", "ETH", "SOL", "HYPE"]
+# Default symbols tracked by the collectors. Derive from the bot's configured symbol
+# set so funding/OI/divergence perception auto-tracks symbol expansion (e.g. XRP) and
+# reaches the agents — a hardcoded list silently dropped XRP from agent-facing context.
+try:
+    from trading_config import DEFAULT_SYMBOLS as _CFG_SYMBOLS
+    DEFAULT_SYMBOLS = list(_CFG_SYMBOLS.keys())
+except Exception:
+    DEFAULT_SYMBOLS = ["BTC", "ETH", "SOL", "HYPE", "XRP"]
 
 
 # ── Helpers ──────────────────────────────────────────────────────────

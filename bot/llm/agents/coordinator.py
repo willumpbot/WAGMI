@@ -631,7 +631,9 @@ class AgentCoordinator:
         # April data — injects present-day market state into past-window context.
         if _EXTERNAL_DATA_AVAILABLE and not _is_backtest:
             try:
-                ext_text = format_external_data(["BTC", "ETH", "SOL", "HYPE"])
+                # Use the config-derived default (includes XRP and any future symbols) so
+                # every tracked symbol's funding/OI/divergence reaches the agent prompt.
+                ext_text = format_external_data()
                 if ext_text:
                     enriched_parts.append(ext_text)
             except Exception as e:

@@ -679,3 +679,18 @@ Once ~12h of fresh ticks accrue, get_oi_divergence_insight / get_funding_trend p
 agent snapshot. NEXT (gated): backtest the OI-divergence taxonomy on accruing data; only graduate an OI-divergence
 veto on high-conf longs at n>=13 (rank-8). NO hardcoded directional block — data-learned only.
 DEPLOYING rank-7 via restart.
+
+=== 2026-06-29 RANK-7 FOLLOW-UP: close the intertwining loop for XRP (perception -> agents) ===
+Verified the collector revival works end-to-end (fresh write: XRP px=1.057 funding/OI; 565->570 records).
+But found the perception did NOT fully reach decisions: external_data.DEFAULT_SYMBOLS was hardcoded
+["BTC","ETH","SOL","HYPE"] (line 27), the default for get_latest_funding_oi / format_for_agent /
+get_external_data_for_snapshot AND coordinator.py:634 explicitly passed the same 4-list. So XRP funding/OI
+was COLLECTED but never INTERTWINED into the agent prompt/snapshot. FIX: DEFAULT_SYMBOLS now derives from
+trading_config.DEFAULT_SYMBOLS.keys() (auto-tracks future symbol expansion); coordinator.py:634 now calls
+format_external_data() with the config default. Now every traded symbol's funding/OI/divergence reaches agents.
+TESTS: test_external_data_symbols.py 2/2 (+ all 14 session tests pass). Deploying via restart, then entering a
+MONITOR/ACCUMULATE phase: the OI-divergence (12h window) + funding-trend (8h) need hours of collected data
+before they emit signals, so no more code churn — let data accrue, health-check periodically.
+SESSION SUMMARY: ranks 1,2,6,7(+followup) DEPLOYED & tested; ranks 3,5 DEFERRED (inversion is n~50 noise, not
+-0.205 — refusing to overfit). Self-knowledge instruments fixed; dead perception revived & wired. rank-8
+(funding percentile veto) GATED on accruing data, graduate only at n>=13, data-learned not hardcoded.
