@@ -12,7 +12,7 @@ sys.stdout.reconfigure(line_buffering=True) if hasattr(sys.stdout, 'reconfigure'
 
 import ccxt
 
-SYMBOLS = ["BTC/USDC:USDC", "ETH/USDC:USDC", "SOL/USDC:USDC", "HYPE/USDC:USDC"]
+SYMBOLS = ["BTC/USDC:USDC", "ETH/USDC:USDC", "SOL/USDC:USDC", "HYPE/USDC:USDC", "XRP/USDC:USDC"]
 SHORT_NAMES = {s: s.split("/")[0] for s in SYMBOLS}
 DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "funding_oi_history.jsonl")
 INTERVAL = 15 * 60  # 15 minutes

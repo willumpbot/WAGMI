@@ -1412,6 +1412,44 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         t.start()
         logger.info(f"[INIT] Exit-regret scorer started (every {interval}s)")
 
+    def _start_funding_oi_collector(self):
+        """Background: collect funding-rate + open-interest time-series for all tracked symbols
+        into data/funding_oi_history.jsonl on a throttled cadence. MEASUREMENT-ONLY — never touches a
+        trade. Feeds the OI-divergence + funding-trend perception in llm/agents/external_data.py
+        (get_oi_divergence_insight / get_funding_trend). The standalone tools/funding_oi_collector.py
+        died in the ~Jun-7 blackout (22d stale); this revives it INSIDE the bot so it lives and restarts
+        with the process — no separate task, no admin. Free Hyperliquid public data, no creds."""
+        if os.getenv("FUNDING_OI_COLLECTOR_ENABLED", "true").lower() not in ("1", "true", "yes"):
+            logger.info("[FUNDING-OI] collector disabled via env")
+            return
+        interval = int(os.getenv("FUNDING_OI_INTERVAL_S", "900"))  # 15 min default
+
+        def _collector_loop():
+            try:
+                import sys as _sys
+                _tools = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
+                if _tools not in _sys.path:
+                    _sys.path.insert(0, _tools)
+                import funding_oi_collector as foc
+                ex = foc.init_exchange()
+            except Exception as e:
+                logger.warning(f"[FUNDING-OI] init failed, collector disabled: {e}")
+                return
+            time.sleep(120)  # let startup settle before competing for network
+            while True:
+                try:
+                    recs = foc.collect_tick(ex)
+                    if recs:
+                        foc.save_records(recs)
+                        logger.info(f"[FUNDING-OI] collected {len(recs)} funding/OI records")
+                except Exception as e:
+                    logger.debug(f"[FUNDING-OI] collect error: {e}")
+                time.sleep(interval)
+
+        t = threading.Thread(target=_collector_loop, daemon=True, name="FundingOICollector")
+        t.start()
+        logger.info(f"[INIT] Funding/OI collector started (every {interval}s)")
+
     def _run_health_check(self):
         """Startup symbol health check: validate precision, connectivity, leverage caps."""
         logger.info("=" * 60)
@@ -1644,6 +1682,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
 
         # Start exit-regret scorer (measurement-only background loop)
         self._start_exit_regret_scorer()
+
+        # Start funding/OI collector (measurement-only; revives the dead perception time-series)
+        self._start_funding_oi_collector()
 
         # Start HTTP health endpoint (container/orchestrator readiness probes)
         try:

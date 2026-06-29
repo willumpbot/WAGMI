@@ -662,3 +662,20 @@ write site (continuous_backtest.record_outcome append) and the read/bucket site 
 so historical fragmented records also consolidate. Blank/'unknown' capture root (37/87 records) is a deeper
 upstream caller trace — DEFERRED (diminishing returns vs the perception/intertwining work Nunu prioritized).
 TESTS: tests/test_regime_canon_outcome.py 2/2 pass. Deploying rank-2 + rank-6 together (one restart).
+
+=== 2026-06-29 RANK-7 PERCEPTION: revive funding/OI collector (the dead time-series Nunu means by "intertwining") ===
+funding_oi_history.jsonl was 22.3d stale (collector died in the ~Jun-7 blackout); liquidation_levels.jsonl +
+shadow_mr_signals.jsonl never existed. The consumer llm/agents/external_data.py (get_oi_divergence_insight,
+get_funding_trend) reads this file but found nothing recent -> OI-divergence/funding-trend perception was OFFLINE
+despite being wired into the snapshot. The live bot fetches CURRENT funding/OI per scan, but the TIME-SERIES
+(needed for OI CHANGE / divergence / funding trend) was dead.
+FIX: (a) added XRP (our 5th symbol) to tools/funding_oi_collector.py SYMBOLS; verified live collect_tick pulls
+all 5 (BTC/ETH/SOL/HYPE/XRP) funding+OI from HL public API (free, no creds). (b) Integrated the collector as a
+daemon thread INSIDE the bot (_start_funding_oi_collector, mirrors _start_exit_regret_scorer), every
+FUNDING_OI_INTERVAL_S=900s, measurement-only. Chose daemon-in-bot over a separate scheduled task because
+Register-ScheduledTask needs admin (Access denied in this session); daemon lives/restarts with the bot, single
+writer (no double-write race), genuinely "intertwined." Env: FUNDING_OI_COLLECTOR_ENABLED (default true).
+Once ~12h of fresh ticks accrue, get_oi_divergence_insight / get_funding_trend produce real signals into the
+agent snapshot. NEXT (gated): backtest the OI-divergence taxonomy on accruing data; only graduate an OI-divergence
+veto on high-conf longs at n>=13 (rank-8). NO hardcoded directional block — data-learned only.
+DEPLOYING rank-7 via restart.
