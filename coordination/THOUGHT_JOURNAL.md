@@ -761,3 +761,6 @@ Both are reversible and would unblock exits + let rank-8 accumulate. Awaiting ow
 
 === 2026-06-30 ~05:35 UTC check #11 ===
 HEALTHY: pid=18440 scan=1613 errors=0 equity=$1984 pos=5. Still 0 closes (trades.csv=85). Dead-capital issue unchanged; owner not yet greenlit exit fix; holding per directive. Collector ~10.5h (797 rec).
+
+=== 2026-06-30 ~06:38 UTC check #12 ===
+HEALTHY: pid=18440 scan=1746 errors=0 equity=$1984 pos=4. trades.csv=85 (0 real closes). Collector ~11.5h (816 rec). Exit fix still awaiting owner go; holding.
