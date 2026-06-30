@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782835986.911253,
+  "updated_at": 1782847390.2123122,
   "scenarios": [
     {
       "id": "cf_1782021106_762c834c",
@@ -11537,6 +11537,133 @@
         "actual_pnl_raw": -0.4549846011914277,
         "pnl_at_tp1_pct": 4.8913,
         "pnl_at_tp2_pct": 9.7828
+      }
+    },
+    {
+      "id": "cf_1782845569_25af718e",
+      "timestamp": 1782845569.0957506,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58562.0,
+        "sl_price": 59353.71428571428,
+        "tp1_price": 56978.571428571435,
+        "tp2_price": 55395.14285714287,
+        "confidence": 65.0,
+        "reason": "LLM_FIRST: BTC SELL solo signal conflicts with 4h/1h regime misalignment and decayed BTC_SHORT edge; skip rathe"
+      }
+    },
+    {
+      "id": "cf_1782846263_d76dbf97",
+      "timestamp": 1782846263.104903,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58636.0,
+        "sl_price": 59390.57142857143,
+        "tp1_price": 57126.857142857145,
+        "tp2_price": 55617.71428571429,
+        "confidence": 65.0,
+        "reason": "LLM_FIRST: BTC SHORT toward 57100 plausible given bearish OI divergence, but multiple wired-data red flags over"
+      }
+    },
+    {
+      "id": "cf_1782846277_11c9c7fe",
+      "timestamp": 1782846277.9819758,
+      "symbol": "SOL",
+      "scenario_type": "exit_timing",
+      "actual_action": "LLM_EXIT_AGENT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": -0.4371726353038584,
+      "counterfactual_pnl": 6.6153112004908365,
+      "delta": 7.052483835794695,
+      "resolved": true,
+      "metadata": {
+        "side": "short",
+        "entry_price": 73.345,
+        "actual_exit_price": 73.6025,
+        "tp1_price": 70.919,
+        "tp2_price": 68.493,
+        "actual_pnl_raw": -0.3206442693636149,
+        "pnl_at_tp1_pct": 3.3077,
+        "pnl_at_tp2_pct": 6.6153
+      }
+    },
+    {
+      "id": "cf_1782846713_d95f08db",
+      "timestamp": 1782846713.6044304,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 73.501,
+        "sl_price": 72.7357142857143,
+        "tp1_price": 75.03157142857143,
+        "tp2_price": 76.56214285714285,
+        "confidence": 75.86430531570022,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782846837_aa02f31d",
+      "timestamp": 1782846837.2597654,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58585.0,
+        "sl_price": 59352.285714285725,
+        "tp1_price": 57050.428571428565,
+        "tp2_price": 55515.85714285713,
+        "confidence": 65.0,
+        "reason": "LLM_FIRST: BTC SHORT solo confidence_scorer signal conflicts with 4h/1h regime misalignment and toxic BTC_SHORT"
+      }
+    },
+    {
+      "id": "cf_1782847390_5f0f2d01",
+      "timestamp": 1782847390.2122965,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 73.519,
+        "sl_price": 72.7537142857143,
+        "tp1_price": 75.04957142857143,
+        "tp2_price": 76.58014285714285,
+        "confidence": 75.86430531570022,
+        "reason": "LLM_FIRST: "
       }
     }
   ]

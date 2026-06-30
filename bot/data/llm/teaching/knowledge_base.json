@@ -4618,11 +4618,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (4 trades)",
       "confidence": 0.406,
-      "evidence_count": 89,
+      "evidence_count": 90,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775829913.005274,
-      "last_validated": 1782842868.4736035,
+      "last_validated": 1782844890.5320184,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -11674,11 +11674,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (5 trades)",
       "confidence": 0.6,
-      "evidence_count": 1,
+      "evidence_count": 2,
       "supporting": [],
       "contradicting": [],
       "created_at": 1781878466.5225227,
-      "last_validated": 1782584460.0976093,
+      "last_validated": 1782846988.4089792,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18267,11 +18267,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in  regime (0% WR)",
       "confidence": 0.7,
-      "evidence_count": 16,
+      "evidence_count": 18,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782810275.9864216,
-      "last_validated": 1782842868.443055,
+      "last_validated": 1782846988.3674176,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -18430,6 +18430,48 @@
         "regime_mismatch",
         "hype",
         "unknown"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "confidence_scorer SHORT in TREND: 0% WR. Entry OK (consolidation), regime shift eroded +0.79% to -0.35%. Close on regime shift.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "SOL in trend"
+      ],
+      "contradicting": [],
+      "created_at": 1782846179.9125295,
+      "last_validated": 1782846179.9125304,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "sol",
+        "trend"
+      ],
+      "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "principle",
+      "content": "confidence_scorer SHORT: Regime shift (consolidation\u2192TREND) eroded +0.79% to -0.35%. Regime-lock exits prevent 115bps drawdown on shift.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "SOL in consolidation"
+      ],
+      "contradicting": [],
+      "created_at": 1782846277.894844,
+      "last_validated": 1782846277.894844,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "sol",
+        "consolidation"
       ],
       "source": "learning_agent"
     }

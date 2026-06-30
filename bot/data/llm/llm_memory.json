@@ -1,42 +1,6 @@
 {
-  "last_updated": 1782839367,
+  "last_updated": 1782846988,
   "notes": [
-    {
-      "text": "Lead-lag XRP\u2192ETH expired (3.7min lag, 9min+ since last eval already flat). ETH_LONG 0%WR confirmed wired contraindication. HYPE_LONG alternative: graduated rule PENALIZE active on confidence_scorer+HY",
-      "ts": 1782738200.170113,
-      "symbol": "[LEAD-LAG",
-      "regime": "high_volatility"
-    },
-    {
-      "text": "XRP\u2192HYPE lead-lag tested: skipped. 7.7min avg lag + HYPE_LONG AVOID + Kelly=0 + vol:0.00! block = no structural edge. Wait for 2-agree with volume confirmation before any HYPE LONG.",
-      "ts": 1782739004.6922247,
-      "symbol": "[LEAD-LAG",
-      "regime": "high_volatility"
-    },
-    {
-      "text": "XRP\u2192ETH lead-lag 3.7min avg already flagged expired in memory (9min+ elapsed). ETH_LONG 0%WR(n=4) AVOID + consolidation TOXIC(29%WR) + EV=-5.22 + Kelly=0. Hard skip. If SOL signal re-surfaces with 2-a",
-      "ts": 1782739707.672045,
-      "symbol": "[LEAD-LAG",
-      "regime": "range"
-    },
-    {
-      "text": "XRP\u2192SOL lead-lag first test: SKIPPED. 12.6min avg lag, 120 obs, 0.9 conf = real cross-asset pattern. But consolidation TOXIC + Kelly=-1.03 + solo directional signal. SOL filter passed conf=68/EV=0.46",
-      "ts": 1782740332.2057443,
-      "symbol": "[LEAD-LAG",
-      "regime": "range"
-    },
-    {
-      "text": "ETH SHORT consolidation graduated rule acc=0%/n=4 is an active empirical failure pattern. Lead-lag XRP\u2192ETH trigger confirmed expired (9min+). ETH_LONG 0%WR AVOID, ETH_SHORT_consolidation PENALIZE. Bot",
-      "ts": 1782741038.0122926,
-      "symbol": "[LEAD-LAG",
-      "regime": "range"
-    },
-    {
-      "text": "ETH SHORT solo multi_tier_quality consolidation: EV=-2.64, Kelly=0, noise_prob=0.75. BB squeeze unresolved. Wait for breakout confirmation before any entry.",
-      "ts": 1782741577.59621,
-      "symbol": "[LEAD-LAG",
-      "regime": "range"
-    },
     {
       "text": "ETH_SHORT_consolidation solo confirmed skip: EV=-0.51/unit (quant), Kelly=0, noise_prob=0.90, active penalize graduated rule acc=0% n=4, vol=0.3x avg. Pattern matches prior 4 losing trades exactly.",
       "ts": 1782742270.7947135,
@@ -600,6 +564,42 @@
       "ts": 1782839367.6664937,
       "symbol": "[PRE-CLOSE",
       "regime": "trend"
+    },
+    {
+      "text": "trending_bear regime 0% WR (n=5-8) confirmed TOXIC, overseer critical rec to hard-block trend/range/consolidation/unknown regimes + cap leverage 1.5x during cold streak; all 5 candidate signals solo (",
+      "ts": 1782844254.2461007,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "Cold streak (4L), trending_bear regime confirmed TOXIC (0% WR n=5), conditional_wr=8% for solo multi_tier_quality setup, quant kelly=0, already holding 3 correlated SHORTs (XRP/ETH/SOL) with HIGH corr",
+      "ts": 1782844615.0492268,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "Cold streak 4L, CB warning, 3 correlated SHORTs already open (XRP/ETH/SOL), conditional_wr=12% vs base 26% (edge -14%), kelly=0 \u2014 quant explicitly says stand down, no positive-EV setup found this scan",
+      "ts": 1782845685.8914013,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "confidence_scorer SHORT in TREND: 0% WR. Entry OK (consolidation), regime shift eroded +0.79% to -0.35%. Close on regime shift.",
+      "ts": 1782846179.8508985,
+      "symbol": "SOL",
+      "regime": "consolidation"
+    },
+    {
+      "text": "confidence_scorer SHORT: Regime shift (consolidation\u2192TREND) eroded +0.79% to -0.35%. Regime-lock exits prevent 115bps drawdown on shift.",
+      "ts": 1782846277.8430157,
+      "symbol": "SOL",
+      "regime": "consolidation"
+    },
+    {
+      "text": "5-loss streak + CB warning + kelly=0 + quant explicit skip-everything call; consolidation toxic, solo 1-strat=23%WR, vol-reject flags on all symbols, already holding correlated XRP/ETH shorts (corr=0.",
+      "ts": 1782846988.361498,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
     }
   ]
 }
