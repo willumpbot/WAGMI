@@ -1,42 +1,30 @@
 {
-  "status": "UPDATED_RUN157",
-  "last_updated": "2026-06-25T02:01:00Z",
-  "run_number": 157,
+  "status": "UPDATED_RUN158",
+  "last_updated": "2026-06-30T01:10:00Z",
+  "run_number": 158,
   "cost_tracker_status": "NOT_FOUND",
-  "cost_tracker_path": "bot/llm/cost_tracker.json",
-  "consecutive_skips": 14,
-  "data_source": "Architecture estimates from CLAUDE.md + accumulated forensics. No real cost data.",
+  "consecutive_skips": 15,
   "roi_summary": {
-    "total_pnl_965_trades": 905.23,
-    "estimated_llm_cost_965_cycles": 6.4655,
     "roi_all_time": 140.0,
     "roi_recent_100": -11647.8,
-    "interpretation": "All-time ROI strong (140x) but recent 100 deeply negative. LLM cost is NOT the bottleneck -- trade quality is.",
+    "interpretation": "LLM cost NOT bottleneck -- RR geometry and bot offline status are.",
     "monthly_cost_estimate": 4.82
   },
   "swaps_recommended_this_run": 0,
   "potential_monthly_savings": 0.0,
-  "potential_monthly_benefit": 186.0,
-  "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST -- fix RR geometry, restart bot, collect live data",
+  "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST -- fix RR geometry, restart bot, collect live data.",
   "upgrade_candidates": [
     {
       "agent": "Regime",
       "from": "haiku-3",
       "to": "sonnet-3-7 (REGIME_SHIFT events only)",
       "confidence": 65,
-      "estimated_monthly_benefit": 186.0,
-      "estimated_monthly_cost_delta": 0.27,
-      "status": "CONSIDER -- blocked on regime logging fix first. Requires llm_regime field populated."
+      "status": "CONSIDER -- blocked on llm_regime field populated in trade CSV first."
     }
   ],
   "missing_data_gaps": [
-    "bot/llm/cost_tracker.json -- does not exist. 14th consecutive skip.",
-    "llm_regime field in CSV -- empty for all 965 trades.",
-    "Veto log -- Critic decisions not recorded.",
-    "Agent-level PnL attribution -- unknown which agent decisions led to wins vs losses."
+    "bot/llm/cost_tracker.json -- does not exist. 15th consecutive skip.",
+    "llm_regime field in CSV -- empty for all 965 trades."
   ],
-  "output": {
-    "model_swaps_recommended": 0,
-    "potential_savings": "$0.00 (cost not bottleneck)"
-  }
+  "output": {"model_swaps_recommended": 0, "potential_savings": "$0.00"}
 }

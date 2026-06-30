@@ -1,8 +1,7 @@
 {
-  "status": "UPDATED_RUN157",
-  "last_updated": "2026-06-25T02:01:00Z",
-  "run_number": 157,
-  "data_source": "Full 965-trade dataset (cached). Bot offline Day 87 -- no new trades.",
+  "status": "UPDATED_RUN158",
+  "last_updated": "2026-06-30T01:10:00Z",
+  "run_number": 158,
   "trades_analyzed": 965,
   "high_edges": [
     {
@@ -10,64 +9,39 @@
       "win_rate": 63.7,
       "count": 179,
       "ev_per_trade": 32.44,
-      "status": "ACTIVE boost +8 in LLM rules (restored_sol_short_boost_v1)",
-      "consecutive_flags": 25
+      "status": "ACTIVE -- sol_short_penalize_v1 DEACTIVATED Jun26 (correct, was inverting evidence)",
+      "consecutive_flags": 26
     },
     {
-      "key": "BTC_LONG",
-      "win_rate": 63.9,
-      "count": 72,
-      "ev_per_trade": 25.55,
-      "status": "BOOST DEACTIVATED run135 (100d WR=31.7% -- temporal degradation). Boost active for BTC_TREND regime only.",
-      "consecutive_flags": 25
+      "key": "BTC_SHORT_90PLUS",
+      "win_rate": 67.0,
+      "count": 43,
+      "ev_per_trade": 102.92,
+      "status": "ACTIVE boost +10 via btc_short_90plus_boost_v1 (new rule since run157)",
+      "consecutive_flags": 26
     },
     {
       "key": "CONF_90_PLUS",
       "win_rate": 64.1,
       "count": 39,
       "ev_per_trade": 101.92,
-      "status": "PENDING_HUMAN_REVIEW -- CRITICAL. boost +5 proposed. conf=72% (below 75% auto-inject). 17TH CONSECUTIVE FLAG.",
-      "consecutive_flags": 17,
-      "inject_trigger": "Human approval OR (flags>=5 AND conf>=75%). Currently: flags=17 MET (threshold=5), conf=72% NOT MET. 17th flag -- CRITICAL.",
-      "missed_ev_total": 1732.64,
-      "severity": "CRITICAL",
-      "escalated_run": 156,
-      "note": "17th consecutive flag. CRITICAL since run156. EV=+$101.92/trade (n=39). Each run without action = ~$102 additional uncaptured edge. Strongly recommend human bypass at gate=20%."
+      "status": "PARTIALLY CAPTURED -- BTC SHORT via btc_short_90plus_boost_v1. Non-BTC PENDING_HUMAN_REVIEW.",
+      "consecutive_flags": 18,
+      "missed_ev_total_paper": 6727.0,
+      "severity": "HIGH"
     }
   ],
   "high_edges_found": 3,
   "weak_setups": [
-    {
-      "key": "REGIME_ILLIQUID",
-      "win_rate": 28.1,
-      "count": 57,
-      "rule_status": "VETO active (restored_illiquid_regime_block_v1, conf=0.87)"
-    },
-    {
-      "key": "REGIME_RANGING",
-      "win_rate": 25.0,
-      "count": 16,
-      "rule_status": "PENALIZE -15 active (restored_ranging_regime_penalty_v1, conf=0.82)"
-    },
-    {
-      "key": "HYPE_LONG",
-      "win_rate": 57.0,
-      "note": "Negative EV despite WR > 50% -- avg loss > avg win",
-      "rule_status": "VETO active (restored_hype_long_block_v1, conf=0.88)"
-    },
-    {
-      "key": "CONF_70_80_PCT",
-      "win_rate": 47.6,
-      "ev_per_trade": -86.67,
-      "count": 200,
-      "rule_status": "CONF_70_80_SIZE_REDUCTION A/B gate=20%, size_adjust=-0.3x (physically in LLM rules from run137/143)"
-    }
+    {"key": "REGIME_ILLIQUID", "win_rate": 28.1, "rule_status": "PENALIZE -15 (illiquid_regime_penalize_v1)"},
+    {"key": "REGIME_RANGING", "win_rate": 25.0, "rule_status": "PENALIZE -10 (ranging_regime_penalize_v1)"},
+    {"key": "HYPE_LONG", "win_rate": 23.0, "ev_per_trade": -77.26, "rule_status": "VETO (hype_long_veto_v1)"},
+    {"key": "CONF_70_80_PCT", "win_rate": 47.6, "ev_per_trade": -86.67, "count": 200, "rule_status": "btc_short_conf70_80_penalize_v1 + size reduction A/B"},
+    {"key": "HYPE_SHORT", "win_rate": 48.9, "ev_per_trade": -16.65, "count": 239, "rule_status": "VETO (hype_short_veto_v1)"},
+    {"key": "BB_MTQ_CO_AGREEMENT", "win_rate": 35.0, "count": 2172, "rule_status": "PENALIZE -10 (bb_mtq_antipattern_v1)"}
   ],
-  "weak_setups_found": 4,
+  "weak_setups_found": 6,
   "new_injections_this_run": 0,
-  "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 17th flag) -- CRITICAL. Threshold requires conf>=75 OR human approval. Flags=17 (threshold=5 met), confidence NOT met (72%). Uncaptured edge every run. ~$1,732.64 missed EV. CRITICAL since run156.",
-  "output": {
-    "high_edges_found": 3,
-    "weak_setups_found": 4
-  }
+  "pending_human_review": "CONF_90PLUS_GENERAL_BOOST (conf=72%, flag #18 master / #66 paper). ~$6,727 missed EV.",
+  "output": {"high_edges_found": 3, "weak_setups_found": 6}
 }

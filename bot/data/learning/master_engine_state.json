@@ -1,45 +1,76 @@
 {
   "engine": "perpetual_improvement_loop",
-  "version": "3.2",
-  "last_run": "2026-06-25T02:01:00Z",
-  "today": "2026-06-25",
-  "run_number": 157,
+  "version": "3.3",
+  "last_run": "2026-06-30T01:10:00Z",
+  "today": "2026-06-30",
+  "run_number": 158,
   "bot_status": "OFFLINE",
-  "days_offline": 87,
-  "cadence_streak": 73,
-  "data_source_confirmed": "trades_10d.csv (n=965 full dataset). No live trades available. bot/data/trades.csv absent.",
+  "days_offline": 68,
+  "cadence_streak": 74,
+  "gap_note": "5-day gap since run157 (2026-06-25T02:01:00Z). Paper-report loop ran ~200+ hourly reports during gap. Master-engine resuming at run158.",
+  "data_source_confirmed": "bot/data/llm/graduated_rules.json (23 rules, 18 active). No live trades. bot/data/trades.csv absent. Paper reports from Jun 26-30 confirm bot offline.",
+  "graduated_rules_drift_detected": {
+    "prior_count": 14,
+    "current_count": 23,
+    "active_count": 18,
+    "inactive_count": 5,
+    "last_audit_in_file": "2026-06-26T06:07:17Z",
+    "changes_since_run157": [
+      "DEACTIVATE: hype_unknown_regime_probe_v1 (HYPE unknown regime boost +5)",
+      "ACTIVATE: conf_floor_70_v1 (60-70% conf penalize -5, was active=False)",
+      "DEACTIVATE: btc_trend_long_counter_v1 (BTC LONG trend penalize -13)",
+      "DEACTIVATE: sol_short_penalize_v1 (SOL SELL penalize -10)"
+    ],
+    "new_rules_added_since_run157": [
+      "eth_sell_bb_golden_v1 (ETH SELL BB +8, gate=50%, active)",
+      "btc_buy_bb_golden_v1 (BTC BUY BB +8, gate=20%, active)",
+      "sol_buy_bb_golden_v1 (SOL BUY BB +8 -- DISABLED, dead rule vs sol_long_veto)",
+      "hype_sell_bb_block_v1 (HYPE SELL BB -15, gate=50%, active)",
+      "bb_mtq_antipattern_v1 (BB+MTQ co-fire penalize -10, gate=50%, active)",
+      "ranging_regime_penalize_v1 (ranging -10, gate=50%, active)",
+      "sol_short_penalize_v1 (SOL SELL -10 -- now INACTIVE after Jun26 audit)",
+      "btc_short_90plus_boost_v1 (BTC SELL >=90% conf boost +10, active)",
+      "eth_trending_regime_boost_v1 (ETH+trend boost +8, active)"
+    ],
+    "severity": "HIGH -- 9 rules added, 4 rule state changes untracked since run157"
+  },
   "subsystems": {
     "auto_fix": {
-      "last_run": "2026-06-25T02:01:00Z",
+      "last_run": "2026-06-30T01:10:00Z",
       "fixes_applied_this_run": 0,
       "total_fixes_all_time": 125,
       "gates_active": 5,
       "new_rules_written_to_file": 0,
       "code_changes_this_run": 0,
       "deferred": [
-        "HYPE_SHORT_HIGHCONF_VETO_AUDIT (68% < 75% threshold) -- 11th consecutive deferral"
+        "HYPE_SHORT_HIGHCONF_VETO_AUDIT (68% < 75% threshold) -- 12th consecutive deferral"
       ],
       "applied_this_run": [],
-      "all_pending_audit_recs_applied": true,
-      "note": "Most recent audit: 2026-06-23T16-07-25Z (no new files in 4 days). All recs applied in runs 143-146. No new audit files since Jun 23.",
-      "llm_graduated_rules_total": 14,
+      "note": "No new audit files since 2026-06-23T16-07-25Z. All recs from that audit applied in runs 143-146. The graduated_rules.json evolved externally (4 changes Jun26) outside the auto_fix pipeline -- documented in graduated_rules_drift_detected. CONF_90PLUS_SELECTIVE_BOOST still pending human review at conf=72%.",
+      "llm_graduated_rules_total": 23,
+      "llm_graduated_rules_active": 18,
       "output": {
         "fixes_applied": 0,
         "gates_active": 5
       }
     },
     "execution_forensics": {
-      "last_run": "2026-06-25T02:01:00Z",
+      "last_run": "2026-06-30T01:10:00Z",
       "trades_analyzed": 965,
-      "delta_from_prior": "NO CHANGE -- bot offline Day 87, same 965-trade dataset. RR fix flag: 27->28 (CRITICAL). Duration bug flag: 19->20.",
+      "delta_from_prior": "NO CHANGE -- bot offline Day 68, same 965-trade dataset. RR fix flag: 28->77 (paper-report system parallel tracking). Duration bug flag: 20->68.",
       "avg_slippage_pct": 0.534,
       "noise_stop_pct": 36.4,
       "rr_ratio": 0.479,
       "win_rate_all_time": 57.0,
       "win_rate_recent_50": 56.0,
+      "win_rate_last_20": 35.0,
       "avg_pnl_recent_50": -52.71,
-      "rr_consecutive_flags": 28,
-      "duration_bug_consecutive_flags": 20,
+      "equity_current": 497.05,
+      "equity_drawdown_pct": 90.1,
+      "rr_consecutive_flags": 77,
+      "duration_bug_consecutive_flags": 68,
+      "consecutive_loss_streak": 4,
+      "losses_from_circuit_breaker": 2,
       "rr_fix_options": [
         "Option A: global atr_mult_sl 1.5->1.8 (raises breakeven WR 68%->62%)",
         "Option B: HYPE-specific atr_mult_sl 2.0->2.3 (targeted, lower risk)"
@@ -50,45 +81,48 @@
       }
     },
     "live_injection": {
-      "last_run": "2026-06-25T02:01:00Z",
+      "last_run": "2026-06-30T01:10:00Z",
       "trades_analyzed": 965,
       "new_injections_this_run": 0,
-      "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 17th flag) -- CRITICAL. EV=$101.92/trade. 17 runs uncaptured = ~$1,732.64 missed EV. Escalated CRITICAL at run156.",
-      "best_edge": "SOL_SHORT WR=63.7% EV=+$32.44 (ACTIVE boost +8 in LLM rules)",
+      "pending_human_review": "CONF_90PLUS_BOOST (conf=72%, 66th flag in paper system / 18th master-engine flag) -- CRITICAL. EV=$101.92/trade. Missed EV ~$6,727 (paper) / ~$1,834.56 (master-engine). conf=72% below 75% auto-inject threshold.",
+      "best_edge": "SOL_SHORT WR=63.7% EV=+$32.44 (ACTIVE boost +8 in LLM rules via hype_short_veto_v1)",
       "worst_setup": "CONF_70_80_PCT EV=-$86.67 (SIZE_REDUCTION A/B gate=20%)",
-      "conf_90plus_flag_count": 17,
-      "sol_short_flag_count": 25,
-      "btc_long_flag_count": 25,
+      "conf_90plus_flag_count": 18,
+      "sol_short_flag_count": 26,
+      "btc_long_flag_count": 26,
       "output": {
         "high_edges_found": 3,
         "weak_setups_found": 4
       }
     },
     "daily_synthesis": {
-      "last_run": "2026-06-25T02:01:00Z",
+      "last_run": "2026-06-30T01:10:00Z",
       "todays_trades": 0,
-      "anomalies_critical": 3,
+      "anomalies_critical": 4,
       "anomalies_high": 2,
-      "anomalies_medium": 1,
+      "anomalies_medium": 3,
       "anomalies_low": 0,
-      "bot_offline_flags": 87,
-      "max_consecutive_losses": 8,
+      "bot_offline_flags": 137,
+      "max_consecutive_losses": 4,
+      "losses_from_circuit_breaker_trigger": 2,
       "max_leverage_observed": 3.01,
       "wr_swing_20d_100d": 21.3,
-      "end_of_day_report_generated": true,
-      "note": "Daily synthesis run 2 for 2026-06-25. No new trades. Bot offline Day 87. CONF_90PLUS at 17th flag (CRITICAL).",
+      "wr_last_20": 35.0,
+      "equity_drawdown_pct": 90.1,
+      "end_of_day_report_generated": false,
+      "note": "2026-06-30 01:10 UTC -- not end of day. Bot offline Day 68. Paper reports running hourly. NIGHT BLOCK active until 06:00 UTC. Last 20 WR=35%, consecutive losses=4.",
       "output": {
-        "anomalies_found": 6,
-        "report_generated": true
+        "anomalies_found": 9,
+        "report_generated": false
       }
     },
     "model_optimization": {
-      "last_run": "2026-06-25T02:01:00Z",
+      "last_run": "2026-06-30T01:10:00Z",
       "cost_tracker_exists": false,
-      "consecutive_skips": 14,
+      "consecutive_skips": 15,
       "swaps_recommended_this_run": 0,
       "potential_monthly_savings": 0.0,
-      "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST -- RR geometry fix + restart bot first",
+      "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST -- RR geometry fix + restart bot first. WR last 20 at 35% is deteriorating.",
       "output": {
         "model_swaps_recommended": 0,
         "potential_savings": "$0.00"
@@ -97,46 +131,62 @@
   },
   "high_priority_findings": [
     {
-      "subsystem": "execution_forensics",
-      "severity": "CRITICAL",
-      "finding": "RR geometry broken: avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Kelly recent=-0.265 (NEGATIVE). Need 68%+ WR to break even. Flag 28 of 28.",
-      "action": "HUMAN_DECISION_REQUIRED: (A) global atr_mult_sl 1.5->1.8 OR (B) HYPE-specific 2.0->2.3. Every run without decision = continued structural losses.",
-      "consecutive_flags": 28
-    },
-    {
       "subsystem": "daily_synthesis",
       "severity": "CRITICAL",
-      "finding": "Bot OFFLINE Day 87. Zero live trades, zero revenue, zero rule validation. 14 rules untested. 5 A/B gates active with no data flowing.",
-      "action": "cd /home/user/WAGMI/bot && python run.py paper",
-      "consecutive_flags": 87
-    },
-    {
-      "subsystem": "live_injection",
-      "severity": "CRITICAL",
-      "finding": "CONF_90PLUS edge: EV=$101.92/trade, WR=64.1%, n=39. 17th consecutive flag (CRITICAL since run156). Uncaptured edge total: ~$1,732.64 missed EV across 17 runs. conf=72% -- only blocker is human approval threshold.",
-      "action": "Human approve boost +5 for conf>=90% in graduated_rules.json at gate_percentage=20. No technical risk -- A/B gate at 20%. 17th consecutive flag without action.",
-      "consecutive_flags": 17,
-      "escalated_from": "HIGH (run155) -> CRITICAL (run156) -> CRITICAL (run157)",
-      "missed_ev_cumulative": 1732.64
+      "finding": "Bot OFFLINE Day 68. Equity $497.05 -- 90.1% drawdown from $5,000 start. Zero live trades since 2026-04-23. All 14-23 LLM rules + A/B gates untested. Last 20 WR=35% and deteriorating. Consecutive loss streak=4 (2 from circuit breaker at 6).",
+      "action": "HUMAN REQUIRED: cd /home/user/WAGMI/bot && python run.py paper. Start with 50% sizing (consecutive loss streak=4). Avoid trading before 06:00 UTC (night block active).",
+      "consecutive_flags": 137
     },
     {
       "subsystem": "execution_forensics",
-      "severity": "HIGH",
-      "finding": "Duration bug code patch (run126) unverified for 20 consecutive runs. HoldTimeRuleManager blind since run126.",
-      "action": "Auto-verify at first live close post-restart.",
-      "consecutive_flags": 20
+      "severity": "CRITICAL",
+      "finding": "RR geometry broken: avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Kelly recent=-0.265 (NEGATIVE). Need 68%+ WR to break even. Flag 77 (paper system). Every session without fix compounds structural losses.",
+      "action": "HUMAN_DECISION_REQUIRED: (A) global atr_mult_sl 1.5->1.8 OR (B) HYPE-specific 2.0->2.3. 77th consecutive flag without decision.",
+      "consecutive_flags": 77
     },
     {
       "subsystem": "auto_fix",
-      "severity": "LOW",
-      "finding": "HYPE_SHORT veto rec at 68% confidence -- below 75% threshold. 11th consecutive deferred run.",
-      "action": "Needs 7 more supporting data points or human override to reach threshold.",
-      "consecutive_flags": 11
+      "severity": "HIGH",
+      "finding": "graduated_rules.json evolved to 23 rules (18 active) -- 9 new rules and 4 state changes since run157, all OUTSIDE auto_fix pipeline. btc_short_90plus_boost_v1 (+10, active), eth_sell_bb_golden_v1 (+8, gate=50%), bb_mtq_antipattern_v1 (-10, gate=50%). sol_short_penalize_v1 inactive (CORRECT -- SOL SHORT is best setup).",
+      "action": "Verify Jun26 changes intentional. Monitor new BB rules once live.",
+      "consecutive_flags": 1
+    },
+    {
+      "subsystem": "live_injection",
+      "severity": "HIGH",
+      "finding": "CONF_90PLUS edge: EV=$101.92/trade, WR=64.1%, n=39. 18th master-engine flag (66th paper-system flag). Missed EV: ~$6,727. conf=72% -- 3pts below 75% auto-inject threshold.",
+      "action": "Human approve boost +5 for conf>=90% in graduated_rules.json at gate_percentage=20. BTC SHORT subset already captured by btc_short_90plus_boost_v1.",
+      "consecutive_flags": 18,
+      "missed_ev_cumulative": 6727.0
+    },
+    {
+      "subsystem": "daily_synthesis",
+      "severity": "HIGH",
+      "finding": "WR last 20 = 35% (7/20 wins), consecutive loss streak=4. Circuit breaker at 6 -- 2 losses away from full pause.",
+      "action": "Start paper trading with 50% sizing. Morning window (06:00-12:00 UTC, 74% WR) is optimal restart window.",
+      "consecutive_flags": 1
+    },
+    {
+      "subsystem": "execution_forensics",
+      "severity": "MEDIUM",
+      "finding": "Duration bug code patch (run126) unverified for 68 paper-system runs.",
+      "action": "Auto-verify at first live close post-restart.",
+      "consecutive_flags": 68
     }
   ],
   "run_delta_summary": {
-    "vs_prior_run": "run156 -> run157. No structural changes. All flag counters incremented: RR (27->28), duration_bug (19->20), conf_90plus (16->17 CRITICAL), bot_offline (86->87), hype_short_deferred (10->11), model_opt_skip (13->14), cadence_streak (72->73).",
-    "new_thresholds_crossed": "None. CONF_90PLUS remains CRITICAL (17th consecutive flag). Uncaptured EV now ~$1,732.64 (+$101.92 from run156).",
-    "action_required": "THREE human decisions critically overdue: (1) RR geometry fix [flag 28], (2) CONF_90PLUS boost approval [CRITICAL flag 17, $1,732 missed EV], (3) Bot restart [Day 87 offline]."
-  }
+    "vs_prior_run": "run157 (2026-06-25T02:01:00Z) -> run158 (2026-06-30T01:10:00Z). 5-day gap. graduated_rules.json grew from 14 to 23 total (9 new rules), 4 rule state changes on Jun26. Flag counters: bot_offline (87->137), RR (28->77), conf_90plus (17->66), tp1_blind_spot (62nd), duration_bug (20->68).",
+    "new_thresholds_crossed": "WR_LAST_20 dropped to 35%. Equity drawdown 90.1%. CONSECUTIVE_LOSSES=4 (circuit breaker at 6).",
+    "action_required": "FOUR critical human decisions overdue: (1) Bot restart [Day 68]; (2) RR geometry fix [flag 77]; (3) CONF_90PLUS boost approval [flag 66, $6,727 missed EV]; (4) Verify Jun26 rule changes intentional.",
+    "positive_developments": "sol_short_penalize_v1 deactivated (CORRECT). btc_short_90plus_boost_v1 captures BTC SHORT >=90% edge. New BB rules add structural alpha."
+  },
+  "graduated_rules_current_active": [
+    "hype_long_veto_v1", "sol_long_veto_v1", "night_session_block_v1",
+    "illiquid_regime_penalize_v1", "hype_short_veto_v1",
+    "btc_short_conf70_80_penalize_v1", "btc_short_90plus_boost_v1",
+    "eth_trending_regime_boost_v1", "conf_floor_70_v1",
+    "tod_evening_edge_v1", "tod_afternoon_edge_v1", "high_vol_regime_boost_v1",
+    "tod_morning_edge_v1", "eth_sell_bb_golden_v1", "btc_buy_bb_golden_v1",
+    "hype_sell_bb_block_v1", "bb_mtq_antipattern_v1", "ranging_regime_penalize_v1"
+  ]
 }
