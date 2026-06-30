@@ -33,6 +33,16 @@ class ExitDecision:
     partial_pct: float = 0.5          # For partial exit (0.0-1.0 of remaining qty)
     reason: str = ""
 
+    def __post_init__(self):
+        # The exit agent sometimes emits partial_pct as a PERCENT (e.g. 50) instead of a
+        # fraction (0.5), which made every such partial-close fail validation ("out of range: 50")
+        # — a hidden cause of dead-capital positions never being trimmed. Normalize it.
+        try:
+            if self.partial_pct is not None and 1.0 < float(self.partial_pct) <= 100.0:
+                self.partial_pct = float(self.partial_pct) / 100.0
+        except (TypeError, ValueError):
+            pass
+
     def validate(self) -> tuple:
         """Basic validation. Returns (ok, error_msg)."""
         if self.exit_action not in VALID_EXIT_ACTIONS:

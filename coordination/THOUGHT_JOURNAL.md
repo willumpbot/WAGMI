@@ -764,3 +764,13 @@ HEALTHY: pid=18440 scan=1613 errors=0 equity=$1984 pos=5. Still 0 closes (trades
 
 === 2026-06-30 ~06:38 UTC check #12 ===
 HEALTHY: pid=18440 scan=1746 errors=0 equity=$1984 pos=4. trades.csv=85 (0 real closes). Collector ~11.5h (816 rec). Exit fix still awaiting owner go; holding.
+
+=== 2026-06-30 ~07:00 UTC EXIT FIX (owner greenlit 'fix exits') ===
+Two reversible fixes to unstick dead-capital (5 positions, 0 closes ~12h):
+ (1) exit_types.py: ExitDecision.__post_init__ normalizes partial_pct from percent->fraction (50 -> 0.5).
+     Was failing validation 'partial_pct out of range: 50' -> partial trims never executed. Tested 50->0.5 ok.
+ (2) exit_engine.py: conditional full-close gate. Blanket EXIT_AGENT_FULL_CLOSE=false stays for discretionary/
+     winner-cutting (the 0/71 problem) BUT now allows LLM full_close when reason is dead-capital/no-progress/
+     thesis-invalidated AND position is NOT a winner. Winner-protection (>=0.90 conf) intact.
+Deploying via SAFE restart. Expect: stuck dead-capital positions finally close -> trades.csv grows -> rank-8 can
+begin accumulating funding/OI-labeled closes. Will verify a close + rank-1/rank-2 credit next checks.

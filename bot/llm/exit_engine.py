@@ -132,10 +132,21 @@ class ExitEngine:
             # mechanical SL/TP/trailing produce 100% of profit. The agent keeps tighten_sl / partial /
             # hold authority; mechanical exits handle full closes. Re-enable per-regime once it
             # demonstrates positive exit edge on counterfactual scoring. Reversible: EXIT_AGENT_FULL_CLOSE=true.
-            if os.getenv("EXIT_AGENT_FULL_CLOSE", "false").lower() != "true":
-                return False, ("Exit-agent full-close disabled (measured 0/71 win-rate, -$1503); "
-                               "mechanical SL/TP/trailing handle closes. Set EXIT_AGENT_FULL_CLOSE=true to re-enable.")
             is_profitable = (current_price > position.entry) if is_long else (current_price < position.entry)
+            _gate_open = os.getenv("EXIT_AGENT_FULL_CLOSE", "false").lower() == "true"
+            _reason_l = (decision.reason or "").lower()
+            _dead_capital = any(k in _reason_l for k in (
+                "dead capital", "no-progress", "no progress", "no progres",
+                "thesis invalidated", "thesis invalid", "invalidated", "toxic"))
+            # CONDITIONAL RE-ENABLE (2026-06-30, owner-approved): the blanket OFF was right for the
+            # agent CUTTING WINNERS (measured 0/71). But it also blocked legitimate dead-capital /
+            # thesis-invalidated exits on NON-winners, so flat/losing positions piled up forever
+            # (5 stuck ~11h, 0 closes). Allow full_close ONLY when the reason is dead-capital/
+            # thesis-invalid AND the position is not a winner; still block discretionary closes and
+            # all winner-cutting (those still need EXIT_AGENT_FULL_CLOSE=true or >=0.90 conf below).
+            if not _gate_open and not (_dead_capital and not is_profitable):
+                return False, ("Exit-agent full-close disabled except dead-capital/thesis-invalid losers "
+                               "(measured 0/71 on discretionary closes); mechanical SL/TP/trailing handle the rest.")
             if is_profitable:
                 # Winning trade: require 0.90 confidence to override trailing stop
                 if decision.exit_confidence < 0.90:
