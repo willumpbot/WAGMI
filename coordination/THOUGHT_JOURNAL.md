@@ -729,3 +729,9 @@ HEALTHY: pid=18440 scan=877 errors=0 equity=$1992.69 pos=3. Collector ~6.2h accr
 
 === 2026-06-30 ~00:45 UTC check #7 ===
 HEALTHY: pid=18440 scan=1049 errors=0 equity=$1992.21 pos=3. Collector ~7.5h accrued (718 rec). No close (85). Just shy of 8h for rank-8. Hold.
+
+=== 2026-06-30 ~02:15 UTC check #8 — RANK-7 CONFIRMED, RANK-8 GATED ===
+HEALTHY: pid=18440 scan=1189 errors=0 equity=$1992.21 pos=4. Collector ~8.5h (737 rec).
+RANK-7 PERCEPTION LIVE+PRODUCING: get_funding_trend BTC=falling +5.9%ann/30smp; get_oi_divergence computing all 5 syms (~35smp). Intertwining works.
+RANK-8 GATED n=0: ZERO closes since collector start (trades.csv=85, historical closes predate funding data) -> no trades with funding/OI context to correlate. Insufficient; graduate NOTHING; keep accruing; need the bot to CLOSE trades while collector runs. NEVER hardcode.
+NOTE: bot held 3-4 positions all ~9h session w/o a close (selective+bear-chop, equity flat, 0 errors) - exit logic just not triggering TP/SL.
