@@ -738,3 +738,23 @@ NOTE: bot held 3-4 positions all ~9h session w/o a close (selective+bear-chop, e
 
 === 2026-06-30 ~03:24 UTC check #9 ===
 HEALTHY: pid=18440 scan=1333 errors=0 equity=$1984 pos=5. Collector ~9.5h (757 rec). TRADES still 85 (0 closes since collector start). Rank-8 gated n=0. WATCH: 5 open positions held ~9.5h w/ ZERO closes - exit logic not triggering TP/SL in low-vol chop; if persists, audit exit path. No errors, selective by design, not forcing.
+
+=== 2026-06-30 ~04:30 UTC check #10 — WATCH ITEM DIAGNOSED: bot cannot EXIT (dead capital) ===
+HEALTHY infra: pid=18440 scan=1474 errors=0 equity=$1984 pos=5. But 5 positions dead-stuck ~11h, 0 closes (trades.csv=85).
+ROOT CAUSE (from logs): Exit agent CORRECTLY flags exits — BTC 'Dead capital: 5.5h hold exceeds 4h no-progress 0% MFE',
+SOL 'Thesis invalidated on three axes', XRP 'Range regime toxic' — but:
+ (1) EXIT_AGENT_FULL_CLOSE=false gate BLOCKS all LLM full-closes: '[EXIT-ENGINE] BTC safety gate: Exit-agent full-close
+     disabled (measured 0/71 win-rate, -$1503); mechanical SL/TP/trailing handle close'. But mechanical TP/SL is NOT
+     firing (flat market, equity unchanged) -> nothing closes.
+ (2) BUG: '[EXIT-ENGINE] Invalid decision for XRP: partial_pct out of range: 50' — agent's 50% partial_close rejected by
+     validation (likely 0-1 fraction vs 0-100 percent unit mismatch). So even partial trims fail.
+NET EFFECT: bot opens selective trades but can NEVER exit dead/invalidated positions -> capital sits, no closes, rank-8
+(needs closes w/ funding context) starves. This is the #1 issue now, bigger than rank-8.
+DECISION (per directive: don't change risk/force closes without owner sign-off): REPORTING ONLY this run.
+OWNER DECISIONS NEEDED:
+ A) The EXIT_AGENT_FULL_CLOSE=false gate is now over-restrictive. The 0/71 was historical (agent cutting winners). But
+    the agent is now flagging DEAD-CAPITAL / THESIS-INVALID exits which are a DIFFERENT, likely-valid signal. Recommend:
+    allow LLM close ONLY for dead-capital (no-progress > Nh) + thesis-invalidated cases, keep blocking discretionary
+    profit-taking. (Conditional gate, not full re-enable.)
+ B) Fix the partial_pct unit-mismatch bug (50 rejected) so partial trims work — clear bug, reversible.
+Both are reversible and would unblock exits + let rank-8 accumulate. Awaiting owner go.
