@@ -1,0 +1,53 @@
+{
+  "made_at": "2026-06-30T~16:00Z",
+  "horizon_h": 12,
+  "note": "Alpha-brain directional predictions to validate the read. Resolve by comparing actual price to price0 per condition. >0.3%% move = directional; within +/-1%% = flat.",
+  "preds": [
+    {
+      "id": "p1",
+      "symbol": "BTC",
+      "price0": 58434.5,
+      "direction": "down",
+      "condition": "BTC < 58434.5 in ~12h (falling funding = longs unwinding, no fuel for upside)",
+      "conf": 0.55,
+      "rationale": "funding falling 8%/yr, OI flat, no divergence -> mild bearish/neutral"
+    },
+    {
+      "id": "p2",
+      "symbol": "ETH",
+      "price0": 1566.75,
+      "direction": "flat",
+      "condition": "ETH within +/-1.5%% of 1566.75 in ~12h (chop)",
+      "conf": 0.5,
+      "rationale": "low funding 4.3%/yr, flat OI -> no catalyst, range"
+    },
+    {
+      "id": "p3",
+      "symbol": "SOL",
+      "price0": 73.2465,
+      "direction": "down",
+      "condition": "SOL < 73.2465 in ~12h AND underperforms BTC",
+      "conf": 0.62,
+      "rationale": "crowded longs (funding +10.8%/yr) + liquidation OI-divergence + sol_long_veto 14/14 toxic-long edge -> biased DOWN (highest conviction)"
+    },
+    {
+      "id": "p4",
+      "symbol": "HYPE",
+      "price0": 65.2105,
+      "direction": "down",
+      "condition": "HYPE <= 65.2105 in ~12h",
+      "conf": 0.55,
+      "rationale": "crowded longs (funding +11%/yr), flat OI -> mean-revert lean down"
+    },
+    {
+      "id": "p5",
+      "symbol": "XRP",
+      "price0": 1.03555,
+      "direction": "up_or_flat",
+      "condition": "XRP > 1.025 in ~12h (no breakdown; do NOT short)",
+      "conf": 0.55,
+      "rationale": "funding rising but NEGATIVE -9%/yr = crowded SHORTS -> squeeze risk up / avoid-short"
+    }
+  ],
+  "resolutions": []
+}
