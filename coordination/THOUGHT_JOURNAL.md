@@ -802,3 +802,6 @@ HEALTHY (recovered): bot did a clean internal state-reload (~12:43, no crash/tra
 
 === 2026-06-30 ~13:55 UTC overnight WAGMI ===
 HEALTHY: recovered scan=863 (MONOTONIC across re-inits -> NOT full restarts) equity=$1971 pos=3 errors=0. Minimal-heartbeat blips = frequent feedback re-init (~60x today) but main loop keeps running. WATCH (report-only): why feedback re-inits so often + brief minimal-heartbeat; could relate to position-reconciliation drops/unlogged-closes starving rank-8. trades.csv still 86 (rank-8 n=1). Vetoes: sol_long_veto 14/14 (edge), night_session_block 5/1 (20%, nearing auto-retire), hype_long_veto 9/0.
+
+=== 2026-06-30 ~14:58 UTC overnight WAGMI — VETO SELF-CORRECTION VALIDATED ===
+HEALTHY: pid=18284 scan=1003 errors=0 equity=$1971 pos=4. MILESTONE: hype_long_veto_v1 AUTO-RETIRED (15/6, active=False) — over-blocking veto (was 9/0) self-corrected once enough evidence accrued. sol_long_veto 14/14 KEPT (strong edge). night_session_block 13/7=54% KEPT (recovered from 20%). => graduated-rules self-measure + auto-retire loop FULLY WORKING (the payoff of the rank-1 wiring fix). trades.csv 86 (rank-8 n=1, slow in quiet market). Boot/feedback re-init still chatty but scan monotonic (1003), bot healthy.
