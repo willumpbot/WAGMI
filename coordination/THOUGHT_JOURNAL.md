@@ -799,3 +799,6 @@ HEALTHY: pid=18284 scan=559 errors=0 equity=$1971 pos=2 (flat ~3h). No new close
 
 === 2026-06-30 ~12:45 UTC overnight WAGMI ===
 HEALTHY (recovered): bot did a clean internal state-reload (~12:43, no crash/traceback, same pid 18284) -> heartbeat briefly minimal -> recovered full (scan 707 equity $1971 pos 2 errors 0). Main loop running. No new closes (rank-8 n=1). Grad rules stable. Transient, self-healed.
+
+=== 2026-06-30 ~13:55 UTC overnight WAGMI ===
+HEALTHY: recovered scan=863 (MONOTONIC across re-inits -> NOT full restarts) equity=$1971 pos=3 errors=0. Minimal-heartbeat blips = frequent feedback re-init (~60x today) but main loop keeps running. WATCH (report-only): why feedback re-inits so often + brief minimal-heartbeat; could relate to position-reconciliation drops/unlogged-closes starving rank-8. trades.csv still 86 (rank-8 n=1). Vetoes: sol_long_veto 14/14 (edge), night_session_block 5/1 (20%, nearing auto-retire), hype_long_veto 9/0.
