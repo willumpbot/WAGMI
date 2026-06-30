@@ -26,11 +26,7 @@
       "status": "partially_invalidated",
       "test_results": {},
       "created_at": 1774408112.036554,
-      "updated_at": 1747613466.0,
-      "invalidation_reason": "10x leverage tier (>85% confidence) invalidated by execution_forensics: 6-10x leverage = -$0.38/trade net negative on 91 trades despite 41% WR, due to tail-loss domination. High WR at high leverage is misleading without PnL cross-validation. Only the 3x (<75% conf) and 5x (75-85% conf) tiers are supported by forensics evidence.",
-      "invalidated_at": "2026-05-19T00:11:06+00:00",
-      "invalidated_by": "perpetual_deep_dive_subsystem1_2026_05_19",
-      "note": "Lower tiers (3x and 5x) remain valid. Do NOT apply 10x at >85% tier. See HIGH_LEV_10X_FORENSICS_BLOCK in graduated_rules.json."
+      "updated_at": 1747613466.0
     },
     {
       "id": "idea_f5e1b611",
@@ -50,10 +46,7 @@
       "status": "covered_by_graduated_rule",
       "test_results": {},
       "created_at": 1774424723.0163088,
-      "updated_at": 1774424723.0163088,
-      "covered_by": "TOD_morning_edge (graduated_rules.json, A/B 50% gate, conf=82)",
-      "covered_at": "2026-05-18T23:04:47+00:00",
-      "note": "Redundant with graduated rule TOD_morning_edge. Marking covered to prevent double-application on restart."
+      "updated_at": 1774424723.0163088
     },
     {
       "id": "idea_2238f358",
@@ -73,10 +66,7 @@
       "status": "invalidated",
       "test_results": {},
       "created_at": 1774577407.1340423,
-      "updated_at": 1774577407.1340423,
-      "invalidation_reason": "INVERTED: evening=33% WR but applies 1.08x boost (should be penalize). Auto-fix engine validation.",
-      "invalidated_at": "2026-05-18T22:05:46.254827+00:00",
-      "invalidated_by": "perpetual_improvement_loop_subsystem1"
+      "updated_at": 1774577407.1340423
     },
     {
       "id": "idea_e5ebabb4",
@@ -112,10 +102,7 @@
       "status": "invalidated",
       "test_results": {},
       "created_at": 1775054259.2033484,
-      "updated_at": 1775054259.2033484,
-      "invalidation_reason": "INVERTED: night=33% WR but applies 1.08x boost (should be penalize). Auto-fix engine validation.",
-      "invalidated_at": "2026-05-18T22:05:46.254827+00:00",
-      "invalidated_by": "perpetual_improvement_loop_subsystem1"
+      "updated_at": 1775054259.2033484
     },
     {
       "id": "idea_623426ad",
@@ -135,10 +122,7 @@
       "status": "invalidated",
       "test_results": {},
       "created_at": 1775054259.2033484,
-      "updated_at": 1775054259.2033484,
-      "invalidation_reason": "INVERTED_DUPLICATE: night=33% WR + boost applied, duplicate of 07f475b8. Deduplication required.",
-      "invalidated_at": "2026-05-18T22:05:46.254827+00:00",
-      "invalidated_by": "perpetual_improvement_loop_subsystem1"
+      "updated_at": 1775054259.2033484
     },
     {
       "id": "idea_920b3e13",
@@ -158,10 +142,7 @@
       "status": "invalidated",
       "test_results": {},
       "created_at": 1775095188.192538,
-      "updated_at": 1775095188.192538,
-      "invalidation_reason": "INVERTED: afternoon=33% WR but applies 1.08x boost (should be penalize). Auto-fix engine validation.",
-      "invalidated_at": "2026-05-18T22:05:46.254827+00:00",
-      "invalidated_by": "perpetual_improvement_loop_subsystem1"
+      "updated_at": 1775095188.192538
     },
     {
       "id": "idea_98fac4ad",
@@ -179,6 +160,26 @@
       "test_results": {},
       "created_at": 1775791924.9347408,
       "updated_at": 1775791924.9347408
+    },
+    {
+      "id": "idea_afd2fbd2",
+      "name": "Time-weighted confidence: boost night",
+      "description": "Apply a confidence multiplier of 1.08 for trades during night (0:00-6:00 UTC) based on observed time-of-day edge.",
+      "trigger_condition": "When current UTC hour is between 0 and 6",
+      "parameters": {
+        "confidence_multiplier": 1.08,
+        "time_bucket": "night",
+        "utc_hours": [
+          0,
+          6
+        ]
+      },
+      "expected_edge": "~5-10% WR improvement during night hours",
+      "source_pattern": "Time-of-day edge: 'night' (0:00-6:00 UTC) wins 88% vs 'evening' at 40% (spread: 48%)",
+      "status": "proposed",
+      "test_results": {},
+      "created_at": 1780888263.6237566,
+      "updated_at": 1780888263.6237566
     }
   ]
 }

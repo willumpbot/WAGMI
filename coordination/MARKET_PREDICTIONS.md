@@ -19,3 +19,14 @@ Made 2026-06-30 ~16:00 UTC (owner away 6-12h). Resolve each vs actual price. Goa
 
 ## Resolutions
 (autonomous loop appends actual price + right/wrong + running accuracy as the horizon elapses)
+
+### Interim reading — 2026-06-30 17:08 UTC (~1.1h / 12h elapsed; NOT resolved, noise-level)
+| # | Sym | price0 | now | move | call | on-track? | driver |
+|---|-----|--------|-----|------|------|-----------|--------|
+| p1 | BTC | 58434.5 | 58578.5 | +0.25% | down | no (above) | funding-crowding (weak) |
+| p2 | ETH | 1566.75 | 1575.65 | +0.57% | flat | yes (in ±1.5%) | low-funding/no-catalyst |
+| p3 | SOL | 73.2465 | 73.8385 | +0.81% | down | no (above) | sol_long_veto 14/14 + OI-div |
+| p4 | HYPE | 65.2105 | 65.0645 | -0.22% | down | yes (below) | funding-crowding |
+| p5 | XRP | 1.03555 | 1.04275 | +0.70% | up_or_flat | yes (>1.025) | crowded-shorts squeeze |
+
+Interim: 3/5 currently on-track, but ~1h is below signal — the two "down" highest-conviction calls (SOL, BTC) are slightly red against us so far. Real scoring at the 12h horizon (~04:00 UTC Jul 1).

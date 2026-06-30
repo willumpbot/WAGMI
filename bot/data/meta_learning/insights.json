@@ -30,10 +30,7 @@
       "confidence": 0.85,
       "evidence_count": 27,
       "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1776797749.9410007,
-      "invalidated": true,
-      "invalidated_at": "2026-05-19T02:04:26.010467+00:00",
-      "invalidation_reason": "Post-dedup evidence invalidated. INSIGHTS_DEDUP_PRUNING (2026-05-18) removed 89 duplicate entries that inflated this WR. Meta_learning analysis confirmed evening=33% WR (not 65%) and afternoon=27% WR (not 64%), n=27. idea_2238f358 and idea_920b3e13 explicitly invalidated based on this. Marking insight to prevent re-proposal of inverted rules."
+      "timestamp": 1776797749.9410007
     },
     {
       "category": "bias",
@@ -97,10 +94,7 @@
       "confidence": 0.85,
       "evidence_count": 27,
       "actionable_suggestion": "Boost confidence for trades during afternoon (12:00-18:00 UTC). Consider raising confidence floor during night by 5-10%.",
-      "timestamp": 1775453531.0103774,
-      "invalidated": true,
-      "invalidated_at": "2026-05-19T02:04:26.010467+00:00",
-      "invalidation_reason": "Post-dedup evidence invalidated. INSIGHTS_DEDUP_PRUNING (2026-05-18) removed 89 duplicate entries that inflated this WR. Meta_learning analysis confirmed evening=33% WR (not 65%) and afternoon=27% WR (not 64%), n=27. idea_2238f358 and idea_920b3e13 explicitly invalidated based on this. Marking insight to prevent re-proposal of inverted rules."
+      "timestamp": 1775453531.0103774
     },
     {
       "category": "weakness",
@@ -157,10 +151,126 @@
       "evidence_count": 16,
       "actionable_suggestion": "Reduce position sizes \u2014 larger positions are losing more often. Consider capping leverage or adding a size penalty to the confidence calculation.",
       "timestamp": 1774458397.3132286
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'night' (0:00-6:00 UTC) wins 88% vs 'evening' at 40% (spread: 48%)",
+      "confidence": 0.7,
+      "evidence_count": 18,
+      "actionable_suggestion": "Boost confidence for trades during night (0:00-6:00 UTC). Consider raising confidence floor during evening by 5-10%.",
+      "timestamp": 1780888263.6191368
+    },
+    {
+      "category": "bias",
+      "description": "Strategy concentration: 'unknown' accounts for 78% of all trades (29/37). WR: 55%",
+      "confidence": 0.8,
+      "evidence_count": 29,
+      "actionable_suggestion": "Diversify: over-reliance on 'unknown' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
+      "timestamp": 1780888263.6191368
+    },
+    {
+      "category": "edge",
+      "description": "Size edge: larger positions (>2.5x) have 93% WR vs 48% for smaller. Higher conviction trades are more profitable.",
+      "confidence": 0.75,
+      "evidence_count": 37,
+      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
+      "timestamp": 1780888263.6191368
+    },
+    {
+      "category": "bias",
+      "description": "Strategy concentration: 'unknown' accounts for 79% of all trades (31/39). WR: 52%",
+      "confidence": 0.8,
+      "evidence_count": 31,
+      "actionable_suggestion": "Diversify: over-reliance on 'unknown' creates fragility. Consider reducing its ensemble weight or boosting underrepresented strategies.",
+      "timestamp": 1780919224.812476
+    },
+    {
+      "category": "edge",
+      "description": "Size edge: larger positions (>2.5x) have 87% WR vs 46% for smaller. Higher conviction trades are more profitable.",
+      "confidence": 0.75,
+      "evidence_count": 39,
+      "actionable_suggestion": "High-conviction sizing is working. Consider increasing sizes on high-confidence setups and further reducing sizes on low-confidence ones.",
+      "timestamp": 1780919224.812476
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 54% vs 'night' at 18% (spread: 36%)",
+      "confidence": 0.8,
+      "evidence_count": 24,
+      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
+      "timestamp": 1782491880.730893
+    },
+    {
+      "category": "weakness",
+      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 18% WR over 11 trades",
+      "confidence": 0.775,
+      "evidence_count": 11,
+      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
+      "timestamp": 1782491880.730893
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 54% vs 'night' at 17% (spread: 37%)",
+      "confidence": 0.8166666666666667,
+      "evidence_count": 25,
+      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
+      "timestamp": 1782536935.037261
+    },
+    {
+      "category": "weakness",
+      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 17% WR over 12 trades",
+      "confidence": 0.8,
+      "evidence_count": 12,
+      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
+      "timestamp": 1782536935.037261
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 58% vs 'night' at 17% (spread: 42%)",
+      "confidence": 0.8,
+      "evidence_count": 24,
+      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
+      "timestamp": 1782584125.6485946
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 60% vs 'night' at 23% (spread: 37%)",
+      "confidence": 0.7833333333333334,
+      "evidence_count": 23,
+      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
+      "timestamp": 1782631026.6508973
+    },
+    {
+      "category": "weakness",
+      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 23% WR over 13 trades",
+      "confidence": 0.8,
+      "evidence_count": 13,
+      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
+      "timestamp": 1782631026.6508973
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 67% vs 'night' at 33% (spread: 33%)",
+      "confidence": 0.8,
+      "evidence_count": 24,
+      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
+      "timestamp": 1782694512.6031034
+    },
+    {
+      "category": "weakness",
+      "description": "Significant time-of-day weakness: 'night' (0:00-6:00 UTC) has only 33% WR over 15 trades",
+      "confidence": 0.8,
+      "evidence_count": 15,
+      "actionable_suggestion": "Consider pausing trading or raising confidence floor to 75%+ during night (0:00-6:00 UTC).",
+      "timestamp": 1782694512.6031034
+    },
+    {
+      "category": "pattern",
+      "description": "Time-of-day edge: 'evening' (18:00-24:00 UTC) wins 75% vs 'night' at 40% (spread: 35%)",
+      "confidence": 0.7833333333333334,
+      "evidence_count": 23,
+      "actionable_suggestion": "Boost confidence for trades during evening (18:00-24:00 UTC). Consider raising confidence floor during night by 5-10%.",
+      "timestamp": 1782717730.0179079
     }
-  ],
-  "last_dedup_at": "2026-05-18T22:06:12.775083+00:00",
-  "dedup_note": "Pruned from 108 to 19 by perpetual_improvement_loop (removed 89 duplicates, kept most-recent per insight category/bucket)",
-  "last_invalidation_run": "2026-05-19T02:04:26.010467+00:00",
-  "invalidation_note": "Perpetual deep-dive 2026-05-19T02:07 marked 2 inverted time-of-day insights."
+  ]
 }

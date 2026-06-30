@@ -1,179 +1,605 @@
 {
-  "last_updated": 1780694919,
+  "last_updated": 1782839367,
   "notes": [
     {
-      "text": "BTC range/bearish solo ensemble SELL \u2014 quality 0.3, miscalibrated system (35% acc). Outcome needed for learning.",
-      "ts": 1780346817.2352262,
-      "symbol": "BTC",
+      "text": "Lead-lag XRP\u2192ETH expired (3.7min lag, 9min+ since last eval already flat). ETH_LONG 0%WR confirmed wired contraindication. HYPE_LONG alternative: graduated rule PENALIZE active on confidence_scorer+HY",
+      "ts": 1782738200.170113,
+      "symbol": "[LEAD-LAG",
+      "regime": "high_volatility"
+    },
+    {
+      "text": "XRP\u2192HYPE lead-lag tested: skipped. 7.7min avg lag + HYPE_LONG AVOID + Kelly=0 + vol:0.00! block = no structural edge. Wait for 2-agree with volume confirmation before any HYPE LONG.",
+      "ts": 1782739004.6922247,
+      "symbol": "[LEAD-LAG",
+      "regime": "high_volatility"
+    },
+    {
+      "text": "XRP\u2192ETH lead-lag 3.7min avg already flagged expired in memory (9min+ elapsed). ETH_LONG 0%WR(n=4) AVOID + consolidation TOXIC(29%WR) + EV=-5.22 + Kelly=0. Hard skip. If SOL signal re-surfaces with 2-a",
+      "ts": 1782739707.672045,
+      "symbol": "[LEAD-LAG",
       "regime": "range"
     },
     {
-      "text": "BTC solo ensemble SELL in range regime; volume compressed 0.4x, miscalibrated system (35% acc). Low conviction but no hard block. Monitor for volume expansion confirming continuation or reversal.",
-      "ts": 1780346977.2814243,
-      "symbol": "BTC",
+      "text": "XRP\u2192SOL lead-lag first test: SKIPPED. 12.6min avg lag, 120 obs, 0.9 conf = real cross-asset pattern. But consolidation TOXIC + Kelly=-1.03 + solo directional signal. SOL filter passed conf=68/EV=0.46",
+      "ts": 1782740332.2057443,
+      "symbol": "[LEAD-LAG",
       "regime": "range"
     },
     {
-      "text": "BTC range-sell taken: solo_ensemble 0.70, range bearish regime, quality 0.3, agent MISCALIBRATED 35% acc +18% drift \u2014 track outcome for calibration",
-      "ts": 1780347161.209755,
-      "symbol": "BTC",
+      "text": "ETH SHORT consolidation graduated rule acc=0%/n=4 is an active empirical failure pattern. Lead-lag XRP\u2192ETH trigger confirmed expired (9min+). ETH_LONG 0%WR AVOID, ETH_SHORT_consolidation PENALIZE. Bot",
+      "ts": 1782741038.0122926,
+      "symbol": "[LEAD-LAG",
       "regime": "range"
     },
     {
-      "text": "Solo signal flag acknowledged but already priced into 0.35 floor confidence and minimum sizing. Syst",
-      "ts": 1780347319.1313775,
-      "symbol": "BTC",
+      "text": "ETH SHORT solo multi_tier_quality consolidation: EV=-2.64, Kelly=0, noise_prob=0.75. BB squeeze unresolved. Wait for breakout confirmation before any entry.",
+      "ts": 1782741577.59621,
+      "symbol": "[LEAD-LAG",
       "regime": "range"
     },
     {
-      "text": "BTC SELL signal 2026-06-01: solo ensemble 0.72 in range regime; skipped \u2014 existing short at 70031 already profitable at 69538, range bounce risk, quality 0.3",
-      "ts": 1780347492.1819491,
-      "symbol": "BTC",
+      "text": "ETH_SHORT_consolidation solo confirmed skip: EV=-0.51/unit (quant), Kelly=0, noise_prob=0.90, active penalize graduated rule acc=0% n=4, vol=0.3x avg. Pattern matches prior 4 losing trades exactly.",
+      "ts": 1782742270.7947135,
+      "symbol": "[LEAD-LAG",
       "regime": "range"
     },
     {
-      "text": "BTC solo ensemble SELL 0.77 in range; system miscalibrated 35% accuracy \u2014 log outcome for recalibration; existing short at 70031 already ~0.8% ITM",
-      "ts": 1780347658.6404746,
-      "symbol": "BTC",
+      "text": "ETH SHORT consolidation: quant Kelly=-0.42, noise_prob=0.90, realized payoff=0.61 (winners $5.01 vs losers $8.18). Consolidation regime 29% WR n=31 TOXIC. Active PENALIZE rule for this exact setup. No",
+      "ts": 1782743179.7293375,
+      "symbol": "[LEAD-LAG",
       "regime": "range"
     },
     {
-      "text": "BTC solo ensemble SELL in consolidation/squeeze skipped: regime wired data explicitly flagged as false signal; ATR% extreme low (0.68%) makes fee EV negative",
-      "ts": 1780348099.8425226,
-      "symbol": "BTC",
-      "regime": "consolidation"
+      "text": "Lead-lag SOL\u2192HYPE evaluated and rejected: HYPE_LONG confirmed AVOID in consolidation; EV=-0.51, Kelly=0, noise_prob=0.82; no graduated-rule override possible. BTC_SHORT 3-agree but active VETO (consol",
+      "ts": 1782743763.803831,
+      "symbol": "[LEAD-LAG",
+      "regime": "range"
     },
     {
-      "text": "BTC squeeze breakout pending; solo ensemble SELL explicitly flagged as likely false signal by regime agent in compression phase. Revisit when ADX/OI/EMA data confirm direction post-squeeze.",
-      "ts": 1780348152.6347027,
-      "symbol": "BTC",
-      "regime": "consolidation"
-    },
-    {
-      "text": "BTC solo ensemble SELL in consolidation, quality 0.3, vol 0.7x. Trade agent MISCALIBRATED at 35% accuracy n=17 drift +18%. Note for calibration review.",
-      "ts": 1780348173.7640083,
-      "symbol": "BTC",
-      "regime": "consolidation"
-    },
-    {
-      "text": "SOL SHORT taken trending_bear conf=0.88 at $64.99; solo PRIORITY MTQ 6h-aligned; validated 62%WR n=213 SOL SELL edge; hold 4h+ mandatory per quant; fee_drag 5% requires 3%+ move to profit",
-      "ts": 1780682253.317681,
-      "symbol": "[HIGH-CONFIDENCE",
+      "text": "Lead-lag XRP\u2192ETH signal skipped (4th consecutive skip today). trending_bear=0%WR TOXIC + solo signal conf=60 below floor=66 + EV=-0.38 + Kelly=0 + ETH SHORT already open underwater at 1565.25. No new",
+      "ts": 1782744461.3410778,
+      "symbol": "[LEAD-LAG",
       "regime": "trend"
     },
     {
-      "text": "SOL SHORT trending_bear: 2-agree CS+MTQ PRIORITY (6h-aligned), validated 62%WR n=213 US-session edge, vol 2.71x confirms. Hold 4h+ mandatory. Post-big-win SOL +$377 \u2192 size 0.5x cold-streak multiplier.",
-      "ts": 1780685335.8157313,
+      "text": "trending_bear: 0%WR confirmed across 8 trades (wired data). Lead-lag XRP\u2192ETH SHORT skipped (5th consecutive today). ETH SHORT already open at 1565.25 underwater. Await regime shift to unknown/illiquid",
+      "ts": 1782745166.3432071,
+      "symbol": "[LEAD-LAG",
+      "regime": "trend"
+    },
+    {
+      "text": "Lead-lag XRP\u2192ETH SHORT skip #6 today. ETH SHORT already open at 1565.25. Consolidation 29%WR TOXIC. EV=-3.64, Kelly=0, noise=0.9. No edge this cycle \u2014 await regime shift.",
+      "ts": 1782745907.3711245,
+      "symbol": "[LEAD-LAG",
+      "regime": "range"
+    },
+    {
+      "text": "Lead-lag XRP\u2192ETH SHORT skip #7 today. ETH SHORT open at 1565.25 pnl=+0.9. Consolidation TOXIC. EV=-0.31R Kelly=0 noise=0.90 vr=0.1. No edge this cycle \u2014 await regime shift.",
+      "ts": 1782746569.5059586,
+      "symbol": "[LEAD-LAG",
+      "regime": "range"
+    },
+    {
+      "text": "ETH SHORT lost with blank regime + strategy\u2014BLOCK entry without regime classification gate",
+      "ts": 1782752993.7207634,
+      "symbol": "ETH",
+      "regime": ""
+    },
+    {
+      "text": "ETH SHORT opened with regime='', hit SL 3h later. Don't enter without regime classification. Block at execution gate.",
+      "ts": 1782753034.1008816,
+      "symbol": "ETH",
+      "regime": ""
+    },
+    {
+      "text": "All near-miss signals rejected on vol:0.00! + conf below floor. Wait for regime to resolve to consolidation/range + 2-agree ensemble before re-engaging. ETH/BTC SHORT best candidates when confluence f",
+      "ts": 1782753278.294639,
       "symbol": "[PRE-CLOSE",
       "regime": "trend"
     },
     {
-      "text": "SOL SHORT trending_bear: 2-agree PRIORITY, cold streak 4L \u2192 0.5x size mandatory, post-big-win SOL+$377 giveback risk. Hold \u22654h to clear noise stops per quant.",
-      "ts": 1780685673.9582534,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "SOL SHORT trending_bear 2-agree CS+MTQ PRIORITY 6h-aligned conf=0.55; cold streak 4L \u2192 0.5x size mandatory; post-big-win SOL+$377 giveback risk; RSI=32 oversold watch bounce; hold 4h+ mandatory per qu",
-      "ts": 1780686487.7133827,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "BTC SHORT trending_bear 2-agree (conf_scorer+MTQ) c=0.58; cold streak 4L \u2192 0.5x size MANDATORY; RSI=31 oversold bounce risk active; VR=0.3 low volume confirms exhaustion \u2014 hold 4h+ to escape noise sto",
-      "ts": 1780687001.661823,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "ETH SHORT solo MTQ REGULAR skipped: conditional_wr=40% in exhausting trending_bear, oversold RSI=30, vol=0.5x \u2014 next entry requires PRIORITY tier or volume confirmation",
-      "ts": 1780687301.7104614,
-      "symbol": "[PRE-CLOSE",
-      "regime": "trend"
-    },
-    {
-      "text": "BTC SHORT in trending: 75% WR (3/4 recent) vs 50% baseline. Ensemble voting filters noise effectively\u2014sustains this edge. Increase BTC SHORT allocation on 2+ consensus.",
-      "ts": 1780687744.1072624,
+      "text": "BTC SHORT 0% confidence + unknown regime held 2h+ but lost. Directional thesis likely wrong. Require regime match before trading.",
+      "ts": 1782753477.870929,
       "symbol": "BTC",
-      "regime": "trending"
+      "regime": ""
     },
     {
-      "text": "BTC SHORT WIN +$39 in trending, conf=85%, held 96min\u2014replicate this setup",
-      "ts": 1780687744.175123,
+      "text": "BTC SHORT confidence=0 + unknown regime: 18% baseline WR. Never SHORT BTC below confidence 20 or without regime validation. Apply hard gate block.",
+      "ts": 1782753532.7841976,
       "symbol": "BTC",
-      "regime": "trending"
+      "regime": ""
     },
     {
-      "text": "BTC SHORT trending with ensemble consensus: 80% recent WR via trailing stops. Lock as primary strategy. In streak\u2014increase allocation 10-20% per trade",
-      "ts": 1780687801.4151275,
+      "text": "Consolidation regime TOXIC for all LONGs confirmed again \u2014 hold for 2+ agree ensemble signal with regime shift to trending/breakout before re-engaging longs",
+      "ts": 1782754084.5594401,
+      "symbol": "[POSITION",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation LONG hard-block confirmed again: SOL BUY VETO active (24% WR n=34), OI covering on SOL (OI-0.03% vs price+0.01% = longs exiting not entering), vol:0.00! on all 5 symbols. Wait for volume",
+      "ts": 1782773258.8281524,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation blocked all LONG signals again. SOL 2-agree (conf_scorer+multi_tier, EV=0.58, R:R=2.0) is strongest candidate but has active graduated VETO. BTC LONG 0% WR (n=4/5 losses). Volume=0 on al",
+      "ts": 1782774218.9374027,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "All 5 symbols show vol_ratio=0.0 (zero volume). Consolidation TOXIC for LONGs (BTC_LONG_consolidation 0% WR n=4, -$32). SOL/HYPE BUY have active graduated VETOs. Best candidate BTC LONG 2-agree (bolli",
+      "ts": 1782774651.6933484,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation+zero_volume=skip confirmed again (vol_ratio=0.0 all symbols). Regime shift criteria: ADX>25 + OI expansion + volume surge before any LONG entry.",
+      "ts": 1782775107.6237395,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation LONG hard-block confirmed again: vol_ratio=0.0 all 5 symbols, BTC_LONG_consolidation 0% WR (n=4-5), conditional_WR=18% for solo MTQ LONG in consolidation, Kelly=0.0. Next valid LONG entr",
+      "ts": 1782775371.1096034,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Trend regime 0% WR (n=7) TOXIC confirmed again; solo MTQ LONG conditional WR=8% (n=7 similar); graduated VETOES active SOL/HYPE BUY; vol_ratio=0.0 all symbols; Kelly=0.0 \u2014 require volume surge + OI ex",
+      "ts": 1782776010.0733988,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "HYPE LONG: active VETO + trend regime 0% WR (n=7) + 6h opposed + MANUAL tier + conditional_WR=0% (n=7 similar) = textbook catastrophic setup. Do not override under any mode.",
+      "ts": 1782776323.5843236,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "Trend regime + solo/weak MTQ LONG = conditional WR 0% (n=7 confirmed). All OI falling: BTC-1.4%, ETH-3.4%, SOL-2.0%. Active graduated VETOs on SOL BUY (24% WR/34 live) and HYPE BUY (23% WR/35 live) ar",
+      "ts": 1782777038.8589602,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "HYPE BUY VETO confirmed again: solo MTQ MANUAL + trend regime + 6h opposed = 0/7 similar trades won. Do not override regardless of mode.",
+      "ts": 1782777310.9613678,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "Trend regime still 0% WR (n=7, $-118 TOXIC). SOL BUY VETO active (24% WR/34 live, active_rules=10). OI falling: BTC-1.3%, ETH-3.2%, SOL-1.9%. Vol_ratio\u22480 all symbols. Kelly=0.04. Do not re-evaluate un",
+      "ts": 1782777780.8403046,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "Range regime confirmed 11% WR (TOXIC). BTC_LONG=0% WR (5t) AVOID, ETH_LONG=0% WR (4t) AVOID. Active VETOs: HYPE BUY + SOL BUY. Kelly=0.0. Do not enter range regime LONGs until OI expands + volume spik",
+      "ts": 1782778219.1331375,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime 11% WR toxic + BTC LONG 0% WR live AVOID + Kelly=0.0 + quant noise=0.90 + cwr=11% all confirm no edge; skip all LONG signals until OI expands + volume spikes + 2+ ensemble agrees in trend",
+      "ts": 1782779038.4162018,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime confirmed 0% WR live (n=19 trades), 11% quant (n=9). vol:0.00! hard rejection on ALL symbols. SOL BUY VETO active (24% WR/34t). BTC LONG 0% WR live (5t). Kelly=0.0. Skip all LONGs until O",
+      "ts": 1782779341.6495714,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "XRP LONG: regime='' and confidence=0 at entry (gate fail), closed on RANGE=11% WR. Block if regime unclassified or confidence<30.",
+      "ts": 1782779677.5531435,
+      "symbol": "XRP",
+      "regime": ""
+    },
+    {
+      "text": "XRP: confidence=0 + regime=unclassified at entry (gate fail). Closed RANGE(11%WR). Block regime=unclassified or confidence<30.",
+      "ts": 1782779764.708155,
+      "symbol": "XRP",
+      "regime": ""
+    },
+    {
+      "text": "Range regime = 0% live WR confirmed (19 trades). SOL BUY veto active. BTC LONG AVOID. Kelly=0.0. All OI falling. Wait for OI expansion + volume spike + ADX>25 trend confirmation before any new LONG.",
+      "ts": 1782779957.743652,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime confirmed 0% WR live (19 trades). XRP SELL solo confidence_scorer raw=65 / adjusted=46.1 (below 66 floor). Kelly=0.0. Skip all signals in range regime until ADX>25 + OI expansion + 2-stra",
+      "ts": 1782780365.610991,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime confirmed 0% live WR (19 trades). SOL LONG veto active. All OI contracting. No entry until ADX>25 + OI expansion + trend regime confirmed.",
+      "ts": 1782780961.4931872,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime 11% WR (n=9) TOXIC. SOL BUY active VETO (24% WR 34 live). HYPE BUY active VETO (23% WR 35 live). All OI contracting: BTC -1.3%, ETH -3.7%, SOL -3.2%, HYPE -1.2%. Kelly=0.0. Wait for ADX>2",
+      "ts": 1782781238.4540982,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime 11% WR confirmed (n=9). SOL BUY active VETO (24% WR, 34 live trades). All OI contracting: ETH -3.9%, SOL -3.5%. Kelly=0.0. Conditional edge -19%. Skip until ADX>25 + OI expansion + 2-stra",
+      "ts": 1782781719.9613411,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime confirmed TOXIC: 0% live WR n=19. OI contracting all symbols. SOL BUY + HYPE BUY active vetoes (24% and 23% WR respectively). Kelly=0.0. Conditional WR=9% for solo MANUAL VWAP-opposed in",
+      "ts": 1782781971.4271743,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "SOL BUY veto confirmed active (24% WR n=34 live). OI liquidation divergence confirmed. Skip all SOL LONG until regime=trending + OI expands + volume>1.0x.",
+      "ts": 1782782505.8415754,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "SOL BUY VETO confirmed active (24% WR n=34). Consolidation regime TOXIC (29% WR $-288). OI liquidation divergence (SOL OI -6.1% vs price -0.01% = forced deleveraging). Kelly=0.0. No LONG until ADX>25",
+      "ts": 1782782944.7603126,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "SOL BUY veto remains active. OI liquidation divergence confirmed again. Do not long SOL until OI expands + ADX>25 + regime=trending.",
+      "ts": 1782783435.6902213,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Wait for VR>1.5x + OI expansion to confirm breakout direction. Consolidation 29% WR TOXIC. Kelly=0.0. Do not enter until volume spike confirms side.",
+      "ts": 1782783734.8028245,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "ETH SHORT in consolidation: 50% WR (8t, $+7.64) \u2014 this specific sub-edge is positive vs overall consolidation 29% TOXIC. OI -5% ETH bearish. Flip on SL hit.",
+      "ts": 1782784415.2206552,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime confirmed 0% WR (19 trades, TOXIC). VR=0 is structural dead zone \u2014 no volume = no breakout fuel. ETH SHORT best available edge (42% WR recent 50t) but range kills it. Wait for VR>1.5x + O",
+      "ts": 1782785556.6588662,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime 11% WR (n=9, TOXIC). Solo multi_tier_quality in range = conditional WR 11% (-19pp vs base). Kelly=0.0. Wait for BTC >$60.5k + VR>1.5x + OI expansion before any long.",
+      "ts": 1782785955.8910732,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "ETH LONG lost $8 in trending_bull, LLM conf=0.13\u2014be cautious on similar trending_bull LONGs",
+      "ts": 1782786365.0068786,
+      "symbol": "ETH",
+      "regime": "trending_bull"
+    },
+    {
+      "text": "ETH LONG SL in trending_bull\u2014confidence_scorer 0% WR (3 losers). MUTE from trending regimes.",
+      "ts": 1782786424.2341654,
+      "symbol": "ETH",
+      "regime": "trending_bull"
+    },
+    {
+      "text": "Post-close pause: range regime confirmed toxic (11% WR n=9). Wait for VR>1.5x + OI expansion + regime shift to proceed. ETH SHORT remains best available edge (42% WR recent) but NOT in range.",
+      "ts": 1782786666.8989553,
+      "symbol": "[POSITION",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime 11% WR (n=9) confirmed toxic. Best edge ETH_SHORT (42% WR) explicitly blocked in range per memory note. Entry conditions not met: VR=1.4 (need >1.5x), OI falling across all (liquidation n",
+      "ts": 1782793661.2862053,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime = 0% WR (brain, 19 trades) + confidence_scorer in range = 11% WR (n=9, wired). ETH SHORT explicitly blocked in range per memory note. Skip all confidence_scorer solo signals in range regi",
+      "ts": 1782794199.5255675,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime skip confirmed: quant conditional_wr=11% (n=9, -18% vs base), memory explicitly blocks ETH SHORT in range, Kelly=0.0 across all symbols. Wait for ADX>25 + OI expansion + volume surge befo",
+      "ts": 1782794771.7109444,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime confirmed 11% WR toxic (n=9, wired). SOL BUY VETO active (acc=100%, n=5) + OI liquidation on SOL \u2014 let SL hit, do not defend. Kelly=0.0 across all symbols. CB WARNING active (3 consecutiv",
+      "ts": 1782795165.5567853,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime structural skip confirmed by brain (0%/19t) + wired (11%/n=9). ETH SHORT blocked in range per memory. SOL BUY VETO active (acc=100%, n=5). HYPE BUY VETO active (n=7). CB warning (3 consec",
+      "ts": 1782795854.3828127,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "BTC SHORT in range: even 3-strat bollinger-90% agreement maps to 8% WR TOXIC in live dynamic data. Kelly=0.0. Range regime = 0% WR brain (19t), 11% wired (9t). Skip until volume surge + OI expansion c",
+      "ts": 1782796201.090065,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "BTC SHORT 2-agree (bollinger_squeeze 90% + confidence_scorer 65%, avg_conf=77.5%) = best available signal. Blocked: range regime 8% WR wired (12t) + 0% WR brain (19t) + vol=0.59x compressed + BB squee",
+      "ts": 1782797742.331737,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "BTC SHORT 2-agree (bollinger 90% + confidence_scorer 65%, avg_conf=77.5%) in range: wired data = 0% WR brain (19t) + 8% WR live (12t) + Kelly=0.0. PENALIZE rule active for avg_conf 70-79% (single larg",
+      "ts": 1782798416.4576883,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "BTC SHORT 3-agree bollinger-90%+multi_tier-PRIORITY-83%+conf_scorer-65% in range/BB-squeeze: testing BOOST rule ('BTC SELL 90%+ is #1 edge, 67% WR') vs quant's conditional_wr=11% for range-solo. Track",
+      "ts": 1782798802.8213024,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "LLM_FIRST entry for ETH SHORT in unknown regime won (+$0.30, 3.2h) vs confidence_scorer (10% WR). Override failing strategies with 70%+ LLM confidence in weak regimes.",
+      "ts": 1782799303.11276,
+      "symbol": "ETH",
+      "regime": "unknown"
+    },
+    {
+      "text": "Unknown regime holds >4h without TP1 progress = losses. ETH SL-exit 3.2h +$0.30 (thesis correct) beat SOL hold 5.8h -$3.52 (zero progress). Exit or reassess at 4h if thesis intact but stalled.",
+      "ts": 1782799374.7853732,
+      "symbol": "ETH",
+      "regime": "unknown"
+    },
+    {
+      "text": "BB squeeze (2.22% width) with OI liquidation cross-asset (BTC-1.8%, ETH-3.2%, SOL-1.2%) = bearish breakout building. Wait for volume surge + directional confirmation before entry. Bearish bias is clea",
+      "ts": 1782799691.8231316,
+      "symbol": "[POSITION",
+      "regime": "range"
+    },
+    {
+      "text": "BTC SHORT 3-agree (BB-squeeze-90%+MTQ-PRIORITY-83%+CS-65%) in consolidation. Volume compressed 0.56x = key risk. Testing BOOST rule: BTC SELL 90%+ unvalidated 67% WR. OI liquidation across all assets",
+      "ts": 1782800947.7746572,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime = 0% WR (19 trades) \u2014 most toxic regime in live DNA. Kelly=0. Conditional WR collapses to 11% for solo MANUAL-tier in range. All signals below conf floor 66. Stand down until OI accumulat",
+      "ts": 1782804476.5428689,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "XRP SHORT (REGULAR tier, VWAP+6h aligned, negative funding -6.1%/yr) is best candidate when range breaks or ensemble signal forms; monitor for OI expansion + volume surge as transition signal",
+      "ts": 1782806141.9738567,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime = 0% WR (19 trades current run). ALL 5 symbols below conf floor 66. XRP SHORT best structural setup (2-agree, REGULAR, VWAP+6h aligned) but still rejected. Wait for regime break + OI expa",
+      "ts": 1782806484.9758146,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "confidence_scorer signals in range regimes: 11% WR (n=9). SOL example\u20147.95h hold, low directional probability. Hard veto.",
+      "ts": 1782807091.4536273,
+      "symbol": "SOL",
+      "regime": ""
+    },
+    {
+      "text": "confidence_scorer HYPE longs: 10% WR on symbol + 11% WR in ranges. 5.7h hold in range regime lost $1.20\u2014mute or require 2-strategy confirmation",
+      "ts": 1782807111.6108098,
+      "symbol": "HYPE",
+      "regime": ""
+    },
+    {
+      "text": "confidence_scorer range signals: thesis requires volume breakout by 1.3h; without it, directional prob\u21920. HYPE long 5.7h lost $1.20\u2014mute or gate-exit.",
+      "ts": 1782807174.7659457,
+      "symbol": "HYPE",
+      "regime": ""
+    },
+    {
+      "text": "confidence_scorer + range regimes: 11% WR (n=9)\u2014no edge. Exit agent correctly closed trade after 7.95h. HARD BLOCK this entry combo.",
+      "ts": 1782807188.3156276,
+      "symbol": "SOL",
+      "regime": ""
+    },
+    {
+      "text": "Range regime scan repeat: 0/19 WR current run, all 5 symbols below conf floor 66. XRP SHORT (2-agree REGULAR VWAP+6h) remains best available structure but regime is TOXIC. No entries until regime brea",
+      "ts": 1782807366.4286458,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime 0/19 current run \u2014 hard block all entries until regime classification breaks out of range; XRP SHORT 2-agree REGULAR remains best available structure for next regime shift",
+      "ts": 1782807695.2943153,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "XRP SHORT 2-agree REGULAR (VWAP+6h aligned, R:R=2.0) remains best structure for next regime break; trigger condition = volume expansion + ADX>25 + regime reclassification out of range",
+      "ts": 1782808145.0749464,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime 0/19 hard block confirmed again. Best structure XRP SHORT 2-agree REGULAR already captured in existing position. Next entry condition: regime reclassification out of range + volume expans",
+      "ts": 1782808458.2140503,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime 0/19 HARD BLOCK reconfirmed. ETH showing 4/10 regime shift confirmations (range\u2192trend); XRP 1/10 (range\u2192trending_bear). Monitor for reclassification. XRP SHORT 2-agree PRIORITY (VWAP+6h E",
+      "ts": 1782809022.3876371,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "BTC LONG in RANGE: Regime hard-block rule (0% WR, 19 trades) validated. Avoid entry or wait for TREND. This trade's MFE 0.596% trapped by noise.",
+      "ts": 1782809272.0510335,
       "symbol": "BTC",
-      "regime": "trending"
+      "regime": ""
     },
     {
-      "text": "ETH SHORT solo MTQ REGULAR skipped: RSI=26 deeply oversold, regime itself flags 'oversold bounce likely', BTC diverging +0.7%/1h \u2014 wait for bounce exhaustion then re-short",
-      "ts": 1780688754.6817694,
-      "symbol": "PRE_TRADE",
+      "text": "GATE FAILURE: BTC LONG entered in RANGE despite hard-block rule (0% WR, 19 trades). Regime validation missing at entry. MFE trapped at noise.",
+      "ts": 1782809429.7026997,
+      "symbol": "BTC",
+      "regime": ""
+    },
+    {
+      "text": "XRP SHORT 2-agree REGULAR (best signal, EV=0.77/dollar) already captured in portfolio at +$0.8. BTC SHORT hard-flagged TOXIC (8% WR, n=12 reliable). Next entry condition: regime reclassification out o",
+      "ts": 1782809783.5311675,
+      "symbol": "[POSITION",
       "regime": "range"
     },
     {
-      "text": "ETH SHORT solo MTQ REGULAR skipped AGAIN: RSI=27 deeply oversold, BTC diverging +0.7%/1h, regime_momentum=weakening, regime_trend strategy flagging neutral on 6h. Entry requires bounce exhaustion to R",
-      "ts": 1780688953.2946572,
-      "symbol": "[HIGH-CONFIDENCE",
+      "text": "All 5 symbols: range regime=11%WR(n=9) TOXIC, OI liquidation across board, BTC SHORT still TOXIC(8%WR n=12). Next entry condition: regime reclassification to trend/trending_bear OR 2+ convergent strat",
+      "ts": 1782813200.224667,
+      "symbol": "[PRE-CLOSE",
       "regime": "range"
     },
     {
-      "text": "ETH SHORT trending_bear: BOOST rule active (ETH TRENDING=71% WR). Solo CS cap 0.55 applied. Entry contingent on BTC bounce rolling over to confirm dead-cat. HYPE SELL 4-agree remains permanently block",
-      "ts": 1780689544.7363546,
-      "symbol": "PRE_TRADE",
+      "text": "Range scan: BTC SHORT 2-agree REGULAR was best candidate but TOXIC (8% WR/12t, -$52). All OI showing liquidation divergence (exhaustion signal, not directional trigger). HYPE both directions vetoed ac",
+      "ts": 1782813466.5580053,
+      "symbol": "[PRE-CLOSE",
       "regime": "range"
     },
     {
-      "text": "BTC SHORT confidence_scorer solo in trending_bear (Regime Agent conf=0.85): took at floor 0.55. Main risk = vr=0.2 very low volume. Monitor dead-cat exhaustion near $61k. Post-big-win caution applied.",
-      "ts": 1780690496.3114493,
-      "symbol": "PRE_TRADE",
+      "text": "Range regime scan 2026-06-30: all 5 symbols failed conf floor (max HYPE 63 vs floor 66). BTC SHORT 2-agree but TOXIC (8% WR, $-52.59/12t). HYPE both dirs vetoed. SOL BUY vetoed. Kelly=0. OI liquidatio",
+      "ts": 1782813952.2966633,
+      "symbol": "[PRE-CLOSE",
       "regime": "range"
     },
     {
-      "text": "ETH SHORT confidence_scorer solo in trending_bear; BOOST rule active (ETH trending=71% WR). Entry conditioned on BTC bounce rollover near $60k zone \u2014 do not chase the 1h dead-cat.",
-      "ts": 1780690947.152229,
-      "symbol": "PRE_TRADE",
+      "text": "Range scan 2026-06-30: all 5 symbols failed conf floor (best=HYPE 63 vs floor 66). BTC SHORT 2-agree REGULAR but TOXIC (8% WR/12t, $-52.59). Kelly=0. Active vetoes: HYPE BUY/SELL, SOL BUY. No new entr",
+      "ts": 1782814214.7442048,
+      "symbol": "[PRE-CLOSE",
       "regime": "range"
     },
     {
-      "text": "SOL SHORT solo CS trending_bear ADX=56, BTC -5.2%/24h leading. Validated 62% WR US-session SOL SELL edge. Hold 4h+ to avoid noise stops; sub-4h exits destroy value per quant lesson.",
-      "ts": 1780691738.5201561,
-      "symbol": "[HIGH-CONFIDENCE",
+      "text": "2026-06-30 scan: range regime 11%WR TOXIC, all signals failed conf floor 66 (max HYPE 53%), BTC SHORT 2-agree TOXIC 8%WR, Kelly=0, vol ratios 0.0-0.1 dead market, active vetoes HYPE BUY + SOL BUY. No",
+      "ts": 1782814768.4545822,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime scan 2026-06-30: All signals below floor 66 (best BTC SHORT ensemble 43.4). BTC SHORT TOXIC (8% WR/12t, $-52.59). Active vetoes: HYPE BUY, HYPE SELL, SOL BUY. Kelly=0. Noise prob=0.9. No",
+      "ts": 1782815206.373841,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "2026-06-30 range scan: 0/5 passed floor 66. Active vetoes: SOL BUY, HYPE BUY/SELL. BTC SHORT TOXIC 8%WR. Kelly=0. OI liquidation divergence across ETH/SOL/HYPE/XRP. Wait for 2-TF EMA align + volume su",
+      "ts": 1782815678.3663697,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range scan 2026-06-30: all 5 symbols failed conf floor 66 (best: HYPE BUY 53.2, BTC SHORT 43.4 weighted). Range WR=11% TOXIC. BTC_SHORT 8%WR/12t TOXIC. Kelly=0. Noise_prob=0.92. Conditional_wr=11% for",
+      "ts": 1782815956.527906,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "2026-06-30 pre-close: range regime confirmed, all signals sub-floor, BTC SHORT 8% WR TOXIC, HYPE BUY vetoed (23% WR), SOL BUY vetoed (24% WR), Kelly=0, noise=0.9, OI liquidation divergence across all",
+      "ts": 1782816347.102447,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range scan 2026-06-30: 0/5 passed floor 66 (best HYPE BUY 53.2, BTC SHORT 43.4). Active vetoes: HYPE BUY (23% WR), SOL BUY (24% WR), HYPE SELL (net-negative EV). BTC SHORT TOXIC 8% WR/12t. Range regim",
+      "ts": 1782816672.9720397,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Pre-close 2026-06-30: 0/5 passed floor 66. HYPE LONG had best ev_per_dollar=0.37 but active graduated VETO (23% WR/35t) blocks it. Range WR confirmed 11% n=9. CB warning 3 consec losses. Regime shift",
+      "ts": 1782817286.177998,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "2026-06-30 range scan: 0/5 passed floor 66. HYPE BUY best EV (0.37/dollar) but active VETO blocks (23% WR/35t). BTC SHORT TOXIC (8%WR/12t). ETH SHORT best live edge (42%WR) but no valid ETH SHORT sign",
+      "ts": 1782817581.5173802,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Range regime confirmed 11% WR (n=9) TOXIC. HYPE BUY active graduated VETO (23%WR/35t). HYPE.LONG DNA 12%WR avg-$73 AVOID. Wait for trend regime + ensemble 2+ consensus before any new HYPE entries.",
+      "ts": 1782817996.811922,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "HYPE LONG: active veto confirmed correct block. Range regime 11% WR toxic. HYPE.LONG DNA 12% WR avg-$73 AVOID. All 5 symbols fail floor 66. Best EV candidate (HYPE, 0.34/dollar) still blocked by struc",
+      "ts": 1782818261.9094677,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "2026-06-30 pre-close: 0/5 passed. Range regime 11% WR confirmed toxic. HYPE BUY active veto (23% WR/35t) correctly blocking. Wait for EMA convergence resolution or confirmed 2-strat trend break before",
+      "ts": 1782818689.6364534,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "HYPE regime shift from range\u2192trend at 5/10 confirmations \u2014 monitor. If HYPE gets 2+ ensemble agreement in confirmed trend, HYPE SHORT (38% WR recent, PF 2.12) or momentum LONG becomes viable. ETH SHOR",
+      "ts": 1782819047.9163122,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "All 5 symbols fail conf floor 66 (best: ETH@62, XRP@64). Consolidation regime disabled by overseer. Kelly=0.0. Survival CRITICAL (3L streak). Best wired candidate ETH SHORT has 50% WR in consolidation",
+      "ts": 1782830154.7251256,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "HYPE unknown regime + single strategy = thesis collapse after 2.4h. confidence_scorer 10% WR; require 2+ strategy votes before unknown entries",
+      "ts": 1782833742.6002636,
+      "symbol": "HYPE",
+      "regime": "unknown"
+    },
+    {
+      "text": "HYPE in unknown regime + no strategy consensus \u2192 thesis breaks 2-3h. Exit agent catch minimized loss.",
+      "ts": 1782833831.2689567,
+      "symbol": "HYPE",
+      "regime": "unknown"
+    },
+    {
+      "text": "CB reset + XRP SHORT watch: REGULAR tier multi_tier_quality with VWAP+6h EMA aligned + vr=1.9x is the strongest setup in this scan. Re-evaluate when closs resets AND if 2+ strategies agree. SOL/XRP sh",
+      "ts": 1782834159.3611195,
+      "symbol": "[POSITION",
+      "regime": "range"
+    },
+    {
+      "text": "trending_bear regime 0% WR (5 trades, $-149.96 TOXIC). MC probability up_4h=0.45 > down_4h=0.27 \u2014 market biased UP not down. conditional_wr=12% for solo multi_tier in exhausting trending_bear (edge_pc",
+      "ts": 1782838912.898087,
+      "symbol": "[PRE-CLOSE",
       "regime": "trend"
     },
     {
-      "text": "SOL SHORT trending_bear ADX=56 solo CS c=0.55. Validated 62% WR US-session SOL SELL edge (n=213). BTC 1h +1.4% dead-cat headwind acknowledged \u2014 hold 4h+ minimum to escape noise-regime stops per quant",
-      "ts": 1780692313.669182,
-      "symbol": "PRE_TRADE",
+      "text": "trending_bear 0% WR confirmed TOXIC across 5 trades. Vol=0.00 blocks every signal this scan. Regime agent forecasts relief bounce 2-4h then range formation \u2014 new shorts face squeeze before continuatio",
+      "ts": 1782839367.6664937,
+      "symbol": "[PRE-CLOSE",
       "regime": "trend"
-    },
-    {
-      "text": "BTC SHORT solo CS trending_bear: conditional_wr=39% (solo non-BB 0.7x penalty + n<5 base rate fallback). Re-evaluate when: regime_trend turns short (2-agree \u2192 ~62% cWR), price rejection at 61.6k, or B",
-      "ts": 1780692996.8660772,
-      "symbol": "PRE_TRADE",
-      "regime": "trend"
-    },
-    {
-      "text": "ETH SHORT solo CS trending_bear ADX=36; entry conditioned on 1h bounce rollover; structural bear confirmed; hold 4h+ to avoid noise stops per quant lesson",
-      "ts": 1780693453.7548366,
-      "symbol": "PRE_TRADE",
-      "regime": "trend"
-    },
-    {
-      "text": "SOL SHORT PRIORITY MTQ solo trending_bear: vol=0.1x weak at scan time \u2014 wait for BTC 1h bounce to exhaust + volume expansion. US session 14-22 UTC activates Grade B 62% WR edge (n=213). ETH SHORT hard",
-      "ts": 1780694424.3434293,
-      "symbol": "PRE_TRADE",
-      "regime": "trend"
-    },
-    {
-      "text": "SOL SHORT PRIORITY MTQ solo at $64.7; HV regime conf=0.70 transitioning trending_bear; vol=2.54x P90 (condition met); validated 62% WR SOL SELL edge n=213; target $62-63 in 4-8h; fat-tail elevated",
-      "ts": 1780694919.407548,
-      "symbol": "[HIGH-CONFIDENCE",
-      "regime": "range"
     }
   ]
 }
