@@ -796,3 +796,6 @@ HEALTHY: pid=18284 scan=419 errors=0 equity=$1971 pos=2 (stable). No new closes 
 
 === 2026-06-30 ~11:40 UTC overnight WAGMI ===
 HEALTHY: pid=18284 scan=559 errors=0 equity=$1971 pos=2 (flat ~3h). No new closes (86, rank-8 n=1). Grad rules unchanged. Quiet hold period; 2 positions not flagged dead-capital/thesis-invalid by exit agent so they hold (valid). rank-8 building slowly.
+
+=== 2026-06-30 ~12:45 UTC overnight WAGMI ===
+HEALTHY (recovered): bot did a clean internal state-reload (~12:43, no crash/traceback, same pid 18284) -> heartbeat briefly minimal -> recovered full (scan 707 equity $1971 pos 2 errors 0). Main loop running. No new closes (rank-8 n=1). Grad rules stable. Transient, self-healed.
