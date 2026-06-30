@@ -1,30 +1,6 @@
 {
-  "last_updated": 1782854751,
+  "last_updated": 1782858362,
   "notes": [
-    {
-      "text": "Consolidation regime TOXIC for all LONGs confirmed again \u2014 hold for 2+ agree ensemble signal with regime shift to trending/breakout before re-engaging longs",
-      "ts": 1782754084.5594401,
-      "symbol": "[POSITION",
-      "regime": "range"
-    },
-    {
-      "text": "Consolidation LONG hard-block confirmed again: SOL BUY VETO active (24% WR n=34), OI covering on SOL (OI-0.03% vs price+0.01% = longs exiting not entering), vol:0.00! on all 5 symbols. Wait for volume",
-      "ts": 1782773258.8281524,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Consolidation blocked all LONG signals again. SOL 2-agree (conf_scorer+multi_tier, EV=0.58, R:R=2.0) is strongest candidate but has active graduated VETO. BTC LONG 0% WR (n=4/5 losses). Volume=0 on al",
-      "ts": 1782774218.9374027,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "All 5 symbols show vol_ratio=0.0 (zero volume). Consolidation TOXIC for LONGs (BTC_LONG_consolidation 0% WR n=4, -$32). SOL/HYPE BUY have active graduated VETOs. Best candidate BTC LONG 2-agree (bolli",
-      "ts": 1782774651.6933484,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "Consolidation+zero_volume=skip confirmed again (vol_ratio=0.0 all symbols). Regime shift criteria: ADX>25 + OI expansion + volume surge before any LONG entry.",
       "ts": 1782775107.6237395,
@@ -598,6 +574,30 @@
     {
       "text": "Consolidation regime TOXIC (29% WR n=31), all 5 symbols mechanically rejected at confidence_floor_66, BTC_SHORT specifically TOXIC (9% WR n=11, PF 0.28), SOL BUY and HYPE SELL both hit active graduate",
       "ts": 1782854751.9458518,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "5L streak + CB warning + survival CRITICAL + all 5 symbols rejected at floor_66 in TOXIC consolidation; SOL BUY graduated-veto active, BTC_SHORT toxic 9%WR, HYPE SELL net-negative EV veto active \u2014 qua",
+      "ts": 1782857123.4542706,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation regime toxic (29% WR), survival CRITICAL, 5L streak + CB warning, all 5 symbols rejected at confidence_floor_66 or graduated veto (SOL BUY actively vetoed 24%WR n=34, BTC_SHORT toxic 9%W",
+      "ts": 1782857388.8568726,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation regime TOXIC (29% WR n=31), 5L streak + CB warning, survival CRITICAL (23/100). SOL BUY hits active graduated veto (24% WR n=34, acc=100% n=14) - genuine validated rule, not stale. All 5",
+      "ts": 1782857861.8980446,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation regime TOXIC (29% WR n=31), 5-loss streak + CB warning, survival CRITICAL. All 5 symbols solo/weak signals rejected at confidence_floor or active graduated vetoes (SOL BUY 24%WR veto, HY",
+      "ts": 1782858362.0806437,
       "symbol": "[PRE-CLOSE",
       "regime": "range"
     }
