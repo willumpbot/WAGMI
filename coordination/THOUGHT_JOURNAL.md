@@ -774,3 +774,16 @@ Two reversible fixes to unstick dead-capital (5 positions, 0 closes ~12h):
      thesis-invalidated AND position is NOT a winner. Winner-protection (>=0.90 conf) intact.
 Deploying via SAFE restart. Expect: stuck dead-capital positions finally close -> trades.csv grows -> rank-8 can
 begin accumulating funding/OI-labeled closes. Will verify a close + rank-1/rank-2 credit next checks.
+
+=== 2026-06-30 ~08:20 UTC — EXIT FIX VALIDATED + FULL MEASUREMENT LOOP ALIVE ===
+Exit fix (07:00) WORKED: first close in ~12h -> HYPE LONG closed -$1.20 conf=65.0 CLEAN_LOSS @08:12. pos 5->3.
+RANK-2 VALIDATED LIVE: close logged conf=65.0 (was 0.0 pre-fix). Confidence logging works end-to-end.
+RANK-1 VALIDATED LIVE: NON-veto graduated rules now accrue applied+correct on real closes —
+  eth_trending_regime_boost 1/0, conf_floor_70 penalize 2/1. (Pre-fix these were dead-0 by construction.)
+  Vetoes self-measuring: sol_long_veto_v1 11/11 (100% correct — a GENUINE data-learned edge, blocked 11 losing
+  SOL longs!); hype_long_veto_v1 9/0 (over-blocking — would-be winners; approaching n>=10 auto-retire at <35% acc,
+  self-correction working as designed).
+RANK-8: datapoint #1 — HYPE LONG loss, entry context funding=stable +11%/yr, OI-divergence=liquidation. n=1, need 13.
+=> The whole session's instrument work (rank-1 wiring + rank-2 confidence + exit unstick) is proven end-to-end.
+   The bot can now trade full cycles AND learn from them. This was the core goal. Keep accruing rank-8; watch
+   hype_long_veto auto-retire; let sol_long_veto keep proving its edge.
