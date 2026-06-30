@@ -793,3 +793,6 @@ HEALTHY: pid=18284 scan=282 errors=0 equity=$1971 pos=2. 1 logged close since fi
 
 === 2026-06-30 ~10:36 UTC overnight WAGMI ===
 HEALTHY: pid=18284 scan=419 errors=0 equity=$1971 pos=2 (stable). No new closes this hour (still 86, rank-8 n=1). pos+equity STABLE -> no logging-gap evidence this pass. Grad rules unchanged (sol_long_veto 11/11, hype_long_veto 9/0). Quiet selective hour; rank-8 builds slowly.
+
+=== 2026-06-30 ~11:40 UTC overnight WAGMI ===
+HEALTHY: pid=18284 scan=559 errors=0 equity=$1971 pos=2 (flat ~3h). No new closes (86, rank-8 n=1). Grad rules unchanged. Quiet hold period; 2 positions not flagged dead-capital/thesis-invalid by exit agent so they hold (valid). rank-8 building slowly.
