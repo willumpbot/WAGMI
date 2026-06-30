@@ -1,256 +1,6 @@
 {
   "insights": [
     {
-      "ts": 1782748786.5962362,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: Confidence=0: no directional thesis formed. System explicitly blocks confidence=0 entries per gate rules; gate failure detected. BTC SHORT weak histor",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 2
-    },
-    {
-      "ts": 1782748982.470597,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Dead capital: 4.33h hold, price within 0.36% of entry (meets dynamic time-stop criterion). Range regime is explicitly hostile to confidence_scorer (11",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782749017.4255035,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Confidence=0.0 invalidates thesis. Hold time 4.34h with no progress (price within 0.3% of entry). Setup: confidence_scorer 21% WR (58 trades, -$830), ",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782749052.575862,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Thesis_invalidation: confidence=0.0 at entry = no valid thesis formed. Early hold (1.97h) in noise phase, but with zero thesis conviction, noise-phase",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782749107.243072,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: Zero confidence at entry invalidates thesis by definition. confidence_scorer has collapsed WR across all regimes. Position already losing -$4.66 with ",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782749498.3536887,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Thesis dead: confidence metric 0.0, confidence_scorer 21% WR on 58 trades (-$830), 0% WR in trend conditions. Hold time 4h48m with -0.375% progress\u2014no",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782749530.0785413,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Zero-confidence signal + negative PnL + adverse price action. Entry lacked directional conviction (conf=0.0). At 2.1h into noise phase with no progres",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782749559.5546722,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: Confidence=0.0 indicates entry gate failure. Overseer directive: 85%+ confidence required for BTC SHORT. Position violates entry criteria. Thesis was ",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782749871.8376617,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Confidence collapsed to 0.0 \u2014 thesis invalidated. Sunk-cost principle: would you enter XRP LONG at 0.0 confidence RIGHT NOW? No. Therefore close. Hold",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782749909.6244555,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Thesis invalidated: confidence 0.0. Setup (confidence_scorer) poor edge: 21% WR on 58 trades ($-830 cumulative), 0% WR in trending regime. Position lo",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 1
-    },
-    {
-      "ts": 1782749932.0310667,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: Sunk cost immunity test: would not re-enter SHORT BTC at 59704.5 with 0.0 confidence. Unrealized loss -$3.93 is acceptable capital preservation cost. ",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782750157.4098394,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Thesis weak + regime mismatched. Confidence_scorer: 11% WR in range (n=9 trades). No documented strategy/entry_type. Sunk cost immunity fails\u2014would re",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 1
-    },
-    {
-      "ts": 1782750400.2772455,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Zero-confidence entry violates core principle ('if no position, would I enter NOW?'). 4.7h hold time exceeds noise window; position is actively losing",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782750451.1963322,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Confidence=0.0 is thesis death signal per exit framework rule: 'Thesis INVALIDATED \u2192 full_close'. Position already realizing loss at early hold time. ",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782750476.4908092,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: Thesis invalid (confidence=0.0). Position entered without directional conviction. Gate failure allowed zero-confidence execution. Hold time 1.3h insuf",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782750933.3508685,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Entry confidence=0.0 (thesis never valid from inception). confidence_scorer strategy underperforms: -$830 total PnL, 21% WR (n=58); on XRP: 33% WR (n=",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 1
-    },
-    {
-      "ts": 1782750998.5354624,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Zero-confidence entry (confidence=0.0) combined with confidence_scorer weakness across regimes. Position already unprofitable at loss median hold time",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": -1
-    },
-    {
-      "ts": 1782751087.6937346,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: Confidence 0.0 indicates trade was below entry threshold (minimum 45-55 per system). Position 1.5h old, -$3 loss. Sunk-cost immunity: if fresh setup, ",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782751296.6799948,
-      "category": "prediction",
-      "insight": "Counter-thesis: Bearish momentum fading, RSI divergence forming on 4H",
-      "confidence": 0.5,
-      "evidence": "Critic predicted opposite: Momentum exhaustion risk outweighs continuation thesis",
-      "source": "critic_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782751967.9261627,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: Thesis invalidated at inception. confidence=0.0 is unacceptable signal conviction. confidence_scorer demonstrated 21% WR overall, 0% WR in trend/direc",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782751996.6616373,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Confidence=0.0 signals entry quality failure; high_volatility regime (not trending) rejects early shorts\u2014losses here are regime failures not noise. Po",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782752031.7446692,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: No thesis (confidence=0.0); strategy dead (0% trending, 11% range, 10% unknown); HIGH_VOLATILITY regime; SL tight; forward EV negative. Close to prese",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782752457.3375964,
-      "category": "exit_pattern",
-      "insight": "Exit [XRP]: DEAD CAPITAL + THESIS INVALIDATED. (1) Entry confidence 0.0 = no conviction. (2) confidence_scorer is 21% WR across 58 trades, -$830 total loss \u2014 stat",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
-      "ts": 1782752489.5279517,
-      "category": "exit_pattern",
-      "insight": "Exit [ETH]: Thesis dead: zero confidence + setup weakness across all regimes on ETH (confidence_scorer 0% trend WR, 11% range WR). Losing $5.49 at 3h mark. Consol",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": true,
-      "validation_count": 3
-    },
-    {
-      "ts": 1782752516.249149,
-      "category": "exit_pattern",
-      "insight": "Exit [BTC]: confidence=0.0 (zero signal merit from inception); confidence_scorer 21% WR overall, 11% WR in consolidation regimes; price +1.23% against SHORT after",
-      "confidence": 0.75,
-      "evidence": "action=full_close, thesis_valid=False",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
       "ts": 1782754275.3843164,
       "category": "exit_pattern",
       "insight": "Exit [XRP]: RANGE REGIME DEFENSE: Consolidation explicitly threatens thesis (scout warned 'range regime threatens'). Hold 5.79h in range is extended\u2014range losses ",
@@ -4996,6 +4746,256 @@
       "insight": "Exit [XRP]: Position at +0.567% MFE in consolidation regime where confidence_scorer underperforms (35% WR, 26 trades). Consolidation = range/mean-revert environme",
       "confidence": 0.5,
       "evidence": "action=partial_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782858541.8859508,
+      "category": "trade_management",
+      "insight": "Exit [ETH]: Consolidation (range-like regime) at 1.35% MFE (1593.15-1571.55=21.6pips) exceeds profit-locking threshold (1.0%+ in ranges). Confidence_scorer weak i",
+      "confidence": 0.5,
+      "evidence": "action=partial_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782858700.8824418,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: BTC_SHORT is confirmed toxic (9% WR, -$51.92 total). Consolidation regime punishes patience\u2014mean-reversion likely over next 4h. Confidence_scorer unde",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782859017.9175045,
+      "category": "trade_management",
+      "insight": "Exit [XRP]: Consolidation regime + 0.85% MFE + 20.8h hold (2.3\u00d7 median win): trigger = partial_close 50% (MFE\u22650.5% rule in ranges). Range regimes punish patience;",
+      "confidence": 0.5,
+      "evidence": "action=partial_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782859137.405835,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: Regime invalidation: consolidation bearish with explicit downside-break outlook contradicts LONG direction. Strategy weakness confirmed (confidence_sc",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782859194.460786,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Thesis invalidation via regime + instrument mismatch. (1) BTC_SHORT toxic: 9% WR in consolidation vs 24% WR in trending \u2014 instrument has no edge here.",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782859528.482162,
+      "category": "trade_management",
+      "insight": "Exit [XRP]: Range regime + confidence_scorer 11% WR in range (worst-case regime mismatch) + hold 2.4x WIN median + MFE retraction 55% + $0.14 profit on 20.9h comm",
+      "confidence": 0.5,
+      "evidence": "action=partial_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782859602.1166449,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: Consolidation regime structural mismatch (overseer avoid list: SOL LONG consolidation), system critical health (5-loss streak + CB warning active), de",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782859657.6094818,
+      "category": "exit_pattern",
+      "insight": "Exit [XRP]: Thesis weakened: consolidation consolidation-break-downside setup has not delivered directional breakout after 21h. Strategy (confidence_scorer) has p",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782859700.9057076,
+      "category": "exit_pattern",
+      "insight": "Exit [ETH]: Regime mismatch: consolidation is structurally mean-reverting (opposite of trade thesis). Weak setup edge in consolidation (35% WR) + dead capital (+$",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782859835.8073845,
+      "category": "trade_management",
+      "insight": "Exit [BTC]: Regime consolidation is structurally toxic for BTC_SHORT (9% WR n=11, -$51.92 cumulative). Sub-1h hold has 0% WR system-wide (n=11). Position +$0.34 a",
+      "confidence": 0.5,
+      "evidence": "action=full_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782860174.2120147,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: Regime contradiction: SOL LONG conflicts with consolidation regime showing bearish bias and downside OI divergence. Outlook explicitly calls downside ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782860198.7392302,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Regime veto justified: consolidation is proven lethal for BTC_SHORT. Confidence_scorer 18% WR on BTC (n=17), 35% WR in consolidation (n=26). System in",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782860437.1488976,
+      "category": "trade_management",
+      "insight": "Exit [XRP]: Consolidation regime (mean-revert risk, 35% WR confidence_scorer in range/consolidation). Modest MFE +0.78%, 21.2h hold time (at longer end of distrib",
+      "confidence": 0.5,
+      "evidence": "action=partial_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782860504.6452007,
+      "category": "trade_management",
+      "insight": "Exit [ETH]: MFE 1.64% in consolidation regime triggers 50% profit-lock per backtested range-edge. Hold time 16.2h = 1.8\u00d7 win median; minimal PnL/hour indicates st",
+      "confidence": 0.5,
+      "evidence": "action=partial_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782860575.9015443,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: Dead capital: zero progress after 3.4h in weak hold-time window (2-4h: 12% WR). LONG vs bearish consolidation-break warning. Consolidation historicall",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782860637.3570385,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: REGIME TOXICITY INVALIDATES THESIS. BTC SHORT in consolidation documented at 9% WR with -$51.92 loss (11 trades); this specific setup is a known loser",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782860775.1085756,
+      "category": "exit_pattern",
+      "insight": "Exit [XRP]: Consolidation SHORT with no directional thesis. MFE retrace 58% from peak is mean-reversion warning in range regime. 21.3h hold exceeds optimal for co",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782860859.8141701,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: Thesis death: (1) SOL LONG explicitly in upstream AVOID directive vs SOL SHORT in PREFER list; (2) consolidation regime hostile to this setup (confide",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782861131.8564954,
+      "category": "exit_pattern",
+      "insight": "Exit [XRP]: Thesis invalidated by regime mismatch + strategy weakness. CONSOLIDATION is hard-block for shorts (BTC_SHORT 9% WR; regime veto active per regime outl",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782861253.1631763,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: Consolidation regime bearish bias + downside break outlook + no progress after 3.6h in worst hold-bucket (2-4h: 12% WR) = regime failure. This strateg",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782861321.5166557,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: REGIME-INVALIDATED: BTC SHORT in consolidation empirically toxic at 9% WR (11t, -$51.92). Position 1.27h into early-hold phase in mean-reverting regim",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782861745.3813171,
+      "category": "trade_management",
+      "insight": "Exit [XRP]: confidence_scorer is unreliable (21% WR overall, -$839 total; 35% WR in consolidation specifically). Trade was veto-overridden; overseer explicitly re",
+      "confidence": 0.5,
+      "evidence": "action=partial_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782861799.5076668,
+      "category": "trade_management",
+      "insight": "Exit [ETH]: Consolidation regimes punish patience via mean-reversion. Thesis (SHORT consolidation-break-down) remains valid directionally but has failed to materi",
+      "confidence": 0.5,
+      "evidence": "action=full_close, thesis_valid=True",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782861840.5114985,
+      "category": "exit_pattern",
+      "insight": "Exit [SOL]: Bearish consolidation regime conflicts with LONG thesis. Dead capital confirmed: 3.75h hold, -$3.12 loss, <0.5% price progress (0.44% underwater). con",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782861893.544562,
+      "category": "exit_pattern",
+      "insight": "Exit [BTC]: Regime-structure mismatch confirmed: directional SHORT in consolidation is structurally negative (BTC_SHORT 9% WR n=11 -$51.92; confidence_scorer 35% ",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",
       "validated": false,
       "validation_count": 0
