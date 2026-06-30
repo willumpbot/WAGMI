@@ -1,36 +1,6 @@
 {
-  "last_updated": 1782846988,
+  "last_updated": 1782850967,
   "notes": [
-    {
-      "text": "ETH_SHORT_consolidation solo confirmed skip: EV=-0.51/unit (quant), Kelly=0, noise_prob=0.90, active penalize graduated rule acc=0% n=4, vol=0.3x avg. Pattern matches prior 4 losing trades exactly.",
-      "ts": 1782742270.7947135,
-      "symbol": "[LEAD-LAG",
-      "regime": "range"
-    },
-    {
-      "text": "ETH SHORT consolidation: quant Kelly=-0.42, noise_prob=0.90, realized payoff=0.61 (winners $5.01 vs losers $8.18). Consolidation regime 29% WR n=31 TOXIC. Active PENALIZE rule for this exact setup. No",
-      "ts": 1782743179.7293375,
-      "symbol": "[LEAD-LAG",
-      "regime": "range"
-    },
-    {
-      "text": "Lead-lag SOL\u2192HYPE evaluated and rejected: HYPE_LONG confirmed AVOID in consolidation; EV=-0.51, Kelly=0, noise_prob=0.82; no graduated-rule override possible. BTC_SHORT 3-agree but active VETO (consol",
-      "ts": 1782743763.803831,
-      "symbol": "[LEAD-LAG",
-      "regime": "range"
-    },
-    {
-      "text": "Lead-lag XRP\u2192ETH signal skipped (4th consecutive skip today). trending_bear=0%WR TOXIC + solo signal conf=60 below floor=66 + EV=-0.38 + Kelly=0 + ETH SHORT already open underwater at 1565.25. No new",
-      "ts": 1782744461.3410778,
-      "symbol": "[LEAD-LAG",
-      "regime": "trend"
-    },
-    {
-      "text": "trending_bear: 0%WR confirmed across 8 trades (wired data). Lead-lag XRP\u2192ETH SHORT skipped (5th consecutive today). ETH SHORT already open at 1565.25 underwater. Await regime shift to unknown/illiquid",
-      "ts": 1782745166.3432071,
-      "symbol": "[LEAD-LAG",
-      "regime": "trend"
-    },
     {
       "text": "Lead-lag XRP\u2192ETH SHORT skip #6 today. ETH SHORT already open at 1565.25. Consolidation 29%WR TOXIC. EV=-3.64, Kelly=0, noise=0.9. No edge this cycle \u2014 await regime shift.",
       "ts": 1782745907.3711245,
@@ -598,6 +568,36 @@
     {
       "text": "5-loss streak + CB warning + kelly=0 + quant explicit skip-everything call; consolidation toxic, solo 1-strat=23%WR, vol-reject flags on all symbols, already holding correlated XRP/ETH shorts (corr=0.",
       "ts": 1782846988.361498,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "5-loss cold streak, CB warning, trend regime 0% WR n=7, conditional_wr 0% vs base 28%, fee drag 54% of PnL, quant explicitly flags skip-everything; SOL BUY hard-vetoed by graduated rule; already holdi",
+      "ts": 1782848469.0422537,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "5-loss streak + CB warning + trend regime TOXIC (0% WR n=7) + conditional_edge -28.7% + quant explicit skip-everything + HYPE LONG AVOID flag (12% WR n=21) + all candidate signals solo/sub-floor confi",
+      "ts": 1782849037.8822656,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "5-loss streak + CB warning + survival CRITICAL + trend regime 0%WR n=14 + all candidates solo/sub-floor + quant explicit skip-all; respect mechanical rejects, wait for 2+ confluence with volume confir",
+      "ts": 1782849901.397072,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "5-loss CB streak + trend regime 0% WR (n=7) + survival CRITICAL + quant explicit skip-all + all candidates solo/sub-floor; BTC SELL 70-79% conf specifically penalized by graduated rule. Wait for 2+ co",
+      "ts": 1782850201.9165514,
+      "symbol": "[PRE-CLOSE",
+      "regime": "trend"
+    },
+    {
+      "text": "5-loss streak + CB warning + range regime toxic + quant explicit skip-all (kelly=0, EV neutral, noise_prob=0.92) + all 5 symbols rejected mechanically (confidence_floor_66/graduated_veto) \u2014 no signal",
+      "ts": 1782850967.1361315,
       "symbol": "[PRE-CLOSE",
       "regime": "range"
     }

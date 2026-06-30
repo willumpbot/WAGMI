@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782847390.2123122,
+  "updated_at": 1782850791.96647,
   "scenarios": [
     {
       "id": "cf_1782021106_762c834c",
@@ -11664,6 +11664,111 @@
         "tp2_price": 76.58014285714285,
         "confidence": 75.86430531570022,
         "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782847587_ca6988b7",
+      "timestamp": 1782847587.8934278,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58622.0,
+        "sl_price": 59389.28571428572,
+        "tp1_price": 57087.428571428565,
+        "tp2_price": 55552.85714285713,
+        "confidence": 65.0,
+        "reason": "LLM_FIRST: BTC short setup mechanically plausible (weak downtrend, OI bearish divergence) but data integrity fa"
+      }
+    },
+    {
+      "id": "cf_1782848169_f5138508",
+      "timestamp": 1782848169.8469598,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58619.0,
+        "sl_price": 59387.14285714285,
+        "tp1_price": 57082.71428571429,
+        "tp2_price": 55546.42857142858,
+        "confidence": 65.0,
+        "reason": "LLM_FIRST: BTC short bias plausible into weak downtrend but historical BTC_SHORT edge is toxic (9% WR n=11) and"
+      }
+    },
+    {
+      "id": "cf_1782848909_256186dd",
+      "timestamp": 1782848909.106357,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58715.0,
+        "sl_price": 59729.74285714285,
+        "tp1_price": 56685.514285714286,
+        "tp2_price": 55592.71428571429,
+        "confidence": 65.0,
+        "reason": "LLM_FIRST: BTC drifting lower toward 56.7k but setup is structurally poor; not entering short here"
+      }
+    },
+    {
+      "id": "cf_1782849786_7bb15df3",
+      "timestamp": 1782849786.3438864,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58790.0,
+        "sl_price": 59462.0138091406,
+        "tp1_price": 57445.972381718806,
+        "tp2_price": 55651.71428571429,
+        "confidence": 70.1967241847822,
+        "reason": "LLM_FIRST: BTC SELL toward 57.4k stalls \u2014 live edge data shows BTC_SHORT is currently TOXIC (9% WR n=11, PF 0.2"
+      }
+    },
+    {
+      "id": "cf_1782850791_d3c7da36",
+      "timestamp": 1782850791.9664576,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58846.99999999999,
+        "sl_price": 59490.13990218885,
+        "tp1_price": 57560.72019562229,
+        "tp2_price": 55749.28571428571,
+        "confidence": 69.39722815635416,
+        "reason": "LLM_FIRST: BTC SELL thesis (OI bearish divergence + breakdown) is directionally plausible toward 57500 but live"
       }
     }
   ]
