@@ -1,7 +1,7 @@
 {
-  "status": "UPDATED_RUN158",
-  "last_updated": "2026-06-30T01:10:00Z",
-  "run_number": 158,
+  "status": "UPDATED_RUN159",
+  "last_updated": "2026-06-30T20:00:00Z",
+  "run_number": 159,
   "trades_analyzed": 965,
   "high_edges": [
     {
@@ -26,8 +26,8 @@
       "count": 39,
       "ev_per_trade": 101.92,
       "status": "PARTIALLY CAPTURED -- BTC SHORT via btc_short_90plus_boost_v1. Non-BTC PENDING_HUMAN_REVIEW.",
-      "consecutive_flags": 18,
-      "missed_ev_total_paper": 6727.0,
+      "consecutive_flags": 19,
+      "missed_ev_total_paper": 7542.0,
       "severity": "HIGH"
     }
   ],
@@ -42,6 +42,6 @@
   ],
   "weak_setups_found": 6,
   "new_injections_this_run": 0,
-  "pending_human_review": "CONF_90PLUS_GENERAL_BOOST (conf=72%, flag #18 master / #66 paper). ~$6,727 missed EV.",
+  "pending_human_review": "CONF_90PLUS_GENERAL_BOOST (conf=72%, flag #19 master / #80 paper). ~$7,542 missed EV. BTC SHORT 90%+ captured by btc_short_90plus_boost_v1. ETH/SOL at 90%+ still unbosted.",
   "output": {"high_edges_found": 3, "weak_setups_found": 6}
 }

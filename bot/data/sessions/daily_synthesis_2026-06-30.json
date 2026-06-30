@@ -1,0 +1,43 @@
+{
+  "date": "2026-06-30",
+  "generated_at": "2026-06-30T20:00:00Z",
+  "run_number": 159,
+  "bot_status": "OFFLINE",
+  "days_offline": 68,
+  "daily_summary": {
+    "trades_today": 0,
+    "win_rate_today": null,
+    "pnl_today": 0.0,
+    "best_trade": null,
+    "worst_trade": null,
+    "paper_reports_generated": 10,
+    "note": "Bot offline Day 68. Zero live activity on 2026-06-30. 10 paper reports generated (highest single-day count). Morning+afternoon windows both wasted. Evening window (65% WR) now active."
+  },
+  "tod_windows_today": {
+    "morning_06_12": {"wr_historical": 0.74, "status": "CLOSED", "trades_captured": 0, "outcome": "WASTED — best window of the day missed"},
+    "afternoon_12_18": {"wr_historical": 0.58, "status": "CLOSED", "trades_captured": 0, "outcome": "WASTED — 6 more hours squandered"},
+    "evening_18_24": {"wr_historical": 0.65, "status": "ACTIVE", "hours_remaining": 4, "outcome": "FINAL viable window — 4h remain as of 20:00 UTC"},
+    "night_00_06": {"wr_historical": 0.07, "status": "UPCOMING", "blocked_by": "night_session_block_v1 (gate=100%)"}
+  },
+  "anomalies": [
+    {"type": "EVENING_WINDOW_ACTIVE", "severity": "CRITICAL", "time_sensitive": true, "window_closes": "2026-06-30T24:00:00Z", "hours_remaining": 4, "historical_wr": 0.65, "description": "Evening window (18:00-24:00 UTC, 65% WR) is ACTIVE with ~4h remaining. Morning (74% WR) and afternoon (58% WR) both closed with 0 trades.", "recommendation": "cd /home/user/WAGMI/bot && python run.py paper — ACT NOW. 50% sizing (streak=4)."},
+    {"type": "BOT_OFFLINE", "severity": "CRITICAL", "consecutive_days": 68, "consecutive_flags": 151, "description": "Bot offline Day 68. 18 LLM rules + 5 A/B gates untested. $1,579.85 opportunity cost.", "recommendation": "cd /home/user/WAGMI/bot && python run.py paper"},
+    {"type": "RR_GEOMETRY_BROKEN", "severity": "CRITICAL", "consecutive_flags": 91, "description": "avg_loss=$306.96 vs avg_win=$147.07 (ratio=0.479). Kelly=-0.265. Requires 68% WR to break even.", "recommendation": "Decide atr_mult_sl option A or B. 91st flag."},
+    {"type": "EQUITY_DRAWDOWN_CRITICAL", "severity": "HIGH", "equity_current": 497.05, "drawdown_pct": 90.1, "description": "$497.05 — 90.1% drawdown from $5,000 start."},
+    {"type": "CONF_90PLUS_EDGE_PENDING", "severity": "HIGH", "consecutive_flags_master": 19, "consecutive_flags_paper": 80, "missed_ev": 7542.0, "description": "ETH/SOL at >=90% conf unbosted. BTC captured by btc_short_90plus_boost_v1. conf=72% (3pts below threshold).", "recommendation": "Approve conf_90plus_general_boost_v1 gate=20%."},
+    {"type": "CONSECUTIVE_LOSS_STREAK", "severity": "HIGH", "streak": 4, "circuit_breaker_at": 6, "description": "4 consecutive losses. 2 from CB trigger at 6."},
+    {"type": "TP1_BLIND_SPOT_UNVERIFIED", "severity": "MEDIUM", "consecutive_flags": 69, "description": "TP1 fix applied run146, 69 unverified flags."},
+    {"type": "DATASET_TEMPORAL_CONFLICT", "severity": "MEDIUM", "description": "20d WR=65.8% vs 100d WR=44.5%. Rules on 100d may penalize recent winners."},
+    {"type": "AB_TRACKER_FROZEN", "severity": "MEDIUM", "consecutive_flags": 68, "description": "All 18 active rules at times_correct=0. A/B tracking frozen until restart."}
+  ],
+  "anomalies_by_severity": {"CRITICAL": 3, "HIGH": 3, "MEDIUM": 3, "LOW": 0},
+  "tomorrows_focus": {
+    "symbols": ["SOL", "BTC", "ETH"],
+    "preferred_setups": ["SOL SHORT (69.2% 20d WR)", "BTC SHORT >=90% conf", "ETH SHORT BB squeeze", "ETH TRENDING regime"],
+    "avoid": ["00:00-06:00 UTC", "HYPE LONG/SHORT (VETOED)", "SOL LONG (VETOED)", "Conf 70-80% BTC SHORT"],
+    "first_action": "python run.py paper, 50% sizing, target morning window 06:00-12:00 UTC (74% WR)"
+  },
+  "seven_day_wr_avg": 57.0,
+  "wr_swing_vs_7d": -22.0,
+  "output": {"anomalies_found": 9, "report_generated": true}
+}
