@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782850791.96647,
+  "updated_at": 1782854256.5891798,
   "scenarios": [
     {
       "id": "cf_1782021106_762c834c",
@@ -11769,6 +11769,69 @@
         "tp2_price": 55749.28571428571,
         "confidence": 69.39722815635416,
         "reason": "LLM_FIRST: BTC SELL thesis (OI bearish divergence + breakdown) is directionally plausible toward 57500 but live"
+      }
+    },
+    {
+      "id": "cf_1782851827_5a239902",
+      "timestamp": 1782851827.8683488,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58642.99999999999,
+        "sl_price": 59376.77802715899,
+        "tp1_price": 57175.443945682026,
+        "tp2_price": 55484.71428571429,
+        "confidence": 70.1967241847822,
+        "reason": "LLM_FIRST: BTC drifts toward 57.5k support on bearish OI divergence but BTC_SHORT is a TOXIC live edge (9% WR n"
+      }
+    },
+    {
+      "id": "cf_1782852817_e077f73c",
+      "timestamp": 1782852817.4507017,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58696.00000000001,
+        "sl_price": 59408.59138240564,
+        "tp1_price": 57270.81723518872,
+        "tp2_price": 55537.71428571429,
+        "confidence": 70.1967241847822,
+        "reason": "LLM_FIRST: BTC SHORT toward 57.3k possible on bearish OI divergence but setup is structurally poisoned: 1h/4h r"
+      }
+    },
+    {
+      "id": "cf_1782854256_67d1610c",
+      "timestamp": 1782854256.589158,
+      "symbol": "BTC",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 58544.0,
+        "sl_price": 59575.82857142857,
+        "tp1_price": 56480.34285714287,
+        "tp2_price": 55369.14285714287,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: BTC SHORT toward 56.5k on bearish OI divergence + funding tilt, but live edge is broken: BTC_SHORT 9"
       }
     }
   ]
