@@ -3,6 +3,7 @@ Owner mandate (2026-07-02): "take the long aggressive move to understand the mas
 This is the standing research backlog. The learning engine pulls the top unanswered question each pass (after spine verification + HOLES burns). Every answer gets a coordination/ report + a one-line verdict added here. Questions are cheap — add freely; answers require evidence.
 
 ## Rules of the program
+- **TOKEN TARGETING (owner, 2026-07-02): spend goes to TRADE and MARKET data first** — trades ledger, counterfactuals, theses, candles, funding/OI, exit decisions. Infrastructure/meta audits (memory stores, dashboards, non-trading data) run only when trade-data questions are exhausted for the pass or a P0 integrity issue demands it.
 - Every claim gets a denominator, an era-split, and an adversarial check (week-1-artifact test is mandatory).
 - Negative results are wins — a killed hypothesis is compounded knowledge. Log them.
 - Nothing graduates to live behavior without: backtest + counterfactual + owner sign-off (or A/B rule with auto-retire).
