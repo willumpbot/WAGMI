@@ -18955,159 +18955,51 @@
       "source": "learning_agent"
     },
     {
-      "knowledge_type": "graduated_rule",
-      "content": "[CAUTION] Implement regime-change exit rule: Close all confidence_scorer positions on consolidation\u2192trend flip. 0% WR in trends is structural, not noise.",
-      "confidence": 0.35,
-      "evidence_count": 14,
-      "evidence_ratio": 0.286,
-      "category": "regime",
-      "tags": [
-        "symbol",
-        "regime",
-        "strategy"
+      "knowledge_type": "principle",
+      "content": "SOL LONG in unknown regime: 18% WR, flagged prior as 'avoid', 0% WR trend. Require regime certainty >75% before SOL positions.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "SOL in unknown"
       ],
-      "source": "hypothesis_graduation",
-      "rule_id": "rule_1782899959_13",
-      "action": "penalize",
-      "conditions": {
-        "symbol": "SOL",
-        "regime": "trend",
-        "strategy": "confidence_scorer"
-      },
-      "created_at": 1782899959.236748,
-      "last_validated": 1782899959.236748,
-      "validation_count": 14,
-      "invalidation_count": 0
+      "contradicting": [],
+      "created_at": 1782909795.1753645,
+      "last_validated": 1782909795.175365,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
+      "tags": [
+        "regime_mismatch",
+        "sol",
+        "unknown"
+      ],
+      "source": "learning_agent"
     },
     {
-      "knowledge_type": "graduated_rule",
-      "content": "[EDGE] Auto-exit confidence_scorer SHORT when consolidation regime ends or trending detected. Edge drops to 0% in trending (n=5 validated); saves ~$1.74 per trade vs SL.",
-      "confidence": 0.35,
-      "evidence_count": 14,
-      "evidence_ratio": 0.286,
-      "category": "regime",
-      "tags": [
-        "symbol",
-        "regime",
-        "side",
-        "strategy"
+      "knowledge_type": "principle",
+      "content": "SOL LONG+unknown regime=18% WR loser. Gate rule violated by LLM_FIRST. Hard-block or wait for regime confirmation. Exit right.",
+      "confidence": 0.8,
+      "evidence_count": 1,
+      "supporting": [
+        "SOL in unknown"
       ],
-      "source": "hypothesis_graduation",
-      "rule_id": "rule_1782899959_14",
-      "action": "boost",
-      "conditions": {
-        "symbol": "SOL",
-        "regime": "trend",
-        "side": "SELL",
-        "strategy": "confidence_scorer"
-      },
-      "created_at": 1782899959.2926486,
-      "last_validated": 1782899959.2926486,
-      "validation_count": 14,
-      "invalidation_count": 0
-    },
-    {
-      "knowledge_type": "graduated_rule",
-      "content": "[AVOID] BTC LONGs in consolidation with confidence <60 or agreement <0.7 fail predictably. Test: block all such entries, measure WR vs baseline",
-      "confidence": 0.325,
-      "evidence_count": 17,
-      "evidence_ratio": 0.294,
-      "category": "regime",
+      "contradicting": [],
+      "created_at": 1782909857.551009,
+      "last_validated": 1782909857.5510092,
+      "validation_count": 0,
+      "invalidation_count": 0,
+      "category": "regime_mismatch",
       "tags": [
-        "symbol",
-        "regime",
-        "side"
+        "regime_mismatch",
+        "sol",
+        "unknown"
       ],
-      "source": "hypothesis_graduation",
-      "rule_id": "rule_1782899959_15",
-      "action": "veto",
-      "conditions": {
-        "symbol": "BTC",
-        "regime": "consolidation",
-        "side": "BUY"
-      },
-      "created_at": 1782899959.3819294,
-      "last_validated": 1782899959.3819294,
-      "validation_count": 17,
-      "invalidation_count": 0
-    },
-    {
-      "knowledge_type": "graduated_rule",
-      "content": "[EDGE] Confidence threshold separates winners: BTC LONG in consolidation with conf >60 should outperform conf <50 by 2:1+ WR ratio. Test on last 20 consolidation LONGs",
-      "confidence": 0.325,
-      "evidence_count": 17,
-      "evidence_ratio": 0.294,
-      "category": "regime",
-      "tags": [
-        "symbol",
-        "regime",
-        "side"
-      ],
-      "source": "hypothesis_graduation",
-      "rule_id": "rule_1782899959_16",
-      "action": "boost",
-      "conditions": {
-        "symbol": "BTC",
-        "regime": "consolidation",
-        "side": "BUY"
-      },
-      "created_at": 1782899959.50546,
-      "last_validated": 1782899959.50546,
-      "validation_count": 17,
-      "invalidation_count": 0
-    },
-    {
-      "knowledge_type": "graduated_rule",
-      "content": "[CAUTION] Consolidation shorts with <50% confidence leak false positives. Require minimum 50% confidence OR 2+ strategy confluence at entry gate\u2014trailing stops can bail out bad entries but create survivorship b",
-      "confidence": 0.4,
-      "evidence_count": 10,
-      "evidence_ratio": 0.3,
-      "category": "regime",
-      "tags": [
-        "symbol",
-        "regime",
-        "side"
-      ],
-      "source": "hypothesis_graduation",
-      "rule_id": "rule_1782899959_17",
-      "action": "penalize",
-      "conditions": {
-        "symbol": "SOL",
-        "regime": "consolidation",
-        "side": "SELL"
-      },
-      "created_at": 1782899959.5584362,
-      "last_validated": 1782899959.5584362,
-      "validation_count": 10,
-      "invalidation_count": 0
-    },
-    {
-      "knowledge_type": "graduated_rule",
-      "content": "[AVOID] BTC SHORT with confidence<20 or regime=unknown has <10% WR. Block all (BTC:SHORT && (conf<20 || regime='unknown')) trades at risk gate.",
-      "confidence": 0.375,
-      "evidence_count": 7,
-      "evidence_ratio": 0.143,
-      "category": "symbol",
-      "tags": [
-        "symbol",
-        "side"
-      ],
-      "source": "hypothesis_graduation",
-      "rule_id": "rule_1782899959_18",
-      "action": "veto",
-      "conditions": {
-        "symbol": "BTC",
-        "side": "SELL"
-      },
-      "created_at": 1782899959.631954,
-      "last_validated": 1782899959.631954,
-      "validation_count": 7,
-      "invalidation_count": 0
+      "source": "learning_agent"
     },
     {
       "knowledge_type": "counterfactual_evidence",
-      "content": "[FILTER_MISS] confidence_floor_71 blocked a winning SELL trade on HYPE in trending_bear (hypothetical +2.4%). Consider relaxing this filter.",
-      "confidence": 0.524,
+      "content": "[FILTER_MISS] confidence_floor_71 blocked a winning SELL trade on HYPE in range (hypothetical +3.9%). Consider relaxing this filter.",
+      "confidence": 0.539,
       "evidence_count": 1,
       "category": "execution",
       "tags": [
@@ -19116,8 +19008,8 @@
         "SELL"
       ],
       "source": "counterfactual_resolution",
-      "created_at": 1782902675.1522675,
-      "last_validated": 1782902675.1522677,
+      "created_at": 1782910286.2183013,
+      "last_validated": 1782910286.2183018,
       "validation_count": 1,
       "invalidation_count": 0
     }

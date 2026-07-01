@@ -1,6 +1,5 @@
 {
   "recent_outcomes": [
-    false,
     true,
     false,
     true,
@@ -18,6 +17,7 @@
     false,
     false,
     true,
+    false,
     false,
     false
   ],
@@ -60,7 +60,7 @@
     },
     "unknown": {
       "wins": 3,
-      "total": 17
+      "total": 18
     }
   }
 }

@@ -896,3 +896,6 @@ PART C: LL verified, holding. page 200, 56 posts all likes, 12/24 galleries, ree
 === 2026-07-01 ~12:07 UTC — health + verify (routine) ===
 PART B: STABLE. pid 34056 steady, uptime 7.7h, scan 1051 monotonic, pos 3, equity $1963.48 flat, errors 0. trades.csv 89 (rank-8 n~3). Vetoes unchanged. epsilon 0.12.
 PART C: LL verified, holding. page 200, 56 posts all likes, 12/24 galleries, reel r10 200, 0 "$"+digit.
+
+=== 2026-07-01 ~12:15 UTC — ALPHA WORK: crowding→direction study (autonomous) ===
+Tested the scorecard's "crowding=continuation, flip the sign" hypothesis against 25d of funding_oi_history (~300/sym). Result: pooled corr(funding, fwd_ret) = -0.06/-0.18/-0.18 at 6/12/24h -> NEGATIVE = weak FADE (crowded longs underperform), the OPPOSITE of "continuation". => do NOT flip the sign (would be overfitting to the 1/5 melt-up window). Real insight: fade edge is weak+real but gets destroyed fighting a trend; the 1/5 failure was REGIME (faded crowded longs into a melt-up), not wrong direction. Recommendation: keep fade sign, GATE it by regime (suppress fade when multi-TF trend is with the crowd), do NOT graduate yet (thin n, single regime, overlapping-window autocorrelation). Full writeup: coordination/CROWDING_STUDY.md. No code change made (validate-before-build). Health loops unchanged/green.

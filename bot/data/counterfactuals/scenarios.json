@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782907540.5594425,
+  "updated_at": 1782909857.6062567,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -12547,6 +12547,70 @@
         "tp2_price": 1470.4142857142856,
         "confidence": 75.0,
         "reason": "LLM_FIRST: ETH short thesis plausible (consolidation drift lower) but 1h trend vs 4h range timeframe misalignme"
+      }
+    },
+    {
+      "id": "cf_1782908477_cdf79fbf",
+      "timestamp": 1782908477.705272,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 1568.9,
+        "sl_price": 1601.8457142857144,
+        "tp1_price": 1503.0085714285713,
+        "tp2_price": 1467.5285714285715,
+        "confidence": 75.0,
+        "reason": "LLM_FIRST: ETH short thesis targets 1503 but 1h trend vs 4h range regime misalignment plus consolidation toxici"
+      }
+    },
+    {
+      "id": "cf_1782909235_b3f139c8",
+      "timestamp": 1782909235.223751,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 1570.4999999999998,
+        "sl_price": 1603.4457142857143,
+        "tp1_price": 1504.6085714285714,
+        "tp2_price": 1469.1285714285714,
+        "confidence": 75.0,
+        "reason": "LLM_FIRST: ETH SHORT toward 1505 plausible on 1h trend but 4h regime is range (toxic 11% WR) and 1h/4h are misa"
+      }
+    },
+    {
+      "id": "cf_1782909857_4e2898e1",
+      "timestamp": 1782909857.6061518,
+      "symbol": "SOL",
+      "scenario_type": "exit_timing",
+      "actual_action": "LLM_EXIT_AGENT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": -0.07598991877955219,
+      "counterfactual_pnl": 8.500040170322164,
+      "delta": 8.576030089101716,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 74.682,
+        "actual_exit_price": 74.3535,
+        "tp1_price": 77.856,
+        "tp2_price": 81.03,
+        "actual_pnl_raw": -0.056750791142945164,
+        "pnl_at_tp1_pct": 4.25,
+        "pnl_at_tp2_pct": 8.5
       }
     }
   ]
