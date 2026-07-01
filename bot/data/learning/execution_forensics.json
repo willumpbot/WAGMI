@@ -1,13 +1,15 @@
 {
-  "status": "UPDATED_RUN158",
-  "last_updated": "2026-06-30T01:10:00Z",
-  "run_number": 158,
+  "status": "UPDATED_RUN163",
+  "last_updated": "2026-07-01T18:10:00Z",
+  "run_number": 163,
   "trades_analyzed": 965,
-  "bot_offline_days": 68,
+  "bot_offline_days": 69,
   "trades_csv_exists": false,
   "slippage_analysis": {
-    "avg_slippage_from_sl_level_pct": 0.5345,
-    "slippage_by_symbol": {"BTC": 0.41, "SOL": 0.48, "HYPE": 0.64}
+    "avg_slippage_from_sl_level_pct": 0.534,
+    "slippage_by_symbol": {"BTC": 0.41, "SOL": 0.48, "HYPE": 0.64},
+    "sl_distance_from_100d_backtest": {"BTC": 0.469, "SOL": 0.731, "HYPE": 1.171},
+    "note": "HYPE has 2.5x wider SL distances vs BTC in backtest — explains higher per-trade loss magnitude"
   },
   "noise_stop_analysis": {
     "noise_stop_pct_last50": 36.4,
@@ -15,14 +17,20 @@
     "mitigation_active": "btc_short_conf70_80_penalize_v1 (-20, gate=100%)"
   },
   "rr_geometry": {
+    "avg_win_alltime": 153.99,
+    "avg_loss_alltime": -201.90,
+    "win_loss_ratio_alltime": 0.763,
     "avg_win_last50": 147.07,
     "avg_loss_last50": -306.96,
     "win_loss_ratio_last50": 0.479,
-    "verdict": "DEEPLY_NEGATIVE -- avg loss 2.09x avg win. Need 68%+ WR to break even.",
+    "avg_win_100d_backtest": 82.72,
+    "avg_loss_100d_backtest": -91.27,
+    "win_loss_ratio_100d_backtest": 0.906,
+    "verdict": "RECENT_PERIOD_DEGRADED — last50 avg loss 2.09x avg win vs all-time 1.31x and 100d backtest 1.10x. Live execution quality has degraded.",
     "kelly_full_dataset": 0.0061,
     "kelly_recent_100": -0.265,
-    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_77",
-    "consecutive_flags": 77,
+    "rr_fix_status": "HUMAN_DECISION_OVERDUE_FLAG_95",
+    "consecutive_flags": 95,
     "fix_options": [
       "Option A: global atr_mult_sl 1.5->1.8 (breakeven WR 68%->62%)",
       "Option B: HYPE-specific atr_mult_sl 2.0->2.3 (targeted)"
@@ -37,9 +45,10 @@
   "duration_bug": {
     "pct_affected": 100.0,
     "status": "UNFIXED in cached data -- code patch run126 unverified",
-    "consecutive_flags": 68
+    "consecutive_flags": 86
   },
-  "performance_summary_last50": {"win_rate": 56.0, "total_pnl": -2635.32},
+  "performance_alltime": {"win_rate": 57.0, "avg_win": 153.99, "avg_loss": -201.90},
+  "performance_last50": {"win_rate": 56.0, "avg_win": 147.07, "avg_loss": -306.96},
   "performance_last20": {"win_rate": 35.0, "trend": "DETERIORATING"},
   "equity_monitoring": {
     "start_equity": 5000.0,
@@ -48,6 +57,7 @@
   },
   "output": {
     "avg_slippage": "0.534%",
-    "noise_stop_problem": "36.4% of stops in high-conf setups"
+    "noise_stop_problem": "36.4% of stops in high-conf setups",
+    "rr_insight": "live recent RR=0.479 vs backtest RR=0.906 — live execution degradation detected"
   }
 }

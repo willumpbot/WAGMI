@@ -1,18 +1,17 @@
 {
-  "status": "UPDATED_RUN158",
-  "last_updated": "2026-06-30T01:10:00Z",
-  "run_number": 158,
+  "status": "UPDATED_RUN163",
+  "last_updated": "2026-07-01T18:10:00Z",
+  "run_number": 163,
   "cost_tracker_status": "NOT_FOUND",
-  "consecutive_skips": 15,
+  "consecutive_skips": 19,
   "roi_summary": {
     "roi_all_time": 140.0,
     "roi_recent_100": -11647.8,
-    "interpretation": "LLM cost NOT bottleneck -- RR geometry and bot offline status are.",
+    "interpretation": "LLM cost NOT bottleneck -- RR geometry and bot offline status are. Monthly cost est $4.82.",
     "monthly_cost_estimate": 4.82
   },
   "swaps_recommended_this_run": 0,
   "potential_monthly_savings": 0.0,
-  "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST -- fix RR geometry, restart bot, collect live data.",
   "upgrade_candidates": [
     {
       "agent": "Regime",
@@ -22,9 +21,10 @@
       "status": "CONSIDER -- blocked on llm_regime field populated in trade CSV first."
     }
   ],
+  "bottleneck": "TRADE_QUALITY_NOT_MODEL_COST -- fix RR geometry (atr_mult_sl), restart bot, collect live data.",
   "missing_data_gaps": [
-    "bot/llm/cost_tracker.json -- does not exist. 15th consecutive skip.",
-    "llm_regime field in CSV -- empty for all 965 trades."
+    "bot/llm/cost_tracker.json -- does not exist. 19th consecutive skip.",
+    "llm_regime field in CSV -- empty for all 965 trades (bot offline)."
   ],
   "output": {"model_swaps_recommended": 0, "potential_savings": "$0.00"}
 }

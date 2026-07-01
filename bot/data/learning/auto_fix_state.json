@@ -1,9 +1,9 @@
 {
-  "last_run": "2026-07-01T17:09:55Z",
-  "run_number": 162,
-  "cadence_streak": 78,
-  "fixes_applied": 1,
-  "fixes_applied_this_run": 1,
+  "last_run": "2026-07-01T18:10:00Z",
+  "run_number": 163,
+  "cadence_streak": 79,
+  "fixes_applied": 0,
+  "fixes_applied_this_run": 0,
   "gates_active": 6,
   "total_fixes_all_time": 126,
   "external_changes_detected": {
@@ -28,8 +28,8 @@
       "description": "Added TP1 partial-feedback branch in multi_strategy_main.py after L3117.",
       "confidence": 87,
       "applied_at": "2026-06-24T08:00:00Z",
-      "status": "APPLIED_PENDING_LIVE_VERIFICATION -- 69 paper-system runs since application",
-      "consecutive_unverified_flags": 69
+      "status": "APPLIED_PENDING_LIVE_VERIFICATION -- 70 paper-system runs since application",
+      "consecutive_unverified_flags": 70
     },
     {
       "fix_id": "CONF_90PLUS_GENERAL_BOOST",
@@ -38,7 +38,7 @@
       "escalation_threshold_applied": 70,
       "applied_at": "2026-07-01T17:09:55Z",
       "status": "APPLIED_PENDING_LIVE_VERIFICATION -- gate=20% A/B active. Cannot verify until bot restart.",
-      "consecutive_unverified_flags": 0,
+      "consecutive_unverified_flags": 1,
       "evidence": {"n": 39, "wr": 0.641, "ev_per_trade": 101.92, "missed_ev_before_apply": 7542.0},
       "rule_written_to": "bot/data/llm/graduated_rules.json",
       "rule_id": "conf_90plus_general_boost_v1"
@@ -47,7 +47,7 @@
   "all_recs_from_latest_audit": [
     {"rec_id": "TP1_BLIND_SPOT_FIX", "confidence": 87, "status": "APPLIED_PENDING_LIVE_VERIFICATION (run146)"},
     {"rec_id": "EVENING_AFTERNOON_PENALTY", "confidence": 75, "status": "VERIFIED_ACTIVE (became BOOST rules based on live data)"},
-    {"rec_id": "HYPE_SHORT_HIGHCONF_VETO_AUDIT", "confidence": 68, "status": "DEFERRED -- 15th deferral. hype_short_veto_v1 added independently."},
+    {"rec_id": "HYPE_SHORT_HIGHCONF_VETO_AUDIT", "confidence": 68, "status": "DEFERRED -- 16th deferral. hype_short_veto_v1 added independently."},
     {"rec_id": "CONF_90PLUS_GENERAL_BOOST", "confidence": 72, "status": "APPLIED_RUN162 -- escalation threshold 75%->70% triggered after 22 deferrals. Rule: conf_90plus_general_boost_v1, gate=20%."}
   ],
   "pending_proposals": [],
@@ -59,18 +59,11 @@
     "verified_at": "2026-07-01T17:09:55Z"
   },
   "skipped_this_run": [
-    {"rec_id": "HYPE_SHORT_HIGHCONF_VETO_AUDIT", "reason": "confidence=68% below 70% escalation threshold"}
+    {"rec_id": "HYPE_SHORT_HIGHCONF_VETO_AUDIT", "reason": "confidence=68% below 70% escalation threshold — 16th deferral"}
   ],
-  "applied_this_run": [
-    {
-      "rec_id": "CONF_90PLUS_GENERAL_BOOST",
-      "rule_id": "conf_90plus_general_boost_v1",
-      "applied_via": "ESCALATION (22 deferrals, threshold reduced 75%->70%)",
-      "gate": 20,
-      "evidence": "n=39, WR=64.1%, EV=+$101.92/trade, missed_ev=$7,542"
-    }
-  ],
+  "applied_this_run": [],
   "notes": {
-    "run162": "First fix applied in 37 runs (last was run125). CONF_90PLUS_GENERAL_BOOST escalation threshold met after 22 deferrals. graduated_rules.json now has 24 rules (19 active). BOT OFFLINE Day 69. cadence_streak=78."
+    "run162": "First fix applied in 37 runs (last was run125). CONF_90PLUS_GENERAL_BOOST escalation threshold met after 22 deferrals. graduated_rules.json now has 24 rules (19 active). BOT OFFLINE Day 69. cadence_streak=78.",
+    "run163": "No new fixes. All audit recs from Jun23 audit already processed. HYPE SHORT veto 16th deferral. Evening window NOW ACTIVE (65% WR). New insight: live RR=0.479 vs backtest RR=0.906 gap = live execution degradation. cadence_streak=79."
   }
 }

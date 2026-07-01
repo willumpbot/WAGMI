@@ -1,7 +1,7 @@
 {
-  "status": "UPDATED_RUN162",
-  "last_updated": "2026-07-01T17:09:55Z",
-  "run_number": 162,
+  "status": "UPDATED_RUN163",
+  "last_updated": "2026-07-01T18:10:00Z",
+  "run_number": 163,
   "trades_analyzed": 965,
   "high_edges": [
     {
@@ -10,7 +10,7 @@
       "count": 179,
       "ev_per_trade": 32.44,
       "status": "ACTIVE -- sol_short_penalize_v1 DEACTIVATED Jun26 (correct, was inverting evidence)",
-      "consecutive_flags": 29
+      "consecutive_flags": 30
     },
     {
       "key": "BTC_SHORT_90PLUS",
@@ -18,18 +18,17 @@
       "count": 43,
       "ev_per_trade": 102.92,
       "status": "ACTIVE boost +10 via btc_short_90plus_boost_v1",
-      "consecutive_flags": 29
+      "consecutive_flags": 30
     },
     {
       "key": "CONF_90_PLUS_NON_BTC",
       "win_rate": 64.1,
       "count": 39,
       "ev_per_trade": 101.92,
-      "status": "APPLIED_RUN162 -- conf_90plus_general_boost_v1 written to graduated_rules.json (+5pts boost, gate=20%). ESCALATION triggered after 22 consecutive deferrals. Pending live verification.",
-      "consecutive_flags": 22,
-      "missed_ev_total_paper": 7542.0,
-      "severity": "RESOLVED_PENDING_LIVE_VERIFICATION",
-      "applied_at": "2026-07-01T17:09:55Z"
+      "status": "APPLIED_RUN162 -- conf_90plus_general_boost_v1 in graduated_rules.json (+5pts boost, gate=20%). Pending live verification.",
+      "consecutive_flags": 0,
+      "applied_at": "2026-07-01T17:09:55Z",
+      "severity": "MONITORING_PENDING_LIVE_VERIFICATION"
     }
   ],
   "high_edges_found": 3,
@@ -37,17 +36,20 @@
     {"key": "REGIME_ILLIQUID", "win_rate": 28.1, "rule_status": "PENALIZE -15 (illiquid_regime_penalize_v1)"},
     {"key": "REGIME_RANGING", "win_rate": 25.0, "rule_status": "PENALIZE -10 (ranging_regime_penalize_v1)"},
     {"key": "HYPE_LONG", "win_rate": 23.0, "ev_per_trade": -77.26, "rule_status": "VETO (hype_long_veto_v1)"},
-    {"key": "CONF_70_80_PCT", "win_rate": 47.6, "ev_per_trade": -86.67, "count": 200, "rule_status": "btc_short_conf70_80_penalize_v1 + size reduction A/B"},
+    {"key": "CONF_70_80_PCT", "win_rate": 47.6, "ev_per_trade": -86.67, "count": 200, "rule_status": "btc_short_conf70_80_penalize_v1 + CONF_70_80_SIZE_REDUCTION (A/B gate=20%)"},
     {"key": "HYPE_SHORT", "win_rate": 48.9, "ev_per_trade": -16.65, "count": 239, "rule_status": "VETO (hype_short_veto_v1)"},
     {"key": "BB_MTQ_CO_AGREEMENT", "win_rate": 35.0, "count": 2172, "rule_status": "PENALIZE -10 (bb_mtq_antipattern_v1)"}
   ],
   "weak_setups_found": 6,
-  "new_injections_this_run": 1,
-  "injection_this_run": {
-    "rule_id": "conf_90plus_general_boost_v1",
-    "trigger": "ESCALATION_22_DEFERRALS",
-    "edge": "ETH/SOL 90%+ confidence, WR=64.1%, EV=+$101.92/trade, n=39",
-    "gate": 20
+  "new_injections_this_run": 0,
+  "run163_observation": {
+    "finding": "100d backtest (589 trades) vs full 965-trade set diverge on confidence tiers. 100d 80-90% conf = 40% WR vs 965-trade set shows better distribution. 20d recent shows 82% WR at 80-90% conf. Three-way divergence makes confidence-bin rules uncertain. Prioritize live data collection.",
+    "symbol_ev_all_time": {
+      "SOL": {"wr": 59.5, "ev_per_trade": 18.23, "n": 301},
+      "BTC": {"wr": 56.6, "ev_per_trade": 1.62, "n": 267},
+      "HYPE": {"wr": 55.4, "ev_per_trade": -12.63, "n": 397}
+    },
+    "key_insight": "HYPE has POSITIVE WR (55.4%) but NEGATIVE EV (-$12.63/trade) due to RR asymmetry. Vetoing HYPE is correct even at above-50% WR. SOL is the primary alpha source."
   },
   "output": {"high_edges_found": 3, "weak_setups_found": 6}
 }
