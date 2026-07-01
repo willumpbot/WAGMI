@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782865508.2942986,
+  "updated_at": 1782869038.0533783,
   "scenarios": [
     {
       "id": "cf_1782021106_762c834c",
@@ -12044,6 +12044,90 @@
         "tp1_price": 75.00771428571429,
         "tp2_price": 76.56242857142857,
         "confidence": 65.94471470535545,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782866538_fa3dd649",
+      "timestamp": 1782866538.2471883,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 73.579,
+        "sl_price": 72.7945,
+        "tp1_price": 75.14799999999998,
+        "tp2_price": 76.71699999999997,
+        "confidence": 66.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782867213_16c64be5",
+      "timestamp": 1782867213.8566158,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 73.773,
+        "sl_price": 72.98849999999999,
+        "tp1_price": 75.34200000000001,
+        "tp2_price": 76.91100000000003,
+        "confidence": 76.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782868225_6b546e73",
+      "timestamp": 1782868225.1340003,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 63.468,
+        "sl_price": 65.96057142857143,
+        "tp1_price": 59.72914285714286,
+        "tp2_price": 55.99028571428572,
+        "confidence": 69.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782869038_961e0c72",
+      "timestamp": 1782869038.0532753,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 63.800000000000004,
+        "sl_price": 66.38019047619048,
+        "tp1_price": 59.92971428571427,
+        "tp2_price": 56.05942857142854,
+        "confidence": 69.0,
         "reason": "LLM_FIRST: "
       }
     }

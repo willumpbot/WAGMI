@@ -11675,11 +11675,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (5 trades)",
       "confidence": 0.6,
-      "evidence_count": 10,
+      "evidence_count": 11,
       "supporting": [],
       "contradicting": [],
       "created_at": 1781878466.5225227,
-      "last_validated": 1782865518.3523743,
+      "last_validated": 1782867633.9548857,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -18630,80 +18630,6 @@
         "agree_1"
       ],
       "source": "pattern_recognition"
-    },
-    {
-      "knowledge_type": "self_discovered",
-      "content": "Avoid LONG trades in consolidation regime - 100% loss rate observed (0/4 wins), avg loss $14.25",
-      "confidence": 0.85,
-      "evidence_count": 4,
-      "category": "regime",
-      "tags": [
-        "consolidation",
-        "long",
-        "directional-bias",
-        "regime-trap"
-      ],
-      "source": "self_analyst_cli",
-      "evidence": "All 4 LONG trades in consolidation lost: BTC -2.93, -3.11, -25.62 and ETH -26.62. Consolidation punishes directional buying consistently.",
-      "created_at": 1782865626.2001672,
-      "last_validated": 1782865626.2001674,
-      "validation_count": 4,
-      "invalidation_count": 0
-    },
-    {
-      "knowledge_type": "self_discovered",
-      "content": "Unknown regime signals incomplete analysis - expect losses; skip trading until regime classification improves",
-      "confidence": 0.8,
-      "evidence_count": 5,
-      "category": "regime",
-      "tags": [
-        "unknown-regime",
-        "signal-quality",
-        "risk-management"
-      ],
-      "source": "self_analyst_cli",
-      "evidence": "All 5 'unknown' regime trades were losses (HYPE/ETH SHORTs -1.24, -0.28, -9.50, -8.48, -0.45). Lack of regime clarity predicts failure.",
-      "created_at": 1782865626.2005537,
-      "last_validated": 1782865626.200554,
-      "validation_count": 5,
-      "invalidation_count": 0
-    },
-    {
-      "knowledge_type": "self_discovered",
-      "content": "Missing regime/strategy metadata indicates system malfunction - 67% loss rate; investigate before continuing",
-      "confidence": 0.68,
-      "evidence_count": 6,
-      "category": "execution",
-      "tags": [
-        "metadata",
-        "data-quality",
-        "system-health"
-      ],
-      "source": "self_analyst_cli",
-      "evidence": "Trades with blank regime/strat fields: 4 significant losses (BTC SHORT -12.21/-8.68, HYPE SHORT -0.42, HYPE LONG -1.20) vs 2 tiny wins (0.77, 0.11). Data gaps correlate with poor execution.",
-      "created_at": 1782865626.2008297,
-      "last_validated": 1782865626.2008297,
-      "validation_count": 6,
-      "invalidation_count": 0
-    },
-    {
-      "knowledge_type": "self_discovered",
-      "content": "ETH SHORT during consolidation has positive expectancy (60% win rate, +15.5 avg win vs -3.1 avg loss)",
-      "confidence": 0.72,
-      "evidence_count": 5,
-      "category": "symbol",
-      "tags": [
-        "eth",
-        "consolidation",
-        "short",
-        "edge-pattern"
-      ],
-      "source": "self_analyst_cli",
-      "evidence": "ETH SHORT in consolidation: 3 wins (21.40, 21.83, 3.27) outpaced 2 losses (-4.48, -1.74) with 5:1 magnitude ratio favoring longs.",
-      "created_at": 1782865626.2012725,
-      "last_validated": 1782865626.2012725,
-      "validation_count": 5,
-      "invalidation_count": 0
     }
   ]
 }
