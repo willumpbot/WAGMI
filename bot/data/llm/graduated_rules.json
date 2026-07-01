@@ -555,6 +555,109 @@
       "times_overridden": 0,
       "overridden_correct": 0,
       "active": true
+    },
+    {
+      "rule_id": "rule_1782939699_27",
+      "hypothesis_statement": "Consolidation + SHORT + confidence <60% has high whipsaw rate. Adding 2-strategy requirement or confidence floor of 60% should cut losses. Test: skip all consolidation shorts with 1 strategy + <60% co",
+      "action": "veto",
+      "conditions": {
+        "symbol": "SOL",
+        "regime": "consolidation",
+        "side": "SELL"
+      },
+      "adjustment": 0.0,
+      "confidence": 0.35,
+      "evidence_ratio": 0.2857142857142857,
+      "total_evidence": 14,
+      "created_at": 1782939699.0079188,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "times_overridden": 0,
+      "overridden_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "rule_1782939699_28",
+      "hypothesis_statement": "HYPE in unknown regime needs min 2+ strategy confluence; single strategies fail systematically on this symbol-regime combo",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "HYPE"
+      },
+      "adjustment": -10.0,
+      "confidence": 0.325,
+      "evidence_ratio": 0.0,
+      "total_evidence": 7,
+      "created_at": 1782939699.0803943,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "times_overridden": 0,
+      "overridden_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "rule_1782939699_29",
+      "hypothesis_statement": "HYPE in unknown regime: structurally avoid both sides. WR <20% expected.",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "HYPE"
+      },
+      "adjustment": -15.0,
+      "confidence": 0.325,
+      "evidence_ratio": 0.0,
+      "total_evidence": 7,
+      "created_at": 1782939699.1345165,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "times_overridden": 0,
+      "overridden_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "rule_1782939699_30",
+      "hypothesis_statement": "Auto-exit confidence_scorer SHORT on consolidation\u2192trend shift. Predicted: 100% loss reduction vs. extended holds in mismatched regime.",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "SOL",
+        "regime": "trend",
+        "side": "SELL",
+        "strategy": "confidence_scorer"
+      },
+      "adjustment": -10.0,
+      "confidence": 0.325,
+      "evidence_ratio": 0.0,
+      "total_evidence": 7,
+      "created_at": 1782939699.198785,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "times_overridden": 0,
+      "overridden_correct": 0,
+      "active": true
+    },
+    {
+      "rule_id": "rule_1782939699_31",
+      "hypothesis_statement": "confidence_scorer trades (esp SHORT): Implement regime-lock circuit. On consolidation\u2192TREND shift, close within 15min. Prevents 50-100bps MFE bleed. Test: regime-shift closes vs hold-through outcomes.",
+      "action": "penalize",
+      "conditions": {
+        "symbol": "SOL",
+        "regime": "trend",
+        "side": "SELL",
+        "strategy": "confidence_scorer"
+      },
+      "adjustment": -10.0,
+      "confidence": 0.325,
+      "evidence_ratio": 0.0,
+      "total_evidence": 7,
+      "created_at": 1782939699.2632813,
+      "last_applied": 0.0,
+      "times_applied": 0,
+      "times_correct": 0,
+      "times_overridden": 0,
+      "overridden_correct": 0,
+      "active": true
     }
   ]
 }

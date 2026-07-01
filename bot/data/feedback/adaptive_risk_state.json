@@ -1,7 +1,6 @@
 {
   "recent_outcomes": [
     false,
-    false,
     true,
     false,
     false,
@@ -12,6 +11,7 @@
     false,
     false,
     true,
+    false,
     false,
     false,
     false,
@@ -36,7 +36,7 @@
     },
     "consolidation": {
       "wins": 11,
-      "total": 38
+      "total": 39
     },
     "trend": {
       "wins": 0,

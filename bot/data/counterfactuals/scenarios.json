@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782938995.5809534,
+  "updated_at": 1782940032.9578338,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -13771,6 +13771,49 @@
         "tp2_price": 1.121371428571428,
         "confidence": 60.0,
         "reason": "LLM_FIRST: XRP BUY into 1h/4h regime conflict (trending_bull vs range) likely chops near 1.05-1.07 rather than "
+      }
+    },
+    {
+      "id": "cf_1782939535_35f8bd44",
+      "timestamp": 1782939535.996821,
+      "symbol": "HYPE",
+      "scenario_type": "exit_timing",
+      "actual_action": "LLM_EXIT_AGENT",
+      "counterfactual_action": "hold_to_tp2",
+      "actual_pnl": -10.998508990921927,
+      "counterfactual_pnl": 12.133560233427358,
+      "delta": 23.132069224349287,
+      "resolved": true,
+      "metadata": {
+        "side": "long",
+        "entry_price": 64.3455,
+        "actual_exit_price": 62.0175,
+        "tp1_price": 68.2492,
+        "tp2_price": 72.1529,
+        "actual_pnl_raw": -7.077045602753669,
+        "pnl_at_tp1_pct": 6.0668,
+        "pnl_at_tp2_pct": 12.1336
+      }
+    },
+    {
+      "id": "cf_1782940032_3152d69a",
+      "timestamp": 1782940032.957603,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_SELL",
+      "counterfactual_action": "entered_SELL",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "SELL",
+        "entry_price": 62.235,
+        "sl_price": 65.0492857142857,
+        "tp1_price": 58.01357142857144,
+        "tp2_price": 53.79214285714288,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: "
       }
     }
   ]

@@ -1,16 +1,6 @@
 {
   "insights": [
     {
-      "ts": 1782813547.599841,
-      "category": "trade_management",
-      "insight": "Exit [XRP]: Range regime (mean-reversion punishes patience) + MFE 0.54% (meets 0.5% partial threshold) + hold 8.16h + slow progress (0.54% of 4.08% to TP1 achieve",
-      "confidence": 0.5,
-      "evidence": "action=partial_close, thesis_valid=True",
-      "source": "exit_agent",
-      "validated": false,
-      "validation_count": 0
-    },
-    {
       "ts": 1782813625.9491382,
       "category": "trade_management",
       "insight": "Exit [ETH]: RANGE regime + MFE 0.55% + dead-capital risk ($0.15/h velocity at 3.17h hold) + confidence_scorer 11% WR in range \u2192 lock 33% profit per range-regime p",
@@ -4994,6 +4984,16 @@
       "ts": 1782939238.2319314,
       "category": "exit_pattern",
       "insight": "Exit [HYPE]: Thesis invalidated on two fronts: (1) HYPE LONG in regime=trend has 0% historical WR (n=7); confidence_scorer variant also 0% WR on HYPE in trend (n=6",
+      "confidence": 0.75,
+      "evidence": "action=full_close, thesis_valid=False",
+      "source": "exit_agent",
+      "validated": false,
+      "validation_count": 0
+    },
+    {
+      "ts": 1782939905.1993906,
+      "category": "exit_pattern",
+      "insight": "Exit [XRP]: Signal generator (confidence_scorer) is statistically broken in the exact regime this trade is in (0% WR, n=6 trend trades vs 19% WR overall, -$851). ",
       "confidence": 0.75,
       "evidence": "action=full_close, thesis_valid=False",
       "source": "exit_agent",

@@ -1,18 +1,6 @@
 {
-  "last_updated": 1782939451,
+  "last_updated": 1782940313,
   "notes": [
-    {
-      "text": "Consolidation regime TOXIC (29% WR, $-287), quant analysis explicitly flags kelly=0/skip-all, 7-loss cold streak + CB warning + survival CRITICAL(26/100). SOL BUY graduated veto still firing despite f",
-      "ts": 1782871599.1655414,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Consolidation regime toxic (29% WR n=31, -$287); quant_analysis explicitly flags kelly=0/no-trade-qualifies; 7-loss cold streak + CB warning + survival CRITICAL(26/100) demand skip until stronger mult",
-      "ts": 1782872281.5325038,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "All 5 symbols solo/weak signals in TOXIC consolidation regime; quant kelly=0, EV negative, 7-loss cold streak + survival CRITICAL(26/100); wait for 2-strategy agreement or volume/OI expansion before r",
       "ts": 1782872629.1753407,
@@ -600,6 +588,18 @@
       "ts": 1782939451.401315,
       "symbol": "HYPE",
       "regime": "consolidation"
+    },
+    {
+      "text": "MFE=0 after 1h in consolidation = thesis dead. Exit quickly. Held 2.24h with zero upside\u2014textbook failure. Also block confidence_scorer HYPE (8% WR).",
+      "ts": 1782939535.8731773,
+      "symbol": "HYPE",
+      "regime": "consolidation"
+    },
+    {
+      "text": "BTC LONG solo multi_tier_quality in trending_bull: conditional_wr=17% vs 24% base, kelly=0, BTC_LONG 0%WR(n=5), trending_bull regime 0%WR(n=3), CB warning active - skip until confluence confirms",
+      "ts": 1782940313.838112,
+      "symbol": "[LEAD-LAG",
+      "regime": "trend"
     }
   ]
 }
