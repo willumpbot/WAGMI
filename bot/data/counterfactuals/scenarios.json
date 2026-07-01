@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782916836.7205424,
+  "updated_at": 1782927689.6852634,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -12969,6 +12969,405 @@
         "tp1_price": 80.90628571428572,
         "tp2_price": 85.12057142857144,
         "confidence": 62.00000000000001,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782917310_b75d9c55",
+      "timestamp": 1782917310.1533387,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1595.1,
+        "sl_price": 1564.3142857142857,
+        "tp1_price": 1656.6714285714284,
+        "tp2_price": 1718.2428571428568,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: ETH LONG lacks confluence for continuation to 1657; regime 4h=range vs 1h=trend mismatch invalidates"
+      }
+    },
+    {
+      "id": "cf_1782917654_fad36a1a",
+      "timestamp": 1782917654.9565785,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.091,
+        "sl_price": 74.98385714285713,
+        "tp1_price": 81.30528571428572,
+        "tp2_price": 85.51957142857144,
+        "confidence": 62.00000000000001,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782918024_9d11e9f5",
+      "timestamp": 1782918024.7461047,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1600.8,
+        "sl_price": 1570.0,
+        "tp1_price": 1662.3999999999999,
+        "tp2_price": 1723.9999999999998,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: ETH BUY solo confidence_scorer signal lacks confluence; 4h range regime conflicts with 1h trend read"
+      }
+    },
+    {
+      "id": "cf_1782918352_30a48ebc",
+      "timestamp": 1782918352.506051,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 76.968,
+        "sl_price": 75.154,
+        "tp1_price": 80.59600000000002,
+        "tp2_price": 84.22400000000003,
+        "confidence": 62.00000000000001,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782918939_47d724aa",
+      "timestamp": 1782918939.8541672,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1611.2,
+        "sl_price": 1582.942857142857,
+        "tp1_price": 1667.7142857142856,
+        "tp2_price": 1724.228571428571,
+        "confidence": 75.0,
+        "reason": "LLM_FIRST: ETH consolidating near 1600-1615; solo confidence_scorer BUY lacks confirmation, regime_4h=range vs "
+      }
+    },
+    {
+      "id": "cf_1782919029_408c87e4",
+      "timestamp": 1782919029.3391516,
+      "symbol": "XRP",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1.0565,
+        "sl_price": 1.0406142857142857,
+        "tp1_price": 1.0835297130874733,
+        "tp2_price": 1.1200428571428571,
+        "confidence": 67.59598780900428,
+        "reason": "LLM_FIRST: XRP likely chops within 1.03-1.06 range over next 4h; BUY signal lacks confirmation for a sustained "
+      }
+    },
+    {
+      "id": "cf_1782919304_d0c45913",
+      "timestamp": 1782919304.4167385,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.045,
+        "sl_price": 75.148,
+        "tp1_price": 80.83900000000001,
+        "tp2_price": 84.63300000000002,
+        "confidence": 62.00000000000001,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782919866_20a321e8",
+      "timestamp": 1782919866.776504,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1623.8,
+        "sl_price": 1593.542857142857,
+        "tp1_price": 1684.3142857142857,
+        "tp2_price": 1744.828571428571,
+        "confidence": 75.0,
+        "reason": "LLM_FIRST: ETH BUY solo signal conflicts with 4h range regime (regime_4h_aligned=false); expect fade back towar"
+      }
+    },
+    {
+      "id": "cf_1782919982_c980377d",
+      "timestamp": 1782919982.7540174,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.69,
+        "sl_price": 75.75000000000001,
+        "tp1_price": 81.57,
+        "tp2_price": 85.44999999999999,
+        "confidence": 62.00000000000001,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782920654_90be5d0a",
+      "timestamp": 1782920654.506977,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.423,
+        "sl_price": 75.483,
+        "tp1_price": 81.303,
+        "tp2_price": 85.18299999999999,
+        "confidence": 62.00000000000001,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782920872_ab9dee7f",
+      "timestamp": 1782920872.381893,
+      "symbol": "ETH",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 1621.9,
+        "sl_price": 1591.6428571428573,
+        "tp1_price": 1682.4142857142856,
+        "tp2_price": 1742.928571428571,
+        "confidence": 75.0,
+        "reason": "LLM_FIRST: ETH LONG solo signal in high_volatility(1h)/range(4h) misaligned regime, consolidation historically "
+      }
+    },
+    {
+      "id": "cf_1782921533_0ba742fc",
+      "timestamp": 1782921533.2565591,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.46400000000001,
+        "sl_price": 75.71702307036004,
+        "tp1_price": 80.5719077185598,
+        "tp2_price": 85.22399999999999,
+        "confidence": 67.17381425707349,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782922317_658f89df",
+      "timestamp": 1782922317.7951815,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.443,
+        "sl_price": 75.64057142857143,
+        "tp1_price": 81.04785714285715,
+        "tp2_price": 84.65271428571431,
+        "confidence": 70.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782923304_cbd8c6fb",
+      "timestamp": 1782923304.850923,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 78.033,
+        "sl_price": 76.20299324835563,
+        "tp1_price": 81.16206076479939,
+        "tp2_price": 85.65642857142858,
+        "confidence": 65.36574072056466,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782924178_faaaa916",
+      "timestamp": 1782924178.5229533,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.508,
+        "sl_price": 75.67799324835562,
+        "tp1_price": 80.63706076479937,
+        "tp2_price": 85.13142857142857,
+        "confidence": 65.36574072056466,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782925061_1d593be4",
+      "timestamp": 1782925061.6759665,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.025,
+        "sl_price": 75.15658519120396,
+        "tp1_price": 80.21973327916443,
+        "tp2_price": 84.8084285714286,
+        "confidence": 67.2561728529569,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782925904_517ce326",
+      "timestamp": 1782925904.9715734,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.134,
+        "sl_price": 75.32414285714286,
+        "tp1_price": 80.75371428571428,
+        "tp2_price": 84.37342857142856,
+        "confidence": 60.0,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782926888_eec2bf41",
+      "timestamp": 1782926888.7595837,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.784,
+        "sl_price": 75.95166133059999,
+        "tp1_price": 80.91704802460013,
+        "tp2_price": 85.41714285714285,
+        "confidence": 65.36574072056466,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782927689_327856b9",
+      "timestamp": 1782927689.6851733,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 77.72300000000001,
+        "sl_price": 75.89066133059998,
+        "tp1_price": 80.85604802460011,
+        "tp2_price": 85.35614285714284,
+        "confidence": 65.36574072056466,
         "reason": "LLM_FIRST: "
       }
     }

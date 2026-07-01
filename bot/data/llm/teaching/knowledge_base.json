@@ -3983,11 +3983,11 @@
       "knowledge_type": "observation",
       "content": "1-strategy agreement: 0% win rate (3 trades)",
       "confidence": 0.5,
-      "evidence_count": 88,
+      "evidence_count": 92,
       "supporting": [],
       "contradicting": [],
       "created_at": 1775668595.8846202,
-      "last_validated": 1782917011.2031076,
+      "last_validated": 1782925517.9135294,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "strategy",
@@ -14199,11 +14199,11 @@
       "knowledge_type": "observation",
       "content": "System struggles in unknown regime (0% WR)",
       "confidence": 0.7,
-      "evidence_count": 78,
+      "evidence_count": 82,
       "supporting": [],
       "contradicting": [],
       "created_at": 1782124943.202592,
-      "last_validated": 1782917011.1714425,
+      "last_validated": 1782925517.8577857,
       "validation_count": 0,
       "invalidation_count": 0,
       "category": "regime",
@@ -18677,12 +18677,13 @@
         "Short WR=0%",
         "Short WR=0%",
         "Short WR=0%",
+        "Short WR=0%",
         "Short WR=0%"
       ],
       "created_at": 1782869578.655471,
-      "last_validated": 1782917011.2366562,
+      "last_validated": 1782919144.0856528,
       "validation_count": 3,
-      "invalidation_count": 6,
+      "invalidation_count": 7,
       "category": "direction",
       "tags": [
         "side_bias"
@@ -18856,7 +18857,7 @@
     {
       "knowledge_type": "hypothesis",
       "content": "System currently favors shorts (17% long WR vs 42% short WR)",
-      "confidence": 0.30000000000000004,
+      "confidence": 0.05,
       "evidence_count": 1,
       "supporting": [
         "Short WR=42%",
@@ -18864,12 +18865,16 @@
       ],
       "contradicting": [
         "Short WR=0%",
+        "Short WR=0%",
+        "Short WR=0%",
+        "Short WR=0%",
+        "Short WR=0%",
         "Short WR=0%"
       ],
       "created_at": 1782883588.5556507,
-      "last_validated": 1782917011.266262,
+      "last_validated": 1782925517.9768686,
       "validation_count": 2,
-      "invalidation_count": 2,
+      "invalidation_count": 6,
       "category": "direction",
       "tags": [
         "side_bias"
@@ -19085,6 +19090,78 @@
         "unknown"
       ],
       "source": "learning_agent"
+    },
+    {
+      "knowledge_type": "self_discovered",
+      "content": "Avoid trading when regime is unclassified - unknown regime shows 100% loss rate",
+      "confidence": 0.9,
+      "evidence_count": 8,
+      "category": "regime",
+      "tags": [
+        "regime-classification",
+        "risk-gate",
+        "red-flag"
+      ],
+      "source": "self_analyst_cli",
+      "evidence": "All 8 trades with regime='unknown' resulted in losses (-0.28 to -9.50 pnl range); regime classification gaps signal weak confluence",
+      "created_at": 1782925625.4191892,
+      "last_validated": 1782925625.4191895,
+      "validation_count": 8,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "self_discovered",
+      "content": "Skip BTC LONG positions during consolidation regime - 100% loss rate observed",
+      "confidence": 0.82,
+      "evidence_count": 3,
+      "category": "regime",
+      "tags": [
+        "symbol-specific",
+        "direction-bias",
+        "consolidation"
+      ],
+      "source": "self_analyst_cli",
+      "evidence": "Three consecutive BTC LONG trades in consolidation regime all lost: -2.93, -3.11, -25.62; directional mismatch with consolidation pattern",
+      "created_at": 1782925625.419875,
+      "last_validated": 1782925625.419875,
+      "validation_count": 3,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "self_discovered",
+      "content": "Favor SHORT bias over LONG bias in consolidation regime - SHORTs win 60%, LONGs win 20%",
+      "confidence": 0.75,
+      "evidence_count": 9,
+      "category": "regime",
+      "tags": [
+        "direction-bias",
+        "consolidation",
+        "setup-edge"
+      ],
+      "source": "self_analyst_cli",
+      "evidence": "10 consolidation SHORTs: 6 wins vs 4 losses (60%). 5 consolidation LONGs: 1 win vs 4 losses (20%). Clear directional edge asymmetry",
+      "created_at": 1782925625.420346,
+      "last_validated": 1782925625.4203463,
+      "validation_count": 9,
+      "invalidation_count": 0
+    },
+    {
+      "knowledge_type": "self_discovered",
+      "content": "HYPE symbol shows degraded edge - 7 losses vs 2 minimal wins; reduce sizing or skip",
+      "confidence": 0.73,
+      "evidence_count": 8,
+      "category": "symbol",
+      "tags": [
+        "symbol-specific",
+        "edge-degradation",
+        "position-sizing"
+      ],
+      "source": "self_analyst_cli",
+      "evidence": "8 HYPE trades: 7 losses, 2 tiny wins (0.03, 0.11 pnl), cumulative -14.99; consistent underperformance vs other symbols",
+      "created_at": 1782925625.4207397,
+      "last_validated": 1782925625.42074,
+      "validation_count": 8,
+      "invalidation_count": 0
     }
   ]
 }
