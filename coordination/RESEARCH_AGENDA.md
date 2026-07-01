@@ -8,6 +8,9 @@ This is the standing research backlog. The learning engine pulls the top unanswe
 - Negative results are wins — a killed hypothesis is compounded knowledge. Log them.
 - Nothing graduates to live behavior without: backtest + counterfactual + owner sign-off (or A/B rule with auto-retire).
 
+## Fallacy definition (owner, 2026-07-02 — broadened)
+A fallacy = ANY of: (a) a standard violation (v1.2/v1.3), (b) code that could be wired MORE EFFICIENTLY, (c) wiring that could produce BETTER EV UNDERSTANDING if arranged differently. Hunts under this definition treat 'suboptimal but working' as findings, not passes.
+
 ## OPEN QUESTIONS (ranked by expected value)
 1. What does the honest post-fix data say after 15-20 clean closes? (The first-ever trustworthy sample. Re-run WR/conf/side/regime tables on it alone.)
 2. Exit intent restoration: does hold-and-trim beat current config? (IN FLIGHT — exit-geometry backtest.)
@@ -36,6 +39,8 @@ This is the standing research backlog. The learning engine pulls the top unanswe
 25. Scorecard validity: trade_scorecards.jsonl (2.5k records, nothing reads it) — do scorecard grades predict realized PnL, i.e. is the grader worth its tokens?
 26. Proposal→adoption audit: growth/hypotheses+recommendations+self_improvement_proposals (1.5MB, ~write-only) — what fraction of machine proposals were ever enacted, and did enacted beat ignored?
 27. P0 INTEGRITY — single source of truth: five trade stores disagree (trades.csv 91 vs trade_ledger.csv 157 vs ml_data/bot.db trades 330 vs ml_data/trade_outcomes.json vs analysis/trade_outcomes.csv 25). Reconcile once, designate canon, alias the rest — every WR/EV answer depends on this denominator. (Full flag list: DATA_CENSUS.md §4.)
+
+28. DATA EXPANSION: what free trade/market streams do we NOT collect that would sharpen EV? (HL: L2 book depth/spread/imbalance snapshots, liquidation events, trade-tape aggregates; Binance: long/short account ratio, taker buy/sell flow, basis.) Time-series can't be backfilled — every uncollected day is lost forever. Collector must be ISOLATED (own daemon/task, new files, zero contact with the trade path during the open rewire).
 
 ## ANSWERED (verdict + report)
 - Missed-EV regime-skips: ARTIFACT (week-1 crash shorts) — MISSED_EV_LOCKDOWN_2026-07-01.md
