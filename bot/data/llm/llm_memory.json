@@ -1,18 +1,6 @@
 {
-  "last_updated": 1782940313,
+  "last_updated": 1782941237,
   "notes": [
-    {
-      "text": "All 5 symbols solo/weak signals in TOXIC consolidation regime; quant kelly=0, EV negative, 7-loss cold streak + survival CRITICAL(26/100); wait for 2-strategy agreement or volume/OI expansion before r",
-      "ts": 1782872629.1753407,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Low-liquidity regime + 7-loss streak + survival CRITICAL(26/100): all signals solo weak, quant kelly=0, EV negative across board; skipped per Gate1 regime hard rule",
-      "ts": 1782872873.209859,
-      "symbol": "[PRE-CLOSE",
-      "regime": "low_liquidity"
-    },
     {
       "text": "Low-liquidity regime explicit hard-skip per Gate 1; quant_analysis confirms kelly=0, EV negative, all symbols solo-signal only with confidence_floor rejections; 7-loss streak + survival CRITICAL(26/10",
       "ts": 1782873172.3139322,
@@ -598,6 +586,18 @@
     {
       "text": "BTC LONG solo multi_tier_quality in trending_bull: conditional_wr=17% vs 24% base, kelly=0, BTC_LONG 0%WR(n=5), trending_bull regime 0%WR(n=3), CB warning active - skip until confluence confirms",
       "ts": 1782940313.838112,
+      "symbol": "[LEAD-LAG",
+      "regime": "trend"
+    },
+    {
+      "text": "HYPE SHORT solo (multi_tier_quality) vetoed: active graduated rule flags HYPE SELL as net-negative EV (-$16.65/trade, n=14, acc=71%); regime-specific HYPE_SHORT WR=0% (n=6, unknown/trending_bear) vs t",
+      "ts": 1782940709.3498852,
+      "symbol": "[LEAD-LAG",
+      "regime": "trend"
+    },
+    {
+      "text": "BTC_LONG solo multi_tier_quality in trending_bull: quant flags 0% WR (n=5) BTC_LONG, 0% WR trending_bull (n=2-3), kelly=0, conditional_wr 12% vs 22% base, mechanically rejected by confidence_floor (46",
+      "ts": 1782941237.1948354,
       "symbol": "[LEAD-LAG",
       "regime": "trend"
     }

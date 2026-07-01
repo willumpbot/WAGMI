@@ -1597,6 +1597,85 @@ class PositionManager:
             return None
         return self._close_position(pos, price, reason)
 
+    def partial_close(
+        self, symbol: str, pct: float, price: float,
+        action: str = "PARTIAL_CLOSE", qty: Optional[float] = None,
+    ) -> Optional[TradeEvent]:
+        """Book the accounting for a partial close and return its TradeEvent.
+
+        Extracted from the TP1 accounting path (2026-07-01 wiring audit #2):
+        LLM/heuristic partial closes previously did only `pos.qty -= close_qty`,
+        so the banked leg PnL never reached fees, realized_pnl, equity,
+        trade logs, or learning — a PnL black hole that also inverted
+        win/loss labels (partial profit + SL on remainder recorded pure loss).
+
+        Pure accounting: fee, leg PnL, proportional funding allocation, qty
+        reduction, TradeEvent. Does NOT touch SL/TP/state (exit geometry
+        unchanged). Caller owns exchange submission and must stamp
+        event.metadata["_exchange_submitted"] before injecting the event
+        into the main event loop (equity + log_trade flow from there).
+
+        qty: exact quantity already submitted to the exchange (overrides pct
+        for the booked amount so books match the fill).
+        """
+        pos = self.positions.get(symbol)
+        if not pos or pos.state == CLOSED or pos.qty <= 0:
+            return None
+        close_qty = qty if (qty is not None and qty > 0) else pos.qty * pct
+        close_qty = round_qty(symbol, min(close_qty, pos.qty))
+        # A "partial" must never zero the position — keep a minimum remainder
+        # (mirrors the _partial_close_tp1 rounding guard).
+        remaining_after = round_qty(symbol, pos.qty - close_qty)
+        if remaining_after <= 0:
+            close_qty = round_qty(symbol, pos.qty * 0.90)
+        if close_qty <= 0 or close_qty >= pos.qty:
+            return None
+
+        fee = self._fee(price, close_qty)
+        pos.fees_paid += fee
+
+        if pos.side == "LONG":
+            pnl = (price - pos.entry) * close_qty * pos.leverage
+        else:
+            pnl = (pos.entry - price) * close_qty * pos.leverage
+
+        # Proportionally allocate funding costs to this leg
+        # (mirrors _partial_close_tp1 — prevents dumping all funding onto
+        # the final close and distorting per-leg PnL)
+        funding_share = pos.funding_costs * (close_qty / pos.qty) if pos.qty > 0 else 0.0
+        pos.realized_pnl += (pnl - fee - funding_share)
+        pos.funding_costs -= funding_share
+        pos.qty = round_qty(symbol, pos.qty - close_qty)
+
+        logger.info(
+            f"[{symbol}] {action} @ {price} | Closed {close_qty} ({pct:.0%}) | "
+            f"PnL={pnl:.2f} | Fee={fee:.2f} | Remaining={pos.qty}"
+        )
+
+        event = TradeEvent(
+            symbol=symbol,
+            action=action,
+            side=pos.side,
+            price=price,
+            qty=close_qty,
+            pnl=pnl,
+            fee=fee,
+            leverage=pos.leverage,
+            strategy=pos.strategy,
+            metadata={
+                "remaining_qty": pos.qty,
+                "partial_pct": pct,
+                "entry": pos.entry,
+                "sl": pos.original_sl,
+                "tp1": pos.tp1,
+                "tp2": pos.tp2,
+                "confidence": pos.confidence,
+                "entry_reasons": pos.entry_reasons,
+            },
+        )
+        self.trade_log.append(event)
+        return event
+
     # Profile-specific max hold hours: prevents stale positions from lingering
     _PROFILE_MAX_HOLD_HOURS = {
         "SCALP": 4,

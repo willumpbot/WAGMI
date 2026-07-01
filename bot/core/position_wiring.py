@@ -18,7 +18,7 @@ from typing import Dict, Any
 from trading_config import DEFAULT_SYMBOLS
 from data.db import log_trade
 from data.fetchers.telemetry import Telemetry
-from execution.precision import get_min_qty
+from execution.precision import get_min_qty, round_qty
 
 # Optional imports
 try:
@@ -828,7 +828,7 @@ class PositionWiringMixin:
                                                     )
                                         elif action_name == "partial":
                                             partial_pct = result.get("partial_pct", 0.5)
-                                            close_qty = pos.qty * partial_pct
+                                            close_qty = round_qty(symbol, pos.qty * partial_pct)
                                             if close_qty > 0:
                                                 _part_side = "SELL" if pos.side == "LONG" else "BUY"
                                                 _part_close = self.order_executor.close_position(
@@ -836,7 +836,17 @@ class PositionWiringMixin:
                                                     reason="LLM_EXIT_PARTIAL"
                                                 )
                                                 if _part_close and getattr(_part_close, "filled", False):
-                                                    pos.qty -= close_qty
+                                                    # Wiring audit #2 (2026-07-01): book the leg via
+                                                    # partial_close() (fee/PnL/funding/qty) and inject
+                                                    # the event so equity + log_trade flow through the
+                                                    # main event loop. Previously only `pos.qty -=`.
+                                                    _pev = self.pos_mgr.partial_close(
+                                                        symbol, partial_pct, current_price,
+                                                        action="LLM_EXIT_PARTIAL", qty=close_qty,
+                                                    )
+                                                    if _pev:
+                                                        _pev.metadata["_exchange_submitted"] = True
+                                                        self._pending_exit_events.append(_pev)
                                                     logger.info(
                                                         f"[EXIT-INTEL-LLM] {symbol} partial: "
                                                         f"closed {close_qty:.6f}, remaining {pos.qty:.6f}"
@@ -1016,7 +1026,7 @@ class PositionWiringMixin:
                         elif action == "partial":
                             # Partial close: submit exchange order, then update internal state
                             partial_pct = result.get("partial_pct", 0.5)
-                            close_qty = pos.qty * partial_pct
+                            close_qty = round_qty(symbol, pos.qty * partial_pct)
                             if close_qty > 0:
                                 _part_side2 = "SELL" if pos.side == "LONG" else "BUY"
                                 _part_close2 = self.order_executor.close_position(
@@ -1024,7 +1034,17 @@ class PositionWiringMixin:
                                     reason="EXIT_ENGINE_PARTIAL"
                                 )
                                 if _part_close2 and getattr(_part_close2, "filled", False):
-                                    pos.qty -= close_qty
+                                    # Wiring audit #2 (2026-07-01): book the leg via
+                                    # partial_close() (fee/PnL/funding/qty) and inject the
+                                    # event so equity + log_trade flow through the main
+                                    # event loop. Previously only `pos.qty -= close_qty`.
+                                    _pev2 = self.pos_mgr.partial_close(
+                                        symbol, partial_pct, current_price,
+                                        action="EXIT_ENGINE_PARTIAL", qty=close_qty,
+                                    )
+                                    if _pev2:
+                                        _pev2.metadata["_exchange_submitted"] = True
+                                        self._pending_exit_events.append(_pev2)
                                     logger.info(
                                         f"[EXIT-INTEL] {symbol} partial close: "
                                         f"closed {close_qty:.6f}, remaining {pos.qty:.6f}"
