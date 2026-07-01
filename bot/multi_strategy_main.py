@@ -6611,7 +6611,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         # Update entry_reasons with LLM decision info now that candidate is populated
         entry_reasons["llm_action"] = candidate.llm_action or ""
         entry_reasons["llm_confidence"] = getattr(candidate, 'llm_confidence', 0.0) or 0.0
-        entry_reasons["llm_agreed"] = candidate.llm_action in ("proceed", "go", "", "no_llm", None)
+        # Audit #40: only an explicit LLM proceed/go counts as agreement —
+        # ""/"no_llm"/None mean the LLM never judged the trade, not that it agreed.
+        entry_reasons["llm_agreed"] = candidate.llm_action in ("proceed", "go")
         entry_reasons["llm_notes"] = getattr(candidate, 'llm_notes', '') or ""
 
         # ── LLM size multiplier: apply the meta-brain's sizing adjustment ──
@@ -7678,6 +7680,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             raise  # Let caller fall back to mechanical path
 
         _thesis = (entry_decision.thesis or "")[:100]
+        # Truthful labeling (audit #40/#7): distinguish pipeline failures and
+        # exploration overrides from genuine LLM judgments in all records.
+        _pipeline_failed = "pipeline failure" in (entry_decision.thesis or "").lower()
+        _exploration_entry = False
         if entry_decision.action == "skip":
             # ── EXPLORATION MODE (Nunu-authorized 2026-06-20) ──────────────────
             # Break the entry paralysis to GATHER EDGE DATA: convert a throttled
@@ -7772,6 +7778,7 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                             _rf.append("EXPLORATION")
                             entry_decision.risk_flags = _rf
                             _explored = True
+                            _exploration_entry = True
                             logger.info(
                                 f"[{trace_id}][{symbol}] EXPLORATION ENTRY: skip→go "
                                 f"qty={_ex_qty:.6f} lev={_ex_lev:.1f}x risk=${_risk_usd:.2f} "
@@ -7815,8 +7822,11 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 logger.info(
                     f"[{trace_id}][{symbol}] LLM-FIRST SKIP: {_thesis}"
                 )
-                # Record for counterfactual tracking
-                if self.counterfactual:
+                # Record for counterfactual tracking.
+                # Audit #7 (labeling half): pipeline failures are NOT LLM vetoes —
+                # recording them as vetoes polluted veto-accuracy learning
+                # (167 'LLM pipeline failure' records in scenarios.json).
+                if self.counterfactual and not _pipeline_failed:
                     try:
                         self.counterfactual.record_veto(
                             symbol=symbol,
@@ -7831,11 +7841,13 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                     except Exception:
                         pass
                 # Track rejection in signal_outcomes.jsonl
+                # (pipeline errors get their own stage so llm_skip stats stay clean)
                 self._track_llm_first_outcome(
                     raw_signal, symbol,
                     passed=False, hard_rejected=False,
-                    reason=f"LLM veto: {_thesis}",
-                    stage="llm_skip",
+                    reason=(f"LLM pipeline error: {_thesis}" if _pipeline_failed
+                            else f"LLM veto: {_thesis}"),
+                    stage="pipeline_error" if _pipeline_failed else "llm_skip",
                     metadata={
                         "llm_confidence": entry_decision.confidence,
                         "llm_regime": entry_decision.regime,
@@ -7967,11 +7979,16 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             f"regime={_regime} thesis={_thesis[:60]}"
         )
 
-        # Track successful LLM-first execution
+        # Track successful LLM-first execution.
+        # Audit #40: exploration overrides were logged as "LLM approved" — the
+        # LLM actually said SKIP (conf may legitimately be 0.0 on pipeline
+        # failure; record it as returned, never fabricate).
+        _entry_label = "EXPLORATION" if _exploration_entry else "LLM_APPROVED"
         self._track_llm_first_outcome(
             raw_signal, symbol,
             passed=True, hard_rejected=False,
-            reason="LLM approved",
+            reason=("exploration override (LLM skipped)" if _exploration_entry
+                    else "LLM approved"),
             stage="llm_execute",
             metadata={
                 "llm_confidence": entry_decision.confidence,
@@ -7980,6 +7997,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 "qty": qty,
                 "entry": actual_entry,
                 "thesis": _thesis[:100],
+                "entry_type": _entry_label,
+                "llm_action": "exploration_override" if _exploration_entry else "go",
+                "pipeline_failed": _pipeline_failed,
             },
         )
 
@@ -7995,8 +8015,10 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             "risk_flags": entry_decision.risk_flags or [],
             "debate_summary": _debate[:200],
             "llm_confidence": entry_decision.confidence,
-            "llm_action": "go",
-            "llm_agreed": True,
+            "llm_action": "exploration_override" if _exploration_entry else "go",
+            "llm_agreed": not _exploration_entry,
+            "entry_type": _entry_label,
+            "pipeline_failed": _pipeline_failed,
             "agent_confidences": getattr(entry_decision, "agent_confidences", {}) or {},
         }
 
@@ -8013,7 +8035,9 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
         if isinstance(_strategies, str):
             _strategies = [_strategies]
         trade_prof = TradeProfile(
-            entry_type="LLM_FIRST",
+            # EXPLORATION label is truthful metadata only — neither value matches
+            # the SCALP/TREND exit-behavior branches, so exit geometry unchanged.
+            entry_type=_entry_label if _exploration_entry else "LLM_FIRST",
             entry_reasons=list(_strategies),
             primary_driver=raw_signal.strategy or "ensemble",
             confidence=float(entry_decision.confidence * 100.0),  # scale 0-1 -> 0-100
@@ -8062,7 +8086,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
             confidence=raw_signal.confidence,
             entry_reasons=entry_reasons,
             trade_profile=trade_prof,
-            notes=f"LLM-FIRST: {_thesis[:200]}",
+            notes=(f"EXPLORATION (LLM skipped): {_thesis[:200]}" if _exploration_entry
+                   else f"LLM-FIRST: {_thesis[:200]}"),
         )
 
         # Log trade
@@ -8081,6 +8106,8 @@ class MultiStrategyBot(AnalyticsMixin, LLMIntegrationMixin, PositionWiringMixin)
                 "llm_thesis": _thesis[:100],
                 "llm_leverage": leverage,
                 "llm_risk_pct": entry_decision.risk_pct,
+                "entry_type": _entry_label,
+                "llm_action": "exploration_override" if _exploration_entry else "go",
             }
         )
 
