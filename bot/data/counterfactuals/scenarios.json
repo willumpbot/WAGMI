@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": 1782885201.4668505,
+  "updated_at": 1782889059.7827816,
   "scenarios": [
     {
       "id": "cf_1782091710_89a62090",
@@ -12187,6 +12187,153 @@
         "tp2_price": 75.01500000000004,
         "confidence": 79.4622204590251,
         "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782885749_18ed08c5",
+      "timestamp": 1782885749.709333,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 75.1,
+        "sl_price": 73.57357142857141,
+        "tp1_price": 78.15285714285716,
+        "tp2_price": 81.20571428571432,
+        "confidence": 60.35769995373409,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782886173_5cbab0f1",
+      "timestamp": 1782886173.8699028,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 65.06,
+        "sl_price": 62.21547619047619,
+        "tp1_price": 69.32678571428572,
+        "tp2_price": 73.82000000000002,
+        "confidence": 80.4636522772069,
+        "reason": "LLM_FIRST: HYPE grinds toward TP1 ~69.3 (+6.5%) within 4-8h on bullish OI divergence (+2.4% OI vs +1% price) an"
+      }
+    },
+    {
+      "id": "cf_1782886350_595a91e0",
+      "timestamp": 1782886350.901006,
+      "symbol": "SOL",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 75.012,
+        "sl_price": 73.45971428571427,
+        "tp1_price": 78.11657142857143,
+        "tp2_price": 81.22114285714287,
+        "confidence": 62.34762851414697,
+        "reason": "LLM_FIRST: "
+      }
+    },
+    {
+      "id": "cf_1782886778_fa4135e2",
+      "timestamp": 1782886778.64188,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 65.069,
+        "sl_price": 62.21371428571428,
+        "tp1_price": 69.35192857142859,
+        "tp2_price": 73.86500000000002,
+        "confidence": 80.4636522772069,
+        "reason": "LLM_FIRST: HYPE consolidation drift, no clean directional edge for LONG despite ensemble confidence"
+      }
+    },
+    {
+      "id": "cf_1782887643_a77298dc",
+      "timestamp": 1782887643.7932389,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 65.085,
+        "sl_price": 62.258571428571415,
+        "tp1_price": 69.32464285714286,
+        "tp2_price": 71.0205,
+        "confidence": 77.92419545678527,
+        "reason": "LLM_FIRST: HYPE grinding near 65 in a marginal 1h trend, but structural red flags dominate: trend regime is 0% "
+      }
+    },
+    {
+      "id": "cf_1782888366_fff3183c",
+      "timestamp": 1782888366.1989057,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 64.624,
+        "sl_price": 61.73971428571428,
+        "tp1_price": 68.95042857142857,
+        "tp2_price": 70.68100000000001,
+        "confidence": 77.94430686620959,
+        "reason": "LLM_FIRST: HYPE breaks upper BB compression, targets 68.95 (TP1, +6.7%) within 8-12h; invalidated below 61.74"
+      }
+    },
+    {
+      "id": "cf_1782889059_6b5e70d5",
+      "timestamp": 1782889059.7827685,
+      "symbol": "HYPE",
+      "scenario_type": "veto_override",
+      "actual_action": "vetoed_BUY",
+      "counterfactual_action": "entered_BUY",
+      "actual_pnl": 0.0,
+      "counterfactual_pnl": 0.0,
+      "delta": 0.0,
+      "resolved": false,
+      "metadata": {
+        "side": "BUY",
+        "entry_price": 64.837,
+        "sl_price": 61.92747619047618,
+        "tp1_price": 69.20128571428575,
+        "tp2_price": 70.94700000000002,
+        "confidence": 77.92419545678527,
+        "reason": "LLM_FIRST: HYPE LONG breaks squeeze continuation toward 69.2 (TP1) within 4-8h as bollinger_squeeze resolves in"
       }
     }
   ]

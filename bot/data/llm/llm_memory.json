@@ -1,18 +1,6 @@
 {
-  "last_updated": 1782878009,
+  "last_updated": 1782888500,
   "notes": [
-    {
-      "text": "Range regime = 0% WR (brain, 19 trades) + confidence_scorer in range = 11% WR (n=9, wired). ETH SHORT explicitly blocked in range per memory note. Skip all confidence_scorer solo signals in range regi",
-      "ts": 1782794199.5255675,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
-    {
-      "text": "Range regime skip confirmed: quant conditional_wr=11% (n=9, -18% vs base), memory explicitly blocks ETH SHORT in range, Kelly=0.0 across all symbols. Wait for ADX>25 + OI expansion + volume surge befo",
-      "ts": 1782794771.7109444,
-      "symbol": "[PRE-CLOSE",
-      "regime": "range"
-    },
     {
       "text": "Range regime confirmed 11% WR toxic (n=9, wired). SOL BUY VETO active (acc=100%, n=5) + OI liquidation on SOL \u2014 let SL hit, do not defend. Kelly=0.0 across all symbols. CB WARNING active (3 consecutiv",
       "ts": 1782795165.5567853,
@@ -600,6 +588,18 @@
       "ts": 1782878009.7509823,
       "symbol": "ETH",
       "regime": ""
+    },
+    {
+      "text": "Consolidation regime TOXIC (29% WR n=31), quant kelly=0, EV neutral, noise_prob=0.9, all signals solo/weak (confluence=1, quality 0.3), no 2+ agreement clears the 66% floor, 7-loss streak w/ CB warnin",
+      "ts": 1782888034.7913687,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
+    },
+    {
+      "text": "Consolidation regime TOXIC (29% WR n=31), BTC_SHORT specifically toxic (9% WR n=11), solo signal (confl=1, quality=0.3), kelly=0, noise_prob=0.9, 7-loss streak w/ CB warning, fee drag 54% of PnL. Quan",
+      "ts": 1782888500.6371715,
+      "symbol": "[PRE-CLOSE",
+      "regime": "range"
     }
   ]
 }
