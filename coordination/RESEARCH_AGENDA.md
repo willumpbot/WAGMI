@@ -30,6 +30,12 @@ This is the standing research backlog. The learning engine pulls the top unanswe
 19. Ensemble strategy attribution: which of the 4 strategies' signals actually correlate with wins? (Needs H22 strategy-capture fix live first.)
 21. ARCHIVE MINING: the under-mined historical estate — data/reports/paper_trading_*.md (Apr-May reports incl. the 82 frozen A/B rules), sim_trades.jsonl sniper simulations, pre-May trade eras: extract every validated pattern + failed experiment already paid for. Years of walkthroughs = free training data.
 20. Equity-curve Monte Carlo: given honest per-trade distributions, what bankroll/leverage keeps risk-of-ruin <5% at each calibration level? (The math behind the leverage ramp.)
+22. Gate ROC: signal_outcomes.jsonl carries 56k signals with per-gate pass/reject annotations — for each gate (esp. confidence_floor), at what threshold does pass/reject flip EV-positive? (Source: DATA_CENSUS 2026-07-01.)
+23. Sniper rejection EV audit: sniper_rejections.jsonl (79k records, write-only) — which single rejection reason destroyed the most counterfactual EV, per regime? 5x the sample of any accepted-trade set.
+24. Agent skill attribution: agent_performance.jsonl (24k calls) — which agent role's confidence actually moves trade outcomes (skill vs noise per role)? Feeds calibration weights and token budget.
+25. Scorecard validity: trade_scorecards.jsonl (2.5k records, nothing reads it) — do scorecard grades predict realized PnL, i.e. is the grader worth its tokens?
+26. Proposal→adoption audit: growth/hypotheses+recommendations+self_improvement_proposals (1.5MB, ~write-only) — what fraction of machine proposals were ever enacted, and did enacted beat ignored?
+27. P0 INTEGRITY — single source of truth: five trade stores disagree (trades.csv 91 vs trade_ledger.csv 157 vs ml_data/bot.db trades 330 vs ml_data/trade_outcomes.json vs analysis/trade_outcomes.csv 25). Reconcile once, designate canon, alias the rest — every WR/EV answer depends on this denominator. (Full flag list: DATA_CENSUS.md §4.)
 
 ## ANSWERED (verdict + report)
 - Missed-EV regime-skips: ARTIFACT (week-1 crash shorts) — MISSED_EV_LOCKDOWN_2026-07-01.md
